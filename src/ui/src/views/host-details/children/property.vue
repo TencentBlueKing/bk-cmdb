@@ -125,9 +125,9 @@
         },
         computed: {
             ...mapState('hostDetails', ['info']),
-            ...mapGetters('hostDetails', ['groupedProperties']),
+            ...mapGetters('hostDetails', ['groupedProperties', 'properties']),
             host () {
-                return this.info.host || {}
+                return this.$tools.getInstFormValues(this.properties, this.info.host, false)
             }
         },
         methods: {
@@ -193,14 +193,15 @@
                 const { property, value } = this.editState
                 try {
                     const isValid = await this.$validator.validateAll()
-                    if (!isValid) {
-                        return false
-                    }
-                    this.loadingState.push(property)
+                    if (!isValid) return
                     this.exitForm()
+                    const oldValue = this.host[property.bk_property_id]
+                    if (oldValue === value) return
+                    this.loadingState.push(property)
+                    const sumitValue = this.$tools.formatValue(value, property)
                     await this.$store.dispatch('hostUpdate/updateHost', {
                         params: {
-                            [property.bk_property_id]: value,
+                            [property.bk_property_id]: sumitValue,
                             bk_host_id: String(this.host.bk_host_id)
                         },
                         config: {
@@ -208,7 +209,7 @@
                         }
                     })
                     this.$store.commit('hostDetails/updateInfo', {
-                        [property.bk_property_id]: value
+                        [property.bk_property_id]: sumitValue
                     })
                     this.loadingState = this.loadingState.filter(exist => exist !== property)
                 } catch (e) {

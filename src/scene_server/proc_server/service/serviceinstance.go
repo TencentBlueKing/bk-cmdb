@@ -807,8 +807,12 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 	var firstErr errors.CCErrorCoder
 	pipeline := make(chan bool, 10)
 	result := make([]*metadata.ModuleDiffWithTemplateDetail, 0)
+	isFinish := false
 
 	for _, moduleID := range diffOption.ModuleIDs {
+		if isFinish {
+			break
+		}
 		pipeline <- true
 		wg.Add(1)
 
@@ -831,6 +835,13 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 				return
 			}
 			result = append(result, oneModuleResult)
+
+			// judge whether need compare partial and finish in advance
+			if diffOption.PartialCompare {
+				if oneModuleResult.HasDifference {
+					isFinish = true
+				}
+			}
 
 		}(diffOption.BizID, moduleID)
 	}
@@ -1054,8 +1065,9 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		for idx := range records {
 			item := metadata.ServiceDifferenceDetails{
 				ServiceInstance: metadata.SrvInstBriefInfo{
-					ID:   records[idx].ServiceInstance.ID,
-					Name: records[idx].ServiceInstance.Name,
+					ID:        records[idx].ServiceInstance.ID,
+					Name:      records[idx].ServiceInstance.Name,
+					SvcTempID: records[idx].ServiceInstance.ServiceTemplateID,
 				},
 				Process: records[idx].Process,
 			}
@@ -1077,8 +1089,9 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		serviceInstances := make([]metadata.ServiceDifferenceDetails, 0)
 		for _, record := range records {
 			serviceInstances = append(serviceInstances, metadata.ServiceDifferenceDetails{ServiceInstance: metadata.SrvInstBriefInfo{
-				ID:   record.ServiceInstance.ID,
-				Name: record.ServiceInstance.Name,
+				ID:        record.ServiceInstance.ID,
+				Name:      record.ServiceInstance.Name,
+				SvcTempID: record.ServiceInstance.ServiceTemplateID,
 			}})
 		}
 		moduleDifference.Unchanged = append(moduleDifference.Unchanged, metadata.ServiceInstanceDifference{
@@ -1097,8 +1110,9 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		for _, record := range records {
 			serviceInstances = append(serviceInstances, metadata.ServiceDifferenceDetails{
 				ServiceInstance: metadata.SrvInstBriefInfo{
-					ID:   record.ServiceInstance.ID,
-					Name: record.ServiceInstance.Name,
+					ID:        record.ServiceInstance.ID,
+					Name:      record.ServiceInstance.Name,
+					SvcTempID: record.ServiceInstance.ServiceTemplateID,
 				},
 				ChangedAttributes: record.ChangedAttribute,
 			})
@@ -1115,8 +1129,9 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		sInstances := make([]metadata.ServiceDifferenceDetails, 0)
 		for _, s := range records {
 			sInstances = append(sInstances, metadata.ServiceDifferenceDetails{ServiceInstance: metadata.SrvInstBriefInfo{
-				ID:   s.ServiceInstance.ID,
-				Name: s.ServiceInstance.Name,
+				ID:        s.ServiceInstance.ID,
+				Name:      s.ServiceInstance.Name,
+				SvcTempID: s.ServiceInstance.ServiceTemplateID,
 			}})
 		}
 

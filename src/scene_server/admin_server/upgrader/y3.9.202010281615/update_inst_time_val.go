@@ -94,8 +94,8 @@ func updateInstTimeVal(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 					if ok == false {
 						continue
 					}
-					if util.IsTime(valStr) {
-						doc[field] = util.Str2Time(valStr)
+					if timeType, isTime := util.IsTime(valStr); isTime {
+						doc[field] = util.Str2Time(valStr, timeType)
 						continue
 					}
 					blog.ErrorJSON("It is not a time type string, table: %s, filed: %s, val: %s", instTable, field, val)

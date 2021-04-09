@@ -26,6 +26,18 @@ type GseClientInterface interface {
 	QueryProcStatus(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
 	RegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
 	UnRegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
+	ConfigAddStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigAddStreamToParams) (
+		*metadata.GseConfigAddStreamToResult, error)
+	ConfigUpdateStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateStreamToParams) error
+	ConfigDeleteStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigDeleteStreamToParams) error
+	ConfigQueryStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigQueryStreamToParams) (
+		[]metadata.GseConfigAddStreamToParams, error)
+	ConfigAddRoute(ctx context.Context, h http.Header, data *metadata.GseConfigAddRouteParams) (
+		resp *metadata.GseConfigAddRouteResult, err error)
+	ConfigUpdateRoute(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateRouteParams) error
+	ConfigDeleteRoute(ctx context.Context, h http.Header, data *metadata.GseConfigDeleteRouteParams) error
+	ConfigQueryRoute(ctx context.Context, h http.Header, data *metadata.GseConfigQueryRouteParams) (
+		[]metadata.GseConfigChannel, error)
 }
 
 func NewGsecClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigSrv) GseClientInterface {
@@ -42,10 +54,50 @@ type gse struct {
 
 type esbGseProcParams struct {
 	*esbutil.EsbCommParams
-	*metadata.GseProcRequest `json:"inline"`
+	*metadata.GseProcRequest `json:",inline"`
 }
 
 type esbTaskIDParams struct {
 	*esbutil.EsbCommParams
 	TaskID string `json:"task_id"`
+}
+
+type esbGseConfigAddStreamToParams struct {
+	*esbutil.EsbCommParams
+	*metadata.GseConfigAddStreamToParams `json:",inline"`
+}
+
+type esbGseConfigUpdateStreamToParams struct {
+	*esbutil.EsbCommParams
+	*metadata.GseConfigUpdateStreamToParams `json:",inline"`
+}
+
+type esbGseConfigDeleteStreamToParams struct {
+	*esbutil.EsbCommParams
+	*metadata.GseConfigDeleteStreamToParams `json:",inline"`
+}
+
+type esbGseConfigQueryStreamToParams struct {
+	*esbutil.EsbCommParams
+	*metadata.GseConfigQueryStreamToParams `json:",inline"`
+}
+
+type esbGseConfigAddRouteParams struct {
+	*esbutil.EsbCommParams
+	*metadata.GseConfigAddRouteParams `json:",inline"`
+}
+
+type esbGseConfigUpdateRouteParams struct {
+	*esbutil.EsbCommParams
+	*metadata.GseConfigUpdateRouteParams `json:",inline"`
+}
+
+type esbGseConfigDeleteRouteParams struct {
+	*esbutil.EsbCommParams
+	*metadata.GseConfigDeleteRouteParams `json:",inline"`
+}
+
+type esbGseConfigQueryRouteParams struct {
+	*esbutil.EsbCommParams
+	*metadata.GseConfigQueryRouteParams `json:",inline"`
 }

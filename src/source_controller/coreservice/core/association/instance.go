@@ -292,11 +292,17 @@ func (m *associationInstance) SearchInstanceAssociation(kit *rest.Kit, objID str
 
 	dataResult := &metadata.QueryResult{}
 	dataResult.Count, err = m.countInstanceAssociation(kit, objID, param.Condition)
-	dataResult.Info = make([]mapstr.MapStr, 0)
-	if nil != err {
-		blog.ErrorJSON("count inst association err: %s, objID: %s, param: %s, rid: %s", err, objID, param, kit.Rid)
-		return &metadata.QueryResult{}, err
+
+	// the InstAsst number will be counted by default.
+	if !param.DisableCounter {
+		count, err := m.countInstanceAssociation(kit, objID, param.Condition)
+		if nil != err {
+			blog.Errorf("search inst association count err [%#v], rid: %s", err, kit.Rid)
+			return &metadata.QueryResult{}, err
+		}
+		dataResult.Count = count
 	}
+	dataResult.Info = make([]mapstr.MapStr, 0)
 	for _, item := range instAsstItems {
 		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(item, "field"))
 	}

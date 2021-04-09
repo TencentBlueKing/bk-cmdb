@@ -256,10 +256,6 @@ func (lgc *Logics) MoveHostToResourcePool(kit *rest.Kit, conf *metadata.DefaultM
 		return nil, kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
 
-	if err := lgc.DeleteHostBusinessAttributes(kit, conf.HostIDs, conf.ApplicationID); err != nil {
-		blog.Errorf("move host to resource pool, delete host bussiness private, err: %v, input:%+v,rid:%s", err, conf, kit.Rid)
-		return nil, kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
-	}
 	return nil, nil
 }
 

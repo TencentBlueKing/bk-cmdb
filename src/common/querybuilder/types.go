@@ -121,14 +121,14 @@ var SupportOperators = map[Operator]bool{
 	OperatorsEndsWith:     true,
 	OperatorNotEndsWith:   true,
 
-	OperatorIsEmpty:    false,
-	OperatorIsNotEmpty: false,
+	OperatorIsEmpty:    true,
+	OperatorIsNotEmpty: true,
 
-	OperatorIsNull:    false,
-	OperatorIsNotNull: false,
+	OperatorIsNull:    true,
+	OperatorIsNotNull: true,
 
 	OperatorExist:    true,
-	OperatorNotExist: false,
+	OperatorNotExist: true,
 }
 
 func (op Operator) Validate() error {
@@ -285,7 +285,8 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 		}
 	case OperatorContains:
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBLIKE: fmt.Sprintf("%s", r.Value),
+			common.BKDBLIKE:    fmt.Sprintf("%s", r.Value),
+			common.BKDBOPTIONS: "i",
 		}
 	case OperatorNotContains:
 		filter[r.Field] = map[string]interface{}{

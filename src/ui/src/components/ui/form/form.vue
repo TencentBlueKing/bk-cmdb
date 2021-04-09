@@ -1,5 +1,5 @@
 <template>
-    <div class="form-layout">
+    <cmdb-sticky-layout class="form-layout">
         <slot name="prepend"></slot>
         <div class="form-groups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
@@ -56,9 +56,9 @@
                 </div>
             </template>
         </div>
-        <div class="form-options"
+        <div class="form-options" slot="footer" slot-scope="{ sticky }"
             v-if="showOptions"
-            :class="{ sticky: scrollbar }">
+            :class="{ sticky: sticky }">
             <slot name="form-options">
                 <cmdb-auth class="inline-block-middle" :auth="saveAuth">
                     <bk-button slot-scope="{ disabled }"
@@ -74,12 +74,11 @@
             </slot>
             <slot name="extra-options"></slot>
         </div>
-    </div>
+    </cmdb-sticky-layout>
 </template>
 
 <script>
     import formMixins from '@/mixins/form'
-    import RESIZE_EVENTS from '@/utils/resize-events'
     import FormTips from './form-tips.js'
     import FormAppend from './form-append.js'
     export default {
@@ -129,8 +128,7 @@
         data () {
             return {
                 values: {},
-                refrenceValues: {},
-                scrollbar: false
+                refrenceValues: {}
             }
         },
         computed: {
@@ -163,17 +161,7 @@
         created () {
             this.initValues()
         },
-        mounted () {
-            RESIZE_EVENTS.addResizeListener(this.$refs.formGroups, this.checkScrollbar)
-        },
-        beforeDestroy () {
-            RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
-        },
         methods: {
-            checkScrollbar () {
-                const $layout = this.$el
-                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
-            },
             initValues () {
                 this.values = this.$tools.getInstFormValues(this.properties, this.inst, this.type === 'create')
                 this.refrenceValues = this.$tools.clone(this.values)
@@ -353,17 +341,12 @@
         }
     }
     .form-options {
-        position: sticky;
-        bottom: 0;
-        left: 0;
         width: 100%;
-        padding: 10px 32px 0;
+        padding: 10px 32px;
+        background-color: #fff;
         font-size: 0;
         &.sticky {
-            padding: 10px 32px;
             border-top: 1px solid $cmdbBorderColor;
-            background-color: #fff;
-            z-index: 100;
         }
         .button-save {
             min-width: 76px;

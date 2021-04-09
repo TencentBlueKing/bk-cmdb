@@ -23,6 +23,7 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/configures"
@@ -32,6 +33,9 @@ import (
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
+	// init esb client
+	esb.InitEsbClient(nil)
+
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -42,6 +46,30 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err := cc.SetMigrateFromFile(op.ServConf.ExConfig); err != nil {
 		return fmt.Errorf("parse config file error %s", err.Error())
 	}
+
+	process.Config.Errors.Res, _ = cc.String("errors.res")
+	process.Config.Language.Res, _ = cc.String("language.res")
+	process.Config.Configures.Dir, _ = cc.String("confs.dir")
+	process.Config.Register.Address, _ = cc.String("registerServer.addrs")
+	snapDataID, _ := cc.Int("hostsnap.dataID")
+	process.Config.SnapDataID = int64(snapDataID)
+
+	// load mongodb, redis and common config from configure directory
+	mongodbPath := process.Config.Configures.Dir + "/" + types.CCConfigureMongo
+	if err := cc.SetMongodbFromFile(mongodbPath); err != nil {
+		return fmt.Errorf("parse mongodb config from file[%s] failed, err: %v", mongodbPath, err)
+	}
+
+	redisPath := process.Config.Configures.Dir + "/" + types.CCConfigureRedis
+	if err := cc.SetRedisFromFile(redisPath); err != nil {
+		return fmt.Errorf("parse redis config from file[%s] failed, err: %v", redisPath, err)
+	}
+
+	commonPath := process.Config.Configures.Dir + "/" + types.CCConfigureCommon
+	if err := cc.SetCommonFromFile(commonPath); err != nil {
+		return fmt.Errorf("parse common config from file[%s] failed, err: %v", commonPath, err)
+	}
+
 	mongoConf, err := cc.Mongo("mongodb")
 	if err != nil {
 		return err
@@ -59,13 +87,14 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 	process.Config.Redis = redisConf
-	process.Config.Errors.Res, _ = cc.String("errors.res")
-	process.Config.Language.Res, _ = cc.String("language.res")
-	process.Config.Configures.Dir, _ = cc.String("confs.dir")
-	process.Config.Register.Address, _ = cc.String("registerServer.addrs")
-	process.Config.ProcSrvConfig.CCApiSrvAddr, _ = cc.String("procsrv.ccApi")
 
-	process.Config.Iam, err = iam.ParseConfigFromKV("auth", nil)
+	snapRedisConf, err := cc.Redis("redis.snap")
+	if err != nil {
+		return fmt.Errorf("get host snapshot redis configuration failed, err: %v", err)
+	}
+	process.Config.SnapRedis = snapRedisConf
+
+	process.Config.Iam, err = iam.ParseConfigFromKV("authServer", nil)
 	if err != nil && auth.EnableAuthorize() {
 		blog.Errorf("parse iam error: %v", err)
 	}
@@ -125,7 +154,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			return fmt.Errorf("connect redis server failed, err: %s", err.Error())
 		}
 		process.Service.SetCache(cache)
-		process.Service.SetApiSrvAddr(process.Config.ProcSrvConfig.CCApiSrvAddr)
 
 		if auth.EnableAuthorize() {
 			blog.Info("enable auth center access.")
@@ -137,6 +165,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			process.Service.SetIam(iamCli)
 		} else {
 			blog.Infof("disable auth center access.")
+		}
+
+		if esbConfig, err := esb.ParseEsbConfig(""); err == nil {
+			esb.UpdateEsbConfig(*esbConfig)
 		}
 		break
 	}

@@ -51,7 +51,7 @@ export async function getConfig (app) {
 }
 
 export default async function (app) {
-    getAuthorizedBusiness(app)
+    getAuthorizedBusiness()
     return Promise.all([
         getConfig(app),
         getClassifications(app),

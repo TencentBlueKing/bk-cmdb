@@ -212,7 +212,7 @@ func (sh *searchHost) FillTopologyData() ([]mapstr.MapStr, int, errors.CCError) 
 		Fields:    []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
 	sh.searchedHostIDs = nil
-	mhconfig, err := sh.lgc.GetConfigByCond(sh.kit, queryCond)
+	mhconfig, err := sh.lgc.GetHostRelations(sh.kit, queryCond)
 	if err != nil {
 		return nil, 0, err
 	}

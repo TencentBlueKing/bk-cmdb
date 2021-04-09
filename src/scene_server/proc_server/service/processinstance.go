@@ -1066,19 +1066,13 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 	}
 
 	// get processIDs
-	processIDs := input.Process.ProcessIDs
+	var processIDs []int64
 	if len(serviceIntanceIDs) > 0 {
 		filter := map[string]interface{}{
 			common.BKAppIDField: bizID,
 			common.BKServiceInstanceIDField: map[string]interface{}{
 				common.BKDBIN: serviceIntanceIDs,
 			},
-		}
-
-		if len(input.Process.ProcessIDs) > 0 {
-			filter[common.BKProcessIDField] = map[string]interface{}{
-				common.BKDBIN: input.Process.ProcessIDs,
-			}
 		}
 
 		option := &metadata.DistinctFieldOption{
@@ -1120,16 +1114,24 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 		}
 	}
 
-	if len(input.Process.ProcessNames) > 0 {
-		filter[common.BKProcessNameField] = map[string]interface{}{
-			common.BKDBIN: input.Process.ProcessNames,
+	propertyFilter := make(map[string]interface{})
+	if input.ProcessPropertyFilter != nil {
+		mgoFilter, key, err := input.ProcessPropertyFilter.ToMgo()
+		if err != nil {
+			blog.ErrorJSON("ListProcessRelatedInfo failed, ToMgo err:%s, ProcessPropertyFilter:%s, rid:%s", err, input.ProcessPropertyFilter, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()+fmt.Sprintf(", host_property_filter.%s", key)))
+			return
+		}
+		if len(mgoFilter) > 0 {
+			propertyFilter = mgoFilter
 		}
 	}
 
-	if len(input.Process.FuncIDs) > 0 {
-		filter[common.BKFuncIDField] = map[string]interface{}{
-			common.BKDBIN: input.Process.FuncIDs,
-		}
+	finalFilter := make(map[string]interface{})
+	if len(propertyFilter) > 0 {
+		finalFilter[common.BKDBAND] = []map[string]interface{}{filter, propertyFilter}
+	} else {
+		finalFilter = filter
 	}
 
 	fields := []string{}
@@ -1151,7 +1153,7 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 			Limit: input.Page.Limit,
 			Start: input.Page.Start,
 		},
-		Condition: filter,
+		Condition: finalFilter,
 	}
 
 	processResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDProc, reqParam)

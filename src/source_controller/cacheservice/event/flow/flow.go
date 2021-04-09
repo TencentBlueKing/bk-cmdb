@@ -166,6 +166,14 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		lastTokenData[common.BKTokenField] = e.Token.Data
 		lastTokenData[common.BKStartAtTimeField] = e.ClusterTime
 
+		// validate the event is valid or not.
+		// the invalid event will be dropped.
+		if err := f.key.Validate(e.DocBytes); err != nil {
+			blog.Errorf("run flow, received %s event, but got invalid event, doc: %s err: %v, oid: %s",
+				f.key.Collection(), e.DocBytes, err, e.Oid)
+			continue
+		}
+
 		switch e.OperationType {
 		case types.Insert, types.Update, types.Replace, types.Delete:
 		case types.Invalidate:

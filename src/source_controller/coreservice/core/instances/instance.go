@@ -77,6 +77,8 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 
 	id, err := m.save(kit, objID, inputParam.Data)
 	if err != nil {
+		blog.ErrorJSON("CreateModelInstance failed, save error:%v, objID:%s, data:%s, rid:%s",
+			err, objID, inputParam.Data, kit.Rid)
 		return nil, err
 	}
 

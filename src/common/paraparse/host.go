@@ -101,8 +101,8 @@ func ParseHostParams(input []metadata.ConditionItem, output map[string]interface
 			}
 			switch rawVal := i.Value.(type) {
 			case string:
-				if util.IsTime(rawVal) {
-					i.Value = util.Str2Time(rawVal)
+				if timeType, isTime := util.IsTime(rawVal); isTime {
+					i.Value = util.Str2Time(rawVal, timeType)
 				}
 			}
 			queryCondItem[i.Operator] = i.Value

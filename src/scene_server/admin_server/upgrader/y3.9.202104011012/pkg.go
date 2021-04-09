@@ -9,7 +9,8 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package x18_10_10_01
+
+package y3_9_202104011012
 
 import (
 	"context"
@@ -20,23 +21,17 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x18.10.10.01", upgrade)
+	upgrader.RegistUpgrader("y3.9.202104011012", upgrade)
 }
+
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	err = addProcOpTaskTable(ctx, db, conf)
+	blog.Infof("start execute y3.9.202104011012")
+
+	err = addHostBkCPUArchitectureAttr(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x18.10.10.01] addProcOpTaskTable error  %s", err.Error())
+		blog.Errorf("add host bk_cpu_architecture attribute failed, error: %v")
 		return err
 	}
-	err = addProcInstanceModelTable(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x18.10.10.01] addProcInstanceModelTable error  %s", err.Error())
-		return err
-	}
-	err = addProcInstanceDetailTable(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x18.10.10.01] addProcInstanceDetailTable error  %s", err.Error())
-		return err
-	}
-	return
+
+	return nil
 }

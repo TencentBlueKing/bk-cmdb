@@ -96,6 +96,7 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 	if err != nil {
 		siteURL = ""
 	}
+	siteURL = strings.TrimRight(siteURL, "/")
 	return fmt.Sprintf("%s/login?c_url=%s%s", siteURL, siteURL, c.Request.URL.String())
 }
 

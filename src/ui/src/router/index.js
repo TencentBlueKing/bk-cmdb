@@ -174,7 +174,7 @@ router.beforeEach((to, from, next) => {
                 setupValidator(router.app)
             }
             await runBeforeHooks()
-            const shouldContinue = await businessBeforeInterceptor(router.app, to, from, next)
+            const shouldContinue = await businessBeforeInterceptor(to, from, next)
             if (!shouldContinue) {
                 return false
             }

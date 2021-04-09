@@ -13,7 +13,10 @@
 package logics
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
+	"sync"
 
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -73,8 +76,8 @@ func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[stri
 	return hostInfo, ip, nil
 }
 
-// GetConfigByCond get hosts owned set, module info, where hosts must match condition specify by cond.
-func (lgc *Logics) GetConfigByCond(kit *rest.Kit, input metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, errors.CCError) {
+// GetHostRelations get hosts owned set, module info, where hosts must match condition specify by cond.
+func (lgc *Logics) GetHostRelations(kit *rest.Kit, input metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, errors.CCError) {
 
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, &input)
 	if err != nil {
@@ -324,15 +327,10 @@ func (lgc *Logics) GetAllHostIDByCond(kit *rest.Kit, cond metadata.HostModuleRel
 	return hostIDs, nil
 }
 
-// DeleteHostBusinessAttributes delete host business private property
-func (lgc *Logics) DeleteHostBusinessAttributes(kit *rest.Kit, hostIDArr []int64, bizID int64) error {
-
-	return nil
-}
-
 // GetHostModuleRelation  query host and module relation,
 // condition key use appID, moduleID,setID,HostID
-func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond metadata.HostModuleRelationRequest) (*metadata.HostConfigData, errors.CCErrorCoder) {
+func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond *metadata.HostModuleRelationRequest) (*metadata.
+	HostConfigData, errors.CCErrorCoder) {
 
 	if cond.Empty() {
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPBodyEmpty)
@@ -354,7 +352,7 @@ func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond metadata.HostModule
 		return nil, kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "bk_host_ids", 500)
 	}
 
-	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, &cond)
+	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		blog.Errorf("GetHostModuleRelation http do error, err:%s, input:%+v, rid:%s", err.Error(), cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -674,4 +672,686 @@ func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostM
 	}
 
 	return hostInfoArr[0], hostID, nil
+}
+
+// ArrangeHostDetailAndTopology arrange host's detail and it's topology node's info along with it.
+func (lgc *Logics) ArrangeHostDetailAndTopology(kit *rest.Kit, withBiz bool, hosts []map[string]interface{}) (
+	[]*metadata.HostDetailWithTopo, error) {
+
+	// get mainline topology rank data, it's the order to arrange the host's topology data.
+	rankMap, reverseRankMap, rank, err := lgc.getTopologyRank(kit)
+	if err != nil {
+		return nil, err
+	}
+
+	// search all hosts' host module relations
+	hostIDs := make([]int64, 0)
+	for _, host := range hosts {
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			blog.ErrorJSON("got invalid bk_host_id field in host: %s, rid: %s", host, kit.Rid)
+			return nil, err
+		}
+		hostIDs = append(hostIDs, hostID)
+	}
+	relationCond := metadata.HostModuleRelationRequest{
+		HostIDArr: hostIDs,
+	}
+	relations, err := lgc.GetHostRelations(kit, relationCond)
+	if nil != err {
+		blog.ErrorJSON("read host module relation error: %s, input: %s, rid: %s", err, hosts, kit.Rid)
+		return nil, err
+	}
+
+	bizList := make([]int64, 0)
+	moduleList := make([]int64, 0)
+	setList := make([]int64, 0)
+	hostModule := make(map[int64][]int64)
+	for _, one := range relations {
+		bizList = append(bizList, one.AppID)
+		setList = append(setList, one.SetID)
+		moduleList = append(moduleList, one.ModuleID)
+		hostModule[one.HostID] = append(hostModule[one.HostID], one.ModuleID)
+	}
+
+	// get all the inner object's details info
+	bizDetails, setDetails, moduleDetails, err := lgc.getInnerObjectDetails(kit, withBiz, bizList, moduleList, setList)
+	if err != nil {
+		return nil, err
+	}
+
+	// now we get all the custom object's instances with set's parent instance id
+	// from low level to the top business level.
+	customObjInstMap := make(map[string]map[int64]mapstr.MapStr)
+	reversedRank := util.ReverseArrayString(rank)
+	var parentsInst []interface{}
+loop:
+	for _, one := range reversedRank {
+		switch one {
+		case common.BKInnerObjIDApp:
+			break loop
+		case common.BKInnerObjIDHost:
+			continue
+		case common.BKInnerObjIDModule:
+			continue
+		case common.BKInnerObjIDSet:
+			if rankMap[common.BKInnerObjIDSet] == common.BKInnerObjIDApp {
+				break loop
+			}
+
+			parentsInst = make([]interface{}, 0)
+			for _, set := range setDetails {
+				if fmt.Sprintf("%v", set[common.BKDefaultField]) != "0" {
+					// this is a inner set, do not have custom obj parent instance
+					continue
+				}
+				parentsInst = append(parentsInst, set[common.BKParentIDField])
+			}
+
+			continue
+		default:
+			if len(parentsInst) == 0 {
+				// when the set is inner set, which default field value is > 0;
+				break loop
+			}
+			// get custom level instances details with parent instance id list.
+			customInst, err := lgc.getCustomObjectInstances(kit, one, parentsInst)
+			if err != nil {
+				return nil, err
+			}
+
+			// reset parent instances
+			parentsInst = make([]interface{}, 0)
+			// save the custom instances details
+			for _, inst := range customInst {
+				if _, exists := customObjInstMap[one]; !exists {
+					customObjInstMap[one] = make(map[int64]mapstr.MapStr)
+				}
+
+				instID, err := util.GetInt64ByInterface(inst[common.BKInstIDField])
+				if err != nil {
+					blog.Errorf("get inst id from inst: %v failed, err: %v, rid: %s", inst, err, kit.Rid)
+					return nil, err
+				}
+
+				// save the instances data with object and it's instances
+				customObjInstMap[one][instID] = inst
+				// update parent instances
+				parentsInst = append(parentsInst, inst[common.BKParentIDField])
+			}
+
+			if rankMap[one] == common.BKInnerObjIDApp {
+				break loop
+			}
+		}
+	}
+
+	// now, we have already get all the data we need, it's time to arrange the data.
+	bizMap := make(map[int64]mapstr.MapStr)
+	for _, biz := range bizDetails {
+		bizID, err := util.GetInt64ByInterface(biz[common.BKAppIDField])
+		if err != nil {
+			blog.Errorf("get biz id failed, biz: %v, err: %v, rid: %s", biz, err, kit.Rid)
+			return nil, err
+		}
+		bizMap[bizID] = biz
+	}
+	setMap := make(map[int64]mapstr.MapStr)
+	for _, set := range setDetails {
+		setID, err := util.GetInt64ByInterface(set[common.BKSetIDField])
+		if err != nil {
+			blog.Errorf("get set id failed, set: %v, err: %v, rid: %s", set, err, kit.Rid)
+			return nil, err
+		}
+		setMap[setID] = set
+	}
+
+	moduleMap := make(map[int64]mapstr.MapStr)
+	for _, mod := range moduleDetails {
+		modID, err := util.GetInt64ByInterface(mod[common.BKModuleIDField])
+		if err != nil {
+			blog.Errorf("get module id failed, module: %v, err: %v, rid: %s", mod, err, kit.Rid)
+			return nil, err
+		}
+		moduleMap[modID] = mod
+	}
+
+	// reset the rank from biz to module with host one by one.
+	rank = util.ReverseArrayString(rank)
+	topo := make([]*metadata.HostDetailWithTopo, len(hosts))
+	for idx, one := range hosts {
+		hostID, err := util.GetInt64ByInterface(one[common.BKHostIDField])
+		if err != nil {
+			blog.ErrorJSON("got invalid bk_host_id field in host: %s, rid: %s", one, kit.Rid)
+			return nil, err
+		}
+
+		topo[idx] = &metadata.HostDetailWithTopo{Host: one}
+		modules, exists := hostModule[hostID]
+		if !exists {
+			blog.Errorf("can not find modules host %d belongs to, host: %v, skip, rid: %s", hostID, one, kit.Rid)
+			continue
+		}
+
+		// one host can only belongs to one business, so the resource in the tree is all belongs to a same business.
+		children, err := lgc.arrangeParentTree(kit.Rid, rank, rankMap, reverseRankMap, withBiz, bizMap, setMap,
+			moduleMap, modules, customObjInstMap)
+		if err != nil {
+			return nil, err
+		}
+
+		topo[idx].Topo = children
+
+	}
+
+	return topo, nil
+}
+
+// arrangeParentTree is to arrange the host's topology tree with the modules it belongs to.
+// so all these generated topology tree's nodes must belongs to a same business.
+// the tree is constructed with two steps:
+// step1: rearrange the object's instances with map[parent_id]child_detail, so that we can know
+// which instances have how many children and what exactly its child is.
+// step2: arrange the tree from the top object to the bottom module with step 1's map.
+func (lgc *Logics) arrangeParentTree(
+	rid string,
+	rank []string,
+	rankMap map[string]string,
+	reverseRankMap map[string]string,
+	withBiz bool,
+	bizsMap, setsMap, modulesMap map[int64]mapstr.MapStr,
+	relateModules []int64,
+	objInstMap map[string]map[int64]mapstr.MapStr) ([]*metadata.HostTopoNode, error) {
+
+	if len(rank) < 4 {
+		// min rank is biz,set,module,host
+		return nil, fmt.Errorf("invalid rank, should at least have 4 level, detail: %v", rank)
+	}
+
+	// object -> instance_id -> instance_children_list
+	parentToChildrenMap := make(map[string]map[int64][]mapstr.MapStr)
+	setModules := make(map[int64][]mapstr.MapStr)
+
+	// we separate inner module(default != 0), cause, it's topology is different, it does not have
+	// custom object level.
+	innerSetModules := make(map[int64][]mapstr.MapStr)
+	for _, m := range relateModules {
+		mod, exist := modulesMap[m]
+		if !exist {
+			blog.Errorf("can not find module: %d detail, skip, rid: %s", m, rid)
+			continue
+		}
+
+		isInner := false
+		if fmt.Sprintf("%v", mod[common.BKDefaultField]) != "0" {
+
+			isInner = true
+		}
+
+		setID, err := util.GetInt64ByInterface(mod[common.BKSetIDField])
+		if err != nil {
+			blog.Errorf("get set id from module failed, module: %v, err: %v, rid: %s", m, err, rid)
+			return nil, err
+		}
+
+		if isInner {
+			// this is a inner module, it will be handled with special logic.
+			innerSetModules[setID] = append(innerSetModules[setID], mod)
+			continue
+		}
+
+		setModules[setID] = append(setModules[setID], mod)
+	}
+	parentToChildrenMap[common.BKInnerObjIDSet] = setModules
+
+	// start from module object
+	parent := rankMap[common.BKInnerObjIDModule]
+
+	rootBizInstances := make(map[int64][]mapstr.MapStr)
+loop:
+	// for loop model from bottom module to business
+	for {
+		// get next object for prepare
+		next := rankMap[parent]
+
+		switch parent {
+		case common.BKInnerObjIDSet:
+
+			sets, exists := parentToChildrenMap[common.BKInnerObjIDSet]
+			if !exists {
+				blog.ErrorJSON("get set list failed, all object detail: %s, err: %s, rid: %s", parentToChildrenMap, rid)
+				return nil, fmt.Errorf("can not find all set instances details")
+			}
+
+			setParents := make(map[int64][]mapstr.MapStr)
+			for setID := range sets {
+				set, exists := setsMap[setID]
+				if !exists {
+					blog.Errorf("can not find set detail with set id: %d, rid: %s", setID, rid)
+					return nil, fmt.Errorf("can not find set instance detail with id")
+				}
+				pid, err := util.GetInt64ByInterface(set[common.BKParentIDField])
+				if err != nil {
+					blog.Errorf("get set id failed, set: %v, err: %v, rid: %s", set, err, rid)
+					return nil, err
+				}
+				setParents[pid] = append(setParents[pid], set)
+			}
+			parentToChildrenMap[next] = setParents
+
+		default:
+			// get this parent object's all instances found from previous cycle.
+			current, exists := parentToChildrenMap[parent]
+			if !exists {
+				blog.ErrorJSON("can not get %s list instances, all object detail: %s, err: %s, rid: %s", parent,
+					parentToChildrenMap, rid)
+				return nil, fmt.Errorf("can not find %s instance details", parent)
+			}
+
+			customParents := make(map[int64][]mapstr.MapStr)
+			for instID := range current {
+				pInstances, exists := objInstMap[parent]
+				if !exists {
+					blog.Errorf("can not get %s instances map, rid: %s", parent, rid)
+					return nil, fmt.Errorf("can not find %s instance details", parent)
+				}
+				one, exists := pInstances[instID]
+				if !exists {
+					blog.Errorf("can not find set detail with set id: %d, rid: %s", instID, rid)
+					return nil, fmt.Errorf("can not find set detail with id: %d", instID)
+				}
+
+				// find this one's parent instance id
+				pid, err := util.GetInt64ByInterface(one[common.BKParentIDField])
+				if err != nil {
+					blog.Errorf("get %s inst id failed, inst: %v, err: %v, rid: %s", parent, one, err, rid)
+					return nil, err
+				}
+
+				// record this instance's parent's children which is itself.
+				customParents[pid] = append(customParents[pid], one)
+
+				if next == common.BKInnerObjIDApp {
+					if biz, exist := bizsMap[pid]; exist {
+						rootBizInstances[pid] = []mapstr.MapStr{biz}
+					}
+				}
+			}
+
+			parentToChildrenMap[next] = customParents
+		}
+
+		// update parent level
+		parent = next
+
+		// check if we have already hit the topology's root
+		if next == common.BKInnerObjIDApp {
+			break loop
+		}
+	}
+
+	// now, we format the topology
+	var root string
+	nodes := make([]*metadata.HostTopoNode, 0)
+	if withBiz {
+		// start from biz
+		root = common.BKInnerObjIDApp
+
+		for rootID := range rootBizInstances {
+			node := &metadata.HostTopoNode{
+				Instance: &metadata.NodeInstance{
+					Object:   root,
+					InstName: bizsMap[rootID][common.BKAppNameField],
+					InstID:   rootID,
+				},
+				Children: getTopologyChildren(rid, reverseRankMap, root, rootID, parentToChildrenMap),
+			}
+			nodes = append(nodes, node)
+		}
+
+	} else {
+		// start from the second level
+		root = rank[1]
+		rootInstances, exist := parentToChildrenMap[common.BKInnerObjIDApp]
+		if !exist {
+			blog.Errorf("can not find %s object's instances, rid: %s", root, rid)
+			return nil, fmt.Errorf("can not find %s object's instances", root)
+		}
+		// rootInstanceMap = objInstMap[root]
+		nameField := common.GetInstNameField(root)
+		idField := common.GetInstIDField(root)
+		for _, children := range rootInstances {
+
+			childObj := reverseRankMap[root]
+			for _, one := range children {
+				childID, err := util.GetInt64ByInterface(one[common.GetInstIDField(childObj)])
+				if err != nil {
+					blog.Errorf("get %s instance id failed, inst: %v, err: %v, rid: %s", childObj, one, err, rid)
+					return nil, err
+				}
+				node := &metadata.HostTopoNode{
+					Instance: &metadata.NodeInstance{
+						Object:   root,
+						InstName: one[nameField],
+						InstID:   one[idField],
+					},
+					Children: getTopologyChildren(rid, reverseRankMap, root, childID, parentToChildrenMap),
+				}
+				nodes = append(nodes, node)
+			}
+
+		}
+	}
+
+	if len(innerSetModules) != 0 {
+		// these set and modules are in the same business.
+		// add inner module and sets to the topology nodes.
+		nodes = append(nodes, arrangeInnerModuleTree(rid, withBiz, bizsMap, innerSetModules, setsMap)...)
+	}
+
+	return nodes, nil
+}
+
+// arrange inner module's topology tree specially.
+func arrangeInnerModuleTree(rid string, withBiz bool, bizsMap map[int64]mapstr.MapStr,
+	innerSetModules map[int64][]mapstr.MapStr, setMap map[int64]mapstr.MapStr) []*metadata.HostTopoNode {
+
+	nodes := make([]*metadata.HostTopoNode, 0)
+	if len(innerSetModules) == 0 {
+		return nodes
+	}
+
+	var oneSet mapstr.MapStr
+
+	setNodes := make([]*metadata.HostTopoNode, 0)
+	for setID, modules := range innerSetModules {
+		set, exists := setMap[setID]
+		if !exists {
+			blog.Errorf("can not find biz id from set: %v, skip, rid: %s", set, rid)
+			continue
+		}
+
+		oneSet = set
+		node := &metadata.HostTopoNode{
+			Instance: &metadata.NodeInstance{
+				Object:   common.BKInnerObjIDSet,
+				InstName: setMap[setID][common.BKSetNameField],
+				InstID:   setMap[setID][common.BKSetIDField],
+			},
+			Children: make([]*metadata.HostTopoNode, 0),
+		}
+
+		for _, m := range modules {
+			node.Children = append(node.Children, &metadata.HostTopoNode{
+				Instance: &metadata.NodeInstance{
+					Object:   common.BKInnerObjIDModule,
+					InstName: m[common.BKModuleNameField],
+					InstID:   m[common.BKModuleIDField],
+				},
+			})
+		}
+
+		setNodes = append(setNodes, node)
+	}
+
+	if !withBiz {
+		return setNodes
+	}
+
+	if len(setNodes) == 0 {
+		// seriously? it can not be happen
+		blog.Errorf("got 0 set nodes, skip, rid: %s", rid)
+		return setNodes
+	}
+
+	// these inner module belongs to a same biz
+	bizIDField, exists := oneSet[common.BKParentIDField]
+	if !exists {
+		blog.Errorf("can not find biz id from set: %v, skip, rid: %s", oneSet, rid)
+		return nodes
+	}
+
+	bizID, err := util.GetInt64ByInterface(bizIDField)
+	if err != nil {
+		blog.Errorf("can not parse biz id from set: %v, skip, rid: %s", oneSet, rid)
+		return nodes
+	}
+
+	biz, exists := bizsMap[bizID]
+	if !exists {
+		blog.Errorf("can not find biz %d, from biz map: %v, skip, rid: %s", bizID, bizsMap, rid)
+		return nodes
+	}
+
+	nodes = append(nodes, &metadata.HostTopoNode{
+		Instance: &metadata.NodeInstance{
+			Object:   common.BKInnerObjIDApp,
+			InstName: biz[common.BKAppNameField],
+			InstID:   bizID,
+		},
+		Children: setNodes,
+	})
+
+	return nodes
+}
+
+func getTopologyChildren(rid string, rankMap map[string]string, obj string, instID int64,
+	objInstChildrenMap map[string]map[int64][]mapstr.MapStr) []*metadata.HostTopoNode {
+
+	children := make([]*metadata.HostTopoNode, 0)
+	instances, exist := objInstChildrenMap[obj][instID]
+	if !exist {
+		// should not happen
+		return children
+	}
+
+	next, exist := rankMap[obj]
+	if !exist {
+		// should not happen, for safety guarantee
+		return nil
+	}
+
+	// host is the bottom of the topology, do nothing
+	if next == common.BKInnerObjIDHost {
+		return nil
+	}
+
+	idField := common.GetInstIDField(next)
+	nameField := common.GetInstNameField(next)
+
+	for _, one := range instances {
+		id, err := util.GetInt64ByInterface(one[idField])
+		if err != nil {
+			// should not happen, because we have already get ids from upper logical
+			blog.Errorf("get instance id failed, instance: %v, rid: %s", one, rid)
+			return children
+		}
+
+		child := &metadata.HostTopoNode{
+			Instance: &metadata.NodeInstance{
+				Object:   next,
+				InstName: one[nameField],
+				InstID:   id,
+			},
+		}
+
+		if next != common.BKInnerObjIDModule {
+			child.Children = getTopologyChildren(rid, rankMap, next, id, objInstChildrenMap)
+		}
+
+		children = append(children, child)
+	}
+
+	return children
+
+}
+
+// get inner object's instance details, as is biz, set, modules from cache
+func (lgc *Logics) getInnerObjectDetails(kit *rest.Kit, withBiz bool, bizList, moduleList,
+	setList []int64) ([]mapstr.MapStr, []mapstr.MapStr, []mapstr.MapStr, error) {
+
+	wg := sync.WaitGroup{}
+	wg.Add(3)
+	var hitError error
+	var bizDetails []mapstr.MapStr
+	var moduleDetails []mapstr.MapStr
+	var setDetails []mapstr.MapStr
+	if withBiz {
+		go func() {
+			defer func() { wg.Done() }()
+			header := kit.NewHeader()
+			opt := &metadata.ListWithIDOption{
+				IDs:    bizList,
+				Fields: []string{common.BKAppIDField, common.BKAppNameField},
+			}
+			bizs, err := lgc.CoreAPI.CacheService().Cache().Topology().ListBusiness(kit.Ctx, header, opt)
+			if err != nil {
+				blog.Errorf("list business from cache failed, err: %v, rid: %s", err, kit.Rid)
+				hitError = err
+				return
+			}
+
+			list := make([]mapstr.MapStr, 0)
+			if err := json.Unmarshal([]byte(bizs), &list); err != nil {
+				blog.Errorf("unmarshal business from cache failed, detail: %v, err: %v, rid: %s", bizs, err, kit.Rid)
+				hitError = err
+				return
+			}
+
+			bizDetails = list
+		}()
+	} else {
+		bizDetails = make([]mapstr.MapStr, 0)
+		wg.Done()
+	}
+
+	go func() {
+		defer func() { wg.Done() }()
+		header := kit.NewHeader()
+		opt := &metadata.ListWithIDOption{
+			IDs: setList,
+			Fields: []string{common.BKSetIDField, common.BKSetNameField, common.BKParentIDField,
+				common.BKDefaultField},
+		}
+		sets, err := lgc.CoreAPI.CacheService().Cache().Topology().ListSets(kit.Ctx, header, opt)
+		if err != nil {
+			blog.Errorf("list sets from cache failed, err: %v, rid: %s", err, kit.Rid)
+			hitError = err
+			return
+		}
+
+		list := make([]mapstr.MapStr, 0)
+		if err := json.Unmarshal([]byte(sets), &list); err != nil {
+			blog.Errorf("unmarshal sets from cache failed, detail: %v, err: %v, rid: %s", sets, err, kit.Rid)
+			hitError = err
+			return
+		}
+
+		setDetails = list
+	}()
+
+	go func() {
+		defer func() { wg.Done() }()
+		header := kit.NewHeader()
+		opt := &metadata.ListWithIDOption{
+			IDs: moduleList,
+			Fields: []string{common.BKModuleIDField, common.BKModuleNameField, common.BKSetIDField,
+				common.BKDefaultField, common.BKAppIDField},
+		}
+		modules, err := lgc.CoreAPI.CacheService().Cache().Topology().ListModules(kit.Ctx, header, opt)
+		if err != nil {
+			blog.Errorf("list modules from cache failed, err: %v, rid: %s", err, kit.Rid)
+			hitError = err
+			return
+		}
+
+		list := make([]mapstr.MapStr, 0)
+		if err := json.Unmarshal([]byte(modules), &list); err != nil {
+			blog.Errorf("unmarshal modules from cache failed, detail: %v, err: %v, rid: %s", modules, err, kit.Rid)
+			hitError = err
+			return
+		}
+
+		moduleDetails = list
+	}()
+
+	wg.Wait()
+
+	if hitError != nil {
+		return nil, nil, nil, hitError
+	}
+
+	return bizDetails, setDetails, moduleDetails, nil
+}
+
+// get mainline topology rank with
+func (lgc *Logics) getTopologyRank(kit *rest.Kit) (map[string]string, map[string]string, []string, error) {
+	mainlineFilter := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline},
+	}
+	mainline, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, mainlineFilter)
+	if err != nil {
+		blog.Errorf("get mainline association failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, nil, nil, err
+	}
+
+	if !mainline.Result {
+		blog.Errorf("get mainline association failed, err: %s, rid: %s", mainline.ErrMsg, kit.Rid)
+		return nil, nil, nil, errors.New(mainline.Code, mainline.ErrMsg)
+	}
+
+	rankMap := make(map[string]string)
+	reverseRankMap := make(map[string]string)
+	for _, one := range mainline.Data.Info {
+		// from host to biz
+		// host:module;module:set;set:biz
+		rankMap[one.ObjectID] = one.AsstObjID
+		reverseRankMap[one.AsstObjID] = one.ObjectID
+	}
+
+	rank := make([]string, 0)
+	next := "biz"
+	rank = append(rank, next)
+	for _, relation := range mainline.Data.Info {
+		if relation.AsstObjID == next {
+			rank = append(rank, relation.ObjectID)
+			next = relation.ObjectID
+			continue
+		} else {
+			for _, rel := range mainline.Data.Info {
+				if rel.AsstObjID == next {
+					rank = append(rank, rel.ObjectID)
+					next = rel.ObjectID
+					break
+				}
+			}
+		}
+	}
+	return rankMap, reverseRankMap, rank, nil
+}
+
+// get biz custom instances with object
+func (lgc *Logics) getCustomObjectInstances(kit *rest.Kit, obj string, instIDs []interface{}) (
+	[]mapstr.MapStr, error) {
+
+	opts := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKInstIDField: mapstr.MapStr{common.BKDBIN: instIDs}, common.BKObjIDField: obj},
+		Fields:         []string{common.BKInstIDField, common.BKInstNameField, common.BKParentIDField},
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
+		DisableCounter: true,
+	}
+
+	instRes, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, obj, opts)
+	if err != nil {
+		blog.Errorf("get biz custom object instances failed, options: %s, err: %s, rid: %s", opts, err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !instRes.Result {
+		blog.Errorf("get biz custom object instances failed, options: %s, err: %s, rid: %s", opts,
+			instRes.ErrMsg, kit.Rid)
+		return nil, kit.CCError.New(instRes.Code, instRes.ErrMsg)
+	}
+
+	return instRes.Data.Info, nil
 }

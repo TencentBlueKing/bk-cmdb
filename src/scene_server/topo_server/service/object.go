@@ -17,7 +17,9 @@ import (
 	"strconv"
 	"time"
 
+	"configcenter/src/ac"
 	"configcenter/src/ac/iam"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
@@ -37,13 +39,34 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 		return
 	}
 
+	// auth: check authorization
+	objIDs := make([]string, 0)
+	for objID := range *data {
+		objIDs = append(objIDs, objID)
+	}
+
+	if err := s.AuthManager.AuthorizeByObjectIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.UpdateMany, 0, objIDs...); err != nil {
+		blog.Errorf("check object authorization failed, objIDs: %+v, err: %v, rid: %s", objIDs, err, ctx.Kit.Rid)
+		if err != ac.NoAuthorizeError {
+			ctx.RespAutoError(err)
+			return
+		}
+
+		perm, err := s.AuthManager.GenObjectBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, meta.UpdateMany, 0, objIDs)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
+		return
+	}
+
 	// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
 	// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 	// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
 	// Collection minimum is Timestamp(1616747878, 5)
 	if err := s.createObjectTableBatch(ctx, *data); err != nil {
 		ctx.RespAutoError(err)
-		return
 	}
 
 	var ret mapstr.MapStr
