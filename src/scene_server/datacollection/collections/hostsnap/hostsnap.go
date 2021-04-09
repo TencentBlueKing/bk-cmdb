@@ -297,20 +297,19 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	}
 
 	innerIPArr := strings.Split(innerIP, ",")
-	innerIPMap := make(map[string]struct{})
-	for _, ip := range innerIPArr {
-		innerIPMap[ip] = struct{}{}
+	innerIPMap := make(map[string]int)
+	for index, ip := range innerIPArr {
+		innerIPMap[ip] = index
 	}
 
 	outerIPArr := strings.Split(outerIP, ",")
-	outerIPMap := make(map[string]struct{})
-	for _, ip := range outerIPArr {
-		outerIPMap[ip] = struct{}{}
+	outerIPMap := make(map[string]int)
+	for index, ip := range outerIPArr {
+		outerIPMap[ip] = index
 	}
 
-	var OuterMAC, InnerMAC string
-	innerMacMap := make(map[string]struct{})
-	outerMacMap := make(map[string]struct{})
+	outerMACArr, innerMACArr := make([]string, len(outerIPArr)), make([]string, len(innerIPArr))
+	hasOuterMAC, hasInnerMAC := false, false
 	for _, inter := range val.Get("data.net.interface").Array() {
 		for _, addr := range inter.Get("addrs.#.addr").Array() {
 			splitAddr := strings.Split(addr.String(), "/")
@@ -318,27 +317,24 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 				continue
 			}
 			ip := splitAddr[0]
-			if _, exists := innerIPMap[ip]; exists {
+			if index, exists := innerIPMap[ip]; exists {
+				hasInnerMAC = true
 				innerMAC := strings.TrimSpace(inter.Get("hardwareaddr").String())
-				if len(InnerMAC) == 0 {
-					InnerMAC = innerMAC
-					innerMacMap[innerMAC] = struct{}{}
-				} else if _, exists := innerMacMap[innerMAC]; !exists {
-					InnerMAC += "," + innerMAC
-					innerMacMap[innerMAC] = struct{}{}
+				if len(innerMACArr[index]) == 0 {
+					innerMACArr[index] = innerMAC
 				}
-			} else if _, exists := outerIPMap[ip]; exists {
+			} else if index, exists := outerIPMap[ip]; exists {
+				hasOuterMAC = true
 				outerMAC := strings.TrimSpace(inter.Get("hardwareaddr").String())
-				if len(OuterMAC) == 0 {
-					OuterMAC = outerMAC
-					outerMacMap[outerMAC] = struct{}{}
-				} else if _, exists := outerMacMap[outerMAC]; !exists {
-					OuterMAC += "," + outerMAC
-					outerMacMap[outerMAC] = struct{}{}
+				if len(outerMACArr[index]) == 0 {
+					outerMACArr[index] = outerMAC
 				}
 			}
 		}
 	}
+
+	OuterMAC := strings.Join(outerMACArr, ",")
+	InnerMAC := strings.Join(innerMACArr, ",")
 
 	osbit := val.Get("data.system.info.systemtype").String()
 
@@ -435,10 +431,10 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	if hostname == "" {
 		blog.V(4).Infof("bk_host_name not found in message for %s", innerIP)
 	}
-	if outerIP != "" && OuterMAC == "" {
-		blog.V(4).Infof("bk_outer_mac not found in message for %s", innerIP)
+	if outerIP != "" && !hasOuterMAC {
+		blog.V(4).Infof("bk_outer_mac not found in message for %s", outerIP)
 	}
-	if InnerMAC == "" {
+	if !hasInnerMAC {
 		blog.V(4).Infof("bk_mac not found in message for %s", innerIP)
 	}
 
