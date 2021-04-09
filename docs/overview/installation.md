@@ -175,7 +175,7 @@ elasticsearch-urls = ["http://localhost:9200"]
 # if you need to seed an index from a collection and not just listen and sync changes events
 # you can copy entire collections or views from MongoDB to Elasticsearch
 direct-read-namespaces = [""]
-direct-read-dynamic-include-regex = "cmdb.cc_ObjectBase_pub_|cmdb.cc_ApplicationBase|cmdb.cc_HostBase|cmdb.cc_ObjDes"
+direct-read-dynamic-include-regex = "cmdb.cc_ObjectBase_(.*)_pub_|cmdb.cc_ApplicationBase$|cmdb.cc_HostBase$|cmdb.cc_ObjDes$"
 
 # if you want to use MongoDB change streams instead of legacy oplog tailing use change-stream-namespaces
 # change streams require at least MongoDB API 3.6+
@@ -183,7 +183,7 @@ direct-read-dynamic-include-regex = "cmdb.cc_ObjectBase_pub_|cmdb.cc_Application
 # in this case you usually don't need regexes in your config to filter collections unless you target the deployment.
 # to listen to an entire db use only the database name.  For a deployment use an empty string.
 change-stream-namespaces = [""]
-namespace-regex =  "cmdb.cc_ObjectBase_pub_|cmdb.cc_ApplicationBase|cmdb.cc_HostBase|cmdb.cc_ObjDes"
+namespace-regex = "cmdb.cc_ObjectBase_(.*)_pub_|cmdb.cc_ApplicationBase$|cmdb.cc_HostBase$|cmdb.cc_ObjDes$"
 
 # additional settings
 
@@ -221,7 +221,7 @@ enable-patches = true
 routing = true 
 script = """
 
-var re = new RegExp("cmdb_oa.cc_ObjectBase_pub")
+var re = new RegExp("cmdb.cc_ObjectBase_(.*)_pub_")
 module.exports = function(doc, ns, updateDesc) {
     doc["aa"]=ns 
     if(re.test(ns)) {
