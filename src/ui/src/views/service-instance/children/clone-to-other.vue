@@ -89,13 +89,13 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       hostId() {
-        return parseInt(this.$route.params.hostId)
+        return parseInt(this.$route.params.hostId, 10)
       },
       moduleId() {
-        return parseInt(this.$route.params.moduleId)
+        return parseInt(this.$route.params.moduleId, 10)
       },
       setId() {
-        return parseInt(this.$route.params.setId)
+        return parseInt(this.$route.params.setId, 10)
       }
     },
     mounted() {

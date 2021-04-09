@@ -15,7 +15,7 @@
                 <span class="desc-item"
                   :key="childIndex"
                   v-if="source[property['bk_property_id']]"
-                  v-html="`${property['bk_property_name']}：${getShowPropertyText(property, source, property['bk_property_id'])}`">
+                  v-html="`${property.bk_property_name}：${getText(property, source, property.bk_property_id)}`">
                 </span>
               </template>
             </div>
@@ -32,7 +32,7 @@
                 <span class="desc-item"
                   v-if="source[property['bk_property_id']]"
                   :key="childIndex"
-                  v-html="`${property['bk_property_name']}：${getShowPropertyText(property, source, property['bk_property_id'])}`">
+                  v-html="`${property.bk_property_name}：${getText(property, source, property.bk_property_id)}`">
                 </span>
               </template>
             </div>
@@ -47,7 +47,7 @@
                 <span class="desc-item"
                   :key="childIndex"
                   v-if="source[property['bk_property_id']]"
-                  v-html="`${property['bk_property_name']}：${getShowPropertyText(property, source, property['bk_property_id'])}`">
+                  v-html="`${property.bk_property_name}：${getText(property, source, property.bk_property_id)}`">
                 </span>
               </template>
             </div>
@@ -194,7 +194,7 @@
           })
         }
       },
-      getShowPropertyText(property, source, thisProperty) {
+      getText(property, source, thisProperty) {
         let propertyValue = this.$tools.getPropertyText(property, source)
 
         if (!Object.keys(source.highlight).includes(thisProperty)) {
@@ -212,6 +212,7 @@
         }
         // eslint-disable-next-line prefer-destructuring
         let keyword = Array.isArray(highlightValue) ? highlightValue[0] : highlightValue
+        // eslint-disable-next-line prefer-destructuring
         keyword = keyword.match(/<em>(.+?)<\/em>/)[1]
         const reg = new RegExp(`(${keyword})`, 'g')
         return String(value).replace(reg, '<em>$1</em>')

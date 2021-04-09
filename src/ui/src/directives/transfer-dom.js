@@ -10,7 +10,7 @@
  * @return {Node} The target that the el will be appended to
  */
 
-/* eslint-disable no-underscore-dangle, no-param-reassign */
+/* eslint-disable no-underscore-dangle */
 function getTarget(node) {
   if (node === void 0) {
     node = document.body

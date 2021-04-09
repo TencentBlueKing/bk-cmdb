@@ -91,7 +91,6 @@
         this.table.toggleRowExpansion(this.row, !this.expanded)
       },
       handleUpdateLabels(row, labels) {
-        // eslint-disable-next-line no-param-reassign
         row.labels = labels
       }
     }

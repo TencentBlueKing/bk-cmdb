@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars, no-param-reassign */
-
 import Vue from 'vue'
 
 const state = {

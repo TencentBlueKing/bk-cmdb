@@ -51,6 +51,7 @@
     },
     methods: {
       getZIndex() {
+        // eslint-disable-next-line no-underscore-dangle
         return window.__bk_zIndex_manager.nextZIndex()
       },
       handleSwitch(active) {

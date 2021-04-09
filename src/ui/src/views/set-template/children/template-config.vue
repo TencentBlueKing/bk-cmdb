@@ -52,7 +52,11 @@
         </cmdb-auth>
       </template>
       <template v-else>
-        <cmdb-auth :auth=" mode === 'create' ? { type: $OPERATION.C_SET_TEMPLATE, relation: [bizId] } : { type: $OPERATION.U_SET_TEMPLATE, relation: [bizId, templateId] }">
+        <cmdb-auth :auth="
+          mode === 'create'
+            ? { type: $OPERATION.C_SET_TEMPLATE, relation: [bizId] }
+            : { type: $OPERATION.U_SET_TEMPLATE, relation: [bizId, templateId]
+            }">
           <bk-button slot-scope="{ disabled }"
             class="options-confirm"
             theme="primary"
@@ -142,10 +146,10 @@
           }
         }
       },
-      mode(mode) {
+      mode() {
         this.errors.clear()
       },
-      services(services) {
+      services() {
         if (!this.isViewMode) {
           this.$nextTick(() => {
             this.$validator.validate('service')
@@ -173,7 +177,7 @@
               set_template_ids: [this.templateId]
             }
           })
-          const info = data.info[0]
+          const [info] = data.info
           this.templateInfo = info
           this.templateName = info.set_template.name
           this.originalTemplateName = info.set_template.name

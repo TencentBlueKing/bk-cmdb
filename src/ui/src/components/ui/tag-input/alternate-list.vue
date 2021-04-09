@@ -41,6 +41,7 @@
 
 <script>
   import AlternateItem from './alternate-item.vue'
+  import has from 'has'
   export default {
     components: {
       AlternateItem

@@ -152,7 +152,6 @@
       },
       async handleUpdateName(row, value) {
         try {
-          // eslint-disable-next-line no-param-reassign
           value = value.trim()
           this.rowInEdit = null
           if (row.bk_cloud_name === value) {
@@ -165,7 +164,6 @@
               bk_cloud_name: value
             }
           })
-          // eslint-disable-next-line no-param-reassign
           row.bk_cloud_name = value
           this.$delete(row, '_pending_')
         } catch (error) {

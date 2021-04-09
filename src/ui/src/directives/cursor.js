@@ -1,4 +1,4 @@
-/* eslint-disable no-underscore-dangle, no-param-reassign */
+/* eslint-disable no-underscore-dangle */
 const requestFrame = window.requestAnimationFrame
     || window.mozRequestAnimationFrame
     || window.webkitRequestAnimationFrame

@@ -13,8 +13,11 @@
                 <li :class="['property-item', { flex: property.bk_property_type === 'table' }]"
                   v-if="checkEditable(property)"
                   :key="propertyIndex">
-                  <div class="property-name clearfix" v-if="!invisibleNameProperties.includes(property['bk_property_id'])">
-                    <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
+                  <div class="property-name clearfix"
+                    v-if="!invisibleNameProperties.includes(property.bk_property_id)">
+                    <span class="property-name-text" :class="{ required: property.isrequired }">
+                      {{property['bk_property_name']}}
+                    </span>
                     <i class="property-name-tooltips icon-cc-tips"
                       v-if="property['placeholder']"
                       v-bk-tooltips="{
@@ -84,6 +87,7 @@
   import formMixins from '@/mixins/form'
   import { mapMutations } from 'vuex'
   import ProcessFormPropertyTable from './process-form-property-table'
+  import has from 'has'
   export default {
     components: {
       ProcessFormPropertyTable
@@ -145,7 +149,7 @@
       }
     },
     watch: {
-      inst(inst) {
+      inst() {
         this.initValues()
       },
       properties() {
@@ -191,7 +195,11 @@
         Object.keys(this.values).forEach((propertyId) => {
           let isChange = false
           if (!['sign_id', 'process_id'].includes(propertyId)) {
-            isChange = Object.keys(this.values[propertyId]).some(key => JSON.stringify(this.values[propertyId][key]) !== JSON.stringify(this.refrenceValues[propertyId][key]))
+            isChange = Object.keys(this.values[propertyId]).some((key) => {
+              const newValue = JSON.stringify(this.values[propertyId][key])
+              const oldValue = JSON.stringify(this.refrenceValues[propertyId][key])
+              return newValue !== oldValue
+            })
           }
           if (isChange) {
             changedValues[propertyId] = this.values[propertyId]
@@ -209,7 +217,7 @@
         const restValues = {}
         const formValues = this.$tools.getInstFormValues(this.properties, {}, this.type === 'create')
         Object.keys(formValues).forEach((key) => {
-          if (!this.inst.hasOwnProperty(key)) {
+          if (!has(this.inst, key)) {
             restValues[key] = {
               as_default_value: this.defaultLocked.includes(key),
               value: formValues[key]
@@ -306,7 +314,7 @@
       },
       handleCancel() {
         if (this.hasChange()) {
-          return new Promise((resolve, reject) => {
+          return new Promise((resolve) => {
             this.$bkInfo({
               title: this.$t('确认退出'),
               subTitle: this.$t('退出会导致未保存信息丢失'),

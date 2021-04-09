@@ -583,11 +583,9 @@
         this.table.pagination.count = data.count
         this.table.originalList = Object.freeze(data.info.slice())
         if (asstObjId === 'host') {
-          // eslint-disable-next-line no-param-reassign
           data.info = data.info.map(item => item.host)
         }
         if (asstObjId === this.objId) {
-          // eslint-disable-next-line no-param-reassign
           data.info = data.info.filter(item => item[this.instanceIdKey] !== this.instId)
         }
         this.table.list = data.info

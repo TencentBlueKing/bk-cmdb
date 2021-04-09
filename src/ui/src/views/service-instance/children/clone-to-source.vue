@@ -12,7 +12,8 @@
       <bk-table
         :data="cloneProcesses"
         @selection-change="handleSelectChange">
-        <bk-table-column type="selection" align="center" width="60" fixed class-name="bk-table-selection"></bk-table-column>
+        <bk-table-column type="selection" align="center" width="60" fixed class-name="bk-table-selection">
+        </bk-table-column>
         <bk-table-column v-for="column in header"
           :key="column.id"
           :prop="column.id"
@@ -110,13 +111,17 @@
       },
       repeatedProcesses() {
         return this.cloneProcesses.filter((cloneProcess) => {
-          const sourceProcess = this.sourceProcesses.find(sourceProcess => sourceProcess.bk_process_id === cloneProcess.bk_process_id)
+          const key = 'bk_process_id'
+          const sourceProcess = this.sourceProcesses.find(process => process[key] === cloneProcess[key])
           return this.norepeatProperties.length
-            && this.norepeatProperties.every(property => sourceProcess[property.bk_property_id] === cloneProcess[property.bk_property_id])
+            && this.norepeatProperties.every((property) => {
+              const propertyId = property.bk_property_id
+              return sourceProcess[propertyId] === cloneProcess[propertyId]
+            })
         })
       },
       hostId() {
-        return parseInt(this.$route.params.hostId)
+        return parseInt(this.$route.params.hostId, 10)
       },
       bindInfoProperty() {
         return this.properties.find(property => property.bk_property_id === 'bind_info') || {}

@@ -53,7 +53,9 @@
             <span class="stat">
               已选<em class="num">{{selectedServiceCount}}</em>个
             </span>
-            <bk-link class="to-template" theme="primary" icon="icon-cc-share" @click="handleLinkClick">{{$t('跳转服务模板')}}</bk-link>
+            <bk-link class="to-template" theme="primary" icon="icon-cc-share" @click="handleLinkClick">
+              {{$t('跳转服务模板')}}
+            </bk-link>
           </div>
           <div class="action">
             <bk-button theme="primary" class="btn" @click.stop="handleDialogConfirm">{{$t('确定')}}</bk-button>

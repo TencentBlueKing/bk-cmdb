@@ -238,10 +238,10 @@ export function getUniqueProperties(preset, dynamic) {
 function getPropertyPriority(property) {
   let priority = 0
   if (property.isonly) {
-    priority--
+    priority = priority - 1
   }
   if (property.isrequired) {
-    priority--
+    priority = priority - 1
   }
   return priority
 }

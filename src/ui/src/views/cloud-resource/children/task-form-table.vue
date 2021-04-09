@@ -120,7 +120,6 @@
       },
       handleMultipleSelected(value) {
         this.list.forEach((row) => {
-          // eslint-disable-next-line no-param-reassign
           row.bk_sync_dir = value
         })
       },
@@ -136,9 +135,7 @@
         ])
       },
       handleAreaChange(row, cloudName) {
-        // eslint-disable-next-line no-param-reassign
         row.bk_cloud_name = cloudName
-        // eslint-disable-next-line no-param-reassign
         row.bk_cloud_error = false
       },
       // task-form保存时调用，创建新的云区域
@@ -190,7 +187,6 @@
         let valid = true
         list.forEach((row) => {
           if (!row.bk_cloud_name) {
-            // eslint-disable-next-line no-param-reassign
             row.bk_cloud_error = this.$t('请填写云区域')
             valid = false
           }

@@ -70,6 +70,7 @@
   import Vue from 'vue'
   import Tippy from 'bk-magic-vue/lib/utils/tippy'
   import Axios from 'axios'
+  import has from 'has'
   export default {
     name: 'cmdb-tag-input',
     components: {
@@ -356,7 +357,6 @@
             if (this.multiple) {
               const unexistTag = children.filter(child => !this.localValue.includes(child.value))
               if (unexistTag.length) {
-                // eslint-disable-next-line no-param-reassign
                 tag.children = unexistTag
                 matched.push(tag)
                 flattened.push(...unexistTag)
@@ -553,7 +553,7 @@
           return false
         }
         this.selectedTipsTimer[value] = setTimeout(() => {
-          // eslint-disable-next-line no-underscore-dangle new-cap
+          // eslint-disable-next-line no-underscore-dangle,new-cap
           target._tag_tips_ = Tippy(target, {
             theme: 'light small-arrow tag-selected-tips',
             boundary: 'window',
@@ -564,6 +564,7 @@
             interactive: true,
             onShow: instance => this.getTagTips(instance, value)
           })
+          // eslint-disable-next-line no-underscore-dangle
           target._user_tips_.show()
           delete this.selectedTipsTimer[value]
         }, this.tagTipsDelay)
@@ -711,7 +712,7 @@
         this.hidePopover()
       },
       // 删除事件，无文本输入时删除前一个
-      handleBackspace(event) {
+      handleBackspace() {
         if (this.inputValue || !this.localValue.length || !this.inputIndex) {
           return true
         }
@@ -740,15 +741,16 @@
           event.preventDefault()
           if (arrow === 'ArrowDown') {
             if (this.highlightIndex < (this.flattenedData.length - 1)) {
-              this.highlightIndex++
+              this.highlightIndex = this.highlightIndex + 1
             } else if (this.alternateContent && this.alternateContent.next) {
-              this.alternateContent.$refs.alternateList.scrollTop = this.alternateContent.$refs.alternateList.scrollTop + 32
+              const { alternateList } = this.alternateContent.$refs
+              alternateList.scrollTop = alternateList.scrollTop + 32
               this.alternateContent.handleScroll()
             } else {
               this.highlightIndex = 0
             }
           } else if (arrow === 'ArrowUp' && this.highlightIndex !== -1) {
-            this.highlightIndex--
+            this.highlightIndex = this.highlightIndex - 1
           }
         }
       },
@@ -843,7 +845,8 @@
             const listScrollTop = $alternateList.scrollTop
             const itemOffsetTop = $alternateItem.offsetTop
             const itemOffsetHeight = $alternateItem.offsetHeight
-            if (itemOffsetTop >= listScrollTop && (itemOffsetTop + itemOffsetHeight) <= (listScrollTop + listClientHeight)) {
+            const isSmaller = (itemOffsetTop + itemOffsetHeight) <= (listScrollTop + listClientHeight)
+            if (itemOffsetTop >= listScrollTop && isSmaller) {
               return false
             } if (itemOffsetTop <= listScrollTop) {
               $alternateList.scrollTop = itemOffsetTop
@@ -858,6 +861,7 @@
       // 计算第二行第一个的index，在其前方插入overflow tag
       calcOverflow() {
         this.removeOverflowTagNode()
+        // eslint-disable-next-line no-underscore-dangle
         if (!this._isMounted || !this.fixedHeight || this.isFocus || this.localValue.length < 2) {
           return false
         }
@@ -865,7 +869,7 @@
         this.overflowTimer = setTimeout(() => {
           const selectedData = this.getSelectedDOM()
           const userIndexInSecondRow = selectedData.findIndex((currentTag, index) => {
-            if (!index) return
+            if (!index) return false
             const previousTag = selectedData[index - 1]
             return previousTag.offsetTop !== currentTag.offsetTop
           })
@@ -897,7 +901,7 @@
         setTimeout(() => {
           const previousTag = selectedTag[this.overflowTagIndex - 1]
           if (overflowTagNode.offsetTop !== previousTag.offsetTop) {
-            this.overflowTagIndex--
+            this.overflowTagIndex = this.overflowTagIndex - 1
             this.$refs.container.insertBefore(overflowTagNode, overflowTagNode.previousSibling)
             overflowTagNode.textContent = `+${this.localValue.length - this.overflowTagIndex}`
           }
@@ -909,6 +913,7 @@
           return this.overflowTagNode
         }
         const overflowTagNode = document.createElement('span')
+        // eslint-disable-next-line no-underscore-dangle
         overflowTagNode.setAttribute(this.$options._scopeId, '')
         overflowTagNode.className = 'tag-input-overflow-tag'
         this.overflowTagNode = overflowTagNode

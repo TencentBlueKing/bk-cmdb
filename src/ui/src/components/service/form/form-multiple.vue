@@ -131,7 +131,7 @@
       },
       beforeClose() {
         if (this.$refs.form.hasChange) {
-          return new Promise((resolve, reject) => {
+          return new Promise((resolve) => {
             this.$bkInfo({
               title: this.$t('确认退出'),
               subTitle: this.$t('退出会导致未保存信息丢失'),

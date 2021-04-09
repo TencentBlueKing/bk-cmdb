@@ -98,7 +98,7 @@
         'getDefaultSearchCondition'
       ]),
       moduleId() {
-        return this.$route.params.moduleId && parseInt(this.$route.params.moduleId)
+        return this.$route.params.moduleId && parseInt(this.$route.params.moduleId, 10)
       },
       serviceInstanceIds() {
         return String(this.$route.params.ids).split('/')
@@ -112,7 +112,7 @@
       }
     },
     watch: {
-      ready(ready) {
+      ready() {
         this.$nextTick(() => {
           addResizeListener(this.$refs.changeInfo, this.resizeHandler)
         })

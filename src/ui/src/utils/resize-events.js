@@ -1,9 +1,11 @@
 /* Modified from https://github.com/sdecima/javascript-detect-element-resize
  * version: 0.5.3
  */
-
+/* eslint-disable no-underscore-dangle */
 const requestFrame = (function () {
-  const raf = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame
+  const raf = window.requestAnimationFrame
+    || window.mozRequestAnimationFrame
+    || window.webkitRequestAnimationFrame
     || function (fn) {
       return window.setTimeout(fn, 20)
     }
@@ -13,7 +15,10 @@ const requestFrame = (function () {
 }())
 
 const cancelFrame = (function () {
-  const cancel = window.cancelAnimationFrame || window.mozCancelAnimationFrame || window.webkitCancelAnimationFrame || window.clearTimeout
+  const cancel = window.cancelAnimationFrame
+    || window.mozCancelAnimationFrame
+    || window.webkitCancelAnimationFrame
+    || window.clearTimeout
   return function (id) {
     return cancel(id)
   }
@@ -27,8 +32,8 @@ const resetTrigger = function (element) {
 
   contract.scrollLeft = contract.scrollWidth
   contract.scrollTop = contract.scrollHeight
-  expandChild.style.width = expand.offsetWidth + 1 + 'px'
-  expandChild.style.height = expand.offsetHeight + 1 + 'px'
+  expandChild.style.width = `${expand.offsetWidth + 1}px`
+  expandChild.style.height = `${expand.offsetHeight + 1}px`
   expand.scrollLeft = expand.scrollWidth
   expand.scrollTop = expand.scrollHeight
 }
@@ -52,7 +57,7 @@ const scrollListener = function (event) {
 }
 
 /* Detect CSS Animations support to detect element display/re-attach */
-const attachEvent = document.attachEvent
+const { attachEvent } = document
 const DOM_PREFIXES = 'Webkit Moz O ms'.split(' ')
 const START_EVENTS = 'webkitAnimationStart animationstart oAnimationStart MSAnimationStart'.split(' ')
 const RESIZE_ANIMATION_NAME = 'resizeanim'
@@ -69,9 +74,9 @@ if (!attachEvent) {
   if (animation === false) {
     let prefix = ''
     for (let i = 0; i < DOM_PREFIXES.length; i++) {
-      if (testElement.style[DOM_PREFIXES[i] + 'AnimationName'] !== undefined) {
+      if (testElement.style[`${DOM_PREFIXES[i]}AnimationName`] !== undefined) {
         prefix = DOM_PREFIXES[i]
-        keyFramePrefix = '-' + prefix.toLowerCase() + '-'
+        keyFramePrefix = `-${prefix.toLowerCase()}-`
         animationStartEvent = START_EVENTS[i]
         animation = true
         break
@@ -120,8 +125,8 @@ export const addResizeListener = function (element, fn) {
       createStyles()
       element.__resizeLast__ = {}
       element.__resizeListeners__ = []
-
-      const resizeTrigger = element.__resizeTrigger__ = document.createElement('div')
+      element.__resizeTrigger__ = document.createElement('div')
+      const resizeTrigger = element.__resizeTrigger__
       resizeTrigger.className = 'resize-triggers'
       resizeTrigger.innerHTML = '<div class="expand-trigger"><div></div></div><div class="contract-trigger"></div>'
       element.appendChild(resizeTrigger)
@@ -131,7 +136,7 @@ export const addResizeListener = function (element, fn) {
 
       /* Listen for a css animation to detect element display/re-attach */
       if (animationStartEvent) {
-        resizeTrigger.addEventListener(animationStartEvent, function (event) {
+        resizeTrigger.addEventListener(animationStartEvent, (event) => {
           if (event.animationName === RESIZE_ANIMATION_NAME) {
             resetTrigger(element)
           }

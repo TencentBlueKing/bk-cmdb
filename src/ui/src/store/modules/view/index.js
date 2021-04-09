@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars, no-param-reassign */
-
 const state = {
   showClassify: false
 }

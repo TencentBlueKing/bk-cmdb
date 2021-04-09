@@ -1,5 +1,6 @@
 import moment from 'moment'
-import GET_VALUE from 'get-value'
+import getValueByPath from 'get-value'
+import has from 'has'
 
 /**
  * 获取实例中某个属性的展示值
@@ -9,8 +10,8 @@ import GET_VALUE from 'get-value'
  */
 
 export function getPropertyText(property, item) {
-  const propertyId = property['bk_property_id']
-  const propertyType = property['bk_property_type']
+  const propertyId = property.bk_property_id
+  const propertyType = property.bk_property_type
   let propertyValue = item[propertyId]
   if (
     propertyValue === null
@@ -27,7 +28,7 @@ export function getPropertyText(property, item) {
     propertyValue = formatTime(propertyValue, propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
   } else if (propertyType === 'foreignkey') {
     if (Array.isArray(propertyValue)) {
-      propertyValue = propertyValue.map(inst => inst['bk_inst_name']).join(',')
+      propertyValue = propertyValue.map(inst => inst.bk_inst_name).join(',')
     } else {
       return String(propertyValue).length ? propertyValue : '--'
     }
@@ -50,11 +51,11 @@ function getDefaultOptionValue(property) {
   return ''
 }
 
-export function getInstFormValues(properties, inst = {}, autoSelect = true) {
+export function getInstFormValues(properties, inst = {}, auto = true) {
   const values = {}
   properties.forEach((property) => {
-    const propertyId = property['bk_property_id']
-    const propertyType = property['bk_property_type']
+    const propertyId = property.bk_property_id
+    const propertyType = property.bk_property_type
     if (['singleasst', 'multiasst', 'foreignkey'].includes(propertyType)) {
       // const validAsst = (inst[propertyId] || []).filter(asstInst => asstInst.id !== '')
       // values[propertyId] = validAsst.map(asstInst => asstInst['bk_inst_id']).join(',')
@@ -64,21 +65,23 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
     } else if (['int', 'float'].includes(propertyType)) {
       values[propertyId] = [null, undefined].includes(inst[propertyId]) ? '' : inst[propertyId]
     } else if (['bool'].includes(propertyType)) {
-      if ([null, undefined].includes(inst[propertyId]) && autoSelect) {
-        values[propertyId] = typeof property['option'] === 'boolean' ? property['option'] : false
+      if ([null, undefined].includes(inst[propertyId]) && auto) {
+        values[propertyId] = typeof property.option === 'boolean' ? property.option : false
       } else {
         values[propertyId] = !!inst[propertyId]
       }
     } else if (['enum'].includes(propertyType)) {
-      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? getDefaultOptionValue(property) : '') : inst[propertyId]
+      // eslint-disable-next-line no-nested-ternary
+      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (auto ? getDefaultOptionValue(property) : '') : inst[propertyId]
     } else if (['timezone'].includes(propertyType)) {
-      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? 'Asia/Shanghai' : '') : inst[propertyId]
+      // eslint-disable-next-line no-nested-ternary
+      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (auto ? 'Asia/Shanghai' : '') : inst[propertyId]
     } else if (['organization'].includes(propertyType)) {
       values[propertyId] = inst[propertyId] || null
     } else if (['table'].includes(propertyType)) {
-      values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(property.option || [], row, autoSelect))
+      values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(property.option || [], row, auto))
     } else {
-      values[propertyId] = inst.hasOwnProperty(propertyId) ? inst[propertyId] : ''
+      values[propertyId] = has(inst, propertyId) ? inst[propertyId] : ''
     }
   })
   return { ...inst, ...values }
@@ -114,7 +117,7 @@ export function formatValues(values, properties) {
   const formatted = { ...values }
   properties.forEach((property) => {
     const key = property.bk_property_id
-    if (formatted.hasOwnProperty(key)) {
+    if (has(formatted, key)) {
       formatted[key] = formatValue(formatted[key], property)
     }
   })
@@ -134,9 +137,8 @@ export function formatTime(originalTime, format = 'YYYY-MM-DD HH:mm:ss') {
   const formatedTime = moment(originalTime).format(format)
   if (formatedTime === 'Invalid date') {
     return originalTime
-  } else {
-    return formatedTime
   }
+  return formatedTime
 }
 /**
  * 从模型属性中获取指定id的属性对象
@@ -145,7 +147,7 @@ export function formatTime(originalTime, format = 'YYYY-MM-DD HH:mm:ss') {
  * @return {Object} 模型属性对象
  */
 export function getProperty(properties, id) {
-  return properties.find(property => property['bk_property_id'] === id)
+  return properties.find(property => property.bk_property_id === id)
 }
 
 /**
@@ -166,11 +168,11 @@ export function getEnumOptions(properties, id) {
  */
 export function getPropertyPriority(property) {
   let priority = 0
-  if (property['isonly']) {
-    priority--
+  if (property.isonly) {
+    priority = priority - 1
   }
-  if (property['isrequired']) {
-    priority--
+  if (property.isrequired) {
+    priority = priority - 1
   }
   return priority
 }
@@ -181,9 +183,7 @@ export function getPropertyPriority(property) {
  * @return {Array} 默认展示的前六个模型属性
  */
 export function getDefaultHeaderProperties(properties) {
-  return [...properties].sort((propertyA, propertyB) => {
-    return getPropertyPriority(propertyA) - getPropertyPriority(propertyB)
-  }).slice(0, 6)
+  return [...properties].sort((A, B) => getPropertyPriority(A) - getPropertyPriority(B)).slice(0, 6)
 }
 
 /**
@@ -195,7 +195,7 @@ export function getDefaultHeaderProperties(properties) {
 export function getCustomHeaderProperties(properties, customColumns) {
   const columnProperties = []
   customColumns.forEach((propertyId) => {
-    const columnProperty = properties.find(property => property['bk_property_id'] === propertyId)
+    const columnProperty = properties.find(property => property.bk_property_id === propertyId)
     if (columnProperty) {
       columnProperties.push(columnProperty)
     }
@@ -218,10 +218,10 @@ export function getHeaderProperties(properties, customColumns, fixedPropertyIds 
     headerProperties = getDefaultHeaderProperties(properties)
   }
   if (fixedPropertyIds.length) {
-    headerProperties = headerProperties.filter(property => !fixedPropertyIds.includes(property['bk_property_id']))
+    headerProperties = headerProperties.filter(property => !fixedPropertyIds.includes(property.bk_property_id))
     const fixedProperties = []
     fixedPropertyIds.forEach((id) => {
-      const property = properties.find(property => property['bk_property_id'] === id)
+      const property = properties.find(property => property.bk_property_id === id)
       if (property) {
         fixedProperties.push(property)
       }
@@ -259,14 +259,14 @@ export function getValidateRules(property) {
   }
   if (option) {
     if (['int', 'float'].includes(propertyType)) {
-      if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
-        rules['min_value'] = option.min
+      if (has(option, 'min') && !['', null, undefined].includes(option.min)) {
+        rules.min_value = option.min
       }
-      if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
-        rules['max_value'] = option.max
+      if (has(option, 'max') && !['', null, undefined].includes(option.max)) {
+        rules.max_value = option.max
       }
     } else if (['singlechar', 'longchar'].includes(propertyType)) {
-      rules['regex'] = option
+      rules.regex = option
     }
   }
   if (['singlechar', 'longchar'].includes(propertyType)) {
@@ -292,7 +292,8 @@ export function getSort(sort, defaultSort = {}) {
 }
 
 export function getValue() {
-  return GET_VALUE(...arguments)
+  // eslint-disable-next-line prefer-rest-params
+  return getValueByPath(...arguments)
 }
 
 export function transformHostSearchParams(params) {
@@ -300,8 +301,8 @@ export function transformHostSearchParams(params) {
   const conditions = transformedParams.condition
   conditions.forEach((item) => {
     item.condition.forEach((field) => {
-      const operator = field.operator
-      const value = field.value
+      const { operator } = field
+      const { value } = field
       if (['$in', '$nin', '$multilike'].includes(operator) && !Array.isArray(value)) {
         field.value = value.split(/\n|;|；|,|，/).filter(str => str.trim().length)
           .map(str => str.trim())
@@ -318,8 +319,8 @@ export function getDefaultPaginationConfig(customConfig = {}) {
   const RouterQuery = require('@/router/query').default
   const config = {
     count: 0,
-    current: parseInt(RouterQuery.get('page', 1)),
-    limit: parseInt(RouterQuery.get('limit', defaultPaginationConfig.limit)),
+    current: parseInt(RouterQuery.get('page', 1), 10),
+    limit: parseInt(RouterQuery.get('limit', defaultPaginationConfig.limit), 10),
     'limit-list': customConfig['limit-list'] || defaultPaginationConfig['limit-list']
   }
   return config
@@ -334,7 +335,7 @@ export function getPageParams(pagination) {
 
 export function localSort(data, compareKey) {
   return data.sort((A, B) => {
-    if (A.hasOwnProperty(compareKey) && B.hasOwnProperty(compareKey)) {
+    if (has(A, compareKey) && has(B, compareKey)) {
       return A[compareKey].localeCompare(B[compareKey], 'zh-Hans-CN', { sensitivity: 'accent', caseFirst: 'lower' })
     }
     return 0

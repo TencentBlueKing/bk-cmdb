@@ -119,7 +119,6 @@
         })
       },
       handleExpandChange(row, expandedRows) {
-        // eslint-disable-next-line no-param-reassign
         row.pending = expandedRows.includes(row)
       },
       handleExpandAllChange(expand) {
@@ -128,19 +127,15 @@
         })
       },
       handleRowClick(row) {
-        // eslint-disable-next-line no-param-reassign
         this.$refs.processTable.toggleRowExpansion(row)
       },
       handleReserveSelectionChange(process, selection) {
         this.list.forEach((row) => {
-          // eslint-disable-next-line no-param-reassign
           row.reserved = row === process ? selection : []
         })
       },
       handleExpandResolved(row, list) {
-        // eslint-disable-next-line no-param-reassign
         row.pending = false
-        // eslint-disable-next-line no-param-reassign
         row.process_ids = list.map(process => process.process_id)
       }
     }

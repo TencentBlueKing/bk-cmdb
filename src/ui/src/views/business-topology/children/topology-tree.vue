@@ -103,6 +103,7 @@
   import RouterQuery from '@/router/query'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import FilterStore from '@/components/filters/store'
+  import has from 'has'
   export default {
     components: {
       CreateNode,
@@ -363,7 +364,7 @@
         this.createInfo.parentNode = node
         this.createInfo.show = true
         this.createInfo.visible = true
-        if (this.propertyMap.hasOwnProperty(nextModelId)) {
+        if (has(this.propertyMap, nextModelId)) {
           this.createInfo.properties = this.propertyMap[nextModelId]
         } else {
           const action = 'objectModelProperty/searchObjectAttribute'
@@ -539,7 +540,7 @@
               const node = this.$refs.tree.getNodeById(`module-${module.bk_module_id}`)
               const nodes = node ? [node, ...node.parents] : []
               nodes.forEach((exist) => {
-                exist.data[type]--
+                exist.data[type] = exist.data[type] - 1
               })
             }
           })

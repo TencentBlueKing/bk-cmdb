@@ -180,7 +180,6 @@
         if (itemIndex > -1) {
           this.defaultIndex = itemIndex
           this.enumList.forEach((item) => {
-            // eslint-disable-next-line no-param-reassign
             item.is_default = item.id === id
           })
 

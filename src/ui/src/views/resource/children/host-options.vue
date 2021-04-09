@@ -54,7 +54,10 @@
     </div>
     <div class="options-right">
       <filter-fast-search class="option-fast-search"></filter-fast-search>
-      <icon-button class="option-filter ml10" icon="icon-cc-funnel" v-bk-tooltips.top="$t('高级筛选')" @click="handleSetFilters"></icon-button>
+      <icon-button class="option-filter ml10" icon="icon-cc-funnel"
+        v-bk-tooltips.top="$t('高级筛选')"
+        @click="handleSetFilters">
+      </icon-button>
       <icon-button class="ml10"
         v-bk-tooltips="$t('查看删除历史')"
         icon="icon icon-cc-history"
@@ -175,7 +178,11 @@
               :id="option.id"
               :name="option.name"
               :disabled="option.disabled">
-              <cmdb-auth style="display: block;" :auth="option.auth" @update-auth="handleUpdateAssignAuth(option, ...arguments)">{{option.name}}</cmdb-auth>
+              <cmdb-auth style="display: block;"
+                :auth="option.auth"
+                @update-auth="handleUpdateAssignAuth(option, ...arguments)">
+                {{option.name}}
+              </cmdb-auth>
             </bk-option>
           </bk-select>
         </div>
@@ -189,7 +196,11 @@
           @click="handleConfirmAssign">
           {{$t('确定')}}
         </bk-button>
-        <bk-button theme="default" :disabled="$loading(assign.requestId)" @click="closeAssignDialog">{{$t('取消')}}</bk-button>
+        <bk-button theme="default"
+          :disabled="$loading(assign.requestId)"
+          @click="closeAssignDialog">
+          {{$t('取消')}}
+        </bk-button>
       </div>
     </bk-dialog>
   </div>
@@ -206,9 +217,9 @@
   import FilterForm from '@/components/filters/filter-form.js'
   import FilterFastSearch from '@/components/filters/filter-fast-search'
   import FilterStore from '@/components/filters/store'
-  import ExportFields from '@/components/export-fields/export-fields.js'
+  import exportFields from '@/components/export-fields/export-fields.js'
   import FilterUtils from '@/components/filters/utils'
-  import BatchExport from '@/components/batch-export/index.js'
+  import batchExport from '@/components/batch-export/index.js'
   export default {
     components: {
       cmdbImport,
@@ -380,7 +391,7 @@
     async created() {
       try {
         this.unwatchScope = RouterQuery.watch('scope', (scope = 1) => {
-          this.scope = isNaN(scope) ? 'all' : parseInt(scope)
+          this.scope = isNaN(scope) ? 'all' : parseInt(scope, 10)
         }, { immediate: true })
         await this.getFullAmountBusiness()
       } catch (e) {
@@ -536,6 +547,7 @@
             return `${cloud}:${ip}`
           }
           if (property.bk_property_type === 'topology') {
+            // eslint-disable-next-line no-underscore-dangle
             return data.__bk_host_topology__.join(',').replace(/\s\/\s/g, '')
           }
           const value = modelData[property.bk_property_id]
@@ -599,7 +611,7 @@
         const $form = this.$refs.multipleForm
         const { changedValues } = $form
         if (Object.keys(changedValues).length) {
-          return new Promise((resolve, reject) => {
+          return new Promise((resolve) => {
             this.$bkInfo({
               title: this.$t('确认退出'),
               subTitle: this.$t('退出会导致未保存信息丢失'),
@@ -618,7 +630,7 @@
         this.slider.component = null
       },
       async exportField() {
-        ExportFields.show({
+        exportFields.show({
           title: this.$t('导出选中'),
           properties: FilterStore.getModelProperties('host'),
           propertyGroups: FilterStore.propertyGroups,
@@ -644,7 +656,7 @@
         }
       },
       async batchExportField() {
-        ExportFields.show({
+        exportFields.show({
           title: this.$t('导出全部'),
           properties: FilterStore.getModelProperties('host'),
           propertyGroups: FilterStore.propertyGroups,
@@ -652,7 +664,7 @@
         })
       },
       batchExportHandler(properties) {
-        BatchExport({
+        batchExport({
           name: 'host',
           count: this.table.pagination.count,
           options: (page) => {

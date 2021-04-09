@@ -89,6 +89,7 @@ module.exports = {
                 "ignoreTemplateLiterals": true
             }
         ],
+        'no-param-reassign': 'off',
 
         // https://github.com/vuejs/eslint-plugin-vue/blob/master/docs/rules/array-bracket-spacing.md
         'vue/array-bracket-spacing': ['error', 'never'],

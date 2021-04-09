@@ -553,7 +553,7 @@
             const convertValue = [true, false].find(bool => bool.toString() === filterValue)
             filterValue = convertValue === undefined ? filterValue : convertValue
           } else if (filterType === 'int') {
-            filterValue = isNaN(parseInt(filterValue)) ? filterValue : parseInt(filterValue, 10)
+            filterValue = isNaN(parseInt(filterValue, 10)) ? filterValue : parseInt(filterValue, 10)
           } else if (filterType === 'float') {
             filterValue = isNaN(parseFloat(filterValue)) ? filterValue : parseFloat(filterValue, 10)
           }
@@ -631,7 +631,6 @@
             })
           })
         } else {
-          // eslint-disable-next-line no-param-reassign
           delete values.bk_inst_id // properties中注入了前端自定义的bk_inst_id属性
           this.createInst({
             params: values,

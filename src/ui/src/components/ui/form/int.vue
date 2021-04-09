@@ -61,10 +61,8 @@
         const originalValue = String(event.target.value).trim()
         const intValue = originalValue.length ? Number(event.target.value.trim()) : null
         if (isNaN(intValue)) {
-          // eslint-disable-next-line no-param-reassign
           value = this.autoCheck ? null : value
         } else {
-          // eslint-disable-next-line no-param-reassign
           value = intValue
         }
         this.localValue = value

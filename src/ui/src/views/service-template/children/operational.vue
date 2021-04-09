@@ -57,7 +57,8 @@
               <i class="form-loading fl"></i>
             </template>
             <template v-else>
-              <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('mainClassificationId') }" style="width: auto;">
+              <div class="cmdb-form-item fl" style="width: auto;"
+                :class="{ 'is-error': errors.has('mainClassificationId') }">
                 <cmdb-selector
                   class="fl"
                   display-key="displayName"
@@ -81,7 +82,8 @@
                 </cmdb-selector>
                 <p class="form-error">{{errors.first('mainClassificationId')}}</p>
               </div>
-              <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('secondaryClassificationId') }" style="width: auto;">
+              <div class="cmdb-form-item fl" style="width: auto;"
+                :class="{ 'is-error': errors.has('secondaryClassificationId') }">
                 <cmdb-selector
                   class="fl"
                   display-key="displayName"
@@ -502,7 +504,7 @@
             this.processLoading = false
           })
       },
-      handleSelect(id, data) {
+      handleSelect(id) {
         this.secondaryList = this.allSecondaryList.filter(classification => classification.bk_parent_id === id)
         if (!this.secondaryList.length) {
           this.formData.secondaryClassification = ''
@@ -515,7 +517,8 @@
             (data[key].value || []).forEach((row) => {
               Object.keys(row).forEach((rowKey) => {
                 if (typeof row[rowKey] === 'object') {
-                  const columnProperty = (property.option || []).find(columnProperty => columnProperty.bk_property_id === rowKey) || {}
+                  const option = property.option || []
+                  const columnProperty = option.find(columnProperty => columnProperty.bk_property_id === rowKey) || {}
                   row[rowKey].value = this.$tools.formatValue(row[rowKey].value, columnProperty)
                 }
               })
@@ -625,10 +628,10 @@
           config: {
             requestId: this.request.createProcessTemplate
           }
-        }).then((data) => {
+        }).then(() => {
           this.handleCreateSuccess()
         })
-          .catch(async (e) => {
+          .catch(async () => {
             // 新建进程失败静默删除服务模板
             await this.deleteServiceTemplate({
               params: {
@@ -704,7 +707,7 @@
       handleSliderBeforeClose() {
         const hasChanged = this.$refs.processForm && this.$refs.processForm.hasChange()
         if (hasChanged) {
-          return new Promise((resolve, reject) => {
+          return new Promise((resolve) => {
             this.$bkInfo({
               title: this.$t('确认退出'),
               subTitle: this.$t('退出会导致未保存信息丢失'),

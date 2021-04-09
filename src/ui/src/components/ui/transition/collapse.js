@@ -1,4 +1,4 @@
-/* eslint-disable no-param-reassign, no-restricted-syntax */
+/* eslint-disable no-restricted-syntax */
 import has from 'has'
 const Transition = {
   beforeEnter(el) {

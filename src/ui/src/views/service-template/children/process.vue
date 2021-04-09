@@ -92,7 +92,7 @@
       showList() {
         const list = this.list.map((template) => {
           const result = {}
-          Object.keys(template).map((key) => {
+          Object.keys(template).forEach((key) => {
             const type = typeof template[key]
             if (type === 'object') {
               result[key] = template[key].value
@@ -100,6 +100,7 @@
               result[key] = template[key]
             }
           })
+          // eslint-disable-next-line no-underscore-dangle
           result._original_ = template
           return result
         })

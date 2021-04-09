@@ -75,7 +75,6 @@
               // eslint-disable-next-line max-len
               const index = list.findIndex(item => item.id !== -1 && defaultLabels[i].id === item.id && (defaultLabels[i].key !== item.key || defaultLabels[i].value !== item.value))
               if (index !== -1) {
-                // eslint-disable-next-line no-param-reassign
                 list[index].id = -1
                 !this.removeKeysList.includes[defaultLabels[i].key] && this.removeKeysList.push(defaultLabels[i].key)
               }

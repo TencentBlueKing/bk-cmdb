@@ -265,7 +265,6 @@
                     node.children.push(child)
                   }
                 } else {
-                  // eslint-disable-next-line no-param-reassign
                   node.children = [child]
                 }
               }

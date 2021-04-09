@@ -51,7 +51,7 @@
 <script>
   import { mapGetters } from 'vuex'
   import propertyFormElement from './property-form-element'
-  /* eslint-disable no-underscore-dangle, no-param-reassign */
+  /* eslint-disable no-underscore-dangle */
   export default {
     components: {
       propertyFormElement

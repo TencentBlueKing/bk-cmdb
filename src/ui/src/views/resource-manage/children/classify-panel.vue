@@ -30,6 +30,7 @@
     MENU_RESOURCE_HOST_COLLECTION,
     MENU_RESOURCE_BUSINESS_COLLECTION
   } from '@/dictionary/menu-symbol'
+  import has from 'has'
   export default {
     props: {
       classify: {
@@ -69,7 +70,7 @@
           host: MENU_RESOURCE_HOST,
           biz: MENU_RESOURCE_BUSINESS
         }
-        if (map.hasOwnProperty(model.bk_obj_id)) {
+        if (has(map, model.bk_obj_id)) {
           this.$routerActions.redirect({
             name: map[model.bk_obj_id]
           })

@@ -321,7 +321,7 @@
       },
       initData() {
         if (this.isEdit) {
-          Object.keys(this.relationInfo).forEach((propertyId) => {
+          Object.keys(this.relationInfo).forEach((key) => {
             this.relationInfo[key] = this.$tools.clone(this.relation[key])
           })
         } else {

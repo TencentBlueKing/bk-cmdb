@@ -70,7 +70,10 @@
                     <div class="tips" v-if="_module.diff_type === 'remove' && existHost(_module.bk_module_id)">
                       <i class="bk-icon icon-exclamation"></i>
                       <i18n path="存在主机不可同步提示" tag="p">
-                        <span place="btn" class="view-btn" @click="handleViewModule(_module.bk_module_id)">{{$t('跳转查看')}}</span>
+                        <span place="btn" class="view-btn"
+                          @click="handleViewModule(_module.bk_module_id)">
+                          {{$t('跳转查看')}}
+                        </span>
                       </i18n>
                     </div>
                   </li>
@@ -130,11 +133,8 @@
         return '--'
       },
       canSyncStatus() {
-        for (const _module of this.instance.module_diffs) {
-          if (_module.diff_type === 'remove' && this.moduleHostCount[_module.bk_module_id] > 0) {
-            return false
-          }
-        }
+        const hasRemoveType = this.instance.module_diffs.some(module => module.diff_type === 'remove' && this.moduleHostCount[module.bk_module_id] > 0)
+        if (hasRemoveType) return false
         return true
       }
     },

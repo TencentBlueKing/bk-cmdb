@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars, no-param-reassign */
-
+/* eslint-disable no-unused-vars */
 import Vue from 'vue'
 let commonRequestResolver
 const commonRequest = new Promise((resolve, reject) => {

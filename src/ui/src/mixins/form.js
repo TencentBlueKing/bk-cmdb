@@ -47,7 +47,6 @@ export default {
         ...bizCustomGroups
       ]
       allGroups.forEach((group, index) => {
-        // eslint-disable-next-line no-param-reassign
         group.bk_group_index = index
         this.$set(this.groupState, group.bk_group_id, group.is_collapse)
       })

@@ -179,7 +179,6 @@
     methods: {
       handleChangeActive(process, index) {
         this.activeIndex = index
-        // eslint-disable-next-line no-param-reassign
         process.confirmed = true
       },
       async getProperties() {
@@ -342,7 +341,7 @@
         const loaded = module.service_instances.__loaded__
         if (this.current.type === 'others' && !loaded) {
           try {
-            // eslint-disable-next-line no-underscore-dangle, no-param-reassign
+            // eslint-disable-next-line no-underscore-dangle
             module.service_instances.__loaded__ = true
             const { info: instances } = await this.getModuleServiceInstances(module.bk_module_id)
             module.service_instances.push(...instances.map(instance => ({
@@ -356,7 +355,7 @@
             })))
           } catch (e) {
             console.error(e)
-            // eslint-disable-next-line no-underscore-dangle, no-param-reassign
+            // eslint-disable-next-line no-underscore-dangle
             module.service_instances.__loaded__ = false
           }
         }

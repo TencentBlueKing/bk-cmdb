@@ -2,8 +2,12 @@
   <div class="template-layout">
     <cmdb-tips class="mb10" tips-key="showSetTips">
       <i18n path="集群模板功能提示" class="tips-text">
-        <a class="tips-link" href="javascript:void(0)" @click="handleGoBusinessTopo" place="topo">{{$t('业务拓扑')}}</a>
-        <a class="tips-link" href="javascript:void(0)" @click="handleGoServiceTemplate" place="template">{{$t('服务模板')}}</a>
+        <a class="tips-link" href="javascript:void(0)" @click="handleGoBusinessTopo" place="topo">
+          {{$t('业务拓扑')}}
+        </a>
+        <a class="tips-link" href="javascript:void(0)" @click="handleGoServiceTemplate" place="template">
+          {{$t('服务模板')}}
+        </a>
       </i18n>
     </cmdb-tips>
     <div class="options clearfix">
@@ -150,7 +154,7 @@
                 set_template_ids: this.originList.map(item => item.id)
               }
             })
-            this.originList.map((item) => {
+            this.originList.forEach((item) => {
               const syncStatus = data.find(status => status.set_template_id === item.id)
               if (syncStatus) {
                 this.$set(item, '_need_sync_', syncStatus.need_sync)

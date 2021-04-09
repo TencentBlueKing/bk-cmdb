@@ -229,7 +229,6 @@
             }
           })
           this.list.forEach((account) => {
-            /* eslint-disable no-param-reassign */
             const status = results.find(result => result.bk_account_id === account.bk_account_id)
             if (status && status.err_msg) {
               account.status = 'error'

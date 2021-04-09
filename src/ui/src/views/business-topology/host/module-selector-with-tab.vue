@@ -34,6 +34,7 @@
   import ModuleSelector from './module-selector.vue'
   import AcrossBusinessModuleSelector from './across-business-module-selector.vue'
   import NoPermission from './no-permission.vue'
+  import has from 'has'
   export default {
     name: 'module-selector-with-tab',
     components: {
@@ -127,16 +128,12 @@
       availableTabList() {
         const availableTabList = []
         this.tab.list.forEach((tab) => {
-          // eslint-disable-next-line no-param-reassign
           tab.component.props.business = this.business
           if (tab.props.name !== 'acrossBusiness') {
             const defaultChecked = this.modules.map(module => module.bk_module_id)
             const firstSelectionModules = this.modules.map(module => module.bk_module_id).sort()
-            // eslint-disable-next-line no-param-reassign
             tab.component.props.previousModules = firstSelectionModules
-            // eslint-disable-next-line no-param-reassign
             tab.component.props.defaultChecked = defaultChecked
-            // eslint-disable-next-line no-param-reassign
             tab.component.props.confirmText = tab.props.name === 'idle' && this.isIdleSetModules ? this.$t('确定') : ''
             availableTabList.push(tab)
           } else if (this.isIdleSetModules) {

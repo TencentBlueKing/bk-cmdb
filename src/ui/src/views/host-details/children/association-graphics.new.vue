@@ -608,7 +608,6 @@
         node.data('loaded', true)
       },
       handleToggleNodeVisibility(legend) {
-        // eslint-disable-next-line no-param-reassign
         legend.active = !legend.active
 
         cy.startBatch()

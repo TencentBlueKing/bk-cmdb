@@ -171,11 +171,9 @@ const menus = [{
     if (has(top, 'menu')) {
       top.menu.forEach((menu) => {
         if (has(menu, 'submenu')) {
-          // eslint-disable-next-line no-param-reassign
           menu.submenu = menu.submenu.filter(submenu => submenu.route.available)
         }
       })
-      // eslint-disable-next-line no-param-reassign
       top.menu = top.menu.filter((menu) => {
         if (has(menu, 'route')) {
           return menu.route.available

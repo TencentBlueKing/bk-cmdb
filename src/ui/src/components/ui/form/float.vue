@@ -56,10 +56,8 @@
         const originalValue = String(event.target.value).trim()
         const floatValue = originalValue.length ? Number(event.target.value.trim()) : null
         if (isNaN(floatValue)) {
-          // eslint-disable-next-line no-param-reassign
           value = this.autoCheck ? null : value
         } else {
-          // eslint-disable-next-line no-param-reassign
           value = floatValue
         }
         this.$refs.input.curValue = value

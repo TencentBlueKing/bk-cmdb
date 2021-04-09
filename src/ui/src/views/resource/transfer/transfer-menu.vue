@@ -153,21 +153,25 @@
         if (this.dialog.component === ModuleSelector.name) {
           if (this.dialog.props.moduleType === 'idle') {
             if (HostStore.isAllIdleSet) {
+              // eslint-disable-next-line prefer-rest-params
               this.transferDirectly(...arguments)
             } else {
+              // eslint-disable-next-line prefer-rest-params
               this.gotoTransferPage(...arguments)
             }
           } else {
+            // eslint-disable-next-line prefer-rest-params
             this.gotoTransferPage(...arguments)
           }
         } else if (this.dialog.component === MoveToResourceConfirm.name) {
+          // eslint-disable-next-line prefer-rest-params
           this.moveHostToResource(...arguments)
         }
       },
       async transferDirectly(modules) {
         try {
           const bizId = HostStore.uniqueBusiness.bk_biz_id
-          const internalModule = modules[0]
+          const [internalModule] = modules
           await this.$http.post(`host/transfer_with_auto_clear_service_instance/bk_biz_id/${bizId}`, {
             bk_host_ids: HostStore.getSelected().map(data => data.host.bk_host_id),
             default_internal_module: internalModule.data.bk_inst_id,

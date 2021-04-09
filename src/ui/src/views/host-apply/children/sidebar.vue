@@ -151,7 +151,6 @@
         const modules = []
         const findModuleNode = function (data, parent) {
           data.forEach((item) => {
-            // eslint-disable-next-line no-param-reassign
             item.path = parent ? [...parent.path, item.bk_inst_name] : [item.bk_inst_name]
             if (item.bk_obj_id === 'module' && ids.includes(`module_${item.bk_inst_id}`)) {
               modules.push(item)

@@ -5,6 +5,7 @@ import RequestQueue from './_request-queue'
 // eslint-disable-next-line
 import { $error, $warn } from '@/magicbox'
 import i18n, { language } from '@/i18n'
+import has from 'has'
 
 // axios实例
 const axiosInstance = Axios.create({
@@ -88,7 +89,9 @@ async function getPromise(method, url, data, userConfig = {}) {
     return promise
   }
   promise = new Promise((resolve, reject) => {
-    const axiosRequest = methodsWithData.includes(method) ? axiosInstance[method](url, data, config) : axiosInstance[method](url, config)
+    const axiosRequest = methodsWithData.includes(method)
+      ? axiosInstance[method](url, data, config)
+      : axiosInstance[method](url, config)
     axiosRequest.then((response) => {
       Object.assign(config, response.config)
       handleResponse({ config, response, resolve, reject })
@@ -125,9 +128,17 @@ function handleResponse({ config, response, resolve, reject }) {
   }
   if (!transformedResponse.result && config.globalError) {
     reject({ message })
-  } else {
-    resolve(config.originalResponse ? response : config.transformData ? transformedResponse.data : transformedResponse)
+    return
   }
+  if (config.originalResponse) {
+    resolve(response)
+    return
+  }
+  if (config.transformData) {
+    resolve(transformedResponse.data)
+    return
+  }
+  resolve(transformedResponse)
 }
 
 /**
@@ -162,7 +173,7 @@ function handleReject(error, config) {
     }
     config.globalError && status !== 401 && $error(nextError.message)
     return Promise.reject(nextError)
-  } else if (error.message === 'Network Error') {
+  } if (error.message === 'Network Error') {
     $error(i18n.t('资源请求失败提示'))
   } else {
     config.globalError && $error(error.message)
@@ -183,8 +194,10 @@ function popupPermissionModal(permission = []) {
  */
 
 function initConfig(method, url, userConfig) {
-  if (userConfig.hasOwnProperty('requestGroup')) {
-    userConfig.requestGroup = userConfig.requestGroup instanceof Array ? userConfig.requestGroup : [userConfig.requestGroup]
+  if (has(userConfig, 'requestGroup')) {
+    userConfig.requestGroup = userConfig.requestGroup instanceof Array
+      ? userConfig.requestGroup
+      : [userConfig.requestGroup]
   }
   const defaultConfig = {
     ...getCancelToken(),

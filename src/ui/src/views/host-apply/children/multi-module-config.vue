@@ -250,6 +250,7 @@
             additionalRules.push({
               bk_attribute_id: property.id,
               bk_module_id: moduleId,
+              // eslint-disable-next-line no-underscore-dangle
               bk_property_value: property.__extra__.value
             })
           })

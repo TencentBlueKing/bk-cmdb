@@ -515,14 +515,12 @@
       },
       handleRiseGroup(index, group) {
         this.groupedProperties[index - 1].info.bk_group_index = index
-        // eslint-disable-next-line no-param-reassign
         group.info.bk_group_index = index - 1
         this.updateGroupIndex()
         this.resortGroups()
       },
       handleDropGroup(index, group) {
         this.groupedProperties[index + 1].info.bk_group_index = index
-        // eslint-disable-next-line no-param-reassign
         group.info.bk_group_index = index + 1
         this.updateGroupIndex()
         this.resortGroups()
@@ -542,12 +540,11 @@
         this.init(properties, groups)
       },
       init(properties, groups) {
-        // eslint-disable-next-line no-param-reassign
         properties = this.setPropertIndex(properties)
-        groups = this.separateBizCustomGroups(groups)
-        groups = this.setGroupIndex(groups)
+        let tempGroups = this.separateBizCustomGroups(groups)
+        tempGroups = this.setGroupIndex(tempGroups)
         const groupState = {}
-        const groupedProperties = groups.map((group) => {
+        const groupedProperties = tempGroups.map((group) => {
           groupState[group.bk_group_id] = group.is_collapse
           return {
             info: group,
@@ -697,7 +694,7 @@
               if (group.info.bk_group_id === 'none') {
                 Array.prototype.push.apply(resortedProperties, deletedProperties)
               }
-              resortedProperties.sort((propertyA, propertyB) => propertyA.bk_property_index - propertyB.bk_property_index)
+              resortedProperties.sort((A, B) => A.bk_property_index - B.bk_property_index)
               group.properties = resortedProperties
             }
           })
@@ -949,7 +946,7 @@
       handleSliderBeforeClose() {
         const hasChanged = Object.keys(this.$refs.fieldForm.changedValues).length
         if (hasChanged) {
-          return new Promise((resolve, reject) => {
+          return new Promise((resolve) => {
             this.$bkInfo({
               title: this.$t('确认退出'),
               subTitle: this.$t('退出会导致未保存信息丢失'),

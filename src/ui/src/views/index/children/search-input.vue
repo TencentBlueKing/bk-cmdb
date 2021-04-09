@@ -360,11 +360,9 @@
         return res
       },
       getFullTextSearch(wait = 600) {
-        // eslint-disable-next-line no-underscore-dangle
-        let _resolve = null
-        const _promise = new Promise((resolve) => {
-          // eslint-disable-next-line no-underscore-dangle
-          _resolve = resolve
+        let resolver = null
+        const promise = new Promise((resolve) => {
+          resolver = resolve
         })
         if (this.debounceTimer) {
           clearTimeout(this.debounceTimer)
@@ -412,9 +410,9 @@
             console.error(e)
             this.searching = false
           }
-          _resolve && _resolve()
+          resolver && resolver()
         }, wait)
-        return _promise
+        return promise
       },
       handleHideLenovo() {
         this.showHistory = false

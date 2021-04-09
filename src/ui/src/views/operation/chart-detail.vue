@@ -355,7 +355,6 @@
       delKeys(obj, keys) {
         // eslint-disable-next-line array-callback-return
         keys.map((key) => {
-          // eslint-disable-next-line no-param-reassign
           delete obj[key]
         })
         return obj

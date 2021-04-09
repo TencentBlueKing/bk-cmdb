@@ -66,7 +66,8 @@
       @page-limit-change="handleSizeChange"
       @page-change="handlePageChange"
       @sort-change="handleSortChange">
-      <bk-table-column prop="id" label="ID" class-name="is-highlight" show-overflow-tooltip sortable="custom"></bk-table-column>
+      <bk-table-column prop="id" label="ID" class-name="is-highlight" show-overflow-tooltip sortable="custom">
+      </bk-table-column>
       <bk-table-column prop="name" :label="$t('模板名称')" show-overflow-tooltip sortable="custom"></bk-table-column>
       <bk-table-column prop="service_category" :label="$t('服务分类')" show-overflow-tooltip></bk-table-column>
       <bk-table-column prop="process_template_count" :label="$t('进程数量')">
@@ -179,9 +180,10 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       params() {
+        const maincategoryId = this.maincategoryId ? this.maincategoryId : 0
         const id = this.categoryId
           ? this.categoryId
-          : this.maincategoryId ? this.maincategoryId : 0
+          : maincategoryId
         return {
           bk_biz_id: this.bizId,
           service_category_id: id,
@@ -211,7 +213,7 @@
     methods: {
       ...mapActions('serviceTemplate', ['searchServiceTemplate', 'deleteServiceTemplate']),
       ...mapActions('serviceClassification', ['searchServiceCategoryWithoutAmout']),
-      async getTableData(event) {
+      async getTableData() {
         try {
           const templateData = await this.getTemplateData()
           if (templateData.count && !templateData.info.length) {
@@ -220,11 +222,11 @@
           }
           this.table.pagination.count = templateData.count
           this.table.list = templateData.info.map((template) => {
-            const secondaryCategory = this.allSecondaryList.find(classification => classification.id === template.service_category_id)
-            const mainCategory = this.mainList.find(classification => secondaryCategory && classification.id === secondaryCategory.bk_parent_id)
-            const secondaryCategoryName = secondaryCategory ? secondaryCategory.name : '--'
+            const second = this.allSecondaryList.find(clazz => clazz.id === template.service_category_id)
+            const mainCategory = this.mainList.find(clazz => second && clazz.id === second.bk_parent_id)
+            const secondName = second ? second.name : '--'
             const mainCategoryName = mainCategory ? mainCategory.name : '--'
-            template.service_category = `${mainCategoryName} / ${secondaryCategoryName}`
+            template.service_category = `${mainCategoryName} / ${secondName}`
             return template
           })
           this.table.stuff.type = this.hasFilter ? 'search' : 'default'

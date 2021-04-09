@@ -69,7 +69,7 @@
         Bus.$emit('toggle-host-filter', false)
         Bus.$emit('reset-host-filter')
         RouterQuery.set({
-          scope: isNaN(tab) ? tab : parseInt(tab),
+          scope: isNaN(tab) ? tab : parseInt(tab, 10),
           ip: '',
           bk_asset_id: '',
           page: 1,

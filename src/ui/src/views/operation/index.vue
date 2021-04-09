@@ -179,7 +179,6 @@
 </template>
 
 <script>
-  /* eslint-disable no-param-reassign */
   import moment from 'moment'
   import {
     MENU_RESOURCE_BUSINESS,
@@ -476,9 +475,9 @@
         }
         if (item.report_type === 'host_change_biz_chart') {
           if (this.dateRange.length !== 0) {
-            // eslint-disable-next-line prefer-destructuring, no-param-reassign
+            // eslint-disable-next-line prefer-destructuring
             item.data.minTime = this.dateRange[0]
-            // eslint-disable-next-line prefer-destructuring, no-param-reassign
+            // eslint-disable-next-line prefer-destructuring
             item.data.maxTime = this.dateRange[1]
           } else {
             this.dateRange = [item.data.minTime, item.data.maxTime]
@@ -573,11 +572,11 @@
           }
           Plotly.restyle(myDiv, update, [tn])
         } else {
-          // eslint-disable-next-line prefer-destructuring, no-param-reassign
+          // eslint-disable-next-line prefer-destructuring
           data.points[0].data.marker.color[pn] = color[0]
-          // eslint-disable-next-line prefer-destructuring, no-param-reassign
+          // eslint-disable-next-line prefer-destructuring
           data.points[1].data.marker.color[pn] = color[1]
-          // eslint-disable-next-line prefer-destructuring, no-param-reassign
+          // eslint-disable-next-line prefer-destructuring
           data.points[2].data.marker.color[pn] = color[2]
           const update = {
             data: {
@@ -592,9 +591,11 @@
       },
       moveChart(type, dire, key, list) {
         if (dire === 'up' && key !== 0) {
-          list[key] = list.splice(key - 1, 1, list[key])[0]
+          const [target] = list.splice(key - 1, 1, list[key])
+          list[key] = target
         } else if (dire === 'down' && key !== list.length - 1) {
-          list[key + 1] = list.splice(key, 1, list[key + 1])[0]
+          const [target] = list.splice(key, 1, list[key + 1])
+          list[key + 1] = target
         }
         if (type === 'host') this.hostData.disList = list
         else this.instData.disList = list

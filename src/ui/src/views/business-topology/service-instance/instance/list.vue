@@ -51,6 +51,7 @@
   import RouterQuery from '@/router/query'
   import Bus from '../common/bus'
   import LabelBatchDialog from './dialog/label-batch-dialog.js'
+  import has from 'has'
   export default {
     components: {
       ListCellName,
@@ -188,12 +189,10 @@
       },
       handleExpandAllChange(expanded) {
         this.list.forEach((row) => {
-          // eslint-disable-next-line no-param-reassign
           row.process_count && this.$refs.instanceTable.toggleRowExpansion(row, expanded)
         })
       },
       async handleExpandChange(row, expandedRows) {
-        // eslint-disable-next-line no-param-reassign
         row.pending = expandedRows.includes(row)
       },
       handleSelectionChange(selection) {
@@ -204,7 +203,6 @@
         this.$refs.instanceTable.toggleRowExpansion(row)
       },
       handleExpandResolved(row, list) {
-        // eslint-disable-next-line no-param-reassign
         row.pending = false
         this.handleRefreshCount(row, list.length)
         if (!row.process_count) {
@@ -212,11 +210,9 @@
         }
       },
       handleRefreshCount(row, newCount) {
-        // eslint-disable-next-line no-param-reassign
         row.process_count = newCount
       },
       handleUpdateLabels(row, labels) {
-        // eslint-disable-next-line no-param-reassign
         row.labels = labels
         Bus.$emit('update-labels')
       },
@@ -233,17 +229,13 @@
       },
       handleEditName(row) {
         this.list.forEach(row => (row.editing.name = false))
-        // eslint-disable-next-line no-param-reassign
         row.editing.name = true
       },
       handleEditNameSuccess(row, value) {
-        // eslint-disable-next-line no-param-reassign
         row.name = value
-        // eslint-disable-next-line no-param-reassign
         row.editing.name = false
       },
       handleCancelEditName(row) {
-        // eslint-disable-next-line no-param-reassign
         row.editing.name = false
       }
     }

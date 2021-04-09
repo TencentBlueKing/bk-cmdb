@@ -105,7 +105,7 @@
       }
     },
     methods: {
-      isLocked({ row, column, index }) {
+      isLocked({ column, index }) {
         return this.lockStates[index][column.property]
       },
       setLockState(rowProps) {

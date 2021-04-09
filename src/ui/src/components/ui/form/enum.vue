@@ -96,9 +96,9 @@
       getDefaultValue() {
         if (this.autoSelect) {
           const defaultOption = this.options.find(option => option.is_default)
-          return defaultOption
-            ? this.multiple ? [defaultOption.id] : defaultOption.id
-            : ''
+          if (!defaultOption) return ''
+          if (this.multiple) return [defaultOption.id]
+          return defaultOption.id
         }
         return this.multiple ? [] : ''
       },

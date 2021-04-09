@@ -361,14 +361,10 @@
             }
           })
         ]).then(([dataAsSource, dataAsTarget, mainLineModels]) => {
-          // eslint-disable-next-line no-param-reassign
           dataAsSource = dataAsSource || []
-          // eslint-disable-next-line no-param-reassign
           dataAsTarget = dataAsTarget || []
           mainLineModels = mainLineModels.filter(model => !['biz', 'host'].includes(model.bk_obj_id))
-          // eslint-disable-next-line no-param-reassign
           dataAsSource = this.getAvailableAssociation(dataAsSource, mainLineModels)
-          // eslint-disable-next-line no-param-reassign
           dataAsTarget = this.getAvailableAssociation(dataAsTarget, mainLineModels)
           this.associationObject = [...dataAsSource, ...dataAsTarget]
         })
@@ -396,6 +392,7 @@
         // eslint-disable-next-line no-underscore-dangle
         const allLabel = options.map(option => option._label)
         const uniqueLabel = [...new Set(allLabel)]
+        // eslint-disable-next-line no-underscore-dangle
         this.options = uniqueLabel.map(label => options.find(option => option._label === label))
       },
       async handleSelectObj(asstId, option) {
@@ -614,11 +611,9 @@
         // const properties = this.properties
         this.table.pagination.count = data.count
         if (asstObjId === 'host') {
-          // eslint-disable-next-line no-param-reassign
           data.info = data.info.map(item => item.host)
         }
         if (asstObjId === this.objId) {
-          // eslint-disable-next-line no-param-reassign
           data.info = data.info.filter(item => item[this.instanceIdKey] !== this.instId)
         }
         this.table.list = data.info

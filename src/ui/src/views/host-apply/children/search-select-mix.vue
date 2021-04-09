@@ -44,7 +44,6 @@
         this.searchOptions.forEach((option) => {
           // eslint-disable-next-line max-len
           const selected = searchValue.some(value => value.id === option.id && value.name === option.name && value.type === option.type)
-          // eslint-disable-next-line no-param-reassign
           option.disabled = selected
         })
         this.handleSearch()

@@ -45,7 +45,10 @@
         <cmdb-table-empty slot="empty" :stuff="table.stuff">
           <div>
             <i18n path="空服务模板实例提示" tag="div">
-              <bk-button style="font-size: 14px;" text @click="handleToCreatedInstance" place="link">{{$t('创建服务实例')}}</bk-button>
+              <bk-button style="font-size: 14px;" text place="link"
+                @click="handleToCreatedInstance">
+                {{$t('创建服务实例')}}
+              </bk-button>
             </i18n>
           </div>
         </cmdb-table-empty>
@@ -118,7 +121,7 @@
             this.table.syncStatus = syncStatus
             data.info.forEach((module) => {
               const topo = topoPath.nodes.find(topo => topo.topo_node.bk_inst_id === module.bk_module_id)
-              // eslint-disable-next-line no-underscore-dangle, no-param-reassign
+              // eslint-disable-next-line no-underscore-dangle
               module._path_ = topo.topo_path.map(path => path.bk_inst_name).reverse()
                 .join(' / ')
             })

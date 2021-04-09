@@ -95,6 +95,7 @@
   import propertyConfirmTable from '@/components/host-apply/property-confirm-table'
   import { mapGetters } from 'vuex'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
+  import has from 'has'
   export default {
     name: 'create-service-instance',
     components: {
@@ -175,7 +176,6 @@
     watch: {
       activeTab(tab) {
         if (!tab) return
-        // eslint-disable-next-line no-param-reassign
         tab.confirmed = true
       }
     },
@@ -318,15 +318,12 @@
               value[key].forEach((row) => {
                 Object.keys(row).forEach((field) => {
                   if (field === 'ip') {
-                    // eslint-disable-next-line no-param-reassign
                     row[field] = this.getBindIp(instance, row)
                   } else if (field === 'row_id') {
                     // 实例数据中使用 template_row_id
-                    // eslint-disable-next-line no-param-reassign
                     row.template_row_id = row[field]
                     delete row[field]
                   } else if (row[field] !== null && typeof row[field] === 'object') {
-                    // eslint-disable-next-line no-param-reassign
                     row[field] = row[field].value
                   }
                 })
@@ -344,7 +341,7 @@
           1: '127.0.0.1',
           2: '0.0.0.0'
         }
-        if (mapping.hasOwnProperty(ipValue)) {
+        if (has(mapping, ipValue)) {
           return mapping[ipValue]
         }
         const { host } = this.hosts.find(data => data.host.bk_host_id === instance.bk_host_id)
@@ -458,6 +455,7 @@
             conflictResolvers.push({
               bk_host_id: Number(key),
               bk_attribute_id: property.id,
+              // eslint-disable-next-line no-underscore-dangle
               bk_property_value: property.__extra__.value
             })
           })
@@ -466,17 +464,13 @@
       },
       handleEditName(instance) {
         this.instances.forEach(instance => (instance.editing.name = false))
-        // eslint-disable-next-line no-param-reassign
         instance.editing.name = true
       },
       handleConfirmEditName(instance, name) {
-        // eslint-disable-next-line no-param-reassign
         instance.name = name
-        // eslint-disable-next-line no-param-reassign
         instance.editing.name = false
       },
       handleCancelEditName(instance) {
-        // eslint-disable-next-line no-param-reassign
         instance.editing.name = false
       },
       handleBackToModule() {

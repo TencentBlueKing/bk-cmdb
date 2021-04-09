@@ -31,6 +31,7 @@
 
 <script>
   import FormOperatorSelector from '@/components/filters/operator-selector.vue'
+  import has from 'has'
   export default {
     components: {
       FormOperatorSelector
@@ -109,9 +110,8 @@
         Object.values(this.condition).forEach((condition) => {
           const modelId = condition.property.bk_obj_id
           const propertyId = condition.property.bk_property_id
-          // eslint-disable-next-line max-len, no-param-reassign
+          // eslint-disable-next-line max-len
           const detailsCondition = this.details.info.condition.find(detailsCondition => detailsCondition.bk_obj_id === modelId)
-          // eslint-disable-next-line no-param-reassign
           const detailsFieldData = detailsCondition.condition.find(data => data.field === propertyId)
           condition.operator = detailsFieldData.operator
           condition.value = detailsFieldData.value

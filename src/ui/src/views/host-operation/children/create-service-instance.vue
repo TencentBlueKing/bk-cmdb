@@ -200,19 +200,14 @@
         this.processChangeState[key] = state
       },
       handleEditName(instance) {
-        // eslint-disable-next-line no-param-reassign
         this.instances.forEach(instance => (instance.editing.name = false))
-        // eslint-disable-next-line no-param-reassign
         instance.editing.name = true
       },
       handleConfirmEditName(instance, name) {
-        // eslint-disable-next-line no-param-reassign
         instance.name = name
-        // eslint-disable-next-line no-param-reassign
         instance.editing.name = false
       },
       handleCancelEditName(instance) {
-        // eslint-disable-next-line no-param-reassign
         instance.editing.name = false
       }
     }

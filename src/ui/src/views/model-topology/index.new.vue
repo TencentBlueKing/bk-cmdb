@@ -240,7 +240,6 @@
       },
       localClassifications() {
         return this.$tools.clone(this.classifications).map((classify) => {
-          // eslint-disable-next-line no-param-reassign
           classify.bk_objects = classify.bk_objects.filter(model => !model.bk_ishidden && !model.bk_ispaused)
           return classify
         })
@@ -635,7 +634,7 @@
             }
             this.showSlider('theRelationDetail')
           })
-          .on('ehcomplete', (event, sourceNode, targetNode, addedEles) => {
+          .on('ehcomplete', (event, sourceNode, targetNode) => {
             this.slider.properties = {
               fromObjId: sourceNode.data('id'),
               toObjId: targetNode.data('id'),
@@ -810,7 +809,7 @@
 
         // 3. 摆放无位置节点
         const nodeCollection = cy.collection()
-        this.noPositionModels.forEach((model, i) => {
+        this.noPositionModels.forEach((model) => {
           const node = cy.nodes(`#${model.bk_obj_id}`)
           nodeCollection.merge(node)
         })
@@ -1004,7 +1003,7 @@
           eh.enable()
         } else {
           eh = cy.edgehandles({
-            loopAllowed(node) {
+            loopAllowed() {
               return true
             },
             edgeParams() {

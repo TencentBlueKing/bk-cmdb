@@ -168,7 +168,7 @@
   import FilterStore from '@/components/filters/store'
   import ExportFields from '@/components/export-fields/export-fields.js'
   import FilterUtils from '@/components/filters/utils'
-  import BatchExport from '@/components/batch-export/index.js'
+  import batchExport from '@/components/batch-export/index.js'
   export default {
     components: {
       FilterCollection,
@@ -338,7 +338,7 @@
         })
       },
       batchExportHandler(properties) {
-        BatchExport({
+        batchExport({
           name: 'host',
           count: this.count,
           options: (page) => {

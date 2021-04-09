@@ -111,7 +111,7 @@
       hanldeFilterProperty() {
         // 使用visible方式是为了兼容checkbox-group组件
         this.propertyList.forEach((property) => {
-          // eslint-disable-next-line no-underscore-dangle, no-param-reassign
+          // eslint-disable-next-line no-underscore-dangle
           property.__extra__.visible = property.bk_property_name.indexOf(this.searchName) > -1
         })
         this.propertyList = [...this.propertyList]

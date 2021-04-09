@@ -274,12 +274,10 @@
       availableTabList(tabList) {
         tabList.forEach((tab) => {
           if (tab !== this.activeTab) {
-            // eslint-disable-next-line no-param-reassign
             tab.confirmed = false
           }
         })
         const hasActiveTab = tabList.find(tab => tab === this.activeTab)
-        // eslint-disable-next-line no-param-reassign
         if (!hasActiveTab) this.tab.active = null
       },
       activeTab(tab) {

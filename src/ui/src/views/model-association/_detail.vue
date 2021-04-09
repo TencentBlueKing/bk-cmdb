@@ -93,7 +93,8 @@
     <slot name="operation">
       <div class="btn-group">
         <bk-button theme="primary"
-          :disabled="isReadOnly || isEdit && relation.ispre" :loading="$loading(['updateAssociationType', 'createAssociationType'])"
+          :disabled="isReadOnly || isEdit && relation.ispre"
+          :loading="$loading(['updateAssociationType', 'createAssociationType'])"
           @click="saveRelation">
           {{saveBtnText || $t('确定')}}
         </bk-button>

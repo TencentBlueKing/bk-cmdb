@@ -21,6 +21,7 @@ const Component = Vue.extend({
       this.$destroy()
     }
   },
+  // eslint-disable-next-line no-unused-vars
   render(h) {
     return (<dynamic-group-form ref="form" { ...{ props: this.$options.attrs }} on-close={ this.handleClose }></dynamic-group-form>)
   }

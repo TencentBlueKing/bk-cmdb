@@ -11,7 +11,10 @@
     </div>
     <div class="category-list">
       <div class="category-item bgc-white" v-for="(mainCategory, index) in displayList" :key="index">
-        <div class="category-title" :style="{ 'background-color': editMainStatus === mainCategory['id'] ? '#f0f1f5' : '' }">
+        <div class="category-title"
+          :style="{
+            'background-color': editMainStatus === mainCategory['id'] ? '#f0f1f5' : ''
+          }">
           <div class="main-edit"
             :style="{ width: editMainStatus === mainCategory['id'] ? '100%' : 'auto' }"
             v-if="editMainStatus === mainCategory['id']">
@@ -129,7 +132,8 @@
           </div>
           <div class="child-item is-add" v-if="!mainCategory['is_built_in'] && !addChildStatus">
             <div class="child-title">
-              <cmdb-auth @update-auth="isAuthcompleted = true" :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }">
+              <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }"
+                @update-auth="isAuthcompleted = true">
                 <bk-button slot-scope="{ disabled }"
                   class="add-btn"
                   :disabled="disabled"
@@ -184,7 +188,10 @@
           </bk-button>
         </cmdb-auth>
       </div>
-      <bk-exception v-show="!displayList.length && !$loading(Object.values(request))" type="search-empty" scene="part"></bk-exception>
+      <bk-exception v-show="!displayList.length && !$loading(Object.values(request))"
+        type="search-empty"
+        scene="part">
+      </bk-exception>
     </div>
   </div>
 </template>
@@ -193,6 +200,7 @@
   import { mapActions, mapGetters } from 'vuex'
   import debounce from 'lodash.debounce'
   import categoryInput from './children/category-input'
+  import has from 'has'
   export default {
     components: {
       categoryInput
@@ -270,7 +278,9 @@
             if (reg.test(mainCategory.name) || reg.test(mainCategory.id)) {
               return true
             }
-            return mainCategory.child_category_list.findIndex(subCategory => reg.test(subCategory.name) || reg.test(subCategory.id)) !== -1
+            const childList = mainCategory.child_category_list
+            const index = childList.findIndex(category => reg.test(category.name) || reg.test(category.id))
+            return index !== -1
           })
         } else {
           this.displayList = this.list
@@ -292,7 +302,7 @@
             let markIndex = null
             const currentObj = this.list.find((category, index) => {
               markIndex = index
-              return category.hasOwnProperty('bk_root_id') && category.bk_root_id === rootId
+              return has(category, 'bk_root_id') && category.bk_root_id === rootId
             })
             const childList = currentObj ? currentObj.child_category_list : []
             childList.push(res)

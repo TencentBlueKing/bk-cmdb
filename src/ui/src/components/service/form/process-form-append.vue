@@ -46,7 +46,6 @@
       hackRadius() {
         const hackDOM = this.$el.parentElement.querySelectorAll('.bk-form-input,.bk-form-textarea,.bk-textarea-wrapper,.bk-select')
         Array.prototype.forEach.call(hackDOM, (dom) => {
-          /* eslint-disable no-param-reassign */
           dom.style.borderTopRightRadius = 0
           dom.style.borderBottomRightRadius = 0
         })

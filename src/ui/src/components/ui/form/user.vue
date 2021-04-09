@@ -59,12 +59,13 @@
       setupFastSelect() {
         if (!this.fastSelect) return
         const FastSelect = new Vue({
+          // eslint-disable-next-line no-unused-vars
           render: h => (
-                            <span class="fast-select"
-                                on-click={ this.handleFastSelect }>
-                                { this.$i18n.locale === 'en' ? 'me' : '我' }
-                            </span>
-                        )
+            <span class="fast-select"
+                on-click={ this.handleFastSelect }>
+                { this.$i18n.locale === 'en' ? 'me' : '我' }
+            </span>
+          )
         })
         FastSelect.$mount()
         // eslint-disable-next-line no-underscore-dangle

@@ -305,7 +305,6 @@
           },
           config
         }).then((data) => {
-          // eslint-disable-next-line no-param-reassign
           data = data || {
             count: 0,
             info: []

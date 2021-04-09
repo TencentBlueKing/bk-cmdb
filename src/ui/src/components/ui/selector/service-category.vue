@@ -112,6 +112,7 @@
           }
         })
         categories.forEach((category) => {
+          // eslint-disable-next-line max-len
           category.secondCategory = data.filter(item => item.category.bk_parent_id === category.id).map(item => item.category)
         })
         return categories

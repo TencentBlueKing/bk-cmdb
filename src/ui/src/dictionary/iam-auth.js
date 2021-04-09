@@ -1133,7 +1133,6 @@ Object.keys(IAM_ACTIONS).forEach(key => (OPERATION[key] = key))
 export function TRANSFORM_TO_INTERNAL(authList) {
   try {
     // 类似导入的鉴权，需要新增、编辑两种权限，统一转成数组处理
-    // eslint-disable-next-line no-param-reassign
     authList = Array.isArray(authList) ? authList : [authList]
     const internalAuthList = []
     authList.forEach((auth) => {

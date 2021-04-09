@@ -385,7 +385,6 @@
         }
       },
       toggleEventList(classify) {
-        // eslint-disable-next-line no-param-reassign
         classify.isHidden = !classify.isHidden
       },
       eventHeight(len) {
@@ -448,7 +447,7 @@
         if (this.type === 'edit') {
           const subscriptionForm = {}
           // eslint-disable-next-line no-case-declarations
-          this.curPush.subscription_form.map((item) => {
+          this.curPush.subscription_form.forEach((item) => {
             switch (item) {
               case 'hostcreate':
                 if (has(subscriptionForm, 'resource')) {
@@ -478,13 +477,14 @@
                   subscriptionForm.host = ['moduletransfer']
                 }
                 break
-              default:
+              default: {
                 const key = item.substr(0, item.length - 6)
                 if (has(subscriptionForm, key)) {
                   subscriptionForm[key].push(item)
                 } else {
                   subscriptionForm[key] = [item]
                 }
+              }
             }
           })
           this.tempEventData = {

@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars, no-param-reassign */
-
+/* eslint-disable no-unused-vars */
 import Vue from 'vue'
 const state = {
   propertyMap: {},

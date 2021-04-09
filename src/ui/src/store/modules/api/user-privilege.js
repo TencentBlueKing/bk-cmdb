@@ -8,8 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-unused-vars, no-param-reassign */
-
+/* eslint-disable no-unused-vars */
 import has from 'has'
 import $http from '@/api'
 

@@ -138,7 +138,7 @@
           this.table.pagination.limit = parseInt(limit, 10)
           this.table.sort = sort
           this.directory = parseInt(directory, 10) || null
-          this.scope = isNaN(scope) ? 'all' : parseInt(scope)
+          this.scope = isNaN(scope) ? 'all' : parseInt(scope, 10)
           this.getHostList()
         }, { throttle: 100 })
         this.unwatchScopeAndDirectory = RouterQuery.watch(['scope', 'directory'], FilterStore.resetAll)
@@ -328,7 +328,7 @@
       },
       // 拓扑路径写入数据中，用于复制
       handlePathReady(row, paths) {
-        // eslint-disable-next-line no-underscore-dangle, no-param-reassign
+        // eslint-disable-next-line no-underscore-dangle
         row.__bk_host_topology__ = paths
       },
       handleHeaderClick(column) {

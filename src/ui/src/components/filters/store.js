@@ -83,11 +83,9 @@ const FilterStore = new Vue({
       return Utils.getUniqueProperties(fixedProperties, headerProperties).slice(0, 6)
     },
     defaultHeader() {
-      return this.customHeader.length
-        ? this.customHeader
-        : this.globalHeader.length
-          ? this.globalHeader
-          : this.presetHeader
+      if (this.customHeader.length) return this.customHeader
+      if (this.globalHeader.length) return this.globalHeader
+      return this.presetHeader
     },
     modelPropertyMap() {
       const map = {}
@@ -256,11 +254,11 @@ const FilterStore = new Vue({
       })
     },
     setHeader(newHeader) {
-      newHeader = newHeader.length ? newHeader : this.defaultHeader
+      const header = newHeader.length ? newHeader : this.defaultHeader
       const presetId = ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
       // eslint-disable-next-line max-len
       const presetProperty = presetId.map(propertyId => this.properties.find(property => property.bk_property_id === propertyId))
-      this.header = Utils.getUniqueProperties(presetProperty, newHeader)
+      this.header = Utils.getUniqueProperties(presetProperty, header)
     },
     setActiveCollection(collection, silent) {
       if (!collection) {

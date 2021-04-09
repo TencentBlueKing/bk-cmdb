@@ -186,7 +186,8 @@
           this.localSelected = this.templates.map(template => template.id)
         } else {
           if (this.isEditMode) {
-            this.localSelected = this.templates.filter(template => serviceExistHost(template.id)).map(template => template.id)
+            const selectedTemplate = this.templates.filter(template => serviceExistHost(template.id))
+            this.localSelected = selectedTemplate.map(template => template.id)
           } else {
             this.localSelected = []
           }
@@ -219,9 +220,7 @@
       },
       setProcessInfo(data = [], event) {
         this.processInfo.processes = data.map((process) => {
-          const port = process.property
-            ? process.property.port ? process.property.port.value : ''
-            : ''
+          const port = this.$tools.getValue(process, 'property.port.value') || ''
           return `${process.bk_process_name}${port ? `:${port}` : ''}`
         })
         const subCagetory = this.cagetory.find(item => item.id === this.curTemplate.service_category_id) || {}

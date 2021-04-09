@@ -228,7 +228,6 @@
         this.setTableList()
       },
       async handleShowDetails(row) {
-        /* eslint-disable no-param-reassign */
         this.currentRow = row
         this.slider.title = `${this.$t('属性详情')}【${row.expect_host.bk_host_innerip}】`
         this.slider.content = 'detail'

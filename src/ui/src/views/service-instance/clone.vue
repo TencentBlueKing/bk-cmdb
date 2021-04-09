@@ -52,22 +52,23 @@
         return this.$store.getters['objectBiz/bizId']
       },
       setId() {
-        return parseInt(this.$route.params.setId)
+        return parseInt(this.$route.params.setId, 10)
       },
       moduleId() {
-        return parseInt(this.$route.params.moduleId)
+        return parseInt(this.$route.params.moduleId, 10)
       },
       instanceId() {
-        return parseInt(this.$route.params.instanceId)
+        return parseInt(this.$route.params.instanceId, 10)
       }
     },
     async created() {
       try {
-        const [module, processes] = await Promise.all([
+        const [{ info }, processes] = await Promise.all([
           this.getModuleInstance(),
           this.getServiceInstanceProcesses()
         ])
-        this.module = module.info[0]
+        const [module] = info
+        this.module = module
         this.processes = processes.map(instance => instance.property)
       } catch (e) {
         console.error(e)

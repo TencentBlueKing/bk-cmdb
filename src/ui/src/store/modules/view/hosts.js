@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars, no-param-reassign */
-
+/* eslint-disable no-unused-vars */
 function getDefaultCondition() {
   return ['biz', 'set', 'module', 'host', 'object'].map(modelId => ({
     bk_obj_id: modelId,

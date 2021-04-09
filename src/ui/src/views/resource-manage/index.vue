@@ -117,7 +117,8 @@
     methods: {
       filterModel() {
         if (this.filter) {
-          this.matchedModels = this.models.filter(model => model.bk_obj_name.indexOf(this.filter) > -1).map(model => model.bk_obj_id)
+          const models = this.models.filter(model => model.bk_obj_name.indexOf(this.filter) > -1)
+          this.matchedModels = models.map(model => model.bk_obj_id)
         } else {
           this.matchedModels = null
         }
@@ -140,7 +141,7 @@
         // 46px 分类高度
         // 16px 模型列表padding
         // 36 模型高度
-        return 46 + 16 + classify.bk_objects.length * 36
+        return 46 + 16 + (classify.bk_objects.length * 36)
       }
     }
   }

@@ -208,9 +208,7 @@
           }
           // eslint-disable-next-line array-callback-return
           res.info.map((item) => {
-            // eslint-disable-next-line no-param-reassign
             item.subscription_form = item.subscription_form.split(',')
-            // eslint-disable-next-line no-param-reassign
             item.last_time = formatTime(item.last_time)
           })
           this.table.list = res.info

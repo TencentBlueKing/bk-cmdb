@@ -1,9 +1,7 @@
-/* eslint-disable no-unused-vars, no-param-reassign */
-
 import { language } from '@/i18n'
 import $http from '@/api'
 import { Base64 } from 'js-base64'
-
+/* eslint-disable no-unused-vars */
 const state = {
   config: {
     site: {},

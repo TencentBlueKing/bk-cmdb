@@ -11,7 +11,7 @@
     "start": "npm run dev",
     "lint": "eslint --ext .js,.vue ./src",
     "lint-output": "eslint --ext .js,.vue --output-file ./eslint.html --format html ./src",
-    "lint-fix": "eslint --fix --fix-type layout --ext .js,.vue ./src",
+    "lint-fix": "eslint --fix --ext .js,.vue ./src",
     "build": "node build/build.js",
     "sync-magicbox": "node build/sync-magicbox.js"
   },

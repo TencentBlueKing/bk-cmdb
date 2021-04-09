@@ -1,5 +1,6 @@
 <template>
-  <cmdb-sticky-layout class="sync-set-layout" ref="instancesInfo" v-bkloading="{ isLoading: $loading('diffTemplateAndInstances') }">
+  <cmdb-sticky-layout class="sync-set-layout" ref="instancesInfo"
+    v-bkloading="{ isLoading: $loading('diffTemplateAndInstances') }">
     <template v-if="noInfo">
       <div class="no-content">
         <img src="../../assets/images/no-content.png" alt="no-content">

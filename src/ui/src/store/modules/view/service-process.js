@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars, no-param-reassign */
-
 const state = {
   localProcessTemplate: []
 }
@@ -19,7 +17,7 @@ const mutations = {
   updateLocalProcessTemplate(state, { process, index }) {
     state.localProcessTemplate.splice(index, 1, process)
   },
-  deleteLocalProcessTemplate(state, { process, index }) {
+  deleteLocalProcessTemplate(state, { index }) {
     state.localProcessTemplate.splice(index, 1)
   },
   clearLocalProcessTemplate(state) {
