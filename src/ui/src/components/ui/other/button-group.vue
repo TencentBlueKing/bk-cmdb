@@ -72,6 +72,7 @@
 </template>
 
 <script>
+  import has from 'has'
   export default {
     props: {
       buttons: {
@@ -92,7 +93,7 @@
     computed: {
       available() {
         return this.buttons.filter((button) => {
-          if (button.hasOwnProperty('available')) {
+          if (has(button, 'available')) {
             return button.available
           }
           return true

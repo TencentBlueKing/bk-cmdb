@@ -36,6 +36,7 @@
       ]),
       curIconList() {
         if (this.filterIcon) {
+          // eslint-disable-next-line max-len
           return this.iconList.filter(icon => icon.nameZh.toLowerCase().indexOf(this.filterIcon.toLowerCase()) > -1 || icon.nameEn.toLowerCase().indexOf(this.filterIcon.toLowerCase()) > -1)
         }
         return this.iconList

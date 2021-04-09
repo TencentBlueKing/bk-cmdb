@@ -24,13 +24,19 @@
       </list-cell-name>
     </bk-table-column>
     <bk-table-column :label="$t('进程数量')" prop="process_count" width="240" :resizable="false">
-      <list-cell-count slot-scope="{ row }" :row="row" @refresh-count="handleRefreshCount"></list-cell-count>
+      <list-cell-count slot-scope="{ row }" :row="row"
+        @refresh-count="handleRefreshCount">
+      </list-cell-count>
     </bk-table-column>
     <bk-table-column :label="$t('标签')" prop="tag" min-width="150">
-      <list-cell-tag slot-scope="{ row }" :row="row" @update-labels="handleUpdateLabels(row, ...arguments)"></list-cell-tag>
+      <list-cell-tag slot-scope="{ row }" :row="row"
+        @update-labels="handleUpdateLabels(row, ...arguments)">
+      </list-cell-tag>
     </bk-table-column>
     <bk-table-column :label="$t('操作')" :min-width="$i18n.locale === 'en' ? 200 : 150">
-      <list-cell-operation slot-scope="{ row }" :row="row" @refresh-count="handleRefreshCount"></list-cell-operation>
+      <list-cell-operation slot-scope="{ row }" :row="row"
+        @refresh-count="handleRefreshCount">
+      </list-cell-operation>
     </bk-table-column>
   </bk-table>
 </template>
@@ -76,7 +82,7 @@
         const tagFilters = []
         this.filters.forEach((data) => {
           if (data.id === 'name') return
-          if (data.hasOwnProperty('condition')) {
+          if (has(data, 'condition')) {
             tagFilters.push({
               key: data.condition.id,
               operator: 'in',
@@ -108,8 +114,8 @@
         if (view !== 'instance') {
           return false
         }
-        this.pagination.page = parseInt(page)
-        this.pagination.limit = parseInt(limit)
+        this.pagination.page = parseInt(page, 10)
+        this.pagination.limit = parseInt(limit, 10)
         this.getList()
       }, { immediate: true, throttle: true })
       Bus.$on('expand-all-change', this.handleExpandAllChange)
@@ -164,7 +170,7 @@
       handlePageChange(page) {
         this.pagination.current = page
         RouterQuery.set({
-          page: page,
+          page,
           _t: Date.now()
         })
       },
@@ -172,7 +178,7 @@
         this.pagination.limit = limit
         this.pagination.page = 1
         RouterQuery.set({
-          limit: limit,
+          limit,
           page: 1,
           _t: Date.now()
         })
@@ -182,10 +188,12 @@
       },
       handleExpandAllChange(expanded) {
         this.list.forEach((row) => {
+          // eslint-disable-next-line no-param-reassign
           row.process_count && this.$refs.instanceTable.toggleRowExpansion(row, expanded)
         })
       },
       async handleExpandChange(row, expandedRows) {
+        // eslint-disable-next-line no-param-reassign
         row.pending = expandedRows.includes(row)
       },
       handleSelectionChange(selection) {
@@ -196,6 +204,7 @@
         this.$refs.instanceTable.toggleRowExpansion(row)
       },
       handleExpandResolved(row, list) {
+        // eslint-disable-next-line no-param-reassign
         row.pending = false
         this.handleRefreshCount(row, list.length)
         if (!row.process_count) {
@@ -203,9 +212,11 @@
         }
       },
       handleRefreshCount(row, newCount) {
+        // eslint-disable-next-line no-param-reassign
         row.process_count = newCount
       },
       handleUpdateLabels(row, labels) {
+        // eslint-disable-next-line no-param-reassign
         row.labels = labels
         Bus.$emit('update-labels')
       },
@@ -222,13 +233,17 @@
       },
       handleEditName(row) {
         this.list.forEach(row => (row.editing.name = false))
+        // eslint-disable-next-line no-param-reassign
         row.editing.name = true
       },
       handleEditNameSuccess(row, value) {
+        // eslint-disable-next-line no-param-reassign
         row.name = value
+        // eslint-disable-next-line no-param-reassign
         row.editing.name = false
       },
       handleCancelEditName(row) {
+        // eslint-disable-next-line no-param-reassign
         row.editing.name = false
       }
     }

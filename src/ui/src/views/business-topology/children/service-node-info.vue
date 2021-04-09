@@ -71,6 +71,7 @@
 </template>
 
 <script>
+  import has from 'has'
   import debounce from 'lodash.debounce'
   import NodeExtraInfo from './node-extra-info'
   import FormServiceCategory from './form-service-category'
@@ -123,6 +124,7 @@
       isBlueking() {
         let rootNode = this.selectedNode || {}
         if (rootNode.parent) {
+          // eslint-disable-next-line prefer-destructuring
           rootNode = rootNode.parents[0]
         }
         return rootNode.name === '蓝鲸'
@@ -227,8 +229,8 @@
       },
       async getProperties() {
         let properties = []
-        const modelId = this.modelId
-        if (this.propertyMap.hasOwnProperty(modelId)) {
+        const { modelId } = this
+        if (has(this.propertyMap, modelId)) {
           properties = this.propertyMap[modelId]
         } else {
           const action = 'objectModelProperty/searchObjectAttribute'
@@ -244,7 +246,7 @@
           })
           this.$store.commit('businessHost/setProperties', {
             id: modelId,
-            properties: properties
+            properties
           })
         }
         this.insertNodeIdProperty(properties)
@@ -252,8 +254,8 @@
       },
       async getPropertyGroups() {
         let groups = []
-        const modelId = this.modelId
-        if (this.propertyGroupMap.hasOwnProperty(modelId)) {
+        const { modelId } = this
+        if (has(this.propertyGroupMap, modelId)) {
           groups = this.propertyGroupMap[modelId]
         } else {
           const action = 'objectModelFieldGroup/searchGroup'
@@ -266,14 +268,14 @@
           })
           this.$store.commit('businessHost/setPropertyGroups', {
             id: modelId,
-            groups: groups
+            groups
           })
         }
         return Promise.resolve(groups)
       },
       async getInstance() {
         try {
-          const modelId = this.modelId
+          const { modelId } = this
           const promiseMap = {
             biz: this.getBizInstance,
             set: this.getSetInstance,
@@ -354,6 +356,7 @@
             cancelPrevious: true
           }
         })
+        // eslint-disable-next-line prefer-destructuring
         const instance = data.info[0]
         return instance
       },
@@ -456,7 +459,7 @@
             }
             try {
               await (promiseMap[this.modelId] || this.deleteCustomInstance)()
-              const tree = this.selectedNode.tree
+              const { tree } = this.selectedNode
               const parentId = this.selectedNode.parent.id
               const nodeId = this.selectedNode.id
               tree.setSelected(parentId, {
@@ -511,15 +514,13 @@
           object: 'bk_inst_id'
         }
         const conditionParams = {
-          condition: defaultModel.map((model) => {
-            return {
-              bk_obj_id: model,
-              condition: [],
-              fields: []
-            }
-          })
+          condition: defaultModel.map(model => ({
+            bk_obj_id: model,
+            condition: [],
+            fields: []
+          }))
         }
-        const selectedNode = this.selectedNode
+        const { selectedNode } = this
         const selectedModel = defaultModel.includes(selectedNode.data.bk_obj_id) ? selectedNode.data.bk_obj_id : 'object'
         const selectedModelCondition = conditionParams.condition.find(model => model.bk_obj_id === selectedModel)
         selectedModelCondition.condition.push({

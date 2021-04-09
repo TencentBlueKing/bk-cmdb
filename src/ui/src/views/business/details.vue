@@ -54,7 +54,7 @@
       ...mapGetters(['supplierAccount', 'userName']),
       ...mapGetters('objectModelClassify', ['getModelById']),
       bizId() {
-        return parseInt(this.$route.params.bizId)
+        return parseInt(this.$route.params.bizId, 10)
       },
       model() {
         return this.getModelById('biz') || {}

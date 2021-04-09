@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 import $http from '@/api'
 export default {
   namespaced: true,

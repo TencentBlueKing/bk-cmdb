@@ -128,7 +128,7 @@
     },
     methods: {
       setInitData() {
-        let value = this.value
+        let { value } = this
         if (this.autoSelect) {
           const currentOption = this.list.find(option => option[this.settingKey] === this.value)
           if (!currentOption) {

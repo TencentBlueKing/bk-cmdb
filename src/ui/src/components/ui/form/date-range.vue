@@ -46,9 +46,7 @@
     computed: {
       time: {
         get() {
-          return this.localValue.map((date) => {
-            return date ? new Date(date) : ''
-          })
+          return this.localValue.map(date => (date ? new Date(date) : ''))
         },
         set(value) {
           const localValue = value.map(date => this.$tools.formatTime(date, this.timer ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD'))

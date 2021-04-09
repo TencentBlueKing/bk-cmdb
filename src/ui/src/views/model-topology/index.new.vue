@@ -1,7 +1,9 @@
 <template>
   <div :class="['topo-wrapper', { hover: isTopoHover }]">
     <div class="toolbar">
-      <cmdb-auth style="display: none;" ref="addBusinessLevel" :auth="{ type: $OPERATION.SYSTEM_TOPOLOGY }" @update-auth="handleReceiveAuth"></cmdb-auth>
+      <cmdb-auth style="display: none;" ref="addBusinessLevel" :auth="{ type: $OPERATION.SYSTEM_TOPOLOGY }"
+        @update-auth="handleReceiveAuth">
+      </cmdb-auth>
       <template v-if="!topoEdit.isEdit">
         <cmdb-auth :auth="{ type: $OPERATION.SYSTEM_MODEL_GRAPHICS }">
           <bk-button slot-scope="{ disabled }"
@@ -44,7 +46,8 @@
 
     <ul class="topo-nav">
       <li class="group-item">
-        <div :class="['group-info', 'group-total', { 'selected': topoNav.selectedGroupId === -1 }]" @click="handleSelectGroup()">
+        <div :class="['group-info', 'group-total', { 'selected': topoNav.selectedGroupId === -1 }]"
+          @click="handleSelectGroup()">
           <span class="group-name">{{$t('全部模型')}}</span>
           <span class="model-count">{{localTopoModelList.length > 1000 ? '999+' : localTopoModelList.length}}</span>
         </div>
@@ -59,7 +62,9 @@
           }"
           @click="handleSelectGroup(group)"
         >
-          <span class="toggle-arrow" @click.stop="handleSlideGroup(group)"><i class="bk-icon icon-angle-right"></i></span>
+          <span class="toggle-arrow" @click.stop="handleSlideGroup(group)">
+            <i class="bk-icon icon-angle-right"></i>
+          </span>
           <span class="group-name" :title="group.bk_classification_name">{{group['bk_classification_name']}}</span>
           <span class="model-count">{{group['bk_objects'].length}}</span>
           <i
@@ -151,10 +156,11 @@
   import cytoscape from 'cytoscape'
   import edgehandles from 'cytoscape-edgehandles'
   import popper from 'cytoscape-popper'
+  import has from 'has'
   import theRelation from './children/create-relation'
   import theRelationDetail from './children/relation-detail'
   import theCreateModel from '@/components/model-manage/_create-model'
-  import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
+  import { generateObjIcon } from '@/utils/util'
   import { mapGetters, mapActions } from 'vuex'
   import memoize from 'lodash.memoize'
   import debounce from 'lodash.debounce'
@@ -227,16 +233,15 @@
       ]),
       noPositionModels() {
         return this.localTopoModelList.filter((model) => {
-          const position = model.position
+          const { position } = model
           const isMainNode = this.isMainNode(model)
           return position.x === null && position.y === null && !isMainNode
         })
       },
       localClassifications() {
         return this.$tools.clone(this.classifications).map((classify) => {
-          classify['bk_objects'] = classify['bk_objects'].filter((model) => {
-            return !model.bk_ishidden && !model.bk_ispaused
-          })
+          // eslint-disable-next-line no-param-reassign
+          classify.bk_objects = classify.bk_objects.filter(model => !model.bk_ishidden && !model.bk_ispaused)
           return classify
         })
       },
@@ -297,6 +302,7 @@
         }).then(res => res.info)
       },
       initNetwork() {
+        // eslint-disable-next-line no-multi-assign
         cy = window.cy = cytoscape({
           container: this.$refs.topo,
           autolock: true,
@@ -343,14 +349,14 @@
             {
               selector: 'node.model',
               style: {
-                'width': NODE_WIDTH,
-                'height': NODE_WIDTH,
+                width: NODE_WIDTH,
+                height: NODE_WIDTH,
 
                 // 设置label文本
-                'label': 'data(name)',
+                label: 'data(name)',
 
                 // label
-                'color': '#868b97',
+                color: '#868b97',
                 'text-valign': 'bottom',
                 'text-halign': 'center',
                 'font-size': '14px',
@@ -386,7 +392,7 @@
             {
               selector: 'node.model.mask',
               style: {
-                'opacity': 0.16
+                opacity: 0.16
               }
             },
 
@@ -394,18 +400,18 @@
             {
               selector: 'node.add-business-btn',
               style: {
-                'width': 20,
-                'height': 20,
-                'color': '#ffffff',
+                width: 20,
+                height: 20,
+                color: '#ffffff',
                 'text-valign': 'bottom',
                 'text-halign': 'center',
                 'font-size': '20px',
                 'text-margin-y': '-19px',
                 'font-family': 'arial',
-                'label': '+',
-                'shape': 'round-rectangle',
+                label: '+',
+                shape: 'round-rectangle',
                 'background-color': '#3c96ff',
-                'display': 'none'
+                display: 'none'
               }
             },
 
@@ -414,19 +420,19 @@
               selector: 'edge.model',
               style: {
                 'curve-style': 'bezier',
-                'label': 'data(label)',
+                label: 'data(label)',
                 'target-arrow-shape': 'triangle-backcurve',
-                'opacity': 1,
+                opacity: 1,
                 'arrow-scale': 1.5,
                 'line-color': '#c3cdd7',
                 'target-arrow-color': '#c3cdd7',
-                'width': 2,
+                width: 2,
 
                 // 点击时overlay
                 'overlay-padding': '3px',
 
                 // label
-                'color': '#979ba5',
+                color: '#979ba5',
                 'font-size': '14px',
                 'text-background-opacity': 0.7,
                 'text-background-color': '#ffffff',
@@ -458,7 +464,7 @@
             {
               selector: 'edge.model.hover',
               style: {
-                'width': 3,
+                width: 3,
                 'line-color': '#3c96ff',
                 'source-arrow-color': '#3c96ff',
                 'target-arrow-color': '#3c96ff',
@@ -468,7 +474,7 @@
             {
               selector: 'edge.model.mask',
               style: {
-                'opacity': 0.16
+                opacity: 0.16
               }
             },
 
@@ -476,7 +482,7 @@
               selector: '.edge-editing',
               style: {
                 'curve-style': 'bezier',
-                'label': 'data(label)'
+                label: 'data(label)'
               }
             },
 
@@ -485,7 +491,7 @@
               selector: '.eh-handle',
               style: {
                 // 不需要控制点
-                'display': 'none'
+                display: 'none'
               }
             },
             {
@@ -524,7 +530,7 @@
             {
               selector: '.eh-ghost-edge.eh-preview-active',
               style: {
-                'opacity': 0
+                opacity: 0
               }
             }
           ]
@@ -532,7 +538,7 @@
 
         // 所有操作的事件绑定
         cy.on('ready', (event) => {
-          const cy = event.cy
+          const { cy } = event
 
           // 初始化节点隐藏
           cy.batch(() => {
@@ -546,7 +552,7 @@
           this.fitMaxZoom(event.cy)
         })
           .on('resize', debounce((event) => {
-            const cy = event.cy
+            const { cy } = event
             cy.fit()
             this.fitMaxZoom(cy)
           }, 500))
@@ -648,10 +654,10 @@
             const node = event.target
             this.handleAddBusinessLevel(node.data('model'))
           })
-          .on('mouseover', 'node.add-business-btn', (event) => {
+          .on('mouseover', 'node.add-business-btn', () => {
             this.isTopoHover = true
           })
-          .on('mouseout', 'node.add-business-btn', (event) => {
+          .on('mouseout', 'node.add-business-btn', () => {
             this.isTopoHover = false
           })
       },
@@ -679,9 +685,9 @@
         this.loading = false
 
         // 包含分类属性的节点数据
-        const nodeObjects = this.localClassifications.reduce((acc, cur) => acc.concat(cur['bk_objects']), [])
+        const nodeObjects = this.localClassifications.reduce((acc, cur) => acc.concat(cur.bk_objects), [])
 
-        this.localTopoModelList.forEach((nodeItem, i) => {
+        this.localTopoModelList.forEach((nodeItem) => {
           // nodes，模型节点
           const nodeObjId = nodeItem.bk_obj_id
           const isMainNode = this.isMainNode(nodeItem)
@@ -713,20 +719,20 @@
 
           // edges
           if (Array.isArray(nodeItem.assts) && nodeItem.assts.length) {
-            nodeItem.assts.forEach((asstItem, asstIndex) => {
+            nodeItem.assts.forEach((asstItem) => {
               // 关联关系源数据
-              const { direction, asstName, asstId } = this.getAsstDetail(asstItem['bk_asst_inst_id'])
+              const { direction, asstName, asstId } = this.getAsstDetail(asstItem.bk_asst_inst_id)
 
               // 所关联的节点必须存在
               if (this.localTopoModelList.findIndex(({ bk_obj_id: objId }) => objId === asstItem.bk_obj_id) !== -1) {
                 elements.push({
                   data: {
-                    id: asstItem['bk_inst_id'],
+                    id: asstItem.bk_inst_id,
                     label: asstName || asstId,
                     source: nodeItem.bk_obj_id,
                     target: asstItem.bk_obj_id,
                     direction,
-                    instId: asstItem['bk_inst_id']
+                    instId: asstItem.bk_inst_id
                   },
                   group: 'edges',
                   selectable: true,
@@ -738,7 +744,7 @@
         })
 
         // nodes，添加业务层级操作按钮
-        this.mainLineModelList.forEach((model, i) => {
+        this.mainLineModelList.forEach((model) => {
           if (this.canAddBusinessLevel(model)) {
             elements.push({
               data: {
@@ -757,7 +763,7 @@
       loadNodeImage() {
         // 缓存调用结果，减少相同icon的转换开销
         const makeSvg = memoize(this.makeSvg, data => data.icon)
-        cy.nodes('.model').forEach(async (node, i) => {
+        cy.nodes('.model').forEach(async (node) => {
           const svg = await makeSvg(node.data())
           node.data('bg', svg)
           node.addClass('bg')
@@ -765,7 +771,7 @@
       },
       updateElementPostion() {
         const extent = cy.extent()
-        const isEdit = this.topoEdit.isEdit
+        const { isEdit } = this.topoEdit
 
         // 先给节点解锁
         cy.autolock(false)
@@ -778,15 +784,16 @@
 
         // 坚排并lock
         this.mainLineModelList.forEach((model, i) => {
-          cy.nodes(`#${model['bk_obj_id']}`).position({
+          cy.nodes(`#${model.bk_obj_id}`).position({
             x: centerPos.x,
+            // eslint-disable-next-line no-mixed-operators
             y: i * nodeSpace + startPosY
           })
             .lock()
         })
 
         // 2. 摆放添加业务层级按钮节点
-        cy.nodes('.add-business-btn').positions((node, i) => {
+        cy.nodes('.add-business-btn').positions((node) => {
           // 所属模型节点信息
           const modelNodeId = node.data('model').bk_obj_id
           const modelNode = cy.nodes(`#${modelNodeId}`)
@@ -804,7 +811,7 @@
         // 3. 摆放无位置节点
         const nodeCollection = cy.collection()
         this.noPositionModels.forEach((model, i) => {
-          const node = cy.nodes(`#${model['bk_obj_id']}`)
+          const node = cy.nodes(`#${model.bk_obj_id}`)
           nodeCollection.merge(node)
         })
         const collectionBoundingBox = nodeCollection.boundingBox()
@@ -830,7 +837,7 @@
         cy.autolock(!isEdit)
       },
       handleToggleGroup(group) {
-        const groupId = group['bk_classification_id']
+        const groupId = group.bk_classification_id
         const index = this.topoNav.hideGroupIds.indexOf(groupId)
         let display
         if (index !== -1) {
@@ -843,8 +850,8 @@
         this.toggleNodeByGroup(group, display)
       },
       handleToggleNode(model, group) {
-        const nodeId = model['bk_obj_id']
-        const groupId = group['bk_classification_id']
+        const nodeId = model.bk_obj_id
+        const groupId = group.bk_classification_id
 
         // 当前节点在隐藏列表中的索引
         const index = this.topoNav.hideNodeIds.indexOf(nodeId)
@@ -864,7 +871,7 @@
         }
 
         // 节点所关联的组中所有节点id
-        const nodeIds = group['bk_objects'].map(model => model['bk_obj_id'])
+        const nodeIds = group.bk_objects.map(model => model.bk_obj_id)
         const nodeCount = nodeIds.length
         const hideNodeCount = this.topoNav.hideNodeIds.filter(id => nodeIds.includes(id)).length
         const hideGroupIndex = this.topoNav.hideGroupIds.indexOf(groupId)
@@ -879,7 +886,7 @@
       },
       handleSelectGroup(group) {
         if (group) {
-          const groupId = group['bk_classification_id']
+          const groupId = group.bk_classification_id
           const groupNodes = cy.$(`node[groupId='${groupId}']`)
 
           // 通过样式降低其它节点透明度，使用batch降低开销
@@ -889,7 +896,7 @@
             .removeClass('mask')
           cy.endBatch()
 
-          this.topoNav.selectedGroupId = group['bk_classification_id']
+          this.topoNav.selectedGroupId = group.bk_classification_id
         } else {
           // 选择全部
           this.topoNav.selectedGroupId = -1
@@ -900,7 +907,7 @@
         this.topoNav.selectedNodeId = ''
       },
       handleSelectNode(model) {
-        const nodeId = model['bk_obj_id']
+        const nodeId = model.bk_obj_id
         this.topoNav.selectedNodeId = nodeId
 
         cy.startBatch()
@@ -912,8 +919,8 @@
         this.topoNav.selectedGroupId = ''
       },
       toggleNodeByGroup(group, display) {
-        const groupId = group['bk_classification_id']
-        const nodeIds = group['bk_objects'].map(model => model['bk_obj_id'])
+        const groupId = group.bk_classification_id
+        const nodeIds = group.bk_objects.map(model => model.bk_obj_id)
 
         if (display) {
           // 显示则从隐藏记录中过滤掉
@@ -929,17 +936,17 @@
           .style('visibility', visibility)
       },
       makeSvg(nodeData) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           const image = new Image()
           image.onload = () => {
             const model = this.getModelById(nodeData.id)
             const svg = {
-              unselected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
+              unselected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(generateObjIcon(image, {
                 name: nodeData.name,
                 iconColor: model.ispre ? '#798aad' : '#3c96ff',
                 backgroundColor: '#fff'
               }))}`,
-              selected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
+              selected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(generateObjIcon(image, {
                 name: nodeData.name,
                 iconColor: '#fff',
                 backgroundColor: '#3a84ff'
@@ -952,13 +959,13 @@
         })
       },
       handleRelationSave(params) {
-        const fromNode = this.localTopoModelList.find(model => model['bk_obj_id'] === params['bk_obj_id'])
-        if (!fromNode.hasOwnProperty('assts')) {
+        const fromNode = this.localTopoModelList.find(model => model.bk_obj_id === params.bk_obj_id)
+        if (!has(fromNode, 'assts')) {
           Object.assign(fromNode, { assts: [] })
         }
         fromNode.assts.push({
-          bk_asst_inst_id: this.associationList.find(asst => asst['bk_asst_id'] === params['bk_asst_id']).id,
-          bk_obj_id: params['bk_asst_obj_id'],
+          bk_asst_inst_id: this.associationList.find(asst => asst.bk_asst_id === params.bk_asst_id).id,
+          bk_obj_id: params.bk_asst_obj_id,
           bk_inst_id: params.id,
           asstInfo: params
         })
@@ -968,13 +975,13 @@
       handleRelationDetailSave(data) {
         if (data.type === 'delete') {
           this.localTopoModelList.forEach((model) => {
-            if (model.hasOwnProperty('assts')) {
+            if (has(model, 'assts')) {
               const index = model.assts.findIndex((asst) => {
-                if (asst['bk_inst_id'] !== '') {
-                  return asst['bk_inst_id'] === data.params.id
-                } else {
-                  return asst.asstInfo['bk_obj_id'] === data.params['bk_obj_id'] && asst.asstInfo['bk_asst_id'] === data.params['bk_asst_id'] && asst.asstInfo['bk_asst_obj_id'] === data.params['bk_asst_obj_id']
+                if (asst.bk_inst_id !== '') {
+                  return asst.bk_inst_id === data.params.id
                 }
+                // eslint-disable-next-line max-len
+                return asst.asstInfo.bk_obj_id === data.params.bk_obj_id && asst.asstInfo.bk_asst_id === data.params.bk_asst_id && asst.asstInfo.bk_asst_obj_id === data.params.bk_asst_obj_id
               })
               if (index > -1) {
                 model.assts.splice(index, 1)
@@ -1000,7 +1007,7 @@
             loopAllowed(node) {
               return true
             },
-            edgeParams(sourceNode, targetNode, i) {
+            edgeParams() {
               return {
                 data: {
                   label: ''
@@ -1046,7 +1053,7 @@
         cy.edges('.edge-editing').remove()
       },
       completeEditingEdge(params) {
-        const asstInstId = this.associationList.find(asst => asst['bk_asst_id'] === params['bk_asst_id']).id
+        const asstInstId = this.associationList.find(asst => asst.bk_asst_id === params.bk_asst_id).id
         const { direction, asstName, asstId } = this.getAsstDetail(asstInstId)
         const edge = cy.edges('.edge-editing')
 
@@ -1082,18 +1089,18 @@
         this.slider.isShow = false
       },
       canAddBusinessLevel(model) {
-        return !['set', 'module', 'host'].includes(model['bk_obj_id'])
+        return !['set', 'module', 'host'].includes(model.bk_obj_id)
       },
       isMainNode(model) {
-        const mainLineIds = this.mainLineModelList.map(model => model['bk_obj_id'])
-        return mainLineIds.includes(model['bk_obj_id'])
+        const mainLineIds = this.mainLineModelList.map(model => model.bk_obj_id)
+        return mainLineIds.includes(model.bk_obj_id)
       },
       handleShowDetails(labelInfo) {
         this.slider.title = labelInfo.text
         this.slider.properties = {
           objId: labelInfo.objId,
           isEdit: this.topoEdit.isEdit,
-          asstId: labelInfo.asst['bk_inst_id'],
+          asstId: labelInfo.asst.bk_inst_id,
           asstInfo: labelInfo.asst.asstInfo || {}
         }
         this.showSlider('theRelationDetail')
@@ -1101,8 +1108,8 @@
       getAsstDetail(asstId) {
         const asst = this.associationList.find(asst => asst.id === asstId)
         return {
-          asstId: asst['bk_asst_id'],
-          asstName: asst['bk_asst_name'].length ? asst['bk_asst_name'] : asst['bk_asst_id'],
+          asstId: asst.bk_asst_id,
+          asstName: asst.bk_asst_name.length ? asst.bk_asst_name : asst.bk_asst_id,
           direction: asst.direction
         }
       },
@@ -1120,8 +1127,8 @@
         slider.isShow = true
       },
       handleSlideGroup(group) {
-        if (group['bk_classification_id'] !== this.topoNav.activeGroupId) {
-          this.topoNav.activeGroupId = group['bk_classification_id']
+        if (group.bk_classification_id !== this.topoNav.activeGroupId) {
+          this.topoNav.activeGroupId = group.bk_classification_id
         } else {
           this.topoNav.activeGroupId = ''
         }
@@ -1153,7 +1160,7 @@
           this.addBusinessLevel.parent = model
           this.addBusinessLevel.showDialog = true
         } else {
-          const addBusinessLevel = this.$refs.addBusinessLevel
+          const { addBusinessLevel } = this.$refs
           if (addBusinessLevel) {
             addBusinessLevel.$el && addBusinessLevel.$el.click()
           }
@@ -1163,13 +1170,13 @@
         try {
           await this.createMainlineObject({
             params: {
-              'bk_asst_obj_id': this.addBusinessLevel.parent['bk_obj_id'],
-              'bk_classification_id': 'bk_biz_topo',
-              'bk_obj_icon': data['bk_obj_icon'],
-              'bk_obj_id': data['bk_obj_id'],
-              'bk_obj_name': data['bk_obj_name'],
-              'bk_supplier_account': this.supplierAccount,
-              'creator': this.userName
+              bk_asst_obj_id: this.addBusinessLevel.parent.bk_obj_id,
+              bk_classification_id: 'bk_biz_topo',
+              bk_obj_icon: data.bk_obj_icon,
+              bk_obj_id: data.bk_obj_id,
+              bk_obj_name: data.bk_obj_name,
+              bk_supplier_account: this.supplierAccount,
+              creator: this.userName
             }
           })
 
@@ -1476,7 +1483,8 @@
         height: calc(100% - 50px);
         padding: 12px;
         background-color: #f4f5f8;
-        background-image: linear-gradient(#eef1f5 1px, transparent 0), linear-gradient(90deg, #eef1f5 1px, transparent 0);
+        background-image: linear-gradient(#eef1f5 1px, transparent 0),
+          linear-gradient(90deg, #eef1f5 1px, transparent 0);
         background-size: 10px 10px;
     }
 

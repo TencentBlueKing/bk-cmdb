@@ -23,6 +23,7 @@
   import TIMEZONE from '@/components/ui/form/timezone.json'
   import Bus from '@/utils/bus'
   import { mapGetters } from 'vuex'
+  import has from 'has'
   export default {
     components: {},
     data() {
@@ -41,7 +42,9 @@
     watch: {
       searchValue(searchValue) {
         this.searchOptions.forEach((option) => {
+          // eslint-disable-next-line max-len
           const selected = searchValue.some(value => value.id === option.id && value.name === option.name && value.type === option.type)
+          // eslint-disable-next-line no-param-reassign
           option.disabled = selected
         })
         this.handleSearch()
@@ -53,12 +56,14 @@
     methods: {
       async initOptions() {
         try {
+          // eslint-disable-next-line max-len
           const properties = await this.$store.dispatch('hostApply/getProperties', { params: { bk_biz_id: this.bizId } })
           const availableProperties = properties.filter(property => property.host_apply_enabled)
           this.searchOptions = availableProperties.map((property) => {
             const type = property.bk_property_type
             const data = { id: property.id, name: property.bk_property_name, type, disabled: false }
             if (type === 'enum') {
+              // eslint-disable-next-line max-len
               data.children = (property.option || []).map(option => ({ id: option.id, name: option.name, disabled: false }))
               data.multiable = true
             } else if (type === 'list') {
@@ -80,7 +85,7 @@
         }
       },
       handleChange(values) {
-        const keywords = values.filter(value => !value.hasOwnProperty('type') && value.hasOwnProperty('id'))
+        const keywords = values.filter(value => !has(value, 'type') && has(value, 'id'))
         if (keywords.length > 1) {
           keywords.pop()
           this.searchValue = values.filter(value => !keywords.includes(value))
@@ -109,10 +114,11 @@
             rules: []
           }
         }
-        const rules = params.query_filter.rules
+        const { rules } = params.query_filter
         this.searchValue.forEach((item) => {
-          if (item.hasOwnProperty('type')) {
+          if (has(item, 'type')) {
             if (item.values.length === 1) {
+              // eslint-disable-next-line prefer-destructuring
               const value = item.values[0]
               const isAny = value.id === '*'
               const rule = { field: String(item.id) }
@@ -147,7 +153,7 @@
         })
         return params
       },
-      handleMenuSelect(item, index) {
+      handleMenuSelect(item) {
         this.currentMenu = item
       },
       filterMenuMethod(list, filter) {

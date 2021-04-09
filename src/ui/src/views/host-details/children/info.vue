@@ -119,14 +119,11 @@
           const hostList = this.host.bk_host_innerip.split(',')
           const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
           return host
-        } else {
-          return ''
         }
+        return ''
       },
       cloudArea() {
-        return (this.host.bk_cloud_id || []).map((cloud) => {
-          return `${this.$t('云区域')}：${cloud.bk_inst_name} (ID：${cloud.bk_inst_id})`
-        }).join('\n')
+        return (this.host.bk_cloud_id || []).map(cloud => `${this.$t('云区域')}：${cloud.bk_inst_name} (ID：${cloud.bk_inst_id})`).join('\n')
       },
       topologyList() {
         const modules = this.info.module || []
@@ -139,9 +136,7 @@
               .join(' / '),
             isInternal: module && module.default !== 0
           }
-        }).sort((itemA, itemB) => {
-          return itemA.path.localeCompare(itemB.path, 'zh-Hans-CN', { sensitivity: 'accent' })
-        })
+        }).sort((itemA, itemB) => itemA.path.localeCompare(itemB.path, 'zh-Hans-CN', { sensitivity: 'accent' }))
       },
       showMore() {
         if (this.isSingleColumn) {
@@ -187,7 +182,7 @@
         const itemMargin = 9
         const length = this.isSingleColumn ? items.length : Math.ceil(items.length / 2)
         return {
-          height: (this.showAll ? length : 1) * (itemHeight + itemMargin) + 'px',
+          height: `${(this.showAll ? length : 1) * (itemHeight + itemMargin)}px`,
           flex: (!this.isSingleColumn && items.length === 1) ? 'none' : ''
         }
       },
@@ -247,6 +242,7 @@
         this.dialog.show = false
       },
       handleDialogConfirm() {
+        // eslint-disable-next-line prefer-rest-params
         const [tab, ...params] = [...arguments]
         const { tabName, moduleType } = tab
         if (tabName !== 'acrossBusiness') {
@@ -266,6 +262,7 @@
       },
       async transferDirectly(modules) {
         try {
+          // eslint-disable-next-line prefer-destructuring
           const internalModule = modules[0]
           await this.$http.post(`host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, {
             bk_host_ids: [this.host.bk_host_id],
@@ -298,7 +295,7 @@
             bizId: this.bizId,
             type: moduleType
           },
-          query: query,
+          query,
           history: true
         })
       },

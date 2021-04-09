@@ -54,11 +54,11 @@
         return window.__bk_zIndex_manager.nextZIndex()
       },
       handleSwitch(active) {
-        RouterQuery.set({ 'view': active })
+        RouterQuery.set({ view: active })
       },
       hideTips() {
         this.tipsDisabled = true
-        const tippyInstance = this.$refs.tipsReference.$el.tippyInstance
+        const { tippyInstance } = this.$refs.tipsReference.$el
         tippyInstance && tippyInstance.hide()
       },
       handleCloseTips() {

@@ -182,7 +182,7 @@
         return `cmdb-form-${type}`
       },
       getPropertyEditStatus(property) {
-        const uneditable = ['bk_func_name', 'bk_process_name'].includes(property['bk_property_id']) && !this.isCreatedService
+        const uneditable = ['bk_func_name', 'bk_process_name'].includes(property.bk_property_id) && !this.isCreatedService
         return this.type === 'update' && uneditable
       },
       changedValues() {
@@ -191,9 +191,7 @@
         Object.keys(this.values).forEach((propertyId) => {
           let isChange = false
           if (!['sign_id', 'process_id'].includes(propertyId)) {
-            isChange = Object.keys(this.values[propertyId]).some((key) => {
-              return JSON.stringify(this.values[propertyId][key]) !== JSON.stringify(this.refrenceValues[propertyId][key])
-            })
+            isChange = Object.keys(this.values[propertyId]).some(key => JSON.stringify(this.values[propertyId][key]) !== JSON.stringify(this.refrenceValues[propertyId][key]))
           }
           if (isChange) {
             changedValues[propertyId] = this.values[propertyId]
@@ -225,16 +223,14 @@
         })
       },
       checkGroupAvailable(properties) {
-        const availabelProperties = properties.filter((property) => {
-          return this.checkEditable(property)
-        })
+        const availabelProperties = properties.filter(property => this.checkEditable(property))
         return !!availabelProperties.length
       },
       checkEditable(property) {
         if (this.type === 'create') {
-          return !property['bk_isapi']
+          return !property.bk_isapi
         }
-        return property.editable && !property['bk_isapi']
+        return property.editable && !property.bk_isapi
       },
       checkDisabled(property) {
         if (this.type === 'create') {
@@ -303,8 +299,8 @@
       uncollapseGroup() {
         this.errors.items.forEach((item) => {
           const compareKey = item.scope || item.field
-          const property = this.properties.find(property => property['bk_property_id'] === compareKey)
-          const group = property['bk_property_group']
+          const property = this.properties.find(property => property.bk_property_id === compareKey)
+          const group = property.bk_property_group
           this.groupState[group] = false
         })
       },
@@ -323,9 +319,8 @@
               }
             })
           })
-        } else {
-          this.$emit('on-cancel')
         }
+        this.$emit('on-cancel')
       }
     }
   }

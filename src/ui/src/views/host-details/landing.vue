@@ -41,7 +41,7 @@
             start: 0
           }
         }
-        const cloudId = parseInt(this.$route.params.cloudId)
+        const cloudId = parseInt(this.$route.params.cloudId, 10)
         if (!isNaN(cloudId)) {
           hostCondition.condition.push({
             field: 'bk_cloud_id',

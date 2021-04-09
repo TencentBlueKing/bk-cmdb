@@ -112,9 +112,7 @@
         return this.cloneProcesses.filter((cloneProcess) => {
           const sourceProcess = this.sourceProcesses.find(sourceProcess => sourceProcess.bk_process_id === cloneProcess.bk_process_id)
           return this.norepeatProperties.length
-            && this.norepeatProperties.every((property) => {
-              return sourceProcess[property.bk_property_id] === cloneProcess[property.bk_property_id]
-            })
+            && this.norepeatProperties.every(property => sourceProcess[property.bk_property_id] === cloneProcess[property.bk_property_id])
         })
       },
       hostId() {

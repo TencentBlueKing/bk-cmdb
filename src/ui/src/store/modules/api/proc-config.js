@@ -8,6 +8,8 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars */
+
 import $http from '@/api'
 
 const state = {
@@ -48,14 +50,12 @@ const actions = {
   searchProcessById({ rootGetters }, { bizId, processId, config }) {
     return $http.post(`proc/search/${rootGetters.supplierAccount}/${bizId}`, {
       condition: {
-        'bk_biz_id': bizId,
-        'bk_process_id': {
-          '$eq': processId
+        bk_biz_id: bizId,
+        bk_process_id: {
+          $eq: processId
         }
       }
-    }, config).then((data) => {
-      return data.info[0] || {}
-    })
+    }, config).then(data => data.info[0] || {})
   },
   /**
      * 获取进程详情

@@ -48,7 +48,8 @@
                 v-bk-overflow-tips>
                 {{changed.property.bk_property_name}}：
                 <span class="info-item-value">
-                  <span v-if="changed.property.bk_property_id === 'bind_info' && !changed.template_property_value.length">
+                  <span
+                    v-if="changed.property.bk_property_id === 'bind_info' && !changed.template_property_value.length">
                     {{$t('移除所有进程监听信息')}}
                   </span>
                   <cmdb-property-value v-else
@@ -178,6 +179,7 @@
     methods: {
       handleChangeActive(process, index) {
         this.activeIndex = index
+        // eslint-disable-next-line no-param-reassign
         process.confirmed = true
       },
       async getProperties() {
@@ -227,12 +229,13 @@
             differenceType.forEach((type) => {
               difference[type].forEach((info) => {
                 const moduleInfo = { ...info, bk_module_id: difference.bk_module_id }
+                // eslint-disable-next-line max-len
                 const item = processList.find(item => item.type === type && item.process_template_id === info.process_template_id)
                 if (item) {
                   item.modules.push(moduleInfo)
                 } else {
                   const newItem = {
-                    type: type,
+                    type,
                     process_template_id: info.process_template_id,
                     process_template_name: info.process_template_name,
                     modules: [moduleInfo]
@@ -316,7 +319,7 @@
               const property = this.properties.find(property => property.bk_property_id === changedProperty.property_id)
               if (!isExist && property) {
                 changed.push({
-                  property: property,
+                  property,
                   template_property_value: changedProperty.template_property_value
                 })
               }
@@ -326,7 +329,7 @@
         return changed
       },
       getChangedValue(changed) {
-        const property = changed.property
+        const { property } = changed
         let value = changed.template_property_value
         value = Object.prototype.toString.call(value) === '[object Object]' ? value.value : value
         return formatter(value, property)
@@ -335,24 +338,25 @@
         return this.topoPath[moduleId]
       },
       async handleModulesCollapseChange(collapse, module) {
+        // eslint-disable-next-line no-underscore-dangle
         const loaded = module.service_instances.__loaded__
         if (this.current.type === 'others' && !loaded) {
           try {
+            // eslint-disable-next-line no-underscore-dangle, no-param-reassign
             module.service_instances.__loaded__ = true
             const { info: instances } = await this.getModuleServiceInstances(module.bk_module_id)
-            module.service_instances.push(...instances.map((instance) => {
-              return {
-                changed_attributes: [{
-                  property_id: 'service_category_id',
-                  property_name: this.$t('服务分类'),
-                  property_value: module.current_service_category,
-                  template_property_value: module.template_service_category
-                }],
-                service_instance: instance
-              }
-            }))
+            module.service_instances.push(...instances.map(instance => ({
+              changed_attributes: [{
+                property_id: 'service_category_id',
+                property_name: this.$t('服务分类'),
+                property_value: module.current_service_category,
+                template_property_value: module.template_service_category
+              }],
+              service_instance: instance
+            })))
           } catch (e) {
             console.error(e)
+            // eslint-disable-next-line no-underscore-dangle, no-param-reassign
             module.service_instances.__loaded__ = false
           }
         }

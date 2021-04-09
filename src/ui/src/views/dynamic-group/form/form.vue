@@ -141,6 +141,7 @@
             }
           })
           // 业务调用方暂时只需要一下三种类型的查询
+          // eslint-disable-next-line max-len
           const availableModels = this.availableModelIds.map(modelId => models.find(model => model.bk_obj_id === modelId))
           this.availableModels = Object.freeze(availableModels)
         } catch (error) {
@@ -205,7 +206,7 @@
         }
       },
       transformDetails(details) {
-        const condition = details.info.condition
+        const { condition } = details.info
         const transformedCondition = []
         condition.forEach((data) => {
           transformedCondition.push({
@@ -363,12 +364,10 @@
           }
           submitConditionMap[property.bk_obj_id] = submitCondition
         })
-        return Object.keys(submitConditionMap).map((modelId) => {
-          return {
-            bk_obj_id: modelId,
-            condition: submitConditionMap[modelId]
-          }
-        })
+        return Object.keys(submitConditionMap).map(modelId => ({
+          bk_obj_id: modelId,
+          condition: submitConditionMap[modelId]
+        }))
       },
       close() {
         this.isShow = false

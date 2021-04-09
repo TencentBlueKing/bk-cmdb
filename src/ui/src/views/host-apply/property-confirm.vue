@@ -147,6 +147,7 @@
       goBack() {
         const query = {}
         if (!this.isBatch) {
+          // eslint-disable-next-line prefer-destructuring
           query.module = this.propertyConfig.bk_module_ids[0]
         }
         this.$store.commit('hostApply/clearRuleDraft')
@@ -164,6 +165,7 @@
             conflictResolvers.push({
               bk_host_id: Number(key),
               bk_attribute_id: property.id,
+              // eslint-disable-next-line no-underscore-dangle
               bk_property_value: property.__extra__.value
             })
           })

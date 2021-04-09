@@ -27,6 +27,7 @@
 </template>
 
 <script>
+  import has from 'has'
   import hostSearch from './children/host-search'
   import searchInput from './children/search-input'
   import theMap from './children/map'
@@ -59,8 +60,8 @@
     },
     created() {
       this.inSearchPaddingTop = this.paddingTop
-      const query = this.$route.query
-      const showFullText = ['keywords', 'show'].every(key => query.hasOwnProperty(key))
+      const { query } = this.$route
+      const showFullText = ['keywords', 'show'].every(key => has(query, key))
       if (showFullText && this.isFullTextSearch) {
         this.activeName = 'fullText'
       }

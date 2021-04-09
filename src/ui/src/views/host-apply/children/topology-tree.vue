@@ -106,6 +106,7 @@
       modelIconMap() {
         const map = {}
         this.mainLineModels.forEach((model) => {
+          // eslint-disable-next-line prefer-destructuring
           map[model.bk_obj_id] = model.bk_obj_name[0]
         })
         return map
@@ -157,7 +158,7 @@
           if (params.query_filter.rules.length) {
             const data = await this.$store.dispatch('hostApply/searchNode', {
               bizId: this.business,
-              params: params,
+              params,
               config: {
                 requestId: this.request.searchNode
               }
@@ -174,13 +175,14 @@
         }
       },
       filterMethod(remoteData, node) {
+        // eslint-disable-next-line max-len
         return remoteData.some(datum => datum.bk_inst_id === node.data.bk_inst_id && datum.bk_obj_id === node.data.bk_obj_id)
       },
       setDefaultState(data) {
         this.$refs.tree.setData(data)
         let defaultNodeId
-        const queryModule = parseInt(this.$route.query.module)
-        const firstModule = this.treeStat.firstModule
+        const queryModule = parseInt(this.$route.query.module, 10)
+        const { firstModule } = this.treeStat
         if (!isNaN(queryModule)) {
           defaultNodeId = `module_${queryModule}`
         } else if (this.ruleDraft.moduleIds) {
@@ -200,6 +202,7 @@
           noRuleIds: []
         }
         const findModule = function (data, parent) {
+          // eslint-disable-next-line no-restricted-syntax
           for (const item of data) {
             stat.levels[item.bk_inst_id] = parent ? (stat.levels[parent.bk_inst_id] + 1) : 0
             if (item.bk_obj_id === 'module') {

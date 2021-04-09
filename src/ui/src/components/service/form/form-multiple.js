@@ -21,7 +21,7 @@ const Component = Vue.extend({
       this.$destroy()
     }
   },
-  render(h) {
+  render() {
     return <process-form-multiple ref="form" { ...{ props: this.$options.attrs }} on-close={ this.handleClose }></process-form-multiple>
   }
 })

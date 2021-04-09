@@ -27,6 +27,7 @@ export default {
   },
   computed: {
     isGlobalView() {
+      // eslint-disable-next-line prefer-destructuring
       const topRoute = this.$route.matched[0]
       return topRoute ? topRoute.name !== MENU_BUSINESS : true
     },
@@ -71,7 +72,7 @@ export default {
         await this.$store.dispatch('hostUpdate/updateHost', {
           params: {
             ...changedValues,
-            'bk_host_id': this.selection.map(row => row.host.bk_host_id).join(',')
+            bk_host_id: this.selection.map(row => row.host.bk_host_id).join(',')
           }
         })
         this.slider.show = false
@@ -86,7 +87,7 @@ export default {
     handleSliderBeforeClose() {
       const $form = this.$refs.multipleForm
       if (Object.keys($form.changedValues).length) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           this.$bkInfo({
             title: this.$t('确认退出'),
             subTitle: this.$t('退出会导致未保存信息丢失'),
@@ -117,7 +118,7 @@ export default {
     getPropertyGroups() {
       return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
         objId: 'host',
-        params: this.isGlobalView ? {} : { bk_biz_id: parseInt(this.$route.params.bizId) },
+        params: this.isGlobalView ? {} : { bk_biz_id: parseInt(this.$route.params.bizId, 10) },
         config: {
           requestId: this.request.propertyGroups
         }

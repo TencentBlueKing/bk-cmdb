@@ -68,6 +68,7 @@ function mergeSameActions(actions) {
 export const translateAuth = (auth) => {
   const authList = Array.isArray(auth) ? auth : [auth]
   const actions = authList.map(({ type, relation = [] }) => {
+    // eslint-disable-next-line no-param-reassign
     relation = convertRelation(relation, type)
     const definition = IAM_ACTIONS[type]
     const action = {
@@ -101,7 +102,7 @@ export const translateAuth = (auth) => {
 cursor.setOptions({
   globalCallback: (options) => {
     const permission = translateAuth(options.auth)
-    const permissionModal = window.permissionModal
+    const { permissionModal } = window
     permissionModal && permissionModal.show(permission)
   },
   x: 16,

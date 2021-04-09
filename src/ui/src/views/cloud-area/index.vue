@@ -2,8 +2,12 @@
   <div class="cloud-area-layout">
     <cmdb-tips class="cloud-area-tips" tips-key="cloud-area-tips">
       <i18n path="云区域提示语">
-        <bk-button text size="small" place="resource" style="padding: 0" @click="linkResource">{{$t('云资源发现')}}</bk-button>
-        <bk-button text size="small" place="agent" style="padding: 0" @click="linkAgent">{{$t('节点管理')}}</bk-button>
+        <bk-button text size="small" place="resource" style="padding: 0" @click="linkResource">
+          {{$t('云资源发现')}}
+        </bk-button>
+        <bk-button text size="small" place="agent" style="padding: 0" @click="linkAgent">
+          {{$t('节点管理')}}
+        </bk-button>
       </i18n>
     </cmdb-tips>
     <div class="cloud-area-options">
@@ -148,6 +152,7 @@
       },
       async handleUpdateName(row, value) {
         try {
+          // eslint-disable-next-line no-param-reassign
           value = value.trim()
           this.rowInEdit = null
           if (row.bk_cloud_name === value) {
@@ -160,6 +165,7 @@
               bk_cloud_name: value
             }
           })
+          // eslint-disable-next-line no-param-reassign
           row.bk_cloud_name = value
           this.$delete(row, '_pending_')
         } catch (error) {
@@ -233,7 +239,7 @@
             params.is_fuzzy = true
           }
           const data = await this.$store.dispatch('cloud/area/findMany', {
-            params: params,
+            params,
             config: {
               requestId: this.request.search,
               cancelPrevious: true
@@ -273,7 +279,7 @@
                 bk_cloud_ids: ids
               },
               config: {
-                requestId: requestId
+                requestId
               }
             })
           }))

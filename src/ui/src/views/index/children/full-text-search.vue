@@ -25,7 +25,9 @@
               <span v-html="`${modelClassifyName['host']} - ${source.bk_host_innerip.toString()}`"></span>
             </div>
             <div class="results-desc" v-if="propertyMap['host']" @click="jumpPage(source)">
-              <span class="desc-item" v-html="`${$t('主机ID')}：${getHighlightValue(source['bk_host_id'], source, 'bk_host_id')}`"> </span>
+              <span class="desc-item"
+                v-html="`${$t('主机ID')}：${getHighlightValue(source['bk_host_id'], source, 'bk_host_id')}`">
+              </span>
               <template v-for="(property, childIndex) in propertyMap['host']">
                 <span class="desc-item"
                   v-if="source[property['bk_property_id']]"
@@ -61,6 +63,8 @@
 </template>
 
 <script>
+  /* eslint-disable no-useless-escape */
+  import has from 'has'
   import {
     MENU_RESOURCE_INSTANCE_DETAILS,
     MENU_RESOURCE_BUSINESS_DETAILS,
@@ -118,7 +122,7 @@
         const hitsData = data.hits || []
         const modelData = data.aggregations || []
         this.modelClassify.forEach((model) => {
-          this.modelClassifyName[model['bk_obj_id']] = model['bk_obj_name']
+          this.modelClassifyName[model.bk_obj_id] = model.bk_obj_name
         })
         if (modelData.length) {
           await this.getProperties({
@@ -131,8 +135,8 @@
             hitsType: hits.type,
             highlight: hits.highlight
           }
-          if (hit.hasOwnProperty('bk_obj_id')) {
-            hit['bk_obj_id'] = hit['bk_obj_id'].toString().replace(/\<\/?em\>/g, '')
+          if (has(hit, 'bk_obj_id')) {
+            hit.bk_obj_id = hit.bk_obj_id.toString().replace(/\<\/?em\>/g, '')
           }
           return hit
         })
@@ -146,24 +150,24 @@
         })
       },
       jumpPage(source) {
-        if (source['hitsType'] === 'host') {
+        if (source.hitsType === 'host') {
           this.$routerActions.redirect({
             name: MENU_RESOURCE_HOST_DETAILS,
             params: {
-              id: source['bk_host_id'].toString().replace(/(\<\/?em\>)/g, '')
+              id: source.bk_host_id.toString().replace(/(\<\/?em\>)/g, '')
             },
             history: true
           })
-        } else if (source['hitsType'] === 'object') {
-          const model = this.getModelById(source['bk_obj_id'])
-          const isPauserd = this.getModelById(source['bk_obj_id'])['bk_ispaused']
-          if (model['bk_classification_id'] === 'bk_biz_topo') {
+        } else if (source.hitsType === 'object') {
+          const model = this.getModelById(source.bk_obj_id)
+          const isPauserd = this.getModelById(source.bk_obj_id).bk_ispaused
+          if (model.bk_classification_id === 'bk_biz_topo') {
             this.$bkMessage({
               message: this.$t('主线模型无法查看'),
               theme: 'warning'
             })
             return
-          } else if (isPauserd) {
+          } if (isPauserd) {
             this.$bkMessage({
               message: this.$t('该模型已停用'),
               theme: 'warning'
@@ -173,18 +177,18 @@
           this.$routerActions.redirect({
             name: MENU_RESOURCE_INSTANCE_DETAILS,
             params: {
-              objId: source['bk_obj_id'],
-              instId: source['bk_inst_id'].toString().replace(/(\<\/?em\>)/g, '')
+              objId: source.bk_obj_id,
+              instId: source.bk_inst_id.toString().replace(/(\<\/?em\>)/g, '')
             },
             history: true
           })
-        } else if (source['hitsType'] === 'biz') {
+        } else if (source.hitsType === 'biz') {
           const name = source.bk_data_status === 'disabled' ? MENU_RESOURCE_BUSINESS_HISTORY : MENU_RESOURCE_BUSINESS_DETAILS
           this.$routerActions.redirect({
-            name: name,
+            name,
             params: {
               bizId: source.bk_biz_id,
-              bizName: source['bk_biz_name'].toString().replace(/(\<\/?em\>)/g, '')
+              bizName: source.bk_biz_name.toString().replace(/(\<\/?em\>)/g, '')
             },
             history: true
           })
@@ -206,6 +210,7 @@
         if (!highlightValue) {
           return value
         }
+        // eslint-disable-next-line prefer-destructuring
         let keyword = Array.isArray(highlightValue) ? highlightValue[0] : highlightValue
         keyword = keyword.match(/<em>(.+?)<\/em>/)[1]
         const reg = new RegExp(`(${keyword})`, 'g')

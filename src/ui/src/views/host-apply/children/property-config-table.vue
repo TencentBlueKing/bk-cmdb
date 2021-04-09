@@ -90,6 +90,7 @@
 </template>
 <script>
   import { mapGetters, mapState } from 'vuex'
+  import has from 'has'
   import propertyFormElement from '@/components/host-apply/property-form-element'
   export default {
     components: {
@@ -171,12 +172,16 @@
               const property = this.$tools.clone(findProperty)
               // 初始化值
               if (this.multiple) {
+                // eslint-disable-next-line no-underscore-dangle
                 property.__extra__.ruleList = this.ruleList.filter(item => item.bk_attribute_id === property.id)
+                // eslint-disable-next-line no-underscore-dangle
                 property.__extra__.value = this.getPropertyDefaultValue(property)
               } else {
                 const rule = this.ruleList.find(item => item.bk_attribute_id === property.id) || {}
+                // eslint-disable-next-line no-underscore-dangle
                 property.__extra__.ruleId = rule.id
-                property.__extra__.value = rule.hasOwnProperty('bk_property_value') ? rule.bk_property_value : this.getPropertyDefaultValue(property)
+                // eslint-disable-next-line no-underscore-dangle
+                property.__extra__.value = has(rule, 'bk_property_value') ? rule.bk_property_value : this.getPropertyDefaultValue(property)
               }
               this.modulePropertyList.push(property)
             }
@@ -184,6 +189,7 @@
         })
 
         // 删除或取消选择的，则去除
+        // eslint-disable-next-line max-len
         this.modulePropertyList = this.modulePropertyList.filter(property => this.checkedPropertyIdList.includes(property.id))
       },
       setConfigData() {

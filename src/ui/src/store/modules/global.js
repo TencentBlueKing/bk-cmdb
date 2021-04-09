@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars, no-param-reassign */
+
 import { language } from '@/i18n'
 import $http from '@/api'
 import { Base64 } from 'js-base64'
@@ -10,7 +12,7 @@ const state = {
   validatorSetuped: false,
   user: window.User,
   supplier: window.Supplier,
-  language: language,
+  language,
   globalLoading: true,
   nav: {
     stick: window.localStorage.getItem('navStick') !== 'false',
@@ -38,16 +40,12 @@ const state = {
 const getters = {
   config: state => state.config,
   validatorSetuped: state => state.validatorSetuped,
-  site: (state) => {
-    // 通过getter和CMDB_CONFIG.site获取的site值确保为页面定义和配置定义的集合
-    return { ...window.Site, ...state.config.site }
-  },
+  // 通过getter和CMDB_CONFIG.site获取的site值确保为页面定义和配置定义的集合
+  site: state => ({ ...window.Site, ...state.config.site }),
   user: state => state.user,
   userName: state => state.user.name,
   admin: state => state.user.admin === '1',
-  isBusinessSelected: (state, getters, rootState, rootGetters) => {
-    return rootGetters['objectBiz/bizId'] !== null
-  },
+  isBusinessSelected: (state, getters, rootState, rootGetters) => rootGetters['objectBiz/bizId'] !== null,
   language: state => state.language,
   supplier: state => state.supplier,
   supplierAccount: state => state.supplier.account,
@@ -130,6 +128,7 @@ const mutations = {
   setConfig(state, config) {
     // 按照数据格式约定验证规则的正则需要baes64解码
     const { validationRules } = config
+    // eslint-disable-next-line no-restricted-syntax
     for (const rule of Object.values(validationRules)) {
       rule.value = Base64.decode(rule.value)
     }

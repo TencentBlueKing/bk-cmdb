@@ -64,7 +64,7 @@
 </template>
 
 <script>
-  import Throttle from 'lodash.throttle'
+  import throttle from 'lodash.throttle'
   import RenderTag from './render-tag.js'
   import AlternateList from './alternate-list'
   import Vue from 'vue'
@@ -165,7 +165,7 @@
       panelWidth: {
         type: [Number, String],
         validator(value) {
-          const pixel = parseInt(value)
+          const pixel = parseInt(value, 10)
           return pixel >= 190
         }
       }
@@ -183,7 +183,7 @@
         currentData: [],
         matchedData: [],
         flattenedData: [],
-        scheduleSearch: Throttle(this.search, 800, { leading: false }),
+        scheduleSearch: throttle(this.search, 800, { leading: false }),
         popoverInstance: null,
         alternateContent: null,
         selectedTipsTimer: {},
@@ -195,9 +195,9 @@
       containerStyle() {
         const style = {}
         if (this.isFocus) {
-          style.maxHeight = this.fixedHeight ? this.focusRowLimit * this.singleRowHeight + 'px' : 'auto'
+          style.maxHeight = this.fixedHeight ? `${this.focusRowLimit * this.singleRowHeight}px` : 'auto'
         } else if (this.fixedHeight) {
-          style.height = this.singleRowHeight + 'px'
+          style.height = `${this.singleRowHeight}px`
         }
         return style
       },
@@ -237,7 +237,7 @@
         }
         this.calcOverflow()
       },
-      localValue(localValue) {
+      localValue() {
         this.calcOverflow()
         this.getCurrentData()
       },
@@ -329,7 +329,7 @@
         if (keyword) {
           const filterResult = []
           data.forEach((tag) => {
-            if (tag.hasOwnProperty('children')) {
+            if (has(tag, 'children')) {
               const children = tag.children.filter(child => isMatch(child, keyword))
               if (children.length) {
                 filterResult.push({
@@ -350,11 +350,13 @@
         const matched = []
         const flattened = []
         data.forEach((tag) => {
-          if (tag.hasOwnProperty('children')) {
+          if (has(tag, 'children')) {
+            // eslint-disable-next-line max-len
             const children = tag.children.filter(child => !flattened.some(flattenedTag => flattenedTag.value === child.value))
             if (this.multiple) {
               const unexistTag = children.filter(child => !this.localValue.includes(child.value))
               if (unexistTag.length) {
+                // eslint-disable-next-line no-param-reassign
                 tag.children = unexistTag
                 matched.push(tag)
                 flattened.push(...unexistTag)
@@ -413,6 +415,7 @@
       // 创建/获取备选面板popover实例
       getPopoverInstance() {
         if (!this.popoverInstance) {
+          // eslint-disable-next-line new-cap
           this.popoverInstance = Tippy(this.$refs.input, {
             theme: 'light tag-input-popover',
             appendTo: document.body,
@@ -464,6 +467,7 @@
               histories.splice(exist, 1)
             }
             Array.isArray(tag) ? histories.unshift(...tag) : histories.unshift(tag)
+            // eslint-disable-next-line max-len
             const newHistories = histories.filter(history => !this.disabledData.includes(history.value)).slice(0, this.historyRecord)
             window.localStorage.setItem(this.historyKey, JSON.stringify(newHistories))
           } catch (e) {
@@ -516,7 +520,7 @@
       },
       // 已选择click事件拆分为mousedown,mouseup, 因为click事件晚于input的blur事件，但mousedown早于blur
       // shouldUpdate = false, 阻止input blur后续处理
-      handleSelectedMousedown(event, index) {
+      handleSelectedMousedown() {
         if (this.disabled) {
           return false
         }
@@ -529,7 +533,7 @@
         }
         if (this.multiple) {
           const $referenceTarget = event.target
-          const offsetWidth = $referenceTarget.offsetWidth
+          const { offsetWidth } = $referenceTarget
           const eventX = event.offsetX
           // const $input = this.$refs.input
           this.inputIndex = eventX > (offsetWidth / 2) ? index + 1 : index
@@ -544,10 +548,12 @@
       handleSelectedMouseenter(event, { value }) {
         if (!this.displayTagTips) return
         const target = event.currentTarget
+        // eslint-disable-next-line no-underscore-dangle
         if (target._tag_tips_) {
           return false
         }
         this.selectedTipsTimer[value] = setTimeout(() => {
+          // eslint-disable-next-line no-underscore-dangle new-cap
           target._tag_tips_ = Tippy(target, {
             theme: 'light small-arrow tag-selected-tips',
             boundary: 'window',
@@ -589,7 +595,7 @@
         this.$emit('remove-selected', value)
       },
       // 选择列表mousedown, 阻止input blur
-      handleTagMousedown(tag, disabled) {
+      handleTagMousedown() {
         this.shouldUpdate = false
       },
       // 选择列表，区分单选多选
@@ -647,17 +653,17 @@
           event.stopPropagation()
           return
         }
-        const key = event.key
+        const { key } = event
         const keyMap = {
-          'Enter': this.handleEnter,
-          'Backspace': this.handleBackspace,
-          'Delete': this.handleBackspace,
-          'ArrowLeft': this.handleArrow,
-          'ArrowRight': this.handleArrow,
-          'ArrowUp': this.handleArrow,
-          'ArrowDown': this.handleArrow
+          Enter: this.handleEnter,
+          Backspace: this.handleBackspace,
+          Delete: this.handleBackspace,
+          ArrowLeft: this.handleArrow,
+          ArrowRight: this.handleArrow,
+          ArrowUp: this.handleArrow,
+          ArrowDown: this.handleArrow
         }
-        if (keyMap.hasOwnProperty(key)) {
+        if (has(keyMap, key)) {
           keyMap[key](event)
         }
         this.$emit('keydown', event)
@@ -669,7 +675,7 @@
         event.preventDefault()
         this.shouldUpdate = false
         if (this.highlightIndex !== -1) {
-          const value = this.flattenedData[this.highlightIndex]['value']
+          const { value } = this.flattenedData[this.highlightIndex]
           const disabled = this.disabledData.includes(value)
           if (disabled) {
             return false
@@ -767,8 +773,8 @@
       // 获取匹配当前输入文本的数据
       getMatchedTag(nameToMatch) {
         const tag = this.flattenedData.find((tag) => {
-          const value = tag.value
-          const text = tag.text
+          const { value } = tag
+          const { text } = tag
           const isMatch = [value, text].some(name => name.toLowerCase() === nameToMatch.toLowerCase())
           const isSelected = this.localValue.includes(value)
           return isMatch && !isSelected
@@ -826,7 +832,7 @@
           return false
         }
         this.$nextTick(() => {
-          const highlightIndex = this.highlightIndex
+          const { highlightIndex } = this
           const $alternateList = this.alternateContent.$refs.alternateList
           if (!$alternateList) {
             return false
@@ -839,7 +845,7 @@
             const itemOffsetHeight = $alternateItem.offsetHeight
             if (itemOffsetTop >= listScrollTop && (itemOffsetTop + itemOffsetHeight) <= (listScrollTop + listClientHeight)) {
               return false
-            } else if (itemOffsetTop <= listScrollTop) {
+            } if (itemOffsetTop <= listScrollTop) {
               $alternateList.scrollTop = itemOffsetTop
             } else if ((itemOffsetTop + itemOffsetHeight) > (listScrollTop + listClientHeight)) {
               $alternateList.scrollTop = itemOffsetTop + itemOffsetHeight - listClientHeight

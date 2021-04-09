@@ -117,17 +117,13 @@
         return moduleModel.bk_obj_name || ''
       },
       sortedServices() {
-        return [...this.services].sort((A, B) => {
-          return A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' })
-        })
+        return [...this.services].sort((A, B) => A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' }))
       },
       topoNodes() {
-        return this.originalServices.map((service) => {
-          return {
-            bk_obj_id: 'module',
-            bk_inst_id: service.id
-          }
-        })
+        return this.originalServices.map(service => ({
+          bk_obj_id: 'module',
+          bk_inst_id: service.id
+        }))
       }
     },
     watch: {
@@ -158,12 +154,10 @@
             setTemplateId: this.templateId
           })
           this.services = data.map(item => item.service_template)
-          this.servicesHost = data.map((item) => {
-            return {
-              service_id: item.service_template.id,
-              host_count: item.host_count
-            }
-          })
+          this.servicesHost = data.map(item => ({
+            service_id: item.service_template.id,
+            host_count: item.host_count
+          }))
           this.originalServices = [...this.services]
         } catch (e) {
           console.error(e)
@@ -180,9 +174,7 @@
         return false
       },
       initMonitorTemplateName() {
-        this.unwatch = this.$watch(() => {
-          return this.$parent.templateName
-        }, (value) => {
+        this.unwatch = this.$watch(() => this.$parent.templateName, (value) => {
           if (value) {
             this.templateName = value
           } else {

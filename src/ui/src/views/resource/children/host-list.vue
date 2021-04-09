@@ -13,7 +13,9 @@
       @page-change="handlePageChange"
       @page-limit-change="handleSizeChange"
       @header-click="handleHeaderClick">
-      <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
+      <bk-table-column type="selection" width="60" align="center" fixed
+        class-name="bk-table-selection">
+      </bk-table-column>
       <bk-table-column v-for="property in tableHeader"
         :show-overflow-tooltip="property.bk_property_type !== 'topology'"
         :min-width="getColumnMinWidth(property)"
@@ -132,10 +134,10 @@
           if (this.$route.name !== MENU_RESOURCE_HOST) {
             return false
           }
-          this.table.pagination.current = parseInt(page)
-          this.table.pagination.limit = parseInt(limit)
+          this.table.pagination.current = parseInt(page, 10)
+          this.table.pagination.limit = parseInt(limit, 10)
           this.table.sort = sort
-          this.directory = parseInt(directory) || null
+          this.directory = parseInt(directory, 10) || null
           this.scope = isNaN(scope) ? 'all' : parseInt(scope)
           this.getHostList()
         }, { throttle: 100 })
@@ -145,9 +147,7 @@
       }
     },
     mounted() {
-      this.unwatchFilter = this.$watch(() => {
-        return [FilterStore.condition, FilterStore.IP]
-      }, () => {
+      this.unwatchFilter = this.$watch(() => [FilterStore.condition, FilterStore.IP], () => {
         const el = this.$refs.filterTag.$el
         if (el.getBoundingClientRect) {
           this.filtersTagHeight = el.getBoundingClientRect().height
@@ -166,6 +166,7 @@
       disabledTableSettingDefaultBehavior() {
         setTimeout(() => {
           const settingReference = this.$refs.table.$el.querySelector('.bk-table-column-setting .bk-tooltip-ref')
+          // eslint-disable-next-line no-underscore-dangle
           settingReference && settingReference._tippy && settingReference._tippy.disable()
         }, 1000)
       },
@@ -242,6 +243,7 @@
             operator: '$eq',
             value: this.scope
           }
+          // eslint-disable-next-line max-len
           const existMeta = biz.condition.find(({ field, operator }) => field === newMeta.field && operator === newMeta.operator)
           if (existMeta) {
             existMeta.value = newMeta.value
@@ -261,6 +263,7 @@
           operator: '$eq',
           value: this.directory
         }
+        // eslint-disable-next-line max-len
         const existMeta = moduleCondition.condition.find(({ field, operator }) => field === directoryMeta.field && operator === directoryMeta.operator)
         if (existMeta) {
           existMeta.value = directoryMeta.value
@@ -277,6 +280,7 @@
         if (property.bk_obj_id !== 'host' || property.bk_property_id !== 'bk_host_id') {
           return
         }
+        // eslint-disable-next-line prefer-destructuring
         const business = item.biz[0]
         if (business.default) {
           this.$routerActions.redirect({
@@ -311,7 +315,7 @@
       },
       handleSizeChange(limit) {
         RouterQuery.set({
-          limit: limit,
+          limit,
           page: 1,
           _t: Date.now()
         })
@@ -324,6 +328,7 @@
       },
       // 拓扑路径写入数据中，用于复制
       handlePathReady(row, paths) {
+        // eslint-disable-next-line no-underscore-dangle, no-param-reassign
         row.__bk_host_topology__ = paths
       },
       handleHeaderClick(column) {
@@ -332,11 +337,9 @@
         }
         ColumnsConfig.open({
           props: {
-            properties: FilterStore.properties.filter((property) => {
-              return property.bk_obj_id === 'host'
-                || (property.bk_obj_id === 'module' && property.bk_property_id === 'bk_module_name')
-                || (property.bk_obj_id === 'set' && property.bk_property_id === 'bk_set_name')
-            }),
+            properties: FilterStore.properties.filter(property => property.bk_obj_id === 'host'
+              || (property.bk_obj_id === 'module' && property.bk_property_id === 'bk_module_name')
+              || (property.bk_obj_id === 'set' && property.bk_property_id === 'bk_set_name')),
             selected: FilterStore.defaultHeader.map(property => property.bk_property_id),
             disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
           },

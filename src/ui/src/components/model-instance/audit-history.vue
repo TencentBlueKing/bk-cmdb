@@ -130,8 +130,8 @@
         if (usefuleCondition.operation_time) {
           const [start, end] = usefuleCondition.operation_time
           usefuleCondition.operation_time = {
-            start: start + ' 00:00:00',
-            end: end + ' 23:59:59'
+            start: `${start} 00:00:00`,
+            end: `${end} 23:59:59`
           }
         }
         return usefuleCondition

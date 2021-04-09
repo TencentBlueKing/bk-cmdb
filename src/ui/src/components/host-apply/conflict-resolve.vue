@@ -32,13 +32,17 @@
           :resizable="false"
         >
           <template slot-scope="{ row, $index }">
-            <property-form-element :property="row" @value-change="value => handlePropertyValueChange(value, row, $index)"></property-form-element>
+            <property-form-element :property="row"
+              @value-change="value => handlePropertyValueChange(value, row, $index)">
+            </property-form-element>
           </template>
         </bk-table-column>
       </bk-table>
     </div>
     <div slot="footer" slot-scope="{ sticky }" :class="['footer-btns', { 'sticky': sticky }]">
-      <bk-button theme="primary" class="mr10" :disabled="confirmButtonDisabled" @click="handleConfirm">{{$t('确定')}}</bk-button>
+      <bk-button theme="primary" class="mr10" :disabled="confirmButtonDisabled" @click="handleConfirm">
+        {{$t('确定')}}
+      </bk-button>
       <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
     </div>
   </cmdb-sticky-layout>
@@ -47,6 +51,7 @@
 <script>
   import { mapGetters } from 'vuex'
   import propertyFormElement from './property-form-element'
+  /* eslint-disable no-underscore-dangle, no-param-reassign */
   export default {
     components: {
       propertyFormElement
@@ -106,6 +111,7 @@
         } else {
           const conflicts = this.dataRow.conflicts || []
           conflicts.forEach((item) => {
+            // eslint-disable-next-line max-len
             const findProperty = this.configPropertyList.find(property => property.bk_property_id === item.bk_property_id)
             const property = this.$tools.clone(findProperty)
             // 主机当前值
@@ -143,7 +149,7 @@
         const target = topoInfo.find(target => target.bk_obj_id === 'module' && target.bk_inst_id === id) || {}
         return target.bk_inst_name
       },
-      renderColumnHeader(h, { column, $index }) {
+      renderColumnHeader(h) {
         const style = {
           width: '50%',
           display: 'inline-block'

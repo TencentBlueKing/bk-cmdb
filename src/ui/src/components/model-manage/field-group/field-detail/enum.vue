@@ -47,7 +47,8 @@
         <bk-button text class="enum-btn" @click="deleteEnum(index)" :disabled="enumList.length === 1 || isReadOnly">
           <i class="bk-icon icon-minus-circle-shape"></i>
         </bk-button>
-        <bk-button text class="enum-btn" @click="addEnum(index)" :disabled="isReadOnly" v-if="index === enumList.length - 1">
+        <bk-button text class="enum-btn" @click="addEnum(index)"
+          :disabled="isReadOnly" v-if="index === enumList.length - 1">
           <i class="bk-icon icon-plus-circle-shape"></i>
         </bk-button>
       </li>
@@ -158,7 +159,7 @@
         this.enumList.splice(index, 1)
         if (this.defaultIndex === index) {
           this.defaultIndex = 0
-          this.enumList[0]['is_default'] = true
+          this.enumList[0].is_default = true
         }
         this.handleInput()
       },
@@ -179,6 +180,7 @@
         if (itemIndex > -1) {
           this.defaultIndex = itemIndex
           this.enumList.forEach((item) => {
+            // eslint-disable-next-line no-param-reassign
             item.is_default = item.id === id
           })
 
@@ -190,9 +192,7 @@
       },
       handleSort() {
         this.order = this.order * -1
-        this.enumList.sort((A, B) => {
-          return A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' }) * this.order
-        })
+        this.enumList.sort((A, B) => A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' }) * this.order)
 
         this.$emit('input', this.enumList)
       }

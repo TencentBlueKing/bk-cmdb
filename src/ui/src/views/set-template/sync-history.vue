@@ -222,9 +222,7 @@
       },
       hanldeFilterByDate(daterange) {
         daterange = daterange.filter(date => date)
-        this.searchDate = daterange.map((date, index) => {
-          return index === 0 ? (date + ' 00:00:00') : (date + ' 23:59:59')
-        })
+        this.searchDate = daterange.map((date, index) => (index === 0 ? (`${date} 00:00:00`) : (`${date} 23:59:59`)))
         this.getData(true)
       }
     }

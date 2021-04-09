@@ -151,7 +151,8 @@
       <div class="topo-text">{{sourceModel['bk_obj_name']}} {{relationName}} {{targetModel['bk_obj_name']}}</div>
     </div>
     <div class="btn-group" v-if="!isReadOnly">
-      <bk-button theme="primary" :disabled="isReadOnly" :loading="$loading(['createObjectAssociation', 'updateObjectAssociation'])" @click="saveRelation">
+      <bk-button theme="primary" :disabled="isReadOnly"
+        :loading="$loading(['createObjectAssociation', 'updateObjectAssociation'])" @click="saveRelation">
         {{isEdit ? $t('保存') : $t('提交')}}
       </bk-button>
       <bk-button theme="default" @click="cancel">
@@ -229,41 +230,41 @@
         if (this.isEdit) {
           return this.relation.bk_obj_asst_id
         }
-        const relationInfo = this.relationInfo
-        if (relationInfo['bk_obj_id'].length && relationInfo['bk_asst_id'].length && relationInfo['bk_asst_obj_id'].length) {
-          return `${relationInfo['bk_obj_id']}_${relationInfo['bk_asst_id']}_${relationInfo['bk_asst_obj_id']}`
+        const { relationInfo } = this
+        if (relationInfo.bk_obj_id.length && relationInfo.bk_asst_id.length && relationInfo.bk_asst_obj_id.length) {
+          return `${relationInfo.bk_obj_id}_${relationInfo.bk_asst_id}_${relationInfo.bk_asst_obj_id}`
         }
         return ''
       },
       createParams() {
         return {
           bk_obj_asst_id: this.objAsstId,
-          bk_obj_asst_name: this.relationInfo['bk_obj_asst_name'],
-          bk_obj_id: this.relationInfo['bk_obj_id'],
-          bk_asst_obj_id: this.relationInfo['bk_asst_obj_id'],
-          bk_asst_id: this.relationInfo['bk_asst_id'],
+          bk_obj_asst_name: this.relationInfo.bk_obj_asst_name,
+          bk_obj_id: this.relationInfo.bk_obj_id,
+          bk_asst_obj_id: this.relationInfo.bk_asst_obj_id,
+          bk_asst_id: this.relationInfo.bk_asst_id,
           mapping: this.relationInfo.mapping
         }
       },
       updateParams() {
         return {
-          bk_obj_asst_name: this.relationInfo['bk_obj_asst_name'],
-          bk_asst_id: this.relationInfo['bk_asst_id']
+          bk_obj_asst_name: this.relationInfo.bk_obj_asst_name,
+          bk_asst_id: this.relationInfo.bk_asst_id
         }
       },
       asstList() {
         const asstList = []
         this.classifications.forEach((classify) => {
-          if (classify['bk_objects'].length) {
+          if (classify.bk_objects.length) {
             const objects = []
-            classify['bk_objects'].forEach((model) => {
+            classify.bk_objects.forEach((model) => {
               if (!model.bk_ishidden) {
                 objects.push(model)
               }
             })
             if (objects.length) {
               asstList.push({
-                name: classify['bk_classification_name'],
+                name: classify.bk_classification_name,
                 children: objects
               })
             }
@@ -273,33 +274,33 @@
       },
       changedValues() {
         const changedValues = {}
-        for (const propertyId in this.relationInfo) {
+        Object.keys(this.relationInfo).forEach((propertyId) => {
           if (JSON.stringify(this.relationInfo[propertyId]) !== JSON.stringify(this.originRelationInfo[propertyId])) {
             changedValues[propertyId] = this.relationInfo[propertyId]
           }
-        }
+        })
         return changedValues
       },
       sourceModel() {
-        return this.getModelById(this.relationInfo['bk_obj_id']) || {}
+        return this.getModelById(this.relationInfo.bk_obj_id) || {}
       },
       targetModel() {
-        return this.getModelById(this.relationInfo['bk_asst_obj_id']) || {}
+        return this.getModelById(this.relationInfo.bk_asst_obj_id) || {}
       },
       relationName() {
-        const asstId = this.relationInfo['bk_asst_id']
+        const asstId = this.relationInfo.bk_asst_id
         return (this.relationList.find(relation => relation.id === asstId) || {}).name
       }
     },
     watch: {
       'relationInfo.bk_obj_id'(val) {
-        if (val !== this.activeModel['bk_obj_id']) {
-          this.relationInfo['bk_asst_obj_id'] = this.activeModel['bk_obj_id']
+        if (val !== this.activeModel.bk_obj_id) {
+          this.relationInfo.bk_asst_obj_id = this.activeModel.bk_obj_id
         }
       },
       'relationInfo.bk_asst_obj_id'(val) {
-        if (val !== this.activeModel['bk_obj_id']) {
-          this.relationInfo['bk_obj_id'] = this.activeModel['bk_obj_id']
+        if (val !== this.activeModel.bk_obj_id) {
+          this.relationInfo.bk_obj_id = this.activeModel.bk_obj_id
         }
       }
     },
@@ -320,11 +321,11 @@
       },
       initData() {
         if (this.isEdit) {
-          for (const key in this.relationInfo) {
+          Object.keys(this.relationInfo).forEach((propertyId) => {
             this.relationInfo[key] = this.$tools.clone(this.relation[key])
-          }
+          })
         } else {
-          this.relationInfo['bk_obj_id'] = this.activeModel['bk_obj_id']
+          this.relationInfo.bk_obj_id = this.activeModel.bk_obj_id
         }
       },
       async saveRelation() {
@@ -354,7 +355,7 @@
       },
       exchangeObjAsst() {
         const { relationInfo } = this;
-        [relationInfo['bk_obj_id'], relationInfo['bk_asst_obj_id']] = [relationInfo['bk_asst_obj_id'], relationInfo['bk_obj_id']]
+        [relationInfo.bk_obj_id, relationInfo.bk_asst_obj_id] = [relationInfo.bk_asst_obj_id, relationInfo.bk_obj_id]
       }
     }
   }

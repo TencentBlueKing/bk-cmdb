@@ -111,7 +111,7 @@
         'targetInstances'
       ]),
       hostId() {
-        return parseInt(this.$route.params.id)
+        return parseInt(this.$route.params.id, 10)
       },
       model() {
         return this.$store.getters['objectModelClassify/getModelById'](this.id)
@@ -153,13 +153,11 @@
       },
       header() {
         const headerProperties = this.$tools.getDefaultHeaderProperties(this.properties)
-        const header = headerProperties.map((property) => {
-          return {
-            id: property.bk_property_id,
-            name: this.$tools.getHeaderPropertyName(property),
-            property
-          }
-        })
+        const header = headerProperties.map(property => ({
+          id: property.bk_property_id,
+          name: this.$tools.getHeaderPropertyName(property),
+          property
+        }))
         return header
       },
       expandAll() {
@@ -246,13 +244,11 @@
           operator: '$in',
           value: this.instanceIds
         }
-        const condition = models.map((model) => {
-          return {
-            bk_obj_id: model,
-            fields: [],
-            condition: model === 'host' ? [hostCondition] : []
-          }
-        })
+        const condition = models.map(model => ({
+          bk_obj_id: model,
+          fields: [],
+          condition: model === 'host' ? [hostCondition] : []
+        }))
         return this.$store.dispatch('hostSearch/searchHost', {
           params: {
             bk_biz_id: -1,
@@ -268,12 +264,10 @@
             }
           },
           config
-        }).then((data) => {
-          return {
-            count: data.count,
-            info: data.info.map(item => item.host)
-          }
-        })
+        }).then(data => ({
+          count: data.count,
+          info: data.info.map(item => item.host)
+        }))
       },
       getBusinessInstances(config) {
         return this.$store.dispatch('objectBiz/searchBusiness', {
@@ -311,6 +305,7 @@
           },
           config
         }).then((data) => {
+          // eslint-disable-next-line no-param-reassign
           data = data || {
             count: 0,
             info: []
@@ -319,7 +314,7 @@
         })
       },
       async cancelAssociation() {
-        const item = this.confirm.item
+        const { item } = this.confirm
         const keyMap = {
           host: 'bk_host_id',
           biz: 'bk_biz_id'
@@ -356,7 +351,7 @@
         })
       },
       togglePage(step) {
-        const current = this.pagination.current
+        const { current } = this.pagination
         const newCurrent = current + step
         if (newCurrent < 1 || newCurrent > this.totalPage) {
           return false

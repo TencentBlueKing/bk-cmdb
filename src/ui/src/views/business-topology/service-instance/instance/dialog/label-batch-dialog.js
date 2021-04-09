@@ -12,7 +12,7 @@ const Component = Vue.extend({
       this.$destroy()
     }
   },
-  render(h) {
+  render() {
     return <label-batch-dialog ref="dialog" { ...{ props: this.$options.attrs }} on-close={ this.handleClose }></label-batch-dialog>
   }
 })

@@ -80,13 +80,14 @@ export default new Vue({
     }
   },
   watch: {
-    queue(queue) {
+    queue() {
       this.verify()
     }
   },
   methods: {
     add({ component, data }) {
       this.authComponents.push(component)
+      // eslint-disable-next-line new-cap
       const authMetas = TRANSFORM_TO_INTERNAL(data)
       this.queue.push(...authMetas)
     },
@@ -102,6 +103,7 @@ export default new Vue({
       } finally {
         authData = filterUselssKey(authData, ['resource_id_ex'])
         authComponents.forEach((component) => {
+          // eslint-disable-next-line new-cap
           const authMetas = TRANSFORM_TO_INTERNAL(component.auth)
           const authResults = []
           authMetas.forEach((meta) => {

@@ -8,6 +8,8 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars, no-param-reassign */
+
 import $http from '@/api'
 
 const state = {
@@ -22,7 +24,8 @@ const getters = {
       // 兼容通用方法
       property.options = property.option
       // 自定义字段空间
-      property['__extra__'] = {
+      // eslint-disable-next-line no-underscore-dangle
+      property.__extra__ = {
         visible: true
       }
     })

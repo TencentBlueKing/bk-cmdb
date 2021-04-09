@@ -156,7 +156,9 @@
       <div class="dialog-title" slot="tools">{{$t('新建字段')}}</div>
       <div class="dialog-content">
         <div class="dialog-filter">
-          <bk-input type="text" class="cmdb-form-input" clearable v-model.trim="dialog.filter" right-icon="bk-icon icon-search"></bk-input>
+          <bk-input type="text" class="cmdb-form-input" clearable
+            v-model.trim="dialog.filter" right-icon="bk-icon icon-search">
+          </bk-input>
         </div>
         <ul class="dialog-property clearfix" ref="dialogProperty">
           <li class="property-item fl"
@@ -284,6 +286,7 @@
 
 <script>
   import vueDraggable from 'vuedraggable'
+  import has from 'has'
   import debounce from 'lodash.debounce'
   import theFieldDetail from './field-detail'
   import previewField from './preview-field'
@@ -314,18 +317,18 @@
         groupState: {},
         initGroupState: {},
         fieldTypeMap: {
-          'singlechar': this.$t('短字符'),
-          'int': this.$t('数字'),
-          'float': this.$t('浮点'),
-          'enum': this.$t('枚举'),
-          'date': this.$t('日期'),
-          'time': this.$t('时间'),
-          'longchar': this.$t('长字符'),
-          'objuser': this.$t('用户'),
-          'timezone': this.$t('时区'),
-          'bool': 'bool',
-          'list': this.$t('列表'),
-          'organization': this.$t('组织')
+          singlechar: this.$t('短字符'),
+          int: this.$t('数字'),
+          float: this.$t('浮点'),
+          enum: this.$t('枚举'),
+          date: this.$t('日期'),
+          time: this.$t('时间'),
+          longchar: this.$t('长字符'),
+          objuser: this.$t('用户'),
+          timezone: this.$t('时区'),
+          bool: 'bool',
+          list: this.$t('列表'),
+          organization: this.$t('组织')
         },
         dialog: {
           isShow: false,
@@ -369,14 +372,14 @@
       ...mapGetters(['supplierAccount']),
       ...mapGetters('objectModel', ['activeModel']),
       isGlobalView() {
-        const topRoute = this.$route.matched[0]
+        const [topRoute] = this.$route.matched
         return topRoute ? topRoute.name !== MENU_BUSINESS : true
       },
       bizId() {
         if (this.isGlobalView) {
           return null
         }
-        return parseInt(this.$route.params.bizId)
+        return parseInt(this.$route.params.bizId, 10)
       },
       objId() {
         return this.$route.params.modelId || this.customObjId
@@ -436,12 +439,12 @@
         return this.globalUsercustom[`${this.objId}_global_custom_table_columns`]
       },
       canEditSort() {
-        return !this.customObjId && this.curModel['bk_classification_id'] !== 'bk_biz_topo'
+        return !this.customObjId && this.curModel.bk_classification_id !== 'bk_biz_topo'
       }
     },
     watch: {
       groupedProperties: {
-        handler(groupedProperties) {
+        handler() {
           this.filterField()
         },
         deep: true
@@ -470,7 +473,7 @@
         'searchObjectAttribute'
       ]),
       isBizCustomData(data) {
-        return data.hasOwnProperty('bk_biz_id') && data.bk_biz_id > 0
+        return has(data, 'bk_biz_id') && data.bk_biz_id > 0
       },
       isBuiltInGroup(group) {
         if (this.isGlobalView) {
@@ -512,12 +515,14 @@
       },
       handleRiseGroup(index, group) {
         this.groupedProperties[index - 1].info.bk_group_index = index
+        // eslint-disable-next-line no-param-reassign
         group.info.bk_group_index = index - 1
         this.updateGroupIndex()
         this.resortGroups()
       },
       handleDropGroup(index, group) {
         this.groupedProperties[index + 1].info.bk_group_index = index
+        // eslint-disable-next-line no-param-reassign
         group.info.bk_group_index = index + 1
         this.updateGroupIndex()
         this.resortGroups()
@@ -537,6 +542,7 @@
         this.init(properties, groups)
       },
       init(properties, groups) {
+        // eslint-disable-next-line no-param-reassign
         properties = this.setPropertIndex(properties)
         groups = this.separateBizCustomGroups(groups)
         groups = this.setGroupIndex(groups)
@@ -554,6 +560,7 @@
           }
         })
         const seletedProperties = this.$tools.getHeaderProperties(properties, [], this.disabledConfig)
+        // eslint-disable-next-line max-len
         this.configProperty.selected = this.curGlobalCustomTableColumns || seletedProperties.map(property => property.bk_property_id)
         this.initGroupState = this.$tools.clone(groupState)
         this.groupState = Object.assign({}, groupState, this.groupState)
@@ -578,7 +585,7 @@
             }
           })
           displayGroupedProperties.forEach((group) => {
-            this.groupState[group.info['bk_group_id']] = false
+            this.groupState[group.info.bk_group_id] = false
           })
           this.displayGroupedProperties = displayGroupedProperties
         } else {
@@ -597,14 +604,14 @@
       },
       getProperties() {
         const params = {
-          'bk_obj_id': this.objId,
-          'bk_supplier_account': this.supplierAccount
+          bk_obj_id: this.objId,
+          bk_supplier_account: this.supplierAccount
         }
         if (!this.isGlobalView) {
           params.bk_biz_id = this.bizId
         }
         return this.searchObjectAttribute({
-          params: params,
+          params,
           config: {
             requestId: `post_searchObjectAttribute_${this.objId}`,
             cancelPrevious: true
@@ -621,12 +628,8 @@
             publicGroups.push(group)
           }
         })
-        publicGroups.sort((groupA, groupB) => {
-          return groupA.bk_group_index - groupB.bk_group_index
-        })
-        bizCustomGroups.sort((groupA, groupB) => {
-          return groupA.bk_group_index - groupB.bk_group_index
-        })
+        publicGroups.sort((groupA, groupB) => groupA.bk_group_index - groupB.bk_group_index)
+        bizCustomGroups.sort((groupA, groupB) => groupA.bk_group_index - groupB.bk_group_index)
         return [...publicGroups, ...bizCustomGroups]
       },
       setGroupIndex(groups) {
@@ -651,9 +654,9 @@
         })
       },
       handleSelectProperty(property) {
-        const selectedProperties = this.dialog.selectedProperties
-        const addedProperties = this.dialog.addedProperties
-        const deletedProperties = this.dialog.deletedProperties
+        const { selectedProperties } = this.dialog
+        const { addedProperties } = this.dialog
+        const { deletedProperties } = this.dialog
         const selectedIndex = selectedProperties.indexOf(property)
         const addedIndex = addedProperties.indexOf(property)
         const deletedIndex = deletedProperties.indexOf(property)
@@ -686,6 +689,7 @@
         if (addedProperties.length || deletedProperties.length) {
           this.groupedProperties.forEach((group) => {
             if (group === this.dialog.group) {
+              // eslint-disable-next-line max-len
               const resortedProperties = [...selectedProperties].sort((propertyA, propertyB) => propertyA.bk_property_index - propertyB.bk_property_index)
               group.properties = resortedProperties
             } else {
@@ -718,6 +722,7 @@
           return
         }
         const curGroup = this.groupDialog.group
+        // eslint-disable-next-line max-len
         const isExist = this.groupedProperties.some(originalGroup => originalGroup !== curGroup && originalGroup.info.bk_group_name === this.groupForm.groupName)
         if (isExist) {
           this.$error(this.$t('该名字已经存在'))
@@ -728,15 +733,15 @@
             id: curGroup.info.id
           },
           data: {
-            'bk_group_name': this.groupForm.groupName,
-            'is_collapse': this.groupForm.isCollapse
+            bk_group_name: this.groupForm.groupName,
+            is_collapse: this.groupForm.isCollapse
           }
         }
         if (!this.isGlobalView) {
           params.bk_biz_id = this.bizId
         }
         await this.updateGroup({
-          params: params,
+          params,
           config: {
             requestId: `put_updateGroup_name_${curGroup.info.id}`,
             cancelPrevious: true
@@ -765,7 +770,7 @@
         if (!valid) {
           return
         }
-        const groupedProperties = this.groupedProperties
+        const { groupedProperties } = this
         const isExist = groupedProperties.some(group => group.info.bk_group_name === this.groupForm.groupName)
         if (isExist) {
           this.$error(this.$t('该名字已经存在'))
@@ -784,7 +789,7 @@
           params.bk_biz_id = this.bizId
         }
         this.createGroup({
-          params: params,
+          params,
           config: {
             requestId: `post_createGroup_${groupId}`
           }
@@ -825,14 +830,14 @@
               id: group.info.id
             },
             data: {
-              'bk_group_index': group.info['bk_group_index']
+              bk_group_index: group.info.bk_group_index
             }
           }
           if (!this.isGlobalView) {
             params.bk_biz_id = this.bizId
           }
           this.updateGroup({
-            params: params,
+            params,
             config: {
               requestId: `put_updateGroup_index_${group.info.id}`,
               cancelPrevious: true
@@ -841,7 +846,7 @@
         })
       },
       handleDragChange(moveInfo) {
-        if (moveInfo.hasOwnProperty('moved') || moveInfo.hasOwnProperty('added')) {
+        if (has(moveInfo, 'moved') || has(moveInfo, 'added')) {
           const info = moveInfo.moved ? { ...moveInfo.moved } : { ...moveInfo.added }
           this.updatePropertyIndex(info)
         }
@@ -849,8 +854,11 @@
       async updatePropertyIndex({ element: property, newIndex }) {
         let curIndex = 0
         let curGroup = ''
+
+        // eslint-disable-next-line no-restricted-syntax
         for (const group of this.groupedProperties) {
           const len = group.properties.length
+          // eslint-disable-next-line no-restricted-syntax
           for (const item of group.properties) {
             if (item.bk_property_id === property.bk_property_id) {
               // 取移动字段新位置的前一个字段 index + 1
@@ -874,7 +882,7 @@
         await this.updatePropertySort({
           objId: this.objId,
           propertyId: property.id,
-          params: params,
+          params,
           config: {
             requestId: `updatePropertySort_${this.objId}`
           }
@@ -917,7 +925,7 @@
                 originalResponse: true
               }
             }).then((res) => {
-              this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
+              this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
               if (res.data.bk_error_msg === 'success' && res.data.bk_error_code === 0) {
                 this.displayGroupedProperties[index].properties.splice(fieldIndex, 1)
                 this.handleSliderHidden()

@@ -72,7 +72,7 @@
             const options = this.property.option
             const property = options.find(property => property.bk_property_id === key)
             if (property) {
-              const displayValue = this.$options.filters['formatter'](value, property, property.option)
+              const displayValue = this.$options.filters.formatter(value, property, property.option)
               values[key] = displayValue
             }
           })

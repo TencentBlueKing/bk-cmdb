@@ -67,14 +67,18 @@
           <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
         </bk-form-item>
         <bk-form-item>
-          <bk-button class="filter-add-button ml10" type="primary" text @click="handleSelectProperty">{{$t('添加其他条件')}}</bk-button>
+          <bk-button class="filter-add-button ml10" type="primary" text @click="handleSelectProperty">
+            {{$t('添加其他条件')}}
+          </bk-button>
         </bk-form-item>
       </bk-form>
       <div class="filter-options"
         slot="footer"
         slot-scope="{ sticky }"
         :class="{ 'is-sticky': sticky }">
-        <bk-button class="option-search mr10" theme="primary" :disabled="errors.any()" @click="handleSearch">{{$t('查询')}}</bk-button>
+        <bk-button class="option-search mr10" theme="primary" :disabled="errors.any()" @click="handleSearch">
+          {{$t('查询')}}
+        </bk-button>
         <template v-if="collectable">
           <span class="option-collect-wrapper" v-if="collection"
             v-bk-tooltips="{
@@ -105,7 +109,9 @@
               disabled: allowCollect,
               content: $t('请先填写筛选条件')
             }">
-            <bk-button theme="default" :disabled="!allowCollect" @click="handleCreateCollection">{{$t('收藏此条件')}}</bk-button>
+            <bk-button theme="default" :disabled="!allowCollect" @click="handleCreateCollection">
+              {{$t('收藏此条件')}}
+            </bk-button>
             <section class="collection-form" slot="content">
               <label class="collection-title">{{$t('收藏此条件')}}</label>
               <bk-input class="collection-name"
@@ -142,6 +148,7 @@
 </template>
 
 <script>
+  import has from 'has'
   import PropertySelector from './property-selector'
   import FilterStore from './store'
   import OperatorSelector from './operator-selector'
@@ -194,7 +201,7 @@
       allowCollect() {
         const hasIP = !!this.IPCondition.text.trim().length
         const hasCondition = Object.keys(this.condition).some((id) => {
-          const value = this.condition[id].value
+          const { value } = this.condition[id]
           return !!String(value).trim().length
         })
         return hasIP || hasCondition
@@ -206,7 +213,7 @@
         handler() {
           const newCondition = this.$tools.clone(FilterStore.condition)
           Object.keys(newCondition).forEach((id) => {
-            if (this.condition.hasOwnProperty(id)) {
+            if (has(this.condition, id)) {
               newCondition[id] = this.condition[id]
             }
           })
@@ -270,7 +277,7 @@
         }
       },
       handleOperatorChange(property, operator) {
-        const value = this.condition[property.id].value
+        const { value } = this.condition[property.id]
         const effectValue = Utils.getOperatorSideEffect(property, operator, value)
         this.condition[property.id].value = effectValue
       },
@@ -287,6 +294,7 @@
         try {
           this.$nextTick(() => {
             const reference = component.$el.querySelector('.user-selector-input')
+            // eslint-disable-next-line no-underscore-dangle
             reference._tippy.setProps({
               offset: [240, 5]
             })
@@ -321,7 +329,7 @@
         }, 300)
       },
       handleCreateCollection() {
-        const instance = this.$refs.collectionPopover.instance
+        const { instance } = this.$refs.collectionPopover
         this.errors.clear()
         instance.show()
       },
@@ -330,7 +338,7 @@
         if (!collectionPopover) {
           return false
         }
-        const instance = this.$refs.collectionPopover.instance
+        const { instance } = this.$refs.collectionPopover
         instance.hide()
       },
       handleCollectionFormFocus() {

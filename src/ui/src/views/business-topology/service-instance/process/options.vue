@@ -19,7 +19,9 @@
       </cmdb-auth>
     </div>
     <div class="right">
-      <bk-checkbox class="options-expand-all" v-model="expandAll" @change="handleExpandAllChange">{{$t('全部展开')}}</bk-checkbox>
+      <bk-checkbox class="options-expand-all" v-model="expandAll" @change="handleExpandAllChange">
+        {{$t('全部展开')}}
+      </bk-checkbox>
       <bk-input class="options-search ml10"
         ref="searchSelect"
         v-model.trim="searchValue"

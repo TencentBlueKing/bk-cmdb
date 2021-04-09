@@ -58,6 +58,7 @@
 </template>
 
 <script>
+  import has from 'has'
   import { MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
   export default {
     props: {
@@ -117,7 +118,7 @@
         }
       },
       async getSetTemplates() {
-        if (this.setTemplateMap.hasOwnProperty(this.business)) {
+        if (has(this.setTemplateMap, this.business)) {
           this.setTemplateList = this.setTemplateMap[this.business]
         } else {
           try {

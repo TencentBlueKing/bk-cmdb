@@ -1,3 +1,4 @@
+import has from 'has'
 import router from './index'
 import { Base64 } from 'js-base64'
 import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
@@ -6,7 +7,7 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
   const currentRoute = router.app.$route
 
   // 当前页非history模式则先清空历史记录
-  if (!currentRoute.query.hasOwnProperty('_f')) {
+  if (!has(currentRoute.query, '_f')) {
     window.sessionStorage.setItem('history', JSON.stringify([]))
   }
 
@@ -28,7 +29,8 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
       query: { ...currentRoute.query }
     }
     const base64 = Base64.encode(JSON.stringify(data))
-    queryBackup['_f'] = '1'
+    // eslint-disable-next-line no-underscore-dangle
+    queryBackup._f = '1'
 
     historyList.push(base64)
     window.sessionStorage.setItem('history', JSON.stringify(historyList))
@@ -54,11 +56,11 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
     query: queryBackup
   }
   if (reload) {
-    const href = router.resolve(to).href
+    const { href } = router.resolve(to)
     window.location.href = href
     window.location.reload()
   } else {
-    const resolved = router.resolve(to).resolved
+    const { resolved } = router.resolve(to)
     // 注入bizId，未改造的页面跳转，可能会遗漏了bizId的设置
     if (resolved.matched.length && resolved.matched[0].name === MENU_BUSINESS && !params.bizId) {
       to.params.bizId = router.app.$route.params.bizId
@@ -70,7 +72,7 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
 
 export const back = function () {
   let record
-  if (router.app.$route.query.hasOwnProperty('_f')) {
+  if (has(router.app.$route.query, '_f')) {
     try {
       const historyList = JSON.parse(window.sessionStorage.getItem('history')) || []
       record = historyList.pop()
@@ -91,7 +93,7 @@ export const back = function () {
 }
 
 export const open = function (to) {
-  const href = router.resolve(to).href
+  const { href } = router.resolve(to)
   window.open(href)
 }
 

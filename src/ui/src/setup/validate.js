@@ -4,64 +4,44 @@ import veeValidate, { Validator } from 'vee-validate'
 import cnMessages from 'vee-validate/dist/locale/zh_CN'
 import stringLength from 'utf8-byte-length'
 
+/* eslint-disable no-useless-escape */
+
 const customRules = {
   length: {
-    validate: (value, [length]) => {
-      return stringLength(value) <= length
-    }
+    validate: (value, [length]) => stringLength(value) <= length
   },
   repeat: {
-    validate: (value, otherValue) => {
-      return otherValue.findIndex(item => item === value) === -1
-    }
+    validate: (value, otherValue) => otherValue.findIndex(item => item === value) === -1
   },
   singlechar: {
-    validate: (value) => {
-      return /\S*/.test(value)
-    }
+    validate: value => /\S*/.test(value)
   },
   longchar: {
-    validate: (value) => {
-      return /\S*/.test(value)
-    }
+    validate: value => /\S*/.test(value)
   },
   associationId: {
-    validate: (value) => {
-      return /^[a-zA-Z][\w]*$/.test(value)
-    }
+    validate: value => /^[a-zA-Z][\w]*$/.test(value)
   },
   // 未被使用
   classifyName: {
-    validate: (value) => {
-      return /^([a-zA-Z0-9_ ]|[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]){1,20}$/.test(value)
-    }
+    validate: value => /^([a-zA-Z0-9_ ]|[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]){1,20}$/.test(value)
   },
   // 模型分组id
   classifyId: {
-    validate: (value) => {
-      return /^[a-zA-Z][\w]*$/.test(value)
-    }
+    validate: value => /^[a-zA-Z][\w]*$/.test(value)
   },
   http: {
-    validate: (value) => {
-      return /^http(s?):\/\/[^\s]+/.test(value)
-    }
+    validate: value => /^http(s?):\/\/[^\s]+/.test(value)
   },
   // 新建模型唯一标识id
   modelId: {
-    validate: (value) => {
-      return /^[a-zA-Z][\w]*$/.test(value)
-    }
+    validate: value => /^[a-zA-Z][\w]*$/.test(value)
   },
   enumId: {
-    validate: (value) => {
-      return /^[a-zA-Z0-9_]*$/.test(value)
-    }
+    validate: value => /^[a-zA-Z0-9_]*$/.test(value)
   },
   enumName: {
-    validate: (value) => {
-      return /^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[()+-《》,，；;“”‘’。\."\' \\/:])*$/.test(value)
-    }
+    validate: value => /^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[()+-《》,，；;“”‘’。\."\' \\/:])*$/.test(value)
   },
   number: {
     validate: (value) => {
@@ -72,63 +52,41 @@ const customRules = {
     }
   },
   isBigger: {
-    validate: (value, [targetValue]) => {
-      return Number(value) > Number(targetValue)
-    }
+    validate: (value, [targetValue]) => Number(value) > Number(targetValue)
   },
   // 新建字段唯一标识
   fieldId: {
-    validate: (value) => {
-      return /^[a-zA-Z][\w]*$/.test(value)
-    }
+    validate: value => /^[a-zA-Z][\w]*$/.test(value)
   },
   float: {
-    validate: (value) => {
-      return /^[+-]?([0-9]*[.]?[0-9]+|[0-9]+[.]?[0-9]*)([eE][+-]?[0-9]+)?$/.test(value)
-    }
+    validate: value => /^[+-]?([0-9]*[.]?[0-9]+|[0-9]+[.]?[0-9]*)([eE][+-]?[0-9]+)?$/.test(value)
   },
   oid: {
-    validate: (value) => {
-      return /^(\d+)?(\.\d+)+$/.test(value)
-    }
+    validate: value => /^(\d+)?(\.\d+)+$/.test(value)
   },
   hourFormat: {
-    validate: (value) => {
-      return /^[1-5]?[0-9]$/.test(value)
-    }
+    validate: value => /^[1-5]?[0-9]$/.test(value)
   },
   dayFormat: {
-    validate: (value) => {
-      return /^((20|21|22|23|[0-1]\d):[0-5][0-9])?$/.test(value)
-    }
+    validate: value => /^((20|21|22|23|[0-1]\d):[0-5][0-9])?$/.test(value)
   },
   // 服务分类名称
   namedCharacter: {
-    validate: (value) => {
-      return /^[a-zA-Z0-9\u4e00-\u9fa5_\-:\(\)]+$/.test(value)
-    }
+    validate: value => /^[a-zA-Z0-9\u4e00-\u9fa5_\-:\(\)]+$/.test(value)
   },
   // 服务实例标签键
   instanceTagKey: {
-    validate: (value) => {
-      return /^[a-zA-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$/.test(value)
-    }
+    validate: value => /^[a-zA-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$/.test(value)
   },
   // 服务实例标签值
   instanceTagValue: {
-    validate: (value) => {
-      return /^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$/.test(value)
-    }
+    validate: value => /^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$/.test(value)
   },
   businessTopoInstNames: {
-    validate: (value) => {
-      return /^[^\#\/,\>\<\|]+$/.test(value)
-    }
+    validate: value => /^[^\#\/,\>\<\|]+$/.test(value)
   },
   repeatTagKey: {
-    validate: (value, otherValue) => {
-      return otherValue.findIndex(item => item === value) === -1
-    }
+    validate: (value, otherValue) => otherValue.findIndex(item => item === value) === -1
   },
   setNameMap: {
     validate: (value) => {
@@ -147,6 +105,7 @@ const customRules = {
   setNameLen: {
     validate: (value) => {
       const nameList = value.split('\n').filter(name => name)
+      // eslint-disable-next-line no-restricted-syntax
       for (const name of nameList) {
         if (stringLength(name) > 256) return false
       }
@@ -154,9 +113,7 @@ const customRules = {
     }
   },
   reservedWord: {
-    validate: (value) => {
-      return /^(?!bk_).*/.test(value)
-    }
+    validate: value => /^(?!bk_).*/.test(value)
   },
   ipSearchRuls: {
     validate: (value) => {
@@ -182,16 +139,12 @@ const customRules = {
 }
 
 const dictionary = {
-  'zh_CN': {
+  zh_CN: {
     messages: {
-      regex: (field) => {
-        return `请输入合法的${field}`
-      },
+      regex: field => `请输入合法的${field}`,
       longchar: () => '请输入正确的长字符内容',
       singlechar: () => '请输入正确的短字符内容',
-      length: (field, [maxLength]) => {
-        return `请输入${maxLength}个字符以内的内容`
-      },
+      length: (field, [maxLength]) => `请输入${maxLength}个字符以内的内容`,
       associationId: () => '格式不正确，请填写英文开头，下划线，数字，英文的组合',
       classifyName: () => '请输入正确的内容',
       classifyId: () => '请输入正确的内容',
@@ -229,14 +182,11 @@ const dictionary = {
   },
   en: {
     messages: {
-      regex: (field) => {
-        return `Please enter a valid $ {field}`
-      },
+      // eslint-disable-next-line no-unused-vars
+      regex: field => 'Please enter a valid $ {field}',
       longchar: () => 'Please enter the correct content',
       singlechar: () => 'Please enter the correct content',
-      length: (field, [maxLength]) => {
-        return `Content length max than ${maxLength}`
-      },
+      length: (field, [maxLength]) => `Content length max than ${maxLength}`,
       associationId: () => 'The format is incorrect, can only contain underscores, numbers, letter and start with a letter',
       classifyName: () => 'Please enter the correct content',
       classifyId: () => 'Please enter the correct content',
@@ -301,6 +251,7 @@ const customConfigRules = [
 
 const mixinConfig = () => {
   const { validationRules = {} } = window.CMDB_CONFIG || {}
+  // eslint-disable-next-line no-restricted-syntax
   for (const item of customConfigRules) {
     const useCb = typeof item !== 'string'
     const key = useCb ? Object.keys(item)[0] : item
@@ -308,27 +259,21 @@ const mixinConfig = () => {
     const rule = validationRules[key]
     if (!rule) continue
 
-    let validate = (value) => {
-      return new RegExp(rule.value).test(value)
-    }
+    let validate = value => new RegExp(rule.value).test(value)
     if (useCb) {
-      validate = (value) => {
-        return item[key](value, () => {
-          return new RegExp(rule.value).test(value)
-        })
-      }
+      validate = value => item[key](value, () => new RegExp(rule.value).test(value))
     }
 
     // 加入到自定义规则列表
     customRules[key] = { validate }
     // 提示语设置
-    dictionary['zh_CN']['messages'][key] = (field, args) => {
+    dictionary.zh_CN.messages[key] = (field) => {
       // 确保总是获取最新的配置
       const { validationRules } = window.CMDB_CONFIG
       const rule = validationRules[key]
       return rule.i18n.cn.replace(/{field}/g, field)
     }
-    dictionary['en']['messages'][key] = (field, args) => {
+    dictionary.en.messages[key] = (field) => {
       const { validationRules } = window.CMDB_CONFIG
       const rule = validationRules[key]
       return rule.i18n.en.replace(/{field}/g, field)
@@ -338,6 +283,7 @@ const mixinConfig = () => {
 
 export function setupValidator(app) {
   mixinConfig()
+  // eslint-disable-next-line no-restricted-syntax
   for (const rule in customRules) {
     Validator.extend(rule, customRules[rule])
   }
@@ -356,6 +302,7 @@ export function setupValidator(app) {
 
 export function updateValidator() {
   mixinConfig()
+  // eslint-disable-next-line no-restricted-syntax
   for (const rule in customRules) {
     Validator.extend(rule, customRules[rule])
   }

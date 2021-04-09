@@ -30,7 +30,7 @@ export default {
             }
           }
         }, [h(ColumnsConfig, {
-          props: props,
+          props,
           slot: 'content',
           on: {
             cancel: () => {

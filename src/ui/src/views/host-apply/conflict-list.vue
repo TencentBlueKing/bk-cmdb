@@ -55,7 +55,7 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       moduleIds() {
-        const mid = this.$route.query.mid
+        const { mid } = this.$route.query
         let moduleIds = []
         if (mid) {
           moduleIds = String(mid).split(',')
@@ -99,7 +99,7 @@
         })
       },
       postApply() {
-        const conflictResolveResult = this.$refs.propertyConfirmTable.conflictResolveResult
+        const { conflictResolveResult } = this.$refs.propertyConfirmTable
         const conflictResolvers = []
         Object.keys(conflictResolveResult).forEach((key) => {
           const propertyList = conflictResolveResult[key]
@@ -107,6 +107,7 @@
             conflictResolvers.push({
               bk_host_id: Number(key),
               bk_attribute_id: property.id,
+              // eslint-disable-next-line no-underscore-dangle
               bk_property_value: property.__extra__.value
             })
           })

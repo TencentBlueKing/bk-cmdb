@@ -84,7 +84,7 @@
     watch: {
       value: {
         immediate: true,
-        handler(value) {
+        handler() {
           this.checkSelected()
         }
       }
@@ -95,7 +95,7 @@
       },
       getDefaultValue() {
         if (this.autoSelect) {
-          const defaultOption = this.options.find(option => option['is_default'])
+          const defaultOption = this.options.find(option => option.is_default)
           return defaultOption
             ? this.multiple ? [defaultOption.id] : defaultOption.id
             : ''
@@ -103,7 +103,7 @@
         return this.multiple ? [] : ''
       },
       checkSelected() {
-        const selected = this.selected
+        const { selected } = this
         if (this.value !== selected) {
           this.selected = selected
         }

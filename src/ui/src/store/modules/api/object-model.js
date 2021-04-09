@@ -8,6 +8,8 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars, no-param-reassign */
+
 import $http from '@/api'
 
 const state = {
@@ -16,7 +18,7 @@ const state = {
 
 const getters = {
   activeModel: state => state.activeModel,
-  isMainLine: state => state.activeModel['bk_classification_id'] === 'bk_biz_topo'
+  isMainLine: state => state.activeModel.bk_classification_id === 'bk_biz_topo'
 }
 
 const actions = {

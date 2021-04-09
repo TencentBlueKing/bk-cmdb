@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 import $http from '@/api'
 
 const actions = {
@@ -19,7 +21,7 @@ const actions = {
       if (info.length) {
         return Promise.resolve(info[0])
       }
-      throw new Error('Can not find cloud account with id:' + id)
+      throw new Error(`Can not find cloud account with id:${id}`)
     } catch (e) {
       return Promise.reject(e)
     }

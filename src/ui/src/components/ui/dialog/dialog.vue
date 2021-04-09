@@ -71,15 +71,15 @@
       },
       bodyStyle() {
         const style = {
-          width: this.width + 'px',
-          '--height': (this.autoResize ? this.bodyHeight : this.height) + 'px'
+          width: `${this.width}px`,
+          '--height': `${this.autoResize ? this.bodyHeight : this.height}px`
         }
         if (!this.autoResize) {
-          style.height = this.height + 'px'
+          style.height = `${this.height}px`
           style.maxHeight = 'initial'
         }
         if (this.minHeight) {
-          style.minHeight = this.minHeight + 'px'
+          style.minHeight = `${this.minHeight}px`
         }
         return style
       }
@@ -90,6 +90,7 @@
         handler(value) {
           if (value) {
             this.showWrapper = true
+            // eslint-disable-next-line no-underscore-dangle
             this.zIndex = window.__bk_zIndex_manager.nextZIndex()
             this.$nextTick(() => {
               this.showBody = true

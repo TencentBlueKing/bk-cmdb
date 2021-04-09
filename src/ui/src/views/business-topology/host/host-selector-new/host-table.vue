@@ -55,7 +55,7 @@
       list(list) {
         this.displayList = list
       },
-      displayList(list) {
+      displayList() {
         this.setChecked()
       },
       selected() {
@@ -81,7 +81,7 @@
           })
         })
       },
-      handleSelect(selection, row) {
+      handleSelect(selection) {
         this.handleSelectionChange(selection)
       },
       handleSelectAll(selection) {
@@ -94,9 +94,7 @@
       },
       searchList() {
         if (this.keyword) {
-          this.displayList = this.list.filter((item) => {
-            return new RegExp(this.keyword, 'i').test(item.host.bk_host_innerip)
-          })
+          this.displayList = this.list.filter(item => new RegExp(this.keyword, 'i').test(item.host.bk_host_innerip))
         } else {
           this.displayList = this.list
         }

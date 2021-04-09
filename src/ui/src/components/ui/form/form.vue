@@ -15,7 +15,9 @@
                   v-if="checkEditable(property)"
                   :key="propertyIndex">
                   <div class="property-name" v-if="!invisibleNameProperties.includes(property['bk_property_id'])">
-                    <span class="property-name-text" :class="{ required: isRequired(property) }">{{property['bk_property_name']}}</span>
+                    <span class="property-name-text" :class="{ required: isRequired(property) }">
+                      {{property['bk_property_name']}}
+                    </span>
                     <i class="property-name-tooltips icon-cc-tips"
                       v-if="property['placeholder']"
                       v-bk-tooltips="{
@@ -134,24 +136,22 @@
     computed: {
       changedValues() {
         const changedValues = {}
-        for (const propertyId in this.values) {
+        Object.keys(this.values).forEach((propertyId) => {
           if (this.values[propertyId] !== this.refrenceValues[propertyId]) {
             changedValues[propertyId] = this.values[propertyId]
           }
-        }
+        })
         return changedValues
       },
       hasChange() {
         return !!Object.keys(this.changedValues).length
       },
       groupedProperties() {
-        return this.$groupedProperties.map((properties) => {
-          return properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
-        })
+        return this.$groupedProperties.map(properties => properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property.bk_property_type)))
       }
     },
     watch: {
-      inst(inst) {
+      inst() {
         this.initValues()
       },
       properties() {
@@ -167,16 +167,14 @@
         this.refrenceValues = this.$tools.clone(this.values)
       },
       checkGroupAvailable(properties) {
-        const availabelProperties = properties.filter((property) => {
-          return this.checkEditable(property)
-        })
+        const availabelProperties = properties.filter(property => this.checkEditable(property))
         return !!availabelProperties.length
       },
       checkEditable(property) {
         if (this.type === 'create') {
-          return !property['bk_isapi']
+          return !property.bk_isapi
         }
-        return property.editable && !property['bk_isapi'] && !this.uneditableProperties.includes(property.bk_property_id)
+        return property.editable && !property.bk_isapi && !this.uneditableProperties.includes(property.bk_property_id)
       },
       checkDisabled(property) {
         if (this.type === 'create') {
@@ -241,8 +239,8 @@
       uncollapseGroup() {
         this.errors.items.forEach((item) => {
           const compareKey = item.scope || item.field
-          const property = this.properties.find(property => property['bk_property_id'] === compareKey)
-          const group = property['bk_property_group']
+          const property = this.properties.find(property => property.bk_property_id === compareKey)
+          const group = property.bk_property_group
           this.groupState[group] = false
         })
       },

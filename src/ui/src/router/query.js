@@ -1,3 +1,4 @@
+import has from 'has'
 import router from './index'
 import throttle from 'lodash.throttle'
 import deepEqual from 'deep-equal'
@@ -9,8 +10,9 @@ function createWatchOptions(key, options) {
     immediate: false,
     deep: false
   }
+  // eslint-disable-next-line no-restricted-syntax
   for (const key in watchOptions) {
-    if (options.hasOwnProperty(key)) {
+    if (has(options, key)) {
       watchOptions[key] = options[key]
     }
   }
@@ -24,7 +26,7 @@ function createWatchOptions(key, options) {
 function createCallback(keys, handler, options = {}) {
   let immediateCalled = false
   const callback = (values, oldValues = {}) => {
-    let execValue, execOldValue
+    let execValue; let execOldValue
     if (Array.isArray(keys)) {
       execValue = {}
       execOldValue = {}
@@ -35,7 +37,7 @@ function createCallback(keys, handler, options = {}) {
     } else if (keys === '*') {
       execValue = { ...values }
       execOldValue = { ...oldValues }
-      if (options.hasOwnProperty('ignore')) {
+      if (has(options, 'ignore')) {
         const ignoreKeys = Array.isArray(options.ignore) ? options.ignore : [options.ignore]
         ignoreKeys.forEach((key) => {
           delete execValue[key]
@@ -55,7 +57,7 @@ function createCallback(keys, handler, options = {}) {
     }
   }
 
-  if (options.hasOwnProperty('throttle')) {
+  if (has(options, 'throttle')) {
     const interval = typeof options.throttle === 'number' ? options.throttle : 100
     return throttle(callback, interval, { leading: false, trailing: true })
   }
@@ -80,7 +82,7 @@ class RouterQuery {
   }
 
   get(key, defaultValue) {
-    if (this.route.query.hasOwnProperty(key)) {
+    if (has(this.route.query, key)) {
       return this.route.query[key]
     }
     if (arguments.length === 2) {
@@ -106,7 +108,7 @@ class RouterQuery {
     })
     redirect({
       ...this.route,
-      query: query
+      query
     })
   }
 
@@ -117,7 +119,7 @@ class RouterQuery {
     delete query[key]
     redirect({
       ...this.route,
-      query: query
+      query
     })
   }
 

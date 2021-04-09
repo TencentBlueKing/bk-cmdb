@@ -42,7 +42,7 @@
       },
       selected() {
         return FilterStore.selected.filter((property) => {
-          const value = this.condition[property.id].value
+          const { value } = this.condition[property.id]
           return value !== null && !!value.toString().length
         })
       },

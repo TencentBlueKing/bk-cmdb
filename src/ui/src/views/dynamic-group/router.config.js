@@ -12,7 +12,7 @@ export default {
       i18n: '动态分组'
     },
     auth: {
-      view: (to, app) => ({ type: OPERATION.R_CUSTOM_QUERY, relation: [to.params.bizId] })
+      view: to => ({ type: OPERATION.R_CUSTOM_QUERY, relation: [to.params.bizId] })
     }
   })
 }

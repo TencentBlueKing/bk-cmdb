@@ -61,10 +61,10 @@
       ...mapState('hostDetails', ['info', 'isBusinessHost']),
       ...mapGetters('hostDetails', ['isBusinessHost']),
       id() {
-        return parseInt(this.$route.params.id)
+        return parseInt(this.$route.params.id, 10)
       },
       business() {
-        const business = parseInt(this.$route.params.bizId || this.$route.params.business)
+        const business = parseInt(this.$route.params.bizId || this.$route.params.business, 10)
         if (isNaN(business)) {
           return -1
         }
@@ -136,13 +136,11 @@
         }
         return {
           bk_biz_id: this.business,
-          condition: ['biz', 'set', 'module', 'host'].map((model) => {
-            return {
-              bk_obj_id: model,
-              condition: model === 'host' ? [hostCondition] : [],
-              fields: []
-            }
-          }),
+          condition: ['biz', 'set', 'module', 'host'].map(model => ({
+            bk_obj_id: model,
+            condition: model === 'host' ? [hostCondition] : [],
+            fields: []
+          })),
           ip: { flag: 'bk_host_innerip', exact: 1, data: [] }
         }
       },
@@ -156,7 +154,7 @@
             params.bk_biz_id = this.business
           }
           const properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
-            params: params
+            params
           })
           this.$store.commit('hostDetails/setHostProperties', properties)
         } catch (e) {
@@ -176,10 +174,10 @@
           this.$store.commit('hostDetails/setHostPropertyGroups', [])
         }
       },
-      setInfoHeight(height) {
+      setInfoHeight() {
         this.infoTimer && clearTimeout(this.infoTimer)
         this.infoTimer = setTimeout(() => {
-          this.infoHeight = this.$refs.info.$el.offsetHeight + 'px'
+          this.infoHeight = `${this.$refs.info.$el.offsetHeight}px`
         }, 250)
       },
       handleInfoChange() {

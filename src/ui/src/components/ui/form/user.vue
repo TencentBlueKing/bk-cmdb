@@ -59,24 +59,23 @@
       setupFastSelect() {
         if (!this.fastSelect) return
         const FastSelect = new Vue({
-          render: (h) => {
-            return (
+          render: h => (
                             <span class="fast-select"
                                 on-click={ this.handleFastSelect }>
                                 { this.$i18n.locale === 'en' ? 'me' : '我' }
                             </span>
                         )
-          }
         })
         FastSelect.$mount()
+        // eslint-disable-next-line no-underscore-dangle
         FastSelect.$el.setAttribute([this.$options._scopeId], true)
-        const container = this.$refs.userSelector.$refs.container
+        const { container } = this.$refs.userSelector.$refs
         container.parentElement.append(FastSelect.$el)
       },
       focus() {
         this.$refs.userSelector.focus()
       },
-      async fuzzySearchMethod(keyword, page = 1) {
+      async fuzzySearchMethod(keyword) {
         const users = await this.$http.get(`${window.API_HOST}user/list`, {
           params: {
             fuzzy_lookups: keyword

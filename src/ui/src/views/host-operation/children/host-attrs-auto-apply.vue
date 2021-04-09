@@ -48,7 +48,7 @@
     },
     methods: {
       getHostApplyConflictResolvers() {
-        const conflictResolveResult = this.$refs.confirmTable.conflictResolveResult
+        const { conflictResolveResult } = this.$refs.confirmTable
         const conflictResolvers = []
         Object.keys(conflictResolveResult).forEach((key) => {
           const propertyList = conflictResolveResult[key]
@@ -56,6 +56,7 @@
             conflictResolvers.push({
               bk_host_id: Number(key),
               bk_attribute_id: property.id,
+              // eslint-disable-next-line no-underscore-dangle
               bk_property_value: property.__extra__.value
             })
           })

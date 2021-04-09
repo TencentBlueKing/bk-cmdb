@@ -33,7 +33,8 @@
         <bk-button text class="list-btn" @click="deleteList(index)" :disabled="list.length === 1 || isReadOnly">
           <i class="bk-icon icon-minus-circle-shape"></i>
         </bk-button>
-        <bk-button text class="list-btn" @click="addList(index)" :disabled="isReadOnly" v-if="index === list.length - 1">
+        <bk-button text class="list-btn" @click="addList(index)"
+          :disabled="isReadOnly" v-if="index === list.length - 1">
           <i class="bk-icon icon-plus-circle-shape"></i>
         </bk-button>
       </li>
@@ -81,7 +82,7 @@
     methods: {
       getOtherName(index) {
         const nameList = []
-        this.list.map((item, _index) => {
+        this.list.forEach((item, _index) => {
           if (index !== _index) {
             nameList.push(item.name)
           }
@@ -123,9 +124,7 @@
       },
       handleSort() {
         this.order = this.order * -1
-        this.list.sort((A, B) => {
-          return A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' }) * this.order
-        })
+        this.list.sort((A, B) => A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' }) * this.order)
 
         const list = this.list.map(item => item.name)
         this.$emit('input', list)

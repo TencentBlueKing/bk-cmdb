@@ -103,6 +103,7 @@
 </template>
 
 <script>
+  import has from 'has'
   import { MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
   export default {
     props: {
@@ -182,7 +183,7 @@
     },
     methods: {
       async getServiceTemplates() {
-        if (this.serviceTemplateMap.hasOwnProperty(this.business)) {
+        if (has(this.serviceTemplateMap, this.business)) {
           this.templateList = this.serviceTemplateMap[this.business]
         } else {
           try {
@@ -200,7 +201,7 @@
             this.templateList = templates
             this.$store.commit('businessHost/setServiceTemplate', {
               id: this.business,
-              templates: templates
+              templates
             })
           } catch (e) {
             console.error(e)
@@ -210,7 +211,7 @@
         this.template = this.templateList[0] ? this.templateList[0].id : ''
       },
       async getServiceCategories() {
-        if (this.categoryMap.hasOwnProperty(this.business)) {
+        if (has(this.categoryMap, this.business)) {
           this.firstClassList = this.categoryMap[this.business]
         } else {
           try {
@@ -224,7 +225,7 @@
             this.firstClassList = categories
             this.$store.commit('businessHost/setCategories', {
               id: this.business,
-              categories: categories
+              categories
             })
           } catch (e) {
             console.error(e)
@@ -240,6 +241,7 @@
           }
         })
         categories.forEach((category) => {
+          // eslint-disable-next-line max-len, no-param-reassign
           category.secondCategory = data.filter(item => item.category.bk_parent_id === category.id).map(item => item.category)
         })
         return categories

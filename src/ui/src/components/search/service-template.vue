@@ -43,14 +43,14 @@
     data() {
       return {
         list: [],
-        requestId: requestId
+        requestId
       }
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       localValue: {
         get() {
-          const value = this.value
+          const { value } = this
           if (Array.isArray(value)) {
             return value
           }

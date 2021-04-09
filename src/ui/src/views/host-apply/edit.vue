@@ -11,6 +11,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
+  import has from 'has'
   import multiModuleConfig from './children/multi-module-config'
   import singleModuleConfig from './children/single-module-config'
   import {
@@ -30,7 +31,7 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       moduleIds() {
-        const mid = this.$route.query.mid
+        const { mid } = this.$route.query
         let moduleIds = []
         if (mid) {
           moduleIds = String(mid).split(',')
@@ -39,7 +40,7 @@
         return moduleIds
       },
       isBatch() {
-        return this.$route.query.hasOwnProperty('batch')
+        return has(this.$route.query, 'batch')
       },
       action() {
         return this.$route.query.action

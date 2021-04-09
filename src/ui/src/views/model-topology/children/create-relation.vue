@@ -6,7 +6,9 @@
         <span class="color-danger">*</span>
       </span>
       <div class="cmdb-form-item">
-        <bk-input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])"></bk-input>
+        <bk-input type="text" class="cmdb-form-input" disabled
+          :value="getModelName(relationInfo['bk_obj_id'])">
+        </bk-input>
       </div>
     </label>
     <label class="form-label exchange-icon-wrapper">
@@ -15,7 +17,9 @@
         <span class="color-danger">*</span>
       </span>
       <div class="cmdb-form-item">
-        <bk-input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])"></bk-input>
+        <bk-input type="text" class="cmdb-form-input" disabled
+          :value="getModelName(relationInfo['bk_asst_obj_id'])">
+        </bk-input>
       </div>
       <span class="exchange-icon" @click="exchangeObjAsst">
         <i class="bk-icon icon-sort"></i>
@@ -155,19 +159,19 @@
         const {
           relationInfo
         } = this
-        if (relationInfo['bk_obj_id'].length && relationInfo['bk_asst_id'].length && relationInfo['bk_asst_obj_id'].length) {
-          return `${relationInfo['bk_obj_id']}_${relationInfo['bk_asst_id']}_${relationInfo['bk_asst_obj_id']}`
+        if (relationInfo.bk_obj_id.length && relationInfo.bk_asst_id.length && relationInfo.bk_asst_obj_id.length) {
+          return `${relationInfo.bk_obj_id}_${relationInfo.bk_asst_id}_${relationInfo.bk_asst_obj_id}`
         }
         return ''
       },
       sourceModel() {
-        return this.getModelById(this.relationInfo['bk_obj_id']) || {}
+        return this.getModelById(this.relationInfo.bk_obj_id) || {}
       },
       targetModel() {
-        return this.getModelById(this.relationInfo['bk_asst_obj_id']) || {}
+        return this.getModelById(this.relationInfo.bk_asst_obj_id) || {}
       },
       relationName() {
-        const asstId = this.relationInfo['bk_asst_id']
+        const asstId = this.relationInfo.bk_asst_id
         return (this.relationList.find(relation => relation.id === asstId) || {}).name
       }
     },
@@ -182,9 +186,9 @@
         'searchObjectAssociation'
       ]),
       getModelName(objId) {
-        const model = this.models.find(model => model['bk_obj_id'] === objId)
+        const model = this.models.find(model => model.bk_obj_id === objId)
         if (model) {
-          return model['bk_obj_name']
+          return model.bk_obj_name
         }
         return ''
       },
@@ -192,7 +196,7 @@
         const {
           relationInfo
         } = this;
-        [relationInfo['bk_obj_id'], relationInfo['bk_asst_obj_id']] = [relationInfo['bk_asst_obj_id'], relationInfo['bk_obj_id']]
+        [relationInfo.bk_obj_id, relationInfo.bk_asst_obj_id] = [relationInfo.bk_asst_obj_id, relationInfo.bk_obj_id]
       },
       async initRelationList() {
         const data = await this.searchAssociationType({
@@ -213,10 +217,8 @@
             id: asstId,
             name: asstId
           }
-        }).filter((relation) => {
-          return relation.id !== 'bk_mainline'
-        })
-        this.relationInfo['bk_asst_id'] = this.relationList[0].id
+        }).filter(relation => relation.id !== 'bk_mainline')
+        this.relationInfo.bk_asst_id = this.relationList[0].id
       },
       async searchModelRelationList() {
         const [source, dest] = await Promise.all([this.searchAsSource(), this.searchAsDest()])
@@ -226,7 +228,7 @@
         return this.searchObjectAssociation({
           params: {
             condition: {
-              'bk_obj_id': this.relationInfo['bk_obj_id']
+              bk_obj_id: this.relationInfo.bk_obj_id
             }
           }
         })
@@ -235,7 +237,7 @@
         return this.searchObjectAssociation({
           params: {
             condition: {
-              'bk_asst_obj_id': this.relationInfo['bk_obj_id']
+              bk_asst_obj_id: this.relationInfo.bk_obj_id
             }
           }
         })
@@ -251,7 +253,7 @@
                     }
         }
         const res = await this.createObjectAssociation({
-          params: params,
+          params,
           config: {
             requestId: 'createObjectAssociation'
           }

@@ -219,7 +219,7 @@
       ...mapGetters(['supplierAccount', 'userName']),
       ...mapGetters('objectModel', ['activeModel']),
       isGlobalView() {
-        const topRoute = this.$route.matched[0]
+        const [topRoute] = this.$route.matched
         return topRoute ? topRoute.name !== MENU_BUSINESS : true
       },
       fieldType() {
@@ -232,15 +232,15 @@
         return type
       },
       isComponentShow() {
-        return ['singlechar', 'longchar', 'enum', 'int', 'float', 'list', 'bool'].indexOf(this.fieldInfo['bk_property_type']) !== -1
+        return ['singlechar', 'longchar', 'enum', 'int', 'float', 'list', 'bool'].indexOf(this.fieldInfo.bk_property_type) !== -1
       },
       changedValues() {
         const changedValues = {}
-        for (const propertyId in this.fieldInfo) {
+        Object.keys(this.fieldInfo).forEach((propertyId) => {
           if (JSON.stringify(this.fieldInfo[propertyId]) !== JSON.stringify(this.originalFieldInfo[propertyId])) {
             changedValues[propertyId] = this.fieldInfo[propertyId]
           }
-        }
+        })
         return changedValues
       },
       isSystemCreate() {
@@ -281,9 +281,9 @@
         'updateBizObjectAttribute'
       ]),
       initData() {
-        for (const key in this.fieldInfo) {
+        Object.keys(this.fieldInfo).forEach((key) => {
           this.fieldInfo[key] = this.$tools.clone(this.field[key])
-        }
+        })
         this.originalFieldInfo = this.$tools.clone(this.fieldInfo)
       },
       async validateValue() {
@@ -317,13 +317,13 @@
           await this[action]({
             bizId: this.bizId,
             id: this.field.id,
-            params: params,
+            params,
             config: {
               requestId: 'updateObjectAttribute'
             }
           }).then(() => {
             fieldId = this.fieldInfo.bk_property_id
-            this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
+            this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
             this.$http.cancelCache('getHostPropertyList')
           })
         } else {
@@ -344,12 +344,12 @@
           }
           await this[action]({
             bizId: this.bizId,
-            params: params,
+            params,
             config: {
               requestId: 'createObjectAttribute'
             }
           }).then(() => {
-            this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
+            this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
             this.$http.cancelCache('getHostPropertyList')
           })
         }

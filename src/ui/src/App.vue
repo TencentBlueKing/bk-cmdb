@@ -38,7 +38,7 @@
       const showBrowserTips = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
       return {
         showBrowserTips,
-        loginSuccessUrl: window.location.origin + '/static/login_success.html'
+        loginSuccessUrl: `${window.location.origin}/static/login_success.html`
         // execMainScrollListener
       }
     },
@@ -52,14 +52,14 @@
         return !(this.$route.meta.layout || {}).breadcrumbs
       },
       topView() {
-        const topRoute = this.$route.matched[0]
+        const [topRoute] = this.$route.matched
         return (topRoute && topRoute.meta.view) || 'default'
       },
       loginUrl() {
         const siteLoginUrl = this.site.login || ''
         const loginBaseUrl = siteLoginUrl.substring(0, siteLoginUrl.indexOf('?'))
         if (loginBaseUrl) {
-          return loginBaseUrl + 'plain'
+          return `${loginBaseUrl}plain`
         }
         return ''
       }

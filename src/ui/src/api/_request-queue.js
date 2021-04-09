@@ -27,7 +27,7 @@ export default class RequestQueue {
     }
   }
 
-  cancel(requestIds, msg = 'request canceled') {
+  cancel(requestIds) {
     let cancelQueue = []
     if (typeof requestIds === 'undefined') {
       cancelQueue = [...this.queue]

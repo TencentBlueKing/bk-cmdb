@@ -1,11 +1,11 @@
+/* eslint-disable no-unused-vars, no-param-reassign */
+
 function getDefaultCondition() {
-  return ['biz', 'set', 'module', 'host', 'object'].map((modelId) => {
-    return {
-      bk_obj_id: modelId,
-      fields: [],
-      condition: []
-    }
-  })
+  return ['biz', 'set', 'module', 'host', 'object'].map(modelId => ({
+    bk_obj_id: modelId,
+    fields: [],
+    condition: []
+  }))
 }
 const state = {
   filterList: [],
@@ -22,7 +22,8 @@ const getters = {
     const disableList = ['bk_cpu']
     state.propertyList.forEach((property) => {
       property.options = property.option
-      property['__extra__'] = {
+      // eslint-disable-next-line no-underscore-dangle
+      property.__extra__ = {
         disabled: disableList.includes(property.bk_property_id)
       }
     })

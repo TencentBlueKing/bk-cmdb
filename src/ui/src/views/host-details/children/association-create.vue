@@ -78,6 +78,7 @@
 </template>
 
 <script>
+  import has from 'has'
   import cmdbAssociationPropertyFilter from './association-property-filter.vue'
   import bus from '@/utils/bus.js'
   import { mapGetters, mapActions } from 'vuex'
@@ -112,11 +113,11 @@
           }
         },
         specialObj: {
-          'host': 'bk_host_innerip',
-          'biz': 'bk_biz_name',
-          'plat': 'bk_cloud_name',
-          'module': 'bk_module_name',
-          'set': 'bk_set_name'
+          host: 'bk_host_innerip',
+          biz: 'bk_biz_name',
+          plat: 'bk_cloud_name',
+          module: 'bk_module_name',
+          set: 'bk_set_name'
         },
         confirm: {
           instance: null,
@@ -139,61 +140,61 @@
         return 'host'
       },
       instId() {
-        return parseInt(this.$route.params.id)
+        return parseInt(this.$route.params.id, 10)
       },
       instanceIdKey() {
         const specialObj = {
-          'host': 'bk_host_id',
-          'biz': 'bk_biz_id',
-          'plat': 'bk_cloud_id',
-          'module': 'bk_module_id',
-          'set': 'bk_set_id'
+          host: 'bk_host_id',
+          biz: 'bk_biz_id',
+          plat: 'bk_cloud_id',
+          module: 'bk_module_id',
+          set: 'bk_set_id'
         }
-        if (specialObj.hasOwnProperty(this.currentAsstObj)) {
+        if (has(specialObj, this.currentAsstObj)) {
           return specialObj[this.currentAsstObj]
         }
         return 'bk_inst_id'
       },
       instanceNameKey() {
         const nameKey = {
-          'bk_host_id': 'bk_host_innerip',
-          'bk_biz_id': 'bk_biz_name',
-          'bk_cloud_id': 'bk_cloud_name',
-          'bk_module_id': 'bk_module_name',
-          'bk_set_id': 'bk_set_name',
-          'bk_inst_id': 'bk_inst_name'
+          bk_host_id: 'bk_host_innerip',
+          bk_biz_id: 'bk_biz_name',
+          bk_cloud_id: 'bk_cloud_name',
+          bk_module_id: 'bk_module_name',
+          bk_set_id: 'bk_set_name',
+          bk_inst_id: 'bk_inst_name'
         }
         return nameKey[this.instanceIdKey]
       },
       instanceName() {
         const name = {
-          'bk_host_innerip': this.$t('内网IP'),
-          'bk_biz_name': this.$t('业务名'),
-          'bk_cloud_name': this.$t('云区域'),
-          'bk_module_name': this.$t('模块名'),
-          'bk_set_name': this.$t('集群名'),
-          'bk_inst_name': this.$t('实例名')
+          bk_host_innerip: this.$t('内网IP'),
+          bk_biz_name: this.$t('业务名'),
+          bk_cloud_name: this.$t('云区域'),
+          bk_module_name: this.$t('模块名'),
+          bk_set_name: this.$t('集群名'),
+          bk_inst_name: this.$t('实例名')
         }
-        if (name.hasOwnProperty(this.filter.id)) {
+        if (has(name, this.filter.id)) {
           return this.filter.name
         }
         return name[this.instanceNameKey]
       },
       dataIdKey() {
         const specialObj = {
-          'host': 'bk_host_id',
-          'biz': 'bk_biz_id',
-          'plat': 'bk_cloud_id',
-          'module': 'bk_module_id',
-          'set': 'bk_set_id'
+          host: 'bk_host_id',
+          biz: 'bk_biz_id',
+          plat: 'bk_cloud_id',
+          module: 'bk_module_id',
+          set: 'bk_set_id'
         }
-        if (specialObj.hasOwnProperty(this.objId)) {
+        if (has(specialObj, this.objId)) {
           return specialObj[this.objId]
         }
         return 'bk_inst_id'
       },
       page() {
-        const pagination = this.table.pagination
+        const { pagination } = this.table
         return {
           start: (pagination.current - 1) * pagination.limit,
           limit: pagination.limit,
@@ -204,7 +205,7 @@
         return this.currentOption.mapping !== '1:1'
       },
       isSource() {
-        return this.currentOption['bk_obj_id'] === this.objId
+        return this.currentOption.bk_obj_id === this.objId
       }
     },
     watch: {
@@ -277,8 +278,8 @@
       getAsstObjProperties() {
         return this.searchObjectAttribute({
           params: {
-            'bk_obj_id': this.currentAsstObj,
-            'bk_supplier_account': this.supplierAccount
+            bk_obj_id: this.currentAsstObj,
+            bk_supplier_account: this.supplierAccount
           },
           config: {
             requestId: `post_searchObjectAttribute_${this.currentAsstObj}`
@@ -321,7 +322,7 @@
           header.push({
             id: propertyId,
             name: this.$tools.getHeaderPropertyName(property),
-            property: property
+            property
           })
         }
         this.table.header = header
@@ -337,7 +338,7 @@
           this.searchObjectAssociation({
             params: {
               condition: {
-                'bk_obj_id': this.objId
+                bk_obj_id: this.objId
               }
             },
             config: {
@@ -347,7 +348,7 @@
           this.searchObjectAssociation({
             params: {
               condition: {
-                'bk_asst_obj_id': this.objId
+                bk_asst_obj_id: this.objId
               }
             },
             config: {
@@ -360,35 +361,39 @@
             }
           })
         ]).then(([dataAsSource, dataAsTarget, mainLineModels]) => {
+          // eslint-disable-next-line no-param-reassign
           dataAsSource = dataAsSource || []
+          // eslint-disable-next-line no-param-reassign
           dataAsTarget = dataAsTarget || []
-          mainLineModels = mainLineModels.filter(model => !['biz', 'host'].includes(model['bk_obj_id']))
+          mainLineModels = mainLineModels.filter(model => !['biz', 'host'].includes(model.bk_obj_id))
+          // eslint-disable-next-line no-param-reassign
           dataAsSource = this.getAvailableAssociation(dataAsSource, mainLineModels)
+          // eslint-disable-next-line no-param-reassign
           dataAsTarget = this.getAvailableAssociation(dataAsTarget, mainLineModels)
           this.associationObject = [...dataAsSource, ...dataAsTarget]
         })
       },
       getAvailableAssociation(data, mainLine) {
-        return data.filter((relation) => {
-          return !mainLine.some(model => [relation['bk_obj_id'], relation['bk_asst_obj_id']].includes(model['bk_obj_id']))
-        })
+        // eslint-disable-next-line max-len
+        return data.filter(relation => !mainLine.some(model => [relation.bk_obj_id, relation.bk_asst_obj_id].includes(model.bk_obj_id)))
       },
       setAssociationOptions() {
         const options = this.associationObject.map((option) => {
-          const isSource = option['bk_obj_id'] === this.objId
-          const type = this.associationType.find(type => type['bk_asst_id'] === option['bk_asst_id'])
+          const isSource = option.bk_obj_id === this.objId
+          const type = this.associationType.find(type => type.bk_asst_id === option.bk_asst_id)
           const model = this.models.find((model) => {
             if (isSource) {
-              return model['bk_obj_id'] === option['bk_asst_obj_id']
-            } else {
-              return model['bk_obj_id'] === option['bk_obj_id']
+              return model.bk_obj_id === option.bk_asst_obj_id
             }
+            return model.bk_obj_id === option.bk_obj_id
           })
           return {
             ...option,
-            '_label': `${isSource ? type['src_des'] : type['dest_des']}-${model['bk_obj_name']}`
+            // eslint-disable-next-line no-underscore-dangle
+            _label: `${isSource ? type.src_des : type.dest_des}-${model.bk_obj_name}`
           }
         })
+        // eslint-disable-next-line no-underscore-dangle
         const allLabel = options.map(option => option._label)
         const uniqueLabel = [...new Set(allLabel)]
         this.options = uniqueLabel.map(label => options.find(option => option._label === label))
@@ -396,7 +401,7 @@
       async handleSelectObj(asstId, option) {
         this.tempData = []
         this.currentOption = option
-        this.currentAsstObj = option['bk_obj_id'] === this.objId ? option['bk_asst_obj_id'] : option['bk_obj_id']
+        this.currentAsstObj = option.bk_obj_id === this.objId ? option.bk_asst_obj_id : option.bk_obj_id
         this.table.pagination.current = 1
         this.table.pagination.count = 0
         this.table.list = []
@@ -409,14 +414,14 @@
       },
       getExistInstAssociation() {
         const option = this.currentOption
-        const isSource = this.isSource
+        const { isSource } = this
         return this.searchInstAssociation({
           params: {
             condition: {
-              'bk_asst_id': option['bk_asst_id'],
-              'bk_obj_asst_id': option['bk_obj_asst_id'],
-              'bk_obj_id': isSource ? this.objId : option['bk_obj_id'],
-              'bk_asst_obj_id': isSource ? option['bk_asst_obj_id'] : this.objId,
+              bk_asst_id: option.bk_asst_id,
+              bk_obj_asst_id: option.bk_obj_asst_id,
+              bk_obj_id: isSource ? this.objId : option.bk_obj_id,
+              bk_asst_obj_id: isSource ? option.bk_asst_obj_id : this.objId,
               [`${isSource ? 'bk_inst_id' : 'bk_asst_inst_id'}`]: this.instId
             }
           }
@@ -427,9 +432,9 @@
       isAssociated(inst) {
         return this.existInstAssociation.some((exist) => {
           if (this.isSource) {
-            return exist['bk_asst_inst_id'] === inst[this.instanceIdKey]
+            return exist.bk_asst_inst_id === inst[this.instanceIdKey]
           }
-          return exist['bk_inst_id'] === inst[this.instanceIdKey]
+          return exist.bk_inst_id === inst[this.instanceIdKey]
         })
       },
       async updateAssociation(instId, updateType = 'new') {
@@ -443,7 +448,8 @@
             this.tempData = this.tempData.filter(tempId => tempId !== instId)
             this.$success(this.$t('取消关联成功'))
           } else if (updateType === 'update') {
-            await this.deleteAssociation(this.isSource ? this.existInstAssociation[0]['bk_asst_inst_id'] : this.existInstAssociation[0]['bk_inst_id'])
+            // eslint-disable-next-line max-len
+            await this.deleteAssociation(this.isSource ? this.existInstAssociation[0].bk_asst_inst_id : this.existInstAssociation[0].bk_inst_id)
             this.hasChange = true
             this.tempData = []
             await this.createAssociation(instId)
@@ -460,18 +466,18 @@
       createAssociation(instId) {
         return this.createInstAssociation({
           params: {
-            'bk_obj_asst_id': this.currentOption['bk_obj_asst_id'],
-            'bk_inst_id': this.isSource ? this.instId : instId,
-            'bk_asst_inst_id': this.isSource ? instId : this.instId
+            bk_obj_asst_id: this.currentOption.bk_obj_asst_id,
+            bk_inst_id: this.isSource ? this.instId : instId,
+            bk_asst_inst_id: this.isSource ? instId : this.instId
           }
         })
       },
       deleteAssociation(instId) {
         const instAssociation = this.existInstAssociation.find((exist) => {
           if (this.isSource) {
-            return exist['bk_asst_inst_id'] === instId
+            return exist.bk_asst_inst_id === instId
           }
-          return exist['bk_inst_id'] === instId
+          return exist.bk_inst_id === instId
         })
         return this.deleteInstAssociation({
           id: (instAssociation || {}).id
@@ -537,7 +543,7 @@
       },
       getHostInstance(config) {
         const ipFields = ['bk_host_innerip', 'bk_host_outerip']
-        const filter = this.filter
+        const { filter } = this
         const hostParams = {
           condition: this.getHostCondition(),
           ip: {
@@ -553,13 +559,13 @@
         })
       },
       getHostCondition() {
-        const condition = [{ 'bk_obj_id': 'host', 'condition': [], fields: [] }]
+        const condition = [{ bk_obj_id: 'host', condition: [], fields: [] }]
         const property = this.getProperty(this.filter.id)
         if (this.filter.value !== '' && property) {
-          condition[0]['condition'].push({
-            'field': this.filter.id,
-            'operator': this.filter.operator,
-            'value': this.filter.value
+          condition[0].condition.push({
+            field: this.filter.id,
+            operator: this.filter.operator,
+            value: this.filter.value
           })
         }
         return condition
@@ -567,7 +573,7 @@
       getBizInstance(config) {
         const params = {
           condition: {
-            'bk_data_status': { '$ne': 'disabled' }
+            bk_data_status: { $ne: 'disabled' }
           },
           fields: [],
           page: this.page
@@ -582,7 +588,7 @@
       },
       getObjInstance(objId, config) {
         return this.searchInst({
-          objId: objId,
+          objId,
           params: this.getObjParams(),
           config
         })
@@ -597,9 +603,9 @@
         if (this.filter.value !== '' && property) {
           const objId = this.currentAsstObj
           params.condition[objId] = [{
-            'field': this.filter.id,
-            'operator': this.filter.operator,
-            'value': this.filter.value
+            field: this.filter.id,
+            operator: this.filter.operator,
+            value: this.filter.value
           }]
         }
         return params
@@ -608,9 +614,11 @@
         // const properties = this.properties
         this.table.pagination.count = data.count
         if (asstObjId === 'host') {
-          data.info = data.info.map(item => item['host'])
+          // eslint-disable-next-line no-param-reassign
+          data.info = data.info.map(item => item.host)
         }
         if (asstObjId === this.objId) {
+          // eslint-disable-next-line no-param-reassign
           data.info = data.info.filter(item => item[this.instanceIdKey] !== this.instId)
         }
         this.table.list = data.info
@@ -618,14 +626,14 @@
       getProperty(propertyId) {
         return this.properties.find(({ bk_property_id: bkPropertyId }) => bkPropertyId === propertyId)
       },
-      handleCloseConfirm(event) {
+      handleCloseConfirm() {
         // this.confirm.id = null
       },
       handlePropertySelected(value, data) {
-        this.filter.id = data['bk_property_id']
-        this.filter.name = data['bk_property_name']
+        this.filter.id = data.bk_property_id
+        this.filter.name = data.bk_property_name
       },
-      handleOperatorSelected(value, data) {
+      handleOperatorSelected(value) {
         this.filter.operator = value
       },
       handleValueChange(value) {

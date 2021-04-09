@@ -51,6 +51,7 @@
   </nav>
 </template>
 <script>
+  import has from 'has'
   import { mapGetters } from 'vuex'
   import MENU_DICTIONARY from '@/dictionary/menu'
   import {
@@ -79,7 +80,7 @@
       ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('objectModelClassify', ['classifications', 'models']),
       isBusinessNav() {
-        const matched = this.$route.matched
+        const { matched } = this.$route
         if (!matched.length) {
           return false
         }
@@ -106,9 +107,8 @@
           if (isBusinessCollected) {
             collection.unshift('biz')
           }
-          return collection.filter((modelId) => {
-            return this.models.some(model => model.bk_obj_id === modelId && !model.bk_ispaused)
-          })
+          // eslint-disable-next-line max-len
+          return collection.filter(modelId => this.models.some(model => model.bk_obj_id === modelId && !model.bk_ispaused))
         }
         return []
       },
@@ -139,9 +139,10 @@
           for (let index = 0; index < names.length; index++) {
             const name = names[index]
             const isActive = this.currentMenus.some((menu) => {
-              if (menu.hasOwnProperty('route')) {
+              if (has(menu, 'route')) {
                 return menu.route.name === name
-              } else if (menu.submenu && menu.submenu.length) {
+              }
+              if (menu.submenu && menu.submenu.length) {
                 return menu.submenu.some(submenu => submenu.route.name === name)
               }
               return false
@@ -175,7 +176,7 @@
           this.$set(this.state, expandedId, { expanded: true })
         } else if (this.relativeActiveName) {
           const parent = this.currentMenus.find((menu) => {
-            if (menu.hasOwnProperty('route')) {
+            if (has(menu, 'route')) {
               return menu.route.name === this.relativeActiveName
             }
             return menu.submenu.some(submenu => submenu.route.name === this.relativeActiveName)
@@ -201,7 +202,7 @@
           host: MENU_RESOURCE_HOST,
           biz: MENU_RESOURCE_BUSINESS
         }
-        if (map.hasOwnProperty(model.bk_obj_id)) {
+        if (has(map, model.bk_obj_id)) {
           return {
             name: map[model.bk_obj_id]
           }
@@ -259,7 +260,7 @@
         try {
           const { info } = await this.$store.dispatch('objectBiz/getAuthorizedBusiness')
           this.$store.commit('objectBiz/setAuthorizedBusiness', Object.freeze(info))
-          const bizId = this.$route.params.bizId
+          const { bizId } = this.$route.params
           const exist = info.some(biz => biz.bk_biz_id.toString() === bizId.toString())
           if (!exist) {
             this.$route.matched[0].meta.view = 'permission'

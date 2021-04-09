@@ -1,12 +1,13 @@
+/* eslint-disable no-unused-vars, no-param-reassign */
+
 const state = {
   localProcessTemplate: []
 }
 
 const getters = {
   localProcessTemplate: state => state.localProcessTemplate,
-  hasProcessName: state => (process) => {
-    return state.localProcessTemplate.find(template => template['bk_func_name']['value'] === process['bk_func_name']['value'])
-  }
+  // eslint-disable-next-line max-len
+  hasProcessName: state => process => state.localProcessTemplate.find(template => template.bk_func_name.value === process.bk_func_name.value)
 }
 
 const actions = {}

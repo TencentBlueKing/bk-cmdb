@@ -47,13 +47,13 @@
       }
     },
     watch: {
-      $route(val) {
+      $route() {
         this.meta = this.$route.meta
       }
     },
     created() {
       this.scrollerObserverHandler = throttle(() => {
-        const scroller = this.$refs.scroller
+        const { scroller } = this.$refs
         if (scroller) {
           const gutter = scroller.offsetHeight - scroller.clientHeight
           this.$store.commit('setAppHeight', this.$root.$el.offsetHeight - gutter)

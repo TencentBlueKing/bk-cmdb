@@ -48,10 +48,11 @@
 
 <script>
   import { mapActions, mapGetters, mapState } from 'vuex'
+  import has from 'has'
   import cytoscape from 'cytoscape'
   import popper from 'cytoscape-popper'
   import dagre from 'cytoscape-dagre'
-  import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
+  import { generateObjIcon } from '@/utils/util'
   import memoize from 'lodash.memoize'
   import debounce from 'lodash.debounce'
   import throttle from 'lodash.throttle'
@@ -110,7 +111,7 @@
         return this.info.host || {}
       },
       id() {
-        return parseInt(this.$route.params.id)
+        return parseInt(this.$route.params.id, 10)
       }
     },
     created() {
@@ -127,6 +128,7 @@
     methods: {
       ...mapActions('objectRelation', ['getInstRelationTopo', 'updateInstRelation']),
       initNetwork() {
+        // eslint-disable-next-line no-multi-assign
         cy = window.cy = cytoscape({
           container: this.$refs.container,
 
@@ -162,14 +164,14 @@
             {
               selector: 'node',
               style: {
-                'width': 36,
-                'height': 36,
+                width: 36,
+                height: 36,
 
                 // 设置label文本
-                'label': 'data(name)',
+                label: 'data(name)',
 
                 // label
-                'color': '#868b97',
+                color: '#868b97',
                 'text-valign': 'bottom',
                 'text-halign': 'center',
                 'font-size': '14px',
@@ -191,8 +193,8 @@
             {
               selector: 'node.root',
               style: {
-                'width': 56,
-                'height': 56
+                width: 56,
+                height: 56
               }
             },
             {
@@ -216,17 +218,17 @@
               style: {
                 'curve-style': 'straight',
                 'target-arrow-shape': 'triangle-backcurve',
-                'opacity': 1,
+                opacity: 1,
                 'arrow-scale': 1.5,
                 'line-color': '#c3cdd7',
                 'target-arrow-color': '#c3cdd7',
-                'width': 2,
+                width: 2,
 
                 // 点击时overlay
                 'overlay-padding': '3px',
 
                 // label
-                'color': '#979ba5',
+                color: '#979ba5',
                 'font-size': '10px',
                 'text-background-opacity': 0.7,
                 'text-background-color': '#ffffff',
@@ -258,7 +260,7 @@
             {
               selector: 'edge.hover',
               style: {
-                'width': 3,
+                width: 3,
                 'line-color': '#3c96ff',
                 'source-arrow-color': '#3c96ff',
                 'target-arrow-color': '#3c96ff',
@@ -338,8 +340,9 @@
       async initTopoElements() {
         try {
           const rootObjId = this.$parent.objId
-          const rootInstId = this.$parent.formatedInst['bk_inst_id']
-          const rootInstName = this.$parent.formatedInst['bk_inst_name']
+          const rootInstId = this.$parent.formatedInst.bk_inst_id
+          const rootInstName = this.$parent.formatedInst.bk_inst_name
+          // eslint-disable-next-line no-plusplus
           const rootNodeId = `${rootObjId}_${rootInstId}_${NODE_ID++}`
           const relData = await this.getRelationTopo(rootObjId, rootInstId)
 
@@ -379,7 +382,7 @@
       loadNodeImage() {
         // 缓存调用结果，减少相同icon的转换开销
         const makeSvg = memoize(this.makeSvg, data => data.icon)
-        cy.nodes().forEach(async (node, i) => {
+        cy.nodes().forEach(async (node) => {
           const svg = await makeSvg(node.data())
           node.data('bg', svg)
           node.addClass('bg')
@@ -389,16 +392,16 @@
         })
       },
       makeSvg(nodeData) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           const image = new Image()
           image.onload = () => {
             const svg = {
-              unselected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
+              unselected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(generateObjIcon(image, {
                 name: nodeData.name,
                 iconColor: '#798aad',
                 backgroundColor: '#fff'
               }))}`,
-              selected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
+              selected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(generateObjIcon(image, {
                 name: nodeData.name,
                 iconColor: '#fff',
                 backgroundColor: '#3a84ff'
@@ -425,8 +428,8 @@
       getAsstDetail(asstId) {
         const asst = this.associationTypes.find(asst => asst.bk_asst_id === asstId)
         return {
-          asstId: asst['bk_asst_id'],
-          asstName: asst['bk_asst_name'].length ? asst['bk_asst_name'] : asst['bk_asst_id'],
+          asstId: asst.bk_asst_id,
+          asstName: asst.bk_asst_name.length ? asst.bk_asst_name : asst.bk_asst_id,
           direction: asst.direction
         }
       },
@@ -442,25 +445,25 @@
       },
       getInstIdKey(objId) {
         const specialObj = {
-          'host': 'bk_host_id',
-          'biz': 'bk_biz_id',
-          'plat': 'bk_cloud_id',
-          'module': 'bk_module_id',
-          'set': 'bk_set_id'
+          host: 'bk_host_id',
+          biz: 'bk_biz_id',
+          plat: 'bk_cloud_id',
+          module: 'bk_module_id',
+          set: 'bk_set_id'
         }
-        if (specialObj.hasOwnProperty(objId)) {
+        if (has(specialObj, objId)) {
           return specialObj[objId]
         }
         return 'bk_inst_id'
       },
       getInstNameKey(idKey) {
         const nameKey = {
-          'bk_host_id': 'bk_host_innerip',
-          'bk_biz_id': 'bk_biz_name',
-          'bk_cloud_id': 'bk_cloud_name',
-          'bk_module_id': 'bk_module_name',
-          'bk_set_id': 'bk_set_name',
-          'bk_inst_id': 'bk_inst_name'
+          bk_host_id: 'bk_host_innerip',
+          bk_biz_id: 'bk_biz_name',
+          bk_cloud_id: 'bk_cloud_name',
+          bk_module_id: 'bk_module_name',
+          bk_set_id: 'bk_set_name',
+          bk_inst_id: 'bk_inst_name'
         }
         return nameKey[idKey]
       },
@@ -480,6 +483,7 @@
         // 所有以rootNodeId为目标的关联数据
         asstDst.forEach((item) => {
           const nodeIdPrefix = `${item.bk_obj_id}_${item.bk_inst_id}_`
+          // eslint-disable-next-line no-plusplus
           const nodeId = `${nodeIdPrefix}${NODE_ID++}`
 
           // 是否存在目标是当前根节点的连接
@@ -499,9 +503,11 @@
         asstSrc.forEach((item) => {
           // 为源时，取目标实例id
           const nodeIdPrefix = `${item.bk_asst_obj_id}_${item.bk_asst_inst_id}_`
+          // eslint-disable-next-line no-plusplus
           const nodeId = `${nodeIdPrefix}${NODE_ID++}`
           const exist = edges.find(item => item.source === rootNodeId)
           if (!exist || !exist.target.startsWith(nodeIdPrefix)) {
+            // eslint-disable-next-line max-len
             const nodeOptions = this.getNodeOptions({ nodeId, objId: item.bk_asst_obj_id, instId: item.bk_asst_inst_id })
             const edgeOptions = this.getEdgeOptions({ source: rootNodeId, target: nodeId, asstId: item.bk_asst_id })
             elements.push(nodeOptions)
@@ -558,6 +564,7 @@
         if (nodelegends) {
           const legend = nodelegends.find(legend => legend.id === objId)
           if (legend) {
+            // eslint-disable-next-line no-plusplus
             legend.count++
             legend.nodeIds.push(nodeId)
           } else {
@@ -591,6 +598,7 @@
         node.data('loaded', true)
       },
       handleToggleNodeVisibility(legend) {
+        // eslint-disable-next-line no-param-reassign
         legend.active = !legend.active
 
         cy.startBatch()
@@ -625,7 +633,7 @@
         const modelId = this.hoverNodeData.objId
         if (modelId === 'host') {
           return this.getHostDetails()
-        } else if (modelId === 'biz') {
+        } if (modelId === 'biz') {
           return this.getBusinessDetails()
         }
         return this.getInstDetails()
@@ -635,7 +643,7 @@
         return this.$store.dispatch('hostSearch/getHostBaseInfo', { hostId }).then((data) => {
           const inst = {}
           data.forEach((field) => {
-            inst[field['bk_property_id']] = field['bk_property_value']
+            inst[field.bk_property_id] = field.bk_property_value
           })
           return inst
         })
@@ -644,7 +652,7 @@
         const bizId = this.hoverNodeData.instId
         return this.$store.dispatch('objectBiz/searchBusiness', {
           params: {
-            condition: { 'bk_biz_id': bizId },
+            condition: { bk_biz_id: bizId },
             fields: [],
             page: { start: 0, limit: 1 }
           }
@@ -652,7 +660,7 @@
       },
       getInstDetails() {
         const modelId = this.hoverNodeData.objId
-        const instId = this.hoverNodeData.instId
+        const { instId } = this.hoverNodeData
         return this.$store.dispatch('objectCommonInst/searchInst', {
           objId: modelId,
           params: {
@@ -671,7 +679,7 @@
       getProperties() {
         return this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
           params: {
-            'bk_obj_id': this.hoverNodeData.objId
+            bk_obj_id: this.hoverNodeData.objId
           }
         })
       },

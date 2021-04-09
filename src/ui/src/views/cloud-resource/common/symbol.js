@@ -1,10 +1,12 @@
+import has from 'has'
+
 class Symbols {
   constructor() {
     this.map = {}
   }
 
   get(name) {
-    if (!this.map.hasOwnProperty(name)) {
+    if (!has(this.map, name)) {
       this.map[name] = Symbol(name)
     }
     return this.map[name]

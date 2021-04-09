@@ -6,7 +6,7 @@ const requestId = Symbol('getAuthorizedBusiness')
 let committed = false
 export async function getAuthorizedBusiness() {
   const { info } = await store.dispatch('objectBiz/getAuthorizedBusiness', {
-    requestId: requestId,
+    requestId,
     fromCache: true
   })
   if (!committed) {
@@ -17,7 +17,9 @@ export async function getAuthorizedBusiness() {
 }
 
 export const before = async function (to, from, next) {
+  // eslint-disable-next-line prefer-destructuring
   const toTopRoute = to.matched[0]
+  // eslint-disable-next-line prefer-destructuring
   const fromTopRoute = from.matched[0]
   if (!toTopRoute || toTopRoute.name !== MENU_BUSINESS) {
     if (fromTopRoute && fromTopRoute.name === MENU_BUSINESS) {
@@ -25,7 +27,8 @@ export const before = async function (to, from, next) {
     }
     return true
   }
-  if (fromTopRoute && fromTopRoute.name === MENU_BUSINESS && parseInt(to.params.bizId) !== parseInt(from.params.bizId)) {
+  // eslint-disable-next-line max-len
+  if (fromTopRoute && fromTopRoute.name === MENU_BUSINESS && parseInt(to.params.bizId, 10) !== parseInt(from.params.bizId, 10)) {
     window.location.hash = to.fullPath
     window.location.reload()
     return false
@@ -35,7 +38,7 @@ export const before = async function (to, from, next) {
     return false
   }
   const authorizedList = await getAuthorizedBusiness()
-  const id = parseInt(to.params.bizId || window.localStorage.getItem('selectedBusiness'))
+  const id = parseInt(to.params.bizId || window.localStorage.getItem('selectedBusiness'), 10)
   const business = authorizedList.find(business => business.bk_biz_id === id)
   const hasURLId = to.params.bizId
 
@@ -52,7 +55,8 @@ export const before = async function (to, from, next) {
         replace: true
       })
       return false
-    } else if (!hasURLId) { // 如果是二级路由且URL中不包含业务ID，则补充业务ID到URL中
+    }
+    if (!hasURLId) { // 如果是二级路由且URL中不包含业务ID，则补充业务ID到URL中
       next({
         name: to.name,
         params: {

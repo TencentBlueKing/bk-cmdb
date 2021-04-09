@@ -12,7 +12,9 @@
       @page-limit-change="handleSizeChange"
       @row-click="handleRowClick"
     >
-      <bk-table-column :label="$t('内网IP')" prop="host.bk_host_innerip" class-name="is-highlight" show-overflow-tooltip></bk-table-column>
+      <bk-table-column :label="$t('内网IP')" prop="host.bk_host_innerip"
+        class-name="is-highlight" show-overflow-tooltip>
+      </bk-table-column>
       <bk-table-column :label="$t('云区域')" show-overflow-tooltip>
         <template slot-scope="{ row }">
           {{getCloudName(row.host.bk_cloud_id)}}
@@ -119,7 +121,7 @@
         return this.$route.query.batch === 1
       },
       moduleId() {
-        const mid = this.$route.query.mid
+        const { mid } = this.$route.query
         let moduleId
         if (mid) {
           moduleId = Number(mid)
@@ -169,13 +171,11 @@
         }
         return {
           bk_biz_id: this.bizId,
-          condition: ['biz', 'set', 'module', 'host'].map((model) => {
-            return {
-              bk_obj_id: model,
-              condition: model === 'host' ? [hostCondition] : [],
-              fields: []
-            }
-          }),
+          condition: ['biz', 'set', 'module', 'host'].map(model => ({
+            bk_obj_id: model,
+            condition: model === 'host' ? [hostCondition] : [],
+            fields: []
+          })),
           ip: { flag: 'bk_host_innerip', exact: 1, data: [] }
         }
       },

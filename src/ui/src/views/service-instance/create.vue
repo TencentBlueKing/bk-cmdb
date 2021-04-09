@@ -149,10 +149,10 @@
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('businessHost', ['getDefaultSearchCondition']),
       moduleId() {
-        return parseInt(this.$route.params.moduleId)
+        return parseInt(this.$route.params.moduleId, 10)
       },
       setId() {
-        return parseInt(this.$route.params.setId)
+        return parseInt(this.$route.params.setId, 10)
       },
       withTemplate() {
         const instance = this.instances[0] || {}
@@ -175,6 +175,7 @@
     watch: {
       activeTab(tab) {
         if (!tab) return
+        // eslint-disable-next-line no-param-reassign
         tab.confirmed = true
       }
     },
@@ -202,7 +203,7 @@
     methods: {
       resolveData(route) {
         const query = route.query || {}
-        const resources = query.resources
+        const { resources } = query
         if (!resources) {
           this.resources = []
         } else {
@@ -317,12 +318,15 @@
               value[key].forEach((row) => {
                 Object.keys(row).forEach((field) => {
                   if (field === 'ip') {
+                    // eslint-disable-next-line no-param-reassign
                     row[field] = this.getBindIp(instance, row)
                   } else if (field === 'row_id') {
                     // 实例数据中使用 template_row_id
-                    row['template_row_id'] = row[field]
+                    // eslint-disable-next-line no-param-reassign
+                    row.template_row_id = row[field]
                     delete row[field]
                   } else if (row[field] !== null && typeof row[field] === 'object') {
+                    // eslint-disable-next-line no-param-reassign
                     row[field] = row[field].value
                   }
                 })
@@ -416,7 +420,7 @@
       async handleConfirm() {
         try {
           const serviceInstanceTables = this.$refs.serviceInstanceTable
-          const confirmTable = this.$refs.confirmTable
+          const { confirmTable } = this.$refs
           const params = {
             bk_module_id: this.moduleId,
             bk_biz_id: this.bizId
@@ -436,7 +440,7 @@
           }
 
           await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
-            params: params
+            params
           })
 
           this.$success(this.$t('添加成功'))
@@ -446,7 +450,7 @@
         }
       },
       getHostApplyConflictResolvers() {
-        const conflictResolveResult = this.$refs.confirmTable.conflictResolveResult
+        const { conflictResolveResult } = this.$refs.confirmTable
         const conflictResolvers = []
         Object.keys(conflictResolveResult).forEach((key) => {
           const propertyList = conflictResolveResult[key]
@@ -462,13 +466,17 @@
       },
       handleEditName(instance) {
         this.instances.forEach(instance => (instance.editing.name = false))
+        // eslint-disable-next-line no-param-reassign
         instance.editing.name = true
       },
       handleConfirmEditName(instance, name) {
+        // eslint-disable-next-line no-param-reassign
         instance.name = name
+        // eslint-disable-next-line no-param-reassign
         instance.editing.name = false
       },
       handleCancelEditName(instance) {
+        // eslint-disable-next-line no-param-reassign
         instance.editing.name = false
       },
       handleBackToModule() {

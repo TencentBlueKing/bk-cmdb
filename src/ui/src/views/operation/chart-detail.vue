@@ -56,7 +56,9 @@
                 {{$t('图表名称')}}
               </label>
               <span class="cmdb-form-item">
-                <input class="cmdb-form-input" :placeholder="$t('请输入图表名称')" v-model="chartData.name" name="collectionName" v-validate="'required'">
+                <input class="cmdb-form-input" :placeholder="$t('请输入图表名称')" v-model="chartData.name"
+                  name="collectionName"
+                  v-validate="'required'">
                 <span class="form-error">{{errors.first('collectionName')}}</span>
               </span>
             </div>
@@ -125,7 +127,8 @@
               <span class="cmdb-radio-text">100%</span>
             </label>
           </div>
-          <div class="content-item" v-if="chartData.chart_type !== 'pie' && chartData.report_type !== 'host_change_biz_chart'">
+          <div class="content-item"
+            v-if="chartData.chart_type !== 'pie' && chartData.report_type !== 'host_change_biz_chart'">
             <label class="label-text-x">
               {{$t('横轴坐标数量')}}
               <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('图标可视区横轴坐标数量，建议不超过20个')"></i>
@@ -244,15 +247,11 @@
         })
       },
       staticFilter() {
-        return this.staList.filter((item) => {
-          return !item.bk_ishidden && !this.hostFilter.includes(item.bk_obj_id)
-        })
+        return this.staList.filter(item => !item.bk_ishidden && !this.hostFilter.includes(item.bk_obj_id))
       },
       typeFilter() {
         const data = this.chartData.bk_obj_id === 'host' ? this.seList.host : this.seList.inst
-        return data.filter((item) => {
-          return item.name === this.chartData.name
-        })
+        return data.filter(item => item.name === this.chartData.name)
       }
     },
     watch: {
@@ -287,7 +286,7 @@
       getDisabled(property) {
         if (this.hostType === 'host') {
           return this.existedCharts.findIndex(item => item.field === property.bk_property_id) > -1
-        } else if (this.hostType === 'inst') {
+        } if (this.hostType === 'inst') {
           const existed = this.existedCharts.find(item => item.bk_obj_id === property.bk_obj_id)
           if (existed) return existed.field === property.bk_property_id
         }
@@ -296,7 +295,7 @@
       calculate(flag) {
         if (flag === 'up') {
           this.chartData.x_axis_count += 1
-          this.maxNum = parseInt(this.maxNum) >= 25 ? 25 : this.maxNum
+          this.maxNum = parseInt(this.maxNum, 10) >= 25 ? 25 : this.maxNum
           if (this.chartData.x_axis_count > this.maxNum) {
             this.chartData.x_axis_count = this.maxNum
           }
@@ -324,7 +323,7 @@
         this.$validator.validateAll().then((result) => {
           if (result) {
             this.chartData.report_type = this.chartType ? 'custom' : this.typeFilter[0].repType
-            this.chartData.x_axis_count = parseInt(this.chartData.x_axis_count)
+            this.chartData.x_axis_count = parseInt(this.chartData.x_axis_count, 10)
             const data = this.$tools.clone(this.chartData)
             if (this.openType === 'add') {
               if (!this.chartType) this.delKeys(data, ['bk_obj_id', 'config_id', 'field', 'name', 'chart_type'])
@@ -354,13 +353,15 @@
         }, 300)
       },
       delKeys(obj, keys) {
+        // eslint-disable-next-line array-callback-return
         keys.map((key) => {
+          // eslint-disable-next-line no-param-reassign
           delete obj[key]
         })
         return obj
       },
       initTitle() {
-        if (this.openType !== 'add') this.editTitle = this.$t('编辑') + '【' + this.chartData.title + '】'
+        if (this.openType !== 'add') this.editTitle = `${this.$t('编辑')}【${this.chartData.title}】`
         else this.editTitle = this.chartData.bk_obj_id === 'host' ? this.$t('新增主机统计图表') : this.$t('新增实例统计图表')
       }
     }

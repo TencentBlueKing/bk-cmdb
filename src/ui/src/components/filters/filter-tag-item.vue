@@ -20,7 +20,7 @@
 
 <script>
   import FilterStore from './store'
-  import Formatter from '@/filters/formatter'
+  import formatter from '@/filters/formatter'
   import FilterTagForm from './filter-tag-form'
   import Vue from 'vue'
   import i18n from '@/i18n'
@@ -54,11 +54,11 @@
     },
     computed: {
       transformedValue() {
-        let value = this.value
+        let { value } = this
         if (!Array.isArray(value)) {
           value = [value]
         }
-        return value.map(value => Formatter(value, this.property))
+        return value.map(value => formatter(value, this.property))
       },
       showColon() {
         return this.operator === '$range'
@@ -112,10 +112,8 @@
             trigger: 'manual',
             interactive: true,
             arrow: true,
-            zIndex: window.__bk_zIndex_manager.nextZIndex(),
-            onHide: () => {
-              return !this.tagFormViewModel.$refs.filterTagForm.active
-            },
+            zIndex: window.__bk_zIndex_manager.nextZIndex(), // eslint-disable-line no-underscore-dangle
+            onHide: () => !this.tagFormViewModel.$refs.filterTagForm.active,
             onHidden: () => {
               this.tagFormViewModel.$refs.filterTagForm.resetCondition()
             }

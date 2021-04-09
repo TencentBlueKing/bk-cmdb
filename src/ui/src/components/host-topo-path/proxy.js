@@ -62,9 +62,8 @@ export default new Vue({
         modules.push(...data.modules)
       })
       const uniqueModules = [...new Set(modules)]
-      const newModules = uniqueModules.filter((moduleId) => {
-        return !(this.results.has(bizId) && this.results.get(bizId).has(moduleId))
-      })
+      // eslint-disable-next-line max-len
+      const newModules = uniqueModules.filter(moduleId => !(this.results.has(bizId) && this.results.get(bizId).has(moduleId)))
       return newModules.map(moduleId => ({
         bk_obj_id: 'module',
         bk_inst_id: moduleId
@@ -87,15 +86,13 @@ export default new Vue({
     resolvePromise(bizId, requestSet) {
       const resultMap = this.results.get(bizId) || new Map()
       requestSet.forEach((meta) => {
-        const result = meta.data.modules.map((moduleId) => {
-          return resultMap.get(moduleId) || {
-            bk_biz_id: bizId,
-            topo_node: {
-              bk_inst_id: moduleId,
-              bk_obj_id: 'module'
-            },
-            topo_path: []
-          }
+        const result = meta.data.modules.map(moduleId => resultMap.get(moduleId) || {
+          bk_biz_id: bizId,
+          topo_node: {
+            bk_inst_id: moduleId,
+            bk_obj_id: 'module'
+          },
+          topo_path: []
         })
         meta.resolve(result)
       })

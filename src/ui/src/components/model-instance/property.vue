@@ -175,7 +175,7 @@
           this.loadingState.push(property)
           this.exitForm()
 
-          const values = { [property['bk_property_id']]: value }
+          const values = { [property.bk_property_id]: value }
 
           if (this.resourceType === 'business') {
             await this.updateBusiness({

@@ -135,10 +135,10 @@
     watch: {
       isShow(isShow) {
         if (isShow) {
-          this.modelDialog.data['bk_classification_id'] = ''
-          this.modelDialog.data['bk_obj_icon'] = 'icon-cc-default'
-          this.modelDialog.data['bk_obj_id'] = ''
-          this.modelDialog.data['bk_obj_name'] = ''
+          this.modelDialog.data.bk_classification_id = ''
+          this.modelDialog.data.bk_obj_icon = 'icon-cc-default'
+          this.modelDialog.data.bk_obj_id = ''
+          this.modelDialog.data.bk_obj_name = ''
           this.$validator.reset()
         }
       },

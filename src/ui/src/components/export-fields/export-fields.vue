@@ -67,7 +67,7 @@
 </template>
 
 <script>
-  import Throttle from 'lodash.throttle'
+  import throttle from 'lodash.throttle'
   export default {
     props: {
       properties: {
@@ -103,43 +103,30 @@
         renderGroups: [],
         isShow: false,
         selected: [],
-        throttleFilter: Throttle(this.handleFilter, 500, { leading: false })
+        throttleFilter: throttle(this.handleFilter, 500, { leading: false })
       }
     },
     computed: {
       availableProperties() {
         return this.properties.filter(property => !this.invisibleProperties.includes(property.bk_property_id))
       },
-      sortedProperties() {
-        return [...this.availableProperties].sort((propertyA, propertyB) => {
-
-        })
-      },
       independentProperties() {
-        return this.availableProperties.filter((property) => {
-          return !this.propertyGroups.some((group) => {
-            return group.bk_group_id === property.bk_property_group
-              && group.bk_obj_id === property.bk_obj_id
-          })
-        })
+        // eslint-disable-next-line max-len
+        return this.availableProperties.filter(property => !this.propertyGroups.some(group => group.bk_group_id === property.bk_property_group
+          && group.bk_obj_id === property.bk_obj_id))
       },
       groups() {
-        const sortedGroups = [...this.propertyGroups].sort((groupA, groupB) => {
-          return groupA.bk_group_index - groupB.bk_group_index
-        })
-        const groups = sortedGroups.map((group) => {
-          return {
-            id: group.bk_group_id,
-            name: group.bk_group_name,
-            properties: this.availableProperties.filter(property => property.bk_property_group === group.bk_group_id)
-          }
-        })
+        // eslint-disable-next-line max-len
+        const sortedGroups = [...this.propertyGroups].sort((groupA, groupB) => groupA.bk_group_index - groupB.bk_group_index)
+        const groups = sortedGroups.map(group => ({
+          id: group.bk_group_id,
+          name: group.bk_group_name,
+          properties: this.availableProperties.filter(property => property.bk_property_group === group.bk_group_id)
+        }))
         return groups.filter(group => group.properties.length)
       },
       visibleProperties() {
-        return this.renderGroups.reduce((accumulator, group) => {
-          return accumulator.concat(group.properties)
-        }, [])
+        return this.renderGroups.reduce((accumulator, group) => accumulator.concat(group.properties), [])
       },
       isAllChecked() {
         if (this.filter) {
@@ -218,9 +205,7 @@
         const group = this.renderGroups.find(group => group.id === groupId)
         const isGroupAllChecked = this.isGroupAllChecked[groupId]
         if (isGroupAllChecked) {
-          this.selected = this.selected.filter((property) => {
-            return !group.properties.includes(property)
-          })
+          this.selected = this.selected.filter(property => !group.properties.includes(property))
         } else {
           const newSelected = group.properties.filter(property => !this.selected.includes(property))
           this.selected = this.selected.concat(newSelected)

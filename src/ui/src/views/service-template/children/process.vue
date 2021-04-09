@@ -62,15 +62,11 @@
       },
       list: {
         type: Array,
-        default: () => {
-          return []
-        }
+        default: () => []
       },
       properties: {
         type: Array,
-        default: () => {
-          return []
-        }
+        default: () => []
       },
       loading: {
         type: Boolean,
@@ -99,7 +95,7 @@
           Object.keys(template).map((key) => {
             const type = typeof template[key]
             if (type === 'object') {
-              result[key] = template[key]['value']
+              result[key] = template[key].value
             } else {
               result[key] = template[key]
             }

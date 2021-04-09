@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+import has from 'has'
 
 import StatusError from './StatusError.js'
 
@@ -125,27 +126,16 @@ function cancelRequest(app) {
   app.$http.cancelRequest(cancelId)
 }
 
-const checkViewAuthorize = async (to) => {
-  // owener判断已经发现无业务时
-  // if (to.meta.view === 'permission') {
-  //     return false
-  // }
-  // const auth = to.meta.auth || {}
-  // const view = auth.view
-  // if (view) {
-  //     const viewAuthData = typeof view === 'function' ? view(to, router.app) : view
-  //     const viewAuth = await router.app.$store.dispatch('auth/getViewAuth', viewAuthData)
-  //     to.meta.view = viewAuth ? 'default' : 'permission'
-  // }
-  return Promise.resolve()
-}
+// eslint-disable-next-line no-unused-vars
+const checkViewAuthorize = async to => Promise.resolve()
 
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
 
 const checkAvailable = (to, from) => {
   if (typeof to.meta.checkAvailable === 'function') {
     return to.meta.checkAvailable(to, from, router.app)
-  } else if (to.meta.hasOwnProperty('available')) {
+  }
+  if (has(to.meta, 'available')) {
     return to.meta.available
   }
   return true
@@ -188,6 +178,7 @@ router.beforeEach((to, from, next) => {
     } catch (e) {
       console.error(e)
       setupStatus.preload = true
+      // eslint-disable-next-line no-underscore-dangle
       if (e.__CANCEL__) {
         next()
       } else if (e instanceof StatusError) {

@@ -159,7 +159,7 @@
       }
     },
     watch: {
-      checkedPropertyIdList(val) {
+      checkedPropertyIdList() {
         this.$nextTick(() => {
           this.toggleNextButtonDisabled()
         })
@@ -183,6 +183,7 @@
           this.initRuleList = ruleData.info
           const attrIds = this.initRuleList.map(item => item.bk_attribute_id)
           const checkedPropertyIdList = [...new Set(attrIds)]
+          // eslint-disable-next-line max-len
           this.checkedPropertyIdList = this.hasRuleDraft ? [...new Set([...this.checkedPropertyIdList])] : checkedPropertyIdList
         } catch (e) {
           console.log(e)
@@ -203,9 +204,11 @@
         return this.$parent.getModulePath(id)
       },
       setShowMoreLinkStatus() {
-        const moduleList = this.$refs.moduleList
+        const { moduleList } = this.$refs
+        // eslint-disable-next-line prefer-destructuring
         const moduleItemEl = moduleList.getElementsByClassName('module-item')[0]
         const moduleItemStyle = getComputedStyle(moduleItemEl)
+        // eslint-disable-next-line max-len
         const moduleItemWidth = moduleItemEl.offsetWidth + parseInt(moduleItemStyle.marginLeft, 10) + parseInt(moduleItemStyle.marginRight, 10)
         const moduleListWidth = moduleList.clientWidth
         const maxCountInRow = Math.floor(moduleListWidth / moduleItemWidth)
@@ -214,9 +217,11 @@
         this.showMore.linkLeft = moduleItemWidth * (maxCountInRow - 1)
       },
       toggleNextButtonDisabled() {
-        const modulePropertyList = this.$refs.configEditTable.modulePropertyList
+        const { modulePropertyList } = this.$refs.configEditTable
         const everyTruthy = modulePropertyList.every((property) => {
+          // eslint-disable-next-line no-underscore-dangle
           const validTruthy = property.__extra__.valid !== false
+          // eslint-disable-next-line no-underscore-dangle
           let valueTruthy = property.__extra__.value
           if (property.bk_property_type === 'bool') {
             valueTruthy = true
@@ -281,6 +286,7 @@
           title: this.$t('确认删除自动应用字段？'),
           subTitle: this.$t('删除后将会移除字段在对应模块中的配置'),
           confirmFn: async () => {
+            // eslint-disable-next-line max-len, no-underscore-dangle
             const ruleIds = this.selectedPropertyRow.reduce((acc, cur) => acc.concat(cur.__extra__.ruleList.map(item => item.id)), [])
             try {
               await this.$store.dispatch('hostApply/deleteRules', {

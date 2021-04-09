@@ -21,7 +21,7 @@ const Component = Vue.extend({
       this.$destroy()
     }
   },
-  render(h) {
+  render() {
     return (<dynamic-group-preview ref="preview" { ...{ props: this.$options.attrs }} on-close={ this.handleClose }></dynamic-group-preview>)
   }
 })

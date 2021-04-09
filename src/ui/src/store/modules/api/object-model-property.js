@@ -8,6 +8,8 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars */
+
 import $http from '@/api'
 
 function createIdProperty(objId) {
@@ -117,6 +119,7 @@ const actions = {
       if (injectId !== params.bk_obj_id) {
         return data
       }
+      // eslint-disable-next-line no-underscore-dangle
       const alreadyInject = data.some(property => property._is_inject_)
       if (alreadyInject) {
         return data
@@ -141,10 +144,11 @@ const actions = {
         result[objId] = []
       })
       properties.forEach((property) => {
-        result[property['bk_obj_id']].push(property)
+        result[property.bk_obj_id].push(property)
       })
       Object.keys(result).forEach((objId) => {
         if (injectId === objId) {
+          // eslint-disable-next-line no-underscore-dangle
           const alreadyInject = result[objId].some(property => property._is_inject_)
           if (!alreadyInject) {
             result[objId].unshift(createIdProperty(objId))

@@ -96,11 +96,11 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       setTemplateId() {
-        return this.$route.params['setTemplateId']
+        return this.$route.params.setTemplateId
       },
       setInstancesId() {
         const id = `${this.bizId}_${this.setTemplateId}`
-        let syncIdMap = this.$store.state.setFeatures.syncIdMap
+        let { syncIdMap } = this.$store.state.setFeatures
         const sessionSyncIdMap = sessionStorage.getItem('setSyncIdMap')
         if (!Object.keys(syncIdMap).length && sessionSyncIdMap) {
           syncIdMap = JSON.parse(sessionSyncIdMap)
@@ -163,11 +163,10 @@
             if ((prevEixstHostList.length && nextEixstHostList.length)
               || (!prevEixstHostList.length && !nextEixstHostList.length)) {
               return 0
-            } else if (prevEixstHostList.length) {
+            } if (prevEixstHostList.length) {
               return -1
-            } else {
-              return 1
             }
+            return 1
           })
           const changeList = this.diffList.filter((set) => {
             const moduleDiffs = set.module_diffs
@@ -221,12 +220,12 @@
         this.diffList = this.diffList.filter(instance => instance.bk_set_id !== id)
       },
       handleGoback() {
-        const moduleId = this.$route.params['moduleId']
+        const { moduleId } = this.$route.params
         if (moduleId) {
           this.$routerActions.redirect({
             name: MENU_BUSINESS_HOST_AND_SERVICE,
             query: {
-              node: 'set-' + moduleId
+              node: `set-${moduleId}`
             }
           })
         } else {

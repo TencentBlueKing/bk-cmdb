@@ -9,7 +9,9 @@
     >
       <bk-table-column :label="$t('内网IP')">
         <template slot-scope="{ row }">
-          <bk-button theme="primary" text @click="handleShowDetails(row)">{{row.expect_host.bk_host_innerip}}</bk-button>
+          <bk-button theme="primary" text @click="handleShowDetails(row)">
+            {{row.expect_host.bk_host_innerip}}
+          </bk-button>
         </template>
       </bk-table-column>
       <bk-table-column :label="$t('主机名称')" prop="expect_host.bk_host_name"></bk-table-column>
@@ -143,7 +145,7 @@
       }
     },
     watch: {
-      list(data) {
+      list() {
         this.setTableList()
       },
       total(value) {
@@ -177,6 +179,7 @@
         const { conflicts, update_fields: updateFields, unresolved_conflict_count: conflictCount } = row
 
         const resultConflicts = conflicts.map((item) => {
+          /* eslint-disable max-len */
           const property = this.configPropertyList.find(propertyItem => propertyItem.id === item.bk_attribute_id) || {}
           let content = <span>{property.bk_property_name}：<cmdb-property-value value={item.bk_property_value} property={property} /></span>
           const conflictExist = conflicts.find(conflictItem => conflictItem.bk_attribute_id === item.bk_attribute_id && conflictItem.unresolved_conflict_exist)
@@ -193,9 +196,9 @@
 
         return (
                     <div>
-                        { resultConflicts.reduce((acc, x) => acc === null ? [x] : [acc, conflictSeparator, x], null) }
+                        { resultConflicts.reduce((acc, x) => (acc === null ? [x] : [acc, conflictSeparator, x]), null) }
                         { (resultConflicts.length && resultUpdates.length) ? conflictSeparator : '' }
-                        { resultUpdates.reduce((acc, x) => acc === null ? [x] : [acc, '；', x], null) }
+                        { resultUpdates.reduce((acc, x) => (acc === null ? [x] : [acc, '；', x]), null) }
                     </div>
                 )
       },
@@ -225,15 +228,16 @@
         this.setTableList()
       },
       async handleShowDetails(row) {
+        /* eslint-disable no-param-reassign */
         this.currentRow = row
         this.slider.title = `${this.$t('属性详情')}【${row.expect_host.bk_host_innerip}】`
         this.slider.content = 'detail'
         const properties = this.propertyList
         const inst = row.expect_host
         // 云区域数据
-        row.cloud_area['bk_inst_name'] = row.cloud_area['bk_cloud_name']
-        row.cloud_area['bk_inst_id'] = row.cloud_area['bk_cloud_id']
-        inst['bk_cloud_id'] = [row.cloud_area]
+        row.cloud_area.bk_inst_name = row.cloud_area.bk_cloud_name
+        row.cloud_area.bk_inst_id = row.cloud_area.bk_cloud_id
+        inst.bk_cloud_id = [row.cloud_area]
         try {
           const propertyGroups = await this.getPropertyGroups()
           this.details.inst = inst
@@ -261,6 +265,7 @@
         // 标记冲突状态并更新属性值
         this.currentRow.conflicts.forEach((item) => {
           item.unresolved_conflict_exist = false
+          /* eslint-disable-next-line  no-underscore-dangle */
           item.bk_property_value = data.find(property => property.id === item.bk_attribute_id).__extra__.value
         })
         this.currentRow.unresolved_conflict_count = 0

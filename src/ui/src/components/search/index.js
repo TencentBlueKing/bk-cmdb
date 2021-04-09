@@ -17,7 +17,7 @@ import module from './module'
 import set from './set'
 
 export default {
-  install(Vue, ops = {}) {
+  install(Vue) {
     const components = [
       bool,
       date,

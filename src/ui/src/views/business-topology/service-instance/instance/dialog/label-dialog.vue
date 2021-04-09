@@ -56,14 +56,14 @@
       },
       async handleSubmit() {
         try {
-          const labelComp = this.$refs.labelComp
+          const { labelComp } = this.$refs
           const validateResult = await labelComp.$validator.validateAll()
           if (!validateResult) {
             return false
           }
           const list = labelComp.submitList
-          const removeKeysList = labelComp.removeKeysList
-          const originList = labelComp.originList
+          const { removeKeysList } = labelComp
+          const { originList } = labelComp
           const hasChange = JSON.stringify(labelComp.list) !== JSON.stringify(originList)
 
           const request = []

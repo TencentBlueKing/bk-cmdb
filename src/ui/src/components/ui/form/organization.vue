@@ -130,7 +130,7 @@
       async loadTree() {
         const { data: topData } = await this.getLazyData()
         const defaultChecked = this.checked
-        const tree = this.$refs.tree
+        const { tree } = this.$refs
 
         if (defaultChecked.length) {
           const checkedRes = await this.getSearchData({
@@ -219,7 +219,7 @@
         return !node.data.has_children
       },
       setDisplayName() {
-        const tree = this.$refs.tree
+        const { tree } = this.$refs
         const nodes = this.checked.map(id => tree.getNodeById(id)).filter(node => !!node)
         const displayNames = nodes.map(node => node.data.full_name)
         this.displayName = this.formatName(displayNames)
@@ -265,6 +265,7 @@
                     node.children.push(child)
                   }
                 } else {
+                  // eslint-disable-next-line no-param-reassign
                   node.children = [child]
                 }
               }
@@ -302,6 +303,7 @@
 
           treeNode.ids = ids.reverse()
           if (item.ancestors[0]) {
+            // eslint-disable-next-line prefer-destructuring
             treeNode.map = item.ancestors[0]
           } else {
             treeNode.map = curNode
@@ -339,7 +341,7 @@
                 node.remove = true
                 break
               }
-              k--
+              k-- // eslint-disable-line no-plusplus
             }
           }
         }
@@ -349,7 +351,7 @@
         return finalTreeData
       },
       setTreeSearchData(data) {
-        const tree = this.$refs.tree
+        const { tree } = this.$refs
         const finalTreeData = this.getTreeSearchData(data)
         tree.setData(finalTreeData)
         finalTreeData.forEach((node) => {
@@ -381,7 +383,7 @@
         if (this.multiple) {
           this.checked = ids
         } else {
-          const tree = this.$refs.tree
+          const { tree } = this.$refs
           tree.removeChecked({ emitEvent: false })
           tree.setChecked(node.id, { emitEvent: false })
           this.checked = [node.id]

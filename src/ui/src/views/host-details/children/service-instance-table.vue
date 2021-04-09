@@ -42,7 +42,8 @@
       <div class="right-content fr">
         <div class="instance-label clearfix" @click.stop v-if="currentView === 'label'">
           <div class="label-list fl">
-            <div class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelShowList">
+            <div class="label-item" :title="`${label.key}：${label.value}`" :key="index"
+              v-for="(label, index) in labelShowList">
               <span>{{label.key}}</span>
               <span>:</span>
               <span>{{label.value}}</span>
@@ -54,7 +55,8 @@
               placement="bottom-end">
               <span>...</span>
               <div class="tips-label-list" slot="content">
-                <span class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelTipsList">
+                <span class="label-item" :title="`${label.key}：${label.value}`" :key="index"
+                  v-for="(label, index) in labelTipsList">
                   <span>{{label.key}}</span>
                   <span>:</span>
                   <span>{{label.value}}</span>
@@ -105,7 +107,8 @@
               {{$t('编辑')}}
             </bk-button>
           </cmdb-auth>
-          <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }" v-if="!instance.service_template_id">
+          <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
+            v-if="!instance.service_template_id">
             <bk-button slot-scope="{ disabled }"
               theme="primary" text
               :disabled="disabled"
@@ -214,11 +217,11 @@
       },
       labelList() {
         const list = []
-        const labels = this.instance.labels
+        const { labels } = this.instance
         labels && Object.keys(labels).forEach((key) => {
           list.push({
             id: this.instance.id,
-            key: key,
+            key,
             value: labels[key]
           })
         })
@@ -336,7 +339,7 @@
           name: MENU_BUSINESS_HOST_AND_SERVICE,
           query: {
             tab: 'serviceInstance',
-            node: 'module-' + this.instance.bk_module_id,
+            node: `module-${this.instance.bk_module_id}`,
             instanceName: this.instance.name
           },
           history: true

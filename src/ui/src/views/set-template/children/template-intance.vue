@@ -195,7 +195,7 @@
           if (templateSyncInfo && templateSyncInfo.status === syncFail) {
             const failModules = (templateSyncInfo.detail || []).filter(module => module.status === syncFail)
             failTips = failModules.map((module) => {
-              const data = module.data
+              const { data } = module
               const moduleName = data && data.module_diff && data.module_diff.bk_module_name
               const errorMsg = module.response && module.response.bk_error_msg
               const tips = moduleName && errorMsg ? `${moduleName} : ${errorMsg}` : ''

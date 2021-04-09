@@ -66,7 +66,7 @@
         return this.$parent.objId
       },
       instId() {
-        return this.$parent.formatedInst['bk_inst_id']
+        return this.$parent.formatedInst.bk_inst_id
       },
       hasRelation() {
         return this.$parent.hasRelation
@@ -78,8 +78,8 @@
       list() {
         try {
           const list = []
-          this.uniqueAssociationObject.forEach((association, index) => {
-            const isSource = association['bk_obj_id'] === this.objId
+          this.uniqueAssociationObject.forEach((association) => {
+            const isSource = association.bk_obj_id === this.objId
             const modelId = isSource ? association.bk_asst_obj_id : association.bk_obj_id
             list.push({
               type: isSource ? 'source' : 'target',

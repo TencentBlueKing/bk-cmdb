@@ -36,6 +36,7 @@
     methods: {
       setupTips() {
         const DOM = this.$el.previousElementSibling
+        // eslint-disable-next-line new-cap
         Tippy(DOM, {
           content: this.$t('系统限定不可修改'),
           arrow: true,
@@ -45,6 +46,7 @@
       hackRadius() {
         const hackDOM = this.$el.parentElement.querySelectorAll('.bk-form-input,.bk-form-textarea,.bk-textarea-wrapper,.bk-select')
         Array.prototype.forEach.call(hackDOM, (dom) => {
+          /* eslint-disable no-param-reassign */
           dom.style.borderTopRightRadius = 0
           dom.style.borderBottomRightRadius = 0
         })

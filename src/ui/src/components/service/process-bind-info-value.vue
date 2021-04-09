@@ -53,10 +53,10 @@
     methods: {
       ipText(value) {
         const map = {
-          '1': '127.0.0.1',
-          '2': '0.0.0.0',
-          '3': this.$t('第一内网IP'),
-          '4': this.$t('第一外网IP')
+          1: '127.0.0.1',
+          2: '0.0.0.0',
+          3: this.$t('第一内网IP'),
+          4: this.$t('第一外网IP')
         }
         return map[value] || value || '--'
       },

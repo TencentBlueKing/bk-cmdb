@@ -34,8 +34,12 @@
         </bk-table-column>
         <bk-table-column :label="$t('操作')">
           <template slot-scope="{ row }">
-            <span class="latest-sync" v-if="isSyncDisabled(row)" v-bk-tooltips="getSyncDisabledText(row)">{{$t('去同步')}}</span>
-            <bk-button v-else text :disabled="isSyncDisabled(row)" @click="handleSync(row)">{{$t('去同步')}}</bk-button>
+            <span class="latest-sync" v-if="isSyncDisabled(row)" v-bk-tooltips="getSyncDisabledText(row)">
+              {{$t('去同步')}}
+            </span>
+            <bk-button v-else text :disabled="isSyncDisabled(row)" @click="handleSync(row)">
+              {{$t('去同步')}}
+            </bk-button>
           </template>
         </bk-table-column>
         <cmdb-table-empty slot="empty" :stuff="table.stuff">
@@ -114,6 +118,7 @@
             this.table.syncStatus = syncStatus
             data.info.forEach((module) => {
               const topo = topoPath.nodes.find(topo => topo.topo_node.bk_inst_id === module.bk_module_id)
+              // eslint-disable-next-line no-underscore-dangle, no-param-reassign
               module._path_ = topo.topo_path.map(path => path.bk_inst_name).reverse()
                 .join(' / ')
             })
@@ -203,6 +208,7 @@
         this.$nextTick(() => {
           if (this.table.filter) {
             this.table.data = this.table.backup.filter((row) => {
+              // eslint-disable-next-line no-underscore-dangle
               const path = row._path_.replace(/\s*(\/)\s*/g, '$1')
               const filter = this.table.filter.replace(/\s*(\/)\s*/g, '$1')
               return path.indexOf(filter) > -1
@@ -215,6 +221,7 @@
         })
       },
       sortByPath(rowA, rowB) {
+        // eslint-disable-next-line no-underscore-dangle
         return rowA._path_.toLowerCase().localeCompare(rowB._path_.toLowerCase(), 'zh-Hans-CN', { sensitivity: 'accent' })
       },
       sortByTime(rowA, rowB) {

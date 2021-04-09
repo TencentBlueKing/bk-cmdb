@@ -169,61 +169,65 @@
           return
         }
 
-        const files = e.target.files
+        const { files } = e.target
+        // eslint-disable-next-line prefer-destructuring
         const fileInfo = files[0]
         if (!this.allowTypeRegExp.test(fileInfo.name)) {
           this.$refs.fileInput.value = ''
           this.$error(this.$t('文件格式非法', { allowType: this.allowType.join(',') }))
           return false
-        } else if (fileInfo.size / 1024 > this.maxSize) {
+        }
+
+        if (fileInfo.size / 1024 > this.maxSize) {
           this.$refs.fileInput.value = ''
           this.$error(this.$t('文件大小溢出', { maxSize: this.maxSizeLocal }))
           return false
-        } else {
-          this.fileInfo.name = fileInfo.name
-          this.fileInfo.size = this.formatSize(fileInfo.size, 2)
-          const formData = new FormData()
-          formData.append('file', files[0])
-          for (const [key, value] of Object.entries(this.importPayload)) {
-            formData.append(key, value)
-          }
-          this.isLoading = true
-          this.$http.post(this.importUrl, formData, { transformData: false, globalError: false }).then((res) => {
-            const defaultResult = {
-              success: null,
-              error: null,
-              update_error: null,
-              asst_error: null
-            }
-            this.uploadResult = Object.assign(this.uploadResult, res.data || defaultResult)
-            if (res.result) {
-              this.uploaded = true
-              this.fileInfo.status = this.$t('成功')
-              this.$emit('success', res)
-            } else if (res.data && res.data.success) {
-              this.failed = true
-              this.fileInfo.status = this.$t('部分成功')
-              this.$emit('partialSuccess', res)
-            } else {
-              this.failed = true
-              this.fileInfo.status = this.$t('失败')
-              this.globalError && this.$error(res['bk_error_msg'])
-              this.$emit('error', res)
-            }
-            this.$refs.fileInput.value = ''
-            this.isLoading = false
-
-            this.$emit('upload-done', res)
-          })
-            .catch((error) => {
-              this.reset()
-              this.isLoading = false
-              this.$emit('error', error)
-            })
         }
+
+        this.fileInfo.name = fileInfo.name
+        this.fileInfo.size = this.formatSize(fileInfo.size, 2)
+        const formData = new FormData()
+        formData.append('file', files[0])
+        // eslint-disable-next-line no-restricted-syntax
+        for (const [key, value] of Object.entries(this.importPayload)) {
+          formData.append(key, value)
+        }
+        this.isLoading = true
+        this.$http.post(this.importUrl, formData, { transformData: false, globalError: false }).then((res) => {
+          const defaultResult = {
+            success: null,
+            error: null,
+            update_error: null,
+            asst_error: null
+          }
+          this.uploadResult = Object.assign(this.uploadResult, res.data || defaultResult)
+          if (res.result) {
+            this.uploaded = true
+            this.fileInfo.status = this.$t('成功')
+            this.$emit('success', res)
+          } else if (res.data && res.data.success) {
+            this.failed = true
+            this.fileInfo.status = this.$t('部分成功')
+            this.$emit('partialSuccess', res)
+          } else {
+            this.failed = true
+            this.fileInfo.status = this.$t('失败')
+            this.globalError && this.$error(res.bk_error_msg)
+            this.$emit('error', res)
+          }
+          this.$refs.fileInput.value = ''
+          this.isLoading = false
+
+          this.$emit('upload-done', res)
+        })
+          .catch((error) => {
+            this.reset()
+            this.isLoading = false
+            this.$emit('error', error)
+          })
       },
       hasUploadError() {
-        const uploadResult = this.uploadResult
+        const { uploadResult } = this
         return (uploadResult.success && uploadResult.success.length)
           || (uploadResult.error && uploadResult.error.length)
           || (uploadResult.update_error && uploadResult.update_error.length)
@@ -247,7 +251,7 @@
       formatSize(value, digits = 0) {
         const uints = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
         const index = Math.floor(Math.log(value) / Math.log(1024))
-        let size = value / Math.pow(1024, index)
+        let size = value / (1024 ** index)
         size = `${size.toFixed(digits)}${uints[index]}`
         return size
       },
@@ -267,7 +271,7 @@
           }
           this.$http.download({
             url: this.templateUrl,
-            data: data
+            data
           })
         } catch (e) {
           console.log(e)

@@ -71,7 +71,8 @@
             <span class="number">({{classification['bk_objects'].length}})</span>
           </div>
           <template v-if="isEditable(classification) && modelType === 'enable'">
-            <cmdb-auth v-if="!mainLoading" class="group-btn ml5" :auth="{ type: $OPERATION.C_MODEL, relation: [classification.id] }">
+            <cmdb-auth v-if="!mainLoading" class="group-btn ml5"
+              :auth="{ type: $OPERATION.C_MODEL, relation: [classification.id] }">
               <bk-button slot-scope="{ disabled }"
                 theme="primary"
                 text
@@ -80,7 +81,8 @@
                 <i class="icon-cc-add-line"></i>
               </bk-button>
             </cmdb-auth>
-            <cmdb-auth v-if="!mainLoading" class="group-btn" :auth="{ type: $OPERATION.U_MODEL_GROUP, relation: [classification.id] }">
+            <cmdb-auth v-if="!mainLoading" class="group-btn"
+              :auth="{ type: $OPERATION.U_MODEL_GROUP, relation: [classification.id] }">
               <bk-button slot-scope="{ disabled }"
                 theme="primary"
                 text
@@ -89,7 +91,8 @@
                 <i class="icon-cc-edit"></i>
               </bk-button>
             </cmdb-auth>
-            <cmdb-auth v-if="!mainLoading" class="group-btn" :auth="{ type: $OPERATION.D_MODEL_GROUP, relation: [classification.id] }">
+            <cmdb-auth v-if="!mainLoading" class="group-btn"
+              :auth="{ type: $OPERATION.D_MODEL_GROUP, relation: [classification.id] }">
               <bk-button slot-scope="{ disabled }"
                 theme="primary"
                 text
@@ -109,7 +112,9 @@
             v-for="(model, modelIndex) in classification['bk_objects']"
             :key="modelIndex">
             <div class="info-model"
-              :class="{ 'radius': modelType === 'disabled' || classification['bk_classification_id'] === 'bk_biz_topo' }"
+              :class="{
+                'radius': modelType === 'disabled' || classification['bk_classification_id'] === 'bk_biz_topo'
+              }"
               @click="modelClick(model)">
               <div class="icon-box">
                 <i class="icon" :class="[model['bk_obj_icon']]"></i>
@@ -209,6 +214,7 @@
 </template>
 
 <script>
+  import has from 'has'
   import cmdbMainInject from '@/components/layout/main-inject'
   import theCreateModel from '@/components/model-manage/_create-model'
   import { mapGetters, mapMutations, mapActions } from 'vuex'
@@ -272,9 +278,7 @@
         this.classifications.forEach((classification) => {
           enableClassifications.push({
             ...classification,
-            'bk_objects': classification['bk_objects'].filter((model) => {
-              return !model.bk_ispaused && !model.bk_ishidden
-            })
+            bk_objects: classification.bk_objects.filter(model => !model.bk_ispaused && !model.bk_ishidden)
           })
         })
         return enableClassifications
@@ -282,13 +286,11 @@
       disabledClassifications() {
         const disabledClassifications = []
         this.classifications.forEach((classification) => {
-          const disabledModels = classification['bk_objects'].filter((model) => {
-            return model.bk_ispaused && !model.bk_ishidden
-          })
+          const disabledModels = classification.bk_objects.filter(model => model.bk_ispaused && !model.bk_ishidden)
           if (disabledModels.length) {
             disabledClassifications.push({
               ...classification,
-              'bk_objects': disabledModels
+              bk_objects: disabledModels
             })
           }
         })
@@ -297,9 +299,8 @@
       currentClassifications() {
         if (!this.searchModel) {
           return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
-        } else {
-          return this.filterClassifications
         }
+        return this.filterClassifications
       },
       disabledModelBtnText() {
         return this.disabledClassifications.length ? '' : this.$t('停用模型提示')
@@ -321,6 +322,7 @@
           classifications[i].bk_objects = classifications[i].bk_objects.filter((model) => {
             const modelName = model.bk_obj_name.toLowerCase()
             const modelId = model.bk_obj_id.toLowerCase()
+            // eslint-disable-next-line max-len
             return (modelName && modelName.indexOf(lowerCaseValue) !== -1) || (modelId && modelId.indexOf(lowerCaseValue) !== -1)
           })
           searchResult.push(classifications[i])
@@ -350,7 +352,7 @@
         this.$route.meta.view = 'error'
       }
       if (this.$route.query.searchModel) {
-        const hash = window.location.hash
+        const { hash } = window.location
         this.searchModel = this.$route.query.searchModel
         window.location.hash = hash.substring(0, hash.indexOf('?'))
       }
@@ -387,8 +389,8 @@
         if (isEdit) {
           this.groupDialog.data.id = group.id
           this.groupDialog.title = this.$t('编辑分组')
-          this.groupDialog.data.bk_classification_id = group['bk_classification_id']
-          this.groupDialog.data.bk_classification_name = group['bk_classification_name']
+          this.groupDialog.data.bk_classification_id = group.bk_classification_id
+          this.groupDialog.data.bk_classification_name = group.bk_classification_name
           this.groupDialog.data.id = group.id
         } else {
           this.groupDialog.title = this.$t('新建分组')
@@ -425,8 +427,8 @@
         }
         const params = {
           bk_supplier_account: this.supplierAccount,
-          bk_classification_id: this.groupDialog.data['bk_classification_id'],
-          bk_classification_name: this.groupDialog.data['bk_classification_name']
+          bk_classification_id: this.groupDialog.data.bk_classification_id,
+          bk_classification_name: this.groupDialog.data.bk_classification_name
         }
         if (this.groupDialog.isEdit) {
           // eslint-disable-next-line
@@ -455,7 +457,7 @@
             await this.deleteClassification({
               id: group.id
             })
-            this.$store.commit('objectModelClassify/deleteClassify', group['bk_classification_id'])
+            this.$store.commit('objectModelClassify/deleteClassify', group.bk_classification_id)
             this.searchModel = ''
           }
         })
@@ -467,10 +469,10 @@
       async saveModel(data) {
         const params = {
           bk_supplier_account: this.supplierAccount,
-          bk_obj_name: data['bk_obj_name'],
-          bk_obj_icon: data['bk_obj_icon'],
-          bk_classification_id: data['bk_classification_id'],
-          bk_obj_id: data['bk_obj_id'],
+          bk_obj_name: data.bk_obj_name,
+          bk_obj_icon: data.bk_obj_icon,
+          bk_classification_id: data.bk_classification_id,
+          bk_obj_id: data.bk_obj_id,
           userName: this.userName
         }
         const createModel = await this.createObject({ params, config: { requestId: 'createModel' } })
@@ -490,7 +492,7 @@
         this.$routerActions.redirect({
           name: 'modelDetails',
           params: {
-            modelId: model['bk_obj_id']
+            modelId: model.bk_obj_id
           },
           history: true
         })
@@ -501,7 +503,7 @@
           host: MENU_RESOURCE_HOST,
           biz: MENU_RESOURCE_BUSINESS
         }
-        if (map.hasOwnProperty(model.bk_obj_id)) {
+        if (has(map, model.bk_obj_id)) {
           const query = model.bk_obj_id === 'host' ? { scope: 'all' } : {}
           this.$routerActions.redirect({
             name: map[model.bk_obj_id],

@@ -1,4 +1,5 @@
 import moment from 'moment'
+import has from 'has'
 
 const defaultFormatter = (value) => {
   if (!value) {
@@ -123,7 +124,7 @@ export default function formatter(value, property, options) {
   const isPropertyObject = typeof property === 'object'
   const type = isPropertyObject ? property.bk_property_type : property
   const propertyOptions = isPropertyObject ? property.option : options
-  if (formatterMap.hasOwnProperty(type)) {
+  if (has(formatterMap, type)) {
     return formatterMap[type](value, propertyOptions)
   }
   return value

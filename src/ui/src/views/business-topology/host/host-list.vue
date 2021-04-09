@@ -46,6 +46,7 @@
 </template>
 
 <script>
+  import has from 'has'
   import HostListOptions from './host-list-options.vue'
   import ModuleSelector from './module-selector.vue'
   import AcrossBusinessConfirm from './across-business-confirm.vue'
@@ -131,15 +132,13 @@
         if (this.$route.name !== MENU_BUSINESS_HOST_AND_SERVICE) {
           return false
         }
-        this.table.pagination.current = parseInt(page)
-        this.table.pagination.limit = parseInt(limit)
+        this.table.pagination.current = parseInt(page, 10)
+        this.table.pagination.limit = parseInt(limit, 10)
         tab === 'hostList' && node && this.selectedNode && this.getHostList()
       }, { throttle: 16, ignore: ['keyword'] })
     },
     mounted() {
-      this.unwatchFilter = this.$watch(() => {
-        return [FilterStore.condition, FilterStore.IP]
-      }, () => {
+      this.unwatchFilter = this.$watch(() => [FilterStore.condition, FilterStore.IP], () => {
         const el = this.$refs.filterTag.$el
         if (el.getBoundingClientRect) {
           this.filtersTagHeight = el.getBoundingClientRect().height
@@ -157,6 +156,7 @@
       disabledTableSettingDefaultBehavior() {
         setTimeout(() => {
           const settingReference = this.$refs.table.$el.querySelector('.bk-table-column-setting .bk-tooltip-ref')
+          // eslint-disable-next-line no-underscore-dangle
           settingReference && settingReference._tippy && settingReference._tippy.disable()
         }, 1000)
       },
@@ -183,7 +183,7 @@
       },
       handleLimitChange(limit) {
         RouterQuery.set({
-          limit: limit,
+          limit,
           page: 1,
           _t: Date.now()
         })
@@ -214,11 +214,9 @@
         }
         ColumnsConfig.open({
           props: {
-            properties: FilterStore.properties.filter((property) => {
-              return property.bk_obj_id === 'host'
-                || (property.bk_obj_id === 'module' && property.bk_property_id === 'bk_module_name')
-                || (property.bk_obj_id === 'set' && property.bk_property_id === 'bk_set_name')
-            }),
+            properties: FilterStore.properties.filter(property => property.bk_obj_id === 'host'
+              || (property.bk_obj_id === 'module' && property.bk_property_id === 'bk_module_name')
+              || (property.bk_obj_id === 'set' && property.bk_property_id === 'bk_set_name')),
             selected: FilterStore.defaultHeader.map(property => property.bk_property_id),
             disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
           },
@@ -270,16 +268,16 @@
         }
         const topoNodeData = this.selectedNode.data
         const fieldMap = {
-          'biz': 'bk_biz_id',
-          'set': 'bk_set_id',
-          'module': 'bk_module_id'
+          biz: 'bk_biz_id',
+          set: 'bk_set_id',
+          module: 'bk_module_id'
         }
         const topoCondition = {
           field: fieldMap[topoNodeData.bk_obj_id] || 'bk_inst_id',
           operator: '$eq',
           value: topoNodeData.bk_inst_id
         }
-        const modelConditionId = fieldMap.hasOwnProperty(topoNodeData.bk_obj_id) ? topoNodeData.bk_obj_id : 'object'
+        const modelConditionId = has(fieldMap, topoNodeData.bk_obj_id) ? topoNodeData.bk_obj_id : 'object'
         const modelCondition = params.condition.find(modelCondition => modelCondition.bk_obj_id === modelConditionId)
         modelCondition.condition.push(topoCondition)
         return params
@@ -302,7 +300,7 @@
           props.title = this.$t('转移主机到空闲模块')
         } else {
           props.title = this.$t('转移主机到业务模块')
-          const selection = this.table.selection
+          const { selection } = this.table
           const firstSelectionModules = selection[0].module.map(module => module.bk_module_id).sort()
           const firstSelectionModulesStr = firstSelectionModules.join(',')
           const allSame = selection.slice(1).every((item) => {
@@ -326,7 +324,7 @@
         this.dialog.props = {
           count: this.table.selection.length,
           bizId: this.bizId,
-          invalidList: invalidList
+          invalidList
         }
         const hasInvalid = !!invalidList.length
         this.dialog.width = hasInvalid ? 640 : 460
@@ -386,16 +384,21 @@
               return modules.every(module => module.default !== 0)
             })
             if (isAllIdleSetHost) {
+              // eslint-disable-next-line prefer-rest-params
               this.transferDirectly(...arguments)
             } else {
+              // eslint-disable-next-line prefer-rest-params
               this.gotoTransferPage(...arguments)
             }
           } else {
+            // eslint-disable-next-line prefer-rest-params
             this.gotoTransferPage(...arguments)
           }
         } else if (this.dialog.component === MoveToResourceConfirm.name) {
+          // eslint-disable-next-line prefer-rest-params
           this.moveHostToResource(...arguments)
         } else if (this.dialog.component === AcrossBusinessModuleSelector.name) {
+          // eslint-disable-next-line prefer-rest-params
           this.moveHostToOtherBusiness(...arguments)
         } else if (this.dialog.component === AcrossBusinessConfirm.name) {
           this.openAcrossBusinessModuleSelector()
@@ -403,8 +406,9 @@
       },
       async transferDirectly(modules) {
         try {
+          // eslint-disable-next-line prefer-destructuring
           const internalModule = modules[0]
-          const selectedNode = this.selectedNode
+          const { selectedNode } = this
           await this.$http.post(`host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, {
             bk_host_ids: this.table.selection.map(data => data.host.bk_host_id),
             default_internal_module: internalModule.data.bk_inst_id,
@@ -443,7 +447,7 @@
           params: {
             type: this.dialog.props.moduleType
           },
-          query: query,
+          query,
           history: true
         })
       },

@@ -8,6 +8,8 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars, no-param-reassign */
+
 import $http from '@/api'
 
 const state = {
@@ -105,8 +107,8 @@ const actions = {
   searchBusinessById({ rootGetters }, { bizId, config }) {
     return $http.post(`biz/search/${rootGetters.supplierAccount}`, {
       condition: {
-        'bk_biz_id': {
-          '$eq': bizId
+        bk_biz_id: {
+          $eq: bizId
         }
       },
       fields: [],
@@ -114,9 +116,7 @@ const actions = {
         start: 0,
         limit: 1
       }
-    }, config).then((data) => {
-      return data.info[0] || {}
-    })
+    }, config).then(data => data.info[0] || {})
   },
   getFullAmountBusiness({ commit }, config = {}) {
     return $http.get('biz/simplify', config)

@@ -28,7 +28,7 @@
       RenderList
     },
     // eslint-disable-next-line
-        props: ['tagInput', 'tag', 'keyword', 'index'],
+    props: ['tagInput', 'tag', 'keyword', 'index'],
     computed: {
       disabled() {
         return this.tagInput.disabledData.includes(this.tag.value)
@@ -38,6 +38,7 @@
       getItemContent() {
         let displayText = this.tag.text || this.tag.value
         if (this.keyword) {
+          // eslint-disable-next-line no-underscore-dangle
           displayText = displayText.replace(new RegExp(this.keyword, 'ig'), `<span ${this.$options._scopeId}>$&</span>`)
         }
         return displayText

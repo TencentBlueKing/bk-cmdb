@@ -65,7 +65,7 @@
   export default {
     data() {
       return {
-        menu: menu
+        menu
       }
     },
     computed: {
@@ -77,7 +77,7 @@
     },
     methods: {
       isLinkActive(nav) {
-        const matched = this.$route.matched
+        const { matched } = this.$route
         if (!matched.length) {
           return false
         }
@@ -95,7 +95,7 @@
       },
       handleLogout() {
         this.$http.post(`${window.API_HOST}logout`, {
-          'http_scheme': window.location.protocol.replace(':', '')
+          http_scheme: window.location.protocol.replace(':', '')
         }).then((data) => {
           window.location.href = data.url
         })

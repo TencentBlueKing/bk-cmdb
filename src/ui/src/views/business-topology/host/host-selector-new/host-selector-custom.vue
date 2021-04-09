@@ -67,6 +67,7 @@
               const exist = info.some(target => target.host.bk_host_innerip === ip)
               return !exist
             })
+            // eslint-disable-next-line max-len
             const newHostList = info.filter(({ host }) => !this.hostList.some(target => target.host.bk_host_id === host.bk_host_id))
             this.hostList.push(...newHostList)
             this.invalidList.push(...unexistList)

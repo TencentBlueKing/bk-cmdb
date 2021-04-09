@@ -138,7 +138,7 @@
         this.filterTimer = setTimeout(() => {
           RouterQuery.set({
             page: 1,
-            filter: filter,
+            filter,
             _t: Date.now()
           })
         }, 500)
@@ -233,14 +233,14 @@
       },
       handlePageChange(page) {
         RouterQuery.set({
-          page: page,
+          page,
           _t: Date.now()
         })
       },
       handlePageLimitChange(limit) {
         RouterQuery.set({
           page: 1,
-          limit: limit,
+          limit,
           _t: Date.now()
         })
       },

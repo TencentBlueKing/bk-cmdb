@@ -59,8 +59,8 @@
         page = 1,
         limit = this.pagination.limit
       }) => {
-        this.pagination.current = parseInt(page)
-        this.pagination.limit = parseInt(limit)
+        this.pagination.current = parseInt(page, 10)
+        this.pagination.limit = parseInt(limit, 10)
         this.getProcessList()
       }, { immediate: true })
       Bus.$on('expand-all-change', this.handleExpandAllChange)
@@ -107,18 +107,19 @@
       },
       handlePageChange(page) {
         RouterQuery.set({
-          page: page,
+          page,
           _t: Date.now()
         })
       },
       handlePageLimitChange(limit) {
         RouterQuery.set({
-          limit: limit,
+          limit,
           page: 1,
           _t: Date.now()
         })
       },
       handleExpandChange(row, expandedRows) {
+        // eslint-disable-next-line no-param-reassign
         row.pending = expandedRows.includes(row)
       },
       handleExpandAllChange(expand) {
@@ -127,15 +128,19 @@
         })
       },
       handleRowClick(row) {
+        // eslint-disable-next-line no-param-reassign
         this.$refs.processTable.toggleRowExpansion(row)
       },
       handleReserveSelectionChange(process, selection) {
         this.list.forEach((row) => {
+          // eslint-disable-next-line no-param-reassign
           row.reserved = row === process ? selection : []
         })
       },
       handleExpandResolved(row, list) {
+        // eslint-disable-next-line no-param-reassign
         row.pending = false
+        // eslint-disable-next-line no-param-reassign
         row.process_ids = list.map(process => process.process_id)
       }
     }

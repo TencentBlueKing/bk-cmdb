@@ -39,12 +39,10 @@
       }
     },
     data() {
-      const timezoneList = TIMEZONE.map((timezone) => {
-        return {
-          id: timezone,
-          name: timezone
-        }
-      })
+      const timezoneList = TIMEZONE.map(timezone => ({
+        id: timezone,
+        name: timezone
+      }))
       return {
         timezoneList,
         selected: this.multiple ? [] : ''

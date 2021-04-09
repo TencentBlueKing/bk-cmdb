@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars, no-param-reassign */
+
 import Vue from 'vue'
 let commonRequestResolver
 const commonRequest = new Promise((resolve, reject) => {
@@ -24,9 +26,7 @@ const state = {
 
 const getters = {
   propertyMap: state => state.propertyMap,
-  getProperties: state => (id) => {
-    return state.propertyMap[id] || []
-  },
+  getProperties: state => id => state.propertyMap[id] || [],
   topologyModels: state => state.topologyModels,
   columnsConfigProperties: (state, getters) => {
     const setProperties = getters.getProperties('set').filter(property => ['bk_set_name'].includes(property.bk_property_id))
@@ -35,13 +35,11 @@ const getters = {
     return [...setProperties, ...moduleProperties, ...hostProperties]
   },
   selectedNode: state => state.selectedNode,
-  getDefaultSearchCondition: state => () => {
-    return ['biz', 'set', 'module', 'host', 'object'].map(modelId => ({
-      bk_obj_id: modelId,
-      condition: [],
-      fields: []
-    }))
-  },
+  getDefaultSearchCondition: state => () => ['biz', 'set', 'module', 'host', 'object'].map(modelId => ({
+    bk_obj_id: modelId,
+    condition: [],
+    fields: []
+  })),
   commonRequest: state => state.commonRequest,
   failHostList: state => state.failHostList
 }

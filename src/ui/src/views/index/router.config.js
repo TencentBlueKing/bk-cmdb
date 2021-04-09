@@ -21,9 +21,7 @@ export default [{
   path: 'index/search',
   component: () => import('./children/full-text-search.vue'),
   meta: new Meta({
-    checkAvailable: (to, from, app) => {
-      return window.CMDB_CONFIG.site.fullTextSearch === 'on'
-    },
+    checkAvailable: () => window.CMDB_CONFIG.site.fullTextSearch === 'on',
     layout: {
       breadcrumbs: false
     }

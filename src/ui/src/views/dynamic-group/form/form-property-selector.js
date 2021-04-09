@@ -22,7 +22,7 @@ const Component = Vue.extend({
       this.$destroy()
     }
   },
-  render(h) {
+  render() {
     return (<form-property-selector ref="selector" { ...{ props: this.$options.attrs }} on-close={ this.handleClose }></form-property-selector>)
   }
 })
@@ -33,11 +33,9 @@ export default {
       store,
       i18n,
       attrs: data,
-      provide: () => {
-        return {
-          dynamicGroupForm
-        }
-      }
+      provide: () => ({
+        dynamicGroupForm
+      })
     })
     vm.$mount()
     // magicbox实现相关，多个侧滑同时存在，后面的不会挂在到body中，而是挂在到popmanager中，此处不手动添加

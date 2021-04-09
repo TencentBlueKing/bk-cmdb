@@ -31,7 +31,7 @@ const Component = Vue.extend({
       this.$destroy()
     }
   },
-  render(h) {
+  render() {
     return (
       <bk-dialog
         width={ 768 }

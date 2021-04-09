@@ -37,7 +37,7 @@
         set(value) {
           let newValue
           if (Array.isArray(value)) {
-            newValue = value.map(number => number.toString().length ? Number(number) : number)
+            newValue = value.map(number => (number.toString().length ? Number(number) : number))
           } else {
             newValue = value.toString().length ? Number(value) : value
           }

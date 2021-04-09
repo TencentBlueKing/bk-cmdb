@@ -114,7 +114,9 @@
       @page-limit-change="handleSizeChange"
       @page-change="handlePageChange"
       @selection-change="handleSelectChange">
-      <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
+      <bk-table-column type="selection" width="60" align="center" fixed
+        class-name="bk-table-selection">
+      </bk-table-column>
       <bk-table-column v-for="column in table.header"
         sortable="custom"
         min-width="80"
@@ -136,7 +138,9 @@
         <template slot-scope="{ row }">
           <cmdb-auth :auth="{ type: $OPERATION.D_INST, relation: [model.id, row.bk_inst_id] }">
             <template slot-scope="{ disabled }">
-              <bk-button theme="primary" text :disabled="disabled" @click.stop="handleDelete(row)">{{$t('删除')}}</bk-button>
+              <bk-button theme="primary" text :disabled="disabled" @click.stop="handleDelete(row)">
+                {{$t('删除')}}
+              </bk-button>
             </template>
           </cmdb-auth>
         </template>
@@ -206,6 +210,7 @@
 
 <script>
   import { mapState, mapGetters, mapActions } from 'vuex'
+  import has from 'has'
   import cmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
   import cmdbImport from '@/components/import/import'
   import { MENU_RESOURCE_INSTANCE_DETAILS } from '@/dictionary/menu-symbol'
@@ -292,8 +297,8 @@
       url() {
         const prefix = `${window.API_HOST}insts/owner/${this.supplierAccount}/object/${this.objId}/`
         return {
-          import: prefix + 'import',
-          export: prefix + 'export',
+          import: `${prefix}import`,
+          export: `${prefix}export`,
           template: `${window.API_HOST}importtemplate/${this.objId}`
         }
       },
@@ -313,7 +318,7 @@
       }
     },
     watch: {
-      'filter.id'(id) {
+      'filter.id'() {
         this.filter.value = ''
       },
       'slider.show'(show) {
@@ -341,8 +346,8 @@
       }) => {
         this.filter.id = field
         this.filter.value = filter
-        this.table.pagination.current = parseInt(page)
-        this.table.pagination.limit = parseInt(limit)
+        this.table.pagination.current = parseInt(page, 10)
+        this.table.pagination.limit = parseInt(limit, 10)
         this.getTableData(!!filter)
       })
       this.setDynamicBreadcrumbs()
@@ -420,7 +425,7 @@
           stuff: {
             type: 'default',
             payload: {
-              resource: this.model['bk_obj_name']
+              resource: this.model.bk_obj_name
             }
           }
         }
@@ -448,23 +453,22 @@
         })
       },
       setTableHeader() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
+          // eslint-disable-next-line max-len
           const headerProperties = this.$tools.getHeaderProperties(this.properties, customColumns, this.columnsConfig.disabledColumns)
           resolve(headerProperties)
         }).then((properties) => {
           this.updateTableHeader(properties)
-          this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
+          this.columnsConfig.selected = properties.map(property => property.bk_property_id)
         })
       },
       updateTableHeader(properties) {
-        this.table.header = properties.map((property) => {
-          return {
-            id: property.bk_property_id,
-            name: this.$tools.getHeaderPropertyName(property),
-            property
-          }
-        })
+        this.table.header = properties.map(property => ({
+          id: property.bk_property_id,
+          name: this.$tools.getHeaderPropertyName(property),
+          property
+        }))
       },
       handleValueClick(item, column) {
         if (column.id !== 'bk_inst_id') {
@@ -492,9 +496,9 @@
           _t: Date.now()
         })
       },
-      handlePageChange(page, withFilter = false) {
+      handlePageChange(page) {
         RouterQuery.set({
-          page: page,
+          page,
           _t: Date.now()
         })
       },
@@ -543,15 +547,15 @@
           }
         }
         if (this.filter.id && String(this.filter.value).length) {
-          const filterType = this.filterType
+          const { filterType } = this
           let filterValue = this.filter.value
           if (filterType === 'bool') {
             const convertValue = [true, false].find(bool => bool.toString() === filterValue)
             filterValue = convertValue === undefined ? filterValue : convertValue
           } else if (filterType === 'int') {
-            filterValue = isNaN(parseInt(filterValue)) ? filterValue : parseInt(filterValue)
+            filterValue = isNaN(parseInt(filterValue)) ? filterValue : parseInt(filterValue, 10)
           } else if (filterType === 'float') {
-            filterValue = isNaN(parseFloat(filterValue)) ? filterValue : parseFloat(filterValue)
+            filterValue = isNaN(parseFloat(filterValue)) ? filterValue : parseFloat(filterValue, 10)
           }
           if (['bool', 'int', 'enum', 'float', 'organization'].includes(filterType)) {
             params.condition[this.objId].push({
@@ -560,17 +564,17 @@
               value: filterValue
             })
           } else if (['singleasst', 'multiasst'].includes(filterType)) {
-            const asstObjId = (this.$tools.getProperty(this.properties, this.filter.id) || {})['bk_asst_obj_id']
+            const asstObjId = (this.$tools.getProperty(this.properties, this.filter.id) || {}).bk_asst_obj_id
             if (asstObjId) {
               const fieldMap = {
-                'host': 'bk_host_innerip',
-                'biz': 'bk_biz_name',
-                'plat': 'bk_cloud_name',
-                'module': 'bk_module_name',
-                'set': 'bk_set_name'
+                host: 'bk_host_innerip',
+                biz: 'bk_biz_name',
+                plat: 'bk_cloud_name',
+                module: 'bk_module_name',
+                set: 'bk_set_name'
               }
               params.condition[asstObjId] = [{
-                field: fieldMap.hasOwnProperty(asstObjId) ? fieldMap[asstObjId] : 'bk_inst_name',
+                field: has(fieldMap, asstObjId) ? fieldMap[asstObjId] : 'bk_inst_name',
                 operator: '$in',
                 value: filterValue.split(',')
               }]
@@ -593,15 +597,15 @@
         this.attribute.type = 'create'
         this.attribute.inst.edit = {}
         this.slider.show = true
-        this.slider.title = `${this.$t('创建')} ${this.model['bk_obj_name']}`
+        this.slider.title = `${this.$t('创建')} ${this.model.bk_obj_name}`
       },
       handleDelete(inst) {
         this.$bkInfo({
-          title: this.$t('确认要删除', { name: inst['bk_inst_name'] }),
+          title: this.$t('确认要删除', { name: inst.bk_inst_name }),
           confirmFn: () => {
             this.deleteInst({
               objId: this.objId,
-              instId: inst['bk_inst_id']
+              instId: inst.bk_inst_id
             }).then(() => {
               this.slider.show = false
               this.$success(this.$t('删除成功'))
@@ -616,7 +620,7 @@
         if (type === 'update') {
           this.updateInst({
             objId: this.objId,
-            instId: originalValues['bk_inst_id'],
+            instId: originalValues.bk_inst_id,
             params: values
           }).then(() => {
             this.attribute.inst.details = Object.assign({}, originalValues, values)
@@ -627,6 +631,7 @@
             })
           })
         } else {
+          // eslint-disable-next-line no-param-reassign
           delete values.bk_inst_id // properties中注入了前端自定义的bk_inst_id属性
           this.createInst({
             params: values,
@@ -655,12 +660,10 @@
         this.batchUpdateInst({
           objId: this.objId,
           params: {
-            update: this.table.checked.map((instId) => {
-              return {
-                'datas': values,
-                'inst_id': instId
-              }
-            })
+            update: this.table.checked.map(instId => ({
+              datas: values,
+              inst_id: instId
+            }))
           },
           config: {
             requestId: `${this.objId}BatchUpdate`
@@ -690,8 +693,8 @@
           objId: this.objId,
           config: {
             data: {
-              'delete': {
-                'inst_ids': this.table.checked
+              delete: {
+                inst_ids: this.table.checked
               }
             }
           }
@@ -705,7 +708,7 @@
       },
       handleApplyColumnsConfig(properties) {
         this.$store.dispatch('userCustom/saveUsercustom', {
-          [this.customConfigKey]: properties.map(property => property['bk_property_id'])
+          [this.customConfigKey]: properties.map(property => property.bk_property_id)
         })
         this.columnsConfig.show = false
       },
@@ -728,7 +731,7 @@
         if (this.tab.active === 'attribute') {
           const $form = this.attribute.type === 'multiple' ? this.$refs.multipleForm : this.$refs.form
           if ($form.hasChange) {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
               this.$bkInfo({
                 title: this.$t('确认退出'),
                 subTitle: this.$t('退出会导致未保存信息丢失'),

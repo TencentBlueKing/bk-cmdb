@@ -12,6 +12,7 @@ const i18n = new VueI18n({
   fallbackLocale: 'zh_CN',
   messages,
   missing(locale, path) {
+    // eslint-disable-next-line no-underscore-dangle
     const parsedPath = i18n._path.parsePath(path)
     return parsedPath[parsedPath.length - 1]
   }

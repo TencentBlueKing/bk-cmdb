@@ -31,9 +31,7 @@ export function getGlobalUsercustom(app) {
       fromCache: false,
       globalError: false
     }
-  }).catch(() => {
-    return {}
-  })
+  }).catch(() => ({}))
 }
 
 export async function getConfig(app) {

@@ -1,6 +1,6 @@
 import store from '@/store'
 import i18n from '@/i18n'
-import IS_INT from 'validator/es/lib/isInt'
+import isInt from 'validator/es/lib/isInt'
 
 const getModelById = store.getters['objectModelClassify/getModelById']
 export function getLabel(property) {
@@ -83,9 +83,11 @@ export function convertValue(value, operator, property) {
   convertedValue = convertedValue.map((data) => {
     if (['int', 'foreignkey', 'organization', 'service-template'].includes(type)) {
       return parseInt(data, 10)
-    } else if (type === 'float') {
+    }
+    if (type === 'float') {
       return parseFloat(data, 10)
-    } else if (type === 'bool') {
+    }
+    if (type === 'bool') {
       return data === 'true'
     }
     return data
@@ -97,7 +99,7 @@ export function convertValue(value, operator, property) {
 }
 
 export function findProperty(id, properties) {
-  const field = IS_INT(id) ? 'id' : 'bk_property_id'
+  const field = isInt(id) ? 'id' : 'bk_property_id'
   return properties.find(property => property[field].toString() === id.toString())
 }
 
@@ -142,13 +144,11 @@ export function transformCondition(condition, properties, header) {
       })
     }
   })
-  return Object.keys(conditionMap).map((modelId) => {
-    return {
-      bk_obj_id: modelId,
-      fields: header.filter(property => property.bk_obj_id === modelId).map(property => property.bk_property_id),
-      condition: conditionMap[modelId]
-    }
-  })
+  return Object.keys(conditionMap).map(modelId => ({
+    bk_obj_id: modelId,
+    fields: header.filter(property => property.bk_obj_id === modelId).map(property => property.bk_property_id),
+    condition: conditionMap[modelId]
+  }))
 }
 
 export function splitIP(raw) {
@@ -185,16 +185,16 @@ export function transformIP(raw) {
 }
 
 const operatorSymbolMap = {
-  '$eq': '=',
-  '$ne': '≠',
-  '$in': '*=',
-  '$nin': '*≠',
-  '$gt': '>',
-  '$lt': '<',
-  '$gte': '≥',
-  '$lte': '≤',
-  '$regex': 'Like',
-  '$range': '≤ ≥'
+  $eq: '=',
+  $ne: '≠',
+  $in: '*=',
+  $nin: '*≠',
+  $gt: '>',
+  $lt: '<',
+  $gte: '≥',
+  $lte: '≤',
+  $regex: 'Like',
+  $range: '≤ ≥'
 }
 export function getOperatorSymbol(operator) {
   return operatorSymbolMap[operator]
@@ -237,18 +237,17 @@ export function getUniqueProperties(preset, dynamic) {
 
 function getPropertyPriority(property) {
   let priority = 0
-  if (property['isonly']) {
+  if (property.isonly) {
     priority--
   }
-  if (property['isrequired']) {
+  if (property.isrequired) {
     priority--
   }
   return priority
 }
 export function getInitialProperties(properties) {
-  return [...properties].sort((propertyA, propertyB) => {
-    return getPropertyPriority(propertyA) - getPropertyPriority(propertyB)
-  }).slice(0, 6)
+  // eslint-disable-next-line max-len
+  return [...properties].sort((propertyA, propertyB) => getPropertyPriority(propertyA) - getPropertyPriority(propertyB)).slice(0, 6)
 }
 
 export default {

@@ -93,7 +93,7 @@
       }
     },
     methods: {
-      isLocked({ row, column, index }) {
+      isLocked({ column, index }) {
         const rowState = this.lockStates[index]
         return rowState ? rowState[column.property] : false
       },

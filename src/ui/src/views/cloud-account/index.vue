@@ -141,14 +141,14 @@
       handlePageChange(page) {
         RouterQuery.set({
           _t: Date.now(),
-          page: page
+          page
         })
       },
       handleLimitChange(limit) {
         RouterQuery.set({
           _t: Date.now(),
           page: 1,
-          limit: limit
+          limit
         })
       },
       handleCellClick(row, column) {
@@ -199,7 +199,7 @@
             params.is_fuzzy = true
           }
           const data = await this.$store.dispatch('cloud/account/findMany', {
-            params: params,
+            params,
             config: {
               requestId: this.request.search
             }
@@ -229,6 +229,7 @@
             }
           })
           this.list.forEach((account) => {
+            /* eslint-disable no-param-reassign */
             const status = results.find(result => result.bk_account_id === account.bk_account_id)
             if (status && status.err_msg) {
               account.status = 'error'

@@ -21,7 +21,7 @@ const Component = Vue.extend({
       this.$destroy()
     }
   },
-  render(h) {
+  render() {
     return <audit-details-slider ref="details" { ...{ props: this.$options.attrs }} on-close={ this.handleClose }></audit-details-slider>
   }
 })

@@ -26,6 +26,7 @@
 
 <script>
   import { mapState, mapGetters } from 'vuex'
+  import has from 'has'
   export default {
     name: 'cmdb-service-category',
     props: {
@@ -84,7 +85,7 @@
     },
     methods: {
       async getServiceCategories() {
-        if (this.categoryMap.hasOwnProperty(this.bizId)) {
+        if (has(this.categoryMap, this.bizId)) {
           this.firstClassList = this.categoryMap[this.bizId]
         } else {
           try {
@@ -95,7 +96,7 @@
             this.firstClassList = categories
             this.$store.commit('businessHost/setCategories', {
               id: this.bizId,
-              categories: categories
+              categories
             })
           } catch (e) {
             console.error(e)

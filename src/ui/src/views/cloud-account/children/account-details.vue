@@ -117,29 +117,27 @@
         const infoInstance = this.$bkInfo({
           title: this.$t('确认删除xx', { instance: this.account.bk_account_name }),
           closeIcon: false,
-          confirmFn: () => {
-            return new Promise(async (resolve) => {
-              infoInstance.buttonLoading = true
-              try {
-                await this.$store.dispatch('cloud/account/delete', {
-                  id: this.account.bk_account_id,
-                  config: {
-                    requestId: this.request.delete
-                  }
-                })
-                this.$success('删除成功')
-                this.container.hide()
-                RouterQuery.set({
-                  _t: Date.now(),
-                  page: RouterQuery.get('page', 1)
-                })
-              } catch (error) {
-                console.error(error)
-              } finally {
-                resolve(true)
-              }
-            })
-          }
+          confirmFn: () => new Promise(async (resolve) => {
+            infoInstance.buttonLoading = true
+            try {
+              await this.$store.dispatch('cloud/account/delete', {
+                id: this.account.bk_account_id,
+                config: {
+                  requestId: this.request.delete
+                }
+              })
+              this.$success('删除成功')
+              this.container.hide()
+              RouterQuery.set({
+                _t: Date.now(),
+                page: RouterQuery.get('page', 1)
+              })
+            } catch (error) {
+              console.error(error)
+            } finally {
+              resolve(true)
+            }
+          })
         })
       }
     }

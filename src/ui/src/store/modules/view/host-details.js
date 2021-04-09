@@ -1,3 +1,6 @@
+/* eslint-disable no-unused-vars, no-param-reassign */
+import has from 'has'
+
 const state = {
   info: {},
   properties: [],
@@ -16,7 +19,7 @@ const state = {
 }
 
 function isBizCustomData(data) {
-  return data.hasOwnProperty('bk_biz_id') && data.bk_biz_id > 0
+  return has(data, 'bk_biz_id') && data.bk_biz_id > 0
 }
 const getters = {
   groupedProperties: (state) => {
@@ -39,11 +42,10 @@ const getters = {
                 || (!bizCustomPrev && !bizCustomNext)
       ) {
         return prev.bk_group_index - next.bk_group_index
-      } else if (bizCustomPrev) {
+      } if (bizCustomPrev) {
         return 1
-      } else {
-        return -1
       }
+      return -1
     })
   },
   mainLine: state => state.mainLine,
@@ -52,9 +54,7 @@ const getters = {
   target: state => state.association.target,
   sourceInstances: state => state.instances.source,
   targetInstances: state => state.instances.target,
-  isBusinessHost: (state) => {
-    return (state.info.biz || []).some(business => business.default === 0)
-  }
+  isBusinessHost: state => (state.info.biz || []).some(business => business.default === 0)
 }
 
 const mutations = {
@@ -83,8 +83,8 @@ const mutations = {
     state.associationTypes = types
   },
   deleteAssociation(state, data) {
-    const type = data.type
-    const model = data.model
+    const { type } = data
+    const { model } = data
     const target = data.association
     const instances = state.instances[type === 'source' ? 'target' : 'source']
     const associations = instances.find(data => data.bk_obj_id === model)

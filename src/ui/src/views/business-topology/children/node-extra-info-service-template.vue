@@ -89,7 +89,9 @@
       },
       async getServiceInfo() {
         const categories = await this.getServiceCategories()
+        // eslint-disable-next-line max-len
         const firstCategory = categories.find(category => category.secondCategory.some(second => second.id === this.instance.service_category_id)) || {}
+        // eslint-disable-next-line max-len
         const secondCategory = (firstCategory.secondCategory || []).find(second => second.id === this.instance.service_category_id) || {}
         this.template = {
           name: this.instance.service_template_id ? this.instance.bk_module_name : this.$t('无'),
@@ -120,6 +122,7 @@
           }
         })
         categories.forEach((category) => {
+          // eslint-disable-next-line max-len, no-param-reassign
           category.secondCategory = data.filter(item => item.category.bk_parent_id === category.id).map(item => item.category)
         })
         return categories

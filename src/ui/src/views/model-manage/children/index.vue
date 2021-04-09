@@ -29,12 +29,16 @@
         </div>
         <div class="model-text">
           <span>{{$t('唯一标识')}}：</span>
-          <span class="text-content id" :title="activeModel['bk_obj_id'] || ''">{{activeModel['bk_obj_id'] || ''}}</span>
+          <span class="text-content id" :title="activeModel['bk_obj_id'] || ''">
+            {{activeModel['bk_obj_id'] || ''}}
+          </span>
         </div>
         <div class="model-text">
           <span>{{$t('名称')}}：</span>
           <template v-if="!isEditName">
-            <span class="text-content" :title="activeModel['bk_obj_name'] || ''">{{activeModel['bk_obj_name'] || ''}}</span>
+            <span class="text-content" :title="activeModel['bk_obj_name'] || ''">
+              {{activeModel['bk_obj_name'] || ''}}
+            </span>
             <cmdb-auth tag="i" class="icon icon-cc-edit text-primary"
               v-if="isEditable"
               :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
@@ -53,7 +57,8 @@
             <span class="text-primary" @click="isEditName = false">{{$t('取消')}}</span>
           </template>
         </div>
-        <div class="model-text ml10" v-if="!activeModel['bk_ispaused'] && activeModel.bk_classification_id !== 'bk_biz_topo'">
+        <div class="model-text ml10"
+          v-if="!activeModel['bk_ispaused'] && activeModel.bk_classification_id !== 'bk_biz_topo'">
           <span>{{$t('实例数量')}}：</span>
           <div class="text-content-count"
             :title="modelStatisticsSet[activeModel['bk_obj_id']] || 0"
@@ -183,6 +188,7 @@
 </template>
 
 <script>
+  import has from 'has'
   import theRelation from './relation'
   import theVerification from './verification'
   import theFieldGroup from '@/components/model-manage/field-group'
@@ -263,16 +269,16 @@
         if (objIcon) {
           Object.assign(params, { bk_obj_icon: objIcon })
         }
-        if (objName.length && objName !== this.activeModel['bk_obj_name']) {
+        if (objName.length && objName !== this.activeModel.bk_obj_name) {
           Object.assign(params, { bk_obj_name: objName })
         }
         return params
       },
       exportUrl() {
-        return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/export`
+        return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel.bk_obj_id}/export`
       },
       importUrl() {
-        return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/import`
+        return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel.bk_obj_id}/import`
       },
       canBeImport() {
         const cantImport = ['host', 'biz']
@@ -318,43 +324,43 @@
         return ''
       },
       async handleFile(e) {
-        const files = e.target.files
+        const { files } = e.target
         const formData = new FormData()
         formData.append('file', files[0])
         try {
           const res = await this.importObjectAttribute({
             params: formData,
-            objId: this.activeModel['bk_obj_id'],
+            objId: this.activeModel.bk_obj_id,
             config: {
               requestId: 'importObjectAttribute',
               globalError: false,
               transformData: false
             }
           }).then((res) => {
-            this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
+            this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
             return res
           })
           if (res.result) {
-            const data = res.data[this.activeModel['bk_obj_id']]
-            if (data.hasOwnProperty('insert_failed')) {
-              this.$error(data['insert_failed'][0])
-            } else if (data.hasOwnProperty('update_failed')) {
-              this.$error(data['update_failed'][0])
+            const data = res.data[this.activeModel.bk_obj_id]
+            if (has(data, 'insert_failed')) {
+              this.$error(data.insert_failed[0])
+            } else if (has(data, 'update_failed')) {
+              this.$error(data.update_failed[0])
             } else {
               this.$success(this.$t('导入成功'))
               this.$refs.field.initFieldList()
             }
           } else {
-            this.$error(res['bk_error_msg'])
+            this.$error(res.bk_error_msg)
           }
         } catch (e) {
-          this.$error(e.data['bk_error_msg'])
+          this.$error(e.data.bk_error_msg)
         } finally {
           this.$refs.fileInput.value = ''
         }
       },
       checkModel() {
-        return this.models.find(model => model['bk_obj_id'] === this.$route.params.modelId)
+        return this.models.find(model => model.bk_obj_id === this.$route.params.modelId)
       },
       hideChooseBox() {
         this.isIconListShow = false
@@ -364,7 +370,7 @@
         this.saveModel()
       },
       editModelName() {
-        this.modelInfo.objName = this.activeModel['bk_obj_name']
+        this.modelInfo.objName = this.activeModel.bk_obj_name
         this.isEditName = true
       },
       async saveModel() {
@@ -372,7 +378,7 @@
           return
         }
         await this.updateObject({
-          id: this.activeModel['id'],
+          id: this.activeModel.id,
           params: this.modelParams
         }).then(() => {
           this.$http.cancel('post_searchClassificationsObjects')
@@ -404,8 +410,8 @@
       },
       initModelInfo() {
         this.modelInfo = {
-          objIcon: this.activeModel['bk_obj_icon'],
-          objName: this.activeModel['bk_obj_name']
+          objIcon: this.activeModel.bk_obj_icon,
+          objName: this.activeModel.bk_obj_name
         }
       },
       exportExcel(response) {
@@ -422,7 +428,7 @@
       },
       async exportField() {
         const res = await this.exportObjectAttribute({
-          objId: this.activeModel['bk_obj_id'],
+          objId: this.activeModel.bk_obj_id,
           params: {},
           config: {
             globalError: false,
@@ -463,7 +469,7 @@
       },
       async updateModelObject(ispaused) {
         await this.updateObject({
-          id: this.activeModel['id'],
+          id: this.activeModel.id,
           params: {
             bk_ispaused: ispaused
           },
@@ -480,7 +486,7 @@
       async deleteModel() {
         if (this.isMainLine) {
           await this.deleteMainlineObject({
-            bkObjId: this.activeModel['bk_obj_id'],
+            bkObjId: this.activeModel.bk_obj_id,
             config: {
               requestId: 'deleteModel'
             }
@@ -488,7 +494,7 @@
           this.$routerActions.back()
         } else {
           await this.deleteObject({
-            id: this.activeModel['id'],
+            id: this.activeModel.id,
             config: {
               requestId: 'deleteModel'
             }
@@ -503,7 +509,7 @@
           host: MENU_RESOURCE_HOST,
           biz: MENU_RESOURCE_BUSINESS
         }
-        if (map.hasOwnProperty(model.bk_obj_id)) {
+        if (has(map, model.bk_obj_id)) {
           const query = model.bk_obj_id === 'host' ? { scope: 'all' } : {}
           this.$routerActions.redirect({
             name: map[model.bk_obj_id],
@@ -519,14 +525,14 @@
         }
       },
       handleUploadDone(res) {
-        const data = res.data[this.activeModel['bk_obj_id']]
+        const data = res.data[this.activeModel.bk_obj_id]
         if (res.result) {
           this.uploadResult.success = data.success
           this.$success(this.$t('导入成功'))
           this.$refs.field.initFieldList()
         } else {
-          this.uploadResult.insert_failed = data['insert_failed']
-          this.uploadResult.update_failed = data['update_failed']
+          this.uploadResult.insert_failed = data.insert_failed
+          this.uploadResult.update_failed = data.update_failed
         }
       },
       handleSliderHide() {

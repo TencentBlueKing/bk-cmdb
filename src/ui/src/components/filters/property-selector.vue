@@ -48,14 +48,14 @@
 <script>
   import { mapGetters } from 'vuex'
   import FilterStore from './store'
-  import Throttle from 'lodash.throttle'
+  import throttle from 'lodash.throttle'
   export default {
     data() {
       return {
         filter: '',
         isShow: false,
         selected: [...FilterStore.selected],
-        throttleFilter: Throttle(this.handleFilter, 500, { leading: false }),
+        throttleFilter: throttle(this.handleFilter, 500, { leading: false }),
         renderGroups: []
       }
     },
@@ -64,6 +64,7 @@
       propertyMap() {
         let modelPropertyMap = { ...FilterStore.modelPropertyMap }
         const ignoreHostProperties = ['bk_host_innerip', 'bk_host_outerip', '__bk_host_topology__']
+        // eslint-disable-next-line max-len
         modelPropertyMap.host = modelPropertyMap.host.filter(property => !ignoreHostProperties.includes(property.bk_property_id))
         if (!FilterStore.bizId) {
           return modelPropertyMap
@@ -85,9 +86,7 @@
             children: this.propertyMap[modelId]
           }
         })
-          .sort((groupA, groupB) => {
-            return sequence.indexOf(groupA.id) - sequence.indexOf(groupB.id)
-          })
+          .sort((groupA, groupB) => sequence.indexOf(groupA.id) - sequence.indexOf(groupB.id))
       }
     },
     watch: {

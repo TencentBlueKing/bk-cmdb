@@ -102,8 +102,12 @@
               {{$t('移除')}}
             </span>
           </cmdb-auth>
-          <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)">{{$t('导出选中')}}</li>
-          <li :class="['bk-dropdown-item', { disabled: !count }]" @click="handleBatchExport($event)">{{$t('导出全部')}}</li>
+          <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)">
+            {{$t('导出选中')}}
+          </li>
+          <li :class="['bk-dropdown-item', { disabled: !count }]" @click="handleBatchExport($event)">
+            {{$t('导出全部')}}
+          </li>
           <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
             :auth="{ type: $OPERATION.U_HOST, relation: [bizId] }">
             <span href="javascript:void(0)"
@@ -119,7 +123,10 @@
     <div class="options options-right">
       <filter-fast-search class="option-fast-search"></filter-fast-search>
       <filter-collection class="option-collection ml10"></filter-collection>
-      <icon-button class="option-filter ml10" icon="icon-cc-funnel" v-bk-tooltips.top="$t('高级筛选')" @click="handleSetFilters"></icon-button>
+      <icon-button class="option-filter ml10"
+        icon="icon-cc-funnel" v-bk-tooltips.top="$t('高级筛选')"
+        @click="handleSetFilters">
+      </icon-button>
     </div>
     <edit-multiple-host ref="editMultipleHost"
       :properties="hostProperties"
@@ -223,13 +230,11 @@
         })
       },
       isIdleSetModules() {
-        return this.selection.every((data) => {
-          return data.module.every(module => module.default >= 1)
-        })
+        return this.selection.every(data => data.module.every(module => module.default >= 1))
       },
       showRemoveMenu() {
         if (!this.selectedNode) return false
-        const data = this.selectedNode.data
+        const { data } = this.selectedNode
         return data.is_idle_set || data.default === 1 || data.bk_obj_id === 'biz'
       },
       /**
@@ -356,7 +361,7 @@
           }
         })
       },
-      handleExcelUpdate(event) {
+      handleExcelUpdate() {
         this.sideslider.component = CmdbImport.name
         this.sideslider.componentProps = {
           templateUrl: `${window.API_HOST}importtemplate/host`,
@@ -387,6 +392,7 @@
       },
       handleDialogConfirm() {
         if (this.dialog.component === HostSelector.name) {
+          // eslint-disable-next-line prefer-rest-params
           this.gotoTransferPage(...arguments)
         }
       },

@@ -136,7 +136,9 @@
           if (this.$refs.propertyConfigTable) {
             const { modulePropertyList } = this.$refs.propertyConfigTable
             const everyTruthy = modulePropertyList.every((property) => {
+              // eslint-disable-next-line no-underscore-dangle
               const validTruthy = property.__extra__.valid !== false
+              // eslint-disable-next-line no-underscore-dangle
               let valueTruthy = property.__extra__.value
               if (property.bk_property_type === 'bool') {
                 valueTruthy = true
@@ -154,6 +156,7 @@
         const additionalRules = modulePropertyList.map(property => ({
           bk_attribute_id: property.id,
           bk_module_id: this.moduleId,
+          // eslint-disable-next-line no-underscore-dangle
           bk_property_value: property.__extra__.value
         }))
 

@@ -96,6 +96,7 @@
 </template>
 
 <script>
+  import has from 'has'
   import TaskRegionSelector from './task-region-selector.vue'
   export default {
     name: 'task-vpc-selector',
@@ -127,7 +128,7 @@
       selectState() {
         const state = {}
         const vpcList = this.regionVPC[this.currentRegion]
-        const selected = vpcList.filter(vpc => this.selectionMap.hasOwnProperty(vpc.bk_vpc_id))
+        const selected = vpcList.filter(vpc => has(this.selectionMap, vpc.bk_vpc_id))
         state.indeterminate = selected.length > 0 && selected.length < vpcList.length
         state.all = selected.length === vpcList.length
         return state
@@ -151,7 +152,7 @@
     methods: {
       async getVpcList() {
         try {
-          if (this.regionVPC.hasOwnProperty(this.currentRegion)) {
+          if (has(this.regionVPC, this.currentRegion)) {
             return this.regionVPC[this.currentRegion]
           }
           const { info } = await this.$store.dispatch('cloud/resource/findVPC', {
@@ -172,7 +173,7 @@
       handleToggleSelectAll(checked) {
         const vpcList = this.regionVPC[this.currentRegion]
         if (checked) {
-          const appendVpc = vpcList.filter(vpc => !this.selectionMap.hasOwnProperty(vpc.bk_vpc_id))
+          const appendVpc = vpcList.filter(vpc => !has(this.selectionMap, vpc.bk_vpc_id))
           this.selection.unshift(...appendVpc)
         } else {
           this.selection = this.selection.filter(exist => !vpcList.some(vpc => exist.bk_vpc_id === vpc.bk_vpc_id))

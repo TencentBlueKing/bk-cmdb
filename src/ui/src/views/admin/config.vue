@@ -66,6 +66,7 @@
         try {
           const configData = JSON.parse(this.configValue)
           const { validationRules } = configData
+          // eslint-disable-next-line no-restricted-syntax
           for (const rule of Object.values(validationRules)) {
             rule.value = Base64.encode(rule.value)
           }

@@ -41,7 +41,7 @@
         this.title = title
         this.isShow = true
       },
-      hide(eventType) {
+      hide() {
         this.isShow = false
       },
       handleHidden() {

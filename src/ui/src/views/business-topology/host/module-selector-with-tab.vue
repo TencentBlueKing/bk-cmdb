@@ -127,12 +127,16 @@
       availableTabList() {
         const availableTabList = []
         this.tab.list.forEach((tab) => {
+          // eslint-disable-next-line no-param-reassign
           tab.component.props.business = this.business
           if (tab.props.name !== 'acrossBusiness') {
             const defaultChecked = this.modules.map(module => module.bk_module_id)
             const firstSelectionModules = this.modules.map(module => module.bk_module_id).sort()
+            // eslint-disable-next-line no-param-reassign
             tab.component.props.previousModules = firstSelectionModules
+            // eslint-disable-next-line no-param-reassign
             tab.component.props.defaultChecked = defaultChecked
+            // eslint-disable-next-line no-param-reassign
             tab.component.props.confirmText = tab.props.name === 'idle' && this.isIdleSetModules ? this.$t('确定') : ''
             availableTabList.push(tab)
           } else if (this.isIdleSetModules) {
@@ -167,11 +171,12 @@
       handleConfirm() {
         const currentTab = this.activeTab
         const tab = { tabName: currentTab.props.name, moduleType: currentTab.component.props.moduleType }
+        // eslint-disable-next-line prefer-rest-params
         this.$emit('confirm', tab, ...arguments)
       },
       handleUpdateAuth(isAuthorized, panel) {
         // 已鉴权则不再更新，配合auth组件ignore，在切换tab时不重复鉴权
-        if (!this.authorized.hasOwnProperty(panel)) {
+        if (!has(this.authorized, panel)) {
           this.$set(this.authorized, panel, isAuthorized)
         }
       }

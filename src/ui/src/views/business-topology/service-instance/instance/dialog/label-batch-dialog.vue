@@ -17,7 +17,9 @@
       </single-content>
     </batch-content>
     <div class="edit-label-footer" slot="footer">
-      <bk-button theme="primary" :loading="$loading(Object.values(request))" @click.stop="handleSubmit">{{$t('确定')}}</bk-button>
+      <bk-button theme="primary" :loading="$loading(Object.values(request))" @click.stop="handleSubmit">
+        {{$t('确定')}}
+      </bk-button>
       <bk-button theme="default" class="ml5" @click.stop="close">{{$t('取消')}}</bk-button>
     </div>
   </bk-dialog>
@@ -77,13 +79,13 @@
       },
       async handleSubmit() {
         try {
-          const singleContent = this.$refs.singleContent
+          const { singleContent } = this.$refs
           const validateResult = await singleContent.$validator.validateAll()
           if (!validateResult) {
             return false
           }
-          const batchContent = this.$refs.batchContent
-          const removeLabels = batchContent.removeLabels
+          const { batchContent } = this.$refs
+          const { removeLabels } = batchContent
 
           const removeIds = []
           const removeKeys = []

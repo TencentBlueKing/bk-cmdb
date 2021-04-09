@@ -41,7 +41,7 @@
           theme: 'switcher-group-tips',
           placement: 'bottom',
           trigger: 'manual',
-          showOnInit: showOnInit,
+          showOnInit,
           disabled: !this.tips,
           tippyOptions: {
             hideOnClick: false

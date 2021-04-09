@@ -5,7 +5,9 @@
       v-model.trim="localValue"
       @enter="handleConfirm">
     </bk-input>
-    <bk-button class="btn" theme="primary" :disabled="disabled" text @click.stop="handleConfirm">{{$t('确定')}}</bk-button>
+    <bk-button class="btn" theme="primary" :disabled="disabled" text @click.stop="handleConfirm">
+      {{$t('确定')}}
+    </bk-button>
     <span class="divider">|</span>
     <bk-button class="btn" theme="primary" text @click.stop="handleCancel">{{$t('取消')}}</bk-button>
   </div>

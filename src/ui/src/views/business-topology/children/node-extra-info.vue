@@ -28,9 +28,9 @@
       component() {
         if (!this.selectedNode) {
           return null
-        } else if (this.isTypeOfNode('module')) {
+        } if (this.isTypeOfNode('module')) {
           return ServiceTemplate.name
-        } else if (this.isTypeOfNode('set')) {
+        } if (this.isTypeOfNode('set')) {
           return SetTemplate.name
         }
         return null

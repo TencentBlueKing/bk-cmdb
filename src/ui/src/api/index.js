@@ -17,37 +17,27 @@ const axiosInstance = Axios.create({
 // axios实例拦截器
 axiosInstance.interceptors.request.use(
   config => config,
-  (error) => {
-    return Promise.reject(error)
-  }
+  error => Promise.reject(error)
 )
 
 axiosInstance.interceptors.response.use(
   response => response,
-  (error) => {
-    return Promise.reject(error)
-  }
+  error => Promise.reject(error)
 )
 
 const $http = {
   queue: new RequestQueue(),
   cache: new CachedPromise(),
-  cancelRequest: (requestId) => {
-    return $http.queue.cancel(requestId)
-  },
-  cancelCache: (requestId) => {
-    return $http.cache.delete(requestId)
-  },
-  cancel: (requestId) => {
-    return Promise.all([$http.cancelRequest(requestId), $http.cancelCache(requestId)])
-  },
+  cancelRequest: requestId => $http.queue.cancel(requestId),
+  cancelCache: requestId => $http.cache.delete(requestId),
+  cancel: requestId => Promise.all([$http.cancelRequest(requestId), $http.cancelCache(requestId)]),
   setHeader: (key, value) => {
     axiosInstance.defaults.headers[key] = value
   },
   deleteHeader: (key) => {
     delete axiosInstance.defaults.headers[key]
   },
-  download: download
+  download
 }
 
 const methodsWithoutData = ['delete', 'get', 'head', 'options']
@@ -70,13 +60,9 @@ allMethods.forEach((method) => {
  */
 function getRequest(method) {
   if (methodsWithData.includes(method)) {
-    return (url, data, config) => {
-      return getPromise(method, url, data, config)
-    }
+    return (url, data, config) => getPromise(method, url, data, config)
   }
-  return (url, config) => {
-    return getPromise(method, url, null, config)
-  }
+  return (url, config) => getPromise(method, url, null, config)
 }
 
 /**
@@ -110,9 +96,7 @@ async function getPromise(method, url, data, userConfig = {}) {
       Object.assign(config, error.config)
       reject(error)
     })
-  }).catch((error) => {
-    return handleReject(error, config)
-  })
+  }).catch(error => handleReject(error, config))
     .finally(() => {
       $http.queue.delete(config.requestId, config.requestSymbol)
     })
@@ -169,8 +153,8 @@ function handleReject(error, config) {
         // 接口401需要拿html中定义的Site
         window.Site.login && (window.location.href = window.Site.login)
       }
-    } else if (data && data['bk_error_msg']) {
-      nextError.message = data['bk_error_msg']
+    } else if (data && data.bk_error_msg) {
+      nextError.message = data.bk_error_msg
     } else if (status === 403) {
       nextError.message = language === 'en' ? 'You don\'t have permission.' : '无权限操作'
     } else if (status === 500) {

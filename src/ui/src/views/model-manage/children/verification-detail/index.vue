@@ -79,14 +79,14 @@
         this.verificationInfo.selected.forEach((id) => {
           const attr = this.attribute.list.find(attr => attr.id === id)
           if (attr) {
-            nameList.push(attr['bk_property_name'])
+            nameList.push(attr.bk_property_name)
           }
         })
         return nameList.join(',')
       },
       params() {
         const params = {
-          must_check: this.verificationInfo['must_check'],
+          must_check: this.verificationInfo.must_check,
           keys: []
         }
         this.verificationInfo.selected.forEach((id) => {
@@ -99,11 +99,12 @@
       },
       changedValues() {
         const changedValues = {}
-        for (const propertyId in this.verificationInfo) {
+        Object.keys(this.verificationInfo).forEach((propertyId) => {
+          // eslint-disable-next-line max-len
           if (JSON.stringify(this.verificationInfo[propertyId]) !== JSON.stringify(this.originVerificationInfo[propertyId])) {
             changedValues[propertyId] = this.verificationInfo[propertyId]
           }
-        }
+        })
         return changedValues
       }
     },
@@ -119,9 +120,9 @@
         'updateObjectUniqueConstraints'
       ]),
       initData() {
-        this.verificationInfo['must_check'] = this.verification['must_check']
+        this.verificationInfo.must_check = this.verification.must_check
         this.verification.keys.forEach((key) => {
-          this.verificationInfo.selected.push(key['key_id'])
+          this.verificationInfo.selected.push(key.key_id)
         })
       },
       toggleSelector(isShow) {
@@ -134,7 +135,7 @@
         if (this.isEdit) {
           await this.updateObjectUniqueConstraints({
             id: this.verification.id,
-            objId: this.activeModel['bk_obj_id'],
+            objId: this.activeModel.bk_obj_id,
             params: this.params,
             config: {
               requestId: 'updateObjectUniqueConstraints'
@@ -143,7 +144,7 @@
           this.$emit('save')
         } else {
           await this.createObjectUniqueConstraints({
-            objId: this.activeModel['bk_obj_id'],
+            objId: this.activeModel.bk_obj_id,
             params: this.params,
             config: {
               requestId: 'createObjectUniqueConstraints'

@@ -78,6 +78,18 @@ module.exports = {
         // 必须只使用函数声明或只使用函数表达式，关闭
         'func-style': 'off',
 
+        'max-len': [
+            "error",
+            {
+                "code": 120,
+                "ignoreComments": true,
+                "ignoreStrings": true,
+                "ignoreUrls": true,
+                "ignoreRegExpLiterals": true,
+                "ignoreTemplateLiterals": true
+            }
+        ],
+
         // https://github.com/vuejs/eslint-plugin-vue/blob/master/docs/rules/array-bracket-spacing.md
         'vue/array-bracket-spacing': ['error', 'never'],
 

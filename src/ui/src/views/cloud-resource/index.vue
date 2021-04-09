@@ -222,7 +222,7 @@
             params.is_fuzzy = true
           }
           const data = await this.$store.dispatch('cloud/resource/findTask', {
-            params: params,
+            params,
             config: {
               requestId: this.request.findTask
             }

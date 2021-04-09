@@ -1,3 +1,5 @@
+/* eslint-disable no-param-reassign, no-restricted-syntax */
+import has from 'has'
 const Transition = {
   beforeEnter(el) {
     el.classList.add('collapse-transition')
@@ -17,7 +19,7 @@ const Transition = {
     el.dataset.oldOverflow = el.style.overflow
     el.style.overflow = 'hidden'
     if (el.scrollHeight !== 0) {
-      el.style.height = el.scrollHeight + 'px'
+      el.style.height = `${el.scrollHeight}px`
       el.style.paddingTop = el.dataset.oldPaddingTop
       el.style.paddingBottom = el.dataset.oldPaddingBottom
     } else {
@@ -39,7 +41,7 @@ const Transition = {
     el.dataset.oldPaddingBottom = el.style.paddingBottom
     el.dataset.oldOverflow = el.style.overflow
 
-    el.style.height = el.scrollHeight + 'px'
+    el.style.height = `${el.scrollHeight}px`
     el.style.overflow = 'hidden'
   },
 
@@ -62,9 +64,7 @@ const Transition = {
 }
 
 const toCamelCase = function (str) {
-  return str.replace(/-([a-z])/g, function (g) {
-    return g[1].toUpperCase()
-  })
+  return str.replace(/-([a-z])/g, g => g[1].toUpperCase())
 }
 
 export default {
@@ -78,7 +78,7 @@ export default {
       camelCaseEvents[toCamelCase(event)] = events[event]
     }
     for (const event in Transition) {
-      if (camelCaseEvents.hasOwnProperty(event)) {
+      if (has(camelCaseEvents, event)) {
         transitionEvents[event] = (el) => {
           Transition[event](el)
           camelCaseEvents[event]()

@@ -111,7 +111,7 @@
       activeTab(tab) {
         this.$nextTick(() => {
           RouterQuery.set({
-            tab: tab,
+            tab,
             _t: Date.now(),
             page: '',
             limit: ''

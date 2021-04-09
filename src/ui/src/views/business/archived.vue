@@ -29,7 +29,8 @@
       </bk-table-column>
       <bk-table-column :label="$t('操作')" fixed="right">
         <template slot-scope="{ row }">
-          <cmdb-auth class="inline-block-middle" :auth="{ type: $OPERATION.BUSINESS_ARCHIVE, relation: [row.bk_biz_id] }">
+          <cmdb-auth class="inline-block-middle"
+            :auth="{ type: $OPERATION.BUSINESS_ARCHIVE, relation: [row.bk_biz_id] }">
             <bk-button slot-scope="{ disabled }"
               theme="primary"
               size="small"
@@ -137,13 +138,11 @@
       ...mapActions('objectBiz', ['searchBusiness', 'recoveryBusiness']),
       setTableHeader() {
         const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customBusinessColumns, ['bk_biz_name'])
-        this.header = headerProperties.map((property) => {
-          return {
-            id: property['bk_property_id'],
-            name: this.$tools.getHeaderPropertyName(property),
-            property
-          }
-        })
+        this.header = headerProperties.map(property => ({
+          id: property.bk_property_id,
+          name: this.$tools.getHeaderPropertyName(property),
+          property
+        }))
       },
       getTableData(event) {
         this.searchBusiness({
@@ -177,7 +176,7 @@
       getSearchParams() {
         const params = {
           condition: {
-            'bk_data_status': 'disabled'
+            bk_data_status: 'disabled'
           },
           fields: [],
           page: {
@@ -188,8 +187,8 @@
         }
         if (this.filter.range.length) {
           params.condition.last_time = {
-            '$gte': this.filter.range[0],
-            '$lte': this.filter.range[1]
+            $gte: this.filter.range[0],
+            $lte: this.filter.range[1]
           }
         }
         if (this.filter.name) {
@@ -207,7 +206,7 @@
         this.recoveryBusiness({
           bizId: this.recovery.bizId,
           params: {
-            'bk_biz_name': this.recovery.name
+            bk_biz_name: this.recovery.name
           },
           config: {
             cancelWhenRouteChange: false

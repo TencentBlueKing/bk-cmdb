@@ -114,15 +114,13 @@
         this.dialog.show = true
       },
       handleDialogConfirm(selected) {
-        this.hosts = selected.map((item) => {
-          return {
-            ...item,
-            instance: {
-              name: '',
-              editing: { name: false }
-            }
+        this.hosts = selected.map(item => ({
+          ...item,
+          instance: {
+            name: '',
+            editing: { name: false }
           }
-        })
+        }))
         this.dialog.show = false
       },
       handleDialogCancel() {
@@ -140,15 +138,13 @@
               bk_biz_id: this.bizId,
               bk_module_id: this.moduleId,
               instances: serviceInstanceTables.map((table) => {
-                const instance = this.hosts.find(data => data.host.bk_host_id === table.id).instance
+                const { instance } = this.hosts.find(data => data.host.bk_host_id === table.id)
                 return {
                   bk_host_id: table.id,
                   service_instance_name: instance.name || '',
-                  processes: table.processList.map((item) => {
-                    return {
-                      process_info: item
-                    }
-                  })
+                  processes: table.processList.map(item => ({
+                    process_info: item
+                  }))
                 }
               })
             }

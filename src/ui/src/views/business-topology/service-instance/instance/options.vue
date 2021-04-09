@@ -51,7 +51,9 @@
       </cmdb-auth>
     </div>
     <div class="right">
-      <bk-checkbox class="options-expand-all" v-model="allExpanded" @change="handleExpandAll">{{$t('全部展开')}}</bk-checkbox>
+      <bk-checkbox class="options-expand-all" v-model="allExpanded" @change="handleExpandAll">
+        {{$t('全部展开')}}
+      </bk-checkbox>
       <bk-search-select class="options-search ml10"
         ref="searchSelect"
         :show-condition="false"
@@ -106,7 +108,7 @@
         }, {
           id: 'tagValue',
           name: this.$t('标签值'),
-          conditions: Object.keys(this.historyLabels).map(key => ({ id: key, name: key + ':' })),
+          conditions: Object.keys(this.historyLabels).map(key => ({ id: key, name: `${key}:` })),
           disabled: !hasHistoryLables
         }, {
           id: 'tagKey',
@@ -172,11 +174,11 @@
           return false
         }
         this.searchValue.push({
-          'id': 'name',
-          'name': this.$t('服务实例名'),
-          'values': [{
-            'id': filterName,
-            'name': filterName
+          id: 'name',
+          name: this.$t('服务实例名'),
+          values: [{
+            id: filterName,
+            name: filterName
           }]
         })
         this.$nextTick(() => {
@@ -223,6 +225,7 @@
           const validator = new Validator()
           const validPromise = []
           this.selection.forEach((row) => {
+            // eslint-disable-next-line prefer-destructuring
             const ip = row.name.split('_')[0]
             validPromise.push(new Promise(async (resolve) => {
               const { valid } = await validator.verify(ip, MULTIPLE_IP_REGEXP)

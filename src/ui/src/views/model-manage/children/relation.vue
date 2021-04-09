@@ -137,7 +137,7 @@
       ...mapGetters('objectModelClassify', ['models']),
       isReadOnly() {
         if (this.activeModel) {
-          return this.activeModel['bk_ispaused']
+          return this.activeModel.bk_ispaused
         }
         return false
       }
@@ -160,7 +160,7 @@
         'searchAssociationType'
       ]),
       isEditable(item) {
-        if (item.ispre || item['bk_asst_id'] === 'bk_mainline' || this.isReadOnly) {
+        if (item.ispre || item.bk_asst_id === 'bk_mainline' || this.isReadOnly) {
           return false
         }
         return true
@@ -193,9 +193,9 @@
         })
       },
       getModelName(objId) {
-        const model = this.models.find(model => model['bk_obj_id'] === objId)
+        const model = this.models.find(model => model.bk_obj_id === objId)
         if (model) {
-          return model['bk_obj_name']
+          return model.bk_obj_name
         }
         return ''
       },
@@ -223,7 +223,7 @@
                 requestId: 'deleteObjectAssociation'
               }
             }).then(() => {
-              this.$http.cancel(`post_searchObjectAssociation_${this.activeModel['bk_obj_id']}`)
+              this.$http.cancel(`post_searchObjectAssociation_${this.activeModel.bk_obj_id}`)
             })
             this.searchRelationList()
           }
@@ -237,7 +237,7 @@
         return this.searchObjectAssociation({
           params: {
             condition: {
-              'bk_obj_id': this.activeModel['bk_obj_id']
+              bk_obj_id: this.activeModel.bk_obj_id
             }
           }
         })
@@ -246,7 +246,7 @@
         return this.searchObjectAssociation({
           params: {
             condition: {
-              'bk_asst_obj_id': this.activeModel['bk_obj_id']
+              bk_asst_obj_id: this.activeModel.bk_obj_id
             }
           }
         })
@@ -255,7 +255,7 @@
         this.slider.isShow = false
         this.searchRelationList()
       },
-      handleShowDetails(row, column, cell) {
+      handleShowDetails(row, column) {
         if (column.property === 'operation') return
         this.slider.isEdit = true
         this.slider.isReadOnly = true
@@ -269,7 +269,7 @@
       handleSliderBeforeClose() {
         const hasChanged = Object.keys(this.$refs.relationForm.changedValues).length
         if (hasChanged) {
-          return new Promise((resolve, reject) => {
+          return new Promise((resolve) => {
             this.$bkInfo({
               title: this.$t('确认退出'),
               subTitle: this.$t('退出会导致未保存信息丢失'),

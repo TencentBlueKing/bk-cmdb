@@ -9,6 +9,8 @@
  * @param {(Node|string|Boolean)} [node=document.body] DOM Node, CSS selector, or Boolean
  * @return {Node} The target that the el will be appended to
  */
+
+/* eslint-disable no-underscore-dangle, no-param-reassign */
 function getTarget(node) {
   if (node === void 0) {
     node = document.body
@@ -20,9 +22,9 @@ function getTarget(node) {
 }
 
 const directive = {
-  inserted(el, { value }, vnode) {
-    el.className = el.className ? el.className + ' v-transfer-dom' : 'v-transfer-dom'
-    const parentNode = el.parentNode
+  inserted(el, { value }) {
+    el.className = el.className ? `${el.className} v-transfer-dom` : 'v-transfer-dom'
+    const { parentNode } = el
     if (!parentNode) {
       return
     }
@@ -36,10 +38,10 @@ const directive = {
     }
     if (!el.__transferDomData) {
       el.__transferDomData = {
-        parentNode: parentNode,
-        home: home,
+        parentNode,
+        home,
         target: getTarget(value),
-        hasMovedOut: hasMovedOut
+        hasMovedOut
       }
     }
   },
@@ -50,9 +52,9 @@ const directive = {
       return
     }
     // homes.get(el)
-    const parentNode = ref$1.parentNode
-    const home = ref$1.home
-    const hasMovedOut = ref$1.hasMovedOut // recall where home is
+    const { parentNode } = ref$1
+    const { home } = ref$1
+    const { hasMovedOut } = ref$1 // recall where home is
 
     if (!hasMovedOut && value) {
       // remove from document and leave placeholder

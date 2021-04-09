@@ -9,7 +9,9 @@
       </div>
       <div class="info-group">
         <label class="info-label">{{$t('操作对象')}}</label>
-        <span class="info-content" v-bk-overflow-tips>{{resourceType ? resourceType.name : details.resource_type}}</span>
+        <span class="info-content" v-bk-overflow-tips>
+          {{resourceType ? resourceType.name : details.resource_type}}
+        </span>
       </div>
       <div class="info-group">
         <label class="info-label">{{$t('动作')}}</label>
@@ -205,7 +207,7 @@
           return {
             field: property.bk_property_name,
             type: 'property',
-            property: property,
+            property,
             before: before[field],
             after: after[field]
           }

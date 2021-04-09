@@ -87,11 +87,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.MODEL_GROUP,
       instances: [IAM_VIEWS.MODEL_GROUP]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        resource_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
   },
   D_MODEL_GROUP: {
     id: 'delete_model_group',
@@ -101,11 +99,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.MODEL_GROUP,
       instances: [IAM_VIEWS.MODEL_GROUP]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        resource_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
   },
 
   // 模型
@@ -137,11 +133,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.MODEL,
       instances: [IAM_VIEWS.MODEL]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        resource_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
   },
   D_MODEL: {
     id: 'delete_sys_model',
@@ -151,11 +145,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.MODEL,
       instances: [IAM_VIEWS.MODEL]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        resource_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
   },
 
   // 实例
@@ -258,11 +250,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        bk_biz_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      bk_biz_id: relationIds[0]
+    })
   },
   U_CUSTOM_QUERY: {
     id: 'edit_biz_dynamic_query',
@@ -322,11 +312,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        bk_biz_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      bk_biz_id: relationIds[0]
+    })
   },
   U_TOPO: {
     id: 'edit_biz_topology',
@@ -336,11 +324,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        bk_biz_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      bk_biz_id: relationIds[0]
+    })
   },
   D_TOPO: {
     id: 'delete_biz_topology',
@@ -350,11 +336,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        bk_biz_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      bk_biz_id: relationIds[0]
+    })
   },
 
   U_HOST: {
@@ -382,20 +366,19 @@ export const IAM_ACTIONS = {
           return verifyMeta
         })
         return metas
-      } else { // 单个编辑的场景
-        const [bizId, hostId] = relationIds
-        const verifyMeta = basicTransform(cmdbAction, {
-          bk_biz_id: bizId,
-          parent_layers: [{
-            resource_type: 'biz',
-            resource_id: bizId
-          }]
-        })
-        if (hostId) {
-          verifyMeta.resource_id = hostId
-        }
-        return verifyMeta
+      }  // 单个编辑的场景
+      const [bizId, hostId] = relationIds
+      const verifyMeta = basicTransform(cmdbAction, {
+        bk_biz_id: bizId,
+        parent_layers: [{
+          resource_type: 'biz',
+          resource_id: bizId
+        }]
+      })
+      if (hostId) {
+        verifyMeta.resource_id = hostId
       }
+      return verifyMeta
     }
   },
   HOST_TO_RESOURCE: {
@@ -584,11 +567,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY,
       instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        resource_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
   },
   D_RESOURCE_DIRECTORY: {
     id: 'delete_resource_pool_directory',
@@ -598,11 +579,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY,
       instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        resource_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
   },
 
   // 关联类型
@@ -619,11 +598,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.ASSOCIATION_TYPE,
       instances: [IAM_VIEWS.ASSOCIATION_TYPE]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        resource_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
   },
   D_RELATION: {
     id: 'delete_association_type',
@@ -633,11 +610,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.ASSOCIATION_TYPE,
       instances: [IAM_VIEWS.ASSOCIATION_TYPE]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        resource_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
   },
 
   // 业务
@@ -654,11 +629,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        resource_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
   },
   R_BUSINESS: {
     id: 'find_business',
@@ -668,11 +641,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        resource_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
   },
   BUSINESS_ARCHIVE: {
     id: 'archive_business',
@@ -682,11 +653,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        resource_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
   },
 
   // 事件推送
@@ -703,11 +672,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.EVENT_PUSHING,
       instances: [IAM_VIEWS.EVENT_PUSHING]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        resource_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
   },
   D_EVENT: {
     id: 'delete_event_subscription',
@@ -717,11 +684,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.EVENT_PUSHING,
       instances: [IAM_VIEWS.EVENT_PUSHING]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        resource_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
   },
   R_EVENT: {
     id: 'find_event_subscription',
@@ -731,11 +696,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.EVENT_PUSHING,
       instances: [IAM_VIEWS.EVENT_PUSHING]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        resource_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
   },
 
   // 操作审计
@@ -780,11 +743,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        bk_biz_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      bk_biz_id: relationIds[0]
+    })
   },
   U_SERVICE_CATEGORY: {
     id: 'edit_biz_service_category',
@@ -794,11 +755,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        bk_biz_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      bk_biz_id: relationIds[0]
+    })
   },
   D_SERVICE_CATEGORY: {
     id: 'delete_biz_service_category',
@@ -808,11 +767,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        bk_biz_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      bk_biz_id: relationIds[0]
+    })
   },
 
   // 服务模板
@@ -824,11 +781,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        bk_biz_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      bk_biz_id: relationIds[0]
+    })
   },
   U_SERVICE_TEMPLATE: {
     id: 'edit_biz_service_template',
@@ -1155,11 +1110,9 @@ export const IAM_ACTIONS = {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
     }],
-    transform: (cmdbAction, relationIds) => {
-      return basicTransform(cmdbAction, {
-        bk_biz_id: relationIds[0]
-      })
-    }
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      bk_biz_id: relationIds[0]
+    })
   }
 }
 
@@ -1180,6 +1133,7 @@ Object.keys(IAM_ACTIONS).forEach(key => (OPERATION[key] = key))
 export function TRANSFORM_TO_INTERNAL(authList) {
   try {
     // 类似导入的鉴权，需要新增、编辑两种权限，统一转成数组处理
+    // eslint-disable-next-line no-param-reassign
     authList = Array.isArray(authList) ? authList : [authList]
     const internalAuthList = []
     authList.forEach((auth) => {

@@ -70,8 +70,8 @@
     data() {
       return {
         viewName: {
-          'list': cmdbHostAssociationList.name,
-          'graphics': cmdbHostAssociationGraphics.name
+          list: cmdbHostAssociationList.name,
+          graphics: cmdbHostAssociationGraphics.name
         },
         activeView: cmdbHostAssociationList.name,
         showCreate: false
@@ -88,9 +88,7 @@
         return !!(this.source.length || this.target.length)
       },
       hasInstance() {
-        return [...this.sourceInstances, ...this.targetInstances].some((instance) => {
-          return !!(instance.children || []).length
-        })
+        return [...this.sourceInstances, ...this.targetInstances].some(instance => !!(instance.children || []).length)
       }
     },
     beforeDestroy() {

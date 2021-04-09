@@ -36,9 +36,9 @@
           return null
         }
         const iconMap = {
-          '1': '#icon-cc-cloud-aws',
-          '2': '#icon-cc-cloud-tencent',
-          '3': '#icon-cc-cloud-ali'
+          1: '#icon-cc-cloud-aws',
+          2: '#icon-cc-cloud-tencent',
+          3: '#icon-cc-cloud-ali'
         }
         return iconMap[this.vendor.id] || null
       }

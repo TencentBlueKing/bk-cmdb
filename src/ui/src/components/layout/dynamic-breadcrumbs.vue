@@ -6,6 +6,7 @@
 </template>
 
 <script>
+  import has from 'has'
   import { mapGetters } from 'vuex'
   import { Base64 } from 'js-base64'
   export default {
@@ -24,7 +25,7 @@
       },
       latest() {
         let latest
-        if (this.$route.query.hasOwnProperty('_f')) {
+        if (has(this.$route.query, '_f')) {
           try {
             const historyList = JSON.parse(window.sessionStorage.getItem('history'))
             latest = historyList.pop()

@@ -43,13 +43,16 @@
       </div>
     </div>
     <div class="layout-footer">
-      <bk-button class="mr10" theme="primary" :disabled="!selected.length" @click="handleNextStep">{{confirmText || $t('下一步')}}</bk-button>
+      <bk-button class="mr10" theme="primary" :disabled="!selected.length" @click="handleNextStep">
+        {{confirmText || $t('下一步')}}
+      </bk-button>
       <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
     </div>
   </div>
 </template>
 
 <script>
+  import has from 'has'
   import { foreignkey } from '@/filters/formatter.js'
   import HostSelectorTopology from './host-selector-topology.vue'
   import HostSelectorCustom from './host-selector-custom.vue'
@@ -142,7 +145,7 @@
         const unique = []
         selected.forEach((data) => {
           const ip = data.host.bk_host_innerip
-          if (ipMap.hasOwnProperty(ip)) {
+          if (has(ipMap, ip)) {
             ipMap[ip].push(data)
           } else {
             ipMap[ip] = [data]

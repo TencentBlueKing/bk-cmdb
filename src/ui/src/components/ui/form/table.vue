@@ -110,7 +110,7 @@
       }
     },
     methods: {
-      renderHeader(h, { column, $index }, property) {
+      renderHeader(h, {}, property) {
         if (!property.placeholder) {
           return property.bk_property_name
         }

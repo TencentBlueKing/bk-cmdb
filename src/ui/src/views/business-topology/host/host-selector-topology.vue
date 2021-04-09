@@ -106,7 +106,7 @@
           .indexOf(keyword) > -1
       },
       displayNodesFilterMethod(keyword, node) {
-        const displayNodes = this.$parent.displayNodes
+        const { displayNodes } = this.$parent
         if (this.filter) {
           return node.data.bk_obj_id === 'host' && node.name.indexOf(keyword) > -1
         }
@@ -114,8 +114,8 @@
       },
       recaculateLine() {
         if (this.limitDisplay) {
-          const tree = this.$refs.tree
-          const displayNodes = this.$parent.displayNodes
+          const { tree } = this.$refs
+          const { displayNodes } = this.$parent
           tree.needsCalculateNodes.push(...displayNodes.map(id => tree.getNodeById(id)))
         }
       },
@@ -208,7 +208,7 @@
               bk_inst_id: `${node.id}-${item.host.bk_host_id}`, // 额外加上父节点id，防止不同模块下的主机id重复
               bk_inst_name: item.host.bk_host_innerip,
               bk_host_id: item.host.bk_host_id,
-              item: item
+              item
             }
             data.push(nodeData)
             this.$set(this.hostMap, item.host.bk_host_id, item)
@@ -254,7 +254,7 @@
           value: node.data.bk_inst_id
         })
         return this.$store.dispatch('hostSearch/searchHost', {
-          params: params,
+          params,
           config: {
             requestId: this.$parent.request.host
           }

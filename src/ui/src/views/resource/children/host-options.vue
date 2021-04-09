@@ -403,7 +403,7 @@
         }
       },
       openAgentApp() {
-        const agent = window.Site.agent
+        const { agent } = window.Site
         if (agent) {
           const topWindow = window.top
           const isPaasConsole = topWindow !== window
@@ -420,7 +420,7 @@
         }
       },
       handleAssignHosts(id) {
-        let directoryId = this.directoryId
+        let { directoryId } = this
         if (!directoryId) {
           const hosts = HostStore.getSelected()
           directoryId = hosts[0].module[0].bk_module_id
@@ -565,7 +565,7 @@
         await this.$store.dispatch('hostUpdate/updateHost', {
           params: {
             ...changedValues,
-            'bk_host_id': this.table.checked.join(',')
+            bk_host_id: this.table.checked.join(',')
           }
         })
         this.slider.show = false
@@ -580,8 +580,8 @@
             this.$store.dispatch('hostDelete/deleteHost', {
               params: {
                 data: {
-                  'bk_host_id': this.table.checked.join(','),
-                  'bk_supplier_account': this.supplierAccount
+                  bk_host_id: this.table.checked.join(','),
+                  bk_supplier_account: this.supplierAccount
                 }
               }
             }).then(() => {
@@ -597,7 +597,7 @@
       },
       handleSliderBeforeClose() {
         const $form = this.$refs.multipleForm
-        const changedValues = $form.changedValues
+        const { changedValues } = $form
         if (Object.keys(changedValues).length) {
           return new Promise((resolve, reject) => {
             this.$bkInfo({

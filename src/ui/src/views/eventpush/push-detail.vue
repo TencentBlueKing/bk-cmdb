@@ -96,7 +96,8 @@
       </ul>
       <div class="info">
         <i class="bk-icon icon-exclamation-circle"></i>
-        <span :class="{ 'color-danger': subscriptionFormError }">{{$t('至少选择1个事件')}}</span><i18n path="已选择"><span class="num" place="number">{{selectNum}}</span></i18n>
+        <span :class="{ 'color-danger': subscriptionFormError }">{{$t('至少选择1个事件')}}</span>
+        <i18n path="已选择"><span class="num" place="number">{{selectNum}}</span></i18n>
       </div>
       <ul class="event-wrapper">
         <li class="event-box clearfix"
@@ -116,7 +117,8 @@
                       <input type="checkbox"
                         value="resourceall"
                         :checked="tempEventData['subscription_form'][item.id].length === 2"
-                        id="resourceall" @change="checkAll('resource')"><i class="cmdb-checkbox-text" :title="$t('全选')">{{$t('全选')}}</i>
+                        id="resourceall" @change="checkAll('resource')">
+                      <i class="cmdb-checkbox-text" :title="$t('全选')">{{$t('全选')}}</i>
                     </label>
                     <label for="hostcreate" class="cmdb-form-checkbox cmdb-checkbox-small">
                       <input type="checkbox"
@@ -139,7 +141,8 @@
                       <input type="checkbox"
                         :value="'hostall'"
                         :checked="tempEventData['subscription_form'][item.id].length === 3"
-                        :id="'hostall'" @change="checkAll('host')"><i class="cmdb-checkbox-text" :title="$t('全选')">{{$t('全选')}}</i>
+                        :id="'hostall'" @change="checkAll('host')">
+                      <i class="cmdb-checkbox-text" :title="$t('全选')">{{$t('全选')}}</i>
                     </label>
                     <label :for="item.id + 'update'" class="cmdb-form-checkbox cmdb-checkbox-small">
                       <input type="checkbox"
@@ -198,7 +201,9 @@
       </ul>
     </div>
     <footer class="footer">
-      <bk-button theme="primary" :loading="$loading('savePush')" class="btn" @click="save">{{type === 'create' ? $t('提交') : $t('保存')}}</bk-button>
+      <bk-button theme="primary" :loading="$loading('savePush')" class="btn" @click="save">
+        {{type === 'create' ? $t('提交') : $t('保存')}}
+      </bk-button>
       <bk-button theme="default" class="btn vice-btn" @click="cancel">{{$t('取消')}}</bk-button>
     </footer>
     <v-pop
@@ -211,6 +216,7 @@
 </template>
 
 <script>
+  import has from 'has'
   import vPop from './pop'
   import { mapActions, mapGetters } from 'vuex'
   export default {
@@ -261,6 +267,7 @@
         const {
           subscription_form: subscriptionForm
         } = this.tempEventData
+        // eslint-disable-next-line no-restricted-syntax
         for (const key in subscriptionForm) {
           const item = subscriptionForm[key]
           if (item.length) {
@@ -274,15 +281,16 @@
       },
       params() {
         const params = this.$tools.clone(this.tempEventData)
-        params['confirm_pattern'] = this.tempEventData['confirm_mode'] === 'httpstatus' ? this.tempEventData['confirm_pattern']['httpstatus'] : this.tempEventData['confirm_pattern']['regular']
+        params.confirm_pattern = this.tempEventData.confirm_mode === 'httpstatus' ? this.tempEventData.confirm_pattern.httpstatus : this.tempEventData.confirm_pattern.regular
         const subscriptionForm = []
-        for (const key in params['subscription_form']) {
-          if (params['subscription_form'][key].length) {
-            subscriptionForm.push(params['subscription_form'][key].join(','))
+        // eslint-disable-next-line no-restricted-syntax
+        for (const key in params.subscription_form) {
+          if (params.subscription_form[key].length) {
+            subscriptionForm.push(params.subscription_form[key].join(','))
           }
         }
-        params['subscription_form'] = subscriptionForm.join(',')
-        params['time_out'] = parseInt(params['time_out'])
+        params.subscription_form = subscriptionForm.join(',')
+        params.time_out = parseInt(params.time_out, 10)
         return params
       }
     },
@@ -296,11 +304,12 @@
         'updateEventSubscribe'
       ]),
       isCloseConfirmShow() {
-        const tempEventData = this.tempEventData
-        const eventData = this.eventData
+        const { tempEventData } = this
+        const { eventData } = this
+        // eslint-disable-next-line no-restricted-syntax
         for (const key in tempEventData) {
           if (key === 'confirm_pattern') {
-            if (tempEventData[key][tempEventData['confirm_mode']] !== eventData[key][eventData['confirm_mode']]) {
+            if (tempEventData[key][tempEventData.confirm_mode] !== eventData[key][eventData.confirm_mode]) {
               return true
             }
           } else if (key === 'subscription_form') {
@@ -349,11 +358,11 @@
           return
         }
         // eslint-disable-next-line
-                let res = null
+        let res = null
         if (this.type === 'create') {
           res = await this.subscribeEvent({ bkBizId: 0, params: this.params, config: { requestId: 'savePush' } })
         } else {
-          res = await this.updateEventSubscribe({ bkBizId: 0, subscriptionId: this.curPush['subscription_id'], params: this.params, config: { requestId: 'savePush' } })
+          res = await this.updateEventSubscribe({ bkBizId: 0, subscriptionId: this.curPush.subscription_id, params: this.params, config: { requestId: 'savePush' } })
         }
         this.$emit('saveSuccess')
         this.$success(this.$t('保存成功'))
@@ -365,17 +374,18 @@
       checkAll(objId) {
         if (event.target.checked) {
           if (objId === 'resource') {
-            this.tempEventData['subscription_form'][objId] = ['hostcreate', 'hostdelete']
+            this.tempEventData.subscription_form[objId] = ['hostcreate', 'hostdelete']
           } else if (objId === 'host') {
-            this.tempEventData['subscription_form'][objId] = ['moduletransfer', 'hostupdate', 'hostidentifier']
+            this.tempEventData.subscription_form[objId] = ['moduletransfer', 'hostupdate', 'hostidentifier']
           } else {
-            this.tempEventData['subscription_form'][objId] = [`${objId}create`, `${objId}update`, `${objId}delete`]
+            this.tempEventData.subscription_form[objId] = [`${objId}create`, `${objId}update`, `${objId}delete`]
           }
         } else {
-          this.tempEventData['subscription_form'][objId] = []
+          this.tempEventData.subscription_form[objId] = []
         }
       },
       toggleEventList(classify) {
+        // eslint-disable-next-line no-param-reassign
         classify.isHidden = !classify.isHidden
       },
       eventHeight(len) {
@@ -384,15 +394,16 @@
       setEventPushList() {
         const eventPushList = []
         const subscriptionForm = {}
+        // eslint-disable-next-line array-callback-return
         this.classifications.map((classify) => {
-          if (classify['bk_objects'].length && classify['bk_classification_id'] !== 'bk_host_manage') {
+          if (classify.bk_objects.length && classify.bk_classification_id !== 'bk_host_manage') {
             const event = {
-              name: classify['bk_classification_name'],
+              name: classify.bk_classification_name,
               isHidden: false,
-              classificationId: classify['bk_classification_id'],
+              classificationId: classify.bk_classification_id,
               children: []
             }
-            if (classify['bk_classification_id'] === 'bk_biz_topo') {
+            if (classify.bk_classification_id === 'bk_biz_topo') {
               event.children.push({
                 id: 'set',
                 name: this.$t('集群')
@@ -400,22 +411,23 @@
                 id: 'module',
                 name: this.$t('模块')
               })
-              subscriptionForm['set'] = []
-              subscriptionForm['module'] = []
+              subscriptionForm.set = []
+              subscriptionForm.module = []
             } else {
-              classify['bk_objects'].map((model) => {
+              // eslint-disable-next-line array-callback-return
+              classify.bk_objects.map((model) => {
                 event.children.push({
-                  id: model['bk_obj_id'],
-                  name: model['bk_obj_name']
+                  id: model.bk_obj_id,
+                  name: model.bk_obj_name
                 })
-                subscriptionForm[model['bk_obj_id']] = []
+                subscriptionForm[model.bk_obj_id] = []
               })
             }
             eventPushList.push(event)
           }
         })
-        subscriptionForm['resource'] = []
-        subscriptionForm['host'] = []
+        subscriptionForm.resource = []
+        subscriptionForm.host = []
         eventPushList.unshift({
           isDefault: true,
           isHidden: false,
@@ -435,39 +447,40 @@
       initData() {
         if (this.type === 'edit') {
           const subscriptionForm = {}
-          this.curPush['subscription_form'].map((item) => {
+          // eslint-disable-next-line no-case-declarations
+          this.curPush.subscription_form.map((item) => {
             switch (item) {
               case 'hostcreate':
-                if (subscriptionForm.hasOwnProperty('resource')) {
-                  subscriptionForm['resource'].push('hostcreate')
+                if (has(subscriptionForm, 'resource')) {
+                  subscriptionForm.resource.push('hostcreate')
                 } else {
-                  subscriptionForm['resource'] = ['hostcreate']
+                  subscriptionForm.resource = ['hostcreate']
                 }
                 break
               case 'hostdelete':
-                if (subscriptionForm.hasOwnProperty('resource')) {
-                  subscriptionForm['resource'].push('hostdelete')
+                if (has(subscriptionForm, 'resource')) {
+                  subscriptionForm.resource.push('hostdelete')
                 } else {
-                  subscriptionForm['resource'] = ['hostdelete']
+                  subscriptionForm.resource = ['hostdelete']
                 }
                 break
               case 'hostidentifier':
-                if (subscriptionForm.hasOwnProperty('host')) {
-                  subscriptionForm['host'].push('hostidentifier')
+                if (has(subscriptionForm, 'host')) {
+                  subscriptionForm.host.push('hostidentifier')
                 } else {
-                  subscriptionForm['host'] = ['hostidentifier']
+                  subscriptionForm.host = ['hostidentifier']
                 }
                 break
               case 'moduletransfer':
-                if (subscriptionForm.hasOwnProperty('host')) {
-                  subscriptionForm['host'].push('moduletransfer')
+                if (has(subscriptionForm, 'host')) {
+                  subscriptionForm.host.push('moduletransfer')
                 } else {
-                  subscriptionForm['host'] = ['moduletransfer']
+                  subscriptionForm.host = ['moduletransfer']
                 }
                 break
               default:
                 const key = item.substr(0, item.length - 6)
-                if (subscriptionForm.hasOwnProperty(key)) {
+                if (has(subscriptionForm, key)) {
                   subscriptionForm[key].push(item)
                 } else {
                   subscriptionForm[key] = [item]
@@ -475,17 +488,17 @@
             }
           })
           this.tempEventData = {
-            subscription_id: this.curPush['subscription_id'],
-            subscription_name: this.curPush['subscription_name'],
-            system_name: this.curPush['system_name'],
-            callback_url: this.curPush['callback_url'],
-            confirm_mode: this.curPush['confirm_mode'],
+            subscription_id: this.curPush.subscription_id,
+            subscription_name: this.curPush.subscription_name,
+            system_name: this.curPush.system_name,
+            callback_url: this.curPush.callback_url,
+            confirm_mode: this.curPush.confirm_mode,
             confirm_pattern: {
-              httpstatus: this.curPush['confirm_mode'] === 'httpstatus' ? this.curPush['confirm_pattern'] : '',
-              regular: this.curPush['confirm_mode'] === 'regular' ? this.curPush['confirm_pattern'] : ''
+              httpstatus: this.curPush.confirm_mode === 'httpstatus' ? this.curPush.confirm_pattern : '',
+              regular: this.curPush.confirm_mode === 'regular' ? this.curPush.confirm_pattern : ''
             },
-            subscription_form: { ...this.tempEventData['subscription_form'], ...subscriptionForm },
-            time_out: this.curPush['time_out']
+            subscription_form: { ...this.tempEventData.subscription_form, ...subscriptionForm },
+            time_out: this.curPush.time_out
           }
         }
         this.eventData = this.$tools.clone(this.tempEventData)

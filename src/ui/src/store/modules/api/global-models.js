@@ -7,6 +7,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and limitations under the License.
  */
+
+/* eslint-disable no-unused-vars, no-param-reassign */
+
 import Vue from 'vue'
 import $http from '@/api'
 
@@ -46,12 +49,10 @@ const actions = {
      * @return {Promise} promise 对象
      */
   searchModelAction({ commit, state, dispatch, rootGetters }, params) {
-    return $http.post('find/objecttopo/scope_type/global/scope_id/0', params).then((data) => {
-      return data.filter((node) => {
-        const model = rootGetters['objectModelClassify/getModelById'](node.bk_obj_id)
-        return model && !model.bk_ispaused && !model.bk_ishidden
-      })
-    })
+    return $http.post('find/objecttopo/scope_type/global/scope_id/0', params).then(data => data.filter((node) => {
+      const model = rootGetters['objectModelClassify/getModelById'](node.bk_obj_id)
+      return model && !model.bk_ispaused && !model.bk_ishidden
+    }))
   },
 
   /**
@@ -71,16 +72,16 @@ const mutations = {
   setTopologyData(state, topologyData) {
     const topologyMap = {}
     topologyData.forEach((data) => {
-      topologyMap[data['bk_obj_id']] = data
+      topologyMap[data.bk_obj_id] = data
     })
     state.topologyData = topologyData
     state.topologyMap = topologyMap
   },
   updateTopologyData(state, queue) {
     const updateQueue = Array.isArray(queue) ? queue : [queue]
-    const topologyMap = state.topologyMap
+    const { topologyMap } = state
     updateQueue.forEach((data) => {
-      const modelId = data['bk_obj_id']
+      const modelId = data.bk_obj_id
       Object.assign(topologyMap[modelId], data)
     })
   },
@@ -94,10 +95,10 @@ const mutations = {
     }
   },
   deleteAssociation(state, associationId) {
-    const topologyData = state.topologyData
+    const { topologyData } = state
     for (let i = 0; i < topologyData.length; i++) {
-      const associations = topologyData[i]['assts'] || []
-      const index = associations.findIndex(association => association['bk_inst_id'] === associationId)
+      const associations = topologyData[i].assts || []
+      const index = associations.findIndex(association => association.bk_inst_id === associationId)
       if (index > -1) {
         associations.splice(index, 1)
         break

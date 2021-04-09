@@ -116,7 +116,7 @@
       },
       isReadOnly() {
         if (this.activeModel) {
-          return this.activeModel['bk_ispaused']
+          return this.activeModel.bk_ispaused
         }
         return false
       }
@@ -149,10 +149,10 @@
       getRuleName(keys) {
         const name = []
         keys.forEach((key) => {
-          if (key['key_kind'] === 'property') {
-            const attr = this.attributeList.find(({ id }) => id === key['key_id'])
+          if (key.key_kind === 'property') {
+            const attr = this.attributeList.find(({ id }) => id === key.key_id)
             if (attr) {
-              name.push(attr['bk_property_name'])
+              name.push(attr.bk_property_name)
             }
           }
         })
@@ -161,10 +161,10 @@
       async initAttrList() {
         this.attributeList = await this.searchObjectAttribute({
           params: {
-            bk_obj_id: this.activeModel['bk_obj_id']
+            bk_obj_id: this.activeModel.bk_obj_id
           },
           config: {
-            requestId: `post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`
+            requestId: `post_searchObjectAttribute_${this.activeModel.bk_obj_id}`
           }
         })
       },
@@ -190,7 +190,7 @@
           title: this.$tc('确定删除唯一校验', this.getRuleName(verification.keys), { name: this.getRuleName(verification.keys) }),
           confirmFn: async () => {
             await this.deleteObjectUniqueConstraints({
-              objId: verification['bk_obj_id'],
+              objId: verification.bk_obj_id,
               id: verification.id,
               params: {},
               config: {
@@ -203,7 +203,7 @@
       },
       async searchVerification() {
         const res = await this.searchObjectUniqueConstraints({
-          objId: this.activeModel['bk_obj_id'],
+          objId: this.activeModel.bk_obj_id,
           params: {},
           config: {
             requestId: 'searchObjectUniqueConstraints'
@@ -211,7 +211,7 @@
         })
         this.table.list = res
       },
-      handleShowDetails(row, column, cell) {
+      handleShowDetails(row, column) {
         if (column.property === 'operation') return
         this.slider.title = this.$t('查看校验')
         this.slider.verification = row
@@ -225,7 +225,7 @@
       handleSliderBeforeClose() {
         const hasChanged = Object.keys(this.$refs.verificationForm.changedValues).length
         if (hasChanged) {
-          return new Promise((resolve, reject) => {
+          return new Promise((resolve) => {
             this.$bkInfo({
               title: this.$t('确认退出'),
               subTitle: this.$t('退出会导致未保存信息丢失'),

@@ -133,7 +133,7 @@
       ]),
       handleBeforeSliderClose() {
         if (this.$refs.detail.isCloseConfirmShow()) {
-          return new Promise((resolve, reject) => {
+          return new Promise((resolve) => {
             this.$bkInfo({
               title: this.$t('确认退出'),
               subTitle: this.$t('退出会导致未保存信息丢失'),
@@ -162,9 +162,9 @@
       },
       deleteConfirm(item) {
         this.$bkInfo({
-          title: this.$tc('删除推送确认', item['subscription_name'], { name: item['subscription_name'] }),
+          title: this.$tc('删除推送确认', item.subscription_name, { name: item.subscription_name }),
           confirmFn: () => {
-            this.deletePush(item['subscription_id'])
+            this.deletePush(item.subscription_id)
           }
         })
       },
@@ -185,7 +185,7 @@
         this.slider.isShow = false
       },
       async getTableData() {
-        const pagination = this.table.pagination
+        const { pagination } = this.table
         const params = {
           page: {
             start: (pagination.current - 1) * pagination.limit,
@@ -206,9 +206,12 @@
             this.table.pagination.current -= 1
             this.getTableData()
           }
+          // eslint-disable-next-line array-callback-return
           res.info.map((item) => {
-            item['subscription_form'] = item['subscription_form'].split(',')
-            item['last_time'] = formatTime(item['last_time'])
+            // eslint-disable-next-line no-param-reassign
+            item.subscription_form = item.subscription_form.split(',')
+            // eslint-disable-next-line no-param-reassign
+            item.last_time = formatTime(item.last_time)
           })
           this.table.list = res.info
           pagination.count = res.count

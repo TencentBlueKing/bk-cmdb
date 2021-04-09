@@ -406,12 +406,10 @@
           const [properties, groups, { info: categories }, templateResponse] = await Promise.all(request)
           this.properties = properties
           this.propertyGroups = groups
-          const categoryList = categories.map((item) => {
-            return {
-              ...item.category,
-              displayName: `${item.category.name}（#${item.category.id}）`
-            }
-          })
+          const categoryList = categories.map(item => ({
+            ...item.category,
+            displayName: `${item.category.name}（#${item.category.id}）`
+          }))
           this.allSecondaryList = categoryList.filter(classification => classification.bk_parent_id)
           this.mainList = categoryList.filter(classification => !classification.bk_parent_id)
           this.allSecondaryList = categoryList.filter(classification => classification.bk_parent_id)
@@ -495,19 +493,17 @@
             requestId: this.request.processList
           }
         }).then((data) => {
-          this.processList = data.info.map((template) => {
-            return {
-              process_id: template.id,
-              ...template['property']
-            }
-          })
+          this.processList = data.info.map(template => ({
+            process_id: template.id,
+            ...template.property
+          }))
         })
           .finally(() => {
             this.processLoading = false
           })
       },
       handleSelect(id, data) {
-        this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id)
+        this.secondaryList = this.allSecondaryList.filter(classification => classification.bk_parent_id === id)
         if (!this.secondaryList.length) {
           this.formData.secondaryClassification = ''
         }
@@ -537,7 +533,7 @@
           this.createProcessTemplate({
             params: {
               bk_biz_id: this.bizId,
-              service_template_id: this.originTemplateValues['id'],
+              service_template_id: this.originTemplateValues.id,
               processes: [{
                 spec: processValues
               }]
@@ -550,7 +546,7 @@
           this.updateProcessTemplate({
             params: {
               bk_biz_id: this.bizId,
-              process_template_id: values['process_id'],
+              process_template_id: values.process_id,
               process_property: processValues
             }
           }).then(() => {
@@ -583,7 +579,7 @@
       handleUpdateProcess(template, index) {
         try {
           this.slider.show = true
-          this.slider.title = template['bk_func_name']['value']
+          this.slider.title = template.bk_func_name.value
           this.attribute.type = 'update'
           this.attribute.inst.edit = template
           this.attribute.dataIndex = index
@@ -603,7 +599,7 @@
                 params: {
                   data: {
                     bk_biz_id: this.bizId,
-                    process_templates: [template['process_id']]
+                    process_templates: [template.process_id]
                   }
                 }
               }).then(() => {
@@ -690,12 +686,12 @@
           this.refresh()
           return
         }
-        const moduleId = this.$route.params['moduleId']
+        const { moduleId } = this.$route.params
         if (moduleId) {
           this.$routerActions.redirect({
             name: MENU_BUSINESS_HOST_AND_SERVICE,
             query: {
-              node: 'module-' + this.$route.params.moduleId
+              node: `module-${this.$route.params.moduleId}`
             }
           })
         } else {
@@ -735,7 +731,7 @@
       getButtonText() {
         if (this.isCreateMode) {
           return this.$t('提交')
-        } else if (this.insideMode === 'view') {
+        } if (this.insideMode === 'view') {
           return this.$t('编辑')
         }
         return this.$t('保存')

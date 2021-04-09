@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle, no-param-reassign */
 const requestFrame = window.requestAnimationFrame
     || window.mozRequestAnimationFrame
     || window.webkitRequestAnimationFrame
@@ -10,7 +11,7 @@ const cancelFrame = window.cancelAnimationFrame
     || window.webkitCancelAnimationFrame
     || window.clearTimeout
 
-const addEventListener = (el, binding) => {
+const addEventListener = (el) => {
   el.addEventListener('mouseenter', mouseenter)
   el.addEventListener('mousemove', mousemove)
   el.addEventListener('mouseleave', mouseleave)
@@ -71,7 +72,7 @@ const click = (event) => {
   if (typeof callback === 'function') {
     callback(data)
   }
-  const globalCallback = data.globalCallback
+  const { globalCallback } = data
   if (typeof globalCallback === 'function') {
     globalCallback(data)
   }
@@ -85,8 +86,8 @@ const createProxy = () => {
   proxy.style.position = 'fixed'
   proxy.style.pointerEvents = 'none'
   proxy.style.zIndex = options.zIndex
-  proxy.style.width = options.width + 'px'
-  proxy.style.height = options.height + 'px'
+  proxy.style.width = `${options.width}px`
+  proxy.style.height = `${options.height}px`
   proxy.classList.add(options.className)
   document.body.append(proxy)
 }
@@ -98,8 +99,8 @@ const updateProxyPosition = (event) => {
     cancelFrame(frameId)
   }
   frameId = requestFrame(() => {
-    proxy.style.left = event.clientX + data.x + 'px'
-    proxy.style.top = event.clientY + data.y + 'px'
+    proxy.style.left = `${event.clientX + data.x}px`
+    proxy.style.top = `${event.clientY + data.y}px`
   })
 }
 
@@ -110,7 +111,7 @@ const setChildrenEvents = (target, pointerEvents) => {
 }
 
 const cursor = {
-  inserted(el, binding, vNode) {
+  inserted(el, binding) {
     if (!proxy) {
       createProxy()
     }

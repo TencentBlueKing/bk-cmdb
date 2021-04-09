@@ -67,7 +67,7 @@
       this.table.$refs.bodyWrapper.removeEventListener('scroll', this.updatePostion)
     },
     methods: {
-      updatePostion(event) {
+      updatePostion() {
         // const newScrollTop = event.target.scrollTop
         // const delta = newScrollTop - this.scrollTop
         // if (delta > 0 && this.updateScrollPosition) {
@@ -79,7 +79,7 @@
         const column = this.columns.find(column => column.property === property)
         if (column) {
           return {
-            width: (column.realWidth || column.width) + 'px'
+            width: `${column.realWidth || column.width}px`
           }
         }
         return {}
@@ -91,6 +91,7 @@
         this.table.toggleRowExpansion(this.row, !this.expanded)
       },
       handleUpdateLabels(row, labels) {
+        // eslint-disable-next-line no-param-reassign
         row.labels = labels
       }
     }

@@ -55,6 +55,7 @@
       },
       handleContentClick() {
         if (this.closeWhenMenuClick) {
+          // eslint-disable-next-line no-underscore-dangle
           this.$refs.popover.$refs.reference._tippy.hide()
         }
       }

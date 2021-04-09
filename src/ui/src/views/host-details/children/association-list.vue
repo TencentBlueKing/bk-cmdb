@@ -41,12 +41,10 @@
         'associationTypes'
       ]),
       id() {
-        return parseInt(this.$route.params.id)
+        return parseInt(this.$route.params.id, 10)
       },
       hasAssociation() {
-        return [...this.sourceInstances, ...this.targetInstances].some((instance) => {
-          return !!(instance.children || []).length
-        })
+        return [...this.sourceInstances, ...this.targetInstances].some(instance => !!(instance.children || []).length)
       },
       list() {
         try {
@@ -55,9 +53,7 @@
           associations.forEach((association, index) => {
             const isSource = index < this.source.length
             const modelId = isSource ? association.bk_asst_obj_id : association.bk_obj_id
-            const item = list.find((item) => {
-              return isSource ? item.source === 'host' : item.target === 'host'
-            })
+            const item = list.find(item => (isSource ? item.source === 'host' : item.target === 'host'))
             if (item) {
               item.associations.push(association)
             } else {
@@ -122,7 +118,7 @@
             source: availabelSource,
             target: availabelTarget,
             mainLine: mainLineModels,
-            associationTypes: associationTypes,
+            associationTypes,
             root
           })
         } catch (e) {

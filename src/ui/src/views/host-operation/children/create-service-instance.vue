@@ -51,6 +51,7 @@
 <script>
   import ServiceInstanceTable from '@/components/service/instance-table'
   import { mapGetters } from 'vuex'
+  import has from 'has'
   export default {
     name: 'create-service-instance',
     components: {
@@ -85,13 +86,9 @@
         let instances = []
         if (this.sort === 'module') {
           const order = this.$parent.targetModules
-          instances = [...this.info].sort((A, B) => {
-            return order.indexOf(A.bk_module_id) - order.indexOf(B.bk_module_id)
-          })
+          instances = [...this.info].sort((A, B) => order.indexOf(A.bk_module_id) - order.indexOf(B.bk_module_id))
         } else {
-          instances = [...this.info].sort((A, B) => {
-            return this.getName(A).localeCompare(this.getName(B))
-          })
+          instances = [...this.info].sort((A, B) => this.getName(A).localeCompare(this.getName(B)))
         }
         this.instances = instances.map(instance => ({ ...instance, name: '', editing: { name: false } }))
       },
@@ -147,7 +144,7 @@
           1: '127.0.0.1',
           2: '0.0.0.0'
         }
-        if (mapping.hasOwnProperty(ipValue)) {
+        if (has(mapping, ipValue)) {
           return mapping[ipValue]
         }
         const { host } = this.$parent.hostInfo.find(data => data.host.bk_host_id === instance.bk_host_id)
@@ -203,14 +200,19 @@
         this.processChangeState[key] = state
       },
       handleEditName(instance) {
+        // eslint-disable-next-line no-param-reassign
         this.instances.forEach(instance => (instance.editing.name = false))
+        // eslint-disable-next-line no-param-reassign
         instance.editing.name = true
       },
       handleConfirmEditName(instance, name) {
+        // eslint-disable-next-line no-param-reassign
         instance.name = name
+        // eslint-disable-next-line no-param-reassign
         instance.editing.name = false
       },
       handleCancelEditName(instance) {
+        // eslint-disable-next-line no-param-reassign
         instance.editing.name = false
       }
     }

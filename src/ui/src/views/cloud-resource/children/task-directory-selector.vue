@@ -136,6 +136,7 @@
       injectAuth(directories) {
         return new Promise((resolve) => {
           const fakeComponent = {
+            // eslint-disable-next-line max-len
             auth: directories.map(directory => ({ type: this.$OPERATION.C_RESOURCE_HOST, relation: [directory.bk_module_id] })),
             updateAuth: (results) => {
               directories.forEach((directory) => {

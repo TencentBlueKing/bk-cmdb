@@ -8,6 +8,9 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars */
+
+import has from 'has'
 import $http from '@/api'
 import { transformHostSearchParams, localSort } from '@/utils/tools'
 
@@ -30,7 +33,7 @@ const actions = {
      */
   searchHost({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/search', transformHostSearchParams(params), config).then((data) => {
-      if (data.hasOwnProperty('info')) {
+      if (has(data, 'info')) {
         data.info.forEach((host) => {
           localSort(host.module, 'bk_module_name')
           localSort(host.set, 'bk_set_name')

@@ -23,7 +23,7 @@
       }
     },
     watch: {
-      relations(value) {
+      relations() {
         this.fetchName()
       }
     },

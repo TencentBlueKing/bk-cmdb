@@ -20,7 +20,7 @@ export default [{
     },
     layout: {},
     checkAvailable: (to, from, app) => {
-      const modelId = to.params.modelId
+      const { modelId } = to.params
       const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
       return !!model
     }

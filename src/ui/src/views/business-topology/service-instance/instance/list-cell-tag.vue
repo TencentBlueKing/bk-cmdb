@@ -32,7 +32,7 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       tags() {
-        const labels = this.row.labels
+        const { labels } = this.row
         if (!labels) {
           return []
         }
@@ -78,12 +78,12 @@
           this.updateEditPosition()
         })
       },
-      insertEllipsisTag(reference, index) {
-        const ellipsis = this.$refs.ellipsis
+      insertEllipsisTag(reference) {
+        const { ellipsis } = this.$refs
         this.$refs.list.insertBefore(ellipsis, reference)
       },
       doubleCheckEllipsisPosition() {
-        const ellipsis = this.$refs.ellipsis
+        const { ellipsis } = this.$refs
         const previous = ellipsis.previousElementSibling
         if (previous && ellipsis.offsetTop !== previous.offsetTop) {
           this.$refs.list.insertBefore(ellipsis, previous)
@@ -91,7 +91,7 @@
         this.setEllipsisTips()
       },
       updateEditPosition() {
-        const ellipsis = this.$refs.ellipsis
+        const { ellipsis } = this.$refs
         let lastItem = null
         if (ellipsis && ellipsis.previousElementSibling) {
           lastItem = ellipsis
@@ -99,10 +99,10 @@
           const tagItems = this.$refs.list.querySelectorAll('.tag-item')
           lastItem = tagItems[tagItems.length - 1]
         }
-        this.$refs.editTrigger.$el.style.left = lastItem ? lastItem.offsetLeft + lastItem.offsetWidth + 10 + 'px' : 0
+        this.$refs.editTrigger.$el.style.left = lastItem ? `${lastItem.offsetLeft + lastItem.offsetWidth + 10}px` : 0
       },
       setEllipsisTips() {
-        const ellipsis = this.$refs.ellipsis
+        const { ellipsis } = this.$refs
         const tips = this.getTipsInstance()
         const tipsNode = this.$refs.list.cloneNode(false)
         let loopItem = ellipsis

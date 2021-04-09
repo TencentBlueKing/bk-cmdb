@@ -18,6 +18,7 @@
       },
       localValue(localValue) {
         if (['true', 'false'].includes(localValue)) {
+          // eslint-disable-next-line no-param-reassign
           localValue = [true, false].find(value => value.toString() === localValue)
         }
         this.$emit('input', localValue)

@@ -146,9 +146,7 @@
         return list
       },
       totalCount() {
-        return this.directoryList.reduce((accumulator, directory) => {
-          return accumulator + directory.host_count
-        }, 0)
+        return this.directoryList.reduce((accumulator, directory) => accumulator + directory.host_count, 0)
       }
     },
     watch: {
@@ -266,7 +264,7 @@
       handleShowCreate() {
         this.createInfo.active = true
         this.$nextTick(() => {
-          const createDirItem = this.$refs.createDirItem
+          const { createDirItem } = this.$refs
           const idleNextItem = this.$refs.dirList.querySelector('[data-default="1"]').nextElementSibling
           this.$refs.dirList.insertBefore(createDirItem, idleNextItem)
           this.$refs.createdDir.$refs.input.focus()

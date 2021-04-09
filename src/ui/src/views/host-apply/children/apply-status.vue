@@ -52,7 +52,7 @@
       }
     },
     watch: {
-      request(request) {
+      request() {
         this.initStatus()
       }
     },

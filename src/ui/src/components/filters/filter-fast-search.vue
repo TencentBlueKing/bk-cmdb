@@ -9,7 +9,7 @@
 
 <script>
   import FilterStore from './store'
-  import IS_IP from 'validator/es/lib/isIP'
+  import isIP from 'validator/es/lib/isIP'
   export default {
     data() {
       return {
@@ -32,7 +32,7 @@
         const IP = []
         const assets = []
         values.forEach((text) => {
-          IS_IP(text) ? IP.push(text) : assets.push(text)
+          isIP(text) ? IP.push(text) : assets.push(text)
         })
         if (IP.length) {
           FilterStore.updateIP({

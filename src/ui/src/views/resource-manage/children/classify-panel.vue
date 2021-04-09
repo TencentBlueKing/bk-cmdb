@@ -92,7 +92,7 @@
           let isAdd = false
           let newCollection
           const oldCollection = this.usercustom[MENU_RESOURCE_COLLECTION] || []
-          if (oldCollection.includes(model['bk_obj_id'])) {
+          if (oldCollection.includes(model.bk_obj_id)) {
             newCollection = oldCollection.filter(id => id !== model.bk_obj_id)
           } else {
             isAdd = true

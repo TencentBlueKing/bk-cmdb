@@ -47,7 +47,7 @@
         this.$emit('clear')
       },
       getNodePath(node) {
-        const parents = node.parents
+        const { parents } = node
         return parents.map(parent => parent.data.bk_inst_name).join(' / ')
       }
     }

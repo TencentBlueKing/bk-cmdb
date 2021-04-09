@@ -152,6 +152,7 @@
           return this.$tools.getHeaderPropertyName(property)
         }
         const attrs = {
+          // eslint-disable-next-line no-underscore-dangle
           [this.$options._scopeId]: true
         }
         return (

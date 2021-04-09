@@ -127,7 +127,7 @@
       }
       return {
         accounts: [],
-        form: form,
+        form,
         selectedVPC: this.task ? [...this.task.bk_sync_vpcs] : [],
         request: {
           getAccounts: symbols.get('getAccounts'),
@@ -220,7 +220,7 @@
           }
           await this.$store.dispatch('cloud/resource/updateTask', {
             id: this.task.bk_task_id,
-            params: params,
+            params,
             config: {
               requestId: this.request.updateTask
             }
@@ -238,17 +238,15 @@
         }
       },
       getVPCList() {
-        return this.$refs.vpcTable.list.map((row) => {
-          return {
-            bk_vpc_id: row.bk_vpc_id,
-            bk_vpc_name: row.bk_vpc_name,
-            bk_region: row.bk_region,
-            bk_host_count: row.bk_host_count,
-            bk_sync_dir: row.bk_sync_dir,
-            bk_cloud_id: row.bk_cloud_id,
-            destroyed: row.destroyed
-          }
-        })
+        return this.$refs.vpcTable.list.map(row => ({
+          bk_vpc_id: row.bk_vpc_id,
+          bk_vpc_name: row.bk_vpc_name,
+          bk_region: row.bk_region,
+          bk_host_count: row.bk_host_count,
+          bk_sync_dir: row.bk_sync_dir,
+          bk_cloud_id: row.bk_cloud_id,
+          destroyed: row.destroyed
+        }))
       },
       handleCancel() {
         if (this.isCreateMode) {

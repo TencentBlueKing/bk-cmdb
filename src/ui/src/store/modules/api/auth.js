@@ -6,6 +6,7 @@ const actions = {
       return Promise.resolve(true)
     }
     const result = await $http.post('auth/verify', {
+      // eslint-disable-next-line new-cap
       resources: TRANSFORM_TO_INTERNAL(viewAuthData)
     })
     return Promise.resolve(result.every(data => data.is_pass))

@@ -280,7 +280,9 @@
         vertical-align: middle;
         .offline-image {
             height: 140px;
-            background-image: url("../../../assets/images/box-circle.png"), url("../../../assets/images/box.png"), url("../../../assets/images/box-light.png");
+            background-image: url("../../../assets/images/box-circle.png"),
+              url("../../../assets/images/box.png"),
+              url("../../../assets/images/box-light.png");
             background-repeat: no-repeat;
             background-position: center -10px, center, center;
             background-size: 75px 75px, 127px 100%, 127px 100%;

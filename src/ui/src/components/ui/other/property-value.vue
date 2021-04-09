@@ -110,8 +110,9 @@
         if (type === 'organization') {
           displayValue = await this.getOrganization(value)
         } else {
-          displayValue = this.$options.filters['formatter'](value, this.property, this.options)
+          displayValue = this.$options.filters.formatter(value, this.property, this.options)
         }
+        // eslint-disable-next-line no-nested-ternary
         this.displayValue = (this.showUnit && unit && displayValue !== '--')
           ? `${displayValue}${unit}`
           : String(displayValue).length

@@ -41,7 +41,7 @@ import routerSubview from './other/router-subview.vue'
 import organization from './form/organization.vue'
 import propertyValue from './other/property-value.vue'
 import tagInput from './tag-input/tag-input.vue'
-const install = (Vue, opts = {}) => {
+const install = (Vue) => {
   const components = [
     businessSelector,
     clipboardSelector,

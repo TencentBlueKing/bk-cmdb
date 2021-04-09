@@ -44,8 +44,10 @@ const flatternViews = (views) => {
   return flatterned
 }
 
+// eslint-disable-next-line no-unused-vars
 export const injectStatusComponents = (views, status = ['permission', 'error']) => {
   views.forEach((view) => {
+    // eslint-disable-next-line no-param-reassign
     view.components = {
       default: view.component,
       permission: statusPermission,

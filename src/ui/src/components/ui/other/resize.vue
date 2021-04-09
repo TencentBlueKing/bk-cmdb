@@ -15,6 +15,7 @@
 </template>
 
 <script>
+  /* eslint-disable max-len */
   export default {
     name: 'cmdb-resize-layout',
     props: {
@@ -26,7 +27,7 @@
           const validDirections = ['bottom', 'right']
           if (typeof val === 'string') {
             return validDirections.includes(val)
-          } else if (val instanceof Array) {
+          } if (val instanceof Array) {
             return !val.some(direction => !validDirections.includes(direction))
           }
           return false
@@ -107,11 +108,11 @@
       getHandlerStyle(direction) {
         const style = {}
         if (direction === 'right') {
-          style.width = this.handlerWidth + 'px'
-          style.marginLeft = this.handlerOffset - this.handlerWidth + 'px'
+          style.width = `${this.handlerWidth}px`
+          style.marginLeft = `${this.handlerOffset - this.handlerWidth}px`
         } else {
-          style.height = this.handlerWidth + 'px'
-          style.marginTop = this.handlerOffset - this.handlerWidth + 'px'
+          style.height = `${this.handlerWidth}px`
+          style.marginTop = `${this.handlerOffset - this.handlerWidth}px`
         }
         return style
       },
@@ -131,7 +132,7 @@
             startLeft: handlerRect.right - containerRect.left
           }
           $resizeProxy.style.top = 0
-          $resizeProxy.style.left = this.state.startLeft + 'px'
+          $resizeProxy.style.left = `${this.state.startLeft}px`
           $resizeMask.style.cursor = 'col-resize'
         } else {
           this.state = {
@@ -140,37 +141,33 @@
             startTop: handlerRect.bottom - containerRect.top
           }
           $resizeProxy.style.left = 0
-          $resizeProxy.style.top = this.state.startTop + 'px'
+          $resizeProxy.style.top = `${this.state.startTop}px`
           $resizeMask.style.cursor = 'row-resize'
         }
-        document.onselectstart = () => {
-          return false
-        }
-        document.ondragstart = () => {
-          return false
-        }
+        document.onselectstart = () => false
+        document.ondragstart = () => false
         const handleMouseMove = (event) => {
           if (direction === 'right') {
             const deltaLeft = event.clientX - this.state.startMouseLeft
             const proxyLeft = this.state.startLeft + deltaLeft
             const maxLeft = this.localMax.right
             const minLeft = this.localMin.right
-            $resizeProxy.style.left = Math.min(maxLeft, Math.max(minLeft, proxyLeft)) + this.handlerOffset + 'px'
+            $resizeProxy.style.left = `${Math.min(maxLeft, Math.max(minLeft, proxyLeft)) + this.handlerOffset}px`
           } else {
             const deltaTop = event.clientY - this.state.startMouseTop
             const proxyTop = this.state.startTop + deltaTop
             const maxTop = this.localMax.bottom
             const minTop = this.localMin.bottom
-            $resizeProxy.style.top = Math.min(maxTop, Math.max(minTop, proxyTop)) + this.handlerOffset + 'px'
+            $resizeProxy.style.top = `${Math.min(maxTop, Math.max(minTop, proxyTop)) + this.handlerOffset}px`
           }
         }
-        const handleMouseUp = (event) => {
+        const handleMouseUp = () => {
           if (direction === 'right') {
             const finalLeft = parseInt($resizeProxy.style.left, 10)
-            this.$el.style.width = finalLeft + 'px'
+            this.$el.style.width = `${finalLeft}px`
           } else {
             const finalTop = parseInt($resizeProxy.style.top, 10)
-            this.$el.style.height = finalTop + 'px'
+            this.$el.style.height = `${finalTop}px`
           }
           $resizeProxy.style.visibility = 'hidden'
           this.$refs.resizeMask.style.display = 'none'

@@ -97,26 +97,27 @@
         refrenceValues: {},
         editable: {},
         groupState: {
-          'none': true
+          none: true
         }
       }
     },
     computed: {
       changedValues() {
         const changedValues = {}
-        for (const propertyId in this.values) {
+        Object.keys(this.values).forEach((propertyId) => {
           const property = this.getProperty(propertyId)
           if (
-            ['bool'].includes(property['bk_property_type'])
+            ['bool'].includes(property.bk_property_type)
             || this.values[propertyId] !== this.refrenceValues[propertyId]
           ) {
             changedValues[propertyId] = this.values[propertyId]
           }
-        }
+        })
         return changedValues
       },
       hasChange() {
         let hasChange = false
+        // eslint-disable-next-line no-restricted-syntax
         for (const propertyId in this.editable) {
           if (this.editable[propertyId]) {
             hasChange = true
@@ -126,15 +127,14 @@
         return hasChange
       },
       groupedProperties() {
-        return this.$groupedProperties.map((properties) => {
-          return properties.filter((property) => {
-            const editable = property.editable
-            const isapi = property['bk_isapi']
-            const isonly = property.isonly
-            const isAsst = ['singleasst', 'multiasst'].includes(property['bk_property_type'])
-            return editable && !isapi && !isonly && !isAsst && !this.uneditableProperties.includes(property.bk_property_id)
-          })
-        })
+        return this.$groupedProperties.map(properties => properties.filter((property) => {
+          const { editable } = property
+          const isapi = property.bk_isapi
+          const { isonly } = property
+          const isAsst = ['singleasst', 'multiasst'].includes(property.bk_property_type)
+          // eslint-disable-next-line max-len
+          return editable && !isapi && !isonly && !isAsst && !this.uneditableProperties.includes(property.bk_property_id)
+        }))
       },
       hasAvaliableGroups() {
         return this.groupedProperties.some(properties => !!properties.length)
@@ -170,7 +170,7 @@
         const editable = {}
         this.groupedProperties.forEach((properties) => {
           properties.forEach((property) => {
-            editable[property['bk_property_id']] = false
+            editable[property.bk_property_id] = false
           })
         })
         this.editable = editable
@@ -183,7 +183,7 @@
         return output
       },
       getProperty(id) {
-        return this.properties.find(property => property['bk_property_id'] === id)
+        return this.properties.find(property => property.bk_property_id === id)
       },
       getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
@@ -197,11 +197,11 @@
       },
       getMultipleValues() {
         const multipleValues = {}
-        for (const propertyId in this.editable) {
+        Object.keys(this.values).forEach((propertyId) => {
           if (this.editable[propertyId]) {
             multipleValues[propertyId] = this.values[propertyId]
           }
-        }
+        })
         return this.$tools.formatValues(multipleValues, this.properties)
       },
       handleSave() {
@@ -215,8 +215,8 @@
       },
       uncollapseGroup() {
         this.errors.items.forEach((item) => {
-          const property = this.properties.find(property => property['bk_property_id'] === item.field)
-          const group = property['bk_property_group']
+          const property = this.properties.find(property => property.bk_property_id === item.field)
+          const group = property.bk_property_group
           this.groupState[group] = false
         })
       },

@@ -5,10 +5,14 @@
         <span class="form-value">{{task.bk_task_name}}</span>
       </bk-form-item>
       <bk-form-item class="form-item clearfix fl" :label="$t('账户名称')">
-        <task-account-selector class="form-value" display="info" :value="task.bk_account_id"></task-account-selector>
+        <task-account-selector class="form-value"
+          display="info" :value="task.bk_account_id">
+        </task-account-selector>
       </bk-form-item>
       <bk-form-item class="form-item clearfix fl" :label="$t('资源类型')">
-        <task-resource-selector class="form-value" display="info" :value="task.bk_resource_type"></task-resource-selector>
+        <task-resource-selector class="form-value"
+          display="info" :value="task.bk_resource_type">
+        </task-resource-selector>
       </bk-form-item>
       <bk-form-item class="form-item clearfix" :label="$t('云区域设定')"></bk-form-item>
     </bk-form>
@@ -26,7 +30,9 @@
             </div>
           </template>
         </bk-table-column>
-        <bk-table-column label="VPC" prop="bk_vpc_id" width="150" :formatter="vpcFormatter" show-overflow-tooltip></bk-table-column>
+        <bk-table-column label="VPC" prop="bk_vpc_id" width="150"
+          :formatter="vpcFormatter" show-overflow-tooltip>
+        </bk-table-column>
         <bk-table-column :label="$t('地域')" prop="bk_region_name" :width="150" show-overflow-tooltip>
           <task-region-selector
             slot-scope="{ row }"
@@ -117,29 +123,27 @@
         const infoInstance = this.$bkInfo({
           title: this.$t('确认删除xx', { instance: this.task.bk_task_name }),
           closeIcon: false,
-          confirmFn: () => {
-            return new Promise(async (resolve) => {
-              try {
-                infoInstance.buttonLoading = true
-                await this.$store.dispatch('cloud/resource/deleteTask', {
-                  id: this.task.bk_task_id,
-                  config: {
-                    requestId: this.request.delete
-                  }
-                })
-                this.$success('删除成功')
-                this.container.hide()
-                RouterQuery.set({
-                  _t: Date.now()
-                })
-              } catch (error) {
-                console.error(error)
-              } finally {
-                infoInstance.buttonLoading = false
-                resolve(true)
-              }
-            })
-          }
+          confirmFn: () => new Promise(async (resolve) => {
+            try {
+              infoInstance.buttonLoading = true
+              await this.$store.dispatch('cloud/resource/deleteTask', {
+                id: this.task.bk_task_id,
+                config: {
+                  requestId: this.request.delete
+                }
+              })
+              this.$success('删除成功')
+              this.container.hide()
+              RouterQuery.set({
+                _t: Date.now()
+              })
+            } catch (error) {
+              console.error(error)
+            } finally {
+              infoInstance.buttonLoading = false
+              resolve(true)
+            }
+          })
         })
       },
       getRowClass({ row }) {

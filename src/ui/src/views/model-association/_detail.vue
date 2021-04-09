@@ -92,7 +92,9 @@
     </div>
     <slot name="operation">
       <div class="btn-group">
-        <bk-button theme="primary" :disabled="isReadOnly || isEdit && relation.ispre" :loading="$loading(['updateAssociationType', 'createAssociationType'])" @click="saveRelation">
+        <bk-button theme="primary"
+          :disabled="isReadOnly || isEdit && relation.ispre" :loading="$loading(['updateAssociationType', 'createAssociationType'])"
+          @click="saveRelation">
           {{saveBtnText || $t('确定')}}
         </bk-button>
         <bk-button theme="default" @click="cancel">
@@ -143,7 +145,7 @@
       },
       updateParams() {
         const updateParams = { ...this.relationInfo }
-        delete updateParams['bk_asst_id']
+        delete updateParams.bk_asst_id
         return updateParams
       },
       changedValues() {
@@ -158,6 +160,7 @@
     },
     created() {
       if (this.isEdit) {
+        // eslint-disable-next-line no-restricted-syntax
         for (const key in this.relationInfo) {
           this.relationInfo[key] = this.$tools.clone(this.relation[key])
         }

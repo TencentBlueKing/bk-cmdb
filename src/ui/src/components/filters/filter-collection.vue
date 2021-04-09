@@ -13,7 +13,8 @@
       slot="trigger"
       slot-scope="scopeProps"
       :value="scopeProps.value">
-      <icon-button class="filter-trigger" icon="icon-cc-star" :class="{ 'is-selected': !!storageCollection }"></icon-button>
+      <icon-button class="filter-trigger" icon="icon-cc-star"
+        :class="{ 'is-selected': !!storageCollection }"></icon-button>
     </cmdb-loading>
     <bk-option v-for="collection in collections"
       :key="collection.id"
@@ -111,7 +112,7 @@
       }
     },
     mounted() {
-      const instance = this.$refs.selector.$refs.selectDropdown.instance
+      const { instance } = this.$refs.selector.$refs.selectDropdown
       const bindedHideFunc = instance.props.onHide
       instance.set({
         placement: 'bottom-end',

@@ -239,13 +239,13 @@
         return this.usercustom[this.columnsConfigKey] || []
       },
       globalCustomColumns() {
-        return this.globalUsercustom['biz_global_custom_table_columns'] || []
+        return this.globalUsercustom.biz_global_custom_table_columns || []
       },
       saveAuth() {
-        const type = this.attribute.type
+        const { type } = this.attribute
         if (type === 'create') {
           return { type: this.$OPERATION.C_BUSINESS }
-        } else if (type === 'update') {
+        } if (type === 'update') {
           return { type: this.$OPERATION.U_BUSINESS }
         }
         return null
@@ -257,7 +257,7 @@
     watch: {
       'filter.id'(id) {
         this.filter.value = ''
-        this.filter.type = (this.$tools.getProperty(this.properties, id) || {})['bk_property_type']
+        this.filter.type = (this.$tools.getProperty(this.properties, id) || {}).bk_property_type
       },
       'slider.show'(show) {
         if (!show) {
@@ -330,23 +330,23 @@
         })
       },
       setTableHeader() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
+          // eslint-disable-next-line max-len
           const customColumns = this.customBusinessColumns.length ? this.customBusinessColumns : this.globalCustomColumns
+          // eslint-disable-next-line max-len
           const headerProperties = this.$tools.getHeaderProperties(this.properties, customColumns, this.columnsConfig.disabledColumns)
           resolve(headerProperties)
         }).then((properties) => {
           this.updateTableHeader(properties)
-          this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
+          this.columnsConfig.selected = properties.map(property => property.bk_property_id)
         })
       },
       updateTableHeader(properties) {
-        this.table.header = properties.map((property) => {
-          return {
-            id: property['bk_property_id'],
-            name: this.$tools.getHeaderPropertyName(property),
-            property
-          }
-        })
+        this.table.header = properties.map(property => ({
+          id: property.bk_property_id,
+          name: this.$tools.getHeaderPropertyName(property),
+          property
+        }))
       },
       handleValueClick(row, column) {
         if (column.id !== 'bk_biz_id') {
@@ -408,7 +408,7 @@
       getSearchParams() {
         const params = {
           condition: {
-            'bk_data_status': { '$ne': 'disabled' }
+            bk_data_status: { $ne: 'disabled' }
           },
           fields: [],
           page: {
@@ -424,7 +424,7 @@
             const convertValue = [true, false].find(bool => bool.toString() === filterValue)
             filterValue = convertValue === undefined ? filterValue : convertValue
           } else if (filterType === 'int') {
-            filterValue = isNaN(parseInt(filterValue)) ? filterValue : parseInt(filterValue)
+            filterValue = isNaN(parseInt(filterValue, 10)) ? filterValue : parseInt(filterValue, 10)
           }
           params.condition[this.filter.id] = filterValue
         }
@@ -432,7 +432,7 @@
       },
       async handleEdit(inst) {
         const bizNameProperty = this.$tools.getProperty(this.properties, 'bk_biz_name')
-        bizNameProperty.isreadonly = inst['bk_biz_name'] === '蓝鲸'
+        bizNameProperty.isreadonly = inst.bk_biz_name === '蓝鲸'
         this.attribute.inst.edit = inst
         this.attribute.type = 'update'
       },
@@ -440,14 +440,14 @@
         this.attribute.type = 'create'
         this.attribute.inst.edit = {}
         this.slider.show = true
-        this.slider.title = `${this.$t('创建')} ${this.model['bk_obj_name']}`
+        this.slider.title = `${this.$t('创建')} ${this.model.bk_obj_name}`
       },
       handleDelete(inst) {
         this.$bkInfo({
-          title: this.$t('确认要归档', { name: inst['bk_biz_name'] }),
+          title: this.$t('确认要归档', { name: inst.bk_biz_name }),
           subTitle: this.$t('归档确认信息'),
           confirmFn: () => {
-            this.archiveBusiness(inst['bk_biz_id']).then(() => {
+            this.archiveBusiness(inst.bk_biz_id).then(() => {
               this.slider.show = false
               this.$success(this.$t('归档成功'))
               this.getTableData()
@@ -459,7 +459,7 @@
       handleSave(values, changedValues, originalValues, type) {
         if (type === 'update') {
           this.updateBusiness({
-            bizId: originalValues['bk_biz_id'],
+            bizId: originalValues.bk_biz_id,
             params: values
           }).then(() => {
             this.attribute.inst.details = Object.assign({}, originalValues, values)
@@ -469,6 +469,7 @@
             this.$http.cancel('post_searchBusiness_$ne_disabled')
           })
         } else {
+          // eslint-disable-next-line no-param-reassign
           delete values.bk_biz_id // properties中注入了前端自定义的bk_biz_id属性
           this.createBusiness({
             params: values
@@ -487,7 +488,7 @@
       },
       handleApplayColumnsConfig(properties) {
         this.$store.dispatch('userCustom/saveUsercustom', {
-          [this.columnsConfigKey]: properties.map(property => property['bk_property_id'])
+          [this.columnsConfigKey]: properties.map(property => property.bk_property_id)
         })
         this.columnsConfig.show = false
       },
@@ -506,9 +507,9 @@
       handleSliderBeforeClose() {
         if (this.tab.active === 'attribute') {
           const $form = this.$refs.form
-          const changedValues = $form.changedValues
+          const { changedValues } = $form
           if (Object.keys(changedValues).length) {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
               this.$bkInfo({
                 title: this.$t('确认退出'),
                 subTitle: this.$t('退出会导致未保存信息丢失'),

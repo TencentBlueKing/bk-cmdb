@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 import $http from '@/api'
 const cloudArea = {
   namespaced: true,
@@ -38,7 +40,7 @@ const cloudAccount = {
         config
       }).then(({ info }) => {
         if (!info.length) {
-          return Promise.reject(new Error('Can not find cloud account with id:' + id))
+          return Promise.reject(new Error(`Can not find cloud account with id:${id}`))
         }
         return info[0]
       })
@@ -83,7 +85,7 @@ const cloudResource = {
         config
       }).then(({ info }) => {
         if (!info.length) {
-          return Promise.reject(new Error('Can not find cloud task with id:' + id))
+          return Promise.reject(new Error(`Can not find cloud task with id:${id}`))
         }
         return info[0]
       })

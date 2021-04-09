@@ -58,7 +58,7 @@
       wrapperStyle() {
         const style = {}
         if (this.tagInput && this.tagInput.panelWidth) {
-          style.width = parseInt(this.tagInput.panelWidth) + 'px'
+          style.width = `${parseInt(this.tagInput.panelWidth, 10)}px`
         }
         return style
       },
@@ -67,9 +67,9 @@
           'max-height': '192px'
         }
         if (this.tagInput) {
-          const maxHeight = parseInt(this.tagInput.listScrollHeight)
+          const maxHeight = parseInt(this.tagInput.listScrollHeight, 10)
           if (!isNaN(maxHeight)) {
-            style['max-height'] = maxHeight + 'px'
+            style['max-height'] = `${maxHeight}px`
           }
         }
         return style
@@ -86,7 +86,7 @@
       getIndex(index, childIndex = 0) {
         let flattenedIndex = 0
         this.matchedData.slice(0, index).forEach((tag) => {
-          if (tag.hasOwnProperty('children')) {
+          if (has(tag, 'children')) {
             flattenedIndex += tag.children.length
           } else {
             flattenedIndex += 1

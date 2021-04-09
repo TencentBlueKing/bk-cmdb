@@ -130,7 +130,7 @@
           this.$error('所选主机已在主机池中')
           return false
         }
-        const isAllIdleModule = HostStore.isAllIdleModule
+        const { isAllIdleModule } = HostStore
         if (!isAllIdleModule) {
           this.$error(this.$t('仅支持对空闲机模块下的主机进行操作'))
           return false
@@ -138,7 +138,7 @@
         const [bizId] = HostStore.bizSet
         this.dialog.props = {
           count: HostStore.getSelected().length,
-          bizId: bizId
+          bizId
         }
         this.dialog.width = 460
         this.dialog.height = 250

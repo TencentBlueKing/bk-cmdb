@@ -30,7 +30,9 @@
       }
     },
     watch: {
+      // eslint-disable-next-line object-shorthand
       'property.__extra__.value': async function (value) {
+        // eslint-disable-next-line no-underscore-dangle
         this.property.__extra__.valid = await this.$validator.validate()
         this.$emit('value-change', value)
       }

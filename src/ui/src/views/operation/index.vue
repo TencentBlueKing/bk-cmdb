@@ -179,6 +179,7 @@
 </template>
 
 <script>
+  /* eslint-disable no-param-reassign */
   import moment from 'moment'
   import {
     MENU_RESOURCE_BUSINESS,
@@ -345,8 +346,8 @@
             x: [],
             y: [],
             type: data.chart_type,
-            hoverlabel: hoverlabel,
-            marker: marker,
+            hoverlabel,
+            marker,
             mode: 'markers',
             textinfo: 'none',
             hole: 0.7,
@@ -355,6 +356,7 @@
           }
           let zeroList = 0
           res.forEach((item) => {
+            // eslint-disable-next-line no-plusplus
             if (item.count === 0) zeroList++
             if (data.chart_type === 'pie') {
               content.labels.push(item.id)
@@ -379,7 +381,7 @@
                 color: '#3A84FF',
                 marker: this.$tools.clone(marker),
                 hoverinfo: 'y+name',
-                hoverlabel: hoverlabel
+                hoverlabel
               },
               update: {
                 name: this.$t('更新'),
@@ -388,7 +390,7 @@
                 color: '#38C1E2',
                 marker: this.$tools.clone(marker),
                 hoverinfo: 'y+name',
-                hoverlabel: hoverlabel
+                hoverlabel
               },
               create: {
                 name: this.$t('新建'),
@@ -397,18 +399,19 @@
                 color: '#59D178',
                 marker: this.$tools.clone(marker),
                 hoverinfo: 'y+name',
-                hoverlabel: hoverlabel
+                hoverlabel
               }
             },
             x: [],
             isX: false
           }
+          // eslint-disable-next-line no-restricted-syntax
           for (const item in res) {
             const content = {
               name: item,
               x: [],
               y: [],
-              hoverlabel: hoverlabel,
+              hoverlabel,
               textinfo: 'none'
             }
             if (Array.isArray(res[item])) {
@@ -426,6 +429,7 @@
             } else {
               barModel.x.push(item)
               barModel.isX = true
+              // eslint-disable-next-line no-restricted-syntax
               for (const chartItem in barModel.chart) {
                 barModel.chart[chartItem].y.push(res[item][chartItem])
                 barModel.chart[chartItem].marker.color.push(barModel.chart[chartItem].color)
@@ -433,6 +437,7 @@
             }
           }
           if (barModel.isX) {
+            // eslint-disable-next-line no-restricted-syntax
             for (const chartItem in barModel.chart) {
               barModel.chart[chartItem].x = barModel.x
               returnData.data.push(barModel.chart[chartItem])
@@ -459,7 +464,7 @@
           }
         }
         const myDiv = item.report_type + item.config_id
-        const data = item.data.data
+        const { data } = item.data
         if (!item.hasData) this.$set(item, 'noData', true)
         if (item.chart_type === 'pie') {
           layConfig.legend = {
@@ -471,7 +476,9 @@
         }
         if (item.report_type === 'host_change_biz_chart') {
           if (this.dateRange.length !== 0) {
+            // eslint-disable-next-line prefer-destructuring, no-param-reassign
             item.data.minTime = this.dateRange[0]
+            // eslint-disable-next-line prefer-destructuring, no-param-reassign
             item.data.maxTime = this.dateRange[1]
           } else {
             this.dateRange = [item.data.minTime, item.data.maxTime]
@@ -557,20 +564,25 @@
           colors = data.points[i].data.marker.color
         }
         if (data.points.length === 1) {
+          // eslint-disable-next-line prefer-destructuring
           colors[pn] = color[0]
           const update = {
-            'marker': {
+            marker: {
               color: colors
             }
           }
           Plotly.restyle(myDiv, update, [tn])
         } else {
+          // eslint-disable-next-line prefer-destructuring, no-param-reassign
           data.points[0].data.marker.color[pn] = color[0]
+          // eslint-disable-next-line prefer-destructuring, no-param-reassign
           data.points[1].data.marker.color[pn] = color[1]
+          // eslint-disable-next-line prefer-destructuring, no-param-reassign
           data.points[2].data.marker.color[pn] = color[2]
           const update = {
             data: {
               maker: {
+                // eslint-disable-next-line max-len
                 color: [data.points[0].data.marker.color, data.points[1].data.marker.color, data.points[2].data.marker.color]
               }
             }
@@ -591,7 +603,7 @@
       deleteChart(type, key, list, item) {
         this.$bkInfo({
           title: this.$tc('是否确认删除'),
-          subTitle: '确定要删除【' + item.name + '】',
+          subTitle: `确定要删除【${item.name}】`,
           extCls: 'bk-dialog-sub-header-center',
           confirmFn: () => {
             list.splice(key, 1)
@@ -648,8 +660,8 @@
       },
       updatePosition() {
         const data = {
-          'host': [],
-          'inst': []
+          host: [],
+          inst: []
         }
         this.hostData.disList.forEach((item) => {
           data.host.push(item.config_id)
@@ -667,7 +679,9 @@
         this.$routerActions.redirect({ name: route })
       },
       dateChange(date) {
+        // eslint-disable-next-line prefer-destructuring
         this.dateChart.data.maxTime = date[1]
+        // eslint-disable-next-line prefer-destructuring
         this.dateChart.data.minTime = date[0]
         this.editType.openType = 'edit'
         this.drawCharts(this.dateChart)

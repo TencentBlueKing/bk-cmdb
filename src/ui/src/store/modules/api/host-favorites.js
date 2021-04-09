@@ -8,6 +8,8 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars, no-param-reassign */
+
 import $http from '@/api'
 
 const state = {
@@ -26,12 +28,12 @@ const getters = {
     const properties = []
     if (state.applying) {
       const ignore = ['biz']
-      const params = JSON.parse(state.applying['query_params'])
+      const params = JSON.parse(state.applying.query_params)
       params.forEach((param) => {
-        if (!ignore.includes(param['bk_obj_id'])) {
+        if (!ignore.includes(param.bk_obj_id)) {
           properties.push({
-            'bk_obj_id': param['bk_obj_id'],
-            'bk_property_id': param.field
+            bk_obj_id: param.bk_obj_id,
+            bk_property_id: param.field
           })
         }
       })
@@ -42,9 +44,9 @@ const getters = {
     const conditions = {}
     if (state.applying) {
       const ignore = ['biz']
-      const params = JSON.parse(state.applying['query_params'])
+      const params = JSON.parse(state.applying.query_params)
       params.forEach((param) => {
-        const objId = param['bk_obj_id']
+        const objId = param.bk_obj_id
         if (!ignore.includes(objId)) {
           conditions[objId] = conditions[objId] || []
           conditions[objId].push({

@@ -20,7 +20,9 @@
         }">
         <i18n path="以下N台主机转移失败">
           <span place="N">{{resources.length}}</span>
-          <bk-link class="fail-detail-link" theme="primary" @click="handleViewFailDetail" place="link">{{$t('点击查看详情')}}</bk-link>
+          <bk-link class="fail-detail-link" theme="primary" @click="handleViewFailDetail" place="link">
+            {{$t('点击查看详情')}}
+          </bk-link>
         </i18n>
       </cmdb-tips>
       <div class="info clearfix mb20">
@@ -259,10 +261,10 @@
         return type === 'remove' && module
       },
       isRetry() {
-        return parseInt(this.$route.query.retry) === 1
+        return parseInt(this.$route.query.retry, 10) === 1
       },
       isSingle() {
-        return parseInt(this.$route.query.single) === 1
+        return parseInt(this.$route.query.single, 10) === 1
       },
       changeHostDisabled() {
         return this.isSingle || this.isRemoveModule
@@ -272,10 +274,12 @@
       availableTabList(tabList) {
         tabList.forEach((tab) => {
           if (tab !== this.activeTab) {
+            // eslint-disable-next-line no-param-reassign
             tab.confirmed = false
           }
         })
         const hasActiveTab = tabList.find(tab => tab === this.activeTab)
+        // eslint-disable-next-line no-param-reassign
         if (!hasActiveTab) this.tab.active = null
       },
       activeTab(tab) {
@@ -319,7 +323,7 @@
       resolveData(route) {
         this.type = route.params.type
         const query = route.query || {}
-        const targetModules = query.targetModules
+        const { targetModules } = query
         if (!targetModules) {
           this.targetModules = []
         } else {
@@ -327,7 +331,7 @@
             .map(id => Number(id))
         }
 
-        const resources = query.resources
+        const { resources } = query
         if (!resources) {
           this.resources = []
         } else {
@@ -345,6 +349,7 @@
           }
         }
         if (this.type === 'idle') {
+          // eslint-disable-next-line prefer-destructuring
           params.default_internal_module = this.targetModules[0]
         } else if (this.targetModules.length) {
           params.add_to_modules = this.targetModules
@@ -405,6 +410,7 @@
       },
       setConfirmState(data) {
         // 是否是相同的模块转换
+        // eslint-disable-next-line max-len
         this.isSameModule = data.every(datum => !(datum.to_add_to_modules.length || datum.to_remove_from_modules.length))
         // 是否溢出的是空服务实例（前端流转不会创建空服务实例，但是ESB会）
         this.isEmptyChange = data.every((datum) => {
@@ -461,7 +467,7 @@
         const tab = this.tabList.find(tab => tab.id === 'createServiceInstance')
         tab.props.info = Object.freeze(instanceInfo)
       },
-      setFailHostTableList(data) {
+      setFailHostTableList() {
         this.failDetailDialog.list = this.failHostList.map((item) => {
           const host = (this.hostInfo.find(data => data.host.bk_host_id === item.bk_host_id) || {}).host || {}
           return {
@@ -604,9 +610,11 @@
       },
       handleDialogConfirm() {
         if (this.dialog.component === ModuleSelector.name) {
+          // eslint-disable-next-line prefer-rest-params
           this.gotoTransferPage(...arguments)
           this.dialog.show = false
         } else if (this.dialog.component === HostSelector.name) {
+          // eslint-disable-next-line prefer-rest-params
           this.refreshRemoveHost(...arguments)
           this.dialog.show = false
         }

@@ -100,8 +100,8 @@
         hasRelation: false,
         fullScreen: false,
         viewName: {
-          'list': cmdbRelationList.name,
-          'graphics': cmdbRelationGraphics.name
+          list: cmdbRelationList.name,
+          graphics: cmdbRelationGraphics.name
         },
         activeView: cmdbRelationList.name,
         showCreate: false,
@@ -121,8 +121,8 @@
         const nameKey = this.nameKeyMap[this.objId] || 'bk_inst_name'
         return {
           ...this.inst,
-          'bk_inst_id': this.inst[idKey],
-          'bk_inst_name': this.inst[nameKey]
+          bk_inst_id: this.inst[idKey],
+          bk_inst_name: this.inst[nameKey]
         }
       },
       authResources() {
@@ -144,15 +144,15 @@
       async getRelation() {
         try {
           let [dataAsSource, dataAsTarget, mainLineModels] = await Promise.all([
-            this.getObjectAssociation({ 'bk_obj_id': this.objId }, { requestId: 'getSourceAssocaition' }),
-            this.getObjectAssociation({ 'bk_asst_obj_id': this.objId }, { requestId: 'getTargetAssocaition' }),
+            this.getObjectAssociation({ bk_obj_id: this.objId }, { requestId: 'getSourceAssocaition' }),
+            this.getObjectAssociation({ bk_asst_obj_id: this.objId }, { requestId: 'getTargetAssocaition' }),
             this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
               config: {
                 requestId: 'getMainLineModels'
               }
             })
           ])
-          mainLineModels = mainLineModels.filter(model => !['biz', 'host'].includes(model['bk_obj_id']))
+          mainLineModels = mainLineModels.filter(model => !['biz', 'host'].includes(model.bk_obj_id))
           dataAsSource = this.getAvailableRelation(dataAsSource, mainLineModels)
           dataAsTarget = this.getAvailableRelation(dataAsTarget, mainLineModels)
           this.associationObject = [...dataAsSource, ...dataAsTarget]
@@ -164,9 +164,8 @@
         }
       },
       getAvailableRelation(data, mainLine) {
-        return data.filter((relation) => {
-          return !mainLine.some(model => [relation['bk_obj_id'], relation['bk_asst_obj_id']].includes(model['bk_obj_id']))
-        })
+        // eslint-disable-next-line max-len
+        return data.filter(relation => !mainLine.some(model => [relation.bk_obj_id, relation.bk_asst_obj_id].includes(model.bk_obj_id)))
       },
       getObjectAssociation(condition, config) {
         return this.searchObjectAssociation({

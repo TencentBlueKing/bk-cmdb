@@ -26,7 +26,9 @@
             :id="vendor.id">
             <cmdb-vendor :type="vendor.id"></cmdb-vendor>
           </bk-option>
-          <cmdb-vendor class="vendor-selector-trigger" slot="trigger" :type="form.bk_cloud_vendor" empty-text=""></cmdb-vendor>
+          <cmdb-vendor class="vendor-selector-trigger" slot="trigger"
+            :type="form.bk_cloud_vendor" empty-text="">
+          </cmdb-vendor>
         </bk-select>
         <p class="create-form-error" v-if="errors.has('bk_cloud_vendor')">
           {{errors.first('bk_cloud_vendor')}}
@@ -277,7 +279,7 @@
         try {
           this.verifyResult = {}
           const response = await this.$store.dispatch('cloud/account/verify', {
-            params: params,
+            params,
             config: {
               requestId: this.request.verify,
               transformData: false
@@ -340,7 +342,7 @@
           }
           await this.$store.dispatch('cloud/account/update', {
             id: this.account.bk_account_id,
-            params: params,
+            params,
             config: {
               requestId: this.request.update
             }
@@ -370,8 +372,8 @@
       },
       handleLinkToFAQ() {
         const FAQLink = {
-          '1': 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_enable-console-custom-url.html',
-          '2': 'https://cloud.tencent.com/document/product/598/37140'
+          1: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_enable-console-custom-url.html',
+          2: 'https://cloud.tencent.com/document/product/598/37140'
         }
         const link = FAQLink[this.form.bk_cloud_vendor]
         if (link) {

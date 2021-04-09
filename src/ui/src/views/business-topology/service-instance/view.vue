@@ -17,8 +17,8 @@
       return {
         activeComponent: null,
         viewMap: Object.freeze({
-          'instance': ViewInstance.name,
-          'process': ViewProcess.name
+          instance: ViewInstance.name,
+          process: ViewProcess.name
         })
       }
     },

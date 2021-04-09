@@ -68,7 +68,7 @@
 
 <script>
   import formMixins from '@/mixins/form'
-  import Formatter from '@/filters/formatter.js'
+  import formatter from '@/filters/formatter.js'
   export default {
     name: 'cmdb-details',
     mixins: [formMixins],
@@ -129,15 +129,15 @@
     },
     methods: {
       handleToggleGroup(group) {
-        const groupId = group['bk_group_id']
+        const groupId = group.bk_group_id
         const collapse = !!this.groupState[groupId]
         this.$set(this.groupState, groupId, !collapse)
       },
       getTitle(inst, property) {
-        return `${property['bk_property_name']}: ${inst[property['bk_property_id']] || '--'} ${property.unit}`
+        return `${property.bk_property_name}: ${inst[property.bk_property_id] || '--'} ${property.unit}`
       },
       getValue(property) {
-        return Formatter(this.inst[property.bk_property_id], property)
+        return formatter(this.inst[property.bk_property_id], property)
       },
       handleEdit() {
         this.$emit('on-edit', this.inst)

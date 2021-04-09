@@ -132,7 +132,7 @@
         this.topologyTree.updateNodeStatus(moduleId, isClear)
       },
       removeChecked() {
-        const tree = this.topologyTree.$refs.tree
+        const { tree } = this.topologyTree.$refs
         tree.removeChecked({ emitEvent: true })
       },
       async handleBatchAction(actionMode) {
@@ -146,11 +146,12 @@
       handleTreeSelected(node) {
         this.$emit('module-selected', node.data)
       },
-      handleTreeChecked(ids, target) {
-        const treeData = this.topologyTree.treeData
+      handleTreeChecked(ids) {
+        const { treeData } = this.topologyTree
         const modules = []
         const findModuleNode = function (data, parent) {
           data.forEach((item) => {
+            // eslint-disable-next-line no-param-reassign
             item.path = parent ? [...parent.path, item.bk_inst_name] : [item.bk_inst_name]
             if (item.bk_obj_id === 'module' && ids.includes(`module_${item.bk_inst_id}`)) {
               modules.push(item)
@@ -165,7 +166,7 @@
         this.checkedList = modules
       },
       handleRemoveChecked(id) {
-        const tree = this.topologyTree.$refs.tree
+        const { tree } = this.topologyTree.$refs
         const checkedIds = this.checkedList.filter(item => item.bk_inst_id !== id).map(item => `module_${item.bk_inst_id}`)
         tree.removeChecked({ emitEvent: true })
         tree.setChecked(checkedIds, { emitEvent: true, beforeCheck: true, checked: true })

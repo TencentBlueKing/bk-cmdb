@@ -109,7 +109,7 @@
       }
     },
     watch: {
-      internalType(type) {
+      internalType() {
         this.updateFormWatcher()
       }
     },
@@ -148,20 +148,16 @@
           this.teardownWatcher()
         } else {
           this.$nextTick(() => {
-            const form = this.$refs.form
+            const { form } = this.$refs
             if (!form) {
               return this.updateFormWatcher() // 递归nextTick等待form创建完成
             }
             // watch form组件表单值，用于获取bind_info字段给进程表格字段组件使用
-            this.unwatchFormValues = this.$watch(() => {
-              return form.values
-            }, (values) => {
+            this.unwatchFormValues = this.$watch(() => form.values, (values) => {
               this.formValuesReflect = values
             }, { immediate: true })
             // watch 名称，在用户未修改进程别名时，自动同步进程名称到进程别名
-            this.unwatchName = this.$watch(() => {
-              return form.values.bk_func_name
-            }, (newVal, oldValue) => {
+            this.unwatchName = this.$watch(() => form.values.bk_func_name, (newVal, oldValue) => {
               if (form.values.bk_process_name === oldValue) {
                 form.values.bk_process_name = newVal
               }
@@ -267,7 +263,7 @@
         if (this.internalType === 'view') return Promise.resolve(true)
         const formChanged = !!Object.values(this.$refs.form.changedValues).length
         if (formChanged) {
-          return new Promise((resolve, reject) => {
+          return new Promise((resolve) => {
             this.$bkInfo({
               title: this.$t('确认退出'),
               subTitle: this.$t('退出会导致未保存信息丢失'),
@@ -281,11 +277,12 @@
         }
         return Promise.resolve(true)
       },
-      renderAppend(h, { property, type }) {
+      renderAppend(h, { property }) {
         if (this.bindedProperties.includes(property.bk_property_id)) {
+          // eslint-disable-next-line new-cap
           return RenderAppend(h, {
             serviceTemplateId: this.serviceTemplateId,
-            property: property,
+            property,
             bizId: this.bizId
           })
         }

@@ -11,7 +11,9 @@
           <template v-if="hasTitle">
             <h2 class="title">{{title}}</h2>
           </template>
-          <bk-input class="tree-filter" clearable right-icon="icon-search" v-model="filter" :placeholder="$t('请输入关键词')"></bk-input>
+          <bk-input class="tree-filter" clearable right-icon="icon-search"
+            v-model="filter" :placeholder="$t('请输入关键词')">
+          </bk-input>
           <bk-big-tree ref="tree" class="topology-tree"
             display-matched-node-descendants
             :default-expand-all="moduleType === 'idle'"
@@ -191,29 +193,27 @@
           config: {
             requestId: this.request.internal
           }
-        }).then((data) => {
-          return [{
-            bk_inst_id: this.bizId,
-            bk_inst_name: this.bizName,
-            bk_obj_id: 'biz',
-            bk_obj_name: this.getModelById('biz').bk_obj_name,
+        }).then(data => [{
+          bk_inst_id: this.bizId,
+          bk_inst_name: this.bizName,
+          bk_obj_id: 'biz',
+          bk_obj_name: this.getModelById('biz').bk_obj_name,
+          default: 0,
+          child: [{
+            bk_inst_id: data.bk_set_id,
+            bk_inst_name: data.bk_set_name,
+            bk_obj_id: 'set',
+            bk_obj_name: this.getModelById('set').bk_obj_name,
             default: 0,
-            child: [{
-              bk_inst_id: data.bk_set_id,
-              bk_inst_name: data.bk_set_name,
-              bk_obj_id: 'set',
-              bk_obj_name: this.getModelById('set').bk_obj_name,
-              default: 0,
-              child: this.$tools.sort((data.module || []), 'default').map(module => ({
-                bk_inst_id: module.bk_module_id,
-                bk_inst_name: module.bk_module_name,
-                bk_obj_id: 'module',
-                bk_obj_name: this.getModelById('module').bk_obj_name,
-                default: module.default
-              }))
-            }]
+            child: this.$tools.sort((data.module || []), 'default').map(module => ({
+              bk_inst_id: module.bk_module_id,
+              bk_inst_name: module.bk_module_name,
+              bk_obj_id: 'module',
+              bk_obj_name: this.getModelById('module').bk_obj_name,
+              default: module.default
+            }))
           }]
-        })
+        }])
       },
       getBusinessModules() {
         return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
@@ -233,7 +233,7 @@
       },
       // 选择空闲模块
       handleNodeClick(node) {
-        const data = node.data
+        const { data } = node
         if (data.bk_obj_id !== 'module') {
           return false
         }

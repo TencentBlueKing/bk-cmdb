@@ -27,6 +27,7 @@
 </template>
 <script>
   import { mapGetters, mapActions } from 'vuex'
+  import has from 'has'
   export default {
     props: {
       objId: {
@@ -55,41 +56,40 @@
         },
         filteredProperties: [],
         propertyOperator: {
-          'default': ['$eq', '$ne'],
-          'singlechar': ['$regex', '$eq', '$ne'],
-          'longchar': ['$regex', '$eq', '$ne'],
-          'objuser': ['$regex', '$eq', '$ne'],
-          'singleasst': ['$regex', '$eq', '$ne'],
-          'multiasst': ['$regex', '$eq', '$ne']
+          default: ['$eq', '$ne'],
+          singlechar: ['$regex', '$eq', '$ne'],
+          longchar: ['$regex', '$eq', '$ne'],
+          objuser: ['$regex', '$eq', '$ne'],
+          singleasst: ['$regex', '$eq', '$ne'],
+          multiasst: ['$regex', '$eq', '$ne']
         },
         operatorLabel: {
-          '$nin': this.$t('不包含'),
-          '$in': this.$t('包含'),
-          '$regex': this.$t('包含'),
-          '$eq': this.$t('等于'),
-          '$ne': this.$t('不等于')
+          $nin: this.$t('不包含'),
+          $in: this.$t('包含'),
+          $regex: this.$t('包含'),
+          $eq: this.$t('等于'),
+          $ne: this.$t('不等于')
         }
       }
     },
     computed: {
       ...mapGetters(['supplierAccount']),
       selectedProperty() {
+        // eslint-disable-next-line max-len
         return this.filteredProperties.find(({ bk_property_id: bkPropertyId }) => bkPropertyId === this.localSelected.id) || {}
       },
       operatorOptions() {
         if (this.selectedProperty) {
-          if (['bk_host_innerip', 'bk_host_outerip'].includes(this.selectedProperty['bk_property_id']) || this.objId === 'biz') {
-            return [{ label: this.operatorLabel['$regex'], value: '$regex' }]
-          } else {
-            const propertyType = this.selectedProperty['bk_property_type']
-            const propertyOperator = this.propertyOperator.hasOwnProperty(propertyType) ? this.propertyOperator[propertyType] : this.propertyOperator['default']
-            return propertyOperator.map((operator) => {
-              return {
-                label: this.operatorLabel[operator],
-                value: operator
-              }
-            })
+          if (['bk_host_innerip', 'bk_host_outerip'].includes(this.selectedProperty.bk_property_id) || this.objId === 'biz') {
+            return [{ label: this.operatorLabel.$regex, value: '$regex' }]
           }
+          const propertyType = this.selectedProperty.bk_property_type
+          // eslint-disable-next-line max-len
+          const propertyOperator = has(this.propertyOperator, propertyType) ? this.propertyOperator[propertyType] : this.propertyOperator.default
+          return propertyOperator.map(operator => ({
+            label: this.operatorLabel[operator],
+            value: operator
+          }))
         }
         return []
       }
@@ -97,18 +97,18 @@
     watch: {
       filteredProperties(properties) {
         if (properties.length) {
-          this.localSelected.id = properties[0]['bk_property_id']
-          this.$emit('on-property-selected', properties[0]['bk_property_id'], properties[0])
+          this.localSelected.id = properties[0].bk_property_id
+          this.$emit('on-property-selected', properties[0].bk_property_id, properties[0])
         } else {
           this.localSelected.id = ''
           this.$emit('on-property-selected', '', null)
         }
       },
       operatorOptions(operatorOptions) {
-        this.localSelected.operator = operatorOptions.length ? operatorOptions[0]['value'] : ''
+        this.localSelected.operator = operatorOptions.length ? operatorOptions[0].value : ''
         this.$emit('handleOperatorSelected', this.localSelected.operator)
       },
-      'localSelected.id'(id) {
+      'localSelected.id'() {
         this.localSelected.value = ''
       },
       'localSelected.value'(value) {
@@ -117,8 +117,8 @@
       async objId(objId) {
         const properties = await this.searchObjectAttribute({
           params: {
-            'bk_obj_id': objId,
-            'bk_supplier_account': this.supplierAccount
+            bk_obj_id: objId,
+            bk_supplier_account: this.supplierAccount
           },
           config: {
             requestId: `post_searchObjectAttribute_${objId}`,

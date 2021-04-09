@@ -54,7 +54,8 @@
           </bk-button>
         </div>
         <transition name="slide">
-          <div class="lenovo selectTips" :style="{ top: result.isShow ? '76px' : '47px' }" v-show="showLenovo && lenovoList.length">
+          <div class="lenovo selectTips" :style="{ top: result.isShow ? '76px' : '47px' }"
+            v-show="showLenovo && lenovoList.length">
             <ul class="lenovo-result">
               <template v-for="(item, index) in lenovoList">
                 <li :key="index" v-if="item.type === 'host'"
@@ -144,6 +145,7 @@
 </template>
 
 <script>
+  /* eslint-disable no-useless-escape */
   import searchResult from './full-text-search'
   import hostSearch from './host-search'
   import { mapGetters } from 'vuex'
@@ -240,33 +242,33 @@
       },
       searchParams() {
         return {
-          'page': {
-            'start': this.pagination.start,
-            'limit': this.pagination.limit,
-            'sort': 'bk_host_id'
+          page: {
+            start: this.pagination.start,
+            limit: this.pagination.limit,
+            sort: 'bk_host_id'
           },
-          'pattern': '',
-          'ip': {
-            'flag': 'bk_host_innerip|bk_host_outerip',
-            'exact': 0,
-            'data': [this.keywords]
+          pattern: '',
+          ip: {
+            flag: 'bk_host_innerip|bk_host_outerip',
+            exact: 0,
+            data: [this.keywords]
           },
-          'condition': [{
-            'bk_obj_id': 'host',
-            'fields': [],
-            'condition': []
+          condition: [{
+            bk_obj_id: 'host',
+            fields: [],
+            condition: []
           }, {
-            'bk_obj_id': 'module',
-            'fields': [],
-            'condition': []
+            bk_obj_id: 'module',
+            fields: [],
+            condition: []
           }, {
-            'bk_obj_id': 'set',
-            'fields': [],
-            'condition': []
+            bk_obj_id: 'set',
+            fields: [],
+            condition: []
           }, {
-            'bk_obj_id': 'biz',
-            'fields': [],
-            'condition': []
+            bk_obj_id: 'biz',
+            fields: [],
+            condition: []
           }]
         }
       },
@@ -278,7 +280,7 @@
       }
     },
     watch: {
-      '$route'(to, from) {
+      '$route'(to) {
         const queryLen = Object.keys(to.query).length
         if (to.path === '/index' && !queryLen) {
           this.$emit('search-status', 0)
@@ -330,8 +332,8 @@
       getShowModelName(source) {
         let modelName = ''
         try {
-          const model = this.getModelById(source['bk_obj_id'])
-          modelName = model['bk_obj_name']
+          const model = this.getModelById(source.bk_obj_id)
+          modelName = model.bk_obj_name
         } catch (e) {
           console.error(e)
         }
@@ -349,19 +351,19 @@
             count: data.count,
             key: 'host'
           }]
-          res.hits = data.info.map((item) => {
-            return {
-              highlight: {},
-              type: 'host',
-              source: item.host
-            }
-          })
+          res.hits = data.info.map(item => ({
+            highlight: {},
+            type: 'host',
+            source: item.host
+          }))
         }
         return res
       },
       getFullTextSearch(wait = 600) {
+        // eslint-disable-next-line no-underscore-dangle
         let _resolve = null
-        const _promise = new Promise((resolve, reject) => {
+        const _promise = new Promise((resolve) => {
+          // eslint-disable-next-line no-underscore-dangle
           _resolve = resolve
         })
         if (this.debounceTimer) {
@@ -394,12 +396,10 @@
             if (data.total) {
               if (!this.query.objId) {
                 this.currentClassify = -1
-                this.curModelMap = modelData.sort((prev, next) => next.count - prev.count).map((item) => {
-                  return {
-                    ...this.getModelById(item.key),
-                    count: item.count > 999 ? '999+' : item.count
-                  }
-                })
+                this.curModelMap = modelData.sort((prev, next) => next.count - prev.count).map(item => ({
+                  ...this.getModelById(item.key),
+                  count: item.count > 999 ? '999+' : item.count
+                }))
               }
             }
             this.lenovoList = hitData.length > 8 ? hitData.slice(0, 8) : hitData
@@ -457,7 +457,7 @@
         this.setStyle.paddingTop = 50
         this.setStyle.backgroundColor = '#FAFBFD'
         this.showLenovo = false
-        const total = this.curPagination.total
+        const { total } = this.curPagination
         this.searchCount = total > 999 ? '999+' : total
         this.pagination.total = total
         this.modelMap = this.$tools.clone(this.curModelMap)
@@ -493,15 +493,15 @@
         })
       },
       handleGoInstace(source) {
-        const model = this.getModelById(source['bk_obj_id'])
-        const isPauserd = this.getModelById(source['bk_obj_id'])['bk_ispaused']
-        if (model['bk_classification_id'] === 'bk_biz_topo') {
+        const model = this.getModelById(source.bk_obj_id)
+        const isPauserd = this.getModelById(source.bk_obj_id).bk_ispaused
+        if (model.bk_classification_id === 'bk_biz_topo') {
           this.$bkMessage({
             message: this.$t('主线模型无法查看'),
             theme: 'warning'
           })
           return
-        } else if (isPauserd) {
+        } if (isPauserd) {
           this.$bkMessage({
             message: this.$t('该模型已停用'),
             theme: 'warning'
@@ -511,8 +511,8 @@
         this.$routerActions.redirect({
           name: MENU_RESOURCE_INSTANCE_DETAILS,
           params: {
-            objId: source['bk_obj_id'],
-            instId: source['bk_inst_id']
+            objId: source.bk_obj_id,
+            instId: source.bk_inst_id
           },
           history: true
         })
@@ -520,10 +520,10 @@
       handleGoBusiness(source) {
         const name = source.bk_data_status === 'disabled' ? MENU_RESOURCE_BUSINESS_HISTORY : MENU_RESOURCE_BUSINESS_DETAILS
         this.$routerActions.redirect({
-          name: name,
+          name,
           params: {
             bizId: source.bk_biz_id,
-            bizName: source['bk_biz_name']
+            bizName: source.bk_biz_name
           },
           history: true
         })
@@ -580,11 +580,11 @@
         this.selectedStatus = true
         const itemList = showLenovo ? this.$refs.lenovoItem : this.$refs.historyItem
         const len = itemList.length
-        const keyCode = event.keyCode
+        const { keyCode } = event
         const code = {
-          'enter': 13,
-          'up': 38,
-          'down': 40
+          enter: 13,
+          up: 38,
+          down: 40
         }
         let index = this.selectIndex
         if (code.up === keyCode || code.down === keyCode) {

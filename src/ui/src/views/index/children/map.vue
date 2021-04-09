@@ -36,9 +36,9 @@
         this.resizeHandler = () => {
           const parentRect = this.$parent.$el.getBoundingClientRect()
           const imgStyles = {
-            width: Math.floor(parentRect.width * 0.66) + 'px',
-            height: Math.floor(parentRect.width * 0.66 * this.ratio.height) + 'px',
-            left: Math.floor(parentRect.width * 0.17 + parentRect.left) + 'px'
+            width: `${Math.floor(parentRect.width * 0.66)}px`,
+            height: `${Math.floor(parentRect.width * 0.66 * this.ratio.height)}px`,
+            left: `${Math.floor(parentRect.width * 0.17 + parentRect.left)}px`
           }
           this.imgStyles = imgStyles
         }

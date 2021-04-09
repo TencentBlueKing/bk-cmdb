@@ -172,7 +172,7 @@
             } else {
               const value = this.localValue[rowIndex][key]
               templateRowValue[key] = {
-                value: value,
+                value,
                 as_default_value: row[key]
               }
             }

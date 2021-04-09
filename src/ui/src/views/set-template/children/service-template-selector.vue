@@ -181,7 +181,7 @@
         this.templates = this.allTemplates.filter(template => template.name.indexOf(this.searchName) > -1)
       },
       handleSelectAll(checked) {
-        const serviceExistHost = this.$parent.$parent.serviceExistHost
+        const { serviceExistHost } = this.$parent.$parent
         if (checked) {
           this.localSelected = this.templates.map(template => template.id)
         } else {

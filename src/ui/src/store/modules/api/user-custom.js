@@ -8,8 +8,11 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars */
+
 import $http from '@/api'
 import Vue from 'vue'
+import has from 'has'
 
 const state = {
   usercustom: {},
@@ -17,18 +20,12 @@ const state = {
 }
 
 const getters = {
-  classifyNavigationKey: () => {
-    return 'custom_classify_navigation'
-  },
-  firstEntryKey: () => {
-    return 'custom_first_entry'
-  },
-  recentlyKey: () => {
-    return 'custom_recently'
-  },
+  classifyNavigationKey: () => 'custom_classify_navigation',
+  firstEntryKey: () => 'custom_first_entry',
+  recentlyKey: () => 'custom_recently',
   usercustom: state => state.usercustom,
   getCustomData: state => (key, defaultData = null) => {
-    if (state.usercustom.hasOwnProperty(key)) {
+    if (has(state.usercustom, key)) {
       return state.usercustom[key]
     }
     return defaultData
@@ -115,11 +112,13 @@ const actions = {
 
 const mutations = {
   setUsercustom(state, usercustom = {}) {
+    // eslint-disable-next-line no-restricted-syntax
     for (const key in usercustom) {
       Vue.set(state.usercustom, key, usercustom[key])
     }
   },
   setGlobalUsercustom(state, globalUsercustom = {}) {
+    // eslint-disable-next-line no-restricted-syntax
     for (const key in globalUsercustom) {
       Vue.set(state.globalUsercustom, key, globalUsercustom[key])
     }

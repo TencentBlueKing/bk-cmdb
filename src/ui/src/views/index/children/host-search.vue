@@ -24,8 +24,8 @@
 <script>
   import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
   import QS from 'qs'
-  import IS_IP from 'validator/es/lib/isIP'
-  import IS_INT from 'validator/es/lib/isInt'
+  import isIP from 'validator/es/lib/isIP'
+  import isInt from 'validator/es/lib/isInt'
   export default {
     data() {
       return {
@@ -91,12 +91,12 @@
           const assetList = []
           const cloudIdSet = new Set()
           searchList.forEach((text) => {
-            if (IS_IP(text, 4)) {
+            if (isIP(text, 4)) {
               IPList.push(text)
             } else {
               const splitData = text.split(':')
               const [cloudId, ip] = splitData
-              if (splitData.length === 2 && IS_INT(cloudId) && IS_IP(ip)) {
+              if (splitData.length === 2 && isInt(cloudId) && isIP(ip)) {
                 IPWithCloudList.push(text)
                 cloudIdSet.add(parseInt(cloudId, 10))
               } else {

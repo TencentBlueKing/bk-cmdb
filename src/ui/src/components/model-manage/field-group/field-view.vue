@@ -92,18 +92,18 @@
     data() {
       return {
         fieldTypeMap: {
-          'singlechar': this.$t('短字符'),
-          'int': this.$t('数字'),
-          'float': this.$t('浮点'),
-          'enum': this.$t('枚举'),
-          'date': this.$t('日期'),
-          'time': this.$t('时间'),
-          'longchar': this.$t('长字符'),
-          'objuser': this.$t('用户'),
-          'timezone': this.$t('时区'),
-          'bool': 'bool',
-          'list': this.$t('列表'),
-          'organization': this.$t('组织')
+          singlechar: this.$t('短字符'),
+          int: this.$t('数字'),
+          float: this.$t('浮点'),
+          enum: this.$t('枚举'),
+          date: this.$t('日期'),
+          time: this.$t('时间'),
+          longchar: this.$t('长字符'),
+          objuser: this.$t('用户'),
+          timezone: this.$t('时区'),
+          bool: 'bool',
+          list: this.$t('列表'),
+          organization: this.$t('组织')
         },
         scrollbar: false
       }
@@ -135,7 +135,7 @@
               return `${item.name}(${item.id})`
             })
             return arr.length ? arr.join('<br>') : '--'
-          } else if (type === 'list') {
+          } if (type === 'list') {
             return value.length ? value.join('<br>') : '--'
           }
         }

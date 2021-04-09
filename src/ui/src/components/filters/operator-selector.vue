@@ -77,13 +77,11 @@
           [LTE]: this.$t('小于等于'),
           [GTE]: this.$t('大于等于')
         }
-        return typeMap[this.type].map((operator) => {
-          return {
-            id: operator,
-            name: Utils.getOperatorSymbol(operator),
-            title: nameDescription[operator]
-          }
-        })
+        return typeMap[this.type].map(operator => ({
+          id: operator,
+          name: Utils.getOperatorSymbol(operator),
+          title: nameDescription[operator]
+        }))
       },
       localValue: {
         get() {

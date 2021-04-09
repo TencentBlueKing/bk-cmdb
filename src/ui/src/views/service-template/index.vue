@@ -285,11 +285,11 @@
           }
         })
         this.classificationList = categories
-        this.mainList = this.classificationList.filter(classification => !classification['bk_parent_id'])
-        this.allSecondaryList = this.classificationList.filter(classification => classification['bk_parent_id'])
+        this.mainList = this.classificationList.filter(classification => !classification.bk_parent_id)
+        this.allSecondaryList = this.classificationList.filter(classification => classification.bk_parent_id)
       },
       handleSelect(id = '') {
-        this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id)
+        this.secondaryList = this.allSecondaryList.filter(classification => classification.bk_parent_id === id)
         this.maincategoryId = id
         this.handleSelectSecondary()
       },

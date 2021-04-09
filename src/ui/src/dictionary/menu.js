@@ -1,3 +1,4 @@
+import has from 'has'
 import {
   MENU_INDEX,
   MENU_BUSINESS,
@@ -167,14 +168,16 @@ const menus = [{
 // 移除未被激活的menu
 ;(() => {
   menus.forEach((top) => {
-    if (top.hasOwnProperty('menu')) {
+    if (has(top, 'menu')) {
       top.menu.forEach((menu) => {
-        if (menu.hasOwnProperty('submenu')) {
+        if (has(menu, 'submenu')) {
+          // eslint-disable-next-line no-param-reassign
           menu.submenu = menu.submenu.filter(submenu => submenu.route.available)
         }
       })
+      // eslint-disable-next-line no-param-reassign
       top.menu = top.menu.filter((menu) => {
-        if (menu.hasOwnProperty('route')) {
+        if (has(menu, 'route')) {
           return menu.route.available
         }
         return menu.submenu.length

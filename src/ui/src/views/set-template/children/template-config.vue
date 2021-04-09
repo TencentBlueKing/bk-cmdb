@@ -228,7 +228,7 @@
         }
       },
       createSetTemplate() {
-        const services = this.$refs.templateTree.services
+        const { services } = this.$refs.templateTree
         const bizId = this.$store.getters['objectBiz/bizId']
         return this.$store.dispatch('setTemplate/createSetTemplate', {
           bizId,
@@ -259,7 +259,7 @@
         })
       },
       updateSetTemplate() {
-        const services = this.$refs.templateTree.services
+        const { services } = this.$refs.templateTree
         const bizId = this.$store.getters['objectBiz/bizId']
         return this.$store.dispatch('setTemplate/updateSetTemplate', {
           bizId,
@@ -279,7 +279,7 @@
           this.insideMode = null
           this.$refs.templateTree.recoveryService()
         } else {
-          const breadcrumbs = window.CMDB_APP.$children[0].$refs.topView.$refs.breadcrumbs
+          const { breadcrumbs } = window.CMDB_APP.$children[0].$refs.topView.$refs
           if (breadcrumbs.from) {
             breadcrumbs.handleClick()
           } else {

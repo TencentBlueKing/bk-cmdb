@@ -54,7 +54,7 @@
       }
     },
     watch: {
-      value(value) {
+      value() {
         this.setLocalValue()
       }
     },

@@ -49,8 +49,10 @@
         try {
           await this.$copyText(group.list.map(ip => ip).join('\n'))
           const target = event.currentTarget
+          // eslint-disable-next-line no-underscore-dangle
           target._tippy.show()
           setTimeout(() => {
+            // eslint-disable-next-line no-underscore-dangle
             target._tippy.hide(0)
           }, 500)
         } catch (e) {

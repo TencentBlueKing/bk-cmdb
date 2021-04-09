@@ -34,7 +34,8 @@
       </task-region-selector>
     </bk-table-column>
     <bk-table-column :label="$t('主机数量')" prop="bk_host_count"></bk-table-column>
-    <bk-table-column :label="$t('主机录入到')" prop="directory" width="200" :render-header="directoryHeaderRender" :resizable="false">
+    <bk-table-column :label="$t('主机录入到')" prop="directory" width="200"
+      :render-header="directoryHeaderRender" :resizable="false">
       <template slot-scope="{ row }">
         <task-directory-selector display="info" :value="row.bk_sync_dir" v-if="row.destroyed"></task-directory-selector>
         <task-directory-selector class="form-table-selector"
@@ -106,7 +107,7 @@
           return newRow
         })
       },
-      vpcFormatter(row, column) {
+      vpcFormatter(row) {
         const vpcId = row.bk_vpc_id
         const vpcName = row.bk_vpc_name
         if (vpcId !== vpcName) {
@@ -119,6 +120,7 @@
       },
       handleMultipleSelected(value) {
         this.list.forEach((row) => {
+          // eslint-disable-next-line no-param-reassign
           row.bk_sync_dir = value
         })
       },
@@ -126,7 +128,7 @@
         return h('div', [
           h(TaskFormTableHeader, {
             props: {
-              data: data,
+              data,
               batchSelectHandler: this.handleMultipleSelected,
               disabled: !this.list.length
             }
@@ -134,7 +136,9 @@
         ])
       },
       handleAreaChange(row, cloudName) {
+        // eslint-disable-next-line no-param-reassign
         row.bk_cloud_name = cloudName
+        // eslint-disable-next-line no-param-reassign
         row.bk_cloud_error = false
       },
       // task-form保存时调用，创建新的云区域
@@ -148,25 +152,23 @@
           if (!valid) {
             return Promise.resolve(false)
           }
-                    
+
           const results = await this.$store.dispatch('cloud/area/batchCreate', {
             params: {
-              data: newAreaList.map((row) => {
-                return {
-                  bk_cloud_name: row.bk_cloud_name,
-                  bk_vpc_id: row.bk_vpc_id,
-                  bk_vpc_name: row.bk_vpc_name,
-                  bk_region: row.bk_region,
-                  bk_cloud_vendor: accountInfo.bk_cloud_vendor,
-                  bk_account_id: accountInfo.bk_account_id
-                }
-              })
+              data: newAreaList.map(row => ({
+                bk_cloud_name: row.bk_cloud_name,
+                bk_vpc_id: row.bk_vpc_id,
+                bk_vpc_name: row.bk_vpc_name,
+                bk_region: row.bk_region,
+                bk_cloud_vendor: accountInfo.bk_cloud_vendor,
+                bk_account_id: accountInfo.bk_account_id
+              }))
             },
             config: {
               requestId: this.request.createArea
             }
           })
-                    
+
           let hasError = false
           results.forEach((result, index) => {
             if (result.bk_cloud_id === -1) {
@@ -188,6 +190,7 @@
         let valid = true
         list.forEach((row) => {
           if (!row.bk_cloud_name) {
+            // eslint-disable-next-line no-param-reassign
             row.bk_cloud_error = this.$t('请填写云区域')
             valid = false
           }

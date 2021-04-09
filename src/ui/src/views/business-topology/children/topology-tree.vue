@@ -231,7 +231,7 @@
       setDefaultState() {
         const defaultNode = this.getDefaultNode()
         if (defaultNode) {
-          const tree = this.$refs.tree
+          const { tree } = this.$refs
           tree.setExpanded(defaultNode.id)
           tree.setSelected(defaultNode.id, { emitEvent: true })
           // 仅对第一次设置时调整滚动位置
@@ -380,7 +380,7 @@
           if (!['set', 'module'].includes(nextModelId)) {
             this.$store.commit('businessHost/setProperties', {
               id: nextModelId,
-              properties: properties
+              properties
             })
           }
           this.createInfo.properties = properties
@@ -397,13 +397,13 @@
       },
       async handleCreateNode(value) {
         try {
-          const parentNode = this.createInfo.parentNode
+          const { parentNode } = this.createInfo
           const formData = {
             ...value,
             bk_biz_id: this.bizId,
             bk_parent_id: parentNode.data.bk_inst_id
           }
-          const nextModelId = this.createInfo.nextModelId
+          const { nextModelId } = this.createInfo
           const nextModel = this.topologyModels.find(model => model.bk_obj_id === nextModelId)
           const handlerMap = {
             set: this.createSet,
@@ -429,15 +429,13 @@
       },
       async handleCreateSetNode(value) {
         try {
-          const parentNode = this.createInfo.parentNode
+          const { parentNode } = this.createInfo
           const nextModel = this.topologyModels.find(model => model.bk_obj_id === 'set')
-          const formData = (value.sets || []).map((set) => {
-            return {
-              ...set,
-              bk_biz_id: this.bizId,
-              bk_parent_id: parentNode.data.bk_inst_id
-            }
-          })
+          const formData = (value.sets || []).map(set => ({
+            ...set,
+            bk_biz_id: this.bizId,
+            bk_parent_id: parentNode.data.bk_inst_id
+          }))
           const data = await this.createSet(formData)
           const insertBasic = parentNode.data.bk_obj_id === 'biz' ? 1 : 0
           data && data.forEach((set, index) => {
@@ -498,12 +496,10 @@
         const data = await this.$store.dispatch('objectSet/createset', {
           bizId: this.bizId,
           params: {
-            sets: value.map((set) => {
-              return {
-                ...set,
-                bk_supplier_account: this.supplierAccount
-              }
-            })
+            sets: value.map(set => ({
+              ...set,
+              bk_supplier_account: this.supplierAccount
+            }))
           }
         })
         return data || []

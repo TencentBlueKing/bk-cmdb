@@ -24,7 +24,7 @@ export default class CombineRequest {
   add(payload) {
     this.data.push(payload)
     if (!this.timer) {
-      this.promise = new Promise(async (resolve, reject) => {
+      this.promise = new Promise(async (resolve) => {
         this.timer = setTimeout(async () => {
           const result = this.run()
           resolve(result)

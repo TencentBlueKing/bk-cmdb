@@ -21,7 +21,8 @@
     </bk-input>
     <bk-checkbox-group v-model="localChecked">
       <ul class="property-list">
-        <li class="property-item" v-for="property in propertyList" :key="property.bk_property_id" v-show="property.__extra__.visible">
+        <li class="property-item" v-for="property in propertyList" :key="property.bk_property_id"
+          v-show="property.__extra__.visible">
           <bk-checkbox
             :disabled="!property.host_apply_enabled"
             :value="property.id"
@@ -110,6 +111,7 @@
       hanldeFilterProperty() {
         // 使用visible方式是为了兼容checkbox-group组件
         this.propertyList.forEach((property) => {
+          // eslint-disable-next-line no-underscore-dangle, no-param-reassign
           property.__extra__.visible = property.bk_property_name.indexOf(this.searchName) > -1
         })
         this.propertyList = [...this.propertyList]

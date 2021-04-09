@@ -40,7 +40,8 @@
             {{$t('编辑')}}
           </bk-button>
         </cmdb-auth>
-        <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }" v-if="!row.relation.process_template_id">
+        <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
+          v-if="!row.relation.process_template_id">
           <bk-button slot-scope="{ disabled }"
             theme="primary" text
             :disabled="disabled"
@@ -93,6 +94,7 @@
         const paddingHeight = 43
         const rowHeight = 42
         if (this.list.length && this.list.length < 3) {
+          // eslint-disable-next-line no-mixed-operators
           dynamicProps.height = paddingHeight + rowHeight * (this.list.length + 1)
         }
         return dynamicProps

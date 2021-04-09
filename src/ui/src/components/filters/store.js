@@ -1,3 +1,4 @@
+import has from 'has'
 import api from '@/api'
 import Vue from 'vue'
 import Utils from './utils'
@@ -5,7 +6,7 @@ import store from '@/store'
 import i18n from '@/i18n'
 import QS from 'qs'
 import RouterQuery from '@/router/query'
-import Throttle from 'lodash.throttle'
+import throttle from 'lodash.throttle'
 
 function getStorageHeader(type, key, properties) {
   if (!key) {
@@ -33,7 +34,7 @@ const FilterStore = new Vue({
       header: [],
       collections: [],
       activeCollection: null,
-      throttleSearch: Throttle(this.dispatchSearch, 100, { leading: false })
+      throttleSearch: throttle(this.dispatchSearch, 100, { leading: false })
     }
   },
   computed: {
@@ -100,7 +101,7 @@ const FilterStore = new Vue({
     },
     hasCondition() {
       return Object.keys(this.condition).some((id) => {
-        const value = this.condition[id].value
+        const { value } = this.condition[id]
         return !!String(value).trim().length
       })
     }
@@ -123,8 +124,8 @@ const FilterStore = new Vue({
           if (property && operator && value.length) {
             properties.push(property)
             condition[property.id] = {
-              operator: '$' + operator,
-              value: Utils.convertValue(value, '$' + operator, property)
+              operator: `$${operator}`,
+              value: Utils.convertValue(value, `$${operator}`, property)
             }
           }
         })
@@ -143,6 +144,7 @@ const FilterStore = new Vue({
         ['bk_bak_operator', 'host'],
         ['bk_cloud_id', 'host']
       ]
+      // eslint-disable-next-line max-len
       this.createOrUpdateCondition(normal.map(([field, model]) => ({ field, model })), { createOnly: true, useDefaultData: true })
     },
     setupIPQuery() {
@@ -161,7 +163,7 @@ const FilterStore = new Vue({
     initCondition() {
       const newConditon = {}
       this.selected.forEach((property) => {
-        if (this.condition.hasOwnProperty(property.id)) {
+        if (has(this.condition, property.id)) {
           newConditon[property.id] = this.condition[property.id]
         } else {
           newConditon[property.id] = Utils.getDefaultData(property)
@@ -185,6 +187,7 @@ const FilterStore = new Vue({
     createOrUpdateCondition(data, options = {}) {
       const { createOnly = false, useDefaultData = false } = options
       data.forEach(({ field, model, operator, value }) => {
+        // eslint-disable-next-line max-len
         const existProperty = this.selected.find(property => property.bk_property_id === field && property.bk_obj_id === model)
         if (!existProperty) {
           const property = Utils.findPropertyByPropertyId(field, this.getModelProperties(model))
@@ -220,7 +223,7 @@ const FilterStore = new Vue({
     resetValue(property, silent = false) {
       const properties = Array.isArray(property) ? property : [property]
       properties.forEach((target) => {
-        const operator = this.condition[target.id].operator
+        const { operator } = this.condition[target.id]
         const value = Utils.getOperatorSideEffect(target, operator, [])
         this.condition[target.id].value = value
       })
@@ -255,9 +258,8 @@ const FilterStore = new Vue({
     setHeader(newHeader) {
       newHeader = newHeader.length ? newHeader : this.defaultHeader
       const presetId = ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
-      const presetProperty = presetId.map((propertyId) => {
-        return this.properties.find(property => property.bk_property_id === propertyId)
-      })
+      // eslint-disable-next-line max-len
+      const presetProperty = presetId.map(propertyId => this.properties.find(property => property.bk_property_id === propertyId))
       this.header = Utils.getUniqueProperties(presetProperty, newHeader)
     },
     setActiveCollection(collection, silent) {
@@ -268,7 +270,7 @@ const FilterStore = new Vue({
       }
       try {
         const IP = JSON.parse(collection.info)
-        if (IP.hasOwnProperty('ip_list')) { // 因老数据的操作符不可兼容，应用收藏条件时直接提示错误并返回
+        if (has(IP, 'ip_list')) { // 因老数据的操作符不可兼容，应用收藏条件时直接提示错误并返回
           this.$error(i18n.t('应用收藏条件失败提示'))
           return false
         }
@@ -277,9 +279,8 @@ const FilterStore = new Vue({
         const selected = []
         let hasMissedProperty = false
         queryParams.forEach((query) => {
-          const property = this.properties.find((property) => {
-            return property.bk_obj_id === query.bk_obj_id && property.bk_property_id === query.field
-          })
+          // eslint-disable-next-line max-len
+          const property = this.properties.find(property => property.bk_obj_id === query.bk_obj_id && property.bk_property_id === query.field)
           if (property) {
             selected.push(property)
             condition[property.id] = {

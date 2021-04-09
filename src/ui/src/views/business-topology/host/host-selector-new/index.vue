@@ -43,7 +43,10 @@
                 <li class="host-item" v-for="(row, index) in selected" :key="index">
                   <div class="ip">
                     {{row.host.bk_host_innerip}}
-                    <span class="repeat-tag" v-if="repeatSelected.includes(row)" v-bk-tooltips="{ content: `${$t('云区域')}：${foreignkey(row.host.bk_cloud_id)}` }">{{$t('IP重复')}}</span>
+                    <span class="repeat-tag" v-if="repeatSelected.includes(row)"
+                      v-bk-tooltips="{ content: `${$t('云区域')}：${foreignkey(row.host.bk_cloud_id)}` }">
+                      {{$t('IP重复')}}
+                    </span>
                   </div>
                   <i class="bk-icon icon-close-line" @click="handleRemove(row)"></i>
                 </li>
@@ -54,7 +57,9 @@
       </div>
     </div>
     <div class="layout-footer">
-      <bk-button class="mr10" theme="primary" :disabled="!selected.length" @click="handleNextStep">{{confirmText || $t('下一步')}}</bk-button>
+      <bk-button class="mr10" theme="primary" :disabled="!selected.length" @click="handleNextStep">
+        {{confirmText || $t('下一步')}}
+      </bk-button>
       <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
     </div>
     <ul class="more-menu" ref="moreMenu" v-show="more.show">
@@ -65,6 +70,7 @@
 </template>
 
 <script>
+  import has from 'has'
   import { foreignkey } from '@/filters/formatter.js'
   import HostSelectorTopology from './host-selector-topology.vue'
   import HostSelectorCustom from './host-selector-custom.vue'
@@ -153,7 +159,7 @@
         const unique = []
         selected.forEach((data) => {
           const ip = data.host.bk_host_innerip
-          if (ipMap.hasOwnProperty(ip)) {
+          if (has(ipMap, ip)) {
             ipMap[ip].push(data)
           } else {
             ipMap[ip] = [data]

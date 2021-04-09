@@ -8,14 +8,18 @@
         'padding-bottom': formPaddingBottom
       }">
       <div v-for="(property, index) in sortedProperties"
-        :class="['form-group', { 'form-group-flex': sortedProperties.length === 1 || property['bk_property_type'] === 'longchar' }]"
+        :class="[
+          'form-group',
+          { 'form-group-flex': sortedProperties.length === 1 || property['bk_property_type'] === 'longchar' }
+        ]"
         :key="index">
         <label :class="['form-label', 'inline-block-middle', {
           required: property['isrequired']
         }]">
           {{property['bk_property_name']}}
         </label>
-        <component v-if="!['longchar'].includes(property['bk_property_type'])" :is="`cmdb-form-${property['bk_property_type']}`"
+        <component v-if="!['longchar'].includes(property['bk_property_type'])"
+          :is="`cmdb-form-${property['bk_property_type']}`"
           style="display: flex;"
           :unit="property['unit']"
           :data-vv-name="property['bk_property_id']"
@@ -73,9 +77,7 @@
         return nodePath.map(node => node.data.bk_inst_name).join('-')
       },
       sortedProperties() {
-        return this.properties.sort((propertyA, propertyB) => {
-          return propertyA['bk_property_index'] - propertyB['bk_property_index']
-        })
+        return this.properties.sort((propertyA, propertyB) => propertyA.bk_property_index - propertyB.bk_property_index)
       },
       title() {
         return this.nextModelId === 'set' ? this.$t('新建集群') : this.$t('新建节点')

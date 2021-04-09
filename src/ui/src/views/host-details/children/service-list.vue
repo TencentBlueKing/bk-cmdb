@@ -83,6 +83,7 @@
 </template>
 
 <script>
+  import has from 'has'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_BUSINESS_DELETE_SERVICE
@@ -163,8 +164,8 @@
     methods: {
       async getHostSeriveInstances() {
         try {
-          const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
-            || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
+          const searchKey = this.searchSelectData.find(item => (item.id === 0 && has(item, 'values'))
+            || (![0, 1].includes(item.id) && !has(item, 'values')))
           const data = await this.$store.dispatch('serviceInstance/getHostServiceInstances', {
             params: {
               page: {
@@ -173,8 +174,9 @@
               },
               bk_host_id: this.host.bk_host_id,
               bk_biz_id: this.info.biz[0].bk_biz_id,
+              // eslint-disable-next-line no-nested-ternary
               search_key: searchKey
-                ? searchKey.hasOwnProperty('values') ? searchKey.values[0].name : searchKey.name
+                ? has(searchKey, 'values') ? searchKey.values[0].name : searchKey.name
                 : '',
               selectors: this.getSelectorParams()
             }
@@ -196,8 +198,8 @@
       },
       getSelectorParams() {
         try {
-          const labels = this.searchSelectData.filter(item => item.id === 1 && item.hasOwnProperty('values'))
-          const labelsKey = this.searchSelectData.filter(item => item.id === 2 && item.hasOwnProperty('values'))
+          const labels = this.searchSelectData.filter(item => item.id === 1 && has(item, 'values'))
+          const labelsKey = this.searchSelectData.filter(item => item.id === 2 && has(item, 'values'))
           const submitLabel = {}
           const submitLabelKey = {}
           labels.forEach((label) => {
@@ -211,25 +213,22 @@
             }
           })
           labelsKey.forEach((label) => {
-            const id = label.values[0].id
+            // eslint-disable-next-line prefer-destructuring
+            const { id } = label.values[0]
             if (!submitLabelKey[id]) {
               submitLabelKey[id] = id
             }
           })
-          const selectors = Object.keys(submitLabel).map((key) => {
-            return {
-              key: key,
-              operator: 'in',
-              values: submitLabel[key]
-            }
-          })
-          const selectorsKey = Object.keys(submitLabelKey).map((key) => {
-            return {
-              key: key,
-              operator: 'exists',
-              values: []
-            }
-          })
+          const selectors = Object.keys(submitLabel).map(key => ({
+            key,
+            operator: 'in',
+            values: submitLabel[key]
+          }))
+          const selectorsKey = Object.keys(submitLabelKey).map(key => ({
+            key,
+            operator: 'exists',
+            values: []
+          }))
           return selectors.concat(selectorsKey)
         } catch (e) {
           console.error(e)
@@ -248,18 +247,14 @@
         })
         this.historyLabels = historyLabels
         const keys = Object.keys(historyLabels)
-        const valueOption = keys.map((key) => {
-          return {
-            name: key + ' : ',
-            id: key
-          }
-        })
-        const keyOption = keys.map((key) => {
-          return {
-            name: key,
-            id: key
-          }
-        })
+        const valueOption = keys.map(key => ({
+          name: `${key} : `,
+          id: key
+        }))
+        const keyOption = keys.map(key => ({
+          name: key,
+          id: key
+        }))
         if (!valueOption.length) {
           this.$set(this.searchSelect[1], 'disabled', true)
         }
@@ -269,24 +264,30 @@
         this.$set(this.searchSelect[1], 'conditions', valueOption)
         this.$set(this.searchSelect[2], 'children', keyOption)
       },
-      handleDeleteInstance(id) {
+      handleDeleteInstance() {
         this.getHostSeriveInstances()
       },
       handleEditName(instance) {
+        // eslint-disable-next-line no-param-reassign
         this.instances.forEach(instance => (instance.editing.name = false))
+        // eslint-disable-next-line no-param-reassign
         instance.editing.name = true
       },
       handleEditNameSuccess(instance, value) {
+        // eslint-disable-next-line no-param-reassign
         instance.name = value
+        // eslint-disable-next-line no-param-reassign
         instance.editing.name = false
       },
       handleCancelEditName(instance) {
+        // eslint-disable-next-line no-param-reassign
         instance.editing.name = false
       },
       handleCheckALL(checked) {
         this.searchSelectData = []
         this.isCheckAll = checked
         this.$refs.serviceInstanceTable.forEach((table) => {
+          // eslint-disable-next-line no-param-reassign
           table.checked = checked
         })
       },
@@ -319,9 +320,9 @@
       handleClearFilter() {
         this.handleSearch()
       },
-      handleSearch(value) {
-        const instanceName = this.searchSelectData.filter(item => (item.id === 0 && item.hasOwnProperty('values'))
-          || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
+      handleSearch() {
+        const instanceName = this.searchSelectData.filter(item => (item.id === 0 && has(item, 'values'))
+          || (![0, 1].includes(item.id) && !has(item, 'values')))
         if (instanceName.length) {
           this.searchSelect[0].id === 0 && this.searchSelect.shift()
         } else {
@@ -351,12 +352,10 @@
       },
       handleConditionSelect(cur, index) {
         const values = this.historyLabels[cur.id]
-        const children = values.map((item) => {
-          return {
-            id: item,
-            name: item
-          }
-        })
+        const children = values.map(item => ({
+          id: item,
+          name: item
+        }))
         const el = this.$refs.searchSelect
         el.curItem.children = children
         el.updateChildMenu(cur, index, false)

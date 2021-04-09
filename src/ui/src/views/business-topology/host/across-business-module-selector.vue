@@ -159,29 +159,27 @@
           config: {
             requestId: this.request.internal
           }
-        }).then((data) => {
-          return [{
-            bk_inst_id: this.targetBizId,
-            bk_inst_name: this.targetBiz.bk_biz_name,
-            bk_obj_id: 'biz',
-            bk_obj_name: this.getModelById('biz').bk_obj_name,
+        }).then(data => [{
+          bk_inst_id: this.targetBizId,
+          bk_inst_name: this.targetBiz.bk_biz_name,
+          bk_obj_id: 'biz',
+          bk_obj_name: this.getModelById('biz').bk_obj_name,
+          default: 0,
+          child: [{
+            bk_inst_id: data.bk_set_id,
+            bk_inst_name: data.bk_set_name,
+            bk_obj_id: 'set',
+            bk_obj_name: this.getModelById('set').bk_obj_name,
             default: 0,
-            child: [{
-              bk_inst_id: data.bk_set_id,
-              bk_inst_name: data.bk_set_name,
-              bk_obj_id: 'set',
-              bk_obj_name: this.getModelById('set').bk_obj_name,
-              default: 0,
-              child: this.$tools.sort((data.module || []), 'default').map(module => ({
-                bk_inst_id: module.bk_module_id,
-                bk_inst_name: module.bk_module_name,
-                bk_obj_id: 'module',
-                bk_obj_name: this.getModelById('module').bk_obj_name,
-                default: module.default
-              }))
-            }]
+            child: this.$tools.sort((data.module || []), 'default').map(module => ({
+              bk_inst_id: module.bk_module_id,
+              bk_inst_name: module.bk_module_name,
+              bk_obj_id: 'module',
+              bk_obj_name: this.getModelById('module').bk_obj_name,
+              default: module.default
+            }))
           }]
-        })
+        }])
       },
       getNodeId(data) {
         return `${data.bk_obj_id}-${data.bk_inst_id}`

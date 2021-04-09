@@ -67,9 +67,7 @@
         if (isBusinessCollected) {
           collection.push('biz')
         }
-        return collection.filter((modelId) => {
-          return this.models.some(model => model.bk_obj_id === modelId)
-        })
+        return collection.filter(modelId => this.models.some(model => model.bk_obj_id === modelId))
       },
       filteredClassifications() {
         const result = []
@@ -142,7 +140,7 @@
         // 46px 分类高度
         // 16px 模型列表padding
         // 36 模型高度
-        return 46 + 16 + classify['bk_objects'].length * 36
+        return 46 + 16 + classify.bk_objects.length * 36
       }
     }
   }

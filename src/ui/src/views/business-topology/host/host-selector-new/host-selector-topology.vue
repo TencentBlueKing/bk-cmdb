@@ -17,7 +17,8 @@
             <span class="title">{{$t('搜索结果')}}</span>
           </div>
           <div class="search-result-body" v-if="filter.list.length">
-            <div class="search-result-item" v-for="(module, index) in filter.list" :key="index" @click="handleClickFilterItem(module)">
+            <div class="search-result-item"
+              v-for="(module, index) in filter.list" :key="index" @click="handleClickFilterItem(module)">
               <div class="path-name">
                 <p class="name">{{module.bk_inst_name}}</p>
                 <p class="path" :title="module.path.join(' / ')">{{module.path.join(' / ')}}</p>
@@ -195,7 +196,7 @@
           value: node.data.bk_inst_id
         })
         return this.$store.dispatch('hostSearch/searchHost', {
-          params: params,
+          params,
           config: {
             requestId: this.request.host
           }
@@ -209,9 +210,8 @@
           this.getFilterPopover().hide()
           return
         }
-        const result = this.topoModuleList.filter((mod) => {
-          return mod.path.findIndex(path => path.toLowerCase().indexOf(keyword) !== -1) !== -1
-        })
+        // eslint-disable-next-line max-len
+        const result = this.topoModuleList.filter(mod => mod.path.findIndex(path => path.toLowerCase().indexOf(keyword) !== -1) !== -1)
         this.filter.list = result
         this.showFilterPopover()
       },
@@ -219,6 +219,7 @@
         const modules = []
         const findModuleNode = function (data, parent) {
           data.forEach((item) => {
+            // eslint-disable-next-line no-param-reassign
             item.path = parent ? [...parent.path, item.bk_inst_name] : [item.bk_inst_name]
             if (item.bk_obj_id === 'module') {
               modules.push(item)

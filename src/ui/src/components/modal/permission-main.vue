@@ -70,7 +70,7 @@
       }
     },
     watch: {
-      permission(v) {
+      permission() {
         this.setList()
       }
     },
@@ -84,9 +84,10 @@
           const { id: actionId, related_resource_types: relatedResourceTypes = [] } = action
           const definition = Object.values(IAM_ACTIONS).find(definition => definition.id === actionId)
           const allRelationPath = []
-          relatedResourceTypes.forEach(({ type, instances = [] }) => {
+          relatedResourceTypes.forEach(({ instances = [] }) => {
             instances.forEach((fullPaths) => {
               // 数据格式[type, id, label]
+              // eslint-disable-next-line max-len
               const topoPath = fullPaths.map(pathData => [pathData.type, pathData.id, IAM_VIEWS_NAME[pathData.type][languageIndex]])
               allRelationPath.push(topoPath)
             })

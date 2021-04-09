@@ -40,7 +40,9 @@
       @page-change="handlePageChange"
       @page-limit-change="handleSizeChange"
       @sort-change="handleSortChange">
-      <bk-table-column prop="bk_asst_id" :label="$t('唯一标识')" sortable="custom" class-name="is-highlight" show-overflow-tooltip></bk-table-column>
+      <bk-table-column prop="bk_asst_id" :label="$t('唯一标识')" sortable="custom"
+        class-name="is-highlight" show-overflow-tooltip>
+      </bk-table-column>
       <bk-table-column prop="bk_asst_name" :label="$t('名称')" sortable="custom" show-overflow-tooltip>
         <template slot-scope="{ row }">
           {{row['bk_asst_name'] || '--'}}
@@ -165,7 +167,7 @@
           Object.assign(params, {
             condition: {
               bk_asst_name: {
-                '$regex': this.sendSearchText
+                $regex: this.sendSearchText
               }
             }
           })
@@ -213,7 +215,7 @@
           }
         })
         this.table.list.forEach((item) => {
-          const asst = res.associations.find(({ bk_asst_id: asstId }) => asstId === item['bk_asst_id'])
+          const asst = res.associations.find(({ bk_asst_id: asstId }) => asstId === item.bk_asst_id)
           if (asst) {
             this.$set(item, 'count', asst.assts.length)
           }
@@ -235,7 +237,7 @@
       },
       deleteRelation(relation) {
         this.$bkInfo({
-          title: this.$tc('确定删除关联类型？', relation['bk_asst_name'], { name: relation['bk_asst_name'] }),
+          title: this.$tc('确定删除关联类型？', relation.bk_asst_name, { name: relation.bk_asst_name }),
           confirmFn: async () => {
             await this.deleteAssociationType({
               id: relation.id,
@@ -266,7 +268,7 @@
       handleSliderBeforeClose() {
         const hasChanged = Object.keys(this.$refs.relationForm.changedValues).length
         if (hasChanged) {
-          return new Promise((resolve, reject) => {
+          return new Promise((resolve) => {
             this.$bkInfo({
               title: this.$t('确认退出'),
               subTitle: this.$t('退出会导致未保存信息丢失'),

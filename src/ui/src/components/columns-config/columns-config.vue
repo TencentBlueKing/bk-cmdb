@@ -11,7 +11,9 @@
         </bk-input>
       </div>
       <ul class="property-list property-list-unselected">
-        <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" :key="index" @click="selectProperty(property)">
+        <li ref="unselectedPropertyItem" class="property-item"
+          v-for="(property, index) in unselectedProperties" :key="index"
+          @click="selectProperty(property)">
           <span class="property-name">{{property['bk_property_name']}}</span>
           <i class="bk-icon icon-arrows-right"></i>
         </li>
@@ -41,9 +43,13 @@
       </div>
     </div>
     <div class="config-options clearfix">
-      <bk-button class="config-button fl" theme="primary" @click="handleApply">{{confirmText || $t('应用')}}</bk-button>
+      <bk-button class="config-button fl" theme="primary" @click="handleApply">
+        {{confirmText || $t('应用')}}
+      </bk-button>
       <bk-button class="config-button fl" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-      <bk-button class="config-button fr" theme="default" @click="handleReset" v-if="showReset">{{$t('还原默认')}}</bk-button>
+      <bk-button class="config-button fr" theme="default" @click="handleReset" v-if="showReset">
+        {{$t('还原默认')}}
+      </bk-button>
     </div>
   </div>
 </template>
@@ -99,14 +105,12 @@
     },
     computed: {
       sortedProperties() {
-        return [...this.properties].sort((propertyA, propertyB) => {
-          return propertyA['bk_property_name'].localeCompare(propertyB['bk_property_name'], 'zh-Hans-CN', { sensitivity: 'accent' })
-        })
+        return [...this.properties].sort((propertyA, propertyB) => propertyA.bk_property_name.localeCompare(propertyB.bk_property_name, 'zh-Hans-CN', { sensitivity: 'accent' }))
       },
       unselectedProperties() {
         return this.sortedProperties.filter((property) => {
-          const unselected = !this.localSelected.includes(property['bk_property_id'])
-          const includesFilter = property['bk_property_name'].toLowerCase().indexOf(this.filter.toLowerCase()) !== -1
+          const unselected = !this.localSelected.includes(property.bk_property_id)
+          const includesFilter = property.bk_property_name.toLowerCase().indexOf(this.filter.toLowerCase()) !== -1
           return unselected && includesFilter
         })
       },
@@ -128,7 +132,7 @@
           const drabbleProperties = []
           this.localSelected.forEach((propertyId) => {
             if (!this.disabledColumns.includes(propertyId)) {
-              const property = this.properties.find(property => property['bk_property_id'] === propertyId)
+              const property = this.properties.find(property => property.bk_property_id === propertyId)
               if (property) {
                 drabbleProperties.push(property)
               }
@@ -137,12 +141,15 @@
           return drabbleProperties
         },
         set(drabbleProperties) {
-          this.localSelected = [...this.undragbbleProperties, ...drabbleProperties].map(property => property['bk_property_id'])
+          this.localSelected = [
+            ...this.undragbbleProperties,
+            ...drabbleProperties
+          ].map(property => property.bk_property_id)
         }
       }
     },
     watch: {
-      selected(selected) {
+      selected() {
         this.initLocalSelected()
       }
     },
@@ -151,24 +158,25 @@
     },
     methods: {
       initLocalSelected() {
-        this.localSelected = this.selected.filter(propertyId => this.properties.some(property => property['bk_property_id'] === propertyId))
+        // eslint-disable-next-line max-len
+        this.localSelected = this.selected.filter(propertyId => this.properties.some(property => property.bk_property_id === propertyId))
       },
       selectProperty(property) {
         if (this.localSelected.length < this.max) {
-          this.localSelected.push(property['bk_property_id'])
+          this.localSelected.push(property.bk_property_id)
         } else {
           this.$info(this.$t('最多选择N项', { n: this.max }))
         }
       },
       unselectProperty(property) {
         if (this.localSelected.length > this.min) {
-          this.localSelected = this.localSelected.filter(propertyId => propertyId !== property['bk_property_id'])
+          this.localSelected = this.localSelected.filter(propertyId => propertyId !== property.bk_property_id)
         } else {
           this.$info(this.$t('至少选择N项', { n: this.min }))
         }
       },
       checkDisabled(property) {
-        return this.disabledColumns.includes(property['bk_property_id'])
+        return this.disabledColumns.includes(property.bk_property_id)
       },
       handleApply() {
         if (this.localSelected.length > this.max) {
