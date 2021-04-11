@@ -27,12 +27,12 @@ import (
 
 func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, cache redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) (*metadata.HostIdentifier, error) {
 	// fill cloudName
-	cloud, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDPlat, identifier.CloudID)
-	if err != nil {
-		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDPlat, identifier.CloudID, err.Error())
-		return nil, err
-	}
-	identifier.CloudName = getString(cloud.data[common.BKCloudNameField])
+	// cloud, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDPlat, identifier.CloudID)
+	// if err != nil {
+	// 	blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDPlat, identifier.CloudID, err.Error())
+	// 	return nil, err
+	// }
+	// identifier.CloudName = getString(cloud.data[common.BKCloudNameField])
 
 	customLayers, err := getCustomLayers(ctx, db, identifier.SupplierAccount)
 	if err != nil {
@@ -87,7 +87,7 @@ func fillModule(identifier *metadata.HostIdentifier, hostIdentModule *metadata.H
 		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDApp, hostIdentModule.BizID, err.Error())
 		return err
 	}
-	hostIdentModule.BizName = getString(biz.data[common.BKAppNameField])
+	// hostIdentModule.BizName = getString(biz.data[common.BKAppNameField])
 	identifier.SupplierAccount = getString(biz.data[common.BKOwnerIDField])
 
 	set, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDSet, hostIdentModule.SetID)
@@ -95,16 +95,16 @@ func fillModule(identifier *metadata.HostIdentifier, hostIdentModule *metadata.H
 		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDSet, hostIdentModule.SetID, err.Error())
 		return err
 	}
-	hostIdentModule.SetName = getString(set.data[common.BKSetNameField])
-	hostIdentModule.SetEnv = getString(set.data[common.BKSetEnvField])
-	hostIdentModule.SetStatus = getString(set.data[common.BKSetStatusField])
+	// hostIdentModule.SetName = getString(set.data[common.BKSetNameField])
+	// hostIdentModule.SetEnv = getString(set.data[common.BKSetEnvField])
+	// hostIdentModule.SetStatus = getString(set.data[common.BKSetStatusField])
 
-	module, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDModule, hostIdentModule.ModuleID)
-	if err != nil {
-		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDModule, hostIdentModule.ModuleID, err.Error())
-		return err
-	}
-	hostIdentModule.ModuleName = getString(module.data[common.BKModuleNameField])
+	// module, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDModule, hostIdentModule.ModuleID)
+	// if err != nil {
+	// 	blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDModule, hostIdentModule.ModuleID, err.Error())
+	// 	return err
+	// }
+	// hostIdentModule.ModuleName = getString(module.data[common.BKModuleNameField])
 
 	// fill host layer info
 	parentID, err := getInt(set.data, common.BKParentIDField)
