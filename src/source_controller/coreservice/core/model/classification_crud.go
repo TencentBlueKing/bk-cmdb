@@ -50,17 +50,8 @@ func (m *modelClassification) save(kit *rest.Kit, classification metadata.Classi
 
 func (m *modelClassification) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.count(kit, cond)
-	if nil != err {
-		return cnt, err
-	}
-
-	if 0 == cnt {
-		return cnt, nil
-	}
-
 	data.Remove(metadata.ClassFieldClassificationID)
-	err = mongodb.Client().Table(common.BKTableNameObjClassification).Update(kit.Ctx, cond.ToMapStr(), data)
+	cnt, err = mongodb.Client().Table(common.BKTableNameObjClassification).UpdateMany(kit.Ctx, cond.ToMapStr(), data)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute a database update operation on the table(%s) by the condition(%#v) , error info is %s", kit.Rid, common.BKTableNameObjClassification, cond.ToMapStr(), err.Error())
 		return 0, err
@@ -70,16 +61,7 @@ func (m *modelClassification) update(kit *rest.Kit, data mapstr.MapStr, cond uni
 
 func (m *modelClassification) delete(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.count(kit, cond)
-	if nil != err {
-		return cnt, err
-	}
-
-	if 0 == cnt {
-		return 0, err
-	}
-
-	err = mongodb.Client().Table(common.BKTableNameObjClassification).Delete(kit.Ctx, cond.ToMapStr())
+	cnt, err = mongodb.Client().Table(common.BKTableNameObjClassification).DeleteMany(kit.Ctx, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute a database deletion operation on the table(%s) by the condition(%#v), error info is %s", kit.Rid, common.BKTableNameObjClassification, cond.ToMapStr(), err.Error())
 		return 0, err

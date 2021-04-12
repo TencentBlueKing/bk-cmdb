@@ -73,6 +73,11 @@ type Table interface {
 	// field the field for which to return distinct values.
 	// filter query that specifies the documents from which to retrieve the distinct values.
 	Distinct(ctx context.Context, field string, filter Filter) ([]interface{}, error)
+
+	// DeleteMany delete document, return number of documents that were deleted.
+	DeleteMany(ctx context.Context, filter Filter) (uint64, error)
+	// UpdateMany update document, return number of documents that were modified.
+	UpdateMany(ctx context.Context, filter Filter, doc interface{}) (uint64, error)
 }
 
 // Find find operation interface

@@ -92,36 +92,50 @@ func (m *associationInstance) save(kit *rest.Kit, asstInst metadata.InstAsst) (i
 	return id, err
 }
 
-func (m *associationInstance) deleteInstanceAssociation(kit *rest.Kit, objID string, cond mapstr.MapStr) error {
+func (m *associationInstance) deleteInstanceAssociation(kit *rest.Kit, objID string,
+	cond mapstr.MapStr) (uint64, error) {
 	asstInstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
 	associations := make([]metadata.InstAsst, 0)
 	if err := mongodb.Client().Table(asstInstTableName).Find(cond).Fields(common.BKObjIDField, common.BKAsstObjIDField).
 		All(kit.Ctx, &associations); err != nil {
-		return err
+		blog.ErrorJSON("delete instance association error. objID: %s, cond: %s, err: %s, rid: %s",
+			objID, cond, err.Error(), kit.Rid)
+		return 0, err
 	}
 
 	objIDMap := make(map[string]struct{})
 	for _, asst := range associations {
-		var objID string
+		var asstObjID string
 		if asst.ObjectID != objID {
-			objID = asst.ObjectID
+			asstObjID = asst.ObjectID
 		} else if asst.AsstObjectID != objID {
-			objID = asst.AsstObjectID
-		}
-
-		if _, exists := objIDMap[objID]; exists {
+			asstObjID = asst.AsstObjectID
+		} else {
+			// 自关联再循环外处理
 			continue
 		}
-		objIDMap[objID] = struct{}{}
 
-		asstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
+		if _, exists := objIDMap[asstObjID]; exists {
+			continue
+		}
+		objIDMap[asstObjID] = struct{}{}
+
+		asstTableName := common.GetObjectInstAsstTableName(asstObjID, kit.SupplierAccount)
 		err := mongodb.Client().Table(asstTableName).Delete(kit.Ctx, cond)
 		if err != nil {
-			return err
+			blog.ErrorJSON("delete instance association error. objID: %s, cond: %s, err: %s, rid: %s",
+				asstObjID, cond, err.Error(), kit.Rid)
+			return 0, err
 		}
 	}
 
-	return mongodb.Client().Table(asstInstTableName).Delete(kit.Ctx, cond)
+	cnt, err := mongodb.Client().Table(asstInstTableName).DeleteMany(kit.Ctx, cond)
+	if err != nil {
+		blog.ErrorJSON("delete instance association error. objID: %s, cond: %s, err: %s, rid: %s",
+			objID, cond, err.Error(), kit.Rid)
+		return 0, err
+	}
+	return cnt, nil
 }
 
 func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error) {
@@ -291,7 +305,6 @@ func (m *associationInstance) SearchInstanceAssociation(kit *rest.Kit, objID str
 	}
 
 	dataResult := &metadata.QueryResult{}
-	dataResult.Count, err = m.countInstanceAssociation(kit, objID, param.Condition)
 
 	// the InstAsst number will be counted by default.
 	if !param.DisableCounter {
@@ -318,13 +331,8 @@ func (m *associationInstance) DeleteInstanceAssociation(kit *rest.Kit, objID str
 	}
 
 	inputParam.Condition = util.SetModOwner(inputParam.Condition, kit.SupplierAccount)
-	cnt, err := m.countInstanceAssociation(kit, objID, inputParam.Condition)
-	if nil != err {
-		blog.Errorf("delete inst association get inst [%#v] count err [%#v], rid: %s", inputParam.Condition, err, kit.Rid)
-		return &metadata.DeletedCount{}, err
-	}
 
-	err = m.deleteInstanceAssociation(kit, objID, inputParam.Condition)
+	cnt, err := m.deleteInstanceAssociation(kit, objID, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("delete inst association [%#v] err [%#v], rid: %s", inputParam.Condition, err, kit.Rid)
 		return &metadata.DeletedCount{}, err

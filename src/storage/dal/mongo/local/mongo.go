@@ -488,6 +488,32 @@ func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interf
 	})
 }
 
+// Update 更新数据, 返回修改成功的条数
+func (c *Collection) UpdateMany(ctx context.Context, filter types.Filter, doc interface{}) (uint64, error) {
+	mtc.collectOperCount(c.collName, updateOper)
+	start := time.Now()
+	defer func() {
+		mtc.collectOperDuration(c.collName, updateOper, time.Since(start))
+	}()
+
+	if filter == nil {
+		filter = bson.M{}
+	}
+
+	data := bson.M{"$set": doc}
+	var modifiedCount uint64
+	err := c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		updateRet, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
+		if err != nil {
+			mtc.collectErrorCount(c.collName, updateOper)
+			return err
+		}
+		modifiedCount = uint64(updateRet.ModifiedCount)
+		return nil
+	})
+	return modifiedCount, err
+}
+
 // Upsert 数据存在更新数据，否则新加数据。
 // 注意：该接口非原子操作，可能存在插入多条相同数据的风险。
 func (c *Collection) Upsert(ctx context.Context, filter types.Filter, doc interface{}) error {
@@ -545,6 +571,12 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter types.Filter, 
 
 // Delete 删除数据
 func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
+	_, err := c.DeleteMany(ctx, filter)
+	return err
+}
+
+// Delete 删除数据， 返回删除的行数
+func (c *Collection) DeleteMany(ctx context.Context, filter types.Filter) (uint64, error) {
 	mtc.collectOperCount(c.collName, deleteOper)
 
 	start := time.Now()
@@ -552,20 +584,23 @@ func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
 		mtc.collectOperDuration(c.collName, deleteOper, time.Since(start))
 	}()
 
-	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+	var deleteCount uint64
+	err := c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		if err := c.tryArchiveDeletedDoc(ctx, filter); err != nil {
 			mtc.collectErrorCount(c.collName, deleteOper)
 			return err
 		}
-		_, err := c.dbc.Database(c.dbname).Collection(c.collName).DeleteMany(ctx, filter)
+		deleteRet, err := c.dbc.Database(c.dbname).Collection(c.collName).DeleteMany(ctx, filter)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, deleteOper)
 			return err
 		}
 
+		deleteCount = uint64(deleteRet.DeletedCount)
 		return nil
 	})
 
+	return deleteCount, err
 }
 
 func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filter) error {
