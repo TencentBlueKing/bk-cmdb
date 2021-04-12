@@ -10,37 +10,42 @@
  * limitations under the License.
  */
 
-package y3_9_202103241156
+package y3_9_202104121004
 
 import (
 	"context"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/types"
 )
 
-func init() {
-	upgrader.RegistUpgrader("y3.9.202103241156", upgrade)
-}
+func instanceObjectIDMapping(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Info("y3.9.202103241156")
-
-	if err := instanceObjectIDMapping(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.9.202103241156] migrate instance object id mapping table failed, error:%s",
-			err.Error())
-		return err
-	}
-
-	err = splitTable(ctx, db, conf)
+	exists, err := db.HasTable(ctx, objectBaseMapping)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202103241156] migrate inst split table failed, error  %s", err.Error())
+		blog.ErrorJSON("check table(%s) exist error, err: %s", objectBaseMapping, err)
 		return err
+
+	}
+	if !exists {
+		if err := db.CreateTable(ctx, objectBaseMapping); err != nil {
+			blog.ErrorJSON("create table(%s) error, err: %s", objectBaseMapping, err)
+			return err
+		}
+
 	}
 
-	if err = syncInnerObjectIndex(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.9.202103241156] migrate inner object index failed, error  %s", err.Error())
+	index := types.Index{
+		Name: common.CCLogicIndexNamePrefix + "InstID",
+		Keys: map[string]int32{
+			common.BKInstIDField: 1,
+		},
+		Background: true,
+	}
+	if err := db.Table(objectBaseMapping).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
 		return err
 	}
 
