@@ -14,6 +14,7 @@ package model
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -42,14 +43,12 @@ func (g *modelAttributeGroup) save(kit *rest.Kit, group metadata.Group) (uint64,
 }
 
 func (g *modelAttributeGroup) delete(kit *rest.Kit, cond universalsql.Condition) (uint64, error) {
-
-	cnt, err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Find(cond.ToMapStr()).Count(kit.Ctx)
-	if nil != err {
-		return cnt, err
+	cnt, err := mongodb.Client().Table(common.BKTableNamePropertyGroup).DeleteMany(kit.Ctx, cond.ToMapStr())
+	if err != nil {
+		blog.ErrorJSON("delete model attribute group error. cond: %s, err: %s, rid: %s", cond, err.Error(), kit.Rid)
+		return 0, err
 	}
-
-	err = mongodb.Client().Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx, cond.ToMapStr())
-	return cnt, err
+	return cnt, nil
 }
 
 func (g *modelAttributeGroup) search(kit *rest.Kit, cond universalsql.Condition) ([]metadata.Group, error) {
@@ -61,10 +60,10 @@ func (g *modelAttributeGroup) search(kit *rest.Kit, cond universalsql.Condition)
 
 func (g *modelAttributeGroup) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (uint64, error) {
 
-	cnt, err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Find(cond.ToMapStr()).Count(kit.Ctx)
-	if nil != err {
-		return cnt, err
+	cnt, err := mongodb.Client().Table(common.BKTableNamePropertyGroup).UpdateMany(kit.Ctx, cond.ToMapStr(), data)
+	if err != nil {
+		blog.ErrorJSON("update model attribute group error. cond: %s, err: %s, rid: %s", cond, err.Error(), kit.Rid)
+		return 0, err
 	}
-	err = mongodb.Client().Table(common.BKTableNamePropertyGroup).Update(kit.Ctx, cond.ToMapStr(), data)
-	return cnt, err
+	return cnt, nil
 }

@@ -66,15 +66,6 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 
 func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.count(kit, cond)
-	if nil != err {
-		return 0, err
-	}
-
-	if 0 == cnt {
-		return 0, nil
-	}
-
 	data.Set(metadata.ModelFieldLastTime, time.Now())
 	models := make([]metadata.Object, 0)
 	err = mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(kit.Ctx, &models)
@@ -107,7 +98,7 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 
 			// 一次更新多个模型的时候，唯一校验需要特别小心
 			filter := map[string]interface{}{common.BKFieldID: model.ID}
-			err = mongodb.Client().Table(common.BKTableNameObjDes).Update(kit.Ctx, filter, data)
+			cnt, err = mongodb.Client().Table(common.BKTableNameObjDes).UpdateMany(kit.Ctx, filter, data)
 			if nil != err {
 				blog.Errorf("request(%s): it is failed to execute database update operation on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjDes, err.Error())
 				return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
@@ -116,7 +107,7 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 		return cnt, nil
 	}
 
-	err = mongodb.Client().Table(common.BKTableNameObjDes).Update(kit.Ctx, cond.ToMapStr(), data)
+	cnt, err = mongodb.Client().Table(common.BKTableNameObjDes).UpdateMany(kit.Ctx, cond.ToMapStr(), data)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute database update operation on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjDes, err.Error())
 		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
@@ -149,16 +140,8 @@ func (m *modelManager) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condi
 
 func (m *modelManager) delete(kit *rest.Kit, cond universalsql.Condition) (uint64, error) {
 
-	cnt, err := m.count(kit, cond)
+	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, cond.ToMapStr())
 	if nil != err {
-		return 0, err
-	}
-
-	if 0 == cnt {
-		return 0, nil
-	}
-
-	if err = mongodb.Client().Table(common.BKTableNameObjDes).Delete(kit.Ctx, cond.ToMapStr()); nil != err {
 		blog.Errorf("request(%s): it is failed to execute a deletion operation on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjDes, err.Error())
 		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
@@ -191,12 +174,13 @@ func (m *modelManager) cascadeDelete(kit *rest.Kit, objIDs []string) (uint64, er
 	}
 
 	// delete model
-	if err := mongodb.Client().Table(common.BKTableNameObjDes).Delete(kit.Ctx, delCondMap); err != nil {
+	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, delCondMap)
+	if err != nil {
 		blog.ErrorJSON("delete model unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
-	return uint64(len(objIDs)), nil
+	return cnt, nil
 }
 
 // createObjectShardingTables creates new collections for new model,

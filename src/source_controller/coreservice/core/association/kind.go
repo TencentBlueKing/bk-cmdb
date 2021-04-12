@@ -96,7 +96,8 @@ func (m *associationKind) SetAssociationKind(kit *rest.Kit, inputParam metadata.
 		data.Remove(common.BKIsPre)
 		data.Remove(common.AssociationKindIDField)
 		data.Remove(common.BKFieldID)
-		if err := m.update(kit, data, cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: origin.AssociationKindID}).ToMapStr()); nil != err {
+		filter := cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: origin.AssociationKindID}).ToMapStr()
+		if _, err := m.update(kit, data, filter); nil != err {
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 				Message:     err.Error(),
 				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
@@ -145,7 +146,9 @@ func (m *associationKind) SetManyAssociationKind(kit *rest.Kit, inputParam metad
 			data.Remove(common.BKIsPre)
 			data.Remove(common.AssociationKindIDField)
 			data.Remove(common.BKFieldID)
-			if err := m.update(kit, data, cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: origin.AssociationKindID}).ToMapStr()); nil != err {
+			filter := cond.Element(&mongo.Eq{Key: common.AssociationKindIDField,
+				Val: origin.AssociationKindID}).ToMapStr()
+			if _, err := m.update(kit, data, filter); nil != err {
 				dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 					Message:     err.Error(),
 					Code:        int64(err.(errors.CCErrorCoder).GetCode()),
@@ -182,11 +185,9 @@ func (m *associationKind) SetManyAssociationKind(kit *rest.Kit, inputParam metad
 	return dataResult, nil
 }
 func (m *associationKind) UpdateAssociationKind(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
-	cnt, err := mongodb.Client().Table(common.BKTableNameAsstDes).Find(inputParam.Condition).Count(kit.Ctx)
-	if nil != err {
-		return &metadata.UpdatedCount{}, err
-	}
-	if err := m.update(kit, inputParam.Data, inputParam.Condition); nil != err {
+
+	cnt, err := m.update(kit, inputParam.Data, inputParam.Condition)
+	if err != nil {
 		return &metadata.UpdatedCount{}, err
 	}
 	return &metadata.UpdatedCount{Count: cnt}, nil
@@ -223,12 +224,12 @@ func (m *associationKind) DeleteAssociationKind(kit *rest.Kit, inputParam metada
 		blog.Errorf(" pre association can not be delete [%#v], rid: %s", inputParam.Condition, kit.Rid)
 		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrorTopoPreAssKindCanNotBeDelete)
 	}
-	err = mongodb.Client().Table(common.BKTableNameAsstDes).Delete(kit.Ctx, inputParam.Condition)
+	cnt, err := mongodb.Client().Table(common.BKTableNameAsstDes).DeleteMany(kit.Ctx, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("delete association kind by condition [%#v],error:%s, rid: %s", inputParam.Condition, err.Error(), kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
-	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
+	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
 func (m *associationKind) CascadeDeleteAssociationKind(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
@@ -249,13 +250,13 @@ func (m *associationKind) CascadeDeleteAssociationKind(kit *rest.Kit, inputParam
 		}
 	}
 
-	err = mongodb.Client().Table(common.BKTableNameAsstDes).Delete(kit.Ctx, inputParam.Condition)
+	cnt, err := mongodb.Client().Table(common.BKTableNameAsstDes).DeleteMany(kit.Ctx, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("delete association kind by condition [%#v],error:%s, rid: %s", inputParam.Condition, err.Error(), kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
 
-	return &metadata.DeletedCount{Count: uint64(len(associationKindItems))}, nil
+	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
 func (m *associationKind) SearchAssociationKind(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.SearchAssociationKindResult, error) {
