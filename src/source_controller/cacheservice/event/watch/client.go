@@ -489,9 +489,7 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 			"_id": map[string]interface{}{common.BKDBIN: oids},
 		}
 
-		findOpts := daltypes.FindOpts{
-			WithObjectID: true,
-		}
+		findOpts := daltypes.NewFindOpts().SetWithObjectID(true)
 
 		fields := fields
 		if len(fields) > 0 {

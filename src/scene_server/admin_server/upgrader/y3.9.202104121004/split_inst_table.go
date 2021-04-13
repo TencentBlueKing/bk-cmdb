@@ -113,9 +113,7 @@ func initWorkerChn(workerNum int) chan struct{} {
 
 func splitInstAsstTable(ctx context.Context, db dal.RDB) error {
 	filter := map[string]interface{}{}
-	opts := types.FindOpts{
-		WithObjectID: true,
-	}
+	opts := types.NewFindOpts().SetWithObjectID(true)
 	const pageSize = uint64(1000)
 	start := uint64(0)
 	query := db.Table(oldInstAsstTable).Find(filter, opts).Limit(pageSize)
@@ -196,9 +194,7 @@ func copyInstanceAssociationToShardingTable(ctx context.Context, association map
 
 func splitInstTable(ctx context.Context, db dal.RDB) error {
 	filter := map[string]interface{}{}
-	opts := types.FindOpts{
-		WithObjectID: true,
-	}
+	opts := types.NewFindOpts().SetWithObjectID(true)
 	const pageSize = uint64(1000)
 	start := uint64(0)
 	query := db.Table(oldInstTable).Find(filter, opts).Limit(pageSize)
