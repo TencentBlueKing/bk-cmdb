@@ -64,6 +64,33 @@ type DeleteServiceTemplatesInput struct {
 	ServiceTemplateID int64 `json:"service_template_id"`
 }
 
+type GetServiceTemplateSyncStatusOption struct {
+	ServiceTemplateIDs []int64 `json:"service_template_ids"`
+	ModuleIDs          []int64 `json:"bk_module_ids"`
+	// IsPartial if is set, check service templates status, returns need sync for template if one module need sync
+	IsPartial bool `json:"is_partial"`
+}
+
+type GetServiceTemplateSyncStatusResult struct {
+	BaseResp `json:",inline"`
+	Data     *ServiceTemplateSyncStatus `json:"data"`
+}
+
+type ServiceTemplateSyncStatus struct {
+	ServiceTemplates []SvcTempSyncStatus `json:"service_templates"`
+	Modules          []ModuleSyncStatus  `json:"modules"`
+}
+
+type SvcTempSyncStatus struct {
+	ServiceTemplateID int64 `json:"service_template_id"`
+	NeedSync          bool  `json:"need_sync"`
+}
+
+type ModuleSyncStatus struct {
+	ModuleID int64 `json:"bk_module_id"`
+	NeedSync bool  `json:"need_sync"`
+}
+
 type CreateServiceInstanceForServiceTemplateInput struct {
 	BizID                      int64                         `json:"bk_biz_id"`
 	Name                       string                        `json:"name"`

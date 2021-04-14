@@ -267,3 +267,77 @@ func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(nil)
 }
+
+// GetServiceTemplateSyncStatus check if service templates or modules with template need sync, return the status
+func (ps *ProcServer) GetServiceTemplateSyncStatus(ctx *rest.Contexts) {
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil || bizID <= 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField))
+		return
+	}
+
+	opt := new(metadata.GetServiceTemplateSyncStatusOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	const maxIDLen = 100
+	if opt.IsPartial {
+		if len(opt.ServiceTemplateIDs) == 0 {
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "service_template_ids"))
+			return
+		}
+
+		if len(opt.ServiceTemplateIDs) > maxIDLen {
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "service_template_ids", maxIDLen))
+			return
+		}
+
+		moduleCond := map[string]interface{}{
+			common.BKAppIDField: bizID,
+			common.BKServiceTemplateIDField: map[string]interface{}{
+				common.BKDBIN: opt.ServiceTemplateIDs,
+			},
+		}
+
+		statuses, _, err := ps.Logic.GetSvcTempSyncStatus(ctx.Kit, bizID, moduleCond, true)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+
+		ctx.RespEntity(metadata.ServiceTemplateSyncStatus{ServiceTemplates: statuses})
+		return
+	} else {
+		if len(opt.ModuleIDs) == 0 {
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "bk_module_ids"))
+			return
+		}
+
+		if len(opt.ModuleIDs) > maxIDLen {
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "bk_module_ids", maxIDLen))
+			return
+		}
+
+		moduleCond := map[string]interface{}{
+			common.BKModuleIDField: map[string]interface{}{
+				common.BKDBIN: opt.ModuleIDs,
+			},
+			common.BKAppIDField: bizID,
+			common.BKServiceTemplateIDField: map[string]interface{}{
+				common.BKDBNE: common.ServiceTemplateIDNotSet,
+			},
+		}
+
+		_, statuses, err := ps.Logic.GetSvcTempSyncStatus(ctx.Kit, bizID, moduleCond, false)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+
+		ctx.RespEntity(metadata.ServiceTemplateSyncStatus{Modules: statuses})
+		return
+	}
+}
