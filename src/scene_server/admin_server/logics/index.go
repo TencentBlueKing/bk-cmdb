@@ -23,10 +23,13 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/index"
 	"configcenter/src/common/metadata"
+	types2 "configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+	"configcenter/src/thirdparty/monitor"
+	"configcenter/src/thirdparty/monitor/meta"
 )
 
 /*
@@ -207,6 +210,13 @@ func (dt *dbTable) tryUpdateTableIndex(ctx context.Context, tableName string,
 		if err := dt.db.Table(tableName).CreateIndex(ctx, logicIndex); err != nil {
 			blog.Errorf("create table(%s) index(%s) error. err: %s, rid: %s",
 				tableName, logicIndex.Name, err.Error(), dt.rid)
+			monitor.Collect(&meta.Alarm{
+				RequestID: dt.rid,
+				Type:      meta.MongoDDLFatalError,
+				Detail:    fmt.Sprintf("collection(%s)  create index failed", tableName),
+				Module:    types2.CC_MODULE_MIGRATE,
+				Dimension: map[string]string{"hit_create_index": "yes"},
+			})
 			return err
 		}
 	}
@@ -258,6 +268,13 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 					// TODO: 需要报警，但是不影响后需逻辑继续执行下一个
 					blog.Errorf("create table(%s) error. err: %s, rid: %s", instTable, err.Error(), dt.rid)
 					// NOTICE: 索引有专门的任务处理
+					monitor.Collect(&meta.Alarm{
+						RequestID: dt.rid,
+						Type:      meta.MongoDDLFatalError,
+						Detail:    fmt.Sprintf("create %s collection failed", instTable),
+						Module:    types2.CC_MODULE_MIGRATE,
+						Dimension: map[string]string{"hit_create_collection": "yes"},
+					})
 				}
 				dt.createIndexes(ctx, instTable, objIndexes)
 			} else {
@@ -275,6 +292,13 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 				blog.Errorf("create table(%s) error. err: %s, rid: %s", instAsstTable, err.Error(), dt.rid)
 				// NOTICE: 索引有专门的任务处理
 			}
+			monitor.Collect(&meta.Alarm{
+				RequestID: dt.rid,
+				Type:      meta.MongoDDLFatalError,
+				Detail:    fmt.Sprintf("create %s collection failed", instAsstTable),
+				Module:    types2.CC_MODULE_MIGRATE,
+				Dimension: map[string]string{"hit_create_collection": "yes"},
+			})
 			dt.createIndexes(ctx, instAsstTable, index.InstanceAssociationIndexes())
 		} else {
 			if err := dt.syncIndexesToDB(ctx, instAsstTable, index.InstanceAssociationIndexes(), nil); err != nil {
@@ -288,9 +312,9 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 	}
 
 	if err := dt.cleanRedundancyTable(ctx, modelDBTableNameMap); err != nil {
-		// TODO: 需要报警，但是不影响后需逻辑继续执行下一个
 		blog.Errorf("clean redundancy table Name map:(%#v) error. err: %s, rid: %s",
 			modelDBTableNameMap, err.Error(), dt.rid)
+
 	}
 	return nil
 }
@@ -335,18 +359,36 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 				blog.Infof("delete sharding table(%s) rid: %s", name, dt.rid)
 				// 没有数据删除
 				if err := dt.db.DropTable(ctx, name); err != nil {
-					// TODO: 需要报警，但是不影响后需逻辑继续执行下一个
 					blog.Errorf("delete table(%s) error. err: %s, rid: %s", name, err.Error(), dt.rid)
+					monitor.Collect(&meta.Alarm{
+						RequestID: dt.rid,
+						Type:      meta.MongoDDLFatalError,
+						Detail:    fmt.Sprintf("drop collection(%s) failed", name),
+						Module:    types2.CC_MODULE_MIGRATE,
+						Dimension: map[string]string{"hit_clean_redundancy_table": "yes"},
+					})
 					continue
 				}
 			} else {
-				// TODO: 需要报警，但是不影响后需逻辑继续执行下一个
+				monitor.Collect(&meta.Alarm{
+					RequestID: dt.rid,
+					Type:      meta.MongoDDLFatalError,
+					Detail:    fmt.Sprintf("drop collection(%s) failed, reason: find table has error", name),
+					Module:    types2.CC_MODULE_MIGRATE,
+					Dimension: map[string]string{"hit_clean_redundancy_table": "yes"},
+				})
 				blog.Errorf("find table(%s) one row error. err: %s, rid: %s", name, err.Error(), dt.rid)
 
 			}
 
 		} else {
-			// TODO: 需要报警，但是不影响后需逻辑继续执行下一个
+			monitor.Collect(&meta.Alarm{
+				RequestID: dt.rid,
+				Type:      meta.MongoDDLFatalError,
+				Detail:    fmt.Sprintf("drop collection(%s) failed, reason: non-empty sharding table", name),
+				Module:    types2.CC_MODULE_MIGRATE,
+				Dimension: map[string]string{"hit_clean_redundancy_table": "yes"},
+			})
 			blog.Errorf("can't drop the non-empty sharding table, table name: %s, rid: %d", name, dt.rid)
 		}
 
@@ -363,6 +405,13 @@ func (dt *dbTable) createIndexes(ctx context.Context, tableName string, indexes 
 			// 不影响后需执行，
 			// TODO: 报警
 			blog.WarnJSON("create table(%s) error. index: %s, err: %s, rid: %s", tableName, index, err, dt.rid)
+			monitor.Collect(&meta.Alarm{
+				RequestID: dt.rid,
+				Type:      meta.MongoDDLFatalError,
+				Detail:    fmt.Sprintf("collection(%s) create index(%s) failed", tableName, index.Name),
+				Module:    types2.CC_MODULE_MIGRATE,
+				Dimension: map[string]string{"hit_create_index": "yes"},
+			})
 		}
 	}
 
