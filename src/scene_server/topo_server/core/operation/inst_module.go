@@ -265,9 +265,10 @@ func (m *module) IsModuleNameDuplicateError(kit *rest.Kit, bizID, setID int64, m
 		blog.ErrorJSON("IsModuleNameDuplicateError failed, filter: %s, err: %s, rid: %s", nameDuplicateFilter, err.Error(), kit.Rid)
 		return false, err
 	}
-	if result.Result == false || result.Code != 0 {
-		blog.ErrorJSON("IsModuleNameDuplicateError failed, result false, filter: %s, result: %s, err: %s, rid: %s", nameDuplicateFilter, result, err.Error(), kit.Rid)
-		return false, errors.New(result.Code, result.ErrMsg)
+	if ccErr := result.CCError(); ccErr != nil {
+		blog.ErrorJSON("IsModuleNameDuplicateError failed, result false, filter: %s, result: %s, err: %s, rid: %s",
+			nameDuplicateFilter, result, ccErr, kit.Rid)
+		return false, ccErr
 	}
 	if result.Data.Count > 0 {
 		return true, nil
