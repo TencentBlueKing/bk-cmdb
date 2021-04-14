@@ -8,6 +8,8 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars */
+
 import $http from '@/api'
 
 const state = {
@@ -19,17 +21,17 @@ const getters = {
 }
 
 const actions = {
-    getCloudarea ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`findmany/cloudarea`, params, config)
-    },
-    deleteCloudarea (context, { id, config }) {
-        return $http.delete(`delete/cloudarea/${id}`, config)
-    }
+  getCloudarea({ commit, state, dispatch }, { params, config }) {
+    return $http.post('findmany/cloudarea', params, config)
+  },
+  deleteCloudarea(context, { id, config }) {
+    return $http.delete(`delete/cloudarea/${id}`, config)
+  }
 }
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions
+  namespaced: true,
+  state,
+  getters,
+  actions
 }

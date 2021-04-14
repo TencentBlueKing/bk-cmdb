@@ -8,35 +8,32 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars */
+
 import $http from '@/api'
 import Vue from 'vue'
+import has from 'has'
 
 const state = {
-    usercustom: {},
-    globalUsercustom: {}
+  usercustom: {},
+  globalUsercustom: {}
 }
 
 const getters = {
-    classifyNavigationKey: () => {
-        return 'custom_classify_navigation'
-    },
-    firstEntryKey: () => {
-        return 'custom_first_entry'
-    },
-    recentlyKey: () => {
-        return 'custom_recently'
-    },
-    usercustom: state => state.usercustom,
-    getCustomData: (state) => (key, defaultData = null) => {
-        if (state.usercustom.hasOwnProperty(key)) {
-            return state.usercustom[key]
-        }
-        return defaultData
+  classifyNavigationKey: () => 'custom_classify_navigation',
+  firstEntryKey: () => 'custom_first_entry',
+  recentlyKey: () => 'custom_recently',
+  usercustom: state => state.usercustom,
+  getCustomData: state => (key, defaultData = null) => {
+    if (has(state.usercustom, key)) {
+      return state.usercustom[key]
     }
+    return defaultData
+  }
 }
 
 const actions = {
-    /**
+  /**
      * 保存用户字段配置
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -44,92 +41,94 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    saveUsercustom ({ commit, state, dispatch }, usercustom = {}) {
-        return $http.post(`usercustom`, usercustom, { cancelWhenRouteChange: false }).then(() => {
-            $http.cancelCache('searchUserCustom')
-            commit('setUsercustom', usercustom)
-            return state.usercustom
-        })
-    },
+  saveUsercustom({ commit, state, dispatch }, usercustom = {}) {
+    return $http.post('usercustom', usercustom, { cancelWhenRouteChange: false }).then(() => {
+      $http.cancelCache('searchUserCustom')
+      commit('setUsercustom', usercustom)
+      return state.usercustom
+    })
+  },
 
-    /**
+  /**
      * 获取用户字段配置
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-    searchUsercustom ({ commit, state, dispatch }, { config }) {
-        const mergedConfig = Object.assign({
-            requestId: 'searchUserCustom'
-        }, config)
-        return $http.post(`usercustom/user/search`, {}, mergedConfig).then(usercustom => {
-            commit('setUsercustom', usercustom)
-            return usercustom
-        })
-    },
+  searchUsercustom({ commit, state, dispatch }, { config }) {
+    const mergedConfig = Object.assign({
+      requestId: 'searchUserCustom'
+    }, config)
+    return $http.post('usercustom/user/search', {}, mergedConfig).then((usercustom) => {
+      commit('setUsercustom', usercustom)
+      return usercustom
+    })
+  },
 
-    /**
+  /**
      * 获取默认字段配置
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-    getUserDefaultCustom ({ commit, state, dispatch }) {
-        return $http.post(`usercustom/default/search`)
-    },
+  getUserDefaultCustom({ commit, state, dispatch }) {
+    return $http.post('usercustom/default/search')
+  },
 
-    setRencentlyData ({ commit, state, dispatch }, { id }) {
-        const usercustomData = state.usercustom.recently_models || []
-        const isExist = usercustomData.some(target => target === id)
-        let newUsercustomData = [...usercustomData]
-        if (isExist) {
-            newUsercustomData = newUsercustomData.filter(target => target !== id)
-        }
-        newUsercustomData.unshift(id)
-        dispatch('saveUsercustom', {
-            recently_models: newUsercustomData
-        })
-    },
-
-    saveGlobalUsercustom ({ commit }, { objId, params, config }) {
-        return $http.post(`usercustom/default/model/${objId}`, params, config).then(data => {
-            commit('setGlobalUsercustom', {
-                [`${objId}_global_custom_table_columns`]: params.global_custom_table_columns
-            })
-            return data
-        })
-    },
-
-    getGlobalUsercustom ({ commit }, { config }) {
-        const mergedConfig = Object.assign({
-            requestId: 'getGlobalUsercustom'
-        }, config)
-        return $http.post('usercustom/default/model', {}, mergedConfig).then(usercustom => {
-            commit('setGlobalUsercustom', usercustom)
-            return usercustom
-        })
+  setRencentlyData({ commit, state, dispatch }, { id }) {
+    const usercustomData = state.usercustom.recently_models || []
+    const isExist = usercustomData.some(target => target === id)
+    let newUsercustomData = [...usercustomData]
+    if (isExist) {
+      newUsercustomData = newUsercustomData.filter(target => target !== id)
     }
+    newUsercustomData.unshift(id)
+    dispatch('saveUsercustom', {
+      recently_models: newUsercustomData
+    })
+  },
+
+  saveGlobalUsercustom({ commit }, { objId, params, config }) {
+    return $http.post(`usercustom/default/model/${objId}`, params, config).then((data) => {
+      commit('setGlobalUsercustom', {
+        [`${objId}_global_custom_table_columns`]: params.global_custom_table_columns
+      })
+      return data
+    })
+  },
+
+  getGlobalUsercustom({ commit }, { config }) {
+    const mergedConfig = Object.assign({
+      requestId: 'getGlobalUsercustom'
+    }, config)
+    return $http.post('usercustom/default/model', {}, mergedConfig).then((usercustom) => {
+      commit('setGlobalUsercustom', usercustom)
+      return usercustom
+    })
+  }
 }
 
 const mutations = {
-    setUsercustom (state, usercustom = {}) {
-        for (const key in usercustom) {
-            Vue.set(state.usercustom, key, usercustom[key])
-        }
-    },
-    setGlobalUsercustom (state, globalUsercustom = {}) {
-        for (const key in globalUsercustom) {
-            Vue.set(state.globalUsercustom, key, globalUsercustom[key])
-        }
+  setUsercustom(state, usercustom = {}) {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const key in usercustom) {
+      Vue.set(state.usercustom, key, usercustom[key])
     }
+  },
+  setGlobalUsercustom(state, globalUsercustom = {}) {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const key in globalUsercustom) {
+      Vue.set(state.globalUsercustom, key, globalUsercustom[key])
+    }
+  }
 }
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
 }

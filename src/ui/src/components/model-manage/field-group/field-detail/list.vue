@@ -1,137 +1,136 @@
 <template>
-    <div class="form-list-layout">
-        <div class="toolbar">
-            <p class="title">{{$t('列表值')}}</p>
-            <i
-                v-bk-tooltips.top-start="$t('按照0-9a-z排序')"
-                :class="['sort-icon', `icon-cc-sort-${order > 0 ? 'up' : 'down'}`]"
-                @click="handleSort">
-            </i>
-        </div>
-        <vue-draggable
-            class="form-list-wrapper"
-            tag="ul"
-            v-model="list"
-            :options="dragOptions"
-            @end="handleDragEnd">
-            <li class="form-item clearfix" v-for="(item, index) in list" :key="index">
-                <div class="list-name">
-                    <div class="cmdb-form-item" :class="{ 'is-error': errors.has(`name${index}`) }">
-                        <bk-input type="text"
-                            class="cmdb-form-input"
-                            :placeholder="$t('请输入值')"
-                            v-model.trim="item.name"
-                            v-validate="`required|enumName|repeat:${getOtherName(index)}`"
-                            @input="handleInput"
-                            :disabled="isReadOnly"
-                            :name="`name${index}`"
-                            :ref="`name${index}`">
-                        </bk-input>
-                        <p class="form-error">{{errors.first(`name${index}`)}}</p>
-                    </div>
-                </div>
-                <bk-button text class="list-btn" @click="deleteList(index)" :disabled="list.length === 1 || isReadOnly">
-                    <i class="bk-icon icon-minus-circle-shape"></i>
-                </bk-button>
-                <bk-button text class="list-btn" @click="addList(index)" :disabled="isReadOnly" v-if="index === list.length - 1">
-                    <i class="bk-icon icon-plus-circle-shape"></i>
-                </bk-button>
-            </li>
-        </vue-draggable>
+  <div class="form-list-layout">
+    <div class="toolbar">
+      <p class="title">{{$t('列表值')}}</p>
+      <i
+        v-bk-tooltips.top-start="$t('按照0-9a-z排序')"
+        :class="['sort-icon', `icon-cc-sort-${order > 0 ? 'up' : 'down'}`]"
+        @click="handleSort">
+      </i>
     </div>
+    <vue-draggable
+      class="form-list-wrapper"
+      tag="ul"
+      v-model="list"
+      :options="dragOptions"
+      @end="handleDragEnd">
+      <li class="form-item clearfix" v-for="(item, index) in list" :key="index">
+        <div class="list-name">
+          <div class="cmdb-form-item" :class="{ 'is-error': errors.has(`name${index}`) }">
+            <bk-input type="text"
+              class="cmdb-form-input"
+              :placeholder="$t('请输入值')"
+              v-model.trim="item.name"
+              v-validate="`required|enumName|repeat:${getOtherName(index)}`"
+              @input="handleInput"
+              :disabled="isReadOnly"
+              :name="`name${index}`"
+              :ref="`name${index}`">
+            </bk-input>
+            <p class="form-error">{{errors.first(`name${index}`)}}</p>
+          </div>
+        </div>
+        <bk-button text class="list-btn" @click="deleteList(index)" :disabled="list.length === 1 || isReadOnly">
+          <i class="bk-icon icon-minus-circle-shape"></i>
+        </bk-button>
+        <bk-button text class="list-btn" @click="addList(index)"
+          :disabled="isReadOnly" v-if="index === list.length - 1">
+          <i class="bk-icon icon-plus-circle-shape"></i>
+        </bk-button>
+      </li>
+    </vue-draggable>
+  </div>
 </template>
 
 <script>
-    import vueDraggable from 'vuedraggable'
-    export default {
-        components: {
-            vueDraggable
+  import vueDraggable from 'vuedraggable'
+  export default {
+    components: {
+      vueDraggable
+    },
+    props: {
+      value: {
+        type: [Array, String],
+        default: ''
+      },
+      isReadOnly: {
+        type: Boolean,
+        default: false
+      }
+    },
+    data() {
+      return {
+        list: [{ name: '' }],
+        dragOptions: {
+          animation: 300,
+          disabled: false,
+          filter: '.list-btn, .list-name',
+          preventOnFilter: false,
+          ghostClass: 'ghost'
         },
-        props: {
-            value: {
-                type: [Array, String],
-                default: ''
-            },
-            isReadOnly: {
-                type: Boolean,
-                default: false
-            }
-        },
-        data () {
-            return {
-                list: [{ name: '' }],
-                dragOptions: {
-                    animation: 300,
-                    disabled: false,
-                    filter: '.list-btn, .list-name',
-                    preventOnFilter: false,
-                    ghostClass: 'ghost'
-                },
-                order: 1
-            }
-        },
-        watch: {
-            value () {
-                this.initValue()
-            }
-        },
-        created () {
-            this.initValue()
-        },
-        methods: {
-            getOtherName (index) {
-                const nameList = []
-                this.list.map((item, _index) => {
-                    if (index !== _index) {
-                        nameList.push(item.name)
-                    }
-                })
-                return nameList.join(',')
-            },
-            initValue () {
-                if (this.value === '') {
-                    this.list = [{ name: '' }]
-                } else {
-                    this.list = this.value.map(name => ({ name }))
-                }
-            },
-            handleInput () {
-                this.$nextTick(async () => {
-                    const res = await this.$validator.validateAll()
-                    if (res) {
-                        const list = this.list.map(item => item.name)
-                        this.$emit('input', list)
-                    }
-                })
-            },
-            addList (index) {
-                this.list.push({ name: '' })
-                this.$nextTick(() => {
-                    this.$refs[`name${index + 1}`] && this.$refs[`name${index + 1}`][0].focus()
-                })
-            },
-            deleteList (index) {
-                this.list.splice(index, 1)
-                this.handleInput()
-            },
-            validate () {
-                return this.$validator.validateAll()
-            },
-            handleDragEnd () {
-                const list = this.list.map(item => item.name)
-                this.$emit('input', list)
-            },
-            handleSort () {
-                this.order = this.order * -1
-                this.list.sort((A, B) => {
-                    return A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' }) * this.order
-                })
-
-                const list = this.list.map(item => item.name)
-                this.$emit('input', list)
-            }
+        order: 1
+      }
+    },
+    watch: {
+      value() {
+        this.initValue()
+      }
+    },
+    created() {
+      this.initValue()
+    },
+    methods: {
+      getOtherName(index) {
+        const nameList = []
+        this.list.forEach((item, _index) => {
+          if (index !== _index) {
+            nameList.push(item.name)
+          }
+        })
+        return nameList.join(',')
+      },
+      initValue() {
+        if (this.value === '') {
+          this.list = [{ name: '' }]
+        } else {
+          this.list = this.value.map(name => ({ name }))
         }
+      },
+      handleInput() {
+        this.$nextTick(async () => {
+          const res = await this.$validator.validateAll()
+          if (res) {
+            const list = this.list.map(item => item.name)
+            this.$emit('input', list)
+          }
+        })
+      },
+      addList(index) {
+        this.list.push({ name: '' })
+        this.$nextTick(() => {
+          this.$refs[`name${index + 1}`] && this.$refs[`name${index + 1}`][0].focus()
+        })
+      },
+      deleteList(index) {
+        this.list.splice(index, 1)
+        this.handleInput()
+      },
+      validate() {
+        return this.$validator.validateAll()
+      },
+      handleDragEnd() {
+        const list = this.list.map(item => item.name)
+        this.$emit('input', list)
+      },
+      handleSort() {
+        this.order = this.order * -1
+        this.list.sort((A, B) => A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' }) * this.order)
+
+        const list = this.list.map(item => item.name)
+        this.$emit('input', list)
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

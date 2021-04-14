@@ -1,16 +1,16 @@
 <template>
-    <div class="json-details-layout">
-        <pre>{{details}}</pre>
-    </div>
+  <div class="json-details-layout">
+    <pre>{{details}}</pre>
+  </div>
 </template>
 
 <script>
-    export default {
-        name: 'details-json',
-        props: {
-            details: Object
-        }
+  export default {
+    name: 'details-json',
+    props: {
+      details: Object
     }
+  }
 </script>
 
 <style lang="scss" scoped>

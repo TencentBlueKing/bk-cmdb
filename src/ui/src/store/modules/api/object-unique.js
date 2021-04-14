@@ -8,6 +8,8 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars */
+
 import $http from '@/api'
 
 const state = {
@@ -19,7 +21,7 @@ const getters = {
 }
 
 const actions = {
-    /**
+  /**
      * 添加模型唯一约束
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -28,10 +30,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createObjectUniqueConstraints ({ commit, state, dispatch }, { objId, params, config }) {
-        return $http.post(`create/objectunique/object/${objId}`, params, config)
-    },
-    /**
+  createObjectUniqueConstraints({ commit, state, dispatch }, { objId, params, config }) {
+    return $http.post(`create/objectunique/object/${objId}`, params, config)
+  },
+  /**
      * 编辑模型唯一约束
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -41,10 +43,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    updateObjectUniqueConstraints ({ commit, state, dispatch }, { objId, id, params, config }) {
-        return $http.put(`update/objectunique/object/${objId}/unique/${id}`, params, config)
-    },
-    /**
+  updateObjectUniqueConstraints({ commit, state, dispatch }, { objId, id, params, config }) {
+    return $http.put(`update/objectunique/object/${objId}/unique/${id}`, params, config)
+  },
+  /**
      * 删除模型唯一约束
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -54,10 +56,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    deleteObjectUniqueConstraints ({ commit, state, dispatch }, { objId, id, params, config }) {
-        return $http.post(`delete/objectunique/object/${objId}/unique/${id}`, params, config)
-    },
-    /**
+  deleteObjectUniqueConstraints({ commit, state, dispatch }, { objId, id, params, config }) {
+    return $http.post(`delete/objectunique/object/${objId}/unique/${id}`, params, config)
+  },
+  /**
      * 删除模型唯一约束
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -66,9 +68,9 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchObjectUniqueConstraints ({ commit, state, dispatch }, { objId, params, config }) {
-        return $http.post(`find/objectunique/object/${objId}`, params, config)
-    }
+  searchObjectUniqueConstraints({ commit, state, dispatch }, { objId, params, config }) {
+    return $http.post(`find/objectunique/object/${objId}`, params, config)
+  }
 }
 
 const mutations = {
@@ -76,9 +78,9 @@ const mutations = {
 }
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
 }

@@ -1,44 +1,44 @@
 <template>
-    <section class="across-confirm">
-        <h1 class="title">{{$t('转移主机到其他业务')}}</h1>
-        <i18n tag="p" path="确认跨业务转移忽略主机数量" class="content">
-            <span class="count" place="count">{{count}}</span>
-            <span class="invalid" place="invalid">{{invalidList.length}}</span>
-        </i18n>
-        <invalid-list :title="$t('以下主机不能移除')" :list="invalidList"></invalid-list>
-        <div class="footer">
-            <bk-button theme="primary" @click="next">{{$t('下一步')}}</bk-button>
-            <bk-button class="ml10" theme="default" @click="cancel">{{$t('取消')}}</bk-button>
-        </div>
-    </section>
+  <section class="across-confirm">
+    <h1 class="title">{{$t('转移主机到其他业务')}}</h1>
+    <i18n tag="p" path="确认跨业务转移忽略主机数量" class="content">
+      <span class="count" place="count">{{count}}</span>
+      <span class="invalid" place="invalid">{{invalidList.length}}</span>
+    </i18n>
+    <invalid-list :title="$t('以下主机不能移除')" :list="invalidList"></invalid-list>
+    <div class="footer">
+      <bk-button theme="primary" @click="next">{{$t('下一步')}}</bk-button>
+      <bk-button class="ml10" theme="default" @click="cancel">{{$t('取消')}}</bk-button>
+    </div>
+  </section>
 </template>
 
 <script>
-    import InvalidList from './invalid-list'
-    export default {
-        name: 'across-business-confirm',
-        components: {
-            InvalidList
-        },
-        props: {
-            count: {
-                type: Number,
-                default: 0
-            },
-            invalidList: {
-                type: Array,
-                default: () => ([])
-            }
-        },
-        methods: {
-            next () {
-                this.$emit('confirm')
-            },
-            cancel () {
-                this.$emit('cancel')
-            }
-        }
+  import InvalidList from './invalid-list'
+  export default {
+    name: 'across-business-confirm',
+    components: {
+      InvalidList
+    },
+    props: {
+      count: {
+        type: Number,
+        default: 0
+      },
+      invalidList: {
+        type: Array,
+        default: () => ([])
+      }
+    },
+    methods: {
+      next() {
+        this.$emit('confirm')
+      },
+      cancel() {
+        this.$emit('cancel')
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

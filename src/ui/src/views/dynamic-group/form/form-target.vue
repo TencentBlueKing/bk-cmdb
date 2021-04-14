@@ -1,62 +1,62 @@
 <template>
-    <div class="search-target">
-        <div class="target-item"
-            v-for="item in list"
-            :key="item.bk_obj_id"
-            :class="{
-                disabled: disabled,
-                selected: selected === item.bk_obj_id
-            }"
-            @click="setSelected(item)">
-            <span class="item-checkbox"></span>
-            <span class="item-info">
-                <span class="info-name">{{item.bk_obj_name}}</span>
-                <span class="info-desc">{{item.desc}}</span>
-            </span>
-        </div>
+  <div class="search-target">
+    <div class="target-item"
+      v-for="item in list"
+      :key="item.bk_obj_id"
+      :class="{
+        disabled: disabled,
+        selected: selected === item.bk_obj_id
+      }"
+      @click="setSelected(item)">
+      <span class="item-checkbox"></span>
+      <span class="item-info">
+        <span class="info-name">{{item.bk_obj_name}}</span>
+        <span class="info-desc">{{item.desc}}</span>
+      </span>
     </div>
+  </div>
 </template>
 
 <script>
-    export default {
-        props: {
-            value: {
-                type: String,
-                default: ''
-            },
-            disabled: Boolean
+  export default {
+    props: {
+      value: {
+        type: String,
+        default: ''
+      },
+      disabled: Boolean
+    },
+    data() {
+      return {
+        list: Object.freeze([{
+          bk_obj_id: 'host',
+          bk_obj_name: this.$t('主机'),
+          desc: this.$t('目标为主机列表')
+        }, {
+          bk_obj_id: 'set',
+          bk_obj_name: this.$t('集群'),
+          desc: this.$t('目标为集群列表')
+        }])
+      }
+    },
+    computed: {
+      selected: {
+        get() {
+          return this.value
         },
-        data () {
-            return {
-                list: Object.freeze([{
-                    bk_obj_id: 'host',
-                    bk_obj_name: this.$t('主机'),
-                    desc: this.$t('目标为主机列表')
-                }, {
-                    bk_obj_id: 'set',
-                    bk_obj_name: this.$t('集群'),
-                    desc: this.$t('目标为集群列表')
-                }])
-            }
-        },
-        computed: {
-            selected: {
-                get () {
-                    return this.value
-                },
-                set (value) {
-                    this.$emit('input', value)
-                    this.$emit('change', value, this.value)
-                }
-            }
-        },
-        methods: {
-            setSelected (item) {
-                if (this.disabled) return
-                this.selected = item.bk_obj_id
-            }
+        set(value) {
+          this.$emit('input', value)
+          this.$emit('change', value, this.value)
         }
+      }
+    },
+    methods: {
+      setSelected(item) {
+        if (this.disabled) return
+        this.selected = item.bk_obj_id
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>
