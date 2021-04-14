@@ -27,8 +27,14 @@ func init() {
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	blog.Info("y3.9.202104121004")
 
+	if err := dropPlatVpcIDIndex(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade y3.9.202104121004] migrate cloud unique index error, error:%s",
+			err.Error())
+		return err
+	}
+
 	if err := instanceObjectIDMapping(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.9.202104121004] migrate instance object id mapping table failed, error:%s",
+		blog.Errorf("[upgrade y3.9.202104121004] migrate instance object id mapping table fail, error:%s",
 			err.Error())
 		return err
 	}
