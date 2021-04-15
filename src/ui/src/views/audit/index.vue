@@ -1,7 +1,6 @@
 <template>
   <div class="audit-layout">
-    <bk-tab v-show="!$loading(request.list)"
-      class="audit-tab"
+    <bk-tab class="audit-tab"
       type="unborder-card"
       :active.sync="active">
       <bk-tab-panel
@@ -10,12 +9,10 @@
         :key="panel.id">
       </bk-tab-panel>
     </bk-tab>
-    <div class="audit-options" v-show="!$loading(request.list)">
+    <div class="audit-options">
       <component :is="optionsComponent" @condition-change="handleConditionChange"></component>
     </div>
-    <bk-table
-      v-show="!$loading(request.list)"
-      v-bkloading="{ isLoading: $loading(request.list) }"
+    <bk-table v-bkloading="{ isLoading: $loading(request.list) }"
       :data="table.list"
       :pagination="table.pagination"
       :max-height="$APP.height - 310"
