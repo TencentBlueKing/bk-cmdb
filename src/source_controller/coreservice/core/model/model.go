@@ -359,13 +359,6 @@ func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metada
 		return nil, err
 	}
 
-	// delete object instance sharding table.
-	for _, objID := range objIDs {
-		if err := m.dropObjectShardingTables(kit, objID); err != nil {
-			// there is a timed task to clean the tables if it's failed here.
-			blog.Warnf("drop object sharding tables failed, model: %s, err: %s, rid: %s", objID, err.Error(), kit.Rid)
-		}
-	}
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
