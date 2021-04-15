@@ -5,7 +5,7 @@
 
 module.exports = {
     extends: [
-        'standard',
+        'eslint-config-tencent',
         'plugin:vue/recommended'
     ],
     parserOptions: {
@@ -30,72 +30,36 @@ module.exports = {
     root: true,
     // add your custom rules hered
     rules: {
-        // https://eslint.org/docs/rules/brace-style
-        'brace-style': ['error', '1tbs', {'allowSingleLine': false}],
-
-        // https://eslint.org/docs/rules/camelcase
-        'camelcase': ['error', {'properties': 'never', 'ignoreDestructuring': true}],
-
-        // 缩进使用 4 个空格，并且 switch 语句中的 Case 需要缩进
+        // 缩进使用 2 个空格，并且 switch 语句中的 Case 需要缩进
         // https://eslint.org/docs/rules/indent
-        'indent': ['error', 4, {
+        'indent': ['error', 2, {
             'SwitchCase': 1,
             'flatTernaryExpressions': true
         }],
 
-        // 数组的括号内的前后禁止有空格
-        // https://eslint.org/docs/rules/array-bracket-spacing
-        'array-bracket-spacing': ['error', 'never'],
-
-        // https://eslint.org/docs/rules/operator-linebreak
-        'operator-linebreak': ['error', 'before'],
-
-        // 在开发阶段打开调试
-        // https://eslint.org/docs/rules/no-debugger
-        'no-debugger': 'off',
-
-        // 只有一个参数时，箭头函数体可以省略圆括号
-        // https://eslint.org/docs/rules/arrow-parens
-        'arrow-parens': 'off',
-
-        // 禁止空语句（可在空语句写注释避免），允许空的 catch 语句
-        // https://eslint.org/docs/rules/no-empty
-        'no-empty': ['error', {'allowEmptyCatch': true}],
+        // 强制使用一致的换行符风格，默认unix，关闭
+        'linebreak-style': 'off',
 
         // 禁止在语句末尾使用分号
         // https://eslint.org/docs/rules/semi
+        // 与 eslint-config-tencent 不一致
         'semi': ['error', 'never'],
 
         // 禁用不必要的分号
         // https://eslint.org/docs/rules/no-extra-semi
+        // eslint-config-tencent 未配置，默认为关闭，此处打开
         'no-extra-semi': 'error',
-
-        // generator 的 * 前面禁止有空格，后面必须有空格
-        // https://eslint.org/docs/rules/generator-star-spacing
-        'generator-star-spacing': [
-            'error',
-            {
-                before: false,
-                after: true
-            }
-        ],
-
-        // 函数圆括号之前有一个空格
-        // https://eslint.org/docs/rules/space-before-function-paren
-        'space-before-function-paren': ['error', {
-            'anonymous': 'always', // 匿名函数表达式
-            'named': 'always', // 命名的函数表达式
-            'asyncArrow': 'always' // 异步的箭头函数表达式
-        }],
 
         // 禁止行尾有空格
         // https://eslint.org/docs/rules/no-trailing-spaces
+        // eslint-config-tencent，打开，避免在行尾添加空格
         'no-trailing-spaces': ['error', {
-            'skipBlankLines': true // 允许在空行使用空白符
+            'skipBlankLines': true // 允许在空行使用空白符，eslint-config-tencent 未配置，默认为不允许，此处允许
         }],
 
         // 注释的斜线或 * 后必须有空格
         // https://eslint.org/docs/rules/spaced-comment
+        // eslint-config-tencent，打开always与此处配置一致，options未配置
         'spaced-comment': ['error', 'always', {
             'line': {
                 'markers': ['*package', '!', '/', ',', '=']
@@ -108,21 +72,24 @@ module.exports = {
             }
         }],
 
-        // https://eslint.org/docs/rules/no-template-curly-in-string
-        // 禁止在字符串中使用字符串模板。不限制
-        'no-template-curly-in-string': 'off',
+        // 要求或禁止末尾逗号，关闭
+        'comma-dangle': 'off',
 
-        // https://eslint.org/docs/rules/no-useless-escape
-        // 禁止出现没必要的转义。不限制
-        'no-useless-escape': 'off',
+        // 必须只使用函数声明或只使用函数表达式，关闭
+        'func-style': 'off',
 
-        // https://eslint.org/docs/rules/no-var
-        // 禁止使用 var
-        'no-var': 'error',
-
-        // https://eslint.org/docs/rules/prefer-const
-        // 如果一个变量不会被重新赋值，必须使用 `const` 进行声明。
-        'prefer-const': 'error',
+        'max-len': [
+            "error",
+            {
+                "code": 120,
+                "ignoreComments": true,
+                "ignoreStrings": true,
+                "ignoreUrls": true,
+                "ignoreRegExpLiterals": true,
+                "ignoreTemplateLiterals": true
+            }
+        ],
+        'no-param-reassign': 'off',
 
         // https://github.com/vuejs/eslint-plugin-vue/blob/master/docs/rules/array-bracket-spacing.md
         'vue/array-bracket-spacing': ['error', 'never'],
@@ -182,7 +149,7 @@ module.exports = {
         'vue/html-end-tags': 'error',
 
         // https://github.com/vuejs/eslint-plugin-vue/blob/master/docs/rules/html-indent.md
-        'vue/html-indent': ['error', 4, {
+        'vue/html-indent': ['error', 2, {
             'attribute': 1,
             'baseIndent': 1,
             'closeBracket': 0,
@@ -373,7 +340,7 @@ module.exports = {
         'vue/return-in-computed-property': 'error',
 
         // https://github.com/vuejs/eslint-plugin-vue/blob/master/docs/rules/script-indent.md
-        'vue/script-indent': ['error', 4, {
+        'vue/script-indent': ['error', 2, {
             'baseIndent': 1,
             'switchCase': 1
         }],
@@ -464,7 +431,10 @@ module.exports = {
 
         // https://github.com/vuejs/eslint-plugin-vue/blob/master/docs/rules/valid-v-text.md
         // v-text 指令必须合法
-        'vue/valid-v-text': 'error'
+        'vue/valid-v-text': 'error',
+
+        // eslint-config-tencent 会使用 prettier，endOfLine的配置默认为lf，此处覆盖为auto
+        "prettier/prettier": 0
     },
     overrides: [
         {

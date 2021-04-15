@@ -14,10 +14,12 @@ package y3_9_202104011012
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	mCommon "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -38,6 +40,21 @@ func addHostBkCPUArchitectureAttr(ctx context.Context, db dal.RDB, conf *upgrade
 
 	if cnt > 0 {
 		return nil
+	}
+
+	attrGrpFilter := map[string]interface{}{
+		common.BKObjIDField:           common.BKInnerObjIDHost,
+		common.BKPropertyGroupIDField: mCommon.HostAutoFields,
+	}
+
+	cnt, err = db.Table(common.BKTableNamePropertyGroup).Find(attrGrpFilter).Count(ctx)
+	if err != nil {
+		blog.Errorf("count auto attribute group failed, err: %v", err)
+		return err
+	}
+
+	if cnt == 0 {
+		return fmt.Errorf("attribute group %s does not exist", mCommon.HostAutoFields)
 	}
 
 	attrID, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
@@ -64,7 +81,7 @@ func addHostBkCPUArchitectureAttr(ctx context.Context, db dal.RDB, conf *upgrade
 		ObjectID:      common.BKInnerObjIDHost,
 		PropertyID:    "bk_cpu_architecture",
 		PropertyName:  "CPU架构",
-		PropertyGroup: "auto",
+		PropertyGroup: mCommon.HostAutoFields,
 		PropertyIndex: lastAttr.PropertyIndex + 1,
 		Placeholder:   "选择CPU架构类型，如X86或ARM",
 		IsEditable:    true,

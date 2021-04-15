@@ -32,27 +32,27 @@ import cloudResource from '@/views/cloud-resource/router.config'
 import statusPermission from '@/views/status/permission'
 import statusError from '@/views/status/error'
 
-const flatternViews = views => {
-    const flatterned = []
-    views.forEach(view => {
-        if (Array.isArray(view)) {
-            flatterned.push(...view)
-        } else {
-            flatterned.push(view)
-        }
-    })
-    return flatterned
+const flatternViews = (views) => {
+  const flatterned = []
+  views.forEach((view) => {
+    if (Array.isArray(view)) {
+      flatterned.push(...view)
+    } else {
+      flatterned.push(view)
+    }
+  })
+  return flatterned
 }
 
-export const injectStatusComponents = (views, status = ['permission', 'error']) => {
-    views.forEach(view => {
-        view.components = {
-            default: view.component,
-            permission: statusPermission,
-            error: statusError
-        }
-    })
-    return views
+export const injectStatusComponents = (views) => {
+  views.forEach((view) => {
+    view.components = {
+      default: view.component,
+      permission: statusPermission,
+      error: statusError
+    }
+  })
+  return views
 }
 
 export const indexViews = injectStatusComponents(flatternViews([index]))
@@ -62,46 +62,46 @@ export const adminViews = injectStatusComponents(flatternViews([admin]))
 export const hostLandingViews = injectStatusComponents(flatternViews([hostLanding]))
 
 export const businessViews = injectStatusComponents(flatternViews([
-    customQuery,
-    businessTopology,
-    serviceTemplate,
-    serviceCategory,
-    serviceInstance,
-    serviceSynchronous,
-    customFields,
-    setSync,
-    setTemplate,
-    hostApply
+  customQuery,
+  businessTopology,
+  serviceTemplate,
+  serviceCategory,
+  serviceInstance,
+  serviceSynchronous,
+  customFields,
+  setSync,
+  setTemplate,
+  hostApply
 ]))
 
 export const resourceViews = injectStatusComponents(flatternViews([
-    business,
-    resource,
-    generalModel,
-    eventpush,
-    resourceManagement,
-    cloudArea,
-    cloudAccount,
-    cloudResource
+  business,
+  resource,
+  generalModel,
+  eventpush,
+  resourceManagement,
+  cloudArea,
+  cloudAccount,
+  cloudResource
 ]))
 
 export const modelViews = injectStatusComponents(flatternViews([
-    model,
-    modelAssociation,
-    modelTopology
+  model,
+  modelAssociation,
+  modelTopology
 ]))
 
 export const analysisViews = injectStatusComponents(flatternViews([
-    audit,
-    operation
+  audit,
+  operation
 ]))
 
 export default {
-    ...indexViews,
-    ...adminViews,
-    ...hostLandingViews,
-    ...businessViews,
-    ...resourceViews,
-    ...modelViews,
-    ...analysisViews
+  ...indexViews,
+  ...adminViews,
+  ...hostLandingViews,
+  ...businessViews,
+  ...resourceViews,
+  ...modelViews,
+  ...analysisViews
 }

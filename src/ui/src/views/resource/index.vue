@@ -1,83 +1,83 @@
 <template>
-    <div class="resource-layout clearfix">
-        <bk-tab
-            :active.sync="activeTab"
-            class="scope-tab"
-            type="unborder-card"
-            @tab-change="handleTabChange">
-            <bk-tab-panel v-for="item in scopeList"
-                :key="item.id"
-                :name="item.id"
-                :label="item.label">
-            </bk-tab-panel>
-        </bk-tab>
-        <div class="content">
-            <cmdb-resize-layout
-                v-if="isResourcePool"
-                :class="['resize-layout fl', { 'is-collapse': layout.collapse }]"
-                :handler-offset="3"
-                :min="200"
-                :max="480"
-                :disabled="layout.collapse"
-                direction="right">
-                <resource-directory></resource-directory>
-                <i class="directory-collapse-icon bk-icon icon-angle-left"
-                    @click="layout.collapse = !layout.collapse">
-                </i>
-            </cmdb-resize-layout>
-            <resource-hosts class="main"></resource-hosts>
-        </div>
-        <router-subview></router-subview>
+  <div class="resource-layout clearfix">
+    <bk-tab
+      :active.sync="activeTab"
+      class="scope-tab"
+      type="unborder-card"
+      @tab-change="handleTabChange">
+      <bk-tab-panel v-for="item in scopeList"
+        :key="item.id"
+        :name="item.id"
+        :label="item.label">
+      </bk-tab-panel>
+    </bk-tab>
+    <div class="content">
+      <cmdb-resize-layout
+        v-if="isResourcePool"
+        :class="['resize-layout fl', { 'is-collapse': layout.collapse }]"
+        :handler-offset="3"
+        :min="200"
+        :max="480"
+        :disabled="layout.collapse"
+        direction="right">
+        <resource-directory></resource-directory>
+        <i class="directory-collapse-icon bk-icon icon-angle-left"
+          @click="layout.collapse = !layout.collapse">
+        </i>
+      </cmdb-resize-layout>
+      <resource-hosts class="main"></resource-hosts>
     </div>
+    <router-subview></router-subview>
+  </div>
 </template>
 
 <script>
-    import resourceDirectory from './children/directory.vue'
-    import resourceHosts from './children/host-list.vue'
-    import Bus from '@/utils/bus.js'
-    import RouterQuery from '@/router/query'
-    export default {
-        components: {
-            resourceDirectory,
-            resourceHosts
+  import resourceDirectory from './children/directory.vue'
+  import resourceHosts from './children/host-list.vue'
+  import Bus from '@/utils/bus.js'
+  import RouterQuery from '@/router/query'
+  export default {
+    components: {
+      resourceDirectory,
+      resourceHosts
+    },
+    data() {
+      return {
+        layout: {
+          collapse: false
         },
-        data () {
-            return {
-                layout: {
-                    collapse: false
-                },
-                activeTab: RouterQuery.get('scope', '1'),
-                scopeList: [{
-                    id: '1',
-                    label: this.$t('未分配')
-                }, {
-                    id: '0',
-                    label: this.$t('已分配')
-                }, {
-                    id: 'all',
-                    label: this.$t('全部')
-                }]
-            }
-        },
-        computed: {
-            isResourcePool () {
-                return this.activeTab.toString() === '1'
-            }
-        },
-        methods: {
-            handleTabChange (tab) {
-                Bus.$emit('toggle-host-filter', false)
-                Bus.$emit('reset-host-filter')
-                RouterQuery.set({
-                    scope: isNaN(tab) ? tab : parseInt(tab),
-                    ip: '',
-                    bk_asset_id: '',
-                    page: 1,
-                    _t: Date.now()
-                })
-            }
-        }
+        activeTab: RouterQuery.get('scope', '1'),
+        scopeList: [{
+          id: '1',
+          label: this.$t('未分配')
+        }, {
+          id: '0',
+          label: this.$t('已分配')
+        }, {
+          id: 'all',
+          label: this.$t('全部')
+        }]
+      }
+    },
+    computed: {
+      isResourcePool() {
+        return this.activeTab.toString() === '1'
+      }
+    },
+    methods: {
+      handleTabChange(tab) {
+        Bus.$emit('toggle-host-filter', false)
+        Bus.$emit('reset-host-filter')
+        RouterQuery.set({
+          scope: isNaN(tab) ? tab : parseInt(tab, 10),
+          ip: '',
+          bk_asset_id: '',
+          page: 1,
+          _t: Date.now()
+        })
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

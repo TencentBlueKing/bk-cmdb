@@ -252,7 +252,7 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 	//sort error
 	sort.Ints(colIdxList)
 	for colIdx := range colIdxList {
-		results.Errors = append(results.Errors, colIdxErrMap[colIdx])
+		results.Errors = append(results.Errors, colIdxErrMap[colIdxList[colIdx]])
 	}
 
 	return results, nil
