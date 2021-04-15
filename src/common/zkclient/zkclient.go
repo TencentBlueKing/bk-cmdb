@@ -106,6 +106,7 @@ type ZkClient struct {
 	zkAcl        []zk.ACL
 	zkConnClosed bool
 	sync.Mutex
+	closeLock sync.Mutex
 }
 
 func NewZkClient(host []string) *ZkClient {
@@ -123,6 +124,9 @@ func (z *ZkClient) Connect() error {
 }
 
 func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
+	z.Lock()
+	defer z.Unlock()
+
 	if z.ZkConn != nil {
 		z.Close()
 	}
@@ -138,15 +142,14 @@ func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
 		c.Close()
 		return err
 	}
-
 	z.ZkConn = c
 	z.zkConnClosed = false
 	return nil
 }
 
 func (z *ZkClient) Close() {
-	z.Lock()
-	defer z.Unlock()
+	z.closeLock.Lock()
+	defer z.closeLock.Unlock()
 	if nil != z.ZkConn && !z.zkConnClosed {
 		z.ZkConn.Close()
 		z.zkConnClosed = true
@@ -414,4 +417,8 @@ func (z *ZkClient) GetAll2Json(path string) (string, error) {
 
 	//blog.Infof("data:%s", string(data))
 	return string(data), err
+}
+
+func (z *ZkClient) IsConnectionError(err error) bool {
+	return err == zk.ErrConnectionClosed || err == zk.ErrNoServer || err == zk.ErrClosing
 }
