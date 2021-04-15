@@ -66,7 +66,11 @@
       @page-limit-change="handleSizeChange"
       @page-change="handlePageChange"
       @sort-change="handleSortChange">
-      <bk-table-column prop="id" label="ID" class-name="is-highlight" show-overflow-tooltip sortable="custom">
+      <bk-table-column prop="id" label="ID" class-name="is-highlight" sortable="custom">
+        <div slot-scope="{ row }" v-bk-overflow-tips
+          :class="['template-id', { 'need-sync': row.need_sync }]">
+          {{row.id}}
+        </div>
       </bk-table-column>
       <bk-table-column prop="name" :label="$t('模板名称')" show-overflow-tooltip sortable="custom"></bk-table-column>
       <bk-table-column prop="service_category" :label="$t('服务分类')" show-overflow-tooltip></bk-table-column>
@@ -155,7 +159,9 @@
           pagination: {
             current: 1,
             count: 0,
-            ...this.$tools.getDefaultPaginationConfig()
+            ...this.$tools.getDefaultPaginationConfig({
+              'limit-list': [20, 50, 100]
+            })
           },
           sort: '-id',
           stuff: {
@@ -211,7 +217,11 @@
       }
     },
     methods: {
-      ...mapActions('serviceTemplate', ['searchServiceTemplate', 'deleteServiceTemplate']),
+      ...mapActions('serviceTemplate', [
+        'searchServiceTemplate',
+        'deleteServiceTemplate',
+        'getServiceTemplateSyncStatus'
+      ]),
       ...mapActions('serviceClassification', ['searchServiceCategoryWithoutAmout']),
       async getTableData() {
         try {
@@ -230,7 +240,10 @@
             return template
           })
           this.table.stuff.type = this.hasFilter ? 'search' : 'default'
-          this.table.list.length && this.getTemplateCount()
+          if (this.table.list.length) {
+            this.getTemplateCount()
+            this.getTemplateSyncStatus()
+          }
         } catch ({ permission }) {
           if (permission) {
             this.table.stuff = {
@@ -289,6 +302,31 @@
         this.classificationList = categories
         this.mainList = this.classificationList.filter(classification => !classification.bk_parent_id)
         this.allSecondaryList = this.classificationList.filter(classification => classification.bk_parent_id)
+      },
+      async getTemplateSyncStatus() {
+        try {
+          const { service_templates: syncStatusList = [] } = await this.getServiceTemplateSyncStatus({
+            bizId: this.bizId,
+            params: {
+              is_partial: true,
+              service_template_ids: this.table.list.map(row => row.id)
+            },
+            config: {
+              cancelPrevious: true
+            }
+          })
+          this.table.list.forEach((row) => {
+            const syncStatus = syncStatusList.find(status => status.service_template_id === row.id) || {}
+            if (syncStatus) {
+              this.$set(row, 'need_sync', syncStatus.need_sync)
+            }
+          })
+        } catch (error) {
+          console.error(error)
+          this.table.list.forEach((row) => {
+            this.$set(row, 'need_sync', false)
+          })
+        }
       },
       handleSelect(id = '') {
         this.secondaryList = this.allSecondaryList.filter(classification => classification.bk_parent_id === id)
@@ -376,6 +414,25 @@
         }
         .template-table {
             margin-top: 14px;
+            .template-id {
+                position: relative;
+                display: inline-block;
+                vertical-align: middle;
+                line-height: 40px;
+                padding-right: 10px;
+                max-width: 100%;
+                @include ellipsis;
+                &.need-sync:after {
+                    content: "";
+                    position: absolute;
+                    top: 10px;
+                    right: 2px;
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 50%;
+                    background-color: $dangerColor;
+                }
+            }
         }
     }
 </style>

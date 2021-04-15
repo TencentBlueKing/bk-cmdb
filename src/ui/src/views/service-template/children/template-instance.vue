@@ -22,7 +22,10 @@
         ref="instanceTable"
         v-bkloading="{ isLoading: $loading(Object.values(request)) || table.filtering }"
         :data="table.data"
+        :pagination="table.pagination"
         :max-height="$APP.height - 250"
+        @page-limit-change="handleSizeChange"
+        @page-change="handlePageChange"
         @selection-change="handleSelectionChange">
         <bk-table-column type="selection" :selectable="checkSelectable"></bk-table-column>
         <bk-table-column :label="$t('模块名称')" prop="bk_module_name" show-overflow-tooltip></bk-table-column>
@@ -34,10 +37,10 @@
         </bk-table-column>
         <bk-table-column :label="$t('操作')">
           <template slot-scope="{ row }">
-            <span class="latest-sync" v-if="isSyncDisabled(row)" v-bk-tooltips="getSyncDisabledText(row)">
+            <span class="latest-sync" v-if="isSyncDisabled(row)" v-bk-tooltips="'无需同步'">
               {{$t('去同步')}}
             </span>
-            <bk-button v-else text :disabled="isSyncDisabled(row)" @click="handleSync(row)">
+            <bk-button v-else text @click="handleSync(row)">
               {{$t('去同步')}}
             </bk-button>
           </template>
@@ -82,6 +85,13 @@
           stuff: {
             type: 'default',
             payload: {}
+          },
+          pagination: {
+            current: 1,
+            count: 0,
+            ...this.$tools.getDefaultPaginationConfig({
+              'limit-list': [20, 50, 100]
+            })
           }
         },
         request: {
@@ -118,7 +128,8 @@
               this.getSyncStatus(data.info),
               this.getTopoPath(data.info)
             ])
-            this.table.syncStatus = syncStatus
+            this.table.syncStatus = syncStatus.modules
+            this.table.pagination.count = data.count
             data.info.forEach((module) => {
               const topo = topoPath.nodes.find(topo => topo.topo_node.bk_inst_id === module.bk_module_id)
               // eslint-disable-next-line no-underscore-dangle
@@ -137,18 +148,23 @@
         return this.$store.dispatch('serviceTemplate/getServiceTemplateModules', {
           bizId: this.bizId,
           serviceTemplateId: this.serviceTemplateId,
-          params: {},
+          params: {
+            page: {
+              start: (this.table.pagination.current - 1) * this.table.pagination.limit,
+              limit: this.table.pagination.limit
+            }
+          },
           config: {
             requestId: this.request.instance
           }
         })
       },
       getSyncStatus(modules) {
-        return this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
+        return this.$store.dispatch('serviceTemplate/getServiceTemplateSyncStatus', {
+          bizId: this.bizId,
           params: {
+            is_partial: false,
             bk_module_ids: modules.map(module => module.bk_module_id),
-            service_template_id: this.serviceTemplateId,
-            bk_biz_id: this.bizId
           },
           config: {
             requestId: this.request.status
@@ -172,13 +188,9 @@
       isSyncDisabled(row) {
         const difference = this.getSyncStatusDifference(row)
         if (difference) {
-          return !difference.has_difference
+          return !difference.need_sync
         }
         return true
-      },
-      getSyncDisabledText(row) {
-        const difference = this.getSyncStatusDifference(row) || {}
-        return difference.unchanged && difference.unchanged.length ? this.$t('已经是最新，无需同步') : this.$t('没有主机无需同步')
       },
       handleSync(row) {
         this.$routerActions.redirect({
@@ -242,6 +254,15 @@
             node: `module-${row.bk_module_id}`
           }
         })
+      },
+      handleSizeChange(size) {
+        this.table.pagination.limit = size
+        this.table.pagination.current = 1
+        this.refresh()
+      },
+      handlePageChange(page) {
+        this.table.pagination.current = page
+        this.refresh()
       }
     }
   }
