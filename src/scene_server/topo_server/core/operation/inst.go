@@ -985,6 +985,7 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, objID string, co
 		input := &metadata.QueryCondition{Condition: queryCond}
 		input.Limit.Offset = int64(cond.Start)
 		input.Limit.Limit = int64(cond.Limit)
+		input.SortArr = metadata.NewSearchSortParse().String(cond.Sort).ToSearchSortArr()
 		input.Fields = strings.Split(cond.Fields, ",")
 		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, objID, input)
 		if nil != err {
