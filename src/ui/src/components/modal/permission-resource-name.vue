@@ -1,57 +1,57 @@
 <template>
-    <div>
-        <div :class="['skeleton', { 'full-width': relations.length > 1 }]" v-if="fetching"></div>
-        <div v-else>{{names.join(' / ') || '--'}}</div>
-    </div>
+  <div>
+    <div :class="['skeleton', { 'full-width': relations.length > 1 }]" v-if="fetching"></div>
+    <div v-else>{{names.join(' / ') || '--'}}</div>
+  </div>
 </template>
 
 <script>
-    import { IAM_VIEWS_INST_NAME } from './permission-resource-name.js'
-    export default {
-        props: {
-            relations: {
-                type: Array,
-                default () {
-                    return []
-                }
-            }
-        },
-        data () {
-            return {
-                fetching: false,
-                names: []
-            }
-        },
-        watch: {
-            relations (value) {
-                this.fetchName()
-            }
-        },
-        created () {
-            this.fetchName()
-        },
-        methods: {
-            async fetchName () {
-                this.names = []
-                const nameReq = []
-                this.relations.forEach(relation => {
-                    const [type, id] = relation
-                    nameReq.push(IAM_VIEWS_INST_NAME[type](this, id, this.relations))
-                })
-                try {
-                    this.fetching = true
-                    const result = await Promise.all(nameReq)
-                    result.forEach((name, index) => {
-                        this.names.push(`【${this.relations[index][2]}】${name}`)
-                    })
-                } catch (error) {
-                    console.error(error)
-                } finally {
-                    this.fetching = false
-                }
-            }
+  import { IAM_VIEWS_INST_NAME } from './permission-resource-name.js'
+  export default {
+    props: {
+      relations: {
+        type: Array,
+        default() {
+          return []
         }
+      }
+    },
+    data() {
+      return {
+        fetching: false,
+        names: []
+      }
+    },
+    watch: {
+      relations() {
+        this.fetchName()
+      }
+    },
+    created() {
+      this.fetchName()
+    },
+    methods: {
+      async fetchName() {
+        this.names = []
+        const nameReq = []
+        this.relations.forEach((relation) => {
+          const [type, id] = relation
+          nameReq.push(IAM_VIEWS_INST_NAME[type](this, id, this.relations))
+        })
+        try {
+          this.fetching = true
+          const result = await Promise.all(nameReq)
+          result.forEach((name, index) => {
+            this.names.push(`【${this.relations[index][2]}】${name}`)
+          })
+        } catch (error) {
+          console.error(error)
+        } finally {
+          this.fetching = false
+        }
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

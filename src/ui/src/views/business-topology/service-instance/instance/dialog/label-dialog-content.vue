@@ -1,153 +1,154 @@
 <template>
-    <div class="edit-label-list">
-        <div class="scrollbar-box">
-            <div class="label-item" v-for="(label, index) in list" :key="index">
-                <div class="label-key" :class="{ 'is-error': errors.has('key-' + index) }">
-                    <input class="cmdb-form-input" type="text"
-                        ref="tagKey"
-                        :data-vv-name="'key-' + index"
-                        v-validate="getValidateRules(index, 'key')"
-                        v-model="label.key"
-                        :placeholder="`Key: ${$validator.dictionary.getMessage($i18n.locale, 'instanceTagKey')}`">
-                    <p class="input-error">{{errors.first('key-' + index)}}</p>
-                </div>
-                <span class="symbol">:</span>
-                <div class="label-value" :class="{ 'is-error': errors.has('value-' + index) }">
-                    <input class="cmdb-form-input" type="text"
-                        :data-vv-name="'value-' + index"
-                        v-validate="getValidateRules(index, 'value')"
-                        v-model="label.value"
-                        :placeholder="`Value: ${$validator.dictionary.getMessage($i18n.locale, 'instanceTagValue')}`">
-                    <p class="input-error">{{errors.first('value-' + index)}}</p>
-                </div>
-                <i class="bk-icon icon-plus-circle-shape icon-btn"
-                    v-show="list.length - 1 === index"
-                    @click="handleAddLabel(index)">
-                </i>
-                <i :class="['bk-icon', 'icon-minus-circle-shape', 'icon-btn']"
-                    @click="handleRemoveLabel(index)">
-                </i>
-            </div>
+  <div class="edit-label-list">
+    <div class="scrollbar-box">
+      <div class="label-item" v-for="(label, index) in list" :key="index">
+        <div class="label-key" :class="{ 'is-error': errors.has('key-' + index) }">
+          <input class="cmdb-form-input" type="text"
+            ref="tagKey"
+            :data-vv-name="'key-' + index"
+            v-validate="getValidateRules(index, 'key')"
+            v-model="label.key"
+            :placeholder="`Key: ${$validator.dictionary.getMessage($i18n.locale, 'instanceTagKey')}`">
+          <p class="input-error">{{errors.first('key-' + index)}}</p>
         </div>
+        <span class="symbol">:</span>
+        <div class="label-value" :class="{ 'is-error': errors.has('value-' + index) }">
+          <input class="cmdb-form-input" type="text"
+            :data-vv-name="'value-' + index"
+            v-validate="getValidateRules(index, 'value')"
+            v-model="label.value"
+            :placeholder="`Value: ${$validator.dictionary.getMessage($i18n.locale, 'instanceTagValue')}`">
+          <p class="input-error">{{errors.first('value-' + index)}}</p>
+        </div>
+        <i class="bk-icon icon-plus-circle-shape icon-btn"
+          v-show="list.length - 1 === index"
+          @click="handleAddLabel(index)">
+        </i>
+        <i :class="['bk-icon', 'icon-minus-circle-shape', 'icon-btn']"
+          @click="handleRemoveLabel(index)">
+        </i>
+      </div>
     </div>
+  </div>
 </template>
 
 <script>
-    export default {
-        props: {
-            defaultLabels: {
-                type: Array,
-                default: () => []
-            }
+  export default {
+    props: {
+      defaultLabels: {
+        type: Array,
+        default: () => []
+      }
+    },
+    data() {
+      return {
+        originList: [],
+        list: [],
+        removeKeysList: [],
+        submitList: []
+      }
+    },
+    watch: {
+      defaultLabels: {
+        handler(list) {
+          let cloneList = this.$tools.clone(list)
+          if (!cloneList.length) {
+            cloneList = cloneList.concat([{
+              id: -1,
+              key: '',
+              value: ''
+            }])
+          }
+          this.list = cloneList
+          this.originList = this.$tools.clone(list)
         },
-        data () {
-            return {
-                originList: [],
-                list: [],
-                removeKeysList: [],
-                submitList: []
+        deep: true
+      },
+      list: {
+        handler(list) {
+          if (list.length === 1 && !list[0].key && !list[0].value) {
+            this.submitList = []
+            this.removeKeysList = this.originList.map(label => label.key)
+          } else {
+            const { defaultLabels } = this
+            for (let i = 0; i < defaultLabels.length; i++) {
+              // eslint-disable-next-line max-len
+              const index = list.findIndex(item => item.id !== -1 && defaultLabels[i].id === item.id && (defaultLabels[i].key !== item.key || defaultLabels[i].value !== item.value))
+              if (index !== -1) {
+                list[index].id = -1
+                !this.removeKeysList.includes[defaultLabels[i].key] && this.removeKeysList.push(defaultLabels[i].key)
+              }
             }
+            this.submitList = list
+          }
         },
-        watch: {
-            defaultLabels: {
-                handler (list) {
-                    let cloneList = this.$tools.clone(list)
-                    if (!cloneList.length) {
-                        cloneList = cloneList.concat([{
-                            id: -1,
-                            key: '',
-                            value: ''
-                        }])
-                    }
-                    this.list = cloneList
-                    this.originList = this.$tools.clone(list)
-                },
-                deep: true
-            },
-            list: {
-                handler (list) {
-                    if (list.length === 1 && !list[0].key && !list[0].value) {
-                        this.submitList = []
-                        this.removeKeysList = this.originList.map(label => label.key)
-                    } else {
-                        const defaultLabels = this.defaultLabels
-                        for (let i = 0; i < defaultLabels.length; i++) {
-                            const index = list.findIndex(item => item.id !== -1 && defaultLabels[i].id === item.id && (defaultLabels[i].key !== item.key || defaultLabels[i].value !== item.value))
-                            if (index !== -1) {
-                                list[index].id = -1
-                                !this.removeKeysList.includes[defaultLabels[i].key] && this.removeKeysList.push(defaultLabels[i].key)
-                            }
-                        }
-                        this.submitList = list
-                    }
-                },
-                deep: true
-            }
-        },
-        created () {
-            this.initValue()
-        },
-        methods: {
-            initValue () {
-                let cloneList = this.$tools.clone(this.defaultLabels)
-                if (!cloneList.length) {
-                    cloneList = cloneList.concat([{
-                        id: -1,
-                        key: '',
-                        value: ''
-                    }])
-                }
-                this.list = cloneList
-                this.originList = this.$tools.clone(this.defaultLabels)
-            },
-            getValidateRules (currentIndex, type) {
-                const rules = {}
-                if (this.list.length === 1 && !this.list[0].key && !this.list[0].value) {
-                    return {}
-                }
-                rules.required = true
-                if (type === 'key') {
-                    rules.instanceTagKey = true
-                    const list = this.$tools.clone(this.list)
-                    list.splice(currentIndex, 1)
-                    rules.repeatTagKey = list.map(label => label.key)
-                } else {
-                    rules.instanceTagValue = true
-                }
-                return rules
-            },
-            handleAddLabel (index) {
-                const currentTag = this.list[index]
-                if (!currentTag.key || !currentTag.value) {
-                    this.$bkMessage({
-                        message: this.$t('请填写完整标签键/值'),
-                        theme: 'warning'
-                    })
-                    return
-                }
-                this.list.push({
-                    id: -1,
-                    key: '',
-                    value: ''
-                })
-                this.$nextTick(() => {
-                    this.$refs.tagKey[index + 1].focus()
-                })
-            },
-            handleRemoveLabel (index) {
-                if (this.list.length === 1) {
-                    this.$set(this.list[0], 'key', '')
-                    this.$set(this.list[0], 'value', '')
-                    return
-                }
-                const currentTag = this.list[index]
-                if (currentTag.id !== -1) {
-                    this.removeKeysList.push(currentTag.key)
-                }
-                this.list.splice(index, 1)
-            }
+        deep: true
+      }
+    },
+    created() {
+      this.initValue()
+    },
+    methods: {
+      initValue() {
+        let cloneList = this.$tools.clone(this.defaultLabels)
+        if (!cloneList.length) {
+          cloneList = cloneList.concat([{
+            id: -1,
+            key: '',
+            value: ''
+          }])
         }
+        this.list = cloneList
+        this.originList = this.$tools.clone(this.defaultLabels)
+      },
+      getValidateRules(currentIndex, type) {
+        const rules = {}
+        if (this.list.length === 1 && !this.list[0].key && !this.list[0].value) {
+          return {}
+        }
+        rules.required = true
+        if (type === 'key') {
+          rules.instanceTagKey = true
+          const list = this.$tools.clone(this.list)
+          list.splice(currentIndex, 1)
+          rules.repeatTagKey = list.map(label => label.key)
+        } else {
+          rules.instanceTagValue = true
+        }
+        return rules
+      },
+      handleAddLabel(index) {
+        const currentTag = this.list[index]
+        if (!currentTag.key || !currentTag.value) {
+          this.$bkMessage({
+            message: this.$t('请填写完整标签键/值'),
+            theme: 'warning'
+          })
+          return
+        }
+        this.list.push({
+          id: -1,
+          key: '',
+          value: ''
+        })
+        this.$nextTick(() => {
+          this.$refs.tagKey[index + 1].focus()
+        })
+      },
+      handleRemoveLabel(index) {
+        if (this.list.length === 1) {
+          this.$set(this.list[0], 'key', '')
+          this.$set(this.list[0], 'value', '')
+          return
+        }
+        const currentTag = this.list[index]
+        if (currentTag.id !== -1) {
+          this.removeKeysList.push(currentTag.key)
+        }
+        this.list.splice(index, 1)
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

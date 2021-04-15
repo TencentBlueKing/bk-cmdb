@@ -1,224 +1,231 @@
 <template>
-    <div class="host-selector-layout">
-        <div class="layout-header">
-            <h2 class="title">{{title || $t('选择主机')}}</h2>
-        </div>
-        <div class="layout-content">
-            <div class="topo-table">
-                <bk-tab :active.sync="tab.active" type="border-card">
-                    <bk-tab-panel
-                        v-for="(panel, index) in tab.panels"
-                        v-bind="panel"
-                        :key="index">
-                        <div class="tab-content">
-                            <keep-alive>
-                                <component
-                                    :is="components[panel.name]"
-                                    class="selector-component"
-                                    :selected="selected"
-                                    @select-change="handleSelectChange">
-                                </component>
-                            </keep-alive>
-                        </div>
-                    </bk-tab-panel>
-                </bk-tab>
-            </div>
-            <div class="result-preview">
-                <div class="preview-title">{{$t('结果预览')}}</div>
-                <div class="preview-content" v-show="selected.length > 0">
-                    <bk-collapse v-model="collapse.active" @item-click="handleCollapse">
-                        <bk-collapse-item name="host" hide-arrow>
-                            <div class="collapse-title">
-                                <div class="text">
-                                    <i :class="['bk-icon icon-angle-right', { expand: collapse.expanded.host }]"></i>
-                                    <i18n path="已选择N台主机">
-                                        <span class="count" place="count">{{selected.length}}</span>
-                                    </i18n>
-                                </div>
-                                <div class="more" @click.stop="handleClickMore">
-                                    <i class="bk-icon icon-more"></i>
-                                </div>
-                            </div>
-                            <ul slot="content" class="host-list">
-                                <li class="host-item" v-for="(row, index) in selected" :key="index">
-                                    <div class="ip">
-                                        {{row.host.bk_host_innerip}}
-                                        <span class="repeat-tag" v-if="repeatSelected.includes(row)" v-bk-tooltips="{ content: `${$t('云区域')}：${foreignkey(row.host.bk_cloud_id)}` }">{{$t('IP重复')}}</span>
-                                    </div>
-                                    <i class="bk-icon icon-close-line" @click="handleRemove(row)"></i>
-                                </li>
-                            </ul>
-                        </bk-collapse-item>
-                    </bk-collapse>
-                </div>
-            </div>
-        </div>
-        <div class="layout-footer">
-            <bk-button class="mr10" theme="primary" :disabled="!selected.length" @click="handleNextStep">{{confirmText || $t('下一步')}}</bk-button>
-            <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-        </div>
-        <ul class="more-menu" ref="moreMenu" v-show="more.show">
-            <li class="menu-item" @click="handleCopyIp">{{$t('复制IP')}}</li>
-            <li class="menu-item" @click="handleRemoveAll">{{$t('移除所有')}}</li>
-        </ul>
+  <div class="host-selector-layout">
+    <div class="layout-header">
+      <h2 class="title">{{title || $t('选择主机')}}</h2>
     </div>
+    <div class="layout-content">
+      <div class="topo-table">
+        <bk-tab :active.sync="tab.active" type="border-card">
+          <bk-tab-panel
+            v-for="(panel, index) in tab.panels"
+            v-bind="panel"
+            :key="index">
+            <div class="tab-content">
+              <keep-alive>
+                <component
+                  :is="components[panel.name]"
+                  class="selector-component"
+                  :selected="selected"
+                  @select-change="handleSelectChange">
+                </component>
+              </keep-alive>
+            </div>
+          </bk-tab-panel>
+        </bk-tab>
+      </div>
+      <div class="result-preview">
+        <div class="preview-title">{{$t('结果预览')}}</div>
+        <div class="preview-content" v-show="selected.length > 0">
+          <bk-collapse v-model="collapse.active" @item-click="handleCollapse">
+            <bk-collapse-item name="host" hide-arrow>
+              <div class="collapse-title">
+                <div class="text">
+                  <i :class="['bk-icon icon-angle-right', { expand: collapse.expanded.host }]"></i>
+                  <i18n path="已选择N台主机">
+                    <span class="count" place="count">{{selected.length}}</span>
+                  </i18n>
+                </div>
+                <div class="more" @click.stop="handleClickMore">
+                  <i class="bk-icon icon-more"></i>
+                </div>
+              </div>
+              <ul slot="content" class="host-list">
+                <li class="host-item" v-for="(row, index) in selected" :key="index">
+                  <div class="ip">
+                    {{row.host.bk_host_innerip}}
+                    <span class="repeat-tag" v-if="repeatSelected.includes(row)"
+                      v-bk-tooltips="{ content: `${$t('云区域')}：${foreignkey(row.host.bk_cloud_id)}` }">
+                      {{$t('IP重复')}}
+                    </span>
+                  </div>
+                  <i class="bk-icon icon-close-line" @click="handleRemove(row)"></i>
+                </li>
+              </ul>
+            </bk-collapse-item>
+          </bk-collapse>
+        </div>
+      </div>
+    </div>
+    <div class="layout-footer">
+      <bk-button class="mr10" theme="primary" :disabled="!selected.length" @click="handleNextStep">
+        {{confirmText || $t('下一步')}}
+      </bk-button>
+      <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
+    </div>
+    <ul class="more-menu" ref="moreMenu" v-show="more.show">
+      <li class="menu-item" @click="handleCopyIp">{{$t('复制IP')}}</li>
+      <li class="menu-item" @click="handleRemoveAll">{{$t('移除所有')}}</li>
+    </ul>
+  </div>
 </template>
 
 <script>
-    import { foreignkey } from '@/filters/formatter.js'
-    import HostSelectorTopology from './host-selector-topology.vue'
-    import HostSelectorCustom from './host-selector-custom.vue'
-    export default {
-        name: 'cmdb-host-selector',
+  import has from 'has'
+  import { foreignkey } from '@/filters/formatter.js'
+  import HostSelectorTopology from './host-selector-topology.vue'
+  import HostSelectorCustom from './host-selector-custom.vue'
+  export default {
+    name: 'cmdb-host-selector',
+    components: {
+      HostSelectorTopology,
+      HostSelectorCustom
+    },
+    filters: {
+      foreignkey
+    },
+    props: {
+      exist: {
+        type: Array,
+        default: () => ([])
+      },
+      confirmText: {
+        type: String,
+        default: ''
+      },
+      title: String
+    },
+    data() {
+      return {
+        tab: {
+          panels: [
+            { name: 'topology', label: this.$t('静态拓扑') },
+            { name: 'custom', label: this.$t('自定义输入') }
+          ],
+          active: 'topology'
+        },
+        collapse: {
+          expanded: { host: true },
+          active: 'host'
+        },
         components: {
-            HostSelectorTopology,
-            HostSelectorCustom
+          topology: HostSelectorTopology,
+          custom: HostSelectorCustom
         },
-        filters: {
-            foreignkey
+        more: {
+          instance: null,
+          show: false
         },
-        props: {
-            exist: {
-                type: Array,
-                default: () => ([])
-            },
-            confirmText: {
-                type: String,
-                default: ''
-            },
-            title: String
-        },
-        data () {
-            return {
-                tab: {
-                    panels: [
-                        { name: 'topology', label: this.$t('静态拓扑') },
-                        { name: 'custom', label: this.$t('自定义输入') }
-                    ],
-                    active: 'topology'
-                },
-                collapse: {
-                    expanded: { host: true },
-                    active: 'host'
-                },
-                components: {
-                    topology: HostSelectorTopology,
-                    custom: HostSelectorCustom
-                },
-                more: {
-                    instance: null,
-                    show: false
-                },
-                repeatSelected: [],
-                uniqueSelected: []
-            }
-        },
-        computed: {
-            selected () {
-                return [...this.repeatSelected, ...this.uniqueSelected]
-            }
-        },
-        created () {
-            this.setSelected(this.exist)
-        },
-        methods: {
-            handleSelectChange ({ removed, selected }) {
-                this.handleRemove(removed)
-                this.handleSelect(selected)
-            },
-            handleRemove (hosts) {
-                const removeData = Array.isArray(hosts) ? hosts : [hosts]
-                const ids = [...new Set(removeData.map(data => data.host.bk_host_id))]
-                const selected = this.selected.filter(target => !ids.includes(target.host.bk_host_id))
-                this.setSelected(selected)
-            },
-            handleSelect (hosts) {
-                const selectData = Array.isArray(hosts) ? hosts : [hosts]
-                const ids = [...new Set(selectData.map(data => data.host.bk_host_id))]
-                const uniqueData = ids.map(id => selectData.find(data => data.host.bk_host_id === id))
-                const newSelectData = []
-                uniqueData.forEach(data => {
-                    const isExist = this.selected.some(target => target.host.bk_host_id === data.host.bk_host_id)
-                    if (!isExist) {
-                        newSelectData.push(data)
-                    }
-                })
-                if (newSelectData.length) {
-                    this.setSelected([...this.selected, ...newSelectData])
-                }
-            },
-            setSelected (selected) {
-                const ipMap = {}
-                const repeat = []
-                const unique = []
-                selected.forEach(data => {
-                    const ip = data.host.bk_host_innerip
-                    if (ipMap.hasOwnProperty(ip)) {
-                        ipMap[ip].push(data)
-                    } else {
-                        ipMap[ip] = [data]
-                    }
-                })
-                Object.values(ipMap).forEach(value => {
-                    if (value.length > 1) {
-                        repeat.push(...value)
-                    } else {
-                        unique.push(...value)
-                    }
-                })
-                this.repeatSelected = repeat
-                this.uniqueSelected = unique
-            },
-            handleClickMore (event) {
-                this.more.instance && this.more.instance.destroy()
-                this.more.instance = this.$bkPopover(event.target, {
-                    content: this.$refs.moreMenu,
-                    allowHTML: true,
-                    delay: 300,
-                    trigger: 'manual',
-                    boundary: 'window',
-                    placement: 'bottom-end',
-                    theme: 'light host-selector-popover',
-                    distance: 6,
-                    interactive: true
-                })
-                this.more.show = true
-                this.$nextTick(() => {
-                    this.more.instance.show()
-                })
-            },
-            handleCopyIp () {
-                const ipList = this.selected.map(item => item.host.bk_host_innerip)
-                this.$copyText(ipList.join('\n')).then(() => {
-                    this.$success(this.$t('复制成功'))
-                }, () => {
-                    this.$error(this.$t('复制失败'))
-                }).finally(() => {
-                    this.more.instance.hide()
-                })
-            },
-            handleRemoveAll () {
-                this.repeatSelected = []
-                this.uniqueSelected = []
-                this.more.instance.hide()
-            },
-            handleCancel () {
-                this.$emit('cancel')
-            },
-            handleNextStep () {
-                this.$emit('confirm', this.selected)
-            },
-            handleCollapse (names) {
-                Object.keys(this.collapse.expanded).forEach(key => (this.collapse.expanded[key] = false))
-                names.forEach(name => {
-                    this.$set(this.collapse.expanded, name, true)
-                })
-            },
-            foreignkey (value) {
-                return foreignkey(value)
-            }
+        repeatSelected: [],
+        uniqueSelected: []
+      }
+    },
+    computed: {
+      selected() {
+        return [...this.repeatSelected, ...this.uniqueSelected]
+      }
+    },
+    created() {
+      this.setSelected(this.exist)
+    },
+    methods: {
+      handleSelectChange({ removed, selected }) {
+        this.handleRemove(removed)
+        this.handleSelect(selected)
+      },
+      handleRemove(hosts) {
+        const removeData = Array.isArray(hosts) ? hosts : [hosts]
+        const ids = [...new Set(removeData.map(data => data.host.bk_host_id))]
+        const selected = this.selected.filter(target => !ids.includes(target.host.bk_host_id))
+        this.setSelected(selected)
+      },
+      handleSelect(hosts) {
+        const selectData = Array.isArray(hosts) ? hosts : [hosts]
+        const ids = [...new Set(selectData.map(data => data.host.bk_host_id))]
+        const uniqueData = ids.map(id => selectData.find(data => data.host.bk_host_id === id))
+        const newSelectData = []
+        uniqueData.forEach((data) => {
+          const isExist = this.selected.some(target => target.host.bk_host_id === data.host.bk_host_id)
+          if (!isExist) {
+            newSelectData.push(data)
+          }
+        })
+        if (newSelectData.length) {
+          this.setSelected([...this.selected, ...newSelectData])
         }
+      },
+      setSelected(selected) {
+        const ipMap = {}
+        const repeat = []
+        const unique = []
+        selected.forEach((data) => {
+          const ip = data.host.bk_host_innerip
+          if (has(ipMap, ip)) {
+            ipMap[ip].push(data)
+          } else {
+            ipMap[ip] = [data]
+          }
+        })
+        Object.values(ipMap).forEach((value) => {
+          if (value.length > 1) {
+            repeat.push(...value)
+          } else {
+            unique.push(...value)
+          }
+        })
+        this.repeatSelected = repeat
+        this.uniqueSelected = unique
+      },
+      handleClickMore(event) {
+        this.more.instance && this.more.instance.destroy()
+        this.more.instance = this.$bkPopover(event.target, {
+          content: this.$refs.moreMenu,
+          allowHTML: true,
+          delay: 300,
+          trigger: 'manual',
+          boundary: 'window',
+          placement: 'bottom-end',
+          theme: 'light host-selector-popover',
+          distance: 6,
+          interactive: true
+        })
+        this.more.show = true
+        this.$nextTick(() => {
+          this.more.instance.show()
+        })
+      },
+      handleCopyIp() {
+        const ipList = this.selected.map(item => item.host.bk_host_innerip)
+        this.$copyText(ipList.join('\n')).then(() => {
+          this.$success(this.$t('复制成功'))
+        }, () => {
+          this.$error(this.$t('复制失败'))
+        })
+          .finally(() => {
+            this.more.instance.hide()
+          })
+      },
+      handleRemoveAll() {
+        this.repeatSelected = []
+        this.uniqueSelected = []
+        this.more.instance.hide()
+      },
+      handleCancel() {
+        this.$emit('cancel')
+      },
+      handleNextStep() {
+        this.$emit('confirm', this.selected)
+      },
+      handleCollapse(names) {
+        Object.keys(this.collapse.expanded).forEach(key => (this.collapse.expanded[key] = false))
+        names.forEach((name) => {
+          this.$set(this.collapse.expanded, name, true)
+        })
+      },
+      foreignkey(value) {
+        return foreignkey(value)
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

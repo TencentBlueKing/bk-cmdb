@@ -1,109 +1,110 @@
 <template>
-    <div class="clone-layout">
-        <div class="host-type clearfix">
-            <label class="type-label fl">{{$t('克隆到')}}</label>
-            <div class="type-item fl">
-                <input class="type-radio"
-                    type="radio"
-                    id="sourceHost"
-                    name="hostTarget"
-                    v-model="hostTarget"
-                    :value="targetName.source">
-                <label for="sourceHost">{{$t('当前主机')}}</label>
-            </div>
-            <div class="type-item fl">
-                <input class="type-radio"
-                    type="radio"
-                    id="otherHost"
-                    name="hostTarget"
-                    v-model="hostTarget"
-                    :value="targetName.other">
-                <label for="otherHost">{{$t('其他主机')}}</label>
-            </div>
-        </div>
-        <component :is="hostTarget"
-            :source-processes="processes"
-            :module="module">
-        </component>
+  <div class="clone-layout">
+    <div class="host-type clearfix">
+      <label class="type-label fl">{{$t('克隆到')}}</label>
+      <div class="type-item fl">
+        <input class="type-radio"
+          type="radio"
+          id="sourceHost"
+          name="hostTarget"
+          v-model="hostTarget"
+          :value="targetName.source">
+        <label for="sourceHost">{{$t('当前主机')}}</label>
+      </div>
+      <div class="type-item fl">
+        <input class="type-radio"
+          type="radio"
+          id="otherHost"
+          name="hostTarget"
+          v-model="hostTarget"
+          :value="targetName.other">
+        <label for="otherHost">{{$t('其他主机')}}</label>
+      </div>
     </div>
+    <component :is="hostTarget"
+      :source-processes="processes"
+      :module="module">
+    </component>
+  </div>
 </template>
 
 <script>
-    import cloneToSource from './children/clone-to-source.vue'
-    import cloneToOther from './children/clone-to-other.vue'
-    export default {
-        components: {
-            [cloneToSource.name]: cloneToSource,
-            [cloneToOther.name]: cloneToOther
+  import cloneToSource from './children/clone-to-source.vue'
+  import cloneToOther from './children/clone-to-other.vue'
+  export default {
+    components: {
+      [cloneToSource.name]: cloneToSource,
+      [cloneToOther.name]: cloneToOther
+    },
+    data() {
+      return {
+        hostTarget: cloneToSource.name,
+        targetName: {
+          source: cloneToSource.name,
+          other: cloneToOther.name
         },
-        data () {
-            return {
-                hostTarget: cloneToSource.name,
-                targetName: {
-                    source: cloneToSource.name,
-                    other: cloneToOther.name
-                },
-                module: {},
-                processes: []
+        module: {},
+        processes: []
+      }
+    },
+    computed: {
+      business() {
+        return this.$store.getters['objectBiz/bizId']
+      },
+      setId() {
+        return parseInt(this.$route.params.setId, 10)
+      },
+      moduleId() {
+        return parseInt(this.$route.params.moduleId, 10)
+      },
+      instanceId() {
+        return parseInt(this.$route.params.instanceId, 10)
+      }
+    },
+    async created() {
+      try {
+        const [{ info }, processes] = await Promise.all([
+          this.getModuleInstance(),
+          this.getServiceInstanceProcesses()
+        ])
+        const [module] = info
+        this.module = module
+        this.processes = processes.map(instance => instance.property)
+      } catch (e) {
+        console.error(e)
+      }
+    },
+    methods: {
+      getModuleInstance() {
+        return this.$store.dispatch('objectModule/searchModule', {
+          bizId: this.business,
+          setId: this.setId,
+          params: {
+            page: { start: 0, limit: 1 },
+            fields: [],
+            condition: {
+              bk_module_id: this.moduleId,
+              bk_supplier_account: this.$store.getters.supplierAccount
             }
-        },
-        computed: {
-            business () {
-                return this.$store.getters['objectBiz/bizId']
-            },
-            setId () {
-                return parseInt(this.$route.params.setId)
-            },
-            moduleId () {
-                return parseInt(this.$route.params.moduleId)
-            },
-            instanceId () {
-                return parseInt(this.$route.params.instanceId)
-            }
-        },
-        async created () {
-            try {
-                const [module, processes] = await Promise.all([
-                    this.getModuleInstance(),
-                    this.getServiceInstanceProcesses()
-                ])
-                this.module = module.info[0]
-                this.processes = processes.map(instance => instance.property)
-            } catch (e) {
-                console.error(e)
-            }
-        },
-        methods: {
-            getModuleInstance () {
-                return this.$store.dispatch('objectModule/searchModule', {
-                    bizId: this.business,
-                    setId: this.setId,
-                    params: {
-                        page: { start: 0, limit: 1 },
-                        fields: [],
-                        condition: {
-                            bk_module_id: this.moduleId,
-                            bk_supplier_account: this.$store.getters.supplierAccount
-                        }
-                    },
-                    config: {
-                        requestId: 'getModuleInstance'
-                    }
-                })
-            },
-            getServiceInstanceProcesses () {
-                return this.$store.dispatch('processInstance/getServiceInstanceProcesses', {
-                    params: {
-                        bk_biz_id: this.business,
-                        service_instance_id: this.instanceId
-                    },
-                    config: {
-                        requestId: 'getServiceInstanceProcesses'
-                    }
-                })
-            }
-        }
+          },
+          config: {
+            requestId: 'getModuleInstance'
+          }
+        })
+      },
+      getServiceInstanceProcesses() {
+        return this.$store.dispatch('processInstance/getServiceInstanceProcesses', {
+          params: {
+            bk_biz_id: this.business,
+            service_instance_id: this.instanceId
+          },
+          config: {
+            requestId: 'getServiceInstanceProcesses'
+          }
+        })
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

@@ -8,6 +8,9 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars */
+
+import has from 'has'
 import $http from '@/api'
 import { transformHostSearchParams, localSort } from '@/utils/tools'
 
@@ -20,7 +23,7 @@ const getters = {
 }
 
 const actions = {
-    /**
+  /**
      * 根据条件查询主机
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -28,19 +31,19 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    searchHost ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`hosts/search`, transformHostSearchParams(params), config).then(data => {
-            if (data.hasOwnProperty('info')) {
-                data.info.forEach(host => {
-                    localSort(host.module, 'bk_module_name')
-                    localSort(host.set, 'bk_set_name')
-                })
-            }
-            return data
+  searchHost({ commit, state, dispatch }, { params, config }) {
+    return $http.post('hosts/search', transformHostSearchParams(params), config).then((data) => {
+      if (has(data, 'info')) {
+        data.info.forEach((host) => {
+          localSort(host.module, 'bk_module_name')
+          localSort(host.set, 'bk_set_name')
         })
-    },
+      }
+      return data
+    })
+  },
 
-    /**
+  /**
      * 获取主机详情
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -49,11 +52,11 @@ const actions = {
      * @param {Number} bkHostId 主机id
      * @return {Promise} promise 对象
      */
-    getHostBaseInfo ({ commit, state, dispatch, rootGetters }, { hostId, config }) {
-        return $http.get(`hosts/${rootGetters.supplierAccount}/${hostId}`)
-    },
+  getHostBaseInfo({ commit, state, dispatch, rootGetters }, { hostId, config }) {
+    return $http.get(`hosts/${rootGetters.supplierAccount}/${hostId}`)
+  },
 
-    /**
+  /**
      * 根据主机id获取主机快照数据
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -61,11 +64,11 @@ const actions = {
      * @param {Number} bkHostId 主机id
      * @return {Promise} promise 对象
      */
-    getHostSnapshot ({ commit, state, dispatch }, { hostId, config }) {
-        return $http.get(`hosts/snapshot/${hostId}`, config)
-    },
+  getHostSnapshot({ commit, state, dispatch }, { hostId, config }) {
+    return $http.get(`hosts/snapshot/${hostId}`, config)
+  },
 
-    /**
+  /**
      * 根据主机id获取主机快照数据
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -73,9 +76,9 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    searchHostByCondition ({ commit, state, dispatch }, { params }) {
-        return $http.post(`hosts/snapshot/asstdetail`, params)
-    }
+  searchHostByCondition({ commit, state, dispatch }, { params }) {
+    return $http.post('hosts/snapshot/asstdetail', params)
+  }
 }
 
 const mutations = {
@@ -83,9 +86,9 @@ const mutations = {
 }
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
 }

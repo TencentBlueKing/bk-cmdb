@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars, max-len */
+
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -15,7 +17,7 @@ const state = {}
 const getters = {}
 
 const actions = {
-    /**
+  /**
      * 根据服务模板、模块查询进程实例与服务模板之间的差异
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -23,10 +25,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchServiceInstanceDifferences ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`find/proc/service_instance/difference`, params, config)
-    },
-    /**
+  searchServiceInstanceDifferences({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post('find/proc/service_instance/difference', params, config)
+  },
+  /**
      * 批量更新服务实例中的进程信息，保持和服务模板一致
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -34,17 +36,17 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    syncServiceInstanceByTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.put(`update/proc/service_instance/sync`, params, config)
-    }
+  syncServiceInstanceByTemplate({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.put('update/proc/service_instance/sync', params, config)
+  }
 }
 
 const mutations = {}
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
 }

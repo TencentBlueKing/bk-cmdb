@@ -35,14 +35,14 @@ Vue.prototype.$tools = tools
 Vue.prototype.$routerActions = routerActions
 /* eslint-disable no-new */
 window.CMDB_APP = new Vue({
-    el: '#app',
-    router,
-    store,
-    i18n,
-    components: { App },
-    template: '<App/>'
+  el: '#app',
+  router,
+  store,
+  i18n,
+  components: { App },
+  template: '<App/>'
 })
 
 if (process.env.COMMIT_ID) {
-    window.CMDB_COMMIT_ID = process.env.COMMIT_ID
+  window.CMDB_COMMIT_ID = process.env.COMMIT_ID
 }

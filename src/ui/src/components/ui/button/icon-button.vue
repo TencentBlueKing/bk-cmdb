@@ -1,25 +1,25 @@
 <template>
-    <button class="bk-button bk-default icon-button" @click="handleClick($event)">
-        <i :class="['icon-wrapper', icon]"></i>
-    </button>
+  <button class="bk-button bk-default icon-button" @click="handleClick($event)">
+    <i :class="['icon-wrapper', icon]"></i>
+  </button>
 </template>
 
 <script>
-    export default {
-        name: 'icon-button',
-        props: {
-            disabled: Boolean,
-            icon: {
-                type: String,
-                required: true
-            }
-        },
-        methods: {
-            handleClick (event) {
-                this.$emit('click', event)
-            }
-        }
+  export default {
+    name: 'icon-button',
+    props: {
+      disabled: Boolean,
+      icon: {
+        type: String,
+        required: true
+      }
+    },
+    methods: {
+      handleClick(event) {
+        this.$emit('click', event)
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

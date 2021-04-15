@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars, max-len */
+
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -19,50 +21,50 @@ const getters = {
 }
 
 const actions = {
-    searchCloudTask ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`hosts/cloud/search`, params, config)
-    },
+  searchCloudTask({ commit, state, dispatch }, { params, config }) {
+    return $http.post('hosts/cloud/search', params, config)
+  },
 
-    addCloudTask ({ commit, state, dispatch }, { params }) {
-        return $http.post(`hosts/cloud/add`, params)
-    },
+  addCloudTask({ commit, state, dispatch }, { params }) {
+    return $http.post('hosts/cloud/add', params)
+  },
 
-    updateCloudTask ({ commit, state, dispatch }, { params }) {
-        return $http.put(`hosts/cloud/update`, params)
-    },
+  updateCloudTask({ commit, state, dispatch }, { params }) {
+    return $http.put('hosts/cloud/update', params)
+  },
 
-    deleteCloudTask ({ commit, state, dispatch }, { taskID }) {
-        return $http.delete(`hosts/cloud/delete/${taskID}`)
-    },
+  deleteCloudTask({ commit, state, dispatch }, { taskID }) {
+    return $http.delete(`hosts/cloud/delete/${taskID}`)
+  },
 
-    startCloudSync ({ commit, state, dispatch }, { params }) {
-        return $http.post(`hosts/cloud/startSync`, params)
-    },
+  startCloudSync({ commit, state, dispatch }, { params }) {
+    return $http.post('hosts/cloud/startSync', params)
+  },
 
-    searchCloudHistory ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`hosts/cloud/syncHistory`, params, config)
-    },
+  searchCloudHistory({ commit, state, dispatch }, { params, config }) {
+    return $http.post('hosts/cloud/syncHistory', params, config)
+  },
 
-    getResourceConfirm ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`hosts/cloud/searchConfirm`, params, config)
-    },
+  getResourceConfirm({ commit, state, dispatch }, { params, config }) {
+    return $http.post('hosts/cloud/searchConfirm', params, config)
+  },
 
-    resourceConfirm ({ commit, state, dispatch }, { params }) {
-        return $http.post(`hosts/cloud/resourceConfirm`, params)
-    },
+  resourceConfirm({ commit, state, dispatch }, { params }) {
+    return $http.post('hosts/cloud/resourceConfirm', params)
+  },
 
-    addConfirmHistory ({ commit, state, dispatch }, { params }) {
-        return $http.post('hosts/cloud/confirmHistory/add', params)
-    },
+  addConfirmHistory({ commit, state, dispatch }, { params }) {
+    return $http.post('hosts/cloud/confirmHistory/add', params)
+  },
 
-    searchConfirmHistory ({ commit, state, dispatch }, { params, config }) {
-        return $http.post('/hosts/cloud/confirmHistory/search', params, config)
-    }
+  searchConfirmHistory({ commit, state, dispatch }, { params, config }) {
+    return $http.post('/hosts/cloud/confirmHistory/search', params, config)
+  }
 }
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions
+  namespaced: true,
+  state,
+  getters,
+  actions
 }

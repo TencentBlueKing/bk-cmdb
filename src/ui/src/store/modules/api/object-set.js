@@ -8,6 +8,8 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars */
+
 import $http from '@/api'
 
 const state = {
@@ -19,7 +21,7 @@ const getters = {
 }
 
 const actions = {
-    /**
+  /**
      * 创建集群
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -28,15 +30,15 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createSet ({ commit, state, dispatch }, { bizId, params, config }) {
-        return $http.post(`set/${bizId}`, params, config)
-    },
+  createSet({ commit, state, dispatch }, { bizId, params, config }) {
+    return $http.post(`set/${bizId}`, params, config)
+  },
 
-    createset ({ commit, state, dispatch }, { bizId, params, config }) {
-        return $http.post(`set/${bizId}/batch`, params, config)
-    },
+  createset({ commit, state, dispatch }, { bizId, params, config }) {
+    return $http.post(`set/${bizId}/batch`, params, config)
+  },
 
-    /**
+  /**
      * 删除集群
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -45,11 +47,11 @@ const actions = {
      * @param {Number} bkSetId 集群id
      * @return {promises} promises 对象
      */
-    deleteSet ({ commit, state, dispatch }, { bizId, setId, config }) {
-        return $http.delete(`set/${bizId}/${setId}`, config)
-    },
+  deleteSet({ commit, state, dispatch }, { bizId, setId, config }) {
+    return $http.delete(`set/${bizId}/${setId}`, config)
+  },
 
-    /**
+  /**
      * 更新集群
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -59,11 +61,11 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    updateSet ({ commit, state, dispatch }, { bizId, setId, params, config }) {
-        return $http.put(`set/${bizId}/${setId}`, params, config)
-    },
+  updateSet({ commit, state, dispatch }, { bizId, setId, params, config }) {
+    return $http.put(`set/${bizId}/${setId}`, params, config)
+  },
 
-    /**
+  /**
      * 查询集群
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -73,9 +75,9 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchSet ({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
-        return $http.post(`set/search/${rootGetters.supplierAccount}/${bizId}`, params, config)
-    }
+  searchSet({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
+    return $http.post(`set/search/${rootGetters.supplierAccount}/${bizId}`, params, config)
+  }
 }
 
 const mutations = {
@@ -83,9 +85,9 @@ const mutations = {
 }
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
 }

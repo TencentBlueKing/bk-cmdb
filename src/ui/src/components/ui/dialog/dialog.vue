@@ -1,127 +1,128 @@
 <template>
-    <div class="dialog-wrapper"
-        v-transfer-dom
-        v-show="showWrapper"
-        :style="{
-            zIndex
-        }">
-        <div ref="resizeTrigger">
-            <transition name="dialog-fade">
-                <div class="dialog-body" ref="body"
-                    v-if="showBody"
-                    :class="{ 'is-scrollable': bodyScroll }"
-                    :style="bodyStyle">
-                    <div class="dialog-header" v-if="showHeader" ref="header">
-                        <slot name="header"></slot>
-                    </div>
-                    <div class="dialog-content">
-                        <slot></slot>
-                    </div>
-                    <div class="dialog-footer" v-if="showFooter" ref="footer">
-                        <slot name="footer"></slot>
-                    </div>
-                    <i class="bk-icon icon-close" v-if="showCloseIcon" @click="handleCloseDialog"></i>
-                </div>
-            </transition>
+  <div class="dialog-wrapper"
+    v-transfer-dom
+    v-show="showWrapper"
+    :style="{
+      zIndex
+    }">
+    <div ref="resizeTrigger">
+      <transition name="dialog-fade">
+        <div class="dialog-body" ref="body"
+          v-if="showBody"
+          :class="{ 'is-scrollable': bodyScroll }"
+          :style="bodyStyle">
+          <div class="dialog-header" v-if="showHeader" ref="header">
+            <slot name="header"></slot>
+          </div>
+          <div class="dialog-content">
+            <slot></slot>
+          </div>
+          <div class="dialog-footer" v-if="showFooter" ref="footer">
+            <slot name="footer"></slot>
+          </div>
+          <i class="bk-icon icon-close" v-if="showCloseIcon" @click="handleCloseDialog"></i>
         </div>
+      </transition>
     </div>
+  </div>
 </template>
 
 <script>
-    import { addResizeListener, removeResizeListener } from '@/utils/resize-events.js'
-    export default {
-        name: 'cmdb-dialog',
-        props: {
-            value: Boolean,
-            showHeader: {
-                type: Boolean,
-                default: true
-            },
-            showFooter: {
-                type: Boolean,
-                default: true
-            },
-            showCloseIcon: {
-                type: Boolean,
-                default: true
-            },
-            width: {
-                type: Number,
-                default: 720
-            },
-            height: Number,
-            minHeight: Number,
-            bodyScroll: {
-                type: Boolean,
-                default: true
-            }
-        },
-        data () {
-            return {
-                timer: null,
-                bodyHeight: 0,
-                showWrapper: false,
-                showBody: false,
-                zIndex: 2000
-            }
-        },
-        computed: {
-            autoResize () {
-                return typeof this.height !== 'number'
-            },
-            bodyStyle () {
-                const style = {
-                    width: this.width + 'px',
-                    '--height': (this.autoResize ? this.bodyHeight : this.height) + 'px'
-                }
-                if (!this.autoResize) {
-                    style.height = this.height + 'px'
-                    style.maxHeight = 'initial'
-                }
-                if (this.minHeight) {
-                    style.minHeight = this.minHeight + 'px'
-                }
-                return style
-            }
-        },
-        watch: {
-            value: {
-                immediate: true,
-                handler (value) {
-                    if (value) {
-                        this.showWrapper = true
-                        this.zIndex = window.__bk_zIndex_manager.nextZIndex()
-                        this.$nextTick(() => {
-                            this.showBody = true
-                        })
-                    } else {
-                        this.showBody = false
-                        this.timer && clearTimeout(this.timer)
-                        this.timer = setTimeout(() => {
-                            this.showWrapper = false
-                        }, 300)
-                    }
-                }
-            }
-        },
-        mounted () {
-            addResizeListener(this.$refs.resizeTrigger, this.resizeHandler)
-        },
-        beforeDestroy () {
-            removeResizeListener(this.$refs.resizeTrigger, this.resizeHandler)
-        },
-        methods: {
-            resizeHandler () {
-                this.$nextTick(() => {
-                    this.bodyHeight = Math.min(this.$APP.height, this.$refs.resizeTrigger.offsetHeight)
-                })
-            },
-            handleCloseDialog () {
-                this.$emit('close')
-                this.$emit('input', false)
-            }
+  import { addResizeListener, removeResizeListener } from '@/utils/resize-events.js'
+  export default {
+    name: 'cmdb-dialog',
+    props: {
+      value: Boolean,
+      showHeader: {
+        type: Boolean,
+        default: true
+      },
+      showFooter: {
+        type: Boolean,
+        default: true
+      },
+      showCloseIcon: {
+        type: Boolean,
+        default: true
+      },
+      width: {
+        type: Number,
+        default: 720
+      },
+      height: Number,
+      minHeight: Number,
+      bodyScroll: {
+        type: Boolean,
+        default: true
+      }
+    },
+    data() {
+      return {
+        timer: null,
+        bodyHeight: 0,
+        showWrapper: false,
+        showBody: false,
+        zIndex: 2000
+      }
+    },
+    computed: {
+      autoResize() {
+        return typeof this.height !== 'number'
+      },
+      bodyStyle() {
+        const style = {
+          width: `${this.width}px`,
+          '--height': `${this.autoResize ? this.bodyHeight : this.height}px`
         }
+        if (!this.autoResize) {
+          style.height = `${this.height}px`
+          style.maxHeight = 'initial'
+        }
+        if (this.minHeight) {
+          style.minHeight = `${this.minHeight}px`
+        }
+        return style
+      }
+    },
+    watch: {
+      value: {
+        immediate: true,
+        handler(value) {
+          if (value) {
+            this.showWrapper = true
+            // eslint-disable-next-line no-underscore-dangle
+            this.zIndex = window.__bk_zIndex_manager.nextZIndex()
+            this.$nextTick(() => {
+              this.showBody = true
+            })
+          } else {
+            this.showBody = false
+            this.timer && clearTimeout(this.timer)
+            this.timer = setTimeout(() => {
+              this.showWrapper = false
+            }, 300)
+          }
+        }
+      }
+    },
+    mounted() {
+      addResizeListener(this.$refs.resizeTrigger, this.resizeHandler)
+    },
+    beforeDestroy() {
+      removeResizeListener(this.$refs.resizeTrigger, this.resizeHandler)
+    },
+    methods: {
+      resizeHandler() {
+        this.$nextTick(() => {
+          this.bodyHeight = Math.min(this.$APP.height, this.$refs.resizeTrigger.offsetHeight)
+        })
+      },
+      handleCloseDialog() {
+        this.$emit('close')
+        this.$emit('input', false)
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

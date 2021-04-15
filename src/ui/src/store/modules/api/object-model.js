@@ -8,19 +8,20 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars */
 import $http from '@/api'
 
 const state = {
-    activeModel: {}
+  activeModel: {}
 }
 
 const getters = {
-    activeModel: (state) => state.activeModel,
-    isMainLine: state => state.activeModel['bk_classification_id'] === 'bk_biz_topo'
+  activeModel: state => state.activeModel,
+  isMainLine: state => state.activeModel.bk_classification_id === 'bk_biz_topo'
 }
 
 const actions = {
-    /**
+  /**
      * 添加模型主关联
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -28,11 +29,11 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createObject ({ commit, state, dispatch }, { params, config }) {
-        return $http.post('create/object', params, config)
-    },
+  createObject({ commit, state, dispatch }, { params, config }) {
+    return $http.post('create/object', params, config)
+  },
 
-    /**
+  /**
      * 删除对象模型
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -40,11 +41,11 @@ const actions = {
      * @param {Number} id 被删除的数据记录的id
      * @return {promises} promises 对象
      */
-    deleteObject ({ commit, state, dispatch }, { id, config }) {
-        return $http.delete(`delete/object/${id}`, config)
-    },
+  deleteObject({ commit, state, dispatch }, { id, config }) {
+    return $http.delete(`delete/object/${id}`, config)
+  },
 
-    /**
+  /**
      * 更新对象模型
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -53,11 +54,11 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    updateObject ({ commit, state, dispatch }, { id, params, config }) {
-        return $http.put(`update/object/${id}`, params, config)
-    },
+  updateObject({ commit, state, dispatch }, { id, params, config }) {
+    return $http.put(`update/object/${id}`, params, config)
+  },
 
-    /**
+  /**
      * 查询对象模型
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -65,11 +66,11 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchObjects ({ commit, state, dispatch }, { params, config }) {
-        return $http.post('find/object', params, config)
-    },
+  searchObjects({ commit, state, dispatch }, { params, config }) {
+    return $http.post('find/object', params, config)
+  },
 
-    /**
+  /**
      * 查询普通对象模型的拓扑结构
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -77,21 +78,21 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchObjectTopo ({ commit, state, dispatch }, { params, config }) {
-        return $http.post('find/objecttopology', params, config)
-    }
+  searchObjectTopo({ commit, state, dispatch }, { params, config }) {
+    return $http.post('find/objecttopology', params, config)
+  }
 }
 
 const mutations = {
-    setActiveModel (state, activeModel) {
-        state.activeModel = activeModel
-    }
+  setActiveModel(state, activeModel) {
+    state.activeModel = activeModel
+  }
 }
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
 }
