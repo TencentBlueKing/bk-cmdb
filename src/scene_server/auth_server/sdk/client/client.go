@@ -16,6 +16,7 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
@@ -27,6 +28,8 @@ type Interface interface {
 	GetUserPolicy(ctx context.Context, opt *types.GetPolicyOption) (*operator.Policy, error)
 	ListUserPolicies(ctx context.Context, opts *types.ListPolicyOptions) ([]*types.ActionPolicy, error)
 	GetSystemToken(ctx context.Context) (string, error)
+	UpdateAction(ctx context.Context, action iam.ResourceAction) error
+	CreateActions(ctx context.Context, action []iam.ResourceAction) error
 }
 
 func NewClient(conf types.IamConfig, opt types.Options) (Interface, error) {

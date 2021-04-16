@@ -146,10 +146,6 @@ func GenerateInstanceSelections() []InstanceSelection {
 			ResourceTypeChain: []ResourceChain{
 				{
 					SystemID: SystemIDCMDB,
-					ID:       SysInstanceModel,
-				},
-				{
-					SystemID: SystemIDCMDB,
 					ID:       SysInstance,
 				},
 			},

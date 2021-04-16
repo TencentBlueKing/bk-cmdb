@@ -157,6 +157,7 @@ func (s *AuthService) GetPermissionToApply(ctx *rest.Contexts) {
 }
 
 // RegisterResourceCreatorAction registers iam resource instance so that creator will be authorized on related actions
+// 创建者权限, 一个资源的创建者可以拥有这个资源的编辑和删除权限
 func (s *AuthService) RegisterResourceCreatorAction(ctx *rest.Contexts) {
 	input := new(metadata.IamInstanceWithCreator)
 	err := ctx.DecodeInto(input)
@@ -194,4 +195,22 @@ func (s *AuthService) BatchRegisterResourceCreatorAction(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(policies)
+}
+
+// UpdateModelInstanceAction update iam resource instance actions.
+func (s *AuthService) CreateModelInstanceActions(ctx *rest.Contexts) {
+	// instantiate resourceActions.
+	resourceActions := []iam.ResourceAction{}
+	err := ctx.DecodeInto(resourceActions)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// Direct call IAM.
+	if err := s.iamClient.CreateActions(ctx.Kit.Ctx, resourceActions); err != nil {
+		blog.ErrorJSON("register resource actions failed, error: %s, resource actions: %s", err.Error(), resourceActions)
+		ctx.RespAutoError(err)
+	}
+	ctx.RespEntity(nil)
 }

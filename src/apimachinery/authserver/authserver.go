@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
@@ -34,6 +35,7 @@ type AuthServerClientInterface interface {
 		[]metadata.IamCreatorActionPolicy, error)
 	BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstancesWithCreator) (
 		[]metadata.IamCreatorActionPolicy, error)
+	CreateModelInstanceActions(ctx context.Context, h http.Header, input []iam.ResourceAction) error
 }
 
 func NewAuthServerClientInterface(c *util.Capability, version string) AuthServerClientInterface {

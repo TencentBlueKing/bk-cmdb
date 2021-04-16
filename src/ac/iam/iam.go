@@ -412,3 +412,7 @@ func (a *authorizer) BatchRegisterResourceCreatorAction(ctx context.Context, h h
 
 	return a.authClientSet.BatchRegisterResourceCreatorAction(ctx, h, input)
 }
+
+func (a *authorizer) CreateModelInstanceActions(ctx context.Context, h http.Header, input []ResourceAction) error {
+	return a.authClientSet.CreateModelInstanceActions(ctx, h, input)
+}

@@ -141,6 +141,14 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
 			}
+
+			// register IAM actions when new model is created, in order to realize dynamic action list.
+			iamResourceActions := newModelInstanceActions(rsp.Object())
+			err = s.AuthManager.Authorizer.CreateModelInstanceActions(ctx.Kit.Ctx, ctx.Kit.Header, iamResourceActions)
+			if err != nil {
+				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 		}
 		return nil
 	})
@@ -318,4 +326,61 @@ func (s *Service) createObjectTableByObjectID(ctx *rest.Contexts, objectID strin
 
 	}
 	return nil
+}
+
+func newModelInstanceActions(obj metadata.Object) []iam.ResourceAction {
+	// todo: 定义const, 国际化
+	editActionID := iam.ActionID(fmt.Sprintf("%s_%s_%d", "edit", obj.ObjectID, obj.ID))
+	editActionNameCN := fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "编辑")
+	editActionNameEN := fmt.Sprintf("%s %s %s", "edit", obj.ObjectID, "instance")
+	deleteActionID := iam.ActionID(fmt.Sprintf("%s_%s_%d", "delete", obj.ObjectID, obj.ID))
+	deleteActionNameCN := fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "删除")
+	deleteActionNameEN := fmt.Sprintf("%s %s %s", "delete", obj.ObjectID, "instance")
+
+	relatedResource := []iam.RelateResourceType{
+		{
+			SystemID:    iam.SystemIDCMDB,
+			ID:          iam.SysInstance,
+			NameAlias:   "",
+			NameAliasEn: "",
+			Scope:       nil,
+			InstanceSelections: []iam.RelatedInstanceSelection{{
+				SystemID: iam.SystemIDCMDB,
+				ID:       iam.SysInstanceSelection,
+			}},
+		},
+	}
+
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   editActionID,
+		Name:                 editActionNameCN,
+		NameEn:               editActionNameEN,
+		Type:                 iam.Edit,
+		RelatedResourceTypes: relatedResource,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, iam.ResourceAction{
+		ID:                   deleteActionID,
+		Name:                 deleteActionNameCN,
+		NameEn:               deleteActionNameEN,
+		Type:                 iam.Delete,
+		RelatedResourceTypes: relatedResource,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	// actions = append(actions, ResourceAction{
+	// 	ID:                   FindSysInstance,
+	// 	Name:                 ActionIDNameMap[FindSysInstance],
+	// 	NameEn:               "View Instance",
+	// 	Type:                 View,
+	// 	RelatedResourceTypes: relatedResource,
+	// 	RelatedActions:       nil,
+	// 	Version:              1,
+	// })
+
+	return actions
 }

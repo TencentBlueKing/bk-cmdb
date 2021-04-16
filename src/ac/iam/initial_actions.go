@@ -739,6 +739,7 @@ func genCloudAreaActions() []ResourceAction {
 	return actions
 }
 
+// todo: 编辑和删除需要按模型进行注册。
 func genModelInstanceActions() []ResourceAction {
 	selection := []RelatedInstanceSelection{{
 		SystemID: SystemIDCMDB,
