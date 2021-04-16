@@ -37,7 +37,7 @@
         </bk-table-column>
         <bk-table-column :label="$t('操作')">
           <template slot-scope="{ row }">
-            <span class="latest-sync" v-if="isSyncDisabled(row)" v-bk-tooltips="'无需同步'">
+            <span class="latest-sync" v-if="isSyncDisabled(row)" v-bk-tooltips="$t('无需同步')">
               {{$t('去同步')}}
             </span>
             <bk-button v-else text @click="handleSync(row)">
