@@ -24,6 +24,13 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
+var (
+	staticActionList            []iam.ResourceAction
+	staticInstanceSelectionList []iam.InstanceSelection
+	staticResourceTypeList      []iam.ResourceType
+	staticActionGroupList       []iam.ActionGroup
+)
+
 // AuthorizeBath works to check if a user has the authority to operate resources.
 func (s *AuthService) AuthorizeBatch(ctx *rest.Contexts) {
 	opts := new(types.AuthBatchOptions)
@@ -157,6 +164,7 @@ func (s *AuthService) GetPermissionToApply(ctx *rest.Contexts) {
 }
 
 // RegisterResourceCreatorAction registers iam resource instance so that creator will be authorized on related actions
+// 创建者权限, 一个资源的创建者可以拥有这个资源的编辑和删除权限
 func (s *AuthService) RegisterResourceCreatorAction(ctx *rest.Contexts) {
 	input := new(metadata.IamInstanceWithCreator)
 	err := ctx.DecodeInto(input)
@@ -194,4 +202,162 @@ func (s *AuthService) BatchRegisterResourceCreatorAction(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(policies)
+}
+
+// RegisterModelResourceTypes add new iam resourceType to IAM.
+func (s *AuthService) RegisterModelResourceTypes(ctx *rest.Contexts) {
+	models := make([]metadata.Object, 0)
+	err := ctx.DecodeInto(&models)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	resourceActions := iam.GenDynamicResourceTypeWithModel(models)
+	// Direct call IAM.
+	if err := s.acIam.Client.RegisterResourcesTypes(ctx.Kit.Ctx, resourceActions); err != nil {
+		blog.ErrorJSON("register resource actions failed, error: %s, resource actions: %s, rid: %s", err.Error(), resourceActions, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// UnregisterModelResourceTypes add new iam resourceType to IAM.
+func (s *AuthService) UnregisterModelResourceTypes(ctx *rest.Contexts) {
+	models := make([]metadata.Object, 0)
+	err := ctx.DecodeInto(&models)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	idList := []iam.TypeID{}
+	for _, obj := range models {
+		idList = append(idList, iam.MakeDynamicResourceType(obj).ID)
+	}
+	// Direct call IAM.
+	if err := s.acIam.Client.DeleteResourcesTypes(ctx.Kit.Ctx, idList); err != nil {
+		blog.ErrorJSON("register resource actions failed, error: %s, models: %s, rid: %s", err.Error(), models, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// CreateModelInstanceActions create iam resource instance actions.
+func (s *AuthService) RegisterModelInstanceSelections(ctx *rest.Contexts) {
+	models := make([]metadata.Object, 0)
+	err := ctx.DecodeInto(&models)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	instanceSelections := iam.GenDynamicInstanceSelectionWithModel(models)
+	// Direct call IAM.
+	if err := s.acIam.Client.CreateInstanceSelection(ctx.Kit.Ctx, instanceSelections); err != nil {
+		blog.ErrorJSON("register instance selections failed, error: %s, instance selections: %s, rid: %s", err.Error(), instanceSelections, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// DeleteModelInstanceSelections create iam resource instance actions.
+func (s *AuthService) UnregisterModelInstanceSelections(ctx *rest.Contexts) {
+	models := make([]metadata.Object, 0)
+	err := ctx.DecodeInto(&models)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	instanceSelectionIDList := []iam.InstanceSelectionID{}
+	instanceSelections := iam.GenDynamicInstanceSelectionWithModel(models)
+	for _, instanceSelection := range instanceSelections {
+		instanceSelectionIDList = append(instanceSelectionIDList, instanceSelection.ID)
+	}
+	// Direct call IAM.
+	if err := s.acIam.Client.DeleteInstanceSelection(ctx.Kit.Ctx, instanceSelectionIDList); err != nil {
+		blog.ErrorJSON("Unregister instance selections failed, error: %s, instance selection ID list: %s, rid: %s", err.Error(), instanceSelectionIDList, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// CreateModelInstanceActions create iam resource instance actions.
+func (s *AuthService) CreateModelInstanceActions(ctx *rest.Contexts) {
+	models := make([]metadata.Object, 0)
+	err := ctx.DecodeInto(&models)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	resourceActions := iam.GenModelInstanceActions(models)
+	// Direct call IAM.
+	if err := s.acIam.Client.CreateAction(ctx.Kit.Ctx, resourceActions); err != nil {
+		blog.ErrorJSON("register resource actions failed, error: %s, resource actions: %s, rid: %s", err.Error(), resourceActions, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// DeleteModelInstanceActions delete iam resource instance actions.
+func (s *AuthService) DeleteModelInstanceActions(ctx *rest.Contexts) {
+	models := make([]metadata.Object, 0)
+	err := ctx.DecodeInto(&models)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	actionIDList := []iam.ActionID{}
+	for _, obj := range models {
+		actionIDList = append(actionIDList, iam.GenDynamicActionIDListWithModel(obj)...)
+	}
+
+	// Direct call IAM.
+	if err := s.acIam.Client.DeleteAction(ctx.Kit.Ctx, actionIDList); err != nil {
+		blog.ErrorJSON("unregister resource actions failed, error: %s, resource actions: %s, rid: %s", err.Error(), actionIDList, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// CreateModelInstanceActionGroup create iam resource instance action group.
+func (s *AuthService) UpdateModelInstanceActionGroups(ctx *rest.Contexts) {
+	// 入参没有用, 由于IAM仅提供了全量更新的接口, 所以只能重新全量拉取models列表
+	models, err := s.lgc.CollectObjectsNotPre(ctx.Kit)
+	if err != nil {
+		blog.Errorf("Synchronize actions with IAM failed, collect notPre-models failed, err: %s, rid:%s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if staticActionGroupList == nil {
+		staticActionGroupList = iam.GenerateStaticActionGroups()
+	}
+	actionGroups := staticActionGroupList
+	// generate model instance manage action groups
+	actionGroups = append(actionGroups, iam.GenModelInstanceManageActionGroups(models)...)
+
+	// Direct call IAM.
+	if err := s.acIam.Client.UpdateActionGroups(ctx.Kit.Ctx, actionGroups); err != nil {
+		blog.ErrorJSON("register resource action groups failed, error: %s, resource action groups: %s, rid: %s", err.Error(), actionGroups, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// SyncIAMModelResourcesCall will call SyncIAMModelResources
+func (s *AuthService) SyncIAMModelResourcesCall(ctx *rest.Contexts) {
+
+	err := s.SyncIAMModelResources(*ctx.Kit)
+	if err != nil {
+		blog.Errorf("sync action with IAM failed, err:%v", err)
+		ctx.RespAutoError(err)
+	}
+	ctx.RespEntity(nil)
 }

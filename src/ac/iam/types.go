@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"configcenter/src/common/auth"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -24,8 +25,8 @@ import (
 
 const (
 	IamRequestHeader   = "X-Request-Id"
-	iamAppCodeHeader   = "X-Bk-App-Code"
-	iamAppSecretHeader = "X-Bk-App-Secret"
+	IamAppCodeHeader   = "X-Bk-App-Code"
+	IamAppSecretHeader = "X-Bk-App-Secret"
 
 	SystemIDCMDB     = "bk_cmdb"
 	SystemNameCMDBEn = "cmdb"
@@ -44,6 +45,8 @@ type AuthConfig struct {
 	// the system id that cmdb used in auth center.
 	// default value: bk_cmdb
 	SystemID string
+	// it is a time period for deleting Iam actions by interval.
+	Interval time.Duration
 }
 
 func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, error) {
@@ -85,6 +88,15 @@ func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, 
 	}
 
 	cfg.SystemID = SystemIDCMDB
+
+	interval, err := cc.Duration(prefix + ".interval")
+	if err != nil {
+		return cfg, errors.New(`missing "interval" configuration for auth center`)
+	}
+	cfg.Interval = interval
+	if len(cfg.AppCode) == 0 {
+		return cfg, errors.New(`invalid "interval" configuration for auth center`)
+	}
 
 	return cfg, nil
 }
@@ -177,9 +189,12 @@ const (
 
 // describe resource type defined and registered to iam.
 type ResourceType struct {
-	ID             TypeID         `json:"id"`
-	Name           string         `json:"name"`
-	NameEn         string         `json:"name_en"`
+	// unique id
+	ID TypeID `json:"id"`
+	// unique name
+	Name   string `json:"name"`
+	NameEn string `json:"name_en"`
+	// unique description
 	Description    string         `json:"description"`
 	DescriptionEn  string         `json:"description_en"`
 	Parents        []Parent       `json:"parents"`
@@ -331,15 +346,23 @@ type ResourceAction struct {
 	Version              int                  `json:"version"`
 }
 
+type SelectionMode string
+
 type RelateResourceType struct {
 	SystemID           string                     `json:"system_id"`
 	ID                 TypeID                     `json:"id"`
 	NameAlias          string                     `json:"name_alias"`
 	NameAliasEn        string                     `json:"name_alias_en"`
 	Scope              *Scope                     `json:"scope"`
-	SelectionMode      string                     `json:"selection_mode"`
+	SelectionMode      SelectionMode              `json:"selection_mode"`
 	InstanceSelections []RelatedInstanceSelection `json:"related_instance_selections"`
 }
+
+const (
+	all       SelectionMode = "all"
+	instance  SelectionMode = "instance"
+	attribute SelectionMode = "attribute"
+)
 
 type Scope struct {
 	Op      string         `json:"op"`
@@ -388,22 +411,25 @@ const (
 	SysEventPushingSelection           InstanceSelectionID = "sys_event_pushing"
 	SysModelGroupSelection             InstanceSelectionID = "sys_model_group"
 	SysModelSelection                  InstanceSelectionID = "sys_model"
-	SysInstanceSelection               InstanceSelectionID = "sys_instance"
-	SysInstanceModelSelection          InstanceSelectionID = "sys_instance_model"
-	SysAssociationTypeSelection        InstanceSelectionID = "sys_association_type"
-	SysCloudAreaSelection              InstanceSelectionID = "sys_cloud_area"
-	SysCloudAccountSelection           InstanceSelectionID = "sys_cloud_account"
-	SysCloudResourceTaskSelection      InstanceSelectionID = "sys_cloud_resource_task"
+	//SysInstanceSelection               InstanceSelectionID = "sys_instance"
+	SysInstanceModelSelection     InstanceSelectionID = "sys_instance_model"
+	SysAssociationTypeSelection   InstanceSelectionID = "sys_association_type"
+	SysCloudAreaSelection         InstanceSelectionID = "sys_cloud_area"
+	SysCloudAccountSelection      InstanceSelectionID = "sys_cloud_account"
+	SysCloudResourceTaskSelection InstanceSelectionID = "sys_cloud_resource_task"
 	// 主机池目录的两种视图，管理的资源也相同，仅名称做区分
 	SysResourcePoolDirectorySelection InstanceSelectionID = "sys_resource_pool_directory"
 	SysHostRscPoolDirectorySelection  InstanceSelectionID = "sys_host_rsc_pool_directory"
 )
 
 type InstanceSelection struct {
-	ID                InstanceSelectionID `json:"id"`
-	Name              string              `json:"name"`
-	NameEn            string              `json:"name_en"`
-	ResourceTypeChain []ResourceChain     `json:"resource_type_chain"`
+	// unique
+	ID InstanceSelectionID `json:"id"`
+	// unique
+	Name string `json:"name"`
+	// unique
+	NameEn            string          `json:"name_en"`
+	ResourceTypeChain []ResourceChain `json:"resource_type_chain"`
 }
 
 type ResourceChain struct {
@@ -474,4 +500,18 @@ type CommonAction struct {
 	Name        string         `json:"name"`
 	EnglishName string         `json:"name_en"`
 	Actions     []ActionWithID `json:"actions"`
+}
+
+type DynamicActionAttribute struct {
+	createActionID     ActionID
+	createActionNameCN string
+	createActionNameEN string
+
+	editActionID     ActionID
+	editActionNameCN string
+	editActionNameEN string
+
+	deleteActionID     ActionID
+	deleteActionNameCN string
+	deleteActionNameEN string
 }

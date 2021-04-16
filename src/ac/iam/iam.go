@@ -33,7 +33,7 @@ import (
 )
 
 type Iam struct {
-	client *iamClient
+	Client *iamClient
 }
 
 func NewIam(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer) (*Iam, error) {
@@ -60,11 +60,11 @@ func NewIam(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer
 	header := http.Header{}
 	header.Set("Content-Type", "application/json")
 	header.Set("Accept", "application/json")
-	header.Set(iamAppCodeHeader, cfg.AppCode)
-	header.Set(iamAppSecretHeader, cfg.AppSecret)
+	header.Set(IamAppCodeHeader, cfg.AppCode)
+	header.Set(IamAppSecretHeader, cfg.AppSecret)
 
 	return &Iam{
-		client: &iamClient{
+		Client: &iamClient{
 			Config:      cfg,
 			client:      rest.NewRESTClient(c, ""),
 			basicHeader: header,
@@ -72,8 +72,8 @@ func NewIam(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer
 	}, nil
 }
 
-func (i Iam) RegisterSystem(ctx context.Context, host string) error {
-	systemResp, err := i.client.GetSystemInfo(ctx)
+func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.Object) error {
+	systemResp, err := i.Client.GetSystemInfo(ctx)
 	if err != nil && err != ErrNotFound {
 		blog.Errorf("get system info failed, error: %s", err.Error())
 		return err
@@ -90,14 +90,14 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 				Auth: "basic",
 			},
 		}
-		if err = i.client.RegisterSystem(ctx, sys); err != nil {
+		if err = i.Client.RegisterSystem(ctx, sys); err != nil {
 			blog.ErrorJSON("register system %s failed, error: %s", sys, err.Error())
 			return err
 		}
 		blog.V(5).Infof("register new system %+v succeed", sys)
 	} else if systemResp.Data.BaseInfo.ProviderConfig == nil || systemResp.Data.BaseInfo.ProviderConfig.Host != host {
 		// if iam registered cmdb system has no ProviderConfig or registered host config is different with current host config, update system host config
-		if err = i.client.UpdateSystemConfig(ctx, &SysConfig{Host: host}); err != nil {
+		if err = i.Client.UpdateSystemConfig(ctx, &SysConfig{Host: host}); err != nil {
 			blog.Errorf("update system host %s config failed, error: %s", host, err.Error())
 			return err
 		}
@@ -115,12 +115,12 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		removedResourceTypeMap[resourceType.ID] = struct{}{}
 	}
 	newResourceTypes := make([]ResourceType, 0)
-	for _, resourceType := range GenerateResourceTypes() {
+	for _, resourceType := range GenerateResourceTypes(models) {
 		// registered resource type exist in current resource types, should not be removed
 		delete(removedResourceTypeMap, resourceType.ID)
 		// if current resource type is registered, update it, or else register it
 		if existResourceTypeMap[resourceType.ID] {
-			if err = i.client.UpdateResourcesTypes(ctx, resourceType); err != nil {
+			if err = i.Client.UpdateResourcesTypes(ctx, resourceType); err != nil {
 				blog.ErrorJSON("update resource type %s failed, error: %s, input resource type: %s", resourceType.ID, err.Error(), resourceType)
 				return err
 			}
@@ -129,7 +129,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		}
 	}
 	if len(newResourceTypes) > 0 {
-		if err = i.client.RegisterResourcesTypes(ctx, newResourceTypes); err != nil {
+		if err = i.Client.RegisterResourcesTypes(ctx, newResourceTypes); err != nil {
 			blog.ErrorJSON("register resource types failed, error: %s, resource types: %s", err.Error(), newResourceTypes)
 			return err
 		}
@@ -142,12 +142,13 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		removedInstanceSelectionMap[instanceSelection.ID] = struct{}{}
 	}
 	newInstanceSelections := make([]InstanceSelection, 0)
-	for _, resourceType := range GenerateInstanceSelections() {
+
+	for _, resourceType := range GenerateInstanceSelections(models) {
 		// registered instance selection exist in current instance selections, should not be removed
 		delete(removedInstanceSelectionMap, resourceType.ID)
 		// if current instance selection is registered, update it, or else register it
 		if existInstanceSelectionMap[resourceType.ID] {
-			if err = i.client.UpdateInstanceSelection(ctx, resourceType); err != nil {
+			if err = i.Client.UpdateInstanceSelection(ctx, resourceType); err != nil {
 				blog.ErrorJSON("update instance selection %s failed, error: %s, input resource type: %s", resourceType.ID, err.Error(), resourceType)
 				return err
 			}
@@ -156,7 +157,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		}
 	}
 	if len(newInstanceSelections) > 0 {
-		if err = i.client.CreateInstanceSelection(ctx, newInstanceSelections); err != nil {
+		if err = i.Client.CreateInstanceSelection(ctx, newInstanceSelections); err != nil {
 			blog.ErrorJSON("register instance selections failed, error: %s, resource types: %s", err.Error(), newInstanceSelections)
 			return err
 		}
@@ -169,12 +170,12 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		removedResourceActionMap[resourceAction.ID] = struct{}{}
 	}
 	newResourceActions := make([]ResourceAction, 0)
-	for _, resourceAction := range GenerateActions() {
+	for _, resourceAction := range GenerateActions(models) {
 		// registered resource action exist in current resource actions, should not be removed
 		delete(removedResourceActionMap, resourceAction.ID)
 		// if current resource action is registered, update it, or else register it
 		if existResourceActionMap[resourceAction.ID] {
-			if err = i.client.UpdateAction(ctx, resourceAction); err != nil {
+			if err = i.Client.UpdateAction(ctx, resourceAction); err != nil {
 				blog.ErrorJSON("update resource action %s failed, error: %s, input resource action: %s", resourceAction.ID, err.Error(), resourceAction)
 				return err
 			}
@@ -183,7 +184,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		}
 	}
 	if len(newResourceActions) > 0 {
-		if err = i.client.CreateAction(ctx, newResourceActions); err != nil {
+		if err = i.Client.CreateAction(ctx, newResourceActions); err != nil {
 			blog.ErrorJSON("register resource actions failed, error: %s, resource actions: %s", err.Error(), newResourceActions)
 			return err
 		}
@@ -197,7 +198,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 			removedResourceActionIDs[idx] = resourceActionID
 			idx++
 		}
-		if err = i.client.DeleteAction(ctx, removedResourceActionIDs); err != nil {
+		if err = i.Client.DeleteAction(ctx, removedResourceActionIDs); err != nil {
 			blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(), removedResourceActionIDs)
 			return err
 		}
@@ -209,7 +210,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 			removedInstanceSelectionIDs[idx] = resourceActionID
 			idx++
 		}
-		if err = i.client.DeleteInstanceSelection(ctx, removedInstanceSelectionIDs); err != nil {
+		if err = i.Client.DeleteInstanceSelection(ctx, removedInstanceSelectionIDs); err != nil {
 			blog.ErrorJSON("delete instance selections failed, error: %s, instance selections: %s", err.Error(), removedInstanceSelectionIDs)
 			return err
 		}
@@ -221,21 +222,21 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 			removedResourceTypeIDs[idx] = resourceType
 			idx++
 		}
-		if err = i.client.DeleteResourcesTypes(ctx, removedResourceTypeIDs); err != nil {
+		if err = i.Client.DeleteResourcesTypes(ctx, removedResourceTypeIDs); err != nil {
 			blog.ErrorJSON("delete resource types failed, error: %s, resource types: %s", err.Error(), removedResourceTypeIDs)
 			return err
 		}
 	}
 
 	// register or update resource action groups
-	actionGroups := GenerateActionGroups()
+	actionGroups := GenerateActionGroups(models)
 	if len(systemResp.Data.ActionGroups) == 0 {
-		if err = i.client.RegisterActionGroups(ctx, actionGroups); err != nil {
+		if err = i.Client.RegisterActionGroups(ctx, actionGroups); err != nil {
 			blog.ErrorJSON("register action groups failed, error: %s, action groups: %s", err.Error(), actionGroups)
 			return err
 		}
 	} else {
-		if err = i.client.UpdateActionGroups(ctx, actionGroups); err != nil {
+		if err = i.Client.UpdateActionGroups(ctx, actionGroups); err != nil {
 			blog.ErrorJSON("update action groups failed, error: %s, action groups: %s", err.Error(), actionGroups)
 			return err
 		}
@@ -244,12 +245,12 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 	// register or update resource creator actions
 	resourceCreatorActions := GenerateResourceCreatorActions()
 	if len(systemResp.Data.ResourceCreatorActions.Config) == 0 {
-		if err = i.client.RegisterResourceCreatorActions(ctx, resourceCreatorActions); err != nil {
+		if err = i.Client.RegisterResourceCreatorActions(ctx, resourceCreatorActions); err != nil {
 			blog.ErrorJSON("register resource creator actions failed, error: %s, resource creator actions: %s", err.Error(), resourceCreatorActions)
 			return err
 		}
 	} else {
-		if err = i.client.UpdateResourceCreatorActions(ctx, resourceCreatorActions); err != nil {
+		if err = i.Client.UpdateResourceCreatorActions(ctx, resourceCreatorActions); err != nil {
 			blog.ErrorJSON("update resource creator actions failed, error: %s, resource creator actions: %s", err.Error(), resourceCreatorActions)
 			return err
 		}
@@ -258,12 +259,12 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 	// register or update common actions
 	commonActions := GenerateCommonActions()
 	if len(systemResp.Data.CommonActions) == 0 {
-		if err = i.client.RegisterCommonActions(ctx, commonActions); err != nil {
+		if err = i.Client.RegisterCommonActions(ctx, commonActions); err != nil {
 			blog.ErrorJSON("register common actions failed, error: %s, common actions: %s", err.Error(), commonActions)
 			return err
 		}
 	} else {
-		if err = i.client.UpdateCommonActions(ctx, commonActions); err != nil {
+		if err = i.Client.UpdateCommonActions(ctx, commonActions); err != nil {
 			blog.ErrorJSON("update common actions failed, error: %s, common actions: %s", err.Error(), commonActions)
 			return err
 		}
@@ -411,4 +412,32 @@ func (a *authorizer) BatchRegisterResourceCreatorAction(ctx context.Context, h h
 	[]metadata.IamCreatorActionPolicy, error) {
 
 	return a.authClientSet.BatchRegisterResourceCreatorAction(ctx, h, input)
+}
+
+func (a *authorizer) RegisterModelResourceTypes(ctx context.Context, h http.Header, input []metadata.Object) error {
+	return a.authClientSet.RegisterModelResourceTypes(ctx, h, input)
+}
+
+func (a *authorizer) UnregisterModelResourceTypes(ctx context.Context, h http.Header, input []metadata.Object) error {
+	return a.authClientSet.UnregisterModelResourceTypes(ctx, h, input)
+}
+
+func (a *authorizer) RegisterModelInstanceSelections(ctx context.Context, h http.Header, input []metadata.Object) error {
+	return a.authClientSet.RegisterModelInstanceSelections(ctx, h, input)
+}
+
+func (a *authorizer) UnregisterModelInstanceSelections(ctx context.Context, h http.Header, input []metadata.Object) error {
+	return a.authClientSet.UnregisterModelInstanceSelections(ctx, h, input)
+}
+
+func (a *authorizer) CreateModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error {
+	return a.authClientSet.CreateModelInstanceActions(ctx, h, input)
+}
+
+func (a *authorizer) DeleteModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error {
+	return a.authClientSet.DeleteModelInstanceActions(ctx, h, input)
+}
+
+func (a *authorizer) UpdateModelInstanceActionGroups(ctx context.Context, h http.Header) error {
+	return a.authClientSet.UpdateModelInstanceActionGroups(ctx, h)
 }

@@ -81,17 +81,20 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			return err
 		}
 
+		acIam, err := iam.NewIam(nil, authConf, engine.Metric().Registry())
+
+		lgc := logics.NewLogics(engine.CoreAPI)
+
 		authConfig := sdktypes.Config{
 			Iam:     iamConf,
 			Options: opt,
 		}
-		lgc := logics.NewLogics(engine.CoreAPI)
 		authorizer, err := auth.NewAuth(authConfig, lgc)
 		if err != nil {
 			return fmt.Errorf("new authorize failed, err: %v", err)
 		}
 
-		authServer.Service = service.NewAuthService(engine, iamCli, lgc, authorizer)
+		authServer.Service = service.NewAuthService(engine, iamCli, acIam, lgc, authorizer)
 		break
 	}
 	err = backbone.StartServer(ctx, cancel, engine, authServer.Service.WebService(), true)
@@ -99,10 +102,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	select {
-	case <-ctx.Done():
-		blog.Infof("auth server will exit!")
-	}
+	// 按一定时间周期循环同步IAM动作列表; 接收ctx.Done()信号将结束阻塞
+	authServer.Service.LoopSyncActionWithIAM(ctx, authServer.Config)
 
 	return nil
 }

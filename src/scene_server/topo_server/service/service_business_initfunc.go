@@ -26,6 +26,8 @@ func (s *Service) initBusinessObject(web *restful.WebService) {
 		Language: s.Engine.Language,
 	})
 
+	// todo: CreateObjectBatch 这个函数到底是干嘛的？我在后续的注释中发现了下面这行注释
+	// ----"this method doesn't act as it's name, it create or update model's attributes indeed."
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/object", Handler: s.CreateObjectBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/object", Handler: s.SearchObjectBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/object", Handler: s.CreateObject})

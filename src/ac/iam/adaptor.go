@@ -477,3 +477,159 @@ func ParseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, 
 	}
 	return instances, nil
 }
+
+// 生成dynamic resourceType
+func MakeDynamicResourceType(obj metadata.Object) ResourceType {
+	// todo: 定义const, 国际化
+	return ResourceType{
+		ID:            TypeID(fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID)),
+		Name:          obj.ObjectName,
+		NameEn:        obj.ObjectID,
+		Description:   fmt.Sprintf("%s %s", "自定义模型", obj.ObjectName),
+		DescriptionEn: fmt.Sprintf("%s %s", "custom model", obj.ObjectID),
+		Parents:       nil,
+		ProviderConfig: ResourceConfig{
+			Path: "/auth/v3/find/resource",
+		},
+		Version: 1,
+	}
+}
+
+// 将model对象构造为ResourceType对象
+func GenDynamicResourceTypeWithModel(objects []metadata.Object) []ResourceType {
+	resourceTypeList := make([]ResourceType, 0)
+	for _, obj := range objects {
+		resourceTypeList = append(resourceTypeList, MakeDynamicResourceType(obj))
+	}
+	return resourceTypeList
+}
+
+// 将model对象构造为InstanceSelection对象
+func MakeDynamicInstanceSelection(obj metadata.Object) InstanceSelection {
+	// todo: 定义const, 国际化
+	return InstanceSelection{
+		ID: InstanceSelectionID(fmt.Sprintf("sys_%s_%d_instance", obj.ObjectID, obj.ID)),
+		// 这个系统下唯一, 需要ID
+		Name:   fmt.Sprintf("%s%d", obj.ObjectName, obj.ID),
+		NameEn: fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID),
+		ResourceTypeChain: []ResourceChain{{
+			SystemID: SystemIDCMDB,
+			ID:       TypeID(fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID)),
+		}},
+	}
+}
+
+// 将model对象构造为instance_selection对象
+func GenDynamicInstanceSelectionWithModel(objects []metadata.Object) []InstanceSelection {
+	resourceTypeList := make([]InstanceSelection, 0)
+	for _, obj := range objects {
+		resourceTypeList = append(resourceTypeList, MakeDynamicInstanceSelection(obj))
+	}
+	return resourceTypeList
+}
+
+// 生成dynamic action-ID/Name/NameEN
+func MakeDynamicAction(obj metadata.Object) DynamicActionAttribute {
+	// todo: 定义const, 国际化
+	return DynamicActionAttribute{
+		createActionID:     ActionID(fmt.Sprintf("%s_%s_%d", "create", obj.ObjectID, obj.ID)),
+		createActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "创建"),
+		createActionNameEN: fmt.Sprintf("%s %s %s", "create", obj.ObjectID, "instance"),
+
+		editActionID:     ActionID(fmt.Sprintf("%s_%s_%d", "edit", obj.ObjectID, obj.ID)),
+		editActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "编辑"),
+		editActionNameEN: fmt.Sprintf("%s %s %s", "edit", obj.ObjectID, "instance"),
+
+		deleteActionID:     ActionID(fmt.Sprintf("%s_%s_%d", "delete", obj.ObjectID, obj.ID)),
+		deleteActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "删除"),
+		deleteActionNameEN: fmt.Sprintf("%s %s %s", "delete", obj.ObjectID, "instance"),
+	}
+}
+
+// 动态的按模型生成动作分组作为‘模型实例管理’分组的subGroup
+func MakeDynamicActionSubGroup(obj metadata.Object) ActionGroup {
+	actionAttr := MakeDynamicAction(obj)
+	return ActionGroup{
+		Name:   obj.ObjectName,
+		NameEn: obj.ObjectID,
+		Actions: []ActionWithID{
+			{
+				ID: actionAttr.createActionID,
+			},
+			{
+				ID: actionAttr.editActionID,
+			},
+			{
+				ID: actionAttr.deleteActionID,
+			},
+		},
+	}
+}
+
+// 将model对象构造为actionID对象
+func GenDynamicActionIDListWithModel(object metadata.Object) []ActionID {
+	action := MakeDynamicAction(object)
+
+	actionIDList := make([]ActionID, 0)
+	actionIDList = append(actionIDList, action.createActionID)
+	actionIDList = append(actionIDList, action.editActionID)
+	actionIDList = append(actionIDList, action.deleteActionID)
+	return actionIDList
+}
+
+// 将model对象构造为resourceAction对象
+func genDynamicActionWithModel(objects []metadata.Object) []ResourceAction {
+	// 注意: 目前属性鉴权功能仅作用于"自定义模型实例"/"资源池主机"的Edit和Delete动作
+	actions := make([]ResourceAction, 0)
+	for _, obj := range objects {
+
+		relatedResource := []RelateResourceType{
+			{
+				SystemID:      SystemIDCMDB,
+				ID:            TypeID(fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID)),
+				NameAlias:     "",
+				NameAliasEn:   "",
+				Scope:         nil,
+				SelectionMode: all,
+				InstanceSelections: []RelatedInstanceSelection{{
+					SystemID: SystemIDCMDB,
+					ID:       InstanceSelectionID(fmt.Sprintf("sys_%s_%d_instance", obj.ObjectID, obj.ID)),
+				}},
+			},
+		}
+
+		actAttr := MakeDynamicAction(obj)
+		actions = append(actions, ResourceAction{
+			ID:     actAttr.createActionID,
+			Name:   actAttr.createActionNameCN,
+			NameEn: actAttr.createActionNameEN,
+			Type:   Create,
+			// 创建不需要实例级颗粒度权限, 无实例视图
+			RelatedResourceTypes: nil,
+			RelatedActions:       nil,
+			Version:              1,
+		})
+
+		actions = append(actions, ResourceAction{
+			ID:                   actAttr.editActionID,
+			Name:                 actAttr.editActionNameCN,
+			NameEn:               actAttr.editActionNameEN,
+			Type:                 Edit,
+			RelatedActions:       nil,
+			Version:              1,
+			RelatedResourceTypes: relatedResource,
+		})
+
+		actions = append(actions, ResourceAction{
+			ID:                   actAttr.deleteActionID,
+			Name:                 actAttr.deleteActionNameCN,
+			NameEn:               actAttr.deleteActionNameEN,
+			Type:                 Delete,
+			RelatedResourceTypes: relatedResource,
+			RelatedActions:       nil,
+			Version:              1,
+		})
+	}
+
+	return actions
+}

@@ -422,6 +422,16 @@ func Int(key string) (int, error) {
 	return 0, err.New("config not found")
 }
 
+// Int return the int value of the configuration information according to the key.
+func Duration(key string) (time.Duration, error) {
+	confLock.RLock()
+	defer confLock.RUnlock()
+	if commonParser != nil && commonParser.isSet(key) {
+		return commonParser.getDuration(key), nil
+	}
+	return 0, err.New("config not found")
+}
+
 // Bool return the bool value of the configuration information according to the key.
 func Bool(key string) (bool, error) {
 	confLock.RLock()
@@ -463,6 +473,7 @@ type Parser interface {
 	GetInt(string) int
 	GetUint64(string) uint64
 	GetBool(string) bool
+	GetDuration(string) time.Duration
 	IsSet(path string) bool
 }
 
@@ -507,6 +518,10 @@ func (vp *viperParser) getUint64(path string) uint64 {
 
 func (vp *viperParser) getBool(path string) bool {
 	return vp.parser.GetBool(path)
+}
+
+func (vp *viperParser) getDuration(path string) time.Duration {
+	return vp.parser.GetDuration(path)
 }
 
 func (vp *viperParser) isSet(path string) bool {

@@ -36,14 +36,16 @@ import (
 type AuthService struct {
 	engine     *backbone.Engine
 	iamClient  client.Interface
+	acIam      *iam.Iam
 	lgc        *logics.Logics
 	authorizer sdkauth.Authorizer
 }
 
-func NewAuthService(engine *backbone.Engine, iamClient client.Interface, lgc *logics.Logics, authorizer sdkauth.Authorizer) *AuthService {
+func NewAuthService(engine *backbone.Engine, iamClient client.Interface, acIam *iam.Iam, lgc *logics.Logics, authorizer sdkauth.Authorizer) *AuthService {
 	return &AuthService{
 		engine:     engine,
 		iamClient:  iamClient,
+		acIam:      acIam,
 		lgc:        lgc,
 		authorizer: authorizer,
 	}
@@ -194,6 +196,18 @@ func (s *AuthService) initAuth(api *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/permission_to_apply", Handler: s.GetPermissionToApply})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/register/resource_creator_action", Handler: s.RegisterResourceCreatorAction})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/register/batch_resource_creator_action", Handler: s.BatchRegisterResourceCreatorAction})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/register/model_resource_types", Handler: s.RegisterModelResourceTypes})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/unregister/model_resource_types", Handler: s.UnregisterModelResourceTypes})
+	// 增量注册instance_selections
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/register/model_instance_selections", Handler: s.RegisterModelInstanceSelections})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/unregister/model_instance_selections", Handler: s.UnregisterModelInstanceSelections})
+	// 增量注册actions
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model_instance_actions", Handler: s.CreateModelInstanceActions})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/delete/model_instance_actions", Handler: s.DeleteModelInstanceActions})
+	// 全量更新IAM内的action_groups
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/model_instance_action_groups", Handler: s.UpdateModelInstanceActionGroups})
+	// 目前还没有使用到"sync/model_instance_actions"接口, 以后可能有用
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/model_instance_actions", Handler: s.SyncIAMModelResourcesCall})
 
 	utility.AddToRestfulWebService(api)
 }

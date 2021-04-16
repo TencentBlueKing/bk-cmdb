@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	codeNotFound = 1901404
+	CodeNotFound = 1901404
 )
 
 var (
@@ -74,12 +74,39 @@ func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
 	}
 
 	if resp.Code != 0 {
-		if resp.Code == codeNotFound {
+		if resp.Code == CodeNotFound {
 			return resp, ErrNotFound
 		}
 		return nil, &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
 			Reason:    fmt.Errorf("get system info failed, code: %d, msg:%s", resp.Code, resp.Message),
+		}
+	}
+
+	return resp, nil
+}
+
+func (c *iamClient) GetSystemDynamicInfo(ctx context.Context) (*SystemResp, error) {
+
+	resp := new(SystemResp)
+	result := c.client.Get().
+		SubResourcef("/api/v1/model/systems/%s/query", c.Config.SystemID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		WithParam("fields", "resource_types, actions, action_groups, instance_selections").
+		Body(nil).Do()
+	err := result.Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != 0 {
+		if resp.Code == CodeNotFound {
+			return resp, ErrNotFound
+		}
+		return nil, &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("get actions info failed, code: %d, msg:%s", resp.Code, resp.Message),
 		}
 	}
 

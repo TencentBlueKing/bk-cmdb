@@ -12,6 +12,8 @@
 
 package iam
 
+import "configcenter/src/common/metadata"
+
 var (
 	businessResource = RelateResourceType{
 		SystemID:    SystemIDCMDB,
@@ -118,7 +120,13 @@ var ActionIDNameMap = map[ActionID]string{
 }
 
 // GenerateActions generate all the actions registered to IAM.
-func GenerateActions() []ResourceAction {
+func GenerateActions(objects []metadata.Object) []ResourceAction {
+	resourceActionList := GenerateStaticActions()
+	resourceActionList = append(resourceActionList, GenModelInstanceActions(objects)...)
+	return resourceActionList
+}
+
+func GenerateStaticActions() []ResourceAction {
 	resourceActionList := make([]ResourceAction, 0)
 	// add business resource actions
 	resourceActionList = append(resourceActionList, genBusinessHostActions()...)
@@ -136,7 +144,6 @@ func GenerateActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genResourcePoolDirectoryActions()...)
 	resourceActionList = append(resourceActionList, genBusinessActions()...)
 	resourceActionList = append(resourceActionList, genCloudAreaActions()...)
-	resourceActionList = append(resourceActionList, genModelInstanceActions()...)
 	resourceActionList = append(resourceActionList, genEventPushingActions()...)
 	resourceActionList = append(resourceActionList, genCloudAccountActions()...)
 	resourceActionList = append(resourceActionList, genCloudResourceTaskActions()...)
@@ -519,12 +526,14 @@ func genResourcePoolHostActions() []ResourceAction {
 		ID:       SysHostInstanceSelection,
 	}}
 
+	// 注意: 目前属性鉴权功能仅作用于"资源池主机"/"自定义模型实例"的"Edit"和"Delete"动作
 	relatedResource := []RelateResourceType{{
 		SystemID:           SystemIDCMDB,
 		ID:                 Host,
 		NameAlias:          "",
 		NameAliasEn:        "",
 		Scope:              nil,
+		SelectionMode:      all,
 		InstanceSelections: hostSelection,
 	}}
 
@@ -739,77 +748,9 @@ func genCloudAreaActions() []ResourceAction {
 	return actions
 }
 
-func genModelInstanceActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       SysInstanceSelection,
-	}}
-
-	relatedResource := []RelateResourceType{
-		{
-			SystemID:           SystemIDCMDB,
-			ID:                 SysInstance,
-			NameAlias:          "",
-			NameAliasEn:        "",
-			Scope:              nil,
-			InstanceSelections: selection,
-		},
-	}
-
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:     CreateSysInstance,
-		Name:   ActionIDNameMap[CreateSysInstance],
-		NameEn: "Create Instance",
-		Type:   Create,
-		RelatedResourceTypes: []RelateResourceType{
-			{
-				SystemID:    SystemIDCMDB,
-				ID:          SysInstanceModel,
-				NameAlias:   "",
-				NameAliasEn: "",
-				Scope:       nil,
-				InstanceSelections: []RelatedInstanceSelection{{
-					SystemID: SystemIDCMDB,
-					ID:       SysInstanceModelSelection,
-				}},
-			},
-		},
-		RelatedActions: nil,
-		Version:        1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   EditSysInstance,
-		Name:                 ActionIDNameMap[EditSysInstance],
-		NameEn:               "Edit Instance",
-		Type:                 Edit,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteSysInstance,
-		Name:                 ActionIDNameMap[DeleteSysInstance],
-		NameEn:               "Delete Instance",
-		Type:                 Delete,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	// actions = append(actions, ResourceAction{
-	// 	ID:                   FindSysInstance,
-	// 	Name:                 ActionIDNameMap[FindSysInstance],
-	// 	NameEn:               "View Instance",
-	// 	Type:                 View,
-	// 	RelatedResourceTypes: relatedResource,
-	// 	RelatedActions:       nil,
-	// 	Version:              1,
-	// })
-
-	return actions
+func GenModelInstanceActions(objects []metadata.Object) []ResourceAction {
+	// create && edit && delete instance
+	return genDynamicActionWithModel(objects)
 }
 
 func genEventPushingActions() []ResourceAction {
