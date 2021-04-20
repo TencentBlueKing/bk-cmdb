@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -120,11 +119,13 @@ func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context, header ht
 
 	// load other mainline instance(except business,set,module) list of target business
 	for _, objectID := range im.modelIDs {
+		if util.IsInnerObject(objectID) {
+			continue
+		}
+
 		filter := map[string]interface{}{
-			common.BKObjIDField: map[string]interface{}{
-				common.BKDBEQ: objectID,
-			},
-			common.MetadataLabelBiz: strconv.FormatInt(im.bkBizID, 10),
+			common.BKObjIDField: objectID,
+			common.BKAppIDField: im.bkBizID,
 		}
 		filter = util.SetQueryOwner(filter, supplierAccount)
 
