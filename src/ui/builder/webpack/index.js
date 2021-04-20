@@ -4,10 +4,12 @@ const moduleConfig = require('./module')
 const pluginsConfig = require('./plugins')
 const optimizationConfig = require('./optimization')
 
-const { resolveBase, modeValue } = require('../utils')
+const { appDir, resolveBase, modeValue } = require('../utils')
 
 module.exports = {
   mode: modeValue('production', 'development'),
+
+  context: appDir,
 
   entry: {
     app: './src/main.js',
@@ -29,6 +31,12 @@ module.exports = {
     alias: {
       vue$: 'vue/dist/vue.esm.js',
       '@': resolveBase('src'),
+    },
+    fallback: {
+      fs: false,
+      buffer: false,
+      assert: false,
+      path: require.resolve('path-browserify')
     }
   },
 
@@ -39,6 +47,13 @@ module.exports = {
   devtool: modeValue(false, 'eval-cheap-module-source-map'),
 
   target: 'browserslist', // default
+
+  cache: {
+    type: 'filesystem',
+    buildDependencies: {
+      config: [__filename]
+    }
+  },
 
   optimization: {
     ...optimizationConfig(config)

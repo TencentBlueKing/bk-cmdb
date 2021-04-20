@@ -4,7 +4,7 @@ const { HOST } = process.env
 const PORT = process.env.PORT && Number(process.env.PORT)
 
 module.exports = config => ({
-  clientLogLevel: 'warning',
+  clientLogLevel: 'info',
   historyApiFallback: {
     rewrites: [
       { from: /.*/, to: path.posix.join(config.dev.assetsPublicPath, 'index.html') },
@@ -21,8 +21,9 @@ module.exports = config => ({
     : false,
   publicPath: config.dev.assetsPublicPath,
   proxy: config.dev.proxyTable,
-  quiet: true, // necessary for FriendlyErrorsPlugin
+  quiet: false, // necessary for FriendlyErrorsPlugin
   watchOptions: {
     poll: config.dev.poll,
-  }
+  },
+  stats: 'errors-only', // 'errors-only' | 'minimal' | 'normal' | 'verbose'
 })

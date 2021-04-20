@@ -16,5 +16,4 @@ server.listen(devServerConfig.port, devServerConfig.host, (err) => {
   if (err) {
     return console.error(err)
   }
-  console.log(`dev server listening on port ${devServerConfig.port}`)
 })
