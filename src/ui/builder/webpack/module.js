@@ -9,14 +9,11 @@ const baseStyleLoaders = [
       esModule: false,
       sourceMap: !isProd
     }
-  },
-  {
-    loader: 'postcss-loader'
   }
 ]
 
 module.exports = () => ({
-  noParse: 'vue|vue-router|vuex',
+  noParse: /^(vue|vue-router|vuex)$/,
   rules: [
     {
       test: /\.vue$/,
@@ -24,7 +21,7 @@ module.exports = () => ({
     },
 
     {
-      test: /\.[jt]sx?$/,
+      test: /\.js$/,
       use: [
         {
           loader: 'thread-loader'
@@ -71,14 +68,41 @@ module.exports = () => ({
 
     {
       test: /\.css$/,
-      use: [...baseStyleLoaders]
+      use: [
+        ...baseStyleLoaders,
+        {
+          loader: 'postcss-loader'
+        }
+      ]
     },
 
     {
       test: /\.s[ac]ss$/,
       use: [
         ...baseStyleLoaders,
-        'sass-loader'
+        {
+          loader: 'sass-loader',
+          options: {
+            sassOptions: {
+              includePaths: [
+                resolveBase('src/assets'),
+                resolveBase('src/magicbox')
+              ],
+            }
+          }
+        },
+        {
+          loader: 'postcss-loader'
+        },
+        {
+          loader: 'sass-resources-loader',
+          options: {
+            resources: [
+              resolveBase('src/assets/scss/_vars.scss'),
+              resolveBase('src/assets/scss/_mixins.scss'),
+            ]
+          }
+        }
       ]
     }
   ]

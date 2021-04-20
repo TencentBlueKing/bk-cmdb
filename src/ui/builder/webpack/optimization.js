@@ -9,7 +9,6 @@ module.exports = () => ({
   minimizer: [
     '...',
     new CssMinimizerPlugin({
-      cache: true,
       parallel: true
     }),
     new TerserPlugin({
