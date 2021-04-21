@@ -477,3 +477,55 @@ func ParseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, 
 	}
 	return instances, nil
 }
+
+// 将model对象构造为resourceAction对象
+func ConvertModelToAction(objects []metadata.Object) []ResourceAction {
+
+	// 注意:这里的实例视图都是采用的sys_instance实例视图, 相应的实例视图回调函数要重新实现, 要能根据传入的bk_obj_id查询不同的表。
+	actions := make([]ResourceAction, 0)
+	relatedResource := []RelateResourceType{
+		{
+			SystemID:    SystemIDCMDB,
+			ID:          SysInstance,
+			NameAlias:   "",
+			NameAliasEn: "",
+			Scope:       nil,
+			InstanceSelections: []RelatedInstanceSelection{{
+				SystemID: SystemIDCMDB,
+				ID:       SysInstanceSelection,
+			}},
+		},
+	}
+
+	for _, obj := range objects {
+		// todo: 定义const, 国际化
+		editActionID := ActionID(fmt.Sprintf("%s_%s_%d", "edit", obj.ObjectID, obj.ID))
+		editActionNameCN := fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "编辑")
+		editActionNameEN := fmt.Sprintf("%s %s %s", "edit", obj.ObjectID, "instance")
+		deleteActionID := ActionID(fmt.Sprintf("%s_%s_%d", "delete", obj.ObjectID, obj.ID))
+		deleteActionNameCN := fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "删除")
+		deleteActionNameEN := fmt.Sprintf("%s %s %s", "delete", obj.ObjectID, "instance")
+
+		actions = append(actions, ResourceAction{
+			ID:                   editActionID,
+			Name:                 editActionNameCN,
+			NameEn:               editActionNameEN,
+			Type:                 Edit,
+			RelatedResourceTypes: relatedResource,
+			RelatedActions:       nil,
+			Version:              1,
+		})
+
+		actions = append(actions, ResourceAction{
+			ID:                   deleteActionID,
+			Name:                 deleteActionNameCN,
+			NameEn:               deleteActionNameEN,
+			Type:                 Delete,
+			RelatedResourceTypes: relatedResource,
+			RelatedActions:       nil,
+			Version:              1,
+		})
+	}
+
+	return actions
+}

@@ -72,7 +72,7 @@ func NewIam(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer
 	}, nil
 }
 
-func (i Iam) RegisterSystem(ctx context.Context, host string) error {
+func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.Object) error {
 	systemResp, err := i.client.GetSystemInfo(ctx)
 	if err != nil && err != ErrNotFound {
 		blog.Errorf("get system info failed, error: %s", err.Error())
@@ -142,6 +142,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		removedInstanceSelectionMap[instanceSelection.ID] = struct{}{}
 	}
 	newInstanceSelections := make([]InstanceSelection, 0)
+	// todo：InstanceSelections, 这里依方案不同可能需要变更, 目前暂时不变
 	for _, resourceType := range GenerateInstanceSelections() {
 		// registered instance selection exist in current instance selections, should not be removed
 		delete(removedInstanceSelectionMap, resourceType.ID)
@@ -169,7 +170,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		removedResourceActionMap[resourceAction.ID] = struct{}{}
 	}
 	newResourceActions := make([]ResourceAction, 0)
-	for _, resourceAction := range GenerateActions() {
+	for _, resourceAction := range GenerateActions(models) {
 		// registered resource action exist in current resource actions, should not be removed
 		delete(removedResourceActionMap, resourceAction.ID)
 		// if current resource action is registered, update it, or else register it
