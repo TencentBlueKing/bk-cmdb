@@ -30,6 +30,8 @@ type Interface interface {
 	GetSystemToken(ctx context.Context) (string, error)
 	UpdateAction(ctx context.Context, action iam.ResourceAction) error
 	CreateActions(ctx context.Context, action []iam.ResourceAction) error
+	DeleteActionsBatch(ctx context.Context, action []iam.ResourceAction) error
+	GetActions(ctx context.Context) (*iam.SystemResp, error)
 }
 
 func NewClient(conf types.IamConfig, opt types.Options) (Interface, error) {

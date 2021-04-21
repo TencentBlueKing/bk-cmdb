@@ -13,9 +13,12 @@
 package logics
 
 import (
+	"fmt"
+
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -168,4 +171,28 @@ func (lgc *Logics) getCloudNameMapByIDs(kit *rest.Kit, cloudIDs []int64) (map[in
 
 func getHostDisplayName(innerIP string, cloudName string) string {
 	return innerIP + "(" + cloudName + ")"
+}
+
+// collectObjectsNotPre collect objects which are custom.
+func (lgc *Logics) CollectObjectsNotPre(kit *rest.Kit) ([]metadata.Object, error) {
+	// get model
+	cond := condition.CreateCondition().Field(common.BKIsPre).Eq(false)
+	cond.SetFields([]string{common.BKObjIDField, common.BKObjNameField, common.BKFieldID})
+	fCond := cond.ToMapStr()
+	queryCond := &metadata.QueryCondition{Condition: fCond}
+
+	resp, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, queryCond)
+	if err != nil {
+		return nil, fmt.Errorf("get custom models failed, err: %+v", err)
+	}
+	if len(resp.Data.Info) == 0 {
+		blog.Info("get custom models, custom models not found")
+	}
+
+	objects := make([]metadata.Object, 0)
+	for _, item := range resp.Data.Info {
+		objects = append(objects, item.Spec)
+	}
+
+	return objects, nil
 }
