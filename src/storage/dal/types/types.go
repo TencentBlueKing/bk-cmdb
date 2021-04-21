@@ -34,7 +34,7 @@ type Filter interface{}
 
 type Table interface {
 	// Find 查询多个并反序列化到 Result
-	Find(filter Filter, opts ...FindOpts) Find
+	Find(filter Filter, opts ...*FindOpts) Find
 	// Aggregate 聚合查询
 	AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error
 	AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error
@@ -96,6 +96,10 @@ type Find interface {
 	One(ctx context.Context, result interface{}) error
 	// Count 统计数量(非事务)
 	Count(ctx context.Context) (uint64, error)
+	// List 查询多个, start 等于0的时候，返回满足条件的行数
+	List(ctx context.Context, result interface{}) (int64, error)
+
+	Option(opts ...*FindOpts)
 }
 
 // ModeUpdate  根据不同的操作符去更新数据
@@ -115,5 +119,19 @@ type Index struct {
 }
 
 type FindOpts struct {
-	WithObjectID bool
+	WithObjectID *bool
+	WithCount    *bool
+}
+
+func NewFindOpts() *FindOpts {
+	return &FindOpts{}
+}
+
+func (f *FindOpts) SetWithObjectID(bl bool) *FindOpts {
+	f.WithObjectID = &bl
+	return f
+}
+func (f *FindOpts) SetWithCount(bl bool) *FindOpts {
+	f.WithCount = &bl
+	return f
 }

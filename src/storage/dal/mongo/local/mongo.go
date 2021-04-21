@@ -211,22 +211,15 @@ type Collection struct {
 }
 
 // Find 查询多个并反序列化到 Result
-func (c *Collection) Find(filter types.Filter, opts ...types.FindOpts) types.Find {
+func (c *Collection) Find(filter types.Filter, opts ...*types.FindOpts) types.Find {
 	find := &Find{
 		Collection: c,
 		filter:     filter,
 		projection: make(map[string]int),
 	}
 
-	if len(opts) == 0 {
-		find.projection["_id"] = 0
-		return find
-	}
+	find.Option(opts...)
 
-	if !opts[0].WithObjectID {
-		find.projection["_id"] = 0
-		return find
-	}
 	return find
 }
 
@@ -239,6 +232,8 @@ type Find struct {
 	start      int64
 	limit      int64
 	sort       bson.D
+
+	option types.FindOpts
 }
 
 // Fields 查询字段
@@ -320,19 +315,7 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 		return err
 	}
 
-	findOpts := &options.FindOptions{}
-	if len(f.projection) != 0 {
-		findOpts.Projection = f.projection
-	}
-	if f.start != 0 {
-		findOpts.SetSkip(f.start)
-	}
-	if f.limit != 0 {
-		findOpts.SetLimit(f.limit)
-	}
-	if len(f.sort) != 0 {
-		findOpts.SetSort(f.sort)
-	}
+	findOpts := f.generateMongoOption()
 	// 查询条件为空时候，mongodb 不返回数据
 	if f.filter == nil {
 		f.filter = bson.M{}
@@ -350,6 +333,49 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 	})
 }
 
+// List 查询多个数据， 当分页中start值为零的时候返回满足条件总行数
+func (f *Find) List(ctx context.Context, result interface{}) (int64, error) {
+	mtc.collectOperCount(f.collName, findOper)
+
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		mtc.collectOperDuration(f.collName, findOper, time.Since(start))
+	}()
+
+	err := validHostType(f.collName, f.projection, result, rid)
+	if err != nil {
+		return 0, err
+	}
+
+	findOpts := f.generateMongoOption()
+	// 查询条件为空时候，mongodb 不返回数据
+	if f.filter == nil {
+		f.filter = bson.M{}
+	}
+
+	opt := getCollectionOption(ctx)
+
+	var total int64
+	err = f.tm.AutoRunWithTxn(ctx, f.dbc, func(ctx context.Context) error {
+		if f.start == 0 || (f.option.WithCount != nil && *f.option.WithCount) {
+			var cntErr error
+			total, cntErr = f.dbc.Database(f.dbname).Collection(f.collName, opt).CountDocuments(ctx, f.filter)
+			if cntErr != nil {
+				return cntErr
+			}
+		}
+		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).Find(ctx, f.filter, findOpts)
+		if err != nil {
+			mtc.collectErrorCount(f.collName, findOper)
+			return err
+		}
+		return cursor.All(ctx, result)
+	})
+
+	return total, nil
+}
+
 // One 查询一个
 func (f *Find) One(ctx context.Context, result interface{}) error {
 	mtc.collectOperCount(f.collName, findOper)
@@ -365,19 +391,8 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 		return err
 	}
 
-	findOpts := &options.FindOptions{}
-	if len(f.projection) != 0 {
-		findOpts.Projection = f.projection
-	}
-	if f.start != 0 {
-		findOpts.SetSkip(f.start)
-	}
-	if f.limit != 0 {
-		findOpts.SetLimit(1)
-	}
-	if len(f.sort) != 0 {
-		findOpts.SetSort(f.sort)
-	}
+	findOpts := f.generateMongoOption()
+
 	// 查询条件为空时候，mongodb panic
 	if f.filter == nil {
 		f.filter = bson.M{}
@@ -980,7 +995,7 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 			return err
 		}
 		defer cursor.Close(ctx)
-		return decodeCusorIntoSlice(ctx, cursor, result)
+		return decodeCursorIntoSlice(ctx, cursor, result)
 	})
 
 }
@@ -1042,7 +1057,54 @@ func (c *Collection) Distinct(ctx context.Context, field string, filter types.Fi
 	return results, err
 }
 
-func decodeCusorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result interface{}) error {
+func (f *Find) Option(opts ...*types.FindOpts) {
+	for _, opt := range opts {
+		if opt == nil {
+			continue
+		}
+		if opt.WithObjectID != nil {
+			f.option.WithObjectID = opt.WithObjectID
+		}
+		if opt.WithCount != nil {
+			f.option.WithCount = opt.WithCount
+		}
+	}
+}
+
+func (f *Find) generateMongoOption() *options.FindOptions {
+	findOpts := &options.FindOptions{}
+	if f.projection == nil {
+		f.projection = make(map[string]int, 0)
+	}
+	if f.option.WithObjectID != nil && *f.option.WithObjectID {
+		// mongodb 要求，当有字段设置未1, 不设置都不显示
+		// 没有设置projection 的时候，返回所有字段
+		if len(f.projection) > 0 {
+			f.projection["_id"] = 1
+		}
+	} else {
+		if _, exists := f.projection["_id"]; !exists {
+			f.projection["_id"] = 0
+		}
+	}
+	if len(f.projection) != 0 {
+		findOpts.Projection = f.projection
+	}
+
+	if f.start != 0 {
+		findOpts.SetSkip(f.start)
+	}
+	if f.limit != 0 {
+		findOpts.SetLimit(f.limit)
+	}
+	if len(f.sort) != 0 {
+		findOpts.SetSort(f.sort)
+	}
+
+	return findOpts
+}
+
+func decodeCursorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result interface{}) error {
 	resultv := reflect.ValueOf(result)
 	if resultv.Kind() != reflect.Ptr || resultv.Elem().Kind() != reflect.Slice {
 		return errors.New("result argument must be a slice address")
