@@ -111,7 +111,7 @@ func (m *associationInstance) deleteInstanceAssociation(kit *rest.Kit, objID str
 		} else if asst.AsstObjectID != objID {
 			asstObjID = asst.AsstObjectID
 		} else {
-			// 自关联再循环外处理
+			// 自关联在循环外处理
 			continue
 		}
 
