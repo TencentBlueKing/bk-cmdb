@@ -9,6 +9,8 @@ const { appDir, resolveBase, modeValue } = require('../utils')
 module.exports = {
   mode: modeValue('production', 'development'),
 
+  target: 'web', // default
+
   context: appDir,
 
   entry: {
@@ -19,8 +21,7 @@ module.exports = {
   output: {
     path: config.build.assetsRoot,
     filename: 'js/[name].[chunkhash].js',
-    // webpack5中可能受optimization.chunkIds配置影响，暂不配置使用默认行为
-    // chunkFilename: 'js/[id].[chunkhash].js'
+    chunkFilename: modeValue('js/[name].[chunkhash].js', 'js/[name].js'),
     publicPath: modeValue(config.build.assetsPublicPath, config.dev.assetsPublicPath),
     clean: true // 5.20.0+
   },
@@ -45,8 +46,6 @@ module.exports = {
   },
 
   devtool: modeValue(false, 'eval-cheap-module-source-map'),
-
-  target: 'browserslist', // default
 
   cache: {
     type: 'filesystem',

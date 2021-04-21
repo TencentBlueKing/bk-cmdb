@@ -46,9 +46,12 @@ const getCommonPlugins = config => ([
       {
         from: resolveBase('static'),
         to: modeValue(config.build.assetsSubDirectory, config.dev.assetsSubDirectory),
-        globOptions: { ignore: ['.*'] }
+        globOptions: { dot: true, ignore: ['.*'] }
       }
-    ]
+    ],
+    options: {
+      concurrency: 300
+    }
   }),
 
   new ProgressBarPlugin({

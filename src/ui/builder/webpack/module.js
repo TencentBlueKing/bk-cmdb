@@ -13,7 +13,10 @@ const baseStyleLoaders = [
 ]
 
 module.exports = () => ({
-  noParse: /^(vue|vue-router|vuex)$/,
+  noParse: [
+    /^(vue|vue-router|vuex)$/,
+    /^(axios|moment|plotly.js|cytoscape|bk-magic-vue)$/
+  ],
   rules: [
     {
       test: /\.vue$/,

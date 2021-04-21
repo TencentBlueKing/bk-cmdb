@@ -4,7 +4,7 @@ const { HOST } = process.env
 const PORT = process.env.PORT && Number(process.env.PORT)
 
 module.exports = config => ({
-  clientLogLevel: 'info',
+  clientLogLevel: 'error',
   historyApiFallback: {
     rewrites: [
       { from: /.*/, to: path.posix.join(config.dev.assetsPublicPath, 'index.html') },
