@@ -15,6 +15,7 @@ package operation
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
@@ -977,13 +978,8 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 	return resp, err
 }
 
+// association.DeleteInst method will remove docs from both source-asst-collection and target-asst-collection, which is atomicity.
 func (assoc *association) DeleteInst(kit *rest.Kit, objID string, asstIDList []int64) (resp *metadata.DeleteAssociationInstResult, err error) {
-
-	cond := condition.CreateCondition().Field(common.BKFieldID).In(asstIDList)
-	// The objID should not be empty has been checked before, the logic here is to adapt to other scene.
-	if objID != "" {
-		cond.Field(common.BKObjIDField).Eq(objID)
-	}
 
 	// asstIDList check duplicate
 	idMap := make(map[int64]struct{})
@@ -998,7 +994,8 @@ func (assoc *association) DeleteInst(kit *rest.Kit, objID string, asstIDList []i
 		}
 		idMap[id] = struct{}{}
 	}
-
+	// search association Instances
+	cond := condition.CreateCondition().Field(common.BKFieldID).In(asstIDList)
 	searchCondition := metadata.InstAsstQueryCondition{
 		Cond: metadata.QueryCondition{
 			Condition:      cond.ToMapStr(),
@@ -1011,15 +1008,30 @@ func (assoc *association) DeleteInst(kit *rest.Kit, objID string, asstIDList []i
 		blog.Errorf("Delete instance association failed, get instance association failed, kit: %+v, err: %+v, rid: %s", kit, err, kit.Rid)
 		return nil, err
 	}
-	if len(data.Data.Info) != len(asstIDList) {
-		blog.Errorf("Delete instance association failed, got unexpected number of instance associations %d which should be %d, searchCondition: %+v, err: %+v, rid: %s", len(data.Data.Info), len(asstIDList), searchCondition, err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommNotFound)
+	if len(data.Data.Info) != len(idMap) {
+		errStr := ""
+		for _, dataRst := range data.Data.Info {
+			delete(idMap, dataRst.ID)
+		}
+		for idNotExist := range idMap {
+			errStr = fmt.Sprintf("%s,%d", errStr, idNotExist)
+		}
+		errStr = strings.TrimPrefix(errStr, ",")
+		blog.Errorf("Delete instance association failed, %s in ID list does not exists, searchCondition: %+v, rid: %s", errStr, searchCondition, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, errStr)
 	}
 
-	instanceAssociation := data.Data.Info[0]
+	// get different association models, check whether they are exists.
+	objAsstMap := make(map[string]struct{})
+	objAsstList := []string{}
+	for _, instAsst := range data.Data.Info {
+		objAsstMap[instAsst.ObjectAsstID] = struct{}{}
+	}
+	for objAsstID := range objAsstMap {
+		objAsstList = append(objAsstList, objAsstID)
+	}
+	searchCond := condition.CreateCondition().Field(common.AssociationObjAsstIDField).In(objAsstList)
 
-	searchCond := condition.CreateCondition()
-	searchCond.Field(common.AssociationObjAsstIDField).Eq(instanceAssociation.ObjectAsstID)
 	assInfoResult, err := assoc.SearchObject(kit, &metadata.SearchAssociationObjectRequest{Condition: searchCond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("Delete instance association failed, search object association with cond[%v] failed, err: %v, rid: %s", cond, err, kit.Rid)
@@ -1028,6 +1040,10 @@ func (assoc *association) DeleteInst(kit *rest.Kit, objID string, asstIDList []i
 	if !assInfoResult.Result {
 		blog.Errorf("Delete instance association failed, search object association with cond[%v] failed, err: %s, rid: %s", cond, assInfoResult.ErrMsg, kit.Rid)
 		return nil, assInfoResult.CCError()
+	}
+	if len(assInfoResult.Data) != len(objAsstList) {
+		blog.Errorf("Delete instance association failed, got unexpected number of model associations %d which should be %d, searchCondition: %+v, rid: %s", len(assInfoResult.Data), len(objAsstList), searchCond, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommNotFound)
 	}
 
 	input := metadata.InstAsstDeleteOption{

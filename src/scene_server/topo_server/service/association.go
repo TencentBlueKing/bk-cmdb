@@ -728,9 +728,7 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		idList := []int64{id}
-		// bkObjID has no actual effect here for now.
-		bkObjID := ""
-		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, bkObjID, idList)
+		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, objID, idList)
 		if err != nil {
 			return err
 		}
