@@ -77,7 +77,7 @@ type AuditQueryCondition struct {
 	OperationTime OperationTimeCondition `json:"operation_time"`
 	// Category is used by front end, filters audit logs as business(business resource related to business), resource(instance resource not related to business), host or other category
 	Category string `json:"category"`
-	// ObjID is used for instance audit log filter like host deletion history
+	// ObjID is used for instance and instance association audit log filter like host deletion history
 	ObjID string `json:"bk_obj_id"`
 }
 

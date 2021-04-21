@@ -135,7 +135,7 @@
         }
       },
       isModelInstance() {
-        return this.condition.resource_type === 'model_instance'
+        return ['model_instance', 'instance_association'].includes(this.condition.resource_type)
       }
     },
     watch: {

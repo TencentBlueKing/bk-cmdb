@@ -337,20 +337,19 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	osname = strings.TrimSpace(osname)
 
 	innerIPArr := strings.Split(innerIP, ",")
-	innerIPMap := make(map[string]struct{})
-	for _, ip := range innerIPArr {
-		innerIPMap[ip] = struct{}{}
+	innerIPMap := make(map[string]int)
+	for index, ip := range innerIPArr {
+		innerIPMap[ip] = index
 	}
 
 	outerIPArr := strings.Split(outerIP, ",")
-	outerIPMap := make(map[string]struct{})
-	for _, ip := range outerIPArr {
-		outerIPMap[ip] = struct{}{}
+	outerIPMap := make(map[string]int)
+	for index, ip := range outerIPArr {
+		outerIPMap[ip] = index
 	}
 
-	var OuterMAC, InnerMAC string
-	innerMacMap := make(map[string]struct{})
-	outerMacMap := make(map[string]struct{})
+	outerMACArr, innerMACArr := make([]string, len(outerIPArr)), make([]string, len(innerIPArr))
+	hasOuterMAC, hasInnerMAC := false, false
 	for _, inter := range val.Get("data.net.interface").Array() {
 		for _, addr := range inter.Get("addrs.#.addr").Array() {
 			splitAddr := strings.Split(addr.String(), "/")
@@ -358,23 +357,17 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 				continue
 			}
 			ip := splitAddr[0]
-			if _, exists := innerIPMap[ip]; exists {
+			if index, exists := innerIPMap[ip]; exists {
+				hasInnerMAC = true
 				innerMAC := strings.TrimSpace(inter.Get("hardwareaddr").String())
-				if len(InnerMAC) == 0 {
-					InnerMAC = innerMAC
-					innerMacMap[innerMAC] = struct{}{}
-				} else if _, exists := innerMacMap[innerMAC]; !exists {
-					InnerMAC += "," + innerMAC
-					innerMacMap[innerMAC] = struct{}{}
+				if len(innerMACArr[index]) == 0 {
+					innerMACArr[index] = innerMAC
 				}
-			} else if _, exists := outerIPMap[ip]; exists {
+			} else if index, exists := outerIPMap[ip]; exists {
+				hasOuterMAC = true
 				outerMAC := strings.TrimSpace(inter.Get("hardwareaddr").String())
-				if len(OuterMAC) == 0 {
-					OuterMAC = outerMAC
-					outerMacMap[outerMAC] = struct{}{}
-				} else if _, exists := outerMacMap[outerMAC]; !exists {
-					OuterMAC += "," + outerMAC
-					outerMacMap[outerMAC] = struct{}{}
+				if len(outerMACArr[index]) == 0 {
+					outerMACArr[index] = outerMAC
 				}
 			}
 		}
@@ -460,22 +453,24 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 		raw.Write([]byte("\"" + hostname + "\""))
 	}
 
-	if outerIP != "" && OuterMAC == "" {
-		blog.V(4).Infof("bk_outer_mac not found in message for %s", innerIP)
+	if outerIP != "" && !hasOuterMAC {
+		blog.V(4).Infof("bk_outer_mac not found in message for %s", outerIP)
 	} else {
-		setter["bk_outer_mac"] = OuterMAC
+		outerMAC := strings.Join(outerMACArr, ",")
+		setter["bk_outer_mac"] = outerMAC
 		raw.WriteString(",")
 		raw.WriteString("\"bk_outer_mac\":")
-		raw.Write([]byte("\"" + OuterMAC + "\""))
+		raw.Write([]byte("\"" + outerMAC + "\""))
 	}
 
-	if InnerMAC == "" {
+	if !hasInnerMAC {
 		blog.V(4).Infof("bk_mac not found in message for %s", innerIP)
 	} else {
-		setter["bk_mac"] = InnerMAC
+		innerMAC := strings.Join(innerMACArr, ",")
+		setter["bk_mac"] = innerMAC
 		raw.WriteString(",")
 		raw.WriteString("\"bk_mac\":")
-		raw.Write([]byte("\"" + InnerMAC + "\""))
+		raw.Write([]byte("\"" + innerMAC + "\""))
 	}
 
 	if osbit == "" {
@@ -527,20 +522,19 @@ func parseV10Setter(val *gjson.Result, innerIP, outerIP string) (map[string]inte
 	osname = strings.TrimSpace(osname)
 
 	innerIPArr := strings.Split(innerIP, ",")
-	innerIPMap := make(map[string]struct{})
-	for _, ip := range innerIPArr {
-		innerIPMap[ip] = struct{}{}
+	innerIPMap := make(map[string]int)
+	for index, ip := range innerIPArr {
+		innerIPMap[ip] = index
 	}
 
 	outerIPArr := strings.Split(outerIP, ",")
-	outerIPMap := make(map[string]struct{})
-	for _, ip := range outerIPArr {
-		outerIPMap[ip] = struct{}{}
+	outerIPMap := make(map[string]int)
+	for index, ip := range outerIPArr {
+		outerIPMap[ip] = index
 	}
 
-	var OuterMAC, InnerMAC string
-	innerMacMap := make(map[string]struct{})
-	outerMacMap := make(map[string]struct{})
+	outerMACArr, innerMACArr := make([]string, len(outerIPArr)), make([]string, len(innerIPArr))
+	hasOuterMAC, hasInnerMAC := false, false
 	for _, inter := range val.Get("data.net.interface").Array() {
 		for _, addr := range inter.Get("addrs").Array() {
 			splitAddr := strings.Split(addr.String(), "/")
@@ -548,23 +542,17 @@ func parseV10Setter(val *gjson.Result, innerIP, outerIP string) (map[string]inte
 				continue
 			}
 			ip := splitAddr[0]
-			if _, exists := innerIPMap[ip]; exists {
+			if index, exists := innerIPMap[ip]; exists {
+				hasInnerMAC = true
 				innerMAC := strings.TrimSpace(inter.Get("mac").String())
-				if len(InnerMAC) == 0 {
-					InnerMAC = innerMAC
-					innerMacMap[innerMAC] = struct{}{}
-				} else if _, exists := innerMacMap[innerMAC]; !exists {
-					InnerMAC += "," + innerMAC
-					innerMacMap[innerMAC] = struct{}{}
+				if len(innerMACArr[index]) == 0 {
+					innerMACArr[index] = innerMAC
 				}
-			} else if _, exists := outerIPMap[ip]; exists {
+			} else if index, exists := outerIPMap[ip]; exists {
+				hasOuterMAC = true
 				outerMAC := strings.TrimSpace(inter.Get("mac").String())
-				if len(OuterMAC) == 0 {
-					OuterMAC = outerMAC
-					outerMacMap[outerMAC] = struct{}{}
-				} else if _, exists := outerMacMap[outerMAC]; !exists {
-					OuterMAC += "," + outerMAC
-					outerMacMap[outerMAC] = struct{}{}
+				if len(outerMACArr[index]) == 0 {
+					outerMACArr[index] = outerMAC
 				}
 			}
 		}
@@ -649,22 +637,24 @@ func parseV10Setter(val *gjson.Result, innerIP, outerIP string) (map[string]inte
 		raw.Write([]byte("\"" + hostname + "\""))
 	}
 
-	if outerIP != "" && OuterMAC == "" {
-		blog.V(4).Infof("bk_outer_mac not found in message for %s", innerIP)
+	if outerIP != "" && !hasOuterMAC {
+		blog.V(4).Infof("bk_outer_mac not found in message for %s", outerIP)
 	} else {
-		setter["bk_outer_mac"] = OuterMAC
+		outerMAC := strings.Join(outerMACArr, ",")
+		setter["bk_outer_mac"] = outerMAC
 		raw.WriteString(",")
 		raw.WriteString("\"bk_outer_mac\":")
-		raw.Write([]byte("\"" + OuterMAC + "\""))
+		raw.Write([]byte("\"" + outerMAC + "\""))
 	}
 
-	if InnerMAC == "" {
+	if !hasInnerMAC {
 		blog.V(4).Infof("bk_mac not found in message for %s", innerIP)
 	} else {
-		setter["bk_mac"] = InnerMAC
+		innerMAC := strings.Join(innerMACArr, ",")
+		setter["bk_mac"] = innerMAC
 		raw.WriteString(",")
 		raw.WriteString("\"bk_mac\":")
-		raw.Write([]byte("\"" + InnerMAC + "\""))
+		raw.Write([]byte("\"" + innerMAC + "\""))
 	}
 
 	if osbit == "" {
