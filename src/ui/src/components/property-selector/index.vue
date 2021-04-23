@@ -3,7 +3,8 @@
     v-model="localValue"
     searchable
     font-size="medium"
-    :clearable="false">
+    :clearable="false"
+    v-bind="$attrs">
     <bk-option v-for="option in options"
       :key="option.bk_property_id"
       :id="option.bk_property_id"
