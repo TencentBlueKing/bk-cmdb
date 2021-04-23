@@ -258,3 +258,43 @@ func (s *AuthService) SyncModelInstanceActions(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(nil)
 }
+
+// SynchronizeModelInstanceActions check iam resource instance actions.
+// In most cases, this func will delete IAM-actions which are discard.
+func (s *AuthService) SyncModelInstActions(kit rest.Kit) error {
+
+	// Direct call IAM, get actions from iam.
+	sysResp, err := s.iamClient.GetActions(kit.Ctx)
+	if err != nil {
+		blog.ErrorJSON("Synchronize actions with IAM failed, get resource actions from IAM failed, error: %s, resource actions: %s, rid: %s", err.Error(), sysResp, kit.Rid)
+		return err
+	}
+	iamActionMap := map[iam.ActionID]struct{}{}
+	for _, act := range sysResp.Data.Actions {
+		iamActionMap[act.ID] = struct{}{}
+	}
+
+	// 需要先拿到当前已存在的模型, 再与IAM返回结果进行对比
+	models, err := s.lgc.CollectObjectsNotPre(&kit)
+	if err != nil {
+		blog.Errorf("Synchronize actions with IAM failed, collect notPre-models failed, err: %s, rid:%s", err.Error(), kit.Rid)
+		return err
+	}
+	cmdbActionList := iam.GenerateActions(models)
+
+	// 对比出IAM中多余的动作
+	deleteActionList := []iam.ResourceAction{}
+	for _, act := range cmdbActionList {
+		if _, exists := iamActionMap[act.ID]; exists {
+			continue
+		}
+		deleteActionList = append(deleteActionList, act)
+	}
+
+	// Direct call IAM, delete certain actions in iam.
+	if err := s.iamClient.DeleteActionsBatch(kit.Ctx, deleteActionList); err != nil {
+		blog.ErrorJSON("Synchronize actions with IAM failed, delete IAM actions failed, error: %s, resource actions: %s, rid:%s", err.Error(), deleteActionList, kit.Rid)
+		return err
+	}
+	return nil
+}

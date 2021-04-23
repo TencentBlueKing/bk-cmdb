@@ -60,8 +60,8 @@ func NewIam(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer
 	header := http.Header{}
 	header.Set("Content-Type", "application/json")
 	header.Set("Accept", "application/json")
-	header.Set(iamAppCodeHeader, cfg.AppCode)
-	header.Set(iamAppSecretHeader, cfg.AppSecret)
+	header.Set(IamAppCodeHeader, cfg.AppCode)
+	header.Set(IamAppSecretHeader, cfg.AppSecret)
 
 	return &Iam{
 		client: &iamClient{

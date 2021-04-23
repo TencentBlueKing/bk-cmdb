@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"configcenter/src/common/auth"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -24,8 +25,8 @@ import (
 
 const (
 	IamRequestHeader   = "X-Request-Id"
-	iamAppCodeHeader   = "X-Bk-App-Code"
-	iamAppSecretHeader = "X-Bk-App-Secret"
+	IamAppCodeHeader   = "X-Bk-App-Code"
+	IamAppSecretHeader = "X-Bk-App-Secret"
 
 	SystemIDCMDB     = "bk_cmdb"
 	SystemNameCMDBEn = "cmdb"
@@ -44,6 +45,8 @@ type AuthConfig struct {
 	// the system id that cmdb used in auth center.
 	// default value: bk_cmdb
 	SystemID string
+	// it is a time period for deleting Iam actions by interval.
+	Interval time.Duration
 }
 
 func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, error) {
@@ -85,6 +88,15 @@ func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, 
 	}
 
 	cfg.SystemID = SystemIDCMDB
+
+	interval, err := cc.Duration(prefix + ".interval")
+	if err != nil {
+		return cfg, errors.New(`missing "interval" configuration for auth center`)
+	}
+	cfg.Interval = interval
+	if len(cfg.AppCode) == 0 {
+		return cfg, errors.New(`invalid "interval" configuration for auth center`)
+	}
 
 	return cfg, nil
 }
