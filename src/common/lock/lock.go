@@ -22,7 +22,7 @@ type lock struct {
 // Locker redis atomic lock
 type Locker interface {
 	// Lock can lock one
-	Lock(key StrFormat, expire time.Duration) (looked bool, err error)
+	Lock(key StrFormat, expire time.Duration) (locked bool, err error)
 	Unlock() error
 }
 

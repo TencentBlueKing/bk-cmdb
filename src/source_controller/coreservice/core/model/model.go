@@ -59,17 +59,17 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	// fmt.Sprintf("coreservice:create:model:%s", inputParam.Spec.ObjectID)
 	redisKey := lock.GetLockKey(lock.CreateModelFormat, inputParam.Spec.ObjectID)
 
-	looked, err := locker.Lock(redisKey, time.Second*35)
+	locked, err := locker.Lock(redisKey, time.Second*35)
 	defer locker.Unlock()
 	if err != nil {
 		blog.ErrorJSON("create model error. get create look error. err:%s, input:%s, rid:%s", err.Error(), inputParam, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommRedisOPErr)
 	}
-	if !looked {
+	if !locked {
 		blog.ErrorJSON("create model have same task in progress. input:%s, rid:%s", inputParam, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr, fmt.Sprintf("create object(%s)", inputParam.Spec.ObjectID))
 	}
-	blog.V(5).Infof("create model redis look info. key:%s, bl:%v, err:%v, rid:%s", redisKey, looked, err, kit.Rid)
+	blog.V(5).Infof("create model redis look info. key:%s, bl:%v, err:%v, rid:%s", redisKey, locked, err, kit.Rid)
 
 	dataResult := &metadata.CreateOneDataResult{}
 
