@@ -121,6 +121,12 @@ var ActionIDNameMap = map[ActionID]string{
 
 // GenerateActions generate all the actions registered to IAM.
 func GenerateActions(objects []metadata.Object) []ResourceAction {
+	resourceActionList := GenerateStaticActions()
+	resourceActionList = append(resourceActionList, GenModelInstanceActions(objects)...)
+	return resourceActionList
+}
+
+func GenerateStaticActions() []ResourceAction {
 	resourceActionList := make([]ResourceAction, 0)
 	// add business resource actions
 	resourceActionList = append(resourceActionList, genBusinessHostActions()...)
@@ -138,7 +144,6 @@ func GenerateActions(objects []metadata.Object) []ResourceAction {
 	resourceActionList = append(resourceActionList, genResourcePoolDirectoryActions()...)
 	resourceActionList = append(resourceActionList, genBusinessActions()...)
 	resourceActionList = append(resourceActionList, genCloudAreaActions()...)
-	resourceActionList = append(resourceActionList, genModelInstanceActions(objects)...)
 	resourceActionList = append(resourceActionList, genEventPushingActions()...)
 	resourceActionList = append(resourceActionList, genCloudAccountActions()...)
 	resourceActionList = append(resourceActionList, genCloudResourceTaskActions()...)
@@ -742,7 +747,7 @@ func genCloudAreaActions() []ResourceAction {
 }
 
 // todo: 编辑和删除需要按模型进行注册。
-func genModelInstanceActions(objects []metadata.Object) []ResourceAction {
+func GenModelInstanceActions(objects []metadata.Object) []ResourceAction {
 	// edit && delete instance
 	actions := ConvertModelToAction(objects)
 

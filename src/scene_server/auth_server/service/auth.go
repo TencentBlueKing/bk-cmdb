@@ -24,6 +24,10 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
+var (
+	staticActionList []iam.ResourceAction
+)
+
 // AuthorizeBath works to check if a user has the authority to operate resources.
 func (s *AuthService) AuthorizeBatch(ctx *rest.Contexts) {
 	opts := new(types.AuthBatchOptions)
@@ -239,7 +243,11 @@ func (s *AuthService) SyncModelInstanceActions(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	cmdbActionList := iam.GenerateActions(models)
+	if staticActionList == nil {
+		staticActionList = iam.GenerateStaticActions()
+	}
+	cmdbActionList := staticActionList
+	cmdbActionList = append(cmdbActionList, iam.GenModelInstanceActions(models)...)
 
 	// 对比出IAM中多余的动作
 	deleteActionList := []iam.ResourceAction{}
@@ -280,7 +288,11 @@ func (s *AuthService) SyncModelInstActions(kit rest.Kit) error {
 		blog.Errorf("Synchronize actions with IAM failed, collect notPre-models failed, err: %s, rid:%s", err.Error(), kit.Rid)
 		return err
 	}
-	cmdbActionList := iam.GenerateActions(models)
+	if staticActionList == nil {
+		staticActionList = iam.GenerateStaticActions()
+	}
+	cmdbActionList := staticActionList
+	cmdbActionList = append(cmdbActionList, iam.GenModelInstanceActions(models)...)
 
 	// 对比出IAM中多余的动作
 	deleteActionList := []iam.ResourceAction{}
