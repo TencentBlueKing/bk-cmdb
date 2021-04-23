@@ -5,6 +5,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin')
 const ProgressBarPlugin = require('progress-bar-webpack-plugin')
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const chalk = require('chalk')
 
 
@@ -54,6 +55,13 @@ const getCommonPlugins = config => ([
     }
   }),
 
+  new webpack.ContextReplacementPlugin(/moment[/\\]locale$/, /zh-cn|en/),
+
+  new webpack.IgnorePlugin({
+    resourceRegExp: /mapbox-gl/,
+    contextRegExp: /mapbox/
+  }),
+
   new ProgressBarPlugin({
     format: `  build [:bar] ${chalk.green.bold(':percent')} (:elapsed seconds)`,
     clear: false
@@ -65,7 +73,9 @@ const getProdPlugins = () => ([
     filename: isProd ? 'css/[name][contenthash:7].css' : '[name].css',
     ignoreOrder: true
   })
-])
+].concat(process.env.ANALYZER ? [
+  new BundleAnalyzerPlugin()
+] : []))
 
 module.exports = (config) => {
   const commonPlugins = getCommonPlugins(config)
