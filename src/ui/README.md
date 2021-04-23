@@ -8,8 +8,8 @@
 # install dependencies
 npm install
 
-# set dev config -- API_URL in 'config/index.js'  
-# the API_URL is the address of apiServer and it should start with 'http(s)://', end with '/'  
+# set dev config -- API_URL in 'builder/config/index.js'
+# the API_URL is the address of apiServer and it should start with 'http(s)://', end with '/'
 # serve with hot reload at localhost:9090
 npm run dev
 

@@ -7,16 +7,14 @@
   },
   "private": true,
   "scripts": {
-    "dev": "webpack-dev-server --inline --progress --config build/webpack.dev.conf.js",
+    "dev": "node builder/dev.js",
+    "build": "node builder/build.js",
+    "build:analyzer": "cross-env ANALYZER=true node builder/build.js",
     "start": "npm run dev",
     "lint": "eslint --ext .js,.vue ./src",
     "lint-output": "eslint --ext .js,.vue --output-file ./eslint.html --format html ./src",
     "lint-fix": "eslint --fix --ext .js,.vue ./src",
-    "build": "node build/build.js",
-    "sync-magicbox": "node build/sync-magicbox.js",
-    "dev2": "node builder/dev.js",
-    "build2": "node builder/build.js",
-    "build2:analyzer": "cross-env ANALYZER=true node builder/build.js"
+    "sync-magicbox": "node builder/utils/sync-magicbox.js"
   },
   "dependencies": {
     "@blueking/paas-login": "0.0.9",

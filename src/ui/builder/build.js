@@ -16,5 +16,5 @@ webpack(webpackConfig, (err, stats) => {
     return
   }
 
-  console.log('\n', stats.toString({ colors: true }), '\n')
+  console.log(stats.toString({ colors: true }))
 })

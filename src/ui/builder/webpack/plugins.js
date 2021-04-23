@@ -57,23 +57,18 @@ const getCommonPlugins = config => ([
 
   new webpack.ContextReplacementPlugin(/moment[/\\]locale$/, /zh-cn|en/),
 
-  new webpack.IgnorePlugin({
-    resourceRegExp: /mapbox-gl/,
-    contextRegExp: /mapbox/
-  }),
-
   new ProgressBarPlugin({
     format: `  build [:bar] ${chalk.green.bold(':percent')} (:elapsed seconds)`,
     clear: false
   })
 ])
 
-const getProdPlugins = () => ([
+const getProdPlugins = config => ([
   new MiniCssExtractPlugin({
     filename: isProd ? 'css/[name][contenthash:7].css' : '[name].css',
     ignoreOrder: true
   })
-].concat(process.env.ANALYZER ? [
+].concat((process.env.ANALYZER || config.build.bundleAnalyzerReport) ? [
   new BundleAnalyzerPlugin()
 ] : []))
 
