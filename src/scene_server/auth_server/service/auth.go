@@ -204,11 +204,16 @@ func (s *AuthService) BatchRegisterResourceCreatorAction(ctx *rest.Contexts) {
 // UpdateModelInstanceAction update iam resource instance actions.
 func (s *AuthService) CreateModelInstanceActions(ctx *rest.Contexts) {
 	// instantiate resourceActions.
-	resourceActions := []iam.ResourceAction{}
-	err := ctx.DecodeInto(resourceActions)
+	models := []metadata.Object{}
+	err := ctx.DecodeInto(models)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
+	}
+
+	resourceActions := []iam.ResourceAction{}
+	for _, model := range models {
+		resourceActions = newModelInstanceActions(model, resourceActions)
 	}
 
 	// Direct call IAM.

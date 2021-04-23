@@ -16,7 +16,6 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
@@ -199,7 +198,7 @@ func (a *authServer) BatchRegisterResourceCreatorAction(ctx context.Context, h h
 	return response.Data, nil
 }
 
-func (a *authServer) CreateModelInstanceActions(ctx context.Context, h http.Header, input []iam.ResourceAction) error {
+func (a *authServer) CreateModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error {
 	resp := new(metadata.Response)
 	subPath := "/create/model_instance_actions"
 

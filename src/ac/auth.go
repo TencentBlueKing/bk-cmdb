@@ -18,7 +18,6 @@ import (
 	"errors"
 	"net/http"
 
-	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/types"
@@ -45,5 +44,5 @@ type AuthorizeInterface interface {
 	BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstancesWithCreator) (
 		[]metadata.IamCreatorActionPolicy, error)
 
-	CreateModelInstanceActions(ctx context.Context, h http.Header, input []iam.ResourceAction) error
+	CreateModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error
 }

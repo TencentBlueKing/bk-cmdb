@@ -31,7 +31,6 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/client"
 	sdktypes "configcenter/src/scene_server/auth_server/sdk/types"
 	"configcenter/src/scene_server/auth_server/service"
-	syncAction "configcenter/src/scene_server/auth_server/sync_action"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -101,7 +100,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	// 按一定时间周期循环同步IAM动作列表; 接收ctx.Done()信号将结束阻塞
-	authServer.loopSyncIAMAction(ctx)
+	authServer.Service.LoopSyncActionWithIAM(ctx, authServer.Config)
 
 	return nil
 }
@@ -137,13 +136,4 @@ func (a *AuthServer) onAuthConfigUpdate(previous, current cc.ProcessConfig) {
 			esb.UpdateEsbConfig(*esbConfig)
 		}
 	}
-}
-
-func (a *AuthServer) loopSyncIAMAction(ctx context.Context) {
-	syncServer := syncAction.SyncServer{
-		Config:  a.Config,
-		Service: a.Service,
-	}
-	syncServer.LoopSyncActionWithIAM(ctx)
-	return
 }
