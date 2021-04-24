@@ -163,7 +163,7 @@ tested on Windows neglect this subtlety, and will result in software
 bugs when running on Windows. This library would invoke the callback
 function with `some\path\to\foo.txt` for the same file when running on
 Windows, eliminating the need to normalize the pathname by the client,
-and lessen the likelyhood that a client will work on unix but not on
+and lessen the likelihood that a client will work on unix but not on
 Windows.
 
 ### It's more flexible than `filepath.Walk`
