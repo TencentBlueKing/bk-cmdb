@@ -13,8 +13,7 @@
     "start": "npm run dev",
     "lint": "eslint --ext .js,.vue ./src",
     "lint-output": "eslint --ext .js,.vue --output-file ./eslint.html --format html ./src",
-    "lint-fix": "eslint --fix --ext .js,.vue ./src",
-    "sync-magicbox": "node builder/utils/sync-magicbox.js"
+    "lint-fix": "eslint --fix --ext .js,.vue ./src"
   },
   "dependencies": {
     "@blueking/paas-login": "0.0.9",
