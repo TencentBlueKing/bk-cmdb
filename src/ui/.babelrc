@@ -11,7 +11,8 @@
     [
       "@vue/babel-preset-jsx",
       {
-        // "compositionAPI": true
+        // https://github.com/vuejs/composition-api
+        "compositionAPI": true
       }
     ]
   ],
