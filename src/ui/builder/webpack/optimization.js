@@ -5,7 +5,7 @@ const { isProd } = require('../utils')
 
 module.exports = () => ({
   // built-in optimizations works, more: https://webpack.js.org/configuration/mode/
-  minimize: isProd, // is defaults, follow mode setting
+  minimize: isProd, // is default follow mode setting
   minimizer: [
     '...',
     new CssMinimizerPlugin({
@@ -16,5 +16,28 @@ module.exports = () => ({
       parallel: true
     })
   ],
-  runtimeChunk: 'single' // shared for all generated chunks
+  runtimeChunk: 'single', // shared for all generated chunks
+  splitChunks: {
+    minChunks: 1, // default
+    cacheGroups: {
+      bkMagixbox: {
+        test: /[\\/]bk-magic/,
+        name: 'bk-magicbox',
+        chunks: 'all',
+        priority: 20,
+        reuseExistingChunk: true,  // default
+      },
+      vendors: {
+        test: /[\\/]node_modules[\\/]/,
+        name: 'vendors',
+        chunks: 'initial',
+        priority: 10,
+      },
+      commons: {
+        chunks: 'initial',
+        name: 'commons',
+        minChunks: 2
+      }
+    }
+  }
 })
