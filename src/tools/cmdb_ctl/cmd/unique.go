@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
 	"github.com/spf13/cobra"
@@ -73,6 +74,15 @@ func (s *uniqueCheckService) checkUnique() error {
 	}
 
 	for _, objID := range objIDs {
+		if !model.SatisfyMongoCollLimit(objID) {
+			fmt.Printf("object id %s is invalid\n", objID)
+		}
+
+		attrMap, err := s.getObjAttrMap(ctx, objID)
+		if err != nil {
+			return err
+		}
+
 		fmt.Printf("=================================\nstart checking unique constraints for object %s\n", objID)
 		uniques, err := s.getObjectUniques(ctx, objID)
 		if err != nil {
@@ -81,11 +91,6 @@ func (s *uniqueCheckService) checkUnique() error {
 
 		if len(uniques) == 0 {
 			continue
-		}
-
-		attrMap, err := s.getObjAttrMap(ctx, objID)
-		if err != nil {
-			return err
 		}
 
 		uniqueKeyMap := make(map[uint64]uint64)
@@ -163,6 +168,10 @@ func (s *uniqueCheckService) getObjAttrMap(ctx context.Context, objID string) (m
 
 	attrMap := make(map[int64]metadata.Attribute)
 	for _, attribute := range attributes {
+		if !model.SatisfyMongoFieldLimit(attribute.PropertyID) {
+			fmt.Printf("object(%s) attribute(%d) property id %s is invalid\n", objID, attribute.ID, attribute.PropertyID)
+		}
+
 		if objID == common.BKInnerObjIDHost && attribute.PropertyID == common.BKCloudIDField {
 			// NOTICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未foreignkey 特殊的类型
 			attribute.PropertyType = common.FieldTypeInt
@@ -219,7 +228,7 @@ func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID, suppl
 		dbType := index.CCFieldTypeToDBType(attribute.PropertyType)
 		if dbType == "" {
 			isValid = false
-			fmt.Printf("object(%s) attribute(%d) type %s is invalid\n", objID, attribute.ID, attribute.PropertyID)
+			fmt.Printf("object(%s) attribute(%d) type %s is invalid\n", objID, attribute.ID, attribute.PropertyType)
 			continue
 		}
 
