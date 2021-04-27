@@ -35,7 +35,7 @@
         v-if="mode !== 'info'"
         min-width="100"
         :label="$t('操作')">
-        <template slot-scope="{ row, $index }">
+        <template slot-scope="{ $index }">
           <bk-button class="mr10" theme="primary" text
             @click.stop="handleAddRow($event, $index)">
             {{$t('添加')}}

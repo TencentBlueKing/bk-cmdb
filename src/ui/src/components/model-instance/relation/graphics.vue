@@ -754,7 +754,7 @@
         text-align: center;
         &::before {
             content: '';
-            background: url('../../assets/images/tip.png');
+            background: url('../../../assets/images/tip.png');
             width: 6px;
             height: 10px;
             position: absolute;

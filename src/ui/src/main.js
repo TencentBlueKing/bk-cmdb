@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import VueCompositionAPI from '@vue/composition-api'
 import App from './App.vue'
 import router from './router/index.js'
 import store from './store'
@@ -21,6 +22,8 @@ import './setup/permission'
 import '@icon-cool/bk-icon-cmdb'
 import '@icon-cool/bk-icon-cmdb-colorful/src/index'
 import './assets/scss/common.scss'
+
+Vue.use(VueCompositionAPI)
 
 Vue.use(cmdbUI)
 Vue.use(cmdbSearchComponent)
