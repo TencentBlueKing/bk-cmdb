@@ -38,7 +38,9 @@ export function getPlaceholder(property) {
 }
 
 export function getDefaultData(property, defaultData = { operator: '$in', value: [] }) {
-  const EQ = '$eq', RANGE = '$range', IN = '$in'
+  const EQ = '$eq'
+  const RANGE = '$range'
+  const IN = '$in'
   const defaultMap = {
     singlechar: { operator: IN, value: [] },
     int: { operator: EQ, value: '' },
