@@ -36,6 +36,7 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	commonUtil "configcenter/src/common/util"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
 )
 
@@ -78,11 +79,21 @@ type Request struct {
 	// sub path format args
 	subPathArgs []interface{}
 
+	// metric additional labels
+	metricDimension string
+
 	// request timeout value
 	timeout time.Duration
 
 	peek bool
 	err  error
+}
+
+// add this request a addition dimension value, which helps us to separate
+// request metrics with a dimension label.
+func (r *Request) WithMetricDimension(value string) *Request {
+	r.metricDimension = value
+	return r
 }
 
 func (r *Request) WithParams(params map[string]string) *Request {
@@ -247,18 +258,6 @@ func (r *Request) checkToleranceLatency(start *time.Time, url string, rid string
 func (r *Request) Do() *Result {
 	result := new(Result)
 
-	if r.parent.requestInflight != nil {
-		r.parent.requestInflight.Inc()
-		defer r.parent.requestInflight.Dec()
-	}
-	if r.parent.requestDuration != nil {
-		before := time.Now()
-		defer func() {
-			r.parent.requestDuration.WithLabelValues(r.subPath, strconv.Itoa(result.StatusCode)).Observe(
-				float64(time.Since(before) / time.Millisecond))
-		}()
-	}
-
 	rid := commonUtil.ExtractRequestIDFromContext(r.ctx)
 	if rid == "" {
 		rid = commonUtil.GetHTTPCCRequestID(r.headers)
@@ -333,6 +332,17 @@ func (r *Request) Do() *Result {
 				time.Sleep(20 * time.Millisecond)
 				continue
 
+			}
+
+			// collect request metrics
+			if r.parent.requestDuration != nil {
+				labels := prometheus.Labels{
+					"handler":     r.subPath,
+					"status_code": strconv.Itoa(result.StatusCode),
+					"dimension":   r.metricDimension,
+				}
+
+				r.parent.requestDuration.With(labels).Observe(float64(time.Since(start) / time.Millisecond))
 			}
 
 			// record latency if needed
