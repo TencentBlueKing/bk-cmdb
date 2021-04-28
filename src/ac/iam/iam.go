@@ -229,7 +229,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.
 	}
 
 	// register or update resource action groups
-	actionGroups := GenerateActionGroups()
+	actionGroups := GenerateActionGroups(models)
 	if len(systemResp.Data.ActionGroups) == 0 {
 		if err = i.client.RegisterActionGroups(ctx, actionGroups); err != nil {
 			blog.ErrorJSON("register action groups failed, error: %s, action groups: %s", err.Error(), actionGroups)

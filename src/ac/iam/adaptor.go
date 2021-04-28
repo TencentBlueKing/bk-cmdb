@@ -478,8 +478,46 @@ func ParseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, 
 	return instances, nil
 }
 
+// 工具函数, 生成dynamic action-ID/Name/NameEN
+func MakeDynamicAction(obj metadata.Object) DynamicActionAttribute {
+	// todo: 定义const, 国际化
+	return DynamicActionAttribute{
+		createActionID:     ActionID(fmt.Sprintf("%s_%s_%d", "create", obj.ObjectID, obj.ID)),
+		createActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "创建"),
+		createActionNameEN: fmt.Sprintf("%s %s %s", "create", obj.ObjectID, "instance"),
+
+		editActionID:     ActionID(fmt.Sprintf("%s_%s_%d", "edit", obj.ObjectID, obj.ID)),
+		editActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "编辑"),
+		editActionNameEN: fmt.Sprintf("%s %s %s", "edit", obj.ObjectID, "instance"),
+
+		deleteActionID:     ActionID(fmt.Sprintf("%s_%s_%d", "delete", obj.ObjectID, obj.ID)),
+		deleteActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "删除"),
+		deleteActionNameEN: fmt.Sprintf("%s %s %s", "delete", obj.ObjectID, "instance"),
+	}
+}
+
+// 工具函数, 动态的按模型生成动作分组作为‘模型实例管理’分组的subGroup
+func MakeDynamicActionSubGroup(obj metadata.Object) ActionGroup {
+	actionAttr := MakeDynamicAction(obj)
+	return ActionGroup{
+		Name:   obj.ObjectName,
+		NameEn: obj.ObjectID,
+		Actions: []ActionWithID{
+			{
+				ID: actionAttr.createActionID,
+			},
+			{
+				ID: actionAttr.editActionID,
+			},
+			{
+				ID: actionAttr.deleteActionID,
+			},
+		},
+	}
+}
+
 // 将model对象构造为resourceAction对象
-func ConvertModelToAction(objects []metadata.Object) []ResourceAction {
+func genDynamicActionWithModel(objects []metadata.Object) []ResourceAction {
 
 	// 注意:这里的实例视图都是采用的sys_instance实例视图, 相应的实例视图回调函数要重新实现, 要能根据传入的bk_obj_id查询不同的表。
 	actions := make([]ResourceAction, 0)
@@ -498,18 +536,22 @@ func ConvertModelToAction(objects []metadata.Object) []ResourceAction {
 	}
 
 	for _, obj := range objects {
-		// todo: 定义const, 国际化
-		editActionID := ActionID(fmt.Sprintf("%s_%s_%d", "edit", obj.ObjectID, obj.ID))
-		editActionNameCN := fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "编辑")
-		editActionNameEN := fmt.Sprintf("%s %s %s", "edit", obj.ObjectID, "instance")
-		deleteActionID := ActionID(fmt.Sprintf("%s_%s_%d", "delete", obj.ObjectID, obj.ID))
-		deleteActionNameCN := fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "删除")
-		deleteActionNameEN := fmt.Sprintf("%s %s %s", "delete", obj.ObjectID, "instance")
+		actAttr := MakeDynamicAction(obj)
+		actions = append(actions, ResourceAction{
+			ID:     actAttr.createActionID,
+			Name:   actAttr.createActionNameCN,
+			NameEn: actAttr.createActionNameEN,
+			Type:   Create,
+			// 创建不需要实例级颗粒度权限, 无实例视图
+			RelatedResourceTypes: nil,
+			RelatedActions:       nil,
+			Version:              1,
+		})
 
 		actions = append(actions, ResourceAction{
-			ID:                   editActionID,
-			Name:                 editActionNameCN,
-			NameEn:               editActionNameEN,
+			ID:                   actAttr.editActionID,
+			Name:                 actAttr.editActionNameCN,
+			NameEn:               actAttr.editActionNameEN,
 			Type:                 Edit,
 			RelatedResourceTypes: relatedResource,
 			RelatedActions:       nil,
@@ -517,9 +559,9 @@ func ConvertModelToAction(objects []metadata.Object) []ResourceAction {
 		})
 
 		actions = append(actions, ResourceAction{
-			ID:                   deleteActionID,
-			Name:                 deleteActionNameCN,
-			NameEn:               deleteActionNameEN,
+			ID:                   actAttr.deleteActionID,
+			Name:                 actAttr.deleteActionNameCN,
+			NameEn:               actAttr.deleteActionNameEN,
 			Type:                 Delete,
 			RelatedResourceTypes: relatedResource,
 			RelatedActions:       nil,

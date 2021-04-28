@@ -195,6 +195,7 @@ func (s *AuthService) initAuth(api *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/register/resource_creator_action", Handler: s.RegisterResourceCreatorAction})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/register/batch_resource_creator_action", Handler: s.BatchRegisterResourceCreatorAction})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model_instance_actions", Handler: s.CreateModelInstanceActions})
+	// 目前还没有使用到"sync/model_instance_actions"接口, 以后可能有用
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/model_instance_actions", Handler: s.SyncModelInstanceActions})
 
 	utility.AddToRestfulWebService(api)

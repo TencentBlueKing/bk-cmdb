@@ -746,34 +746,9 @@ func genCloudAreaActions() []ResourceAction {
 	return actions
 }
 
-// todo: 编辑和删除需要按模型进行注册。
 func GenModelInstanceActions(objects []metadata.Object) []ResourceAction {
-	// edit && delete instance
-	actions := ConvertModelToAction(objects)
-
-	// create instance
-	actions = append(actions, ResourceAction{
-		ID:     CreateSysInstance,
-		Name:   ActionIDNameMap[CreateSysInstance],
-		NameEn: "Create Instance",
-		Type:   Create,
-		RelatedResourceTypes: []RelateResourceType{
-			{
-				SystemID:    SystemIDCMDB,
-				ID:          SysInstanceModel,
-				NameAlias:   "",
-				NameAliasEn: "",
-				Scope:       nil,
-				InstanceSelections: []RelatedInstanceSelection{{
-					SystemID: SystemIDCMDB,
-					ID:       SysInstanceModelSelection,
-				}},
-			},
-		},
-		RelatedActions: nil,
-		Version:        1,
-	})
-	return actions
+	// create && edit && delete instance
+	return genDynamicActionWithModel(objects)
 }
 
 func genEventPushingActions() []ResourceAction {

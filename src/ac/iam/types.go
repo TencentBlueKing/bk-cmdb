@@ -487,3 +487,17 @@ type CommonAction struct {
 	EnglishName string         `json:"name_en"`
 	Actions     []ActionWithID `json:"actions"`
 }
+
+type DynamicActionAttribute struct {
+	createActionID     ActionID
+	createActionNameCN string
+	createActionNameEN string
+
+	editActionID     ActionID
+	editActionNameCN string
+	editActionNameEN string
+
+	deleteActionID     ActionID
+	deleteActionNameCN string
+	deleteActionNameEN string
+}
