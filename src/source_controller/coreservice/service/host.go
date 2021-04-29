@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (s *coreService) TransferHostToInnerModule(ctx *rest.Contexts) {
@@ -167,32 +166,24 @@ func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 }
 
 func (s *coreService) GetHosts(ctx *rest.Contexts) {
-	var dat metadata.ObjQueryInput
+	var dat metadata.QueryInput
 	if err := ctx.DecodeInto(&dat); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	condition := util.ConvParamsTime(dat.Condition)
-	var cond map[string]interface{}
-	switch value := condition.(type) {
-	case map[string]interface{}:
-		cond = value
-	case mapstr.MapStr:
-		cond = value
-	case common.KvMap:
-		cond = value
-	default:
-		out, err := bson.Marshal(condition)
+	condition := dat.Condition
+	if dat.TimeCondition != nil {
+		var err error
+		condition, err = dat.TimeCondition.MergeTimeCondition(condition)
 		if err != nil {
-			blog.Errorf("SetModOwner failed condition %#v, error %s", condition, err.Error())
-		}
-		err = bson.Unmarshal(out, &cond)
-		if err != nil {
-			blog.Errorf("SetModOwner failed condition %#v, error %s", condition, err.Error())
+			blog.ErrorJSON("merge time condition failed, error: %s, input: %s, rid: %s", err, dat, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
 		}
 	}
-	condition = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
+
+	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 
 	result := make([]metadata.HostMapStr, 0)
@@ -201,7 +192,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 		dbInst.Fields(fieldArr...)
 	}
 	if err := dbInst.All(ctx.Kit.Ctx, &result); err != nil {
-		blog.ErrorJSON("failed to query the host , cond: %s err: %s, rid: %s", cond, err, ctx.Kit.Rid)
+		blog.ErrorJSON("failed to query the host , cond: %s err: %s, rid: %s", condition, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

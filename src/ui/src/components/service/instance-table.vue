@@ -43,7 +43,7 @@
         </template>
       </bk-table-column>
       <bk-table-column :label="$t('操作')" fixed="right" v-if="showOperation">
-        <template slot-scope="{ row, $index }">
+        <template slot-scope="{ $index }">
           <a href="javascript:void(0)" class="text-primary mr10" @click="handleEditProcess($index)">
             {{$t('编辑')}}
           </a>

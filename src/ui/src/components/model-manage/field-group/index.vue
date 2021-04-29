@@ -294,6 +294,7 @@
   import CmdbColumnsConfig from '@/components/columns-config/columns-config'
   import { mapGetters, mapActions, mapState } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+  import { v4 as uuidv4 } from 'uuid'
   export default {
     components: {
       vueDraggable,
@@ -514,15 +515,19 @@
         return customDataIndex !== (this.bizGroupedProperties.length - 1)
       },
       handleRiseGroup(index, group) {
-        this.groupedProperties[index - 1].info.bk_group_index = index
-        group.info.bk_group_index = index - 1
-        this.updateGroupIndex()
+        const currentGroupIndex = group.info.bk_group_index
+        const previousGroup = this.groupedProperties[index - 1]
+        group.info.bk_group_index = previousGroup.info.bk_group_index
+        previousGroup.info.bk_group_index = currentGroupIndex
+        this.updateGroupIndex([group, previousGroup])
         this.resortGroups()
       },
       handleDropGroup(index, group) {
-        this.groupedProperties[index + 1].info.bk_group_index = index
-        group.info.bk_group_index = index + 1
-        this.updateGroupIndex()
+        const currentGroupIndex = group.info.bk_group_index
+        const nextGroup = this.groupedProperties[index + 1]
+        group.info.bk_group_index = nextGroup.info.bk_group_index
+        nextGroup.info.bk_group_index = currentGroupIndex
+        this.updateGroupIndex([nextGroup, group])
         this.resortGroups()
       },
       async resetData(filedId) {
@@ -540,11 +545,10 @@
         this.init(properties, groups)
       },
       init(properties, groups) {
-        properties = this.setPropertIndex(properties)
-        let tempGroups = this.separateBizCustomGroups(groups)
-        tempGroups = this.setGroupIndex(tempGroups)
+        properties = this.sortProperties(properties)
+        const separatedGroups = this.separateBizCustomGroups(groups)
         const groupState = {}
-        const groupedProperties = tempGroups.map((group) => {
+        const groupedProperties = separatedGroups.map((group) => {
           groupState[group.bk_group_id] = group.is_collapse
           return {
             info: group,
@@ -629,13 +633,7 @@
         bizCustomGroups.sort((groupA, groupB) => groupA.bk_group_index - groupB.bk_group_index)
         return [...publicGroups, ...bizCustomGroups]
       },
-      setGroupIndex(groups) {
-        groups.forEach((group, index) => {
-          group.bk_group_index = index
-        })
-        return groups
-      },
-      setPropertIndex(properties) {
+      sortProperties(properties) {
         properties.sort((propertyA, propertyB) => propertyA.bk_property_index - propertyB.bk_property_index)
         return properties
       },
@@ -773,10 +771,10 @@
           this.$error(this.$t('该名字已经存在'))
           return
         }
-        const groupId = Date.now().toString()
+        const latestIndex = Math.max(...groupedProperties.map(group => group.info.bk_group_index))
         const params = {
-          bk_group_id: groupId,
-          bk_group_index: groupedProperties.length + 1,
+          bk_group_id: uuidv4(),
+          bk_group_index: latestIndex + 1,
           bk_group_name: this.groupForm.groupName,
           bk_obj_id: this.objId,
           bk_supplier_account: this.supplierAccount,
@@ -785,43 +783,33 @@
         if (!this.isGlobalView) {
           params.bk_biz_id = this.bizId
         }
-        this.createGroup({
-          params,
-          config: {
-            requestId: `post_createGroup_${groupId}`
-          }
-        }).then((group) => {
-          groupedProperties.push({
-            info: group,
-            properties: []
-          })
-          this.groupState[group.bk_group_id] = group.is_collapse
-          this.groupDialog.isShow = false
+        const group = await this.createGroup({ params })
+        groupedProperties.push({
+          info: group,
+          properties: []
         })
+        this.groupState[group.bk_group_id] = group.is_collapse
+        this.groupDialog.isShow = false
       },
-      handleDeleteGroup(group, index) {
+      async handleDeleteGroup(group, index) {
         if (group.properties.length) {
           this.$error(this.$t('请先清空该分组下的字段'))
           return
         }
-        this.deleteGroup({
+        await this.deleteGroup({
           id: group.info.id,
           config: {
-            requestId: `delete_deleteGroup_${group.info.id}`,
-            fromCache: true,
             data: this.isGlobalView ? {} : { bk_biz_id: this.bizId }
           }
-        }).then(() => {
-          this.groupedProperties.splice(index, 1)
-          this.$success(this.$t('删除成功'))
         })
+        this.groupedProperties.splice(index, 1)
+        this.$success(this.$t('删除成功'))
       },
       resortGroups() {
         this.groupedProperties.sort((groupA, groupB) => groupA.info.bk_group_index - groupB.info.bk_group_index)
       },
-      updateGroupIndex() {
-        const groupToUpdate = this.groupedProperties.filter((group, index) => group.info.bk_group_index !== index)
-        groupToUpdate.forEach((group) => {
+      updateGroupIndex(groups) {
+        groups.forEach((group) => {
           const params = {
             condition: {
               id: group.info.id
@@ -914,20 +902,19 @@
           title: this.$tc('确定删除字段？', field.bk_property_name, { name: field.bk_property_name }),
           subTitle: this.$t('删除模型字段提示', { property: field.bk_property_name, model: this.curModel.bk_obj_name }),
           confirmFn: async () => {
-            await this.$store.dispatch('objectModelProperty/deleteObjectAttribute', {
+            const res = await this.$store.dispatch('objectModelProperty/deleteObjectAttribute', {
               id: field.id,
               config: {
                 data: this.isGlobalView ? {} : { bk_biz_id: this.bizId },
                 requestId: 'deleteObjectAttribute',
                 originalResponse: true
               }
-            }).then((res) => {
-              this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
-              if (res.data.bk_error_msg === 'success' && res.data.bk_error_code === 0) {
-                this.displayGroupedProperties[index].properties.splice(fieldIndex, 1)
-                this.handleSliderHidden()
-              }
             })
+            this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
+            if (res.data.bk_error_msg === 'success' && res.data.bk_error_code === 0) {
+              this.displayGroupedProperties[index].properties.splice(fieldIndex, 1)
+              this.handleSliderHidden()
+            }
           }
         })
       },

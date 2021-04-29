@@ -7,7 +7,7 @@
           :key="index">
           <template v-if="source['hitsType'] === 'object'">
             <div class="results-title" @click="jumpPage(source)">
-              <span v-html="`${modelClassifyName[source['bk_obj_id']]} - ${source.bk_inst_name.toString()}`"></span>
+              <span v-html="`${getModelName(source.bk_obj_id)} - ${source.bk_inst_name.toString()}`"></span>
             </div>
             <div class="results-desc" v-if="propertyMap[source['bk_obj_id']]" @click="jumpPage(source)">
               <span class="desc-item" v-html="`${$t('实例ID')}：${source['bk_inst_id']}`"> </span>
@@ -22,7 +22,7 @@
           </template>
           <template v-else-if="source.hitsType === 'host'">
             <div class="results-title" @click="jumpPage(source)">
-              <span v-html="`${modelClassifyName['host']} - ${source.bk_host_innerip.toString()}`"></span>
+              <span v-html="`${getModelName('host')} - ${source.bk_host_innerip.toString()}`"></span>
             </div>
             <div class="results-desc" v-if="propertyMap['host']" @click="jumpPage(source)">
               <span class="desc-item"
@@ -39,7 +39,7 @@
           </template>
           <template v-else-if="source.hitsType === 'biz'">
             <div class="results-title" @click="jumpPage(source)">
-              <span v-html="`${modelClassifyName['biz']} - ${source.bk_biz_name.toString()}`"></span>
+              <span v-html="`${getModelName('biz')} - ${source.bk_biz_name.toString()}`"></span>
               <i class="disabled-mark" v-if="source.bk_data_status === 'disabled'">{{$t('已归档')}}</i>
             </div>
             <div class="results-desc" v-if="propertyMap['biz']" @click="jumpPage(source)">
@@ -77,10 +77,6 @@
       queryData: {
         type: Object,
         default: () => {}
-      },
-      modelClassify: {
-        type: Array,
-        default: () => []
       }
     },
     data() {
@@ -89,7 +85,6 @@
         properties: [],
         showNoData: false,
         searchData: [],
-        modelClassifyName: {},
         propertyMap: {}
       }
     },
@@ -121,9 +116,6 @@
       async initResult(data) {
         const hitsData = data.hits || []
         const modelData = data.aggregations || []
-        this.modelClassify.forEach((model) => {
-          this.modelClassifyName[model.bk_obj_id] = model.bk_obj_name
-        })
         if (modelData.length) {
           await this.getProperties({
             $in: modelData.map(model => model.key)
@@ -140,6 +132,13 @@
           }
           return hit
         })
+      },
+      getModelName(objId) {
+        const model = this.getModelById(objId)
+        if (model && model.bk_obj_name) {
+          return model.bk_obj_name
+        }
+        return objId
       },
       async getProperties(objId) {
         this.propertyMap = await this.batchSearchObjectAttribute({

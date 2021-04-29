@@ -43,10 +43,10 @@
       }
     },
     mounted() {
-      this.addPasteEvent()
+      this.multiple && this.addPasteEvent()
     },
     beforeDestroy() {
-      this.removePasteEvent()
+      this.multiple && this.removePasteEvent()
     },
     methods: {
       addPasteEvent() {

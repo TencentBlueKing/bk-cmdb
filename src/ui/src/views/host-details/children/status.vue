@@ -76,8 +76,8 @@
     async mounted() {
       try {
         const [Echarts, snapshot] = await Promise.all([
-                    import(/* webpackChunkName: "echart" */ 'echarts'),
-                    this.getHostSnapshot()
+          import(/* webpackChunkName: "echart" */ 'echarts'),
+          this.getHostSnapshot()
         ])
         this.Echarts = Echarts
         this.snapshot = snapshot
