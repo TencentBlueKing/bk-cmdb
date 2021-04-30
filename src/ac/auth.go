@@ -45,4 +45,5 @@ type AuthorizeInterface interface {
 		[]metadata.IamCreatorActionPolicy, error)
 
 	CreateModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error
+	UpdateModelInstanceActionGroups(ctx context.Context, h http.Header, input []metadata.Object) error
 }

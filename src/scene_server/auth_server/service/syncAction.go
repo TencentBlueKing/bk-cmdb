@@ -13,9 +13,7 @@
 package service
 
 import (
-	"configcenter/src/common/metadata"
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -84,60 +82,4 @@ func (s *AuthService) NewKit(config *options.Config) *rest.Kit {
 		User:            user,
 		SupplierAccount: supplierAccount,
 	}
-}
-
-func newModelInstanceActions(obj metadata.Object, actions []iam.ResourceAction) []iam.ResourceAction {
-	// todo: 定义const, 国际化
-	editActionID := iam.ActionID(fmt.Sprintf("%s_%s_%d", "edit", obj.ObjectID, obj.ID))
-	editActionNameCN := fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "编辑")
-	editActionNameEN := fmt.Sprintf("%s %s %s", "edit", obj.ObjectID, "instance")
-	deleteActionID := iam.ActionID(fmt.Sprintf("%s_%s_%d", "delete", obj.ObjectID, obj.ID))
-	deleteActionNameCN := fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "删除")
-	deleteActionNameEN := fmt.Sprintf("%s %s %s", "delete", obj.ObjectID, "instance")
-
-	relatedResource := []iam.RelateResourceType{
-		{
-			SystemID:    iam.SystemIDCMDB,
-			ID:          iam.SysInstance,
-			NameAlias:   "",
-			NameAliasEn: "",
-			Scope:       nil,
-			InstanceSelections: []iam.RelatedInstanceSelection{{
-				SystemID: iam.SystemIDCMDB,
-				ID:       iam.SysInstanceSelection,
-			}},
-		},
-	}
-
-	actions = append(actions, iam.ResourceAction{
-		ID:                   editActionID,
-		Name:                 editActionNameCN,
-		NameEn:               editActionNameEN,
-		Type:                 iam.Edit,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	actions = append(actions, iam.ResourceAction{
-		ID:                   deleteActionID,
-		Name:                 deleteActionNameCN,
-		NameEn:               deleteActionNameEN,
-		Type:                 iam.Delete,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	// actions = append(actions, ResourceAction{
-	// 	ID:                   FindSysInstance,
-	// 	Name:                 ActionIDNameMap[FindSysInstance],
-	// 	NameEn:               "View Instance",
-	// 	Type:                 View,
-	// 	RelatedResourceTypes: relatedResource,
-	// 	RelatedActions:       nil,
-	// 	Version:              1,
-	// })
-
-	return actions
 }

@@ -517,10 +517,8 @@ func MakeDynamicActionSubGroup(obj metadata.Object) ActionGroup {
 }
 
 // 将model对象构造为resourceAction对象
+// 注意:这里的实例视图都是采用的sys_instance实例视图, 相应的实例视图回调函数要重新实现, 要能根据传入的bk_obj_id查询不同的表。
 func genDynamicActionWithModel(objects []metadata.Object) []ResourceAction {
-
-	// 注意:这里的实例视图都是采用的sys_instance实例视图, 相应的实例视图回调函数要重新实现, 要能根据传入的bk_obj_id查询不同的表。
-	actions := make([]ResourceAction, 0)
 	relatedResource := []RelateResourceType{
 		{
 			SystemID:    SystemIDCMDB,
@@ -535,6 +533,7 @@ func genDynamicActionWithModel(objects []metadata.Object) []ResourceAction {
 		},
 	}
 
+	actions := make([]ResourceAction, 0)
 	for _, obj := range objects {
 		actAttr := MakeDynamicAction(obj)
 		actions = append(actions, ResourceAction{

@@ -35,6 +35,7 @@ type AuthServerClientInterface interface {
 	BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstancesWithCreator) (
 		[]metadata.IamCreatorActionPolicy, error)
 	CreateModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error
+	UpdateModelInstanceActionGroups(ctx context.Context, h http.Header, input []metadata.Object) error
 }
 
 func NewAuthServerClientInterface(c *util.Capability, version string) AuthServerClientInterface {

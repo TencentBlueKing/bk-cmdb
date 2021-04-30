@@ -417,3 +417,7 @@ func (a *authorizer) BatchRegisterResourceCreatorAction(ctx context.Context, h h
 func (a *authorizer) CreateModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error {
 	return a.authClientSet.CreateModelInstanceActions(ctx, h, input)
 }
+
+func (a *authorizer) UpdateModelInstanceActionGroups(ctx context.Context, h http.Header, input []metadata.Object) error {
+	return a.authClientSet.UpdateModelInstanceActionGroups(ctx, h, input)
+}

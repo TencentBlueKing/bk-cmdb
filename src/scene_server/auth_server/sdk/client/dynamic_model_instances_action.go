@@ -65,7 +65,6 @@ func (ac *authClient) CreateActions(ctx context.Context, actions []iam.ResourceA
 	return nil
 }
 
-// todo: 尚未检测可用性，这里IAM文档有些细节问题没有表述清楚
 func (ac *authClient) DeleteActionsBatch(ctx context.Context, actions []iam.ResourceAction) error {
 
 	resp := new(iam.BaseResponse)
@@ -90,6 +89,7 @@ func (ac *authClient) DeleteActionsBatch(ctx context.Context, actions []iam.Reso
 }
 
 func (ac *authClient) GetActions(ctx context.Context) (*iam.SystemResp, error) {
+
 	resp := new(iam.SystemResp)
 	result := ac.client.Get().
 		SubResourcef("/api/v1/model/systems/%s/query", ac.config.SystemID).
@@ -113,4 +113,27 @@ func (ac *authClient) GetActions(ctx context.Context) (*iam.SystemResp, error) {
 	}
 
 	return resp, nil
+}
+
+func (ac *authClient) UpdateActionGroups(ctx context.Context, actionGroups []iam.ActionGroup) error {
+
+	resp := new(iam.BaseResponse)
+	result := ac.client.Put().
+		SubResourcef("/api/v1/model/systems/%s/configs/action_groups", ac.config.SystemID).
+		WithContext(ctx).
+		WithHeaders(ac.basicHeader).
+		Body(actionGroups).Do()
+	err := result.Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return &iam.AuthError{
+			RequestID: result.Header.Get(iam.IamRequestHeader),
+			Reason:    fmt.Errorf("update action groups %v failed, code: %d, msg:%s", actionGroups, resp.Code, resp.Message),
+		}
+	}
+
+	return nil
 }

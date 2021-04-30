@@ -25,7 +25,8 @@ import (
 )
 
 var (
-	staticActionList []iam.ResourceAction
+	staticActionList      []iam.ResourceAction
+	staticActionGroupList []iam.ActionGroup
 )
 
 // AuthorizeBath works to check if a user has the authority to operate resources.
@@ -201,24 +202,52 @@ func (s *AuthService) BatchRegisterResourceCreatorAction(ctx *rest.Contexts) {
 	ctx.RespEntity(policies)
 }
 
-// UpdateModelInstanceAction update iam resource instance actions.
+// CreateModelInstanceActions create iam resource instance actions.
 func (s *AuthService) CreateModelInstanceActions(ctx *rest.Contexts) {
 	// instantiate resourceActions.
-	models := []metadata.Object{}
-	err := ctx.DecodeInto(models)
+	models := make([]metadata.Object, 0)
+	err := ctx.DecodeInto(&models)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-
-	resourceActions := []iam.ResourceAction{}
-	for _, model := range models {
-		resourceActions = newModelInstanceActions(model, resourceActions)
-	}
-
+	resourceActions := iam.GenModelInstanceActions(models)
 	// Direct call IAM.
 	if err := s.iamClient.CreateActions(ctx.Kit.Ctx, resourceActions); err != nil {
 		blog.ErrorJSON("register resource actions failed, error: %s, resource actions: %s, rid: %s", err.Error(), resourceActions, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// CreateModelInstanceActionGroup create iam resource instance action group.
+func (s *AuthService) UpdateModelInstanceActionGroups(ctx *rest.Contexts) {
+	//models := make([]metadata.Object, 0)
+	//err := ctx.DecodeInto(&models)
+	//if err != nil {
+	//	ctx.RespAutoError(err)
+	//	return
+	//}
+
+	// 上边models没有用, 由于IAM仅提供了全量更新的接口, 所以只能重新全量拉取models列表
+	models, err := s.lgc.CollectObjectsNotPre(ctx.Kit)
+	if err != nil {
+		blog.Errorf("Synchronize actions with IAM failed, collect notPre-models failed, err: %s, rid:%s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if staticActionGroupList == nil {
+		staticActionGroupList = iam.GenerateStaticActionGroups()
+	}
+	actionGroups := staticActionGroupList
+	// generate model instance manage action groups
+	actionGroups = append(actionGroups, iam.GenModelInstanceManageActionGroups(models)...)
+
+	// Direct call IAM.
+	if err := s.iamClient.UpdateActionGroups(ctx.Kit.Ctx, actionGroups); err != nil {
+		blog.ErrorJSON("register resource action groups failed, error: %s, resource action groups: %s, rid: %s", err.Error(), actionGroups, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -236,10 +265,6 @@ func (s *AuthService) SyncModelInstanceActions(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	iamActionMap := map[iam.ActionID]struct{}{}
-	for _, act := range sysResp.Data.Actions {
-		iamActionMap[act.ID] = struct{}{}
-	}
 
 	// 需要先拿到当前已存在的模型, 再与IAM返回结果进行对比
 	models, err := s.lgc.CollectObjectsNotPre(ctx.Kit)
@@ -251,13 +276,19 @@ func (s *AuthService) SyncModelInstanceActions(ctx *rest.Contexts) {
 	if staticActionList == nil {
 		staticActionList = iam.GenerateStaticActions()
 	}
+
+	// 由整体的cmdbAction列表转换为cmdbAction集合
 	cmdbActionList := staticActionList
 	cmdbActionList = append(cmdbActionList, iam.GenModelInstanceActions(models)...)
+	cmdbActionMap := map[iam.ActionID]struct{}{}
+	for _, act := range cmdbActionList {
+		cmdbActionMap[act.ID] = struct{}{}
+	}
 
 	// 对比出IAM中多余的动作
 	deleteActionList := []iam.ResourceAction{}
-	for _, act := range cmdbActionList {
-		if _, exists := iamActionMap[act.ID]; exists {
+	for _, act := range sysResp.Data.Actions {
+		if _, exists := cmdbActionMap[act.ID]; exists {
 			continue
 		}
 		deleteActionList = append(deleteActionList, act)
@@ -282,10 +313,6 @@ func (s *AuthService) SyncModelInstActions(kit rest.Kit) error {
 		blog.ErrorJSON("Synchronize actions with IAM failed, get resource actions from IAM failed, error: %s, resource actions: %s, rid: %s", err.Error(), sysResp, kit.Rid)
 		return err
 	}
-	iamActionMap := map[iam.ActionID]struct{}{}
-	for _, act := range sysResp.Data.Actions {
-		iamActionMap[act.ID] = struct{}{}
-	}
 
 	// 需要先拿到当前已存在的模型, 再与IAM返回结果进行对比
 	models, err := s.lgc.CollectObjectsNotPre(&kit)
@@ -296,13 +323,19 @@ func (s *AuthService) SyncModelInstActions(kit rest.Kit) error {
 	if staticActionList == nil {
 		staticActionList = iam.GenerateStaticActions()
 	}
+
+	// 由整体的cmdbAction列表转换为cmdbAction集合
 	cmdbActionList := staticActionList
 	cmdbActionList = append(cmdbActionList, iam.GenModelInstanceActions(models)...)
+	cmdbActionMap := map[iam.ActionID]struct{}{}
+	for _, act := range cmdbActionList {
+		cmdbActionMap[act.ID] = struct{}{}
+	}
 
 	// 对比出IAM中多余的动作
 	deleteActionList := []iam.ResourceAction{}
-	for _, act := range cmdbActionList {
-		if _, exists := iamActionMap[act.ID]; exists {
+	for _, act := range sysResp.Data.Actions {
+		if _, exists := cmdbActionMap[act.ID]; exists {
 			continue
 		}
 		deleteActionList = append(deleteActionList, act)

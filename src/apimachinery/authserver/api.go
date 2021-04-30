@@ -219,3 +219,25 @@ func (a *authServer) CreateModelInstanceActions(ctx context.Context, h http.Head
 
 	return nil
 }
+
+func (a *authServer) UpdateModelInstanceActionGroups(ctx context.Context, h http.Header, input []metadata.Object) error {
+	resp := new(metadata.Response)
+	subPath := "/update/model_instance_action_groups"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.Code != 0 {
+		return resp.CCError()
+	}
+
+	return nil
+}

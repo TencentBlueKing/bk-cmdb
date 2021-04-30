@@ -16,6 +16,16 @@ import "configcenter/src/common/metadata"
 
 // GenerateActionGroups generate all the resource action groups registered to IAM.
 func GenerateActionGroups(objects []metadata.Object) []ActionGroup {
+	ActionGroups := GenerateStaticActionGroups()
+
+	// generate model instance manage action groups, contains model instance related actions which are dynamic
+	ActionGroups = append(ActionGroups, GenModelInstanceManageActionGroups(objects)...)
+
+	return ActionGroups
+}
+
+// GenerateStaticActionGroups generate all the static resource action groups.
+func GenerateStaticActionGroups() []ActionGroup {
 	ActionGroups := make([]ActionGroup, 0)
 
 	// generate business manage action groups, contains business related actions
@@ -26,9 +36,6 @@ func GenerateActionGroups(objects []metadata.Object) []ActionGroup {
 
 	// generate model manage action groups, contains model related actions
 	ActionGroups = append(ActionGroups, genModelManageActionGroups()...)
-
-	// generate model instance manage action groups, contains model instance related actions which are dynamic
-	ActionGroups = append(ActionGroups, genModelInstanceManageActionGroups(objects)...)
 
 	// generate operation statistic action groups, contains operation statistic and audit related actions
 	ActionGroups = append(ActionGroups, genOperationStatisticActionGroups()...)
@@ -233,21 +240,6 @@ func genResourceManageActionGroups() []ActionGroup {
 					},
 				},
 				{
-					Name:   "实例",
-					NameEn: "Configuration Instance",
-					Actions: []ActionWithID{
-						{
-							ID: CreateSysInstance,
-						},
-						{
-							ID: EditSysInstance,
-						},
-						{
-							ID: DeleteSysInstance,
-						},
-					},
-				},
-				{
 					Name:   "云账户",
 					NameEn: "Cloud Account",
 					Actions: []ActionWithID{
@@ -416,7 +408,7 @@ func genModelManageActionGroups() []ActionGroup {
 	}
 }
 
-func genModelInstanceManageActionGroups(objects []metadata.Object) []ActionGroup {
+func GenModelInstanceManageActionGroups(objects []metadata.Object) []ActionGroup {
 	subGroups := []ActionGroup{}
 	for _, obj := range objects {
 		subGroups = append(subGroups, MakeDynamicActionSubGroup(obj))

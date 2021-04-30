@@ -129,7 +129,8 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 			return err
 		}
 
-		// register object resource creator action to iam
+		// 注册: 1.创建者权限 2.新鉴权动作 3.新鉴权动作分组
+		// 注意: 必须要先注册动作, 后注册动作分组
 		if auth.EnableAuthorize() {
 			iamInstance := metadata.IamInstanceWithCreator{
 				Type:    string(iam.SysModel),
@@ -137,6 +138,7 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 				Name:    rsp.Object().ObjectName,
 				Creator: ctx.Kit.User,
 			}
+			// register object resource creator action to iam
 			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
@@ -146,6 +148,14 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 			// register IAM actions when new model is created, in order to realize dynamic action list.
 			modelList := []metadata.Object{rsp.Object()}
 			err = s.AuthManager.Authorizer.CreateModelInstanceActions(ctx.Kit.Ctx, ctx.Kit.Header, modelList)
+			if err != nil {
+				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
+			time.Sleep(time.Duration(5) * time.Second)
+
+			// register IAM action groups when new model is created, in order to realize dynamic action list.
+			err = s.AuthManager.Authorizer.UpdateModelInstanceActionGroups(ctx.Kit.Ctx, ctx.Kit.Header, modelList)
 			if err != nil {
 				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
