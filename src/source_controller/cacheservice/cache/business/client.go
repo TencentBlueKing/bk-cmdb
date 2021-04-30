@@ -369,7 +369,7 @@ func (c *Client) GetModuleDetail(moduleID int64) (string, error) {
 	if err == nil && len(mod) != 0 {
 		return mod, nil
 	}
-	blog.Errorf("get module: %d failed from redis, err: %v", err)
+	blog.Errorf("get module: %d failed from redis, err: %v", moduleID, err)
 	// get from db directly.
 	return c.getModuleDetailFromMongo(moduleID)
 }
