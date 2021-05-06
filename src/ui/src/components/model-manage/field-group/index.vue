@@ -291,7 +291,7 @@
   import theFieldDetail from './field-detail'
   import previewField from './preview-field'
   import fieldDetailsView from './field-view'
-  import CmdbColumnsConfig from '@/components/columns-config/columns-config'
+  import CmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
   import { mapGetters, mapActions, mapState } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
   import { v4 as uuidv4 } from 'uuid'
