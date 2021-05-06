@@ -418,6 +418,6 @@ func (a *authorizer) CreateModelInstanceActions(ctx context.Context, h http.Head
 	return a.authClientSet.CreateModelInstanceActions(ctx, h, input)
 }
 
-func (a *authorizer) UpdateModelInstanceActionGroups(ctx context.Context, h http.Header, input []metadata.Object) error {
-	return a.authClientSet.UpdateModelInstanceActionGroups(ctx, h, input)
+func (a *authorizer) UpdateModelInstanceActionGroups(ctx context.Context, h http.Header) error {
+	return a.authClientSet.UpdateModelInstanceActionGroups(ctx, h)
 }

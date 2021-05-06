@@ -32,7 +32,6 @@ import (
 )
 
 // CreateObjectBatch batch to create some objects
-// todo: 这里也要注册IAM
 func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 	data := new(map[string]operation.ImportObjectData)
 	if err := ctx.DecodeInto(data); err != nil {
@@ -152,12 +151,13 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
 			}
-			time.Sleep(time.Duration(5) * time.Second)
+			time.Sleep(time.Duration(1) * time.Second)
 
 			// register IAM action groups when new model is created, in order to realize dynamic action list.
-			err = s.AuthManager.Authorizer.UpdateModelInstanceActionGroups(ctx.Kit.Ctx, ctx.Kit.Header, modelList)
+			// 注意: 此接口目前为全量更新, IAM暂时没有提供增量更新接口
+			err = s.AuthManager.Authorizer.UpdateModelInstanceActionGroups(ctx.Kit.Ctx, ctx.Kit.Header)
 			if err != nil {
-				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+				blog.Errorf("update model instance action groups to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
 			}
 		}

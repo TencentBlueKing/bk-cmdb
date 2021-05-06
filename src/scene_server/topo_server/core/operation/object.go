@@ -19,6 +19,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
@@ -103,7 +104,7 @@ func (o *object) IsValidObject(kit *rest.Kit, objID string) error {
 }
 
 // CreateObjectBatch manipulate model in cc_ObjDes
-// this method does'nt act as it's name, it create or update model's attributes indeed.
+// this method doesn't act as it's name, it create or update model's attributes indeed.
 // it only operate on model already exist, that it to say no new model will be created.
 func (o *object) CreateObjectBatch(kit *rest.Kit, inputDataMap map[string]ImportObjectData) (mapstr.MapStr, error) {
 	result := mapstr.New()
@@ -600,6 +601,17 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
 	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
 		blog.Errorf("delete object %s success, save audit log failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
 		return err
+	}
+
+	// 需要同步刷新IAM的动作分组, 此接口为全量更新, IAM暂未提供增量更新接口
+	// 考虑到事务原子性, 将IAM的注册放在最后一步; 避免由于操作审计失败导致CMDB数据回滚而IAM无法回滚的问题
+	if auth.EnableAuthorize() {
+		// register IAM action groups when new model is created, in order to realize dynamic action list.
+		err = o.authManager.Authorizer.UpdateModelInstanceActionGroups(kit.Ctx, kit.Header)
+		if err != nil {
+			blog.Errorf("delete model, but update instance action group to iam failed, err: %s, rid: %s", err, kit.Rid)
+			return err
+		}
 	}
 
 	return nil

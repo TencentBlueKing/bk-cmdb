@@ -223,14 +223,7 @@ func (s *AuthService) CreateModelInstanceActions(ctx *rest.Contexts) {
 
 // CreateModelInstanceActionGroup create iam resource instance action group.
 func (s *AuthService) UpdateModelInstanceActionGroups(ctx *rest.Contexts) {
-	//models := make([]metadata.Object, 0)
-	//err := ctx.DecodeInto(&models)
-	//if err != nil {
-	//	ctx.RespAutoError(err)
-	//	return
-	//}
-
-	// 上边models没有用, 由于IAM仅提供了全量更新的接口, 所以只能重新全量拉取models列表
+	// 入参没有用, 由于IAM仅提供了全量更新的接口, 所以只能重新全量拉取models列表
 	models, err := s.lgc.CollectObjectsNotPre(ctx.Kit)
 	if err != nil {
 		blog.Errorf("Synchronize actions with IAM failed, collect notPre-models failed, err: %s, rid:%s", err.Error(), ctx.Kit.Rid)

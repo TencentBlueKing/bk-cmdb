@@ -220,13 +220,13 @@ func (a *authServer) CreateModelInstanceActions(ctx context.Context, h http.Head
 	return nil
 }
 
-func (a *authServer) UpdateModelInstanceActionGroups(ctx context.Context, h http.Header, input []metadata.Object) error {
+func (a *authServer) UpdateModelInstanceActionGroups(ctx context.Context, h http.Header) error {
 	resp := new(metadata.Response)
 	subPath := "/update/model_instance_action_groups"
 
 	err := a.client.Post().
 		WithContext(ctx).
-		Body(input).
+		Body(nil).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
