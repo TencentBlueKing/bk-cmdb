@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 
 	"github.com/coccyx/timeparser"
@@ -292,4 +293,132 @@ type BkBaseResp struct {
 type BKResponse struct {
 	BkBaseResp `json:",inline"`
 	Data       interface{} `json:"data"`
+}
+
+// CommonSearchResult is common search action result.
+type CommonSearchResult struct {
+	// Info search result.
+	Info []mapstr.MapStr `json:"info"`
+}
+
+// CommonSearchFilter is a common search action filter struct,
+// such like search instance or instance associations.
+// And the conditions must abide by query filter.
+type CommonSearchFilter struct {
+	// ObjectID is target model object id.
+	ObjectID string `json:"bk_obj_id"`
+
+	// Conditions is target search conditions that make up by the query filter.
+	Conditions *querybuilder.QueryFilter `json:"conditions"`
+
+	// Fields indicates which fields should be returns, it's would be ignored if not exists.
+	Fields []string `json:"fields"`
+
+	// Page batch query action page.
+	Page BasePage `json:"page"`
+}
+
+// Validate validates the common search filter struct,
+// return the key and error if any one of keys is invalid.
+func (f *CommonSearchFilter) Validate() (string, error) {
+	// validates object id parameter.
+	if len(f.ObjectID) == 0 {
+		return "bk_obj_id", fmt.Errorf("empty bk_obj_id")
+	}
+
+	// validate page parameter.
+	if invalidKey, err := f.Page.Validate(false); err != nil {
+		return fmt.Sprintf("page.%s", invalidKey), err
+	}
+
+	// validate fields parameter.
+	if len(f.Fields) == 0 {
+		return "fields", fmt.Errorf("empty fields")
+	}
+
+	// validate conditions parameter.
+	if f.Conditions == nil {
+		return "conditions", fmt.Errorf("empty conditions")
+	}
+
+	if invalidKey, err := f.Conditions.Validate(); err != nil {
+		return fmt.Sprintf("conditions.%s", invalidKey), err
+	}
+
+	if f.Conditions.GetDeep() > querybuilder.MaxDeep {
+		return "conditions.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
+	}
+
+	return "", nil
+}
+
+// GetConditions returns a database type conditions base on the query filter.
+func (f *CommonSearchFilter) GetConditions() (map[string]interface{}, error) {
+	if f.Conditions == nil {
+		return nil, fmt.Errorf("empty conditions")
+	}
+
+	// convert to mongo conditions.
+	mgoFilter, invalidKey, err := f.Conditions.ToMgo()
+	if err != nil {
+		return nil, fmt.Errorf("invalid key, conditions.%s, err: %s", invalidKey, err)
+	}
+
+	return mgoFilter, nil
+}
+
+// CommonCountResult is common count action result.
+type CommonCountResult struct {
+	// Count count result.
+	Count int `json:"count"`
+}
+
+// CommonCountFilter is a common count action filter struct,
+// such like search instance count or instance associations count.
+// And the conditions must abide by query filter.
+type CommonCountFilter struct {
+	// ObjectID is target model object id.
+	ObjectID string `json:"bk_obj_id"`
+
+	// Conditions is target search conditions that make up by the query filter.
+	Conditions *querybuilder.QueryFilter `json:"conditions"`
+}
+
+// Validate validates the common count filter struct,
+// return the key and error if any one of keys is invalid.
+func (f *CommonCountFilter) Validate() (string, error) {
+	// validates object id parameter.
+	if len(f.ObjectID) == 0 {
+		return "bk_obj_id", fmt.Errorf("empty bk_obj_id")
+	}
+
+	// validate conditions parameter.
+	if f.Conditions == nil {
+		return "conditions", fmt.Errorf("empty conditions")
+	}
+
+	if invalidKey, err := f.Conditions.Validate(); err != nil {
+		return fmt.Sprintf("conditions.%s", invalidKey), err
+	}
+
+	if f.Conditions.GetDeep() > querybuilder.MaxDeep {
+		return "conditions.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
+	}
+
+	return "", nil
+}
+
+// GetConditions returns a database type conditions base on the query filter.
+func (f *CommonCountFilter) GetConditions() (map[string]interface{}, error) {
+	if f.Conditions == nil {
+		return nil, fmt.Errorf("empty conditions")
+	}
+
+	// convert to mongo conditions.
+	mgoFilter, invalidKey, err := f.Conditions.ToMgo()
+	if err != nil {
+		return nil, fmt.Errorf("invalid key, conditions.%s, err: %s", invalidKey, err)
+	}
+
+	return mgoFilter, nil
 }
