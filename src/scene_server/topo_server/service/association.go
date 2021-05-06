@@ -617,6 +617,86 @@ func (s *Service) DeleteAssociationType(ctx *rest.Contexts) {
 	ctx.RespEntity(ret.Data)
 }
 
+// SearchInstanceAssociations searches object instance associations with the input conditions.
+func (s *Service) SearchInstanceAssociations(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	// NOTE: NOT SUPPORT inner model associations search action in this interface.
+	if common.IsInnerModel(objID) {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
+
+	// decode input parameter.
+	input := &metadata.CommonSearchFilter{}
+	if err := ctx.DecodeInto(input); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	input.ObjectID = objID
+
+	// validate input parameter.
+	if invalidKey, err := input.Validate(); err != nil {
+		blog.Warnf("validate search instance associations input parameters failed, err: %s, rid: %s",
+			err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, invalidKey))
+		return
+	}
+
+	// set read preference.
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	// search instance associations.
+	result, err := s.Core.AssociationOperation().SearchInstanceAssociations(ctx.Kit, objID, input)
+	if err != nil {
+		blog.Errorf("search object[%s] instance associations failed, err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(result)
+}
+
+// CountInstanceAssociations counts object instance associations with the input conditions.
+func (s *Service) CountInstanceAssociations(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	// NOTE: NOT SUPPORT inner model associations count action in this interface.
+	if common.IsInnerModel(objID) {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
+
+	// decode input parameter.
+	input := &metadata.CommonCountFilter{}
+	if err := ctx.DecodeInto(input); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	input.ObjectID = objID
+
+	// validate input parameter.
+	if invalidKey, err := input.Validate(); err != nil {
+		blog.Warnf("validate count instance associations input parameters failed, err: %s, rid: %s",
+			err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, invalidKey))
+		return
+	}
+
+	// set read preference.
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	// count instance associations.
+	result, err := s.Core.AssociationOperation().CountInstanceAssociations(ctx.Kit, objID, input)
+	if err != nil {
+		blog.Errorf("count object[%s] instance associations failed, err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(result)
+}
+
 func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 	request := &metadata.SearchAssociationInstRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
