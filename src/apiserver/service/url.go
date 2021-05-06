@@ -172,6 +172,12 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case topoURLRegexp.MatchString(string(*u)):
 		from, to, isHit = rootPath, topoRoot, true
 
+	case strings.HasPrefix(string(*u), rootPath+"/search"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/count"):
+		from, to, isHit = rootPath, topoRoot, true
+
 	default:
 		isHit = false
 	}
