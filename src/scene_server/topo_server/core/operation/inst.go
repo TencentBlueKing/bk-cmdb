@@ -50,6 +50,9 @@ type InstOperationInterface interface {
 	FindInstTopo(kit *rest.Kit, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []CommonInstTopoV2, err error)
 	UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error
 
+	SearchObjectInstances(kit *rest.Kit, objID string, input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, errors.CCError)
+	CountObjectInstances(kit *rest.Kit, objID string, input *metadata.CommonCountFilter) (*metadata.CommonCountResult, errors.CCError)
+
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface)
 }
 
