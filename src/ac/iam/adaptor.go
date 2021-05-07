@@ -519,13 +519,15 @@ func MakeDynamicActionSubGroup(obj metadata.Object) ActionGroup {
 // 将model对象构造为resourceAction对象
 // 注意:这里的实例视图都是采用的sys_instance实例视图, 相应的实例视图回调函数要重新实现, 要能根据传入的bk_obj_id查询不同的表。
 func genDynamicActionWithModel(objects []metadata.Object) []ResourceAction {
+	// 注意: 目前属性鉴权功能仅作用于"自定义模型实例"/"资源池主机"的Edit和Delete动作
 	relatedResource := []RelateResourceType{
 		{
-			SystemID:    SystemIDCMDB,
-			ID:          SysInstance,
-			NameAlias:   "",
-			NameAliasEn: "",
-			Scope:       nil,
+			SystemID:      SystemIDCMDB,
+			ID:            SysInstance,
+			NameAlias:     "",
+			NameAliasEn:   "",
+			Scope:         nil,
+			SelectionMode: all,
 			InstanceSelections: []RelatedInstanceSelection{{
 				SystemID: SystemIDCMDB,
 				ID:       SysInstanceSelection,

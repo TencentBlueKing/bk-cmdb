@@ -526,12 +526,14 @@ func genResourcePoolHostActions() []ResourceAction {
 		ID:       SysHostInstanceSelection,
 	}}
 
+	// 注意: 目前属性鉴权功能仅作用于"资源池主机"/"自定义模型实例"的"Edit"和"Delete"动作
 	relatedResource := []RelateResourceType{{
 		SystemID:           SystemIDCMDB,
 		ID:                 Host,
 		NameAlias:          "",
 		NameAliasEn:        "",
 		Scope:              nil,
+		SelectionMode:      all,
 		InstanceSelections: hostSelection,
 	}}
 

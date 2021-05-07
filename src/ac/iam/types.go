@@ -343,15 +343,23 @@ type ResourceAction struct {
 	Version              int                  `json:"version"`
 }
 
+type SelectionMode string
+
 type RelateResourceType struct {
 	SystemID           string                     `json:"system_id"`
 	ID                 TypeID                     `json:"id"`
 	NameAlias          string                     `json:"name_alias"`
 	NameAliasEn        string                     `json:"name_alias_en"`
 	Scope              *Scope                     `json:"scope"`
-	SelectionMode      string                     `json:"selection_mode"`
+	SelectionMode      SelectionMode              `json:"selection_mode"`
 	InstanceSelections []RelatedInstanceSelection `json:"related_instance_selections"`
 }
+
+const (
+	all       SelectionMode = "all"
+	instance  SelectionMode = "instance"
+	attribute SelectionMode = "attribute"
+)
 
 type Scope struct {
 	Op      string         `json:"op"`
