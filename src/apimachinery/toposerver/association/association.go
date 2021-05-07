@@ -226,9 +226,9 @@ func (asst *Association) SearchObjectAssoWithAssoKindList(ctx context.Context, h
 
 // SearchInstanceAssociations is search instance associations api in toposerver.
 func (asst *Association) SearchInstanceAssociations(ctx context.Context, header http.Header,
-	objID string, input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error) {
+	objID string, input *metadata.CommonSearchFilter) (*metadata.Response, error) {
 
-	resp := new(metadata.CommonSearchResult)
+	resp := new(metadata.Response)
 	subPath := "/search/instance_associations/object/%s"
 
 	err := asst.client.Post().
@@ -244,9 +244,9 @@ func (asst *Association) SearchInstanceAssociations(ctx context.Context, header 
 
 // CountInstanceAssociations is count instance associations api in toposerver.
 func (asst *Association) CountInstanceAssociations(ctx context.Context, header http.Header,
-	objID string, input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error) {
+	objID string, input *metadata.CommonCountFilter) (*metadata.Response, error) {
 
-	resp := new(metadata.CommonCountResult)
+	resp := new(metadata.Response)
 	subPath := "/count/instance_associations/object/%s"
 
 	err := asst.client.Post().

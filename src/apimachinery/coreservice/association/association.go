@@ -47,7 +47,7 @@ type AssociationClientInterface interface {
 
 	// CountInstanceAssociations counts model instance associations num.
 	CountInstanceAssociations(ctx context.Context, header http.Header,
-		objID string, input *metadata.Condition) (*metadata.CommonCountResult, error)
+		objID string, input *metadata.Condition) (*metadata.CountResponse, error)
 }
 
 func NewAssociationClientInterface(client rest.ClientInterface) AssociationClientInterface {

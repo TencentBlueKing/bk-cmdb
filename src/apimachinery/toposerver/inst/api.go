@@ -63,11 +63,11 @@ type InstanceInterface interface {
 
 	// SearchObjectInstances searches object instances.
 	SearchObjectInstances(ctx context.Context, header http.Header,
-		objID string, input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error)
+		objID string, input *metadata.CommonSearchFilter) (*metadata.Response, error)
 
 	// CountObjectInstances counts object instances num.
 	CountObjectInstances(ctx context.Context, header http.Header,
-		objID string, input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error)
+		objID string, input *metadata.CommonCountFilter) (*metadata.Response, error)
 }
 
 type instanceClient struct {

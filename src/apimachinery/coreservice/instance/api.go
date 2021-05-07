@@ -145,9 +145,9 @@ func (inst *instance) ReadInstanceStruct(ctx context.Context, h http.Header, obj
 
 // CountInstances counts target model instances num.
 func (inst *instance) CountInstances(ctx context.Context, header http.Header,
-	objID string, input *metadata.Condition) (*metadata.CommonCountResult, error) {
+	objID string, input *metadata.Condition) (*metadata.CountResponse, error) {
 
-	resp := new(metadata.CommonCountResult)
+	resp := new(metadata.CountResponse)
 	subPath := "/count/model/%s/instances"
 
 	err := inst.client.Post().

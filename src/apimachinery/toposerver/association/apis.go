@@ -37,11 +37,11 @@ type AssociationInterface interface {
 
 	// SearchInstanceAssociations searches object instance associations.
 	SearchInstanceAssociations(ctx context.Context, header http.Header,
-		objID string, input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error)
+		objID string, input *metadata.CommonSearchFilter) (*metadata.Response, error)
 
 	// CountInstanceAssociations counts object instance associations num.
 	CountInstanceAssociations(ctx context.Context, header http.Header,
-		objID string, input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error)
+		objID string, input *metadata.CommonCountFilter) (*metadata.Response, error)
 }
 
 func NewAssociationInterface(client rest.ClientInterface) AssociationInterface {

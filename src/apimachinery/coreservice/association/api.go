@@ -289,9 +289,9 @@ func (asst *association) ReadInstAssociation(ctx context.Context, h http.Header,
 
 // CountInstanceAssociations counts model instance associations num.
 func (asst *association) CountInstanceAssociations(ctx context.Context, header http.Header,
-	objID string, input *metadata.Condition) (*metadata.CommonCountResult, error) {
+	objID string, input *metadata.Condition) (*metadata.CountResponse, error) {
 
-	resp := new(metadata.CommonCountResult)
+	resp := new(metadata.CountResponse)
 	subPath := "/count/instanceassociation/model/%s"
 
 	err := asst.client.Post().

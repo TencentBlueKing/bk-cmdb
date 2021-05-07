@@ -71,6 +71,18 @@ type Response struct {
 	Data     interface{} `json:"data" mapstructure:"data"`
 }
 
+// CountResponse count action response content.
+type CountResponseContent struct {
+	// Count count num.
+	Count uint64 `json:"count"`
+}
+
+// CountResponse count action response.
+type CountResponse struct {
+	BaseResp `json:",inline"`
+	Data     CountResponseContent `json:"data"`
+}
+
 type BoolResponse struct {
 	BaseResp `json:",inline"`
 	Data     bool `json:"data"`
@@ -304,7 +316,7 @@ type BKResponse struct {
 // CommonSearchResult is common search action result.
 type CommonSearchResult struct {
 	// Info search result.
-	Info []mapstr.MapStr `json:"info"`
+	Info []interface{} `json:"info"`
 }
 
 // CommonSearchFilter is a common search action filter struct,

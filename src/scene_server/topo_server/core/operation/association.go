@@ -829,7 +829,12 @@ func (assoc *association) SearchInstanceAssociations(kit *rest.Kit, objID string
 		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
 	}
 
-	return &metadata.CommonSearchResult{Info: resp.Data.Info}, nil
+	result := &metadata.CommonSearchResult{}
+	for idx := range resp.Data.Info {
+		result.Info = append(result.Info, &resp.Data.Info[idx])
+	}
+
+	return result, nil
 }
 
 // CountInstanceAssociations counts object instance associations num.

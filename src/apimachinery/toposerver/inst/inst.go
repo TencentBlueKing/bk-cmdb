@@ -176,9 +176,9 @@ func (t *instanceClient) SearchInstsNames(ctx context.Context, h http.Header, s 
 
 // SearchObjectInstances is search object instances api in toposerver.
 func (t *instanceClient) SearchObjectInstances(ctx context.Context, header http.Header,
-	objID string, input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error) {
+	objID string, input *metadata.CommonSearchFilter) (*metadata.Response, error) {
 
-	resp := new(metadata.CommonSearchResult)
+	resp := new(metadata.Response)
 	subPath := "/search/instances/object/%s"
 
 	err := t.client.Post().
@@ -194,9 +194,9 @@ func (t *instanceClient) SearchObjectInstances(ctx context.Context, header http.
 
 // CountObjectInstances is count object instances num api in toposerver.
 func (t *instanceClient) CountObjectInstances(ctx context.Context, header http.Header,
-	objID string, input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error) {
+	objID string, input *metadata.CommonCountFilter) (*metadata.Response, error) {
 
-	resp := new(metadata.CommonCountResult)
+	resp := new(metadata.Response)
 	subPath := "/count/instances/object/%s"
 
 	err := t.client.Post().
