@@ -417,6 +417,24 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 	return dataResult, nil
 }
 
+// CountModelInstances counts target model instances num.
+func (m *instanceManager) CountModelInstances(kit *rest.Kit,
+	objID string, input *metadata.Condition) (*metadata.CommonCountResult, error) {
+
+	if len(objID) == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField)
+	}
+
+	count, err := m.countInstance(kit, objID, input.Condition)
+	if err != nil {
+		blog.Errorf("count model instances failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, err
+	}
+	result := &metadata.CommonCountResult{Count: count}
+
+	return result, nil
+}
+
 func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	instIDs := []int64{}
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)

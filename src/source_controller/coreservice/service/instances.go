@@ -76,6 +76,27 @@ func (s *coreService) SearchModelInstances(ctx *rest.Contexts) {
 	ctx.RespEntity(dataResult)
 }
 
+// CountModelInstances counts target model instances num.
+func (s *coreService) CountModelInstances(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	// decode input parameter.
+	input := &metadata.Condition{}
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// count target model instances num.
+	result, err := s.core.InstanceOperation().CountModelInstances(ctx.Kit, objID, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(result)
+}
+
 func (s *coreService) DeleteModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
 	if err := ctx.DecodeInto(&inputData); nil != err {

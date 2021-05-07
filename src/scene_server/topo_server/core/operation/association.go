@@ -73,8 +73,8 @@ type AssociationOperationInterface interface {
 	CreateInst(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
 	DeleteInst(kit *rest.Kit, objID string, asstIDList []int64) (resp *metadata.DeleteAssociationInstResult, err error)
 
-	SearchInstanceAssociations(kit *rest.Kit, objID string, input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, errors.CCError)
-	CountInstanceAssociations(kit *rest.Kit, objID string, input *metadata.CommonCountFilter) (*metadata.CommonCountResult, errors.CCError)
+	SearchInstanceAssociations(kit *rest.Kit, objID string, input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error)
+	CountInstanceAssociations(kit *rest.Kit, objID string, input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error)
 
 	ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string, importData map[int]metadata.ExcelAssocation, languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error)
 

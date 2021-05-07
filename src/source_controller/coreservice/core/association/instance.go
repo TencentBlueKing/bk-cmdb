@@ -54,6 +54,8 @@ func (m *associationInstance) isExists(kit *rest.Kit, instID, asstInstID int64, 
 func (m *associationInstance) searchInstanceAssociation(kit *rest.Kit, objID string, param metadata.QueryCondition) (
 	[]metadata.InstAsst, error) {
 
+	param.Condition = util.SetQueryOwner(param.Condition, kit.SupplierAccount)
+
 	results := make([]metadata.InstAsst, 0)
 	asstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
 	instHandler := mongodb.Client().Table(asstTableName).Find(param.Condition).Fields(param.Fields...)
@@ -63,6 +65,7 @@ func (m *associationInstance) searchInstanceAssociation(kit *rest.Kit, objID str
 }
 
 func (m *associationInstance) countInstanceAssociation(kit *rest.Kit, objID string, cond mapstr.MapStr) (uint64, error) {
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	asstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
 	return mongodb.Client().Table(asstTableName).Find(cond).Count(kit.Ctx)
 }
@@ -297,7 +300,6 @@ func (m *associationInstance) SearchInstanceAssociation(kit *rest.Kit, objID str
 		return &metadata.QueryResult{}, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField)
 	}
 
-	param.Condition = util.SetQueryOwner(param.Condition, kit.SupplierAccount)
 	instAsstItems, err := m.searchInstanceAssociation(kit, objID, param)
 	if nil != err {
 		blog.ErrorJSON("search inst association err: %s, objID: %s, param: %s, rid: %s", err, objID, param, kit.Rid)
@@ -321,6 +323,24 @@ func (m *associationInstance) SearchInstanceAssociation(kit *rest.Kit, objID str
 	}
 
 	return dataResult, nil
+}
+
+// CountInstanceAssociations counts target model instance associations num.
+func (m *associationInstance) CountInstanceAssociations(kit *rest.Kit,
+	objID string, input *metadata.Condition) (*metadata.CommonCountResult, error) {
+
+	if len(objID) == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField)
+	}
+
+	count, err := m.countInstanceAssociation(kit, objID, input.Condition)
+	if err != nil {
+		blog.Errorf("count model instance associations failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, err
+	}
+	result := &metadata.CommonCountResult{Count: count}
+
+	return result, nil
 }
 
 func (m *associationInstance) DeleteInstanceAssociation(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (

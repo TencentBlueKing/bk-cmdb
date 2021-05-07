@@ -99,6 +99,7 @@ func (s *coreService) initModelInstances(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/model/{bk_obj_id}/instance", Handler: s.CreateManyModelInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model/{bk_obj_id}/instance", Handler: s.UpdateModelInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/{bk_obj_id}/instances", Handler: s.SearchModelInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/model/{bk_obj_id}/instances", Handler: s.CountModelInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance", Handler: s.DeleteModelInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance/cascade", Handler: s.CascadeDeleteModelInstances})
 
@@ -149,6 +150,7 @@ func (s *coreService) initInstanceAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/instanceassociation", Handler: s.CreateOneInstanceAssociation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/instanceassociation", Handler: s.CreateManyInstanceAssociation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/instanceassociation", Handler: s.SearchInstanceAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/instanceassociation/model/{bk_obj_id}", Handler: s.CountInstanceAssociations})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/instanceassociation", Handler: s.DeleteInstanceAssociation})
 
 	utility.AddToRestfulWebService(web)

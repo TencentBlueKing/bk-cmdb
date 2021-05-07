@@ -239,6 +239,12 @@ type DefaultModuleHostConfigParams struct {
 	ModuleID      int64   `json:"bk_module_id"`
 }
 
+// Condition is common simple condition parameter struct.
+type Condition struct {
+	// Condition conditions.
+	Condition map[string]interface{} `json:"condition"`
+}
+
 // common search struct
 type SearchParams struct {
 	Condition map[string]interface{} `json:"condition"`
@@ -370,7 +376,7 @@ func (f *CommonSearchFilter) GetConditions() (map[string]interface{}, error) {
 // CommonCountResult is common count action result.
 type CommonCountResult struct {
 	// Count count result.
-	Count int `json:"count"`
+	Count uint64 `json:"count"`
 }
 
 // CommonCountFilter is a common count action filter struct,
