@@ -34,6 +34,8 @@ type AssociationInterface interface {
 	DeleteInst(ctx context.Context, h http.Header, objID string, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error)
 	DeleteInstBatch(ctx context.Context, h http.Header, assoIDs *metadata.DeleteAssociationInstBatchRequest) (resp *metadata.DeleteAssociationInstBatchResult, err error)
 	SearchObjectAssoWithAssoKindList(ctx context.Context, h http.Header, assoKindIDs metadata.AssociationKindIDs) (resp *metadata.ListAssociationsWithAssociationKindResult, err error)
+	SearchInstanceAssociations(ctx context.Context, header http.Header, objID string, input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error)
+	CountInstanceAssociations(ctx context.Context, header http.Header, objID string, input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error)
 }
 
 func NewAssociationInterface(client rest.ClientInterface) AssociationInterface {

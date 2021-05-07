@@ -60,6 +60,8 @@ type InstanceInterface interface {
 	SearchSet(ctx context.Context, ownerID string, appID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
 	SearchSetBatch(ctx context.Context, appID string, h http.Header, s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error)
 	SearchInstsNames(ctx context.Context, h http.Header, s *metadata.SearchInstsNamesOption) (resp *metadata.ArrayResponse, err error)
+	SearchObjectInstances(ctx context.Context, header http.Header, objID string, input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error)
+	CountObjectInstances(ctx context.Context, header http.Header, objID string, input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error)
 }
 
 type instanceClient struct {
