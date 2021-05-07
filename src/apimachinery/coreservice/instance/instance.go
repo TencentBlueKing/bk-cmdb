@@ -33,7 +33,7 @@ type InstanceClientInterface interface {
 	ReadInstanceStruct(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition,
 		result interface{}) (err errors.CCErrorCoder)
 
-	// CountInstances counts target model instances num.
+	// CountInstances counts model instances num.
 	CountInstances(ctx context.Context, header http.Header,
 		objID string, input *metadata.Condition) (*metadata.CommonCountResult, error)
 }

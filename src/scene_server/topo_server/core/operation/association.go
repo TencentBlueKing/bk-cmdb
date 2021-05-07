@@ -72,13 +72,17 @@ type AssociationOperationInterface interface {
 	SearchAssociationRelatedInst(kit *rest.Kit, request *metadata.SearchAssociationRelatedInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	CreateInst(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
 	DeleteInst(kit *rest.Kit, objID string, asstIDList []int64) (resp *metadata.DeleteAssociationInstResult, err error)
-
-	SearchInstanceAssociations(kit *rest.Kit, objID string, input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error)
-	CountInstanceAssociations(kit *rest.Kit, objID string, input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error)
-
 	ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string, importData map[int]metadata.ExcelAssocation, languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error)
 
 	SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, grp GroupOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory)
+
+	// SearchInstanceAssociations searches object instance associations.
+	SearchInstanceAssociations(kit *rest.Kit, objID string,
+		input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error)
+
+	// CountInstanceAssociations counts object instance associations num.
+	CountInstanceAssociations(kit *rest.Kit, objID string,
+		input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error)
 }
 
 // NewAssociationOperation create a new association operation instance
@@ -794,6 +798,64 @@ func (assoc *association) DeleteObject(kit *rest.Kit, asstID int) (resp *metadat
 
 	return &metadata.DeleteAssociationObjectResult{BaseResp: rsp.BaseResp}, nil
 
+}
+
+// SearchInstanceAssociations searches object instance associations.
+func (assoc *association) SearchInstanceAssociations(kit *rest.Kit, objID string,
+	input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error) {
+
+	// search conditions.
+	cond, err := input.GetConditions()
+	if err != nil {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
+	}
+
+	conditions := &metadata.InstAsstQueryCondition{
+		ObjID: objID,
+		Cond: metadata.QueryCondition{
+			Fields:         input.Fields,
+			Condition:      cond,
+			Page:           input.Page,
+			DisableCounter: true,
+		},
+	}
+
+	// search object instance associations.
+	resp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, conditions)
+	if err != nil {
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+	}
+
+	return &metadata.CommonSearchResult{Info: resp.Data.Info}, nil
+}
+
+// CountInstanceAssociations counts object instance associations num.
+func (assoc *association) CountInstanceAssociations(kit *rest.Kit, objID string,
+	input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error) {
+
+	// count conditions.
+	cond, err := input.GetConditions()
+	if err != nil {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
+	}
+
+	conditions := &metadata.Condition{
+		Condition: cond,
+	}
+
+	// count object instance associations num.
+	resp, err := assoc.clientSet.CoreService().Association().CountInstanceAssociations(kit.Ctx, kit.Header, objID, conditions)
+	if err != nil {
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+	}
+
+	return &metadata.CommonCountResult{Count: resp.Data.Count}, nil
 }
 
 func (assoc *association) SearchInst(kit *rest.Kit, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
