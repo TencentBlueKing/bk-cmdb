@@ -69,7 +69,20 @@ var objectURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/object$", ve
 func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	topoRoot := "/topo/v3"
 	from, to := rootPath, topoRoot
+
 	switch {
+	case strings.HasPrefix(string(*u), rootPath+"/search/instances"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/count/instances"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/search/instance_associations"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/count/instance_associations"):
+		from, to, isHit = rootPath, topoRoot, true
+
 	case strings.HasPrefix(string(*u), rootPath+"/biz/"):
 		from, to, isHit = rootPath+"/biz", topoRoot+"/app", true
 
@@ -170,12 +183,6 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, topoRoot, true
 
 	case topoURLRegexp.MatchString(string(*u)):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/search"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/count"):
 		from, to, isHit = rootPath, topoRoot, true
 
 	default:
