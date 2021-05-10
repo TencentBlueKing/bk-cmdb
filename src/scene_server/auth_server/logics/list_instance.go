@@ -149,6 +149,7 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, resourceType iam.TypeID, 
 }
 
 // ListModelInstance list model instances, parent is model
+// todo: 为实现动态模型实例列表的展示, 这里需要修改
 func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
 	page types.Page) (*types.ListInstanceResult, error) {
 

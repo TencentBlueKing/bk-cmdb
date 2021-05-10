@@ -36,14 +36,16 @@ import (
 type AuthService struct {
 	engine     *backbone.Engine
 	iamClient  client.Interface
+	acIam      *iam.Iam
 	lgc        *logics.Logics
 	authorizer sdkauth.Authorizer
 }
 
-func NewAuthService(engine *backbone.Engine, iamClient client.Interface, lgc *logics.Logics, authorizer sdkauth.Authorizer) *AuthService {
+func NewAuthService(engine *backbone.Engine, iamClient client.Interface, acIam *iam.Iam, lgc *logics.Logics, authorizer sdkauth.Authorizer) *AuthService {
 	return &AuthService{
 		engine:     engine,
 		iamClient:  iamClient,
+		acIam:      acIam,
 		lgc:        lgc,
 		authorizer: authorizer,
 	}

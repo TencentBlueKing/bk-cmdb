@@ -86,6 +86,33 @@ func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
 	return resp, nil
 }
 
+func (c *iamClient) GetSystemInfoActions(ctx context.Context) (*SystemResp, error) {
+
+	resp := new(SystemResp)
+	result := c.client.Get().
+		SubResourcef("/api/v1/model/systems/%s/query", c.Config.SystemID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		WithParam("fields", "actions").
+		Body(nil).Do()
+	err := result.Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != 0 {
+		if resp.Code == CodeNotFound {
+			return resp, ErrNotFound
+		}
+		return nil, &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("get actions info failed, code: %d, msg:%s", resp.Code, resp.Message),
+		}
+	}
+
+	return resp, nil
+}
+
 // Note: can only update provider_config.host field.
 func (c *iamClient) UpdateSystemConfig(ctx context.Context, config *SysConfig) error {
 	sys := new(System)

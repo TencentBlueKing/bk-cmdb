@@ -213,7 +213,7 @@ func (s *AuthService) CreateModelInstanceActions(ctx *rest.Contexts) {
 	}
 	resourceActions := iam.GenModelInstanceActions(models)
 	// Direct call IAM.
-	if err := s.iamClient.CreateActions(ctx.Kit.Ctx, resourceActions); err != nil {
+	if err := s.acIam.Client.CreateAction(ctx.Kit.Ctx, resourceActions); err != nil {
 		blog.ErrorJSON("register resource actions failed, error: %s, resource actions: %s, rid: %s", err.Error(), resourceActions, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -239,7 +239,7 @@ func (s *AuthService) UpdateModelInstanceActionGroups(ctx *rest.Contexts) {
 	actionGroups = append(actionGroups, iam.GenModelInstanceManageActionGroups(models)...)
 
 	// Direct call IAM.
-	if err := s.iamClient.UpdateActionGroups(ctx.Kit.Ctx, actionGroups); err != nil {
+	if err := s.acIam.Client.UpdateActionGroups(ctx.Kit.Ctx, actionGroups); err != nil {
 		blog.ErrorJSON("register resource action groups failed, error: %s, resource action groups: %s, rid: %s", err.Error(), actionGroups, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -252,46 +252,10 @@ func (s *AuthService) UpdateModelInstanceActionGroups(ctx *rest.Contexts) {
 func (s *AuthService) SyncModelInstanceActions(ctx *rest.Contexts) {
 
 	// Direct call IAM, get actions from iam.
-	sysResp, err := s.iamClient.GetActions(ctx.Kit.Ctx)
+	err := s.SyncModelInstActions(*ctx.Kit)
 	if err != nil {
-		blog.ErrorJSON("Synchronize actions with IAM failed, get resource actions from IAM failed, error: %s, resource actions: %s, rid: %s", err.Error(), sysResp, ctx.Kit.Rid)
+		blog.Errorf("sync action with IAM failed, err:%v", err)
 		ctx.RespAutoError(err)
-		return
-	}
-
-	// 需要先拿到当前已存在的模型, 再与IAM返回结果进行对比
-	models, err := s.lgc.CollectObjectsNotPre(ctx.Kit)
-	if err != nil {
-		blog.Errorf("Synchronize actions with IAM failed, collect notPre-models failed, err: %s, rid:%s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	if staticActionList == nil {
-		staticActionList = iam.GenerateStaticActions()
-	}
-
-	// 由整体的cmdbAction列表转换为cmdbAction集合
-	cmdbActionList := staticActionList
-	cmdbActionList = append(cmdbActionList, iam.GenModelInstanceActions(models)...)
-	cmdbActionMap := map[iam.ActionID]struct{}{}
-	for _, act := range cmdbActionList {
-		cmdbActionMap[act.ID] = struct{}{}
-	}
-
-	// 对比出IAM中多余的动作
-	deleteActionList := []iam.ResourceAction{}
-	for _, act := range sysResp.Data.Actions {
-		if _, exists := cmdbActionMap[act.ID]; exists {
-			continue
-		}
-		deleteActionList = append(deleteActionList, act)
-	}
-
-	// Direct call IAM, delete certain actions in iam.
-	if err := s.iamClient.DeleteActionsBatch(ctx.Kit.Ctx, deleteActionList); err != nil {
-		blog.ErrorJSON("Synchronize actions with IAM failed, delete IAM actions failed, error: %s, resource actions: %s, rid:%s", err.Error(), deleteActionList, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
 	}
 	ctx.RespEntity(nil)
 }
@@ -301,7 +265,7 @@ func (s *AuthService) SyncModelInstanceActions(ctx *rest.Contexts) {
 func (s *AuthService) SyncModelInstActions(kit rest.Kit) error {
 
 	// Direct call IAM, get actions from iam.
-	sysResp, err := s.iamClient.GetActions(kit.Ctx)
+	sysResp, err := s.acIam.Client.GetSystemInfoActions(kit.Ctx)
 	if err != nil {
 		blog.ErrorJSON("Synchronize actions with IAM failed, get resource actions from IAM failed, error: %s, resource actions: %s, rid: %s", err.Error(), sysResp, kit.Rid)
 		return err
@@ -326,16 +290,16 @@ func (s *AuthService) SyncModelInstActions(kit rest.Kit) error {
 	}
 
 	// 对比出IAM中多余的动作
-	deleteActionList := []iam.ResourceAction{}
+	deleteActionList := []iam.ActionID{}
 	for _, act := range sysResp.Data.Actions {
 		if _, exists := cmdbActionMap[act.ID]; exists {
 			continue
 		}
-		deleteActionList = append(deleteActionList, act)
+		deleteActionList = append(deleteActionList, act.ID)
 	}
 
 	// Direct call IAM, delete certain actions in iam.
-	if err := s.iamClient.DeleteActionsBatch(kit.Ctx, deleteActionList); err != nil {
+	if err := s.acIam.Client.DeleteAction(kit.Ctx, deleteActionList); err != nil {
 		blog.ErrorJSON("Synchronize actions with IAM failed, delete IAM actions failed, error: %s, resource actions: %s, rid:%s", err.Error(), deleteActionList, kit.Rid)
 		return err
 	}
