@@ -3,7 +3,9 @@ package topo_server_test
 import (
 	"context"
 
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/querybuilder"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test/util"
 
@@ -178,6 +180,60 @@ var _ = Describe("inst test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
+
+	It("search instance associations", func() {
+		input := &metadata.CommonSearchFilter{
+			Conditions: &querybuilder.QueryFilter{Rule: querybuilder.CombinedRule{
+				Condition: querybuilder.ConditionAnd,
+				Rules: []querybuilder.Rule{
+					&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+				},
+			}},
+			Fields: []string{"bk_asst_id", "bk_inst_id", "bk_obj_id", "bk_asst_inst_id", "bk_asst_obj_id", "bk_obj_asst_id"},
+			Page:   metadata.BasePage{Start: 0, Limit: 1},
+		}
+
+		rsp, err := asstClient.SearchInstanceAssociations(context.Background(), header, "bk_router", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		info, ok := data["info"].([]interface{})
+		Expect(ok).To(Equal(true))
+		Expect(len(info)).To(Equal(1))
+
+		association, ok := info[0].(map[string]interface{})
+		Expect(ok).To(Equal(true))
+
+		Expect(association["bk_obj_asst_id"].(string)).To(Equal("bk_router_default_bk_switch"))
+	})
+
+	It("count instance associations", func() {
+		input := &metadata.CommonCountFilter{
+			Conditions: &querybuilder.QueryFilter{Rule: querybuilder.CombinedRule{
+				Condition: querybuilder.ConditionAnd,
+				Rules: []querybuilder.Rule{
+					&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+				},
+			}},
+		}
+
+		rsp, err := asstClient.CountInstanceAssociations(context.Background(), header, "bk_router", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		count, ok := data["count"].(uint64)
+		Expect(ok).To(Equal(true))
+		Expect(count).To(Equal(1))
+	})
+
 	//check "DeleteInstBatch" "the number of IDs should be less than 500." function.
 	It("delete inst association batch", func() {
 		list := make([]int64, 501, 501)
