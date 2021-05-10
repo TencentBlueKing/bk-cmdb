@@ -359,7 +359,13 @@ func (f *CommonSearchFilter) Validate() (string, error) {
 		return "conditions", fmt.Errorf("empty conditions")
 	}
 
-	if invalidKey, err := f.Conditions.Validate(); err != nil {
+	option := &querybuilder.RuleOption{
+		NeedSameSliceElementType: true,
+		MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
+		MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
+	}
+
+	if invalidKey, err := f.Conditions.Validate(option); err != nil {
 		return fmt.Sprintf("conditions.%s", invalidKey), err
 	}
 
@@ -415,7 +421,13 @@ func (f *CommonCountFilter) Validate() (string, error) {
 		return "conditions", fmt.Errorf("empty conditions")
 	}
 
-	if invalidKey, err := f.Conditions.Validate(); err != nil {
+	option := &querybuilder.RuleOption{
+		NeedSameSliceElementType: true,
+		MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
+		MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
+	}
+
+	if invalidKey, err := f.Conditions.Validate(option); err != nil {
 		return fmt.Sprintf("conditions.%s", invalidKey), err
 	}
 

@@ -577,7 +577,7 @@ func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "query_filter"))
 		return
 	}
-	if key, err := requestBody.QueryFilter.Validate(); err != nil {
+	if key, err := requestBody.QueryFilter.Validate(&querybuilder.RuleOption{NeedSameSliceElementType: true}); err != nil {
 		blog.V(3).Info("SearchRuleRelatedModules failed, search query_filter.%s validate failed, err: %+v, rid: %s", key, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "query_filter."+key))
 		return
