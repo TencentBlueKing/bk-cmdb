@@ -495,7 +495,7 @@ func (s *Service) SearchObjectInstances(ctx *rest.Contexts) {
 
 	// validate input parameter.
 	if invalidKey, err := input.Validate(); err != nil {
-		blog.Warnf("validate search instances input parameters failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("validate search instances input parameters failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, invalidKey))
 		return
 	}
@@ -534,7 +534,7 @@ func (s *Service) CountObjectInstances(ctx *rest.Contexts) {
 
 	// validate input parameter.
 	if invalidKey, err := input.Validate(); err != nil {
-		blog.Warnf("validate count instances input parameters failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("validate count instances input parameters failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, invalidKey))
 		return
 	}

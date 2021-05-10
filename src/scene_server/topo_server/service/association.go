@@ -637,7 +637,7 @@ func (s *Service) SearchInstanceAssociations(ctx *rest.Contexts) {
 
 	// validate input parameter.
 	if invalidKey, err := input.Validate(); err != nil {
-		blog.Warnf("validate search instance associations input parameters failed, err: %s, rid: %s",
+		blog.Errorf("validate search instance associations input parameters failed, err: %s, rid: %s",
 			err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, invalidKey))
 		return
@@ -677,7 +677,7 @@ func (s *Service) CountInstanceAssociations(ctx *rest.Contexts) {
 
 	// validate input parameter.
 	if invalidKey, err := input.Validate(); err != nil {
-		blog.Warnf("validate count instance associations input parameters failed, err: %s, rid: %s",
+		blog.Errorf("validate count instance associations input parameters failed, err: %s, rid: %s",
 			err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, invalidKey))
 		return
