@@ -523,9 +523,9 @@ var _ = Describe("inst test", func() {
 		data, err := mapstr.NewFromInterface(rsp.Data)
 		Expect(err).NotTo(HaveOccurred())
 
-		count, ok := data["count"].(uint64)
-		Expect(ok).To(Equal(true))
-		Expect(count).To(Equal(1))
+		count, err := data["count"].(json.Number).Int64()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(int(count)).To(Equal(1))
 	})
 
 	It("search inst association detail", func() {
