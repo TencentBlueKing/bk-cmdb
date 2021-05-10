@@ -79,6 +79,8 @@ type AuditQueryCondition struct {
 	Category string `json:"category"`
 	// ObjID is used for instance and instance association audit log filter like host deletion history
 	ObjID string `json:"bk_obj_id"`
+	// FuzzyQuery is used for searching for resource name using regex, use accurate query by default when it is not set
+	FuzzyQuery bool `json:"fuzzy_query"`
 }
 
 type OperationTimeCondition struct {
