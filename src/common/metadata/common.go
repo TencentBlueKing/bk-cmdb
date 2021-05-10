@@ -345,8 +345,8 @@ func (f *CommonSearchFilter) Validate() (string, error) {
 	}
 
 	// validate page parameter.
-	if invalidKey, err := f.Page.Validate(false); err != nil {
-		return fmt.Sprintf("page.%s", invalidKey), err
+	if err := f.Page.ValidateLimit(common.BKMaxInstanceLimit); err != nil {
+		return "page.limit", err
 	}
 
 	// validate fields parameter.
