@@ -38,7 +38,7 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 	var err error
 	if bizID, err = p.validateBizID(kit, instance.BizID); err != nil {
 		blog.Errorf("CreateServiceInstance failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_biz_id")
 	}
 
 	instance.BizID = bizID
@@ -76,7 +76,7 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 	// make sure biz id identical with service template
 	if serviceTemplate != nil && serviceTemplate.BizID != bizID {
 		blog.Errorf("CreateServiceInstance failed, validation failed, input bizID:%d not equal service template bizID:%d, rid: %s", bizID, serviceTemplate.BizID, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_biz_id")
 	}
 
 	// check unique `template_id + module_id + host_id`
