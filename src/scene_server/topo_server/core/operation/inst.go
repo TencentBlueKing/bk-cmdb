@@ -1126,6 +1126,7 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, objID string, asst
 
 	query := &metadata.QueryInput{}
 	query.Condition = instCond
+	query.TimeCondition = asstParamCond.TimeCondition
 	if fields, ok := asstParamCond.Fields[objID]; ok {
 		query.Fields = strings.Join(fields, ",")
 	}
@@ -1154,7 +1155,7 @@ func (c *commonInst) FindOriginInst(kit *rest.Kit, objID string, cond *metadata.
 
 	default:
 		queryCond, err := mapstr.NewFromInterface(cond.Condition)
-		input := &metadata.QueryCondition{Condition: queryCond}
+		input := &metadata.QueryCondition{Condition: queryCond, TimeCondition: cond.TimeCondition}
 		input.Page.Start = cond.Start
 		input.Page.Limit = cond.Limit
 		input.Page.Sort = cond.Sort

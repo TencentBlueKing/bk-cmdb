@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	cctime "configcenter/src/common/time"
 	"configcenter/src/common/util"
 
 	"github.com/coccyx/timeparser"
@@ -113,12 +114,58 @@ type ResponseDataMapStr struct {
 }
 
 type QueryInput struct {
-	Condition      map[string]interface{} `json:"condition"`
-	Fields         string                 `json:"fields,omitempty"`
-	Start          int                    `json:"start,omitempty"`
-	Limit          int                    `json:"limit,omitempty"`
-	Sort           string                 `json:"sort,omitempty"`
-	DisableCounter bool                   `json:"disable_counter,omitempty"`
+	Condition map[string]interface{} `json:"condition"`
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition  TimeCondition `json:"time_condition,omitempty"`
+	Fields         string        `json:"fields,omitempty"`
+	Start          int           `json:"start,omitempty"`
+	Limit          int           `json:"limit,omitempty"`
+	Sort           string        `json:"sort,omitempty"`
+	DisableCounter bool          `json:"disable_counter,omitempty"`
+}
+
+type TimeConditionItem struct {
+	Start *cctime.Time `json:"start"`
+	End   *cctime.Time `json:"end"`
+}
+
+type TimeCondition map[string]TimeConditionItem
+
+// MergeTimeCondition parse time condition and merge with common condition to construct a DB condition, only used by DB
+func (tc *TimeCondition) MergeTimeCondition(condition map[string]interface{}) (map[string]interface{}, error) {
+	if tc == nil {
+		return nil, nil
+	}
+
+	timeCondition := make(map[string]interface{})
+	for key, cond := range *tc {
+		if cond.Start == nil && cond.End == nil {
+			return nil, errors.New(common.CCErrCommParamsInvalid, "time condition start and end both not set")
+		}
+
+		if cond.Start == nil {
+			timeCondition[key] = map[string]interface{}{common.BKDBLTE: cond.End}
+			continue
+		}
+
+		if cond.End == nil {
+			timeCondition[key] = map[string]interface{}{common.BKDBGTE: cond.Start}
+			continue
+		}
+
+		if *cond.Start == *cond.End {
+			timeCondition[key] = map[string]interface{}{common.BKDBEQ: cond.Start}
+			continue
+		}
+
+		timeCondition[key] = map[string]interface{}{common.BKDBGTE: cond.Start, common.BKDBLTE: cond.End}
+	}
+
+	if len(condition) == 0 {
+		return timeCondition, nil
+	}
+
+	return map[string]interface{}{common.BKDBAND: []map[string]interface{}{condition, timeCondition}}, nil
 }
 
 // ConvTime cc_type key

@@ -33,9 +33,11 @@ type SearchSort struct {
 
 // QueryCondition the common query condition definition
 type QueryCondition struct {
-	Fields         []string      `json:"fields"`
-	Page           BasePage      `json:"page"`
-	Condition      mapstr.MapStr `json:"condition"`
+	Fields    []string      `json:"fields"`
+	Page      BasePage      `json:"page"`
+	Condition mapstr.MapStr `json:"condition"`
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition  TimeCondition `json:"time_condition,omitempty"`
 	DisableCounter bool          `json:"disable_counter"`
 }
 

@@ -48,25 +48,34 @@
 <style lang="scss" scoped>
     .sticky-layout {
         position: relative;
+        &.has-scrollbar {
+          .sticky-header,
+          .sticky-footer {
+            z-index: 2;
+          }
+          .sticky-content {
+            z-index: 1;
+          }
+        }
         .sticky-header {
             position: sticky;
             top: 0;
             left: 0;
             width: 100%;
-            z-index: 2;
+            z-index: 1;
         }
         .sticky-content {
             position: relative;
             white-space: normal;
             word-break: break-all;
-            z-index: 1;
+            z-index: 2;
         }
         .sticky-footer {
             position: sticky;
             bottom: 0;
             left: 0;
             width: 100%;
-            z-index: 2;
+            z-index: 1;
         }
     }
 </style>

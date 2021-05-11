@@ -59,10 +59,10 @@ func NewEsb(apiMachineryConfig *util.APIMachineryConfig, cfgChan chan esbutil.Es
 	esbConfig := esbutil.NewEsbConfigSrv(cfgChan, defaultCfg)
 
 	esbCapability := &util.Capability{
-		Client:   client,
-		Discover: esbConfig,
-		Throttle: flowControl,
-		Reg:      reg,
+		Client:     client,
+		Discover:   esbConfig,
+		Throttle:   flowControl,
+		MetricOpts: util.MetricOption{Register: reg},
 	}
 
 	esb := &esbsrv{

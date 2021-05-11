@@ -111,6 +111,11 @@ func (s *Service) FullTextFind(ctx *rest.Contexts) {
 		return
 	}
 
+	plainQuery, _ := esQuery.Source()
+	plainResult, _ := json.Marshal(result)
+	blog.V(4).Infof("es search, esQuery:%s, indexs:%v, start:%d, limit:%d, result:%s", plainQuery, indexs,
+		query.Paging.Start, query.Paging.Limit, plainResult)
+
 	// result is hits and aggregations
 	searchResults := new(SearchResults)
 
@@ -189,12 +194,6 @@ func (query *Query) checkQueryString() (string, bool) {
 func (query Query) toEsBoolQueryAndIndexs() (elastic.Query, []string) {
 	qBool := elastic.NewBoolQuery()
 
-	// if set bk_biz_id
-	qBool.MinimumNumberShouldMatch(1)
-	qBizRegex := elastic.NewRegexpQuery(common.BKAppIDField, "[0-9]*")
-	qBizBool := elastic.NewBoolQuery()
-	qBizBool.MustNot(qBizRegex)
-	qBool.Should(qBizBool)
 	if query.BkBizId != "" {
 		qBizTerm := elastic.NewTermQuery(common.BKAppIDField, query.BkBizId)
 		qBool.Should(qBizTerm)

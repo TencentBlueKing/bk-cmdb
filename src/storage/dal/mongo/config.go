@@ -14,6 +14,7 @@ package mongo
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -62,10 +63,8 @@ func (c Config) BuildURI() string {
 		c.Address = c.Address + ":" + c.Port
 	}
 
-	c.User = strings.Replace(c.User, "@", "%40", -1)
-	c.Password = strings.Replace(c.Password, "@", "%40", -1)
-	c.User = strings.Replace(c.User, ":", "%3a", -1)
-	c.Password = strings.Replace(c.Password, ":", "%3a", -1)
+	c.User = url.QueryEscape(c.User)
+	c.Password = url.QueryEscape(c.Password)
 	uri := fmt.Sprintf("mongodb://%s:%s@%s/%s?authMechanism=%s", c.User, c.Password, c.Address, c.Database, c.Mechanism)
 	return uri
 }

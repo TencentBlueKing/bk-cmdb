@@ -298,7 +298,7 @@
                         width: 16px;
                         height: 16px;
                         margin: 2px 0;
-                        background-image: url("../../../assets/images/icon/loading.svg");
+                        background-image: url("../../assets/images/icon/loading.svg");
                     }
                 }
             }
