@@ -189,9 +189,12 @@ const (
 
 // describe resource type defined and registered to iam.
 type ResourceType struct {
-	ID             TypeID         `json:"id"`
-	Name           string         `json:"name"`
-	NameEn         string         `json:"name_en"`
+	// unique id
+	ID TypeID `json:"id"`
+	// unique name
+	Name   string `json:"name"`
+	NameEn string `json:"name_en"`
+	// unique description
 	Description    string         `json:"description"`
 	DescriptionEn  string         `json:"description_en"`
 	Parents        []Parent       `json:"parents"`
@@ -408,12 +411,12 @@ const (
 	SysEventPushingSelection           InstanceSelectionID = "sys_event_pushing"
 	SysModelGroupSelection             InstanceSelectionID = "sys_model_group"
 	SysModelSelection                  InstanceSelectionID = "sys_model"
-	SysInstanceSelection               InstanceSelectionID = "sys_instance"
-	SysInstanceModelSelection          InstanceSelectionID = "sys_instance_model"
-	SysAssociationTypeSelection        InstanceSelectionID = "sys_association_type"
-	SysCloudAreaSelection              InstanceSelectionID = "sys_cloud_area"
-	SysCloudAccountSelection           InstanceSelectionID = "sys_cloud_account"
-	SysCloudResourceTaskSelection      InstanceSelectionID = "sys_cloud_resource_task"
+	//SysInstanceSelection               InstanceSelectionID = "sys_instance"
+	SysInstanceModelSelection     InstanceSelectionID = "sys_instance_model"
+	SysAssociationTypeSelection   InstanceSelectionID = "sys_association_type"
+	SysCloudAreaSelection         InstanceSelectionID = "sys_cloud_area"
+	SysCloudAccountSelection      InstanceSelectionID = "sys_cloud_account"
+	SysCloudResourceTaskSelection InstanceSelectionID = "sys_cloud_resource_task"
 	// 主机池目录的两种视图，管理的资源也相同，仅名称做区分
 	SysResourcePoolDirectorySelection InstanceSelectionID = "sys_resource_pool_directory"
 	SysHostRscPoolDirectorySelection  InstanceSelectionID = "sys_host_rsc_pool_directory"

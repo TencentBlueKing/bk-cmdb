@@ -478,7 +478,24 @@ func ParseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, 
 	return instances, nil
 }
 
-// 工具函数, 生成dynamic action-ID/Name/NameEN
+// 生成dynamic resourceType
+func MakeDynamicResourceType(obj metadata.Object) ResourceType {
+	// todo: 定义const, 国际化
+	return ResourceType{
+		ID:            TypeID(fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID)),
+		Name:          obj.ObjectName,
+		NameEn:        obj.ObjectID,
+		Description:   fmt.Sprintf("%s %s", "自定义模型", obj.ObjectName),
+		DescriptionEn: fmt.Sprintf("%s %s", "custom model", obj.ObjectID),
+		Parents:       nil,
+		ProviderConfig: ResourceConfig{
+			Path: "/auth/v3/find/resource",
+		},
+		Version: 1,
+	}
+}
+
+// 生成dynamic action-ID/Name/NameEN
 func MakeDynamicAction(obj metadata.Object) DynamicActionAttribute {
 	// todo: 定义const, 国际化
 	return DynamicActionAttribute{
@@ -496,7 +513,7 @@ func MakeDynamicAction(obj metadata.Object) DynamicActionAttribute {
 	}
 }
 
-// 工具函数, 动态的按模型生成动作分组作为‘模型实例管理’分组的subGroup
+// 动态的按模型生成动作分组作为‘模型实例管理’分组的subGroup
 func MakeDynamicActionSubGroup(obj metadata.Object) ActionGroup {
 	actionAttr := MakeDynamicAction(obj)
 	return ActionGroup{
@@ -516,27 +533,47 @@ func MakeDynamicActionSubGroup(obj metadata.Object) ActionGroup {
 	}
 }
 
+// 将model对象构造为actionID对象
+func GenDynamicActionIDListWithModel(object metadata.Object) []ActionID {
+	action := MakeDynamicAction(object)
+
+	actionIDList := make([]ActionID, 0)
+	actionIDList = append(actionIDList, action.createActionID)
+	actionIDList = append(actionIDList, action.editActionID)
+	actionIDList = append(actionIDList, action.deleteActionID)
+	return actionIDList
+}
+
+// 将model对象构造为ResourceType对象
+func GenDynamicResourceTypeWithModel(objects []metadata.Object) []ResourceType {
+	resourceTypeList := make([]ResourceType, 0)
+	for _, obj := range objects {
+		resourceTypeList = append(resourceTypeList, MakeDynamicResourceType(obj))
+	}
+	return resourceTypeList
+}
+
 // 将model对象构造为resourceAction对象
-// 注意:这里的实例视图都是采用的sys_instance实例视图, 相应的实例视图回调函数要重新实现, 要能根据传入的bk_obj_id查询不同的表。
 func genDynamicActionWithModel(objects []metadata.Object) []ResourceAction {
 	// 注意: 目前属性鉴权功能仅作用于"自定义模型实例"/"资源池主机"的Edit和Delete动作
-	relatedResource := []RelateResourceType{
-		{
-			SystemID:      SystemIDCMDB,
-			ID:            SysInstance,
-			NameAlias:     "",
-			NameAliasEn:   "",
-			Scope:         nil,
-			SelectionMode: all,
-			InstanceSelections: []RelatedInstanceSelection{{
-				SystemID: SystemIDCMDB,
-				ID:       SysInstanceSelection,
-			}},
-		},
-	}
-
 	actions := make([]ResourceAction, 0)
 	for _, obj := range objects {
+
+		relatedResource := []RelateResourceType{
+			{
+				SystemID:      SystemIDCMDB,
+				ID:            SysInstance,
+				NameAlias:     "",
+				NameAliasEn:   "",
+				Scope:         nil,
+				SelectionMode: all,
+				InstanceSelections: []RelatedInstanceSelection{{
+					SystemID: SystemIDCMDB,
+					ID:       InstanceSelectionID(fmt.Sprintf("sys_%s_%d_instance", obj.ObjectID, obj.ID)),
+				}},
+			},
+		}
+
 		actAttr := MakeDynamicAction(obj)
 		actions = append(actions, ResourceAction{
 			ID:     actAttr.createActionID,
@@ -554,9 +591,9 @@ func genDynamicActionWithModel(objects []metadata.Object) []ResourceAction {
 			Name:                 actAttr.editActionNameCN,
 			NameEn:               actAttr.editActionNameEN,
 			Type:                 Edit,
-			RelatedResourceTypes: relatedResource,
 			RelatedActions:       nil,
 			Version:              1,
+			RelatedResourceTypes: relatedResource,
 		})
 
 		actions = append(actions, ResourceAction{

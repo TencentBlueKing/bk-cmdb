@@ -202,9 +202,48 @@ func (s *AuthService) BatchRegisterResourceCreatorAction(ctx *rest.Contexts) {
 	ctx.RespEntity(policies)
 }
 
+// RegisterModelResourceTypes add new iam resourceType to IAM.
+func (s *AuthService) RegisterModelResourceTypes(ctx *rest.Contexts) {
+	models := make([]metadata.Object, 0)
+	err := ctx.DecodeInto(&models)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	resourceActions := iam.GenDynamicResourceTypeWithModel(models)
+	// Direct call IAM.
+	if err := s.acIam.Client.RegisterResourcesTypes(ctx.Kit.Ctx, resourceActions); err != nil {
+		blog.ErrorJSON("register resource actions failed, error: %s, resource actions: %s, rid: %s", err.Error(), resourceActions, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// UnregisterModelResourceTypes add new iam resourceType to IAM.
+func (s *AuthService) UnregisterModelResourceTypes(ctx *rest.Contexts) {
+	models := make([]metadata.Object, 0)
+	err := ctx.DecodeInto(&models)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	idList := []iam.TypeID{}
+	for _, obj := range models {
+		idList = append(idList, iam.MakeDynamicResourceType(obj).ID)
+	}
+	// Direct call IAM.
+	if err := s.acIam.Client.DeleteResourcesTypes(ctx.Kit.Ctx, idList); err != nil {
+		blog.ErrorJSON("register resource actions failed, error: %s, models: %s, rid: %s", err.Error(), models, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
 // CreateModelInstanceActions create iam resource instance actions.
 func (s *AuthService) CreateModelInstanceActions(ctx *rest.Contexts) {
-	// instantiate resourceActions.
 	models := make([]metadata.Object, 0)
 	err := ctx.DecodeInto(&models)
 	if err != nil {
@@ -215,6 +254,29 @@ func (s *AuthService) CreateModelInstanceActions(ctx *rest.Contexts) {
 	// Direct call IAM.
 	if err := s.acIam.Client.CreateAction(ctx.Kit.Ctx, resourceActions); err != nil {
 		blog.ErrorJSON("register resource actions failed, error: %s, resource actions: %s, rid: %s", err.Error(), resourceActions, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// DeleteModelInstanceActions delete iam resource instance actions.
+func (s *AuthService) DeleteModelInstanceActions(ctx *rest.Contexts) {
+	models := make([]metadata.Object, 0)
+	err := ctx.DecodeInto(&models)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	actionIDList := []iam.ActionID{}
+	for _, obj := range models {
+		actionIDList = append(actionIDList, iam.GenDynamicActionIDListWithModel(obj)...)
+	}
+
+	// Direct call IAM.
+	if err := s.acIam.Client.DeleteAction(ctx.Kit.Ctx, actionIDList); err != nil {
+		blog.ErrorJSON("unregister resource actions failed, error: %s, resource actions: %s, rid: %s", err.Error(), actionIDList, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

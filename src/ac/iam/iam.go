@@ -115,7 +115,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.
 		removedResourceTypeMap[resourceType.ID] = struct{}{}
 	}
 	newResourceTypes := make([]ResourceType, 0)
-	for _, resourceType := range GenerateResourceTypes() {
+	for _, resourceType := range GenerateResourceTypes(models) {
 		// registered resource type exist in current resource types, should not be removed
 		delete(removedResourceTypeMap, resourceType.ID)
 		// if current resource type is registered, update it, or else register it
@@ -414,8 +414,20 @@ func (a *authorizer) BatchRegisterResourceCreatorAction(ctx context.Context, h h
 	return a.authClientSet.BatchRegisterResourceCreatorAction(ctx, h, input)
 }
 
+func (a *authorizer) RegisterModelResourceTypes(ctx context.Context, h http.Header, input []metadata.Object) error {
+	return a.authClientSet.RegisterModelResourceTypes(ctx, h, input)
+}
+
+func (a *authorizer) UnregisterModelResourceTypes(ctx context.Context, h http.Header, input []metadata.Object) error {
+	return a.authClientSet.UnregisterModelResourceTypes(ctx, h, input)
+}
+
 func (a *authorizer) CreateModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error {
 	return a.authClientSet.CreateModelInstanceActions(ctx, h, input)
+}
+
+func (a *authorizer) DeleteModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error {
+	return a.authClientSet.DeleteModelInstanceActions(ctx, h, input)
 }
 
 func (a *authorizer) UpdateModelInstanceActionGroups(ctx context.Context, h http.Header) error {

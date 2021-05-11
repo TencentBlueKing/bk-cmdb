@@ -34,7 +34,10 @@ type AuthServerClientInterface interface {
 		[]metadata.IamCreatorActionPolicy, error)
 	BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstancesWithCreator) (
 		[]metadata.IamCreatorActionPolicy, error)
+	RegisterModelResourceTypes(ctx context.Context, h http.Header, input []metadata.Object) error
+	UnregisterModelResourceTypes(ctx context.Context, h http.Header, input []metadata.Object) error
 	CreateModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error
+	DeleteModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error
 	UpdateModelInstanceActionGroups(ctx context.Context, h http.Header) error
 }
 
