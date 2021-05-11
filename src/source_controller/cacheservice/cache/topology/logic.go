@@ -120,11 +120,17 @@ func (t *Topology) genCustomNodes(ctx context.Context, biz int64, object, suppli
 		return nil, err
 	}
 
+	reminder := make(map[int64]struct{})
 	customParentMap := make(map[int64][]*Node)
 	for _, custom := range customList {
 		if _, exists := customParentMap[custom.ParentID]; !exists {
 			customParentMap[custom.ParentID] = make([]*Node, 0)
 		}
+
+		if _, exists := reminder[custom.ID]; exists {
+			continue
+		}
+		reminder[custom.ID] = struct{}{}
 
 		customParentMap[custom.ParentID] = append(customParentMap[custom.ParentID], &Node{
 			Object: object,
@@ -147,7 +153,7 @@ func (t *Topology) listCustomInstance(ctx context.Context, biz int64, object, su
 	for {
 		oneStep := make([]*customBase, 0)
 		err := t.db.Table(common.GetObjectInstTableName(object, supplierAccount)).Find(filter).
-			Fields(customBaseFields...).Start(start).
+			Fields(customBaseFields...).Sort(common.BKInstIDField).Start(start).
 			Limit(step).All(ctx, &oneStep)
 		if err != nil {
 			blog.Errorf("get biz: %d custom object: %s instance list failed, err: %v", biz, object, err)
@@ -182,6 +188,7 @@ func (t *Topology) genSetNodes(ctx context.Context, biz int64) (idle map[int64][
 		return nil, nil, err
 	}
 
+	reminder := make(map[int64]struct{})
 	idleSetNodes := make(map[int64][]*Node)
 	normalSetParentMap := make(map[int64][]*Node)
 	var current map[int64][]*Node
@@ -199,6 +206,11 @@ func (t *Topology) genSetNodes(ctx context.Context, biz int64) (idle map[int64][
 		if !exists {
 			current[set.ParentID] = make([]*Node, 0)
 		}
+
+		if _, exists = reminder[set.ID]; exists {
+			continue
+		}
+		reminder[set.ID] = struct{}{}
 
 		current[set.ParentID] = append(current[set.ParentID], &Node{
 			Object:   "set",
@@ -220,7 +232,7 @@ func (t *Topology) listSets(ctx context.Context, biz int64) ([]*setBase, error) 
 	for {
 		oneStep := make([]*setBase, 0)
 		err := t.db.Table(common.BKTableNameBaseSet).Find(filter).Fields(setBaseFields...).Start(start).
-			Limit(step).All(ctx, &oneStep)
+			Limit(step).Sort(common.BKSetIDField).All(ctx, &oneStep)
 		if err != nil {
 			blog.Errorf("get biz: %d set list failed, err: %v", biz, err)
 			return nil, err
@@ -247,6 +259,7 @@ func (t *Topology) genModulesNodes(ctx context.Context, biz int64) (map[int64][]
 		return nil, err
 	}
 
+	reminder := make(map[int64]struct{})
 	moduleParentMap := make(map[int64][]*Node)
 	for idx := range moduleList {
 		module := moduleList[idx]
@@ -254,6 +267,11 @@ func (t *Topology) genModulesNodes(ctx context.Context, biz int64) (map[int64][]
 		if !exists {
 			moduleParentMap[module.SetID] = make([]*Node, 0)
 		}
+
+		if _, exists = reminder[module.ID]; exists {
+			continue
+		}
+		reminder[module.ID] = struct{}{}
 
 		moduleParentMap[module.SetID] = append(moduleParentMap[module.SetID], &Node{
 			Object:   "module",
@@ -276,7 +294,7 @@ func (t *Topology) listModules(ctx context.Context, biz int64) ([]*moduleBase, e
 	for {
 		oneStep := make([]*moduleBase, 0)
 		err := t.db.Table(common.BKTableNameBaseModule).Find(filter).Fields(moduleBaseFields...).Start(start).
-			Limit(step).All(ctx, &oneStep)
+			Limit(step).Sort(common.BKModuleIDField).All(ctx, &oneStep)
 		if err != nil {
 			blog.Errorf("get biz: %d module list failed, err: %v", biz, err)
 			return nil, err
@@ -340,7 +358,7 @@ func (t *Topology) listAllBusiness(ctx context.Context) ([]*BizBase, error) {
 	for {
 		oneStep := make([]*BizBase, 0)
 		err := t.db.Table(common.BKTableNameBaseApp).Find(filter).Fields(bizBaseFields...).Start(start).
-			Limit(step).All(ctx, &oneStep)
+			Limit(step).Sort(common.BKAppIDField).All(ctx, &oneStep)
 		if err != nil {
 			return nil, err
 		}

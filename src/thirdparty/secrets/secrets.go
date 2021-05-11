@@ -50,7 +50,7 @@ func NewSecretsClient(tls *util.TLSClientConfig, config SecretsConfig, reg prome
 		Mock: util.MockInfo{
 			Mocked: false,
 		},
-		Reg: reg,
+		MetricOpts: util.MetricOption{Register: reg},
 	}
 
 	header := http.Header{}

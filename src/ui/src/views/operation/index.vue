@@ -248,8 +248,8 @@
     async created() {
       this.fetching = true
       const [plotly, plotlyCn] = await Promise.all([
-                import('plotly.js'),
-                import('plotly.js/lib/locales/zh-cn.js')
+        import('plotly.js'),
+        import('plotly.js/lib/locales/zh-cn.js')
       ])
       this.fetching = false
       Plotly = plotly

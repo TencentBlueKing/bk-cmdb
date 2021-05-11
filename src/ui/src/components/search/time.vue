@@ -25,6 +25,7 @@
         },
         set(values) {
           const formattedValues = values.filter(value => !!value).map(date => this.$tools.formatTime(date, 'YYYY-MM-DD hh:mm:ss'))
+          if (formattedValues.toString() === this.value.toString()) return
           this.$emit('input', formattedValues)
           this.$emit('change', formattedValues)
         }

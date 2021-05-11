@@ -14,6 +14,10 @@ env:
   global:
     - REPO_NAME=bk-cmdb
     - BUILD_DIR=configcenter
+    - NODE_VERSION="12.13.1"
+
+before_install:
+  - nvm install $NODE_VERSION
 
 cache:
   directories:

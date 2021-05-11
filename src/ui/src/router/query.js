@@ -123,6 +123,10 @@ class RouterQuery {
     })
   }
 
+  refresh() {
+    this.set('_t', Date.now())
+  }
+
   clear() {
     redirect({
       ...this.route,

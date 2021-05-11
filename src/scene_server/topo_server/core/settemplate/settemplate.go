@@ -34,6 +34,8 @@ type SetTemplate interface {
 	GetLatestSyncTaskDetail(kit *rest.Kit, setID int64) (*metadata.APITaskDetail, errors.CCErrorCoder)
 	CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64, setTemplateID int64) (metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder)
 	TriggerCheckSetTemplateSyncingStatus(kit *rest.Kit, bizID, setTemplateID, setID int64) errors.CCErrorCoder
+	ListSetTemplateSyncStatus(kit *rest.Kit, bizID int64,
+		option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
 }
 
 func NewSetTemplate(client apimachinery.ClientSetInterface) SetTemplate {

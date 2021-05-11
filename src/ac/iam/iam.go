@@ -54,7 +54,7 @@ func NewIam(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer
 		Mock: util.MockInfo{
 			Mocked: false,
 		},
-		Reg: reg,
+		MetricOpts: util.MetricOption{Register: reg},
 	}
 
 	header := http.Header{}

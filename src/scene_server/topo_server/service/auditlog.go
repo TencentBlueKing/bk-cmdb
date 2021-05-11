@@ -72,8 +72,12 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 	}
 
 	if condition.ResourceName != "" {
-		cond[common.BKResourceNameField] = map[string]interface{}{
-			common.BKDBLIKE: condition.ResourceName,
+		if condition.FuzzyQuery {
+			cond[common.BKResourceNameField] = map[string]interface{}{
+				common.BKDBLIKE: condition.ResourceName,
+			}
+		} else {
+			cond[common.BKResourceNameField] = condition.ResourceName
 		}
 	}
 
