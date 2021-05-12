@@ -514,7 +514,7 @@ func MakeDynamicInstanceSelection(obj metadata.Object) InstanceSelection {
 		NameEn: fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID),
 		ResourceTypeChain: []ResourceChain{{
 			SystemID: SystemIDCMDB,
-			ID:       TypeID(fmt.Sprintf("sys_%s_%d_instance", obj.ObjectID, obj.ID)),
+			ID:       TypeID(fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID)),
 		}},
 	}
 }
@@ -586,7 +586,7 @@ func genDynamicActionWithModel(objects []metadata.Object) []ResourceAction {
 		relatedResource := []RelateResourceType{
 			{
 				SystemID:      SystemIDCMDB,
-				ID:            SysInstance,
+				ID:            TypeID(fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID)),
 				NameAlias:     "",
 				NameAliasEn:   "",
 				Scope:         nil,
