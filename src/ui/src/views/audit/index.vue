@@ -166,8 +166,11 @@
         }
       },
       handleConditionChange(condition) {
-        const usefulCondition = {}
+        const usefulCondition = {
+          fuzzy_query: !condition.exact
+        }
         Object.keys(condition).forEach((key) => {
+          if (key === 'exact') return
           const value = condition[key]
           if (String(value).length) {
             usefulCondition[key] = value

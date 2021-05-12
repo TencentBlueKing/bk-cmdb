@@ -18,7 +18,7 @@
         '--hoverColor': hoverColor
       }">
     </i>
-    <div class="menu-content" slot="content" @click="handleContentClick">
+    <div class="menu-content" slot="content" @click.capture="handleContentClick">
       <slot></slot>
     </div>
   </bk-popover>
@@ -56,7 +56,7 @@
       handleContentClick() {
         if (this.closeWhenMenuClick) {
           // eslint-disable-next-line no-underscore-dangle
-          this.$refs.popover.$refs.reference._tippy.hide()
+          this.$refs.popover && this.$refs.popover.$refs.reference._tippy.hide()
         }
       }
     }

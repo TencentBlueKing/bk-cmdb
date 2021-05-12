@@ -90,7 +90,8 @@
         user: '',
         resource_id: '',
         resource_name: '',
-        category: 'host'
+        category: 'host',
+        exact: true
       }
       return {
         instanceType: 'resource_name',
