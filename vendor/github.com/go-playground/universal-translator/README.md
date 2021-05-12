@@ -51,7 +51,7 @@ Please see https://godoc.org/github.com/go-playground/universal-translator for u
 
 File formatting
 --------------
-All types, Plain substitution, Cardinal, Ordinal and Range translations can all be contained within the same file(s);
+All types, Plain substitution, Cardinal, Ordinal and Range translations can all be contained withing the same file(s);
 they are only separated for easy viewing.
 
 ##### Examples:

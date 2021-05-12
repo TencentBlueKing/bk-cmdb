@@ -103,7 +103,7 @@ Go-toml provides two handy command line tools:
 
 ### Docker image
 
-Those tools are also available as a Docker image from
+Those tools are also availble as a Docker image from
 [dockerhub](https://hub.docker.com/r/pelletier/go-toml). For example, to
 use `tomljson`:
 

@@ -7,7 +7,7 @@ by HashiCorp. The goal of HCL is to build a structured configuration language
 that is both human and machine friendly for use with command-line tools, but
 specifically targeted towards DevOps tools, servers, etc.
 
-> **NOTE:** This is major version 1 of HCL, which is now in maintenance mode only. We strongly recommend that new projects use HCL 2 instead. For more information, see
+> **NOTE:** This is major version 1 of HCL, which is now in maintenence mode only. We strongly recommend that new projects use HCL 2 instead. For more information, see
 > [our version selection guide](https://github.com/hashicorp/hcl/wiki/Version-Selection).
 
 HCL is also fully JSON compatible. That is, JSON can be used as a completely

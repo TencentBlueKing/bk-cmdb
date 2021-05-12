@@ -100,7 +100,7 @@ BenchmarkUUIDv4-2   	 1000000	      1427 ns/op	      64 B/op	       2 allocs/op
 BenchmarkUUIDv4-4   	 1000000	      1452 ns/op	      64 B/op	       2 allocs/op
 ```
 
-Note: UUIDv1 requires a global lock, hence the performance degrading as we add more CPUs.
+Note: UUIDv1 requires a global lock, hence the performence degrading as we add more CPUs.
 
 ## Licenses
 

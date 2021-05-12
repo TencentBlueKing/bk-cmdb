@@ -305,7 +305,7 @@ g.File(genny.NewFileS("strings/string.html", "Hello\n"))
 g.File(genny.NewFileB("bytes/byte.html", []byte("Hello\n")))
 ```
 
-In the case of [`github.com/gobuffalo/genny#WetRunner`](https://godoc.org/github.com/gobuffalo/genny#WetRunner) will attempt to create any directories your files require.
+In the case of [`github.com/gobuffalo/genny#WetRunner`](https://godoc.org/github.com/gobuffalo/genny#WetRunner) will attemp to create any directories your files require.
 
 #### Reading Files
 
@@ -390,7 +390,7 @@ Hello World
 
 Testing a generator can be difficult because creating, deleting, and modifying files can be painful to handle during testing. The same can be said of running functions and HTTP requests.
 
-The `*Fn` attributes on [`github.com/gobuffalo/genny#Runner`](https://godoc.org/github.com/gobuffalo/genny#Runner) make it simpler to mock out different test cases.
+The `*Fn` attributes on [`github.com/gobuffalo/genny#Runner`](https://godoc.org/github.com/gobuffalo/genny#Runner) make it simplier to mock out different test cases.
 
 Most of the time the out of the box defaults are "good enough" for testing. The [`github.com/gobuffalo/genny/gentest`](https://godoc.org/github.com/gobuffalo/genny/gentest) package offers several helpers to simplify testing further.
 
