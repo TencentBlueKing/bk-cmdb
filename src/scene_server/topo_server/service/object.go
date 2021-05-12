@@ -128,7 +128,7 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 			return err
 		}
 
-		// 注册: 1.创建者权限 2.新资源类型 3.新鉴权动作 4.新鉴权动作分组
+		// 注册: 1.创建者权限 2.新资源类型 3.新实例视图 4.新鉴权动作 5.新鉴权动作分组
 		if auth.EnableAuthorize() {
 			iamInstance := metadata.IamInstanceWithCreator{
 				Type:    string(iam.SysModel),
@@ -151,7 +151,14 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 				return err
 			}
 
-			// 3.register IAM actions when new model is created
+			// 3.register new instance_selection when new model is created
+			err = s.AuthManager.Authorizer.RegisterModelInstanceSelections(ctx.Kit.Ctx, ctx.Kit.Header, modelList)
+			if err != nil {
+				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
+
+			// 4.register IAM actions when new model is created
 			err = s.AuthManager.Authorizer.CreateModelInstanceActions(ctx.Kit.Ctx, ctx.Kit.Header, modelList)
 			if err != nil {
 				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
@@ -159,11 +166,11 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 			}
 			time.Sleep(time.Duration(1) * time.Second)
 
-			// 4.register IAM action groups when new model is created
+			// 5.register IAM action groups when new model is created
 			// 注意: 此接口目前为全量更新, IAM暂时没有提供增量更新接口
 			err = s.AuthManager.Authorizer.UpdateModelInstanceActionGroups(ctx.Kit.Ctx, ctx.Kit.Header)
 			if err != nil {
-				blog.Errorf("update model instance action groups to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
 			}
 		}
@@ -293,20 +300,31 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		// 2.delete action
 		err = s.AuthManager.Authorizer.DeleteModelInstanceActions(ctx.Kit.Ctx, ctx.Kit.Header, objList)
 		if err != nil {
-			blog.Errorf("[api-obj] delete model, but unregister action failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("[api-obj] delete model, but unregister actions failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 
-			// 这里的失败, 用户是无感知的
+			// 这里的失败, 用户是无感知的, 可依赖周期性任务实现最终一致
 			// ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommUnRegistResourceToIAMFailed))
 			ctx.RespEntity(nil)
 			return
 		}
 
-		// 3.unregister resourceType
+		// 3.instance selection
+		err = s.AuthManager.Authorizer.UnregisterModelInstanceSelections(ctx.Kit.Ctx, ctx.Kit.Header, objList)
+		if err != nil {
+			blog.Errorf("[api-obj] delete model, but unregister instance selections failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+
+			// 这里的失败, 用户是无感知的, 可依赖周期性任务实现最终一致
+			// ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommUnRegistResourceToIAMFailed))
+			ctx.RespEntity(nil)
+			return
+		}
+
+		// 4.unregister resourceType
 		err = s.AuthManager.Authorizer.UnregisterModelResourceTypes(ctx.Kit.Ctx, ctx.Kit.Header, objList)
 		if err != nil {
 			blog.Errorf("[api-obj] delete model, but unregister model resource types failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 
-			// 这里的失败, 用户是无感知的
+			// 这里的失败, 用户是无感知的, 可依赖周期性任务实现最终一致
 			// ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommUnRegistResourceToIAMFailed))
 			ctx.RespEntity(nil)
 			return

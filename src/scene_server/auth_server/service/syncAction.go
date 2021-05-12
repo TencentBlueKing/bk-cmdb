@@ -38,7 +38,7 @@ func (s *AuthService) LoopSyncActionWithIAM(ctx context.Context, config *options
 		select {
 		// 计时器信号
 		case <-timer.C:
-			err := s.SyncModelInstActions(*kit)
+			err := s.SyncIAMModelResources(*kit)
 			if err != nil {
 				blog.Errorf("sync action with IAM failed, err:%v", err)
 			}

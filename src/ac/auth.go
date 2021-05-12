@@ -45,6 +45,8 @@ type AuthorizeInterface interface {
 		[]metadata.IamCreatorActionPolicy, error)
 	RegisterModelResourceTypes(ctx context.Context, h http.Header, input []metadata.Object) error
 	UnregisterModelResourceTypes(ctx context.Context, h http.Header, input []metadata.Object) error
+	RegisterModelInstanceSelections(ctx context.Context, h http.Header, input []metadata.Object) error
+	UnregisterModelInstanceSelections(ctx context.Context, h http.Header, input []metadata.Object) error
 	CreateModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error
 	DeleteModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error
 	UpdateModelInstanceActionGroups(ctx context.Context, h http.Header) error

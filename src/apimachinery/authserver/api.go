@@ -242,6 +242,50 @@ func (a *authServer) UnregisterModelResourceTypes(ctx context.Context, h http.He
 	return nil
 }
 
+func (a *authServer) RegisterModelInstanceSelections(ctx context.Context, h http.Header, input []metadata.Object) error {
+	resp := new(metadata.Response)
+	subPath := "/register/model_instance_selections"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.Code != 0 {
+		return resp.CCError()
+	}
+
+	return nil
+}
+
+func (a *authServer) UnregisterModelInstanceSelections(ctx context.Context, h http.Header, input []metadata.Object) error {
+	resp := new(metadata.Response)
+	subPath := "/unregister/model_instance_selections"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.Code != 0 {
+		return resp.CCError()
+	}
+
+	return nil
+}
+
 func (a *authServer) CreateModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error {
 	resp := new(metadata.Response)
 	subPath := "/create/model_instance_actions"

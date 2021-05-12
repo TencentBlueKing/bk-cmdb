@@ -25,8 +25,10 @@ import (
 )
 
 var (
-	staticActionList      []iam.ResourceAction
-	staticActionGroupList []iam.ActionGroup
+	staticActionList            []iam.ResourceAction
+	staticInstanceSelectionList []iam.InstanceSelection
+	staticResourceTypeList      []iam.ResourceType
+	staticActionGroupList       []iam.ActionGroup
 )
 
 // AuthorizeBath works to check if a user has the authority to operate resources.
@@ -243,6 +245,46 @@ func (s *AuthService) UnregisterModelResourceTypes(ctx *rest.Contexts) {
 }
 
 // CreateModelInstanceActions create iam resource instance actions.
+func (s *AuthService) RegisterModelInstanceSelections(ctx *rest.Contexts) {
+	models := make([]metadata.Object, 0)
+	err := ctx.DecodeInto(&models)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	instanceSelections := iam.GenDynamicInstanceSelectionWithModel(models)
+	// Direct call IAM.
+	if err := s.acIam.Client.CreateInstanceSelection(ctx.Kit.Ctx, instanceSelections); err != nil {
+		blog.ErrorJSON("register instance selections failed, error: %s, instance selections: %s, rid: %s", err.Error(), instanceSelections, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// DeleteModelInstanceSelections create iam resource instance actions.
+func (s *AuthService) UnregisterModelInstanceSelections(ctx *rest.Contexts) {
+	models := make([]metadata.Object, 0)
+	err := ctx.DecodeInto(&models)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	instanceSelectionIDList := []iam.InstanceSelectionID{}
+	instanceSelections := iam.GenDynamicInstanceSelectionWithModel(models)
+	for _, instanceSelection := range instanceSelections {
+		instanceSelectionIDList = append(instanceSelectionIDList, instanceSelection.ID)
+	}
+	// Direct call IAM.
+	if err := s.acIam.Client.DeleteInstanceSelection(ctx.Kit.Ctx, instanceSelectionIDList); err != nil {
+		blog.ErrorJSON("Unregister instance selections failed, error: %s, instance selection ID list: %s, rid: %s", err.Error(), instanceSelectionIDList, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// CreateModelInstanceActions create iam resource instance actions.
 func (s *AuthService) CreateModelInstanceActions(ctx *rest.Contexts) {
 	models := make([]metadata.Object, 0)
 	err := ctx.DecodeInto(&models)
@@ -311,10 +353,10 @@ func (s *AuthService) UpdateModelInstanceActionGroups(ctx *rest.Contexts) {
 
 // SynchronizeModelInstanceActions check iam resource instance actions.
 // In most cases, this func will delete IAM-actions which are discard.
-func (s *AuthService) SyncModelInstanceActions(ctx *rest.Contexts) {
+func (s *AuthService) SyncIAMModelResourcesCall(ctx *rest.Contexts) {
 
 	// Direct call IAM, get actions from iam.
-	err := s.SyncModelInstActions(*ctx.Kit)
+	err := s.SyncIAMModelResources(*ctx.Kit)
 	if err != nil {
 		blog.Errorf("sync action with IAM failed, err:%v", err)
 		ctx.RespAutoError(err)
@@ -322,12 +364,12 @@ func (s *AuthService) SyncModelInstanceActions(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-// SynchronizeModelInstanceActions check iam resource instance actions.
-// In most cases, this func will delete IAM-actions which are discard.
-func (s *AuthService) SyncModelInstActions(kit rest.Kit) error {
+// SyncIAMResources check iam model resources with CC models.
+// In most cases, this func will unregister IAM model resources which are discard.
+func (s *AuthService) SyncIAMModelResources(kit rest.Kit) error {
 
-	// Direct call IAM, get actions from iam.
-	sysResp, err := s.acIam.Client.GetSystemInfoActions(kit.Ctx)
+	// Direct call IAM, get infos from iam.
+	sysResp, err := s.acIam.Client.GetSystemDynamicInfo(kit.Ctx)
 	if err != nil {
 		blog.ErrorJSON("Synchronize actions with IAM failed, get resource actions from IAM failed, error: %s, resource actions: %s, rid: %s", err.Error(), sysResp, kit.Rid)
 		return err
@@ -341,6 +383,15 @@ func (s *AuthService) SyncModelInstActions(kit rest.Kit) error {
 	}
 	if staticActionList == nil {
 		staticActionList = iam.GenerateStaticActions()
+	}
+	if staticInstanceSelectionList == nil {
+		staticInstanceSelectionList = iam.GenerateStaticInstanceSelections()
+	}
+	if staticResourceTypeList == nil {
+		staticResourceTypeList = iam.GenerateStaticResourceTypes()
+	}
+	if staticActionGroupList == nil {
+		staticActionGroupList = iam.GenerateStaticActionGroups()
 	}
 
 	// 由整体的cmdbAction列表转换为cmdbAction集合

@@ -86,14 +86,14 @@ func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
 	return resp, nil
 }
 
-func (c *iamClient) GetSystemInfoActions(ctx context.Context) (*SystemResp, error) {
+func (c *iamClient) GetSystemDynamicInfo(ctx context.Context) (*SystemResp, error) {
 
 	resp := new(SystemResp)
 	result := c.client.Get().
 		SubResourcef("/api/v1/model/systems/%s/query", c.Config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
-		WithParam("fields", "actions").
+		WithParam("fields", "resource_types, actions, action_groups, instance_selections").
 		Body(nil).Do()
 	err := result.Into(resp)
 	if err != nil {

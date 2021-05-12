@@ -12,6 +12,8 @@
 
 package iam
 
+import "configcenter/src/common/metadata"
+
 var (
 	businessChain = ResourceChain{
 		SystemID: SystemIDCMDB,
@@ -19,9 +21,14 @@ var (
 	}
 )
 
-// todo: 这里需要动态注册实例视图
 // GenerateInstanceSelections generate all the instance selections registered to IAM.
-func GenerateInstanceSelections() []InstanceSelection {
+func GenerateInstanceSelections(models []metadata.Object) []InstanceSelection {
+	instSelections := GenerateStaticInstanceSelections()
+	instSelections = append(instSelections, GenDynamicInstanceSelectionWithModel(models)...)
+	return instSelections
+}
+
+func GenerateStaticInstanceSelections() []InstanceSelection {
 	return []InstanceSelection{
 		{
 			ID:                BusinessSelection,
@@ -140,17 +147,6 @@ func GenerateInstanceSelections() []InstanceSelection {
 				},
 			},
 		},
-		//{
-		//	ID:     SysInstanceSelection,
-		//	Name:   "实例列表",
-		//	NameEn: "Instance List",
-		//	ResourceTypeChain: []ResourceChain{
-		//		{
-		//			SystemID: SystemIDCMDB,
-		//			ID:       SysInstance,
-		//		},
-		//	},
-		//},
 		{
 			ID:     SysInstanceModelSelection,
 			Name:   "实例模型列表",

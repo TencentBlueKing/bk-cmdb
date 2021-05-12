@@ -423,10 +423,13 @@ const (
 )
 
 type InstanceSelection struct {
-	ID                InstanceSelectionID `json:"id"`
-	Name              string              `json:"name"`
-	NameEn            string              `json:"name_en"`
-	ResourceTypeChain []ResourceChain     `json:"resource_type_chain"`
+	// unique
+	ID InstanceSelectionID `json:"id"`
+	// unique
+	Name string `json:"name"`
+	// unique
+	NameEn            string          `json:"name_en"`
+	ResourceTypeChain []ResourceChain `json:"resource_type_chain"`
 }
 
 type ResourceChain struct {

@@ -495,6 +495,39 @@ func MakeDynamicResourceType(obj metadata.Object) ResourceType {
 	}
 }
 
+// 将model对象构造为ResourceType对象
+func GenDynamicResourceTypeWithModel(objects []metadata.Object) []ResourceType {
+	resourceTypeList := make([]ResourceType, 0)
+	for _, obj := range objects {
+		resourceTypeList = append(resourceTypeList, MakeDynamicResourceType(obj))
+	}
+	return resourceTypeList
+}
+
+// 将model对象构造为InstanceSelection对象
+func MakeDynamicInstanceSelection(obj metadata.Object) InstanceSelection {
+	// todo: 定义const, 国际化
+	return InstanceSelection{
+		ID: InstanceSelectionID(fmt.Sprintf("sys_%s_%d_instance", obj.ObjectID, obj.ID)),
+		// 这个系统下唯一, 需要ID
+		Name:   fmt.Sprintf("%s%d", obj.ObjectName, obj.ID),
+		NameEn: fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID),
+		ResourceTypeChain: []ResourceChain{{
+			SystemID: SystemIDCMDB,
+			ID:       TypeID(fmt.Sprintf("sys_%s_%d_instance", obj.ObjectID, obj.ID)),
+		}},
+	}
+}
+
+// 将model对象构造为instance_selection对象
+func GenDynamicInstanceSelectionWithModel(objects []metadata.Object) []InstanceSelection {
+	resourceTypeList := make([]InstanceSelection, 0)
+	for _, obj := range objects {
+		resourceTypeList = append(resourceTypeList, MakeDynamicInstanceSelection(obj))
+	}
+	return resourceTypeList
+}
+
 // 生成dynamic action-ID/Name/NameEN
 func MakeDynamicAction(obj metadata.Object) DynamicActionAttribute {
 	// todo: 定义const, 国际化
@@ -542,15 +575,6 @@ func GenDynamicActionIDListWithModel(object metadata.Object) []ActionID {
 	actionIDList = append(actionIDList, action.editActionID)
 	actionIDList = append(actionIDList, action.deleteActionID)
 	return actionIDList
-}
-
-// 将model对象构造为ResourceType对象
-func GenDynamicResourceTypeWithModel(objects []metadata.Object) []ResourceType {
-	resourceTypeList := make([]ResourceType, 0)
-	for _, obj := range objects {
-		resourceTypeList = append(resourceTypeList, MakeDynamicResourceType(obj))
-	}
-	return resourceTypeList
 }
 
 // 将model对象构造为resourceAction对象

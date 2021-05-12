@@ -142,8 +142,8 @@ func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.
 		removedInstanceSelectionMap[instanceSelection.ID] = struct{}{}
 	}
 	newInstanceSelections := make([]InstanceSelection, 0)
-	// todo：InstanceSelections, 这里依方案不同可能需要变更, 目前暂时不变
-	for _, resourceType := range GenerateInstanceSelections() {
+
+	for _, resourceType := range GenerateInstanceSelections(models) {
 		// registered instance selection exist in current instance selections, should not be removed
 		delete(removedInstanceSelectionMap, resourceType.ID)
 		// if current instance selection is registered, update it, or else register it
@@ -420,6 +420,14 @@ func (a *authorizer) RegisterModelResourceTypes(ctx context.Context, h http.Head
 
 func (a *authorizer) UnregisterModelResourceTypes(ctx context.Context, h http.Header, input []metadata.Object) error {
 	return a.authClientSet.UnregisterModelResourceTypes(ctx, h, input)
+}
+
+func (a *authorizer) RegisterModelInstanceSelections(ctx context.Context, h http.Header, input []metadata.Object) error {
+	return a.authClientSet.RegisterModelInstanceSelections(ctx, h, input)
+}
+
+func (a *authorizer) UnregisterModelInstanceSelections(ctx context.Context, h http.Header, input []metadata.Object) error {
+	return a.authClientSet.UnregisterModelInstanceSelections(ctx, h, input)
 }
 
 func (a *authorizer) CreateModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error {
