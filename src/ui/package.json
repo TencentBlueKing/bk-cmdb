@@ -45,7 +45,7 @@
     "sortablejs": "1.8.4",
     "utf8-byte-length": "^1.0.4",
     "uuid": "^8.3.2",
-    "v-click-outside": "1.0.5",
+    "v-click-outside": "3.1.2",
     "validator": "^13.1.17",
     "vee-validate": "^2.2.14",
     "vue": "^2.6.12",
