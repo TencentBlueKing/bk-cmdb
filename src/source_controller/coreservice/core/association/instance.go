@@ -312,7 +312,7 @@ func (m *associationInstance) SearchInstanceAssociation(kit *rest.Kit, objID str
 	if !param.DisableCounter {
 		count, err := m.countInstanceAssociation(kit, objID, param.Condition)
 		if nil != err {
-			blog.Errorf("search inst association count err [%#v], rid: %s", err, kit.Rid)
+			blog.Errorf("search model instance associations count err: %s, rid: %s", err.Error(), kit.Rid)
 			return &metadata.QueryResult{}, err
 		}
 		dataResult.Count = count

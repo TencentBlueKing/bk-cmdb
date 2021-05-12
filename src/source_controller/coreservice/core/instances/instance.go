@@ -404,10 +404,10 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 	var finalCount uint64
 
 	if !inputParam.DisableCounter {
-		count, countErr := mongodb.Client().Table(tableName).Find(inputParam.Condition).Count(kit.Ctx)
-		if countErr != nil {
-			blog.Errorf("count instance error [%v], rid: %s", countErr, kit.Rid)
-			return nil, countErr
+		count, err := m.countInstance(kit, objID, inputParam.Condition)
+		if err != nil {
+			blog.Errorf("search model instances count err: %s, rid: %s", err.Error(), kit.Rid)
+			return nil, err
 		}
 		finalCount = count
 	}
