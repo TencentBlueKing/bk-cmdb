@@ -48,7 +48,7 @@
       </bk-table-column>
       <cmdb-table-empty slot="empty" :stuff="table.stuff" :auth="permissionAuth"></cmdb-table-empty>
     </bk-table>
-    <div class="confirm-tips" ref="confirmTips" v-click-outside="hideTips" v-show="confirm.show">
+    <div class="confirm-tips" ref="confirmTips" v-show="confirm.show">
       <p class="tips-content">{{$t('确认取消')}}</p>
       <div class="tips-option">
         <bk-button class="tips-button" theme="primary" @click.stop="cancelAssociation">{{$t('确认')}}</bk-button>
@@ -358,25 +358,25 @@
         this.pagination.current = newCurrent
         this.getInstances()
       },
-      hideTips(event) {
-        if (event && event.target === this.confirm.target) {
-          return false
-        }
+      hideTips() {
         this.confirm.instance && this.confirm.instance.hide()
       },
       showTips(event, item) {
         this.confirm.item = item
         this.confirm.id = item.bk_inst_id
-        this.confirm.instance && this.confirm.instance.destroy()
         this.confirm.instance = this.$bkPopover(event.target, {
           content: this.$refs.confirmTips,
           theme: 'light',
           zIndex: 9999,
           width: 200,
-          trigger: 'manual',
+          trigger: 'click',
           boundary: 'window',
           arrow: true,
-          interactive: true
+          interactive: true,
+          onHidden: () => {
+            this.confirm.instance && this.confirm.instance.destroy()
+            this.confirm.instance = null
+          }
         })
         this.confirm.show = true
         this.$nextTick(() => {
