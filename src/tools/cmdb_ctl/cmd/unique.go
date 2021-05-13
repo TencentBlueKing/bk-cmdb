@@ -186,6 +186,8 @@ func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID, suppl
 	// check if all unique keys are valid
 	uniqueFields := make([]metadata.Attribute, 0)
 	isValid := true
+
+	keyLen := len(unique.Keys)
 	for idx, key := range unique.Keys {
 		switch key.Kind {
 		case metadata.UniqueKeyKindProperty:
@@ -195,6 +197,12 @@ func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID, suppl
 				fmt.Printf("object(%s) unique(%d) key(%d) id(%d) not exist\n", objID, unique.ID, idx, key.ID)
 				continue
 			}
+
+			if !index.ValidateCCFieldType(property.PropertyType, keyLen) {
+				isValid = false
+				fmt.Printf("attribute(%d) type %s is invalid\n", property.ID, property.PropertyType)
+			}
+
 			uniqueFields = append(uniqueFields, property)
 		default:
 			isValid = false
