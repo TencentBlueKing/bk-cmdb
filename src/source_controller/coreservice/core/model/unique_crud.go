@@ -61,21 +61,6 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		}
 	}
 
-	if inputParam.Data.MustCheck {
-		cond := condition.CreateCondition()
-		cond.Field(common.BKObjIDField).Eq(objID)
-		cond.Field("must_check").Eq(true)
-		count, err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(kit.Ctx)
-		if nil != err {
-			blog.Errorf("[CreateObjectUnique] check must check error: %#v, rid: %s", err, kit.Rid)
-			return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
-		}
-		if count > 0 {
-			blog.Errorf("[CreateObjectUnique] model could not have multiple must check unique, rid: %s", kit.Rid)
-			return 0, kit.CCError.Error(common.CCErrTopoObjectUniqueCanNotHasMultipleMustCheck)
-		}
-	}
-
 	err := m.checkUniqueRuleExist(kit, objID, 0, inputParam.Data.Keys)
 	if err != nil {
 		blog.Errorf("[CreateObjectUnique] checkUniqueRuleExist error: %#v, rid: %s", err, kit.Rid)
@@ -117,13 +102,12 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 	}
 
 	unique := metadata.ObjectUnique{
-		ID:        id,
-		ObjID:     objID,
-		MustCheck: inputParam.Data.MustCheck,
-		Keys:      inputParam.Data.Keys,
-		Ispre:     false,
-		OwnerID:   kit.SupplierAccount,
-		LastTime:  metadata.Now(),
+		ID:       id,
+		ObjID:    objID,
+		Keys:     inputParam.Data.Keys,
+		Ispre:    false,
+		OwnerID:  kit.SupplierAccount,
+		LastTime: metadata.Now(),
 	}
 	err = mongodb.Client().Table(common.BKTableNameObjUnique).Insert(kit.Ctx, &unique)
 	if nil != err {
@@ -145,22 +129,6 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 		default:
 			blog.Errorf("[UpdateObjectUnique] invalid key kind: %s, rid: %s", key.Kind, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
-		}
-	}
-
-	if unique.MustCheck {
-		cond := condition.CreateCondition()
-		cond.Field(common.BKObjIDField).Eq(objID)
-		cond.Field("must_check").Eq(true)
-		cond.Field("id").NotEq(id)
-		count, err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(kit.Ctx)
-		if nil != err {
-			blog.Errorf("[UpdateObjectUnique] check must check  error: %#v, rid: %s", err, kit.Rid)
-			return kit.CCError.Error(common.CCErrObjectDBOpErrno)
-		}
-		if count > 0 {
-			blog.Errorf("[UpdateObjectUnique] model could not have multiple must check unique, rid: %s", kit.Rid)
-			return kit.CCError.Error(common.CCErrTopoObjectUniqueCanNotHasMultipleMustCheck)
 		}
 	}
 
@@ -257,7 +225,6 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 // get properties via keys
 func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys []metadata.UniqueKey) (
 	[]metadata.Attribute, error) {
-
 	propertyIDs := make([]int64, 0)
 	for _, key := range keys {
 		propertyIDs = append(propertyIDs, int64(key.ID))

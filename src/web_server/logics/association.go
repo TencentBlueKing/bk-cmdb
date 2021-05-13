@@ -99,10 +99,6 @@ func (lgc *Logics) fetchAssociationData(ctx context.Context, header http.Header,
 func (lgc *Logics) fetchInstAssociationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, modelBizID int64) (map[int64][]PropertyPrimaryVal, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	propertyArr, err := lgc.getObjectPrimaryFieldByObjID(objID, header, modelBizID)
-	if err != nil {
-		return nil, err
-	}
 
 	instIDKey := metadata.GetInstIDFieldByObjID(objID)
 	insts := make([]mapstr.MapStr, 0)

@@ -14,6 +14,7 @@ package y3_7_201912121117
 
 import (
 	"context"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
@@ -39,7 +40,7 @@ func addHostOuterIPUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	uniqueCond := condition.CreateCondition()
 	uniqueCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
 	uniqueCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
-	existUniques := make([]metadata.ObjectUnique, 0)
+	existUniques := make([]ObjectUnique, 0)
 	err = db.Table(common.BKTableNameObjUnique).Find(uniqueCond.ToMapStr()).All(ctx, &existUniques)
 	if err != nil {
 		return err
@@ -51,18 +52,18 @@ func addHostOuterIPUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	}
 
 	// insert host outer ip unique
-	unique := metadata.ObjectUnique{
+	unique := ObjectUnique{
 		ObjID:     common.BKInnerObjIDHost,
 		MustCheck: false,
-		Keys: []metadata.UniqueKey{
+		Keys: []UniqueKey{
 			{
-				Kind: metadata.UniqueKeyKindProperty,
+				Kind: UniqueKeyKindProperty,
 				ID:   id,
 			},
 		},
 		Ispre:    false,
 		OwnerID:  conf.OwnerID,
-		LastTime: metadata.Now(),
+		LastTime: Now(),
 	}
 	uid, err := db.NextSequence(ctx, common.BKTableNameObjUnique)
 	if err != nil {
@@ -74,3 +75,28 @@ func addHostOuterIPUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	}
 	return nil
 }
+
+type ObjectUnique struct {
+	ID        uint64      `json:"id" bson:"id"`
+	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
+	MustCheck bool        `json:"must_check" bson:"must_check"`
+	Keys      []UniqueKey `json:"keys" bson:"keys"`
+	Ispre     bool        `json:"ispre" bson:"ispre"`
+	OwnerID   string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime  Time        `json:"last_time" bson:"last_time"`
+}
+
+type Time metadata.Time
+
+func Now() Time {
+	return Time{time.Now().UTC()}
+}
+
+type UniqueKey struct {
+	Kind string `json:"key_kind" bson:"key_kind"`
+	ID   uint64 `json:"key_id" bson:"key_id"`
+}
+
+const (
+	UniqueKeyKindProperty = "property"
+)

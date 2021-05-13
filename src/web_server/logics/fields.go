@@ -36,7 +36,6 @@ type Property struct {
 	Group         string
 	ExcelColIndex int
 	NotObjPropery bool //Not an attribute of the object, indicating that the field to be exported is needed for export,
-	IsOnly        bool
 	AsstObjID     string
 	NotExport     bool
 }
@@ -103,21 +102,6 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, modelBizID i
 		ret = append(ret, propertyGroup)
 	}
 	blog.V(5).Infof("getObjectGroup count:%d, rid: %s", len(ret), rid)
-	return ret, nil
-
-}
-
-func (lgc *Logics) getObjectPrimaryFieldByObjID(objID string, header http.Header, modelBizID int64) ([]Property, error) {
-	fields, err := lgc.getObjFieldIDsBySort(objID, common.BKPropertyIDField, header, nil, modelBizID)
-	if nil != err {
-		return nil, err
-	}
-	var ret []Property
-	for _, field := range fields {
-		if true == field.IsOnly {
-			ret = append(ret, field)
-		}
-	}
 	return ret, nil
 
 }
@@ -225,28 +209,6 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 		Condition: mapstr.MapStr(map[string]interface{}{
 			common.BKObjIDField: objID,
 		}),
-	}
-	uniques, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrUnique(context.Background(), header, inputParam)
-	if nil != err {
-		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, err, rid)
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !uniques.Result {
-		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, uniques, rid)
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(uniques.Code, uniques.ErrMsg)
-	}
-
-	keyIDs := map[uint64]bool{}
-	for _, unique := range uniques.Data.Info {
-		if unique.MustCheck {
-			for _, key := range unique.Keys {
-				keyIDs[key.ID] = true
-			}
-			break
-		}
-	}
-	if len(keyIDs) <= 0 {
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrTopoObjectUniqueSearchFailed)
 	}
 
 	ret := []Property{}

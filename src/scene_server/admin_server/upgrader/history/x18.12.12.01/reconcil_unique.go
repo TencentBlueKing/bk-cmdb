@@ -13,6 +13,10 @@ package x18_12_12_01
 
 import (
 	"context"
+	"fmt"
+	"sort"
+	"strings"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
@@ -49,28 +53,28 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 
 	checkKeysShouldExists(propertyIDToProperty, shouldCheck)
 
-	uniques := []metadata.ObjectUnique{
+	uniques := []ObjectUnique{
 		// process
 		{
 			ObjID:     common.BKInnerObjIDProc,
 			MustCheck: false,
-			Keys: []metadata.UniqueKey{
+			Keys: []UniqueKey{
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDProc, common.BKAppIDField)].ID),
 				},
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDProc, "bk_start_param_regex")].ID),
 				},
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDProc, common.BKFuncName)].ID),
 				},
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: Now(),
 		},
 	}
 
@@ -107,12 +111,12 @@ func checkKeysShouldExists(m map[string]Attribute, shouldExistKeys []string) []s
 	return notValidKeys
 }
 
-func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, unique metadata.ObjectUnique) (bool, error) {
+func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, unique ObjectUnique) (bool, error) {
 	keyhash := unique.KeysHash()
 	uniqueCond := condition.CreateCondition()
 	uniqueCond.Field(common.BKObjIDField).Eq(unique.ObjID)
 	uniqueCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
-	existUniques := []metadata.ObjectUnique{}
+	existUniques := []ObjectUnique{}
 
 	err := db.Table(common.BKTableNameObjUnique).Find(uniqueCond.ToMapStr()).All(ctx, &existUniques)
 	if err != nil {
@@ -127,3 +131,37 @@ func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, uniq
 	return false, nil
 
 }
+
+type ObjectUnique struct {
+	ID        uint64      `json:"id" bson:"id"`
+	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
+	MustCheck bool        `json:"must_check" bson:"must_check"`
+	Keys      []UniqueKey `json:"keys" bson:"keys"`
+	Ispre     bool        `json:"ispre" bson:"ispre"`
+	OwnerID   string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime  Time        `json:"last_time" bson:"last_time"`
+}
+
+type Time metadata.Time
+
+func Now() Time {
+	return Time{time.Now().UTC()}
+}
+
+type UniqueKey struct {
+	Kind string `json:"key_kind" bson:"key_kind"`
+	ID   uint64 `json:"key_id" bson:"key_id"`
+}
+
+func (o ObjectUnique) KeysHash() string {
+	keys := []string{}
+	for _, key := range o.Keys {
+		keys = append(keys, fmt.Sprintf("%s:%d", key.Kind, key.ID))
+	}
+	sort.Strings(keys)
+	return strings.Join(keys, "#")
+}
+
+const (
+	UniqueKeyKindProperty = "property"
+)

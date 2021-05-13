@@ -60,12 +60,8 @@ func (valid *validator) getValidUniqueOptions(kit *rest.Kit, data mapstr.MapStr,
 		}
 
 		cond := mongo.NewCondition()
-		anyEmpty := false
 		for _, key := range uniqueKeys {
-			val, ok := data[key]
-			if !ok || isEmpty(val) {
-				anyEmpty = true
-			}
+			val := data[key]
 			if valid.objID == common.BKInnerObjIDHost && hostSpecialFieldMap[key] {
 				valStr, _ := val.(string)
 				valArr := strings.Split(valStr, ",")
@@ -80,9 +76,6 @@ func (valid *validator) getValidUniqueOptions(kit *rest.Kit, data mapstr.MapStr,
 			}
 		}
 
-		if anyEmpty && !unique.MustCheck {
-			continue
-		}
 		uniqueOpts = append(uniqueOpts, validUniqueOption{Condition: cond, UniqueKeys: uniqueKeys})
 	}
 

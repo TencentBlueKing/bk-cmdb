@@ -45,9 +45,8 @@ type unique struct {
 
 func (a *unique) Create(kit *rest.Kit, objectID string, request *metadata.CreateUniqueRequest) (uniqueID *metadata.RspID, err error) {
 	unique := metadata.ObjectUnique{
-		ObjID:     request.ObjID,
-		Keys:      request.Keys,
-		MustCheck: request.MustCheck,
+		ObjID: request.ObjID,
+		Keys:  request.Keys,
 	}
 
 	resp, err := a.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header, objectID, metadata.CreateModelAttrUnique{Data: unique})

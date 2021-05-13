@@ -13,6 +13,9 @@ package x18_11_19_01
 
 import (
 	"context"
+	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -100,7 +103,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 
 	checkKeysShouldExists(propertyIDToProperty, shouldCheck)
 
-	uniques := []metadata.ObjectUnique{
+	uniques := []ObjectUnique{
 		// host
 		// 产品调整，回撤
 		// {
@@ -119,136 +122,136 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		{
 			ObjID:     common.BKInnerObjIDHost,
 			MustCheck: true,
-			Keys: []metadata.UniqueKey{
+			Keys: []UniqueKey{
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDHost, common.BKCloudIDField)].ID),
 				},
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDHost, common.BKHostInnerIPField)].ID),
 				},
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: Now(),
 		},
 		// process
 		{
 			ObjID:     common.BKInnerObjIDProc,
 			MustCheck: true,
-			Keys: []metadata.UniqueKey{
+			Keys: []UniqueKey{
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDProc, common.BKAppIDField)].ID),
 				},
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDProc, common.BKProcNameField)].ID),
 				},
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: Now(),
 		},
 		{
 			ObjID:     common.BKInnerObjIDProc,
 			MustCheck: false,
-			Keys: []metadata.UniqueKey{
+			Keys: []UniqueKey{
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDProc, common.BKAppIDField)].ID),
 				},
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDProc, common.BKFuncIDField)].ID),
 				},
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: Now(),
 		},
 		// biz
 		{
 			ObjID:     common.BKInnerObjIDApp,
 			MustCheck: true,
-			Keys: []metadata.UniqueKey{
+			Keys: []UniqueKey{
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDApp, common.BKAppNameField)].ID),
 				},
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: Now(),
 		},
 		// set
 		{
 			ObjID:     common.BKInnerObjIDSet,
 			MustCheck: true,
-			Keys: []metadata.UniqueKey{
+			Keys: []UniqueKey{
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDSet, common.BKAppIDField)].ID),
 				},
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDSet, common.BKSetNameField)].ID),
 				},
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDSet, common.BKInstParentStr)].ID),
 				},
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: Now(),
 		},
 		// module
 		{
 			ObjID:     common.BKInnerObjIDModule,
 			MustCheck: true,
-			Keys: []metadata.UniqueKey{
+			Keys: []UniqueKey{
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDModule, common.BKAppIDField)].ID),
 				},
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDModule, common.BKSetIDField)].ID),
 				},
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDModule, common.BKModuleNameField)].ID),
 				},
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: Now(),
 		},
 		// cloud area
 		{
 			ObjID:     common.BKInnerObjIDPlat,
 			MustCheck: true,
-			Keys: []metadata.UniqueKey{
+			Keys: []UniqueKey{
 				{
-					Kind: metadata.UniqueKeyKindProperty,
+					Kind: UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPlat, common.BKCloudNameField)].ID),
 				},
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
+			LastTime: Now(),
 		},
 	}
 
 	for objID, oldAttrs := range obj2IsOnlyProperty {
-		keys := []metadata.UniqueKey{}
+		keys := []UniqueKey{}
 		ownerID := conf.OwnerID
 		allPreset := true
 		for _, oldAttr := range oldAttrs {
-			keys = append(keys, metadata.UniqueKey{
-				Kind: metadata.UniqueKeyKindProperty,
+			keys = append(keys, UniqueKey{
+				Kind: UniqueKeyKindProperty,
 				ID:   uint64(oldAttr.ID),
 			})
 			ownerID = oldAttr.OwnerID
@@ -260,13 +263,13 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			continue
 		}
 
-		unique := metadata.ObjectUnique{
+		unique := ObjectUnique{
 			ObjID:     objID,
 			MustCheck: true,
 			Keys:      keys,
 			Ispre:     false,
 			OwnerID:   ownerID,
-			LastTime:  metadata.Now(),
+			LastTime:  Now(),
 		}
 		uniques = append(uniques, unique)
 	}
@@ -308,12 +311,12 @@ func checkKeysShouldExists(m map[string]Attribute, shouldExistKeys []string) []s
 	return notValidKeys
 }
 
-func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, unique metadata.ObjectUnique) (bool, error) {
+func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, unique ObjectUnique) (bool, error) {
 	keyhash := unique.KeysHash()
 	uniqueCond := condition.CreateCondition()
 	uniqueCond.Field(common.BKObjIDField).Eq(unique.ObjID)
 	uniqueCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
-	existUniques := []metadata.ObjectUnique{}
+	existUniques := []ObjectUnique{}
 
 	err := db.Table(common.BKTableNameObjUnique).Find(uniqueCond.ToMapStr()).All(ctx, &existUniques)
 	if err != nil {
@@ -328,3 +331,37 @@ func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, uniq
 	return false, nil
 
 }
+
+type ObjectUnique struct {
+	ID        uint64      `json:"id" bson:"id"`
+	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
+	MustCheck bool        `json:"must_check" bson:"must_check"`
+	Keys      []UniqueKey `json:"keys" bson:"keys"`
+	Ispre     bool        `json:"ispre" bson:"ispre"`
+	OwnerID   string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime  Time        `json:"last_time" bson:"last_time"`
+}
+
+type Time metadata.Time
+
+func Now() Time {
+	return Time{time.Now().UTC()}
+}
+
+type UniqueKey struct {
+	Kind string `json:"key_kind" bson:"key_kind"`
+	ID   uint64 `json:"key_id" bson:"key_id"`
+}
+
+func (o ObjectUnique) KeysHash() string {
+	keys := []string{}
+	for _, key := range o.Keys {
+		keys = append(keys, fmt.Sprintf("%s:%d", key.Kind, key.ID))
+	}
+	sort.Strings(keys)
+	return strings.Join(keys, "#")
+}
+
+const (
+	UniqueKeyKindProperty = "property"
+)

@@ -249,9 +249,6 @@ func (ia *importAssociation) getAssociationObjProperty() error {
 	}
 	var propertyIDArr []uint64
 	for _, unique := range uniqueResult.Data.Info {
-		if !unique.MustCheck {
-			continue
-		}
 		for _, property := range unique.Keys {
 			propertyIDArr = append(propertyIDArr, property.ID)
 		}
