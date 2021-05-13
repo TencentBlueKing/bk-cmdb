@@ -91,7 +91,7 @@
         resource_id: '',
         resource_name: '',
         category: 'host',
-        exact: true
+        fuzzy_query: false
       }
       return {
         instanceType: 'resource_name',
