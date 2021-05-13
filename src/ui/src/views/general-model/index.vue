@@ -541,7 +541,12 @@
         if (this.filterType === 'time') {
           const [start, end] = this.filter.value
           params.time_condition = {
-            [this.filter.field]: { start, end }
+            oper: 'and',
+            rules: [{
+              field: this.filter.field,
+              start,
+              end
+            }]
           }
           return params
         }

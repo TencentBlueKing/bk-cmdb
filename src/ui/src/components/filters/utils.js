@@ -107,6 +107,9 @@ export function findPropertyByPropertyId(propertyId, properties, modelId) {
   return properties.find(property => property.bk_property_id === propertyId)
 }
 
+function createTimeCondition() {
+  return { oper: 'and', rules: [] }
+}
 export function transformCondition(condition, properties, header) {
   const conditionMap = {
     host: [],
@@ -115,10 +118,25 @@ export function transformCondition(condition, properties, header) {
     biz: [],
     object: []
   }
+  const timeCondition = {
+    host: createTimeCondition(),
+    module: createTimeCondition(),
+    set: createTimeCondition(),
+    biz: createTimeCondition(),
+    object: createTimeCondition()
+  }
   Object.keys(condition).forEach((id) => {
     const property = findProperty(id, properties)
     const { operator, value } = condition[id]
-    if (value === null || !value.toString().length) {
+    if (value === null || !value.toString().length) return
+    // 时间类型的字段需要上升一层单独处理
+    if (property.bk_property_type === 'time') {
+      const [start, end] = value
+      timeCondition[property.bk_obj_id].rules.push({
+        field: property.bk_property_id,
+        start,
+        end
+      })
       return
     }
     const submitCondition = conditionMap[property.bk_obj_id]
@@ -141,11 +159,17 @@ export function transformCondition(condition, properties, header) {
       })
     }
   })
-  return Object.keys(conditionMap).map(modelId => ({
-    bk_obj_id: modelId,
-    fields: header.filter(property => property.bk_obj_id === modelId).map(property => property.bk_property_id),
-    condition: conditionMap[modelId]
-  }))
+  return Object.keys(conditionMap).map(modelId => {
+    const condition = {
+      bk_obj_id: modelId,
+      fields: header.filter(property => property.bk_obj_id === modelId).map(property => property.bk_property_id),
+      condition: conditionMap[modelId]
+    }
+    if (timeCondition[modelId].rules.length) {
+      condition.time_condition = timeCondition[modelId]
+    }
+    return condition
+  })
 }
 
 export function splitIP(raw) {
