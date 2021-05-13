@@ -551,8 +551,12 @@ func (sh *searchHost) searchByApp() errors.CCError {
 	if sh.noData {
 		return nil
 	}
-	if len(sh.conds.appCond.Condition) > 0 {
-		appIDArr, err := sh.lgc.GetAppIDByCond(sh.kit, sh.conds.appCond.Condition)
+	if len(sh.conds.appCond.Condition) > 0 || sh.conds.appCond.TimeCondition != nil {
+		cond := metadata.ConditionWithTime{
+			Condition:     sh.conds.appCond.Condition,
+			TimeCondition: sh.conds.appCond.TimeCondition,
+		}
+		appIDArr, err := sh.lgc.GetAppIDByCond(sh.kit, cond)
 		if err != nil {
 			return err
 		}
@@ -593,7 +597,7 @@ func (sh *searchHost) searchByMainline() errors.CCError {
 		})
 	}
 	// search set by appcond
-	if len(sh.conds.setCond.Condition) > 0 {
+	if len(sh.conds.setCond.Condition) > 0 || sh.conds.setCond.TimeCondition != nil {
 		if len(sh.idArr.moduleHostConfig.appIDArr) > 0 {
 			sh.conds.setCond.Condition = append(sh.conds.setCond.Condition, metadata.ConditionItem{
 				Field:    common.BKAppIDField,
@@ -601,7 +605,11 @@ func (sh *searchHost) searchByMainline() errors.CCError {
 				Value:    sh.idArr.moduleHostConfig.appIDArr,
 			})
 		}
-		setIDArr, err = sh.lgc.GetSetIDByCond(sh.kit, sh.conds.setCond.Condition)
+		cond := metadata.ConditionWithTime{
+			Condition:     sh.conds.setCond.Condition,
+			TimeCondition: sh.conds.setCond.TimeCondition,
+		}
+		setIDArr, err = sh.lgc.GetSetIDByCond(sh.kit, cond)
 		if err != nil {
 			return err
 		}
@@ -620,7 +628,7 @@ func (sh *searchHost) searchByModule() errors.CCError {
 	if sh.noData {
 		return nil
 	}
-	if len(sh.conds.moduleCond.Condition) > 0 {
+	if len(sh.conds.moduleCond.Condition) > 0 || sh.conds.moduleCond.TimeCondition != nil {
 		if len(sh.idArr.moduleHostConfig.setIDArr) > 0 {
 			sh.conds.moduleCond.Condition = append(sh.conds.moduleCond.Condition, metadata.ConditionItem{
 				Field:    common.BKSetIDField,
@@ -636,7 +644,11 @@ func (sh *searchHost) searchByModule() errors.CCError {
 			})
 		}
 		//search module by cond
-		moduleIDArr, err := sh.lgc.GetModuleIDByCond(sh.kit, sh.conds.moduleCond.Condition)
+		cond := metadata.ConditionWithTime{
+			Condition:     sh.conds.moduleCond.Condition,
+			TimeCondition: sh.conds.moduleCond.TimeCondition,
+		}
+		moduleIDArr, err := sh.lgc.GetModuleIDByCond(sh.kit, cond)
 		if err != nil {
 			return err
 		}
@@ -680,11 +692,12 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 	}
 
 	query := &metadata.QueryInput{
-		Condition: condition,
-		Start:     sh.hostSearchParam.Page.Start,
-		Limit:     sh.hostSearchParam.Page.Limit,
-		Sort:      sh.hostSearchParam.Page.Sort,
-		Fields:    strings.Join(sh.conds.hostCond.Fields, ","),
+		Condition:     condition,
+		TimeCondition: sh.conds.hostCond.TimeCondition,
+		Start:         sh.hostSearchParam.Page.Start,
+		Limit:         sh.hostSearchParam.Page.Limit,
+		Sort:          sh.hostSearchParam.Page.Sort,
+		Fields:        strings.Join(sh.conds.hostCond.Fields, ","),
 	}
 	sh.conds.hostCond.Fields = nil
 	sh.hostSearchParam = nil
@@ -786,7 +799,7 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 	sh.totalHostCnt = len(respHostIDInfo.Data.IDArr)
 	// 当有根据主机实例内容查询的时候的时候，无法在程序中完成分页
 	hasHostCond := false
-	if len(sh.hostSearchParam.Ip.Data) > 0 || len(sh.conds.hostCond.Condition) > 0 {
+	if len(sh.hostSearchParam.Ip.Data) > 0 || len(sh.conds.hostCond.Condition) > 0 || sh.conds.hostCond.TimeCondition != nil {
 		hasHostCond = true
 	}
 	if !hasHostCond && sh.hostSearchParam.Page.Limit > 0 {

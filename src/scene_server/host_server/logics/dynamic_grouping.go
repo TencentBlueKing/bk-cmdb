@@ -197,11 +197,15 @@ func (e *HostDynamicGroupExecutor) searchByApp() error {
 		return nil
 	}
 
-	if len(e.conds.appCond.Condition) == 0 {
+	if len(e.conds.appCond.Condition) == 0 && e.conds.appCond.TimeCondition == nil {
 		return nil
 	}
 
-	appIDs, err := e.lgc.GetAppIDByCond(e.kit, e.conds.appCond.Condition)
+	cond := metadata.ConditionWithTime{
+		Condition:     e.conds.appCond.Condition,
+		TimeCondition: e.conds.appCond.TimeCondition,
+	}
+	appIDs, err := e.lgc.GetAppIDByCond(e.kit, cond)
 	if err != nil {
 		return err
 	}
@@ -247,7 +251,7 @@ func (e *HostDynamicGroupExecutor) searchByMainline() error {
 	}
 
 	// search set.
-	if len(e.conds.setCond.Condition) > 0 {
+	if len(e.conds.setCond.Condition) > 0 || e.conds.setCond.TimeCondition != nil {
 		if len(e.idArr.moduleHostConfig.appIDArr) > 0 {
 			e.conds.setCond.Condition = append(e.conds.setCond.Condition, metadata.ConditionItem{
 				Field:    common.BKAppIDField,
@@ -256,7 +260,11 @@ func (e *HostDynamicGroupExecutor) searchByMainline() error {
 			})
 		}
 
-		setIDs, err = e.lgc.GetSetIDByCond(e.kit, e.conds.setCond.Condition)
+		cond := metadata.ConditionWithTime{
+			Condition:     e.conds.setCond.Condition,
+			TimeCondition: e.conds.setCond.TimeCondition,
+		}
+		setIDs, err = e.lgc.GetSetIDByCond(e.kit, cond)
 		if err != nil {
 			return err
 		}
@@ -277,7 +285,7 @@ func (e *HostDynamicGroupExecutor) searchByModule() error {
 		return nil
 	}
 
-	if len(e.conds.moduleCond.Condition) == 0 {
+	if len(e.conds.moduleCond.Condition) == 0 && e.conds.moduleCond.TimeCondition == nil {
 		return nil
 	}
 
@@ -298,7 +306,11 @@ func (e *HostDynamicGroupExecutor) searchByModule() error {
 	}
 
 	// search module.
-	moduleIDs, err := e.lgc.GetModuleIDByCond(e.kit, e.conds.moduleCond.Condition)
+	cond := metadata.ConditionWithTime{
+		Condition:     e.conds.moduleCond.Condition,
+		TimeCondition: e.conds.moduleCond.TimeCondition,
+	}
+	moduleIDs, err := e.lgc.GetModuleIDByCond(e.kit, cond)
 	if err != nil {
 		return err
 	}
@@ -377,6 +389,7 @@ func (e *HostDynamicGroupExecutor) searchByHostConds() error {
 	query := &metadata.QueryInput{
 		Fields:         strings.Join(e.conds.hostCond.Fields, ","),
 		Condition:      condition,
+		TimeCondition:  e.conds.hostCond.TimeCondition,
 		Start:          e.params.Page.Start,
 		Limit:          e.params.Page.Limit,
 		Sort:           e.params.Page.Sort,
@@ -462,7 +475,7 @@ func (e *HostDynamicGroupExecutor) appendHostTopoConds() error {
 
 	// 当有根据主机实例内容查询的时候的时候，无法在程序中完成分页
 	hasHostCond := false
-	if len(e.params.Ip.Data) > 0 || len(e.conds.hostCond.Condition) > 0 {
+	if len(e.params.Ip.Data) > 0 || len(e.conds.hostCond.Condition) > 0 || e.conds.hostCond.TimeCondition != nil {
 		hasHostCond = true
 	}
 

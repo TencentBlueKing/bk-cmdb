@@ -82,7 +82,7 @@ func (lgc *Logics) GetTopoIDByName(kit *rest.Kit, c *meta.HostToAppModule) (int6
 	}
 
 	setCond := []meta.ConditionItem{appIdItem, setNameItem}
-	setIDs, setErr := lgc.GetSetIDByCond(kit, setCond)
+	setIDs, setErr := lgc.GetSetIDByCond(kit, meta.ConditionWithTime{Condition: setCond})
 	if nil != setErr {
 		return 0, 0, 0, setErr
 	}
@@ -105,7 +105,7 @@ func (lgc *Logics) GetTopoIDByName(kit *rest.Kit, c *meta.HostToAppModule) (int6
 	}
 
 	moduleCond := []meta.ConditionItem{appIdItem, setIDConds, moduleNameCond}
-	moduleIDs, moduleErr := lgc.GetModuleIDByCond(kit, moduleCond)
+	moduleIDs, moduleErr := lgc.GetModuleIDByCond(kit, meta.ConditionWithTime{Condition: moduleCond})
 	if nil != moduleErr {
 		return 0, 0, 0, err
 	}
@@ -164,7 +164,7 @@ func (lgc *Logics) GetSetIDByObjectCond(kit *rest.Kit, appID int64, objectCond [
 	}
 
 	for {
-		sSetIDArr, err := lgc.GetSetIDByCond(kit, condition)
+		sSetIDArr, err := lgc.GetSetIDByCond(kit, meta.ConditionWithTime{Condition: condition})
 		if err != nil {
 			return nil, err
 		}
