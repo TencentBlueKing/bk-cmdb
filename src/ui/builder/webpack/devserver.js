@@ -4,6 +4,10 @@ const { HOST } = process.env
 const PORT = process.env.PORT && Number(process.env.PORT)
 
 module.exports = config => ({
+  before(app) {
+    const launchMiddleware = require('launch-editor-middleware')
+    app.use('/__open-in-editor', launchMiddleware())
+  },
   clientLogLevel: 'error',
   historyApiFallback: {
     rewrites: [
