@@ -278,7 +278,7 @@ func (m *customLevel) onMainlineTopologyListDone() {
 func (m *customLevel) onUpsertCustomInstance(e *types.Event) {
 	blog.V(4).Infof("received biz custom level instance upsert event, detail: %s", e.String())
 
-	fields := gjson.GetManyBytes(e.DocBytes, "bk_obj_id", "bk_inst_id", "bk_inst_name", "metadata.label.bk_biz_id", "bk_parent_id")
+	fields := gjson.GetManyBytes(e.DocBytes, "bk_obj_id", "bk_inst_id", "bk_inst_name", "bk_biz_id", "bk_parent_id")
 	objID := fields[0].String()
 	if len(objID) == 0 {
 		blog.Errorf("received biz custom level instance upsert event, but parse object id failed, doc: %s", e.String())

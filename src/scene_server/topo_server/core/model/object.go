@@ -646,7 +646,7 @@ func (o *object) GetNonInnerAttributes() ([]AttributeInterface, error) {
 	cond.Field(meta.AttributeFieldObjectID).Eq(o.obj.ObjectID)
 	cond.Field(meta.AttributeFieldIsSystem).NotEq(true)
 	cond.Field(meta.AttributeFieldIsAPI).NotEq(true)
-	cond.Parse(meta.BizLabelNotExist)
+	cond.Field(common.BKAppIDField).Eq(0)
 	return o.searchAttributes(cond)
 }
 

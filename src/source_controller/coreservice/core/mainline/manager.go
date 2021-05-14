@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -122,7 +121,7 @@ func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context, header ht
 		common.BKObjIDField: map[string]interface{}{
 			common.BKDBIN: im.modelIDs,
 		},
-		common.MetadataLabelBiz: strconv.FormatInt(im.bkBizID, 10),
+		common.BKAppIDField: im.bkBizID,
 	}
 	filter = util.SetQueryOwner(filter, util.GetOwnerID(header))
 	err = mongodb.Client().Table(common.BKTableNameBaseInst).Find(filter).All(ctx, &im.mainlineInstances)
