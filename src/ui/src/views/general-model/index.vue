@@ -423,6 +423,8 @@
           value = parseFloat(value, 10)
         } else if (operator === '$in') {
           value = Array.isArray(value) ? value : !!value ? [value] : []
+        } else if (Array.isArray(value)) {
+          value = value.filter(value => !!value)
         }
         return value
       },
