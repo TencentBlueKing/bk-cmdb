@@ -33,6 +33,8 @@ const (
 	SystemNameCMDB   = "配置平台"
 
 	SystemIDIAM = "bk_iam"
+
+	SysInstTypePrefix = "sys_inst_pub_"
 )
 
 type AuthConfig struct {
@@ -359,9 +361,9 @@ type RelateResourceType struct {
 }
 
 const (
-	all       SelectionMode = "all"
-	instance  SelectionMode = "instance"
-	attribute SelectionMode = "attribute"
+	modeAll       SelectionMode = "all"
+	modeInstance  SelectionMode = "instance"
+	modeAttribute SelectionMode = "attribute"
 )
 
 type Scope struct {

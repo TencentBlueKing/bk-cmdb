@@ -103,7 +103,12 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	// 按一定时间周期循环同步IAM动作列表; 接收ctx.Done()信号将结束阻塞
-	authServer.Service.LoopSyncActionWithIAM(ctx, authServer.Config)
+	go authServer.Service.LoopSyncActionWithIAM(ctx, authServer.Config)
+
+	select {
+	case <-ctx.Done():
+		blog.Infof("auth server will exit!")
+	}
 
 	return nil
 }

@@ -37,7 +37,7 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID, 
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
-	collection := getResourceTableName(resourceType)
+	collection := getResourceTableName(resourceType, kit.SupplierAccount)
 	idField := GetResourceIDField(resourceType)
 	nameField := GetResourceNameField(resourceType)
 	if collection == "" || idField == "" || nameField == "" {
@@ -155,7 +155,7 @@ func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types
 // list resource instances that user is privileged to access by policy
 func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) ([]string, error) {
 	resourceType := iam.TypeID(opts.Type)
-	collection := getResourceTableName(resourceType)
+	collection := getResourceTableName(resourceType, "0")
 	idField := GetResourceIDField(resourceType)
 	if collection == "" || idField == "" {
 		return nil, fmt.Errorf("request type %s is invalid", opts.Type)

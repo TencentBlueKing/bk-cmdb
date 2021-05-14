@@ -14,6 +14,7 @@ package logics
 
 import (
 	"strconv"
+	"strings"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
@@ -263,7 +264,7 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
 	[]map[string]interface{}, error) {
 
-	if resourceType != iam.SysInstance {
+	if resourceType != iam.SysInstance && !strings.HasPrefix(string(resourceType), iam.SysInstTypePrefix) {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 

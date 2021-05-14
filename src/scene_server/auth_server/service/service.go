@@ -30,6 +30,7 @@ import (
 	sdkauth "configcenter/src/scene_server/auth_server/sdk/auth"
 	"configcenter/src/scene_server/auth_server/sdk/client"
 	"configcenter/src/scene_server/auth_server/types"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -206,7 +207,7 @@ func (s *AuthService) initAuth(api *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/delete/model_instance_actions", Handler: s.DeleteModelInstanceActions})
 	// 全量更新IAM内的action_groups
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/model_instance_action_groups", Handler: s.UpdateModelInstanceActionGroups})
-	// 目前还没有使用到"sync/model_instance_actions"接口, 以后可能有用
+	// 同步IAM动态模型实例资源
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/model_instance_actions", Handler: s.SyncIAMModelResourcesCall})
 
 	utility.AddToRestfulWebService(api)

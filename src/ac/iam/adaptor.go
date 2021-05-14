@@ -480,9 +480,8 @@ func ParseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, 
 
 // 生成dynamic resourceType
 func MakeDynamicResourceType(obj metadata.Object) ResourceType {
-	// todo: 定义const, 国际化
 	return ResourceType{
-		ID:            TypeID(fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID)),
+		ID:            TypeID(fmt.Sprintf("%s%s_%d", SysInstTypePrefix, obj.ObjectID, obj.ID)),
 		Name:          obj.ObjectName,
 		NameEn:        obj.ObjectID,
 		Description:   fmt.Sprintf("%s %s", "自定义模型", obj.ObjectName),
@@ -506,7 +505,6 @@ func GenDynamicResourceTypeWithModel(objects []metadata.Object) []ResourceType {
 
 // 将model对象构造为InstanceSelection对象
 func MakeDynamicInstanceSelection(obj metadata.Object) InstanceSelection {
-	// todo: 定义const, 国际化
 	return InstanceSelection{
 		ID: InstanceSelectionID(fmt.Sprintf("sys_%s_%d_instance", obj.ObjectID, obj.ID)),
 		// 这个系统下唯一, 需要ID
@@ -514,7 +512,7 @@ func MakeDynamicInstanceSelection(obj metadata.Object) InstanceSelection {
 		NameEn: fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID),
 		ResourceTypeChain: []ResourceChain{{
 			SystemID: SystemIDCMDB,
-			ID:       TypeID(fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID)),
+			ID:       TypeID(fmt.Sprintf("%s%s_%d", SysInstTypePrefix, obj.ObjectID, obj.ID)),
 		}},
 	}
 }
@@ -530,7 +528,6 @@ func GenDynamicInstanceSelectionWithModel(objects []metadata.Object) []InstanceS
 
 // 生成dynamic action-ID/Name/NameEN
 func MakeDynamicAction(obj metadata.Object) DynamicActionAttribute {
-	// todo: 定义const, 国际化
 	return DynamicActionAttribute{
 		createActionID:     ActionID(fmt.Sprintf("%s_%s_%d", "create", obj.ObjectID, obj.ID)),
 		createActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "创建"),
@@ -586,11 +583,11 @@ func genDynamicActionWithModel(objects []metadata.Object) []ResourceAction {
 		relatedResource := []RelateResourceType{
 			{
 				SystemID:      SystemIDCMDB,
-				ID:            TypeID(fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID)),
+				ID:            TypeID(fmt.Sprintf("%s%s_%d", SysInstTypePrefix, obj.ObjectID, obj.ID)),
 				NameAlias:     "",
 				NameAliasEn:   "",
 				Scope:         nil,
-				SelectionMode: all,
+				SelectionMode: modeAll,
 				InstanceSelections: []RelatedInstanceSelection{{
 					SystemID: SystemIDCMDB,
 					ID:       InstanceSelectionID(fmt.Sprintf("sys_%s_%d_instance", obj.ObjectID, obj.ID)),
@@ -632,4 +629,13 @@ func genDynamicActionWithModel(objects []metadata.Object) []ResourceAction {
 	}
 
 	return actions
+}
+
+func IsPublicSysInstance(resourceType TypeID) bool {
+	return strings.HasPrefix(string(resourceType), SysInstTypePrefix)
+}
+
+func GetObjIDFromIamSysInstance(resourceType TypeID) string {
+	instIDIdx := strings.LastIndex(string(resourceType), "_")
+	return strings.TrimPrefix(string(resourceType[:instIDIdx]), SysInstTypePrefix)
 }

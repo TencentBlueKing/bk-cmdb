@@ -25,7 +25,7 @@ import (
 )
 
 // get resource database table name
-func getResourceTableName(resourceType iam.TypeID) string {
+func getResourceTableName(resourceType iam.TypeID, supplierAccount string) string {
 	switch resourceType {
 	case iam.Host:
 		return common.BKTableNameBaseHost
@@ -64,6 +64,9 @@ func getResourceTableName(resourceType iam.TypeID) string {
 	//case iam.Module:
 	//	return common.BKTableNameBaseModule
 	default:
+		if iam.IsPublicSysInstance(resourceType) {
+			return common.GetObjectInstTableName(iam.GetObjIDFromIamSysInstance(resourceType), supplierAccount)
+		}
 		return ""
 	}
 }

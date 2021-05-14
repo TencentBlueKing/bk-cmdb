@@ -25,7 +25,7 @@ import (
 func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.AttrResource, error) {
 	attrs := make([]types.AttrResource, 0)
 	objID := getInstanceResourceObjID(resourceType)
-	if objID == "" && resourceType != iam.SysInstance {
+	if objID == "" && resourceType != iam.SysInstance && !iam.IsPublicSysInstance(resourceType) {
 		return attrs, nil
 	}
 
@@ -50,6 +50,9 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.Att
 		}
 		res, err = lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, &param)
 	} else {
+		if iam.IsPublicSysInstance(resourceType) {
+			objID = iam.GetObjIDFromIamSysInstance(resourceType)
+		}
 		res, err = lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, &param)
 	}
 	if err != nil {

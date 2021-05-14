@@ -34,7 +34,7 @@ type SyncServer struct {
 func (s *AuthService) LoopSyncActionWithIAM(ctx context.Context, config *options.Config) {
 	kit := s.NewKit(config)
 	timer := time.NewTimer(config.Auth.Interval)
-	for true {
+	for {
 		select {
 		// 计时器信号
 		case <-timer.C:

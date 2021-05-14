@@ -533,7 +533,7 @@ func genResourcePoolHostActions() []ResourceAction {
 		NameAlias:          "",
 		NameAliasEn:        "",
 		Scope:              nil,
-		SelectionMode:      all,
+		SelectionMode:      modeAll,
 		InstanceSelections: hostSelection,
 	}}
 

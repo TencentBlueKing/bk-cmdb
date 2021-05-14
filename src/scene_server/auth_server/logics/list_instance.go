@@ -67,7 +67,7 @@ func (lgc *Logics) listInstance(kit *rest.Kit, cond map[string]interface{}, reso
 
 // searchAuthResource search auth resource instances from database
 func (lgc *Logics) searchAuthResource(kit *rest.Kit, param metadata.PullResourceParam, resourceType iam.TypeID) (*metadata.PullResourceResult, error) {
-	param.Collection = getResourceTableName(resourceType)
+	param.Collection = getResourceTableName(resourceType, kit.SupplierAccount)
 	if param.Collection == "" {
 		blog.Errorf("request type %s is invalid, rid: %s", resourceType, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "type")
