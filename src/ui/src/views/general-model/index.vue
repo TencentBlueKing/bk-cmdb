@@ -56,20 +56,26 @@
         </icon-button>
       </div>
       <div class="options-filter clearfix fr">
-        <cmdb-property-selector class="filter-selector fl"
+        <cmdb-property-selector class="filter-selector"
           v-model="filter.field"
           :properties="properties"
           :object-unique="objectUnique"
           :loading="$loading([request.properties, request.groups, request.unique])">
         </cmdb-property-selector>
-        <component class="filter-value fl"
+        <component class="filter-value"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
+          :class="filterType"
           v-bind="filterComponentProps"
           v-model="filter.value"
           @change="handleFilterValueChange"
           @enter="handleFilterValueEnter">
         </component>
+        <bk-checkbox class="filter-exact" size="small"
+          v-if="allowFuzzyQuery"
+          v-model="filter.fuzzy_query">
+          {{$t('模糊')}}
+        </bk-checkbox>
       </div>
     </div>
     <bk-table class="models-table" ref="table"
@@ -214,7 +220,8 @@
         filter: {
           field: '',
           value: '',
-          operator: '$eq'
+          operator: '$eq',
+          fuzzy_query: false
         },
         slider: {
           show: false,
@@ -297,10 +304,30 @@
       },
       filterComponentProps() {
         return Utils.getBindProps(this.filterProperty)
+      },
+      allowFuzzyQuery() {
+        return ['singlechar', 'longchar'].includes(this.filterType)
       }
     },
     watch: {
       'filter.field'() {
+        // 模糊搜索
+        if (this.allowFuzzyQuery && this.filter.fuzzy_query) {
+          this.filter.value = ''
+          this.filter.operator = '$regex'
+          return
+        }
+        const defaultData = Utils.getDefaultData(this.filterProperty)
+        this.filter.value = defaultData.value
+        this.filter.operator = defaultData.operator
+      },
+      'filter.fuzzy_query'(fuzzy) {
+        if (!this.allowFuzzyQuery) return
+        if (fuzzy) {
+          this.filter.value = ''
+          this.filter.operator = '$regex'
+          return
+        }
         const defaultData = Utils.getDefaultData(this.filterProperty)
         this.filter.value = defaultData.value
         this.filter.operator = defaultData.operator
@@ -330,17 +357,18 @@
         page = 1,
         limit = this.table.pagination.limit,
         filter = '',
+        operator = '',
+        fuzzy = false,
         field = 'bk_inst_name'
       }) => {
         this.filter.field = field
+        this.filter.fuzzy_query = fuzzy.toString() === 'true'
         this.table.pagination.current = parseInt(page, 10)
         this.table.pagination.limit = parseInt(limit, 10)
         await this.$nextTick()
         const defaultData = Utils.getDefaultData(this.filterProperty)
-        const isNumber = ['int', 'float'].includes(this.filterType)
-        const filterValue = (isNumber && filter) ? parseFloat(filter, 10) : filter
-        this.filter.operator = defaultData.operator
-        this.filter.value = filterValue.toString().length ? filterValue : defaultData.value
+        this.filter.operator = operator || defaultData.operator
+        this.filter.value = this.formatFilterValue({ value: filter, operator: this.filter.operator }, defaultData.value)
         this.throttleGetTableData()
       }, { immediate: true })
     },
@@ -388,18 +416,33 @@
           // ignore
         }
       },
+      formatFilterValue({ value: currentValue, operator }, defaultValue) {
+        let value = currentValue.toString().length ? currentValue : defaultValue
+        const isNumber = ['int', 'float'].includes(this.filterType)
+        if (isNumber && value) {
+          value = parseFloat(value, 10)
+        } else if (operator === '$in') {
+          value = Array.isArray(value) ? value : !!value ? [value] : []
+        }
+        return value
+      },
       handleFilterValueChange() {
         const hasEnterEvnet = ['float', 'int', 'longchar', 'singlechar']
         if (hasEnterEvnet.includes(this.filterType)) return
         this.handleFilterValueEnter()
       },
       handleFilterValueEnter() {
-        RouterQuery.set({
+        const query = {
           _t: Date.now(),
           page: 1,
           field: this.filter.field,
-          filter: this.filter.value
-        })
+          filter: this.filter.value,
+          operator: this.filter.operator
+        }
+        if (this.allowFuzzyQuery) {
+          query.fuzzy = this.filter.fuzzy_query
+        }
+        RouterQuery.set(query)
       },
       resetData() {
         this.table = {
@@ -560,6 +603,15 @@
             field: this.filter.field,
             operator: '$lte',
             value: end
+          })
+          return params
+        }
+        if (this.filterType === 'objuser') {
+          const multiple = this.filter.value.length > 1
+          params.condition[this.objId].push({
+            field: this.filter.field,
+            operator: multiple ? '$in' : '$regex',
+            value: multiple ? this.filter.value : this.filter.value.toString()
           })
           return params
         }
@@ -747,23 +799,36 @@
     .options-filter{
         position: relative;
         margin-right: 5px;
+        display: flex;
+        align-items: center;
+        width: 440px;
         .filter-selector{
             width: 120px;
             border-radius: 2px 0 0 2px;
             margin-right: -1px;
         }
         .filter-value{
-            width: 320px;
+            flex: 1;
             border-radius: 0 2px 2px 0;
+            &.singlechar,
+            &.longchar {
+              border-radius: unset;
+              /deep/ .bk-tag-input {
+                border-radius: unset;
+              }
+            }
             /deep/ .bk-form-input {
                 line-height: 32px;
             }
         }
-        .filter-search{
-            position: absolute;
-            right: 10px;
-            top: 8px;
-            cursor: pointer;
+        .filter-exact {
+          display: inline-flex;
+          align-items: center;
+          padding: 0 5px;
+          height: 32px;
+          border: 1px solid #c4c6cc;
+          border-radius: 0 2px 2px 0;
+          border-left: none;
         }
     }
     .models-button{
