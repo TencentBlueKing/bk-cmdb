@@ -260,7 +260,7 @@ func (m *instanceManager) validateModuleCreate(kit *rest.Kit, instanceData mapst
 	}
 	bizID, err := util.GetInt64ByInterface(bizIDIf)
 	if err != nil {
-		return valid.errIf.Errorf(common.CCErrCommParamsNeedInt, common.MetadataLabelBiz)
+		return valid.errIf.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
 	}
 	tpl := metadata.ServiceTemplate{}
 	filter := map[string]interface{}{

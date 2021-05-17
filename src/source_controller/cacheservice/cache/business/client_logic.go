@@ -23,7 +23,6 @@ import (
 	ccError "configcenter/src/common/errors"
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
-	meta "configcenter/src/common/metadata"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
 )
@@ -582,8 +581,8 @@ func (c *Client) genCustomLevelListKeys(objID string, bizID int64) ([]string, er
 
 func (c *Client) getCustomLevelBaseFromMongodb(objID, supplierAccount string, bizID int64) ([]CustomInstanceBase, error) {
 	filter := mapstr.MapStr{
-		common.BKObjIDField:  objID,
-		common.MetadataField: meta.NewMetadata(bizID),
+		common.BKObjIDField: objID,
+		common.BKAppIDField: bizID,
 	}
 	// count for paging use.
 	cnt, err := mongodb.Client().Table(common.GetObjectInstTableName(objID, supplierAccount)).Find(filter).Count(context.Background())

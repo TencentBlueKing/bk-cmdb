@@ -291,26 +291,6 @@ func NewBuildSameInfo(info *metadata.SynchronizeItem, syncData *metadata.Synchro
 
 func (bsi *buildSameInfo) BuildSameInfoBaseCond(kit *rest.Kit) errors.CCError {
 	info := bsi.info
-	if info.Info.Exists(common.MetadataField) {
-		metadataVal, err := info.Info.MapStr(common.MetadataField)
-		if err != nil {
-			blog.Errorf("buildSameInfoBaseCond get metadata error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, "propery", common.MetadataField, "map", err.Error())
-		}
-		if metadataVal.Exists(metadata.LabelBusinessID) {
-			str, err := metadataVal.String(metadata.LabelBusinessID)
-			if err != nil {
-				blog.Errorf("buildSameInfoBaseCond get metadata.bk_biz_id error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, kit.Rid)
-				return kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, "propery", common.MetadataField, "map", err.Error())
-			}
-			bsi.cond.Set("metadata.label.bk_biz_id", str)
-		} else {
-			bsi.cond.Merge(metadata.BizLabelNotExist)
-		}
-
-	} else {
-		bsi.cond.Merge(metadata.BizLabelNotExist)
-	}
 	ownerID, err := info.Info.String(common.BKOwnerIDField)
 	if err != nil {
 		blog.Errorf("buildSameInfoBaseCond get ownerID error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, kit.Rid)

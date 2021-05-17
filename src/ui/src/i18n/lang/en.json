@@ -1438,5 +1438,8 @@
     "至业务模块": "to business module",
     "至主机池": "to host pool",
     "至其他业务": "to other business",
-    "请先选择主机": "Please select host"
+    "请先选择主机": "Please select host",
+    "请先选择操作对象": "Please select operation target",
+    "账号": "Account",
+    "模糊": "fuzzy"
 }

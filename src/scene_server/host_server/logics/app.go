@@ -132,9 +132,11 @@ func (lgc *Logics) GetSingleApp(kit *rest.Kit, cond mapstr.MapStr) (mapstr.MapSt
 	return result.Data.Info[0], nil
 }
 
-func (lgc *Logics) GetAppIDByCond(kit *rest.Kit, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
+func (lgc *Logics) GetAppIDByCond(kit *rest.Kit, cond metadata.ConditionWithTime) (
+	[]int64, errors.CCError) {
+
 	condc := make(map[string]interface{})
-	if err := params.ParseCommonParams(cond, condc); err != nil {
+	if err := params.ParseCommonParams(cond.Condition, condc); err != nil {
 		blog.Errorf("ParseCommonParams failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, err
 
@@ -143,9 +145,10 @@ func (lgc *Logics) GetAppIDByCond(kit *rest.Kit, cond []metadata.ConditionItem) 
 	condMap.Set(common.BKDataStatusField, mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled})
 
 	query := &metadata.QueryCondition{
-		Condition: condMap,
-		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKAppIDField},
-		Fields:    []string{common.BKAppIDField},
+		Condition:     condMap,
+		Page:          metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKAppIDField},
+		Fields:        []string{common.BKAppIDField},
+		TimeCondition: cond.TimeCondition,
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, query)
 	if err != nil {

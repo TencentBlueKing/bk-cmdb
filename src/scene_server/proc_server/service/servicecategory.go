@@ -138,7 +138,7 @@ func (ps *ProcServer) UpdateServiceCategory(ctx *rest.Contexts) {
 		category, err = ps.CoreAPI.CoreService().Process().UpdateServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, input.ID, input)
 		if err != nil {
 			blog.Errorf("update service category failed, err: %v", err)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return err
 		}
 
 		return nil
@@ -173,7 +173,7 @@ func (ps *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
 		err := ps.CoreAPI.CoreService().Process().DeleteServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, input.ID)
 		if err != nil {
 			blog.Errorf("delete service category failed, err: %v", err)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return err
 		}
 
 		return nil

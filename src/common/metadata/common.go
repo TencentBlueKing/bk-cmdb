@@ -116,20 +116,24 @@ type ResponseDataMapStr struct {
 type QueryInput struct {
 	Condition map[string]interface{} `json:"condition"`
 	// 非必填，只能用来查时间，且与Condition是与关系
-	TimeCondition  TimeCondition `json:"time_condition,omitempty"`
-	Fields         string        `json:"fields,omitempty"`
-	Start          int           `json:"start,omitempty"`
-	Limit          int           `json:"limit,omitempty"`
-	Sort           string        `json:"sort,omitempty"`
-	DisableCounter bool          `json:"disable_counter,omitempty"`
+	TimeCondition  *TimeCondition `json:"time_condition,omitempty"`
+	Fields         string         `json:"fields,omitempty"`
+	Start          int            `json:"start,omitempty"`
+	Limit          int            `json:"limit,omitempty"`
+	Sort           string         `json:"sort,omitempty"`
+	DisableCounter bool           `json:"disable_counter,omitempty"`
 }
 
 type TimeConditionItem struct {
+	Field string       `json:"field"`
 	Start *cctime.Time `json:"start"`
 	End   *cctime.Time `json:"end"`
 }
 
-type TimeCondition map[string]TimeConditionItem
+type TimeCondition struct {
+	Operator string              `json:"oper"`
+	Rules    []TimeConditionItem `json:"rules"`
+}
 
 // MergeTimeCondition parse time condition and merge with common condition to construct a DB condition, only used by DB
 func (tc *TimeCondition) MergeTimeCondition(condition map[string]interface{}) (map[string]interface{}, error) {
@@ -137,28 +141,40 @@ func (tc *TimeCondition) MergeTimeCondition(condition map[string]interface{}) (m
 		return nil, nil
 	}
 
+	if tc.Operator != "and" {
+		return nil, errors.New(common.CCErrCommParamsInvalid, "time condition oper is invalid")
+	}
+
+	if len(tc.Rules) == 0 {
+		return nil, errors.New(common.CCErrCommParamsNeedSet, "time condition rules not set")
+	}
+
 	timeCondition := make(map[string]interface{})
-	for key, cond := range *tc {
+	for _, cond := range tc.Rules {
+		if len(cond.Field) == 0 {
+			return nil, errors.New(common.CCErrCommParamsNeedSet, "time condition field not set")
+		}
+
 		if cond.Start == nil && cond.End == nil {
 			return nil, errors.New(common.CCErrCommParamsInvalid, "time condition start and end both not set")
 		}
 
 		if cond.Start == nil {
-			timeCondition[key] = map[string]interface{}{common.BKDBLTE: cond.End}
+			timeCondition[cond.Field] = map[string]interface{}{common.BKDBLTE: cond.End}
 			continue
 		}
 
 		if cond.End == nil {
-			timeCondition[key] = map[string]interface{}{common.BKDBGTE: cond.Start}
+			timeCondition[cond.Field] = map[string]interface{}{common.BKDBGTE: cond.Start}
 			continue
 		}
 
 		if *cond.Start == *cond.End {
-			timeCondition[key] = map[string]interface{}{common.BKDBEQ: cond.Start}
+			timeCondition[cond.Field] = map[string]interface{}{common.BKDBEQ: cond.Start}
 			continue
 		}
 
-		timeCondition[key] = map[string]interface{}{common.BKDBGTE: cond.Start, common.BKDBLTE: cond.End}
+		timeCondition[cond.Field] = map[string]interface{}{common.BKDBGTE: cond.Start, common.BKDBLTE: cond.End}
 	}
 
 	if len(condition) == 0 {
@@ -166,6 +182,12 @@ func (tc *TimeCondition) MergeTimeCondition(condition map[string]interface{}) (m
 	}
 
 	return map[string]interface{}{common.BKDBAND: []map[string]interface{}{condition, timeCondition}}, nil
+}
+
+type ConditionWithTime struct {
+	Condition []ConditionItem `json:"condition"`
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition *TimeCondition `json:"time_condition,omitempty"`
 }
 
 // ConvTime cc_type key

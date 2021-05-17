@@ -78,6 +78,10 @@ func (m *bkMonitor) convertToReportMsg(alarm *meta.Alarm) (string, error) {
 		Dimension:   alarm.Dimension,
 		TimeStampMs: time.Now().UnixNano() / 1e6,
 	}
+
+	if one.Dimension == nil {
+		one.Dimension = make(map[string]string)
+	}
 	one.Dimension["module"] = alarm.Module
 	one.Dimension["request_id"] = alarm.RequestID
 

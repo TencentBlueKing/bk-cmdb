@@ -946,7 +946,7 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 		})
 	}
 	// srvData.lgc..NewHostSyncValidModule(req, data.ApplicationID, data.ModuleID, m.CC.ObjCtrl())
-	moduleIDS, err := s.Logic.GetModuleIDByCond(ctx.Kit, moduleCond)
+	moduleIDS, err := s.Logic.GetModuleIDByCond(ctx.Kit, meta.ConditionWithTime{Condition: moduleCond})
 	if nil != err {
 		blog.Errorf("NewHostSyncAppTop GetModuleIDByCond error. err:%s,input:%+v,rid:%s", err.Error(), hostList, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -1059,7 +1059,7 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 		},
 	}
 
-	moduleIDArr, err := s.Logic.GetModuleIDByCond(ctx.Kit, moduleCond)
+	moduleIDArr, err := s.Logic.GetModuleIDByCond(ctx.Kit, meta.ConditionWithTime{Condition: moduleCond})
 	if err != nil {
 		blog.Errorf("MoveSetHost2IdleModule GetModuleIDByCond error. err:%s, input:%#v, param:%#v, rid:%s", err.Error(), data, moduleCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

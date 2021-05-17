@@ -14,6 +14,7 @@ package util
 
 import (
 	"encoding/json"
+	"regexp"
 	"unicode/utf8"
 
 	"configcenter/src/common"
@@ -30,6 +31,8 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 		return ValidFieldTypeIntOption(option, errProxy)
 	case common.FieldTypeList:
 		return ValidFieldTypeListOption(option, errProxy)
+	case common.FieldTypeLongChar, common.FieldTypeSingleChar:
+		return ValidFieldRegularExpressionOption(option, errProxy)
 	}
 	return nil
 }
@@ -188,6 +191,31 @@ func ValidFieldTypeListOption(option interface{}, errProxy errors.DefaultCCError
 			blog.Errorf(" option %v not string type list option", option)
 			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "list option need string type item")
 		}
+	}
+
+	return nil
+}
+
+func ValidFieldRegularExpressionOption(option interface{}, errProxy errors.DefaultCCErrorIf) error {
+	// check regular is legal
+	if option == nil {
+		return nil
+	}
+
+	regular, ok := option.(string)
+	if !ok {
+		blog.Errorf("variable type conversion error")
+		return errProxy.Errorf(common.CCIllegalRegularExpression, "option")
+	}
+
+	if len(regular) == 0 {
+		return nil
+	}
+
+	_, err := regexp.Compile(regular)
+	if err != nil {
+		blog.Errorf("regular expression is wrong, regular expression is:%s, err:%s", regular, err)
+		return errProxy.Errorf(common.CCErrorCheckRegularFailed)
 	}
 
 	return nil
