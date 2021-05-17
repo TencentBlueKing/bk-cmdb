@@ -28,7 +28,7 @@ import (
 
 func (p *processOperation) CreateServiceTemplate(kit *rest.Kit, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
 	// base attribute validate
-	if field, err := template.Validate(); err != nil {
+	if field, err := template.Validate(kit.CCError); err != nil {
 		blog.Errorf("CreateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
 		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
@@ -130,7 +130,7 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 		template.Name = input.Name
 		needCheckName = true
 	}
-	if field, err := template.Validate(); err != nil {
+	if field, err := template.Validate(kit.CCError); err != nil {
 		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
 		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
