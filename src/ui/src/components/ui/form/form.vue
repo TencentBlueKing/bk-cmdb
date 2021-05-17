@@ -326,7 +326,7 @@
                     }
                 }
             }
-            .form-component {
+            .form-component:not(.form-bool) {
                 flex: 1;
             }
 
