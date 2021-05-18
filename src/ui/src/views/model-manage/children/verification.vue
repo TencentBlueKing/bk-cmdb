@@ -30,11 +30,6 @@
           {{getRuleName(row.keys)}}
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('属性为空值是否校验')">
-        <template slot-scope="{ row }">
-          {{row.must_check ? $t('是') : $t('否')}}
-        </template>
-      </bk-table-column>
       <bk-table-column prop="operation"
         v-if="updateAuth && !isTopoModel"
         :label="$t('操作')">
@@ -45,7 +40,7 @@
             {{$t('编辑')}}
           </button>
           <button class="text-primary operation-btn"
-            :disabled="!isEditable(row) || row.must_check"
+            :disabled="!isEditable(row)"
             @click.stop="deleteVerification(row)">
             {{$t('删除')}}
           </button>

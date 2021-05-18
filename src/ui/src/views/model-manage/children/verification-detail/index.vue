@@ -60,8 +60,7 @@
     data() {
       return {
         verificationInfo: {
-          selected: [],
-          must_check: false
+          selected: []
         },
         attribute: {
           isShow: false,
@@ -86,7 +85,6 @@
       },
       params() {
         const params = {
-          must_check: this.verificationInfo.must_check,
           keys: []
         }
         this.verificationInfo.selected.forEach((id) => {
@@ -120,14 +118,12 @@
         'updateObjectUniqueConstraints'
       ]),
       initData() {
-        this.verificationInfo.must_check = this.verification.must_check
         this.verification.keys.forEach((key) => {
           this.verificationInfo.selected.push(key.key_id)
         })
       },
       toggleSelector(isShow) {
         if (!this.isReadOnly) {
-          // isShow ? this.$refs.attrSelector.show() : this.$refs.attrSelector.hide()
           this.attribute.isShow = isShow
         }
       },

@@ -20,12 +20,6 @@ export default {
       default() {
         return []
       }
-    },
-    objectUnique: {
-      type: Array,
-      default() {
-        return []
-      }
     }
   },
   computed: {
@@ -53,11 +47,8 @@ export default {
       return allGroups
     },
     $sortedProperties() {
-      const unique = this.isMultiple ? this.objectUnique.find(unique => unique.must_check) || {} : {}
-      const uniqueKeys = unique.keys || []
       const sortKey = 'bk_property_index'
-      const properties = this.properties.filter(property => !property.bk_isapi
-                    && !uniqueKeys.some(key => key.key_id === property.id))
+      const properties = this.properties.filter(property => !property.bk_isapi)
       return properties.sort((propertyA, propertyB) => propertyA[sortKey] - propertyB[sortKey])
     },
     $groupedProperties() {
