@@ -59,8 +59,7 @@
         <cmdb-property-selector class="filter-selector fl"
           v-model="filter.field"
           :properties="properties"
-          :object-unique="objectUnique"
-          :loading="$loading([request.properties, request.groups, request.unique])">
+          :loading="$loading([request.properties, request.groups])">
         </cmdb-property-selector>
         <component class="filter-value fl"
           :is="`cmdb-search-${filterType}`"
@@ -133,7 +132,6 @@
           :inst="attribute.inst.edit"
           :type="attribute.type"
           :save-auth="{ type: attribute.type === 'update' ? $OPERATION.U_INST : $OPERATION.C_INST }"
-          :object-unique="objectUnique"
           @on-submit="handleSave"
           @on-cancel="handleCancel">
         </cmdb-form>
@@ -142,7 +140,6 @@
           :uneditable-properties="['bk_inst_name']"
           :properties="properties"
           :property-groups="propertyGroups"
-          :object-unique="objectUnique"
           @on-submit="handleMultipleSave"
           @on-cancel="handleMultipleCancel">
         </cmdb-form-multiple>
@@ -192,7 +189,6 @@
     },
     data() {
       return {
-        objectUnique: [],
         properties: [],
         propertyGroups: [],
         table: {
@@ -242,7 +238,6 @@
         request: {
           properties: Symbol('properties'),
           groups: Symbol('groups'),
-          unique: Symbol('unique'),
           list: Symbol('list')
         }
       }
@@ -381,7 +376,6 @@
           })
           return Promise.all([
             this.getPropertyGroups(),
-            this.getObjectUnique(),
             this.setTableHeader()
           ])
         } catch (e) {
@@ -429,16 +423,6 @@
         }).then((groups) => {
           this.propertyGroups = groups
           return groups
-        })
-      },
-      getObjectUnique() {
-        return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
-          objId: this.objId,
-          params: {},
-          config: { requestId: this.request.unique }
-        }).then((data) => {
-          this.objectUnique = data
-          return data
         })
       },
       setTableHeader() {

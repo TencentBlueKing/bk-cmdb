@@ -142,7 +142,6 @@
           ref="multipleForm"
           :properties="properties.host"
           :property-groups="propertyGroups"
-          :object-unique="objectUnique"
           :save-auth="saveAuth"
           @on-submit="handleMultipleSave"
           @on-cancel="handleSliderBeforeClose">
@@ -243,14 +242,10 @@
           showTips: false
         },
         businessList: [],
-        objectUnique: [],
         slider: {
           show: false,
           title: '',
-          component: null,
-          request: {
-            objectUnique: Symbol('objectUnique')
-          }
+          component: null
         },
         assign: {
           show: false,
@@ -562,13 +557,6 @@
       async handleMultipleEdit() {
         this.slider.title = this.$t('主机属性')
         this.slider.show = true
-        this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
-          objId: 'host',
-          params: {},
-          config: {
-            requestId: this.slider.request.objectUnique
-          }
-        })
         setTimeout(() => {
           this.slider.component = 'cmdb-form-multiple'
         }, 200)
