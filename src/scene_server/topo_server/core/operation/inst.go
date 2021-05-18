@@ -320,11 +320,8 @@ func (c *commonInst) validMainLineParentID(kit *rest.Kit, obj model.Object, data
 	}
 	bizID, err := data.Int64(common.BKAppIDField)
 	if err != nil {
-		bizID, err = metadata.ParseBizIDFromData(data)
-		if err != nil {
-			blog.Errorf("[operation-inst]failed to parse the biz id, err: %s, rid: %s", err.Error(), kit.Rid)
-			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
-		}
+		blog.Errorf("[operation-inst]failed to parse the biz id, err: %s, rid: %s", err.Error(), kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
 	}
 	parentID, err := data.Int64(common.BKParentIDField)
 	if err != nil {

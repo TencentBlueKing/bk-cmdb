@@ -185,7 +185,7 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 			Value:    option.ModuleIDs,
 		})
 	}
-	moduleIDArr, err := s.Logic.GetModuleIDByCond(ctx.Kit, moduleCond)
+	moduleIDArr, err := s.Logic.GetModuleIDByCond(ctx.Kit, meta.ConditionWithTime{Condition: moduleCond})
 	if err != nil {
 		blog.Errorf("FindHostsByServiceTemplates failed, GetModuleIDByCond err:%s, cond:%#v, rid:%s", err.Error(), moduleCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -326,7 +326,7 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 		})
 	}
 
-	setIDArr, err := s.Logic.GetSetIDByCond(ctx.Kit, setCond)
+	setIDArr, err := s.Logic.GetSetIDByCond(ctx.Kit, meta.ConditionWithTime{Condition: setCond})
 	if err != nil {
 		blog.Errorf("FindHostsBySetTemplates failed, GetSetIDByCond err:%s, cond:%#v, rid:%s", err.Error(), setCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

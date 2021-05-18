@@ -544,6 +544,8 @@ type SearchCondition struct {
 	Fields    []string        `json:"fields"`
 	Condition []ConditionItem `json:"condition"`
 	ObjectID  string          `json:"bk_obj_id"`
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition *TimeCondition `json:"time_condition,omitempty"`
 }
 
 type SearchHost struct {

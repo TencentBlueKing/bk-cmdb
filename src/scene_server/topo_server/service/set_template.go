@@ -745,8 +745,7 @@ func (s *Service) GetSetSyncDetails(ctx *rest.Contexts) {
 				Limit: common.BKNoLimit,
 			},
 			Condition: mapstr.MapStr(map[string]interface{}{
-				// common.BKAppIDField:         bizID,
-				common.MetadataField:        metadata.NewMetadata(bizID),
+				common.BKAppIDField:         bizID,
 				common.BKSetTemplateIDField: setTemplateID,
 			}),
 		}
