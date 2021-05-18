@@ -44,6 +44,10 @@ type AssociationClientInterface interface {
 		resp *metadata.ReadInstAssociationResult, err error)
 	DeleteInstAssociation(ctx context.Context, h http.Header, input *metadata.InstAsstDeleteOption) (
 		resp *metadata.DeletedOptionResult, err error)
+
+	// CountInstanceAssociations counts model instance associations num.
+	CountInstanceAssociations(ctx context.Context, header http.Header,
+		objID string, input *metadata.Condition) (*metadata.CountResponse, error)
 }
 
 func NewAssociationClientInterface(client rest.ClientInterface) AssociationClientInterface {

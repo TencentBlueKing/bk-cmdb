@@ -2,8 +2,13 @@ package topo_server_test
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
+	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/querybuilder"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test/util"
 
@@ -178,6 +183,167 @@ var _ = Describe("inst test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
+
+	It("search instance associations", func() {
+		input := &metadata.CommonSearchFilter{
+			Conditions: &querybuilder.QueryFilter{
+				Rule: querybuilder.CombinedRule{
+					Condition: querybuilder.ConditionAnd,
+					Rules: []querybuilder.Rule{
+						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+					},
+				},
+			},
+			Fields: []string{"bk_asst_id", "bk_inst_id", "bk_obj_id", "bk_asst_inst_id", "bk_asst_obj_id", "bk_obj_asst_id"},
+			Page:   metadata.BasePage{Start: 0, Limit: 1},
+		}
+
+		rsp, err := asstClient.SearchInstanceAssociations(context.Background(), header, "bk_router", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		info, ok := data["info"].([]interface{})
+		Expect(ok).To(Equal(true))
+		Expect(len(info)).To(Equal(1))
+
+		association, ok := info[0].(map[string]interface{})
+		Expect(ok).To(Equal(true))
+
+		Expect(association["bk_obj_asst_id"].(string)).To(Equal("bk_router_default_bk_switch"))
+	})
+
+	It("search instance associations with limit more than 500", func() {
+		input := &metadata.CommonSearchFilter{
+			Conditions: &querybuilder.QueryFilter{
+				Rule: querybuilder.CombinedRule{
+					Condition: querybuilder.ConditionAnd,
+					Rules: []querybuilder.Rule{
+						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+					},
+				},
+			},
+			Fields: []string{"bk_asst_id", "bk_inst_id", "bk_obj_id", "bk_asst_inst_id", "bk_asst_obj_id", "bk_obj_asst_id"},
+			Page:   metadata.BasePage{Start: 0, Limit: common.BKMaxInstanceLimit + 1},
+		}
+
+		rsp, err := asstClient.SearchInstanceAssociations(context.Background(), header, "bk_router", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("count instance associations", func() {
+		input := &metadata.CommonCountFilter{
+			Conditions: &querybuilder.QueryFilter{
+				Rule: querybuilder.CombinedRule{
+					Condition: querybuilder.ConditionAnd,
+					Rules: []querybuilder.Rule{
+						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+					},
+				},
+			},
+		}
+
+		rsp, err := asstClient.CountInstanceAssociations(context.Background(), header, "bk_router", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		count, err := data["count"].(json.Number).Int64()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(int(count)).To(Equal(2))
+	})
+
+	It("count instance associations with OR conditions more than 20", func() {
+		rules := []querybuilder.Rule{}
+		ruleItem := &querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1}
+		for i := 0; i < querybuilder.DefaultMaxConditionOrRulesCount+1; i++ {
+			rules = append(rules, ruleItem)
+		}
+
+		input := &metadata.CommonCountFilter{
+			Conditions: &querybuilder.QueryFilter{
+				Rule: querybuilder.CombinedRule{
+					Condition: querybuilder.ConditionOr,
+					Rules:     rules,
+				},
+			},
+		}
+
+		rsp, err := asstClient.CountInstanceAssociations(context.Background(), header, "bk_router", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("count instance associations with operator value elements count more than 500", func() {
+		var values []string
+		for i := 0; i < querybuilder.DefaultMaxSliceElementsCount+1; i++ {
+			values = append(values, fmt.Sprintf("%d", i))
+		}
+
+		input := &metadata.CommonCountFilter{
+			Conditions: &querybuilder.QueryFilter{
+				Rule: querybuilder.CombinedRule{
+					Condition: querybuilder.ConditionOr,
+					Rules: []querybuilder.Rule{
+						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: values},
+					},
+				},
+			},
+		}
+
+		rsp, err := asstClient.CountInstanceAssociations(context.Background(), header, "bk_router", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("count instance associations with conditions deep more than 3", func() {
+		deep4 := &querybuilder.CombinedRule{
+			Condition: querybuilder.ConditionOr,
+			Rules: []querybuilder.Rule{
+				&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+			},
+		}
+
+		deep3 := &querybuilder.CombinedRule{
+			Condition: querybuilder.ConditionOr,
+			Rules: []querybuilder.Rule{
+				&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+				deep4,
+			},
+		}
+
+		deep2 := &querybuilder.CombinedRule{
+			Condition: querybuilder.ConditionOr,
+			Rules: []querybuilder.Rule{
+				&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+				deep3,
+			},
+		}
+
+		deep1 := &querybuilder.QueryFilter{
+			Rule: deep2,
+		}
+
+		input := &metadata.CommonCountFilter{
+			Conditions: deep1,
+		}
+
+		rsp, err := asstClient.CountInstanceAssociations(context.Background(), header, "bk_router", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
 	//check "DeleteInstBatch" "the number of IDs should be less than 500." function.
 	It("delete inst association batch", func() {
 		list := make([]int64, 501, 501)

@@ -392,7 +392,7 @@ func (option ListHostsParameter) Validate() (string, error) {
 	}
 
 	if option.HostPropertyFilter != nil {
-		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+		if key, err := option.HostPropertyFilter.Validate(&querybuilder.RuleOption{NeedSameSliceElementType: true}); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
@@ -423,7 +423,7 @@ func (option ListHostsWithNoBizParameter) Validate() (string, error) {
 	}
 
 	if option.HostPropertyFilter != nil {
-		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+		if key, err := option.HostPropertyFilter.Validate(&querybuilder.RuleOption{NeedSameSliceElementType: true}); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
@@ -459,7 +459,7 @@ func (option *ListHostsDetailAndTopoOption) Validate() *errors.RawErrorInfo {
 	}
 
 	if option.HostPropertyFilter != nil {
-		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+		if key, err := option.HostPropertyFilter.Validate(&querybuilder.RuleOption{NeedSameSliceElementType: true}); err != nil {
 			return &errors.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsInvalid,
 				Args:    []interface{}{"host_property_filter." + key},
@@ -510,7 +510,7 @@ func (option ListHosts) Validate() (errKey string, err error) {
 	}
 
 	if option.HostPropertyFilter != nil {
-		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+		if key, err := option.HostPropertyFilter.Validate(&querybuilder.RuleOption{NeedSameSliceElementType: true}); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {

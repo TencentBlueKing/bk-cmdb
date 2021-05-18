@@ -456,7 +456,7 @@ type ServiceInstanceCondOfP struct {
 // Validate validates the input param
 func (o *ListProcessRelatedInfoOption) Validate() (rawError cErr.RawErrorInfo) {
 	if o.ProcessPropertyFilter != nil {
-		if key, err := o.ProcessPropertyFilter.Validate(); err != nil {
+		if key, err := o.ProcessPropertyFilter.Validate(&querybuilder.RuleOption{NeedSameSliceElementType: true}); err != nil {
 			return cErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsInvalid,
 				Args:    []interface{}{fmt.Sprintf("%s, host_property_filter.%s", err.Error(), key)},

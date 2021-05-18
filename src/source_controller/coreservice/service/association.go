@@ -277,6 +277,26 @@ func (s *coreService) SearchInstanceAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// CountInstanceAssociations counts target model instance associations num.
+func (s *coreService) CountInstanceAssociations(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	// decode input parameter.
+	input := &metadata.Condition{}
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// count model instance associations num.
+	result, err := s.core.AssociationOperation().CountInstanceAssociations(ctx.Kit, objID, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
+}
+
 func (s *coreService) DeleteInstanceAssociation(ctx *rest.Contexts) {
 	inputData := metadata.InstAsstDeleteOption{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
