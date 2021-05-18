@@ -132,7 +132,7 @@ type Options struct {
 	Collection string
 
 	// StartAfterToken describe where you want to watch the event.
-	// Note: the returned event does'nt contains the token represented,
+	// Note: the returned event doesn't contains the token represented,
 	// and will returns event just after this token.
 	StartAfterToken *EventToken
 
@@ -142,6 +142,10 @@ type Options struct {
 	// WatchFatalErrorCallback the function to be called when watch failed with a fatal error
 	// reset the resume token and set the start time for next watch in case it use the mistaken token again
 	WatchFatalErrorCallback func(startAtTime TimeStamp) error `json:"-"`
+
+	// Fields defines which fields will be returned along with the events
+	// this is optional, if not set, all the fields will be returned.
+	Fields []string
 }
 
 var defaultMaxAwaitTime = time.Second

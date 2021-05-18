@@ -352,8 +352,7 @@ func genProcInfo(ctx context.Context, db dal.RDB, procID int64, serviceInstanceI
 	}
 	blog.V(5).Infof("getHostIdentifierProcInfo query service instance info. service instance id:%d, info:%#v", serviceInstanceID, serviceInstanceInfo)
 	procInfo := metadata.HostIdentProcess{
-		ProcessID:   procID,
-		BindModules: []int64{serviceInstanceInfo.ModuleID},
+		ProcessID: procID,
 	}
 	return procInfo, nil
 }
@@ -371,48 +370,48 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 	handler := func(hostID int64, inst *Inst) error {
 		switch objType {
 		case common.BKInnerObjIDPlat:
-			for _, field := range diffFields {
-				if field == common.BKCloudNameField {
-					inst.ident.CloudName = getString(curData[common.BKCloudNameField])
-				}
-			}
+			// for _, field := range diffFields {
+			// 	if field == common.BKCloudNameField {
+			// 		inst.ident.CloudName = getString(curData[common.BKCloudNameField])
+			// 	}
+			// }
 		case common.BKInnerObjIDApp:
 			for _, hostIdentModule := range inst.ident.HostIdentModule {
 				if hostIdentModule.BizID != instID {
 					continue
 				}
-				for _, field := range diffFields {
-					if field == common.BKAppNameField {
-						hostIdentModule.BizName = getString(curData[field])
-					}
-				}
+				// for _, field := range diffFields {
+				// 	if field == common.BKAppNameField {
+				// 		hostIdentModule.BizName = getString(curData[field])
+				// 	}
+				// }
 			}
 		case common.BKInnerObjIDSet:
 			for _, hostIdentModule := range inst.ident.HostIdentModule {
 				if hostIdentModule.SetID != instID {
 					continue
 				}
-				for _, field := range diffFields {
-					switch field {
-					case common.BKSetNameField:
-						hostIdentModule.SetName = getString(curData[field])
-					case common.BKSetStatusField:
-						hostIdentModule.SetStatus = getString(curData[field])
-					case common.BKSetEnvField:
-						hostIdentModule.SetEnv = getString(curData[field])
-					}
-				}
+				// for _, field := range diffFields {
+				// 	switch field {
+				// 	case common.BKSetNameField:
+				// 		hostIdentModule.SetName = getString(curData[field])
+				// 	case common.BKSetStatusField:
+				// 		hostIdentModule.SetStatus = getString(curData[field])
+				// 	case common.BKSetEnvField:
+				// 		hostIdentModule.SetEnv = getString(curData[field])
+				// 	}
+				// }
 			}
 		case common.BKInnerObjIDModule:
 			for _, hostIdentModule := range inst.ident.HostIdentModule {
 				if hostIdentModule.ModuleID != instID {
 					continue
 				}
-				for _, field := range diffFields {
-					if field == common.BKModuleNameField {
-						hostIdentModule.ModuleName = getString(curData[field])
-					}
-				}
+				// for _, field := range diffFields {
+				// 	if field == common.BKModuleNameField {
+				// 		hostIdentModule.ModuleName = getString(curData[field])
+				// 	}
+				// }
 			}
 		case common.BKInnerObjIDProc:
 			for index, process := range inst.ident.Process {
@@ -559,29 +558,29 @@ func (i *Inst) set(key string, value interface{}) error {
 	if i.objType == common.BKInnerObjIDHost {
 		switch key {
 		case common.BKHostNameField:
-			i.ident.HostName = getString(value)
+			// i.ident.HostName = getString(value)
 		case common.BKCloudIDField:
 			i.ident.CloudID, err = util.GetInt64ByInterface(value)
 		case common.BKHostInnerIPField:
 			i.ident.InnerIP = metadata.StringArrayToString(getString(value))
 		case common.BKHostOuterIPField:
-			i.ident.OuterIP = metadata.StringArrayToString(getString(value))
+			// i.ident.OuterIP = metadata.StringArrayToString(getString(value))
 		case common.BKOSTypeField:
 			i.ident.OSType = getString(value)
 		case common.BKOSNameField:
-			i.ident.OSName = getString(value)
-		case "bk_mem":
-			if value != nil {
-				i.ident.Memory, err = util.GetInt64ByInterface(value)
-			}
-		case "bk_cpu":
-			if value != nil {
-				i.ident.CPU, err = util.GetInt64ByInterface(value)
-			}
-		case "bk_disk":
-			if value != nil {
-				i.ident.Disk, err = util.GetInt64ByInterface(value)
-			}
+			// i.ident.OSName = getString(value)
+			// case "bk_mem":
+			// 	if value != nil {
+			// 		i.ident.Memory, err = util.GetInt64ByInterface(value)
+			// 	}
+			// case "bk_cpu":
+			// 	if value != nil {
+			// 		i.ident.CPU, err = util.GetInt64ByInterface(value)
+			// 	}
+			// case "bk_disk":
+			// 	if value != nil {
+			// 		i.ident.Disk, err = util.GetInt64ByInterface(value)
+			// 	}
 		}
 		if nil != err {
 			blog.Errorf("key %s	convert error %s", key, err.Error())
@@ -620,42 +619,42 @@ func (i *Inst) copy() *Inst {
 func NewHostIdentifier(m map[string]interface{}) (*metadata.HostIdentifier, error) {
 	var err error
 	ident := metadata.HostIdentifier{}
-	ident.HostName = getString(m[common.BKHostNameField])
+	// ident.HostName = getString(m[common.BKHostNameField])
 	ident.CloudID, err = util.GetInt64ByInterface(m[common.BKCloudIDField])
 	if nil != err {
 		blog.Errorf("%s is not integer, %+v", common.BKCloudIDField, m)
 		return nil, err
 	}
 	ident.InnerIP = metadata.StringArrayToString(getString(m[common.BKHostInnerIPField]))
-	ident.OuterIP = metadata.StringArrayToString(getString(m[common.BKHostOuterIPField]))
+	// ident.OuterIP = metadata.StringArrayToString(getString(m[common.BKHostOuterIPField]))
 	ident.OSType = getString(m[common.BKOSTypeField])
-	ident.OSName = getString(m[common.BKOSNameField])
+	// ident.OSName = getString(m[common.BKOSNameField])
 	ident.HostID, err = util.GetInt64ByInterface(m[common.BKHostIDField])
 	if nil != err {
 		blog.Errorf("%s is not integer, %+v", common.BKHostIDField, m)
 		return nil, err
 	}
-	if m["bk_mem"] != nil {
-		ident.Memory, err = util.GetInt64ByInterface(m["bk_mem"])
-		if nil != err {
-			blog.Errorf("bk_mem is not integer, %+v", m)
-			return nil, err
-		}
-	}
-	if m["bk_cpu"] != nil {
-		ident.CPU, err = util.GetInt64ByInterface(m["bk_cpu"])
-		if nil != err {
-			blog.Errorf("bk_cpu is not integer, %+v", m)
-			return nil, err
-		}
-	}
-	if m["bk_disk"] != nil {
-		ident.Disk, err = util.GetInt64ByInterface(m["bk_disk"])
-		if nil != err {
-			blog.Errorf("bk_disk is not integer, %+v", m)
-			return nil, err
-		}
-	}
+	// if m["bk_mem"] != nil {
+	// 	ident.Memory, err = util.GetInt64ByInterface(m["bk_mem"])
+	// 	if nil != err {
+	// 		blog.Errorf("bk_mem is not integer, %+v", m)
+	// 		return nil, err
+	// 	}
+	// }
+	// if m["bk_cpu"] != nil {
+	// 	ident.CPU, err = util.GetInt64ByInterface(m["bk_cpu"])
+	// 	if nil != err {
+	// 		blog.Errorf("bk_cpu is not integer, %+v", m)
+	// 		return nil, err
+	// 	}
+	// }
+	// if m["bk_disk"] != nil {
+	// 	ident.Disk, err = util.GetInt64ByInterface(m["bk_disk"])
+	// 	if nil != err {
+	// 		blog.Errorf("bk_disk is not integer, %+v", m)
+	// 		return nil, err
+	// 	}
+	// }
 	ident.SupplierAccount = getString(m[common.BKOwnerIDField])
 	ident.HostIdentModule = map[string]*metadata.HostIdentModule{}
 	return &ident, nil
@@ -806,45 +805,15 @@ func getHostIdentifierProcInfo(ctx context.Context, db dal.RDB, hostIDs []int64)
 	blog.V(5).Infof("getHostIdentifierProcInfo query host and process relation. hostID:%#v, relation:%#v", hostIDs, relations)
 
 	procIDs := make([]int64, 0)
-	serviceInstIDs := make([]int64, 0)
 	// 进程与服务实例的关系
-	procServiceInstMap := make(map[int64][]int64, 0)
 	for _, relation := range relations {
 		procIDs = append(procIDs, relation.ProcessID)
-		serviceInstIDs = append(serviceInstIDs, relation.ServiceInstanceID)
-		procServiceInstMap[relation.ProcessID] = append(procServiceInstMap[relation.ProcessID], relation.ServiceInstanceID)
-	}
-
-	serviceInstInfos := make([]metadata.ServiceInstance, 0)
-	serviceInstFilter := map[string]interface{}{
-		common.BKFieldID: map[string]interface{}{
-			common.BKDBIN: serviceInstIDs,
-		},
-	}
-	err = db.Table(common.BKTableNameServiceInstance).Find(serviceInstFilter).Fields(common.BKFieldID, common.BKModuleIDField).All(ctx, &serviceInstInfos)
-	if err != nil {
-		blog.ErrorJSON("getHostIdentifierProcInfo query table %s err. cond:%s", common.BKTableNameServiceInstance, serviceInstFilter)
-		return nil, err
-	}
-	blog.V(5).Infof("getHostIdentifierProcInfo query service instance info. service instance id:%#v, info:%#v", serviceInstIDs, serviceInstInfos)
-	// 服务实例与模块的关系
-	serviceInstModuleRelation := make(map[int64][]int64, 0)
-	for _, serviceInstInfo := range serviceInstInfos {
-		serviceInstModuleRelation[serviceInstInfo.ID] = append(serviceInstModuleRelation[serviceInstInfo.ID], serviceInstInfo.ModuleID)
-	}
-
-	procModuleRelation := make(map[int64][]int64, 0)
-	for procID, serviceInstIDs := range procServiceInstMap {
-		for _, serviceInstID := range serviceInstIDs {
-			procModuleRelation[procID] = append(procModuleRelation[procID], serviceInstModuleRelation[serviceInstID]...)
-		}
 	}
 
 	procs := make(map[int64]metadata.HostIdentProcess, 0)
 	for _, procID := range procIDs {
 		procInfo := metadata.HostIdentProcess{
-			ProcessID:   procID,
-			BindModules: procModuleRelation[procID],
+			ProcessID: procID,
 		}
 		procs[procInfo.ProcessID] = procInfo
 	}

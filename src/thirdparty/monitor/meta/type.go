@@ -20,5 +20,5 @@ const (
 	MongoFatalError MonitorType = "mongo_fatal_error"
 	ZKFatalError    MonitorType = "zk_fatal_error"
 	LogicFatalError MonitorType = "logic_fatal_error"
-	FlowFatalError  MonitorType = "flow_fatal_error"
+	EventFatalError MonitorType = "event_fatal_error"
 )

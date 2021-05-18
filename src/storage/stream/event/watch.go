@@ -161,7 +161,8 @@ func (e *Event) loopWatch(ctx context.Context,
 					}
 				}
 
-				blog.Warnf("mongodb watch collection: %s failed with conf: %v, err: %v", opts.Collection, *opts, err)
+				blog.ErrorJSON("mongodb watch %s failed with opts: %s, pipeline: %s, streamOpts: %s, err: %s",
+					opts.Collection, opts, pipeline, streamOptions, err)
 
 				retry = true
 				continue

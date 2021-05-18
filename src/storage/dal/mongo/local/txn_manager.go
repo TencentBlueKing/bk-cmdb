@@ -67,14 +67,13 @@ func (t *TxnManager) GenTxnNumber(sessionID string, ttl time.Duration) (int64, e
 
 	pip := t.cache.Pipeline()
 	defer pip.Close()
-
+	if ttl == 0 {
+		ttl = common.TransactionDefaultTimeout
+	}
 	// we increase by step 1, so that we can calculate how many transaction has already
 	// be executed in a same session.
 	pip.SetNX(key, 0, ttl).Result()
 	incrBy := pip.IncrBy(key, 1)
-	if ttl == 0 {
-		ttl = common.TransactionDefaultTimeout
-	}
 	_, err := pip.Exec()
 	if err != nil {
 		return 0, err
