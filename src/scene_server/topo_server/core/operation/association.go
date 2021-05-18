@@ -823,6 +823,7 @@ func (assoc *association) SearchInstanceAssociations(kit *rest.Kit, objID string
 	// search object instance associations.
 	resp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, conditions)
 	if err != nil {
+		blog.Errorf("search instance associations failed, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !resp.Result || resp.Code != 0 {
@@ -854,6 +855,7 @@ func (assoc *association) CountInstanceAssociations(kit *rest.Kit, objID string,
 	// count object instance associations num.
 	resp, err := assoc.clientSet.CoreService().Association().CountInstanceAssociations(kit.Ctx, kit.Header, objID, conditions)
 	if err != nil {
+		blog.Errorf("count instance associations failed, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !resp.Result || resp.Code != 0 {

@@ -59,7 +59,7 @@ func (page BasePage) ValidateLimit(maxLimit int) error {
 	}
 
 	if page.Limit > maxLimit {
-		return fmt.Errorf("exceed business max page size: %d", common.BKMaxPageSize)
+		return fmt.Errorf("exceed business max page size: %d", maxLimit)
 	}
 
 	return nil

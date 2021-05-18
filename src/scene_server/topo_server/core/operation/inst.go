@@ -1162,6 +1162,7 @@ func (c *commonInst) SearchObjectInstances(kit *rest.Kit, objID string,
 	// search object instances.
 	resp, err := c.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, conditions)
 	if err != nil {
+		blog.Errorf("search object instances failed, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !resp.Result || resp.Code != 0 {
@@ -1193,6 +1194,7 @@ func (c *commonInst) CountObjectInstances(kit *rest.Kit, objID string,
 	// count object instances num.
 	resp, err := c.clientSet.CoreService().Instance().CountInstances(kit.Ctx, kit.Header, objID, conditions)
 	if err != nil {
+		blog.Errorf("count object instances failed, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !resp.Result || resp.Code != 0 {
