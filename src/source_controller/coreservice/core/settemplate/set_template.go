@@ -82,7 +82,7 @@ func (p *setTemplateOperation) CreateSetTemplate(kit *rest.Kit, bizID int64, opt
 		LastTime:        now,
 		SupplierAccount: kit.SupplierAccount,
 	}
-	if key, err := setTemplate.Validate(); err != nil {
+	if key, err := setTemplate.Validate(kit.CCError); err != nil {
 		blog.Errorf("CreateSetTemplate failed, parameter invalid, key: %s, err: %+v, rid: %s", key, err, kit.Rid)
 		return setTemplate, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
@@ -156,7 +156,7 @@ func (p *setTemplateOperation) CreateSetTemplate(kit *rest.Kit, bizID int64, opt
 func (p *setTemplateOperation) UpdateSetTemplate(kit *rest.Kit, setTemplateID int64, option metadata.UpdateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder) {
 	setTemplate := metadata.SetTemplate{}
 
-	if errKey, err := option.Validate(); err != nil {
+	if errKey, err := option.Validate(kit.CCError); err != nil {
 		blog.Errorf("UpdateSetTemplate failed, update option validate failed, option: %+v, key: %s, err: %+v, rid: %s", option, errKey, err, kit.Rid)
 		return setTemplate, kit.CCError.CCError(common.CCErrCommHTTPBodyEmpty)
 	}

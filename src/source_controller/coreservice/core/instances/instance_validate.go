@@ -14,9 +14,7 @@ package instances
 
 import (
 	stderr "errors"
-	"regexp"
 	"strings"
-	"unicode/utf8"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -385,16 +383,12 @@ func (m *instanceManager) validMainlineInstanceData(kit *rest.Kit, objID string,
 		if !ok {
 			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedString, nameField)
 		}
-		if common.NameFieldMaxLength < utf8.RuneCountInString(name) {
-			return kit.CCError.CCErrorf(common.CCErrCommValExceedMaxFailed, nameField, common.NameFieldMaxLength)
+
+		name, err := util.ValidTopoNameField(name, nameField, kit.CCError)
+		if err != nil {
+			return err
 		}
-		match, err := regexp.MatchString(common.FieldTypeMainlineRegexp, name)
-		if nil != err {
-			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, nameField)
-		}
-		if !match {
-			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, nameField)
-		}
+		instanceData[nameField] = name
 	}
 
 	// validate bk_parent_id
