@@ -32,17 +32,10 @@ func InstanceAssociationIndexes() []types.Index {
 
 func CCFieldTypeToDBType(typ string) string {
 	switch typ {
-	case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeEnum,
-		common.FieldTypeUser, common.FieldTypeTimeZone, common.FieldTypeOrganization:
+	case common.FieldTypeSingleChar, common.FieldTypeEnum, common.FieldTypeDate, common.FieldTypeList:
 		return "string"
 	case common.FieldTypeInt, common.FieldTypeFloat:
 		return "number"
-	case common.FieldTypeDate, common.FieldTypeTime:
-		return "date"
-	case common.FieldTypeBool:
-		return "bool"
-	case common.FieldTypeList:
-		return "array"
 	}
 
 	// other type not support
@@ -77,6 +70,8 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 	for _, property := range properties {
 		propertiesIDMap[property.ID] = property
 	}
+
+	keyLen := len(keys)
 	for _, key := range keys {
 		attr := propertiesIDMap[int64(key.ID)]
 		if objID == common.BKInnerObjIDHost && attr.PropertyID == common.BKCloudIDField {
@@ -89,6 +84,12 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 			// NOTICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未innerIP,OuterIP 特殊的类型
 			attr.PropertyType = common.FieldTypeList
 		}
+
+		if !ValidateCCFieldType(attr.PropertyType, keyLen) {
+			return dbIndex, errors.GetGlobalCCError().CreateDefaultCCErrorIf(string(common.English)).
+				CCErrorf(common.CCErrCoreServiceUniqueIndexPropertyType, attr.PropertyID)
+		}
+
 		dbType := CCFieldTypeToDBType(attr.PropertyType)
 		if dbType == "" {
 			return dbIndex, errors.GetGlobalCCError().CreateDefaultCCErrorIf(string(common.English)).
@@ -99,4 +100,24 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 	}
 
 	return dbIndex, nil
+}
+
+// ValidateCCFieldType returns if cc unique field type is valid, differs for union and separate unique. issue #5240
+func ValidateCCFieldType(propertyType string, keyLen int) bool {
+	if keyLen == 1 {
+		switch propertyType {
+		case common.FieldTypeSingleChar, common.FieldTypeInt, common.FieldTypeFloat:
+			return true
+		default:
+			return false
+		}
+	}
+
+	switch propertyType {
+	case common.FieldTypeSingleChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum,
+		common.FieldTypeDate, common.FieldTypeList:
+		return true
+	default:
+		return false
+	}
 }

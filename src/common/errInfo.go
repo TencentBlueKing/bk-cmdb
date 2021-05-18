@@ -801,6 +801,10 @@ const (
 
 	// CCERrrCoreServiceUniqueRuleExist 模型唯一校验规则已经存在
 	CCERrrCoreServiceSameUniqueCheckRuleExist = 1113050
+	// CCERrrCoreServiceSubsetUniqueRuleExist 已存在 “X字段” 唯一校验，请在该规则基础上进行补充
+	CCERrrCoreServiceSubsetUniqueRuleExist = 1113051
+	// CCERrrCoreServiceSupersetUniqueRuleExist 所选字段组合和已有规则重复，请勿创建冗余规则
+	CCERrrCoreServiceSupersetUniqueRuleExist = 1113052
 	// CCErrCoreServiceResourceDirectoryNotExistErr 资源池目录不存在
 	CCErrCoreServiceResourceDirectoryNotExistErr = 1113033
 	// CCErrCoreServiceHostNotUnderAnyResourceDirectory 主机不在任意资源池目录下
