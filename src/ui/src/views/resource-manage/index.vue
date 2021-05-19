@@ -21,10 +21,7 @@
         </cmdb-classify-panel>
       </div>
     </div>
-    <div v-show="isEmpty && !globalLoading" class="no-data">
-      <img src="../../assets/images/full-text-search.png" alt="no-data">
-      <p>{{$t('搜不到相关资源')}}</p>
-    </div>
+    <no-search-results v-show="isEmpty && !globalLoading" :text="$t('搜不到相关资源')" />
   </div>
 </template>
 
@@ -35,11 +32,13 @@
     MENU_RESOURCE_HOST_COLLECTION,
     MENU_RESOURCE_BUSINESS_COLLECTION
   } from '@/dictionary/menu-symbol'
+  import noSearchResults from '@/views/status/no-search-results.vue'
   import cmdbClassifyPanel from './children/classify-panel'
   import debounce from 'lodash.debounce'
   export default {
     components: {
-      cmdbClassifyPanel
+      cmdbClassifyPanel,
+      noSearchResults
     },
     data() {
       return {
@@ -162,17 +161,6 @@
         margin: 0 0 0 20px;
         &:first-child{
             margin: 0;
-        }
-    }
-    .no-data {
-        width: 90%;
-        margin: 0 auto;
-        padding-top: 240px;
-        text-align: center;
-        color: #63656E;
-        font-size: 16px;
-        img {
-            width: 104px;
         }
     }
 </style>

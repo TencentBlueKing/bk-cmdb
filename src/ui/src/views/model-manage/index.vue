@@ -56,7 +56,7 @@
       </div>
     </cmdb-main-inject>
 
-    <ul class="group-list">
+    <ul class="group-list" v-show="currentClassifications.length">
       <li class="group-item clearfix"
         v-for="(classification, classIndex) in currentClassifications"
         :key="classIndex">
@@ -134,6 +134,7 @@
         </ul>
       </li>
     </ul>
+    <no-search-results v-if="!currentClassifications.length" :text="$t('搜不到相关模型')" />
 
     <bk-dialog
       class="bk-dialog-no-padding bk-dialog-no-tools group-dialog dialog"
@@ -217,6 +218,7 @@
   import has from 'has'
   import cmdbMainInject from '@/components/layout/main-inject'
   import theCreateModel from '@/components/model-manage/_create-model'
+  import noSearchResults from '@/views/status/no-search-results.vue'
   import { mapGetters, mapMutations, mapActions } from 'vuex'
   import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
@@ -233,7 +235,8 @@
     components: {
       // theModel,
       theCreateModel,
-      cmdbMainInject
+      cmdbMainInject,
+      noSearchResults
     },
     data() {
       return {
@@ -327,7 +330,7 @@
           })
           searchResult.push(classifications[i])
         }
-        this.filterClassifications = searchResult
+        this.filterClassifications = searchResult.filter(item => item.bk_objects.length)
       },
       modelType() {
         this.searchModel = ''

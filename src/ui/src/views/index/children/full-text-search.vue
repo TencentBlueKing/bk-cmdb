@@ -55,10 +55,7 @@
         </div>
       </div>
     </div>
-    <div class="no-data" v-show="showNoData">
-      <img src="../../../assets/images/full-text-search.png" alt="no-data">
-      <p>{{$t('搜不到相关内容')}}</p>
-    </div>
+    <no-search-results v-if="showNoData" :text="$t('搜不到相关内容')" />
   </div>
 </template>
 
@@ -72,7 +69,11 @@
     MENU_RESOURCE_BUSINESS_HISTORY
   } from '@/dictionary/menu-symbol'
   import { mapGetters, mapActions } from 'vuex'
+  import noSearchResults from '@/views/status/no-search-results.vue'
   export default {
+    components: {
+      noSearchResults
+    },
     props: {
       queryData: {
         type: Object,
@@ -277,17 +278,6 @@
                         }
                     }
                 }
-            }
-        }
-        .no-data {
-            width: 90%;
-            margin: 0 auto;
-            padding-top: 240px;
-            text-align: center;
-            color: #63656E;
-            font-size: 16px;
-            img {
-                width: 104px;
             }
         }
     }

@@ -137,7 +137,7 @@ const customRules = {
     }
   },
   validRegExp: {
-    validate: value => {
+    validate: (value) => {
       try {
         new RegExp(value)
         return true
