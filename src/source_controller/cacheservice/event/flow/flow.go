@@ -202,10 +202,20 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		oids[index] = e.ID()
 		id := ids[index]
 		name := f.key.Name(e.DocBytes)
-		currentCursor, err := watch.GetEventCursor(f.key.Collection(), e)
+		currentCursor, err := watch.GetEventCursor(f.key.Collection(), e, f.key.InstanceID(e.DocBytes))
 		if err != nil {
 			blog.Errorf("get %s event cursor failed, name: %s, err: %v, oid: %s, rid: %s", f.key.Collection(), name,
 				err, e.ID(), rid)
+
+			monitor.Collect(&meta.Alarm{
+				RequestID: rid,
+				Type:      meta.FlowFatalError,
+				Detail: fmt.Sprintf("run event flow, but get invalid %s cursor, inst id: %d, name: %s",
+					f.key.Collection(), f.key.InstanceID(e.DocBytes), name),
+				Module:    types2.CC_MODULE_CACHESERVICE,
+				Dimension: map[string]string{"hit_invalid_cursor": "yes"},
+			})
+
 			return false
 		}
 

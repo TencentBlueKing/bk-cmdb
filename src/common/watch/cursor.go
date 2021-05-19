@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -137,6 +138,13 @@ type Cursor struct {
 	// a random hex string to avoid the caller to generated a self-defined cursor.
 	Oid  string
 	Oper types.OperType
+	// UniqKey is an optional key which is used to ensure that a cursor is unique among a same resources(
+	// as is Type field).
+	// This key is used when the upper fields can not describe a unique cursor. such as the common object instance
+	// event, all these instance event all have a same cursor type, as is object instance. but the instance id is
+	// unique which can be used as a unique key, and is REENTRANT when a retry operation happens which is
+	// **VERY IMPORTANT**.
+	UniqKey string
 }
 
 const cursorVersion = "1"
@@ -187,6 +195,10 @@ func (c Cursor) Encode() (string, error) {
 
 	// cluster time nano field
 	pool.WriteString(nano)
+	pool.WriteByte('\r')
+
+	// unique key field
+	pool.WriteString(c.UniqKey)
 
 	return base64.StdEncoding.EncodeToString(pool.Bytes()), nil
 }
@@ -219,7 +231,8 @@ func (c *Cursor) Decode(cur string) error {
 		}
 	}
 
-	if len(elements) != 6 {
+	// at least have 6 fields, UniqKey is an optional field.
+	if len(elements) < 6 {
 		return errors.New("invalid cursor string")
 	}
 
@@ -257,10 +270,16 @@ func (c *Cursor) Decode(cur string) error {
 		return fmt.Errorf("got invalid nano field %s, err: %v", elements[5], err)
 	}
 	c.ClusterTime.Nano = uint32(nano)
+
+	// cause unique key is an optional key.
+	if len(elements) >= 7 {
+		c.UniqKey = elements[6]
+	}
+
 	return nil
 }
 
-func GetEventCursor(coll string, e *types.Event) (string, error) {
+func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 	curType := UnknownType
 	switch coll {
 	case common.BKTableNameBaseHost:
@@ -275,15 +294,17 @@ func GetEventCursor(coll string, e *types.Event) (string, error) {
 		curType = Module
 	case common.BKTableNameSetTemplate:
 		curType = SetTemplate
-	case common.BKTableNameBaseInst:
-		curType = ObjectBase
 	case common.BKTableNameBaseProcess:
 		curType = Process
 	case common.BKTableNameProcessInstanceRelation:
 		curType = ProcessInstanceRelation
 	default:
-		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.Oid)
-		return "", fmt.Errorf("unsupported cursor type collection: %s", coll)
+		if strings.HasPrefix(coll, common.BKTableNameBaseInst) {
+			curType = ObjectBase
+		} else {
+			blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.Oid)
+			return "", fmt.Errorf("unsupported cursor type collection: %s", coll)
+		}
 	}
 
 	hCursor := &Cursor{
@@ -291,6 +312,15 @@ func GetEventCursor(coll string, e *types.Event) (string, error) {
 		ClusterTime: e.ClusterTime,
 		Oid:         e.Oid,
 		Oper:        e.OperationType,
+	}
+
+	if curType == ObjectBase {
+		if instID <= 0 {
+			return "", errors.New("invalid instance id")
+		}
+
+		// add unique key for common object instance.
+		hCursor.UniqKey = strconv.FormatInt(instID, 10)
 	}
 
 	hCursorEncode, err := hCursor.Encode()
