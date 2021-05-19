@@ -65,7 +65,9 @@ const FilterStore = new Vue({
     },
     customHeader() {
       const key = this.config.header && this.config.header.custom
-      return getStorageHeader('usercustom', key, this.modelPropertyMap.host)
+      const moduleNameProperty = Utils.findPropertyByPropertyId('bk_module_name', this.properties, 'module')
+      const setNameProperty = Utils.findPropertyByPropertyId('bk_set_name', this.properties, 'set')
+      return getStorageHeader('usercustom', key, [...this.modelPropertyMap.host, moduleNameProperty, setNameProperty])
     },
     presetHeader() {
       const hostProperties = this.getModelProperties('host')

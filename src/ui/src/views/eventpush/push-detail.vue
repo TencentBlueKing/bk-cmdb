@@ -357,12 +357,10 @@
         if (!await this.checkParams()) {
           return
         }
-        // eslint-disable-next-line
-        let res = null
         if (this.type === 'create') {
-          res = await this.subscribeEvent({ bkBizId: 0, params: this.params, config: { requestId: 'savePush' } })
+          await this.subscribeEvent({ bkBizId: 0, params: this.params, config: { requestId: 'savePush' } })
         } else {
-          res = await this.updateEventSubscribe({ bkBizId: 0, subscriptionId: this.curPush.subscription_id, params: this.params, config: { requestId: 'savePush' } })
+          await this.updateEventSubscribe({ bkBizId: 0, subscriptionId: this.curPush.subscription_id, params: this.params, config: { requestId: 'savePush' } })
         }
         this.$emit('saveSuccess')
         this.$success(this.$t('保存成功'))

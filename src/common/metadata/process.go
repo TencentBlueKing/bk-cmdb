@@ -813,13 +813,10 @@ type ServiceTemplate struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
-func (st *ServiceTemplate) Validate() (field string, err error) {
-	if len(st.Name) == 0 {
-		return "name", errors.New("name can't be empty")
-	}
-
-	if len(st.Name) > common.NameFieldMaxLength {
-		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(st.Name), common.NameFieldMaxLength)
+func (st *ServiceTemplate) Validate(errProxy cErr.DefaultCCErrorIf) (field string, err error) {
+	st.Name, err = util.ValidTopoNameField(st.Name, "name", errProxy)
+	if err != nil {
+		return "name", err
 	}
 	return "", nil
 }

@@ -9,6 +9,9 @@ export function getLabel(property) {
 }
 
 export function getBindProps(property) {
+  if (!property) {
+    return {}
+  }
   const type = property.bk_property_type
   if (['list', 'enum'].includes(type)) {
     return {
@@ -24,6 +27,9 @@ export function getBindProps(property) {
 }
 
 export function getPlaceholder(property) {
+  if (!property) {
+    return ''
+  }
   const selectTypes = ['list', 'enum', 'timezone', 'organization', 'date', 'time']
   if (selectTypes.includes(property.bk_property_type)) {
     return i18n.t('请选择xx', { name: property.bk_property_name })
@@ -31,36 +37,27 @@ export function getPlaceholder(property) {
   return i18n.t('请输入xx', { name: property.bk_property_name })
 }
 
-export function getDefaultData(property) {
+export function getDefaultData(property, defaultData = { operator: '$in', value: [] }) {
+  const EQ = '$eq'
+  const RANGE = '$range'
+  const IN = '$in'
   const defaultMap = {
-    bool: {
-      operator: '$eq',
-      value: ''
-    },
-    date: {
-      operator: '$range',
-      value: []
-    },
-    float: {
-      operator: '$eq',
-      value: ''
-    },
-    int: {
-      operator: '$eq',
-      value: ''
-    },
-    time: {
-      operator: '$range',
-      value: []
-    },
-    'service-template': {
-      operator: '$in',
-      value: []
-    }
+    singlechar: { operator: IN, value: [] },
+    int: { operator: EQ, value: '' },
+    float: { operator: EQ, value: '' },
+    enum: { operator: IN, value: [] },
+    date: { operator: RANGE, value: [] },
+    time: { operator: RANGE, value: [] },
+    longchar: { operator: IN, value: [] },
+    objuser: { operator: IN, value: [] },
+    timezone: { operator: IN, value: [] },
+    bool: { operator: EQ, value: '' },
+    list: { operator: IN, value: [] },
+    organization: { operator: IN, value: [] },
   }
   return {
-    operator: '$in',
-    value: [],
+    operator: defaultData.operator,
+    value: defaultData.value,
     ...defaultMap[property.bk_property_type]
   }
 }
@@ -110,6 +107,9 @@ export function findPropertyByPropertyId(propertyId, properties, modelId) {
   return properties.find(property => property.bk_property_id === propertyId)
 }
 
+function createTimeCondition() {
+  return { oper: 'and', rules: [] }
+}
 export function transformCondition(condition, properties, header) {
   const conditionMap = {
     host: [],
@@ -118,10 +118,25 @@ export function transformCondition(condition, properties, header) {
     biz: [],
     object: []
   }
+  const timeCondition = {
+    host: createTimeCondition(),
+    module: createTimeCondition(),
+    set: createTimeCondition(),
+    biz: createTimeCondition(),
+    object: createTimeCondition()
+  }
   Object.keys(condition).forEach((id) => {
     const property = findProperty(id, properties)
     const { operator, value } = condition[id]
-    if (value === null || !value.toString().length) {
+    if (value === null || !value.toString().length) return
+    // 时间类型的字段需要上升一层单独处理
+    if (property.bk_property_type === 'time') {
+      const [start, end] = value
+      timeCondition[property.bk_obj_id].rules.push({
+        field: property.bk_property_id,
+        start,
+        end
+      })
       return
     }
     const submitCondition = conditionMap[property.bk_obj_id]
@@ -144,11 +159,17 @@ export function transformCondition(condition, properties, header) {
       })
     }
   })
-  return Object.keys(conditionMap).map(modelId => ({
-    bk_obj_id: modelId,
-    fields: header.filter(property => property.bk_obj_id === modelId).map(property => property.bk_property_id),
-    condition: conditionMap[modelId]
-  }))
+  return Object.keys(conditionMap).map((modelId) => {
+    const condition = {
+      bk_obj_id: modelId,
+      fields: header.filter(property => property.bk_obj_id === modelId).map(property => property.bk_property_id),
+      condition: conditionMap[modelId]
+    }
+    if (timeCondition[modelId].rules.length) {
+      condition.time_condition = timeCondition[modelId]
+    }
+    return condition
+  })
 }
 
 export function splitIP(raw) {

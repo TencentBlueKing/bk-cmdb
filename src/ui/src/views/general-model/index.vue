@@ -56,57 +56,30 @@
         </icon-button>
       </div>
       <div class="options-filter clearfix fr">
-        <cmdb-property-selector class="filter-selector fl"
-          v-model="filter.id"
+        <cmdb-property-selector class="filter-selector"
+          v-model="filter.field"
           :properties="properties"
-          :object-unique="objectUnique">
+          :object-unique="objectUnique"
+          :loading="$loading([request.properties, request.groups, request.unique])">
         </cmdb-property-selector>
-        <component class="filter-value fl"
-          v-if="['enum', 'list', 'organization'].includes(filterType)"
-          :is="`cmdb-form-${filterType}`"
-          :options="$tools.getEnumOptions(properties, filter.id)"
-          :allow-clear="true"
-          :clearable="true"
-          :auto-select="false"
+        <component class="filter-value"
+          :is="`cmdb-search-${filterType}`"
+          :placeholder="filterPlaceholder"
+          :class="filterType"
+          v-bind="filterComponentProps"
           v-model="filter.value"
-          font-size="medium"
-          @on-selected="handleFilterValueChange"
-          @on-checked="handleFilterValueChange">
+          @change="handleFilterValueChange"
+          @enter="handleFilterValueEnter">
         </component>
-        <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
-          v-else-if="filterType === 'int'"
-          v-model.number="filter.value"
-          clearable
-          right-icon="icon-search"
-          font-size="medium"
-          :placeholder="$t('快速查询')"
-          @enter="handleFilterValueChange"
-          @clear="handleFilterValueChange">
-        </bk-input>
-        <bk-input class="filter-value cmdb-form-input fl" type="text"
-          v-else-if="filterType === 'float'"
-          v-model.number="filter.value"
-          clearable
-          right-icon="icon-search"
-          font-size="medium"
-          :placeholder="$t('快速查询')"
-          @enter="handleFilterValueChange"
-          @clear="handleFilterValueChange">
-        </bk-input>
-        <bk-input class="filter-value cmdb-form-input fl" type="text"
-          v-else
-          v-model.trim="filter.value"
-          clearable
-          right-icon="icon-search"
-          font-size="medium"
-          :placeholder="$t('快速查询')"
-          @enter="handleFilterValueChange"
-          @clear="handleFilterValueChange">
-        </bk-input>
+        <bk-checkbox class="filter-exact" size="small"
+          v-if="allowFuzzyQuery"
+          v-model="filter.fuzzy_query">
+          {{$t('模糊')}}
+        </bk-checkbox>
       </div>
     </div>
     <bk-table class="models-table" ref="table"
-      v-bkloading="{ isLoading: $loading('^=post_searchInst_') }"
+      v-bkloading="{ isLoading: $loading(request.list) }"
       :data="table.list"
       :pagination="table.pagination"
       :max-height="$APP.height - 190"
@@ -210,12 +183,13 @@
 
 <script>
   import { mapState, mapGetters, mapActions } from 'vuex'
-  import has from 'has'
   import cmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
   import cmdbImport from '@/components/import/import'
   import { MENU_RESOURCE_INSTANCE_DETAILS } from '@/dictionary/menu-symbol'
   import cmdbPropertySelector from '@/components/property-selector'
   import RouterQuery from '@/router/query'
+  import Utils from '@/components/filters/utils'
+  import throttle from  'lodash.throttle'
   export default {
     components: {
       cmdbColumnsConfig,
@@ -244,9 +218,10 @@
           }
         },
         filter: {
-          id: 'bk_inst_name',
-          value: RouterQuery.get('filter', ''),
-          type: 'singlechar'
+          field: '',
+          value: '',
+          operator: '$eq',
+          fuzzy_query: false
         },
         slider: {
           show: false,
@@ -270,6 +245,12 @@
         },
         importSlider: {
           show: false
+        },
+        request: {
+          properties: Symbol('properties'),
+          groups: Symbol('groups'),
+          unique: Symbol('unique'),
+          list: Symbol('list')
         }
       }
     },
@@ -308,18 +289,48 @@
           resource_type: 'model'
         }]
       },
+      filterProperty() {
+        const property = this.properties.find(property => property.bk_property_id === this.filter.field)
+        return property || null
+      },
       filterType() {
-        const propertyId = this.filter.id
-        const property = this.properties.find(property => property.bk_property_id === propertyId)
-        if (property) {
-          return property.bk_property_type
+        if (this.filterProperty) {
+          return this.filterProperty.bk_property_type
         }
         return 'singlechar'
+      },
+      filterPlaceholder() {
+        return Utils.getPlaceholder(this.filterProperty)
+      },
+      filterComponentProps() {
+        return Utils.getBindProps(this.filterProperty)
+      },
+      allowFuzzyQuery() {
+        return ['singlechar', 'longchar'].includes(this.filterType)
       }
     },
     watch: {
-      'filter.id'() {
-        this.filter.value = ''
+      'filter.field'() {
+        // 模糊搜索
+        if (this.allowFuzzyQuery && this.filter.fuzzy_query) {
+          this.filter.value = ''
+          this.filter.operator = '$regex'
+          return
+        }
+        const defaultData = Utils.getDefaultData(this.filterProperty)
+        this.filter.value = defaultData.value
+        this.filter.operator = defaultData.operator
+      },
+      'filter.fuzzy_query'(fuzzy) {
+        if (!this.allowFuzzyQuery) return
+        if (fuzzy) {
+          this.filter.value = ''
+          this.filter.operator = '$regex'
+          return
+        }
+        const defaultData = Utils.getDefaultData(this.filterProperty)
+        this.filter.value = defaultData.value
+        this.filter.operator = defaultData.operator
       },
       'slider.show'(show) {
         if (!show) {
@@ -334,24 +345,32 @@
       },
       objId() {
         this.setDynamicBreadcrumbs()
-        this.reload()
+        this.setup()
+        RouterQuery.refresh()
       }
     },
-    created() {
-      this.unwatch = RouterQuery.watch('*', ({
+    async created() {
+      this.throttleGetTableData = throttle(this.getTableData, 300, { leading: false, trailing: true })
+      this.setDynamicBreadcrumbs()
+      await this.setup()
+      this.unwatch = RouterQuery.watch('*', async ({
         page = 1,
         limit = this.table.pagination.limit,
         filter = '',
+        operator = '',
+        fuzzy = false,
         field = 'bk_inst_name'
       }) => {
-        this.filter.id = field
-        this.filter.value = filter
+        this.filter.field = field
+        this.filter.fuzzy_query = fuzzy.toString() === 'true'
         this.table.pagination.current = parseInt(page, 10)
         this.table.pagination.limit = parseInt(limit, 10)
-        this.getTableData(!!filter)
-      })
-      this.setDynamicBreadcrumbs()
-      this.reload()
+        await this.$nextTick()
+        const defaultData = Utils.getDefaultData(this.filterProperty)
+        this.filter.operator = operator || defaultData.operator
+        this.filter.value = this.formatFilterValue({ value: filter, operator: this.filter.operator }, defaultData.value)
+        this.throttleGetTableData()
+      }, { immediate: true })
     },
     beforeDestroy() {
       this.unwatch()
@@ -375,9 +394,8 @@
       setDynamicBreadcrumbs() {
         this.$store.commit('setTitle', this.model.bk_obj_name)
       },
-      async reload() {
+      async setup() {
         try {
-          this.setRencentlyData()
           this.resetData()
           this.properties = await this.searchObjectAttribute({
             injectId: this.objId,
@@ -386,29 +404,48 @@
               bk_supplier_account: this.supplierAccount
             },
             config: {
-              requestId: `post_searchObjectAttribute_${this.objId}`,
-              fromCache: false
+              requestId: this.request.properties,
             }
           })
-          await Promise.all([
+          return Promise.all([
             this.getPropertyGroups(),
             this.getObjectUnique(),
             this.setTableHeader()
           ])
-          RouterQuery.set({
-            _t: Date.now()
-          })
         } catch (e) {
           // ignore
         }
       },
+      formatFilterValue({ value: currentValue, operator }, defaultValue) {
+        let value = currentValue.toString().length ? currentValue : defaultValue
+        const isNumber = ['int', 'float'].includes(this.filterType)
+        if (isNumber && value) {
+          value = parseFloat(value, 10)
+        } else if (operator === '$in') {
+          // eslint-disable-next-line no-nested-ternary
+          value = Array.isArray(value) ? value : !!value ? [value] : []
+        } else if (Array.isArray(value)) {
+          value = value.filter(value => !!value)
+        }
+        return value
+      },
       handleFilterValueChange() {
-        RouterQuery.set({
+        const hasEnterEvnet = ['float', 'int', 'longchar', 'singlechar']
+        if (hasEnterEvnet.includes(this.filterType)) return
+        this.handleFilterValueEnter()
+      },
+      handleFilterValueEnter() {
+        const query = {
           _t: Date.now(),
           page: 1,
-          field: this.filter.id,
-          filter: this.filter.value
-        })
+          field: this.filter.field,
+          filter: this.filter.value,
+          operator: this.filter.operator
+        }
+        if (this.allowFuzzyQuery) {
+          query.fuzzy = this.filter.fuzzy_query
+        }
+        RouterQuery.set(query)
       },
       resetData() {
         this.table = {
@@ -434,10 +471,7 @@
         return this.searchGroup({
           objId: this.objId,
           params: {},
-          config: {
-            fromCache: false,
-            requestId: `post_searchGroup_${this.objId}`
-          }
+          config: { requestId: this.request.groups }
         }).then((groups) => {
           this.propertyGroups = groups
           return groups
@@ -446,7 +480,8 @@
       getObjectUnique() {
         return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
           objId: this.objId,
-          params: {}
+          params: {},
+          config: { requestId: this.request.unique }
         }).then((data) => {
           this.objectUnique = data
           return data
@@ -485,9 +520,7 @@
       },
       handleSortChange(sort) {
         this.table.sort = this.$tools.getSort(sort)
-        RouterQuery.set({
-          _t: Date.now()
-        })
+        RouterQuery.refresh()
       },
       handleSizeChange(size) {
         RouterQuery.set({
@@ -509,19 +542,21 @@
         return this.searchInst({
           objId: this.objId,
           params: this.getSearchParams(),
-          config: Object.assign({ requestId: `post_searchInst_${this.objId}` }, config)
+          config: Object.assign({ requestId: this.request.list }, config)
         })
       },
-      getTableData(withFilter) {
+      getTableData() {
         this.getInstList({ cancelPrevious: true, globalPermission: false }).then((data) => {
           if (data.count && !data.info.length) {
-            this.table.pagination.current -= 1
-            this.getTableData()
+            RouterQuery.set({
+              page: this.table.pagination.current - 1,
+              _t: Date.now()
+            })
           }
           this.table.list = data.info
           this.table.pagination.count = data.count
 
-          this.table.stuff.type = withFilter ? 'search' : 'default'
+          this.table.stuff.type = this.filter.value.toString().length ? 'search' : 'default'
 
           return data
         })
@@ -546,47 +581,48 @@
             sort: this.table.sort
           }
         }
-        if (this.filter.id && String(this.filter.value).length) {
-          const { filterType } = this
-          let filterValue = this.filter.value
-          if (filterType === 'bool') {
-            const convertValue = [true, false].find(bool => bool.toString() === filterValue)
-            filterValue = convertValue === undefined ? filterValue : convertValue
-          } else if (filterType === 'int') {
-            filterValue = isNaN(parseInt(filterValue, 10)) ? filterValue : parseInt(filterValue, 10)
-          } else if (filterType === 'float') {
-            filterValue = isNaN(parseFloat(filterValue)) ? filterValue : parseFloat(filterValue, 10)
-          }
-          if (['bool', 'int', 'enum', 'float', 'organization'].includes(filterType)) {
-            params.condition[this.objId].push({
-              field: this.filter.id,
-              operator: '$eq',
-              value: filterValue
-            })
-          } else if (['singleasst', 'multiasst'].includes(filterType)) {
-            const asstObjId = (this.$tools.getProperty(this.properties, this.filter.id) || {}).bk_asst_obj_id
-            if (asstObjId) {
-              const fieldMap = {
-                host: 'bk_host_innerip',
-                biz: 'bk_biz_name',
-                plat: 'bk_cloud_name',
-                module: 'bk_module_name',
-                set: 'bk_set_name'
-              }
-              params.condition[asstObjId] = [{
-                field: has(fieldMap, asstObjId) ? fieldMap[asstObjId] : 'bk_inst_name',
-                operator: '$in',
-                value: filterValue.split(',')
-              }]
-            }
-          } else {
-            params.condition[this.objId].push({
-              field: this.filter.id,
-              operator: '$regex',
-              value: filterValue
-            })
-          }
+        if (!this.filter.value.toString()) {
+          return params
         }
+        if (this.filterType === 'time') {
+          const [start, end] = this.filter.value
+          params.time_condition = {
+            oper: 'and',
+            rules: [{
+              field: this.filter.field,
+              start,
+              end
+            }]
+          }
+          return params
+        }
+        if (this.filter.operator === '$range') {
+          const [start, end] = this.filter.value
+          params.condition[this.objId].push({
+            field: this.filter.field,
+            operator: '$gte',
+            value: start
+          }, {
+            field: this.filter.field,
+            operator: '$lte',
+            value: end
+          })
+          return params
+        }
+        if (this.filterType === 'objuser') {
+          const multiple = this.filter.value.length > 1
+          params.condition[this.objId].push({
+            field: this.filter.field,
+            operator: multiple ? '$in' : '$regex',
+            value: multiple ? this.filter.value : this.filter.value.toString()
+          })
+          return params
+        }
+        params.condition[this.objId].push({
+          field: this.filter.field,
+          operator: this.filter.operator,
+          value: this.filter.value
+        })
         return params
       },
       async handleEdit(item) {
@@ -609,9 +645,7 @@
             }).then(() => {
               this.slider.show = false
               this.$success(this.$t('删除成功'))
-              RouterQuery.set({
-                _t: Date.now()
-              })
+              RouterQuery.refresh()
             })
           }
         })
@@ -626,9 +660,7 @@
             this.attribute.inst.details = Object.assign({}, originalValues, values)
             this.handleCancel()
             this.$success(this.$t('修改成功'))
-            RouterQuery.set({
-              _t: Date.now()
-            })
+            RouterQuery.refresh()
           })
         } else {
           delete values.bk_inst_id // properties中注入了前端自定义的bk_inst_id属性
@@ -700,9 +732,7 @@
         }).then(() => {
           this.$success(this.$t('删除成功'))
           this.table.checked = []
-          RouterQuery.set({
-            _t: Date.now()
-          })
+          RouterQuery.refresh()
         })
       },
       handleApplyColumnsConfig(properties) {
@@ -760,10 +790,6 @@
           method: 'post',
           data
         })
-      },
-      setRencentlyData() {
-        const modelId = this.model.id
-        this.$store.dispatch('userCustom/setRencentlyData', { id: modelId })
       }
     }
   }
@@ -776,23 +802,36 @@
     .options-filter{
         position: relative;
         margin-right: 5px;
+        display: flex;
+        align-items: center;
+        width: 440px;
         .filter-selector{
             width: 120px;
             border-radius: 2px 0 0 2px;
             margin-right: -1px;
         }
         .filter-value{
-            width: 320px;
+            flex: 1;
             border-radius: 0 2px 2px 0;
+            &.singlechar,
+            &.longchar {
+              border-radius: unset;
+              /deep/ .bk-tag-input {
+                border-radius: unset;
+              }
+            }
             /deep/ .bk-form-input {
                 line-height: 32px;
             }
         }
-        .filter-search{
-            position: absolute;
-            right: 10px;
-            top: 8px;
-            cursor: pointer;
+        .filter-exact {
+          display: inline-flex;
+          align-items: center;
+          padding: 0 5px;
+          height: 32px;
+          border: 1px solid #c4c6cc;
+          border-radius: 0 2px 2px 0;
+          border-left: none;
         }
     }
     .models-button{

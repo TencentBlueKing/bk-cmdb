@@ -368,6 +368,15 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 	}
 	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
 
+	if inputParam.TimeCondition != nil {
+		var err error
+		inputParam.Condition, err = inputParam.TimeCondition.MergeTimeCondition(inputParam.Condition)
+		if err != nil {
+			blog.ErrorJSON("merge time condition failed, error: %s, input: %s, rid: %s", err, inputParam, kit.Rid)
+			return nil, err
+		}
+	}
+
 	// parse vip fields for processes
 	fields, vipFields := hooks.ParseVIPFieldsForProcessHook(inputParam.Fields, tableName)
 

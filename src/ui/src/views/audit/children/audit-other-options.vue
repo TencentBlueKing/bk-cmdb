@@ -58,6 +58,9 @@
             <bk-option id="resource_name" :name="$t('名称')"></bk-option>
             <bk-option id="resource_id" name="ID"></bk-option>
           </bk-select>
+          <bk-checkbox class="option-exact" slot="append" size="small" v-model="condition.fuzzy_query">
+            {{$t('模糊')}}
+          </bk-checkbox>
         </bk-input>
       </td>
       <td></td>
@@ -91,7 +94,8 @@
         user: '',
         resource_id: '',
         resource_name: '',
-        category: 'other'
+        category: 'other',
+        fuzzy_query: false
       }
       return {
         instanceType: 'resource_name',
@@ -162,6 +166,11 @@
             margin-top: -1px;
             border-color: #c4c6cc transparent;
             box-shadow: none;
+        }
+        .option-exact {
+          white-space: nowrap;
+          padding: 0 4px;
+          margin: 7px 0;
         }
         .options-button {
             display: flex;

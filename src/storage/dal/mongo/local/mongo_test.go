@@ -63,7 +63,7 @@ func BenchmarkLocalCUD(b *testing.B) {
 	}
 }
 
-func dbCleint(t *testing.T) *Mongo {
+func dbClient(t *testing.T) *Mongo {
 	uri := os.Getenv("MONGOURI")
 	mongoConfig := MongoConf{
 		MaxOpenConns: 1000,
@@ -81,7 +81,7 @@ func dbCleint(t *testing.T) *Mongo {
 func TestTableOperate(t *testing.T) {
 
 	ctx := context.Background()
-	db := dbCleint(t)
+	db := dbClient(t)
 	tableName := "tmp_test_table_operate"
 
 	exist, err := db.HasTable(ctx, tableName)
@@ -111,7 +111,7 @@ func TestIndex(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_index"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	table := db.Table(tableName)
 
 	// 清理数据
@@ -190,7 +190,7 @@ func TestInsertAndFind(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_insert_find"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
@@ -259,7 +259,7 @@ func TestFindOpt(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_find_option"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 	require.NoError(t, err)
@@ -370,7 +370,7 @@ func TestFindOneOpt(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_find_option"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 	require.NoError(t, err)
@@ -462,7 +462,7 @@ func TestCount(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_find_count"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 	require.NoError(t, err)
@@ -525,7 +525,7 @@ func TestUpdate(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_update"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 	require.NoError(t, err)
@@ -572,7 +572,7 @@ func TestUpdateMulti(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_update_multi"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 	require.NoError(t, err)
@@ -626,7 +626,7 @@ func TestUpsert(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_upsert"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 	require.NoError(t, err)
@@ -677,7 +677,7 @@ func TestDelete(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_delete"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 	require.NoError(t, err)
@@ -713,7 +713,7 @@ func TestColumn(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_Column"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 	require.NoError(t, err)
@@ -810,7 +810,7 @@ func TestAggregate(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_Aggregate"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 	require.NoError(t, err)
@@ -862,7 +862,7 @@ func TestUpdateModifyCount(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_update_modify_count"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 	require.NoError(t, err)
@@ -892,7 +892,7 @@ func TestConvInterface(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_decode_interface"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 	require.NoError(t, err)
@@ -1123,7 +1123,7 @@ func TestConvInterfaceMap(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_decode_interface_map"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 	require.NoError(t, err)
@@ -1173,7 +1173,7 @@ func TestConvInterfaceStructInline(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_decode_interface_map"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 	require.NoError(t, err)
@@ -1220,7 +1220,7 @@ func TestConvInterfaceStructInline(t *testing.T) {
 func TestConvInterfaceStructTagInline(t *testing.T) {
 
 	ctx := context.Background()
-	db := dbCleint(t)
+	db := dbClient(t)
 
 	tableName := "tmptest_decode_interface_struct_tag"
 
@@ -1270,7 +1270,7 @@ func TestNextSequence(t *testing.T) {
 
 	ctx := context.Background()
 
-	db := dbCleint(t)
+	db := dbClient(t)
 
 	// 清理数据
 	err := db.DropTable(ctx, "cc_idgenerator")
@@ -1288,7 +1288,7 @@ func TestDropDcocsColumn(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmptest_drop_doc_column"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 	require.NoError(t, err)
@@ -1334,7 +1334,7 @@ func TestDistinct(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmp_test_distinct"
 
-	db := dbCleint(t)
+	db := dbClient(t)
 
 	// 清理数据
 	err := db.DropTable(ctx, tableName)

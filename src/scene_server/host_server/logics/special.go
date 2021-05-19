@@ -132,7 +132,7 @@ func (s *special) bkSystemParameterConv(ctx context.Context, appName string, inp
 	}
 
 	var appIDArr []int64
-	appIDArr, err = s.lgc.GetAppIDByCond(s.kit, bkAppCond)
+	appIDArr, err = s.lgc.GetAppIDByCond(s.kit, metadata.ConditionWithTime{Condition: bkAppCond})
 	if err != nil {
 		blog.ErrorJSON("bkSystemParameterConv get blueking app error. err:%s, cond:%s, rid:%s", err.Error(), bkAppCond, s.kit.Rid)
 		return
@@ -211,7 +211,7 @@ func (s *special) bkSystemGetInstallModuleID(ctx context.Context, appID int64, s
 		},
 	}
 
-	setIDArr, err := s.lgc.GetSetIDByCond(s.kit, bkSetCond)
+	setIDArr, err := s.lgc.GetSetIDByCond(s.kit, metadata.ConditionWithTime{Condition: bkSetCond})
 	if err != nil {
 		blog.ErrorJSON("bkSystemGetInstallModuleID GetSetIDByCond error. err:%s, cond:%s, rid:%s", err.Error(), bkSetCond, s.kit.Rid)
 		return nil, err
@@ -238,7 +238,7 @@ func (s *special) bkSystemGetInstallModuleID(ctx context.Context, appID int64, s
 			Value:    moduleName,
 		},
 	}
-	moduleIDArr, err := s.lgc.GetModuleIDByCond(s.kit, bkModuleCond)
+	moduleIDArr, err := s.lgc.GetModuleIDByCond(s.kit, metadata.ConditionWithTime{Condition: bkModuleCond})
 	if err != nil {
 		blog.ErrorJSON("bkSystemGetInstallModuleID GetModuleIDByCond error. err:%s, cond:%s, rid:%s", err.Error(), bkModuleCond, s.kit.Rid)
 		return nil, err

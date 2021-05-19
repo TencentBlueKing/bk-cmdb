@@ -294,7 +294,7 @@
     .info {
         flex: 1;
         display: flex;
-        justify-content: start;
+        justify-content: flex-start;
         flex-direction: column;
         padding: 0 17px;
         .info-name {

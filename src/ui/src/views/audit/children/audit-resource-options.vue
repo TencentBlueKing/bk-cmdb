@@ -81,6 +81,9 @@
             <bk-option id="resource_name" :name="$t('名称')"></bk-option>
             <bk-option id="resource_id" name="ID"></bk-option>
           </bk-select>
+          <bk-checkbox class="option-exact" slot="append" size="small" v-model="condition.fuzzy_query">
+            {{$t('模糊')}}
+          </bk-checkbox>
         </bk-input>
       </td>
       <td></td>
@@ -117,7 +120,8 @@
         resource_id: '',
         resource_name: '',
         category: 'resource',
-        bk_obj_id: ''
+        bk_obj_id: '',
+        fuzzy_query: false
       }
       return {
         instanceType: 'resource_name',
@@ -135,7 +139,7 @@
         }
       },
       isModelInstance() {
-        return this.condition.resource_type === 'model_instance'
+        return ['model_instance', 'instance_association'].includes(this.condition.resource_type)
       }
     },
     watch: {
@@ -189,6 +193,11 @@
             margin-top: -1px;
             border-color: #c4c6cc transparent;
             box-shadow: none;
+        }
+        .option-exact {
+          white-space: nowrap;
+          padding: 0 4px;
+          margin: 7px 0;
         }
         .options-button {
             display: flex;

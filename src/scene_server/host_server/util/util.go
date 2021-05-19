@@ -13,11 +13,8 @@
 package util
 
 import (
-	"strconv"
-
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 )
 
 func NewOperation() *operation {
@@ -105,44 +102,5 @@ func (o *operation) WithHostInnerIP(ip string) *operation {
 
 func (o *operation) WithCloudID(id int64) *operation {
 	o.op[common.BKCloudIDField] = id
-	return o
-}
-
-func (o *operation) WithAttrComm() *operation {
-	attrMeta := metadata.Metadata{
-		Label: make(metadata.Label, 0),
-	}
-	// attrMeta.Label.SetModelKind(metadata.PublicModelKindValue)
-	conds := mapstr.New()
-	for key, val := range attrMeta.Label {
-		conds.Set(key, val)
-	}
-	o.op[common.MetadataField] = conds
-	return o
-}
-
-func (o *operation) WithAttrBizID(bizID int64) *operation {
-	attrMeta := metadata.Metadata{
-		Label: make(metadata.Label, 0),
-	}
-	attrMeta.Label.SetModelKind(metadata.BusinessModelKindValue)
-	attrMeta.Label.SetBusinessID(bizID)
-	conds := mapstr.New()
-	for key, val := range attrMeta.Label {
-		conds.Set(key, val)
-	}
-	o.op[common.MetadataField] = conds
-
-	return o
-}
-
-func (o *operation) WithAttrCommBizID(bizID int64) *operation {
-	conds := mapstr.New()
-	conds[common.BKDBOR] = []mapstr.MapStr{
-		{metadata.LabelModelKind: metadata.PublicModelKindValue},
-		{metadata.LabelModelKind: metadata.BusinessModelKindValue, metadata.LabelBusinessID: strconv.FormatInt(bizID, 10)},
-	}
-	o.op[common.MetadataField] = conds
-
 	return o
 }

@@ -72,13 +72,26 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 	}
 
 	if condition.ResourceName != "" {
-		cond[common.BKResourceNameField] = map[string]interface{}{
-			common.BKDBLIKE: condition.ResourceName,
+		if condition.FuzzyQuery {
+			cond[common.BKResourceNameField] = map[string]interface{}{
+				common.BKDBLIKE: condition.ResourceName,
+			}
+		} else {
+			cond[common.BKResourceNameField] = condition.ResourceName
 		}
 	}
 
 	if condition.ObjID != "" {
-		cond[common.BKOperationDetailField+"."+common.BKObjIDField] = condition.ObjID
+		switch condition.ResourceType {
+		case metadata.ModelInstanceRes:
+			cond[common.BKOperationDetailField+"."+common.BKObjIDField] = condition.ObjID
+		case metadata.InstanceAssociationRes:
+			cond[common.BKOperationDetailField+"."+"src_obj_id"] = condition.ObjID
+		default:
+			blog.Errorf("unsupported resource type %s when query with object id", condition.ResourceType)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField))
+			return
+		}
 	}
 
 	// parse operation start time and end time from string to time condition

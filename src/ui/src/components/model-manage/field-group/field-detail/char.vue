@@ -1,12 +1,15 @@
 <template>
-  <div class="form-label">
+  <div class="form-label cmdb-form-item" :class="{ 'is-error': errors.has('option') }">
     <span class="label-text">{{$t('正则校验')}}</span>
     <textarea
       class="raw"
+      name="option"
       v-model="localValue"
       :disabled="isReadOnly"
-      @input="handleInput"
-    ></textarea>
+      v-validate="'validRegExp'"
+      @input="handleInput">
+    </textarea>
+    <p class="form-error">{{errors.first('option')}}</p>
   </div>
 </template>
 

@@ -312,11 +312,8 @@ func (c *commonInst) validMainLineParentID(kit *rest.Kit, obj model.Object, data
 	}
 	bizID, err := data.Int64(common.BKAppIDField)
 	if err != nil {
-		bizID, err = metadata.ParseBizIDFromData(data)
-		if err != nil {
-			blog.Errorf("[operation-inst]failed to parse the biz id, err: %s, rid: %s", err.Error(), kit.Rid)
-			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
-		}
+		blog.Errorf("[operation-inst]failed to parse the biz id, err: %s, rid: %s", err.Error(), kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
 	}
 	parentID, err := data.Int64(common.BKParentIDField)
 	if err != nil {
@@ -1126,6 +1123,7 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, objID string, asst
 
 	query := &metadata.QueryInput{}
 	query.Condition = instCond
+	query.TimeCondition = asstParamCond.TimeCondition
 	if fields, ok := asstParamCond.Fields[objID]; ok {
 		query.Fields = strings.Join(fields, ",")
 	}
@@ -1154,7 +1152,7 @@ func (c *commonInst) FindOriginInst(kit *rest.Kit, objID string, cond *metadata.
 
 	default:
 		queryCond, err := mapstr.NewFromInterface(cond.Condition)
-		input := &metadata.QueryCondition{Condition: queryCond}
+		input := &metadata.QueryCondition{Condition: queryCond, TimeCondition: cond.TimeCondition}
 		input.Page.Start = cond.Start
 		input.Page.Limit = cond.Limit
 		input.Page.Sort = cond.Sort

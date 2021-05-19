@@ -659,9 +659,7 @@ func (s *Service) SearchInstByObject(ctx *rest.Contexts) {
 
 // SearchInstByAssociation search inst by the association inst
 func (s *Service) SearchInstByAssociation(ctx *rest.Contexts) {
-	data := struct {
-		operation.AssociationParams `json:",inline"`
-	}{}
+	data := new(operation.AssociationParams)
 	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -670,7 +668,7 @@ func (s *Service) SearchInstByAssociation(ctx *rest.Contexts) {
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
-	result, err := s.Core.InstOperation().FindInstByAssociationInst(ctx.Kit, objID, &data.AssociationParams)
+	result, err := s.Core.InstOperation().FindInstByAssociationInst(ctx.Kit, objID, data)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)

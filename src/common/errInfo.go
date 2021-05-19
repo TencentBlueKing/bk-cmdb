@@ -226,6 +226,9 @@ const (
 	// CCErrArrayLengthWrong the length of the array is wrong
 	CCErrArrayLengthWrong = 1199089
 
+	//CCIllegalRegularExpression the regular expression's type assertion failed
+	CCIllegalRegularExpression = 1199090
+
 	// too many requests
 	CCErrTooManyRequestErr = 1199997
 
@@ -473,6 +476,9 @@ const (
 
 	CCErrorAttributeNameDuplicated = 1101107
 	CCErrorSetNameDuplicated       = 1101108
+
+	// CCErrorCheckRegularFailed check regular expression failed
+	CCErrorCheckRegularFailed = 1101109
 
 	// object controller 1102XXX
 

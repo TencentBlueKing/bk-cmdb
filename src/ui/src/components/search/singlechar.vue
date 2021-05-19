@@ -42,18 +42,29 @@
         }
       }
     },
-    mounted() {
-      this.addPasteEvent()
+    watch: {
+      multiple: {
+        immediate: true,
+        handler(multiple) {
+          multiple ? this.addPasteEvent() : this.removePasteEvent()
+        }
+      }
     },
     beforeDestroy() {
       this.removePasteEvent()
     },
     methods: {
-      addPasteEvent() {
-        this.$refs.tagInput.$refs.input.addEventListener('paste', this.handlePaste)
+      async addPasteEvent() {
+        await this.$nextTick()
+        const { tagInput } = this.$refs
+        if (!tagInput) return
+        tagInput.$refs.input.addEventListener('paste', this.handlePaste)
       },
-      removePasteEvent() {
-        this.$refs.tagInput.$refs.input.removeEventListener('paste', this.handlePaste)
+      async removePasteEvent() {
+        await this.$nextTick()
+        const { tagInput } = this.$refs
+        if (!tagInput) return
+        tagInput.$refs.input.removeEventListener('paste', this.handlePaste)
       },
       handlePaste(event) {
         const text = event.clipboardData.getData('text')
