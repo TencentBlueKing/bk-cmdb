@@ -100,7 +100,8 @@ func (s *coreService) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 		return
 	}
 	if len(dbData) != 1 {
-		blog.V(5).Infof("update host favorites with id[%s], but favorites found: %+v, ctx:%v, rid: %s", id, dbData, query, ctx.Kit.Rid)
+		blog.ErrorJSON("update host favorites with id[%s], but got multiple, detail: %s, rid: %s", id, dbData,
+			query, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostFavouriteUpdateFail))
 		return
 	}

@@ -160,21 +160,11 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			return
 		}
 
-		// if common.BKSuperOwnerID == util.GetOwnerID(req.Request.Header) {
-		// 	blog.Errorf("authFilter failed, can not use super supplier account, rid: %s", rid)
-		// 	rsp := metadata.BaseResp{
-		// 		Code:   common.CCErrCommParseAuthAttributeFailed,
-		// 		ErrMsg: "invalid supplier account.",
-		// 		Result: false,
-		// 	}
-		// 	resp.WriteHeaderAndJson(http.StatusBadRequest, rsp, restful.MIME_JSON)
-		// 	return
-		// }
-
 		language := util.GetLanguage(req.Request.Header)
 		attribute, err := parser.ParseAttribute(req, s.engine)
 		if err != nil {
-			blog.Errorf("authFilter failed, caller: %s, parse auth attribute for %s %s failed, err: %v, rid: %s", req.Request.RemoteAddr, req.Request.Method, req.Request.URL.Path, err, rid)
+			blog.Errorf("authFilter failed, caller: %s, parse auth attribute for %s %s failed, err: %v, rid: %s",
+				req.Request.RemoteAddr, req.Request.Method, req.Request.URL.Path, err, rid)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommParseAuthAttributeFailed,
 				ErrMsg: err.Error(),
@@ -184,7 +174,10 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			return
 		}
 
-		blog.V(7).Infof("auth filter parse attribute result: %v, rid: %s", attribute, rid)
+		if blog.V(5) {
+			blog.InfoJSON("auth filter parsed attribute: %s, rid: %s", attribute, rid)
+		}
+
 		decisions, err := s.authorizer.AuthorizeBatch(req.Request.Context(), req.Request.Header, attribute.User, attribute.Resources...)
 		if err != nil {
 			blog.Errorf("authFilter failed, authorized request failed, url: %s, err: %v, rid: %s", path, err, rid)
@@ -206,7 +199,6 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		}
 
 		if !authorized {
-			blog.V(4).Infof("GetPermissionToApply attribute: %+v, rid: %s", attribute, rid)
 			permission, err := s.authorizer.GetPermissionToApply(req.Request.Context(), req.Request.Header, attribute.Resources)
 			if err != nil {
 				blog.Errorf("get permission to apply failed, err: %v, rid: %s", err, rid)
