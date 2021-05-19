@@ -183,6 +183,8 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 					f.key.Collection(), e.Oid, err, rid)
 				continue
 			}
+			// update delete event detail doc bytes.
+			e.DocBytes = doc
 
 			// validate the event is valid or not.
 			// the invalid event will be dropped.
@@ -202,7 +204,8 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		oids[index] = e.ID()
 		id := ids[index]
 		name := f.key.Name(e.DocBytes)
-		currentCursor, err := watch.GetEventCursor(f.key.Collection(), e, f.key.InstanceID(e.DocBytes))
+		instID := f.key.InstanceID(e.DocBytes)
+		currentCursor, err := watch.GetEventCursor(f.key.Collection(), e, instID)
 		if err != nil {
 			blog.Errorf("get %s event cursor failed, name: %s, err: %v, oid: %s, rid: %s", f.key.Collection(), name,
 				err, e.ID(), rid)
@@ -211,7 +214,7 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 				RequestID: rid,
 				Type:      meta.FlowFatalError,
 				Detail: fmt.Sprintf("run event flow, but get invalid %s cursor, inst id: %d, name: %s",
-					f.key.Collection(), f.key.InstanceID(e.DocBytes), name),
+					f.key.Collection(), instID, name),
 				Module:    types2.CC_MODULE_CACHESERVICE,
 				Dimension: map[string]string{"hit_invalid_cursor": "yes"},
 			})
@@ -237,18 +240,13 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 			Cursor:      currentCursor,
 		}
 
-		if instanceID := f.key.InstanceID(e.DocBytes); instanceID > 0 {
-			chainNode.InstanceID = instanceID
+		if instID > 0 {
+			chainNode.InstanceID = instID
 		}
 		chainNodes = append(chainNodes, chainNode)
 
-		docBytes := e.DocBytes
-		if e.OperationType == types.Delete {
-			docBytes = oidDetailMap[e.Oid]
-		}
-
 		detail := types.EventDetail{
-			Detail:        types.JsonString(docBytes),
+			Detail:        types.JsonString(e.DocBytes),
 			UpdatedFields: e.ChangeDesc.UpdatedFields,
 			RemovedFields: e.ChangeDesc.RemovedFields,
 		}

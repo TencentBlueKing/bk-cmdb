@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -294,17 +293,15 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 		curType = Module
 	case common.BKTableNameSetTemplate:
 		curType = SetTemplate
+	case common.BKTableNameBaseInst:
+		curType = ObjectBase
 	case common.BKTableNameBaseProcess:
 		curType = Process
 	case common.BKTableNameProcessInstanceRelation:
 		curType = ProcessInstanceRelation
 	default:
-		if strings.HasPrefix(coll, common.BKTableNameBaseInst) {
-			curType = ObjectBase
-		} else {
-			blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.Oid)
-			return "", fmt.Errorf("unsupported cursor type collection: %s", coll)
-		}
+		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.ID())
+		return "", fmt.Errorf("unsupported cursor type collection: %s", coll)
 	}
 
 	hCursor := &Cursor{
