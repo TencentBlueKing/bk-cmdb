@@ -422,6 +422,7 @@
         if (isNumber && value) {
           value = parseFloat(value, 10)
         } else if (operator === '$in') {
+          // eslint-disable-next-line no-nested-ternary
           value = Array.isArray(value) ? value : !!value ? [value] : []
         } else if (Array.isArray(value)) {
           value = value.filter(value => !!value)

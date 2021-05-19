@@ -57,7 +57,7 @@
       },
       loginUrl() {
         const siteLoginUrl = this.site.login || ''
-        const loginBaseUrl = siteLoginUrl.substring(0, siteLoginUrl.indexOf('?'))
+        const [loginBaseUrl] = siteLoginUrl.split('?')
         if (loginBaseUrl) {
           return `${loginBaseUrl}plain`
         }
