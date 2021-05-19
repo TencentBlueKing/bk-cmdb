@@ -58,12 +58,13 @@
         ref="verificationForm"
         slot="content"
         v-if="slider.isShow"
-        :is-read-only="isReadOnly || slider.isReadOnly"
-        :is-edit="slider.isEdit"
-        :verification="slider.verification"
         :attribute-list="attributeList"
+        :rule-list="table.list"
+        :id="slider.id"
+        :readonly="slider.readonly"
         @save="saveVerification"
-        @cancel="handleSliderBeforeClose">
+        @cancel="handleSliderBeforeClose"
+        @change-mode="editVerification">
       </the-verification-detail>
     </bk-sideslider>
   </div>
@@ -86,8 +87,8 @@
       return {
         slider: {
           isShow: false,
-          isEdit: false,
-          verification: {}
+          id: null,
+          readonly: false
         },
         table: {
           list: [],
@@ -165,19 +166,20 @@
       },
       createVerification() {
         this.slider.title = this.$t('新建校验')
-        this.slider.isEdit = false
-        this.slider.isReadOnly = false
+        this.slider.id = null
+        this.slider.readonly = false
         this.slider.isShow = true
       },
-      editVerification(verification) {
+      editVerification({ id }) {
         this.slider.title = this.$t('编辑校验')
-        this.slider.verification = verification
-        this.slider.isEdit = true
-        this.slider.isReadOnly = false
+        this.slider.id = id
+        this.slider.readonly = false
         this.slider.isShow = true
       },
       saveVerification() {
         this.slider.isShow = false
+        this.slider.id = null
+        this.slider.readonly = false
         this.searchVerification()
       },
       deleteVerification(verification) {
@@ -209,34 +211,35 @@
       handleShowDetails(row, column) {
         if (column.property === 'operation') return
         this.slider.title = this.$t('查看校验')
-        this.slider.verification = row
-        this.slider.isEdit = true
-        this.slider.isReadOnly = true
+        this.slider.id = row.id
+        this.slider.readonly = true
         this.slider.isShow = true
       },
       handleReceiveAuth(auth) {
         this.updateAuth = auth
       },
       handleSliderBeforeClose() {
-        const hasChanged = Object.keys(this.$refs.verificationForm.changedValues).length
-        if (hasChanged) {
-          return new Promise((resolve) => {
-            this.$bkInfo({
-              title: this.$t('确认退出'),
-              subTitle: this.$t('退出会导致未保存信息丢失'),
-              extCls: 'bk-dialog-sub-header-center',
-              confirmFn: () => {
-                this.slider.isShow = false
-                resolve(true)
-              },
-              cancelFn: () => {
-                resolve(false)
-              }
-            })
-          })
+        const isChanged = this.$refs.verificationForm.isChanged()
+        if (!isChanged) {
+          this.slider.isShow = false
+          this.slider.id = null
+          return true
         }
-        this.slider.isShow = false
-        return true
+        return new Promise((resolve) => {
+          this.$bkInfo({
+            title: this.$t('确认退出'),
+            subTitle: this.$t('退出会导致未保存信息丢失'),
+            extCls: 'bk-dialog-sub-header-center',
+            confirmFn: () => {
+              this.slider.isShow = false
+              this.slider.id = null
+              resolve(true)
+            },
+            cancelFn: () => {
+              resolve(false)
+            }
+          })
+        })
       }
     }
   }
