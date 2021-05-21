@@ -15,6 +15,7 @@ package logics
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
@@ -33,6 +34,8 @@ func (lgc *Logics) GetPermissionToApply(kit *rest.Kit, rs []meta.ResourceAttribu
 	permission.SystemID = iam.SystemIDCMDB
 	permission.SystemName = iam.SystemNameCMDB
 	instTypeIDsMap := make(map[iam.TypeID][]int64)
+	actionIDRscTypeMap := make(map[iam.ActionID]iam.TypeID)
+	sysInstObjIDNameMap := make(map[string]string)
 
 	// permissionMap maps ResourceActionID and ResourceTypeID to ResourceInstances
 	permissionMap := make(map[iam.ActionID]map[string][][]metadata.IamResourceInstance, 0)
@@ -52,8 +55,19 @@ func (lgc *Logics) GetPermissionToApply(kit *rest.Kit, rs []meta.ResourceAttribu
 			return nil, err
 		}
 
+		actionIDRscTypeMap[actionID] = *rscType
+
 		if _, ok := permissionMap[actionID]; !ok {
 			permissionMap[actionID] = make(map[string][][]metadata.IamResourceInstance, 0)
+		}
+
+		sysInstObjIDs := getAllSysInstanceObjIDs(*rscType, resource)
+		if len(sysInstObjIDs) > 0 {
+			var err error
+			if sysInstObjIDNameMap, err = lgc.GetObjectsIDNameMap(kit, sysInstObjIDs); err != nil {
+				return nil, err
+			}
+
 		}
 
 		// generate iam resource instances by its paths and itself
@@ -85,7 +99,7 @@ func (lgc *Logics) GetPermissionToApply(kit *rest.Kit, rs []meta.ResourceAttribu
 			}
 			instance = append(instance, metadata.IamResourceInstance{
 				Type:     string(res.Type),
-				TypeName: iam.ResourceTypeIDMap[iam.TypeID(res.Type)],
+				TypeName: getTypeName(iam.TypeID(res.Type), sysInstObjIDNameMap),
 				ID:       res.ID,
 			})
 			instID, err := strconv.ParseInt(res.ID, 10, 64)
@@ -106,8 +120,8 @@ func (lgc *Logics) GetPermissionToApply(kit *rest.Kit, rs []meta.ResourceAttribu
 
 	for actionID, permissionTypeMap := range permissionMap {
 		action := metadata.IamAction{
-			ID: string(actionID),
-			Name: iam.ActionIDNameMap[actionID],
+			ID:                   string(actionID),
+			Name:                 getActionName(actionID, actionIDRscTypeMap[actionID], sysInstObjIDNameMap),
 			RelatedResourceTypes: make([]metadata.IamResourceType, 0),
 		}
 		for rscType := range permissionTypeMap {
@@ -128,7 +142,7 @@ func (lgc *Logics) GetPermissionToApply(kit *rest.Kit, rs []meta.ResourceAttribu
 				SystemID:   iam.SystemIDCMDB,
 				SystemName: iam.SystemNameCMDB,
 				Type:       rscType,
-				TypeName:   iam.ResourceTypeIDMap[iam.TypeID(rscType)],
+				TypeName:   getTypeName(iam.TypeID(rscType), sysInstObjIDNameMap),
 				Instances:  permissionTypeMap[rscType],
 			})
 		}
@@ -176,4 +190,49 @@ func (lgc *Logics) getInstIDNameMap(kit *rest.Kit, instTypeIDsMap map[iam.TypeID
 	}
 
 	return instIDNameMap, nil
+}
+
+// getAllSysInstanceObjIDs get all system instance objIDs
+func getAllSysInstanceObjIDs(rscType iam.TypeID, resource []types.Resource) []string {
+	objIDs := make([]string, 0)
+	if iam.IsIAMSysInstance(rscType) {
+		objIDs = append(objIDs, iam.GetObjIDFromIamSysInstance(rscType))
+	}
+
+	for _, res := range resource {
+		if iam.IsIAMSysInstance(iam.TypeID(res.Type)) {
+			objIDs = append(objIDs, iam.GetObjIDFromIamSysInstance(iam.TypeID(res.Type)))
+		}
+	}
+
+	return objIDs
+}
+
+func getActionName(actionID iam.ActionID, rscType iam.TypeID, sysInstObjIDNameMap map[string]string) string {
+	name := ""
+	if name = iam.ActionIDNameMap[actionID]; name != "" {
+		return name
+	}
+
+	if iam.IsIAMSysInstance(rscType) {
+		objID := iam.GetObjIDFromIamSysInstance(rscType)
+		actionType := actionID[:strings.Index(string(actionID), "_")]
+		return fmt.Sprintf("%s实例%s", sysInstObjIDNameMap[objID], iam.ActionTypeIDNameMap[iam.ActionType(
+			actionType)])
+	}
+
+	return name
+}
+
+func getTypeName(rscType iam.TypeID, sysInstObjIDNameMap map[string]string) string {
+	name := ""
+	if name = iam.ResourceTypeIDMap[rscType]; name != "" {
+		return name
+	}
+
+	if iam.IsIAMSysInstance(rscType) {
+		return sysInstObjIDNameMap[iam.GetObjIDFromIamSysInstance(rscType)]
+	}
+
+	return name
 }

@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -833,8 +834,8 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+		modelType := iam.GenCMDBDynamicResType(objID, model.ID)
 
-		var modelType = meta.ModelInstance
 		isMainline, err := ps.isMainlineModel(objID)
 		if err != nil {
 			ps.err = err
@@ -871,10 +872,18 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		modelType := iam.GenCMDBDynamicResType(objID, model.ID)
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   modelType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -902,8 +911,8 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+		modelType := iam.GenCMDBDynamicResType(objectID, model.ID)
 
-		var modelType = meta.ModelInstance
 		isMainline, err := ps.isMainlineModel(objectID)
 		if err != nil {
 			ps.err = err
@@ -927,7 +936,6 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 					Action:     meta.Update,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -946,6 +954,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+		modelType := iam.GenCMDBDynamicResType(objectID, model.ID)
 
 		ids := make([]int64, 0)
 		val, err := ps.RequestCtx.getValueFromBody("update.#.inst_id")
@@ -969,11 +978,10 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.ModelInstance,
+					Type:       modelType,
 					Action:     meta.UpdateMany,
 					InstanceID: id,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			})
 		}
 
@@ -987,10 +995,18 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		modelType := iam.GenCMDBDynamicResType(objID, model.ID)
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   modelType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1018,8 +1034,8 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+		modelType := iam.GenCMDBDynamicResType(objID, model.ID)
 
-		var modelType = meta.ModelInstance
 		isMainline, err := ps.isMainlineModel(objID)
 		if err != nil {
 			ps.err = err
@@ -1045,7 +1061,6 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 					Action:     meta.Delete,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 
@@ -1108,10 +1123,18 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		modelType := iam.GenCMDBDynamicResType(objID, model.ID)
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   modelType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1126,10 +1149,18 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		modelType := iam.GenCMDBDynamicResType(objID, model.ID)
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   modelType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1144,10 +1175,18 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		modelType := iam.GenCMDBDynamicResType(objID, model.ID)
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   modelType,
 					Action: meta.SkipAction,
 				},
 			},

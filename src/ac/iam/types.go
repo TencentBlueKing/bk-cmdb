@@ -34,7 +34,8 @@ const (
 
 	SystemIDIAM = "bk_iam"
 
-	SysInstTypePrefix = "sys_inst_pub_"
+	// IAM侧资源的通用模型实例前缀
+	IAMSysInstTypePrefix = "sys_inst_pub_"
 )
 
 type AuthConfig struct {
@@ -225,6 +226,13 @@ const (
 	Edit   ActionType = "edit"
 	List   ActionType = "list"
 )
+
+var ActionTypeIDNameMap = map[ActionType]string{
+	Create: "新建",
+	Edit:   "编辑",
+	Delete: "删除",
+	View:   "查询",
+}
 
 type ActionID string
 
@@ -504,7 +512,14 @@ type CommonAction struct {
 	Actions     []ActionWithID `json:"actions"`
 }
 
-type DynamicActionAttribute struct {
+type DynamicAction struct {
+	ActionID     ActionID
+	ActionType   ActionType
+	ActionNameCN string
+	ActionNameEN string
+}
+
+type DynamicDynamicAction struct {
 	createActionID     ActionID
 	createActionNameCN string
 	createActionNameEN string

@@ -411,7 +411,7 @@ func genModelManageActionGroups() []ActionGroup {
 func GenModelInstanceManageActionGroups(objects []metadata.Object) []ActionGroup {
 	subGroups := []ActionGroup{}
 	for _, obj := range objects {
-		subGroups = append(subGroups, MakeDynamicActionSubGroup(obj))
+		subGroups = append(subGroups, GenDynamicActionSubGroup(obj))
 	}
 	return []ActionGroup{
 		{

@@ -264,7 +264,7 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
 	[]map[string]interface{}, error) {
 
-	if resourceType != iam.SysInstance && !strings.HasPrefix(string(resourceType), iam.SysInstTypePrefix) {
+	if resourceType != iam.SysInstance && !strings.HasPrefix(string(resourceType), iam.IAMSysInstTypePrefix) {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
@@ -303,55 +303,82 @@ func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filt
 		ids[idx] = id
 	}
 
-	instIDObjIDMap, err := instancemapping.GetInstanceMapping(ids)
-	if err != nil {
-		blog.Errorf("get object ids from instance ids(%+v) failed, err: %v, rid: %s", ids, err, kit.Rid)
-		return nil, err
-	}
-
-	objIDInstIDsMap := make(map[string][]int64)
-	for instID, row := range instIDObjIDMap {
-		objIDInstIDsMap[row.ObjectID] = append(objIDInstIDsMap[row.ObjectID], instID)
-	}
-
 	instances := make([]map[string]interface{}, 0)
-	for objID, instIDs := range objIDInstIDsMap {
+	var result *metadata.QueryConditionResult
+	var err error
+	if resourceType == iam.SysInstance {
+		instIDObjIDMap, err := instancemapping.GetInstanceMapping(ids)
+		if err != nil {
+			blog.Errorf("get object ids from instance ids(%+v) failed, err: %v, rid: %s", ids, err, kit.Rid)
+			return nil, err
+		}
+
+		objIDInstIDsMap := make(map[string][]int64)
+		for instID, row := range instIDObjIDMap {
+			objIDInstIDsMap[row.ObjectID] = append(objIDInstIDsMap[row.ObjectID], instID)
+		}
+
+		for objID, instIDs := range objIDInstIDsMap {
+			query := &metadata.QueryCondition{
+				Condition: map[string]interface{}{
+					common.BKInstIDField: map[string]interface{}{common.BKDBIN: instIDs},
+				},
+				Fields: attrs,
+				Page: metadata.BasePage{
+					Limit: common.BKNoLimit,
+				},
+			}
+
+			result, err = lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, query)
+			if err != nil {
+				blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, instIDs, err, kit.Rid)
+				return nil, err
+			}
+
+			if err = result.CCError(); err != nil {
+				blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, instIDs, err, kit.Rid)
+				return nil, err
+			}
+
+		}
+	} else {
 		query := &metadata.QueryCondition{
 			Condition: map[string]interface{}{
-				common.BKInstIDField: map[string]interface{}{common.BKDBIN: instIDs},
+				common.BKInstIDField: map[string]interface{}{common.BKDBIN: ids},
 			},
 			Fields: attrs,
 			Page: metadata.BasePage{
 				Limit: common.BKNoLimit,
 			},
 		}
-
-		result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, query)
+		objID := iam.GetObjIDFromIamSysInstance(resourceType)
+		result, err = lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, query)
 		if err != nil {
-			blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, instIDs, err, kit.Rid)
+			blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, ids, err, kit.Rid)
 			return nil, err
 		}
 
-		if err := result.CCError(); err != nil {
-			blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, instIDs, err, kit.Rid)
+		if err = result.CCError(); err != nil {
+			blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, ids, err, kit.Rid)
 			return nil, err
 		}
+	}
 
-		// covert id and display_name field
-		for _, instance := range result.Data.Info {
-			instance[types.IDField] = util.GetStrByInterface(instance[common.BKInstIDField])
-			if instance[common.BKInstNameField] != nil {
-				instance[types.NameField] = util.GetStrByInterface(instance[common.BKInstNameField])
-			}
-			if needPath {
-				instance[sdktypes.IamPathKey], err = lgc.getResourceIamPath(kit, resourceType, instance)
-				if err != nil {
-					blog.ErrorJSON("get iam path failed, err: %s, instance: %s, rid: %s", err, instance, kit.Rid)
-					return nil, err
-				}
-			}
-			instances = append(instances, instance)
+	// covert id and display_name field
+	for _, instance := range result.Data.Info {
+		instance[types.IDField] = util.GetStrByInterface(instance[common.BKInstIDField])
+		if instance[common.BKInstNameField] != nil {
+			instance[types.NameField] = util.GetStrByInterface(instance[common.BKInstNameField])
 		}
+		if needPath {
+			var err error
+			instance[sdktypes.IamPathKey], err = lgc.getResourceIamPath(kit, resourceType, instance)
+			if err != nil {
+				blog.ErrorJSON("get iam path failed, err: %s, instance: %s, rid: %s", err, instance, kit.Rid)
+				return nil, err
+			}
+		}
+		instances = append(instances, instance)
 	}
 
 	return instances, nil

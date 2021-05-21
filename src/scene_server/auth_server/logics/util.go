@@ -18,7 +18,6 @@ import (
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -64,7 +63,7 @@ func getResourceTableName(resourceType iam.TypeID, supplierAccount string) strin
 	//case iam.Module:
 	//	return common.BKTableNameBaseModule
 	default:
-		if iam.IsPublicSysInstance(resourceType) {
+		if iam.IsIAMSysInstance(resourceType) {
 			return common.GetObjectInstTableName(iam.GetObjIDFromIamSysInstance(resourceType), supplierAccount)
 		}
 		return ""
@@ -176,15 +175,15 @@ func getHostDisplayName(innerIP string, cloudName string) string {
 	return innerIP + "(" + cloudName + ")"
 }
 
-// collectObjectsNotPre collect objects which are custom.
-func (lgc *Logics) CollectObjectsNotPre(kit *rest.Kit) ([]metadata.Object, error) {
-	// get model
-	cond := condition.CreateCondition().Field(common.BKIsPre).Eq(false)
-	cond.SetFields([]string{common.BKObjIDField, common.BKObjNameField, common.BKFieldID})
-	fCond := cond.ToMapStr()
-	queryCond := &metadata.QueryCondition{Condition: fCond}
-
-	resp, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, queryCond)
+// GetCustomObjects get objects which are custom.
+func (lgc *Logics) GetCustomObjects(kit *rest.Kit) ([]metadata.Object, error) {
+	resp, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{
+		Fields: []string{common.BKObjIDField, common.BKObjNameField, common.BKFieldID},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{
+			common.BKIsPre: false,
+		},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("get custom models failed, err: %+v", err)
 	}
@@ -198,4 +197,30 @@ func (lgc *Logics) CollectObjectsNotPre(kit *rest.Kit) ([]metadata.Object, error
 	}
 
 	return objects, nil
+}
+
+// GetObjectsIDNameMap get a map, key is bk_obj_id, value is bk_obj_name
+func (lgc *Logics) GetObjectsIDNameMap(kit *rest.Kit, objIDs []string) (map[string]string, error) {
+	resp, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{
+		Fields: []string{common.BKObjIDField, common.BKObjNameField},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{
+			common.BKObjIDField: map[string]interface{}{
+				common.BKDBIN: objIDs,
+			},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get models failed, err: %+v", err)
+	}
+	if len(resp.Data.Info) == 0 {
+		blog.Info("get models failed, no models was found")
+	}
+
+	objIDNameMap := make(map[string]string)
+	for _, item := range resp.Data.Info {
+		objIDNameMap[item.Spec.ObjectID] = item.Spec.ObjectName
+	}
+
+	return objIDNameMap, nil
 }

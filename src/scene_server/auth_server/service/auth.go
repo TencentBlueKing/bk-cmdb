@@ -233,7 +233,7 @@ func (s *AuthService) UnregisterModelResourceTypes(ctx *rest.Contexts) {
 
 	idList := []iam.TypeID{}
 	for _, obj := range models {
-		idList = append(idList, iam.MakeDynamicResourceType(obj).ID)
+		idList = append(idList, iam.GenDynamicResourceType(obj).ID)
 	}
 	// Direct call IAM.
 	if err := s.acIam.Client.DeleteResourcesTypes(ctx.Kit.Ctx, idList); err != nil {
@@ -328,7 +328,7 @@ func (s *AuthService) DeleteModelInstanceActions(ctx *rest.Contexts) {
 // CreateModelInstanceActionGroup create iam resource instance action group.
 func (s *AuthService) UpdateModelInstanceActionGroups(ctx *rest.Contexts) {
 	// 入参没有用, 由于IAM仅提供了全量更新的接口, 所以只能重新全量拉取models列表
-	models, err := s.lgc.CollectObjectsNotPre(ctx.Kit)
+	models, err := s.lgc.GetCustomObjects(ctx.Kit)
 	if err != nil {
 		blog.Errorf("Synchronize actions with IAM failed, collect notPre-models failed, err: %s, rid:%s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)

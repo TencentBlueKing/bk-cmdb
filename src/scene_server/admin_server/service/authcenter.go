@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
@@ -53,7 +52,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	}
 
 	// 由于模型实例的编辑&删除拆分为实例级别, 需要先拿到当前已存在的模型, 再进行相应的IAM注册操作
-	models, err := s.CollectObjectsNotPre(rHeader)
+	models, err := s.GetCustomObjects(rHeader)
 	if err != nil {
 		blog.Errorf("init iam failed, collect notPre-models failed, err: %s, rid:%s", err.Error(), rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.CCError(common.CCErrCommDBSelectFailed)})
@@ -72,15 +71,15 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
-// collectObjectsNotPre collect objects which are custom.
-func (s *Service) CollectObjectsNotPre(header http.Header) ([]metadata.Object, error) {
-	// get model
-	cond := condition.CreateCondition().Field(common.BKIsPre).Eq(false)
-	cond.SetFields([]string{common.BKObjIDField, common.BKObjNameField, common.BKFieldID})
-	fCond := cond.ToMapStr()
-	queryCond := &metadata.QueryCondition{Condition: fCond}
-
-	resp, err := s.CoreAPI.CoreService().Model().ReadModel(s.ctx, header, queryCond)
+// GetCustomObjects get objects which are custom.
+func (s *Service) GetCustomObjects(header http.Header) ([]metadata.Object, error) {
+	resp, err := s.CoreAPI.CoreService().Model().ReadModel(s.ctx, header, &metadata.QueryCondition{
+		Fields: []string{common.BKObjIDField, common.BKObjNameField, common.BKFieldID},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{
+			common.BKIsPre: false,
+		},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("get custom models failed, err: %+v", err)
 	}

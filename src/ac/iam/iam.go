@@ -198,11 +198,10 @@ func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.
 			removedResourceActionIDs[idx] = resourceActionID
 			idx++
 		}
-		// TODO: 现有权限迁移完和老权限策略全部删除后，再取消注释去删除
-		//if err = i.Client.DeleteAction(ctx, removedResourceActionIDs); err != nil {
-		//	blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(), removedResourceActionIDs)
-		//	return err
-		//}
+		if err = i.Client.DeleteAction(ctx, removedResourceActionIDs); err != nil {
+			blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(), removedResourceActionIDs)
+			return err
+		}
 	}
 	if selectionLen := len(removedInstanceSelectionMap); selectionLen > 0 {
 		removedInstanceSelectionIDs := make([]InstanceSelectionID, selectionLen)
@@ -211,11 +210,10 @@ func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.
 			removedInstanceSelectionIDs[idx] = resourceActionID
 			idx++
 		}
-		// TODO: 现有权限迁移完和老权限策略全部删除后，再取消注释去删除
-		//if err = i.Client.DeleteInstanceSelection(ctx, removedInstanceSelectionIDs); err != nil {
-		//	blog.ErrorJSON("delete instance selections failed, error: %s, instance selections: %s", err.Error(), removedInstanceSelectionIDs)
-		//	return err
-		//}
+		if err = i.Client.DeleteInstanceSelection(ctx, removedInstanceSelectionIDs); err != nil {
+			blog.ErrorJSON("delete instance selections failed, error: %s, instance selections: %s", err.Error(), removedInstanceSelectionIDs)
+			return err
+		}
 	}
 	if typeLen := len(removedResourceTypeMap); typeLen > 0 {
 		removedResourceTypeIDs := make([]TypeID, len(removedResourceTypeMap))
@@ -224,11 +222,10 @@ func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.
 			removedResourceTypeIDs[idx] = resourceType
 			idx++
 		}
-		// TODO: 现有权限迁移完和老权限策略全部删除后，再取消注释去删除
-		//if err = i.Client.DeleteResourcesTypes(ctx, removedResourceTypeIDs); err != nil {
-		//	blog.ErrorJSON("delete resource types failed, error: %s, resource types: %s", err.Error(), removedResourceTypeIDs)
-		//	return err
-		//}
+		if err = i.Client.DeleteResourcesTypes(ctx, removedResourceTypeIDs); err != nil {
+			blog.ErrorJSON("delete resource types failed, error: %s, resource types: %s", err.Error(), removedResourceTypeIDs)
+			return err
+		}
 	}
 
 	// register or update resource action groups
@@ -260,18 +257,18 @@ func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.
 	}
 
 	// register or update common actions
-	commonActions := GenerateCommonActions()
-	if len(systemResp.Data.CommonActions) == 0 {
-		if err = i.Client.RegisterCommonActions(ctx, commonActions); err != nil {
-			blog.ErrorJSON("register common actions failed, error: %s, common actions: %s", err.Error(), commonActions)
-			return err
-		}
-	} else {
-		if err = i.Client.UpdateCommonActions(ctx, commonActions); err != nil {
-			blog.ErrorJSON("update common actions failed, error: %s, common actions: %s", err.Error(), commonActions)
-			return err
-		}
-	}
+	//commonActions := GenerateCommonActions()
+	//if len(systemResp.Data.CommonActions) == 0 {
+	//	if err = i.Client.RegisterCommonActions(ctx, commonActions); err != nil {
+	//		blog.ErrorJSON("register common actions failed, error: %s, common actions: %s", err.Error(), commonActions)
+	//		return err
+	//	}
+	//} else {
+	//	if err = i.Client.UpdateCommonActions(ctx, commonActions); err != nil {
+	//		blog.ErrorJSON("update common actions failed, error: %s, common actions: %s", err.Error(), commonActions)
+	//		return err
+	//	}
+	//}
 
 	return nil
 }

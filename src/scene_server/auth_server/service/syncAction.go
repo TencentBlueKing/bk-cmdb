@@ -110,7 +110,7 @@ func (s *AuthService) SyncIAMModelResources(kit rest.Kit) error {
 	}
 
 	// 需要先拿到当前已存在的模型, 再与IAM返回结果进行对比
-	models, err := s.lgc.CollectObjectsNotPre(&kit)
+	models, err := s.lgc.GetCustomObjects(&kit)
 	if err != nil {
 		blog.Errorf("Synchronize actions with IAM failed, collect notPre-models failed, err: %s, rid:%s", err.Error(), kit.Rid)
 		return err

@@ -155,7 +155,12 @@ func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types
 // list resource instances that user is privileged to access by policy
 func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) ([]string, error) {
 	resourceType := iam.TypeID(opts.Type)
-	collection := getResourceTableName(resourceType, "0")
+	// the supplier account was set in func (r *RestUtility) wrapperAction(action Action)
+	supplierAccount := util.GetStrByInterface(ctx.Value(common.ContextRequestOwnerField))
+	if supplierAccount == "" {
+		supplierAccount = common.BKDefaultOwnerID
+	}
+	collection := getResourceTableName(resourceType, supplierAccount)
 	idField := GetResourceIDField(resourceType)
 	if collection == "" || idField == "" {
 		return nil, fmt.Errorf("request type %s is invalid", opts.Type)
@@ -164,12 +169,12 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	policyArr := make([]*operator.Policy, len(opts.Attributes))
 	for index, element := range opts.Attributes {
 		policyArr[index] = &operator.Policy{
-			Operator: opts.Operator,
+			Operator: operator.Equal,
 			Element:  element,
 		}
 	}
 	policy := &operator.Policy{
-		Operator: operator.And,
+		Operator: opts.Operator,
 		Element: &operator.Content{
 			Content: policyArr,
 		},

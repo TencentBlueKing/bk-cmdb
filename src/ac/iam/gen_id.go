@@ -94,6 +94,10 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 		return make([]types.Resource, 0), nil
 	case meta.ProcessServiceCategory:
 		return genProcessServiceCategoryResource(act, rscType, a)
+	default:
+		if IsCMDBSysInstance(a.Basic.Type) {
+			return genModelInsteResource(act, rscType, a)
+		}
 	}
 
 	return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", a.Type)
@@ -656,6 +660,25 @@ func genModelInstanceResource(act ActionID, typ TypeID, att *meta.ResourceAttrib
 		r.Attribute = map[string]interface{}{
 			types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", SysInstanceModel, att.Layers[0].InstanceID)},
 		}
+	}
+
+	return []types.Resource{r}, nil
+}
+
+func genModelInsteResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
+		System:    SystemIDCMDB,
+		Type:      types.ResourceType(typ),
+		Attribute: nil,
+	}
+
+	// create action do not related to instance authorize
+	if att.Action == meta.Create || att.Action == meta.CreateMany {
+		return make([]types.Resource, 0), nil
+	}
+
+	if att.InstanceID > 0 {
+		r.ID = strconv.FormatInt(att.InstanceID, 10)
 	}
 
 	return []types.Resource{r}, nil

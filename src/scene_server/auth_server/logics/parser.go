@@ -373,7 +373,7 @@ func GetResourceIDField(resourceType iam.TypeID) string {
 	//case iam.Module:
 	//	return common.BKModuleIDField
 	default:
-		if iam.IsPublicSysInstance(resourceType) {
+		if iam.IsIAMSysInstance(resourceType) {
 			return common.BKInstIDField
 		}
 		return ""
@@ -412,7 +412,7 @@ func GetResourceNameField(resourceType iam.TypeID) string {
 	//case iam.Module:
 	//	return common.BKModuleNameField
 	default:
-		if iam.IsPublicSysInstance(resourceType) {
+		if iam.IsIAMSysInstance(resourceType) {
 			return common.BKInstNameField
 		}
 		return ""

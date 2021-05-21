@@ -192,7 +192,7 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 		return types.ResourcePullMethod{}, nil
 
 	default:
-		if iam.IsPublicSysInstance(resourceType) {
+		if iam.IsIAMSysInstance(resourceType) {
 			return types.ResourcePullMethod{
 				ListAttr:          s.lgc.ListAttr,
 				ListAttrValue:     s.lgc.ListAttrValue,

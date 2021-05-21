@@ -172,6 +172,7 @@ func genBusinessHostActions() []ResourceAction {
 		NameAlias:          "",
 		NameAliasEn:        "",
 		Scope:              nil,
+		SelectionMode:      modeAll,
 		InstanceSelections: hostSelection,
 	}}
 
