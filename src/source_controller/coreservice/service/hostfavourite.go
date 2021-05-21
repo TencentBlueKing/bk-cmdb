@@ -142,7 +142,7 @@ func (s *coreService) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 	}
 
 	// do update host favorite
-	if err = mongodb.Client().Table(common.BKTableNameHostFavorite).Update(ctx.Kit.Ctx, query, fav); err != nil {
+	if err = mongodb.Client().Table(common.BKTableNameHostFavorite).Update(ctx.Kit.Ctx, query, hostFavourite); err != nil {
 		blog.Errorf("update host favorite failed, err: %v, ctx:%v, rid: %s", err, query, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostFavouriteUpdateFail))
 		return

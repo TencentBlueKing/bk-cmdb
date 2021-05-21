@@ -52,6 +52,14 @@ type InstOperationInterface interface {
 	UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface)
+
+	// SearchObjectInstances searches object instances.
+	SearchObjectInstances(kit *rest.Kit, objID string,
+		input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error)
+
+	// CountObjectInstances counts object instances num.
+	CountObjectInstances(kit *rest.Kit, objID string,
+		input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error)
 }
 
 // NewInstOperation create a new inst operation instance
@@ -1241,6 +1249,68 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, objID string, asst
 	query.Start = asstParamCond.Page.Start
 	blog.V(4).Infof("[FindInstByAssociationInst] search object[%s] with inst condition: %v, rid: %s", objID, instCond, kit.Rid)
 	return c.FindOriginInst(kit, objID, query)
+}
+
+// SearchObjectInstances searches object instances.
+func (c *commonInst) SearchObjectInstances(kit *rest.Kit, objID string,
+	input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error) {
+
+	// search conditions.
+	cond, err := input.GetConditions()
+	if err != nil {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
+	}
+
+	conditions := &metadata.QueryCondition{
+		Fields:         input.Fields,
+		Condition:      cond,
+		Page:           input.Page,
+		DisableCounter: true,
+	}
+
+	// search object instances.
+	resp, err := c.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, conditions)
+	if err != nil {
+		blog.Errorf("search object instances failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+	}
+
+	result := &metadata.CommonSearchResult{}
+	for idx := range resp.Data.Info {
+		result.Info = append(result.Info, &resp.Data.Info[idx])
+	}
+
+	return result, nil
+}
+
+// CountObjectInstances counts object instances num.
+func (c *commonInst) CountObjectInstances(kit *rest.Kit, objID string,
+	input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error) {
+
+	// count conditions.
+	cond, err := input.GetConditions()
+	if err != nil {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
+	}
+
+	conditions := &metadata.Condition{
+		Condition: cond,
+	}
+
+	// count object instances num.
+	resp, err := c.clientSet.CoreService().Instance().CountInstances(kit.Ctx, kit.Header, objID, conditions)
+	if err != nil {
+		blog.Errorf("count object instances failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+	}
+
+	return &metadata.CommonCountResult{Count: resp.Data.Count}, nil
 }
 
 func (c *commonInst) FindOriginInst(kit *rest.Kit, objID string, cond *metadata.QueryInput) (*metadata.InstResult, errors.CCError) {

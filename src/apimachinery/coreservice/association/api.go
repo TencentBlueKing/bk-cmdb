@@ -287,6 +287,24 @@ func (asst *association) ReadInstAssociation(ctx context.Context, h http.Header,
 	return
 }
 
+// CountInstanceAssociations counts model instance associations num.
+func (asst *association) CountInstanceAssociations(ctx context.Context, header http.Header,
+	objID string, input *metadata.Condition) (*metadata.CountResponse, error) {
+
+	resp := new(metadata.CountResponse)
+	subPath := "/count/instanceassociation/model/%s"
+
+	err := asst.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, objID).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	return resp, err
+}
+
 func (asst *association) DeleteInstAssociation(ctx context.Context, h http.Header, input *metadata.InstAsstDeleteOption) (
 	resp *metadata.DeletedOptionResult, err error) {
 

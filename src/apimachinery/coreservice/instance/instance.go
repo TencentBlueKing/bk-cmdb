@@ -32,6 +32,10 @@ type InstanceClientInterface interface {
 	//  ReadInstanceStruct 按照结构体返回实例数据
 	ReadInstanceStruct(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition,
 		result interface{}) (err errors.CCErrorCoder)
+
+	// CountInstances counts model instances num.
+	CountInstances(ctx context.Context, header http.Header,
+		objID string, input *metadata.Condition) (*metadata.CountResponse, error)
 }
 
 func NewInstanceClientInterface(client rest.ClientInterface) InstanceClientInterface {

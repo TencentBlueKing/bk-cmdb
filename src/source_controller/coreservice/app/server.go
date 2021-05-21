@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/types"
 	"configcenter/src/source_controller/coreservice/app/options"
 	coresvr "configcenter/src/source_controller/coreservice/service"
@@ -84,6 +85,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	coreSvr.Core = engine
+	errors.SetGlobalCCError(engine.CCErr)
 
 	if err := initResource(coreSvr); err != nil {
 		return err
