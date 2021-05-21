@@ -350,14 +350,3 @@ func (s *AuthService) UpdateModelInstanceActionGroups(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(nil)
 }
-
-// SyncIAMModelResourcesCall will call SyncIAMModelResources
-func (s *AuthService) SyncIAMModelResourcesCall(ctx *rest.Contexts) {
-
-	err := s.SyncIAMModelResources(*ctx.Kit)
-	if err != nil {
-		blog.Errorf("sync action with IAM failed, err:%v", err)
-		ctx.RespAutoError(err)
-	}
-	ctx.RespEntity(nil)
-}

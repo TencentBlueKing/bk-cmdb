@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	CodeNotFound = 1901404
+	codeNotFound = 1901404
 )
 
 var (
@@ -74,7 +74,7 @@ func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
 	}
 
 	if resp.Code != 0 {
-		if resp.Code == CodeNotFound {
+		if resp.Code == codeNotFound {
 			return resp, ErrNotFound
 		}
 		return nil, &AuthError{
@@ -101,7 +101,7 @@ func (c *iamClient) GetSystemDynamicInfo(ctx context.Context) (*SystemResp, erro
 	}
 
 	if resp.Code != 0 {
-		if resp.Code == CodeNotFound {
+		if resp.Code == codeNotFound {
 			return resp, ErrNotFound
 		}
 		return nil, &AuthError{

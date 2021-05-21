@@ -257,18 +257,18 @@ func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.
 	}
 
 	// register or update common actions
-	//commonActions := GenerateCommonActions()
-	//if len(systemResp.Data.CommonActions) == 0 {
-	//	if err = i.Client.RegisterCommonActions(ctx, commonActions); err != nil {
-	//		blog.ErrorJSON("register common actions failed, error: %s, common actions: %s", err.Error(), commonActions)
-	//		return err
-	//	}
-	//} else {
-	//	if err = i.Client.UpdateCommonActions(ctx, commonActions); err != nil {
-	//		blog.ErrorJSON("update common actions failed, error: %s, common actions: %s", err.Error(), commonActions)
-	//		return err
-	//	}
-	//}
+	commonActions := GenerateCommonActions()
+	if len(systemResp.Data.CommonActions) == 0 {
+		if err = i.Client.RegisterCommonActions(ctx, commonActions); err != nil {
+			blog.ErrorJSON("register common actions failed, error: %s, common actions: %s", err.Error(), commonActions)
+			return err
+		}
+	} else {
+		if err = i.Client.UpdateCommonActions(ctx, commonActions); err != nil {
+			blog.ErrorJSON("update common actions failed, error: %s, common actions: %s", err.Error(), commonActions)
+			return err
+		}
+	}
 
 	return nil
 }

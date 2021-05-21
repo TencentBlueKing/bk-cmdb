@@ -179,6 +179,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	errors.SetGlobalCCError(engine.CCErr)
 	go service.BackgroundTask()
+	go service.SyncIAM()
+
 	select {
 	case <-ctx.Done():
 	}

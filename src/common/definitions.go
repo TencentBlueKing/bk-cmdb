@@ -1092,7 +1092,7 @@ const (
 
 	BKCloudSyncUser = "cloud_sync_user"
 
-	BKAuthUser = "auth_sync_user"
+	BKIAMSyncUser = "iam_sync_user"
 )
 
 const (

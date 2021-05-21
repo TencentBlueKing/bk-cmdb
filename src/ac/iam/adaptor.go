@@ -544,8 +544,9 @@ func GenDynamicResourceTypeWithModel(objects []metadata.Object) []ResourceType {
 func GenDynamicInstanceSelection(obj metadata.Object) InstanceSelection {
 	return InstanceSelection{
 		ID:     InstanceSelectionID(fmt.Sprintf("sys_instance_%s_%d", obj.ObjectID, obj.ID)),
-		Name:   obj.ObjectName,
-		NameEn: obj.ObjectID,
+		// 这个系统下唯一, 需要ID
+		Name:   fmt.Sprintf("%s%d", obj.ObjectName, obj.ID),
+		NameEn: fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID),
 		ResourceTypeChain: []ResourceChain{{
 			SystemID: SystemIDCMDB,
 			ID:       GenIAMDynamicResTypeID(obj.ObjectID, obj.ID),
