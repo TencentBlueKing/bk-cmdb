@@ -22,7 +22,9 @@ import (
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 
 	"github.com/tidwall/gjson"
 )
@@ -807,6 +809,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 var (
 	createObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/create/instance/object/[^\s/]+/?$`)
+	createObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/create/instance/batch`)
 	findObjectInstanceAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/find/instassociation/object/[^\s/]+/?$`)
 	updateObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/update/instance/object/[^\s/]+/inst/[0-9]+/?$`)
 	updateObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/updatemany/instance/object/[^\s/]+/?$`)
@@ -861,6 +864,57 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
+		return ps
+	}
+
+	if ps.hitRegexp(createObjectInstanceBatchLatestRegexp, http.MethodPost) {
+		input := &metadata.InstancesBatch{}
+		body, err := ps.RequestCtx.getRequestBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		if err := json.Unmarshal(body, input); err != nil {
+			ps.err = err
+			return ps
+		}
+
+		objID := input.ObjID
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		var modelType = meta.ModelInstance
+		isMainline, err := ps.isMainlineModel(objID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		if isMainline {
+			modelType = meta.MainlineInstance
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   modelType,
+					Action: meta.Create,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+			},
+		}
+
 		return ps
 	}
 

@@ -39,6 +39,7 @@ import (
 type InstOperationInterface interface {
 	CreateInst(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
 	CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error)
+	CreateInstanceBatch(kit *rest.Kit, obj model.Object, data *metadata.InstancesBatch) (*metadata.InstancesResult, error)
 	DeleteInst(kit *rest.Kit, objectID string, cond mapstr.MapStr, needCheckHost bool) error
 	DeleteMainlineInstWithID(kit *rest.Kit, obj model.Object, instID int64) error
 	DeleteInstByInstID(kit *rest.Kit, objectID string, instID []int64, needCheckHost bool) error
@@ -91,6 +92,114 @@ func (c *commonInst) SetProxy(modelFactory model.Factory, instFactory inst.Facto
 	c.instFactory = instFactory
 	c.asst = asst
 	c.obj = obj
+}
+
+func (c *commonInst) CreateInstanceBatch(kit *rest.Kit, obj model.Object, data *metadata.InstancesBatch) (*metadata.InstancesResult, error) {
+	object := obj.Object()
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(object.ObjectID) == true {
+		blog.Errorf("CreateInstBatch failed, create %s instance with common create api forbidden, rid: %s", object.ObjectID, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrTopoImportMainlineForbidden)
+	}
+
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", object.ObjectID, err.Error(), kit.Rid)
+		return nil, err
+	}
+	if isMainline {
+		blog.Errorf("CreateInstBatch failed, create %s instance with common create api forbidden, rid: %s", object.ObjectID, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrTopoImportMainlineForbidden)
+
+	}
+
+	switch lens := len(data.Details); {
+	case lens == 0:
+		blog.Errorf("[operation-inst] parameter details is zero, rid: %s", kit.Rid)
+		return nil, fmt.Errorf("details is empty")
+	case lens > 200:
+		blog.Errorf("[operation-inst] parameter details is more than 200 , rid: %s", kit.Rid)
+		return nil, fmt.Errorf("details is more than 200 ,out of limit")
+	}
+
+	// create new insts
+	params := &metadata.CreateManyModelInstance{}
+
+	var objErrItem []string
+	var uniqueErrItem []string
+	for _, item := range data.Details {
+		itemName, ok := item["bk_inst_name"].(string)
+		if !ok {
+			return nil, fmt.Errorf("itemName isn't string type")
+		}
+
+		if item["bk_obj_id"] != object.ObjectID {
+			objErrItem = append(objErrItem, itemName)
+			continue
+		}
+
+		cond := &metadata.QueryCondition{}
+		if _,ok := item["bk_asset_id"]; ok{
+			cond.Condition = mapstr.MapStr{"bk_obj_id": object.ObjectID, "bk_asset_id": item["bk_asset_id"]}
+		} else {
+			cond.Condition = mapstr.MapStr{"bk_obj_id": object.ObjectID, "bk_inst_name": item["bk_inst_name"]}
+		}
+		res, err := c.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, object.ObjectID, cond)
+		if err != nil {
+			blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
+			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if res.Data.Count > 0 {
+			uniqueErrItem = append(uniqueErrItem, itemName)
+			continue
+		}
+
+		params.Datas = append(params.Datas, item)
+	}
+
+	res, err := c.clientSet.CoreService().Instance().CreateManyInstance(kit.Ctx, kit.Header, object.ObjectID, params)
+	if err != nil {
+		blog.Errorf("[operation-inst] failed to save the object(%s) instances , err: %s, rid: %s", object.ObjectID, err.Error(), kit.Rid)
+		return nil, err
+	}
+
+	successResult := &metadata.InstancesResult{}
+	if res.Result {
+		for _, item := range res.Data.Created {
+			successResult.SuccessCreated = append(successResult.SuccessCreated, item.ID)
+		}
+		if len(objErrItem) != 0 {
+			successResult.ObjErrors = fmt.Sprintf("%s %s", strings.Join(objErrItem, ","), "their obj_id is different from the outer")
+		}
+		if len(uniqueErrItem) != 0 {
+			successResult.UniqueErrors = fmt.Sprintf("%s %s", strings.Join(uniqueErrItem, ","), "they already exist,please check bk_inst_name or bk_asset_id")
+		}
+	}
+
+	if len(successResult.SuccessCreated) != 0 { // generate audit log of instance.
+		cond := map[string]interface{}{
+			obj.GetInstIDFieldName(): map[string]interface{}{
+				common.BKDBIN: successResult.SuccessCreated,
+			},
+		}
+		audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+		auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, obj.GetObjectID(), cond)
+		if err != nil {
+			blog.Errorf(" create inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+
+		// save audit log.
+		err = audit.SaveAuditLog(kit, auditLog...)
+		if err != nil {
+			blog.Errorf("creat inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+		}
+	}
+
+	return successResult, nil
 }
 
 // CreateInstBatch

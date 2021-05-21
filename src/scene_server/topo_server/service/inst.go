@@ -128,6 +128,61 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 	ctx.RespEntity(setInst.ToMapStr())
 }
 
+func (s *Service) CreateInstanceBatch(ctx *rest.Contexts) {
+	data := &metadata.InstancesBatch{}
+	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	objID := data.ObjID
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) {
+		blog.Errorf("batch create instance failed, create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
+
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
+	if nil != err {
+		blog.Errorf("failed to search the object, %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("CreateInst failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if isMainline == true {
+		blog.Errorf("CreateInst failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	var setInst *metadata.InstancesResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		var err error
+		setInst, err = s.Core.InstOperation().CreateInstanceBatch(ctx.Kit, obj, data)
+		if nil != err {
+			blog.Errorf("failed to create a new %s, %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(setInst)
+}
+
 func (s *Service) DeleteInsts(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
 

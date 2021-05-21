@@ -163,6 +163,7 @@ func (s *Service) initBusinessInst(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/instance/object/{bk_obj_id}", Handler: s.CreateInst})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/instance/batch", Handler: s.CreateInstanceBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/instance/object/{bk_obj_id}/inst/{inst_id}", Handler: s.DeleteInst})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/instance/object/{bk_obj_id}", Handler: s.DeleteInsts})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/instance/object/{bk_obj_id}/inst/{inst_id}", Handler: s.UpdateInst})

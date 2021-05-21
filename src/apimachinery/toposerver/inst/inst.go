@@ -34,6 +34,20 @@ func (t *instanceClient) CreateInst(ctx context.Context, objID string, h http.He
 	return
 }
 
+func (t *instanceClient) CreateInstanceBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.CreateInstResult, err error) {
+	resp = new(metadata.CreateInstResult)
+	subPath := "/create/instance/batch"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (t *instanceClient) DeleteInst(ctx context.Context, objID string, instID int64, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/delete/instance/object/%s/inst/%d"

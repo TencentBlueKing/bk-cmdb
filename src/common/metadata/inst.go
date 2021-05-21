@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 )
 
@@ -192,6 +193,18 @@ type SearchInstsNamesOption struct {
 var ObjsForSearchName = map[string]bool{
 	common.BKInnerObjIDSet:    true,
 	common.BKInnerObjIDModule: true,
+}
+
+//InstancesBatch batch create instances' parameter
+type InstancesBatch struct {
+	ObjID   string          `json:"bk_obj_id"`
+	Details []mapstr.MapStr `json:"details"`
+}
+
+type InstancesResult struct {
+	ObjErrors      string   `json:"obj_error"`
+	UniqueErrors   string   `json:"unique_error"`
+	SuccessCreated []uint64 `json:"success_created"`
 }
 
 // Validate verify the SearchInstsNamesOption
