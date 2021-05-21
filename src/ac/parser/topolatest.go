@@ -595,7 +595,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		}
 		// 处理模型自关联的情况
 		if len(models) == 1 {
-			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID)
+			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID, models[0].ID)
 			if err != nil {
 				ps.err = err
 				return ps
@@ -631,7 +631,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			} else {
 				instID = asstInstID
 			}
-			instanceType, err := ps.getInstanceTypeByObject(model.ObjectID)
+			instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
 			if err != nil {
 				ps.err = err
 				return ps
@@ -687,7 +687,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 		// 处理模型自关联的情况
 		if len(models) == 1 {
-			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID)
+			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID, models[0].ID)
 			if err != nil {
 				ps.err = err
 				return ps
@@ -723,7 +723,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			} else {
 				instID = asst.AsstInstID
 			}
-			instanceType, err := ps.getInstanceTypeByObject(model.ObjectID)
+			instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
 			if err != nil {
 				ps.err = err
 				return ps

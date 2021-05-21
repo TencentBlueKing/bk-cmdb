@@ -159,7 +159,6 @@ const (
 	// special model resource for selection of instance, not including models whose instances are managed separately
 	SysInstanceModel         TypeID = "sys_instance_model"
 	SysModel                 TypeID = "sys_model"
-	SysInstance              TypeID = "sys_instance"
 	SysAssociationType       TypeID = "sys_association_type"
 	SysAuditLog              TypeID = "sys_audit_log"
 	SysOperationStatistic    TypeID = "sys_operation_statistic"
@@ -289,10 +288,6 @@ const (
 	EditCloudArea   ActionID = "edit_cloud_area"
 	DeleteCloudArea ActionID = "delete_cloud_area"
 
-	CreateSysInstance ActionID = "create_sys_instance"
-	EditSysInstance   ActionID = "edit_sys_instance"
-	DeleteSysInstance ActionID = "delete_sys_instance"
-
 	CreateEventPushing ActionID = "create_event_subscription"
 	EditEventPushing   ActionID = "edit_event_subscription"
 	DeleteEventPushing ActionID = "delete_event_subscription"
@@ -421,12 +416,11 @@ const (
 	SysEventPushingSelection           InstanceSelectionID = "sys_event_pushing"
 	SysModelGroupSelection             InstanceSelectionID = "sys_model_group"
 	SysModelSelection                  InstanceSelectionID = "sys_model"
-	//SysInstanceSelection               InstanceSelectionID = "sys_instance"
-	SysInstanceModelSelection     InstanceSelectionID = "sys_instance_model"
-	SysAssociationTypeSelection   InstanceSelectionID = "sys_association_type"
-	SysCloudAreaSelection         InstanceSelectionID = "sys_cloud_area"
-	SysCloudAccountSelection      InstanceSelectionID = "sys_cloud_account"
-	SysCloudResourceTaskSelection InstanceSelectionID = "sys_cloud_resource_task"
+	SysInstanceModelSelection          InstanceSelectionID = "sys_instance_model"
+	SysAssociationTypeSelection        InstanceSelectionID = "sys_association_type"
+	SysCloudAreaSelection              InstanceSelectionID = "sys_cloud_area"
+	SysCloudAccountSelection           InstanceSelectionID = "sys_cloud_account"
+	SysCloudResourceTaskSelection      InstanceSelectionID = "sys_cloud_resource_task"
 	// 主机池目录的两种视图，管理的资源也相同，仅名称做区分
 	SysResourcePoolDirectorySelection InstanceSelectionID = "sys_resource_pool_directory"
 	SysHostRscPoolDirectorySelection  InstanceSelectionID = "sys_host_rsc_pool_directory"

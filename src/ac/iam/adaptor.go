@@ -72,10 +72,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 	case meta.ModelAssociation:
 		iamResourceType = SysModel
 	case meta.ModelInstanceAssociation:
-		iamResourceType = SysInstance
+		iamResourceType = SkipType
 	case meta.MainlineModelTopology:
-	case meta.ModelInstance:
-		iamResourceType = SysInstance
 	case meta.ModelInstanceTopology:
 		iamResourceType = SkipType
 	case meta.CloudAreaInstance:
@@ -208,13 +206,6 @@ func ConvertSysInstanceActionID(resourceType meta.ResourceType, action meta.Acti
 }
 
 var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
-	meta.ModelInstance: {
-		meta.Delete:   DeleteSysInstance,
-		meta.Update:   EditSysInstance,
-		meta.Create:   CreateSysInstance,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
-	},
 	meta.ModelAttributeGroup: {
 		meta.Delete:   EditSysModel,
 		meta.Update:   EditSysModel,
@@ -421,9 +412,9 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 	meta.ModelInstanceAssociation: {
 		meta.Find:     Skip,
 		meta.FindMany: Skip,
-		meta.Update:   EditSysInstance,
-		meta.Delete:   EditSysInstance,
-		meta.Create:   EditSysInstance,
+		meta.Update:   Skip,
+		meta.Delete:   Skip,
+		meta.Create:   Skip,
 	},
 	meta.ModelAssociation: {
 		meta.Find:     Skip,
@@ -552,8 +543,7 @@ func GenDynamicResourceTypeWithModel(objects []metadata.Object) []ResourceType {
 // 将model对象构造为InstanceSelection对象
 func GenDynamicInstanceSelection(obj metadata.Object) InstanceSelection {
 	return InstanceSelection{
-		ID: InstanceSelectionID(fmt.Sprintf("sys_instance_%s_%d", obj.ObjectID, obj.ID)),
-		// 这个系统下唯一, 需要ID
+		ID:     InstanceSelectionID(fmt.Sprintf("sys_instance_%s_%d", obj.ObjectID, obj.ID)),
 		Name:   obj.ObjectName,
 		NameEn: obj.ObjectID,
 		ResourceTypeChain: []ResourceChain{{

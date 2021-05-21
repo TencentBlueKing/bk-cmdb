@@ -30,7 +30,7 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iam.TypeID, filter 
 
 	// get attributes' enumeration options from cache
 	objID := getInstanceResourceObjID(resourceType)
-	if objID == "" && resourceType != iam.SysInstance && !iam.IsIAMSysInstance(resourceType) {
+	if objID == "" {
 		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
 	}
 	var attrType string
@@ -43,18 +43,11 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iam.TypeID, filter 
 		Fields: []string{common.BKPropertyTypeField, common.BKOptionField},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 	}
-	var res *metadata.ReadModelAttrResult
-	var err error
 
-	// read all non-inner model attributes for SysInstance resource, add object id to distinguish
-	if resourceType == iam.SysInstance {
-		res, err = lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, &param)
-	} else {
-		if iam.IsIAMSysInstance(resourceType) {
-			objID = iam.GetObjIDFromIamSysInstance(resourceType)
-		}
-		res, err = lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, &param)
+	if iam.IsIAMSysInstance(resourceType) {
+		objID = iam.GetObjIDFromIamSysInstance(resourceType)
 	}
+	res, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, &param)
 	if err != nil {
 		blog.ErrorJSON("read model attribute failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
 		return nil, err

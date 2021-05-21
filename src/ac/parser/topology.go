@@ -335,7 +335,7 @@ func (ps *parseStream) mainline() *parseStream {
 }
 
 const (
-	objectStatistics         = "/api/v3/object/statistics"
+	objectStatistics = "/api/v3/object/statistics"
 )
 
 func (ps *parseStream) object() *parseStream {
@@ -441,7 +441,7 @@ func (ps *parseStream) objectModule() *parseStream {
 				},
 				Layers: []meta.Item{
 					{
-						Type:       meta.ModelInstance,
+						Type:       meta.ModelSet,
 						Name:       "set",
 						InstanceID: setID,
 					},
@@ -480,7 +480,7 @@ func (ps *parseStream) objectModule() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.ModelModule,
+					Type:       meta.ModelSet,
 					Action:     meta.Delete,
 					InstanceID: moduleID,
 				},
@@ -530,7 +530,7 @@ func (ps *parseStream) objectModule() *parseStream {
 				},
 				Layers: []meta.Item{
 					{
-						Type:       meta.ModelInstance,
+						Type:       meta.ModelSet,
 						Name:       "set",
 						InstanceID: setID,
 					},

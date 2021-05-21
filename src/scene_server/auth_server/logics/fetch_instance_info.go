@@ -25,7 +25,6 @@ import (
 	"configcenter/src/common/util"
 	sdktypes "configcenter/src/scene_server/auth_server/sdk/types"
 	"configcenter/src/scene_server/auth_server/types"
-	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
 
 var resourceParentMap = iam.GetResourceParentMap()
@@ -264,7 +263,7 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
 	[]map[string]interface{}, error) {
 
-	if resourceType != iam.SysInstance && !strings.HasPrefix(string(resourceType), iam.IAMSysInstTypePrefix) {
+	if !strings.HasPrefix(string(resourceType), iam.IAMSysInstTypePrefix) {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
@@ -304,64 +303,25 @@ func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filt
 	}
 
 	instances := make([]map[string]interface{}, 0)
-	var result *metadata.QueryConditionResult
-	var err error
-	if resourceType == iam.SysInstance {
-		instIDObjIDMap, err := instancemapping.GetInstanceMapping(ids)
-		if err != nil {
-			blog.Errorf("get object ids from instance ids(%+v) failed, err: %v, rid: %s", ids, err, kit.Rid)
-			return nil, err
-		}
+	query := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKInstIDField: map[string]interface{}{common.BKDBIN: ids},
+		},
+		Fields: attrs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	objID := iam.GetObjIDFromIamSysInstance(resourceType)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, query)
+	if err != nil {
+		blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, ids, err, kit.Rid)
+		return nil, err
+	}
 
-		objIDInstIDsMap := make(map[string][]int64)
-		for instID, row := range instIDObjIDMap {
-			objIDInstIDsMap[row.ObjectID] = append(objIDInstIDsMap[row.ObjectID], instID)
-		}
-
-		for objID, instIDs := range objIDInstIDsMap {
-			query := &metadata.QueryCondition{
-				Condition: map[string]interface{}{
-					common.BKInstIDField: map[string]interface{}{common.BKDBIN: instIDs},
-				},
-				Fields: attrs,
-				Page: metadata.BasePage{
-					Limit: common.BKNoLimit,
-				},
-			}
-
-			result, err = lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, query)
-			if err != nil {
-				blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, instIDs, err, kit.Rid)
-				return nil, err
-			}
-
-			if err = result.CCError(); err != nil {
-				blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, instIDs, err, kit.Rid)
-				return nil, err
-			}
-
-		}
-	} else {
-		query := &metadata.QueryCondition{
-			Condition: map[string]interface{}{
-				common.BKInstIDField: map[string]interface{}{common.BKDBIN: ids},
-			},
-			Fields: attrs,
-			Page: metadata.BasePage{
-				Limit: common.BKNoLimit,
-			},
-		}
-		objID := iam.GetObjIDFromIamSysInstance(resourceType)
-		result, err = lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, query)
-		if err != nil {
-			blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, ids, err, kit.Rid)
-			return nil, err
-		}
-
-		if err = result.CCError(); err != nil {
-			blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, ids, err, kit.Rid)
-			return nil, err
-		}
+	if err = result.CCError(); err != nil {
+		blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, ids, err, kit.Rid)
+		return nil, err
 	}
 
 	// covert id and display_name field

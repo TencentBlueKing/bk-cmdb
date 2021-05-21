@@ -34,8 +34,6 @@ func getResourceTableName(resourceType iam.TypeID, supplierAccount string) strin
 		return common.BKTableNameObjClassification
 	case iam.SysModel, iam.SysInstanceModel:
 		return common.BKTableNameObjDes
-	case iam.SysInstance:
-		return common.BKTableNameBaseInst
 	case iam.SysAssociationType:
 		return common.BKTableNameAsstDes
 	case iam.SysResourcePoolDirectory, iam.SysHostRscPoolDirectory:
