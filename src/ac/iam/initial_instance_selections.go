@@ -24,7 +24,7 @@ var (
 // GenerateInstanceSelections generate all the instance selections registered to IAM.
 func GenerateInstanceSelections(models []metadata.Object) []InstanceSelection {
 	instSelections := GenerateStaticInstanceSelections()
-	instSelections = append(instSelections, GenDynamicInstanceSelectionWithModel(models)...)
+	instSelections = append(instSelections, GenDynamicInstanceSelections(models)...)
 	return instSelections
 }
 

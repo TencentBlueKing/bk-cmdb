@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
 	"configcenter/src/common/auth"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -25,8 +24,8 @@ import (
 
 const (
 	IamRequestHeader   = "X-Request-Id"
-	IamAppCodeHeader   = "X-Bk-App-Code"
-	IamAppSecretHeader = "X-Bk-App-Secret"
+	iamAppCodeHeader   = "X-Bk-App-Code"
+	iamAppSecretHeader = "X-Bk-App-Secret"
 
 	SystemIDCMDB     = "bk_cmdb"
 	SystemNameCMDBEn = "cmdb"
@@ -48,8 +47,6 @@ type AuthConfig struct {
 	// the system id that cmdb used in auth center.
 	// default value: bk_cmdb
 	SystemID string
-	// it is a time period for deleting Iam actions by interval.
-	Interval time.Duration
 }
 
 func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, error) {
@@ -92,15 +89,6 @@ func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, 
 
 	cfg.SystemID = SystemIDCMDB
 
-	interval, err := cc.Duration(prefix + ".interval")
-	if err != nil {
-		return cfg, errors.New(`missing "interval" configuration for auth center`)
-	}
-	cfg.Interval = interval
-	if len(cfg.AppCode) == 0 {
-		return cfg, errors.New(`invalid "interval" configuration for auth center`)
-	}
-
 	return cfg, nil
 }
 
@@ -113,6 +101,19 @@ type System struct {
 	Clients            string     `json:"clients,omitempty"`
 	ProviderConfig     *SysConfig `json:"provider_config"`
 }
+
+// SystemQueryField is system query field for searching system info
+type SystemQueryField string
+
+const (
+	FieldBaseInfo               SystemQueryField = "base_info"
+	FieldResourceTypes          SystemQueryField = "resource_types"
+	FieldActions                SystemQueryField = "actions"
+	FieldActionGroups           SystemQueryField = "action_groups"
+	FieldInstanceSelections     SystemQueryField = "instance_selections"
+	FieldResourceCreatorActions SystemQueryField = "resource_creator_actions"
+	FieldCommonActions          SystemQueryField = "common_actions"
+)
 
 type SysConfig struct {
 	Host string `json:"host,omitempty"`
@@ -351,7 +352,17 @@ type ResourceAction struct {
 	Version              int                  `json:"version"`
 }
 
+// 选择类型, 资源在权限中心产品上配置权限时的作用范围
 type SelectionMode string
+
+const (
+	// 仅可选择实例, 默认值
+	modeInstance SelectionMode = "instance"
+	// 仅可配置属性, 此时instance_selections配置不生效
+	modeAttribute SelectionMode = "attribute"
+	// 可以同时选择实例和配置属性
+	modeAll SelectionMode = "all"
+)
 
 type RelateResourceType struct {
 	SystemID           string                     `json:"system_id"`
@@ -362,12 +373,6 @@ type RelateResourceType struct {
 	SelectionMode      SelectionMode              `json:"selection_mode"`
 	InstanceSelections []RelatedInstanceSelection `json:"related_instance_selections"`
 }
-
-const (
-	modeAll       SelectionMode = "all"
-	modeInstance  SelectionMode = "instance"
-	modeAttribute SelectionMode = "attribute"
-)
 
 type Scope struct {
 	Op      string         `json:"op"`
@@ -506,23 +511,10 @@ type CommonAction struct {
 	Actions     []ActionWithID `json:"actions"`
 }
 
+// DynamicAction is dynamic model action
 type DynamicAction struct {
 	ActionID     ActionID
 	ActionType   ActionType
 	ActionNameCN string
 	ActionNameEN string
-}
-
-type DynamicDynamicAction struct {
-	createActionID     ActionID
-	createActionNameCN string
-	createActionNameEN string
-
-	editActionID     ActionID
-	editActionNameCN string
-	editActionNameEN string
-
-	deleteActionID     ActionID
-	deleteActionNameCN string
-	deleteActionNameEN string
 }

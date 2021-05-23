@@ -265,8 +265,9 @@ authServer:
   appCode: $auth_app_code
   #cmdb项目在蓝鲸权限中心的应用密钥
   appSecret: $auth_app_secret
-  #删除IAM多余模型的时间周期,最少为1m,不要忘记填入单位时(h),分(m),秒(s)
-  interval: 30m
+# adminServer专属配置
+  #同步IAM动态模型的周期,最小为5分钟,默认为30分钟,需填入单位时(h),分(m),秒(s)
+  syncIAMPeriod: 30m
 #cloudServer专属配置
 cloudServer:
   # 加密服务使用

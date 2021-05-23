@@ -13,6 +13,8 @@
 package app
 
 import (
+	"configcenter/src/ac/iam"
+	"configcenter/src/common/auth"
 	"context"
 	"errors"
 	"fmt"
@@ -48,6 +50,10 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", nil)
 	if err != nil {
 		blog.Warnf("parse es config failed: %v", err)
+	}
+	t.Config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
+	if err != nil {
+		blog.Warnf("parse auth center config failed: %v", err)
 	}
 }
 
@@ -131,12 +137,24 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		essrv.Client = esClient
 	}
 
+	iamCli := new(iam.IAM)
+	if auth.EnableAuthorize() {
+		blog.Info("enable auth center access")
+		iamCli, err = iam.NewIam(nil, server.Config.Auth, engine.Metric().Registry())
+		if err != nil {
+			return fmt.Errorf("new iam client failed: %v", err)
+		}
+	} else {
+		blog.Infof("disable auth center access")
+	}
+
 	authManager := extensions.NewAuthManager(engine.CoreAPI)
 	server.Service = &service.Service{
 		Language:    engine.Language,
 		Engine:      engine,
 		AuthManager: authManager,
 		Es:          essrv,
+		IAMClient:   iamCli.Client,
 		Core:        core.New(engine.CoreAPI, authManager, engine.Language),
 		Error:       engine.CCErr,
 		Config:      server.Config,

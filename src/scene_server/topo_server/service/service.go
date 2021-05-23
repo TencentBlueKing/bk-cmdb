@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 
 	"configcenter/src/ac/extensions"
+	"configcenter/src/ac/iam"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
@@ -34,6 +35,7 @@ type Service struct {
 	Config      options.Config
 	AuthManager *extensions.AuthManager
 	Es          *elasticsearch.EsSrv
+	IAMClient   iam.IAMClientInterface
 	Error       errors.CCErrorIf
 	Language    language.CCLanguageIf
 }

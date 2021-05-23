@@ -164,11 +164,12 @@ func genBusinessHostActions() []ResourceAction {
 	}}
 
 	relatedResource := []RelateResourceType{{
-		SystemID:           SystemIDCMDB,
-		ID:                 Host,
-		NameAlias:          "",
-		NameAliasEn:        "",
-		Scope:              nil,
+		SystemID:    SystemIDCMDB,
+		ID:          Host,
+		NameAlias:   "",
+		NameAliasEn: "",
+		Scope:       nil,
+		// 配置权限时可选择实例和配置属性, 后者用于属性鉴权
 		SelectionMode:      modeAll,
 		InstanceSelections: hostSelection,
 	}}
@@ -524,13 +525,13 @@ func genResourcePoolHostActions() []ResourceAction {
 		ID:       SysHostInstanceSelection,
 	}}
 
-	// 注意: 目前属性鉴权功能仅作用于"资源池主机"/"自定义模型实例"的"Edit"和"Delete"动作
 	relatedResource := []RelateResourceType{{
-		SystemID:           SystemIDCMDB,
-		ID:                 Host,
-		NameAlias:          "",
-		NameAliasEn:        "",
-		Scope:              nil,
+		SystemID:    SystemIDCMDB,
+		ID:          Host,
+		NameAlias:   "",
+		NameAliasEn: "",
+		Scope:       nil,
+		// 配置权限时可选择实例和配置属性, 后者用于属性鉴权
 		SelectionMode:      modeAll,
 		InstanceSelections: hostSelection,
 	}}
@@ -748,7 +749,7 @@ func genCloudAreaActions() []ResourceAction {
 
 func GenModelInstanceActions(objects []metadata.Object) []ResourceAction {
 	// create && edit && delete instance
-	return genDynamicActionWithModel(objects)
+	return GenDynamicActions(objects)
 }
 
 func genEventPushingActions() []ResourceAction {

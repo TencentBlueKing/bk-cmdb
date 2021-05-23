@@ -53,6 +53,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	process.Config.Register.Address, _ = cc.String("registerServer.addrs")
 	snapDataID, _ := cc.Int("hostsnap.dataID")
 	process.Config.SnapDataID = int64(snapDataID)
+	process.Config.SyncIAMPeriod, _ = cc.Duration("adminServer.syncIAMPeriod")
+	process.setSyncIAMPeriod()
 
 	// load mongodb, redis and common config from configure directory
 	mongodbPath := process.Config.Configures.Dir + "/" + types.CCConfigureMongo
@@ -100,7 +102,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	input := &backbone.BackboneParameter{
-		ConfigUpdate: process.onHostConfigUpdate,
+		ConfigUpdate: process.onMigrateConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
 		Regdiscv:     process.Config.Register.Address,
 		SrvInfo:      svrInfo,
@@ -195,4 +197,13 @@ type MigrateServer struct {
 	ConfigCenter *configures.ConfCenter
 }
 
-func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {}
+func (h *MigrateServer) onMigrateConfigUpdate(previous, current cc.ProcessConfig) {}
+
+// setSyncIAMPeriod set the sync period
+func (c *MigrateServer) setSyncIAMPeriod() {
+	svc.SyncIAMPeriod = c.Config.SyncIAMPeriod
+	if svc.SyncIAMPeriod < svc.SyncIAMPeriodMin {
+		svc.SyncIAMPeriod = svc.SyncIAMPeriodDefault
+	}
+	blog.Infof("sync iam period is %#v", svc.SyncIAMPeriod)
+}

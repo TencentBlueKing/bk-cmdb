@@ -237,3 +237,181 @@ func (am *AuthManager) AuthorizeByInstances(ctx context.Context, header http.Hea
 
 	return am.batchAuthorize(ctx, header, resources...)
 }
+
+// RegisterModelResourceTypes register resource types for models
+func (am *AuthManager) RegisterModelResourceTypes(ctx context.Context, iamClient iam.IAMClientInterface,
+	objects []metadata.Object) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	if !am.Enabled() {
+		return nil
+	}
+
+	resourceTypes := iam.GenDynamicResourceTypes(objects)
+	if err := iamClient.RegisterResourcesTypes(ctx, resourceTypes); err != nil {
+		blog.ErrorJSON("register resourceTypes failed, error: %s, objects: %s, resourceTypes: %s, rid: %s",
+			err.Error(), objects, resourceTypes, rid)
+		return err
+	}
+
+	return nil
+}
+
+// UnregisterModelResourceTypes unregister resourceTypes for models
+func (am *AuthManager) UnregisterModelResourceTypes(ctx context.Context, iamClient iam.IAMClientInterface,
+	objects []metadata.Object) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	if !am.Enabled() {
+		return nil
+	}
+
+	typeIDs := []iam.TypeID{}
+	resourceTypes := iam.GenDynamicResourceTypes(objects)
+	for _, resourceType := range resourceTypes {
+		typeIDs = append(typeIDs, resourceType.ID)
+	}
+	if err := iamClient.DeleteResourcesTypes(ctx, typeIDs); err != nil {
+		blog.ErrorJSON("unregister resourceTypes failed, error: %s, objects: %s, resourceTypes: %s, rid: %s",
+			err.Error(), objects, resourceTypes, rid)
+		return err
+	}
+
+	return nil
+}
+
+// RegisterModelInstanceSelections register instanceSelections for models
+func (am *AuthManager) RegisterModelInstanceSelections(ctx context.Context, iamClient iam.IAMClientInterface,
+	objects []metadata.Object) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	if !am.Enabled() {
+		return nil
+	}
+
+	instanceSelections := iam.GenDynamicInstanceSelections(objects)
+	if err := iamClient.RegisterInstanceSelections(ctx, instanceSelections); err != nil {
+		blog.ErrorJSON("register instanceSelections failed, error: %s, objects: %s, instanceSelections: %s, rid: %s",
+			err.Error(), objects,
+			instanceSelections, rid)
+		return err
+	}
+
+	return nil
+}
+
+// UnregisterModelInstanceSelections unregister instanceSelections for models
+func (am *AuthManager) UnregisterModelInstanceSelections(ctx context.Context, iamClient iam.IAMClientInterface,
+	objects []metadata.Object) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	if !am.Enabled() {
+		return nil
+	}
+
+	instanceSelectionIDs := []iam.InstanceSelectionID{}
+	instanceSelections := iam.GenDynamicInstanceSelections(objects)
+	for _, instanceSelection := range instanceSelections {
+		instanceSelectionIDs = append(instanceSelectionIDs, instanceSelection.ID)
+	}
+	if err := iamClient.DeleteInstanceSelections(ctx, instanceSelectionIDs); err != nil {
+		blog.ErrorJSON("unregister instanceSelections failed, error: %s, objects: %s, instanceSelections: %s, rid: %s",
+			err.Error(), objects,
+			instanceSelections, rid)
+		return err
+	}
+
+	return nil
+}
+
+// RegisterModelActions register actions for models
+func (am *AuthManager) RegisterModelActions(ctx context.Context, iamClient iam.IAMClientInterface,
+	objects []metadata.Object) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	if !am.Enabled() {
+		return nil
+	}
+
+	actions := iam.GenDynamicActions(objects)
+	if err := iamClient.RegisterActions(ctx, actions); err != nil {
+		blog.ErrorJSON("register actions failed, error: %s, objects: %s, actions: %s, rid: %s", err.Error(), objects,
+			actions, rid)
+		return err
+	}
+
+	return nil
+}
+
+// UnregisterModelActions unregister actions for models
+func (am *AuthManager) UnregisterModelActions(ctx context.Context, iamClient iam.IAMClientInterface,
+	objects []metadata.Object) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	if !am.Enabled() {
+		return nil
+	}
+
+	actionIDs := []iam.ActionID{}
+	for _, obj := range objects {
+		actionIDs = append(actionIDs, iam.GenDynamicActionIDs(obj)...)
+	}
+	if err := iamClient.DeleteActions(ctx, actionIDs); err != nil {
+		blog.ErrorJSON("unregister actions failed, error: %s, objects: %s, actionIDs: %s, rid: %s", err.Error(),
+			objects, actionIDs, rid)
+		return err
+	}
+
+	return nil
+}
+
+// UpdateModelActionGroups update actionGroups for models
+func (am *AuthManager) UpdateModelActionGroups(ctx context.Context, header http.Header,
+	iamClient iam.IAMClientInterface) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	if !am.Enabled() {
+		return nil
+	}
+
+	// IAM目前不支持增量更新，仅支持完全覆盖更新，即更新所有actionGroup
+	actionGroups := iam.GenerateStaticActionGroups()
+	objects, err := am.GetCustomObjects(ctx, header)
+	if err != nil {
+		blog.Errorf("get custom objects failed, err: %s, rid:%s", err.Error(), rid)
+		return err
+	}
+	actionGroups = append(actionGroups, iam.GenModelInstanceManageActionGroups(objects)...)
+
+	if err := iamClient.UpdateActionGroups(ctx, actionGroups); err != nil {
+		blog.ErrorJSON("update actionGroups failed, error: %s, actionGroups: %s, rid: %s", err.Error(),
+			actionGroups, rid)
+		return err
+	}
+
+	return nil
+}
+
+// GetCustomObjects get objects which are custom
+func (am *AuthManager) GetCustomObjects(ctx context.Context, header http.Header) ([]metadata.Object, error) {
+	resp, err := am.clientSet.CoreService().Model().ReadModel(ctx, header, &metadata.QueryCondition{
+		Fields: []string{common.BKObjIDField, common.BKObjNameField, common.BKFieldID},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{
+			common.BKIsPre: false,
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get custom objects failed, err: %+v", err)
+	}
+	if len(resp.Data.Info) == 0 {
+		blog.Info("get custom objects failed, no custom objects were found")
+	}
+
+	objects := make([]metadata.Object, 0)
+	for _, item := range resp.Data.Info {
+		objects = append(objects, item.Spec)
+	}
+
+	return objects, nil
+}

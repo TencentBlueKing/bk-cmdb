@@ -32,14 +32,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type Iam struct {
-	Client *iamClient
+type IAM struct {
+	Client IAMClientInterface
 }
 
-func NewIam(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer) (*Iam, error) {
+func NewIam(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer) (*IAM, error) {
 	blog.V(5).Infof("new iam with parameters tls: %+v, cfg: %+v", tls, cfg)
 	if !auth.EnableAuthorize() {
-		return new(Iam), nil
+		return new(IAM), nil
 	}
 	client, err := util.NewClient(tls)
 	if err != nil {
@@ -60,20 +60,20 @@ func NewIam(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer
 	header := http.Header{}
 	header.Set("Content-Type", "application/json")
 	header.Set("Accept", "application/json")
-	header.Set(IamAppCodeHeader, cfg.AppCode)
-	header.Set(IamAppSecretHeader, cfg.AppSecret)
+	header.Set(iamAppCodeHeader, cfg.AppCode)
+	header.Set(iamAppSecretHeader, cfg.AppSecret)
 
-	return &Iam{
-		Client: &iamClient{
+	return &IAM{
+		Client: NewIAMClient(&IAMClientCfg{
 			Config:      cfg,
-			client:      rest.NewRESTClient(c, ""),
-			basicHeader: header,
-		},
+			Client:      rest.NewRESTClient(c, ""),
+			BasicHeader: header,
+		}),
 	}, nil
 }
 
-func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.Object) error {
-	systemResp, err := i.Client.GetSystemInfo(ctx)
+func (i IAM) RegisterSystem(ctx context.Context, host string, models []metadata.Object) error {
+	systemResp, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
 	if err != nil && err != ErrNotFound {
 		blog.Errorf("get system info failed, error: %s", err.Error())
 		return err
@@ -157,7 +157,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.
 		}
 	}
 	if len(newInstanceSelections) > 0 {
-		if err = i.Client.CreateInstanceSelection(ctx, newInstanceSelections); err != nil {
+		if err = i.Client.RegisterInstanceSelections(ctx, newInstanceSelections); err != nil {
 			blog.ErrorJSON("register instance selections failed, error: %s, resource types: %s", err.Error(), newInstanceSelections)
 			return err
 		}
@@ -184,7 +184,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.
 		}
 	}
 	if len(newResourceActions) > 0 {
-		if err = i.Client.CreateAction(ctx, newResourceActions); err != nil {
+		if err = i.Client.RegisterActions(ctx, newResourceActions); err != nil {
 			blog.ErrorJSON("register resource actions failed, error: %s, resource actions: %s", err.Error(), newResourceActions)
 			return err
 		}
@@ -198,7 +198,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.
 			removedResourceActionIDs[idx] = resourceActionID
 			idx++
 		}
-		if err = i.Client.DeleteAction(ctx, removedResourceActionIDs); err != nil {
+		if err = i.Client.DeleteActions(ctx, removedResourceActionIDs); err != nil {
 			blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(), removedResourceActionIDs)
 			return err
 		}
@@ -210,7 +210,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string, models []metadata.
 			removedInstanceSelectionIDs[idx] = resourceActionID
 			idx++
 		}
-		if err = i.Client.DeleteInstanceSelection(ctx, removedInstanceSelectionIDs); err != nil {
+		if err = i.Client.DeleteInstanceSelections(ctx, removedInstanceSelectionIDs); err != nil {
 			blog.ErrorJSON("delete instance selections failed, error: %s, instance selections: %s", err.Error(), removedInstanceSelectionIDs)
 			return err
 		}
@@ -412,32 +412,4 @@ func (a *authorizer) BatchRegisterResourceCreatorAction(ctx context.Context, h h
 	[]metadata.IamCreatorActionPolicy, error) {
 
 	return a.authClientSet.BatchRegisterResourceCreatorAction(ctx, h, input)
-}
-
-func (a *authorizer) RegisterModelResourceTypes(ctx context.Context, h http.Header, input []metadata.Object) error {
-	return a.authClientSet.RegisterModelResourceTypes(ctx, h, input)
-}
-
-func (a *authorizer) UnregisterModelResourceTypes(ctx context.Context, h http.Header, input []metadata.Object) error {
-	return a.authClientSet.UnregisterModelResourceTypes(ctx, h, input)
-}
-
-func (a *authorizer) RegisterModelInstanceSelections(ctx context.Context, h http.Header, input []metadata.Object) error {
-	return a.authClientSet.RegisterModelInstanceSelections(ctx, h, input)
-}
-
-func (a *authorizer) UnregisterModelInstanceSelections(ctx context.Context, h http.Header, input []metadata.Object) error {
-	return a.authClientSet.UnregisterModelInstanceSelections(ctx, h, input)
-}
-
-func (a *authorizer) CreateModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error {
-	return a.authClientSet.CreateModelInstanceActions(ctx, h, input)
-}
-
-func (a *authorizer) DeleteModelInstanceActions(ctx context.Context, h http.Header, input []metadata.Object) error {
-	return a.authClientSet.DeleteModelInstanceActions(ctx, h, input)
-}
-
-func (a *authorizer) UpdateModelInstanceActionGroups(ctx context.Context, h http.Header) error {
-	return a.authClientSet.UpdateModelInstanceActionGroups(ctx, h)
 }

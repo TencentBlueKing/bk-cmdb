@@ -56,7 +56,8 @@ func GenerateResourceTypes(models []metadata.Object) []ResourceType {
 	resourceTypeList = append(resourceTypeList, GenerateStaticResourceTypes()...)
 
 	// add dynamic resources
-	resourceTypeList = append(resourceTypeList, GenDynamicResourceTypeWithModel(models)...)
+	resourceTypeList = append(resourceTypeList, GenDynamicResourceTypes(models)...)
+
 	return resourceTypeList
 }
 

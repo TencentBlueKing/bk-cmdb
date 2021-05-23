@@ -13,6 +13,8 @@
 package options
 
 import (
+	"time"
+
 	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
@@ -55,6 +57,8 @@ type Config struct {
 	SnapRedis  redis.Config
 	Iam        iam.AuthConfig
 	SnapDataID int64
+	// SyncIAMPeriod the period for sync Iam resources
+	SyncIAMPeriod time.Duration
 }
 
 type LanguageConfig struct {

@@ -145,21 +145,21 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 
 			modelList := []metadata.Object{rsp.Object()}
 			// 2.register new resourceType when new model is created
-			err = s.AuthManager.Authorizer.RegisterModelResourceTypes(ctx.Kit.Ctx, ctx.Kit.Header, modelList)
+			err = s.AuthManager.RegisterModelResourceTypes(ctx.Kit.Ctx, s.IAMClient, modelList)
 			if err != nil {
 				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
 			}
 
 			// 3.register new instance_selection when new model is created
-			err = s.AuthManager.Authorizer.RegisterModelInstanceSelections(ctx.Kit.Ctx, ctx.Kit.Header, modelList)
+			err = s.AuthManager.RegisterModelInstanceSelections(ctx.Kit.Ctx, s.IAMClient, modelList)
 			if err != nil {
 				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
 			}
 
 			// 4.register IAM actions when new model is created
-			err = s.AuthManager.Authorizer.CreateModelInstanceActions(ctx.Kit.Ctx, ctx.Kit.Header, modelList)
+			err = s.AuthManager.RegisterModelActions(ctx.Kit.Ctx, s.IAMClient, modelList)
 			if err != nil {
 				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
@@ -168,7 +168,7 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 
 			// 5.register IAM action groups when new model is created
 			// 注意: 此接口目前为全量更新, IAM暂时没有提供增量更新接口
-			err = s.AuthManager.Authorizer.UpdateModelInstanceActionGroups(ctx.Kit.Ctx, ctx.Kit.Header)
+			err = s.AuthManager.UpdateModelActionGroups(ctx.Kit.Ctx, ctx.Kit.Header, s.IAMClient)
 			if err != nil {
 				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
@@ -280,7 +280,7 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		// 由于ActionGroups会直观的让用户在IAM内看到访问界面的变化, 应尽量优先保证与cmdb操作的事务性
 		// 1.update IAM action groups
 		if auth.EnableAuthorize() {
-			err = s.AuthManager.Authorizer.UpdateModelInstanceActionGroups(ctx.Kit.Ctx, ctx.Kit.Header)
+			err = s.AuthManager.UpdateModelActionGroups(ctx.Kit.Ctx, ctx.Kit.Header, s.IAMClient)
 			if err != nil {
 				blog.Errorf("[api-obj] delete model, but update instance action group to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
@@ -298,7 +298,7 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 	if auth.EnableAuthorize() {
 		objList := []metadata.Object{*obj}
 		// 2.delete action
-		err = s.AuthManager.Authorizer.DeleteModelInstanceActions(ctx.Kit.Ctx, ctx.Kit.Header, objList)
+		err = s.AuthManager.UnregisterModelActions(ctx.Kit.Ctx, s.IAMClient, objList)
 		if err != nil {
 			blog.Errorf("[api-obj] delete model, but unregister actions failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 
@@ -309,7 +309,7 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		}
 
 		// 3.instance selection
-		err = s.AuthManager.Authorizer.UnregisterModelInstanceSelections(ctx.Kit.Ctx, ctx.Kit.Header, objList)
+		err = s.AuthManager.UnregisterModelInstanceSelections(ctx.Kit.Ctx, s.IAMClient, objList)
 		if err != nil {
 			blog.Errorf("[api-obj] delete model, but unregister instance selections failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 
@@ -320,7 +320,7 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		}
 
 		// 4.unregister resourceType
-		err = s.AuthManager.Authorizer.UnregisterModelResourceTypes(ctx.Kit.Ctx, ctx.Kit.Header, objList)
+		err = s.AuthManager.UnregisterModelResourceTypes(ctx.Kit.Ctx, s.IAMClient, objList)
 		if err != nil {
 			blog.Errorf("[api-obj] delete model, but unregister model resource types failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 

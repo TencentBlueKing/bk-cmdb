@@ -81,10 +81,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			return err
 		}
 
-		acIam, err := iam.NewIam(nil, authConf, engine.Metric().Registry())
-
 		lgc := logics.NewLogics(engine.CoreAPI)
-
 		authConfig := sdktypes.Config{
 			Iam:     iamConf,
 			Options: opt,
@@ -94,7 +91,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			return fmt.Errorf("new authorize failed, err: %v", err)
 		}
 
-		authServer.Service = service.NewAuthService(engine, iamCli, acIam, lgc, authorizer)
+		authServer.Service = service.NewAuthService(engine, iamCli, lgc, authorizer)
 		break
 	}
 	err = backbone.StartServer(ctx, cancel, engine, authServer.Service.WebService(), true)
