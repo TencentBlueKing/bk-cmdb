@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package x18_12_12_01
+package y3_9_202105271151
 
 import (
 	"context"
@@ -23,7 +23,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-type Attribute struct {
+type attribute struct {
 	ID                int64       `json:"id" bson:"id"`
 	OwnerID           string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	ObjectID          string      `json:"bk_obj_id" bson:"bk_obj_id"`
@@ -49,7 +49,7 @@ type Attribute struct {
 	LastTime          *time.Time  `json:"last_time" bson:"last_time"`
 }
 
-func addAIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addUNIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(common.BKDefaultOwnerID)
@@ -57,7 +57,7 @@ func addAIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	cond.Field(common.BKPropertyIDField).Eq(common.BKOSTypeField)
 	cond.Field(common.BKAppIDField).Eq(0)
 
-	ostypeProperty := Attribute{}
+	ostypeProperty := attribute{}
 	err := db.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, &ostypeProperty)
 	if err != nil {
 		return err
@@ -68,14 +68,14 @@ func addAIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		return err
 	}
 	for _, enum := range enumOpts {
-		if enum.ID == common.HostOSTypeEnumAIX {
+		if enum.ID == common.HostOSTypeEnumUNIX {
 			return nil
 		}
 	}
 
 	aixEnum := metadata.EnumVal{
-		ID:   common.HostOSTypeEnumAIX,
-		Name: "AIX",
+		ID:   common.HostOSTypeEnumUNIX,
+		Name: "Unix",
 		Type: "text",
 	}
 	enumOpts = append(enumOpts, aixEnum)
