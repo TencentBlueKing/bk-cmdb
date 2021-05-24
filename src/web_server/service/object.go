@@ -237,7 +237,6 @@ func (s *Service) ExportObject(c *gin.Context) {
 
 	webCommon.SetProxyHeader(c)
 
-	ownerID := c.Param(common.BKOwnerIDField)
 	objID := c.Param(common.BKObjIDField)
 
 	language := webCommon.GetLanguageByHTTPRequest(c)
@@ -254,7 +253,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 	}
 
 	// get the all attribute of the object
-	arrItems, err := s.Logics.GetObjectData(ownerID, objID, c.Request.Header, requestBody.BizID)
+	arrItems, err := s.Logics.GetObjectData(objID, c.Request.Header, requestBody.BizID)
 	if nil != err {
 		blog.Error("export model, but get object data failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)

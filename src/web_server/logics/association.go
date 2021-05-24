@@ -24,7 +24,9 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, objID string, instAsstArr []*metadata.InstAsst, modelBizID int64) (map[string]map[int64][]PropertyPrimaryVal, error) {
+func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, objID string,
+	instAsstArr []*metadata.InstAsst, modelBizID int64, objectUniqueIDMap map[string]int64) (
+	map[string]map[int64][]PropertyPrimaryVal, error) {
 
 	// map[objID][]instID
 	asstObjIDIDArr := make(map[string][]int64)
@@ -44,7 +46,8 @@ func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, o
 	// map[objID]map[inst_id][]Property
 	retAsstObjIDInstInfoMap := make(map[string]map[int64][]PropertyPrimaryVal)
 	for itemObjID, asstInstIDArr := range asstObjIDIDArr {
-		objPrimaryInfo, err := lgc.fetchInstAssociationData(ctx, header, itemObjID, asstInstIDArr, modelBizID)
+		unqieuID := objectUniqueIDMap[itemObjID]
+		objPrimaryInfo, err := lgc.fetchInstAssociationData(ctx, header, itemObjID, asstInstIDArr, modelBizID, unqieuID)
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +99,8 @@ func (lgc *Logics) fetchAssociationData(ctx context.Context, header http.Header,
 	return result, nil
 }
 
-func (lgc *Logics) fetchInstAssociationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, modelBizID int64) (map[int64][]PropertyPrimaryVal, error) {
+func (lgc *Logics) fetchInstAssociationData(ctx context.Context, header http.Header, objID string, instIDArr []int64,
+	modelBizID int64, uniqueID int64) (map[int64][]PropertyPrimaryVal, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
@@ -110,7 +114,7 @@ func (lgc *Logics) fetchInstAssociationData(ctx context.Context, header http.Hea
 		},
 	}
 
-	resp, err := lgc.CoreAPI.ApiServer().GetInstUniqueFields(ctx, header, objID, option)
+	resp, err := lgc.CoreAPI.ApiServer().GetInstUniqueFields(ctx, header, objID, uniqueID, option)
 	if err != nil {
 		blog.ErrorJSON("fetchInstAssociationData failed, GetInstUniqueFields err:%v, option: %s, rid: %s", err, option, rid)
 		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -130,17 +134,18 @@ func (lgc *Logics) fetchInstAssociationData(ctx context.Context, header http.Hea
 		}
 		isSkip := false
 		var primaryKeysVal []PropertyPrimaryVal
-		for _, key := range propertyArr {
+		for attrID, attrName := range resp.Data.UniqueAttribute {
 			// use display , use string
-			val, err := inst.String(key.ID)
+			val, err := inst.String(attrID)
 			if err != nil {
-				blog.Warnf("fetchInstAssociationData get %s instance %s field error, err:%s, inst:%+v, rid:%s", objID, key, err.Error(), inst, rid)
+				blog.WarnJSON("fetchInstAssociationData get %s instance %s field error, err:%s, inst:%s, rid:%s",
+					objID, attrID, err.Error(), inst, rid)
 				isSkip = true
 				break
 			}
 			primaryKeysVal = append(primaryKeysVal, PropertyPrimaryVal{
-				ID:     key.ID,
-				Name:   key.Name,
+				ID:     attrID,
+				Name:   attrName,
 				StrVal: val,
 			})
 		}

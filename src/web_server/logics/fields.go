@@ -137,13 +137,7 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID i
 	index := 1
 	// 第一步，选出唯一校验字段；
 	for _, field := range sortedFields {
-		if field.IsOnly == true {
-			field.ExcelColIndex = index
-			index++
-			fields = append(fields, field)
-		} else {
-			noUniqueFields = append(noUniqueFields, field)
-		}
+		noUniqueFields = append(noUniqueFields, field)
 	}
 
 	// 第二步，根据字段分组，对必填字段排序；并选出非必填字段
@@ -201,16 +195,6 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
 	}
 
-	inputParam := metadata.QueryCondition{
-		Page: metadata.BasePage{
-			Start: 0,
-			Limit: common.BKNoLimit,
-		},
-		Condition: mapstr.MapStr(map[string]interface{}{
-			common.BKObjIDField: objID,
-		}),
-	}
-
 	ret := []Property{}
 	for _, attr := range result.Data {
 		ret = append(ret, Property{
@@ -222,7 +206,6 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 			Option:        attr.Option,
 			Group:         attr.PropertyGroup,
 			ExcelColIndex: int(attr.PropertyIndex),
-			IsOnly:        keyIDs[uint64(attr.ID)],
 		})
 	}
 	blog.V(5).Infof("getObjFieldIDsBySort ret count:%d, rid: %s", len(ret), rid)
