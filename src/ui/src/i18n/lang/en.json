@@ -1441,5 +1441,6 @@
     "请先选择主机": "Please select host",
     "请先选择操作对象": "Please select operation target",
     "账号": "Account",
-    "模糊": "fuzzy"
+    "模糊": "fuzzy",
+    "模板名称将作为实例化后的模块名": "The template name will be used as the module name after instantiation"
 }

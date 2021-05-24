@@ -83,7 +83,7 @@ const customRules = {
     validate: value => /^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$/.test(value)
   },
   businessTopoInstNames: {
-    validate: value => /^[^\#\/,\>\<\|]+$/.test(value)
+    validate: value => /^[^\\\|\/:\*,<>"\?#\s]+$/.test(value)
   },
   repeatTagKey: {
     validate: (value, otherValue) => otherValue.findIndex(item => item === value) === -1
@@ -107,7 +107,7 @@ const customRules = {
       const nameList = value.split('\n').filter(name => name)
       // eslint-disable-next-line no-restricted-syntax
       for (const name of nameList) {
-        if (stringLength(name) > 256) return false
+        if (stringLength(name) > 32) return false
       }
       return true
     }
@@ -179,8 +179,8 @@ const dictionary = {
       emptySetName: () => '请勿输入空白集群名称',
       instanceTagValue: () => '请输入英文数字的组合',
       instanceTagKey: () => '请输入英文开头数字的组合',
-      setNameLen: () => '请输入256个字符以内的内容',
-      businessTopoInstNames: () => '格式不正确，不能包含特殊字符 #/,><|',
+      setNameLen: () => '请输入32个字符以内的内容',
+      businessTopoInstNames: () => '格式不正确，不能包含特殊字符\ | / : * , < > " ? #及空格',
       reservedWord: () => '不能以"bk_"开头',
       ipSearchRuls: () => '暂不支持不同云区域的混合搜索',
       validRegExp: () => '请输入合法的正则表达式'
@@ -222,8 +222,8 @@ const dictionary = {
       instanceTagValue: () => 'Please enter letter, number',
       instanceTagKey: () => 'Please enter letter, number starts with letter',
       repeatTagKey: () => 'Label key cannot be repeated',
-      setNameLen: () => 'Content length max than 256',
-      businessTopoInstNames: () => 'The format is incorrect and cannot contain special characters #/,><|',
+      setNameLen: () => 'Content length max than 32',
+      businessTopoInstNames: () => 'The format is incorrect and cannot contain special characters \ | / : * , < > " ? # and space',
       reservedWord: () => 'Can not start with "bk_"',
       ipSearchRuls: () => 'Hybrid search of different cloud regions is not supported at the moment',
       validRegExp: () => 'Please enter valid regular express'
