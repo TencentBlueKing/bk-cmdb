@@ -145,23 +145,24 @@ var SetTemplateKey = Key{
 	},
 }
 
-var objectBaseFields = []string{common.BKInstIDField, common.BKInstNameField}
 var ObjectBaseKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDObject,
 	collection: common.BKTableNameBaseInst,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
-		fields := gjson.GetManyBytes(doc, objectBaseFields...)
-		for idx := range objectBaseFields {
-			if !fields[idx].Exists() {
-				return fmt.Errorf("field %s not exist", objectBaseFields[idx])
-			}
+		field := gjson.GetBytes(doc, common.BKInstIDField)
+		if !field.Exists() {
+			return fmt.Errorf("field %s not exist", common.BKInstIDField)
 		}
+
+		if field.Int() <= 0 {
+			return fmt.Errorf("invalid bk_inst_id: %s, should be integer type and >= 0", field.Raw)
+		}
+
 		return nil
 	},
 	instName: func(doc []byte) string {
-		fields := gjson.GetManyBytes(doc, objectBaseFields...)
-		return fields[1].String()
+		return gjson.GetBytes(doc, common.BKInstNameField).String()
 	},
 	instID: func(doc []byte) int64 {
 		return gjson.GetBytes(doc, common.BKInstIDField).Int()
