@@ -142,14 +142,13 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 	// get delete events' detail with oid from cmdb
 	if node.EventType == watch.Delete {
 		filter := map[string]interface{}{
-			"oid":  node.Oid,
-			"coll": key.Collection(),
+			"oid": node.Oid,
 		}
 
 		if key.Collection() == common.BKTableNameBaseInst {
-			filter["coll"] = map[string]interface{}{
-				common.BKDBLIKE: event.ObjInstTablePrefixRegex,
-			}
+			filter["detail.bk_inst_id"] = node.InstanceID
+		} else {
+			filter["coll"] = key.Collection()
 		}
 
 		detailFields := make([]string, len(fields))
@@ -460,12 +459,17 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 	// get oids and its mapping with the detail array indexes
 	oids := make([]primitive.ObjectID, 0)
 	deletedOids := make([]string, 0)
+	deleteInstIDs := make([]int64, 0)
 	oidIndexMap := make(map[string][]int)
 	coll := key.Collection()
 	instIDs := make([]int64, 0)
 	for _, node := range nodes {
 		if node.EventType == watch.Delete {
 			deletedOids = append(deletedOids, node.Oid)
+
+			if coll == common.BKTableNameBaseInst {
+				deleteInstIDs = append(deleteInstIDs, node.InstanceID)
+			}
 		} else {
 			objectId, err := primitive.ObjectIDFromHex(node.Oid)
 			if err != nil {
@@ -473,10 +477,10 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 				return nil, fmt.Errorf("get mongodb _id from oid(%s) failed, err: %v", node.Oid, err)
 			}
 			oids = append(oids, objectId)
-		}
 
-		if coll == common.BKTableNameBaseInst {
-			instIDs = append(instIDs, node.InstanceID)
+			if coll == common.BKTableNameBaseInst {
+				instIDs = append(instIDs, node.InstanceID)
+			}
 		}
 
 		oidIndexMap[node.Oid] = append(oidIndexMap[node.Oid], errCursorIndexMap[node.Cursor])
@@ -516,19 +520,19 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 				}
 			}
 		} else if coll == common.BKTableNameBaseInst {
-			instIDObjIDMap, err := instancemapping.GetInstanceMapping(instIDs)
+			instObjMappings, err := instancemapping.GetInstanceObjectMapping(instIDs)
 			if err != nil {
 				blog.Errorf("get object ids from instance ids(%+v) failed, err: %v, rid: %s", instIDs, err, kit.Rid)
 				return nil, err
 			}
 
 			objIDOwnerIDInstIDsMap := make(map[string]map[string][]int64, 0)
-			for instID, row := range instIDObjIDMap {
+			for _, row := range instObjMappings {
 				if _, ok := objIDOwnerIDInstIDsMap[row.ObjectID]; !ok {
 					objIDOwnerIDInstIDsMap[row.ObjectID] = make(map[string][]int64, 0)
 				}
 				objIDOwnerIDInstIDsMap[row.ObjectID][row.ObjectID] =
-					append(objIDOwnerIDInstIDsMap[row.ObjectID][row.ObjectID], instID)
+					append(objIDOwnerIDInstIDsMap[row.ObjectID][row.ObjectID], row.ID)
 			}
 
 			for objID, ownerIDInstMap := range objIDOwnerIDInstIDsMap {
@@ -577,7 +581,8 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 		return oidDetailMap, nil
 	}
 
-	oidDetailMap, err := c.searchDeletedEventDetailsFromMongo(kit, coll, deletedOids, fields, oidIndexMap, oidDetailMap)
+	oidDetailMap, err := c.searchDeletedEventDetailsFromMongo(kit, coll, deletedOids, fields, deleteInstIDs,
+		oidIndexMap, oidDetailMap)
 	if err != nil {
 		blog.Errorf("get delete details from db failed, err: %s, oids: %+v, rid: %s", err, deletedOids, kit.Rid)
 		return nil, err
@@ -588,7 +593,7 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 
 // searchDeletedEventDetailsFromMongo search delete events' details from the cc_DelArchive table by oids
 func (c *Client) searchDeletedEventDetailsFromMongo(kit *rest.Kit, coll string, deletedOids []string, fields []string,
-	oidIndexMap map[string][]int, oidDetailMap map[int]string) (map[int]string, error) {
+	deleteInstIDs []int64, oidIndexMap map[string][]int, oidDetailMap map[int]string) (map[int]string, error) {
 
 	detailFields := make([]string, 0)
 	if len(fields) > 0 {
@@ -599,14 +604,13 @@ func (c *Client) searchDeletedEventDetailsFromMongo(kit *rest.Kit, coll string, 
 	}
 
 	deleteFilter := map[string]interface{}{
-		"oid":  map[string]interface{}{common.BKDBIN: deletedOids},
-		"coll": coll,
+		"oid": map[string]interface{}{common.BKDBIN: deletedOids},
 	}
 
 	if coll == common.BKTableNameBaseInst {
-		deleteFilter["coll"] = map[string]interface{}{
-			common.BKDBLIKE: event.ObjInstTablePrefixRegex,
-		}
+		deleteFilter["detail.bk_inst_id"] = map[string]interface{}{common.BKDBIN: deleteInstIDs}
+	} else {
+		deleteFilter["coll"] = coll
 	}
 
 	if coll == common.BKTableNameBaseHost {

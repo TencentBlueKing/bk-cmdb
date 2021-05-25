@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/multilingual"
+	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
 
 func (s *coreService) CreateOneModelInstance(ctx *rest.Contexts) {
@@ -113,4 +114,13 @@ func (s *coreService) CascadeDeleteModelInstances(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntityWithError(s.core.InstanceOperation().CascadeDeleteModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+}
+
+func (s *coreService) GetInstanceObjectMapping(ctx *rest.Contexts) {
+	inputData := metadata.GetInstanceObjectMappingsOption{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntityWithError(instancemapping.GetInstanceObjectMapping(inputData.IDs))
 }

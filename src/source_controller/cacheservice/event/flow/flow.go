@@ -431,65 +431,61 @@ func isConflictError(err error) bool {
 func (f *Flow) getDeleteEventDetails(es []*types.Event) (map[string][]byte, bool, error) {
 	oidDetailMap := make(map[string][]byte)
 
-	deletedEventOids := make([]string, 0)
+	deletedEventOidMap := make(map[string][]string, 0)
 	for _, e := range es {
 		if e.OperationType == types.Delete {
-			deletedEventOids = append(deletedEventOids, e.Oid)
+			deletedEventOidMap[e.Collection] = append(deletedEventOidMap[e.Collection], e.Oid)
 		}
 	}
 
-	if len(deletedEventOids) == 0 {
+	if len(deletedEventOidMap) == 0 {
 		return oidDetailMap, false, nil
 	}
 
-	filter := map[string]interface{}{
-		"oid":  map[string]interface{}{common.BKDBIN: deletedEventOids},
-		"coll": f.key.Collection(),
-	}
-
-	if f.key.Collection() == common.BKTableNameBaseInst {
-		filter["coll"] = map[string]interface{}{
-			common.BKDBLIKE: event.ObjInstTablePrefixRegex,
-		}
-	}
-
-	if f.key.Collection() == common.BKTableNameBaseHost {
-		docs := make([]event.HostArchive, 0)
-		err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).All(context.Background(), &docs)
-		if err != nil {
-			f.metrics.collectMongoError()
-			blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oids: %+v, err: %v",
-				f.key.Collection(), deletedEventOids, err)
-			return nil, true, err
+	for collection, deletedEventOids := range deletedEventOidMap {
+		filter := map[string]interface{}{
+			"oid":  map[string]interface{}{common.BKDBIN: deletedEventOids},
+			"coll": collection,
 		}
 
-		for _, doc := range docs {
-			byt, err := json.Marshal(doc.Detail)
+		if collection == common.BKTableNameBaseHost {
+			docs := make([]event.HostArchive, 0)
+			err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).All(context.Background(), &docs)
 			if err != nil {
-				blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
-					f.key.Collection(), doc.Oid, err)
-				return nil, false, err
+				f.metrics.collectMongoError()
+				blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oids: %+v, err: %v",
+					collection, deletedEventOids, err)
+				return nil, true, err
 			}
-			oidDetailMap[doc.Oid] = byt
-		}
-	} else {
-		docs := make([]bsonx.Doc, 0)
-		err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).All(context.Background(), &docs)
-		if err != nil {
-			f.metrics.collectMongoError()
-			blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oids: %+v, err: %v",
-				f.key.Collection(), deletedEventOids, err)
-			return nil, true, err
-		}
 
-		for _, doc := range docs {
-			byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
-			if err != nil {
-				blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
-					f.key.Collection(), doc.Lookup("oid").String(), err)
-				return nil, false, err
+			for _, doc := range docs {
+				byt, err := json.Marshal(doc.Detail)
+				if err != nil {
+					blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
+						collection, doc.Oid, err)
+					return nil, false, err
+				}
+				oidDetailMap[doc.Oid] = byt
 			}
-			oidDetailMap[doc.Lookup("oid").String()] = byt
+		} else {
+			docs := make([]bsonx.Doc, 0)
+			err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).All(context.Background(), &docs)
+			if err != nil {
+				f.metrics.collectMongoError()
+				blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oids: %+v, err: %v",
+					collection, deletedEventOids, err)
+				return nil, true, err
+			}
+
+			for _, doc := range docs {
+				byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
+				if err != nil {
+					blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
+						collection, doc.Lookup("oid").String(), err)
+					return nil, false, err
+				}
+				oidDetailMap[doc.Lookup("oid").String()] = byt
+			}
 		}
 	}
 

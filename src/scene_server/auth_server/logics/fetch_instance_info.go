@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/util"
 	sdktypes "configcenter/src/scene_server/auth_server/sdk/types"
 	"configcenter/src/scene_server/auth_server/types"
-	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
 
 var resourceParentMap = iam.GetResourceParentMap()
@@ -302,15 +301,15 @@ func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filt
 		ids[idx] = id
 	}
 
-	instIDObjIDMap, err := instancemapping.GetInstanceMapping(ids)
+	instObjIDMapping, err := lgc.CoreAPI.CoreService().Instance().GetInstanceObjectMapping(kit.Ctx, kit.Header, ids)
 	if err != nil {
 		blog.Errorf("get object ids from instance ids(%+v) failed, err: %v, rid: %s", ids, err, kit.Rid)
 		return nil, err
 	}
 
 	objIDInstIDsMap := make(map[string][]int64)
-	for instID, row := range instIDObjIDMap {
-		objIDInstIDsMap[row.ObjectID] = append(objIDInstIDsMap[row.ObjectID], instID)
+	for _, row := range instObjIDMapping {
+		objIDInstIDsMap[row.ObjectID] = append(objIDInstIDsMap[row.ObjectID], row.ID)
 	}
 
 	instances := make([]map[string]interface{}, 0)

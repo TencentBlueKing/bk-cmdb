@@ -54,6 +54,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		mapping := make(mapstr.MapStr, 0)
 		mapping[instIDFieldName] = id
 		mapping[common.BKObjIDField] = objID
+		mapping[common.BkSupplierAccount] = kit.SupplierAccount
 
 		// save instance object type mapping.
 		if err := instancemapping.Create(kit.Ctx, mapping); err != nil {

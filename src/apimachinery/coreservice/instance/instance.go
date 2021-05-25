@@ -36,6 +36,8 @@ type InstanceClientInterface interface {
 	// CountInstances counts model instances num.
 	CountInstances(ctx context.Context, header http.Header,
 		objID string, input *metadata.Condition) (*metadata.CountResponse, error)
+	GetInstanceObjectMapping(ctx context.Context, h http.Header, ids []int64) ([]metadata.ObjectMapping,
+		errors.CCErrorCoder)
 }
 
 func NewInstanceClientInterface(client rest.ClientInterface) InstanceClientInterface {
