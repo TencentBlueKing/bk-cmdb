@@ -59,7 +59,7 @@
         </label>
         <cmdb-form-singlechar
           v-model="moduleName"
-          v-validate="'required|singlechar|businessTopoInstNames|length:256'"
+          v-validate="'required|businessTopoInstNames|length:32'"
           data-vv-name="moduleName"
           key="moduleName"
           :placeholder="$t('请输入xx', { name: $t('模块名称') })"
