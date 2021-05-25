@@ -18,17 +18,10 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
 )
 
 type Interface interface {
-	GetLatestEvent(ctx context.Context, h http.Header, opts *metadata.GetLatestEventOption) (
-		*metadata.EventNode, errors.CCErrorCoder)
-	SearchFollowingEventChainNodes(ctx context.Context, h http.Header, opts *metadata.SearchEventNodesOption) (
-		bool, []*watch.ChainNode, errors.CCErrorCoder)
-	SearchEventDetails(ctx context.Context, h http.Header, opts *metadata.SearchEventDetailsOption) ([]string,
-		errors.CCErrorCoder)
 	WatchEvent(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (*string, errors.CCErrorCoder)
 }
 
