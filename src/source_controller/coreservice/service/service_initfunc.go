@@ -368,20 +368,6 @@ func (s *coreService) initAuth(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
-func (s *coreService) initEvent(web *restful.WebService) {
-	utility := rest.NewRestUtility(rest.Config{
-		ErrorIf:  s.engine.CCErr,
-		Language: s.engine.Language,
-	})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/subscribe", Handler: s.Subscribe})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/subscribe/{subscribeID}", Handler: s.UnSubscribe})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/subscribe/{subscribeID}", Handler: s.UpdateSubscription})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/subscribe", Handler: s.ListSubscriptions})
-
-	utility.AddToRestfulWebService(web)
-}
-
 func (s *coreService) initCommon(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.engine.CCErr,
@@ -416,6 +402,5 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initCount(web)
 	s.initCloudSync(web)
 	s.initAuth(web)
-	s.initEvent(web)
 	s.initCommon(web)
 }

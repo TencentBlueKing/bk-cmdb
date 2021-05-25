@@ -29,7 +29,6 @@ import (
 	"configcenter/src/source_controller/coreservice/core/cloud"
 	coreCommon "configcenter/src/source_controller/coreservice/core/common"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
-	e "configcenter/src/source_controller/coreservice/core/event"
 	"configcenter/src/source_controller/coreservice/core/host"
 	"configcenter/src/source_controller/coreservice/core/hostapplyrule"
 	"configcenter/src/source_controller/coreservice/core/instances"
@@ -41,7 +40,6 @@ import (
 	"configcenter/src/source_controller/coreservice/core/settemplate"
 	dbSystem "configcenter/src/source_controller/coreservice/core/system"
 	"configcenter/src/storage/driver/mongodb"
-	"configcenter/src/storage/driver/redis"
 
 	"github.com/emicklei/go-restful"
 )
@@ -120,7 +118,6 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		dbSystem.New(),
 		cloud.New(mongodb.Client()),
 		auth.New(mongodb.Client()),
-		e.New(mongodb.Client(), redis.Client()),
 		coreCommon.New(),
 	)
 	return nil

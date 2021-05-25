@@ -20,12 +20,17 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+const (
+	tableNameSubscription = "cc_Subscription"
+	subscriptionNameField = "subscription_name"
+)
+
 func removeProcFreshInstance(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tableName := common.BKTableNameSubscription
+	tableName := tableNameSubscription
 	SubscriptionName := "process instance refresh [Do not remove it]"
 	filter := map[string]interface{}{
-		common.BKSubscriptionNameField: SubscriptionName,
-		common.BKOperatorField:         conf.User,
+		subscriptionNameField:  SubscriptionName,
+		common.BKOperatorField: conf.User,
 	}
 	err := db.Table(tableName).Delete(ctx, filter)
 	if err != nil {

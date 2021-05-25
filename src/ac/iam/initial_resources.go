@@ -30,7 +30,6 @@ var ResourceTypeIDMap = map[TypeID]string{
 	SysModel:                  "模型",
 	SysInstance:               "实例",
 	SysAssociationType:        "关联类型",
-	SysEventPushing:           "事件订阅",
 	SysOperationStatistic:     "运营统计",
 	SysAuditLog:               "操作审计",
 	SysCloudAccount:           "云账户",
@@ -338,18 +337,6 @@ func genPublicResources() []ResourceType {
 			NameEn:        "Association Type",
 			Description:   "关联类型是模型关联关系的分类",
 			DescriptionEn: "association type is the classification of model association",
-			Parents:       nil,
-			ProviderConfig: ResourceConfig{
-				Path: "/auth/v3/find/resource",
-			},
-			Version: 1,
-		},
-		{
-			ID:            SysEventPushing,
-			Name:          ResourceTypeIDMap[SysEventPushing],
-			NameEn:        "Event Subscription",
-			Description:   "当配置发生变化时推送事件",
-			DescriptionEn: "push event when configuration changes",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/resource",
