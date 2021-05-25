@@ -242,6 +242,7 @@ func (e *Event) loopWatch(ctx context.Context,
 				OperationType: base.OperationType,
 				Document:      newStruct.Field(1).Addr().Interface(),
 				DocBytes:      byt,
+				Collection:    base.Namespace.Collection,
 				ClusterTime: types.TimeStamp{
 					Sec:  base.ClusterTime.T,
 					Nano: base.ClusterTime.I,

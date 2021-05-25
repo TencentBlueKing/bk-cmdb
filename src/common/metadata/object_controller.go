@@ -156,3 +156,19 @@ type ObjClassificationObject struct {
 	Objects        []Object                 `json:"bk_objects"`
 	AsstObjects    map[string][]interface{} `json:"bk_asst_objects"`
 }
+
+type GetInstanceObjectMappingsOption struct {
+	IDs []int64 `json:"ids"`
+}
+
+// InstanceObjectMappingsResult instance id to bk_obj_id mapping result
+type InstanceObjectMappingsResult struct {
+	BaseResp `json:",inline"`
+	Data     []ObjectMapping `json:"data"`
+}
+
+type ObjectMapping struct {
+	ID       int64  `bson:"bk_inst_id"`
+	ObjectID string `bson:"bk_obj_id"`
+	OwnerID  string `bson:"bk_supplier_account"`
+}

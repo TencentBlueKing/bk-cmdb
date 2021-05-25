@@ -254,6 +254,7 @@ type Event struct {
 	Document      interface{}
 	DocBytes      []byte
 	OperationType OperType
+	Collection    string
 
 	// The timestamp from the oplog entry associated with the event.
 	ClusterTime TimeStamp

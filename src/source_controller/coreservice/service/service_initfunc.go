@@ -102,6 +102,7 @@ func (s *coreService) initModelInstances(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/model/{bk_obj_id}/instances", Handler: s.CountModelInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance", Handler: s.DeleteModelInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance/cascade", Handler: s.CascadeDeleteModelInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/get/instance/object/mapping", Handler: s.GetInstanceObjectMapping})
 
 	utility.AddToRestfulWebService(web)
 }
