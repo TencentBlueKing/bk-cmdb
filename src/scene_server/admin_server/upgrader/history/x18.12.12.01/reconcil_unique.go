@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -53,7 +52,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 
 	checkKeysShouldExists(propertyIDToProperty, shouldCheck)
 
-	uniques := []ObjectUnique{
+	uniques := []objectUnique{
 		// process
 		{
 			ObjID:     common.BKInnerObjIDProc,
@@ -111,12 +110,12 @@ func checkKeysShouldExists(m map[string]Attribute, shouldExistKeys []string) []s
 	return notValidKeys
 }
 
-func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, unique ObjectUnique) (bool, error) {
+func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, unique objectUnique) (bool, error) {
 	keyhash := unique.KeysHash()
 	uniqueCond := condition.CreateCondition()
 	uniqueCond.Field(common.BKObjIDField).Eq(unique.ObjID)
 	uniqueCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
-	existUniques := []ObjectUnique{}
+	existUniques := []objectUnique{}
 
 	err := db.Table(common.BKTableNameObjUnique).Find(uniqueCond.ToMapStr()).All(ctx, &existUniques)
 	if err != nil {
@@ -132,20 +131,18 @@ func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, uniq
 
 }
 
-type ObjectUnique struct {
+type objectUnique struct {
 	ID        uint64      `json:"id" bson:"id"`
 	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
 	MustCheck bool        `json:"must_check" bson:"must_check"`
 	Keys      []UniqueKey `json:"keys" bson:"keys"`
 	Ispre     bool        `json:"ispre" bson:"ispre"`
 	OwnerID   string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	LastTime  Time        `json:"last_time" bson:"last_time"`
+	LastTime  time.Time   `json:"last_time" bson:"last_time"`
 }
 
-type Time metadata.Time
-
-func Now() Time {
-	return Time{time.Now().UTC()}
+func Now() time.Time {
+	return time.Now().UTC()
 }
 
 type UniqueKey struct {
@@ -153,7 +150,7 @@ type UniqueKey struct {
 	ID   uint64 `json:"key_id" bson:"key_id"`
 }
 
-func (o ObjectUnique) KeysHash() string {
+func (o objectUnique) KeysHash() string {
 	keys := []string{}
 	for _, key := range o.Keys {
 		keys = append(keys, fmt.Sprintf("%s:%d", key.Kind, key.ID))

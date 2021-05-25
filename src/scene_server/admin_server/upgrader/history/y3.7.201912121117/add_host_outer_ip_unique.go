@@ -40,7 +40,7 @@ func addHostOuterIPUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	uniqueCond := condition.CreateCondition()
 	uniqueCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
 	uniqueCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
-	existUniques := make([]ObjectUnique, 0)
+	existUniques := make([]objectUnique, 0)
 	err = db.Table(common.BKTableNameObjUnique).Find(uniqueCond.ToMapStr()).All(ctx, &existUniques)
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func addHostOuterIPUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	}
 
 	// insert host outer ip unique
-	unique := ObjectUnique{
+	unique := objectUnique{
 		ObjID:     common.BKInnerObjIDHost,
 		MustCheck: false,
 		Keys: []UniqueKey{
@@ -76,20 +76,18 @@ func addHostOuterIPUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	return nil
 }
 
-type ObjectUnique struct {
+type objectUnique struct {
 	ID        uint64      `json:"id" bson:"id"`
 	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
 	MustCheck bool        `json:"must_check" bson:"must_check"`
 	Keys      []UniqueKey `json:"keys" bson:"keys"`
 	Ispre     bool        `json:"ispre" bson:"ispre"`
 	OwnerID   string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	LastTime  Time        `json:"last_time" bson:"last_time"`
+	LastTime  time.Time   `json:"last_time" bson:"last_time"`
 }
 
-type Time metadata.Time
-
-func Now() Time {
-	return Time{time.Now().UTC()}
+func Now() time.Time {
+	return time.Now().UTC()
 }
 
 type UniqueKey struct {
