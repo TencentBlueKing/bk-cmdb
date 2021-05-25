@@ -75,4 +75,13 @@ var deprecatedSetBaseIndexes = []types.Index{
 		Unique:     true,
 		Background: true,
 	},
+	{
+		Name: "idx_unique_parentID_setName",
+		Keys: map[string]int32{
+			common.BKParentIDField: 1,
+			common.BKSetNameField:  1,
+		},
+		Unique:     true,
+		Background: true,
+	},
 }

@@ -91,6 +91,7 @@ func runDecodeCursor(c *watchConf) error {
 	fmt.Printf("         type: %s\n", cursor.Type)
 	fmt.Printf("          oid: %s\n", cursor.Oid)
 	fmt.Printf("         oper: %s\n", cursor.Oper)
+	fmt.Printf("      uniqKey: %s\n", cursor.UniqKey)
 	fmt.Printf("     unixTime: %d:%d\n", cursor.ClusterTime.Sec, cursor.ClusterTime.Nano)
 	fmt.Printf("  clusterTime: %s\n\n", time.Unix(int64(cursor.ClusterTime.Sec), int64(cursor.ClusterTime.Nano)).Format(time.RFC3339))
 	return nil

@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202104221702
+package y3_10_202104221702
 
 import (
 	"context"
@@ -21,32 +21,32 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.9.202104221702", upgrade)
+	upgrader.RegistUpgrader("y3.10.202104221702", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	blog.Info("y3.9.202104221702")
 
 	if err := dropPlatVpcIDIndex(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.9.202104221702] migrate cloud unique index error, error:%s",
+		blog.Errorf("[upgrade y3.10.202104221702] migrate cloud unique index error, error:%s",
 			err.Error())
 		return err
 	}
 
 	if err := instanceObjectIDMapping(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.9.202104221702] migrate instance object id mapping table fail, error:%s",
+		blog.Errorf("[upgrade y3.10.202104221702] migrate instance object id mapping table fail, error:%s",
 			err.Error())
 		return err
 	}
 
 	err = splitTable(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202104221702] migrate inst split table failed, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.10.202104221702] migrate inst split table failed, error  %s", err.Error())
 		return err
 	}
 
 	if err = syncInnerObjectIndex(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.9.202104221702] migrate inner object index failed, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.10.202104221702] migrate inner object index failed, error  %s", err.Error())
 		return err
 	}
 
