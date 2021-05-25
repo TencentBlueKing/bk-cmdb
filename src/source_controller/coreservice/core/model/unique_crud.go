@@ -330,7 +330,6 @@ func (m *modelAttrUnique) checkUniqueRequireExist(kit *rest.Kit, objID string, i
 		cond.Field(common.BKFieldID).NotIn(ignoreUniqueIDS)
 	}
 	cond.Field(common.BKObjIDField).Eq(objID)
-	cond.Field("must_check").Eq(true)
 
 	cnt, err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(kit.Ctx)
 	if nil != err {
