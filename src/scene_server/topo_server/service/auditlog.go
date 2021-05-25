@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"fmt"
 )
 
 // SearchAuditDict returns all audit types with their name and actions for front-end display
@@ -37,20 +38,90 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 		return
 	}
 
+	cond := make(map[string]interface{})
+	condition := query.Condition
+
 	// the front-end table display fields
 	fields := []string{common.BKFieldID, common.BKUser, common.BKResourceTypeField, common.BKActionField,
 		common.BKOperationTimeField, common.BKAppIDField, common.BKResourceIDField, common.BKResourceNameField}
 
-	cond := make(map[string]interface{})
-	condition := query.Condition
-
 	// parse front-end condition to db search cond
-	if condition.ResourceType != "" {
-		cond[common.BKResourceTypeField] = condition.ResourceType
+	if len(condition.Condition) != 0 {
+		for _, item := range condition.Condition {
+			if item.Field == "user" {
+				if condition.User != "" {
+					blog.Errorf("'condition' and 'user' fields cannot exist at the same time")
+					ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, fmt.Errorf("condition and user fields cannot exist at the same time")))
+					return
+				}
+				switch item.Operator {
+				case common.BKDBIN, common.BKDBNIN:
+					if _,ok := item.Value.([]interface{}); ok {
+						cond[item.Field] = map[string]interface{}{item.Operator: item.Value}
+					} else {
+						blog.Errorf("%s need array",item.Operator)
+						ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, fmt.Errorf("%s need array",item.Operator)))
+						return
+					}
+				default:
+					blog.Errorf("`user` operator currently allows only `$in` and `$nin`")
+					ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, fmt.Errorf("condition operator currently allows only $in and $nin")))
+					return
+				}
+			} else if item.Field == "resource_name" {
+				if condition.ResourceName != "" {
+					blog.Errorf("'condition' and 'resource_name' fields cannot exist at the same time")
+					ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, fmt.Errorf("condition and resource_name fields cannot exist at the same time")))
+					return
+				}
+				switch item.Operator {
+				case common.BKDBIN, common.BKDBNIN:
+					if _,ok := item.Value.([]interface{}); ok {
+						cond[item.Field] = map[string]interface{}{item.Operator: item.Value}
+					} else {
+						blog.Errorf("%s need array",item.Operator)
+						ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, fmt.Errorf("%s need array",item.Operator)))
+						return
+					}
+				case common.BKDBLIKE:
+					if _,ok := item.Value.(string); ok{
+						cond[item.Field] = map[string]interface{}{item.Operator: item.Value}
+					} else {
+						blog.Errorf("%s need string",common.BKDBLIKE)
+						ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, fmt.Errorf("%s need string",common.BKDBLIKE)))
+						return
+					}
+				default:
+					blog.Errorf("`user` operator currently allows only `$in` and `$nin`")
+					ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, fmt.Errorf("condition operator currently allows only $in and $nin")))
+					return
+				}
+			} else {
+				blog.Errorf("'condition' field currently allows only 'user' and 'resource_name'")
+				ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, fmt.Errorf("condition field currently allows only user and resource_name")))
+				return
+			}
+		}
+	} else {
+		if condition.User != "" {
+			cond[common.BKUser] = map[string]interface{}{common.BKDBIN: []string{condition.User}}
+		}
+
+		if condition.ResourceName != "" {
+			if condition.FuzzyQuery {
+				cond[common.BKResourceNameField] = map[string]interface{}{
+					common.BKDBLIKE: condition.ResourceName,
+				}
+			} else {
+				cond[common.BKResourceNameField] = map[string]interface{}{
+					common.BKDBIN: []string{condition.ResourceName},
+				}
+			}
+		}
 	}
 
-	if condition.User != "" {
-		cond[common.BKUser] = condition.User
+	if condition.ResourceType != "" {
+		cond[common.BKResourceTypeField] = condition.ResourceType
 	}
 
 	if condition.OperateFrom != "" {
@@ -69,16 +140,6 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 
 	if condition.ResourceID != nil {
 		cond[common.BKResourceIDField] = condition.ResourceID
-	}
-
-	if condition.ResourceName != "" {
-		if condition.FuzzyQuery {
-			cond[common.BKResourceNameField] = map[string]interface{}{
-				common.BKDBLIKE: condition.ResourceName,
-			}
-		} else {
-			cond[common.BKResourceNameField] = condition.ResourceName
-		}
 	}
 
 	if condition.ObjID != "" {
