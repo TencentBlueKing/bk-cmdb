@@ -18,20 +18,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/source_controller/cacheservice/cache/tools"
 	"configcenter/src/storage/driver/mongodb"
 )
-
-type customLevel struct {
-	key  customKeyGen
-	lock tools.RefreshingLock
-}
-
-func (m *customLevel) Run() error {
-	// do nothing here, we deleted the event watch
-	// logics because sharding object tables.
-	return nil
-}
 
 func getMainlineTopology() ([]MainlineTopoAssociation, error) {
 	relations := make([]MainlineTopoAssociation, 0)

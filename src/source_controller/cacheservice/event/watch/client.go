@@ -118,6 +118,8 @@ func (c *Client) getEventDetail(kit *rest.Kit, node *watch.ChainNode, fields []s
 		return detail, true, nil
 	}
 
+	blog.Errorf("get event detail from redis failed, will get from db directly, err: %v, rid: %s", err, kit.Rid)
+
 	return c.getEventDetailFromMongo(kit, node, fields, key)
 }
 
