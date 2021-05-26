@@ -15,7 +15,6 @@ package service
 import (
 	"fmt"
 	"strconv"
-	"time"
 
 	"configcenter/src/ac"
 	"configcenter/src/ac/iam"
@@ -67,6 +66,7 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 	// Collection minimum is Timestamp(1616747878, 5)
 	if err := s.createObjectTableBatch(ctx, *data); err != nil {
 		ctx.RespAutoError(err)
+		return
 	}
 
 	var ret mapstr.MapStr
@@ -297,8 +297,6 @@ func (s *Service) createObjectTableBatch(ctx *rest.Contexts, objectMap map[strin
 		}
 	}
 
-	// 表创建成功后，需要sleep 要不然有查询操作会报错
-	time.Sleep(time.Millisecond * 400)
 	return s.Engine.CoreAPI.CoreService().Model().CreateModelTables(ctx.Kit.Ctx, ctx.Kit.Header, input)
 }
 

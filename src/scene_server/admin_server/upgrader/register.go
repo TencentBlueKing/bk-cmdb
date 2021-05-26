@@ -262,6 +262,7 @@ func DBReady(ctx context.Context, db dal.RDB) (bool, error) {
 	if currentVersion == cmdbVersion.CurrentVersion {
 		return true, nil
 	}
+	blog.ErrorJSON("not complete. current version: %s, db version: %s", currentVersion, cmdbVersion.CurrentVersion)
 	return false, nil
 }
 
