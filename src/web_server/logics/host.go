@@ -171,7 +171,8 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 			}
 		}
 		return &metadata.ResponseDataMapStr{
-			Data: mapstr.MapStr{"association": info},
+			BaseResp: metadata.BaseResp{Result: true},
+			Data:     mapstr.MapStr{"association": info},
 		}
 
 	}
@@ -381,7 +382,8 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 
 	if OpType == 1 {
 		result := &metadata.ResponseDataMapStr{
-			Data: mapstr.MapStr{"association": map[string]string{}},
+			BaseResp: metadata.BaseResp{Result: true},
+			Data:     mapstr.MapStr{"association": map[string]string{}},
 		}
 		if len(f.Sheets) < 2 {
 			return result
