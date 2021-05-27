@@ -55,6 +55,7 @@ func addAIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	cond.Field(common.BKOwnerIDField).Eq(common.BKDefaultOwnerID)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
 	cond.Field(common.BKPropertyIDField).Eq(common.BKOSTypeField)
+	cond.Field(common.BKAppIDField).Eq(0)
 
 	ostypeProperty := Attribute{}
 	err := db.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, &ostypeProperty)
@@ -67,13 +68,13 @@ func addAIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		return err
 	}
 	for _, enum := range enumOpts {
-		if enum.ID == "3" {
+		if enum.ID == common.HostOSTypeEnumAIX {
 			return nil
 		}
 	}
 
 	aixEnum := metadata.EnumVal{
-		ID:   "3",
+		ID:   common.HostOSTypeEnumAIX,
 		Name: "AIX",
 		Type: "text",
 	}

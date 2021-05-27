@@ -24,7 +24,7 @@ func init() {
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	err = addUNIXProperty(ctx, db, conf)
+	err = addUnixProperty(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("[upgrade y3.10.202105251151] addUNIXProperty error  %s", err.Error())
 		return err

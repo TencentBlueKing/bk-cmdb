@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package y3_9_202105251151
+package y3_9_202105271151
 
 import (
 	"context"
@@ -23,7 +23,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-type Attribute struct {
+type attribute struct {
 	ID                int64       `json:"id" bson:"id"`
 	OwnerID           string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	ObjectID          string      `json:"bk_obj_id" bson:"bk_obj_id"`
@@ -55,8 +55,9 @@ func addUNIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 	cond.Field(common.BKOwnerIDField).Eq(common.BKDefaultOwnerID)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
 	cond.Field(common.BKPropertyIDField).Eq(common.BKOSTypeField)
+	cond.Field(common.BKAppIDField).Eq(0)
 
-	ostypeProperty := Attribute{}
+	ostypeProperty := attribute{}
 	err := db.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, &ostypeProperty)
 	if err != nil {
 		return err
@@ -67,14 +68,14 @@ func addUNIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 		return err
 	}
 	for _, enum := range enumOpts {
-		if enum.ID == "4" {
+		if enum.ID == common.HostOSTypeEnumUNIX {
 			return nil
 		}
 	}
 
 	aixEnum := metadata.EnumVal{
-		ID:   "4",
-		Name: "UNIX",
+		ID:   common.HostOSTypeEnumUNIX,
+		Name: "Unix",
 		Type: "text",
 	}
 	enumOpts = append(enumOpts, aixEnum)
