@@ -54,7 +54,6 @@ const (
 	BKTableNameHistory          = "cc_History"
 	BKTableNameHostFavorite     = "cc_HostFavourite"
 	BKTableNameAuditLog         = "cc_AuditLog"
-	BKTableNameSubscription     = "cc_Subscription"
 	BKTableNameUserAPI          = "cc_UserAPI"
 	BKTableNameDynamicGroup     = "cc_DynamicGroup"
 	BKTableNameUserCustom       = "cc_UserCustom"
@@ -122,7 +121,6 @@ var AllTables = []string{
 	BKTableNameHistory,
 	BKTableNameHostFavorite,
 	BKTableNameAuditLog,
-	BKTableNameSubscription,
 	BKTableNameUserAPI,
 	BKTableNameDynamicGroup,
 	BKTableNameUserCustom,

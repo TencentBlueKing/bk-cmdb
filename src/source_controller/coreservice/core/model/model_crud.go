@@ -256,7 +256,7 @@ func (m *modelManager) createShardingTable(kit *rest.Kit, tableName string, inde
 	// get all created table indexes.
 	createdIndexes, err := mongodb.Client().Table(tableName).Indexes(kit.Ctx)
 	if err != nil {
-		return fmt.Errorf("get created sharding table indexes failed, %+v", err)
+		return fmt.Errorf("get created sharding table[%s] indexes failed, %+v", tableName, err)
 	}
 
 	// find missing indexes.
@@ -272,7 +272,7 @@ func (m *modelManager) createShardingTable(kit *rest.Kit, tableName string, inde
 	for _, index := range missingIndexes {
 		err = mongodb.Client().Table(tableName).CreateIndex(kit.Ctx, index)
 		if err != nil {
-			return fmt.Errorf("create sharding table index failed, index: %+v, %+v", index, err)
+			return fmt.Errorf("create sharding table[%s] index failed, index: %+v, %+v", tableName, index, err)
 		}
 	}
 
@@ -288,15 +288,15 @@ func (m *modelManager) dropShardingTable(kit *rest.Kit, tableName string) error 
 	// check remain data.
 	err := mongodb.Client().Table(tableName).Find(common.KvMap{}).One(kit.Ctx, &common.KvMap{})
 	if err != nil && !mongodb.Client().IsNotFoundError(err) {
-		return fmt.Errorf("check data failed, can't drop the sharding table, %+v", err)
+		return fmt.Errorf("check data failed, can't drop the sharding table[%s], %+v", tableName, err)
 	}
 	if err == nil {
-		return fmt.Errorf("can't drop the non-empty sharding table")
+		return fmt.Errorf("can't drop the non-empty sharding table[%s]", tableName)
 	}
 
 	// drop the empty table.
 	if err := mongodb.Client().DropTable(kit.Ctx, tableName); err != nil {
-		return fmt.Errorf("drop sharding table failed, %+v", err)
+		return fmt.Errorf("drop sharding table[%s] failed, %+v", tableName, err)
 	}
 	return nil
 }

@@ -16,9 +16,9 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"strconv"
 
 	"configcenter/src/ac/meta"
+	"configcenter/src/common/watch"
 )
 
 func (ps *parseStream) eventRelated() *parseStream {
@@ -26,116 +26,17 @@ func (ps *parseStream) eventRelated() *parseStream {
 		return ps
 	}
 
-	ps.subscribe()
+	ps.watch()
 
 	return ps
 }
 
 var (
-	findSubscribeRegexp   = regexp.MustCompile(`^/api/v3/event/subscribe/search/\S+/\d+/?$`)
-	createSubscribeRegexp = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/?$`)
-	updateSubscribeRegexp = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/\d+/?$`)
-	deleteSubscribeRegexp = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/\d+/?$`)
-	watchResourceRegexp   = regexp.MustCompile(`^/api/v3/event/watch/resource/\S+/?$`)
+	watchResourceRegexp = regexp.MustCompile(`^/api/v3/event/watch/resource/\S+/?$`)
 )
 
-const (
-	telnetEventTestPattern = "/api/v3/event/subscribe/telnet"
-	pingEventTestPattern   = "/api/v3/event/subscribe/ping"
-)
-
-func (ps *parseStream) subscribe() *parseStream {
+func (ps *parseStream) watch() *parseStream {
 	if ps.shouldReturn() {
-		return ps
-	}
-
-	// find all the subscription
-	if ps.hitRegexp(findSubscribeRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:   meta.EventPushing,
-					Action: meta.SkipAction,
-				},
-			},
-		}
-		return ps
-	}
-
-	// create a subscription
-	if ps.hitRegexp(createSubscribeRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:   meta.EventPushing,
-					Action: meta.Create,
-				},
-			},
-		}
-		return ps
-	}
-
-	// update a subscription
-	if ps.hitRegexp(updateSubscribeRegexp, http.MethodPut) {
-		subscribeID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("update subscription batch, but got invalid subscription id: %s", ps.RequestCtx.Elements[6])
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:       meta.EventPushing,
-					Action:     meta.Update,
-					InstanceID: subscribeID,
-				},
-			},
-		}
-		return ps
-	}
-
-	// delete a subscription
-	if ps.hitRegexp(deleteSubscribeRegexp, http.MethodDelete) {
-		subscribeID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("delete subscription batch, but got invalid subscription id: %s", ps.RequestCtx.Elements[6])
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:       meta.EventPushing,
-					Action:     meta.Delete,
-					InstanceID: subscribeID,
-				},
-			},
-		}
-		return ps
-	}
-
-	// telnet event for testing.
-	if ps.hitPattern(telnetEventTestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:   meta.EventPushing,
-					Action: meta.SkipAction,
-				},
-			},
-		}
-		return ps
-	}
-
-	// ping event for testing.
-	if ps.hitPattern(pingEventTestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:   meta.EventPushing,
-					Action: meta.SkipAction,
-				},
-			},
-		}
 		return ps
 	}
 
@@ -145,6 +46,11 @@ func (ps *parseStream) subscribe() *parseStream {
 		if len(resource) == 0 {
 			ps.err = fmt.Errorf("watch event resource, but got empty resource: %s", ps.RequestCtx.Elements[5])
 			return ps
+		}
+
+		if resource == string(watch.HostIdentifier) {
+			// redirect host identity resource to host resource in iam.
+			resource = string(watch.Host)
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{

@@ -294,24 +294,6 @@ func genResourceManageActionGroups() []ActionGroup {
 					},
 				},
 				{
-					Name:   "事件订阅",
-					NameEn: "Event Subscription",
-					Actions: []ActionWithID{
-						{
-							ID: CreateEventPushing,
-						},
-						{
-							ID: EditEventPushing,
-						},
-						{
-							ID: DeleteEventPushing,
-						},
-						{
-							ID: FindEventPushing,
-						},
-					},
-				},
-				{
 					Name:   "事件监听",
 					NameEn: "Event Watch",
 					Actions: []ActionWithID{
@@ -329,9 +311,6 @@ func genResourceManageActionGroups() []ActionGroup {
 						},
 						{
 							ID: WatchModuleEvent,
-						},
-						{
-							ID: WatchSetTemplateEvent,
 						},
 						{
 							ID: WatchProcessEvent,

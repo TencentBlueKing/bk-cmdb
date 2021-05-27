@@ -303,15 +303,13 @@
           console.error(error)
         }
       },
-      handleRemove(property) {
+      async handleRemove(property) {
         const index = this.selected.indexOf(property)
         index > -1 && this.selected.splice(index, 1)
-        this.$delete(this.condition, property.id)
-        if (!this.collection) {
-          this.$nextTick(() => {
-            FilterStore.updateUserBehavior(this.selected)
-          })
-        }
+        if (this.collection) return
+        await this.$nextTick()
+        FilterStore.updateSelected([...this.selected])
+        FilterStore.updateUserBehavior(this.selected)
       },
       handleSelectProperty() {
         PropertySelector.show()

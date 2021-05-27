@@ -226,6 +226,9 @@ const (
 	// CCErrArrayLengthWrong the length of the array is wrong
 	CCErrArrayLengthWrong = 1199089
 
+	//CCIllegalRegularExpression the regular expression's type assertion failed
+	CCIllegalRegularExpression = 1199090
+
 	// too many requests
 	CCErrTooManyRequestErr = 1199997
 
@@ -473,6 +476,9 @@ const (
 
 	CCErrorAttributeNameDuplicated = 1101107
 	CCErrorSetNameDuplicated       = 1101108
+
+	// CCErrorCheckRegularFailed check regular expression failed
+	CCErrorCheckRegularFailed = 1101109
 
 	// object controller 1102XXX
 
@@ -795,6 +801,10 @@ const (
 
 	// CCERrrCoreServiceUniqueRuleExist 模型唯一校验规则已经存在
 	CCERrrCoreServiceSameUniqueCheckRuleExist = 1113050
+	// CCERrrCoreServiceSubsetUniqueRuleExist 已存在 “X字段” 唯一校验，请在该规则基础上进行补充
+	CCERrrCoreServiceSubsetUniqueRuleExist = 1113051
+	// CCERrrCoreServiceSupersetUniqueRuleExist 所选字段组合和已有规则重复，请勿创建冗余规则
+	CCERrrCoreServiceSupersetUniqueRuleExist = 1113052
 	// CCErrCoreServiceResourceDirectoryNotExistErr 资源池目录不存在
 	CCErrCoreServiceResourceDirectoryNotExistErr = 1113033
 	// CCErrCoreServiceHostNotUnderAnyResourceDirectory 主机不在任意资源池目录下

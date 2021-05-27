@@ -77,14 +77,17 @@ type QueryFilter struct {
 	Rule `json:",inline"`
 }
 
-func (qf *QueryFilter) Validate() (string, error) {
+// Validate validates query filter conditions.
+func (qf *QueryFilter) Validate(option *RuleOption) (string, error) {
 	if qf.Rule == nil {
 		return "", nil
 	}
+
 	if _, ok := qf.Rule.(CombinedRule); !ok {
 		return "", fmt.Errorf("query filter must be combined rules")
 	}
-	return qf.Rule.Validate()
+
+	return qf.Rule.Validate(option)
 }
 
 func (qf *QueryFilter) MarshalJSON() ([]byte, error) {

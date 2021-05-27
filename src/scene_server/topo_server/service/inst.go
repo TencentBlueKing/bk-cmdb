@@ -475,6 +475,84 @@ func (s *Service) SearchInsts(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchObjectInstances searches object instances with the input conditions.
+func (s *Service) SearchObjectInstances(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	// NOTE: NOT SUPPORT inner model search action in this interface.
+	if common.IsInnerModel(objID) {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
+
+	// decode input parameter.
+	input := &metadata.CommonSearchFilter{}
+	if err := ctx.DecodeInto(input); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	input.ObjectID = objID
+
+	// validate input parameter.
+	if invalidKey, err := input.Validate(); err != nil {
+		blog.Errorf("validate search instances input parameters failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, invalidKey))
+		return
+	}
+
+	// set read preference.
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	// search object instances.
+	result, err := s.Core.InstOperation().SearchObjectInstances(ctx.Kit, objID, input)
+	if err != nil {
+		blog.Errorf("search object[%s] instances failed, err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(result)
+}
+
+// CountObjectInstances counts object instances num with the input conditions.
+func (s *Service) CountObjectInstances(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	// NOTE: NOT SUPPORT inner model count action in this interface.
+	if common.IsInnerModel(objID) {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
+
+	// decode input parameter.
+	input := &metadata.CommonCountFilter{}
+	if err := ctx.DecodeInto(input); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	input.ObjectID = objID
+
+	// validate input parameter.
+	if invalidKey, err := input.Validate(); err != nil {
+		blog.Errorf("validate count instances input parameters failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, invalidKey))
+		return
+	}
+
+	// set read preference.
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	// count object instances.
+	result, err := s.Core.InstOperation().CountObjectInstances(ctx.Kit, objID, input)
+	if err != nil {
+		blog.Errorf("count object[%s] instances failed, err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(result)
+}
+
 // SearchInstAndAssociationDetail search the inst with association details
 func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")

@@ -65,19 +65,10 @@ func (p *hostApplyRule) listHostAttributes(kit *rest.Kit, bizID int64, hostAttri
 		common.BKDBOR: []map[string]interface{}{
 			{
 				// business private attribute
-				metadata.MetadataBizField: map[string]interface{}{
-					common.BKDBEQ: strconv.FormatInt(bizID, 10),
-				},
+				common.BKAppIDField: bizID,
 			}, {
 				// global attribute
-				metadata.MetadataBizField: map[string]interface{}{
-					common.BKDBExists: false,
-				},
-			}, {
-				// global attribute
-				metadata.BKMetadata: map[string]interface{}{
-					common.BKDBExists: false,
-				},
+				common.BKAppIDField: 0,
 			},
 		},
 		common.BKFieldID: map[string]interface{}{

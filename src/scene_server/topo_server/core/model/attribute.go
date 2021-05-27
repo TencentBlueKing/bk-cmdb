@@ -152,7 +152,7 @@ func (a *attribute) IsValid(isUpdate bool, data mapstr.MapStr) error {
 		}
 
 		option, exists := data.Get(metadata.AttributeFieldOption)
-		if exists && a.isPropertyTypeIntEnumList(propertyType) {
+		if exists && a.isPropertyTypeIntEnumListSingleLong(propertyType) {
 			if err := util.ValidPropertyOption(propertyType, option, a.kit.CCError); nil != err {
 				return err
 			}
@@ -347,9 +347,11 @@ func (a *attribute) SetSupplierAccount(supplierAccount string) {
 	a.attr.OwnerID = supplierAccount
 }
 
-func (a *attribute) isPropertyTypeIntEnumList(propertyType string) bool {
+func (a *attribute) isPropertyTypeIntEnumListSingleLong(propertyType string) bool {
 	switch propertyType {
 	case common.FieldTypeInt, common.FieldTypeEnum, common.FieldTypeList:
+		return true
+	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
 		return true
 	default:
 		return false

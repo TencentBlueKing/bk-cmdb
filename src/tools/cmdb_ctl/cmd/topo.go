@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
@@ -216,17 +215,13 @@ func (s *topoCheckService) searchMainlineInstance() error {
 	for _, objectID := range s.modelIDs {
 		mainlineInstances := make([]map[string]interface{}, 0)
 
-		cond := mongo.NewCondition()
-		cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objectID})
+		cond :=map[string]interface{}{
+			common.BKObjIDField: objectID,
+			common.BKAppIDField: s.bizID,
+		}
 
-		_, metaCond := cond.Embed(metadata.BKMetadata)
-		_, labelCond := metaCond.Embed(metadata.BKLabel)
-		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: strconv.FormatInt(s.bizID, 10)})
-
-		err = s.service.DbProxy.
-			Table(common.GetInstTableName(objectID, s.supplierAccount)).
-			Find(cond.ToMapStr()).
-			All(context.Background(), &mainlineInstances)
+		err = s.service.DbProxy.Table(common.GetInstTableName(objectID, s.supplierAccount)).
+			Find(cond).All(context.Background(), &mainlineInstances)
 		if err != nil {
 			return fmt.Errorf("get mainline instances by business id: %d failed, err: %+v", s.bizID, err)
 		}

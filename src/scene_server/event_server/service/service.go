@@ -25,27 +25,19 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"configcenter/src/scene_server/event_server/distribution"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
 )
 
-// Service impls main logics as service for datacolection app.
+// Service impls main logics as service.
 type Service struct {
 	ctx    context.Context
 	engine *backbone.Engine
 
-	// db is cc main database.
-	db dal.RDB
-
-	// cache is cc redis client.
-	cache redis.Client
-
-	// distributer is event subscription distributer.
-	distributer *distribution.Distributor
-
+	db         dal.RDB
+	cache      redis.Client
 	authorizer ac.AuthorizeInterface
 }
 
@@ -66,11 +58,6 @@ func (s *Service) SetCache(db redis.Client) {
 
 func (s *Service) SetAuthorizer(authorizer ac.AuthorizeInterface) {
 	s.authorizer = authorizer
-}
-
-// SetDistributer setups event subscription distributer.
-func (s *Service) SetDistributer(distributer *distribution.Distributor) {
-	s.distributer = distributer
 }
 
 // WebService setups a new restful web service.
@@ -105,12 +92,6 @@ func (s *Service) initService(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/search/{ownerID}/{appID}", Handler: s.ListSubscriptions})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/{ownerID}/{appID}", Handler: s.Subscribe})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/subscribe/{ownerID}/{appID}/{subscribeID}", Handler: s.UnSubscribe})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/subscribe/{ownerID}/{appID}/{subscribeID}", Handler: s.UpdateSubscription})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/ping", Handler: s.Ping})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/telnet", Handler: s.Telnet})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/watch/resource/{resource}", Handler: s.WatchEvent})
 
 	utility.AddToRestfulWebService(web)

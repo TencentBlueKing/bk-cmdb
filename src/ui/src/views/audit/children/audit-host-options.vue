@@ -90,7 +90,8 @@
         user: '',
         resource_id: '',
         resource_name: '',
-        category: 'host'
+        category: 'host',
+        fuzzy_query: false
       }
       return {
         instanceType: 'resource_name',
