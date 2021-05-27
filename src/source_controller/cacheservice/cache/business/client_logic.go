@@ -700,7 +700,8 @@ func (c *Client) refreshAndGetTopologyRank() ([]string, error) {
 	rank := rankMainlineTopology(relations)
 
 	// then set the rank to cache
-	err = redis.Client().Set(context.Background(), customKey.topologyKey(), customKey.topologyValue(rank), 0).Err()
+	err = redis.Client().Set(context.Background(), customKey.topologyKey(), customKey.topologyValue(rank),
+		2*customKey.detailExpireDuration).Err()
 	if err != nil {
 		blog.Errorf("refresh mainline topology rank, but update to cache failed, err: %v", err)
 		// do not return

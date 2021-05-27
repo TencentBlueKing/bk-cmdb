@@ -88,7 +88,6 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 	data.Set(common.LastTimeField, ts)
 	data.Remove(common.BKObjIDField)
 	err := mongodb.Client().Table(tableName).Update(kit.Ctx, cond, data)
-
 	if err != nil {
 		blog.ErrorJSON("update instance error. err: %s, objID: %s, instance: %s, cond: %s, rid: %s",
 			err.Error(), objID, data, cond, kit.Rid)

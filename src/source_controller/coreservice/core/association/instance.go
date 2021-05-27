@@ -297,23 +297,23 @@ func (m *associationInstance) SearchInstanceAssociation(kit *rest.Kit, objID str
 	*metadata.QueryResult, error) {
 
 	if len(objID) == 0 {
-		return &metadata.QueryResult{}, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField)
 	}
 
 	instAsstItems, err := m.searchInstanceAssociation(kit, objID, param)
 	if nil != err {
 		blog.ErrorJSON("search inst association err: %s, objID: %s, param: %s, rid: %s", err, objID, param, kit.Rid)
-		return &metadata.QueryResult{}, err
+		return nil, err
 	}
 
-	dataResult := &metadata.QueryResult{}
+	dataResult := new(metadata.QueryResult)
 
 	// the InstAsst number will be counted by default.
 	if !param.DisableCounter {
 		count, err := m.countInstanceAssociation(kit, objID, param.Condition)
 		if nil != err {
 			blog.Errorf("search model instance associations count err: %s, rid: %s", err.Error(), kit.Rid)
-			return &metadata.QueryResult{}, err
+			return nil, err
 		}
 		dataResult.Count = count
 	}
@@ -347,7 +347,7 @@ func (m *associationInstance) DeleteInstanceAssociation(kit *rest.Kit, objID str
 	*metadata.DeletedCount, error) {
 
 	if len(objID) == 0 {
-		return &metadata.DeletedCount{}, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField)
 	}
 
 	inputParam.Condition = util.SetModOwner(inputParam.Condition, kit.SupplierAccount)
@@ -355,7 +355,7 @@ func (m *associationInstance) DeleteInstanceAssociation(kit *rest.Kit, objID str
 	cnt, err := m.deleteInstanceAssociation(kit, objID, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("delete inst association [%#v] err [%#v], rid: %s", inputParam.Condition, err, kit.Rid)
-		return &metadata.DeletedCount{}, err
+		return nil, err
 	}
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
