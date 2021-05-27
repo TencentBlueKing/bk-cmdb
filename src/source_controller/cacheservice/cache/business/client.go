@@ -563,12 +563,18 @@ func (c *Client) ListCustomLevelDetail(objID, supplierAccount string, instIDs []
 }
 
 func (c *Client) GetTopology() ([]string, error) {
-	// TODO: try refresh the cache.
 	key := customKey.topologyKey()
 	rank, err := redis.Client().Get(context.Background(), key).Result()
 	if err != nil {
 		blog.Errorf("get mainline topology from cache failed, get from db directly. err: %v", err)
 		return c.refreshAndGetTopologyRank()
 	}
-	return strings.Split(rank, ","), nil
+
+	topo := strings.Split(rank, ",")
+	if len(topo) < 4 {
+		// invalid topology
+		return c.refreshAndGetTopologyRank()
+	}
+
+	return topo, nil
 }

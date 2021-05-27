@@ -38,8 +38,8 @@ func removeDeletedInstAsst(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	instAsstQueue := make(chan []metadata.InstAsst, 1000)
 
 	assts := make([]*metadata.Association, 0)
-	if err := db.Table(common.BKTableNameObjAsst).Find(nil).All(ctx, &assts); err != nil {
-		blog.ErrorJSON("find %s error. error:%s", common.BKTableNameObjAsst, err.Error())
+	if err := db.Table(bkTableNameObjAsst).Find(nil).All(ctx, &assts); err != nil {
+		blog.ErrorJSON("find %s error. error:%s", bkTableNameObjAsst, err.Error())
 		return err
 	}
 	asstNameChan := make(chan string, len(assts))
@@ -210,7 +210,7 @@ func handleAsst(ctx context.Context, db dal.RDB, asstArr []metadata.InstAsst) er
 	deleteCond.Field(common.BKFieldID).In(delInstAsstID)
 
 	blog.InfoJSON("start delete cond:%s", deleteCond.ToMapStr())
-	if err := db.Table(common.BKTableNameInstAsst).Delete(ctx, deleteCond.ToMapStr()); err != nil {
+	if err := db.Table(bkTableNameInstAsst).Delete(ctx, deleteCond.ToMapStr()); err != nil {
 		blog.ErrorJSON("delete inst asst info error. err:%s", err.Error())
 		return err
 	}
@@ -222,7 +222,7 @@ func getInst(ctx context.Context, db dal.RDB, objID string, instID []int64) (map
 	insttable := GetInstTableName(objID)
 	cond := condition.CreateCondition()
 	cond.Field(idField).In(instID)
-	if insttable == BKTableNameBaseInst {
+	if insttable == bkTableNameBaseInst {
 		cond.Field(common.BKObjIDField).Eq(objID)
 	}
 	instArr := make([]map[string]int64, 0)
@@ -258,7 +258,7 @@ func getInstAsst(ctx context.Context, db dal.RDB, asstName string, maxID int64) 
 	cond.Field(common.BKFieldID).Gt(maxID)
 	cond.Field(common.AssociationObjAsstIDField).Eq(asstName)
 	blog.InfoJSON("get inst asst data, cond:%s", cond.ToMapStr())
-	err := db.Table(common.BKTableNameInstAsst).Find(cond.ToMapStr()).Sort("+id").Limit(limit).All(ctx, &assts)
+	err := db.Table(bkTableNameInstAsst).Find(cond.ToMapStr()).Sort("+id").Limit(limit).All(ctx, &assts)
 	if err != nil {
 		blog.ErrorJSON("getInstAsst error:%s", err.Error())
 		return assts, maxID, err
@@ -278,9 +278,9 @@ func getInstAsst(ctx context.Context, db dal.RDB, asstName string, maxID int64) 
 
 func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
-	idxArr, err := db.Table(common.BKTableNameInstAsst).Indexes(ctx)
+	idxArr, err := db.Table(bkTableNameInstAsst).Indexes(ctx)
 	if err != nil {
-		blog.Errorf("get table %s index error. err:%s", common.BKTableNameInstAsst, err.Error())
+		blog.Errorf("get table %s index error. err:%s", bkTableNameInstAsst, err.Error())
 		return err
 	}
 
@@ -300,7 +300,7 @@ func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgra
 		if exist {
 			continue
 		}
-		if err := db.Table(common.BKTableNameInstAsst).CreateIndex(ctx, idx); err != nil {
+		if err := db.Table(bkTableNameInstAsst).CreateIndex(ctx, idx); err != nil {
 			blog.ErrorJSON("create index to cc_InstAsst error, err:%s, current index:%s, all create index:%s", err.Error(), idx, createIdxArr)
 			return err
 		}
@@ -314,55 +314,56 @@ func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgra
 // GetInstTableName returns inst data table name
 func GetInstTableName(objID string) string {
 	switch objID {
-	case BKInnerObjIDApp:
-		return BKTableNameBaseApp
-	case BKInnerObjIDSet:
-		return BKTableNameBaseSet
-	case BKInnerObjIDModule:
-		return BKTableNameBaseModule
-	case BKInnerObjIDHost:
-		return BKTableNameBaseHost
-	case BKInnerObjIDProc:
-		return BKTableNameBaseProcess
-	case BKInnerObjIDPlat:
-		return BKTableNameBasePlat
+	case bkInnerObjIDApp:
+		return bkTableNameBaseApp
+	case bkInnerObjIDSet:
+		return bkTableNameBaseSet
+	case bkInnerObjIDModule:
+		return bkTableNameBaseModule
+	case bkInnerObjIDHost:
+		return bkTableNameBaseHost
+	case bkInnerObjIDProc:
+		return bkTableNameBaseProcess
+	case bkInnerObjIDPlat:
+		return bkTableNameBasePlat
 	default:
-		return BKTableNameBaseInst
+		return bkTableNameBaseInst
 	}
 }
 
 const (
-	// BKTableNameInstAsst the table name of the inst association
-	BKTableNameInstAsst = "cc_InstAsst"
+	// bkTableNameInstAsst the table name of the inst association
+	bkTableNameInstAsst = "cc_InstAsst"
 
-	BKTableNameBaseApp     = "cc_ApplicationBase"
-	BKTableNameBaseHost    = "cc_HostBase"
-	BKTableNameBaseModule  = "cc_ModuleBase"
-	BKTableNameBaseInst    = "cc_ObjectBase"
-	BKTableNameBasePlat    = "cc_PlatBase"
-	BKTableNameBaseSet     = "cc_SetBase"
-	BKTableNameBaseProcess = "cc_Process"
+	bkTableNameBaseApp     = "cc_ApplicationBase"
+	bkTableNameBaseHost    = "cc_HostBase"
+	bkTableNameBaseModule  = "cc_ModuleBase"
+	bkTableNameBaseInst    = "cc_ObjectBase"
+	bkTableNameBasePlat    = "cc_PlatBase"
+	bkTableNameBaseSet     = "cc_SetBase"
+	bkTableNameBaseProcess = "cc_Process"
+	bkTableNameObjAsst     = "cc_ObjAsst"
 )
 
 const (
-	// BKInnerObjIDApp the inner object
-	BKInnerObjIDApp = "biz"
+	// bkInnerObjIDApp the inner object
+	bkInnerObjIDApp = "biz"
 
-	// BKInnerObjIDSet the inner object
-	BKInnerObjIDSet = "set"
+	// bkInnerObjIDSet the inner object
+	bkInnerObjIDSet = "set"
 
-	// BKInnerObjIDModule the inner object
-	BKInnerObjIDModule = "module"
+	// bkInnerObjIDModule the inner object
+	bkInnerObjIDModule = "module"
 
-	// BKInnerObjIDHost the inner object
-	BKInnerObjIDHost = "host"
+	// bkInnerObjIDHost the inner object
+	bkInnerObjIDHost = "host"
 
-	// BKInnerObjIDObject the inner object
-	BKInnerObjIDObject = "object"
+	// bkInnerObjIDObject the inner object
+	bkInnerObjIDObject = "object"
 
-	// BKInnerObjIDProc the inner object
-	BKInnerObjIDProc = "process"
+	// bkInnerObjIDProc the inner object
+	bkInnerObjIDProc = "process"
 
-	// BKInnerObjIDPlat the inner object
-	BKInnerObjIDPlat = "plat"
+	// bkInnerObjIDPlat the inner object
+	bkInnerObjIDPlat = "plat"
 )

@@ -63,6 +63,9 @@ const (
 	ObjectBase              CursorType = "object_instance"
 	Process                 CursorType = "process"
 	ProcessInstanceRelation CursorType = "process_instance_relation"
+	// a mixed event type, which contains host, host relation, process events etc.
+	// and finally converted to host identifier event.
+	HostIdentifier CursorType = "host_identifier"
 )
 
 func (ct CursorType) ToInt() int {
@@ -87,6 +90,8 @@ func (ct CursorType) ToInt() int {
 		return 9
 	case ProcessInstanceRelation:
 		return 10
+	case HostIdentifier:
+		return 11
 	default:
 		return -1
 	}
@@ -114,6 +119,8 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = Process
 	case 10:
 		*ct = ProcessInstanceRelation
+	case 11:
+		*ct = HostIdentifier
 	default:
 		*ct = UnknownType
 	}
@@ -121,7 +128,8 @@ func (ct *CursorType) ParseInt(typ int) {
 
 // ListCursorTypes returns all support CursorTypes.
 func ListCursorTypes() []CursorType {
-	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, SetTemplate, ObjectBase, Process, ProcessInstanceRelation}
+	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, SetTemplate, ObjectBase, Process,
+		ProcessInstanceRelation, HostIdentifier}
 }
 
 // ListEventCallbackCursorTypes returns all support CursorTypes for event callback.
@@ -322,7 +330,7 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 
 	hCursorEncode, err := hCursor.Encode()
 	if err != nil {
-		blog.Errorf("encode head node cursor failed, err: %v, oid: %s", err, e.Oid)
+		blog.Errorf("encode node cursor failed, err: %v, oid: %s", err, e.Oid)
 		return "", err
 	}
 

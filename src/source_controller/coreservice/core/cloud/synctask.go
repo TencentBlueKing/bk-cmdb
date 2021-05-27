@@ -318,9 +318,9 @@ func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metad
 	objIDMap := make(map[string]struct{})
 	for _, asst := range hostAssociations {
 		var objID string
-		if asst.ObjectID != common.BKHostIDField {
+		if asst.ObjectID != common.BKInnerObjIDHost {
 			objID = asst.ObjectID
-		} else if asst.AsstObjectID != common.BKHostIDField {
+		} else if asst.AsstObjectID != common.BKInnerObjIDHost {
 			objID = asst.AsstObjectID
 		}
 

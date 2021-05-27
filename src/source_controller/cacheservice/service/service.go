@@ -27,6 +27,7 @@ import (
 	"configcenter/src/source_controller/cacheservice/cache"
 	cacheop "configcenter/src/source_controller/cacheservice/cache"
 	"configcenter/src/source_controller/cacheservice/event/flow"
+	"configcenter/src/source_controller/cacheservice/event/identifier"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/reflector"
@@ -113,6 +114,11 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 	if flowErr != nil {
 		blog.Errorf("new watch event failed, err: %v", flowErr)
 		return flowErr
+	}
+
+	if err := identifier.NewIdentity(watcher, engine.ServiceManageInterface, watchDB, ccDB); err != nil {
+		blog.Errorf("new host identity event failed, err: %v", err)
+		return err
 	}
 
 	return nil

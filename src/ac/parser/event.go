@@ -18,6 +18,7 @@ import (
 	"regexp"
 
 	"configcenter/src/ac/meta"
+	"configcenter/src/common/watch"
 )
 
 func (ps *parseStream) eventRelated() *parseStream {
@@ -45,6 +46,11 @@ func (ps *parseStream) watch() *parseStream {
 		if len(resource) == 0 {
 			ps.err = fmt.Errorf("watch event resource, but got empty resource: %s", ps.RequestCtx.Elements[5])
 			return ps
+		}
+
+		if resource == string(watch.HostIdentifier) {
+			// redirect host identity resource to host resource in iam.
+			resource = string(watch.Host)
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{

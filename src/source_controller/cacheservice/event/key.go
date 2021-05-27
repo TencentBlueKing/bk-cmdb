@@ -212,6 +212,28 @@ var ProcessInstanceRelationKey = Key{
 	},
 }
 
+// this is a virtual collection name which represent for
+// the mix of host, host relation, process events.
+const hostIdentityWatchCollName = "cc_HostIdentityMixed"
+
+var HostIdentityKey = Key{
+	namespace:  watchCacheNamespace + "host_identity",
+	collection: hostIdentityWatchCollName,
+	// unused ttl seconds, details is generated directly from db.
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		value := gjson.GetBytes(doc, common.BKHostIDField)
+		if !value.Exists() {
+			return fmt.Errorf("field %s not exist", common.BKHostIDField)
+		}
+
+		return nil
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKHostIDField).Int()
+	},
+}
+
 type Key struct {
 	namespace string
 	// the watching db collection name
