@@ -13,6 +13,8 @@
 package watch
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"configcenter/src/common"
@@ -20,9 +22,14 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	types2 "configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
+	"configcenter/src/source_controller/coreservice/core/host/identifier"
 	"configcenter/src/storage/stream/types"
+	"configcenter/src/thirdparty/monitor"
+	"configcenter/src/thirdparty/monitor/meta"
 )
 
 /* eventserver watcher defines, just created base on old service/watch.go */
@@ -89,13 +96,27 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 			return nil, kit.CCError.CCError(common.CCErrEventDetailNotExist)
 		}
 
-		// matched the event type.
-		return []*watch.WatchEventDetail{{
+		event := &watch.WatchEventDetail{
 			Cursor:    tailNode.Cursor,
 			Resource:  opts.Resource,
 			EventType: tailNode.EventType,
-			Detail:    watch.JsonString(*detail),
-		}}, nil
+		}
+
+		if detail == nil {
+			// convert to a no event cursor
+			event.Detail = nil
+		} else {
+			if len(*detail) == 0 {
+				// convert to a no event cursor
+				event.Detail = nil
+			} else {
+				event.Detail = watch.JsonString(*detail)
+			}
+
+		}
+
+		// matched the event type.
+		return []*watch.WatchEventDetail{event}, nil
 	}
 
 	// find the first node with a larger cluster time than the start from parameter
@@ -153,6 +174,11 @@ func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventO
 
 	if len(hitNodes) == 0 {
 		return make([]*watch.WatchEventDetail, 0), nil
+	}
+
+	if opts.Resource == watch.HostIdentifier {
+		// get from db directly.
+		return c.getHostIdentityEventDetailWithNodes(kit, hitNodes)
 	}
 
 	cursors := make([]string, len(hitNodes))
@@ -219,6 +245,92 @@ func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventO
 	return resp, nil
 }
 
+// get host identity from db directly
+func (c *Client) getHostIdentityEventDetailWithNodes(kit *rest.Kit, hitNodes []*watch.ChainNode) (
+	[]*watch.WatchEventDetail, error) {
+
+	if len(hitNodes) == 0 {
+		return nil, errors.New("no hit host identity event nodes")
+	}
+
+	hostIDs := make([]int64, 0)
+	for idx := range hitNodes {
+		if hitNodes[idx].InstanceID <= 0 {
+			monitor.Collect(&meta.Alarm{
+				RequestID: kit.Rid,
+				Type:      meta.EventFatalError,
+				Detail: fmt.Sprintf("host identity, instance id: %d is invalid, cursor: %s",
+					hitNodes[idx].InstanceID, hitNodes[idx].Cursor),
+				Module:    types2.CC_MODULE_CACHESERVICE,
+				Dimension: map[string]string{"host_identifier": "yes"},
+			})
+
+			blog.ErrorJSON("get host identity with chain nodes, but got invalid host id, skip, detail: %s, rid: %s",
+				hitNodes[idx], kit.Rid)
+			continue
+		}
+
+		hostIDs = append(hostIDs, hitNodes[idx].InstanceID)
+	}
+
+	hostIDs = util.IntArrayUnique(hostIDs)
+	// read from secondary, but this may get host identity may not same with master.
+	// kit.Ctx, kit.Header = util.SetReadPreference(kit.Ctx, kit.Header, common.SecondaryPreferredMode)
+	list, err := identifier.NewIdentifier().Identifier(kit, hostIDs)
+	if err != nil {
+		blog.Errorf("get host identity from db failed, host id: %v, err: %v, rid: %s", hostIDs, err, kit.Rid)
+		return nil, err
+	}
+
+	identityMap := make(map[int64]*metadata.HostIdentifier)
+	for idx := range list {
+		identityMap[list[idx].HostID] = &list[idx]
+	}
+
+	details := make([]*watch.WatchEventDetail, 0)
+	for _, one := range hitNodes {
+
+		if one.InstanceID <= 0 {
+			// skip
+			continue
+		}
+
+		identity, exists := identityMap[one.InstanceID]
+		if !exists {
+			// host already be deleted, skip this event.
+			continue
+		}
+
+		js, err := json.Marshal(identity)
+		if err != nil {
+			blog.Errorf("marshal host identity failed, skip, detail: %+v, err :%v, rid: %s", *identity, err, kit.Rid)
+			continue
+		}
+
+		details = append(details, &watch.WatchEventDetail{
+			Cursor:    one.Cursor,
+			Resource:  watch.HostIdentifier,
+			EventType: one.EventType,
+			Detail:    watch.JsonString(js),
+		})
+	}
+
+	if len(details) == 0 {
+		// return the last node's cursor without details, so that use can watch from
+		// this nodes continually.
+		lastOne := hitNodes[len(hitNodes)-1]
+		one := &watch.WatchEventDetail{
+			Cursor:    lastOne.Cursor,
+			Resource:  watch.HostIdentifier,
+			EventType: lastOne.EventType,
+			Detail:    nil,
+		}
+		return []*watch.WatchEventDetail{one}, nil
+	}
+
+	return details, nil
+}
+
 // WatchFromNow watches target resource events from noc.
 func (c *Client) WatchFromNow(kit *rest.Kit, key event.Key, opts *watch.WatchEventOptions) (
 	*watch.WatchEventDetail, error) {
@@ -261,13 +373,27 @@ func (c *Client) WatchFromNow(kit *rest.Kit, key event.Key, opts *watch.WatchEve
 		return nil, kit.CCError.CCError(common.CCErrEventDetailNotExist)
 	}
 
-	// matched the event type.
-	return &watch.WatchEventDetail{
+	e := &watch.WatchEventDetail{
 		Cursor:    node.Cursor,
 		Resource:  opts.Resource,
 		EventType: node.EventType,
-		Detail:    watch.JsonString(*detail),
-	}, nil
+	}
+
+	if detail == nil {
+		// convert to a no event cursor
+		e.Detail = nil
+	} else {
+		if len(*detail) == 0 {
+			// convert to a no event cursor
+			e.Detail = nil
+		} else {
+			e.Detail = watch.JsonString(*detail)
+		}
+
+	}
+
+	// matched the event type.
+	return e, nil
 }
 
 // watchWithCursor get events with the start cursor which is offered by user.

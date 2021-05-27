@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package flow
+package event
 
 import (
 	"time"
@@ -20,13 +20,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func initialMetrics(collection string) *eventMetrics {
+func InitialMetrics(collection string, subSys string) *EventMetrics {
 	labels := prometheus.Labels{"collection": collection}
 
-	m := new(eventMetrics)
+	m := new(EventMetrics)
 	m.totalEventCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace:   metrics.Namespace,
-		Subsystem:   "watch",
+		Subsystem:   subSys,
 		Name:        "total_event_count",
 		Help:        "the total event count which we handled with this resources",
 		ConstLabels: labels,
@@ -35,7 +35,7 @@ func initialMetrics(collection string) *eventMetrics {
 
 	m.lastEventTime = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace:   metrics.Namespace,
-		Subsystem:   "watch",
+		Subsystem:   subSys,
 		Name:        "last_event_unix_time_seconds",
 		Help:        "records the time that event occurs at unix time seconds",
 		ConstLabels: labels,
@@ -44,7 +44,7 @@ func initialMetrics(collection string) *eventMetrics {
 
 	m.eventLagDurations = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace:   metrics.Namespace,
-		Subsystem:   "watch",
+		Subsystem:   subSys,
 		Name:        "event_lag_seconds",
 		Help:        "the lags(seconds) of the event between it occurs and we received it",
 		ConstLabels: labels,
@@ -54,7 +54,7 @@ func initialMetrics(collection string) *eventMetrics {
 
 	m.lastEventLagDuration = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace:   metrics.Namespace,
-		Subsystem:   "watch",
+		Subsystem:   subSys,
 		Name:        "last_event_lag_seconds",
 		Help:        "record the last event's lag duration in seconds",
 		ConstLabels: labels,
@@ -63,7 +63,7 @@ func initialMetrics(collection string) *eventMetrics {
 
 	m.cycleDurations = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace:   metrics.Namespace,
-		Subsystem:   "watch",
+		Subsystem:   subSys,
 		Name:        "event_cycle_seconds",
 		Help:        "the total duration(seconds) of each event being handled",
 		ConstLabels: labels,
@@ -73,7 +73,7 @@ func initialMetrics(collection string) *eventMetrics {
 
 	m.totalErrorCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.Namespace,
-		Subsystem: "watch",
+		Subsystem: subSys,
 		Name:      "total_error_count",
 		Help: "the total error event count which we handled with this resources, " +
 			"including invalid event and re-watch operations",
@@ -84,7 +84,7 @@ func initialMetrics(collection string) *eventMetrics {
 	return m
 }
 
-type eventMetrics struct {
+type EventMetrics struct {
 	// record the total event count be handled.
 	totalEventCount *prometheus.CounterVec
 
@@ -111,8 +111,8 @@ type eventMetrics struct {
 	totalErrorCount *prometheus.CounterVec
 }
 
-// collectBasic collect the basic event's metrics
-func (em *eventMetrics) collectBasic(e *types.Event) {
+// CollectBasic collect the basic event's metrics
+func (em *EventMetrics) CollectBasic(e *types.Event) {
 	// increase event's total count with operate type
 	em.totalEventCount.With(prometheus.Labels{"action": string(e.OperationType)}).Inc()
 
@@ -133,26 +133,21 @@ func (em *eventMetrics) collectBasic(e *types.Event) {
 }
 
 // the total duration(seconds) of each event being handled
-func (em *eventMetrics) collectCycleDuration(d time.Duration) {
+func (em *EventMetrics) CollectCycleDuration(d time.Duration) {
 	em.cycleDurations.With(prometheus.Labels{}).Observe(d.Seconds())
 }
 
 // collect retry operation for any reason
-func (em *eventMetrics) collectRetryError() {
+func (em *EventMetrics) CollectRetryError() {
 	em.totalErrorCount.With(prometheus.Labels{"error_type": "retry"}).Inc()
 }
 
-// redis lock related error
-func (em *eventMetrics) collectLockError() {
-	em.totalErrorCount.With(prometheus.Labels{"error_type": "lock"}).Inc()
-}
-
 // collect redis operation related errors
-func (em *eventMetrics) collectRedisError() {
+func (em *EventMetrics) CollectRedisError() {
 	em.totalErrorCount.With(prometheus.Labels{"error_type": "redis_command"}).Inc()
 }
 
 // collect mongodb related errors, such as get info from table cc_DelArchive
-func (em *eventMetrics) collectMongoError() {
+func (em *EventMetrics) CollectMongoError() {
 	em.totalErrorCount.With(prometheus.Labels{"error_type": "mongo_command"}).Inc()
 }

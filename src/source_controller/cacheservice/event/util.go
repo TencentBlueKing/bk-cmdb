@@ -14,6 +14,7 @@ package event
 
 import (
 	"fmt"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
@@ -42,10 +43,25 @@ func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
 		key = ProcessKey
 	case watch.ProcessInstanceRelation:
 		key = ProcessInstanceRelationKey
+	case watch.HostIdentifier:
+		key = HostIdentityKey
 	default:
 		return key, fmt.Errorf("unsupported cursor type %s", res)
 	}
 	return key, nil
+}
+
+// IsConflictError check if a error is event cursor conflict/duplicate error
+func IsConflictError(err error) bool {
+	if strings.Contains(err.Error(), "duplicate key error") {
+		return true
+	}
+
+	if strings.Contains(err.Error(), "index_cursor dup key") {
+		return true
+	}
+
+	return false
 }
 
 type HostArchive struct {

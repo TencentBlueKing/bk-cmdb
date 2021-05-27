@@ -113,6 +113,25 @@ func (c *Client) getEarliestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNod
 func (c *Client) getEventDetail(kit *rest.Kit, node *watch.ChainNode, fields []string, key event.Key) (*string,
 	bool, error) {
 
+	if key.Collection() == event.HostIdentityKey.Collection() {
+		details, err := c.getHostIdentityEventDetailWithNodes(kit, []*watch.ChainNode{node})
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(details) == 0 {
+			empty := ""
+			return &empty, false, nil
+		}
+
+		js, err := json.Marshal(details[0].Detail)
+		if err != nil {
+			return nil, false, err
+		}
+		str := string(js)
+		return &str, true, nil
+	}
+
 	detail, err := c.getEventDetailFromRedis(kit, node.Cursor, fields, key)
 	if err == nil {
 		return detail, true, nil
@@ -260,26 +279,19 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor strin
 	if startCursor == watch.NoEventCursor {
 		node, exists, err := c.getEarliestEvent(kit, key)
 		if err != nil {
-			blog.Errorf("get earliest event for kwy %s failed, err: %v", key.Namespace(), err)
+			blog.Errorf("get earliest event for key %s failed, err: %v", key.Collection(), err)
 			return false, nil, 0, err
 		}
 
 		// if the first cursor is not a valid event, returns node not exist with the last event id to start from
 		if !exists {
-			filter := map[string]interface{}{
-				"_id": key.Collection(),
+			lastID, err := c.getLastEventID(kit, key)
+			if err != nil {
+				blog.Errorf("get last event id failed, err: %v, rid: %s", err, kit.Rid)
+				return false, nil, 0, err
 			}
 
-			data := new(watch.LastChainNodeData)
-			err := c.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKFieldID).One(kit.Ctx, data)
-			if err != nil {
-				if !c.watchDB.IsNotFoundError(err) {
-					blog.ErrorJSON("get last watch id failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
-					return false, nil, 0, err
-				}
-				return false, nil, 0, nil
-			}
-			return false, make([]*watch.ChainNode, 0), data.ID, nil
+			return false, make([]*watch.ChainNode, 0), lastID, nil
 		}
 
 		nodes, err := c.searchFollowingEventChainNodesByID(kit, node.ID, limit, types, key)
@@ -335,6 +347,46 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor strin
 		return false, nil, 0, err
 	}
 	return true, nodes, node.ID, nil
+}
+
+func (c *Client) getLastEventID(kit *rest.Kit, key event.Key) (uint64, error) {
+	filter := map[string]interface{}{
+		"_id": key.Collection(),
+	}
+
+	if key.Collection() == event.HostIdentityKey.Collection() {
+		// host identity is different with the other kinds of event
+		data := make(map[string]watch.LastChainNodeData)
+		err := c.watchDB.Table(common.BKTableNameWatchToken).Find(filter).One(kit.Ctx, &data)
+		if err != nil {
+			if !c.watchDB.IsNotFoundError(err) {
+				blog.ErrorJSON("get last watch id failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
+				return 0, err
+			}
+			return 0, nil
+		}
+
+		// find the max event id in all types of event ids.
+		max := uint64(0)
+		for _, node := range data {
+			if node.ID > max {
+				max = node.ID
+			}
+		}
+
+		return max, nil
+	}
+
+	data := new(watch.LastChainNodeData)
+	err := c.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKFieldID).One(kit.Ctx, data)
+	if err != nil {
+		if !c.watchDB.IsNotFoundError(err) {
+			blog.ErrorJSON("get last watch id failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
+			return 0, err
+		}
+		return 0, nil
+	}
+	return data.ID, nil
 }
 
 // searchFollowingEventChainNodes search nodes after the node(excluding itself) by id
