@@ -23,16 +23,21 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+const (
+	tableNameSubscription = "cc_Subscription"
+	subscriptionNameField = "subscription_name"
+)
+
 func fixEventSubscribeLastTime(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(common.BKDefaultOwnerID)
-	cond.Field(common.BKSubscriptionNameField).Like("process instance refresh")
+	cond.Field(subscriptionNameField).Like("process instance refresh")
 
 	data := mapstr.MapStr{
 		common.LastTimeField: metadata.Now(),
 	}
 
-	err := db.Table(common.BKTableNameSubscription).Update(ctx, cond.ToMapStr(), data)
+	err := db.Table(tableNameSubscription).Update(ctx, cond.ToMapStr(), data)
 	if err != nil {
 		return err
 	}

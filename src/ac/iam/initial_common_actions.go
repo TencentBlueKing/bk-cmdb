@@ -71,10 +71,6 @@ func GenerateCommonActions() []CommonAction {
 			Name:        "开发者",
 			EnglishName: "Developer",
 			Actions: []ActionWithID{
-				{ID: CreateEventPushing},
-				{ID: EditEventPushing},
-				{ID: DeleteEventPushing},
-				{ID: FindEventPushing},
 				{ID: WatchHostEvent},
 				{ID: WatchHostRelationEvent},
 				{ID: WatchBizEvent},

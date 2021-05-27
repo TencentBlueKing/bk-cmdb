@@ -12,34 +12,9 @@
 
 package manager
 
-import (
-	"net/http"
-
-	"configcenter/src/framework/core/types"
-)
-
 // New return a new  Manager instance
 func New() *Manager {
-	evn := &eventSubscription{
-		datas:             make(chan types.MapStr, 4096),
-		registers:         make(map[types.EventType][]*eventRegister),
-		hostMgr:           &eventHost{},
-		businessMgr:       &eventBusiness{},
-		setMgr:            &eventSet{},
-		moduleMgr:         &eventModule{},
-		moduleTransferMgr: &eventModuleTransfer{},
-		hostIdentifierMgr: &eventHostIdentifier{},
-	}
-	return &Manager{
-		eventMgr: evn,
-		ms: []Action{
-			Action{
-				Method:      http.MethodPost,
-				Path:        "/api/v1/event/puts",
-				HandlerFunc: evn.puts,
-			},
-		},
-	}
+	return &Manager{}
 }
 
 // Delete delete the framework instance

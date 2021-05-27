@@ -144,10 +144,6 @@ var deprecatedIndexName = map[string][]string{
 		"idx_unique_id",
 		"bk_idx_host_id",
 	},
-	common.BKTableNameSubscription: {
-		"subscription_id_1",
-		"idx_unique_subscriptionName",
-	},
 	common.BKTableNameProcessInstanceRelation: {
 		"idx_bkServiceInstanceID",
 		"idx_bkProcessTemplateID",

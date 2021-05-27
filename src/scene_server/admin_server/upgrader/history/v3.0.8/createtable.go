@@ -23,6 +23,11 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
+const (
+	tableNameSubscription = "cc_Subscription"
+	subscriptionIDField   = "subscription_id"
+)
+
 func createTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	for tableName, indexes := range tables {
 		exists, err := db.HasTable(ctx, tableName)
@@ -125,8 +130,8 @@ var tables = map[string][]types.Index{
 		types.Index{Name: "", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
 		types.Index{Name: "", Keys: map[string]int32{common.BKSetNameField: 1}, Background: true},
 	},
-	common.BKTableNameSubscription: {
-		types.Index{Name: "", Keys: map[string]int32{common.BKSubscriptionIDField: 1}, Background: true},
+	tableNameSubscription: {
+		types.Index{Name: "", Keys: map[string]int32{subscriptionIDField: 1}, Background: true},
 	},
 	common.BKTableNameTopoGraphics: {
 		types.Index{Name: "", Keys: map[string]int32{"scope_type": 1, "scope_id": 1, "node_type": 1, common.BKObjIDField: 1, common.BKInstIDField: 1}, Background: true, Unique: true},

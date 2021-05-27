@@ -32,8 +32,6 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 		return genBusinessResource(act, rscType, a)
 	case meta.DynamicGrouping:
 		return genDynamicGroupingResource(act, rscType, a)
-	case meta.EventPushing:
-		return genEventSubscribeResource(act, rscType, a)
 	case meta.EventWatch:
 		return genResourceWatch(act, rscType, a)
 	case meta.ProcessServiceTemplate, meta.ProcessTemplate:
@@ -162,24 +160,6 @@ func genProcessServiceCategoryResource(_ ActionID, _ TypeID, att *meta.ResourceA
 	r.Type = types.ResourceType(Business)
 	if att.BusinessID > 0 {
 		r.ID = strconv.FormatInt(att.BusinessID, 10)
-	}
-
-	return []types.Resource{r}, nil
-}
-
-func genEventSubscribeResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
-		Attribute: nil,
-	}
-
-	if act == CreateEventPushing {
-		return make([]types.Resource, 0), nil
-	}
-
-	if att.InstanceID > 0 {
-		r.ID = strconv.FormatInt(att.InstanceID, 10)
 	}
 
 	return []types.Resource{r}, nil

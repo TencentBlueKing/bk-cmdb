@@ -21,14 +21,19 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+const (
+	tableNameSubscription = "cc_Subscription"
+	subscriptionNameField = "subscription_name"
+)
+
 func removeRedundantItems(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	subscriptionFilter := map[string]interface{}{
-		common.BKSubscriptionNameField: "process instance refresh [Do not remove it]",
-		"system_name":                  "cmdb",
-		common.BkSupplierAccount:       common.BKDefaultOwnerID,
+		subscriptionNameField:    "process instance refresh [Do not remove it]",
+		"system_name":            "cmdb",
+		common.BkSupplierAccount: common.BKDefaultOwnerID,
 	}
 
-	if err := db.Table(common.BKTableNameSubscription).Delete(ctx, subscriptionFilter); err != nil {
+	if err := db.Table(tableNameSubscription).Delete(ctx, subscriptionFilter); err != nil {
 		blog.Errorf("remove redundant subscription failed, err: %v", err)
 		return err
 	}

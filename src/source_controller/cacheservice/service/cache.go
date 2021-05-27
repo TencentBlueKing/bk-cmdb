@@ -338,54 +338,6 @@ func (s *cacheService) SearchBusinessBriefTopology(ctx *rest.Contexts) {
 	ctx.RespString(topo)
 }
 
-func (s *cacheService) GetLatestEvent(ctx *rest.Contexts) {
-	opt := new(metadata.GetLatestEventOption)
-	if err := ctx.DecodeInto(opt); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	node, err := s.cacheSet.Event.GetLatestEvent(ctx.Kit, opt)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntity(node)
-}
-
-func (s *cacheService) SearchFollowingEventChainNodes(ctx *rest.Contexts) {
-	opt := new(metadata.SearchEventNodesOption)
-	if err := ctx.DecodeInto(opt); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	nodes, err := s.cacheSet.Event.SearchFollowingEventChainNodes(ctx.Kit, opt)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntity(nodes)
-}
-
-func (s *cacheService) SearchEventDetails(ctx *rest.Contexts) {
-	opt := new(metadata.SearchEventDetailsOption)
-	if err := ctx.DecodeInto(opt); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	details, err := s.cacheSet.Event.SearchEventDetails(ctx.Kit, opt)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntity(details)
-}
-
 func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
 	var err error
 	// sleep for a while if an error occurred to avoid others using wrong input to request too frequently

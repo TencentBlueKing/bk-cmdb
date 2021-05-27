@@ -293,11 +293,6 @@ const (
 
 	HostApplyEnabledField = "host_apply_enabled"
 
-	// BKSubscriptionIDField the subscription id field
-	BKSubscriptionIDField = "subscription_id"
-	// BKSubscriptionNameField the subscription name field
-	BKSubscriptionNameField = "subscription_name"
-
 	// BKOSTypeField the os type field
 	BKOSTypeField = "bk_os_type"
 
@@ -618,8 +613,6 @@ const (
 	BKGroupField               = "group"
 
 	BKAttributeIDField = "bk_attribute_id"
-
-	BKSubscribeID = "subscribeID"
 
 	BKTokenField       = "token"
 	BKCursorField      = "cursor"
