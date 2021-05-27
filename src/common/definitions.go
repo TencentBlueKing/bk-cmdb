@@ -988,7 +988,7 @@ const (
 	HostOSTypeEnumLinux   = "1"
 	HostOSTypeEnumWindows = "2"
 	HostOSTypeEnumAIX     = "3"
-	HostOSTypeEnumUINX    = "4"
+	HostOSTypeEnumUNIX    = "4"
 )
 
 // integer const
