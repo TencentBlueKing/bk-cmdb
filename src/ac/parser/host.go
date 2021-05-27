@@ -25,7 +25,6 @@ func (ps *parseStream) hostRelated() *parseStream {
 		dynamicGrouping().
 		userCustom().
 		hostFavorite().
-		hostSnapshot().
 		findObjectIdentifier().
 		HostApply()
 	return ps
@@ -1325,50 +1324,6 @@ func (ps *parseStream) hostFavorite() *parseStream {
 
 		return ps
 	}
-	return ps
-}
-
-var (
-	findHostSnapshotAPIRegexp = regexp.MustCompile(`^/api/v3/hosts/snapshot/[0-9]+/?$`)
-
-	findHostSnapshotBatchPattern = "/api/v3/hosts/snapshot/batch"
-)
-
-func (ps *parseStream) hostSnapshot() *parseStream {
-	if ps.shouldReturn() {
-		return ps
-	}
-
-	if ps.hitRegexp(findHostSnapshotAPIRegexp, http.MethodGet) {
-		if len(ps.RequestCtx.Elements) != 5 {
-			ps.err = errors.New("find host snapshot details query, but got invalid uri")
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitPattern(findHostSnapshotBatchPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
-				},
-			},
-		}
-
-		return ps
-	}
-
 	return ps
 }
 
