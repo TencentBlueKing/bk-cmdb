@@ -262,6 +262,10 @@ async function download(options = {}) {
   }
   try {
     const response = await promise
+    if (response.data.type.indexOf('application') === -1) {
+      const text = await new Response(response.data).text()
+      throw new Error(JSON.parse(text).bk_error_msg)
+    }
     const disposition = response.headers['content-disposition']
     const fileName = name || disposition.substring(disposition.indexOf('filename') + 9)
     const downloadUrl = window.URL.createObjectURL(new Blob([response.data], {
@@ -279,7 +283,7 @@ async function download(options = {}) {
     if (Axios.isCancel(error)) {
       return Promise.reject(error)
     }
-    $error('Download failure')
+    $error(error.message)
     return Promise.reject(error)
   }
 }
