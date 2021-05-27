@@ -25,7 +25,7 @@ func init() {
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Info("y3.9.202104221702")
+	blog.Info("y3.10.202104221702")
 
 	if err := dropPlatVpcIDIndex(ctx, db, conf); err != nil {
 		blog.Errorf("[upgrade y3.10.202104221702] migrate cloud unique index error, error:%s",
