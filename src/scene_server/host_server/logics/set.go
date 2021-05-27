@@ -79,6 +79,7 @@ func (lgc *Logics) ExecuteSetDynamicGroup(kit *rest.Kit, setCommonSearch *metada
 		for field, value := range condc {
 			queryParams.Condition.Set(field, value)
 		}
+		queryParams.TimeCondition = searchCondition.TimeCondition
 	}
 	queryParams.Condition.Set(common.BKAppIDField, setCommonSearch.AppID)
 

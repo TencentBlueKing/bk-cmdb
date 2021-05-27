@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/util"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 )
@@ -52,4 +53,19 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 // MarshalBSONValue implements bson.MarshalBSON interface
 func (t Time) MarshalBSONValue() (bsontype.Type, []byte, error) {
 	return bsonx.Time(t.Time).MarshalBSONValue()
+}
+
+// UnmarshalBSONValue implements bson.UnmarshalBSONValue interface
+func (t *Time) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
+	switch typo {
+	case bsontype.DateTime:
+		rv := bson.RawValue{Type: bsontype.DateTime, Value: raw}
+		t.Time = rv.Time()
+		return nil
+	case bsontype.String:
+		rawStr := bson.RawValue{Type: bsontype.String, Value: raw}
+		return t.UnmarshalJSON([]byte(rawStr.String()))
+	}
+
+	return bson.Unmarshal(raw, &t.Time)
 }
