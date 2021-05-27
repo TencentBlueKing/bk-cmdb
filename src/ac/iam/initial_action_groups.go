@@ -331,9 +331,6 @@ func genResourceManageActionGroups() []ActionGroup {
 							ID: WatchModuleEvent,
 						},
 						{
-							ID: WatchSetTemplateEvent,
-						},
-						{
 							ID: WatchProcessEvent,
 						},
 					},

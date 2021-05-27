@@ -309,7 +309,6 @@ const (
 	WatchBizEvent          ActionID = "watch_biz_event"
 	WatchSetEvent          ActionID = "watch_set_event"
 	WatchModuleEvent       ActionID = "watch_module_event"
-	WatchSetTemplateEvent  ActionID = "watch_set_template_event"
 	WatchProcessEvent      ActionID = "watch_process_event"
 	GlobalSettings         ActionID = "global_settings"
 

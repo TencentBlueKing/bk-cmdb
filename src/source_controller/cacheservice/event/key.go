@@ -125,26 +125,6 @@ var ModuleKey = Key{
 	},
 }
 
-var setTemplateFields = []string{common.BKFieldID, common.BKFieldName}
-var SetTemplateKey = Key{
-	namespace:  watchCacheNamespace + "set_template",
-	collection: common.BKTableNameSetTemplate,
-	ttlSeconds: 6 * 60 * 60,
-	validator: func(doc []byte) error {
-		fields := gjson.GetManyBytes(doc, setTemplateFields...)
-		for idx := range setTemplateFields {
-			if !fields[idx].Exists() {
-				return fmt.Errorf("field %s not exist", setTemplateFields[idx])
-			}
-		}
-		return nil
-	},
-	instName: func(doc []byte) string {
-		fields := gjson.GetManyBytes(doc, setTemplateFields...)
-		return fields[1].String()
-	},
-}
-
 var ObjectBaseKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDObject,
 	collection: common.BKTableNameBaseInst,
