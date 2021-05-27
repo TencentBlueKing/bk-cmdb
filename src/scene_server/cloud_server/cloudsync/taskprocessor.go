@@ -43,13 +43,13 @@ func (t *taskProcessor) TaskChanLoop(taskChan chan *metadata.CloudSyncTask) {
 			tasks, err := t.scheduler.GetTaskList()
 			if err != nil {
 				blog.Errorf("scheduler GetTaskList err:%s", err.Error())
-				time.Sleep(time.Duration(SyncPeriodMinutes) * time.Second)
+				time.Sleep(time.Duration(SyncPeriodMinutes) * time.Minute)
 				continue
 			}
 			for i := range tasks {
 				taskChan <- tasks[i]
 			}
-			time.Sleep(time.Duration(SyncPeriodMinutes) * time.Second)
+			time.Sleep(time.Duration(SyncPeriodMinutes) * time.Minute)
 		}
 	}()
 }

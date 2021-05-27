@@ -15,6 +15,7 @@ package instances
 import (
 	stderr "errors"
 	"strings"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -416,8 +417,8 @@ func (m *instanceManager) validCloudID(kit *rest.Kit, objID string, instanceData
 	return nil
 }
 
-func (m *instanceManager) changeStringToTime(valData mapstr.MapStr, propertys []metadata.Attribute) error {
-	for _, field := range propertys {
+func (m *instanceManager) changeStringToTime(valData mapstr.MapStr, properties []metadata.Attribute) error {
+	for _, field := range properties {
 		if field.PropertyType != common.FieldTypeTime {
 			continue
 		}
@@ -425,6 +426,12 @@ func (m *instanceManager) changeStringToTime(valData mapstr.MapStr, propertys []
 		if ok == false || val == nil {
 			continue
 		}
+
+		_, ok = val.(time.Time)
+		if ok {
+			continue
+		}
+
 		valStr, ok := val.(string)
 		if ok == false {
 			return stderr.New("it is not a string of time type")

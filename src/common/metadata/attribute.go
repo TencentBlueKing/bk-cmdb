@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -182,6 +183,11 @@ func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key 
 			}
 
 		}
+		return errors.RawErrorInfo{}
+	}
+
+	_, ok := val.(time.Time)
+	if ok {
 		return errors.RawErrorInfo{}
 	}
 

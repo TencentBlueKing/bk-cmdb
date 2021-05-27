@@ -474,6 +474,7 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 			condItem := meta.ConditionItem{Field: item.Field, Operator: item.Operator, Value: item.Value}
 			searchCondition.Condition = append(searchCondition.Condition, condItem)
 		}
+		searchCondition.TimeCondition = cond.TimeCondition
 		searchConditions = append(searchConditions, searchCondition)
 	}
 
