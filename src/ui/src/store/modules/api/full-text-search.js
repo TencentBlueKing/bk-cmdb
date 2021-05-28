@@ -33,9 +33,14 @@ const actions = {
 
 const mutations = {
   setSearchHistory(state, keywords) {
-    const len = state.searchHistory.length
-    !state.searchHistory.find(keyword => keyword === keywords) && state.searchHistory.unshift(keywords)
-    if (len > 8) {
+    if (!keywords) {
+      return
+    }
+
+    if (!state.searchHistory.find(keyword => keyword === keywords)) {
+      state.searchHistory.unshift(keywords)
+    }
+    if (state.searchHistory.length > 8) {
       state.searchHistory.pop(keywords)
     }
     localStorage.setItem('searchHistory', JSON.stringify(state.searchHistory))

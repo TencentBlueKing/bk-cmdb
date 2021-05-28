@@ -9,7 +9,7 @@
   .no-search-results {
     width: 90%;
     margin: 0 auto;
-    padding-top: 240px;
+    padding: 32px 0;
     text-align: center;
     color: #63656E;
     font-size: 16px;

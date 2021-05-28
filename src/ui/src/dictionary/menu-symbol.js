@@ -41,6 +41,7 @@ export const MENU_MODEL_TOPOLOGY = 'menu_model_topology'
 export const MENU_MODEL_TOPOLOGY_NEW = 'menu_model_topology_new'
 export const MENU_MODEL_BUSINESS_TOPOLOGY = 'menu_model_business_topology'
 export const MENU_MODEL_ASSOCIATION = 'menu_model_association'
+export const MENU_MODEL_DETAILS = 'menu_model_details'
 
 export const MENU_ANALYSIS_AUDIT = 'menu_analysis_audit'
 export const MENU_ANALYSIS_OPERATION = 'menu_analysis_operation'
