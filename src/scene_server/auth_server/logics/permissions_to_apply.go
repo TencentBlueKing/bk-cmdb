@@ -15,7 +15,6 @@ package logics
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
@@ -67,7 +66,6 @@ func (lgc *Logics) GetPermissionToApply(kit *rest.Kit, rs []meta.ResourceAttribu
 			if sysInstObjIDNameMap, err = lgc.GetObjectsIDNameMap(kit, sysInstObjIDs); err != nil {
 				return nil, err
 			}
-
 		}
 
 		// generate iam resource instances by its paths and itself
@@ -216,9 +214,8 @@ func getActionName(actionID iam.ActionID, rscType iam.TypeID, sysInstObjIDNameMa
 
 	if iam.IsIAMSysInstance(rscType) {
 		objID := iam.GetObjIDFromIamSysInstance(rscType)
-		actionType := actionID[:strings.Index(string(actionID), "_")]
-		return fmt.Sprintf("%s实例%s", sysInstObjIDNameMap[objID], iam.ActionTypeIDNameMap[iam.ActionType(
-			actionType)])
+		actionType := iam.GetActionTypeFromIAMSysInstance(actionID)
+		return fmt.Sprintf("%s实例%s", sysInstObjIDNameMap[objID], iam.ActionTypeIDNameMap[actionType])
 	}
 
 	return name

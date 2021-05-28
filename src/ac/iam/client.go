@@ -46,7 +46,7 @@ type IAMClientCfg struct {
 	BasicHeader http.Header
 }
 
-func NewIAMClient(cfg *IAMClientCfg) IAMClientInterface {
+func NewIAMClient(cfg *IAMClientCfg) *iamClient {
 	return &iamClient{
 		config:      cfg.Config,
 		client:      cfg.Client,
@@ -54,8 +54,9 @@ func NewIAMClient(cfg *IAMClientCfg) IAMClientInterface {
 	}
 }
 
-// IAMClientInterface is a interface includes the api provided by IAM
-type IAMClientInterface interface {
+// iamClientInterface is a interface includes the api provided by IAM
+// unexposed interface
+type iamClientInterface interface {
 	// RegisterSystem register a system in IAM
 	RegisterSystem(ctx context.Context, sys System) error
 	// GetSystemInfo get a system info from IAM
@@ -123,6 +124,7 @@ func (c *iamClient) RegisterSystem(ctx context.Context, sys System) error {
 	return nil
 }
 
+// if fields is empty, find all system info
 func (c *iamClient) GetSystemInfo(ctx context.Context, fields []SystemQueryField) (*SystemResp, error) {
 	resp := new(SystemResp)
 	fieldsStr := ""

@@ -13,6 +13,7 @@
 package options
 
 import (
+	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
@@ -28,6 +29,8 @@ type Config struct {
 	ConfigMap map[string]string
 	Mongo     mongo.Config
 	Timer     string
+	// Auth is auth config
+	Auth iam.AuthConfig
 }
 
 func (c *Config) Ready() bool {

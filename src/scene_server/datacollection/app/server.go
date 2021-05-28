@@ -21,8 +21,9 @@ import (
 	"time"
 
 	"configcenter/src/ac/extensions"
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
-	enableauth "configcenter/src/common/auth"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -90,6 +91,9 @@ type DataCollectionConfig struct {
 
 	// DefaultAppName default name of this app.
 	DefaultAppName string
+
+	// Auth is auth config
+	Auth iam.AuthConfig
 }
 
 // DataCollection is data collection server.
@@ -260,6 +264,11 @@ func (c *DataCollection) initConfigs() error {
 		return fmt.Errorf("init netcollect redis configs, %+v", err)
 	}
 
+	c.config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
+	if err != nil {
+		blog.Warnf("parse auth center config failed: %v", err)
+	}
+
 	return nil
 }
 
@@ -327,10 +336,17 @@ func (c *DataCollection) initModules() error {
 		blog.Infof("DataCollection| init modules, connected to netcollect redis, %+v", c.config.NetCollectRedis)
 	}
 
-	// handle authorize.
-	if enableauth.EnableAuthorize() {
-		c.authManager = extensions.NewAuthManager(c.engine.CoreAPI)
+	iamCli := new(iam.IAM)
+	if auth.EnableAuthorize() {
+		blog.Info("enable auth center access")
+		iamCli, err = iam.NewIAM(nil, c.config.Auth, c.engine.Metric().Registry())
+		if err != nil {
+			return fmt.Errorf("new iam client failed: %v", err)
+		}
+	} else {
+		blog.Infof("disable auth center access")
 	}
+	c.authManager = extensions.NewAuthManager(c.engine.CoreAPI, iamCli)
 
 	return nil
 }

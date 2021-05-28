@@ -13,15 +13,15 @@
 package app
 
 import (
-	"configcenter/src/ac/iam"
-	"configcenter/src/common/auth"
 	"context"
 	"errors"
 	"fmt"
 	"time"
 
 	"configcenter/src/ac/extensions"
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -140,21 +140,20 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	iamCli := new(iam.IAM)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIam(nil, server.Config.Auth, engine.Metric().Registry())
+		iamCli, err = iam.NewIAM(nil, server.Config.Auth, engine.Metric().Registry())
 		if err != nil {
 			return fmt.Errorf("new iam client failed: %v", err)
 		}
 	} else {
 		blog.Infof("disable auth center access")
 	}
+	authManager := extensions.NewAuthManager(engine.CoreAPI, iamCli)
 
-	authManager := extensions.NewAuthManager(engine.CoreAPI)
 	server.Service = &service.Service{
 		Language:    engine.Language,
 		Engine:      engine,
 		AuthManager: authManager,
 		Es:          essrv,
-		IAMClient:   iamCli.Client,
 		Core:        core.New(engine.CoreAPI, authManager, engine.Language),
 		Error:       engine.CCErr,
 		Config:      server.Config,

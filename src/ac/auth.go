@@ -26,7 +26,18 @@ import (
 var NoAuthorizeError = errors.New("no authorize")
 
 type AuthInterface interface {
-	RegisterSystem(ctx context.Context, host string) error
+	// RegisterSystem register CMDB system to IAM
+	RegisterSystem(ctx context.Context, host string, objects []metadata.Object) error
+	// SyncIAMSysInstances sync system instances between CMDB and IAM
+	SyncIAMSysInstances(ctx context.Context, objects []metadata.Object) error
+}
+
+// Viewer is a interface to operate iam view
+type Viewer interface {
+	// CreateView create iam view for objects
+	CreateView(ctx context.Context, header http.Header, objects []metadata.Object) error
+	// DeleteView delete iam view for objects
+	DeleteView(ctx context.Context, header http.Header, objects []metadata.Object) error
 }
 
 type AuthorizeInterface interface {

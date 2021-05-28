@@ -34,7 +34,7 @@ const (
 	SystemIDIAM = "bk_iam"
 
 	// IAM侧资源的通用模型实例前缀
-	IAMSysInstTypePrefix = "sys_inst_pub_"
+	IAMSysInstTypePrefix = "cc_inst_"
 )
 
 type AuthConfig struct {
@@ -517,4 +517,15 @@ type DynamicAction struct {
 	ActionType   ActionType
 	ActionNameCN string
 	ActionNameEN string
+}
+
+const (
+	OldIAMSysInstanceTypeID      TypeID              = "sys_instance"
+	OldIAMSysInstanceSelectionID InstanceSelectionID = "sys_instance"
+)
+
+var OldIAMSysInstanceActionIDMap = map[ActionID]struct{}{
+	"create_sys_instance": {},
+	"edit_sys_instance":   {},
+	"delete_sys_instance": {},
 }

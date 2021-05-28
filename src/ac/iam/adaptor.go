@@ -47,6 +47,7 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (ActionID, []types.Resource, er
 	return action, resource, nil
 }
 
+// ConvertResourceType convert resource type from CMDB to IAM
 func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*TypeID, error) {
 	var iamResourceType TypeID
 	switch resourceType {
@@ -132,10 +133,12 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 	return &iamResourceType, nil
 }
 
+// ConvertSysInstanceResourceType convert system instances resouce type from CMDB to IAM
 func ConvertSysInstanceResourceType(resourceType meta.ResourceType) TypeID {
 	return TypeID(strings.Replace(string(resourceType), meta.CMDBSysInstTypePrefix, IAMSysInstTypePrefix, 1))
 }
 
+// ConvertResourceAction convert resource action from CMDB to IAM
 func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, businessID int64) (ActionID, error) {
 	if action == meta.SkipAction {
 		return Skip, nil
@@ -186,6 +189,7 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 	return Unsupported, fmt.Errorf("unsupported type %s action: %s", resourceType, action)
 }
 
+// ConvertSysInstanceActionID convert system instances action from CMDB to IAM
 func ConvertSysInstanceActionID(resourceType meta.ResourceType, action meta.Action) (ActionID, error) {
 	var actionType ActionType
 	switch action {
@@ -202,7 +206,7 @@ func ConvertSysInstanceActionID(resourceType meta.ResourceType, action meta.Acti
 		return Unsupported, fmt.Errorf("unsupported action: %s", action)
 	}
 	objInfo := strings.TrimPrefix(string(resourceType), meta.CMDBSysInstTypePrefix)
-	return ActionID(fmt.Sprintf("%s_%s", actionType, objInfo)), nil
+	return ActionID(fmt.Sprintf("%s_%s%s", actionType, IAMSysInstTypePrefix, objInfo)), nil
 }
 
 var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
@@ -505,17 +509,17 @@ func ParseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, 
 	return instances, nil
 }
 
-// 生成IAM侧资源的的dynamic resource typeID
+// GenIAMDynamicResTypeID 生成IAM侧资源的的dynamic resource typeID
 func GenIAMDynamicResTypeID(objectID string, id int64) TypeID {
 	return TypeID(fmt.Sprintf("%s%s_%d", IAMSysInstTypePrefix, objectID, id))
 }
 
-// 生成CMDB侧资源的的dynamic resource type
+// GenCMDBDynamicResType 生成CMDB侧资源的的dynamic resourceType
 func GenCMDBDynamicResType(objectID string, id int64) meta.ResourceType {
 	return meta.ResourceType(fmt.Sprintf("%s%s_%d", meta.CMDBSysInstTypePrefix, objectID, id))
 }
 
-// 生成dynamic resourceType
+// GenDynamicResourceType generate dynamic resourceType
 func GenDynamicResourceType(obj metadata.Object) ResourceType {
 	return ResourceType{
 		ID:            GenIAMDynamicResTypeID(obj.ObjectID, obj.ID),
@@ -531,7 +535,7 @@ func GenDynamicResourceType(obj metadata.Object) ResourceType {
 	}
 }
 
-// GenDynamicResourceTypes 生成dynamic resourceType
+// GenDynamicResourceTypes generate dynamic resourceTypes
 func GenDynamicResourceTypes(objects []metadata.Object) []ResourceType {
 	resourceTypes := make([]ResourceType, 0)
 	for _, obj := range objects {
@@ -540,13 +544,17 @@ func GenDynamicResourceTypes(objects []metadata.Object) []ResourceType {
 	return resourceTypes
 }
 
-// GenDynamicInstanceSelection 生成dynamic instanceSelection
+// GenIAMDynamicInstanceSelection generate IAM dynamic instanceSelection
+func GenIAMDynamicInstanceSelection(objectID string, id int64) InstanceSelectionID {
+	return InstanceSelectionID(fmt.Sprintf("s_%s%s_%d", IAMSysInstTypePrefix, objectID, id))
+}
+
+// GenDynamicInstanceSelection generate dynamic instanceSelection
 func GenDynamicInstanceSelection(obj metadata.Object) InstanceSelection {
 	return InstanceSelection{
-		ID: InstanceSelectionID(fmt.Sprintf("sys_instance_%s_%d", obj.ObjectID, obj.ID)),
-		// 这个系统下唯一, 需要ID
-		Name:   fmt.Sprintf("%s%d", obj.ObjectName, obj.ID),
-		NameEn: fmt.Sprintf("%s_%d", obj.ObjectID, obj.ID),
+		ID:     GenIAMDynamicInstanceSelection(obj.ObjectID, obj.ID),
+		Name:   obj.ObjectName,
+		NameEn: obj.ObjectID,
 		ResourceTypeChain: []ResourceChain{{
 			SystemID: SystemIDCMDB,
 			ID:       GenIAMDynamicResTypeID(obj.ObjectID, obj.ID),
@@ -554,7 +562,7 @@ func GenDynamicInstanceSelection(obj metadata.Object) InstanceSelection {
 	}
 }
 
-// GenDynamicInstanceSelections 生成dynamic instanceSelections
+// GenDynamicInstanceSelections generate dynamic instanceSelections
 func GenDynamicInstanceSelections(objects []metadata.Object) []InstanceSelection {
 	instanceSelections := make([]InstanceSelection, 0)
 	for _, obj := range objects {
@@ -563,7 +571,7 @@ func GenDynamicInstanceSelections(objects []metadata.Object) []InstanceSelection
 	return instanceSelections
 }
 
-// GenDynamicAction 生成dynamic action
+// GenDynamicAction generate dynamic action
 func GenDynamicAction(obj metadata.Object) []DynamicAction {
 	return []DynamicAction{
 		GenDynamicCreateAction(obj),
@@ -572,12 +580,12 @@ func GenDynamicAction(obj metadata.Object) []DynamicAction {
 	}
 }
 
-// GenDynamicActionID 生成dynamic ActionID
+// GenDynamicActionID generate dynamic ActionID
 func GenDynamicActionID(actionType ActionType, objectID string, id int64) ActionID {
-	return ActionID(fmt.Sprintf("%s_%s_%d", actionType, objectID, id))
+	return ActionID(fmt.Sprintf("%s_%s%s_%d", actionType, IAMSysInstTypePrefix, objectID, id))
 }
 
-// GenDynamicCreateAction 生成dynamic create action
+// GenDynamicCreateAction generate dynamic create action
 func GenDynamicCreateAction(obj metadata.Object) DynamicAction {
 	return DynamicAction{
 		ActionID:     GenDynamicActionID(Create, obj.ObjectID, obj.ID),
@@ -587,7 +595,7 @@ func GenDynamicCreateAction(obj metadata.Object) DynamicAction {
 	}
 }
 
-// GenDynamicEditAction 生成dynamic edit action
+// GenDynamicEditAction generate dynamic edit action
 func GenDynamicEditAction(obj metadata.Object) DynamicAction {
 	return DynamicAction{
 		ActionID:     GenDynamicActionID(Edit, obj.ObjectID, obj.ID),
@@ -597,7 +605,7 @@ func GenDynamicEditAction(obj metadata.Object) DynamicAction {
 	}
 }
 
-// GenDynamicDeleteAction 生成dynamic delete action
+// GenDynamicDeleteAction generate dynamic delete action
 func GenDynamicDeleteAction(obj metadata.Object) DynamicAction {
 	return DynamicAction{
 		ActionID:     GenDynamicActionID(Delete, obj.ObjectID, obj.ID),
@@ -646,7 +654,7 @@ func GenDynamicActions(objects []metadata.Object) []ResourceAction {
 				SelectionMode: modeAll,
 				InstanceSelections: []RelatedInstanceSelection{{
 					SystemID: SystemIDCMDB,
-					ID:       InstanceSelectionID(fmt.Sprintf("sys_instance_%s_%d", obj.ObjectID, obj.ID)),
+					ID:       GenIAMDynamicInstanceSelection(obj.ObjectID, obj.ID),
 				}},
 			},
 		}
@@ -704,8 +712,40 @@ func IsCMDBSysInstance(resourceType meta.ResourceType) bool {
 	return strings.HasPrefix(string(resourceType), meta.CMDBSysInstTypePrefix)
 }
 
+// IsIAMSysInstanceSelection judge whether the instance selection is a system instance selection in iam resource
+func IsIAMSysInstanceSelection(instanceSelectionID InstanceSelectionID) bool {
+	return strings.Contains(string(instanceSelectionID), IAMSysInstTypePrefix)
+}
+
+// IsIAMSysInstanceAction judge whether the action is a system instance action in iam resource
+func IsIAMSysInstanceAction(actionID ActionID) bool {
+	return strings.Contains(string(actionID), IAMSysInstTypePrefix)
+}
+
 // GetObjIDFromIamSysInstance get object id from iam system instance
 func GetObjIDFromIamSysInstance(resourceType TypeID) string {
 	instIDIdx := strings.LastIndex(string(resourceType), "_")
 	return strings.TrimPrefix(string(resourceType[:instIDIdx]), IAMSysInstTypePrefix)
+}
+
+// GetActionTypeFromIAMSysInstance get action type from iam system instance
+func GetActionTypeFromIAMSysInstance(actionID ActionID) ActionType {
+	actionIDStr := string(actionID)
+	return ActionType(actionIDStr[:strings.Index(actionIDStr, "_")])
+}
+
+// IsOldIAMSysInstanceTypeID judge whether the id is an old iam system instance type id
+func IsOldIAMSysInstanceTypeID(id TypeID) bool {
+	return id == OldIAMSysInstanceTypeID
+}
+
+// IsOldIAMSysInstanceSelectionID judge whether the id is an old iam system instance selection id
+func IsOldIAMSysInstanceSelectionID(id InstanceSelectionID) bool {
+	return id == OldIAMSysInstanceSelectionID
+}
+
+// IsOldIAMSysInstanceSelectionID judge whether the id is an old iam system instance action id
+func IsOldIAMSysInstanceActionID(id ActionID) bool {
+	_, ok := OldIAMSysInstanceActionIDMap[id]
+	return ok
 }

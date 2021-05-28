@@ -30,7 +30,7 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iam.TypeID, filter 
 
 	// get attributes' enumeration options from cache
 	objID := getInstanceResourceObjID(resourceType)
-	if objID == "" {
+	if objID == "" && !iam.IsIAMSysInstance(resourceType) {
 		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
 	}
 	var attrType string

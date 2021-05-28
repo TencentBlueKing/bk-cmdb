@@ -31,7 +31,8 @@ type Config struct {
 	Redis                redis.Config
 	ConfigMap            map[string]string
 	Es                   elasticsearch.EsConfig
-	Auth                 iam.AuthConfig
+	// Auth is auth config
+	Auth iam.AuthConfig
 }
 
 func NewServerOption() *ServerOption {

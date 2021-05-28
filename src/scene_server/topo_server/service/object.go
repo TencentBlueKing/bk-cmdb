@@ -128,7 +128,6 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 			return err
 		}
 
-		// 注册: 1.创建者权限 2.新资源类型 3.新实例视图 4.新鉴权动作 5.新鉴权动作分组
 		if auth.EnableAuthorize() {
 			iamInstance := metadata.IamInstanceWithCreator{
 				Type:    string(iam.SysModel),
@@ -136,41 +135,17 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 				Name:    rsp.Object().ObjectName,
 				Creator: ctx.Kit.User,
 			}
-			// 1.register object resource creator action to iam
+			// register object resource creator action to iam
 			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
 			}
 
-			modelList := []metadata.Object{rsp.Object()}
-			// 2.register new resourceType when new model is created
-			err = s.AuthManager.RegisterModelResourceTypes(ctx.Kit.Ctx, s.IAMClient, modelList)
-			if err != nil {
-				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-				return err
-			}
-
-			// 3.register new instance_selection when new model is created
-			err = s.AuthManager.RegisterModelInstanceSelections(ctx.Kit.Ctx, s.IAMClient, modelList)
-			if err != nil {
-				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-				return err
-			}
-
-			// 4.register IAM actions when new model is created
-			err = s.AuthManager.RegisterModelActions(ctx.Kit.Ctx, s.IAMClient, modelList)
-			if err != nil {
-				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-				return err
-			}
-			time.Sleep(time.Duration(1) * time.Second)
-
-			// 5.register IAM action groups when new model is created
-			// 注意: 此接口目前为全量更新, IAM暂时没有提供增量更新接口
-			err = s.AuthManager.UpdateModelActionGroups(ctx.Kit.Ctx, ctx.Kit.Header, s.IAMClient)
-			if err != nil {
-				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+			// create iam view
+			objects := []metadata.Object{rsp.Object()}
+			if err := s.AuthManager.Viewer.CreateView(ctx.Kit.Ctx, ctx.Kit.Header, objects); err != nil {
+				blog.Errorf("create view failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
 			}
 		}
@@ -276,16 +251,6 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		if err != nil {
 			return err
 		}
-		// 事务内部可以允许不多于一个的其它系统调用函数, 排在事务尾部, 仍可保证原子性
-		// 由于ActionGroups会直观的让用户在IAM内看到访问界面的变化, 应尽量优先保证与cmdb操作的事务性
-		// 1.update IAM action groups
-		if auth.EnableAuthorize() {
-			err = s.AuthManager.UpdateModelActionGroups(ctx.Kit.Ctx, ctx.Kit.Header, s.IAMClient)
-			if err != nil {
-				blog.Errorf("[api-obj] delete model, but update instance action group to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-				return err
-			}
-		}
 		return nil
 	})
 	if txnErr != nil {
@@ -293,43 +258,15 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		return
 	}
 
-	// 如果注销操作有部分成功, 然后失败; 此时cmdb数据如果回滚会导致IAM的数据出现不可预知的情况; 故此处操作不能实现事务
-	// 此处的注销操作如果失败, 仍可依赖周期性任务[此任务挂在authServer进程上]保证IAM数据同步
 	if auth.EnableAuthorize() {
-		objList := []metadata.Object{*obj}
-		// 2.delete action
-		err = s.AuthManager.UnregisterModelActions(ctx.Kit.Ctx, s.IAMClient, objList)
-		if err != nil {
-			blog.Errorf("[api-obj] delete model, but unregister actions failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-
-			// 这里的失败, 用户是无感知的, 可依赖周期性任务实现最终一致
-			// ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommUnRegistResourceToIAMFailed))
-			ctx.RespEntity(nil)
-			return
-		}
-
-		// 3.instance selection
-		err = s.AuthManager.UnregisterModelInstanceSelections(ctx.Kit.Ctx, s.IAMClient, objList)
-		if err != nil {
-			blog.Errorf("[api-obj] delete model, but unregister instance selections failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-
-			// 这里的失败, 用户是无感知的, 可依赖周期性任务实现最终一致
-			// ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommUnRegistResourceToIAMFailed))
-			ctx.RespEntity(nil)
-			return
-		}
-
-		// 4.unregister resourceType
-		err = s.AuthManager.UnregisterModelResourceTypes(ctx.Kit.Ctx, s.IAMClient, objList)
-		if err != nil {
-			blog.Errorf("[api-obj] delete model, but unregister model resource types failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-
-			// 这里的失败, 用户是无感知的, 可依赖周期性任务实现最终一致
-			// ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommUnRegistResourceToIAMFailed))
-			ctx.RespEntity(nil)
-			return
+		// delete iam view
+		// if some errors occur, the sync iam task will delete the iam view in the end
+		objects := []metadata.Object{*obj}
+		if err := s.AuthManager.Viewer.DeleteView(ctx.Kit.Ctx, ctx.Kit.Header, objects); err != nil {
+			blog.Errorf("delete view failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 		}
 	}
+
 	ctx.RespEntity(nil)
 }
 

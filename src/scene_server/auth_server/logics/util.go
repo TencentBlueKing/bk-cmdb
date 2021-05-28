@@ -173,30 +173,6 @@ func getHostDisplayName(innerIP string, cloudName string) string {
 	return innerIP + "(" + cloudName + ")"
 }
 
-// GetCustomObjects get objects which are custom.
-func (lgc *Logics) GetCustomObjects(kit *rest.Kit) ([]metadata.Object, error) {
-	resp, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{
-		Fields: []string{common.BKObjIDField, common.BKObjNameField, common.BKFieldID},
-		Page:   metadata.BasePage{Limit: common.BKNoLimit},
-		Condition: map[string]interface{}{
-			common.BKIsPre: false,
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("get custom models failed, err: %+v", err)
-	}
-	if len(resp.Data.Info) == 0 {
-		blog.Info("get custom models, custom models not found")
-	}
-
-	objects := make([]metadata.Object, 0)
-	for _, item := range resp.Data.Info {
-		objects = append(objects, item.Spec)
-	}
-
-	return objects, nil
-}
-
 // GetObjectsIDNameMap get a map, key is bk_obj_id, value is bk_obj_name
 func (lgc *Logics) GetObjectsIDNameMap(kit *rest.Kit, objIDs []string) (map[string]string, error) {
 	resp, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{

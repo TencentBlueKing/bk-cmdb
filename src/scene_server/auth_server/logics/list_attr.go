@@ -25,7 +25,7 @@ import (
 func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.AttrResource, error) {
 	attrs := make([]types.AttrResource, 0)
 	objID := getInstanceResourceObjID(resourceType)
-	if objID == "" {
+	if objID == "" && !iam.IsIAMSysInstance(resourceType) {
 		return attrs, nil
 	}
 

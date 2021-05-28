@@ -53,7 +53,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	process.Config.Register.Address, _ = cc.String("registerServer.addrs")
 	snapDataID, _ := cc.Int("hostsnap.dataID")
 	process.Config.SnapDataID = int64(snapDataID)
-	process.Config.SyncIAMPeriod, _ = cc.Duration("adminServer.syncIAMPeriod")
+	process.Config.SyncIAMPeriodMinutes, _ = cc.Int("adminServer.syncIAMPeriodMinutes")
 	process.setSyncIAMPeriod()
 
 	// load mongodb, redis and common config from configure directory
@@ -96,7 +96,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	process.Config.SnapRedis = snapRedisConf
 
-	process.Config.Iam, err = iam.ParseConfigFromKV("authServer", nil)
+	process.Config.IAM, err = iam.ParseConfigFromKV("authServer", nil)
 	if err != nil && auth.EnableAuthorize() {
 		blog.Errorf("parse iam error: %v", err)
 	}
@@ -160,7 +160,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		if auth.EnableAuthorize() {
 			blog.Info("enable auth center access.")
 
-			iamCli, err := iam.NewIam(nil, process.Config.Iam, engine.Metric().Registry())
+			iamCli, err := iam.NewIAM(nil, process.Config.IAM, engine.Metric().Registry())
 			if err != nil {
 				return fmt.Errorf("new iam client failed: %v", err)
 			}
@@ -201,9 +201,9 @@ func (h *MigrateServer) onMigrateConfigUpdate(previous, current cc.ProcessConfig
 
 // setSyncIAMPeriod set the sync period
 func (c *MigrateServer) setSyncIAMPeriod() {
-	svc.SyncIAMPeriod = c.Config.SyncIAMPeriod
-	if svc.SyncIAMPeriod < svc.SyncIAMPeriodMin {
-		svc.SyncIAMPeriod = svc.SyncIAMPeriodDefault
+	svc.SyncIAMPeriodMinutes = c.Config.SyncIAMPeriodMinutes
+	if svc.SyncIAMPeriodMinutes < svc.SyncIAMPeriodMinutesMin {
+		svc.SyncIAMPeriodMinutes = svc.SyncIAMPeriodMinutesDefault
 	}
-	blog.Infof("sync iam period is %#v", svc.SyncIAMPeriod)
+	blog.Infof("sync iam period is %d minutes", svc.SyncIAMPeriodMinutes)
 }

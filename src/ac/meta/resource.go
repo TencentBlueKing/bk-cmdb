@@ -68,7 +68,7 @@ const (
 
 const (
 	// CMDB侧资源的通用模型实例前缀
-	CMDBSysInstTypePrefix = "model_inst_pub_"
+	CMDBSysInstTypePrefix = "cc_obj_"
 )
 
 const (

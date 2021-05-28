@@ -215,6 +215,10 @@ es:
   usr: $es_user
   #密码
   pwd: $es_pass
+# adminServer专属配置
+adminServer:
+  #同步IAM动态模型的周期,单位为分钟，最小为5分钟,默认为30分钟
+  syncIAMPeriodMinutes: 30
 # web_server专属配置
 webServer:
   api:
@@ -265,9 +269,6 @@ authServer:
   appCode: $auth_app_code
   #cmdb项目在蓝鲸权限中心的应用密钥
   appSecret: $auth_app_secret
-# adminServer专属配置
-  #同步IAM动态模型的周期,最小为5分钟,默认为30分钟,需填入单位时(h),分(m),秒(s)
-  syncIAMPeriod: 30m
 #cloudServer专属配置
 cloudServer:
   # 加密服务使用
