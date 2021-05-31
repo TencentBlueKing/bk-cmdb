@@ -215,7 +215,8 @@ func (s *Service) ExportHost(c *gin.Context) {
 		usernameMap, propertyList, associationCond)
 	if nil != err {
 		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
-		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
+		ccErr := defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error())
+		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, ccErr.Error(), nil)
 		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
