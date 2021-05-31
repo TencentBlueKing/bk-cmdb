@@ -214,6 +214,18 @@
         })
         usefulCondition.condition = usefulSubCondition
 
+        // 兼容resource_name为in/contains操作
+        if (usefulCondition.resource_name) {
+          const { fuzzy_query: fuzzy } = usefulCondition
+          usefulSubCondition.push({
+            field: 'resource_name',
+            operatior: fuzzy ? 'contains' : 'in',
+            value: fuzzy ? usefulCondition.resource_name : [usefulCondition.resource_name]
+          })
+          delete usefulCondition.resource_name
+          delete usefulCondition.fuzzy_query
+        }
+
         this.condition = usefulCondition
       },
       async getAuditList(eventTrigger) {
