@@ -111,6 +111,10 @@ func (s *uniqueCheckService) checkUnique() error {
 				continue
 			}
 
+			if !unique.MustCheck {
+				fmt.Printf("WARNING: not must check object(%s) unique(%d) will not be supported\n", objID, unique.ID)
+			}
+
 			if err := s.checkObjectUnique(ctx, objID, unique.OwnerID, unique, attrMap); err != nil {
 				return err
 			}
