@@ -281,6 +281,9 @@ const (
 var (
 	updateObjectAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/update/objectassociation/[0-9]+/?$`)
 	deleteObjectAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/delete/objectassociation/[0-9]+/?$`)
+	// excel 导入关联关系专用接口
+	importAssociationByObjectAssociationIDLatestRegexp = regexp.MustCompile(
+		`^/api/v3/import/instassociation/[^\s/]+$`)
 )
 
 func (ps *parseStream) objectAssociationLatest() *parseStream {
@@ -467,6 +470,20 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.ModelAssociation,
 					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	// excel 导入关联关系专用接口, 跳过鉴权
+	if ps.hitRegexp(importAssociationByObjectAssociationIDLatestRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: 0,
+				Basic: meta.Basic{
+					Type:   meta.ModelAssociation,
+					Action: meta.SkipAction,
 				},
 			},
 		}
