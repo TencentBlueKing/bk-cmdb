@@ -23,11 +23,6 @@ module.exports = () => ({
       loader: 'vue-loader',
     },
     {
-      resourceQuery: /blockType=i18n/,
-      type: 'javascript/auto',
-      loader: '@kazupon/vue-i18n-loader'
-    },
-    {
       test: /\.js$/,
       use: [
         {
