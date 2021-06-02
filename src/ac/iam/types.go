@@ -18,6 +18,7 @@ import (
 	"strings"
 	"sync"
 
+	"configcenter/src/ac/meta"
 	"configcenter/src/common/auth"
 	cc "configcenter/src/common/backbone/configcenter"
 )
@@ -32,9 +33,6 @@ const (
 	SystemNameCMDB   = "配置平台"
 
 	SystemIDIAM = "bk_iam"
-
-	// IAM侧资源的通用模型实例前缀
-	IAMSysInstTypePrefix = "cc_inst_"
 )
 
 type AuthConfig struct {
@@ -338,6 +336,11 @@ const (
 	Unsupported ActionID = "unsupported"
 	// Skip is an action that no need to auth
 	Skip ActionID = "skip"
+)
+
+const (
+	// IAM侧资源的通用模型实例前缀标识
+	IAMSysInstTypePrefix = meta.CMDBSysInstTypePrefix
 )
 
 type ResourceAction struct {

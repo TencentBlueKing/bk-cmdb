@@ -147,15 +147,6 @@ type CloudMapping struct {
 	CloudID    int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
 }
 
-type AttributesOptions []AttributesOption
-
-type AttributesOption struct {
-	ID        string `json:"id" bson:"id"`
-	Name      string `json:"name" bson:"name"`
-	Type      string `json:"type" bson:"type"`
-	IsDefault bool   `json:"is_default" bson:"is_default"`
-}
-
 type ChartClassification struct {
 	Host []ChartConfig `json:"host"`
 	Inst []ChartConfig `json:"inst"`

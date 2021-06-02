@@ -503,11 +503,29 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
+		val, err := ps.RequestCtx.getValueFromBody(common.BKObjIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		objID := val.Value()
+		if objID == nil {
+			ps.err = fmt.Errorf("find object instance's association object instance info failed, " +
+				"no bk_obj_id was found in request body")
+			return ps
+		}
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		modelType := iam.GenCMDBDynamicResType(model.ID)
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstanceAssociation,
+					Type:   modelType,
 					Action: meta.FindMany,
 				},
 			},
@@ -515,7 +533,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		return ps
 	}
 
-	// find instance's association operation.
+	// find instance's association related info operation.
 	if ps.hitPattern(findObjectInstanceAssociationRelatedLatestPattern, http.MethodPost) {
 		bizID, err := ps.RequestCtx.getBizIDFromBody()
 		if err != nil {
@@ -523,11 +541,29 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
+		val, err := ps.RequestCtx.getValueFromBody("condition.bk_obj_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		objID := val.Value()
+		if objID == nil {
+			ps.err = fmt.Errorf("find instance's association related info failed, " +
+				"no condition.bk_obj_id was found in request body")
+			return ps
+		}
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		modelType := iam.GenCMDBDynamicResType(model.ID)
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstanceAssociation,
+					Type:   modelType,
 					Action: meta.FindMany,
 				},
 			},
@@ -763,7 +799,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ObjectID, model.ID)
+		modelType := iam.GenCMDBDynamicResType(model.ID)
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -785,11 +821,24 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
+		objID := ps.RequestCtx.Elements[6]
+		if len(objID) == 0 {
+			ps.err = fmt.Errorf("find object instance topology ui failed, got empty object id")
+			return ps
+		}
+
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		modelType := iam.GenCMDBDynamicResType(model.ID)
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstanceAssociation,
+					Type:   modelType,
 					Action: meta.FindMany,
 				},
 			},
@@ -805,11 +854,29 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
+		val, err := ps.RequestCtx.getValueFromBody("condition.bk_obj_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		objID := val.Value()
+		if objID == nil {
+			ps.err = fmt.Errorf("find object instance's association object instance info failed, " +
+				"no condition.bk_obj_id was found in request body")
+			return ps
+		}
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		modelType := iam.GenCMDBDynamicResType(model.ID)
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstanceAssociation,
+					Type:   modelType,
 					Action: meta.FindMany,
 				},
 			},
@@ -848,7 +915,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(objID, model.ID)
+		modelType := iam.GenCMDBDynamicResType(model.ID)
 
 		isMainline, err := ps.isMainlineModel(objID)
 		if err != nil {
@@ -892,7 +959,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(objID, model.ID)
+		modelType := iam.GenCMDBDynamicResType(model.ID)
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -925,7 +992,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(objectID, model.ID)
+		modelType := iam.GenCMDBDynamicResType(model.ID)
 
 		isMainline, err := ps.isMainlineModel(objectID)
 		if err != nil {
@@ -968,7 +1035,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(objectID, model.ID)
+		modelType := iam.GenCMDBDynamicResType(model.ID)
 
 		ids := make([]int64, 0)
 		val, err := ps.RequestCtx.getValueFromBody("update.#.inst_id")
@@ -1015,7 +1082,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(objID, model.ID)
+		modelType := iam.GenCMDBDynamicResType(model.ID)
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1048,7 +1115,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(objID, model.ID)
+		modelType := iam.GenCMDBDynamicResType(model.ID)
 
 		isMainline, err := ps.isMainlineModel(objID)
 		if err != nil {
@@ -1143,7 +1210,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(objID, model.ID)
+		modelType := iam.GenCMDBDynamicResType(model.ID)
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1169,7 +1236,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(objID, model.ID)
+		modelType := iam.GenCMDBDynamicResType(model.ID)
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1195,7 +1262,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(objID, model.ID)
+		modelType := iam.GenCMDBDynamicResType(model.ID)
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{

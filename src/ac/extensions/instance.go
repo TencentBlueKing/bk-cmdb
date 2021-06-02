@@ -162,7 +162,7 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 	resultResources := make([]meta.ResourceAttribute, 0)
 	for objID, instances := range objectIDInstancesMap {
 		object := objectIDMap[objID]
-		resourceType := iam.GenCMDBDynamicResType(object.ObjectID, object.ID)
+		resourceType := iam.GenCMDBDynamicResType(object.ID)
 		for _, mainline := range mainlineAsst.Data.Info {
 			if object.ObjectID == mainline.ObjectID {
 				resourceType = meta.MainlineInstance

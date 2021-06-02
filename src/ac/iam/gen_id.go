@@ -70,8 +70,6 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 		}
 	case meta.ModelClassification:
 		return genModelClassificationResource(act, rscType, a)
-	case meta.ModelInstanceAssociation:
-		return genSysInstanceResource(act, rscType, a)
 	case meta.AssociationType:
 		return genAssociationTypeResource(act, rscType, a)
 	case meta.ModelAttribute:

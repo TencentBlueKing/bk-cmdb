@@ -31,7 +31,6 @@ const (
 	MainlineInstance         ResourceType = "mainlineInstance"
 	AssociationType          ResourceType = "associationType"
 	ModelAssociation         ResourceType = "modelAssociation"
-	ModelInstanceAssociation ResourceType = "modelInstanceAssociation"
 	ModelInstance            ResourceType = "modelInstance"
 	ModelInstanceTopology    ResourceType = "modelInstanceTopology"
 	ModelTopology            ResourceType = "modelTopology"
@@ -67,8 +66,8 @@ const (
 )
 
 const (
-	// CMDB侧资源的通用模型实例前缀
-	CMDBSysInstTypePrefix = "cc_obj_"
+	// CMDB侧资源的通用模型实例前缀标识
+	CMDBSysInstTypePrefix = "comobj_"
 )
 
 const (

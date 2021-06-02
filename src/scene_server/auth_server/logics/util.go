@@ -13,7 +13,9 @@
 package logics
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
@@ -24,7 +26,7 @@ import (
 )
 
 // get resource database table name
-func getResourceTableName(resourceType iam.TypeID, supplierAccount string) string {
+func getResourceTableName(resourceType iam.TypeID) string {
 	switch resourceType {
 	case iam.Host:
 		return common.BKTableNameBaseHost
@@ -61,9 +63,6 @@ func getResourceTableName(resourceType iam.TypeID, supplierAccount string) strin
 	//case iam.Module:
 	//	return common.BKTableNameBaseModule
 	default:
-		if iam.IsIAMSysInstance(resourceType) {
-			return common.GetObjectInstTableName(iam.GetObjIDFromIamSysInstance(resourceType), supplierAccount)
-		}
 		return ""
 	}
 }
@@ -173,28 +172,74 @@ func getHostDisplayName(innerIP string, cloudName string) string {
 	return innerIP + "(" + cloudName + ")"
 }
 
-// GetObjectsIDNameMap get a map, key is bk_obj_id, value is bk_obj_name
-func (lgc *Logics) GetObjectsIDNameMap(kit *rest.Kit, objIDs []string) (map[string]string, error) {
-	resp, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{
-		Fields: []string{common.BKObjIDField, common.BKObjNameField},
+// GetModelsIDNameMap get a map, key is id, value is bk_obj_name
+func (lgc *Logics) GetModelsIDNameMap(kit *rest.Kit, modelIDs []int64) (map[int64]string, error) {
+	cond := &metadata.QueryCondition{
+		Fields: []string{common.BKObjNameField, common.BKFieldID},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 		Condition: map[string]interface{}{
-			common.BKObjIDField: map[string]interface{}{
-				common.BKDBIN: objIDs,
+			common.BKFieldID: map[string]interface{}{
+				common.BKDBIN: modelIDs,
 			},
 		},
-	})
+	}
+
+	resp, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
 	if err != nil {
+		blog.ErrorJSON("get models failed, err:%s, cond:%s, rid:%s", err, cond, kit.Rid)
 		return nil, fmt.Errorf("get models failed, err: %+v", err)
 	}
 	if len(resp.Data.Info) == 0 {
-		blog.Info("get models failed, no models was found")
+		blog.ErrorJSON("get models failed, no model was found, cond:%s, rid:%s", cond, kit.Rid)
+		return nil, fmt.Errorf("get models failed, no model was found")
 	}
 
-	objIDNameMap := make(map[string]string)
+	objIDNameMap := make(map[int64]string)
 	for _, item := range resp.Data.Info {
-		objIDNameMap[item.Spec.ObjectID] = item.Spec.ObjectName
+		objIDNameMap[item.Spec.ID] = item.Spec.ObjectName
 	}
 
 	return objIDNameMap, nil
+}
+
+var ModelIDObjIDMap = make(map[int64]string)
+
+// GetObjIDFromRerouceType get objID from resourceType
+func (lgc *Logics) GetObjIDFromRerouceType(ctx context.Context, header http.Header, resourceType iam.TypeID) (string,
+	error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	modelID, err := iam.GetModelIDFromIamSysInstance(resourceType)
+	if err != nil {
+		return "", err
+	}
+
+	if objID, ok := ModelIDObjIDMap[modelID]; ok {
+		return objID, nil
+	}
+
+	cond := &metadata.QueryCondition{
+		Fields: []string{common.BKObjIDField, common.BKFieldID},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{
+			common.BKFieldID: modelID,
+		},
+	}
+
+	resp, err := lgc.CoreAPI.CoreService().Model().ReadModel(ctx, header, cond)
+	if err != nil {
+		blog.ErrorJSON("get model failed, err:%s, cond:%s, rid:%s", err, cond, rid)
+		return "", fmt.Errorf("get model failed, err: %+v", err)
+	}
+	if len(resp.Data.Info) == 0 {
+		blog.ErrorJSON("get model failed, no model was found, cond:%s, rid:%s", cond, rid)
+		return "", fmt.Errorf("get model failed, no model was found")
+	}
+
+	for _, item := range resp.Data.Info {
+		ModelIDObjIDMap[item.Spec.ID] = item.Spec.ObjectID
+		return item.Spec.ObjectID, nil
+	}
+
+	return ModelIDObjIDMap[modelID], nil
 }

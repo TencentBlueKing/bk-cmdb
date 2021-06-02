@@ -221,7 +221,7 @@ func (ps *parseStream) getInstanceTypeByObject(objID string, ID int64) (meta.Res
 	if isMainline {
 		return meta.MainlineInstance, nil
 	}
-	return iam.GenCMDBDynamicResType(objID, ID), nil
+	return iam.GenCMDBDynamicResType(ID), nil
 }
 
 func (ps *parseStream) getBizIDByHostID(hostID int64) (int64, error) {

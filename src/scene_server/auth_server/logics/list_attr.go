@@ -21,7 +21,7 @@ import (
 	"configcenter/src/scene_server/auth_server/types"
 )
 
-// list enumeration attributes of instance type resource
+// list enumeration and list type attributes of instance type resource
 func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.AttrResource, error) {
 	attrs := make([]types.AttrResource, 0)
 	objID := getInstanceResourceObjID(resourceType)
@@ -31,14 +31,25 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.Att
 
 	param := metadata.QueryCondition{
 		Condition: map[string]interface{}{
-			common.BKPropertyTypeField: common.FieldTypeEnum,
+			common.BKPropertyTypeField: map[string]interface{}{
+				common.BKDBIN: []interface{}{
+					common.FieldTypeEnum,
+					common.FieldTypeList,
+				},
+			},
 		},
 		Fields: []string{common.BKPropertyIDField, common.BKPropertyNameField},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 	}
 
+	var err error
 	if iam.IsIAMSysInstance(resourceType) {
-		objID = iam.GetObjIDFromIamSysInstance(resourceType)
+		objID, err = lgc.GetObjIDFromRerouceType(kit.Ctx, kit.Header, resourceType)
+		if err != nil {
+			blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
+				err, resourceType, kit.Rid)
+			return nil, err
+		}
 	}
 	res, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, &param)
 	if err != nil {

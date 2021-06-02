@@ -14,7 +14,6 @@ package logics
 
 import (
 	"strconv"
-	"strings"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
@@ -263,7 +262,7 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
 	[]map[string]interface{}, error) {
 
-	if !strings.HasPrefix(string(resourceType), iam.IAMSysInstTypePrefix) {
+	if !iam.IsIAMSysInstance(resourceType) {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
@@ -312,7 +311,12 @@ func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filt
 			Limit: common.BKNoLimit,
 		},
 	}
-	objID := iam.GetObjIDFromIamSysInstance(resourceType)
+	objID, err := lgc.GetObjIDFromRerouceType(kit.Ctx, kit.Header, resourceType)
+	if err != nil {
+		blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
+			err, resourceType, kit.Rid)
+		return nil, err
+	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, query)
 	if err != nil {
 		blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, ids, err, kit.Rid)

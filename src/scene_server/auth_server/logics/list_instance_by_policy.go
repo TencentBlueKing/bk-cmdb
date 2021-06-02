@@ -15,7 +15,6 @@ package logics
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"configcenter/src/ac/iam"
@@ -37,7 +36,19 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID, 
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
-	collection := getResourceTableName(resourceType, kit.SupplierAccount)
+	collection := ""
+	if iam.IsIAMSysInstance(resourceType) {
+		objID, err := lgc.GetObjIDFromRerouceType(kit.Ctx, kit.Header, resourceType)
+		if err != nil {
+			blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
+				err, resourceType, kit.Rid)
+			return nil, err
+		}
+		collection = common.GetObjectInstTableName(objID, kit.SupplierAccount)
+	} else {
+		collection = getResourceTableName(resourceType)
+	}
+
 	idField := GetResourceIDField(resourceType)
 	nameField := GetResourceNameField(resourceType)
 	if collection == "" || idField == "" || nameField == "" {
@@ -155,12 +166,20 @@ func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types
 // list resource instances that user is privileged to access by policy
 func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) ([]string, error) {
 	resourceType := iam.TypeID(opts.Type)
-	// the supplier account was set in func (r *RestUtility) wrapperAction(action Action)
-	supplierAccount := util.GetStrByInterface(ctx.Value(common.ContextRequestOwnerField))
-	if supplierAccount == "" {
-		supplierAccount = common.BKDefaultOwnerID
+	supplierAccount := util.ExtractOwnerFromContext(ctx)
+	header := util.NewHeaderFromContext(ctx)
+	collection := ""
+	if iam.IsIAMSysInstance(resourceType) {
+		objID, err := lgc.GetObjIDFromRerouceType(ctx, header, resourceType)
+		if err != nil {
+			blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
+				err, resourceType, util.ExtractRequestIDFromContext(ctx))
+			return nil, err
+		}
+		collection = common.GetObjectInstTableName(objID, supplierAccount)
+	} else {
+		collection = getResourceTableName(resourceType)
 	}
-	collection := getResourceTableName(resourceType, supplierAccount)
 	idField := GetResourceIDField(resourceType)
 	if collection == "" || idField == "" {
 		return nil, fmt.Errorf("request type %s is invalid", opts.Type)
@@ -173,17 +192,24 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 			Element:  element,
 		}
 	}
-	policy := &operator.Policy{
-		Operator: opts.Operator,
-		Element: &operator.Content{
-			Content: policyArr,
-		},
+
+	var policy *operator.Policy
+	if len(policyArr) == 1 {
+		policy = &operator.Policy{
+			Operator: operator.Or,
+			Element: &operator.Content{
+				Content: policyArr,
+			},
+		}
+	} else {
+		policy = &operator.Policy{
+			Operator: opts.Operator,
+			Element: &operator.Content{
+				Content: policyArr,
+			},
+		}
 	}
 
-	header := make(http.Header)
-	header.Add(common.BKHTTPOwnerID, "0")
-	header.Add(common.BKHTTPHeaderUser, "admin")
-	header.Add("Content-Type", "application/json")
 	cond, err := lgc.parseFilterToMongo(ctx, header, policy, resourceType)
 	if err != nil {
 		blog.ErrorJSON("parse request filter expression %s failed, error: %s", policy, err.Error())
