@@ -35,7 +35,7 @@ import (
 // BuildExcelFromData product excel from data
 func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string,
 	data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64, usernameMap map[string]string,
-	propertyList []string, objectUniqueIDMap map[string]int64) error {
+	propertyList []string, AsstObjectUniqueIDMap map[string]int64, selfObjectUniqueID int64) error {
 	rid := util.GetHTTPCCRequestID(header)
 
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
@@ -82,7 +82,8 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 
 	}
 
-	err = lgc.BuildAssociationExcelFromData(ctx, objID, instIDArr, xlsxFile, header, modelBizID, objectUniqueIDMap)
+	err = lgc.BuildAssociationExcelFromData(ctx, objID, instIDArr, xlsxFile, header, modelBizID,
+		AsstObjectUniqueIDMap, selfObjectUniqueID)
 	if err != nil {
 		return err
 	}
@@ -90,9 +91,11 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 }
 
 // BuildHostExcelFromData product excel from data
+// selfObjectUniqueID 当前导出对象使用的唯一校验id
 func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property,
 	filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64,
-	usernameMap map[string]string, propertyList []string, objectUniqueIDMap map[string]int64) error {
+	usernameMap map[string]string, propertyList []string,
+	AsstObjectUniqueIDMap map[string]int64, selfObjectUniqueID int64) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -180,7 +183,8 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		rowIndex++
 	}
 
-	err = lgc.BuildAssociationExcelFromData(ctx, objID, instIDArr, xlsxFile, header, modelBizID, objectUniqueIDMap)
+	err = lgc.BuildAssociationExcelFromData(ctx, objID, instIDArr, xlsxFile, header, modelBizID,
+		AsstObjectUniqueIDMap, selfObjectUniqueID)
 	if err != nil {
 		return err
 	}
@@ -221,9 +225,10 @@ func (lgc *Logics) getObjectAssociation(ctx context.Context, header http.Header,
 }
 
 // BuildAssociationExcelFromData
-// @Params: objectUniqueIDMap 用来限定导出关联模型ID 和 导出数据使用使用的唯一索引
+// @Params: AsstObjectUniqueIDMap 用来限定导出关联模型ID 和 导出数据使用使用的唯一索引
 func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID string, instIDArr []int64,
-	xlsxFile *xlsx.File, header http.Header, modelBizID int64, objectUniqueIDMap map[string]int64) error {
+	xlsxFile *xlsx.File, header http.Header, modelBizID int64,
+	AsstObjectUniqueIDMap map[string]int64, selfObjectUniqueID int64) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
@@ -239,16 +244,22 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		return err
 	}
 	// 未设置, 不导出关联关系数据
-	if len(objectUniqueIDMap) == 0 {
+	if len(AsstObjectUniqueIDMap) == 0 {
 		productExcelAssociationHeader(ctx, sheet, defLang, 0, asstList)
 		return nil
 	}
 
-	instAsst, err := lgc.fetchAssociationData(ctx, header, objID, instIDArr, modelBizID)
+	// 2021年06月01日， 判断时候需要导出自关联，这个处理就是打补丁，不友好
+	hasSelfAssociation := false
+	if _, ok := AsstObjectUniqueIDMap[objID]; ok {
+		hasSelfAssociation = true
+	}
+	instAsst, err := lgc.fetchAssociationData(ctx, header, objID, instIDArr, modelBizID, hasSelfAssociation)
 	if err != nil {
 		return err
 	}
-	asstData, err := lgc.getAssociationData(ctx, header, objID, instAsst, modelBizID, objectUniqueIDMap)
+	asstData, objInstData, err := lgc.getAssociationData(ctx, header, objID, instAsst, modelBizID, AsstObjectUniqueIDMap,
+		selfObjectUniqueID)
 	if err != nil {
 		return err
 	}
@@ -260,21 +271,15 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 	for _, inst := range instAsst {
 		sheet.Cell(rowIndex, 1).SetString(inst.ObjectAsstID)
 		sheet.Cell(rowIndex, 2).SetString("")
-		srcInst, ok := asstData[inst.ObjectID][inst.InstID]
-		if !ok {
-			blog.Warnf("BuildAssociationExcelFromData association inst:%+v, not inst id :%d, objID:%s, rid:%s", inst, inst.InstID, objID, rid)
-			// return lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Errorf(common.CCErrCommInstDataNil, fmt.Sprintf("%s %d", objID, inst.InstID))
-			continue
-		}
-		dstInst, ok := asstData[inst.AsstObjectID][inst.AsstInstID]
-		if !ok {
-			blog.Warnf("BuildAssociationExcelFromData association inst:%+v, not inst id :%d, objID:%s, rid:%s", inst, inst.InstID, inst.AsstObjectID, rid)
+
+		srcInst, dstInst := buildRowInfo(objID, rid, inst, asstData, objInstData)
+		if srcInst == nil || dstInst == nil {
 			continue
 		}
 
-		// TODO: 注意源和目标顺序， 手续需要将当前对象放到最开始的位置
-		sheet.Cell(rowIndex, 3).SetString(buildEexcelPrimaryKey(srcInst))
-		sheet.Cell(rowIndex, 4).SetString(buildEexcelPrimaryKey(dstInst))
+		// TODO: 注意源和目标顺序
+		sheet.Cell(rowIndex, 3).SetString(buildExcelPrimaryKey(srcInst))
+		sheet.Cell(rowIndex, 4).SetString(buildExcelPrimaryKey(dstInst))
 		style := sheet.Cell(rowIndex, 3).GetStyle()
 		style.Alignment.WrapText = true
 		style = sheet.Cell(rowIndex, 4).GetStyle()
@@ -286,7 +291,43 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 
 }
 
-func buildEexcelPrimaryKey(propertyArr []PropertyPrimaryVal) string {
+func buildRowInfo(objID, rid string, inst *metadata.InstAsst, asstData map[string]map[int64][]PropertyPrimaryVal,
+	objInstData map[int64][]PropertyPrimaryVal) (srcInst []PropertyPrimaryVal, dstInst []PropertyPrimaryVal) {
+	if inst == nil {
+		return
+	}
+	var ok bool
+	if inst.ObjectID == objID {
+		srcInst, ok = objInstData[inst.InstID]
+		if !ok {
+			blog.WarnJSON("association inst:%s, not inst id :%d, objID:%s, rid:%s",
+				inst, inst.InstID, objID, rid)
+			return
+		}
+		dstInst, ok = asstData[inst.AsstObjectID][inst.AsstInstID]
+		if !ok {
+			blog.WarnJSON("association inst:%s, not inst id :%d, objID:%s, rid:%s",
+				inst, inst.InstID, inst.AsstObjectID, rid)
+			return
+		}
+	} else {
+		srcInst, ok = asstData[inst.ObjectID][inst.InstID]
+		if !ok {
+			blog.WarnJSON("association inst:%s, not inst id :%d, objID:%s, rid:%s",
+				inst, inst.InstID, objID, rid)
+			return
+		}
+		dstInst, ok = objInstData[inst.AsstInstID]
+		if !ok {
+			blog.WarnJSON("association inst:%s, not inst id :%d, objID:%s, rid:%s",
+				inst, inst.InstID, inst.AsstObjectID, rid)
+			return
+		}
+	}
+	return
+}
+
+func buildExcelPrimaryKey(propertyArr []PropertyPrimaryVal) string {
 	var contentArr []string
 	for _, property := range propertyArr {
 		contentArr = append(contentArr, buildExcelPrimaryStr(property))

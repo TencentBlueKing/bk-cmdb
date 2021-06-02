@@ -74,7 +74,7 @@ type AssociationOperationInterface interface {
 	DeleteInst(kit *rest.Kit, objID string, asstIDList []int64) (resp *metadata.DeleteAssociationInstResult, err error)
 
 	ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string,
-		importData map[int]metadata.ExcelAssociation, ObjectUniqueIDMap map[string]int64,
+		importData map[int]metadata.ExcelAssociation, asstObjectUniqueIDMap map[string]int64, objectUniqueID int64,
 		languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error)
 
 	FindAssociationByObjectAssociationID(ctx context.Context, kit *rest.Kit, objID string, asstIDArr []string) (

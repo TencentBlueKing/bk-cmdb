@@ -186,7 +186,7 @@ func (s *Service) ImportInstanceAssociation(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		ret, err = s.Core.AssociationOperation().ImportInstAssociation(ctx.Kit.Ctx, ctx.Kit, objID,
-			request.AssociationInfoMap, request.ObjectUniqueIDMap, s.Language)
+			request.AssociationInfoMap, request.AsstObjectUniqueIDMap, request.ObjectUniqueID, s.Language)
 		if err != nil {
 			return err
 		}

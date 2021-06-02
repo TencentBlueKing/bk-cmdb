@@ -42,6 +42,10 @@ type excelExportInstInput struct {
 
 	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
 	AssociationCond map[string]int64 `json:"association_condition"`
+
+	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// 自关联的时候，规定左边对象使用到的唯一索引
+	ObjectUniqueID int64 `json:"object_unique_id"`
 }
 
 type excelImportInstInput struct {
@@ -49,6 +53,9 @@ type excelImportInstInput struct {
 	OpType int64 `json:"op"`
 	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
 	AssociationCond map[string]int64 `json:"association_condition"`
+	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// 自关联的时候，规定左边对象使用到的唯一索引
+	ObjectUniqueID int64 `json:"object_unique_id"`
 }
 
 // ImportInst import inst
@@ -185,7 +192,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 	}
 
 	err = s.Logics.BuildExcelFromData(ctx, objID, fields, nil, instInfo, file, pheader, modelBizID, usernameMap,
-		propertyList, input.AssociationCond)
+		propertyList, input.AssociationCond, input.ObjectUniqueID)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s, rid: %s", objID, err.Error(), rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
