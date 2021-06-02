@@ -46,6 +46,9 @@ type excelExportHostInput struct {
 
 	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
 	AssociationCond map[string]int64 `json:"association_condition"`
+	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// 自关联的时候，规定左边对象使用到的唯一索引
+	ObjectUniqueID int64 `json:"object_unique_id"`
 }
 
 type excelImportAddHostInput struct {
@@ -53,6 +56,9 @@ type excelImportAddHostInput struct {
 	OpType   int64 `json:"op"`
 	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
 	AssociationCond map[string]int64 `json:"association_condition"`
+	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// 自关联的时候，规定左边对象使用到的唯一索引
+	ObjectUniqueID int64 `json:"object_unique_id"`
 }
 
 type excelImportUpdateHostInput struct {
@@ -60,6 +66,9 @@ type excelImportUpdateHostInput struct {
 	OpType int64 `json:"op"`
 	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
 	AssociationCond map[string]int64 `json:"association_condition"`
+	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// 自关联的时候，规定左边对象使用到的唯一索引
+	ObjectUniqueID int64 `json:"object_unique_id"`
 }
 
 // ImportHost import host
@@ -130,7 +139,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 		return
 	}
 	result := s.Logics.ImportHosts(ctx, f, c.Request.Header, defLang, 0, inputJSON.ModuleID,
-		inputJSON.OpType, inputJSON.AssociationCond)
+		inputJSON.OpType, inputJSON.AssociationCond, inputJSON.ObjectUniqueID)
 
 	c.JSON(http.StatusOK, result)
 }
@@ -212,7 +221,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	}
 
 	err = s.Logics.BuildHostExcelFromData(ctx, objID, fields, nil, hostInfo, file, header, 0,
-		usernameMap, propertyList, associationCond)
+		usernameMap, propertyList, associationCond, input.ObjectUniqueID)
 	if nil != err {
 		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
 		ccErr := defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error())
@@ -503,7 +512,7 @@ func (s *Service) UpdateHosts(c *gin.Context) {
 		return
 	}
 	result := s.Logics.UpdateHosts(ctx, f, c.Request.Header, defLang, inputJSON.BizID, inputJSON.OpType,
-		inputJSON.AssociationCond)
+		inputJSON.AssociationCond, inputJSON.ObjectUniqueID)
 
 	c.JSON(http.StatusOK, result)
 }

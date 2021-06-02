@@ -460,8 +460,9 @@ type ResponeImportAssociationData struct {
 
 // ResponeImportAssociation  import association result
 type RequestImportAssociation struct {
-	AssociationInfoMap map[int]ExcelAssociation `json:"association_info"`
-	ObjectUniqueIDMap  map[string]int64         `json:"object_unique_id_info"`
+	AssociationInfoMap    map[int]ExcelAssociation `json:"association_info"`
+	AsstObjectUniqueIDMap map[string]int64         `json:"asst_object_unique_id_info"`
+	ObjectUniqueID        int64                    `json:"object_unique_id"`
 }
 
 // RequestInstAssociationObjectID 要求根据实例信息（实例的模型ID，实例ID）和模型ID（关联关系中的源，目的模型ID）, 返回关联关系的请求参数

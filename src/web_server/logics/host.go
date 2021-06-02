@@ -150,7 +150,8 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 
 // ImportHosts import host info
 func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
-	modelBizID int64, moduleID int64, opType int64, objectUniqueIDMap map[string]int64) *metadata.ResponseDataMapStr {
+	modelBizID int64, moduleID int64, opType int64, AsstObjectUniqueIDMap map[string]int64,
+	objectUniqueID int64) *metadata.ResponseDataMapStr {
 
 	rid := util.GetHTTPCCRequestID(header)
 
@@ -176,12 +177,13 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 		}
 
 	}
-	return lgc.importHosts(ctx, f, header, defLang, modelBizID, modelBizID, objectUniqueIDMap)
+	return lgc.importHosts(ctx, f, header, defLang, modelBizID, modelBizID, AsstObjectUniqueIDMap, objectUniqueID)
 }
 
 // importHosts import host info
 func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
-	modelBizID int64, moduleID int64, objectUniqueIDMap map[string]int64) *metadata.ResponseDataMapStr {
+	modelBizID int64, moduleID int64, AsstObjectUniqueIDMap map[string]int64,
+	objectUniqueID int64) *metadata.ResponseDataMapStr {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -271,8 +273,9 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 	}
 
 	asstInfoMapInput := &metadata.RequestImportAssociation{
-		AssociationInfoMap: asstInfoMap,
-		ObjectUniqueIDMap:  objectUniqueIDMap,
+		AssociationInfoMap:    asstInfoMap,
+		AsstObjectUniqueIDMap: AsstObjectUniqueIDMap,
+		ObjectUniqueID:        objectUniqueID,
 	}
 	asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, common.BKInnerObjIDHost, asstInfoMapInput)
 	if nil != asstResultErr {
@@ -302,6 +305,7 @@ func (lgc *Logics) importStatisticsAssociation(ctx context.Context, header http.
 
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	rid := util.ExtractRequestIDFromContext(ctx)
+
 	// if len(f.Sheets) >= 2, the second sheet is association data to be import
 	asstNameArr, asstInfoMap := StatisticsAssociation(sheet, common.HostAddMethodExcelAssociationIndexOffset)
 	if len(asstInfoMap) == 0 {
@@ -350,7 +354,8 @@ func (lgc *Logics) importStatisticsAssociation(ctx context.Context, header http.
 
 // UpdateHosts update excel import hosts
 func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
-	modelBizID, OpType int64, objectUniqueIDMap map[string]int64) *metadata.ResponseDataMapStr {
+	modelBizID, OpType int64, AsstObjectUniqueIDMap map[string]int64,
+	objectUniqueID int64) *metadata.ResponseDataMapStr {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -453,8 +458,9 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 	}
 
 	asstInfoMapInput := &metadata.RequestImportAssociation{
-		AssociationInfoMap: asstInfoMap,
-		ObjectUniqueIDMap:  objectUniqueIDMap,
+		AssociationInfoMap:    asstInfoMap,
+		AsstObjectUniqueIDMap: AsstObjectUniqueIDMap,
+		ObjectUniqueID:        objectUniqueID,
 	}
 	asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, common.BKInnerObjIDHost, asstInfoMapInput)
 	if nil != asstResultErr {
