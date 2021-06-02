@@ -13,9 +13,10 @@
 package service
 
 import (
+	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/logics"
 )
 
-func (s *Service) BackgroundTask() {
-	logics.DBSync(s.Engine, s.db)
+func (s *Service) BackgroundTask(options options.Config) {
+	logics.DBSync(s.Engine, s.db, options)
 }

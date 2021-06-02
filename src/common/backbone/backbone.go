@@ -160,6 +160,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	engine.metric = metricService
 
 	handler := &cc.CCHandler{
+		// 扩展这个函数， 新加传递错误
 		OnProcessUpdate:  input.ConfigUpdate,
 		OnExtraUpdate:    input.ExtraUpdate,
 		OnLanguageUpdate: engine.onLanguageUpdate,
