@@ -21,7 +21,7 @@
         </cmdb-classify-panel>
       </div>
     </div>
-    <no-search-results v-show="isEmpty && !globalLoading" :text="$t('搜不到相关资源')" />
+    <no-search-results v-if="isEmpty && !globalLoading" :text="$t('搜不到相关资源')" />
   </div>
 </template>
 
