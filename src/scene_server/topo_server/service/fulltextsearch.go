@@ -12,15 +12,20 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
+
 	"github.com/olivere/elastic/v7"
 )
 
 const (
 	ESIndexPrefix = "cmdb"
 
-	TypeHost        = "host"
-	TypeObject      = "object"
 	TypeApplication = "biz"
+	TypeHost        = "host"
+	TypeInstance    = "instance"
+	TypeModel       = "model"
+
+	KindModel    = "model"
+	KindInstance = "instance"
 
 	BkBizMetaKey = "metadata.label.bk_biz_id"
 )
@@ -34,6 +39,35 @@ var (
 // esSpecialCharactersRegex can match es speical characters which need to be escaped
 var esSpecialCharactersRegex = regexp.MustCompile(`([+\-=&|><(){}\[\]\^"~'?!:*\/])`)
 
+// all es index name
+var (
+	esBizIndex      = getESIndexByCollection(common.BKTableNameBaseApp)
+	esHostIndex     = getESIndexByCollection(common.BKTableNameBaseHost)
+	esInstanceIndex = getESIndexByCollection(common.BKTableNameBaseInst)
+	esModelIndex    = getESIndexByCollection(common.BKTableNameObjDes)
+)
+
+var esIndexesNameTypeMap = map[string]string{
+	esBizIndex:      TypeApplication,
+	esHostIndex:     TypeHost,
+	esInstanceIndex: TypeInstance,
+	esModelIndex:    TypeModel,
+}
+
+var esIndexesTypeNameMap = map[string]string{
+	TypeApplication: esBizIndex,
+	TypeHost:        esHostIndex,
+	TypeInstance:    esInstanceIndex,
+	TypeModel:       esModelIndex + "*",
+}
+
+var esIndexesTypeKindMap = map[string]string{
+	TypeApplication: KindInstance,
+	TypeHost:        KindInstance,
+	TypeInstance:    KindInstance,
+	TypeModel:       KindModel,
+}
+
 type SearchResult struct {
 	Source    map[string]interface{} `json:"source"` // data from mongo, key/value
 	Highlight map[string][]string    `json:"highlight"`
@@ -42,8 +76,10 @@ type SearchResult struct {
 }
 
 type Aggregation struct {
-	Key   interface{} `json:"key"`
-	Count int64       `json:"count"`
+	Key string `json:"key"`
+	// Kind value only can be model or instance
+	Kind  string `json:"kind"`
+	Count int64  `json:"count"`
 }
 
 type SearchResults struct {
@@ -100,9 +136,16 @@ func (s *Service) FullTextFind(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "query_string"))
 		return
 	}
+	// get es query indexs
+	indexs, err := query.getQueryIndexes()
+	if err != nil {
+		blog.Errorf("full_text_find failed, get query indexes failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, err.Error()+", filter"))
+		return
+	}
 
-	// get query and search indexs
-	esQuery, indexs := query.toEsBoolQueryAndIndexs()
+	// get es query
+	esQuery := query.toEsBoolQuery()
 
 	result, err := s.Es.Search(ctx.Kit.Ctx, esQuery, indexs, query.Paging.Start, query.Paging.Limit)
 	if err != nil {
@@ -127,42 +170,71 @@ func (s *Service) FullTextFind(ctx *rest.Contexts) {
 		searchResults.Hits = append(searchResults.Hits, sr)
 	}
 
-	keyMap := make(map[string]int64)
-	notFoundKey := make(map[string]int64)
-	indexArggr, found := result.Aggregations.Terms(common.IndexAggName)
-	if found == true && indexArggr != nil {
-		for _, bucket := range indexArggr.Buckets {
-			// only cc_HostBase, cc_ApplicationBase currently
-			if bucket.Key == getESIndexByCollection(common.BKTableNameBaseHost) ||
-				bucket.Key == getESIndexByCollection(common.BKTableNameBaseApp) {
-				agg := Aggregation{}
-				agg.setAgg(bucket)
-				searchResults.Aggregations = append(searchResults.Aggregations, agg)
-				keyMap[util.GetStrByInterface(agg.Key)] = agg.Count
+	setAggregationInfo(searchResults)
+
+	ctx.RespEntity(searchResults)
+}
+
+// setAggregationInfo set aggregation info for result
+func setAggregationInfo(searchResults *SearchResults) error {
+	bizAggregation := &Aggregation{
+		Key:   TypeApplication,
+		Kind:  KindInstance,
+		Count: 0,
+	}
+	hostAggregation := &Aggregation{
+		Key:   TypeHost,
+		Kind:  KindInstance,
+		Count: 0,
+	}
+	modelAggregation := &Aggregation{
+		Key:   TypeModel,
+		Kind:  KindModel,
+		Count: 0,
+	}
+
+	instanceAggregationMap := map[string]*Aggregation{}
+
+	// count for different type
+	for _, hit := range searchResults.Hits {
+		switch hit.Type {
+		case TypeApplication:
+			bizAggregation.Count++
+		case TypeHost:
+			hostAggregation.Count++
+		case TypeModel:
+			modelAggregation.Count++
+		case TypeInstance:
+			if val, ok := hit.Source[common.BKObjIDField]; ok == true {
+				objID := util.GetStrByInterface(val)
+				if _, ok := instanceAggregationMap[objID]; ok == false {
+					instanceAggregationMap[objID] = &Aggregation{
+						Key:   objID,
+						Kind:  KindInstance,
+						Count: 0,
+					}
+				}
+				instanceAggregationMap[objID].Count++
 			}
+		default:
+			blog.Warnf("unsupported hit type:%s", hit.Type)
 		}
 	}
 
-	// fix aggregation data incomplete problem
-	for _, hit := range searchResults.Hits {
-		if val, ok := hit.Source[common.BKObjIDField]; ok == true {
-			objID := util.GetStrByInterface(val)
-			if _, exist := keyMap[objID]; exist == false {
-				if _, ok := notFoundKey[objID]; ok == false {
-					notFoundKey[objID] = 0
-				}
-				notFoundKey[objID]++
-			}
-		}
+	if modelAggregation.Count > 0 {
+		searchResults.Aggregations = append(searchResults.Aggregations, *modelAggregation)
 	}
-	for key, count := range notFoundKey {
-		agg := Aggregation{
-			Key:   key,
-			Count: count,
-		}
-		searchResults.Aggregations = append(searchResults.Aggregations, agg)
+	if bizAggregation.Count > 0 {
+		searchResults.Aggregations = append(searchResults.Aggregations, *bizAggregation)
 	}
-	ctx.RespEntity(searchResults)
+	if hostAggregation.Count > 0 {
+		searchResults.Aggregations = append(searchResults.Aggregations, *hostAggregation)
+	}
+	for _, aggr := range instanceAggregationMap {
+		searchResults.Aggregations = append(searchResults.Aggregations, *aggr)
+	}
+
+	return nil
 }
 
 // checkQueryString check the format of query string and adjust it when needed
@@ -191,7 +263,26 @@ func (query *Query) checkQueryString() (string, bool) {
 	}
 }
 
-func (query Query) toEsBoolQueryAndIndexs() (elastic.Query, []string) {
+// getQueryIndexes get needed indexes to query es
+func (query Query) getQueryIndexes() ([]string, error) {
+	queryIndexes := []string{}
+	if len(query.TypeFilter) == 0 {
+		queryIndexes = []string{getESIndexByCollection("cc_*")}
+	} else {
+		for _, indexType := range query.TypeFilter {
+			indexName, ok := esIndexesTypeNameMap[indexType]
+			if !ok {
+				return nil, fmt.Errorf("unsupoprted fitler type:%s, must be one of biz, host, instance, model",
+					indexType)
+			}
+			queryIndexes = append(queryIndexes, indexName)
+		}
+	}
+
+	return queryIndexes, nil
+}
+
+func (query Query) toEsBoolQuery() elastic.Query {
 	qBool := elastic.NewBoolQuery()
 
 	if query.BkBizId != "" {
@@ -210,35 +301,18 @@ func (query Query) toEsBoolQueryAndIndexs() (elastic.Query, []string) {
 	qString := elastic.NewQueryStringQuery(query.QueryString)
 	qBool.Must(qString)
 
-	if query.BkObjId == "" {
-		// if bk_obj_id is "", we search all indexs
-		indexs := make([]string, 0)
-		indexs = append(indexs, getESIndexByCollection("cc_*"))
-		return qBool, indexs
-	} else if query.BkObjId == TypeHost {
-		// if bk_obj_id is host, we search only from type cc_HostBase
-		indexs := []string{getESIndexByCollection(common.BKTableNameBaseHost)}
-		return qBool.Must(qString), indexs
-	} else if query.BkObjId == TypeApplication {
-		// if bk_obj_id is biz, we search only from type cc_ApplicationBase
-		indexs := []string{getESIndexByCollection(common.BKTableNameBaseApp)}
-		return qBool.Must(qString), indexs
-	} else {
-		// if define bk_obj_id, we use bool query include must(bk_obj_id=xxx) and should(query string)
+	if query.BkObjId != "" {
 		qBool.Must(elastic.NewTermQuery("bk_obj_id", query.BkObjId))
-		qBool.Must(qString)
-		indexs := []string{getESIndexByCollection(common.BKTableNameBaseInst + "*")}
-		return qBool, indexs
+
 	}
+
+	return qBool
 }
 
 func (agg *Aggregation) setAgg(bucket *elastic.AggregationBucketKeyItem) {
-	if bucket.Key == getESIndexByCollection(common.BKTableNameBaseHost) {
-		agg.Key = TypeHost
-	} else if bucket.Key == getESIndexByCollection(common.BKTableNameBaseApp) {
-		agg.Key = TypeApplication
-	} else {
-		agg.Key = bucket.Key
+	if key, ok := bucket.Key.(string); ok {
+		agg.Key = esIndexesNameTypeMap[key]
+		agg.Kind = esIndexesTypeKindMap[agg.Key]
 	}
 
 	agg.Count = bucket.DocCount
@@ -255,15 +329,7 @@ func (sr *SearchResult) setHit(ctx context.Context, searchHit *elastic.SearchHit
 		sr.Source = nil
 	}
 
-	switch searchHit.Index {
-	case getESIndexByCollection(common.BKTableNameBaseApp):
-		sr.Type = TypeApplication
-	case getESIndexByCollection(common.BKTableNameBaseHost):
-		sr.Type = TypeHost
-	case getESIndexByCollection(common.BKTableNameBaseInst):
-		sr.Type = TypeObject
-	}
-
+	sr.Type = esIndexesNameTypeMap[searchHit.Index]
 	sr.dealHighlight(sr.Source, searchHit.Highlight, bkBizId, rawString)
 }
 
