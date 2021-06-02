@@ -62,18 +62,11 @@
         </td>
       </template>
       <td align="right"><label class="option-label">{{$t('账号')}}</label></td>
-      <td>
-        <cmdb-form-objuser class="option-value"
-          v-model="condition.user"
-          :exclude="false"
-          :multiple="false"
-          :placeholder="$t('请输入xx', { name: $t('账号') })">
-        </cmdb-form-objuser>
-      </td>
+      <td><audit-user-selector class="option-value" v-model="condition.condition.user" /></td>
       <td align="right"><label class="option-label">{{$t('实例')}}</label></td>
       <td>
         <bk-input class="option-value"
-          v-model="instanceFilter"
+          v-model.trim="instanceFilter"
           :placeholder="$t('请输入xx', { name: instanceType === 'resource_id' ? 'ID' : $t('名称') })">
           <bk-select class="option-type" slot="prepend"
             :clearable="false"
@@ -101,13 +94,15 @@
   import AuditTargetSelector from './audit-target-selector'
   import AuditActionSelector from './audit-action-selector'
   import AuditModelSelector from './audit-model-selector'
+  import AuditUserSelector from './audit-user-selector'
   import RouterQuery from '@/router/query'
   export default {
     name: 'audit-resource-options',
     components: {
       AuditTargetSelector,
       AuditActionSelector,
-      AuditModelSelector
+      AuditModelSelector,
+      AuditUserSelector
     },
     data() {
       const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
@@ -116,12 +111,14 @@
         resource_type: '',
         action: [],
         operation_time: [today, today],
-        user: '',
         resource_id: '',
         resource_name: '',
         category: 'resource',
         bk_obj_id: '',
-        fuzzy_query: false
+        fuzzy_query: false,
+        condition: {
+          user: ['in', '']
+        }
       }
       return {
         instanceType: 'resource_name',

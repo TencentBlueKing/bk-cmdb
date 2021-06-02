@@ -89,35 +89,36 @@
 </script>
 
 <style lang="scss" scoped>
-    .bind-info-value {
-        position: relative;
-        display: inline-block;
-        vertical-align: middle;
-        padding-right: 0;
-        max-width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-
-        &.show-count {
-            padding-right: 26px;
-        }
-
-        .count {
-            position: absolute;
+    .process-bind-info-value {
+        /deep/ .bind-info-value {
+            position: relative;
             display: inline-block;
-            right: 2px;
-            top: 0;
-            color: #979ba5;
-            background-color: #f0f1f5;
-            border-radius: 3px;
-            padding: 0 2px;
-        }
-    }
+            vertical-align: middle;
+            padding-right: 0;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
 
-    /deep/.process-bind-info-value {
-        .bk-tooltip,
-        .bk-tooltip-ref {
+            &.show-count {
+                padding-right: 26px;
+            }
+
+            .count {
+                position: absolute;
+                display: inline-block;
+                right: 2px;
+                top: 0;
+                color: #979ba5;
+                background-color: #f0f1f5;
+                border-radius: 3px;
+                padding: 0 2px;
+            }
+        }
+        /deep/ .bk-tooltip {
+            display: block;
+        }
+        /deep/ .bk-tooltip-ref {
             display: block;
         }
     }
