@@ -166,9 +166,9 @@
   import FilterCollection from '@/components/filters/filter-collection'
   import FilterFastSearch from '@/components/filters/filter-fast-search'
   import FilterStore from '@/components/filters/store'
-  import ExportFields from '@/components/export-fields/export-fields.js'
   import FilterUtils from '@/components/filters/utils'
-  import batchExport from '@/components/batch-export/index.js'
+  import { update as updateHost } from '@/service/host/import'
+  import RouterQuery from '@/router/query'
   export default {
     components: {
       FilterCollection,
@@ -295,82 +295,98 @@
           history: true
         })
       },
-      handleExport(event) {
+      async handleExport(event) {
         if (!this.hasSelection) {
           event.stopPropagation()
           return false
         }
-        ExportFields.show({
+        const useExport = await import('@/components/export-file')
+        useExport.default({
           title: this.$t('导出选中'),
-          properties: FilterStore.getModelProperties('host'),
-          propertyGroups: FilterStore.propertyGroups,
-          handler: this.exportHanlder
-        })
-      },
-      async exportHanlder(properties) {
-        const formData = new FormData()
-        formData.append('bk_biz_id', this.bizId)
-        formData.append('bk_host_id', this.selection.map(({ host }) => host.bk_host_id).join(','))
-        formData.append('export_custom_fields', properties.map(property => property.bk_property_id))
-        try {
-          this.$store.commit('setGlobalLoading', true)
-          await this.$http.download({
-            url: `${window.API_HOST}hosts/export`,
-            method: 'post',
-            data: formData
-          })
-        } catch (error) {
-          console.error(error)
-        } finally {
-          this.$store.commit('setGlobalLoading', false)
-        }
+          bk_biz_id: this.bizId,
+          bk_obj_id: 'host',
+          presetFields: ['bk_cloud_id', 'bk_host_innerip'],
+          count: this.selection.length,
+          submit: (state, task) => {
+            const { fields, exportRelation  } = state
+            const params = {
+              export_custom_fields: fields.value.map(property => property.bk_property_id),
+              bk_host_ids: this.selection.map(({ host }) => host.bk_host_id),
+              bk_biz_id: this.bizId
+            }
+            if (exportRelation.value) {
+              params.object_unique_id = state.object_unique_id.value
+              params.association_condition = state.relations.value
+            }
+            return this.$http.download({
+              url: `${window.API_HOST}hosts/export`,
+              method: 'post',
+              name: task.current.value.name,
+              data: params
+            })
+          }
+        }).show()
       },
       async handleBatchExport(event) {
         if (!this.count) {
           event.stopPropagation()
           return false
         }
-        ExportFields.show({
+        const useExport = await import('@/components/export-file')
+        useExport.default({
           title: this.$t('导出全部'),
-          properties: FilterStore.getModelProperties('host'),
-          propertyGroups: FilterStore.propertyGroups,
-          handler: this.batchExportHandler
-        })
-      },
-      batchExportHandler(properties) {
-        batchExport({
-          name: 'host',
+          bk_biz_id: this.bizId,
+          bk_obj_id: 'host',
+          presetFields: ['bk_cloud_id', 'bk_host_innerip'],
           count: this.count,
-          options: (page) => {
-            const condition = this.$parent.getParams()
-            const formData = new FormData()
-            formData.append('bk_biz_id', this.bizId)
-            formData.append('export_custom_fields', properties.map(property => property.bk_property_id))
-            formData.append('export_condition', JSON.stringify({
-              ...condition,
-              page: {
-                ...page,
-                sort: 'bk_host_id'
+          submit: (state, task) => {
+            const { fields, exportRelation  } = state
+            const exportCondition = this.$parent.getParams()
+            const params = {
+              export_custom_fields: fields.value.map(property => property.bk_property_id),
+              bk_biz_id: this.bizId,
+              export_condition: {
+                ...exportCondition,
+                page: {
+                  ...task.current.value.page,
+                  sort: 'bk_host_id'
+                }
               }
-            }))
-            return {
+            }
+            if (exportRelation.value) {
+              params.object_unique_id = state.object_unique_id.value
+              params.association_condition = state.relations.value
+            }
+            return this.$http.download({
               url: `${window.API_HOST}hosts/export`,
               method: 'post',
-              data: formData
-            }
+              name: task.current.value.name,
+              data: params
+            })
           }
-        })
+        }).show()
       },
-      handleExcelUpdate() {
-        this.sideslider.component = CmdbImport.name
-        this.sideslider.componentProps = {
-          templateUrl: `${window.API_HOST}importtemplate/host`,
-          importUrl: `${window.API_HOST}hosts/update`,
-          templdateAvailable: false,
-          importPayload: { bk_biz_id: this.bizId }
-        }
-        this.sideslider.title = this.$t('更新主机属性')
-        this.sideslider.show = true
+      async handleExcelUpdate() {
+        const useImport = await import('@/components/import-file')
+        const [, { show: showImport, setState: setImportState }] = useImport.default()
+        setImportState({
+          title: this.$t('更新主机属性'),
+          bk_obj_id: 'host',
+          fileTips: `${this.$t('导入文件大小提示')},${this.$t('主机导入文件提示')}`,
+          submit: (options) => {
+            const params = {
+              bk_biz_id: this.bizId,
+              op: options.step
+            }
+            if (options.importRelation) {
+              params.object_unique_id = options.object_unique_id
+              params.association_condition = options.relations
+            }
+            return updateHost({ file: options.file, params, config: options.config })
+          },
+          success: () => RouterQuery.set({ _t: Date.now() })
+        })
+        showImport()
       },
       handleCopy(property) {
         const copyText = this.selection.map((data) => {

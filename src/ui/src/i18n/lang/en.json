@@ -1442,5 +1442,14 @@
     "请先选择主机": "Please select host",
     "请先选择操作对象": "Please select operation target",
     "账号": "Account",
-    "模糊": "fuzzy"
+    "模糊": "fuzzy",
+    "模板名称将作为实例化后的模块名": "The template name will be used as the module name after instantiation",
+    "导入更新提示": "You need to export the instances and complete the modification before import",
+    "导入文件大小提示": "Xlsx files within 20m",
+    "导入文件拖拽提示": "Drag the file here or {clickUpload}",
+    "是否导入关联的模型实例": "Import the associated model instance",
+    "数据导入中": "Importing, please wait...",
+    "数据导入终止提示": "Importing, closing will not terminate the import task",
+    "第N行": "The {row} row",
+    "主机导入文件提示": "Only support host in default area"
 }
