@@ -22,7 +22,7 @@
     "@icon-cool/bk-icon-cmdb-colorful": "0.0.1",
     "@vue/composition-api": "^1.0.0-rc.7",
     "axios": "0.18.0",
-    "bk-magic-vue": "2.2.14",
+    "bk-magic-vue": "2.3.1",
     "core-js": "^3.10.1",
     "cytoscape": "3.10.0",
     "cytoscape-dagre": "2.2.2",
