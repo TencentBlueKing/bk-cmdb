@@ -21,7 +21,7 @@
         @hide="isTransferMenuOpen = false">
         <bk-button slot="dropdown-trigger"
           :disabled="!hasSelection">
-          <span>{{$t('转移')}}</span>
+          <span>{{$t('转移至')}}</span>
           <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isTransferMenuOpen }]"></i>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content">
@@ -32,7 +32,7 @@
               { type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }
             ]"
             @click="handleTransfer($event, 'idle', false)">
-            {{$t('至空闲模块')}}
+            {{$t('空闲模块')}}
           </cmdb-auth>
           <cmdb-auth tag="li" class="bk-dropdown-item"
             :auth="[
@@ -41,40 +41,61 @@
               { type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }
             ]"
             @click="handleTransfer($event, 'business', false)">
-            {{$t('至业务模块')}}
+            {{$t('业务模块')}}
+          </cmdb-auth>
+          <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]"
+            @click="handleTransfer($event, 'resource', !isIdleModule)">
+            {{$t('主机池')}}
+          </li>
+          <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]"
+            @click="handleTransfer($event, 'acrossBusiness', !isIdleModule)">
+            {{$t('其他业务')}}
+          </li>
+        </ul>
+      </bk-dropdown-menu>
+      <bk-dropdown-menu class="option ml10" trigger="click"
+        font-size="medium"
+        :disabled="!hasSelection"
+        @show="isAddToOpen = true"
+        @hide="isAddToOpen = false">
+        <bk-button slot="dropdown-trigger"
+          :disabled="!hasSelection">
+          <span>{{$t('追加至')}}</span>
+          <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isAddToOpen }]"></i>
+        </bk-button>
+        <ul class="bk-dropdown-list" slot="dropdown-content">
+          <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
+            :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
+            <span href="javascript:void(0)"
+              slot-scope="{ disabled }"
+              :class="{ disabled: !isNormalModuleNode || disabled }"
+              @click="handleTransfer($event, 'increment', !isNormalModuleNode)">
+              {{$t('业务模块')}}
+            </span>
           </cmdb-auth>
         </ul>
       </bk-dropdown-menu>
       <bk-dropdown-menu class="option ml10" trigger="click"
-        v-show="showRemoveMenu"
+        v-show="!isIdleSetModules"
         font-size="medium"
         :disabled="!hasSelection"
         @show="isRemoveMenuOpen = true"
         @hide="isRemoveMenuOpen = false">
         <bk-button slot="dropdown-trigger"
           :disabled="!hasSelection">
-          <span>{{$t('移除')}}</span>
+          <span>{{$t('移出')}}</span>
           <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isRemoveMenuOpen }]"></i>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content">
-          <li :class="['bk-dropdown-item', { disabled: !hasSelection }]"
-            v-bk-tooltips.right="{
-              disabled: hasSelection,
-              content: $t('请先选择主机'),
-              boundary: 'window'
-            }"
-            @click="handleTransfer($event, 'resource', !hasSelection)">
-            {{$t('至主机池')}}
-          </li>
-          <li :class="['bk-dropdown-item', { disabled: !hasSelection }]"
-            v-bk-tooltips.right="{
-              disabled: hasSelection,
-              content: $t('请先选择主机'),
-              boundary: 'window'
-            }"
-            @click="handleTransfer($event, 'acrossBusiness', !hasSelection)">
-            {{$t('至其他业务')}}
-          </li>
+          <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
+            :auth="{ type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }">
+            <span href="javascript:void(0)"
+              slot-scope="{ disabled }"
+              :class="{ disabled: !removeAvailable || disabled }"
+              @click="handleRemove($event)">
+              {{$t('当前模块')}}
+            </span>
+          </cmdb-auth>
         </ul>
       </bk-dropdown-menu>
       <cmdb-clipboard-selector class="options-clipboard ml10"
@@ -92,16 +113,6 @@
           <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isMoreMenuOpen }]"></i>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content">
-          <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
-            v-if="showRemove"
-            :auth="{ type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }">
-            <span href="javascript:void(0)"
-              slot-scope="{ disabled }"
-              :class="{ disabled: !hasSelection || disabled }"
-              @click="handleRemove($event)">
-              {{$t('移除')}}
-            </span>
-          </cmdb-auth>
           <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)">
             {{$t('导出选中')}}
           </li>
@@ -182,6 +193,7 @@
         isTransferMenuOpen: false,
         isRemoveMenuOpen: false,
         isMoreMenuOpen: false,
+        isAddToOpen: false,
         dialog: {
           show: false,
           props: {
@@ -232,20 +244,11 @@
       isIdleSetModules() {
         return this.selection.every(data => data.module.every(module => module.default >= 1))
       },
-      showRemoveMenu() {
-        if (!this.selectedNode) return false
-        const { data } = this.selectedNode
-        return data.is_idle_set || data.default === 1 || data.bk_obj_id === 'biz'
-      },
-      /**
-       * 暂时屏蔽从当前模块移出主机的功能
-       */
-      showRemove() {
-        return false
-        // return this.selectedNode
-        //     && !this.selectedNode.data.is_idle_set
-        //     && this.selectedNode.data.bk_obj_id === 'module'
-        //     && this.selectedNode.data.default !== 1
+      removeAvailable() {
+        return this.selectedNode
+          && !this.selectedNode.data.is_idle_set
+          && this.selectedNode.data.bk_obj_id === 'module'
+          && this.selectedNode.data.default !== 1
       },
       clipboardList() {
         const IPWithCloud = FilterUtils.defineProperty({
@@ -277,7 +280,7 @@
         this.dialog.show = true
       },
       handleRemove(event) {
-        if (!this.hasSelection) {
+        if (!this.hasSelection || !this.removeAvailable) {
           event.stopPropagation()
           return false
         }

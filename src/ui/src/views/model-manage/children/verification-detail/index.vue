@@ -113,10 +113,10 @@
       existRules() {
         return this.ruleList
           .filter(item => item.id !== this.id)
-          .map(item => ({ id: item.id, rules: item.keys.map(key => key.key_id)}))
+          .map(item => ({ id: item.id, rules: item.keys.map(key => key.key_id) }))
       },
       selectedName() {
-        const name = this.submitRules.map(id => {
+        const name = this.submitRules.map((id) => {
           const property = this.attributeList.find(property => property.id === id)
           return property ? property.bk_property_name : id
         })
@@ -160,7 +160,7 @@
         this.validateResult = null
       },
       getValidateRuleName(rule) {
-        const name = rule.rules.map(id => {
+        const name = rule.rules.map((id) => {
           const property = this.attributeList.find(property => property.id === id)
           return property ? property.bk_property_name : id
         })

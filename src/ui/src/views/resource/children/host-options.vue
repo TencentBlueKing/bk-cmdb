@@ -598,7 +598,7 @@
             return hostImportService.create({ file: options.file, params, config: options.config })
           },
           success: () => {
-            RouterQuery.set({ _t: Date.now()})
+            RouterQuery.set({ _t: Date.now() })
             Bus.$emit('refresh-dir-count')
           }
         })
