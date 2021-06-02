@@ -15,6 +15,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/index"
@@ -137,14 +138,14 @@ func (s *uniqueCheckService) getAllObjectIDs(ctx context.Context) ([]string, err
 	return objIDs, nil
 }
 
-func (s *uniqueCheckService) getObjectUniques(ctx context.Context, objID string) ([]metadata.ObjectUnique, error) {
+func (s *uniqueCheckService) getObjectUniques(ctx context.Context, objID string) ([]ObjectUnique, error) {
 	fmt.Printf("start searching unique constraints for object %s\n", objID)
 
 	filter := map[string]interface{}{
 		common.BKObjIDField: objID,
 	}
 
-	uniques := make([]metadata.ObjectUnique, 0)
+	uniques := make([]ObjectUnique, 0)
 	if err := s.service.DbProxy.Table(common.BKTableNameObjUnique).Find(filter).All(ctx, &uniques); err != nil {
 		return nil, fmt.Errorf("get unique rules for object(%s) failed, err: %v", objID, err)
 	}
@@ -190,7 +191,7 @@ func (s *uniqueCheckService) getObjAttrMap(ctx context.Context, objID string) (m
 }
 
 func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID, supplierAccount string,
-	unique metadata.ObjectUnique, attrMap map[int64]metadata.Attribute) error {
+	unique ObjectUnique, attrMap map[int64]metadata.Attribute) error {
 
 	// check if all unique keys are valid
 	uniqueFields := make([]metadata.Attribute, 0)
@@ -283,4 +284,14 @@ func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID, suppl
 type duplicateItems struct {
 	Attributes map[string]interface{} `json:"attributes" bson:"_id"`
 	Total      int64                  `json:"total" bson:"total"`
+}
+
+type ObjectUnique struct {
+	ID        uint64               `json:"id" bson:"id"`
+	ObjID     string               `json:"bk_obj_id" bson:"bk_obj_id"`
+	MustCheck bool                 `json:"must_check" bson:"must_check"`
+	Keys      []metadata.UniqueKey `json:"keys" bson:"keys"`
+	Ispre     bool                 `json:"ispre" bson:"ispre"`
+	OwnerID   string               `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime  *time.Time           `json:"last_time" bson:"last_time"`
 }

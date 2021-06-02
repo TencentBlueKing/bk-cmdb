@@ -85,7 +85,7 @@ func (lgc *Logics) GetInstData(objID string, instIDArr []int64, header http.Head
 
 // ImportInsts import host info
 func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header,
-	defLang lang.DefaultCCLanguageIf, modelBizID int64, opType int64, AsstObjectUniqueIDMap map[string]int64) (
+	defLang lang.DefaultCCLanguageIf, modelBizID int64, opType int64, AsstObjectUniqueIDMap map[string]int64, objectUniqueID int64) (
 	resultData mapstr.MapStr, errCode int, err error) {
 
 	rid := util.GetHTTPCCRequestID(header)
@@ -102,12 +102,12 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 		return mapstr.MapStr{"association": info}, 0, nil
 	}
 
-	return lgc.importInsts(ctx, f, objID, header, defLang, modelBizID, AsstObjectUniqueIDMap)
+	return lgc.importInsts(ctx, f, objID, header, defLang, modelBizID, AsstObjectUniqueIDMap, objectUniqueID)
 }
 
 // importInsts import insts info
 func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header,
-	defLang lang.DefaultCCLanguageIf, modelBizID int64, AsstObjectUniqueIDMap map[string]int64) (
+	defLang lang.DefaultCCLanguageIf, modelBizID int64, AsstObjectUniqueIDMap map[string]int64, objectUniqueID int64) (
 	resultData mapstr.MapStr, errCode int, err error) {
 	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -152,6 +152,7 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 			asstInfoMapInput := &metadata.RequestImportAssociation{
 				AssociationInfoMap:    asstInfoMap,
 				AsstObjectUniqueIDMap: AsstObjectUniqueIDMap,
+				ObjectUniqueID:        objectUniqueID,
 			}
 			asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, objID, asstInfoMapInput)
 			if nil != asstResultErr {
