@@ -1,7 +1,7 @@
 <template>
   <bk-date-picker
     type="datetimerange"
-    v-model="localValue"
+    :value="localValue"
     v-bind="$attrs"
     format="yyyy-MM-dd HH:mm:ss"
     @change="handleChange"

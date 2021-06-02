@@ -15,6 +15,7 @@ package flow
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"configcenter/src/apimachinery/discovery"
@@ -296,14 +297,6 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 			pickedChainNodes = append(pickedChainNodes, chainNode)
 		}
 
-		monitor.Collect(&meta.Alarm{
-			RequestID: rid,
-			Type:      meta.EventFatalError,
-			Detail:    fmt.Sprintf("run event flow, but hit conflict %s cursor with chain nodes", f.key.Collection()),
-			Module:    types2.CC_MODULE_CACHESERVICE,
-			Dimension: map[string]string{"hit_conflict_nodes": "yes"},
-		})
-
 		// reverse the picked chain nodes to their origin order
 		for i, j := 0, len(pickedChainNodes)-1; i < j; i, j = i+1, j-1 {
 			pickedChainNodes[i], pickedChainNodes[j] = pickedChainNodes[j], pickedChainNodes[i]
@@ -392,7 +385,7 @@ func (f *Flow) doInsertEvents(chainNodes []*watch.ChainNode, lastTokenData map[s
 		blog.Errorf("do insert flow events failed, err: %v, rid: %s", txnErr, rid)
 
 		rid = rid + ":" + chainNodes[0].Oid
-		if retryWithReduce && len(chainNodes) >= 1 {
+		if retryWithReduce {
 			monitor.Collect(&meta.Alarm{
 				RequestID: rid,
 				Type:      meta.EventFatalError,
@@ -401,7 +394,23 @@ func (f *Flow) doInsertEvents(chainNodes []*watch.ChainNode, lastTokenData map[s
 				Dimension: map[string]string{"retry_conflict_nodes": "yes"},
 			})
 
-			// need do with retry with reduce
+			if len(chainNodes) <= 1 {
+				return false, nil
+			}
+
+			for index, reducedChainNode := range chainNodes {
+				if isConflictChainNode(reducedChainNode, txnErr) {
+					chainNodes = append(chainNodes[:index], chainNodes[index+1:]...)
+
+					// need do with retry with reduce
+					blog.ErrorJSON("run flow, insert %s event with reduce node %s, remain nodes: %s, rid: %s",
+						f.key.Collection(), reducedChainNode, chainNodes, rid)
+
+					return f.doInsertEvents(chainNodes, lastTokenData, rid)
+				}
+			}
+
+			// when no cursor conflict node is found, discard the first node and try to insert the others
 			blog.ErrorJSON("run flow, insert %s event with reduce node %s, remain nodes: %s, rid: %s",
 				f.key.Collection(), chainNodes[0], chainNodes[1:], rid)
 
@@ -413,6 +422,11 @@ func (f *Flow) doInsertEvents(chainNodes []*watch.ChainNode, lastTokenData map[s
 	}
 
 	return false, nil
+}
+
+
+func isConflictChainNode(chainNode *watch.ChainNode, err error) bool {
+	return strings.Contains(err.Error(), chainNode.Cursor) && strings.Contains(err.Error(), "index_cursor")
 }
 
 // getDeleteEventDetails get delete events' oid and related detail map from cmdb

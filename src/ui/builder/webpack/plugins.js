@@ -17,6 +17,7 @@ const getCommonPlugins = config => ([
   new ESLintPlugin({
     extensions: ['js', 'vue'],
     files: ['src'],
+    failOnWarning: true,
     formatter: require('eslint-friendly-formatter')
   }),
 

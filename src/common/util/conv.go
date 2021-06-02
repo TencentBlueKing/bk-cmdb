@@ -246,13 +246,23 @@ func SplitStrField(str, sep string) []string {
 
 // SliceInterfaceToInt64 将interface切片转化为int64切片,且interface的真实类型可以是任何整数类型.
 // 失败则返回nil,error.
-func SliceInterfaceToInt64(faceSlice []interface{}) ([]int64,error){
+func SliceInterfaceToInt64(faceSlice []interface{}) ([]int64, error) {
 	// 预分配空间.
-	var results = make([]int64,len(faceSlice))
+	var results = make([]int64, len(faceSlice))
 
 	// 转化操作.
-	for i,item := range faceSlice{
+	for i, item := range faceSlice {
 		switch val := item.(type) {
+		case float64:
+			results[i] = int64(val)
+		case float32:
+			results[i] = int64(val)
+		case json.Number:
+			v, err := val.Int64()
+			if err != nil {
+				return nil, err
+			}
+			results[i] = v
 		case int64:
 			results[i] = val
 		case int:
@@ -274,47 +284,46 @@ func SliceInterfaceToInt64(faceSlice []interface{}) ([]int64,error){
 		case uint64:
 			results[i] = int64(val)
 		default:
-			return nil,errors.New("can't convert to int64")
+			return nil, errors.New("can't convert to int64")
 		}
 	}
-	return results,nil
+	return results, nil
 }
-
 
 // SliceInterfaceToBool将interface切片转化为string切片,且interface的真实类型必须是string.
 // 失败则返回nil,error.
-func SliceInterfaceToString(faceSlice []interface{}) ([]string,error){
+func SliceInterfaceToString(faceSlice []interface{}) ([]string, error) {
 	// 预分配空间.
-	var results = make([]string,len(faceSlice))
+	var results = make([]string, len(faceSlice))
 
 	// 转化操作.
-	for i,item := range faceSlice{
+	for i, item := range faceSlice {
 		var ok bool
 
 		//如果转化失败则返回错误.
-		if results[i],ok = item.(string) ; !ok {
-			return nil,errors.New("can't convert to string")
+		if results[i], ok = item.(string); !ok {
+			return nil, errors.New("can't convert to string")
 		}
 
 	}
-	return results,nil
+	return results, nil
 }
 
 // SliceInterfaceToBool将interface切片转化为bool切片,且interface的真实类型必须是bool.
 // 失败则返回nil,error.
-func SliceInterfaceToBool(faceSlice []interface{}) ([]bool,error){
+func SliceInterfaceToBool(faceSlice []interface{}) ([]bool, error) {
 	// 预分配空间.
-	var results = make([]bool,len(faceSlice))
+	var results = make([]bool, len(faceSlice))
 
 	// 转化操作.
-	for i,item := range faceSlice{
-		 var ok bool
+	for i, item := range faceSlice {
+		var ok bool
 
-		 //如果转化失败则返回错误.
-		 if results[i],ok = item.(bool) ; !ok {
-			 return nil,errors.New("can't convert to bool")
-		 }
+		//如果转化失败则返回错误.
+		if results[i], ok = item.(bool); !ok {
+			return nil, errors.New("can't convert to bool")
+		}
 
 	}
-	return results,nil
+	return results, nil
 }

@@ -67,7 +67,7 @@ const mutations = {
     state.propertyGroups = propertyGroups
   },
   updateInfo(state, data) {
-    Object.assign(state.info.host, data)
+    state.info.host = Object.assign({}, state.info.host, data)
   },
   setAssociation(state, data) {
     state.association[data.type] = data.association

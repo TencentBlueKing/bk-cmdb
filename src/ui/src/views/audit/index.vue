@@ -166,27 +166,66 @@
         }
       },
       handleConditionChange(condition) {
-        const usefulCondition = {}
-        Object.keys(condition).forEach((key) => {
-          const value = condition[key]
-          if (String(value).length) {
-            usefulCondition[key] = value
+        const useCondition = function (condition) {
+          const usefulCondition = {}
+          Object.keys(condition).forEach((key) => {
+            const value = condition[key]
+            if (String(value).length) {
+              usefulCondition[key] = value
+            }
+          })
+          // 动态分组的ID是String, 其他的是Number, 区别转换
+          if (usefulCondition.resource_id) {
+            usefulCondition.resource_id = usefulCondition.resource_type === 'dynamic_group'
+              ? usefulCondition.resource_id
+              : parseInt(usefulCondition.resource_id, 10)
+          }
+          // 转换时间范围为start/end的形式
+          if (usefulCondition.operation_time) {
+            const [start, end] = usefulCondition.operation_time
+            usefulCondition.operation_time = {
+              start: `${start} 00:00:00`,
+              end: `${end} 23:59:59`
+            }
+          }
+          // 账号多选转为Array
+          if (usefulCondition.user) {
+            usefulCondition.user = usefulCondition.user.split(',')
+          }
+
+          return usefulCondition
+        }
+
+        const usefulCondition = useCondition(condition)
+
+        // 处理内联condition
+        const { condition: subCondition = {} } = condition
+        const usefulSubCondition = []
+        Object.keys(subCondition).forEach((key) => {
+          const [operatior, value] = subCondition[key]
+          const conditionValue = useCondition({ [key]: value })
+          if (Object.keys(conditionValue).length) {
+            usefulSubCondition.push({
+              field: key,
+              operatior,
+              value: conditionValue[key]
+            })
           }
         })
-        // 动态分组的ID是String, 其他的是Number, 区别转换
-        if (usefulCondition.resource_id) {
-          usefulCondition.resource_id = usefulCondition.resource_type === 'dynamic_group'
-            ? usefulCondition.resource_id
-            : parseInt(usefulCondition.resource_id, 10)
+        usefulCondition.condition = usefulSubCondition
+
+        // 兼容resource_name为in/contains操作
+        if (usefulCondition.resource_name) {
+          const { fuzzy_query: fuzzy } = usefulCondition
+          usefulSubCondition.push({
+            field: 'resource_name',
+            operatior: fuzzy ? 'contains' : 'in',
+            value: fuzzy ? usefulCondition.resource_name : [usefulCondition.resource_name]
+          })
+          delete usefulCondition.resource_name
+          delete usefulCondition.fuzzy_query
         }
-        // 转换时间范围为start/end的形式
-        if (usefulCondition.operation_time) {
-          const [start, end] = usefulCondition.operation_time
-          usefulCondition.operation_time = {
-            start: `${start} 00:00:00`,
-            end: `${end} 23:59:59`
-          }
-        }
+
         this.condition = usefulCondition
       },
       async getAuditList(eventTrigger) {
@@ -210,7 +249,9 @@
           this.table.pagination.count = count
           this.table.list = info
         } catch ({ permission }) {
-          this.$route.meta.view = 'permission'
+          if (permission) {
+            this.$route.meta.view = 'permission'
+          }
         }
       },
       handlePageChange(current) {

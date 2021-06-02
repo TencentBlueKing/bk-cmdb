@@ -228,11 +228,11 @@ var configChangeHistory = []configChangeItem{
 func setInitConfigSiteTitle() {
 	switch version.CCDistro {
 	case version.CCDistrCommunity:
-		initConfig = strings.ReplaceAll(initConfig, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云社区版")
+		initConfig = strings.Replace(initConfig, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云社区版", -1)
 	case version.CCDistrEnterprise:
-		initConfig = strings.ReplaceAll(initConfig, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云企业版")
+		initConfig = strings.Replace(initConfig, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云企业版", -1)
 	default:
-		initConfig = strings.ReplaceAll(initConfig, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云社区版")
+		initConfig = strings.Replace(initConfig, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云社区版", -1)
 	}
 
 	configChangeHistory[1].config = initConfig

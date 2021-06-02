@@ -281,7 +281,7 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 		process2ServiceInstanceMap[relations.Info[i].ProcessID] = &relations.Info[i]
 	}
 
-	hostMap, err := ps.getHostIPMapByID(ctx.Kit, hostIDs)
+	hostMap, err := ps.Logic.GetHostIPMapByID(ctx.Kit, hostIDs)
 	if err != nil {
 		return nil, err
 	}

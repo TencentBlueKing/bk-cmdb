@@ -16,7 +16,7 @@
         <span class="color-danger">*</span>
       </span>
       <div class="cmdb-form-item" :class="{ 'is-error': errors.has('objId') }">
-        <bk-select class="bk-select-full-width"
+        <bk-select class="bk-select-full-width" searchable
           :disabled="relationInfo.ispre || isEdit"
           v-validate="'required'"
           name="objId"
@@ -45,7 +45,7 @@
         <span class="color-danger">*</span>
       </span>
       <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstObjId') }">
-        <bk-select class="bk-select-full-width"
+        <bk-select class="bk-select-full-width" searchable
           :disabled="relationInfo.ispre || isEdit"
           v-validate="'required'"
           name="asstObjId"
