@@ -600,11 +600,18 @@ func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 // no need to auth because it only get the unique fields
 func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
+	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
+	if err != nil {
+		blog.Errorf("search model unique url parameter id not number, id: %s, error: %s, rid: %s",
+			ctx.Request.PathParameter("id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, "id"))
+		return
+	}
 
 	// get must check unique to judge if the instance exists
 	cond := map[string]interface{}{
 		common.BKObjIDField: objID,
-		"must_check":        true,
+		common.BKFieldID:    id,
 	}
 	uniqueResp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrUnique(ctx.Kit.Ctx, ctx.Kit.Header, metadata.QueryCondition{Condition: cond})
 	if err != nil {
@@ -617,8 +624,16 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(uniqueResp.Error())
 		return
 	}
+
+	if uniqueResp.Data.Count == 0 {
+		blog.Errorf("model %s has wrong must_check unique field not found, input: %s, rid: %s",
+			objID, cond, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrorTopObjectUniqueIndexNotFound, objID, id))
+		return
+	}
+
 	if uniqueResp.Data.Count != 1 {
-		blog.Errorf("model %s has wrong must_check unique field count", objID)
+		blog.Errorf("model %s has wrong must_check unique field count > 1, input: %s,rid: %s", objID, cond, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoObjectUniqueSearchFailed))
 		return
 	}
@@ -653,8 +668,10 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 
 	instIDKey := metadata.GetInstIDFieldByObjID(objID)
 	keys := []string{instIDKey}
+	attrIDNameMap := make(map[string]string, len(attrResp.Data.Info))
 	for _, attr := range attrResp.Data.Info {
 		keys = append(keys, attr.PropertyID)
+		attrIDNameMap[attr.PropertyID] = attr.PropertyName
 	}
 
 	// construct the query inst condition
@@ -682,7 +699,7 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(result)
+	ctx.RespEntity(metadata.QueryUniqueFieldsData{InstResult: *result, UniqueAttribute: attrIDNameMap})
 }
 
 // SearchInstByObject search the inst of the object

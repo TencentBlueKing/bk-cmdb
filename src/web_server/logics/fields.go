@@ -36,7 +36,6 @@ type Property struct {
 	Group         string
 	ExcelColIndex int
 	NotObjPropery bool //Not an attribute of the object, indicating that the field to be exported is needed for export,
-	IsOnly        bool
 	AsstObjID     string
 	NotExport     bool
 }
@@ -107,21 +106,6 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, modelBizID i
 
 }
 
-func (lgc *Logics) getObjectPrimaryFieldByObjID(objID string, header http.Header, modelBizID int64) ([]Property, error) {
-	fields, err := lgc.getObjFieldIDsBySort(objID, common.BKPropertyIDField, header, nil, modelBizID)
-	if nil != err {
-		return nil, err
-	}
-	var ret []Property
-	for _, field := range fields {
-		if true == field.IsOnly {
-			ret = append(ret, field)
-		}
-	}
-	return ret, nil
-
-}
-
 func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID int64, customFields []string) ([]Property, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	sort := fmt.Sprintf("%s", common.BKPropertyIndexField)
@@ -153,13 +137,7 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID i
 	index := 1
 	// 第一步，选出唯一校验字段；
 	for _, field := range sortedFields {
-		if field.IsOnly == true {
-			field.ExcelColIndex = index
-			index++
-			fields = append(fields, field)
-		} else {
-			noUniqueFields = append(noUniqueFields, field)
-		}
+		noUniqueFields = append(noUniqueFields, field)
 	}
 
 	// 第二步，根据字段分组，对必填字段排序；并选出非必填字段
@@ -217,38 +195,6 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
 	}
 
-	inputParam := metadata.QueryCondition{
-		Page: metadata.BasePage{
-			Start: 0,
-			Limit: common.BKNoLimit,
-		},
-		Condition: mapstr.MapStr(map[string]interface{}{
-			common.BKObjIDField: objID,
-		}),
-	}
-	uniques, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrUnique(context.Background(), header, inputParam)
-	if nil != err {
-		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, err, rid)
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !uniques.Result {
-		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, uniques, rid)
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(uniques.Code, uniques.ErrMsg)
-	}
-
-	keyIDs := map[uint64]bool{}
-	for _, unique := range uniques.Data.Info {
-		if unique.MustCheck {
-			for _, key := range unique.Keys {
-				keyIDs[key.ID] = true
-			}
-			break
-		}
-	}
-	if len(keyIDs) <= 0 {
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrTopoObjectUniqueSearchFailed)
-	}
-
 	ret := []Property{}
 	for _, attr := range result.Data {
 		ret = append(ret, Property{
@@ -260,7 +206,6 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 			Option:        attr.Option,
 			Group:         attr.PropertyGroup,
 			ExcelColIndex: int(attr.PropertyIndex),
-			IsOnly:        keyIDs[uint64(attr.ID)],
 		})
 	}
 	blog.V(5).Infof("getObjFieldIDsBySort ret count:%d, rid: %s", len(ret), rid)

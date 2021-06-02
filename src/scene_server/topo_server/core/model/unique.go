@@ -33,9 +33,6 @@ type Unique interface {
 	SetKeys([]metadata.UniqueKey)
 	GetKeys() []metadata.UniqueKey
 
-	SetMustCheck(bool)
-	GetMustCheck() bool
-
 	SetObjectID(objID string)
 	GetObjectID() string
 
@@ -76,9 +73,8 @@ func (g *unique) GetObjectID() string {
 
 func (g *unique) Create() error {
 	data := metadata.ObjectUnique{
-		ObjID:     g.data.ObjID,
-		MustCheck: g.data.MustCheck,
-		Keys:      g.data.Keys,
+		ObjID: g.data.ObjID,
+		Keys:  g.data.Keys,
 	}
 
 	rsp, err := g.clientSet.CoreService().Model().CreateModelAttrUnique(g.kit.Ctx, g.kit.Header, g.data.ObjID, metadata.CreateModelAttrUnique{Data: data})
@@ -98,8 +94,7 @@ func (g *unique) Create() error {
 
 func (g *unique) Update(data mapstr.MapStr) error {
 	updateReq := metadata.UpdateUniqueRequest{
-		MustCheck: g.data.MustCheck,
-		Keys:      g.data.Keys,
+		Keys: g.data.Keys,
 	}
 
 	rsp, err := g.clientSet.CoreService().Model().UpdateModelAttrUnique(g.kit.Ctx, g.kit.Header, g.data.ObjID, g.data.ID, metadata.UpdateModelAttrUnique{Data: updateReq})
@@ -196,10 +191,4 @@ func (g *unique) SetKeys(keys []metadata.UniqueKey) {
 }
 func (g *unique) GetKeys() []metadata.UniqueKey {
 	return g.data.Keys
-}
-func (g *unique) SetMustCheck(mustcheck bool) {
-	g.data.MustCheck = mustcheck
-}
-func (g *unique) GetMustCheck() bool {
-	return g.data.MustCheck
 }

@@ -171,7 +171,6 @@ var _ = Describe("inst test", func() {
 
 	It("create object attribute unique", func() {
 		input := &metadata.CreateUniqueRequest{
-			MustCheck: false,
 			Keys: []metadata.UniqueKey{
 				{
 					Kind: "property",
@@ -194,7 +193,6 @@ var _ = Describe("inst test", func() {
 
 	It("create object attribute unique with duplicate inst", func() {
 		input := &metadata.CreateUniqueRequest{
-			MustCheck: false,
 			Keys: []metadata.UniqueKey{
 				{
 					Kind: "property",
