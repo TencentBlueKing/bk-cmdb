@@ -222,7 +222,12 @@
   import { mapGetters, mapMutations, mapActions } from 'vuex'
   import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
-  import { MENU_RESOURCE_HOST, MENU_RESOURCE_BUSINESS, MENU_RESOURCE_INSTANCE } from '@/dictionary/menu-symbol'
+  import {
+    MENU_RESOURCE_HOST,
+    MENU_RESOURCE_BUSINESS,
+    MENU_RESOURCE_INSTANCE,
+    MENU_MODEL_DETAILS
+  } from '@/dictionary/menu-symbol'
   export default {
     filters: {
       instanceCount(value) {
@@ -434,8 +439,8 @@
           bk_classification_name: this.groupDialog.data.bk_classification_name
         }
         if (this.groupDialog.isEdit) {
-          // eslint-disable-next-line
-                    const res = await this.updateClassification({
+          // eslint-disable-next-line no-unused-vars
+          const res = await this.updateClassification({
             id: this.groupDialog.data.id,
             params,
             config: {
@@ -493,7 +498,7 @@
       modelClick(model) {
         this.$store.commit('objectModel/setActiveModel', model)
         this.$routerActions.redirect({
-          name: 'modelDetails',
+          name: MENU_MODEL_DETAILS,
           params: {
             modelId: model.bk_obj_id
           },

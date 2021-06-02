@@ -212,7 +212,7 @@
         /deep/ {
             .bk-textarea-wrapper {
                 border: 0;
-                border-radius: 2px 0 0 2px;
+                border-radius: 0 0 0 2px;
             }
             .bk-form-textarea {
                 min-height: 42px;
@@ -220,7 +220,7 @@
                 font-size: 14px;
                 border: 1px solid #C4C6CC;
                 padding: 5px 16px;
-                border-radius: 2px 0 0 2px;
+                border-radius: 0 0 0 2px;
             }
         }
     }
