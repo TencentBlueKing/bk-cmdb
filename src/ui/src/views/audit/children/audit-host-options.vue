@@ -42,7 +42,7 @@
       <td align="right"><label class="option-label">{{$t('主机')}}</label></td>
       <td>
         <bk-input class="option-value"
-          v-model="instanceFilter"
+          v-model.trim="instanceFilter"
           :placeholder="$t('请输入xx', { name: instanceType === 'resource_id' ? 'ID' : 'IP' })">
           <bk-select class="option-type" slot="prepend"
             :clearable="false"

@@ -43,7 +43,7 @@
       <td align="right"><label class="option-label">{{$t('实例')}}</label></td>
       <td>
         <bk-input class="option-value"
-          v-model="instanceFilter"
+          v-model.trim="instanceFilter"
           :placeholder="$t('请输入xx', { name: instanceType === 'resource_id' ? 'ID' : $t('名称') })">
           <bk-select class="option-type" slot="prepend"
             :clearable="false"
