@@ -54,9 +54,13 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 	// parse front-end condition to db search cond
 	for _, item := range condition.Condition {
 		if item.Operator != querybuilder.OperatorIn && item.Operator != querybuilder.OperatorNotIn {
-			blog.Errorf("operator invalid, %s wrong, only can be in or not_in", item.Operator)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "operator only can be in or not_in"))
-			return
+			if !(item.Field == common.BKResourceNameField && item.Operator == querybuilder.OperatorContains) {
+				blog.Errorf("operator invalid, %s wrong, only can be in or not_in (resource_name can use contains)",
+					item.Operator)
+				ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid,
+					"operator only can be in or not_in (resource_name can use contains)"))
+				return
+			}
 		}
 		condField, key, err := item.ToMgo()
 		if err != nil {
