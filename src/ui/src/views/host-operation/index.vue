@@ -240,7 +240,8 @@
         const textMap = {
           remove: this.$t('确认移除'),
           idle: this.$t('确认转移'),
-          business: this.$t('确认转移')
+          business: this.$t('确认转移'),
+          increment: this.$t('确认追加')
         }
         return this.isRetry ? this.$t('失败重试') : textMap[this.type]
       },
@@ -248,7 +249,8 @@
         const map = {
           remove: ['deletedServiceInstance', 'moveToIdleHost', 'hostAttrsAutoApply'],
           idle: ['deletedServiceInstance', 'hostAttrsAutoApply'],
-          business: ['createServiceInstance', 'deletedServiceInstance', 'hostAttrsAutoApply']
+          business: ['createServiceInstance', 'deletedServiceInstance', 'hostAttrsAutoApply'],
+          increment: ['createServiceInstance', 'hostAttrsAutoApply']
         }
         const available = map[this.type]
         return this.tabList.filter(tab => available.includes(tab.id) && tab.props.info.length > 0)
@@ -350,6 +352,9 @@
           // eslint-disable-next-line prefer-destructuring
           params.default_internal_module = this.targetModules[0]
         } else if (this.targetModules.length) {
+          if (this.type === 'increment') {
+            delete params.remove_from_node
+          }
           params.add_to_modules = this.targetModules
         }
         this.confirmParams = params
