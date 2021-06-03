@@ -288,11 +288,6 @@ const (
 	EditCloudArea   ActionID = "edit_cloud_area"
 	DeleteCloudArea ActionID = "delete_cloud_area"
 
-	CreateEventPushing ActionID = "create_event_subscription"
-	EditEventPushing   ActionID = "edit_event_subscription"
-	DeleteEventPushing ActionID = "delete_event_subscription"
-	FindEventPushing   ActionID = "find_event_subscription"
-
 	CreateCloudAccount ActionID = "create_cloud_account"
 	EditCloudAccount   ActionID = "edit_cloud_account"
 	DeleteCloudAccount ActionID = "delete_cloud_account"

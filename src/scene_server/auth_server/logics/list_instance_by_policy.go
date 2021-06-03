@@ -185,23 +185,20 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 		return nil, fmt.Errorf("request type %s is invalid", opts.Type)
 	}
 
-	policyArr := make([]*operator.Policy, len(opts.Attributes))
-	for index, element := range opts.Attributes {
-		policyArr[index] = &operator.Policy{
-			Operator: operator.Equal,
-			Element:  element,
-		}
-	}
-
 	var policy *operator.Policy
-	if len(policyArr) == 1 {
+	if len(opts.Attributes) == 1 {
 		policy = &operator.Policy{
-			Operator: operator.Or,
-			Element: &operator.Content{
-				Content: policyArr,
-			},
+			Operator: opts.Operator,
+			Element:  opts.Attributes[0],
 		}
 	} else {
+		policyArr := make([]*operator.Policy, len(opts.Attributes))
+		for index, element := range opts.Attributes {
+			policyArr[index] = &operator.Policy{
+				Operator: operator.Equal,
+				Element:  element,
+			}
+		}
 		policy = &operator.Policy{
 			Operator: opts.Operator,
 			Element: &operator.Content{

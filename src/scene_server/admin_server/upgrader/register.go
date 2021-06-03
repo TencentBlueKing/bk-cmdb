@@ -211,9 +211,8 @@ func RegisterUpgraderWithIAM(version string, handlerFunc func(context.Context, d
 // Upgrade upgrade the db data to newest version
 // we use date instead of version later since 2018.09.04, because the version wasn't manage by the developer
 // ps: when use date instead of version, the date should add x prefix cause x > v
-func Upgrade(ctx context.Context, db dal.RDB, cache redis.Client, iam ac.AuthInterface,
-	conf *Config) (currentVersion string,
-	finishedMigrations []string, err error) {
+func Upgrade(ctx context.Context, db dal.RDB, cache redis.Client, iam ac.AuthInterface, conf *Config) (
+	currentVersion string, finishedMigrations []string, err error) {
 	sort.Slice(upgraderPool, func(i, j int) bool {
 		return VersionCmp(upgraderPool[i].version, upgraderPool[j].version) < 0
 	})

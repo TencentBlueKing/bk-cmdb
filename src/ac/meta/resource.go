@@ -31,7 +31,6 @@ const (
 	MainlineInstance         ResourceType = "mainlineInstance"
 	AssociationType          ResourceType = "associationType"
 	ModelAssociation         ResourceType = "modelAssociation"
-	ModelInstance            ResourceType = "modelInstance"
 	ModelInstanceTopology    ResourceType = "modelInstanceTopology"
 	ModelTopology            ResourceType = "modelTopology"
 	ModelClassification      ResourceType = "modelClassification"

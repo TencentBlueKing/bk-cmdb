@@ -480,13 +480,13 @@ func (ps *parseStream) objectModule() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.ModelSet,
+					Type:       meta.ModelModule,
 					Action:     meta.Delete,
 					InstanceID: moduleID,
 				},
 				Layers: []meta.Item{
 					{
-						Type:       meta.ModelInstance,
+						Type:       meta.ModelSet,
 						Name:       "set",
 						InstanceID: setID,
 					},
