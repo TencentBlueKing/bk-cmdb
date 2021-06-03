@@ -92,8 +92,6 @@ func (s *Service) initHost(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/hosts/batch", Handler: s.DeleteHostBatchFromResourcePool})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/hosts/{bk_supplier_account}/{bk_host_id}", Handler: s.GetHostInstanceProperties})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/hosts/snapshot/{bk_host_id}", Handler: s.HostSnapInfo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/snapshot/batch", Handler: s.HostSnapInfoBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add", Handler: s.AddHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/excel/add", Handler: s.AddHostByExcel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add/resource", Handler: s.AddHostToResourcePool})

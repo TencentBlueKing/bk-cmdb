@@ -172,7 +172,6 @@ func (s *Service) SearchObject(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	resp, err := s.Core.ObjectOperation().FindObject(ctx.Kit, cond)
 	if err != nil {
 		ctx.RespAutoError(err)

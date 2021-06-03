@@ -45,11 +45,6 @@ func Init() {
 		mgr.InputerMgr.AddInputer(inputer)
 	}
 
-	// register events
-	for _, eve := range events {
-		mgr.RegisterEvent(eve.key, eve.eveType, eve.eveCallbackFunc)
-	}
-
 	/** start the main business loop */
 	common.GoRun(func() {
 		mgr.Run(ctx, cancel)

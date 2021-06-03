@@ -160,3 +160,30 @@ func (inst *instance) CountInstances(ctx context.Context, header http.Header,
 
 	return resp, err
 }
+
+// GetInstanceObjectMapping get instance to bk_obj_id mapping by instance ids
+func (inst *instance) GetInstanceObjectMapping(ctx context.Context, header http.Header, ids []int64) (
+	[]metadata.ObjectMapping, errors.CCErrorCoder) {
+
+	resp := new(metadata.InstanceObjectMappingsResult)
+	subPath := "/get/instance/object/mapping"
+	input := metadata.GetInstanceObjectMappingsOption{IDs: ids}
+
+	err := inst.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}

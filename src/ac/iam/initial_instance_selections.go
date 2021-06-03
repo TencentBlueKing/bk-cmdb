@@ -159,17 +159,6 @@ func GenerateStaticInstanceSelections() []InstanceSelection {
 			},
 		},
 		{
-			ID:     SysEventPushingSelection,
-			Name:   "事件订阅列表",
-			NameEn: "Event Subscription List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysEventPushing,
-				},
-			},
-		},
-		{
 			ID:     SysCloudAccountSelection,
 			Name:   "云账户列表",
 			NameEn: "Cloud Account List",

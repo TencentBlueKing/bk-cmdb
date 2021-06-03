@@ -26,13 +26,10 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/event_server/app/options"
-	"configcenter/src/scene_server/event_server/distribution"
-	"configcenter/src/scene_server/event_server/identifier"
 	svc "configcenter/src/scene_server/event_server/service"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/storage/reflector"
 )
 
 const (
@@ -62,18 +59,6 @@ type EventServer struct {
 
 	// redisCli is cc redis client.
 	redisCli redis.Client
-
-	// subWatcher is subscription watcher.
-	subWatcher reflector.Interface
-
-	// identifierHandler is identifier handler.
-	identifierHandler *identifier.IdentifierHandler
-
-	// eventHandler is event handler that handles all event senders.
-	eventHandler *distribution.EventHandler
-
-	// distributor handles all events distribution.
-	distributor *distribution.Distributor
 }
 
 // NewEventServer creates a new EventServer object.
@@ -162,7 +147,7 @@ func (es *EventServer) initConfigs() error {
 			continue
 		}
 
-		// ready to init new datacollection instance.
+		// ready to init new instance.
 		es.hostConfigUpdateMu.Unlock()
 		break
 	}
@@ -208,30 +193,6 @@ func (es *EventServer) initModules() error {
 	// initialize auth authorizer
 	es.service.SetAuthorizer(iam.NewAuthorizer(es.engine.CoreAPI))
 
-	// init subscription stream watcher.
-	subWatcher, err := reflector.NewReflector(es.config.MongoDB.GetMongoConf())
-	if err != nil {
-		return fmt.Errorf("init subscription stream watcher, %+v", err)
-	}
-	es.subWatcher = subWatcher
-	blog.Infof("init modules, init subscription stream watcher success")
-
-	// init identifier handler.
-	identifierHandler := identifier.NewIdentifierHandler(es.ctx, es.redisCli, es.db, es.engine.CoreAPI)
-	es.identifierHandler = identifierHandler
-
-	// init distributer.
-	distributor := distribution.NewDistributer(es.ctx, es.engine, es.db, es.redisCli, es.subWatcher)
-	es.distributor = distributor
-	es.service.SetDistributer(distributor)
-	blog.Infof("init modules, create event distributer success")
-
-	// init event handler.
-	eventHandler := distribution.NewEventHandler(es.ctx, es.engine, es.redisCli)
-	es.eventHandler = eventHandler
-	es.eventHandler.SetDistributer(distributor)
-	blog.Infof("init modules, create event handler success")
-
 	return nil
 }
 
@@ -248,15 +209,6 @@ func (es *EventServer) Run() error {
 		return err
 	}
 	blog.Info("init modules success!")
-
-	// run identifier handler.
-	go es.identifierHandler.Run()
-
-	// run main logic comm distributer.
-	if err := es.distributor.Start(es.eventHandler); err != nil {
-		return fmt.Errorf("distributer start failed, %+v", err)
-	}
-	blog.Info("distributer starting now!")
 
 	return nil
 }

@@ -9,7 +9,6 @@ import businessSync from './modules/view/business-sync.js'
 import hosts from './modules/view/hosts.js'
 import setFeatures from './modules/view/set-features.js'
 import auth from './modules/api/auth.js'
-import eventSub from './modules/api/event-sub.js'
 import hostBatch from './modules/api/host-batch.js'
 import hostDelete from './modules/api/host-delete.js'
 import hostFavorites from './modules/api/host-favorites.js'
@@ -77,7 +76,6 @@ export default new Vuex.Store({
     setFeatures,
     auth,
     request,
-    eventSub,
     hostBatch,
     hostDelete,
     hostFavorites,

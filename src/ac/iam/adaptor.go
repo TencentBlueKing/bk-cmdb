@@ -84,8 +84,6 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 		iamResourceType = SkipType
 	case meta.Process:
 		iamResourceType = BizProcessServiceInstance
-	case meta.EventPushing:
-		iamResourceType = SysEventPushing
 	case meta.DynamicGrouping:
 		iamResourceType = BizCustomQuery
 	case meta.AuditLog:
@@ -336,13 +334,6 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Find:     Skip,
 		meta.FindMany: Skip,
 	},
-	meta.EventPushing: {
-		meta.Delete:   DeleteEventPushing,
-		meta.Update:   EditEventPushing,
-		meta.Create:   CreateEventPushing,
-		meta.Find:     FindEventPushing,
-		meta.FindMany: FindEventPushing,
-	},
 	meta.CloudAccount: {
 		meta.Delete:   DeleteCloudAccount,
 		meta.Update:   EditCloudAccount,
@@ -398,7 +389,6 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.WatchBiz:          WatchBizEvent,
 		meta.WatchSet:          WatchSetEvent,
 		meta.WatchModule:       WatchModuleEvent,
-		meta.WatchSetTemplate:  WatchSetTemplateEvent,
 		meta.WatchProcess:      WatchProcessEvent,
 	},
 	meta.UserCustom: {

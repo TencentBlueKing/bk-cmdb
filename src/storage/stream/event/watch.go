@@ -179,7 +179,8 @@ func (e *Event) loopWatch(ctx context.Context,
 					}
 				}
 
-				blog.Warnf("mongodb watch collection: %s failed with conf: %v, err: %v", opts.Collection, *opts, err)
+				blog.ErrorJSON("mongodb watch %s failed with opts: %s, pipeline: %s, streamOpts: %s, err: %s",
+					opts.Collection, opts, pipeline, streamOptions, err)
 
 				retry = true
 				continue
@@ -242,6 +243,7 @@ func (e *Event) loopWatch(ctx context.Context,
 				OperationType: base.OperationType,
 				Document:      newStruct.Field(1).Addr().Interface(),
 				DocBytes:      byt,
+				Collection:    base.Namespace.Collection,
 				ClusterTime: types.TimeStamp{
 					Sec:  base.ClusterTime.T,
 					Nano: base.ClusterTime.I,

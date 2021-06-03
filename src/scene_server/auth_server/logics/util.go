@@ -30,8 +30,6 @@ func getResourceTableName(resourceType iam.TypeID) string {
 	switch resourceType {
 	case iam.Host:
 		return common.BKTableNameBaseHost
-	case iam.SysEventPushing:
-		return common.BKTableNameSubscription
 	case iam.SysModelGroup:
 		return common.BKTableNameObjClassification
 	case iam.SysModel, iam.SysInstanceModel:

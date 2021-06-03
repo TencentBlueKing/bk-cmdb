@@ -18,75 +18,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
 )
-
-func (e *eventCache) GetLatestEvent(ctx context.Context, h http.Header, opts *metadata.GetLatestEventOption) (
-	*metadata.EventNode, errors.CCErrorCoder) {
-
-	resp := new(metadata.SearchEventNodeResp)
-	err := e.client.Post().
-		WithContext(ctx).
-		Body(opts).
-		SubResourcef("/find/cache/event/latest").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
-	}
-
-	if err := resp.CCError(); err != nil {
-		return nil, err
-	}
-	return resp.Data, nil
-}
-
-func (e *eventCache) SearchFollowingEventChainNodes(ctx context.Context, h http.Header,
-	opts *metadata.SearchEventNodesOption) (bool, []*watch.ChainNode, errors.CCErrorCoder) {
-
-	resp := new(metadata.SearchEventNodesResp)
-	err := e.client.Post().
-		WithContext(ctx).
-		Body(opts).
-		SubResourcef("/findmany/cache/event/node/with_start_from").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return false, nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
-	}
-
-	if err := resp.CCError(); err != nil {
-		return false, nil, err
-	}
-	return resp.Data.ExistsStartNode, resp.Data.Nodes, nil
-}
-
-func (e *eventCache) SearchEventDetails(ctx context.Context, h http.Header, opts *metadata.SearchEventDetailsOption) (
-	[]string, errors.CCErrorCoder) {
-
-	resp := new(metadata.SearchEventDetailsResp)
-	err := e.client.Post().
-		WithContext(ctx).
-		Body(opts).
-		SubResourcef("/findmany/cache/event/detail").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
-	}
-
-	if err := resp.CCError(); err != nil {
-		return nil, err
-	}
-	return resp.Data, nil
-}
 
 func (e *eventCache) WatchEvent(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (*string,
 	errors.CCErrorCoder) {

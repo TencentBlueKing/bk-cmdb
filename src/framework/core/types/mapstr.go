@@ -23,6 +23,9 @@ import (
 	"configcenter/src/framework/core/log"
 )
 
+// MapStr the common data definition
+type MapStr map[string]interface{}
+
 // Get return the origin value by the key
 func (cli MapStr) Get(key string) (val interface{}, exists bool) {
 

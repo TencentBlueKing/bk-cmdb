@@ -153,8 +153,8 @@ func (a *AuthError) Error() string {
 type TypeID string
 
 const (
-	SysEventPushing TypeID = "sys_event_pushing"
-	SysModelGroup   TypeID = "sys_model_group"
+	SysModelGroup TypeID = "sys_model_group"
+
 	// special model resource for selection of instance, not including models whose instances are managed separately
 	SysInstanceModel         TypeID = "sys_instance_model"
 	SysModel                 TypeID = "sys_model"
@@ -169,6 +169,7 @@ const (
 	SysEventWatch            TypeID = "event_watch"
 	Host                     TypeID = "host"
 	UserCustom               TypeID = "usercustom"
+
 	// for resource type, which is not need to be authorized
 	SkipType TypeID = "skip_type"
 )
@@ -328,7 +329,6 @@ const (
 	WatchBizEvent          ActionID = "watch_biz_event"
 	WatchSetEvent          ActionID = "watch_set_event"
 	WatchModuleEvent       ActionID = "watch_module_event"
-	WatchSetTemplateEvent  ActionID = "watch_set_template_event"
 	WatchProcessEvent      ActionID = "watch_process_event"
 	GlobalSettings         ActionID = "global_settings"
 
@@ -421,7 +421,6 @@ const (
 	BizProcessServiceTemplateSelection InstanceSelectionID = "biz_process_service_template"
 	BizSetTemplateSelection            InstanceSelectionID = "biz_set_template"
 	SysHostInstanceSelection           InstanceSelectionID = "sys_host_instance"
-	SysEventPushingSelection           InstanceSelectionID = "sys_event_pushing"
 	SysModelGroupSelection             InstanceSelectionID = "sys_model_group"
 	SysModelSelection                  InstanceSelectionID = "sys_model"
 	SysInstanceModelSelection          InstanceSelectionID = "sys_instance_model"

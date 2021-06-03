@@ -21,8 +21,6 @@ export const IAM_VIEWS = {
   RESOURCE_TARGET_POOL_DIRECTORY: 'sys_resource_pool_directory',
   // 关联类型列表
   ASSOCIATION_TYPE: 'sys_association_type',
-  // 事件订阅列表
-  EVENT_PUSHING: 'sys_event_pushing',
   // 服务模板列表
   SERVICE_TEMPLATE: 'biz_process_service_template',
   // 集群模板列表
@@ -47,7 +45,6 @@ export const IAM_VIEWS_NAME = {
   [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
   [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
   [IAM_VIEWS.ASSOCIATION_TYPE]: ['关联类型', 'Association Type'],
-  [IAM_VIEWS.EVENT_PUSHING]: ['事件订阅', 'Event Pushing'],
   [IAM_VIEWS.SERVICE_TEMPLATE]: ['服务模板', 'Service Template'],
   [IAM_VIEWS.SET_TEMPLATE]: ['集群模板', 'Set Template'],
   [IAM_VIEWS.CLOUD_AREA]: ['云区域', 'Cloud Area'],
@@ -652,49 +649,6 @@ export const IAM_ACTIONS = {
     relation: [{
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
-    }],
-    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
-      resource_id: relationIds[0]
-    })
-  },
-
-  // 事件推送
-  C_EVENT: {
-    id: 'create_event_subscription',
-    name: ['事件订阅创建', 'Create Event Subscription'],
-    cmdb_action: 'eventPushing.create'
-  },
-  U_EVENT: {
-    id: 'edit_event_subscription',
-    name: ['事件订阅编辑', 'Update Event Subscription'],
-    cmdb_action: 'eventPushing.update',
-    relation: [{
-      view: IAM_VIEWS.EVENT_PUSHING,
-      instances: [IAM_VIEWS.EVENT_PUSHING]
-    }],
-    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
-      resource_id: relationIds[0]
-    })
-  },
-  D_EVENT: {
-    id: 'delete_event_subscription',
-    name: ['事件订阅删除', 'Delete Event Subscription'],
-    cmdb_action: 'eventPushing.delete',
-    relation: [{
-      view: IAM_VIEWS.EVENT_PUSHING,
-      instances: [IAM_VIEWS.EVENT_PUSHING]
-    }],
-    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
-      resource_id: relationIds[0]
-    })
-  },
-  R_EVENT: {
-    id: 'find_event_subscription',
-    name: ['事件订阅查询', 'Search Event Subscription'],
-    cmdb_action: 'eventPushing.findMany',
-    relation: [{
-      view: IAM_VIEWS.EVENT_PUSHING,
-      instances: [IAM_VIEWS.EVENT_PUSHING]
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       resource_id: relationIds[0]

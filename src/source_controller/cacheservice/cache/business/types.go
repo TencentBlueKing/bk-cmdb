@@ -17,10 +17,9 @@ import (
 )
 
 type cacheCollection struct {
-	business    *business
-	set         *moduleSet
-	module      *moduleSet
-	customLevel *customLevel
+	business *business
+	set      *moduleSet
+	module   *moduleSet
 }
 
 type forUpsertCache struct {

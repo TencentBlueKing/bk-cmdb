@@ -36,7 +36,7 @@ var _ = Describe("host ip array validation test", func() {
 			MaxOpenConns: mongo.DefaultMaxOpenConns,
 			MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
 			URI:          tConf.MongoURI,
-			RsName:       "rs0",
+			RsName:       tConf.MongoRsName,
 		}
 		db, err := local.NewMgo(mongoConfig, time.Minute)
 		Expect(err).To(BeNil())
