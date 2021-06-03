@@ -10,41 +10,28 @@
  * limitations under the License.
  */
 
-package y3_8_202006092135
+package y3_9_202105261459
 
 import (
 	"context"
-	"time"
 
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func initConfigAdmin(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func init() {
+	upgrader.RegistUpgrader("y3.9.202105261459", upgrade)
+}
 
-	cond := map[string]interface{}{
-		"_id": common.ConfigAdminID,
-	}
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	blog.Infof("start execute y3.9.202105261459")
 
-	cnt, err := db.Table(common.BKTableNameSystem).Find(cond).Count(ctx)
+	err := updateConfigAdmin(ctx, db, conf)
 	if err != nil {
-		blog.ErrorJSON("insert failed, find err:%s, cond:%s", "", err, cond)
+		blog.Errorf("[upgrade y3.9.202105261459] update config admin failed, error: %v", err)
 		return err
 	}
 
-	if cnt == 0 {
-		doc := map[string]interface{}{
-			"_id":                  common.ConfigAdminID,
-			common.CreateTimeField: time.Now(),
-			common.LastTimeField:   time.Now(),
-		}
-		if err := db.Table(common.BKTableNameSystem).Insert(ctx, doc); err != nil {
-			blog.ErrorJSON("insert failed, insert err:%s, doc: %s", err, doc)
-			return err
-		}
-	}
-
-	return upgrader.UpgradeConfigAdmin(ctx, db, "y3.8.202006092135")
+	return nil
 }
