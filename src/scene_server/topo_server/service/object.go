@@ -261,6 +261,8 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		// delete iam view
 		// if some errors occur, the sync iam task will delete the iam view in the end
 		objects := []metadata.Object{*obj}
+		// use new transaction, need a new header
+		ctx.Kit.Header = ctx.Kit.NewHeader()
 		if err := s.AuthManager.Viewer.DeleteView(ctx.Kit.Ctx, ctx.Kit.Header, objects); err != nil {
 			blog.Errorf("delete view failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 		}

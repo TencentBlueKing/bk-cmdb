@@ -25,20 +25,19 @@ import (
 
 type viewer struct {
 	client apimachinery.ClientSetInterface
-	iam *IAM
+	iam    *IAM
 }
 
 func NewViewer(client apimachinery.ClientSetInterface, iam *IAM) *viewer {
 	return &viewer{
 		client: client,
-		iam: iam,
+		iam:    iam,
 	}
 }
 
-
 // CreateView create iam view for a object
 func (v *viewer) CreateView(ctx context.Context, header http.Header, objects []metadata.Object) error {
-	// register order: 1.Action 2.InstanceSelection 3.ResourceType 4.ActionGroup
+	// register order: 1.ResourceType 2.InstanceSelection 3.Action 4.ActionGroup
 	if err := v.registerModelResourceTypes(ctx, objects); err != nil {
 		return err
 	}
@@ -60,8 +59,8 @@ func (v *viewer) CreateView(ctx context.Context, header http.Header, objects []m
 
 // DeleteView delete iam view for a object
 func (v *viewer) DeleteView(ctx context.Context, header http.Header, objects []metadata.Object) error {
-	// unregister order: 1.ResourceType 2.InstanceSelection 3.Action 4.ActionGroup
-	if err := v.unregisterModelResourceTypes(ctx, objects); err != nil {
+	// unregister order: 1.Action 2.InstanceSelection 3.ResourceType 4.ActionGroup
+	if err := v.unregisterModelActions(ctx, objects); err != nil {
 		return err
 	}
 
@@ -69,7 +68,7 @@ func (v *viewer) DeleteView(ctx context.Context, header http.Header, objects []m
 		return err
 	}
 
-	if err := v.unregisterModelActions(ctx, objects); err != nil {
+	if err := v.unregisterModelResourceTypes(ctx, objects); err != nil {
 		return err
 	}
 
@@ -93,7 +92,7 @@ func (v *viewer) registerModelResourceTypes(ctx context.Context, objects []metad
 }
 
 // unregisterModelResourceTypes unregister resourceTypes for models
-func (v *viewer) unregisterModelResourceTypes(ctx context.Context,	objects []metadata.Object) error {
+func (v *viewer) unregisterModelResourceTypes(ctx context.Context, objects []metadata.Object) error {
 	typeIDs := []TypeID{}
 	resourceTypes := GenDynamicResourceTypes(objects)
 	for _, resourceType := range resourceTypes {
@@ -109,7 +108,7 @@ func (v *viewer) unregisterModelResourceTypes(ctx context.Context,	objects []met
 }
 
 // registerModelInstanceSelections register instanceSelections for models
-func (v *viewer) registerModelInstanceSelections(ctx context.Context,	objects []metadata.Object) error {
+func (v *viewer) registerModelInstanceSelections(ctx context.Context, objects []metadata.Object) error {
 	instanceSelections := GenDynamicInstanceSelections(objects)
 	if err := v.iam.client.RegisterInstanceSelections(ctx, instanceSelections); err != nil {
 		blog.ErrorJSON("register instanceSelections failed, error: %s, objects: %s, instanceSelections: %s",
@@ -122,7 +121,7 @@ func (v *viewer) registerModelInstanceSelections(ctx context.Context,	objects []
 }
 
 // unregisterModelInstanceSelections unregister instanceSelections for models
-func (v *viewer) unregisterModelInstanceSelections(ctx context.Context,	objects []metadata.Object) error {
+func (v *viewer) unregisterModelInstanceSelections(ctx context.Context, objects []metadata.Object) error {
 	instanceSelectionIDs := []InstanceSelectionID{}
 	instanceSelections := GenDynamicInstanceSelections(objects)
 	for _, instanceSelection := range instanceSelections {
@@ -139,7 +138,7 @@ func (v *viewer) unregisterModelInstanceSelections(ctx context.Context,	objects 
 }
 
 // registerModelActions register actions for models
-func (v *viewer) registerModelActions(ctx context.Context,	objects []metadata.Object) error {
+func (v *viewer) registerModelActions(ctx context.Context, objects []metadata.Object) error {
 	actions := GenDynamicActions(objects)
 	if err := v.iam.client.RegisterActions(ctx, actions); err != nil {
 		blog.ErrorJSON("register actions failed, error: %s, objects: %s, actions: %s", err.Error(), objects,
@@ -151,7 +150,7 @@ func (v *viewer) registerModelActions(ctx context.Context,	objects []metadata.Ob
 }
 
 // unregisterModelActions unregister actions for models
-func (v *viewer) unregisterModelActions(ctx context.Context,	objects []metadata.Object) error {
+func (v *viewer) unregisterModelActions(ctx context.Context, objects []metadata.Object) error {
 	actionIDs := []ActionID{}
 	for _, obj := range objects {
 		actionIDs = append(actionIDs, GenDynamicActionIDs(obj)...)
