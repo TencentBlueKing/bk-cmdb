@@ -774,7 +774,7 @@ const (
 	FieldTypeServiceCategoryRegexp string = `^([\w\p{Han}]|[:\-\(\)])+$`
 
 	//FieldTypeMainlineRegexp the mainline instance name regex expression
-	FieldTypeMainlineRegexp string = `^[^\|/:*,<>"?# ]+$`
+	FieldTypeMainlineRegexp string = `^[^\\\|\/:\*,<>"\?#\s]+$`
 
 	//FieldTypeSingleCharRegexp the single char regex expression
 	//FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
