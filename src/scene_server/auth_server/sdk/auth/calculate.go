@@ -31,7 +31,9 @@ func (a *Authorize) calculatePolicy(
 	p *operator.Policy) (bool, error) {
 
 	rid := ctx.Value(common.ContextRequestIDField)
-	blog.InfoJSON("calculate policy, resource: %s, policy: %s, rid: %s", resources, p, rid)
+	if blog.V(5) {
+		blog.InfoJSON("calculate policy, resource: %s, policy: %s, rid: %s", resources, p, rid)
+	}
 
 	if p == nil || p.Operator == "" {
 		return false, nil

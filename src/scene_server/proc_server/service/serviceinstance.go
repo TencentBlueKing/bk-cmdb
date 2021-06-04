@@ -245,7 +245,7 @@ func (ps *ProcServer) updateServiceInstanceName(ctx *rest.Contexts, serviceInsta
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	hostMap, err := ps.getHostIPMapByID(ctx.Kit, []int64{hostID})
+	hostMap, err := ps.Logic.GetHostIPMapByID(ctx.Kit, []int64{hostID})
 	if err != nil {
 		blog.Errorf("updateServiceInstanceName failed, getHostIPMapByID failed, hostID: %d, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
 		return err
@@ -943,7 +943,7 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 
 	// step 6:
 	// construct map {hostID ==> host}
-	hostMap, err := ps.getHostIPMapByID(ctx.Kit, hostIDs)
+	hostMap, err := ps.Logic.GetHostIPMapByID(ctx.Kit, hostIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -1005,14 +1005,15 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 				continue
 			}
 
-			changedAttributes, diffErr := ps.Logic.DiffWithProcessTemplate(property.Property, process, hostMap[serviceInstance.HostID], attributeMap)
+			changedAttributes, isChanged, diffErr := ps.Logic.DiffWithProcessTemplate(property.Property, process,
+				hostMap[serviceInstance.HostID], attributeMap, true)
 			if diffErr != nil {
 				blog.Errorf("diff with process template failed, process ID: %d  err: %v, rid: %s",
 					relation.ProcessID, err, rid)
 				return nil, errors.New(common.CCErrCommParamsInvalid, diffErr.Error())
 			}
 
-			if len(changedAttributes) == 0 {
+			if !isChanged {
 				// nothing changed
 				unchanged[relation.ProcessTemplateID] = append(unchanged[relation.ProcessTemplateID], recorder{
 					ProcessID:       relation.ProcessID,
@@ -1065,8 +1066,9 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		for idx := range records {
 			item := metadata.ServiceDifferenceDetails{
 				ServiceInstance: metadata.SrvInstBriefInfo{
-					ID:   records[idx].ServiceInstance.ID,
-					Name: records[idx].ServiceInstance.Name,
+					ID:        records[idx].ServiceInstance.ID,
+					Name:      records[idx].ServiceInstance.Name,
+					SvcTempID: records[idx].ServiceInstance.ServiceTemplateID,
 				},
 				Process: records[idx].Process,
 			}
@@ -1088,8 +1090,9 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		serviceInstances := make([]metadata.ServiceDifferenceDetails, 0)
 		for _, record := range records {
 			serviceInstances = append(serviceInstances, metadata.ServiceDifferenceDetails{ServiceInstance: metadata.SrvInstBriefInfo{
-				ID:   record.ServiceInstance.ID,
-				Name: record.ServiceInstance.Name,
+				ID:        record.ServiceInstance.ID,
+				Name:      record.ServiceInstance.Name,
+				SvcTempID: record.ServiceInstance.ServiceTemplateID,
 			}})
 		}
 		moduleDifference.Unchanged = append(moduleDifference.Unchanged, metadata.ServiceInstanceDifference{
@@ -1108,8 +1111,9 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		for _, record := range records {
 			serviceInstances = append(serviceInstances, metadata.ServiceDifferenceDetails{
 				ServiceInstance: metadata.SrvInstBriefInfo{
-					ID:   record.ServiceInstance.ID,
-					Name: record.ServiceInstance.Name,
+					ID:        record.ServiceInstance.ID,
+					Name:      record.ServiceInstance.Name,
+					SvcTempID: record.ServiceInstance.ServiceTemplateID,
 				},
 				ChangedAttributes: record.ChangedAttribute,
 			})
@@ -1126,8 +1130,9 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		sInstances := make([]metadata.ServiceDifferenceDetails, 0)
 		for _, s := range records {
 			sInstances = append(sInstances, metadata.ServiceDifferenceDetails{ServiceInstance: metadata.SrvInstBriefInfo{
-				ID:   s.ServiceInstance.ID,
-				Name: s.ServiceInstance.Name,
+				ID:        s.ServiceInstance.ID,
+				Name:      s.ServiceInstance.Name,
+				SvcTempID: s.ServiceInstance.ServiceTemplateID,
 			}})
 		}
 
@@ -1366,7 +1371,7 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 
 	// step 5:
 	// construct map {hostID ==> host}
-	hostMap, err := ps.getHostIPMapByID(ctx.Kit, hostIDs)
+	hostMap, err := ps.Logic.GetHostIPMapByID(ctx.Kit, hostIDs)
 	if err != nil {
 		return err
 	}
@@ -1871,36 +1876,4 @@ func (ps *ProcServer) DeleteServiceInstancePreview(ctx *rest.Contexts) {
 	}
 	preview.HostApplyPlan = applyPlan
 	ctx.RespEntity(preview)
-}
-
-// getHostIPMapByID get host ID to ip data map by host IDs, used for bind ip with first inner or outer IP
-func (ps *ProcServer) getHostIPMapByID(kit *rest.Kit, hostIDs []int64) (map[int64]map[string]interface{}, errors.CCErrorCoder) {
-	hostReq := metadata.QueryInput{
-		Condition: map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}},
-		Fields:    common.BKHostIDField + "," + common.BKHostInnerIPField + "," + common.BKHostOuterIPField,
-		Limit:     common.BKNoLimit,
-	}
-
-	hostRes, err := ps.CoreAPI.CoreService().Host().GetHosts(kit.Ctx, kit.Header, &hostReq)
-	if err != nil {
-		blog.Errorf("get hosts failed, err: %s, hostIDs: %+v, rid: %s", err.Error(), hostIDs, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if !hostRes.Result {
-		blog.Errorf("get hosts failed, err: %s, hostIDs: %+v, rid: %s", hostRes.ErrMsg, hostIDs, kit.Rid)
-		return nil, hostRes.CCError()
-	}
-
-	hostMap := make(map[int64]map[string]interface{})
-	for _, host := range hostRes.Data.Info {
-		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
-		if err != nil {
-			blog.Errorf("host id invalid, err: %s, host: %+v, rid: %s", err.Error(), host, kit.Rid)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
-		}
-		hostMap[hostID] = host
-	}
-
-	return hostMap, nil
 }

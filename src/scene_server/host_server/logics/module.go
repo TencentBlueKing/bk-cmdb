@@ -82,17 +82,20 @@ func (lgc *Logics) GetNormalModuleByModuleID(kit *rest.Kit, appID, moduleID int6
 	return result.Data.Info, nil
 }
 
-func (lgc *Logics) GetModuleIDByCond(kit *rest.Kit, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
+func (lgc *Logics) GetModuleIDByCond(kit *rest.Kit, cond metadata.ConditionWithTime) (
+	[]int64, errors.CCError) {
+
 	condc := make(map[string]interface{})
-	if err := parse.ParseCommonParams(cond, condc); err != nil {
+	if err := parse.ParseCommonParams(cond.Condition, condc); err != nil {
 		blog.Errorf("ParseCommonParams failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommUtilHandleFail, "parse condition", err.Error())
 	}
 
 	query := &metadata.QueryCondition{
-		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKModuleIDField},
-		Fields:    []string{common.BKModuleIDField},
-		Condition: mapstr.NewFromMap(condc),
+		Page:          metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKModuleIDField},
+		Fields:        []string{common.BKModuleIDField},
+		Condition:     mapstr.NewFromMap(condc),
+		TimeCondition: cond.TimeCondition,
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule, query)
@@ -329,7 +332,7 @@ func (lgc *Logics) AssignHostToApp(kit *rest.Kit, conf *metadata.DefaultModuleHo
 		},
 	}
 
-	resourceModuleIDs, err := lgc.GetModuleIDByCond(kit, moduleCond)
+	resourceModuleIDs, err := lgc.GetModuleIDByCond(kit, metadata.ConditionWithTime{Condition: moduleCond})
 	if err != nil {
 		blog.Errorf("assign host to app failed, GetModuleIDByCond err: %v, moduleCond:%+v, rid:%s", err, moduleCond, kit.Rid)
 		return nil, err

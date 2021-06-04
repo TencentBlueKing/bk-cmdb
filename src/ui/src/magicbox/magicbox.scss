@@ -230,6 +230,21 @@
     }
 }
 
+.bk-form-checkbox[size=small] {
+    .bk-checkbox {
+        width: 12px;
+        height: 12px;
+    }
+    .bk-checkbox-text {
+        font-size: 12px;
+    }
+    &.is-checked .bk-checkbox:after{
+        left: 3px;
+        width: 2px;
+        height: 6px;
+    }
+}
+
 // 覆盖人员选择器的样式，避免影响magicbox
 .tippy-tooltip {
     .tippy-arrow {

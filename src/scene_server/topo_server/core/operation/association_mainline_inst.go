@@ -319,12 +319,7 @@ func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID
 					moduleIDs = append(moduleIDs, instID)
 				}
 				if bizID == 0 {
-					switch objectID {
-					case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
-						bizID, err = instance.Int64(common.BKAppIDField)
-					default:
-						bizID, err = metadata.ParseBizIDFromData(instance)
-					}
+					bizID, err = instance.Int64(common.BKAppIDField)
 					if err != nil {
 						blog.ErrorJSON("get instance %s biz id failed, err: %s, rid: %s", instance, err, kit.Rid)
 						return nil, err

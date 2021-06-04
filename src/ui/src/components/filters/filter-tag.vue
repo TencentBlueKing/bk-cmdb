@@ -1,62 +1,62 @@
 <template>
-    <section class="filter-wrapper" v-if="selected.length || showIPTag">
-        <label class="filter-label">
-            <i class="label-icon icon-cc-funnel"></i>
-            <span class="label-text">{{$t('检索项')}}</span>
-            <span class="label-colon">:</span>
-        </label>
-        <div class="filter-list" ref="filterList">
-            <filter-tag-ip v-if="showIPTag"></filter-tag-ip>
-            <filter-tag-item
-                v-for="property in selected"
-                :key="property.id"
-                :property="property"
-                v-bind="condition[property.id]">
-            </filter-tag-item>
-            <bk-button class="filter-clear" text
-                v-if="showClear"
-                @click="handleResetAll">
-                {{$t('清空条件')}}
-            </bk-button>
-        </div>
-    </section>
+  <section class="filter-wrapper" v-if="selected.length || showIPTag">
+    <label class="filter-label">
+      <i class="label-icon icon-cc-funnel"></i>
+      <span class="label-text">{{$t('检索项')}}</span>
+      <span class="label-colon">:</span>
+    </label>
+    <div class="filter-list" ref="filterList">
+      <filter-tag-ip v-if="showIPTag"></filter-tag-ip>
+      <filter-tag-item
+        v-for="property in selected"
+        :key="property.id"
+        :property="property"
+        v-bind="condition[property.id]">
+      </filter-tag-item>
+      <bk-button class="filter-clear" text
+        v-if="showClear"
+        @click="handleResetAll">
+        {{$t('清空条件')}}
+      </bk-button>
+    </div>
+  </section>
 </template>
 
 <script>
-    import FilterTagIp from './filter-tag-ip'
-    import FilterTagItem from './filter-tag-item'
-    import FilterStore from './store'
-    import Utils from './utils'
-    export default {
-        components: {
-            FilterTagIp,
-            FilterTagItem
-        },
-        computed: {
-            condition () {
-                return FilterStore.condition
-            },
-            showIPTag () {
-                const list = Utils.splitIP(FilterStore.IP.text)
-                return !!list.length
-            },
-            selected () {
-                return FilterStore.selected.filter(property => {
-                    const value = this.condition[property.id].value
-                    return value !== null && !!value.toString().length
-                })
-            },
-            showClear () {
-                const count = this.selected.length + (this.showIPTag ? 1 : 0)
-                return count > 1
-            }
-        },
-        methods: {
-            handleResetAll () {
-                FilterStore.resetAll()
-            }
-        }
+  import FilterTagIp from './filter-tag-ip'
+  import FilterTagItem from './filter-tag-item'
+  import FilterStore from './store'
+  import Utils from './utils'
+  export default {
+    components: {
+      FilterTagIp,
+      FilterTagItem
+    },
+    computed: {
+      condition() {
+        return FilterStore.condition
+      },
+      showIPTag() {
+        const list = Utils.splitIP(FilterStore.IP.text)
+        return !!list.length
+      },
+      selected() {
+        return FilterStore.selected.filter((property) => {
+          const { value } = this.condition[property.id]
+          return value !== null && !!value.toString().length
+        })
+      },
+      showClear() {
+        const count = this.selected.length + (this.showIPTag ? 1 : 0)
+        return count > 1
+      }
+    },
+    methods: {
+      handleResetAll() {
+        FilterStore.resetAll()
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

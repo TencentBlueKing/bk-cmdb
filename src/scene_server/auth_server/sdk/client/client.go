@@ -53,7 +53,7 @@ func NewClient(conf types.IamConfig, opt types.Options) (Interface, error) {
 
 	// add prometheus metric if possible.
 	if opt.Metric != nil {
-		c.Reg = opt.Metric
+		c.MetricOpts = util.MetricOption{Register: opt.Metric}
 	}
 
 	header := http.Header{}

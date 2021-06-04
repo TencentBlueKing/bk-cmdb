@@ -93,11 +93,11 @@ func (w *WatchEventDetail) UnmarshalJSON(data []byte) error {
 	}
 
 	if w.Detail == nil {
-		w.Detail = JsonString("watchEventDetail.Detail")
+		w.Detail = JsonString(watchEventDetail.Detail)
 	}
 	switch w.Detail.Name() {
 	case "JsonString":
-		w.Detail = JsonString("watchEventDetail.Detail")
+		w.Detail = JsonString(watchEventDetail.Detail)
 	}
 	return nil
 }

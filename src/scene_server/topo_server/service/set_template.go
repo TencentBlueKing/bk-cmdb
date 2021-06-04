@@ -745,8 +745,7 @@ func (s *Service) GetSetSyncDetails(ctx *rest.Contexts) {
 				Limit: common.BKNoLimit,
 			},
 			Condition: mapstr.MapStr(map[string]interface{}{
-				// common.BKAppIDField:         bizID,
-				common.MetadataField:        metadata.NewMetadata(bizID),
+				common.BKAppIDField:         bizID,
 				common.BKSetTemplateIDField: setTemplateID,
 			}),
 		}
@@ -823,21 +822,11 @@ func (s *Service) ListSetTemplateSyncStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := s.Engine.CoreAPI.CoreService().SetTemplate().ListSetTemplateSyncStatus(ctx.Kit.Ctx, ctx.Kit.Header, bizID, option)
+	result, err := s.Core.SetTemplateOperation().ListSetTemplateSyncStatus(ctx.Kit, bizID, option)
 	if err != nil {
 		blog.ErrorJSON("ListSetTemplateSyncStatus failed, core service search failed, option: %s, err: %s, rid: %s", option, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
-	}
-
-	// 处理当前需要同步任务的状态
-	for _, info := range result.Info {
-		if !info.Status.IsFinished() {
-			go func(info metadata.SetTemplateSyncStatus) {
-				s.Core.SetTemplateOperation().TriggerCheckSetTemplateSyncingStatus(ctx.NewContexts().Kit, info.BizID, info.SetTemplateID, info.SetID)
-			}(info)
-		}
-
 	}
 
 	ctx.RespEntity(result)

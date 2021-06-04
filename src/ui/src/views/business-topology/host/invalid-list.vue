@@ -1,46 +1,46 @@
 <template>
-    <section class="invalid-list" v-if="list.length">
-        <div class="header">
-            <strong class="title">{{title}}</strong>
-            <bk-button class="copy" size="small" text @click="handleCopy">{{$t('复制IP')}}</bk-button>
-        </div>
-        <ul class="list clearfix">
-            <li class="item fl"
-                v-for="(item, index) in list"
-                v-bk-overflow-tips="{
-                    interactive: false
-                }"
-                :key="index">
-                {{item}}
-            </li>
-        </ul>
-    </section>
+  <section class="invalid-list" v-if="list.length">
+    <div class="header">
+      <strong class="title">{{title}}</strong>
+      <bk-button class="copy" size="small" text @click="handleCopy">{{$t('复制IP')}}</bk-button>
+    </div>
+    <ul class="list clearfix">
+      <li class="item fl"
+        v-for="(item, index) in list"
+        v-bk-overflow-tips="{
+          interactive: false
+        }"
+        :key="index">
+        {{item}}
+      </li>
+    </ul>
+  </section>
 </template>
 
 <script>
-    export default {
-        props: {
-            title: {
-                type: String,
-                default: ''
-            },
-            list: {
-                type: Array,
-                default: () => ([])
-            }
-        },
-        methods: {
-            async handleCopy () {
-                try {
-                    await this.$copyText(this.list.join('\n'))
-                    this.$success(this.$t('复制成功'))
-                } catch (error) {
-                    this.$error(this.$t('复制失败'))
-                    console.error(error)
-                }
-            }
+  export default {
+    props: {
+      title: {
+        type: String,
+        default: ''
+      },
+      list: {
+        type: Array,
+        default: () => ([])
+      }
+    },
+    methods: {
+      async handleCopy() {
+        try {
+          await this.$copyText(this.list.join('\n'))
+          this.$success(this.$t('复制成功'))
+        } catch (error) {
+          this.$error(this.$t('复制失败'))
+          console.error(error)
         }
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

@@ -31,14 +31,21 @@ type APIMachineryConfig struct {
 }
 
 type Capability struct {
-	Client   HttpClient
-	Discover discovery.Interface
-	Throttle flowctrl.RateLimiter
-	Mock     MockInfo
-	Reg      prometheus.Registerer
+	Client     HttpClient
+	Discover   discovery.Interface
+	Throttle   flowctrl.RateLimiter
+	Mock       MockInfo
+	MetricOpts MetricOption
 	// the max tolerance api request latency time, if exceeded this time, then
 	// this request will be logged and warned.
 	ToleranceLatencyTime time.Duration
+}
+
+type MetricOption struct {
+	// prometheus metric register
+	Register prometheus.Registerer
+	// if not set, use default buckets value
+	DurationBuckets []float64
 }
 
 type MockInfo struct {

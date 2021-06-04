@@ -54,7 +54,7 @@ func NewIam(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer
 		Mock: util.MockInfo{
 			Mocked: false,
 		},
-		Reg: reg,
+		MetricOpts: util.MetricOption{Register: reg},
 	}
 
 	header := http.Header{}
@@ -303,6 +303,10 @@ func (a *authorizer) authorizeBatch(ctx context.Context, h http.Header, exact bo
 	// all resources are skipped
 	if opts == nil {
 		return decisions, nil
+	}
+
+	if blog.V(5) {
+		blog.InfoJSON("auth options: %s, rid: %s", opts, rid)
 	}
 
 	var authDecisions []types.Decision

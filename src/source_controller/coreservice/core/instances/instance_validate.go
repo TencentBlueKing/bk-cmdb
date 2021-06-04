@@ -14,9 +14,8 @@ package instances
 
 import (
 	stderr "errors"
-	"regexp"
 	"strings"
-	"unicode/utf8"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -159,11 +158,16 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		return err
 	}
 
-	if err := m.validMainlineInstanceData(kit, objID, instanceData); err != nil {
+	isMainline, err := m.isMainlineObject(kit, objID)
+	if err != nil {
 		return err
 	}
 
-	err := hooks.ValidateBizBsTopoHook(kit, objID, instanceData, nil, common.ValidCreate, m.clientSet)
+	if err := m.validMainlineInstanceData(kit, objID, instanceData, isMainline); err != nil {
+		return err
+	}
+
+	err = hooks.ValidateBizBsTopoHook(kit, objID, instanceData, nil, common.ValidCreate, m.clientSet)
 	if err != nil {
 		blog.Errorf("validate biz bk_bs_topo attribute failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -255,7 +259,7 @@ func (m *instanceManager) validateModuleCreate(kit *rest.Kit, instanceData mapst
 	}
 	bizID, err := util.GetInt64ByInterface(bizIDIf)
 	if err != nil {
-		return valid.errIf.Errorf(common.CCErrCommParamsNeedInt, common.MetadataLabelBiz)
+		return valid.errIf.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
 	}
 	tpl := metadata.ServiceTemplate{}
 	filter := map[string]interface{}{
@@ -281,11 +285,16 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 		return err
 	}
 
-	if err := m.validMainlineInstanceData(kit, objID, updateData); err != nil {
+	isMainline, err := m.isMainlineObject(kit, objID)
+	if err != nil {
 		return err
 	}
 
-	err := hooks.ValidateBizBsTopoHook(kit, objID, instanceData, updateData, common.ValidUpdate, m.clientSet)
+	if err := m.validMainlineInstanceData(kit, objID, updateData, isMainline); err != nil {
+		return err
+	}
+
+	err = hooks.ValidateBizBsTopoHook(kit, objID, instanceData, updateData, common.ValidUpdate, m.clientSet)
 	if err != nil {
 		blog.Errorf("validate biz bk_bs_topo attribute failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -296,9 +305,11 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 		return err
 	}
 
+	isInnerModel := common.IsInnerModel(objID) || isMainline
+
 	for key, val := range updateData {
 
-		if util.InStrArr(updateIgnoreKeys, key) {
+		if isInnerModel && util.InStrArr(updateIgnoreKeys, key) {
 			// ignore the key field
 			continue
 		}
@@ -338,52 +349,54 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 	return valid.validUpdateUnique(kit, updateData, instanceData, instID, m)
 }
 
-func (m *instanceManager) validMainlineInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr) error {
+func (m *instanceManager) isMainlineObject(kit *rest.Kit, objID string) (bool, error) {
 	// judge whether it is an inner mainline model
-	isMainline := common.IsInnerMainlineModel(objID)
-
-	// if not inner mainline model, then judge whether it is a self defined mainline layer
-	if !isMainline {
-		mainlineCond := map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}
-		mainlineAsst := make([]*metadata.Association, 0)
-		if err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(mainlineCond).All(kit.Ctx, &mainlineAsst); nil != err {
-			blog.ErrorJSON("search mainline asst failed, err: %s, cond: %s, rid: %s", err.Error(), mainlineCond, kit.Rid)
-			return err
-		}
-		for _, asst := range mainlineAsst {
-			if objID == asst.AsstObjID {
-				isMainline = true
-				break
-			}
-		}
+	if common.IsInnerMainlineModel(objID) {
+		return true, nil
 	}
 
-	if isMainline {
-		// validate instance name
-		nameField := metadata.GetInstNameFieldName(objID)
-		if nameVal, exist := instanceData[nameField]; exist {
-			name, ok := nameVal.(string)
-			if !ok {
-				return kit.CCError.CCErrorf(common.CCErrCommParamsNeedString, nameField)
-			}
-			if common.NameFieldMaxLength < utf8.RuneCountInString(name) {
-				return kit.CCError.CCErrorf(common.CCErrCommValExceedMaxFailed, nameField, common.NameFieldMaxLength)
-			}
-			match, err := regexp.MatchString(common.FieldTypeMainlineRegexp, name)
-			if nil != err {
-				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, nameField)
-			}
-			if !match {
-				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, nameField)
-			}
+	// if not inner mainline model, then judge whether it is a self defined mainline layer
+	mainlineCond := map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}
+	mainlineAsst := make([]*metadata.Association, 0)
+	if err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(mainlineCond).All(kit.Ctx, &mainlineAsst); nil != err {
+		blog.ErrorJSON("search mainline asst failed, err: %s, cond: %s, rid: %s", err.Error(), mainlineCond, kit.Rid)
+		return false, err
+	}
+	for _, asst := range mainlineAsst {
+		if objID == asst.AsstObjID {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (m *instanceManager) validMainlineInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr,
+	isMainline bool) error {
+
+	if !isMainline {
+		return nil
+	}
+
+	// validate instance name
+	nameField := metadata.GetInstNameFieldName(objID)
+	if nameVal, exist := instanceData[nameField]; exist {
+		name, ok := nameVal.(string)
+		if !ok {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedString, nameField)
 		}
 
-		// validate bk_parent_id
-		if instanceData.Exists(common.BKParentIDField) {
-			if parentID, err := instanceData.Int64(common.BKParentIDField); err != nil || parentID <= 0 {
-				blog.Errorf("invalid bk_parent_id value:%#v, err:%v, rid:%s", instanceData[common.BKParentIDField], err, kit.Rid)
-				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
-			}
+		name, err := util.ValidTopoNameField(name, nameField, kit.CCError)
+		if err != nil {
+			return err
+		}
+		instanceData[nameField] = name
+	}
+
+	// validate bk_parent_id
+	if instanceData.Exists(common.BKParentIDField) {
+		if parentID, err := instanceData.Int64(common.BKParentIDField); err != nil || parentID <= 0 {
+			blog.Errorf("invalid bk_parent_id value:%#v, err:%v, rid:%s", instanceData[common.BKParentIDField], err, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
 		}
 	}
 
@@ -404,8 +417,8 @@ func (m *instanceManager) validCloudID(kit *rest.Kit, objID string, instanceData
 	return nil
 }
 
-func (m *instanceManager) changeStringToTime(valData mapstr.MapStr, propertys []metadata.Attribute) error {
-	for _, field := range propertys {
+func (m *instanceManager) changeStringToTime(valData mapstr.MapStr, properties []metadata.Attribute) error {
+	for _, field := range properties {
 		if field.PropertyType != common.FieldTypeTime {
 			continue
 		}
@@ -413,12 +426,18 @@ func (m *instanceManager) changeStringToTime(valData mapstr.MapStr, propertys []
 		if ok == false || val == nil {
 			continue
 		}
+
+		_, ok = val.(time.Time)
+		if ok {
+			continue
+		}
+
 		valStr, ok := val.(string)
 		if ok == false {
 			return stderr.New("it is not a string of time type")
 		}
-		if util.IsTime(valStr) {
-			valData[field.PropertyID] = util.Str2Time(valStr)
+		if timeType, isTime := util.IsTime(valStr); isTime {
+			valData[field.PropertyID] = util.Str2Time(valStr, timeType)
 			continue
 		}
 		return stderr.New("can not convert value from string type to time type")

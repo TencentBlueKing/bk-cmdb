@@ -1,170 +1,171 @@
 <template>
-    <section class="export-content">
-        <div class="header">
-            <h1 class="title">{{title}}</h1>
-            <div class="subtitle-wrapper">
-                <i18n class="subtitle" tag="h2" path="分批下载副标题">
-                    <strong class="count" place="count">{{count}}</strong>
-                    <span place="limit">{{limit}}</span>
-                </i18n>
-                <span class="process-counter">
-                    <span class="finished">{{finishedCount}}</span>
-                    <i>&nbsp;/&nbsp;&nbsp;</i>
-                    <span class="total">{{all.length}}</span>
-                </span>
-                <bk-button class="restart" v-if="hasError" text @click="processSchedule">{{$t('重试失败项')}}</bk-button>
-            </div>
-            <i class="close-trigger bk-icon icon-close"
-                v-if="isFinished"
-                @click="$emit('close')">
-            </i>
-            <bk-popconfirm class="close" v-else
-                placement="top"
-                trigger="click"
-                :title="$t('关闭批量导出提示')"
-                @confirm="$emit('close')">
-                <i class="close-confirm-trigger bk-icon icon-close"></i>
-            </bk-popconfirm>
-        </div>
-        <ul class="list" ref="list">
-            <li class="list-item"
-                v-for="(task, index) in all"
-                ref="listItem"
-                :key="index">
-                <span :class="['state', task.state]">
-                    <i :class="['state-icon', iconMapping[task.state]]" v-if="task.state !== 'waiting'"></i>
-                    {{textMapdding[task.state]}}
-                </span>
-                <span class="info">
-                    <span class="info-name">{{`${name}_download_${index + 1}.${ext}`}}</span>
-                    <span class="info-error"
-                        v-if="task === current && current.state === 'error'">
-                        {{message}}
-                    </span>
-                </span>
-            </li>
-        </ul>
-    </section>
+  <section class="export-content">
+    <div class="header">
+      <h1 class="title">{{title}}</h1>
+      <div class="subtitle-wrapper">
+        <i18n class="subtitle" tag="h2" path="分批下载副标题">
+          <strong class="count" place="count">{{count}}</strong>
+          <span place="limit">{{limit}}</span>
+        </i18n>
+        <span class="process-counter">
+          <span class="finished">{{finishedCount}}</span>
+          <i>&nbsp;/&nbsp;&nbsp;</i>
+          <span class="total">{{all.length}}</span>
+        </span>
+        <bk-button class="restart" v-if="hasError" text @click="processSchedule">{{$t('重试失败项')}}</bk-button>
+      </div>
+      <i class="close-trigger bk-icon icon-close"
+        v-if="isFinished"
+        @click="$emit('close')">
+      </i>
+      <bk-popconfirm class="close" v-else
+        placement="top"
+        trigger="click"
+        :title="$t('关闭批量导出提示')"
+        @confirm="$emit('close')">
+        <i class="close-confirm-trigger bk-icon icon-close"></i>
+      </bk-popconfirm>
+    </div>
+    <ul class="list" ref="list">
+      <li class="list-item"
+        v-for="(task, index) in all"
+        ref="listItem"
+        :key="index">
+        <span :class="['state', task.state]">
+          <i :class="['state-icon', iconMapping[task.state]]" v-if="task.state !== 'waiting'"></i>
+          {{textMapdding[task.state]}}
+        </span>
+        <span class="info">
+          <span class="info-name">{{`${name}_download_${index + 1}.${ext}`}}</span>
+          <span class="info-error"
+            v-if="task === current && current.state === 'error'">
+            {{message}}
+          </span>
+        </span>
+      </li>
+    </ul>
+  </section>
 </template>
 
 <script>
-    export default {
-        props: {
-            name: {
-                type: String,
-                default: 'host'
-            },
-            count: {
-                type: Number,
-                required: true
-            },
-            options: {
-                type: Function,
-                required: true
-            },
-            limit: {
-                type: Number,
-                default: 10000
-            },
-            ext: {
-                type: String,
-                default: 'xlsx'
-            }
+  export default {
+    props: {
+      name: {
+        type: String,
+        default: 'host'
+      },
+      count: {
+        type: Number,
+        required: true
+      },
+      options: {
+        type: Function,
+        required: true
+      },
+      limit: {
+        type: Number,
+        default: 10000
+      },
+      ext: {
+        type: String,
+        default: 'xlsx'
+      }
+    },
+    data() {
+      return {
+        current: null,
+        message: null,
+        queue: [],
+        all: [],
+        request: {
+          id: Symbol('id')
         },
-        data () {
-            return {
-                current: null,
-                message: null,
-                queue: [],
-                all: [],
-                request: {
-                    id: Symbol('id')
-                },
-                iconMapping: {
-                    error: 'bk-icon icon-close-circle-shape',
-                    finished: 'bk-icon icon-check-circle-shape',
-                    pending: 'loading'
-                },
-                textMapdding: {
-                    error: this.$t('失败'),
-                    finished: this.$t('已完成'),
-                    pending: this.$t('下载中'),
-                    waiting: this.$t('等待中')
-                }
-            }
+        iconMapping: {
+          error: 'bk-icon icon-close-circle-shape',
+          finished: 'bk-icon icon-check-circle-shape',
+          pending: 'loading'
         },
-        computed: {
-            isFinished () {
-                return this.all.every(task => task.state === 'finished')
-            },
-            finishedCount () {
-                return this.all.filter(task => task.state === 'finished').length
-            },
-            hasError () {
-                return this.all.some(task => task.state === 'error')
-            },
-            title () {
-                if (this.hasError) {
-                    return this.$t('下载失败')
-                }
-                if (this.isFinished) {
-                    return this.$t('全部下载完成')
-                }
-                return this.$t('分批下载标题')
-            }
-        },
-        mounted () {
-            this.setupSchedule()
-        },
-        beforeDestroy () {
-            this.$http.cancel(this.request.id)
-        },
-        methods: {
-            setupSchedule () {
-                const queue = new Array(Math.ceil(this.count / this.limit)).fill(null).map((_, index) => ({
-                    state: 'waiting',
-                    page: {
-                        start: index * this.limit,
-                        limit: this.limit
-                    }
-                }))
-                this.queue = queue
-                this.all = [...queue]
-                this.processSchedule()
-            },
-            async processSchedule () {
-                if (!this.queue.length) return
-                try {
-                    this.message = null
-                    const [current] = this.queue.splice(0, 1)
-                    this.current = current
-                    this.current.state = 'pending'
-                    this.$nextTick(this.syncScrollbar)
-                    const options = this.options(current.page)
-                    options.config = options.config || {}
-                    options.config.requestId = this.request.id
-                    await this.$http.download(options)
-                    this.current.state = 'finished'
-                    this.processSchedule()
-                } catch (error) {
-                    this.queue.unshift(this.current)
-                    this.current.state = 'error'
-                    this.message = error.message
-                    console.error(error)
-                }
-            },
-            syncScrollbar () {
-                const index = this.all.indexOf(this.current)
-                const item = this.$refs.listItem[index]
-                const top = item.offsetTop + item.offsetHeight + 10 // margin
-                const listViewport = this.$refs.list.offsetHeight
-                const scrollHeight = top - listViewport
-                if (scrollHeight > 0) {
-                    this.$refs.list.scrollTop = scrollHeight
-                }
-            }
+        textMapdding: {
+          error: this.$t('失败'),
+          finished: this.$t('已完成'),
+          pending: this.$t('下载中'),
+          waiting: this.$t('等待中')
         }
+      }
+    },
+    computed: {
+      isFinished() {
+        return this.all.every(task => task.state === 'finished')
+      },
+      finishedCount() {
+        return this.all.filter(task => task.state === 'finished').length
+      },
+      hasError() {
+        return this.all.some(task => task.state === 'error')
+      },
+      title() {
+        if (this.hasError) {
+          return this.$t('下载失败')
+        }
+        if (this.isFinished) {
+          return this.$t('全部下载完成')
+        }
+        return this.$t('分批下载标题')
+      }
+    },
+    mounted() {
+      this.setupSchedule()
+    },
+    beforeDestroy() {
+      this.$http.cancel(this.request.id)
+    },
+    methods: {
+      setupSchedule() {
+        const queue = new Array(Math.ceil(this.count / this.limit)).fill(null)
+          .map((_, index) => ({
+            state: 'waiting',
+            page: {
+              start: index * this.limit,
+              limit: this.limit
+            }
+          }))
+        this.queue = queue
+        this.all = [...queue]
+        this.processSchedule()
+      },
+      async processSchedule() {
+        if (!this.queue.length) return
+        try {
+          this.message = null
+          const [current] = this.queue.splice(0, 1)
+          this.current = current
+          this.current.state = 'pending'
+          this.$nextTick(this.syncScrollbar)
+          const options = this.options(current.page)
+          options.config = options.config || {}
+          options.config.requestId = this.request.id
+          await this.$http.download(options)
+          this.current.state = 'finished'
+          this.processSchedule()
+        } catch (error) {
+          this.queue.unshift(this.current)
+          this.current.state = 'error'
+          this.message = error.message
+          console.error(error)
+        }
+      },
+      syncScrollbar() {
+        const index = this.all.indexOf(this.current)
+        const item = this.$refs.listItem[index]
+        const top = item.offsetTop + item.offsetHeight + 10 // margin
+        const listViewport = this.$refs.list.offsetHeight
+        const scrollHeight = top - listViewport
+        if (scrollHeight > 0) {
+          this.$refs.list.scrollTop = scrollHeight
+        }
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>
@@ -293,7 +294,7 @@
     .info {
         flex: 1;
         display: flex;
-        justify-content: start;
+        justify-content: flex-start;
         flex-direction: column;
         padding: 0 17px;
         .info-name {

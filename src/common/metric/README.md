@@ -194,7 +194,7 @@ func NewIntStringDemo() *IntStringMetricDemo {
 			},
 			{
 				Name: "StringMetric",
-				Help: "this metric gives you more ways to describe you process, like it's runing well.",
+				Help: "this metric gives you more ways to describe you process, like it's running well.",
 				GetFunc: func()(*metric.FloatOrString, error){return metric.FormFloatOrString("bcs is running well.")},
 			},
 		},
@@ -261,7 +261,7 @@ func(d DemoMetric) GetExtension() (*metric.MetricExtension, error){
             },
             {
                 "name": "StringMetric",
-                "help": "this metric gives you more ways to describe you process, like it's runing well.",
+                "help": "this metric gives you more ways to describe you process, like it's running well.",
                 "value": "bcs is running well.",
                 "extension": null
             }

@@ -134,7 +134,8 @@ type DeleteAssociationInstRequest struct {
 }
 
 type DeleteAssociationInstBatchRequest struct {
-	ID []int64 `json:"id"`
+	ObjectID string  `json:"bk_obj_id"`
+	ID       []int64 `json:"id"`
 }
 
 type DeleteAssociationInstResult struct {

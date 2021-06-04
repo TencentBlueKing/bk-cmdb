@@ -11,46 +11,46 @@
  */
 
 export default class CombineRequest {
-    static setup (id, callback) {
-        return this.getInstance(id, callback)
+  static setup(id, callback) {
+    return this.getInstance(id, callback)
+  }
+  constructor(id, callback) {
+    this.id = id
+    this.timer = null
+    this.data = []
+    this.callback = callback
+    this.promise = null
+  }
+  add(payload) {
+    this.data.push(payload)
+    if (!this.timer) {
+      this.promise = new Promise(async (resolve) => {
+        this.timer = setTimeout(async () => {
+          const result = this.run()
+          resolve(result)
+          this.reset()
+        }, 0)
+      })
     }
-    constructor (id, callback) {
-        this.id = id
-        this.timer = null
-        this.data = []
-        this.callback = callback
-        this.promise = null
+    return this.promise
+  }
+  run() {
+    if (this.callback) {
+      return this.callback(this.data)
     }
-    add (payload) {
-        this.data.push(payload)
-        if (!this.timer) {
-            this.promise = new Promise(async (resolve, reject) => {
-                this.timer = setTimeout(async () => {
-                    const result = this.run()
-                    resolve(result)
-                    this.reset()
-                }, 0)
-            })
-        }
-        return this.promise
+  }
+  reset() {
+    clearTimeout(this.timer)
+    this.data = []
+    this.timer = null
+    this.promise = null
+  }
+  static getInstance(id, callback) {
+    const instances = CombineRequest.instances || {}
+    if (!instances[id]) {
+      instances[id] = new CombineRequest(id, callback)
     }
-    run () {
-        if (this.callback) {
-            return this.callback(this.data)
-        }
-    }
-    reset () {
-        clearTimeout(this.timer)
-        this.data = []
-        this.timer = null
-        this.promise = null
-    }
-    static getInstance (id, callback) {
-        const instances = CombineRequest.instances || {}
-        if (!instances[id]) {
-            instances[id] = new CombineRequest(id, callback)
-        }
-        CombineRequest.instances = instances
-        return instances[id]
-    }
+    CombineRequest.instances = instances
+    return instances[id]
+  }
 }

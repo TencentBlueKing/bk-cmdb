@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -185,6 +186,11 @@ func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key 
 		return errors.RawErrorInfo{}
 	}
 
+	_, ok := val.(time.Time)
+	if ok {
+		return errors.RawErrorInfo{}
+	}
+
 	valStr, ok := val.(string)
 	if false == ok {
 		blog.Errorf("date can should be string, rid: %s", rid)
@@ -194,7 +200,7 @@ func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key 
 		}
 	}
 
-	result := util.IsTime(valStr)
+	_, result := util.IsTime(valStr)
 	if !result {
 		blog.Errorf("params not valid, rid: %s", rid)
 		return errors.RawErrorInfo{

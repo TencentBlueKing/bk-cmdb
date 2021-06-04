@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
@@ -39,7 +40,12 @@ func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 
 	firstCategory := ServiceCategory{}
 	// insert first category
-	cond := metadata.BizLabelNotExist.Clone()
+	cond := mapstr.MapStr{
+		common.BKDBOR: []mapstr.MapStr{
+			metadata.BizLabelNotExist.Clone(),
+			{"metadata.label.bk_biz_id": "0"},
+		},
+	}
 	cond.Set(common.BKFieldName, common.DefaultServiceCategoryName)
 	cond.Set(common.BKParentIDField, 0)
 	err := db.Table(common.BKTableNameServiceCategory).Find(cond).One(ctx, &firstCategory)
@@ -68,7 +74,12 @@ func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 
 	// insert second category
 	secondCategory := ServiceCategory{}
-	cond = metadata.BizLabelNotExist.Clone()
+	cond = mapstr.MapStr{
+		common.BKDBOR: []mapstr.MapStr{
+			metadata.BizLabelNotExist.Clone(),
+			{"metadata.label.bk_biz_id": "0"},
+		},
+	}
 	cond.Set(common.BKFieldName, common.DefaultServiceCategoryName)
 	cond.Set(common.BKParentIDField, firstCategory.ID)
 	err = db.Table(common.BKTableNameServiceCategory).Find(cond).One(ctx, &secondCategory)

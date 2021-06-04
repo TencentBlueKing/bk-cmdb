@@ -8,79 +8,81 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars */
 import $http from '@/api'
 
 const state = {
-    propertyConfig: {},
-    ruleDraft: {},
-    propertyList: []
+  propertyConfig: {},
+  ruleDraft: {},
+  propertyList: []
 }
 
 const getters = {
-    configPropertyList: state => {
-        state.propertyList.forEach(property => {
-            // 兼容通用方法
-            property.options = property.option
-            // 自定义字段空间
-            property['__extra__'] = {
-                visible: true
-            }
-        })
-        const enabledList = state.propertyList.filter(item => item.host_apply_enabled)
-        const disabledList = state.propertyList.filter(item => !item.host_apply_enabled)
-        return [...enabledList, ...disabledList]
-    }
+  configPropertyList: (state) => {
+    state.propertyList.forEach((property) => {
+      // 兼容通用方法
+      property.options = property.option
+      // 自定义字段空间
+      // eslint-disable-next-line no-underscore-dangle
+      property.__extra__ = {
+        visible: true
+      }
+    })
+    const enabledList = state.propertyList.filter(item => item.host_apply_enabled)
+    const disabledList = state.propertyList.filter(item => !item.host_apply_enabled)
+    return [...enabledList, ...disabledList]
+  }
 }
 
 const actions = {
-    getRules ({ commit, state, dispatch }, { bizId, params, config }) {
-        return $http.post(`findmany/host_apply_rule/bk_biz_id/${bizId}`, params, config)
-    },
-    getApplyPreview ({ commit, state, dispatch }, { bizId, params, config }) {
-        return $http.post(`createmany/host_apply_plan/bk_biz_id/${bizId}/preview`, params, config)
-    },
-    runApply ({ commit, state, dispatch }, { bizId, params, config }) {
-        return $http.post(`updatemany/host_apply_plan/bk_biz_id/${bizId}/run`, params, config)
-    },
-    getTopopath ({ commit, state, dispatch }, { bizId, params, config }) {
-        return $http.post(`find/topopath/biz/${bizId}`, params, config)
-    },
-    setEnableStatus ({ commit, state, dispatch }, { bizId, moduleId, params, config }) {
-        return $http.put(`module/host_apply_enable_status/bk_biz_id/${bizId}/bk_module_id/${moduleId}`, params, config)
-    },
-    deleteRules ({ commit, state, dispatch }, { bizId, params }) {
-        return $http.delete(`deletemany/host_apply_rule/bk_biz_id/${bizId}`, params)
-    },
-    getProperties (context, { params, config }) {
-        return $http.post('find/objectattr/host', params, config)
-    },
-    getHostRelatedRules (context, { bizId, params, config }) {
-        return $http.post(`findmany/host_apply_rule/bk_biz_id/${bizId}/host_related_rules`, params, config)
-    },
-    searchNode (context, { bizId, params, config }) {
-        return $http.post(`find/topoinst/bk_biz_id/${bizId}/host_apply_rule_related`, params, config)
-    }
+  getRules({ commit, state, dispatch }, { bizId, params, config }) {
+    return $http.post(`findmany/host_apply_rule/bk_biz_id/${bizId}`, params, config)
+  },
+  getApplyPreview({ commit, state, dispatch }, { bizId, params, config }) {
+    return $http.post(`createmany/host_apply_plan/bk_biz_id/${bizId}/preview`, params, config)
+  },
+  runApply({ commit, state, dispatch }, { bizId, params, config }) {
+    return $http.post(`updatemany/host_apply_plan/bk_biz_id/${bizId}/run`, params, config)
+  },
+  getTopopath({ commit, state, dispatch }, { bizId, params, config }) {
+    return $http.post(`find/topopath/biz/${bizId}`, params, config)
+  },
+  setEnableStatus({ commit, state, dispatch }, { bizId, moduleId, params, config }) {
+    return $http.put(`module/host_apply_enable_status/bk_biz_id/${bizId}/bk_module_id/${moduleId}`, params, config)
+  },
+  deleteRules({ commit, state, dispatch }, { bizId, params }) {
+    return $http.delete(`deletemany/host_apply_rule/bk_biz_id/${bizId}`, params)
+  },
+  getProperties(context, { params, config }) {
+    return $http.post('find/objectattr/host', params, config)
+  },
+  getHostRelatedRules(context, { bizId, params, config }) {
+    return $http.post(`findmany/host_apply_rule/bk_biz_id/${bizId}/host_related_rules`, params, config)
+  },
+  searchNode(context, { bizId, params, config }) {
+    return $http.post(`find/topoinst/bk_biz_id/${bizId}/host_apply_rule_related`, params, config)
+  }
 }
 
 const mutations = {
-    setPropertyConfig (state, config) {
-        state.propertyConfig = config
-    },
-    setRuleDraft (state, draft) {
-        state.ruleDraft = draft
-    },
-    clearRuleDraft (state) {
-        state.ruleDraft = {}
-    },
-    setPropertyList (state, list) {
-        state.propertyList = list
-    }
+  setPropertyConfig(state, config) {
+    state.propertyConfig = config
+  },
+  setRuleDraft(state, draft) {
+    state.ruleDraft = draft
+  },
+  clearRuleDraft(state) {
+    state.ruleDraft = {}
+  },
+  setPropertyList(state, list) {
+    state.propertyList = list
+  }
 }
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
 }

@@ -160,7 +160,30 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		lastTokenData[common.BKStartAtTimeField] = e.ClusterTime
 
 		switch e.OperationType {
-		case types.Insert, types.Update, types.Replace, types.Delete:
+		case types.Insert, types.Update, types.Replace:
+			// validate the event is valid or not.
+			// the invalid event will be dropped.
+			if err := f.key.Validate(e.DocBytes); err != nil {
+				blog.Errorf("run flow, received %s event, but got invalid event, doc: %s, oid: %s, err: %v, rid: %s",
+					f.key.Collection(), e.DocBytes, e.Oid, err, rid)
+				continue
+			}
+		case types.Delete:
+
+			doc, exist := oidDetailMap[e.Oid]
+			if !exist {
+				blog.Errorf("run flow, received %s event, but got delete doc[oid: %s] detail failed, err: %v, rid: %s",
+					f.key.Collection(), e.Oid, err, rid)
+				continue
+			}
+
+			// validate the event is valid or not.
+			// the invalid event will be dropped.
+			if err := f.key.Validate(doc); err != nil {
+				blog.Errorf("run flow, received %s event, but got invalid event, doc: %s, oid: %s, err: %v, rid: %s",
+					f.key.Collection(), e.DocBytes, e.Oid, err, rid)
+				continue
+			}
 		case types.Invalidate:
 			blog.Errorf("loop flow, received invalid event operation type, doc: %s, rid: %s", e.DocBytes, rid)
 			continue

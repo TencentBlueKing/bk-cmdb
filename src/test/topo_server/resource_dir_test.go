@@ -65,7 +65,7 @@ var _ = Describe("resource pool directory test", func() {
 
 		It("update with normal data", func() {
 			id := moduleID1
-			data := map[string]interface{}{"bk_module_name": "update module name"}
+			data := map[string]interface{}{"bk_module_name": "   update_module_name       "}
 			rsp, err := topoServerClient.ResourceDirectory().UpdateResourceDirectory(context.Background(), header, id, data)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())

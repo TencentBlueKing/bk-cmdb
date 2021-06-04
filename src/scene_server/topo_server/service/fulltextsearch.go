@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -29,6 +30,9 @@ var (
 		"(", ")", "-", "_", "=", "+", "[", "{", "]", "}",
 		"\\", "|", ";", ":", "'", "\"", ",", "<", ".", ">", "/", "?"}
 )
+
+// esSpecialCharactersRegex can match es speical characters which need to be escaped
+var esSpecialCharactersRegex = regexp.MustCompile(`([+\-=&|><(){}\[\]\^"~'?!:*\/])`)
 
 type SearchResult struct {
 	Source    map[string]interface{} `json:"source"` // data from mongo, key/value
@@ -85,11 +89,11 @@ func (s *Service) FullTextFind(ctx *rest.Contexts) {
 	}
 
 	if query.QueryString == "" {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "query_string"))
 		return
 	}
 
-	// check query string
+	// check the format of query string and adjust it when needed
 	rawString, ok := query.checkQueryString()
 	if !ok {
 		blog.Errorf("full_text_find failed, query string [%s] large than 32, rid: %s", rawString, ctx.Kit.Rid)
@@ -106,6 +110,11 @@ func (s *Service) FullTextFind(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextFindErr))
 		return
 	}
+
+	plainQuery, _ := esQuery.Source()
+	plainResult, _ := json.Marshal(result)
+	blog.V(4).Infof("es search, esQuery:%s, indexs:%v, start:%d, limit:%d, result:%s", plainQuery, indexs,
+		query.Paging.Start, query.Paging.Limit, plainResult)
 
 	// result is hits and aggregations
 	searchResults := new(SearchResults)
@@ -156,15 +165,24 @@ func (s *Service) FullTextFind(ctx *rest.Contexts) {
 	ctx.RespEntity(searchResults)
 }
 
-func (query Query) checkQueryString() (string, bool) {
+// checkQueryString check the format of query string and adjust it when needed
+func (query *Query) checkQueryString() (string, bool) {
 	// if query string is single string in SpecialChar, make it to null string
-	for i := range SpecialChar {
-		if query.QueryString == SpecialChar[i] {
-			query.QueryString = ""
-			return "", true
+	if len(query.QueryString) == 1 {
+		for i := range SpecialChar {
+			if query.QueryString == SpecialChar[i] {
+				query.QueryString = ""
+				return "", true
+			}
 		}
 	}
-	rawString := strings.Replace(query.QueryString, "*", "", -1)
+
+	query.QueryString = strings.Trim(query.QueryString, "*")
+	rawString := query.QueryString
+
+	// escape special characters
+	query.QueryString = "*" + esSpecialCharactersRegex.ReplaceAllString(query.QueryString, `\$1`) + "*"
+
 	// judge string if large than 32
 	if utf8.RuneCountInString(rawString) > 32 {
 		return rawString, false
@@ -176,14 +194,8 @@ func (query Query) checkQueryString() (string, bool) {
 func (query Query) toEsBoolQueryAndIndexs() (elastic.Query, []string) {
 	qBool := elastic.NewBoolQuery()
 
-	// if set bk_biz_id
-	qBool.MinimumNumberShouldMatch(1)
-	qBizRegex := elastic.NewRegexpQuery(BkBizMetaKey, "[0-9]*")
-	qBizBool := elastic.NewBoolQuery()
-	qBizBool.MustNot(qBizRegex)
-	qBool.Should(qBizBool)
 	if query.BkBizId != "" {
-		qBizTerm := elastic.NewTermQuery(BkBizMetaKey, query.BkBizId)
+		qBizTerm := elastic.NewTermQuery(common.BKAppIDField, query.BkBizId)
 		qBool.Should(qBizTerm)
 	}
 
@@ -196,15 +208,12 @@ func (query Query) toEsBoolQueryAndIndexs() (elastic.Query, []string) {
 	qBool.MustNot(qSupplierMatch)
 
 	qString := elastic.NewQueryStringQuery(query.QueryString)
-	qString.Escape(true)
 	qBool.Must(qString)
 
 	if query.BkObjId == "" {
 		// if bk_obj_id is "", we search all indexs
 		indexs := make([]string, 0)
-		indexs = append(indexs, getESIndexByCollection(common.BKTableNameBaseApp))
-		indexs = append(indexs, getESIndexByCollection(common.BKTableNameBaseHost))
-		indexs = append(indexs, getESIndexByCollection(common.BKTableNameBaseInst))
+		indexs = append(indexs, getESIndexByCollection("cc_*"))
 		return qBool, indexs
 	} else if query.BkObjId == TypeHost {
 		// if bk_obj_id is host, we search only from type cc_HostBase
@@ -218,7 +227,7 @@ func (query Query) toEsBoolQueryAndIndexs() (elastic.Query, []string) {
 		// if define bk_obj_id, we use bool query include must(bk_obj_id=xxx) and should(query string)
 		qBool.Must(elastic.NewTermQuery("bk_obj_id", query.BkObjId))
 		qBool.Must(qString)
-		indexs := []string{getESIndexByCollection(common.BKTableNameBaseInst)}
+		indexs := []string{getESIndexByCollection(common.BKTableNameBaseInst + "*")}
 		return qBool, indexs
 	}
 }
@@ -285,7 +294,7 @@ func (sr *SearchResult) dealHighlight(source map[string]interface{}, highlight e
 			if !rawStringInObjId {
 				delete(highlight, key)
 			}
-		} else if key == "metadata.label.bk_biz_id" || key == "metadata.label.bk_biz_id.keyword" {
+		} else if key == "bk_biz_id" || key == "bk_biz_id.keyword" {
 			delete(highlight, key)
 		} else {
 			// we don't need highlight with bk_obj_id and bk_biz_id, just like <em>bk_obj_id</em>, <em>bk_biz_id</em>
