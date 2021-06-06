@@ -37,8 +37,8 @@
   import { ref, toRef, watch } from '@vue/composition-api'
   import useFilter from '@/hooks/utils/filter'
   import useGroupProperty from '@/hooks/utils/group-property'
-  import useProperty from '@/hooks/property/property'
-  import useGroup from '@/hooks/property/group'
+  import useProperty from '@/hooks/model/property'
+  import useGroup from '@/hooks/model/group'
   import useState from './state'
   export default {
     name: 'export-property',
@@ -49,7 +49,7 @@
         bk_obj_id: exportState.bk_obj_id.value,
         bk_biz_id: exportState.bk_biz_id.value
       })
-      const [groups] = useGroup({
+      const [{ groups }] = useGroup({
         bk_obj_id: exportState.bk_obj_id.value,
         bk_biz_id: exportState.bk_biz_id.value
       })

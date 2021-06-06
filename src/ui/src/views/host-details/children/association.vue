@@ -45,7 +45,7 @@
       </div>
     </div>
     <div class="association-view">
-      <component ref="dynamicComponent" :is="activeView"></component>
+      <component ref="dynamicComponent" :is="activeView" v-bind="componentProps"></component>
     </div>
     <bk-sideslider v-transfer-dom :is-show.sync="showCreate" :width="800" :title="$t('新增关联')">
       <cmdb-host-association-create slot="content" v-if="showCreate"></cmdb-host-association-create>
@@ -55,7 +55,7 @@
 
 <script>
   import cmdbHostAssociationList from './association-list.vue'
-  import cmdbHostAssociationGraphics from './association-graphics.new.vue'
+  import cmdbInstanceAssociation from '@/components/instance/association/index.vue'
   import cmdbHostAssociationCreate from './association-create.vue'
   import { mapGetters } from 'vuex'
   import authMixin from '../mixin-auth'
@@ -63,7 +63,7 @@
     name: 'cmdb-host-association',
     components: {
       cmdbHostAssociationList,
-      cmdbHostAssociationGraphics,
+      cmdbInstanceAssociation,
       cmdbHostAssociationCreate
     },
     mixins: [authMixin],
@@ -71,7 +71,7 @@
       return {
         viewName: {
           list: cmdbHostAssociationList.name,
-          graphics: cmdbHostAssociationGraphics.name
+          graphics: cmdbInstanceAssociation.name
         },
         activeView: cmdbHostAssociationList.name,
         showCreate: false
@@ -89,6 +89,18 @@
       },
       hasInstance() {
         return [...this.sourceInstances, ...this.targetInstances].some(instance => !!(instance.children || []).length)
+      },
+      componentProps() {
+        if (this.activeView === cmdbInstanceAssociation.name) {
+          const { host, biz: [biz] } = this.info
+          return {
+            objId: 'host',
+            instId: host.bk_host_id,
+            instName: host.bk_host_innerip,
+            bizId: biz.bk_biz_id
+          }
+        }
+        return {}
       }
     },
     beforeDestroy() {
