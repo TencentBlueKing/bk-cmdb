@@ -58,6 +58,7 @@
         :inst="instance"
         :type="type"
         :save-auth="{ type: $OPERATION.U_TOPO, relation: [business] }"
+        :is-main-line="true"
         @on-submit="handleSubmit"
         @on-cancel="handleCancel">
         <form-service-category slot="prepend"

@@ -214,5 +214,4 @@ router.onError((error) => {
     $error(i18n.t('资源请求失败提示'))
   }
 })
-
 export default router

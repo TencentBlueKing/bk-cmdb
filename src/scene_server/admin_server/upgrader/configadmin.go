@@ -214,38 +214,46 @@ var initConfig = `
 var configChangeHistory = []configChangeItem{
 	{
 		dir:         "y3.8.202006092135",
-		description: "第一次初始化前的配置",
-		config:      ``,
-	},
-	{
-		dir:         "y3.8.202006092135",
 		description: "第一次初始化后的配置",
 		config:      initConfig,
 	},
 }
 
+// AddConfigAdminChangeItem add config admin change item to the change history for later upgrading use
+func AddConfigAdminChangeItem(dir string, description string, config string) {
+	configChangeHistory = append(configChangeHistory, configChangeItem{
+		dir:         dir,
+		description: description,
+		config:      config,
+	})
+}
+
 // setInitConfigSiteTitle 根据版本编译参数设置网站title
 func setInitConfigSiteTitle() {
+	initConfig = SetConfigSiteTitle(initConfig)
+	configChangeHistory[0].config = initConfig
+}
+
+// SetConfigSiteTitle 根据版本编译参数设置网站title
+func SetConfigSiteTitle(config string) string {
 	switch version.CCDistro {
 	case version.CCDistrCommunity:
-		initConfig = strings.ReplaceAll(initConfig, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云社区版")
+		return strings.Replace(config, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云社区版", -1)
 	case version.CCDistrEnterprise:
-		initConfig = strings.ReplaceAll(initConfig, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云企业版")
+		return strings.Replace(config, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云企业版", -1)
 	default:
-		initConfig = strings.ReplaceAll(initConfig, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云社区版")
+		return strings.Replace(config, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云社区版", -1)
 	}
-
-	configChangeHistory[1].config = initConfig
 }
 
 // UpgradeConfigAdmin 升级配置管理
 // 每次升级变更配置，需要在configChangeHistory最后追加一项要变更的配置
 // 将configChangeHistory里的最后一项作为当前配置项curCfg，倒数第二项作为上一次配置项preCfg
 // 需要将preCfg和db存在的配置dbCfg进行对比，对于不一致的（说明有用户调过配置管理接口做过更改）,curCfg里对应的配置不做覆盖，仍为db里的数据
-func UpgradeConfigAdmin(ctx context.Context, db dal.RDB) error {
+func UpgradeConfigAdmin(ctx context.Context, db dal.RDB, dir string) error {
 	setInitConfigSiteTitle()
 
-	preCfg, curCfg, dbCfg, err := getConfigs(ctx, db)
+	preCfg, curCfg, dbCfg, err := getConfigs(ctx, db, dir)
 	if err != nil {
 		blog.Errorf("upgradeConfigAdmin failed, getConfigs err: %v", err)
 		return err
@@ -262,9 +270,9 @@ func UpgradeConfigAdmin(ctx context.Context, db dal.RDB) error {
 
 	// 如果是首次进行初始化，直接保存当前配置
 	if preCfg == nil {
-		err = updateCofig(ctx, db, curCfg)
+		err = updateConfig(ctx, db, curCfg)
 		if err != nil {
-			blog.Errorf("UpgradeConfigAdmin failed, updateCofig err: %v, config:%#v", err, *curCfg)
+			blog.Errorf("UpgradeConfigAdmin failed, update config err: %v, config:%#v", err, *curCfg)
 			return err
 		}
 		return nil
@@ -277,9 +285,9 @@ func UpgradeConfigAdmin(ctx context.Context, db dal.RDB) error {
 	}
 	config := getFinalConfig(preCfg, curCfg, dbCfg)
 
-	err = updateCofig(ctx, db, config)
+	err = updateConfig(ctx, db, config)
 	if err != nil {
-		blog.Errorf("UpgradeConfigAdmin failed, updateCofig err: %v, config:%#v", err, *config)
+		blog.Errorf("UpgradeConfigAdmin failed, update config err: %v, config:%#v", err, *config)
 		return err
 	}
 
@@ -287,25 +295,30 @@ func UpgradeConfigAdmin(ctx context.Context, db dal.RDB) error {
 }
 
 // getConfigs 获取preCfg, curCfg, dbCfg
-func getConfigs(ctx context.Context, db dal.RDB) (preCfg, curCfg, dbCfg *metadata.ConfigAdmin, err error) {
-	length := len(configChangeHistory)
-	pre := configChangeHistory[length-2].config
-	cur := configChangeHistory[length-1].config
+func getConfigs(ctx context.Context, db dal.RDB, dir string) (preCfg, curCfg, dbCfg *metadata.ConfigAdmin, err error) {
+	var pre string
+	for index, config := range configChangeHistory {
+		if config.dir == dir {
+			cur := config.config
+			curCfg = new(metadata.ConfigAdmin)
+			if err := json.Unmarshal([]byte(cur), curCfg); err != nil {
+				blog.Errorf("get all config failed, Unmarshal err: %v, config:%+v", err, cur)
+				return nil, nil, nil, err
+			}
 
-	curCfg = new(metadata.ConfigAdmin)
-	if err := json.Unmarshal([]byte(cur), curCfg); err != nil {
-		blog.Errorf("getAllCofnig failed, Unmarshal err: %v, config:%+v", err, cur)
-		return nil, nil, nil, err
+			// 第一次初始化,preCfg为nil
+			if index == 0 {
+				return nil, curCfg, nil, nil
+			}
+
+			pre = configChangeHistory[index-1].config
+			break
+		}
 	}
 
-	// pre为空，说明是第一次初始化,preCfg为nil
-	if pre == "" {
-		preCfg = nil
-		return preCfg, curCfg, dbCfg, nil
-	}
 	preCfg = new(metadata.ConfigAdmin)
 	if err = json.Unmarshal([]byte(pre), preCfg); err != nil {
-		blog.Errorf("getAllCofnig failed, Unmarshal err: %v, config:%+v", err, pre)
+		blog.Errorf("get all config failed, Unmarshal err: %v, config:%+v", err, pre)
 		return nil, nil, nil, err
 	}
 
@@ -317,13 +330,13 @@ func getConfigs(ctx context.Context, db dal.RDB) (preCfg, curCfg, dbCfg *metadat
 	}{}
 	err = db.Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(ctx, &ret)
 	if nil != err {
-		blog.Errorf("getAllCofnig failed, db find err: %+v, rid: %s", err)
+		blog.Errorf("get all config failed, db find err: %+v, rid: %s", err)
 		return nil, nil, nil, err
 	}
 
 	dbCfg = new(metadata.ConfigAdmin)
 	if err := json.Unmarshal([]byte(ret.Config), dbCfg); err != nil {
-		blog.Errorf("getAllCofnig failed, Unmarshal err: %v, config:%+v", err, ret.Config)
+		blog.Errorf("get all config failed, Unmarshal err: %v, config:%+v", err, ret.Config)
 		return nil, nil, nil, err
 	}
 
@@ -360,11 +373,11 @@ func getFinalConfig(preCfg, curCfg, dbCfg *metadata.ConfigAdmin) *metadata.Confi
 	return curCfg
 }
 
-// updateCofig 将配置更新到db里
-func updateCofig(ctx context.Context, db dal.RDB, config *metadata.ConfigAdmin) error {
+// updateConfig 将配置更新到db里
+func updateConfig(ctx context.Context, db dal.RDB, config *metadata.ConfigAdmin) error {
 	bytes, err := json.Marshal(config)
 	if err != nil {
-		blog.Errorf("updateCofig failed, Marshal err: %v, config:%+v", err, config)
+		blog.Errorf("update config failed, Marshal err: %v, config:%+v", err, config)
 		return err
 	}
 
@@ -378,7 +391,7 @@ func updateCofig(ctx context.Context, db dal.RDB, config *metadata.ConfigAdmin) 
 
 	err = db.Table(common.BKTableNameSystem).Update(ctx, cond, data)
 	if err != nil {
-		blog.Errorf("updateCofig failed, update err: %+v", err)
+		blog.Errorf("update config failed, update err: %+v", err)
 		return err
 	}
 

@@ -15,6 +15,7 @@ package util
 import (
 	"encoding/json"
 	"regexp"
+	"strings"
 	"unicode/utf8"
 
 	"configcenter/src/common"
@@ -258,4 +259,26 @@ func IsNumeric(val interface{}) bool {
 	}
 
 	return false
+}
+
+var mainlineNameRegexp = regexp.MustCompile(common.FieldTypeMainlineRegexp)
+
+// ValidTopoNameField validate business topology name, including set and service templates that may generate them
+func ValidTopoNameField(name string, nameField string, errProxy errors.DefaultCCErrorIf) (string, error) {
+	name = strings.Trim(name, " ")
+
+	if len(name) == 0 {
+		return name, errProxy.CCErrorf(common.CCErrCommParamsNeedSet, nameField)
+	}
+
+	if utf8.RuneCountInString(name) > common.MainlineNameFieldMaxLength {
+		return name, errProxy.CCErrorf(common.CCErrCommValExceedMaxFailed, nameField, common.MainlineNameFieldMaxLength)
+	}
+
+	match := mainlineNameRegexp.MatchString(name)
+	if !match {
+		return name, errProxy.CCErrorf(common.CCErrCommParamsInvalid, nameField)
+	}
+
+	return name, nil
 }

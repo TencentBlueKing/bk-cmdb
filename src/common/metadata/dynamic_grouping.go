@@ -191,6 +191,9 @@ type DynamicGroupInfoCondition struct {
 	// Condition is search condition on fields level.
 	// Example: bk_host_name $eq my-host just index host which name is "my-host".
 	Condition []DynamicGroupCondition `json:"condition" bson:"condition"`
+
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition *TimeCondition `json:"time_condition,omitempty" bson:"time_condition,omitempty"`
 }
 
 // Validate validates dynamic group info conditions format.

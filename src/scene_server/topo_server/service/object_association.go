@@ -176,7 +176,8 @@ func (s *Service) ImportInstanceAssociation(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
 	request := new(metadata.RequestImportAssociation)
 	if err := ctx.DecodeInto(request); err != nil {
-		blog.Errorf("ImportInstanceAssociation, json unmarshal error, objID:%S, err: %v, rid:%s", objID, err, ctx.Kit.Rid)
+		blog.Errorf("ImportInstanceAssociation, json unmarshal error, objID: %s, err: %v, rid: %s",
+			objID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
 		return
 	}
@@ -184,7 +185,38 @@ func (s *Service) ImportInstanceAssociation(ctx *rest.Contexts) {
 	var ret metadata.ResponeImportAssociationData
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().ImportInstAssociation(ctx.Kit.Ctx, ctx.Kit, objID, request.AssociationInfoMap, s.Language)
+		ret, err = s.Core.AssociationOperation().ImportInstAssociation(ctx.Kit.Ctx, ctx.Kit, objID,
+			request.AssociationInfoMap, request.AsstObjectUniqueIDMap, request.ObjectUniqueID, s.Language)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespEntityWithError(ret, txnErr)
+		return
+	}
+	ctx.RespEntity(ret)
+}
+
+// FindObjectByObjectAssociationID 根据关联关系bk_obj_asst_id 获取关联信息
+// 专用方法，提供给关联关系导入使用
+func (s *Service) FindAssociationByObjectAssociationID(ctx *rest.Contexts) {
+
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	request := new(metadata.FindAssociationByObjectAssociationIDRequest)
+	if err := ctx.DecodeInto(request); err != nil {
+		blog.Errorf("FindObjectByObjectAssociationID, json unmarshal error, err: %s, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
+
+	var association []metadata.Association
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		var err error
+		association, err = s.Core.AssociationOperation().FindAssociationByObjectAssociationID(ctx.Kit.Ctx, ctx.Kit,
+			objID, request.ObjAsstIDArr)
 		if err != nil {
 			return err
 		}
@@ -195,5 +227,5 @@ func (s *Service) ImportInstanceAssociation(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(ret)
+	ctx.RespEntity(association)
 }

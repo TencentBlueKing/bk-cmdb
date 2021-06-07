@@ -56,13 +56,13 @@
     methods: {
       async addPasteEvent() {
         await this.$nextTick()
-        const tagInput = this.$refs.tagInput
+        const { tagInput } = this.$refs
         if (!tagInput) return
         tagInput.$refs.input.addEventListener('paste', this.handlePaste)
       },
       async removePasteEvent() {
         await this.$nextTick()
-        const tagInput = this.$refs.tagInput
+        const { tagInput } = this.$refs
         if (!tagInput) return
         tagInput.$refs.input.removeEventListener('paste', this.handlePaste)
       },

@@ -138,14 +138,14 @@ type QueryInput struct {
 }
 
 type TimeConditionItem struct {
-	Field string       `json:"field"`
-	Start *cctime.Time `json:"start"`
-	End   *cctime.Time `json:"end"`
+	Field string       `json:"field" bson:"field"`
+	Start *cctime.Time `json:"start" bson:"start"`
+	End   *cctime.Time `json:"end" bson:"end"`
 }
 
 type TimeCondition struct {
-	Operator string              `json:"oper"`
-	Rules    []TimeConditionItem `json:"rules"`
+	Operator string              `json:"oper" bson:"oper"`
+	Rules    []TimeConditionItem `json:"rules" bson:"rules"`
 }
 
 // MergeTimeCondition parse time condition and merge with common condition to construct a DB condition, only used by DB

@@ -281,6 +281,12 @@ const (
 var (
 	updateObjectAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/update/objectassociation/[0-9]+/?$`)
 	deleteObjectAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/delete/objectassociation/[0-9]+/?$`)
+	// excel 导入关联关系专用接口
+	findAssociationByObjectAssociationIDLatestRegexp = regexp.MustCompile(
+		`^/topo/find/object/[^\s/]+/association/by/bk_obj_asst_id$`)
+	// excel 导入关联关系专用接口
+	importAssociationByObjectAssociationIDLatestRegexp = regexp.MustCompile(
+		`^/api/v3/import/instassociation/[^\s/]+$`)
 )
 
 func (ps *parseStream) objectAssociationLatest() *parseStream {
@@ -467,6 +473,34 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.ModelAssociation,
 					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	// excel 导入关联关系专用接口, 跳过鉴权
+	if ps.hitRegexp(findAssociationByObjectAssociationIDLatestRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: 0,
+				Basic: meta.Basic{
+					Type:   meta.ModelAssociation,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// excel 导入关联关系专用接口, 跳过鉴权
+	if ps.hitRegexp(importAssociationByObjectAssociationIDLatestRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: 0,
+				Basic: meta.Basic{
+					Type:   meta.ModelAssociation,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -816,8 +850,9 @@ var (
 	findObjectInstanceSubTopologyLatestRegexp = regexp.MustCompile(`^/api/v3/find/insttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstanceTopologyLatestRegexp    = regexp.MustCompile(`^/api/v3/find/instassttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstancesLatestRegexp           = regexp.MustCompile(`^/api/v3/find/instance/object/[^\s/]+/?$`)
-	findObjectInstancesUniqueFieldsRegexp     = regexp.MustCompile(`^/api/v3/find/instance/object/[^\s/]+/unique_fields/?$`)
-	findObjectInstancesNamesRegexp            = regexp.MustCompile(`^/api/v3/findmany/object/instances/names/?$`)
+	findObjectInstancesUniqueFieldsRegexp     = regexp.MustCompile(
+		`^/api/v3/find/instance/object/[^\s/]+/unique_fields/by/unique/[0-9]+/?$`)
+	findObjectInstancesNamesRegexp = regexp.MustCompile(`^/api/v3/findmany/object/instances/names/?$`)
 )
 
 func (ps *parseStream) objectInstanceLatest() *parseStream {

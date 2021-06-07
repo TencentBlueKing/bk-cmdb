@@ -253,18 +253,20 @@
       },
       async checkDifference() {
         try {
-          const data = await this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
+          // eslint-disable-next-line max-len
+          const { modules: syncStatus = [] } = await this.$store.dispatch('serviceTemplate/getServiceTemplateSyncStatus', {
+            bizId: this.bizId,
             params: {
-              bk_biz_id: this.bizId,
+              is_partial: false,
               bk_module_ids: [this.selectedNode.data.bk_inst_id],
-              service_template_id: this.selectedNode.data.service_template_id
             },
             config: {
               cancelPrevious: true
             }
           })
-          const difference = data.find(difference => difference.bk_module_id === this.selectedNode.data.bk_inst_id)
-          this.hasDifference = !!difference && difference.has_difference
+          // eslint-disable-next-line max-len
+          const difference = syncStatus.find(difference => difference.bk_module_id === this.selectedNode.data.bk_inst_id)
+          this.hasDifference = !!difference && difference.need_sync
         } catch (error) {
           console.error(error)
         }

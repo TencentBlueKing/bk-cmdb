@@ -774,7 +774,7 @@ const (
 	FieldTypeServiceCategoryRegexp string = `^([\w\p{Han}]|[:\-\(\)])+$`
 
 	//FieldTypeMainlineRegexp the mainline instance name regex expression
-	FieldTypeMainlineRegexp string = `^[^#/,><|]+$`
+	FieldTypeMainlineRegexp string = `^[^\\\|\/:\*,<>"\?#\s]+$`
 
 	//FieldTypeSingleCharRegexp the single char regex expression
 	//FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
@@ -1169,7 +1169,8 @@ const (
 )
 
 const (
-	NameFieldMaxLength = 256
+	NameFieldMaxLength         = 256
+	MainlineNameFieldMaxLength = 32
 
 	// 用于表示还未设置服务模板的情况，比如没有绑定服务模板
 	ServiceTemplateIDNotSet = 0

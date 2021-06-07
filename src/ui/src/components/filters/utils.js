@@ -159,7 +159,7 @@ export function transformCondition(condition, properties, header) {
       })
     }
   })
-  return Object.keys(conditionMap).map(modelId => {
+  return Object.keys(conditionMap).map((modelId) => {
     const condition = {
       bk_obj_id: modelId,
       fields: header.filter(property => property.bk_obj_id === modelId).map(property => property.bk_property_id),

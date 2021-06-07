@@ -16,14 +16,4 @@ export default [{
       breadcrumbs: false
     }
   })
-}, {
-  name: 'search',
-  path: 'index/search',
-  component: () => import('./children/full-text-search.vue'),
-  meta: new Meta({
-    checkAvailable: () => window.CMDB_CONFIG.site.fullTextSearch === 'on',
-    layout: {
-      breadcrumbs: false
-    }
-  })
 }]

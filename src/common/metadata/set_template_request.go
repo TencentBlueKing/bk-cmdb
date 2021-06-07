@@ -16,6 +16,8 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	ccErr "configcenter/src/common/errors"
+	"configcenter/src/common/util"
 )
 
 type CreateSetTemplateOption struct {
@@ -28,9 +30,17 @@ type UpdateSetTemplateOption struct {
 	ServiceTemplateIDs []int64 `field:"service_template_ids" json:"service_template_ids" bson:"service_template_ids"`
 }
 
-func (option UpdateSetTemplateOption) Validate() (string, error) {
+func (option UpdateSetTemplateOption) Validate(errProxy ccErr.DefaultCCErrorIf) (string, error) {
 	if len(option.Name) == 0 && option.ServiceTemplateIDs == nil {
 		return "", errors.New("at least one update field not empty")
+	}
+
+	if len(option.Name) > 0 {
+		var err error
+		option.Name, err = util.ValidTopoNameField(option.Name, "name", errProxy)
+		if err != nil {
+			return "name", err
+		}
 	}
 	return "", nil
 }

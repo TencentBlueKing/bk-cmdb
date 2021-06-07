@@ -24,7 +24,7 @@ import (
 )
 
 // GetObjectData get object data
-func (lgc *Logics) GetObjectData(ownerID, objID string, header http.Header, modelBizID int64) ([]interface{}, error) {
+func (lgc *Logics) GetObjectData(objID string, header http.Header, modelBizID int64) ([]interface{}, error) {
 
 	condition := mapstr.MapStr{
 		"condition": []string{

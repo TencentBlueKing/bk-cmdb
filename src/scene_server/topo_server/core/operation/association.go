@@ -72,7 +72,13 @@ type AssociationOperationInterface interface {
 	SearchAssociationRelatedInst(kit *rest.Kit, request *metadata.SearchAssociationRelatedInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	CreateInst(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
 	DeleteInst(kit *rest.Kit, objID string, asstIDList []int64) (resp *metadata.DeleteAssociationInstResult, err error)
-	ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string, importData map[int]metadata.ExcelAssocation, languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error)
+
+	ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string,
+		importData map[int]metadata.ExcelAssociation, asstObjectUniqueIDMap map[string]int64, objectUniqueID int64,
+		languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error)
+
+	FindAssociationByObjectAssociationID(ctx context.Context, kit *rest.Kit, objID string, asstIDArr []string) (
+		[]metadata.Association, errors.CCError)
 
 	SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, grp GroupOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory)
 
