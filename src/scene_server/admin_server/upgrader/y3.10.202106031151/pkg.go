@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package y3_9_202105271151
+package y3_10_202106031151
 
 import (
 	"context"
@@ -20,13 +20,13 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.9.202105271151", upgrade)
+	upgrader.RegistUpgrader("y3.10.202106031151", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = addUNIXProperty(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202105271151] addUNIXProperty error  %s", err.Error())
+		blog.Errorf("[upgrade y3.10.202106031151] addUnixProperty error  %s", err.Error())
 		return err
 	}
 	return
