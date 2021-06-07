@@ -29,9 +29,13 @@ import (
 var Conf *Config
 
 type Config struct {
-	ZkAddr      string
-	MongoURI    string
-	MongoRsName string
+	ZkAddr        string
+	MongoURI      string
+	MongoRsName   string
+	RedisAddr     string
+	RedisPort     string
+	RedisPwd      string
+	RedisDatabase string
 }
 
 // AddFlags add flags
@@ -40,6 +44,12 @@ func (c *Config) AddFlags(cmd *cobra.Command) {
 	// TODO add zkuser and zkpwd
 	cmd.PersistentFlags().StringVar(&c.MongoURI, "mongo-uri", os.Getenv("MONGO_URI"), "the mongodb URI, eg. mongodb://127.0.0.1:27017/cmdb, corresponding environment variable is MONGO_URI")
 	cmd.PersistentFlags().StringVar(&c.MongoRsName, "mongo-rs-name", "rs0", "mongodb replica set name")
+	//redis config
+	cmd.PersistentFlags().StringVar(&c.RedisAddr, "redis-addr", "127.0.0.1", "assign redis server address")
+	cmd.PersistentFlags().StringVar(&c.RedisPort, "redis-port", "6379", "assign redis server port")
+	cmd.PersistentFlags().StringVar(&c.RedisPwd, "redis-pwd", "", "assign redis server password")
+	cmd.PersistentFlags().StringVar(&c.RedisDatabase, "redis-database", "0", "assign the redis database  default is 0")
+	return
 }
 
 type Service struct {
