@@ -1050,48 +1050,6 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 	return "", nil
 }
 
-var HostApplyFieldMap = map[string]bool{
-	common.BKOperatorField:        true,
-	common.BKBakOperatorField:     true,
-	"bk_state":                    true,
-	"bk_sla":                      true,
-	common.BKHostInnerIPField:     false,
-	common.BKHostOuterIPField:     false,
-	common.BKAssetIDField:         false,
-	common.BKSNField:              false,
-	"bk_comment":                  false,
-	"bk_service_term":             false,
-	common.BKCloudIDField:         false,
-	"bk_state_name":               false,
-	"bk_province_name":            false,
-	"bk_isp_name":                 false,
-	common.BKHostNameField:        false,
-	common.BKOSTypeField:          false,
-	common.BKOSNameField:          false,
-	"bk_os_version":               false,
-	"bk_os_bit":                   false,
-	"bk_cpu":                      false,
-	"bk_cpu_module":               false,
-	"bk_mem":                      false,
-	"bk_disk":                     false,
-	"bk_mac":                      false,
-	"bk_outer_mac":                false,
-	common.CreateTimeField:        false,
-	common.LastTimeField:          false,
-	common.BKImportFrom:           false,
-	common.BKCloudInstIDField:     false,
-	common.BKCloudHostStatusField: false,
-	common.BKCloudVendor:          false,
-}
-
-// CheckAllowHostApplyOnField 检查字段是否能用于主机属性自动应用
-func CheckAllowHostApplyOnField(field string) bool {
-	if allow, exist := HostApplyFieldMap[field]; exist == true {
-		return allow
-	}
-	return true
-}
-
 // SubAttribute sub attribute metadata definition
 type SubAttribute struct {
 	PropertyID    string      `field:"bk_property_id" json:"bk_property_id" bson:"bk_property_id"`

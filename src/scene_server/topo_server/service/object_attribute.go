@@ -307,7 +307,10 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 		if item == nil {
 			continue
 		}
-		hostApplyEnabled := metadata.CheckAllowHostApplyOnField(item.PropertyID)
+		hostApplyEnabled := false
+		if item.IsEditable {
+			hostApplyEnabled = true
+		}
 		hostAttribute := metadata.HostObjAttDes{
 			ObjAttDes:        *item,
 			HostApplyEnabled: hostApplyEnabled,

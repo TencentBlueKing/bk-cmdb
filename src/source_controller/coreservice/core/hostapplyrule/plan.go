@@ -214,7 +214,8 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 			blog.Infof("generateOneHostApplyPlan attribute id filed not exist, attributeID: %s, rid: %s", attributeID, rid)
 			continue
 		}
-		if metadata.CheckAllowHostApplyOnField(attribute.PropertyID) == false {
+		// 主机只读字段不能作为自定义属性
+		if !attribute.IsEditable {
 			continue
 		}
 		propertyIDField := attribute.PropertyID
@@ -368,6 +369,12 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option m
 		if len(updateData) == 0 {
 			result.HostResults = append(result.HostResults, applyResult)
 			continue
+		}
+		// 主机只读字段不能作为自定义属性
+		for _, attr := range planResult.HostAttributes {
+			if !attr.IsEditable {
+				delete(updateData, attr.PropertyID)
+			}
 		}
 
 		updateOption := metadata.UpdateOption{
