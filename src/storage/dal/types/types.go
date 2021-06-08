@@ -37,7 +37,7 @@ type Table interface {
 	Find(filter Filter, opts ...*FindOpts) Find
 	// Aggregate 聚合查询
 	AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error
-	AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error
+	AggregateAll(ctx context.Context, pipeline interface{}, result interface{}, opts ...*AggregateOpts) error
 	// Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 	Insert(ctx context.Context, docs interface{}) error
 	// Update 更新数据
@@ -134,4 +134,17 @@ func (f *FindOpts) SetWithObjectID(bl bool) *FindOpts {
 func (f *FindOpts) SetWithCount(bl bool) *FindOpts {
 	f.WithCount = &bl
 	return f
+}
+
+type AggregateOpts struct {
+	AllowDiskUse *bool
+}
+
+func NewAggregateOpts() *AggregateOpts {
+	return &AggregateOpts{}
+}
+
+func (a *AggregateOpts) SetAllowDiskUse(bl bool) *AggregateOpts {
+	a.AllowDiskUse = &bl
+	return a
 }
