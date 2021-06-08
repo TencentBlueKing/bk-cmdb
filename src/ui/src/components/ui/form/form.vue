@@ -1,5 +1,5 @@
 <template>
-    <div class="form-layout">
+    <cmdb-sticky-layout class="form-layout">
         <div class="form-groups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
                 <div class="property-group"
@@ -48,7 +48,9 @@
         </div>
         <div class="form-options"
             v-if="showOptions"
-            :class="{ sticky: scrollbar }">
+            slot="footer"
+            slot-scope="{ sticky }"
+            :class="{ sticky: sticky }">
             <slot name="form-options">
                 <span class="inline-block-middle"
                     v-cursor="{
@@ -65,12 +67,11 @@
             </slot>
             <slot name="extra-options"></slot>
         </div>
-    </div>
+    </cmdb-sticky-layout>
 </template>
 
 <script>
     import formMixins from '@/mixins/form'
-    import RESIZE_EVENTS from '@/utils/resize-events'
     export default {
         name: 'cmdb-form',
         mixins: [formMixins],
@@ -103,8 +104,7 @@
         data () {
             return {
                 values: {},
-                refrenceValues: {},
-                scrollbar: false
+                refrenceValues: {}
             }
         },
         computed: {
@@ -137,17 +137,7 @@
         created () {
             this.initValues()
         },
-        mounted () {
-            RESIZE_EVENTS.addResizeListener(this.$refs.formGroups, this.checkScrollbar)
-        },
-        beforeDestroy () {
-            RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
-        },
         methods: {
-            checkScrollbar () {
-                const $layout = this.$el
-                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
-            },
             initValues () {
                 this.values = this.$tools.getInstFormValues(this.properties, this.inst)
                 const timer = setTimeout(() => {
@@ -311,13 +301,11 @@
         bottom: 0;
         left: 0;
         width: 100%;
-        padding: 28px 32px 0;
         font-size: 0;
+        padding: 10px 32px;
         &.sticky {
-            padding: 10px 32px;
             border-top: 1px solid $cmdbBorderColor;
             background-color: #fff;
-            z-index: 100;
         }
         .button-save{
             min-width: 76px;
