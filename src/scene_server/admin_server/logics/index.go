@@ -371,14 +371,14 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 		// 上个周期不存在，不删除表
 		if _, exists := dt.preCleanRedundancyTableMap[name]; !exists {
 			// 下个周可以删除表的
-			blog.Errorf("skip redundant table(%s), reason: first appearance, err: %v", name)
+			blog.Errorf("skip redundant table(%s), reason: first appearance, rid: %s", name, dt.rid)
 			preCleanRedundancyTableMap[name] = struct{}{}
 			continue
 		}
 		// 检查是否有数据
 		cnt, err := dt.db.Table(name).Find(nil).Count(ctx)
 		if err != nil {
-			blog.Errorf("count table(%s) failed, skip, err: %v", name, err)
+			blog.Errorf("count table(%s) failed, skip, err: %v, rid: %s", name, err, dt.rid)
 			continue
 		}
 
@@ -407,7 +407,7 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 					Module:    types2.CC_MODULE_MIGRATE,
 					Dimension: map[string]string{"hit_clean_redundancy_table": "yes"},
 				})
-				blog.Errorf("find table(%s) one row error. err: %s, rid: %s", name, err.Error(), dt.rid)
+				blog.Errorf("drop collection(%s) failed, reason: find table has error, rid: %s", name, dt.rid)
 
 			}
 
