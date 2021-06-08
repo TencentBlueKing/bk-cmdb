@@ -102,11 +102,17 @@ mongodb以集群的方式启动，需加入参数--replSet,如--replSet=rs0
 
 注:rs0为集群名字，仅作展示，用户使用中可以根据实际情况自行配置
 
-接下来登陆MongoDB后执行以下命令:
+接下来登陆MongoDB后，根据需求执行以下命令:
 
+- 未开启ES情况(用于全文检索, 可选, 控制开关见第9步的full_text_search)
 ``` json
  > use cmdb
  > db.createUser({user: "cc",pwd: "cc",roles: [ { role: "readWrite", db: "cmdb" } ]})
+```
+- 开启ES情况(用于全文检索, 可选, 控制开关见第9步的full_text_search)
+``` json
+ > use cmdb
+ > db.createUser({user: "cc",pwd: "cc",roles: [ { role: "readWrite", db: "cmdb" },{ role: "readWrite", db: "monstache" } ]})
 ```
 
 **注：以上用户名、密码、数据库名仅作示例展示，用户使用中可以根据实际情况自行配置。如果安装的MongoDB的版本大于等于3.6，需要手动修改init.py自动生成的配置文件，详细步骤参看init.py相关小节。**
@@ -157,7 +163,9 @@ mongodb以集群的方式启动，需加入参数--replSet,如--replSet=rs0
 | resume-strategy          | 指定恢复策略。仅当resume为true时生效，详情请参见[resume-strategy](https://rwynn.github.io/monstache-site/config/#resume-strategy)。                                                                                                                                                                |
 | verbose                  | 默认为false，表示不启用调试日志。                                                                                                                                                                                                                                                                  |
 | cluster-name             | 指定集群名称。指定后，Monstache将进入高可用模式，集群名称相同的进程将进行协调，详情请参见[cluster-name](https://rwynn.github.io/monstache-site/config/#cluster-name)。                                                                                                                             |
-| mapping                  | 指定ES索引映射。默认情况下，数据从MongoDB同步到ES时，索引会自动映射为`数据库名.集合名`。如果需要修改索引名称，可通过该参数设置，详情请参见[Index Mapping](https://rwynn.github.io/monstache-site/advanced/#index-mapping)。                                                                        |
+| mapping                  | 指定ES索引映射。默认情况下，数据从MongoDB同步到ES时，索引会自动映射为`数据库名.集合名`。如果需要修改索引名称，可通过该参数设置，详情请参见[Index Mapping](https://rwynn.github.io/monstache-site/advanced/#index-mapping)。
+|
+* **注意事项：https://github.com/rwynn/monstache/pull/525 暂未合并，该PR解决使用namespace-regex 存在的bug**    
 
 **config.toml 内容举例如下：**
 
@@ -165,7 +173,7 @@ mongodb以集群的方式启动，需加入参数--replSet,如--replSet=rs0
 # cmdb connection settings
 
 # connect to MongoDB using the following URL
-mongo-url =  "mongodb://localhost:27017"
+mongo-url =  "mongodb://localhost:27017/cmdb"
 # connect to the Elasticsearch REST API at the following node URLs
 elasticsearch-urls = ["http://localhost:9200"]
 
