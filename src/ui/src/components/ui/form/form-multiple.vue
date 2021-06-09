@@ -1,5 +1,5 @@
 <template>
-    <div class="form-layout">
+    <cmdb-sticky-layout class="form-layout">
         <div class="form-groups" v-if="hasAvaliableGroups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
                 <div class="property-group"
@@ -53,7 +53,8 @@
         <div class="form-empty" v-else>
             {{$t('暂无可批量更新的属性')}}
         </div>
-        <div class="form-options" :class="{ sticky: scrollbar }">
+        <div class="form-options" slot="footer" slot-scope="{ sticky }"
+            :class="{ sticky: sticky }">
             <slot name="details-options">
                 <span class="inline-block-middle"
                     v-cursor="{
@@ -69,12 +70,11 @@
                 <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </slot>
         </div>
-    </div>
+    </cmdb-sticky-layout>
 </template>
 
 <script>
     import formMixins from '@/mixins/form'
-    import RESIZE_EVENTS from '@/utils/resize-events'
     export default {
         name: 'cmdb-form-multiple',
         mixins: [formMixins],
@@ -89,7 +89,6 @@
                 values: {},
                 refrenceValues: {},
                 editable: {},
-                scrollbar: false,
                 groupState: {
                     'none': true
                 }
@@ -144,19 +143,7 @@
             this.initValues()
             this.initEditableStatus()
         },
-        mounted () {
-            if (this.$refs.formGroups) {
-                RESIZE_EVENTS.addResizeListener(this.$refs.formGroups, this.checkScrollbar)
-            }
-        },
-        beforeDestroy () {
-            RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
-        },
         methods: {
-            checkScrollbar () {
-                const $layout = this.$el
-                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
-            },
             initValues () {
                 this.values = this.$tools.getInstFormValues(this.properties, {})
                 const timer = setTimeout(() => {
@@ -301,9 +288,8 @@
         bottom: 0;
         left: 0;
         width: 100%;
-        padding: 28px 32px 0;
+        padding: 10px 32px;
         &.sticky {
-            padding: 10px 32px;
             border-top: 1px solid $cmdbBorderColor;
             background-color: #fff;
         }

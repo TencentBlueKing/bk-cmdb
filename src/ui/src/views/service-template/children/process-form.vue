@@ -490,10 +490,9 @@
         bottom: 0;
         left: 0;
         width: 100%;
-        padding: 28px 32px 0;
+        padding: 10px 32px;
         font-size: 0;
         &.sticky {
-            padding: 10px 32px;
             border-top: 1px solid $cmdbBorderColor;
             background-color: #fff;
         }

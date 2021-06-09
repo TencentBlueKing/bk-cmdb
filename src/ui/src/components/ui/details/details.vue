@@ -1,5 +1,5 @@
 <template>
-    <div class="details-layout">
+    <cmdb-sticky-layout class="details-layout">
         <div ref="detailsWrapper">
             <slot name="details-header"></slot>
             <template v-for="(group, groupIndex) in $sortedGroups">
@@ -28,9 +28,9 @@
                 </div>
             </template>
         </div>
-        <div class="details-options"
+        <div class="details-options" slot="footer" slot-scope="{ sticky }"
             v-if="showOptions"
-            :class="{ sticky: scrollbar }">
+            :class="{ sticky: sticky }">
             <slot name="details-options">
                 <span class="inline-block-middle"
                     v-if="showEdit"
@@ -58,12 +58,11 @@
                 </span>
             </slot>
         </div>
-    </div>
+    </cmdb-sticky-layout>
 </template>
 
 <script>
     import formMixins from '@/mixins/form'
-    import RESIZE_EVENTS from '@/utils/resize-events'
     export default {
         name: 'cmdb-details',
         mixins: [formMixins],
@@ -114,17 +113,7 @@
                 return this.deleteButtonText || this.$t('删除')
             }
         },
-        mounted () {
-            RESIZE_EVENTS.addResizeListener(this.$refs.detailsWrapper, this.checkScrollbar)
-        },
-        beforeDestroy () {
-            RESIZE_EVENTS.removeResizeListener(this.$el.detailsWrapper, this.checkScrollbar)
-        },
         methods: {
-            checkScrollbar () {
-                const $layout = this.$el
-                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
-            },
             handleToggleGroup (group) {
                 const groupId = group['bk_group_id']
                 const collapse = !!this.groupState[groupId]
@@ -220,12 +209,10 @@
         position: sticky;
         bottom: 0;
         left: 0;
-        width: 100%;
-        padding: 28px 18px 0;
+        width: calc(100% + 32px);
+        padding: 10px 32px;
+        margin: 0 0 0 -40px;
         &.sticky {
-            width: calc(100% + 32px);
-            margin: 0 0 0 -40px;
-            padding: 10px 50px;
             border-top: 1px solid $cmdbBorderColor;
             background-color: #fff;
         }
