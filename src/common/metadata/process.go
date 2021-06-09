@@ -1496,7 +1496,7 @@ func (pt *ProcessProperty) Update(input ProcessProperty, rawProperty map[string]
 	selfVal := reflect.ValueOf(pt).Elem()
 	inputVal := reflect.ValueOf(input)
 	fieldCount := selfVal.NumField()
-	updateIgnoreField := []string{"FuncName", "ProcessName"}
+	updateIgnoreField := []string{"FuncName"}
 	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
 		fieldName := selfType.Field(fieldIdx).Name
 		if util.InArray(fieldName, updateIgnoreField) == true {
