@@ -4,7 +4,7 @@
       <span class="classify-name-text">{{classify['bk_classification_name']}}</span>
     </h4>
     <div class="models-layout">
-      <div class="models-link" v-for="(model, index) in classify['bk_objects']"
+      <div class="models-link" v-for="(model, index) in models"
         :key="index"
         :title="model['bk_obj_name']"
         @click="redirect(model)">
@@ -14,7 +14,9 @@
           :class="[isCollected(model) ? 'icon-star-shape' : 'icon-star']"
           @click.prevent.stop="toggleCustomNavigation(model)">
         </i>
-        <span class="model-instance-count">{{getInstanceCount(model)}}</span>
+        <div class="model-instance-count">
+          <instance-count :obj-id="model.bk_obj_id" />
+        </div>
       </div>
     </div>
   </div>
@@ -31,14 +33,14 @@
     MENU_RESOURCE_BUSINESS_COLLECTION
   } from '@/dictionary/menu-symbol'
   import has from 'has'
+  import InstanceCount from './instance-count.vue'
   export default {
+    components: {
+      InstanceCount
+    },
     props: {
       classify: {
         type: Object,
-        required: true
-      },
-      instanceCount: {
-        type: Array,
         required: true
       },
       collection: {
@@ -55,16 +57,12 @@
       ...mapGetters('userCustom', ['usercustom']),
       collectedCount() {
         return this.collection.length
+      },
+      models() {
+        return this.classify.bk_objects
       }
     },
     methods: {
-      getInstanceCount(model) {
-        const data = this.instanceCount.find(data => data.bk_obj_id === model.bk_obj_id)
-        if (data) {
-          return data.instance_count
-        }
-        return 0
-      },
       redirect(model) {
         const map = {
           host: MENU_RESOURCE_HOST,
@@ -207,12 +205,16 @@
             }
             .model-instance-count {
                 float: right;
+                @include inlineBlock;
                 width: 35px;
                 font-size: 14px;
+                height: 24px;
                 line-height: 24px;
                 color: #C4C6CC;
                 text-align: right;
-                @include inlineBlock;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
             }
             .model-star{
                 display: none;
