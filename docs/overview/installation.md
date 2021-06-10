@@ -134,7 +134,7 @@ mongodb以集群的方式启动，需加入参数--replSet,如--replSet=rs0
 
 ### 7.  部署Monstache (用于全文检索, 可选, 控制开关见第9步的full_text_search)
 
-官方仓库 [Monstache](https://github.com/rwynn/monstache/releases)
+ [下载 Monstache 可执行文件](https://github.com/rentiansheng/monstache/tree/rel6_release/build)
 
 **Monstache-Mongodb-Es 版本关系:**
 
@@ -165,7 +165,7 @@ mongodb以集群的方式启动，需加入参数--replSet,如--replSet=rs0
 | cluster-name             | 指定集群名称。指定后，Monstache将进入高可用模式，集群名称相同的进程将进行协调，详情请参见[cluster-name](https://rwynn.github.io/monstache-site/config/#cluster-name)。                                                                                                                             |
 | mapping                  | 指定ES索引映射。默认情况下，数据从MongoDB同步到ES时，索引会自动映射为`数据库名.集合名`。如果需要修改索引名称，可通过该参数设置，详情请参见[Index Mapping](https://rwynn.github.io/monstache-site/advanced/#index-mapping)。
 |
-* **注意事项：https://github.com/rwynn/monstache/pull/525 暂未合并，该PR解决使用namespace-regex 存在的bug**    
+ 
 
 **config.toml 内容举例如下：**
 
