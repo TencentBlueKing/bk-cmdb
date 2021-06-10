@@ -1,8 +1,0 @@
-add test file
-commit first
-add one
-add two
-add three
-add four
-add file
-add six
