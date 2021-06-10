@@ -290,7 +290,7 @@ denyall配置为false的情况下，limit和ttl配置才能生效
              		"init_distro_version": "XXXX.XXXX.XXXX"
              	}
              ]
-             total data num is 1 
+             total data num is 1
      ```
      ```
          显示指定DB中的所有collections
@@ -301,7 +301,7 @@ denyall配置为false的情况下，limit和ttl配置才能生效
              cc_test3
              cc_test4
              cc_test5
-             total collection num is 5 
+             total collection num is 5
      ```
      ```
           对DB进行删除操作示例:

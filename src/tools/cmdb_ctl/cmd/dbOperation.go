@@ -178,7 +178,7 @@ func runDelDbDataCmd(conf *dbOperationConf) error {
 			delCond map[string]interface{}
 		)
 		dataArr := make([]delData, 0)
-		err := s.DbProxy.Table(conf.delParam.colName).Find(cond).Fields("_id").Start(0).
+		err := s.DbProxy.Table(conf.delParam.colName).Find(cond).Sort("_id").Fields("_id").Start(0).
 			Limit(common.BKMaxPageSize).All(ctx, &dataArr)
 		if err != nil {
 			fmt.Printf("find previous del archive data failed, err: %v \n", err)
