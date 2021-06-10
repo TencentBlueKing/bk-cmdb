@@ -217,6 +217,7 @@ func (c *DynamicGroupInfoCondition) Validate(validatefunc Validatefunc) error {
 
 	case common.BKInnerObjIDHost:
 		attributeMap[common.BKHostIDField] = common.FieldTypeInt
+		attributeMap[common.BKCloudIDField] = common.FieldTypeInt
 	}
 
 	blog.Infof("validate info conditions, object[%s] attributes[%+v]", c.ObjID, attributeMap)
