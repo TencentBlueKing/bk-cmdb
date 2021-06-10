@@ -1281,8 +1281,9 @@ func (pt *ProcessTemplate) ExtractEditableFields() []string {
 	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) == false {
 		editableFields = append(editableFields, "start_cmd")
 	}
-	//
-	editableFields = append(editableFields, common.BKProcBindInfo)
+	if IsAsDefaultValue(property.BindInfo.AsDefaultValue) {
+		editableFields = append(editableFields, common.BKProcBindInfo)
+	}
 
 	return editableFields
 }
