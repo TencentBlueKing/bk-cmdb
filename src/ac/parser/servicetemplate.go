@@ -145,6 +145,15 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		BizIndex:       7,
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.FindMany,
+	}, {
+		Name:           "GetServiceTemplateSyncStatus",
+		Description:    "查询服务模版的同步状态",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/service_template/sync_status/biz/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.FindMany,
 	},
 }
 
