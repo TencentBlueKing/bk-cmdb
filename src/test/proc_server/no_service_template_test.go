@@ -860,14 +860,11 @@ var _ = Describe("no service template test", func() {
 
 		It("update process instances by their ids", func() {
 			input := &metadata.UpdateProcessByIDsInput{
-				BizID: bizId,
-				Processes: []metadata.UpdateProcessByIDsInfo{{
-					ProcessIDs:        []int64{processId},
-					ProcessTemplateID: 0,
-					UpdateData: map[string]interface{}{
-						common.BKDescriptionField: "aaa",
-					},
-				}},
+				BizID:      bizId,
+				ProcessIDs: []int64{processId},
+				UpdateData: map[string]interface{}{
+					common.BKDescriptionField: "aaa",
+				},
 			}
 			rsp, err := processClient.UpdateProcessInstancesByIDs(context.Background(), header, input)
 			util.RegisterResponse(rsp)
