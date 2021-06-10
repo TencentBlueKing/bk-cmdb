@@ -13,10 +13,12 @@
 package cmd
 
 import (
-	"configcenter/src/storage/dal/redis"
-	"configcenter/src/tools/cmdb_ctl/app/config"
 	"context"
 	"fmt"
+
+	"configcenter/src/storage/dal/redis"
+	"configcenter/src/tools/cmdb_ctl/app/config"
+
 	"github.com/spf13/cobra"
 )
 
@@ -32,6 +34,7 @@ type redisOperation struct {
 }
 
 func NewRedisOperationCommand() *cobra.Command {
+
 	conf := new(redisOperation)
 	cmd := &cobra.Command{
 		Use:   "redis",
@@ -40,17 +43,18 @@ func NewRedisOperationCommand() *cobra.Command {
 			_ = cmd.Help()
 		},
 	}
+
 	scanCmds := make([]*cobra.Command, 0)
 	scanCmd := &cobra.Command{
 		Use:   "scan",
-		Short: "scan the redis",
+		Short: "redis scan operation",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runRedisScan(conf)
 		},
 	}
 	scanCmd.Flags().Uint64Var(&conf.cursor, "cursor", 0, "redis scan cursor default is 0")
-	scanCmd.Flags().StringVar(&conf.match, "match", "", "redis scan  match pattern  default is null")
-	scanCmd.Flags().Int64Var(&conf.count, "count", 10, "redis scan count default value is 10")
+	scanCmd.Flags().StringVar(&conf.match, "match", "", "redis scan  match pattern, default is null")
+	scanCmd.Flags().Int64Var(&conf.count, "count", 10, "redis scan count, default value is 10")
 
 	scanCmds = append(scanCmds, scanCmd)
 	for _, fCmd := range scanCmds {
@@ -60,13 +64,13 @@ func NewRedisOperationCommand() *cobra.Command {
 	delCmds := make([]*cobra.Command, 0)
 	delCmd := &cobra.Command{
 		Use:   "del",
-		Short: "del the keys",
+		Short: "redis del operation",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runRedisDel(conf)
 		},
 	}
 
-	delCmd.Flags().StringSliceVar(&conf.keys, "keys", []string{}, "del keys default is null")
+	delCmd.Flags().StringSliceVar(&conf.keys, "keys", []string{}, "del keys,the parameter must be assigned ")
 
 	delCmds = append(delCmds, delCmd)
 	for _, fCmd := range delCmds {
@@ -77,26 +81,31 @@ func NewRedisOperationCommand() *cobra.Command {
 }
 
 func runRedisScan(conf *redisOperation) error {
+
 	redisCfg := redis.Config{
 		Address:  config.Conf.RedisAddr + ":" + config.Conf.RedisPort,
 		Password: config.Conf.RedisPwd,
 		Database: config.Conf.RedisDatabase,
 	}
+
 	redisCli, err := redis.NewFromConfig(redisCfg)
 	if err != nil {
 		fmt.Printf("connect redis fail  err :%v.\n", err)
 		return err
 	}
+
 	ctx := context.Background()
 	res := redisCli.Scan(ctx, conf.cursor, conf.match, conf.count)
 	keys, cursor := res.Val()
-	fmt.Printf("keys is begin ======================================\n")
 
+	fmt.Printf("keys is begin:\n")
 	for _, v := range keys {
 		fmt.Printf("%v \n", v)
 	}
-	fmt.Printf("keys is end ======================================\n")
+	fmt.Printf("keys is end \n")
+
 	fmt.Printf("cursor is %d \n", cursor)
+
 	return nil
 }
 func runRedisDel(conf *redisOperation) error {
@@ -106,18 +115,19 @@ func runRedisDel(conf *redisOperation) error {
 		Password: config.Conf.RedisPwd,
 		Database: config.Conf.RedisDatabase,
 	}
+
 	redisCli, err := redis.NewFromConfig(redisCfg)
 	if err != nil {
-		fmt.Printf("connect redis fail  err :%v.\n", err)
+		fmt.Printf("connect redis fail err :%v.\n", err)
 		return err
 	}
-	ctx := context.Background()
-	err = redisCli.Del(ctx, conf.keys...).Err()
+
+	err = redisCli.Del(context.Background(), conf.keys...).Err()
 	if err != nil {
 		fmt.Printf("del the keys fail err:%v \n", err)
 		return err
-	} else {
-		fmt.Printf("del keys success !\n")
-		return nil
 	}
+
+	fmt.Printf("del keys success !\n")
+	return nil
 }
