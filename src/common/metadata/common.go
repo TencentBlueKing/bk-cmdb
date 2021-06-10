@@ -414,7 +414,7 @@ func (f *CommonSearchFilter) Validate() (string, error) {
 	}
 
 	// validate page parameter.
-	if err := f.Page.ValidateLimit(common.BKMaxInstanceLimit); err != nil {
+	if err := f.Page.ValidateLimit(common.BKMaxInstanceLimit, 0); err != nil {
 		return "page.limit", err
 	}
 

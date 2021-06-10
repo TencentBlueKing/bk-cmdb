@@ -53,7 +53,11 @@ func (page BasePage) IsIllegal() bool {
 }
 
 // ValidateLimit validates target page limit.
-func (page BasePage) ValidateLimit(maxLimit int) error {
+func (page BasePage) ValidateLimit(maxLimit, defaultLimit int) error {
+	if page.Limit == 0 {
+		page.Limit = defaultLimit
+	}
+
 	if page.Limit == 0 {
 		return fmt.Errorf("page limit must not be zero")
 	}
