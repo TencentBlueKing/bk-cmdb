@@ -40,6 +40,7 @@ func (c *Config) AddFlags(cmd *cobra.Command) {
 	// TODO add zkuser and zkpwd
 	cmd.PersistentFlags().StringVar(&c.MongoURI, "mongo-uri", os.Getenv("MONGO_URI"), "the mongodb URI, eg. mongodb://127.0.0.1:27017/cmdb, corresponding environment variable is MONGO_URI")
 	cmd.PersistentFlags().StringVar(&c.MongoRsName, "mongo-rs-name", "rs0", "mongodb replica set name")
+	return
 }
 
 type Service struct {

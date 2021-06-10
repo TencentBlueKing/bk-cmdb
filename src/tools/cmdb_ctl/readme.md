@@ -309,3 +309,49 @@ denyall配置为false的情况下，limit和ttl配置才能生效
           回显样式
               delete total data num is 3
      ```
+     
+### Redis操作(目前支持scan操作)
+- 使用方式
+     ```
+         ./tool_ctl redis [flags]
+         ./tool_ctl redis [command]
+     ```
+- 子命令
+     ```
+          scan            scan the redis
+          scan-del        del scanned keys
+     ```     
+     
+- 命令行参数
+     ```
+          count            redis scan count default value is 10
+          cursor           redis scan cursor default is 0
+          match            redis scan  match pattern  default is null
+          zk-addr          zk address where the redis configuration file is stored  
+     ```
+- 示例
+     ```
+         对Redis进行 scan 操作示例:
+             ./tool_ctl redis scan --zk-addr="127.0.0.1:2181"  --match="*test*" --conut 50  
+         回显样式:
+             keys is begin :
+             test 
+             test1 
+             keys is end
+             cursor is 2 
+          对Redis进行 scan-del 操作示例:
+             ./tool_ctl redis scan-del --zk-addr="127.0.0.1:2181"  --match="*test*" --count=50
+          回显样式:  
+             Authenticated: id=72057595548992723, timeout=40000
+             Re-submitting `0` credentials after reconnect
+             keys is begin :
+             test0
+             test1
+             test2
+             test3
+             test4
+             test5
+             keys is end
+             del keys success ,total num is 6
+             cursor is 0
+     ```

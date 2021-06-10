@@ -121,6 +121,10 @@ func (c *client) HScan(ctx context.Context, key string, cursor uint64, match str
 	return c.cli.HScan(key, cursor, match, count)
 }
 
+func (c *client) Scan(ctx context.Context, cursor uint64, match string, count int64) ScanResult {
+	return c.cli.Scan(cursor, match, count)
+}
+
 func (c *client) HSet(ctx context.Context, key string, values ...interface{}) IntResult {
 	return c.cli.HSet(key, values...)
 }

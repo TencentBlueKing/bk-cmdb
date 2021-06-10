@@ -324,7 +324,7 @@ func newMongo(mongoURI string, mongoRsName string) (*config.Service, error) {
 		URI:          mongoURI,
 		RsName:       mongoRsName,
 	}
-
+	
 	db, err := local.NewMgo(mongoConfig, time.Minute)
 	if err != nil {
 		return nil, err
