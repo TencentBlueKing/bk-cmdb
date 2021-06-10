@@ -256,10 +256,6 @@
                     }
                 }
                 &:hover {
-                    // 试用操作列替代聚合菜单
-                    // .instance-dot-menu {
-                    //     display: inline-block;
-                    // }
                     .tag-edit {
                         visibility: visible;
                     }
@@ -277,12 +273,6 @@
                         display: none;
                         cursor: not-allowed;
                     }
-                }
-                td {
-                    position: sticky;
-                    top: 0;
-                    z-index: 1;
-                    background-color: #fff;
                 }
             }
             .bk-table-expanded-cell {

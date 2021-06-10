@@ -39,7 +39,10 @@
       }
     },
     computed: {
-      ...mapGetters('objectBiz', ['bizId'])
+      ...mapGetters('objectBiz', ['bizId']),
+      selectedNode() {
+        return this.$store.state.businessHost.selectedNode
+      }
     },
     watch: {
       instance: {
