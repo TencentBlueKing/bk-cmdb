@@ -120,7 +120,7 @@ func splitInstAsstTable(ctx context.Context, db dal.RDB) error {
 	workerChn := initWorkerChn(maxWorkNumber)
 	errChn := make(chan error, maxWorkNumber)
 	for {
-		blog.Infof("find instance association detail info list. start: ", start)
+		blog.Infof("find instance association detail info list. start: %d", start)
 		asstList := make([]map[string]interface{}, pageSize)
 		if err := query.Start(start).All(ctx, &asstList); err != nil {
 			return fmt.Errorf("find inst association list error. err: %s", err.Error())
@@ -203,7 +203,7 @@ func splitInstTable(ctx context.Context, db dal.RDB) error {
 	errChn := make(chan error, maxWorkNumber)
 
 	for {
-		blog.Infof("find instance detail info list. start: ", start)
+		blog.Infof("find instance detail info list. start: %d", start)
 		insts := make([]map[string]interface{}, pageSize)
 		if err := query.Start(start).All(ctx, &insts); err != nil {
 			return fmt.Errorf("find inst list error. err: %s", err.Error())
