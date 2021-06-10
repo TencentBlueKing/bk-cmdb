@@ -202,12 +202,12 @@
         const { condition: subCondition = {} } = condition
         const usefulSubCondition = []
         Object.keys(subCondition).forEach((key) => {
-          const [operatior, value] = subCondition[key]
+          const [operator, value] = subCondition[key]
           const conditionValue = useCondition({ [key]: value })
           if (Object.keys(conditionValue).length) {
             usefulSubCondition.push({
               field: key,
-              operatior,
+              operator,
               value: conditionValue[key]
             })
           }
@@ -219,7 +219,7 @@
           const { fuzzy_query: fuzzy } = usefulCondition
           usefulSubCondition.push({
             field: 'resource_name',
-            operatior: fuzzy ? 'contains' : 'in',
+            operator: fuzzy ? 'contains' : 'in',
             value: fuzzy ? usefulCondition.resource_name : [usefulCondition.resource_name]
           })
           delete usefulCondition.resource_name
