@@ -705,62 +705,10 @@ func (ps *ProcServer) validateRawInstanceUnique(kit *rest.Kit, bizID int64, serv
 	}
 
 	processName := process[common.BKProcessNameField]
-	processFuncName, processFuncNameExists := process[common.BKFuncName]
-	processStartParam, processStartParamExists := process[common.BKStartParamRegex]
-	processID, _ := util.GetInt64ByInterface(process[common.BKProcIDField])
-
-	processOrCond := make([]map[string]interface{}, 0)
-	if processName != nil {
-		processName = util.GetStrByInterface(processName)
-		processNameCond := map[string]interface{}{common.BKProcessNameField: processName}
-		processOrCond = append(processOrCond, processNameCond)
-	}
-
-	if processFuncName != nil || processStartParam != nil {
-		if !processFuncNameExists || !processStartParamExists {
-			procCond := &metadata.QueryCondition{
-				Condition: map[string]interface{}{
-					common.BKProcessIDField: processID,
-				},
-				Fields: []string{common.BKProcessNameField, common.BKFuncName, common.BKStartParamRegex},
-			}
-
-			processRes, err := ps.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
-				common.BKInnerObjIDProc, procCond)
-			if err != nil {
-				blog.Errorf("search process by id(%d) failed, err: %v, rid: %s", processID, err, kit.Rid)
-				return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-			}
-
-			if len(processRes.Data.Info) != 1 {
-				msg := fmt.Sprintf("[%s: %d]", common.BKProcessIDField, processID)
-				return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, msg)
-			}
-
-			if !processFuncNameExists {
-				processFuncName = processRes.Data.Info[0][common.BKFuncName]
-			}
-
-			if !processStartParamExists {
-				processStartParam = processRes.Data.Info[0][common.BKStartParamRegex]
-			}
-		}
-
-		if processFuncName != nil {
-			processFuncName = util.GetStrByInterface(processFuncName)
-			processFuncNameCond := map[string]interface{}{common.BKFuncName: processFuncName}
-
-			if processStartParam != nil {
-				processStartParam = util.GetStrByInterface(processStartParam)
-				processFuncNameCond[common.BKStartParamRegex] = processStartParam
-			}
-			processOrCond = append(processOrCond, processFuncNameCond)
-		}
-	}
-
-	if len(processOrCond) == 0 {
+	if processName == nil {
 		return nil
 	}
+	processName = util.GetStrByInterface(processName)
 
 	// find process under service instance
 	relationOption := &metadata.ListProcessInstanceRelationOption{
@@ -778,6 +726,7 @@ func (ps *ProcServer) validateRawInstanceUnique(kit *rest.Kit, bizID int64, serv
 	}
 
 	existProcessIDs := make([]int64, 0)
+	processID, _ := util.GetInt64ByInterface(process[common.BKProcIDField])
 	for _, relation := range relations.Info {
 		// exclude the process itself
 		if relation.ProcessID != processID {
@@ -792,12 +741,12 @@ func (ps *ProcServer) validateRawInstanceUnique(kit *rest.Kit, bizID int64, serv
 		common.BKProcessIDField: map[string]interface{}{
 			common.BKDBIN: existProcessIDs,
 		},
-		common.BKDBOR: processOrCond,
+		common.BKProcessNameField: processName,
 	}
 
 	filterCond := &metadata.QueryCondition{
 		Condition: mapstr.MapStr(filter),
-		Fields:    []string{common.BKProcessNameField, common.BKFuncName, common.BKStartParamRegex},
+		Fields:    []string{common.BKProcessIDField},
 	}
 
 	listResult, e := ps.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKProcessObjectName, filterCond)
@@ -807,26 +756,10 @@ func (ps *ProcServer) validateRawInstanceUnique(kit *rest.Kit, bizID int64, serv
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	for _, proc := range listResult.Data.Info {
-		// check process name unique
-		if processName != nil {
-			if procName, _ := proc.String(common.BKProcessNameField); procName == processName {
-				blog.ErrorJSON("bk_process_name duplicated under service instance, serviceInstance: %s, "+
-					"filterCond: %s, err: %s, rid: %s", serviceInstanceID, filterCond, err, kit.Rid)
-				return kit.CCError.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, procName)
-			}
-		}
-
-		// check funcName+startParamRegex unique
-		if processFuncName != nil {
-			funcName, _ := proc.String(common.BKFuncName)
-			startParamRegex, _ := proc.String(common.BKStartParamRegex)
-			if funcName == processFuncName && startParamRegex == processStartParam {
-				blog.ErrorJSON("bk_func_name & bk_start_param_regex duplicated under service instance, "+
-					"serviceInstance: %s, filterCond: %s, rid: %s", serviceInstanceID, filterCond, kit.Rid)
-				return kit.CCError.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated, funcName, startParamRegex)
-			}
-		}
+	if len(listResult.Data.Info) > 0 {
+		blog.ErrorJSON("bk_process_name duplicated under service instance, serviceInstance: %s, filterCond: %s, "+
+			"duplicate processes: %s, rid: %s", serviceInstanceID, filterCond, listResult.Data.Info, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, processName)
 	}
 
 	return nil
@@ -838,11 +771,7 @@ func (ps *ProcServer) validateManyRawInstanceUnique(ctx *rest.Contexts, serviceI
 	rid := ctx.Kit.Rid
 
 	processNamesMap := make(map[string]bool)
-	processFuncNamesMap := make(map[string]bool)
 	originalProcessIDMap := make(map[int64]bool)
-	// joinStr is used to join processFuncName and startParamRegex as a unique key
-	// to prevent misjudgment, consider the scene: 'aa'+ 'bb' == 'aaa' + 'b', but 'aa' + '*_*' + 'b' != 'aa'+ '*_*' + 'bb'
-	joinStr := "*_*"
 
 	for _, processData := range processDatas {
 		process := new(metadata.Process)
@@ -866,16 +795,6 @@ func (ps *ProcServer) validateManyRawInstanceUnique(ctx *rest.Contexts, serviceI
 			return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, *process.ProcessName)
 		}
 		processNamesMap[*process.ProcessName] = true
-
-		startParamRegex := ""
-		if process.StartParamRegex != nil {
-			startParamRegex = *process.StartParamRegex
-		}
-		funcNameUnique := *process.FuncName + joinStr + startParamRegex
-		if processFuncNamesMap[funcNameUnique] == true {
-			return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated, *process.FuncName, startParamRegex)
-		}
-		processFuncNamesMap[funcNameUnique] = true
 
 		if process.ProcessID != 0 {
 			originalProcessIDMap[process.ProcessID] = true
@@ -918,7 +837,7 @@ func (ps *ProcServer) validateManyRawInstanceUnique(ctx *rest.Contexts, serviceI
 
 	filterCond := &metadata.QueryCondition{
 		Condition: mapstr.MapStr(filter),
-		Fields:    []string{common.BKProcessNameField, common.BKFuncName, common.BKStartParamRegex},
+		Fields:    []string{common.BKProcessNameField},
 	}
 
 	listResult, e := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKProcessObjectName, filterCond)
@@ -934,15 +853,6 @@ func (ps *ProcServer) validateManyRawInstanceUnique(ctx *rest.Contexts, serviceI
 			blog.ErrorJSON("validateManyRawInstanceUnique failed, bk_process_name duplicated under service instance, serviceInstanceID: %s, filterCond: %s, err: %s, rid: %s",
 				serviceInstance.ID, filterCond, err, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, procName)
-		}
-
-		// check funcName && startParamRegex unique
-		funcName, _ := proc.String(common.BKFuncName)
-		startParamRegex, _ := proc.String(common.BKStartParamRegex)
-		if processFuncNamesMap[funcName+joinStr+startParamRegex] {
-			blog.ErrorJSON("validateManyRawInstanceUnique failed, bk_process_name duplicated under service instance, serviceInstance: %s, filterCond: %s, rid: %s",
-				serviceInstance.ID, filterCond, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated, funcName, startParamRegex)
 		}
 	}
 
