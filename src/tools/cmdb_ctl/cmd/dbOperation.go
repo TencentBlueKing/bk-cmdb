@@ -14,30 +14,32 @@ package cmd
 
 import (
 	"bytes"
-	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/tools/cmdb_ctl/app/config"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
+	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/tools/cmdb_ctl/app/config"
+
 	"github.com/spf13/cobra"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
-	"os"
-	"strings"
-	"time"
 )
 
 const (
-	MaxDeleteNum      = 1000
-	MaxDeleteBatchNum = 300
+	maxDeleteNum      = 1000
+	maxDeleteBatchNum = 300
 )
 const (
-	DefaultClientMaxOpenConns     = 10
-	MinimumClientMaxIdleOpenConns = 5
+	defaultClientMaxOpenConns     = 10
+	minimumClientMaxIdleOpenConns = 5
 )
 
 func init() {
@@ -68,12 +70,14 @@ type delData struct {
 
 //  db
 //    --find
-//             --colName(collection name) --condition（查询的条件） --resfilter（结果是否需要过滤指定字段） --pretty（是否需要采用json格式返回） --num（返回的数量默认值是5）
+
+//             --colName(collection name) --condition（查询的条件） --resfilter（结果是否需要过滤指定字段） --pretty（是否需要采用json pretty格式返回） --num（返回的数量默认值是5）
 //    --delete
 //             --colName（collection name）--condition（删除的条件）
 //    --show
 
 func NewDbOperationCommand() *cobra.Command {
+
 	conf := new(dbOperationConf)
 	cmd := &cobra.Command{
 		Use:   "db",
@@ -91,11 +95,12 @@ func NewDbOperationCommand() *cobra.Command {
 			return runFindDbDataCmd(conf)
 		},
 	}
-	findCmd.Flags().StringVar(&conf.findParam.colName, "collection", "", "collection name")
-	findCmd.Flags().StringVar(&conf.findParam.condition, "condition", "", "query conditions")
-	findCmd.Flags().StringVar(&conf.findParam.resfilter, "resfilter", "", "display the required fields")
-	findCmd.Flags().Int32Var(&conf.findParam.num, "num", 5, "numbers of result to show")
-	findCmd.Flags().BoolVar(&conf.findParam.bPretty, "pretty", false, "query result are displayed in json format")
+
+	findCmd.Flags().StringVar(&conf.findParam.colName, "collection", "", "collection name,the param must be assigned")
+	findCmd.Flags().StringVar(&conf.findParam.condition, "condition", "", "query conditions ,the parameter must be json format string")
+	findCmd.Flags().StringVar(&conf.findParam.resfilter, "resfilter", "", "display the required fields ,the fieds link with comma")
+	findCmd.Flags().Int32Var(&conf.findParam.num, "num", 5, "numbers of result to show ,default num is 5 ")
+	findCmd.Flags().BoolVar(&conf.findParam.bPretty, "pretty", false, "query result are displayed in json pretty format")
 
 	findCmds = append(findCmds, findCmd)
 	for _, fCmd := range findCmds {
@@ -111,8 +116,8 @@ func NewDbOperationCommand() *cobra.Command {
 		},
 	}
 
-	delCmd.Flags().StringVar(&conf.delParam.colName, "collection", "", "collection name")
-	delCmd.Flags().StringVar(&conf.delParam.condition, "condition", "", "conditions for deletion")
+	delCmd.Flags().StringVar(&conf.delParam.colName, "collection", "", "collection name,the parameter must be assigned")
+	delCmd.Flags().StringVar(&conf.delParam.condition, "condition", "", "conditions for deletion,the parameter must be json format string")
 	delCmds = append(delCmds, delCmd)
 	for _, dCmd := range delCmds {
 		cmd.AddCommand(dCmd)
@@ -157,11 +162,12 @@ func runDelDbDataCmd(conf *dbOperationConf) error {
 		return err
 	}
 
-	if total > MaxDeleteNum {
+	if total > maxDeleteNum {
 		errInfo := fmt.Sprintf("number of data to delete is %d,over the max delete number 1000.", total)
 		return errors.New(errInfo)
 	}
-	if total < MaxDeleteBatchNum {
+
+	if total < maxDeleteBatchNum {
 		if err = s.DbProxy.Table(conf.delParam.colName).Delete(ctx, cond); err != nil {
 			fmt.Printf("delete data failed, err: %s \n", err.Error())
 			return err
@@ -192,13 +198,14 @@ func runDelDbDataCmd(conf *dbOperationConf) error {
 			if start >= len(delMongoIDs) {
 				break
 			}
-			if start+MaxDeleteBatchNum > len(delMongoIDs) {
+
+			if start+maxDeleteBatchNum > len(delMongoIDs) {
 				delCond = map[string]interface{}{
 					"_id": map[string]interface{}{common.BKDBIN: delMongoIDs[start:]},
 				}
 			} else {
 				delCond = map[string]interface{}{
-					"_id": map[string]interface{}{common.BKDBIN: delMongoIDs[start : start+MaxDeleteBatchNum]},
+					"_id": map[string]interface{}{common.BKDBIN: delMongoIDs[start : start+maxDeleteBatchNum]},
 				}
 			}
 
@@ -207,12 +214,13 @@ func runDelDbDataCmd(conf *dbOperationConf) error {
 				return err
 			}
 			time.Sleep(50 * time.Millisecond)
-			start = start + MaxDeleteBatchNum
+
+			start = start + maxDeleteBatchNum
 		}
 
 	}
 
-	fmt.Printf("############## delete total data num is %d ##############\n", total)
+	fmt.Printf(" delete total data num is %d\n", total)
 
 	return nil
 }
@@ -235,9 +243,11 @@ func runFindDbDataCmd(conf *dbOperationConf) error {
 	filter := strings.Split(conf.findParam.resfilter, ",")
 	resultMany := make([]map[string]interface{}, 0)
 
-	if err = s.DbProxy.Table(conf.findParam.colName).Find(cond).Fields(filter...).Limit(uint64(conf.findParam.num)).Sort("create_time").All(context.Background(), &resultMany); err != nil {
-		return fmt.Errorf("query topo model mainline association from db failed, %+v", err)
+	if err = s.DbProxy.Table(conf.findParam.colName).Find(cond).Fields(filter...).Limit(uint64(conf.findParam.num)).
+		Sort("create_time").All(context.Background(), &resultMany); err != nil {
+		return fmt.Errorf("find the result from db failed, %+v", err)
 	}
+
 	dbJSON, err := json.Marshal(resultMany)
 	if err != nil {
 		fmt.Printf("condition  convert to MapStr fail ,err: %v\n", err)
@@ -246,7 +256,7 @@ func runFindDbDataCmd(conf *dbOperationConf) error {
 
 	if conf.findParam.bPretty {
 		var out bytes.Buffer
-		err = json.Indent(&out, dbJSON, "", "\t")
+		err = json.Indent(&out, dbJSON, "", "    ")
 		if err != nil {
 			fmt.Printf("condition  convert to MapStr fail ,err: %v\n", err)
 			return err
@@ -260,14 +270,16 @@ func runFindDbDataCmd(conf *dbOperationConf) error {
 
 	total, totalerr := s.DbProxy.Table(conf.findParam.colName).Find(cond).Fields(filter...).Count(context.Background())
 	if totalerr != nil {
-		fmt.Printf("############## find the total data num is something wrong err: %v ##############\n", totalerr)
+		fmt.Printf("find the total data num is something wrong err: %v \n", totalerr)
 	} else {
-		fmt.Printf("############## total data num is %d ##############\n", total)
+		fmt.Printf("total data num is %d \n", total)
 	}
+
 	return nil
 }
 
 func runShowDbDataCmd() error {
+
 	s, err := newMongo(config.Conf.MongoURI, config.Conf.MongoRsName)
 	if err != nil {
 		fmt.Printf("connect mongo db fail ,err: %v\n", err)
@@ -280,10 +292,12 @@ func runShowDbDataCmd() error {
 		fmt.Printf("parse dbname fail ,err: %v\n", err)
 		return err
 	}
+
 	mongo, ok := s.DbProxy.(*local.Mongo)
 	if !ok {
 		return fmt.Errorf("db is not local.Mongo type")
 	}
+
 	cols, err := mongo.GetDBClient().Database(connStr.Database).ListCollectionNames(context.Background(), bson.D{})
 	if err != nil {
 		fmt.Printf("get collections fail ,err: %v\n", err)
@@ -296,24 +310,30 @@ func runShowDbDataCmd() error {
 	for _, col := range cols {
 		fmt.Printf("%s\n", col)
 	}
-	fmt.Printf("############## total collection num is %d ##############\n", len(cols))
+
+	fmt.Printf("total collection num is %d \n", len(cols))
+
 	return nil
 }
 
 func newMongo(mongoURI string, mongoRsName string) (*config.Service, error) {
+
 	if mongoURI == "" {
 		return nil, errors.New("mongo-uri must set via flag or environment variable")
 	}
+
 	mongoConfig := local.MongoConf{
-		MaxOpenConns: DefaultClientMaxOpenConns,
-		MaxIdleConns: MinimumClientMaxIdleOpenConns,
+		MaxOpenConns: defaultClientMaxOpenConns,
+		MaxIdleConns: minimumClientMaxIdleOpenConns,
 		URI:          mongoURI,
 		RsName:       mongoRsName,
 	}
+
 	db, err := local.NewMgo(mongoConfig, time.Minute)
 	if err != nil {
 		return nil, err
 	}
+
 	return &config.Service{
 		DbProxy: db,
 	}, nil

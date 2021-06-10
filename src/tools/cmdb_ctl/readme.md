@@ -290,7 +290,7 @@ denyall配置为false的情况下，limit和ttl配置才能生效
              		"init_distro_version": "XXXX.XXXX.XXXX"
              	}
              ]
-             ############## total data num is 1 ##############
+             total data num is 1 
      ```
      ```
          显示指定DB中的所有collections
@@ -301,16 +301,16 @@ denyall配置为false的情况下，limit和ttl配置才能生效
              cc_test3
              cc_test4
              cc_test5
-             ############## total collection num is 5 ##############
+             total collection num is 5 
      ```
      ```
           对DB进行删除操作示例:
               ./tool_ctl --mongo-uri="mongodb://user:pwd@localhost:27017/test?replicaSet=rs0" db delete --collection="test_collection" --condition="{\"bk_biz_id\" : 6}"
           回显样式
-              ############## delete total data num is 3 ##############
+              delete total data num is 3
      ```
      
-### Redis操作(目前支持scan操作)
+### Redis操作
 - 使用方式
      ```
          ./tool_ctl redis [flags]
@@ -338,13 +338,14 @@ denyall配置为false的情况下，limit和ttl配置才能生效
          对Redis进行SCAN操作示例:
              ./tool_ctl redis --redis-addr="127.0.0.1" --redis-database="0" --redis-port="6379" scan --count=50 --cursor=0 --match="test*"  
          回显样式:
-             keys is begin ======================================
+             keys is begin :
              test 
              test1 
-             keys is end ======================================
+             keys is end 
              cursor is 2 
           对Redis进行SCAN操作示例:
              ./tool_ctl redis  del --keys=key1,key2,key3 
           回显样式:  
              del keys success !
+
      ```
