@@ -1447,5 +1447,7 @@
     "请先选择操作对象": "Please select operation target",
     "账号": "Account",
     "模糊": "fuzzy",
-    "模板名称将作为实例化后的模块名": "The template name will be used as the module name after instantiation"
+    "模板名称将作为实例化后的模块名": "The template name will be used as the module name after instantiation",
+    "该字段已被设为不可编辑，自动应用规则失效": "The field has been set as non-editable, and the auto-apply rule is invalid",
+    "主机属性设置为不可编辑状态后提示": "After being set to non-editable state, it will affect the configured automatic application rules, please be aware"
 }
