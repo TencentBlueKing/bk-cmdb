@@ -626,7 +626,7 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 	}
 
 	if uniqueResp.Data.Count == 0 {
-		blog.Errorf("model %s has wrong must_check unique field not found, input: %s, rid: %s",
+		blog.Errorf("model %s has wrong must_check unique field not found, input: %s, cond: %s, rid: %s",
 			objID, cond, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrorTopObjectUniqueIndexNotFound, objID, id))
 		return

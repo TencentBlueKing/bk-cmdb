@@ -72,16 +72,21 @@ func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, o
 
 //
 func (lgc *Logics) fetchAssociationData(ctx context.Context, header http.Header, objID string, instIDArr []int64,
-	modelBizID int64, hasSelfAssociation bool) ([]*metadata.InstAsst, error) {
+	modelBizID int64, asstIDArr []string, hasSelfAssociation bool) ([]*metadata.InstAsst, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	input := &metadata.SearchAssociationInstRequest{ObjID: objID}
 
+	if len(asstIDArr) == 0 {
+		blog.Infof("empty  bk_obj_asst_id. obj: %s, rid: %s", objID, rid)
+		return nil, nil
+	}
 	//实例作为关联关系源模型
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKInstIDField).In(instIDArr)
+	cond.Field(common.AssociationObjAsstIDField).In(asstIDArr)
 	if !hasSelfAssociation {
 		// 不包含自关联
 		cond.Field(common.BKAsstObjIDField).NotEq(objID)
@@ -104,10 +109,10 @@ func (lgc *Logics) fetchAssociationData(ctx context.Context, header http.Header,
 	cond = condition.CreateCondition()
 	cond.Field(common.BKAsstObjIDField).Eq(objID)
 	cond.Field(common.BKAsstInstIDField).In(instIDArr)
-	if !hasSelfAssociation {
-		// 不包含自关联
-		cond.Field(common.BKObjIDField).NotEq(objID)
-	}
+	cond.Field(common.AssociationObjAsstIDField).In(asstIDArr)
+	// 自关联数据，上面已经处理，只需要拉取一次数据即可
+	cond.Field(common.BKObjIDField).NotEq(objID)
+
 	input.Condition = cond.ToMapStr()
 	bkAsstObjRst, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(ctx, header, input)
 	if err != nil {
