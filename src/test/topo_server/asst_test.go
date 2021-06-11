@@ -216,6 +216,79 @@ var _ = Describe("inst test", func() {
 		Expect(association["bk_obj_asst_id"].(string)).To(Equal("bk_router_default_bk_switch"))
 	})
 
+	It("search instance associations without conditions", func() {
+		input := &metadata.CommonSearchFilter{
+			Fields: []string{"bk_asst_id", "bk_inst_id", "bk_obj_id", "bk_asst_inst_id", "bk_asst_obj_id", "bk_obj_asst_id"},
+			Page:   metadata.BasePage{Start: 0, Limit: 1},
+		}
+
+		rsp, err := asstClient.SearchInstanceAssociations(context.Background(), header, "bk_router", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		info, ok := data["info"].([]interface{})
+		Expect(ok).To(Equal(true))
+		Expect(len(info)).To(Equal(1))
+
+		association, ok := info[0].(map[string]interface{})
+		Expect(ok).To(Equal(true))
+
+		Expect(association["bk_obj_asst_id"].(string)).To(Equal("bk_router_default_bk_switch"))
+	})
+
+	It("search instance associations without fields", func() {
+		input := &metadata.CommonSearchFilter{
+			Conditions: &querybuilder.QueryFilter{
+				Rule: querybuilder.CombinedRule{
+					Condition: querybuilder.ConditionAnd,
+					Rules: []querybuilder.Rule{
+						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+					},
+				},
+			},
+			Page: metadata.BasePage{Start: 0, Limit: 1},
+		}
+
+		rsp, err := asstClient.SearchInstanceAssociations(context.Background(), header, "bk_router", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		info, ok := data["info"].([]interface{})
+		Expect(ok).To(Equal(true))
+		Expect(len(info)).To(Equal(1))
+
+		association, ok := info[0].(map[string]interface{})
+		Expect(ok).To(Equal(true))
+		Expect(len(association)).To(Equal(8))
+	})
+
+	It("search instance associations without page", func() {
+		input := &metadata.CommonSearchFilter{
+			Conditions: &querybuilder.QueryFilter{
+				Rule: querybuilder.CombinedRule{
+					Condition: querybuilder.ConditionAnd,
+					Rules: []querybuilder.Rule{
+						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+					},
+				},
+			},
+			Fields: []string{"bk_asst_id", "bk_inst_id", "bk_obj_id", "bk_asst_inst_id", "bk_asst_obj_id", "bk_obj_asst_id"},
+		}
+
+		rsp, err := asstClient.SearchInstanceAssociations(context.Background(), header, "bk_router", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
 	It("search instance associations with limit more than 500", func() {
 		input := &metadata.CommonSearchFilter{
 			Conditions: &querybuilder.QueryFilter{
@@ -247,6 +320,22 @@ var _ = Describe("inst test", func() {
 				},
 			},
 		}
+
+		rsp, err := asstClient.CountInstanceAssociations(context.Background(), header, "bk_router", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		count, err := data["count"].(json.Number).Int64()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(int(count)).To(Equal(2))
+	})
+
+	It("count instance associations without conditions", func() {
+		input := &metadata.CommonCountFilter{}
 
 		rsp, err := asstClient.CountInstanceAssociations(context.Background(), header, "bk_router", input)
 		util.RegisterResponse(rsp)
