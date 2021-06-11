@@ -754,12 +754,18 @@ func (s *Service) SearchInstByObject(ctx *rest.Contexts) {
 
 // SearchInstByAssociation search inst by the association inst
 func (s *Service) SearchInstByAssociation(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	if common.IsInnerModel(objID) {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
+
 	data := new(operation.AssociationParams)
 	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	objID := ctx.Request.PathParameter("bk_obj_id")
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
