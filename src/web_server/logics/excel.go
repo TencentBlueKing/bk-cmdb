@@ -254,7 +254,21 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 	if _, ok := AsstObjectUniqueIDMap[objID]; ok {
 		hasSelfAssociation = true
 	}
-	instAsst, err := lgc.fetchAssociationData(ctx, header, objID, instIDArr, modelBizID, hasSelfAssociation)
+	var asstIDArr []string
+	for _, asst := range asstList {
+		_, ok := AsstObjectUniqueIDMap[asst.ObjectID]
+		if ok {
+			asstIDArr = append(asstIDArr, asst.AssociationName)
+			continue
+		}
+		_, ok = AsstObjectUniqueIDMap[asst.AsstObjID]
+		if ok {
+			asstIDArr = append(asstIDArr, asst.AssociationName)
+			continue
+		}
+	}
+
+	instAsst, err := lgc.fetchAssociationData(ctx, header, objID, instIDArr, modelBizID, asstIDArr, hasSelfAssociation)
 	if err != nil {
 		return err
 	}
@@ -495,6 +509,9 @@ func StatisticsAssociation(sheet *xlsx.Sheet, firstRow int) ([]string, map[strin
 
 		row := sheet.Rows[index]
 
+		if len(row.Cells) <= associationOPColIndex {
+			continue
+		}
 		// bk_obj_asst_id 的值
 		asstObjID := row.Cells[associationAsstObjIDIndex].String()
 		asstInfo, ok = asstInfoMap[asstObjID]
