@@ -225,7 +225,7 @@ func (s *Service) migrateSpecifyVersion(req *restful.Request, resp *restful.Resp
 	} */
 
 	if input.CommitID != version.CCGitHash {
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "time_stamp")})
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "commit_id")})
 		return
 	}
 
