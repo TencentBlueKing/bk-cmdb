@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
@@ -200,10 +201,32 @@ func (lgc *Logics) GetModelsIDNameMap(kit *rest.Kit, modelIDs []int64) (map[int6
 	return objIDNameMap, nil
 }
 
-var ModelIDObjIDMap = make(map[int64]string)
+// modelIDObjIDMap is a concurrent safe type
+type modelIDObjIDMap struct {
+	sync.RWMutex
+	data map[int64]string
+}
 
-// GetObjIDFromRerouceType get objID from resourceType
-func (lgc *Logics) GetObjIDFromRerouceType(ctx context.Context, header http.Header, resourceType iam.TypeID) (string,
+// modelObjIDMap is map whose key is modelID , value is objID
+// eg : {7:"bk_switch"}
+var modelObjIDMap = &modelIDObjIDMap{
+	data : make(map[int64]string),
+}
+
+func (m *modelIDObjIDMap) get(objID int64) string {
+	m.RLock()
+	defer m.RUnlock()
+	return m.data[objID]
+}
+
+func (m *modelIDObjIDMap) set(modelID int64, objID string) {
+	m.Lock()
+	defer m.Unlock()
+	m.data[modelID] = objID
+}
+
+// GetObjIDFromResourceType get objID from resourceType
+func (lgc *Logics) GetObjIDFromResourceType(ctx context.Context, header http.Header, resourceType iam.TypeID) (string,
 	error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
@@ -212,7 +235,7 @@ func (lgc *Logics) GetObjIDFromRerouceType(ctx context.Context, header http.Head
 		return "", err
 	}
 
-	if objID, ok := ModelIDObjIDMap[modelID]; ok {
+	if objID := modelObjIDMap.get(modelID); objID != "" {
 		return objID, nil
 	}
 
@@ -235,9 +258,9 @@ func (lgc *Logics) GetObjIDFromRerouceType(ctx context.Context, header http.Head
 	}
 
 	for _, item := range resp.Data.Info {
-		ModelIDObjIDMap[item.Spec.ID] = item.Spec.ObjectID
+		modelObjIDMap.set(item.Spec.ID, item.Spec.ObjectID)
 		return item.Spec.ObjectID, nil
 	}
 
-	return ModelIDObjIDMap[modelID], nil
+	return modelObjIDMap.get(modelID), nil
 }

@@ -311,7 +311,7 @@ func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filt
 			Limit: common.BKNoLimit,
 		},
 	}
-	objID, err := lgc.GetObjIDFromRerouceType(kit.Ctx, kit.Header, resourceType)
+	objID, err := lgc.GetObjIDFromResourceType(kit.Ctx, kit.Header, resourceType)
 
 	if err != nil {
 		blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",

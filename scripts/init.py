@@ -217,8 +217,8 @@ es:
   pwd: $es_pass
 # adminServer专属配置
 adminServer:
-  #同步IAM动态模型的周期,单位为分钟，最小为5分钟,默认为30分钟
-  syncIAMPeriodMinutes: 30
+  #同步IAM动态模型的周期,单位为分钟，最小为1分钟,默认为5分钟
+  syncIAMPeriodMinutes: 5
 # web_server专属配置
 webServer:
   api:

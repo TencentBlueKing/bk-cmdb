@@ -71,13 +71,16 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
-// GetCustomObjects get objects which are custom.
+// GetCustomObjects get objects which are custom(without mainline objects).
 func (s *Service) GetCustomObjects(header http.Header) ([]metadata.Object, error) {
 	resp, err := s.CoreAPI.CoreService().Model().ReadModel(s.ctx, header, &metadata.QueryCondition{
 		Fields: []string{common.BKObjIDField, common.BKObjNameField, common.BKFieldID},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 		Condition: map[string]interface{}{
 			common.BKIsPre: false,
+			common.BKClassificationIDField: map[string]interface{}{
+				common.BKDBNE: "bk_biz_topo",
+			},
 		},
 	})
 	if err != nil {

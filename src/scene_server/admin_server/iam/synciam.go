@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package service
+package iam
 
 import (
 	"net/http"
@@ -21,13 +21,15 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/admin_server/service"
+	iamcli "configcenter/src/ac/iam"
 )
 
 const (
 	// 同步周期最小值
-	SyncIAMPeriodMinutesMin = 5
+	SyncIAMPeriodMinutesMin = 1
 	// 同步周期默认值
-	SyncIAMPeriodMinutesDefault = 30
+	SyncIAMPeriodMinutesDefault = 5
 )
 
 // 同步周期
@@ -66,8 +68,8 @@ func newKit() *rest.Kit {
 	}
 }
 
-// SyncIAM sync the sys instances resource between CMDB and IAM
-func (s *Service) SyncIAM() {
+// SyncIAM sync the system instances resource between CMDB and IAM
+func SyncIAM(srv *service.Service, iamCli *iamcli.IAM) {
 	if !auth.EnableAuthorize() {
 		return
 	}
@@ -79,7 +81,7 @@ func (s *Service) SyncIAM() {
 		blog.Infof("start sync iam")
 
 		// only master can run it
-		if !s.ServiceManageInterface.IsMaster() {
+		if !srv.ServiceManageInterface.IsMaster() {
 			blog.Infof("it is not master, skip sync iam")
 			time.Sleep(20 * time.Second)
 			continue
@@ -88,15 +90,15 @@ func (s *Service) SyncIAM() {
 		// new kit with a different rid, header
 		kit := newKit()
 
-		// get all custom objects in cmdb
-		objects, err := s.GetCustomObjects(kit.Header)
+		// get all custom objects (without mainline objects) in cmdb
+		objects, err := srv.GetCustomObjects(kit.Header)
 		if err != nil {
 			blog.Errorf("sync iam failed, get custom objects err: %s ,rid: %s", err, kit.Rid)
 			time.Sleep(time.Duration(SyncIAMPeriodMinutes) * time.Minute)
 			continue
 		}
 
-		if err := s.iam.SyncIAMSysInstances(s.ctx, objects); err != nil {
+		if err := iamCli.SyncIAMSysInstances(kit.Ctx, objects); err != nil {
 			blog.Errorf("sync iam failed, sync iam system instances err: %s ,rid: %s", err, kit.Rid)
 			time.Sleep(time.Duration(SyncIAMPeriodMinutes) * time.Minute)
 			continue

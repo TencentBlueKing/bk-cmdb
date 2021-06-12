@@ -13,11 +13,9 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/auth_server/types"
 )
@@ -31,8 +29,6 @@ func (s *AuthService) PullResource(ctx *rest.Contexts) {
 		return
 	}
 
-	pullParam, _ := json.Marshal(query)
-	blog.V(4).Infof("pull resource param:%s", pullParam)
 	method, err := s.genResourcePullMethod(ctx.Kit, query.Type)
 	if err != nil {
 		ctx.RespBkError(types.NotFoundErrorCode, err.Error())

@@ -114,7 +114,7 @@ var ActionIDNameMap = map[ActionID]string{
 // GenerateActions generate all the actions registered to IAM.
 func GenerateActions(objects []metadata.Object) []ResourceAction {
 	resourceActionList := GenerateStaticActions()
-	resourceActionList = append(resourceActionList, GenModelInstanceActions(objects)...)
+	resourceActionList = append(resourceActionList, genDynamicActions(objects)...)
 	return resourceActionList
 }
 
@@ -739,11 +739,6 @@ func genCloudAreaActions() []ResourceAction {
 	})
 
 	return actions
-}
-
-func GenModelInstanceActions(objects []metadata.Object) []ResourceAction {
-	// create && edit && delete instance
-	return GenDynamicActions(objects)
 }
 
 func genCloudAccountActions() []ResourceAction {

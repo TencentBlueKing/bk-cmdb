@@ -68,6 +68,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 	// TODO: add business id for these filter rules to resources.
 	// add object unique operation.
 	if ps.hitRegexp(createObjectUniqueLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("add object unique, but got invalid url")
+			return ps
+		}
+
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
@@ -95,6 +100,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// update object unique operation.
 	if ps.hitRegexp(updateObjectUniqueLatestRegexp, http.MethodPut) {
+		if len(ps.RequestCtx.Elements) != 8 {
+			ps.err = errors.New("update object unique, but got invalid url")
+			return ps
+		}
+
 		uniqueID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object unique, but got invalid unique id %s", ps.RequestCtx.Elements[7])
@@ -128,6 +138,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// delete object unique operation.
 	if ps.hitRegexp(deleteObjectUniqueLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 8 {
+			ps.err = errors.New("delete object unique, but got invalid url")
+			return ps
+		}
+
 		uniqueID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object unique, but got invalid unique id %s", ps.RequestCtx.Elements[7])
@@ -161,6 +176,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// find model unique operation
 	if ps.hitRegexp(findObjectUniqueLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("find object unique, but got invalid url")
+			return ps
+		}
+
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
@@ -232,6 +252,11 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 
 	// update association kind operation
 	if ps.hitRegexp(updateAssociationKindLatestRegexp, http.MethodPut) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("update association kind, but got invalid url")
+			return ps
+		}
+
 		kindID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update association kind, but got invalid kind id %s", ps.RequestCtx.Elements[5])
@@ -252,6 +277,11 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 
 	// delete association kind operation
 	if ps.hitRegexp(deleteAssociationKindLatestRegexp, http.MethodDelete) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("delete association kind, but got invalid url")
+			return ps
+		}
+
 		kindID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("delete association kind, but got invalid kind id %s", ps.RequestCtx.Elements[5])
@@ -408,6 +438,11 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// delete object association operation
 	if ps.hitRegexp(deleteObjectAssociationLatestRegexp, http.MethodDelete) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("delete object association, but got invalid url")
+			return ps
+		}
+
 		assoID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("delete object association, but got invalid association id %s", ps.RequestCtx.Elements[4])
@@ -689,6 +724,11 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// delete object's instance association operation. for web
 	if ps.hitRegexp(deleteObjectInstanceAssociationLatestRegexp, http.MethodDelete) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("delete object's instance association, but got invalid url")
+			return ps
+		}
+
 		objID := ps.RequestCtx.Elements[4]
 		if len(objID) == 0 {
 			ps.err = fmt.Errorf("delete object instance association, but got empty object id")
@@ -813,8 +853,13 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		return ps
 	}
 
-	// find object instance's association operation.
+	// find object instance topology ui operation.
 	if ps.hitRegexp(findObjectInstanceTopologyUILatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 14 {
+			ps.err = errors.New("find object instance topology ui, but got invalid url")
+			return ps
+		}
+
 		bizID, err := ps.RequestCtx.getBizIDFromBody()
 		if err != nil {
 			ps.err = err
@@ -909,6 +954,11 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 	// create instance operation
 	if ps.hitRegexp(createObjectInstanceLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("create instance, but got invalid url")
+			return ps
+		}
+
 		objID := ps.RequestCtx.Elements[5]
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
 		if err != nil {

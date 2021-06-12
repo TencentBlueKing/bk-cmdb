@@ -10,24 +10,29 @@
  * limitations under the License.
  */
 
-package y3_10_202105241005
+package y3_10_202106101505
 
 import (
 	"context"
 
 	"configcenter/src/ac"
+	iamtype "configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
+
 // migrateIAMSysInstances migrate iam system instances
 func migrateIAMSysInstances(ctx context.Context, db dal.RDB, iam ac.AuthInterface, conf *upgrader.Config) error {
-	// get all custom objects
+	// get all custom objects(without mainline objects)
 	objects := []metadata.Object{}
 	condition := map[string]interface{}{
 		common.BKIsPre: false,
+		common.BKClassificationIDField: map[string]interface{}{
+			common.BKDBNE: "bk_biz_topo",
+		},
 	}
 	err := db.Table(common.BKTableNameObjDes).Find(condition).All(ctx, &objects)
 	if err != nil {
@@ -35,5 +40,21 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, iam ac.AuthInterfac
 		return err
 	}
 
+	param := &iamtype.DeleteCMDBResourceParam{
+		ActionIDs: []iamtype.ActionID{
+			"create_sys_instance",
+			"edit_sys_instance",
+			"delete_sys_instance",
+		},
+		InstanceSelectionIDs: []iamtype.InstanceSelectionID{"sys_instance"},
+		TypeIDs:              []iamtype.TypeID{"sys_instance"},
+	}
+	// delete the old system instance
+	if err := iam.DeleteCMDBResource(ctx, param, objects); err != nil {
+		blog.ErrorJSON("delete cmdb resource failed, err:%s", err)
+		return err
+	}
+
+	// add new system instances
 	return iam.SyncIAMSysInstances(ctx, objects)
 }

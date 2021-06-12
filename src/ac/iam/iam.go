@@ -16,7 +16,6 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/ac"
 	"configcenter/src/ac/meta"
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/authserver"
@@ -72,7 +71,7 @@ func NewIAM(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer
 	}, nil
 }
 
-func (i *IAM) RegisterSystem(ctx context.Context, host string, objects []metadata.Object) error {
+func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata.Object) error {
 	systemResp, err := i.client.GetSystemInfo(ctx, []SystemQueryField{})
 	if err != nil && err != ErrNotFound {
 		blog.Errorf("get system info failed, error: %s", err.Error())
@@ -285,28 +284,28 @@ func (i *IAM) RegisterSystem(ctx context.Context, host string, objects []metadat
 // SyncIAMSysInstances sync system instances between CMDB and IAM
 // it check the difference of system instances resource between CMDB and IAM
 // if they have difference, sync and make them same
-func (i *IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object) error {
+func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object) error {
+	rid := commonutil.ExtractRequestIDFromContext(ctx)
 
 	fields := []SystemQueryField{FieldResourceTypes,
 		FieldActions, FieldActionGroups, FieldInstanceSelections}
 	iamResp, err := i.client.GetSystemInfo(ctx, fields)
 	if err != nil {
-		blog.ErrorJSON("syc iam sysInstances failed, get system info error: %s, fields: %s",
-			err.Error(), fields)
+		blog.ErrorJSON("syc iam sysInstances failed, get system info error: %s, fields: %s, rid:%s",
+			err.Error(), fields, rid)
 		return err
 	}
 
 	// get the cmdb resources
-	cmdbActions := GenModelInstanceActions(objects)
-	cmdbInstanceSelections := GenDynamicInstanceSelections(objects)
-	cmdbResourceTypes := GenDynamicResourceTypes(objects)
-	cmdbActionGroups := GenerateActionGroups(objects)
+	cmdbActions := genDynamicActions(objects)
+	cmdbInstanceSelections := genDynamicInstanceSelections(objects)
+	cmdbResourceTypes := genDynamicResourceTypes(objects)
 
 	// compare resources between cmdb and iam
-	addActions, deleteActions := compareActions(cmdbActions, iamResp.Data.Actions)
-	addInstanceSelections, deleteInstanceSelections := compareInstanceSelections(cmdbInstanceSelections,
+	addedActions, deletedActions := compareActions(cmdbActions, iamResp.Data.Actions)
+	addedInstanceSelections, deletedInstanceSelections := compareInstanceSelections(cmdbInstanceSelections,
 		iamResp.Data.InstanceSelections)
-	addResourceTypes, deleteResourceTypes := compareResourceTypes(cmdbResourceTypes, iamResp.Data.ResourceTypes)
+	addedResourceTypes, deletedResourceTypes := compareResourceTypes(cmdbResourceTypes, iamResp.Data.ResourceTypes)
 
 	// 因为资源间的依赖关系，删除和更新的顺序为 1.Action 2.InstanceSelection 3.ResourceType
 	// 因为资源间的依赖关系，新建的顺序则反过来为 1.ResourceType 2.InstanceSelection 3.Action
@@ -314,76 +313,76 @@ func (i *IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object
 	// 先删除资源，再新增资源，因为实例视图的名称在系统中是唯一的，如果不先删，同样名称的实例视图将创建失败
 
 	// delete unnecessary actions in iam
-	if len(deleteActions) > 0 {
-		blog.Infof("begin delete actions, count:%d, detail:%s", len(deleteActions),
-			deleteActions)
-		if err := i.client.DeleteActions(ctx, deleteActions); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, delete IAM actions failed, error: %s, actions: %s",
-				err.Error(), deleteActions)
+	if len(deletedActions) > 0 {
+		blog.Infof("begin delete actions, count:%d, detail:%v, rid:%s", len(deletedActions), deletedActions, rid)
+		if err := i.client.DeleteActions(ctx, deletedActions); err != nil {
+			blog.ErrorJSON("syc iam sysInstances failed, delete IAM actions error: %s, actions: %s, rid:%s",
+				err.Error(), deletedActions, rid)
 			return err
 		}
 	}
 
 	// delete unnecessary InstanceSelections in iam
-	if len(deleteInstanceSelections) > 0 {
-		blog.Infof("begin delete instanceSelections, count:%d, detail:%s", len(deleteInstanceSelections),
-			deleteInstanceSelections)
-		if err := i.client.DeleteInstanceSelections(ctx, deleteInstanceSelections); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, delete instanceSelections error: %s, instanceSelections: %s",
-				err.Error(), deleteInstanceSelections)
+	if len(deletedInstanceSelections) > 0 {
+		blog.Infof("begin delete instanceSelections, count:%d, detail:%v, rid:%s",
+			len(deletedInstanceSelections), deletedInstanceSelections, rid)
+		if err := i.client.DeleteInstanceSelections(ctx, deletedInstanceSelections); err != nil {
+			blog.ErrorJSON("syc iam sysInstances failed, delete instanceSelections error: %s, instanceSelections: %s, rid:%s",
+				err.Error(), deletedInstanceSelections, rid)
 			return err
 		}
 	}
 
 	// delete unnecessary ResourceTypes in iam
-	if len(deleteResourceTypes) > 0 {
-		blog.Infof("begin delete resourceTypes, count:%d, detail:%s", len(deleteResourceTypes),
-			deleteResourceTypes)
-		if err := i.client.DeleteResourcesTypes(ctx, deleteResourceTypes); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, delete resourceType error: %s, resourceType: %s",
-				err.Error(), deleteResourceTypes)
+	if len(deletedResourceTypes) > 0 {
+		blog.Infof("begin delete resourceTypes, count:%d, detail:%v, rid:%s",
+			len(deletedResourceTypes), deletedResourceTypes, rid)
+		if err := i.client.DeleteResourcesTypes(ctx, deletedResourceTypes); err != nil {
+			blog.ErrorJSON("syc iam sysInstances failed, delete resourceType error: %s, resourceType: %s, rid:%s",
+				err.Error(), deletedResourceTypes, rid)
 			return err
 		}
 	}
 
 	// add cmdb ResourceTypes in iam
-	if len(addResourceTypes) > 0 {
-		blog.Infof("begin add resourceTypes, count:%d, detail:%s", len(addResourceTypes),
-			addResourceTypes)
-		if err := i.client.RegisterResourcesTypes(ctx, addResourceTypes); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, add resourceType error: %s, resourceType: %s",
-				err.Error(), addResourceTypes)
+	if len(addedResourceTypes) > 0 {
+		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid:%s",
+			len(addedResourceTypes), addedResourceTypes, rid)
+		if err := i.client.RegisterResourcesTypes(ctx, addedResourceTypes); err != nil {
+			blog.ErrorJSON("syc iam sysInstances failed, add resourceType error: %s, resourceType: %s, rid:%s",
+				err.Error(), addedResourceTypes, rid)
 			return err
 		}
 	}
 
 	// add cmdb InstanceSelections in iam
-	if len(addInstanceSelections) > 0 {
-		blog.Infof("begin add instanceSelections, count:%d, detail:%s", len(addInstanceSelections),
-			addInstanceSelections)
-		if err := i.client.RegisterInstanceSelections(ctx, addInstanceSelections); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, add instanceSelections error: %s, instanceSelections: %s",
-				err.Error(), addInstanceSelections)
+	if len(addedInstanceSelections) > 0 {
+		blog.Infof("begin add instanceSelections, count:%d, detail:%v, rid:%s",
+			len(addedInstanceSelections), addedInstanceSelections, rid)
+		if err := i.client.RegisterInstanceSelections(ctx, addedInstanceSelections); err != nil {
+			blog.ErrorJSON("syc iam sysInstances failed, add instanceSelections error: %s, instanceSelections: %s, rid:%s",
+				err.Error(), addedInstanceSelections, rid)
 			return err
 		}
 	}
 
 	// add cmdb actions in iam
-	if len(addActions) > 0 {
-		blog.Infof("begin add actions, count:%d, detail:%s", len(addActions), addActions)
-		if err := i.client.RegisterActions(ctx, addActions); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, add IAM actions failed, error: %s, actions: %s",
-				err.Error(), addActions)
+	if len(addedActions) > 0 {
+		blog.Infof("begin add actions, count:%d, detail:%v, rid:%s", len(addedActions), addedActions, rid)
+		if err := i.client.RegisterActions(ctx, addedActions); err != nil {
+			blog.ErrorJSON("syc iam sysInstances failed, add IAM actions failed, error: %s, actions: %s, rid:%s",
+				err.Error(), addedActions, rid)
 			return err
 		}
 	}
 
 	// update action_groups in iam
-	if len(addActions) > 0 || len(deleteActions) > 0 {
+	if len(addedActions) > 0 || len(deletedActions) > 0 {
+		cmdbActionGroups := GenerateActionGroups(objects)
 		blog.Infof("begin update actionGroups")
 		if err := i.client.UpdateActionGroups(ctx, cmdbActionGroups); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, update actionGroups error: %s, actionGroups: %s",
-				err.Error(), cmdbActionGroups)
+			blog.ErrorJSON("syc iam sysInstances failed, update actionGroups error: %s, actionGroups: %s, rid:%s",
+				err.Error(), cmdbActionGroups, rid)
 			return err
 		}
 	}
@@ -391,14 +390,132 @@ func (i *IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object
 	return nil
 }
 
+// DeleteCMDBResource delete unnecessary CMDB resource from IAM
+// it will  delete the resource if it exists on IAM
+func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourceParam, objects []metadata.Object) error {
+	rid := commonutil.ExtractRequestIDFromContext(ctx)
+
+	fields := []SystemQueryField{FieldResourceTypes,
+		FieldActions, FieldActionGroups, FieldInstanceSelections}
+	iamResp, err := i.client.GetSystemInfo(ctx, fields)
+	if err != nil {
+		blog.ErrorJSON("syc iam sysInstances failed, get system info error: %s, fields: %s, rid:%s",
+			err.Error(), fields, rid)
+		return err
+	}
+
+	// get deleted actions
+	deletedActions := getDeletedActions(param.ActionIDs, iamResp.Data.Actions)
+	deletedInstanceSelections := getdeletedInstanceSelections(param.InstanceSelectionIDs,
+		iamResp.Data.InstanceSelections)
+	deletedResourceTypes := getDeletedResourceTypes(param.TypeIDs, iamResp.Data.ResourceTypes)
+
+	// 因为资源间的依赖关系，删除的顺序为 1.Action 2.InstanceSelection 3.ResourceType
+	// ActionGroup依赖于Action，该资源的增删操作始终放在最后
+
+	// delete unnecessary actions in iam
+	if len(deletedActions) > 0 {
+		blog.Infof("begin delete actions, count:%d, detail:%v, rid:%s", len(deletedActions), deletedActions, rid)
+		if err := i.client.DeleteActions(ctx, deletedActions); err != nil {
+			blog.ErrorJSON("delete cmdb resource failed, delete IAM actions error: %s, actions: %s, rid:%s",
+				err.Error(), deletedActions, rid)
+			return err
+		}
+	}
+
+	// delete unnecessary InstanceSelections in iam
+	if len(deletedInstanceSelections) > 0 {
+		blog.Infof("begin delete instanceSelections, count:%d, detail:%v, rid:%s",
+			len(deletedInstanceSelections), deletedInstanceSelections, rid)
+		if err := i.client.DeleteInstanceSelections(ctx, deletedInstanceSelections); err != nil {
+			blog.ErrorJSON("delete cmdb resource failed, delete instanceSelections error: %s, instanceSelections: %s,"+
+				"rid:%s", err.Error(), deletedInstanceSelections, rid)
+			return err
+		}
+	}
+
+	// delete unnecessary ResourceTypes in iam
+	if len(deletedResourceTypes) > 0 {
+		blog.Infof("begin delete resourceTypes, count:%d, detail:%v, rid:%s",
+			len(deletedResourceTypes), deletedResourceTypes, rid)
+		if err := i.client.DeleteResourcesTypes(ctx, deletedResourceTypes); err != nil {
+			blog.ErrorJSON("delete cmdb resource failed, delete resourceType error: %s, resourceType: %s, rid:%s",
+				err.Error(), deletedResourceTypes, rid)
+			return err
+		}
+	}
+
+	// update action_groups in iam
+	if len(deletedActions) > 0 {
+		cmdbActionGroups := GenerateActionGroups(objects)
+		blog.Infof("begin update actionGroups")
+		if err := i.client.UpdateActionGroups(ctx, cmdbActionGroups); err != nil {
+			blog.ErrorJSON("delete cmdb resource failed, update actionGroups error: %s, actionGroups: %s, rid:%s",
+				err.Error(), cmdbActionGroups, rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// getDeletedActions get deleted actions
+func getDeletedActions(cmdbActionIDs []ActionID, iamActions []ResourceAction) []ActionID {
+	deletedActions := make([]ActionID, 0)
+	iamActionMap := map[ActionID]struct{}{}
+	for _, action := range iamActions {
+		iamActionMap[action.ID] = struct{}{}
+	}
+	for _, actionID := range cmdbActionIDs {
+		if _, ok := iamActionMap[actionID]; ok {
+			deletedActions = append(deletedActions, actionID)
+		}
+	}
+
+	return deletedActions
+}
+
+// getdeletedInstanceSelections get deleted instance selections
+func getdeletedInstanceSelections(cmdbInstanceSelectionIDs []InstanceSelectionID,
+	iamInstanceSelections []InstanceSelection) []InstanceSelectionID {
+	deletedInstanceSelections := make([]InstanceSelectionID, 0)
+	iamInstanceSelectionMap := map[InstanceSelectionID]struct{}{}
+	for _, isntanceSelection := range iamInstanceSelections {
+		iamInstanceSelectionMap[isntanceSelection.ID] = struct{}{}
+	}
+	for _, instanceSelectionID := range cmdbInstanceSelectionIDs {
+		if _, ok := iamInstanceSelectionMap[instanceSelectionID]; ok {
+			deletedInstanceSelections = append(deletedInstanceSelections, instanceSelectionID)
+		}
+	}
+
+	return deletedInstanceSelections
+}
+
+// getDeletedResourceTypes get deleted resource types
+func getDeletedResourceTypes(cmdbTypeIDs []TypeID, iamResourceTypes []ResourceType) []TypeID {
+	deletedResourceTypes := make([]TypeID, 0)
+	iamResourceTypeMap := map[TypeID]struct{}{}
+	for _, resourceType := range iamResourceTypes {
+		iamResourceTypeMap[resourceType.ID] = struct{}{}
+	}
+	for _, typeID := range cmdbTypeIDs {
+		if _, ok := iamResourceTypeMap[typeID]; ok {
+			deletedResourceTypes = append(deletedResourceTypes, typeID)
+		}
+	}
+
+	return deletedResourceTypes
+}
+
 // compareActions compare actions between cmdb and iam
 func compareActions(cmdbActions []ResourceAction, iamActions []ResourceAction) (
-	addActions []ResourceAction, deleteActionIDs []ActionID) {
+	addedActions []ResourceAction, deletedActionIDs []ActionID) {
 	cmdbActionMap := map[ActionID]struct{}{}
 	iamActionMap := map[ActionID]struct{}{}
 
 	for _, action := range iamActions {
-		if IsOldIAMSysInstanceActionID(action.ID) || IsIAMSysInstanceAction(action.ID) {
+		if isIAMSysInstanceAction(action.ID) {
 			iamActionMap[action.ID] = struct{}{}
 		}
 	}
@@ -406,28 +523,28 @@ func compareActions(cmdbActions []ResourceAction, iamActions []ResourceAction) (
 	for _, action := range cmdbActions {
 		cmdbActionMap[action.ID] = struct{}{}
 		if _, ok := iamActionMap[action.ID]; !ok {
-			addActions = append(addActions, action)
+			addedActions = append(addedActions, action)
 		}
 	}
 
 	for actionID := range iamActionMap {
 		if _, ok := cmdbActionMap[actionID]; !ok {
-			deleteActionIDs = append(deleteActionIDs, actionID)
+			deletedActionIDs = append(deletedActionIDs, actionID)
 		}
 	}
 
-	return addActions, deleteActionIDs
+	return addedActions, deletedActionIDs
 }
 
 // compareInstanceSelections compare instanceSelections between cmdb and iam
 func compareInstanceSelections(cmdbInstanceSelections []InstanceSelection,
 	iamInstanceSelections []InstanceSelection) (addInstanceSelection []InstanceSelection,
-	deleteInstanceSelectionIDs []InstanceSelectionID) {
+	deletedInstanceSelectionIDs []InstanceSelectionID) {
 	cmdbInstanceSelectionMap := map[InstanceSelectionID]struct{}{}
 	iamInstanceSelectionMap := map[InstanceSelectionID]struct{}{}
 
 	for _, instanceSelection := range iamInstanceSelections {
-		if IsIAMSysInstanceSelection(instanceSelection.ID) || IsIAMSysInstanceSelection(instanceSelection.ID) {
+		if isIAMSysInstanceSelection(instanceSelection.ID) {
 			iamInstanceSelectionMap[instanceSelection.ID] = struct{}{}
 		}
 	}
@@ -441,21 +558,21 @@ func compareInstanceSelections(cmdbInstanceSelections []InstanceSelection,
 
 	for instanceSelectionID := range iamInstanceSelectionMap {
 		if _, ok := cmdbInstanceSelectionMap[instanceSelectionID]; !ok {
-			deleteInstanceSelectionIDs = append(deleteInstanceSelectionIDs, instanceSelectionID)
+			deletedInstanceSelectionIDs = append(deletedInstanceSelectionIDs, instanceSelectionID)
 		}
 	}
 
-	return addInstanceSelection, deleteInstanceSelectionIDs
+	return addInstanceSelection, deletedInstanceSelectionIDs
 }
 
 // compareResourceTypes compare resourceTypes between cmdb and iam
 func compareResourceTypes(cmdbResourceTypes []ResourceType, iamResourceTypes []ResourceType) (
-	addResourceTypes []ResourceType, deleteTypeIDs []TypeID) {
+	addedResourceTypes []ResourceType, deletedTypeIDs []TypeID) {
 	cmdbResourceTypeMap := map[TypeID]struct{}{}
 	iamResourceTypeMap := map[TypeID]struct{}{}
 
 	for _, resourceType := range iamResourceTypes {
-		if IsOldIAMSysInstanceTypeID(resourceType.ID) || IsIAMSysInstance(resourceType.ID) {
+		if IsIAMSysInstance(resourceType.ID) {
 			iamResourceTypeMap[resourceType.ID] = struct{}{}
 		}
 	}
@@ -463,24 +580,24 @@ func compareResourceTypes(cmdbResourceTypes []ResourceType, iamResourceTypes []R
 	for _, resourceType := range cmdbResourceTypes {
 		cmdbResourceTypeMap[resourceType.ID] = struct{}{}
 		if _, ok := iamResourceTypeMap[resourceType.ID]; !ok {
-			addResourceTypes = append(addResourceTypes, resourceType)
+			addedResourceTypes = append(addedResourceTypes, resourceType)
 		}
 	}
 
 	for typeID := range iamResourceTypeMap {
 		if _, ok := cmdbResourceTypeMap[typeID]; !ok {
-			deleteTypeIDs = append(deleteTypeIDs, typeID)
+			deletedTypeIDs = append(deletedTypeIDs, typeID)
 		}
 	}
 
-	return addResourceTypes, deleteTypeIDs
+	return addedResourceTypes, deletedTypeIDs
 }
 
 type authorizer struct {
 	authClientSet authserver.AuthServerClientInterface
 }
 
-func NewAuthorizer(clientSet apimachinery.ClientSetInterface) ac.AuthorizeInterface {
+func NewAuthorizer(clientSet apimachinery.ClientSetInterface) *authorizer {
 	return &authorizer{authClientSet: clientSet.AuthServer()}
 }
 

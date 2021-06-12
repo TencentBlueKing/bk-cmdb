@@ -18,6 +18,7 @@ import (
 	"errors"
 	"net/http"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/types"
@@ -30,6 +31,8 @@ type AuthInterface interface {
 	RegisterSystem(ctx context.Context, host string, objects []metadata.Object) error
 	// SyncIAMSysInstances sync system instances between CMDB and IAM
 	SyncIAMSysInstances(ctx context.Context, objects []metadata.Object) error
+	// DeleteCMDBResource delete unnecessary CMDB resource from IAM
+	DeleteCMDBResource(ctx context.Context, param *iam.DeleteCMDBResourceParam, objects []metadata.Object) error
 }
 
 // Viewer is a interface to operate iam view

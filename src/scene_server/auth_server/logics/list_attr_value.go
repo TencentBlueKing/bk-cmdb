@@ -51,7 +51,7 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iam.TypeID, filter 
 
 	var err error
 	if iam.IsIAMSysInstance(resourceType) {
-		objID, err = lgc.GetObjIDFromRerouceType(kit.Ctx, kit.Header, resourceType)
+		objID, err = lgc.GetObjIDFromResourceType(kit.Ctx, kit.Header, resourceType)
 		if err != nil {
 			blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
 				err, resourceType, kit.Rid)
@@ -89,11 +89,11 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iam.TypeID, filter 
 	case common.FieldTypeList:
 		return lgc.getListOptionValues(kit, filter, page, marshaledOptions)
 	default:
-		blog.ErrorJSON("unsupport attr type:%s", attrType)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_property_type")
 	}
 }
 
+// getEnumOptionValues get option values of enum type
 func (lgc *Logics) getEnumOptionValues(kit *rest.Kit, filter *types.ListAttrValueFilter, page types.Page,
 	originOption []byte) (*types.ListAttrValueResult, error) {
 	options := metadata.EnumOptions{}
@@ -137,6 +137,7 @@ func (lgc *Logics) getEnumOptionValues(kit *rest.Kit, filter *types.ListAttrValu
 	return &types.ListAttrValueResult{Count: int64(len(options)), Results: values}, nil
 }
 
+// getListOptionValues get option values of list type
 func (lgc *Logics) getListOptionValues(kit *rest.Kit, filter *types.ListAttrValueFilter, page types.Page,
 	originOption []byte) (*types.ListAttrValueResult, error) {
 	options := metadata.ListOptions{}

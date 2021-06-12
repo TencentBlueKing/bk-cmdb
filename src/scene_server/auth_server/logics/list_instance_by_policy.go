@@ -38,7 +38,7 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID, 
 
 	collection := ""
 	if iam.IsIAMSysInstance(resourceType) {
-		objID, err := lgc.GetObjIDFromRerouceType(kit.Ctx, kit.Header, resourceType)
+		objID, err := lgc.GetObjIDFromResourceType(kit.Ctx, kit.Header, resourceType)
 		if err != nil {
 			blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
 				err, resourceType, kit.Rid)
@@ -167,10 +167,13 @@ func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types
 func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) ([]string, error) {
 	resourceType := iam.TypeID(opts.Type)
 	supplierAccount := util.ExtractOwnerFromContext(ctx)
+	if supplierAccount == "" {
+		supplierAccount = common.BKDefaultOwnerID
+	}
 	header := util.NewHeaderFromContext(ctx)
 	collection := ""
 	if iam.IsIAMSysInstance(resourceType) {
-		objID, err := lgc.GetObjIDFromRerouceType(ctx, header, resourceType)
+		objID, err := lgc.GetObjIDFromResourceType(ctx, header, resourceType)
 		if err != nil {
 			blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
 				err, resourceType, util.ExtractRequestIDFromContext(ctx))

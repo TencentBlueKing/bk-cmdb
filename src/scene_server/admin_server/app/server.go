@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"time"
 
-	"configcenter/src/ac/iam"
+	iamcli "configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/admin_server/app/options"
+	"configcenter/src/scene_server/admin_server/iam"
 	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
 	"configcenter/src/storage/dal/mongo/local"
@@ -96,7 +97,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	process.Config.SnapRedis = snapRedisConf
 
-	process.Config.IAM, err = iam.ParseConfigFromKV("authServer", nil)
+	process.Config.IAM, err = iamcli.ParseConfigFromKV("authServer", nil)
 	if err != nil && auth.EnableAuthorize() {
 		blog.Errorf("parse iam error: %v", err)
 	}
@@ -131,6 +132,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.Config = *process.Config
 	service.ConfigCenter = process.ConfigCenter
 	process.Service = service
+	var iamCli *iamcli.IAM
 
 	for {
 		if process.Config == nil {
@@ -160,7 +162,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		if auth.EnableAuthorize() {
 			blog.Info("enable auth center access.")
 
-			iamCli, err := iam.NewIAM(nil, process.Config.IAM, engine.Metric().Registry())
+			iamCli, err = iamcli.NewIAM(nil, process.Config.IAM, engine.Metric().Registry())
 			if err != nil {
 				return fmt.Errorf("new iam client failed: %v", err)
 			}
@@ -181,7 +183,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	errors.SetGlobalCCError(engine.CCErr)
 	go service.BackgroundTask()
-	go service.SyncIAM()
+	//go service.SyncIAM()
+	iam.SyncIAM(process.Service, iamCli)
 
 	select {
 	case <-ctx.Done():
@@ -201,9 +204,9 @@ func (h *MigrateServer) onMigrateConfigUpdate(previous, current cc.ProcessConfig
 
 // setSyncIAMPeriod set the sync period
 func (c *MigrateServer) setSyncIAMPeriod() {
-	svc.SyncIAMPeriodMinutes = c.Config.SyncIAMPeriodMinutes
-	if svc.SyncIAMPeriodMinutes < svc.SyncIAMPeriodMinutesMin {
-		svc.SyncIAMPeriodMinutes = svc.SyncIAMPeriodMinutesDefault
+	iam.SyncIAMPeriodMinutes = c.Config.SyncIAMPeriodMinutes
+	if iam.SyncIAMPeriodMinutes < iam.SyncIAMPeriodMinutesMin {
+		iam.SyncIAMPeriodMinutes = iam.SyncIAMPeriodMinutesDefault
 	}
-	blog.Infof("sync iam period is %d minutes", svc.SyncIAMPeriodMinutes)
+	blog.Infof("sync iam period is %d minutes", iam.SyncIAMPeriodMinutes)
 }

@@ -129,23 +129,16 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 		}
 
 		if auth.EnableAuthorize() {
+			objects := []metadata.Object{rsp.Object()}
 			iamInstance := metadata.IamInstanceWithCreator{
 				Type:    string(iam.SysModel),
 				ID:      strconv.FormatInt(rsp.Object().ID, 10),
 				Name:    rsp.Object().ObjectName,
 				Creator: ctx.Kit.User,
 			}
-			// register object resource creator action to iam
-			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
-			if err != nil {
-				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-				return err
-			}
-
-			// create iam view
-			objects := []metadata.Object{rsp.Object()}
-			if err := s.AuthManager.Viewer.CreateView(ctx.Kit.Ctx, ctx.Kit.Header, objects); err != nil {
-				blog.Errorf("create view failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+			if err := s.AuthManager.CreateObjectOnIAM(ctx.Kit.Ctx, ctx.Kit.Header,objects, iamInstance); err != nil {
+				blog.ErrorJSON("create object on iam failed, objects: %s, iam instance: %s, err: %s, rid: %s",
+					objects, iamInstance, err, ctx.Kit.Rid)
 				return err
 			}
 		}

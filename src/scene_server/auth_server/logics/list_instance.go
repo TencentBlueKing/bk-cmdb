@@ -68,7 +68,7 @@ func (lgc *Logics) listInstance(kit *rest.Kit, cond map[string]interface{}, reso
 // searchAuthResource search auth resource instances from database
 func (lgc *Logics) searchAuthResource(kit *rest.Kit, param metadata.PullResourceParam, resourceType iam.TypeID) (*metadata.PullResourceResult, error) {
 	if iam.IsIAMSysInstance(resourceType) {
-		objID, err := lgc.GetObjIDFromRerouceType(kit.Ctx, kit.Header, resourceType)
+		objID, err := lgc.GetObjIDFromResourceType(kit.Ctx, kit.Header, resourceType)
 		if err != nil {
 			blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
 				err, resourceType, kit.Rid)
