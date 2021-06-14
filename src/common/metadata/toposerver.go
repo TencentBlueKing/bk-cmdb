@@ -74,6 +74,70 @@ type QueryBusinessRequest struct {
 	Condition mapstr.MapStr `json:"condition"`
 }
 
+type BriefBizRelations struct {
+	Business   interface{} `json:"bk_biz_id"`
+	SrcInstID  interface{} `json:"src_id"`
+	DestInstID interface{} `json:"dest_id"`
+}
+
+type GetBriefBizRelationOptions struct {
+	// the source object, which should be one of the mainline object, except host model.
+	SrcBizObj string `json:"src_biz_obj"`
+	// instance ids belongs to the source object
+	SrcInstIDs []int64 `json:"src_ids"`
+	// the destination object which is directly associated with the source object, and should be one of the mainline
+	// object, except host model.
+	// SrcBizObj and DestBizObj can not be same.
+	DestBizObj string   `json:"dest_biz_obj"`
+	Page       BasePage `json:"page"`
+}
+
+func (o *GetBriefBizRelationOptions) Validate() errors.RawErrorInfo {
+	if len(o.SrcBizObj) == 0 || o.SrcBizObj == common.BKInnerObjIDHost {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"src_biz_obj"},
+		}
+	}
+
+	if len(o.SrcInstIDs) == 0 || len(o.SrcInstIDs) > 200 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"src_inst_ids"},
+		}
+	}
+
+	if len(o.DestBizObj) == 0 || o.DestBizObj == common.BKInnerObjIDHost {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"dest_biz_obj is host"},
+		}
+	}
+
+	if o.SrcBizObj == o.DestBizObj {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"src_inst_ids or dest_biz_obj is same "},
+		}
+	}
+
+	if len(o.Page.Sort) != 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.sort should not set"},
+		}
+	}
+
+	if err := o.Page.ValidateLimit(500); err != nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return errors.RawErrorInfo{ErrCode: 0}
+}
+
 type UpdateBusinessStatusOption struct {
 	BizName string `json:"bk_biz_name" mapstructure:"bk_biz_name"`
 }
