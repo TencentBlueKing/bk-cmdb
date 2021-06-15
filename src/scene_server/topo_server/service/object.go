@@ -60,15 +60,6 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
-	// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
-	// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
-	// Collection minimum is Timestamp(1616747878, 5)
-	if err := s.createObjectTableBatch(ctx, *data); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
 	var ret mapstr.MapStr
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
