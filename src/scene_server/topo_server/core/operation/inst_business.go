@@ -454,7 +454,7 @@ func (b *business) UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.O
 // GetBriefTopologyNodeRelation is used to get directly related business topology node information.
 // As is, you can find modules belongs to a set; or you can find the set a module belongs to.
 // It has rules as follows:
-// 1. if src object is biz, then， the destination object can be any mainline object except biz.
+// 1. if src object is biz, then the destination object can be any mainline object except biz.
 // 2. destination object can be biz. otherwise, src and destination object should be the neighbour.
 // this api only return business topology relations.
 func (b *business) GetBriefTopologyNodeRelation(kit *rest.Kit, opts *metadata.GetBriefBizRelationOptions) (
