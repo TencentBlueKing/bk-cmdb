@@ -1091,8 +1091,8 @@ func (s *Service) SearchInstAssociationWithOtherObject(ctx *rest.Contexts) {
 		return
 	}
 
-	blog.V(5).Infof("input:%#v, rid:%s", input, ctx.Kit.Rid)
-	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationSingleObjectInstInfo(ctx.Kit, reqParams.Condition.AssociationObjectID, input)
+	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationSingleObjectInstInfo(ctx.Kit,
+		reqParams.Condition.AssociationObjectID, input, reqParams.Condition.IsTargetObject)
 	if err != nil {
 		blog.ErrorJSON("parse page illegal, input:%s, err:%s, rid:%s", input, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -1102,6 +1102,5 @@ func (s *Service) SearchInstAssociationWithOtherObject(ctx *rest.Contexts) {
 	ctx.RespEntity(map[string]interface{}{
 		"info":  infos,
 		"count": cnt,
-		"page":  input.Page,
 	})
 }
