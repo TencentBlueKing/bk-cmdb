@@ -565,12 +565,6 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		val, err = ps.RequestCtx.getValueFromBody(common.BKInstIDField)
 		if err != nil {
 			ps.err = err
@@ -594,32 +588,18 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		}
 		// 处理模型自关联的情况
 		if len(models) == 1 {
-			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID)
+			instRes, err := ps.generateUpdateInstanceResource(&models[0], instanceID)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			asstInstRes, err := ps.generateUpdateInstanceResource(&models[0], asstInstID)
 			if err != nil {
 				ps.err = err
 				return ps
 			}
 
-			ps.Attribute.Resources = []meta.ResourceAttribute{
-				{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: instanceID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: bizID,
-				},
-				{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: asstInstID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: bizID,
-				},
-			}
+			ps.Attribute.Resources = []meta.ResourceAttribute{*instRes, *asstInstRes}
 			return ps
 		}
 
@@ -630,22 +610,14 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			} else {
 				instID = asstInstID
 			}
-			instanceType, err := ps.getInstanceTypeByObject(model.ObjectID)
+
+			instRes, err := ps.generateUpdateInstanceResource(&model, instID)
 			if err != nil {
 				ps.err = err
 				return ps
 			}
 
-			ps.Attribute.Resources = append(ps.Attribute.Resources,
-				meta.ResourceAttribute{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: instID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-					BusinessID: bizID,
-				})
+			ps.Attribute.Resources = append(ps.Attribute.Resources, *instRes)
 		}
 		return ps
 	}
@@ -672,40 +644,20 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		// 处理模型自关联的情况
 		if len(models) == 1 {
-			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID)
+			instRes, err := ps.generateUpdateInstanceResource(&models[0], asst.InstID)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			asstInstRes, err := ps.generateUpdateInstanceResource(&models[0], asst.AsstInstID)
 			if err != nil {
 				ps.err = err
 				return ps
 			}
 
-			ps.Attribute.Resources = []meta.ResourceAttribute{
-				{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: asst.InstID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: bizID,
-				},
-				{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: asst.AsstInstID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: bizID,
-				},
-			}
+			ps.Attribute.Resources = []meta.ResourceAttribute{*instRes, *asstInstRes}
 			return ps
 		}
 
@@ -716,22 +668,14 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			} else {
 				instID = asst.AsstInstID
 			}
-			instanceType, err := ps.getInstanceTypeByObject(model.ObjectID)
+
+			instRes, err := ps.generateUpdateInstanceResource(&model, instID)
 			if err != nil {
 				ps.err = err
 				return ps
 			}
 
-			ps.Attribute.Resources = append(ps.Attribute.Resources,
-				meta.ResourceAttribute{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: instID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-					BusinessID: bizID,
-				})
+			ps.Attribute.Resources = append(ps.Attribute.Resources, *instRes)
 		}
 
 		return ps
