@@ -21,9 +21,9 @@ import (
 )
 
 type LoginUserInfoOwnerUinList struct {
-	OwnerID    string `json:"id"`
-	OwnerName  string `json:"name"`
-	Role       int64  `json:"role"`
+	OwnerID   string `json:"id"`
+	OwnerName string `json:"name"`
+	Role      int64  `json:"role"`
 }
 
 type LoginUserInfo struct {
@@ -113,19 +113,19 @@ type LogoutRequestParams struct {
 	HTTPScheme string `json:"http_scheme"`
 }
 
-type ExcelAssocationOperate int
+type ExcelAssociationOperate int
 
 const (
-	_ ExcelAssocationOperate = iota
-	ExcelAssocationOperateError
-	ExcelAssocationOperateAdd
-	//ExcelAssocationOperateUpdate
-	ExcelAssocationOperateDelete
+	_ ExcelAssociationOperate = iota
+	ExcelAssociationOperateError
+	ExcelAssociationOperateAdd
+	//ExcelAssociationOperateUpdate
+	ExcelAssociationOperateDelete
 )
 
-type ExcelAssocation struct {
-	ObjectAsstID string                 `json:"bk_obj_asst_id"`
-	Operate      ExcelAssocationOperate `json:"operate"`
-	SrcPrimary   string                 `json:"src_primary_key"`
-	DstPrimary   string                 `json:"dst_primary_key"`
+type ExcelAssociation struct {
+	ObjectAsstID string                  `json:"bk_obj_asst_id"`
+	Operate      ExcelAssociationOperate `json:"operate"`
+	SrcPrimary   string                  `json:"src_primary_key"`
+	DstPrimary   string                  `json:"dst_primary_key"`
 }
