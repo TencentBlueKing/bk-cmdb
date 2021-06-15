@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package y3_9_202106031151
+package y3_10_202106031151
 
 import (
 	"context"
@@ -49,7 +49,7 @@ type attribute struct {
 	LastTime          *time.Time  `json:"last_time" bson:"last_time"`
 }
 
-func addUnixProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addUNIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(common.BKDefaultOwnerID)

@@ -331,7 +331,7 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 		osname = platform
 		ostype = common.HostOSTypeEnumAIX
 	case "unix":
-		//  to do
+		// to do
 		osname = platform
 		ostype = common.HostOSTypeEnumUNIX
 	default:
@@ -520,7 +520,7 @@ func parseV10Setter(val *gjson.Result, innerIP, outerIP string) (map[string]inte
 		osname = platform
 		ostype = common.HostOSTypeEnumAIX
 	case "unix":
-		// to do
+		//  to do
 		osname = platform
 		ostype = common.HostOSTypeEnumUNIX
 	default:
