@@ -1,8 +1,5 @@
-/* eslint-disable no-unused-vars */
 import { ref } from '@vue/composition-api'
 import CombineRequest from '@/api/combine-request.js'
-
-const requestId = Symbol()
 
 // 每一片的大小（一次请求的最大实例个数）
 const segment = 10
@@ -17,15 +14,26 @@ export default function useInstanceCount(state = {}, root) {
   instanceCounts.value = []
 
   const fetchData = async function () {
-    const allResult = await CombineRequest.setup(requestId, params => root.$store.dispatch('objectCommonInst/searchInstanceCount', {
-      params: {
-        condition: { obj_ids: params }
-      },
-      config: {
-        requestId,
-        globalError: false
-      }
-    }), { segment, concurrency }).add(modelIds)
+    const requestIds = []
+    const allResult = await CombineRequest.setup(Symbol(), (params) => {
+      const requestId = `searchInstanceCount_${params.join()}`
+      requestIds.push(requestId)
+      return root.$store.dispatch('objectCommonInst/searchInstanceCount', {
+        params: {
+          condition: { obj_ids: params }
+        },
+        config: {
+          requestId,
+          globalError: false
+        }
+      })
+    }, { segment, concurrency }).add(modelIds)
+
+    // 关闭迭代器与取消请求
+    root.$once('hook:beforeDestroy', () => {
+      allResult?.return()
+      root.$http.cancelRequest(requestIds)
+    })
 
     // eslint-disable-next-line no-restricted-syntax
     for (const result of allResult) {
