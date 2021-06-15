@@ -45,16 +45,26 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, iam ac.AuthInterfac
 			"create_sys_instance",
 			"edit_sys_instance",
 			"delete_sys_instance",
+			"create_event_subscription",
+			"edit_event_subscription",
+			"delete_event_subscription",
+			"find_event_subscription",
+			"watch_set_template_event",
 		},
-		InstanceSelectionIDs: []iamtype.InstanceSelectionID{"sys_instance"},
-		TypeIDs:              []iamtype.TypeID{"sys_instance"},
+		InstanceSelectionIDs: []iamtype.InstanceSelectionID{"sys_instance", "sys_event_pushing"},
+		TypeIDs:              []iamtype.TypeID{"sys_instance", "sys_event_pushing"},
 	}
-	// delete the old system instance
 	if err := iam.DeleteCMDBResource(ctx, param, objects); err != nil {
 		blog.ErrorJSON("delete cmdb resource failed, err:%s", err)
 		return err
 	}
 
 	// add new system instances
-	return iam.SyncIAMSysInstances(ctx, objects)
+	if err := iam.SyncIAMSysInstances(ctx, objects); err != nil {
+		blog.ErrorJSON("sync iam system instances failed, err:%s", err)
+		return err
+	}
+
+	// delete the old cmdb resource
+	return iam.DeleteCMDBResource(ctx, param, objects)
 }
