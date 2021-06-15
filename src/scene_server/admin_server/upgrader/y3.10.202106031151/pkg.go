@@ -29,5 +29,13 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		blog.Errorf("[upgrade y3.10.202106031151] addUnixProperty error  %s", err.Error())
 		return err
 	}
+
+	err = updatePriorityProperty(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.10.202106031151] updatePriorityProperty error  %s", err.Error())
+		return err
+	}
+
 	return
+
 }
