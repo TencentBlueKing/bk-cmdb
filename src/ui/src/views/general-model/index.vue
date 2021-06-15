@@ -179,6 +179,8 @@
   import Utils from '@/components/filters/utils'
   import throttle from  'lodash.throttle'
   import instanceImportService from '@/service/instance/import'
+  import instanceService from '@/service/instance/instance'
+  import queryBuilderOperator from '@/utils/query-builder-operator'
   export default {
     components: {
       cmdbColumnsConfig,
@@ -371,12 +373,10 @@
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
       ...mapActions('objectCommonInst', [
         'createInst',
-        'searchInst',
         'updateInst',
         'batchUpdateInst',
         'deleteInst',
-        'batchDeleteInst',
-        'searchInstById'
+        'batchDeleteInst'
       ]),
       onQueryModeChange(val) {
         this.queryModeIsFuzzy = val
@@ -518,47 +518,42 @@
         this.table.checked = selection.map(row => row.bk_inst_id)
       },
       getInstList(config = { cancelPrevious: true }) {
-        return this.searchInst({
-          objId: this.objId,
+        return instanceService.find({
+          bk_obj_id: this.objId,
           params: this.getSearchParams(),
           config: Object.assign({ requestId: this.request.list }, config)
         })
       },
-      getTableData() {
+      async getTableData() {
         // 防止切换到子路由产生预期外的请求
         if (this.$route.name !== MENU_RESOURCE_INSTANCE) {
           return
         }
 
-        this.getInstList({ cancelPrevious: true, globalPermission: false }).then((data) => {
-          if (data.count && !data.info.length) {
+        try {
+          const { count, info } = await this.getInstList({ cancelPrevious: true, globalPermission: false })
+          if (count && !info.length) {
             RouterQuery.set({
               page: this.table.pagination.current - 1,
               _t: Date.now()
             })
           }
-          this.table.list = data.info
-          this.table.pagination.count = data.count
-
+          this.table.list = info
+          this.table.pagination.count = count
           this.table.stuff.type = this.filter.value.toString().length ? 'search' : 'default'
-
-          return data
-        })
-          .catch(({ permission }) => {
-            if (permission) {
-              this.table.stuff = {
-                type: 'permission',
-                payload: { permission }
-              }
+        } catch (err) {
+          console.error(err)
+          if (err.permission) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission: err.permission }
             }
-          })
+          }
+        }
       },
       getSearchParams() {
         const params = {
-          condition: {
-            [this.objId]: []
-          },
-          fields: {},
+          fields: [],
           page: {
             start: this.table.pagination.limit * (this.table.pagination.current - 1),
             limit: this.table.pagination.limit,
@@ -568,6 +563,7 @@
         if (!this.filter.value.toString()) {
           return params
         }
+
         if (this.filterType === 'time') {
           const [start, end] = this.filter.value
           params.time_condition = {
@@ -580,31 +576,36 @@
           }
           return params
         }
-        if (this.filter.operator === '$range') {
+
+        params.conditions = { condition: 'AND', rules: [] }
+
+        if (this.filterType === 'date') {
           const [start, end] = this.filter.value
-          params.condition[this.objId].push({
+          params.conditions.rules.push({
             field: this.filter.field,
-            operator: '$gte',
+            operator: 'datetime_greater_or_equal',
             value: start
           }, {
             field: this.filter.field,
-            operator: '$lte',
+            operator: 'datetime_less_or_equal',
             value: end
           })
           return params
         }
+
         if (this.filterType === 'objuser') {
           const multiple = this.filter.value.length > 1
-          params.condition[this.objId].push({
+          params.conditions.rules.push({
             field: this.filter.field,
-            operator: multiple ? '$in' : '$regex',
+            operator: queryBuilderOperator(multiple ? '$in' : '$regex'),
             value: multiple ? this.filter.value : this.filter.value.toString()
           })
           return params
         }
-        params.condition[this.objId].push({
+
+        params.conditions.rules.push({
           field: this.filter.field,
-          operator: this.filter.operator,
+          operator: queryBuilderOperator(this.filter.operator),
           value: this.filter.value
         })
         return params

@@ -63,6 +63,7 @@
 
 <script>
   import authMixin from '../mixin-auth'
+  import instanceService from '@/service/instance/instance'
   export default {
     name: 'cmdb-host-association-list-table',
     mixins: [authMixin],
@@ -288,29 +289,24 @@
         })
       },
       getModelInstances(config) {
-        return this.$store.dispatch('objectCommonInst/searchInst', {
-          objId: this.id,
+        return instanceService.find({
+          bk_obj_id: this.id,
           params: {
-            fields: {},
-            condition: {
-              [this.id]: [{
-                field: 'bk_inst_id',
-                operator: '$in',
-                value: this.instanceIds
-              }]
-            },
+            fields: [],
             page: {
               ...this.page,
               sort: 'bk_inst_id'
+            },
+            conditions: {
+              condition: 'AND',
+              rules: [{
+                field: 'bk_inst_id',
+                operator: 'in',
+                value: this.instanceIds
+              }]
             }
           },
           config
-        }).then((data) => {
-          data = data || {
-            count: 0,
-            info: []
-          }
-          return data
         })
       },
       async cancelAssociation() {
