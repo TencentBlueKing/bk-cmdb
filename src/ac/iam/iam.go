@@ -318,8 +318,8 @@ func (a *authorizer) authorizeBatch(ctx context.Context, h http.Header, exact bo
 		}
 	} else {
 		authDecisions, err = a.authClientSet.AuthorizeAnyBatch(ctx, h, opts)
-		blog.ErrorJSON("authorize any batch failed, err: %s, ops: %s, resources: %s, rid: %s", err, opts, resources, rid)
 		if err != nil {
+			blog.ErrorJSON("authorize any batch failed, err: %s, ops: %s, resources: %s, rid: %s", err, opts, resources, rid)
 			return nil, err
 		}
 

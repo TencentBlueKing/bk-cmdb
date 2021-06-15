@@ -626,7 +626,7 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 	}
 
 	if uniqueResp.Data.Count == 0 {
-		blog.Errorf("model %s has wrong must_check unique field not found, input: %s, rid: %s",
+		blog.Errorf("model %s has wrong must_check unique field not found, input: %s, cond: %s, rid: %s",
 			objID, cond, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrorTopObjectUniqueIndexNotFound, objID, id))
 		return
@@ -754,12 +754,18 @@ func (s *Service) SearchInstByObject(ctx *rest.Contexts) {
 
 // SearchInstByAssociation search inst by the association inst
 func (s *Service) SearchInstByAssociation(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	if common.IsInnerModel(objID) {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
+
 	data := new(operation.AssociationParams)
 	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	objID := ctx.Request.PathParameter("bk_obj_id")
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 

@@ -370,3 +370,30 @@ func (s *Service) SearchBusiness(c *gin.Context) {
 	c.JSON(http.StatusOK, biz)
 	return
 }
+
+func (s *Service) GetObjectInstanceCount(c *gin.Context) {
+	header := c.Request.Header
+	rid := util.GetHTTPCCRequestID(header)
+	ctx := util.NewContextFromGinContext(c)
+	webCommon.SetProxyHeader(c)
+	cond := &metadata.ObjectCountParams{}
+
+	err := c.BindJSON(&cond)
+	if err != nil {
+		blog.Errorf("unmarshal body to json failed, err: %s, rid: %s", err.Error(), rid)
+		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, err.Error(), nil)
+		_, _ = c.Writer.Write([]byte(msg))
+		return
+	}
+
+	resp, err := s.Logics.GetObjectCount(ctx, header, cond)
+	if err != nil {
+		blog.Errorf("get object count failed, err: %s, rid: %s", err.Error(), rid)
+		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, err.Error(), nil)
+		_, _ = c.Writer.Write([]byte(msg))
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+	return
+}
