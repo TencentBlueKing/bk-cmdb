@@ -1480,8 +1480,9 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 		}
 	}
 	if pt.Priority.Value != nil {
-		if *pt.Priority.Value < 1 || *pt.Priority.Value > 10000 {
-			return "priority", fmt.Errorf("field %s value must in range [1, 10000]", "priority")
+		if *pt.Priority.Value <  common.MinProcessPrio || *pt.Priority.Value > common.MaxProcessPrio {
+			return "priority",
+			fmt.Errorf("field %s value must in range [%d, %d]", "priority", common.MinProcessPrio,common.MaxProcessPrio)
 		}
 	}
 
