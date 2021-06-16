@@ -128,6 +128,58 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 	ctx.RespEntity(setInst.ToMapStr())
 }
 
+func (s *Service) CreateManyInstance(ctx *rest.Contexts) {
+	data := &metadata.CreateManyCommInst{}
+	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	urlObjID := ctx.Request.PathParameter(common.BKObjIDField)
+	objID := data.ObjID
+
+	if urlObjID != objID {
+		blog.Errorf("bk_obj_id verified failed, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField))
+		return
+	}
+
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
+	if nil != err {
+		blog.Errorf("failed to search the object(%s), err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) {
+		blog.Errorf("create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoImportMainlineForbidden))
+		return
+	}
+
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("failed to get whether the object(%s) is mainline object, err: %s, rid: %s", objID, err.Error(),
+			ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if isMainline {
+		blog.Errorf("create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoImportMainlineForbidden))
+		return
+	}
+
+	var setInst *metadata.CreateManyCommInstResultDetail
+	setInst, err = s.Core.InstOperation().CreateManyInstance(ctx.Kit, obj, data.Details)
+	if err != nil {
+		blog.Errorf("failed to create %s new instances, err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(setInst)
+}
+
 func (s *Service) DeleteInsts(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
 

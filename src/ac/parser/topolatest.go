@@ -841,6 +841,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 var (
 	createObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/create/instance/object/[^\s/]+/?$`)
+	createObjectManyInstanceLatestRegexp      = regexp.MustCompile(`^/api/v3/createmany/instance/object/[^\s/]+/?$`)
 	findObjectInstanceAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/find/instassociation/object/[^\s/]+/?$`)
 	updateObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/update/instance/object/[^\s/]+/inst/[0-9]+/?$`)
 	updateObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/updatemany/instance/object/[^\s/]+/?$`)
@@ -896,6 +897,44 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
+		return ps
+	}
+
+	if ps.hitRegexp(createObjectManyInstanceLatestRegexp, http.MethodPost) {
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		var modelType = meta.ModelInstance
+		isMainline, err := ps.isMainlineModel(objID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if isMainline {
+			modelType = meta.MainlineInstance
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   modelType,
+					Action: meta.Create,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+			},
+		}
+
 		return ps
 	}
 

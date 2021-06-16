@@ -79,6 +79,9 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 	if err != nil {
 		blog.ErrorJSON("CreateModelInstance failed, save error:%v, objID:%s, data:%s, rid:%s",
 			err, objID, inputParam.Data, kit.Rid)
+		if mongodb.Client().IsDuplicatedError(err) {
+			return nil, kit.CCError.CCError(common.CCErrCommDuplicateItem)
+		}
 		return nil, err
 	}
 
@@ -88,7 +91,8 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error) {
 	dataResult := &metadata.CreateManyDataResult{}
 	allValidators := make(map[int64]*validator)
-	for _, item := range inputParam.Datas {
+	for idx, item := range inputParam.Datas {
+		instance := item.Clone()
 		if item == nil {
 			blog.ErrorJSON("the model instance data can't be empty, input data:%s rid:%s", inputParam.Datas, kit.Rid)
 			return nil, kit.CCError.Errorf(common.CCErrCommInstDataNil, "modelInstance")
@@ -110,17 +114,35 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, i
 
 		err = m.validCreateInstanceData(kit, objID, item, allValidators[bizID])
 		if nil != err {
-			blog.Errorf("CreateManyModelInstance failed, validCreateInstanceData err:%v, objID:%s, item:%#v, rid:%s", err, objID, item, kit.Rid)
-			return nil, err
+			blog.Errorf("validCreateInstanceData err:%v, objID:%s, item:%#v, rid:%s", err, objID, item, kit.Rid)
+			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
+				Message:     err.Error(),
+				Data:        item,
+				OriginIndex: int64(idx),
+			})
+			continue
 		}
 
 		id, err := m.save(kit, objID, item)
 		if nil != err {
-			return nil, err
+			if mongodb.Client().IsDuplicatedError(err) {
+				dataResult.Repeated = append(dataResult.Repeated, metadata.RepeatedDataResult{
+					Data:        instance,
+					OriginIndex: int64(idx),
+				})
+			} else {
+				dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
+					Message:     err.Error(),
+					Data:        instance,
+					OriginIndex: int64(idx),
+				})
+			}
+			continue
 		}
 
 		dataResult.Created = append(dataResult.Created, metadata.CreatedDataResult{
-			ID: id,
+			ID:          id,
+			OriginIndex: int64(idx),
 		})
 	}
 
