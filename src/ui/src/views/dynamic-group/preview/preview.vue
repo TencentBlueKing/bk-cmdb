@@ -13,6 +13,7 @@
       :pagination="table.pagination"
       :data="table.list"
       height="400"
+      max-height="400"
       @page-change="handlePageChange"
       @page-limit-change="handlePageLimitChange"
       @sort-change="handleSortChange">

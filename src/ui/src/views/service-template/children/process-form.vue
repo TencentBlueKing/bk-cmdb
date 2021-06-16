@@ -186,7 +186,7 @@
         return `cmdb-form-${type}`
       },
       getPropertyEditStatus(property) {
-        const uneditable = ['bk_func_name', 'bk_process_name'].includes(property.bk_property_id) && !this.isCreatedService
+        const uneditable = ['bk_func_name'].includes(property.bk_property_id) && !this.isCreatedService
         return this.type === 'update' && uneditable
       },
       changedValues() {
