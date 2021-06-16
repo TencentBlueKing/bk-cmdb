@@ -130,6 +130,39 @@ type CreateAssociationInstResult struct {
 	Data     RspID `json:"data"`
 }
 
+//CreateManyInstAsstRequest parameter structure for creating multiple instances associations
+type CreateManyInstAsstRequest struct {
+	ObjectID     string     `field:"bk_obj_id" json:"bk_obj_id,omitempty" bson:"bk_obj_id,omitempty"`
+	AsstObjectID string     `field:"bk_asst_obj_id" json:"bk_asst_obj_id,omitempty" bson:"bk_asst_obj_id,omitempty"`
+	ObjectAsstID string     `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id,omitempty"`
+	Details      []InstAsst `field:"details" json:"details,omitempty" bson:"details,omitempty"`
+}
+
+//AssociationInstDetails source and target instances of associations
+type AssociationInstDetails struct {
+	InstID     int64 `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
+	AsstInstID int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id,omitempty" bson:"bk_asst_inst_id,omitempty"`
+}
+
+//CreateManyInstAsstResultDetail details of creating instance association result
+type CreateManyInstAsstResultDetail struct {
+	SuccessCreated map[int64]int64  `json:"success_created"`
+	Error          map[int64]string `json:"error_msg"`
+}
+
+//CreateManyInstAsstResult  result of creating instance association
+type CreateManyInstAsstResult struct {
+	BaseResp `json:",inline"`
+	Data     CreateManyInstAsstResultDetail `json:"data"`
+}
+
+func NewManyInstAsstResultDetail() CreateManyInstAsstResultDetail {
+	return CreateManyInstAsstResultDetail{
+		SuccessCreated: make(map[int64]int64, 0),
+		Error:          make(map[int64]string, 0),
+	}
+}
+
 type DeleteAssociationInstRequest struct {
 	Condition mapstr.MapStr `json:"condition"`
 }

@@ -790,6 +790,23 @@ func (s *Service) CreateAssociationInst(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(ret.Data)
 }
+func (s *Service) CreateManyInstAssociation(ctx *rest.Contexts) {
+	request := &metadata.CreateManyInstAsstRequest{}
+	if err := ctx.DecodeInto(request); err != nil {
+		blog.Errorf("deserialization failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ret, err := s.Core.AssociationOperation().CreateManyInstAssociation(ctx.Kit, request)
+	if err != nil {
+		blog.Errorf("create many instance association failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(ret)
+}
 
 func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter(common.BKObjIDField)

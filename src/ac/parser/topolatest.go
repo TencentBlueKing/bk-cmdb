@@ -514,6 +514,7 @@ const (
 	findObjectInstanceAssociationLatestPattern        = "/api/v3/find/instassociation"
 	findObjectInstanceAssociationRelatedLatestPattern = "/api/v3/find/instassociation/related"
 	createObjectInstanceAssociationLatestPattern      = "/api/v3/create/instassociation"
+	createObjectManyInstanceAssociationLatestPattern  = "/api/v3/createmany/instassociation"
 )
 
 var (
@@ -680,6 +681,122 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 					Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 					BusinessID: bizID,
 				})
+		}
+		return ps
+	}
+
+	if ps.hitPattern(createObjectManyInstanceAssociationLatestPattern, http.MethodPost) {
+		val, err := ps.RequestCtx.getValueFromBody(common.AssociationObjAsstIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		associationObjAsstID := val.String()
+		filter := mapstr.MapStr{
+			common.AssociationObjAsstIDField: associationObjAsstID,
+		}
+		asst, err := ps.getModelAssociation(filter)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		modelFilter := mapstr.MapStr{
+			common.BKObjIDField: mapstr.MapStr{
+				common.BKDBIN: []interface{}{
+					asst[0].ObjectID,
+					asst[0].AsstObjID,
+				},
+			},
+		}
+		models, err := ps.searchModels(modelFilter)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		instances, err := ps.RequestCtx.getValueFromBody("details")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceArray := instances.Array()
+		for _, instanceItem := range instanceArray {
+			instanceMap := instanceItem.Map()
+			instID := instanceMap[common.BKInstIDField]
+			asstInstID := instanceMap[common.BKAsstInstIDField]
+			instanceID := instID.Int()
+			if instanceID <= 0 {
+				ps.err = errors.New("invalid bk_inst_id value")
+				return ps
+			}
+
+			asstInstIDInt := asstInstID.Int()
+			if asstInstIDInt <= 0 {
+				ps.err = errors.New("invalid bk_asst_inst_id value")
+				return ps
+			}
+			// 处理模型自关联的情况
+			if len(models) == 1 {
+				instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID)
+				if err != nil {
+					ps.err = err
+					return ps
+				}
+
+				ps.Attribute.Resources = []meta.ResourceAttribute{
+					{
+						Basic: meta.Basic{
+							Type:       instanceType,
+							Action:     meta.Update,
+							InstanceID: instanceID,
+						},
+						Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
+						BusinessID: bizID,
+					},
+					{
+						Basic: meta.Basic{
+							Type:       instanceType,
+							Action:     meta.Update,
+							InstanceID: asstInstIDInt,
+						},
+						Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
+						BusinessID: bizID,
+					},
+				}
+				return ps
+			}
+
+			for _, model := range models {
+				var instID int64
+				if model.ObjectID == asst[0].ObjectID {
+					instID = instanceID
+				} else {
+					instID = asstInstIDInt
+				}
+				instanceType, err := ps.getInstanceTypeByObject(model.ObjectID)
+				if err != nil {
+					ps.err = err
+					return ps
+				}
+
+				ps.Attribute.Resources = append(ps.Attribute.Resources,
+					meta.ResourceAttribute{
+						Basic: meta.Basic{
+							Type:       instanceType,
+							Action:     meta.Update,
+							InstanceID: instID,
+						},
+						Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+						BusinessID: bizID,
+					})
+			}
 		}
 		return ps
 	}

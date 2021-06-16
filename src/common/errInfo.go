@@ -631,6 +631,7 @@ const (
 	CCErrAuditTakeSnapshotFailed = 1109002
 	CCErrAuditSelectFailed       = 1109003
 	CCErrAuditSelectTimeout      = 1109004
+	CCErrAuditGenerateLogFailed  = 1109004
 
 	// host server
 	CCErrHostGetFail              = 1110001
