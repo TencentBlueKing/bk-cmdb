@@ -121,7 +121,8 @@ func InitMonitor() error {
 		blog.Errorf("init monitor failed,monitor.enableMonitor err: %v", err)
 		return errors.New("config monitor.enableMonitor is not found")
 	}
-	if !config.MonitorCfg.EnableMonitor { //如果不需要进行监控上报，那么后续没有必要再检查配置
+	//如果不需要进行监控上报，那么后续没有必要再检查配置
+	if !config.MonitorCfg.EnableMonitor {
 		return nil
 	}
 
@@ -159,16 +160,16 @@ func InitMonitor() error {
 	}
 	config.MonitorCfg.Burst = burst
 
-	config.MonitorCfg.Gsecmdline, err = cc.String("monitor.gsecmdline")
+	config.MonitorCfg.GsecmdlinePath, err = cc.String("monitor.gsecmdlinePath")
 	if err != nil {
 		blog.Errorf("init monitor failed, err: %v", err)
-		return errors.New("config monitor.agentAddress is not found")
+		return errors.New("config monitor.gsecmdlinePath is not found")
 	}
 
 	config.MonitorCfg.DomainSocketPath, err = cc.String("monitor.domainSocketPath")
 	if err != nil {
 		blog.Errorf("init monitor failed, err: %v", err)
-		return errors.New("config monitor.accessToken is not found")
+		return errors.New("config monitor.domainSocketPath is not found")
 	}
 
 	err = config.CheckAndCorrectCfg()

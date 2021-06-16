@@ -53,8 +53,9 @@ type MonitorConfig struct {
 	Burst int64
 	// SourceIP is the source ip address to report data
 	SourceIP string
-	// access_token to report data
-	Gsecmdline       string
+	// Gsecmdline command path
+	GsecmdlinePath string
+	//  domainsokect path
 	DomainSocketPath string
 }
 
@@ -102,9 +103,9 @@ func CheckAndCorrectCfg() error {
 		return errors.New("config monitor.domainSocketPath is not set")
 	}
 
-	if MonitorCfg.Gsecmdline == "" {
-		blog.Errorf("init monitor failed, config monitor.gsecmdline is not set")
-		return errors.New("config monitor.gsecmdline is not set")
+	if MonitorCfg.GsecmdlinePath == "" {
+		blog.Errorf("init monitor failed, config monitor.gsecmdlinePath is not set")
+		return errors.New("config monitor.gsecmdlinePath is not set")
 	}
 
 	return nil

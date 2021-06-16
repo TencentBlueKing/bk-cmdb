@@ -13,7 +13,6 @@
 package service
 
 import (
-
 	"context"
 	"fmt"
 
@@ -26,16 +25,14 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
-
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/configures"
-	"configcenter/src/thirdparty/monitor"
-	"configcenter/src/thirdparty/monitor/meta"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/monitor"
+	"configcenter/src/thirdparty/monitor/meta"
 
 	"github.com/emicklei/go-restful"
-
 )
 
 type Service struct {
@@ -156,12 +153,11 @@ func (s *Service) MonitorHealth(req *restful.Request, resp *restful.Response) {
 	alam := &meta.Alarm{
 		RequestID: rid,
 		Type:      meta.EventTestInfo,
-		Detail: fmt.Sprintf("test event link connectivity"),
+		Detail:    fmt.Sprintf("test event link connectivity"),
 		Module:    types.CC_MODULE_MIGRATE,
 	}
 	monitor.Collect(alam)
 	resp.Header().Set("Content-Type", "application/json")
-	//resp.WriteEntity(answer)
 	resp.WriteEntity(metadata.NewSuccessResp(alam))
 
 }
