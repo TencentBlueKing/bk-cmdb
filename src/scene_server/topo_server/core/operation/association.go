@@ -1062,15 +1062,13 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 
 func (assoc *association) CreateManyInstAssociation(kit *rest.Kit,
 	request *metadata.CreateManyInstAsstRequest) (*metadata.CreateManyInstAsstResultDetail, error) {
-
-	num := len(request.Details)
-	switch {
-	case num > 200:
-		blog.Errorf("details cannot more than 200, details number: %s, rid: %s", num, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "details", 200)
-	case num == 0:
+	if len(request.Details) == 0 {
 		blog.Errorf("details cannot be empty, rid: %s", kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommInstDataNil, "details")
+	}
+	if len(request.Details) > 200 {
+		blog.Errorf("details cannot more than 200, details number: %s, rid: %s", len(request.Details), kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "details", 200)
 	}
 
 	if request.ObjectAsstID[:len(request.ObjectID)] != request.ObjectID {

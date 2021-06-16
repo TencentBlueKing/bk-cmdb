@@ -550,7 +550,7 @@ var _ = Describe("inst test", func() {
 
 		count, err := data["count"].(json.Number).Int64()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(int(count)).To(Equal(2))
+		Expect(int(count)).To(Equal(5))
 	})
 
 	It("count instance associations with OR conditions more than 20", func() {
