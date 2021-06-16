@@ -18,22 +18,7 @@
             :name="property.bk_property_name">
           </bk-option>
         </bk-select>
-        <p class="rules-error" v-if="validateResult">
-          <template v-if="validateResult.type === SET_TYPE.superset">
-            <i18n path="唯一校验子集提示">
-              <span place="name">
-                <span class="rules-error-name"
-                  v-for="(rule, index) in validateResult.rules"
-                  :key="rule.id"
-                  @click="handleErrorRuleClick(rule)">
-                  {{getValidateRuleName(rule)}}
-                  <template v-if="index !== (validateResult.rules.length - 1)">、</template>
-                </span>
-              </span>
-            </i18n>
-          </template>
-          <template v-else>{{$t('唯一校验超集提示')}}</template>
-        </p>
+        <p class="rules-error" v-if="validateResult">{{validateResult}}</p>
       </bk-form-item>
       <bk-form-item class="mt20" v-if="!readonly">
         <bk-button theme="primary" class="mr10"
@@ -72,10 +57,6 @@
         singleRuleTypes: Object.freeze(['singlechar', 'int', 'float']),
         unionRuleTypes: Object.freeze(['singlechar', 'int', 'float', 'enum', 'date', 'list']),
         validateResult: null,
-        SET_TYPE: Object.freeze({
-          subset: Symbol('subset'),
-          superset: Symbol('superset')
-        }),
         request: Object.freeze({
           create: Symbol('create'),
           update: Symbol('update')
@@ -167,39 +148,26 @@
         return name.join('+')
       },
       /**
-       * 判断当前规则是否是某些规则的子集，并返回已存在的超集
+       * 判断是否有相同的规则
        */
-      validateSubset() {
-        const rules = this.submitRules
-        const superset = this.existRules.filter(existRule => rules.every(id => existRule.rules.includes(id)))
-        return superset.length ? superset : false
-      },
-      /**
-       * 判断当前规则是否是某些规则的超集，并返回已存在的子集
-       */
-      validateSuperset() {
-        const rules = this.submitRules
-        const subset = this.existRules.filter(existRule => existRule.rules.every(id => rules.includes(id)))
-        return subset.length ? subset : false
+      validateSameRules() {
+        return this.existRules.some((existRule) => {
+          const sameLength = this.submitRules.length === existRule.rules.length
+          if (!sameLength) return false
+          return existRule.rules.every(id => this.submitRules.includes(id))
+        })
       },
       validateRules() {
         if (!this.submitRules.length) {
           return false
         }
-        const subset = this.validateSubset()
-        if (subset) {
-          this.validateResult = {
-            type: this.SET_TYPE.subset,
-            rules: subset
-          }
+        if (this.isUnion && this.submitRules.length < 2) {
+          this.validateResult = this.$t('请至少选择两个字段')
           return false
         }
-        const superset = this.validateSuperset()
-        if (superset) {
-          this.validateResult = {
-            type: this.SET_TYPE.superset,
-            rules: superset
-          }
+        const hasSameRules = this.validateSameRules()
+        if (hasSameRules) {
+          this.validateResult = this.$t('唯一校验重复提示')
           return false
         }
         return true
