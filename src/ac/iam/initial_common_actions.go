@@ -76,6 +76,8 @@ func GenerateCommonActions() []CommonAction {
 				{ID: WatchBizEvent},
 				{ID: WatchSetEvent},
 				{ID: WatchModuleEvent},
+				{ID: WatchProcessEvent},
+				{ID: WatchCommonInstanceEvent},
 			},
 		},
 		{

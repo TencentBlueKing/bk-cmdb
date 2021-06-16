@@ -988,6 +988,11 @@ const (
 	HostOSTypeEnumUNIX    = "4"
 )
 
+const (
+	MaxProcessPrio = 10000
+	MinProcessPrio = -100
+)
+
 // integer const
 const (
 	MaxUint64  = ^uint64(0)

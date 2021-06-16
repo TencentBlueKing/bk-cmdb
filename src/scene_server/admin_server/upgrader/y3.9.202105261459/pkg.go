@@ -9,7 +9,8 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package y3_9_202106031151
+
+package y3_9_202105261459
 
 import (
 	"context"
@@ -20,19 +21,17 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.9.202106031151", upgrade)
+	upgrader.RegistUpgrader("y3.9.202105261459", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	err = addUnixProperty(ctx, db, conf)
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	blog.Infof("start execute y3.9.202105261459")
+
+	err := updateConfigAdmin(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202106031151] addUnixProperty error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202105261459] update config admin failed, error: %v", err)
 		return err
 	}
-	err = updatePriorityProperty(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade y3.9.202106031151] updatePriorityProperty error  %s", err.Error())
-		return err
-	}
-	return
+
+	return nil
 }

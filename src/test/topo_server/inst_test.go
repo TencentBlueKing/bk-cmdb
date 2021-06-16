@@ -503,6 +503,66 @@ var _ = Describe("inst test", func() {
 		Expect(instance["bk_sn"].(string)).To(Equal("1234"))
 	})
 
+	It("search object instances without conditions", func() {
+		input := &metadata.CommonSearchFilter{
+			Fields: []string{"bk_inst_name", "bk_asset_id", "bk_obj_id", "bk_sn"},
+			Page:   metadata.BasePage{Start: 0, Limit: 1},
+		}
+
+		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "bk_switch", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		info, ok := data["info"].([]interface{})
+		Expect(ok).To(Equal(true))
+		Expect(len(info)).To(Equal(1))
+
+		instance, ok := info[0].(map[string]interface{})
+		Expect(ok).To(Equal(true))
+
+		Expect(instance["bk_inst_name"].(string)).To(Equal("aaa"))
+		Expect(instance["bk_asset_id"].(string)).To(Equal("123"))
+		Expect(instance["bk_obj_id"].(string)).To(Equal("bk_switch"))
+		Expect(instance["bk_sn"].(string)).To(Equal("1234"))
+	})
+
+	It("search object instances without fields", func() {
+		input := &metadata.CommonSearchFilter{
+			Conditions: &querybuilder.QueryFilter{
+				Rule: querybuilder.CombinedRule{
+					Condition: querybuilder.ConditionAnd,
+					Rules: []querybuilder.Rule{
+						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual, Value: "aaa"},
+						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual, Value: "123"},
+						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual, Value: "bk_switch"},
+						&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
+					},
+				},
+			},
+			Page: metadata.BasePage{Start: 0, Limit: 1},
+		}
+
+		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "bk_switch", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		info, ok := data["info"].([]interface{})
+		Expect(ok).To(Equal(true))
+		Expect(len(info)).To(Equal(1))
+
+		instance, ok := info[0].(map[string]interface{})
+		Expect(ok).To(Equal(true))
+		Expect(len(instance)).To(Equal(16))
+	})
+
 	It("search object instances with limit more than 500", func() {
 		input := &metadata.CommonSearchFilter{
 			Conditions: &querybuilder.QueryFilter{
@@ -526,6 +586,28 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(false))
 	})
 
+	It("search object instances without page", func() {
+		input := &metadata.CommonSearchFilter{
+			Conditions: &querybuilder.QueryFilter{
+				Rule: querybuilder.CombinedRule{
+					Condition: querybuilder.ConditionAnd,
+					Rules: []querybuilder.Rule{
+						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual, Value: "aaa"},
+						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual, Value: "123"},
+						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual, Value: "bk_switch"},
+						&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
+					},
+				},
+			},
+			Fields: []string{"bk_inst_name", "bk_asset_id", "bk_obj_id", "bk_sn"},
+		}
+
+		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "bk_switch", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
 	It("count object instances", func() {
 		input := &metadata.CommonCountFilter{
 			Conditions: &querybuilder.QueryFilter{
@@ -540,6 +622,22 @@ var _ = Describe("inst test", func() {
 				},
 			},
 		}
+
+		rsp, err := instClient.CountObjectInstances(context.Background(), header, "bk_switch", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		count, err := data["count"].(json.Number).Int64()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(int(count)).To(Equal(1))
+	})
+
+	It("count object instances without conditions", func() {
+		input := &metadata.CommonCountFilter{}
 
 		rsp, err := instClient.CountObjectInstances(context.Background(), header, "bk_switch", input)
 		util.RegisterResponse(rsp)

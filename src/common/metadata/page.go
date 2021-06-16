@@ -54,6 +54,10 @@ func (page BasePage) IsIllegal() bool {
 
 // ValidateLimit validates target page limit.
 func (page BasePage) ValidateLimit(maxLimit int) error {
+	if page.Limit == 0 {
+		return fmt.Errorf("page limit must not be zero")
+	}
+
 	if maxLimit > common.BKMaxPageSize {
 		return fmt.Errorf("exceed system max page size: %d", common.BKMaxPageSize)
 	}

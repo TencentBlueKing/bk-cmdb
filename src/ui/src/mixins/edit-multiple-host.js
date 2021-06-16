@@ -75,6 +75,7 @@ export default {
           _t: Date.now(),
           page: 1
         })
+        this.$success(this.$t('修改成功'))
       } catch (e) {
         console.error(e)
       }

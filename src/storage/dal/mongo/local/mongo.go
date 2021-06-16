@@ -978,7 +978,9 @@ func (c *Collection) DropDocsColumn(ctx context.Context, field string, filter ty
 }
 
 // AggregateAll aggregate all operation
-func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
+func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{},
+	opts ...*types.AggregateOpts) error {
+
 	mtc.collectOperCount(c.collName, aggregateOper)
 
 	start := time.Now()
@@ -986,10 +988,20 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 		mtc.collectOperDuration(c.collName, aggregateOper, time.Since(start))
 	}()
 
+	var aggregateOption *options.AggregateOptions
+	for _, opt := range opts {
+		if opt == nil {
+			continue
+		}
+		if opt.AllowDiskUse != nil {
+			aggregateOption = &options.AggregateOptions{AllowDiskUse: opt.AllowDiskUse}
+		}
+	}
+
 	opt := getCollectionOption(ctx)
 
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName, opt).Aggregate(ctx, pipeline)
+		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName, opt).Aggregate(ctx, pipeline, aggregateOption)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, aggregateOper)
 			return err

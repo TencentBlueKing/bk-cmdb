@@ -44,6 +44,7 @@ func instanceObjectIDMapping(ctx context.Context, db dal.RDB, conf *upgrader.Con
 			common.BKInstIDField: 1,
 		},
 		Background: true,
+		Unique:     true,
 	}
 	if err := db.Table(objectBaseMapping).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
 		return err
