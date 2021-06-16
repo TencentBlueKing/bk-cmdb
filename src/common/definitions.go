@@ -985,6 +985,12 @@ const (
 	HostOSTypeEnumLinux   = "1"
 	HostOSTypeEnumWindows = "2"
 	HostOSTypeEnumAIX     = "3"
+	HostOSTypeEnumUNIX    = "4"
+)
+
+const (
+	MaxProcessPrio = 10000
+	MinProcessPrio = -100
 )
 
 // integer const

@@ -57,8 +57,9 @@ var esIndexesNameTypeMap = map[string]string{
 var esIndexesTypeNameMap = map[string]string{
 	TypeApplication: esBizIndex,
 	TypeHost:        esHostIndex,
-	TypeInstance:    esInstanceIndex,
-	TypeModel:       esModelIndex + "*",
+	// the wildcard * can match multiple indexes whose name start with "cc_ObjectBase"
+	TypeInstance: esInstanceIndex + "*",
+	TypeModel:    esModelIndex,
 }
 
 var esIndexesTypeKindMap = map[string]string{

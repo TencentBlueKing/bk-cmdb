@@ -312,14 +312,11 @@ func (ia *importAssociation) getAssociationObjProperty() error {
 
 	uniqueQueryCond := metadata.QueryCondition{Condition: uniqueCond.ToMapStr()}
 	uniqueResult, err := ia.cli.clientSet.CoreService().Model().ReadModelAttrUnique(ia.ctx, ia.kit.Header, uniqueQueryCond)
-	if nil != err {
+	if err != nil {
 		blog.ErrorJSON("[getAssociationInfo] http do error.  search model unique , error info is %s, input:%s, rid:%s", err.Error(), uniqueQueryCond, ia.rid)
 		return ia.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if nil != err {
-		blog.ErrorJSON("[getAssociationInfo]http reply error. search model unique , error info is %s, input:%s, rid:%s", err.Error(), uniqueQueryCond, ia.rid)
-		return ia.kit.CCError.New(uniqueResult.Code, uniqueResult.ErrMsg)
-	}
+
 	var propertyIDArr []uint64
 	for _, unique := range uniqueResult.Data.Info {
 		for _, property := range unique.Keys {

@@ -315,6 +315,9 @@ func genResourceManageActionGroups() []ActionGroup {
 						{
 							ID: WatchProcessEvent,
 						},
+						{
+							ID: WatchCommonInstanceEvent,
+						},
 					},
 				},
 			},

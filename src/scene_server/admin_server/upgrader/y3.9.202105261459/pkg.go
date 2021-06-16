@@ -10,43 +10,26 @@
  * limitations under the License.
  */
 
-package y3_10_202104221702
+package y3_9_202105261459
 
 import (
 	"context"
 
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/types"
 )
 
-func instanceObjectIDMapping(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func init() {
+	upgrader.RegistUpgrader("y3.9.202105261459", upgrade)
+}
 
-	exists, err := db.HasTable(ctx, objectBaseMapping)
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	blog.Infof("start execute y3.9.202105261459")
+
+	err := updateConfigAdmin(ctx, db, conf)
 	if err != nil {
-		blog.ErrorJSON("check table(%s) exist error, err: %s", objectBaseMapping, err)
-		return err
-
-	}
-	if !exists {
-		if err := db.CreateTable(ctx, objectBaseMapping); err != nil {
-			blog.ErrorJSON("create table(%s) error, err: %s", objectBaseMapping, err)
-			return err
-		}
-
-	}
-
-	index := types.Index{
-		Name: common.CCLogicIndexNamePrefix + "InstID",
-		Keys: map[string]int32{
-			common.BKInstIDField: 1,
-		},
-		Background: true,
-		Unique:     true,
-	}
-	if err := db.Table(objectBaseMapping).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
+		blog.Errorf("[upgrade y3.9.202105261459] update config admin failed, error: %v", err)
 		return err
 	}
 
