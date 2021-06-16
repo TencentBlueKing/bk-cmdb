@@ -67,6 +67,9 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	if err != nil {
 		blog.ErrorJSON("save instance error. err: %s, objID: %s, instance: %s, rid: %s",
 			err.Error(), objID, inputParam, kit.Rid)
+		if mongodb.Client().IsDuplicatedError(err) {
+			return id, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
+		}
 		return 0, err
 	}
 

@@ -79,9 +79,6 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 	if err != nil {
 		blog.ErrorJSON("CreateModelInstance failed, save error:%v, objID:%s, data:%s, rid:%s",
 			err, objID, inputParam.Data, kit.Rid)
-		if mongodb.Client().IsDuplicatedError(err) {
-			return nil, kit.CCError.CCError(common.CCErrCommDuplicateItem)
-		}
 		return nil, err
 	}
 
