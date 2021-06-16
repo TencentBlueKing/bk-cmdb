@@ -621,12 +621,6 @@ func (s *Service) DeleteAssociationType(ctx *rest.Contexts) {
 func (s *Service) SearchInstanceAssociations(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
 
-	// NOTE: NOT SUPPORT inner model associations search action in this interface.
-	if common.IsInnerModel(objID) {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
-		return
-	}
-
 	// decode input parameter.
 	input := &metadata.CommonSearchFilter{}
 	if err := ctx.DecodeInto(input); nil != err {
@@ -660,12 +654,6 @@ func (s *Service) SearchInstanceAssociations(ctx *rest.Contexts) {
 // CountInstanceAssociations counts object instance associations with the input conditions.
 func (s *Service) CountInstanceAssociations(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
-
-	// NOTE: NOT SUPPORT inner model associations count action in this interface.
-	if common.IsInnerModel(objID) {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
-		return
-	}
 
 	// decode input parameter.
 	input := &metadata.CommonCountFilter{}

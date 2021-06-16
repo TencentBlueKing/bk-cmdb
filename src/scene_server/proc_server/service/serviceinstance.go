@@ -1260,8 +1260,73 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 
 	modules, err := ps.getModules(ctx, syncOption.ModuleIDs)
 	if err != nil {
-		blog.Errorf("syncServiceInstanceByTemplate failed, getModule failed, moduleIDs: %+v, err: %s, rid: %s", syncOption.ModuleIDs, err.Error(), rid)
+		blog.ErrorJSON("get module info failed, input: %s, err: %s, rid: %s", syncOption, err.Error(), rid)
 		return err
+	}
+
+	serviceTemplateIDs := make([]int64, 0)
+	serviceTemplateModuleMap := make(map[int64][]*metadata.ModuleInst)
+	for _, module := range modules {
+		serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
+		serviceTemplateModuleMap[module.ServiceTemplateID] = append(serviceTemplateModuleMap[module.ServiceTemplateID],
+			module)
+	}
+
+	listSvcTempCond := &metadata.ListServiceTemplateOption{
+		BusinessID:         bizID,
+		ServiceTemplateIDs: serviceTemplateIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	// get service templates
+	serviceTemplates, err := ps.CoreAPI.CoreService().Process().
+		ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, listSvcTempCond)
+	if err != nil {
+		blog.ErrorJSON("ListServiceTemplates failed, input: %s, err: %s, rid: %s", listSvcTempCond, err.Error(), rid)
+		return err
+	}
+
+	// 2021年06月15日 修复模块下没有服务实例的，同步服务无效
+	// step -1:
+	// update module service category and name field
+	for _, serviceTemplate := range serviceTemplates.Info {
+		updateModules := make([]int64, 0)
+		for _, module := range serviceTemplateModuleMap[serviceTemplate.ID] {
+			if module == nil {
+				continue
+			}
+			if serviceTemplate.ServiceCategoryID != module.ServiceCategoryID ||
+				serviceTemplate.Name != module.ModuleName {
+				updateModules = append(updateModules, module.ModuleID)
+			}
+		}
+		if len(updateModules) == 0 {
+			continue
+		}
+		moduleUpdateOption := &metadata.UpdateOption{
+			Data: map[string]interface{}{
+				common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
+				common.BKModuleNameField:        serviceTemplate.Name,
+			},
+			Condition: map[string]interface{}{
+				common.BKModuleIDField: map[string]interface{}{
+					common.BKDBIN: updateModules,
+				},
+			},
+		}
+		resp, e := ps.CoreAPI.CoreService().Instance().
+			UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleUpdateOption)
+		if e != nil {
+			blog.ErrorJSON("UpdateInstance http do error, option: %s, err: %s, rid:%s",
+				moduleUpdateOption, e.Error(), rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if ccErr := resp.CCError(); ccErr != nil {
+			blog.ErrorJSON("UpdateInstance http reply error, option: %s, result: %s, rid: %s",
+				moduleUpdateOption, resp, rid)
+			return ccErr
+		}
 	}
 
 	// step 0:
@@ -1291,12 +1356,6 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 
 	// step 1:
 	// find all the process template according to the service template id
-	serviceTemplateIDs := make([]int64, 0)
-	serviceTemplateModuleMap := make(map[int64][]*metadata.ModuleInst)
-	for _, module := range modules {
-		serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
-		serviceTemplateModuleMap[module.ServiceTemplateID] = append(serviceTemplateModuleMap[module.ServiceTemplateID], module)
-	}
 	processTemplateFilter := &metadata.ListProcessTemplatesOption{
 		BusinessID:         bizID,
 		ServiceTemplateIDs: serviceTemplateIDs,
@@ -1507,55 +1566,6 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 		}
 	}
 
-	// get service templates
-	serviceTemplates, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &metadata.ListServiceTemplateOption{
-		BusinessID:         bizID,
-		ServiceTemplateIDs: serviceTemplateIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	})
-	if err != nil {
-		blog.Errorf("syncServiceInstanceByTemplate failed, ListServiceTemplates failed, serviceTemplateIDs: %+v, err: %s, rid: %s", serviceTemplateIDs, err.Error(), rid)
-		return err
-	}
-
-	// step 8:
-	// update module service category and name field
-	for _, serviceTemplate := range serviceTemplates.Info {
-		updateModules := make([]int64, 0)
-		for _, module := range serviceTemplateModuleMap[serviceTemplate.ID] {
-			if module == nil {
-				continue
-			}
-			if serviceTemplate.ServiceCategoryID != module.ServiceCategoryID || serviceTemplate.Name != module.ModuleName {
-				updateModules = append(updateModules, module.ModuleID)
-			}
-		}
-		if len(updateModules) == 0 {
-			continue
-		}
-		moduleUpdateOption := &metadata.UpdateOption{
-			Data: map[string]interface{}{
-				common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
-				common.BKModuleNameField:        serviceTemplate.Name,
-			},
-			Condition: map[string]interface{}{
-				common.BKModuleIDField: map[string]interface{}{
-					common.BKDBIN: updateModules,
-				},
-			},
-		}
-		resp, e := ps.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleUpdateOption)
-		if e != nil {
-			blog.ErrorJSON("syncServiceInstanceByTemplate failed, UpdateInstance failed, option: %s, err: %s, rid:%s", moduleUpdateOption, e.Error(), rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if ccErr := resp.CCError(); ccErr != nil {
-			blog.ErrorJSON("syncServiceInstanceByTemplate failed, UpdateInstance failed, option: %s, result: %s, rid: %s", moduleUpdateOption, resp, rid)
-			return ccErr
-		}
-	}
 	return nil
 }
 

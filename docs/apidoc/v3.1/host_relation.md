@@ -306,7 +306,7 @@ host_info object 说明：
     "result":true,
     "bk_error_code":0,
     "bk_error_msg":"success",
-    "data":"sucess"
+    "data":"success"
 }
 ```
 

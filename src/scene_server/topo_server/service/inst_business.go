@@ -725,3 +725,29 @@ func (s *Service) ListAllBusinessSimplify(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(result)
 }
+
+// GetBriefTopologyNodeRelation is used to get directly related business topology node information.
+// As is, you can find modules belongs to a set; or you can find the set a module belongs to.
+func (s *Service) GetBriefTopologyNodeRelation(ctx *rest.Contexts) {
+	options := new(metadata.GetBriefBizRelationOptions)
+	if err := ctx.DecodeInto(options); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := options.Validate()
+	if rawErr.ErrCode != 0 {
+		blog.Errorf("get brief topology node relation, validate failed, err: %v, rid: %s", rawErr.Args, ctx.Kit.Rid)
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	relations, err := s.Core.BusinessOperation().GetBriefTopologyNodeRelation(ctx.Kit, options)
+	if err != nil {
+		blog.Errorf("get brief topology node relation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(&relations)
+}

@@ -196,6 +196,7 @@
   import cmdbImport from '@/components/import/import'
   import { mapActions, mapGetters, mapMutations } from 'vuex'
   import RouterQuery from '@/router/query'
+  import modelImportExportService from '@/service/model/import-export'
   import {
     MENU_MODEL_MANAGEMENT,
     MENU_RESOURCE_HOST,
@@ -274,11 +275,8 @@
         }
         return params
       },
-      exportUrl() {
-        return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel.bk_obj_id}/export`
-      },
       importUrl() {
-        return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel.bk_obj_id}/import`
+        return `${window.API_HOST}object/object/${this.activeModel.bk_obj_id}/import`
       },
       canBeImport() {
         const cantImport = ['host', 'biz']
@@ -414,29 +412,8 @@
           objName: this.activeModel.bk_obj_name
         }
       },
-      exportExcel(response) {
-        const contentDisposition = response.headers['content-disposition']
-        const fileName = contentDisposition.substring(contentDisposition.indexOf('filename') + 9)
-        const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
-        const link = document.createElement('a')
-        link.style.display = 'none'
-        link.href = url
-        link.setAttribute('download', fileName)
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      },
-      async exportField() {
-        const res = await this.exportObjectAttribute({
-          objId: this.activeModel.bk_obj_id,
-          params: {},
-          config: {
-            globalError: false,
-            originalResponse: true,
-            responseType: 'blob'
-          }
-        })
-        this.exportExcel(res)
+      exportField() {
+        modelImportExportService.export(this.activeModel.bk_obj_id)
       },
       dialogConfirm(type) {
         switch (type) {

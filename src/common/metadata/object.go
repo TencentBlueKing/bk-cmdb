@@ -37,14 +37,14 @@ const (
 
 // Object object metadata definition
 type Object struct {
-	ID          int64  `field:"id" json:"id" bson:"id"`
-	ObjCls      string `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id"`
-	ObjIcon     string `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon"`
-	ObjectID    string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
-	ObjectName  string `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name"`
+	ID         int64  `field:"id" json:"id" bson:"id"`
+	ObjCls     string `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id"`
+	ObjIcon    string `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon"`
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	ObjectName string `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name"`
 
 	// IsHidden front-end don't display the object if IsHidden is true
-	IsHidden    bool   `field:"bk_ishidden" json:"bk_ishidden" bson:"bk_ishidden"`
+	IsHidden bool `field:"bk_ishidden" json:"bk_ishidden" bson:"bk_ishidden"`
 
 	IsPre       bool   `field:"ispre" json:"ispre" bson:"ispre"`
 	IsPaused    bool   `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused"`
@@ -222,4 +222,27 @@ type ObjectTopo struct {
 	From      TopoItem `json:"from"`
 	To        TopoItem `json:"to"`
 	Arrows    string   `json:"arrows"`
+}
+
+//ObjectCountParams define parameter of search objects count
+type ObjectCountParams struct {
+	Condition ObjectIDArray `json:"condition"`
+}
+
+//ObjectIDArray a slice of object ids
+type ObjectIDArray struct {
+	ObjectIDs []string `json:"obj_ids"`
+}
+
+//ObjectCountResult result by searching object count
+type ObjectCountResult struct {
+	BaseResp `json:",inline"`
+	Data     []ObjectCountDetails `json:"data"`
+}
+
+//ObjectCountDetails one object count or error message of searching
+type ObjectCountDetails struct {
+	ObjectID  string `json:"bk_obj_id"`
+	InstCount uint64 `json:"inst_count"`
+	Error     string `json:"error"`
 }

@@ -50,7 +50,8 @@ type AssociationOperationInterface interface {
 	SearchInstAssociation(kit *rest.Kit, objID string, query *metadata.QueryInput) ([]metadata.InstAsst, error)
 	SearchInstAssociationList(kit *rest.Kit, objID string, query *metadata.QueryCondition) ([]metadata.InstAsst, uint64, error)
 	SearchInstAssociationUIList(kit *rest.Kit, objID string, query *metadata.QueryCondition) (result interface{}, asstCnt uint64, err error)
-	SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, returnInstInfoObjID string, query *metadata.QueryCondition) (result []metadata.InstBaseInfo, cnt uint64, err error)
+	SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, returnInstInfoObjID string, query *metadata.QueryCondition,
+		isTargetObject bool) (result []metadata.InstBaseInfo, cnt uint64, err error)
 	CreateCommonInstAssociation(kit *rest.Kit, data *metadata.InstAsst) error
 	DeleteInstAssociation(kit *rest.Kit, objID string, cond map[string]interface{}) error
 	CheckAssociation(kit *rest.Kit, objectID string, instID int64) error
@@ -816,6 +817,7 @@ func (assoc *association) SearchInstanceAssociations(kit *rest.Kit, objID string
 	if err != nil {
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
 	}
+	cond[common.BKObjIDField] = objID
 
 	conditions := &metadata.InstAsstQueryCondition{
 		ObjID: objID,
@@ -854,6 +856,7 @@ func (assoc *association) CountInstanceAssociations(kit *rest.Kit, objID string,
 	if err != nil {
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
 	}
+	cond[common.BKObjIDField] = objID
 
 	conditions := &metadata.Condition{
 		Condition: cond,
@@ -1342,7 +1345,8 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 
 // SearchInstAssociationUIList 与实例有关系的实例关系数据,以分页的方式返回
 // returnInstInfoObjID 根据条件查询出来关联关系，需要返回实例信息（实例名，实例ID）的模型ID
-func (assoc *association) SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, returnInstInfoObjID string, query *metadata.QueryCondition) (result []metadata.InstBaseInfo, cnt uint64, err error) {
+func (assoc *association) SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, returnInstInfoObjID string,
+	query *metadata.QueryCondition, isTargetObject bool) (result []metadata.InstBaseInfo, cnt uint64, err error) {
 	queryCond := &metadata.InstAsstQueryCondition{
 		ObjID: returnInstInfoObjID,
 	}
@@ -1370,11 +1374,10 @@ func (assoc *association) SearchInstAssociationSingleObjectInstInfo(kit *rest.Ki
 	var objIDInstIDArr []int64
 
 	for _, instAsst := range rsp.Data.Info {
-		if instAsst.ObjectID == returnInstInfoObjID {
+		if isTargetObject {
 			objIDInstIDArr = append(objIDInstIDArr, instAsst.InstID)
-		} else if instAsst.AsstObjectID == returnInstInfoObjID {
+		} else {
 			objIDInstIDArr = append(objIDInstIDArr, instAsst.AsstInstID)
-
 		}
 	}
 
