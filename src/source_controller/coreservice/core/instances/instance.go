@@ -13,6 +13,7 @@
 package instances
 
 import (
+	"configcenter/src/common/errors"
 	"strconv"
 	"strings"
 
@@ -110,7 +111,7 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, i
 		}
 
 		err = m.validCreateInstanceData(kit, objID, item, allValidators[bizID])
-		if nil != err {
+		if err != nil {
 			blog.Errorf("validCreateInstanceData err:%v, objID:%s, item:%#v, rid:%s", err, objID, item, kit.Rid)
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 				Message:     err.Error(),
@@ -121,15 +122,16 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, i
 		}
 
 		id, err := m.save(kit, objID, item)
-		if nil != err {
-			if mongodb.Client().IsDuplicatedError(err) {
+		if err != nil {
+			if id != 0 {
 				dataResult.Repeated = append(dataResult.Repeated, metadata.RepeatedDataResult{
-					Data:        instance,
+					Data:        mapstr.MapStr{"err_msg": err.Error()},
 					OriginIndex: int64(idx),
 				})
 			} else {
 				dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 					Message:     err.Error(),
+					Code:        int64(err.(errors.CCErrorCoder).GetCode()),
 					Data:        instance,
 					OriginIndex: int64(idx),
 				})

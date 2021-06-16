@@ -426,7 +426,12 @@ func (c *commonInst) CreateManyInstance(kit *rest.Kit, obj model.Object,
 	}
 
 	for _, item := range res.Data.Repeated {
-		resp.Error[item.OriginIndex] = kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, item.Data).Error()
+		errMsg, err := item.Data.String("err_msg")
+		if err != nil {
+			blog.Errorf("get result repeated data failed, err: %s, rid: %s", err.Error(), kit.Rid)
+			return nil, err
+		}
+		resp.Error[item.OriginIndex] = errMsg
 	}
 
 	for _, item := range res.Data.Exceptions {

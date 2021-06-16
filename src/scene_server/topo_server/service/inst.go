@@ -134,17 +134,10 @@ func (s *Service) CreateManyInstance(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	urlObjID := ctx.Request.PathParameter(common.BKObjIDField)
-	objID := data.ObjID
 
-	if urlObjID != objID {
-		blog.Errorf("bk_obj_id verified failed, rid: %s", objID, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField))
-		return
-	}
-
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
 	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("failed to search the object(%s), err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
