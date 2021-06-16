@@ -1192,7 +1192,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 	// find object's instances' unique fields operation
 	if ps.hitRegexp(findObjectInstancesUniqueFieldsRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 7 {
+		if len(ps.RequestCtx.Elements) != 10 {
 			ps.err = errors.New("find object's instances' unique fields, but got invalid url")
 			return ps
 		}
