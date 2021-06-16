@@ -278,7 +278,11 @@ func (zkRD *ZkRegDiscv) reconnectZk() {
 			time.Sleep(5 * time.Second)
 			continue
 		}
+		// wait some time to make the new connection available
+		time.Sleep(time.Second)
 		fmt.Println("reconnect zookeeper success")
+		zkRD.registerPath = ""
+
 		return
 	}
 }
