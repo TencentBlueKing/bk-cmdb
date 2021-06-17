@@ -400,14 +400,13 @@ func (c *commonInst) CreateManyInstance(kit *rest.Kit, obj model.Object,
 	data []mapstr.MapStr) (*metadata.CreateManyCommInstResultDetail, error) {
 	object := obj.Object()
 
-	num := len(data)
-	switch {
-	case num > 200:
-		blog.Errorf("details cannot more than 200, details number: %s, rid: %s", len(data), kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "details", 200)
-	case num == 0:
+	if len(data) == 0 {
 		blog.Errorf("details cannot be empty, rid: %s", kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommInstDataNil, "details")
+	}
+	if len(data) > 200 {
+		blog.Errorf("details cannot more than 200, details number: %s, rid: %s", len(data), kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "details", 200)
 	}
 
 	params := &metadata.CreateManyModelInstance{}

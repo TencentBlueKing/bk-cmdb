@@ -146,7 +146,7 @@ func (s *Service) CreateManyInstance(ctx *rest.Contexts) {
 	// forbidden create inner model instance with common api
 	if common.IsInnerModel(objID) {
 		blog.Errorf("create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoImportMainlineForbidden))
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
 		return
 	}
 

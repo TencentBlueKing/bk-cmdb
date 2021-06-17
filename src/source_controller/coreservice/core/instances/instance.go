@@ -13,13 +13,13 @@
 package instances
 
 import (
-	"configcenter/src/common/errors"
 	"strconv"
 	"strings"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -112,7 +112,7 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, i
 
 		err = m.validCreateInstanceData(kit, objID, item, allValidators[bizID])
 		if err != nil {
-			blog.Errorf("validCreateInstanceData err:%v, objID:%s, item:%#v, rid:%s", err, objID, item, kit.Rid)
+			blog.Errorf("validate instance data for create action error, err:%v, objID:%s, item:%#v, rid:%s", err, objID, item, kit.Rid)
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 				Message:     err.Error(),
 				Data:        item,

@@ -805,7 +805,6 @@ var _ = Describe("inst test", func() {
 	})
 
 	It("batch create instance bk_obj_id='bk_switch'", func() {
-		test.ClearDatabase()
 		input := &metadata.CreateManyCommInst{
 			ObjID: "bk_switch",
 			Details: []mapstr.MapStr{
@@ -827,14 +826,15 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := instClient.CreateManyCommInst(context.Background(), input.ObjID, header, *input)
+		Expect(err).NotTo(HaveOccurred())
+		util.RegisterResponse(rsp)
 		result := &metadata.CreateManyCommInstResultDetail{}
 		rspJson, err := json.Marshal(rsp.Data)
 		json.Unmarshal(rspJson, result)
-		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(len(result.Error)).To(Equal(0))
-		Expect(result.SuccessCreated).NotTo(Equal(nil))
+		Expect(len(result.SuccessCreated)).To(Equal(3))
 	})
 
 	It("batch create instance bk_obj_id='bk_switch' with different obj id , bk_inst_name exist one and bk_asset_id exist one", func() {
@@ -859,6 +859,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := instClient.CreateManyCommInst(context.Background(), input.ObjID, header, *input)
+		Expect(err).NotTo(HaveOccurred())
 		util.RegisterResponse(rsp)
 		result := &metadata.CreateManyCommInstResultDetail{}
 		rspJson, err := json.Marshal(rsp.Data)
@@ -867,6 +868,17 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(true))
 		Expect(len(result.Error)).To(Equal(2))
 		Expect(len(result.SuccessCreated)).To(Equal(1))
+	})
+
+	It("batch create instance bk_obj_id='bk_switch' with empty details", func() {
+		input := &metadata.CreateManyCommInst{
+			ObjID:   "bk_switch",
+			Details: []mapstr.MapStr{},
+		}
+		rsp, err := instClient.CreateManyCommInst(context.Background(), input.ObjID, header, *input)
+		Expect(err).NotTo(HaveOccurred())
+		util.RegisterResponse(rsp)
+		Expect(rsp.Result).To(Equal(false))
 	})
 })
 
