@@ -152,14 +152,13 @@ func (s *Service) CreateManyInstance(ctx *rest.Contexts) {
 
 	isMainline, err := obj.IsMainlineObject()
 	if err != nil {
-		blog.Errorf("failed to get whether the object(%s) is mainline object, err: %s, rid: %s", objID, err.Error(),
-			ctx.Kit.Rid)
+		blog.Errorf("failed to get whether the object(%s) is mainline object, err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	if isMainline {
 		blog.Errorf("create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoImportMainlineForbidden))
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI))
 		return
 	}
 
