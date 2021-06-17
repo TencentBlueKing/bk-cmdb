@@ -21,6 +21,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
@@ -167,6 +168,22 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 			continue
 		}
 
+		if key.Collection() == event.HostIdentityKey.Collection() {
+			// host identity's watch token is different with other identity.
+			// only set coll is ok, the other fields is useless
+			data := mapstr.MapStr{
+				"_id":                              key.Collection(),
+				common.BKTableNameBaseHost:         watch.LastChainNodeData{Coll: common.BKTableNameBaseHost},
+				common.BKTableNameModuleHostConfig: watch.LastChainNodeData{Coll: common.BKTableNameModuleHostConfig},
+				common.BKTableNameBaseProcess:      watch.LastChainNodeData{Coll: common.BKTableNameBaseProcess},
+			}
+			if err := s.watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
+				blog.Errorf("init last watch token failed, err: %v, data: %+v", err, data)
+				return err
+			}
+			continue
+		}
+
 		data := watch.LastChainNodeData{
 			Coll:  key.Collection(),
 			Token: "",
@@ -200,15 +217,15 @@ func (s *Service) migrateSpecifyVersion(req *restful.Request, resp *restful.Resp
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	// 不处理十秒前的请求
+	/* // 不处理十秒前的请求
 	subTS := time.Now().Unix() - input.TimeStamp
 	if subTS > 10 || subTS < 0 {
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "time_stamp")})
 		return
-	}
+	} */
 
 	if input.CommitID != version.CCGitHash {
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "time_stamp")})
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "commit_id")})
 		return
 	}
 

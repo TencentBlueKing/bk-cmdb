@@ -4,7 +4,6 @@
 [![Release Version](https://img.shields.io/badge/release-3.2.19-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/pulls)
 [![BK Pipelines Status](https://api.bkdevops.qq.com/process/api/external/pipelines/projects/cc/p-c02db56ac633447eb2e740b3fd0b6d2b/badge?X-DEVOPS-PROJECT-ID=cc)](http://api.bkdevops.qq.com/process/api-html/user/builds/projects/cc/pipelines/p-c02db56ac633447eb2e740b3fd0b6d2b/latestFinished?X-DEVOPS-PROJECT-ID=cc)
-[![Build Status](https://travis-ci.org/Tencent/bk-cmdb.svg?branch=master)](https://travis-ci.org/Tencent/bk-cmdb)
 
 > **Note**: The `master` branch may be in an *unstable or even broken state* during development.
 Please use [releases](https://github.com/tencent/bk-cmdb/releases) instead of the `master` branch in order to get stable binaries.
@@ -64,7 +63,7 @@ If you want to know more about the above features, please refer to the [Function
  scheduling and execution through a visual graphical interface. 
 
 ## Contributing
-If you have good ideas or suggestions, please let us know by Issues or Pull Requests and contribute to the Blue Whale
+If you have good ideas or suggestions, please let us know by Issues or Pull Requests and contribute to the BlueKing
  Open Source Community. For CMDB branch management, issues, and pr specifications, read the
  [Contributing Guide](docs/CONTRIBUTING.md)。
 
@@ -77,4 +76,4 @@ If you are interested in contributing, check out the [CONTRIBUTING.md], also joi
 
 
 ## License
-Bk-cmdb is based on the MIT protocol. Please refer to [LICENSE](LICENSE) for details.
+Bk-cmdb is based on the MIT license. Please refer to [LICENSE](LICENSE) for details.

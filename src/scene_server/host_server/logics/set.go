@@ -22,17 +22,20 @@ import (
 	parse "configcenter/src/common/paraparse"
 )
 
-func (lgc *Logics) GetSetIDByCond(kit *rest.Kit, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
+func (lgc *Logics) GetSetIDByCond(kit *rest.Kit, cond metadata.ConditionWithTime) (
+	[]int64, errors.CCError) {
+
 	condc := make(map[string]interface{})
-	if err := parse.ParseCommonParams(cond, condc); err != nil {
+	if err := parse.ParseCommonParams(cond.Condition, condc); err != nil {
 		blog.Errorf("ParseCommonParams failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
 	query := &metadata.QueryCondition{
-		Condition: mapstr.NewFromMap(condc),
-		Fields:    []string{common.BKSetIDField},
-		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKSetIDField},
+		Condition:     mapstr.NewFromMap(condc),
+		Fields:        []string{common.BKSetIDField},
+		Page:          metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKSetIDField},
+		TimeCondition: cond.TimeCondition,
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, query)
@@ -76,6 +79,7 @@ func (lgc *Logics) ExecuteSetDynamicGroup(kit *rest.Kit, setCommonSearch *metada
 		for field, value := range condc {
 			queryParams.Condition.Set(field, value)
 		}
+		queryParams.TimeCondition = searchCondition.TimeCondition
 	}
 	queryParams.Condition.Set(common.BKAppIDField, setCommonSearch.AppID)
 

@@ -65,12 +65,10 @@ func (i *instanceAuditLog) generateAuditLog(parameter *generateAuditCommonParame
 		var bizID int64
 		if _, exist := inst[common.BKAppIDField]; exist {
 			bizID, err = util.GetInt64ByInterface(inst[common.BKAppIDField])
-		} else if _, exist := inst[metadata.BKMetadata]; exist {
-			bizID, err = metadata.ParseBizIDFromData(inst)
-		}
-		if err != nil {
-			blog.ErrorJSON("failed to get biz id from metadata, error info is %s, inst: %s, rid: %s", err.Error(), inst, kit.Rid)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, objID, common.BKAppIDField, "int", err.Error())
+			if err != nil {
+				blog.ErrorJSON("failed to get biz id, error info is %s, inst: %s, rid: %s", err.Error(), inst, kit.Rid)
+				return nil, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, objID, common.BKAppIDField, "int", err.Error())
+			}
 		}
 
 		action := parameter.action

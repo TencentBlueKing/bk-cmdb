@@ -13,9 +13,52 @@
 package service
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	"time"
+
+	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/logics"
+	"configcenter/src/storage/dal/mongo/local"
+
+	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) BackgroundTask() {
-	logics.DBSync(s.Engine, s.db)
+func (s *Service) BackgroundTask(options options.Config) error {
+
+	mongoConf, err := cc.Mongo("mongodb")
+	if err != nil {
+		return err
+	}
+
+	// db 语句的执行时间设置为never timeout
+	mongoConf.SocketTimeout = 0
+	db, err := local.NewMgo(mongoConf.GetMongoConf(), time.Minute)
+	if err != nil {
+		return fmt.Errorf("connect mongo server failed %s", err.Error())
+	}
+
+	logics.DBSync(s.Engine, db, options)
+
+	return nil
+}
+
+func (s *Service) RunSyncDBIndex(req *restful.Request, resp *restful.Response) {
+	rHeader := req.Request.Header
+	rid := util.GetHTTPCCRequestID(rHeader)
+	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
+
+	if err := logics.RunSyncDBIndex(ctx, s.Engine); err != nil {
+		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+		return
+	}
+
+	resp.WriteEntity(metadata.NewSuccessResp(""))
+
+	return
 }

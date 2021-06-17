@@ -64,6 +64,33 @@ type DeleteServiceTemplatesInput struct {
 	ServiceTemplateID int64 `json:"service_template_id"`
 }
 
+type GetServiceTemplateSyncStatusOption struct {
+	ServiceTemplateIDs []int64 `json:"service_template_ids"`
+	ModuleIDs          []int64 `json:"bk_module_ids"`
+	// IsPartial if is set, check service templates status, returns need sync for template if one module need sync
+	IsPartial bool `json:"is_partial"`
+}
+
+type GetServiceTemplateSyncStatusResult struct {
+	BaseResp `json:",inline"`
+	Data     *ServiceTemplateSyncStatus `json:"data"`
+}
+
+type ServiceTemplateSyncStatus struct {
+	ServiceTemplates []SvcTempSyncStatus `json:"service_templates"`
+	Modules          []ModuleSyncStatus  `json:"modules"`
+}
+
+type SvcTempSyncStatus struct {
+	ServiceTemplateID int64 `json:"service_template_id"`
+	NeedSync          bool  `json:"need_sync"`
+}
+
+type ModuleSyncStatus struct {
+	ModuleID int64 `json:"bk_module_id"`
+	NeedSync bool  `json:"need_sync"`
+}
+
 type CreateServiceInstanceForServiceTemplateInput struct {
 	BizID                      int64                         `json:"bk_biz_id"`
 	Name                       string                        `json:"name"`
@@ -456,7 +483,7 @@ type ServiceInstanceCondOfP struct {
 // Validate validates the input param
 func (o *ListProcessRelatedInfoOption) Validate() (rawError cErr.RawErrorInfo) {
 	if o.ProcessPropertyFilter != nil {
-		if key, err := o.ProcessPropertyFilter.Validate(); err != nil {
+		if key, err := o.ProcessPropertyFilter.Validate(&querybuilder.RuleOption{NeedSameSliceElementType: true}); err != nil {
 			return cErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsInvalid,
 				Args:    []interface{}{fmt.Sprintf("%s, host_property_filter.%s", err.Error(), key)},
@@ -813,13 +840,10 @@ type ServiceTemplate struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
-func (st *ServiceTemplate) Validate() (field string, err error) {
-	if len(st.Name) == 0 {
-		return "name", errors.New("name can't be empty")
-	}
-
-	if len(st.Name) > common.NameFieldMaxLength {
-		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(st.Name), common.NameFieldMaxLength)
+func (st *ServiceTemplate) Validate(errProxy cErr.DefaultCCErrorIf) (field string, err error) {
+	st.Name, err = util.ValidTopoNameField(st.Name, "name", errProxy)
+	if err != nil {
+		return "name", err
 	}
 	return "", nil
 }
@@ -1456,8 +1480,9 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 		}
 	}
 	if pt.Priority.Value != nil {
-		if *pt.Priority.Value < 1 || *pt.Priority.Value > 10000 {
-			return "priority", fmt.Errorf("field %s value must in range [1, 10000]", "priority")
+		if *pt.Priority.Value <  common.MinProcessPrio || *pt.Priority.Value > common.MaxProcessPrio {
+			return "priority",
+			fmt.Errorf("field %s value must in range [%d, %d]", "priority", common.MinProcessPrio,common.MaxProcessPrio)
 		}
 	}
 
@@ -1472,7 +1497,7 @@ func (pt *ProcessProperty) Update(input ProcessProperty, rawProperty map[string]
 	selfVal := reflect.ValueOf(pt).Elem()
 	inputVal := reflect.ValueOf(input)
 	fieldCount := selfVal.NumField()
-	updateIgnoreField := []string{"FuncName", "ProcessName"}
+	updateIgnoreField := []string{"FuncName"}
 	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
 		fieldName := selfType.Field(fieldIdx).Name
 		if util.InArray(fieldName, updateIgnoreField) == true {

@@ -338,14 +338,5 @@ func (cli *inst) IsDefault() bool {
 }
 
 func (cli *inst) GetBizID() (int64, error) {
-	switch cli.target.Object().ObjectID {
-	case common.BKInnerObjIDApp:
-		return cli.GetInstID()
-	case common.BKInnerObjIDSet:
-		return util.GetInt64ByInterface(cli.datas[common.BKAppIDField])
-	case common.BKInnerObjIDModule:
-		return util.GetInt64ByInterface(cli.datas[common.BKAppIDField])
-	default:
-		return metadata.ParseBizIDFromData(cli.datas)
-	}
+	return util.GetInt64ByInterface(cli.datas[common.BKAppIDField])
 }

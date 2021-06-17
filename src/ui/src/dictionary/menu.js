@@ -14,7 +14,6 @@ import {
   MENU_BUSINESS_CUSTOM_FIELDS,
   MENU_BUSINESS_HOST_APPLY,
 
-  MENU_RESOURCE_EVENTPUSH,
   MENU_RESOURCE_MANAGEMENT,
   MENU_RESOURCE_CLOUD_AREA,
   MENU_RESOURCE_CLOUD_ACCOUNT,
@@ -114,11 +113,6 @@ const menus = [{
     i18n: '云资源发现',
     icon: 'icon-cc-cloud-discover',
     route: getMenuRoute(resourceViews, MENU_RESOURCE_CLOUD_RESOURCE, 'resource')
-  }, {
-    id: MENU_RESOURCE_EVENTPUSH,
-    i18n: '事件订阅',
-    icon: 'icon-cc-nav-subscription',
-    route: getMenuRoute(resourceViews, MENU_RESOURCE_EVENTPUSH)
   }]
 }, {
   id: MENU_MODEL,

@@ -78,13 +78,13 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/hosts/update", s.UpdateHosts)
 	ws.GET("/hosts/:bk_host_id/listen_ip_options", s.ListenIPOptions)
 	ws.POST("/importtemplate/:bk_obj_id", s.BuildDownLoadExcelTemplate)
-	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/import", s.ImportInst)
-	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportInst)
+	ws.POST("/insts/object/:bk_obj_id/import", s.ImportInst)
+	ws.POST("/insts/object/:bk_obj_id/export", s.ExportInst)
 	ws.POST("/logout", s.LogOutUser)
 	ws.GET("/login", s.Login)
 	ws.POST("/login", s.LoginUser)
-	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/import", s.ImportObject)
-	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportObject)
+	ws.POST("/object/object/:bk_obj_id/import", s.ImportObject)
+	ws.POST("/object/object/:bk_obj_id/export", s.ExportObject)
 	ws.GET("/user/list", s.GetUserList)
 	// suggest move to  Organization
 	ws.GET("/user/department", s.GetDepartment)
@@ -109,6 +109,7 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/netproperty/export", s.ExportNetProperty)
 	ws.GET("/netcollect/importtemplate/netproperty", s.BuildDownLoadNetPropertyExcelTemplate)
 
+	ws.POST("/object/count", s.GetObjectInstanceCount)
 	// if no route, redirect to 404 page
 	ws.NoRoute(func(c *gin.Context) {
 		c.Redirect(302, "/#/404")

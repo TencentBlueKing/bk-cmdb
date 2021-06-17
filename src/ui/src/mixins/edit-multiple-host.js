@@ -20,7 +20,6 @@ export default {
         props: {}
       },
       request: {
-        objectUnique: Symbol('objectUnique'),
         propertyGroups: Symbol('propertyGroups')
       }
     }
@@ -52,13 +51,9 @@ export default {
       try {
         this.slider.show = true
         this.slider.title = this.$t('主机属性')
-        const [objectUnique, groups] = await Promise.all([
-          this.getObjectUnique(),
-          this.getPropertyGroups()
-        ])
+        const groups = await this.getPropertyGroups()
         setTimeout(() => {
           this.slider.component = 'cmdb-form-multiple'
-          this.slider.props.objectUnique = objectUnique
           this.slider.props.propertyGroups = groups
           this.slider.props.properties = this.properties
           this.slider.props.saveAuth = this.saveAuth
@@ -80,6 +75,7 @@ export default {
           _t: Date.now(),
           page: 1
         })
+        this.$success(this.$t('修改成功'))
       } catch (e) {
         console.error(e)
       }
@@ -105,15 +101,6 @@ export default {
       }
       this.slider.component = null
       this.slider.show = false
-    },
-    getObjectUnique() {
-      return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
-        objId: 'host',
-        params: {},
-        config: {
-          requestId: this.request.objectUnique
-        }
-      })
     },
     getPropertyGroups() {
       return this.$store.dispatch('objectModelFieldGroup/searchGroup', {

@@ -59,10 +59,12 @@ const (
 	Biz                     CursorType = "biz"
 	Set                     CursorType = "set"
 	Module                  CursorType = "module"
-	SetTemplate             CursorType = "set_template"
 	ObjectBase              CursorType = "object_instance"
 	Process                 CursorType = "process"
 	ProcessInstanceRelation CursorType = "process_instance_relation"
+	// a mixed event type, which contains host, host relation, process events etc.
+	// and finally converted to host identifier event.
+	HostIdentifier CursorType = "host_identifier"
 )
 
 func (ct CursorType) ToInt() int {
@@ -79,14 +81,14 @@ func (ct CursorType) ToInt() int {
 		return 5
 	case Module:
 		return 6
-	case SetTemplate:
-		return 7
 	case ObjectBase:
 		return 8
 	case Process:
 		return 9
 	case ProcessInstanceRelation:
 		return 10
+	case HostIdentifier:
+		return 11
 	default:
 		return -1
 	}
@@ -106,14 +108,14 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = Set
 	case 6:
 		*ct = Module
-	case 7:
-		*ct = SetTemplate
 	case 8:
 		*ct = ObjectBase
 	case 9:
 		*ct = Process
 	case 10:
 		*ct = ProcessInstanceRelation
+	case 11:
+		*ct = HostIdentifier
 	default:
 		*ct = UnknownType
 	}
@@ -121,7 +123,8 @@ func (ct *CursorType) ParseInt(typ int) {
 
 // ListCursorTypes returns all support CursorTypes.
 func ListCursorTypes() []CursorType {
-	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, SetTemplate, ObjectBase, Process, ProcessInstanceRelation}
+	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase, Process,
+		ProcessInstanceRelation, HostIdentifier}
 }
 
 // ListEventCallbackCursorTypes returns all support CursorTypes for event callback.
@@ -137,6 +140,13 @@ type Cursor struct {
 	// a random hex string to avoid the caller to generated a self-defined cursor.
 	Oid  string
 	Oper types.OperType
+	// UniqKey is an optional key which is used to ensure that a cursor is unique among a same resources(
+	// as is Type field).
+	// This key is used when the upper fields can not describe a unique cursor. such as the common object instance
+	// event, all these instance event all have a same cursor type, as is object instance. but the instance id is
+	// unique which can be used as a unique key, and is REENTRANT when a retry operation happens which is
+	// **VERY IMPORTANT**.
+	UniqKey string
 }
 
 const cursorVersion = "1"
@@ -187,6 +197,10 @@ func (c Cursor) Encode() (string, error) {
 
 	// cluster time nano field
 	pool.WriteString(nano)
+	pool.WriteByte('\r')
+
+	// unique key field
+	pool.WriteString(c.UniqKey)
 
 	return base64.StdEncoding.EncodeToString(pool.Bytes()), nil
 }
@@ -219,7 +233,8 @@ func (c *Cursor) Decode(cur string) error {
 		}
 	}
 
-	if len(elements) != 6 {
+	// at least have 6 fields, UniqKey is an optional field.
+	if len(elements) < 6 {
 		return errors.New("invalid cursor string")
 	}
 
@@ -257,10 +272,16 @@ func (c *Cursor) Decode(cur string) error {
 		return fmt.Errorf("got invalid nano field %s, err: %v", elements[5], err)
 	}
 	c.ClusterTime.Nano = uint32(nano)
+
+	// cause unique key is an optional key.
+	if len(elements) >= 7 {
+		c.UniqKey = elements[6]
+	}
+
 	return nil
 }
 
-func GetEventCursor(coll string, e *types.Event) (string, error) {
+func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 	curType := UnknownType
 	switch coll {
 	case common.BKTableNameBaseHost:
@@ -273,8 +294,6 @@ func GetEventCursor(coll string, e *types.Event) (string, error) {
 		curType = Set
 	case common.BKTableNameBaseModule:
 		curType = Module
-	case common.BKTableNameSetTemplate:
-		curType = SetTemplate
 	case common.BKTableNameBaseInst:
 		curType = ObjectBase
 	case common.BKTableNameBaseProcess:
@@ -282,7 +301,7 @@ func GetEventCursor(coll string, e *types.Event) (string, error) {
 	case common.BKTableNameProcessInstanceRelation:
 		curType = ProcessInstanceRelation
 	default:
-		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.Oid)
+		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.ID())
 		return "", fmt.Errorf("unsupported cursor type collection: %s", coll)
 	}
 
@@ -293,9 +312,18 @@ func GetEventCursor(coll string, e *types.Event) (string, error) {
 		Oper:        e.OperationType,
 	}
 
+	if curType == ObjectBase {
+		if instID <= 0 {
+			return "", errors.New("invalid instance id")
+		}
+
+		// add unique key for common object instance.
+		hCursor.UniqKey = strconv.FormatInt(instID, 10)
+	}
+
 	hCursorEncode, err := hCursor.Encode()
 	if err != nil {
-		blog.Errorf("encode head node cursor failed, err: %v, oid: %s", err, e.Oid)
+		blog.Errorf("encode node cursor failed, err: %v, oid: %s", err, e.Oid)
 		return "", err
 	}
 

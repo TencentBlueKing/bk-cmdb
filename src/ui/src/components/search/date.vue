@@ -1,8 +1,10 @@
 <template>
   <bk-date-picker
     type="daterange"
-    v-model="localValue"
+    :value="localValue"
     v-bind="$attrs"
+    format="yyyy-MM-dd"
+    @change="handleChange"
     @open-change="handleToggle">
   </bk-date-picker>
 </template>
@@ -21,14 +23,18 @@
     computed: {
       localValue: {
         get() {
-          return this.value.map(str => new Date(str))
+          return [...this.value]
         },
         set(values) {
-          const formattedValues = values.filter(value => !!value).map(date => this.$tools.formatTime(date, 'YYYY-MM-DD'))
-          if (formattedValues.toString() === this.value.toString()) return
-          this.$emit('input', formattedValues)
-          this.$emit('change', formattedValues)
+          this.$emit('input', values)
+          this.$emit('change', values)
         }
+      }
+    },
+    methods: {
+      handleChange(values) {
+        if (values.toString() === this.value.toString()) return
+        this.localValue = values.filter(value => !!value)
       }
     }
   }

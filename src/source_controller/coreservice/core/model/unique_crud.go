@@ -61,32 +61,13 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		}
 	}
 
-	if inputParam.Data.MustCheck {
-		cond := condition.CreateCondition()
-		cond.Field(common.BKObjIDField).Eq(objID)
-		cond.Field("must_check").Eq(true)
-		count, err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(kit.Ctx)
-		if nil != err {
-			blog.Errorf("[CreateObjectUnique] check must check error: %#v, rid: %s", err, kit.Rid)
-			return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
-		}
-		if count > 0 {
-			blog.Errorf("[CreateObjectUnique] model could not have multiple must check unique, rid: %s", kit.Rid)
-			return 0, kit.CCError.Error(common.CCErrTopoObjectUniqueCanNotHasMultipleMustCheck)
-		}
-	}
-
-	exist, err := m.checkUniqueRuleExist(kit, objID, 0, inputParam.Data.Keys)
+	err := m.checkUniqueRuleExist(kit, objID, 0, inputParam.Data.Keys)
 	if err != nil {
 		blog.Errorf("[CreateObjectUnique] checkUniqueRuleExist error: %#v, rid: %s", err, kit.Rid)
 		return 0, err
 	}
-	if exist {
-		blog.Errorf("[CreateObjectUnique] same unique check rule has been exist: %#v, rid: %s", err, kit.Rid)
-		return 0, kit.CCError.Error(common.CCERrrCoreServiceSameUniqueCheckRuleExist)
-	}
 
-	properties, err := m.getUniqueProperties(kit, objID, inputParam.Data.Keys, inputParam.Data.MustCheck)
+	properties, err := m.getUniqueProperties(kit, objID, inputParam.Data.Keys)
 	if nil != err {
 		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, inputParam, err, kit.Rid)
 		return 0, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
@@ -107,7 +88,7 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 
 	objInstTable := common.GetInstTableName(objID, kit.SupplierAccount)
 	_, dbIndexes, ccErr := m.getTableIndexes(kit, objInstTable)
-	if err != nil {
+	if ccErr != nil {
 		return 0, ccErr
 	}
 	rawDBIndexInfo, exists := index.FindIndexByIndexFields(dbIndex.Keys, dbIndexes)
@@ -121,13 +102,12 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 	}
 
 	unique := metadata.ObjectUnique{
-		ID:        id,
-		ObjID:     objID,
-		MustCheck: inputParam.Data.MustCheck,
-		Keys:      inputParam.Data.Keys,
-		Ispre:     false,
-		OwnerID:   kit.SupplierAccount,
-		LastTime:  metadata.Now(),
+		ID:       id,
+		ObjID:    objID,
+		Keys:     inputParam.Data.Keys,
+		Ispre:    false,
+		OwnerID:  kit.SupplierAccount,
+		LastTime: metadata.Now(),
 	}
 	err = mongodb.Client().Table(common.BKTableNameObjUnique).Insert(kit.Ctx, &unique)
 	if nil != err {
@@ -152,33 +132,13 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 		}
 	}
 
-	if unique.MustCheck {
-		cond := condition.CreateCondition()
-		cond.Field(common.BKObjIDField).Eq(objID)
-		cond.Field("must_check").Eq(true)
-		cond.Field("id").NotEq(id)
-		count, err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(kit.Ctx)
-		if nil != err {
-			blog.Errorf("[UpdateObjectUnique] check must check  error: %#v, rid: %s", err, kit.Rid)
-			return kit.CCError.Error(common.CCErrObjectDBOpErrno)
-		}
-		if count > 0 {
-			blog.Errorf("[UpdateObjectUnique] model could not have multiple must check unique, rid: %s", kit.Rid)
-			return kit.CCError.Error(common.CCErrTopoObjectUniqueCanNotHasMultipleMustCheck)
-		}
-	}
-
-	exist, err := m.checkUniqueRuleExist(kit, objID, id, unique.Keys)
+	err := m.checkUniqueRuleExist(kit, objID, id, unique.Keys)
 	if err != nil {
 		blog.Errorf("[UpdateObjectUnique] checkUniqueRuleExist error: %#v, rid: %s", err, kit.Rid)
 		return err
 	}
-	if exist {
-		blog.Errorf("[UpdateObjectUnique] same unique check rule has been exist: %#v, rid: %s", err, kit.Rid)
-		return kit.CCError.Error(common.CCERrrCoreServiceSameUniqueCheckRuleExist)
-	}
 
-	properties, err := m.getUniqueProperties(kit, objID, unique.Keys, unique.MustCheck)
+	properties, err := m.getUniqueProperties(kit, objID, unique.Keys)
 	if nil != err {
 		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, unique, err, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
@@ -263,7 +223,8 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 }
 
 // get properties via keys
-func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys []metadata.UniqueKey, mustCheck bool) ([]metadata.Attribute, error) {
+func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys []metadata.UniqueKey) (
+	[]metadata.Attribute, error) {
 	propertyIDs := make([]int64, 0)
 	for _, key := range keys {
 		propertyIDs = append(propertyIDs, int64(key.ID))
@@ -369,7 +330,6 @@ func (m *modelAttrUnique) checkUniqueRequireExist(kit *rest.Kit, objID string, i
 		cond.Field(common.BKFieldID).NotIn(ignoreUniqueIDS)
 	}
 	cond.Field(common.BKObjIDField).Eq(objID)
-	cond.Field("must_check").Eq(true)
 
 	cnt, err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(kit.Ctx)
 	if nil != err {
@@ -383,9 +343,9 @@ func (m *modelAttrUnique) checkUniqueRequireExist(kit *rest.Kit, objID string, i
 	return false, nil
 }
 
-// checkUniqueRuleExist check if same unique rule has already existed
+// checkUniqueRuleExist check if same unique rule has already existed. issue #5240
 // if ruleID is 0,then it's create operation, otherwise it's update operation
-func (m *modelAttrUnique) checkUniqueRuleExist(kit *rest.Kit, objID string, ruleID uint64, keys []metadata.UniqueKey) (bool, error) {
+func (m *modelAttrUnique) checkUniqueRuleExist(kit *rest.Kit, objID string, ruleID uint64, keys []metadata.UniqueKey) error {
 	// get all exist uniques
 	uniqueCond := condition.CreateCondition()
 	uniqueCond.Field(common.BKObjIDField).Eq(objID)
@@ -393,29 +353,62 @@ func (m *modelAttrUnique) checkUniqueRuleExist(kit *rest.Kit, objID string, rule
 	existUniques := make([]metadata.ObjectUnique, 0)
 	err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond).All(kit.Ctx, &existUniques)
 	if err != nil {
-		return false, kit.CCError.Error(common.CCErrObjectDBOpErrno)
+		return kit.CCError.CCError(common.CCErrObjectDBOpErrno)
 	}
 
 	// compare to see if the input keys has already existed
 	keysMap := make(map[uint64]bool)
 	for _, key := range keys {
+		_, exists := keysMap[key.ID]
+		if exists {
+			blog.ErrorJSON("unique keys(%s) has duplicate key id: %s, rid: %s", keys, key.ID, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "unique keys")
+		}
 		keysMap[key.ID] = true
 	}
 	for _, u := range existUniques {
+		if ruleID == u.ID {
+			continue
+		}
+
+		cnt := 0
+		for _, key := range u.Keys {
+			if keysMap[key.ID] {
+				cnt++
+			}
+		}
+
 		if len(keysMap) == len(u.Keys) {
-			cnt := 0
-			for _, key := range u.Keys {
-				if keysMap[key.ID] {
-					cnt++
+			if cnt == len(keysMap) {
+				return kit.CCError.CCError(common.CCERrrCoreServiceSameUniqueCheckRuleExist)
+			}
+			continue
+		}
+
+		if len(keysMap) > len(u.Keys) {
+			if cnt == len(u.Keys) {
+				properties, err := m.getUniqueProperties(kit, objID, u.Keys)
+				if nil != err {
+					blog.ErrorJSON("get duplicate unique(%s) properties failed, err: %s, rid: %s", u, err, kit.Rid)
+					return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "unique.keys")
 				}
+
+				dupPropIDs := strings.Builder{}
+				for _, property := range properties {
+					dupPropIDs.WriteString(property.PropertyID + "+")
+				}
+				dupPropIDsStr := dupPropIDs.String()[:len(dupPropIDs.String())-1]
+				return kit.CCError.CCErrorf(common.CCERrrCoreServiceSubsetUniqueRuleExist, dupPropIDsStr)
 			}
-			if cnt == len(keysMap) && ruleID != u.ID {
-				return true, nil
-			}
+			continue
+		}
+
+		if cnt == len(keysMap) {
+			return kit.CCError.Error(common.CCERrrCoreServiceSupersetUniqueRuleExist)
 		}
 	}
 
-	return false, nil
+	return nil
 }
 
 func getBasicDataType(propertyType string) (interface{}, error) {

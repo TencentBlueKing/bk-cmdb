@@ -16,7 +16,9 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/querybuilder"
 )
 
 // SearchAuditDict returns all audit types with their name and actions for front-end display
@@ -41,16 +43,51 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 	fields := []string{common.BKFieldID, common.BKUser, common.BKResourceTypeField, common.BKActionField,
 		common.BKOperationTimeField, common.BKAppIDField, common.BKResourceIDField, common.BKResourceNameField}
 
-	cond := make(map[string]interface{})
+	cond := mapstr.MapStr{}
 	condition := query.Condition
+	if err := condition.Validate(); err != nil {
+		blog.Errorf("condition, user and resource_name cannot exist at the same time")
+		ctx.RespAutoError(err)
+		return
+	}
 
 	// parse front-end condition to db search cond
-	if condition.ResourceType != "" {
-		cond[common.BKResourceTypeField] = condition.ResourceType
+	for _, item := range condition.Condition {
+		if item.Operator != querybuilder.OperatorIn && item.Operator != querybuilder.OperatorNotIn {
+			if !(item.Field == common.BKResourceNameField && item.Operator == querybuilder.OperatorContains) {
+				blog.Errorf("operator invalid, %s wrong, only can be in or not_in (resource_name can use contains)",
+					item.Operator)
+				ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid,
+					"operator only can be in or not_in (resource_name can use contains)"))
+				return
+			}
+		}
+		condField, key, err := item.ToMgo()
+		if err != nil {
+			blog.Errorf("condition invalid, %s wrong, err: %s", key, err.Error())
+			ctx.RespAutoError(err)
+			return
+		}
+		cond.Merge(condField)
 	}
 
 	if condition.User != "" {
 		cond[common.BKUser] = condition.User
+	}
+
+	if condition.ResourceName != "" {
+		if condition.FuzzyQuery {
+			cond[common.BKResourceNameField] = map[string]interface{}{
+				common.BKDBLIKE:    condition.ResourceName,
+				common.BKDBOPTIONS: "i",
+			}
+		} else {
+			cond[common.BKResourceNameField] = condition.ResourceName
+		}
+	}
+
+	if condition.ResourceType != "" {
+		cond[common.BKResourceTypeField] = condition.ResourceType
 	}
 
 	if condition.OperateFrom != "" {
@@ -69,16 +106,6 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 
 	if condition.ResourceID != nil {
 		cond[common.BKResourceIDField] = condition.ResourceID
-	}
-
-	if condition.ResourceName != "" {
-		if condition.FuzzyQuery {
-			cond[common.BKResourceNameField] = map[string]interface{}{
-				common.BKDBLIKE: condition.ResourceName,
-			}
-		} else {
-			cond[common.BKResourceNameField] = condition.ResourceName
-		}
 	}
 
 	if condition.ObjID != "" {

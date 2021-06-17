@@ -125,7 +125,8 @@
         type: Array,
         default: () => []
       },
-      customValidator: Function
+      customValidator: Function,
+      isMainLine: Boolean
     },
     data() {
       return {
@@ -184,15 +185,6 @@
       },
       isRequired(property) {
         return property.isrequired
-        // 后台无对应逻辑，前端屏蔽唯一校验配置中为空必须校验的字段设置为必填的逻辑
-        // if (property.isrequired) {
-        //     return true
-        // }
-        // const unique = this.objectUnique.find(unique => unique.must_check)
-        // if (unique) {
-        //     return unique.keys.some(key => key.key_id === property.id)
-        // }
-        // return false
       },
       htmlEncode(placeholder) {
         let temp = document.createElement('div')
@@ -211,8 +203,10 @@
           rules.required = true
         }
 
-        if (['bk_set_name', 'bk_module_name', 'bk_inst_name'].includes(property.bk_property_id)) {
+        if (this.isMainLine && ['bk_set_name', 'bk_module_name', 'bk_inst_name'].includes(property.bk_property_id)) {
           rules.businessTopoInstNames = true
+          rules.length = 32
+          rules.singlechar = false
         }
 
         return rules
@@ -326,7 +320,7 @@
                     }
                 }
             }
-            .form-component {
+            .form-component:not(.form-bool) {
                 flex: 1;
             }
 

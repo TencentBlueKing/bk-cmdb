@@ -54,6 +54,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		mapping := make(mapstr.MapStr, 0)
 		mapping[instIDFieldName] = id
 		mapping[common.BKObjIDField] = objID
+		mapping[common.BkSupplierAccount] = kit.SupplierAccount
 
 		// save instance object type mapping.
 		if err := instancemapping.Create(kit.Ctx, mapping); err != nil {
@@ -67,7 +68,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		blog.ErrorJSON("save instance error. err: %s, objID: %s, instance: %s, rid: %s",
 			err.Error(), objID, inputParam, kit.Rid)
 		if mongodb.Client().IsDuplicatedError(err) {
-			return id, kit.CCError.CCError(common.CCErrCommDuplicateItem)
+			return id, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
 		}
 		return 0, err
 	}
@@ -87,7 +88,6 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 	data.Set(common.LastTimeField, ts)
 	data.Remove(common.BKObjIDField)
 	err := mongodb.Client().Table(tableName).Update(kit.Ctx, cond, data)
-
 	if err != nil {
 		blog.ErrorJSON("update instance error. err: %s, objID: %s, instance: %s, cond: %s, rid: %s",
 			err.Error(), objID, data, cond, kit.Rid)

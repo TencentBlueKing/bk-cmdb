@@ -292,12 +292,14 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 	}
 
 	// delete object instance sharding table.
-	for _, objID := range targetObjIDS {
-		if err := m.dropObjectShardingTables(kit, objID); err != nil {
-			// there is a timed task to clean the tables if it's failed here.
-			blog.Warnf("drop object sharding tables failed, model: %s, err: %s, rid: %s", objID, err.Error(), kit.Rid)
+	/*
+		for _, objID := range targetObjIDS {
+			if err := m.dropObjectShardingTables(kit, objID); err != nil {
+				// there is a timed task to clean the tables if it's failed here.
+				blog.Warnf("drop object sharding tables failed, model: %s, err: %s, rid: %s", objID, err.Error(), kit.Rid)
+			}
 		}
-	}
+	*/
 
 	return &metadata.DeletedCount{Count: cnt}, nil
 }

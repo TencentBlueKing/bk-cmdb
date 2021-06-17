@@ -50,7 +50,8 @@ type AssociationOperationInterface interface {
 	SearchInstAssociation(kit *rest.Kit, objID string, query *metadata.QueryInput) ([]metadata.InstAsst, error)
 	SearchInstAssociationList(kit *rest.Kit, objID string, query *metadata.QueryCondition) ([]metadata.InstAsst, uint64, error)
 	SearchInstAssociationUIList(kit *rest.Kit, objID string, query *metadata.QueryCondition) (result interface{}, asstCnt uint64, err error)
-	SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, returnInstInfoObjID string, query *metadata.QueryCondition) (result []metadata.InstBaseInfo, cnt uint64, err error)
+	SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, returnInstInfoObjID string, query *metadata.QueryCondition,
+		isTargetObject bool) (result []metadata.InstBaseInfo, cnt uint64, err error)
 	CreateCommonInstAssociation(kit *rest.Kit, data *metadata.InstAsst) error
 	DeleteInstAssociation(kit *rest.Kit, objID string, cond map[string]interface{}) error
 	CheckAssociation(kit *rest.Kit, objectID string, instID int64) error
@@ -73,9 +74,22 @@ type AssociationOperationInterface interface {
 	CreateInst(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
 	DeleteInst(kit *rest.Kit, objID string, asstIDList []int64) (resp *metadata.DeleteAssociationInstResult, err error)
 
-	ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string, importData map[int]metadata.ExcelAssocation, languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error)
+	ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string,
+		importData map[int]metadata.ExcelAssociation, asstObjectUniqueIDMap map[string]int64, objectUniqueID int64,
+		languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error)
+
+	FindAssociationByObjectAssociationID(ctx context.Context, kit *rest.Kit, objID string, asstIDArr []string) (
+		[]metadata.Association, errors.CCError)
 
 	SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, grp GroupOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory)
+
+	// SearchInstanceAssociations searches object instance associations.
+	SearchInstanceAssociations(kit *rest.Kit, objID string,
+		input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error)
+
+	// CountInstanceAssociations counts object instance associations num.
+	CountInstanceAssociations(kit *rest.Kit, objID string,
+		input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error)
 }
 
 // NewAssociationOperation create a new association operation instance
@@ -793,6 +807,73 @@ func (assoc *association) DeleteObject(kit *rest.Kit, asstID int) (resp *metadat
 
 }
 
+// SearchInstanceAssociations searches object instance associations.
+func (assoc *association) SearchInstanceAssociations(kit *rest.Kit, objID string,
+	input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error) {
+
+	// search conditions.
+	cond, err := input.GetConditions()
+	if err != nil {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
+	}
+	cond[common.BKObjIDField] = objID
+
+	conditions := &metadata.InstAsstQueryCondition{
+		ObjID: objID,
+		Cond: metadata.QueryCondition{
+			Fields:         input.Fields,
+			Condition:      cond,
+			Page:           input.Page,
+			DisableCounter: true,
+		},
+	}
+
+	// search object instance associations.
+	resp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, conditions)
+	if err != nil {
+		blog.Errorf("search instance associations failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+	}
+
+	result := &metadata.CommonSearchResult{}
+	for idx := range resp.Data.Info {
+		result.Info = append(result.Info, &resp.Data.Info[idx])
+	}
+
+	return result, nil
+}
+
+// CountInstanceAssociations counts object instance associations num.
+func (assoc *association) CountInstanceAssociations(kit *rest.Kit, objID string,
+	input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error) {
+
+	// count conditions.
+	cond, err := input.GetConditions()
+	if err != nil {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
+	}
+	cond[common.BKObjIDField] = objID
+
+	conditions := &metadata.Condition{
+		Condition: cond,
+	}
+
+	// count object instance associations num.
+	resp, err := assoc.clientSet.CoreService().Association().CountInstanceAssociations(kit.Ctx, kit.Header, objID, conditions)
+	if err != nil {
+		blog.Errorf("count instance associations failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+	}
+
+	return &metadata.CommonCountResult{Count: resp.Data.Count}, nil
+}
+
 func (assoc *association) SearchInst(kit *rest.Kit, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
 	queryCond := &metadata.InstAsstQueryCondition{
 		Cond:  metadata.QueryCondition{Condition: request.Condition},
@@ -1181,7 +1262,8 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 
 // SearchInstAssociationUIList 与实例有关系的实例关系数据,以分页的方式返回
 // returnInstInfoObjID 根据条件查询出来关联关系，需要返回实例信息（实例名，实例ID）的模型ID
-func (assoc *association) SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, returnInstInfoObjID string, query *metadata.QueryCondition) (result []metadata.InstBaseInfo, cnt uint64, err error) {
+func (assoc *association) SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, returnInstInfoObjID string,
+	query *metadata.QueryCondition, isTargetObject bool) (result []metadata.InstBaseInfo, cnt uint64, err error) {
 	queryCond := &metadata.InstAsstQueryCondition{
 		ObjID: returnInstInfoObjID,
 	}
@@ -1209,11 +1291,10 @@ func (assoc *association) SearchInstAssociationSingleObjectInstInfo(kit *rest.Ki
 	var objIDInstIDArr []int64
 
 	for _, instAsst := range rsp.Data.Info {
-		if instAsst.ObjectID == returnInstInfoObjID {
+		if isTargetObject {
 			objIDInstIDArr = append(objIDInstIDArr, instAsst.InstID)
-		} else if instAsst.AsstObjectID == returnInstInfoObjID {
+		} else {
 			objIDInstIDArr = append(objIDInstIDArr, instAsst.AsstInstID)
-
 		}
 	}
 

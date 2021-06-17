@@ -426,3 +426,113 @@ func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
 	}
 	return 0, errors.New(common.CCErrCommParamsIsInvalid, "directory with the supplier account does not exist")
 }
+
+// generateUpdateInstanceResource generate update instance auth resource by their object type
+func (ps *parseStream) generateUpdateInstanceResource(model *metadata.Object, instID int64) (*meta.ResourceAttribute,
+	error) {
+
+	instanceType, err := ps.getInstanceTypeByObject(model.ObjectID)
+	if err != nil {
+		return nil, err
+	}
+
+	switch instanceType {
+	case meta.HostInstance:
+		hostRelationReq := &metadata.HostModuleRelationRequest{
+			HostIDArr: []int64{instID},
+			Fields:    []string{common.BKAppIDField, common.BKModuleIDField},
+		}
+
+		relationRes, err := ps.engine.CoreAPI.CoreService().Host().GetHostModuleRelation(context.Background(),
+			ps.RequestCtx.Header, hostRelationReq)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(relationRes.Data.Info) == 0 {
+			return nil, errors.New(common.CCErrCommParamsIsInvalid, fmt.Sprintf("host %d has no relations", instID))
+		}
+		bizID := relationRes.Data.Info[0].AppID
+
+		rscPoolBizID, err := ps.getResourcePoolBusinessID()
+		if err != nil {
+			return nil, err
+		}
+
+		if bizID != rscPoolBizID {
+			return &meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:       instanceType,
+					Action:     meta.Update,
+					InstanceID: instID,
+				},
+				Layers:     []meta.Item{{Type: meta.Business, InstanceID: bizID}},
+				BusinessID: bizID,
+			}, nil
+		}
+
+		if len(relationRes.Data.Info) > 1 {
+			return nil, errors.New(common.CCErrCommParamsIsInvalid, fmt.Sprintf("host %d is in many dirs", instID))
+		}
+
+		return &meta.ResourceAttribute{
+			Basic: meta.Basic{
+				Type:       instanceType,
+				Action:     meta.Update,
+				InstanceID: instID,
+			},
+			Layers: []meta.Item{{Type: meta.ResourcePoolDirectory, InstanceID: relationRes.Data.Info[0].ModuleID}},
+		}, nil
+	case meta.Business, meta.CloudAreaInstance:
+		return &meta.ResourceAttribute{
+			Basic: meta.Basic{
+				Type:       instanceType,
+				Action:     meta.Update,
+				InstanceID: instID,
+			},
+		}, nil
+	case meta.ModelSet, meta.ModelModule, meta.MainlineInstance, meta.Process:
+		bizIDReq := &metadata.QueryCondition{
+			Fields:    []string{common.BKAppIDField},
+			Page:      metadata.BasePage{Limit: 1},
+			Condition: mapstr.MapStr{metadata.GetInstIDFieldByObjID(model.ObjectID): instID},
+		}
+
+		bizIDResult, err := ps.engine.CoreAPI.CoreService().Instance().ReadInstance(context.Background(),
+			ps.RequestCtx.Header, model.ObjectID, bizIDReq)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := bizIDResult.CCError(); err != nil {
+			return nil, err
+		}
+
+		if len(bizIDResult.Data.Info) == 0 {
+			return nil, errors.New(common.CCErrCommParamsIsInvalid, fmt.Sprintf("host %d has no relations", instID))
+		}
+
+		bizID, err := util.GetInt64ByInterface(bizIDResult.Data.Info[0][common.BKAppIDField])
+		if err != nil {
+			return nil, errors.New(common.CCErrCommParamsInvalid, fmt.Sprintf("inst %d has invalid biz id", instID))
+		}
+
+		return &meta.ResourceAttribute{
+			BusinessID: bizID,
+			Basic: meta.Basic{
+				Type:   instanceType,
+				Action: meta.Update,
+			},
+		}, nil
+	case meta.ModelInstance:
+		return &meta.ResourceAttribute{
+			Basic: meta.Basic{
+				Type:       instanceType,
+				Action:     meta.Update,
+				InstanceID: instID,
+			},
+			Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+		}, nil
+	}
+	return nil, errors.New(common.CCErrCommParamsIsInvalid, fmt.Sprintf("instance type %s is invalid", instanceType))
+}

@@ -144,9 +144,6 @@ func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context, header ht
 		im.mainlineInstances = append(im.mainlineInstances, mainlineInstances...)
 	}
 
-	blog.V(5).Infof("get other mainline instances by business:%d result: %#v, modelIDs: %#v, rid: %s",
-		im.bkBizID, im.mainlineInstances, im.modelIDs, rid)
-
 	return nil
 }
 

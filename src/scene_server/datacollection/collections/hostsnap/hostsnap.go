@@ -334,7 +334,6 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 		// to do
 		osname = platform
 		ostype = common.HostOSTypeEnumUNIX
-		blog.Errorf("parseSetter for test, osname: %s ostype: %v", osname, ostype)
 
 	default:
 		osname = fmt.Sprintf("%s", platform)
@@ -525,7 +524,6 @@ func parseV10Setter(val *gjson.Result, innerIP, outerIP string) (map[string]inte
 		//  to do
 		osname = platform
 		ostype = common.HostOSTypeEnumUNIX
-		blog.Errorf("parseV10Setter for test, osname: %s ostype: %v", osname, ostype)
 
 	default:
 		osname = fmt.Sprintf("%s", platform)

@@ -77,19 +77,10 @@ func NewCache(event reflector.Interface) error {
 		return fmt.Errorf("run set cache failed, err: %v", err)
 	}
 
-	custom := &customLevel{
-		key:  customKey,
-		lock: tools.NewRefreshingLock(),
-	}
-	if err := custom.Run(); err != nil {
-		return fmt.Errorf("run biz custom level cache failed, err: %v", err)
-	}
-
 	cache = &cacheCollection{
-		business:    biz,
-		set:         set,
-		module:      module,
-		customLevel: custom,
+		business: biz,
+		set:      set,
+		module:   module,
 	}
 	return nil
 }

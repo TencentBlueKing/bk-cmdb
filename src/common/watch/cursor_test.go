@@ -13,12 +13,13 @@
 package watch
 
 import (
+	"strconv"
 	"testing"
 
 	"configcenter/src/storage/stream/types"
 )
 
-const cursorSample = "MQ0yDTVlYjM4NTk3NDc3MGExMThmNDkyMmFiZQ1pbnNlcnQNMTU4ODg1MzY1Mg0w"
+const cursorSample = "MQ0yDTVlYjM4NTk3NDc3MGExMThmNDkyMmFiZQ1pbnNlcnQNMTU4ODg1MzY1Mg0wDTE="
 
 func TestCursorEncode(t *testing.T) {
 	cursor := Cursor{
@@ -26,9 +27,10 @@ func TestCursorEncode(t *testing.T) {
 			Sec:  uint32(1588853652),
 			Nano: 0,
 		},
-		Oid:  "5eb385974770a118f4922abe",
-		Type: Host,
-		Oper: types.Insert,
+		Oid:     "5eb385974770a118f4922abe",
+		Type:    Host,
+		Oper:    types.Insert,
+		UniqKey: strconv.Itoa(1),
 	}
 	encode, err := cursor.Encode()
 	if err != nil {
@@ -37,7 +39,7 @@ func TestCursorEncode(t *testing.T) {
 	}
 
 	if encode != cursorSample {
-		t.Errorf("encode cursor failed")
+		t.Errorf("encode cursor failed: %s", encode)
 		return
 	}
 }
@@ -71,6 +73,11 @@ func TestCursorDecode(t *testing.T) {
 
 	if cursor.Oper != types.Insert {
 		t.Errorf("decode cursor, got invalid operation type: %s", cursor.Oper)
+		return
+	}
+
+	if cursor.UniqKey != "1" {
+		t.Errorf("decode cursor, unique key is invalid: %s", cursor.UniqKey)
 		return
 	}
 }

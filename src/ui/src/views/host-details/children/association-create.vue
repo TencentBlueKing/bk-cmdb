@@ -56,7 +56,6 @@
                 {{$t('已关联')}}
               </bk-link>
               <bk-link href="javascript:void(0)" class="option-link" v-else
-                v-click-outside="handleCloseConfirm"
                 theme="primary"
                 :disabled="disabled"
                 @click.stop="beforeUpdate($event, row[instanceIdKey], 'new')">
@@ -67,7 +66,7 @@
         </template>
       </bk-table-column>
     </bk-table>
-    <div class="confirm-tips" ref="confirmTips" v-click-outside="cancelUpdate" v-show="confirm.id">
+    <div class="confirm-tips" ref="confirmTips" v-show="confirm.id">
       <p class="tips-content">{{$t('更新确认')}}</p>
       <div class="tips-option">
         <bk-button class="tips-button" theme="primary" @click="confirmUpdate">{{$t('确认')}}</bk-button>
@@ -101,6 +100,7 @@
         table: {
           header: [],
           list: [],
+          originalList: [],
           pagination: {
             count: 0,
             current: 1,
@@ -486,16 +486,19 @@
           this.updateAssociation(instId, updateType)
         } else {
           this.confirm.id = instId
-          this.confirm.instance && this.confirm.instance.destroy()
           this.confirm.instance = this.$bkPopover(event.target, {
             content: this.$refs.confirmTips,
             theme: 'light',
             zIndex: 9999,
             width: 230,
-            trigger: 'manual',
+            trigger: 'click',
             boundary: 'window',
             arrow: true,
-            interactive: true
+            interactive: true,
+            onHidden: () => {
+              this.confirm.instance && this.confirm.instance.destroy()
+              this.confirm.instance = null
+            }
           })
           this.$nextTick(() => {
             this.confirm.instance.show()
@@ -557,7 +560,10 @@
         })
       },
       getHostCondition() {
-        const condition = [{ bk_obj_id: 'host', condition: [], fields: [] }]
+        const condition = [
+          { bk_obj_id: 'host', condition: [], fields: [] },
+          { bk_obj_id: 'biz', condition: [], fields: ['bk_module_id'] }
+        ]
         const property = this.getProperty(this.filter.id)
         if (this.filter.value !== '' && property) {
           condition[0].condition.push({
@@ -611,6 +617,7 @@
       setTableList(data, asstObjId) {
         // const properties = this.properties
         this.table.pagination.count = data.count
+        this.table.originalList = Object.freeze(data.info.slice())
         if (asstObjId === 'host') {
           data.info = data.info.map(item => item.host)
         }
@@ -621,9 +628,6 @@
       },
       getProperty(propertyId) {
         return this.properties.find(({ bk_property_id: bkPropertyId }) => bkPropertyId === propertyId)
-      },
-      handleCloseConfirm() {
-        // this.confirm.id = null
       },
       handlePropertySelected(value, data) {
         this.filter.id = data.bk_property_id

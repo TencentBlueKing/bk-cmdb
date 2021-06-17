@@ -281,6 +281,12 @@ const (
 var (
 	updateObjectAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/update/objectassociation/[0-9]+/?$`)
 	deleteObjectAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/delete/objectassociation/[0-9]+/?$`)
+	// excel 导入关联关系专用接口
+	findAssociationByObjectAssociationIDLatestRegexp = regexp.MustCompile(
+		`^/api/v3/topo/find/object/[^\s/]+/association/by/bk_obj_asst_id$`)
+	// excel 导入关联关系专用接口
+	importAssociationByObjectAssociationIDLatestRegexp = regexp.MustCompile(
+		`^/api/v3/import/instassociation/[^\s/]+$`)
 )
 
 func (ps *parseStream) objectAssociationLatest() *parseStream {
@@ -473,6 +479,34 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 		return ps
 	}
 
+	// excel 导入关联关系专用接口, 跳过鉴权
+	if ps.hitRegexp(findAssociationByObjectAssociationIDLatestRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: 0,
+				Basic: meta.Basic{
+					Type:   meta.ModelAssociation,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// excel 导入关联关系专用接口, 跳过鉴权
+	if ps.hitRegexp(importAssociationByObjectAssociationIDLatestRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: 0,
+				Basic: meta.Basic{
+					Type:   meta.ModelAssociation,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
 	return ps
 }
 
@@ -487,6 +521,9 @@ var (
 	deleteObjectInstanceAssociationBatchLatestRegexp = regexp.MustCompile("^/api/v3/delete/instassociation/batch")
 	findObjectInstanceTopologyUILatestRegexp         = regexp.MustCompile(`^/api/v3/findmany/inst/association/object/[^\s/]+/inst_id/[0-9]+/offset/[0-9]+/limit/[0-9]+/web$`)
 	findInstAssociationObjInstInfoLatestRegexp       = regexp.MustCompile(`^/api/v3/findmany/inst/association/association_object/inst_base_info$`)
+
+	searchInstanceAssociationsRegexp = regexp.MustCompile(`^/api/v3/search/instance_associations/object/[^\s/]+/?$`)
+	countInstanceAssociationsRegexp  = regexp.MustCompile(`^/api/v3/count/instance_associations/object/[^\s/]+/?$`)
 )
 
 func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
@@ -496,6 +533,56 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// find instance's association operation.
 	if ps.hitPattern(findObjectInstanceAssociationLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceAssociation,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	// search instance associations operation.
+	if ps.hitRegexp(searchInstanceAssociationsRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("search object instance associations, got invalid url")
+			return ps
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceAssociation,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	// count instance associations operation.
+	if ps.hitRegexp(countInstanceAssociationsRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("count object instance associations, got invalid url")
+			return ps
+		}
+
 		bizID, err := ps.RequestCtx.getBizIDFromBody()
 		if err != nil {
 			ps.err = err
@@ -565,12 +652,6 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		val, err = ps.RequestCtx.getValueFromBody(common.BKInstIDField)
 		if err != nil {
 			ps.err = err
@@ -594,32 +675,18 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		}
 		// 处理模型自关联的情况
 		if len(models) == 1 {
-			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID)
+			instRes, err := ps.generateUpdateInstanceResource(&models[0], instanceID)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			asstInstRes, err := ps.generateUpdateInstanceResource(&models[0], asstInstID)
 			if err != nil {
 				ps.err = err
 				return ps
 			}
 
-			ps.Attribute.Resources = []meta.ResourceAttribute{
-				{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: instanceID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: bizID,
-				},
-				{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: asstInstID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: bizID,
-				},
-			}
+			ps.Attribute.Resources = []meta.ResourceAttribute{*instRes, *asstInstRes}
 			return ps
 		}
 
@@ -630,22 +697,14 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			} else {
 				instID = asstInstID
 			}
-			instanceType, err := ps.getInstanceTypeByObject(model.ObjectID)
+
+			instRes, err := ps.generateUpdateInstanceResource(&model, instID)
 			if err != nil {
 				ps.err = err
 				return ps
 			}
 
-			ps.Attribute.Resources = append(ps.Attribute.Resources,
-				meta.ResourceAttribute{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: instID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-					BusinessID: bizID,
-				})
+			ps.Attribute.Resources = append(ps.Attribute.Resources, *instRes)
 		}
 		return ps
 	}
@@ -678,40 +737,20 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		// 处理模型自关联的情况
 		if len(models) == 1 {
-			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID)
+			instRes, err := ps.generateUpdateInstanceResource(&models[0], asst.InstID)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			asstInstRes, err := ps.generateUpdateInstanceResource(&models[0], asst.AsstInstID)
 			if err != nil {
 				ps.err = err
 				return ps
 			}
 
-			ps.Attribute.Resources = []meta.ResourceAttribute{
-				{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: asst.InstID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: bizID,
-				},
-				{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: asst.AsstInstID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: bizID,
-				},
-			}
+			ps.Attribute.Resources = []meta.ResourceAttribute{*instRes, *asstInstRes}
 			return ps
 		}
 
@@ -722,22 +761,14 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			} else {
 				instID = asst.AsstInstID
 			}
-			instanceType, err := ps.getInstanceTypeByObject(model.ObjectID)
+
+			instRes, err := ps.generateUpdateInstanceResource(&model, instID)
 			if err != nil {
 				ps.err = err
 				return ps
 			}
 
-			ps.Attribute.Resources = append(ps.Attribute.Resources,
-				meta.ResourceAttribute{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: instID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-					BusinessID: bizID,
-				})
+			ps.Attribute.Resources = append(ps.Attribute.Resources, *instRes)
 		}
 
 		return ps
@@ -816,8 +847,12 @@ var (
 	findObjectInstanceSubTopologyLatestRegexp = regexp.MustCompile(`^/api/v3/find/insttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstanceTopologyLatestRegexp    = regexp.MustCompile(`^/api/v3/find/instassttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstancesLatestRegexp           = regexp.MustCompile(`^/api/v3/find/instance/object/[^\s/]+/?$`)
-	findObjectInstancesUniqueFieldsRegexp     = regexp.MustCompile(`^/api/v3/find/instance/object/[^\s/]+/unique_fields/?$`)
-	findObjectInstancesNamesRegexp            = regexp.MustCompile(`^/api/v3/findmany/object/instances/names/?$`)
+	findObjectInstancesUniqueFieldsRegexp     = regexp.MustCompile(
+		`^/api/v3/find/instance/object/[^\s/]+/unique_fields/by/unique/[0-9]+/?$`)
+	findObjectInstancesNamesRegexp = regexp.MustCompile(`^/api/v3/findmany/object/instances/names/?$`)
+
+	searchObjectInstancesRegexp = regexp.MustCompile(`^/api/v3/search/instances/object/[^\s/]+/?$`)
+	countObjectInstancesRegexp  = regexp.MustCompile(`^/api/v3/count/instances/object/[^\s/]+/?$`)
 )
 
 func (ps *parseStream) objectInstanceLatest() *parseStream {
@@ -1119,9 +1154,45 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		return ps
 	}
 
+	// search object instances operation.
+	if ps.hitRegexp(searchObjectInstancesRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("search object instances, got invalid url")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// count object instances operation.
+	if ps.hitRegexp(countObjectInstancesRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("count object instances, got invalid url")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
 	// find object's instances' unique fields operation
 	if ps.hitRegexp(findObjectInstancesUniqueFieldsRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 7 {
+		if len(ps.RequestCtx.Elements) != 10 {
 			ps.err = errors.New("find object's instances' unique fields, but got invalid url")
 			return ps
 		}

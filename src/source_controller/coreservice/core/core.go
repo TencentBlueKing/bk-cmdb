@@ -89,6 +89,7 @@ type InstanceOperation interface {
 	CreateManyModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error)
 	UpdateModelInstance(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	SearchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
+	CountModelInstances(kit *rest.Kit, objID string, input *metadata.Condition) (*metadata.CommonCountResult, error)
 	DeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
@@ -121,6 +122,7 @@ type InstanceAssociation interface {
 	CreateOneInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error)
 	CreateManyInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error)
 	SearchInstanceAssociation(kit *rest.Kit, objID string, param metadata.QueryCondition) (*metadata.QueryResult, error)
+	CountInstanceAssociations(kit *rest.Kit, objID string, input *metadata.Condition) (*metadata.CommonCountResult, error)
 	DeleteInstanceAssociation(kit *rest.Kit, objID string, param metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
 
@@ -206,7 +208,6 @@ type Core interface {
 	SystemOperation() SystemOperation
 	CloudOperation() CloudOperation
 	AuthOperation() AuthOperation
-	EventOperation() EventOperation
 	CommonOperation() CommonOperation
 }
 
@@ -316,13 +317,6 @@ type AuthOperation interface {
 	SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64, []map[string]interface{}, errors.CCErrorCoder)
 }
 
-type EventOperation interface {
-	Subscribe(kit *rest.Kit, subscription *metadata.Subscription) (*metadata.Subscription, errors.CCErrorCoder)
-	UnSubscribe(kit *rest.Kit, subscribeID int64) errors.CCErrorCoder
-	UpdateSubscription(kit *rest.Kit, subscribeID int64, subscription *metadata.Subscription) errors.CCErrorCoder
-	ListSubscriptions(kit *rest.Kit, data *metadata.ParamSubscriptionSearch) (*metadata.RspSubscriptionSearch, errors.CCErrorCoder)
-}
-
 type CommonOperation interface {
 	GetDistinctField(kit *rest.Kit, param *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder)
 }
@@ -343,7 +337,6 @@ type core struct {
 	hostApplyRule   HostApplyRuleOperation
 	cloud           CloudOperation
 	auth            AuthOperation
-	event           EventOperation
 	common          CommonOperation
 }
 
@@ -363,7 +356,6 @@ func New(
 	sys SystemOperation,
 	cloud CloudOperation,
 	auth AuthOperation,
-	event EventOperation,
 	common CommonOperation,
 ) Core {
 	return &core{
@@ -382,7 +374,6 @@ func New(
 		hostApplyRule:   hostApplyRule,
 		cloud:           cloud,
 		auth:            auth,
-		event:           event,
 		common:          common,
 	}
 }
@@ -445,10 +436,6 @@ func (m *core) CloudOperation() CloudOperation {
 
 func (m *core) AuthOperation() AuthOperation {
 	return m.auth
-}
-
-func (m *core) EventOperation() EventOperation {
-	return m.event
 }
 
 func (m *core) CommonOperation() CommonOperation {

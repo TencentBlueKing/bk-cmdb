@@ -144,6 +144,8 @@ func (s *Service) initBusinessAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/instassociation", Handler: s.CreateAssociationInst})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/instassociation/{bk_obj_id}/{association_id}", Handler: s.DeleteAssociationInst})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/instassociation/batch", Handler: s.DeleteAssociationInstBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/instance_associations/object/{bk_obj_id}", Handler: s.SearchInstanceAssociations})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/instance_associations/object/{bk_obj_id}", Handler: s.CountInstanceAssociations})
 
 	// topo search methods
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/object/{bk_obj_id}", Handler: s.SearchInstByAssociation})
@@ -152,6 +154,11 @@ func (s *Service) initBusinessAssociation(web *restful.WebService) {
 	// ATTENTION: the following methods is not recommended
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/insttopo/object/{bk_obj_id}/inst/{inst_id}", Handler: s.SearchInstChildTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/import/instassociation/{bk_obj_id}", Handler: s.ImportInstanceAssociation})
+	// 专用方法，提供给关联关系导入使用
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/topo/find/object/{bk_obj_id}/association/by/bk_obj_asst_id",
+		Handler: s.FindAssociationByObjectAssociationID})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -168,9 +175,15 @@ func (s *Service) initBusinessInst(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/instance/object/{bk_obj_id}/inst/{inst_id}", Handler: s.UpdateInst})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/instance/object/{bk_obj_id}", Handler: s.UpdateInsts})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instance/object/{bk_obj_id}", Handler: s.SearchInstAndAssociationDetail})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instance/object/{bk_obj_id}/unique_fields", Handler: s.SearchInstUniqueFields})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/find/instance/object/{bk_obj_id}/unique_fields/by/unique/{id}",
+		Handler: s.SearchInstUniqueFields,
+	})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instdetail/object/{bk_obj_id}/inst/{inst_id}", Handler: s.SearchInstByInstID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/object/instances/names", Handler: s.SearchInstsNames})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/instances/object/{bk_obj_id}", Handler: s.SearchObjectInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/instances/object/{bk_obj_id}", Handler: s.CountObjectInstances})
 
 	utility.AddToRestfulWebService(web)
 }

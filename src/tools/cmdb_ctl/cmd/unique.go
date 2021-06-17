@@ -15,12 +15,15 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/index"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/source_controller/coreservice/core/model"
+	"configcenter/src/storage/dal/types"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
 	"github.com/spf13/cobra"
@@ -63,7 +66,8 @@ func runUniqueCheck() error {
 }
 
 func (s *uniqueCheckService) checkUnique() error {
-	fmt.Println("=================================\nstart checking unique constraints")
+	fmt.Println("=================================")
+	printInfo("start checking unique constraints\n")
 
 	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
 
@@ -73,7 +77,17 @@ func (s *uniqueCheckService) checkUnique() error {
 	}
 
 	for _, objID := range objIDs {
-		fmt.Printf("=================================\nstart checking unique constraints for object %s\n", objID)
+		fmt.Println("=================================")
+		if !model.SatisfyMongoCollLimit(objID) {
+			printError("object id %s is invalid\n", objID)
+		}
+
+		attrMap, err := s.getObjAttrMap(ctx, objID)
+		if err != nil {
+			return err
+		}
+
+		printInfo("start checking unique constraints for object %s\n", objID)
 		uniques, err := s.getObjectUniques(ctx, objID)
 		if err != nil {
 			return err
@@ -83,11 +97,6 @@ func (s *uniqueCheckService) checkUnique() error {
 			continue
 		}
 
-		attrMap, err := s.getObjAttrMap(ctx, objID)
-		if err != nil {
-			return err
-		}
-
 		uniqueKeyMap := make(map[uint64]uint64)
 		for _, unique := range uniques {
 			isValid := true
@@ -95,15 +104,19 @@ func (s *uniqueCheckService) checkUnique() error {
 				id, exists := uniqueKeyMap[key.ID]
 				if exists {
 					isValid = false
-					fmt.Printf("object(%s) unique(%d) key(%d) duplicate with %d\n", objID, unique.ID, key.ID, id)
+					printError("object(%s) unique(%d) key(%d) duplicate with %d\n", objID, unique.ID, key.ID, id)
 					continue
 				}
 				uniqueKeyMap[key.ID] = unique.ID
 			}
 
 			if !isValid {
-				fmt.Printf("object(%s) unique(%d) has invalid key, **skip checking instance**\n", objID, unique.ID)
+				printError("object(%s) unique(%d) has invalid key, **skip checking instance**\n", objID, unique.ID)
 				continue
+			}
+
+			if !unique.MustCheck {
+				fmt.Printf("WARNING: not must check object(%s) unique(%d) will not be supported\n", objID, unique.ID)
 			}
 
 			if err := s.checkObjectUnique(ctx, objID, unique.OwnerID, unique, attrMap); err != nil {
@@ -112,12 +125,12 @@ func (s *uniqueCheckService) checkUnique() error {
 		}
 	}
 
-	fmt.Println("checking unique constraints done")
+	printInfo("checking unique constraints done\n")
 	return nil
 }
 
 func (s *uniqueCheckService) getAllObjectIDs(ctx context.Context) ([]string, error) {
-	fmt.Println("start searching for all object ids")
+	printInfo("start searching for all object ids\n")
 
 	rawObjIDs, err := s.service.DbProxy.Table(common.BKTableNameObjDes).Distinct(ctx, common.BKObjIDField, nil)
 	if err != nil {
@@ -132,14 +145,14 @@ func (s *uniqueCheckService) getAllObjectIDs(ctx context.Context) ([]string, err
 	return objIDs, nil
 }
 
-func (s *uniqueCheckService) getObjectUniques(ctx context.Context, objID string) ([]metadata.ObjectUnique, error) {
-	fmt.Printf("start searching unique constraints for object %s\n", objID)
+func (s *uniqueCheckService) getObjectUniques(ctx context.Context, objID string) ([]ObjectUnique, error) {
+	printInfo("start searching unique constraints for object %s\n", objID)
 
 	filter := map[string]interface{}{
 		common.BKObjIDField: objID,
 	}
 
-	uniques := make([]metadata.ObjectUnique, 0)
+	uniques := make([]ObjectUnique, 0)
 	if err := s.service.DbProxy.Table(common.BKTableNameObjUnique).Find(filter).All(ctx, &uniques); err != nil {
 		return nil, fmt.Errorf("get unique rules for object(%s) failed, err: %v", objID, err)
 	}
@@ -148,7 +161,7 @@ func (s *uniqueCheckService) getObjectUniques(ctx context.Context, objID string)
 }
 
 func (s *uniqueCheckService) getObjAttrMap(ctx context.Context, objID string) (map[int64]metadata.Attribute, error) {
-	fmt.Printf("start searching object attributes for object %s\n", objID)
+	printInfo("start searching object attributes for object %s\n", objID)
 
 	filter := map[string]interface{}{
 		common.BKObjIDField: objID,
@@ -163,6 +176,10 @@ func (s *uniqueCheckService) getObjAttrMap(ctx context.Context, objID string) (m
 
 	attrMap := make(map[int64]metadata.Attribute)
 	for _, attribute := range attributes {
+		if !model.SatisfyMongoFieldLimit(attribute.PropertyID) {
+			printError("object(%s) attribute(%d) property id %s is invalid\n", objID, attribute.ID, attribute.PropertyID)
+		}
+
 		if objID == common.BKInnerObjIDHost && attribute.PropertyID == common.BKCloudIDField {
 			// NOTICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未foreignkey 特殊的类型
 			attribute.PropertyType = common.FieldTypeInt
@@ -181,30 +198,42 @@ func (s *uniqueCheckService) getObjAttrMap(ctx context.Context, objID string) (m
 }
 
 func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID, supplierAccount string,
-	unique metadata.ObjectUnique, attrMap map[int64]metadata.Attribute) error {
+	unique ObjectUnique, attrMap map[int64]metadata.Attribute) error {
 
 	// check if all unique keys are valid
 	uniqueFields := make([]metadata.Attribute, 0)
 	isValid := true
+
+	keyLen := len(unique.Keys)
 	for idx, key := range unique.Keys {
 		switch key.Kind {
 		case metadata.UniqueKeyKindProperty:
 			property, ok := attrMap[int64(key.ID)]
 			if !ok {
 				isValid = false
-				fmt.Printf("object(%s) unique(%d) key(%d) id(%d) not exist\n", objID, unique.ID, idx, key.ID)
+				printError("object(%s) unique(%d) key(%d) id(%d) not exist\n", objID, unique.ID, idx, key.ID)
 				continue
 			}
+
+			if !index.ValidateCCFieldType(property.PropertyType, keyLen) {
+				isValid = false
+				printError("attribute(%d) type %s is invalid\n", property.ID, property.PropertyType)
+			}
+
 			uniqueFields = append(uniqueFields, property)
 		default:
 			isValid = false
-			fmt.Printf("object(%s) unique(%d) key(%d) kind %s is invalid\n", objID, unique.ID, idx, key.Kind)
+			printError("object(%s) unique(%d) key(%d) kind %s is invalid\n", objID, unique.ID, idx, key.Kind)
 			continue
 		}
 	}
 
 	if !isValid {
-		fmt.Printf("object(%s) unique(%d) has invalid key, **skip checking instance**\n", objID, unique.ID)
+		printError("object(%s) unique(%d) has invalid key, **skip checking instance**\n", objID, unique.ID)
+		return nil
+	}
+
+	if objID == common.BKInnerObjIDPlat && len(uniqueFields) == 1 && uniqueFields[0].PropertyID == "bk_vpc_id" {
 		return nil
 	}
 
@@ -219,7 +248,7 @@ func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID, suppl
 		dbType := index.CCFieldTypeToDBType(attribute.PropertyType)
 		if dbType == "" {
 			isValid = false
-			fmt.Printf("object(%s) attribute(%d) type %s is invalid\n", objID, attribute.ID, attribute.PropertyID)
+			printError("object(%s) attribute(%d) type %s is invalid\n", objID, attribute.ID, attribute.PropertyType)
 			continue
 		}
 
@@ -228,7 +257,7 @@ func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID, suppl
 	}
 
 	if !isValid {
-		fmt.Printf("object(%s) unique(%d) has invalid key, **skip checking instance**\n", objID, unique.ID)
+		printError("object(%s) unique(%d) has invalid key, **skip checking instance**\n", objID, unique.ID)
 		return nil
 	}
 
@@ -251,13 +280,14 @@ func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID, suppl
 	}
 
 	items := make([]duplicateItems, 0)
-	if err := s.service.DbProxy.Table(tableName).AggregateAll(ctx, pipeline, &items); err != nil {
+	aggregateOpt := types.NewAggregateOpts().SetAllowDiskUse(true)
+	if err := s.service.DbProxy.Table(tableName).AggregateAll(ctx, pipeline, &items, aggregateOpt); err != nil {
 		return err
 	}
 
 	if len(items) > 0 {
 		jsItem, _ := json.Marshal(items)
-		fmt.Printf("object(%s) unique(%d) has duplicate items(%s)\n", objID, unique.ID, string(jsItem))
+		printError("object(%s) unique(%d) has duplicate items(%s)\n", objID, unique.ID, string(jsItem))
 		return nil
 	}
 	return nil
@@ -266,4 +296,22 @@ func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID, suppl
 type duplicateItems struct {
 	Attributes map[string]interface{} `json:"attributes" bson:"_id"`
 	Total      int64                  `json:"total" bson:"total"`
+}
+
+type ObjectUnique struct {
+	ID        uint64               `json:"id" bson:"id"`
+	ObjID     string               `json:"bk_obj_id" bson:"bk_obj_id"`
+	MustCheck bool                 `json:"must_check" bson:"must_check"`
+	Keys      []metadata.UniqueKey `json:"keys" bson:"keys"`
+	Ispre     bool                 `json:"ispre" bson:"ispre"`
+	OwnerID   string               `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime  *time.Time           `json:"last_time" bson:"last_time"`
+}
+
+func printInfo(format string, a ...interface{}) {
+	fmt.Printf("INFO: %s", fmt.Sprintf(format, a...))
+}
+
+func printError(format string, a ...interface{}) {
+	fmt.Printf("ERROR: %s", fmt.Sprintf(format, a...))
 }

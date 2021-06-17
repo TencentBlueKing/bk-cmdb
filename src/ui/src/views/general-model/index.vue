@@ -18,7 +18,7 @@
           <bk-button slot-scope="{ disabled }"
             class="models-button"
             :disabled="disabled"
-            @click="importSlider.show = true">
+            @click="handleImport">
             {{$t('导入')}}
           </bk-button>
         </cmdb-auth>
@@ -56,20 +56,25 @@
         </icon-button>
       </div>
       <div class="options-filter clearfix fr">
-        <cmdb-property-selector class="filter-selector fl"
+        <cmdb-property-selector class="filter-selector"
           v-model="filter.field"
           :properties="properties"
-          :object-unique="objectUnique"
-          :loading="$loading([request.properties, request.groups, request.unique])">
+          :loading="$loading([request.properties, request.groups])">
         </cmdb-property-selector>
-        <component class="filter-value fl"
+        <component class="filter-value"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
+          :class="filterType"
           v-bind="filterComponentProps"
           v-model="filter.value"
           @change="handleFilterValueChange"
           @enter="handleFilterValueEnter">
         </component>
+        <bk-checkbox class="filter-exact" size="small"
+          v-if="allowFuzzyQuery"
+          v-model="filter.fuzzy_query">
+          {{$t('模糊')}}
+        </bk-checkbox>
       </div>
     </div>
     <bk-table class="models-table" ref="table"
@@ -133,7 +138,6 @@
           :inst="attribute.inst.edit"
           :type="attribute.type"
           :save-auth="{ type: attribute.type === 'update' ? $OPERATION.U_INST : $OPERATION.C_INST }"
-          :object-unique="objectUnique"
           @on-submit="handleSave"
           @on-cancel="handleCancel">
         </cmdb-form>
@@ -142,7 +146,6 @@
           :uneditable-properties="['bk_inst_name']"
           :properties="properties"
           :property-groups="propertyGroups"
-          :object-unique="objectUnique"
           @on-submit="handleMultipleSave"
           @on-cancel="handleMultipleCancel">
         </cmdb-form-multiple>
@@ -159,18 +162,6 @@
         @on-reset="handleResetColumnsConfig">
       </cmdb-columns-config>
     </bk-sideslider>
-    <bk-sideslider
-      v-transfer-dom
-      :is-show.sync="importSlider.show"
-      :width="800"
-      :title="$t('批量导入')">
-      <cmdb-import v-if="importSlider.show" slot="content"
-        :template-url="url.template"
-        :import-url="url.import"
-        @success="handlePageChange(1)"
-        @partialSuccess="handlePageChange(1)">
-      </cmdb-import>
-    </bk-sideslider>
     <router-subview></router-subview>
   </div>
 </template>
@@ -184,6 +175,7 @@
   import RouterQuery from '@/router/query'
   import Utils from '@/components/filters/utils'
   import throttle from  'lodash.throttle'
+  import instanceImportService from '@/service/instance/import'
   export default {
     components: {
       cmdbColumnsConfig,
@@ -192,7 +184,6 @@
     },
     data() {
       return {
-        objectUnique: [],
         properties: [],
         propertyGroups: [],
         table: {
@@ -214,7 +205,8 @@
         filter: {
           field: '',
           value: '',
-          operator: '$eq'
+          operator: '$eq',
+          fuzzy_query: false
         },
         slider: {
           show: false,
@@ -236,13 +228,9 @@
           selected: [],
           disabledColumns: ['bk_inst_id', 'bk_inst_name']
         },
-        importSlider: {
-          show: false
-        },
         request: {
           properties: Symbol('properties'),
           groups: Symbol('groups'),
-          unique: Symbol('unique'),
           list: Symbol('list')
         }
       }
@@ -268,14 +256,6 @@
       globalCustomColumns() {
         return this.globalUsercustom[`${this.objId}_global_custom_table_columns`] || []
       },
-      url() {
-        const prefix = `${window.API_HOST}insts/owner/${this.supplierAccount}/object/${this.objId}/`
-        return {
-          import: `${prefix}import`,
-          export: `${prefix}export`,
-          template: `${window.API_HOST}importtemplate/${this.objId}`
-        }
-      },
       parentLayers() {
         return [{
           resource_id: this.model.id,
@@ -297,10 +277,30 @@
       },
       filterComponentProps() {
         return Utils.getBindProps(this.filterProperty)
+      },
+      allowFuzzyQuery() {
+        return ['singlechar', 'longchar'].includes(this.filterType)
       }
     },
     watch: {
       'filter.field'() {
+        // 模糊搜索
+        if (this.allowFuzzyQuery && this.filter.fuzzy_query) {
+          this.filter.value = ''
+          this.filter.operator = '$regex'
+          return
+        }
+        const defaultData = Utils.getDefaultData(this.filterProperty)
+        this.filter.value = defaultData.value
+        this.filter.operator = defaultData.operator
+      },
+      'filter.fuzzy_query'(fuzzy) {
+        if (!this.allowFuzzyQuery) return
+        if (fuzzy) {
+          this.filter.value = ''
+          this.filter.operator = '$regex'
+          return
+        }
         const defaultData = Utils.getDefaultData(this.filterProperty)
         this.filter.value = defaultData.value
         this.filter.operator = defaultData.operator
@@ -330,17 +330,18 @@
         page = 1,
         limit = this.table.pagination.limit,
         filter = '',
+        operator = '',
+        fuzzy = false,
         field = 'bk_inst_name'
       }) => {
         this.filter.field = field
+        this.filter.fuzzy_query = fuzzy.toString() === 'true'
         this.table.pagination.current = parseInt(page, 10)
         this.table.pagination.limit = parseInt(limit, 10)
         await this.$nextTick()
         const defaultData = Utils.getDefaultData(this.filterProperty)
-        const isNumber = ['int', 'float'].includes(this.filterType)
-        const filterValue = (isNumber && filter) ? parseFloat(filter, 10) : filter
-        this.filter.operator = defaultData.operator
-        this.filter.value = filterValue.toString().length ? filterValue : defaultData.value
+        this.filter.operator = operator || defaultData.operator
+        this.filter.value = this.formatFilterValue({ value: filter, operator: this.filter.operator }, defaultData.value)
         this.throttleGetTableData()
       }, { immediate: true })
     },
@@ -381,12 +382,24 @@
           })
           return Promise.all([
             this.getPropertyGroups(),
-            this.getObjectUnique(),
             this.setTableHeader()
           ])
         } catch (e) {
           // ignore
         }
+      },
+      formatFilterValue({ value: currentValue, operator }, defaultValue) {
+        let value = currentValue.toString().length ? currentValue : defaultValue
+        const isNumber = ['int', 'float'].includes(this.filterType)
+        if (isNumber && value) {
+          value = parseFloat(value, 10)
+        } else if (operator === '$in') {
+          // eslint-disable-next-line no-nested-ternary
+          value = Array.isArray(value) ? value : !!value ? [value] : []
+        } else if (Array.isArray(value)) {
+          value = value.filter(value => !!value)
+        }
+        return value
       },
       handleFilterValueChange() {
         const hasEnterEvnet = ['float', 'int', 'longchar', 'singlechar']
@@ -394,12 +407,17 @@
         this.handleFilterValueEnter()
       },
       handleFilterValueEnter() {
-        RouterQuery.set({
+        const query = {
           _t: Date.now(),
           page: 1,
           field: this.filter.field,
-          filter: this.filter.value
-        })
+          filter: this.filter.value,
+          operator: this.filter.operator
+        }
+        if (this.allowFuzzyQuery) {
+          query.fuzzy = this.filter.fuzzy_query
+        }
+        RouterQuery.set(query)
       },
       resetData() {
         this.table = {
@@ -429,16 +447,6 @@
         }).then((groups) => {
           this.propertyGroups = groups
           return groups
-        })
-      },
-      getObjectUnique() {
-        return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
-          objId: this.objId,
-          params: {},
-          config: { requestId: this.request.unique }
-        }).then((data) => {
-          this.objectUnique = data
-          return data
         })
       },
       setTableHeader() {
@@ -541,7 +549,12 @@
         if (this.filterType === 'time') {
           const [start, end] = this.filter.value
           params.time_condition = {
-            [this.filter.field]: { start, end }
+            oper: 'and',
+            rules: [{
+              field: this.filter.field,
+              start,
+              end
+            }]
           }
           return params
         }
@@ -555,6 +568,15 @@
             field: this.filter.field,
             operator: '$lte',
             value: end
+          })
+          return params
+        }
+        if (this.filterType === 'objuser') {
+          const multiple = this.filter.value.length > 1
+          params.condition[this.objId].push({
+            field: this.filter.field,
+            operator: multiple ? '$in' : '$regex',
+            value: multiple ? this.filter.value : this.filter.value.toString()
           })
           return params
         }
@@ -718,18 +740,56 @@
         }
         return true
       },
-      handleExport() {
-        const data = new FormData()
-        data.append('bk_inst_id', this.table.checked.join(','))
-        const customFields = this.usercustom[this.customConfigKey]
-        if (customFields) {
-          data.append('export_custom_fields', customFields)
-        }
-        this.$http.download({
-          url: this.url.export,
-          method: 'post',
-          data
+      async handleImport() {
+        const useImport = await import('@/components/import-file')
+        const [, { show: showImport, setState: setImportState }] = useImport.default()
+        setImportState({
+          title: this.$t('批量导入'),
+          bk_obj_id: this.objId,
+          template: `${window.API_HOST}importtemplate/${this.objId}`,
+          submit: (options) => {
+            const params = {
+              op: options.step
+            }
+            if (options.importRelation) {
+              params.object_unique_id = options.object_unique_id
+              params.association_condition = options.relations
+            }
+            return instanceImportService.update({
+              file: options.file,
+              params,
+              config: options.config,
+              bk_obj_id: this.objId
+            })
+          },
+          success: () => RouterQuery.set({ _t: Date.now() })
         })
+        showImport()
+      },
+      async handleExport() {
+        const useExport = await import('@/components/export-file')
+        useExport.default({
+          title: this.$t('导出选中'),
+          bk_obj_id: this.objId,
+          count: this.table.checked.length,
+          submit: (state, task) => {
+            const { fields, exportRelation  } = state
+            const params = {
+              export_custom_fields: fields.value.map(property => property.bk_property_id),
+              bk_inst_ids: this.table.checked
+            }
+            if (exportRelation.value) {
+              params.object_unique_id = state.object_unique_id.value
+              params.association_condition = state.relations.value
+            }
+            return this.$http.download({
+              url: `${window.API_HOST}insts/object/${this.objId}/export`,
+              method: 'post',
+              name: task.current.value.name,
+              data: params
+            })
+          }
+        }).show()
       }
     }
   }
@@ -742,23 +802,36 @@
     .options-filter{
         position: relative;
         margin-right: 5px;
+        display: flex;
+        align-items: center;
+        width: 440px;
         .filter-selector{
             width: 120px;
             border-radius: 2px 0 0 2px;
             margin-right: -1px;
         }
         .filter-value{
-            width: 320px;
+            flex: 1;
             border-radius: 0 2px 2px 0;
+            &.singlechar,
+            &.longchar {
+              border-radius: unset;
+              /deep/ .bk-tag-input {
+                border-radius: unset;
+              }
+            }
             /deep/ .bk-form-input {
                 line-height: 32px;
             }
         }
-        .filter-search{
-            position: absolute;
-            right: 10px;
-            top: 8px;
-            cursor: pointer;
+        .filter-exact {
+          display: inline-flex;
+          align-items: center;
+          padding: 0 5px;
+          height: 32px;
+          border: 1px solid #c4c6cc;
+          border-radius: 0 2px 2px 0;
+          border-left: none;
         }
     }
     .models-button{

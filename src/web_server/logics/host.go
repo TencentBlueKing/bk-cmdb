@@ -17,12 +17,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/json"
+	ccErrrors "configcenter/src/common/errors"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -33,12 +32,13 @@ import (
 )
 
 // GetHostData get host data from excel
-func (lgc *Logics) GetHostData(appID int64, hostIDStr string, hostFields []string, exportCondStr string,
+func (lgc *Logics) GetHostData(appID int64, hostIDArr []int64, hostFields []string,
+	exportCond metadata.HostCommonSearch,
 	header http.Header, defLang lang.DefaultCCLanguageIf) ([]mapstr.MapStr, error) {
 	rid := util.GetHTTPCCRequestID(header)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	//defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
-	if hostIDStr == "" && exportCondStr == "" {
+	if len(hostIDArr) == 0 && len(exportCond.Condition) == 0 {
 		return nil, errors.New(defLang.Language("both_hostid_exportcond_empty"))
 	}
 
@@ -50,20 +50,11 @@ func (lgc *Logics) GetHostData(appID int64, hostIDStr string, hostFields []strin
 	sHostCond[common.BKAppIDField] = appID
 
 	// hostIDStr has the higher priority
-	if hostIDStr != "" {
-		hostIDArr := strings.Split(hostIDStr, ",")
-		iHostIDArr := make([]int64, 0)
-		for _, j := range hostIDArr {
-			hostID, err := strconv.ParseInt(j, 10, 64)
-			if err != nil {
-				return nil, err
-			}
-			iHostIDArr = append(iHostIDArr, hostID)
-		}
-		if len(iHostIDArr) > common.BKMaxExportLimit {
+	if len(hostIDArr) != 0 {
+
+		if len(hostIDArr) > common.BKMaxExportLimit {
 			return nil, errors.New(defLang.Languagef("host_id_len_err", common.BKMaxExportLimit))
 		}
-
 		condArr := make([]interface{}, 0)
 
 		// host condition
@@ -72,7 +63,7 @@ func (lgc *Logics) GetHostData(appID int64, hostIDStr string, hostFields []strin
 		hostCond := make(map[string]interface{})
 		hostCond["field"] = common.BKHostIDField
 		hostCond["operator"] = common.BKDBIN
-		hostCond["value"] = iHostIDArr
+		hostCond["value"] = hostIDArr
 		hostCondArr = append(hostCondArr, hostCond)
 		condition[common.BKObjIDField] = common.BKInnerObjIDHost
 		condition["fields"] = make([]string, 0)
@@ -105,12 +96,6 @@ func (lgc *Logics) GetHostData(appID int64, hostIDStr string, hostFields []strin
 
 		sHostCond["condition"] = condArr
 	} else {
-		exportCond := new(metadata.HostCommonSearch)
-		err := json.Unmarshal([]byte(exportCondStr), &exportCond)
-		if err != nil {
-			blog.Errorf("unmarshal err:%v, exportCondStr:%s", err, exportCondStr)
-			return nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
 		if exportCond.Page.Limit <= 0 || exportCond.Page.Limit > common.BKMaxExportLimit {
 			return nil, errors.New(defLang.Languagef("export_page_limit_err", common.BKMaxExportLimit))
 		}
@@ -165,7 +150,40 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 
 // ImportHosts import host info
 func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
-	modelBizID int64, moduleID int64) *metadata.ResponseDataMapStr {
+	modelBizID int64, moduleID int64, opType int64, AsstObjectUniqueIDMap map[string]int64,
+	objectUniqueID int64) *metadata.ResponseDataMapStr {
+
+	rid := util.GetHTTPCCRequestID(header)
+
+	if opType == 1 {
+		if len(f.Sheets) < 2 {
+			return &metadata.ResponseDataMapStr{}
+		}
+		info, err := lgc.importStatisticsAssociation(ctx, header, common.BKInnerObjIDHost, f.Sheets[1])
+		if err != nil {
+			blog.Errorf("ImportHosts failed, GetImportHosts error:%s, rid: %s", err.Error(), rid)
+			return &metadata.ResponseDataMapStr{
+				BaseResp: metadata.BaseResp{
+					Result: false,
+					Code:   err.GetCode(),
+					ErrMsg: err.Error(),
+				},
+				Data: nil,
+			}
+		}
+		return &metadata.ResponseDataMapStr{
+			BaseResp: metadata.BaseResp{Result: true},
+			Data:     mapstr.MapStr{"association": info},
+		}
+
+	}
+	return lgc.importHosts(ctx, f, header, defLang, modelBizID, modelBizID, AsstObjectUniqueIDMap, objectUniqueID)
+}
+
+// importHosts import host info
+func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
+	modelBizID int64, moduleID int64, asstObjectUniqueIDMap map[string]int64,
+	objectUniqueID int64) *metadata.ResponseDataMapStr {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -244,7 +262,7 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 		}
 	}
 
-	if len(f.Sheets) < 2 {
+	if len(f.Sheets) < 2 || len(asstObjectUniqueIDMap) == 0 {
 		return result
 	}
 
@@ -255,7 +273,9 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 	}
 
 	asstInfoMapInput := &metadata.RequestImportAssociation{
-		AssociationInfoMap: asstInfoMap,
+		AssociationInfoMap:    asstInfoMap,
+		AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
+		ObjectUniqueID:        objectUniqueID,
 	}
 	asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, common.BKInnerObjIDHost, asstInfoMapInput)
 	if nil != asstResultErr {
@@ -279,9 +299,63 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 	return result
 }
 
+// Statistics
+func (lgc *Logics) importStatisticsAssociation(ctx context.Context, header http.Header, objID string,
+	sheet *xlsx.Sheet) (map[string]metadata.ObjectAsstIDStatisticsInfo, ccErrrors.CCErrorCoder) {
+
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	// if len(f.Sheets) >= 2, the second sheet is association data to be import
+	asstNameArr, asstInfoMap := StatisticsAssociation(sheet, common.HostAddMethodExcelAssociationIndexOffset)
+	if len(asstInfoMap) == 0 {
+		return nil, nil
+	}
+
+	input := metadata.FindAssociationByObjectAssociationIDRequest{
+		ObjAsstIDArr: asstNameArr,
+	}
+	resp, err := lgc.CoreAPI.ApiServer().FindAssociationByObjectAssociationID(ctx, header, objID, input)
+	if err != nil {
+		blog.ErrorJSON("find model association by bk_obj_asst_id http do error. err: %s, objID: %s, input: %s, rid: %s",
+			err.Error(), objID, input, rid)
+		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if ccErr := resp.CCError(); ccErr != nil {
+		blog.ErrorJSON("find model association by bk_obj_asst_id http reply error. reply: %s, objID: %s, input: %s,"+
+			" rid: %s", resp, objID, input, rid)
+		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	objIDStatisMap := make(map[string]metadata.ObjectAsstIDStatisticsInfo, 0)
+	for _, row := range resp.Data {
+		// bk_obj_asst_id
+		excelAsstNameStatis := asstInfoMap[row.AssociationName]
+
+		statisObjID := row.AsstObjID
+		// 只统计关联对象
+		if row.ObjectID != objID {
+			statisObjID = row.ObjectID
+		}
+
+		objIDStatis, ok := objIDStatisMap[statisObjID]
+		if !ok {
+			objIDStatis = metadata.ObjectAsstIDStatisticsInfo{}
+		}
+		objIDStatis.Create += excelAsstNameStatis.Create
+		objIDStatis.Delete += excelAsstNameStatis.Delete
+		objIDStatis.Total += excelAsstNameStatis.Total
+		objIDStatisMap[statisObjID] = objIDStatis
+	}
+
+	return objIDStatisMap, nil
+
+}
+
 // UpdateHosts update excel import hosts
 func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
-	modelBizID int64) *metadata.ResponseDataMapStr {
+	modelBizID, OpType int64, AsstObjectUniqueIDMap map[string]int64,
+	objectUniqueID int64) *metadata.ResponseDataMapStr {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -309,6 +383,28 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 				"error": errMsg,
 			},
 		}
+	}
+
+	if OpType == 1 {
+		result := &metadata.ResponseDataMapStr{
+			BaseResp: metadata.BaseResp{Result: true},
+			Data:     mapstr.MapStr{"association": map[string]string{}},
+		}
+		if len(f.Sheets) < 2 {
+			return result
+		}
+
+		statisAsstInfo, err := lgc.importStatisticsAssociation(ctx, header, common.BKInnerObjIDHost, f.Sheets[1])
+		if err != nil {
+			result.Result = false
+			result.Code = err.GetCode()
+			result.ErrMsg = err.Error()
+
+			return result
+		}
+
+		result.Data.Set("association", statisAsstInfo)
+		return result
 	}
 
 	errMsg, err = lgc.CheckHostsUpdated(ctx, header, hosts, modelBizID)
@@ -348,15 +444,41 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 		result, resultErr = lgc.CoreAPI.ApiServer().UpdateHost(context.Background(), header, params)
 		if nil != resultErr {
 			blog.Errorf("UpdateHosts update host http request  error:%s, rid:%s", resultErr.Error(), util.GetHTTPCCRequestID(header))
-			return &metadata.ResponseDataMapStr{
-				BaseResp: metadata.BaseResp{
-					Result: false,
-					Code:   common.CCErrCommHTTPDoRequestFailed,
-					ErrMsg: defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(),
-				},
-				Data: nil,
-			}
 		}
+	}
+
+	if len(f.Sheets) < 2 {
+		return result
+	}
+
+	// if len(f.Sheets) >= 2, the second sheet is association data to be import
+	asstInfoMap := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset)
+	if len(asstInfoMap) == 0 {
+		return result
+	}
+
+	asstInfoMapInput := &metadata.RequestImportAssociation{
+		AssociationInfoMap:    asstInfoMap,
+		AsstObjectUniqueIDMap: AsstObjectUniqueIDMap,
+		ObjectUniqueID:        objectUniqueID,
+	}
+	asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, common.BKInnerObjIDHost, asstInfoMapInput)
+	if nil != asstResultErr {
+		blog.Errorf("ImportHosts logics http request import association error:%s, rid:%s", asstResultErr.Error(), util.GetHTTPCCRequestID(header))
+		return &metadata.ResponseDataMapStr{
+			BaseResp: metadata.BaseResp{
+				Result: false,
+				Code:   common.CCErrCommHTTPDoRequestFailed,
+				ErrMsg: defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(),
+			},
+			Data: nil,
+		}
+	}
+
+	result.Data.Set("asst_error", asstResult.Data.ErrMsgMap)
+
+	if result.Result && !asstResult.Result {
+		result.BaseResp = asstResult.BaseResp
 	}
 
 	return result

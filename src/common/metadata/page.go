@@ -52,6 +52,23 @@ func (page BasePage) IsIllegal() bool {
 	return false
 }
 
+// ValidateLimit validates target page limit.
+func (page BasePage) ValidateLimit(maxLimit int) error {
+	if page.Limit == 0 {
+		return fmt.Errorf("page limit must not be zero")
+	}
+
+	if maxLimit > common.BKMaxPageSize {
+		return fmt.Errorf("exceed system max page size: %d", common.BKMaxPageSize)
+	}
+
+	if page.Limit > maxLimit {
+		return fmt.Errorf("exceed business max page size: %d", maxLimit)
+	}
+
+	return nil
+}
+
 func ParsePage(origin interface{}) BasePage {
 	if origin == nil {
 		return BasePage{Limit: common.BKNoLimit}

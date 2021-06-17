@@ -12,7 +12,7 @@
     :value="value"
     display-type="info">
   </service-template-value>
-  <compmoent :is="tag" v-bind="attrs" :class="`value-${theme}-theme`" v-else>{{displayValue}}</compmoent>
+  <compmoent :is="tag" v-bind="attrs" v-else>{{displayValue}}</compmoent>
 </template>
 
 <script>
@@ -75,9 +75,8 @@
     },
     computed: {
       attrs() {
-        const attrs = {}
-        if (this.className) {
-          attrs.class = this.className
+        const attrs = {
+          class: `value-${this.theme}-theme`
         }
         return attrs
       },

@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/querybuilder"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -81,6 +82,16 @@ type AuditQueryCondition struct {
 	ObjID string `json:"bk_obj_id"`
 	// FuzzyQuery is used for searching for resource name using regex, use accurate query by default when it is not set
 	FuzzyQuery bool `json:"fuzzy_query"`
+	// Condition is used for new way to search audit log by user or resource_name
+	Condition []querybuilder.AtomRule `json:"condition"`
+}
+
+// Validate is a AuditQueryCondition validator to validate user resource_name condition whether exist at the same time
+func (a *AuditQueryCondition) Validate() error {
+	if (len(a.User) != 0 || len(a.ResourceName) != 0) && len(a.Condition) != 0 {
+		return errors.New(common.CCErrCommParamsInvalid, "condition, user and resource_name cannot exist at the same time")
+	}
+	return nil
 }
 
 type OperationTimeCondition struct {

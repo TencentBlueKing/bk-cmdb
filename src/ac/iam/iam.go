@@ -305,6 +305,10 @@ func (a *authorizer) authorizeBatch(ctx context.Context, h http.Header, exact bo
 		return decisions, nil
 	}
 
+	if blog.V(5) {
+		blog.InfoJSON("auth options: %s, rid: %s", opts, rid)
+	}
+
 	var authDecisions []types.Decision
 	if exact {
 		authDecisions, err = a.authClientSet.AuthorizeBatch(ctx, h, opts)
@@ -314,8 +318,8 @@ func (a *authorizer) authorizeBatch(ctx context.Context, h http.Header, exact bo
 		}
 	} else {
 		authDecisions, err = a.authClientSet.AuthorizeAnyBatch(ctx, h, opts)
-		blog.ErrorJSON("authorize any batch failed, err: %s, ops: %s, resources: %s, rid: %s", err, opts, resources, rid)
 		if err != nil {
+			blog.ErrorJSON("authorize any batch failed, err: %s, ops: %s, resources: %s, rid: %s", err, opts, resources, rid)
 			return nil, err
 		}
 

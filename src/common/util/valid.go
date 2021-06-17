@@ -14,6 +14,8 @@ package util
 
 import (
 	"encoding/json"
+	"regexp"
+	"strings"
 	"unicode/utf8"
 
 	"configcenter/src/common"
@@ -30,6 +32,8 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 		return ValidFieldTypeIntOption(option, errProxy)
 	case common.FieldTypeList:
 		return ValidFieldTypeListOption(option, errProxy)
+	case common.FieldTypeLongChar, common.FieldTypeSingleChar:
+		return ValidFieldRegularExpressionOption(option, errProxy)
 	}
 	return nil
 }
@@ -193,6 +197,31 @@ func ValidFieldTypeListOption(option interface{}, errProxy errors.DefaultCCError
 	return nil
 }
 
+func ValidFieldRegularExpressionOption(option interface{}, errProxy errors.DefaultCCErrorIf) error {
+	// check regular is legal
+	if option == nil {
+		return nil
+	}
+
+	regular, ok := option.(string)
+	if !ok {
+		blog.Errorf("variable type conversion error")
+		return errProxy.Errorf(common.CCIllegalRegularExpression, "option")
+	}
+
+	if len(regular) == 0 {
+		return nil
+	}
+
+	_, err := regexp.Compile(regular)
+	if err != nil {
+		blog.Errorf("regular expression is wrong, regular expression is:%s, err:%s", regular, err)
+		return errProxy.Errorf(common.CCErrorCheckRegularFailed)
+	}
+
+	return nil
+}
+
 // IsStrProperty  is string property
 func IsStrProperty(propertyType string) bool {
 	if common.FieldTypeLongChar == propertyType || common.FieldTypeSingleChar == propertyType {
@@ -230,4 +259,26 @@ func IsNumeric(val interface{}) bool {
 	}
 
 	return false
+}
+
+var mainlineNameRegexp = regexp.MustCompile(common.FieldTypeMainlineRegexp)
+
+// ValidTopoNameField validate business topology name, including set and service templates that may generate them
+func ValidTopoNameField(name string, nameField string, errProxy errors.DefaultCCErrorIf) (string, error) {
+	name = strings.Trim(name, " ")
+
+	if len(name) == 0 {
+		return name, errProxy.CCErrorf(common.CCErrCommParamsNeedSet, nameField)
+	}
+
+	if utf8.RuneCountInString(name) > common.MainlineNameFieldMaxLength {
+		return name, errProxy.CCErrorf(common.CCErrCommValExceedMaxFailed, nameField, common.MainlineNameFieldMaxLength)
+	}
+
+	match := mainlineNameRegexp.MatchString(name)
+	if !match {
+		return name, errProxy.CCErrorf(common.CCErrCommParamsInvalid, nameField)
+	}
+
+	return name, nil
 }

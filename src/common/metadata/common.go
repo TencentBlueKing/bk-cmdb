@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/querybuilder"
 	cctime "configcenter/src/common/time"
 	"configcenter/src/common/util"
 
@@ -71,6 +72,18 @@ type Response struct {
 	Data     interface{} `json:"data" mapstructure:"data"`
 }
 
+// CountResponse count action response content.
+type CountResponseContent struct {
+	// Count count num.
+	Count uint64 `json:"count"`
+}
+
+// CountResponse count action response.
+type CountResponse struct {
+	BaseResp `json:",inline"`
+	Data     CountResponseContent `json:"data"`
+}
+
 type BoolResponse struct {
 	BaseResp `json:",inline"`
 	Data     bool `json:"data"`
@@ -116,20 +129,24 @@ type ResponseDataMapStr struct {
 type QueryInput struct {
 	Condition map[string]interface{} `json:"condition"`
 	// 非必填，只能用来查时间，且与Condition是与关系
-	TimeCondition  TimeCondition `json:"time_condition,omitempty"`
-	Fields         string        `json:"fields,omitempty"`
-	Start          int           `json:"start,omitempty"`
-	Limit          int           `json:"limit,omitempty"`
-	Sort           string        `json:"sort,omitempty"`
-	DisableCounter bool          `json:"disable_counter,omitempty"`
+	TimeCondition  *TimeCondition `json:"time_condition,omitempty"`
+	Fields         string         `json:"fields,omitempty"`
+	Start          int            `json:"start,omitempty"`
+	Limit          int            `json:"limit,omitempty"`
+	Sort           string         `json:"sort,omitempty"`
+	DisableCounter bool           `json:"disable_counter,omitempty"`
 }
 
 type TimeConditionItem struct {
-	Start *cctime.Time `json:"start"`
-	End   *cctime.Time `json:"end"`
+	Field string       `json:"field" bson:"field"`
+	Start *cctime.Time `json:"start" bson:"start"`
+	End   *cctime.Time `json:"end" bson:"end"`
 }
 
-type TimeCondition map[string]TimeConditionItem
+type TimeCondition struct {
+	Operator string              `json:"oper" bson:"oper"`
+	Rules    []TimeConditionItem `json:"rules" bson:"rules"`
+}
 
 // MergeTimeCondition parse time condition and merge with common condition to construct a DB condition, only used by DB
 func (tc *TimeCondition) MergeTimeCondition(condition map[string]interface{}) (map[string]interface{}, error) {
@@ -137,28 +154,40 @@ func (tc *TimeCondition) MergeTimeCondition(condition map[string]interface{}) (m
 		return nil, nil
 	}
 
+	if tc.Operator != "and" {
+		return nil, errors.New(common.CCErrCommParamsInvalid, "time condition oper is invalid")
+	}
+
+	if len(tc.Rules) == 0 {
+		return nil, errors.New(common.CCErrCommParamsNeedSet, "time condition rules not set")
+	}
+
 	timeCondition := make(map[string]interface{})
-	for key, cond := range *tc {
+	for _, cond := range tc.Rules {
+		if len(cond.Field) == 0 {
+			return nil, errors.New(common.CCErrCommParamsNeedSet, "time condition field not set")
+		}
+
 		if cond.Start == nil && cond.End == nil {
 			return nil, errors.New(common.CCErrCommParamsInvalid, "time condition start and end both not set")
 		}
 
 		if cond.Start == nil {
-			timeCondition[key] = map[string]interface{}{common.BKDBLTE: cond.End}
+			timeCondition[cond.Field] = map[string]interface{}{common.BKDBLTE: cond.End}
 			continue
 		}
 
 		if cond.End == nil {
-			timeCondition[key] = map[string]interface{}{common.BKDBGTE: cond.Start}
+			timeCondition[cond.Field] = map[string]interface{}{common.BKDBGTE: cond.Start}
 			continue
 		}
 
 		if *cond.Start == *cond.End {
-			timeCondition[key] = map[string]interface{}{common.BKDBEQ: cond.Start}
+			timeCondition[cond.Field] = map[string]interface{}{common.BKDBEQ: cond.Start}
 			continue
 		}
 
-		timeCondition[key] = map[string]interface{}{common.BKDBGTE: cond.Start, common.BKDBLTE: cond.End}
+		timeCondition[cond.Field] = map[string]interface{}{common.BKDBGTE: cond.Start, common.BKDBLTE: cond.End}
 	}
 
 	if len(condition) == 0 {
@@ -166,6 +195,12 @@ func (tc *TimeCondition) MergeTimeCondition(condition map[string]interface{}) (m
 	}
 
 	return map[string]interface{}{common.BKDBAND: []map[string]interface{}{condition, timeCondition}}, nil
+}
+
+type ConditionWithTime struct {
+	Condition []ConditionItem `json:"condition"`
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition *TimeCondition `json:"time_condition,omitempty"`
 }
 
 // ConvTime cc_type key
@@ -285,6 +320,12 @@ type DefaultModuleHostConfigParams struct {
 	ModuleID      int64   `json:"bk_module_id"`
 }
 
+// Condition is common simple condition parameter struct.
+type Condition struct {
+	// Condition conditions.
+	Condition map[string]interface{} `json:"condition"`
+}
+
 // common search struct
 type SearchParams struct {
 	Condition map[string]interface{} `json:"condition"`
@@ -339,4 +380,143 @@ type BkBaseResp struct {
 type BKResponse struct {
 	BkBaseResp `json:",inline"`
 	Data       interface{} `json:"data"`
+}
+
+// CommonSearchResult is common search action result.
+type CommonSearchResult struct {
+	// Info search result.
+	Info []interface{} `json:"info"`
+}
+
+// CommonSearchFilter is a common search action filter struct,
+// such like search instance or instance associations.
+// And the conditions must abide by query filter.
+type CommonSearchFilter struct {
+	// ObjectID is target model object id.
+	ObjectID string `json:"bk_obj_id"`
+
+	// Conditions is target search conditions that make up by the query filter.
+	Conditions *querybuilder.QueryFilter `json:"conditions"`
+
+	// Fields indicates which fields should be returns, it's would be ignored if not exists.
+	Fields []string `json:"fields"`
+
+	// Page batch query action page.
+	Page BasePage `json:"page"`
+}
+
+// Validate validates the common search filter struct,
+// return the key and error if any one of keys is invalid.
+func (f *CommonSearchFilter) Validate() (string, error) {
+	// validates object id parameter.
+	if len(f.ObjectID) == 0 {
+		return "bk_obj_id", fmt.Errorf("empty bk_obj_id")
+	}
+
+	// validate page parameter.
+	if err := f.Page.ValidateLimit(common.BKMaxInstanceLimit); err != nil {
+		return "page.limit", err
+	}
+
+	// validate conditions parameter.
+	if f.Conditions == nil {
+		// empty conditions to match all.
+		return "", nil
+	}
+
+	option := &querybuilder.RuleOption{
+		NeedSameSliceElementType: true,
+		MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
+		MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
+	}
+
+	if invalidKey, err := f.Conditions.Validate(option); err != nil {
+		return fmt.Sprintf("conditions.%s", invalidKey), err
+	}
+
+	if f.Conditions.GetDeep() > querybuilder.MaxDeep {
+		return "conditions.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
+	}
+
+	return "", nil
+}
+
+// GetConditions returns a database type conditions base on the query filter.
+func (f *CommonSearchFilter) GetConditions() (map[string]interface{}, error) {
+	if f.Conditions == nil {
+		// empty conditions to match all.
+		return map[string]interface{}{}, nil
+	}
+
+	// convert to mongo conditions.
+	mgoFilter, invalidKey, err := f.Conditions.ToMgo()
+	if err != nil {
+		return nil, fmt.Errorf("invalid key, conditions.%s, err: %s", invalidKey, err)
+	}
+
+	return mgoFilter, nil
+}
+
+// CommonCountResult is common count action result.
+type CommonCountResult struct {
+	// Count count result.
+	Count uint64 `json:"count"`
+}
+
+// CommonCountFilter is a common count action filter struct,
+// such like search instance count or instance associations count.
+// And the conditions must abide by query filter.
+type CommonCountFilter struct {
+	// ObjectID is target model object id.
+	ObjectID string `json:"bk_obj_id"`
+
+	// Conditions is target search conditions that make up by the query filter.
+	Conditions *querybuilder.QueryFilter `json:"conditions"`
+}
+
+// Validate validates the common count filter struct,
+// return the key and error if any one of keys is invalid.
+func (f *CommonCountFilter) Validate() (string, error) {
+	// validates object id parameter.
+	if len(f.ObjectID) == 0 {
+		return "bk_obj_id", fmt.Errorf("empty bk_obj_id")
+	}
+
+	// validate conditions parameter.
+	if f.Conditions == nil {
+		// empty conditions to match all.
+		return "", nil
+	}
+
+	option := &querybuilder.RuleOption{
+		NeedSameSliceElementType: true,
+		MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
+		MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
+	}
+
+	if invalidKey, err := f.Conditions.Validate(option); err != nil {
+		return fmt.Sprintf("conditions.%s", invalidKey), err
+	}
+
+	if f.Conditions.GetDeep() > querybuilder.MaxDeep {
+		return "conditions.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
+	}
+
+	return "", nil
+}
+
+// GetConditions returns a database type conditions base on the query filter.
+func (f *CommonCountFilter) GetConditions() (map[string]interface{}, error) {
+	if f.Conditions == nil {
+		// empty conditions to match all.
+		return map[string]interface{}{}, nil
+	}
+
+	// convert to mongo conditions.
+	mgoFilter, invalidKey, err := f.Conditions.ToMgo()
+	if err != nil {
+		return nil, fmt.Errorf("invalid key, conditions.%s, err: %s", invalidKey, err)
+	}
+
+	return mgoFilter, nil
 }

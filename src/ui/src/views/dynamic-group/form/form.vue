@@ -209,43 +209,53 @@
         const { condition } = details.info
         const transformedCondition = []
         condition.forEach((data) => {
-          transformedCondition.push({
-            bk_obj_id: data.bk_obj_id,
-            condition: data.condition.reduce((accumulator, current) => {
-              if (['$gte', '$lte'].includes(current.operator)) {
-                // 将相同字段的$gte/$lte两个条件合并为一个range条件，用于表单组件渲染
-                let index = accumulator.findIndex(exist => exist.field === current.field)
-                if (index === -1) {
-                  index = accumulator.push({
-                    field: current.field,
-                    operator: '$range',
-                    value: []
-                  }) - 1
-                }
-                const range = accumulator[index]
-                if (current.operator === '$gte') {
-                  range.value.unshift(current.value)
-                } else {
-                  range.value.push(current.value)
-                }
-              } else if (current.operator === '$eq') {
-                // 将老数据的eq转换为当前支持的数据格式
-                const transformType = ['singlechar', 'longchar', 'enum', 'objuser']
-                const property = this.getConditionProperty(data.bk_obj_id, current.field)
-                if (property && transformType.includes(property.bk_property_type)) {
-                  accumulator.push({
-                    field: current.field,
-                    operator: '$in',
-                    value: Array.isArray(current.value) ? current.value : [current.value]
-                  })
-                } else {
-                  accumulator.push(current)
-                }
+          const realCondition = (data.condition || []).reduce((accumulator, current) => {
+            if (['$gte', '$lte'].includes(current.operator)) {
+              // 将相同字段的$gte/$lte两个条件合并为一个range条件，用于表单组件渲染
+              let index = accumulator.findIndex(exist => exist.field === current.field)
+              if (index === -1) {
+                index = accumulator.push({
+                  field: current.field,
+                  operator: '$range',
+                  value: []
+                }) - 1
+              }
+              const range = accumulator[index]
+              if (current.operator === '$gte') {
+                range.value.unshift(current.value)
+              } else {
+                range.value.push(current.value)
+              }
+            } else if (current.operator === '$eq') {
+              // 将老数据的eq转换为当前支持的数据格式
+              const transformType = ['singlechar', 'longchar', 'enum', 'objuser']
+              const property = this.getConditionProperty(data.bk_obj_id, current.field)
+              if (property && transformType.includes(property.bk_property_type)) {
+                accumulator.push({
+                  field: current.field,
+                  operator: '$in',
+                  value: Array.isArray(current.value) ? current.value : [current.value]
+                })
               } else {
                 accumulator.push(current)
               }
-              return accumulator
-            }, [])
+            } else {
+              accumulator.push(current)
+            }
+            return accumulator
+          }, [])
+          if (data.time_condition) {
+            data.time_condition.rules.forEach(({ field, start, end }) => {
+              realCondition.push({
+                field,
+                operator: '$range',
+                value: [start, end]
+              })
+            })
+          }
+          transformedCondition.push({
+            bk_obj_id: data.bk_obj_id,
+            condition: realCondition
           })
         })
         return {
@@ -340,10 +350,22 @@
         })
       },
       getSubmitCondition() {
-        const submitConditionMap = {}
+        const baseConditionMap = {}
+        const timeConditionMap = {}
         const propertyCondition = this.$refs.propertyList.condition
         Object.values(propertyCondition).forEach(({ property, operator, value }) => {
-          const submitCondition = submitConditionMap[property.bk_obj_id] || []
+          if (property.bk_property_type === 'time') { // 时间类型特殊处理
+            const timeCondition = timeConditionMap[property.bk_obj_id] || { oper: 'and', rules: [] }
+            const [start, end] = value
+            timeCondition.rules.push({
+              field: property.bk_property_id,
+              start,
+              end
+            })
+            timeConditionMap[property.bk_obj_id] = timeCondition
+            return
+          }
+          const submitCondition = baseConditionMap[property.bk_obj_id] || []
           if (operator === '$range') {
             const [start, end] = value
             submitCondition.push({
@@ -362,12 +384,24 @@
               value
             })
           }
-          submitConditionMap[property.bk_obj_id] = submitCondition
+          baseConditionMap[property.bk_obj_id] = submitCondition
         })
-        return Object.keys(submitConditionMap).map(modelId => ({
+        const baseConditions = Object.keys(baseConditionMap).map(modelId => ({
           bk_obj_id: modelId,
-          condition: submitConditionMap[modelId]
+          condition: baseConditionMap[modelId]
         }))
+        Object.keys(timeConditionMap).forEach((modelId) => {
+          const condition = baseConditions.find(condition => condition.bk_obj_id === modelId)
+          if (condition) {
+            condition.time_condition = timeConditionMap[modelId]
+          } else {
+            baseConditions.push({
+              bk_obj_id: modelId,
+              time_condition: timeConditionMap[modelId]
+            })
+          }
+        })
+        return baseConditions
       },
       close() {
         this.isShow = false

@@ -287,17 +287,21 @@
           idle: this.openModuleSelector,
           business: this.openModuleSelector,
           acrossBusiness: this.openAcrossBusiness,
-          resource: this.openResourceConfirm
+          resource: this.openResourceConfirm,
+          increment: this.openModuleSelector
         }
         actionMap[type] && actionMap[type](type)
       },
       openModuleSelector(type) {
         const props = {
-          moduleType: type,
+          moduleType: type === 'increment' ? 'business' : type,
+          transferType: type,
           business: this.currentBusiness
         }
         if (type === 'idle') {
           props.title = this.$t('转移主机到空闲模块')
+        } else if (type === 'increment') {
+          props.title = this.$t('追加主机到业务模块')
         } else {
           props.title = this.$t('转移主机到业务模块')
           const { selection } = this.table
@@ -377,8 +381,9 @@
       },
       handleDialogConfirm() {
         this.dialog.show = false
+        const type = this.dialog.props.transferType || this.dialog.props.moduleType
         if (this.dialog.component === ModuleSelector.name) {
-          if (this.dialog.props.moduleType === 'idle') {
+          if (type === 'idle') {
             const isAllIdleSetHost = this.table.selection.every((data) => {
               const modules = data.module
               return modules.every(module => module.default !== 0)
@@ -386,22 +391,26 @@
             if (isAllIdleSetHost) {
               // eslint-disable-next-line prefer-rest-params
               this.transferDirectly(...arguments)
-            } else {
-              // eslint-disable-next-line prefer-rest-params
-              this.gotoTransferPage(...arguments)
+              return
             }
-          } else {
             // eslint-disable-next-line prefer-rest-params
             this.gotoTransferPage(...arguments)
+            return
           }
-        } else if (this.dialog.component === MoveToResourceConfirm.name) {
           // eslint-disable-next-line prefer-rest-params
-          this.moveHostToResource(...arguments)
-        } else if (this.dialog.component === AcrossBusinessModuleSelector.name) {
+          this.gotoTransferPage(...arguments)
+          return
+        }
+        if (this.dialog.component === MoveToResourceConfirm.name) {
           // eslint-disable-next-line prefer-rest-params
-          this.moveHostToOtherBusiness(...arguments)
-        } else if (this.dialog.component === AcrossBusinessConfirm.name) {
-          this.openAcrossBusinessModuleSelector()
+          return this.moveHostToResource(...arguments)
+        }
+        if (this.dialog.component === AcrossBusinessModuleSelector.name) {
+          // eslint-disable-next-line prefer-rest-params
+          return this.moveHostToOtherBusiness(...arguments)
+        }
+        if (this.dialog.component === AcrossBusinessConfirm.name) {
+          return this.openAcrossBusinessModuleSelector()
         }
       },
       async transferDirectly(modules) {
@@ -445,7 +454,7 @@
         this.$routerActions.redirect({
           name: MENU_BUSINESS_TRANSFER_HOST,
           params: {
-            type: this.dialog.props.moduleType
+            type: this.dialog.props.transferType || this.dialog.props.moduleType
           },
           query,
           history: true

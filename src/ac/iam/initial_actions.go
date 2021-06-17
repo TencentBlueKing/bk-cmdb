@@ -81,10 +81,6 @@ var ActionIDNameMap = map[ActionID]string{
 	CreateSysInstance:                   "实例创建",
 	EditSysInstance:                     "实例编辑",
 	DeleteSysInstance:                   "实例删除",
-	CreateEventPushing:                  "事件订阅新建",
-	EditEventPushing:                    "事件订阅编辑",
-	DeleteEventPushing:                  "事件订阅删除",
-	FindEventPushing:                    "事件订阅查询",
 	CreateCloudAccount:                  "云账户新建",
 	EditCloudAccount:                    "云账户编辑",
 	DeleteCloudAccount:                  "云账户删除",
@@ -112,8 +108,8 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchBizEvent:                       "业务事件监听",
 	WatchSetEvent:                       "集群事件监听",
 	WatchModuleEvent:                    "模块数据监听",
-	WatchSetTemplateEvent:               "集群模板数据监听",
 	WatchProcessEvent:                   "进程数据监听",
+	WatchCommonInstanceEvent:            "通用模型实例数据监听",
 	GlobalSettings:                      "全局设置",
 }
 
@@ -137,7 +133,6 @@ func GenerateActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genBusinessActions()...)
 	resourceActionList = append(resourceActionList, genCloudAreaActions()...)
 	resourceActionList = append(resourceActionList, genModelInstanceActions()...)
-	resourceActionList = append(resourceActionList, genEventPushingActions()...)
 	resourceActionList = append(resourceActionList, genCloudAccountActions()...)
 	resourceActionList = append(resourceActionList, genCloudResourceTaskActions()...)
 	resourceActionList = append(resourceActionList, genModelActions()...)
@@ -812,67 +807,6 @@ func genModelInstanceActions() []ResourceAction {
 	return actions
 }
 
-func genEventPushingActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       SysEventPushingSelection,
-	}}
-
-	relatedResource := []RelateResourceType{
-		{
-			SystemID:           SystemIDCMDB,
-			ID:                 SysEventPushing,
-			NameAlias:          "",
-			NameAliasEn:        "",
-			Scope:              nil,
-			InstanceSelections: selection,
-		},
-	}
-
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   CreateEventPushing,
-		Name:                 ActionIDNameMap[CreateEventPushing],
-		NameEn:               "Create Event Subscription",
-		Type:                 Create,
-		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   EditEventPushing,
-		Name:                 ActionIDNameMap[EditEventPushing],
-		NameEn:               "Edit Event Subscription",
-		Type:                 Edit,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{FindEventPushing},
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteEventPushing,
-		Name:                 ActionIDNameMap[DeleteEventPushing],
-		NameEn:               "Delete Event Subscription",
-		Type:                 Delete,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{FindEventPushing},
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   FindEventPushing,
-		Name:                 ActionIDNameMap[FindEventPushing],
-		NameEn:               "View Event Subscription",
-		Type:                 View,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	return actions
-}
-
 func genCloudAccountActions() []ResourceAction {
 	selection := []RelatedInstanceSelection{{
 		SystemID: SystemIDCMDB,
@@ -1280,9 +1214,9 @@ func genEventWatchActions() []ResourceAction {
 	})
 
 	actions = append(actions, ResourceAction{
-		ID:                   WatchSetTemplateEvent,
-		Name:                 ActionIDNameMap[WatchSetTemplateEvent],
-		NameEn:               "Set Template Event Listen",
+		ID:                   WatchProcessEvent,
+		Name:                 ActionIDNameMap[WatchProcessEvent],
+		NameEn:               "Process Event Listen",
 		Type:                 View,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
@@ -1290,9 +1224,9 @@ func genEventWatchActions() []ResourceAction {
 	})
 
 	actions = append(actions, ResourceAction{
-		ID:                   WatchProcessEvent,
-		Name:                 ActionIDNameMap[WatchProcessEvent],
-		NameEn:               "Process Event Listen",
+		ID:                   WatchCommonInstanceEvent,
+		Name:                 ActionIDNameMap[WatchCommonInstanceEvent],
+		NameEn:               "Common Object Instance Event Listen",
 		Type:                 View,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
