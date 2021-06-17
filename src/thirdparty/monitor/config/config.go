@@ -53,9 +53,9 @@ type MonitorConfig struct {
 	Burst int64
 	// SourceIP is the source ip address to report data
 	SourceIP string
-	// Gsecmdline command path
+	// Gse cmd path
 	GsecmdlinePath string
-	//  domainsokect path
+	// Domain Socket Path
 	DomainSocketPath string
 }
 

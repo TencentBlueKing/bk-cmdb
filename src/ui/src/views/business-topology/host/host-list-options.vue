@@ -76,7 +76,7 @@
         </ul>
       </bk-dropdown-menu>
       <bk-dropdown-menu class="option ml10" trigger="click"
-        v-show="!isIdleSetModules"
+        v-show="isNormalModuleNode"
         font-size="medium"
         :disabled="!hasSelection"
         @show="isRemoveMenuOpen = true"

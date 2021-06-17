@@ -283,7 +283,7 @@ var (
 	deleteObjectAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/delete/objectassociation/[0-9]+/?$`)
 	// excel 导入关联关系专用接口
 	findAssociationByObjectAssociationIDLatestRegexp = regexp.MustCompile(
-		`^/topo/find/object/[^\s/]+/association/by/bk_obj_asst_id$`)
+		`^/api/v3/topo/find/object/[^\s/]+/association/by/bk_obj_asst_id$`)
 	// excel 导入关联关系专用接口
 	importAssociationByObjectAssociationIDLatestRegexp = regexp.MustCompile(
 		`^/api/v3/import/instassociation/[^\s/]+$`)
@@ -1192,7 +1192,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 	// find object's instances' unique fields operation
 	if ps.hitRegexp(findObjectInstancesUniqueFieldsRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 7 {
+		if len(ps.RequestCtx.Elements) != 10 {
 			ps.err = errors.New("find object's instances' unique fields, but got invalid url")
 			return ps
 		}
