@@ -45,10 +45,10 @@
         <template v-if="multiple">
           <template v-for="(id, index) in moduleIdList">
             <cmdb-property-value
+              class="value-item"
               v-show="showMore.expanded[row.id] || index < showMore.max"
               :tag="'div'"
               :key="index"
-              :class-name="'value-item'"
               :value="getRuleValue(row.id, id)"
               :show-unit="false"
               :property="row">
@@ -58,10 +58,14 @@
         </template>
         <template v-else>
           <cmdb-property-value
+            :class="['property-value', { disabled: !row.host_apply_enabled }]"
             :show-unit="false"
             :value="row.__extra__.value"
             :property="row">
           </cmdb-property-value>
+          <i class="bk-cc-icon icon-cc-tips disabled-tips"
+            v-if="!row.host_apply_enabled"
+            v-bk-tooltips="$t('该字段已被设为不可编辑，自动应用规则失效')"></i>
         </template>
       </template>
     </bk-table-column>
@@ -263,6 +267,11 @@
         line-height: 20px;
         @include ellipsis;
     }
+    .property-value {
+      &.disabled {
+        text-decoration: line-through;
+      }
+    }
     .show-more {
         color: #3a84ff;
         margin-top: 2px;
@@ -277,7 +286,14 @@
             }
         }
     }
-
+    .property-config-table {
+      .cell {
+        .disabled-tips {
+          margin-top: 0;
+          margin-left: 6px;
+        }
+      }
+    }
 </style>
 <style lang="scss">
     .property-config-table {
