@@ -58,45 +58,30 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 			var watchEvn <-chan gozk.Event
 			var err error
 
-			if zkRD.registerPath == "" {
-				zkRD.registerPath, err = zkRD.zkcli.CreateEphAndSeqEx(path, data)
-				if err != nil {
-					blog.Errorf("fail to register server node(%s). CreateEphAndSeqEx err:%s", path, err.Error())
-					if zkRD.zkcli.IsConnectionError(err) {
-						blog.Error("zk is closed, try to reconnect")
-						zkRD.reconnectZk()
-						continue
-					}
-					time.Sleep(time.Second)
-				}
-				// continue retry watch node
-				continue
-			} else {
-				exist, _, watchEvn, err = zkRD.zkcli.ExistW(zkRD.registerPath)
-				if err != nil {
-					blog.Errorf("fail to watch register node(%s), err:%s\n", zkRD.registerPath, err.Error())
-					if zkRD.zkcli.IsConnectionError(err) {
-						blog.Error("zk is closed, try to reconnect")
-						zkRD.reconnectZk()
-						continue
-					}
-
-					switch err {
-					default:
-						// clear register path, so that it can register to a new path
-						zkRD.zkcli.Del(zkRD.registerPath, -1)
-						zkRD.registerPath = ""
-						// err still exists, waiting 1s. avoid too quick retry.
-						time.Sleep(time.Second * 1)
-						continue
-					}
-				}
-				if !exist {
-					// current node doesn't exist, reset the path to create a new one
-					blog.Errorf("node %s doesn't exist, try to create a new one", zkRD.registerPath)
-					zkRD.registerPath = ""
+			zkRD.registerPath, err = zkRD.zkcli.CreateEphAndSeqEx(path, data)
+			if err != nil {
+				blog.Errorf("fail to register server node(%s). CreateEphAndSeqEx err:%s", path, err.Error())
+				if zkRD.zkcli.IsConnectionError(err) {
+					blog.Error("zk is closed, try to reconnect")
+					zkRD.reconnectZk()
 					continue
 				}
+				time.Sleep(time.Second)
+			}
+
+			exist, _, watchEvn, err = zkRD.zkcli.ExistW(zkRD.registerPath)
+			if err != nil {
+				blog.Errorf("fail to watch register node(%s), err:%s\n", zkRD.registerPath, err.Error())
+				if zkRD.zkcli.IsConnectionError(err) {
+					blog.Error("zk is closed, try to reconnect")
+					zkRD.reconnectZk()
+					continue
+				}
+			}
+			if !exist {
+				// current node doesn't exist, try to create a new one
+				blog.Errorf("node %s doesn't exist, try to create a new one", zkRD.registerPath)
+				continue
 			}
 
 			select {
@@ -281,7 +266,6 @@ func (zkRD *ZkRegDiscv) reconnectZk() {
 		// wait some time to make the new connection available
 		time.Sleep(time.Second)
 		fmt.Println("reconnect zookeeper success")
-		zkRD.registerPath = ""
 
 		return
 	}
