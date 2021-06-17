@@ -152,8 +152,8 @@
         this.table.pagination.count = value
       }
     },
-    created() {
-      this.getHostPropertyList()
+    async created() {
+      await this.getHostPropertyList()
       this.setTableList()
     },
     methods: {
@@ -195,12 +195,12 @@
         const conflictSeparator = <span class={`conflict-separator${!conflictCount ? ' resolved' : ''}`}>；</span>
 
         return (
-                    <div>
-                        { resultConflicts.reduce((acc, x) => (acc === null ? [x] : [acc, conflictSeparator, x]), null) }
-                        { (resultConflicts.length && resultUpdates.length) ? conflictSeparator : '' }
-                        { resultUpdates.reduce((acc, x) => (acc === null ? [x] : [acc, '；', x]), null) }
-                    </div>
-                )
+            <div>
+                { resultConflicts.reduce((acc, x) => (acc === null ? [x] : [acc, conflictSeparator, x]), null) }
+                { (resultConflicts.length && resultUpdates.length) ? conflictSeparator : '' }
+                { resultUpdates.reduce((acc, x) => (acc === null ? [x] : [acc, '；', x]), null) }
+            </div>
+        )
       },
       getPropertyGroups() {
         return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
