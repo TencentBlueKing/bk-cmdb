@@ -751,9 +751,8 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		instanceArray := instances.Array()
-		for _, instanceItem := range instanceArray {
-			instanceMap := instanceItem.Map()
+		for _, instance := range instances.Array() {
+			instanceMap := instance.Map()
 			instID := instanceMap[common.BKInstIDField]
 			asstInstID := instanceMap[common.BKAsstInstIDField]
 			instanceID := instID.Int()

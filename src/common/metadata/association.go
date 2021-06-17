@@ -13,6 +13,8 @@
 package metadata
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 )
 
@@ -138,6 +140,45 @@ type CreateManyInstAsstRequest struct {
 	Details      []InstAsst `field:"details" json:"details,omitempty" bson:"details,omitempty"`
 }
 
+func (assoc *CreateManyInstAsstRequest) Validate() errors.RawErrorInfo {
+	if len(assoc.ObjectAsstID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{common.AssociationObjAsstIDField},
+		}
+	}
+
+	if len(assoc.ObjectID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if len(assoc.AsstObjectID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{common.BKAsstObjIDField},
+		}
+	}
+
+	if len(assoc.Details) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommInstDataNil,
+			Args:    []interface{}{"details"},
+		}
+	}
+
+	if len(assoc.Details) > 200 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"details", 200},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
 //AssociationInstDetails source and target instances of associations
 type AssociationInstDetails struct {
 	InstID     int64 `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
@@ -156,8 +197,8 @@ type CreateManyInstAsstResult struct {
 	Data     CreateManyInstAsstResultDetail `json:"data"`
 }
 
-func NewManyInstAsstResultDetail() CreateManyInstAsstResultDetail {
-	return CreateManyInstAsstResultDetail{
+func NewManyInstAsstResultDetail() *CreateManyInstAsstResultDetail {
+	return &CreateManyInstAsstResultDetail{
 		SuccessCreated: make(map[int64]int64, 0),
 		Error:          make(map[int64]string, 0),
 	}

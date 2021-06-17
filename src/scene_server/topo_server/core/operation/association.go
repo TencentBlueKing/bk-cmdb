@@ -1062,34 +1062,34 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 
 func (assoc *association) CreateManyInstAssociation(kit *rest.Kit,
 	request *metadata.CreateManyInstAsstRequest) (*metadata.CreateManyInstAsstResultDetail, error) {
-	if len(request.Details) == 0 {
-		blog.Errorf("details cannot be empty, rid: %s", kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommInstDataNil, "details")
-	}
-	if len(request.Details) > 200 {
-		blog.Errorf("details cannot more than 200, details number: %s, rid: %s", len(request.Details), kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "details", 200)
+	rawErr := request.Validate()
+	if rawErr.ErrCode != 0 {
+		blog.Errorf("validate parameter failed, err: %s, rid: %s", rawErr.ToCCError(kit.CCError).Error(), kit.Rid)
+		return nil, rawErr.ToCCError(kit.CCError)
 	}
 
+	// NOTE: if bk_obj_asst_id changes, the logic here needs to be modified
 	if request.ObjectAsstID[:len(request.ObjectID)] != request.ObjectID {
 		blog.Errorf("bk_obj_id %s invalid, different from bk_obj_id of bk_obj_asst_id, rid: %s", request.ObjectID, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
 	}
+
 	if request.ObjectAsstID[len(request.ObjectAsstID)-len(request.AsstObjectID):] != request.AsstObjectID {
 		blog.Errorf("bk_asst_obj_id %s invalid, different from bk_asst_obj_id of bk_obj_asst_id, rid: %s", request.AsstObjectID, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAsstObjIDField)
 	}
+
 	param := &metadata.CreateManyInstanceAssociation{}
 	for _, item := range request.Details {
-		data := &metadata.InstAsst{
+		param.Datas = append(param.Datas, metadata.InstAsst{
 			InstID:       item.InstID,
 			ObjectID:     request.ObjectID,
 			AsstInstID:   item.AsstInstID,
 			AsstObjectID: request.AsstObjectID,
 			ObjectAsstID: request.ObjectAsstID,
-		}
-		param.Datas = append(param.Datas, *data)
+		})
 	}
+
 	res, err := assoc.clientSet.CoreService().Association().CreateManyInstAssociation(kit.Ctx, kit.Header, param)
 	if err != nil {
 		blog.Errorf("create many instance association failed, err: %s, rid: %s", err.Error(), kit.Rid)
@@ -1105,17 +1105,19 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit,
 	for _, item := range res.Data.Created {
 		resp.SuccessCreated[item.OriginIndex] = int64(item.ID)
 	}
+
 	for _, item := range res.Data.Repeated {
 		itemObjID, _ := item.Data.Get(common.BKObjIDField)
 		itemAsstObjID, _ := item.Data.Get(common.BKAsstObjIDField)
 		resp.Error[item.OriginIndex] = kit.CCError.CCErrorf(common.CCErrTopoAssociationAlreadyExist, itemObjID, itemAsstObjID).Error()
 	}
+
 	for _, item := range res.Data.Exceptions {
 		resp.Error[item.OriginIndex] = item.Message
 	}
 
 	if len(resp.SuccessCreated) == 0 {
-		return &resp, nil
+		return resp, nil
 	}
 
 	// generate audit log.
@@ -1137,7 +1139,7 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit,
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
-	return &resp, nil
+	return resp, nil
 }
 
 // association.DeleteInst method will remove docs from both source-asst-collection and target-asst-collection, which is atomicity.

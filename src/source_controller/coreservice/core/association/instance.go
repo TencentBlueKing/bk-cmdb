@@ -70,9 +70,9 @@ func (m *associationInstance) countInstanceAssociation(kit *rest.Kit, objID stri
 	return mongodb.Client().Table(asstTableName).Find(cond).Count(kit.Ctx)
 }
 
-func (m *associationInstance) checkAssociationMapping(kit *rest.Kit, ObjAsstID string, InstID int64, AsstInstID int64) error {
-	cond := &metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationObjAsstIDField: ObjAsstID}}
-	asst, err := m.SearchModelAssociation(kit, *cond)
+func (m *associationInstance) checkAssociationMapping(kit *rest.Kit, objAsstID string, instID int64, asstInstID int64) error {
+	cond := metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationObjAsstIDField: objAsstID}}
+	asst, err := m.SearchModelAssociation(kit, cond)
 	if err != nil {
 		return err
 	}
@@ -99,28 +99,36 @@ func (m *associationInstance) checkAssociationMapping(kit *rest.Kit, ObjAsstID s
 		return err
 	}
 
-	paramObj := &mapstr.MapStr{
-		common.AssociationObjAsstIDField: ObjAsstID,
-		common.BKInstIDField:             InstID,
-	}
-	instCount, err := m.countInstanceAssociation(kit, objectID, *paramObj)
-	if err != nil {
-		return err
-	}
-	paramAsstObj := &mapstr.MapStr{
-		common.AssociationObjAsstIDField: ObjAsstID,
-		common.BKAsstInstIDField:         AsstInstID,
-	}
-	asstInstCount, err := m.countInstanceAssociation(kit, asstObjectID, *paramAsstObj)
-	if err != nil {
-		return err
-	}
 	switch asstMapping {
 	case string(metadata.OneToOneMapping):
+		paramObj := mapstr.MapStr{
+			common.AssociationObjAsstIDField: objAsstID,
+			common.BKInstIDField:             instID,
+		}
+		instCount, err := m.countInstanceAssociation(kit, objectID, paramObj)
+		if err != nil {
+			return err
+		}
+		paramAsstObj := mapstr.MapStr{
+			common.AssociationObjAsstIDField: objAsstID,
+			common.BKAsstInstIDField:         asstInstID,
+		}
+		asstInstCount, err := m.countInstanceAssociation(kit, asstObjectID, paramAsstObj)
+		if err != nil {
+			return err
+		}
 		if instCount > 0 || asstInstCount > 0 {
 			return kit.CCError.CCError(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
 		}
 	case string(metadata.OneToManyMapping):
+		paramAsstObj := mapstr.MapStr{
+			common.AssociationObjAsstIDField: objAsstID,
+			common.BKAsstInstIDField:         asstInstID,
+		}
+		asstInstCount, err := m.countInstanceAssociation(kit, asstObjectID, paramAsstObj)
+		if err != nil {
+			return err
+		}
 		if asstInstCount > 0 {
 			return kit.CCError.CCError(common.CCErrorTopoCreateMultipleInstancesForOneToManyAssociation)
 		}
@@ -250,6 +258,7 @@ func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit, inputP
 func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error) {
 	dataResult := &metadata.CreateManyDataResult{}
 	for itemIdx, item := range inputParam.Datas {
+		item.OwnerID = kit.SupplierAccount
 		//check is exist
 		exists, err := m.isExists(kit, item.InstID, item.AsstInstID, item.ObjectAsstID, item.ObjectID, item.BizID)
 		if nil != err {
