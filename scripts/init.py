@@ -300,6 +300,10 @@ monitor:
     dataID: 0
     # 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
     queueSize: 100
+    # 采集数据用的gsecmdline命令绝对路径，默认版本需要大于等于2.0.2 ，默认路径：/usr/local/gse/plugins/bin/gsecmdline
+    gsecmdlinePath: 
+    # 对应的domainsocket绝对路径，默认路径：/usr/local/gse/agent/data/ipc.state.report
+    domainSocketPath: 
     # 用于对数据上报进行频率控制和限流
     # qps的设置范围为1～50，默认值为10
     # burst的设置范围为1～100，默认值为20
