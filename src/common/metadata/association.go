@@ -176,6 +176,21 @@ func (assoc *CreateManyInstAsstRequest) Validate() errors.RawErrorInfo {
 		}
 	}
 
+	// NOTE: if bk_obj_asst_id changes, the logic here needs to be modified
+	if assoc.ObjectAsstID[:len(assoc.ObjectID)] != assoc.ObjectID {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if assoc.ObjectAsstID[len(assoc.ObjectAsstID)-len(assoc.AsstObjectID):] != assoc.AsstObjectID {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKAsstObjIDField},
+		}
+	}
+
 	return errors.RawErrorInfo{}
 }
 

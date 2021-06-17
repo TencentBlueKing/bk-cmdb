@@ -1068,17 +1068,6 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit,
 		return nil, rawErr.ToCCError(kit.CCError)
 	}
 
-	// NOTE: if bk_obj_asst_id changes, the logic here needs to be modified
-	if request.ObjectAsstID[:len(request.ObjectID)] != request.ObjectID {
-		blog.Errorf("bk_obj_id %s invalid, different from bk_obj_id of bk_obj_asst_id, rid: %s", request.ObjectID, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
-	}
-
-	if request.ObjectAsstID[len(request.ObjectAsstID)-len(request.AsstObjectID):] != request.AsstObjectID {
-		blog.Errorf("bk_asst_obj_id %s invalid, different from bk_asst_obj_id of bk_obj_asst_id, rid: %s", request.AsstObjectID, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAsstObjIDField)
-	}
-
 	param := &metadata.CreateManyInstanceAssociation{}
 	for _, item := range request.Details {
 		param.Datas = append(param.Datas, metadata.InstAsst{
