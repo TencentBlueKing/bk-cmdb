@@ -422,6 +422,22 @@ func Int(key string) (int, error) {
 	return 0, err.New("config not found")
 }
 
+// Int return the int value of the configuration information according to the key.
+func Int64(key string) (int64, error) {
+	confLock.RLock()
+	defer confLock.RUnlock()
+	if migrateParser != nil && migrateParser.isSet(key) {
+		return migrateParser.getInt64(key), nil
+	}
+	if commonParser != nil && commonParser.isSet(key) {
+		return commonParser.getInt64(key), nil
+	}
+	if extraParser != nil && extraParser.isSet(key) {
+		return extraParser.getInt64(key), nil
+	}
+	return 0, err.New("config not found")
+}
+
 // Bool return the bool value of the configuration information according to the key.
 func Bool(key string) (bool, error) {
 	confLock.RLock()
@@ -511,4 +527,8 @@ func (vp *viperParser) getBool(path string) bool {
 
 func (vp *viperParser) isSet(path string) bool {
 	return vp.parser.IsSet(path)
+}
+
+func (vp *viperParser) getInt64(path string) int64 {
+	return vp.parser.GetInt64(path)
 }

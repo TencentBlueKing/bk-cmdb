@@ -13,6 +13,7 @@
 package monitor
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -102,6 +103,8 @@ func (m *Monitor) reportLoop() {
 
 // InitMonitor init monitor config and monitor instance
 func InitMonitor() error {
+
+	var err error
 	// no need init for adminserver
 	if common.GetIdentification() == types.CC_MODULE_MIGRATE {
 		return nil
@@ -120,18 +123,68 @@ func InitMonitor() error {
 		return fmt.Errorf("init monitor failed, no monitor config is found, the config 'monitor' must exist")
 	}
 
-	config.MonitorCfg.PluginName, _ = cc.String("monitor.pluginName")
-	config.MonitorCfg.EnableMonitor, _ = cc.Bool("monitor.enableMonitor")
-	dataID, _ := cc.Int("monitor.dataID")
-	config.MonitorCfg.DataID = int64(dataID)
-	queueSize, _ := cc.Int("monitor.queueSize")
-	config.MonitorCfg.QueueSize = int64(queueSize)
-	qps, _ := cc.Int("monitor.qps")
-	config.MonitorCfg.QPS = int64(qps)
-	burst, _ := cc.Int("monitor.burst")
-	config.MonitorCfg.Burst = int64(burst)
+	config.MonitorCfg.EnableMonitor, err = cc.Bool("monitor.enableMonitor")
+	if err != nil {
+		blog.Errorf("init monitor failed,monitor.enableMonitor err: %v", err)
+		return errors.New("config monitor.enableMonitor is not found")
+	}
+	//如果不需要进行监控上报，那么后续没有必要再检查配置
+	if !config.MonitorCfg.EnableMonitor {
+		return nil
+	}
 
-	config.CheckAndCorrectCfg()
+	config.MonitorCfg.PluginName, err = cc.String("monitor.pluginName")
+	if err != nil {
+		blog.Errorf("init monitor failed, err: %v", err)
+		return errors.New("config monitor.pluginName is not found")
+	}
+
+	dataID, err := cc.Int64("monitor.dataID")
+	if err != nil {
+		blog.Errorf("init monitor failed, err: %v", err)
+		return errors.New("config monitor.dataID is not found")
+	}
+	config.MonitorCfg.DataID = dataID
+
+	queueSize, err := cc.Int64("monitor.queueSize")
+	if err != nil {
+		blog.Errorf("init monitor failed, err: %v", err)
+		return errors.New("config monitor.queueSize is not found")
+	}
+	config.MonitorCfg.QueueSize = queueSize
+
+	qps, err := cc.Int64("monitor.rateLimiter.qps")
+	if err != nil {
+		blog.Errorf("init monitor failed, err: %v", err)
+		return errors.New("config monitor.qps is not found")
+	}
+	config.MonitorCfg.QPS = qps
+
+	burst, err := cc.Int64("monitor.rateLimiter.burst")
+	if err != nil {
+		blog.Errorf("init monitor failed, err: %v", err)
+		return errors.New("config monitor.burst is not found")
+	}
+	config.MonitorCfg.Burst = burst
+
+	config.MonitorCfg.GsecmdlinePath, err = cc.String("monitor.gsecmdlinePath")
+	if err != nil {
+		blog.Errorf("init monitor failed, err: %v", err)
+		return errors.New("config monitor.gsecmdlinePath is not found")
+	}
+
+	config.MonitorCfg.DomainSocketPath, err = cc.String("monitor.domainSocketPath")
+	if err != nil {
+		blog.Errorf("init monitor failed, err: %v", err)
+		return errors.New("config monitor.domainSocketPath is not found")
+	}
+
+	err = config.CheckAndCorrectCfg()
+	if err != nil {
+		blog.Errorf("init monitor check cfg failed,  err: %v", err)
+		return err
+	}
+
 	config.SetMonitorSourceIP()
 	if err := startMonitor(); err != nil {
 		blog.Errorf("init monitor failed, startMonitor err: %v", err)
