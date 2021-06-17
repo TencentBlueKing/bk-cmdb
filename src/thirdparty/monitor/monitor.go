@@ -102,6 +102,7 @@ func (m *Monitor) reportLoop() {
 // InitMonitor init monitor config and monitor instance
 func InitMonitor() error {
 
+	var err error
 	maxCnt := 100
 	cnt := 0
 	for !cc.IsExist("monitor") && cnt < maxCnt {
@@ -115,7 +116,6 @@ func InitMonitor() error {
 		return fmt.Errorf("init monitor failed, no monitor config is found, the config 'monitor' must exist")
 	}
 
-	var err error
 	config.MonitorCfg.EnableMonitor, err = cc.Bool("monitor.enableMonitor")
 	if err != nil {
 		blog.Errorf("init monitor failed,monitor.enableMonitor err: %v", err)
