@@ -35,7 +35,7 @@ func (s *coreService) CreateManyModelInstances(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntityWithError(s.core.InstanceOperation().CreateManyModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.InstanceOperation().CreateManyModelInstance(ctx.Kit, ctx.Request.PathParameter(common.BKObjIDField), inputData))
 }
 
 func (s *coreService) UpdateModelInstances(ctx *rest.Contexts) {

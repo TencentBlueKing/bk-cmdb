@@ -17,7 +17,8 @@ import (
 )
 
 var _ = Describe("inst test", func() {
-	var switchInstId1, switchInstId2, routerInstId1, instAsst1, instAsst2 int64
+	var switchInstId1, switchInstId2, switchInstId3, switchInstId4, switchInstId5, routerInstId1, routerInstId2,
+		routerInstId3, instAsst1, instAsst2, instAsst3, instAsst4, instAsst5 int64
 
 	It("create inst bk_obj_id='bk_switch'", func() {
 		input := map[string]interface{}{
@@ -55,6 +56,60 @@ var _ = Describe("inst test", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
+	It("create inst bk_obj_id='bk_switch'", func() {
+		input := map[string]interface{}{
+			"bk_asset_id":  "103",
+			"bk_inst_name": "switch_3",
+			"bk_sn":        "203",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("switch_3"))
+		Expect(rsp.Data["bk_asset_id"].(string)).To(Equal("103"))
+		Expect(rsp.Data["bk_obj_id"].(string)).To(Equal("bk_switch"))
+		Expect(rsp.Data["bk_sn"].(string)).To(Equal("203"))
+		switchInstId3, err = commonutil.GetInt64ByInterface(rsp.Data["bk_inst_id"])
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("create inst bk_obj_id='bk_switch'", func() {
+		input := map[string]interface{}{
+			"bk_asset_id":  "104",
+			"bk_inst_name": "switch_4",
+			"bk_sn":        "204",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("switch_4"))
+		Expect(rsp.Data["bk_asset_id"].(string)).To(Equal("104"))
+		Expect(rsp.Data["bk_obj_id"].(string)).To(Equal("bk_switch"))
+		Expect(rsp.Data["bk_sn"].(string)).To(Equal("204"))
+		switchInstId4, err = commonutil.GetInt64ByInterface(rsp.Data["bk_inst_id"])
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("create inst bk_obj_id='bk_switch'", func() {
+		input := map[string]interface{}{
+			"bk_asset_id":  "105",
+			"bk_inst_name": "switch_5",
+			"bk_sn":        "205",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("switch_5"))
+		Expect(rsp.Data["bk_asset_id"].(string)).To(Equal("105"))
+		Expect(rsp.Data["bk_obj_id"].(string)).To(Equal("bk_switch"))
+		Expect(rsp.Data["bk_sn"].(string)).To(Equal("205"))
+		switchInstId5, err = commonutil.GetInt64ByInterface(rsp.Data["bk_inst_id"])
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	It("create inst bk_obj_id='bk_router'", func() {
 		input := map[string]interface{}{
 			"bk_asset_id":  "101",
@@ -73,6 +128,42 @@ var _ = Describe("inst test", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
+	It("create inst bk_obj_id='bk_router'", func() {
+		input := map[string]interface{}{
+			"bk_asset_id":  "102",
+			"bk_inst_name": "router_2",
+			"bk_sn":        "202",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "bk_router", header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("router_2"))
+		Expect(rsp.Data["bk_asset_id"].(string)).To(Equal("102"))
+		Expect(rsp.Data["bk_obj_id"].(string)).To(Equal("bk_router"))
+		Expect(rsp.Data["bk_sn"].(string)).To(Equal("202"))
+		routerInstId2, err = commonutil.GetInt64ByInterface(rsp.Data["bk_inst_id"])
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("create inst bk_obj_id='bk_router'", func() {
+		input := map[string]interface{}{
+			"bk_asset_id":  "103",
+			"bk_inst_name": "router_3",
+			"bk_sn":        "203",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "bk_router", header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("router_3"))
+		Expect(rsp.Data["bk_asset_id"].(string)).To(Equal("103"))
+		Expect(rsp.Data["bk_obj_id"].(string)).To(Equal("bk_router"))
+		Expect(rsp.Data["bk_sn"].(string)).To(Equal("203"))
+		routerInstId3, err = commonutil.GetInt64ByInterface(rsp.Data["bk_inst_id"])
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	It("create association ='bk_router_default_bk_switch'", func() {
 		input := &metadata.Association{
 			AsstKindID:           "default",
@@ -81,6 +172,36 @@ var _ = Describe("inst test", func() {
 			AssociationAliasName: "",
 			ObjectID:             "bk_router",
 			Mapping:              "n:n",
+		}
+		rsp, err := asstClient.CreateObject(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It("create association ='bk_router_belong_bk_switch'", func() {
+		input := &metadata.Association{
+			AsstKindID:           "belong",
+			AsstObjID:            "bk_switch",
+			AssociationName:      "bk_router_belong_bk_switch",
+			AssociationAliasName: "",
+			ObjectID:             "bk_router",
+			Mapping:              "1:1",
+		}
+		rsp, err := asstClient.CreateObject(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It("create association ='bk_router_connect_bk_switch'", func() {
+		input := &metadata.Association{
+			AsstKindID:           "connect",
+			AsstObjID:            "bk_switch",
+			AssociationName:      "bk_router_connect_bk_switch",
+			AssociationAliasName: "",
+			ObjectID:             "bk_router",
+			Mapping:              "1:n",
 		}
 		rsp, err := asstClient.CreateObject(context.Background(), header, input)
 		util.RegisterResponse(rsp)
@@ -113,6 +234,88 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(true))
 		instAsst2 = rsp.Data.ID
 	})
+
+	It("create inst association ='bk_router_belong_bk_switch', belong mapping 1:1", func() {
+		input := &metadata.CreateManyInstAsstRequest{
+			ObjectAsstID: "bk_router_belong_bk_switch",
+			ObjectID:     "bk_router",
+			AsstObjectID: "bk_switch",
+			Details: []metadata.InstAsst{
+				{
+					InstID:     routerInstId2,
+					AsstInstID: switchInstId3,
+				},
+				{
+					InstID:     routerInstId2,
+					AsstInstID: switchInstId4,
+				},
+				{
+					InstID:     routerInstId2,
+					AsstInstID: switchInstId5,
+				},
+			},
+		}
+		rsp, err := asstClient.CreateManyInstAssociation(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(len(rsp.Data.SuccessCreated)).To(Equal(1))
+		Expect(len(rsp.Data.Error)).To(Equal(2))
+		instAsst3 = rsp.Data.SuccessCreated[0]
+	})
+
+	It("create inst association ='bk_router_connect_bk_switch', connect mapping 1:n", func() {
+		input := &metadata.CreateManyInstAsstRequest{
+			ObjectAsstID: "bk_router_connect_bk_switch",
+			ObjectID:     "bk_router",
+			AsstObjectID: "bk_switch",
+			Details: []metadata.InstAsst{
+				{
+					InstID:     routerInstId3,
+					AsstInstID: switchInstId4,
+				},
+				{
+					InstID:     routerInstId3,
+					AsstInstID: switchInstId5,
+				},
+			},
+		}
+		rsp, err := asstClient.CreateManyInstAssociation(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(len(rsp.Data.SuccessCreated)).To(Equal(2))
+		Expect(len(rsp.Data.Error)).To(Equal(0))
+		instAsst4 = rsp.Data.SuccessCreated[0]
+		instAsst5 = rsp.Data.SuccessCreated[1]
+	})
+
+	It("create inst association ='bk_router_belong_bk_switch', belong mapping 1:1", func() {
+		input := &metadata.CreateManyInstAsstRequest{
+			ObjectAsstID: "bk_router_belong_bk_switch",
+			ObjectID:     "bk_router",
+			AsstObjectID: "bk_router",
+			Details: []metadata.InstAsst{
+				{
+					InstID:     routerInstId2,
+					AsstInstID: switchInstId3,
+				},
+				{
+					InstID:     routerInstId2,
+					AsstInstID: switchInstId4,
+				},
+				{
+					InstID:     routerInstId2,
+					AsstInstID: switchInstId5,
+				},
+			},
+		}
+		rsp, err := asstClient.CreateManyInstAssociation(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
 	//check "SearchAssociationRelatedInst" features available.
 	It("search inst association related", func() {
 		input := &metadata.SearchAssociationRelatedInstRequest{
@@ -347,7 +550,7 @@ var _ = Describe("inst test", func() {
 
 		count, err := data["count"].(json.Number).Int64()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(int(count)).To(Equal(2))
+		Expect(int(count)).To(Equal(5))
 	})
 
 	It("count instance associations with OR conditions more than 20", func() {
@@ -459,13 +662,13 @@ var _ = Describe("inst test", func() {
 	//check "DeleteInstBatch" features available.
 	It("delete inst association batch", func() {
 		input := &metadata.DeleteAssociationInstBatchRequest{
-			ID:       []int64{instAsst1, instAsst2},
+			ID:       []int64{instAsst1, instAsst2, instAsst3, instAsst4, instAsst5},
 			ObjectID: "bk_router",
 		}
 		rsp, err := asstClient.DeleteInstBatch(context.Background(), header, input)
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
-		Expect(rsp.Data).To(Equal(2))
+		Expect(rsp.Data).To(Equal(5))
 	})
 })

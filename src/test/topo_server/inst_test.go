@@ -803,6 +803,83 @@ var _ = Describe("inst test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(instIdRes).To(Equal(instId))
 	})
+
+	It("batch create instance bk_obj_id='bk_switch'", func() {
+		input := &metadata.CreateManyCommInst{
+			ObjID: "bk_switch",
+			Details: []mapstr.MapStr{
+				{
+					"bk_obj_id":    "bk_switch",
+					"bk_inst_name": "example1",
+					"bk_asset_id":  "test0001",
+				},
+				{
+					"bk_obj_id":    "bk_switch",
+					"bk_inst_name": "example2",
+					"bk_asset_id":  "test0002",
+				},
+				{
+					"bk_obj_id":    "bk_switch",
+					"bk_inst_name": "example3",
+					"bk_asset_id":  "test0003",
+				},
+			},
+		}
+		rsp, err := instClient.CreateManyCommInst(context.Background(), input.ObjID, header, *input)
+		Expect(err).NotTo(HaveOccurred())
+		util.RegisterResponse(rsp)
+		result := &metadata.CreateManyCommInstResultDetail{}
+		rspJson, err := json.Marshal(rsp.Data)
+		json.Unmarshal(rspJson, result)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(len(result.Error)).To(Equal(0))
+		Expect(len(result.SuccessCreated)).To(Equal(3))
+	})
+
+	It("batch create instance bk_obj_id='bk_switch' with different obj id , bk_inst_name exist one and bk_asset_id exist one", func() {
+		input := &metadata.CreateManyCommInst{
+			ObjID: "bk_switch",
+			Details: []mapstr.MapStr{
+				{
+					"bk_obj_id":    "switch",
+					"bk_inst_name": "example4",
+					"bk_asset_id":  "test0004",
+				},
+				{
+					"bk_obj_id":    "bk_switch",
+					"bk_inst_name": "example3",
+					"bk_asset_id":  "test0003",
+				},
+				{
+					"bk_obj_id":    "bk_switch",
+					"bk_inst_name": "example5",
+					"bk_asset_id":  "test0003",
+				},
+			},
+		}
+		rsp, err := instClient.CreateManyCommInst(context.Background(), input.ObjID, header, *input)
+		Expect(err).NotTo(HaveOccurred())
+		util.RegisterResponse(rsp)
+		result := &metadata.CreateManyCommInstResultDetail{}
+		rspJson, err := json.Marshal(rsp.Data)
+		json.Unmarshal(rspJson, result)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(len(result.Error)).To(Equal(2))
+		Expect(len(result.SuccessCreated)).To(Equal(1))
+	})
+
+	It("batch create instance bk_obj_id='bk_switch' with empty details", func() {
+		input := &metadata.CreateManyCommInst{
+			ObjID:   "bk_switch",
+			Details: []mapstr.MapStr{},
+		}
+		rsp, err := instClient.CreateManyCommInst(context.Background(), input.ObjID, header, *input)
+		Expect(err).NotTo(HaveOccurred())
+		util.RegisterResponse(rsp)
+		Expect(rsp.Result).To(Equal(false))
+	})
 })
 
 var _ = Describe("audit test", func() {

@@ -143,6 +143,11 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 			return errors.New(res.Code, res.ErrMsg)
 		}
 
+		if len(res.Data.Repeated) > 0 {
+			blog.Errorf("CreatePlatBatch failed, err:#v,input:%+v,rid:%s", res.Data.Repeated, input, ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommDuplicateItem)
+		}
+
 		if len(res.Data.Exceptions) > 0 {
 			blog.Errorf("CreatePlatBatch failed, err:#v,input:%+v,rid:%s", res.Data.Exceptions, input, ctx.Kit.Rid)
 			return ctx.Kit.CCError.New(int(res.Data.Exceptions[0].Code), res.Data.Exceptions[0].Message)
