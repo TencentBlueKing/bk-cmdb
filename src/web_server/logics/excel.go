@@ -374,6 +374,18 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 		blog.Errorf("get %s fields error: %v, rid: %s", objID, err, rid)
 		return err
 	}
+
+	asstSheet, err := file.AddSheet("association")
+	if err != nil {
+		blog.Errorf("setExcelRowDataByIndex add excel  association sheet error. err:%s, rid:%s", err.Error(), rid)
+		return err
+	}
+	asstList, err := lgc.getObjectAssociation(ctx, header, objID, modelBizID)
+	if err != nil {
+		return err
+	}
+	productExcelAssociationHeader(ctx, asstSheet, defLang, 0, asstList)
+
 	blog.V(5).Infof("BuildExcelTemplate fields count:%d, rid: %s", fields, rid)
 	productExcelHeader(ctx, fields, filterFields, sheet, defLang)
 	ProductExcelCommentSheet(ctx, file, defLang)
