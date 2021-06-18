@@ -104,13 +104,22 @@ func NewContextFromHTTPHeader(header http.Header) context.Context {
 
 func NewHeaderFromContext(ctx context.Context) http.Header {
 	rid := ctx.Value(common.ContextRequestIDField)
-	ridValue, _ := rid.(string)
+	ridValue, ok := rid.(string)
+	if !ok {
+		ridValue = GenerateRID()
+	}
 
 	user := ctx.Value(common.ContextRequestUserField)
-	userValue, _ := user.(string)
+	userValue, ok := user.(string)
+	if !ok {
+		ridValue = "admin"
+	}
 
 	owner := ctx.Value(common.ContextRequestOwnerField)
-	ownerValue, _ := owner.(string)
+	ownerValue, ok := owner.(string)
+	if !ok {
+		ownerValue = common.BKDefaultOwnerID
+	}
 
 	header := make(http.Header)
 	header.Set(common.BKHTTPCCRequestID, ridValue)

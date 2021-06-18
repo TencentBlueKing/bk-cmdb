@@ -406,7 +406,7 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 
 	// get deleted actions
 	deletedActions := getDeletedActions(param.ActionIDs, iamResp.Data.Actions)
-	deletedInstanceSelections := getdeletedInstanceSelections(param.InstanceSelectionIDs,
+	deletedInstanceSelections := getDeletedInstanceSelections(param.InstanceSelectionIDs,
 		iamResp.Data.InstanceSelections)
 	deletedResourceTypes := getDeletedResourceTypes(param.TypeIDs, iamResp.Data.ResourceTypes)
 
@@ -475,13 +475,13 @@ func getDeletedActions(cmdbActionIDs []ActionID, iamActions []ResourceAction) []
 	return deletedActions
 }
 
-// getdeletedInstanceSelections get deleted instance selections
-func getdeletedInstanceSelections(cmdbInstanceSelectionIDs []InstanceSelectionID,
+// getDeletedInstanceSelections get deleted instance selections
+func getDeletedInstanceSelections(cmdbInstanceSelectionIDs []InstanceSelectionID,
 	iamInstanceSelections []InstanceSelection) []InstanceSelectionID {
 	deletedInstanceSelections := make([]InstanceSelectionID, 0)
 	iamInstanceSelectionMap := map[InstanceSelectionID]struct{}{}
-	for _, isntanceSelection := range iamInstanceSelections {
-		iamInstanceSelectionMap[isntanceSelection.ID] = struct{}{}
+	for _, instanceSelection := range iamInstanceSelections {
+		iamInstanceSelectionMap[instanceSelection.ID] = struct{}{}
 	}
 	for _, instanceSelectionID := range cmdbInstanceSelectionIDs {
 		if _, ok := iamInstanceSelectionMap[instanceSelectionID]; ok {
@@ -511,7 +511,6 @@ func getDeletedResourceTypes(cmdbTypeIDs []TypeID, iamResourceTypes []ResourceTy
 // compareActions compare actions between cmdb and iam
 func compareActions(cmdbActions []ResourceAction, iamActions []ResourceAction) (
 	addedActions []ResourceAction, deletedActionIDs []ActionID) {
-	cmdbActionMap := map[ActionID]struct{}{}
 	iamActionMap := map[ActionID]struct{}{}
 
 	for _, action := range iamActions {
@@ -521,16 +520,15 @@ func compareActions(cmdbActions []ResourceAction, iamActions []ResourceAction) (
 	}
 
 	for _, action := range cmdbActions {
-		cmdbActionMap[action.ID] = struct{}{}
 		if _, ok := iamActionMap[action.ID]; !ok {
 			addedActions = append(addedActions, action)
+		} else {
+			delete(iamActionMap, action.ID)
 		}
 	}
 
 	for actionID := range iamActionMap {
-		if _, ok := cmdbActionMap[actionID]; !ok {
-			deletedActionIDs = append(deletedActionIDs, actionID)
-		}
+		deletedActionIDs = append(deletedActionIDs, actionID)
 	}
 
 	return addedActions, deletedActionIDs
@@ -540,7 +538,6 @@ func compareActions(cmdbActions []ResourceAction, iamActions []ResourceAction) (
 func compareInstanceSelections(cmdbInstanceSelections []InstanceSelection,
 	iamInstanceSelections []InstanceSelection) (addInstanceSelection []InstanceSelection,
 	deletedInstanceSelectionIDs []InstanceSelectionID) {
-	cmdbInstanceSelectionMap := map[InstanceSelectionID]struct{}{}
 	iamInstanceSelectionMap := map[InstanceSelectionID]struct{}{}
 
 	for _, instanceSelection := range iamInstanceSelections {
@@ -550,16 +547,15 @@ func compareInstanceSelections(cmdbInstanceSelections []InstanceSelection,
 	}
 
 	for _, instanceSelection := range cmdbInstanceSelections {
-		cmdbInstanceSelectionMap[instanceSelection.ID] = struct{}{}
 		if _, ok := iamInstanceSelectionMap[instanceSelection.ID]; !ok {
 			addInstanceSelection = append(addInstanceSelection, instanceSelection)
+		} else {
+			delete(iamInstanceSelectionMap, instanceSelection.ID)
 		}
 	}
 
 	for instanceSelectionID := range iamInstanceSelectionMap {
-		if _, ok := cmdbInstanceSelectionMap[instanceSelectionID]; !ok {
-			deletedInstanceSelectionIDs = append(deletedInstanceSelectionIDs, instanceSelectionID)
-		}
+		deletedInstanceSelectionIDs = append(deletedInstanceSelectionIDs, instanceSelectionID)
 	}
 
 	return addInstanceSelection, deletedInstanceSelectionIDs
@@ -568,7 +564,6 @@ func compareInstanceSelections(cmdbInstanceSelections []InstanceSelection,
 // compareResourceTypes compare resourceTypes between cmdb and iam
 func compareResourceTypes(cmdbResourceTypes []ResourceType, iamResourceTypes []ResourceType) (
 	addedResourceTypes []ResourceType, deletedTypeIDs []TypeID) {
-	cmdbResourceTypeMap := map[TypeID]struct{}{}
 	iamResourceTypeMap := map[TypeID]struct{}{}
 
 	for _, resourceType := range iamResourceTypes {
@@ -578,16 +573,15 @@ func compareResourceTypes(cmdbResourceTypes []ResourceType, iamResourceTypes []R
 	}
 
 	for _, resourceType := range cmdbResourceTypes {
-		cmdbResourceTypeMap[resourceType.ID] = struct{}{}
 		if _, ok := iamResourceTypeMap[resourceType.ID]; !ok {
 			addedResourceTypes = append(addedResourceTypes, resourceType)
+		} else {
+			delete(iamResourceTypeMap, resourceType.ID)
 		}
 	}
 
 	for typeID := range iamResourceTypeMap {
-		if _, ok := cmdbResourceTypeMap[typeID]; !ok {
-			deletedTypeIDs = append(deletedTypeIDs, typeID)
-		}
+		deletedTypeIDs = append(deletedTypeIDs, typeID)
 	}
 
 	return addedResourceTypes, deletedTypeIDs

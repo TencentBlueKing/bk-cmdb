@@ -26,8 +26,8 @@ import (
 	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/admin_server/app/options"
-	"configcenter/src/scene_server/admin_server/iam"
 	"configcenter/src/scene_server/admin_server/configures"
+	"configcenter/src/scene_server/admin_server/iam"
 	svc "configcenter/src/scene_server/admin_server/service"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
@@ -183,8 +183,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	errors.SetGlobalCCError(engine.CCErr)
 	go service.BackgroundTask()
-	//go service.SyncIAM()
-	iam.SyncIAM(process.Service, iamCli)
+	go iam.SyncIAM(process.Service, iamCli)
 
 	select {
 	case <-ctx.Done():

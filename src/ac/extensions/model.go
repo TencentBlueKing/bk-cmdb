@@ -167,7 +167,7 @@ func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.
 // 1. create iam view
 // 2. register object resource creator action to iam
 func (am *AuthManager) CreateObjectOnIAM(ctx context.Context, header http.Header, objects []metadata.Object,
-	iamInstance metadata.IamInstanceWithCreator) error {
+	iamInstances []metadata.IamInstanceWithCreator) error {
 	if !am.Enabled() {
 		return nil
 	}
@@ -181,10 +181,12 @@ func (am *AuthManager) CreateObjectOnIAM(ctx context.Context, header http.Header
 	}
 
 	// register object resource creator action to iam
-	if _, err := am.Authorizer.RegisterResourceCreatorAction(ctx, header, iamInstance); err != nil {
-		blog.ErrorJSON("register created object to iam failed, iam instance:%s, err: %s, rid: %s",
-			iamInstance, err, rid)
-		return err
+	for _, iamInstance := range iamInstances {
+		if _, err := am.Authorizer.RegisterResourceCreatorAction(ctx, header, iamInstance); err != nil {
+			blog.ErrorJSON("register created object to iam failed, iam instance:%s, err: %s, rid: %s",
+				iamInstance, err, rid)
+			return err
+		}
 	}
 
 	return nil

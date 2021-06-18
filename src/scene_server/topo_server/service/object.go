@@ -130,15 +130,16 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 
 		if auth.EnableAuthorize() {
 			objects := []metadata.Object{rsp.Object()}
-			iamInstance := metadata.IamInstanceWithCreator{
+			iamInstances := []metadata.IamInstanceWithCreator{{
 				Type:    string(iam.SysModel),
 				ID:      strconv.FormatInt(rsp.Object().ID, 10),
 				Name:    rsp.Object().ObjectName,
 				Creator: ctx.Kit.User,
+			},
 			}
-			if err := s.AuthManager.CreateObjectOnIAM(ctx.Kit.Ctx, ctx.Kit.Header,objects, iamInstance); err != nil {
-				blog.ErrorJSON("create object on iam failed, objects: %s, iam instance: %s, err: %s, rid: %s",
-					objects, iamInstance, err, ctx.Kit.Rid)
+			if err := s.AuthManager.CreateObjectOnIAM(ctx.Kit.Ctx, ctx.Kit.Header, objects, iamInstances); err != nil {
+				blog.ErrorJSON("create object on iam failed, objects: %s, iam instances: %s, err: %s, rid: %s",
+					objects, iamInstances, err, ctx.Kit.Rid)
 				return err
 			}
 		}
