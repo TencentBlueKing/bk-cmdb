@@ -194,6 +194,11 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		removedResourceActionIDs := make([]ActionID, actionLen)
 		idx := 0
 		for resourceActionID := range removedResourceActionMap {
+			if err = i.client.DeleteActionPolicies(ctx, resourceActionID); err != nil {
+				blog.Errorf("delete action %s policies failed, err: %v", resourceActionID, err)
+				return err
+			}
+
 			removedResourceActionIDs[idx] = resourceActionID
 			idx++
 		}

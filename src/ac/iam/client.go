@@ -476,3 +476,25 @@ func (c *iamClient) UpdateCommonActions(ctx context.Context, commonActions []Com
 
 	return nil
 }
+
+func (c *iamClient) DeleteActionPolicies(ctx context.Context, actionID ActionID) error {
+	resp := new(BaseResponse)
+	result := c.client.Delete().
+		SubResourcef("/api/v1/model/systems/%s/actions/%s/policies", c.Config.SystemID, actionID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		Do()
+	err := result.Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("delete action %s policies failed, code: %d, msg: %s", actionID, resp.Code, resp.Message),
+		}
+	}
+
+	return nil
+}
