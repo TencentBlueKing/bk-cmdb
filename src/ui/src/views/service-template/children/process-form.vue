@@ -224,7 +224,7 @@
             }
           }
         })
-        this.values = Object.assign({}, this.values, restValues, this.inst)
+        this.values = Object.assign({}, this.values, restValues, this.$tools.clone(this.inst))
         const timer = setTimeout(() => {
           this.refrenceValues = this.$tools.clone(this.values)
           clearTimeout(timer)
