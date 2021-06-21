@@ -243,6 +243,20 @@ func (asst *association) CreateInstAssociation(ctx context.Context, h http.Heade
 	return
 }
 
+func (asst *association) CreateManyInstAssociation(ctx context.Context, header http.Header, input *metadata.CreateManyInstanceAssociation) (*metadata.CreatedManyOptionResult, error) {
+	resp := new(metadata.CreatedManyOptionResult)
+	subPath := "/createmany/instanceassociation"
+
+	err := asst.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return resp, err
+}
+
 func (asst *association) SetInstAssociation(ctx context.Context, h http.Header, input *metadata.SetOneInstanceAssociation) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/set/instanceassociation"

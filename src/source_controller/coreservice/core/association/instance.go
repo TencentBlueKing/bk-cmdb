@@ -70,6 +70,72 @@ func (m *associationInstance) countInstanceAssociation(kit *rest.Kit, objID stri
 	return mongodb.Client().Table(asstTableName).Find(cond).Count(kit.Ctx)
 }
 
+func (m *associationInstance) checkAssociationMapping(kit *rest.Kit, objAsstID string, instID int64, asstInstID int64) error {
+	cond := metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationObjAsstIDField: objAsstID}}
+	asst, err := m.SearchModelAssociation(kit, cond)
+	if err != nil {
+		return err
+	}
+
+	if asst.Count == 0 {
+		return kit.CCError.CCError(common.CCErrorTopoAssociationDoNotExist)
+	}
+
+	if asst.Count > 1 {
+		return kit.CCError.CCError(common.CCErrTopoGotMultipleAssociationInstance)
+	}
+
+	asstMapping, ok := asst.Info[0].Get("mapping")
+	if !ok {
+		return kit.CCError.CCError(common.CCErrorTopoAssociationDoNotExist)
+	}
+
+	objectID, err := asst.Info[0].String(common.BKObjIDField)
+	if err != nil {
+		return err
+	}
+	asstObjectID, err := asst.Info[0].String(common.BKAsstObjIDField)
+	if err != nil {
+		return err
+	}
+
+	switch asstMapping {
+	case string(metadata.OneToOneMapping):
+		instCount, err := m.countInstanceAssociation(kit, objectID, mapstr.MapStr{
+			common.AssociationObjAsstIDField: objAsstID,
+			common.BKInstIDField:             instID,
+		})
+		if err != nil {
+			return err
+		}
+
+		asstInstCount, err := m.countInstanceAssociation(kit, asstObjectID, mapstr.MapStr{
+			common.AssociationObjAsstIDField: objAsstID,
+			common.BKAsstInstIDField:         asstInstID,
+		})
+		if err != nil {
+			return err
+		}
+
+		if instCount > 0 || asstInstCount > 0 {
+			return kit.CCError.CCError(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
+		}
+	case string(metadata.OneToManyMapping):
+		asstInstCount, err := m.countInstanceAssociation(kit, asstObjectID, mapstr.MapStr{
+			common.AssociationObjAsstIDField: objAsstID,
+			common.BKAsstInstIDField:         asstInstID,
+		})
+		if err != nil {
+			return err
+		}
+
+		if asstInstCount > 0 {
+			return kit.CCError.CCError(common.CCErrorTopoCreateMultipleInstancesForOneToManyAssociation)
+		}
+	}
+	return nil
+}
+
 func (m *associationInstance) save(kit *rest.Kit, asstInst metadata.InstAsst) (id uint64, err error) {
 	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameInstAsst)
 	if err != nil {
@@ -209,27 +275,7 @@ func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit, input
 			dataResult.Repeated = append(dataResult.Repeated, metadata.RepeatedDataResult{OriginIndex: int64(itemIdx), Data: mapstr.NewFromStruct(item, "field")})
 			continue
 		}
-		//check asst kind
-		_, exists, err = m.associationKind.isExists(kit, item.ObjectAsstID)
-		if nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
-			continue
-		}
-		if !exists {
-			blog.InfoJSON("CreateManyInstanceAssociation error. obj:%s,rid:%s", item.ObjectAsstID, kit.Rid)
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     kit.CCError.Error(common.CCErrorAsstInstIsNotExist).Error(),
-				Code:        int64(common.CCErrorAsstInstIsNotExist),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
-			continue
-		}
+
 		//check asst inst exist
 		exists, err = m.dependent.IsInstanceExist(kit, item.ObjectID, uint64(item.InstID))
 		if nil != err {
@@ -251,6 +297,7 @@ func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit, input
 			})
 			continue
 		}
+
 		//check  inst to asst exist
 		exists, err = m.dependent.IsInstanceExist(kit, item.AsstObjectID, uint64(item.AsstInstID))
 		if nil != err {
@@ -272,6 +319,18 @@ func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit, input
 			})
 			continue
 		}
+
+		err = m.checkAssociationMapping(kit, item.ObjectAsstID, item.InstID, item.AsstInstID)
+		if err != nil {
+			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
+				Message:     err.Error(),
+				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
+				Data:        item,
+				OriginIndex: int64(itemIdx),
+			})
+			continue
+		}
+
 		//save asst inst
 		id, err := m.save(kit, item)
 		if nil != err {
@@ -285,7 +344,8 @@ func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit, input
 		}
 
 		dataResult.Created = append(dataResult.Created, metadata.CreatedDataResult{
-			ID: id,
+			ID:          id,
+			OriginIndex: int64(itemIdx),
 		})
 
 	}

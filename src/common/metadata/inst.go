@@ -15,6 +15,7 @@ package metadata
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 )
 
 // SetInst contains partial fields of a real set
@@ -187,4 +188,29 @@ func (o *SearchInstsNamesOption) Validate() (rawError errors.RawErrorInfo) {
 	}
 
 	return errors.RawErrorInfo{}
+}
+
+//CreateManyCommInst parameters for creating multiple instances
+type CreateManyCommInst struct {
+	ObjID   string          `json:"bk_obj_id"`
+	Details []mapstr.MapStr `json:"details"`
+}
+
+//CreateManyCommInstResult result of creating multiple instances
+type CreateManyCommInstResult struct {
+	BaseResp `json:",inline"`
+	Data     CreateManyCommInstResultDetail `json:"data"`
+}
+
+//CreateManyCommInstResultDetail details of CreateManyInstancesResult
+type CreateManyCommInstResultDetail struct {
+	SuccessCreated map[int64]int64  `json:"success_created"`
+	Error          map[int64]string `json:"error_msg"`
+}
+
+func NewManyCommInstResultDetail() *CreateManyCommInstResultDetail {
+	return &CreateManyCommInstResultDetail{
+		SuccessCreated: make(map[int64]int64, 0),
+		Error:          make(map[int64]string, 0),
+	}
 }
