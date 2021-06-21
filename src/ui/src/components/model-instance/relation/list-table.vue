@@ -1,14 +1,14 @@
 <template>
   <div class="table" v-show="hasInstance" v-bkloading="{ isLoading: loading }">
-    <div class="table-info clearfix">
-      <div class="info-title fl" @click="expanded = !expanded">
+    <div class="table-info clearfix" @click="expanded = !expanded">
+      <div class="info-title fl">
         <i class="icon bk-icon icon-right-shape"
           :class="{ 'is-open': expanded }">
         </i>
         <span class="title-text">{{title}}</span>
         <span class="title-count">({{instances.length}})</span>
       </div>
-      <div class="info-pagination fr" v-show="pagination.count">
+      <div class="info-pagination fr" v-show="pagination.count" @click.stop>
         <span class="pagination-info">{{getPaginationInfo()}}</span>
         <span class="pagination-toggle">
           <i class="pagination-icon bk-icon icon-cc-arrow-down left"
