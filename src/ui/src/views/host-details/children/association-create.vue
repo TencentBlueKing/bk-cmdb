@@ -4,6 +4,7 @@
       <label class="filter-label fl">{{$t('关联列表')}}</label>
       <cmdb-selector class="fl" style="width: 280px;"
         :list="options"
+        searchable
         setting-key="bk_obj_asst_id"
         display-key="_label"
         @on-selected="handleSelectObj">
