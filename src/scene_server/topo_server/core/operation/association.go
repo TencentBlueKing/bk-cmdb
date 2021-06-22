@@ -926,6 +926,10 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 		blog.Errorf("create instance association failed, do coreservice create failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
+	if err := createResult.CCError(); err != nil {
+		blog.Errorf("create instance association failed, do coreservice create failed, err: %+v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
 
 	resp = &metadata.CreateAssociationInstResult{BaseResp: createResult.BaseResp}
 	instanceAssociationID := int64(createResult.Data.Created.ID)
