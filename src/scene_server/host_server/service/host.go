@@ -663,14 +663,6 @@ func (s *Service) SearchHostWithAsstDetail(ctx *rest.Contexts) {
 		return
 	}
 
-	// auth: check authorization
-	hostIDArray := host.ExtractHostIDs()
-	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Find, *hostIDArray...); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArray, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
-		return
-	}
-
 	ctx.RespEntity(host)
 }
 
