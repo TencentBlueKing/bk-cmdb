@@ -14,6 +14,7 @@ package service
 
 import (
 	"strconv"
+	"sync"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
@@ -124,17 +125,44 @@ func (s *Service) UpdateSetTemplate(ctx *rest.Contexts) {
 			blog.Errorf("UpdateSetTemplate failed, ListSetTplRelatedSets failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
+
+		var hitError error
+		pipe := make(chan struct{}, 10)
+		wg := sync.WaitGroup{}
 		for _, item := range setInstanceResult.Data.Info {
 			setID, err := util.GetInt64ByInterface(item[common.BKSetIDField])
 			if err != nil {
 				blog.ErrorJSON("UpdateSetTemplate failed, ListSetTplRelatedSets failed, set: %s, err: %s, rid: %s", item, err, ctx.Kit.Rid)
 				return ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 			}
-			if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(ctx.Kit, setID); err != nil {
-				blog.Errorf("UpdateSetTemplate failed, UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", setID, err, ctx.Kit.Rid)
-				return ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
+
+			if hitError != nil {
+				return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 			}
+
+			pipe <- struct{}{}
+			wg.Add(1)
+			go func(setID int64) {
+				defer func() {
+					<-pipe
+					wg.Done()
+				}()
+
+				if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(ctx.Kit, setID); err != nil {
+					blog.Errorf("UpdateSetTemplate failed, UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", setID, err, ctx.Kit.Rid)
+					hitError = err
+					return
+				}
+
+			}(setID)
 		}
+
+		wg.Wait()
+
+		if hitError != nil {
+			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+
 		return nil
 	})
 
