@@ -72,6 +72,7 @@ type AssociationOperationInterface interface {
 	SearchInst(kit *rest.Kit, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	SearchAssociationRelatedInst(kit *rest.Kit, request *metadata.SearchAssociationRelatedInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	CreateInst(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
+	CreateManyInstAssociation(kit *rest.Kit, request *metadata.CreateManyInstAsstRequest) (*metadata.CreateManyInstAsstResultDetail, error)
 	DeleteInst(kit *rest.Kit, objID string, asstIDList []int64) (resp *metadata.DeleteAssociationInstResult, err error)
 
 	ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string,
@@ -1057,6 +1058,77 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 	}
 
 	return resp, err
+}
+
+func (assoc *association) CreateManyInstAssociation(kit *rest.Kit,
+	request *metadata.CreateManyInstAsstRequest) (*metadata.CreateManyInstAsstResultDetail, error) {
+	rawErr := request.Validate()
+	if rawErr.ErrCode != 0 {
+		blog.Errorf("validate parameter failed, err: %s, rid: %s", rawErr.ToCCError(kit.CCError).Error(), kit.Rid)
+		return nil, rawErr.ToCCError(kit.CCError)
+	}
+
+	param := &metadata.CreateManyInstanceAssociation{}
+	for _, item := range request.Details {
+		param.Datas = append(param.Datas, metadata.InstAsst{
+			InstID:       item.InstID,
+			ObjectID:     request.ObjectID,
+			AsstInstID:   item.AsstInstID,
+			AsstObjectID: request.AsstObjectID,
+			ObjectAsstID: request.ObjectAsstID,
+		})
+	}
+
+	res, err := assoc.clientSet.CoreService().Association().CreateManyInstAssociation(kit.Ctx, kit.Header, param)
+	if err != nil {
+		blog.Errorf("create many instance association failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, err
+	}
+
+	if !res.Result {
+		blog.Errorf("create many instance association failed, err: %s, rid: %s", res.ErrMsg, kit.Rid)
+		return nil, kit.CCError.New(res.Code, res.ErrMsg)
+	}
+
+	resp := metadata.NewManyInstAsstResultDetail()
+	for _, item := range res.Data.Created {
+		resp.SuccessCreated[item.OriginIndex] = int64(item.ID)
+	}
+
+	for _, item := range res.Data.Repeated {
+		itemObjID, _ := item.Data.Get(common.BKObjIDField)
+		itemAsstObjID, _ := item.Data.Get(common.BKAsstObjIDField)
+		resp.Error[item.OriginIndex] = kit.CCError.CCErrorf(common.CCErrTopoAssociationAlreadyExist, itemObjID, itemAsstObjID).Error()
+	}
+
+	for _, item := range res.Data.Exceptions {
+		resp.Error[item.OriginIndex] = item.Message
+	}
+
+	if len(resp.SuccessCreated) == 0 {
+		return resp, nil
+	}
+
+	// generate audit log.
+	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	var auditList []metadata.AuditLog
+	for _, asstID := range resp.SuccessCreated {
+		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, asstID, request.ObjectID, nil)
+		if err != nil {
+			blog.Errorf("generate audit log failed, err: %s, rid: %s", err.Error(), kit.Rid)
+			return nil, kit.CCError.Error(common.CCErrAuditGenerateLogFailed)
+		}
+		auditList = append(auditList, *auditLog)
+	}
+	// save audit log.
+	err = audit.SaveAuditLog(kit, auditList...)
+	if err != nil {
+		blog.Errorf("save audit log failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
+
+	return resp, nil
 }
 
 // association.DeleteInst method will remove docs from both source-asst-collection and target-asst-collection, which is atomicity.

@@ -1450,8 +1450,7 @@
     "模糊": "fuzzy",
     "模板名称将作为实例化后的模块名": "The template name will be used as the module name after instantiation",
     "该字段已被设为不可编辑，自动应用规则失效": "The field has been set as non-editable, and the auto-apply rule is invalid",
-    "主机属性设置为不可编辑状态后提示": "After being set to non-editable state, it will affect the configured automatic application rules, please be aware"
-    "模板名称将作为实例化后的模块名": "The template name will be used as the module name after instantiation",
+    "主机属性设置为不可编辑状态后提示": "After being set to non-editable state, it will affect the configured automatic application rules, please be aware",
     "导入更新提示": "You need to export the instances and complete the modification before import",
     "导入文件大小提示": "Xlsx files within 20m",
     "导入文件拖拽提示": "Drag the file here or {clickUpload}",
