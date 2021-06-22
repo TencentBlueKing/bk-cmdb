@@ -12,8 +12,7 @@
         </cmdb-auth>
         <cmdb-auth class="fl mr10"
           :auth="[
-            { type: $OPERATION.C_INST, relation: [model.id] },
-            { type: $OPERATION.U_INST, relation: [model.id] }
+            { type: $OPERATION.C_INST, relation: [model.id] }
           ]">
           <bk-button slot-scope="{ disabled }"
             class="models-button"
@@ -131,13 +130,13 @@
       :width="800"
       :before-close="handleSliderBeforeClose">
       <template slot="content" v-if="slider.contentShow">
-        <cmdb-form v-if="['update', 'create'].includes(attribute.type)"
+        <cmdb-form v-if="attribute.type === 'create'"
           ref="form"
           :properties="properties"
           :property-groups="propertyGroups"
           :inst="attribute.inst.edit"
           :type="attribute.type"
-          :save-auth="{ type: attribute.type === 'update' ? $OPERATION.U_INST : $OPERATION.C_INST }"
+          :save-auth="{ type: $OPERATION.C_INST, relation: [model.id] }"
           @on-submit="handleSave"
           @on-cancel="handleCancel">
         </cmdb-form>
@@ -586,10 +585,6 @@
           value: this.filter.value
         })
         return params
-      },
-      async handleEdit(item) {
-        this.attribute.inst.edit = item
-        this.attribute.type = 'update'
       },
       handleCreate() {
         this.attribute.type = 'create'
