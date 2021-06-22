@@ -28,6 +28,7 @@ import (
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/configures"
 	"configcenter/src/scene_server/admin_server/iam"
+	"configcenter/src/scene_server/admin_server/logics"
 	svc "configcenter/src/scene_server/admin_server/service"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
@@ -55,7 +56,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	snapDataID, _ := cc.Int("hostsnap.dataID")
 	process.Config.SnapDataID = int64(snapDataID)
 	process.Config.SyncIAMPeriodMinutes, _ = cc.Int("adminServer.syncIAMPeriodMinutes")
-	process.setSyncIAMPeriod()
 
 	// load mongodb, redis and common config from configure directory
 	mongodbPath := process.Config.Configures.Dir + "/" + types.CCConfigureMongo
@@ -174,6 +174,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		if esbConfig, err := esb.ParseEsbConfig(""); err == nil {
 			esb.UpdateEsbConfig(*esbConfig)
 		}
+
+		process.Service.Logics = logics.NewLogics(engine)
 		break
 	}
 	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
@@ -183,7 +185,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	errors.SetGlobalCCError(engine.CCErr)
 	go service.BackgroundTask()
-	go iam.SyncIAM(process.Service, iamCli)
+
+	syncor := iam.NewSyncor()
+	syncor.SetSyncIAMPeriod(process.Config.SyncIAMPeriodMinutes)
+	go syncor.SyncIAM(iamCli, service.Logics)
 
 	select {
 	case <-ctx.Done():
@@ -200,12 +205,3 @@ type MigrateServer struct {
 }
 
 func (h *MigrateServer) onMigrateConfigUpdate(previous, current cc.ProcessConfig) {}
-
-// setSyncIAMPeriod set the sync period
-func (c *MigrateServer) setSyncIAMPeriod() {
-	iam.SyncIAMPeriodMinutes = c.Config.SyncIAMPeriodMinutes
-	if iam.SyncIAMPeriodMinutes < iam.SyncIAMPeriodMinutesMin {
-		iam.SyncIAMPeriodMinutes = iam.SyncIAMPeriodMinutesDefault
-	}
-	blog.Infof("sync iam period is %d minutes", iam.SyncIAMPeriodMinutes)
-}

@@ -166,6 +166,7 @@ func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types
 // list resource instances that user is privileged to access by policy
 func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) ([]string, error) {
 	resourceType := iam.TypeID(opts.Type)
+	rid := util.ExtractRequestIDFromContext(ctx)
 	supplierAccount := util.ExtractOwnerFromContext(ctx)
 	if supplierAccount == "" {
 		supplierAccount = common.BKDefaultOwnerID
@@ -191,7 +192,7 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	var policy *operator.Policy
 	if len(opts.Attributes) == 1 {
 		policy = &operator.Policy{
-			Operator: opts.Operator,
+			Operator: operator.Equal,
 			Element:  opts.Attributes[0],
 		}
 	} else {
@@ -212,7 +213,7 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 
 	cond, err := lgc.parseFilterToMongo(ctx, header, policy, resourceType)
 	if err != nil {
-		blog.ErrorJSON("parse request filter expression %s failed, error: %s", policy, err.Error())
+		blog.ErrorJSON("parse request filter expression %s failed, error: %s, rid: %s", policy, err.Error(), rid)
 		return nil, err
 	}
 	if cond == nil {
@@ -230,7 +231,7 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 			for idx, idStr := range opts.IDList {
 				id, err := strconv.ParseInt(idStr, 10, 64)
 				if err != nil {
-					blog.Errorf("parse id %s to int failed, error: %v", idStr, err)
+					blog.Errorf("parse id %s to int failed, error: %v, rid: %s", idStr, err, rid)
 					return nil, err
 				}
 				ids[idx] = id
@@ -253,11 +254,12 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	}
 	res, err := lgc.CoreAPI.CoreService().Auth().SearchAuthResource(ctx, header, param)
 	if err != nil {
-		blog.ErrorJSON("search auth resource failed, error: %s, param: %s", err.Error(), param)
+		blog.ErrorJSON("search auth resource failed, error: %s, param: %s, rid: %s", err.Error(), param, rid)
 		return nil, err
 	}
 	if !res.Result {
-		blog.ErrorJSON("search auth resource failed, error code: %s, error message: %s, param: %s", res.Code, res.ErrMsg, param)
+		blog.ErrorJSON("search auth resource failed, error code: %s, error message: %s, param: %s, rid: %s",
+			res.Code, res.ErrMsg, param, rid)
 		return nil, res.Error()
 	}
 

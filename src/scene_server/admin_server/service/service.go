@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/configures"
+	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 
@@ -33,6 +34,7 @@ import (
 
 type Service struct {
 	*backbone.Engine
+	*logics.Logics
 	db           dal.RDB
 	watchDB      dal.RDB
 	cache        redis.Client

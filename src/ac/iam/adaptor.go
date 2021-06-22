@@ -699,6 +699,10 @@ func isIAMSysInstanceAction(actionID ActionID) bool {
 
 // GetModelIDFromIamSysInstance get model id from iam system instance
 func GetModelIDFromIamSysInstance(resourceType TypeID) (int64, error) {
+	if !IsIAMSysInstance(resourceType) {
+		return 0, fmt.Errorf("resourceType %s is not an iam system instance, it must start with prefix %s",
+			resourceType, IAMSysInstTypePrefix)
+	}
 	modelIDStr := strings.TrimPrefix(string(resourceType), IAMSysInstTypePrefix)
 	modelID, err := strconv.ParseInt(modelIDStr, 10, 64)
 	if err != nil {

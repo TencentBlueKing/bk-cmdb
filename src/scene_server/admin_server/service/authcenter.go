@@ -14,7 +14,6 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common"
@@ -52,7 +51,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	}
 
 	// 由于模型实例的编辑&删除拆分为实例级别, 需要先拿到当前已存在的模型, 再进行相应的IAM注册操作
-	models, err := s.GetCustomObjects(rHeader)
+	models, err := s.GetCustomObjects(s.ctx, rHeader)
 	if err != nil {
 		blog.Errorf("init iam failed, collect notPre-models failed, err: %s, rid:%s", err.Error(), rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.CCError(common.CCErrCommDBSelectFailed)})
@@ -69,31 +68,4 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	}
 
 	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
-}
-
-// GetCustomObjects get objects which are custom(without mainline objects).
-func (s *Service) GetCustomObjects(header http.Header) ([]metadata.Object, error) {
-	resp, err := s.CoreAPI.CoreService().Model().ReadModel(s.ctx, header, &metadata.QueryCondition{
-		Fields: []string{common.BKObjIDField, common.BKObjNameField, common.BKFieldID},
-		Page:   metadata.BasePage{Limit: common.BKNoLimit},
-		Condition: map[string]interface{}{
-			common.BKIsPre: false,
-			common.BKClassificationIDField: map[string]interface{}{
-				common.BKDBNE: "bk_biz_topo",
-			},
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("get custom models failed, err: %+v", err)
-	}
-	if len(resp.Data.Info) == 0 {
-		blog.Info("get custom models, custom models not found")
-	}
-
-	objects := make([]metadata.Object, 0)
-	for _, item := range resp.Data.Info {
-		objects = append(objects, item.Spec)
-	}
-
-	return objects, nil
 }
