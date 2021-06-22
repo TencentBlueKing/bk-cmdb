@@ -201,6 +201,17 @@ func (c *client) SetNX(ctx context.Context, key string, value interface{}, expir
 	return c.cli.SetNX(key, value, expiration)
 }
 
+func (c *client) TxPipeline(ctx context.Context) Pipeliner {
+	return c.cli.TxPipeline()
+}
+
+func (c *client) Discard(ctx context.Context, pipe Pipeliner) error {
+	return pipe.Discard()
+}
+func (c *client) MSetNX(ctx context.Context, values ...interface{}) BoolResult {
+	return c.cli.MSetNX(values...)
+}
+
 func (c *client) SMembers(ctx context.Context, key string) StringSliceResult {
 	return c.cli.SMembers(key)
 }

@@ -57,7 +57,10 @@ type Commands interface {
 	SAdd(ctx context.Context, key string, members ...interface{}) IntResult
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) StatusResult
 	SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) BoolResult
+	MSetNX(ctx context.Context, values ...interface{}) BoolResult
 	SMembers(ctx context.Context, key string) StringSliceResult
 	SRem(ctx context.Context, key string, members ...interface{}) IntResult
 	TTL(ctx context.Context, key string) DurationResult
+	TxPipeline(ctx context.Context) Pipeliner
+	Discard(ctx context.Context, pipe Pipeliner) error
 }
