@@ -69,6 +69,7 @@
     "@babel/preset-env": "^7.13.15",
     "@vue/babel-helper-vue-jsx-merge-props": "^1.2.1",
     "@vue/babel-preset-jsx": "^1.2.4",
+    "babel-eslint": "^10.1.0",
     "babel-loader": "^8.2.2",
     "babel-plugin-import-bk-magic-vue": "^2.1.10",
     "chalk": "^4.1.0",
