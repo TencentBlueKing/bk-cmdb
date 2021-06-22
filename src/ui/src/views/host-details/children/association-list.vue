@@ -36,15 +36,14 @@
         'mainLine',
         'source',
         'target',
-        'sourceInstances',
-        'targetInstances',
+        'allInstances',
         'associationTypes'
       ]),
       id() {
         return parseInt(this.$route.params.id, 10)
       },
       hasAssociation() {
-        return [...this.sourceInstances, ...this.targetInstances].some(instance => !!(instance.children || []).length)
+        return this.allInstances.length
       },
       list() {
         try {
@@ -67,16 +66,17 @@
           })
           return list
         } catch (e) {
-          console.log(e)
+          console.error(e)
+          return []
         }
-        return []
       },
       loading() {
         return this.$loading([
           'getAssociation',
           'getMainLine',
           'getAssociationType',
-          'getInstRelation'
+          'getSourceAssociation',
+          'getTargetAssociation'
         ])
       }
     },
@@ -93,9 +93,8 @@
     created() {
       this.getData()
       bus.$on('association-change', async () => {
-        const root = await this.getInstRelation()
-        this.$store.commit('hostDetails/setInstances', { type: 'source', instances: root.prev })
-        this.$store.commit('hostDetails/setInstances', { type: 'target', instances: root.next })
+        const instances = await this.getInstAssociation()
+        this.$store.commit('hostDetails/setInstances', instances)
       })
     },
     beforeDestroy() {
@@ -104,12 +103,12 @@
     methods: {
       async getData() {
         try {
-          const [source, target, mainLine, associationTypes, root] = await Promise.all([
+          const [source, target, mainLine, associationTypes, instances] = await Promise.all([
             this.getAssociation({ bk_obj_id: 'host' }),
             this.getAssociation({ bk_asst_obj_id: 'host' }),
             this.getMainLine(),
             this.getAssociationType(),
-            this.getInstRelation()
+            this.getInstAssociation()
           ])
           const mainLineModels = mainLine.filter(model => !['biz', 'host'].includes(model.bk_obj_id))
           const availabelSource = this.getAvailableAssociation(source, [], mainLineModels)
@@ -119,7 +118,7 @@
             target: availabelTarget,
             mainLine: mainLineModels,
             associationTypes,
-            root
+            instances
           })
         } catch (e) {
           this.setState({
@@ -127,20 +126,16 @@
             target: [],
             mainLine: [],
             associationTypes: [],
-            root: {
-              prev: [],
-              next: []
-            }
+            instances: []
           })
           console.error(e)
         }
       },
-      setState({ source, target, mainLine, associationTypes, root }) {
+      setState({ source, target, mainLine, associationTypes, instances }) {
         this.$store.commit('hostDetails/setAssociation', { type: 'source', association: source })
         this.$store.commit('hostDetails/setAssociation', { type: 'target', association: target })
         this.$store.commit('hostDetails/setMainLine', mainLine)
-        this.$store.commit('hostDetails/setInstances', { type: 'source', instances: root.prev })
-        this.$store.commit('hostDetails/setInstances', { type: 'target', instances: root.next })
+        this.$store.commit('hostDetails/setInstances', instances)
         this.$store.commit('hostDetails/setAssociationTypes', associationTypes)
       },
       getAssociation(condition) {
@@ -166,16 +161,25 @@
         })
         return Promise.resolve(info)
       },
-      async getInstRelation() {
-        const [root] = await this.$store.dispatch('objectRelation/getInstRelation', {
-          objId: 'host',
-          instId: this.id,
-          params: {},
-          config: {
-            requestId: 'getInstRelation'
-          }
-        })
-        return Promise.resolve(root || { prev: [], next: [] })
+      async getInstAssociation() {
+        try {
+          const sourceCondition = { bk_obj_id: 'host', bk_inst_id: this.id }
+          const targetCondition = { bk_asst_obj_id: 'host', bk_asst_inst_id: this.id }
+          const [source, target] = await Promise.all([
+            this.$store.dispatch('objectAssociation/searchInstAssociation', {
+              params: { condition: sourceCondition },
+              config: { requestId: 'getSourceAssociation' }
+            }),
+            this.$store.dispatch('objectAssociation/searchInstAssociation', {
+              params: { condition: targetCondition },
+              config: { requestId: 'getTargetAssociation' }
+            })
+          ])
+          return [...source, ...target]
+        } catch (error) {
+          console.error(error)
+          return []
+        }
       },
       getAvailableAssociation(data, reference = [], mainLine = []) {
         return data.filter((association) => {

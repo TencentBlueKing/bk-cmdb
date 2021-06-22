@@ -1,14 +1,14 @@
 <template>
   <div class="table" v-show="instances.length" v-bkloading="{ isLoading: $loading(propertyRequest, instanceRequest) }">
-    <div class="table-info clearfix">
-      <div class="info-title fl" @click="expanded = !expanded">
+    <div class="table-info clearfix" @click="expanded = !expanded">
+      <div class="info-title fl">
         <i class="icon bk-icon icon-right-shape"
           :class="{ 'is-open': expanded }">
         </i>
         <span class="title-text">{{title}}</span>
         <span class="title-count">({{instances.length}})</span>
       </div>
-      <div class="info-pagination fr" v-show="pagination.count">
+      <div class="info-pagination fr" v-show="pagination.count" @click.stop>
         <span class="pagination-info">{{getPaginationInfo()}}</span>
         <span class="pagination-toggle">
           <i class="pagination-icon bk-icon icon-cc-arrow-down left"
@@ -107,8 +107,7 @@
     },
     computed: {
       ...mapGetters('hostDetails', [
-        'sourceInstances',
-        'targetInstances'
+        'allInstances',
       ]),
       hostId() {
         return parseInt(this.$route.params.id, 10)
@@ -143,13 +142,18 @@
       totalPage() {
         return Math.ceil(this.pagination.count / this.pagination.size)
       },
+      isSource() {
+        return this.type === 'source'
+      },
       instances() {
-        const topology = this.type === 'source' ? this.targetInstances : this.sourceInstances
-        const data = topology.find(data => data.bk_obj_id === this.id) || {}
-        return data.children || []
+        return this.allInstances.filter((instance) => {
+          const sameAsstId = instance.bk_asst_id === this.associationType.bk_asst_id
+          const sameModelId = this.id === instance[this.isSource ? 'bk_asst_obj_id' : 'bk_obj_id']
+          return sameAsstId && sameModelId
+        })
       },
       instanceIds() {
-        return this.instances.map(instance => instance.bk_inst_id)
+        return this.instances.map(instance => (this.isSource ? instance.bk_asst_inst_id : instance.bk_inst_id))
       },
       header() {
         const headerProperties = this.$tools.getDefaultHeaderProperties(this.properties)
@@ -165,18 +169,14 @@
       }
     },
     watch: {
-      instances() {
-        if (this.expanded) {
-          this.getData()
-        }
+      instances(instances) {
+        instances.length && this.expanded && this.getData()
       },
       expandAll(expanded) {
         this.expanded = expanded
       },
       expanded(expanded) {
-        if (expanded) {
-          this.getData()
-        }
+        expanded && this.getData()
       }
     },
     methods: {
@@ -231,6 +231,10 @@
           const data = await promise
           this.list = data.info
           this.pagination.count = data.count
+          if (data.count && !data.info.length) {
+            this.pagination.current -= 1
+            this.getInstances()
+          }
         } catch (e) {
           console.error(e)
           this.list = []
@@ -313,29 +317,16 @@
         })
       },
       async cancelAssociation() {
-        const { item } = this.confirm
-        const keyMap = {
-          host: 'bk_host_id',
-          biz: 'bk_biz_id'
-        }
-        const idKey = keyMap[this.id] || 'bk_inst_id'
         try {
-          const associationInstance = this.instances.find(instance => instance.bk_inst_id === item[idKey])
+          const instance = this.instances.find((instance) => {
+            const key = this.isSource ? 'bk_asst_inst_id' : 'bk_inst_id'
+            return instance[key] === this.confirm.id
+          })
           await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
-            id: associationInstance.asso_id,
-            config: {
-              data: {}
-            }
+            id: instance.id,
+            config: { data: {} }
           })
-          this.$store.commit('hostDetails/deleteAssociation', {
-            type: this.type,
-            model: this.id,
-            association: associationInstance
-          })
-          this.$nextTick(() => {
-            this.pagination.current = 1
-            this.getInstances()
-          })
+          this.$store.commit('hostDetails/deleteAssociation', instance.id)
           this.$success(this.$t('取消关联成功'))
           this.hideTips()
         } catch (e) {
