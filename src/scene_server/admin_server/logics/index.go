@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"configcenter/src/common"
@@ -25,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	types2 "configcenter/src/common/types"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
@@ -36,29 +38,38 @@ import (
  如何展示错误给用户
 */
 
-func DBSync(e *backbone.Engine, db dal.RDB) {
-	go RunSyncDBTableIndex(context.Background(), e, db)
+func DBSync(e *backbone.Engine, db dal.RDB, options options.Config) {
+	f := func() {
+		defaultDBTable = db
+		fmt.Println(defaultDBTable)
+	}
+	once.Do(f)
+
+	go func() {
+		RunSyncDBTableIndex(context.Background(), e, db, options)
+	}()
+
 }
+
+var (
+	once sync.Once
+
+	defaultDBTable dal.RDB
+)
 
 type dbTable struct {
 	db                         dal.RDB
 	preCleanRedundancyTableMap map[string]struct{}
 	rid                        string
+	options                    options.Config
 }
 
-func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB) {
-	dbReady := false
-	for {
-		rid := util.GenerateRID()
-		dt := &dbTable{db: db, rid: rid}
-		blog.Infof("start sync table and index rid: %s", rid)
+func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB,
+	options options.Config) {
 
-		if !e.ServiceManageInterface.IsMaster() {
-			blog.Infof("skip sync table and index. reason: not master. rid: %s", rid)
-			time.Sleep(20 * time.Second)
-			continue
-
-		}
+	rid := util.GenerateRID()
+	for dbReady := false; !dbReady; {
+		//等待数据库初始化
 		if !dbReady {
 			var err error
 			dbReady, err = upgrader.DBReady(ctx, db)
@@ -70,24 +81,78 @@ func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB) {
 			}
 
 			time.Sleep(20 * time.Second)
-			continue
 		}
+	}
 
-		blog.Infof("start object sharding table rid: %s", rid)
-		// 先处理模型实例和关联关系表
-		if err := dt.syncModelShardingTable(ctx); err != nil {
-			blog.Errorf("model table sync error. err: %s, rid: %s", err.Error(), dt.rid)
+	syncWorker := func(dt *dbTable, isTable bool) {
+		for {
+			rid := util.GenerateRID()
+			dt.rid = rid
+			blog.Infof("start sync table or index worker rid: %s", rid)
+
+			if !e.ServiceManageInterface.IsMaster() {
+				blog.Infof("skip sync table or index worker. reason: not master. rid: %s", rid)
+				time.Sleep(5 * time.Second)
+				continue
+			}
+
+			if isTable {
+				blog.Infof("start object sharding table rid: %s", rid)
+				// 先处理模型实例和关联关系表
+				if err := dt.syncModelShardingTable(ctx); err != nil {
+					blog.Errorf("model table sync error. err: %s, rid: %s", err.Error(), dt.rid)
+				}
+				blog.Infof("end sync table rid: %s", rid)
+				time.Sleep(time.Second * time.Duration(options.ShardingTable.TableInterval))
+				blog.Infof("end sync table rid: %s", rid)
+
+			} else {
+				blog.Infof("start table common index rid: %s", rid)
+				if err := dt.syncIndexes(ctx); err != nil {
+					blog.Errorf("model table sync error. err: %s, rid: %s", err.Error(), dt.rid)
+				}
+				blog.Infof("end sync table index rid: %s", rid)
+				time.Sleep(time.Minute * time.Duration(options.ShardingTable.IndexesInterval))
+			}
 
 		}
-		blog.Infof("start table common index rid: %s", rid)
-		if err := dt.syncIndexes(ctx); err != nil {
-			blog.Errorf("model table sync error. err: %s, rid: %s", err.Error(), dt.rid)
-		}
+	}
 
-		blog.Infof("end sync table and index rid: %s", rid)
-		time.Sleep(time.Hour * 12)
+	dtTable := &dbTable{db: db, rid: rid, options: options}
+	go syncWorker(dtTable, true)
+	dtIndex := &dbTable{db: db, rid: rid, options: options}
+	go syncWorker(dtIndex, false)
+
+}
+
+func RunSyncDBIndex(ctx context.Context, e *backbone.Engine) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	ccErr := e.CCErr.CreateDefaultCCErrorIf("en")
+
+	if defaultDBTable == nil {
+		blog.Errorf("db client not initialization is complete, rid: %s", rid)
+		return ccErr.CCError(common.CCErrCommDBSelectFailed)
+	}
+	// defaultDBTable DBSync 负责在启动时候初始化
+	dbReady, err := upgrader.DBReady(ctx, defaultDBTable)
+	if err != nil {
+		blog.Errorf("Check whether the db initialization is complete error. err: %s rid: %s", err.Error(), rid)
+		return ccErr.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if !dbReady {
+		blog.Errorf("db not initialization is complete, rid: %s", rid)
+		return ccErr.CCError(common.CCErrCommDBSelectFailed)
 
 	}
+
+	dt := &dbTable{db: defaultDBTable, rid: rid}
+	blog.Infof("start table common index rid: %s", rid)
+	if err := dt.syncIndexes(ctx); err != nil {
+		blog.Errorf("model table sync error. err: %s, rid: %s", err.Error(), dt.rid)
+	}
+	blog.Infof("end sync table index rid: %s", rid)
+
+	return nil
 }
 
 // 同步表中定义的索引
@@ -105,8 +170,19 @@ func (dt *dbTable) syncDBTableIndexes(ctx context.Context) error {
 	deprecatedIndexNames := index.DeprecatedIndexName()
 	tableIndexes := index.TableIndexes()
 
+	dtIndexesMap, err := dt.findSyncIndexesLogicUnique(ctx)
+	if err != nil {
+		blog.ErrorJSON("find db logic unique error. err: %s, rid: %s", err, dt.rid)
+		return err
+	}
+
+	for dt, indexes := range dtIndexesMap {
+		tableIndexes[dt] = append(tableIndexes[dt], indexes...)
+	}
+
 	for tableName, indexes := range tableIndexes {
 		deprecatedTableIndexNames := deprecatedIndexNames[tableName]
+
 		if err := dt.syncIndexesToDB(ctx, tableName, indexes, deprecatedTableIndexNames); err != nil {
 			blog.Warnf("sync table (%s) index error. err: %s, rid: %s", tableName, err.Error(), dt.rid)
 			continue
@@ -194,6 +270,59 @@ func (dt *dbTable) syncIndexesToDB(ctx context.Context, tableName string,
 
 }
 
+func (dt *dbTable) findSyncIndexesLogicUnique(ctx context.Context) (map[string][]types.Index, error) {
+	objs := make([]metadata.Object, 0)
+	if err := dt.db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKObjIDField,
+		common.BKIsPre, common.BKOwnerIDField).All(ctx, &objs); err != nil {
+		blog.Errorf("get all common object id  error. err: %s, rid: %s", err.Error(), dt.rid)
+		return nil, err
+	}
+
+	tbIndexes := make(map[string][]types.Index)
+	for _, obj := range objs {
+		blog.Infof("start object(%s) sharding table rid: %s", obj.ObjectID, dt.rid)
+
+		instTable := common.GetObjectInstTableName(obj.ObjectID, obj.OwnerID)
+		instAsstTable := common.GetObjectInstAsstTableName(obj.ObjectID, obj.OwnerID)
+
+		uniques, err := dt.findObjUniques(ctx, obj.ObjectID)
+		if err != nil {
+			blog.Errorf("object(%s) logic unique to db index error. err: %s, rid: %s",
+				obj.ObjectID, err.Error(), dt.rid)
+			return nil, err
+		}
+		objIndexes := append(index.InstanceIndexes(), uniques...)
+		// 内置模型不需要简表
+		if !obj.IsPre {
+			tbIndexes[instTable] = append(index.InstanceIndexes(), objIndexes...)
+		} else {
+			tb := ""
+			switch obj.ObjectID {
+			case common.BKInnerObjIDHost:
+				tb = common.BKTableNameBaseHost
+			case common.BKInnerObjIDApp:
+				tb = common.BKTableNameBaseApp
+			case common.BKInnerObjIDModule:
+				tb = common.BKTableNameBaseModule
+			case common.BKInnerObjIDSet:
+				tb = common.BKTableNameBaseSet
+			case common.BKInnerObjIDPlat:
+				tb = common.BKTableNameBasePlat
+			case common.BKInnerObjIDProc:
+				tb = common.BKTableNameBaseProcess
+			}
+			if tb != "" {
+				tbIndexes[tb] = uniques
+			}
+
+		}
+		tbIndexes[instAsstTable] = index.InstanceAssociationIndexes()
+
+	}
+
+	return tbIndexes, nil
+}
+
 func (dt *dbTable) tryUpdateTableIndex(ctx context.Context, tableName string,
 	dbIndex, logicIndex types.Index) error {
 	if index.IndexEqual(dbIndex, logicIndex) {
@@ -201,8 +330,7 @@ func (dt *dbTable) tryUpdateTableIndex(ctx context.Context, tableName string,
 		return nil
 	} else {
 		// 说明索引不等， 删除原有的索引，
-		if err := dt.db.Table(tableName).DropIndex(ctx, logicIndex.Name); err != nil &&
-			!ErrDropIndexNameNotFound(err) {
+		if err := dt.db.Table(tableName).DropIndex(ctx, logicIndex.Name); err != nil {
 			blog.Errorf("remove table(%s) index(%s) error. err: %s, rid: %s",
 				tableName, logicIndex.Name, err.Error(), dt.rid)
 			return err
@@ -255,8 +383,14 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 		if err != nil {
 			blog.Errorf("object(%s) logic unique to db index error. err: %s, rid: %s",
 				obj.ObjectID, err.Error(), dt.rid)
-			// TODO: 报错
-			// 服务降级，只是不处理唯一索引
+			monitor.Collect(&meta.Alarm{
+				RequestID: dt.rid,
+				Type:      meta.MongoDDLFatalError,
+				Detail:    fmt.Sprintf("query %s collection logic unique detail failed", instTable),
+				Module:    types2.CC_MODULE_MIGRATE,
+				Dimension: map[string]string{"hit_create_collection": "yes"},
+			})
+			return err
 		}
 
 		objIndexes := append(index.InstanceIndexes(), uniques...)
@@ -347,28 +481,39 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 		return nil
 	}
 
+	preCleanRedundancyTableMap := make(map[string]struct{}, 0)
 	for name := range modelDBTableNameMap {
 		// 上个周期不存在，不删除表
 		if _, exists := dt.preCleanRedundancyTableMap[name]; !exists {
+			// 下个周可以删除表的
+			blog.Errorf("skip redundant table(%s), reason: first appearance, rid: %s", name, dt.rid)
+			preCleanRedundancyTableMap[name] = struct{}{}
 			continue
 		}
-		row := make(map[string]interface{}, 0)
 		// 检查是否有数据
-		if err := dt.db.Table(name).Find(nil).One(ctx, &row); err != nil {
-			if dt.db.IsNotFoundError(err) {
-				blog.Infof("delete sharding table(%s) rid: %s", name, dt.rid)
-				// 没有数据删除
-				if err := dt.db.DropTable(ctx, name); err != nil {
-					blog.Errorf("delete table(%s) error. err: %s, rid: %s", name, err.Error(), dt.rid)
-					monitor.Collect(&meta.Alarm{
-						RequestID: dt.rid,
-						Type:      meta.MongoDDLFatalError,
-						Detail:    fmt.Sprintf("drop collection(%s) failed", name),
-						Module:    types2.CC_MODULE_MIGRATE,
-						Dimension: map[string]string{"hit_clean_redundancy_table": "yes"},
-					})
-					continue
-				}
+		cnt, err := dt.db.Table(name).Find(nil).Count(ctx)
+		if err != nil {
+			blog.Errorf("count table(%s) failed, skip, err: %v, rid: %s", name, err, dt.rid)
+			continue
+		}
+
+		blog.Infof("find redundant table(%s), try to delete now, rid: %s", name, dt.rid)
+		if cnt == 0 {
+			blog.Infof("delete sharding table(%s) rid: %s", name, dt.rid)
+			// 检查表最后操作事件， 如果最后操作事件小于60s不删除， 避免count 查询不到事务里面的数据
+
+			// 没有数据删除
+			if err := dt.db.DropTable(ctx, name); err != nil {
+				blog.Errorf("delete table(%s) error. err: %s, rid: %s", name, err.Error(), dt.rid)
+				monitor.Collect(&meta.Alarm{
+					RequestID: dt.rid,
+					Type:      meta.MongoDDLFatalError,
+					Detail:    fmt.Sprintf("drop collection(%s) failed", name),
+					Module:    types2.CC_MODULE_MIGRATE,
+					Dimension: map[string]string{"hit_clean_redundancy_table": "yes"},
+				})
+				continue
+
 			} else {
 				monitor.Collect(&meta.Alarm{
 					RequestID: dt.rid,
@@ -377,7 +522,7 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 					Module:    types2.CC_MODULE_MIGRATE,
 					Dimension: map[string]string{"hit_clean_redundancy_table": "yes"},
 				})
-				blog.Errorf("find table(%s) one row error. err: %s, rid: %s", name, err.Error(), dt.rid)
+				blog.Errorf("drop collection(%s) failed, reason: find table has error, rid: %s", name, dt.rid)
 
 			}
 
@@ -389,12 +534,12 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 				Module:    types2.CC_MODULE_MIGRATE,
 				Dimension: map[string]string{"hit_clean_redundancy_table": "yes"},
 			})
-			blog.Errorf("can't drop the non-empty sharding table, table name: %s, rid: %d", name, dt.rid)
+			blog.Errorf("can't drop the non-empty sharding table, table name: %s, rid: %s", name, dt.rid)
 		}
 
 	}
 
-	dt.preCleanRedundancyTableMap = modelDBTableNameMap
+	dt.preCleanRedundancyTableMap = preCleanRedundancyTableMap
 	return nil
 }
 
@@ -415,7 +560,6 @@ func (dt *dbTable) createIndexes(ctx context.Context, tableName string, indexes 
 		}
 	}
 
-	return
 }
 
 func (dt *dbTable) findObjUniques(ctx context.Context, objID string) ([]types.Index, error) {

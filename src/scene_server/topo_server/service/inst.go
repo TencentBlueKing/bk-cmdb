@@ -128,6 +128,52 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 	ctx.RespEntity(setInst.ToMapStr())
 }
 
+func (s *Service) CreateManyInstance(ctx *rest.Contexts) {
+	data := &metadata.CreateManyCommInst{}
+	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
+	if err != nil {
+		blog.Errorf("failed to search the object(%s), err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) {
+		blog.Errorf("create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
+
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("failed to get whether the object(%s) is mainline object, err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if isMainline {
+		blog.Errorf("create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI))
+		return
+	}
+
+	var setInst *metadata.CreateManyCommInstResultDetail
+	setInst, err = s.Core.InstOperation().CreateManyInstance(ctx.Kit, obj, data.Details)
+	if err != nil {
+		blog.Errorf("failed to create %s new instances, err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(setInst)
+}
+
 func (s *Service) DeleteInsts(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
 
@@ -600,11 +646,18 @@ func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 // no need to auth because it only get the unique fields
 func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
+	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
+	if err != nil {
+		blog.Errorf("search model unique url parameter id not number, id: %s, error: %s, rid: %s",
+			ctx.Request.PathParameter("id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, "id"))
+		return
+	}
 
 	// get must check unique to judge if the instance exists
 	cond := map[string]interface{}{
 		common.BKObjIDField: objID,
-		"must_check":        true,
+		common.BKFieldID:    id,
 	}
 	uniqueResp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrUnique(ctx.Kit.Ctx, ctx.Kit.Header, metadata.QueryCondition{Condition: cond})
 	if err != nil {
@@ -617,8 +670,16 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(uniqueResp.Error())
 		return
 	}
+
+	if uniqueResp.Data.Count == 0 {
+		blog.Errorf("model %s has wrong must_check unique field not found, input: %s, cond: %s, rid: %s",
+			objID, cond, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrorTopObjectUniqueIndexNotFound, objID, id))
+		return
+	}
+
 	if uniqueResp.Data.Count != 1 {
-		blog.Errorf("model %s has wrong must_check unique field count", objID)
+		blog.Errorf("model %s has wrong must_check unique field count > 1, input: %s,rid: %s", objID, cond, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoObjectUniqueSearchFailed))
 		return
 	}
@@ -653,8 +714,10 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 
 	instIDKey := metadata.GetInstIDFieldByObjID(objID)
 	keys := []string{instIDKey}
+	attrIDNameMap := make(map[string]string, len(attrResp.Data.Info))
 	for _, attr := range attrResp.Data.Info {
 		keys = append(keys, attr.PropertyID)
+		attrIDNameMap[attr.PropertyID] = attr.PropertyName
 	}
 
 	// construct the query inst condition
@@ -682,7 +745,7 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(result)
+	ctx.RespEntity(metadata.QueryUniqueFieldsData{InstResult: *result, UniqueAttribute: attrIDNameMap})
 }
 
 // SearchInstByObject search the inst of the object
@@ -737,12 +800,18 @@ func (s *Service) SearchInstByObject(ctx *rest.Contexts) {
 
 // SearchInstByAssociation search inst by the association inst
 func (s *Service) SearchInstByAssociation(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	if common.IsInnerModel(objID) {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
+
 	data := new(operation.AssociationParams)
 	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	objID := ctx.Request.PathParameter("bk_obj_id")
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
@@ -1068,8 +1137,8 @@ func (s *Service) SearchInstAssociationWithOtherObject(ctx *rest.Contexts) {
 		return
 	}
 
-	blog.V(5).Infof("input:%#v, rid:%s", input, ctx.Kit.Rid)
-	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationSingleObjectInstInfo(ctx.Kit, reqParams.Condition.AssociationObjectID, input)
+	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationSingleObjectInstInfo(ctx.Kit,
+		reqParams.Condition.AssociationObjectID, input, reqParams.Condition.IsTargetObject)
 	if err != nil {
 		blog.ErrorJSON("parse page illegal, input:%s, err:%s, rid:%s", input, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -1079,6 +1148,5 @@ func (s *Service) SearchInstAssociationWithOtherObject(ctx *rest.Contexts) {
 	ctx.RespEntity(map[string]interface{}{
 		"info":  infos,
 		"count": cnt,
-		"page":  input.Page,
 	})
 }

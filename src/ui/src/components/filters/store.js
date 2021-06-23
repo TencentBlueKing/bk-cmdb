@@ -157,9 +157,6 @@ const FilterStore = new Vue({
         outer: outer.toString() === 'true'
       }
     },
-    setupHeader() {
-      (this.selected.length && this.hasCondition) ? this.setHeader(this.selected) : this.setHeader(this.defaultHeader)
-    },
     initCondition() {
       const newConditon = {}
       this.selected.forEach((property) => {
@@ -174,7 +171,6 @@ const FilterStore = new Vue({
     setCondition(data = {}) {
       this.condition = data.condition || this.condition
       this.IP = data.IP || this.IP
-      this.setHeader(this.selected)
       this.throttleSearch()
     },
     updateCondition(property, operator, value) {
@@ -238,6 +234,7 @@ const FilterStore = new Vue({
       this.throttleSearch()
     },
     dispatchSearch() {
+      this.setHeader()
       this.setQuery()
       this.searchHandler(this.condition)
     },
@@ -255,8 +252,10 @@ const FilterStore = new Vue({
         _t: Date.now()
       })
     },
-    setHeader(newHeader) {
-      const header = newHeader.length ? newHeader : this.defaultHeader
+    setHeader() {
+      const suffixPropertyId = Object.keys(this.condition).filter(id => String(this.condition[id].value).trim().length)
+      const suffixProperties = this.properties.filter(property => suffixPropertyId.includes(String(property.id)))
+      const header = [...this.defaultHeader, ...suffixProperties]
       const presetId = ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
       // eslint-disable-next-line max-len
       const presetProperty = presetId.map(propertyId => this.properties.find(property => property.bk_property_id === propertyId))
@@ -454,7 +453,7 @@ export async function setupFilterStore(config = {}) {
   FilterStore.setupIPQuery()
   FilterStore.setupPropertyQuery()
   FilterStore.setupNormalProperty()
-  FilterStore.setupHeader()
+  FilterStore.setHeader()
   FilterStore.throttleSearch()
   return FilterStore
 }

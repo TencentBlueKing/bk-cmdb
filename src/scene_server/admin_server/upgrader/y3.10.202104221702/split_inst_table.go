@@ -30,7 +30,8 @@ var (
 	oldInstAsstTable    = "cc_InstAsst"
 	instAsstTableFormat = "cc_InstAsst_%v_pub_%v"
 	objectBaseMapping   = "cc_ObjectBaseMapping"
-	maxWorkNumber       = 60
+	maxWorkNumber       = 200
+	pageSize            = uint64(5000)
 )
 
 func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
@@ -114,12 +115,12 @@ func initWorkerChn(workerNum int) chan struct{} {
 func splitInstAsstTable(ctx context.Context, db dal.RDB) error {
 	filter := map[string]interface{}{}
 	opts := types.NewFindOpts().SetWithObjectID(true)
-	const pageSize = uint64(1000)
 	start := uint64(0)
-	query := db.Table(oldInstAsstTable).Find(filter, opts).Limit(pageSize)
+	query := db.Table(oldInstAsstTable).Find(filter, opts).Limit(pageSize).Sort("id")
 	workerChn := initWorkerChn(maxWorkNumber)
 	errChn := make(chan error, maxWorkNumber)
 	for {
+		blog.Infof("find instance association detail info list. start: %d", start)
 		asstList := make([]map[string]interface{}, pageSize)
 		if err := query.Start(start).All(ctx, &asstList); err != nil {
 			return fmt.Errorf("find inst association list error. err: %s", err.Error())
@@ -195,13 +196,14 @@ func copyInstanceAssociationToShardingTable(ctx context.Context, association map
 func splitInstTable(ctx context.Context, db dal.RDB) error {
 	filter := map[string]interface{}{}
 	opts := types.NewFindOpts().SetWithObjectID(true)
-	const pageSize = uint64(1000)
 	start := uint64(0)
-	query := db.Table(oldInstTable).Find(filter, opts).Limit(pageSize)
+	query := db.Table(oldInstTable).Find(filter, opts).Limit(pageSize).Sort("bk_inst_id")
 
 	workerChn := initWorkerChn(maxWorkNumber)
 	errChn := make(chan error, maxWorkNumber)
+
 	for {
+		blog.Infof("find instance detail info list. start: %d", start)
 		insts := make([]map[string]interface{}, pageSize)
 		if err := query.Start(start).All(ctx, &insts); err != nil {
 			return fmt.Errorf("find inst list error. err: %s", err.Error())
@@ -210,7 +212,6 @@ func splitInstTable(ctx context.Context, db dal.RDB) error {
 			// 没有数据了
 			break
 		}
-
 		for _, inst := range insts {
 			if len(errChn) > 0 {
 				return <-errChn
@@ -220,7 +221,7 @@ func splitInstTable(ctx context.Context, db dal.RDB) error {
 				defer func() {
 					workerChn <- struct{}{}
 				}()
-				if err := copyInstanceToShardingTable(ctx, inst, db); err != nil {
+				if err := copyInstanceToShardingTable(ctx, copyInst, db); err != nil {
 					errChn <- err
 				}
 			}(inst)

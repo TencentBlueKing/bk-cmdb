@@ -180,6 +180,11 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 		removedResourceActionIDs := make([]ActionID, len(removedResourceActionMap))
 		idx := 0
 		for resourceActionID := range removedResourceActionMap {
+			if err = i.client.DeleteActionPolicies(ctx, resourceActionID); err != nil {
+				blog.Errorf("delete action %s policies failed, err: %v", resourceActionID, err)
+				return err
+			}
+
 			removedResourceActionIDs[idx] = resourceActionID
 			idx++
 		}
@@ -291,7 +296,7 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 		FieldActions, FieldActionGroups, FieldInstanceSelections}
 	iamResp, err := i.client.GetSystemInfo(ctx, fields)
 	if err != nil {
-		blog.ErrorJSON("syc iam sysInstances failed, get system info error: %s, fields: %s, rid:%s",
+		blog.ErrorJSON("syc iam sysInstances failed, get system info error: %s, fields: %s, rid: %s",
 			err.Error(), fields, rid)
 		return err
 	}
@@ -314,9 +319,18 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 
 	// delete unnecessary actions in iam
 	if len(deletedActions) > 0 {
-		blog.Infof("begin delete actions, count:%d, detail:%v, rid:%s", len(deletedActions), deletedActions, rid)
+		blog.Infof("begin delete actions, count:%d, detail:%v, rid: %s", len(deletedActions), deletedActions, rid)
+
+		// before deleting action, the dependent action polices must be deleted
+		for _, actionID := range deletedActions {
+			if err = i.client.DeleteActionPolicies(ctx, actionID); err != nil {
+				blog.Errorf("delete action %s policies failed, err: %s, rid: %s", actionID, err, rid)
+				return err
+			}
+		}
+
 		if err := i.client.DeleteActions(ctx, deletedActions); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, delete IAM actions error: %s, actions: %s, rid:%s",
+			blog.ErrorJSON("syc iam sysInstances failed, delete IAM actions error: %s, actions: %s, rid: %s",
 				err.Error(), deletedActions, rid)
 			return err
 		}
@@ -324,10 +338,11 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 
 	// delete unnecessary InstanceSelections in iam
 	if len(deletedInstanceSelections) > 0 {
-		blog.Infof("begin delete instanceSelections, count:%d, detail:%v, rid:%s",
+		blog.Infof("begin delete instanceSelections, count:%d, detail:%v, rid: %s",
 			len(deletedInstanceSelections), deletedInstanceSelections, rid)
 		if err := i.client.DeleteInstanceSelections(ctx, deletedInstanceSelections); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, delete instanceSelections error: %s, instanceSelections: %s, rid:%s",
+			blog.ErrorJSON("syc iam sysInstances failed, delete instanceSelections error: %s, instanceSelections: %s,"+
+				" rid: %s",
 				err.Error(), deletedInstanceSelections, rid)
 			return err
 		}
@@ -335,10 +350,10 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 
 	// delete unnecessary ResourceTypes in iam
 	if len(deletedResourceTypes) > 0 {
-		blog.Infof("begin delete resourceTypes, count:%d, detail:%v, rid:%s",
+		blog.Infof("begin delete resourceTypes, count:%d, detail:%v, rid: %s",
 			len(deletedResourceTypes), deletedResourceTypes, rid)
 		if err := i.client.DeleteResourcesTypes(ctx, deletedResourceTypes); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, delete resourceType error: %s, resourceType: %s, rid:%s",
+			blog.ErrorJSON("syc iam sysInstances failed, delete resourceType error: %s, resourceType: %s, rid: %s",
 				err.Error(), deletedResourceTypes, rid)
 			return err
 		}
@@ -346,10 +361,10 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 
 	// add cmdb ResourceTypes in iam
 	if len(addedResourceTypes) > 0 {
-		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid:%s",
+		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid: %s",
 			len(addedResourceTypes), addedResourceTypes, rid)
 		if err := i.client.RegisterResourcesTypes(ctx, addedResourceTypes); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, add resourceType error: %s, resourceType: %s, rid:%s",
+			blog.ErrorJSON("syc iam sysInstances failed, add resourceType error: %s, resourceType: %s, rid: %s",
 				err.Error(), addedResourceTypes, rid)
 			return err
 		}
@@ -357,10 +372,11 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 
 	// add cmdb InstanceSelections in iam
 	if len(addedInstanceSelections) > 0 {
-		blog.Infof("begin add instanceSelections, count:%d, detail:%v, rid:%s",
+		blog.Infof("begin add instanceSelections, count:%d, detail:%v, rid: %s",
 			len(addedInstanceSelections), addedInstanceSelections, rid)
 		if err := i.client.RegisterInstanceSelections(ctx, addedInstanceSelections); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, add instanceSelections error: %s, instanceSelections: %s, rid:%s",
+			blog.ErrorJSON("syc iam sysInstances failed, add instanceSelections error: %s, instanceSelections: %s, "+
+				"rid: %s",
 				err.Error(), addedInstanceSelections, rid)
 			return err
 		}
@@ -368,9 +384,9 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 
 	// add cmdb actions in iam
 	if len(addedActions) > 0 {
-		blog.Infof("begin add actions, count:%d, detail:%v, rid:%s", len(addedActions), addedActions, rid)
+		blog.Infof("begin add actions, count:%d, detail:%v, rid: %s", len(addedActions), addedActions, rid)
 		if err := i.client.RegisterActions(ctx, addedActions); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, add IAM actions failed, error: %s, actions: %s, rid:%s",
+			blog.ErrorJSON("syc iam sysInstances failed, add IAM actions failed, error: %s, actions: %s, rid: %s",
 				err.Error(), addedActions, rid)
 			return err
 		}
@@ -381,7 +397,7 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 		cmdbActionGroups := GenerateActionGroups(objects)
 		blog.Infof("begin update actionGroups")
 		if err := i.client.UpdateActionGroups(ctx, cmdbActionGroups); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, update actionGroups error: %s, actionGroups: %s, rid:%s",
+			blog.ErrorJSON("syc iam sysInstances failed, update actionGroups error: %s, actionGroups: %s, rid: %s",
 				err.Error(), cmdbActionGroups, rid)
 			return err
 		}
@@ -399,7 +415,7 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 		FieldActions, FieldActionGroups, FieldInstanceSelections}
 	iamResp, err := i.client.GetSystemInfo(ctx, fields)
 	if err != nil {
-		blog.ErrorJSON("syc iam sysInstances failed, get system info error: %s, fields: %s, rid:%s",
+		blog.ErrorJSON("syc iam sysInstances failed, get system info error: %s, fields: %s, rid: %s",
 			err.Error(), fields, rid)
 		return err
 	}
@@ -415,9 +431,17 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 
 	// delete unnecessary actions in iam
 	if len(deletedActions) > 0 {
-		blog.Infof("begin delete actions, count:%d, detail:%v, rid:%s", len(deletedActions), deletedActions, rid)
+		// before deleting action, the dependent action polices must be deleted
+		for _, actionID := range deletedActions {
+			if err = i.client.DeleteActionPolicies(ctx, actionID); err != nil {
+				blog.Errorf("delete action %s policies failed, err: %s, rid: %s", actionID, err, rid)
+				return err
+			}
+		}
+
+		blog.Infof("begin delete actions, count:%d, detail:%v, rid: %s", len(deletedActions), deletedActions, rid)
 		if err := i.client.DeleteActions(ctx, deletedActions); err != nil {
-			blog.ErrorJSON("delete cmdb resource failed, delete IAM actions error: %s, actions: %s, rid:%s",
+			blog.ErrorJSON("delete cmdb resource failed, delete IAM actions error: %s, actions: %s, rid: %s",
 				err.Error(), deletedActions, rid)
 			return err
 		}
@@ -425,21 +449,21 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 
 	// delete unnecessary InstanceSelections in iam
 	if len(deletedInstanceSelections) > 0 {
-		blog.Infof("begin delete instanceSelections, count:%d, detail:%v, rid:%s",
+		blog.Infof("begin delete instanceSelections, count:%d, detail:%v, rid: %s",
 			len(deletedInstanceSelections), deletedInstanceSelections, rid)
 		if err := i.client.DeleteInstanceSelections(ctx, deletedInstanceSelections); err != nil {
 			blog.ErrorJSON("delete cmdb resource failed, delete instanceSelections error: %s, instanceSelections: %s,"+
-				"rid:%s", err.Error(), deletedInstanceSelections, rid)
+				"rid: %s", err.Error(), deletedInstanceSelections, rid)
 			return err
 		}
 	}
 
 	// delete unnecessary ResourceTypes in iam
 	if len(deletedResourceTypes) > 0 {
-		blog.Infof("begin delete resourceTypes, count:%d, detail:%v, rid:%s",
+		blog.Infof("begin delete resourceTypes, count:%d, detail:%v, rid: %s",
 			len(deletedResourceTypes), deletedResourceTypes, rid)
 		if err := i.client.DeleteResourcesTypes(ctx, deletedResourceTypes); err != nil {
-			blog.ErrorJSON("delete cmdb resource failed, delete resourceType error: %s, resourceType: %s, rid:%s",
+			blog.ErrorJSON("delete cmdb resource failed, delete resourceType error: %s, resourceType: %s, rid: %s",
 				err.Error(), deletedResourceTypes, rid)
 			return err
 		}
@@ -450,7 +474,7 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 		cmdbActionGroups := GenerateActionGroups(objects)
 		blog.Infof("begin update actionGroups")
 		if err := i.client.UpdateActionGroups(ctx, cmdbActionGroups); err != nil {
-			blog.ErrorJSON("delete cmdb resource failed, update actionGroups error: %s, actionGroups: %s, rid:%s",
+			blog.ErrorJSON("delete cmdb resource failed, update actionGroups error: %s, actionGroups: %s, rid: %s",
 				err.Error(), cmdbActionGroups, rid)
 			return err
 		}
@@ -620,6 +644,10 @@ func (a *authorizer) authorizeBatch(ctx context.Context, h http.Header, exact bo
 		return decisions, nil
 	}
 
+	if blog.V(5) {
+		blog.InfoJSON("auth options: %s, rid: %s", opts, rid)
+	}
+
 	var authDecisions []types.Decision
 	if exact {
 		authDecisions, err = a.authClientSet.AuthorizeBatch(ctx, h, opts)
@@ -629,8 +657,8 @@ func (a *authorizer) authorizeBatch(ctx context.Context, h http.Header, exact bo
 		}
 	} else {
 		authDecisions, err = a.authClientSet.AuthorizeAnyBatch(ctx, h, opts)
-		blog.ErrorJSON("authorize any batch failed, err: %s, ops: %s, resources: %s, rid: %s", err, opts, resources, rid)
 		if err != nil {
+			blog.ErrorJSON("authorize any batch failed, err: %s, ops: %s, resources: %s, rid: %s", err, opts, resources, rid)
 			return nil, err
 		}
 

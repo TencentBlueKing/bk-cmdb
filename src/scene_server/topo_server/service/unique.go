@@ -186,23 +186,5 @@ func (s *Service) SearchObjectUnique(ctx *rest.Contexts) {
 		return
 	}
 
-	if len(uniques) == 0 {
-		ctx.RespEntity(uniques)
-		return
-	}
-
-	// auth: check authorization
-	ids := make([]int64, 0)
-	for _, unique := range uniques {
-		ids = append(ids, int64(unique.ID))
-	}
-
-	/*
-		if err := s.AuthManager.AuthorizeModelUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Find, ids...); err != nil {
-			blog.Errorf("authorize model unique failed, unique: %+v, err: %+v, rid: %s", uniques, err, ctx.Kit.Rid)
-			return nil, ctx.Kit.CCError.New(common.CCErrCommAuthNotHavePermission, err.Error())
-		}
-	*/
-
 	ctx.RespEntity(uniques)
 }

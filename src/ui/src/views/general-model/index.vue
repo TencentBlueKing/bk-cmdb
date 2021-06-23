@@ -18,7 +18,7 @@
           <bk-button slot-scope="{ disabled }"
             class="models-button"
             :disabled="disabled"
-            @click="importSlider.show = true">
+            @click="handleImport">
             {{$t('导入')}}
           </bk-button>
         </cmdb-auth>
@@ -162,18 +162,6 @@
         @on-reset="handleResetColumnsConfig">
       </cmdb-columns-config>
     </bk-sideslider>
-    <bk-sideslider
-      v-transfer-dom
-      :is-show.sync="importSlider.show"
-      :width="800"
-      :title="$t('批量导入')">
-      <cmdb-import v-if="importSlider.show" slot="content"
-        :template-url="url.template"
-        :import-url="url.import"
-        @success="handlePageChange(1)"
-        @partialSuccess="handlePageChange(1)">
-      </cmdb-import>
-    </bk-sideslider>
     <router-subview></router-subview>
   </div>
 </template>
@@ -187,6 +175,7 @@
   import RouterQuery from '@/router/query'
   import Utils from '@/components/filters/utils'
   import throttle from  'lodash.throttle'
+  import instanceImportService from '@/service/instance/import'
   export default {
     components: {
       cmdbColumnsConfig,
@@ -239,9 +228,6 @@
           selected: [],
           disabledColumns: ['bk_inst_id', 'bk_inst_name']
         },
-        importSlider: {
-          show: false
-        },
         request: {
           properties: Symbol('properties'),
           groups: Symbol('groups'),
@@ -269,14 +255,6 @@
       },
       globalCustomColumns() {
         return this.globalUsercustom[`${this.objId}_global_custom_table_columns`] || []
-      },
-      url() {
-        const prefix = `${window.API_HOST}insts/owner/${this.supplierAccount}/object/${this.objId}/`
-        return {
-          import: `${prefix}import`,
-          export: `${prefix}export`,
-          template: `${window.API_HOST}importtemplate/${this.objId}`
-        }
       },
       parentLayers() {
         return [{
@@ -416,6 +394,7 @@
         if (isNumber && value) {
           value = parseFloat(value, 10)
         } else if (operator === '$in') {
+          // eslint-disable-next-line no-nested-ternary
           value = Array.isArray(value) ? value : !!value ? [value] : []
         } else if (Array.isArray(value)) {
           value = value.filter(value => !!value)
@@ -761,18 +740,56 @@
         }
         return true
       },
-      handleExport() {
-        const data = new FormData()
-        data.append('bk_inst_id', this.table.checked.join(','))
-        const customFields = this.usercustom[this.customConfigKey]
-        if (customFields) {
-          data.append('export_custom_fields', customFields)
-        }
-        this.$http.download({
-          url: this.url.export,
-          method: 'post',
-          data
+      async handleImport() {
+        const useImport = await import('@/components/import-file')
+        const [, { show: showImport, setState: setImportState }] = useImport.default()
+        setImportState({
+          title: this.$t('批量导入'),
+          bk_obj_id: this.objId,
+          template: `${window.API_HOST}importtemplate/${this.objId}`,
+          submit: (options) => {
+            const params = {
+              op: options.step
+            }
+            if (options.importRelation) {
+              params.object_unique_id = options.object_unique_id
+              params.association_condition = options.relations
+            }
+            return instanceImportService.update({
+              file: options.file,
+              params,
+              config: options.config,
+              bk_obj_id: this.objId
+            })
+          },
+          success: () => RouterQuery.set({ _t: Date.now() })
         })
+        showImport()
+      },
+      async handleExport() {
+        const useExport = await import('@/components/export-file')
+        useExport.default({
+          title: this.$t('导出选中'),
+          bk_obj_id: this.objId,
+          count: this.table.checked.length,
+          submit: (state, task) => {
+            const { fields, exportRelation  } = state
+            const params = {
+              export_custom_fields: fields.value.map(property => property.bk_property_id),
+              bk_inst_ids: this.table.checked
+            }
+            if (exportRelation.value) {
+              params.object_unique_id = state.object_unique_id.value
+              params.association_condition = state.relations.value
+            }
+            return this.$http.download({
+              url: `${window.API_HOST}insts/object/${this.objId}/export`,
+              method: 'post',
+              name: task.current.value.name,
+              data: params
+            })
+          }
+        }).show()
       }
     }
   }

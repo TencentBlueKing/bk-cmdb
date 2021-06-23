@@ -13,6 +13,8 @@
 package metadata
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 )
 
@@ -128,6 +130,93 @@ type CreateAssociationInstRequest struct {
 type CreateAssociationInstResult struct {
 	BaseResp `json:",inline"`
 	Data     RspID `json:"data"`
+}
+
+//CreateManyInstAsstRequest parameter structure for creating multiple instances associations
+type CreateManyInstAsstRequest struct {
+	ObjectID     string     `field:"bk_obj_id" json:"bk_obj_id,omitempty" bson:"bk_obj_id,omitempty"`
+	AsstObjectID string     `field:"bk_asst_obj_id" json:"bk_asst_obj_id,omitempty" bson:"bk_asst_obj_id,omitempty"`
+	ObjectAsstID string     `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id,omitempty"`
+	Details      []InstAsst `field:"details" json:"details,omitempty" bson:"details,omitempty"`
+}
+
+func (assoc *CreateManyInstAsstRequest) Validate() errors.RawErrorInfo {
+	if len(assoc.ObjectAsstID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{common.AssociationObjAsstIDField},
+		}
+	}
+
+	if len(assoc.ObjectID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if len(assoc.AsstObjectID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{common.BKAsstObjIDField},
+		}
+	}
+
+	if len(assoc.Details) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommInstDataNil,
+			Args:    []interface{}{"details"},
+		}
+	}
+
+	if len(assoc.Details) > 200 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"details", 200},
+		}
+	}
+
+	// NOTE: if bk_obj_asst_id changes, the logic here needs to be modified
+	if assoc.ObjectAsstID[:len(assoc.ObjectID)] != assoc.ObjectID {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if assoc.ObjectAsstID[len(assoc.ObjectAsstID)-len(assoc.AsstObjectID):] != assoc.AsstObjectID {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKAsstObjIDField},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+//AssociationInstDetails source and target instances of associations
+type AssociationInstDetails struct {
+	InstID     int64 `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
+	AsstInstID int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id,omitempty" bson:"bk_asst_inst_id,omitempty"`
+}
+
+//CreateManyInstAsstResultDetail details of creating instance association result
+type CreateManyInstAsstResultDetail struct {
+	SuccessCreated map[int64]int64  `json:"success_created"`
+	Error          map[int64]string `json:"error_msg"`
+}
+
+//CreateManyInstAsstResult  result of creating instance association
+type CreateManyInstAsstResult struct {
+	BaseResp `json:",inline"`
+	Data     CreateManyInstAsstResultDetail `json:"data"`
+}
+
+func NewManyInstAsstResultDetail() *CreateManyInstAsstResultDetail {
+	return &CreateManyInstAsstResultDetail{
+		SuccessCreated: make(map[int64]int64, 0),
+		Error:          make(map[int64]string, 0),
+	}
 }
 
 type DeleteAssociationInstRequest struct {
@@ -460,7 +549,9 @@ type ResponeImportAssociationData struct {
 
 // ResponeImportAssociation  import association result
 type RequestImportAssociation struct {
-	AssociationInfoMap map[int]ExcelAssocation `json:"association_info"`
+	AssociationInfoMap    map[int]ExcelAssociation `json:"association_info"`
+	AsstObjectUniqueIDMap map[string]int64         `json:"asst_object_unique_id_info"`
+	ObjectUniqueID        int64                    `json:"object_unique_id"`
 }
 
 // RequestInstAssociationObjectID 要求根据实例信息（实例的模型ID，实例ID）和模型ID（关联关系中的源，目的模型ID）, 返回关联关系的请求参数
@@ -510,4 +601,15 @@ type InstAsstQueryCondition struct {
 type InstAsstDeleteOption struct {
 	Opt   DeleteOption `json:"opt"`
 	ObjID string       `json:"bk_obj_id"`
+}
+
+// 专用接口， 为excel 导入使用
+type FindAssociationByObjectAssociationIDRequest struct {
+	ObjAsstIDArr []string `json:"bk_obj_asst_ids"`
+}
+
+// 专用接口， 为excel 导入使用
+type FindAssociationByObjectAssociationIDResponse struct {
+	BaseResp
+	Data []Association `json:"data"`
 }

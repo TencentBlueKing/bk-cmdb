@@ -56,7 +56,7 @@
       </div>
     </cmdb-main-inject>
 
-    <ul class="group-list">
+    <ul class="group-list" v-show="currentClassifications.length">
       <li class="group-item clearfix"
         v-for="(classification, classIndex) in currentClassifications"
         :key="classIndex">
@@ -134,6 +134,7 @@
         </ul>
       </li>
     </ul>
+    <no-search-results v-if="!currentClassifications.length" :text="$t('搜不到相关模型')" />
 
     <bk-dialog
       class="bk-dialog-no-padding bk-dialog-no-tools group-dialog dialog"
@@ -217,10 +218,16 @@
   import has from 'has'
   import cmdbMainInject from '@/components/layout/main-inject'
   import theCreateModel from '@/components/model-manage/_create-model'
+  import noSearchResults from '@/views/status/no-search-results.vue'
   import { mapGetters, mapMutations, mapActions } from 'vuex'
   import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
-  import { MENU_RESOURCE_HOST, MENU_RESOURCE_BUSINESS, MENU_RESOURCE_INSTANCE } from '@/dictionary/menu-symbol'
+  import {
+    MENU_RESOURCE_HOST,
+    MENU_RESOURCE_BUSINESS,
+    MENU_RESOURCE_INSTANCE,
+    MENU_MODEL_DETAILS
+  } from '@/dictionary/menu-symbol'
   export default {
     filters: {
       instanceCount(value) {
@@ -233,7 +240,8 @@
     components: {
       // theModel,
       theCreateModel,
-      cmdbMainInject
+      cmdbMainInject,
+      noSearchResults
     },
     data() {
       return {
@@ -327,7 +335,7 @@
           })
           searchResult.push(classifications[i])
         }
-        this.filterClassifications = searchResult
+        this.filterClassifications = searchResult.filter(item => item.bk_objects.length)
       },
       modelType() {
         this.searchModel = ''
@@ -431,8 +439,8 @@
           bk_classification_name: this.groupDialog.data.bk_classification_name
         }
         if (this.groupDialog.isEdit) {
-          // eslint-disable-next-line
-                    const res = await this.updateClassification({
+          // eslint-disable-next-line no-unused-vars
+          const res = await this.updateClassification({
             id: this.groupDialog.data.id,
             params,
             config: {
@@ -490,7 +498,7 @@
       modelClick(model) {
         this.$store.commit('objectModel/setActiveModel', model)
         this.$routerActions.redirect({
-          name: 'modelDetails',
+          name: MENU_MODEL_DETAILS,
           params: {
             modelId: model.bk_obj_id
           },

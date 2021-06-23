@@ -1,5 +1,5 @@
 <template>
-  <div class="classify-layout clearfix" v-bkloading="{ isLoading: $loading('getObjectCommonInstanceCount') }">
+  <div class="classify-layout clearfix">
     <div class="classify-filter">
       <bk-input class="filter-input"
         clearable
@@ -16,37 +16,36 @@
           v-for="classify in classifyColumns[col - 1]"
           :key="classify['bk_classification_id']"
           :classify="classify"
-          :collection="collection"
-          :instance-count="instanceCount">
+          :collection="collection">
         </cmdb-classify-panel>
       </div>
     </div>
-    <div v-show="isEmpty && !globalLoading" class="no-data">
-      <img src="../../assets/images/full-text-search.png" alt="no-data">
-      <p>{{$t('搜不到相关资源')}}</p>
-    </div>
+    <no-search-results v-if="isEmpty && !globalLoading" :text="$t('搜不到相关资源')" />
   </div>
 </template>
 
 <script>
   import { mapGetters } from 'vuex'
+  import debounce from 'lodash.debounce'
   import {
     MENU_RESOURCE_COLLECTION,
     MENU_RESOURCE_HOST_COLLECTION,
     MENU_RESOURCE_BUSINESS_COLLECTION
   } from '@/dictionary/menu-symbol'
+  import noSearchResults from '@/views/status/no-search-results.vue'
   import cmdbClassifyPanel from './children/classify-panel'
-  import debounce from 'lodash.debounce'
+  import useInstanceCount from './children/use-instance-count.js'
+
   export default {
     components: {
-      cmdbClassifyPanel
+      cmdbClassifyPanel,
+      noSearchResults
     },
     data() {
       return {
         filter: '',
         debounceFilter: null,
-        matchedModels: null,
-        instanceCount: []
+        matchedModels: null
       }
     },
     computed: {
@@ -90,6 +89,9 @@
         })
         return result
       },
+      modelIds() {
+        return this.filteredClassifications.map(item => item.bk_objects.map(obj => obj.bk_obj_id))
+      },
       classifyColumns() {
         const colHeight = [0, 0, 0, 0]
         const classifyColumns = [[], [], [], []]
@@ -112,7 +114,8 @@
     },
     created() {
       this.debounceFilter = debounce(this.filterModel, 300)
-      this.getInstanceCount()
+      const { fetchData: getInstanceCount } = useInstanceCount({ modelIds: this.modelIds }, this)
+      getInstanceCount()
     },
     methods: {
       filterModel() {
@@ -121,20 +124,6 @@
           this.matchedModels = models.map(model => model.bk_obj_id)
         } else {
           this.matchedModels = null
-        }
-      },
-      async getInstanceCount() {
-        try {
-          this.instanceCount = await this.$store.dispatch('objectCommonInst/getInstanceCount', {
-            config: {
-              requestId: 'getObjectCommonInstanceCount',
-              globalError: false
-            }
-          })
-        } catch (e) {
-          console.error(e)
-          this.instanceCount = []
-          this.$route.meta.view = 'error'
         }
       },
       calcWaterfallHeight(classify) {
@@ -162,17 +151,6 @@
         margin: 0 0 0 20px;
         &:first-child{
             margin: 0;
-        }
-    }
-    .no-data {
-        width: 90%;
-        margin: 0 auto;
-        padding-top: 240px;
-        text-align: center;
-        color: #63656E;
-        font-size: 16px;
-        img {
-            width: 104px;
         }
     }
 </style>

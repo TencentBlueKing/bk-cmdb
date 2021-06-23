@@ -50,7 +50,8 @@ type AssociationOperationInterface interface {
 	SearchInstAssociation(kit *rest.Kit, objID string, query *metadata.QueryInput) ([]metadata.InstAsst, error)
 	SearchInstAssociationList(kit *rest.Kit, objID string, query *metadata.QueryCondition) ([]metadata.InstAsst, uint64, error)
 	SearchInstAssociationUIList(kit *rest.Kit, objID string, query *metadata.QueryCondition) (result interface{}, asstCnt uint64, err error)
-	SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, returnInstInfoObjID string, query *metadata.QueryCondition) (result []metadata.InstBaseInfo, cnt uint64, err error)
+	SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, returnInstInfoObjID string, query *metadata.QueryCondition,
+		isTargetObject bool) (result []metadata.InstBaseInfo, cnt uint64, err error)
 	CreateCommonInstAssociation(kit *rest.Kit, data *metadata.InstAsst) error
 	DeleteInstAssociation(kit *rest.Kit, objID string, cond map[string]interface{}) error
 	CheckAssociation(kit *rest.Kit, objectID string, instID int64) error
@@ -71,8 +72,15 @@ type AssociationOperationInterface interface {
 	SearchInst(kit *rest.Kit, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	SearchAssociationRelatedInst(kit *rest.Kit, request *metadata.SearchAssociationRelatedInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	CreateInst(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
+	CreateManyInstAssociation(kit *rest.Kit, request *metadata.CreateManyInstAsstRequest) (*metadata.CreateManyInstAsstResultDetail, error)
 	DeleteInst(kit *rest.Kit, objID string, asstIDList []int64) (resp *metadata.DeleteAssociationInstResult, err error)
-	ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string, importData map[int]metadata.ExcelAssocation, languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error)
+
+	ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string,
+		importData map[int]metadata.ExcelAssociation, asstObjectUniqueIDMap map[string]int64, objectUniqueID int64,
+		languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error)
+
+	FindAssociationByObjectAssociationID(ctx context.Context, kit *rest.Kit, objID string, asstIDArr []string) (
+		[]metadata.Association, errors.CCError)
 
 	SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, grp GroupOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory)
 
@@ -809,6 +817,7 @@ func (assoc *association) SearchInstanceAssociations(kit *rest.Kit, objID string
 	if err != nil {
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
 	}
+	cond[common.BKObjIDField] = objID
 
 	conditions := &metadata.InstAsstQueryCondition{
 		ObjID: objID,
@@ -847,6 +856,7 @@ func (assoc *association) CountInstanceAssociations(kit *rest.Kit, objID string,
 	if err != nil {
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
 	}
+	cond[common.BKObjIDField] = objID
 
 	conditions := &metadata.Condition{
 		Condition: cond,
@@ -1048,6 +1058,77 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 	}
 
 	return resp, err
+}
+
+func (assoc *association) CreateManyInstAssociation(kit *rest.Kit,
+	request *metadata.CreateManyInstAsstRequest) (*metadata.CreateManyInstAsstResultDetail, error) {
+	rawErr := request.Validate()
+	if rawErr.ErrCode != 0 {
+		blog.Errorf("validate parameter failed, err: %s, rid: %s", rawErr.ToCCError(kit.CCError).Error(), kit.Rid)
+		return nil, rawErr.ToCCError(kit.CCError)
+	}
+
+	param := &metadata.CreateManyInstanceAssociation{}
+	for _, item := range request.Details {
+		param.Datas = append(param.Datas, metadata.InstAsst{
+			InstID:       item.InstID,
+			ObjectID:     request.ObjectID,
+			AsstInstID:   item.AsstInstID,
+			AsstObjectID: request.AsstObjectID,
+			ObjectAsstID: request.ObjectAsstID,
+		})
+	}
+
+	res, err := assoc.clientSet.CoreService().Association().CreateManyInstAssociation(kit.Ctx, kit.Header, param)
+	if err != nil {
+		blog.Errorf("create many instance association failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, err
+	}
+
+	if !res.Result {
+		blog.Errorf("create many instance association failed, err: %s, rid: %s", res.ErrMsg, kit.Rid)
+		return nil, kit.CCError.New(res.Code, res.ErrMsg)
+	}
+
+	resp := metadata.NewManyInstAsstResultDetail()
+	for _, item := range res.Data.Created {
+		resp.SuccessCreated[item.OriginIndex] = int64(item.ID)
+	}
+
+	for _, item := range res.Data.Repeated {
+		itemObjID, _ := item.Data.Get(common.BKObjIDField)
+		itemAsstObjID, _ := item.Data.Get(common.BKAsstObjIDField)
+		resp.Error[item.OriginIndex] = kit.CCError.CCErrorf(common.CCErrTopoAssociationAlreadyExist, itemObjID, itemAsstObjID).Error()
+	}
+
+	for _, item := range res.Data.Exceptions {
+		resp.Error[item.OriginIndex] = item.Message
+	}
+
+	if len(resp.SuccessCreated) == 0 {
+		return resp, nil
+	}
+
+	// generate audit log.
+	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	var auditList []metadata.AuditLog
+	for _, asstID := range resp.SuccessCreated {
+		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, asstID, request.ObjectID, nil)
+		if err != nil {
+			blog.Errorf("generate audit log failed, err: %s, rid: %s", err.Error(), kit.Rid)
+			return nil, kit.CCError.Error(common.CCErrAuditGenerateLogFailed)
+		}
+		auditList = append(auditList, *auditLog)
+	}
+	// save audit log.
+	err = audit.SaveAuditLog(kit, auditList...)
+	if err != nil {
+		blog.Errorf("save audit log failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
+
+	return resp, nil
 }
 
 // association.DeleteInst method will remove docs from both source-asst-collection and target-asst-collection, which is atomicity.
@@ -1253,7 +1334,8 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 
 // SearchInstAssociationUIList 与实例有关系的实例关系数据,以分页的方式返回
 // returnInstInfoObjID 根据条件查询出来关联关系，需要返回实例信息（实例名，实例ID）的模型ID
-func (assoc *association) SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, returnInstInfoObjID string, query *metadata.QueryCondition) (result []metadata.InstBaseInfo, cnt uint64, err error) {
+func (assoc *association) SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, returnInstInfoObjID string,
+	query *metadata.QueryCondition, isTargetObject bool) (result []metadata.InstBaseInfo, cnt uint64, err error) {
 	queryCond := &metadata.InstAsstQueryCondition{
 		ObjID: returnInstInfoObjID,
 	}
@@ -1281,11 +1363,10 @@ func (assoc *association) SearchInstAssociationSingleObjectInstInfo(kit *rest.Ki
 	var objIDInstIDArr []int64
 
 	for _, instAsst := range rsp.Data.Info {
-		if instAsst.ObjectID == returnInstInfoObjID {
+		if isTargetObject {
 			objIDInstIDArr = append(objIDInstIDArr, instAsst.InstID)
-		} else if instAsst.AsstObjectID == returnInstInfoObjID {
+		} else {
 			objIDInstIDArr = append(objIDInstIDArr, instAsst.AsstInstID)
-
 		}
 	}
 

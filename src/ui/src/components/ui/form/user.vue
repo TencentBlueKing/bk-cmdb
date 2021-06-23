@@ -1,13 +1,18 @@
 <template>
-  <blueking-user-selector class="cmdb-form-objuser"
-    ref="userSelector"
-    display-list-tips
-    v-bind="props"
-    v-model="localValue"
-    :class="{ 'has-fast-select': fastSelect }"
-    @focus="$emit('focus')"
-    @blur="$emit('blur')">
-  </blueking-user-selector>
+  <div class="cmdb-form-user">
+    <div class="prepend" v-if="$slots.prepend">
+      <slot name="prepend" />
+    </div>
+    <blueking-user-selector class="cmdb-form-objuser"
+      ref="userSelector"
+      display-list-tips
+      v-bind="props"
+      v-model="localValue"
+      :class="{ 'has-fast-select': fastSelect }"
+      @focus="$emit('focus')"
+      @blur="$emit('blur')">
+    </blueking-user-selector>
+  </div>
 </template>
 
 <script>
@@ -117,6 +122,13 @@
 </script>
 
 <style lang="scss" scoped>
+    .cmdb-form-user {
+      display: flex;
+
+      .prepend {
+        margin-right: -1px;
+      }
+    }
     .cmdb-form-objuser {
         width: 100%;
         &.has-fast-select {

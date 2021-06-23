@@ -25,13 +25,11 @@
           v-show="property.__extra__.visible">
           <bk-checkbox
             :disabled="!property.host_apply_enabled"
-            :value="property.id"
-          >
+            :value="property.id">
             <div
               v-if="!property.host_apply_enabled"
               v-bk-tooltips.top-start="$t('该字段不支持配置')"
-              style="outline:none"
-            >
+              style="outline:none">
               {{property.bk_property_name}}
             </div>
             <div v-else>
@@ -82,7 +80,7 @@
     },
     async created() {
       await this.getHostPropertyList()
-      this.propertyList = this.$tools.clone(this.configPropertyList.filter(property => property.host_apply_enabled))
+      this.propertyList = this.$tools.clone(this.configPropertyList)
     },
     methods: {
       async getHostPropertyList() {

@@ -245,7 +245,7 @@ func (ps *ProcServer) updateServiceInstanceName(ctx *rest.Contexts, serviceInsta
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	hostMap, err := ps.getHostIPMapByID(ctx.Kit, []int64{hostID})
+	hostMap, err := ps.Logic.GetHostIPMapByID(ctx.Kit, []int64{hostID})
 	if err != nil {
 		blog.Errorf("updateServiceInstanceName failed, getHostIPMapByID failed, hostID: %d, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
 		return err
@@ -943,7 +943,7 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 
 	// step 6:
 	// construct map {hostID ==> host}
-	hostMap, err := ps.getHostIPMapByID(ctx.Kit, hostIDs)
+	hostMap, err := ps.Logic.GetHostIPMapByID(ctx.Kit, hostIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -1005,14 +1005,15 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 				continue
 			}
 
-			changedAttributes, diffErr := ps.Logic.DiffWithProcessTemplate(property.Property, process, hostMap[serviceInstance.HostID], attributeMap)
+			changedAttributes, isChanged, diffErr := ps.Logic.DiffWithProcessTemplate(property.Property, process,
+				hostMap[serviceInstance.HostID], attributeMap, true)
 			if diffErr != nil {
 				blog.Errorf("diff with process template failed, process ID: %d  err: %v, rid: %s",
 					relation.ProcessID, err, rid)
 				return nil, errors.New(common.CCErrCommParamsInvalid, diffErr.Error())
 			}
 
-			if len(changedAttributes) == 0 {
+			if !isChanged {
 				// nothing changed
 				unchanged[relation.ProcessTemplateID] = append(unchanged[relation.ProcessTemplateID], recorder{
 					ProcessID:       relation.ProcessID,
@@ -1259,8 +1260,73 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 
 	modules, err := ps.getModules(ctx, syncOption.ModuleIDs)
 	if err != nil {
-		blog.Errorf("syncServiceInstanceByTemplate failed, getModule failed, moduleIDs: %+v, err: %s, rid: %s", syncOption.ModuleIDs, err.Error(), rid)
+		blog.ErrorJSON("get module info failed, input: %s, err: %s, rid: %s", syncOption, err.Error(), rid)
 		return err
+	}
+
+	serviceTemplateIDs := make([]int64, 0)
+	serviceTemplateModuleMap := make(map[int64][]*metadata.ModuleInst)
+	for _, module := range modules {
+		serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
+		serviceTemplateModuleMap[module.ServiceTemplateID] = append(serviceTemplateModuleMap[module.ServiceTemplateID],
+			module)
+	}
+
+	listSvcTempCond := &metadata.ListServiceTemplateOption{
+		BusinessID:         bizID,
+		ServiceTemplateIDs: serviceTemplateIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	// get service templates
+	serviceTemplates, err := ps.CoreAPI.CoreService().Process().
+		ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, listSvcTempCond)
+	if err != nil {
+		blog.ErrorJSON("ListServiceTemplates failed, input: %s, err: %s, rid: %s", listSvcTempCond, err.Error(), rid)
+		return err
+	}
+
+	// 2021年06月15日 修复模块下没有服务实例的，同步服务无效
+	// step -1:
+	// update module service category and name field
+	for _, serviceTemplate := range serviceTemplates.Info {
+		updateModules := make([]int64, 0)
+		for _, module := range serviceTemplateModuleMap[serviceTemplate.ID] {
+			if module == nil {
+				continue
+			}
+			if serviceTemplate.ServiceCategoryID != module.ServiceCategoryID ||
+				serviceTemplate.Name != module.ModuleName {
+				updateModules = append(updateModules, module.ModuleID)
+			}
+		}
+		if len(updateModules) == 0 {
+			continue
+		}
+		moduleUpdateOption := &metadata.UpdateOption{
+			Data: map[string]interface{}{
+				common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
+				common.BKModuleNameField:        serviceTemplate.Name,
+			},
+			Condition: map[string]interface{}{
+				common.BKModuleIDField: map[string]interface{}{
+					common.BKDBIN: updateModules,
+				},
+			},
+		}
+		resp, e := ps.CoreAPI.CoreService().Instance().
+			UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleUpdateOption)
+		if e != nil {
+			blog.ErrorJSON("UpdateInstance http do error, option: %s, err: %s, rid:%s",
+				moduleUpdateOption, e.Error(), rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if ccErr := resp.CCError(); ccErr != nil {
+			blog.ErrorJSON("UpdateInstance http reply error, option: %s, result: %s, rid: %s",
+				moduleUpdateOption, resp, rid)
+			return ccErr
+		}
 	}
 
 	// step 0:
@@ -1290,12 +1356,6 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 
 	// step 1:
 	// find all the process template according to the service template id
-	serviceTemplateIDs := make([]int64, 0)
-	serviceTemplateModuleMap := make(map[int64][]*metadata.ModuleInst)
-	for _, module := range modules {
-		serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
-		serviceTemplateModuleMap[module.ServiceTemplateID] = append(serviceTemplateModuleMap[module.ServiceTemplateID], module)
-	}
 	processTemplateFilter := &metadata.ListProcessTemplatesOption{
 		BusinessID:         bizID,
 		ServiceTemplateIDs: serviceTemplateIDs,
@@ -1370,7 +1430,7 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 
 	// step 5:
 	// construct map {hostID ==> host}
-	hostMap, err := ps.getHostIPMapByID(ctx.Kit, hostIDs)
+	hostMap, err := ps.Logic.GetHostIPMapByID(ctx.Kit, hostIDs)
 	if err != nil {
 		return err
 	}
@@ -1506,55 +1566,6 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 		}
 	}
 
-	// get service templates
-	serviceTemplates, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &metadata.ListServiceTemplateOption{
-		BusinessID:         bizID,
-		ServiceTemplateIDs: serviceTemplateIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	})
-	if err != nil {
-		blog.Errorf("syncServiceInstanceByTemplate failed, ListServiceTemplates failed, serviceTemplateIDs: %+v, err: %s, rid: %s", serviceTemplateIDs, err.Error(), rid)
-		return err
-	}
-
-	// step 8:
-	// update module service category and name field
-	for _, serviceTemplate := range serviceTemplates.Info {
-		updateModules := make([]int64, 0)
-		for _, module := range serviceTemplateModuleMap[serviceTemplate.ID] {
-			if module == nil {
-				continue
-			}
-			if serviceTemplate.ServiceCategoryID != module.ServiceCategoryID || serviceTemplate.Name != module.ModuleName {
-				updateModules = append(updateModules, module.ModuleID)
-			}
-		}
-		if len(updateModules) == 0 {
-			continue
-		}
-		moduleUpdateOption := &metadata.UpdateOption{
-			Data: map[string]interface{}{
-				common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
-				common.BKModuleNameField:        serviceTemplate.Name,
-			},
-			Condition: map[string]interface{}{
-				common.BKModuleIDField: map[string]interface{}{
-					common.BKDBIN: updateModules,
-				},
-			},
-		}
-		resp, e := ps.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleUpdateOption)
-		if e != nil {
-			blog.ErrorJSON("syncServiceInstanceByTemplate failed, UpdateInstance failed, option: %s, err: %s, rid:%s", moduleUpdateOption, e.Error(), rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if ccErr := resp.CCError(); ccErr != nil {
-			blog.ErrorJSON("syncServiceInstanceByTemplate failed, UpdateInstance failed, option: %s, result: %s, rid: %s", moduleUpdateOption, resp, rid)
-			return ccErr
-		}
-	}
 	return nil
 }
 
@@ -1875,36 +1886,4 @@ func (ps *ProcServer) DeleteServiceInstancePreview(ctx *rest.Contexts) {
 	}
 	preview.HostApplyPlan = applyPlan
 	ctx.RespEntity(preview)
-}
-
-// getHostIPMapByID get host ID to ip data map by host IDs, used for bind ip with first inner or outer IP
-func (ps *ProcServer) getHostIPMapByID(kit *rest.Kit, hostIDs []int64) (map[int64]map[string]interface{}, errors.CCErrorCoder) {
-	hostReq := metadata.QueryInput{
-		Condition: map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}},
-		Fields:    common.BKHostIDField + "," + common.BKHostInnerIPField + "," + common.BKHostOuterIPField,
-		Limit:     common.BKNoLimit,
-	}
-
-	hostRes, err := ps.CoreAPI.CoreService().Host().GetHosts(kit.Ctx, kit.Header, &hostReq)
-	if err != nil {
-		blog.Errorf("get hosts failed, err: %s, hostIDs: %+v, rid: %s", err.Error(), hostIDs, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if !hostRes.Result {
-		blog.Errorf("get hosts failed, err: %s, hostIDs: %+v, rid: %s", hostRes.ErrMsg, hostIDs, kit.Rid)
-		return nil, hostRes.CCError()
-	}
-
-	hostMap := make(map[int64]map[string]interface{})
-	for _, host := range hostRes.Data.Info {
-		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
-		if err != nil {
-			blog.Errorf("host id invalid, err: %s, host: %+v, rid: %s", err.Error(), host, kit.Rid)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
-		}
-		hostMap[hostID] = host
-	}
-
-	return hostMap, nil
 }

@@ -13,6 +13,7 @@
 package config
 
 import (
+	"errors"
 	"net"
 
 	"configcenter/src/common/blog"
@@ -52,6 +53,10 @@ type MonitorConfig struct {
 	Burst int64
 	// SourceIP is the source ip address to report data
 	SourceIP string
+	// Gse cmd path
+	GsecmdlinePath string
+	// Domain Socket Path
+	DomainSocketPath string
 }
 
 // SetMonitorSourceIP set monitor source ip
@@ -75,7 +80,7 @@ func SetMonitorSourceIP() {
 }
 
 // CheckAndCorrectCfg check the config, correct it if config is wrong
-func CheckAndCorrectCfg() {
+func CheckAndCorrectCfg() error {
 	if MonitorCfg.QueueSize < QueueSizeMin || MonitorCfg.QueueSize > QueueSizeMax {
 		MonitorCfg.QueueSize = QueueSizeDefault
 	}
@@ -87,4 +92,21 @@ func CheckAndCorrectCfg() {
 	if MonitorCfg.Burst < BurstMin || MonitorCfg.Burst > BurstMax {
 		MonitorCfg.Burst = BurstDefault
 	}
+
+	if MonitorCfg.DataID == 0 {
+		blog.Errorf("init monitor failed, config monitor.dataID is not set")
+		return errors.New("config monitor.dataID is not set")
+	}
+
+	if MonitorCfg.DomainSocketPath == "" {
+		blog.Errorf("init monitor failed, config monitor.domainSocketPath is not set")
+		return errors.New("config monitor.domainSocketPath is not set")
+	}
+
+	if MonitorCfg.GsecmdlinePath == "" {
+		blog.Errorf("init monitor failed, config monitor.gsecmdlinePath is not set")
+		return errors.New("config monitor.gsecmdlinePath is not set")
+	}
+
+	return nil
 }

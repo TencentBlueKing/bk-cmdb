@@ -106,7 +106,7 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 func ValidateCCFieldType(propertyType string, keyLen int) bool {
 	if keyLen == 1 {
 		switch propertyType {
-		case common.FieldTypeSingleChar, common.FieldTypeInt, common.FieldTypeFloat:
+		case common.FieldTypeSingleChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeList:
 			return true
 		default:
 			return false

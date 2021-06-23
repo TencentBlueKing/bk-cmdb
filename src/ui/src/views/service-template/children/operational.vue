@@ -21,10 +21,10 @@
               <template v-if="isCreateMode || isEditName">
                 <bk-input type="text" class="cmdb-form-input fl" ref="templateNameInput" id="templateName"
                   name="templateName"
-                  :placeholder="$t('请输入模板名称')"
+                  :placeholder="$t('模板名称将作为实例化后的模块名')"
                   :class="{ 'is-edit-name': isEditName }"
                   v-model.trim="formData.templateName"
-                  v-validate="'required|singlechar|length:256'">
+                  v-validate="'required|businessTopoInstNames|length:32'">
                 </bk-input>
                 <p class="form-error">{{errors.first('templateName')}}</p>
               </template>
@@ -566,12 +566,13 @@
         this.showSyncInstanceTips()
       },
       showSyncInstanceTips(text = '成功更新模板进程，您可以通过XXX') {
-        const message = () => (
-                    <i18n path={text} tag="div" class="process-success-message">
-                        <bk-link place="link" theme="primary" onClick={this.handleToSyncInstance}>{this.$t('同步功能')}</bk-link>
-                    </i18n>
-                )
-        this.$success(message())
+        // eslint-disable-next-line no-unused-vars
+        const message = (h => (
+          <i18n path={text} tag="div" class="process-success-message">
+            <bk-link place="link" theme="primary" onClick={this.handleToSyncInstance}>{this.$t('同步功能')}</bk-link>
+          </i18n>
+        ))(this.$createElement)
+        this.$success(message)
       },
       handleCreateProcess() {
         this.slider.show = true

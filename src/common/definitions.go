@@ -774,7 +774,7 @@ const (
 	FieldTypeServiceCategoryRegexp string = `^([\w\p{Han}]|[:\-\(\)])+$`
 
 	//FieldTypeMainlineRegexp the mainline instance name regex expression
-	FieldTypeMainlineRegexp string = `^[^#/,><|]+$`
+	FieldTypeMainlineRegexp string = `^[^\\\|\/:\*,<>"\?#\s]+$`
 
 	//FieldTypeSingleCharRegexp the single char regex expression
 	//FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
@@ -985,6 +985,12 @@ const (
 	HostOSTypeEnumLinux   = "1"
 	HostOSTypeEnumWindows = "2"
 	HostOSTypeEnumAIX     = "3"
+	HostOSTypeEnumUNIX    = "4"
+)
+
+const (
+	MaxProcessPrio = 10000
+	MinProcessPrio = -100
 )
 
 // integer const
@@ -1019,7 +1025,7 @@ const (
 const (
 	// URLFilterWhiteList url filter white list not execute any filter
 	// multiple url separated by commas
-	URLFilterWhiteListSuffix = "/healthz,/version"
+	URLFilterWhiteListSuffix = "/healthz,/version,/monitor_healthz"
 
 	URLFilterWhiteListSepareteChar = ","
 )
@@ -1170,7 +1176,8 @@ const (
 )
 
 const (
-	NameFieldMaxLength = 256
+	NameFieldMaxLength         = 256
+	MainlineNameFieldMaxLength = 32
 
 	// 用于表示还未设置服务模板的情况，比如没有绑定服务模板
 	ServiceTemplateIDNotSet = 0

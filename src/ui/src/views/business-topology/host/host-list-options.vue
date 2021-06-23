@@ -21,7 +21,7 @@
         @hide="isTransferMenuOpen = false">
         <bk-button slot="dropdown-trigger"
           :disabled="!hasSelection">
-          <span>{{$t('转移')}}</span>
+          <span>{{$t('转移至')}}</span>
           <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isTransferMenuOpen }]"></i>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content">
@@ -32,7 +32,7 @@
               { type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }
             ]"
             @click="handleTransfer($event, 'idle', false)">
-            {{$t('至空闲模块')}}
+            {{$t('空闲模块')}}
           </cmdb-auth>
           <cmdb-auth tag="li" class="bk-dropdown-item"
             :auth="[
@@ -41,40 +41,61 @@
               { type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }
             ]"
             @click="handleTransfer($event, 'business', false)">
-            {{$t('至业务模块')}}
+            {{$t('业务模块')}}
+          </cmdb-auth>
+          <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]"
+            @click="handleTransfer($event, 'resource', !isIdleModule)">
+            {{$t('主机池')}}
+          </li>
+          <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]"
+            @click="handleTransfer($event, 'acrossBusiness', !isIdleModule)">
+            {{$t('其他业务')}}
+          </li>
+        </ul>
+      </bk-dropdown-menu>
+      <bk-dropdown-menu class="option ml10" trigger="click"
+        font-size="medium"
+        :disabled="!hasSelection"
+        @show="isAddToOpen = true"
+        @hide="isAddToOpen = false">
+        <bk-button slot="dropdown-trigger"
+          :disabled="!hasSelection">
+          <span>{{$t('追加至')}}</span>
+          <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isAddToOpen }]"></i>
+        </bk-button>
+        <ul class="bk-dropdown-list" slot="dropdown-content">
+          <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
+            :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
+            <span href="javascript:void(0)"
+              slot-scope="{ disabled }"
+              :class="{ disabled: !isNormalModuleNode || disabled }"
+              @click="handleTransfer($event, 'increment', !isNormalModuleNode)">
+              {{$t('业务模块')}}
+            </span>
           </cmdb-auth>
         </ul>
       </bk-dropdown-menu>
       <bk-dropdown-menu class="option ml10" trigger="click"
-        v-show="showRemoveMenu"
+        v-show="isNormalModuleNode"
         font-size="medium"
         :disabled="!hasSelection"
         @show="isRemoveMenuOpen = true"
         @hide="isRemoveMenuOpen = false">
         <bk-button slot="dropdown-trigger"
           :disabled="!hasSelection">
-          <span>{{$t('移除')}}</span>
+          <span>{{$t('移出')}}</span>
           <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isRemoveMenuOpen }]"></i>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content">
-          <li :class="['bk-dropdown-item', { disabled: !hasSelection }]"
-            v-bk-tooltips.right="{
-              disabled: hasSelection,
-              content: $t('请先选择主机'),
-              boundary: 'window'
-            }"
-            @click="handleTransfer($event, 'resource', !hasSelection)">
-            {{$t('至主机池')}}
-          </li>
-          <li :class="['bk-dropdown-item', { disabled: !hasSelection }]"
-            v-bk-tooltips.right="{
-              disabled: hasSelection,
-              content: $t('请先选择主机'),
-              boundary: 'window'
-            }"
-            @click="handleTransfer($event, 'acrossBusiness', !hasSelection)">
-            {{$t('至其他业务')}}
-          </li>
+          <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
+            :auth="{ type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }">
+            <span href="javascript:void(0)"
+              slot-scope="{ disabled }"
+              :class="{ disabled: !removeAvailable || disabled }"
+              @click="handleRemove($event)">
+              {{$t('当前模块')}}
+            </span>
+          </cmdb-auth>
         </ul>
       </bk-dropdown-menu>
       <cmdb-clipboard-selector class="options-clipboard ml10"
@@ -92,16 +113,6 @@
           <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isMoreMenuOpen }]"></i>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content">
-          <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
-            v-if="showRemove"
-            :auth="{ type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }">
-            <span href="javascript:void(0)"
-              slot-scope="{ disabled }"
-              :class="{ disabled: !hasSelection || disabled }"
-              @click="handleRemove($event)">
-              {{$t('移除')}}
-            </span>
-          </cmdb-auth>
           <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)">
             {{$t('导出选中')}}
           </li>
@@ -166,9 +177,9 @@
   import FilterCollection from '@/components/filters/filter-collection'
   import FilterFastSearch from '@/components/filters/filter-fast-search'
   import FilterStore from '@/components/filters/store'
-  import ExportFields from '@/components/export-fields/export-fields.js'
   import FilterUtils from '@/components/filters/utils'
-  import batchExport from '@/components/batch-export/index.js'
+  import { update as updateHost } from '@/service/host/import'
+  import RouterQuery from '@/router/query'
   export default {
     components: {
       FilterCollection,
@@ -182,6 +193,7 @@
         isTransferMenuOpen: false,
         isRemoveMenuOpen: false,
         isMoreMenuOpen: false,
+        isAddToOpen: false,
         dialog: {
           show: false,
           props: {
@@ -232,20 +244,11 @@
       isIdleSetModules() {
         return this.selection.every(data => data.module.every(module => module.default >= 1))
       },
-      showRemoveMenu() {
-        if (!this.selectedNode) return false
-        const { data } = this.selectedNode
-        return data.is_idle_set || data.default === 1 || data.bk_obj_id === 'biz'
-      },
-      /**
-       * 暂时屏蔽从当前模块移出主机的功能
-       */
-      showRemove() {
-        return false
-        // return this.selectedNode
-        //     && !this.selectedNode.data.is_idle_set
-        //     && this.selectedNode.data.bk_obj_id === 'module'
-        //     && this.selectedNode.data.default !== 1
+      removeAvailable() {
+        return this.selectedNode
+          && !this.selectedNode.data.is_idle_set
+          && this.selectedNode.data.bk_obj_id === 'module'
+          && this.selectedNode.data.default !== 1
       },
       clipboardList() {
         const IPWithCloud = FilterUtils.defineProperty({
@@ -277,7 +280,7 @@
         this.dialog.show = true
       },
       handleRemove(event) {
-        if (!this.hasSelection) {
+        if (!this.hasSelection || !this.removeAvailable) {
           event.stopPropagation()
           return false
         }
@@ -295,82 +298,98 @@
           history: true
         })
       },
-      handleExport(event) {
+      async handleExport(event) {
         if (!this.hasSelection) {
           event.stopPropagation()
           return false
         }
-        ExportFields.show({
+        const useExport = await import('@/components/export-file')
+        useExport.default({
           title: this.$t('导出选中'),
-          properties: FilterStore.getModelProperties('host'),
-          propertyGroups: FilterStore.propertyGroups,
-          handler: this.exportHanlder
-        })
-      },
-      async exportHanlder(properties) {
-        const formData = new FormData()
-        formData.append('bk_biz_id', this.bizId)
-        formData.append('bk_host_id', this.selection.map(({ host }) => host.bk_host_id).join(','))
-        formData.append('export_custom_fields', properties.map(property => property.bk_property_id))
-        try {
-          this.$store.commit('setGlobalLoading', true)
-          await this.$http.download({
-            url: `${window.API_HOST}hosts/export`,
-            method: 'post',
-            data: formData
-          })
-        } catch (error) {
-          console.error(error)
-        } finally {
-          this.$store.commit('setGlobalLoading', false)
-        }
+          bk_biz_id: this.bizId,
+          bk_obj_id: 'host',
+          presetFields: ['bk_cloud_id', 'bk_host_innerip'],
+          count: this.selection.length,
+          submit: (state, task) => {
+            const { fields, exportRelation  } = state
+            const params = {
+              export_custom_fields: fields.value.map(property => property.bk_property_id),
+              bk_host_ids: this.selection.map(({ host }) => host.bk_host_id),
+              bk_biz_id: this.bizId
+            }
+            if (exportRelation.value) {
+              params.object_unique_id = state.object_unique_id.value
+              params.association_condition = state.relations.value
+            }
+            return this.$http.download({
+              url: `${window.API_HOST}hosts/export`,
+              method: 'post',
+              name: task.current.value.name,
+              data: params
+            })
+          }
+        }).show()
       },
       async handleBatchExport(event) {
         if (!this.count) {
           event.stopPropagation()
           return false
         }
-        ExportFields.show({
+        const useExport = await import('@/components/export-file')
+        useExport.default({
           title: this.$t('导出全部'),
-          properties: FilterStore.getModelProperties('host'),
-          propertyGroups: FilterStore.propertyGroups,
-          handler: this.batchExportHandler
-        })
-      },
-      batchExportHandler(properties) {
-        batchExport({
-          name: 'host',
+          bk_biz_id: this.bizId,
+          bk_obj_id: 'host',
+          presetFields: ['bk_cloud_id', 'bk_host_innerip'],
           count: this.count,
-          options: (page) => {
-            const condition = this.$parent.getParams()
-            const formData = new FormData()
-            formData.append('bk_biz_id', this.bizId)
-            formData.append('export_custom_fields', properties.map(property => property.bk_property_id))
-            formData.append('export_condition', JSON.stringify({
-              ...condition,
-              page: {
-                ...page,
-                sort: 'bk_host_id'
+          submit: (state, task) => {
+            const { fields, exportRelation  } = state
+            const exportCondition = this.$parent.getParams()
+            const params = {
+              export_custom_fields: fields.value.map(property => property.bk_property_id),
+              bk_biz_id: this.bizId,
+              export_condition: {
+                ...exportCondition,
+                page: {
+                  ...task.current.value.page,
+                  sort: 'bk_host_id'
+                }
               }
-            }))
-            return {
+            }
+            if (exportRelation.value) {
+              params.object_unique_id = state.object_unique_id.value
+              params.association_condition = state.relations.value
+            }
+            return this.$http.download({
               url: `${window.API_HOST}hosts/export`,
               method: 'post',
-              data: formData
-            }
+              name: task.current.value.name,
+              data: params
+            })
           }
-        })
+        }).show()
       },
-      handleExcelUpdate() {
-        this.sideslider.component = CmdbImport.name
-        this.sideslider.componentProps = {
-          templateUrl: `${window.API_HOST}importtemplate/host`,
-          importUrl: `${window.API_HOST}hosts/update`,
-          templdateAvailable: false,
-          importPayload: { bk_biz_id: this.bizId }
-        }
-        this.sideslider.title = this.$t('更新主机属性')
-        this.sideslider.show = true
+      async handleExcelUpdate() {
+        const useImport = await import('@/components/import-file')
+        const [, { show: showImport, setState: setImportState }] = useImport.default()
+        setImportState({
+          title: this.$t('更新主机属性'),
+          bk_obj_id: 'host',
+          fileTips: `${this.$t('导入文件大小提示')},${this.$t('主机导入文件提示')}`,
+          submit: (options) => {
+            const params = {
+              bk_biz_id: this.bizId,
+              op: options.step
+            }
+            if (options.importRelation) {
+              params.object_unique_id = options.object_unique_id
+              params.association_condition = options.relations
+            }
+            return updateHost({ file: options.file, params, config: options.config })
+          },
+          success: () => RouterQuery.set({ _t: Date.now() })
+        })
+        showImport()
       },
       handleCopy(property) {
         const copyText = this.selection.map((data) => {

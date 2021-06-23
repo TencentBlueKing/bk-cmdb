@@ -480,6 +480,9 @@ const (
 	// CCErrorCheckRegularFailed check regular expression failed
 	CCErrorCheckRegularFailed = 1101109
 
+	// CCErrorTopObjectUniqueIndexNotFound  模型xx的唯一校验xx不存在
+	CCErrorTopObjectUniqueIndexNotFound = 1101110
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
@@ -628,6 +631,7 @@ const (
 	CCErrAuditTakeSnapshotFailed = 1109002
 	CCErrAuditSelectFailed       = 1109003
 	CCErrAuditSelectTimeout      = 1109004
+	CCErrAuditGenerateLogFailed  = 1109005
 
 	// host server
 	CCErrHostGetFail              = 1110001

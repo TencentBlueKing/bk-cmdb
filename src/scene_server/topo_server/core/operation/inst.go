@@ -39,6 +39,7 @@ import (
 type InstOperationInterface interface {
 	CreateInst(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
 	CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error)
+	CreateManyInstance(kit *rest.Kit, obj model.Object, data []mapstr.MapStr) (*metadata.CreateManyCommInstResultDetail, error)
 	DeleteInst(kit *rest.Kit, objectID string, cond mapstr.MapStr, needCheckHost bool) error
 	DeleteMainlineInstWithID(kit *rest.Kit, obj model.Object, instID int64) error
 	DeleteInstByInstID(kit *rest.Kit, objectID string, instID []int64, needCheckHost bool) error
@@ -393,6 +394,73 @@ func (c *commonInst) CreateInst(kit *rest.Kit, obj model.Object, data mapstr.Map
 	}
 
 	return item, nil
+}
+
+func (c *commonInst) CreateManyInstance(kit *rest.Kit, obj model.Object,
+	data []mapstr.MapStr) (*metadata.CreateManyCommInstResultDetail, error) {
+	object := obj.Object()
+
+	if len(data) == 0 {
+		blog.Errorf("details cannot be empty, rid: %s", kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommInstDataNil, "details")
+	}
+	if len(data) > 200 {
+		blog.Errorf("details cannot more than 200, details number: %s, rid: %s", len(data), kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "details", 200)
+	}
+
+	params := &metadata.CreateManyModelInstance{Datas: data}
+	resp := metadata.NewManyCommInstResultDetail()
+	res, err := c.clientSet.CoreService().Instance().CreateManyInstance(kit.Ctx, kit.Header, object.ObjectID, params)
+	if err != nil {
+		blog.Errorf("failed to save the object(%s) instances, err: %s, rid: %s", object.ObjectID, err.Error(), kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	var successIDs []int64
+	for _, item := range res.Data.Created {
+		resp.SuccessCreated[item.OriginIndex] = int64(item.ID)
+		successIDs = append(successIDs, int64(item.ID))
+	}
+
+	for _, item := range res.Data.Repeated {
+		errMsg, err := item.Data.String("err_msg")
+		if err != nil {
+			blog.Errorf("get result repeated data failed, err: %s, rid: %s", err.Error(), kit.Rid)
+			return nil, err
+		}
+		resp.Error[item.OriginIndex] = errMsg
+	}
+
+	for _, item := range res.Data.Exceptions {
+		resp.Error[item.OriginIndex] = item.Message
+	}
+
+	if len(successIDs) == 0 {
+		return resp, nil
+	}
+
+	// generate audit log of instance.
+	cond := map[string]interface{}{
+		common.BKInstIDField: map[string]interface{}{
+			common.BKDBIN: successIDs,
+		},
+	}
+	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, object.ObjectID, cond)
+	if err != nil {
+		blog.Errorf("create many instances, generate audit log failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrAuditGenerateLogFailed, err.Error())
+	}
+
+	// save audit log.
+	err = audit.SaveAuditLog(kit, auditLog...)
+	if err != nil {
+		blog.Errorf("creat many instances, save audit log failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
+	return resp, nil
 }
 
 func (c *commonInst) innerHasHost(kit *rest.Kit, moduleIDS []int64) (bool, error) {
@@ -1015,6 +1083,7 @@ func (c *commonInst) FindInstTopo(kit *rest.Kit, obj model.Object, instID int64,
 	return len(results), results, nil
 }
 
+// FindInstByAssociationInst deprecated function.
 func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, objID string, asstParamCond *AssociationParams) (*metadata.InstResult, error) {
 
 	instCond := map[string]interface{}{}
@@ -1045,6 +1114,19 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, objID string, asst
 							instCond[objCondition.Field] = map[string]interface{}{
 								objCondition.Operator: objCondition.Value,
 							}
+						}
+					} else if objCondition.Operator == common.BKDBLT ||
+						objCondition.Operator == common.BKDBLTE ||
+						objCondition.Operator == common.BKDBGT ||
+						objCondition.Operator == common.BKDBGTE {
+
+						// fix condition covered when do date range search action.
+						// ISSUE: https://github.com/Tencent/bk-cmdb/issues/5302
+						if _, isExist := instCond[objCondition.Field]; !isExist {
+							instCond[objCondition.Field] = make(map[string]interface{})
+						}
+						if condValue, ok := instCond[objCondition.Field].(map[string]interface{}); ok {
+							condValue[objCondition.Operator] = objCondition.Value
 						}
 					} else {
 						// deal self condition

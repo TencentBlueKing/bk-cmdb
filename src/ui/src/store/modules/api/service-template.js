@@ -97,6 +97,10 @@ const actions = {
 
   getServiceTemplateModules(context, { bizId, serviceTemplateId, params, config }) {
     return $http.post(`module/bk_biz_id/${bizId}/service_template_id/${serviceTemplateId}`, params, config)
+  },
+
+  getServiceTemplateSyncStatus(context, { bizId, params, config }) {
+    return $http.post(`findmany/proc/service_template/sync_status/biz/${bizId}`, params, config)
   }
 }
 

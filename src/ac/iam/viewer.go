@@ -19,9 +19,9 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/auth"
 	"configcenter/src/common/util"
 )
 
@@ -169,6 +169,15 @@ func (v *viewer) unregisterModelActions(ctx context.Context, objects []metadata.
 	for _, obj := range objects {
 		actionIDs = append(actionIDs, genDynamicActionIDs(obj)...)
 	}
+
+	// before deleting action, the dependent action polices must be deleted
+	for _, actionID := range actionIDs {
+		if err := v.iam.client.DeleteActionPolicies(ctx, actionID); err != nil {
+			blog.Errorf("delete action %s policies failed, err: %s, rid: %s", actionID, err, rid)
+			return err
+		}
+	}
+
 	if err := v.iam.client.DeleteActions(ctx, actionIDs); err != nil {
 		blog.ErrorJSON("unregister actions failed, error: %s, objects: %s, actionIDs: %s, rid:%s",
 			err.Error(), objects, actionIDs, rid)

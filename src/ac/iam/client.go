@@ -100,6 +100,9 @@ type iamClientInterface interface {
 	RegisterCommonActions(ctx context.Context, commonActions []CommonAction) error
 	// UpdateCommonActions update common actions in IAM
 	UpdateCommonActions(ctx context.Context, commonActions []CommonAction) error
+
+	// DeleteActionPolicies delete action policies in IAM
+	DeleteActionPolicies(ctx context.Context, actionID ActionID) error
 }
 
 func (c *iamClient) RegisterSystem(ctx context.Context, sys System) error {
@@ -545,6 +548,28 @@ func (c *iamClient) UpdateCommonActions(ctx context.Context, commonActions []Com
 			RequestID: result.Header.Get(IamRequestHeader),
 			Reason: fmt.Errorf("update common actions %v failed, code: %d, msg: %s", commonActions, resp.Code,
 				resp.Message),
+		}
+	}
+
+	return nil
+}
+
+func (c *iamClient) DeleteActionPolicies(ctx context.Context, actionID ActionID) error {
+	resp := new(BaseResponse)
+	result := c.client.Delete().
+		SubResourcef("/api/v1/model/systems/%s/actions/%s/policies", c.config.SystemID, actionID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		Do()
+	err := result.Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("delete action %s policies failed, code: %d, msg: %s", actionID, resp.Code, resp.Message),
 		}
 	}
 

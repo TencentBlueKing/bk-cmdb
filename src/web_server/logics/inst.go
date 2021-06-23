@@ -16,8 +16,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -53,22 +51,15 @@ func (lgc *Logics) GetImportInsts(ctx context.Context, f *xlsx.File, objID strin
 	}
 }
 
-func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Header, kvMap mapstr.MapStr) ([]mapstr.MapStr, error) {
+func (lgc *Logics) GetInstData(objID string, instIDArr []int64, header http.Header) ([]mapstr.MapStr, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	instIDArr := strings.Split(instIDStr, ",")
 	searchCond := mapstr.MapStr{}
-
-	iInstIDArr := make([]int, 0)
-	for _, j := range instIDArr {
-		instID, _ := strconv.Atoi(j)
-		iInstIDArr = append(iInstIDArr, instID)
-	}
 
 	searchCond["fields"] = []string{}
 	searchCond["condition"] = mapstr.MapStr{
 		common.BKInstIDField: mapstr.MapStr{
-			common.BKDBIN: iInstIDArr,
+			common.BKDBIN: instIDArr,
 		},
 		common.BKObjIDField: objID,
 	}
@@ -89,30 +80,35 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 		return nil, defErr.Error(common.CCErrAPINoObjectInstancesIsFound)
 	}
 
-	// read object attributes
-	attrCond := mapstr.MapStr{}
-	attrCond[common.BKObjIDField] = objID
-	attrCond[common.BKOwnerIDField] = ownerID
-	attrResult, aErr := lgc.Engine.CoreAPI.ApiServer().GetObjectAttr(context.Background(), header, attrCond)
-	if nil != aErr {
-		blog.Errorf("get object: %s instance, but get object attr error: %v, rid: %s", objID, aErr, rid)
-		return nil, defErr.Error(common.CCErrTopoObjectAttributeSelectFailed)
-	}
-
-	if !attrResult.Result {
-		blog.Errorf("get object: %s instance, but get object attr error: %s, rid: %s", objID, attrResult.Code, rid)
-		return nil, defErr.Error(common.CCErrTopoObjectAttributeSelectFailed)
-	}
-
-	for _, cell := range attrResult.Data {
-		kvMap.Set(cell.PropertyID, cell.PropertyName)
-	}
-
 	return result.Data.Info, nil
 }
 
-// ImportHosts import host info
-func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header, defLang lang.DefaultCCLanguageIf, modelBizID int64) (resultData mapstr.MapStr, errCode int, err error) {
+// ImportInsts import host info
+func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header,
+	defLang lang.DefaultCCLanguageIf, modelBizID int64, opType int64, AsstObjectUniqueIDMap map[string]int64, objectUniqueID int64) (
+	resultData mapstr.MapStr, errCode int, err error) {
+
+	rid := util.GetHTTPCCRequestID(header)
+
+	if opType == 1 {
+		if len(f.Sheets) < 2 {
+			return nil, 0, nil
+		}
+		info, err := lgc.importStatisticsAssociation(ctx, header, objID, f.Sheets[1])
+		if err != nil {
+			blog.Errorf("ImportHosts failed, GetImportHosts error:%s, rid: %s", err.Error(), rid)
+			return nil, err.GetCode(), err
+		}
+		return mapstr.MapStr{"association": info}, 0, nil
+	}
+
+	return lgc.importInsts(ctx, f, objID, header, defLang, modelBizID, AsstObjectUniqueIDMap, objectUniqueID)
+}
+
+// importInsts import insts info
+func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header,
+	defLang lang.DefaultCCLanguageIf, modelBizID int64, asstObjectUniqueIDMap map[string]int64, objectUniqueID int64) (
+	resultData mapstr.MapStr, errCode int, err error) {
 	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	resultData = mapstr.New()
@@ -149,12 +145,14 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 
 	}
 
-	if len(f.Sheets) > 2 {
+	if len(f.Sheets) > 2 && len(asstObjectUniqueIDMap) > 0 {
 		asstInfoMap := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset)
 
 		if len(asstInfoMap) > 0 {
 			asstInfoMapInput := &metadata.RequestImportAssociation{
-				AssociationInfoMap: asstInfoMap,
+				AssociationInfoMap:    asstInfoMap,
+				AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
+				ObjectUniqueID:        objectUniqueID,
 			}
 			asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, objID, asstInfoMapInput)
 			if nil != asstResultErr {

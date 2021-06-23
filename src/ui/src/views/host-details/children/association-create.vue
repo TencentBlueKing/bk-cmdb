@@ -100,6 +100,7 @@
         table: {
           header: [],
           list: [],
+          originalList: [],
           pagination: {
             count: 0,
             current: 1,
@@ -559,7 +560,10 @@
         })
       },
       getHostCondition() {
-        const condition = [{ bk_obj_id: 'host', condition: [], fields: [] }]
+        const condition = [
+          { bk_obj_id: 'host', condition: [], fields: [] },
+          { bk_obj_id: 'biz', condition: [], fields: ['bk_module_id'] }
+        ]
         const property = this.getProperty(this.filter.id)
         if (this.filter.value !== '' && property) {
           condition[0].condition.push({
@@ -613,6 +617,7 @@
       setTableList(data, asstObjId) {
         // const properties = this.properties
         this.table.pagination.count = data.count
+        this.table.originalList = Object.freeze(data.info.slice())
         if (asstObjId === 'host') {
           data.info = data.info.map(item => item.host)
         }

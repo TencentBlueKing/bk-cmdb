@@ -533,7 +533,21 @@
       isTemplate(node) {
         return node.data.service_template_id || node.data.set_template_id
       },
-      refreshCount({ type, hosts, target }) {
+      async refreshCount({ type, hosts, target }) {
+        // 转移目标为空闲模块强制使用接口数据刷新host_count，解决就地转移到同一空闲模块count错误问题
+        if (target && target.data.default !== 0 && type === 'host_count') {
+          const internal = await this.getInternalTopology()
+          const modules = internal.module || []
+          modules.forEach((module) => {
+            const targetNode = this.$refs.tree.getNodeById(`module-${module.bk_module_id}`)
+            if (targetNode) {
+              targetNode.data.host_count = module.host_count
+            }
+          })
+
+          return
+        }
+
         hosts.forEach((data) => {
           data.module.forEach((module) => {
             if (!target || target.data.bk_inst_id !== module.bk_module_id) {

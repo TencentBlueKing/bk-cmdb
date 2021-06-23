@@ -319,13 +319,14 @@ const (
 
 	FindAuditLog ActionID = "find_audit_log"
 
-	WatchHostEvent         ActionID = "watch_host_event"
-	WatchHostRelationEvent ActionID = "watch_host_relation_event"
-	WatchBizEvent          ActionID = "watch_biz_event"
-	WatchSetEvent          ActionID = "watch_set_event"
-	WatchModuleEvent       ActionID = "watch_module_event"
-	WatchProcessEvent      ActionID = "watch_process_event"
-	GlobalSettings         ActionID = "global_settings"
+	WatchHostEvent           ActionID = "watch_host_event"
+	WatchHostRelationEvent   ActionID = "watch_host_relation_event"
+	WatchBizEvent            ActionID = "watch_biz_event"
+	WatchSetEvent            ActionID = "watch_set_event"
+	WatchModuleEvent         ActionID = "watch_module_event"
+	WatchProcessEvent        ActionID = "watch_process_event"
+	WatchCommonInstanceEvent ActionID = "watch_object_instance_event"
+	GlobalSettings           ActionID = "global_settings"
 
 	// Unknown is an action that can not be recognized
 	Unsupported ActionID = "unsupported"

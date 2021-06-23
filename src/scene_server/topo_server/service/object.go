@@ -15,7 +15,6 @@ package service
 import (
 	"fmt"
 	"strconv"
-	"time"
 
 	"configcenter/src/ac"
 	"configcenter/src/ac/iam"
@@ -59,14 +58,6 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 		}
 		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
-	}
-
-	// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
-	// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
-	// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
-	// Collection minimum is Timestamp(1616747878, 5)
-	if err := s.createObjectTableBatch(ctx, *data); err != nil {
-		ctx.RespAutoError(err)
 	}
 
 	var ret mapstr.MapStr
@@ -310,8 +301,6 @@ func (s *Service) createObjectTableBatch(ctx *rest.Contexts, objectMap map[strin
 		}
 	}
 
-	// 表创建成功后，需要sleep 要不然有查询操作会报错
-	time.Sleep(time.Millisecond * 400)
 	return s.Engine.CoreAPI.CoreService().Model().CreateModelTables(ctx.Kit.Ctx, ctx.Kit.Header, input)
 }
 

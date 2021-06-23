@@ -19,7 +19,6 @@ import (
 	"regexp"
 	"strconv"
 
-	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -312,6 +311,12 @@ const (
 var (
 	updateObjectAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/update/objectassociation/[0-9]+/?$`)
 	deleteObjectAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/delete/objectassociation/[0-9]+/?$`)
+	// excel 导入关联关系专用接口
+	findAssociationByObjectAssociationIDLatestRegexp = regexp.MustCompile(
+		`^/api/v3/topo/find/object/[^\s/]+/association/by/bk_obj_asst_id$`)
+	// excel 导入关联关系专用接口
+	importAssociationByObjectAssociationIDLatestRegexp = regexp.MustCompile(
+		`^/api/v3/import/instassociation/[^\s/]+$`)
 )
 
 func (ps *parseStream) objectAssociationLatest() *parseStream {
@@ -509,6 +514,34 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 		return ps
 	}
 
+	// excel 导入关联关系专用接口, 跳过鉴权
+	if ps.hitRegexp(findAssociationByObjectAssociationIDLatestRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: 0,
+				Basic: meta.Basic{
+					Type:   meta.ModelAssociation,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// excel 导入关联关系专用接口, 跳过鉴权
+	if ps.hitRegexp(importAssociationByObjectAssociationIDLatestRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: 0,
+				Basic: meta.Basic{
+					Type:   meta.ModelAssociation,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
 	return ps
 }
 
@@ -516,6 +549,7 @@ const (
 	findObjectInstanceAssociationLatestPattern        = "/api/v3/find/instassociation"
 	findObjectInstanceAssociationRelatedLatestPattern = "/api/v3/find/instassociation/related"
 	createObjectInstanceAssociationLatestPattern      = "/api/v3/create/instassociation"
+	createObjectManyInstanceAssociationLatestPattern  = "/api/v3/createmany/instassociation"
 )
 
 var (
@@ -523,6 +557,9 @@ var (
 	deleteObjectInstanceAssociationBatchLatestRegexp = regexp.MustCompile("^/api/v3/delete/instassociation/batch")
 	findObjectInstanceTopologyUILatestRegexp         = regexp.MustCompile(`^/api/v3/findmany/inst/association/object/[^\s/]+/inst_id/[0-9]+/offset/[0-9]+/limit/[0-9]+/web$`)
 	findInstAssociationObjInstInfoLatestRegexp       = regexp.MustCompile(`^/api/v3/findmany/inst/association/association_object/inst_base_info$`)
+
+	searchInstanceAssociationsRegexp = regexp.MustCompile(`^/api/v3/search/instance_associations/object/[^\s/]+/?$`)
+	countInstanceAssociationsRegexp  = regexp.MustCompile(`^/api/v3/count/instance_associations/object/[^\s/]+/?$`)
 )
 
 func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
@@ -554,13 +591,101 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   modelType,
+					Type:   instanceType,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	// search instance associations operation.
+	if ps.hitRegexp(searchInstanceAssociationsRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("search object instance associations, got invalid url")
+			return ps
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		objID := ps.RequestCtx.Elements[5]
+		if len(objID) == 0 {
+			ps.err = fmt.Errorf("search instance associations failed, got empty object id")
+			return ps
+		}
+
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   instanceType,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	// count instance associations operation.
+	if ps.hitRegexp(countInstanceAssociationsRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("count object instance associations, got invalid url")
+			return ps
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		objID := ps.RequestCtx.Elements[5]
+		if len(objID) == 0 {
+			ps.err = fmt.Errorf("count instance associations failed, got empty object id")
+			return ps
+		}
+
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   instanceType,
 					Action: meta.FindMany,
 				},
 			},
@@ -592,13 +717,17 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   modelType,
+					Type:   instanceType,
 					Action: meta.FindMany,
 				},
 			},
@@ -637,12 +766,6 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		val, err = ps.RequestCtx.getValueFromBody(common.BKInstIDField)
 		if err != nil {
 			ps.err = err
@@ -664,34 +787,21 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			ps.err = errors.New("invalid bk_asst_inst_id value")
 			return ps
 		}
+
 		// 处理模型自关联的情况
 		if len(models) == 1 {
-			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID, models[0].ID)
+			instRes, err := ps.generateUpdateInstanceResource(&models[0], instanceID)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			asstInstRes, err := ps.generateUpdateInstanceResource(&models[0], asstInstID)
 			if err != nil {
 				ps.err = err
 				return ps
 			}
 
-			ps.Attribute.Resources = []meta.ResourceAttribute{
-				{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: instanceID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: bizID,
-				},
-				{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: asstInstID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: bizID,
-				},
-			}
+			ps.Attribute.Resources = []meta.ResourceAttribute{*instRes, *asstInstRes}
 			return ps
 		}
 
@@ -702,22 +812,99 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			} else {
 				instID = asstInstID
 			}
-			instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+			instRes, err := ps.generateUpdateInstanceResource(&model, instID)
 			if err != nil {
 				ps.err = err
 				return ps
 			}
 
-			ps.Attribute.Resources = append(ps.Attribute.Resources,
-				meta.ResourceAttribute{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: instID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-					BusinessID: bizID,
-				})
+			ps.Attribute.Resources = append(ps.Attribute.Resources, *instRes)
+		}
+		return ps
+	}
+
+	if ps.hitPattern(createObjectManyInstanceAssociationLatestPattern, http.MethodPost) {
+		val, err := ps.RequestCtx.getValueFromBody(common.AssociationObjAsstIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		associationObjAsstID := val.String()
+		filter := mapstr.MapStr{
+			common.AssociationObjAsstIDField: associationObjAsstID,
+		}
+		asst, err := ps.getModelAssociation(filter)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		modelFilter := mapstr.MapStr{
+			common.BKObjIDField: mapstr.MapStr{
+				common.BKDBIN: []interface{}{
+					asst[0].ObjectID,
+					asst[0].AsstObjID,
+				},
+			},
+		}
+		models, err := ps.searchModels(modelFilter)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		instances, err := ps.RequestCtx.getValueFromBody("details")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		for _, instance := range instances.Array() {
+			instanceMap := instance.Map()
+			instID := instanceMap[common.BKInstIDField]
+			asstInstanceID := instanceMap[common.BKAsstInstIDField]
+			instanceID := instID.Int()
+			if instanceID <= 0 {
+				ps.err = errors.New("invalid bk_inst_id value")
+				return ps
+			}
+
+			asstInstID := asstInstanceID.Int()
+			if asstInstID <= 0 {
+				ps.err = errors.New("invalid bk_asst_inst_id value")
+				return ps
+			}
+
+			// 处理模型自关联的情况
+			if len(models) == 1 {
+				instRes, err := ps.generateUpdateInstanceResource(&models[0], instanceID)
+				if err != nil {
+					ps.err = err
+					return ps
+				}
+				asstInstRes, err := ps.generateUpdateInstanceResource(&models[0], asstInstID)
+				if err != nil {
+					ps.err = err
+					return ps
+				}
+
+				ps.Attribute.Resources = []meta.ResourceAttribute{*instRes, *asstInstRes}
+			} else {
+				for _, model := range models {
+					var instID int64
+					if model.ObjectID == asst[0].ObjectID {
+						instID = instanceID
+					} else {
+						instID = asstInstID
+					}
+					instRes, err := ps.generateUpdateInstanceResource(&model, instID)
+					if err != nil {
+						ps.err = err
+						return ps
+					}
+
+					ps.Attribute.Resources = append(ps.Attribute.Resources, *instRes)
+				}
+			}
 		}
 		return ps
 	}
@@ -755,40 +942,20 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		// 处理模型自关联的情况
 		if len(models) == 1 {
-			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID, models[0].ID)
+			instRes, err := ps.generateUpdateInstanceResource(&models[0], asst.InstID)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			asstInstRes, err := ps.generateUpdateInstanceResource(&models[0], asst.AsstInstID)
 			if err != nil {
 				ps.err = err
 				return ps
 			}
 
-			ps.Attribute.Resources = []meta.ResourceAttribute{
-				{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: asst.InstID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: bizID,
-				},
-				{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: asst.AsstInstID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: bizID,
-				},
-			}
+			ps.Attribute.Resources = []meta.ResourceAttribute{*instRes, *asstInstRes}
 			return ps
 		}
 
@@ -799,22 +966,14 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			} else {
 				instID = asst.AsstInstID
 			}
-			instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+
+			instRes, err := ps.generateUpdateInstanceResource(&model, instID)
 			if err != nil {
 				ps.err = err
 				return ps
 			}
 
-			ps.Attribute.Resources = append(ps.Attribute.Resources,
-				meta.ResourceAttribute{
-					Basic: meta.Basic{
-						Type:       instanceType,
-						Action:     meta.Update,
-						InstanceID: instID,
-					},
-					Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-					BusinessID: bizID,
-				})
+			ps.Attribute.Resources = append(ps.Attribute.Resources, *instRes)
 		}
 
 		return ps
@@ -839,13 +998,17 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   modelType,
+					Type:   instanceType,
 					Action: meta.DeleteMany,
 				},
 			},
@@ -877,13 +1040,17 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   modelType,
+					Type:   instanceType,
 					Action: meta.FindMany,
 				},
 			},
@@ -915,13 +1082,17 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   modelType,
+					Type:   instanceType,
 					Action: meta.FindMany,
 				},
 			},
@@ -934,6 +1105,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 var (
 	createObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/create/instance/object/[^\s/]+/?$`)
+	createObjectManyInstanceLatestRegexp      = regexp.MustCompile(`^/api/v3/createmany/instance/object/[^\s/]+/?$`)
 	findObjectInstanceAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/find/instassociation/object/[^\s/]+/?$`)
 	updateObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/update/instance/object/[^\s/]+/inst/[0-9]+/?$`)
 	updateObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/updatemany/instance/object/[^\s/]+/?$`)
@@ -943,8 +1115,12 @@ var (
 	findObjectInstanceSubTopologyLatestRegexp = regexp.MustCompile(`^/api/v3/find/insttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstanceTopologyLatestRegexp    = regexp.MustCompile(`^/api/v3/find/instassttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstancesLatestRegexp           = regexp.MustCompile(`^/api/v3/find/instance/object/[^\s/]+/?$`)
-	findObjectInstancesUniqueFieldsRegexp     = regexp.MustCompile(`^/api/v3/find/instance/object/[^\s/]+/unique_fields/?$`)
-	findObjectInstancesNamesRegexp            = regexp.MustCompile(`^/api/v3/findmany/object/instances/names/?$`)
+	findObjectInstancesUniqueFieldsRegexp     = regexp.MustCompile(
+		`^/api/v3/find/instance/object/[^\s/]+/unique_fields/by/unique/[0-9]+/?$`)
+	findObjectInstancesNamesRegexp = regexp.MustCompile(`^/api/v3/findmany/object/instances/names/?$`)
+
+	searchObjectInstancesRegexp = regexp.MustCompile(`^/api/v3/search/instances/object/[^\s/]+/?$`)
+	countObjectInstancesRegexp  = regexp.MustCompile(`^/api/v3/count/instances/object/[^\s/]+/?$`)
 )
 
 func (ps *parseStream) objectInstanceLatest() *parseStream {
@@ -965,9 +1141,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ID)
-
-		isMainline, err := ps.isMainlineModel(objID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -979,20 +1153,53 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		if isMainline {
-			modelType = meta.MainlineInstance
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   instanceType,
+					Action: meta.Create,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(createObjectManyInstanceLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("create instance, but got invalid url")
+			return ps
+		}
+
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   modelType,
+					Type:   instanceType,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
+
 		return ps
 	}
 
@@ -1009,12 +1216,16 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   modelType,
+					Type:   instanceType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1042,15 +1253,10 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ID)
-
-		isMainline, err := ps.isMainlineModel(objectID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
 		if err != nil {
 			ps.err = err
 			return ps
-		}
-		if isMainline {
-			modelType = meta.MainlineInstance
 		}
 
 		bizID, err := ps.RequestCtx.getBizIDFromBody()
@@ -1063,7 +1269,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       modelType,
+					Type:       instanceType,
 					Action:     meta.Update,
 					InstanceID: instID,
 				},
@@ -1085,7 +1291,11 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ids := make([]int64, 0)
 		val, err := ps.RequestCtx.getValueFromBody("update.#.inst_id")
@@ -1109,7 +1319,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       modelType,
+					Type:       instanceType,
 					Action:     meta.UpdateMany,
 					InstanceID: id,
 				},
@@ -1132,12 +1342,16 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   modelType,
+					Type:   instanceType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1165,9 +1379,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ID)
-
-		isMainline, err := ps.isMainlineModel(objID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1179,16 +1391,11 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		if isMainline {
-			// special logic for mainline object's instance authorization.
-			modelType = meta.MainlineInstance
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       modelType,
+					Type:       instanceType,
 					Action:     meta.Delete,
 					InstanceID: instID,
 				},
@@ -1260,12 +1467,86 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   modelType,
+					Type:   instanceType,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// search object instances operation.
+	if ps.hitRegexp(searchObjectInstancesRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("search object instances, got invalid url")
+			return ps
+		}
+
+		objID := ps.RequestCtx.Elements[5]
+		if len(objID) == 0 {
+			ps.err = fmt.Errorf("find object instance topology ui failed, got empty object id")
+			return ps
+		}
+
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   instanceType,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// count object instances operation.
+	if ps.hitRegexp(countObjectInstancesRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("count object instances, got invalid url")
+			return ps
+		}
+
+		objID := ps.RequestCtx.Elements[5]
+		if len(objID) == 0 {
+			ps.err = fmt.Errorf("find object instance topology ui failed, got empty object id")
+			return ps
+		}
+
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   instanceType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1275,7 +1556,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 	// find object's instances' unique fields operation
 	if ps.hitRegexp(findObjectInstancesUniqueFieldsRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 7 {
+		if len(ps.RequestCtx.Elements) != 10 {
 			ps.err = errors.New("find object's instances' unique fields, but got invalid url")
 			return ps
 		}
@@ -1286,12 +1567,16 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   modelType,
+					Type:   instanceType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1312,12 +1597,16 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		modelType := iam.GenCMDBDynamicResType(model.ID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   modelType,
+					Type:   instanceType,
 					Action: meta.SkipAction,
 				},
 			},

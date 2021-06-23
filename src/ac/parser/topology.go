@@ -251,6 +251,10 @@ var (
 	findBriefBizTopoRegexp                          = regexp.MustCompile(`^/api/v3/find/topo/tree/brief/biz/[0-9]+/?$`)
 )
 
+const (
+	findBriefTopologyNodeRelation = "/api/v3/find/topo/biz/brief_node_relation"
+)
+
 func (ps *parseStream) mainline() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -324,6 +328,19 @@ func (ps *parseStream) mainline() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.MainlineInstance,
 					Action: meta.Find,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(findBriefTopologyNodeRelation, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.MainlineInstance,
+					Action: meta.SkipAction,
 				},
 			},
 		}

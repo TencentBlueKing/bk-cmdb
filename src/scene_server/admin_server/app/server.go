@@ -32,6 +32,7 @@ import (
 	svc "configcenter/src/scene_server/admin_server/service"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/monitor"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -73,6 +74,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("parse common config from file[%s] failed, err: %v", commonPath, err)
 	}
 
+	if err := monitor.InitMonitor(); err != nil {
+		return fmt.Errorf("init monitor failed, err: %v", err)
+	}
+
 	mongoConf, err := cc.Mongo("mongodb")
 	if err != nil {
 		return err
@@ -100,6 +105,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	process.Config.IAM, err = iamcli.ParseConfigFromKV("authServer", nil)
 	if err != nil && auth.EnableAuthorize() {
 		blog.Errorf("parse iam error: %v", err)
+		return err
+	}
+
+	if err := parseShardingTableConfig(process); err != nil {
+		return err
 	}
 
 	input := &backbone.BackboneParameter{
@@ -178,13 +188,16 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		process.Service.Logics = logics.NewLogics(engine)
 		break
 	}
+
+	if err := service.BackgroundTask(*process.Config); err != nil {
+		return err
+	}
 	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
 	if err != nil {
 		return err
 	}
 
 	errors.SetGlobalCCError(engine.CCErr)
-	go service.BackgroundTask()
 
 	syncor := iam.NewSyncor()
 	syncor.SetSyncIAMPeriod(process.Config.SyncIAMPeriodMinutes)
@@ -205,3 +218,45 @@ type MigrateServer struct {
 }
 
 func (h *MigrateServer) onMigrateConfigUpdate(previous, current cc.ProcessConfig) {}
+
+func parseShardingTableConfig(process *MigrateServer) error {
+	if cc.IsExist("shardingTable.indexInterval") {
+		val, err := cc.Int64("shardingTable.indexInterval")
+		if err != nil {
+			blog.Errorf("config shardingTable.indexInterval parse error. err: %s", err)
+			return fmt.Errorf("config shardingTable.indexInterval parse error. err: %s", err)
+		}
+		if val < 30 || val > 720 {
+			blog.Errorf("config shardingTable.indexInterval value illegal. must be in 20-720(minute), but now val is %d",
+				val)
+			return fmt.Errorf("config shardingTable.indexInterval parse error. err: %s", err)
+		}
+		process.Config.ShardingTable.IndexesInterval = val
+	} else {
+		blog.Infof("config shardingTable.index not set. use default value(30m)")
+		// IndexesInterval 表中同步索引间隔时间，单位分钟， 最小30分钟， 默认60分钟， 最大720分钟
+		process.Config.ShardingTable.IndexesInterval = 60
+	}
+
+	// TableInterval模型shardingTable 对比和处理， 单位秒， 最小60秒，默认 120秒， 最大1800s
+	if cc.IsExist("shardingTable.tableInterval") {
+		val, err := cc.Int64("shardingTable.tableInterval")
+		if err != nil {
+			blog.Errorf("config shardingTable.tableInterval parse error. err: %s", err)
+			return fmt.Errorf("config shardingTable.tableInterval parse error. err: %s", err)
+		}
+		if val < 30 || val > 720 {
+			blog.Errorf("config shardingTable.tableInterval value illegal. must be in 60-1800(second), but now val is %d", val)
+			return fmt.Errorf("config shardingTable.tableInterval parse error. err: %s", err)
+		}
+		process.Config.ShardingTable.TableInterval = val
+
+	} else {
+		blog.Infof("config shardingTable.tableInterval not set. use default value(120s)")
+		// TableInterval模型shardingTable 对比和处理， 单位秒， 最小60秒，默认 120秒， 最大1800s
+		process.Config.ShardingTable.TableInterval = 120
+
+	}
+
+	return nil
+}

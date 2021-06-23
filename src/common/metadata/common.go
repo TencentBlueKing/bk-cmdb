@@ -138,14 +138,14 @@ type QueryInput struct {
 }
 
 type TimeConditionItem struct {
-	Field string       `json:"field"`
-	Start *cctime.Time `json:"start"`
-	End   *cctime.Time `json:"end"`
+	Field string       `json:"field" bson:"field"`
+	Start *cctime.Time `json:"start" bson:"start"`
+	End   *cctime.Time `json:"end" bson:"end"`
 }
 
 type TimeCondition struct {
-	Operator string              `json:"oper"`
-	Rules    []TimeConditionItem `json:"rules"`
+	Operator string              `json:"oper" bson:"oper"`
+	Rules    []TimeConditionItem `json:"rules" bson:"rules"`
 }
 
 // MergeTimeCondition parse time condition and merge with common condition to construct a DB condition, only used by DB
@@ -418,14 +418,10 @@ func (f *CommonSearchFilter) Validate() (string, error) {
 		return "page.limit", err
 	}
 
-	// validate fields parameter.
-	if len(f.Fields) == 0 {
-		return "fields", fmt.Errorf("empty fields")
-	}
-
 	// validate conditions parameter.
 	if f.Conditions == nil {
-		return "conditions", fmt.Errorf("empty conditions")
+		// empty conditions to match all.
+		return "", nil
 	}
 
 	option := &querybuilder.RuleOption{
@@ -448,7 +444,8 @@ func (f *CommonSearchFilter) Validate() (string, error) {
 // GetConditions returns a database type conditions base on the query filter.
 func (f *CommonSearchFilter) GetConditions() (map[string]interface{}, error) {
 	if f.Conditions == nil {
-		return nil, fmt.Errorf("empty conditions")
+		// empty conditions to match all.
+		return map[string]interface{}{}, nil
 	}
 
 	// convert to mongo conditions.
@@ -487,7 +484,8 @@ func (f *CommonCountFilter) Validate() (string, error) {
 
 	// validate conditions parameter.
 	if f.Conditions == nil {
-		return "conditions", fmt.Errorf("empty conditions")
+		// empty conditions to match all.
+		return "", nil
 	}
 
 	option := &querybuilder.RuleOption{
@@ -510,7 +508,8 @@ func (f *CommonCountFilter) Validate() (string, error) {
 // GetConditions returns a database type conditions base on the query filter.
 func (f *CommonCountFilter) GetConditions() (map[string]interface{}, error) {
 	if f.Conditions == nil {
-		return nil, fmt.Errorf("empty conditions")
+		// empty conditions to match all.
+		return map[string]interface{}{}, nil
 	}
 
 	// convert to mongo conditions.

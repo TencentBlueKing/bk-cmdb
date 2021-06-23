@@ -19,6 +19,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -88,7 +89,8 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error) {
 	dataResult := &metadata.CreateManyDataResult{}
 	allValidators := make(map[int64]*validator)
-	for _, item := range inputParam.Datas {
+	for idx, item := range inputParam.Datas {
+		instance := item.Clone()
 		if item == nil {
 			blog.ErrorJSON("the model instance data can't be empty, input data:%s rid:%s", inputParam.Datas, kit.Rid)
 			return nil, kit.CCError.Errorf(common.CCErrCommInstDataNil, "modelInstance")
@@ -109,18 +111,37 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, i
 		}
 
 		err = m.validCreateInstanceData(kit, objID, item, allValidators[bizID])
-		if nil != err {
-			blog.Errorf("CreateManyModelInstance failed, validCreateInstanceData err:%v, objID:%s, item:%#v, rid:%s", err, objID, item, kit.Rid)
-			return nil, err
+		if err != nil {
+			blog.Errorf("validate instance data for create action error, err:%v, objID:%s, item:%#v, rid:%s", err, objID, item, kit.Rid)
+			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
+				Message:     err.Error(),
+				Data:        item,
+				OriginIndex: int64(idx),
+			})
+			continue
 		}
 
 		id, err := m.save(kit, objID, item)
-		if nil != err {
-			return nil, err
+		if err != nil {
+			if id != 0 {
+				dataResult.Repeated = append(dataResult.Repeated, metadata.RepeatedDataResult{
+					Data:        mapstr.MapStr{"err_msg": err.Error()},
+					OriginIndex: int64(idx),
+				})
+			} else {
+				dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
+					Message:     err.Error(),
+					Code:        int64(err.(errors.CCErrorCoder).GetCode()),
+					Data:        instance,
+					OriginIndex: int64(idx),
+				})
+			}
+			continue
 		}
 
 		dataResult.Created = append(dataResult.Created, metadata.CreatedDataResult{
-			ID: id,
+			ID:          id,
+			OriginIndex: int64(idx),
 		})
 	}
 

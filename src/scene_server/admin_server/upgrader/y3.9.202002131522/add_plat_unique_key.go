@@ -39,7 +39,7 @@ func addPlatUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	uniqueCond := condition.CreateCondition()
 	uniqueCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDPlat)
 	uniqueCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
-	existUniques := make([]metadata.ObjectUnique, 0)
+	existUniques := make([]objectUnique, 0)
 	err = db.Table(common.BKTableNameObjUnique).Find(uniqueCond.ToMapStr()).All(ctx, &existUniques)
 	if err != nil {
 		return err
@@ -51,18 +51,18 @@ func addPlatUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	}
 
 	// insert bk_vpc_id unique
-	unique := metadata.ObjectUnique{
+	unique := objectUnique{
 		ObjID:     common.BKInnerObjIDPlat,
 		MustCheck: false,
-		Keys: []metadata.UniqueKey{
+		Keys: []UniqueKey{
 			{
-				Kind: metadata.UniqueKeyKindProperty,
+				Kind: UniqueKeyKindProperty,
 				ID:   id,
 			},
 		},
 		Ispre:    false,
 		OwnerID:  conf.OwnerID,
-		LastTime: metadata.Now(),
+		LastTime: Now(),
 	}
 	uid, err := db.NextSequence(ctx, common.BKTableNameObjUnique)
 	if err != nil {
