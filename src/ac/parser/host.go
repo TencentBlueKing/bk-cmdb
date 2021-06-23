@@ -703,11 +703,17 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitPattern(findHostsDetailsPattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
+		var bizID int64
+		val, err := ps.RequestCtx.getValueFromBody(common.BKAppIDField)
 		if err != nil {
 			ps.err = err
 			return ps
 		}
+
+		if val.Exists() {
+			bizID = val.Int()
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
