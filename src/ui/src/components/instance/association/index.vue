@@ -7,7 +7,7 @@
       {{$t('退出')}}
     </bk-button>
     <div class="container" ref="container"></div>
-    <a v-show="false" ref="tooltip" href="javascript:void(0)" @click="handleshowDetails">
+    <a v-show="false" ref="tooltip" href="javascript:void(0)" @click="handleShowDetails">
       {{$t('详情信息')}}
     </a>
   </div>
@@ -155,7 +155,7 @@
           data: event.target.data('instance')
         }
       },
-      async handleshowDetails() {
+      async handleShowDetails() {
         const showInstanceDetails = await import('@/components/instance/details')
         const { data, instance } = this.tooltip
         const model = this.$store.getters['objectModelClassify/getModelById'](data.bk_obj_id)

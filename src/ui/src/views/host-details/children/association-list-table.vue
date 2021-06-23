@@ -25,11 +25,14 @@
     <bk-table class="association-table"
       v-show="expanded"
       :data="list"
-      :max-height="462">
-      <bk-table-column v-for="column in header"
+      :max-height="462"
+      :row-style="{ cursor: 'pointer' }"
+      @row-click="handleShowDetails">
+      <bk-table-column v-for="(column, index) in header"
         :key="column.id"
         :prop="column.id"
         :label="column.name"
+        :class-name="index === 0 ? 'is-highlight' : ''"
         show-overflow-tooltip>
         <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
       </bk-table-column>
@@ -40,7 +43,7 @@
               text
               theme="primary"
               :disabled="disabled"
-              @click="showTips($event, row)">
+              @click.stop="showTips($event, row)">
               {{$t('取消关联')}}
             </bk-button>
           </cmdb-auth>
@@ -382,6 +385,16 @@
         this.confirm.show = true
         this.$nextTick(() => {
           this.confirm.instance.show()
+        })
+      },
+      async handleShowDetails(row) {
+        const showInstanceDetails = await import('@/components/instance/details')
+        const nameMapping = { host: 'bk_host_innerip', biz: 'bk_biz_name' }
+        const idMapping = { host: 'bk_host_id', biz: 'bk_biz_id' }
+        showInstanceDetails.default({
+          bk_obj_id: this.id,
+          bk_inst_id: row[idMapping[this.id] || 'bk_inst_id'],
+          title: `${this.model.bk_obj_name}-${row[nameMapping[this.id] || 'bk_inst_name']}`
         })
       }
     }
