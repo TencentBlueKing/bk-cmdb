@@ -147,6 +147,11 @@ func (lw *LoopsWatch) watchRetry(cancel context.CancelFunc,
 		ctx := context.Background()
 
 		select {
+		case <-opts.StopNotifier:
+			cancel()
+			blog.Warnf("received stop %s loop watch job notify, stopping now.", opts.Name)
+			return
+
 		// wait for another retry
 		case <-retrySignal:
 			// wait for a well and then do the retry work.
@@ -266,6 +271,11 @@ func (lw *LoopsWatch) tryLoopWithBatch(ctxWithCancel context.Context,
 					// ticks, but no events received, loop next round to get events.
 					continue
 				}
+
+			case <-opts.StopNotifier:
+				ticker.Stop()
+				blog.Warnf("received stop %s loop watch job notify, stopping now.", opts.Name)
+				return
 			}
 
 			// break the for loop to handle event for now.
@@ -336,6 +346,11 @@ func (lw *LoopsWatch) tryLoopWithOne(ctxWithCancel context.Context,
 			blog.Warnf("%s job, received cancel loop watch %s signal, exit loop, exit loop", opts.Name,
 				opts.WatchOpt.Collection)
 			return
+
+		case <-opts.StopNotifier:
+			blog.Warnf("received stop %s loop watch job notify, stopping now.", opts.Name)
+			return
+
 		default:
 		}
 
