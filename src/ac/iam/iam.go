@@ -95,7 +95,8 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 		}
 		blog.V(5).Infof("register new system %+v succeed", sys)
 	} else if systemResp.Data.BaseInfo.ProviderConfig == nil || systemResp.Data.BaseInfo.ProviderConfig.Host != host {
-		// if iam registered cmdb system has no ProviderConfig or registered host config is different with current host config, update system host config
+		// if iam registered cmdb system has no ProviderConfig
+		// or registered host config is different with current host config, update system host config
 		if err = i.client.UpdateSystemConfig(ctx, &SysConfig{Host: host}); err != nil {
 			blog.Errorf("update system host %s config failed, error: %s", host, err.Error())
 			return err
@@ -120,7 +121,8 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 		// if current resource type is registered, update it, or else register it
 		if existResourceTypeMap[resourceType.ID] {
 			if err = i.client.UpdateResourcesTypes(ctx, resourceType); err != nil {
-				blog.ErrorJSON("update resource type %s failed, error: %s, input resource type: %s", resourceType.ID, err.Error(), resourceType)
+				blog.ErrorJSON("update resource type %s failed, error: %s, input resource type: %s",
+					resourceType.ID, err.Error(), resourceType)
 				return err
 			}
 		} else {
@@ -142,7 +144,8 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 		// if current instance selection is registered, update it, or else register it
 		if existInstanceSelectionMap[resourceType.ID] {
 			if err = i.client.UpdateInstanceSelection(ctx, resourceType); err != nil {
-				blog.ErrorJSON("update instance selection %s failed, error: %s, input resource type: %s", resourceType.ID, err.Error(), resourceType)
+				blog.ErrorJSON("update instance selection %s failed, error: %s, input resource type: %s",
+					resourceType.ID, err.Error(), resourceType)
 				return err
 			}
 		} else {
@@ -163,7 +166,8 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 		// if current resource action is registered, update it, or else register it
 		if existResourceActionMap[resourceAction.ID] {
 			if err = i.client.UpdateAction(ctx, resourceAction); err != nil {
-				blog.ErrorJSON("update resource action %s failed, error: %s, input resource action: %s", resourceAction.ID, err.Error(), resourceAction)
+				blog.ErrorJSON("update resource action %s failed, error: %s, input resource action: %s",
+					resourceAction.ID, err.Error(), resourceAction)
 				return err
 			}
 		} else {
@@ -175,10 +179,12 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 	// 因为资源间的依赖关系，新建的顺序则反过来为 1.ResourceType 2.InstanceSelection 3.Action
 	// ActionGroup依赖于Action，该资源的增删操作始终放在最后
 	// 先删除资源，再新增资源，因为实例视图的名称在系统中是唯一的，如果不先删，同样名称的实例视图将创建失败
-	// remove redundant actions, redundant instance selections and resource types one by one when dependencies are all deleted
+	// remove redundant actions, redundant instance selections and resource types one by one
+	// when dependencies are all deleted
 	if len(removedResourceActionMap) > 0 {
 		removedResourceActionIDs := make([]ActionID, len(removedResourceActionMap))
 		idx := 0
+		// before deleting action, the dependent action polices must be deleted
 		for resourceActionID := range removedResourceActionMap {
 			if err = i.client.DeleteActionPolicies(ctx, resourceActionID); err != nil {
 				blog.Errorf("delete action %s policies failed, err: %v", resourceActionID, err)
@@ -202,7 +208,8 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 			idx++
 		}
 		if err = i.client.DeleteInstanceSelections(ctx, removedInstanceSelectionIDs); err != nil {
-			blog.ErrorJSON("delete instance selections failed, error: %s, instance selections: %s", err.Error(), removedInstanceSelectionIDs)
+			blog.ErrorJSON("delete instance selections failed, error: %s, instance selections: %s",
+				err.Error(), removedInstanceSelectionIDs)
 			return err
 		}
 	}
@@ -215,28 +222,32 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 			idx++
 		}
 		if err = i.client.DeleteResourcesTypes(ctx, removedResourceTypeIDs); err != nil {
-			blog.ErrorJSON("delete resource types failed, error: %s, resource types: %s", err.Error(), removedResourceTypeIDs)
+			blog.ErrorJSON("delete resource types failed, error: %s, resource types: %s",
+				err.Error(), removedResourceTypeIDs)
 			return err
 		}
 	}
 
 	if len(newResourceTypes) > 0 {
 		if err = i.client.RegisterResourcesTypes(ctx, newResourceTypes); err != nil {
-			blog.ErrorJSON("register resource types failed, error: %s, resource types: %s", err.Error(), newResourceTypes)
+			blog.ErrorJSON("register resource types failed, error: %s, resource types: %s",
+				err.Error(), newResourceTypes)
 			return err
 		}
 	}
 
 	if len(newInstanceSelections) > 0 {
 		if err = i.client.RegisterInstanceSelections(ctx, newInstanceSelections); err != nil {
-			blog.ErrorJSON("register instance selections failed, error: %s, resource types: %s", err.Error(), newInstanceSelections)
+			blog.ErrorJSON("register instance selections failed, error: %s, resource types: %s",
+				err.Error(), newInstanceSelections)
 			return err
 		}
 	}
 
 	if len(newResourceActions) > 0 {
 		if err = i.client.RegisterActions(ctx, newResourceActions); err != nil {
-			blog.ErrorJSON("register resource actions failed, error: %s, resource actions: %s", err.Error(), newResourceActions)
+			blog.ErrorJSON("register resource actions failed, error: %s, resource actions: %s",
+				err.Error(), newResourceActions)
 			return err
 		}
 	}
@@ -259,12 +270,14 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 	resourceCreatorActions := GenerateResourceCreatorActions()
 	if len(systemResp.Data.ResourceCreatorActions.Config) == 0 {
 		if err = i.client.RegisterResourceCreatorActions(ctx, resourceCreatorActions); err != nil {
-			blog.ErrorJSON("register resource creator actions failed, error: %s, resource creator actions: %s", err.Error(), resourceCreatorActions)
+			blog.ErrorJSON("register resource creator actions failed, error: %s, resource creator actions: %s",
+				err.Error(), resourceCreatorActions)
 			return err
 		}
 	} else {
 		if err = i.client.UpdateResourceCreatorActions(ctx, resourceCreatorActions); err != nil {
-			blog.ErrorJSON("update resource creator actions failed, error: %s, resource creator actions: %s", err.Error(), resourceCreatorActions)
+			blog.ErrorJSON("update resource creator actions failed, error: %s, resource creator actions: %s",
+				err.Error(), resourceCreatorActions)
 			return err
 		}
 	}
@@ -296,8 +309,8 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 		FieldActions, FieldActionGroups, FieldInstanceSelections}
 	iamResp, err := i.client.GetSystemInfo(ctx, fields)
 	if err != nil {
-		blog.ErrorJSON("syc iam sysInstances failed, get system info error: %s, fields: %s, rid: %s",
-			err.Error(), fields, rid)
+		blog.ErrorJSON("sync iam sysInstances failed, get system info error: %s, fields: %s, rid: %s",
+			err, fields, rid)
 		return err
 	}
 
@@ -324,14 +337,15 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 		// before deleting action, the dependent action polices must be deleted
 		for _, actionID := range deletedActions {
 			if err = i.client.DeleteActionPolicies(ctx, actionID); err != nil {
-				blog.Errorf("delete action %s policies failed, err: %s, rid: %s", actionID, err, rid)
+				blog.Errorf("sync iam sysInstances failed, delete action %s policies err: %s, rid: %s",
+					actionID, err, rid)
 				return err
 			}
 		}
 
 		if err := i.client.DeleteActions(ctx, deletedActions); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, delete IAM actions error: %s, actions: %s, rid: %s",
-				err.Error(), deletedActions, rid)
+			blog.ErrorJSON("sync iam sysInstances failed, delete IAM actions error: %s, actions: %s, rid: %s",
+				err, deletedActions, rid)
 			return err
 		}
 	}
@@ -341,9 +355,8 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 		blog.Infof("begin delete instanceSelections, count:%d, detail:%v, rid: %s",
 			len(deletedInstanceSelections), deletedInstanceSelections, rid)
 		if err := i.client.DeleteInstanceSelections(ctx, deletedInstanceSelections); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, delete instanceSelections error: %s, instanceSelections: %s,"+
-				" rid: %s",
-				err.Error(), deletedInstanceSelections, rid)
+			blog.ErrorJSON("sync iam sysInstances failed, delete instanceSelections error: %s, instanceSelections: %s,"+
+				" rid: %s", err, deletedInstanceSelections, rid)
 			return err
 		}
 	}
@@ -353,8 +366,8 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 		blog.Infof("begin delete resourceTypes, count:%d, detail:%v, rid: %s",
 			len(deletedResourceTypes), deletedResourceTypes, rid)
 		if err := i.client.DeleteResourcesTypes(ctx, deletedResourceTypes); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, delete resourceType error: %s, resourceType: %s, rid: %s",
-				err.Error(), deletedResourceTypes, rid)
+			blog.ErrorJSON("sync iam sysInstances failed, delete resourceType error: %s, resourceType: %s, rid: %s",
+				err, deletedResourceTypes, rid)
 			return err
 		}
 	}
@@ -364,8 +377,8 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid: %s",
 			len(addedResourceTypes), addedResourceTypes, rid)
 		if err := i.client.RegisterResourcesTypes(ctx, addedResourceTypes); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, add resourceType error: %s, resourceType: %s, rid: %s",
-				err.Error(), addedResourceTypes, rid)
+			blog.ErrorJSON("sync iam sysInstances failed, add resourceType error: %s, resourceType: %s, rid: %s",
+				err, addedResourceTypes, rid)
 			return err
 		}
 	}
@@ -375,9 +388,8 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 		blog.Infof("begin add instanceSelections, count:%d, detail:%v, rid: %s",
 			len(addedInstanceSelections), addedInstanceSelections, rid)
 		if err := i.client.RegisterInstanceSelections(ctx, addedInstanceSelections); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, add instanceSelections error: %s, instanceSelections: %s, "+
-				"rid: %s",
-				err.Error(), addedInstanceSelections, rid)
+			blog.ErrorJSON("sync iam sysInstances failed, add instanceSelections error: %s, instanceSelections: %s, "+
+				"rid: %s", err, addedInstanceSelections, rid)
 			return err
 		}
 	}
@@ -386,8 +398,8 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 	if len(addedActions) > 0 {
 		blog.Infof("begin add actions, count:%d, detail:%v, rid: %s", len(addedActions), addedActions, rid)
 		if err := i.client.RegisterActions(ctx, addedActions); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, add IAM actions failed, error: %s, actions: %s, rid: %s",
-				err.Error(), addedActions, rid)
+			blog.ErrorJSON("sync iam sysInstances failed, add IAM actions failed, error: %s, actions: %s, rid: %s",
+				err, addedActions, rid)
 			return err
 		}
 	}
@@ -397,8 +409,8 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 		cmdbActionGroups := GenerateActionGroups(objects)
 		blog.Infof("begin update actionGroups")
 		if err := i.client.UpdateActionGroups(ctx, cmdbActionGroups); err != nil {
-			blog.ErrorJSON("syc iam sysInstances failed, update actionGroups error: %s, actionGroups: %s, rid: %s",
-				err.Error(), cmdbActionGroups, rid)
+			blog.ErrorJSON("sync iam sysInstances failed, update actionGroups error: %s, actionGroups: %s, rid: %s",
+				err, cmdbActionGroups, rid)
 			return err
 		}
 	}
@@ -415,8 +427,8 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 		FieldActions, FieldActionGroups, FieldInstanceSelections}
 	iamResp, err := i.client.GetSystemInfo(ctx, fields)
 	if err != nil {
-		blog.ErrorJSON("syc iam sysInstances failed, get system info error: %s, fields: %s, rid: %s",
-			err.Error(), fields, rid)
+		blog.ErrorJSON("sync iam sysInstances failed, get system info error: %s, fields: %s, rid: %s",
+			err, fields, rid)
 		return err
 	}
 
@@ -434,7 +446,8 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 		// before deleting action, the dependent action polices must be deleted
 		for _, actionID := range deletedActions {
 			if err = i.client.DeleteActionPolicies(ctx, actionID); err != nil {
-				blog.Errorf("delete action %s policies failed, err: %s, rid: %s", actionID, err, rid)
+				blog.ErrorJSON("delete cmdb resource failed, delete action %s policies err: %s, rid: %s",
+					actionID, err, rid)
 				return err
 			}
 		}
@@ -442,7 +455,7 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 		blog.Infof("begin delete actions, count:%d, detail:%v, rid: %s", len(deletedActions), deletedActions, rid)
 		if err := i.client.DeleteActions(ctx, deletedActions); err != nil {
 			blog.ErrorJSON("delete cmdb resource failed, delete IAM actions error: %s, actions: %s, rid: %s",
-				err.Error(), deletedActions, rid)
+				err, deletedActions, rid)
 			return err
 		}
 	}
@@ -453,7 +466,7 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 			len(deletedInstanceSelections), deletedInstanceSelections, rid)
 		if err := i.client.DeleteInstanceSelections(ctx, deletedInstanceSelections); err != nil {
 			blog.ErrorJSON("delete cmdb resource failed, delete instanceSelections error: %s, instanceSelections: %s,"+
-				"rid: %s", err.Error(), deletedInstanceSelections, rid)
+				"rid: %s", err, deletedInstanceSelections, rid)
 			return err
 		}
 	}
@@ -464,7 +477,7 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 			len(deletedResourceTypes), deletedResourceTypes, rid)
 		if err := i.client.DeleteResourcesTypes(ctx, deletedResourceTypes); err != nil {
 			blog.ErrorJSON("delete cmdb resource failed, delete resourceType error: %s, resourceType: %s, rid: %s",
-				err.Error(), deletedResourceTypes, rid)
+				err, deletedResourceTypes, rid)
 			return err
 		}
 	}
@@ -475,7 +488,7 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 		blog.Infof("begin update actionGroups")
 		if err := i.client.UpdateActionGroups(ctx, cmdbActionGroups); err != nil {
 			blog.ErrorJSON("delete cmdb resource failed, update actionGroups error: %s, actionGroups: %s, rid: %s",
-				err.Error(), cmdbActionGroups, rid)
+				err, cmdbActionGroups, rid)
 			return err
 		}
 	}
@@ -652,13 +665,16 @@ func (a *authorizer) authorizeBatch(ctx context.Context, h http.Header, exact bo
 	if exact {
 		authDecisions, err = a.authClientSet.AuthorizeBatch(ctx, h, opts)
 		if err != nil {
-			blog.ErrorJSON("authorize batch failed, err: %s, ops: %s, resources: %s, rid: %s", err, opts, resources, rid)
+			blog.ErrorJSON("authorize batch failed, err: %s, ops: %s, resources: %s, rid: %s",
+				err, opts, resources,
+				rid)
 			return nil, err
 		}
 	} else {
 		authDecisions, err = a.authClientSet.AuthorizeAnyBatch(ctx, h, opts)
 		if err != nil {
-			blog.ErrorJSON("authorize any batch failed, err: %s, ops: %s, resources: %s, rid: %s", err, opts, resources, rid)
+			blog.ErrorJSON("authorize any batch failed, err: %s, ops: %s, resources: %s, rid: %s",
+				err, opts, resources, rid)
 			return nil, err
 		}
 

@@ -191,8 +191,13 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 
 	var policy *operator.Policy
 	if len(opts.Attributes) == 1 {
+		op := opts.Operator
+		// the op can only be Any(eg: the admin user) and Equal
+		if op != operator.Any {
+			op = operator.Equal
+		}
 		policy = &operator.Policy{
-			Operator: operator.Equal,
+			Operator: op,
 			Element:  opts.Attributes[0],
 		}
 	} else {
