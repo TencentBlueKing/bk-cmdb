@@ -9,10 +9,15 @@
 
 - 命令行参数
   ```
-  --set-default[=false]: set log level to default value
-  --set-v="": set log level for V logs
-  --addrport="": the ip address and port for the hosts to apply command, separated by comma
-  --zk-addr="": the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
+  --set-default      [=false]: set log level to default value
+  --set-v             =""    : set log level for V logs
+  --addrport          =""    : the ip address and port for the hosts to apply command, separated by comma
+  --zk-addr           =""    : the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
+  --redis-addr        =""    : assign redis server address default is 127.0.0.1:6379
+  --redis-pwd         =""    : assign redis server password
+  --redis-database    =""    : assign the redis database default is 0
+  --redis-mastername  =""    : assign redis server master name defalut is null
+  --redis-sentinelpwd =""    : assign the redis sentinel password  default is null
   ```
 - 示例
 
@@ -310,7 +315,7 @@ denyall配置为false的情况下，limit和ttl配置才能生效
               delete total data num is 3
      ```
      
-### Redis操作(目前支持scan操作)
+### Redis操作(目前支持scan、scan-del操作)
 - 使用方式
      ```
          ./tool_ctl redis [flags]
@@ -324,34 +329,28 @@ denyall配置为false的情况下，limit和ttl配置才能生效
      
 - 命令行参数
      ```
-          count            redis scan count default value is 10
-          cursor           redis scan cursor default is 0
           match            redis scan  match pattern  default is null
-          zk-addr          zk address where the redis configuration file is stored  
      ```
 - 示例
      ```
          对Redis进行 scan 操作示例:
-             ./tool_ctl redis scan --zk-addr="127.0.0.1:2181"  --match="*test*" --conut 50  
+             ./tool_ctl redis --redis-pwd="admin" scan --match="test*" 
          回显样式:
-             keys is begin :
-             test 
-             test1 
-             keys is end
-             cursor is 2 
-          对Redis进行 scan-del 操作示例:
-             ./tool_ctl redis scan-del --zk-addr="127.0.0.1:2181"  --match="*test*" --count=50
-          回显样式:  
-             Authenticated: id=72057595548992723, timeout=40000
-             Re-submitting `0` credentials after reconnect
-             keys is begin :
-             test0
-             test1
+             show some results as an example :
              test2
-             test3
-             test4
-             test5
-             keys is end
-             del keys success ,total num is 6
-             cursor is 0
+             test1
+             test
+             example end
+          命令说明：
+             此处只显示不多于5个结果示例，并不是全部结果
+                
+          对Redis进行 scan-del 操作示例:
+             ./tool_ctl redis --redis-pwd="123456" scan-del --match="test*"
+          回显样式:  
+             del keys start :
+             del keys num: 1.
+             del keys num: 2.
+             del keys success ,total num is 3
+          命令说明：
+             按照指定的match参数进行匹配，会一次性将匹配到的key进行全部删除，此命令需要慎用！
      ```

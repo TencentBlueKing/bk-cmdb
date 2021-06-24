@@ -17,8 +17,6 @@ import (
 	"fmt"
 	"time"
 
-	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
@@ -30,15 +28,16 @@ func init() {
 }
 
 const (
-	redisDelBatchDefaulNum = 10
+	redisDelBatchDefaulNum        = 100
+	redisDefaultConnNum           = 10
+	redisDefaultCursor     uint64 = 0
+	redisDefaultCount             = 1000
+	redisDefaultResultNum         = 5
 )
 
 type redisOperation struct {
-	cursor  uint64
 	match   string
-	count   int64
 	service *config.Service
-	zkAddr  string
 }
 
 func NewRedisOperationCommand() *cobra.Command {
@@ -60,10 +59,7 @@ func NewRedisOperationCommand() *cobra.Command {
 			return runRedisScan(conf)
 		},
 	}
-	scanCmd.Flags().Uint64Var(&conf.cursor, "cursor", 0, "redis scan cursor default is 0")
 	scanCmd.Flags().StringVar(&conf.match, "match", "", "redis scan  match pattern  default is null")
-	scanCmd.Flags().Int64Var(&conf.count, "count", 10, "redis scan count default value is 10")
-	scanCmd.Flags().StringVar(&conf.zkAddr, "zk-addr", "127.0.0.1:2181", "zk address where the redis configuration file is stored")
 
 	scanCmds = append(scanCmds, scanCmd)
 	for _, fCmd := range scanCmds {
@@ -78,11 +74,7 @@ func NewRedisOperationCommand() *cobra.Command {
 			return runRedisScanDel(conf)
 		},
 	}
-
-	delCmd.Flags().Uint64Var(&conf.cursor, "cursor", 0, "redis scan cursor default is 0")
 	delCmd.Flags().StringVar(&conf.match, "match", "", "redis scan  match pattern  default is null")
-	delCmd.Flags().Int64Var(&conf.count, "count", 10, "redis scan count default value is 10")
-	delCmd.Flags().StringVar(&conf.zkAddr, "zk-addr", "127.0.0.1:2181", "zk address where the redis configuration file is stored")
 
 	delCmds = append(delCmds, delCmd)
 	for _, fCmd := range delCmds {
@@ -92,75 +84,47 @@ func NewRedisOperationCommand() *cobra.Command {
 	return cmd
 }
 
-func (s *redisOperation) setRedisConf() error {
-
-	if err := s.service.ZkCli.Ping(); err != nil {
-		if err = s.service.ZkCli.Connect(); err != nil {
-			return err
-		}
-	}
-
-	path := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureRedis)
-	strConf, err := s.service.ZkCli.Get(path)
-	if err != nil {
-		return fmt.Errorf("get path [%s] from zk [%v] failed: %v", path, s.service.ZkCli.ZkHost, err)
-	}
-
-	if err := cc.SetRedisFromByte([]byte(strConf)); err != nil {
-		return fmt.Errorf("get path [%s] from regdiscv [%v]  parse config failed: %v", path, s.service.ZkCli.ZkHost, err)
-	}
-
-	if len(strConf) == 0 {
-		return fmt.Errorf("get path [%s] from regdiscv [%v]  parse config empty", path, s.service.ZkCli.ZkHost)
-	}
-
-	return nil
-}
-
-func newService(zkaddr string) (*redisOperation, error) {
-	service, err := config.NewZkService(zkaddr)
-	if err != nil {
-		return nil, err
-	}
-	return &redisOperation{
-		service: service,
-	}, nil
-}
-
 func runRedisScan(conf *redisOperation) error {
 
-	s, err := newService(conf.zkAddr)
-	if err != nil {
-		fmt.Printf("connect zk fail, err :%v .\n", err)
-		return err
-	}
-	err = s.setRedisConf()
-	if err != nil {
-		fmt.Printf("set Redis config  fail, err :%v .\n", err)
-		return err
-	}
-	redisConfig, err := cc.Redis("redis")
-	if err != nil {
-		fmt.Printf("connect redis fail, err :%v .\n", err)
-		return err
-	}
+	var total int
+	cursor := redisDefaultCursor
+	printLen := redisDefaultResultNum
 
-	redisCli, err := redis.NewFromConfig(redisConfig)
+	//don't need to open too many conns
+	config.Conf.RedisConf.MaxOpenConns = redisDefaultConnNum
+
+	redisCli, err := redis.NewFromConfig(config.Conf.RedisConf)
 	if err != nil {
 		fmt.Printf("read redis config fail  err :%v.\n", err)
 		return err
 	}
+	ctx := context.Background()
+	fmt.Printf("show some results as an example :\n")
+	for {
+		res := redisCli.Scan(ctx, cursor, conf.match, redisDefaultCount)
+		keys, cur := res.Val()
 
-	res := redisCli.Scan(context.Background(), conf.cursor, conf.match, conf.count)
-	keys, cursor := res.Val()
+		if len(keys) >= printLen {
+			for _, v := range keys[:printLen] {
+				fmt.Printf("%v \n", v)
+			}
+			total = redisDefaultResultNum
+			break
 
-	fmt.Printf("keys is begin :\n")
-	for _, v := range keys {
-		fmt.Printf("%v \n", v)
+		} else if len(keys) > 0 && len(keys) < redisDefaultResultNum {
+			for _, v := range keys {
+				fmt.Printf("%v \n", v)
+			}
+			total += len(keys)
+			printLen = printLen - len(keys)
+		}
+
+		if cur == 0 {
+			break
+		}
+		cursor = cur
 	}
-	fmt.Printf("keys is end\n")
-
-	fmt.Printf("cursor is %d \n", cursor)
+	fmt.Printf("example end \n")
 
 	return nil
 }
@@ -171,71 +135,65 @@ func runRedisScanDel(conf *redisOperation) error {
 		start   int
 		keysTmp []string
 		bFlag   bool
+		total   uint64
 	)
+	cursor := redisDefaultCursor
 
-	s, err := newService(conf.zkAddr)
-	if err != nil {
-		fmt.Printf("connect zk fail, err :%v .\n", err)
-		return err
-	}
-	err = s.setRedisConf()
-	if err != nil {
-		fmt.Printf("set Redis config  fail, err :%v .\n", err)
-		return err
-	}
+	//don't need to open too many conns
+	config.Conf.RedisConf.MaxOpenConns = redisDefaultConnNum
 
-	redisConfig, err := cc.Redis("redis")
-	if err != nil {
-		fmt.Printf("connect redis fail, err :%v .\n", err)
-		return err
-	}
-
-	redisCli, err := redis.NewFromConfig(redisConfig)
+	redisCli, err := redis.NewFromConfig(config.Conf.RedisConf)
 	if err != nil {
 		fmt.Printf("read redis config fail, err :%v.\n", err)
 		return err
 	}
+
 	ctx := context.Background()
-	res := redisCli.Scan(ctx, conf.cursor, conf.match, conf.count)
-	keys, cursor := res.Val()
-
-	keysNum := len(keys)
+	fmt.Printf("del keys start :\n")
 	for {
+		res := redisCli.Scan(ctx, cursor, conf.match, redisDefaultCount)
+		keys, cur := res.Val()
+		keysNum := len(keys)
 
-		if start >= keysNum {
-			break
+		for keysNum > 0 {
+			if start >= keysNum {
+				break
+			}
+			if start+redisDelBatchDefaulNum > keysNum {
+				keysTmp = keys[start:]
+			} else {
+				keysTmp = keys[start : start+redisDelBatchDefaulNum]
+			}
+
+			err = redisCli.Del(ctx, keysTmp...).Err()
+			if err != nil {
+				fmt.Printf("del the keys fail err:%v \n", err)
+				bFlag = true
+				break
+			}
+
+			time.Sleep(10 * time.Millisecond)
+			start = start + redisDelBatchDefaulNum
 		}
-		if start+redisDelBatchDefaulNum > keysNum {
-			keysTmp = keys[start:]
+		start = 0
+		if bFlag {
+			fmt.Printf("del the keys:(%v) fail,err: %v\n", keysTmp, err)
+			bFlag = false
+			continue
 		} else {
-			keysTmp = keys[start : start+redisDelBatchDefaulNum]
+			if len(keys) > 0 {
+				fmt.Printf("del keys num: %d. \n", len(keys))
+			}
 		}
 
-		err = redisCli.Del(ctx, keysTmp...).Err()
-		if err != nil {
-			fmt.Printf("del the keys fail err:%v \n", err)
-			bFlag = true
+		total += uint64(len(keys))
+		if cur == redisDefaultCursor {
 			break
 		}
-
-		time.Sleep(100 * time.Millisecond)
-		start = start + redisDelBatchDefaulNum
+		cursor = cur
 	}
 
-	if bFlag {
-		fmt.Printf("del the keys fail err:%v \n", err)
-		return err
-	} else {
-
-		fmt.Printf("keys is begin :\n")
-		for _, v := range keys {
-			fmt.Printf("%v \n", v)
-		}
-		fmt.Printf("keys is end\n")
-
-		fmt.Printf("del keys success ,total num is %v\n", len(keys))
-		fmt.Printf("cursor is %d \n", cursor)
-	}
+	fmt.Printf("del keys success ,total num is %v\n", total)
 
 	return nil
 }
