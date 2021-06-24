@@ -81,14 +81,13 @@
       ...mapGetters('hostDetails', [
         'source',
         'target',
-        'sourceInstances',
-        'targetInstances'
+        'allInstances'
       ]),
       hasAssociation() {
         return !!(this.source.length || this.target.length)
       },
       hasInstance() {
-        return [...this.sourceInstances, ...this.targetInstances].some(instance => !!(instance.children || []).length)
+        return !!this.allInstances.length
       }
     },
     beforeDestroy() {
