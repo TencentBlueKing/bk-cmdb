@@ -105,6 +105,7 @@
         </div>
         <ul class="model-list clearfix">
           <li class="model-item bgc-white"
+            @mouseenter="handleModelMouseEnterDebounce(model)"
             :class="{
               'ispaused': model['bk_ispaused'],
               'ispre': model.ispre
@@ -128,7 +129,12 @@
               class="info-instance"
               @click="handleGoInstance(model)">
               <i class="icon-cc-share"></i>
-              <p>{{modelStatisticsSet[model.bk_obj_id] | instanceCount}}</p>
+              <p>
+                <cmdb-loading
+                  :loading="!modelStatisticsSet[model.bk_obj_id] || $loading(request.statistics[model.bk_obj_id])">
+                  {{modelStatisticsSet[model.bk_obj_id] | instanceCount}}
+                </cmdb-loading>
+              </p>
             </div>
           </li>
         </ul>
@@ -218,8 +224,10 @@
   import has from 'has'
   import cmdbMainInject from '@/components/layout/main-inject'
   import theCreateModel from '@/components/model-manage/_create-model'
+  import cmdbLoading from '@/components/loading/index.vue'
   import noSearchResults from '@/views/status/no-search-results.vue'
   import { mapGetters, mapMutations, mapActions } from 'vuex'
+  import debounce from 'lodash.debounce'
   import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import {
@@ -231,17 +239,19 @@
   export default {
     filters: {
       instanceCount(value) {
-        if ([null, undefined].includes(value)) {
-          return 0
+        if (!value) return
+        if (value?.error) {
+          return '--'
         }
-        return value > 999 ? '999+' : value
+        return value.inst_count > 999 ? '999+' : value.inst_count
       }
     },
     components: {
       // theModel,
       theCreateModel,
       cmdbMainInject,
-      noSearchResults
+      noSearchResults,
+      cmdbLoading
     },
     data() {
       return {
@@ -271,7 +281,7 @@
           groupId: ''
         },
         request: {
-          statistics: Symbol('statistics'),
+          statistics: [],
           searchClassifications: Symbol('searchClassifications')
         }
       }
@@ -347,23 +357,23 @@
       }
       addMainScrollListener(this.scrollHandler)
       try {
-        await Promise.all([
-          this.getModelStatistics(),
-          this.searchClassificationsObjects({
-            params: {},
-            config: {
-              requestId: this.request.searchClassifications
-            }
-          })
-        ])
+        await this.searchClassificationsObjects({
+          params: {},
+          config: {
+            requestId: this.request.searchClassifications
+          }
+        })
       } catch (e) {
         this.$route.meta.view = 'error'
       }
+
       if (this.$route.query.searchModel) {
         const { hash } = window.location
         this.searchModel = this.$route.query.searchModel
         window.location.hash = hash.substring(0, hash.indexOf('?'))
       }
+
+      this.handleModelMouseEnterDebounce = debounce(this.handleModelItemMouseEnter, 200)
     },
     mounted() {
       addResizeListener(this.$refs.mainInject.$el, this.handleSetPadding)
@@ -371,6 +381,7 @@
     beforeDestroy() {
       removeResizeListener(this.$refs.mainInject.$el, this.handleSetPadding)
       removeMainScrollListener(this.scrollHandler)
+      this.$http.cancelRequest(this.request.statistics)
     },
     methods: {
       ...mapMutations('objectModelClassify', [
@@ -413,17 +424,37 @@
         this.groupDialog.isShow = false
         this.$validator.reset()
       },
-      async getModelStatistics() {
-        const modelStatisticsSet = {}
-        const res = await this.getClassificationsObjectStatistics({
+      async getModelInstanceCount(id) {
+        // 存在则不再请求
+        if (has(this.modelStatisticsSet, id)) {
+          return
+        }
+
+        const requestId = `getModelInstanceCount_${id}`
+        this.request.statistics.push(requestId)
+
+        // 取消上一个请求
+        const currentIndex = this.request.statistics.findIndex(rid => rid === requestId)
+        const prevIndex = this.request.statistics[currentIndex - 1]
+        if (prevIndex) {
+          this.$http.cancelRequest(prevIndex)
+        }
+
+        const result = await this.$store.dispatch('objectCommonInst/searchInstanceCount', {
+          params: {
+            condition: { obj_ids: [id] }
+          },
           config: {
-            requestId: this.request.statistics
+            requestId,
+            globalError: false
           }
         })
-        res.forEach((item) => {
-          modelStatisticsSet[item.bk_obj_id] = item.instance_count
+
+        const [data] = result
+        this.$set(this.modelStatisticsSet, data.bk_obj_id, {
+          error: data.error,
+          inst_count: data.inst_count
         })
-        this.modelStatisticsSet = modelStatisticsSet
       },
       async saveGroup() {
         const res = await Promise.all([
@@ -487,7 +518,7 @@
         this.curCreateModel = createModel
         this.sucessDialog.isShow = true
         this.$http.cancel('post_searchClassificationsObjects')
-        this.getModelStatistics()
+        this.getModelInstanceCount(params.bk_obj_id)
         this.searchClassificationsObjects({
           params: {}
         })
@@ -525,6 +556,14 @@
             }
           })
         }
+      },
+      handleModelItemMouseEnter(model) {
+        if ((model.bk_ispaused && !model.bk_ishidden) || model.bk_classification_id === 'bk_biz_topo') {
+          // ignore disabled | bk_biz_topo
+          return
+        }
+
+        this.getModelInstanceCount(model.bk_obj_id)
       }
     }
   }
