@@ -15,10 +15,11 @@
           :key="association.id"
           :type="item.type"
           :id="item.id"
-          :source="sourceInstances"
-          :target="targetInstances"
+          :all-instances="instances"
           :association-type="item.associationType"
-          @relation-instance-change="handleInstanceListChange">
+          :obj-id="objId"
+          :inst-id="instId"
+          @delete-association="handleDeleteAssociation">
         </cmdb-relation-list-table>
       </template>
     </template>
@@ -53,10 +54,7 @@
     },
     data() {
       return {
-        sourceInstances: [],
-        targetInstances: [],
-        instances: {},
-        hasRelationInstance: false
+        instances: []
       }
     },
     computed: {
@@ -69,7 +67,10 @@
         return this.$parent.formatedInst.bk_inst_id
       },
       hasRelation() {
-        return this.$parent.hasRelation
+        return !!this.$parent.hasRelation
+      },
+      hasRelationInstance() {
+        return !!this.instances.length
       },
       uniqueAssociationObject() {
         const ids = this.associationObject.map(association => association.id)
@@ -96,7 +97,8 @@
       },
       loading() {
         return this.$loading([
-          'getInstRelation'
+          'getSourceAssociation',
+          'getTargetAssociation'
         ])
       },
       resourceType() {
@@ -109,10 +111,10 @@
       }
     },
     created() {
-      this.getInstRelation()
+      this.getAssociation()
 
       bus.$on('association-change', async () => {
-        await this.getInstRelation()
+        await this.getAssociation()
       })
 
       this.expandFirstListTable()
@@ -124,20 +126,23 @@
       ...mapActions('objectAssociation', [
         'searchObjectAssociation'
       ]),
-      async getInstRelation() {
-        const res = await this.$store.dispatch('objectRelation/getInstRelation', {
-          objId: this.objId,
-          instId: this.instId,
-          params: {},
-          config: {
-            requestId: 'getInstRelation'
-          }
-        })
-
-        if (res) {
-          const data = res[0] || { prev: [], next: [] }
-          this.sourceInstances = data.prev
-          this.targetInstances = data.next
+      async getAssociation() {
+        try {
+          const sourceCondition = { bk_obj_id: this.objId, bk_inst_id: this.instId }
+          const targetCondition = { bk_asst_obj_id: this.objId, bk_asst_inst_id: this.instId }
+          const [source, target] = await Promise.all([
+            this.$store.dispatch('objectAssociation/searchInstAssociation', {
+              params: { condition: sourceCondition },
+              config: { requestId: 'getSourceAssociation' }
+            }),
+            this.$store.dispatch('objectAssociation/searchInstAssociation', {
+              params: { condition: targetCondition },
+              config: { requestId: 'getTargetAssociation' }
+            })
+          ])
+          this.instances = [...source, ...target]
+        } catch (error) {
+          console.error(error)
         }
       },
       expandFirstListTable() {
@@ -148,11 +153,9 @@
           }
         })
       },
-      handleInstanceListChange(list, id, type) {
-        this.instances[`${id}_${type}`] = list
-        const instanceList = Object.values(this.instances).reduce((acc, cur) => acc.concat(cur), [])
-        this.hasRelationInstance = instanceList.length > 0
-        this.expandFirstListTable()
+      handleDeleteAssociation(id) {
+        const index = this.instances.findIndex(instance => instance.id === id)
+        index > -1 && this.instances.splice(index, 1)
       }
     }
   }
