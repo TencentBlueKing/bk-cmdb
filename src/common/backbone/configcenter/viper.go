@@ -422,16 +422,6 @@ func Int(key string) (int, error) {
 	return 0, err.New("config not found")
 }
 
-// Duration return the duration value of the configuration information according to the key.
-func Duration(key string) (time.Duration, error) {
-	confLock.RLock()
-	defer confLock.RUnlock()
-	if commonParser != nil && commonParser.isSet(key) {
-		return commonParser.getDuration(key), nil
-	}
-	return 0, err.New("config not found")
-}
-
 // Int return the int value of the configuration information according to the key.
 func Int64(key string) (int64, error) {
 	confLock.RLock()
