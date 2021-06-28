@@ -181,6 +181,7 @@ func (dt *dbTable) syncDBTableIndexes(ctx context.Context) error {
 	}
 
 	for tableName, indexes := range tableIndexes {
+		blog.Infof("start sync table(%s) index, rid: %s", tableName, dt.rid)
 		deprecatedTableIndexNames := deprecatedIndexNames[tableName]
 
 		if err := dt.syncIndexesToDB(ctx, tableName, indexes, deprecatedTableIndexNames); err != nil {
@@ -546,7 +547,7 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 func (dt *dbTable) createIndexes(ctx context.Context, tableName string, indexes []types.Index) {
 
 	for _, index := range indexes {
-		if err := dt.db.Table(tableName).CreateIndex(ctx, index); err != nil && !dt.db.IsDuplicatedError(err) {
+		if err := dt.db.Table(tableName).CreateIndex(ctx, index); err != nil {
 			// 不影响后需执行，
 			// TODO: 报警
 			blog.WarnJSON("create table(%s) error. index: %s, err: %s, rid: %s", tableName, index, err, dt.rid)
