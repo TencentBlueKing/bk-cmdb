@@ -248,6 +248,24 @@ func (s *coreService) UpdateSetTemplateSyncStatus(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+func (s *coreService) UpdateManySetTemplateSyncStatus(ctx *rest.Contexts) {
+	var option []metadata.SetTemplateSyncStatus
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	for _, setStatus := range option {
+		if err := s.core.SetTemplateOperation().UpdateSetTemplateSyncStatus(ctx.Kit, setStatus.SetID, setStatus); err != nil {
+			blog.Errorf("UpdateSetTemplateSyncStatus failed, setID: %d, option: %+v, err: %+v, rid: %s", setStatus.SetID, option, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
+	ctx.RespEntity(nil)
+}
+
 func (s *coreService) ListSetTemplateSyncStatus(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)

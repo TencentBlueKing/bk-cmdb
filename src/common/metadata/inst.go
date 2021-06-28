@@ -35,8 +35,6 @@ type SetInst struct {
 	CreateTime      Time   `field:"create_time" json:"create_time,omitempty" bson:"create_time" mapstructure:"create_time"`
 	LastTime        Time   `field:"last_time" json:"last_time,omitempty" bson:"last_time" mapstructure:"last_time"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
-
-	SetTemplateVersion int64 `bson:"set_template_version" json:"set_template_version" mapstructure:"set_template_version"`
 }
 
 // ModuleInst contains partial fields of a real module

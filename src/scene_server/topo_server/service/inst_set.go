@@ -146,7 +146,14 @@ func (s *Service) createSet(kit *rest.Kit, bizID int64, obj model.Object, data m
 		return nil, err
 	}
 
-	if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(kit, setID); err != nil {
+	setTemplateID, err := data.Int64(common.BKSetTemplateIDField)
+	if err != nil {
+		blog.Errorf("failed to get set_template_id, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, err
+	}
+
+	setIDs := []int64{setID}
+	if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(kit, setTemplateID, setIDs); err != nil {
 		blog.Errorf("createSet success, but UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", setID, err, kit.Rid)
 	}
 	return set, nil

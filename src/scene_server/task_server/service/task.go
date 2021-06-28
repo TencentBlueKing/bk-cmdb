@@ -54,6 +54,22 @@ func (s *Service) ListTask(ctx *rest.Contexts) {
 	})
 }
 
+func (s *Service) ListLatestTask(ctx *rest.Contexts) {
+	input := new(metadata.ListAPITaskLatestRequest)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	srvData := s.newSrvComm(ctx.Request.Request.Header)
+	infos, err := srvData.lgc.ListLatest(srvData.ctx, ctx.Request.PathParameter("name"), input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(infos)
+}
+
 func (s *Service) DetailTask(ctx *rest.Contexts) {
 	srvData := s.newSrvComm(ctx.Request.Request.Header)
 	taskInfo, err := srvData.lgc.Detail(srvData.ctx, ctx.Request.PathParameter("task_id"))

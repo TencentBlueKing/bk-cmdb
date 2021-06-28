@@ -102,6 +102,15 @@ type ListAPITaskRequest struct {
 	Page      BasePage      `json:"page"`
 }
 
+type ListAPITaskLatestRequest struct {
+	Condition mapstr.MapStr `json:"condition"`
+}
+
+type ListAPITaskLatestResponse struct {
+	BaseResp
+	Data []APITaskDetail `json:"data"`
+}
+
 type ListAPITaskData struct {
 	Info  []APITaskDetail `json:"info"`
 	Count int64           `json:"count"`

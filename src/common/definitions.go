@@ -205,6 +205,12 @@ const (
 
 	// BKDBSize counts and returns the total number of items in an array
 	BKDBSize = "$size"
+
+	// BKDBSort the db operator
+	BKDBSort = "$sort"
+
+	// BKDBReplaceRoot the db operator
+	BKDBReplaceRoot = "$replaceRoot"
 )
 
 const (
