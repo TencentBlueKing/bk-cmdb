@@ -9,10 +9,15 @@
 
 - 命令行参数
   ```
-  --set-default[=false]: set log level to default value
-  --set-v="": set log level for V logs
-  --addrport="": the ip address and port for the hosts to apply command, separated by comma
-  --zk-addr="": the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
+  --set-default      [=false]: set log level to default value
+  --set-v             =""    : set log level for V logs
+  --addrport          =""    : the ip address and port for the hosts to apply command, separated by comma
+  --zk-addr           =""    : the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
+  --redis-addr        =""    : assign redis server address default is 127.0.0.1:6379
+  --redis-pwd         =""    : assign redis server password
+  --redis-database    =""    : assign the redis database default is 0
+  --redis-mastername  =""    : assign redis server master name defalut is null
+  --redis-sentinelpwd =""    : assign the redis sentinel password  default is null
   ```
 - 示例
 
@@ -257,3 +262,95 @@ denyall配置为false的情况下，limit和ttl配置才能生效
       ./tool_ctl checkconf --dir="/data/cmdb/cmdb_adminserver/configures"
       ./tool_ctl checkconf --file="/data/cmdb/cmdb_adminserver/configures/common.yaml"
     ```
+### DB操作(目前支持查找、删除、显示collections操作)
+
+- 使用方式
+     ```
+         ./tool_ctl db [flags]
+         ./tool_ctl db [command]
+     ```
+- 子命令
+     ```
+          find        find eligible data from the db
+          delete      delete eligible data from the db
+          show        show all collections
+     ```
+
+- 命令行参数
+     ```
+          --collection=""   : collection name
+          --condition=""    : query conditions
+          --num=5           : numbers of result to show                  （默认值是5，仅限find命令）
+          --pretty[=false]  : query result are displayed in JSON format  （默认按照文本显示，仅限find命令）
+          --resfilter=""    : display the required fields                （仅限find命令）
+     ```
+- 示例
+     ```
+         对DB进行查找操作示例:
+             ./tool_ctl --mongo-uri="mongodb://user:pwd@localhost:27017/test?replicaSet=rs0" db find --collection="test_collection" --condition="{\"bk_biz_id\" : 6}"  --resfilter="id,type" --pretty=true
+         回显样式:
+             [
+             	{
+             		"current_version": "y3.X.XXXXXXXX",
+             		"init_distro_version": "XXXX.XXXX.XXXX"
+             	}
+             ]
+             total data num is 1
+     ```
+     ```
+         显示指定DB中的所有collections
+             ./tool_ctl --mongo-uri="mongodb://user:pwd@localhost:27017/test?replicaSet=rs0" db show
+         回显样式:
+             cc_test1
+             cc_test2
+             cc_test3
+             cc_test4
+             cc_test5
+             total collection num is 5
+     ```
+     ```
+          对DB进行删除操作示例:
+              ./tool_ctl --mongo-uri="mongodb://user:pwd@localhost:27017/test?replicaSet=rs0" db delete --collection="test_collection" --condition="{\"bk_biz_id\" : 6}"
+          回显样式
+              delete total data num is 3
+     ```
+     
+### Redis操作(目前支持scan、scan-del操作)
+- 使用方式
+     ```
+         ./tool_ctl redis [flags]
+         ./tool_ctl redis [command]
+     ```
+- 子命令
+     ```
+          scan            scan the redis
+          scan-del        del scanned keys
+     ```     
+     
+- 命令行参数
+     ```
+          match            redis scan  match pattern  default is null
+     ```
+- 示例
+     ```
+         对Redis进行 scan 操作示例:
+             ./tool_ctl redis --redis-pwd="admin" scan --match="test*" 
+         回显样式:
+             show some results as an example :
+             test2
+             test1
+             test
+             example end
+          命令说明：
+             此处只显示不多于5个结果示例，并不是全部结果
+                
+          对Redis进行 scan-del 操作示例:
+             ./tool_ctl redis --redis-pwd="123456" scan-del --match="test*"
+          回显样式:  
+             del keys start :
+             del keys num: 1.
+             del keys num: 2.
+             del keys success ,total num is 3
+          命令说明：
+             按照指定的match参数进行匹配，会一次性将匹配到的key进行全部删除，此命令需要慎用！
+     ```
