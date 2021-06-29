@@ -149,6 +149,30 @@ var ObjectBaseKey = Key{
 	},
 }
 
+var MainlineInstanceKey = Key{
+	namespace:  watchCacheNamespace + "mainline_instance",
+	collection: common.BKTableNameMainlineInstance,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		field := gjson.GetBytes(doc, common.BKInstIDField)
+		if !field.Exists() {
+			return fmt.Errorf("field %s not exist", common.BKInstIDField)
+		}
+
+		if field.Int() <= 0 {
+			return fmt.Errorf("invalid bk_inst_id: %s, should be integer type and >= 0", field.Raw)
+		}
+
+		return nil
+	},
+	instName: func(doc []byte) string {
+		return gjson.GetBytes(doc, common.BKInstNameField).String()
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKInstIDField).Int()
+	},
+}
+
 var processFields = []string{common.BKProcessIDField, common.BKProcessNameField}
 var ProcessKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDProc,

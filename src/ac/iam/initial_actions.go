@@ -110,6 +110,7 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchModuleEvent:                    "模块数据监听",
 	WatchProcessEvent:                   "进程数据监听",
 	WatchCommonInstanceEvent:            "模型实例事件监听",
+	WatchMainlineInstanceEvent:          "自定义拓扑层级事件监听",
 	GlobalSettings:                      "全局设置",
 }
 
@@ -1245,6 +1246,32 @@ func genEventWatchActions() []ResourceAction {
 		NameEn:               "Common Model Instance Event Listen",
 		Type:                 View,
 		RelatedResourceTypes: modelResource,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	mainlineModelSelection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       MainlineModelEventSelection,
+	}}
+
+	mainlineModelResource := []RelateResourceType{
+		{
+			SystemID:           SystemIDCMDB,
+			ID:                 MainlineModelEvent,
+			NameAlias:          "",
+			NameAliasEn:        "",
+			Scope:              nil,
+			InstanceSelections: mainlineModelSelection,
+		},
+	}
+
+	actions = append(actions, ResourceAction{
+		ID:                   WatchMainlineInstanceEvent,
+		Name:                 ActionIDNameMap[WatchMainlineInstanceEvent],
+		NameEn:               "Custom Topo Layer Event Listen",
+		Type:                 View,
+		RelatedResourceTypes: mainlineModelResource,
 		RelatedActions:       nil,
 		Version:              1,
 	})

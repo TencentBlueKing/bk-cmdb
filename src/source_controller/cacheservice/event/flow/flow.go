@@ -229,7 +229,6 @@ func (f *Flow) batchHandleEvents(es []*types.Event, oidDetailMap map[string][]by
 
 	blog.Infof("insert watch event for %s success, oids: %v, rid: %s", f.key.Collection(), oids, rid)
 	return false, nil
-
 }
 
 // parseEvent parse event into db chain nodes to store in db and details to store in redis

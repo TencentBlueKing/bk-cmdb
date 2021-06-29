@@ -147,7 +147,7 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 			"oid": node.Oid,
 		}
 
-		if key.Collection() == common.BKTableNameBaseInst {
+		if key.Collection() == common.BKTableNameBaseInst || key.Collection() == common.BKTableNameMainlineInstance {
 			filter["detail.bk_inst_id"] = node.InstanceID
 		} else {
 			filter["coll"] = key.Collection()

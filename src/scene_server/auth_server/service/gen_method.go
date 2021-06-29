@@ -116,7 +116,7 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 			},
 		}, nil
 
-	case iam.SysModel, iam.SysInstanceModel, iam.SysModelEvent:
+	case iam.SysModel, iam.SysInstanceModel, iam.SysModelEvent, iam.MainlineModelEvent:
 
 		// process and cloud area are temporarily excluded TODO: remove this restriction when they are available for user
 		// instance model is used as parent layer of instances, should exclude host model and mainline model as
@@ -151,10 +151,19 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 			excludedObjIDs = append(excludedObjIDs, mainlineObjIDs...)
 		}
 
-		extraCond := map[string]interface{}{
-			common.BKObjIDField: map[string]interface{}{
-				common.BKDBNIN: excludedObjIDs,
-			},
+		var extraCond map[string]interface{}
+		if resourceType == iam.MainlineModelEvent {
+			extraCond = map[string]interface{}{
+				common.BKObjIDField: map[string]interface{}{
+					common.BKDBIN: mainlineObjIDs,
+				},
+			}
+		} else {
+			extraCond = map[string]interface{}{
+				common.BKObjIDField: map[string]interface{}{
+					common.BKDBNIN: excludedObjIDs,
+				},
+			}
 		}
 
 		return types.ResourcePullMethod{

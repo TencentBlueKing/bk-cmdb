@@ -64,7 +64,7 @@ func (ps *parseStream) watch() *parseStream {
 			},
 		}
 
-		if resource == string(watch.ObjectBase) {
+		if resource == string(watch.ObjectBase) || resource == string(watch.MainlineInstance) {
 			body, err := ps.RequestCtx.getRequestBody()
 			if err != nil {
 				ps.err = err
