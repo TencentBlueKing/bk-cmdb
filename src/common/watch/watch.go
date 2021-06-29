@@ -30,6 +30,8 @@ type WatchEventOptions struct {
 	Cursor string `json:"bk_cursor"`
 	// the resource kind you want to watch
 	Resource CursorType `json:"bk_resource"`
+	// SubResource the sub resource you want to watch, eg. object ID of the instance resource, watch all if not set
+	SubResource string `json:"sub_resource,omitempty"`
 }
 
 func (w *WatchEventOptions) Validate() error {

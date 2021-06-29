@@ -142,8 +142,10 @@ const (
 	SysModelGroup TypeID = "sys_model_group"
 
 	// special model resource for selection of instance, not including models whose instances are managed separately
-	SysInstanceModel         TypeID = "sys_instance_model"
-	SysModel                 TypeID = "sys_model"
+	SysInstanceModel TypeID = "sys_instance_model"
+	SysModel         TypeID = "sys_model"
+	// SysModelEvent special model resource for resource watch, not including inner and mainline models
+	SysModelEvent            TypeID = "sys_model_event"
 	SysInstance              TypeID = "sys_instance"
 	SysAssociationType       TypeID = "sys_association_type"
 	SysAuditLog              TypeID = "sys_audit_log"
@@ -306,7 +308,7 @@ const (
 	WatchSetEvent            ActionID = "watch_set_event"
 	WatchModuleEvent         ActionID = "watch_module_event"
 	WatchProcessEvent        ActionID = "watch_process_event"
-	WatchCommonInstanceEvent ActionID = "watch_object_instance_event"
+	WatchCommonInstanceEvent ActionID = "watch_comm_model_inst_event"
 	GlobalSettings           ActionID = "global_settings"
 
 	// Unknown is an action that can not be recognized
@@ -383,6 +385,7 @@ const (
 	SysHostInstanceSelection           InstanceSelectionID = "sys_host_instance"
 	SysModelGroupSelection             InstanceSelectionID = "sys_model_group"
 	SysModelSelection                  InstanceSelectionID = "sys_model"
+	SysModelEventSelection             InstanceSelectionID = "sys_model_event"
 	SysInstanceSelection               InstanceSelectionID = "sys_instance"
 	SysInstanceModelSelection          InstanceSelectionID = "sys_instance_model"
 	SysAssociationTypeSelection        InstanceSelectionID = "sys_association_type"

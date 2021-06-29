@@ -103,7 +103,7 @@ func (e *Event) runHost(ctx context.Context) error {
 		isMaster: e.isMaster,
 	}
 
-	return newFlow(ctx, opts)
+	return newHostFlow(ctx, opts)
 }
 
 func (e *Event) runModuleHostRelation(ctx context.Context) error {
@@ -163,7 +163,7 @@ func (e *Event) runObjectBase(ctx context.Context) error {
 		isMaster: e.isMaster,
 	}
 
-	return newFlow(ctx, opts)
+	return newInstanceFlow(ctx, opts)
 }
 
 func (e *Event) runProcess(ctx context.Context) error {

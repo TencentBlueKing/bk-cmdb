@@ -165,7 +165,22 @@ func genProcessServiceCategoryResource(_ ActionID, _ TypeID, att *meta.ResourceA
 	return []types.Resource{r}, nil
 }
 
-func genResourceWatch(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
+func genResourceWatch(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	if act == WatchCommonInstanceEvent {
+		r := types.Resource{
+			System:    SystemIDCMDB,
+			Attribute: nil,
+		}
+
+		// do not related to instance authorize
+		r.Type = types.ResourceType(SysModelEvent)
+		if att.InstanceID > 0 {
+			r.ID = strconv.FormatInt(att.InstanceID, 10)
+		}
+
+		return []types.Resource{r}, nil
+	}
+
 	return make([]types.Resource, 0), nil
 }
 

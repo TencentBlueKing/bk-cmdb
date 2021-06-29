@@ -28,6 +28,7 @@ var ResourceTypeIDMap = map[TypeID]string{
 	SysModelGroup:             "模型分组",
 	SysInstanceModel:          "实例模型",
 	SysModel:                  "模型",
+	SysModelEvent:             "模型事件",
 	SysInstance:               "实例",
 	SysAssociationType:        "关联类型",
 	SysOperationStatistic:     "运营统计",
@@ -397,6 +398,18 @@ func genPublicResources() []ResourceType {
 			NameEn:        "Event Listen",
 			Description:   "事件监听",
 			DescriptionEn: "event watch",
+			Parents:       nil,
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/resource",
+			},
+			Version: 1,
+		},
+		{
+			ID:            SysModelEvent,
+			Name:          ResourceTypeIDMap[SysModelEvent],
+			NameEn:        "Model Event Listen",
+			Description:   "模型事件监听",
+			DescriptionEn: "model event watch",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/resource",

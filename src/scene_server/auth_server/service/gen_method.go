@@ -17,7 +17,9 @@ import (
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/types"
 )
 
@@ -114,15 +116,39 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 			},
 		}, nil
 
-	case iam.SysModel, iam.SysInstanceModel:
+	case iam.SysModel, iam.SysInstanceModel, iam.SysModelEvent:
 
-		// models should not include mainline models, the related operation of them is iam.EditBusinessLayer
 		// process and cloud area are temporarily excluded TODO: remove this restriction when they are available for user
-		// instance model is used as parent layer of instances, should exclude host model as host instances use separate operations
-		excludedObjIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat, common.BKInnerObjIDApp,
-			common.BKInnerObjIDSet, common.BKInnerObjIDModule}
-		if resourceType == iam.SysInstanceModel {
-			excludedObjIDs = append(excludedObjIDs, common.BKInnerObjIDHost)
+		// instance model is used as parent layer of instances, should exclude host model and mainline model as
+		// they use separate operations
+		excludedObjIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
+
+		// get mainline objects
+		mainlineOpt := &metadata.QueryCondition{
+			Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline},
+		}
+		asstRes, err := s.lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, mainlineOpt)
+		if err != nil {
+			blog.Errorf("search mainline association failed, err: %v, rid: %s", err, kit.Rid)
+			return types.ResourcePullMethod{}, err
+		}
+
+		if err := asstRes.CCError(); err != nil {
+			blog.Errorf("search mainline association failed, err: %v, rid: %s", err, kit.Rid)
+			return types.ResourcePullMethod{}, err
+		}
+
+		mainlineObjIDs := make([]string, 0)
+		for _, asst := range asstRes.Data.Info {
+			if metadata.IsCommon(asst.ObjectID) {
+				mainlineObjIDs = append(mainlineObjIDs, asst.ObjectID)
+			}
+		}
+
+		if resourceType == iam.SysModelEvent || resourceType == iam.SysInstanceModel {
+			excludedObjIDs = append(excludedObjIDs, common.BKInnerObjIDHost, common.BKInnerObjIDApp,
+				common.BKInnerObjIDSet, common.BKInnerObjIDModule)
+			excludedObjIDs = append(excludedObjIDs, mainlineObjIDs...)
 		}
 
 		extraCond := map[string]interface{}{

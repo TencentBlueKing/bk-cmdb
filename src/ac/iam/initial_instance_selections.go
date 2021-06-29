@@ -220,5 +220,16 @@ func GenerateInstanceSelections() []InstanceSelection {
 				},
 			},
 		},
+		{
+			ID:     SysModelEventSelection,
+			Name:   "模型事件列表",
+			NameEn: "Model Event List",
+			ResourceTypeChain: []ResourceChain{
+				{
+					SystemID: SystemIDCMDB,
+					ID:       SysModelEvent,
+				},
+			},
+		},
 	}
 }
