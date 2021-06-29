@@ -101,6 +101,7 @@ func (lgc *Logics) ListLatest(ctx context.Context, name string, input *metadata.
 		}},
 		map[string]interface{}{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},
 	}
+
 	result := make([]metadata.APITaskDetail, 0)
 	if err := lgc.db.Table(common.BKTableNameAPITask).AggregateAll(ctx, aggregateCond, &result); err != nil {
 		blog.Errorf("ListLatest Task failed, err: %v, rid: %v", err, lgc.rid)

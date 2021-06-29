@@ -226,28 +226,6 @@ func (s *coreService) ListSetTplRelatedSvcTpl(ctx *rest.Contexts) {
 	ctx.RespEntity(serviceTemplates)
 }
 
-func (s *coreService) UpdateSetTemplateSyncStatus(ctx *rest.Contexts) {
-	setIDStr := ctx.Request.PathParameter(common.BKSetIDField)
-	setID, err := strconv.ParseInt(setIDStr, 10, 64)
-	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetIDField))
-		return
-	}
-
-	option := metadata.SetTemplateSyncStatus{}
-	if err := ctx.DecodeInto(&option); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if err := s.core.SetTemplateOperation().UpdateSetTemplateSyncStatus(ctx.Kit, setID, option); err != nil {
-		blog.Errorf("UpdateSetTemplateSyncStatus failed, setID: %d, option: %+v, err: %+v, rid: %s", setID, option, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	ctx.RespEntity(nil)
-}
-
 func (s *coreService) UpdateManySetTemplateSyncStatus(ctx *rest.Contexts) {
 	var option []metadata.SetTemplateSyncStatus
 	if err := ctx.DecodeInto(&option); nil != err {

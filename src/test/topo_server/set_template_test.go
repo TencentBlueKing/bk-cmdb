@@ -181,6 +181,7 @@ var _ = Describe("create normal set template test", func() {
 				Name:               "setTpl3",
 				ServiceTemplateIDs: []int64{serviceTemplateID2, serviceTemplateID3},
 			}
+			fmt.Println(bizID, setTemplateID, option)
 			rsp, err := topoServerClient.SetTemplate().UpdateSetTemplate(ctx, header, bizID, setTemplateID, option)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{

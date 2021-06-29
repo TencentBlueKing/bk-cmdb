@@ -127,6 +127,10 @@ func (s *Service) UpdateSetTemplate(ctx *rest.Contexts) {
 			return err
 		}
 
+		if setInstanceResult.Data.Count == 0 {
+			return nil
+		}
+
 		var setID []int64
 		for _, set := range setInstanceResult.Data.Info {
 			setID = append(setID, set.SetID)
@@ -618,38 +622,6 @@ func (s *Service) DiffSetTplWithInst(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(result)
-}
-
-func (s *Service) UpdateSetVersion(kit *rest.Kit, bizID, setID, setTemplateVersion int64) errors.CCErrorCoder {
-	updateOption := &metadata.UpdateOption{
-		Condition: map[string]interface{}{
-			common.BKAppIDField: bizID,
-			common.BKSetIDField: setID,
-		},
-		Data: map[string]interface{}{
-			common.BKSetTemplateVersionField: setTemplateVersion,
-		},
-	}
-
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
-		updateResult, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, updateOption)
-		if err != nil {
-			blog.Errorf("UpdateSetVersion failed, UpdateInstance of set failed, option: %+v, err: %+v, rid: %s", updateOption, err, kit.Rid)
-			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if ccErr := updateResult.CCError(); ccErr != nil {
-			blog.Errorf("UpdateSetVersion failed, UpdateInstance of set failed, option: %+v, response: %+v, rid: %s", updateOption, updateResult, kit.Rid)
-			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		blog.Errorf("UpdateSetVersion failed, err: %v, rid: %s", txnErr, kit.Rid)
-		return txnErr.(errors.CCErrorCoder)
-	}
-
-	return nil
 }
 
 func (s *Service) SyncSetTplToInst(ctx *rest.Contexts) {

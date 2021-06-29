@@ -234,8 +234,7 @@ func (st *setTemplate) SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateI
 					blog.Errorf("poll UpdateSetSyncStatus timeout, setID: %d, rid: %s", setID, kit.Rid)
 					return
 				case <-ticker.C:
-					setId := []int64{setID}
-					setSyncStatus, err := st.UpdateSetSyncStatus(kit.NewKit(), setTemplateID, setId)
+					setSyncStatus, err := st.UpdateSetSyncStatus(kit.NewKit(), setTemplateID, []int64{setID})
 					if err != nil {
 						blog.Errorf("UpdateSetSyncStatus failed, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
 						return

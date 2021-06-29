@@ -60,6 +60,7 @@ func (s *Service) ListLatestTask(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	srvData := s.newSrvComm(ctx.Request.Request.Header)
 	infos, err := srvData.lgc.ListLatest(srvData.ctx, ctx.Request.PathParameter("name"), input)
 	if err != nil {
