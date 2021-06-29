@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"configcenter/src/apimachinery/rest"
 )
@@ -30,11 +31,78 @@ var (
 )
 
 type iamClient struct {
-	Config AuthConfig
+	config AuthConfig
 	// http client instance
 	client rest.ClientInterface
 	// http header info
 	basicHeader http.Header
+}
+
+type IAMClientCfg struct {
+	Config AuthConfig
+	// http client instance
+	Client rest.ClientInterface
+	// http header info
+	BasicHeader http.Header
+}
+
+func NewIAMClient(cfg *IAMClientCfg) *iamClient {
+	return &iamClient{
+		config:      cfg.Config,
+		client:      cfg.Client,
+		basicHeader: cfg.BasicHeader,
+	}
+}
+
+// iamClientInterface is a interface includes the api provided by IAM
+// unexposed interface
+type iamClientInterface interface {
+	// RegisterSystem register a system in IAM
+	RegisterSystem(ctx context.Context, sys System) error
+	// GetSystemInfo get a system info from IAM
+	// if fields is empty, find all system info
+	GetSystemInfo(ctx context.Context, fields []SystemQueryField) (*SystemResp, error)
+	// UpdateSystemConfig update system config in IAM
+	UpdateSystemConfig(ctx context.Context, config *SysConfig) error
+
+	// RegisterResourcesTypes register resource types in IAM
+	RegisterResourcesTypes(ctx context.Context, resTypes []ResourceType) error
+	// UpdateResourcesTypes update resource types in IAM
+	UpdateResourcesTypes(ctx context.Context, resType ResourceType) error
+	// DeleteResourcesTypes delete resource types in IAM
+	DeleteResourcesTypes(ctx context.Context, resTypeIDs []TypeID) error
+
+	// RegisterActions register actions in IAM
+	RegisterActions(ctx context.Context, actions []ResourceAction) error
+	// UpdateAction update action in IAM
+	UpdateAction(ctx context.Context, action ResourceAction) error
+	// DeleteActions delete actions in IAM
+	DeleteActions(ctx context.Context, actionIDs []ActionID) error
+
+	// RegisterActionGroups register action groups in IAM
+	RegisterActionGroups(ctx context.Context, actionGroups []ActionGroup) error
+	// UpdateActionGroups update action groups in IAM
+	UpdateActionGroups(ctx context.Context, actionGroups []ActionGroup) error
+
+	// RegisterInstanceSelections register instance selections in IAM
+	RegisterInstanceSelections(ctx context.Context, instanceSelections []InstanceSelection) error
+	// UpdateInstanceSelection update instance selection in IAM
+	UpdateInstanceSelection(ctx context.Context, instanceSelection InstanceSelection) error
+	// DeleteInstanceSelections delete instance selections in IAM
+	DeleteInstanceSelections(ctx context.Context, instanceSelectionIDs []InstanceSelectionID) error
+
+	// RegisterResourceCreatorActions regitser resource creator actions in IAM
+	RegisterResourceCreatorActions(ctx context.Context, resourceCreatorActions ResourceCreatorActions) error
+	// UpdateResourceCreatorActions update resource creator actions in IAM
+	UpdateResourceCreatorActions(ctx context.Context, resourceCreatorActions ResourceCreatorActions) error
+
+	// RegisterCommonActions register common actions in IAM
+	RegisterCommonActions(ctx context.Context, commonActions []CommonAction) error
+	// UpdateCommonActions update common actions in IAM
+	UpdateCommonActions(ctx context.Context, commonActions []CommonAction) error
+
+	// DeleteActionPolicies delete action policies in IAM
+	DeleteActionPolicies(ctx context.Context, actionID ActionID) error
 }
 
 func (c *iamClient) RegisterSystem(ctx context.Context, sys System) error {
@@ -59,14 +127,23 @@ func (c *iamClient) RegisterSystem(ctx context.Context, sys System) error {
 	return nil
 }
 
-func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
+// if fields is empty, find all system info
+func (c *iamClient) GetSystemInfo(ctx context.Context, fields []SystemQueryField) (*SystemResp, error) {
 	resp := new(SystemResp)
+	fieldsStr := ""
+	if len(fields) > 0 {
+		fieldArr := make([]string, len(fields))
+		for idx, field := range fields {
+			fieldArr[idx] = string(field)
+		}
+		fieldsStr = strings.Join(fieldArr, ",")
+	}
+
 	result := c.client.Get().
-		SubResourcef("/api/v1/model/systems/%s/query", c.Config.SystemID).
+		SubResourcef("/api/v1/model/systems/%s/query", c.config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
-		WithParam("fields", "base_info,resource_types,actions,action_groups,instance_selections,"+
-			"resource_creator_actions,common_actions").
+		WithParam("fields", fieldsStr).
 		Body(nil).Do()
 	err := result.Into(resp)
 	if err != nil {
@@ -93,7 +170,7 @@ func (c *iamClient) UpdateSystemConfig(ctx context.Context, config *SysConfig) e
 	sys.ProviderConfig = config
 	resp := new(BaseResponse)
 	result := c.client.Put().
-		SubResourcef("/api/v1/model/systems/%s", c.Config.SystemID).
+		SubResourcef("/api/v1/model/systems/%s", c.config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(sys).Do()
@@ -115,7 +192,7 @@ func (c *iamClient) UpdateSystemConfig(ctx context.Context, config *SysConfig) e
 func (c *iamClient) RegisterResourcesTypes(ctx context.Context, resTypes []ResourceType) error {
 	resp := new(BaseResponse)
 	result := c.client.Post().
-		SubResourcef("/api/v1/model/systems/%s/resource-types", c.Config.SystemID).
+		SubResourcef("/api/v1/model/systems/%s/resource-types", c.config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(resTypes).Do()
@@ -138,7 +215,7 @@ func (c *iamClient) RegisterResourcesTypes(ctx context.Context, resTypes []Resou
 func (c *iamClient) UpdateResourcesTypes(ctx context.Context, resType ResourceType) error {
 	resp := new(BaseResponse)
 	result := c.client.Put().
-		SubResourcef("/api/v1/model/systems/%s/resource-types/%s", c.Config.SystemID, resType.ID).
+		SubResourcef("/api/v1/model/systems/%s/resource-types/%s", c.config.SystemID, resType.ID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(resType).Do()
@@ -168,7 +245,7 @@ func (c *iamClient) DeleteResourcesTypes(ctx context.Context, resTypeIDs []TypeI
 
 	resp := new(BaseResponse)
 	result := c.client.Delete().
-		SubResourcef("/api/v1/model/systems/%s/resource-types", c.Config.SystemID).
+		SubResourcef("/api/v1/model/systems/%s/resource-types", c.config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(ids).Do()
@@ -187,11 +264,11 @@ func (c *iamClient) DeleteResourcesTypes(ctx context.Context, resTypeIDs []TypeI
 	return nil
 }
 
-func (c *iamClient) CreateAction(ctx context.Context, actions []ResourceAction) error {
+func (c *iamClient) RegisterActions(ctx context.Context, actions []ResourceAction) error {
 
 	resp := new(BaseResponse)
 	result := c.client.Post().
-		SubResourcef("/api/v1/model/systems/%s/actions", c.Config.SystemID).
+		SubResourcef("/api/v1/model/systems/%s/actions", c.config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(actions).Do()
@@ -214,7 +291,7 @@ func (c *iamClient) UpdateAction(ctx context.Context, action ResourceAction) err
 
 	resp := new(BaseResponse)
 	result := c.client.Put().
-		SubResourcef("/api/v1/model/systems/%s/actions/%s", c.Config.SystemID, action.ID).
+		SubResourcef("/api/v1/model/systems/%s/actions/%s", c.config.SystemID, action.ID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(action).Do()
@@ -233,7 +310,7 @@ func (c *iamClient) UpdateAction(ctx context.Context, action ResourceAction) err
 	return nil
 }
 
-func (c *iamClient) DeleteAction(ctx context.Context, actionIDs []ActionID) error {
+func (c *iamClient) DeleteActions(ctx context.Context, actionIDs []ActionID) error {
 	ids := make([]struct {
 		ID ActionID `json:"id"`
 	}, len(actionIDs))
@@ -243,7 +320,7 @@ func (c *iamClient) DeleteAction(ctx context.Context, actionIDs []ActionID) erro
 
 	resp := new(BaseResponse)
 	result := c.client.Delete().
-		SubResourcef("/api/v1/model/systems/%s/actions", c.Config.SystemID).
+		SubResourcef("/api/v1/model/systems/%s/actions", c.config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(ids).Do()
@@ -266,7 +343,7 @@ func (c *iamClient) RegisterActionGroups(ctx context.Context, actionGroups []Act
 
 	resp := new(BaseResponse)
 	result := c.client.Post().
-		SubResourcef("/api/v1/model/systems/%s/configs/action_groups", c.Config.SystemID).
+		SubResourcef("/api/v1/model/systems/%s/configs/action_groups", c.config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(actionGroups).Do()
@@ -289,7 +366,7 @@ func (c *iamClient) UpdateActionGroups(ctx context.Context, actionGroups []Actio
 
 	resp := new(BaseResponse)
 	result := c.client.Put().
-		SubResourcef("/api/v1/model/systems/%s/configs/action_groups", c.Config.SystemID).
+		SubResourcef("/api/v1/model/systems/%s/configs/action_groups", c.config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(actionGroups).Do()
@@ -308,11 +385,11 @@ func (c *iamClient) UpdateActionGroups(ctx context.Context, actionGroups []Actio
 	return nil
 }
 
-func (c *iamClient) CreateInstanceSelection(ctx context.Context, instanceSelections []InstanceSelection) error {
+func (c *iamClient) RegisterInstanceSelections(ctx context.Context, instanceSelections []InstanceSelection) error {
 
 	resp := new(BaseResponse)
 	result := c.client.Post().
-		SubResourcef("/api/v1/model/systems/%s/instance-selections", c.Config.SystemID).
+		SubResourcef("/api/v1/model/systems/%s/instance-selections", c.config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(instanceSelections).Do()
@@ -335,7 +412,7 @@ func (c *iamClient) UpdateInstanceSelection(ctx context.Context, instanceSelecti
 
 	resp := new(BaseResponse)
 	result := c.client.Put().
-		SubResourcef("/api/v1/model/systems/%s/instance-selections/%s", c.Config.SystemID, instanceSelection.ID).
+		SubResourcef("/api/v1/model/systems/%s/instance-selections/%s", c.config.SystemID, instanceSelection.ID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(instanceSelection).Do()
@@ -354,7 +431,7 @@ func (c *iamClient) UpdateInstanceSelection(ctx context.Context, instanceSelecti
 	return nil
 }
 
-func (c *iamClient) DeleteInstanceSelection(ctx context.Context, instanceSelectionIDs []InstanceSelectionID) error {
+func (c *iamClient) DeleteInstanceSelections(ctx context.Context, instanceSelectionIDs []InstanceSelectionID) error {
 	ids := make([]struct {
 		ID InstanceSelectionID `json:"id"`
 	}, len(instanceSelectionIDs))
@@ -364,7 +441,7 @@ func (c *iamClient) DeleteInstanceSelection(ctx context.Context, instanceSelecti
 
 	resp := new(BaseResponse)
 	result := c.client.Delete().
-		SubResourcef("/api/v1/model/systems/%s/instance-selections", c.Config.SystemID).
+		SubResourcef("/api/v1/model/systems/%s/instance-selections", c.config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(ids).Do()
@@ -387,7 +464,7 @@ func (c *iamClient) RegisterResourceCreatorActions(ctx context.Context, resource
 
 	resp := new(BaseResponse)
 	result := c.client.Post().
-		SubResourcef("/api/v1/model/systems/%s/configs/resource_creator_actions", c.Config.SystemID).
+		SubResourcef("/api/v1/model/systems/%s/configs/resource_creator_actions", c.config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(resourceCreatorActions).Do()
@@ -410,7 +487,7 @@ func (c *iamClient) UpdateResourceCreatorActions(ctx context.Context, resourceCr
 
 	resp := new(BaseResponse)
 	result := c.client.Put().
-		SubResourcef("/api/v1/model/systems/%s/configs/resource_creator_actions", c.Config.SystemID).
+		SubResourcef("/api/v1/model/systems/%s/configs/resource_creator_actions", c.config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(resourceCreatorActions).Do()
@@ -432,7 +509,7 @@ func (c *iamClient) UpdateResourceCreatorActions(ctx context.Context, resourceCr
 func (c *iamClient) RegisterCommonActions(ctx context.Context, commonActions []CommonAction) error {
 	resp := new(BaseResponse)
 	result := c.client.Post().
-		SubResourcef("/api/v1/model/systems/%s/configs/common_actions", c.Config.SystemID).
+		SubResourcef("/api/v1/model/systems/%s/configs/common_actions", c.config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(commonActions).Do()
@@ -456,7 +533,7 @@ func (c *iamClient) RegisterCommonActions(ctx context.Context, commonActions []C
 func (c *iamClient) UpdateCommonActions(ctx context.Context, commonActions []CommonAction) error {
 	resp := new(BaseResponse)
 	result := c.client.Put().
-		SubResourcef("/api/v1/model/systems/%s/configs/common_actions", c.Config.SystemID).
+		SubResourcef("/api/v1/model/systems/%s/configs/common_actions", c.config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
 		Body(commonActions).Do()
@@ -471,6 +548,28 @@ func (c *iamClient) UpdateCommonActions(ctx context.Context, commonActions []Com
 			RequestID: result.Header.Get(IamRequestHeader),
 			Reason: fmt.Errorf("update common actions %v failed, code: %d, msg: %s", commonActions, resp.Code,
 				resp.Message),
+		}
+	}
+
+	return nil
+}
+
+func (c *iamClient) DeleteActionPolicies(ctx context.Context, actionID ActionID) error {
+	resp := new(BaseResponse)
+	result := c.client.Delete().
+		SubResourcef("/api/v1/model/systems/%s/actions/%s/policies", c.config.SystemID, actionID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		Do()
+	err := result.Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("delete action %s policies failed, code: %d, msg: %s", actionID, resp.Code, resp.Message),
 		}
 	}
 

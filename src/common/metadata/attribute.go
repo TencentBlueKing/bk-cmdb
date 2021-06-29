@@ -1127,3 +1127,14 @@ func (sa *SubAttribute) Validate(ctx context.Context, data interface{}, key stri
 	}
 	return attr.Validate(ctx, data, key)
 }
+
+type EnumOptions []AttributesOption
+
+type AttributesOption struct {
+	ID        string `json:"id" bson:"id"`
+	Name      string `json:"name" bson:"name"`
+	Type      string `json:"type" bson:"type"`
+	IsDefault bool   `json:"is_default" bson:"is_default"`
+}
+
+type ListOptions []string

@@ -1090,6 +1090,8 @@ const (
 	BKSynchronizeDataTaskDefaultUser = "synchronize task user"
 
 	BKCloudSyncUser = "cloud_sync_user"
+
+	BKIAMSyncUser = "iam_sync_user"
 )
 
 const (

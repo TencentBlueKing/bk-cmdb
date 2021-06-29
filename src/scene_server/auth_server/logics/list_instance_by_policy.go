@@ -15,7 +15,6 @@ package logics
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"configcenter/src/ac/iam"
@@ -37,7 +36,19 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID, 
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
-	collection := getResourceTableName(resourceType)
+	collection := ""
+	if iam.IsIAMSysInstance(resourceType) {
+		objID, err := lgc.GetObjIDFromResourceType(kit.Ctx, kit.Header, resourceType)
+		if err != nil {
+			blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
+				err, resourceType, kit.Rid)
+			return nil, err
+		}
+		collection = common.GetObjectInstTableName(objID, kit.SupplierAccount)
+	} else {
+		collection = getResourceTableName(resourceType)
+	}
+
 	idField := GetResourceIDField(resourceType)
 	nameField := GetResourceNameField(resourceType)
 	if collection == "" || idField == "" || nameField == "" {
@@ -155,33 +166,59 @@ func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types
 // list resource instances that user is privileged to access by policy
 func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) ([]string, error) {
 	resourceType := iam.TypeID(opts.Type)
-	collection := getResourceTableName(resourceType)
+	rid := util.ExtractRequestIDFromContext(ctx)
+	supplierAccount := util.ExtractOwnerFromContext(ctx)
+	if supplierAccount == "" {
+		supplierAccount = common.BKDefaultOwnerID
+	}
+	header := util.NewHeaderFromContext(ctx)
+	collection := ""
+	if iam.IsIAMSysInstance(resourceType) {
+		objID, err := lgc.GetObjIDFromResourceType(ctx, header, resourceType)
+		if err != nil {
+			blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
+				err, resourceType, util.ExtractRequestIDFromContext(ctx))
+			return nil, err
+		}
+		collection = common.GetObjectInstTableName(objID, supplierAccount)
+	} else {
+		collection = getResourceTableName(resourceType)
+	}
 	idField := GetResourceIDField(resourceType)
 	if collection == "" || idField == "" {
 		return nil, fmt.Errorf("request type %s is invalid", opts.Type)
 	}
 
-	policyArr := make([]*operator.Policy, len(opts.Attributes))
-	for index, element := range opts.Attributes {
-		policyArr[index] = &operator.Policy{
+	var policy *operator.Policy
+	if len(opts.Attributes) == 1 {
+		op := opts.Operator
+		// the op can only be Any(eg: the admin user) and Equal
+		if op != operator.Any {
+			op = operator.Equal
+		}
+		policy = &operator.Policy{
+			Operator: op,
+			Element:  opts.Attributes[0],
+		}
+	} else {
+		policyArr := make([]*operator.Policy, len(opts.Attributes))
+		for index, element := range opts.Attributes {
+			policyArr[index] = &operator.Policy{
+				Operator: operator.Equal,
+				Element:  element,
+			}
+		}
+		policy = &operator.Policy{
 			Operator: opts.Operator,
-			Element:  element,
+			Element: &operator.Content{
+				Content: policyArr,
+			},
 		}
 	}
-	policy := &operator.Policy{
-		Operator: operator.And,
-		Element: &operator.Content{
-			Content: policyArr,
-		},
-	}
 
-	header := make(http.Header)
-	header.Add(common.BKHTTPOwnerID, "0")
-	header.Add(common.BKHTTPHeaderUser, "admin")
-	header.Add("Content-Type", "application/json")
 	cond, err := lgc.parseFilterToMongo(ctx, header, policy, resourceType)
 	if err != nil {
-		blog.ErrorJSON("parse request filter expression %s failed, error: %s", policy, err.Error())
+		blog.ErrorJSON("parse request filter expression %s failed, error: %s, rid: %s", policy, err.Error(), rid)
 		return nil, err
 	}
 	if cond == nil {
@@ -199,7 +236,7 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 			for idx, idStr := range opts.IDList {
 				id, err := strconv.ParseInt(idStr, 10, 64)
 				if err != nil {
-					blog.Errorf("parse id %s to int failed, error: %v", idStr, err)
+					blog.Errorf("parse id %s to int failed, error: %v, rid: %s", idStr, err, rid)
 					return nil, err
 				}
 				ids[idx] = id
@@ -222,11 +259,12 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	}
 	res, err := lgc.CoreAPI.CoreService().Auth().SearchAuthResource(ctx, header, param)
 	if err != nil {
-		blog.ErrorJSON("search auth resource failed, error: %s, param: %s", err.Error(), param)
+		blog.ErrorJSON("search auth resource failed, error: %s, param: %s, rid: %s", err.Error(), param, rid)
 		return nil, err
 	}
 	if !res.Result {
-		blog.ErrorJSON("search auth resource failed, error code: %s, error message: %s, param: %s", res.Code, res.ErrMsg, param)
+		blog.ErrorJSON("search auth resource failed, error code: %s, error message: %s, param: %s, rid: %s",
+			res.Code, res.ErrMsg, param, rid)
 		return nil, res.Error()
 	}
 

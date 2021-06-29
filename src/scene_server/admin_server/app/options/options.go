@@ -53,9 +53,11 @@ type Config struct {
 	Register      RegisterConfig
 	Redis         redis.Config
 	SnapRedis     redis.Config
-	Iam           iam.AuthConfig
+	IAM           iam.AuthConfig
 	SnapDataID    int64
 	ShardingTable ShardingTableConfig
+	// SyncIAMPeriodMinutes the period for sync IAM resources
+	SyncIAMPeriodMinutes int
 }
 
 type LanguageConfig struct {

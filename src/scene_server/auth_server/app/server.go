@@ -81,11 +81,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			return err
 		}
 
+		lgc := logics.NewLogics(engine.CoreAPI)
 		authConfig := sdktypes.Config{
 			Iam:     iamConf,
 			Options: opt,
 		}
-		lgc := logics.NewLogics(engine.CoreAPI)
 		authorizer, err := auth.NewAuth(authConfig, lgc)
 		if err != nil {
 			return fmt.Errorf("new authorize failed, err: %v", err)

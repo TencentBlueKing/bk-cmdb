@@ -458,7 +458,7 @@ func (ps *parseStream) objectModule() *parseStream {
 				},
 				Layers: []meta.Item{
 					{
-						Type:       meta.ModelInstance,
+						Type:       meta.ModelSet,
 						Name:       "set",
 						InstanceID: setID,
 					},
@@ -503,7 +503,7 @@ func (ps *parseStream) objectModule() *parseStream {
 				},
 				Layers: []meta.Item{
 					{
-						Type:       meta.ModelInstance,
+						Type:       meta.ModelSet,
 						Name:       "set",
 						InstanceID: setID,
 					},
@@ -547,7 +547,7 @@ func (ps *parseStream) objectModule() *parseStream {
 				},
 				Layers: []meta.Item{
 					{
-						Type:       meta.ModelInstance,
+						Type:       meta.ModelSet,
 						Name:       "set",
 						InstanceID: setID,
 					},

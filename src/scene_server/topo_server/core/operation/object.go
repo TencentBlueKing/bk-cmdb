@@ -41,7 +41,7 @@ type ObjectOperationInterface interface {
 	FindObjectBatch(kit *rest.Kit, objIDs []string) (mapstr.MapStr, error)
 	CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr) (model.Object, error)
 	CanDelete(kit *rest.Kit, targetObj model.Object) error
-	DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
+	DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) (*metadata.Object, error)
 	FindObject(kit *rest.Kit, cond condition.Condition) ([]model.Object, error)
 	FindObjectTopo(kit *rest.Kit, cond condition.Condition) ([]metadata.ObjectTopo, error)
 	FindSingleObject(kit *rest.Kit, objectID string) (model.Object, error)
@@ -103,7 +103,7 @@ func (o *object) IsValidObject(kit *rest.Kit, objID string) error {
 }
 
 // CreateObjectBatch manipulate model in cc_ObjDes
-// this method does'nt act as it's name, it create or update model's attributes indeed.
+// this method doesn't act as it's name, it create or update model's attributes indeed.
 // it only operate on model already exist, that it to say no new model will be created.
 func (o *object) CreateObjectBatch(kit *rest.Kit, inputDataMap map[string]ImportObjectData) (mapstr.MapStr, error) {
 	result := mapstr.New()
@@ -543,9 +543,9 @@ func (o *object) CanDelete(kit *rest.Kit, targetObj model.Object) error {
 }
 
 // DeleteObject delete model by id
-func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error {
+func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) (*metadata.Object, error) {
 	if id <= 0 {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID)
 	}
 
 	// get model by id
@@ -554,15 +554,15 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
 	objs, err := o.FindObject(kit, cond)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to find objects, the condition is (%v) err: %s, rid: %s", cond, err.Error(), kit.Rid)
-		return err
+		return nil, err
 	}
 	// shouldn't return 404 error here, legacy implements just ignore not found error
 	if len(objs) == 0 {
 		blog.V(3).Infof("[operation-obj] object not found, condition: %v, err: %s, rid: %s", cond, err.Error(), kit.Rid)
-		return nil
+		return nil, nil
 	}
 	if len(objs) > 1 {
-		return kit.CCError.CCError(common.CCErrCommGetMultipleObject)
+		return nil, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
 	}
 	obj := objs[0]
 	object := obj.Object()
@@ -570,38 +570,37 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
 	// check whether it can be deleted
 	if needCheckInst {
 		if err := o.CanDelete(kit, obj); nil != err {
-			return err
+			return nil, err
 		}
 	}
 
 	// generate audit log of object.
 	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
-	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.Object().ID, nil)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, id, &object)
 	if err != nil {
 		blog.Errorf("generate audit log failed before delete object, objName: %s, err: %v, rid: %s",
 			object.ObjectName, err, kit.Rid)
-		return err
+		return nil, err
 	}
 
 	// DeleteModelCascade 将会删除模型/模型属性/属性分组/唯一校验
 	rsp, err := o.clientSet.CoreService().Model().DeleteModelCascade(kit.Ctx, kit.Header, id)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to request the object controller, err: %s, rid: %s", err.Error(), kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !rsp.Result {
 		blog.Errorf("[operation-obj] failed to delete the object by the id(%d), rid: %s", id, kit.Rid)
-		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
+		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	// save audit log.
 	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
 		blog.Errorf("delete object %s success, save audit log failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
-		return err
+		return nil, err
 	}
-
-	return nil
+	return &object, nil
 }
 
 func (o *object) isFrom(kit *rest.Kit, fromObjID, toObjID string) (bool, error) {

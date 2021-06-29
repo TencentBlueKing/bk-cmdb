@@ -479,6 +479,7 @@ type Parser interface {
 	GetInt(string) int
 	GetUint64(string) uint64
 	GetBool(string) bool
+	GetDuration(string) time.Duration
 	IsSet(path string) bool
 }
 
@@ -523,6 +524,10 @@ func (vp *viperParser) getUint64(path string) uint64 {
 
 func (vp *viperParser) getBool(path string) bool {
 	return vp.parser.GetBool(path)
+}
+
+func (vp *viperParser) getDuration(path string) time.Duration {
+	return vp.parser.GetDuration(path)
 }
 
 func (vp *viperParser) isSet(path string) bool {

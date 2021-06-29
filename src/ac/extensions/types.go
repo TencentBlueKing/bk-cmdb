@@ -24,6 +24,7 @@ import (
 type AuthManager struct {
 	clientSet  apimachinery.ClientSetInterface
 	Authorizer ac.AuthorizeInterface
+	Viewer     ac.Viewer
 
 	RegisterModuleEnabled        bool
 	RegisterSetEnabled           bool
@@ -31,10 +32,11 @@ type AuthManager struct {
 	SkipReadAuthorization        bool
 }
 
-func NewAuthManager(clientSet apimachinery.ClientSetInterface) *AuthManager {
+func NewAuthManager(clientSet apimachinery.ClientSetInterface, iamCli *iam.IAM) *AuthManager {
 	return &AuthManager{
 		clientSet:                    clientSet,
 		Authorizer:                   iam.NewAuthorizer(clientSet),
+		Viewer:                       iam.NewViewer(clientSet, iamCli),
 		RegisterModuleEnabled:        false,
 		RegisterSetEnabled:           false,
 		SkipReadAuthorization:        true,

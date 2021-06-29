@@ -18,6 +18,7 @@ import (
 	"strings"
 	"sync"
 
+	"configcenter/src/ac/meta"
 	"configcenter/src/common/auth"
 	cc "configcenter/src/common/backbone/configcenter"
 )
@@ -99,6 +100,19 @@ type System struct {
 	ProviderConfig     *SysConfig `json:"provider_config"`
 }
 
+// SystemQueryField is system query field for searching system info
+type SystemQueryField string
+
+const (
+	FieldBaseInfo               SystemQueryField = "base_info"
+	FieldResourceTypes          SystemQueryField = "resource_types"
+	FieldActions                SystemQueryField = "actions"
+	FieldActionGroups           SystemQueryField = "action_groups"
+	FieldInstanceSelections     SystemQueryField = "instance_selections"
+	FieldResourceCreatorActions SystemQueryField = "resource_creator_actions"
+	FieldCommonActions          SystemQueryField = "common_actions"
+)
+
 type SysConfig struct {
 	Host string `json:"host,omitempty"`
 	Auth string `json:"auth,omitempty"`
@@ -144,7 +158,6 @@ const (
 	// special model resource for selection of instance, not including models whose instances are managed separately
 	SysInstanceModel         TypeID = "sys_instance_model"
 	SysModel                 TypeID = "sys_model"
-	SysInstance              TypeID = "sys_instance"
 	SysAssociationType       TypeID = "sys_association_type"
 	SysAuditLog              TypeID = "sys_audit_log"
 	SysOperationStatistic    TypeID = "sys_operation_statistic"
@@ -178,9 +191,12 @@ const (
 
 // describe resource type defined and registered to iam.
 type ResourceType struct {
-	ID             TypeID         `json:"id"`
-	Name           string         `json:"name"`
-	NameEn         string         `json:"name_en"`
+	// unique id
+	ID TypeID `json:"id"`
+	// unique name
+	Name   string `json:"name"`
+	NameEn string `json:"name_en"`
+	// unique description
 	Description    string         `json:"description"`
 	DescriptionEn  string         `json:"description_en"`
 	Parents        []Parent       `json:"parents"`
@@ -209,6 +225,13 @@ const (
 	Edit   ActionType = "edit"
 	List   ActionType = "list"
 )
+
+var ActionTypeIDNameMap = map[ActionType]string{
+	Create: "新建",
+	Edit:   "编辑",
+	Delete: "删除",
+	View:   "查询",
+}
 
 type ActionID string
 
@@ -265,10 +288,6 @@ const (
 	EditCloudArea   ActionID = "edit_cloud_area"
 	DeleteCloudArea ActionID = "delete_cloud_area"
 
-	CreateSysInstance ActionID = "create_sys_instance"
-	EditSysInstance   ActionID = "edit_sys_instance"
-	DeleteSysInstance ActionID = "delete_sys_instance"
-
 	CreateCloudAccount ActionID = "create_cloud_account"
 	EditCloudAccount   ActionID = "edit_cloud_account"
 	DeleteCloudAccount ActionID = "delete_cloud_account"
@@ -315,6 +334,11 @@ const (
 	Skip ActionID = "skip"
 )
 
+const (
+	// IAM侧资源的通用模型实例前缀标识
+	IAMSysInstTypePrefix = meta.CMDBSysInstTypePrefix
+)
+
 type ResourceAction struct {
 	// must be a unique id in the whole system.
 	ID ActionID `json:"id"`
@@ -327,13 +351,25 @@ type ResourceAction struct {
 	Version              int                  `json:"version"`
 }
 
+// 选择类型, 资源在权限中心产品上配置权限时的作用范围
+type SelectionMode string
+
+const (
+	// 仅可选择实例, 默认值
+	modeInstance SelectionMode = "instance"
+	// 仅可配置属性, 此时instance_selections配置不生效
+	modeAttribute SelectionMode = "attribute"
+	// 可以同时选择实例和配置属性
+	modeAll SelectionMode = "all"
+)
+
 type RelateResourceType struct {
 	SystemID           string                     `json:"system_id"`
 	ID                 TypeID                     `json:"id"`
 	NameAlias          string                     `json:"name_alias"`
 	NameAliasEn        string                     `json:"name_alias_en"`
 	Scope              *Scope                     `json:"scope"`
-	SelectionMode      string                     `json:"selection_mode"`
+	SelectionMode      SelectionMode              `json:"selection_mode"`
 	InstanceSelections []RelatedInstanceSelection `json:"related_instance_selections"`
 }
 
@@ -383,7 +419,6 @@ const (
 	SysHostInstanceSelection           InstanceSelectionID = "sys_host_instance"
 	SysModelGroupSelection             InstanceSelectionID = "sys_model_group"
 	SysModelSelection                  InstanceSelectionID = "sys_model"
-	SysInstanceSelection               InstanceSelectionID = "sys_instance"
 	SysInstanceModelSelection          InstanceSelectionID = "sys_instance_model"
 	SysAssociationTypeSelection        InstanceSelectionID = "sys_association_type"
 	SysCloudAreaSelection              InstanceSelectionID = "sys_cloud_area"
@@ -395,10 +430,13 @@ const (
 )
 
 type InstanceSelection struct {
-	ID                InstanceSelectionID `json:"id"`
-	Name              string              `json:"name"`
-	NameEn            string              `json:"name_en"`
-	ResourceTypeChain []ResourceChain     `json:"resource_type_chain"`
+	// unique
+	ID InstanceSelectionID `json:"id"`
+	// unique
+	Name string `json:"name"`
+	// unique
+	NameEn            string          `json:"name_en"`
+	ResourceTypeChain []ResourceChain `json:"resource_type_chain"`
 }
 
 type ResourceChain struct {
@@ -469,4 +507,18 @@ type CommonAction struct {
 	Name        string         `json:"name"`
 	EnglishName string         `json:"name_en"`
 	Actions     []ActionWithID `json:"actions"`
+}
+
+// DynamicAction is dynamic model action
+type DynamicAction struct {
+	ActionID     ActionID
+	ActionType   ActionType
+	ActionNameCN string
+	ActionNameEN string
+}
+
+type DeleteCMDBResourceParam struct {
+	ActionIDs            []ActionID
+	InstanceSelectionIDs []InstanceSelectionID
+	TypeIDs              []TypeID
 }

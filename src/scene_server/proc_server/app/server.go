@@ -18,7 +18,9 @@ import (
 	"time"
 
 	"configcenter/src/ac/extensions"
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
@@ -72,7 +74,24 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err != nil {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
 	}
-	procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI)
+
+	procSvr.Config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
+	if err != nil {
+		blog.Warnf("parse auth center config failed: %v", err)
+	}
+
+	iamCli := new(iam.IAM)
+	if auth.EnableAuthorize() {
+		blog.Info("enable auth center access")
+		iamCli, err = iam.NewIAM(nil, procSvr.Config.Auth, engine.Metric().Registry())
+		if err != nil {
+			return fmt.Errorf("new iam client failed: %v", err)
+		}
+	} else {
+		blog.Infof("disable auth center access")
+	}
+
+	procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
 	procSvr.Engine = engine
 	procSvr.EsbSrv = esbSrv
 	procSvr.Logic = &logics.Logic{

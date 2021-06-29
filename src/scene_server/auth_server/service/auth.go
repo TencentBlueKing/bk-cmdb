@@ -157,6 +157,7 @@ func (s *AuthService) GetPermissionToApply(ctx *rest.Contexts) {
 }
 
 // RegisterResourceCreatorAction registers iam resource instance so that creator will be authorized on related actions
+// 创建者权限, 一个资源的创建者可以拥有这个资源的编辑和删除权限
 func (s *AuthService) RegisterResourceCreatorAction(ctx *rest.Contexts) {
 	input := new(metadata.IamInstanceWithCreator)
 	err := ctx.DecodeInto(input)

@@ -12,6 +12,8 @@
 
 package iam
 
+import "configcenter/src/common/metadata"
+
 var (
 	businessParent = Parent{
 		SystemID:   SystemIDCMDB,
@@ -28,7 +30,6 @@ var ResourceTypeIDMap = map[TypeID]string{
 	SysModelGroup:             "模型分组",
 	SysInstanceModel:          "实例模型",
 	SysModel:                  "模型",
-	SysInstance:               "实例",
 	SysAssociationType:        "关联类型",
 	SysOperationStatistic:     "运营统计",
 	SysAuditLog:               "操作审计",
@@ -47,7 +48,19 @@ var ResourceTypeIDMap = map[TypeID]string{
 }
 
 // GenerateResourceTypes generate all the resource types registered to IAM.
-func GenerateResourceTypes() []ResourceType {
+func GenerateResourceTypes(models []metadata.Object) []ResourceType {
+	resourceTypeList := make([]ResourceType, 0)
+
+	// add public and business resources
+	resourceTypeList = append(resourceTypeList, GenerateStaticResourceTypes()...)
+
+	// add dynamic resources
+	resourceTypeList = append(resourceTypeList, genDynamicResourceTypes(models)...)
+
+	return resourceTypeList
+}
+
+func GenerateStaticResourceTypes() []ResourceType {
 	resourceTypeList := make([]ResourceType, 0)
 
 	// add public resources
@@ -55,14 +68,13 @@ func GenerateResourceTypes() []ResourceType {
 
 	// add business resources
 	resourceTypeList = append(resourceTypeList, genBusinessResources()...)
-
 	return resourceTypeList
 }
 
 // GetResourceParentMap generate resource types' mapping to parents.
 func GetResourceParentMap() map[TypeID][]TypeID {
 	resourceParentMap := make(map[TypeID][]TypeID, 0)
-	for _, resourceType := range GenerateResourceTypes() {
+	for _, resourceType := range GenerateStaticResourceTypes() {
 		for _, parent := range resourceType.Parents {
 			resourceParentMap[resourceType.ID] = append(resourceParentMap[resourceType.ID], parent.ResourceID)
 		}
@@ -311,21 +323,6 @@ func genPublicResources() []ResourceType {
 			Description:   "模型",
 			DescriptionEn: "model",
 			Parents:       nil,
-			ProviderConfig: ResourceConfig{
-				Path: "/auth/v3/find/resource",
-			},
-			Version: 1,
-		},
-		{
-			ID:            SysInstance,
-			Name:          ResourceTypeIDMap[SysInstance],
-			NameEn:        "Instance",
-			Description:   "模型实例",
-			DescriptionEn: "model instance",
-			Parents: []Parent{{
-				SystemID:   SystemIDCMDB,
-				ResourceID: SysModel,
-			}},
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/resource",
 			},

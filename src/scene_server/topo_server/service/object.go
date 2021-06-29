@@ -119,17 +119,18 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 			return err
 		}
 
-		// register object resource creator action to iam
 		if auth.EnableAuthorize() {
-			iamInstance := metadata.IamInstanceWithCreator{
+			objects := []metadata.Object{rsp.Object()}
+			iamInstances := []metadata.IamInstanceWithCreator{{
 				Type:    string(iam.SysModel),
 				ID:      strconv.FormatInt(rsp.Object().ID, 10),
 				Name:    rsp.Object().ObjectName,
 				Creator: ctx.Kit.User,
+			},
 			}
-			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
-			if err != nil {
-				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+			if err := s.AuthManager.CreateObjectOnIAM(ctx.Kit.Ctx, ctx.Kit.Header, objects, iamInstances); err != nil {
+				blog.ErrorJSON("create object on iam failed, objects: %s, iam instances: %s, err: %s, rid: %s",
+					objects, iamInstances, err, ctx.Kit.Rid)
 				return err
 			}
 		}
@@ -227,19 +228,31 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		return
 	}
 
+	obj := &metadata.Object{}
 	//delete model
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Core.ObjectOperation().DeleteObject(ctx.Kit, id, true)
+		obj, err = s.Core.ObjectOperation().DeleteObject(ctx.Kit, id, true)
 		if err != nil {
 			return err
 		}
 		return nil
 	})
-
 	if txnErr != nil {
 		ctx.RespAutoError(txnErr)
 		return
 	}
+
+	if auth.EnableAuthorize() {
+		// delete iam view
+		// if some errors occur, the sync iam task will delete the iam view in the end
+		objects := []metadata.Object{*obj}
+		// use new transaction, need a new header
+		ctx.Kit.Header = ctx.Kit.NewHeader()
+		if err := s.AuthManager.Viewer.DeleteView(ctx.Kit.Ctx, ctx.Kit.Header, objects); err != nil {
+			blog.Errorf("delete view failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+		}
+	}
+
 	ctx.RespEntity(nil)
 }
 
