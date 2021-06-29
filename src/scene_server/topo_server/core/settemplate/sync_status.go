@@ -71,17 +71,17 @@ func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int6
 	instResult := metadata.ResponseSetInstance{}
 	err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter, &instResult)
 	if err != nil {
-		blog.ErrorJSON("GetSets failed, db select failed, filter: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
+		blog.Errorf("GetSets failed, db select failed, filter: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if ccErr := instResult.CCError(); ccErr != nil {
-		blog.ErrorJSON("GetSets failed, read instance failed, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
+		blog.Errorf("GetSets failed, read instance failed, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
 		return nil, ccErr
 	}
 
 	if len(instResult.Data.Info) == 0 {
-		blog.ErrorJSON("GetSets failed, not found, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
+		blog.Errorf("GetSets failed, set not found, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 	}
 
@@ -104,10 +104,13 @@ func getSetIDFromTaskDetail(kit *rest.Kit, detail metadata.APITaskDetail) (int64
 	return setID, nil
 }
 
-func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64) (map[int64]bool, errors.CCErrorCoder) {
-	serviceTemplates, err := st.client.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(kit.Ctx, kit.Header, bizID, setTemplateID)
+func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64) (map[int64]bool,
+	errors.CCErrorCoder) {
+
+	serviceTemplates, err := st.client.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(kit.Ctx, kit.Header, bizID,
+		setTemplateID)
 	if err != nil {
-		blog.Errorf("DiffSetTemplateWithInstances failed, ListSetTplRelatedSvcTpl failed, bizID: %d, "+
+		blog.Errorf("isSyncRequired failed, ListSetTplRelatedSvcTpl failed, bizID: %d, "+
 			"setTemplateID: %d, err: %s, rid: %s", bizID, setTemplateID, err.Error(), kit.Rid)
 		return nil, err
 	}
@@ -122,9 +125,15 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{
+			common.BKSetIDField,
+			common.BKModuleIDField,
+			common.BKSetTemplateIDField,
+			common.BKModuleNameField,
+		},
 		Condition: mapstr.MapStr(map[string]interface{}{
 			common.BKSetTemplateIDField: setTemplateID,
-			common.BKParentIDField: map[string]interface{}{
+			common.BKSetIDField: map[string]interface{}{
 				common.BKDBIN: setIDs,
 			},
 		}),
@@ -132,13 +141,13 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 	modulesInstResult := metadata.ResponseModuleInstance{}
 	if err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
 		moduleFilter, &modulesInstResult); err != nil {
-		blog.ErrorJSON("DiffSetTemplateWithInstances failed, list modules failed, bizID: %s, setTemplateID: %s,"+
+		blog.Errorf("DiffSetTemplateWithInstances failed, list modules failed, bizID: %s, setTemplateID: %s,"+
 			" setIDs: %s, err: %s, rid: %s", bizID, setTemplateID, setIDs, err, kit.Rid)
 		return nil, err
 	}
 
 	if err := modulesInstResult.CCError(); err != nil {
-		blog.ErrorJSON("DiffSetTemplateWithInstances failed, list module http reply failed, bizID: %s, "+
+		blog.Errorf("DiffSetTemplateWithInstances failed, list module http reply failed, bizID: %s, "+
 			"setTemplateID: %s, setIDs: %s, filter: %s, reply: %s, rid: %s", bizID,
 			setTemplateID, setIDs, moduleFilter, modulesInstResult, kit.Rid)
 		return nil, err
@@ -155,15 +164,22 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 
 	checkResult := make(map[int64]bool, len(setIDs))
 	for idx, module := range setModules {
-		NeedSync := DiffModuleServiceTpl(serviceTemplateCnt, serviceTemplateMap, setModulesCnt, module)
+		NeedSync := diffModuleServiceTpl(serviceTemplateCnt, serviceTemplateMap, setModulesCnt, module)
 		checkResult[idx] = NeedSync
 	}
 
 	return checkResult, nil
 }
 
-func DiffModuleServiceTpl(serviceTplCnt int64, serviceTemplates map[int64]metadata.ServiceTemplate, moduleCnt int64,
+// diffModuleServiceTpl check different of modules with template in one set
+func diffModuleServiceTpl(serviceTplCnt int64, serviceTemplates map[int64]metadata.ServiceTemplate, moduleCnt int64,
 	modules []metadata.ModuleInst) bool {
+	/*
+		depend on logic in func DiffServiceTemplateWithModules
+		if the number of the module and the template is not the same, it changed
+		if the name of the module and the template is not the same, it changed
+		this function only use to check if module and template are the same
+	*/
 
 	if serviceTplCnt != moduleCnt {
 		return true
@@ -186,7 +202,7 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, s
 	var setSyncStatus []metadata.SetTemplateSyncStatus
 
 	if setTemplateID == common.SetTemplateIDNotSet {
-		blog.V(3).Infof("UpdateSetSyncStatus success, set not bound with template, setID: %d, rid: %s", setID, kit.Rid)
+		blog.V(4).Infof("UpdateSetSyncStatus success, set not bound with template, setID: %d, rid: %s", setID, kit.Rid)
 		return setSyncStatus, nil
 	}
 
@@ -194,6 +210,12 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, s
 	if err != nil {
 		blog.Errorf("UpdateSetSyncStatus failed, GetSets failed, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
 		return setSyncStatus, err
+	}
+
+	if len(sets) == 0 {
+		blog.Errorf("UpdateSetSyncStatus failed, GetSets failed, return is empty setID: %d, rid: %s",
+			setID, kit.Rid)
+		return setSyncStatus, kit.CCError.CCError(common.CCErrCommNotFound)
 	}
 
 	bizID := sets[0].BizID
@@ -266,6 +288,7 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, s
 
 func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID []int64) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder) {
 	var setIndex []string
+	latestTaskResult := make(map[int64]*metadata.APITaskDetail)
 	for _, item := range setID {
 		setIndex = append(setIndex, metadata.GetSetTemplateSyncIndex(item))
 	}
@@ -279,23 +302,25 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID []int64) (ma
 
 	listResult, err := st.client.TaskServer().Task().ListLatestTask(kit.Ctx, kit.Header, common.SyncSetTaskName, &listTaskOption)
 	if err != nil {
-		blog.ErrorJSON("list set sync tasks failed, option: %s, err: %v, rid: %s", listTaskOption, err, kit.Rid)
+		blog.Errorf("list set sync tasks failed, option: %s, err: %v, rid: %s", listTaskOption, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrTaskListTaskFail)
 	}
+
 	if listResult == nil || len(listResult.Data) == 0 {
-		blog.InfoJSON("list set sync tasks result empty, option: %s, result: %s, rid: %s", listTaskOption, listTaskOption, kit.Rid)
-		return nil, nil
+		blog.Info("list set sync tasks result empty, option: %s, result: %s, rid: %s", listTaskOption, listTaskOption, kit.Rid)
+		return latestTaskResult, nil
 	}
 
-	latestTaskResult := make(map[int64]*metadata.APITaskDetail)
 	for _, APITask := range listResult.Data {
 		clearSetSyncTaskDetail(&APITask)
 		setID, err := getSetIDFromTaskDetail(kit, APITask)
 		if err != nil {
 			blog.Errorf("get setID from task failed, err: %+v, rid: %s", err, kit.Rid)
+			return nil, err.(errors.CCErrorCoder)
 		}
 		latestTaskResult[setID] = &APITask
 	}
+
 	return latestTaskResult, nil
 }
 

@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202106282022
+package y3_9_202106292046
 
 import (
 	"context"
@@ -22,14 +22,21 @@ import (
 
 func init() {
 
-	upgrader.RegistUpgrader("y3.9.202106282022", upgrade)
+	upgrader.RegistUpgrader("y3.9.202106292046", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = dropSetTplVersionColumn(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202106282022] updatePriorityProperty error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202106292046] updatePriorityProperty error  %s", err.Error())
 		return err
 	}
+
+	err = dropSetSetTplVersionColumn(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202106292046] updatePriorityProperty error  %s", err.Error())
+		return err
+	}
+
 	return
 }

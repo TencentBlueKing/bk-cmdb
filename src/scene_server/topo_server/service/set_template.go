@@ -109,35 +109,34 @@ func (s *Service) UpdateSetTemplate(ctx *rest.Contexts) {
 			return err
 		}
 
-		filter := &metadata.QueryCondition{
-			Page: metadata.BasePage{
-				Limit: common.BKNoLimit,
-			},
-			Fields: []string{common.BKSetIDField},
-			Condition: mapstr.MapStr(map[string]interface{}{
-				common.BKAppIDField:         bizID,
+		filter := &metadata.DistinctFieldOption{
+			TableName: common.GetInstTableName(common.BKInnerObjIDSet),
+			Field:     common.BKSetIDField,
+			Filter: map[string]interface{}{
 				common.BKSetTemplateIDField: setTemplateID,
-			}),
+			},
 		}
-		setInstanceResult := metadata.ResponseSetInstance{}
-		err = s.Engine.CoreAPI.CoreService().Instance().ReadInstanceStruct(ctx.Kit.Ctx, ctx.Kit.Header,
-			common.BKInnerObjIDSet, filter, &setInstanceResult)
+
+		setIDs, err := s.Engine.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, filter)
 		if err != nil {
-			blog.Errorf("UpdateSetTemplate failed, ListSetTplRelatedSets failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("get set id failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 
-		if setInstanceResult.Data.Count == 0 {
+		if len(setIDs) == 0 {
+			blog.Errorf("get set id failed, GetDistinctField return is empty, rid: %s", ctx.Kit.Rid)
 			return nil
 		}
 
-		var setID []int64
-		for _, set := range setInstanceResult.Data.Info {
-			setID = append(setID, set.SetID)
+		setID, err := util.SliceInterfaceToInt64(setIDs)
+		if err != nil {
+			blog.Errorf("set id is not int, err: %s, rid: %s", ctx.Kit.Rid)
+			return err
 		}
+
 		if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(ctx.Kit, setTemplateID, setID); err != nil {
-			blog.Errorf("UpdateSetTemplate failed, UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", setID, err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
+			blog.Errorf("update set sync status failed, setID: %d, err: %+v, rid: %s", setID, err, ctx.Kit.Rid)
+			return err
 		}
 
 		return nil

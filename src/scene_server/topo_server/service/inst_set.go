@@ -146,14 +146,19 @@ func (s *Service) createSet(kit *rest.Kit, bizID int64, obj model.Object, data m
 		return nil, err
 	}
 
-	setTemplateID, err := data.Int64(common.BKSetTemplateIDField)
+	setTemplateID, ok := set.ToMapStr().Get(common.BKSetTemplateIDField)
+	if !ok {
+		blog.Errorf("failed to get set_template_id, rid: %s", kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKSetTemplateIDField)
+	}
+
+	setTemplateIDint, err := util.GetInt64ByInterface(setTemplateID)
 	if err != nil {
-		blog.Errorf("failed to get set_template_id, err: %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("failed to get set template id , type is not a int, rid: %s", kit.Rid)
 		return nil, err
 	}
 
-	setIDs := []int64{setID}
-	if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(kit, setTemplateID, setIDs); err != nil {
+	if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(kit, setTemplateIDint, []int64{setID}); err != nil {
 		blog.Errorf("createSet success, but UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", setID, err, kit.Rid)
 	}
 	return set, nil
