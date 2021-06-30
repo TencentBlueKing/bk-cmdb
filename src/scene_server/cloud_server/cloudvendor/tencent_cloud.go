@@ -153,18 +153,34 @@ func (c *tcClient) GetInstances(region string, opt *ccom.InstanceOpt) (*metadata
 			if len(inst.PrivateIpAddresses) > 0 {
 				privateIP = *inst.PrivateIpAddresses[0]
 			}
+
 			publicIP := ""
 			if len(inst.PublicIpAddresses) > 0 {
 				publicIP = *inst.PublicIpAddresses[0]
 			}
+
+			state := ""
+			if inst.InstanceState != nil {
+				state = *inst.InstanceState
+			}
+
+			vpcID := ""
+			if inst.VirtualPrivateCloud != nil {
+				if inst.VirtualPrivateCloud.VpcId != nil {
+					vpcID = *inst.VirtualPrivateCloud.VpcId
+				}
+
+			}
+
 			instancesInfo.InstanceSet = append(instancesInfo.InstanceSet, &metadata.Instance{
 				InstanceId:    *inst.InstanceId,
 				PrivateIp:     privateIP,
 				PublicIp:      publicIP,
-				InstanceState: ccom.CovertInstState(*inst.InstanceState),
-				VpcId:         *inst.VirtualPrivateCloud.VpcId,
+				InstanceState: ccom.CovertInstState(state),
+				VpcId:         vpcID,
 			})
 		}
+
 		totalCnt = int64(*resp.Response.TotalCount)
 		// 在获取到limit数量或者全部数据的情况下，退出循环
 		if opt.Limit == int64(len(instancesInfo.InstanceSet)) || len(instancesInfo.InstanceSet) == int(totalCnt) {

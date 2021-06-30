@@ -30,7 +30,13 @@
         </cmdb-auth>
       </div>
       <div class="model-type-options fr">
-        <bk-button class="model-type-button enable"
+        <bk-button class="model-type-button"
+          :class="[{ 'model-type-button-active': modelType === '' }]"
+          size="small"
+          @click="modelType = ''">
+          {{$t('全部')}}
+        </bk-button>
+        <bk-button class="model-type-button"
           :class="[{ 'model-type-button-active': modelType === 'enable' }]"
           size="small"
           @click="modelType = 'enable'">
@@ -70,7 +76,7 @@
             <span class="mr5">{{classification['bk_classification_name']}}</span>
             <span class="number">({{classification['bk_objects'].length}})</span>
           </div>
-          <template v-if="isEditable(classification) && modelType === 'enable'">
+          <template v-if="isEditable(classification) && !classification._disabled">
             <cmdb-auth v-if="!mainLoading" class="group-btn ml5"
               :auth="{ type: $OPERATION.C_MODEL, relation: [classification.id] }">
               <bk-button slot-scope="{ disabled }"
@@ -114,7 +120,7 @@
             :key="modelIndex">
             <div class="info-model"
               :class="{
-                'radius': modelType === 'disabled' || classification['bk_classification_id'] === 'bk_biz_topo'
+                'radius': classification._disabled || classification['bk_classification_id'] === 'bk_biz_topo'
               }"
               @click="modelClick(model)">
               <div class="icon-box">
@@ -125,7 +131,7 @@
                 <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
               </div>
             </div>
-            <div v-if="modelType !== 'disabled' && model.bk_classification_id !== 'bk_biz_topo'"
+            <div v-if="!classification._disabled && model.bk_classification_id !== 'bk_biz_topo'"
               class="info-instance"
               @click="handleGoInstance(model)">
               <i class="icon-cc-share"></i>
@@ -258,7 +264,7 @@
         scrollHandler: null,
         scrollTop: 0,
         topPadding: 0,
-        modelType: 'enable',
+        modelType: '',
         searchModel: '',
         filterClassifications: [],
         modelStatisticsSet: {},
@@ -296,7 +302,8 @@
         this.classifications.forEach((classification) => {
           enableClassifications.push({
             ...classification,
-            bk_objects: classification.bk_objects.filter(model => !model.bk_ispaused && !model.bk_ishidden)
+            bk_objects: classification.bk_objects.filter(model => !model.bk_ispaused && !model.bk_ishidden),
+            _disabled: false
           })
         })
         return enableClassifications
@@ -308,14 +315,19 @@
           if (disabledModels.length) {
             disabledClassifications.push({
               ...classification,
-              bk_objects: disabledModels
+              bk_objects: disabledModels,
+              _disabled: true
             })
           }
         })
         return disabledClassifications
       },
+      allClassifications() {
+        return [...this.enableClassifications, ...this.disabledClassifications]
+      },
       currentClassifications() {
         if (!this.searchModel) {
+          if (!this.modelType) return this.allClassifications
           return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
         }
         return this.filterClassifications
@@ -333,7 +345,8 @@
           return
         }
         const searchResult = []
-        const currentClassifications = this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
+        // eslint-disable-next-line no-nested-ternary
+        const currentClassifications = !this.modelType ? this.allClassifications : (this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications)
         const classifications = this.$tools.clone(currentClassifications)
         const lowerCaseValue = value.toLowerCase()
         for (let i = 0; i < classifications.length; i++) {
@@ -615,11 +628,17 @@
                 z-index: 1;
             }
             &:hover {
+                border-color: #3a84ff;
                 z-index: 2;
             }
             &-active {
                 border-color: #3a84ff;
                 color: #3a84ff;
+                z-index: 2;
+            }
+            & + .model-type-button {
+              border-radius: 0 2px 2px 0;
+              margin-left: -1px;
             }
         }
     }
