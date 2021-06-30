@@ -13,9 +13,9 @@
 package self
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"configcenter/src/apimachinery/util"
@@ -173,6 +173,18 @@ func (m *user) getEsbClient(config map[string]string) (esbserver.EsbClientInterf
 func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, error) {
 	rid := commonutil.GetHTTPCCRequestID(c.Request.Header)
 	accountURL, ok := config["site.bk_account_url"]
+	query := c.Request.URL.Query()
+	params := make(map[string]string)
+	for key, values := range query {
+		params[key] = strings.Join(values, ";")
+	}
+
+	for key, value := range config {
+		if key == "fields" || key == "exact_lookups" {
+			params[key] = value
+		}
+	}
+
 	if !ok {
 		// try to use esb user list api
 		esbClient, err := m.getEsbClient(config)
@@ -180,7 +192,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 			blog.Warnf("get esb client failed, err: %+v, rid: %s", err, rid)
 			return nil, fmt.Errorf("config site.bk_account_url not found")
 		}
-		result, err := esbClient.User().GetAllUsers(context.Background(), c.Request.Header)
+		result, err := esbClient.User().ListUsers(c.Request.Context(), c.Request.Header, params)
 		if err != nil {
 			blog.Warnf("get users by esb client failed, http failed, err: %+v, rid: %s", err, rid)
 			return nil, fmt.Errorf("get users by esb client failed, http failed")
@@ -189,7 +201,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 		for _, userInfo := range result.Data {
 			user := &metadata.LoginSystemUserInfo{
 				CnName: userInfo.DisplayName,
-				EnName: userInfo.BkUsername,
+				EnName: userInfo.Username,
 			}
 			users = append(users, user)
 		}

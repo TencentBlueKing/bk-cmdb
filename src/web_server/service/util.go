@@ -97,18 +97,17 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 	usernameMap := map[string]string{}
 
 	if userList != nil && len(userList) != 0 {
-		params := make(map[string]string)
-		params["exact_lookups"] = userListStr
-		params["fields"] = "username,display_name"
+		config := s.Config.ConfigMap
+		config["exact_lookups"] = userListStr
+		config["fields"] = "username,display_name"
 		user := plugins.CurrentPlugin(c, s.Config.LoginVersion)
 
-		userListEsb, err := user.GetUserList(c, s.Config.ConfigMap)
+		userListEsb, err := user.GetUserList(c, config)
 		if err != nil {
 			blog.ErrorJSON("get user list from ESB failed, err: %s, rid: %s", err.Error(), rid)
 			userListEsb = []*metadata.LoginSystemUserInfo{}
 			return nil, err
 		}
-
 		for _, userInfo := range userListEsb {
 			username := fmt.Sprintf("%s(%s)", userInfo.EnName, userInfo.CnName)
 			usernameMap[userInfo.EnName] = username
