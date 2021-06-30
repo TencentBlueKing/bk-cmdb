@@ -26,15 +26,15 @@ func init() {
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	err = dropSetTplVersionColumn(ctx, db, conf)
+	err = dropVersionColumn(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202106292046] updatePriorityProperty error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202106292046] drop set template table version column error  %s", err.Error())
 		return err
 	}
 
-	err = dropSetSetTplVersionColumn(ctx, db, conf)
+	err = dropSetTplVersionColumn(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202106292046] updatePriorityProperty error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202106292046] drop set table set_template_version column error  %s", err.Error())
 		return err
 	}
 

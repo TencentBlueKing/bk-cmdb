@@ -89,9 +89,11 @@ func (lgc *Logics) List(ctx context.Context, name string, input *metadata.ListAP
 	return rows, cnt, nil
 }
 
-// ListLatest list latest task
-func (lgc *Logics) ListLatest(ctx context.Context, name string, input *metadata.ListAPITaskLatestRequest) ([]metadata.APITaskDetail, error) {
+// ListLatestTask list latest task
+func (lgc *Logics) ListLatestTask(ctx context.Context, name string, input *metadata.ListAPITaskLatestRequest) ([]metadata.APITaskDetail, error) {
 	input.Condition.Set("name", name)
+
+	// aggregateCond parameter of aggregate to search the latest created task in input.Condition need
 	aggregateCond := []interface{}{
 		map[string]interface{}{common.BKDBMatch: input.Condition},
 		map[string]interface{}{common.BKDBSort: map[string]interface{}{common.CreateTimeField: -1}},
@@ -104,7 +106,7 @@ func (lgc *Logics) ListLatest(ctx context.Context, name string, input *metadata.
 
 	result := make([]metadata.APITaskDetail, 0)
 	if err := lgc.db.Table(common.BKTableNameAPITask).AggregateAll(ctx, aggregateCond, &result); err != nil {
-		blog.Errorf("ListLatest Task failed, err: %v, rid: %v", err, lgc.rid)
+		blog.Errorf("list latest task failed, err: %v, rid: %v", err, lgc.rid)
 		return nil, err
 	}
 

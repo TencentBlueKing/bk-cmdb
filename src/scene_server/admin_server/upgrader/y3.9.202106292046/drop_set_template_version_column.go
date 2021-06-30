@@ -9,7 +9,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-func dropSetTplVersionColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func dropVersionColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	existsVersionFilter := map[string]interface{}{
 		"version": map[string]interface{}{
 			common.BKDBExists: true,
@@ -32,9 +32,9 @@ func dropSetTplVersionColumn(ctx context.Context, db dal.RDB, conf *upgrader.Con
 	return nil
 }
 
-func dropSetSetTplVersionColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func dropSetTplVersionColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	existsVersionFilter := map[string]interface{}{
-		common.BKSetTemplateIDField: map[string]interface{}{
+		common.BKSetTemplateVersionField: map[string]interface{}{
 			common.BKDBExists: true,
 		},
 	}

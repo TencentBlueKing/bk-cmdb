@@ -13,12 +13,12 @@
 package service
 
 import (
-	"configcenter/src/common/errors"
 	"strconv"
 	"sync"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/driver/mongodb"
@@ -242,18 +242,23 @@ func (s *coreService) UpdateManySetTemplateSyncStatus(ctx *rest.Contexts) {
 		pipeline <- true
 		wg.Add(1)
 		go func(kit *rest.Kit, setID int64, setStatus metadata.SetTemplateSyncStatus) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
 			if err := s.core.SetTemplateOperation().UpdateSetTemplateSyncStatus(ctx.Kit, setStatus.SetID, setStatus); err != nil {
 				blog.Errorf("UpdateSetTemplateSyncStatus failed, setID: %d, option: %+v, err: %+v, rid: %s", setStatus.SetID, option, err, ctx.Kit.Rid)
 				apiErr = err
 				return
 			}
 		}(ctx.Kit, setStatus.SetID, setStatus)
-		wg.Wait()
+	}
 
-		if apiErr != nil {
-			ctx.RespAutoError(apiErr)
-			return
-		}
+	wg.Wait()
+
+	if apiErr != nil {
+		ctx.RespAutoError(apiErr)
+		return
 	}
 
 	ctx.RespEntity(nil)
