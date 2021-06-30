@@ -37,6 +37,7 @@ type Commands interface {
 	HKeys(ctx context.Context, key string) StringSliceResult
 	HMGet(ctx context.Context, key string, fields ...string) SliceResult
 	HScan(ctx context.Context, key string, cursor uint64, match string, count int64) ScanResult
+	Scan(ctx context.Context, cursor uint64, match string, count int64) ScanResult
 	HSet(ctx context.Context, key string, values ...interface{}) IntResult
 	Incr(ctx context.Context, key string) IntResult
 	Keys(ctx context.Context, pattern string) StringSliceResult
