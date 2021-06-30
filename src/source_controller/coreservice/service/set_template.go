@@ -237,9 +237,9 @@ func (s *coreService) UpdateManySetTemplateSyncStatus(ctx *rest.Contexts) {
 
 	var wg sync.WaitGroup
 	var apiErr errors.CCErrorCoder
-	pipeline := make(chan bool, 5)
+	pipeline := make(chan struct{}, 5)
 	for _, setStatus := range option {
-		pipeline <- true
+		pipeline <- struct{}{}
 		wg.Add(1)
 		go func(kit *rest.Kit, setID int64, setStatus metadata.SetTemplateSyncStatus) {
 			defer func() {

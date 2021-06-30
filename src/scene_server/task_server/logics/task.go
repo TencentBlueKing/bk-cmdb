@@ -93,7 +93,11 @@ func (lgc *Logics) List(ctx context.Context, name string, input *metadata.ListAP
 func (lgc *Logics) ListLatestTask(ctx context.Context, name string, input *metadata.ListAPITaskLatestRequest) ([]metadata.APITaskDetail, error) {
 	input.Condition.Set("name", name)
 
-	// aggregateCond parameter of aggregate to search the latest created task in input.Condition need
+	/*
+		aggregateCond parameter of aggregate to search the latest created task in input.Condition need.
+		because multiple results of the same task may be at the front end of sorting by
+		create_time field, use group to get the first result of each task
+	*/
 	aggregateCond := []interface{}{
 		map[string]interface{}{common.BKDBMatch: input.Condition},
 		map[string]interface{}{common.BKDBSort: map[string]interface{}{common.CreateTimeField: -1}},

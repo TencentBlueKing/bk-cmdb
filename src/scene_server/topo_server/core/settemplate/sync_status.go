@@ -120,10 +120,10 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 		return nil, err
 	}
 
-	serviceTemplateCnt := int64(len(serviceTemplates))
-	serviceTemplateMap := make(map[int64]metadata.ServiceTemplate, serviceTemplateCnt)
+	svcTplCnt := int64(len(serviceTemplates))
+	svcTplMap := make(map[int64]metadata.ServiceTemplate, svcTplCnt)
 	for _, serviceTemplate := range serviceTemplates {
-		serviceTemplateMap[serviceTemplate.ID] = serviceTemplate
+		svcTplMap[serviceTemplate.ID] = serviceTemplate
 	}
 
 	moduleFilter := &metadata.QueryCondition{
@@ -143,9 +143,9 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 			},
 		}),
 	}
-	modulesInstResult := metadata.ResponseModuleInstance{}
+	modulesInstResult := new(metadata.ResponseModuleInstance)
 	if err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
-		moduleFilter, &modulesInstResult); err != nil {
+		moduleFilter, modulesInstResult); err != nil {
 		blog.Errorf("list modules failed, bizID: %s, setTemplateID: %s, setIDs: %s, err: %s, rid: %s",
 			bizID, setTemplateID, setIDs, err, kit.Rid)
 		return nil, err
@@ -161,16 +161,15 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 	setModulesCnt := int64(modulesInstResult.Data.Count)
 	setModules := make(map[int64][]metadata.ModuleInst, setModulesCnt)
 	for _, module := range modulesInstResult.Data.Info {
-		if _, exist := setModules[module.ParentID]; !exist {
-			setModules[module.ParentID] = make([]metadata.ModuleInst, 0)
+		if _, exist := setModules[module.SetID]; !exist {
+			setModules[module.SetID] = make([]metadata.ModuleInst, 0)
 		}
-		setModules[module.ParentID] = append(setModules[module.ParentID], module)
+		setModules[module.SetID] = append(setModules[module.SetID], module)
 	}
 
-	checkResult := make(map[int64]bool, len(setIDs))
+	checkResult := make(map[int64]bool, len(setModules))
 	for idx, module := range setModules {
-		NeedSync := diffModuleServiceTpl(serviceTemplateCnt, serviceTemplateMap, setModulesCnt, module)
-		checkResult[idx] = NeedSync
+		checkResult[idx] = diffModuleServiceTpl(svcTplCnt, svcTplMap, setModulesCnt, module)
 	}
 
 	return checkResult, nil
@@ -223,14 +222,14 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, s
 	}
 
 	bizID := sets[0].BizID
-	checkNeedSyncResult, err := st.isSyncRequired(kit, bizID, setTemplateID, setID)
+	needSyncs, err := st.isSyncRequired(kit, bizID, setTemplateID, setID)
 	if err != nil {
 		blog.Errorf("check sync required failed, templateID: %d, setID: %d, err: %s, rid: %s",
 			setTemplateID, setID, err.Error(), kit.Rid)
 		return nil, err
 	}
 
-	if len(checkNeedSyncResult) == 0 {
+	if len(needSyncs) == 0 {
 		blog.Errorf("check sync required return empty, templateID: %d, setID: %d, rid: %s",
 			setTemplateID, setID, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommInternalServerError)
@@ -256,7 +255,7 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, s
 			Status:          metadata.SyncStatusFinished,
 		}
 
-		if checkNeedSyncResult[set.SetID] {
+		if needSyncs[set.SetID] {
 			syncStatus.Status = metadata.SyncStatusWaiting
 		}
 

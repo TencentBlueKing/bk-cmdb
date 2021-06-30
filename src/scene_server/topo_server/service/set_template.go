@@ -130,7 +130,7 @@ func (s *Service) UpdateSetTemplate(ctx *rest.Contexts) {
 
 		setID, err := util.SliceInterfaceToInt64(setIDs)
 		if err != nil {
-			blog.Errorf("set id is not int, err: %s, rid: %s", ctx.Kit.Rid)
+			blog.Errorf("set id is not int, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 			return err
 		}
 
@@ -645,15 +645,15 @@ func (s *Service) SyncSetTplToInst(ctx *rest.Contexts) {
 	}
 
 	// NOTE: 如下处理不能杜绝所有发提交任务, 可通过前端防双击的方式限制绝大部分情况
-	setSyncStatus, err := s.getSetSyncStatus(ctx.Kit, option.SetIDs...)
+	setSyncStatus, err := s.Core.SetTemplateOperation().GetLatestSyncTaskDetail(ctx.Kit, option.SetIDs)
 	if err != nil {
 		blog.Errorf("SyncSetTplToInst failed, getSetSyncStatus failed, setIDs: %+v, err: %s, rid: %s", option.SetIDs, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	for _, setID := range option.SetIDs {
-		setStatus, _ := setSyncStatus[setID]
-		if setStatus == nil {
+		setStatus, exist := setSyncStatus[setID]
+		if !exist {
 			continue
 		}
 		if setStatus.Status.IsFinished() == false {
@@ -725,17 +725,7 @@ func (s *Service) GetSetSyncDetails(ctx *rest.Contexts) {
 		}
 		option.SetIDs = setIDs
 	}
-	ctx.RespEntityWithError(s.getSetSyncStatus(ctx.Kit, option.SetIDs...))
-}
-
-func (s *Service) getSetSyncStatus(kit *rest.Kit, setIDs ...int64) (map[int64]*metadata.APITaskDetail, error) {
-	// db.getCollection('cc_APITask').find({"detail.data.set.bk_set_id": 18}).sort({"create_time": -1}).limit(1)
-	taskDetail, err := s.Core.SetTemplateOperation().GetLatestSyncTaskDetail(kit, setIDs)
-	if err != nil {
-		blog.Errorf("getSetSyncStatus failed, GetLatestSyncTaskDetail failed, setID: %+v, err: %s, rid: %s", setIDs, err.Error(), kit.Rid)
-		taskDetail = nil
-	}
-	return taskDetail, nil
+	ctx.RespEntityWithError(s.Core.SetTemplateOperation().GetLatestSyncTaskDetail(ctx.Kit, option.SetIDs))
 }
 
 func (s *Service) ListSetTemplateSyncHistory(ctx *rest.Contexts) {
