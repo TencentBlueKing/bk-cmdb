@@ -115,14 +115,13 @@
         return FilterStore.header
       }
     },
+    watch: {
+      $route() {
+        this.initFilterStore()
+      }
+    },
     created() {
-      setupFilterStore({
-        bk_biz_id: this.bizId,
-        header: {
-          custom: this.$route.meta.customInstanceColumn,
-          global: 'host_global_custom_table_columns'
-        }
-      })
+      this.initFilterStore()
       this.unwatchRouter = RouterQuery.watch('*', ({
         tab = 'hostList',
         node,
@@ -159,6 +158,18 @@
           // eslint-disable-next-line no-underscore-dangle
           settingReference && settingReference._tippy && settingReference._tippy.disable()
         }, 1000)
+      },
+      initFilterStore() {
+        const currentRouteName = this.$route.name
+        if (this.storageRouteName === currentRouteName) return
+        this.storageRouteName = currentRouteName
+        setupFilterStore({
+          bk_biz_id: this.bizId,
+          header: {
+            custom: this.$route.meta.customInstanceColumn,
+            global: 'host_global_custom_table_columns'
+          }
+        })
       },
       getColumnSortable(column) {
         const isHostProperty = column.bk_obj_id === 'host'

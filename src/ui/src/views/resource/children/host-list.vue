@@ -113,16 +113,14 @@
     watch: {
       scope() {
         this.setModuleNamePropertyState()
+      },
+      $route() {
+        this.initFilterStore()
       }
     },
     async created() {
       try {
-        setupFilterStore({
-          header: {
-            custom: this.$route.meta.customInstanceColumn,
-            global: 'host_global_custom_table_columns'
-          }
-        })
+        this.initFilterStore()
         this.setModuleNamePropertyState()
         this.unwatchRouter = RouterQuery.watch('*', ({
           scope = 1,
@@ -169,6 +167,17 @@
           // eslint-disable-next-line no-underscore-dangle
           settingReference && settingReference._tippy && settingReference._tippy.disable()
         }, 1000)
+      },
+      initFilterStore() {
+        const currentRouteName = this.$route.name
+        if (this.storageRouteName === currentRouteName) return
+        this.storageRouteName = currentRouteName
+        setupFilterStore({
+          header: {
+            custom: this.$route.meta.customInstanceColumn,
+            global: 'host_global_custom_table_columns'
+          }
+        })
       },
       setModuleNamePropertyState() {
         const property = this.moduleProperties.find(property => property.bk_property_id === 'bk_module_name')

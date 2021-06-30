@@ -15,7 +15,7 @@
         <bk-tab-panel name="property" :label="$t('主机属性')">
           <cmdb-host-property></cmdb-host-property>
         </bk-tab-panel>
-        <bk-tab-panel name="service" :label="$t('服务列表')" :visible="isBusinessHost">
+        <bk-tab-panel name="service" :label="$t('服务列表')" v-if="isBusinessHost">
           <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
         </bk-tab-panel>
         <bk-tab-panel name="association" :label="$t('关联')">

@@ -2,6 +2,7 @@
   <cmdb-form-objuser
     v-model="localValue"
     v-bind="$attrs"
+    @clear="() => $emit('clear')"
     @focus="handleToggle(true)"
     @blur="handleToggle(false)">
   </cmdb-form-objuser>
