@@ -359,14 +359,16 @@ func (st *setTemplate) CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64
 	setResult := metadata.ResponseSetInstance{}
 	err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter, &setResult)
 	if err != nil {
-		blog.ErrorJSON("CheckSetInstUpdateToDateStatus failed, ReadInstance of set failed, option: %s, err: %s, "+
-			"rid: %s", filter, err, kit.Rid)
+		blog.ErrorJSON(" list set failed, option: %s, err: %s, rid: %s", filter, err, kit.Rid)
 		return result, errors.CCHttpError
 	}
 	if ccErr := setResult.CCError(); ccErr != nil {
-		blog.ErrorJSON("CheckSetInstUpdateToDateStatus failed, ReadInstance of set failed, option: %s, "+
-			"response: %s, rid: %s", filter, setResult, kit.Rid)
+		blog.ErrorJSON("list set failed, option: %s, response: %s, rid: %s", filter, setResult, kit.Rid)
 		return result, ccErr
+	}
+
+	if setResult.Data.Count == 0 {
+		return result, nil
 	}
 
 	var setIDs []int64
@@ -376,8 +378,8 @@ func (st *setTemplate) CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64
 
 	checkNeedSync, err := st.isSyncRequired(kit, bizID, setTemplateID, setIDs)
 	if err != nil {
-		blog.ErrorJSON("CheckSetInstUpdateToDateStatus failed, check set whether need sync failed, set: %+v, err: %s,"+
-			" rid: %s", setIDs, err.Error(), kit.Rid)
+		blog.ErrorJSON("check set whether need sync failed, set: %+v, err: %s, rid: %s",
+			setIDs, err.Error(), kit.Rid)
 		return result, err
 	}
 

@@ -107,6 +107,11 @@ func getSetIDFromTaskDetail(kit *rest.Kit, detail metadata.APITaskDetail) (int64
 func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64) (map[int64]bool,
 	errors.CCErrorCoder) {
 
+	if len(setIDs) == 0 {
+		blog.Errorf("array of set_id is empty, rid: %s", kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKSetIDField)
+	}
+
 	serviceTemplates, err := st.client.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(kit.Ctx, kit.Header, bizID,
 		setTemplateID)
 	if err != nil {
@@ -141,14 +146,14 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 	modulesInstResult := metadata.ResponseModuleInstance{}
 	if err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
 		moduleFilter, &modulesInstResult); err != nil {
-		blog.Errorf("DiffSetTemplateWithInstances failed, list modules failed, bizID: %s, setTemplateID: %s,"+
-			" setIDs: %s, err: %s, rid: %s", bizID, setTemplateID, setIDs, err, kit.Rid)
+		blog.Errorf("list modules failed, bizID: %s, setTemplateID: %s, setIDs: %s, err: %s, rid: %s",
+			bizID, setTemplateID, setIDs, err, kit.Rid)
 		return nil, err
 	}
 
 	if err := modulesInstResult.CCError(); err != nil {
-		blog.Errorf("DiffSetTemplateWithInstances failed, list module http reply failed, bizID: %s, "+
-			"setTemplateID: %s, setIDs: %s, filter: %s, reply: %s, rid: %s", bizID,
+		blog.Errorf("list module http reply failed, bizID: %s, setTemplateID: %s, setIDs: %s, filter: %s, "+
+			"reply: %s, rid: %s", bizID,
 			setTemplateID, setIDs, moduleFilter, modulesInstResult, kit.Rid)
 		return nil, err
 	}
@@ -202,34 +207,33 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, s
 	var setSyncStatus []metadata.SetTemplateSyncStatus
 
 	if setTemplateID == common.SetTemplateIDNotSet {
-		blog.V(4).Infof("UpdateSetSyncStatus success, set not bound with template, setID: %d, rid: %s", setID, kit.Rid)
+		blog.V(4).Infof("set not bound with template, setID: %d, rid: %s", setID, kit.Rid)
 		return setSyncStatus, nil
 	}
 
 	sets, err := st.GetSets(kit, setTemplateID, setID)
 	if err != nil {
-		blog.Errorf("UpdateSetSyncStatus failed, GetSets failed, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
-		return setSyncStatus, err
+		blog.Errorf("get sets failed, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
+		return nil, err
 	}
 
 	if len(sets) == 0 {
-		blog.Errorf("UpdateSetSyncStatus failed, GetSets failed, return is empty setID: %d, rid: %s",
-			setID, kit.Rid)
-		return setSyncStatus, kit.CCError.CCError(common.CCErrCommNotFound)
+		blog.Errorf("get sets success but return is empty setID: %d, rid: %s", setID, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKSetIDField)
 	}
 
 	bizID := sets[0].BizID
 	checkNeedSyncResult, err := st.isSyncRequired(kit, bizID, setTemplateID, setID)
 	if err != nil {
-		blog.Errorf("UpdateSetSyncStatus failed, check sync required failed, templateID: %d, setID: %d, err: %s, rid: %s",
+		blog.Errorf("check sync required failed, templateID: %d, setID: %d, err: %s, rid: %s",
 			setTemplateID, setID, err.Error(), kit.Rid)
-		return setSyncStatus, err
+		return nil, err
 	}
 
 	if len(checkNeedSyncResult) == 0 {
-		blog.Errorf("UpdateSetSyncStatus failed, checkNeedSyncResult empty, templateID: %d, setID: %d, rid: %s",
+		blog.Errorf("check sync required return empty, templateID: %d, setID: %d, rid: %s",
 			setTemplateID, setID, kit.Rid)
-		return setSyncStatus, kit.CCError.CCError(common.CCErrCommInternalServerError)
+		return nil, kit.CCError.CCError(common.CCErrCommInternalServerError)
 	}
 
 	details, err := st.GetLatestSyncTaskDetail(kit, setID)
@@ -280,7 +284,7 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, s
 	err = st.client.CoreService().SetTemplate().UpdateManySetTemplateSyncStatus(kit.Ctx, kit.Header, setSyncStatus)
 	if err != nil {
 		blog.Errorf("UpdateSetSyncStatus failed, UpdateSetTemplateSyncStatus failed, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
-		return setSyncStatus, err
+		return nil, err
 	}
 
 	return setSyncStatus, nil
