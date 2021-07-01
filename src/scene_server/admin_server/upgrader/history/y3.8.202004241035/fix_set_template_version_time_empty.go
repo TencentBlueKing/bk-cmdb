@@ -25,7 +25,7 @@ import (
 // fixSetTemplateVersionTimeEmpty fix time type field value empty for set template version attribute
 func fixSetTemplateVersionTimeEmpty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	filter := map[string]interface{}{
-		common.BKPropertyIDField: common.BKSetTemplateVersionField,
+		common.BKPropertyIDField: "set_template_version",
 		common.BKOwnerIDField:    conf.OwnerID,
 		common.BKObjIDField:      common.BKInnerObjIDSet,
 	}
