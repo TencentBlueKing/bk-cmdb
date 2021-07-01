@@ -68,15 +68,16 @@ func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int6
 		common.BKSetTemplateIDField: setTemplateID,
 	}
 
-	instResult := metadata.ResponseSetInstance{}
-	err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter, &instResult)
+	instResult := new(metadata.ResponseSetInstance)
+	err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter, instResult)
 	if err != nil {
 		blog.Errorf("GetSets failed, db select failed, filter: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if ccErr := instResult.CCError(); ccErr != nil {
-		blog.Errorf("GetSets failed, read instance failed, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
+		blog.Errorf("GetSets failed, read instance failed, filter: %s, instResult: %s, err: %s, rid: %s",
+			filter, instResult, ccErr.Error(), kit.Rid)
 		return nil, ccErr
 	}
 
@@ -135,6 +136,7 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 			common.BKModuleIDField,
 			common.BKSetTemplateIDField,
 			common.BKModuleNameField,
+			common.BKServiceTemplateIDField,
 		},
 		Condition: mapstr.MapStr(map[string]interface{}{
 			common.BKSetTemplateIDField: setTemplateID,
@@ -143,6 +145,7 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 			},
 		}),
 	}
+
 	modulesInstResult := new(metadata.ResponseModuleInstance)
 	if err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
 		moduleFilter, modulesInstResult); err != nil {
@@ -153,8 +156,7 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 
 	if err := modulesInstResult.CCError(); err != nil {
 		blog.Errorf("list module http reply failed, bizID: %s, setTemplateID: %s, setIDs: %s, filter: %s, "+
-			"reply: %s, rid: %s", bizID,
-			setTemplateID, setIDs, moduleFilter, modulesInstResult, kit.Rid)
+			"reply: %s, rid: %s", bizID, setTemplateID, setIDs, moduleFilter, modulesInstResult, kit.Rid)
 		return nil, err
 	}
 
@@ -295,6 +297,7 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID []int64) (ma
 	for _, item := range setID {
 		setIndex = append(setIndex, metadata.GetSetTemplateSyncIndex(item))
 	}
+
 	setRelatedTaskFilter := map[string]interface{}{
 		// "detail.data.set.bk_set_id": setID,
 		"flag": map[string]interface{}{common.BKDBIN: setIndex},
