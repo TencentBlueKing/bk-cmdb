@@ -90,7 +90,9 @@ func (lgc *Logics) List(ctx context.Context, name string, input *metadata.ListAP
 }
 
 // ListLatestTask list latest task
-func (lgc *Logics) ListLatestTask(ctx context.Context, name string, input *metadata.ListAPITaskLatestRequest) ([]metadata.APITaskDetail, error) {
+func (lgc *Logics) ListLatestTask(ctx context.Context, name string,
+	input *metadata.ListAPITaskLatestRequest) ([]metadata.APITaskDetail, error) {
+
 	input.Condition.Set("name", name)
 
 	/*
@@ -106,6 +108,12 @@ func (lgc *Logics) ListLatestTask(ctx context.Context, name string, input *metad
 			"doc": map[string]interface{}{"$first": "$$ROOT"},
 		}},
 		map[string]interface{}{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},
+	}
+
+	if input.Filter != nil {
+		aggregateCond = append(aggregateCond, map[string]interface{}{
+			common.BKDBProject: input.Filter,
+		})
 	}
 
 	result := make([]metadata.APITaskDetail, 0)

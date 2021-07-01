@@ -96,6 +96,11 @@ func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int6
 }
 
 func getSetIDFromTaskDetail(kit *rest.Kit, detail metadata.APITaskDetail) (int64, error) {
+	if len(detail.Flag) == 0 {
+		blog.Errorf("task detail is empty")
+		return 0, kit.CCError.CCErrorf(common.CCErrCommInstDataNil, detail.Flag)
+	}
+
 	setID, err := strconv.ParseInt(detail.Flag[len("set_template_sync:"):], 10, 64)
 	if err != nil {
 		blog.Errorf("getSetIDFromTaskDetail failed, err: %+v, rid: %s", err, kit.Rid)
@@ -160,8 +165,7 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 		return nil, err
 	}
 
-	setModulesCnt := int64(modulesInstResult.Data.Count)
-	setModules := make(map[int64][]metadata.ModuleInst, setModulesCnt)
+	setModules := make(map[int64][]metadata.ModuleInst, modulesInstResult.Data.Count)
 	for _, module := range modulesInstResult.Data.Info {
 		if _, exist := setModules[module.SetID]; !exist {
 			setModules[module.SetID] = make([]metadata.ModuleInst, 0)
@@ -171,7 +175,7 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 
 	checkResult := make(map[int64]bool, len(setModules))
 	for idx, module := range setModules {
-		checkResult[idx] = diffModuleServiceTpl(svcTplCnt, svcTplMap, setModulesCnt, module)
+		checkResult[idx] = diffModuleServiceTpl(svcTplCnt, svcTplMap, int64(len(module)), module)
 	}
 
 	return checkResult, nil
@@ -237,7 +241,15 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, s
 		return nil, kit.CCError.CCError(common.CCErrCommInternalServerError)
 	}
 
-	details, err := st.GetLatestSyncTaskDetail(kit, setID)
+	taskFilter := mapstr.MapStr{
+		common.CreateTimeField:              1,
+		common.LastTimeField:                1,
+		common.BKUser:                       1,
+		common.BKTaskIDField:                1,
+		common.BKStatusField:                1,
+		common.MetaDataSynchronizeFlagField: 1,
+	}
+	details, err := st.GetLatestSyncTaskDetail(kit, setID, taskFilter)
 	if err != nil {
 		return setSyncStatus, err
 	}
@@ -291,7 +303,14 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, s
 	return setSyncStatus, nil
 }
 
-func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID []int64) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder) {
+func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID []int64,
+	filter mapstr.MapStr) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder) {
+
+	if len(setID) == 0 {
+		blog.Errorf("set id is empty, rid: %s", kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrTaskListTaskFail)
+	}
+
 	var setIndex []string
 	latestTaskResult := make(map[int64]*metadata.APITaskDetail)
 	for _, item := range setID {
@@ -299,14 +318,13 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID []int64) (ma
 	}
 
 	setRelatedTaskFilter := map[string]interface{}{
-		// "detail.data.set.bk_set_id": setID,
 		"flag": map[string]interface{}{common.BKDBIN: setIndex},
 	}
-	listTaskOption := metadata.ListAPITaskLatestRequest{
-		Condition: mapstr.MapStr(setRelatedTaskFilter),
-	}
+	listTaskOption := new(metadata.ListAPITaskLatestRequest)
+	listTaskOption.Condition = setRelatedTaskFilter
+	listTaskOption.Filter = filter
 
-	listResult, err := st.client.TaskServer().Task().ListLatestTask(kit.Ctx, kit.Header, common.SyncSetTaskName, &listTaskOption)
+	listResult, err := st.client.TaskServer().Task().ListLatestTask(kit.Ctx, kit.Header, common.SyncSetTaskName, listTaskOption)
 	if err != nil {
 		blog.Errorf("list set sync tasks failed, option: %s, err: %v, rid: %s", listTaskOption, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrTaskListTaskFail)
@@ -318,7 +336,10 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID []int64) (ma
 	}
 
 	for _, APITask := range listResult.Data {
-		clearSetSyncTaskDetail(&APITask)
+		if filter == nil {
+			clearSetSyncTaskDetail(&APITask)
+		}
+
 		setID, err := getSetIDFromTaskDetail(kit, APITask)
 		if err != nil {
 			blog.Errorf("get setID from task failed, err: %+v, rid: %s", err, kit.Rid)

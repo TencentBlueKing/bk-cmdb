@@ -644,8 +644,9 @@ func (s *Service) SyncSetTplToInst(ctx *rest.Contexts) {
 		return
 	}
 
+	taskFilter := mapstr.MapStr{common.BKStatusField: 1, common.MetaDataSynchronizeFlagField: 1}
 	// NOTE: 如下处理不能杜绝所有发提交任务, 可通过前端防双击的方式限制绝大部分情况
-	setSyncStatus, err := s.Core.SetTemplateOperation().GetLatestSyncTaskDetail(ctx.Kit, option.SetIDs)
+	setSyncStatus, err := s.Core.SetTemplateOperation().GetLatestSyncTaskDetail(ctx.Kit, option.SetIDs, taskFilter)
 	if err != nil {
 		blog.Errorf("SyncSetTplToInst failed, getSetSyncStatus failed, setIDs: %+v, err: %s, rid: %s", option.SetIDs, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -725,7 +726,20 @@ func (s *Service) GetSetSyncDetails(ctx *rest.Contexts) {
 		}
 		option.SetIDs = setIDs
 	}
-	ctx.RespEntityWithError(s.Core.SetTemplateOperation().GetLatestSyncTaskDetail(ctx.Kit, option.SetIDs))
+
+	filter := map[string]interface{}{
+		common.MetaDataSynchronizeFlagField: 1,
+		common.BKStatusField:                1,
+		"detail": map[string]interface{}{
+			common.BKStatusField: 1,
+			"data": map[string]interface{}{
+				"module_diff": map[string]interface{}{common.BKModuleNameField: 1},
+				"response":    map[string]interface{}{common.HTTPBKAPIErrorMessage: 1},
+			},
+		},
+	}
+
+	ctx.RespEntityWithError(s.Core.SetTemplateOperation().GetLatestSyncTaskDetail(ctx.Kit, option.SetIDs, filter))
 }
 
 func (s *Service) ListSetTemplateSyncHistory(ctx *rest.Contexts) {

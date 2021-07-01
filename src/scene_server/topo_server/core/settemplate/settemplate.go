@@ -32,7 +32,7 @@ type SetTemplate interface {
 		option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder)
 	SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder
 	UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, setID []int64) ([]metadata.SetTemplateSyncStatus, errors.CCErrorCoder)
-	GetLatestSyncTaskDetail(kit *rest.Kit, setID []int64) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder)
+	GetLatestSyncTaskDetail(kit *rest.Kit, setID []int64, filter mapstr.MapStr) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder)
 	CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64, setTemplateID int64) (metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder)
 	TriggerCheckSetTemplateSyncingStatus(kit *rest.Kit, bizID, setTemplateID int64, setID []int64) errors.CCErrorCoder
 	ListSetTemplateSyncStatus(kit *rest.Kit, bizID int64,
@@ -384,6 +384,12 @@ func (st *setTemplate) CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64
 	}
 
 	for _, setID := range setIDs {
+		if !result.NeedSync {
+			if needSync[setID] {
+				result.NeedSync = true
+			}
+		}
+
 		setStatus := metadata.SetUpdateToDateStatus{
 			SetID:    setID,
 			NeedSync: needSync[setID],
