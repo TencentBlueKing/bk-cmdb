@@ -81,16 +81,6 @@ func (s APITaskStatus) IsFailure() bool {
 	return false
 }
 
-type ListTaskDetail struct {
-	Status APITaskStatus `json:"status" bson:"status"`
-	Detail TaskDetail    `json:"detail" bson:"detail"`
-}
-
-type TaskDetail struct {
-	Status APITaskStatus `json:"status" bson:"status"`
-	Data   mapstr.MapStr `json:"data" bson:"data"`
-}
-
 const (
 	// APITaskStatusNew new task ,waiting execute
 	APITaskStatusNew APITaskStatus = 0
@@ -114,7 +104,7 @@ type ListAPITaskRequest struct {
 
 type ListAPITaskLatestRequest struct {
 	Condition mapstr.MapStr `json:"condition"`
-	Filter    mapstr.MapStr `json:"filter"`
+	Fields    []string      `json:"fields"`
 }
 
 type ListAPITaskLatestResponse struct {
@@ -143,4 +133,9 @@ type TaskDetailResponse struct {
 	Data struct {
 		Info APITaskDetail `json:"info"`
 	} `json:"data"`
+}
+
+type ListAPITaskDetail struct {
+	SetID  []int64  `json:"bk_set_id"`
+	Fields []string `json:"fields"`
 }

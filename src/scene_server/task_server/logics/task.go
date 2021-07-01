@@ -110,9 +110,13 @@ func (lgc *Logics) ListLatestTask(ctx context.Context, name string,
 		map[string]interface{}{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},
 	}
 
-	if input.Filter != nil {
+	if len(input.Fields) != 0 {
+		cond := map[string]int64{}
+		for _, field := range input.Fields {
+			cond[field] = 1
+		}
 		aggregateCond = append(aggregateCond, map[string]interface{}{
-			common.BKDBProject: input.Filter,
+			common.BKDBProject: cond,
 		})
 	}
 

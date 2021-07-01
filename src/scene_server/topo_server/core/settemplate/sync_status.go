@@ -165,7 +165,7 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 		return nil, err
 	}
 
-	setModules := make(map[int64][]metadata.ModuleInst, modulesInstResult.Data.Count)
+	setModules := make(map[int64][]metadata.ModuleInst, len(modulesInstResult.Data.Info))
 	for _, module := range modulesInstResult.Data.Info {
 		if _, exist := setModules[module.SetID]; !exist {
 			setModules[module.SetID] = make([]metadata.ModuleInst, 0)
@@ -241,15 +241,18 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, s
 		return nil, kit.CCError.CCError(common.CCErrCommInternalServerError)
 	}
 
-	taskFilter := mapstr.MapStr{
-		common.CreateTimeField:              1,
-		common.LastTimeField:                1,
-		common.BKUser:                       1,
-		common.BKTaskIDField:                1,
-		common.BKStatusField:                1,
-		common.MetaDataSynchronizeFlagField: 1,
+	taskCond := metadata.ListAPITaskDetail{
+		SetID: setID,
+		Fields: []string{
+			common.CreateTimeField,
+			common.LastTimeField,
+			common.BKUser,
+			common.BKTaskIDField,
+			common.BKStatusField,
+			common.MetaDataSynchronizeFlagField,
+		},
 	}
-	details, err := st.GetLatestSyncTaskDetail(kit, setID, taskFilter)
+	details, err := st.GetLatestSyncTaskDetail(kit, taskCond)
 	if err != nil {
 		return setSyncStatus, err
 	}
@@ -303,17 +306,17 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, s
 	return setSyncStatus, nil
 }
 
-func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID []int64,
-	filter mapstr.MapStr) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder) {
+func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
+	taskCond metadata.ListAPITaskDetail) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder) {
 
-	if len(setID) == 0 {
+	if len(taskCond.SetID) == 0 {
 		blog.Errorf("set id is empty, rid: %s", kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrTaskListTaskFail)
 	}
 
 	var setIndex []string
 	latestTaskResult := make(map[int64]*metadata.APITaskDetail)
-	for _, item := range setID {
+	for _, item := range taskCond.SetID {
 		setIndex = append(setIndex, metadata.GetSetTemplateSyncIndex(item))
 	}
 
@@ -322,7 +325,7 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID []int64,
 	}
 	listTaskOption := new(metadata.ListAPITaskLatestRequest)
 	listTaskOption.Condition = setRelatedTaskFilter
-	listTaskOption.Filter = filter
+	listTaskOption.Fields = taskCond.Fields
 
 	listResult, err := st.client.TaskServer().Task().ListLatestTask(kit.Ctx, kit.Header, common.SyncSetTaskName, listTaskOption)
 	if err != nil {
@@ -336,7 +339,7 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID []int64,
 	}
 
 	for _, APITask := range listResult.Data {
-		if filter == nil {
+		if len(taskCond.Fields) == 0 {
 			clearSetSyncTaskDetail(&APITask)
 		}
 
