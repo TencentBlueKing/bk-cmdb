@@ -1054,10 +1054,10 @@ const (
 )
 
 const (
-	AttributePlaceHolderMaxLength = 300
-	AttributeOptionMaxLength      = 1000
-	AttributeIDMaxLength          = 20
-	AttributeNameMaxLength        = 20
+	AttributePlaceHolderMaxLength = 2000
+	AttributeOptionMaxLength      = 2000
+	AttributeIDMaxLength          = 128
+	AttributeNameMaxLength        = 128
 	AttributeUnitMaxLength        = 20
 	AttributeOptionValueMaxLength = 128
 	AttributeOptionArrayMaxLength = 200
