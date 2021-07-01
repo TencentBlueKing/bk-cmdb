@@ -34,6 +34,8 @@ type ZkRegDiscv struct {
 	rootCxt        context.Context
 	sessionTimeOut time.Duration
 	registerPath   string
+	// regPathLock is a lock for register path
+	regPathLock sync.RWMutex
 	sync.Mutex
 }
 
@@ -58,8 +60,8 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 			var watchEvn <-chan gozk.Event
 			var err error
 
-			if zkRD.registerPath == "" {
-				zkRD.registerPath, err = zkRD.zkcli.CreateEphAndSeqEx(path, data)
+			if zkRD.getRegisterPath() == "" {
+				registerPath, err := zkRD.zkcli.CreateEphAndSeqEx(path, data)
 				if err != nil {
 					blog.Errorf("fail to register server node(%s). CreateEphAndSeqEx err:%s", path, err.Error())
 					if zkRD.zkcli.IsConnectionError(err) {
@@ -69,12 +71,14 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 					}
 					time.Sleep(time.Second)
 				}
+				zkRD.setRegisterPath(registerPath)
 				// continue retry watch node
 				continue
 			} else {
-				exist, _, watchEvn, err = zkRD.zkcli.ExistW(zkRD.registerPath)
+				registerPath := zkRD.getRegisterPath()
+				exist, _, watchEvn, err = zkRD.zkcli.ExistW(registerPath)
 				if err != nil {
-					blog.Errorf("fail to watch register node(%s), err:%s\n", zkRD.registerPath, err.Error())
+					blog.Errorf("fail to watch register node(%s), err:%s\n", registerPath, err.Error())
 					if zkRD.zkcli.IsConnectionError(err) {
 						blog.Error("zk is closed, try to reconnect")
 						zkRD.reconnectZk()
@@ -84,8 +88,8 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 					switch err {
 					default:
 						// clear register path, so that it can register to a new path
-						zkRD.zkcli.Del(zkRD.registerPath, -1)
-						zkRD.registerPath = ""
+						zkRD.zkcli.Del(registerPath, -1)
+						zkRD.setRegisterPath("")
 						// err still exists, waiting 1s. avoid too quick retry.
 						time.Sleep(time.Second * 1)
 						continue
@@ -93,8 +97,8 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 				}
 				if !exist {
 					// current node doesn't exist, reset the path to create a new one
-					blog.Errorf("node %s doesn't exist, try to create a new one", zkRD.registerPath)
-					zkRD.registerPath = ""
+					blog.Errorf("node %s doesn't exist, try to create a new one", registerPath)
+					zkRD.setRegisterPath("")
 					continue
 				}
 			}
@@ -113,8 +117,61 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 		}
 	}()
 
+	go zkRD.loopRegisterNode(path, data)
+
 	blog.Infof("finish register server node(%s) and watch it\n", path)
 	return nil
+}
+
+// loopRegisterNode loop check registered node and register it again if doesn't exist on zk
+// as a standby, in case watch encountered error or other register exception
+func (zkRD *ZkRegDiscv) loopRegisterNode(path string, data []byte) {
+	var exist bool
+	var err error
+	for {
+		// sleep some time for every loop
+		time.Sleep(time.Second)
+
+		// Check whether the node exists
+		exist, err = zkRD.zkcli.Exist(zkRD.getRegisterPath())
+		if err != nil {
+			blog.Errorf("fail to get zk node exist status, register path:%s, err:%s\n",
+				zkRD.registerPath, err.Error())
+			if zkRD.zkcli.IsConnectionError(err) {
+				blog.Error("zk is closed, try to reconnect")
+				zkRD.reconnectZk()
+				continue
+			}
+		}
+
+		// If it doesn't exist， create it
+		if !exist {
+			registerPath, err := zkRD.zkcli.CreateEphAndSeqEx(path, data)
+			if err != nil {
+				blog.Errorf("fail to register server node(%s). CreateEphAndSeqEx err:%s", path, err.Error())
+				if zkRD.zkcli.IsConnectionError(err) {
+					blog.Error("zk is closed, try to reconnect")
+					zkRD.reconnectZk()
+					continue
+				}
+			}
+			zkRD.setRegisterPath(registerPath)
+		}
+	}
+}
+
+// getRegisterPath get register path and is concurrent secure
+func (zkRD *ZkRegDiscv) getRegisterPath() string {
+	zkRD.regPathLock.RLock()
+	defer zkRD.regPathLock.RUnlock()
+	return zkRD.registerPath
+}
+
+// setRegisterPath set register path and is concurrent secure
+func (zkRD *ZkRegDiscv) setRegisterPath(path string) {
+	zkRD.regPathLock.Lock()
+	defer zkRD.regPathLock.Unlock()
+	zkRD.registerPath = path
 }
 
 // GetServNodes get server nodes by path
@@ -197,7 +254,8 @@ func (zkRD *ZkRegDiscv) loopDiscover(discvCtx context.Context, path string, env 
 			fmt.Printf("discover path(%s) done\n", path)
 			return
 		case e := <-watchEnv:
-			fmt.Printf("watch found the children of path(%s) change. event type:%s, event err:%v\n", path, e.Type.String(), e.Err)
+			fmt.Printf("watch found the children of path(%s) change. event type:%s, event err:%v\n",
+				path, e.Type.String(), e.Err)
 			if e.State == gozk.StateDisconnected {
 				zkRD.reconnectZk()
 			}
@@ -281,7 +339,6 @@ func (zkRD *ZkRegDiscv) reconnectZk() {
 		// wait some time to make the new connection available
 		time.Sleep(time.Second)
 		fmt.Println("reconnect zookeeper success")
-		zkRD.registerPath = ""
 
 		return
 	}
