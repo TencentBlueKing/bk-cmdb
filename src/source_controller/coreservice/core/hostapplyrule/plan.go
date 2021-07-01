@@ -56,18 +56,15 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 	}
 	attributes, err := p.listHostAttributes(kit, bizID, attributeIDs...)
 	if err != nil {
-		blog.ErrorJSON("GenerateApplyPlan failed, listHostAttributes failed, attributeIDs: %s, err: %s, rid: %s",
+		blog.Errorf("GenerateApplyPlan failed, listHostAttributes failed, attributeIDs: %s, err: %s, rid: %s",
 			attributeIDs, err.Error(), rid)
 		return result, err
 	}
 
-	hostAttrs := []string{}
-	for _, attr :=range attributes{
-		hostAttrs =append(hostAttrs, attr.PropertyName)
-	}
-
 	fields := []string{common.BKHostIDField,common.BKHostInnerIPField,common.BKCloudIDField, common.BKHostNameField}
-	fields = append(fields, hostAttrs...)
+	for _, attr := range attributes {
+		fields = append(fields, attr.PropertyName)
+	}
 
 	hosts := make([]metadata.HostMapStr, 0)
 	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(fields...).All(kit.Ctx, &hosts); err != nil {
