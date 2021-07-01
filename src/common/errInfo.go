@@ -801,6 +801,8 @@ const (
 
 	// CCERrrCoreServiceUniqueRuleExist 模型唯一校验规则已经存在
 	CCERrrCoreServiceSameUniqueCheckRuleExist = 1113050
+	CCERrrCoreServiceConcurrent               = 1113051
+
 	// CCErrCoreServiceResourceDirectoryNotExistErr 资源池目录不存在
 	CCErrCoreServiceResourceDirectoryNotExistErr = 1113033
 	// CCErrCoreServiceHostNotUnderAnyResourceDirectory 主机不在任意资源池目录下
