@@ -110,7 +110,7 @@ func getSetIDFromTaskDetail(kit *rest.Kit, detail metadata.APITaskDetail) (int64
 	return setID, nil
 }
 
-func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64) (map[int64]bool,
+func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64, isInterrupt bool) (map[int64]bool,
 	errors.CCErrorCoder) {
 
 	if len(setIDs) == 0 {
@@ -121,7 +121,7 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 	serviceTemplates, err := st.client.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(kit.Ctx, kit.Header, bizID,
 		setTemplateID)
 	if err != nil {
-		blog.Errorf("isSyncRequired failed, ListSetTplRelatedSvcTpl failed, bizID: %d, "+
+		blog.Errorf(" list set template and service template related failed, bizID: %d, "+
 			"setTemplateID: %d, err: %s, rid: %s", bizID, setTemplateID, err.Error(), kit.Rid)
 		return nil, err
 	}
@@ -176,6 +176,9 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 	checkResult := make(map[int64]bool, len(setModules))
 	for idx, module := range setModules {
 		checkResult[idx] = diffModuleServiceTpl(svcTplCnt, svcTplMap, int64(len(module)), module)
+		if isInterrupt && checkResult[idx] {
+			return checkResult, nil
+		}
 	}
 
 	return checkResult, nil
@@ -228,7 +231,7 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, s
 	}
 
 	bizID := sets[0].BizID
-	needSyncs, err := st.isSyncRequired(kit, bizID, setTemplateID, setID)
+	needSyncs, err := st.isSyncRequired(kit, bizID, setTemplateID, setID, false)
 	if err != nil {
 		blog.Errorf("check sync required failed, templateID: %d, setID: %d, err: %s, rid: %s",
 			setTemplateID, setID, err.Error(), kit.Rid)

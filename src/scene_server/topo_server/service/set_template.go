@@ -748,6 +748,7 @@ func (s *Service) GetSetSyncDetails(ctx *rest.Contexts) {
 	if err != nil {
 		blog.Errorf("get the latest task detail failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
+		return
 	}
 
 	ctx.RespEntity(taskDetail)

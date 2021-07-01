@@ -27,7 +27,7 @@ import (
 
 type SetTemplate interface {
 	GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int64) ([]metadata.SetInst, errors.CCErrorCoder)
-	isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64) (map[int64]bool, errors.CCErrorCoder)
+	isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64, isInterrupt bool) (map[int64]bool, errors.CCErrorCoder)
 	DiffSetTplWithInst(kit *rest.Kit, bizID int64, setTemplateID int64,
 		option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder)
 	SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder
@@ -376,7 +376,7 @@ func (st *setTemplate) CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64
 		setIDs = append(setIDs, item.SetID)
 	}
 
-	needSync, err := st.isSyncRequired(kit, bizID, setTemplateID, setIDs)
+	needSync, err := st.isSyncRequired(kit, bizID, setTemplateID, setIDs, true)
 	if err != nil {
 		blog.Errorf("check set whether need sync failed, set: %+v, err: %s, rid: %s",
 			setIDs, err.Error(), kit.Rid)

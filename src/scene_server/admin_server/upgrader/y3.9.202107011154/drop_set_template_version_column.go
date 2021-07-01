@@ -64,7 +64,7 @@ func dropVersionColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 
 func dropSetTplVersionColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	existsVersionFilter := map[string]interface{}{
-		common.BKSetTemplateVersionField: map[string]interface{}{
+		"set_template_version": map[string]interface{}{
 			common.BKDBExists: true,
 		},
 	}
@@ -101,9 +101,9 @@ func dropSetTplVersionColumn(ctx context.Context, db dal.RDB, conf *upgrader.Con
 			common.BKSetIDField: map[string]interface{}{common.BKDBIN: setIDs},
 		}
 		if err := db.Table(common.BKTableNameBaseSet).
-			DropColumns(ctx, filter, []string{common.BKSetTemplateVersionField}); err != nil {
+			DropColumns(ctx, filter, []string{"set_template_version"}); err != nil {
 			blog.Errorf("drop column failed, tablename: %s, field:%s, err:%v",
-				common.BKTableNameBaseSet, common.BKSetTemplateVersionField, err)
+				common.BKTableNameBaseSet, "set_template_version", err)
 			return err
 		}
 	}

@@ -231,7 +231,6 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, biz
 	data.Remove(common.BKAppIDField)
 	data.Remove(common.BKSetIDField)
 	data.Remove(common.BKSetTemplateIDField)
-	data.Remove(common.BKSetTemplateVersionField)
 
 	err := s.inst.UpdateInst(kit, data, obj, innerCond, setID)
 	if err != nil {
