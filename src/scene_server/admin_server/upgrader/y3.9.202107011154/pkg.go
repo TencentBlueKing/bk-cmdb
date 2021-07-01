@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202107011114
+package y3_9_202107011154
 
 import (
 	"context"
@@ -22,19 +22,19 @@ import (
 
 func init() {
 
-	upgrader.RegistUpgrader("y3.9.202107011114", upgrade)
+	upgrader.RegistUpgrader("y3.9.202107011154", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = dropVersionColumn(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202107011114] drop set template table version column error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202107011154] drop set template table version column error  %s", err.Error())
 		return err
 	}
 
 	err = dropSetTplVersionColumn(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202107011114] drop set table set_template_version column error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202107011154] drop set table set_template_version column error  %s", err.Error())
 		return err
 	}
 
