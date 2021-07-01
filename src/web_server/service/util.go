@@ -99,7 +99,7 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 		params["fields"] = "username,display_name"
 		user := plugins.CurrentPlugin(c, s.Config.LoginVersion)
 
-		userListEsb, errNew := user.GetUserList(c, s.Config.ConfigMap)
+		userListEsb, errNew := user.GetUserList(c, params)
 		if errNew != nil {
 			blog.ErrorJSON("get user list from ESB failed, err: %s, rid: %s", errNew.ToCCError(defErr).Error(), rid)
 			userListEsb = []*metadata.LoginSystemUserInfo{}
