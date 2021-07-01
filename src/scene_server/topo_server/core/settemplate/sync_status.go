@@ -186,7 +186,7 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setID int64) (metadata
 func (st *setTemplate) UpdateSetVersion(kit *rest.Kit, setID, setTemplateVersion int64) errors.CCErrorCoder {
 	updateSetOption := &metadata.UpdateOption{
 		Data: map[string]interface{}{
-			common.BKSetTemplateVersionField: setTemplateVersion,
+			"set_template_version": setTemplateVersion,
 		},
 		Condition: map[string]interface{}{
 			common.BKSetIDField: setID,

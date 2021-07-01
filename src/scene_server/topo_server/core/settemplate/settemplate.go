@@ -362,7 +362,7 @@ func (st *setTemplate) CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64
 	result.NeedSync = false
 
 	filter := &metadata.QueryCondition{
-		Fields: []string{common.BKSetIDField, common.BKSetTemplateVersionField},
+		Fields: []string{common.BKSetIDField, "set_template_version"},
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},

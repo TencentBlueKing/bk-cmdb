@@ -664,7 +664,7 @@ func (s *Service) UpdateSetVersion(kit *rest.Kit, bizID, setID, setTemplateVersi
 			common.BKSetIDField: setID,
 		},
 		Data: map[string]interface{}{
-			common.BKSetTemplateVersionField: setTemplateVersion,
+			"set_template_version": setTemplateVersion,
 		},
 	}
 
