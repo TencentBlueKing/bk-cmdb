@@ -33,7 +33,7 @@ type SetTemplate interface {
 	SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder
 	UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, setID []int64) ([]metadata.SetTemplateSyncStatus, errors.CCErrorCoder)
 	GetLatestSyncTaskDetail(kit *rest.Kit, taskCond metadata.ListAPITaskDetail) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder)
-	CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64, setTemplateID int64) (metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder)
+	CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64, setTemplateID int64) (*metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder)
 	TriggerCheckSetTemplateSyncingStatus(kit *rest.Kit, bizID, setTemplateID int64, setID []int64) errors.CCErrorCoder
 	ListSetTemplateSyncStatus(kit *rest.Kit, bizID int64,
 		option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
@@ -236,7 +236,13 @@ func (st *setTemplate) SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateI
 				case <-ticker.C:
 					setSyncStatus, err := st.UpdateSetSyncStatus(kit.NewKit(), setTemplateID, []int64{setID})
 					if err != nil {
-						blog.Errorf("UpdateSetSyncStatus failed, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
+						blog.Errorf("update set sync status failed, setID: %d, err: %s, rid: %s",
+							setID, err.Error(), kit.Rid)
+						return
+					}
+					if len(setSyncStatus) == 0 {
+						blog.Errorf("update set sync status failed,return is empty setID: %d, err: %s, rid: %s",
+							setID, err.Error(), kit.Rid)
 						return
 					}
 					if setSyncStatus[0].Status.IsFinished() {
@@ -340,9 +346,10 @@ func DiffServiceTemplateWithModules(serviceTemplates []metadata.ServiceTemplate,
 }
 
 // CheckSetTplInstLatest 检查通过集群模板 setTemplateID 实例化的集群是否都已经达到最新状态
-func (st *setTemplate) CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64, setTemplateID int64) (metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder) {
+func (st *setTemplate) CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64,
+	setTemplateID int64) (*metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder) {
 
-	result := metadata.SetTemplateUpdateToDateStatus{}
+	result := new(metadata.SetTemplateUpdateToDateStatus)
 	result.SetTemplateID = setTemplateID
 	result.NeedSync = false
 
@@ -367,7 +374,7 @@ func (st *setTemplate) CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64
 		return result, ccErr
 	}
 
-	if setResult.Data.Count == 0 {
+	if len(setResult.Data.Info) == 0 {
 		return result, nil
 	}
 

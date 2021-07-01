@@ -851,7 +851,7 @@ func (s *Service) BatchCheckSetInstUpdateToDateStatus(ctx *rest.Contexts) {
 			ctx.RespAutoError(err)
 			return
 		}
-		batchResult = append(batchResult, oneResult)
+		batchResult = append(batchResult, *oneResult)
 	}
 	ctx.RespEntity(batchResult)
 }
