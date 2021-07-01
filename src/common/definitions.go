@@ -482,8 +482,7 @@ const (
 	BKProcessTemplateIDField = "process_template_id"
 	BKServiceCategoryIDField = "service_category_id"
 
-	BKSetTemplateIDField      = "set_template_id"
-	BKSetTemplateVersionField = "set_template_version"
+	BKSetTemplateIDField = "set_template_id"
 
 	HostApplyRuleIDField = "host_apply_rule_id"
 
