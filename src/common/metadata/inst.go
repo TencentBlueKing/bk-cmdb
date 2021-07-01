@@ -32,13 +32,12 @@ type SetInst struct {
 	CreateTime      Time   `field:"create_time" json:"create_time,omitempty" bson:"create_time" mapstructure:"create_time"`
 	LastTime        Time   `field:"last_time" json:"last_time,omitempty" bson:"last_time" mapstructure:"last_time"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
-
-	SetTemplateVersion int64 `bson:"set_template_version" json:"set_template_version" mapstructure:"set_template_version"`
 }
 
 // ModuleInst contains partial fields of a real module
 type ModuleInst struct {
 	BizID             int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id" mapstructure:"bk_biz_id"`
+	SetID             int64  `bson:"bk_set_id" json:"bk_set_id" field:"bk_set_id" mapstructure:"bk_set_id"`
 	ModuleID          int64  `bson:"bk_module_id" json:"bk_module_id" field:"bk_module_id" mapstructure:"bk_module_id"`
 	ModuleName        string `bson:"bk_module_name" json:"bk_module_name" field:"bk_module_name" mapstructure:"bk_module_name"`
 	SupplierAccount   string `bson:"bk_supplier_account" json:"bk_supplier_account" field:"bk_supplier_account" mapstructure:"bk_supplier_account"`

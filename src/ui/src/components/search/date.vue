@@ -5,7 +5,8 @@
     v-bind="$attrs"
     format="yyyy-MM-dd"
     @change="handleChange"
-    @open-change="handleToggle">
+    @open-change="handleToggle"
+    @clear="() => $emit('clear')">
   </bk-date-picker>
 </template>
 

@@ -25,8 +25,6 @@ type SetTemplate struct {
 	Name  string `field:"name" json:"name" bson:"name"`
 	BizID int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 
-	Version int64 `field:"version" json:"version" bson:"version" mapstructure:"version"`
-
 	// 通用字段
 	Creator         string    `field:"creator" json:"creator" bson:"creator"`
 	Modifier        string    `field:"modifier" json:"modifier" bson:"modifier"`

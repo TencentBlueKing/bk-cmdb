@@ -809,6 +809,8 @@ const (
 	CCERrrCoreServiceSubsetUniqueRuleExist = 1113051
 	// CCERrrCoreServiceSupersetUniqueRuleExist 所选字段组合和已有规则重复，请勿创建冗余规则
 	CCERrrCoreServiceSupersetUniqueRuleExist = 1113052
+	CCERrrCoreServiceConcurrent               = 1113053
+
 	// CCErrCoreServiceResourceDirectoryNotExistErr 资源池目录不存在
 	CCErrCoreServiceResourceDirectoryNotExistErr = 1113033
 	// CCErrCoreServiceHostNotUnderAnyResourceDirectory 主机不在任意资源池目录下

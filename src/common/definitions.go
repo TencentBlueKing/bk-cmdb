@@ -209,6 +209,12 @@ const (
 	// BKDBType selects documents where the value of the field is an instance of the specified BSON type(s).
 	// Querying by data type is useful when dealing with highly unstructured data where data types are not predictable.
 	BKDBType = "$type"
+
+	// BKDBSort the db operator
+	BKDBSort = "$sort"
+
+	// BKDBReplaceRoot the db operator
+	BKDBReplaceRoot = "$replaceRoot"
 )
 
 const (
@@ -482,8 +488,7 @@ const (
 	BKProcessTemplateIDField = "process_template_id"
 	BKServiceCategoryIDField = "service_category_id"
 
-	BKSetTemplateIDField      = "set_template_id"
-	BKSetTemplateVersionField = "set_template_version"
+	BKSetTemplateIDField = "set_template_id"
 
 	HostApplyRuleIDField = "host_apply_rule_id"
 

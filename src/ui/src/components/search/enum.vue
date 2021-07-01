@@ -4,6 +4,7 @@
     v-model="localValue"
     v-bind="$attrs"
     :multiple="multiple"
+    @clear="() => $emit('clear')"
     @toggle="handleToggle">
     <bk-option v-for="option in options"
       :key="option.id"

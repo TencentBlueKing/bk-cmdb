@@ -6,12 +6,14 @@
     v-model="localValue"
     v-bind="$attrs"
     :list="[]"
+    @removeAll="() => $emit('clear')"
     @click.native="handleToggle(true)"
     @blur="handleToggle(false, ...arguments)">
   </bk-tag-input>
   <bk-input v-else
     v-model="localValue"
     v-bind="$attrs"
+    @clear="() => $emit('clear')"
     @focus="handleToggle(true, ...arguments)"
     @blur="handleToggle(false, ...arguments)">
   </bk-input>
