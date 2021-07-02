@@ -286,7 +286,7 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 			pickedChainNodes[i], pickedChainNodes[j] = pickedChainNodes[j], pickedChainNodes[i]
 		}
 
-		blog.Warnf("got conflict got conflict cursor with chain nodes: %s, replaced with nodes: %s, rid: %s",
+		blog.WarnJSON("got conflict cursor with chain nodes: %s, replaced with nodes: %s, rid: %s",
 			conflictNodes, pickedChainNodes, rid)
 
 		// update the chain nodes with picked chain nodes, so that we can handle them later.

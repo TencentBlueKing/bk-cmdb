@@ -75,7 +75,6 @@ func (p *setTemplateOperation) CreateSetTemplate(kit *rest.Kit, bizID int64, opt
 		ID:              0,
 		Name:            option.Name,
 		BizID:           bizID,
-		Version:         0,
 		Creator:         kit.User,
 		Modifier:        kit.User,
 		CreateTime:      now,
@@ -257,9 +256,6 @@ func (p *setTemplateOperation) UpdateSetTemplate(kit *rest.Kit, setTemplateID in
 				blog.Errorf("UpdateSetTemplate failed, remove no need service template ids failed, filter: %+v, err: %+v, rid: %s", removeFilter, err, kit.Rid)
 				return setTemplate, kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
 			}
-		}
-		if len(addRelations) > 0 || len(removeIDs) > 0 {
-			setTemplate.Version += 1
 		}
 	}
 

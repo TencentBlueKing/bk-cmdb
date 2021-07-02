@@ -9,34 +9,27 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package y3_8_202004241035
+package y3_9_202106291420
 
 import (
 	"context"
 
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-// fixSetTemplateVersionTimeEmpty fix time type field value empty for set template version attribute
-func fixSetTemplateVersionTimeEmpty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	filter := map[string]interface{}{
-		common.BKPropertyIDField: "set_template_version",
-		common.BKOwnerIDField:    conf.OwnerID,
-		common.BKObjIDField:      common.BKInnerObjIDSet,
-	}
-	now := metadata.Now()
-	doc := map[string]interface{}{
-		common.CreateTimeField: &now,
-		common.LastTimeField:   &now,
-	}
-	if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, filter, doc); err != nil {
-		blog.ErrorJSON("update set template version attribute failed, filter: %s, doc: %s, err: %s", filter, doc, err)
+func init() {
+
+	upgrader.RegistUpgrader("y3.9.202106291420", upgrade)
+}
+
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	err = addIndexex(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202106291420] index error  %s", err.Error())
 		return err
 	}
-	return nil
+
+	return
 }

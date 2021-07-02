@@ -14,9 +14,11 @@ package service
 
 import (
 	"strconv"
+	"sync"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/driver/mongodb"
@@ -226,25 +228,39 @@ func (s *coreService) ListSetTplRelatedSvcTpl(ctx *rest.Contexts) {
 	ctx.RespEntity(serviceTemplates)
 }
 
-func (s *coreService) UpdateSetTemplateSyncStatus(ctx *rest.Contexts) {
-	setIDStr := ctx.Request.PathParameter(common.BKSetIDField)
-	setID, err := strconv.ParseInt(setIDStr, 10, 64)
-	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetIDField))
-		return
-	}
-
-	option := metadata.SetTemplateSyncStatus{}
+func (s *coreService) UpdateManySetTemplateSyncStatus(ctx *rest.Contexts) {
+	var option []metadata.SetTemplateSyncStatus
 	if err := ctx.DecodeInto(&option); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if err := s.core.SetTemplateOperation().UpdateSetTemplateSyncStatus(ctx.Kit, setID, option); err != nil {
-		blog.Errorf("UpdateSetTemplateSyncStatus failed, setID: %d, option: %+v, err: %+v, rid: %s", setID, option, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+	var wg sync.WaitGroup
+	var apiErr errors.CCErrorCoder
+	pipeline := make(chan struct{}, 5)
+	for _, setStatus := range option {
+		pipeline <- struct{}{}
+		wg.Add(1)
+		go func(kit *rest.Kit, setID int64, setStatus metadata.SetTemplateSyncStatus) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+			if err := s.core.SetTemplateOperation().UpdateSetTemplateSyncStatus(ctx.Kit, setStatus.SetID, setStatus); err != nil {
+				blog.Errorf("UpdateSetTemplateSyncStatus failed, setID: %d, option: %+v, err: %+v, rid: %s", setStatus.SetID, option, err, ctx.Kit.Rid)
+				apiErr = err
+				return
+			}
+		}(ctx.Kit, setStatus.SetID, setStatus)
+	}
+
+	wg.Wait()
+
+	if apiErr != nil {
+		ctx.RespAutoError(apiErr)
 		return
 	}
+
 	ctx.RespEntity(nil)
 }
 

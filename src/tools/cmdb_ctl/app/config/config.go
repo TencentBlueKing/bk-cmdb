@@ -22,6 +22,7 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/spf13/cobra"
 )
@@ -32,6 +33,7 @@ type Config struct {
 	ZkAddr      string
 	MongoURI    string
 	MongoRsName string
+	RedisConf   redis.Config
 }
 
 // AddFlags add flags
@@ -40,6 +42,12 @@ func (c *Config) AddFlags(cmd *cobra.Command) {
 	// TODO add zkuser and zkpwd
 	cmd.PersistentFlags().StringVar(&c.MongoURI, "mongo-uri", os.Getenv("MONGO_URI"), "the mongodb URI, eg. mongodb://127.0.0.1:27017/cmdb, corresponding environment variable is MONGO_URI")
 	cmd.PersistentFlags().StringVar(&c.MongoRsName, "mongo-rs-name", "rs0", "mongodb replica set name")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.Address, "redis-addr", "127.0.0.1:6379", "assign redis server address default is 127.0.0.1:6379")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.MasterName, "redis-mastername", "", "assign redis server master name defalut is null")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.Password, "redis-pwd", "", "assign redis server password default is null")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.SentinelPassword, "redis-sentinelpwd", "", "assign the redis sentinel password  default is null")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.Database, "redis-database", "0", "assign the redis database  default is 0")
+	return
 }
 
 type Service struct {

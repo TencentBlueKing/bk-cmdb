@@ -22,7 +22,8 @@
       return {
         listeners: {
           focus: () => this.handleToggle(true),
-          blur: () => this.handleToggle(false)
+          blur: () => this.handleToggle(false),
+          clear: () => this.$emit('clear')
         }
       }
     },

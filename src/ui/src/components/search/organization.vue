@@ -2,6 +2,7 @@
   <cmdb-form-organization
     v-model="localValue"
     v-bind="$attrs"
+    @clear="() => $emit('clear')"
     @toggle="handleToggle">
   </cmdb-form-organization>
 </template>

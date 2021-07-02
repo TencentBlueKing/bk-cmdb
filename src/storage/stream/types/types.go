@@ -350,6 +350,16 @@ type LoopOptions struct {
 	WatchOpt     *WatchOptions
 	TokenHandler TokenHandler
 	RetryOptions *RetryOptions
+
+	// StopNotifier is used when user need to stop loop events and release related resources.
+	// It's a optional option. when it's not set(as is nil), then the loop will not exit forever.
+	// Otherwise, user can use it to stop loop events.
+	// When a user want to stop the loop, the only thing that a user need to do is to just
+	// **close** this stop notifier channel.
+	// Attention:
+	// Close this notifier channel is the only way to stop loop correctly.
+	// Do not send data to this channel.
+	StopNotifier <-chan struct{}
 }
 
 type LoopOneOptions struct {
@@ -391,6 +401,11 @@ func (lo *LoopOneOptions) Validate() error {
 			MaxRetryCount: defaultRetryCount,
 			RetryDuration: defaultRetryDuration,
 		}
+	}
+
+	if lo.LoopOptions.StopNotifier == nil {
+		// if not set, then set never stop loop as default
+		lo.LoopOptions.StopNotifier = make(<-chan struct{})
 	}
 
 	return nil
@@ -447,6 +462,11 @@ func (lo *LoopBatchOptions) Validate() error {
 			MaxRetryCount: defaultRetryCount,
 			RetryDuration: defaultRetryDuration,
 		}
+	}
+
+	if lo.LoopOptions.StopNotifier == nil {
+		// if not set, then set never stop loop as default
+		lo.LoopOptions.StopNotifier = make(<-chan struct{})
 	}
 
 	return nil
