@@ -32,7 +32,7 @@ func updateProcBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 	nowTime := metadata.Now()
 	doc := map[string]interface{}{
 		common.LastTimeField:   &nowTime,
-		"option.$.placeholder": "Single port: 8080</br>Multiple port: 8080,8081,8082</br>Range port: 8080-9090",
+		"option.$.placeholder": "Single port: 8080</br>Range port: 8080-9090",
 	}
 	return db.Table(common.BKTableNameObjAttDes).Update(ctx, bindIPAttrFilter, doc)
 }
