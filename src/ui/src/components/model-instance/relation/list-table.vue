@@ -1,14 +1,14 @@
 <template>
   <div class="table" v-show="hasInstance" v-bkloading="{ isLoading: loading }">
-    <div class="table-info clearfix">
-      <div class="info-title fl" @click="expanded = !expanded">
+    <div class="table-info clearfix" @click="expanded = !expanded">
+      <div class="info-title fl">
         <i class="icon bk-icon icon-right-shape"
           :class="{ 'is-open': expanded }">
         </i>
         <span class="title-text">{{title}}</span>
         <span class="title-count">({{instances.length}})</span>
       </div>
-      <div class="info-pagination fr" v-show="pagination.count">
+      <div class="info-pagination fr" v-show="pagination.count" @click.stop>
         <span class="pagination-info">{{getPaginationInfo()}}</span>
         <span class="pagination-toggle">
           <i class="pagination-icon bk-icon icon-cc-arrow-down left"
@@ -25,11 +25,15 @@
     <bk-table class="association-table"
       v-show="expanded"
       :data="list"
-      :max-height="462">
-      <bk-table-column v-for="column in header"
+      :max-height="462"
+      :row-style="{ cursor: 'pointer' }"
+      @row-click="handleShowDetails">
+      <bk-table-column v-for="(column, index) in header"
         :key="column.id"
         :prop="column.id"
-        :label="column.name">
+        :label="column.name"
+        :class-name="index === 0 ? 'is-highlight' : ''"
+        show-overflow-tooltip>
         <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
       </bk-table-column>
       <bk-table-column :label="$t('操作')">
@@ -39,7 +43,7 @@
               text
               theme="primary"
               :disabled="disabled"
-              @click="showTips($event, row)">
+              @click.stop="showTips($event, row)">
               {{$t('取消关联')}}
             </bk-button>
           </cmdb-auth>
@@ -77,12 +81,16 @@
         type: Object,
         required: true
       },
-      source: {
+      allInstances: {
         type: Array,
         required: true
       },
-      target: {
-        type: Array,
+      objId: {
+        type: String,
+        required: true
+      },
+      instId: {
+        type: Number,
         required: true
       }
     },
@@ -110,9 +118,7 @@
           target: null,
           id: null,
           show: false
-        },
-        targetInstances: this.target,
-        sourceInstances: this.source
+        }
       }
     },
     computed: {
@@ -147,13 +153,17 @@
       totalPage() {
         return Math.ceil(this.pagination.count / this.pagination.size)
       },
+      isSource() {
+        return this.type === 'source'
+      },
       instances() {
-        const topology = this.type === 'source' ? this.targetInstances : this.sourceInstances
-        const data = topology.find(data => data.bk_obj_id === this.id) || {}
-        return data.children || []
+        const objAsstId = this.isSource
+          ? `${this.objId}_${this.associationType.bk_asst_id}_${this.id}`
+          : `${this.id}_${this.associationType.bk_asst_id}_${this.objId}`
+        return this.allInstances.filter(instance => instance.bk_obj_asst_id === objAsstId)
       },
       instanceIds() {
-        return this.instances.map(instance => instance.bk_inst_id)
+        return this.instances.map(instance => (this.isSource ? instance.bk_asst_inst_id : instance.bk_inst_id))
       },
       header() {
         const headerProperties = this.$tools.getDefaultHeaderProperties(this.properties)
@@ -184,24 +194,13 @@
     },
     watch: {
       instances: {
-        handler(value) {
-          if (this.expanded) {
-            this.getData()
-          }
-          this.$emit('relation-instance-change', value, this.id, this.type)
+        handler(instances) {
+          instances.length && this.expanded && this.getData()
         },
         immediate: true
       },
       expanded(expanded) {
-        if (expanded) {
-          this.getData()
-        }
-      },
-      source(source) {
-        this.sourceInstances = source
-      },
-      target(target) {
-        this.targetInstances = target
+        expanded && this.getData()
       }
     },
     created() {
@@ -255,6 +254,11 @@
           const data = await promise
           this.list = data.info
           this.pagination.count = data.count
+          // 向前翻一页
+          if (data.count && !data.info.length) {
+            this.pagination.current -= 1
+            this.getInstances()
+          }
         } catch (e) {
           console.warn(e)
           this.list = []
@@ -337,37 +341,18 @@
         })
       },
       async cancelAssociation() {
-        const { item } = this.confirm
-        const keyMap = {
-          host: 'bk_host_id',
-          biz: 'bk_biz_id'
-        }
-        const idKey = keyMap[this.id] || 'bk_inst_id'
         try {
-          const associationInstance = this.instances.find(instance => instance.bk_inst_id === item[idKey])
-          const assoId = associationInstance.asso_id
-          await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
-            id: assoId,
-            objId: this.id,
-            config: {
-              data: {}
-            }
+          const instance = this.instances.find((instance) => {
+            const key = this.isSource ? 'bk_asst_inst_id' : 'bk_inst_id'
+            return instance[key] === this.confirm.id
           })
-
-          // 操作关联数据就地触发更新
-          const instances = this.type === 'source' ? this.targetInstances : this.sourceInstances
-          const associations = instances.find(data => data.bk_obj_id === this.id)
-          const index = associations.children.findIndex(association => association.asso_id === assoId)
-          if (index > -1) {
-            associations.children.splice(index, 1)
-            const currentTotalPage = Math.ceil(associations.children.length / this.pagination.size)
-            if (currentTotalPage > 0 && this.totalPage > currentTotalPage) {
-              this.pagination.current -= 1
-            }
-          }
-
-          this.$success(this.$t('取消关联成功'))
+          await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
+            id: instance.id,
+            config: { data: {} }
+          })
           this.hideTips()
+          this.$success(this.$t('取消关联成功'))
+          this.$emit('delete-association', instance.id)
         } catch (e) {
           console.error(e)
         }
@@ -411,6 +396,16 @@
         this.confirm.show = true
         this.$nextTick(() => {
           this.confirm.instance.show()
+        })
+      },
+      async handleShowDetails(row) {
+        const showInstanceDetails = await import('@/components/instance/details')
+        const nameMapping = { host: 'bk_host_innerip', biz: 'bk_biz_name' }
+        const idMapping = { host: 'bk_host_id', biz: 'bk_biz_id' }
+        showInstanceDetails.default({
+          bk_obj_id: this.id,
+          bk_inst_id: row[idMapping[this.id] || 'bk_inst_id'],
+          title: `${this.model.bk_obj_name}-${row[nameMapping[this.id] || 'bk_inst_name']}`
         })
       }
     }

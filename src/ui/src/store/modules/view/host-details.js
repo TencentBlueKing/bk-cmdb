@@ -8,10 +8,7 @@ const state = {
     target: []
   },
   mainLine: [],
-  instances: {
-    source: [],
-    target: []
-  },
+  instances: [],
   associationTypes: [],
   expandAll: false
 }
@@ -50,8 +47,7 @@ const getters = {
   associationTypes: state => state.associationTypes,
   source: state => state.association.source,
   target: state => state.association.target,
-  sourceInstances: state => state.instances.source,
-  targetInstances: state => state.instances.target,
+  allInstances: state => state.instances,
   isBusinessHost: state => (state.info.biz || []).some(business => business.default === 0),
   properties: state => state.properties
 }
@@ -76,21 +72,14 @@ const mutations = {
     state.mainLine = mainLine
   },
   setInstances(state, data) {
-    state.instances[data.type] = data.instances
+    state.instances = data
   },
   setAssociationTypes(state, types) {
     state.associationTypes = types
   },
-  deleteAssociation(state, data) {
-    const { type } = data
-    const { model } = data
-    const target = data.association
-    const instances = state.instances[type === 'source' ? 'target' : 'source']
-    const associations = instances.find(data => data.bk_obj_id === model)
-    const index = associations.children.findIndex(association => association.asso_id === target.asso_id)
-    if (index > -1) {
-      associations.children.splice(index, 1)
-    }
+  deleteAssociation(state, id) {
+    const index = state.instances.findIndex(instance => instance.id === id)
+    index > -1 && state.instances.splice(index, 1)
   },
   toggleExpandAll(state, expandAll) {
     state.expandAll = expandAll

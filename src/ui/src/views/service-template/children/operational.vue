@@ -573,6 +573,7 @@
           </i18n>
         ))(this.$createElement)
         this.$success(message)
+        this.$emit('sync-change')
       },
       handleCreateProcess() {
         this.slider.show = true

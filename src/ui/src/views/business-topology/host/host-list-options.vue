@@ -54,6 +54,7 @@
         </ul>
       </bk-dropdown-menu>
       <bk-dropdown-menu class="option ml10" trigger="click"
+        v-show="isNormalNode"
         font-size="medium"
         :disabled="!hasSelection"
         @show="isAddToOpen = true"
@@ -68,8 +69,8 @@
             :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
             <span href="javascript:void(0)"
               slot-scope="{ disabled }"
-              :class="{ disabled: !isNormalModuleNode || disabled }"
-              @click="handleTransfer($event, 'increment', !isNormalModuleNode)">
+              :class="{ disabled }"
+              @click="handleTransfer($event, 'increment', false)">
               {{$t('业务模块')}}
             </span>
           </cmdb-auth>
@@ -230,10 +231,11 @@
       hasSelection() {
         return !!this.selection.length
       },
+      isNormalNode() {
+        return this.selectedNode && this.selectedNode.data.default === 0
+      },
       isNormalModuleNode() {
-        return this.selectedNode
-          && this.selectedNode.data.bk_obj_id === 'module'
-          && this.selectedNode.data.default === 0
+        return this.isNormalNode && this.selectedNode.data.bk_obj_id === 'module'
       },
       isIdleModule() {
         return this.selection.every((data) => {

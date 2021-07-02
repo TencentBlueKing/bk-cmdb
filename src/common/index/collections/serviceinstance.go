@@ -27,7 +27,13 @@ func init() {
 
 //  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 
-var commServiceInstanceIndexes = []types.Index{}
+var commServiceInstanceIndexes = []types.Index{
+	{
+		Name:       "bkcc_idx_bkBizID_ID",
+		Keys:       map[string]int32{"bk_biz_id": 1, "id": 1},
+		Background: true,
+	},
+}
 
 // deprecated 未规范化前的索引，只允许删除不允许新加和修改，
 var deprecatedServiceInstanceIndexes = []types.Index{

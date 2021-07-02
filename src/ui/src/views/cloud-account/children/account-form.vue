@@ -164,7 +164,7 @@
         }
       },
       verifyRequired() {
-        const changed = ['bk_cloud_vendor', 'bk_secret_id', 'bk_secret_key'].some(key => this.form[key] !== this.verifyResult[key])
+        const changed = ['bk_cloud_vendor', 'bk_secret_id', 'bk_secret_key'].some(key => this.verifyResult[key] && this.form[key] !== this.verifyResult[key])
         return changed || !this.verifyResult.connected
       },
       vendors() {

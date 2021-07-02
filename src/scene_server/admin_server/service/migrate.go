@@ -217,12 +217,6 @@ func (s *Service) migrateSpecifyVersion(req *restful.Request, resp *restful.Resp
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	/* // 不处理十秒前的请求
-	subTS := time.Now().Unix() - input.TimeStamp
-	if subTS > 10 || subTS < 0 {
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "time_stamp")})
-		return
-	} */
 
 	if input.CommitID != version.CCGitHash {
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "commit_id")})

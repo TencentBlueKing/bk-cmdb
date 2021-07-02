@@ -65,7 +65,7 @@
   import useStep from './step'
   import useImport from './index'
   import useFile from './file'
-  import useProperty from '@/hooks/property/property'
+  import useProperty from '@/hooks/model/property'
   import useBatchUniqueCheck from '@/hooks/unique-check/batch'
   import useUniqueCheck from '@/hooks/unique-check'
   import usePending from '@/hooks/utils/pending'

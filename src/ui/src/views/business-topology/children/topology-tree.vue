@@ -103,7 +103,6 @@
   import RouterQuery from '@/router/query'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import FilterStore from '@/components/filters/store'
-  import has from 'has'
   export default {
     components: {
       CreateNode,
@@ -364,11 +363,10 @@
         this.createInfo.parentNode = node
         this.createInfo.show = true
         this.createInfo.visible = true
-        if (has(this.propertyMap, nextModelId)) {
-          this.createInfo.properties = this.propertyMap[nextModelId]
-        } else {
+        let properties = this.propertyMap[nextModelId]
+        if (!properties) {
           const action = 'objectModelProperty/searchObjectAttribute'
-          const properties = await this.$store.dispatch(action, {
+          properties = await this.$store.dispatch(action, {
             params: {
               bk_biz_id: this.bizId,
               bk_obj_id: nextModelId,
@@ -384,8 +382,9 @@
               properties
             })
           }
-          this.createInfo.properties = properties
         }
+        const primaryKey = { set: 'bk_set_id', module: 'bk_module_id' }[nextModelId] || 'bk_inst_id'
+        this.createInfo.properties = properties.filter(property => property.bk_property_id !== primaryKey)
       },
       handleAfterCancelCreateNode() {
         this.createInfo.visible = false

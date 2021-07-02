@@ -118,7 +118,6 @@ func (s *set) CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapst
 	}
 
 	data.Set(common.BKSetTemplateIDField, setTemplate.ID)
-	data.Set(common.BKSetTemplateVersionField, setTemplate.Version)
 	data.Remove(common.MetadataField)
 	setInstance, err := s.inst.CreateInst(kit, obj, data)
 	if err != nil {
@@ -232,7 +231,6 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, biz
 	data.Remove(common.BKAppIDField)
 	data.Remove(common.BKSetIDField)
 	data.Remove(common.BKSetTemplateIDField)
-	data.Remove(common.BKSetTemplateVersionField)
 
 	err := s.inst.UpdateInst(kit, data, obj, innerCond, setID)
 	if err != nil {

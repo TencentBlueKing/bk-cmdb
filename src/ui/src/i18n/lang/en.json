@@ -1458,5 +1458,6 @@
     "数据导入中": "Importing, please wait...",
     "数据导入终止提示": "Importing, closing will not terminate the import task",
     "第N行": "The {row} row",
-    "主机导入文件提示": "Only support host in default area"
+    "主机导入文件提示": "Only support host in default area",
+    "已删除的实例": "Deleted instance"
 }
