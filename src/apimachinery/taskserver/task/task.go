@@ -53,6 +53,20 @@ func (t *task) ListTask(ctx context.Context, header http.Header, name string, da
 	return
 }
 
+func (t *task) ListLatestTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskLatestRequest) (resp *metadata.ListAPITaskLatestResponse, err error) {
+	resp = new(metadata.ListAPITaskLatestResponse)
+	subPath := "/task/findmany/list/latest/%s"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, name).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
 func (t *task) TaskDetail(ctx context.Context, header http.Header, taskID string) (resp *metadata.TaskDetailResponse, err error) {
 	resp = new(metadata.TaskDetailResponse)
 	subPath := "/task/findone/detail/%s"

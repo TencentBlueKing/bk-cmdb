@@ -40,12 +40,12 @@ func addSetTemplateDefaultVersion(ctx context.Context, db dal.RDB, conf *upgrade
 
 func addSetDefaultVersion(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	filter := map[string]interface{}{
-		common.BKSetTemplateVersionField: map[string]interface{}{
+		"set_template_version": map[string]interface{}{
 			common.BKDBExists: false,
 		},
 	}
 	doc := map[string]interface{}{
-		common.BKSetTemplateVersionField: 0,
+		"set_template_version": 0,
 	}
 	if err := db.Table(common.BKTableNameBaseSet).Update(ctx, filter, doc); err != nil {
 		return fmt.Errorf("addSetDefaultVersion failed, err: %+v", err)
@@ -56,7 +56,7 @@ func addSetDefaultVersion(ctx context.Context, db dal.RDB, conf *upgrader.Config
 func addSetVersionField(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	filter := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDSet,
-		common.BKPropertyIDField: common.BKSetTemplateVersionField,
+		common.BKPropertyIDField: "set_template_version",
 	}
 	count, err := db.Table(common.BKTableNameObjAttDes).Find(filter).Count(ctx)
 	if err != nil {
@@ -76,7 +76,7 @@ func addSetVersionField(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 		ID:                int64(id),
 		OwnerID:           conf.OwnerID,
 		ObjectID:          common.BKInnerObjIDSet,
-		PropertyID:        common.BKSetTemplateVersionField,
+		PropertyID:        "set_template_version",
 		PropertyName:      "集群模板",
 		PropertyGroup:     "default",
 		PropertyGroupName: "default",

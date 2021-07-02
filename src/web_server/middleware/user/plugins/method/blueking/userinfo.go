@@ -151,10 +151,9 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 	return loginURL
 }
 
-func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
+func (m *user) GetUserList(c *gin.Context, params map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	query := c.Request.URL.Query()
-	params := make(map[string]string)
 	for key, values := range query {
 		params[key] = strings.Join(values, ";")
 	}
