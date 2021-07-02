@@ -157,11 +157,10 @@
         return this.type === 'source'
       },
       instances() {
-        return this.allInstances.filter((instance) => {
-          const sameAsstId = instance.bk_asst_id === this.associationType.bk_asst_id
-          const sameModelId = this.id === instance[this.isSource ? 'bk_asst_obj_id' : 'bk_obj_id']
-          return sameAsstId && sameModelId
-        })
+        const objAsstId = this.isSource
+          ? `${this.objId}_${this.associationType.bk_asst_id}_${this.id}`
+          : `${this.id}_${this.associationType.bk_asst_id}_${this.objId}`
+        return this.allInstances.filter(instance => instance.bk_obj_asst_id === objAsstId)
       },
       instanceIds() {
         return this.instances.map(instance => (this.isSource ? instance.bk_asst_inst_id : instance.bk_inst_id))
