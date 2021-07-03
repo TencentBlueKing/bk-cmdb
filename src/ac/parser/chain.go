@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/tidwall/gjson"
+
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
-
-	"github.com/tidwall/gjson"
 )
 
 type RequestContext struct {
@@ -92,16 +92,7 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 		validateVersion().
 		validateResourceAction().
 		validateUserAndSupplier().
-		cacheRelated().
-		adminRelated().
-		hostRelated().
-		topology().
-		topologyLatest().
-		netCollectorRelated().
-		processRelated().
-		eventRelated().
-		cloudRelated().
-		// finalizer must be at the end of the check chains.
+		matchAuthRoute().
 		finalizer()
 
 	if ps.err != nil {
