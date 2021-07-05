@@ -167,12 +167,6 @@ func buildTopoIndex(indexes map[string][]types.Index) {
 			Background: true,
 			Name:       "idx_unique_cloudID",
 		},
-		{
-			Keys:       map[string]int32{common.BKCloudNameField: sortFlag},
-			Unique:     true,
-			Background: true,
-			Name:       "idx_unique_cloudName",
-		},
 	}
 	indexes[common.BKTableNameProcessInstanceRelation] = []types.Index{
 
