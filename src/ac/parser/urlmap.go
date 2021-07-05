@@ -86,6 +86,9 @@ func (ps *parseStream) matchAuthRoute() *parseStream {
 	index2Map := ps.index2KeywordMap()
 	if fn, exist := index2Map[ps.RequestCtx.Elements[2]]; exist {
 		fn()
+	}
+
+	if len(ps.Attribute.Resources) != 0 {
 		return ps
 	}
 
@@ -93,6 +96,9 @@ func (ps *parseStream) matchAuthRoute() *parseStream {
 		index3Map := ps.index3KeywordMap()
 		if fn, exist := index3Map[ps.RequestCtx.Elements[3]]; exist {
 			fn()
+		}
+
+		if len(ps.Attribute.Resources) != 0 {
 			return ps
 		}
 	}
