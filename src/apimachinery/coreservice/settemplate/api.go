@@ -228,16 +228,16 @@ func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.H
 	return ret.Data, nil
 }
 
-func (p *setTemplate) UpdateSetTemplateSyncStatus(ctx context.Context, header http.Header, setID int64, syncStatus metadata.SetTemplateSyncStatus) errors.CCErrorCoder {
+func (p *setTemplate) UpdateManySetTemplateSyncStatus(ctx context.Context, header http.Header, syncStatus []metadata.SetTemplateSyncStatus) errors.CCErrorCoder {
 	ret := struct {
 		metadata.BaseResp
 	}{}
-	subPath := "/update/topo/set_template_sync_status/bk_set_id/%d"
+	subPath := "/updatemany/topo/set_template_sync_status"
 
 	err := p.client.Put().
 		WithContext(ctx).
 		Body(syncStatus).
-		SubResourcef(subPath, setID).
+		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(&ret)

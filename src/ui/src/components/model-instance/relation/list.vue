@@ -132,11 +132,11 @@
           const targetCondition = { bk_asst_obj_id: this.objId, bk_asst_inst_id: this.instId }
           const [source, target] = await Promise.all([
             this.$store.dispatch('objectAssociation/searchInstAssociation', {
-              params: { condition: sourceCondition },
+              params: { condition: sourceCondition, bk_obj_id: this.objId },
               config: { requestId: 'getSourceAssociation' }
             }),
             this.$store.dispatch('objectAssociation/searchInstAssociation', {
-              params: { condition: targetCondition },
+              params: { condition: targetCondition, bk_obj_id: this.objId },
               config: { requestId: 'getTargetAssociation' }
             })
           ])

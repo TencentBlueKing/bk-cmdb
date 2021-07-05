@@ -205,6 +205,12 @@ const (
 
 	// BKDBSize counts and returns the total number of items in an array
 	BKDBSize = "$size"
+
+	// BKDBSort the db operator
+	BKDBSort = "$sort"
+
+	// BKDBReplaceRoot the db operator
+	BKDBReplaceRoot = "$replaceRoot"
 )
 
 const (
@@ -483,8 +489,7 @@ const (
 	BKProcessTemplateIDField = "process_template_id"
 	BKServiceCategoryIDField = "service_category_id"
 
-	BKSetTemplateIDField      = "set_template_id"
-	BKSetTemplateVersionField = "set_template_version"
+	BKSetTemplateIDField = "set_template_id"
 
 	HostApplyRuleIDField = "host_apply_rule_id"
 
