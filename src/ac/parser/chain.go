@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/tidwall/gjson"
-
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+
+	"github.com/tidwall/gjson"
 )
 
 type RequestContext struct {

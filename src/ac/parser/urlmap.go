@@ -1,8 +1,8 @@
 package parser
 
-type matchRule map[string]func () *parseStream
+type matchRule map[string]func() *parseStream
 
-func (ps *parseStream) index2Map() matchRule {
+func (ps *parseStream) index2KeywordMap() matchRule {
 	return matchRule{
 		// cache related
 		"cache": ps.cacheRelated,
@@ -11,7 +11,7 @@ func (ps *parseStream) index2Map() matchRule {
 		//netCollector related
 		"collector": ps.netCollectorRelated,
 		//event related
-		"event":ps.eventRelated,
+		"event": ps.eventRelated,
 		//cloud related
 		"cloud": ps.cloudRelated,
 		//host related
@@ -31,7 +31,7 @@ func (ps *parseStream) index2Map() matchRule {
 	}
 }
 
-func (ps *parseStream) index3Map() matchRule {
+func (ps *parseStream) index3KeywordMap() matchRule {
 	return matchRule{
 		//process related
 		"proc":      ps.processRelated,
@@ -78,45 +78,31 @@ func (ps *parseStream) index3Map() matchRule {
 	}
 }
 
-func (ps *parseStream) index4Map() matchRule {
-	return matchRule{
-		//topology related
-		"set_template":              ps.topologyLatest,
-		"set_template_sync_history": ps.topologyLatest,
-		"set_template_sync_status":  ps.topologyLatest,
-	}
-}
-
-func (ps *parseStream) index6Map() matchRule {
-	return matchRule{
-		//topology related
-		"association": ps.topologyLatest,
-	}
-}
-
 func (ps *parseStream) matchAuthRoute() *parseStream {
-	switch {
-	case len(ps.RequestCtx.Elements) < 2:
+	if len(ps.RequestCtx.Elements) <= 2 {
 		return ps
-	case len(ps.RequestCtx.Elements) > 3:
-		index2Map := ps.index2Map()
-		index3Map := ps.index3Map()
-		if fn, exist := index2Map[ps.RequestCtx.Elements[2]]; exist {
-			fn()
-			return ps
-		}
+	}
 
+	index2Map := ps.index2KeywordMap()
+	if fn, exist := index2Map[ps.RequestCtx.Elements[2]]; exist {
+		fn()
+		return ps
+	}
+
+	if len(ps.RequestCtx.Elements) > 3 {
+		index3Map := ps.index3KeywordMap()
 		if fn, exist := index3Map[ps.RequestCtx.Elements[3]]; exist {
 			fn()
 			return ps
 		}
-	default:
-		index2Map := ps.index2Map()
-		if fn, exist := index2Map[ps.RequestCtx.Elements[2]]; exist {
-			fn()
-			return ps
-		}
 	}
 
-	return ps.topologyLatest()
+	return ps.topologyLatest().
+		topology().
+		hostRelated().
+		cacheRelated().
+		adminRelated().
+		processRelated().
+		eventRelated().
+		cloudRelated()
 }
