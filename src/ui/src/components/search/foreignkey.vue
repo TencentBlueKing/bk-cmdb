@@ -5,6 +5,7 @@
     v-bind="$attrs"
     :multiple="multiple"
     :loading="$loading(requestId)"
+    @clear="() => $emit('clear')"
     @toggle="handleToggle">
     <bk-option v-for="option in options"
       :key="option.bk_cloud_id"

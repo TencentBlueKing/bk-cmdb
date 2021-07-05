@@ -121,6 +121,10 @@ func (c *client) HScan(ctx context.Context, key string, cursor uint64, match str
 	return c.cli.HScan(key, cursor, match, count)
 }
 
+func (c *client) Scan(ctx context.Context, cursor uint64, match string, count int64) ScanResult {
+	return c.cli.Scan(cursor, match, count)
+}
+
 func (c *client) HSet(ctx context.Context, key string, values ...interface{}) IntResult {
 	return c.cli.HSet(key, values...)
 }
@@ -199,6 +203,17 @@ func (c *client) Set(ctx context.Context, key string, value interface{}, expirat
 
 func (c *client) SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) BoolResult {
 	return c.cli.SetNX(key, value, expiration)
+}
+
+func (c *client) TxPipeline(ctx context.Context) Pipeliner {
+	return c.cli.TxPipeline()
+}
+
+func (c *client) Discard(ctx context.Context, pipe Pipeliner) error {
+	return pipe.Discard()
+}
+func (c *client) MSetNX(ctx context.Context, values ...interface{}) BoolResult {
+	return c.cli.MSetNX(values...)
 }
 
 func (c *client) SMembers(ctx context.Context, key string) StringSliceResult {

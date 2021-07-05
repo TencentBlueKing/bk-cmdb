@@ -45,12 +45,7 @@
       </div>
     </div>
     <div class="relation-view">
-      <component
-        ref="dynamicComponent"
-        :association-types="associationTypes"
-        :association-object="associationObject"
-        :is="activeView">
-      </component>
+      <component ref="dynamicComponent" :is="activeView" v-bind="componentProps"></component>
     </div>
     <bk-sideslider v-transfer-dom :is-show.sync="showCreate" :width="800" :title="$t('新增关联')">
       <cmdb-relation-create
@@ -69,13 +64,13 @@
   import bus from '@/utils/bus.js'
   import { mapActions } from 'vuex'
   import cmdbRelationList from './list.vue'
-  import cmdbRelationGraphics from './graphics.vue'
+  import cmdbInstanceAssociation from '@/components/instance/association/index'
   import cmdbRelationCreate from './create.vue'
   import authMixin from '../mixin-auth'
   export default {
     components: {
       cmdbRelationList,
-      cmdbRelationGraphics,
+      cmdbInstanceAssociation,
       cmdbRelationCreate
     },
     mixins: [authMixin],
@@ -101,7 +96,7 @@
         fullScreen: false,
         viewName: {
           list: cmdbRelationList.name,
-          graphics: cmdbRelationGraphics.name
+          graphics: cmdbInstanceAssociation.name
         },
         activeView: cmdbRelationList.name,
         showCreate: false,
@@ -130,6 +125,15 @@
           return this.INST_AUTH.U_BUSINESS
         }
         return this.INST_AUTH.U_INST
+      },
+      componentProps() {
+        if (this.activeView === cmdbInstanceAssociation.name) {
+          return { objId: this.objId, instId: this.formatedInst.bk_inst_id, instName: this.formatedInst.bk_inst_name }
+        }
+        return {
+          associationTypes: this.associationTypes,
+          associationObject: this.associationObject
+        }
       }
     },
     created() {

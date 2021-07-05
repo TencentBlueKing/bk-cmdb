@@ -30,7 +30,13 @@
         </cmdb-auth>
       </div>
       <div class="model-type-options fr">
-        <bk-button class="model-type-button enable"
+        <bk-button class="model-type-button"
+          :class="[{ 'model-type-button-active': modelType === '' }]"
+          size="small"
+          @click="modelType = ''">
+          {{$t('全部')}}
+        </bk-button>
+        <bk-button class="model-type-button"
           :class="[{ 'model-type-button-active': modelType === 'enable' }]"
           size="small"
           @click="modelType = 'enable'">
@@ -70,7 +76,7 @@
             <span class="mr5">{{classification['bk_classification_name']}}</span>
             <span class="number">({{classification['bk_objects'].length}})</span>
           </div>
-          <template v-if="isEditable(classification) && modelType === 'enable'">
+          <template v-if="isEditable(classification) && !classification._disabled">
             <cmdb-auth v-if="!mainLoading" class="group-btn ml5"
               :auth="{ type: $OPERATION.C_MODEL, relation: [classification.id] }">
               <bk-button slot-scope="{ disabled }"
@@ -105,6 +111,7 @@
         </div>
         <ul class="model-list clearfix">
           <li class="model-item bgc-white"
+            @mouseenter="handleModelMouseEnterDebounce(model)"
             :class="{
               'ispaused': model['bk_ispaused'],
               'ispre': model.ispre
@@ -113,7 +120,7 @@
             :key="modelIndex">
             <div class="info-model"
               :class="{
-                'radius': modelType === 'disabled' || classification['bk_classification_id'] === 'bk_biz_topo'
+                'radius': classification._disabled || classification['bk_classification_id'] === 'bk_biz_topo'
               }"
               @click="modelClick(model)">
               <div class="icon-box">
@@ -124,11 +131,16 @@
                 <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
               </div>
             </div>
-            <div v-if="modelType !== 'disabled' && model.bk_classification_id !== 'bk_biz_topo'"
+            <div v-if="!classification._disabled && model.bk_classification_id !== 'bk_biz_topo'"
               class="info-instance"
               @click="handleGoInstance(model)">
               <i class="icon-cc-share"></i>
-              <p>{{modelStatisticsSet[model.bk_obj_id] | instanceCount}}</p>
+              <p>
+                <cmdb-loading
+                  :loading="!modelStatisticsSet[model.bk_obj_id] || $loading(request.statistics[model.bk_obj_id])">
+                  {{modelStatisticsSet[model.bk_obj_id] | instanceCount}}
+                </cmdb-loading>
+              </p>
             </div>
           </li>
         </ul>
@@ -218,8 +230,10 @@
   import has from 'has'
   import cmdbMainInject from '@/components/layout/main-inject'
   import theCreateModel from '@/components/model-manage/_create-model'
+  import cmdbLoading from '@/components/loading/index.vue'
   import noSearchResults from '@/views/status/no-search-results.vue'
   import { mapGetters, mapMutations, mapActions } from 'vuex'
+  import debounce from 'lodash.debounce'
   import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import {
@@ -231,24 +245,26 @@
   export default {
     filters: {
       instanceCount(value) {
-        if ([null, undefined].includes(value)) {
-          return 0
+        if (!value) return
+        if (value?.error) {
+          return '--'
         }
-        return value > 999 ? '999+' : value
+        return value.inst_count > 999 ? '999+' : value.inst_count
       }
     },
     components: {
       // theModel,
       theCreateModel,
       cmdbMainInject,
-      noSearchResults
+      noSearchResults,
+      cmdbLoading
     },
     data() {
       return {
         scrollHandler: null,
         scrollTop: 0,
         topPadding: 0,
-        modelType: 'enable',
+        modelType: '',
         searchModel: '',
         filterClassifications: [],
         modelStatisticsSet: {},
@@ -271,7 +287,7 @@
           groupId: ''
         },
         request: {
-          statistics: Symbol('statistics'),
+          statistics: [],
           searchClassifications: Symbol('searchClassifications')
         }
       }
@@ -286,7 +302,8 @@
         this.classifications.forEach((classification) => {
           enableClassifications.push({
             ...classification,
-            bk_objects: classification.bk_objects.filter(model => !model.bk_ispaused && !model.bk_ishidden)
+            bk_objects: classification.bk_objects.filter(model => !model.bk_ispaused && !model.bk_ishidden),
+            _disabled: false
           })
         })
         return enableClassifications
@@ -298,14 +315,19 @@
           if (disabledModels.length) {
             disabledClassifications.push({
               ...classification,
-              bk_objects: disabledModels
+              bk_objects: disabledModels,
+              _disabled: true
             })
           }
         })
         return disabledClassifications
       },
+      allClassifications() {
+        return [...this.enableClassifications, ...this.disabledClassifications]
+      },
       currentClassifications() {
         if (!this.searchModel) {
+          if (!this.modelType) return this.allClassifications
           return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
         }
         return this.filterClassifications
@@ -323,7 +345,8 @@
           return
         }
         const searchResult = []
-        const currentClassifications = this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
+        // eslint-disable-next-line no-nested-ternary
+        const currentClassifications = !this.modelType ? this.allClassifications : (this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications)
         const classifications = this.$tools.clone(currentClassifications)
         const lowerCaseValue = value.toLowerCase()
         for (let i = 0; i < classifications.length; i++) {
@@ -347,23 +370,23 @@
       }
       addMainScrollListener(this.scrollHandler)
       try {
-        await Promise.all([
-          this.getModelStatistics(),
-          this.searchClassificationsObjects({
-            params: {},
-            config: {
-              requestId: this.request.searchClassifications
-            }
-          })
-        ])
+        await this.searchClassificationsObjects({
+          params: {},
+          config: {
+            requestId: this.request.searchClassifications
+          }
+        })
       } catch (e) {
         this.$route.meta.view = 'error'
       }
+
       if (this.$route.query.searchModel) {
         const { hash } = window.location
         this.searchModel = this.$route.query.searchModel
         window.location.hash = hash.substring(0, hash.indexOf('?'))
       }
+
+      this.handleModelMouseEnterDebounce = debounce(this.handleModelItemMouseEnter, 200)
     },
     mounted() {
       addResizeListener(this.$refs.mainInject.$el, this.handleSetPadding)
@@ -371,6 +394,7 @@
     beforeDestroy() {
       removeResizeListener(this.$refs.mainInject.$el, this.handleSetPadding)
       removeMainScrollListener(this.scrollHandler)
+      this.$http.cancelRequest(this.request.statistics)
     },
     methods: {
       ...mapMutations('objectModelClassify', [
@@ -413,17 +437,37 @@
         this.groupDialog.isShow = false
         this.$validator.reset()
       },
-      async getModelStatistics() {
-        const modelStatisticsSet = {}
-        const res = await this.getClassificationsObjectStatistics({
+      async getModelInstanceCount(id) {
+        // 存在则不再请求
+        if (has(this.modelStatisticsSet, id)) {
+          return
+        }
+
+        const requestId = `getModelInstanceCount_${id}`
+        this.request.statistics.push(requestId)
+
+        // 取消上一个请求
+        const currentIndex = this.request.statistics.findIndex(rid => rid === requestId)
+        const prevIndex = this.request.statistics[currentIndex - 1]
+        if (prevIndex) {
+          this.$http.cancelRequest(prevIndex)
+        }
+
+        const result = await this.$store.dispatch('objectCommonInst/searchInstanceCount', {
+          params: {
+            condition: { obj_ids: [id] }
+          },
           config: {
-            requestId: this.request.statistics
+            requestId,
+            globalError: false
           }
         })
-        res.forEach((item) => {
-          modelStatisticsSet[item.bk_obj_id] = item.instance_count
+
+        const [data] = result
+        this.$set(this.modelStatisticsSet, data.bk_obj_id, {
+          error: data.error,
+          inst_count: data.inst_count
         })
-        this.modelStatisticsSet = modelStatisticsSet
       },
       async saveGroup() {
         const res = await Promise.all([
@@ -487,7 +531,7 @@
         this.curCreateModel = createModel
         this.sucessDialog.isShow = true
         this.$http.cancel('post_searchClassificationsObjects')
-        this.getModelStatistics()
+        this.getModelInstanceCount(params.bk_obj_id)
         this.searchClassificationsObjects({
           params: {}
         })
@@ -525,6 +569,14 @@
             }
           })
         }
+      },
+      handleModelItemMouseEnter(model) {
+        if ((model.bk_ispaused && !model.bk_ishidden) || model.bk_classification_id === 'bk_biz_topo') {
+          // ignore disabled | bk_biz_topo
+          return
+        }
+
+        this.getModelInstanceCount(model.bk_obj_id)
       }
     }
   }
@@ -576,11 +628,17 @@
                 z-index: 1;
             }
             &:hover {
+                border-color: #3a84ff;
                 z-index: 2;
             }
             &-active {
                 border-color: #3a84ff;
                 color: #3a84ff;
+                z-index: 2;
+            }
+            & + .model-type-button {
+              border-radius: 0 2px 2px 0;
+              margin-left: -1px;
             }
         }
     }

@@ -58,10 +58,10 @@
 <script>
   import { computed, watch, toRef } from '@vue/composition-api'
   import useState from './state'
-  import useRelation from '@/hooks/relation/model'
+  import useModelAssociation from '@/hooks/model/association'
   import useBatchUniqueCheck from '@/hooks/unique-check/batch'
   import useUniqueCheck from '@/hooks/unique-check'
-  import useProperty from '@/hooks/property/property'
+  import useProperty from '@/hooks/model/property'
   import usePending from '@/hooks/utils/pending'
   import { mapGetters } from 'vuex'
   export default {
@@ -75,7 +75,7 @@
       const [{ uniqueChecks: modelUniqueChecks, pending: modelUniquePending }] = useUniqueCheck(currentModelId)
 
       // 获取当前模型的关联关系
-      const [{ relations, pending: relationPending }] = useRelation(currentModelId)
+      const [{ relations, pending: relationPending }] = useModelAssociation(currentModelId)
 
       // 加载关联模型的属性
       const relationModels = computed(() => {

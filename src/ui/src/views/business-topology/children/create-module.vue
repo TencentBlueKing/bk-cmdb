@@ -191,7 +191,7 @@
               params: {
                 bk_biz_id: this.business,
                 page: {
-                  sort: 'name'
+                  sort: '-last_time'
                 }
               },
               config: {

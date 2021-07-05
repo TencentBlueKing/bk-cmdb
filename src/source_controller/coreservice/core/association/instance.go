@@ -13,15 +13,20 @@
 package association
 
 import (
+	"fmt"
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
+	driverRedis "configcenter/src/storage/driver/redis"
 )
 
 type associationInstance struct {
@@ -207,6 +212,11 @@ func (m *associationInstance) deleteInstanceAssociation(kit *rest.Kit, objID str
 	return cnt, nil
 }
 
+func genAssoInstLockKey(id int64, objectAsstID string) string {
+	lockKey := fmt.Sprintf("%d_%s", id, objectAsstID)
+	return lockKey
+}
+
 func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error) {
 	inputParam.Data.OwnerID = kit.SupplierAccount
 	exists, err := m.isExists(kit, inputParam.Data.InstID, inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID,
@@ -219,7 +229,7 @@ func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit, inputP
 		blog.Errorf("association instance (%#v)is duplicated, rid: %s", inputParam.Data, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, "association")
 	}
-	//check association kind
+	// check association kind
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.AssociationObjAsstIDField, Val: inputParam.Data.ObjectAsstID})
 	_, exists, err = m.associationModel.isExists(kit, cond)
@@ -231,7 +241,7 @@ func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit, inputP
 		blog.Errorf("association asst kind(%#v)is not exist, rid: %s", inputParam.Data.ObjectAsstID, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrorTopoAsstKindIsNotExist)
 	}
-	//check association inst
+	// check association inst
 	exists, err = m.dependent.IsInstanceExist(kit, inputParam.Data.ObjectID, uint64(inputParam.Data.InstID))
 	if nil != err {
 		return nil, err
@@ -241,7 +251,7 @@ func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit, inputP
 		blog.Errorf("inst to asst is not exist objid(%#v), instid(%#v), rid: %s", inputParam.Data.ObjectID, inputParam.Data.InstID, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrorAsstInstIsNotExist)
 	}
-	//check inst to asst
+	// check inst to asst
 	exists, err = m.dependent.IsInstanceExist(kit, inputParam.Data.AsstObjectID, uint64(inputParam.Data.AsstInstID))
 	if nil != err {
 		return nil, err
@@ -251,8 +261,89 @@ func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit, inputP
 		blog.Errorf("asst inst is not exist objid(%#v), instid(%#v), rid: %s", inputParam.Data.ObjectID, inputParam.Data.InstID, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrorInstToAsstIsNotExist)
 	}
-	id, err := m.save(kit, inputParam.Data)
-	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
+
+	checkAssoCond := mongo.NewCondition()
+	checkAssoCond.Element(&mongo.Eq{Key: common.AssociationObjAsstIDField, Val: inputParam.Data.ObjectAsstID})
+	checkAssoCond.Element(&mongo.Eq{Key: common.BKOwnerIDField, Val: kit.SupplierAccount})
+	assoItems, err := m.search(kit, checkAssoCond)
+	if err != nil {
+		blog.ErrorJSON("search associations with condition: %s failed, err: %s, rid: %s",
+			checkAssoCond.ToMapStr(), err.Error(), kit.Rid)
+		return nil, err
+	}
+
+	if len(assoItems) != 1 {
+		blog.ErrorJSON("association with cond: %s not exist, rid: %s", checkAssoCond.ToMapStr(), kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCERrrCoreServiceConcurrent)
+	}
+
+	mappingType := assoItems[0].Mapping
+	switch mappingType {
+	case metadata.OneToOneMapping:
+		mlocker := lock.NewMLocker(driverRedis.Client())
+		instkey := genAssoInstLockKey(inputParam.Data.InstID, inputParam.Data.ObjectAsstID)
+		asstInstkey := genAssoInstLockKey(inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID)
+		locked, err := mlocker.MLock(kit.Rid, 10, time.Minute, lock.StrFormat(instkey), lock.StrFormat(asstInstkey))
+		if err != nil {
+			blog.Errorf("obtain lock failed. err: %v, rid: %s", err, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCERrrCoreServiceConcurrent)
+		}
+
+		if !locked {
+			blog.Errorf("create one to one inst association, but get lock failed, rid: %s", kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCERrrCoreServiceConcurrent)
+		}
+
+		defer func() {
+			if err := mlocker.MUnlock(); err != nil {
+				blog.Errorf("release lock failed, err: %v, rid: %s", err, kit.Rid)
+			}
+		}()
+
+		id, err := m.save(kit, inputParam.Data)
+		if err != nil {
+			blog.Errorf("create one to one instance association failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+
+		return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
+
+	case metadata.OneToManyMapping:
+		locker := lock.NewLocker(driverRedis.Client())
+		asstInstManyKey := genAssoInstLockKey(inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID)
+		locked, err := locker.Lock(lock.StrFormat(asstInstManyKey), time.Minute)
+		if err != nil {
+			blog.Errorf("create one to many instance association, get lock failed, err: %v, rid: %s", kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCERrrCoreServiceConcurrent)
+		}
+		if !locked {
+			blog.Errorf("create one to many instance association, but get lock failed, rid: %s", kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCERrrCoreServiceConcurrent)
+		}
+
+		defer func() {
+			if err := locker.Unlock(); err != nil {
+				blog.Errorf("release lock failed, err: %v,rid: %s", err, kit.Rid)
+			}
+		}()
+
+		id, err := m.save(kit, inputParam.Data)
+		if err != nil {
+			blog.Errorf("create one to one instance association failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+
+		return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
+
+	default:
+		id, err := m.save(kit, inputParam.Data)
+		if err != nil {
+			blog.Errorf("create one to one instance association failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+
+		return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
+	}
 }
 
 func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error) {
@@ -276,7 +367,7 @@ func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit, input
 			continue
 		}
 
-		//check asst inst exist
+		// check asst inst exist
 		exists, err = m.dependent.IsInstanceExist(kit, item.ObjectID, uint64(item.InstID))
 		if nil != err {
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
@@ -298,7 +389,7 @@ func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit, input
 			continue
 		}
 
-		//check  inst to asst exist
+		// check  inst to asst exist
 		exists, err = m.dependent.IsInstanceExist(kit, item.AsstObjectID, uint64(item.AsstInstID))
 		if nil != err {
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
@@ -331,7 +422,7 @@ func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit, input
 			continue
 		}
 
-		//save asst inst
+		// save asst inst
 		id, err := m.save(kit, item)
 		if nil != err {
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{

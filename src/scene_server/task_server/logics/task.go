@@ -89,6 +89,46 @@ func (lgc *Logics) List(ctx context.Context, name string, input *metadata.ListAP
 	return rows, cnt, nil
 }
 
+// ListLatestTask list latest task
+func (lgc *Logics) ListLatestTask(ctx context.Context, name string,
+	input *metadata.ListAPITaskLatestRequest) ([]metadata.APITaskDetail, error) {
+
+	input.Condition.Set("name", name)
+
+	/*
+		aggregateCond parameter of aggregate to search the latest created task in input.Condition need.
+		because multiple results of the same task may be at the front end of sorting by
+		create_time field, use group to get the first result of each task
+	*/
+	aggregateCond := []interface{}{
+		map[string]interface{}{common.BKDBMatch: input.Condition},
+		map[string]interface{}{common.BKDBSort: map[string]interface{}{common.CreateTimeField: -1}},
+		map[string]interface{}{common.BKDBGroup: map[string]interface{}{
+			"_id": "$flag",
+			"doc": map[string]interface{}{"$first": "$$ROOT"},
+		}},
+		map[string]interface{}{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},
+	}
+
+	if len(input.Fields) != 0 {
+		cond := map[string]int64{}
+		for _, field := range input.Fields {
+			cond[field] = 1
+		}
+		aggregateCond = append(aggregateCond, map[string]interface{}{
+			common.BKDBProject: cond,
+		})
+	}
+
+	result := make([]metadata.APITaskDetail, 0)
+	if err := lgc.db.Table(common.BKTableNameAPITask).AggregateAll(ctx, aggregateCond, &result); err != nil {
+		blog.Errorf("list latest task failed, err: %v, rid: %v", err, lgc.rid)
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // Detail  task detail
 func (lgc *Logics) Detail(ctx context.Context, taskID string) (*metadata.APITaskDetail, error) {
 

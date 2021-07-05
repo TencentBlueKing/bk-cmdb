@@ -248,9 +248,7 @@
         }
         const params = {
           ...this.relationInfo,
-          ...{
-                        bk_obj_asst_id: this.objAsstId
-                    }
+          bk_obj_asst_id: this.objAsstId
         }
         const res = await this.createObjectAssociation({
           params,
