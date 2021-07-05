@@ -13,7 +13,6 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 
@@ -34,7 +33,6 @@ func (s *Service) VerifyRegularExpress(c *gin.Context) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
 	if len(regular) == 0 {
-		blog.Infof("params invalid regular")
 		result := metadata.ResponseDataMapStr{
 			BaseResp: metadata.BaseResp{
 				Result: false,
@@ -52,12 +50,14 @@ func (s *Service) VerifyRegularExpress(c *gin.Context) {
 		isValid = true
 	}
 
-	c.JSON(http.StatusBadRequest, metadata.Response{
+	c.JSON(http.StatusOK, metadata.Response{
 		BaseResp: metadata.BaseResp{
 			Result: true,
 			Code:   0,
 		},
-		Data: map[string]bool{"is_valid": isValid},
+		Data: verifyRegularExpressDataResult{
+			isValid,
+		},
 	})
 
 }
@@ -69,17 +69,15 @@ func (s *Service) VerifyRegularContentBatch(c *gin.Context) {
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
-	requestBody := new(VerifyRegularContentBatchBody)
-	err := c.BindJSON(&requestBody)
+	requestBody := new(VerifyRegularContentBatchRequest)
+	err := c.BindJSON(requestBody)
 	if err != nil {
 		blog.Errorf("verify regular content batch failed, but unmarshal body to json failed, err: %v, rid: %s", err, rid)
-		msg := fmt.Sprintf("invalid body, parse json failed, err: %+v", err)
-		c.String(http.StatusBadRequest, msg)
+		c.String(http.StatusBadRequest, "invalid body, parse json failed, err: %+v", err)
 		return
 	}
 
 	if len(requestBody.Items) == 0 {
-		blog.Errorf("need data items is null")
 		c.JSON(http.StatusBadRequest, metadata.BaseResp{
 			Result:      false,
 			Code:        common.CCErrCommInstDataNil,
@@ -89,7 +87,6 @@ func (s *Service) VerifyRegularContentBatch(c *gin.Context) {
 		return
 	}
 	if len(requestBody.Items) > 100 {
-		blog.Errorf("item field exceeds maximum value %v", len(requestBody.Items))
 		c.JSON(http.StatusBadRequest, metadata.BaseResp{
 			Result:      false,
 			Code:        common.CCErrCommValExceedMaxFailed,
@@ -99,7 +96,7 @@ func (s *Service) VerifyRegularContentBatch(c *gin.Context) {
 		return
 	}
 
-	var regexpResult []int8
+	var regexpResult []bool
 	result := metadata.Response{
 		BaseResp: metadata.BaseResp{
 			Result: true,
@@ -107,17 +104,15 @@ func (s *Service) VerifyRegularContentBatch(c *gin.Context) {
 		},
 	}
 
-	var isValid int8
+	var isValid bool
 	for _, item := range requestBody.Items {
-		isValid = 1
+		isValid = true
 		_, err = regexp.Compile(item.Regular)
 		if err != nil {
-			isValid = 0
+			isValid = false
 		} else {
-			str := item.Content
-			re := regexp.MustCompile(item.Regular)
-			if len(re.FindAllString(str, -1)) < 1 {
-				isValid = 0
+			if len(regexp.MustCompile(item.Regular).FindAllString(item.Content, -1)) < 1 {
+				isValid = false
 			}
 		}
 		regexpResult = append(regexpResult, isValid)
@@ -127,7 +122,11 @@ func (s *Service) VerifyRegularContentBatch(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-type VerifyRegularContentBatchBody struct {
+type verifyRegularExpressDataResult struct {
+	IsValid bool `json:"is_valid"`
+}
+
+type VerifyRegularContentBatchRequest struct {
 	Items []struct {
 		Regular string `json:"regular"`
 		Content string `json:"content"`
