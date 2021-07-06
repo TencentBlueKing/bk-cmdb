@@ -348,6 +348,7 @@
           })
           await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
             id: instance.id,
+            objId: this.objId,
             config: { data: {} }
           })
           this.hideTips()
