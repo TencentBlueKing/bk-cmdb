@@ -21,10 +21,11 @@ import (
 	"github.com/rwynn/monstache/monstachemap"
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"configcenter/src/common"
 	ccjson "configcenter/src/common/json"
-	"configcenter/src/common/metadata"
+	meta "configcenter/src/common/metadata"
 )
 
 // blueking cmdb elastic monstache plugin.
@@ -42,199 +43,105 @@ const (
 )
 
 // bk-cmdb database.
+// FIXME: select database from config in dynamic mode with monstache.
 const (
 	database = "cmdb"
 )
 
-// elastic index names.
-const (
-	indexNameBiz            = "bk_cmdb.biz"
-	indexNameSet            = "bk_cmdb.set"
-	indexNameModule         = "bk_cmdb.module"
-	indexNameHost           = "bk_cmdb.host"
-	indexNameModel          = "bk_cmdb.model"
-	indexNameObjectInstance = "bk_cmdb.object_instance"
-)
-
-// elastic index property types.
-const (
-	indexPropertyTypeKeyword = "keyword"
-	indexPropertyTypeText    = "text"
-)
-
-// elastic index properties.
-const (
-	indexPropertyID                = "meta_id"
-	indexPropertyBKObjID           = "meta_bk_obj_id"
-	indexPropertyBKSupplierAccount = "meta_bk_supplier_account"
-	indexPropertyBKBizID           = "meta_bk_biz_id"
-	indexPropertyBKParentID        = "meta_bk_parent_id"
-	indexPropertyBKCloudID         = "meta_bk_cloud_id"
-	indexPropertyKeywords          = "keywords"
-)
-
 // elastic indexes.
 var (
-	indexBiz            *ESIndex
-	indexSet            *ESIndex
-	indexModule         *ESIndex
-	indexHost           *ESIndex
-	indexModel          *ESIndex
-	indexObjectInstance *ESIndex
-	indexList           []*ESIndex
+	indexBiz            *meta.ESIndex
+	indexSet            *meta.ESIndex
+	indexModule         *meta.ESIndex
+	indexHost           *meta.ESIndex
+	indexModel          *meta.ESIndex
+	indexObjectInstance *meta.ESIndex
+	indexList           []*meta.ESIndex
 )
 
 func init() {
+	// initialize each index for this release version plugin.
+
 	// business application index.
-	indexBiz = NewESIndex(indexNameBiz, indexVersionBiz, &ESIndexMetadata{
-		Settings: ESIndexMetadataSettings{Shards: "1", Replicas: "1"},
-		Mappings: ESIndexMetadataMappings{Properties: map[string]ESIndexMetadataMappingsProperty{
-			indexPropertyID:                ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKObjID:           ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKSupplierAccount: ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKBizID:           ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyKeywords:          ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeText},
+	indexBiz = meta.NewESIndex(meta.IndexNameBiz, indexVersionBiz, &meta.ESIndexMetadata{
+		Settings: meta.ESIndexMetaSettings{Shards: "1", Replicas: "1"},
+		Mappings: meta.ESIndexMetaMappings{Properties: map[string]meta.ESIndexMetaMappingsProperty{
+			meta.IndexPropertyID:                meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKObjID:           meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKSupplierAccount: meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKBizID:           meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyKeywords:          meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeText},
 		}},
 	})
 	indexList = append(indexList, indexBiz)
 
 	// set index.
-	indexSet = NewESIndex(indexNameSet, indexVersionSet, &ESIndexMetadata{
-		Settings: ESIndexMetadataSettings{Shards: "1", Replicas: "1"},
-		Mappings: ESIndexMetadataMappings{Properties: map[string]ESIndexMetadataMappingsProperty{
-			indexPropertyID:                ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKObjID:           ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKSupplierAccount: ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKBizID:           ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKParentID:        ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyKeywords:          ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeText},
+	indexSet = meta.NewESIndex(meta.IndexNameSet, indexVersionSet, &meta.ESIndexMetadata{
+		Settings: meta.ESIndexMetaSettings{Shards: "1", Replicas: "1"},
+		Mappings: meta.ESIndexMetaMappings{Properties: map[string]meta.ESIndexMetaMappingsProperty{
+			meta.IndexPropertyID:                meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKObjID:           meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKSupplierAccount: meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKBizID:           meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKParentID:        meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyKeywords:          meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeText},
 		}},
 	})
 	indexList = append(indexList, indexSet)
 
 	// module index.
-	indexModule = NewESIndex(indexNameModule, indexVersionModule, &ESIndexMetadata{
-		Settings: ESIndexMetadataSettings{Shards: "1", Replicas: "1"},
-		Mappings: ESIndexMetadataMappings{Properties: map[string]ESIndexMetadataMappingsProperty{
-			indexPropertyID:                ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKObjID:           ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKSupplierAccount: ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKBizID:           ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyKeywords:          ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeText},
+	indexModule = meta.NewESIndex(meta.IndexNameModule, indexVersionModule, &meta.ESIndexMetadata{
+		Settings: meta.ESIndexMetaSettings{Shards: "1", Replicas: "1"},
+		Mappings: meta.ESIndexMetaMappings{Properties: map[string]meta.ESIndexMetaMappingsProperty{
+			meta.IndexPropertyID:                meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKObjID:           meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKSupplierAccount: meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKBizID:           meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyKeywords:          meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeText},
 		}},
 	})
 	indexList = append(indexList, indexModule)
 
 	// host index.
-	indexHost = NewESIndex(indexNameHost, indexVersionHost, &ESIndexMetadata{
-		Settings: ESIndexMetadataSettings{Shards: "1", Replicas: "1"},
-		Mappings: ESIndexMetadataMappings{Properties: map[string]ESIndexMetadataMappingsProperty{
-			indexPropertyID:                ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKObjID:           ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKSupplierAccount: ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKCloudID:         ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyKeywords:          ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeText},
+	indexHost = meta.NewESIndex(meta.IndexNameHost, indexVersionHost, &meta.ESIndexMetadata{
+		Settings: meta.ESIndexMetaSettings{Shards: "1", Replicas: "1"},
+		Mappings: meta.ESIndexMetaMappings{Properties: map[string]meta.ESIndexMetaMappingsProperty{
+			meta.IndexPropertyID:                meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKObjID:           meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKSupplierAccount: meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKCloudID:         meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyKeywords:          meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeText},
 		}},
 	})
 	indexList = append(indexList, indexHost)
 
 	// model index.
-	indexModel = NewESIndex(indexNameModel, indexVersionModel, &ESIndexMetadata{
-		Settings: ESIndexMetadataSettings{Shards: "1", Replicas: "1"},
-		Mappings: ESIndexMetadataMappings{Properties: map[string]ESIndexMetadataMappingsProperty{
-			indexPropertyID:                ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKObjID:           ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKSupplierAccount: ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKBizID:           ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyKeywords:          ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeText},
+	indexModel = meta.NewESIndex(meta.IndexNameModel, indexVersionModel, &meta.ESIndexMetadata{
+		Settings: meta.ESIndexMetaSettings{Shards: "1", Replicas: "1"},
+		Mappings: meta.ESIndexMetaMappings{Properties: map[string]meta.ESIndexMetaMappingsProperty{
+			meta.IndexPropertyID:                meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKObjID:           meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKSupplierAccount: meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKBizID:           meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyKeywords:          meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeText},
 		}},
 	})
 	indexList = append(indexList, indexModel)
 
 	// object instance index.
-	indexObjectInstance = NewESIndex(indexNameObjectInstance, indexVersionObjectInstance, &ESIndexMetadata{
-		Settings: ESIndexMetadataSettings{Shards: "1", Replicas: "1"},
-		Mappings: ESIndexMetadataMappings{Properties: map[string]ESIndexMetadataMappingsProperty{
-			indexPropertyID:                ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKObjID:           ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKSupplierAccount: ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyBKBizID:           ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeKeyword},
-			indexPropertyKeywords:          ESIndexMetadataMappingsProperty{PropertyType: indexPropertyTypeText},
+	indexObjectInstance = meta.NewESIndex(meta.IndexNameObjectInstance, indexVersionObjectInstance, &meta.ESIndexMetadata{
+		Settings: meta.ESIndexMetaSettings{Shards: "1", Replicas: "1"},
+		Mappings: meta.ESIndexMetaMappings{Properties: map[string]meta.ESIndexMetaMappingsProperty{
+			meta.IndexPropertyID:                meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKObjID:           meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKSupplierAccount: meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyBKBizID:           meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeKeyword},
+			meta.IndexPropertyKeywords:          meta.ESIndexMetaMappingsProperty{PropertyType: meta.IndexPropertyTypeText},
 		}},
 	})
 	indexList = append(indexList, indexObjectInstance)
 
 	log.Println("bk-cmdb elastic monstache plugin initialize successfully")
-}
-
-// ESIndexMetadataSettings elasticsearch index settings.
-type ESIndexMetadataSettings struct {
-	// Shards number of index shards as string type.
-	Shards string `json:"number_of_shards"`
-
-	// Replicas number of index document replicas as string type.
-	Replicas string `json:"number_of_replicas"`
-}
-
-// ESIndexMetadataMappings elasticsearch index mappings.
-type ESIndexMetadataMappings struct {
-	// Properties elastic index properties.
-	Properties map[string]ESIndexMetadataMappingsProperty `json:"properties"`
-}
-
-// ESIndexMetadataMappingsProperty elasticsearch index mappings property.
-type ESIndexMetadataMappingsProperty struct {
-	// PropertyType elastic index property type. Support 'keyword' 'text'.
-	PropertyType string `json:"type"`
-}
-
-// ESIndexMetadata is elasticsearch index settings.
-type ESIndexMetadata struct {
-	// Settings elastic index settings.
-	Settings ESIndexMetadataSettings `json:"settings"`
-
-	// Mappings elastic index mappings.
-	Mappings ESIndexMetadataMappings `json:"mappings"`
-}
-
-// ESIndex elasticsearch index.
-type ESIndex struct {
-	// name index name.
-	name string
-
-	// version is the plugin index version, as a postfix in target index.
-	// the plugin would check and create the version index if it not exist,
-	// and alias to bk-cmdb default index name.
-	// NOTE: CHANGE the version name if you have modify the indexes metadata struct.
-	version string
-
-	// metadata index metadata including settings and mappings.
-	metadata *ESIndexMetadata
-}
-
-// NewESIndex creates a new elasticsearch index.
-func NewESIndex(name, version string, metadata *ESIndexMetadata) *ESIndex {
-	return &ESIndex{name: name, version: version, metadata: metadata}
-}
-
-// Name returns the real elastic index name.
-func (idx *ESIndex) Name() string {
-	// return bk-cmdb.{index}_{version} as the real index name.
-	return fmt.Sprintf("%s_%s", idx.name, idx.version)
-}
-
-// AliasName returns real bk-cmdb index name as index alias name.
-func (idx *ESIndex) AliasName() string {
-	return idx.name
-}
-
-// Metadata returns index metadata.
-func (idx *ESIndex) Metadata() string {
-	meta, err := ccjson.MarshalToString(idx.metadata)
-	if err != nil {
-		return ""
-	}
-	return meta
 }
 
 // analysisJSONKeywords analysis the given json style document, and extract
@@ -259,7 +166,12 @@ func analysisJSONKeywords(result gjson.Result) []string {
 func compressKeywords(keywords []string) []string {
 	var compressedKeywords []string
 
-	keywordsMap := make(map[string]struct{})
+	// keywordsMap control repeated or screened keywords.
+	keywordsMap := map[string]struct{}{
+		// filter empty keyword.
+		"": struct{}{},
+	}
+
 	for _, keyword := range keywords {
 		if _, exist := keywordsMap[keyword]; exist {
 			continue
@@ -274,7 +186,7 @@ func compressKeywords(keywords []string) []string {
 // analysisDocument analysis the given document, return document id and keywords.
 func analysisDocument(document map[string]interface{}) (string, []string, error) {
 	// analysis document id.
-	documentID, ok := document["_id"].(string)
+	documentID, ok := document["_id"].(primitive.ObjectID)
 	if !ok {
 		return "", nil, errors.New("missing document metadata id")
 	}
@@ -289,7 +201,7 @@ func analysisDocument(document map[string]interface{}) (string, []string, error)
 	keywords := analysisJSONKeywords(gjson.Parse(jsonDoc))
 
 	// return document id and compressed keywords.
-	return documentID, compressKeywords(keywords), nil
+	return documentID.Hex(), compressKeywords(keywords), nil
 }
 
 // indexingApplication indexing the business application instance.
@@ -297,16 +209,16 @@ func indexingApplication(input *monstachemap.MapperPluginInput, output *monstach
 	// analysis document.
 	documentID, keywords, err := analysisDocument(input.Document)
 	if err != nil {
-		return errors.New("missing document metadata id")
+		return fmt.Errorf("analysis business application document failed, %+v, %+v", input.Document, err)
 	}
 
 	// build elastic document.
 	document := map[string]interface{}{
-		indexPropertyID:                documentID,
-		indexPropertyBKObjID:           input.Document[common.BKObjIDField],
-		indexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
-		indexPropertyBKBizID:           input.Document[common.BKAppIDField],
-		indexPropertyKeywords:          keywords,
+		meta.IndexPropertyID:                documentID,
+		meta.IndexPropertyBKObjID:           input.Document[common.BKObjIDField],
+		meta.IndexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
+		meta.IndexPropertyBKBizID:           input.Document[common.BKAppIDField],
+		meta.IndexPropertyKeywords:          keywords,
 	}
 
 	output.ID = documentID
@@ -323,17 +235,17 @@ func indexingSet(input *monstachemap.MapperPluginInput, output *monstachemap.Map
 	// analysis document.
 	documentID, keywords, err := analysisDocument(input.Document)
 	if err != nil {
-		return errors.New("missing document metadata id")
+		return fmt.Errorf("analysis set document failed, %+v, %+v", input.Document, err)
 	}
 
 	// build elastic document.
 	document := map[string]interface{}{
-		indexPropertyID:                documentID,
-		indexPropertyBKObjID:           input.Document[common.BKObjIDField],
-		indexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
-		indexPropertyBKBizID:           input.Document[common.BKAppIDField],
-		indexPropertyBKParentID:        input.Document[common.BKParentIDField],
-		indexPropertyKeywords:          keywords,
+		meta.IndexPropertyID:                documentID,
+		meta.IndexPropertyBKObjID:           input.Document[common.BKObjIDField],
+		meta.IndexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
+		meta.IndexPropertyBKBizID:           input.Document[common.BKAppIDField],
+		meta.IndexPropertyBKParentID:        input.Document[common.BKParentIDField],
+		meta.IndexPropertyKeywords:          keywords,
 	}
 
 	output.ID = documentID
@@ -350,16 +262,16 @@ func indexingModule(input *monstachemap.MapperPluginInput, output *monstachemap.
 	// analysis document.
 	documentID, keywords, err := analysisDocument(input.Document)
 	if err != nil {
-		return errors.New("missing document metadata id")
+		return fmt.Errorf("analysis module document failed, %+v, %+v", input.Document, err)
 	}
 
 	// build elastic document.
 	document := map[string]interface{}{
-		indexPropertyID:                documentID,
-		indexPropertyBKObjID:           input.Document[common.BKObjIDField],
-		indexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
-		indexPropertyBKBizID:           input.Document[common.BKAppIDField],
-		indexPropertyKeywords:          keywords,
+		meta.IndexPropertyID:                documentID,
+		meta.IndexPropertyBKObjID:           input.Document[common.BKObjIDField],
+		meta.IndexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
+		meta.IndexPropertyBKBizID:           input.Document[common.BKAppIDField],
+		meta.IndexPropertyKeywords:          keywords,
 	}
 
 	output.ID = documentID
@@ -376,16 +288,16 @@ func indexingHost(input *monstachemap.MapperPluginInput, output *monstachemap.Ma
 	// analysis document.
 	documentID, keywords, err := analysisDocument(input.Document)
 	if err != nil {
-		return errors.New("missing document metadata id")
+		return fmt.Errorf("analysis host document failed, %+v, %+v", input.Document, err)
 	}
 
 	// build elastic document.
 	document := map[string]interface{}{
-		indexPropertyID:                documentID,
-		indexPropertyBKObjID:           input.Document[common.BKObjIDField],
-		indexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
-		indexPropertyBKCloudID:         input.Document[common.BKCloudIDField],
-		indexPropertyKeywords:          keywords,
+		meta.IndexPropertyID:                documentID,
+		meta.IndexPropertyBKObjID:           input.Document[common.BKObjIDField],
+		meta.IndexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
+		meta.IndexPropertyBKCloudID:         input.Document[common.BKCloudIDField],
+		meta.IndexPropertyKeywords:          keywords,
 	}
 
 	output.ID = documentID
@@ -402,7 +314,7 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 	// model object id.
 	objectID, ok := input.Document[common.BKObjIDField].(string)
 	if !ok {
-		return errors.New("missing model object id")
+		return fmt.Errorf("analysis model document failed, object id missing, %+v", input.Document)
 	}
 
 	// query model.
@@ -417,37 +329,39 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 	// analysis document.
 	documentID, keywords, err := analysisDocument(model)
 	if err != nil {
-		return errors.New("missing document metadata id")
+		return fmt.Errorf("analysis model document failed, %+v, %+v", input.Document, err)
 	}
 
 	// query model attribute.
-	modelAttrs := []metadata.Attribute{}
+	modelAttrs := []map[string]interface{}{}
 
 	modelAttrsCursor, err := input.MongoClient.Database(database).Collection(common.BKTableNameObjAttDes).
 		Find(context.Background(), bson.D{{common.BKObjIDField, objectID}})
 	if err != nil {
-		return fmt.Errorf("query model attributes object[%s] failed, %+v", objectID, err)
+		return fmt.Errorf("query model attributes object[%s] cursor failed, %+v", objectID, err)
 	}
 
 	if err := modelAttrsCursor.All(context.Background(), &modelAttrs); err != nil {
 		return fmt.Errorf("query model attributes object[%s] failed, %+v", objectID, err)
 	}
 
+	// merge model attribute keywords,
+	// all attributes with model metadata is ONE elastic document.
 	for _, attribute := range modelAttrs {
 		jsonDoc, err := ccjson.MarshalToString(attribute)
 		if err != nil {
-			return fmt.Errorf("marshal model attributes object[%s] failed, %+v", objectID, err)
+			return fmt.Errorf("marshal model attributes object[%s] failed, %+v, %+v", objectID, attribute, err)
 		}
 		keywords = append(keywords, analysisJSONKeywords(gjson.Parse(jsonDoc))...)
 	}
 
 	// build elastic document.
 	document := map[string]interface{}{
-		indexPropertyID:                documentID,
-		indexPropertyBKObjID:           objectID,
-		indexPropertyBKSupplierAccount: model[common.BKOwnerIDField],
-		indexPropertyBKBizID:           model[common.BKAppIDField],
-		indexPropertyKeywords:          compressKeywords(keywords),
+		meta.IndexPropertyID:                documentID,
+		meta.IndexPropertyBKObjID:           objectID,
+		meta.IndexPropertyBKSupplierAccount: model[common.BKOwnerIDField],
+		meta.IndexPropertyBKBizID:           model[common.BKAppIDField],
+		meta.IndexPropertyKeywords:          compressKeywords(keywords),
 	}
 
 	output.ID = documentID
@@ -464,16 +378,16 @@ func indexingObjectInstance(input *monstachemap.MapperPluginInput, output *monst
 	// analysis document.
 	documentID, keywords, err := analysisDocument(input.Document)
 	if err != nil {
-		return errors.New("missing document metadata id")
+		return fmt.Errorf("analysis object instance document failed, %+v, %+v", input.Document, err)
 	}
 
 	// build elastic document.
 	document := map[string]interface{}{
-		indexPropertyID:                documentID,
-		indexPropertyBKObjID:           input.Document[common.BKObjIDField],
-		indexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
-		indexPropertyBKBizID:           input.Document[common.BKAppIDField],
-		indexPropertyKeywords:          keywords,
+		meta.IndexPropertyID:                documentID,
+		meta.IndexPropertyBKObjID:           input.Document[common.BKObjIDField],
+		meta.IndexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
+		meta.IndexPropertyBKBizID:           input.Document[common.BKAppIDField],
+		meta.IndexPropertyKeywords:          keywords,
 	}
 
 	output.ID = documentID

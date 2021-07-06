@@ -14,7 +14,7 @@ direct-read-dynamic-include-regex = "cmdb.cc_ApplicationBase$|cc_SetBase$|cc_Mod
 namespace-regex = "cmdb.cc_ApplicationBase$|cc_SetBase$|cc_ModuleBase$|cmdb.cc_HostBase$|cmdb.cc_ObjDes$|cc_ObjAttDes$|cmdb.cc_ObjectBase_(.*)_pub_"
 
 # plugin
-mapper-plugin-path = "/data/home/meloji/bk-cmdb-monstache-plugin.so"
+mapper-plugin-path = "etc/bk-cmdb-monstache-plugin.so"
 
 # resume mode
 resume = false
