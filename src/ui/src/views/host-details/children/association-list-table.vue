@@ -326,6 +326,7 @@
           })
           await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
             id: instance.id,
+            objId: 'host',
             config: { data: {} }
           })
           this.$store.commit('hostDetails/deleteAssociation', instance.id)

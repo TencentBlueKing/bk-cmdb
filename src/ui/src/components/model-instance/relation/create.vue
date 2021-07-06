@@ -6,6 +6,7 @@
         :list="options"
         setting-key="bk_obj_asst_id"
         display-key="_label"
+        searchable
         @on-selected="handleSelectObj">
       </cmdb-selector>
     </div>
