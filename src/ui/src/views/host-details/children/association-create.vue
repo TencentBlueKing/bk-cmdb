@@ -560,7 +560,12 @@
         })
       },
       getHostCondition() {
-        const condition = [{ bk_obj_id: 'host', condition: [], fields: [] }]
+        const condition = [
+          { bk_obj_id: 'host', condition: [], fields: [] },
+          { bk_obj_id: 'biz', condition: [], fields: [] },
+          { bk_obj_id: 'module', condition: [], fields: [] },
+          { bk_obj_id: 'set', condition: [], fields: [] }
+        ]
         const property = this.getProperty(this.filter.id)
         if (this.filter.value !== '' && property) {
           condition[0].condition.push({
@@ -614,6 +619,7 @@
       setTableList(data, asstObjId) {
         // const properties = this.properties
         this.table.pagination.count = data.count
+        this.table.originalList = Object.freeze(data.info.slice())
         if (asstObjId === 'host') {
           data.info = data.info.map(item => item.host)
         }
