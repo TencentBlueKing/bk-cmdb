@@ -42,6 +42,15 @@ const (
 	IndexNameObjectInstance = IndexNamePrefix + "object_instance"
 )
 
+// elastic document data kind.
+const (
+	// DataKindModel data kind model.
+	DataKindModel = "model"
+
+	// DataKindInstance data kind instance.
+	DataKindInstance = "instance"
+)
+
 // elastic index property types.
 const (
 	// IndexPropertyTypeKeyword es index property type keyword.

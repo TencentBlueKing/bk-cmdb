@@ -196,8 +196,6 @@ func analysisDocument(document map[string]interface{}) (string, []string, error)
 	if err != nil {
 		return "", nil, err
 	}
-
-	// TODO: analysis in go types, not in json mode.
 	keywords := analysisJSONKeywords(gjson.Parse(jsonDoc))
 
 	// return document id and compressed keywords.
@@ -222,6 +220,7 @@ func indexingApplication(input *monstachemap.MapperPluginInput, output *monstach
 	}
 
 	output.ID = documentID
+	output.Type = meta.DataKindInstance
 	output.Document = document
 
 	// use alias name to indexing document.
@@ -249,6 +248,7 @@ func indexingSet(input *monstachemap.MapperPluginInput, output *monstachemap.Map
 	}
 
 	output.ID = documentID
+	output.Type = meta.DataKindInstance
 	output.Document = document
 
 	// use alias name to indexing document.
@@ -275,6 +275,7 @@ func indexingModule(input *monstachemap.MapperPluginInput, output *monstachemap.
 	}
 
 	output.ID = documentID
+	output.Type = meta.DataKindInstance
 	output.Document = document
 
 	// use alias name to indexing document.
@@ -301,6 +302,7 @@ func indexingHost(input *monstachemap.MapperPluginInput, output *monstachemap.Ma
 	}
 
 	output.ID = documentID
+	output.Type = meta.DataKindInstance
 	output.Document = document
 
 	// use alias name to indexing document.
@@ -365,6 +367,7 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 	}
 
 	output.ID = documentID
+	output.Type = meta.DataKindModel
 	output.Document = document
 
 	// use alias name to indexing document.
@@ -391,6 +394,7 @@ func indexingObjectInstance(input *monstachemap.MapperPluginInput, output *monst
 	}
 
 	output.ID = documentID
+	output.Type = meta.DataKindInstance
 	output.Document = document
 
 	// use alias name to indexing document.
