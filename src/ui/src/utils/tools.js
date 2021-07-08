@@ -279,6 +279,18 @@ export function getMetadataBiz (object = {}) {
     return biz
 }
 
+export function getValidateEvents (property) {
+    const type = property.bk_property_type
+    const isChar = ['singlechar', 'longchar'].includes(type)
+    const hasRegular = !!property.option
+    if (isChar && hasRegular) {
+        return {
+            'data-vv-validate-on': 'blur'
+        }
+    }
+    return {}
+}
+
 export function getValidateRules (property) {
     const rules = {}
     const {
@@ -298,7 +310,7 @@ export function getValidateRules (property) {
                 rules['max_value'] = option.max
             }
         } else if (['singlechar', 'longchar'].includes(propertyType)) {
-            rules['regex'] = option
+            rules['remoteString'] = option
         }
     }
     if (['singlechar', 'longchar'].includes(propertyType)) {
@@ -366,6 +378,7 @@ export default {
     getInstFormValues,
     getMetadataBiz,
     getValidateRules,
+    getValidateEvents,
     getSort,
     getValue,
     transformHostSearchParams,

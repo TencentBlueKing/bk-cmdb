@@ -4,8 +4,12 @@
         <textarea
             v-model="localValue"
             :disabled="isReadOnly"
+            v-validate="'remoteRegular'"
+            data-vv-validate-on="blur"
+            data-vv-name="regular"
             @input="handleInput"
         ></textarea>
+        <p class="form-error" v-if="errors.has('regular')">{{errors.first('regular')}}</p>
     </div>
 </template>
 
@@ -37,7 +41,20 @@
         methods: {
             handleInput () {
                 this.$emit('input', this.localValue)
+            },
+            validate () {
+                return this.$validator.validateAll()
             }
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .form-label {
+        position: relative;
+        .form-error {
+            font-size: 12px;
+            color: $cmdbDangerColor;
+        }
+    }
+</style>

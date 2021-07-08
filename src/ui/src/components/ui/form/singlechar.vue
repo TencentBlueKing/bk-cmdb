@@ -6,7 +6,8 @@
         :disabled="disabled"
         @input="handleInput"
         @change="handleChange"
-        @enter="handleEnter">
+        @enter="handleEnter"
+        @blur="handleBlur">
     </bk-input>
 </template>
 
@@ -45,6 +46,9 @@
             },
             handleEnter (value) {
                 this.$emit('enter', value)
+            },
+            handleBlur (value) {
+                this.$emit('blur', value)
             }
         }
     }

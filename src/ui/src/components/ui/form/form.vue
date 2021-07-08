@@ -31,6 +31,7 @@
                                             :data-vv-name="property['bk_property_id']"
                                             :data-vv-as="property['bk_property_name']"
                                             :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                                            v-bind="$tools.getValidateEvents(property)"
                                             v-validate="getValidateRules(property)"
                                             v-model.trim="values[property['bk_property_id']]">
                                         </component>
@@ -189,7 +190,7 @@
                             rules['max_value'] = option.max
                         }
                     } else if (['singlechar', 'longchar'].includes(propertyType)) {
-                        rules['regex'] = option
+                        rules['remoteString'] = option
                     }
                 }
                 if (['singlechar', 'longchar'].includes(propertyType)) {

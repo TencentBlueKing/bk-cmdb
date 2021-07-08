@@ -29,6 +29,7 @@
                                             :options="property.option || []"
                                             :data-vv-name="property['bk_property_id']"
                                             :data-vv-as="property['bk_property_name']"
+                                            v-bind="getValidateEvents(property)"
                                             v-validate="getValidateRules(property)"
                                             v-model.trim="values[property['bk_property_id']]">
                                         </component>
@@ -141,6 +142,17 @@
                 temp = null
                 return output
             },
+            getValidateEvents (property) {
+                const type = property.bk_property_type
+                const isChar = ['singlechar', 'longchar'].includes(type)
+                const hasRegular = !!property.option
+                if (isChar && hasRegular) {
+                    return {
+                        'data-vv-validate-on': 'blur'
+                    }
+                }
+                return {}
+            },
             getValidateRules (property) {
                 const rules = {}
                 const {
@@ -160,7 +172,7 @@
                             rules['max_value'] = option.max
                         }
                     } else if (['singlechar', 'longchar'].includes(propertyType)) {
-                        rules['regex'] = option
+                        rules['remoteString'] = option
                     }
                 }
                 if (['singlechar', 'longchar'].includes(propertyType)) {

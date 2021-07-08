@@ -174,7 +174,7 @@
                 if (this.bindIpProperty.isrequired) {
                     rules['required'] = true
                 }
-                rules['regex'] = this.bindIpProperty.option
+                rules['remoteString'] = this.bindIpProperty.option
                 return rules
             },
             checkDisabled () {
