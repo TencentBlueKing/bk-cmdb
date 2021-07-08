@@ -93,6 +93,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	taskSrv.Core = engine
 	taskSrv.Service = service
 
+	go service.InitFunc()
 	if err := backbone.StartServer(ctx, cancel, engine, service.WebService(), true); err != nil {
 		blog.Errorf("start backbone failed, err: %+v", err)
 		return err

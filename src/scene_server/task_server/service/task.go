@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
@@ -80,6 +81,24 @@ func (s *Service) DetailTask(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(map[string]interface{}{"info": taskInfo})
+}
+
+func (s *Service) DeleteTask(ctx *rest.Contexts) {
+	srvData := s.newSrvComm(ctx.Request.Request.Header)
+
+	input := new(metadata.DeleteOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	err := srvData.lgc.DeleteTask(srvData.ctx, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(common.CCSuccessStr)
 }
 
 func (s *Service) StatusToSuccess(ctx *rest.Contexts) {

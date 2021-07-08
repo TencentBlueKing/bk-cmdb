@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/robfig/cron"
 	"github.com/rs/xid"
 
 	"configcenter/src/common"
@@ -44,6 +45,7 @@ func (lgc *Logics) Create(ctx context.Context, input *metadata.CreateTaskRequest
 	dbTask.Name = input.Name
 	dbTask.User = lgc.user
 	dbTask.Flag = input.Flag
+	dbTask.InstID = input.InstID
 	dbTask.Header = GetDBHTTPHeader(lgc.header)
 	dbTask.Status = metadata.APITaskStatusNew
 	dbTask.CreateTime = time.Now()
@@ -92,22 +94,26 @@ func (lgc *Logics) List(ctx context.Context, name string, input *metadata.ListAP
 // ListLatestTask list latest task
 func (lgc *Logics) ListLatestTask(ctx context.Context, name string,
 	input *metadata.ListAPITaskLatestRequest) ([]metadata.APITaskDetail, error) {
-
-	input.Condition.Set("name", name)
-
 	/*
 		aggregateCond parameter of aggregate to search the latest created task in input.Condition need.
 		because multiple results of the same task may be at the front end of sorting by
 		create_time field, use group to get the first result of each task
 	*/
-	aggregateCond := []interface{}{
-		map[string]interface{}{common.BKDBMatch: input.Condition},
-		map[string]interface{}{common.BKDBSort: map[string]interface{}{common.CreateTimeField: -1}},
-		map[string]interface{}{common.BKDBGroup: map[string]interface{}{
-			"_id": "$flag",
+	aggregateCond := []map[string]interface{}{
+		{common.BKDBSort: map[string]interface{}{common.CreateTimeField: -1}},
+		{common.BKDBGroup: map[string]interface{}{
+			"_id": "$bk_inst_id",
 			"doc": map[string]interface{}{"$first": "$$ROOT"},
 		}},
-		map[string]interface{}{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},
+		{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},
+	}
+
+	if len(name) != 0 {
+		input.Condition.Set("name", name)
+	}
+
+	if len(input.Condition) != 0 {
+		aggregateCond = append([]map[string]interface{}{{common.BKDBMatch: input.Condition}}, aggregateCond...)
 	}
 
 	if len(input.Fields) != 0 {
@@ -122,7 +128,7 @@ func (lgc *Logics) ListLatestTask(ctx context.Context, name string,
 
 	result := make([]metadata.APITaskDetail, 0)
 	if err := lgc.db.Table(common.BKTableNameAPITask).AggregateAll(ctx, aggregateCond, &result); err != nil {
-		blog.Errorf("list latest task failed, err: %v, rid: %v", err, lgc.rid)
+		blog.Errorf("list latest task failed, aggregateCond: %v, err: %v, rid: %v", aggregateCond, err, lgc.rid)
 		return nil, err
 	}
 
@@ -145,6 +151,21 @@ func (lgc *Logics) Detail(ctx context.Context, taskID string) (*metadata.APITask
 		return nil, nil
 	}
 	return &rows[0], nil
+}
+
+func (lgc *Logics) DeleteTask(ctx context.Context, taskCond *metadata.DeleteOption) error {
+	if len(taskCond.Condition) == 0 {
+		blog.Errorf("task condition is empty, rid: %s", lgc.rid)
+		return lgc.ccErr.CCErrorf(common.CCErrCommInstDataNil, "task condition")
+	}
+
+	err := lgc.db.Table(common.BKTableNameAPITask).Delete(ctx, taskCond.Condition)
+	if err != nil {
+		blog.Errorf("delete task failed, err: %s, rid: %s", err.Error(), lgc.rid)
+		return err
+	}
+
+	return nil
 }
 
 // ChangeStatusToSuccess task status change to success
@@ -278,4 +299,76 @@ func getStrTaskID(prefix string) string {
 		prefix = prefix + ":"
 	}
 	return "task:" + prefix + xid.New().String()
+}
+
+func (lgc *Logics) DeleteRedundancyTask(ctx context.Context) error {
+	input := &metadata.ListAPITaskLatestRequest{
+		Fields: []string{common.BKTaskIDField, common.BKStatusField},
+	}
+
+	infos, err := lgc.ListLatestTask(ctx, "", input)
+	if err != nil {
+		blog.Errorf("list latest task failed, err: %s, rid: %s", err.Error(), lgc.rid)
+		return err
+	}
+	if len(infos) == 0 {
+		return nil
+	}
+
+	var taskIDs []string
+	for _, item := range infos {
+		if !item.Status.IsSuccessful() {
+			taskIDs = append(taskIDs, item.TaskID)
+		}
+	}
+
+
+	cond := &metadata.DeleteOption{
+		Condition: map[string]interface{}{common.BKStatusField: 200},
+	}
+
+	if len(taskIDs) != 0{
+		cond.Condition = map[string]interface{}{
+			common.BKTaskIDField: map[string]interface{}{
+				common.BKDBNIN: taskIDs,
+			},
+		}
+	}
+
+
+	err = lgc.DeleteTask(ctx, cond)
+	if err != nil {
+		blog.Errorf("delete redundancy task failed, err: %s, rid: %s", err.Error(), lgc.rid)
+		return err
+	}
+
+	return nil
+}
+
+func (lgc *Logics) TimerDeleteHistoryTask(ctx context.Context) {
+	c := cron.New()
+
+	_,err := c.AddFunc("@weekly", func() {
+		isMaster := lgc.Engine.ServiceManageInterface.IsMaster()
+		if isMaster {
+			blog.Infof("begin delete redundancy task, time: %v", time.Now())
+			err := lgc.DeleteRedundancyTask(ctx)
+			if err != nil {
+				blog.Errorf("delete redundancy task failed, err: %v", err)
+				return
+			}
+		}
+		blog.Infof("delete redundancy task completed, time: %v", time.Now())
+	})
+
+	if err != nil {
+		blog.Errorf("new cron failed, please contact developer, err: %v", err)
+		return
+	}
+	c.Start()
+
+	select {
+	case <-ctx.Done():
+		return
+	}
 }
