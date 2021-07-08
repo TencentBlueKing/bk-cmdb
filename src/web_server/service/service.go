@@ -76,6 +76,9 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/netproperty/export", s.ExportNetProperty)
 	ws.GET("/netcollect/importtemplate/netproperty", s.BuildDownLoadNetPropertyExcelTemplate)
 
+	ws.POST("/regular/verify_regular_express", s.VerifyRegularExpress)
+	ws.POST("/regular/verify_regular_content_batch", s.VerifyRegularContentBatch)
+
 	return ws
 }
 
