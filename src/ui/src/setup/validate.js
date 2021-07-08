@@ -3,6 +3,8 @@ import { language } from '@/i18n'
 import veeValidate, { Validator } from 'vee-validate'
 import cnMessages from 'vee-validate/dist/locale/zh_CN'
 import stringLength from 'utf8-byte-length'
+import regularRemoteValidate from './regular-remote-validate'
+import stringRemoteValidate from './string-remote-validate'
 
 const customRules = {
     singlechar: {
@@ -150,7 +152,9 @@ const dictionary = {
             max_value: () => '该值大于最大值',
             instanceTagValue: () => '请输入英文 / 数字',
             instanceTagKey: () => '请输入英文 / 数字, 以英文开头',
-            repeatTagKey: () => '标签键不能重复'
+            repeatTagKey: () => '标签键不能重复',
+            remoteRegular: () => '请输入合法的正则表达式',
+            remoteString: () => '请输入符合自定义校验规则的内容'
         },
         custom: {
             asst: {
@@ -187,7 +191,9 @@ const dictionary = {
             max_value: () => 'This value is greater than the maximum',
             instanceTagValue: () => 'Please enter letter / number',
             instanceTagKey: () => 'Please enter letter / number starts with letter',
-            repeatTagKey: () => 'Label key cannot be repeated'
+            repeatTagKey: () => 'Label key cannot be repeated',
+            remoteRegular: () => 'Please input valid regular expression',
+            remoteString: () => 'Please input correct content that matchs ths custom rules'
         },
         custom: {
             asst: {
@@ -197,6 +203,8 @@ const dictionary = {
     }
 }
 
+Validator.extend('remoteRegular', regularRemoteValidate)
+Validator.extend('remoteString', stringRemoteValidate, { paramNames: ['regular'] })
 for (const rule in customRules) {
     Validator.extend(rule, customRules[rule])
 }

@@ -36,6 +36,7 @@
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
                                         :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                                        v-bind="$tools.getValidateEvents(property)"
                                         v-validate="getValidateRules(property)"
                                         v-model.trim="values[property['bk_property_id']]">
                                     </component>

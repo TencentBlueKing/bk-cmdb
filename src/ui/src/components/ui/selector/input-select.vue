@@ -12,6 +12,7 @@
                     :name="name"
                     :placeholder="placeholder || $t('请选择或输入内容')"
                     :disabled="disabled"
+                    v-bind="getValidateEvents()"
                     v-validate="validate"
                     v-model="localValue">
             </div>
@@ -90,6 +91,12 @@
         methods: {
             handleSelected (value) {
                 this.localValue = value
+            },
+            getValidateEvents () {
+                if (this.validate.hasOwnProperty('remoteString')) {
+                    return { 'data-vv-validate-on': 'blur' }
+                }
+                return {}
             }
         }
     }

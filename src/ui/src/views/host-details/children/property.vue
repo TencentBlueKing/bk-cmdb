@@ -49,6 +49,7 @@
                                 :data-vv-name="property.bk_property_id"
                                 :data-vv-as="property.bk_property_name"
                                 :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                                v-bind="$tools.getValidateEvents(property)"
                                 v-validate="$tools.getValidateRules(property)"
                                 v-model.trim="editState.value"
                                 @enter="confirm">
