@@ -65,6 +65,9 @@ const (
 	// IndexPropertyID es index property for metadata id.
 	IndexPropertyID = "meta_id"
 
+	// IndexPropertyDataKind es index property for metadata kind.
+	IndexPropertyDataKind = "meta_data_kind"
+
 	// IndexPropertyBKObjID es index property for object id.
 	IndexPropertyBKObjID = "meta_bk_obj_id"
 

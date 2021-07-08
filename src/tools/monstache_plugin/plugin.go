@@ -29,7 +29,7 @@ import (
 )
 
 // blueking cmdb elastic monstache plugin.
-// build: go build -buildmode=plugin -o bk-cmdb-monstache-plugin.so plugin.go
+// build: go build -buildmode=plugin -o monstache-plugin.so plugin.go
 
 // elastic index versions.
 // NOTE: CHANGE the version name if you have modify the indexes metadata struct.
@@ -213,14 +213,14 @@ func indexingApplication(input *monstachemap.MapperPluginInput, output *monstach
 	// build elastic document.
 	document := map[string]interface{}{
 		meta.IndexPropertyID:                documentID,
-		meta.IndexPropertyBKObjID:           input.Document[common.BKObjIDField],
+		meta.IndexPropertyDataKind:          meta.DataKindInstance,
+		meta.IndexPropertyBKObjID:           common.BKInnerObjIDApp,
 		meta.IndexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
 		meta.IndexPropertyBKBizID:           input.Document[common.BKAppIDField],
 		meta.IndexPropertyKeywords:          keywords,
 	}
 
 	output.ID = documentID
-	output.Type = meta.DataKindInstance
 	output.Document = document
 
 	// use alias name to indexing document.
@@ -240,7 +240,8 @@ func indexingSet(input *monstachemap.MapperPluginInput, output *monstachemap.Map
 	// build elastic document.
 	document := map[string]interface{}{
 		meta.IndexPropertyID:                documentID,
-		meta.IndexPropertyBKObjID:           input.Document[common.BKObjIDField],
+		meta.IndexPropertyDataKind:          meta.DataKindInstance,
+		meta.IndexPropertyBKObjID:           common.BKInnerObjIDSet,
 		meta.IndexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
 		meta.IndexPropertyBKBizID:           input.Document[common.BKAppIDField],
 		meta.IndexPropertyBKParentID:        input.Document[common.BKParentIDField],
@@ -248,7 +249,6 @@ func indexingSet(input *monstachemap.MapperPluginInput, output *monstachemap.Map
 	}
 
 	output.ID = documentID
-	output.Type = meta.DataKindInstance
 	output.Document = document
 
 	// use alias name to indexing document.
@@ -268,14 +268,14 @@ func indexingModule(input *monstachemap.MapperPluginInput, output *monstachemap.
 	// build elastic document.
 	document := map[string]interface{}{
 		meta.IndexPropertyID:                documentID,
-		meta.IndexPropertyBKObjID:           input.Document[common.BKObjIDField],
+		meta.IndexPropertyDataKind:          meta.DataKindInstance,
+		meta.IndexPropertyBKObjID:           common.BKInnerObjIDModule,
 		meta.IndexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
 		meta.IndexPropertyBKBizID:           input.Document[common.BKAppIDField],
 		meta.IndexPropertyKeywords:          keywords,
 	}
 
 	output.ID = documentID
-	output.Type = meta.DataKindInstance
 	output.Document = document
 
 	// use alias name to indexing document.
@@ -295,14 +295,14 @@ func indexingHost(input *monstachemap.MapperPluginInput, output *monstachemap.Ma
 	// build elastic document.
 	document := map[string]interface{}{
 		meta.IndexPropertyID:                documentID,
-		meta.IndexPropertyBKObjID:           input.Document[common.BKObjIDField],
+		meta.IndexPropertyDataKind:          meta.DataKindInstance,
+		meta.IndexPropertyBKObjID:           common.BKInnerObjIDHost,
 		meta.IndexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
 		meta.IndexPropertyBKCloudID:         input.Document[common.BKCloudIDField],
 		meta.IndexPropertyKeywords:          keywords,
 	}
 
 	output.ID = documentID
-	output.Type = meta.DataKindInstance
 	output.Document = document
 
 	// use alias name to indexing document.
@@ -360,6 +360,7 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 	// build elastic document.
 	document := map[string]interface{}{
 		meta.IndexPropertyID:                documentID,
+		meta.IndexPropertyDataKind:          meta.DataKindModel,
 		meta.IndexPropertyBKObjID:           objectID,
 		meta.IndexPropertyBKSupplierAccount: model[common.BKOwnerIDField],
 		meta.IndexPropertyBKBizID:           model[common.BKAppIDField],
@@ -367,7 +368,6 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 	}
 
 	output.ID = documentID
-	output.Type = meta.DataKindModel
 	output.Document = document
 
 	// use alias name to indexing document.
@@ -387,6 +387,7 @@ func indexingObjectInstance(input *monstachemap.MapperPluginInput, output *monst
 	// build elastic document.
 	document := map[string]interface{}{
 		meta.IndexPropertyID:                documentID,
+		meta.IndexPropertyDataKind:          meta.DataKindInstance,
 		meta.IndexPropertyBKObjID:           input.Document[common.BKObjIDField],
 		meta.IndexPropertyBKSupplierAccount: input.Document[common.BKOwnerIDField],
 		meta.IndexPropertyBKBizID:           input.Document[common.BKAppIDField],
@@ -394,7 +395,6 @@ func indexingObjectInstance(input *monstachemap.MapperPluginInput, output *monst
 	}
 
 	output.ID = documentID
-	output.Type = meta.DataKindInstance
 	output.Document = document
 
 	// use alias name to indexing document.

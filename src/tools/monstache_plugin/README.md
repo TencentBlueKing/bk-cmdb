@@ -7,12 +7,13 @@
 
 ```shell
 .
-└── bk-cmdb-monstache-plugin-517da48-21.06.29
+└── monstache_plugin
     ├── etc
-    │   ├── bk-cmdb-monstache-plugin.so
+    │   ├── monstache-plugin.so
     │   └── config.toml
     ├── monstache
     ├── monstache.sh
+    └── CHANGELOG.md
     └── README.md
 ```
 
@@ -24,7 +25,7 @@
 sh monstache.sh start
 ```
 
-当然，也可以通过`systemd`或者简单的`nohup`方式运行, 例如 `monstache -f config.toml -mapper-plugin-path bk-cmdb-monstache-plugin.so`
+当然，也可以通过`systemd`或者简单的`nohup`方式运行, 例如 `monstache -f config.toml -mapper-plugin-path monstache-plugin.so`
 
 ## 配置
 

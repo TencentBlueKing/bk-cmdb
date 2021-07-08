@@ -81,14 +81,14 @@ var (
 
 // SearchResult fulltext search result.
 type SearchResult struct {
-	// Source mongodb metadata.
-	Source interface{} `json:"source"`
-
 	// Kind data kind model or instance.
 	Kind string `json:"kind"`
 
 	// Key data model key biz/set/module/host/{common object id}.
 	Key string `json:"key"`
+
+	// Source mongodb metadata.
+	Source interface{} `json:"source"`
 }
 
 // Aggregation fulltext search aggregation.
@@ -144,15 +144,6 @@ func (p *Page) Validate() error {
 	return nil
 }
 
-// FullTextSearchESQuery fulltext search elastic query.
-type FullTextSearchESQuery struct {
-	// Query elastic query.
-	Query elastic.Query
-
-	// Condition elastic search condition.
-	Condition *FullTextSearchCondition
-}
-
 // FullTextSearchCondition fulltext search condition.
 type FullTextSearchCondition struct {
 	// IndexName es index name.
@@ -160,6 +151,15 @@ type FullTextSearchCondition struct {
 
 	// Conditions es search conditions.
 	Conditions map[string]interface{}
+}
+
+// FullTextSearchESQuery fulltext search elastic query.
+type FullTextSearchESQuery struct {
+	// Query elastic query.
+	Query elastic.Query
+
+	// Condition elastic search condition.
+	Condition *FullTextSearchCondition
 }
 
 // FullTextSearchFilter is fulltext filter.
@@ -256,7 +256,9 @@ func (r *FullTextSearchReq) Validate() error {
 	return nil
 }
 
-func (r *FullTextSearchReq) generateModelQueryConditions() []*FullTextSearchCondition {
+// generateESQueryConditions parse and handle models/instances filter, generate main elastic
+// query, sub-count aggregations query.
+func (r *FullTextSearchReq) generateESQueryConditions() []*FullTextSearchCondition {
 	var searchConditions []*FullTextSearchCondition
 
 	for _, model := range r.Filter.Models {
@@ -267,12 +269,6 @@ func (r *FullTextSearchReq) generateModelQueryConditions() []*FullTextSearchCond
 			},
 		})
 	}
-
-	return searchConditions
-}
-
-func (r *FullTextSearchReq) generateInstanceQueryConditions() []*FullTextSearchCondition {
-	var searchConditions []*FullTextSearchCondition
 
 	for _, instance := range r.Filter.Instances {
 		switch instance {
@@ -323,69 +319,71 @@ func (r *FullTextSearchReq) generateInstanceQueryConditions() []*FullTextSearchC
 
 // GenerateESQuery returns the elastic query for main search and sub-count searches.
 func (r *FullTextSearchReq) GenerateESQuery() (elastic.Query, []string, []*FullTextSearchESQuery) {
-	// elastic query conditions.
-	conditions := r.generateModelQueryConditions()
-	conditions = append(conditions, r.generateInstanceQueryConditions()...)
+	// elastic query conditions for each model or instance.
+	conditions := r.generateESQueryConditions()
 
-	// build elastic bool query.
+	// build elastic main query and indexes for search.
 	var indexes []string
+	indexMap := make(map[string]struct{})
+
+	// build elastic count aggregations conditions for search.
 	var subCountQueries []*FullTextSearchESQuery
 
-	indexMap := make(map[string]struct{})
+	// main query.
+	query := elastic.NewBoolQuery()
 	queryConditions := make(map[string][]interface{})
 
-	query := elastic.NewBoolQuery()
 	if len(r.OwnerID) != 0 {
-		query.Should(elastic.NewMatchQuery(metadata.IndexPropertyBKSupplierAccount, r.OwnerID))
+		query.Must(elastic.NewMatchQuery(metadata.IndexPropertyBKSupplierAccount, r.OwnerID))
 	}
 	if len(r.BizID) != 0 {
-		query.Should(elastic.NewMatchQuery(metadata.IndexPropertyBKBizID, r.BizID))
+		query.Must(elastic.NewMatchQuery(metadata.IndexPropertyBKBizID, r.BizID))
 	}
 	query.Must(elastic.NewQueryStringQuery(r.QueryString))
 
+	// sub aggregations query.
 	for _, condition := range conditions {
 		boolQuery := elastic.NewBoolQuery()
 
-		// handle conditions.
 		if len(r.OwnerID) != 0 {
-			boolQuery.Should(elastic.NewMatchQuery(metadata.IndexPropertyBKSupplierAccount, r.OwnerID))
+			boolQuery.Must(elastic.NewMatchQuery(metadata.IndexPropertyBKSupplierAccount, r.OwnerID))
 		}
 		if len(r.BizID) != 0 {
-			boolQuery.Should(elastic.NewMatchQuery(metadata.IndexPropertyBKBizID, r.BizID))
+			boolQuery.Must(elastic.NewMatchQuery(metadata.IndexPropertyBKBizID, r.BizID))
 		}
 
 		// handle filter conditions.
 		for property, value := range condition.Conditions {
 			queryConditions[property] = append(queryConditions[property], value)
-			boolQuery.Should(elastic.NewMatchQuery(property, value))
+			boolQuery.Must(elastic.NewMatchQuery(property, value))
 		}
 
-		// build elastic search.
+		// build elastic main query indexes.
 		if _, exist := indexMap[condition.IndexName]; !exist {
 			indexes = append(indexes, condition.IndexName)
 			indexMap[condition.IndexName] = struct{}{}
 		}
 
-		// handle query string.
+		// handle sub aggregation conditions.
 		boolQuery.Must(elastic.NewQueryStringQuery(r.QueryString))
-
 		subCountQueries = append(subCountQueries, &FullTextSearchESQuery{Query: boolQuery, Condition: condition})
 	}
 
+	// add all sub aggregation conditions to main query.
 	for property, value := range queryConditions {
-		query.Should(elastic.NewMatchQuery(property, value))
+		query.Must(elastic.NewTermsQuery(property, value...))
 	}
 
 	return query, indexes, subCountQueries
 }
 
-func (s *Service) fullTextAggregationSearch(ctx *rest.Contexts,
-	esQueries []*FullTextSearchESQuery) ([]Aggregation, error) {
-
-	// elastic pipeline sub-count search.
+// fullTextAggregation count aggregations in multi gcoroutines mode.
+func (s *Service) fullTextAggregation(ctx *rest.Contexts, esQueries []*FullTextSearchESQuery) ([]Aggregation, error) {
+	// elastic pipeline sub aggregation search.
 	var pipelineErr error
 	var wg sync.WaitGroup
 
+	// control max gcoroutines num.
 	pipeline := make(chan struct{}, esPipelineConcurrency)
 
 	// pipeline results.
@@ -436,6 +434,90 @@ func (s *Service) fullTextAggregationSearch(ctx *rest.Contexts,
 	return aggregationQueryResults, nil
 }
 
+// fullTextMetadata returns metadata base on the elastic hits.
+func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit) ([]SearchResult, error) {
+	var objectIDs []string
+	instMetadataConditions := make(map[string][]string)
+
+	// set read preference.
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	// build metadata models and instances conditions.
+	for _, hit := range hits {
+		source := make(map[string]interface{})
+		if err := json.Unmarshal(hit.Source, &source); err != nil {
+			blog.Warnf("fulltext handle search result source data failed, err: %+v,  rid: %s", err, ctx.Kit.Rid)
+			continue
+		}
+
+		// parse meta fields.
+		metaID := util.GetStrByInterface(source[metadata.IndexPropertyID])
+		objectID := util.GetStrByInterface(source[metadata.IndexPropertyBKObjID])
+		dataKind := util.GetStrByInterface(source[metadata.IndexPropertyDataKind])
+
+		if dataKind == metadata.DataKindModel {
+			objectIDs = append(objectIDs, objectID)
+		} else if dataKind == metadata.DataKindInstance {
+			instMetadataConditions[objectID] = append(instMetadataConditions[objectID], metaID)
+		} else {
+			blog.Warnf("fulltext handle search source, unknown data kind[%s], rid: %s", dataKind, ctx.Kit.Rid)
+		}
+	}
+
+	blog.V(5).Infof("fulltext metadata query models[%s], instances[%s], rid: %s",
+		objectIDs, instMetadataConditions, ctx.Kit.Rid)
+
+	// search metadata as result.
+	var searchResults []SearchResult
+
+	// query metadata model.
+	modelCondition := condition.CreateCondition()
+	modelCondition.Field(common.BKObjIDField).In(objectIDs)
+	objects, err := s.Core.ObjectOperation().FindObject(ctx.Kit, modelCondition)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, object := range objects {
+		searchResults = append(searchResults, SearchResult{
+			Kind:   metadata.DataKindModel,
+			Key:    object.Object().ObjectID,
+			Source: object.Object(),
+		})
+	}
+
+	// query metadata instance.
+	for objectID, ids := range instMetadataConditions {
+		input := &metadata.CommonSearchFilter{
+			Conditions: &querybuilder.QueryFilter{
+				Rule: querybuilder.CombinedRule{
+					Condition: querybuilder.ConditionAnd,
+					Rules: []querybuilder.Rule{
+						&querybuilder.AtomRule{Field: "_id", Operator: querybuilder.OperatorIn, Value: ids},
+					},
+				},
+			},
+			Page: metadata.BasePage{Start: 0, Limit: common.BKMaxInstanceLimit},
+		}
+
+		// search object instances.
+		result, err := s.Core.InstOperation().SearchObjectInstances(ctx.Kit, objectID, input)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, instance := range result.Info {
+			searchResults = append(searchResults, SearchResult{
+				Kind:   metadata.DataKindInstance,
+				Key:    objectID,
+				Source: instance,
+			})
+		}
+	}
+
+	return searchResults, nil
+}
+
 // FullTextSearch fulltext search service.
 func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 	// check elastic client.
@@ -460,6 +542,8 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 
 	// generate elastic query.
 	esQuery, indexes, subCountQueries := request.GenerateESQuery()
+	mainESQuery, _ := esQuery.Source()
+	blog.V(5).Infof("fulltext main query[%s], indexes[%s], rid: %s", mainESQuery, indexes, ctx.Kit.Rid)
 
 	// main search.
 	mainSearchResult, err := s.Es.Search(ctx.Kit.Ctx, esQuery, indexes, request.Page.Start, request.Page.Limit)
@@ -475,16 +559,15 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 	}
 
 	// build response data.
-	response := FullTextSearchResp{}
-	response.Total = mainSearchResult.Hits.TotalHits.Value
+	response := FullTextSearchResp{Total: mainSearchResult.Hits.TotalHits.Value}
 
 	if mainSearchResult.Hits.TotalHits.Value == 0 {
 		ctx.RespEntity(response)
 		return
 	}
 
-	// sub-count aggregation search.
-	aggregations, err := s.fullTextAggregationSearch(ctx, subCountQueries)
+	// aggregation search.
+	aggregations, err := s.fullTextAggregation(ctx, subCountQueries)
 	if err != nil {
 		blog.Errorf("fulltext sub-count search failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextFindErr))
@@ -492,81 +575,14 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 	}
 	response.Aggregations = aggregations
 
-	// query result metadata.
-	modelMetadataConditions := []string{}
-	instMetadataConditions := make(map[string][]string)
-
-	// set read preference.
-	ctx.SetReadPreference(common.SecondaryPreferredMode)
-
-	for _, hit := range mainSearchResult.Hits.Hits {
-		source := make(map[string]interface{})
-		if err := json.Unmarshal(hit.Source, &source); err != nil {
-			blog.Warnf("fulltext handle search result source data failed, err: %+v,  rid: %s", err, ctx.Kit.Rid)
-			continue
-		}
-
-		metaID := util.GetStrByInterface(source[metadata.IndexPropertyID])
-		objectID := util.GetStrByInterface(source[metadata.IndexPropertyBKObjID])
-
-		if hit.Type == metadata.DataKindModel {
-			modelMetadataConditions = append(modelMetadataConditions, objectID)
-		} else if hit.Type == metadata.DataKindInstance {
-			instMetadataConditions[objectID] = append(instMetadataConditions[objectID], metaID)
-		} else {
-			blog.Warnf("fulltext handle search source, unknown data kind[%s], rid: %s", hit.Type, ctx.Kit.Rid)
-		}
-	}
-
-	// query model.
-	modelCondition := condition.CreateCondition()
-	modelCondition.Field(common.BKObjIDField).In(modelMetadataConditions)
-
-	objects, err := s.Core.ObjectOperation().FindObject(ctx.Kit, modelCondition)
+	// metadata search.
+	metadatas, err := s.fullTextMetadata(ctx, mainSearchResult.Hits.Hits)
 	if err != nil {
-		blog.Errorf("fulltext search model failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		blog.Errorf("fulltext metadata search failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextFindErr))
 		return
 	}
-
-	for _, object := range objects {
-		response.Hits = append(response.Hits, SearchResult{
-			Kind:   metadata.DataKindModel,
-			Key:    object.Object().ObjectID,
-			Source: object.Object(),
-		})
-	}
-
-	// query instance.
-	for objectID, ids := range instMetadataConditions {
-		input := &metadata.CommonSearchFilter{
-			Conditions: &querybuilder.QueryFilter{
-				Rule: querybuilder.CombinedRule{
-					Condition: querybuilder.ConditionAnd,
-					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "_id", Operator: querybuilder.OperatorIn, Value: ids},
-					},
-				},
-			},
-			Page: metadata.BasePage{Start: 0, Limit: common.BKMaxInstanceLimit},
-		}
-
-		// search object instances.
-		result, err := s.Core.InstOperation().SearchObjectInstances(ctx.Kit, objectID, input)
-		if err != nil {
-			blog.Errorf("fulltext search object[%s] instances failed, err: %+v, rid: %s", objectID, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-
-		for _, instance := range result.Info {
-			response.Hits = append(response.Hits, SearchResult{
-				Kind:   metadata.DataKindInstance,
-				Key:    objectID,
-				Source: instance,
-			})
-		}
-	}
+	response.Hits = metadatas
 
 	ctx.RespEntity(response)
 }
