@@ -214,7 +214,7 @@
 
         if (this.isMainLine && ['bk_set_name', 'bk_module_name', 'bk_inst_name'].includes(property.bk_property_id)) {
           rules.businessTopoInstNames = true
-          rules.length = 32
+          rules.length = 256
           rules.singlechar = false
         }
 

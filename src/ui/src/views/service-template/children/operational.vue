@@ -24,7 +24,7 @@
                   :placeholder="$t('模板名称将作为实例化后的模块名')"
                   :class="{ 'is-edit-name': isEditName }"
                   v-model.trim="formData.templateName"
-                  v-validate="'required|businessTopoInstNames|length:32'">
+                  v-validate="'required|businessTopoInstNames|length:256'">
                 </bk-input>
                 <p class="form-error">{{errors.first('templateName')}}</p>
               </template>
