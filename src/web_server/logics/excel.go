@@ -97,9 +97,11 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		blog.Errorf("BuildHostExcelFromData add excel sheet error, err:%s, rid:%s", err.Error(), rid)
 		return err
 	}
+	extFieldsMouleID := "cc_ext_field_module"
 	extFieldsTopoID := "cc_ext_field_topo"
 	extFieldsBizID := "cc_ext_biz"
 	extFields := map[string]string{
+		extFieldsMouleID: ccLang.Language("web_ext_field_module"),
 		extFieldsTopoID: ccLang.Language("web_ext_field_topo"),
 		extFieldsBizID:  ccLang.Language("biz_property_bk_biz_name"),
 	}
@@ -146,13 +148,20 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 				}
 
 				toposNobiz := make([]string, 0)
+				moduleNoset := make([]string, 0)
 				for _, topo := range topos {
 					idx := strings.Index(topo, logics.SplitFlag)
 					if idx > 0 && len(topo) >= idx+len(logics.SplitFlag) {
-						toposNobiz = append(toposNobiz, topo[idx+len(logics.SplitFlag):])
+						toposNobizTmp := topo[idx+len(logics.SplitFlag):]
+						idxInner := strings.Index(toposNobizTmp, logics.SplitFlag)
+						if idxInner > 0 && len(toposNobizTmp) >= idxInner + len(logics.SplitFlag) {
+							toposNobiz = append(toposNobiz, toposNobizTmp[:idxInner])
+							moduleNoset = append(moduleNoset, toposNobizTmp[idxInner+len(logics.SplitFlag):])
+						}
 					}
 				}
 				rowMap[extFieldsTopoID] = strings.Join(toposNobiz, "\n")
+				rowMap[extFieldsMouleID] = strings.Join(moduleNoset, "\n")
 			}
 		}
 
