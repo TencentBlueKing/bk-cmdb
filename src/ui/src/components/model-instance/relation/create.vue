@@ -379,6 +379,7 @@
         const { isSource } = this
         return this.searchInstAssociation({
           params: {
+            bk_obj_id: isSource ? this.objId : option.bk_obj_id,
             condition: {
               bk_asst_id: option.bk_asst_id,
               bk_obj_asst_id: option.bk_obj_asst_id,

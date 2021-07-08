@@ -6,6 +6,7 @@
     display-tag
     v-bind="$attrs"
     v-model="localValue"
+    @clear="() => $emit('clear')"
     @toggle="handleToggle">
     <bk-option
       v-for="template in list"

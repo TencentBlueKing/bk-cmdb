@@ -69,7 +69,8 @@
           v-bind="filterComponentProps"
           v-model="filter.value"
           @change="handleFilterValueChange"
-          @enter="handleFilterValueEnter">
+          @enter="handleFilterValueEnter"
+          @clear="handleFilterValueEnter">
         </component>
         <bk-checkbox class="filter-exact" size="small"
           v-if="allowFuzzyQuery"

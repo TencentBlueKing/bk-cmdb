@@ -189,12 +189,34 @@ func (c *awsClient) getInstances(region string, opt *ccom.InstanceOpt) ([]*metad
 		}
 		for _, reservation := range output.Reservations {
 			for _, inst := range reservation.Instances {
+				privateIP := ""
+				if inst.PrivateIpAddress != nil {
+					privateIP = *inst.PrivateIpAddress
+				}
+
+				publicIP := ""
+				if inst.PublicIpAddress != nil {
+					publicIP = *inst.PublicIpAddress
+				}
+
+				state := ""
+				if inst.State != nil {
+					if inst.State.Name != nil {
+						state = *inst.State.Name
+					}
+				}
+
+				vpcID := ""
+				if inst.VpcId != nil {
+					vpcID = *inst.VpcId
+				}
+
 				instances = append(instances, &metadata.Instance{
 					InstanceId:    *inst.InstanceId,
-					PrivateIp:     *inst.PrivateIpAddress,
-					PublicIp:      *inst.PublicIpAddress,
-					InstanceState: ccom.CovertInstState(*inst.State.Name),
-					VpcId:         *inst.VpcId,
+					PrivateIp:     privateIP,
+					PublicIp:      publicIP,
+					InstanceState: ccom.CovertInstState(state),
+					VpcId:         vpcID,
 				})
 			}
 		}

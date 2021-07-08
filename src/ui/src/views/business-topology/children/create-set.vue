@@ -124,7 +124,7 @@
           try {
             const data = await this.$store.dispatch('setTemplate/getSetTemplates', {
               bizId: this.business,
-              params: {},
+              params: { page: { sort: '-last_time' } },
               config: {
                 requestId: this.request.setTemplate
               }
