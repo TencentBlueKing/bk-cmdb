@@ -27,12 +27,13 @@ import (
 
 // VerifyRegularExpress verify regular express
 func (s *Service) VerifyRegularExpress(c *gin.Context) {
-	regular := c.PostForm("regular")
+	requestBody := new(VerifyRegularExpressRequest)
+	err := c.BindJSON(requestBody)
 
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
-	if len(regular) == 0 {
+	if len(requestBody.Regular) == 0 {
 		result := metadata.ResponseDataMapStr{
 			BaseResp: metadata.BaseResp{
 				Result: false,
@@ -45,7 +46,7 @@ func (s *Service) VerifyRegularExpress(c *gin.Context) {
 	}
 
 	var isValid bool
-	_, err := regexp.Compile(regular)
+	_, err = regexp.Compile(requestBody.Regular)
 	if err == nil {
 		isValid = true
 	}
@@ -131,4 +132,8 @@ type VerifyRegularContentBatchRequest struct {
 		Regular string `json:"regular"`
 		Content string `json:"content"`
 	} `json:"items"`
+}
+
+type VerifyRegularExpressRequest struct {
+	Regular string `json:"regular"`
 }
