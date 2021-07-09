@@ -67,6 +67,7 @@
                     :data-vv-as="property.bk_property_name"
                     :placeholder="getPlaceholder(property)"
                     :auto-check="false"
+                    v-bind="$tools.getValidateEvents(property)"
                     v-validate="$tools.getValidateRules(property)"
                     v-model.trim="editState.value"
                     :ref="`component-${property.bk_property_id}`">
