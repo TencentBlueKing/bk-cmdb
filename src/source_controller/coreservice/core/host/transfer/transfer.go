@@ -568,14 +568,15 @@ func (t *genericTransfer) countByCond(ctx core.ContextParams, conds mapstr.MapSt
 }
 
 func (t *genericTransfer) validAppArchivedStatus(ctx core.ContextParams) (bool, errors.CCErrorCoder) {
-	appCond := condition.CreateCondition()
-	appCond.Field(common.BKAppIDField).Eq(t.bizID)
-	appCond.Field(common.BKDataStatusField).Eq("disabled")
+	cond := mapstr.MapStr{
+		common.BKAppIDField:      t.bizID,
+		common.BKDataStatusField: "disabled",
+	}
 
-	cnt, err := t.dbProxy.Table(common.BKTableNameBaseApp).Find(appCond.ToMapStr()).Count(ctx)
+	cnt, err := t.dbProxy.Table(common.BKTableNameBaseApp).Find(cond).Count(ctx)
 	if err != nil {
 		blog.Errorf("get app info error. err:%s, table:%s,cond:%s, rid:%s",
-			err.Error(), common.BKTableNameBaseApp, appCond, ctx.ReqID)
+			err.Error(), common.BKTableNameBaseApp, cond, ctx.ReqID)
 		return false, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 

@@ -652,7 +652,7 @@ const (
 	CCErrHostSetNotBelongBusinessErr                          = 1110060
 	CCErrHostModuleNotBelongBusinessErr                       = 1110061
 	CCErrHostModuleNotBelongSetErr                            = 1110062
-	CCErrTransferHostToApp                                    = 1110063
+	CCErrTransferHostToArchivedApp                            = 1110063
 
 	// web 1111XXX
 	CCErrWebFileNoFound                 = 1111001

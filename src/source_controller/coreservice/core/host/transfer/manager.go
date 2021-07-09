@@ -326,7 +326,8 @@ func (manager *TransferManager) TransferToAnotherBusiness(ctx core.ContextParams
 	}
 
 	if !isAppArchived {
-		return nil, ctx.Error.CCErrorf(common.CCErrTransferHostToApp)
+		blog.Errorf("target business has been archived, bizID: %d, rid: %s", transfer.bizID, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrTransferHostToArchivedApp)
 	}
 
 	var exceptionArr []metadata.ExceptionResult
