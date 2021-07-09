@@ -559,25 +559,19 @@ func (t *genericTransfer) countByCond(kit *rest.Kit, conds mapstr.MapStr, tableN
 	return cnt, nil
 }
 
-func (t *genericTransfer) validAppStatus(kit *rest.Kit) (bool, errors.CCErrorCoder) {
+func (t *genericTransfer) validAppArchivedStatus(kit *rest.Kit) (bool, errors.CCErrorCoder) {
 	appCond := condition.CreateCondition()
 	appCond.Field(common.BKAppIDField).Eq(t.bizID)
-	cond := util.SetQueryOwner(appCond.ToMapStr(), kit.SupplierAccount)
+	appCond.Field(common.BKDataStatusField).Eq("disabled")
 
-	appInfo := make(mapstr.MapStr, 0)
-	err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(cond).Fields(common.BKDataStatusField).One(kit.Ctx, &appInfo)
+	cnt, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(appCond.ToMapStr()).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("get app info error. err:%s, table:%s,cond:%s, rid:%s",
-			err.Error(), common.BKTableNameBaseApp, cond, kit.Rid)
+			err.Error(), common.BKTableNameBaseApp, appCond, kit.Rid)
 		return false, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
-	appStatus, exist := appInfo.Get(common.BKDataStatusField)
-	if !exist {
-		return true, nil
-	}
-
-	if appStatus == "disabled" {
+	if cnt != 0 {
 		return false, nil
 	}
 

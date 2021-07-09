@@ -241,7 +241,7 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit, input *
 		return err
 	}
 
-	isAppArchived, err := transfer.validAppStatus(kit)
+	isAppArchived, err := transfer.validAppArchivedStatus(kit)
 	if err != nil {
 		blog.Errorf("valid app status failed, err:%s, input:%s, rid:%s", err.Error(), input, kit.Rid)
 		return err
