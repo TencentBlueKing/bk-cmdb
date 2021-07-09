@@ -241,6 +241,16 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit, input *
 		return err
 	}
 
+	isAppArchived, err := transfer.validAppStatus(kit)
+	if err != nil {
+		blog.Errorf("valid app status failed, err:%s, input:%s, rid:%s", err.Error(), input, kit.Rid)
+		return err
+	}
+
+	if !isAppArchived {
+		return kit.CCError.CCErrorf(common.CCErrTransferHostToApp)
+	}
+
 	// attributes in legacy business
 	legacyAttributes, err := transfer.dependent.SelectObjectAttWithParams(kit, common.BKInnerObjIDHost, input.SrcApplicationID)
 	if err != nil {

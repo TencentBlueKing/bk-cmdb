@@ -660,6 +660,7 @@ const (
 	CCErrHostEditRelationPoolFail = 1110028
 	CCErrAddHostToModule          = 1110029
 	CCErrAddHostToModuleFailStr   = 1110030
+	CCErrTransferHostToApp        = 1110031
 
 	// hostserver api machinery new error code
 	CCErrAddUserCustomQueryFailed       = 1110040
