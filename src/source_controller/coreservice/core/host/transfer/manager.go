@@ -318,6 +318,17 @@ func (manager *TransferManager) TransferToAnotherBusiness(ctx core.ContextParams
 		blog.ErrorJSON("TransferToAnotherBusiness failed, ValidParameter failed, err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
 		return nil, err
 	}
+
+	isAppArchived, err := transfer.validAppStatus(ctx)
+	if err != nil {
+		blog.Errorf("valid app status failed, err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		return nil, err
+	}
+
+	if !isAppArchived {
+		return nil, ctx.Error.CCErrorf(common.CCErrTransferHostToApp)
+	}
+
 	var exceptionArr []metadata.ExceptionResult
 	for _, hostID := range input.HostIDArr {
 		err := transfer.Transfer(ctx, hostID)
