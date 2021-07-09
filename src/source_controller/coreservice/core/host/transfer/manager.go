@@ -319,7 +319,7 @@ func (manager *TransferManager) TransferToAnotherBusiness(ctx core.ContextParams
 		return nil, err
 	}
 
-	isAppArchived, err := transfer.validAppStatus(ctx)
+	isAppArchived, err := transfer.validAppArchivedStatus(ctx)
 	if err != nil {
 		blog.Errorf("valid app status failed, err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
 		return nil, err

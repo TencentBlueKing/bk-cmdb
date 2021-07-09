@@ -567,25 +567,19 @@ func (t *genericTransfer) countByCond(ctx core.ContextParams, conds mapstr.MapSt
 	return cnt, nil
 }
 
-func (t *genericTransfer) validAppStatus(ctx core.ContextParams) (bool, errors.CCErrorCoder) {
+func (t *genericTransfer) validAppArchivedStatus(ctx core.ContextParams) (bool, errors.CCErrorCoder) {
 	appCond := condition.CreateCondition()
 	appCond.Field(common.BKAppIDField).Eq(t.bizID)
-	cond := util.SetQueryOwner(appCond.ToMapStr(), ctx.SupplierAccount)
+	appCond.Field(common.BKDataStatusField).Eq("disabled")
 
-	appInfo := make(mapstr.MapStr, 0)
-	err := t.dbProxy.Table(common.BKTableNameBaseApp).Find(cond).Fields(common.BKDataStatusField).One(ctx, &appInfo)
+	cnt, err := t.dbProxy.Table(common.BKTableNameBaseApp).Find(appCond.ToMapStr()).Count(ctx)
 	if err != nil {
 		blog.Errorf("get app info error. err:%s, table:%s,cond:%s, rid:%s",
-			err.Error(), common.BKTableNameBaseApp, cond, ctx.ReqID)
+			err.Error(), common.BKTableNameBaseApp, appCond, ctx.ReqID)
 		return false, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
-	appStatus, exist := appInfo.Get(common.BKDataStatusField)
-	if !exist {
-		return true, nil
-	}
-
-	if appStatus == "disabled" {
+	if cnt != 0 {
 		return false, nil
 	}
 
