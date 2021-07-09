@@ -45,10 +45,12 @@ func (s *Service) VerifyRegularExpress(c *gin.Context) {
 		return
 	}
 
-	var isValid bool
+	isValid := true
+	invalidReason := ""
 	_, err = regexp.Compile(requestBody.Regular)
-	if err == nil {
-		isValid = true
+	if err != nil {
+		isValid = false
+		invalidReason = err.Error()
 	}
 
 	c.JSON(http.StatusOK, metadata.Response{
@@ -58,6 +60,7 @@ func (s *Service) VerifyRegularExpress(c *gin.Context) {
 		},
 		Data: verifyRegularExpressDataResult{
 			isValid,
+			invalidReason,
 		},
 	})
 
@@ -124,7 +127,8 @@ func (s *Service) VerifyRegularContentBatch(c *gin.Context) {
 }
 
 type verifyRegularExpressDataResult struct {
-	IsValid bool `json:"is_valid"`
+	IsValid       bool   `json:"is_valid"`
+	InvalidReason string `json:"invalid_reason"`
 }
 
 type VerifyRegularContentBatchRequest struct {
