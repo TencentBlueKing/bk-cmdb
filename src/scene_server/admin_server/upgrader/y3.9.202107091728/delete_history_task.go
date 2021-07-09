@@ -1,4 +1,4 @@
-package y3_9_202107082004
+package y3_9_202107091728
 
 import (
 	"context"
@@ -25,10 +25,11 @@ func deleteTaskInvalidHistory(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		return err
 	}
 
-	var flags []string
+	flags := []string{"set_template_sync"}
 	for _, setID := range setIDs {
 		flags = append(flags, fmt.Sprintf("set_template_sync:%d", setID.SetID))
 	}
+
 	deleteCond := mapstr.New()
 	deleteCond.Set("flag", map[string]interface{}{common.BKDBNIN: flags})
 	err = db.Table(common.BKTableNameAPITask).Delete(ctx, deleteCond)
@@ -39,6 +40,10 @@ func deleteTaskInvalidHistory(ctx context.Context, db dal.RDB, conf *upgrader.Co
 	}
 
 	for _, flag := range flags {
+		if flag == "set_template_sync" {
+			continue
+		}
+
 		split := strings.Split(flag, ":")
 		if len(split) != 2 {
 			continue

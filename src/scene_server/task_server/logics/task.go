@@ -18,13 +18,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/robfig/cron"
-	"github.com/rs/xid"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+
+	"github.com/rs/xid"
 )
 
 // Create add task
@@ -106,6 +105,14 @@ func (lgc *Logics) ListLatestTask(ctx context.Context, name string,
 			"doc": map[string]interface{}{"$first": "$$ROOT"},
 		}},
 		{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},
+	}
+
+	if input == nil {
+		input = &metadata.ListAPITaskLatestRequest{}
+	}
+
+	if input.Condition == nil {
+		input.Condition = mapstr.New()
 	}
 
 	if len(name) != 0 {
@@ -299,76 +306,4 @@ func getStrTaskID(prefix string) string {
 		prefix = prefix + ":"
 	}
 	return "task:" + prefix + xid.New().String()
-}
-
-func (lgc *Logics) DeleteRedundancyTask(ctx context.Context) error {
-	input := &metadata.ListAPITaskLatestRequest{
-		Fields: []string{common.BKTaskIDField, common.BKStatusField},
-	}
-
-	infos, err := lgc.ListLatestTask(ctx, "", input)
-	if err != nil {
-		blog.Errorf("list latest task failed, err: %s, rid: %s", err.Error(), lgc.rid)
-		return err
-	}
-	if len(infos) == 0 {
-		return nil
-	}
-
-	var taskIDs []string
-	for _, item := range infos {
-		if !item.Status.IsSuccessful() {
-			taskIDs = append(taskIDs, item.TaskID)
-		}
-	}
-
-
-	cond := &metadata.DeleteOption{
-		Condition: map[string]interface{}{common.BKStatusField: 200},
-	}
-
-	if len(taskIDs) != 0{
-		cond.Condition = map[string]interface{}{
-			common.BKTaskIDField: map[string]interface{}{
-				common.BKDBNIN: taskIDs,
-			},
-		}
-	}
-
-
-	err = lgc.DeleteTask(ctx, cond)
-	if err != nil {
-		blog.Errorf("delete redundancy task failed, err: %s, rid: %s", err.Error(), lgc.rid)
-		return err
-	}
-
-	return nil
-}
-
-func (lgc *Logics) TimerDeleteHistoryTask(ctx context.Context) {
-	c := cron.New()
-
-	_,err := c.AddFunc("@weekly", func() {
-		isMaster := lgc.Engine.ServiceManageInterface.IsMaster()
-		if isMaster {
-			blog.Infof("begin delete redundancy task, time: %v", time.Now())
-			err := lgc.DeleteRedundancyTask(ctx)
-			if err != nil {
-				blog.Errorf("delete redundancy task failed, err: %v", err)
-				return
-			}
-		}
-		blog.Infof("delete redundancy task completed, time: %v", time.Now())
-	})
-
-	if err != nil {
-		blog.Errorf("new cron failed, please contact developer, err: %v", err)
-		return
-	}
-	c.Start()
-
-	select {
-	case <-ctx.Done():
-		return
-	}
 }

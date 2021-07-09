@@ -10,25 +10,25 @@
  * limitations under the License.
  */
 
-package y3_9_202107082004
+package y3_9_202107091728
 
 import (
-"context"
+	"context"
 
-"configcenter/src/common/blog"
-"configcenter/src/scene_server/admin_server/upgrader"
-"configcenter/src/storage/dal"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
 func init() {
 
-	upgrader.RegistUpgrader("y3.9.202107082004", upgrade)
+	upgrader.RegistUpgrader("y3.9.202107091728", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = deleteTaskInvalidHistory(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202107082004] remove task invalid history failed, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202107091728] remove task invalid history failed, error  %s", err.Error())
 		return err
 	}
 
