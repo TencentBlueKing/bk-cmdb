@@ -248,7 +248,8 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit, input *
 	}
 
 	if !isAppArchived {
-		return kit.CCError.CCErrorf(common.CCErrTransferHostToApp)
+		blog.Errorf("target business has been archived, bizID: %d, rid: %s", transfer.bizID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrTransferHostToArchivedApp)
 	}
 
 	// attributes in legacy business

@@ -560,14 +560,15 @@ func (t *genericTransfer) countByCond(kit *rest.Kit, conds mapstr.MapStr, tableN
 }
 
 func (t *genericTransfer) validAppArchivedStatus(kit *rest.Kit) (bool, errors.CCErrorCoder) {
-	appCond := condition.CreateCondition()
-	appCond.Field(common.BKAppIDField).Eq(t.bizID)
-	appCond.Field(common.BKDataStatusField).Eq("disabled")
+	cond := mapstr.MapStr{
+		common.BKAppIDField:      t.bizID,
+		common.BKDataStatusField: "disabled",
+	}
 
-	cnt, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(appCond.ToMapStr()).Count(kit.Ctx)
+	cnt, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(cond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("get app info error. err:%s, table:%s,cond:%s, rid:%s",
-			err.Error(), common.BKTableNameBaseApp, appCond, kit.Rid)
+			err.Error(), common.BKTableNameBaseApp, cond, kit.Rid)
 		return false, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
