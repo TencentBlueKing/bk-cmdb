@@ -131,7 +131,7 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 				ExpireAfterSeconds: dbChainTTLTime},
 		}
 
-		if cursorType == watch.ObjectBase {
+		if cursorType == watch.ObjectBase || cursorType == watch.MainlineInstance {
 			subResourceIndex := daltypes.Index{
 				Name: "index_sub_resource", Keys: map[string]int32{common.BKSubResourceField: 1}, Background: true,
 			}

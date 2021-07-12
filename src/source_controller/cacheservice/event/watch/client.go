@@ -148,7 +148,7 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 		}
 
 		if key.Collection() == common.BKTableNameBaseInst || key.Collection() == common.BKTableNameMainlineInstance {
-			filter["detail.bk_inst_id"] = node.InstanceID
+			filter["coll"] = key.ShardingCollection(node.SubResource, kit.SupplierAccount)
 		} else {
 			filter["coll"] = key.Collection()
 		}
@@ -218,7 +218,12 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 		detailMap = new(map[string]interface{})
 	}
 
-	if err := c.db.Table(key.Collection()).Find(filter).Fields(fields...).One(kit.Ctx, detailMap); err != nil {
+	collection := key.Collection()
+	if key.Collection() == common.BKTableNameBaseInst || key.Collection() == common.BKTableNameMainlineInstance {
+		collection = key.ShardingCollection(node.SubResource, kit.SupplierAccount)
+	}
+
+	if err := c.db.Table(collection).Find(filter).Fields(fields...).One(kit.Ctx, detailMap); err != nil {
 		if c.db.IsNotFoundError(err) {
 			return nil, false, nil
 		}
@@ -236,7 +241,7 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, opts *searchFollo
 	bool, []*watch.ChainNode, uint64, error) {
 
 	// if start cursor is no event cursor, start from the beginning
-	if opts.cursor == watch.NoEventCursor {
+	if opts.startCursor == watch.NoEventCursor {
 		node, exists, err := c.getEarliestEvent(kit, opts.key)
 		if err != nil {
 			blog.Errorf("get earliest event for key %s failed, err: %v", opts.key.Collection(), err)
@@ -254,20 +259,26 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, opts *searchFollo
 			return false, make([]*watch.ChainNode, 0), lastID, nil
 		}
 
-		opts.id = node.ID
-		nodes, err := c.searchFollowingEventChainNodesByID(kit, opts)
+		idOpts := &searchFollowingChainNodesOption{
+			id:          node.ID,
+			limit:       opts.limit,
+			types:       opts.types,
+			key:         opts.key,
+			subResource: opts.subResource,
+		}
+		nodes, err := c.searchFollowingEventChainNodesByID(kit, idOpts)
 		if err != nil {
 			return false, nil, 0, err
 		}
 
-		if c.isNodeWithEventType(node, opts.types) && c.isNodeWithSubResource(node, opts.subResource) {
+		if c.isNodeHitEventType(node, opts.types) && c.isNodeHitSubResource(node, opts.subResource) {
 			return true, append([]*watch.ChainNode{node}, nodes...), node.ID, nil
 		}
 		return true, nodes, node.ID, nil
 	}
 
 	filter := map[string]interface{}{
-		common.BKCursorField: opts.cursor,
+		common.BKCursorField: opts.startCursor,
 		common.BKClusterTimeField: map[string]interface{}{
 			common.BKDBGTE: metadata.Time{Time: time.Now().Add(-time.Duration(opts.key.TTLSeconds()) * time.Second).UTC()},
 		},
@@ -283,7 +294,7 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, opts *searchFollo
 
 		filter := map[string]interface{}{
 			"_id":                opts.key.Collection(),
-			common.BKCursorField: opts.cursor,
+			common.BKCursorField: opts.startCursor,
 		}
 
 		data := new(watch.LastChainNodeData)
@@ -635,7 +646,7 @@ type mapStrWithOid struct {
 
 type searchFollowingChainNodesOption struct {
 	id          uint64
-	cursor      string
+	startCursor string
 	limit       uint64
 	types       []watch.EventType
 	key         event.Key

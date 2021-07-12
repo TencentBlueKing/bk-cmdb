@@ -166,7 +166,8 @@ func genProcessServiceCategoryResource(_ ActionID, _ TypeID, att *meta.ResourceA
 }
 
 func genResourceWatch(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	if act == WatchCommonInstanceEvent {
+	switch act {
+	case WatchCommonInstanceEvent:
 		r := types.Resource{
 			System:    SystemIDCMDB,
 			Attribute: nil,
@@ -177,11 +178,9 @@ func genResourceWatch(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]
 		if att.InstanceID > 0 {
 			r.ID = strconv.FormatInt(att.InstanceID, 10)
 		}
-
 		return []types.Resource{r}, nil
-	}
 
-	if act == WatchMainlineInstanceEvent {
+	case WatchMainlineInstanceEvent:
 		r := types.Resource{
 			System:    SystemIDCMDB,
 			Attribute: nil,
@@ -192,11 +191,11 @@ func genResourceWatch(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]
 		if att.InstanceID > 0 {
 			r.ID = strconv.FormatInt(att.InstanceID, 10)
 		}
-
 		return []types.Resource{r}, nil
-	}
 
-	return make([]types.Resource, 0), nil
+	default:
+		return make([]types.Resource, 0), nil
+	}
 }
 
 func genServiceTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {

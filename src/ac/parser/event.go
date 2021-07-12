@@ -72,6 +72,7 @@ func (ps *parseStream) watch() *parseStream {
 			}
 
 			// use sub resource(corresponding to the bk_obj_id of the object) for authorization if it is set
+			// if sub resource is not set, verify authorization of the resource(which means all sub resources)
 			subResource := gjson.GetBytes(body, common.BKSubResourceField)
 			if subResource.Exists() {
 				model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: subResource.String()})

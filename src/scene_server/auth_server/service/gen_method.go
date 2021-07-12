@@ -118,11 +118,6 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 
 	case iam.SysModel, iam.SysInstanceModel, iam.SysModelEvent, iam.MainlineModelEvent:
 
-		// process and cloud area are temporarily excluded TODO: remove this restriction when they are available for user
-		// instance model is used as parent layer of instances, should exclude host model and mainline model as
-		// they use separate operations
-		excludedObjIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
-
 		// get mainline objects
 		mainlineOpt := &metadata.QueryCondition{
 			Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline},
@@ -145,20 +140,29 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 			}
 		}
 
-		if resourceType == iam.SysModelEvent || resourceType == iam.SysInstanceModel {
+		// process and cloud area are temporarily excluded TODO: remove this restriction when they are available for user
+		// instance model is used as parent layer of instances, should exclude host model and mainline model as
+		// they use separate operations
+		excludedObjIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
+
+		var extraCond map[string]interface{}
+		switch resourceType {
+		case iam.SysModelEvent, iam.SysInstanceModel:
 			excludedObjIDs = append(excludedObjIDs, common.BKInnerObjIDHost, common.BKInnerObjIDApp,
 				common.BKInnerObjIDSet, common.BKInnerObjIDModule)
 			excludedObjIDs = append(excludedObjIDs, mainlineObjIDs...)
-		}
-
-		var extraCond map[string]interface{}
-		if resourceType == iam.MainlineModelEvent {
+			extraCond = map[string]interface{}{
+				common.BKObjIDField: map[string]interface{}{
+					common.BKDBNIN: excludedObjIDs,
+				},
+			}
+		case iam.MainlineModelEvent:
 			extraCond = map[string]interface{}{
 				common.BKObjIDField: map[string]interface{}{
 					common.BKDBIN: mainlineObjIDs,
 				},
 			}
-		} else {
+		default:
 			extraCond = map[string]interface{}{
 				common.BKObjIDField: map[string]interface{}{
 					common.BKDBNIN: excludedObjIDs,
@@ -167,13 +171,16 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 		}
 
 		return types.ResourcePullMethod{
-			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter, page types.Page) (*types.ListInstanceResult, error) {
+			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+				page types.Page) (*types.ListInstanceResult, error) {
 				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
 			},
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
+			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
+				[]map[string]interface{}, error) {
 				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
 			},
-			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
+			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
+				page types.Page) (result *types.ListInstanceResult, e error) {
 				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
 			},
 		}, nil
