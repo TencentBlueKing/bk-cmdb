@@ -425,6 +425,9 @@
             height: 32px;
             width: 260px;
             margin: 0 4px 0 0;
+            > [class^=cmdb-form-] {
+              width: 100%;
+            }
             &.bool {
                 width: 42px;
                 height: 24px;
