@@ -386,6 +386,13 @@
       'importInst.active'() {
         this.importInst.error = null
         this.importInst.showTips = false
+      },
+      '$route.query'(query, prev) {
+        // 高级筛选自动打开面板，首次进入时无_t参数
+        // eslint-disable-next-line no-underscore-dangle
+        if (!prev._t && query.adv) {
+          FilterForm.show()
+        }
       }
     },
     async created() {

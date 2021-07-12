@@ -17,6 +17,7 @@
         <i class="bk-icon icon-search"></i>
         {{$t('搜索')}}
       </bk-button>
+      <bk-link theme="primary" class="advanced-link" @click="handleClickAdvancedSearch">高级筛选</bk-link>
     </div>
   </div>
 </template>
@@ -187,6 +188,13 @@
         } catch (error) {
           console.error(true)
         }
+      },
+      handleClickAdvancedSearch() {
+        this.$routerActions.redirect({
+          name: MENU_RESOURCE_HOST,
+          query: { adv: 1 },
+          history: false
+        })
       }
     }
   }
@@ -253,5 +261,11 @@
         z-index: 1;
         cursor: text;
         @include ellipsis;
+    }
+    .advanced-link {
+      margin-left: 8px;
+      /deep/ .bk-link-text {
+        font-size: 12px;
+      }
     }
 </style>
