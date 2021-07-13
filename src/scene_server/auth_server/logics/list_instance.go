@@ -229,7 +229,7 @@ func (lgc *Logics) getModelObjectIDWithIamParentID(kit *rest.Kit, parentID strin
 	if len(result.Data.Info) != 1 {
 		return "", fmt.Errorf("got multiple model with id: %s", parentID)
 	}
-	return result.Data.Info[0].Spec.ObjectID, nil
+	return result.Data.Info[0].ObjectID, nil
 }
 
 // ListHostInstance list host instances

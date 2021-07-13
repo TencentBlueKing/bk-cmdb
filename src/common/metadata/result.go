@@ -318,16 +318,21 @@ type ReadModelAttrResult struct {
 	Data     QueryModelAttributeDataResult `json:"data"`
 }
 
-// ReadModelClassifitionResult  read model classifition api http response return result struct
-type ReadModelClassifitionResult struct {
+// ReadModelClassificationResult  read model classification api http response return result struct
+type ReadModelClassificationResult struct {
 	BaseResp `json:",inline"`
 	Data     QueryModelClassificationDataResult `json:"data"`
 }
 
-// ReadModelResult  read model classifition api http response return result struct
-type ReadModelResult struct {
+// ReadModelWithAttributeResult  read model with its attributes api http response return result struct
+type ReadModelWithAttributeResult struct {
 	BaseResp `json:",inline"`
 	Data     QueryModelWithAttributeDataResult `json:"data"`
+}
+
+type ReadModelResult struct {
+	BaseResp `json:",inline"`
+	Data     QueryModelDataResult `json:"data"`
 }
 
 type ReadModelAttributeGroupResult struct {

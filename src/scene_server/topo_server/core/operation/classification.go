@@ -189,8 +189,8 @@ func (c *classification) FindClassificationWithObjects(kit *rest.Kit, cond condi
 	objMap := make(map[string][]metadata.Object)
 	objIDs := make([]string, 0)
 	for _, info := range queryObjectResp.Data.Info {
-		objIDs = append(objIDs, info.Spec.ObjectID)
-		objMap[info.Spec.ObjCls] = append(objMap[info.Spec.ObjCls], info.Spec)
+		objIDs = append(objIDs, info.ObjectID)
+		objMap[info.ObjCls] = append(objMap[info.ObjCls], info)
 	}
 
 	datas := make([]metadata.ClassificationWithObject, 0)

@@ -77,7 +77,7 @@ func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
 
 	models := []metadata.Object{}
 	for index := range rsp.Data.Info {
-		models = append(models, rsp.Data.Info[index].Spec)
+		models = append(models, rsp.Data.Info[index])
 	}
 	return models, nil
 

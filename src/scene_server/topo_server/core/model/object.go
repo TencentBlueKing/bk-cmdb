@@ -182,12 +182,7 @@ func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
 		return nil, o.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	models := make([]meta.Object, 0)
-	for _, info := range rsp.Data.Info {
-		models = append(models, info.Spec)
-	}
-
-	return models, nil
+	return rsp.Data.Info, nil
 }
 
 // GetMainlineParentObject get mainline relationship model

@@ -120,7 +120,7 @@ func (a *audit) getObjNameByObjID(kit *rest.Kit, objID string) (string, error) {
 		return "", kit.CCError.CCError(common.CCErrorModelNotFound)
 	}
 
-	return resp.Data.Info[0].Spec.ObjectName, nil
+	return resp.Data.Info[0].ObjectName, nil
 }
 
 // getDefaultAppID get default businessID under designated supplier account.

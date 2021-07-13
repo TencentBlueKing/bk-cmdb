@@ -90,11 +90,7 @@ func (ps *parseStream) searchModels(cond mapstr.MapStr) ([]metadata.Object, erro
 		return nil, fmt.Errorf("model [%+v] not found", cond)
 	}
 
-	models := []metadata.Object{}
-	for _, info := range model.Data.Info {
-		models = append(models, info.Spec)
-	}
-	return models, nil
+	return model.Data.Info, nil
 }
 
 func (ps *parseStream) getModelAttribute(cond mapstr.MapStr) ([]metadata.Attribute, error) {

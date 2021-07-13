@@ -582,8 +582,8 @@ func (lgc *Logics) getObjIDsAndShowFields(pHeader http.Header, objectCond map[st
 	objIDs := make([]string, 0)
 	objIDMapobjName := map[string]objShowField{}
 	for _, obj := range objResult.Data.Info {
-		objIDs = append(objIDs, obj.Spec.ObjectID)
-		objIDMapobjName[obj.Spec.ObjectID] = objShowField{obj.Spec.ObjectName}
+		objIDs = append(objIDs, obj.ObjectID)
+		objIDMapobjName[obj.ObjectID] = objShowField{obj.ObjectName}
 	}
 
 	return objIDs, objIDMapobjName, nil

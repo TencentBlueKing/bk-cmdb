@@ -48,7 +48,7 @@ func (h *objectAuditLog) GenerateAuditLog(parameter *generateAuditCommonParamete
 			return nil, kit.CCError.CCError(common.CCErrorModelNotFound)
 		}
 
-		data = &rsp.Data.Info[0].Spec
+		data = &rsp.Data.Info[0]
 	}
 
 	return &metadata.AuditLog{

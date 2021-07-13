@@ -726,11 +726,7 @@ func (o *object) FindObject(kit *rest.Kit, cond condition.Condition) ([]model.Ob
 		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	models := make([]metadata.Object, 0)
-	for index := range rsp.Data.Info {
-		models = append(models, rsp.Data.Info[index].Spec)
-	}
-	return model.CreateObject(kit, o.clientSet, models), nil
+	return model.CreateObject(kit, o.clientSet, rsp.Data.Info), nil
 }
 
 func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error {

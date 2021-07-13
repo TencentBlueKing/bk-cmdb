@@ -71,7 +71,7 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.Att
 		for _, attr := range res.Data.Info {
 			objIDs = append(objIDs, attr.ObjectID)
 		}
-		modelRes, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{
+		modelRes, err := lgc.CoreAPI.CoreService().Model().ReadModelWithAttribute(kit.Ctx, kit.Header, &metadata.QueryCondition{
 			Fields: []string{common.BKObjIDField, common.BKObjNameField},
 			Page:   metadata.BasePage{Limit: common.BKNoLimit},
 			Condition: map[string]interface{}{

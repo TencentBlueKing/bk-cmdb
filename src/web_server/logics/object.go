@@ -233,7 +233,7 @@ func (lgc *Logics) ProcessObjectIDArray(ctx context.Context, header http.Header,
 	if objects.Data.Count < int64(len(objArray)) {
 		var temp []string
 		for _, object := range objects.Data.Info {
-			temp = append(temp, object.Spec.ObjectID)
+			temp = append(temp, object.ObjectID)
 		}
 		nonexistentObjects = util.StrArrDiff(objArray, temp)
 		objArray = temp
