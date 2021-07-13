@@ -436,7 +436,8 @@ func toDBUniqueIdx(idx objectUnique, attrIDMap map[int64]Attribute) (types.Index
 			attr.PropertyType = common.FieldTypeInt
 		}
 		if idx.ObjID == common.BKInnerObjIDHost &&
-			(attr.PropertyID == common.BKHostInnerIPField || attr.PropertyID == common.BKHostInnerIPField) {
+			(attr.PropertyID == common.BKHostInnerIPField || attr.PropertyID == common.BKHostOuterIPField ||
+				attr.PropertyID == common.BKOperatorField || attr.PropertyID == common.BKBakOperatorField) {
 			// NOTEICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未innerIP,OuterIP 特殊的类型
 			attr.PropertyType = common.FieldTypeList
 		}
@@ -484,20 +485,10 @@ type uniqueKey struct {
 
 func convFieldTypeToDBType(typ string) string {
 	switch typ {
-	case FieldTypeSingleChar, FieldTypeLongChar, FieldTypeEnum, FieldTypeTimeZone, FieldTypeOrganization:
+	case FieldTypeSingleChar, FieldTypeEnum, FieldTypeDate, FieldTypeList:
 		return "string"
 	case FieldTypeInt, FieldTypeFloat:
 		return "number"
-	case FieldTypeDate, FieldTypeTime:
-		return "date"
-	case FieldTypeBool:
-		return "bool"
-	case "foreignkey":
-		// 用于运区域
-		return "number"
-	case FieldTypeList:
-		return "array"
-
 	}
 
 	// other type not support
