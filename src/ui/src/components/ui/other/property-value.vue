@@ -66,7 +66,8 @@
           return ['default', 'cell'].includes(value)
         }
       },
-      formatCellValue: Function
+      formatCellValue: Function,
+      multiple: Boolean
     },
     data() {
       return {
@@ -102,6 +103,16 @@
     methods: {
       async setDisplayValue(value) {
         if (this.isUser || this.isTable) return
+        let displayQueue
+        if (this.multiple && Array.isArray(value)) {
+          displayQueue = value.map(subValue => this.getDisplayValue(subValue))
+        } else {
+          displayQueue = [this.getDisplayValue(value)]
+        }
+        const result = await Promise.all(displayQueue)
+        this.displayValue = result.join(',')
+      },
+      async getDisplayValue(value) {
         let displayValue
         const isPropertyObject = Object.prototype.toString.call(this.property) === '[object Object]'
         const type = isPropertyObject ? this.property.bk_property_type : this.property
@@ -112,7 +123,7 @@
           displayValue = this.$options.filters.formatter(value, this.property, this.options)
         }
         // eslint-disable-next-line no-nested-ternary
-        this.displayValue = (this.showUnit && unit && displayValue !== '--')
+        return (this.showUnit && unit && displayValue !== '--')
           ? `${displayValue}${unit}`
           : String(displayValue).length
             ? displayValue

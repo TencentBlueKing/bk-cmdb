@@ -389,7 +389,7 @@
           const propertyId = property.bk_property_id
           if (Array.isArray(modelData)) {
             const value = modelData.map(item => this.$tools.getPropertyCopyValue(item[propertyId], property))
-            return value.join(', ')
+            return value.join(',')
           }
           return this.$tools.getPropertyCopyValue(modelData[propertyId], property)
         })

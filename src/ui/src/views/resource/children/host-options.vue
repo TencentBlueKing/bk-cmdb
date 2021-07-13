@@ -548,12 +548,12 @@
           }
           if (property.bk_property_type === 'topology') {
             // eslint-disable-next-line no-underscore-dangle
-            return data.__bk_host_topology__.join(', ')
+            return data.__bk_host_topology__.join(',')
           }
           const propertyId = property.bk_property_id
           if (Array.isArray(modelData)) {
             const value = modelData.map(item => this.$tools.getPropertyCopyValue(item[propertyId], property))
-            return value.join(', ')
+            return value.join(',')
           }
           return this.$tools.getPropertyCopyValue(modelData[propertyId], property)
         })
