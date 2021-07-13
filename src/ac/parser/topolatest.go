@@ -942,13 +942,53 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		var modelType = meta.ModelInstance
+		isMainline, err := ps.isMainlineModel(objID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		if isMainline {
+			// special logic for mainline object's instance authorization.
+			modelType = meta.MainlineInstance
+		}
+
+		instIDs := make([]int64, 0)
+		val, err := ps.RequestCtx.getValueFromBody("delete.inst_ids")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		val.ForEach(
+			func(key, value gjson.Result) bool {
+				instIDs = append(instIDs, value.Int())
+				return true
+			})
+
+		for _, instID := range instIDs {
+			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
-					Action: meta.SkipAction,
+					Type:       modelType,
+					Action:     meta.Delete,
+					InstanceID: instID,
 				},
-			},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+			})
 		}
 		return ps
 	}
