@@ -64,7 +64,7 @@ func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName str
 		return "", "", defErr.Errorf(common.CCErrCollectObjIDNotNetDevice)
 	}
 
-	return objResult.Data.Info[0].Spec.ObjectID, objResult.Data.Info[0].Spec.ObjectName, nil
+	return objResult.Data.Info[0].ObjectID, objResult.Data.Info[0].ObjectName, nil
 }
 
 // by checking if bk_property_id and bk_property_name function parameter are valid net device object property or not

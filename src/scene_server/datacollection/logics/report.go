@@ -286,12 +286,8 @@ func (lgc *Logics) findObject(header http.Header, filter mapstr.MapStr) ([]metad
 		blog.Errorf("[NetDevice][findObject] by %+v failed, err: %v, rid: %s", filter, resp, rid)
 		return nil, err
 	}
-	models := make([]metadata.Object, 0)
-	for _, info := range resp.Data.Info {
-		models = append(models, info.Spec)
-	}
 
-	return models, nil
+	return resp.Data.Info, nil
 }
 
 func (lgc *Logics) findInstMap(header http.Header, objectID string, query *metadata.QueryCondition) (map[int64]mapstr.MapStr, error) {

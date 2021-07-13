@@ -106,8 +106,8 @@ func (m *model) DeleteModelClassification(ctx context.Context, h http.Header, in
 	return
 }
 
-func (m *model) ReadModelClassification(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelClassifitionResult, err error) {
-	resp = new(metadata.ReadModelClassifitionResult)
+func (m *model) ReadModelClassification(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelClassificationResult, err error) {
+	resp = new(metadata.ReadModelClassificationResult)
 	subPath := "/read/model/classification"
 
 	err = m.client.Post().
@@ -189,9 +189,9 @@ func (m *model) DeleteModelCascade(ctx context.Context, h http.Header, modelID i
 	return
 }
 
-func (m *model) ReadModel(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelResult, err error) {
-	resp = new(metadata.ReadModelResult)
-	subPath := "/read/model"
+func (m *model) ReadModelWithAttribute(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelWithAttributeResult, err error) {
+	resp = new(metadata.ReadModelWithAttributeResult)
+	subPath := "/read/model/with/attribute"
 
 	err = m.client.Post().
 		WithContext(ctx).
@@ -201,6 +201,20 @@ func (m *model) ReadModel(ctx context.Context, h http.Header, input *metadata.Qu
 		Do().
 		Into(resp)
 	return
+}
+
+func (m *model) ReadModel(ctx context.Context, h http.Header, input *metadata.QueryCondition) (*metadata.ReadModelResult, error) {
+	resp := new(metadata.ReadModelResult)
+	subPath := "/read/model"
+
+	err := m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return resp, err
 }
 
 func (m *model) CreateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelAttributes) (resp *metadata.CreatedManyOptionResult, err error) {

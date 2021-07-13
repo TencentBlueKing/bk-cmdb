@@ -204,7 +204,7 @@ func queryClassification(t *testing.T, client *httpclient.HttpClient, classifica
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
-	clsResult := metadata.ReadModelClassifitionResult{}
+	clsResult := metadata.ReadModelClassificationResult{}
 	err = json.Unmarshal(dataResult, &clsResult)
 	require.NoError(t, err)
 	require.Equal(t, clsResult.Data.Count, int64(len(clsResult.Data.Info)))

@@ -419,7 +419,7 @@ func (lgc *Logics) getObjIDMapObjNameFromNetDevice(
 
 	objIDMapObjName := map[string]string{}
 	for _, data := range objResult.Data.Info {
-		objIDMapObjName[data.Spec.ObjectID] = data.Spec.ObjectName
+		objIDMapObjName[data.ObjectID] = data.ObjectName
 	}
 
 	return objIDMapObjName, nil
@@ -508,7 +508,7 @@ func (lgc *Logics) getNetDeviceObjIDsByCond(pHeader http.Header, objCond map[str
 		}
 
 		for _, data := range objResult.Data.Info {
-			objIDs = append(objIDs, data.Spec.ObjectID)
+			objIDs = append(objIDs, data.ObjectID)
 		}
 	}
 

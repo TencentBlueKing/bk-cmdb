@@ -50,12 +50,7 @@ func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header htt
 		return nil, fmt.Errorf("get model by id: %+v failed, get multiple model", objectIDs)
 	}
 
-	objects := make([]metadata.Object, 0)
-	for _, item := range resp.Data.Info {
-		objects = append(objects, item.Spec)
-	}
-
-	return objects, nil
+	return resp.Data.Info, nil
 }
 
 // MakeResourcesByObjects make object resource with businessID and objects

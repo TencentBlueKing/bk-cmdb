@@ -84,7 +84,7 @@ var _ = Describe("Transaction Test", func() {
 			attResult, err := clientSet.CoreService().Model().ReadModel(ctx, test.GetHeader(), &query)
 			Expect(err).Should(BeNil())
 			Expect(attResult.Result).Should(BeTrue())
-			Expect(attResult.Data.Info[0].Spec.ObjectID).Should(Equal(objectID))
+			Expect(attResult.Data.Info[0].ObjectID).Should(Equal(objectID))
 
 			// use commit and abort transaction to test transaction.
 			ops := metadata.TxnOption{

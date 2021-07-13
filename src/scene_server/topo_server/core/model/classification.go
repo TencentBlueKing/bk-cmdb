@@ -79,7 +79,7 @@ func (cli *classification) GetObjects() ([]Object, error) {
 	rstItems := make([]Object, 0)
 	for _, item := range rsp.Data.Info {
 		tmpObj := &object{
-			obj:   item.Spec,
+			obj:   item,
 			isNew: false,
 		}
 		rstItems = append(rstItems, tmpObj)
