@@ -9,28 +9,30 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package y3_9_202107012030
+
+package y3_9_202107142030
 
 import (
 	"context"
 
-	"configcenter/src/common/blog"
+	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func init() {
-	upgrader.RegistUpgrader("y3.9.202107012030", upgrade)
-}
-
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.9.202107012030")
-
-	// 更新 procBindInfo
-	if err = updateProcBindInfo(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.8.202107012030] change process bind attr, error  %s", err.Error())
-		return err
+// 更新绑定进程port提示信息
+func updateProcBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	bindIPAttrFilter := map[string]interface{}{
+		common.BKObjIDField:      common.BKInnerObjIDProc,
+		common.BKPropertyIDField: "bind_info",
+		"option.bk_property_id":  "port",
 	}
 
-	return nil
+	nowTime := metadata.Now()
+	doc := map[string]interface{}{
+		common.LastTimeField:   &nowTime,
+		"option.$.placeholder": "Single port: 8080</br>Range port: 8080-9090",
+	}
+	return db.Table(common.BKTableNameObjAttDes).Update(ctx, bindIPAttrFilter, doc)
 }
