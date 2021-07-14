@@ -102,7 +102,7 @@
         const rules = this.$tools.getValidateRules(property)
         if (property.bk_property_id === 'bk_inst_name') {
           rules.businessTopoInstNames = true
-          rules.length = 32
+          rules.length = 256
           rules.singlechar = false
         }
         return rules

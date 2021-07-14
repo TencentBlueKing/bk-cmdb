@@ -146,11 +146,10 @@
         return this.type === 'source'
       },
       instances() {
-        return this.allInstances.filter((instance) => {
-          const sameAsstId = instance.bk_asst_id === this.associationType.bk_asst_id
-          const sameModelId = this.id === instance[this.isSource ? 'bk_asst_obj_id' : 'bk_obj_id']
-          return sameAsstId && sameModelId
-        })
+        const objAsstId = this.isSource
+          ? `host_${this.associationType.bk_asst_id}_${this.id}`
+          : `${this.id}_${this.associationType.bk_asst_id}_host`
+        return this.allInstances.filter(instance => instance.bk_obj_asst_id === objAsstId)
       },
       instanceIds() {
         return this.instances.map(instance => (this.isSource ? instance.bk_asst_inst_id : instance.bk_inst_id))
@@ -352,9 +351,15 @@
       hideTips() {
         this.confirm.instance && this.confirm.instance.hide()
       },
+      getRowInstId(item) {
+        const specialModel = ['host', 'biz', 'set', 'module']
+        const mapping = {}
+        specialModel.forEach(key => (mapping[key] = `bk_${key}_id`))
+        return item[mapping[this.id] || 'bk_inst_id']
+      },
       showTips(event, item) {
         this.confirm.item = item
-        this.confirm.id = item.bk_inst_id
+        this.confirm.id = this.getRowInstId(item)
         this.confirm.instance = this.$bkPopover(event.target, {
           content: this.$refs.confirmTips,
           theme: 'light',
