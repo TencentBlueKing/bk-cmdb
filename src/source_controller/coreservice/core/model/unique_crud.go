@@ -97,7 +97,7 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		if err := mongodb.Table(objInstTable).CreateIndex(context.Background(), dbIndex); err != nil {
 			blog.ErrorJSON("[CreateObjectUnique] create unique index for %s with %s err: %s, index: %s, rid: %s",
 				objID, inputParam, err, dbIndex, kit.Rid)
-			return 0, kit.CCError.CCError(common.CCErrCoreServiceCreateDBUniqueIndex)
+			return 0, kit.CCError.CCErrorf(common.CCErrCoreServiceCreateDBUniqueIndexDuplicateValue, mongodb.GetDuplicateValue(properties[0].PropertyID, err))
 		}
 	}
 
