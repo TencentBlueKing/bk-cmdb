@@ -12,6 +12,7 @@
       <component class="content-value"
         size="small"
         font-size="small"
+        v-bind="getEvents(column)"
         v-validate="getRules(rowProps, column)"
         :data-vv-name="column.bk_property_id"
         :data-vv-as="column.bk_property_name"
@@ -125,6 +126,12 @@
       getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
+      },
+      getEvents(property) {
+        if (property.bk_property_id === 'ip') {
+          return {}
+        }
+        return this.$tools.getValidateEvents(property)
       },
       getRules(rowProps, property) {
         const rules = this.$tools.getValidateRules(property)
