@@ -191,6 +191,10 @@ func (s *Service) searchBusinessTopoNodeHostAndServiceInstancesCount(ctx *rest.C
 		return nil, err
 	}
 
+	if len(input.Condition) > common.BKParamMaxLength {
+		return nil, ctx.Kit.CCError.Error(common.CCErrorParamExceedMaxLength)
+	}
+
 	topoInstHostCountRst, err := s.Core.AssociationOperation().SearchTopoNodeHostAndServiceInstCount(ctx.Kit, id, input)
 	if err != nil {
 		return nil, err

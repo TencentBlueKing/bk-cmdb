@@ -420,10 +420,10 @@ type TopoInstRst struct {
 }
 
 type TopoInstNodeHostAndServiceInstCount struct {
-	ObjID string `json:"bk_obj_id"`
-	InstID int64 `json:"bk_inst_id"`
-	HostCount int64 `json:"host_count"`
-	ServiceInstanceCount int64  `json:"service_instance_count,omitempty"`
+	ObjID                string `json:"bk_obj_id"`
+	InstID               int64  `json:"bk_inst_id"`
+	HostCount            int64  `json:"host_count"`
+	ServiceInstanceCount int64  `json:"service_instance_count"`
 }
 
 type SearchBizTopoNodeHostAndServiceInstCountOption struct {
@@ -431,8 +431,8 @@ type SearchBizTopoNodeHostAndServiceInstCountOption struct {
 }
 
 type Condition struct {
-	ObjID string `json:"bk_obj_id"`
-	InstID int64 `json:"bk_inst_id"`
+	ObjID  string `json:"bk_obj_id"`
+	InstID int64  `json:"bk_inst_id"`
 }
 
 type TopoInstRstVisitor func(tir *TopoInstRst)
