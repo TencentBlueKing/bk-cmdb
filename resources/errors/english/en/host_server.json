@@ -61,6 +61,7 @@
 	"1110060": "set ID [%d] not belong to business ID [%d]",
 	"1110061": "module ID [%d] not belong to business ID [%d]",
 	"1110062": "module ID [%d] not belong to set ID [%d]",
+	"1110063": "Failed to transfer host to biz, biz has been archived",
 
 	"1116011": "Fail to delete cloud sync task",
 	"1116012": "Fail to update cloud sync task",
