@@ -559,7 +559,7 @@ func (t *genericTransfer) countByCond(kit *rest.Kit, conds mapstr.MapStr, tableN
 	return cnt, nil
 }
 
-func (t *genericTransfer) validAppArchivedStatus(kit *rest.Kit) (bool, errors.CCErrorCoder) {
+func (t *genericTransfer) isAppArchived(kit *rest.Kit) (bool, errors.CCErrorCoder) {
 	cond := mapstr.MapStr{
 		common.BKAppIDField:      t.bizID,
 		common.BKDataStatusField: "disabled",
@@ -573,8 +573,8 @@ func (t *genericTransfer) validAppArchivedStatus(kit *rest.Kit) (bool, errors.CC
 	}
 
 	if cnt != 0 {
-		return false, nil
+		return true, nil
 	}
 
-	return true, nil
+	return false, nil
 }

@@ -231,23 +231,25 @@ func (manager *TransferManager) RemoveFromModule(kit *rest.Kit, input *metadata.
 }
 
 // TransferHostCrossBusiness Host cross-business transfer
-func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit, input *metadata.TransferHostsCrossBusinessRequest) error {
+func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit,
+	input *metadata.TransferHostsCrossBusinessRequest) error {
 	transfer := manager.NewHostModuleTransfer(kit, input.DstApplicationID, input.DstModuleIDArr, false)
 	transfer.SetCrossBusiness(kit, input.SrcApplicationID)
 	var err error
 	err = transfer.ValidParameter(kit)
 	if err != nil {
-		blog.ErrorJSON("TransferToAnotherBusiness failed, ValidParameter failed, err:%s, input:%s, rid:%s", err.Error(), input, kit.Rid)
+		blog.ErrorJSON("TransferToAnotherBusiness failed, ValidParameter failed, err:%s, input:%s, rid:%s",
+			err.Error(), input, kit.Rid)
 		return err
 	}
 
-	isAppArchived, err := transfer.validAppArchivedStatus(kit)
+	isAppArchived, err := transfer.isAppArchived(kit)
 	if err != nil {
 		blog.Errorf("valid app status failed, err:%s, input:%s, rid:%s", err.Error(), input, kit.Rid)
 		return err
 	}
 
-	if !isAppArchived {
+	if isAppArchived {
 		blog.Errorf("target business has been archived, bizID: %d, rid: %s", transfer.bizID, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrTransferHostToArchivedApp)
 	}
@@ -255,27 +257,33 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit, input *
 	// attributes in legacy business
 	legacyAttributes, err := transfer.dependent.SelectObjectAttWithParams(kit, common.BKInnerObjIDHost, input.SrcApplicationID)
 	if err != nil {
-		blog.ErrorJSON("TransferToAnotherBusiness failed, SelectObjectAttWithParams failed, bizID: %s, err:%s, rid:%s", input.SrcApplicationID, err.Error(), kit.Rid)
+		blog.ErrorJSON("select objectAtt with params failed, bizID: %s, err:%s, rid:%s", input.SrcApplicationID,
+			err.Error(), kit.Rid)
 		return err
 	}
 
 	err = transfer.Transfer(kit, input.HostIDArr)
 	if err != nil {
-		blog.ErrorJSON("transfer to another business failed, transfer module host relation error. err: %s, input: %s, rid: %s", err.Error(), input, kit.Rid)
+		blog.ErrorJSON("transfer to another business failed, transfer module host relation error. "+
+			"err: %s, input: %s, rid: %s", err.Error(), input, kit.Rid)
 		return err
 	}
 
 	// reset private field in legacy business
 	if err := manager.clearLegacyPrivateField(kit, legacyAttributes, input.HostIDArr...); err != nil {
-		blog.ErrorJSON("TransferToAnotherBusiness failed, clearLegacyPrivateField failed, hostID:%s, attributes:%s, err:%s, rid:%s", input.HostIDArr, legacyAttributes, err.Error(), kit.Rid)
+		blog.ErrorJSON("TransferToAnotherBusiness failed, clearLegacyPrivateField failed, "+
+			"hostID:%s, attributes:%s, err:%s, rid:%s", input.HostIDArr, legacyAttributes, err.Error(), kit.Rid)
 		// we should go on setting default value for new private field
 	}
 
 	updateHostOption := metadata.UpdateHostByHostApplyRuleOption{
 		HostIDs: input.HostIDArr,
 	}
-	if hostApplyResult, err := manager.hostApplyDependence.RunHostApplyOnHosts(kit, input.DstApplicationID, updateHostOption); err != nil {
-		blog.Warnf("TransferToAnotherBusiness success, but RunHostApplyOnHosts failed, bizID: %d, option: %+v, hostApplyResult: %+v, err: %+v, rid: %s", input.DstApplicationID, updateHostOption, hostApplyResult, err, kit.Rid)
+	if hostApplyResult, err := manager.hostApplyDependence.RunHostApplyOnHosts(kit,
+		input.DstApplicationID, updateHostOption); err != nil {
+		blog.Warnf("TransferToAnotherBusiness success, but RunHostApplyOnHosts failed, "+
+			"bizID: %d, option: %+v, hostApplyResult: %+v, err: %+v, rid: %s",
+			input.DstApplicationID, updateHostOption, hostApplyResult, err, kit.Rid)
 	}
 
 	return nil
