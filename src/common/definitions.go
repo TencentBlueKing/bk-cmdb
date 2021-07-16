@@ -1185,7 +1185,7 @@ const (
 
 const (
 	NameFieldMaxLength         = 256
-	MainlineNameFieldMaxLength = 32
+	MainlineNameFieldMaxLength = 256
 
 	// 用于表示还未设置服务模板的情况，比如没有绑定服务模板
 	ServiceTemplateIDNotSet = 0
