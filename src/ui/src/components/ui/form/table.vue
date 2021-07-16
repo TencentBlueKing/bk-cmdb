@@ -17,6 +17,7 @@
           <component class="form-component"
             v-else
             v-validate="$tools.getValidateRules(property)"
+            v-bind="$tools.getValidateEvents(property)"
             size="small"
             :data-vv-name="property.bk_property_id"
             :data-vv-as="property.bk_property_name"
