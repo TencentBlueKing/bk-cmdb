@@ -567,7 +567,7 @@ func (t *genericTransfer) countByCond(ctx core.ContextParams, conds mapstr.MapSt
 	return cnt, nil
 }
 
-func (t *genericTransfer) validAppArchivedStatus(ctx core.ContextParams) (bool, errors.CCErrorCoder) {
+func (t *genericTransfer) isAppArchived(ctx core.ContextParams) (bool, errors.CCErrorCoder) {
 	cond := mapstr.MapStr{
 		common.BKAppIDField:      t.bizID,
 		common.BKDataStatusField: "disabled",
@@ -581,8 +581,8 @@ func (t *genericTransfer) validAppArchivedStatus(ctx core.ContextParams) (bool, 
 	}
 
 	if cnt != 0 {
-		return false, nil
+		return true, nil
 	}
 
-	return true, nil
+	return false, nil
 }
