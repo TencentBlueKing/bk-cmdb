@@ -47,6 +47,16 @@ type flowOptions struct {
 	EventStruct interface{}
 }
 
+// oidCollKey key for oid to detail map. Since oid can duplicate in different collections, we need oid & coll for unique
+type oidCollKey struct {
+	oid  string
+	coll string
+}
+
+// getDeleteEventDetailsFunc function type for getting delete event details from db del archive
+type getDeleteEventDetailsFunc func(es []*types.Event, db dal.DB, metrics *event.EventMetrics) (map[oidCollKey][]byte,
+	bool, error)
+
 func newFlow(ctx context.Context, opts flowOptions, getDeleteEventDetails getDeleteEventDetailsFunc) error {
 	flow := Flow{
 		flowOptions:           opts,
@@ -63,10 +73,6 @@ type Flow struct {
 	tokenHandler          *flowTokenHandler
 	getDeleteEventDetails getDeleteEventDetailsFunc
 }
-
-// getDeleteEventDetailsFunc function type for getting delete event details from db del archive
-type getDeleteEventDetailsFunc func(es []*types.Event, db dal.DB, metrics *event.EventMetrics) (map[string][]byte,
-	bool, error)
 
 const batchSize = 200
 
@@ -220,7 +226,7 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 }
 
 // parseEvent parse event into db chain nodes to store in db and details to store in redis
-func parseEvent(key event.Key, e *types.Event, oidDetailMap map[string][]byte, id uint64, rid string) (
+func parseEvent(key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byte, id uint64, rid string) (
 	*watch.ChainNode, []byte, bool, error) {
 
 	switch e.OperationType {
@@ -233,7 +239,7 @@ func parseEvent(key event.Key, e *types.Event, oidDetailMap map[string][]byte, i
 			return nil, nil, false, nil
 		}
 	case types.Delete:
-		doc, exist := oidDetailMap[e.Oid+e.Collection]
+		doc, exist := oidDetailMap[oidCollKey{oid: e.Oid, coll: e.Collection}]
 		if !exist {
 			blog.Errorf("run flow, received %s event, but delete doc[oid: %s] detail not exists, rid: %s",
 				key.Collection(), e.Oid, rid)
@@ -447,8 +453,10 @@ func isConflictChainNode(chainNode *watch.ChainNode, err error) bool {
 }
 
 // getDeleteEventDetails get delete events' oid+collection to related detail map from cmdb
-func getDeleteEventDetails(es []*types.Event, db dal.DB, metrics *event.EventMetrics) (map[string][]byte, bool, error) {
-	oidDetailMap := make(map[string][]byte)
+func getDeleteEventDetails(es []*types.Event, db dal.DB, metrics *event.EventMetrics) (map[oidCollKey][]byte, bool,
+	error) {
+
+	oidDetailMap := make(map[oidCollKey][]byte)
 	if len(es) == 0 {
 		return oidDetailMap, false, nil
 	}
@@ -486,7 +494,7 @@ func getDeleteEventDetails(es []*types.Event, db dal.DB, metrics *event.EventMet
 					collection, doc.Lookup("oid").String(), err)
 				return nil, false, err
 			}
-			oidDetailMap[doc.Lookup("oid").String()+collection] = byt
+			oidDetailMap[oidCollKey{oid: doc.Lookup("oid").String(), coll: collection}] = byt
 		}
 	}
 
@@ -494,10 +502,10 @@ func getDeleteEventDetails(es []*types.Event, db dal.DB, metrics *event.EventMet
 }
 
 // getDeleteEventDetails get delete events' oid+collection to related detail map from cmdb
-func getHostDeleteEventDetails(es []*types.Event, db dal.DB, metrics *event.EventMetrics) (map[string][]byte, bool,
+func getHostDeleteEventDetails(es []*types.Event, db dal.DB, metrics *event.EventMetrics) (map[oidCollKey][]byte, bool,
 	error) {
 
-	oidDetailMap := make(map[string][]byte)
+	oidDetailMap := make(map[oidCollKey][]byte)
 	if len(es) == 0 {
 		return oidDetailMap, false, nil
 	}
@@ -534,7 +542,7 @@ func getHostDeleteEventDetails(es []*types.Event, db dal.DB, metrics *event.Even
 				common.BKTableNameBaseHost, doc.Oid, err)
 			return nil, false, err
 		}
-		oidDetailMap[doc.Oid+common.BKTableNameBaseHost] = byt
+		oidDetailMap[oidCollKey{oid: doc.Oid, coll: common.BKTableNameBaseHost}] = byt
 	}
 
 	return oidDetailMap, false, nil

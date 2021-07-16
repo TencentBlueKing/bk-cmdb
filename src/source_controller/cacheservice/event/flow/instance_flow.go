@@ -70,11 +70,6 @@ func (f *InstanceFlow) syncMainlineObjectMap() {
 	}
 }
 
-type InstanceFlow struct {
-	Flow
-	*mainlineObjectMap
-}
-
 type mainlineObjectMap struct {
 	data map[string]struct{}
 	lock sync.RWMutex
@@ -83,13 +78,22 @@ type mainlineObjectMap struct {
 func (m *mainlineObjectMap) Get() map[string]struct{} {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-	return m.data
+	data := make(map[string]struct{})
+	for key, value := range m.data {
+		data[key] = value
+	}
+	return data
 }
 
 func (m *mainlineObjectMap) Set(data map[string]struct{}) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	m.data = data
+}
+
+type InstanceFlow struct {
+	Flow
+	*mainlineObjectMap
 }
 
 func (f *InstanceFlow) RunFlow(ctx context.Context) error {
@@ -279,7 +283,8 @@ func (f *InstanceFlow) getMainlineObjectMap(ctx context.Context) (map[string]str
 }
 
 // classifyEvents classify events by their related key's collection
-func (f *InstanceFlow) classifyEvents(es []*types.Event, oidDetailMap map[string][]byte, rid string) (map[string][]*types.Event, map[string]int) {
+func (f *InstanceFlow) classifyEvents(es []*types.Event, oidDetailMap map[oidCollKey][]byte, rid string) (
+	map[string][]*types.Event, map[string]int) {
 
 	mainlineColl := event.MainlineInstanceKey.Collection()
 	commonColl := f.key.Collection()
@@ -290,7 +295,7 @@ func (f *InstanceFlow) classifyEvents(es []*types.Event, oidDetailMap map[string
 		oidIndexMap[e.Oid+e.Collection] = index
 
 		if e.OperationType == types.Delete {
-			doc, exist := oidDetailMap[e.Oid+e.Collection]
+			doc, exist := oidDetailMap[oidCollKey{oid: e.Oid, coll: e.Collection}]
 			if !exist {
 				blog.Errorf("run flow, received %s event, but delete doc[oid: %s] detail not exists, rid: %s",
 					f.key.Collection(), e.OperationType, e.Oid, rid)
