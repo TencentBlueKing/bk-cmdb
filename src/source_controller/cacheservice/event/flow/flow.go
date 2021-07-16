@@ -252,6 +252,10 @@ func parseEvent(key event.Key, e *types.Event, oidDetailMap map[string][]byte, i
 	case types.Invalidate:
 		blog.Errorf("loop flow, received invalid event operation type, doc: %s, rid: %s", e.DocBytes, rid)
 		return nil, nil, false, nil
+	case types.Drop:
+		blog.Errorf("loop flow, received drop collection event operation type, **delete object will send a drop "+
+			"instance collection event, ignore it**. doc: %s, rid: %s", e.DocBytes, rid)
+		return nil, nil, false, nil
 	default:
 		blog.Errorf("loop flow, received unsupported event operation type: %s, doc: %s, rid: %s",
 			e.OperationType, e.DocBytes, rid)
