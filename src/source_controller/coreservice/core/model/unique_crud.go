@@ -68,7 +68,7 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 	}
 
 	properties, err := m.getUniqueProperties(kit, objID, inputParam.Data.Keys)
-	if nil != err {
+	if nil != err || len(properties) <= 0 {
 		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, inputParam, err, kit.Rid)
 		return 0, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
 	}
