@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202107142030
+package y3_9_202107161611
 
 import (
 	"context"
@@ -21,15 +21,15 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.9.202107142030", upgrade)
+	upgrader.RegistUpgrader("y3.9.202107161611", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.9.202107142030")
+	blog.Infof("start execute y3.9.202107161611")
 
 	// 更新 procBindInfo
 	if err = updateProcBindInfo(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.8.202107012030] change process bind attr, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202107161611] change process bind attr, error  %s", err.Error())
 		return err
 	}
 
