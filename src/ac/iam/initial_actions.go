@@ -289,7 +289,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 		NameEn:               "Create Service Category",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource, EditBusinessServiceCategory, DeleteBusinessServiceCategory},
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -325,7 +325,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 		NameEn:               "Create Service Instance",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource, EditBusinessServiceInstance, DeleteBusinessServiceInstance},
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -465,7 +465,7 @@ func genBusinessTopologyActions() []ResourceAction {
 		NameEn:               "Create Business Topo",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource, EditBusinessTopology, DeleteBusinessTopology},
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 

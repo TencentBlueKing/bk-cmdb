@@ -348,6 +348,7 @@
           })
           await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
             id: instance.id,
+            objId: this.objId,
             config: { data: {} }
           })
           this.hideTips()
@@ -376,9 +377,15 @@
       hideTips() {
         this.confirm.instance && this.confirm.instance.hide()
       },
+      getRowInstId(item) {
+        const specialModel = ['host', 'biz', 'set', 'module']
+        const mapping = {}
+        specialModel.forEach(key => (mapping[key] = `bk_${key}_id`))
+        return item[mapping[this.id] || 'bk_inst_id']
+      },
       showTips(event, item) {
         this.confirm.item = item
-        this.confirm.id = item.bk_inst_id
+        this.confirm.id = this.getRowInstId(item)
         this.confirm.instance = this.$bkPopover(event.target, {
           content: this.$refs.confirmTips,
           theme: 'light',

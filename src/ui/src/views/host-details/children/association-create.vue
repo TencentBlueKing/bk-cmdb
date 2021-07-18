@@ -563,7 +563,9 @@
       getHostCondition() {
         const condition = [
           { bk_obj_id: 'host', condition: [], fields: [] },
-          { bk_obj_id: 'biz', condition: [], fields: ['bk_module_id'] }
+          { bk_obj_id: 'biz', condition: [], fields: [] },
+          { bk_obj_id: 'module', condition: [], fields: [] },
+          { bk_obj_id: 'set', condition: [], fields: [] }
         ]
         const property = this.getProperty(this.filter.id)
         if (this.filter.value !== '' && property) {
