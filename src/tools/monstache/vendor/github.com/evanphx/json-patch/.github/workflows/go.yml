@@ -1,0 +1,30 @@
+name: Go
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        path: go/src/github.com/evanphx/json-patch
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.15
+
+    - name: Test
+      run: |
+        cd /home/runner/work/json-patch/json-patch/go/src/github.com/evanphx/json-patch
+        go get ./...
+        go test -v ./...
+      env:
+        GOPATH: /home/runner/work/json-patch/json-patch/go
