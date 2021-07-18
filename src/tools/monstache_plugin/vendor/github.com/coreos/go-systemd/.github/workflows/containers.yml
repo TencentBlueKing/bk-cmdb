@@ -1,0 +1,49 @@
+---
+name: Containers
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  GO_TOOLCHAIN: "1.15"
+  GOPATH: "/opt"
+  BUILD_DIR: "/opt/src/github.com/coreos/go-systemd"
+
+jobs:
+  ditro-test:
+    name: "Distro test"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        baseimage: ['debian:stretch', 'ubuntu:16.04', 'ubuntu:18.04']
+    steps:
+      - run: sudo apt-get -qq update
+      - name: Install libsystemd-dev
+        run: sudo apt-get install libsystemd-dev
+      - uses: actions/checkout@v2
+      - name: Setup go
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ env['GO_TOOLCHAIN'] }}
+      - name: Go build (source)
+        run: ./scripts/ci-runner.sh build_source
+      - name: Go build (tests)
+        run: ./scripts/ci-runner.sh build_tests
+      - name: Pull base image - ${{ matrix.baseimage }}
+        run: docker pull ${{ matrix.baseimage }}
+      - name: Install packages for ${{ matrix.baseimage }}
+        run: docker run --privileged -e GOPATH=${GOPATH} --cidfile=/tmp/cidfile ${{ matrix.baseimage }} /bin/bash -c "apt-get update && apt-get install -y sudo build-essential git golang dbus libsystemd-dev libpam-systemd systemd-container"
+      - name: Persist base container
+        run: docker commit `cat /tmp/cidfile` go-systemd/container-tests
+      - run: rm -f /tmp/cidfile
+      - name: Run systemd from ${{ matrix.baseimage }}
+        run: docker run --shm-size=2gb -d --cidfile=/tmp/cidfile --privileged -e GOPATH=${GOPATH} -v ${PWD}:${BUILD_DIR} go-systemd/container-tests /bin/systemd --system
+      - name: Wait a bit for the whole system to settle
+        run: sleep 30s
+      - name: Run tests
+        run: docker exec --privileged `cat /tmp/cidfile` /bin/bash -c "cd ${BUILD_DIR} && ./scripts/ci-runner.sh run_tests"
+      - name: Cleanup
+        run: docker kill `cat /tmp/cidfile`
