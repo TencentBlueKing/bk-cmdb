@@ -33,6 +33,7 @@ import (
 	"configcenter/src/thirdparty/monitor"
 	"configcenter/src/thirdparty/monitor/meta"
 
+	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/x/bsonx"
@@ -300,8 +301,12 @@ func parseEvent(key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byt
 		chainNode.InstanceID = instID
 	}
 
+	// remove the _id field from detail
+	oidKV := fmt.Sprintf(`"_id":%s,`, gjson.GetBytes(e.DocBytes, "_id").Raw)
+	detailValue := strings.Replace(string(e.DocBytes), oidKV, "", -1)
+
 	detail := types.EventDetail{
-		Detail:        types.JsonString(e.DocBytes),
+		Detail:        types.JsonString(detailValue),
 		UpdatedFields: e.ChangeDesc.UpdatedFields,
 		RemovedFields: e.ChangeDesc.RemovedFields,
 	}
