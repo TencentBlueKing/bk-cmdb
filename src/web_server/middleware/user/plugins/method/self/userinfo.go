@@ -172,7 +172,6 @@ func (m *user) getEsbClient(config map[string]string) (esbserver.EsbClientInterf
 // GetUserList get user list from paas
 func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, error) {
 	rid := commonutil.GetHTTPCCRequestID(c.Request.Header)
-	accountURL, ok := config["site.bk_account_url"]
 	query := c.Request.URL.Query()
 	params := make(map[string]string)
 	for key, values := range query {
@@ -185,6 +184,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 		}
 	}
 
+	accountURL, ok := config["site.bk_account_url"]
 	if !ok {
 		// try to use esb user list api
 		esbClient, err := m.getEsbClient(config)
@@ -223,19 +223,19 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	}
 
 	token := session.Get(common.HTTPCookieBKToken)
-	getURL := fmt.Sprintf(accountURL, token)
+	getUserListURL := fmt.Sprintf(accountURL, token)
 	httpClient := httpclient.NewHttpClient()
 
 	if err := httpClient.SetTlsNoVerity(); err != nil {
 		blog.Warnf("httpClient.SetTlsNoVerity failed, err: %s, rid: %s", err.Error(), rid)
 	}
-	reply, err := httpClient.GET(getURL, nil, nil)
+	reply, err := httpClient.GET(getUserListURL, nil, nil)
 
 	if nil != err {
 		blog.Errorf("get user list error：%v, rid: %s", err, rid)
 		return nil, fmt.Errorf("http do error:%s", err.Error())
 	}
-	blog.V(5).Infof("get user list url: %s, return：%s, rid: %s", getURL, reply, rid)
+	blog.V(5).Infof("get user list url: %s, return：%s, rid: %s", getUserListURL, reply, rid)
 	var result userListResult
 	err = json.Unmarshal([]byte(reply), &result)
 	if nil != err || false == result.Result {
@@ -298,18 +298,18 @@ func (m *user) GetUserListForFront(c *gin.Context, config map[string]string) ([]
 	}
 
 	token := session.Get(common.HTTPCookieBKToken)
-	getURL := fmt.Sprintf(accountURL, token)
+	getUserListURL := fmt.Sprintf(accountURL, token)
 	httpClient := httpclient.NewHttpClient()
 
 	if err := httpClient.SetTlsNoVerity(); err != nil {
 		blog.Warnf("httpClient.SetTlsNoVerity failed, err: %s, rid: %s", err.Error(), rid)
 	}
-	reply, err := httpClient.GET(getURL, nil, nil)
+	reply, err := httpClient.GET(getUserListURL, nil, nil)
 	if nil != err {
 		blog.Errorf("get user list error：%v, rid: %s", err, rid)
 		return nil, fmt.Errorf("http do error:%s", err.Error())
 	}
-	blog.V(5).Infof("get user list url: %s, return：%s, rid: %s", getURL, reply, rid)
+	blog.V(5).Infof("get user list url: %s, return：%s, rid: %s", getUserListURL, reply, rid)
 	var result userListResult
 	err = json.Unmarshal([]byte(reply), &result)
 	if nil != err || false == result.Result {
