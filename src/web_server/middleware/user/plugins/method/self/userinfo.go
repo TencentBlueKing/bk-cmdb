@@ -260,7 +260,6 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 func (m *user) GetUserListForFront(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, error) {
 	rid := commonutil.GetHTTPCCRequestID(c.Request.Header)
 	accountURL, ok := config["site.bk_account_url"]
-
 	if !ok {
 		// try to use esb user list api
 		esbClient, err := m.getEsbClient(config)
@@ -306,7 +305,6 @@ func (m *user) GetUserListForFront(c *gin.Context, config map[string]string) ([]
 		blog.Warnf("httpClient.SetTlsNoVerity failed, err: %s, rid: %s", err.Error(), rid)
 	}
 	reply, err := httpClient.GET(getURL, nil, nil)
-
 	if nil != err {
 		blog.Errorf("get user list error：%v, rid: %s", err, rid)
 		return nil, fmt.Errorf("http do error:%s", err.Error())
