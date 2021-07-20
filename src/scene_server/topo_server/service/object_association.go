@@ -33,7 +33,7 @@ func (s *Service) CreateObjectAssociation(ctx *rest.Contexts) {
 	var association *metadata.Association
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		association, err = s.Core.AssociationOperation().CreateCommonAssociation(ctx.Kit, assoc)
+		association, err = s.Logics.AssociationOperation().CreateCommonAssociation(ctx.Kit, assoc)
 		if nil != err {
 			return err
 		}
@@ -63,7 +63,8 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 
 		cond, err := data.MapStr("condition")
 		if nil != err {
-			blog.Errorf("search object association, failed to get the condition, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+			blog.Errorf("search object association, failed to get the condition, error info is %s, rid: %s",
+				err.Error(), ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsIsInvalid, err.Error()))
 			return
 		}
@@ -73,7 +74,7 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 			return
 		}
 
-		resp, err := s.Core.AssociationOperation().SearchObject(ctx.Kit, &metadata.SearchAssociationObjectRequest{Condition: cond})
+		resp, err := s.Logics.AssociationOperation().SearchObjectAssociation(ctx.Kit, cond)
 		if err != nil {
 			blog.Errorf("search object association with cond[%v] failed, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
@@ -81,7 +82,8 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 		}
 
 		if !resp.Result {
-			blog.Errorf("search object association with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, ctx.Kit.Rid)
+			blog.Errorf("search object association with cond[%v] failed, err: %s, rid: %s",
+				cond, resp.ErrMsg, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.New(resp.Code, resp.ErrMsg))
 			return
 		}
@@ -92,7 +94,8 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 
 	objID, err := data.String(metadata.AssociationFieldObjectID)
 	if err != nil {
-		blog.Errorf("search object association, but get object id failed from: %v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
+		blog.Errorf("search object association, but get object id failed from: %v, err: %v, rid: %s",
+			data, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
 		return
 	}
@@ -102,12 +105,48 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	resp, err := s.Core.AssociationOperation().SearchObjectAssociation(ctx.Kit, objID)
+	resp, err := s.Logics.AssociationOperation().SearchObjectAssociationByObjIDs(ctx.Kit, []interface{}{objID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(resp)
+	ctx.RespEntity(resp.Data)
+}
+
+func (s *Service) SearchObjectAssociationByObjIDs(ctx *rest.Contexts) {
+	data := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	objIDArray, exist := data.Get(metadata.AssociationFieldObjectID)
+	if !exist {
+		blog.Errorf("bk_obj_id can't be non-existent, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, metadata.AssociationFieldObjectID))
+		return
+	}
+
+	val, ok := objIDArray.([]interface{})
+	if !ok {
+		blog.Errorf("object ID must be array, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, metadata.AssociationFieldObjectID))
+		return
+	}
+
+	if len(val) == 0 {
+		blog.Errorf("object ID is empty, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, metadata.AssociationFieldObjectID))
+		return
+	}
+
+	resp, err := s.Logics.AssociationOperation().SearchObjectAssociationByObjIDs(ctx.Kit, val)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(resp.Data)
 }
 
 // DeleteObjectAssociation delete object association
@@ -115,7 +154,8 @@ func (s *Service) DeleteObjectAssociation(ctx *rest.Contexts) {
 
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
 	if err != nil {
-		blog.Errorf("delete object association failed, got a invalid object association id[%v], err: %v, rid: %s", ctx.Request.PathParameter("id"), err, ctx.Kit.Rid)
+		blog.Errorf("delete object association failed, got a invalid object association id[%v], err: %v, rid: %s",
+			ctx.Request.PathParameter("id"), err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoInvalidObjectAssociationID))
 		return
 	}
@@ -127,7 +167,7 @@ func (s *Service) DeleteObjectAssociation(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Core.AssociationOperation().DeleteAssociationWithPreCheck(ctx.Kit, id)
+		err = s.Logics.AssociationOperation().DeleteAssociationWithPreCheck(ctx.Kit, id)
 		if err != nil {
 			return err
 		}
@@ -145,7 +185,8 @@ func (s *Service) DeleteObjectAssociation(ctx *rest.Contexts) {
 func (s *Service) UpdateObjectAssociation(ctx *rest.Contexts) {
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
 	if err != nil {
-		blog.Errorf("update object association, but got invalid id[%v], err: %v, rid: %s", ctx.Request.PathParameter("id"), err, ctx.Kit.Rid)
+		blog.Errorf("update object association, but got invalid id[%v], err: %v, rid: %s",
+			ctx.Request.PathParameter("id"), err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommParamsIsInvalid))
 		return
 	}
@@ -157,7 +198,7 @@ func (s *Service) UpdateObjectAssociation(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Core.AssociationOperation().UpdateAssociation(ctx.Kit, *data, id)
+		err = s.Logics.AssociationOperation().UpdateObjectAssociation(ctx.Kit, *data, id)
 		if err != nil {
 			return err
 		}

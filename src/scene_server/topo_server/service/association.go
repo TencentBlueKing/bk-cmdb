@@ -482,7 +482,7 @@ func (s *Service) SearchAssociationType(ctx *rest.Contexts) {
 		request.Condition = make(map[string]interface{}, 0)
 	}
 
-	ret, err := s.Core.AssociationOperation().SearchType(ctx.Kit, request)
+	ret, err := s.Logics.AssociationOperation().SearchAssociationType(ctx.Kit, request)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -504,7 +504,7 @@ func (s *Service) SearchObjectAssocWithAssocKindList(ctx *rest.Contexts) {
 		return
 	}
 
-	resp, err := s.Core.AssociationOperation().SearchObjectAssocWithAssocKindList(ctx.Kit, ids.AsstIDs)
+	resp, err := s.Logics.AssociationOperation().SearchObjectAssocWithAssocKindList(ctx.Kit, ids.AsstIDs)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -522,7 +522,7 @@ func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 	var ret *metadata.CreateAssociationTypeResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().CreateType(ctx.Kit, request)
+		ret, err = s.Logics.AssociationOperation().CreateAssociationType(ctx.Kit, request)
 		if err != nil {
 			return err
 		}
@@ -571,7 +571,7 @@ func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
 	var ret *metadata.UpdateAssociationTypeResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().UpdateType(ctx.Kit, asstTypeID, request)
+		ret, err = s.Logics.AssociationOperation().UpdateAssociationType(ctx.Kit, asstTypeID, request)
 		if err != nil {
 			return err
 		}
@@ -599,7 +599,7 @@ func (s *Service) DeleteAssociationType(ctx *rest.Contexts) {
 	var ret *metadata.DeleteAssociationTypeResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().DeleteType(ctx.Kit, asstTypeID)
+		ret, err = s.Logics.AssociationOperation().DeleteAssociationType(ctx.Kit, asstTypeID)
 		if err != nil {
 			return err
 		}
