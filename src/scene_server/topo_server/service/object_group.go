@@ -35,7 +35,7 @@ func (s *Service) CreateObjectGroup(ctx *rest.Contexts) {
 	var rsp model.GroupInterface
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		rsp, err = s.Core.GroupOperation().CreateObjectGroup(ctx.Kit, dataWithModelBizID.Data, dataWithModelBizID.ModelBizID)
+		rsp, err = s.Logics.GroupOperation().CreateObjectGroup(ctx.Kit, dataWithModelBizID.Data, dataWithModelBizID.ModelBizID)
 		if nil != err {
 			return err
 		}
@@ -60,7 +60,7 @@ func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Core.GroupOperation().UpdateObjectGroup(ctx.Kit, cond)
+		err := s.Logics.GroupOperation().UpdateObjectGroup(ctx.Kit, cond)
 		if nil != err {
 			return err
 		}
@@ -70,7 +70,7 @@ func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 		if cond.Condition.ID != 0 {
 			searchCondition.Field(common.BKFieldID).Eq(cond.Condition.ID)
 		}
-		result, err := s.Core.GroupOperation().FindObjectGroup(ctx.Kit, searchCondition, cond.ModelBizID)
+		result, err := s.Logics.GroupOperation().FindObjectGroup(ctx.Kit, searchCondition, cond.ModelBizID)
 		if err != nil {
 			blog.Errorf("search attribute group by condition failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -98,7 +98,7 @@ func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Core.GroupOperation().DeleteObjectGroup(ctx.Kit, gid)
+		err := s.Logics.GroupOperation().DeleteObjectGroup(ctx.Kit, gid)
 		if nil != err {
 			return err
 		}
@@ -130,7 +130,7 @@ func (s *Service) UpdateObjectAttributeGroupProperty(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Core.GroupOperation().UpdateObjectAttributeGroup(ctx.Kit, objectAtt, requestBody.ModelBizID)
+		err := s.Logics.GroupOperation().UpdateObjectAttributeGroup(ctx.Kit, objectAtt, requestBody.ModelBizID)
 		if nil != err {
 			return err
 		}
@@ -148,7 +148,8 @@ func (s *Service) UpdateObjectAttributeGroupProperty(ctx *rest.Contexts) {
 
 func (s *Service) DeleteObjectAttributeGroup(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Core.GroupOperation().DeleteObjectAttributeGroup(ctx.Kit, ctx.Request.PathParameter("bk_object_id"), ctx.Request.PathParameter("property_id"), ctx.Request.PathParameter("group_id"))
+		err := s.Logics.GroupOperation().DeleteObjectAttributeGroup(ctx.Kit, ctx.Request.PathParameter("bk_object_id"),
+			ctx.Request.PathParameter("property_id"), ctx.Request.PathParameter("group_id"))
 		if nil != err {
 			return err
 		}
@@ -171,7 +172,7 @@ func (s *Service) SearchGroupByObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	resp, err := s.Core.GroupOperation().FindGroupByObject(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), cond, modelType.BizID)
+	resp, err := s.Logics.GroupOperation().FindGroupByObject(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), cond, modelType.BizID)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
