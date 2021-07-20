@@ -641,7 +641,7 @@ func (s *Service) SearchInstanceAssociations(ctx *rest.Contexts) {
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
 	// search instance associations.
-	result, err := s.Core.AssociationOperation().SearchInstanceAssociations(ctx.Kit, objID, input)
+	result, err := s.Logics.InstAssociationOperation().SearchInstanceAssociations(ctx.Kit, objID, input)
 	if err != nil {
 		blog.Errorf("search object[%s] instance associations failed, err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -675,7 +675,7 @@ func (s *Service) CountInstanceAssociations(ctx *rest.Contexts) {
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
 	// count instance associations.
-	result, err := s.Core.AssociationOperation().CountInstanceAssociations(ctx.Kit, objID, input)
+	result, err := s.Logics.InstAssociationOperation().CountInstanceAssociations(ctx.Kit, objID, input)
 	if err != nil {
 		blog.Errorf("count object[%s] instance associations failed, err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -698,7 +698,7 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 	}
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	ret, err := s.Core.AssociationOperation().SearchInst(ctx.Kit, request)
+	ret, err := s.Logics.InstAssociationOperation().SearchInstAssociation(ctx.Kit, request)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -761,7 +761,7 @@ func (s *Service) CreateAssociationInst(ctx *rest.Contexts) {
 	var ret *metadata.CreateAssociationInstResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().CreateInst(ctx.Kit, request)
+		ret, err = s.Logics.InstAssociationOperation().CreateInstanceAssociation(ctx.Kit, request)
 		if err != nil {
 			return err
 		}
@@ -787,7 +787,7 @@ func (s *Service) CreateManyInstAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	ret, err := s.Core.AssociationOperation().CreateManyInstAssociation(ctx.Kit, request)
+	ret, err := s.Logics.InstAssociationOperation().CreateManyInstAssociation(ctx.Kit, request)
 	if err != nil {
 		blog.Errorf("create many instance association failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -814,7 +814,7 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		idList := []int64{id}
-		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, objID, idList)
+		ret, err = s.Logics.InstAssociationOperation().DeleteInstAssociation(ctx.Kit, objID, idList)
 		if err != nil {
 			return err
 		}
@@ -856,7 +856,7 @@ func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var ret *metadata.DeleteAssociationInstResult
 		var err error
-		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, request.ObjectID, request.ID)
+		ret, err = s.Logics.InstAssociationOperation().DeleteInstAssociation(ctx.Kit, request.ObjectID, request.ID)
 		if err != nil {
 			return err
 		}
