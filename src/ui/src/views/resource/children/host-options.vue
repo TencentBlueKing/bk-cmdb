@@ -386,6 +386,13 @@
       'importInst.active'() {
         this.importInst.error = null
         this.importInst.showTips = false
+      },
+      '$route.query'(query, prev) {
+        // 高级筛选自动打开面板，首次进入时无_t参数
+        // eslint-disable-next-line no-underscore-dangle
+        if (!prev._t && query.adv) {
+          FilterForm.show()
+        }
       }
     },
     async created() {
@@ -540,7 +547,7 @@
       handleCopy(property) {
         const copyText = this.table.selection.map((data) => {
           const modelId = property.bk_obj_id
-          const [modelData] = Array.isArray(data[modelId]) ? data[modelId] : [data[modelId]]
+          const modelData = data[modelId]
           if (property.id === this.IPWithCloudSymbol) {
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
@@ -548,10 +555,14 @@
           }
           if (property.bk_property_type === 'topology') {
             // eslint-disable-next-line no-underscore-dangle
-            return data.__bk_host_topology__.join(',').replace(/\s\/\s/g, '')
+            return data.__bk_host_topology__.join(',')
           }
-          const value = modelData[property.bk_property_id]
-          return this.$tools.getPropertyCopyValue(value, property)
+          const propertyId = property.bk_property_id
+          if (Array.isArray(modelData)) {
+            const value = modelData.map(item => this.$tools.getPropertyCopyValue(item[propertyId], property))
+            return value.join(',')
+          }
+          return this.$tools.getPropertyCopyValue(modelData[propertyId], property)
         })
         this.$copyText(copyText.join('\n')).then(() => {
           this.$success(this.$t('复制成功'))

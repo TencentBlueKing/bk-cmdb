@@ -13,6 +13,7 @@
         <component class="content-value"
           size="small"
           font-size="small"
+          v-bind="$tools.getValidateEvents(property)"
           v-validate="$tools.getValidateRules(column)"
           :disabled="isLocked(rowProps)"
           :data-vv-name="column.bk_property_id"
