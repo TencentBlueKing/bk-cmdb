@@ -249,6 +249,18 @@ export function clone(object) {
   return JSON.parse(JSON.stringify(object))
 }
 
+export function getValidateEvents(property) {
+  const type = property.bk_property_type
+  const isChar = ['singlechar', 'longchar'].includes(type)
+  const hasRegular = !!property.option
+  if (isChar && hasRegular) {
+    return {
+      'data-vv-validate-on': 'blur'
+    }
+  }
+  return {}
+}
+
 export function getValidateRules(property) {
   const rules = {}
   const {
@@ -268,7 +280,7 @@ export function getValidateRules(property) {
         rules.max_value = option.max
       }
     } else if (['singlechar', 'longchar'].includes(propertyType)) {
-      rules.regex = option
+      rules.remoteString = option
     }
   }
   if (['singlechar', 'longchar'].includes(propertyType)) {
@@ -395,6 +407,7 @@ export default {
   formatValue,
   formatValues,
   getValidateRules,
+  getValidateEvents,
   getSort,
   getValue,
   transformHostSearchParams,
