@@ -14,7 +14,6 @@ package settemplate
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
 	"configcenter/src/common"
@@ -41,11 +40,11 @@ func (st *setTemplate) GetOneSet(kit *rest.Kit, setID int64) (metadata.SetInst, 
 	instResult, err := st.client.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, qc)
 	if err != nil {
 		blog.ErrorJSON("GetOneSet failed, db select failed, filter: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
-		return set, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		return set, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !instResult.Result || instResult.Code != 0 {
+	if ccErr := instResult.CCError(); ccErr != nil {
 		blog.ErrorJSON("GetOneSet failed, read instance failed, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
-		return set, errors.NewCCError(instResult.Code, instResult.ErrMsg)
+		return set, ccErr
 	}
 	if len(instResult.Data.Info) == 0 {
 		blog.ErrorJSON("GetOneSet failed, not found, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
@@ -55,7 +54,7 @@ func (st *setTemplate) GetOneSet(kit *rest.Kit, setID int64) (metadata.SetInst, 
 		blog.ErrorJSON("GetOneSet failed, got multiple, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
 		return set, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
 	}
-	if err := mapstruct.Decode2Struct(instResult.Data.Info[0], &set); err != nil {
+	if err := mapstruct.Decode2StructWithHook(instResult.Data.Info[0], &set); err != nil {
 		blog.ErrorJSON("GetOneSet failed, unmarshal set failed, instResult: %s, err: %s, rid: %s", instResult, err.Error(), kit.Rid)
 		return set, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -99,7 +98,7 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setID int64) (metadata
 	option := metadata.DiffSetTplWithInstOption{
 		SetIDs: []int64{set.SetID},
 	}
-	diff, err := st.DiffSetTplWithInst(kit.Ctx, kit.Header, set.BizID, set.SetTemplateID, option)
+	diff, err := st.DiffSetTplWithInst(kit, set.BizID, set.SetTemplateID, option)
 	if err != nil {
 		blog.Errorf("UpdateSetSyncStatus failed, DiffSetTplWithInst failed, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
 		return setSyncStatus, err
@@ -220,7 +219,7 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID int64) (*met
 
 	listResult, err := st.client.TaskServer().Task().ListTask(kit.Ctx, kit.Header, common.SyncSetTaskName, &listTaskOption)
 	if err != nil {
-		blog.ErrorJSON("list set sync tasks failed, option: %s, rid: %s", listTaskOption, kit.Rid)
+		blog.ErrorJSON("list set sync tasks failed, option: %s, err: %v, rid: %s", listTaskOption, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrTaskListTaskFail)
 	}
 	if listResult == nil || len(listResult.Data.Info) == 0 {
@@ -233,7 +232,7 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID int64) (*met
 }
 
 func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
-	detail.Header = http.Header{}
+	detail.Header = util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 	for taskIdx := range detail.Detail {
 		subTaskDetail, ok := detail.Detail[taskIdx].Data.(map[string]interface{})
 		if !ok {
@@ -264,4 +263,79 @@ func (st *setTemplate) TriggerCheckSetTemplateSyncingStatus(kit *rest.Kit, bizID
 		blog.Warnf("skip task, reason not get lock . set template id: %d, setID: %d, rid: %s", setTemplateID, setID, kit.Rid)
 	}
 	return nil
+}
+
+func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, bizID int64,
+	option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
+
+	responseInfo := metadata.MultipleSetTemplateSyncStatus{}
+
+	filterTemp := &metadata.QueryCondition{
+		Page:      option.Page,
+		Condition: mapstr.MapStr{common.BKSetTemplateIDField: option.SetTemplateID, common.BKAppIDField: bizID},
+	}
+	if len(option.SetIDs) != 0 {
+		filterTemp.Condition[common.BKSetIDField] = mapstr.MapStr{common.BKDBIN: option.SetIDs}
+	}
+	filterTemp.Fields = []string{common.BKSetIDField, common.BKSetNameField, common.BkSupplierAccount}
+
+	var setInfoResp metadata.ResponseSetInstance
+	err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header,
+		common.BKInnerObjIDSet, filterTemp, &setInfoResp)
+	if err != nil {
+		blog.ErrorJSON("ListSetTemplateSyncStatus failed, core service find set template failed,"+
+			" option: %s, err: %s, rid: %s", filterTemp, err, kit.Rid)
+		return metadata.MultipleSetTemplateSyncStatus{}, err
+	}
+	if err := setInfoResp.CCError(); err != nil {
+		blog.ErrorJSON("ListSetTemplateSyncStatus failed, core service find set template http reply failed,"+
+			" option: %s, err: %s, rid: %s", filterTemp, err, kit.Rid)
+		return metadata.MultipleSetTemplateSyncStatus{}, err
+	}
+
+	responseInfo.Count = int64(setInfoResp.Data.Count)
+	setIDs := make([]int64, len(setInfoResp.Data.Info))
+	responseInfo.Info = make([]metadata.SetTemplateSyncStatus, len(setInfoResp.Data.Info))
+
+	for idx, setInfo := range setInfoResp.Data.Info {
+		setIDs[idx] = setInfo.SetID
+		// setInfoResp 只返回了部分字段，新加字段注意修改
+		responseInfo.Info[idx] = metadata.SetTemplateSyncStatus{
+			SetID:           setInfo.SetID,
+			Name:            setInfo.SetName,
+			BizID:           bizID,
+			SetTemplateID:   option.SetTemplateID,
+			SupplierAccount: setInfo.SupplierAccount,
+		}
+	}
+
+	// 使用存在模块
+	option.SetIDs = setIDs
+	result, err := st.client.CoreService().SetTemplate().ListSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, option)
+	if err != nil {
+		blog.ErrorJSON("ListSetTemplateSyncStatus failed, core service search failed, option: %s, err: %s, rid: %s",
+			option, err.Error(), kit.Rid)
+		return metadata.MultipleSetTemplateSyncStatus{}, err
+	}
+
+	setTempSyncMap := make(map[int64]metadata.SetTemplateSyncStatus, len(result.Info))
+	// 处理当前需要同步任务的状态
+	for _, info := range result.Info {
+		setTempSyncMap[info.SetID] = info
+		if !info.Status.IsFinished() {
+			go func(info metadata.SetTemplateSyncStatus) {
+				st.TriggerCheckSetTemplateSyncingStatus(kit.NewKit(), info.BizID, info.SetTemplateID, info.SetID)
+			}(info)
+		}
+
+	}
+	// 如果在同步表中有数据，使用同步表中的数据
+	for idx, row := range responseInfo.Info {
+		if newRow, ok := setTempSyncMap[row.SetID]; ok {
+			responseInfo.Info[idx] = newRow
+		}
+	}
+
+	return responseInfo, nil
+
 }

@@ -19,11 +19,12 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (m *associationModel) count(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).Count(kit.Ctx)
+	cnt, err = mongodb.Client().Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute database count operation on the table (%s) by the condition (%#v), error info is %s", kit.Rid, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
 		return 0, err
@@ -34,18 +35,18 @@ func (m *associationModel) count(kit *rest.Kit, cond universalsql.Condition) (cn
 func (m *associationModel) isExists(kit *rest.Kit, cond universalsql.Condition) (oneResult *metadata.Association, exists bool, err error) {
 
 	oneResult = &metadata.Association{}
-	err = m.dbProxy.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).One(kit.Ctx, oneResult)
-	if nil != err && !m.dbProxy.IsNotFoundError(err) {
+	err = mongodb.Client().Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).One(kit.Ctx, oneResult)
+	if nil != err && !mongodb.Client().IsNotFoundError(err) {
 		blog.Errorf("request(%s): it is faield to execute database findone operation on the table (%s) by the condition (%#v), error info is %s", kit.Rid, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
 		return oneResult, false, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
-	return oneResult, !m.dbProxy.IsNotFoundError(err), nil
+	return oneResult, !mongodb.Client().IsNotFoundError(err), nil
 }
 
 func (m *associationModel) save(kit *rest.Kit, assoParam *metadata.Association) (id uint64, err error) {
 
-	id, err = m.dbProxy.NextSequence(kit.Ctx, common.BKTableNameObjAsst)
+	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjAsst)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to make a sequence ID on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjAsst, err.Error())
 		return id, err
@@ -53,7 +54,7 @@ func (m *associationModel) save(kit *rest.Kit, assoParam *metadata.Association) 
 
 	assoParam.ID = int64(id)
 	assoParam.OwnerID = kit.SupplierAccount
-	err = m.dbProxy.Table(common.BKTableNameObjAsst).Insert(kit.Ctx, assoParam)
+	err = mongodb.Client().Table(common.BKTableNameObjAsst).Insert(kit.Ctx, assoParam)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute database insert operation on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjAsst, err.Error())
 		return 0, err
@@ -72,7 +73,7 @@ func (m *associationModel) update(kit *rest.Kit, data mapstr.MapStr, cond univer
 		return 0, err
 	}
 
-	err = m.dbProxy.Table(common.BKTableNameObjAsst).Update(kit.Ctx, cond.ToMapStr(), data)
+	err = mongodb.Client().Table(common.BKTableNameObjAsst).Update(kit.Ctx, cond.ToMapStr(), data)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute database upate some data (%v) on the table (%s) by the condition (%#v)", kit.Rid, data, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
 		return 0, err
@@ -91,7 +92,7 @@ func (m *associationModel) delete(kit *rest.Kit, cond universalsql.Condition) (c
 		return 0, err
 	}
 
-	err = m.dbProxy.Table(common.BKTableNameObjAsst).Delete(kit.Ctx, cond.ToMapStr())
+	err = mongodb.Client().Table(common.BKTableNameObjAsst).Delete(kit.Ctx, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("request(%s): it is to delete some data on the table (%s) by the condition (%#v), error info is %s", kit.Rid, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
 		return 0, err
@@ -102,7 +103,7 @@ func (m *associationModel) delete(kit *rest.Kit, cond universalsql.Condition) (c
 func (m *associationModel) search(kit *rest.Kit, cond universalsql.Condition) ([]metadata.Association, error) {
 
 	dataResult := []metadata.Association{}
-	err := m.dbProxy.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(kit.Ctx, &dataResult)
+	err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(kit.Ctx, &dataResult)
 	if nil != err {
 		blog.Errorf("request(%s): it is to search some data on the table (%s) by the condition (%v), error info is %s", kit.Rid, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
 		return dataResult, err
@@ -112,7 +113,7 @@ func (m *associationModel) search(kit *rest.Kit, cond universalsql.Condition) ([
 
 func (m *associationModel) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condition) ([]mapstr.MapStr, error) {
 	dataResult := []mapstr.MapStr{}
-	err := m.dbProxy.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(kit.Ctx, &dataResult)
+	err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(kit.Ctx, &dataResult)
 	if nil != err {
 		blog.Errorf("request(%s): it is to search data on the table (%s) by the condition (%#v), error info is %s", kit.Rid, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
 		return dataResult, err

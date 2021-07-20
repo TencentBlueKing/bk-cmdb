@@ -1,259 +1,276 @@
 <template>
-    <nav class="nav-layout"
-        :class="{ 'sticked': navStick }"
-        @mouseenter="handleMouseEnter"
-        @mouseleave="handleMouseLeave">
-        <div class="nav-wrapper"
-            :class="{ unfold: unfold, flexible: !navStick }">
-            <div class="business-wrapper" v-show="isBusinessNav">
-                <transition name="fade">
-                    <cmdb-business-selector class="business-selector"
-                        v-show="unfold"
-                        show-apply-permission
-                        :popover-options="{
-                            appendTo: () => this.$el
-                        }"
-                        @select="handleToggleBusiness">
-                    </cmdb-business-selector>
-                </transition>
-                <transition name="fade">
-                    <i class="business-flag bk-icon icon-angle-down" v-show="!unfold"></i>
-                </transition>
-            </div>
-            <div class="menu-list">
-                <template v-for="(menu, index) in currentMenus">
-                    <router-link class="menu-item is-link" tag="a" active-class="active" style="display: block;"
-                        v-if="menu.hasOwnProperty('route')"
-                        ref="menuLink"
-                        :class="{
-                            'is-relative-active': isRelativeActive(menu)
-                        }"
-                        :key="index"
-                        :to="getMenuLink(menu)"
-                        :title="$t(menu.i18n)">
-                        <h3 class="menu-info clearfix">
-                            <i :class="['menu-icon', menu.icon]"></i>
-                            <span class="menu-name">{{$t(menu.i18n)}}</span>
-                        </h3>
-                    </router-link>
-                </template>
-            </div>
-            <div class="nav-option">
-                <i class="nav-stick icon icon-cc-nav-toggle"
-                    :class="{
-                        sticked: navStick
-                    }"
-                    :title="navStick ? $t('收起导航') : $t('固定导航')"
-                    @click="toggleNavStick">
-                </i>
-            </div>
-        </div>
-    </nav>
+  <nav class="nav-layout"
+    :class="{ 'sticked': navStick }"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave">
+    <div class="nav-wrapper"
+      :class="{ unfold: unfold, flexible: !navStick }">
+      <div class="business-wrapper" v-show="isBusinessNav">
+        <transition name="fade">
+          <cmdb-business-selector class="business-selector"
+            v-show="unfold"
+            show-apply-permission
+            :popover-options="{
+              appendTo: () => this.$el
+            }"
+            @select="handleToggleBusiness">
+          </cmdb-business-selector>
+        </transition>
+        <transition name="fade">
+          <i class="business-flag bk-icon icon-angle-down" v-show="!unfold"></i>
+        </transition>
+      </div>
+      <div class="menu-list">
+        <template v-for="(menu, index) in currentMenus">
+          <router-link class="menu-item is-link" tag="a" active-class="active" style="display: block;"
+            v-if="menu.hasOwnProperty('route')"
+            ref="menuLink"
+            :class="{
+              'is-relative-active': isRelativeActive(menu)
+            }"
+            :key="index"
+            :to="getMenuLink(menu)"
+            :title="$t(menu.i18n)">
+            <h3 class="menu-info clearfix">
+              <i :class="['menu-icon', menu.icon]"></i>
+              <span class="menu-name">{{$t(menu.i18n)}}</span>
+            </h3>
+          </router-link>
+        </template>
+      </div>
+      <div class="nav-option">
+        <i class="nav-stick icon icon-cc-nav-toggle"
+          :class="{
+            sticked: navStick
+          }"
+          :title="navStick ? $t('收起导航') : $t('固定导航')"
+          @click="toggleNavStick">
+        </i>
+      </div>
+    </div>
+  </nav>
 </template>
 <script>
-    import { mapGetters } from 'vuex'
-    import MENU_DICTIONARY from '@/dictionary/menu'
-    import {
-        MENU_BUSINESS,
-        MENU_BUSINESS_HOST_AND_SERVICE,
-        MENU_RESOURCE,
-        MENU_RESOURCE_BUSINESS,
-        MENU_RESOURCE_HOST,
-        MENU_RESOURCE_INSTANCE,
-        // MENU_RESOURCE_MANAGEMENT,
-        MENU_RESOURCE_COLLECTION,
-        MENU_RESOURCE_HOST_COLLECTION,
-        MENU_RESOURCE_BUSINESS_COLLECTION
-    } from '@/dictionary/menu-symbol'
-    export default {
-        data () {
-            return {
-                routerLinkHeight: 42,
-                timer: null,
-                state: {},
-                hasExactActive: false
-            }
-        },
-        computed: {
-            ...mapGetters(['navStick', 'navFold', 'admin']),
-            ...mapGetters('userCustom', ['usercustom']),
-            ...mapGetters('objectModelClassify', ['classifications', 'models']),
-            isBusinessNav () {
-                const matched = this.$route.matched
-                if (!matched.length) {
-                    return false
-                }
-                return matched[0].name === MENU_BUSINESS
-            },
-            unfold () {
-                return this.navStick || !this.navFold
-            },
-            owner () {
-                return this.$route.matched[0].name
-            },
-            collection () {
-                if (this.owner === MENU_RESOURCE) {
-                    const isHostCollected = this.usercustom[MENU_RESOURCE_HOST_COLLECTION] === undefined
-                        ? true
-                        : this.usercustom[MENU_RESOURCE_HOST_COLLECTION]
-                    const isBusinessCollected = this.usercustom[MENU_RESOURCE_BUSINESS_COLLECTION] === undefined
-                        ? true
-                        : this.usercustom[MENU_RESOURCE_BUSINESS_COLLECTION]
-                    const collection = [...(this.usercustom[MENU_RESOURCE_COLLECTION] || [])]
-                    if (isHostCollected) {
-                        collection.unshift('host')
-                    }
-                    if (isBusinessCollected) {
-                        collection.unshift('biz')
-                    }
-                    return collection.filter(modelId => {
-                        return this.models.some(model => model.bk_obj_id === modelId && !model.bk_ispaused)
-                    })
-                }
-                return []
-            },
-            collectionMenus () {
-                return this.collection.map(id => {
-                    const model = this.models.find(model => model.bk_obj_id === id)
-                    return {
-                        i18n: model.bk_obj_name,
-                        icon: model.bk_obj_icon,
-                        id: `collection_${id}`,
-                        route: this.getCollectionRoute(model)
-                    }
-                })
-            },
-            currentMenus () {
-                const target = MENU_DICTIONARY.find(menu => menu.id === this.owner)
-                const menus = [...((target && target.menu) || [])]
-                if (this.owner === MENU_RESOURCE) {
-                    menus.splice(1, 0, ...this.collectionMenus)
-                }
-                return menus
-            },
-            relativeActiveName () {
-                const relative = this.$tools.getValue(this.$route, 'meta.menu.relative')
-                if (relative && !this.hasExactActive) {
-                    const names = Array.isArray(relative) ? relative : [relative]
-                    let relativeActiveName = null
-                    for (let index = 0; index < names.length; index++) {
-                        const name = names[index]
-                        const isActive = this.currentMenus.some(menu => {
-                            if (menu.hasOwnProperty('route')) {
-                                return menu.route.name === name
-                            } else if (menu.submenu && menu.submenu.length) {
-                                return menu.submenu.some(submenu => submenu.route.name === name)
-                            }
-                            return false
-                        })
-                        if (isActive) {
-                            relativeActiveName = name
-                            break
-                        }
-                    }
-                    return relativeActiveName
-                }
-                return null
-            }
-        },
-        watch: {
-            $route: {
-                immediate: true,
-                handler () {
-                    this.setDefaultExpand()
-                    this.checkExactActive()
-                }
-            }
-        },
-        methods: {
-            setDefaultExpand () {
-                const expandedId = this.$route.meta.menu.parent
-                if (expandedId) {
-                    this.$set(this.state, expandedId, { expanded: true })
-                } else if (this.relativeActiveName) {
-                    const parent = this.currentMenus.find(menu => {
-                        if (menu.hasOwnProperty('route')) {
-                            return menu.route.name === this.relativeActiveName
-                        }
-                        return menu.submenu.some(submenu => submenu.route.name === this.relativeActiveName)
-                    })
-                    if (parent) {
-                        this.$set(this.state, parent.id, { expanded: true })
-                    }
-                }
-            },
-            checkExactActive () {
-                if (!this.$refs.menuLink) {
-                    return
-                }
-                this.$nextTick(() => {
-                    this.hasExactActive = this.$refs.menuLink.some(link => link.$el.classList.contains('active'))
-                })
-            },
-            isRelativeActive (menu) {
-                return menu.route.name === this.relativeActiveName
-            },
-            getCollectionRoute (model) {
-                const map = {
-                    host: MENU_RESOURCE_HOST,
-                    biz: MENU_RESOURCE_BUSINESS
-                }
-                if (map.hasOwnProperty(model.bk_obj_id)) {
-                    return {
-                        name: map[model.bk_obj_id]
-                    }
-                }
-                return {
-                    name: MENU_RESOURCE_INSTANCE,
-                    params: {
-                        objId: model.bk_obj_id
-                    }
-                }
-            },
-            getMenuLink (menu) {
-                if (this.isBusinessNav) {
-                    return {
-                        name: menu.route.name,
-                        params: {
-                            bizId: this.$store.getters['objectBiz/bizId']
-                        }
-                    }
-                }
-                return menu.route
-            },
-            handleMouseEnter () {
-                if (this.timer) {
-                    clearTimeout(this.timer)
-                }
-                this.$store.commit('setNavStatus', { fold: false })
-            },
-            handleMouseLeave () {
-                this.timer = setTimeout(() => {
-                    this.$store.commit('setNavStatus', { fold: true })
-                }, 300)
-            },
-            // 切换导航展开固定
-            toggleNavStick () {
-                this.$store.commit('setNavStatus', {
-                    fold: !this.navFold,
-                    stick: !this.navStick
-                })
-            },
-            handleToggleBusiness (id, oldValue) {
-                if (!oldValue || id === oldValue) {
-                    return false
-                }
-                this.$routerActions.redirect({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE,
-                    params: {
-                        ...this.$route.params,
-                        bizId: id
-                    },
-                    reload: true
-                })
-            }
+  import has from 'has'
+  import { mapGetters } from 'vuex'
+  import MENU_DICTIONARY from '@/dictionary/menu'
+  import {
+    MENU_BUSINESS,
+    MENU_BUSINESS_HOST_AND_SERVICE,
+    MENU_RESOURCE,
+    MENU_RESOURCE_BUSINESS,
+    MENU_RESOURCE_HOST,
+    MENU_RESOURCE_INSTANCE,
+    // MENU_RESOURCE_MANAGEMENT,
+    MENU_RESOURCE_COLLECTION,
+    MENU_RESOURCE_HOST_COLLECTION,
+    MENU_RESOURCE_BUSINESS_COLLECTION
+  } from '@/dictionary/menu-symbol'
+  export default {
+    data() {
+      return {
+        routerLinkHeight: 42,
+        timer: null,
+        state: {},
+        hasExactActive: false
+      }
+    },
+    computed: {
+      ...mapGetters(['navStick', 'navFold', 'admin']),
+      ...mapGetters('userCustom', ['usercustom']),
+      ...mapGetters('objectModelClassify', ['classifications', 'models']),
+      isBusinessNav() {
+        const { matched } = this.$route
+        if (!matched.length) {
+          return false
         }
+        return matched[0].name === MENU_BUSINESS
+      },
+      unfold() {
+        return this.navStick || !this.navFold
+      },
+      owner() {
+        return this.$route.matched[0].name
+      },
+      collection() {
+        if (this.owner === MENU_RESOURCE) {
+          const isHostCollected = this.usercustom[MENU_RESOURCE_HOST_COLLECTION] === undefined
+            ? true
+            : this.usercustom[MENU_RESOURCE_HOST_COLLECTION]
+          const isBusinessCollected = this.usercustom[MENU_RESOURCE_BUSINESS_COLLECTION] === undefined
+            ? true
+            : this.usercustom[MENU_RESOURCE_BUSINESS_COLLECTION]
+          const collection = [...(this.usercustom[MENU_RESOURCE_COLLECTION] || [])]
+          if (isHostCollected) {
+            collection.unshift('host')
+          }
+          if (isBusinessCollected) {
+            collection.unshift('biz')
+          }
+          // eslint-disable-next-line max-len
+          return collection.filter(modelId => this.models.some(model => model.bk_obj_id === modelId && !model.bk_ispaused))
+        }
+        return []
+      },
+      collectionMenus() {
+        return this.collection.map((id) => {
+          const model = this.models.find(model => model.bk_obj_id === id)
+          return {
+            i18n: model.bk_obj_name,
+            icon: model.bk_obj_icon,
+            id: `collection_${id}`,
+            route: this.getCollectionRoute(model)
+          }
+        })
+      },
+      currentMenus() {
+        const target = MENU_DICTIONARY.find(menu => menu.id === this.owner)
+        const menus = [...((target && target.menu) || [])]
+        if (this.owner === MENU_RESOURCE) {
+          menus.splice(1, 0, ...this.collectionMenus)
+        }
+        return menus
+      },
+      relativeActiveName() {
+        const relative = this.$tools.getValue(this.$route, 'meta.menu.relative')
+        if (relative && !this.hasExactActive) {
+          const names = Array.isArray(relative) ? relative : [relative]
+          let relativeActiveName = null
+          for (let index = 0; index < names.length; index++) {
+            const name = names[index]
+            const isActive = this.currentMenus.some((menu) => {
+              if (has(menu, 'route')) {
+                return menu.route.name === name
+              }
+              if (menu.submenu && menu.submenu.length) {
+                return menu.submenu.some(submenu => submenu.route.name === name)
+              }
+              return false
+            })
+            if (isActive) {
+              relativeActiveName = name
+              break
+            }
+          }
+          return relativeActiveName
+        }
+        return null
+      }
+    },
+    watch: {
+      $route: {
+        immediate: true,
+        handler() {
+          this.setDefaultExpand()
+          this.checkExactActive()
+        }
+      },
+      isBusinessNav(isBusinessNav) {
+        isBusinessNav && this.refreshAuthorizedList()
+      }
+    },
+    methods: {
+      setDefaultExpand() {
+        const expandedId = this.$route.meta.menu.parent
+        if (expandedId) {
+          this.$set(this.state, expandedId, { expanded: true })
+        } else if (this.relativeActiveName) {
+          const parent = this.currentMenus.find((menu) => {
+            if (has(menu, 'route')) {
+              return menu.route.name === this.relativeActiveName
+            }
+            return menu.submenu.some(submenu => submenu.route.name === this.relativeActiveName)
+          })
+          if (parent) {
+            this.$set(this.state, parent.id, { expanded: true })
+          }
+        }
+      },
+      checkExactActive() {
+        if (!this.$refs.menuLink) {
+          return
+        }
+        this.$nextTick(() => {
+          this.hasExactActive = this.$refs.menuLink.some(link => link.$el.classList.contains('active'))
+        })
+      },
+      isRelativeActive(menu) {
+        return menu.route.name === this.relativeActiveName
+      },
+      getCollectionRoute(model) {
+        const map = {
+          host: MENU_RESOURCE_HOST,
+          biz: MENU_RESOURCE_BUSINESS
+        }
+        if (has(map, model.bk_obj_id)) {
+          return {
+            name: map[model.bk_obj_id]
+          }
+        }
+        return {
+          name: MENU_RESOURCE_INSTANCE,
+          params: {
+            objId: model.bk_obj_id
+          }
+        }
+      },
+      getMenuLink(menu) {
+        if (this.isBusinessNav) {
+          return {
+            name: menu.route.name,
+            params: {
+              bizId: this.$store.getters['objectBiz/bizId']
+            }
+          }
+        }
+        return menu.route
+      },
+      handleMouseEnter() {
+        if (this.timer) {
+          clearTimeout(this.timer)
+        }
+        this.$store.commit('setNavStatus', { fold: false })
+      },
+      handleMouseLeave() {
+        this.timer = setTimeout(() => {
+          this.$store.commit('setNavStatus', { fold: true })
+        }, 300)
+      },
+      // 切换导航展开固定
+      toggleNavStick() {
+        this.$store.commit('setNavStatus', {
+          fold: !this.navFold,
+          stick: !this.navStick
+        })
+      },
+      handleToggleBusiness(id, oldValue) {
+        if (!oldValue || id === oldValue) {
+          return false
+        }
+        this.$routerActions.redirect({
+          name: MENU_BUSINESS_HOST_AND_SERVICE,
+          params: {
+            ...this.$route.params,
+            bizId: id
+          },
+          reload: true
+        })
+      },
+      async refreshAuthorizedList() {
+        try {
+          const { info } = await this.$store.dispatch('objectBiz/getAuthorizedBusiness')
+          this.$store.commit('objectBiz/setAuthorizedBusiness', Object.freeze(info))
+          const { bizId } = this.$route.params
+          const exist = info.some(biz => biz.bk_biz_id.toString() === bizId.toString())
+          if (!exist) {
+            this.$route.matched[0].meta.view = 'permission'
+          }
+        } catch (error) {
+          console.error(error)
+        }
+      }
     }
+  }
 </script>
 <style lang="scss" scoped>
 $cubicBezier: cubic-bezier(0.4, 0, 0.2, 1);

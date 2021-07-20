@@ -18,7 +18,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -26,11 +25,6 @@ import (
 func addProcEnablePortProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	blog.Infof("start execute y3_7_202002231026")
-	id, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
-	if err != nil {
-		blog.Errorf("get proerty id error. err:%s", err.Error())
-		return fmt.Errorf("get proerty id error. err:%s", err.Error())
-	}
 
 	propertyGroup := "proc_port"
 	maxIdxCond := map[string]interface{}{
@@ -38,14 +32,14 @@ func addProcEnablePortProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 		common.BKObjIDField:         common.BKInnerObjIDProc,
 	}
 	maxIdxAttr := &Attribute{}
-	err = db.Table(common.BKTableNameObjAttDes).Find(maxIdxCond).Sort(fmt.Sprintf("%s:-1", common.BKPropertyGroupField)).One(ctx, maxIdxAttr)
+	err := db.Table(common.BKTableNameObjAttDes).Find(maxIdxCond).Sort(fmt.Sprintf("%s:-1", 
+		common.BKPropertyIndexField)).One(ctx, maxIdxAttr)
 	if err != nil {
 		blog.ErrorJSON("get proerty max index value error.cond:%s, err:%s", maxIdxCond, err.Error())
 		return fmt.Errorf("get proerty max index value error. err:%s", err.Error())
 	}
 
 	addPortEnable := Attribute{
-		ID:            int64(id),
 		OwnerID:       common.BKDefaultOwnerID,
 		ObjectID:      common.BKInnerObjIDProc,
 		PropertyID:    common.BKProcPortEnable,
@@ -64,14 +58,14 @@ func addProcEnablePortProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 		Option:        true,
 		Description:   "",
 		Creator:       common.CCSystemOperatorUserName,
-		LastTime:      &metadata.Time{Time: time.Now()},
-		CreateTime:    &metadata.Time{Time: time.Now()},
+		CreateTime:    time.Now(),
+		LastTime:      time.Now(),
 	}
 
-	err = db.Table(common.BKTableNameObjAttDes).Insert(ctx, addPortEnable)
-	if err != nil {
-		blog.Errorf("add process proerty %s error. err:%s", common.BKProcPortEnable, err.Error())
-		return fmt.Errorf("add process proerty %s error. err:%s", common.BKProcPortEnable, err.Error())
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	if err := upgrader.Insert(ctx, db, common.BKTableNameObjAttDes, addPortEnable, "id", uniqueFields); err != nil {
+		blog.ErrorJSON("addProcEnablePortProperty failed, Insert err: %s, attribute: %#v, ", err, addPortEnable)
+		return err
 	}
 
 	return nil
@@ -142,9 +136,9 @@ type Attribute struct {
 	Option            interface{} `field:"option" json:"option" bson:"option"`
 	Description       string      `field:"description" json:"description" bson:"description"`
 
-	Creator    string         `field:"creator" json:"creator" bson:"creator"`
-	CreateTime *metadata.Time `json:"create_time" bson:"create_time"`
-	LastTime   *metadata.Time `json:"last_time" bson:"last_time"`
+	Creator    string    `field:"creator" json:"creator" bson:"creator"`
+	CreateTime time.Time `json:"create_time" bson:"create_time"`
+	LastTime   time.Time `json:"last_time" bson:"last_time"`
 }
 
 // Metadata  used to define the metadata for the resources

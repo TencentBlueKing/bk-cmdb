@@ -14,6 +14,7 @@ package host
 
 import (
 	"strings"
+	"sync"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -21,6 +22,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder {
@@ -36,7 +38,7 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.Up
 	cloudIDFiler := map[string]interface{}{
 		common.BKCloudIDField: input.CloudID,
 	}
-	count, err := hm.DbProxy.Table(common.BKTableNameBasePlat).Find(cloudIDFiler).Count(context)
+	count, err := mongodb.Client().Table(common.BKTableNameBasePlat).Find(cloudIDFiler).Count(context)
 	if err != nil {
 		blog.ErrorJSON("UpdateHostCloudAreaField failed, db select failed, table: %s, option: %s, err: %s, rid: %s", common.BKTableNameBasePlat, cloudIDFiler, err.Error(), rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -58,7 +60,7 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.Up
 	}
 	hostSimplify := make([]metadata.HostMapStr, 0)
 	fields := []string{common.BKHostInnerIPField, common.BKCloudIDField, common.BKHostIDField}
-	if err := hm.DbProxy.Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(fields...).All(context, &hostSimplify); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(fields...).All(context, &hostSimplify); err != nil {
 		blog.ErrorJSON("UpdateHostCloudAreaField failed, db select failed, table: %s, option: %s, err: %s, rid: %s", common.BKTableNameBaseHost, hostFilter, err.Error(), rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -83,8 +85,7 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.Up
 		innerIPArr := strings.Split(innerIP, ",")
 		ipCond[index] = map[string]interface{}{
 			common.BKHostInnerIPField: map[string]interface{}{
-				common.BKDBAll:  innerIPArr,
-				common.BKDBSize: len(innerIPArr),
+				common.BKDBIN: innerIPArr,
 			},
 		}
 	}
@@ -96,7 +97,7 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.Up
 		common.BKDBOR:         ipCond,
 	}
 	duplicatedHosts := make([]metadata.HostMapStr, 0)
-	if err := hm.DbProxy.Table(common.BKTableNameBaseHost).Find(dbHostFilter).Fields(fields...).All(context, &duplicatedHosts); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(dbHostFilter).Fields(fields...).All(context, &duplicatedHosts); err != nil {
 		blog.ErrorJSON("UpdateHostCloudAreaField failed, db select failed, table: %s, option: %s, err: %s, rid: %s", common.BKTableNameBaseHost, dbHostFilter, err.Error(), rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -114,9 +115,67 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.Up
 	updateDoc := map[string]interface{}{
 		common.BKCloudIDField: input.CloudID,
 	}
-	if err := hm.DbProxy.Table(common.BKTableNameBaseHost).Update(context, updateFilter, updateDoc); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Update(context, updateFilter, updateDoc); err != nil {
 		blog.ErrorJSON("UpdateHostCloudAreaField failed, db update failed, table: %s, filter: %s, doc: %s, err: %s, rid: %s", common.BKTableNameBaseHost, updateFilter, updateDoc, err.Error(), rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 	return nil
+}
+
+func (hm *hostManager) FindCloudAreaHostCount(kit *rest.Kit, input metadata.CloudAreaHostCount) ([]metadata.CloudAreaHostCountElem, error) {
+	if len(input.CloudIDs) == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_cloud_ids")
+	}
+
+	cloudIDs := util.IntArrayUnique(input.CloudIDs)
+
+	// to speed up, multi goroutine to query host count for multi cloudarea
+	var wg sync.WaitGroup
+	var lock sync.RWMutex
+	var firstErr errors.CCErrorCoder
+	pipeline := make(chan bool, 10)
+	cloudCountMap := make(map[int64]int64)
+
+	for _, cloudID := range cloudIDs {
+		pipeline <- true
+		wg.Add(1)
+
+		go func(cloudID int64) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			filter := map[string]interface{}{common.BKCloudIDField: cloudID}
+			hostCnt, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Count(kit.Ctx)
+			if err != nil {
+				blog.ErrorJSON("UpdateHostCloudAreaField failed, db selected failed, table: %s, filter: %s, err: %s, rid: %s", common.BKTableNameBaseHost, filter, err.Error(), kit.Rid)
+				if firstErr == nil {
+					firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+				}
+				return
+			}
+
+			lock.Lock()
+			cloudCountMap[cloudID] = int64(hostCnt)
+			lock.Unlock()
+
+		}(cloudID)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return nil, firstErr
+	}
+
+	ret := make([]metadata.CloudAreaHostCountElem, len(input.CloudIDs))
+	for idx, cloudID := range input.CloudIDs {
+		ret[idx] = metadata.CloudAreaHostCountElem{
+			CloudID:   cloudID,
+			HostCount: cloudCountMap[cloudID],
+		}
+	}
+
+	return ret, nil
 }

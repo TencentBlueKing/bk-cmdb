@@ -18,8 +18,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (s *coreService) CreateServiceTemplate(ctx *rest.Contexts) {
@@ -88,7 +88,7 @@ func (s *coreService) GetServiceTemplateWithStatistics(ctx *rest.Contexts) {
 	serviceInstanceFilter := map[string]interface{}{
 		common.BKServiceTemplateIDField: template.ID,
 	}
-	serviceInstanceCount, err := s.db.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(ctx.Kit.Ctx)
+	serviceInstanceCount, err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("GetServiceCategory failed, filter: %+v, err: %+v, rid: %s", serviceInstanceFilter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -99,7 +99,7 @@ func (s *coreService) GetServiceTemplateWithStatistics(ctx *rest.Contexts) {
 	processRelationFilter := map[string]interface{}{
 		common.BKServiceTemplateIDField: template.ID,
 	}
-	processRelationCount, err := s.db.Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).Count(ctx.Kit.Ctx)
+	processRelationCount, err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("GetServiceCategory failed, filter: %+v, err: %+v, rid: %s", serviceInstanceFilter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -130,14 +130,8 @@ func (s *coreService) ListServiceTemplateDetail(ctx *rest.Contexts) {
 	input := struct {
 		ServiceTemplateIDs []int64 `json:"service_template_ids" mapstructure:"service_template_ids"`
 	}{}
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
+	if err := ctx.DecodeInto(&input); nil != err {
 		ctx.RespAutoError(err)
-		return
-	}
-	if err := mapstruct.Decode2Struct(data, &input); err != nil {
-		blog.ErrorJSON("ListServiceTemplateDetail failed, unmarshal request body failed, value: %s, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
 		return
 	}
 

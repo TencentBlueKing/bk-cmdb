@@ -45,7 +45,7 @@ func newClassification(cli *Client) *Classification {
 // CreateClassification create a new classification
 func (m *Classification) CreateClassification(data types.MapStr) (int, error) {
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classification", m.cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/create/objectclassification", m.cli.GetAddress())
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -74,7 +74,7 @@ func (m *Classification) DeleteClassification(cond common.Condition) error {
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classification/%d", m.cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/delete/objectclassification/%d", m.cli.GetAddress(), id)
 
 	rst, err := m.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
@@ -96,7 +96,7 @@ func (m *Classification) SearchClassifications(cond common.Condition) ([]types.M
 
 	data := cond.ToMapStr()
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classifications", m.cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/find/objectclassification", m.cli.GetAddress())
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -126,7 +126,7 @@ func (m *Classification) SearchClassificationWithObjects(cond common.Condition) 
 
 	data := cond.ToMapStr()
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classification/%s/objects", m.cli.GetAddress(), m.cli.GetSupplierAccount())
+	targetURL := fmt.Sprintf("%s/api/v3/find/classificationobject", m.cli.GetAddress())
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -159,7 +159,7 @@ func (m *Classification) UpdateClassification(data types.MapStr, cond common.Con
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classification/%d", m.cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/update/objectclassification/%d", m.cli.GetAddress(), id)
 
 	rst, err := m.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {

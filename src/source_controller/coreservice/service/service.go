@@ -14,21 +14,22 @@ package service
 
 import (
 	"net/http"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/app/options"
-	"configcenter/src/source_controller/coreservice/cache"
-	cacheop "configcenter/src/source_controller/coreservice/cache"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/auditlog"
+	"configcenter/src/source_controller/coreservice/core/auth"
+	"configcenter/src/source_controller/coreservice/core/cloud"
+	coreCommon "configcenter/src/source_controller/coreservice/core/common"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
+	e "configcenter/src/source_controller/coreservice/core/event"
 	"configcenter/src/source_controller/coreservice/core/host"
 	"configcenter/src/source_controller/coreservice/core/hostapplyrule"
 	"configcenter/src/source_controller/coreservice/core/instances"
@@ -39,15 +40,10 @@ import (
 	"configcenter/src/source_controller/coreservice/core/process"
 	"configcenter/src/source_controller/coreservice/core/settemplate"
 	dbSystem "configcenter/src/source_controller/coreservice/core/system"
-	watchEvent "configcenter/src/source_controller/coreservice/event"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo/local"
-	dalredis "configcenter/src/storage/dal/redis"
-	"configcenter/src/storage/reflector"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/driver/redis"
 
 	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
 )
 
 // CoreServiceInterface the topo service methods used to init
@@ -69,9 +65,6 @@ type coreService struct {
 	err         errors.CCErrorIf
 	cfg         options.Config
 	core        core.Core
-	db          dal.RDB
-	rds         *redis.Client
-	cacheSet    *cache.ClientSet
 }
 
 func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf, lang language.CCLanguageIf) error {
@@ -89,70 +82,47 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		s.langFactory[common.English] = lang.CreateDefaultCCLanguageIf(string(common.English))
 	}
 
-	db, dbErr := local.NewMgo(s.cfg.Mongo.GetMongoConf(), time.Minute)
+	/* db, dbErr := local.NewMgo(s.cfg.Mongo.GetMongoConf(), time.Minute)
 	if dbErr != nil {
 		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
 		return dbErr
 	}
 
-	cache, cacheRrr := dalredis.NewFromConfig(cfg.Redis)
+	 cache, cacheRrr := dalredis.NewFromConfig(cfg.Redis)
 	if cacheRrr != nil {
 		blog.Errorf("new redis client failed, err: %v", cacheRrr)
 		return cacheRrr
 	}
-
 	initErr := db.InitTxnManager(cache)
 	if initErr != nil {
 		blog.Errorf("failed to init txn manager, error info is %v", initErr)
 		return initErr
 	}
-
-	s.db = db
-	s.rds = cache
+	mongodb.Client() = db
+	s.rds = cache */
 
 	// connect the remote mongodb
-	instance := instances.New(db, s, cache, lang)
-	hostApplyRuleCore := hostapplyrule.New(db, instance)
+	instance := instances.New(s, lang, engine.CoreAPI)
+	hostApplyRuleCore := hostapplyrule.New(instance)
 	s.core = core.New(
-		model.New(db, s, lang, cache),
+		model.New(s, lang),
 		instance,
-		association.New(db, s),
-		datasynchronize.New(db, s),
-		mainline.New(db, lang),
-		host.New(db, cache, s, hostApplyRuleCore),
-		auditlog.New(db),
-		process.New(db, s, cache),
-		label.New(db),
-		settemplate.New(db),
-		operation.New(db),
+		association.New(s),
+		datasynchronize.New(s),
+		mainline.New(lang),
+		host.New(s, hostApplyRuleCore),
+		auditlog.New(),
+		process.New(s),
+		label.New(),
+		settemplate.New(),
+		operation.New(),
 		hostApplyRuleCore,
-		dbSystem.New(db),
+		dbSystem.New(),
+		cloud.New(mongodb.Client()),
+		auth.New(mongodb.Client()),
+		e.New(mongodb.Client(), redis.Client()),
+		coreCommon.New(),
 	)
-
-	event, eventErr := reflector.NewReflector(s.cfg.Mongo.GetMongoConf())
-	if eventErr != nil {
-		blog.Errorf("new reflector failed, err: %v", eventErr)
-		return eventErr
-	}
-
-	c, cacheErr := cacheop.NewCache(cache, db, event)
-	if cacheErr != nil {
-		blog.Errorf("new cache instance failed, err: %v", cacheErr)
-		return cacheErr
-	}
-	s.cacheSet = c
-
-	watcher, watchErr := stream.NewStream(s.cfg.Mongo.GetMongoConf())
-	if watchErr != nil {
-		blog.Errorf("new watch stream failed, err: %v", watchErr)
-		return watchErr
-	}
-
-	if err := watchEvent.NewEvent(s.db, s.rds, watcher, engine.ServiceManageInterface); err != nil {
-		blog.Errorf("new watch event failed, err: %v", err)
-		return err
-	}
-
 	return nil
 }
 
@@ -160,10 +130,11 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 func (s *coreService) WebService() *restful.Container {
 
 	container := restful.NewContainer()
-
+	getErrFunc := func() errors.CCErrorIf {
+		return s.err
+	}
 	api := new(restful.WebService)
-	api.Path("/api/v3").Filter(s.engine.Metric().RestfulMiddleWare).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-
+	api.Path("/api/v3").Filter(s.engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 	// init service actions
 	s.initService(api)
 	container.Add(api)

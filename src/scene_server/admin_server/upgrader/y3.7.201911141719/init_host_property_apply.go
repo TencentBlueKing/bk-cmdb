@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-    "configcenter/src/storage/dal/types"
+	"configcenter/src/storage/dal/types"
 )
 
 func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -40,7 +40,7 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 	}
 
 	// add module attribute field
-	newAttributeID, err := db.NextSequence(ctx, common.BKTableNameObjDes)
+	newAttributeID, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
 	if err != nil {
 		blog.Errorf("InitHostPropertyApplyDataModel failed, NextSequence failed, err: %s", err.Error())
 		return fmt.Errorf("NextSequence failed, err: %s", err.Error())

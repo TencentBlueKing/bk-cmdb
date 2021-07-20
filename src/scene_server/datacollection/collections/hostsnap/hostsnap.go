@@ -22,46 +22,83 @@ import (
 	"strings"
 	"time"
 
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
+	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/tidwall/gjson"
-	"gopkg.in/redis.v5"
+)
+
+const (
+	// defaultChangeRangePercent is the value of the default percentage of data fluctuation
+	defaultChangeRangePercent = 10
+	// minChangeRangePercent is the value of the minimum percentage of data fluctuation
+	minChangeRangePercent = 1
+	// defaultRateLimiterQPS is the default value of rateLimiter qps
+	defaultRateLimiterQPS = 40
+	// defaultRateLimiterBurst is the default value of rateLimiter burst
+	defaultRateLimiterBurst = 100
+)
+
+var (
+	// 需要参与变化对比的字段
+	compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
+		"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit"}
+	reqireFields = append(compareFields, "bk_host_id", "bk_host_innerip", "bk_host_outerip")
+
+	// notice: 为了对应不同版本和环境差异，再当前版本中设置compareFields中不参加对比的字段
+	ignoreCompareField = make(map[string]struct{}, 0)
 )
 
 type HostSnap struct {
-	redisCli    *redis.Client
+	redisCli    redis.Client
 	authManager *extensions.AuthManager
 	*backbone.Engine
-
-	filter *filter
-	ctx    context.Context
-	db     dal.RDB
+	rateLimit flowctrl.RateLimiter
+	filter    *filter
+	ctx       context.Context
+	db        dal.RDB
+	window    *Window
 }
 
-func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine *backbone.Engine, authManager *extensions.AuthManager) *HostSnap {
+func NewHostSnap(ctx context.Context, redisCli redis.Client, db dal.RDB, engine *backbone.Engine, authManager *extensions.AuthManager) *HostSnap {
+	qps, burst := getRateLimiterConfig()
 	h := &HostSnap{
 		redisCli:    redisCli,
 		ctx:         ctx,
 		db:          db,
+		rateLimit:   flowctrl.NewRateLimiter(int64(qps), int64(burst)),
 		authManager: authManager,
 		Engine:      engine,
 		filter:      newFilter(),
+		window:      newWindow(),
 	}
 	return h
 }
 
-var compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_cpu_mhz", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
-	"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit",
-	common.HostFieldDockerClientVersion, common.HostFieldDockerServerVersion}
+func getRateLimiterConfig() (int, int) {
+	qps, err := cc.Int("datacollection.hostsnap.rateLimiter.qps")
+	if err != nil {
+		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.qps settings, set the default value: %s", defaultRateLimiterQPS)
+		qps = defaultRateLimiterQPS
+	}
+	burst, err := cc.Int("datacollection.hostsnap.rateLimiter.burst")
+	if err != nil {
+		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.burst setting,set the default value: %s", defaultRateLimiterBurst)
+		burst = defaultRateLimiterBurst
+	}
+	return qps, burst
+}
 
 // Hash returns hash value base on message.
 func (h *HostSnap) Hash(cloudid, ip string) (string, error) {
@@ -80,6 +117,23 @@ func (h *HostSnap) Hash(cloudid, ip string) (string, error) {
 // Mock returns local mock message for testing.
 func (h *HostSnap) Mock() string {
 	return MockMessage
+}
+
+// getLimitConfig return the configured limit value
+func getLimitConfig(config string, defaultValue, minValue int) int {
+	var err error
+	limit := defaultValue
+	if cc.IsExist(config) {
+		limit, err = cc.Int(config)
+		if err != nil {
+			blog.Errorf("get %s value error, err: %v ", config, err)
+			limit = defaultValue
+		}
+		if limit < minValue {
+			limit = minValue
+		}
+	}
+	return limit
 }
 
 func (h *HostSnap) Analyze(msg *string) error {
@@ -105,7 +159,6 @@ func (h *HostSnap) Analyze(msg *string) error {
 		blog.Errorf("get host detail with ips: %v failed, err: %v, rid: %s", ips, err, rid)
 		return err
 	}
-
 	elements := gjson.GetMany(host, common.BKHostIDField, common.BKHostInnerIPField, common.BKHostOuterIPField)
 	// check host id field
 	if !elements[0].Exists() {
@@ -127,37 +180,66 @@ func (h *HostSnap) Analyze(msg *string) error {
 	innerIP := elements[1].String()
 	outerIP := elements[2].String()
 
-	key := common.RedisSnapKeyPrefix + strconv.FormatInt(hostID, 10)
-	if err := h.redisCli.Set(key, data, time.Minute*10).Err(); err != nil {
-		blog.Errorf("save snapshot key: %s to redis failed: %v, rid: %s", key, err, rid)
+	// save host snapshot in redis
+
+	if !val.Get("data.apiVer").Exists() {
+		h.saveHostsnap(header, &val, hostID)
 	}
 
+	// window restriction on request
+	if !h.window.canPassWindow() {
+		if blog.V(4) {
+			blog.Infof("not within the time window that can pass, skip host snapshot data update, host id: %d, ip: %s, cloud id: %d, rid: %s",
+				hostID, innerIP, cloudID, rid)
+		}
+		return nil
+	}
 	setter, raw := parseSetter(&val, innerIP, outerIP)
 	// no need to update
 	if !needToUpdate(raw, host) {
 		return nil
 	}
 
+	// limit the number of requests
+	if !h.rateLimit.TryAccept() {
+		blog.Warnf("skip host snapshot data update due to request limit, host id: %d, ip: %s, cloud id: %d, rid: %s",
+			hostID, innerIP, cloudID, rid)
+		return nil
+	}
+
 	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, rid: %s",
 		hostID, innerIP, cloudID, host, raw, rid)
 
-	// add auditLog
-	preData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, header, hostID)
+	// get audit interface of host.
+	audit := auditlog.NewHostAudit(h.CoreAPI.CoreService())
+	kit := &rest.Kit{
+		Rid:             rid,
+		Header:          header,
+		Ctx:             h.ctx,
+		CCError:         h.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)),
+		User:            common.CCSystemCollectorUserName,
+		SupplierAccount: common.BKDefaultOwnerID,
+	}
+
+	// generate audit log for update host.
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).
+		WithOperateFrom(metadata.FromDataCollection).WithUpdateFields(setter)
+	auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, innerIP, nil)
 	if err != nil {
-		blog.Errorf("snapshot get host previous data failed, err: %s, hostID: %d, rid: %s", err, hostID, rid)
+		blog.Errorf("generate host snap audit log failed before update host, host: %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
 		return err
 	}
-	if !preData.Result {
-		blog.Errorf("snapshot get host previous data failed, code: %d, err: %s, hostID: %d, rid: %s",
-			preData.Code, preData.ErrMsg, hostID, rid)
-		return err
+
+	// notice: needToUpdate 需要顺序，只能在更新数据库之前，删除需要忽略更新的字段
+	for field := range ignoreCompareField {
+		delete(setter, field)
 	}
 
 	opt := &metadata.UpdateOption{
 		Condition: map[string]interface{}{
 			common.BKHostIDField: hostID,
 		},
-		Data:       mapstr.NewFromMap(setter),
+		Data:       setter,
 		CanEditAll: true,
 	}
 
@@ -171,71 +253,10 @@ func (h *HostSnap) Analyze(msg *string) error {
 		return fmt.Errorf("update snapshot failed, err: %s", res.ErrMsg)
 	}
 
-	curData := make(map[string]interface{}, 0)
-	for k, v := range preData.Data {
-		if value, exist := setter[k]; exist {
-			// set with the new value
-			curData[k] = value
-			continue
-		}
-		curData[k] = v
-	}
-
-	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}, Fields: []string{common.BKAppIDField}}
-	moduleHost, err := h.CoreAPI.CoreService().Host().GetHostModuleRelation(h.ctx, header, input)
-	if err != nil {
-		blog.Errorf("snapshot get host: %d/%s module relation failed, err:%v, rid: %s", hostID, innerIP, err, rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("save host snap audit log failed after update host, host %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
 		return err
-	}
-	if !moduleHost.Result {
-		blog.Errorf("snapshot get host: %d%s module relation failed, err: %v, rid: %s", hostID, innerIP, moduleHost.ErrMsg, rid)
-		return fmt.Errorf("snapshot get moduleHostConfig failed, fail to create auditLog")
-	}
-
-	audit := auditlog.NewAudit(h.CoreAPI, header)
-	properties, err := audit.GetAuditLogProperty(h.ctx, common.BKInnerObjIDHost)
-	if err != nil {
-		return err
-	}
-	var bizID int64
-	if len(moduleHost.Data.Info) > 0 {
-		bizID = moduleHost.Data.Info[0].AppID
-	}
-	bizName := ""
-	if bizID > 0 {
-		bizName, err = audit.GetInstNameByID(h.ctx, common.BKInnerObjIDApp, bizID)
-		if err != nil {
-			return err
-		}
-	}
-	auditLog := metadata.AuditLog{
-		AuditType:    metadata.HostType,
-		ResourceType: metadata.HostRes,
-		Action:       metadata.AuditUpdate,
-		OperateFrom:  metadata.FromDataCollection,
-		OperationDetail: &metadata.InstanceOpDetail{
-			BasicOpDetail: metadata.BasicOpDetail{
-				BusinessID:   bizID,
-				BusinessName: bizName,
-				ResourceID:   hostID,
-				ResourceName: innerIP,
-				Details: &metadata.BasicContent{
-					PreData:    preData.Data,
-					CurData:    curData,
-					Properties: properties,
-				},
-			},
-			ModelID: common.BKInnerObjIDHost,
-		},
-	}
-	result, err := h.CoreAPI.CoreService().Audit().SaveAuditLog(h.ctx, header, auditLog)
-	if err != nil {
-		blog.Errorf("snapshot create host %d/%s audit log failed, err: %v, rid: %s", hostID, innerIP, err.Error())
-		return err
-	}
-	if !result.Result {
-		blog.Errorf("snapshot create host %d/%s audit log failed, err: %s, rid: %s", hostID, innerIP, result.ErrMsg, rid)
-		return fmt.Errorf("create host audit log failed, err: %s", result.ErrMsg)
 	}
 
 	blog.V(5).Infof("snapshot for host changed, update success, host id: %d, ip: %s, cloud id: %d, rid: %s",
@@ -245,15 +266,23 @@ func (h *HostSnap) Analyze(msg *string) error {
 }
 
 func needToUpdate(src, toCompare string) bool {
+	// get data fluctuation limit
+	changeRangePercent := getLimitConfig("datacollection.hostsnap.changeRangePercent", defaultChangeRangePercent, minChangeRangePercent)
 	srcElements := gjson.GetMany(src, compareFields...)
 	compareElements := gjson.GetMany(toCompare, compareFields...)
-	for idx := range compareFields {
+	for idx, field := range compareFields {
+		if _, ok := ignoreCompareField[field]; ok {
+			// 忽略变更对比的字段直接过滤掉
+			continue
+		}
 		// compare these value with string directly to avoid empty value or null value.
 		if srcElements[idx].String() != compareElements[idx].String() {
-			// tolerate bk_cpu_mhz changes less than 100
-			if compareFields[idx] == "bk_cpu_mhz" {
-				diff := srcElements[idx].Int() - compareElements[idx].Int()
-				if -100 < diff && diff < 100 {
+			compareField := compareFields[idx]
+			// tolerate bk_cpu, bk_disk, bk_mem changes less than the set value
+			if compareField == "bk_cpu" || compareField == "bk_disk" || compareField == "bk_mem" {
+				val := compareElements[idx].Float() * (float64(changeRangePercent) / 100.0)
+				diff := srcElements[idx].Float() - compareElements[idx].Float()
+				if -val < diff && diff < val {
 					continue
 				}
 			}
@@ -264,21 +293,28 @@ func needToUpdate(src, toCompare string) bool {
 }
 
 func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interface{}, string) {
+	if val.Get("data.apiVer").String() == "v1.0" {
+		return parseV10Setter(val, innerIP, outerIP)
+	}
+
 	var cpumodule = val.Get("data.cpu.cpuinfo.0.modelName").String()
+	cpumodule = strings.TrimSpace(cpumodule)
 	var cpunum int64
 	for _, core := range val.Get("data.cpu.cpuinfo.#.cores").Array() {
 		cpunum += core.Int()
 	}
-	var CPUMhz = val.Get("data.cpu.cpuinfo.0.mhz").Int()
 	var disk uint64
 	for _, disktotal := range val.Get("data.disk.usage.#.total").Array() {
 		disk += disktotal.Uint() >> 10 >> 10 >> 10
 	}
 	var mem = val.Get("data.mem.meminfo.total").Uint()
 	var hostname = val.Get("data.system.info.hostname").String()
+	hostname = strings.TrimSpace(hostname)
 	var ostype = val.Get("data.system.info.os").String()
+	ostype = strings.TrimSpace(ostype)
 	var osname string
 	platform := val.Get("data.system.info.platform").String()
+	platform = strings.TrimSpace(platform)
 	version := val.Get("data.system.info.platformVersion").String()
 	switch strings.ToLower(ostype) {
 	case "linux":
@@ -297,124 +333,343 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
-	var OuterMAC, InnerMAC string
+	version = strings.TrimSpace(version)
+	osname = strings.TrimSpace(osname)
+
+	innerIPArr := strings.Split(innerIP, ",")
+	innerIPMap := make(map[string]int)
+	for index, ip := range innerIPArr {
+		innerIPMap[ip] = index
+	}
+
+	outerIPArr := strings.Split(outerIP, ",")
+	outerIPMap := make(map[string]int)
+	for index, ip := range outerIPArr {
+		outerIPMap[ip] = index
+	}
+
+	outerMACArr, innerMACArr := make([]string, len(outerIPArr)), make([]string, len(innerIPArr))
+	hasOuterMAC, hasInnerMAC := false, false
 	for _, inter := range val.Get("data.net.interface").Array() {
 		for _, addr := range inter.Get("addrs.#.addr").Array() {
-			ip := strings.Split(addr.String(), "/")[0]
-			if ip == innerIP {
-				InnerMAC = inter.Get("hardwareaddr").String()
-			} else if ip == outerIP {
-				OuterMAC = inter.Get("hardwareaddr").String()
+			splitAddr := strings.Split(addr.String(), "/")
+			if len(splitAddr) == 0 {
+				continue
+			}
+			ip := splitAddr[0]
+			if index, exists := innerIPMap[ip]; exists {
+				hasInnerMAC = true
+				innerMAC := strings.TrimSpace(inter.Get("hardwareaddr").String())
+				if len(innerMACArr[index]) == 0 {
+					innerMACArr[index] = innerMAC
+				}
+			} else if index, exists := outerIPMap[ip]; exists {
+				hasOuterMAC = true
+				outerMAC := strings.TrimSpace(inter.Get("hardwareaddr").String())
+				if len(outerMACArr[index]) == 0 {
+					outerMACArr[index] = outerMAC
+				}
 			}
 		}
 	}
 
 	osbit := val.Get("data.system.info.systemtype").String()
-
-	dockerClientVersion := val.Get("data.system.docker.Client.Version").String()
-	dockerServerVersion := val.Get("data.system.docker.Server.Version").String()
-
+	osbit = strings.TrimSpace(osbit)
 	mem = mem >> 10 >> 10
-	setter := map[string]interface{}{
-		"bk_cpu":                            cpunum,
-		"bk_cpu_module":                     cpumodule,
-		"bk_cpu_mhz":                        CPUMhz,
-		"bk_disk":                           disk,
-		"bk_mem":                            mem,
-		"bk_os_type":                        ostype,
-		"bk_os_name":                        osname,
-		"bk_os_version":                     version,
-		"bk_host_name":                      hostname,
-		"bk_outer_mac":                      OuterMAC,
-		"bk_mac":                            InnerMAC,
-		"bk_os_bit":                         osbit,
-		common.HostFieldDockerClientVersion: dockerClientVersion,
-		common.HostFieldDockerServerVersion: dockerServerVersion,
-	}
 
+	setter := make(map[string]interface{})
 	raw := strings.Builder{}
 	raw.WriteByte('{')
-	raw.WriteString("\"bk_cpu\":")
-	raw.WriteString(strconv.FormatInt(cpunum, 10))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_cpu_module\":")
-	raw.Write([]byte("\"" + cpumodule + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_cpu_mhz\":")
-	raw.WriteString(strconv.FormatInt(CPUMhz, 10))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_disk\":")
-	raw.WriteString(strconv.FormatUint(disk, 10))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_mem\":")
-	raw.WriteString(strconv.FormatUint(mem, 10))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_os_type\":")
-	raw.Write([]byte("\"" + ostype + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_os_name\":")
-	raw.Write([]byte("\"" + osname + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_os_version\":")
-	raw.Write([]byte("\"" + version + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_host_name\":")
-	raw.Write([]byte("\"" + hostname + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_outer_mac\":")
-	raw.Write([]byte("\"" + OuterMAC + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_mac\":")
-	raw.Write([]byte("\"" + InnerMAC + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_os_bit\":")
-	raw.Write([]byte("\"" + osbit + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"docker_client_version\":")
-	raw.Write([]byte("\"" + dockerClientVersion + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"docker_server_version\":")
-	raw.Write([]byte("\"" + dockerServerVersion + "\""))
-	raw.WriteByte('}')
 
 	if cpunum <= 0 {
 		blog.V(4).Infof("bk_cpu not found in message for %s", innerIP)
+	} else {
+		setter["bk_cpu"] = cpunum
+		raw.WriteString("\"bk_cpu\":")
+		raw.WriteString(strconv.FormatInt(cpunum, 10))
+
 	}
+
 	if cpumodule == "" {
 		blog.V(4).Infof("bk_cpu_module not found in message for %s", innerIP)
+	} else {
+		setter["bk_cpu_module"] = cpumodule
+		raw.WriteString(",")
+		raw.WriteString("\"bk_cpu_module\":")
+		raw.Write([]byte("\"" + cpumodule + "\""))
 	}
-	if CPUMhz <= 0 {
-		blog.V(4).Infof("bk_cpu_mhz not found in message for %s", innerIP)
-	}
+
 	if disk <= 0 {
 		blog.V(4).Infof("bk_disk not found in message for %s", innerIP)
+	} else {
+		setter["bk_disk"] = disk
+		raw.WriteString(",")
+		raw.WriteString("\"bk_disk\":")
+		raw.WriteString(strconv.FormatUint(disk, 10))
 	}
+
 	if mem <= 0 {
 		blog.V(4).Infof("bk_mem not found in message for %s", innerIP)
+	} else {
+		setter["bk_mem"] = mem
+		raw.WriteString(",")
+		raw.WriteString("\"bk_mem\":")
+		raw.WriteString(strconv.FormatUint(mem, 10))
 	}
+
 	if ostype == "" {
 		blog.V(4).Infof("bk_os_type not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_type"] = ostype
+		raw.WriteString(",")
+		raw.WriteString("\"bk_os_type\":")
+		raw.Write([]byte("\"" + ostype + "\""))
 	}
+
 	if osname == "" {
 		blog.V(4).Infof("bk_os_name not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_name"] = osname
+		raw.WriteString(",")
+		raw.WriteString("\"bk_os_name\":")
+		raw.Write([]byte("\"" + osname + "\""))
 	}
+
 	if version == "" {
 		blog.V(4).Infof("bk_os_version not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_version"] = version
+		raw.WriteString(",")
+		raw.WriteString("\"bk_os_version\":")
+		raw.Write([]byte("\"" + version + "\""))
 	}
+
 	if hostname == "" {
 		blog.V(4).Infof("bk_host_name not found in message for %s", innerIP)
+	} else {
+		setter["bk_host_name"] = hostname
+		raw.WriteString(",")
+		raw.WriteString("\"bk_host_name\":")
+		raw.Write([]byte("\"" + hostname + "\""))
 	}
-	if outerIP != "" && OuterMAC == "" {
-		blog.V(4).Infof("bk_outer_mac not found in message for %s", innerIP)
+
+	if outerIP != "" && !hasOuterMAC {
+		blog.V(4).Infof("bk_outer_mac not found in message for %s", outerIP)
+	} else {
+		outerMAC := strings.Join(outerMACArr, ",")
+		setter["bk_outer_mac"] = outerMAC
+		raw.WriteString(",")
+		raw.WriteString("\"bk_outer_mac\":")
+		raw.Write([]byte("\"" + outerMAC + "\""))
 	}
-	if InnerMAC == "" {
+
+	if !hasInnerMAC {
 		blog.V(4).Infof("bk_mac not found in message for %s", innerIP)
+	} else {
+		innerMAC := strings.Join(innerMACArr, ",")
+		setter["bk_mac"] = innerMAC
+		raw.WriteString(",")
+		raw.WriteString("\"bk_mac\":")
+		raw.Write([]byte("\"" + innerMAC + "\""))
 	}
+
+	if osbit == "" {
+		blog.V(4).Infof("bk_os_bit not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_bit"] = osbit
+		raw.WriteString(",")
+		raw.WriteString("\"bk_os_bit\":")
+		raw.Write([]byte("\"" + osbit + "\""))
+	}
+
+	raw.WriteByte('}')
 
 	return setter, raw.String()
 }
 
-var reqireFields = append(compareFields, "bk_host_id", "bk_host_innerip", "bk_host_outerip")
+func parseV10Setter(val *gjson.Result, innerIP, outerIP string) (map[string]interface{}, string) {
+	var cpumodule = val.Get("data.cpu.model").String()
+	cpumodule = strings.TrimSpace(cpumodule)
+	var cpunum = val.Get("data.cpu.total").Int()
+	var disk = val.Get("data.disk.total").Uint() >> 10 >> 10 >> 10
+	var mem = val.Get("data.mem.total").Uint() >> 10 >> 10
+	var hostname = val.Get("data.system.hostname").String()
+	hostname = strings.TrimSpace(hostname)
+	var ostype = val.Get("data.system.os").String()
+	ostype = strings.TrimSpace(ostype)
+	var osname string
+	platform := val.Get("data.system.platform").String()
+	platform = strings.TrimSpace(platform)
+	version := val.Get("data.system.platVer").String()
+	switch strings.ToLower(ostype) {
+	case "linux":
+		version = strings.Replace(version, ".x86_64", "", 1)
+		version = strings.Replace(version, ".i386", "", 1)
+		osname = fmt.Sprintf("%s %s", ostype, platform)
+		ostype = common.HostOSTypeEnumLinux
+	case "windows":
+		version = strings.Replace(version, "Microsoft ", "", 1)
+		platform = strings.Replace(platform, "Microsoft ", "", 1)
+		osname = fmt.Sprintf("%s", platform)
+		ostype = common.HostOSTypeEnumWindows
+	case "aix":
+		osname = platform
+		ostype = common.HostOSTypeEnumAIX
+	default:
+		osname = fmt.Sprintf("%s", platform)
+	}
+	version = strings.TrimSpace(version)
+	osname = strings.TrimSpace(osname)
+
+	innerIPArr := strings.Split(innerIP, ",")
+	innerIPMap := make(map[string]int)
+	for index, ip := range innerIPArr {
+		innerIPMap[ip] = index
+	}
+
+	outerIPArr := strings.Split(outerIP, ",")
+	outerIPMap := make(map[string]int)
+	for index, ip := range outerIPArr {
+		outerIPMap[ip] = index
+	}
+
+	outerMACArr, innerMACArr := make([]string, len(outerIPArr)), make([]string, len(innerIPArr))
+	hasOuterMAC, hasInnerMAC := false, false
+	for _, inter := range val.Get("data.net.interface").Array() {
+		for _, addr := range inter.Get("addrs").Array() {
+			splitAddr := strings.Split(addr.String(), "/")
+			if len(splitAddr) == 0 {
+				continue
+			}
+			ip := splitAddr[0]
+			if index, exists := innerIPMap[ip]; exists {
+				hasInnerMAC = true
+				innerMAC := strings.TrimSpace(inter.Get("mac").String())
+				if len(innerMACArr[index]) == 0 {
+					innerMACArr[index] = innerMAC
+				}
+			} else if index, exists := outerIPMap[ip]; exists {
+				hasOuterMAC = true
+				outerMAC := strings.TrimSpace(inter.Get("mac").String())
+				if len(outerMACArr[index]) == 0 {
+					outerMACArr[index] = outerMAC
+				}
+			}
+		}
+	}
+
+	osbit := val.Get("data.system.sysType").String()
+	osbit = strings.TrimSpace(osbit)
+
+	setter := make(map[string]interface{})
+	raw := strings.Builder{}
+	raw.WriteByte('{')
+
+	if cpunum <= 0 {
+		blog.V(4).Infof("bk_cpu not found in message for %s", innerIP)
+	} else {
+		setter["bk_cpu"] = cpunum
+		raw.WriteString("\"bk_cpu\":")
+		raw.WriteString(strconv.FormatInt(cpunum, 10))
+
+	}
+
+	if cpumodule == "" {
+		blog.V(4).Infof("bk_cpu_module not found in message for %s", innerIP)
+	} else {
+		setter["bk_cpu_module"] = cpumodule
+		raw.WriteString(",")
+		raw.WriteString("\"bk_cpu_module\":")
+		raw.Write([]byte("\"" + cpumodule + "\""))
+	}
+
+	if disk <= 0 {
+		blog.V(4).Infof("bk_disk not found in message for %s", innerIP)
+	} else {
+		setter["bk_disk"] = disk
+		raw.WriteString(",")
+		raw.WriteString("\"bk_disk\":")
+		raw.WriteString(strconv.FormatUint(disk, 10))
+	}
+
+	if mem <= 0 {
+		blog.V(4).Infof("bk_mem not found in message for %s", innerIP)
+	} else {
+		setter["bk_mem"] = mem
+		raw.WriteString(",")
+		raw.WriteString("\"bk_mem\":")
+		raw.WriteString(strconv.FormatUint(mem, 10))
+	}
+
+	if ostype == "" {
+		blog.V(4).Infof("bk_os_type not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_type"] = ostype
+		raw.WriteString(",")
+		raw.WriteString("\"bk_os_type\":")
+		raw.Write([]byte("\"" + ostype + "\""))
+	}
+
+	if osname == "" {
+		blog.V(4).Infof("bk_os_name not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_name"] = osname
+		raw.WriteString(",")
+		raw.WriteString("\"bk_os_name\":")
+		raw.Write([]byte("\"" + osname + "\""))
+	}
+
+	if version == "" {
+		blog.V(4).Infof("bk_os_version not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_version"] = version
+		raw.WriteString(",")
+		raw.WriteString("\"bk_os_version\":")
+		raw.Write([]byte("\"" + version + "\""))
+	}
+
+	if hostname == "" {
+		blog.V(4).Infof("bk_host_name not found in message for %s", innerIP)
+	} else {
+		setter["bk_host_name"] = hostname
+		raw.WriteString(",")
+		raw.WriteString("\"bk_host_name\":")
+		raw.Write([]byte("\"" + hostname + "\""))
+	}
+
+	if outerIP != "" && !hasOuterMAC {
+		blog.V(4).Infof("bk_outer_mac not found in message for %s", outerIP)
+	} else {
+		outerMAC := strings.Join(outerMACArr, ",")
+		setter["bk_outer_mac"] = outerMAC
+		raw.WriteString(",")
+		raw.WriteString("\"bk_outer_mac\":")
+		raw.Write([]byte("\"" + outerMAC + "\""))
+	}
+
+	if !hasInnerMAC {
+		blog.V(4).Infof("bk_mac not found in message for %s", innerIP)
+	} else {
+		innerMAC := strings.Join(innerMACArr, ",")
+		setter["bk_mac"] = innerMAC
+		raw.WriteString(",")
+		raw.WriteString("\"bk_mac\":")
+		raw.Write([]byte("\"" + innerMAC + "\""))
+	}
+
+	if osbit == "" {
+		blog.V(4).Infof("bk_os_bit not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_bit"] = osbit
+		raw.WriteString(",")
+		raw.WriteString("\"bk_os_bit\":")
+		raw.Write([]byte("\"" + osbit + "\""))
+	}
+
+	raw.WriteByte('}')
+
+	return setter, raw.String()
+}
 
 func (h *HostSnap) getHostByVal(header http.Header, cloudID int64, ips []string, val *gjson.Result) (string, error) {
 	rid := util.GetHTTPCCRequestID(header)
@@ -436,7 +691,7 @@ func (h *HostSnap) getHostByVal(header http.Header, cloudID int64, ips []string,
 			Fields:  reqireFields,
 		}
 
-		host, err := h.Engine.CoreAPI.CoreService().Cache().SearchHostWithInnerIP(context.Background(), header, opt)
+		host, err := h.Engine.CoreAPI.CacheService().Cache().Host().SearchHostWithInnerIP(context.Background(), header, opt)
 		if err != nil {
 			blog.Errorf("get host info with ip: %s, cloud id: %d failed, err: %v, rid: %s", ip, cloudID, err, rid)
 			if ccErr, ok := err.(ccErr.CCErrorCoder); ok {
@@ -495,6 +750,25 @@ func getIPS(val *gjson.Result) []string {
 		}
 	}
 	return append(ipv4, ipv6...)
+}
+
+// saveHostsnap save host snapshot in redis
+func (h *HostSnap) saveHostsnap(header http.Header, hostData *gjson.Result, hostID int64) error {
+	rid := util.GetHTTPCCRequestID(header)
+
+	snapshot, err := ParseHostSnap(hostData)
+	if err != nil {
+		blog.Errorf("saveHostsnap failed, ParseHostSnap err: %v, hostID:%v, rid:%s", err, hostID, rid)
+		return err
+	}
+
+	key := common.RedisSnapKeyPrefix + strconv.FormatInt(hostID, 10)
+	if err := h.redisCli.Set(context.Background(), key, *snapshot, time.Minute*10).Err(); err != nil {
+		blog.Errorf("saveHostsnap failed, set key: %s to redis err: %v, rid: %s", key, err, rid)
+		return err
+	}
+
+	return nil
 }
 
 func newHeaderWithRid() (http.Header, string) {

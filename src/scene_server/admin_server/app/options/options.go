@@ -13,7 +13,7 @@
 package options
 
 import (
-	"configcenter/src/auth/authcenter"
+	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
@@ -45,14 +45,16 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 }
 
 type Config struct {
-	MongoDB       mongo.Config
-	Errors        ErrorConfig
-	Language      LanguageConfig
-	Configures    ConfConfig
-	Register      RegisterConfig
-	ProcSrvConfig ProcSrvConfig
-	Redis         redis.Config
-	AuthCenter    authcenter.AuthConfig
+	MongoDB    mongo.Config
+	WatchDB    mongo.Config
+	Errors     ErrorConfig
+	Language   LanguageConfig
+	Configures ConfConfig
+	Register   RegisterConfig
+	Redis      redis.Config
+	SnapRedis  redis.Config
+	Iam        iam.AuthConfig
+	SnapDataID int64
 }
 
 type LanguageConfig struct {
@@ -69,8 +71,4 @@ type ConfConfig struct {
 
 type RegisterConfig struct {
 	Address string
-}
-
-type ProcSrvConfig struct {
-	CCApiSrvAddr string
 }

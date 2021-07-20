@@ -102,6 +102,15 @@ func NewContextFromHTTPHeader(header http.Header) context.Context {
 	return ctx
 }
 
+func BuildHeader(user string, supplierAccount string) http.Header {
+	header := make(http.Header)
+	header.Add(common.BKHTTPOwnerID, supplierAccount)
+	header.Add(common.BKHTTPHeaderUser, user)
+	header.Add(common.BKHTTPCCRequestID, GenerateRID())
+	header.Add("Content-Type", "application/json")
+	return header
+}
+
 func ExtractRequestUserFromContext(ctx context.Context) string {
 	if ctx == nil {
 		return ""
@@ -112,19 +121,6 @@ func ExtractRequestUserFromContext(ctx context.Context) string {
 		return userValue
 	}
 	return ""
-}
-
-// GetSupplierID return supplier_id from http header
-func GetSupplierID(header http.Header) (int64, error) {
-	return GetInt64ByInterface(header.Get(common.BKHTTPSupplierID))
-}
-
-// IsExistSupplierID check supplier_id  exist from http header
-func IsExistSupplierID(header http.Header) bool {
-	if "" == header.Get(common.BKHTTPSupplierID) {
-		return false
-	}
-	return true
 }
 
 type AtomicBool int32
@@ -160,6 +156,12 @@ func (b *AtomicBool) SetTo(yes bool) {
 		atomic.StoreInt32((*int32)(b), 0)
 	}
 }
+
+type IntSlice []int
+
+func (p IntSlice) Len() int           { return len(p) }
+func (p IntSlice) Less(i, j int) bool { return p[i] < p[j] }
+func (p IntSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 type Int64Slice []int64
 
@@ -211,7 +213,47 @@ func CCHeader(header http.Header) http.Header {
 	newHeader.Add(common.BKHTTPOwnerID, header.Get(common.BKHTTPOwnerID))
 	newHeader.Add(common.BKHTTPRequestAppCode, header.Get(common.BKHTTPRequestAppCode))
 	newHeader.Add(common.BKHTTPRequestRealIP, header.Get(common.BKHTTPRequestRealIP))
-	newHeader.Add(common.BKHTTPSupplierID, header.Get(common.BKHTTPSupplierID))
+	newHeader.Add(common.BKHTTPReadReference, header.Get(common.BKHTTPReadReference))
 
 	return newHeader
+}
+
+// SetHTTPReadPreference  再header 头中设置mongodb read preference， 这个是给调用子流程使用
+func SetHTTPReadPreference(header http.Header, mode common.ReadPreferenceMode) http.Header {
+	header.Set(common.BKHTTPReadReference, mode.String())
+	return header
+}
+
+// SetDBReadPreference  再context 设置设置mongodb read preference，给dal 使用
+func SetDBReadPreference(ctx context.Context, mode common.ReadPreferenceMode) context.Context {
+	ctx = context.WithValue(ctx, common.BKHTTPReadReference, mode.String())
+	return ctx
+}
+
+// SetReadPreference  再context， header 设置设置mongodb read preference，给dal 使用
+func SetReadPreference(ctx context.Context, header http.Header, mode common.ReadPreferenceMode) (context.Context, http.Header) {
+	ctx = SetDBReadPreference(ctx, mode)
+	header = SetHTTPReadPreference(header, mode)
+	return ctx, header
+}
+
+// GetDBReadPreference
+func GetDBReadPreference(ctx context.Context) common.ReadPreferenceMode {
+	val := ctx.Value(common.BKHTTPReadReference)
+	if val != nil {
+		mode, ok := val.(string)
+		if ok {
+			return common.ReadPreferenceMode(mode)
+		}
+	}
+	return common.NilMode
+}
+
+// GetHTTPReadPreference
+func GetHTTPReadPreference(header http.Header) common.ReadPreferenceMode {
+	mode := header.Get(common.BKHTTPReadReference)
+	if mode == "" {
+		return common.NilMode
+	}
+	return common.ReadPreferenceMode(mode)
 }

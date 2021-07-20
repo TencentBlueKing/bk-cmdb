@@ -22,11 +22,10 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-
-	"gopkg.in/redis.v5"
+	"configcenter/src/storage/dal/redis"
 )
 
-func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, cache *redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) (*metadata.HostIdentifier, error) {
+func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, cache redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) (*metadata.HostIdentifier, error) {
 	// fill cloudName
 	cloud, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDPlat, identifier.CloudID)
 	if err != nil {
@@ -61,24 +60,28 @@ func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, ca
 	return identifier, nil
 }
 
-func fillProcess(process *metadata.HostIdentProcess, ctx context.Context, cache *redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) error {
+func fillProcess(process *metadata.HostIdentProcess, ctx context.Context, cache redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) error {
 	proc, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDProc, process.ProcessID)
 	if err != nil {
 		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDProc, process.ProcessID, err.Error())
 		return err
 	}
+
+	ip, port, protocol, enable, bindInfoArr := getBindInfo(proc.data[common.BKProcBindInfo])
 	process.ProcessName = getString(proc.data[common.BKProcessNameField])
-	process.FuncID = getString(proc.data[common.BKFuncIDField])
 	process.FuncName = getString(proc.data[common.BKFuncName])
-	process.BindIP = getString(proc.data[common.BKBindIP])
-	process.Protocol = getString(proc.data[common.BKProtocol])
-	process.Port = getString(proc.data[common.BKPort])
+	process.BindIP = ip         //getString(proc.data[common.BKBindIP])
+	process.Protocol = protocol // getString(proc.data[common.BKProtocol])
+	process.Port = port         // getString(proc.data[common.BKPort])
+	process.PortEnable = enable
+	process.BindInfo = bindInfoArr
 	process.StartParamRegex = getString(proc.data[common.BKStartParamRegex])
 	return nil
 }
 
 func fillModule(identifier *metadata.HostIdentifier, hostIdentModule *metadata.HostIdentModule, customLayers []string,
-	ctx context.Context, cache *redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) error {
+	ctx context.Context, cache redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) error {
+
 	biz, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDApp, hostIdentModule.BizID)
 	if err != nil {
 		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDApp, hostIdentModule.BizID, err.Error())
@@ -86,11 +89,6 @@ func fillModule(identifier *metadata.HostIdentifier, hostIdentModule *metadata.H
 	}
 	hostIdentModule.BizName = getString(biz.data[common.BKAppNameField])
 	identifier.SupplierAccount = getString(biz.data[common.BKOwnerIDField])
-	identifier.SupplierID, err = getInt(biz.data, common.BKSupplierIDField)
-	if err != nil {
-		blog.Errorf("identifier: convert SupplierID failed the raw is %+v", biz.data[common.BKSupplierIDField])
-		return err
-	}
 
 	set, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDSet, hostIdentModule.SetID)
 	if err != nil {

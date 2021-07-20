@@ -21,7 +21,7 @@ import (
 
 func (t *object) CreatePropertyGroup(ctx context.Context, h http.Header, dat metadata.Group) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectatt/group/new"
+	subPath := "/create/objectattgroup"
 
 	err = t.client.Post().
 		WithContext(ctx).
@@ -35,7 +35,7 @@ func (t *object) CreatePropertyGroup(ctx context.Context, h http.Header, dat met
 
 func (t *object) UpdatePropertyGroup(ctx context.Context, h http.Header, cond *metadata.PropertyGroupCondition) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectatt/group/update"
+	subPath := "/update/objectattgroup"
 
 	err = t.client.Put().
 		WithContext(ctx).
@@ -49,7 +49,7 @@ func (t *object) UpdatePropertyGroup(ctx context.Context, h http.Header, cond *m
 
 func (t *object) DeletePropertyGroup(ctx context.Context, groupID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectatt/group/groupid/%s"
+	subPath := "/delete/objectattgroup/%s"
 
 	err = t.client.Delete().
 		WithContext(ctx).
@@ -63,7 +63,7 @@ func (t *object) DeletePropertyGroup(ctx context.Context, groupID string, h http
 
 func (t *object) UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectatt/group/property"
+	subPath := "/update/objectattgroupproperty"
 
 	err = t.client.Put().
 		WithContext(ctx).
@@ -89,14 +89,14 @@ func (t *object) DeletePropertyGroupObjectAtt(ctx context.Context, ownerID strin
 	return
 }
 
-func (t *object) SelectPropertyGroupByObjectID(ctx context.Context, ownerID string, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (t *object) SelectPropertyGroupByObjectID(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectatt/group/property/owner/%s/object/%s"
+	subPath := "/find/objectattgroup/object/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath, ownerID, objID).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

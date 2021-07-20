@@ -1,17 +1,18 @@
 package lock
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	"github.com/rs/xid"
-	redis "gopkg.in/redis.v5"
-
 	"configcenter/src/common"
+	"configcenter/src/storage/dal/redis"
+
+	"github.com/rs/xid"
 )
 
 type lock struct {
-	cache *redis.Client
+	cache redis.Client
 	key   string
 	// 是否需要释放key
 	needUnlock bool
@@ -21,11 +22,11 @@ type lock struct {
 // Locker redis atomic lock
 type Locker interface {
 	// Lock can lock one
-	Lock(key StrFormat, expire time.Duration) (looked bool, err error)
+	Lock(key StrFormat, expire time.Duration) (locked bool, err error)
 	Unlock() error
 }
 
-func NewLocker(cache *redis.Client) Locker {
+func NewLocker(cache redis.Client) Locker {
 
 	return &lock{
 		isFirst:    false,
@@ -45,7 +46,7 @@ func (l *lock) Lock(key StrFormat, expire time.Duration) (locked bool, err error
 
 	// 不能一样，一样的话，会提示设置成功
 	uuid := xid.New().String()
-	locked, err = l.cache.SetNX(l.key, uuid, expire).Result()
+	locked, err = l.cache.SetNX(context.Background(), l.key, uuid, expire).Result()
 	// locked sucess , can unlock
 	if locked {
 		l.needUnlock = true
@@ -58,5 +59,5 @@ func (l *lock) Unlock() error {
 	if !l.needUnlock {
 		return nil
 	}
-	return l.cache.Del(l.key).Err()
+	return l.cache.Del(context.Background(), l.key).Err()
 }

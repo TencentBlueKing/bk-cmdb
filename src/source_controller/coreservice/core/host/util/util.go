@@ -18,23 +18,20 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type DBExecQuery struct {
-	DbProxy dal.RDB
 }
 
-func NewDBExecQuery(dbProxy dal.RDB) *DBExecQuery {
-	return &DBExecQuery{
-		DbProxy: dbProxy,
-	}
+func NewDBExecQuery() *DBExecQuery {
+	return &DBExecQuery{}
 }
 
 // dbExecQuery get info from table with condition
 func (query DBExecQuery) ExecQuery(kit *rest.Kit, tableName string, fields []string, condMap mapstr.MapStr, result interface{}) error {
 	newCondMap := util.SetQueryOwner(condMap, kit.SupplierAccount)
-	dbFind := query.DbProxy.Table(tableName).Find(newCondMap)
+	dbFind := mongodb.Client().Table(tableName).Find(newCondMap)
 	if len(fields) > 0 {
 		dbFind = dbFind.Fields(fields...)
 	}

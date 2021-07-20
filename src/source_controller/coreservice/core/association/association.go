@@ -14,7 +14,6 @@ package association
 
 import (
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal"
 )
 
 var _ core.AssociationOperation = (*associationManager)(nil)
@@ -23,27 +22,21 @@ type associationManager struct {
 	*associationKind
 	*associationInstance
 	*associationModel
-	dbProxy dal.RDB
 }
 
 // New create a new association manager instance
-func New(dbProxy dal.RDB, dependent OperationDependencies) core.AssociationOperation {
-	asstModel := &associationModel{dbProxy: dbProxy}
+func New(dependent OperationDependencies) core.AssociationOperation {
+	asstModel := &associationModel{}
 	asstKind := &associationKind{
-		dbProxy:          dbProxy,
 		associationModel: asstModel,
 	}
 	return &associationManager{
-		dbProxy:         dbProxy,
 		associationKind: asstKind,
 		associationInstance: &associationInstance{
-			dbProxy:          dbProxy,
 			associationKind:  asstKind,
 			associationModel: asstModel,
 			dependent:        dependent,
 		},
-		associationModel: &associationModel{
-			dbProxy: dbProxy,
-		},
+		associationModel: &associationModel{},
 	}
 }

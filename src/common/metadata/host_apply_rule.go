@@ -12,16 +12,18 @@
 package metadata
 
 import (
+	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"configcenter/src/common/errors"
+	"configcenter/src/common/json"
 	"configcenter/src/common/querybuilder"
 )
 
 const (
 	TopoNodeKeyword = "keyword"
-	// 主机更新时是否剔除绑定了主机属性自动应用的字段
-	HostUpdateWithoutHostApplyFiled = true
 )
 
 // HostApplyRule represent one rule of host property auto apply
@@ -162,6 +164,18 @@ func (plan OneHostApplyPlan) GetUpdateData() map[string]interface{} {
 		updateData[field.PropertyID] = field.PropertyValue
 	}
 	return updateData
+}
+
+func (plan OneHostApplyPlan) GetUpdateDataStr() string {
+	fields := make([]string, len(plan.UpdateFields))
+
+	for index, field := range plan.UpdateFields {
+		value, _ := json.Marshal(field.PropertyValue)
+		fields[index] = fmt.Sprintf(`"%s":%s`, field.PropertyID, string(value))
+	}
+
+	sort.Strings(fields)
+	return "{" + strings.Join(fields, ",") + "}"
 }
 
 type HostApplyPlanResult struct {

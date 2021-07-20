@@ -194,9 +194,6 @@ func parseFloatOption(ctx context.Context, val interface{}) FloatOption {
 func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []metadata.Attribute) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	for _, field := range propertys {
-		if field.PropertyID == common.BKChildStr || field.PropertyID == common.BKParentStr {
-			continue
-		}
 		_, ok := valData[field.PropertyID]
 		if !ok {
 			switch field.PropertyType {

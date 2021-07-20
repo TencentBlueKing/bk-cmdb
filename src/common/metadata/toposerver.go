@@ -12,7 +12,11 @@
 
 package metadata
 
-import "configcenter/src/common/mapstr"
+import (
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
+)
 
 type SearchInstResult struct {
 	BaseResp `json:",inline"`
@@ -72,4 +76,67 @@ type QueryBusinessRequest struct {
 
 type UpdateBusinessStatusOption struct {
 	BizName string `json:"bk_biz_name" mapstructure:"bk_biz_name"`
+}
+
+type SearchResourceDirParams struct {
+	Fields    []string      `json:"fields"`
+	Page      BasePage      `json:"page"`
+	Condition mapstr.MapStr `json:"condition"`
+	IsFuzzy   bool          `json:"is_fuzzy"`
+}
+
+type SearchResourceDirResult struct {
+	BizID      int64  `json:"bk_biz_id"`
+	ModuleID   int64  `json:"bk_module_id"`
+	ModuleName string `json:"bk_module_name"`
+	SetID      int64  `json:"bk_set_id"`
+	HostCount  int64  `json:"host_count"`
+}
+
+type SearchBriefBizTopoOption struct {
+	BizID        int64    `json:"bk_biz_id"`
+	SetFields    []string `json:"set_fields"`
+	ModuleFields []string `json:"module_fields"`
+	HostFields   []string `json:"host_fields"`
+}
+
+// Validate validates the input param
+func (o *SearchBriefBizTopoOption) Validate() (rawError errors.RawErrorInfo) {
+	if len(o.SetFields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"set_fields"},
+		}
+	}
+
+	if len(o.ModuleFields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"module_fields"},
+		}
+	}
+
+	if len(o.HostFields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"host_fields"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type SetTopo struct {
+	Set         map[string]interface{} `json:"set"`
+	ModuleTopos []*ModuleTopo          `json:"modules"`
+}
+
+type ModuleTopo struct {
+	Module map[string]interface{}   `json:"module"`
+	Hosts  []map[string]interface{} `json:"hosts"`
+}
+
+type SearchBriefBizTopoResult struct {
+	BaseResp `json:",inline"`
+	Data     []*SetTopo
 }

@@ -13,39 +13,47 @@
 package types
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 )
 
-// Event Cache Keys
-const (
-
-	// EventCacheEventIDKey the event instance id key in cache
-	EventCacheEventIDKey             = common.BKCacheKeyV3Prefix + "event:inst_id"
-	EventCacheEventQueueKey          = common.BKCacheKeyV3Prefix + "event:inst_queue"
-	EventCacheEventQueueDuplicateKey = common.BKCacheKeyV3Prefix + "event:inst_queue_duplicate"
-	EventCacheEventPendingKey        = common.BKCacheKeyV3Prefix + "event:inst_pending"
-	EventCacheEventRunningPrefix     = common.BKCacheKeyV3Prefix + "event:inst_running_"
-	EventCacheEventTimeoutKey        = common.BKCacheKeyV3Prefix + "event:inst_timeout"
-	EventCacheEventDoneKey           = common.BKCacheKeyV3Prefix + "event:inst_done"
-
-	EventCacheDistIDPrefix      = common.BKCacheKeyV3Prefix + "event:dist_id_"
-	EventCacheDistQueuePrefix   = common.BKCacheKeyV3Prefix + "event:dist_queue_"
-	EventCacheDistPendingPrefix = common.BKCacheKeyV3Prefix + "event:dist_pending_"
-	EventCacheDistRunningPrefix = common.BKCacheKeyV3Prefix + "event:dist_running_"
-	EventCacheDistTimeoutPrefix = common.BKCacheKeyV3Prefix + "event:dist_timeout_"
-	EventCacheDistDonePrefix    = common.BKCacheKeyV3Prefix + "event:dist_done_"
-
-	EventCacheDistCallBackCountPrefix = common.BKCacheKeyV3Prefix + "event:dist_callback_"
-
-	// EventCacheSubscribeFormKey the key prefix in cache
-	EventCacheSubscribeFormKey = common.BKCacheKeyV3Prefix + "event:subscribeform:"
-	EventCacheSubscribesKey    = common.BKCacheKeyV3Prefix + "event:subscribers"
-	EventCacheProcessChannel   = common.BKCacheKeyV3Prefix + "event_process_channel"
-
-	EventCacheIdentInstPrefix = common.BKCacheKeyV3Prefix + "ident:inst_"
+var (
+	// NilStr is special NIL string.
+	NilStr = "nil"
 )
 
-// EventSubscriberCacheKey returns EventSubscriberCacheKey
-func EventSubscriberCacheKey(ownerID, eventType string) string {
-	return EventCacheSubscribeFormKey + ownerID + ":" + eventType
+const (
+	// MetricsNamespacePrefix is prefix of metrics namespace.
+	MetricsNamespacePrefix = "cmdb_eventserver"
+
+	// EventCacheEventIDKey the event instance id key in cache
+	EventCacheEventIDKey = common.BKCacheKeyV3Prefix + "event:inst_id"
+
+	// EventCacheDistIDPrefix is prefix of event dist id key in cache.
+	EventCacheDistIDPrefix = common.BKCacheKeyV3Prefix + "event:dist_id_"
+
+	// EventCacheIdentInstPrefix is prefix of host identifier instance key in cache.
+	EventCacheIdentInstPrefix = common.BKCacheKeyV3Prefix + "ident:inst_"
+
+	// EventCacheEventQueueKey is main event queue key in cache.
+	EventCacheEventQueueKey = common.BKCacheKeyV3Prefix + "event:queue"
+
+	// EventCacheEventQueueDuplicateKey is duplicate event queue key in cache.
+	EventCacheEventQueueDuplicateKey = common.BKCacheKeyV3Prefix + "event:duplicate_queue"
+
+	// EventCacheSubscriberEventQueueKeyPrefix is prefix of subscriber event queue key in cache.
+	EventCacheSubscriberEventQueueKeyPrefix = common.BKCacheKeyV3Prefix + "event:subscriber_queue_"
+
+	// EventCacheSubscriberCursorPrefixis prefix for subscriber on target resource event type.
+	// e.g: cc:v3:event:subscriber_cursor_hostcreate:1 -> MarshalChainNodeStr
+	EventCacheSubscriberCursorPrefix = common.BKCacheKeyV3Prefix + "event:subscriber_cursor"
+
+	// EventCacheDistCallBackCountPrefix is prefix of event callback stats key in cache.
+	EventCacheDistCallBackCountPrefix = common.BKCacheKeyV3Prefix + "event:dist_callback_"
+)
+
+// EventCacheSubscriberCursorKey returns redis key for subscriber cursor cache.
+func EventCacheSubscriberCursorKey(eventType string, subid int64) string {
+	return fmt.Sprintf("%s_%s_%d", EventCacheSubscriberCursorPrefix, eventType, subid)
 }

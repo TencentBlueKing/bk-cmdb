@@ -13,16 +13,12 @@
 package service
 
 import (
-	"encoding/json"
-	"net/http"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	meta "configcenter/src/common/metadata"
-
-	"github.com/emicklei/go-restful"
 )
 
 /*
@@ -34,57 +30,49 @@ import (
 // 描述: 1.  只能操作蓝鲸业务 2. 不能将主机转移到空闲机和故障机等内置模块
 // 3. 不会删除主机已经存在的主机模块， 只会新加主机与模块。 4. 不存在的主机会新加， 规则通过内网IP和 cloud id 判断主机是否存在
 // 4. 进程不存在不报错
-func (s *Service) BKSystemInstall(req *restful.Request, resp *restful.Response) {
-
-	srvData := s.newSrvComm(req.Request.Header)
-
+func (s *Service) BKSystemInstall(ctx *rest.Contexts) {
 	input := new(metadata.BkSystemInstallRequest)
-	if err := json.NewDecoder(req.Request.Body).Decode(input); nil != err {
-		blog.Errorf("BKSystemInstall decode body err: %v,rid:%s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	if err := ctx.DecodeInto(&input); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
+
 	if input.SetName == "" {
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, common.BKSetNameField)})
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKSetNameField))
 		return
 	}
 	if input.ModuleName == "" {
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, common.BKModuleNameField)})
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKModuleNameField))
 		return
 	}
 	if input.InnerIP == "" {
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, common.BKHostInnerIPField)})
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKHostInnerIPField))
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
-		err := srvData.lgc.NewSpecial().BkSystemInstall(srvData.ctx, common.BKAppName, input)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.Logic.NewSpecial(ctx.Kit).BkSystemInstall(ctx.Kit.Ctx, common.BKAppName, input)
 		if err != nil {
-			blog.Errorf("BkSystemInstall handle err: %v, rid:%s", err, srvData.rid)
+			blog.Errorf("BkSystemInstall handle err: %v, rid:%s", err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
 	})
 
 	if txnErr != nil {
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr})
+		ctx.RespAutoError(txnErr)
 		return
 	}
-	resp.WriteEntity(meta.Response{
-		BaseResp: meta.SuccessBaseResp,
-		Data:     "",
-	})
+	ctx.RespEntity("")
 }
 
-func (s *Service) FindSystemUserConfigBKSwitch(req *restful.Request, resp *restful.Response) {
-
-	srvData := s.newSrvComm(req.Request.Header)
+func (s *Service) FindSystemUserConfigBKSwitch(ctx *rest.Contexts) {
 
 	// 没有权限校验
-	data, err := srvData.lgc.CoreAPI.CoreService().System().GetUserConfig(srvData.ctx, srvData.header)
+	data, err := s.Logic.CoreAPI.CoreService().System().GetUserConfig(ctx.Kit.Ctx, ctx.Kit.Header)
 	if err != nil {
-		blog.Errorf("FindSystemUserConfig handle err: %v, rid:%s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		blog.Errorf("FindSystemUserConfig handle err: %v, rid:%s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	canModify := false
@@ -94,9 +82,5 @@ func (s *Service) FindSystemUserConfigBKSwitch(req *restful.Request, resp *restf
 		}
 	}
 
-	resp.WriteEntity(meta.Response{
-		BaseResp: meta.SuccessBaseResp,
-		Data:     canModify,
-	})
-
+	ctx.RespEntity(canModify)
 }

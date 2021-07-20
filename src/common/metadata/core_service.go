@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
@@ -83,7 +84,7 @@ type UpdateModelAttrUnique struct {
 }
 
 type DeleteModelAttrUnique struct {
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	BizID int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 }
 
 type CreateModelInstance struct {
@@ -332,7 +333,33 @@ type ListServiceTemplateOption struct {
 	ServiceCategoryID  *int64   `json:"service_category_id"`
 	ServiceTemplateIDs []int64  `json:"service_template_ids"`
 	Page               BasePage `json:"page,omitempty"`
-	Search             string   `json:"search"`
+	// search service templates by name
+	Search string `json:"search"`
+	// used with search, means whether search service templates with exact name or not
+	IsExact bool `json:"is_exact"`
+}
+
+type FindServiceTemplateCountInfoOption struct {
+	ServiceTemplateIDs []int64 `json:"service_template_ids"`
+}
+
+func (o *FindServiceTemplateCountInfoOption) Validate() (rawError errors.RawErrorInfo) {
+	maxLimit := 500
+	if len(o.ServiceTemplateIDs) == 0 || len(o.ServiceTemplateIDs) > maxLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"service_template_ids", maxLimit},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type FindServiceTemplateCountInfoResult struct {
+	ServiceTemplateID    int64 `json:"service_template_id"`
+	ProcessTemplateCount int64 `json:"process_template_count"`
+	ServiceInstanceCount int64 `json:"service_instance_count"`
+	ModuleCount          int64 `json:"module_count"`
 }
 
 type OneServiceTemplateResult struct {
@@ -373,7 +400,6 @@ type ListServiceInstanceOption struct {
 
 type ListServiceInstanceDetailOption struct {
 	BusinessID         int64              `json:"bk_biz_id"`
-	SetID              int64              `json:"bk_set_id"`
 	ModuleID           int64              `json:"bk_module_id"`
 	HostID             int64              `json:"bk_host_id"`
 	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
@@ -436,6 +462,11 @@ type OneServiceInstanceResult struct {
 	Data     ServiceInstance `json:"data"`
 }
 
+type ManyServiceInstanceResult struct {
+	BaseResp `json:",inline"`
+	Data     []*ServiceInstance `json:"data"`
+}
+
 type MultipleServiceInstance struct {
 	Count uint64            `json:"count"`
 	Info  []ServiceInstance `json:"info"`
@@ -459,6 +490,11 @@ type MultipleServiceInstanceDetailResult struct {
 type OneProcessInstanceRelationResult struct {
 	BaseResp `json:",inline"`
 	Data     ProcessInstanceRelation `json:"data"`
+}
+
+type ManyProcessInstanceRelationResult struct {
+	BaseResp `json:",inline"`
+	Data     []*ProcessInstanceRelation `json:"data"`
 }
 
 type MultipleProcessInstanceRelation struct {
@@ -509,11 +545,6 @@ type RemoveTemplateBoundOnModuleResult struct {
 	} `json:"data"`
 }
 
-type GetProc2ModuleResult struct {
-	BaseResp `json:",inline"`
-	Data     []Proc2Module `json:"data"`
-}
-
 type MultipleMap struct {
 	Count uint64                   `json:"count"`
 	Info  []map[string]interface{} `json:"info"`
@@ -543,4 +574,83 @@ func (h *DistinctHostIDByTopoRelationRequest) Empty() bool {
 		return false
 	}
 	return true
+}
+
+type CloudAccountResult struct {
+	BaseResp `json:",inline"`
+	Data     CloudAccount `json:"data"`
+}
+
+type MultipleCloudAccountResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleCloudAccount `json:"data"`
+}
+
+type TransferHostResourceDirectory struct {
+	ModuleID int64   `json:"bk_module_id"`
+	HostID   []int64 `json:"bk_host_id"`
+}
+
+type MultipleCloudAccountConfResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleCloudAccountConf `json:"data"`
+}
+
+type CreateSyncTaskResult struct {
+	BaseResp `json:",inline"`
+	Data     CloudSyncTask `json:"data"`
+}
+
+type CreateSyncHistoryesult struct {
+	BaseResp `json:",inline"`
+	Data     SyncHistory `json:"data"`
+}
+
+type MultipleCloudSyncTaskResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleCloudSyncTask `json:"data"`
+}
+
+type MultipleSyncHistoryResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleSyncHistory `json:"data"`
+}
+
+type MultipleSyncRegionResult struct {
+	BaseResp `json:",inline"`
+	Data     []*Region `json:"data"`
+}
+
+type SubscriptionResult struct {
+	BaseResp `json:",inline"`
+	Data     Subscription `json:"data"`
+}
+
+type MultipleSubscriptionResult struct {
+	BaseResp `json:",inline"`
+	Data     RspSubscriptionSearch `json:"data"`
+}
+
+type DistinctFieldOption struct {
+	TableName string                 `json:"table_name"`
+	Field     string                 `json:"field"`
+	Filter    map[string]interface{} `json:"filter"`
+}
+
+func (d *DistinctFieldOption) Validate() (rawError errors.RawErrorInfo) {
+	if d.TableName == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"table_name"},
+		}
+	}
+
+	if d.Field == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"field"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }

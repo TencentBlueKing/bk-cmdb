@@ -1,202 +1,195 @@
 <template>
-    <div class="host-search-layout">
-        <div class="search-bar">
-            <bk-input class="search-input"
-                ref="searchInput"
-                type="textarea"
-                :placeholder="$t('首页主机搜索提示语')"
-                :rows="rows"
-                v-model="searchContent"
-                @focus="handleFocus"
-                @blur="handleBlur">
-            </bk-input>
-            <bk-button theme="primary" class="search-btn"
-                :loading="$loading(request.search)"
-                @click="handleSearch">
-                <i class="bk-icon icon-search"></i>
-                {{$t('搜索')}}
-            </bk-button>
-            <span v-if="showEllipsis" class="search-text" @click="handleSearchInput">{{searchText}}</span>
-        </div>
+  <div class="host-search-layout">
+    <div class="search-bar">
+      <bk-input class="search-input"
+        ref="searchInput"
+        type="textarea"
+        :placeholder="$t('首页主机搜索提示语')"
+        :rows="rows"
+        v-model="searchContent"
+        @focus="handleFocus"
+        @blur="handleBlur"
+        @keydown="handleKeydown">
+      </bk-input>
+      <bk-button theme="primary" class="search-btn"
+        :loading="$loading(request.search)"
+        @click="handleSearch">
+        <i class="bk-icon icon-search"></i>
+        {{$t('搜索')}}
+      </bk-button>
     </div>
+  </div>
 </template>
 
 <script>
-    import { MENU_RESOURCE_HOST, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
-    export default {
-        data () {
-            return {
-                rows: 1,
-                searchText: '',
-                searchContent: '',
-                textarea: '',
-                showEllipsis: false,
-                textareaDom: null,
-                request: {
-                    search: Symbol('search')
-                }
-            }
-        },
-        watch: {
-            searchContent () {
-                this.$nextTick(this.setRows)
-            }
-        },
-        mounted () {
-            this.textareaDom = this.$refs.searchInput && this.$refs.searchInput.$refs.textarea
-        },
-        methods: {
-            getSearchList () {
-                const searchList = []
-                this.searchContent.split('\n').forEach(text => {
-                    const trimText = text.trim()
-                    if (trimText.length) {
-                        searchList.push(trimText)
-                    }
-                })
-                return searchList
-            },
-            setRows () {
-                const rows = this.searchContent.split('\n').length || 1
-                this.rows = Math.min(10, rows)
-            },
-            handleFocus () {
-                this.$emit('focus', true)
-                this.setRows()
-            },
-            handleBlur () {
-                this.textareaDom && this.textareaDom.blur()
-                this.$emit('focus', false)
-                const data = this.getSearchList()
-                if (data.length) {
-                    this.showEllipsis = true
-                    this.searchText = data.join(',')
-                } else {
-                    this.searchContent = ''
-                }
-                this.$nextTick(() => {
-                    this.rows = 1
-                    this.textareaDom && (this.textareaDom.scrollTop = 0)
-                })
-            },
-            handleSearchInput () {
-                this.showEllipsis = false
-                this.textareaDom && this.textareaDom.focus()
-            },
-            async handleSearch () {
-                const searchList = this.getSearchList()
-                if (searchList.length > 500) {
-                    this.$warn(this.$t('最多支持搜索500条数据'))
-                } else if (searchList.length) {
-                    try {
-                        const validateQueue = searchList.map(text => this.$validator.verify(text, 'ip'))
-                        const results = await Promise.all(validateQueue)
-                        const ipList = []
-                        const asstList = []
-                        results.forEach((result, index) => {
-                            (result.valid ? ipList : asstList).push(searchList[index])
-                        })
-                        if (ipList.length && asstList.length) {
-                            this.$warn(this.$t('不支持混合搜索'))
-                            return
-                        } else if (ipList.length) {
-                            this.checkTargetPage(ipList, 'ip')
-                        } else {
-                            this.checkTargetPage(asstList, 'bk_asset_id')
-                        }
-                    } catch (e) {
-                        console.error(e)
-                    }
-                } else {
-                    this.searchContent = ''
-                    this.textareaDom && this.textareaDom.focus()
-                }
-            },
-            async checkTargetPage (list, type) {
-                try {
-                    const params = {
-                        bk_biz_id: -1,
-                        condition: [{
-                            bk_obj_id: 'biz',
-                            condition: [],
-                            fields: []
-                        }],
-                        ip: {
-                            data: [],
-                            flag: 'bk_host_innerip|bk_host_outerip',
-                            exact: 1
-                        }
-                    }
-                    if (type === 'ip') {
-                        params.ip.data = list
-                    } else {
-                        params.condition.push({
-                            bk_obj_id: 'host',
-                            condition: [{
-                                field: 'bk_asset_id',
-                                operator: '$in',
-                                value: list
-                            }]
-                        })
-                    }
-                    const { info } = await this.$store.dispatch('hostSearch/searchHost', {
-                        params: params,
-                        config: {
-                            requestId: this.request.search,
-                            cancelPrevious: true
-                        }
-                    })
-                    const bizSet = new Set()
-                    const resourceBizId = -1
-                    info.forEach(({ biz }) => {
-                        biz.forEach(data => {
-                            if (data.default === 1) { // 资源池的dfault为1
-                                bizSet.add(resourceBizId)
-                            } else {
-                                bizSet.add(data.bk_biz_id)
-                            }
-                        })
-                    })
-                    if (bizSet.size === 1) {
-                        const bizId = bizSet.values().next().value
-                        if (bizId === resourceBizId) {
-                            this.navigateToResource(list, 1, type)
-                        } else {
-                            this.navigateToBusiness(list, bizId, type)
-                        }
-                    } else {
-                        this.navigateToResource(list, 'all', type)
-                    }
-                } catch (error) {
-                    console.error(error)
-                }
-            },
-            navigateToResource (list, scope, type) {
-                this.$routerActions.redirect({
-                    name: MENU_RESOURCE_HOST,
-                    query: {
-                        [type]: list.join(','),
-                        scope: scope,
-                        exact: 1
-                    },
-                    history: true
-                })
-            },
-            navigateToBusiness (list, bizId, type) {
-                this.$routerActions.redirect({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE,
-                    params: {
-                        bizId
-                    },
-                    query: {
-                        [type]: list.join(','),
-                        exact: 1
-                    },
-                    history: true
-                })
-            }
+  import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
+  import QS from 'qs'
+  import isIP from 'validator/es/lib/isIP'
+  import isInt from 'validator/es/lib/isInt'
+  export default {
+    data() {
+      return {
+        rows: 1,
+        searchText: '',
+        searchContent: '',
+        textarea: '',
+        textareaDom: null,
+        request: {
+          search: Symbol('search')
         }
+      }
+    },
+    watch: {
+      searchContent() {
+        this.$nextTick(this.setRows)
+      }
+    },
+    mounted() {
+      this.textareaDom = this.$refs.searchInput && this.$refs.searchInput.$refs.textarea
+    },
+    methods: {
+      getSearchList() {
+        const searchList = []
+        this.searchContent.split('\n').forEach((text) => {
+          const trimText = text.trim()
+          if (trimText.length) {
+            searchList.push(trimText)
+          }
+        })
+        return searchList
+      },
+      setRows() {
+        const rows = this.searchContent.split('\n').length || 1
+        this.rows = Math.min(10, rows)
+      },
+      handleFocus() {
+        this.$emit('focus', true)
+        this.setRows()
+      },
+      handleBlur() {
+        if (!this.searchContent.trim().length) {
+          this.searchContent = ''
+        }
+        this.textareaDom && this.textareaDom.blur()
+        this.$emit('focus', false)
+      },
+      handleKeydown(content, event) {
+        const agent = window.navigator.userAgent.toLowerCase()
+        const isMac = /macintosh|mac os x/i.test(agent)
+        const modifierKey = isMac ? event.metaKey : event.ctrlKey
+        if (modifierKey && event.code.toLowerCase() === 'enter') {
+          this.handleSearch()
+        }
+      },
+      async handleSearch() {
+        const searchList = this.getSearchList()
+        if (searchList.length > 500) {
+          this.$warn(this.$t('最多支持搜索500条数据'))
+        } else if (searchList.length) {
+          const IPList = []
+          const IPWithCloudList = []
+          const assetList = []
+          const cloudIdSet = new Set()
+          searchList.forEach((text) => {
+            if (isIP(text, 4)) {
+              IPList.push(text)
+            } else {
+              const splitData = text.split(':')
+              const [cloudId, ip] = splitData
+              if (splitData.length === 2 && isInt(cloudId) && isIP(ip)) {
+                IPWithCloudList.push(text)
+                cloudIdSet.add(parseInt(cloudId, 10))
+              } else {
+                assetList.push(text)
+              }
+            }
+          })
+          console.log(IPList, IPWithCloudList, assetList, cloudIdSet)
+          // 判断是否存在IP、固资编号混合搜搜
+          if ((IPList.length || IPWithCloudList.length) && assetList.length) {
+            return this.$warn(this.$t('不支持混合搜索'))
+          }
+          // 纯固资编号搜索
+          if (assetList.length) {
+            return this.handleAssetSearch(assetList)
+          }
+          // 无云区域与有云区域的混合搜索
+          if (IPList.length && IPWithCloudList.length) {
+            return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
+          }
+          // 纯IP搜索
+          if (IPList.length) {
+            return this.handleIPSearch(IPList)
+          }
+          // 不同云区域+IP的混合搜索
+          if (cloudIdSet.size > 1) {
+            return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
+          }
+          this.handleIPWithCloudSearch(IPWithCloudList, cloudIdSet)
+        } else {
+          this.searchContent = ''
+          this.textareaDom && this.textareaDom.focus()
+        }
+      },
+      handleIPSearch(list) {
+        const ip = {
+          text: list.join('\n'),
+          inner: true,
+          outer: true,
+          exact: true
+        }
+        this.$routerActions.redirect({
+          name: MENU_RESOURCE_HOST,
+          query: {
+            scope: 'all',
+            ip: QS.stringify(ip, { encode: false })
+          },
+          history: true
+        })
+      },
+      handleIPWithCloudSearch(list, cloudSet) {
+        const IPList = list.map((text) => {
+          const [, ip] = text.split(':')
+          return ip
+        })
+        const ip = {
+          text: IPList.join('\n'),
+          inner: true,
+          outer: true,
+          exact: true
+        }
+        const filter = {
+          'bk_cloud_id.in': [cloudSet.values().next().value].join(',')
+        }
+        this.$routerActions.redirect({
+          name: MENU_RESOURCE_HOST,
+          query: {
+            scope: 'all',
+            ip: QS.stringify(ip, { encode: false }),
+            filter: QS.stringify(filter, { encode: false })
+          },
+          history: true
+        })
+      },
+      async handleAssetSearch(list) {
+        try {
+          const filter = {
+            'bk_asset_id.in': list.join(',')
+          }
+          this.$routerActions.redirect({
+            name: MENU_RESOURCE_HOST,
+            query: {
+              scope: 'all',
+              filter: QS.stringify(filter, { encode: false })
+            },
+            history: true
+          })
+        } catch (error) {
+          console.error(true)
+        }
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

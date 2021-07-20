@@ -20,42 +20,42 @@ import (
 )
 
 // TODO: config this body data struct.
-func (t *instanceClient) CreateInst(ctx context.Context, ownerID string, objID string, h http.Header, dat interface{}) (resp *metadata.CreateInstResult, err error) {
+func (t *instanceClient) CreateInst(ctx context.Context, objID string, h http.Header, dat interface{}) (resp *metadata.CreateInstResult, err error) {
 	resp = new(metadata.CreateInstResult)
-	subPath := "/inst/%s/%s"
+	subPath := "/create/instance/object/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResourcef(subPath, ownerID, objID).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) DeleteInst(ctx context.Context, ownerID string, objID string, instID int64, h http.Header) (resp *metadata.Response, err error) {
+func (t *instanceClient) DeleteInst(ctx context.Context, objID string, instID int64, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/inst/%s/%s/%d"
+	subPath := "/delete/instance/object/%s/inst/%d"
 
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, ownerID, objID, instID).
+		SubResourcef(subPath, objID, instID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) UpdateInst(ctx context.Context, ownerID string, objID string, instID int64, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+func (t *instanceClient) UpdateInst(ctx context.Context, objID string, instID int64, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/inst/%s/%s/%d"
+	subPath := "/update/instance/object/%s/inst/%d"
 
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(dat).
-		SubResourcef(subPath, ownerID, objID, instID).
+		SubResourcef(subPath, objID, instID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -76,84 +76,98 @@ func (t *instanceClient) SelectInsts(ctx context.Context, ownerID string, objID 
 	return
 }
 
-func (t *instanceClient) SelectInstsAndAsstDetail(ctx context.Context, ownerID string, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
+func (t *instanceClient) SelectInstsAndAsstDetail(ctx context.Context, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
-	subPath := "/inst/search/owner/%s/object/%s/detail"
+	subPath := "/find/instance/object/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(s).
-		SubResourcef(subPath, ownerID, objID).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) InstSearch(ctx context.Context, ownerID string, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
+func (t *instanceClient) InstSearch(ctx context.Context, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
-	subPath := "/inst/search/owner/%s/object/%s"
+	subPath := "/find/instance/object/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(s).
-		SubResourcef(subPath, ownerID, objID).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) SelectInstsByAssociation(ctx context.Context, ownerID string, objID string, h http.Header, p *metadata.AssociationParams) (resp *metadata.SearchInstResult, err error) {
+func (t *instanceClient) SelectInstsByAssociation(ctx context.Context, objID string, h http.Header, p *metadata.AssociationParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
-	subPath := "/inst/association/search/owner/%s/object/%s"
+	subPath := "/find/instassociation/object/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(p).
-		SubResourcef(subPath, ownerID, objID).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) SelectInst(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
+func (t *instanceClient) SelectInst(ctx context.Context, objID string, instID int64, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
-	subPath := "/inst/search/%s/%s/%s"
+	subPath := "/find/instdetail/object/%s/inst/%d"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(p).
-		SubResourcef(subPath, ownerID, objID, instID).
+		SubResourcef(subPath, objID, instID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) SelectTopo(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchTopoResult, err error) {
+func (t *instanceClient) SelectTopo(ctx context.Context, objID string, instID int64, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchTopoResult, err error) {
 	resp = new(metadata.SearchTopoResult)
-	subPath := "/inst/search/topo/owner/%s/object/%s/inst/%s"
+	subPath := "/find/insttopo/object/%s/inst/%d"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(p).
-		SubResourcef(subPath, ownerID, objID, instID).
+		SubResourcef(subPath, objID, instID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) SelectAssociationTopo(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchAssociationTopoResult, err error) {
+func (t *instanceClient) SelectAssociationTopo(ctx context.Context, objID string, instID int64, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchAssociationTopoResult, err error) {
 	resp = new(metadata.SearchAssociationTopoResult)
-	subPath := "/inst/association/topo/search/owner/%s/object/%s/inst/%s"
+	subPath := "/find/instassttopo/object/%s/inst/%d"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(p).
-		SubResourcef(subPath, ownerID, objID, instID).
+		SubResourcef(subPath, objID, instID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (t *instanceClient) SearchInstsNames(ctx context.Context, h http.Header, s *metadata.SearchInstsNamesOption) (resp *metadata.ArrayResponse, err error) {
+	resp = new(metadata.ArrayResponse)
+	subPath := "/findmany/object/instances/names"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(s).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

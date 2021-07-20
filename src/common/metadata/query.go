@@ -36,6 +36,9 @@ type QueryCondition struct {
 	Fields    []string      `json:"fields"`
 	Page      BasePage      `json:"page"`
 	Condition mapstr.MapStr `json:"condition"`
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition  *TimeCondition `json:"time_condition,omitempty"`
+	DisableCounter bool           `json:"disable_counter"`
 }
 
 // IsIllegal  limit is illegal, if limit = 0; change to default page size

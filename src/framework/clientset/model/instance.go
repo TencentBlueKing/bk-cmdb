@@ -49,7 +49,7 @@ func (s instClient) CreateObjectInstance(ctx *types.CreateSetCtx) (int64, error)
 
 func (s instClient) DeleteObjectInstance(ctx *types.DeleteObjectCtx) error {
 	resp := new(types.Response)
-	subPath := fmt.Sprintf("/inst/%s/%s/%d", ctx.Tenancy, ctx.ObjectID, ctx.InstanceID)
+	subPath := fmt.Sprintf("/delete/instance/object/%s/inst/%d", ctx.ObjectID, ctx.InstanceID)
 	err := s.client.Delete().
 		WithContext(ctx.Ctx).
 		Body(nil).
@@ -70,7 +70,7 @@ func (s instClient) DeleteObjectInstance(ctx *types.DeleteObjectCtx) error {
 
 func (s instClient) UpdateObjectInstance(ctx *types.UpdateObjectCtx) error {
 	resp := new(types.Response)
-	subPath := fmt.Sprintf("/inst/%s/%s/%d", ctx.Tenancy, ctx.ObjectID, ctx.InstanceID)
+	subPath := fmt.Sprintf("/update/instance/object/%s/inst/%d", ctx.ObjectID, ctx.InstanceID)
 	err := s.client.Put().
 		WithContext(ctx.Ctx).
 		Body(ctx.Object).

@@ -17,7 +17,8 @@ import (
 	"strings"
 
 	"configcenter/src/common"
-
+	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"github.com/rentiansheng/xlsx"
 )
 
@@ -172,4 +173,32 @@ func addExtFields(fields map[string]Property, extFields map[string]string) map[s
 		excelColIndex++
 	}
 	return fields
+}
+
+func replaceEnName(rid string, rowMap mapstr.MapStr, usernameMap map[string]string, propertyList []string) (mapstr.MapStr, error) {
+	// propertyList是用户自定义的objuser型的attr名列表
+	for _, property := range propertyList {
+		if rowMap[property] == nil {
+			continue
+		}
+		newUserList := []string{}
+		userListString, ok := rowMap[property].(string)
+		if !ok {
+			blog.Errorf("convert variable rowMap[%s] type to string field , rowMap: %v, rowMap type: %T, rid: %s", property, rowMap[property], rowMap[property], rid)
+			return nil, fmt.Errorf("convert variable rowMap[%s] type to string field", property)
+		}
+		enNameList := strings.Split(userListString, ",")
+		for _, item := range enNameList {
+			newUserList = append(newUserList, usernameMap[item])
+		}
+		rowMap[property] = strings.Join(newUserList, ",")
+	}
+	return rowMap, nil
+}
+
+// setExcelCellIgnore set the excel cell to be ignored
+func setExcelCellIgnored(sheet *xlsx.Sheet, style *xlsx.Style, row int, col int) {
+	cell := sheet.Cell(row, col)
+	cell.Value = common.ExcelCellIgnoreValue
+	cell.SetStyle(style)
 }

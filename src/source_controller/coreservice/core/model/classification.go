@@ -21,12 +21,10 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
 )
 
 type modelClassification struct {
-	model   *modelManager
-	dbProxy dal.RDB
+	model *modelManager
 }
 
 func (m *modelClassification) CreateOneModelClassification(kit *rest.Kit, inputParam metadata.CreateOneModelClassification) (*metadata.CreateOneDataResult, error) {
@@ -36,7 +34,7 @@ func (m *modelClassification) CreateOneModelClassification(kit *rest.Kit, inputP
 		return &metadata.CreateOneDataResult{}, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ClassFieldClassificationID)
 	}
 
-	_, exists, err := m.isExists(kit, inputParam.Data.ClassificationID, inputParam.Data.Metadata)
+	_, exists, err := m.isExists(kit, inputParam.Data.ClassificationID)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check if the classification ID (%s)is exists, error info is %s", kit.Rid, inputParam.Data.ClassificationID, err.Error())
 		return nil, err
@@ -83,7 +81,7 @@ func (m *modelClassification) CreateManyModelClassification(kit *rest.Kit, input
 			continue
 		}
 
-		_, exists, err := m.isExists(kit, item.ClassificationID, item.Metadata)
+		_, exists, err := m.isExists(kit, item.ClassificationID)
 		if nil != err {
 			blog.Errorf("request(%s): it is failed to check the classification ID (%s) is exists, error info is %s", kit.Rid, item.ClassificationID, err.Error())
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
@@ -136,7 +134,7 @@ func (m *modelClassification) SetManyModelClassification(kit *rest.Kit, inputPar
 			continue
 		}
 
-		origin, exists, err := m.isExists(kit, item.ClassificationID, item.Metadata)
+		origin, exists, err := m.isExists(kit, item.ClassificationID)
 		if nil != err {
 			blog.Errorf("request(%s): it is failed to check the classification ID (%s) is exists, error info is %s", kit.Rid, item.ClassificationID, err.Error())
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
@@ -193,7 +191,7 @@ func (m *modelClassification) SetOneModelClassification(kit *rest.Kit, inputPara
 		return dataResult, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ClassFieldClassificationID)
 	}
 
-	origin, exists, err := m.isExists(kit, inputParam.Data.ClassificationID, inputParam.Data.Metadata)
+	origin, exists, err := m.isExists(kit, inputParam.Data.ClassificationID)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check the classification ID (%s) is exists, error info is %s", kit.Rid, inputParam.Data.ClassificationID, err.Error())
 		return dataResult, err

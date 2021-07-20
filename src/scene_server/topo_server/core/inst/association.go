@@ -13,7 +13,6 @@
 package inst
 
 import (
-	"context"
 	"io"
 
 	"configcenter/src/common"
@@ -44,7 +43,7 @@ func (cli *inst) updateMainlineAssociation(child Inst, parentID int64) error {
 		},
 		Condition: cond.ToMapStr(),
 	}
-	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(context.Background(), cli.kit.Header, object.ObjectID, &input)
+	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(cli.kit.Ctx, cli.kit.Header, object.ObjectID, &input)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request object controller, error info %s, rid: %s", err.Error(), cli.kit.Rid)
 		return cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -60,7 +59,7 @@ func (cli *inst) updateMainlineAssociation(child Inst, parentID int64) error {
 
 func (cli *inst) searchInstAssociation(cond condition.Condition) ([]metadata.InstAsst, error) {
 
-	rsp, err := cli.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), cli.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := cli.clientSet.CoreService().Association().ReadInstAssociation(cli.kit.Ctx, cli.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request the object controller , err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return nil, cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -84,7 +83,7 @@ func (cli *inst) deleteInstAssociation(instID, asstInstID int64, objID, asstObjI
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKAsstObjIDField).Eq(asstObjID)
 
-	rsp, err := cli.clientSet.CoreService().Association().DeleteInstAssociation(context.Background(), cli.kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+	rsp, err := cli.clientSet.CoreService().Association().DeleteInstAssociation(cli.kit.Ctx, cli.kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request the object controller , err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)

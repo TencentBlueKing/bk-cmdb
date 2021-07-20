@@ -44,25 +44,6 @@ func (s *coreService) UpdateModelInstances(ctx *rest.Contexts) {
 		return
 	}
 
-	// TODO: remove this logic when biz model is changed.
-	cond := metadata.QueryCondition{
-		Condition: map[string]interface{}{
-			common.AssociationKindIDField:  common.AssociationKindMainline,
-			common.AssociatedObjectIDField: ctx.Request.PathParameter("bk_obj_id"),
-		},
-	}
-	result, err := s.core.AssociationOperation().SearchModelAssociation(ctx.Kit, cond)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if len(result.Info) != 0 {
-		// this is a mainline object, need to delete metadata field.
-		// otherwise, can not find this object, then update failed.
-		inputData.Condition.Remove("metadata")
-	}
-
 	ctx.RespEntityWithError(s.core.InstanceOperation().UpdateModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 

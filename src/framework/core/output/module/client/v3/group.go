@@ -54,7 +54,7 @@ func (g *Group) CreateGroup(data types.MapStr) (int, error) {
 	if !data.Exists("bk_group_name") {
 		return 0, errors.New("bk_group_name must set")
 	}
-	targetURL := fmt.Sprintf("%s/api/v3/objectatt/group/new", g.cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/create/objectattgroup", g.cli.GetAddress())
 
 	out := data.ToJSON()
 	rst, err := g.cli.httpCli.POST(targetURL, nil, out)
@@ -84,7 +84,7 @@ func (g *Group) DeleteGroup(cond common.Condition) error {
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/objectatt/group/groupid/%d", g.cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/delete/objectattgroup/%d", g.cli.GetAddress(), id)
 
 	rst, err := g.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
@@ -111,7 +111,7 @@ func (g *Group) UpdateGroup(data types.MapStr, cond common.Condition) error {
 	}
 
 	log.Infof("update group by %s to %s", cond.ToMapStr().ToJSON(), data.ToJSON())
-	targetURL := fmt.Sprintf("%s/api/v3/objectatt/group/update", g.cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/update/objectattgroup", g.cli.GetAddress())
 	rst, err := g.cli.httpCli.PUT(targetURL, nil, param.ToJSON())
 	if nil != err {
 		log.Errorf("post error %v", err)
@@ -137,7 +137,7 @@ func (g *Group) SearchGroups(cond common.Condition) ([]types.MapStr, error) {
 		return nil, errors.New("bk_obj_id must set")
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/objectatt/group/property/owner/%s/object/%s", g.cli.GetAddress(), g.cli.GetSupplierAccount(), objid)
+	targetURL := fmt.Sprintf("%s/api/v3/find/objectattgroup/object/%s", g.cli.GetAddress(), objid)
 	rst, err := g.cli.httpCli.POST(targetURL, nil, cond.ToMapStr().ToJSON())
 	if nil != err {
 		return nil, err

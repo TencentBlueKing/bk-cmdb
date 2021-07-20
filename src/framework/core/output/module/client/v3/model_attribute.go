@@ -44,7 +44,7 @@ func newAttribute(cli *Client) *Attribute {
 // CreateObjectAttribute create a new model object attribute
 func (m *Attribute) CreateObjectAttribute(data types.MapStr) (int, error) {
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/attr", m.cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/create/objectattr", m.cli.GetAddress())
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -73,7 +73,7 @@ func (m *Attribute) DeleteObjectAttribute(cond common.Condition) error {
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/attr/%d", m.cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/delete/objectattr/%d", m.cli.GetAddress(), id)
 
 	rst, err := m.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
@@ -99,7 +99,7 @@ func (m *Attribute) UpdateObjectAttribute(data types.MapStr, cond common.Conditi
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/attr/%d", m.cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/update/objectattr/%d", m.cli.GetAddress(), id)
 
 	rst, err := m.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -120,7 +120,7 @@ func (m *Attribute) SearchObjectAttributes(cond common.Condition) ([]types.MapSt
 
 	data := cond.ToMapStr()
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/attr/search", m.cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/find/objectattr", m.cli.GetAddress())
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {

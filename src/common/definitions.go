@@ -50,25 +50,14 @@ const (
 	// BKAuditLogPageLimit the audit log page limit
 	BKAuditLogPageLimit = 200
 
-	// BKParent the parent code
-	BKParent = 1
-	// BKChild the child code
-	BKChild = 2
-
-	// BKParentStr the parent name
-	BKParentStr = "bk_parentid"
-
-	// BKChildStr the child name
-	BKChildStr = "bk_childid"
+	// BKMaxExportRecord the limit to export
+	BKMaxExportLimit = 10000
 
 	// BKInstParentStr the inst parent name
 	BKInstParentStr = "bk_parent_id"
 
 	// BKDefaultOwnerID the default owner value
 	BKDefaultOwnerID = "0"
-
-	// BKDefaultSupplierID the default owner id
-	BKDefaultSupplierID = 0
 
 	// BKSuperOwnerID the super owner value
 	BKSuperOwnerID = "superadmin"
@@ -211,11 +200,11 @@ const (
 	// BKDBAll matches arrays that contain all elements specified in the query.
 	BKDBAll = "$all"
 
-	// BKDBSize selects documents if the array field is a specified size.
-	BKDBSize = "$size"
+	// BKDBProject passes along the documents with the requested fields to the next stage in the pipeline
+	BKDBProject = "$project"
 
-	// BKDBSortFieldSep the db sort field split char
-	BKDBSortFieldSep = ","
+	// BKDBSize counts and returns the total number of items in an array
+	BKDBSize = "$size"
 )
 
 const (
@@ -238,9 +227,6 @@ const (
 	// BKOwnerIDField the owner field
 	BKOwnerIDField = "bk_supplier_account"
 
-	// BKSupplierIDField the supplier id field
-	BKSupplierIDField = "bk_supplier_id"
-
 	// BKAppIDField the appid field
 	BKAppIDField = "bk_biz_id"
 
@@ -262,41 +248,20 @@ const (
 	// BKHostOuterIPField the host outerip field
 	BKHostOuterIPField = "bk_host_outerip"
 
+	// BKCloudInstIDField the cloud instance id field
+	BKCloudInstIDField = "bk_cloud_inst_id"
+
+	// BKCloudHostStatusField the cloud host status field
+	BKCloudHostStatusField = "bk_cloud_host_status"
+
 	// TimeTransferModel the time transferModel field
 	TimeTransferModel = "2006-01-02 15:04:05"
-
-	// BKLastTimeCloudSync the last time cloud sync
-	BKLastTimeCloudSync = "bk_last_sync_time"
 
 	// BKCloudTaskID the cloud sync task id
 	BKCloudTaskID = "bk_task_id"
 
-	// BKSyncStatus the cloud sync status
-	BKSyncStatus = "bk_sync_status"
-
 	// BKNewAddHost the cloud sync new add hosts
 	BKNewAddHost = "new_add"
-
-	// BKAttrChangedHost the cloud sync attr changed hosts
-	BKAttrChangedHost = "attr_changed"
-
-	// BKCloudConfirm whether new add cloud hosts need confirm
-	BKCloudConfirm = "bk_confirm"
-
-	// BKAttrConfirm the cloud hosts attr changed need confirm
-	BKAttrConfirm = "bk_attr_confirm"
-
-	// BKCloudSyncTaskName the cloud sync task name field
-	BKCloudSyncTaskName = "bk_task_name"
-
-	// BKCloudAccountType the cloud account type field
-	BKCloudAccountType = "bk_account_type"
-
-	// BKCloudSyncAccountAdmin the cloud sync account admin
-	BKCloudSyncAccountAdmin = "bk_account_admin"
-
-	// BKResourceType the cloud sync resource type
-	BKResourceType = "bk_resource_type"
 
 	// BKImportFrom the host import from field
 	BKImportFrom = "import_from"
@@ -492,11 +457,20 @@ const (
 	// BKProcGatewayCity the process gateway city
 	BKProcGatewayCity = "bk_gateway_city"
 
+	// BKProcBindInfo the process bind info
+	BKProcBindInfo = "bind_info"
+
 	// BKUser the user
 	BKUser = "user"
 
 	// BKProtocol the protocol
 	BKProtocol = "protocol"
+
+	// BKIP the ip
+	BKIP = "ip"
+
+	// BKEnable the enable
+	BKEnable = "enable"
 
 	// the process object name
 	BKProcessObjectName = "process"
@@ -640,6 +614,14 @@ const (
 	BKGroupField               = "group"
 
 	BKAttributeIDField = "bk_attribute_id"
+
+	BKSubscribeID = "subscribeID"
+
+	BKTokenField       = "token"
+	BKCursorField      = "cursor"
+	BKClusterTimeField = "cluster_time"
+	BKEventTypeField   = "type"
+	BKStartAtTimeField = "start_at_time"
 )
 
 const (
@@ -728,8 +710,11 @@ const (
 	// NormalSetDefaultFlag user create set default field value
 	NormalSetDefaultFlag int64 = 0
 
-	// default recycle module flat
+	// DefaultRecycleModuleFlag default recycle module flag
 	DefaultRecycleModuleFlag int = 3
+
+	// DefaultResSelfDefinedModuleFlag the default resource self-defined module flag
+	DefaultResSelfDefinedModuleFlag int = 4
 )
 
 const (
@@ -767,8 +752,11 @@ const (
 	// FieldTypeBool the bool type
 	FieldTypeBool string = "bool"
 
-	// FieldTypeList the lis type
+	// FieldTypeList the list type
 	FieldTypeList string = "list"
+
+	// FieldTypeTable the table type, inner type.
+	FieldTypeTable string = "table"
 
 	// FieldTypeOrganization the organization field type
 	FieldTypeOrganization string = "organization"
@@ -789,7 +777,7 @@ const (
 	FieldTypeServiceCategoryRegexp string = `^([\w\p{Han}]|[:\-\(\)])+$`
 
 	//FieldTypeMainlineRegexp the mainline instance name regex expression
-	FieldTypeMainlineRegexp string = `^[^#/,><|]+$`
+	FieldTypeMainlineRegexp string = `^[^\|/:*,<>"?# ]+$`
 
 	//FieldTypeSingleCharRegexp the single char regex expression
 	//FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
@@ -814,7 +802,7 @@ const (
 	HostAddMethodExcelIndexOffset = 3
 
 	// HostAddMethodExcelAssociationIndexOffset
-	HostAddMethodExcelAssociationIndexOffset = 1
+	HostAddMethodExcelAssociationIndexOffset = 2
 
 	/*EXCEL color AARRGGBB :
 	AA means Alpha
@@ -861,6 +849,12 @@ const (
 	ExcelFirstColumnFieldType = "field_type"
 	ExcelFirstColumnFieldID   = "field_id"
 	ExcelFirstColumnInstData  = "inst_data"
+
+	ExcelFirstColumnAssociationAttribute = "excel_association_attribute"
+	ExcelFirstColumnFieldDescription     = "excel_field_description"
+
+	// the value of ignored excel cell
+	ExcelCellIgnoreValue = "--"
 )
 
 const (
@@ -872,6 +866,9 @@ const (
 
 	// BatchHostAddMaxRow batch sync add host max row
 	BatchHostAddMaxRow = 128
+
+	// ExcelImportMaxRow excel import max row
+	ExcelImportMaxRow = 1000
 )
 
 const (
@@ -907,12 +904,8 @@ const (
 
 // event cache keys
 const (
-	EventCacheEventIDKey             = BKCacheKeyV3Prefix + "event:inst_id"
-	EventCacheEventQueueKey          = BKCacheKeyV3Prefix + "event:inst_queue"
-	EventCacheEventTxnQueuePrefix    = BKCacheKeyV3Prefix + "event:inst_txn_queue:"
-	EventCacheEventTxnCommitQueueKey = BKCacheKeyV3Prefix + "event:inst_txn_commit_queue"
-	EventCacheEventTxnAbortQueueKey  = BKCacheKeyV3Prefix + "event:inst_txn_abort_queue"
-	RedisSnapKeyPrefix               = BKCacheKeyV3Prefix + "snapshot:"
+	EventCacheEventIDKey = BKCacheKeyV3Prefix + "event:inst_id"
+	RedisSnapKeyPrefix   = BKCacheKeyV3Prefix + "snapshot:"
 )
 
 // api cache keys
@@ -930,7 +923,6 @@ const (
 	// BKHTTPOwnerID the owner id
 	BKHTTPOwnerID           = "HTTP_BLUEKING_SUPPLIER_ID"
 	BKHTTPCookieLanugageKey = "blueking_language"
-	BKHTTPSupplierID        = "bk_supplier_id"
 	BKHTTPRequestAppCode    = "Bk-App-Code"
 	BKHTTPRequestRealIP     = "X-Real-Ip"
 
@@ -938,6 +930,43 @@ const (
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
 	BKHTTPOtherRequestID = "X-Bkapi-Request-Id"
+
+	BKHTTPSecretsToken   = "BK-Secrets-Token"
+	BKHTTPSecretsProject = "BK-Secrets-Project"
+	BKHTTPSecretsEnv     = "BK-Secrets-Env"
+	// BKHTTPReadReference  query db use secondary node
+	BKHTTPReadReference = "Cc_Read_Preference"
+)
+
+type ReadPreferenceMode string
+
+func (r ReadPreferenceMode) String() string {
+	return string(r)
+}
+
+// BKHTTPReadRefernceMode constants  这个位置对应的是mongodb 的read preference 的mode，如果driver 没有变化这里是不需要变更的，
+// 新增mode 需要修改src/storage/dal/mongo/local/mongo.go 中的getCollectionOption 方法来支持
+const (
+	// NilMode not set
+	NilMode ReadPreferenceMode = ""
+	// PrimaryMode indicates that only a primary is
+	// considered for reading. This is the default
+	// mode.
+	PrimaryMode ReadPreferenceMode = "1"
+	// PrimaryPreferredMode indicates that if a primary
+	// is available, use it; otherwise, eligible
+	// secondaries will be considered.
+	PrimaryPreferredMode ReadPreferenceMode = "2"
+	// SecondaryMode indicates that only secondaries
+	// should be considered.
+	SecondaryMode ReadPreferenceMode = "3"
+	// SecondaryPreferredMode indicates that only secondaries
+	// should be considered when one is available. If none
+	// are available, then a primary will be considered.
+	SecondaryPreferredMode ReadPreferenceMode = "4"
+	// NearestMode indicates that all primaries and secondaries
+	// will be considered.
+	NearestMode ReadPreferenceMode = "5"
 )
 
 // transaction related
@@ -1027,6 +1056,10 @@ const (
 	BKOpenSourceLoginPluginVersion = "opensource"
 	BKSkipLoginPluginVersion       = "skip-login"
 
+	// monitor plugin type
+	BKNoopMonitorPlugin     = "noop"
+	BKBluekingMonitorPlugin = "blueking"
+
 	HTTPCookieBKToken = "bk_token"
 
 	WEBSessionUinKey           = "username"
@@ -1038,7 +1071,6 @@ const (
 	WEBSessionOwnerUinListeKey = "owner_uin_list"
 	WEBSessionAvatarUrlKey     = "avatar_url"
 	WEBSessionMultiSupplierKey = "multisupplier"
-	WEBSessionSupplierID       = "supplier_id"
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"
@@ -1048,16 +1080,23 @@ const (
 	LogoutHTTPSchemeHTTPS     = "https"
 )
 
-const (
-	HostFieldDockerClientVersion = "docker_client_version"
-	HostFieldDockerServerVersion = "docker_server_version"
-)
-
 const BKStatusField = "status"
 
 const (
 	BKProcInstanceOpUser             = "proc instance user"
 	BKSynchronizeDataTaskDefaultUser = "synchronize task user"
+
+	BKCloudSyncUser = "cloud_sync_user"
+)
+
+const (
+	RedisProcSrvHostInstanceRefreshModuleKey  = BKCacheKeyV3Prefix + "prochostinstancerefresh:set"
+	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
+	RedisProcSrvQueryProcOPResultKey          = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
+	RedisCloudSyncInstancePendingStart        = BKCacheKeyV3Prefix + "cloudsyncinstancependingstart:list"
+	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
+	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
+	RedisMongoCacheSyncKey                    = BKCacheKeyV3Prefix + "mongodb:cache"
 )
 
 // association fields
@@ -1132,7 +1171,8 @@ const (
 )
 
 const (
-	NameFieldMaxLength = 256
+	NameFieldMaxLength         = 256
+	MainlineNameFieldMaxLength = 32
 
 	// 用于表示还未设置服务模板的情况，比如没有绑定服务模板
 	ServiceTemplateIDNotSet = 0
@@ -1178,4 +1218,47 @@ type LanguageType string
 const (
 	Chinese LanguageType = "zh-cn"
 	English LanguageType = "en"
+)
+
+// cloud sync const
+const (
+	BKCloudAccountID             = "bk_account_id"
+	BKCloudAccountName           = "bk_account_name"
+	BKCloudVendor                = "bk_cloud_vendor"
+	BKCloudSyncTaskName          = "bk_task_name"
+	BKCloudSyncTaskID            = "bk_task_id"
+	BKCloudSyncStatus            = "bk_sync_status"
+	BKCloudSyncStatusDescription = "bk_status_description"
+	BKCloudLastSyncTime          = "bk_last_sync_time"
+	BKCreator                    = "bk_creator"
+	BKStatus                     = "bk_status"
+	BKStatusDetail               = "bk_status_detail"
+	BKLastEditor                 = "bk_last_editor"
+	BKSecretID                   = "bk_secret_id"
+	BKVpcID                      = "bk_vpc_id"
+	BKVpcName                    = "bk_vpc_name"
+	BKRegion                     = "bk_region"
+	BKCloudSyncVpcs              = "bk_sync_vpcs"
+
+	// 是否为被销毁的云主机
+	IsDestroyedCloudHost = "is_destroyed_cloud_host"
+)
+
+const (
+	BKCloudHostStatusUnknown   = "1"
+	BKCloudHostStatusStarting  = "2"
+	BKCloudHostStatusRunning   = "3"
+	BKCloudHostStatusStopping  = "4"
+	BKCloudHostStatusStopped   = "5"
+	BKCloudHostStatusDestroyed = "6"
+)
+
+const (
+	BKCloudAreaStatusNormal   = "1"
+	BKCloudAreaStatusAbnormal = "2"
+)
+
+// configcenter
+const (
+	BKDefaultConfigCenter = "zookeeper"
 )

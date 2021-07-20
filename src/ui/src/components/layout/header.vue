@@ -1,103 +1,107 @@
 <template>
-    <header class="header-layout">
-        <div class="logo">
-            <router-link class="logo-link" to="/index">
-                {{$t('蓝鲸配置平台')}}
-            </router-link>
-        </div>
-        <nav class="header-nav">
-            <router-link class="header-link"
-                v-for="nav in menu"
-                :to="getHeaderLink(nav)"
-                :key="nav.id"
-                :class="{
-                    active: isLinkActive(nav)
-                }">
-                {{$t(nav.i18n)}}
-            </router-link>
-        </nav>
-        <section class="header-info">
-            <bk-popover class="info-item"
-                theme="light header-info-popover"
-                trigger="click"
-                animation="fade"
-                placement="bottom-end"
-                :arrow="false"
-                :tippy-options="{
-                    animateFill: false
-                }">
-                <span class="info-user">
-                    <span class="user-name">{{userName}}</span>
-                    <i class="user-icon bk-icon icon-angle-down"></i>
-                </span>
-                <template slot="content">
-                    <a class="question-link" href="javascript:void(0)"
-                        @click="handleLogout">
-                        <i class="icon-cc-logout"></i>
-                        {{$t('注销')}}
-                    </a>
-                </template>
-            </bk-popover>
-            <bk-popover class="info-item"
-                theme="light header-info-popover"
-                trigger="click"
-                animation="fade"
-                placement="bottom-end"
-                :arrow="false"
-                :tippy-options="{
-                    animateFill: false
-                }">
-                <i class="question-icon icon-cc-default"></i>
-                <template slot="content">
-                    <a class="question-link" target="_blank" href="http://docs.bk.tencent.com/product_white_paper/cmdb/">{{$t('帮助文档')}}</a>
-                    <a class="question-link" target="_blank" href="https://github.com/Tencent/bk-cmdb">{{$t('开源社区')}}</a>
-                </template>
-            </bk-popover>
-        </section>
-    </header>
+  <header class="header-layout">
+    <div class="logo">
+      <router-link class="logo-link" to="/index">
+        {{$t('蓝鲸配置平台')}}
+      </router-link>
+    </div>
+    <nav class="header-nav">
+      <router-link class="header-link"
+        v-for="nav in menu"
+        :to="getHeaderLink(nav)"
+        :key="nav.id"
+        :class="{
+          active: isLinkActive(nav)
+        }">
+        {{$t(nav.i18n)}}
+      </router-link>
+    </nav>
+    <section class="header-info">
+      <bk-popover class="info-item"
+        theme="light header-info-popover"
+        trigger="click"
+        animation="fade"
+        placement="bottom-end"
+        :arrow="false"
+        :tippy-options="{
+          animateFill: false
+        }">
+        <i class="question-icon icon-cc-default"></i>
+        <template slot="content">
+          <a class="question-link" target="_blank" :href="helpDocUrl">{{$t('产品文档')}}</a>
+          <a class="question-link" target="_blank" href="https://bk.tencent.com/s-mart/community">{{$t('问题反馈')}}</a>
+          <a class="question-link" target="_blank" href="https://github.com/Tencent/bk-cmdb">{{$t('开源社区')}}</a>
+        </template>
+      </bk-popover>
+      <bk-popover class="info-item"
+        theme="light header-info-popover"
+        trigger="click"
+        animation="fade"
+        placement="bottom-end"
+        :arrow="false"
+        :tippy-options="{
+          animateFill: false
+        }">
+        <span class="info-user">
+          <span class="user-name">{{userName}}</span>
+          <i class="user-icon bk-icon icon-angle-down"></i>
+        </span>
+        <template slot="content">
+          <a class="question-link" href="javascript:void(0)"
+            @click="handleLogout">
+            <i class="icon-cc-logout"></i>
+            {{$t('注销')}}
+          </a>
+        </template>
+      </bk-popover>
+    </section>
+  </header>
 </template>
 
 <script>
-    import menu from '@/dictionary/menu'
-    import { MENU_BUSINESS, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
-    import { mapGetters } from 'vuex'
-    export default {
-        data () {
-            return {
-                menu: menu
-            }
-        },
-        computed: {
-            ...mapGetters(['userName']),
-            ...mapGetters('objectBiz', ['bizId'])
-        },
-        methods: {
-            isLinkActive (nav) {
-                const matched = this.$route.matched
-                if (!matched.length) {
-                    return false
-                }
-                return matched[0].name === nav.id
-            },
-            getHeaderLink (nav) {
-                const link = { name: nav.id }
-                if (nav.id === MENU_BUSINESS && this.bizId) {
-                    link.name = MENU_BUSINESS_HOST_AND_SERVICE
-                    link.params = {
-                        bizId: this.bizId
-                    }
-                }
-                return link
-            },
-            handleLogout () {
-                this.$http.post(`${window.API_HOST}logout`, {
-                    'http_scheme': window.location.protocol.replace(':', '')
-                }).then(data => {
-                    window.location.href = data.url
-                })
-            }
+  import menu from '@/dictionary/menu'
+  import { MENU_BUSINESS, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+  import { mapGetters } from 'vuex'
+  export default {
+    data() {
+      return {
+        menu
+      }
+    },
+    computed: {
+      ...mapGetters(['site', 'userName']),
+      ...mapGetters('objectBiz', ['bizId']),
+      helpDocUrl() {
+        return this.site.helpDocUrl || 'http://docs.bk.tencent.com/product_white_paper/cmdb/'
+      }
+    },
+    methods: {
+      isLinkActive(nav) {
+        const { matched } = this.$route
+        if (!matched.length) {
+          return false
         }
+        return matched[0].name === nav.id
+      },
+      getHeaderLink(nav) {
+        const link = { name: nav.id }
+        if (nav.id === MENU_BUSINESS && this.bizId) {
+          link.name = MENU_BUSINESS_HOST_AND_SERVICE
+          link.params = {
+            bizId: this.bizId
+          }
+        }
+        return link
+      },
+      handleLogout() {
+        this.$http.post(`${window.API_HOST}logout`, {
+          http_scheme: window.location.protocol.replace(':', '')
+        }).then((data) => {
+          window.location.href = data.url
+        })
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

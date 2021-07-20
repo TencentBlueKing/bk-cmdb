@@ -17,7 +17,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
+	"configcenter/src/common/paraparse"
 )
 
 func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
@@ -61,7 +61,7 @@ func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h http.He
 	return
 }
 
-func (hs *hostServer) HostSnapInfoBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.HostSnapBatchResult, err error){
+func (hs *hostServer) HostSnapInfoBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.HostSnapBatchResult, err error) {
 	subPath := "/hosts/snapshot/batch"
 
 	err = hs.client.Get().
@@ -74,10 +74,23 @@ func (hs *hostServer) HostSnapInfoBatch(ctx context.Context, h http.Header, dat 
 	return
 }
 
-
 func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/add"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) AddHostToResourcePool(ctx context.Context, h http.Header, dat metadata.AddHostToResourcePoolHostList) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/add/resource"
 
 	err = hs.client.Post().
 		WithContext(ctx).
@@ -229,7 +242,7 @@ func (hs *hostServer) AddHostMultiAppModuleRelation(ctx context.Context, h http.
 	return
 }
 
-func (hs *hostServer) HostModuleRelation(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) TransferHostModule(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/modules"
 
@@ -288,20 +301,6 @@ func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h http.Header,
 func (hs *hostServer) AssignHostToApp(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/modules/resource/idle"
-
-	err = hs.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) AssignHostToAppModule(ctx context.Context, h http.Header, dat *metadata.HostToAppModule) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/host/add/module"
 
 	err = hs.client.Post().
 		WithContext(ctx).
@@ -439,85 +438,103 @@ func (hs *hostServer) UpdateHostPropertyBatch(ctx context.Context, h http.Header
 	return
 }
 
-func (hs *hostServer) AddUserCustomQuery(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/userapi"
+// CreateDynamicGroup is dynamic group create action api machinery.
+func (hs *hostServer) CreateDynamicGroup(ctx context.Context, header http.Header,
+	data map[string]interface{}) (resp *metadata.IDResult, err error) {
+
+	resp = new(metadata.IDResult)
+	subPath := "/dynamicgroup"
 
 	err = hs.client.Post().
 		WithContext(ctx).
-		Body(dat).
+		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) UpdateUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/userapi/%s/%s"
+// UpdateDynamicGroup is dynamic group update action api machinery.
+func (hs *hostServer) UpdateDynamicGroup(ctx context.Context, bizID, id string,
+	header http.Header, data map[string]interface{}) (resp *metadata.BaseResp, err error) {
+
+	resp = new(metadata.BaseResp)
+	subPath := "/dynamicgroup/%s/%s"
 
 	err = hs.client.Put().
 		WithContext(ctx).
-		Body(dat).
-		SubResourcef(subPath, businessID, id).
-		WithHeaders(h).
+		Body(data).
+		SubResourcef(subPath, bizID, id).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) DeleteUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/userapi/%s/%s"
+// DeleteDynamicGroup is dynamic group delete action api machinery.
+func (hs *hostServer) DeleteDynamicGroup(ctx context.Context, bizID, id string,
+	header http.Header) (resp *metadata.BaseResp, err error) {
+
+	resp = new(metadata.BaseResp)
+	subPath := "/dynamicgroup/%s/%s"
 
 	err = hs.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, businessID, id).
-		WithHeaders(h).
+		SubResourcef(subPath, bizID, id).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetUserCustomQuery(ctx context.Context, businessID string, h http.Header, dat *metadata.QueryInput) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/userapi/search/%s"
+// GetDynamicGroup is dynamic group query detail action api machinery.
+func (hs *hostServer) GetDynamicGroup(ctx context.Context, bizID, id string,
+	header http.Header) (resp *metadata.GetDynamicGroupResult, err error) {
+
+	resp = new(metadata.GetDynamicGroupResult)
+	subPath := "/dynamicgroup/%s/%s"
+
+	err = hs.client.Get().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath, bizID, id).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+// SearchDynamicGroup is dynamic group search action api machinery.
+func (hs *hostServer) SearchDynamicGroup(ctx context.Context, bizID string, header http.Header,
+	data *metadata.QueryCondition) (resp *metadata.SearchDynamicGroupResult, err error) {
+
+	resp = new(metadata.SearchDynamicGroupResult)
+	subPath := "/dynamicgroup/search/%s"
 
 	err = hs.client.Post().
 		WithContext(ctx).
-		Body(dat).
-		SubResourcef(subPath, businessID).
-		WithHeaders(h).
+		Body(data).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetUserCustomQueryDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.UserCustomQueryDetailResult, err error) {
-	resp = new(metadata.UserCustomQueryDetailResult)
-	subPath := "/userapi/detail/%s/%s"
+// ExecuteDynamicGroup is dynamic group execute action base on conditions api machinery.
+func (hs *hostServer) ExecuteDynamicGroup(ctx context.Context, bizID, id string, header http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 
-	err = hs.client.Get().
-		WithContext(ctx).
-		Body(nil).
-		SubResourcef(subPath, businessID, id).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) GetUserCustomQueryResult(ctx context.Context, businessID, id, start, limit string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/userapi/data/%s/%s/%s/%s"
+	subPath := "/dynamicgroup/data/%s/%s"
 
-	err = hs.client.Get().
+	err = hs.client.Post().
 		WithContext(ctx).
-		Body(nil).
-		SubResourcef(subPath, businessID, id, start, limit).
-		WithHeaders(h).
+		Body(data).
+		SubResourcef(subPath, bizID, id).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
@@ -548,6 +565,95 @@ func (hs *hostServer) ListBizHostsTopo(ctx context.Context, h http.Header, bizID
 		Body(params).
 		SubResourcef(subPath, bizID).
 		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) CreateCloudArea(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error) {
+
+	resp = new(metadata.CreatedOneOptionResult)
+	subPath := "/create/cloudarea"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) CreateManyCloudArea(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.CreateManyCloudAreaResult, err error) {
+
+	resp = new(metadata.CreateManyCloudAreaResult)
+	subPath := "/createmany/cloudarea"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) UpdateCloudArea(ctx context.Context, h http.Header, cloudID int64, data map[string]interface{}) (resp *metadata.Response, err error) {
+
+	resp = new(metadata.Response)
+	subPath := "/update/cloudarea/%d"
+
+	err = hs.client.Put().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, cloudID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) SearchCloudArea(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.SearchResp, err error) {
+
+	resp = new(metadata.SearchResp)
+	subPath := "/findmany/cloudarea"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) DeleteCloudArea(ctx context.Context, h http.Header, cloudID int64) (resp *metadata.Response, err error) {
+
+	resp = new(metadata.Response)
+	subPath := "/delete/cloudarea/%d"
+
+	err = hs.client.Delete().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath, cloudID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) FindCloudAreaHostCount(ctx context.Context, header http.Header, option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error) {
+	resp = new(metadata.CloudAreaHostCountResult)
+	subPath := "/findmany/cloudarea/hostcount"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return

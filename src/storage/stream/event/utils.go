@@ -97,5 +97,10 @@ func generateOptions(opts *types.Options) (mongo.Pipeline, *options.ChangeStream
 		streamOptions.SetStartAfter(opts.StartAfterToken)
 	}
 
+	// set batch size, otherwise,
+	// it will take as much as about 16MB data one cycle with unlimited batch size as default.
+	var batchSize int32 = 2000
+	streamOptions.BatchSize = &batchSize
+
 	return pipeline, streamOptions
 }

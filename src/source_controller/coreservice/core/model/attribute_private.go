@@ -18,36 +18,25 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 // isExists 需要支持的情况
 // 1. 公有模型加入业务私有字段：私有字段不能与当前业务私有字段重复，且不能与公有字段重复
 // 2. 公有模型加入业务公有字段：公有字段不能与其它公有字段重复，且不能与任何业务的私有字段重复(即忽略业务参数)
-func (m *modelAttribute) isExists(kit *rest.Kit, objID, propertyID string, meta metadata.Metadata) (oneAttribute *metadata.Attribute, exists bool, err error) {
+// 字段不能与其它开发商下的字段重复
+func (m *modelAttribute) isExists(kit *rest.Kit, objID, propertyID string, modelBizID int64) (oneAttribute *metadata.Attribute, exists bool, err error) {
 	filter := map[string]interface{}{
 		metadata.AttributeFieldPropertyID: propertyID,
 		common.BKObjIDField:               objID,
 	}
 
-	bizID, err := meta.ParseBizID()
-	if err != nil {
-		blog.Errorf("request(%s): database findOne operation is failed, parse biz id failed, error info is %s", kit.Rid, err.Error())
-		return oneAttribute, false, err
-	}
-	if bizID != 0 {
-		oc := metadata.NewPublicOrBizConditionByBizID(bizID)
-		if _, ok := oc[common.BKDBOR]; ok == true {
-			filter[common.BKDBOR] = oc[common.BKDBOR]
-		}
-	}
-
-	condMap := util.SetModOwner(filter, kit.SupplierAccount)
+	util.AddModelBizIDCondition(filter, modelBizID)
 	oneAttribute = &metadata.Attribute{}
-	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condMap).One(kit.Ctx, oneAttribute)
-	blog.V(5).Infof("isExists cond:%#v, rid:%s", condMap, kit.Rid)
-	if nil != err && !m.dbProxy.IsNotFoundError(err) {
+	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(filter).One(kit.Ctx, oneAttribute)
+	if nil != err && !mongodb.Client().IsNotFoundError(err) {
 		blog.Errorf("request(%s): database findOne operation is failed, error info is %s", kit.Rid, err.Error())
 		return oneAttribute, false, err
 	}
-	return oneAttribute, !m.dbProxy.IsNotFoundError(err), nil
+	return oneAttribute, !mongodb.Client().IsNotFoundError(err), nil
 }

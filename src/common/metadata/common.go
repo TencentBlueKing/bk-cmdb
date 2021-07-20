@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	cctime "configcenter/src/common/time"
 	"configcenter/src/common/util"
 
 	"github.com/coccyx/timeparser"
@@ -85,6 +86,11 @@ type CoreUint64Response struct {
 	Data     uint64 `json:"data"`
 }
 
+type ArrayResponse struct {
+	BaseResp `json:",inline"`
+	Data     []interface{} `json:"data"`
+}
+
 type MapArrayResponse struct {
 	BaseResp `json:",inline"`
 	Data     []mapstr.MapStr `json:"data"`
@@ -109,28 +115,79 @@ type ResponseDataMapStr struct {
 
 type QueryInput struct {
 	Condition map[string]interface{} `json:"condition"`
-	Fields    string                 `json:"fields,omitempty"`
-	Start     int                    `json:"start,omitempty"`
-	Limit     int                    `json:"limit,omitempty"`
-	Sort      string                 `json:"sort,omitempty"`
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition  *TimeCondition `json:"time_condition,omitempty"`
+	Fields         string         `json:"fields,omitempty"`
+	Start          int            `json:"start,omitempty"`
+	Limit          int            `json:"limit,omitempty"`
+	Sort           string         `json:"sort,omitempty"`
+	DisableCounter bool           `json:"disable_counter,omitempty"`
 }
 
-// Validate validates the input param
-func (o *QueryInput) Validate() (rawError errors.RawErrorInfo) {
-	if o.Limit <= 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{"limit"},
-		}
+type TimeConditionItem struct {
+	Field string       `json:"field" bson:"field"`
+	Start *cctime.Time `json:"start" bson:"start"`
+	End   *cctime.Time `json:"end" bson:"end"`
+}
+
+type TimeCondition struct {
+	Operator string              `json:"oper" bson:"oper"`
+	Rules    []TimeConditionItem `json:"rules" bson:"rules"`
+}
+
+// MergeTimeCondition parse time condition and merge with common condition to construct a DB condition, only used by DB
+func (tc *TimeCondition) MergeTimeCondition(condition map[string]interface{}) (map[string]interface{}, error) {
+	if tc == nil {
+		return nil, nil
 	}
 
-	if o.Limit > common.BKAuditLogPageLimit {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommPageLimitIsExceeded,
-		}
+	if tc.Operator != "and" {
+		return nil, errors.New(common.CCErrCommParamsInvalid, "time condition oper is invalid")
 	}
 
-	return errors.RawErrorInfo{}
+	if len(tc.Rules) == 0 {
+		return nil, errors.New(common.CCErrCommParamsNeedSet, "time condition rules not set")
+	}
+
+	timeCondition := make(map[string]interface{})
+	for _, cond := range tc.Rules {
+		if len(cond.Field) == 0 {
+			return nil, errors.New(common.CCErrCommParamsNeedSet, "time condition field not set")
+		}
+
+		if cond.Start == nil && cond.End == nil {
+			return nil, errors.New(common.CCErrCommParamsInvalid, "time condition start and end both not set")
+		}
+
+		if cond.Start == nil {
+			timeCondition[cond.Field] = map[string]interface{}{common.BKDBLTE: cond.End}
+			continue
+		}
+
+		if cond.End == nil {
+			timeCondition[cond.Field] = map[string]interface{}{common.BKDBGTE: cond.Start}
+			continue
+		}
+
+		if *cond.Start == *cond.End {
+			timeCondition[cond.Field] = map[string]interface{}{common.BKDBEQ: cond.Start}
+			continue
+		}
+
+		timeCondition[cond.Field] = map[string]interface{}{common.BKDBGTE: cond.Start, common.BKDBLTE: cond.End}
+	}
+
+	if len(condition) == 0 {
+		return timeCondition, nil
+	}
+
+	return map[string]interface{}{common.BKDBAND: []map[string]interface{}{condition, timeCondition}}, nil
+}
+
+type ConditionWithTime struct {
+	Condition []ConditionItem `json:"condition"`
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition *TimeCondition `json:"time_condition,omitempty"`
 }
 
 // ConvTime cc_type key
@@ -245,9 +302,9 @@ type BkHostInfo struct {
 }
 
 type DefaultModuleHostConfigParams struct {
-	ApplicationID int64    `json:"bk_biz_id"`
-	HostIDs       []int64  `json:"bk_host_id"`
-	Metadata      Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	ApplicationID int64   `json:"bk_biz_id"`
+	HostIDs       []int64 `json:"bk_host_id"`
+	ModuleID      int64   `json:"bk_module_id"`
 }
 
 // common search struct
@@ -293,4 +350,15 @@ func (s *SearchInstBatchOption) Validate() (rawError errors.RawErrorInfo) {
 	}
 
 	return errors.RawErrorInfo{}
+}
+
+// BkBaseResp base response defined in blueking api protocol
+type BkBaseResp struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+type BKResponse struct {
+	BkBaseResp `json:",inline"`
+	Data       interface{} `json:"data"`
 }

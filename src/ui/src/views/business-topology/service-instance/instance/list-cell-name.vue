@@ -1,77 +1,79 @@
 <template>
-    <div :class="{ 'instance-name': true, disabled }">
-        <span class="name-text" v-bk-overflow-tips>{{row.name}}</span>
-        <!-- 点菜单改变为行操作，代码暂时保留 -->
-        <cmdb-dot-menu class="instance-dot-menu" trigger="click" @click.native.stop>
-            <ul class="menu-list">
-                <cmdb-auth tag="li" class="menu-item"
-                    v-if="!row.service_template_id"
-                    :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }"
-                    @click="handleAddProcess">
-                    {{$t('添加进程')}}
-                </cmdb-auth>
-                <cmdb-auth tag="li" class="menu-item"
-                    v-if="!row.service_template_id"
-                    :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, bk_biz_id: bizId }"
-                    @click="handleClone">
-                    {{$t('克隆')}}
-                </cmdb-auth>
-                <cmdb-auth tag="li" class="menu-item"
-                    :auth="{ type: $OPERATION.D_SERVICE_INSTANCE, bk_biz_id: bizId }"
-                    @click="handleDelete">
-                    {{$t('删除')}}
-                </cmdb-auth>
-            </ul>
-        </cmdb-dot-menu>
-    </div>
+  <div :class="{ 'instance-name': true, disabled }">
+    <template v-if="!editing">
+      <span class="name-text" v-bk-overflow-tips>{{row.name}}</span>
+      <cmdb-auth tag="i" class="name-edit icon-cc-edit-shape"
+        :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
+        @click.native.stop
+        @click="handleEdit">
+      </cmdb-auth>
+    </template>
+    <service-instance-name-edit-form v-else ref="nameEditForm"
+      :value="row.name"
+      @click.native.stop
+      @confirm="handleConfirm"
+      @cancel="handleCancel" />
+  </div>
 </template>
 
 <script>
-    import { mapGetters } from 'vuex'
-    import { MENU_BUSINESS_DELETE_SERVICE } from '@/dictionary/menu-symbol'
-    import createProcessMixin from './create-process-mixin'
-    export default {
-        name: 'list-cell-name',
-        mixins: [createProcessMixin],
-        props: {
-            row: Object
-        },
-        computed: {
-            ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters('businessHost', ['selectedNode']),
-            disabled () {
-                return !this.row.process_count
-            }
-        },
-        methods: {
-            handleClone () {
-                this.$routerActions.redirect({
-                    name: 'cloneServiceInstance',
-                    params: {
-                        instanceId: this.row.id,
-                        hostId: this.row.bk_host_id,
-                        setId: this.selectedNode.parent.data.bk_inst_id,
-                        moduleId: this.selectedNode.data.bk_inst_id
-                    },
-                    query: {
-                        title: this.row.name,
-                        node: this.selectedNode.id
-                    },
-                    history: true
-                })
-            },
-            handleDelete () {
-                this.$routerActions.redirect({
-                    name: MENU_BUSINESS_DELETE_SERVICE,
-                    params: {
-                        ids: this.row.id,
-                        moduleId: this.selectedNode.data.bk_inst_id
-                    },
-                    history: true
-                })
-            }
+  import { mapGetters } from 'vuex'
+  import ServiceInstanceNameEditForm from '@/components/service/instance-name-edit-form'
+  export default {
+    name: 'list-cell-name',
+    components: {
+      ServiceInstanceNameEditForm
+    },
+    props: {
+      row: Object
+    },
+    data() {
+      return {
+        request: {
+          update: Symbol('update')
         }
+      }
+    },
+    computed: {
+      ...mapGetters('objectBiz', ['bizId']),
+      disabled() {
+        return !this.row.process_count
+      },
+      editing() {
+        return this.row.editing.name
+      }
+    },
+    methods: {
+      handleEdit() {
+        this.$emit('edit')
+        this.$nextTick(() => {
+          this.$refs.nameEditForm.focus()
+        })
+      },
+      async handleConfirm(value) {
+        try {
+          await this.$store.dispatch('serviceInstance/updateServiceInstance', {
+            bizId: this.bizId,
+            params: {
+              data: [{
+                service_instance_id: this.row.id,
+                update: {
+                  name: value
+                }
+              }]
+            },
+            config: { requestId: this.request.update }
+          })
+          this.$emit('success', value)
+        } catch (error) {
+          console.error(error)
+        }
+      },
+      handleCancel() {
+        this.$emit('cancel')
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>
@@ -88,28 +90,24 @@
             @include ellipsis;
             cursor: default;
         }
-        .instance-dot-menu {
-            display: none;
-        }
-    }
-    .menu-list {
-        padding: 6px 0;
-        font-size: 12px;
-        .menu-item {
-            padding: 0 12px;
-            display: block;
-            line-height: 32px;
-            color: $textColor;
-            font-size: 12px;
+        .name-edit {
+            visibility: hidden;
+            font-size: 14px;
+            height: 26px;
+            width: 26px;
+            text-align: center;
+            line-height: 26px;
+            color: $primaryColor;
             cursor: pointer;
             &:hover {
-                background-color: #E1ECFF;
-                color: #3a84ff;
+                opacity: .8;
             }
             &.disabled {
-                background-color: #fff;
                 color: $textDisabledColor;
             }
+        }
+        .instance-name-edit-form {
+            flex: auto;
         }
     }
 </style>

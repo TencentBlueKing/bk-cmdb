@@ -21,17 +21,16 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type ModelMainline struct {
 	root         *metadata.TopoModelNode
-	dbProxy      dal.RDB
 	associations []metadata.Association
 }
 
-func NewModelMainline(proxy dal.RDB) (*ModelMainline, error) {
-	modelMainline := &ModelMainline{dbProxy: proxy}
+func NewModelMainline() (*ModelMainline, error) {
+	modelMainline := &ModelMainline{}
 	modelMainline.associations = make([]metadata.Association, 0)
 	return modelMainline, nil
 }
@@ -42,7 +41,7 @@ func (mm *ModelMainline) loadMainlineAssociations(ctx context.Context, header ht
 		common.AssociationKindIDField: common.AssociationKindMainline,
 	}
 	filter = util.SetQueryOwner(filter, util.GetOwnerID(header))
-	err := mm.dbProxy.Table(common.BKTableNameObjAsst).Find(filter).All(ctx, &mm.associations)
+	err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(filter).All(ctx, &mm.associations)
 	if err != nil {
 		blog.Errorf("query topo model mainline association from db failed, %+v, rid: %s", err, rid)
 		return fmt.Errorf("query topo model mainline association from db failed, %+v", err)

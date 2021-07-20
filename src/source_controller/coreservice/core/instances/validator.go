@@ -14,6 +14,7 @@ package instances
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
@@ -27,6 +28,7 @@ type validator struct {
 	propertySlice []metadata.Attribute
 	require       map[string]bool
 	requireFields []string
+	uniqueAttrs   []metadata.ObjectUnique
 	dependent     OperationDependences
 	objID         string
 	language      language.CCLanguageIf
@@ -40,15 +42,17 @@ func NewValidator(kit *rest.Kit, dependent OperationDependences, objID string, b
 	valid.propertySlice = make([]metadata.Attribute, 0)
 	valid.require = make(map[string]bool)
 	valid.requireFields = make([]string, 0)
+	valid.uniqueAttrs = make([]metadata.ObjectUnique, 0)
+	valid.objID = objID
 	valid.errIf = kit.CCError
+	valid.dependent = dependent
+	valid.language = language
+
 	result, err := dependent.SelectObjectAttWithParams(kit, objID, bizID)
 	if nil != err {
-		return valid, err
+		return nil, err
 	}
 	for _, attr := range result {
-		if attr.PropertyID == common.BKChildStr || attr.PropertyID == common.BKParentStr {
-			continue
-		}
 		valid.properties[attr.PropertyID] = attr
 		valid.idToProperty[attr.ID] = attr
 		valid.propertySlice = append(valid.propertySlice, attr)
@@ -57,8 +61,18 @@ func NewValidator(kit *rest.Kit, dependent OperationDependences, objID string, b
 			valid.requireFields = append(valid.requireFields, attr.PropertyID)
 		}
 	}
-	valid.objID = objID
-	valid.dependent = dependent
-	valid.language = language
+
+	uniqueAttrs, err := valid.dependent.SearchUnique(kit, valid.objID)
+	if nil != err {
+		return nil, err
+	}
+
+	// process model do not have the unique rules, so we ignore it's attribute's unique check
+	if len(uniqueAttrs) == 0 && objID != common.BKProcessObjectName {
+		blog.Errorf("[validUpdateUnique] there're not unique constraint for %s, return, rid: %s", valid.objID, kit.Rid)
+		uniqueAttrs = make([]metadata.ObjectUnique, 0)
+	}
+	valid.uniqueAttrs = uniqueAttrs
+
 	return valid, nil
 }

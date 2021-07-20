@@ -66,7 +66,11 @@ func ParseHostParams(input []metadata.ConditionItem, output map[string]interface
 			output[i.Field] = i.Value
 		case common.BKDBIN:
 			queryCondItem := make(map[string]interface{})
-			queryCondItem[i.Operator] = i.Value
+			if i.Value == nil {
+				queryCondItem[i.Operator] = make([]interface{}, 0)
+			} else {
+				queryCondItem[i.Operator] = i.Value
+			}
 			output[i.Field] = queryCondItem
 		case common.BKDBLIKE:
 			regex := make(map[string]interface{})
@@ -97,8 +101,8 @@ func ParseHostParams(input []metadata.ConditionItem, output map[string]interface
 			}
 			switch rawVal := i.Value.(type) {
 			case string:
-				if util.IsTime(rawVal) {
-					i.Value = util.Str2Time(rawVal)
+				if timeType, isTime := util.IsTime(rawVal); isTime {
+					i.Value = util.Str2Time(rawVal, timeType)
 				}
 			}
 			queryCondItem[i.Operator] = i.Value

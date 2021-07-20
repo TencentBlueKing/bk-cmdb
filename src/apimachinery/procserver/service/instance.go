@@ -21,6 +21,20 @@ func (s *service) CreateServiceInstance(ctx context.Context, h http.Header, data
 	return
 }
 
+func (s *service) UpdateServiceInstances(ctx context.Context, h http.Header, bizID int64, data map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/updatemany/proc/service_instance/biz/%d"
+
+	err = s.client.Put().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (s *service) DeleteServiceInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/deletemany/proc/service_instance"
@@ -43,6 +57,20 @@ func (s *service) SearchServiceInstance(ctx context.Context, h http.Header, data
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (s *service) SearchServiceInstanceBySetTemplate(ctx context.Context, appID string, h http.Header, data map[string]interface{}) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+	subPath := "/findmany/proc/service/set_template/list_service_instance/biz/%s"
+
+	err = s.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, appID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

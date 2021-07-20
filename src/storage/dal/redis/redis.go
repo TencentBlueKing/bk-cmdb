@@ -13,39 +13,27 @@
 package redis
 
 import (
+	"context"
 	"strconv"
 	"strings"
 
-	redis "gopkg.in/redis.v5"
+	"github.com/go-redis/redis/v7"
 )
 
 // Config define redis config
 type Config struct {
-	Address    string
-	Password   string
-	Database   string
-	MasterName string
+	Address          string
+	Password         string
+	Database         string
+	MasterName       string
+	SentinelPassword string
 	// for datacollection, notify if the snapshot redis is in use
 	Enable       string
 	MaxOpenConns int
 }
 
-// ParseConfigFromKV returns new config
-func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
-	poolSize, _ := strconv.Atoi(prefix + ".maxOpenConns")
-
-	return Config{
-		Address:      conifgmap[prefix+".host"],
-		Password:     conifgmap[prefix+".pwd"],
-		Database:     conifgmap[prefix+".database"],
-		MasterName:   conifgmap[prefix+".masterName"],
-		Enable:       conifgmap[prefix+".enable"],
-		MaxOpenConns: poolSize,
-	}
-}
-
 // NewFromConfig returns new redis client from config
-func NewFromConfig(cfg Config) (*redis.Client, error) {
+func NewFromConfig(cfg Config) (Client, error) {
 	dbNum, err := strconv.Atoi(cfg.Database)
 	if nil != err {
 		return nil, err
@@ -54,7 +42,7 @@ func NewFromConfig(cfg Config) (*redis.Client, error) {
 		cfg.MaxOpenConns = 3000
 	}
 
-	var client *redis.Client
+	var client Client
 	if cfg.MasterName == "" {
 		option := &redis.Options{
 			Addr:     cfg.Address,
@@ -62,20 +50,21 @@ func NewFromConfig(cfg Config) (*redis.Client, error) {
 			DB:       dbNum,
 			PoolSize: cfg.MaxOpenConns,
 		}
-		client = redis.NewClient(option)
+		client = NewClient(option)
 	} else {
 		hosts := strings.Split(cfg.Address, ",")
 		option := &redis.FailoverOptions{
-			MasterName:    cfg.MasterName,
-			SentinelAddrs: hosts,
-			Password:      cfg.Password,
-			DB:            dbNum,
-			PoolSize:      cfg.MaxOpenConns,
+			MasterName:       cfg.MasterName,
+			SentinelAddrs:    hosts,
+			Password:         cfg.Password,
+			DB:               dbNum,
+			PoolSize:         cfg.MaxOpenConns,
+			SentinelPassword: cfg.SentinelPassword,
 		}
-		client = redis.NewFailoverClient(option)
+		client = NewFailoverClient(option)
 	}
 
-	err = client.Ping().Err()
+	err = client.Ping(context.Background()).Err()
 	if err != nil {
 		return nil, err
 	}

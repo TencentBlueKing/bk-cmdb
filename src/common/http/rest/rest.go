@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -40,6 +41,10 @@ type Config struct {
 }
 
 func NewRestUtility(conf Config) *RestUtility {
+	once.Do(func() {
+		initMetric()
+	})
+
 	return &RestUtility{
 		Config:  conf,
 		actions: make([]Action, 0),
@@ -98,6 +103,8 @@ func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, re
 		restContexts := new(Contexts)
 		restContexts.Request = req
 		restContexts.resp = resp
+		restContexts.uri = action.Path
+
 		header := req.Request.Header
 		rid := util.GetHTTPCCRequestID(header)
 		user := util.GetUser(header)
@@ -111,6 +118,11 @@ func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, re
 			ctx = context.WithValue(ctx, common.TransactionIdHeader, txnID)
 			ctx = context.WithValue(ctx, common.TransactionTimeoutHeader, header.Get(common.TransactionTimeoutHeader))
 		}
+		if mode := util.GetHTTPReadPreference(header); mode != common.NilMode {
+			ctx = util.SetDBReadPreference(ctx, mode)
+			header = util.SetHTTPReadPreference(header, mode)
+		}
+
 		restContexts.Kit = &Kit{
 			Header:          header,
 			Rid:             rid,

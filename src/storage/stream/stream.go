@@ -17,9 +17,12 @@ import (
 	"fmt"
 	"time"
 
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/stream/event"
+	"configcenter/src/storage/stream/loop"
 	"configcenter/src/storage/stream/types"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
@@ -32,6 +35,7 @@ type Interface interface {
 	ListWatch(ctx context.Context, opts *types.ListWatchOptions) (*types.Watcher, error)
 }
 
+// NewStream create a list watch event stream
 func NewStream(conf local.MongoConf) (Interface, error) {
 	connStr, err := connstring.Parse(conf.URI)
 	if nil != err {
@@ -62,4 +66,48 @@ func NewStream(conf local.MongoConf) (Interface, error) {
 		return nil, fmt.Errorf("new event failed, err: %v", err)
 	}
 	return event, nil
+}
+
+type LoopInterface interface {
+	WithOne(opts *types.LoopOneOptions) error
+	WithBatch(opts *types.LoopBatchOptions) error
+}
+
+// NewLoopStream create a new event loop stream.
+func NewLoopStream(conf local.MongoConf, isMaster discovery.ServiceManageInterface) (LoopInterface, error) {
+	connStr, err := connstring.Parse(conf.URI)
+	if nil != err {
+		return nil, err
+	}
+	if conf.RsName == "" {
+		return nil, fmt.Errorf("rsName not set")
+	}
+
+	timeout := 15 * time.Second
+	conOpt := options.ClientOptions{
+		MaxPoolSize:    &conf.MaxOpenConns,
+		MinPoolSize:    &conf.MaxIdleConns,
+		ConnectTimeout: &timeout,
+		ReplicaSet:     &conf.RsName,
+	}
+
+	client, err := mongo.NewClient(options.Client().ApplyURI(conf.URI), &conOpt)
+	if nil != err {
+		return nil, err
+	}
+	if err := client.Connect(context.TODO()); nil != err {
+		return nil, err
+	}
+
+	event, err := event.NewEvent(client, connStr.Database)
+	if err != nil {
+		return nil, fmt.Errorf("new event failed, err: %v", err)
+	}
+
+	loop, err := loop.NewLoopWatch(event, isMaster)
+	if err != nil {
+		return nil, err
+	}
+
+	return loop, nil
 }

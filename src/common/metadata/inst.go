@@ -16,6 +16,8 @@ import (
 	"encoding/json"
 	"sort"
 
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/util"
 )
 
@@ -54,7 +56,6 @@ type ModuleInst struct {
 type BizInst struct {
 	BizID           int64  `bson:"bk_biz_id" mapstructure:"bk_biz_id"`
 	BizName         string `bson:"bk_biz_name" mapstructure:"bk_biz_name"`
-	SupplierID      int64  `bson:"bk_supplier_id" mapstructure:"bk_supplier_id"`
 	SupplierAccount string `bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
 }
 
@@ -74,7 +75,6 @@ type ProcessInst struct {
 	BindIP          string `json:"bind_ip" bson:"bind_ip"`                           // 绑定IP, 枚举: [{ID: "1", Name: "127.0.0.1"}, {ID: "2", Name: "0.0.0.0"}, {ID: "3", Name: "第一内网IP"}, {ID: "4", Name: "第一外网IP"}]
 	PORT            string `json:"port" bson:"port"`                                 // 端口, 单个端口："8080", 多个连续端口："8080-8089", 多个不连续端口："8080-8089,8199"
 	PROTOCOL        string `json:"protocol" bson:"protocol"`                         // 协议, 枚举: [{ID: "1", Name: "TCP"}, {ID: "2", Name: "UDP"}],
-	FuncID          string `json:"bk_func_id" bson:"bk_func_id"`                     // 功能ID
 	FuncName        string `json:"bk_func_name" bson:"bk_func_name"`                 // 功能名称
 	StartParamRegex string `json:"bk_start_param_regex" bson:"bk_start_param_regex"` // 启动参数匹配规则
 }
@@ -82,7 +82,6 @@ type ProcessInst struct {
 type HostIdentifier struct {
 	HostID          int64                       `json:"bk_host_id" bson:"bk_host_id"`           // 主机ID(host_id)								数字
 	HostName        string                      `json:"bk_host_name" bson:"bk_host_name"`       // 主机名称
-	SupplierID      int64                       `json:"bk_supplier_id"`                         // 开发商ID（bk_supplier_id）				数字
 	SupplierAccount string                      `json:"bk_supplier_account"`                    // 开发商帐号（bk_supplier_account）	数字
 	CloudID         int64                       `json:"bk_cloud_id" bson:"bk_cloud_id"`         // 所属云区域id(bk_cloud_id)				数字
 	CloudName       string                      `json:"bk_cloud_name" bson:"bk_cloud_name"`     // 所属云区域名称(bk_cloud_name)		字符串（最大长度25）
@@ -103,16 +102,21 @@ func (identifier *HostIdentifier) MarshalBinary() (data []byte, err error) {
 }
 
 type HostIdentProcess struct {
-	ProcessID       int64   `json:"bk_process_id" bson:"bk_process_id"`               // 进程名称
-	ProcessName     string  `json:"bk_process_name" bson:"bk_process_name"`           // 进程名称
-	BindIP          string  `json:"bind_ip" bson:"bind_ip"`                           // 绑定IP, 枚举: [{ID: "1", Name: "127.0.0.1"}, {ID: "2", Name: "0.0.0.0"}, {ID: "3", Name: "第一内网IP"}, {ID: "4", Name: "第一外网IP"}]
-	Port            string  `json:"port" bson:"port"`                                 // 端口, 单个端口："8080", 多个连续端口："8080-8089", 多个不连续端口："8080-8089,8199"
+	ProcessID   int64  `json:"bk_process_id" bson:"bk_process_id"`     // 进程名称
+	ProcessName string `json:"bk_process_name" bson:"bk_process_name"` // 进程名称
+	// deprecated  后续的版本会被废弃掉
+	BindIP string `json:"bind_ip" bson:"bind_ip"` // 绑定IP, 枚举: [{ID: "1", Name: "127.0.0.1"}, {ID: "2", Name: "0.0.0.0"}, {ID: "3", Name: "第一内网IP"}, {ID: "4", Name: "第一外网IP"}]
+	// deprecated  后续的版本会被废弃掉
+	Port string `json:"port" bson:"port"` // 端口, 单个端口："8080", 多个连续端口："8080-8089", 多个不连续端口："8080-8089,8199"
+	// deprecated  后续的版本会被废弃掉
 	Protocol        string  `json:"protocol" bson:"protocol"`                         // 协议, 枚举: [{ID: "1", Name: "TCP"}, {ID: "2", Name: "UDP"}],
-	FuncID          string  `json:"bk_func_id" bson:"bk_func_id"`                     // 功能ID
 	FuncName        string  `json:"bk_func_name" bson:"bk_func_name"`                 // 功能名称
 	StartParamRegex string  `json:"bk_start_param_regex" bson:"bk_start_param_regex"` // 启动参数匹配规则
 	BindModules     []int64 `json:"bind_modules" bson:"bind_modules"`                 // 进程绑定的模块ID，数字数组
-	PortEnable      bool    `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
+	// deprecated  后续的版本会被废弃掉
+	PortEnable bool `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
+	// BindInfo 进程绑定信息
+	BindInfo []ProcBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info"`
 }
 
 type HostIdentProcessSorter []HostIdentProcess
@@ -176,4 +180,42 @@ type SearchHostIdentifierResult struct {
 type SearchHostIdentifierData struct {
 	Count int              `json:"count"`
 	Info  []HostIdentifier `json:"info"`
+}
+
+// SearchInstsNamesOption search instances names option
+type SearchInstsNamesOption struct {
+	ObjID string `json:"bk_obj_id"`
+	BizID int64  `json:"bk_biz_id"`
+	Name  string `json:"name"`
+}
+
+var ObjsForSearchName = map[string]bool{
+	common.BKInnerObjIDSet:    true,
+	common.BKInnerObjIDModule: true,
+}
+
+// Validate verify the SearchInstsNamesOption
+func (o *SearchInstsNamesOption) Validate() (rawError errors.RawErrorInfo) {
+	if _, ok := ObjsForSearchName[o.ObjID]; !ok {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"bk_obj_id"},
+		}
+	}
+
+	if o.BizID <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"bk_biz_id"},
+		}
+	}
+
+	if o.Name == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"name"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }

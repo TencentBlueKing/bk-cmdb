@@ -55,8 +55,8 @@ type PropertyPrimaryVal struct {
 }
 
 // GetObjFieldIDs get object fields
-func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, meta *metadata.Metadata) (map[string]Property, error) {
-	fields, err := lgc.getObjFieldIDs(objID, header, meta)
+func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, modelBizID int64) (map[string]Property, error) {
+	fields, err := lgc.getObjFieldIDs(objID, header, modelBizID, customFields)
 	if nil != err {
 		return nil, fmt.Errorf("get object fields failed, err: %+v", err)
 	}
@@ -72,7 +72,7 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFie
 	return ret, nil
 }
 
-func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta *metadata.Metadata) ([]PropertyGroup, error) {
+func (lgc *Logics) getObjectGroup(objID string, header http.Header, modelBizID int64) ([]PropertyGroup, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	ownerID := util.GetOwnerID(header)
 	condition := mapstr.MapStr{
@@ -82,7 +82,7 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta *metada
 			"limit": common.BKNoLimit,
 			"sort":  common.BKPropertyGroupIndexField,
 		},
-		metadata.BKMetadata: meta,
+		common.BKAppIDField: modelBizID,
 	}
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectGroup(context.Background(), header, ownerID, objID, condition)
 	if nil != err {
@@ -107,8 +107,8 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta *metada
 
 }
 
-func (lgc *Logics) getObjectPrimaryFieldByObjID(objID string, header http.Header, meta *metadata.Metadata) ([]Property, error) {
-	fields, err := lgc.getObjFieldIDsBySort(objID, common.BKPropertyIDField, header, nil, meta)
+func (lgc *Logics) getObjectPrimaryFieldByObjID(objID string, header http.Header, modelBizID int64) ([]Property, error) {
+	fields, err := lgc.getObjFieldIDsBySort(objID, common.BKPropertyIDField, header, nil, modelBizID)
 	if nil != err {
 		return nil, err
 	}
@@ -122,18 +122,24 @@ func (lgc *Logics) getObjectPrimaryFieldByObjID(objID string, header http.Header
 
 }
 
-func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta *metadata.Metadata) ([]Property, error) {
+func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID int64, customFields []string) ([]Property, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	sort := fmt.Sprintf("%s", common.BKPropertyIndexField)
 
+	customFieldsCond := make(map[string]interface{})
+	if len(customFields) > 0 {
+		fields := append(customFields, common.BKHostInnerIPField, common.BKCloudIDField)
+		customFieldsCond[common.BKPropertyIDField] = map[string]interface{}{common.BKDBIN: fields}
+	}
+
 	// sortedFields 模型字段已经根据bk_property_index排序好了
-	sortedFields, err := lgc.getObjFieldIDsBySort(objID, sort, header, nil, meta)
+	sortedFields, err := lgc.getObjFieldIDsBySort(objID, sort, header, customFieldsCond, modelBizID)
 	if err != nil {
 		blog.Errorf("getObjFieldIDs, getObjFieldIDsBySort failed, sort: %s, rid: %s, err: %v", sort, rid, err)
 		return nil, err
 	}
 
-	groups, err := lgc.getObjectGroup(objID, header, meta)
+	groups, err := lgc.getObjectGroup(objID, header, modelBizID)
 	if nil != err {
 		return nil, fmt.Errorf("getObjFieldIDs, get attribute group failed, err: %+v", err)
 	}
@@ -186,7 +192,7 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta *metada
 	return fields, nil
 }
 
-func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr, meta *metadata.Metadata) ([]Property, error) {
+func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr, modelBizID int64) ([]Property, error) {
 	rid := util.GetHTTPCCRequestID(header)
 
 	condition := mapstr.MapStr{
@@ -196,7 +202,7 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 			"limit": common.BKNoLimit,
 			"sort":  sort,
 		},
-		metadata.BKMetadata: meta,
+		common.BKAppIDField: modelBizID,
 	}
 	condition.Merge(conds)
 

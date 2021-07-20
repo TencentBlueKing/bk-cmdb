@@ -49,7 +49,7 @@ func newModel(cli *Client) *Model {
 // CreateObject create a new model object
 func (m *Model) CreateObject(data types.MapStr) (int64, error) {
 
-	targetURL := fmt.Sprintf("%s/api/v3/object", m.cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/create/object", m.cli.GetAddress())
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -81,7 +81,7 @@ func (m *Model) DeleteObject(cond common.Condition) error {
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/%d", m.cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/delete/object/%d", m.cli.GetAddress(), id)
 	log.Infof("targetURL %s", targetURL)
 	rst, err := m.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
@@ -107,7 +107,7 @@ func (m *Model) UpdateObject(data types.MapStr, cond common.Condition) error {
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/%d", m.cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/update/object/%d", m.cli.GetAddress(), id)
 
 	rst, err := m.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -128,7 +128,7 @@ func (m *Model) SearchObjects(cond common.Condition) ([]types.MapStr, error) {
 
 	data := cond.ToMapStr()
 
-	targetURL := fmt.Sprintf("%s/api/v3/objects", m.cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/find/object", m.cli.GetAddress())
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -157,7 +157,7 @@ func (m *Model) SearchObjectTopo(cond common.Condition) ([]types.MapStr, error) 
 
 	data := cond.ToMapStr()
 
-	targetURL := fmt.Sprintf("%s/api/v3/objects/topo", m.cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/find/objecttopology", m.cli.GetAddress())
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {

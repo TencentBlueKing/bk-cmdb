@@ -15,7 +15,7 @@ package service
 import (
 	"context"
 
-	"configcenter/src/auth/authcenter"
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -24,20 +24,22 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/admin_server/app/options"
+	"configcenter/src/scene_server/admin_server/configures"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*backbone.Engine
 	db           dal.RDB
-	cache        *redis.Client
-	ccApiSrvAddr string
+	watchDB      dal.RDB
+	cache        redis.Client
 	ctx          context.Context
 	Config       options.Config
-	authCenter   *authcenter.AuthCenter
+	iam          *iam.Iam
+	ConfigCenter *configures.ConfCenter
 }
 
 func NewService(ctx context.Context) *Service {
@@ -50,16 +52,16 @@ func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
 }
 
-func (s *Service) SetCache(cache *redis.Client) {
+func (s *Service) SetWatchDB(watchDB dal.RDB) {
+	s.watchDB = watchDB
+}
+
+func (s *Service) SetCache(cache redis.Client) {
 	s.cache = cache
 }
 
-func (s *Service) SetAuthCenter(authCenter *authcenter.AuthCenter) {
-	s.authCenter = authCenter
-}
-
-func (s *Service) SetApiSrvAddr(ccApiSrvAddr string) {
-	s.ccApiSrvAddr = ccApiSrvAddr
+func (s *Service) SetIam(iam *iam.Iam) {
+	s.iam = iam
 }
 
 func (s *Service) WebService() *restful.Container {
@@ -80,6 +82,9 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/system/user_config/{key}/{can}").To(s.UserConfigSwitch))
 	api.Route(api.GET("/find/system/config_admin").To(s.SearchConfigAdmin))
 	api.Route(api.PUT("/update/system/config_admin").To(s.UpdateConfigAdmin))
+	api.Route(api.POST("/migrate/specify/version/{distribution}/{ownerID}").To(s.migrateSpecifyVersion))
+	api.Route(api.POST("/migrate/config/refresh").To(s.refreshConfig))
+	api.Route(api.POST("/migrate/dataid").To(s.migrateDataID))
 	api.Route(api.GET("/healthz").To(s.Healthz))
 
 	container.Add(api)
@@ -107,7 +112,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, healthItem)
 
 	// redis
-	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err())
+	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping(context.Background()).Err())
 	meta.Items = append(meta.Items, redisItem)
 
 	for _, item := range meta.Items {
@@ -131,6 +136,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		Result:  meta.IsHealthy,
 		Message: meta.Message,
 	}
+	answer.SetCommonResponse()
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteEntity(answer)
 }

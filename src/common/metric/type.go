@@ -17,6 +17,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/version"
 )
 
 type MetricFamily struct {
@@ -84,11 +85,21 @@ type HealthResponse struct {
 	Result  bool       `json:"result"`
 }
 
+func (h *HealthResponse) SetCommonResponse() {
+	// set version in healthz response
+	h.Data.Version = map[string]interface{}{
+		"version":   version.CCVersion,
+		"time":      version.CCBuildTime,
+		"commit_id": version.CCGitHash,
+	}
+}
+
 type HealthInfo struct {
 	Module     string `json:"module"`
 	Address    string `json:"address"`
 	HealthMeta `json:",inline"`
-	AtTime     metadata.Time `json:"at_time"`
+	AtTime     metadata.Time          `json:"at_time"`
+	Version    map[string]interface{} `json:"version"`
 }
 
 type Action struct {

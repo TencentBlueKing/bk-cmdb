@@ -19,7 +19,76 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
+
+func (lgc *Logic) ListProcessInstances(kit *rest.Kit, bizID int64, serviceInstanceID int64, fields []string) (
+	[]metadata.ProcessInstance, errors.CCErrorCoder) {
+
+	if serviceInstanceID == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField)
+	}
+	// list process instance relation
+	relationOption := metadata.ListProcessInstanceRelationOption{
+		BusinessID:         bizID,
+		ServiceInstanceIDs: []int64{serviceInstanceID},
+	}
+	relationsResult, err := lgc.CoreAPI.CoreService().Process().ListProcessInstanceRelation(kit.Ctx, kit.Header, &relationOption)
+	if err != nil {
+		return nil, kit.CCError.CCErrorf(common.CCErrProcGetServiceInstancesFailed, "list process instance "+
+			"relation failed, bizID: %d, serviceInstanceID: %d, err: %+v", bizID, serviceInstanceID, err)
+	}
+
+	processIDs := make([]int64, 0)
+	for _, relation := range relationsResult.Info {
+		processIDs = append(processIDs, relation.ProcessID)
+	}
+	filter := map[string]interface{}{
+		common.BKProcessIDField: map[string]interface{}{
+			common.BKDBIN: processIDs,
+		},
+	}
+	reqParam := &metadata.QueryCondition{
+		Condition: filter,
+		Fields:    fields,
+	}
+	processResult, ccErr := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, reqParam)
+	if nil != ccErr {
+		return nil, kit.CCError.CCErrorf(common.CCErrProcGetServiceInstancesFailed, "list process instance "+
+			"property failed, bizID: %d, processIDs: %+v, err: %+v", bizID, processIDs, ccErr)
+	}
+
+	processIDPropertyMap := map[int64]mapstr.MapStr{}
+	for _, process := range processResult.Data.Info {
+		processIDVal, exist := process.Get(common.BKProcessIDField)
+		if !exist {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParseDataFailed, "list process instance failed, parse "+
+				"bk_process_id from process property failed, field not exist, bizID: %d, processIDs: %+v", bizID, processIDs)
+		}
+		processID, err := util.GetInt64ByInterface(processIDVal)
+		if err != nil {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParseDataFailed, "list process instance failed, "+
+				"parse bk_process_id from process property failed, parse field to int64 failed, bizID: %d, "+
+				"processIDs: %+v, process: %+v, err: %+v", bizID, processIDs, process, err)
+		}
+		processIDPropertyMap[processID] = process
+	}
+
+	processInstanceList := make([]metadata.ProcessInstance, 0)
+	for _, relation := range relationsResult.Info {
+		processInstance := metadata.ProcessInstance{
+			Property: nil,
+			Relation: relation,
+		}
+		process, exist := processIDPropertyMap[relation.ProcessID]
+		if exist {
+			processInstance.Property = process
+		}
+		processInstanceList = append(processInstanceList, processInstance)
+	}
+
+	return processInstanceList, nil
+}
 
 func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]metadata.Process, errors.CCErrorCoder) {
 	reqParam := &metadata.QueryCondition{
@@ -37,7 +106,7 @@ func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]
 
 	if !ret.Result {
 		blog.Errorf("rid: %s list process instance with procID: %d failed, err: %v", kit.Rid, procIDs, ret.ErrMsg)
-		return nil, errors.New(ret.Code, ret.ErrMsg)
+		return nil, ret.CCError()
 	}
 
 	processes := make([]metadata.Process, 0)
@@ -67,7 +136,7 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 
 	if !ret.Result {
 		blog.Errorf("GetProcessInstanceWithID failed, get process instance with procID: %d failed, err: %v, rid: %s", procID, ret.ErrMsg, kit.Rid)
-		return nil, errors.New(ret.Code, ret.ErrMsg)
+		return nil, ret.CCError()
 	}
 
 	process := new(metadata.Process)
@@ -169,16 +238,57 @@ func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, processData map[string]in
 	return int64(result.Data.Created.ID), nil
 }
 
+func (lgc *Logic) CreateProcessInstances(kit *rest.Kit, processDatas []map[string]interface{}) ([]int64, errors.CCErrorCoder) {
+
+	data := make([]mapstr.MapStr, len(processDatas))
+	for idx := range processDatas {
+		data[idx] = processDatas[idx]
+	}
+
+	inputParam := metadata.CreateManyModelInstance{
+		Datas: data,
+	}
+
+	result, err := lgc.CoreAPI.CoreService().Instance().CreateManyInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &inputParam)
+	if err != nil {
+		blog.Errorf("CreateProcessInstances failed, http request failed, err: %+v, inputParam:%#v, rid: %s", err, inputParam, kit.Rid)
+		return nil, errors.CCHttpError
+	}
+	if !result.Result {
+		blog.Errorf("CreateProcessInstances failed, http request failed, err: %+v, inputParam:%#v, rid: %s", result.ErrMsg, inputParam, kit.Rid)
+		return nil, errors.New(result.Code, result.ErrMsg)
+	}
+
+	if len(processDatas) != len(result.Data.Created) {
+		blog.Errorf("CreateProcessInstances failed, len(processes) != len(result.Created), inputParam: %#v, rid: %s", inputParam, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrProcCreateProcessFailed)
+	}
+
+	processIDs := make([]int64, len(processDatas))
+	for idx, created := range result.Data.Created {
+		processIDs[idx] = int64(created.ID)
+	}
+
+	return processIDs, nil
+}
+
 // it works to find the different attribute value between the process instance and it's bounded process template.
-// return with the changed attribute's details.
-func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metadata.Process, attrMap map[string]metadata.Attribute) []metadata.ProcessChangedAttribute {
+// if needDetail is true, returns with the changed attribute's details, otherwise only returns if process is changed.
+func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metadata.Process, host map[string]interface{},
+	attrMap map[string]metadata.Attribute, needDetail bool) ([]metadata.ProcessChangedAttribute, bool, error) {
+
 	changes := make([]metadata.ProcessChangedAttribute, 0)
 	if t == nil || i == nil {
-		return changes
+		return changes, false, nil
 	}
 
 	if metadata.IsAsDefaultValue(t.ProcNum.AsDefaultValue) {
-		if (t.ProcNum.Value == nil && i.ProcNum != nil) || (t.ProcNum.Value != nil && i.ProcNum == nil) || (t.ProcNum.Value != nil && *t.ProcNum.Value != *i.ProcNum) {
+		if (t.ProcNum.Value == nil && i.ProcNum != nil) ||
+			(t.ProcNum.Value != nil && i.ProcNum == nil) ||
+			(t.ProcNum.Value != nil && i.ProcNum != nil && *t.ProcNum.Value != *i.ProcNum) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["proc_num"].ID,
 				PropertyID:            "proc_num",
@@ -193,6 +303,9 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		if (t.StopCmd.Value == nil && i.StopCmd != nil) ||
 			(t.StopCmd.Value != nil && i.StopCmd == nil) ||
 			(t.StopCmd.Value != nil && i.StopCmd != nil && *t.StopCmd.Value != *i.StopCmd) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["stop_cmd"].ID,
 				PropertyID:            "stop_cmd",
@@ -207,6 +320,9 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		if (t.RestartCmd.Value == nil && i.RestartCmd != nil) ||
 			(t.RestartCmd.Value != nil && i.RestartCmd == nil) ||
 			(t.RestartCmd.Value != nil && i.RestartCmd != nil && *t.RestartCmd.Value != *i.RestartCmd) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["restart_cmd"].ID,
 				PropertyID:            "restart_cmd",
@@ -221,6 +337,9 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		if (t.ForceStopCmd.Value == nil && i.ForceStopCmd != nil) ||
 			(t.ForceStopCmd.Value != nil && i.ForceStopCmd == nil) ||
 			(t.ForceStopCmd.Value != nil && i.ForceStopCmd != nil && *t.ForceStopCmd.Value != *i.ForceStopCmd) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["face_stop_cmd"].ID,
 				PropertyID:            "face_stop_cmd",
@@ -235,6 +354,9 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		if (t.FuncName.Value == nil && i.FuncName != nil) ||
 			(t.FuncName.Value != nil && i.FuncName == nil) ||
 			(t.FuncName.Value != nil && i.FuncName != nil && *t.FuncName.Value != *i.FuncName) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["bk_func_name"].ID,
 				PropertyID:            "bk_func_name",
@@ -249,6 +371,9 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		if (t.WorkPath.Value == nil && i.WorkPath != nil) ||
 			(t.WorkPath.Value != nil && i.WorkPath == nil) ||
 			(t.WorkPath.Value != nil && i.WorkPath != nil && *t.WorkPath.Value != *i.WorkPath) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["work_path"].ID,
 				PropertyID:            "work_path",
@@ -259,24 +384,33 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		}
 	}
 
-	if metadata.IsAsDefaultValue(t.BindIP.AsDefaultValue) {
-		if (t.BindIP.Value == nil && i.BindIP != nil) ||
-			(t.BindIP.Value != nil && i.BindIP == nil) ||
-			(t.BindIP.Value != nil && i.BindIP != nil && t.BindIP.Value.IP() != *i.BindIP) {
+	if metadata.IsAsDefaultValue(t.BindInfo.AsDefaultValue) {
+		newBindInfo, change, err := t.BindInfo.DiffWithProcessTemplate(i.BindInfo, host, needDetail)
+		if err != nil {
+			return nil, false, err
+		}
+		if change {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap["bind_ip"].ID,
-				PropertyID:            "bind_ip",
-				PropertyName:          attrMap["bind_ip"].PropertyName,
-				PropertyValue:         i.BindIP,
-				TemplatePropertyValue: t.BindIP.Value.IP(),
+				ID:                    attrMap[common.BKProcBindInfo].ID,
+				PropertyID:            common.BKProcBindInfo,
+				PropertyName:          attrMap[common.BKProcBindInfo].PropertyName,
+				PropertyValue:         i.BindInfo,
+				TemplatePropertyValue: newBindInfo,
 			})
 		}
+
 	}
 
 	if metadata.IsAsDefaultValue(t.Priority.AsDefaultValue) {
 		if (t.Priority.Value == nil && i.Priority != nil) ||
 			(t.Priority.Value != nil && i.Priority == nil) ||
 			(t.Priority.Value != nil && i.Priority != nil && *t.Priority.Value != *i.Priority) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["priority"].ID,
 				PropertyID:            "priority",
@@ -291,6 +425,9 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		if (t.ReloadCmd.Value == nil && i.ReloadCmd != nil) ||
 			(t.ReloadCmd.Value != nil && i.ReloadCmd == nil) ||
 			(t.ReloadCmd.Value != nil && i.ReloadCmd != nil && *t.ReloadCmd.Value != *i.ReloadCmd) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["reload_cmd"].ID,
 				PropertyID:            "reload_cmd",
@@ -305,6 +442,9 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		if (t.ProcessName.Value == nil && i.ProcessName != nil) ||
 			(t.ProcessName.Value != nil && i.ProcessName == nil) ||
 			(t.ProcessName.Value != nil && i.ProcessName != nil && *t.ProcessName.Value != *i.ProcessName) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["bk_process_name"].ID,
 				PropertyID:            "bk_process_name",
@@ -315,24 +455,13 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		}
 	}
 
-	if metadata.IsAsDefaultValue(t.Port.AsDefaultValue) {
-		if (t.Port.Value == nil && i.Port != nil) ||
-			(t.Port.Value != nil && i.Port == nil) ||
-			(t.Port.Value != nil && i.Port != nil && *t.Port.Value != *i.Port) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap["port"].ID,
-				PropertyID:            "port",
-				PropertyName:          attrMap["port"].PropertyName,
-				PropertyValue:         i.Port,
-				TemplatePropertyValue: t.Port,
-			})
-		}
-	}
-
 	if metadata.IsAsDefaultValue(t.PidFile.AsDefaultValue) {
 		if (t.PidFile.Value == nil && i.PidFile != nil) ||
 			(t.PidFile.Value != nil && i.PidFile == nil) ||
 			(t.PidFile.Value != nil && i.PidFile != nil && *t.PidFile.Value != *i.PidFile) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["pid_file"].ID,
 				PropertyID:            "pid_file",
@@ -347,6 +476,9 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		if (t.AutoStart.Value == nil && i.AutoStart != nil) ||
 			(t.AutoStart.Value != nil && i.AutoStart == nil) ||
 			(t.AutoStart.Value != nil && i.AutoStart != nil && *t.AutoStart.Value != *i.AutoStart) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["auto_start"].ID,
 				PropertyID:            "auto_start",
@@ -357,16 +489,19 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		}
 	}
 
-	if metadata.IsAsDefaultValue(t.AutoTimeGapSeconds.AsDefaultValue) {
-		if (t.AutoTimeGapSeconds.Value == nil && i.AutoTimeGap != nil) ||
-			(t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap == nil) ||
-			(t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap != nil && *t.AutoTimeGapSeconds.Value != *i.AutoTimeGap) {
+	if metadata.IsAsDefaultValue(t.StartCheckSecs.AsDefaultValue) {
+		if (t.StartCheckSecs.Value == nil && i.StartCheckSecs != nil) ||
+			(t.StartCheckSecs.Value != nil && i.StartCheckSecs == nil) ||
+			(t.StartCheckSecs.Value != nil && i.StartCheckSecs != nil && *t.StartCheckSecs.Value != *i.StartCheckSecs) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap["auto_time_gap"].ID,
-				PropertyID:            "auto_time_gap",
-				PropertyName:          attrMap["auto_time_gap"].PropertyName,
-				PropertyValue:         i.AutoTimeGap,
-				TemplatePropertyValue: t.AutoTimeGapSeconds,
+				ID:                    attrMap["bk_start_check_secs"].ID,
+				PropertyID:            "bk_start_check_secs",
+				PropertyName:          attrMap["bk_start_check_secs"].PropertyName,
+				PropertyValue:         i.StartCheckSecs,
+				TemplatePropertyValue: t.StartCheckSecs,
 			})
 		}
 	}
@@ -375,6 +510,9 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		if (t.StartCmd.Value == nil && i.StartCmd != nil) ||
 			(t.StartCmd.Value != nil && i.StartCmd == nil) ||
 			(t.StartCmd.Value != nil && i.StartCmd != nil && *t.StartCmd.Value != *i.StartCmd) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["start_cmd"].ID,
 				PropertyID:            "start_cmd",
@@ -385,24 +523,13 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		}
 	}
 
-	if metadata.IsAsDefaultValue(t.FuncID.AsDefaultValue) {
-		if (t.FuncID.Value == nil && i.FuncID != nil) ||
-			(t.FuncID.Value != nil && i.FuncID == nil) ||
-			(t.FuncID.Value != nil && i.FuncID != nil && *t.FuncID.Value != *i.FuncID) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap["bk_func_id"].ID,
-				PropertyID:            "bk_func_id",
-				PropertyName:          attrMap["bk_func_id"].PropertyName,
-				PropertyValue:         i.FuncID,
-				TemplatePropertyValue: t.FuncID,
-			})
-		}
-	}
-
 	if metadata.IsAsDefaultValue(t.User.AsDefaultValue) {
 		if (t.User.Value == nil && i.User != nil) ||
 			(t.User.Value != nil && i.User == nil) ||
 			(t.User.Value != nil && i.User != nil && *t.User.Value != *i.User) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["user"].ID,
 				PropertyID:            "user",
@@ -417,6 +544,9 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		if (t.TimeoutSeconds.Value == nil && i.TimeoutSeconds != nil) ||
 			(t.TimeoutSeconds.Value != nil && i.TimeoutSeconds == nil) ||
 			(t.TimeoutSeconds.Value != nil && i.TimeoutSeconds != nil && *t.TimeoutSeconds.Value != *i.TimeoutSeconds) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["timeout"].ID,
 				PropertyID:            "timeout",
@@ -427,24 +557,13 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		}
 	}
 
-	if metadata.IsAsDefaultValue(t.Protocol.AsDefaultValue) {
-		if (t.Protocol.Value == nil && i.Protocol != nil) ||
-			(t.Protocol.Value != nil && i.Protocol == nil) ||
-			(t.Protocol.Value != nil && i.Protocol != nil && *t.Protocol.Value != *i.Protocol) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap["protocol"].ID,
-				PropertyID:            "protocol",
-				PropertyName:          attrMap["protocol"].PropertyName,
-				PropertyValue:         i.Protocol,
-				TemplatePropertyValue: t.Protocol,
-			})
-		}
-	}
-
 	if metadata.IsAsDefaultValue(t.Description.AsDefaultValue) {
 		if (t.Description.Value == nil && i.Description != nil) ||
 			(t.Description.Value != nil && i.Description == nil) ||
 			(t.Description.Value != nil && i.Description != nil && *t.Description.Value != *i.Description) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["description"].ID,
 				PropertyID:            "description",
@@ -459,6 +578,9 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		if (t.StartParamRegex.Value == nil && i.StartParamRegex != nil) ||
 			(t.StartParamRegex.Value != nil && i.StartParamRegex == nil) ||
 			(t.StartParamRegex.Value != nil && i.StartParamRegex != nil && *t.StartParamRegex.Value != *i.StartParamRegex) {
+			if !needDetail {
+				return changes, true, nil
+			}
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["bk_start_param_regex"].ID,
 				PropertyID:            "bk_start_param_regex",
@@ -469,75 +591,37 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		}
 	}
 
-	if metadata.IsAsDefaultValue(t.PortEnable.AsDefaultValue) {
-		if (t.PortEnable.Value == nil && i.PortEnable != nil) ||
-			(t.PortEnable.Value != nil && i.PortEnable == nil) ||
-			(t.PortEnable.Value != nil && i.PortEnable != nil && *t.PortEnable.Value != *i.PortEnable) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap[common.BKProcPortEnable].ID,
-				PropertyID:            common.BKProcPortEnable,
-				PropertyName:          attrMap[common.BKProcPortEnable].PropertyName,
-				PropertyValue:         i.PortEnable,
-				TemplatePropertyValue: t.PortEnable,
-			})
-		}
+	return changes, len(changes) > 0, nil
+}
+
+// GetHostIPMapByID get host ID to ip data map by host IDs, used for bind ip with first inner or outer IP
+func (lgc *Logic) GetHostIPMapByID(kit *rest.Kit, hostIDs []int64) (map[int64]map[string]interface{}, errors.CCErrorCoder) {
+	hostReq := metadata.QueryInput{
+		Condition: map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}},
+		Fields:    common.BKHostIDField + "," + common.BKHostInnerIPField + "," + common.BKHostOuterIPField,
+		Limit:     common.BKNoLimit,
 	}
 
-	if metadata.IsAsDefaultValue(t.GatewayIP.AsDefaultValue) {
-		if (t.GatewayIP.Value == nil && i.GatewayIP != nil) ||
-			(t.GatewayIP.Value != nil && i.GatewayIP == nil) ||
-			(t.GatewayIP.Value != nil && i.GatewayIP != nil && *t.GatewayIP.Value != *i.GatewayIP) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap[common.BKProcGatewayIP].ID,
-				PropertyID:            common.BKProcGatewayIP,
-				PropertyName:          attrMap[common.BKProcGatewayIP].PropertyName,
-				PropertyValue:         i.GatewayIP,
-				TemplatePropertyValue: t.GatewayIP,
-			})
-		}
+	hostRes, err := lgc.CoreAPI.CoreService().Host().GetHosts(kit.Ctx, kit.Header, &hostReq)
+	if err != nil {
+		blog.Errorf("get hosts failed, err: %s, hostIDs: %+v, rid: %s", err.Error(), hostIDs, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if metadata.IsAsDefaultValue(t.GatewayPort.AsDefaultValue) {
-		if (t.GatewayPort.Value == nil && i.GatewayPort != nil) ||
-			(t.GatewayPort.Value != nil && i.GatewayPort == nil) ||
-			(t.GatewayPort.Value != nil && i.GatewayPort != nil && *t.GatewayPort.Value != *i.GatewayPort) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap[common.BKProcGatewayPort].ID,
-				PropertyID:            common.BKProcGatewayPort,
-				PropertyName:          attrMap[common.BKProcGatewayPort].PropertyName,
-				PropertyValue:         i.GatewayPort,
-				TemplatePropertyValue: t.GatewayPort,
-			})
-		}
+	if !hostRes.Result {
+		blog.Errorf("get hosts failed, err: %s, hostIDs: %+v, rid: %s", hostRes.ErrMsg, hostIDs, kit.Rid)
+		return nil, hostRes.CCError()
 	}
 
-	if metadata.IsAsDefaultValue(t.GatewayProtocol.AsDefaultValue) {
-		if (t.GatewayProtocol.Value == nil && i.GatewayProtocol != nil) ||
-			(t.GatewayProtocol.Value != nil && i.GatewayProtocol == nil) ||
-			(t.GatewayProtocol.Value != nil && i.GatewayProtocol != nil && *t.GatewayProtocol.Value != *i.GatewayProtocol) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap[common.BKProcGatewayProtocol].ID,
-				PropertyID:            common.BKProcGatewayProtocol,
-				PropertyName:          attrMap[common.BKProcGatewayProtocol].PropertyName,
-				PropertyValue:         i.GatewayProtocol,
-				TemplatePropertyValue: t.GatewayProtocol,
-			})
+	hostMap := make(map[int64]map[string]interface{})
+	for _, host := range hostRes.Data.Info {
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			blog.Errorf("host id invalid, err: %s, host: %+v, rid: %s", err.Error(), host, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
 		}
+		hostMap[hostID] = host
 	}
 
-	if metadata.IsAsDefaultValue(t.GatewayCity.AsDefaultValue) {
-		if (t.GatewayCity.Value == nil && i.GatewayCity != nil) ||
-			(t.GatewayCity.Value != nil && i.GatewayCity == nil) ||
-			(t.GatewayCity.Value != nil && i.GatewayCity != nil && *t.GatewayCity.Value != *i.GatewayCity) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap[common.BKProcGatewayCity].ID,
-				PropertyID:            common.BKProcGatewayCity,
-				PropertyName:          attrMap[common.BKProcGatewayCity].PropertyName,
-				PropertyValue:         i.GatewayCity,
-				TemplatePropertyValue: t.GatewayCity,
-			})
-		}
-	}
-
-	return changes
+	return hostMap, nil
 }

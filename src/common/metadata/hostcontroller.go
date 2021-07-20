@@ -15,6 +15,8 @@ package metadata
 import (
 	"time"
 
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 )
 
@@ -93,6 +95,30 @@ type GetHostSnapResult struct {
 	Data     HostSnap `json:"data"`
 }
 
+type HostSnapBatchOption struct {
+	IDs    []int64  `json:"bk_ids"`
+	Fields []string `json:"fields"`
+}
+
+func (h *HostSnapBatchOption) Validate() (rawError errors.RawErrorInfo) {
+	maxLimit := 200
+	if len(h.IDs) == 0 || len(h.IDs) > maxLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_ids", maxLimit},
+		}
+	}
+
+	if len(h.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
 type HostSnapBatchInput struct {
 	HostIDs []int64 `json:"host_ids"`
 }
@@ -123,11 +149,11 @@ type AssignHostToAppParams struct {
 }
 
 type ModuleHost struct {
-	AppID    int64  `json:"bk_biz_id" bson:"bk_biz_id"`
-	HostID   int64  `json:"bk_host_id" bson:"bk_host_id"`
-	ModuleID int64  `json:"bk_module_id" bson:"bk_module_id"`
-	SetID    int64  `json:"bk_set_id" bson:"bk_set_id"`
-	OwnerID  string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	AppID    int64  `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
+	HostID   int64  `json:"bk_host_id,omitempty" bson:"bk_host_id"`
+	ModuleID int64  `json:"bk_module_id,omitempty" bson:"bk_module_id"`
+	SetID    int64  `json:"bk_set_id,omitempty" bson:"bk_set_id"`
+	OwnerID  string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 }
 
 type HostConfig struct {
@@ -141,32 +167,16 @@ type HostConfigData struct {
 	Page  BasePage     `json:"page"`
 }
 
+type HostModuleResp struct {
+	BaseResp `json:",inline"`
+	Data     []ModuleHost `json:"data"`
+}
+
 type ModuleHostConfigParams struct {
 	ApplicationID int64   `json:"bk_biz_id"`
 	HostID        int64   `json:"bk_host_id"`
 	ModuleID      []int64 `json:"bk_module_id"`
 	OwnerID       string  `json:"bk_supplier_account" bson:"bk_supplier_account"`
-}
-
-type UserConfig struct {
-	Info       string    `json:"info" bson:"info"`
-	Name       string    `json:"name" bson:"name"`
-	ID         string    `json:"id" bson:"id"`
-	CreateTime time.Time `json:"create_time" bson:"create_time"`
-	UpdateTime time.Time `json:"last_time" bson:"last_time"`
-	AppID      int64     `json:"bk_biz_id" bson:"bk_biz_id"`
-	CreateUser string    `json:"create_user" bson:"create_user"`
-	ModifyUser string    `json:"modify_user" bson:"modify_user"`
-}
-
-type UserConfigResult struct {
-	Count uint64        `json:"count"`
-	Info  []interface{} `json:"info"`
-}
-
-type GetUserConfigResult struct {
-	BaseResp `json:",inline"`
-	Data     UserConfigResult `json:"data"`
 }
 
 type GetUserCustomResult struct {
@@ -195,30 +205,6 @@ type FavouriteMeta struct {
 	QueryParams string    `json:"query_params,omitempty" bson:"query_params,omitempty"`
 	CreateTime  time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
 	UpdateTime  time.Time `json:"last_time,omitempty" bson:"last_time,omitempty"`
-}
-
-type GetUserConfigDetailResult struct {
-	BaseResp `json:",inline"`
-	Data     UserConfigMeta `json:"data"`
-}
-
-type UserConfigMeta struct {
-	AppID      int64     `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
-	Info       string    `json:"info,omitempty" bson:"info,omitempty"`
-	Name       string    `json:"name,omitempty" bson:"name,omitempty"`
-	ID         string    `json:"id,omitempty" bson:"id,omitempty"`
-	CreateTime time.Time `json:"create_time" bson:"create_time,omitempty"`
-	CreateUser string    `json:"create_user" bson:"create_user,omitempty"`
-	ModifyUser string    `json:"modify_user" bson:"modify_user,omitempty"`
-	UpdateTime time.Time `json:"last_time" bson:"last_time,omitempty"`
-	OwnerID    string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
-}
-
-type AddConfigQuery struct {
-	AppID      int64  `json:"bk_biz_id,omitempty"`
-	Info       string `json:"info,omitempty"`
-	Name       string `json:"name,omitempty"`
-	CreateUser string `json:"create_user,omitempty"`
 }
 
 // TransferHostToInnerModule transfer host to inner module eg:idle module ,fault module

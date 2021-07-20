@@ -23,7 +23,6 @@ import (
 type LoginUserInfoOwnerUinList struct {
 	OwnerID    string `json:"id"`
 	OwnerName  string `json:"name"`
-	SupplierID int64  `json:"supplier_id"`
 	Role       int64  `json:"role"`
 }
 
@@ -40,7 +39,6 @@ type LoginUserInfo struct {
 	Extra         map[string]interface{}      `json:"extra"`         //custom information
 	Language      string                      `json:"-"`
 	AvatarUrl     string                      `json:"avatar_url"`
-	SupplierID    int64                       `json:"supplier_id"`
 	MultiSupplier bool                        `json:"multi_supplier"`
 }
 

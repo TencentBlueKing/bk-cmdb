@@ -226,6 +226,9 @@ const (
 	// CCErrArrayLengthWrong the length of the array is wrong
 	CCErrArrayLengthWrong = 1199089
 
+	//CCIllegalRegularExpression the regular expression's type assertion failed
+	CCIllegalRegularExpression = 1199090
+
 	// too many requests
 	CCErrTooManyRequestErr = 1199997
 
@@ -464,8 +467,19 @@ const (
 
 	CCErrorTopoPathParamPaserFailed                = 1101100
 	CCErrorTopoSearchModelAttriFailedPleaseRefresh = 1101101
+	CCErrorTopoOnlyResourceDirNameCanBeUpdated     = 1101102
+	CCErrorTopoOperateReourceDirFailNotExist       = 1101103
+	CCErrorTopoResourceDirIdleModuleCanNotRemove   = 1101104
+	CCErrorTopoResourceDirUsedInCloudSync          = 1101105
 
-	CCErrorModelNotFound = 1101102
+	CCErrorModelNotFound = 1101106
+
+	CCErrorAttributeNameDuplicated = 1101107
+	CCErrorSetNameDuplicated       = 1101108
+
+	// CCErrorCheckRegularFailed check regular expression failed
+	CCErrorCheckRegularFailed = 1101109
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
@@ -484,7 +498,7 @@ const (
 	CCErrObjectSelectIdentifierFailed = 1102008
 
 	// CCErrObjectDBOpErrno failed to operation database
-	CCErrObjectDBOpErrno = 1102004
+	CCErrObjectDBOpErrno = 1102020
 
 	// event_server 1103XXX
 	// CCErrEventSubscribeInsertFailed failed to save the Subscribe
@@ -505,6 +519,9 @@ const (
 	CCErrEventSubscribeTelnetFailed = 1103005
 	// CCErrEventOperateSuccessBUtSentEventFailed failed to sent event
 	CCErrEventPushEventFailed = 1103006
+
+	CCErrEventChainNodeNotExist = 1103007
+	CCErrEventDetailNotExist    = 1103008
 
 	// host 1104XXX
 	CCErrHostModuleRelationAddFailed = 1104000
@@ -604,10 +621,13 @@ const (
 
 	CCErrHostTransferFinalModuleConflict = 1108044
 
+	CCErrSyncServiceInstanceByTemplateFailed = 1108045
+
 	// audit log 1109XXX
 	CCErrAuditSaveLogFailed      = 1109001
 	CCErrAuditTakeSnapshotFailed = 1109002
 	CCErrAuditSelectFailed       = 1109003
+	CCErrAuditSelectTimeout      = 1109004
 
 	// host server
 	CCErrHostGetFail              = 1110001
@@ -663,8 +683,8 @@ const (
 	CCErrHostModuleNotExist = 1110054
 	// CCErrDeleteHostFromBusiness Delete the host under the business
 	CCErrDeleteHostFromBusiness = 1110055
-	// CCErrHostNotBelongIDLEModuleErr hostID[%#v] not belong to business
-	CCErrHostNotBelongIDLEModuleErr = 1110056
+	// CCErrHostModuleConfigNotMatch hostID[%#v] not belong to business
+	CCErrHostModuleConfigNotMatch = 1110056
 	// CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed Module does not exist or there are multiple built-in modules
 	CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed = 1110057
 	CCErrHostSearchNeedObjectInstIDErr                        = 1110058
@@ -672,6 +692,11 @@ const (
 	CCErrHostSetNotBelongBusinessErr                          = 1110060
 	CCErrHostModuleNotBelongBusinessErr                       = 1110061
 	CCErrHostModuleNotBelongSetErr                            = 1110062
+	CCErrHostPlatCloudNameIsrequired                          = 1110063
+	CCErrHostPlatCloudNameAlreadyExist                        = 1110064
+	CCErrHostFindManyCloudAreaAddHostCountFieldFail           = 1110065
+	CCErrDeleteDefaultCloudAreaFail                           = 1110066
+	CCErrHostFindManyCloudAreaAddSyncTaskIDsFieldFail         = 1110067
 
 	// web 1111XXX
 	CCErrWebFileNoFound                 = 1111001
@@ -691,6 +716,8 @@ const (
 	CCErrWebNoUsernamePasswd            = 1111015
 	CCErrWebUserinfoFormatWrong         = 1111016
 	CCErrWebUnknownLoginVersion         = 1111017
+	CCErrWebGetUsernameMapFail          = 1111018
+	CCErrWebHostCheckFail               = 1111019
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000
@@ -774,6 +801,10 @@ const (
 
 	// CCERrrCoreServiceUniqueRuleExist 模型唯一校验规则已经存在
 	CCERrrCoreServiceSameUniqueCheckRuleExist = 1113050
+	// CCErrCoreServiceResourceDirectoryNotExistErr 资源池目录不存在
+	CCErrCoreServiceResourceDirectoryNotExistErr = 1113033
+	// CCErrCoreServiceHostNotUnderAnyResourceDirectory 主机不在任意资源池目录下
+	CCErrCoreServiceHostNotUnderAnyResourceDirectory = 11130034
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
@@ -793,8 +824,6 @@ const (
 	CCErrOperationUpdateChartFail         = 1116006
 	CCErrOperationGetChartDataFail        = 1116007
 	CCErrOperationUpdateChartPositionFail = 1116008
-	CCErrCloudSyncDeleteSyncTaskFail      = 1116011
-	CCErrCloudSyncUpdateSyncTaskFail      = 1116012
 
 	// task_server 1117xxx
 	// CCErrTaskNotFound task not found
@@ -808,6 +837,32 @@ const (
 	CCErrTaskLockedTaskFail       = 1117005
 	CCErrTaskUnLockedTaskFail     = 1117006
 	CCErrTaskListTaskFail         = 1117007
+
+	// cloud_server 1118xxx
+	// CCErrCloudVendorNotSupport cloud vendor not support
+	CCErrCloudVendorNotSupport                = 1118001
+	CCErrCloudAccountNameAlreadyExist         = 1118002
+	CCErrCloudValidAccountParamFail           = 1118003
+	CCErrCloudAccountIDNoExistFail            = 1118004
+	CCErrCloudSyncTaskNameAlreadyExist        = 1118005
+	CCErrCloudValidSyncTaskParamFail          = 1118006
+	CCErrCloudVpcIDIsRequired                 = 1118007
+	CCErrCloudVendorInterfaceCalledFailed     = 1118008
+	CCErrCloudAccountSecretIDAlreadyExist     = 1118009
+	CCErrCloudTaskAlreadyExistInAccount       = 1118010
+	CCErrCloudAccoutIDSecretWrong             = 1118011
+	CCErrCloudHttpRequestTimeout              = 1118012
+	CCErrCloudVpcGetFail                      = 1118013
+	CCErrCloudRegionGetFail                   = 1118014
+	CCErrCloudSyncDirNoChosen                 = 1118015
+	CCErrCloudSyncDirNoExist                  = 1118016
+	CCErrCloudIDNoProvided                    = 1118017
+	CCErrCloudIDNoExist                       = 1118018
+	CCErrDefaultCloudIDProvided               = 1118019
+	CCErrCloudAccountCreateFail               = 1118020
+	CCErrGetCloudAccountConfBatchFailed       = 1118021
+	CCErrDeleteDestroyedHostRelatedFailed     = 1118022
+	CCErrCloudAccountDeletedFailedForSyncTask = 1118023
 
 	/** TODO: 以下错误码需要改造 **/
 

@@ -8,6 +8,6 @@ Vue.use(cursor)
 Vue.directive('transfer-dom', transferDom)
 
 export default {
-    'v-click-outside': vClickOutside,
-    'v-transfer-dom': transferDom
+  'v-click-outside': vClickOutside,
+  'v-transfer-dom': transferDom
 }

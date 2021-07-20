@@ -16,8 +16,8 @@ import (
 	"context"
 	"fmt"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -34,16 +34,16 @@ import (
 // AssociationOperationInterface association operation methods
 type AssociationOperationInterface interface {
 	CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association, maxTopoLevel int) (model.Object, error)
-	DeleteMainlineAssociation(kit *rest.Kit, objID string, metaData *metadata.Metadata) error
+	DeleteMainlineAssociation(kit *rest.Kit, objID string) error
 	SearchMainlineAssociationTopo(kit *rest.Kit, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
-	SearchMainlineAssociationInstTopo(kit *rest.Kit, objID string, instID int64, withStatistics bool, withDefault bool, metaData *metadata.Metadata) ([]*metadata.TopoInstRst, errors.CCError)
+	SearchMainlineAssociationInstTopo(kit *rest.Kit, objID string, instID int64, withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, errors.CCError)
 	IsMainlineObject(kit *rest.Kit, objID string) (bool, error)
 
-	CreateCommonAssociation(kit *rest.Kit, data *metadata.Association, metaData *metadata.Metadata) (*metadata.Association, error)
+	CreateCommonAssociation(kit *rest.Kit, data *metadata.Association) (*metadata.Association, error)
 	DeleteAssociationWithPreCheck(kit *rest.Kit, associationID int64) error
-	UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, assoID int64, metaData *metadata.Metadata) error
-	SearchObjectAssociation(kit *rest.Kit, objID string, metaData *metadata.Metadata) ([]metadata.Association, error)
-	SearchObjectsAssociation(kit *rest.Kit, objIDs []string, metaData *metadata.Metadata) ([]metadata.Association, error)
+	UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, assoID int64) error
+	SearchObjectAssociation(kit *rest.Kit, objID string) ([]metadata.Association, error)
+	SearchObjectsAssociation(kit *rest.Kit, objIDs []string) ([]metadata.Association, error)
 
 	DeleteAssociation(kit *rest.Kit, cond condition.Condition) error
 	SearchInstAssociation(kit *rest.Kit, query *metadata.QueryInput) ([]metadata.InstAsst, error)
@@ -51,8 +51,9 @@ type AssociationOperationInterface interface {
 	SearchInstAssociationUIList(kit *rest.Kit, objID string, query *metadata.QueryCondition) (result interface{}, asstCnt uint64, err error)
 	SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, returnInstInfoObjID string, query *metadata.QueryCondition) (result []metadata.InstBaseInfo, cnt uint64, err error)
 	CreateCommonInstAssociation(kit *rest.Kit, data *metadata.InstAsst) error
-	DeleteInstAssociation(kit *rest.Kit, cond condition.Condition) error
-	CheckAssociation(kit *rest.Kit, obj model.Object, objectID string, instID int64) error
+	DeleteInstAssociation(kit *rest.Kit, cond map[string]interface{}) error
+	CheckAssociation(kit *rest.Kit, objectID string, instID int64) error
+	CheckAssociations(kit *rest.Kit, objectID string, instIDs []int64) error
 
 	// 关联关系改造后的接口
 	SearchObjectAssocWithAssocKindList(kit *rest.Kit, asstKindIDs []string) (resp *metadata.AssociationList, err error)
@@ -67,8 +68,9 @@ type AssociationOperationInterface interface {
 	DeleteObject(kit *rest.Kit, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error)
 
 	SearchInst(kit *rest.Kit, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
+	SearchAssociationRelatedInst(kit *rest.Kit, request *metadata.SearchAssociationRelatedInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	CreateInst(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
-	DeleteInst(kit *rest.Kit, assoID int64, metadata *metadata.Metadata) (resp *metadata.DeleteAssociationInstResult, err error)
+	DeleteInst(kit *rest.Kit, assoIDList []int64, bkObjId string) (resp *metadata.DeleteAssociationInstResult, err error)
 
 	ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string, importData map[int]metadata.ExcelAssocation, languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error)
 
@@ -105,21 +107,14 @@ func (assoc *association) SetProxy(cls ClassificationOperationInterface, obj Obj
 	assoc.instFactory = targetInst
 }
 
-func (assoc *association) SearchObjectAssociation(kit *rest.Kit, objID string, metaData *metadata.Metadata) ([]metadata.Association, error) {
+func (assoc *association) SearchObjectAssociation(kit *rest.Kit, objID string) ([]metadata.Association, error) {
 	cond := condition.CreateCondition()
 	if 0 != len(objID) {
 		cond.Field(common.BKObjIDField).Eq(objID)
 	}
 
 	fCond := cond.ToMapStr()
-	if nil != metaData {
-		fCond.Merge(metadata.PublicAndBizCondition(*metaData))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
-
-	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: fCond})
+	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -133,21 +128,14 @@ func (assoc *association) SearchObjectAssociation(kit *rest.Kit, objID string, m
 	return rsp.Data.Info, nil
 }
 
-func (assoc *association) SearchObjectsAssociation(kit *rest.Kit, objIDs []string, metaData *metadata.Metadata) ([]metadata.Association, error) {
+func (assoc *association) SearchObjectsAssociation(kit *rest.Kit, objIDs []string) ([]metadata.Association, error) {
 	cond := condition.CreateCondition()
 	if 0 != len(objIDs) {
 		cond.Field(common.BKObjIDField).In(objIDs)
 	}
 
 	fCond := cond.ToMapStr()
-	if nil != metaData {
-		fCond.Merge(metadata.PublicAndBizCondition(*metaData))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
-
-	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: fCond})
+	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -163,7 +151,7 @@ func (assoc *association) SearchObjectsAssociation(kit *rest.Kit, objIDs []strin
 
 func (assoc *association) SearchInstAssociation(kit *rest.Kit, query *metadata.QueryInput) ([]metadata.InstAsst, error) {
 	intput, err := mapstr.NewFromInterface(query.Condition)
-	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: intput})
+	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: intput})
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -178,7 +166,7 @@ func (assoc *association) SearchInstAssociation(kit *rest.Kit, query *metadata.Q
 }
 
 // CreateCommonAssociation create a common association, in topo model scene, which doesn't include bk_mainline association type
-func (assoc *association) CreateCommonAssociation(kit *rest.Kit, data *metadata.Association, metaData *metadata.Metadata) (*metadata.Association, error) {
+func (assoc *association) CreateCommonAssociation(kit *rest.Kit, data *metadata.Association) (*metadata.Association, error) {
 	if data.AsstKindID == common.AssociationKindMainline {
 		return nil, kit.CCError.Error(common.CCErrorTopoAssociationKindMainlineUnavailable)
 	}
@@ -201,7 +189,7 @@ func (assoc *association) CreateCommonAssociation(kit *rest.Kit, data *metadata.
 	cond.Field(common.BKObjIDField).Eq(data.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(data.AsstKindID)
 
-	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -218,18 +206,18 @@ func (assoc *association) CreateCommonAssociation(kit *rest.Kit, data *metadata.
 	}
 
 	// check source object exists
-	if err := assoc.obj.IsValidObject(kit, data.ObjectID, metaData); nil != err {
+	if err := assoc.obj.IsValidObject(kit, data.ObjectID); nil != err {
 		blog.Errorf("[operation-asst] the object(%s) is invalid, err: %s, rid: %s", data.ObjectID, err.Error(), kit.Rid)
 		return nil, err
 	}
 
-	if err := assoc.obj.IsValidObject(kit, data.AsstObjID, metaData); nil != err {
+	if err := assoc.obj.IsValidObject(kit, data.AsstObjID); nil != err {
 		blog.Errorf("[operation-asst] the object(%s) is invalid, err: %s, rid: %s", data.AsstObjID, err.Error(), kit.Rid)
 		return nil, err
 	}
 
 	// create a new
-	rspAsst, err := assoc.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), kit.Header, &metadata.CreateModelAssociation{Spec: *data})
+	rspAsst, err := assoc.clientSet.CoreService().Association().CreateModelAssociation(kit.Ctx, kit.Header, &metadata.CreateModelAssociation{Spec: *data})
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -244,9 +232,10 @@ func (assoc *association) CreateCommonAssociation(kit *rest.Kit, data *metadata.
 	return data, nil
 }
 
-func (assoc *association) DeleteInstAssociation(kit *rest.Kit, cond condition.Condition) error {
+func (assoc *association) DeleteInstAssociation(kit *rest.Kit, cond map[string]interface{}) error {
 
-	rsp, err := assoc.clientSet.CoreService().Association().DeleteInstAssociation(context.Background(), kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+	rsp, err := assoc.clientSet.CoreService().Association().DeleteInstAssociation(kit.Ctx, kit.Header,
+		&metadata.DeleteOption{Condition: cond})
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -262,7 +251,7 @@ func (assoc *association) DeleteInstAssociation(kit *rest.Kit, cond condition.Co
 
 func (assoc *association) CreateCommonInstAssociation(kit *rest.Kit, data *metadata.InstAsst) error {
 	// create a new
-	rspAsst, err := assoc.clientSet.CoreService().Association().CreateInstAssociation(context.Background(), kit.Header, &metadata.CreateOneInstanceAssociation{Data: *data})
+	rspAsst, err := assoc.clientSet.CoreService().Association().CreateInstAssociation(kit.Ctx, kit.Header, &metadata.CreateOneInstanceAssociation{Data: *data})
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -278,7 +267,7 @@ func (assoc *association) CreateCommonInstAssociation(kit *rest.Kit, data *metad
 
 func (assoc *association) IsMainlineObject(kit *rest.Kit, objID string) (bool, error) {
 	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
-	asst, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header,
+	asst, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
 		&metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		return false, err
@@ -306,7 +295,7 @@ func (assoc *association) DeleteAssociationWithPreCheck(kit *rest.Kit, associati
 	// get the association with id at first.
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AssociationFieldAssociationId).Eq(associationID)
-	result, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	result, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("[operation-asst] delete association with id[%d], but get this association for pre check failed, err: %v, rid: %s", associationID, err, kit.Rid)
 		return kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -355,7 +344,7 @@ func (assoc *association) DeleteAssociationWithPreCheck(kit *rest.Kit, associati
 }
 
 func (assoc *association) DeleteAssociation(kit *rest.Kit, cond condition.Condition) error {
-	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("delete object association, but get association with cond[%v] failed, err: %v, rid: %s", cond.ToMapStr(), err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -379,7 +368,7 @@ func (assoc *association) DeleteAssociation(kit *rest.Kit, cond condition.Condit
 	}
 
 	// delete the object association
-	result, err := assoc.clientSet.CoreService().Association().DeleteModelAssociation(context.Background(), kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+	result, err := assoc.clientSet.CoreService().Association().DeleteModelAssociation(kit.Ctx, kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -393,7 +382,7 @@ func (assoc *association) DeleteAssociation(kit *rest.Kit, cond condition.Condit
 	return nil
 }
 
-func (assoc *association) UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, assoID int64, metaData *metadata.Metadata) error {
+func (assoc *association) UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, assoID int64) error {
 	asst := &metadata.Association{}
 	err := data.MarshalJSONInto(asst)
 	if err != nil {
@@ -409,7 +398,7 @@ func (assoc *association) UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, a
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AssociationFieldAssociationId).Eq(assoID)
 
-	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -432,12 +421,12 @@ func (assoc *association) UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, a
 	}
 
 	// check object exists
-	if err := assoc.obj.IsValidObject(kit, rsp.Data.Info[0].ObjectID, metaData); nil != err {
+	if err := assoc.obj.IsValidObject(kit, rsp.Data.Info[0].ObjectID); nil != err {
 		blog.Errorf("[operation-asst] the object(%s) is invalid, error info is %s, rid: %s", rsp.Data.Info[0].ObjectID, err.Error(), kit.Rid)
 		return err
 	}
 
-	if err := assoc.obj.IsValidObject(kit, rsp.Data.Info[0].AsstObjID, metaData); nil != err {
+	if err := assoc.obj.IsValidObject(kit, rsp.Data.Info[0].AsstObjID); nil != err {
 		blog.Errorf("[operation-asst] the object(%s) is invalid, error info is %s, rid: %s", rsp.Data.Info[0].AsstObjID, err.Error(), kit.Rid)
 		return err
 	}
@@ -446,7 +435,7 @@ func (assoc *association) UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, a
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(assoID).ToMapStr(),
 		Data:      data,
 	}
-	rspAsst, err := assoc.clientSet.CoreService().Association().UpdateModelAssociation(context.Background(), kit.Header, &updateopt)
+	rspAsst, err := assoc.clientSet.CoreService().Association().UpdateModelAssociation(kit.Ctx, kit.Header, &updateopt)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -461,7 +450,7 @@ func (assoc *association) UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, a
 }
 
 // CheckAssociation and return error if the instance exist association
-func (assoc *association) CheckAssociation(kit *rest.Kit, obj model.Object, objectID string, instID int64) error {
+func (assoc *association) CheckAssociation(kit *rest.Kit, objectID string, instID int64) error {
 	cond := condition.CreateCondition()
 	or := cond.NewOR()
 	or.Item(mapstr.MapStr{common.BKObjIDField: objectID, common.BKInstIDField: instID})
@@ -496,7 +485,7 @@ func (assoc *association) CheckAssociation(kit *rest.Kit, obj model.Object, obje
 
 func (assoc *association) CheckAssociationInstExist(kit *rest.Kit, objectID string, instID int64) (bool, error) {
 	instIDField := common.GetInstIDField(objectID)
-	instRsp, err := assoc.clientSet.CoreService().Instance().ReadInstance(context.Background(), kit.Header, objectID,
+	instRsp, err := assoc.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objectID,
 		&metadata.QueryCondition{Condition: mapstr.MapStr{instIDField: instID}})
 	if err != nil {
 		return false, kit.CCError.Error(common.CCErrObjectSelectInstFailed)
@@ -519,10 +508,86 @@ func (assoc *association) DeleteAssociationDirtyData(kit *rest.Kit, objectID str
 	or := cond.NewOR()
 	or.Item(mapstr.MapStr{common.BKObjIDField: objectID, common.BKInstIDField: instID})
 	or.Item(mapstr.MapStr{common.BKAsstObjIDField: objectID, common.BKAsstInstIDField: instID})
-	if delErr := assoc.DeleteInstAssociation(kit, cond); delErr != nil {
+	if delErr := assoc.DeleteInstAssociation(kit, cond.ToMapStr()); delErr != nil {
 		return delErr
 	}
 
+	return nil
+}
+
+// CheckAssociations returns error if the instances has associations with exist instances, clear dirty associations
+func (assoc *association) CheckAssociations(kit *rest.Kit, objectID string, instIDs []int64) error {
+	if len(instIDs) == 0 {
+		return nil
+	}
+
+	// get all associations for the instances
+	cond := map[string]interface{}{
+		common.BKDBOR: []map[string]interface{}{
+			{common.BKObjIDField: objectID, common.BKInstIDField: map[string]interface{}{common.BKDBIN: instIDs}},
+			{common.BKAsstObjIDField: objectID, common.BKAsstInstIDField: map[string]interface{}{common.BKDBIN: instIDs}},
+		},
+	}
+
+	associations, err := assoc.SearchInstAssociation(kit, &metadata.QueryInput{Condition: cond, Limit: common.BKNoLimit})
+	if err != nil {
+		blog.ErrorJSON("search instance associations failed, err: %s, cond: %s, rid: %s", err, cond, kit.Rid)
+		return err
+	}
+
+	if len(associations) == 0 {
+		return nil
+	}
+
+	instIDExistsMap := make(map[int64]bool)
+	for _, instID := range instIDs {
+		instIDExistsMap[instID] = true
+	}
+
+	// get all associated inst IDs grouped by object ID, then check if any inst exists, clear not exist one's assts
+	asstObjInstIDsMap := make(map[string][]int64)
+	for _, asst := range associations {
+		if asst.ObjectID == objectID && instIDExistsMap[asst.InstID] {
+			asstObjInstIDsMap[asst.AsstObjectID] = append(asstObjInstIDsMap[asst.AsstObjectID], asst.AsstInstID)
+		} else if asst.AsstObjectID == objectID && instIDExistsMap[asst.AsstInstID] {
+			asstObjInstIDsMap[asst.ObjectID] = append(asstObjInstIDsMap[asst.ObjectID], asst.InstID)
+		}
+	}
+
+	for asstObjID, asstInstIDs := range asstObjInstIDsMap {
+		query := &metadata.QueryCondition{
+			Condition: map[string]interface{}{
+				common.GetInstIDField(asstObjID): map[string]interface{}{common.BKDBIN: asstInstIDs},
+			},
+			Page: metadata.BasePage{Limit: 1},
+		}
+
+		asstInstRsp, err := assoc.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, asstObjID, query)
+		if err != nil {
+			blog.ErrorJSON("check instance existence failed, err: %s, query: %s, rid: %s", err, query, kit.Rid)
+			return kit.CCError.Error(common.CCErrObjectSelectInstFailed)
+		}
+		if err := asstInstRsp.CCError(); err != nil {
+			blog.ErrorJSON("check instance existence failed, err: %s, query: %s, rid: %s", err, query, kit.Rid)
+			return err
+		}
+
+		if len(asstInstRsp.Data.Info) > 0 {
+			return kit.CCError.CCError(common.CCErrorInstHasAsst)
+		}
+
+		deleteAsstCond := map[string]interface{}{
+			common.BKDBOR: []map[string]interface{}{
+				{common.BKObjIDField: asstObjID, common.BKInstIDField: map[string]interface{}{common.BKDBIN: asstInstIDs}},
+				{common.BKAsstObjIDField: asstObjID, common.BKAsstInstIDField: map[string]interface{}{common.BKDBIN: asstInstIDs}},
+			},
+		}
+
+		if err := assoc.DeleteInstAssociation(kit, deleteAsstCond); err != nil {
+			blog.ErrorJSON("delete dirty assts failed, err: %s, cond: %s, rid: %s", err, deleteAsstCond, kit.Rid)
+			return err
+		}
+	}
 	return nil
 }
 
@@ -537,7 +602,7 @@ func (assoc *association) SearchObjectAssocWithAssocKindList(kit *rest.Kit, asst
 		cond := condition.CreateCondition()
 		cond.Field(common.AssociationKindIDField).Eq(id)
 
-		r, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+		r, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 		if err != nil {
 			blog.Errorf("get object association list with association kind[%s] failed, err: %v, rid: %s", id, err, kit.Rid)
 			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -560,7 +625,7 @@ func (assoc *association) SearchType(kit *rest.Kit, request *metadata.SearchAsso
 		Page:      metadata.BasePage{Limit: request.Limit, Start: request.Start, Sort: request.Sort},
 	}
 
-	return assoc.clientSet.CoreService().Association().ReadAssociationType(context.Background(), kit.Header, &input)
+	return assoc.clientSet.CoreService().Association().ReadAssociationType(kit.Ctx, kit.Header, &input)
 }
 
 func (assoc *association) CreateType(kit *rest.Kit, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
@@ -577,29 +642,19 @@ func (assoc *association) CreateType(kit *rest.Kit, request *metadata.Associatio
 	resp = &metadata.CreateAssociationTypeResult{BaseResp: rsp.BaseResp}
 	resp.Data.ID = int64(rsp.Data.Created.ID)
 	request.ID = resp.Data.ID
-	if err := assoc.authManager.RegisterAssociationTypeByID(kit.Ctx, kit.Header, resp.Data.ID); err != nil {
-		blog.Error("create association type: %s success, but register id: %d to auth failed, err: %v, rid: %s", request.AssociationKindID, resp.Data.ID, err, kit.Rid)
-		return nil, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-	}
 
 	return resp, nil
 
 }
 
 func (assoc *association) UpdateType(kit *rest.Kit, asstTypeID int64, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
-	if len(request.AsstName) != 0 {
-		if err := assoc.authManager.UpdateAssociationTypeByID(kit.Ctx, kit.Header, asstTypeID); err != nil {
-			blog.Errorf("update association type %s, but got update resource to auth failed, err: %v, rid: %s", request.AsstName, err, kit.Rid)
-			return nil, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
-	}
 
 	input := metadata.UpdateOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(asstTypeID).ToMapStr(),
 		Data:      mapstr.NewFromStruct(request, "json"),
 	}
 
-	rsp, err := assoc.clientSet.CoreService().Association().UpdateAssociationType(context.Background(), kit.Header, &input)
+	rsp, err := assoc.clientSet.CoreService().Association().UpdateAssociationType(kit.Ctx, kit.Header, &input)
 	if err != nil {
 		blog.Errorf("update association type failed, kind id: %d, err: %v, rid: %s", asstTypeID, err, kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoCreateAssocKindFailed, err.Error())
@@ -609,10 +664,6 @@ func (assoc *association) UpdateType(kit *rest.Kit, asstTypeID int64, request *m
 }
 
 func (assoc *association) DeleteType(kit *rest.Kit, asstTypeID int64) (resp *metadata.DeleteAssociationTypeResult, err error) {
-	if err := assoc.authManager.DeregisterAssociationTypeByIDs(kit.Ctx, kit.Header, asstTypeID); err != nil {
-		blog.Errorf("delete association type id: %d, but deregister from auth failed, err: %v, rid: %s", asstTypeID, err, kit.Rid)
-		return nil, kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
-	}
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(asstTypeID)
 	query := &metadata.SearchAssociationTypeRequest{
@@ -647,7 +698,7 @@ func (assoc *association) DeleteType(kit *rest.Kit, asstTypeID int64) (resp *met
 	// a already used association kind can not be deleted.
 	cond = condition.CreateCondition()
 	cond.Field(common.AssociationKindIDField).Eq(result.Data.Info[0].AssociationKindID)
-	asso, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	asso, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("delete association kind[%d], but get objects that used this asso kind failed, err: %v, rid: %s", asstTypeID, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -664,7 +715,7 @@ func (assoc *association) DeleteType(kit *rest.Kit, asstTypeID int64) (resp *met
 	}
 
 	rsp, err := assoc.clientSet.CoreService().Association().DeleteAssociationType(
-		context.Background(), kit.Header, &metadata.DeleteOption{
+		kit.Ctx, kit.Header, &metadata.DeleteOption{
 			Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(asstTypeID).ToMapStr(),
 		},
 	)
@@ -677,24 +728,30 @@ func (assoc *association) DeleteType(kit *rest.Kit, asstTypeID int64) (resp *met
 }
 
 func (assoc *association) SearchObject(kit *rest.Kit, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error) {
-	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: request.Condition})
+	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: request.Condition})
+	if err != nil {
+		return nil, err
+	}
 
 	resp = &metadata.SearchAssociationObjectResult{BaseResp: rsp.BaseResp, Data: []*metadata.Association{}}
 	for index := range rsp.Data.Info {
 		resp.Data = append(resp.Data, &rsp.Data.Info[index])
 	}
 
-	return resp, err
+	return resp, nil
 }
 
 func (assoc *association) CreateObject(kit *rest.Kit, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error) {
-	rsp, err := assoc.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), kit.Header, &metadata.CreateModelAssociation{Spec: *request})
+	rsp, err := assoc.clientSet.CoreService().Association().CreateModelAssociation(kit.Ctx, kit.Header, &metadata.CreateModelAssociation{Spec: *request})
+	if err != nil {
+		return nil, err
+	}
 
 	resp = &metadata.CreateAssociationObjectResult{
 		BaseResp: rsp.BaseResp,
 	}
 	resp.Data.ID = int64(rsp.Data.Created.ID)
-	return resp, err
+	return resp, nil
 }
 
 func (assoc *association) UpdateObject(kit *rest.Kit, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error) {
@@ -703,25 +760,64 @@ func (assoc *association) UpdateObject(kit *rest.Kit, asstID int, request *metad
 		Data:      mapstr.NewFromStruct(request, "json"),
 	}
 
-	rsp, err := assoc.clientSet.CoreService().Association().UpdateModelAssociation(context.Background(), kit.Header, &input)
+	rsp, err := assoc.clientSet.CoreService().Association().UpdateModelAssociation(kit.Ctx, kit.Header, &input)
+	if err != nil {
+		return nil, err
+	}
+
 	resp = &metadata.UpdateAssociationObjectResult{
 		BaseResp: rsp.BaseResp,
 	}
-	return resp, err
+	return resp, nil
 }
 
 func (assoc *association) DeleteObject(kit *rest.Kit, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error) {
-
 	input := metadata.DeleteOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(asstID).ToMapStr(),
 	}
-	rsp, err := assoc.clientSet.CoreService().Association().DeleteModelAssociation(context.Background(), kit.Header, &input)
-	return &metadata.DeleteAssociationObjectResult{BaseResp: rsp.BaseResp}, err
+
+	rsp, err := assoc.clientSet.CoreService().Association().DeleteModelAssociation(kit.Ctx, kit.Header, &input)
+	if err != nil {
+		return nil, err
+	}
+
+	return &metadata.DeleteAssociationObjectResult{BaseResp: rsp.BaseResp}, nil
 
 }
 
 func (assoc *association) SearchInst(kit *rest.Kit, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
-	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: request.Condition})
+	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: request.Condition})
+	if err != nil {
+		return nil, err
+	}
+
+	resp = &metadata.SearchAssociationInstResult{BaseResp: rsp.BaseResp, Data: []*metadata.InstAsst{}}
+	for index := range rsp.Data.Info {
+		resp.Data = append(resp.Data, &rsp.Data.Info[index])
+	}
+
+	return resp, nil
+}
+
+func (assoc *association) SearchAssociationRelatedInst(kit *rest.Kit, request *metadata.SearchAssociationRelatedInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
+	cond := &metadata.QueryCondition{
+		Fields: request.Fields,
+		Page:   request.Page,
+	}
+	cond.Condition = mapstr.MapStr{
+		condition.BKDBOR: []mapstr.MapStr{
+			{
+				common.BKObjIDField:  request.Condition.ObjectID,
+				common.BKInstIDField: request.Condition.InstID,
+			},
+			{
+				common.BKAsstObjIDField:  request.Condition.ObjectID,
+				common.BKAsstInstIDField: request.Condition.InstID,
+			},
+		},
+	}
+
+	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, cond)
 
 	resp = &metadata.SearchAssociationInstResult{BaseResp: rsp.BaseResp, Data: []*metadata.InstAsst{}}
 	for index := range rsp.Data.Info {
@@ -741,8 +837,8 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 	}
 
 	if !result.Result {
-		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %s, rid: %s", cond, result.ErrMsg, kit.Rid)
+		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
 	if len(result.Data) == 0 {
@@ -768,8 +864,8 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 		}
 
 		if !instance.Result {
-			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, kit.Rid)
-			return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, instance.ErrMsg, kit.Rid)
+			return nil, kit.CCError.New(instance.Code, instance.ErrMsg)
 		}
 		if len(instance.Data) >= 1 {
 			return nil, kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
@@ -786,8 +882,8 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 		}
 
 		if !instance.Result {
-			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, kit.Rid)
-			return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, instance.ErrMsg, kit.Rid)
+			return nil, kit.CCError.New(instance.Code, instance.ErrMsg)
 		}
 		if len(instance.Data) >= 1 {
 			return nil, kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
@@ -804,8 +900,8 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 		}
 
 		if !instance.Result {
-			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, kit.Rid)
-			return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, instance.ErrMsg, kit.Rid)
+			return nil, kit.CCError.New(instance.Code, instance.ErrMsg)
 		}
 		if len(instance.Data) >= 1 {
 			return nil, kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToManyAssociation)
@@ -825,7 +921,7 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 			AssociationKindID: objectAsst.AsstKindID,
 		},
 	}
-	createResult, err := assoc.clientSet.CoreService().Association().CreateInstAssociation(context.Background(), kit.Header, &input)
+	createResult, err := assoc.clientSet.CoreService().Association().CreateInstAssociation(kit.Ctx, kit.Header, &input)
 	if err != nil {
 		blog.Errorf("create instance association failed, do coreservice create failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, err
@@ -838,126 +934,105 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 	curData := mapstr.NewFromStruct(input.Data, "json")
 	curData.Set("name", objectAsst.AssociationAliasName)
 
-	audit := auditlog.NewAudit(assoc.clientSet, kit.Header)
-	srcInstName, err := audit.GetInstNameByID(kit.Ctx, objID, request.InstID)
+	// generate audit log.
+	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, instanceAssociationID, nil)
 	if err != nil {
-		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
+		blog.Errorf(" delete inst asst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
 	}
-	targetInstName, err := audit.GetInstNameByID(kit.Ctx, asstObjID, request.AsstInstID)
+
+	// save audit log.
+	err = audit.SaveAuditLog(kit, *auditLog)
 	if err != nil {
-		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
-	}
-	auditLog := metadata.AuditLog{
-		AuditType:    metadata.ModelInstanceType,
-		ResourceType: metadata.InstanceAssociationRes,
-		Action:       metadata.AuditCreate,
-		OperationDetail: &metadata.InstanceAssociationOpDetail{
-			AssociationOpDetail: metadata.AssociationOpDetail{
-				AssociationID:   objectAsst.AssociationName,
-				AssociationKind: objectAsst.AsstKindID,
-				SourceModelID:   objID,
-				TargetModelID:   asstObjID,
-			},
-			SourceInstanceID:   request.InstID,
-			SourceInstanceName: srcInstName,
-			TargetInstanceID:   request.AsstInstID,
-			TargetInstanceName: targetInstName,
-		},
-		OperationTime: metadata.Now(),
-	}
-	auditResp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(kit.Ctx, kit.Header, auditLog)
-	if err != nil {
-		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("delete inst asst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
-	}
-	if !auditResp.Result {
-		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", auditResp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(auditResp.Code, auditResp.ErrMsg)
 	}
 
 	return resp, err
 }
 
-func (assoc *association) DeleteInst(kit *rest.Kit, assoID int64, metaData *metadata.Metadata) (resp *metadata.DeleteAssociationInstResult, err error) {
-	// record audit log
-	searchCondition := metadata.QueryCondition{
-		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(assoID).ToMapStr(),
+func (assoc *association) DeleteInst(kit *rest.Kit, asstIDList []int64, bkObjID string) (resp *metadata.DeleteAssociationInstResult, err error) {
+
+	cond := condition.CreateCondition().Field(common.BKFieldID).In(asstIDList)
+	// The bkObjID should not be empty has been checked before, the logic here is to adapt to other scene.
+	if bkObjID != "" {
+		cond.Field(common.BKObjIDField).Eq(bkObjID)
 	}
-	data, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), kit.Header, &searchCondition)
+
+	// asstIDList check duplicate
+	idMap := make(map[int64]struct{})
+	for _, id := range asstIDList {
+		if id <= 0 {
+			blog.ErrorJSON("Delete instance association failed, input id list contains illegal id %d, kit: %+v, rid: %s", id, kit, kit.Rid)
+			return nil, fmt.Errorf("input id list contains illegal id %d", id)
+		}
+		if _, exists := idMap[id]; exists {
+			blog.ErrorJSON("Delete instance association failed, input id list contains duplicate id %d, kit: %+v, rid: %s", kit, kit.Rid)
+			return nil, fmt.Errorf("input id list contains duplicate id %d", id)
+		}
+		idMap[id] = struct{}{}
+	}
+
+	searchCondition := metadata.QueryCondition{
+		Condition:      cond.ToMapStr(),
+		DisableCounter: true,
+	}
+	data, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, &searchCondition)
 	if err != nil {
-		blog.Errorf("DeleteInst failed, get instance association failed, kit: %+v, err: %+v, rid: %s", kit, err, kit.Rid)
+		blog.Errorf("Delete instance association failed, get instance association failed, kit: %+v, err: %+v, rid: %s", kit, err, kit.Rid)
 		return nil, err
 	}
-	if len(data.Data.Info) == 0 {
-		blog.Errorf("DeleteInst failed, instance association not found, searchCondition: %+v, err: %+v, rid: %s", searchCondition, err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommNotFound)
-	}
-	if len(data.Data.Info) > 1 {
-		blog.Errorf("DeleteInst failed, get instance association with id:%d get multiple, err: %+v, rid: %s", assoID, err, kit.Rid)
+	if len(data.Data.Info) != len(asstIDList) {
+		blog.Errorf("Delete instance association failed, got unexpected number of instance associations %d which should be %d, searchCondition: %+v, err: %+v, rid: %s", len(data.Data.Info), len(asstIDList), searchCondition, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommNotFound)
 	}
 
 	instanceAssociation := data.Data.Info[0]
 
-	cond := condition.CreateCondition()
-	cond.Field(common.AssociationObjAsstIDField).Eq(instanceAssociation.ObjectAsstID)
-	assInfoResult, err := assoc.SearchObject(kit, &metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()})
+	searchCond := condition.CreateCondition()
+	searchCond.Field(common.AssociationObjAsstIDField).Eq(instanceAssociation.ObjectAsstID)
+	assInfoResult, err := assoc.SearchObject(kit, &metadata.SearchAssociationObjectRequest{Condition: searchCond.ToMapStr()})
 	if err != nil {
-		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %v, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("Delete instance association failed, search object association with cond[%v] failed, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !assInfoResult.Result {
-		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %s, rid: %s", cond, assInfoResult.ErrMsg, kit.Rid)
+		blog.Errorf("Delete instance association failed, search object association with cond[%v] failed, err: %s, rid: %s", cond, assInfoResult.ErrMsg, kit.Rid)
 		return nil, assInfoResult.CCError()
 	}
 
 	input := metadata.DeleteOption{
-		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(assoID).ToMapStr(),
+		Condition: cond.ToMapStr(),
 	}
-	rsp, err := assoc.clientSet.CoreService().Association().DeleteInstAssociation(context.Background(), kit.Header, &input)
+	rsp, err := assoc.clientSet.CoreService().Association().DeleteInstAssociation(kit.Ctx, kit.Header, &input)
 	if err != nil {
-		blog.ErrorJSON("DeleteInstAssociation failed, err: %s, input: %s, rid: %s", err, input, kit.Rid)
+		blog.ErrorJSON("Delete instance association failed, err: %s, input: %s, rid: %s", err, input, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	resp = &metadata.DeleteAssociationInstResult{
 		BaseResp: rsp.BaseResp,
 	}
 
-	audit := auditlog.NewAudit(assoc.clientSet, kit.Header)
-	srcInstName, err := audit.GetInstNameByID(kit.Ctx, instanceAssociation.ObjectID, instanceAssociation.InstID)
-	if err != nil {
-		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
+	// generate audit log.
+	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+
+	auditList := []metadata.AuditLog{}
+	for i, asstID := range asstIDList {
+		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, asstID, &data.Data.Info[i])
+		if err != nil {
+			blog.Errorf("Delete instance association failed, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+		auditList = append(auditList, *auditLog)
 	}
-	targetInstName, err := audit.GetInstNameByID(kit.Ctx, instanceAssociation.AsstObjectID, instanceAssociation.AsstInstID)
+	// save audit log.
+	err = audit.SaveAuditLog(kit, auditList...)
 	if err != nil {
-		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
-	}
-	auditLog := metadata.AuditLog{
-		AuditType:    metadata.ModelInstanceType,
-		ResourceType: metadata.InstanceAssociationRes,
-		Action:       metadata.AuditDelete,
-		OperationDetail: &metadata.InstanceAssociationOpDetail{
-			AssociationOpDetail: metadata.AssociationOpDetail{
-				AssociationID:   instanceAssociation.ObjectAsstID,
-				AssociationKind: instanceAssociation.AssociationKindID,
-				SourceModelID:   instanceAssociation.ObjectID,
-				TargetModelID:   instanceAssociation.AsstObjectID,
-			},
-			SourceInstanceID:   instanceAssociation.InstID,
-			SourceInstanceName: srcInstName,
-			TargetInstanceID:   instanceAssociation.AsstInstID,
-			TargetInstanceName: targetInstName,
-		},
-		OperationTime: metadata.Now(),
-	}
-	auditResp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(kit.Ctx, kit.Header, auditLog)
-	if err != nil {
-		blog.Errorf("DeleteInst finished, but save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("Delete instance association failed, save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
-	}
-	if !auditResp.Result {
-		blog.Errorf("DeleteInst finished, but save audit log failed, err: %+v, rid: %s", auditResp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(auditResp.Code, auditResp.ErrMsg)
 	}
 
 	return resp, nil
@@ -966,7 +1041,7 @@ func (assoc *association) DeleteInst(kit *rest.Kit, assoID int64, metaData *meta
 // SearchInstAssociationList 与实例有关系的实例关系数据,以分页的方式返回
 func (assoc *association) SearchInstAssociationList(kit *rest.Kit, query *metadata.QueryCondition) ([]metadata.InstAsst, uint64, error) {
 
-	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), kit.Header, query)
+	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, query)
 	if nil != err {
 		blog.Errorf("ReadInstAssociation http do error, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, 0, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -983,7 +1058,7 @@ func (assoc *association) SearchInstAssociationList(kit *rest.Kit, query *metada
 // SearchInstAssociationUIList 与实例有关系的实例关系数据,以分页的方式返回
 func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID string, query *metadata.QueryCondition) (result interface{}, asstCnt uint64, err error) {
 
-	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), kit.Header, query)
+	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, query)
 	if nil != err {
 		blog.Errorf("ReadInstAssociation http do error, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, 0, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -1022,7 +1097,7 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 			Fields: []string{metadata.GetInstNameFieldName(instObjID), idField},
 		}
 		instResp, err := assoc.clientSet.CoreService().Instance().
-			ReadInstance(context.Background(), kit.Header, instObjID, input)
+			ReadInstance(kit.Ctx, kit.Header, instObjID, input)
 		if err != nil {
 			blog.Errorf("ReadInstance http do error, err: %s, input:%s, rid: %s", err.Error(), input, kit.Rid)
 			return nil, 0, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -1051,7 +1126,7 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 // returnInstInfoObjID 根据条件查询出来关联关系，需要返回实例信息（实例名，实例ID）的模型ID
 func (assoc *association) SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, returnInstInfoObjID string, query *metadata.QueryCondition) (result []metadata.InstBaseInfo, cnt uint64, err error) {
 
-	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), kit.Header, query)
+	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, query)
 	if nil != err {
 		blog.Errorf("ReadInstAssociation http do error, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, 0, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -1092,7 +1167,7 @@ func (assoc *association) SearchInstAssociationSingleObjectInstInfo(kit *rest.Ki
 		Fields: []string{nameField, idField},
 	}
 	instResp, err := assoc.clientSet.CoreService().Instance().
-		ReadInstance(context.Background(), kit.Header, returnInstInfoObjID, input)
+		ReadInstance(kit.Ctx, kit.Header, returnInstInfoObjID, input)
 	if err != nil {
 		blog.Errorf("ReadInstance http do error, err: %s, input:%s, rid: %s", err.Error(), input, kit.Rid)
 		return nil, 0, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())

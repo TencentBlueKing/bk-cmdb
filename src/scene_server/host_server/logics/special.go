@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -30,6 +31,7 @@ import (
 
 // special 用来做隔离， 不让logic 正常逻辑调用
 type special struct {
+	kit *rest.Kit
 	lgc *Logics
 }
 
@@ -39,8 +41,9 @@ type SpecialHandle interface {
 }
 
 // NewSpecial return handle special logic
-func (lgc *Logics) NewSpecial() SpecialHandle {
+func (lgc *Logics) NewSpecial(kit *rest.Kit) SpecialHandle {
 	return &special{
+		kit: kit,
 		lgc: lgc,
 	}
 }
@@ -61,7 +64,7 @@ func (s *special) BkSystemInstall(ctx context.Context, appName string, input *me
 	// bkSystemParameterConv  将名字转为cc id， 主机返回值的方式和hostID. hostID=0,表示主机不存
 	appID, moduleIDArr, hostID, err := s.bkSystemParameterConv(ctx, appName, input)
 	if err != nil {
-		blog.ErrorJSON("BkSystemInstall convert name to cc id error. err:%s, input:%s, rid:%s", err, input, s.lgc.rid)
+		blog.ErrorJSON("BkSystemInstall convert name to cc id error. err:%s, input:%s, rid:%s", err, input, s.kit.Rid)
 		return err
 	}
 	// TODO auth logic
@@ -72,47 +75,47 @@ func (s *special) BkSystemInstall(ctx context.Context, appName string, input *me
 		// host not found
 		hostID, err = s.bkSystemInstallAddHostInstance(ctx, input)
 		if err != nil {
-			blog.Errorf("BkSystemInstall IsHostExistInApp error. err:%s, parameters:%s, rid:%s", err.Error(), input, s.lgc.rid)
+			blog.Errorf("BkSystemInstall IsHostExistInApp error. err:%s, parameters:%s, rid:%s", err.Error(), input, s.kit.Rid)
 			return err
 		}
 	} else {
 		// check host belong app
 		// source host belong app
-		ok, err := s.lgc.IsHostExistInApp(ctx, appID, hostID)
+		ok, err := s.lgc.IsHostExistInApp(s.kit, appID, hostID)
 		if err != nil {
-			blog.Errorf("BkSystemInstall IsHostExistInApp error. err:%s, params:{appID:%d, hostID:%d}, rid:%s", err.Error(), hostID, s.lgc.rid)
+			blog.Errorf("BkSystemInstall IsHostExistInApp error. err:%s, params:{appID:%d, hostID:%d}, rid:%s", err.Error(), hostID, s.kit.Rid)
 			return err
 		}
 		if !ok {
-			blog.Errorf("BkSystemInstall Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s", appID, hostID, s.lgc.rid)
-			return s.lgc.ccErr.CCErrorf(common.CCErrHostNotINAPP, hostID)
+			blog.Errorf("BkSystemInstall Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s", appID, hostID, s.kit.Rid)
+			return s.kit.CCError.CCErrorf(common.CCErrHostNotINAPP, hostID)
 		}
 
 		updateInput := &metadata.UpdateOption{
 			Data:      input.HostInfo,
 			Condition: mapstr.MapStr{common.BKHostIDField: hostID},
 		}
-		resp, httpDoErr := s.lgc.CoreAPI.CoreService().Instance().UpdateInstance(ctx, s.lgc.header, common.BKInnerObjIDHost, updateInput)
+		resp, httpDoErr := s.lgc.CoreAPI.CoreService().Instance().UpdateInstance(ctx, s.kit.Header, common.BKInnerObjIDHost, updateInput)
 		if httpDoErr != nil {
-			blog.ErrorJSON("BkSystemInstall update host instance http do error.  err:%s, input:%s,  update parameter:%s, rid:%s", httpDoErr, input, updateInput, s.lgc.rid)
-			return s.lgc.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+			blog.ErrorJSON("BkSystemInstall update host instance http do error.  err:%s, input:%s,  update parameter:%s, rid:%s", httpDoErr, input, updateInput, s.kit.Rid)
+			return s.kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if err := resp.CCError(); err != nil {
-			blog.ErrorJSON("BkSystemInstall update host instance http reply error.  err:%s, input:%s,  update parameter:%s, rid:%s", err.Error(), input, updateInput, s.lgc.rid)
+			blog.ErrorJSON("BkSystemInstall update host instance http reply error.  err:%s, input:%s,  update parameter:%s, rid:%s", err.Error(), input, updateInput, s.kit.Rid)
 			return err
 		}
 	}
 
 	err = s.bkSystemInstallModule(ctx, appID, hostID, moduleIDArr)
 	if err != nil {
-		blog.ErrorJSON("BkSystemInstallBkSystemInstall bkSystemInstallModule error. err:%s, parameters:%s, rid:%s", err.Error(), input, s.lgc.rid)
+		blog.ErrorJSON("BkSystemInstallBkSystemInstall bkSystemInstallModule error. err:%s, parameters:%s, rid:%s", err.Error(), input, s.kit.Rid)
 		return err
 	}
 
 	// 进程不存在不报错
 	err = s.bkSystemInstallProc(ctx, appID, moduleIDArr, hostID, input.ProcInfo)
 	if err != nil {
-		blog.Errorf("BkSystemInstallBkSystemInstall bkSystemInstallProc error. err:%s, parameters:%s, rid:%s", err.Error(), input, s.lgc.rid)
+		blog.Errorf("BkSystemInstallBkSystemInstall bkSystemInstallProc error. err:%s, parameters:%s, rid:%s", err.Error(), input, s.kit.Rid)
 		return err
 	}
 	return nil
@@ -129,43 +132,43 @@ func (s *special) bkSystemParameterConv(ctx context.Context, appName string, inp
 	}
 
 	var appIDArr []int64
-	appIDArr, err = s.lgc.GetAppIDByCond(ctx, bkAppCond)
+	appIDArr, err = s.lgc.GetAppIDByCond(s.kit, metadata.ConditionWithTime{Condition: bkAppCond})
 	if err != nil {
-		blog.ErrorJSON("bkSystemParameterConv get blueking app error. err:%s, cond:%s, rid:%s", err.Error(), bkAppCond, s.lgc.rid)
+		blog.ErrorJSON("bkSystemParameterConv get blueking app error. err:%s, cond:%s, rid:%s", err.Error(), bkAppCond, s.kit.Rid)
 		return
 	}
 
 	if len(appIDArr) == 0 {
-		blog.ErrorJSON("bkSystemParameterConv blueking app not found. cond:%s, rid:%s", bkAppCond, s.lgc.rid)
-		err = s.lgc.ccErr.CCErrorf(common.CCErrCommBizNotFoundError, appName)
+		blog.ErrorJSON("bkSystemParameterConv blueking app not found. cond:%s, rid:%s", bkAppCond, s.kit.Rid)
+		err = s.kit.CCError.CCErrorf(common.CCErrCommBizNotFoundError, appName)
 		return
 	}
 	appID = appIDArr[0]
 
 	moduleIDArr, err = s.bkSystemGetInstallModuleID(ctx, appID, input.SetName, input.ModuleName)
 	if err != nil {
-		blog.ErrorJSON("bkSystemParameterConv bkSystemGetInstallModuleID error. err:%s, input:%s, rid:%s", err.Error(), input, s.lgc.rid)
+		blog.ErrorJSON("bkSystemParameterConv bkSystemGetInstallModuleID error. err:%s, input:%s, rid:%s", err.Error(), input, s.kit.Rid)
 		return
 	}
 	if len(moduleIDArr) == 0 {
-		blog.ErrorJSON("bkSystemParameterConv bkSystemGetInstallModuleID not found module id. input:%s, rid:%s", input, s.lgc.rid)
-		err = s.lgc.ccErr.Errorf(common.CCErrCommTopoModuleNotFoundError, input.SetName+"->"+input.ModuleName)
+		blog.ErrorJSON("bkSystemParameterConv bkSystemGetInstallModuleID not found module id. input:%s, rid:%s", input, s.kit.Rid)
+		err = s.kit.CCError.Errorf(common.CCErrCommTopoModuleNotFoundError, input.SetName+"->"+input.ModuleName)
 		return
 	}
 
-	isExist, err := s.lgc.IsPlatExist(ctx, mapstr.MapStr{common.BKCloudIDField: input.CloudID})
+	isExist, err := s.lgc.IsPlatExist(s.kit, mapstr.MapStr{common.BKCloudIDField: input.CloudID})
 	if nil != err {
-		blog.ErrorJSON("bkSystemParameterConv get cloud  error. err:%s, cond:%s, rid:%s", err.Error(), input, s.lgc.rid)
+		blog.ErrorJSON("bkSystemParameterConv get cloud  error. err:%s, cond:%s, rid:%s", err.Error(), input, s.kit.Rid)
 		return
 	}
 	if !isExist {
-		err = s.lgc.ccErr.Error(common.CCErrTopoCloudNotFound)
+		err = s.kit.CCError.Error(common.CCErrTopoCloudNotFound)
 		return
 	}
 
-	_, hostID, err = s.lgc.IPCloudToHost(ctx, input.InnerIP, input.CloudID)
+	_, hostID, err = s.lgc.IPCloudToHost(s.kit, input.InnerIP, input.CloudID)
 	if err != nil {
-		blog.InfoJSON("bkSystemParameterConv IPCloudToHost error. err:%s, input:%s, rid:%s", err, input, s.lgc.rid)
+		blog.InfoJSON("bkSystemParameterConv IPCloudToHost error. err:%s, input:%s, rid:%s", err, input, s.kit.Rid)
 		return
 	}
 
@@ -177,15 +180,15 @@ func (s *special) bkSystemParameterConv(ctx context.Context, appName string, inp
 func (s *special) bkSystemInstallAddHostInstance(ctx context.Context, input *metadata.BkSystemInstallRequest) (int64, errors.CCError) {
 
 	resp, httpDoErr := s.lgc.CoreAPI.CoreService().Instance().
-		CreateInstance(ctx, s.lgc.header, common.BKInnerObjIDHost, &metadata.CreateModelInstance{
+		CreateInstance(ctx, s.kit.Header, common.BKInnerObjIDHost, &metadata.CreateModelInstance{
 			Data: input.HostInfo,
 		})
 	if httpDoErr != nil {
-		blog.ErrorJSON("BkSystemInstall create host instance http do error.  err:%s, data:%s, rid:%s", httpDoErr, input.HostInfo, s.lgc.rid)
-		return 0, s.lgc.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+		blog.ErrorJSON("BkSystemInstall create host instance http do error.  err:%s, data:%s, rid:%s", httpDoErr, input.HostInfo, s.kit.Rid)
+		return 0, s.kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if err := resp.CCError(); err != nil {
-		blog.ErrorJSON("BkSystemInstall create host instance http reply error.  err:%s, data:%s, rid:%s", err.Error(), input.HostInfo, s.lgc.rid)
+		blog.ErrorJSON("BkSystemInstall create host instance http reply error.  err:%s, data:%s, rid:%s", err.Error(), input.HostInfo, s.kit.Rid)
 		return 0, err
 	}
 
@@ -208,13 +211,13 @@ func (s *special) bkSystemGetInstallModuleID(ctx context.Context, appID int64, s
 		},
 	}
 
-	setIDArr, err := s.lgc.GetSetIDByCond(ctx, bkSetCond)
+	setIDArr, err := s.lgc.GetSetIDByCond(s.kit, metadata.ConditionWithTime{Condition: bkSetCond})
 	if err != nil {
-		blog.ErrorJSON("bkSystemGetInstallModuleID GetSetIDByCond error. err:%s, cond:%s, rid:%s", err.Error(), bkSetCond, s.lgc.rid)
+		blog.ErrorJSON("bkSystemGetInstallModuleID GetSetIDByCond error. err:%s, cond:%s, rid:%s", err.Error(), bkSetCond, s.kit.Rid)
 		return nil, err
 	}
 	if len(setIDArr) == 0 {
-		blog.Warnf("bkSystemGetInstallModuleID GetSetIDByCond not found set. cond:%v, rid:%s", bkSetCond, s.lgc.rid)
+		blog.Warnf("bkSystemGetInstallModuleID GetSetIDByCond not found set. cond:%v, rid:%s", bkSetCond, s.kit.Rid)
 		return nil, nil
 	}
 
@@ -235,13 +238,13 @@ func (s *special) bkSystemGetInstallModuleID(ctx context.Context, appID int64, s
 			Value:    moduleName,
 		},
 	}
-	moduleIDArr, err := s.lgc.GetModuleIDByCond(ctx, bkModuleCond)
+	moduleIDArr, err := s.lgc.GetModuleIDByCond(s.kit, metadata.ConditionWithTime{Condition: bkModuleCond})
 	if err != nil {
-		blog.ErrorJSON("bkSystemGetInstallModuleID GetModuleIDByCond error. err:%s, cond:%s, rid:%s", err.Error(), bkModuleCond, s.lgc.rid)
+		blog.ErrorJSON("bkSystemGetInstallModuleID GetModuleIDByCond error. err:%s, cond:%s, rid:%s", err.Error(), bkModuleCond, s.kit.Rid)
 		return nil, err
 	}
 	if len(moduleIDArr) == 0 {
-		blog.Warnf("bkSystemGetInstallModuleID GetModuleIDByCond not found set. cond:%v, rid:%s", bkModuleCond, s.lgc.rid)
+		blog.Warnf("bkSystemGetInstallModuleID GetModuleIDByCond not found set. cond:%v, rid:%s", bkModuleCond, s.kit.Rid)
 	}
 	return moduleIDArr, nil
 }
@@ -256,14 +259,14 @@ func (s *special) bkSystemInstallModule(ctx context.Context, appID, hostID int64
 		IsIncrement:   true,
 	}
 
-	resp, httpDoErr := s.lgc.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, s.lgc.header, input)
+	resp, httpDoErr := s.lgc.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, s.kit.Header, input)
 	if httpDoErr != nil {
-		blog.ErrorJSON("bkSystemInstallModule add host moduel relation  http do error.  err:%s, data:%s, rid:%s", httpDoErr, input, s.lgc.rid)
-		return s.lgc.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+		blog.ErrorJSON("bkSystemInstallModule add host moduel relation  http do error.  err:%s, data:%s, rid:%s", httpDoErr, input, s.kit.Rid)
+		return s.kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if err := resp.CCError(); err != nil {
-		blog.ErrorJSON("bkSystemInstallModule add host moduel relation  http reply error.  err:%s, data:%s, rid:%s", err, input, s.lgc.rid)
+		blog.ErrorJSON("bkSystemInstallModule add host moduel relation  http reply error.  err:%s, data:%s, rid:%s", err, input, s.kit.Rid)
 		return err
 	}
 
@@ -286,9 +289,9 @@ func (s *special) bkSystemInstallProc(ctx context.Context, appID int64, moduleID
 			ModuleID:   moduleID,
 		}
 
-		srvInstInfo, err := s.lgc.CoreAPI.CoreService().Process().ListServiceInstanceDetail(ctx, s.lgc.header, searchSrvInstRelationCond)
+		srvInstInfo, err := s.lgc.CoreAPI.CoreService().Process().ListServiceInstanceDetail(ctx, s.kit.Header, searchSrvInstRelationCond)
 		if err != nil {
-			blog.ErrorJSON("bkSystemInstallProc ListServiceInstance  http  error.  err:%s, data:%s, rid:%s", err, appID, searchSrvInstRelationCond, s.lgc.rid)
+			blog.ErrorJSON("bkSystemInstallProc ListServiceInstance  http  error.  err:%s, data:%s, rid:%s", err, appID, searchSrvInstRelationCond, s.kit.Rid)
 			return err
 		}
 		var procIDArr []int64
@@ -307,13 +310,13 @@ func (s *special) bkSystemInstallProc(ctx context.Context, appID int64, moduleID
 				Data:      info,
 				Condition: updateCond.ToMapStr(),
 			}
-			resp, httpDoErr := s.lgc.CoreAPI.CoreService().Instance().UpdateInstance(ctx, s.lgc.header, common.BKInnerObjIDProc, procUpdateOpt)
+			resp, httpDoErr := s.lgc.CoreAPI.CoreService().Instance().UpdateInstance(ctx, s.kit.Header, common.BKInnerObjIDProc, procUpdateOpt)
 			if httpDoErr != nil {
-				blog.ErrorJSON("bkSystemInstallProc UpdateInstance  http do error.  err:%s, data:%s, rid:%s", httpDoErr, appID, searchSrvInstRelationCond, s.lgc.rid)
+				blog.ErrorJSON("bkSystemInstallProc UpdateInstance  http do error.  err:%s, data:%s, rid:%s", httpDoErr, appID, searchSrvInstRelationCond, s.kit.Rid)
 				return httpDoErr
 			}
 			if err := resp.CCError(); err != nil {
-				blog.ErrorJSON("bkSystemInstallProc UpdateInstance  http reply error. err:%s, update params:%s, rid:%s", err, procUpdateOpt, s.lgc.rid)
+				blog.ErrorJSON("bkSystemInstallProc UpdateInstance  http reply error. err:%s, update params:%s, rid:%s", err, procUpdateOpt, s.kit.Rid)
 			}
 		}
 

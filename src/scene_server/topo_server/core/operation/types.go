@@ -15,7 +15,6 @@ package operation
 import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/model"
 )
 
 type opcondition struct {
@@ -56,6 +55,8 @@ type AssociationParams struct {
 	Page      metadata.BasePage          `json:"page,omitempty"`
 	Fields    map[string][]string        `json:"fields,omitempty"`
 	Condition map[string][]ConditionItem `json:"condition,omitempty"`
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition *metadata.TimeCondition `json:"time_condition,omitempty"`
 }
 
 // commonInstTopo common inst topo
@@ -71,17 +72,10 @@ type CommonInstTopoV2 struct {
 	Curr interface{}       `json:"curr"`
 }
 
-type deletedInst struct {
-	instID int64
-	bizID  int64
-	obj    model.Object
-}
-
 type ExportObjectCondition struct {
 	ObjIDS []string `json:"condition"`
 }
 
 type ImportObjectData struct {
-	Meta mapstr.MapStr           `json:"meta"`
 	Attr map[int64]mapstr.MapStr `json:"attr"`
 }

@@ -17,19 +17,20 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (m *operationManager) SearchOperationChart(kit *rest.Kit, inputParam interface{}) (*metadata.ChartClassification, error) {
 	opt := map[string]interface{}{}
 	chartConfig := make([]metadata.ChartConfig, 0)
 
-	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Find(opt).All(kit.Ctx, &chartConfig); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartConfig).Find(opt).All(kit.Ctx, &chartConfig); err != nil {
 		blog.Errorf("SearchOperationChart fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrOperationSearchChartFail)
 	}
 
 	chartPosition := make([]metadata.ChartPosition, 0)
-	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Find(opt).All(kit.Ctx, &chartPosition); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartPosition).Find(opt).All(kit.Ctx, &chartPosition); err != nil {
 		blog.Errorf("SearchOperationChart fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrOperationSearchChartFail)
 	}
@@ -70,13 +71,13 @@ func (m *operationManager) SearchOperationChart(kit *rest.Kit, inputParam interf
 }
 
 func (m *operationManager) CreateOperationChart(kit *rest.Kit, inputParam metadata.ChartConfig) (uint64, error) {
-	configID, err := m.dbProxy.NextSequence(kit.Ctx, common.BKTableNameChartConfig)
+	configID, err := mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameChartConfig)
 	if err != nil {
 		return 0, err
 	}
 	inputParam.ConfigID = configID
 
-	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Insert(kit.Ctx, inputParam); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartConfig).Insert(kit.Ctx, inputParam); err != nil {
 		blog.Errorf("CreateOperationChart fail, err: %v, rid: %v", err, kit.Rid)
 		return 0, kit.CCError.CCError(common.CCErrOperationNewAddStatisticFail)
 	}
@@ -87,12 +88,12 @@ func (m *operationManager) CreateOperationChart(kit *rest.Kit, inputParam metada
 func (m *operationManager) UpdateChartPosition(kit *rest.Kit, inputParam interface{}) (interface{}, error) {
 	opt := map[string]interface{}{}
 
-	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Delete(kit.Ctx, opt); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartPosition).Delete(kit.Ctx, opt); err != nil {
 		blog.Errorf("UpdateChartPosition, delete chart position info fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrOperationUpdateChartPositionFail)
 	}
 
-	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Insert(kit.Ctx, inputParam); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartPosition).Insert(kit.Ctx, inputParam); err != nil {
 		blog.Errorf("UpdateChartPosition, update chart position fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrOperationUpdateChartPositionFail)
 	}
@@ -103,7 +104,7 @@ func (m *operationManager) UpdateChartPosition(kit *rest.Kit, inputParam interfa
 func (m *operationManager) DeleteOperationChart(kit *rest.Kit, id int64) (interface{}, error) {
 	opt := map[string]interface{}{}
 	opt[common.OperationConfigID] = id
-	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Delete(kit.Ctx, opt); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartConfig).Delete(kit.Ctx, opt); err != nil {
 		blog.Errorf("DeleteOperationChart fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrOperationDeleteChartFail)
 	}
@@ -114,7 +115,7 @@ func (m *operationManager) DeleteOperationChart(kit *rest.Kit, id int64) (interf
 func (m *operationManager) UpdateOperationChart(kit *rest.Kit, inputParam map[string]interface{}) (interface{}, error) {
 	opt := map[string]interface{}{}
 	opt[common.OperationConfigID] = inputParam[common.OperationConfigID]
-	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Update(kit.Ctx, opt, inputParam); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartConfig).Update(kit.Ctx, opt, inputParam); err != nil {
 		blog.Errorf("UpdateOperationChart fail,chartName: %v, id: %v err: %v, rid: %v", opt["name"], inputParam[common.OperationConfigID], err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrOperationUpdateChartFail)
 	}

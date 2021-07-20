@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/dal/types"
 )
 
@@ -31,6 +32,10 @@ type DB interface {
 
 	// NextSequence 获取新序列号(非事务)
 	NextSequence(ctx context.Context, sequenceName string) (uint64, error)
+
+	//NextSequences 批量获取新序列号(非事务)
+	NextSequences(ctx context.Context, sequenceName string, num int) ([]uint64, error)
+
 	// Ping 健康检查
 	Ping() error // 健康检查
 
@@ -50,4 +55,7 @@ type DB interface {
 	CommitTransaction(context.Context, *metadata.TxnCapable) error
 	// AbortTransaction 取消事务
 	AbortTransaction(context.Context, *metadata.TxnCapable) error
+
+	// InitTxnManager TxnID management of initial transaction
+	InitTxnManager(r redis.Client) error
 }

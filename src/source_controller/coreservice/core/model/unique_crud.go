@@ -24,11 +24,12 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/types"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (m *modelAttrUnique) searchModelAttrUnique(kit *rest.Kit, inputParam metadata.QueryCondition) (results []metadata.ObjectUnique, err error) {
 	results = []metadata.ObjectUnique{}
-	instHandler := m.dbProxy.Table(common.BKTableNameObjUnique).Find(inputParam.Condition)
+	instHandler := mongodb.Client().Table(common.BKTableNameObjUnique).Find(inputParam.Condition)
 	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).All(kit.Ctx, &results)
 
 	return results, err
@@ -36,7 +37,7 @@ func (m *modelAttrUnique) searchModelAttrUnique(kit *rest.Kit, inputParam metada
 
 func (m *modelAttrUnique) countModelAttrUnique(kit *rest.Kit, cond mapstr.MapStr) (count uint64, err error) {
 
-	count, err = m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond).Count(kit.Ctx)
+	count, err = mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond).Count(kit.Ctx)
 
 	return count, err
 }
@@ -55,7 +56,7 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		cond := condition.CreateCondition()
 		cond.Field(common.BKObjIDField).Eq(objID)
 		cond.Field("must_check").Eq(true)
-		count, err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(kit.Ctx)
+		count, err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(kit.Ctx)
 		if nil != err {
 			blog.Errorf("[CreateObjectUnique] check must check error: %#v, rid: %s", err, kit.Rid)
 			return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
@@ -76,19 +77,19 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		return 0, kit.CCError.Error(common.CCERrrCoreServiceSameUniqueCheckRuleExist)
 	}
 
-	properties, err := m.getUniqueProperties(kit, objID, inputParam.Data.Keys, inputParam.Data.MustCheck, inputParam.Data.Metadata)
+	properties, err := m.getUniqueProperties(kit, objID, inputParam.Data.Keys, inputParam.Data.MustCheck)
 	if nil != err {
 		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, inputParam, err, kit.Rid)
 		return 0, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
 	}
 
-	err = m.recheckUniqueForExistsInstances(kit, objID, properties, inputParam.Data.MustCheck, inputParam.Data.Metadata)
+	err = m.recheckUniqueForExistsInstances(kit, objID, properties, inputParam.Data.MustCheck)
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %#v err: %#v, rid: %s", objID, inputParam, err, kit.Rid)
 		return 0, kit.CCError.Errorf(common.CCErrCommDuplicateItem, "instance")
 	}
 
-	id, err := m.dbProxy.NextSequence(kit.Ctx, common.BKTableNameObjUnique)
+	id, err := mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjUnique)
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] NextSequence error: %#v, rid: %s", err, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
@@ -103,11 +104,7 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		OwnerID:   kit.SupplierAccount,
 		LastTime:  metadata.Now(),
 	}
-	_, err = inputParam.Data.Metadata.Label.GetBusinessID()
-	if nil == err {
-		unique.Metadata = inputParam.Data.Metadata
-	}
-	err = m.dbProxy.Table(common.BKTableNameObjUnique).Insert(kit.Ctx, &unique)
+	err = mongodb.Client().Table(common.BKTableNameObjUnique).Insert(kit.Ctx, &unique)
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] Insert error: %#v, raw: %#v, rid: %s", err, &unique, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
@@ -135,7 +132,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 		cond.Field(common.BKObjIDField).Eq(objID)
 		cond.Field("must_check").Eq(true)
 		cond.Field("id").NotEq(id)
-		count, err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(kit.Ctx)
+		count, err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(kit.Ctx)
 		if nil != err {
 			blog.Errorf("[UpdateObjectUnique] check must check  error: %#v, rid: %s", err, kit.Rid)
 			return kit.CCError.Error(common.CCErrObjectDBOpErrno)
@@ -156,13 +153,13 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 		return kit.CCError.Error(common.CCERrrCoreServiceSameUniqueCheckRuleExist)
 	}
 
-	properties, err := m.getUniqueProperties(kit, objID, unique.Keys, unique.MustCheck, unique.Metadata)
+	properties, err := m.getUniqueProperties(kit, objID, unique.Keys, unique.MustCheck)
 	if nil != err {
 		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, unique, err, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
 	}
 
-	err = m.recheckUniqueForExistsInstances(kit, objID, properties, unique.MustCheck, unique.Metadata)
+	err = m.recheckUniqueForExistsInstances(kit, objID, properties, unique.MustCheck)
 	if nil != err {
 		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v, rid: %s", objID, unique, err, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommDuplicateItem, "instance")
@@ -171,13 +168,10 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
-	if len(unique.Metadata.Label) > 0 {
-		cond.Field(metadata.BKMetadata).Eq(unique.Metadata)
-	}
 	condMap := util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
 
 	oldUnique := metadata.ObjectUnique{}
-	err = m.dbProxy.Table(common.BKTableNameObjUnique).Find(condMap).One(kit.Ctx, &oldUnique)
+	err = mongodb.Client().Table(common.BKTableNameObjUnique).Find(condMap).One(kit.Ctx, &oldUnique)
 	if nil != err {
 		blog.Errorf("[UpdateObjectUnique] find error: %s, raw: %#v, rid: %s", err, cond.ToMapStr(), kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
@@ -188,7 +182,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 		return kit.CCError.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)
 	}
 
-	err = m.dbProxy.Table(common.BKTableNameObjUnique).Update(kit.Ctx, cond.ToMapStr(), &unique)
+	err = mongodb.Client().Table(common.BKTableNameObjUnique).Update(kit.Ctx, cond.ToMapStr(), &unique)
 	if nil != err {
 		blog.Errorf("[UpdateObjectUnique] Update error: %s, raw: %#v, rid: %s", err, &unique, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
@@ -196,14 +190,14 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 	return nil
 }
 
-func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id uint64, meta metadata.DeleteModelAttrUnique) error {
+func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id uint64) error {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKFieldID).Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
 	condMap := util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
 
 	unique := metadata.ObjectUnique{}
-	err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(condMap).One(kit.Ctx, &unique)
+	err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(condMap).One(kit.Ctx, &unique)
 	if nil != err {
 		blog.Errorf("[DeleteObjectUnique] find error: %s, raw: %#v, rid: %s", err, cond.ToMapStr(), kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
@@ -225,14 +219,7 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 	}
 
 	fCond := cond.ToMapStr()
-	if len(meta.Label) > 0 {
-		fCond.Merge(metadata.PublicAndBizCondition(meta.Metadata))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
-
-	err = m.dbProxy.Table(common.BKTableNameObjUnique).Delete(kit.Ctx, fCond)
+	err = mongodb.Client().Table(common.BKTableNameObjUnique).Delete(kit.Ctx, fCond)
 	if nil != err {
 		blog.Errorf("[DeleteObjectUnique] Delete error: %s, raw: %#v, rid: %s", err, fCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
@@ -242,7 +229,7 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 }
 
 // get properties via keys
-func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys []metadata.UniqueKey, mustCheck bool, meta metadata.Metadata) ([]metadata.Attribute, error) {
+func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys []metadata.UniqueKey, mustCheck bool) ([]metadata.Attribute, error) {
 	propertyIDs := make([]int64, 0)
 	for _, key := range keys {
 		propertyIDs = append(propertyIDs, int64(key.ID))
@@ -255,14 +242,8 @@ func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys 
 	attCond.Field(common.BKFieldID).In(propertyIDs)
 	fCond := attCond.ToMapStr()
 	fCond = util.SetQueryOwner(fCond, kit.SupplierAccount)
-	if len(meta.Label) > 0 {
-		fCond.Merge(metadata.PublicAndBizCondition(meta))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
 
-	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(fCond).All(kit.Ctx, &properties)
+	err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(fCond).All(kit.Ctx, &properties)
 	if err != nil {
 		blog.ErrorJSON("[ObjectUnique] getUniqueProperties find properties for %s failed %s: %s, rid: %s", objID, err, kit.Rid)
 		return nil, err
@@ -283,17 +264,11 @@ func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys 
 // for create or update a model instance unique check usage.
 // the must_check is true, must be check exactly, no matter the check filed is empty or not.
 // the must_check is false, only when all the filed is not empty, then it's check exactly, otherwise, skip this check.
-func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID string, properties []metadata.Attribute, mustCheck bool, meta metadata.Metadata) error {
+func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID string, properties []metadata.Attribute, mustCheck bool) error {
 	// now, set the pipeline.
 	pipeline := make([]interface{}, 0)
 
 	instCond := mapstr.MapStr{}
-	if len(meta.Label) > 0 {
-		instCond.Merge(metadata.PublicAndBizCondition(meta))
-		instCond.Remove(metadata.BKMetadata)
-	} else {
-		instCond.Merge(metadata.BizLabelNotExist)
-	}
 	if common.GetObjByType(objID) == common.BKInnerObjIDObject {
 		instCond.Set(common.BKObjIDField, objID)
 	}
@@ -341,8 +316,8 @@ func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID s
 	result := struct {
 		UniqueCount uint64 `bson:"unique_count"`
 	}{}
-	err := m.dbProxy.Table(common.GetInstTableName(objID)).AggregateOne(kit.Ctx, pipeline, &result)
-	if err != nil && !m.dbProxy.IsNotFoundError(err) {
+	err := mongodb.Client().Table(common.GetInstTableName(objID)).AggregateOne(kit.Ctx, pipeline, &result)
+	if err != nil && !mongodb.Client().IsNotFoundError(err) {
 		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts failed %s, pipeline: %s, rid: %s", err, pipeline, kit.Rid)
 		return err
 	}
@@ -364,7 +339,7 @@ func (m *modelAttrUnique) checkUniqueRequireExist(kit *rest.Kit, objID string, i
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field("must_check").Eq(true)
 
-	cnt, err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(kit.Ctx)
+	cnt, err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(kit.Ctx)
 	if nil != err {
 		blog.ErrorJSON("[checkUniqueRequireExist] find error: %s, raw: %s, rid: %s", err, cond.ToMapStr(), kit.Rid)
 		return false, kit.CCError.Error(common.CCErrObjectDBOpErrno)
@@ -384,7 +359,7 @@ func (m *modelAttrUnique) checkUniqueRuleExist(kit *rest.Kit, objID string, rule
 	uniqueCond.Field(common.BKObjIDField).Eq(objID)
 	cond := util.SetQueryOwner(uniqueCond.ToMapStr(), kit.SupplierAccount)
 	existUniques := make([]metadata.ObjectUnique, 0)
-	err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond).All(kit.Ctx, &existUniques)
+	err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond).All(kit.Ctx, &existUniques)
 	if err != nil {
 		return false, kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}

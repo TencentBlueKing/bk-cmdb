@@ -26,15 +26,16 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/dal/types"
 	dtype "configcenter/src/storage/types"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
-	"gopkg.in/redis.v5"
 )
 
 type Mongo struct {
@@ -52,6 +53,7 @@ type MongoConf struct {
 	MaxIdleConns   uint64
 	URI            string
 	RsName         string
+	SocketTimeout  int
 }
 
 // NewMgo returns new RDB
@@ -63,7 +65,7 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 	if config.RsName == "" {
 		return nil, fmt.Errorf("mongodb rsName not set")
 	}
-
+	socketTimeout := time.Second * time.Duration(config.SocketTimeout)
 	// do not change this, our transaction plan need it to false.
 	// it's related with the transaction number(eg txnNumber) in a transaction session.
 	disableWriteRetry := false
@@ -71,6 +73,7 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 		MaxPoolSize:    &config.MaxOpenConns,
 		MinPoolSize:    &config.MaxIdleConns,
 		ConnectTimeout: &timeout,
+		SocketTimeout:  &socketTimeout,
 		ReplicaSet:     &config.RsName,
 		RetryWrites:    &disableWriteRetry,
 	}
@@ -88,6 +91,9 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 	// if err := checkMongodbVersion(connStr.Database, client); err != nil {
 	// 	return nil, err
 	// }
+
+	// initialize mongodb related metrics
+	initMongoMetric()
 
 	return &Mongo{
 		dbc:    client,
@@ -134,8 +140,8 @@ func checkMongodbVersion(db string, client *mongo.Client) error {
 	return nil
 }
 
-// NewMgo returns new RDB
-func (c *Mongo) InitTxnManager(r *redis.Client) error {
+// InitTxnManager TxnID management of initial transaction
+func (c *Mongo) InitTxnManager(r redis.Client) error {
 	return c.tm.InitTxnManager(r)
 }
 
@@ -163,6 +169,12 @@ func (c *Mongo) IsDuplicatedError(err error) bool {
 			return true
 		}
 		if strings.Contains(err.Error(), "IndexOptionsConflict") {
+			return true
+		}
+		if strings.Contains(err.Error(), "all indexes already exist") {
+			return true
+		}
+		if strings.Contains(err.Error(), "already exists with a different name") {
 			return true
 		}
 	}
@@ -199,12 +211,23 @@ type Collection struct {
 }
 
 // Find 查询多个并反序列化到 Result
-func (c *Collection) Find(filter types.Filter) types.Find {
-	return &Find{
+func (c *Collection) Find(filter types.Filter, opts ...types.FindOpts) types.Find {
+	find := &Find{
 		Collection: c,
 		filter:     filter,
-		projection: map[string]int{"_id": 0},
+		projection: make(map[string]int),
 	}
+
+	if len(opts) == 0 {
+		find.projection["_id"] = 0
+		return find
+	}
+
+	if !opts[0].WithObjectID {
+		find.projection["_id"] = 0
+		return find
+	}
+	return find
 }
 
 // Find define a find operation
@@ -215,7 +238,7 @@ type Find struct {
 	filter     types.Filter
 	start      int64
 	limit      int64
-	sort       map[string]interface{}
+	sort       bson.D
 }
 
 // Fields 查询字段
@@ -230,25 +253,27 @@ func (f *Find) Fields(fields ...string) types.Find {
 }
 
 // Sort 查询排序
+// sort支持多字段最左原则排序
+// sort值为"host_id, -host_name"和sort值为"host_id:1, host_name:-1"是一样的，都代表先按host_id递增排序，再按host_name递减排序
 func (f *Find) Sort(sort string) types.Find {
 	if sort != "" {
 		sortArr := strings.Split(sort, ",")
-		f.sort = make(map[string]interface{}, 0)
+		f.sort = bson.D{}
 		for _, sortItem := range sortArr {
-			sortItemArr := strings.Split(sortItem, ":")
+			sortItemArr := strings.Split(strings.TrimSpace(sortItem), ":")
 			sortKey := strings.TrimLeft(sortItemArr[0], "+-")
 			if len(sortItemArr) == 2 {
 				sortDescFlag := strings.TrimSpace(sortItemArr[1])
 				if sortDescFlag == "-1" {
-					f.sort[sortKey] = -1
+					f.sort = append(f.sort, bson.E{sortKey, -1})
 				} else {
-					f.sort[sortKey] = 1
+					f.sort = append(f.sort, bson.E{sortKey, 1})
 				}
 			} else {
 				if strings.HasPrefix(sortItemArr[0], "-") {
-					f.sort[sortKey] = -1
+					f.sort = append(f.sort, bson.E{sortKey, -1})
 				} else {
-					f.sort[sortKey] = 1
+					f.sort = append(f.sort, bson.E{sortKey, 1})
 				}
 			}
 		}
@@ -282,10 +307,12 @@ var hostSpecialFieldMap = map[string]bool{
 
 // All 查询多个
 func (f *Find) All(ctx context.Context, result interface{}) error {
+	mtc.collectOperCount(f.collName, findOper)
+
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo find-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(f.collName, findOper, time.Since(start))
 	}()
 
 	err := validHostType(f.collName, f.projection, result, rid)
@@ -311,9 +338,12 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 		f.filter = bson.M{}
 	}
 
+	opt := getCollectionOption(ctx)
+
 	return f.tm.AutoRunWithTxn(ctx, f.dbc, func(ctx context.Context) error {
-		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName).Find(ctx, f.filter, findOpts)
+		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).Find(ctx, f.filter, findOpts)
 		if err != nil {
+			mtc.collectErrorCount(f.collName, findOper)
 			return err
 		}
 		return cursor.All(ctx, result)
@@ -322,10 +352,12 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 
 // One 查询一个
 func (f *Find) One(ctx context.Context, result interface{}) error {
+	mtc.collectOperCount(f.collName, findOper)
+
 	start := time.Now()
 	rid := ctx.Value(common.ContextRequestIDField)
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo find-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(f.collName, findOper, time.Since(start))
 	}()
 
 	err := validHostType(f.collName, f.projection, result, rid)
@@ -351,9 +383,11 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 		f.filter = bson.M{}
 	}
 
+	opt := getCollectionOption(ctx)
 	return f.tm.AutoRunWithTxn(ctx, f.dbc, func(ctx context.Context) error {
-		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName).Find(ctx, f.filter, findOpts)
+		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).Find(ctx, f.filter, findOpts)
 		if err != nil {
+			mtc.collectErrorCount(f.collName, findOper)
 			return err
 		}
 
@@ -368,15 +402,18 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 
 // Count 统计数量(非事务)
 func (f *Find) Count(ctx context.Context) (uint64, error) {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(f.collName, countOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo count cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(f.collName, countOper, time.Since(start))
 	}()
 
 	if f.filter == nil {
 		f.filter = bson.M{}
 	}
+
+	opt := getCollectionOption(ctx)
 
 	sessCtx, _, useTxn, err := f.tm.GetTxnContext(ctx, f.dbc)
 	if err != nil {
@@ -384,16 +421,22 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 	}
 	if !useTxn {
 		// not use transaction.
-		cnt, err := f.dbc.Database(f.dbname).Collection(f.collName).CountDocuments(ctx, f.filter)
+		cnt, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).CountDocuments(ctx, f.filter)
+		if err != nil {
+			mtc.collectErrorCount(f.collName, countOper)
+			return 0, err
+		}
+
 		return uint64(cnt), err
 	} else {
 		// use transaction
-		cnt, err := f.dbc.Database(f.dbname).Collection(f.collName).CountDocuments(sessCtx, f.filter)
+		cnt, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).CountDocuments(sessCtx, f.filter)
 		// do not release th session, otherwise, the session will be returned to the
 		// session pool and will be reused. then mongodb driver will increase the transaction number
 		// automatically and do read/write retry if policy is set.
 		// mongo.CmdbReleaseSession(ctx, session)
 		if err != nil {
+			mtc.collectErrorCount(f.collName, countOper)
 			return 0, err
 		}
 		return uint64(cnt), nil
@@ -402,26 +445,32 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, insertOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo insert cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, insertOper, time.Since(start))
 	}()
 
 	rows := util.ConverToInterfaceSlice(docs)
 
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).InsertMany(ctx, rows)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, insertOper)
+			return err
+		}
+
+		return nil
 	})
 }
 
 // Update 更新数据
 func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interface{}) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, updateOper)
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo update cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, updateOper, time.Since(start))
 	}()
 
 	if filter == nil {
@@ -431,37 +480,48 @@ func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interf
 	data := bson.M{"$set": doc}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, updateOper)
+			return err
+		}
+		return nil
 	})
 }
 
-// Upsert 数据存在更新数据，否则新加数据
+// Upsert 数据存在更新数据，否则新加数据。
+// 注意：该接口非原子操作，可能存在插入多条相同数据的风险。
 func (c *Collection) Upsert(ctx context.Context, filter types.Filter, doc interface{}) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, upsertOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo upsert cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, upsertOper, time.Since(start))
 	}()
 
 	// set upsert option
-	upsert := true
+	doUpsert := true
 	replaceOpt := &options.UpdateOptions{
-		Upsert: &upsert,
+		Upsert: &doUpsert,
 	}
 	data := bson.M{"$set": doc}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateOne(ctx, filter, data, replaceOpt)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, upsertOper)
+			return err
+		}
+		return nil
 	})
 
 }
 
 // UpdateMultiModel 根据不同的操作符去更新数据
 func (c *Collection) UpdateMultiModel(ctx context.Context, filter types.Filter, updateModel ...types.ModeUpdate) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, updateOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo update-multi-model cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, updateOper, time.Since(start))
 	}()
 
 	data := bson.M{}
@@ -474,24 +534,36 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter types.Filter, 
 
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, updateOper)
+			return err
+		}
+		return nil
 	})
 
 }
 
 // Delete 删除数据
 func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, deleteOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo delete cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, deleteOper, time.Since(start))
 	}()
+
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		if err := c.tryArchiveDeletedDoc(ctx, filter); err != nil {
+			mtc.collectErrorCount(c.collName, deleteOper)
 			return err
 		}
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).DeleteMany(ctx, filter)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, deleteOper)
+			return err
+		}
+
+		return nil
 	})
 
 }
@@ -503,6 +575,10 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	case common.BKTableNameBaseApp:
 	case common.BKTableNameBaseSet:
 	case common.BKTableNameBaseModule:
+	case common.BKTableNameSetTemplate:
+	case common.BKTableNameBaseInst:
+	case common.BKTableNameBaseProcess:
+	case common.BKTableNameProcessInstanceRelation:
 	default:
 		// do not archive the delete docs
 		return nil
@@ -527,6 +603,7 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 		archives[idx] = metadata.DeleteArchive{
 			Oid:    doc.Lookup("_id").ObjectID().Hex(),
 			Detail: doc.Delete("_id"),
+			Coll:   c.collName,
 		}
 	}
 
@@ -566,6 +643,50 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 		return 0, err
 	}
 	return doc.SequenceID, err
+}
+
+// NextSequences 批量获取新序列号(非事务)
+func (c *Mongo) NextSequences(ctx context.Context, sequenceName string, num int) ([]uint64, error) {
+	if num == 0 {
+		return make([]uint64, 0), nil
+	}
+
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo next-sequences cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
+	// 直接使用新的context，确保不会用到事务,不会因为context含有session而使用分布式事务，防止产生相同的序列号
+	ctx = context.Background()
+
+	coll := c.dbc.Database(c.dbname).Collection("cc_idgenerator")
+
+	Update := bson.M{
+		"$inc":         bson.M{"SequenceID": num},
+		"$setOnInsert": bson.M{"create_time": time.Now()},
+		"$set":         bson.M{"last_time": time.Now()},
+	}
+	filter := bson.M{"_id": sequenceName}
+	upsert := true
+	returnChange := options.After
+	opt := &options.FindOneAndUpdateOptions{
+		Upsert:         &upsert,
+		ReturnDocument: &returnChange,
+	}
+
+	doc := Idgen{}
+	err := coll.FindOneAndUpdate(ctx, filter, Update, opt).Decode(&doc)
+	if err != nil {
+		return nil, err
+	}
+
+	sequences := make([]uint64, num)
+	for i := 0; i < num; i++ {
+		sequences[i] = uint64(i-num) + doc.SequenceID + 1
+	}
+
+	return sequences, err
 }
 
 type Idgen struct {
@@ -608,6 +729,10 @@ func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 		createIndexOpt.Name = &index.Name
 	}
 
+	if index.ExpireAfterSeconds != 0 {
+		createIndexOpt.SetExpireAfterSeconds(index.ExpireAfterSeconds)
+	}
+
 	createIndexInfo := mongo.IndexModel{
 		Keys:    index.Keys,
 		Options: createIndexOpt,
@@ -615,6 +740,16 @@ func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 
 	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
 	_, err := indexView.CreateOne(ctx, createIndexInfo)
+	if err != nil {
+		// ignore the following case
+		// 1.the new index is exactly the same as the existing one
+		// 2.the new index has same keys with the existing one, but its name is different
+		if strings.Contains(err.Error(), "all indexes already exist") ||
+			strings.Contains(err.Error(), "already exists with a different name") {
+			return nil
+		}
+	}
+
 	return err
 }
 
@@ -645,70 +780,102 @@ func (c *Collection) Indexes(ctx context.Context) ([]types.Index, error) {
 
 // AddColumn add a new column for the collection
 func (c *Collection) AddColumn(ctx context.Context, column string, value interface{}) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, columnOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo add-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, columnOper, time.Since(start))
 	}()
 
 	selector := dtype.Document{column: dtype.Document{"$exists": false}}
 	datac := dtype.Document{"$set": dtype.Document{column: value}}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, selector, datac)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, columnOper)
+			return err
+		}
+		return nil
 	})
 }
 
 // RenameColumn rename a column for the collection
 func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, columnOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo rename-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, columnOper, time.Since(start))
 	}()
 
 	datac := dtype.Document{"$rename": dtype.Document{oldName: newColumn}}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, dtype.Document{}, datac)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, columnOper)
+			return err
+		}
+
+		return nil
 	})
 }
 
 // DropColumn remove a column by the name
 func (c *Collection) DropColumn(ctx context.Context, field string) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, columnOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo drop-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, columnOper, time.Since(start))
 	}()
 
 	datac := dtype.Document{"$unset": dtype.Document{field: ""}}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, dtype.Document{}, datac)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, columnOper)
+			return err
+		}
+
+		return nil
 	})
 }
 
 // DropColumns remove many columns by the name
 func (c *Collection) DropColumns(ctx context.Context, filter types.Filter, fields []string) error {
+	mtc.collectOperCount(c.collName, columnOper)
+
+	start := time.Now()
+	defer func() {
+		mtc.collectOperDuration(c.collName, columnOper, time.Since(start))
+	}()
+
 	unsetFields := make(map[string]interface{})
 	for _, field := range fields {
 		unsetFields[field] = ""
 	}
+
 	datac := dtype.Document{"$unset": unsetFields}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, datac)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, columnOper)
+			return err
+		}
+
+		return nil
 	})
 }
 
 // DropDocsColumn remove a column by the name for doc use filter
 func (c *Collection) DropDocsColumn(ctx context.Context, field string, filter types.Filter) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, columnOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo drop-docs-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, columnOper, time.Since(start))
 	}()
+
 	// 查询条件为空时候，mongodb 不返回数据
 	if filter == nil {
 		filter = bson.M{}
@@ -717,21 +884,30 @@ func (c *Collection) DropDocsColumn(ctx context.Context, field string, filter ty
 	datac := dtype.Document{"$unset": dtype.Document{field: ""}}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, datac)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, columnOper)
+			return err
+		}
+
+		return nil
 	})
 }
 
 // AggregateAll aggregate all operation
 func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, aggregateOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo aggregate-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, aggregateOper, time.Since(start))
 	}()
 
+	opt := getCollectionOption(ctx)
+
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Aggregate(ctx, pipeline)
+		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName, opt).Aggregate(ctx, pipeline)
 		if err != nil {
+			mtc.collectErrorCount(c.collName, aggregateOper)
 			return err
 		}
 		defer cursor.Close(ctx)
@@ -742,17 +918,22 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 
 // AggregateOne aggregate one operation
 func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, aggregateOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo aggregate-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, aggregateOper, time.Since(start))
 	}()
 
+	opt := getCollectionOption(ctx)
+
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Aggregate(ctx, pipeline)
+		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName, opt).Aggregate(ctx, pipeline)
 		if err != nil {
+			mtc.collectErrorCount(c.collName, aggregateOper)
 			return err
 		}
+
 		defer cursor.Close(ctx)
 		for cursor.Next(ctx) {
 			return cursor.Decode(result)
@@ -766,24 +947,32 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 // field the field for which to return distinct values.
 // filter query that specifies the documents from which to retrieve the distinct values.
 func (c *Collection) Distinct(ctx context.Context, field string, filter types.Filter) ([]interface{}, error) {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, distinctOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo distinct cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, distinctOper, time.Since(start))
 	}()
 
 	if filter == nil {
 		filter = bson.M{}
 	}
-	var results []interface{} = nil
 
+	opt := getCollectionOption(ctx)
+	var results []interface{} = nil
 	err := c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		var err error
-		results, err = c.dbc.Database(c.dbname).Collection(c.collName).Distinct(ctx, field, filter)
-		return err
+		results, err = c.dbc.Database(c.dbname).Collection(c.collName, opt).Distinct(ctx, field, filter)
+		if err != nil {
+			mtc.collectErrorCount(c.collName, distinctOper)
+			return err
+		}
+
+		return nil
 	})
 	return results, err
 }
+
 func decodeCusorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result interface{}) error {
 	resultv := reflect.ValueOf(result)
 	if resultv.Kind() != reflect.Ptr || resultv.Elem().Kind() != reflect.Slice {
@@ -809,6 +998,11 @@ func decodeCusorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result inte
 
 // validHostType valid if host query uses specified type that transforms ip & operator array to string
 func validHostType(collection string, projection map[string]int, result interface{}, rid interface{}) error {
+	if result == nil {
+		blog.Errorf("host query result is nil, rid: %s", rid)
+		return fmt.Errorf("host query result type invalid")
+	}
+
 	if collection != common.BKTableNameBaseHost {
 		return nil
 	}
@@ -870,6 +1064,10 @@ func validHostType(collection string, projection map[string]int, result interfac
 			return nil
 		}
 
+		if elem.Kind() == reflect.Ptr {
+			elem = elem.Elem()
+		}
+
 		if elem.Kind() != reflect.Struct {
 			blog.Errorf("host query result type(%v) not struct pointer type or map type", resType)
 			return fmt.Errorf("host query result type invalid")
@@ -893,4 +1091,46 @@ func validHostType(collection string, projection map[string]int, result interfac
 		return fmt.Errorf("host query result type invalid")
 	}
 	return nil
+}
+
+const (
+	// reference doc:
+	// https://docs.mongodb.com/manual/core/read-preference-staleness/#replica-set-read-preference-max-staleness
+	// this is the minimum value of maxStalenessSeconds allowed.
+	// specifying a smaller maxStalenessSeconds value will raise an error. Clients estimate secondaries’ staleness
+	// by periodically checking the latest write date of each replica set member. Since these checks are infrequent,
+	// the staleness estimate is coarse. Thus, clients cannot enforce a maxStalenessSeconds value of less than
+	// 90 seconds.
+	maxStalenessSeconds = 90 * time.Second
+)
+
+func getCollectionOption(ctx context.Context) *options.CollectionOptions {
+	var opt *options.CollectionOptions
+	switch util.GetDBReadPreference(ctx) {
+
+	case common.NilMode:
+
+	case common.PrimaryMode:
+		opt = &options.CollectionOptions{
+			ReadPreference: readpref.Primary(),
+		}
+	case common.PrimaryPreferredMode:
+		opt = &options.CollectionOptions{
+			ReadPreference: readpref.PrimaryPreferred(readpref.WithMaxStaleness(maxStalenessSeconds)),
+		}
+	case common.SecondaryMode:
+		opt = &options.CollectionOptions{
+			ReadPreference: readpref.Secondary(readpref.WithMaxStaleness(maxStalenessSeconds)),
+		}
+	case common.SecondaryPreferredMode:
+		opt = &options.CollectionOptions{
+			ReadPreference: readpref.SecondaryPreferred(readpref.WithMaxStaleness(maxStalenessSeconds)),
+		}
+	case common.NearestMode:
+		opt = &options.CollectionOptions{
+			ReadPreference: readpref.Nearest(readpref.WithMaxStaleness(maxStalenessSeconds)),
+		}
+	}
+
+	return opt
 }

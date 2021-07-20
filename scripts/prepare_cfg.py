@@ -14,7 +14,6 @@ import sys
     @cp -R $(RESOURCE_DIR)/language/*  $(BIN_PATH)/$(TARGET_NAME)/conf/language
     @sed  -e 's/cmdb-name-placeholder/${TARGET_NAME}/g;s/cmdb-port-placeholder/${TARGET_PORT}/g' $(SCRIPT_DIR)/template.sh.start > $(BIN_PATH)/$(TARGET_NAME)/start.sh
     @sed  -e 's/cmdb-name-placeholder/${TARGET_NAME}/g;' $(SCRIPT_DIR)/template.sh.stop > $(BIN_PATH)/$(TARGET_NAME)/stop.sh
-    @sed  -e 's/admin_port_placeholer/${TARGET_PORT}/g;' $(SCRIPT_DIR)/init_db.sh >  $(BIN_PATH)/$(TARGET_NAME)/init_db.sh
     @cp -f $(SCRIPT_DIR)/template.sh.start $(BIN_PATH)/$(TARGET_NAME)/template.sh.start
     @cp -f $(SCRIPT_DIR)/ip.py $(BIN_PATH)/$(TARGET_NAME)/ip.py
     @cp -f $(SCRIPT_DIR)/init.py $(BIN_PATH)/init.py
@@ -80,13 +79,6 @@ if __name__ == "__main__":
         with open(os.path.join(bin_path, target_name, "stop.sh"), "w") as tf:
             tf.write(data)
 
-    # @sed  -e 's/admin_port_placeholer/${TARGET_PORT}/g;' $(SCRIPT_DIR)/init_db.sh >  $(BIN_PATH)/$(TARGET_NAME)/init_db.sh
-    with open(os.path.join(script_dir, "init_db.sh"), "r") as f:
-        data = f.read()
-        data = data.replace("admin_port_placeholer", target_port)
-        with open(os.path.join(bin_path, target_name, "init_db.sh"), "w") as tf:
-            tf.write(data)
-
     #  @cp -f $(SCRIPT_DIR)/template.sh.start $(BIN_PATH)/$(TARGET_NAME)/template.sh.start
     #  @cp -f $(SCRIPT_DIR)/ip.py $(BIN_PATH)/$(TARGET_NAME)/ip.py
     #  @cp -f $(SCRIPT_DIR)/init.py $(BIN_PATH)/init.py
@@ -96,6 +88,10 @@ if __name__ == "__main__":
     #  @cp -f $(SCRIPT_DIR)/stop.sh $(BIN_PATH)/stop.sh
     #  @cp -f $(SCRIPT_DIR)/restart.sh $(BIN_PATH)/restart.sh
     #  @cp -f $(SCRIPT_DIR)/restart.sh $(BIN_PATH)/$(TARGET_NAME)/restart.sh
+    #  @cp -f $(SCRIPT_DIR)/init_db.sh $(BIN_PATH)/init_db.sh
+    #  @cp -f $(SCRIPT_DIR)/init_db.sh $(BIN_PATH)/$(TARGET_NAME)/init_db.sh
+    #  @cp -f $(SCRIPT_DIR)/refresh_config.sh $(BIN_PATH)/refresh_config.sh
+    #  @cp -f $(SCRIPT_DIR)/refresh_config.sh $(BIN_PATH)/$(TARGET_NAME)/refresh_config.sh
     shutil.copy(os.path.join(script_dir, "template.sh.start"), os.path.join(bin_path, target_name, "template.sh.start"))
     shutil.copy(os.path.join(script_dir, "ip.py"), os.path.join(bin_path, target_name, "ip.py"))
     shutil.copy(os.path.join(script_dir, "init.py"), os.path.join(bin_path, "init.py"))
@@ -105,6 +101,10 @@ if __name__ == "__main__":
     shutil.copy(os.path.join(script_dir, "stop.sh"), os.path.join(bin_path, "stop.sh"))
     shutil.copy(os.path.join(script_dir, "restart.sh"), os.path.join(bin_path, "restart.sh"))
     shutil.copy(os.path.join(script_dir, "restart.sh"), os.path.join(bin_path, target_name, "restart.sh"))
+    shutil.copy(os.path.join(script_dir, "init_db.sh"), os.path.join(bin_path, "init_db.sh"))
+    shutil.copy(os.path.join(script_dir, "init_db.sh"), os.path.join(bin_path, target_name, "init_db.sh"))
+    shutil.copy(os.path.join(script_dir, "refresh_config.sh"), os.path.join(bin_path, target_name, "refresh_config.sh"))
+    shutil.copy(os.path.join(script_dir, "refresh_config.sh"), os.path.join(bin_path, "refresh_config.sh"))
 
     # @sed -e 's/version_placeholer/${VERSION}/g' $(SCRIPT_DIR)/image.sh > $(BIN_PATH)/image.sh
     with open(os.path.join(script_dir, "image.sh"), "r") as f:

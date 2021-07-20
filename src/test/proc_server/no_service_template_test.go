@@ -1,3 +1,14 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package proc_server_test
 
 import (
@@ -533,6 +544,23 @@ var _ = Describe("no service template test", func() {
 			Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", serviceId3)))
 		})
 
+		It("update service instance with no process", func() {
+			input := map[string]interface{}{
+				"data": []map[string]interface{}{
+					{
+						"service_instance_id": serviceId1,
+						"update": map[string]interface{}{
+							"name": "inst_update_test",
+						},
+					},
+				},
+			}
+			rsp, err := serviceClient.UpdateServiceInstances(context.Background(), header, bizId, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
+		})
+
 		It("delete service instance with no process", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField: bizId,
@@ -686,6 +714,14 @@ var _ = Describe("no service template test", func() {
 						"bk_process_name":      "p3",
 						"bk_start_param_regex": "1234",
 						"bk_process_id":        processId,
+						"bind_info": []map[string]interface{}{
+							{
+								"ip":       "127.0.0.1",
+								"port":     "1024",
+								"protocol": "1",
+								"enable":   true,
+							},
+						},
 					},
 				},
 			}
@@ -778,6 +814,26 @@ var _ = Describe("no service template test", func() {
 			Expect(resMap["process_instance"]).To(Equal(j))
 		})
 
+		It("list process related info", func() {
+			input := metadata.ListProcessRelatedInfoOption{
+				Set:    metadata.SetCondOfP{},
+				Module: metadata.ModuleCondOfP{},
+				ServiceInstance: metadata.ServiceInstanceCondOfP{
+					IDs: []int64{serviceId},
+				},
+				Fields: []string{},
+				Page: metadata.BasePage{
+					Start: 0,
+					Limit: 100,
+				},
+			}
+			rsp, err := processClient.ListProcessRelatedInfo(context.Background(), header, bizId, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
+			Expect(rsp.Data.Count).To(Not(Equal(0)))
+		})
+
 		It("list process instance names with their ids in one module", func() {
 			input := map[string]interface{}{
 				"bk_module_id":      moduleId,
@@ -826,14 +882,26 @@ var _ = Describe("no service template test", func() {
 			Expect(data.Info[0].Property[common.BKProcessNameField]).To(Equal("p3"))
 		})
 
+		It("list process instance details", func() {
+			input := metadata.ListProcessInstancesDetailsOption{
+				ProcessIDs: []int64{processId},
+				Fields:     []string{common.BKProcessIDField, common.BKProcessNameField},
+			}
+			rsp, err := processClient.ListProcessInstancesDetails(context.Background(), header, bizId, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
+			Expect(len(rsp.Data)).To(Equal(1))
+			pName, _ := rsp.Data[0].String(common.BKProcessNameField)
+			Expect(pName).To(Equal("p3"))
+		})
+
 		It("update process instances by their ids", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField: bizId,
 				"process_ids":       []int64{processId},
 				"update_data": map[string]interface{}{
-					common.BKProcPortEnable:   true,
 					common.BKDescriptionField: "aaa",
-					common.BKProtocol:         "1",
 				},
 			}
 			rsp, err := processClient.UpdateProcessInstancesByIDs(context.Background(), header, input)
@@ -842,7 +910,7 @@ var _ = Describe("no service template test", func() {
 			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 		})
 
-		It("list process instance details by their ids", func() {
+		It("list process instance details with bind info", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField: bizId,
 				"process_ids":       []int64{processId},
@@ -864,9 +932,21 @@ var _ = Describe("no service template test", func() {
 			json.Unmarshal(j, &data)
 			Expect(data.Count).To(Equal(int64(1)))
 			Expect(data.Info[0].Property[common.BKProcessNameField]).To(Equal("p3"))
-			Expect(data.Info[0].Property[common.BKProcPortEnable]).To(Equal(true))
 			Expect(data.Info[0].Property[common.BKDescriptionField]).To(Equal("aaa"))
-			Expect(data.Info[0].Property[common.BKProtocol]).To(Equal("1"))
+			bindInfo := map[string]interface{}{
+				"ip":       "127.0.0.1",
+				"port":     "1024",
+				"protocol": "1",
+				"enable":   true,
+			}
+			ExpectBindInfoArr, err := commonutil.GetMapInterfaceByInerface(data.Info[0].Property[common.BKProcBindInfo])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(ExpectBindInfoArr)).To(Equal(int(1)))
+			expectBindInfo, ok := ExpectBindInfoArr[0].(map[string]interface{})
+			delete(expectBindInfo, "template_row_id")
+			Expect(ok).To(Equal(true))
+			Expect(expectBindInfo).To(Equal(bindInfo))
+
 		})
 
 		It("delete process instance", func() {
@@ -922,131 +1002,5 @@ var _ = Describe("no service template test", func() {
 			j, err := json.Marshal(rsp)
 			Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"id\":%d", serviceId)))
 		})
-	})
-})
-
-var _ = Describe("list_biz_host_process test", func() {
-	It("list_biz_host_process", func() {
-		By("add host")
-		input := map[string]interface{}{
-			"bk_biz_id": bizId,
-			"host_info": map[string]interface{}{
-				"1": map[string]interface{}{
-					"bk_host_innerip": "127.0.0.3",
-					"bk_cloud_id":     0,
-				},
-				"2": map[string]interface{}{
-					"bk_host_innerip": "127.0.0.4",
-					"bk_cloud_id":     0,
-				},
-			},
-		}
-		addHostRsp, err := hostServerClient.AddHost(context.Background(), header, input)
-		util.RegisterResponse(addHostRsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(addHostRsp.Result).To(Equal(true))
-
-		By("search host")
-		input1 := &params.HostCommonSearch{
-			AppID: int(bizId),
-			Ip: params.IPInfo{
-				Data:  []string{"127.0.0.3", "127.0.0.4"},
-				Exact: 1,
-				Flag:  "bk_host_innerip|bk_host_outerip",
-			},
-		}
-		hostRsp, err := hostServerClient.SearchHost(context.Background(), header, input1)
-		util.RegisterResponse(hostRsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(hostRsp.Result).To(Equal(true))
-		hostId3, err := commonutil.GetInt64ByInterface(hostRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"])
-		Expect(err).NotTo(HaveOccurred())
-		hostId4, err := commonutil.GetInt64ByInterface(hostRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"])
-		Expect(err).NotTo(HaveOccurred())
-
-		By("create module")
-		input = map[string]interface{}{
-			"bk_module_name":      "list_biz_host_process_test",
-			"bk_parent_id":        setId,
-			"service_category_id": 2,
-			"service_template_id": 0,
-		}
-		rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-		moduleId, err := commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
-		Expect(err).NotTo(HaveOccurred())
-
-		By("create service instance without template with processes")
-		input = map[string]interface{}{
-			common.BKAppIDField: bizId,
-			"bk_module_id":      moduleId,
-			"instances": []map[string]interface{}{
-				{
-					"bk_host_id": hostId3,
-					"processes": []map[string]interface{}{
-						{
-							"process_info": map[string]interface{}{
-								common.BKPort:             "123",
-								common.BKFuncName:         "p11111",
-								common.BKProcessNameField: "p11111",
-							},
-						},
-						{
-							"process_info": map[string]interface{}{
-								common.BKProtocol:         "2",
-								common.BKFuncName:         "p22222",
-								common.BKProcessNameField: "p22222",
-							},
-						},
-					},
-				},
-				{
-					"bk_host_id": hostId4,
-					"processes": []map[string]interface{}{
-						{
-							"process_info": map[string]interface{}{
-								common.BKBindIP:           "0.0.0.0",
-								common.BKFuncName:         "p33333",
-								common.BKProcessNameField: "p33333",
-							},
-						},
-					},
-				},
-			},
-		}
-		rsp1, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
-		util.RegisterResponse(rsp1)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp1.Result).To(Equal(true), rsp1.BaseResp.ToString())
-
-		By("list all biz host process")
-		input = map[string]interface{}{
-			"bk_host_ids":       []int64{hostId3, hostId4},
-			common.BKAppIDField: bizId,
-			"page": metadata.BasePage{
-				Sort:  "-bk_host_id",
-				Limit: 10,
-				Start: 0,
-			},
-		}
-		rsp2, err := processClient.ListProcessInstancesWithHost(context.Background(), header, input)
-		util.RegisterResponse(rsp2)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp2.Result).To(Equal(true), rsp2.BaseResp.ToString())
-		j, err := json.Marshal(rsp2.Data)
-		data := struct {
-			Count int64                          `json:"count"`
-			Info  []metadata.HostProcessInstance `json:"info"`
-		}{}
-		json.Unmarshal(j, &data)
-		Expect(data.Count).To(Equal(int64(3)))
-		Expect(data.Info[0].HostID).To(Or(Equal(hostId3), Equal(hostId4)))
-		Expect(data.Info[1].HostID).To(Or(Equal(hostId3), Equal(hostId4)))
-		Expect(data.Info[2].HostID).To(Or(Equal(hostId3), Equal(hostId4)))
-		Expect("0.0.0.0").To(Or(Equal(data.Info[0].BindIP), Equal(data.Info[1].BindIP), Equal(data.Info[2].BindIP)))
-		Expect("123").To(Or(Equal(data.Info[0].Port), Equal(data.Info[1].Port), Equal(data.Info[2].Port)))
-		Expect("2").To(Or(Equal(string(data.Info[0].Protocol)), Equal(string(data.Info[1].Protocol)), Equal(string(data.Info[2].Protocol))))
 	})
 })
