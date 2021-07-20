@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 )
 
@@ -30,15 +29,9 @@ func (s *coreService) CreateHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
 	option := metadata.CreateHostApplyRuleOption{}
-	if err := mapstruct.Decode2Struct(data, &option); err != nil {
-		blog.Errorf("CreateHostApplyRule failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -66,15 +59,9 @@ func (s *coreService) UpdateHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
 	option := metadata.UpdateHostApplyRuleOption{}
-	if err := mapstruct.Decode2Struct(data, &option); err != nil {
-		blog.Errorf("UpdateHostApplyRule failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -95,15 +82,9 @@ func (s *coreService) DeleteHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
 	option := metadata.DeleteHostApplyRuleOption{}
-	if err := mapstruct.Decode2Struct(data, &option); err != nil {
-		blog.Errorf("DeleteHostApplyRule failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -147,15 +128,9 @@ func (s *coreService) ListHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
 	option := metadata.ListHostApplyRuleOption{}
-	if err := mapstruct.Decode2Struct(data, &option); err != nil {
-		blog.Errorf("ListHostApplyRule failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -176,15 +151,9 @@ func (s *coreService) GenerateApplyPlan(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
 	option := metadata.HostApplyPlanOption{}
-	if err := mapstruct.Decode2Struct(data, &option); err != nil {
-		blog.Errorf("GenerateApplyPlan failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -205,15 +174,9 @@ func (s *coreService) SearchRuleRelatedModules(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
 	option := metadata.SearchRuleRelatedModulesOption{}
-	if err := mapstruct.Decode2Struct(data, &option); err != nil {
-		blog.Errorf("SearchRuleRelatedModules failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -234,15 +197,9 @@ func (s *coreService) BatchUpdateHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
 	option := metadata.BatchCreateOrUpdateApplyRuleOption{}
-	if err := mapstruct.Decode2Struct(data, &option); err != nil {
-		blog.Errorf("BatchUpdateHostApplyRule failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -263,15 +220,9 @@ func (s *coreService) UpdateHostByHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
 	option := metadata.UpdateHostByHostApplyRuleOption{}
-	if err := mapstruct.Decode2Struct(data, &option); err != nil {
-		blog.Errorf("UpdateHostByHostApplyRule failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 

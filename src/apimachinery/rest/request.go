@@ -31,10 +31,13 @@ import (
 	"time"
 
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	commonUtil "configcenter/src/common/util"
+
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
 )
 
@@ -77,11 +80,21 @@ type Request struct {
 	// sub path format args
 	subPathArgs []interface{}
 
+	// metric additional labels
+	metricDimension string
+
 	// request timeout value
 	timeout time.Duration
 
 	peek bool
 	err  error
+}
+
+// add this request a addition dimension value, which helps us to separate
+// request metrics with a dimension label.
+func (r *Request) WithMetricDimension(value string) *Request {
+	r.metricDimension = value
+	return r
 }
 
 func (r *Request) WithParams(params map[string]string) *Request {
@@ -226,19 +239,25 @@ func (r *Request) WrapURL() *url.URL {
 	return finalUrl
 }
 
+func (r *Request) checkToleranceLatency(start *time.Time, url string, rid string) {
+	if time.Since(*start) < r.capability.ToleranceLatencyTime {
+		return
+	}
+
+	if strings.Contains(url, "/watch/resource/") || strings.Contains(url, "/watch/cache/event") ||
+		strings.Contains(url, "/cache/event/node/with_start_from") {
+		// except resource watch api.
+		return
+	}
+
+	// request time larger than the maxToleranceLatencyTime time, then log the request
+	blog.InfofDepthf(3, "[apimachinery] request exceeded max latency time. cost: %d ms, code: %s, user: %s, %s, "+
+		"url: %s, body: %s, rid: %s", time.Since(*start)/time.Millisecond, r.headers.Get(common.BKHTTPRequestAppCode),
+		r.headers.Get(common.BKHTTPHeaderUser), r.verb, url, r.body, rid)
+}
+
 func (r *Request) Do() *Result {
 	result := new(Result)
-
-	if r.parent.requestInflight != nil {
-		r.parent.requestInflight.Inc()
-		defer r.parent.requestInflight.Dec()
-	}
-	if r.parent.requestDuration != nil {
-		before := time.Now()
-		defer func() {
-			r.parent.requestDuration.WithLabelValues(r.subPath, strconv.Itoa(result.StatusCode)).Observe(commonUtil.ToMillisecond(time.Since(before)))
-		}()
-	}
 
 	rid := commonUtil.ExtractRequestIDFromContext(r.ctx)
 	if rid == "" {
@@ -302,7 +321,8 @@ func (r *Request) Do() *Result {
 				// Which means that we can retry it. And so does the GET operation.
 				// While the other "write" operation can not simply retry it again, because they are not idempotent.
 
-				blog.Errorf("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
+				blog.Errorf("[apimachinery] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
+				r.checkToleranceLatency(&start, url, rid)
 				if !isConnectionReset(err) || r.verb != GET {
 					result.Err = err
 					result.Rid = rid
@@ -315,6 +335,20 @@ func (r *Request) Do() *Result {
 
 			}
 
+			// collect request metrics
+			if r.parent.requestDuration != nil {
+				labels := prometheus.Labels{
+					"handler":     r.subPath,
+					"status_code": strconv.Itoa(result.StatusCode),
+					"dimension":   r.metricDimension,
+				}
+
+				r.parent.requestDuration.With(labels).Observe(float64(time.Since(start) / time.Millisecond))
+			}
+
+			// record latency if needed
+			r.checkToleranceLatency(&start, url, rid)
+
 			var body []byte
 			if resp.Body != nil {
 				data, err := ioutil.ReadAll(resp.Body)
@@ -326,16 +360,23 @@ func (r *Request) Do() *Result {
 					}
 					result.Err = err
 					result.Rid = rid
-					blog.Infof("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
+					blog.Errorf("[apimachinery] %s %s with body %s, err: %v, rid: %s", string(r.verb), url, r.body,
+						err, rid)
 					return result
 				}
 				body = data
 			}
-			blog.V(4).InfoDepthf(2, "[apimachinery][peek] cost: %dms, %s %s with body %s, response status: %s, response body: %s, rid: %s",
-				time.Since(start).Nanoseconds()/int64(time.Millisecond), string(r.verb), url, r.body, resp.Status, body, rid)
+
+			if blog.V(4) {
+				blog.V(4).InfoDepthf(2, "[apimachinery] cost: %dms, %s %s with body %s, response status: %s, "+
+					"response body: %s, rid: %s", time.Since(start)/time.Millisecond,
+					string(r.verb), url, r.body, resp.Status, body, rid)
+			}
+
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			result.Status = resp.Status
+			result.Header = resp.Header
 			result.Rid = rid
 
 			return result
@@ -366,6 +407,7 @@ type Result struct {
 	Err        error
 	StatusCode int
 	Status     string
+	Header     http.Header
 }
 
 func (r *Result) Into(obj interface{}) error {
@@ -430,7 +472,7 @@ func (r *Result) IntoJsonString() (*metadata.JsonStringResp, error) {
 	if elements[3].Exists() {
 		raw := elements[3].Raw
 		if len(raw) != 0 {
-			perm := make([]metadata.Permission, 0)
+			perm := new(metadata.IamPermission)
 			if err := json.Unmarshal([]byte(raw), &perm); err != nil {
 				blog.Errorf("invalid http response, invalid permission field, body: %s, rid: %s", r.Body, r.Rid)
 				return nil, fmt.Errorf("http response with invalid permission field, body: %s", r.Body)
@@ -439,6 +481,79 @@ func (r *Result) IntoJsonString() (*metadata.JsonStringResp, error) {
 		}
 	}
 	resp.Data = elements[4].Raw
+
+	return resp, nil
+}
+
+func (r *Result) IntoJsonCntInfoString() (*metadata.JsonCntInfoResp, error) {
+	if nil != r.Err {
+		return nil, r.Err
+	}
+
+	if 0 == len(r.Body) {
+		return nil, fmt.Errorf("http request failed: %s", r.Status)
+	}
+	elements := gjson.GetManyBytes(r.Body, "result", "bk_error_code", "bk_error_msg", "permission", "data")
+
+	// check result
+	if !elements[0].Exists() {
+		blog.Errorf("invalid http response, no result field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	// check error code
+	if !elements[1].Exists() {
+		blog.Errorf("invalid http response, no bk_error_code field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	// check error message
+	if !elements[2].Exists() {
+		blog.Errorf("invalid http response, no bk_error_msg field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	// check data
+	if !elements[4].Exists() {
+		blog.Errorf("invalid http response, no data field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	// check data.count
+	if !elements[4].Get("count").Exists() {
+		blog.Errorf("invalid http response, no data.count field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	// check data.info
+	if !elements[4].Get("info").Exists() {
+		blog.Errorf("invalid http response, no data.info field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	resp := new(metadata.JsonCntInfoResp)
+	resp.Result = elements[0].Bool()
+	resp.Code = int(elements[1].Int())
+	resp.ErrMsg = elements[2].String()
+
+	// parse permission field
+	if elements[3].Exists() {
+		raw := elements[3].Raw
+		if len(raw) != 0 {
+			perm := new(metadata.IamPermission)
+			if err := json.Unmarshal([]byte(raw), perm); err != nil {
+				blog.Errorf("invalid http response, invalid permission field, body: %s, rid: %s", r.Body, r.Rid)
+				return nil, fmt.Errorf("http response with invalid permission field, body: %s", r.Body)
+			}
+			resp.Permissions = perm
+		}
+	}
+
+	// set count field
+	resp.Data.Count = elements[4].Get("count").Int()
+
+	// set info field
+	resp.Data.Info = elements[4].Get("info").Raw
 
 	return resp, nil
 }

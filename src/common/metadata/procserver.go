@@ -29,7 +29,6 @@ type ProcInstanceModel struct {
 	SetID          int64  `json:"bk_set_id" bson:"bk_set_id,omitempty"`
 	ModuleID       int64  `json:"bk_module_id" bson:"bk_module_id,omitempty"`
 	ProcID         int64  `json:"bk_process_id" bson:"bk_process_id"`
-	FuncID         int64  `json:"bk_func_id" bson:"bk_func_id"`
 	ProcInstanceID uint64 `json:"proc_instance_id" bson:"proc_instance_id"`
 	HostID         int64  `json:"bk_host_id" bson:"bk_host_id"`
 	HostInstanID   uint64 `json:"bk_host_instance_id" bson:"bk_host_instance_id"`
@@ -41,7 +40,6 @@ type MatchProcInstParam struct {
 	ApplicationID  int64  `json:"bk_biz_id" bson:"bk_biz_id"`
 	SetName        string `json:"bk_set_name" bson:"bk_set_name"`
 	ModuleName     string `json:"bk_module_name" bson:"bk_module_name"`
-	FuncID         string `json:"bk_func_id" bson:"bk_func_id"`
 	HostInstanceID string `json:"bk_host_instance_id" bson:"bk_host_instance_id"`
 }
 
@@ -64,10 +62,9 @@ type ProcInstModelResult struct {
 }
 
 type GseHost struct {
-	HostID       int64  `json:"bk_host_id,omitempty"`
-	Ip           string `json:"ip,omitempty"`
-	BkCloudId    int64  `json:"bk_cloud_id"`
-	BkSupplierId int64  `json:"bk_supplier_id"`
+	HostID    int64  `json:"bk_host_id,omitempty"`
+	Ip        string `json:"ip,omitempty"`
+	BkCloudId int64  `json:"bk_cloud_id"`
 }
 
 type GseProcMeta struct {
@@ -326,4 +323,12 @@ type TemplateVersion struct {
 	Content     string `json:"content" field:"content"`
 	Status      string `json:"status" field:"status"`
 	Description string `json:"description" field:"description"`
+}
+
+type ListProcessRelatedInfoResponse struct {
+	BaseResp `json:",inline"`
+	Data     struct {
+		Count int                            `json:"count"`
+		Info  []ListProcessRelatedInfoResult `json:"info"`
+	} `json:"data"`
 }

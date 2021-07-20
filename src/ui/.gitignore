@@ -14,3 +14,6 @@ index.dev.js
 *.ntvs*
 *.njsproj
 *.sln
+
+# eslint
+eslint.html

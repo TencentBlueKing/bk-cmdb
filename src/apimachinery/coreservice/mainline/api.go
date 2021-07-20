@@ -43,8 +43,8 @@ func (m *mainline) SearchMainlineModelTopo(ctx context.Context, header http.Head
 		blog.Errorf("SearchMainlineModelTopo failed, http failed, err: %s, rid: %s", err.Error(), rid)
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil
@@ -69,8 +69,8 @@ func (m *mainline) SearchMainlineInstanceTopo(ctx context.Context, header http.H
 		blog.Errorf("SearchMainlineInstanceTopo failed, http failed, err: %s, rid: %s", err.Error(), rid)
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil

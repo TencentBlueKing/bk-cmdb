@@ -8,4 +8,4 @@ src/source_controller/*/*controller
 src/source_controller/*/coreservice
 src/web*/*server
 src/web*/cmdb_*
-
+*exvim*

@@ -25,7 +25,7 @@ func TestDecodeSubMap(t *testing.T) {
 
 	ts := metadata.Now()
 	attr := metadata.Attribute{
-		Metadata:   metadata.NewMetaDataFromBusinessID("111"),
+		BizID:      111,
 		LastTime:   &ts,
 		CreateTime: &ts,
 	}
@@ -37,6 +37,6 @@ func TestDecodeSubMap(t *testing.T) {
 	err = bson.Unmarshal(bsonAttr, newAttr)
 	require.NoError(t, err)
 
-	require.Equal(t, attr.Metadata.Label, newAttr.Metadata.Label)
+	require.Equal(t, attr.BizID, newAttr.BizID)
 
 }

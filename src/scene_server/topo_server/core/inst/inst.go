@@ -169,7 +169,6 @@ func (cli *inst) UpdateInstance(filter condition.Condition, data mapstr.MapStr, 
 	// not allowed to update these fields, need to use specialized function
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.BKAppIDField)
-	data.Remove(metadata.BKMetadata)
 	rid := cli.kit.Rid
 	tObj := cli.target.Object()
 	objID := tObj.ObjectID
@@ -339,14 +338,5 @@ func (cli *inst) IsDefault() bool {
 }
 
 func (cli *inst) GetBizID() (int64, error) {
-	switch cli.target.Object().ObjectID {
-	case common.BKInnerObjIDApp:
-		return cli.GetInstID()
-	case common.BKInnerObjIDSet:
-		return util.GetInt64ByInterface(cli.datas[common.BKAppIDField])
-	case common.BKInnerObjIDModule:
-		return util.GetInt64ByInterface(cli.datas[common.BKAppIDField])
-	default:
-		return metadata.ParseBizIDFromData(cli.datas)
-	}
+	return util.GetInt64ByInterface(cli.datas[common.BKAppIDField])
 }

@@ -2,7 +2,7 @@
 
 set -e
 
-proc_num=11
+proc_num=12
 withSynchronizeServer=false 
 
 
@@ -11,7 +11,7 @@ do
     case $opt in 
     "--with-synchronize")
         withSynchronizeServer=true
-        proc_num=$(($proc_num++))
+        proc_num=$(($proc_num+1))
         ;;
     esac
 done

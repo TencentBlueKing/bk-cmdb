@@ -29,14 +29,13 @@ func New(clientSet apimachinery.ClientSetInterface, languageIf language.CCLangua
 }
 
 // CreateClassification create classification objects
-func CreateClassification(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, clsItems []metadata.Classification, metadata *metadata.Metadata) []Classification {
+func CreateClassification(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, clsItems []metadata.Classification) []Classification {
 	results := make([]Classification, 0)
 	for _, cls := range clsItems {
 		results = append(results, &classification{
 			cls:       cls,
 			kit:       kit,
 			clientSet: clientSet,
-			metadata:  metadata,
 		})
 	}
 
@@ -125,8 +124,8 @@ func (cli *factory) CreateAttribute(kit *rest.Kit) AttributeInterface {
 	return attr
 }
 
-func (cli *factory) CreateGroup(kit *rest.Kit, metadata *metadata.Metadata) GroupInterface {
-	return NewGroup(kit, cli.clientSet, metadata)
+func (cli *factory) CreateGroup(kit *rest.Kit, bizID int64) GroupInterface {
+	return NewGroup(kit, cli.clientSet, bizID)
 }
 
 func (cli *factory) CreateMainLineAssociation(kit *rest.Kit, obj Object, asstKey string, asstObj Object) Association {

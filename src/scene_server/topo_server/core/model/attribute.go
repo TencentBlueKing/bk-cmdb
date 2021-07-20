@@ -13,7 +13,6 @@
 package model
 
 import (
-	"context"
 	"encoding/json"
 
 	"configcenter/src/apimachinery"
@@ -56,7 +55,7 @@ func (a *attribute) SetAttribute(attr metadata.Attribute) {
 }
 
 func (a *attribute) IsMainlineField() bool {
-	return a.attr.PropertyID == common.BKInstParentStr || a.attr.PropertyID == common.BKChildStr
+	return a.attr.PropertyID == common.BKInstParentStr
 }
 
 func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
@@ -65,7 +64,7 @@ func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
 	input := metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
 	}
-	rsp, err := a.clientSet.CoreService().Model().ReadModel(context.Background(), a.kit.Header, &input)
+	rsp, err := a.clientSet.CoreService().Model().ReadModel(a.kit.Ctx, a.kit.Header, &input)
 	if nil != err {
 		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), a.kit.Rid)
 		return nil, a.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -114,7 +113,7 @@ func (a *attribute) ToMapStr() (mapstr.MapStr, error) {
 
 func (a *attribute) IsValid(isUpdate bool, data mapstr.MapStr) error {
 
-	if a.attr.PropertyID == common.BKChildStr || a.attr.PropertyID == common.BKInstParentStr {
+	if a.attr.PropertyID == common.BKInstParentStr {
 		return nil
 	}
 
@@ -153,7 +152,7 @@ func (a *attribute) IsValid(isUpdate bool, data mapstr.MapStr) error {
 		}
 
 		option, exists := data.Get(metadata.AttributeFieldOption)
-		if exists && a.isPropertyTypeIntEnumList(propertyType) {
+		if exists && a.isPropertyTypeIntEnumListSingleLong(propertyType) {
 			if err := util.ValidPropertyOption(propertyType, option, a.kit.CCError); nil != err {
 				return err
 			}
@@ -197,6 +196,11 @@ func (a *attribute) Create() error {
 		return a.kit.CCError.New(int(exception.Code), exception.Message)
 	}
 
+	if len(rsp.Data.Repeated) > 0 {
+		blog.ErrorJSON("create model attrs failed, the attr is duplicated, ObjectID: %s, input: %s, rid: %s", a.attr.ObjectID, input, a.kit.Rid)
+		return a.kit.CCError.CCError(common.CCErrorAttributeNameDuplicated)
+	}
+
 	if len(rsp.Data.Created) != 1 {
 		blog.ErrorJSON("create model attrs created amount error, ObjectID: %s, input: %s, rid: %s", a.attr.ObjectID, input, a.kit.Rid)
 		return a.kit.CCError.CCError(common.CCErrTopoObjectAttributeCreateFailed)
@@ -230,7 +234,7 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(a.attr.ID).ToMapStr(),
 		Data:      data,
 	}
-	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrs(context.Background(), a.kit.Header, a.attr.ObjectID, &input)
+	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrs(a.kit.Ctx, a.kit.Header, a.attr.ObjectID, &input)
 	if nil != err {
 		blog.Errorf("failed to request object controller, err: %s, rid: %s", err.Error(), a.kit.Rid)
 		return err
@@ -244,7 +248,7 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 }
 func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, error) {
 
-	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(context.Background(), a.kit.Header, a.attr.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(a.kit.Ctx, a.kit.Header, a.attr.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request to object controller, err: %s, rid: %s", err.Error(), a.kit.Rid)
 		return nil, err
@@ -321,7 +325,7 @@ func (a *attribute) GetGroup() (GroupInterface, error) {
 	cond.Field(metadata.GroupFieldGroupID).Eq(a.attr.PropertyGroup)
 	cond.Field(metadata.GroupFieldObjectID).Eq(a.attr.ObjectID)
 
-	rsp, err := a.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), a.kit.Header, a.attr.ObjectID, metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := a.clientSet.CoreService().Model().ReadAttributeGroup(a.kit.Ctx, a.kit.Header, a.attr.ObjectID, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-grp] failed to request the coreservice, err: %s, rid: %s", err.Error(), a.kit.Rid)
 		return nil, a.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -333,7 +337,7 @@ func (a *attribute) GetGroup() (GroupInterface, error) {
 	}
 
 	if 0 == len(rsp.Data.Info) {
-		return CreateGroup(a.kit, a.clientSet, []metadata.Group{metadata.Group{GroupID: "default", GroupName: "Default", OwnerID: a.attr.OwnerID, ObjectID: a.attr.ObjectID}})[0], nil
+		return CreateGroup(a.kit, a.clientSet, []metadata.Group{{GroupID: "default", GroupName: "Default", OwnerID: a.attr.OwnerID, ObjectID: a.attr.ObjectID}})[0], nil
 	}
 
 	return CreateGroup(a.kit, a.clientSet, rsp.Data.Info)[0], nil // should be one group
@@ -343,9 +347,11 @@ func (a *attribute) SetSupplierAccount(supplierAccount string) {
 	a.attr.OwnerID = supplierAccount
 }
 
-func (a *attribute) isPropertyTypeIntEnumList(propertyType string) bool {
+func (a *attribute) isPropertyTypeIntEnumListSingleLong(propertyType string) bool {
 	switch propertyType {
 	case common.FieldTypeInt, common.FieldTypeEnum, common.FieldTypeList:
+		return true
+	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
 		return true
 	default:
 		return false

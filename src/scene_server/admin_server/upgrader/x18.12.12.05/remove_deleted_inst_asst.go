@@ -25,13 +25,13 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-    "configcenter/src/storage/dal/types"
+	"configcenter/src/storage/dal/types"
 
-    "github.com/rs/xid"
+	"github.com/rs/xid"
 )
 
 var (
-	limit         = uint64(2000)
+	limit = uint64(2000)
 )
 
 func removeDeletedInstAsst(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {

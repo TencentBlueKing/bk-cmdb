@@ -17,7 +17,7 @@ import (
 
 	"configcenter/src/common/backbone"
 	"configcenter/src/storage/dal"
-	"configcenter/src/thirdpartyclient/esbserver"
+	"configcenter/src/thirdparty/esbserver"
 )
 
 // Logics framwork need

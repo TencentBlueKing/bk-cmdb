@@ -18,8 +18,7 @@ import (
 	"os"
 
 	"configcenter/src/common"
-	"configcenter/src/common/backbone/configcenter"
-	"configcenter/src/storage/dal/mongo"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/storage/dal/mongo/local"
 
 	"github.com/spf13/pflag"
@@ -66,11 +65,13 @@ func Parse(args []string) error {
 	}
 
 	// read config
-	config, err := configcenter.ParseConfigWithFile(configPosition)
-	if nil != err {
+    if err := cc.SetMigrateFromFile(configPosition); err != nil {
 		return fmt.Errorf("parse config file error %s", err.Error())
 	}
-	mongoConfig := mongo.ParseConfigFromKV("mongodb", config.ConfigMap)
+	mongoConfig, err := cc.Mongo("mongodb")
+	if err != nil {
+		return err
+	}
 
 	// connect to mongo db
 	db, err := local.NewMgo(mongoConfig.GetMongoConf(), 0)

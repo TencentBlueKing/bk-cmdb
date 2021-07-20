@@ -19,18 +19,16 @@ import (
 	"configcenter/src/common/universalsql/mongo"
 )
 
-func (g *modelAttributeGroup) groupIDIsExists(kit *rest.Kit, objID, groupID string, meta metadata.Metadata) (oneResult metadata.Group, isExists bool, err error) {
+func (g *modelAttributeGroup) groupIDIsExists(kit *rest.Kit, objID, groupID string, modelBizID int64) (oneResult metadata.Group, isExists bool, err error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldGroupID, Val: groupID})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: kit.SupplierAccount})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
-	exist, bizID := meta.Label.Get(common.BKAppIDField)
-	if exist {
-		_, metaCond := cond.Embed(metadata.BKMetadata)
-		_, labelCond := metaCond.Embed(metadata.BKLabel)
-		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+	if modelBizID > 0 {
+		cond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: modelBizID})
 	}
+
 	groups, err := g.search(kit, cond)
 	if nil != err {
 		return oneResult, isExists, err
@@ -43,18 +41,16 @@ func (g *modelAttributeGroup) groupIDIsExists(kit *rest.Kit, objID, groupID stri
 	return oneResult, isExists, nil
 }
 
-func (g *modelAttributeGroup) groupNameIsExists(kit *rest.Kit, objID, groupName string, meta metadata.Metadata) (oneResult metadata.Group, isExists bool, err error) {
+func (g *modelAttributeGroup) groupNameIsExists(kit *rest.Kit, objID, groupName string, modelBizID int64) (oneResult metadata.Group, isExists bool, err error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldGroupName, Val: groupName})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: kit.SupplierAccount})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
-	exist, bizID := meta.Label.Get(common.BKAppIDField)
-	if exist {
-		_, metaCond := cond.Embed(metadata.BKMetadata)
-		_, labelCond := metaCond.Embed(metadata.BKLabel)
-		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+	if modelBizID > 0 {
+		cond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: modelBizID})
 	}
+
 	groups, err := g.search(kit, cond)
 	if nil != err {
 		return oneResult, isExists, err

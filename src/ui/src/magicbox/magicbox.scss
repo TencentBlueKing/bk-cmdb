@@ -5,6 +5,17 @@
     &.is-disabled {
         background-color: #fafbfd !important;
         border-color: #dcdee5 !important;
+        .bk-select-name {
+            color: $textDisabledColor;
+        }
+    }
+    &.bk-select-small {
+        .bk-select-loading {
+            top: 4px;
+        }
+    }
+    &.is-default-trigger.is-unselected:before {
+        font-size: 12px;
     }
 }
 
@@ -70,13 +81,14 @@
         border-bottom: none;
         tr.bk-table-row-last {
             td.is-last {
-                border-bottom: 1px solid  #dfe0e5;
+                border-bottom: 1px solid #dfe0e5;
             }
         }
     }
     .bk-table-body {
         .is-highlight {
             color: #3A84FF;
+            cursor: pointer;
         }
         tr.hover-row>td {
             background-color: #f0f1f5;
@@ -87,9 +99,18 @@
             top: 15px;
         }
     }
+    .bk-loading {
+        border: 1px solid #dfe0e5;
+        border-top: none;
+        border-left: none;
+    }
+    .user-selector.user-selector-info {
+        font-size: 12px;
+    }
 }
 
 .bk-big-tree {
+    position: relative;
     .bk-big-tree-node:not(.has-link-line) {
         height: 36px;
         line-height: 36px;
@@ -119,6 +140,13 @@
             background-color: #dcdee5;
             border-radius: 3px;
         }
+    }
+    .bk-big-tree-empty {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
     }
 }
 
@@ -176,8 +204,45 @@
     }
 }
 
+.bk-popconfirm-content {
+    .popconfirm-operate {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        button {
+            margin: 0 5px;
+            &.default-operate-button {
+                padding: 0;
+            }
+        }
+        .popconfirm-split {
+            position: static;
+        }
+    }
+}
 .bk-dropdown-menu {
     vertical-align: middle;
+}
+
+.bk-form-control.control-disable {
+    .bk-textarea-wrapper {
+        border-color: #dcdee5;
+    }
+}
+
+.bk-form-checkbox[size=small] {
+    .bk-checkbox {
+        width: 12px;
+        height: 12px;
+    }
+    .bk-checkbox-text {
+        font-size: 12px;
+    }
+    &.is-checked .bk-checkbox:after{
+        left: 3px;
+        width: 2px;
+        height: 6px;
+    }
 }
 
 // 覆盖人员选择器的样式，避免影响magicbox

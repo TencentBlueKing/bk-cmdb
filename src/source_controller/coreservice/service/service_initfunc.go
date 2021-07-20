@@ -183,18 +183,38 @@ func (s *coreService) host(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/host/{bk_host_id}", Handler: s.GetHostByID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/search", Handler: s.GetHosts})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/host/snapshot/{bk_host_id}", Handler: s.GetHostSnap})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host/snapshot/batch", Handler: s.GetHostSnapBatch})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host/lock", Handler: s.LockHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/host/lock", Handler: s.UnlockHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/host/lock/search", Handler: s.QueryLockHost})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/userapi", Handler: s.AddUserConfig})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/userapi/{bk_biz_id}/{id}", Handler: s.UpdateUserConfig})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/userapi/{bk_biz_id}/{id}", Handler: s.DeleteUserConfig})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/userapi/search", Handler: s.GetUserConfig})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/userapi/detail/{bk_biz_id}/{id}", Handler: s.UserConfigDetail})
+	// dynamic grouping handlers.
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/create/dynamicgroup",
+		Handler: s.CreateDynamicGroup,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPut,
+		Path:    "/update/dynamicgroup/{bk_biz_id}/{id}",
+		Handler: s.UpdateDynamicGroup,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodGet,
+		Path:    "/find/dynamicgroup/{bk_biz_id}/{id}",
+		Handler: s.GetDynamicGroup,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodDelete,
+		Path:    "/delete/dynamicgroup/{bk_biz_id}/{id}",
+		Handler: s.DeleteDynamicGroup,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/dynamicgroup/search",
+		Handler: s.SearchDynamicGroup,
+	})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/usercustom/{bk_user}", Handler: s.AddUserCustom})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/usercustom/{bk_user}/{id}", Handler: s.UpdateUserCustomByID})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/usercustom/user/search/{bk_user}", Handler: s.GetUserCustomByUser})
@@ -211,8 +231,10 @@ func (s *coreService) host(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/list_hosts", Handler: s.ListHosts})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/hosts/cloudarea_field", Handler: s.UpdateHostCloudAreaField})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloudarea/hostcount", Handler: s.FindCloudAreaHostCount})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/distinct/host_id/topology/relation", Handler: s.GetDistinctHostIDsByTopoRelation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/transfer/resource/directory", Handler: s.TransferHostResourceDirectory})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -298,23 +320,6 @@ func (s *coreService) transaction(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
-func (s *coreService) initCache(web *restful.WebService) {
-	utility := rest.NewRestUtility(rest.Config{
-		ErrorIf:  s.engine.CCErr,
-		Language: s.engine.Language,
-	})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/topotree", Handler: s.SearchTopologyTreeInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/host/with_inner_ip", Handler: s.SearchHostWithInnerIPInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/host/with_host_id", Handler: s.SearchHostWithHostIDInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cache/host/with_host_id", Handler: s.ListHostWithHostIDInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/biz/{bk_biz_id}", Handler: s.SearchBusinessInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/set/{bk_set_id}", Handler: s.SearchSetInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/module/{bk_module_id}", Handler: s.SearchModuleInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/{bk_obj_id}/{bk_inst_id}", Handler: s.SearchCustomLayerInCache})
-
-	utility.AddToRestfulWebService(web)
-}
-
 func (s *coreService) initCount(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.engine.CCErr,
@@ -322,6 +327,65 @@ func (s *coreService) initCount(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/resource/count", Handler: s.GetCountByFilter})
+
+	utility.AddToRestfulWebService(web)
+}
+
+func (s *coreService) initCloudSync(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloud/account", Handler: s.CreateAccount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/account", Handler: s.SearchAccount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/cloud/account/{bk_account_id}", Handler: s.UpdateAccount})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloud/account/{bk_account_id}", Handler: s.DeleteAccount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/accountconf", Handler: s.SearchAccountConf})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloud/sync/task", Handler: s.CreateSyncTask})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/sync/task", Handler: s.SearchSyncTask})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/cloud/sync/task/{bk_task_id}", Handler: s.UpdateSyncTask})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloud/sync/task/{bk_task_id}", Handler: s.DeleteSyncTask})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloud/sync/history", Handler: s.CreateSyncHistory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/sync/history", Handler: s.SearchSyncHistory})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloud/sync/destroyed_host_related", Handler: s.DeleteDestroyedHostRelated})
+
+	utility.AddToRestfulWebService(web)
+}
+
+func (s *coreService) initAuth(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/auth/resource", Handler: s.SearchAuthResource})
+
+	utility.AddToRestfulWebService(web)
+}
+
+func (s *coreService) initEvent(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/subscribe", Handler: s.Subscribe})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/subscribe/{subscribeID}", Handler: s.UnSubscribe})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/subscribe/{subscribeID}", Handler: s.UpdateSubscription})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/subscribe", Handler: s.ListSubscriptions})
+
+	utility.AddToRestfulWebService(web)
+}
+
+func (s *coreService) initCommon(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/common/distinct_field", Handler: s.GetDistinctField})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -347,5 +411,8 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initHostApplyRule(web)
 	s.transaction(web)
 	s.initCount(web)
-	s.initCache(web)
+	s.initCloudSync(web)
+	s.initAuth(web)
+	s.initEvent(web)
+	s.initCommon(web)
 }

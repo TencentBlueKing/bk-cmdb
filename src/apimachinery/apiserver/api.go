@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 func (a *apiServer) Client() rest.ClientInterface {
@@ -59,7 +58,7 @@ func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header, ownerID
 
 func (a *apiServer) GetObjectData(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ObjectAttrBatchResult, err error) {
 	resp = new(metadata.ObjectAttrBatchResult)
-	subPath := "object/search/batch"
+	subPath := "/findmany/object"
 
 	err = a.client.Post().
 		WithContext(ctx).
@@ -71,10 +70,24 @@ func (a *apiServer) GetObjectData(ctx context.Context, h http.Header, params map
 	return
 }
 
-func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
+func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
 
 	resp = new(metadata.QueryInstResult)
 	subPath := "/find/instance/object/%s"
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (a *apiServer) GetInstUniqueFields(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
+
+	resp = new(metadata.QueryInstResult)
+	subPath := "/find/instance/object/%s/unique_fields"
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(params).
@@ -185,12 +198,42 @@ func (a *apiServer) AddHost(ctx context.Context, h http.Header, params mapstr.Ma
 	return
 }
 
+func (a *apiServer) AddHostByExcel(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
+
+	resp = new(metadata.ResponseDataMapStr)
+	subPath := "hosts/excel/add"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (a *apiServer) UpdateHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
 	resp = new(metadata.ResponseDataMapStr)
 	subPath := "hosts/update"
 
 	err = a.client.Put().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (a *apiServer) GetHostModuleRelation(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.HostModuleResp, err error) {
+
+	resp = new(metadata.HostModuleResp)
+	subPath := "/hosts/modules/read"
+
+	err = a.client.Post().
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
@@ -207,17 +250,16 @@ func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID s
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(params).
-		SubResourcef(subPath, ownerID, objID).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.Response, err error) {
-
+func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "object/batch"
+	subPath := "/createmany/object"
 
 	err = a.client.Post().
 		WithContext(ctx).
@@ -244,27 +286,9 @@ func (a *apiServer) SearchAssociationInst(ctx context.Context, h http.Header, re
 	return
 }
 
-func (a *apiServer) SearchInsts(ctx context.Context, h http.Header, objID string, cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
-	resp = new(metadata.ResponseInstData)
-	input := &metadata.SearchAssociationInstRequest{
-		Condition: cond.ToMapStr(),
-	}
-	subPath := "/inst/search/owner/%s/object/%s"
-
-	err = a.client.Post().
-		WithContext(ctx).
-		Body(input).
-		SubResourcef(subPath, util.GetOwnerID(h), objID).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	return
-}
-
 func (a *apiServer) ImportAssociation(ctx context.Context, h http.Header, objID string, input *metadata.RequestImportAssociation) (resp *metadata.ResponeImportAssociation, err error) {
 	resp = new(metadata.ResponeImportAssociation)
-	subPath := "/inst/association/action/%s/import"
+	subPath := "/import/instassociation/%s"
 
 	err = a.client.Post().
 		WithContext(ctx).

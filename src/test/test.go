@@ -26,6 +26,7 @@ var clientSet apimachinery.ClientSetInterface
 var tConfig TestConfig
 var reportUrl string
 var reportDir string
+var db *local.Mongo
 
 type TestConfig struct {
 	ZkAddr         string
@@ -67,6 +68,15 @@ func init() {
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
 	client := zk.NewZkClient(tConfig.ZkAddr, 40*time.Second)
+	var err error
+	mongoConfig := local.MongoConf{
+		MaxOpenConns: mongo.DefaultMaxOpenConns,
+		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		URI:          tConfig.MongoURI,
+		RsName:       tConfig.MongoRsName,
+	}
+	db, err = local.NewMgo(mongoConfig, time.Minute)
+	Expect(err).Should(BeNil())
 	Expect(client.Start()).Should(BeNil())
 	Expect(client.Ping()).Should(BeNil())
 	disc, err := discovery.NewServiceDiscovery(client)
@@ -94,7 +104,6 @@ func GetTestConfig() TestConfig {
 func GetHeader() http.Header {
 	header := make(http.Header)
 	header.Add(common.BKHTTPOwnerID, "0")
-	header.Add(common.BKSupplierIDField, "0")
 	header.Add(common.BKHTTPHeaderUser, "admin")
 	header.Add("Content-Type", "application/json")
 	return header
@@ -130,4 +139,8 @@ func GetReportDir() string {
 		reportDir = reportDir + "/"
 	}
 	return reportDir
+}
+
+func GetDB() *local.Mongo {
+	return db
 }

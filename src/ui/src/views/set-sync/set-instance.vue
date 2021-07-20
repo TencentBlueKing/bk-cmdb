@@ -1,166 +1,167 @@
 <template>
-    <div class="set-instance-layout"
-        :class="{
-            'borderBottom': !localExpand,
-            'cant-sync': !canSyncStatus
-        }">
-        <div class="title" @click="localExpand = !localExpand">
-            <div class="left-info">
-                <i class="bk-icon icon-right-shape" :class="{ 'is-expand': localExpand }"></i>
-                <h2 :class="['path', { 'is-read': hasRead }]">{{topoPath}}</h2>
-                <span class="sync-status-tips" v-if="!canSyncStatus">{{$t('不可同步')}}</span>
-            </div>
-            <i class="bk-icon icon-close"
-                v-if="iconClose"
-                v-bk-tooltips="$t('本次不同步')"
-                @click.stop="handleClose">
-            </i>
-        </div>
-        <cmdb-collapse-transition>
-            <div class="main clearfix" v-show="localExpand">
-                <div class="sync fl">
-                    <h3>{{$t('同步前')}}</h3>
-                    <div class="sync-main fl">
-                        <div class="sync-title"
-                            :class="{ 'is-expand': beforeSyncExpand }"
-                            :title="setDeatails.bk_set_name"
-                            @click.stop="beforeSyncExpand = !beforeSyncExpand">
-                            <i class="bk-icon icon-right-shape"></i>
-                            <i class="sync-icon">{{$i18n.locale === 'en' ? 's' : '集'}}</i>
-                            <span class="set-name">{{setDeatails.bk_set_name}}</span>
-                        </div>
-                        <cmdb-collapse-transition>
-                            <div v-show="beforeSyncExpand">
-                                <ul class="sync-info">
-                                    <li class="mt15"
-                                        v-for="_module in beforeChangeList"
-                                        :key="_module.bk_module_id"
-                                        :title="_module.bk_module_name">
-                                        <i class="sync-icon">{{$i18n.locale === 'en' ? 'm' : '模'}}</i>
-                                        <span class="name">{{_module.bk_module_name}}</span>
-                                    </li>
-                                </ul>
-                            </div>
-                        </cmdb-collapse-transition>
-                    </div>
-                </div>
-                <div class="sync fl sync-after">
-                    <h3>{{$t('同步后')}}</h3>
-                    <div class="sync-main fl">
-                        <div class="sync-title"
-                            :class="{ 'is-expand': afterSyncExpand }"
-                            :title="setDeatails.bk_set_name"
-                            @click.stop="afterSyncExpand = !afterSyncExpand">
-                            <i class="bk-icon icon-right-shape"></i>
-                            <i class="sync-icon">{{$i18n.locale === 'en' ? 's' : '集'}}</i>
-                            <span class="set-name">{{setDeatails.bk_set_name}}</span>
-                        </div>
-                        <cmdb-collapse-transition>
-                            <div v-show="afterSyncExpand">
-                                <ul class="sync-info">
-                                    <li v-for="_module in instance.module_diffs"
-                                        :key="_module.bk_module_id + _module.bk_module_name"
-                                        :class="['mt15', {
-                                            'has-delete': _module.diff_type === 'remove',
-                                            'has-changed': _module.diff_type === 'changed',
-                                            'new-add': _module.diff_type === 'add'
-                                        }]">
-                                        <i class="sync-icon" :title="_module.bk_module_name">{{$i18n.locale === 'en' ? 'm' : '模'}}</i>
-                                        <span class="name" :title="_module.bk_module_name">{{_module.bk_module_name}}</span>
-                                        <div class="tips" v-if="_module.diff_type === 'remove' && existHost(_module.bk_module_id)">
-                                            <i class="bk-icon icon-exclamation"></i>
-                                            <i18n path="存在主机不可同步提示" tag="p">
-                                                <span place="btn" class="view-btn" @click="handleViewModule(_module.bk_module_id)">{{$t('跳转查看')}}</span>
-                                            </i18n>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                        </cmdb-collapse-transition>
-                    </div>
-                </div>
-            </div>
-        </cmdb-collapse-transition>
+  <div class="set-instance-layout"
+    :class="{
+      'borderBottom': !localExpand,
+      'cant-sync': !canSyncStatus
+    }">
+    <div class="title" @click="localExpand = !localExpand">
+      <div class="left-info">
+        <i class="bk-icon icon-right-shape" :class="{ 'is-expand': localExpand }"></i>
+        <h2 :class="['path', { 'is-read': hasRead }]">{{topoPath}}</h2>
+        <span class="sync-status-tips" v-if="!canSyncStatus">{{$t('不可同步')}}</span>
+      </div>
+      <i class="bk-icon icon-close"
+        v-if="iconClose"
+        v-bk-tooltips="$t('本次不同步')"
+        @click.stop="handleClose">
+      </i>
     </div>
+    <cmdb-collapse-transition>
+      <div class="main clearfix" v-show="localExpand">
+        <div class="sync fl">
+          <h3>{{$t('同步前')}}</h3>
+          <div class="sync-main fl">
+            <div class="sync-title"
+              :class="{ 'is-expand': beforeSyncExpand }"
+              :title="setDeatails.bk_set_name"
+              @click.stop="beforeSyncExpand = !beforeSyncExpand">
+              <i class="bk-icon icon-right-shape"></i>
+              <i class="sync-icon">{{$i18n.locale === 'en' ? 's' : '集'}}</i>
+              <span class="set-name">{{setDeatails.bk_set_name}}</span>
+            </div>
+            <cmdb-collapse-transition>
+              <div v-show="beforeSyncExpand">
+                <ul class="sync-info">
+                  <li class="mt15"
+                    v-for="_module in beforeChangeList"
+                    :key="_module.bk_module_id"
+                    :title="_module.bk_module_name">
+                    <i class="sync-icon">{{$i18n.locale === 'en' ? 'm' : '模'}}</i>
+                    <span class="name">{{_module.bk_module_name}}</span>
+                  </li>
+                </ul>
+              </div>
+            </cmdb-collapse-transition>
+          </div>
+        </div>
+        <div class="sync fl sync-after">
+          <h3>{{$t('同步后')}}</h3>
+          <div class="sync-main fl">
+            <div class="sync-title"
+              :class="{ 'is-expand': afterSyncExpand }"
+              :title="setDeatails.bk_set_name"
+              @click.stop="afterSyncExpand = !afterSyncExpand">
+              <i class="bk-icon icon-right-shape"></i>
+              <i class="sync-icon">{{$i18n.locale === 'en' ? 's' : '集'}}</i>
+              <span class="set-name">{{setDeatails.bk_set_name}}</span>
+            </div>
+            <cmdb-collapse-transition>
+              <div v-show="afterSyncExpand">
+                <ul class="sync-info">
+                  <li v-for="_module in instance.module_diffs"
+                    :key="_module.bk_module_id + _module.bk_module_name"
+                    :class="['mt15', {
+                      'has-delete': _module.diff_type === 'remove',
+                      'has-changed': _module.diff_type === 'changed',
+                      'new-add': _module.diff_type === 'add'
+                    }]">
+                    <i class="sync-icon" :title="_module.bk_module_name">{{$i18n.locale === 'en' ? 'm' : '模'}}</i>
+                    <span class="name" :title="_module.bk_module_name">{{_module.bk_module_name}}</span>
+                    <div class="tips" v-if="_module.diff_type === 'remove' && existHost(_module.bk_module_id)">
+                      <i class="bk-icon icon-exclamation"></i>
+                      <i18n path="存在主机不可同步提示" tag="p">
+                        <span place="btn" class="view-btn"
+                          @click="handleViewModule(_module.bk_module_id)">
+                          {{$t('跳转查看')}}
+                        </span>
+                      </i18n>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </cmdb-collapse-transition>
+          </div>
+        </div>
+      </div>
+    </cmdb-collapse-transition>
+  </div>
 </template>
 
 <script>
-    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
-    export default {
-        props: {
-            instance: {
-                type: Object,
-                required: true
-            },
-            expand: {
-                type: Boolean,
-                default: false
-            },
-            iconClose: {
-                type: Boolean,
-                default: true
-            },
-            moduleHostCount: {
-                type: Object,
-                default: () => ({})
-            }
-        },
-        data () {
-            return {
-                localExpand: this.expand,
-                beforeSyncExpand: true,
-                afterSyncExpand: true,
-                hasRead: this.expand
-            }
-        },
-        computed: {
-            beforeChangeList () {
-                return this.instance.module_diffs.filter(_module => _module.diff_type !== 'add')
-            },
-            setDeatails () {
-                return this.instance.set_detail
-            },
-            topoPath () {
-                const path = this.instance.topo_path
-                if (path.length) {
-                    const topoPath = this.$tools.clone(path)
-                    return topoPath.reverse().map(path => path.bk_inst_name).join(' / ')
-                }
-                return '--'
-            },
-            canSyncStatus () {
-                for (const _module of this.instance.module_diffs) {
-                    if (_module.diff_type === 'remove' && this.moduleHostCount[_module.bk_module_id] > 0) {
-                        return false
-                    }
-                }
-                return true
-            }
-        },
-        watch: {
-            localExpand (value) {
-                if (value && !this.hasRead) {
-                    this.hasRead = true
-                }
-            }
-        },
-        methods: {
-            existHost (moduleId) {
-                return this.moduleHostCount[moduleId] > 0
-            },
-            handleClose () {
-                this.$emit('close', this.instance.bk_set_id)
-            },
-            handleViewModule (moduleId) {
-                this.$routerActions.redirect({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE,
-                    query: {
-                        node: `module-${moduleId}`
-                    }
-                })
-            }
+  import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+  export default {
+    props: {
+      instance: {
+        type: Object,
+        required: true
+      },
+      expand: {
+        type: Boolean,
+        default: false
+      },
+      iconClose: {
+        type: Boolean,
+        default: true
+      },
+      moduleHostCount: {
+        type: Object,
+        default: () => ({})
+      }
+    },
+    data() {
+      return {
+        localExpand: this.expand,
+        beforeSyncExpand: true,
+        afterSyncExpand: true,
+        hasRead: this.expand
+      }
+    },
+    computed: {
+      beforeChangeList() {
+        return this.instance.module_diffs.filter(_module => _module.diff_type !== 'add')
+      },
+      setDeatails() {
+        return this.instance.set_detail
+      },
+      topoPath() {
+        const path = this.instance.topo_path
+        if (path.length) {
+          const topoPath = this.$tools.clone(path)
+          return topoPath.reverse().map(path => path.bk_inst_name)
+            .join(' / ')
         }
+        return '--'
+      },
+      canSyncStatus() {
+        const hasRemoveType = this.instance.module_diffs.some(module => module.diff_type === 'remove' && this.moduleHostCount[module.bk_module_id] > 0)
+        if (hasRemoveType) return false
+        return true
+      }
+    },
+    watch: {
+      localExpand(value) {
+        if (value && !this.hasRead) {
+          this.hasRead = true
+        }
+      }
+    },
+    methods: {
+      existHost(moduleId) {
+        return this.moduleHostCount[moduleId] > 0
+      },
+      handleClose() {
+        this.$emit('close', this.instance.bk_set_id)
+      },
+      handleViewModule(moduleId) {
+        this.$routerActions.redirect({
+          name: MENU_BUSINESS_HOST_AND_SERVICE,
+          query: {
+            node: `module-${moduleId}`
+          }
+        })
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

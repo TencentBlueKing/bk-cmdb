@@ -21,17 +21,17 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	"gopkg.in/redis.v5"
 )
 
 var Engine *backbone.Engine
-var CacheCli *redis.Client
+var CacheCli redis.Client
 
 // ValidLogin valid the user login status
 func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.HandlerFunc {
@@ -55,12 +55,10 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 			session := sessions.Default(c)
 			userName, _ := session.Get(common.WEBSessionUinKey).(string)
 			ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
-			supplierID, _ := session.Get(common.WEBSessionSupplierID).(string)
 			language := webCommon.GetLanguageByHTTPRequest(c)
 			c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
 			c.Request.Header.Add(common.BKHTTPLanguage, language)
 			c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
-			c.Request.Header.Add(common.BKHTTPSupplierID, supplierID)
 
 			if path1 == "api" {
 				servers, err := disc.ApiServer().GetServers()
@@ -119,12 +117,6 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 	// check owner_uin
 	ownerID, ok := session.Get(common.WEBSessionOwnerUinKey).(string)
 	if !ok || "" == ownerID {
-		return user.LoginUser(c)
-	}
-
-	// check supplier_id
-	supplierID, ok := session.Get(common.WEBSessionSupplierID).(string)
-	if !ok || "" == supplierID {
 		return user.LoginUser(c)
 	}
 

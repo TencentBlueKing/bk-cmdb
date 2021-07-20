@@ -177,9 +177,9 @@ type Association struct {
 
 func getAddAsstData(ownerID string) []Association {
 	dataRows := []Association{
-		{OwnerID: ownerID, ObjectID: common.BKInnerObjIDSet, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDApp},
-		{OwnerID: ownerID, ObjectID: common.BKInnerObjIDModule, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDSet},
-		{OwnerID: ownerID, ObjectID: common.BKInnerObjIDHost, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDModule},
+		{OwnerID: ownerID, ObjectID: common.BKInnerObjIDSet, ObjectAttID: "bk_childid", AsstObjID: common.BKInnerObjIDApp},
+		{OwnerID: ownerID, ObjectID: common.BKInnerObjIDModule, ObjectAttID: "bk_childid", AsstObjID: common.BKInnerObjIDSet},
+		{OwnerID: ownerID, ObjectID: common.BKInnerObjIDHost, ObjectAttID: "bk_childid", AsstObjID: common.BKInnerObjIDModule},
 		{OwnerID: ownerID, ObjectID: common.BKInnerObjIDHost, ObjectAttID: common.BKCloudIDField, AsstObjID: common.BKInnerObjIDPlat},
 	}
 	return dataRows

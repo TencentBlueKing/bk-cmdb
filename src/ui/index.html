@@ -26,10 +26,11 @@
             version: <%= htmlWebpackPlugin.options.config.API_VERSION %>,
             login: <%= htmlWebpackPlugin.options.config.API_LOGIN %>,
             agent: <%= htmlWebpackPlugin.options.config.AGENT_URL %>,
-            authscheme: <%= htmlWebpackPlugin.options.config.AUTH_SCHEME %> || 'internal',
-            authCenter: <%= htmlWebpackPlugin.options.config.AUTH_CENTER %>,
+            authscheme: <%= htmlWebpackPlugin.options.config.AUTH_SCHEME || 'internal' %>,
             buildVersion: '<%= htmlWebpackPlugin.options.config.BUILD_VERSION %>',
-            fullTextSearch: <%= htmlWebpackPlugin.options.config.FULL_TEXT_SEARCH %> || 'off'
+            fullTextSearch: <%= htmlWebpackPlugin.options.config.FULL_TEXT_SEARCH || 'off' %>,
+            helpDocUrl: <%= htmlWebpackPlugin.options.config.HELP_DOC_URL || null %>,
+            disableOperationStatistic: <%= htmlWebpackPlugin.options.config.DISABLE_OPERATION_STATISTIC || false %>
         }
         window.User = {
             admin: <%= htmlWebpackPlugin.options.config.USER_ROLE %>,

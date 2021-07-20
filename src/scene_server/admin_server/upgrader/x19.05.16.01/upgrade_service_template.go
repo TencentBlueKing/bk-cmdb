@@ -15,6 +15,7 @@ package x19_05_16_01
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -26,6 +27,9 @@ import (
 	"configcenter/src/common/selector"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
+
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type ProcessInstanceRelation struct {
@@ -71,7 +75,7 @@ type ProcessTemplate struct {
 
 	// stores a process instance's data includes all the process's
 	// properties's value.
-	Property *metadata.ProcessProperty `field:"property" json:"property,omitempty" bson:"property"`
+	Property *ProcessProperty `field:"property" json:"property,omitempty" bson:"property"`
 
 	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
 	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
@@ -88,8 +92,8 @@ type ServiceInstance struct {
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
-	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id"`
-	HostID            int64  `field:"bk_host_id" json:"bk_host_id,omitempty" bson:"bk_host_id"`
+	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id"`
+	HostID            int64 `field:"bk_host_id" json:"bk_host_id,omitempty" bson:"bk_host_id"`
 
 	// the module that this service belongs to.
 	ModuleID int64 `field:"bk_module_id" json:"bk_module_id,omitempty" bson:"bk_module_id"`
@@ -132,6 +136,12 @@ type Process struct {
 }
 
 func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	mongo, ok := db.(*local.Mongo)
+	if !ok {
+		return fmt.Errorf("db is not *local.Mongo type")
+	}
+	dbc := mongo.GetDBClient()
+
 	categoryID, err := addDefaultCategory(ctx, db, conf)
 	if err != nil {
 		return fmt.Errorf("addDefaultCategory failed: %v", err)
@@ -147,7 +157,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 		return err
 	}
 
-	// bizID:modulename:modules
+	// bizID:moduleName:modules
 	biz2Module := map[int64]map[string][]metadata.ModuleInst{}
 	for _, module := range allmodules {
 		_, ok := biz2Module[module.BizID]
@@ -157,9 +167,18 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 		biz2Module[module.BizID][module.ModuleName] = append(biz2Module[module.BizID][module.ModuleName], module)
 	}
 
+	hostMap := make(map[int64]map[string]interface{}, 0)
+
 	for bizID, bizModules := range biz2Module {
 		ownerID := common.BKDefaultOwnerID
-		for modulename, modules := range bizModules {
+
+		svcTemplateIDs, err := db.NextSequences(ctx, common.BKTableNameServiceTemplate, len(bizModules))
+		if err != nil {
+			return err
+		}
+		svcTemplateIndex := 0
+
+		for moduleName, modules := range bizModules {
 			if len(modules) == 0 {
 				continue
 			}
@@ -168,9 +187,9 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 				ownerID = modules[0].SupplierAccount
 			}
 
-			processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKModuleNameField: modulename}
+			processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKModuleNameField: moduleName}
 			processMappingInModule := make([]metadata.ProcessModule, 0)
-			if err = db.Table(common.BKTableNameProcModule).Find(processMappingInModuleCond).All(ctx, &processMappingInModule); err != nil {
+			if err = db.Table("cc_Proc2Module").Find(processMappingInModuleCond).All(ctx, &processMappingInModule); err != nil {
 				return err
 			}
 			if len(processMappingInModule) <= 0 {
@@ -178,15 +197,14 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 				continue
 			}
 
+			svcTemplateID := svcTemplateIDs[svcTemplateIndex]
+			svcTemplateIndex++
+
 			// build service template
-			svcTemplateID, err := db.NextSequence(ctx, common.BKTableNameServiceTemplate)
-			if err != nil {
-				return err
-			}
 			serviceTemplate := ServiceTemplate{
 				Metadata:          metadata.NewMetadata(bizID),
 				ID:                int64(svcTemplateID),
-				Name:              modulename,
+				Name:              moduleName,
 				ServiceCategoryID: categoryID,
 				Creator:           conf.User,
 				Modifier:          conf.User,
@@ -228,11 +246,12 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 			}
 
 			inst2ProcessInstTemplate := map[int64]ProcessTemplate{}
-			for _, oldInst := range oldProcess {
-				procTemplateID, err := db.NextSequence(ctx, common.BKTableNameProcessTemplate)
-				if err != nil {
-					return err
-				}
+			procTemplateIDs, err := db.NextSequences(ctx, common.BKTableNameProcessTemplate, len(oldProcess))
+			if err != nil {
+				return err
+			}
+
+			for index, oldInst := range oldProcess {
 
 				procName := ""
 				if oldInst.ProcessName != nil {
@@ -244,7 +263,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 
 				procTemplate := ProcessTemplate{
 					Metadata:          metadata.NewMetadata(bizID),
-					ID:                int64(procTemplateID),
+					ID:                int64(procTemplateIDs[index]),
 					ProcessName:       procName,
 					ServiceTemplateID: serviceTemplate.ID,
 					Property:          procInstToProcTemplate(oldInst),
@@ -269,15 +288,16 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 					return err
 				}
 
-				for _, moduleHost := range moduleHosts {
-					srvInstID, err := db.NextSequence(ctx, common.BKTableNameServiceInstance)
-					if err != nil {
-						return err
-					}
+				srvInstIDs, err := db.NextSequences(ctx, common.BKTableNameServiceInstance, len(moduleHosts))
+				if err != nil {
+					return err
+				}
+
+				for index, moduleHost := range moduleHosts {
 					srvInst := ServiceInstance{
 						Metadata:          metadata.NewMetadata(bizID),
-						ID:                int64(srvInstID),
-						Name:              modulename,
+						ID:                int64(srvInstIDs[index]),
+						Name:              moduleName,
 						ServiceTemplateID: serviceTemplate.ID,
 						HostID:            moduleHost.HostID,
 						ModuleID:          module.ModuleID,
@@ -293,22 +313,66 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 					}
 
 					// build process instance
-					for _, inst := range oldProcess {
+					procInstIDs, err := db.NextSequences(ctx, common.BKTableNameBaseProcess, len(oldProcess))
+					if err != nil {
+						return err
+					}
+
+					for index, inst := range oldProcess {
 						processTemplateID := inst2ProcessInstTemplate[inst.ProcessID].ID
-						procInstID, err := db.NextSequence(ctx, common.BKTableNameBaseProcess)
-						if err != nil {
-							return err
-						}
-						inst.ProcessID = int64(procInstID)
+						inst.ProcessID = int64(procInstIDs[index])
 						inst.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 						inst.BusinessID = bizID
 						inst.CreateTime = time.Now()
 						inst.LastTime = time.Now()
 						if inst.BindIP != nil {
 							tplBindIP := metadata.SocketBindType(*inst.BindIP)
-							*inst.BindIP = tplBindIP.IP()
+
+							if tplBindIP == metadata.BindInnerIP || tplBindIP == metadata.BindOuterIP {
+								if hostMap[moduleHost.HostID] == nil {
+									findOpts := &options.FindOptions{}
+									findOpts.SetLimit(1)
+									findOpts.SetProjection(map[string]int{common.BKHostInnerIPField: 1, common.BKHostOuterIPField: 1})
+									filter := map[string]interface{}{common.BKHostIDField: moduleHost.HostID}
+									host := make(map[string]interface{})
+
+									cursor, err := dbc.Database(mongo.GetDBName()).Collection(common.BKTableNameBaseHost).Find(ctx, filter, findOpts)
+									if err != nil {
+										blog.Errorf("find host %d failed, err: %s", moduleHost.HostID, err.Error())
+										return err
+									}
+
+									if !cursor.Next(ctx) {
+										return fmt.Errorf("host %d not exist", moduleHost.HostID)
+									}
+
+									if err := cursor.Decode(&host); err != nil {
+										blog.Errorf("decode host %d failed, err: %s", moduleHost.HostID, err.Error())
+										return err
+									}
+									hostMap[moduleHost.HostID] = host
+								}
+							}
+
+							if tplBindIP == "" {
+								*inst.BindIP = "127.0.0.1"
+							} else {
+								matched, err := regexp.MatchString(common.PatternIP, *inst.BindIP)
+								if err != nil {
+									return err
+								}
+
+								if !matched {
+									bindIP, err := tplBindIP.IP(hostMap[moduleHost.HostID])
+									if err != nil {
+										return err
+									}
+									*inst.BindIP = bindIP
+								}
+							}
 						} else {
-							inst.BindIP = new(string)
+							bindIP := "127.0.0.1"
+							inst.BindIP = &bindIP
 						}
 						inst.SupplierAccount = ownerID
 						blog.InfoJSON("procInst: %s", inst)
@@ -373,9 +437,9 @@ func backupProcessBase(ctx context.Context, db dal.RDB, conf *upgrader.Config) (
 	return db.Table(common.BKTableNameBaseProcess).Update(ctx, nil, mapstr.MapStr{"old_flag": true})
 }
 
-func procInstToProcTemplate(inst Process) *metadata.ProcessProperty {
+func procInstToProcTemplate(inst Process) *ProcessProperty {
 	var True = true
-	template := metadata.ProcessProperty{}
+	template := ProcessProperty{}
 	if inst.ProcNum != nil && *inst.ProcNum > 0 {
 		template.ProcNum.Value = inst.ProcNum
 		template.ProcNum.AsDefaultValue = &True
@@ -467,4 +531,33 @@ func procInstToProcTemplate(inst Process) *metadata.ProcessProperty {
 	}
 
 	return &template
+}
+
+type ProcessProperty struct {
+	ProcNum            metadata.PropertyInt64    `field:"proc_num" json:"proc_num" bson:"proc_num" validate:"max=10000,min=1"`
+	StopCmd            metadata.PropertyString   `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd"`
+	RestartCmd         metadata.PropertyString   `field:"restart_cmd" json:"restart_cmd" bson:"restart_cmd"`
+	ForceStopCmd       metadata.PropertyString   `field:"face_stop_cmd" json:"face_stop_cmd" bson:"face_stop_cmd"`
+	FuncName           metadata.PropertyString   `field:"bk_func_name" json:"bk_func_name" bson:"bk_func_name" validate:"required"`
+	WorkPath           metadata.PropertyString   `field:"work_path" json:"work_path" bson:"work_path"`
+	BindIP             metadata.PropertyBindIP   `field:"bind_ip" json:"bind_ip" bson:"bind_ip"`
+	Priority           metadata.PropertyInt64    `field:"priority" json:"priority" bson:"priority" validate:"max=10000,min=1"`
+	ReloadCmd          metadata.PropertyString   `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd"`
+	ProcessName        metadata.PropertyString   `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" validate:"required"`
+	Port               metadata.PropertyPort     `field:"port" json:"port" bson:"port"`
+	PidFile            metadata.PropertyString   `field:"pid_file" json:"pid_file" bson:"pid_file"`
+	AutoStart          metadata.PropertyBool     `field:"auto_start" json:"auto_start" bson:"auto_start"`
+	AutoTimeGapSeconds metadata.PropertyInt64    `field:"auto_time_gap" json:"auto_time_gap" bson:"auto_time_gap" validate:"max=10000,min=1"`
+	StartCmd           metadata.PropertyString   `field:"start_cmd" json:"start_cmd" bson:"start_cmd"`
+	FuncID             metadata.PropertyString   `field:"bk_func_id" json:"bk_func_id" bson:"bk_func_id"`
+	User               metadata.PropertyString   `field:"user" json:"user" bson:"user"`
+	TimeoutSeconds     metadata.PropertyInt64    `field:"timeout" json:"timeout" bson:"timeout" validate:"max=10000,min=1"`
+	Protocol           metadata.PropertyProtocol `field:"protocol" json:"protocol" bson:"protocol"`
+	Description        metadata.PropertyString   `field:"description" json:"description" bson:"description"`
+	StartParamRegex    metadata.PropertyString   `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex"`
+	PortEnable         metadata.PropertyBool     `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
+	GatewayIP          metadata.PropertyString   `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip"`
+	GatewayPort        metadata.PropertyString   `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port"`
+	GatewayProtocol    metadata.PropertyProtocol `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol"`
+	GatewayCity        metadata.PropertyString   `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city"`
 }

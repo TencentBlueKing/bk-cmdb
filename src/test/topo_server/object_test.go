@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
@@ -21,6 +22,7 @@ var _ = Describe("object test", func() {
 	var bizId string
 	var childInstId string
 	var setId string
+	var serviceTemplateId string
 	var childInstIdInt, bizIdInt int64
 	objectClient := topoServerClient.Object()
 	instClient := topoServerClient.Instance()
@@ -208,14 +210,14 @@ var _ = Describe("object test", func() {
 		})
 
 		It("delete mainline object bk_obj_id = 'test_object'", func() {
-			rsp, err := objectClient.DeleteModel(context.Background(), "0", "test_object", header)
+			rsp, err := objectClient.DeleteModel(context.Background(), "test_object", header)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("delete mainline object twice", func() {
-			rsp, err := objectClient.DeleteModel(context.Background(), "0", "test_object", header)
+			rsp, err := objectClient.DeleteModel(context.Background(), "test_object", header)
 			util.RegisterResponse(rsp)
 			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
@@ -249,7 +251,7 @@ var _ = Describe("object test", func() {
 		})
 
 		It("search mainline object", func() {
-			rsp, err := objectClient.SelectModel(context.Background(), "0", header)
+			rsp, err := objectClient.SelectModel(context.Background(), header)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -288,7 +290,7 @@ var _ = Describe("object test", func() {
 
 	Describe("instance topo test", func() {
 		It("search instance topo", func() {
-			rsp, err := objectClient.SelectInst(context.Background(), "0", bizId, header)
+			rsp, err := objectClient.SelectInst(context.Background(), bizIdInt, header)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -309,21 +311,6 @@ var _ = Describe("object test", func() {
 			childInstIdInt, err = commonutil.GetInt64ByInterface(child["bk_inst_id"])
 			Expect(err).NotTo(HaveOccurred())
 			childInstId = strconv.FormatInt(childInstIdInt, 10)
-		})
-
-		It("search instance topo child", func() {
-			rsp, err := objectClient.SelectInstChild(context.Background(), "0", "cc_test_object", bizId, childInstId, header)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			j, err := json.Marshal(rsp.Data)
-			data := []map[string]interface{}{}
-			json.Unmarshal(j, &data)
-			child := data[0]
-			Expect(child["bk_inst_name"].(string)).To(Equal("cc_test_object"))
-			Expect(child["bk_obj_id"].(string)).To(Equal("cc_test_object"))
-			Expect(child["bk_obj_name"].(string)).To(Equal("cc_test_object"))
-			Expect(len(child["child"].([]interface{}))).To(Equal(0))
 		})
 
 		It("search instance topo", func() {
@@ -565,7 +552,7 @@ var _ = Describe("object test", func() {
 			input := map[string]interface{}{
 				"bk_classification_id": "cc_class",
 			}
-			rsp, err := objectClient.SelectClassificationWithObjects(context.Background(), "0", header, input)
+			rsp, err := objectClient.SelectClassificationWithObjects(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -647,7 +634,7 @@ var _ = Describe("object test", func() {
 
 		It("update object topo graphics", func() {
 			input := map[string]interface{}{
-				"data": []map[string]interface{}{
+				"origin": []map[string]interface{}{
 					{
 						"bk_obj_id":  "cc_obj",
 						"bk_inst_id": 0,
@@ -810,7 +797,7 @@ var _ = Describe("object test", func() {
 
 			It("search group bk_obj_id='cc_obj'", func() {
 				input := map[string]interface{}{}
-				rsp, err := objectClient.SelectPropertyGroupByObjectID(context.Background(), "0", "cc_obj", header, input)
+				rsp, err := objectClient.SelectPropertyGroupByObjectID(context.Background(), "cc_obj", header, input)
 				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
@@ -981,11 +968,40 @@ var _ = Describe("object test", func() {
 				Expect(data.ObjectID).To(Equal(input.ObjectID))
 				Expect(data.PropertyID).To(Equal(input.PropertyID))
 				Expect(data.PropertyName).To(Equal(input.PropertyName))
-				Expect(data.PropertyGroup).To(Equal("bizdefault"))
+				Expect(data.PropertyGroup).To(Equal("default"))
 				Expect(data.IsEditable).To(Equal(input.IsEditable))
 				Expect(data.PropertyType).To(Equal(input.PropertyType))
 				Expect(data.OwnerID).To(Equal(input.OwnerID))
 				attrId1 = strconv.FormatInt(data.ID, 10)
+			})
+
+			It("create object attribute bk_obj_id='cc_obj' and bk_property_id='test_biz' and bk_property_name='test_biz' and invalid PropertyGroup with bizID", func() {
+				input := &metadata.ObjAttDes{
+					Attribute: metadata.Attribute{
+						OwnerID:       "0",
+						ObjectID:      "cc_obj",
+						PropertyID:    "test_biz",
+						PropertyName:  "test_biz",
+						PropertyGroup: "abcdefg",
+						IsEditable:    true,
+						PropertyType:  "singlechar",
+						BizID:         bizIdInt,
+					},
+				}
+				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+				util.RegisterResponse(rsp)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
+				j, err := json.Marshal(rsp.Data)
+				data := metadata.Attribute{}
+				json.Unmarshal(j, &data)
+				Expect(data.ObjectID).To(Equal(input.ObjectID))
+				Expect(data.PropertyID).To(Equal(input.PropertyID))
+				Expect(data.PropertyName).To(Equal(input.PropertyName))
+				Expect(data.PropertyGroup).To(Equal("bizdefault"))
+				Expect(data.IsEditable).To(Equal(input.IsEditable))
+				Expect(data.PropertyType).To(Equal(input.PropertyType))
+				Expect(data.OwnerID).To(Equal(input.OwnerID))
 			})
 
 			It("update object attribute id="+attrId1, func() {
@@ -1037,7 +1053,7 @@ var _ = Describe("object test", func() {
 		Describe("object attribute group test", func() {
 			It("update object attribute property group", func() {
 				arr := []metadata.PropertyGroupObjectAtt{
-					metadata.PropertyGroupObjectAtt{},
+					{},
 				}
 				arr[0].Condition.ObjectID = "cc_obj"
 				arr[0].Condition.PropertyID = "test_singlechar"
@@ -1054,7 +1070,7 @@ var _ = Describe("object test", func() {
 
 			It("update nonexist object attribute property group", func() {
 				arr := []metadata.PropertyGroupObjectAtt{
-					metadata.PropertyGroupObjectAtt{},
+					{},
 				}
 				arr[0].Condition.ObjectID = "cc_obj"
 				arr[0].Condition.PropertyID = "test_singlechar"
@@ -1092,7 +1108,7 @@ var _ = Describe("object test", func() {
 
 			It("search group bk_obj_id='cc_obj'", func() {
 				input := map[string]interface{}{}
-				rsp, err := objectClient.SelectPropertyGroupByObjectID(context.Background(), "0", "cc_obj", header, input)
+				rsp, err := objectClient.SelectPropertyGroupByObjectID(context.Background(), "cc_obj", header, input)
 				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
@@ -1316,6 +1332,24 @@ var _ = Describe("object test", func() {
 			Expect(bizIdRes).To(Equal(bizIdInt))
 		})
 
+		It("search object instances names info", func() {
+			bizIDInt, _ := strconv.ParseInt(bizId, 10, 64)
+			input := &metadata.SearchInstsNamesOption{
+				ObjID: common.BKInnerObjIDSet,
+				BizID: bizIDInt,
+				Name:  "test",
+			}
+			rsp, err := instClient.SearchInstsNames(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			nameMap := make(map[string]bool)
+			for _, name := range rsp.Data {
+				nameMap[commonutil.GetStrByInterface(name)] = true
+			}
+			Expect(nameMap["new_test"]).To(Equal(true))
+		})
+
 		It("search set batch", func() {
 			sid, _ := strconv.ParseInt(setId, 10, 64)
 			sid2, _ := strconv.ParseInt(setId, 10, 64)
@@ -1513,12 +1547,32 @@ var _ = Describe("object test", func() {
 			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_parent_id"])).To(Equal(setId))
 		})
 
+		It("search module by condition", func() {
+			setID, _ := strconv.ParseInt(setId, 10, 64)
+			input := &params.SearchParams{
+				Condition: map[string]interface{}{
+					"bk_set_id": setID,
+				},
+				Page: map[string]interface{}{
+					"sort": "id",
+				},
+			}
+			rsp, err := instClient.SearchModuleByCondition(context.Background(), bizId, header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(1))
+			Expect(map[string]interface{}(rsp.Data.Info[0])).To(HaveKeyWithValue("bk_module_name", "new_module"))
+			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_set_id"])).To(Equal(setId))
+			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_parent_id"])).To(Equal(setId))
+		})
+
 		It("search module batch", func() {
 			mid, _ := strconv.ParseInt(moduleId, 10, 64)
 			mid2, _ := strconv.ParseInt(moduleId1, 10, 64)
 			input := &metadata.SearchInstBatchOption{
 				IDs:    []int64{mid, mid2},
-				Fields: []string{"bk_module_id", "bk_module_name"},
+				Fields: []string{"bk_module_id", "bk_module_name", "bk_set_id", "service_template_id"},
 			}
 			rsp, err := instClient.SearchModuleBatch(context.Background(), bizId, header, input)
 			util.RegisterResponse(rsp)
@@ -1527,6 +1581,30 @@ var _ = Describe("object test", func() {
 			Expect(len(rsp.Data)).To(Equal(1))
 			Expect(commonutil.GetStrByInterface(rsp.Data[0]["bk_module_id"])).To(Equal(moduleId))
 			Expect(commonutil.GetStrByInterface(rsp.Data[0]["bk_module_name"])).To(Equal("new_module"))
+
+			setId = commonutil.GetStrByInterface(rsp.Data[0]["bk_set_id"])
+			serviceTemplateId = commonutil.GetStrByInterface(rsp.Data[0]["service_template_id"])
+		})
+
+		It("search module with relation", func() {
+			setid, _ := strconv.ParseInt(setId, 10, 64)
+			serviceTemplateid, _ := strconv.ParseInt(serviceTemplateId, 10, 64)
+			input := map[string]interface{}{
+				"bk_set_ids":              []int64{setid},
+				"bk_service_template_ids": []int64{serviceTemplateid},
+				"fields":                  []string{"bk_module_id", "bk_module_name"},
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 500,
+				},
+			}
+			rsp, err := topoServerClient.Instance().SearchModuleWithRelation(context.Background(), bizId, header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(1))
+			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_module_id"])).To(Equal(moduleId))
+			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_module_name"])).To(Equal("new_module"))
 		})
 	})
 })

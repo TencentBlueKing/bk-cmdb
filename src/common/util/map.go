@@ -11,6 +11,10 @@
  */
 package util
 
+import (
+	"sort"
+)
+
 func MergeMaps(maps ...map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
 	for _, m := range maps {
@@ -19,4 +23,24 @@ func MergeMaps(maps ...map[string]interface{}) map[string]interface{} {
 		}
 	}
 	return result
+}
+
+// SortedMapIntKeys get sorted int keys slice from map[int]map[string]interface{}
+func SortedMapIntKeys(data map[int]map[string]interface{}) []int {
+	keys := make([]int, 0)
+	for k := range data {
+		keys = append(keys, k)
+	}
+	sort.Sort(IntSlice(keys))
+	return keys
+}
+
+// SortedMapInt64Keys get sorted int64 keys slice from map[int64]map[string]interface{}
+func SortedMapInt64Keys(data map[int64]map[string]interface{}) []int64 {
+	keys := make([]int64, 0)
+	for k := range data {
+		keys = append(keys, k)
+	}
+	sort.Sort(Int64Slice(keys))
+	return keys
 }

@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -10,8 +12,27 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
-	"github.com/olivere/elastic"
+	"github.com/olivere/elastic/v7"
 )
+
+const (
+	ESIndexPrefix = "cmdb"
+
+	TypeHost        = "host"
+	TypeObject      = "object"
+	TypeApplication = "biz"
+
+	BkBizMetaKey = "metadata.label.bk_biz_id"
+)
+
+var (
+	SpecialChar = []string{"`", "~", "!", "@", "#", "$", "%", "^", "&", "*",
+		"(", ")", "-", "_", "=", "+", "[", "{", "]", "}",
+		"\\", "|", ";", ":", "'", "\"", ",", "<", ".", ">", "/", "?"}
+)
+
+// esSpecialCharactersRegex can match es speical characters which need to be escaped
+var esSpecialCharactersRegex = regexp.MustCompile(`([+\-=&|><(){}\[\]\^"~'?!:*\/])`)
 
 type SearchResult struct {
 	Source    map[string]interface{} `json:"source"` // data from mongo, key/value
@@ -68,59 +89,52 @@ func (s *Service) FullTextFind(ctx *rest.Contexts) {
 	}
 
 	if query.QueryString == "" {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "query_string"))
 		return
 	}
 
-	// check query string
+	// check the format of query string and adjust it when needed
 	rawString, ok := query.checkQueryString()
 	if !ok {
 		blog.Errorf("full_text_find failed, query string [%s] large than 32, rid: %s", rawString, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "query_string"))
 		return
 	}
-	// get query and search types
-	esQuery, searchTypes := query.toEsQueryAndSearchTypes()
 
-	result, err := s.Es.Search(ctx.Kit.Ctx, esQuery, searchTypes, query.Paging.Start, query.Paging.Limit)
+	// get query and search indexs
+	esQuery, indexs := query.toEsBoolQueryAndIndexs()
+
+	result, err := s.Es.Search(ctx.Kit.Ctx, esQuery, indexs, query.Paging.Start, query.Paging.Limit)
 	if err != nil {
 		blog.Errorf("full_text_find failed, es search failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextFindErr))
 		return
 	}
 
+	plainQuery, _ := esQuery.Source()
+	plainResult, _ := json.Marshal(result)
+	blog.V(4).Infof("es search, esQuery:%s, indexs:%v, start:%d, limit:%d, result:%s", plainQuery, indexs,
+		query.Paging.Start, query.Paging.Limit, plainResult)
+
 	// result is hits and aggregations
 	searchResults := new(SearchResults)
 
-	searchResults.Total = result.Hits.TotalHits
+	searchResults.Total = result.Hits.TotalHits.Value
 	// set hits
 	for _, hit := range result.Hits.Hits {
-		// ignore not correct cmdb table data
-		if hit.Index == common.CMDBINDEX && hit.Id != common.INDICES {
-			sr := SearchResult{}
-			sr.setHit(ctx.Kit.Ctx, hit, query.BkBizId, rawString)
-			searchResults.Hits = append(searchResults.Hits, sr)
-		}
+		sr := SearchResult{}
+		sr.setHit(ctx.Kit.Ctx, hit, query.BkBizId, rawString)
+		searchResults.Hits = append(searchResults.Hits, sr)
 	}
 
 	keyMap := make(map[string]int64)
 	notFoundKey := make(map[string]int64)
-	// set aggregations
-	bkObjIdAggr, found := result.Aggregations.Terms(common.BkObjIdAggName)
-	if found == true && bkObjIdAggr != nil {
-		for _, bucket := range bkObjIdAggr.Buckets {
-			agg := Aggregation{}
-			agg.setAgg(bucket)
-			searchResults.Aggregations = append(searchResults.Aggregations, agg)
-			keyMap[util.GetStrByInterface(agg.Key)] = agg.Count
-		}
-	}
-
-	typeAggr, found := result.Aggregations.Terms(common.TypeAggName)
-	if found == true && typeAggr != nil {
-		for _, bucket := range typeAggr.Buckets {
+	indexArggr, found := result.Aggregations.Terms(common.IndexAggName)
+	if found == true && indexArggr != nil {
+		for _, bucket := range indexArggr.Buckets {
 			// only cc_HostBase, cc_ApplicationBase currently
-			if bucket.Key == common.BKTableNameBaseHost || bucket.Key == common.BKTableNameBaseApp {
+			if bucket.Key == getESIndexByCollection(common.BKTableNameBaseHost) ||
+				bucket.Key == getESIndexByCollection(common.BKTableNameBaseApp) {
 				agg := Aggregation{}
 				agg.setAgg(bucket)
 				searchResults.Aggregations = append(searchResults.Aggregations, agg)
@@ -151,15 +165,24 @@ func (s *Service) FullTextFind(ctx *rest.Contexts) {
 	ctx.RespEntity(searchResults)
 }
 
-func (query Query) checkQueryString() (string, bool) {
+// checkQueryString check the format of query string and adjust it when needed
+func (query *Query) checkQueryString() (string, bool) {
 	// if query string is single string in SpecialChar, make it to null string
-	for i := range common.SpecialChar {
-		if query.QueryString == common.SpecialChar[i] {
-			query.QueryString = ""
-			return "", true
+	if len(query.QueryString) == 1 {
+		for i := range SpecialChar {
+			if query.QueryString == SpecialChar[i] {
+				query.QueryString = ""
+				return "", true
+			}
 		}
 	}
-	rawString := strings.Replace(query.QueryString, "*", "", -1)
+
+	query.QueryString = strings.Trim(query.QueryString, "*")
+	rawString := query.QueryString
+
+	// escape special characters
+	query.QueryString = "*" + esSpecialCharactersRegex.ReplaceAllString(query.QueryString, `\$1`) + "*"
+
 	// judge string if large than 32
 	if utf8.RuneCountInString(rawString) > 32 {
 		return rawString, false
@@ -168,17 +191,11 @@ func (query Query) checkQueryString() (string, bool) {
 	}
 }
 
-func (query Query) toEsQueryAndSearchTypes() (elastic.Query, []string) {
+func (query Query) toEsBoolQueryAndIndexs() (elastic.Query, []string) {
 	qBool := elastic.NewBoolQuery()
 
-	// if set bk_biz_id
-	qBool.MinimumNumberShouldMatch(1)
-	qBizRegex := elastic.NewRegexpQuery(common.BkBizMetaKey, "[0-9]*")
-	qBizBool := elastic.NewBoolQuery()
-	qBizBool.MustNot(qBizRegex)
-	qBool.Should(qBizBool)
 	if query.BkBizId != "" {
-		qBizTerm := elastic.NewTermQuery(common.BkBizMetaKey, query.BkBizId)
+		qBizTerm := elastic.NewTermQuery(common.BKAppIDField, query.BkBizId)
 		qBool.Should(qBizTerm)
 	}
 
@@ -190,72 +207,36 @@ func (query Query) toEsQueryAndSearchTypes() (elastic.Query, []string) {
 	qSupplierMatch := elastic.NewMatchQuery(common.BkSupplierAccount, query.QueryString)
 	qBool.MustNot(qSupplierMatch)
 
-	// if set bk_obj_id
 	qString := elastic.NewQueryStringQuery(query.QueryString)
+	qBool.Must(qString)
+
 	if query.BkObjId == "" {
-		// get search types from filter
-		indexTypes := getEsIndexTypes(query.TypeFilter)
-		// add search cc_ApplicationBase type
-		indexTypes = append(indexTypes, common.BKTableNameBaseApp)
-		return qBool.Must(qString), indexTypes
-	} else if query.BkObjId == common.TypeHost {
+		// if bk_obj_id is "", we search all indexs
+		indexs := make([]string, 0)
+		indexs = append(indexs, getESIndexByCollection("cc_*"))
+		return qBool, indexs
+	} else if query.BkObjId == TypeHost {
 		// if bk_obj_id is host, we search only from type cc_HostBase
-		indexTypes := []string{common.BKTableNameBaseHost}
-		return qBool.Must(qString), indexTypes
-	} else if query.BkObjId == common.TypeApplication {
+		indexs := []string{getESIndexByCollection(common.BKTableNameBaseHost)}
+		return qBool.Must(qString), indexs
+	} else if query.BkObjId == TypeApplication {
 		// if bk_obj_id is biz, we search only from type cc_ApplicationBase
-		indexTypes := []string{common.BKTableNameBaseApp}
-		return qBool.Must(qString), indexTypes
+		indexs := []string{getESIndexByCollection(common.BKTableNameBaseApp)}
+		return qBool.Must(qString), indexs
 	} else {
 		// if define bk_obj_id, we use bool query include must(bk_obj_id=xxx) and should(query string)
 		qBool.Must(elastic.NewTermQuery("bk_obj_id", query.BkObjId))
 		qBool.Must(qString)
-		indexTypes := getEsIndexTypes(query.TypeFilter)
-		return qBool, indexTypes
+		indexs := []string{getESIndexByCollection(common.BKTableNameBaseInst + "*")}
+		return qBool, indexs
 	}
-}
-
-func getEsIndexTypes(typesFilter []string) []string {
-	typesMap := make([]string, 0)
-	for _, filter := range typesFilter {
-		switch filter {
-		case common.TypeHost:
-			typesMap = append(typesMap, common.BKTableNameBaseHost)
-		case common.TypeModel:
-			typesMap = append(typesMap, common.BKTableNameObjDes)
-		case common.TypeObject:
-			typesMap = append(typesMap, common.BKTableNameBaseInst)
-		case common.TypeApplication:
-			typesMap = append(typesMap, common.BKTableNameBaseApp)
-		case common.TypeProcess:
-			typesMap = append(typesMap, common.BKTableNameBaseProcess)
-		}
-	}
-
-	indexTypes := make([]string, 0)
-	for _, value := range common.CmdbFindTypes {
-		if !inTypes(value, typesMap) {
-			indexTypes = append(indexTypes, value)
-		}
-	}
-
-	return indexTypes
-}
-
-func inTypes(val string, types []string) bool {
-	for _, v := range types {
-		if v == val {
-			return true
-		}
-	}
-	return false
 }
 
 func (agg *Aggregation) setAgg(bucket *elastic.AggregationBucketKeyItem) {
-	if bucket.Key == common.BKTableNameBaseHost {
-		agg.Key = common.TypeHost
-	} else if bucket.Key == common.BKTableNameBaseApp {
-		agg.Key = common.TypeApplication
+	if bucket.Key == getESIndexByCollection(common.BKTableNameBaseHost) {
+		agg.Key = TypeHost
+	} else if bucket.Key == getESIndexByCollection(common.BKTableNameBaseApp) {
+		agg.Key = TypeApplication
 	} else {
 		agg.Key = bucket.Key
 	}
@@ -266,24 +247,21 @@ func (agg *Aggregation) setAgg(bucket *elastic.AggregationBucketKeyItem) {
 func (sr *SearchResult) setHit(ctx context.Context, searchHit *elastic.SearchHit, bkBizId, rawString string) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	sr.Score = *searchHit.Score
-	switch searchHit.Type {
-	case common.BKTableNameBaseInst:
-		sr.Type = common.TypeObject
-	case common.BKTableNameBaseHost:
-		sr.Type = common.TypeHost
-	case common.BKTableNameBaseProcess:
-		sr.Type = common.TypeProcess
-	case common.BKTableNameBaseApp:
-		sr.Type = common.TypeApplication
-	case common.BKTableNameObjDes:
-		sr.Type = common.TypeModel
-	}
 
 	// sr.Highlight = searchHit.Highlight
-	err := json.Unmarshal(*searchHit.Source, &(sr.Source))
+	err := json.Unmarshal(searchHit.Source, &(sr.Source))
 	if err != nil {
 		blog.Warnf("full_text_find unmarshal search result source err: %+v, rid: %s", err, rid)
 		sr.Source = nil
+	}
+
+	switch searchHit.Index {
+	case getESIndexByCollection(common.BKTableNameBaseApp):
+		sr.Type = TypeApplication
+	case getESIndexByCollection(common.BKTableNameBaseHost):
+		sr.Type = TypeHost
+	case getESIndexByCollection(common.BKTableNameBaseInst):
+		sr.Type = TypeObject
 	}
 
 	sr.dealHighlight(sr.Source, searchHit.Highlight, bkBizId, rawString)
@@ -316,7 +294,7 @@ func (sr *SearchResult) dealHighlight(source map[string]interface{}, highlight e
 			if !rawStringInObjId {
 				delete(highlight, key)
 			}
-		} else if key == "metadata.label.bk_biz_id" || key == "metadata.label.bk_biz_id.keyword" {
+		} else if key == "bk_biz_id" || key == "bk_biz_id.keyword" {
 			delete(highlight, key)
 		} else {
 			// we don't need highlight with bk_obj_id and bk_biz_id, just like <em>bk_obj_id</em>, <em>bk_biz_id</em>
@@ -333,4 +311,10 @@ func (sr *SearchResult) dealHighlight(source map[string]interface{}, highlight e
 	}
 
 	sr.Highlight = highlight
+}
+
+// getESIndexByCollection get the index of es through ESIndexPrefix and collection's name
+func getESIndexByCollection(collectionName string) string {
+	collectionName = strings.ToLower(collectionName)
+	return fmt.Sprintf("%s.%s", strings.ToLower(ESIndexPrefix), collectionName)
 }

@@ -25,7 +25,7 @@ import (
 	"github.com/rentiansheng/xlsx"
 )
 
-// ProductExcelHealer Excel comment sheet，
+// ProductExcelHeader Excel comment sheet，
 func ProductExcelCommentSheet(ctx context.Context, excel *xlsx.File, defLang lang.DefaultCCLanguageIf) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	sheetName := defLang.Language(common.ExcelCommentSheetCotentLangPrefixKey + "_sheet_name")

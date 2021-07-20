@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type synchronizeAdapterError struct {
@@ -37,7 +37,6 @@ type synchronizeAdapterDBParameter struct {
 }
 
 type synchronizeAdapter struct {
-	dbProxy    dal.RDB
 	syncData   *metadata.SynchronizeParameter
 	errorArray map[int64]synchronizeAdapterError
 }
@@ -48,10 +47,9 @@ type dataTypeInterface interface {
 	SaveSynchronize(kit *rest.Kit) errors.CCError
 }
 
-func newSynchronizeAdapter(syncData *metadata.SynchronizeParameter, dbProxy dal.RDB) *synchronizeAdapter {
+func newSynchronizeAdapter(syncData *metadata.SynchronizeParameter) *synchronizeAdapter {
 	return &synchronizeAdapter{
 		syncData:   syncData,
-		dbProxy:    dbProxy,
 		errorArray: make(map[int64]synchronizeAdapterError, 0),
 	}
 }
@@ -168,7 +166,7 @@ func (s *synchronizeAdapter) replaceSynchronize(kit *rest.Kit, dbParam synchroni
 		if exist {
 			// Existing data, does not update the ID field
 			delete(item.Info, dbParam.InstIDField)
-			err := s.dbProxy.Table(dbParam.tableName).Update(kit.Ctx, conds, item.Info)
+			err := mongodb.Client().Table(dbParam.tableName).Update(kit.Ctx, conds, item.Info)
 			if err != nil {
 				blog.Errorf("replaceSynchronize update info error,err:%s.DataClassify:%s,condition:%#v,info:%#v,rid:%s", err.Error(), s.syncData.DataClassify, conds, item, kit.Rid)
 				s.errorArray[item.ID] = synchronizeAdapterError{
@@ -178,7 +176,7 @@ func (s *synchronizeAdapter) replaceSynchronize(kit *rest.Kit, dbParam synchroni
 				continue
 			}
 		} else {
-			err := s.dbProxy.Table(dbParam.tableName).Insert(kit.Ctx, item.Info)
+			err := mongodb.Client().Table(dbParam.tableName).Insert(kit.Ctx, item.Info)
 			if err != nil {
 				blog.Errorf("replaceSynchronize insert info error,err:%s.DataClassify:%s,info:%#v,rid:%s", err.Error(), s.syncData.DataClassify, item, kit.Rid)
 				s.errorArray[item.ID] = synchronizeAdapterError{
@@ -196,7 +194,7 @@ func (s *synchronizeAdapter) deleteSynchronize(kit *rest.Kit, dbParam synchroniz
 	for _, item := range s.syncData.InfoArray {
 		instIDArr = append(instIDArr, item.ID)
 	}
-	err := s.dbProxy.Table(dbParam.tableName).Delete(kit.Ctx, mapstr.MapStr{dbParam.InstIDField: mapstr.MapStr{common.BKDBIN: instIDArr}})
+	err := mongodb.Client().Table(dbParam.tableName).Delete(kit.Ctx, mapstr.MapStr{dbParam.InstIDField: mapstr.MapStr{common.BKDBIN: instIDArr}})
 	if err != nil {
 		blog.Errorf("deleteSynchronize delete info error,err:%s.DataClassify:%s,instIDArr:%#v,rid:%s", err.Error(), s.syncData.DataClassify, instIDArr, kit.Rid)
 		for _, item := range s.syncData.InfoArray {
@@ -209,7 +207,7 @@ func (s *synchronizeAdapter) deleteSynchronize(kit *rest.Kit, dbParam synchroniz
 }
 
 func (s *synchronizeAdapter) existSynchronizeID(kit *rest.Kit, tableName string, conds mapstr.MapStr) (bool, errors.CCError) {
-	cnt, err := s.dbProxy.Table(tableName).Find(conds).Count(kit.Ctx)
+	cnt, err := mongodb.Client().Table(tableName).Find(conds).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("existSynchronizeID error. DataClassify:%s,conds:%#v,rid:%s", s.syncData.DataClassify, conds, kit.Rid)
 		return false, kit.CCError.Error(common.CCErrCommDBSelectFailed)
@@ -256,8 +254,8 @@ func (s *synchronizeAdapter) getSameInfo(kit *rest.Kit, instIDField, tableName s
 	}
 
 	inst := mapstr.New()
-	err = s.dbProxy.Table(tableName).Find(bsi.Condition()).One(kit.Ctx, &inst)
-	if err != nil && !s.dbProxy.IsNotFoundError(err) {
+	err = mongodb.Client().Table(tableName).Find(bsi.Condition()).One(kit.Ctx, &inst)
+	if err != nil && !mongodb.Client().IsNotFoundError(err) {
 		blog.Errorf("existSameInfo query db error. err:%s, DataClassify:%s,info:%#v,condition:%#v, rid:%s", err.Error(), bsi.syncData.DataClassify, info.Info, bsi.Condition(), kit.Rid)
 		return 0, false, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
@@ -293,26 +291,6 @@ func NewBuildSameInfo(info *metadata.SynchronizeItem, syncData *metadata.Synchro
 
 func (bsi *buildSameInfo) BuildSameInfoBaseCond(kit *rest.Kit) errors.CCError {
 	info := bsi.info
-	if info.Info.Exists(common.MetadataField) {
-		metadataVal, err := info.Info.MapStr(common.MetadataField)
-		if err != nil {
-			blog.Errorf("buildSameInfoBaseCond get metadata error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, "propery", common.MetadataField, "map", err.Error())
-		}
-		if metadataVal.Exists(metadata.LabelBusinessID) {
-			str, err := metadataVal.String(metadata.LabelBusinessID)
-			if err != nil {
-				blog.Errorf("buildSameInfoBaseCond get metadata.bk_biz_id error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, kit.Rid)
-				return kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, "propery", common.MetadataField, "map", err.Error())
-			}
-			bsi.cond.Set("metadata.label.bk_biz_id", str)
-		} else {
-			bsi.cond.Merge(metadata.BizLabelNotExist)
-		}
-
-	} else {
-		bsi.cond.Merge(metadata.BizLabelNotExist)
-	}
 	ownerID, err := info.Info.String(common.BKOwnerIDField)
 	if err != nil {
 		blog.Errorf("buildSameInfoBaseCond get ownerID error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, kit.Rid)

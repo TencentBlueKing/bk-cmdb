@@ -15,10 +15,11 @@ package esb
 import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/thirdpartyclient/esbserver"
-	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+	"configcenter/src/thirdparty/esbserver"
+	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
 var (
@@ -34,28 +35,35 @@ func EsbClient() esbserver.EsbClientInterface {
 	return esbClient
 }
 
-func ParseEsbConfig(config map[string]string) (*esbutil.EsbConfig, errors.CCErrorCoder) {
-	esbAddr, addrOk := config["esb.addr"]
-	if addrOk == false {
+func ParseEsbConfig(prefix string) (*esbutil.EsbConfig, errors.CCErrorCoder) {
+	if len(prefix) > 0 {
+		prefix = prefix + "."
+	}
+
+	var err error
+	esbAddr, err := cc.String(prefix + "esb.addr")
+	if err != nil {
 		blog.Infof("esb addr not found, unable to call esb service")
 		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing [esb.addr] configuration item")
 		return nil, lastConfigErr
 	}
-	esbAppCode, appCodeOk := config["esb.appCode"]
-	if appCodeOk == false {
+
+	esbAppCode, err := cc.String(prefix + "esb.appCode")
+	if err != nil {
 		blog.Errorf("esb appCode not found, unable to call esb service")
 		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing [esb.esbAppCode] configuration item")
 		return nil, lastConfigErr
 	}
-	esbAppSecret, appSecretOk := config["esb.appSecret"]
-	if appSecretOk == false {
+
+	esbAppSecret, err := cc.String(prefix + "esb.appSecret")
+	if err != nil {
 		blog.Errorf("esb appSecretOk not found,unable to call esb service")
 		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing [esb.appSecret] configuration item")
 		return nil, lastConfigErr
 	}
+
 	// 不支持热更新
-	var err error
-	tlsConfig, err = util.NewTLSClientConfigFromConfig("esb", config)
+	tlsConfig, err = util.NewTLSClientConfigFromConfig(prefix+"esb", nil)
 	if err != nil {
 		lastInitErr = errors.NewCCError(common.CCErrCommResourceInitFailed, "'esb' initialization failed")
 		return nil, lastInitErr

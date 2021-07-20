@@ -21,9 +21,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"gopkg.in/mgo.v2/bson"
-	"gopkg.in/redis.v5"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (s *coreService) TransferHostToInnerModule(ctx *rest.Contexts) {
@@ -32,10 +30,10 @@ func (s *coreService) TransferHostToInnerModule(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	exceptionArr, err := s.core.HostOperation().TransferToInnerModule(ctx.Kit, inputData)
+	err := s.core.HostOperation().TransferToInnerModule(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("TransferHostToDefaultModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.Errorf("transfer host to default module failed. err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -47,10 +45,10 @@ func (s *coreService) TransferHostToNormalModule(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	exceptionArr, err := s.core.HostOperation().TransferToNormalModule(ctx.Kit, inputData)
+	err := s.core.HostOperation().TransferToNormalModule(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("TransferHostModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.Errorf("transfer host to normal module failed. err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -62,10 +60,11 @@ func (s *coreService) TransferHostToAnotherBusiness(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	exceptionArr, err := s.core.HostOperation().TransferToAnotherBusiness(ctx.Kit, inputData)
+
+	err := s.core.HostOperation().TransferToAnotherBusiness(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("TransferHostCrossBusiness  error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), inputData, exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.ErrorJSON("transfer host across business failed. err: %s, input: %s, rid: %s", err.Error(), inputData, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -77,10 +76,10 @@ func (s *coreService) RemoveFromModule(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	exceptionArr, err := s.core.HostOperation().RemoveFromModule(ctx.Kit, inputData)
+	err := s.core.HostOperation().RemoveFromModule(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("RemoveFromModule error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), inputData, exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.ErrorJSON("remove host from module failed. err: %s, input: %s, rid: %s", err.Error(), inputData, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -107,10 +106,11 @@ func (s *coreService) DeleteHostFromSystem(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	exceptionArr, err := s.core.HostOperation().DeleteFromSystem(ctx.Kit, inputData)
+
+	err := s.core.HostOperation().DeleteFromSystem(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("DeleteHost  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.ErrorJSON("delete host error. err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -125,7 +125,8 @@ func (s *coreService) HostIdentifier(ctx *rest.Contexts) {
 	hostIdentifierArr, err := s.core.HostOperation().Identifier(ctx.Kit, inputData)
 
 	if err != nil {
-		blog.InfoJSON("Identifier host identifier handle error. err:%s, input:%s, rid:%s", err.Error(), inputData, ctx.Kit.Rid)
+		blog.InfoJSON("Identifier host identifier handle error. err: %s, input: %s, rid:%s", err.Error(), inputData,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -133,13 +134,13 @@ func (s *coreService) HostIdentifier(ctx *rest.Contexts) {
 }
 
 // TransferHostModuleDep is a TransferHostModule dependence
-func (s *coreService) TransferHostModuleDep(kit *rest.Kit, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
-	exceptionArr, err := s.core.HostOperation().TransferToNormalModule(kit, input)
+func (s *coreService) TransferHostModuleDep(kit *rest.Kit, input *metadata.HostsModuleRelation) error {
+	err := s.core.HostOperation().TransferToNormalModule(kit, input)
 	if err != nil {
-		blog.ErrorJSON("TransferHostModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, kit.Rid)
-		return exceptionArr, err
+		blog.Errorf("transfer host to normal module failed. err: %s, rid: %s", err.Error(), kit.Rid)
+		return err
 	}
-	return nil, nil
+	return nil
 }
 
 func (s *coreService) GetHostByID(ctx *rest.Contexts) {
@@ -153,9 +154,9 @@ func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 	result := make(metadata.HostMapStr, 0)
 	condition := common.KvMap{common.BKHostIDField: hostID}
 	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
-	err = s.db.Table(common.BKTableNameBaseHost).Find(condition).One(ctx.Kit.Ctx, &result)
+	err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).One(ctx.Kit.Ctx, &result)
 	// TODO: return error for not found and deal error with all callers
-	if err != nil && !s.db.IsNotFoundError(err) {
+	if err != nil && !mongodb.Client().IsNotFoundError(err) {
 		blog.Errorf("GetHostByID failed, get host by id[%d] failed, err: %+v, rid: %s", hostID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
@@ -165,50 +166,47 @@ func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 }
 
 func (s *coreService) GetHosts(ctx *rest.Contexts) {
-	var dat metadata.ObjQueryInput
+	var dat metadata.QueryInput
 	if err := ctx.DecodeInto(&dat); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	condition := util.ConvParamsTime(dat.Condition)
-	var cond map[string]interface{}
-	switch value := condition.(type) {
-	case map[string]interface{}:
-		cond = value
-	case mapstr.MapStr:
-		cond = value
-	case common.KvMap:
-		cond = value
-	default:
-		out, err := bson.Marshal(condition)
+	condition := dat.Condition
+	if dat.TimeCondition != nil {
+		var err error
+		condition, err = dat.TimeCondition.MergeTimeCondition(condition)
 		if err != nil {
-			blog.Errorf("SetModOwner failed condition %#v, error %s", condition, err.Error())
-		}
-		err = bson.Unmarshal(out, &cond)
-		if err != nil {
-			blog.Errorf("SetModOwner failed condition %#v, error %s", condition, err.Error())
+			blog.ErrorJSON("merge time condition failed, error: %s, input: %s, rid: %s", err, dat, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
 		}
 	}
-	condition = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
+
+	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 
 	result := make([]metadata.HostMapStr, 0)
-	dbInst := s.db.Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).Start(uint64(dat.Start)).Limit(uint64(dat.Limit))
+	dbInst := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).Start(uint64(dat.Start)).Limit(uint64(dat.Limit))
 	if 0 < len(fieldArr) {
 		dbInst.Fields(fieldArr...)
 	}
 	if err := dbInst.All(ctx.Kit.Ctx, &result); err != nil {
-		blog.ErrorJSON("failed to query the host , cond: %s err: %s, rid: %s", cond, err, ctx.Kit.Rid)
+		blog.ErrorJSON("failed to query the host , cond: %s err: %s, rid: %s", condition, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	count, err := s.db.Table(common.BKTableNameBaseHost).Find(condition).Count(ctx.Kit.Ctx)
-	if err != nil {
-		blog.Errorf("get object failed type:%s ,input: %v error: %v, rid: %s", common.BKInnerObjIDHost, dat, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostSelectInst))
-		return
+	var finalCount uint64
+
+	if !dat.DisableCounter {
+		count, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Count(ctx.Kit.Ctx)
+		if err != nil {
+			blog.Errorf("get object failed type:%s ,input: %v error: %v, rid: %s", common.BKInnerObjIDHost, dat, err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostSelectInst))
+			return
+		}
+		finalCount = count
 	}
 
 	info := make([]mapstr.MapStr, len(result))
@@ -216,70 +214,9 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 		info[index] = mapstr.MapStr(host)
 	}
 	ctx.RespEntity(metadata.HostInfo{
-		Count: int(count),
+		Count: int(finalCount),
 		Info:  info,
 	})
-}
-
-func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
-	hostID := ctx.Request.PathParameter(common.BKHostIDField)
-	key := common.RedisSnapKeyPrefix + hostID
-	result, err := s.rds.Get(key).Result()
-	if nil != err && err != redis.Nil {
-		blog.Errorf("get host snapshot failed, hostID: %v, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
-		return
-	}
-
-	ctx.RespEntity(metadata.HostSnap{
-		Data: result,
-	})
-}
-
-func (s *coreService) GetHostSnapBatch(ctx *rest.Contexts) {
-	input := metadata.HostSnapBatchInput{}
-	if err := ctx.DecodeInto(&input); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if len(input.HostIDs) == 0 {
-		ctx.RespEntity(map[int64]string{})
-		return
-	}
-
-	keys := []string{}
-	for _, id := range input.HostIDs {
-		keys = append(keys, common.RedisSnapKeyPrefix+strconv.FormatInt(id, 10))
-	}
-
-	res, err := s.rds.MGet(keys...).Result()
-	if err != nil {
-		if err == redis.Nil {
-			ctx.RespEntity(map[int64]string{})
-			return
-		}
-		blog.Errorf("get host snapshot failed, keys: %#v, err: %v, rid: %s", keys, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
-		return
-	}
-
-	ret := make(map[int64]string)
-	for i, hostID := range input.HostIDs {
-		if res[i] == nil {
-			ret[hostID] = ""
-			continue
-		}
-		value, ok := res[i].(string)
-		if !ok {
-			blog.Errorf("GetHostSnapBatch failed, hostID: %d, value in redis is not type string, but tyep: %T, value:%#v, rid: %s", hostID, res[i], res[i], ctx.Kit.Rid)
-			ret[hostID] = ""
-			continue
-		}
-		ret[hostID] = value
-	}
-
-	ctx.RespEntity(ret)
 }
 
 // GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
@@ -296,4 +233,21 @@ func (s *coreService) GetDistinctHostIDsByTopoRelation(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(metadata.DistinctID{IDArr: hostIDArr})
+}
+
+func (s *coreService) TransferHostResourceDirectory(ctx *rest.Contexts) {
+	input := &metadata.TransferHostResourceDirectory{}
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	err := s.core.HostOperation().TransferResourceDirectory(ctx.Kit, input)
+	if err != nil {
+		blog.ErrorJSON("TransferHostResourceDirectory  error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
 }

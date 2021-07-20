@@ -15,6 +15,8 @@ package service
 import (
 	"strconv"
 
+	"configcenter/src/ac/iam"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
@@ -32,11 +34,26 @@ func (s *Service) CreateClassification(ctx *rest.Contexts) {
 	}
 
 	var cls model.Classification
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		cls, err = s.Core.ClassificationOperation().CreateClassification(ctx.Kit, data)
 		if nil != err {
 			return err
+		}
+
+		// register object classification resource creator action to iam
+		if auth.EnableAuthorize() {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.SysModelGroup),
+				ID:      strconv.FormatInt(cls.Classify().ID, 10),
+				Name:    cls.Classify().ClassificationName,
+				Creator: ctx.Kit.User,
+			}
+			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created object classification to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 		}
 		return nil
 	})
@@ -50,12 +67,11 @@ func (s *Service) CreateClassification(ctx *rest.Contexts) {
 
 // SearchClassificationWithObjects search the classification with objects
 func (s *Service) SearchClassificationWithObjects(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	data := dataWithMetadata.Data
 
 	cond := condition.CreateCondition()
 	if data.Exists(metadata.PageName) {
@@ -81,7 +97,7 @@ func (s *Service) SearchClassificationWithObjects(ctx *rest.Contexts) {
 		return
 	}
 
-	resp, err := s.Core.ClassificationOperation().FindClassificationWithObjects(ctx.Kit, cond, dataWithMetadata.Metadata)
+	resp, err := s.Core.ClassificationOperation().FindClassificationWithObjects(ctx.Kit, cond)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -91,12 +107,11 @@ func (s *Service) SearchClassificationWithObjects(ctx *rest.Contexts) {
 
 // SearchClassification search the classifications
 func (s *Service) SearchClassification(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	data := dataWithMetadata.Data
 
 	cond := condition.CreateCondition()
 	if data.Exists(metadata.PageName) {
@@ -122,7 +137,7 @@ func (s *Service) SearchClassification(ctx *rest.Contexts) {
 		return
 	}
 
-	resp, err := s.Core.ClassificationOperation().FindClassification(ctx.Kit, cond, dataWithMetadata.Metadata)
+	resp, err := s.Core.ClassificationOperation().FindClassification(ctx.Kit, cond)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -149,7 +164,7 @@ func (s *Service) UpdateClassification(ctx *rest.Contexts) {
 	}
 	data.Remove(metadata.BKMetadata)
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Core.ClassificationOperation().UpdateClassification(ctx.Kit, data, id, cond)
 		if err != nil {
 			return err
@@ -173,14 +188,9 @@ func (s *Service) DeleteClassification(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err = s.Core.ClassificationOperation().DeleteClassification(ctx.Kit, id, cond, md.Metadata)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err = s.Core.ClassificationOperation().DeleteClassification(ctx.Kit, id, cond)
 		if nil != err {
 			blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("id"), err.Error(), ctx.Kit.Rid)
 			return err

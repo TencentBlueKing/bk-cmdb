@@ -13,12 +13,8 @@
 package operation
 
 import (
-	"context"
-	"strconv"
-
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -28,6 +24,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 )
@@ -35,7 +32,7 @@ import (
 // ModuleOperationInterface module operation methods
 type ModuleOperationInterface interface {
 	CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int64, data mapstr.MapStr) (inst.Inst, error)
-	DeleteModule(kit *rest.Kit, obj model.Object, bizID int64, setID, moduleIDS []int64) error
+	DeleteModule(kit *rest.Kit, bizID int64, setID, moduleIDS []int64) error
 	FindModule(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput) (count int, results []mapstr.MapStr, err error)
 	UpdateModule(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID, setID, moduleID int64) error
 
@@ -92,18 +89,12 @@ func (m *module) validBizSetID(kit *rest.Kit, bizID int64, setID int64) error {
 	cond.Field(common.BKSetIDField).Eq(setID)
 	or := cond.NewOR()
 	or.Item(mapstr.MapStr{common.BKAppIDField: bizID})
-	meta := metadata.Metadata{
-		Label: map[string]string{
-			common.BKAppIDField: strconv.FormatInt(bizID, 10),
-		},
-	}
-	or.Item(mapstr.MapStr{metadata.BKMetadata: meta})
 
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit
 
-	rsp, err := m.clientSet.CoreService().Instance().ReadInstance(context.Background(), kit.Header, common.BKInnerObjIDSet, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := m.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -125,6 +116,12 @@ func (m *module) CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int6
 	data.Set(common.BKAppIDField, bizID)
 	if !data.Exists(common.BKDefaultField) {
 		data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
+	}
+	defaultVal, err := data.Int64(common.BKDefaultField)
+	if err != nil {
+		blog.Errorf("parse default field into int failed, data: %+v, rid: %s", data, kit.Rid)
+		err := kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKDefaultField)
+		return nil, err
 	}
 
 	if err := m.validBizSetID(kit, bizID, setID); err != nil {
@@ -149,13 +146,17 @@ func (m *module) CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int6
 	}
 
 	var serviceTemplateID int64
-	var err error
 	serviceTemplateIDIf, serviceTemplateFieldExist := data.Get(common.BKServiceTemplateIDField)
 	if serviceTemplateFieldExist == true {
 		serviceTemplateID, err = util.GetInt64ByInterface(serviceTemplateIDIf)
 		if err != nil {
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 		}
+	}
+
+	// if need create module using service template
+	if serviceTemplateID == 0 && !version.CanCreateSetModuleWithoutTemplate && defaultVal == 0 {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "service_template_id can not be 0")
 	}
 
 	if serviceCategoryID == 0 && serviceTemplateID == 0 {
@@ -235,16 +236,6 @@ func (m *module) CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int6
 		return inst, createErr
 	}
 
-	// auth: register module to iam
-	moduleID, err := inst.GetInstID()
-	if err != nil {
-		blog.Errorf("create module success, but parse module id failed, response: %s, err: %s, rid: %s", inst, err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrTopoModuleCreateFailed)
-	}
-	if err := m.authManager.RegisterModuleByID(kit.Ctx, kit.Header, moduleID); err != nil {
-		blog.Errorf("create module success, but register to iam failed, err: %+v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
-	}
 	return inst, nil
 }
 
@@ -274,9 +265,10 @@ func (m *module) IsModuleNameDuplicateError(kit *rest.Kit, bizID, setID int64, m
 		blog.ErrorJSON("IsModuleNameDuplicateError failed, filter: %s, err: %s, rid: %s", nameDuplicateFilter, err.Error(), kit.Rid)
 		return false, err
 	}
-	if result.Result == false || result.Code != 0 {
-		blog.ErrorJSON("IsModuleNameDuplicateError failed, result false, filter: %s, result: %s, err: %s, rid: %s", nameDuplicateFilter, result, err.Error(), kit.Rid)
-		return false, errors.New(result.Code, result.ErrMsg)
+	if ccErr := result.CCError(); ccErr != nil {
+		blog.ErrorJSON("IsModuleNameDuplicateError failed, result false, filter: %s, result: %s, err: %s, rid: %s",
+			nameDuplicateFilter, result, ccErr, kit.Rid)
+		return false, ccErr
 	}
 	if result.Data.Count > 0 {
 		return true, nil
@@ -284,9 +276,9 @@ func (m *module) IsModuleNameDuplicateError(kit *rest.Kit, bizID, setID int64, m
 	return false, nil
 }
 
-func (m *module) DeleteModule(kit *rest.Kit, moduleModel model.Object, bizID int64, setIDs, moduleIDS []int64) error {
+func (m *module) DeleteModule(kit *rest.Kit, bizID int64, setIDs, moduleIDs []int64) error {
 
-	exists, err := m.hasHost(kit, bizID, setIDs, moduleIDS)
+	exists, err := m.hasHost(kit, bizID, setIDs, moduleIDs)
 	if nil != err {
 		blog.Errorf("[operation-module] failed to delete the modules, err: %s, rid: %s", err.Error(), kit.Rid)
 		return err
@@ -297,33 +289,20 @@ func (m *module) DeleteModule(kit *rest.Kit, moduleModel model.Object, bizID int
 		return kit.CCError.Error(common.CCErrTopoHasHost)
 	}
 
-	innerCond := condition.CreateCondition()
-	innerCond.Field(common.BKAppIDField).Eq(bizID)
+	innerCond := map[string]interface{}{common.BKAppIDField: bizID}
 	if nil != setIDs {
-		innerCond.Field(common.BKSetIDField).In(setIDs)
+		innerCond[common.BKSetIDField] = map[string]interface{}{common.BKDBIN: setIDs}
 	}
 
-	if nil != moduleIDS {
-		innerCond.Field(common.BKModuleIDField).In(moduleIDS)
-	}
-
-	// auth: deregister module to iam
-	iamResources, err := m.authManager.MakeResourcesByModuleIDs(kit.Ctx, kit.Header, meta.EmptyAction, moduleIDS...)
-	if err != nil {
-		blog.Errorf("delete module failed, deregister module failed, err: %+v, rid: %s", err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommUnRegistResourceToIAMFailed)
+	if nil != moduleIDs {
+		innerCond[common.BKModuleIDField] = map[string]interface{}{common.BKDBIN: moduleIDs}
 	}
 
 	// module table doesn't have metadata field
-	err = m.inst.DeleteInst(kit, moduleModel, innerCond, false)
+	err = m.inst.DeleteInst(kit, common.BKInnerObjIDModule, innerCond, false)
 	if err != nil {
 		blog.Errorf("delete module failed, DeleteInst failed, err: %+v, rid: %s", err, kit.Rid)
 		return err
-	}
-
-	if err := m.authManager.DeregisterResource(kit.Ctx, iamResources...); err != nil {
-		blog.Errorf("delete module success, but deregister module failed, err: %+v, rid: %s", err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 	return nil
 }
@@ -428,7 +407,7 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, obj model.Objec
 	data.Remove(common.BKModuleIDField)
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.MetadataField)
-	updateErr := m.inst.UpdateInst(kit, data, obj, innerCond, -1, nil)
+	updateErr := m.inst.UpdateInst(kit, data, obj, innerCond, -1)
 	if updateErr != nil {
 		moduleNameStr, exist := data[common.BKModuleNameField]
 		if exist == false {
@@ -446,10 +425,5 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, obj model.Objec
 		return updateErr
 	}
 
-	// auth: update registered module to iam
-	if err := m.authManager.UpdateRegisteredModuleByID(kit.Ctx, kit.Header, moduleID); err != nil {
-		blog.Errorf("update module success, but update registered module failed, err: %+v, rid: %s", err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
-	}
 	return nil
 }

@@ -15,7 +15,6 @@ package discovery
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
 
 	"configcenter/src/common/blog"
@@ -34,6 +33,7 @@ func newServerDiscover(disc *registerdiscover.RegDiscover, path, name string) (*
 		name:         name,
 		servers:      make([]*types.ServerInfo, 0),
 		discoverChan: discoverChan,
+		serversChan:  make(chan []string, 1),
 	}
 
 	svr.run()
@@ -42,13 +42,13 @@ func newServerDiscover(disc *registerdiscover.RegDiscover, path, name string) (*
 
 type server struct {
 	sync.RWMutex
-	index int
+	next int
 	// server's name
 	name         string
 	path         string
 	servers      []*types.ServerInfo
-	uuids        []string
 	discoverChan <-chan *registerdiscover.DiscoverEvent
+	serversChan  chan []string
 }
 
 func (s *server) GetServers() ([]string, error) {
@@ -63,16 +63,22 @@ func (s *server) GetServers() ([]string, error) {
 		return []string{}, fmt.Errorf("oops, there is no %s can be used", s.name)
 	}
 
-	if s.index < num-1 {
-		s.index = s.index + 1
-		s.servers = append(s.servers[s.index-1:], s.servers[:s.index-1]...)
+	var infos []*types.ServerInfo
+	if s.next < num-1 {
+		s.next = s.next + 1
+		infos = append(s.servers[s.next-1:], s.servers[:s.next-1]...)
 	} else {
-		s.index = 0
-		s.servers = append(s.servers[num-1:], s.servers[:num-1]...)
+		s.next = 0
+		infos = append(s.servers[num-1:], s.servers[:num-1]...)
 	}
 	s.Unlock()
 
-	return s.GetRegAddrs(), nil
+	servers := make([]string, 0)
+	for _, server := range infos {
+		servers = append(servers, server.RegisterAddress())
+	}
+
+	return servers, nil
 }
 
 // IsMaster 判断当前进程是否为master 进程， 服务注册节点的第一个节点
@@ -103,10 +109,12 @@ func (s *server) run() {
 			if len(svr.Server) <= 0 {
 				blog.Warnf("get zk event with 0 instance with path[%s], reset its servers", s.path)
 				s.resetServer()
+				s.setServersChan()
 				continue
 			}
 
 			s.updateServer(svr.Server)
+			s.setServersChan()
 		}
 	}()
 }
@@ -115,6 +123,31 @@ func (s *server) resetServer() {
 	s.Lock()
 	defer s.Unlock()
 	s.servers = make([]*types.ServerInfo, 0)
+}
+
+// 当监听到服务节点变化时，将最新的服务节点信息放入该channel里
+func (s *server) setServersChan() {
+	// 即使没有其他服务消费该channel，也能保证该channel不会阻塞
+	for len(s.serversChan) >= 1 {
+		<-s.serversChan
+	}
+	s.serversChan <- s.getInstances()
+}
+
+// 获取zk上最新的服务节点信息channel
+func (s *server) GetServersChan() chan []string {
+	return s.serversChan
+}
+
+// 获取所有注册服务节点的ip:port
+func (s *server) getInstances() []string {
+	addrArr := []string{}
+	s.RLock()
+	defer s.RUnlock()
+	for _, info := range s.servers {
+		addrArr = append(addrArr, info.Instance())
+	}
+	return addrArr
 }
 
 func (s *server) updateServer(svrs []string) {
@@ -150,18 +183,7 @@ func (s *server) updateServer(svrs []string) {
 		s.Unlock()
 
 		if blog.V(5) {
-			blog.Infof("update component with new server instance[%s] about path: %s", strings.Join(s.GetRegAddrs(), "; "), s.path)
+			blog.InfoJSON("update component with new server instance %s about path: %s", servers, s.path)
 		}
 	}
-}
-
-// 获取注册地址
-func (s *server) GetRegAddrs() []string {
-	s.RLock()
-	regAddrs := make([]string, 0)
-	for _, server := range s.servers {
-		regAddrs = append(regAddrs, server.RegisterAddress())
-	}
-	s.RUnlock()
-	return regAddrs
 }

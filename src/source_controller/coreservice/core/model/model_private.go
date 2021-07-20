@@ -20,17 +20,18 @@ import (
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (m *modelManager) isExists(kit *rest.Kit, cond universalsql.Condition) (oneModel *metadata.Object, exists bool, err error) {
 
 	oneModel = &metadata.Object{}
-	err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).One(kit.Ctx, oneModel)
-	if nil != err && !m.dbProxy.IsNotFoundError(err) {
+	err = mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).One(kit.Ctx, oneModel)
+	if nil != err && !mongodb.Client().IsNotFoundError(err) {
 		blog.Errorf("request(%s): it is failed to execute database findOne operation on the table (%#v) by the condition (%#v), error info is %s", kit.Rid, common.BKTableNameObjDes, cond.ToMapStr(), err.Error())
 		return oneModel, exists, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
-	exists = !m.dbProxy.IsNotFoundError(err)
+	exists = !mongodb.Client().IsNotFoundError(err)
 	return oneModel, exists, nil
 }
 
@@ -39,7 +40,7 @@ func (m *modelManager) isValid(kit *rest.Kit, objID string) error {
 	checkCond, _ := mongo.NewConditionFromMapStr(checkCondMap)
 	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: objID})
 
-	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(checkCond.ToMapStr()).Count(kit.Ctx)
+	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(checkCond.ToMapStr()).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("count operation on the table (%s) by the condition (%#v) failed , err: %v", common.BKTableNameObjDes, checkCond.ToMapStr(), err, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)

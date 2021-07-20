@@ -62,6 +62,7 @@ type Site struct {
 	// available value: off, on
 	FullTextSearch string
 	PaasDomainUrl  string
+	HelpDocUrl     string
 }
 
 type Config struct {
@@ -74,6 +75,7 @@ type Config struct {
 	LoginVersion string
 	ConfigMap    map[string]string
 	AuthCenter   AppInfo
+	DisableOperationStatistic bool
 }
 
 type AppInfo struct {

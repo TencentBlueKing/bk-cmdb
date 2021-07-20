@@ -34,7 +34,7 @@ type Filter interface{}
 
 type Table interface {
 	// Find 查询多个并反序列化到 Result
-	Find(filter Filter) Find
+	Find(filter Filter, opts ...FindOpts) Find
 	// Aggregate 聚合查询
 	AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error
 	AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error
@@ -72,7 +72,7 @@ type Table interface {
 	// Distinct Finds the distinct values for a specified field across a single collection or view and returns the results in an
 	// field the field for which to return distinct values.
 	// filter query that specifies the documents from which to retrieve the distinct values.
-	Distinct(ctx context.Context, field string, filter Filter) ([]interface{},error)
+	Distinct(ctx context.Context, field string, filter Filter) ([]interface{}, error)
 }
 
 // Find find operation interface
@@ -101,8 +101,13 @@ type ModeUpdate struct {
 
 // Index define the DB index struct
 type Index struct {
-	Keys       map[string]int32 `json:"keys" bson:"key"`
-	Name       string           `json:"name" bson:"name"`
-	Unique     bool             `json:"unique" bson:"unique"`
-	Background bool             `json:"background" bson:"background"`
+	Keys               map[string]int32 `json:"keys" bson:"key"`
+	Name               string           `json:"name" bson:"name"`
+	Unique             bool             `json:"unique" bson:"unique"`
+	Background         bool             `json:"background" bson:"background"`
+	ExpireAfterSeconds int32            `json:"expire_after_seconds" bson:"expire_after_seconds"`
+}
+
+type FindOpts struct {
+	WithObjectID bool
 }

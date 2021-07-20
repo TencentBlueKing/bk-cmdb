@@ -13,10 +13,10 @@ package metadata
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
-	"configcenter/src/common"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/util"
 )
 
 // SetTemplate 集群模板
@@ -35,11 +35,10 @@ type SetTemplate struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
-func (st SetTemplate) Validate() (key string, err error) {
-	st.Name = strings.TrimSpace(st.Name)
-	nameLen := len(st.Name)
-	if nameLen == 0 || nameLen > common.NameFieldMaxLength {
-		return common.BKFieldName, fmt.Errorf("%s field length is: %d", common.BKFieldName, nameLen)
+func (st SetTemplate) Validate(errProxy errors.DefaultCCErrorIf) (key string, err error) {
+	st.Name, err = util.ValidTopoNameField(st.Name, "name", errProxy)
+	if err != nil {
+		return "name", err
 	}
 	return "", nil
 }

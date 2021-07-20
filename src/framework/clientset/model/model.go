@@ -32,7 +32,7 @@ type modelClient struct {
 
 func (m *modelClient) CreateModel(ctx *types.CreateModelCtx) (int64, error) {
 	resp := new(types.CreateModelResponse)
-	subPath := "/object"
+	subPath := "/create/object"
 	err := m.client.Post().
 		WithContext(ctx.Ctx).
 		Body(ctx.ModelInfo).
@@ -53,7 +53,7 @@ func (m *modelClient) CreateModel(ctx *types.CreateModelCtx) (int64, error) {
 
 func (m *modelClient) DeleteModel(ctx *types.DeleteModelCtx) error {
 	resp := new(types.Response)
-	subPath := fmt.Sprintf("/object/%d", ctx.ModelID)
+	subPath := fmt.Sprintf("/delete/object/%d", ctx.ModelID)
 	err := m.client.Delete().
 		WithContext(ctx.Ctx).
 		Body(nil).
@@ -74,7 +74,7 @@ func (m *modelClient) DeleteModel(ctx *types.DeleteModelCtx) error {
 
 func (m *modelClient) UpdateModel(ctx *types.UpdateModelCtx) error {
 	resp := new(types.Response)
-	subPath := fmt.Sprintf("/object/%d", ctx.ModelID)
+	subPath := fmt.Sprintf("/update/object/%d", ctx.ModelID)
 	err := m.client.Put().
 		WithContext(ctx.Ctx).
 		Body(ctx.ModelInfo).
@@ -95,7 +95,7 @@ func (m *modelClient) UpdateModel(ctx *types.UpdateModelCtx) error {
 
 func (m *modelClient) GetModels(ctx *types.GetModelsCtx) ([]types.ModelInfo, error) {
 	resp := new(types.GetModelsResult)
-	subPath := "/objects"
+	subPath := "/find/object"
 	err := m.client.Post().
 		WithContext(ctx.Ctx).
 		Body(ctx.Filters).

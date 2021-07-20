@@ -17,8 +17,10 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 // get counts in table based on filters, returns in the same order
@@ -34,28 +36,44 @@ func (s *coreService) GetCountByFilter(ctx *rest.Contexts) {
 	filters := req.Filters
 	table := req.Table
 
-	wg := sync.WaitGroup{}
-	var err error
+	// to speed up, multi goroutine to get count
+	var wg sync.WaitGroup
+	var lock sync.RWMutex
+	var firstErr errors.CCErrorCoder
+	pipeline := make(chan bool, 10)
 	results := make([]int64, len(filters))
 	for idx, filter := range filters {
+		pipeline <- true
 		wg.Add(1)
-		go func(idx int, filter map[string]interface{}, ctx *rest.Contexts) {
+		go func(idx int, filter map[string]interface{}) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
 			filter = util.SetQueryOwner(filter, ctx.Kit.SupplierAccount)
-			var count uint64
-			count, err = s.db.Table(table).Find(filter).Count(ctx.Kit.Ctx)
+			count, err := mongodb.Client().Table(table).Find(filter).Count(ctx.Kit.Ctx)
 			if err != nil {
 				blog.ErrorJSON("GetCountByFilter failed, error: %s, table: %s, filter: %s, rid: %s", err.Error(), table, filter, ctx.Kit.Rid)
+				if firstErr == nil {
+					firstErr = ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+				}
 				return
 			}
+
+			lock.Lock()
 			results[idx] = int64(count)
-			wg.Done()
-		}(idx, filter, ctx)
+			lock.Unlock()
+
+		}(idx, filter)
 	}
 
 	wg.Wait()
-	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+
+	if firstErr != nil {
+		ctx.RespAutoError(firstErr)
 		return
 	}
+
 	ctx.RespEntity(results)
 }

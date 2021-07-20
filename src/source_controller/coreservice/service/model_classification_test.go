@@ -16,8 +16,8 @@ import (
 	"encoding/json"
 	"testing"
 
-    "configcenter/src/common"
-    "configcenter/src/common/http/httpclient"
+	"configcenter/src/common"
+	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
@@ -30,10 +30,7 @@ func setManyClassification(t *testing.T, client *httpclient.HttpClient, classifi
 	// set many
 	classItems := metadata.SetManyModelClassification{
 		Data: []metadata.Classification{
-			metadata.Classification{
-				Metadata: metadata.Metadata{
-					Label: metadata.Label{metadata.LabelBusinessID: "test_biz"},
-				},
+			{
 				ClassificationID: classificationID,
 			},
 		},
@@ -76,9 +73,6 @@ func setOneClassification(t *testing.T, client *httpclient.HttpClient, classific
 	// create one
 	classItems := metadata.SetOneModelClassification{
 		Data: metadata.Classification{
-			Metadata: metadata.Metadata{
-				Label: metadata.Label{metadata.LabelBusinessID: "test_biz"},
-			},
 			ClassificationID: classificationID,
 		},
 	}
@@ -120,10 +114,7 @@ func createManyClassification(t *testing.T, client *httpclient.HttpClient, class
 	// create many
 	classItems := metadata.CreateManyModelClassifiaction{
 		Data: []metadata.Classification{
-			metadata.Classification{
-				Metadata: metadata.Metadata{
-					Label: metadata.Label{metadata.LabelBusinessID: "test_biz"},
-				},
+			{
 				ClassificationID: classificationID,
 			},
 		},
@@ -168,9 +159,6 @@ func createOneClassification(t *testing.T, client *httpclient.HttpClient, classi
 	// create one
 	classItems := metadata.CreateOneModelClassification{
 		Data: metadata.Classification{
-			Metadata: metadata.Metadata{
-				Label: metadata.Label{metadata.LabelBusinessID: "test_biz"},
-			},
 			ClassificationID: classificationID,
 		},
 	}

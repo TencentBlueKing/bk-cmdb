@@ -1,0 +1,27 @@
+{
+  "1118001": "Not support cloud vendor",
+  "1118002": "Account name already exists",
+  "1118003": "Cloud account parameter %s valid failed",
+  "1118004": "Cloud account ID %d no exist",
+  "1118005": "Task name already exists",
+  "1118006": "Cloud sync task parameter %s valid failed",
+  "1118007": "Parameter bk_vpc_id cannot be empty",
+  "1118008": "Cloud Vendor Interface Called Failed",
+  "1118009": "Same SecretID has already exist in account %s",
+  "1118010": "This cloud account has had cloud sync task %s",
+  "1118011": "Cloud account SecretID or Key is not matched",
+  "1118012": "Cloud vendor http request timeout",
+  "1118013": "Get cloud vendor VPC info failed",
+  "1118014": "Get cloud vendor region info failed",
+  "1118015": "No cloud sync dir was chosen",
+  "1118016": "Cloud sync dir ID %d is not exist",
+  "1118017": "No cloud ID was provided",
+  "1118018": "Cloud ID %d is not exist",
+  "1118019": "Default cloud area can't be used",
+  "1118020": "Cloud account create failed",
+  "1118021": "Cloud account configures get in batch failed",
+  "1118022": "Delete destroyed cloud hosts related resource failed",
+  "1118023": "Cloud account can't be deleted for it has bound cloud sync task",
+
+  "": ""
+}

@@ -1,80 +1,109 @@
 import cursor from '@/directives/cursor'
-import http from '@/api'
-import { language } from '@/i18n'
-import { RESOURCE_TYPE_NAME, RESOURCE_ACTION_NAME, GET_AUTH_META } from '@/dictionary/auth'
-import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
-import store from '@/store'
-const SCOPE_NAME = language === 'en' ? {
-    global: 'global',
-    business: 'business'
-} : {
-    global: '全局',
-    business: '业务'
+import { IAM_ACTIONS } from '@/dictionary/iam-auth'
+import { $error } from '@/magicbox'
+
+const SYSTEM_ID = 'bk_cmdb'
+
+// 前端构造的auth结构为：
+// [{ type: 'xxx', relation: [xxx] }]
+// 为了便于view中书写，其中relation可能存在三种格式:
+// relation: [1, 2, ...] 表示该动作只关联一个视图，relation成员为视图拓扑路径上的资源ID，即关联单视图，操作单资源
+// relation: [[1, 2], [3, 4], ...] 表示该动作只关联一个视图，relation中的成员为数组，每个数组代表一个视图的拓扑路径上的资源ID，即关联单视图，操作多资源
+// relation: [[[1, 2], [3, 4]], [[1, 2], [5, 6]]] 表示该动作关联两个及以上的视图，为第二种情况的多视图场景，即关联多视图，操作多资源
+// 因第一、第二种均为第三种的子场景，因此通过简单的类型判断转换为第三种形式
+// 类型判断减少复杂度，只判断第一个元素的类型，不合法的混搭写法会报错
+function convertRelation(relation = [], type) {
+  if (!relation.length) return relation
+  try {
+    const [levelOne] = relation
+    if (!Array.isArray(levelOne)) { // [1, 2, ...]的场景
+      return [[relation]]
+    }
+    const [levelTwo] = levelOne
+    if (!Array.isArray(levelTwo)) {
+      return relation.map(data => [data])
+    }
+    return relation
+  } catch (error) {
+    $error('Convert resource relations fail, wrong params')
+    console.error('Convert resource relations fail, wrong params:')
+    console.error('auth type:', type)
+    console.error('auth relation:', relation)
+  }
 }
 
-const getScope = () => {
-    return window.CMDB_APP.$route.meta.owner === MENU_BUSINESS ? 'business' : 'global'
-}
-
-const convertAuth = authList => {
-    const scope = getScope()
-    return http.post('auth/convert', {
-        data: authList.map(auth => {
-            const combineAuth = typeof auth === 'object' ? auth.type : auth
-            const { resource_type: type, action } = GET_AUTH_META(combineAuth)
-            return {
-                scope: scope === 'global' ? 'system' : 'biz',
-                attribute: {
-                    type,
-                    action
-                }
-            }
-        })
+// 将相同动作下的相同视图的实例合并到一起
+function mergeSameActions(actions) {
+  const actionMap = new Map()
+  actions.forEach((action) => {
+    const viewMap = actionMap.get(action.id) || new Map()
+    action.related_resource_types.forEach(({ type, instances }) => {
+      const viewInstances = viewMap.get(type) || []
+      viewInstances.push(...instances)
+      viewMap.set(type, viewInstances)
     })
+    actionMap.set(action.id, viewMap)
+  })
+  const permission = {
+    system_id: SYSTEM_ID,
+    actions: []
+  }
+  actionMap.forEach((viewMap, actionId) => {
+    const relatedResourceTypes = []
+    viewMap.forEach((viewInstances, viewType) => {
+      relatedResourceTypes.push({
+        type: viewType,
+        system_id: SYSTEM_ID,
+        instances: viewInstances
+      })
+    })
+    permission.actions.push({
+      id: actionId,
+      related_resource_types: relatedResourceTypes
+    })
+  })
+  return permission
 }
-export const translateAuth = async (authList = []) => {
-    if (!authList.length) {
-        return authList
+
+export const translateAuth = (auth) => {
+  const authList = Array.isArray(auth) ? auth : [auth]
+  const actions = authList.map(({ type, relation = [] }) => {
+    relation = convertRelation(relation, type)
+    const definition = IAM_ACTIONS[type]
+    const action = {
+      id: definition.id,
+      related_resource_types: []
     }
-    try {
-        const convertedAuth = await convertAuth(authList)
-        const business = store.state.objectBiz.authorizedBusiness.find(business => business.bk_biz_id === store.getters['objectBiz/bizId']) || {}
-        const scope = getScope()
-        return authList.map((auth, index) => {
-            const isObjectAuth = typeof auth === 'object'
-            const combineAuth = isObjectAuth ? auth.type : auth
-            const { resource_type: resourceType, action } = GET_AUTH_META(combineAuth)
-            return {
-                action_id: convertedAuth[index].action,
-                action_name: RESOURCE_ACTION_NAME[action],
-                scope_id: scope === 'global' ? 'bk_cmdb' : business.bk_biz_id ? String(business.bk_biz_id) : '',
-                scope_name: scope === 'global' ? '配置平台' : business.bk_biz_name,
-                scope_type: scope === 'global' ? 'system' : 'biz',
-                scope_type_name: SCOPE_NAME[scope],
-                system_id: 'bk_cmdb',
-                system_name: '配置平台',
-                resource_type: convertedAuth[index].type,
-                resource_type_name: RESOURCE_TYPE_NAME[resourceType],
-                resources: [[{
-                    resource_type_name: RESOURCE_TYPE_NAME[resourceType],
-                    resource_type: convertedAuth[index].type,
-                    resource_id: isObjectAuth ? (String(auth.resource_id) || '') : '',
-                    resource_name: isObjectAuth ? (auth.resource_name || '') : ''
-                }]]
-            }
-        })
-    } catch (e) {
-        console.error(e)
-        return []
+    if (!definition.relation) {
+      return action
     }
+    definition.relation.forEach((viewDefinition, viewDefinitionIndex) => { // 第m个视图的定义n
+      const { view, instances } = viewDefinition
+      const relatedResource = {
+        type: view,
+        instances: []
+      }
+      relation.forEach((resourceViewPaths) => { // 第x个资源对应的视图数组
+        const viewPathData = resourceViewPaths[viewDefinitionIndex] || [] // 取出第x个资源对应的第m个视图对应的拓扑路径ID数组
+        const viewFullPath = viewPathData.map((path, pathIndex) => ({ // 资源x的第m个视图对应的全路径拓扑对象
+          type: instances[pathIndex],
+          id: String(path)
+        }))
+        relatedResource.instances.push(viewFullPath)
+      })
+      action.related_resource_types.push(relatedResource)
+    })
+    return action
+  })
+  return mergeSameActions(actions)
 }
 
 cursor.setOptions({
-    globalCallback: async options => {
-        const permission = await translateAuth(options.auth)
-        const permissionModal = window.permissionModal
-        permissionModal && permissionModal.show(permission)
-    },
-    x: 16,
-    y: 8
+  globalCallback: (options) => {
+    const permission = translateAuth(options.auth)
+    const { permissionModal } = window
+    permissionModal && permissionModal.show(permission)
+  },
+  x: 16,
+  y: 8
 })

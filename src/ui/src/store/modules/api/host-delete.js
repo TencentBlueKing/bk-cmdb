@@ -8,6 +8,8 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars */
+
 import $http from '@/api'
 
 const state = {
@@ -19,7 +21,7 @@ const getters = {
 }
 
 const actions = {
-    /**
+  /**
      * 删除主机
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -27,9 +29,9 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    deleteHost ({ commit, state, dispatch }, { params }) {
-        return $http.delete(`hosts/batch`, params)
-    }
+  deleteHost({ commit, state, dispatch }, { params }) {
+    return $http.delete('hosts/batch', params)
+  }
 }
 
 const mutations = {
@@ -37,9 +39,9 @@ const mutations = {
 }
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
 }

@@ -83,6 +83,21 @@ var _ = Describe("service template test", func() {
 			resMap["service_template"] = j
 		})
 
+		It("find service template count info", func() {
+			input := map[string]interface{}{
+				"service_template_ids": []int64{serviceTemplateId},
+			}
+			rsp, err := serviceClient.FindServiceTemplateCountInfo(context.Background(), header, bizId, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(len(rsp.Data)).To(Equal(1))
+			Expect(rsp.Data[0].(map[string]interface{})["service_template_id"].(json.Number).Int64()).To(Equal(serviceTemplateId))
+			Expect(rsp.Data[0].(map[string]interface{})["process_template_count"].(json.Number).Int64()).To(Equal(int64(0)))
+			Expect(rsp.Data[0].(map[string]interface{})["service_instance_count"].(json.Number).Int64()).To(Equal(int64(0)))
+			Expect(rsp.Data[0].(map[string]interface{})["module_count"].(json.Number).Int64()).To(Equal(int64(0)))
+		})
+
 		It("create service template with empty name", func() {
 			input := map[string]interface{}{
 				"service_category_id": categoryId,
@@ -373,6 +388,16 @@ var _ = Describe("service template test", func() {
 			j, err := json.Marshal(rsp)
 			Expect(j).To(Equal(resMap["service_instance"]))
 		})
+
+		It("search service instance by set template id", func() {
+			input := map[string]interface{}{
+				"set_template_id": 1,
+			}
+			rsp, err := serviceClient.SearchServiceInstanceBySetTemplate(context.Background(), strconv.FormatInt(bizId, 10), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.ToString())
+		})
 	})
 
 	Describe("process template test", func() {
@@ -601,7 +626,7 @@ var _ = Describe("service template test", func() {
 			Expect(len(data)).To(Equal(1))
 			Expect(data[0].Property["bk_process_name"]).To(Equal("p1"))
 			Expect(data[0].Property["bk_func_name"]).To(Equal("p1"))
-			Expect(data[0].Property["bk_start_param_regex"]).Should(BeNil())
+			Expect(data[0].Property["bk_start_param_regex"]).To(Equal("123"))
 			Expect(data[0].Relation.HostID).To(Equal(hostId2))
 			processId, err = commonutil.GetInt64ByInterface(data[0].Property["bk_process_id"])
 			Expect(err).NotTo(HaveOccurred())

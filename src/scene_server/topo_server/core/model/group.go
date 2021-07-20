@@ -13,7 +13,6 @@
 package model
 
 import (
-	"context"
 	"encoding/json"
 
 	"configcenter/src/apimachinery"
@@ -23,6 +22,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+
 	"github.com/rs/xid"
 )
 
@@ -39,11 +39,11 @@ type GroupInterface interface {
 
 var _ GroupInterface = (*group)(nil)
 
-func NewGroup(param *rest.Kit, cli apimachinery.ClientSetInterface, metaData *metadata.Metadata) GroupInterface {
+func NewGroup(param *rest.Kit, cli apimachinery.ClientSetInterface, bizID int64) GroupInterface {
 	return &group{
 		grp:       metadata.Group{},
 		kit:       param,
-		metadata:  metaData,
+		bizID:     bizID,
 		clientSet: cli,
 		ownerID:   param.SupplierAccount,
 	}
@@ -62,7 +62,7 @@ type group struct {
 	grp       metadata.Group
 	isNew     bool
 	kit       *rest.Kit
-	metadata  *metadata.Metadata
+	bizID     int64
 	clientSet apimachinery.ClientSetInterface
 	ownerID   string
 }
@@ -113,7 +113,7 @@ func (g *group) Create() error {
 		return err
 	}
 
-	rsp, err := g.clientSet.CoreService().Model().CreateAttributeGroup(context.Background(), g.kit.Header, g.GetObjectID(), metadata.CreateModelAttributeGroup{Data: g.grp})
+	rsp, err := g.clientSet.CoreService().Model().CreateAttributeGroup(g.kit.Ctx, g.kit.Header, g.GetObjectID(), metadata.CreateModelAttributeGroup{Data: g.grp})
 	if nil != err {
 		blog.Errorf("[model-grp] failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return g.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -160,7 +160,7 @@ func (g *group) Update(data mapstr.MapStr) error {
 			},
 		}
 
-		rsp, err := g.clientSet.CoreService().Model().UpdateAttributeGroup(context.Background(), g.kit.Header, g.GetObjectID(), input)
+		rsp, err := g.clientSet.CoreService().Model().UpdateAttributeGroup(g.kit.Ctx, g.kit.Header, g.GetObjectID(), input)
 		if nil != err {
 			blog.Errorf("[model-grp]failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 			return err
@@ -221,7 +221,7 @@ func (g *group) GetAttributes() ([]AttributeInterface, error) {
 	cond.Field(metadata.AttributeFieldObjectID).Eq(g.grp.ObjectID).
 		Field(metadata.AttributeFieldPropertyGroup).Eq(g.grp.GroupID)
 
-	rsp, err := g.clientSet.CoreService().Model().ReadModelAttr(context.Background(), g.kit.Header, g.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := g.clientSet.CoreService().Model().ReadModelAttr(g.kit.Ctx, g.kit.Header, g.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return nil, g.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -248,10 +248,10 @@ func (g *group) GetAttributes() ([]AttributeInterface, error) {
 }
 
 func (g *group) search(cond condition.Condition) ([]metadata.Group, error) {
-	if nil != g.metadata {
-		cond.Field(metadata.BKMetadata).Eq(*g.metadata)
+	if g.bizID > 0 {
+		cond.Field(common.BKAppIDField).Eq(g.bizID)
 	}
-	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), g.kit.Header, g.GetObjectID(), metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroup(g.kit.Ctx, g.kit.Header, g.GetObjectID(), metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return nil, err

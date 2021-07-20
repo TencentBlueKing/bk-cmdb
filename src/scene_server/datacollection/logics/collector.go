@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/thirdpartyclient/esbserver/nodeman"
+	"configcenter/src/thirdparty/esbserver/nodeman"
 
 	"gopkg.in/yaml.v2"
 )

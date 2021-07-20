@@ -88,8 +88,8 @@ func (h *host) TransferToAnotherBusiness(ctx context.Context, header http.Header
 }
 
 // DeleteHost delete host
-func (h *host) DeleteHostFromSystem(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (resp *metadata.OperaterException, err error) {
-	resp = new(metadata.OperaterException)
+func (h *host) DeleteHostFromSystem(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
 	subPath := "/delete/host"
 
 	err = h.client.Delete().
@@ -159,33 +159,6 @@ func (h *host) GetHosts(ctx context.Context, header http.Header, opt *metadata.Q
 	return resp, err
 }
 
-func (h *host) GetHostSnap(ctx context.Context, header http.Header, hostID string) (resp *metadata.GetHostSnapResult, err error) {
-	resp = new(metadata.GetHostSnapResult)
-	subPath := "/find/host/snapshot/%s"
-
-	err = h.client.Get().
-		WithContext(ctx).
-		SubResourcef(subPath, hostID).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	return resp, err
-}
-
-func (h *host) GetHostSnapBatch(ctx context.Context, header http.Header, input metadata.HostSnapBatchInput) (resp *metadata.GetHostSnapBatchResult, err error) {
-	resp = new(metadata.GetHostSnapBatchResult)
-	subPath := "/find/host/snapshot/batch"
-
-	err = h.client.Post().
-		Body(input).
-		WithContext(ctx).
-		SubResourcef(subPath).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	return resp, err
-}
-
 func (h *host) LockHost(ctx context.Context, header http.Header, input *metadata.HostLockRequest) (resp *metadata.HostLockResponse, err error) {
 	resp = new(metadata.HostLockResponse)
 	subPath := "/find/host/lock"
@@ -228,13 +201,16 @@ func (h *host) QueryHostLock(ctx context.Context, header http.Header, input *met
 	return resp, err
 }
 
-func (h *host) AddUserConfig(ctx context.Context, header http.Header, dat *metadata.UserConfig) (resp *metadata.IDResult, err error) {
+// CreateDynamicGroup is dynamic group query datas base on conditions action api machinery.
+func (h *host) CreateDynamicGroup(ctx context.Context, header http.Header,
+	data *metadata.DynamicGroup) (resp *metadata.IDResult, err error) {
+
 	resp = new(metadata.IDResult)
-	subPath := "/create/userapi"
+	subPath := "/create/dynamicgroup"
 
 	err = h.client.Post().
 		WithContext(ctx).
-		Body(dat).
+		Body(data).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
@@ -242,56 +218,68 @@ func (h *host) AddUserConfig(ctx context.Context, header http.Header, dat *metad
 	return
 }
 
-func (h *host) UpdateUserConfig(ctx context.Context, businessID string, id string, header http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+// UpdateDynamicGroup is dynamic group update action api machinery.
+func (h *host) UpdateDynamicGroup(ctx context.Context, bizID, id string,
+	header http.Header, data map[string]interface{}) (resp *metadata.BaseResp, err error) {
+
 	resp = new(metadata.BaseResp)
-	subPath := "/update/userapi/%s/%s"
+	subPath := "/update/dynamicgroup/%s/%s"
 
 	err = h.client.Put().
 		WithContext(ctx).
-		Body(dat).
-		SubResourcef(subPath, businessID, id).
+		Body(data).
+		SubResourcef(subPath, bizID, id).
 		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
 }
 
-func (h *host) DeleteUserConfig(ctx context.Context, businessID string, id string, header http.Header) (resp *metadata.BaseResp, err error) {
+// DeleteDynamicGroup is dynamic group delete action api machinery.
+func (h *host) DeleteDynamicGroup(ctx context.Context, bizID, id string,
+	header http.Header) (resp *metadata.BaseResp, err error) {
+
 	resp = new(metadata.BaseResp)
-	subPath := "/delete/userapi/%s/%s"
+	subPath := "/delete/dynamicgroup/%s/%s"
 
 	err = h.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, businessID, id).
+		SubResourcef(subPath, bizID, id).
 		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
 }
 
-func (h *host) GetUserConfig(ctx context.Context, header http.Header, opt *metadata.QueryInput) (resp *metadata.GetUserConfigResult, err error) {
-	resp = new(metadata.GetUserConfigResult)
-	subPath := "/findmany/userapi/search"
+// GetDynamicGroup is dynamic group query detail action api machinery.
+func (h *host) GetDynamicGroup(ctx context.Context, bizID, id string,
+	header http.Header) (resp *metadata.GetDynamicGroupResult, err error) {
+
+	resp = new(metadata.GetDynamicGroupResult)
+	subPath := "/find/dynamicgroup/%s/%s"
+
+	err = h.client.Get().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath, bizID, id).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+// SearchDynamicGroup is dynamic group search action api machinery.
+func (h *host) SearchDynamicGroup(ctx context.Context, header http.Header,
+	opt *metadata.QueryCondition) (resp *metadata.SearchDynamicGroupResult, err error) {
+
+	resp = new(metadata.SearchDynamicGroupResult)
+	subPath := "/findmany/dynamicgroup/search"
 
 	err = h.client.Post().
 		WithContext(ctx).
 		Body(opt).
 		SubResourcef(subPath).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	return
-}
-
-func (h *host) GetUserConfigDetail(ctx context.Context, businessID string, id string, header http.Header) (resp *metadata.GetUserConfigDetailResult, err error) {
-	resp = new(metadata.GetUserConfigDetailResult)
-	subPath := "/find/userapi/detail/%s/%s"
-
-	err = h.client.Get().
-		WithContext(ctx).
-		Body(nil).
-		SubResourcef(subPath, businessID, id).
 		WithHeaders(header).
 		Do().
 		Into(resp)
@@ -493,6 +481,44 @@ func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header,
 	if result.Code > 0 || result.Result == false {
 		return errors.New(result.Code, result.ErrMsg)
 	}
+	return nil
+}
+
+func (h *host) FindCloudAreaHostCount(ctx context.Context, header http.Header, option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error) {
+	resp = new(metadata.CloudAreaHostCountResult)
+	subPath := "/findmany/cloudarea/hostcount"
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) TransferHostResourceDirectory(ctx context.Context, header http.Header, option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
+	rid := util.GetHTTPCCRequestID(header)
+
+	result := metadata.BaseResp{}
+	subPath := "/host/transfer/resource/directory"
+
+	err := h.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&result)
+	if err != nil {
+		blog.Errorf("TransferHostResourceDirectory failed, http request failed, err: %+v, rid: %s", err, rid)
+		return errors.CCHttpError
+	}
+	if result.Code > 0 || result.Result == false {
+		return errors.New(result.Code, result.ErrMsg)
+	}
+
 	return nil
 }
 

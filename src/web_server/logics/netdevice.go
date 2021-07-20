@@ -49,7 +49,7 @@ func GetImportNetDevices(
 }
 
 func BuildNetDeviceExcelFromData(ctx context.Context, defLang language.DefaultCCLanguageIf, fields map[string]Property, data []mapstr.MapStr, sheet *xlsx.Sheet) error {
-	productExcelHealer(ctx, fields, nil, sheet, defLang)
+	productExcelHeader(ctx, fields, nil, sheet, defLang)
 
 	rowIndex := common.HostAddMethodExcelIndexOffset
 	for _, row := range data {
@@ -112,7 +112,7 @@ func BuildNetDeviceExcelTemplate(header http.Header, defLang language.DefaultCCL
 
 	blog.V(5).Infof("[Build NetDevice Excel Template] fields count:%d, rid: %s", len(fields), rid)
 
-	productExcelHealer(ctx, fields, nil, sheet, defLang)
+	productExcelHeader(ctx, fields, nil, sheet, defLang)
 
 	if err = file.Save(filename); nil != err {
 		return err

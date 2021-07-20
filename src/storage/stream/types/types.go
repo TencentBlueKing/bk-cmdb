@@ -13,12 +13,17 @@
 package types
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
 	"time"
 
+	"github.com/tidwall/gjson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
 type OperType string
@@ -133,6 +138,10 @@ type Options struct {
 
 	// Ensures that this watch will provide events that occurred after this timestamp.
 	StartAtTime *TimeStamp
+
+	// WatchFatalErrorCallback the function to be called when watch failed with a fatal error
+	// reset the resume token and set the start time for next watch in case it use the mistaken token again
+	WatchFatalErrorCallback func(startAtTime TimeStamp) error `json:"-"`
 }
 
 var defaultMaxAwaitTime = time.Second
@@ -161,9 +170,41 @@ func (opts *Options) CheckSetDefault() error {
 
 type TimeStamp struct {
 	// the most significant 32 bits are a time_t value (seconds since the Unix epoch)
-	Sec uint32 `json:"sec"`
+	Sec uint32 `json:"sec" bson:"sec"`
 	// the least significant 32 bits are an incrementing ordinal for operations within a given second.
-	Nano uint32 `json:"nano"`
+	Nano uint32 `json:"nano" bson:"nano"`
+}
+
+func (t TimeStamp) String() string {
+	return time.Unix(int64(t.Sec), int64(t.Nano)).Format("2006-01-02/15:04:05")
+}
+
+func (t TimeStamp) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	return bsonx.Time(time.Unix(int64(t.Sec), int64(t.Nano))).MarshalBSONValue()
+}
+
+type timeStampCopy struct {
+	Sec  uint32 `json:"sec" bson:"sec"`
+	Nano uint32 `json:"nano" bson:"nano"`
+}
+
+func (t *TimeStamp) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
+	if typo == bsontype.DateTime {
+		timeStamp := bson.RawValue{Type: bsontype.DateTime, Value: raw}.Time()
+		t.Sec = uint32(timeStamp.Unix())
+		t.Nano = uint32(timeStamp.Nanosecond())
+		return nil
+	}
+
+	tt := timeStampCopy{}
+	err := bson.Unmarshal(raw, &tt)
+	if err != nil {
+		return err
+	}
+
+	t.Sec = tt.Sec
+	t.Nano = tt.Nano
+	return nil
 }
 
 type WatchOptions struct {
@@ -214,10 +255,24 @@ type Event struct {
 
 	// event token for resume after.
 	Token EventToken
+
+	// changed fields details in this event, describes which fields is updated or removed.
+	ChangeDesc *ChangeDescription
+}
+
+type ChangeDescription struct {
+	// updated details's value is the current value, not the previous value.
+	UpdatedFields map[string]interface{}
+	RemovedFields []string
 }
 
 func (e *Event) String() string {
-	return fmt.Sprintf("event detail, oper: %s, oid: %s, doc: %s", e.OperationType, e.Oid, e.DocBytes)
+	return fmt.Sprintf("oper: %s, oid: %s, doc: %s", e.OperationType, e.Oid, e.DocBytes)
+}
+
+// ID returns a event's  logical unique identity id in a collection
+func (e *Event) ID() string {
+	return fmt.Sprintf("%s-%d-%d", e.Oid, e.ClusterTime.Sec, e.ClusterTime.Nano)
 }
 
 // mongodb change stream token, which represent a event's identity.
@@ -234,6 +289,7 @@ type EventStream struct {
 	ClusterTime   primitive.Timestamp `bson:"clusterTime"`
 	Namespace     Namespace           `bson:"ns"`
 	DocumentKey   Key                 `bson:"documentKey"`
+	UpdateDesc    UpdateDescription   `bson:"updateDescription"`
 }
 
 type Key struct {
@@ -244,4 +300,177 @@ type Key struct {
 type Namespace struct {
 	Database   string `bson:"db"`
 	Collection string `bson:"coll"`
+}
+
+type UpdateDescription struct {
+	// document's fields which is updated in a change stream
+	UpdatedFields map[string]interface{} `json:"updatedFields" bson:"updatedFields"`
+	// document's fields which is removed in a change stream
+	RemovedFields []string `json:"removedFields" bson:"removedFields"`
+}
+
+// EventDetail event document detail and changed fields
+type EventDetail struct {
+	Detail        JsonString             `json:"detail"`
+	UpdatedFields map[string]interface{} `json:"update_fields"`
+	RemovedFields []string               `json:"deleted_fields"`
+}
+
+type JsonString string
+
+func (j JsonString) MarshalJSON() ([]byte, error) {
+	if j == "" {
+		j = "{}"
+	}
+	return []byte(j), nil
+}
+
+func (j *JsonString) UnmarshalJSON(b []byte) error {
+	*j = JsonString(b)
+	return nil
+}
+
+// GetEventDetail get event document detail, returns EventDetail's detail field
+func GetEventDetail(detailStr *string) *string {
+	if detailStr == nil {
+		return new(string)
+	}
+	detail := gjson.Get(*detailStr, "detail").Raw
+	return &detail
+}
+
+type TokenHandler interface {
+	SetLastWatchToken(ctx context.Context, token string) error
+	GetStartWatchToken(ctx context.Context) (token string, err error)
+}
+
+type LoopOptions struct {
+	// name of this loop watch
+	Name         string
+	WatchOpt     *WatchOptions
+	TokenHandler TokenHandler
+	RetryOptions *RetryOptions
+}
+
+type LoopOneOptions struct {
+	LoopOptions
+	EventHandler *OneHandler
+}
+
+func (lo *LoopOneOptions) Validate() error {
+	if len(lo.Name) == 0 {
+		return errors.New("loop watch should have a name")
+	}
+
+	if lo.TokenHandler == nil {
+		return errors.New("token handler is nil")
+	}
+
+	if lo.EventHandler == nil {
+		return errors.New("event handler is nil")
+	}
+
+	if lo.EventHandler.DoAdd == nil || lo.EventHandler.DoUpdate == nil || lo.EventHandler.DoDelete == nil {
+		return errors.New("invalid event handler options with add, update or delete is nil")
+	}
+
+	if lo.RetryOptions != nil {
+		if lo.RetryOptions.MaxRetryCount <= 0 {
+			lo.RetryOptions.MaxRetryCount = defaultRetryCount
+		}
+
+		if lo.RetryOptions.RetryDuration == 0 {
+			lo.RetryOptions.RetryDuration = defaultRetryDuration
+		}
+
+		if lo.RetryOptions.RetryDuration < 500*time.Millisecond {
+			return errors.New("invalid retry duration, can not less than 500ms")
+		}
+	} else {
+		lo.RetryOptions = &RetryOptions{
+			MaxRetryCount: defaultRetryCount,
+			RetryDuration: defaultRetryDuration,
+		}
+	}
+
+	return nil
+}
+
+type LoopBatchOptions struct {
+	LoopOptions
+	EventHandler *BatchHandler
+	// describe how many events in a batch.
+	BatchSize int
+}
+
+const (
+	defaultBatchSize     = 200
+	defaultRetryCount    = 10
+	defaultRetryDuration = 1 * time.Second
+)
+
+func (lo *LoopBatchOptions) Validate() error {
+	if len(lo.Name) == 0 {
+		return errors.New("loop watch should have a name")
+	}
+
+	if lo.TokenHandler == nil {
+		return errors.New("token handler is nil")
+	}
+
+	if lo.EventHandler == nil {
+		return errors.New("event handler is nil")
+	}
+
+	if lo.EventHandler.DoBatch == nil {
+		return errors.New("batch handler is nil")
+	}
+
+	if lo.BatchSize == 0 {
+		lo.BatchSize = defaultBatchSize
+	}
+
+	if lo.RetryOptions != nil {
+		if lo.RetryOptions.MaxRetryCount <= 0 {
+			lo.RetryOptions.MaxRetryCount = defaultRetryCount
+		}
+
+		if lo.RetryOptions.RetryDuration == 0 {
+			lo.RetryOptions.RetryDuration = defaultRetryDuration
+		}
+
+		if lo.RetryOptions.RetryDuration < 200*time.Millisecond {
+			return errors.New("invalid retry duration, can not less than 200ms")
+		}
+	} else {
+		lo.RetryOptions = &RetryOptions{
+			MaxRetryCount: defaultRetryCount,
+			RetryDuration: defaultRetryDuration,
+		}
+	}
+
+	return nil
+}
+
+type RetryOptions struct {
+	// the maximum count to retry, when a event is handled failed.
+	MaxRetryCount int
+
+	// the duration between each retry.
+	// default
+	RetryDuration time.Duration
+}
+
+type OneHandler struct {
+	// retry decide whether event(s) is required to retry after
+	// a event is handled failed
+	DoAdd    func(event *Event) (retry bool)
+	DoUpdate func(event *Event) (retry bool)
+	DoDelete func(event *Event) (retry bool)
+}
+
+type BatchHandler struct {
+	// DoBatch means handle the event with batch,
+	// when this is enabled, then DoAdd, DoUpdate, DoDelete will be ignored
+	DoBatch func(es []*Event) (retry bool)
 }

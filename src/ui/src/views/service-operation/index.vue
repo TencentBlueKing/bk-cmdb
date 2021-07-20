@@ -1,236 +1,238 @@
 <template>
-    <div class="layout" v-bkloading="{
-        isLoading: !ready,
-        immediate: true
-    }">
-        <template v-if="ready">
-            <div class="info clearfix mb20">
-                <label class="info-label fl">{{$t('已选实例')}}：</label>
-                <i18n tag="div" path="N个" class="info-content">
-                    <b class="info-count" place="count">{{serviceInstanceIds.length}}</b>
-                </i18n>
-            </div>
-            <div class="info clearfix mb10" ref="changeInfo">
-                <label class="info-label fl">{{$t('变更确认')}}：</label>
-                <div class="info-content">
-                    <template v-if="availableTabList.length">
-                        <ul class="tab clearfix">
-                            <template v-for="(item, index) in availableTabList">
-                                <li class="tab-grep fl" v-if="index" :key="index"></li>
-                                <li class="tab-item fl"
-                                    :class="{ active: activeTab === item }"
-                                    :key="item.id"
-                                    @click="handleTabClick(item)">
-                                    <span class="tab-label">{{item.label}}</span>
-                                    <span :class="['tab-count', { 'has-badge': !item.confirmed }]">
-                                        {{item.props.info.length}}
-                                    </span>
-                                </li>
-                            </template>
-                        </ul>
-                        <component class="tab-component"
-                            v-for="item in availableTabList"
-                            v-bind="item.props"
-                            v-show="activeTab === item"
-                            :ref="item.id"
-                            :key="item.id"
-                            :is="item.component">
-                        </component>
-                    </template>
-                    <div class="tab-empty" v-else>
-                        {{$t('仅移除服务实例，主机无变更')}}
-                    </div>
-                </div>
-            </div>
-            <div class="options" :class="{ 'is-sticky': hasScrollbar }">
-                <bk-button theme="primary" :loading="$loading(request.confirm)" @click="handleConfirm">{{$t('确认')}}</bk-button>
-                <bk-button class="ml10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-            </div>
-        </template>
-    </div>
+  <div class="layout" v-bkloading="{
+    isLoading: !ready,
+    immediate: true
+  }">
+    <template v-if="ready">
+      <div class="info clearfix mb20">
+        <label class="info-label fl">{{$t('已选实例')}}：</label>
+        <i18n tag="div" path="N个" class="info-content">
+          <b class="info-count" place="count">{{serviceInstanceIds.length}}</b>
+        </i18n>
+      </div>
+      <div class="info clearfix mb10" ref="changeInfo">
+        <label class="info-label fl">{{$t('变更确认')}}：</label>
+        <div class="info-content">
+          <template v-if="availableTabList.length">
+            <ul class="tab clearfix">
+              <template v-for="(item, index) in availableTabList">
+                <li class="tab-grep fl" v-if="index" :key="index"></li>
+                <li class="tab-item fl"
+                  :class="{ active: activeTab === item }"
+                  :key="item.id"
+                  @click="handleTabClick(item)">
+                  <span class="tab-label">{{item.label}}</span>
+                  <span :class="['tab-count', { 'has-badge': !item.confirmed }]">
+                    {{item.props.info.length}}
+                  </span>
+                </li>
+              </template>
+            </ul>
+            <component class="tab-component"
+              v-for="item in availableTabList"
+              v-bind="item.props"
+              v-show="activeTab === item"
+              :ref="item.id"
+              :key="item.id"
+              :is="item.component">
+            </component>
+          </template>
+          <div class="tab-empty" v-else>
+            {{$t('仅移除服务实例，主机无变更')}}
+          </div>
+        </div>
+      </div>
+      <div class="options" :class="{ 'is-sticky': hasScrollbar }">
+        <bk-button theme="primary" :loading="$loading(request.confirm)" @click="handleConfirm">{{$t('确认')}}</bk-button>
+        <bk-button class="ml10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
+      </div>
+    </template>
+  </div>
 </template>
 
 <script>
-    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
-    import { mapGetters } from 'vuex'
-    import MoveToIdleHost from './children/move-to-idle-host.vue'
-    import HostAttrsAutoApply from './children/host-attrs-auto-apply.vue'
-    export default {
-        components: {
-            [MoveToIdleHost.name]: MoveToIdleHost,
-            [HostAttrsAutoApply.name]: HostAttrsAutoApply
+  import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
+  import { mapGetters } from 'vuex'
+  import MoveToIdleHost from './children/move-to-idle-host.vue'
+  import HostAttrsAutoApply from './children/host-attrs-auto-apply.vue'
+  export default {
+    components: {
+      [MoveToIdleHost.name]: MoveToIdleHost,
+      [HostAttrsAutoApply.name]: HostAttrsAutoApply
+    },
+    data() {
+      return {
+        ready: false,
+        hasScrollbar: false,
+        moveToIdleHosts: [],
+        tabList: [{
+          id: 'moveToIdleHost',
+          label: this.$t('转移到空闲机的主机'),
+          confirmed: false,
+          component: MoveToIdleHost.name,
+          props: {
+            info: []
+          }
+        }, {
+          id: 'hostAttrsAutoApply',
+          label: this.$t('属性自动应用'),
+          confirmed: false,
+          component: HostAttrsAutoApply.name,
+          props: {
+            info: []
+          }
+        }],
+        request: {
+          preview: Symbol('review'),
+          confirm: Symbol('confirm'),
+          host: Symbol('host')
         },
-        data () {
-            return {
-                ready: false,
-                hasScrollbar: false,
-                moveToIdleHosts: [],
-                tabList: [{
-                    id: 'moveToIdleHost',
-                    label: this.$t('转移到空闲机的主机'),
-                    confirmed: false,
-                    component: MoveToIdleHost.name,
-                    props: {
-                        info: []
-                    }
-                }, {
-                    id: 'hostAttrsAutoApply',
-                    label: this.$t('属性自动应用'),
-                    confirmed: false,
-                    component: HostAttrsAutoApply.name,
-                    props: {
-                        info: []
-                    }
-                }],
-                request: {
-                    preview: Symbol('review'),
-                    confirm: Symbol('confirm'),
-                    host: Symbol('host')
-                },
-                tab: {
-                    active: null
-                }
-            }
-        },
-        computed: {
-            ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters('businessHost', [
-                'getDefaultSearchCondition'
-            ]),
-            moduleId () {
-                return this.$route.params.moduleId && parseInt(this.$route.params.moduleId)
-            },
-            serviceInstanceIds () {
-                return String(this.$route.params.ids).split('/').map(id => parseInt(id, 10))
-            },
-            availableTabList () {
-                return this.tabList.filter(tab => tab.props.info.length > 0)
-            },
-            activeTab () {
-                return this.tabList.find(tab => tab.id === this.tab.active) || this.availableTabList[0]
-            }
-        },
-        watch: {
-            ready (ready) {
-                this.$nextTick(() => {
-                    addResizeListener(this.$refs.changeInfo, this.resizeHandler)
-                })
-            },
-            availableTabList (tabList) {
-                tabList.forEach(tab => {
-                    if (tab !== this.activeTab) {
-                        tab.confirmed = false
-                    }
-                })
-            },
-            activeTab (tab) {
-                if (!tab) return
-                tab.confirmed = true
-            }
-        },
-        async created () {
-            this.getPreviewData()
-        },
-        beforeDestroy () {
-            removeResizeListener(this.$refs.changeInfo, this.resizeHandler)
-        },
-        methods: {
-            async getPreviewData () {
-                try {
-                    const data = await this.$store.dispatch('serviceInstance/previewDeleteServiceInstances', {
-                        params: {
-                            bk_biz_id: this.bizId,
-                            service_instance_ids: this.serviceInstanceIds
-                        },
-                        config: {
-                            requestId: this.request.preview
-                        }
-                    })
-                    this.setMoveToIdleHosts(data.to_move_module_hosts)
-                    this.setHostAttrsAutoApply(data.host_apply_plan)
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            async setMoveToIdleHosts (data = []) {
-                try {
-                    const hostIds = []
-                    data.forEach(item => {
-                        if (item.move_to_idle) {
-                            hostIds.push(item.bk_host_id)
-                        }
-                    })
-                    const moveToIdleHosts = await this.getHostInfo(hostIds)
-                    const tab = this.tabList.find(tab => tab.id === 'moveToIdleHost')
-                    tab.props.info = moveToIdleHosts
-                    setTimeout(() => {
-                        this.ready = true
-                    }, 300)
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            setHostAttrsAutoApply (data = {}) {
-                const applyList = data.plans || []
-                const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
-                tab.props.info = applyList.filter(item => item.conflicts.length || item.update_fields.length)
-            },
-            getHostInfo (hostIds) {
-                return this.$store.dispatch('hostSearch/searchHost', {
-                    params: this.getSearchHostParams(hostIds),
-                    config: {
-                        requestId: this.request.host
-                    }
-                }).then(data => data.info)
-            },
-            getSearchHostParams (hostIds) {
-                const params = {
-                    bk_biz_id: this.bizId,
-                    ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
-                    page: {},
-                    condition: this.getDefaultSearchCondition()
-                }
-                const hostCondition = params.condition.find(target => target.bk_obj_id === 'host')
-                hostCondition.condition.push({
-                    field: 'bk_host_id',
-                    operator: '$in',
-                    value: hostIds
-                })
-                return params
-            },
-            resizeHandler () {
-                this.$nextTick(() => {
-                    const scroller = this.$el.parentElement
-                    this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
-                })
-            },
-            async handleConfirm () {
-                try {
-                    await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
-                        config: {
-                            data: this.$injectMetadata({
-                                service_instance_ids: this.serviceInstanceIds
-                            }, { injectBizId: true }),
-                            requestId: this.request.confirm
-                        }
-                    })
-                    this.$success(this.$t('删除成功'))
-                    this.redirect()
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            handleCancel () {
-                this.redirect()
-            },
-            handleTabClick (tab) {
-                this.tab.active = tab.id
-            },
-            redirect () {
-                this.$routerActions.back()
-            }
+        tab: {
+          active: null
         }
+      }
+    },
+    computed: {
+      ...mapGetters('objectBiz', ['bizId']),
+      ...mapGetters('businessHost', [
+        'getDefaultSearchCondition'
+      ]),
+      moduleId() {
+        return this.$route.params.moduleId && parseInt(this.$route.params.moduleId, 10)
+      },
+      serviceInstanceIds() {
+        return String(this.$route.params.ids).split('/')
+          .map(id => parseInt(id, 10))
+      },
+      availableTabList() {
+        return this.tabList.filter(tab => tab.props.info.length > 0)
+      },
+      activeTab() {
+        return this.tabList.find(tab => tab.id === this.tab.active) || this.availableTabList[0]
+      }
+    },
+    watch: {
+      ready() {
+        this.$nextTick(() => {
+          addResizeListener(this.$refs.changeInfo, this.resizeHandler)
+        })
+      },
+      availableTabList(tabList) {
+        tabList.forEach((tab) => {
+          if (tab !== this.activeTab) {
+            tab.confirmed = false
+          }
+        })
+      },
+      activeTab(tab) {
+        if (!tab) return
+        tab.confirmed = true
+      }
+    },
+    async created() {
+      this.getPreviewData()
+    },
+    beforeDestroy() {
+      removeResizeListener(this.$refs.changeInfo, this.resizeHandler)
+    },
+    methods: {
+      async getPreviewData() {
+        try {
+          const data = await this.$store.dispatch('serviceInstance/previewDeleteServiceInstances', {
+            params: {
+              bk_biz_id: this.bizId,
+              service_instance_ids: this.serviceInstanceIds
+            },
+            config: {
+              requestId: this.request.preview
+            }
+          })
+          this.setMoveToIdleHosts(data.to_move_module_hosts)
+          this.setHostAttrsAutoApply(data.host_apply_plan)
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      async setMoveToIdleHosts(data = []) {
+        try {
+          const hostIds = []
+          data.forEach((item) => {
+            if (item.move_to_idle) {
+              hostIds.push(item.bk_host_id)
+            }
+          })
+          const moveToIdleHosts = await this.getHostInfo(hostIds)
+          const tab = this.tabList.find(tab => tab.id === 'moveToIdleHost')
+          tab.props.info = moveToIdleHosts
+          setTimeout(() => {
+            this.ready = true
+          }, 300)
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      setHostAttrsAutoApply(data = {}) {
+        const applyList = data.plans || []
+        const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
+        tab.props.info = applyList.filter(item => item.conflicts.length || item.update_fields.length)
+      },
+      getHostInfo(hostIds) {
+        return this.$store.dispatch('hostSearch/searchHost', {
+          params: this.getSearchHostParams(hostIds),
+          config: {
+            requestId: this.request.host
+          }
+        }).then(data => data.info)
+      },
+      getSearchHostParams(hostIds) {
+        const params = {
+          bk_biz_id: this.bizId,
+          ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
+          page: {},
+          condition: this.getDefaultSearchCondition()
+        }
+        const hostCondition = params.condition.find(target => target.bk_obj_id === 'host')
+        hostCondition.condition.push({
+          field: 'bk_host_id',
+          operator: '$in',
+          value: hostIds
+        })
+        return params
+      },
+      resizeHandler() {
+        this.$nextTick(() => {
+          const scroller = this.$el.parentElement
+          this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
+        })
+      },
+      async handleConfirm() {
+        try {
+          await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
+            config: {
+              data: {
+                service_instance_ids: this.serviceInstanceIds,
+                bk_biz_id: this.bizId
+              },
+              requestId: this.request.confirm
+            }
+          })
+          this.$success(this.$t('删除成功'))
+          this.redirect()
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      handleCancel() {
+        this.redirect()
+      },
+      handleTabClick(tab) {
+        this.tab.active = tab.id
+      },
+      redirect() {
+        this.$routerActions.back()
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

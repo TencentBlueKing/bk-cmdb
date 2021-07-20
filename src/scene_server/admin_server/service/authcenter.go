@@ -13,9 +13,9 @@
 package service
 
 import (
+	"encoding/json"
 	"net/http"
 
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
@@ -29,102 +29,35 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
 	rid := util.GetHTTPCCRequestID(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
-	if !auth.IsAuthed() {
-		blog.Errorf("received auth center initialization request, but auth center not enabled, rid: %s", rid)
-		result := &metadata.RespError{
-			Msg: defErr.Error(common.CCErrCommAuthCenterIsNotEnabled),
-		}
-		resp.WriteError(http.StatusBadRequest, result)
+	if !auth.EnableAuthorize() {
+		blog.Warnf("received iam initialization request, but auth not enabled, rid: %s", rid)
+		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
 		return
 	}
 
-	bizs := make([]metadata.BizInst, 0)
-	bizFilter := map[string]interface{}{
-		common.BKDefaultField: map[string]interface{}{
-			common.BKDBNE: common.DefaultAppFlag,
-		},
-	}
-	if err := s.db.Table(common.BKTableNameBaseApp).Find(bizFilter).All(s.ctx, &bizs); err != nil {
-		blog.Errorf("init auth center failed, list businesses failed, err: %v, rid: %s", err, rid)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommInitAuthCenterFailed, err.Error()),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
+	param := struct {
+		Host string `json:"host"`
+	}{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&param); err != nil {
+		blog.Errorf("init iam failed with decode body err: %s, rid:%s", err.Error(), rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.CCError(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	noRscPoolBiz := make([]metadata.BizInst, 0)
-	resourcePoolNames := []string{"资源池", "resource pool"}
-	for _, biz := range bizs {
-		if util.InArray(biz.BizName, resourcePoolNames) {
-			continue
-		}
-		noRscPoolBiz = append(noRscPoolBiz, biz)
-	}
-
-	cls := make([]metadata.Classification, 0)
-	clsFilter := map[string]interface{}{
-		common.BKIsPre: map[string]interface{}{
-			common.BKDBNE: true,
-		},
-	}
-	if err := s.db.Table(common.BKTableNameObjClassification).Find(clsFilter).All(s.ctx, &cls); err != nil {
-		blog.Errorf("init auth center failed, list classifications failed, err: %+v, rid: %s", err, rid)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommInitAuthCenterFailed, err.Error()),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
+	if param.Host == "" {
+		blog.Errorf("init iam host not set, rid:%s", rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsNeedSet, "host")})
 		return
 	}
 
-	models := make([]metadata.Object, 0)
-	modelFilter := map[string]interface{}{
-		common.BKObjIDField: map[string]interface{}{
-			common.BKDBNIN: []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat},
-		},
-	}
-	if err := s.db.Table(common.BKTableNameObjDes).Find(modelFilter).All(s.ctx, &models); err != nil {
-		blog.Errorf("init auth center failed, list models failed, err: %v, rid: %s", err, rid)
+	if err := s.iam.RegisterSystem(s.ctx, param.Host); err != nil {
+		blog.Errorf("init iam failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommInitAuthCenterFailed, err.Error()),
+			Msg: defErr.CCErrorf(common.CCErrCommInitAuthCenterFailed, err.Error()),
 		}
-		resp.WriteError(http.StatusInternalServerError, result)
+		_ = resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
 
-	associationKinds := make([]metadata.AssociationKind, 0)
-	associationFilter := map[string]interface{}{
-		common.BKIsPre: true,
-	}
-	if err := s.db.Table(common.BKTableNameAsstDes).Find(associationFilter).All(s.ctx, &associationKinds); err != nil {
-		blog.Errorf("init auth center with association kind failed, get details association kind failed, err: %+v, rid: %s", err, rid)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommDBSelectFailed, err.Error()),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
-		return
-	}
-	assoKinds := make([]metadata.AssociationKind, 0)
-	for ak := range associationKinds {
-		// filter bk_mainline kind, do not register to auth center.
-		if associationKinds[ak].AssociationKindID != common.AssociationKindMainline {
-			assoKinds = append(assoKinds, associationKinds[ak])
-		}
-	}
-
-	initCfg := meta.InitConfig{
-		Bizs:             noRscPoolBiz,
-		Models:           models,
-		Classifications:  cls,
-		AssociationKinds: assoKinds,
-	}
-	if err := s.authCenter.Init(s.ctx, initCfg); nil != err {
-		blog.Errorf("init auth center failed, err: %+v, rid: %s", err, rid)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommInitAuthCenterFailed, err.Error()),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
-		return
-	}
-	resp.WriteEntity(metadata.NewSuccessResp("init auth center success"))
+	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
 }

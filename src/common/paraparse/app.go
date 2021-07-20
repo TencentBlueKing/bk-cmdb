@@ -64,6 +64,14 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 				// a or operator can not have a empty value in mongodb.
 				output[common.BKDBOR] = fields
 			}
+		case common.BKDBIN:
+			d := make(map[string]interface{})
+			if i.Value == nil {
+				d[i.Operator] = make([]interface{}, 0)
+			} else {
+				d[i.Operator] = i.Value
+			}
+			output[i.Field] = d
 		default:
 			d := make(map[string]interface{})
 			if i.Value == nil {

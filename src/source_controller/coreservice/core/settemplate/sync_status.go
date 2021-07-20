@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (p *setTemplateOperation) UpdateSetTemplateSyncStatus(kit *rest.Kit, setID int64, option metadata.SetTemplateSyncStatus) errors.CCErrorCoder {
@@ -28,7 +29,7 @@ func (p *setTemplateOperation) UpdateSetTemplateSyncStatus(kit *rest.Kit, setID 
 	filter := map[string]interface{}{
 		common.BKSetIDField: setID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameSetTemplateSyncStatus).Upsert(kit.Ctx, filter, option); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameSetTemplateSyncStatus).Upsert(kit.Ctx, filter, option); err != nil {
 		blog.Errorf("UpdateSetTemplateSyncStatus failed, db upsert sync status failed, id: %d, option: %s, err: %s, rid: %s", setID, option, err.Error(), kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
@@ -40,7 +41,7 @@ func (p *setTemplateOperation) UpdateSetTemplateSyncStatus(kit *rest.Kit, setID 
 	historyFilter := map[string]interface{}{
 		common.BKTaskIDField: option.TaskID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameSetTemplateSyncHistory).Upsert(kit.Ctx, historyFilter, option); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameSetTemplateSyncHistory).Upsert(kit.Ctx, historyFilter, option); err != nil {
 		blog.Errorf("UpdateSetTemplateSyncStatus failed, db upsert sync history failed, id: %d, option: %s, err: %s, rid: %s", setID, option, err.Error(), kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
@@ -69,7 +70,7 @@ func (p *setTemplateOperation) listSetTemplateSyncStatus(kit *rest.Kit, option m
 	}
 
 	filter := option.ToFilter()
-	querySet := p.dbProxy.Table(tableName).Find(filter)
+	querySet := mongodb.Client().Table(tableName).Find(filter)
 	total, err := querySet.Count(kit.Ctx)
 	if err != nil {
 		blog.ErrorJSON("ListSetTemplateSyncStatus failed, db count failed, filter: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
@@ -101,7 +102,7 @@ func (p *setTemplateOperation) DeleteSetTemplateSyncStatus(kit *rest.Kit, option
 		},
 		common.BKAppIDField: option.BizID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameSetTemplateSyncStatus).Delete(kit.Ctx, filter); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameSetTemplateSyncStatus).Delete(kit.Ctx, filter); err != nil {
 		blog.Errorf("RemoveSetTemplateSyncStatus failed, db delete sync status failed, option: %s, err: %s, rid: %s", option, err.Error(), kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
@@ -118,17 +119,17 @@ func (sto *setTemplateOperation) ModifySetTemplateSyncStatus(kit *rest.Kit, setI
 		common.BKStatusField: sysncStatus,
 	}
 	// check 数据是否存在
-	cnt, err := sto.dbProxy.Table(common.BKTableNameSetTemplateSyncStatus).Find(filter).Count(kit.Ctx)
+	cnt, err := mongodb.Client().Table(common.BKTableNameSetTemplateSyncStatus).Find(filter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("ModifyStatus failed, find set template sync info error, id: %d, status: %s, err: %s, rid: %s", setID, sysncStatus, err.Error(), kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if cnt <= 0 {
-		blog.Errorf("ModifyStatus failed, not find set template sync info, id: %d, status: %s, err: %s, rid: %s", setID, sysncStatus, err.Error(), kit.Rid)
+		blog.Errorf("ModifyStatus failed, not find set template sync info, id: %d, status: %s, rid: %s", setID, sysncStatus, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommNotFound)
 	}
 
-	if err := sto.dbProxy.Table(common.BKTableNameSetTemplateSyncStatus).Upsert(kit.Ctx, filter, doc); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameSetTemplateSyncStatus).Upsert(kit.Ctx, filter, doc); err != nil {
 		blog.Errorf("ModifyStatus failed, db upsert sync status failed, id: %d, status: %s, err: %s, rid: %s", setID, sysncStatus, err.Error(), kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}

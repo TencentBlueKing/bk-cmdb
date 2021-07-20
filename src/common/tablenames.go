@@ -14,21 +14,6 @@ package common
 
 // table names
 const (
-	// BKTableNameProcModule the table name of the process module
-	BKTableNameProcModule = "cc_Proc2Module"
-
-	// BKTableNameProcTemplate the table name of the process template config
-	BKTableNameProcTemplate = "cc_Proc2Template"
-
-	// BKTableNameProcInstanceModel the table name of the process instance
-	BKTableNameProcInstanceModel = "cc_ProcInstanceModel"
-
-	// BKTableNameProcInstanceDetail  the table name of the process instance detail
-	BKTableNameProcInstanceDetail = "cc_ProcInstanceDetail"
-
-	// BKTableNameProcOperateTask  the table name of the process instance operater task info
-	BKTableNameProcOperateTask = "cc_ProcOpTask"
-
 	// BKTableNamePropertyGroup the table name of the property group
 	BKTableNamePropertyGroup = "cc_PropertyGroup"
 
@@ -66,6 +51,7 @@ const (
 	BKTableNameAuditLog         = "cc_AuditLog"
 	BKTableNameSubscription     = "cc_Subscription"
 	BKTableNameUserAPI          = "cc_UserAPI"
+	BKTableNameDynamicGroup     = "cc_DynamicGroup"
 	BKTableNameUserCustom       = "cc_UserCustom"
 	BKTableNameObjAsst          = "cc_ObjAsst"
 	BKTableNameTopoGraphics     = "cc_TopoGraphics"
@@ -101,19 +87,20 @@ const (
 
 	// rule for host property auto apply
 	BKTableNameHostApplyRule = "cc_HostApplyRule"
+
+	// cloud sync tables
+	BKTableNameCloudSyncTask    = "cc_CloudSyncTask"
+	BKTableNameCloudAccount     = "cc_CloudAccount"
+	BKTableNameCloudSyncHistory = "cc_CloudSyncHistory"
+
+	// BKTableNameWatchToken the table to store the latest watch token for collections
+	BKTableNameWatchToken = "cc_WatchToken"
 )
 
 // AllTables alltables
 var AllTables = []string{
-	BKTableNameProcModule,
-	BKTableNameProcTemplate,
-	BKTableNameProcInstanceModel,
-	BKTableNameProcInstanceDetail,
-	BKTableNameProcOperateTask,
 	BKTableNamePropertyGroup,
-	BKTableNameAsstDes,
 	BKTableNameObjDes,
-	BKTableNameObjUnique,
 	BKTableNameObjAttDes,
 	BKTableNameObjClassification,
 	BKTableNameInstAsst,
@@ -131,6 +118,7 @@ var AllTables = []string{
 	BKTableNameAuditLog,
 	BKTableNameSubscription,
 	BKTableNameUserAPI,
+	BKTableNameDynamicGroup,
 	BKTableNameUserCustom,
 	BKTableNameObjAsst,
 	BKTableNameTopoGraphics,
@@ -158,6 +146,9 @@ var AllTables = []string{
 	BKTableNameAPITask,
 	BKTableNameSetTemplateSyncStatus,
 	BKTableNameSetTemplateSyncHistory,
+	BKTableNameCloudSyncTask,
+	BKTableNameCloudAccount,
+	BKTableNameCloudSyncHistory,
 }
 
 // GetInstTableName returns inst data table name

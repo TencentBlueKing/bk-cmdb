@@ -15,22 +15,19 @@ package logics
 import (
 	"net/http"
 
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
-	"configcenter/src/thirdpartyclient/esbserver"
-
-	"gopkg.in/redis.v5"
+	"configcenter/src/thirdparty/esbserver"
 )
 
 type Logics struct {
 	*backbone.Engine
 	esbServ     esbserver.EsbClientInterface
 	ErrHandle   errors.DefaultCCErrorIf
-	cache       *redis.Client
 	header      http.Header
 	rid         string
 	ownerID     string
@@ -73,7 +70,6 @@ func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
 		header:    header,
 		Engine:    lgc.Engine,
 		rid:       rid,
-		cache:     lgc.cache,
 		esbServ:   lgc.esbServ,
 		user:      util.GetUser(header),
 		ownerID:   util.GetOwnerID(header),

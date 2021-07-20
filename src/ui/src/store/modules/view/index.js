@@ -1,20 +1,20 @@
 const state = {
-    showClassify: false
+  showClassify: false
 }
 
 const getters = {
-    showClassify: state => state.showClassify
+  showClassify: state => state.showClassify
 }
 
 const mutations = {
-    toggleClassify (state, showClassify) {
-        state.showClassify = showClassify
-    }
+  toggleClassify(state, showClassify) {
+    state.showClassify = showClassify
+  }
 }
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  mutations
 }

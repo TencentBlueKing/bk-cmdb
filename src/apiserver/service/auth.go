@@ -16,10 +16,11 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/meta"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -35,7 +36,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	ownerID := util.GetOwnerID(pheader)
 	rid := util.GetHTTPCCRequestID(pheader)
 
-	if s.authorizer.Enabled() == false {
+	if auth.EnableAuthorize() == false {
 		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
 		return
@@ -54,66 +55,71 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 
 	resources := make([]metadata.AuthBathVerifyResult, len(body.Resources), len(body.Resources))
 
-	attrs := make([]meta.ResourceAttribute, len(body.Resources))
+	attrs := make([]meta.ResourceAttribute, 0)
+	needExactAuthAttrs := make([]meta.ResourceAttribute, 0)
+	needExactAuthMap := make(map[int]bool)
+
 	for i, res := range body.Resources {
 		resources[i].AuthResource = res
-		attrs[i].BusinessID = res.BizID
-		attrs[i].SupplierAccount = ownerID
-		attrs[i].Type = meta.ResourceType(res.ResourceType)
-		attrs[i].InstanceID = res.ResourceID
-		attrs[i].Action = meta.Action(res.Action)
+		attr := meta.ResourceAttribute{
+			Basic: meta.Basic{
+				Type:         meta.ResourceType(res.ResourceType),
+				Action:       meta.Action(res.Action),
+				InstanceID:   res.ResourceID,
+				InstanceIDEx: res.ResourceIDEx,
+			},
+			SupplierAccount: ownerID,
+			BusinessID:      res.BizID,
+		}
 		for _, item := range res.ParentLayers {
-			attrs[i].Layers = append(attrs[i].Layers, meta.Item{Type: meta.ResourceType(item.ResourceType), InstanceID: item.ResourceID})
+			attr.Layers = append(attr.Layers, meta.Item{Type: meta.ResourceType(item.ResourceType), InstanceID: item.ResourceID, InstanceIDEx: item.ResourceIDEx})
+		}
+		// contains exact resource info, need exact authorize
+		if res.ResourceID > 0 || res.ResourceIDEx != "" || res.BizID > 0 || len(res.ParentLayers) > 0 {
+			needExactAuthMap[i] = true
+			needExactAuthAttrs = append(needExactAuthAttrs, attr)
+		} else {
+			attrs = append(attrs, attr)
 		}
 	}
 
 	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
-	verifyResults, err := s.authorizer.AuthorizeBatch(ctx, user, attrs...)
-	if err != nil {
-		blog.Errorf("get user's resource auth verify status, but authorize batch failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
-		return
+
+	if len(needExactAuthAttrs) > 0 {
+		verifyResults, err := s.authorizer.AuthorizeBatch(ctx, pheader, user, needExactAuthAttrs...)
+		if err != nil {
+			blog.ErrorJSON("get user's resource auth verify status, but authorize batch failed, err: %s, attrs: %s, rid: %s", err, needExactAuthAttrs, rid)
+			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
+			return
+		}
+		index := 0
+		resourceLen := len(body.Resources)
+		for i := 0; i < resourceLen; i++ {
+			if needExactAuthMap[i] {
+				resources[i].Passed = verifyResults[index].Authorized
+				index++
+			}
+		}
 	}
 
-	for i, verifyResult := range verifyResults {
-		resources[i].Passed = verifyResult.Authorized
-		resources[i].Reason = verifyResult.Reason
+	if len(attrs) > 0 {
+		verifyResults, err := s.authorizer.AuthorizeAnyBatch(ctx, pheader, user, attrs...)
+		if err != nil {
+			blog.ErrorJSON("get user's resource auth verify status, but authorize any batch failed, err: %s, attrs: %s, rid: %s", err, attrs, rid)
+			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
+			return
+		}
+		index := 0
+		resourceLen := len(body.Resources)
+		for i := 0; i < resourceLen; i++ {
+			if !needExactAuthMap[i] {
+				resources[i].Passed = verifyResults[index].Authorized
+				index++
+			}
+		}
 	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(resources))
-}
-
-func (s *service) GetAdminEntrance(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	rid := util.GetHTTPCCRequestID(pheader)
-
-	if s.authorizer.Enabled() == false {
-		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
-		return
-	}
-
-	userInfo := meta.UserInfo{
-		UserName:        util.GetUser(pheader),
-		SupplierAccount: util.GetOwnerID(pheader),
-	}
-
-	systemlist, err := s.authorizer.AdminEntrance(req.Request.Context(), userInfo)
-	if err != nil {
-		blog.Errorf("get user: %s authorized business list failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
-		return
-	}
-
-	result := struct {
-		Passed bool `json:"is_pass"`
-	}{}
-	if len(systemlist) > 0 {
-		result.Passed = true
-	}
-
-	resp.WriteEntity(metadata.NewSuccessResp(result))
 }
 
 func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Response) {
@@ -121,7 +127,7 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	rid := util.GetHTTPCCRequestID(pheader)
 
-	if s.authorizer.Enabled() == false {
+	if auth.EnableAuthorize() == false {
 		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
 		return
@@ -132,11 +138,26 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 		SupplierAccount: util.GetOwnerID(pheader),
 	}
 
-	appIDList, err := s.authorizer.GetAnyAuthorizedBusinessList(req.Request.Context(), userInfo)
+	authInput := meta.ListAuthorizedResourcesParam{
+		UserName:     util.GetUser(pheader),
+		ResourceType: meta.Business,
+		Action:       meta.ViewBusinessResource,
+	}
+	authorizedResources, err := s.authorizer.ListAuthorizedResources(req.Request.Context(), pheader, authInput)
 	if err != nil {
 		blog.Errorf("get user: %s authorized business list failed, err: %v, rid: %s", userInfo.UserName, err, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
+	}
+	appIDList := make([]int64, 0)
+	for _, resourceID := range authorizedResources {
+		bizID, err := strconv.ParseInt(resourceID, 10, 64)
+		if err != nil {
+			blog.Errorf("parse bizID(%s) failed, err: %v, rid: %s", bizID, err, rid)
+			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+			return
+		}
+		appIDList = append(appIDList, bizID)
 	}
 
 	if len(appIDList) == 0 {
@@ -171,8 +192,8 @@ func (s *service) GetUserNoAuthSkipURL(req *restful.Request, resp *restful.Respo
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(reqHeader))
 	rid := util.GetHTTPCCRequestID(reqHeader)
 
-	p := make([]metadata.Permission, 0)
-	err := json.NewDecoder(req.Request.Body).Decode(&p)
+	p := new(metadata.IamPermission)
+	err := json.NewDecoder(req.Request.Body).Decode(p)
 	if err != nil {
 		blog.Errorf("get user's skip url when no auth, but decode request failed, err: %v, rid: %s", err, rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
@@ -182,82 +203,9 @@ func (s *service) GetUserNoAuthSkipURL(req *restful.Request, resp *restful.Respo
 	url, err := s.authorizer.GetNoAuthSkipUrl(req.Request.Context(), reqHeader, p)
 	if err != nil {
 		blog.Errorf("get user's skip url when no auth, but request to auth center failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrGetNoAuthSkipURLFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrGetNoAuthSkipURLFailed)})
 		return
 	}
 
-	resp.WriteEntity(metadata.NewSuccessResp(url))
-}
-
-type ConvertedResource struct {
-	Type   string `json:"type"`
-	Action string `json:"action"`
-}
-
-type ScopeType string
-
-const (
-	Business ScopeType = "biz"
-	System   ScopeType = "system"
-)
-
-type ResourceDetail struct {
-	Attribute meta.ResourceAttribute `json:"attribute"`
-	Scope     ScopeType              `json:"scope"`
-}
-
-type ConvertData struct {
-	Data []ResourceDetail `json:"data"`
-}
-
-// used for web to get auth's resource with cmdb's resource. in a word, it's for converting.
-func (s *service) GetCmdbConvertResources(req *restful.Request, resp *restful.Response) {
-	reqHeader := req.Request.Header
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(reqHeader))
-	rid := util.GetHTTPCCRequestID(reqHeader)
-
-	attributes := new(ConvertData)
-	err := json.NewDecoder(req.Request.Body).Decode(attributes)
-	if err != nil {
-		blog.Errorf("convert cmdb resource with iam, but decode request failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-		return
-	}
-
-	converts := make([]ConvertedResource, 0)
-	for _, att := range attributes.Data {
-		var bizID int64
-		switch att.Scope {
-		case Business:
-			// set biz id = 1 means that this resource need to convert to a business resource.
-			bizID = 1
-		case System:
-			// set biz id = 1 means that this resource need to convert to a global resource.
-			bizID = 0
-		default:
-			blog.Errorf("convert cmdb resource with iam, but got invalid scope: %s, rid: %s", att.Scope, rid)
-			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsIsInvalid, att.Scope)})
-			return
-		}
-		typ, err := authcenter.ConvertResourceType(att.Attribute.Type, bizID)
-		if err != nil {
-			blog.Errorf("convert attribute resource type: %+v failed, err: %v", att, err)
-			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, att.Attribute.Type)})
-			return
-		}
-
-		action, err := authcenter.AdaptorAction(&att.Attribute)
-		if err != nil {
-			blog.Errorf("convert attribute resource action: %+v failed, err: %v", att, err)
-			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, att.Attribute.Type)})
-			return
-		}
-
-		converts = append(converts, ConvertedResource{
-			Type:   string(*typ),
-			Action: string(action),
-		})
-	}
-
-	resp.WriteEntity(metadata.NewSuccessResp(converts))
+	_ = resp.WriteEntity(metadata.NewSuccessResp(url))
 }

@@ -20,25 +20,22 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 var _ core.StatisticOperation = (*operationManager)(nil)
 
 type operationManager struct {
-	dbProxy dal.RDB
 }
 
 type M map[string]interface{}
 
-func New(dbProxy dal.RDB) core.StatisticOperation {
-	return &operationManager{
-		dbProxy: dbProxy,
-	}
+func New() core.StatisticOperation {
+	return &operationManager{}
 }
 
 func (m *operationManager) SearchInstCount(kit *rest.Kit, inputParam map[string]interface{}) (uint64, error) {
-	count, err := m.dbProxy.Table(common.BKTableNameBaseInst).Find(inputParam).Count(kit.Ctx)
+	count, err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(inputParam).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("query database error:%s, condition:%v, rid: %v", err.Error(), inputParam, kit.Rid)
 		return 0, err
@@ -73,61 +70,14 @@ func (m *operationManager) SearchChartData(kit *rest.Kit, inputParam metadata.Ch
 }
 
 func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error) {
-	commonCount := make([]metadata.StringIDCount, 0)
-	filterCondition := fmt.Sprintf("$%s", inputParam.Field)
-
-	if inputParam.ObjID == common.BKInnerObjIDHost {
-		pipeline := []M{{common.BKDBGroup: M{"_id": filterCondition, "count": M{common.BKDBSum: 1}}}}
-		if err := m.dbProxy.Table(common.BKTableNameBaseHost).AggregateAll(kit.Ctx, pipeline, &commonCount); err != nil {
-			blog.Errorf("host os type count aggregate fail, chartName: %v, err: %v, rid: %v", inputParam.Name, err, kit.Rid)
-			return nil, err
-		}
-	} else {
-		pipeline := []M{{common.BKDBMatch: M{common.BKObjIDField: inputParam.ObjID}}, {common.BKDBGroup: M{"_id": filterCondition, "count": M{common.BKDBSum: 1}}}}
-		if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(kit.Ctx, pipeline, &commonCount); err != nil {
-			blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, kit.Rid)
-			return nil, err
-		}
-	}
-
+	// get enum options by model's field
 	attribute := metadata.Attribute{}
 	opt := map[string]interface{}{}
 	opt[common.BKObjIDField] = inputParam.ObjID
 	opt[common.BKPropertyIDField] = inputParam.Field
-	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).One(kit.Ctx, &attribute); err != nil {
-		blog.Errorf("model's instance count aggregate fail, chartName: %v, objID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, kit.Rid)
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(opt).One(kit.Ctx, &attribute); err != nil {
+		blog.Errorf("model's instance count aggregate failed, chartName: %v, objID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, kit.Rid)
 		return nil, err
-	}
-
-	instCount := uint64(0)
-	cond := M{}
-	var countErr error
-	if inputParam.ObjID == common.BKInnerObjIDHost {
-		instCount, countErr = m.dbProxy.Table(common.BKTableNameBaseHost).Find(cond).Count(kit.Ctx)
-		if countErr != nil {
-			blog.Errorf("host os type count aggregate fail, chartName: %v, err: %v, rid: %v", inputParam.Name, countErr, kit.Rid)
-			return nil, countErr
-		}
-		if instCount > 0 {
-			pipeline := []M{{"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
-			if err := m.dbProxy.Table(common.BKTableNameBaseHost).AggregateAll(kit.Ctx, pipeline, &commonCount); err != nil {
-				blog.Errorf("host os type count aggregate fail, chartName: %v, err: %v, rid: %v", inputParam.Name, err, kit.Rid)
-				return nil, err
-			}
-		}
-	} else {
-		instCount, countErr = m.dbProxy.Table(common.BKTableNameBaseInst).Find(cond).Count(kit.Ctx)
-		if countErr != nil {
-			blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, countErr, kit.Rid)
-			return nil, countErr
-		}
-		if instCount > 0 {
-			pipeline := []M{{"$match": M{"bk_obj_id": inputParam.ObjID}}, {"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
-			if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(kit.Ctx, pipeline, &commonCount); err != nil {
-				blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, kit.Rid)
-				return nil, err
-			}
-		}
 	}
 
 	option, err := metadata.ParseEnumOption(kit.Ctx, attribute.Option)
@@ -136,21 +86,76 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 		return nil, err
 	}
 
+	// get model instances' count group by its field
+	// eg: get host count group by bk_os_type
+	groupCountArr := make([]metadata.StringIDCount, 0)
+	groupField := fmt.Sprintf("$%s", inputParam.Field)
+	instCount := uint64(0)
+	cond := M{}
+	var countErr error
+	if inputParam.ObjID == common.BKInnerObjIDHost {
+		instCount, countErr = mongodb.Client().Table(common.BKTableNameBaseHost).Find(cond).Count(kit.Ctx)
+		if countErr != nil {
+			blog.Errorf("model's instance count aggregate failed, chartName: %v, err: %v, rid: %v", inputParam.Name, countErr, kit.Rid)
+			return nil, countErr
+		}
+		if instCount > 0 {
+			pipeline := []M{
+				{common.BKDBMatch: M{common.BKDBAND: []M{
+					{inputParam.Field: M{common.BKDBExists: true}},
+					{inputParam.Field: M{common.BKDBNE: nil}},
+				}}},
+				{common.BKDBGroup: M{"_id": groupField, "count": M{common.BKDBSum: 1}}},
+			}
+			if err := mongodb.Client().Table(common.BKTableNameBaseHost).AggregateAll(kit.Ctx, pipeline, &groupCountArr); err != nil {
+				blog.Errorf("model's instance count aggregate failed, chartName: %v, err: %v, rid: %v", inputParam.Name, err, kit.Rid)
+				return nil, err
+			}
+		}
+	} else {
+		instCount, countErr = mongodb.Client().Table(common.BKTableNameBaseInst).Find(cond).Count(kit.Ctx)
+		if countErr != nil {
+			blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, countErr, kit.Rid)
+			return nil, countErr
+		}
+		if instCount > 0 {
+			pipeline := []M{
+				{common.BKDBMatch: M{common.BKDBAND: []M{
+					{inputParam.Field: M{common.BKDBExists: true}},
+					{inputParam.Field: M{common.BKDBNE: nil}},
+					{common.BKDBMatch: M{common.BKObjIDField: inputParam.ObjID}},
+				}}},
+				{common.BKDBGroup: M{"_id": groupField, "count": M{common.BKDBSum: 1}}},
+			}
+			if err := mongodb.Client().Table(common.BKTableNameBaseInst).AggregateAll(kit.Ctx, pipeline, &groupCountArr); err != nil {
+				blog.Errorf("model's instance count aggregate failed, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, kit.Rid)
+				return nil, err
+			}
+		}
+	}
+
+	if len(groupCountArr) == 0 {
+		return []metadata.StringIDCount{}, nil
+	}
+
+	groupCountMap := make(map[string]int64)
+	for _, groupCount := range groupCountArr {
+		groupCountMap[groupCount.ID] = groupCount.Count
+	}
+
 	respData := make([]metadata.StringIDCount, 0)
 	for _, opt := range option {
-		info := metadata.StringIDCount{
+		if opt.Name == common.OptionOther {
+			respData = append(respData, metadata.StringIDCount{
+				ID:    opt.Name,
+				Count: groupCountMap[""],
+			})
+			continue
+		}
+		respData = append(respData, metadata.StringIDCount{
 			ID:    opt.Name,
-			Count: 0,
-		}
-		for _, count := range commonCount {
-			if count.ID == opt.ID {
-				info.Count = count.Count
-			}
-			if opt.Name == common.OptionOther && count.ID == "" {
-				info.Count = count.Count
-			}
-		}
-		respData = append(respData, info)
+			Count: groupCountMap[opt.ID],
+		})
 	}
 
 	return respData, nil
@@ -163,7 +168,7 @@ func (m *operationManager) SearchTimerChartData(kit *rest.Kit, inputParam metada
 	switch inputParam.ReportType {
 	case common.HostChangeBizChart:
 		chartData := make([]metadata.HostChangeChartData, 0)
-		if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).All(kit.Ctx, &chartData); err != nil {
+		if err := mongodb.Client().Table(common.BKTableNameChartData).Find(condition).All(kit.Ctx, &chartData); err != nil {
 			blog.Errorf("search chart data fail, chart name: %v err: %v, rid: %v", inputParam.Name, err, kit.Rid)
 			return nil, err
 		}
@@ -182,14 +187,14 @@ func (m *operationManager) SearchTimerChartData(kit *rest.Kit, inputParam metada
 		return result, nil
 	case common.ModelInstChart:
 		chartData := metadata.ModelInstChartData{}
-		if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).One(kit.Ctx, &chartData); err != nil {
+		if err := mongodb.Client().Table(common.BKTableNameChartData).Find(condition).One(kit.Ctx, &chartData); err != nil {
 			blog.Errorf("search chart data fail, chart name: %v err: %v, rid: %v", inputParam.Name, err, kit.Rid)
 			return nil, err
 		}
 		return chartData.Data, nil
 	case common.ModelInstChangeChart:
 		chartData := metadata.ChartData{}
-		if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).One(kit.Ctx, &chartData); err != nil {
+		if err := mongodb.Client().Table(common.BKTableNameChartData).Find(condition).One(kit.Ctx, &chartData); err != nil {
 			blog.Errorf("search chart data fail, chart name: %v err: %v, rid: %v", inputParam.Name, err, kit.Rid)
 			return nil, err
 		}

@@ -50,11 +50,6 @@ type HostSnapBatchResult struct {
 	Data     []map[string]interface{} `json:"data"`
 }
 
-type UserCustomQueryDetailResult struct {
-	BaseResp `json:",inline"`
-	Data     map[string]interface{} `json:"data"`
-}
-
 type HostInputType string
 
 const (
@@ -64,9 +59,25 @@ const (
 
 type HostList struct {
 	ApplicationID int64                            `json:"bk_biz_id"`
+	ModuleID      int64                            `json:"bk_module_id"`
 	HostInfo      map[int64]map[string]interface{} `json:"host_info"`
-	SupplierID    int64                            `json:"bk_supplier_id"`
 	InputType     HostInputType                    `json:"input_type"`
+}
+
+type AddHostToResourcePoolHostList struct {
+	HostInfo  []map[string]interface{} `json:"host_info"`
+	Directory int64                    `json:"directory"`
+}
+
+type AddHostToResourcePoolResult struct {
+	Success []AddOneHostToResourcePoolResult `json:"success,omitempty"`
+	Error   []AddOneHostToResourcePoolResult `json:"error,omitempty"`
+}
+
+type AddOneHostToResourcePoolResult struct {
+	Index    int    `json:"index"`
+	HostID   int64  `json:"bk_host_id,omitempty"`
+	ErrorMsg string `json:"error_message,omitempty"`
 }
 
 type AddHostFromAgentHostList struct {
@@ -76,7 +87,6 @@ type AddHostFromAgentHostList struct {
 type HostSyncList struct {
 	ApplicationID int64                            `json:"bk_biz_id"`
 	HostInfo      map[int64]map[string]interface{} `json:"host_info"`
-	SupplierID    int64                            `json:"bk_supplier_id"`
 	ModuleID      []int64                          `json:"bk_module_id"`
 	InputType     HostInputType                    `json:"input_type"`
 }
@@ -120,12 +130,10 @@ type HostCommonSearch struct {
 	Pattern   string            `json:"pattern,omitempty"`
 }
 
-type HostModuleFind struct {
-	ModuleIDS []int64   `json:"bk_module_ids"`
-	Metadata  *Metadata `json:"metadata"`
-	AppID     int64     `json:"bk_biz_id"`
-	Fields    []string  `json:"fields"`
-	Page      BasePage  `json:"page"`
+type SetCommonSearch struct {
+	AppID     int64             `json:"bk_biz_id,omitempty"`
+	Condition []SearchCondition `json:"condition"`
+	Page      BasePage          `json:"page"`
 }
 
 type FindHostsBySrvTplOpt struct {
@@ -204,6 +212,113 @@ func (o *FindHostsBySetTplOpt) Validate() (rawError errors.RawErrorInfo) {
 	}
 
 	return errors.RawErrorInfo{}
+}
+
+type FindHostsByTopoOpt struct {
+	ObjID  string   `json:"bk_obj_id"`
+	InstID int64    `json:"bk_inst_id"`
+	Fields []string `json:"fields"`
+	Page   BasePage `json:"page"`
+}
+
+func (o *FindHostsByTopoOpt) Validate() (rawError errors.RawErrorInfo) {
+	if o.ObjID == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if o.ObjID == common.BKInnerObjIDApp {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if o.InstID <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKInstIDField},
+		}
+	}
+
+	if len(o.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	if o.Page.IsIllegal() {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type FindHostRelationWtihTopoOpt struct {
+	Business int64    `json:"bk_biz_id"`
+	ObjID    string   `json:"bk_obj_id"`
+	InstIDs  []int64  `json:"bk_inst_ids"`
+	Fields   []string `json:"fields"`
+	Page     BasePage `json:"page"`
+}
+
+func (f *FindHostRelationWtihTopoOpt) Validate() *errors.RawErrorInfo {
+	if f.ObjID == "" {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if f.ObjID == common.BKInnerObjIDApp {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if f.Business <= 0 {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
+	if len(f.InstIDs) <= 0 || len(f.InstIDs) > 50 {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKInstIDField},
+		}
+	}
+
+	if len(f.Fields) == 0 {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	if f.Page.Limit > common.BKMaxInstanceLimit {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	if f.Page.IsIllegal() {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page"},
+		}
+	}
+
+	return nil
 }
 
 type FindModuleHostRelationParameter struct {
@@ -319,6 +434,55 @@ func (option ListHostsWithNoBizParameter) Validate() (string, error) {
 	return "", nil
 }
 
+type ListHostsDetailAndTopoOption struct {
+	// return the host's topology with biz info.
+	WithBiz            bool                      `json:"with_biz"`
+	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Fields             []string                  `json:"fields"`
+	Page               BasePage                  `json:"page"`
+}
+
+func (option *ListHostsDetailAndTopoOption) Validate() *errors.RawErrorInfo {
+
+	if key, err := option.Page.Validate(false); err != nil {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page." + key},
+		}
+	}
+
+	if option.Page.Limit > common.BKMaxInstanceLimit {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page." + "limit"},
+		}
+	}
+
+	if option.HostPropertyFilter != nil {
+		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+			return &errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{"host_property_filter." + key},
+			}
+		}
+		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return &errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{"host_property_filter exceeded max allowed deep"},
+			}
+		}
+	}
+
+	if len(option.Fields) == 0 {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	return nil
+}
+
 type CountTopoNodeHostsOption struct {
 	Nodes []TopoNode `json:"topo_nodes" mapstructure:"topo_nodes"`
 }
@@ -380,6 +544,8 @@ type SearchCondition struct {
 	Fields    []string        `json:"fields"`
 	Condition []ConditionItem `json:"condition"`
 	ObjectID  string          `json:"bk_obj_id"`
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition *TimeCondition `json:"time_condition,omitempty"`
 }
 
 type SearchHost struct {
@@ -403,9 +569,25 @@ type HostTopo struct {
 }
 
 type Topo struct {
-	SetID   int64    `json:"bk_set_id"`
-	SetName string   `json:"bk_set_name"`
-	Module  []Module `json:"module"`
+	SetID   int64    `json:"bk_set_id" bson:"bk_set_id"`
+	SetName string   `json:"bk_set_name" bson:"bk_set_name"`
+	Module  []Module `json:"module" bson:"module"`
+}
+
+type HostDetailWithTopo struct {
+	Host map[string]interface{} `json:"host"`
+	Topo []*HostTopoNode        `json:"topo"`
+}
+
+type HostTopoNode struct {
+	Instance *NodeInstance   `json:"inst"`
+	Children []*HostTopoNode `json:"children"`
+}
+
+type NodeInstance struct {
+	Object   string      `json:"obj"`
+	InstName interface{} `json:"name"`
+	InstID   interface{} `json:"id"`
 }
 
 type Module struct {
@@ -437,7 +619,7 @@ func (sh SearchHost) ExtractHostIDs() *[]int64 {
 
 type SearchHostResult struct {
 	BaseResp `json:",inline"`
-	Data     SearchHost `json:"data"`
+	Data     *SearchHost `json:"data"`
 }
 
 type HostCloneInputParams struct {
@@ -454,25 +636,39 @@ type SetHostConfigParams struct {
 }
 
 type CloneHostPropertyParams struct {
-	AppID   int64  `json:"bk_biz_id"`
-	OrgIP   string `json:"bk_org_ip"`
-	DstIP   string `json:"bk_dst_ip"`
-	CloudID int64  `json:"bk_cloud_id"`
+	AppID int64 `json:"bk_biz_id"`
+	// source and destination host inner ip
+	OrgIP string `json:"bk_org_ip"`
+	DstIP string `json:"bk_dst_ip"`
+	// source and destination host id
+	OrgID   int64 `json:"bk_org_id"`
+	DstID   int64 `json:"bk_dst_id"`
+	CloudID int64 `json:"bk_cloud_id"`
 }
 
 // TransferHostAcrossBusinessParameter Transfer host across business request parameter
 type TransferHostAcrossBusinessParameter struct {
-	SrcAppID       int64   `json:"src_bk_biz_id"`
-	DstAppID       int64   `json:"dst_bk_biz_id"`
-	HostID         []int64 `json:"bk_host_id"`
-	DstModuleIDArr []int64 `json:"bk_module_ids"`
+	SrcAppID    int64   `json:"src_bk_biz_id"`
+	DstAppID    int64   `json:"dst_bk_biz_id"`
+	HostID      []int64 `json:"bk_host_id"`
+	DstModuleID int64   `json:"bk_module_id"`
 }
 
 // HostModuleRelationParameter get host and module  relation parameter
 type HostModuleRelationParameter struct {
-	AppID  int64    `json:"bk_biz_id"`
-	HostID []int64  `json:"bk_host_id"`
-	Page   BasePage `json:"page"`
+	AppID  int64   `json:"bk_biz_id"`
+	HostID []int64 `json:"bk_host_id"`
+}
+
+func (h *HostModuleRelationParameter) Validate() (rawError errors.RawErrorInfo) {
+	if len(h.HostID) == 0 || len(h.HostID) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_host_id", common.BKMaxInstanceLimit},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }
 
 // DeleteHostFromBizParameter delete host from business
@@ -482,9 +678,46 @@ type DeleteHostFromBizParameter struct {
 }
 
 // CloudAreaParameter search cloud area parameter
-type CloudAreaParameter struct {
-	Condition mapstr.MapStr `json:"condition" bson:"condition" field:"condition"`
-	Page      BasePage      `json:"page" bson:"page" field:"page"`
+type CloudAreaSearchParam struct {
+	SearchCloudOption `json:",inline"`
+	SyncTaskIDs       bool `json:"sync_task_ids"`
+}
+
+// CloudAreaHostCount cloud area host count param
+type CloudAreaHostCount struct {
+	CloudIDs []int64 `json:"bk_cloud_ids"`
+}
+
+func (c *CloudAreaHostCount) Validate() (rawError errors.RawErrorInfo) {
+	maxLimit := 50
+	if len(c.CloudIDs) == 0 || len(c.CloudIDs) > maxLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_cloud_ids", maxLimit},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type CloudAreaHostCountResult struct {
+	BaseResp `json:",inline"`
+	Data     []CloudAreaHostCountElem `json:"data"`
+}
+
+type CloudAreaHostCountElem struct {
+	CloudID   int64 `json:"bk_cloud_id"`
+	HostCount int64 `json:"host_count"`
+}
+
+type CreateManyCloudAreaResult struct {
+	BaseResp `json:",inline"`
+	Data     []CreateManyCloudAreaElem `json:"data"`
+}
+
+type CreateManyCloudAreaElem struct {
+	CloudID int64  `json:"bk_cloud_id"`
+	ErrMsg  string `json:"err_msg"`
 }
 
 type TopoNode struct {

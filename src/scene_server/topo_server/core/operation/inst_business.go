@@ -13,16 +13,16 @@
 package operation
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"strings"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/mapstruct"
@@ -34,11 +34,10 @@ import (
 
 // BusinessOperationInterface business operation methods
 type BusinessOperationInterface interface {
-	CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr, metaData *metadata.Metadata) (inst.Inst, error)
-	DeleteBusiness(kit *rest.Kit, obj model.Object, bizID int64, metaData *metadata.Metadata) error
+	CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
 	FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error)
-	GetInternalModule(kit *rest.Kit, obj model.Object, bizID int64, metaData *metadata.Metadata) (count int, result *metadata.InnterAppTopo, err error)
-	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64, metaData *metadata.Metadata) error
+	GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder)
+	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error
 	HasHosts(kit *rest.Kit, bizID int64) (bool, error)
 	SetProxy(set SetOperationInterface, module ModuleOperationInterface, inst InstOperationInterface, obj ObjectOperationInterface)
 	GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (achieveName string, err error)
@@ -74,7 +73,7 @@ func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 		Fields:        []string{common.BKHostIDField},
 		Page:          metadata.BasePage{Limit: 1},
 	}
-	rsp, err := b.clientSet.CoreService().Host().GetHostModuleRelation(context.Background(), kit.Header, option)
+	rsp, err := b.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, option)
 	if nil != err {
 		blog.Errorf("[operation-set] failed to request the object controller, error info is %s", err.Error())
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -88,7 +87,7 @@ func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 	return 0 != len(rsp.Data.Info), nil
 }
 
-func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr, metaData *metadata.Metadata) (inst.Inst, error) {
+func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
 
 	defaultFieldVal, err := data.Int64(common.BKDefaultField)
 	if nil != err {
@@ -103,7 +102,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 		defaultOwnerHeader := util.CloneHeader(kit.Header)
 		defaultOwnerHeader.Set(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
 
-		asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), defaultOwnerHeader, &metadata.QueryCondition{Condition: asstQuery})
+		asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, defaultOwnerHeader, &metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
 			blog.Errorf("create business failed to get default assoc, error info is %s, rid: %s", err.Error(), kit.Rid)
 			return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -114,7 +113,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 		expectAssts := asstRsp.Data.Info
 		blog.Infof("copy asst for %s, %+v, rid: %s", kit.SupplierAccount, expectAssts, kit.Rid)
 
-		existAsstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: asstQuery})
+		existAsstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
 			blog.Errorf("create business failed to get default assoc, error info is %s, rid: %s", err.Error(), kit.Rid)
 			return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -140,9 +139,9 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 			if asst.AsstKindID == common.AssociationKindMainline {
 				// bk_mainline is a inner association type that can only create in special case,
 				// so we separate bk_mainline association type creation with a independent method,
-				createAsstRsp, err = b.clientSet.CoreService().Association().CreateMainlineModelAssociation(context.Background(), kit.Header, &metadata.CreateModelAssociation{Spec: asst})
+				createAsstRsp, err = b.clientSet.CoreService().Association().CreateMainlineModelAssociation(kit.Ctx, kit.Header, &metadata.CreateModelAssociation{Spec: asst})
 			} else {
-				createAsstRsp, err = b.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), kit.Header, &metadata.CreateModelAssociation{Spec: asst})
+				createAsstRsp, err = b.clientSet.CoreService().Association().CreateModelAssociation(kit.Ctx, kit.Header, &metadata.CreateModelAssociation{Spec: asst})
 			}
 			if nil != err {
 				blog.Errorf("create business failed to copy default assoc, error info is %s, rid: %s", err.Error(), kit.Rid)
@@ -153,14 +152,6 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 			}
 
 		}
-	}
-
-	if util.IsExistSupplierID(kit.Header) {
-		supplierID, err := util.GetSupplierID(kit.Header)
-		if err != nil {
-			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKSupplierIDField)
-		}
-		data[common.BKSupplierIDField] = supplierID
 	}
 
 	bizInst, err := b.inst.CreateInst(kit, obj, data)
@@ -175,20 +166,8 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 		return bizInst, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 
-	// register business to auth
-	bizName, err := data.String(common.BKAppNameField)
-	if err != nil {
-		blog.Errorf("create business, but got invalid business name. err: %v, rid: %s", err, kit.Rid)
-		return bizInst, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
-	}
-
-	if err := b.authManager.RegisterBusinessesByID(kit.Ctx, kit.Header, bizID); err != nil {
-		blog.Errorf("create business: %s, but register business resource failed, err: %v, rid: %s", bizName, err, kit.Rid)
-		return bizInst, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-	}
-
 	// create set
-	objSet, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet, metaData)
+	objSet, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet)
 	if nil != err {
 		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -200,7 +179,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 	setData.Set(common.BKSetNameField, common.DefaultResSetName)
 	setData.Set(common.BKDefaultField, common.DefaultResSetFlag)
 
-	setInst, err := b.set.CreateSet(kit, objSet, bizID, setData, metaData)
+	setInst, err := b.set.CreateSet(kit, objSet, bizID, setData)
 	if nil != err {
 		blog.Errorf("create business failed to create business, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return bizInst, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -213,7 +192,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 	}
 
 	// create module
-	objModule, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDModule, metaData)
+	objModule, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -278,35 +257,6 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 	return bizInst, nil
 }
 
-func (b *business) DeleteBusiness(kit *rest.Kit, obj model.Object, bizID int64, metaData *metadata.Metadata) error {
-	if err := b.authManager.DeregisterBusinessByRawID(kit.Ctx, kit.Header, bizID); err != nil {
-		blog.Errorf("delete business: %d, but deregister business from auth failed, err: %v, rid: %s", bizID, err, kit.Rid)
-		return kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
-	}
-
-	setObj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet, metaData)
-	if nil != err {
-		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
-		return err
-	}
-
-	bizModel, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDApp, metaData)
-	if nil != err {
-		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
-		return err
-	}
-
-	if err = b.set.DeleteSet(kit, setObj, bizID, nil, metaData); nil != err {
-		blog.Errorf("[operation-biz] failed to delete the set, error info is %s, rid: %s", err.Error(), kit.Rid)
-		return kit.CCError.New(common.CCErrTopoAppDeleteFailed, err.Error())
-	}
-
-	innerCond := condition.CreateCondition()
-	innerCond.Field(common.BKAppIDField).Eq(bizID)
-
-	return b.inst.DeleteInst(kit, bizModel, innerCond, true)
-}
-
 func (b *business) FindBusiness(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error) {
 
 	cond.Condition[common.BKDefaultField] = 0
@@ -329,8 +279,9 @@ func (b *business) FindBusiness(kit *rest.Kit, cond *metadata.QueryBusinessReque
 	return result.Data.Count, result.Data.Info, err
 }
 func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error) {
-
-	cond.Condition[common.BKDefaultField] = 0
+	if !cond.Condition.Exists(common.BKDefaultField) {
+		cond.Condition[common.BKDefaultField] = 0
+	}
 	query := &metadata.QueryCondition{
 		Fields:    cond.Fields,
 		Condition: cond.Condition,
@@ -412,64 +363,74 @@ func (b *business) GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (a
 	return fmt.Sprintf("%s-archived-%d", bizName, maxNum+1), nil
 }
 
-func (b *business) GetInternalModule(kit *rest.Kit, obj model.Object, bizID int64, metaData *metadata.Metadata) (count int, result *metadata.InnterAppTopo, err error) {
+func (b *business) GetInternalModule(kit *rest.Kit,
+	bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder) {
 	// get set model
-	setObj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet, metaData)
+	querySet := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKAppIDField:   bizID,
+			common.BKDefaultField: common.DefaultResSetFlag,
+		},
+		Fields: []string{common.BKSetIDField, common.BKSetNameField},
+	}
+	querySet.Page.Limit = 1
+
+	/* setRsp, err := b.inst.FindOriginInst(kit, common.BKInnerObjIDSet, querySet)
 	if nil != err {
 		return 0, nil, kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error())
+	} */
+
+	setRsp := &metadata.ResponseSetInstance{}
+	// 返回数据不包含自定义字段
+	if err = b.clientSet.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header,
+		common.BKInnerObjIDSet, querySet, setRsp); err != nil {
+		return 0, nil, err
+	}
+	if err := setRsp.CCError(); err != nil {
+		blog.ErrorJSON("query set error. filter: %s, result: %s, rid: %s", querySet, setRsp, kit.Rid)
+		return 0, nil, err
 	}
 
-	// search internal sets
-	querySet := &metadata.QueryInput{}
-	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKDefaultField).Eq(common.DefaultResModuleFlag)
-	querySet.Condition = cond.ToMapStr()
-	_, sets, err := b.set.FindSet(kit, setObj, querySet)
-	if nil != err {
-		return 0, nil, kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error())
+	// search modules
+	queryModule := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+			common.BKDefaultField: map[string]interface{}{
+				common.BKDBNE: 0,
+			},
+		},
+		Fields: []string{common.BKModuleIDField, common.BKModuleNameField, common.BKDefaultField, common.HostApplyEnabledField},
 	}
+	queryModule.Page.Limit = common.BKNoLimit
 
-	// get module model
-	moduleObj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDModule, metaData)
-	if nil != err {
-		return 0, nil, kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error())
+	/*
+		moduleRsp, err := b.inst.FindOriginInst(kit, common.BKInnerObjIDModule, queryModule)
+		if nil != err {
+			return 0, nil, kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error())
+		}
+	*/
+
+	moduleResp := &metadata.ResponseModuleInstance{}
+	// 返回数据不包含自定义字段
+	if err = b.clientSet.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header,
+		common.BKInnerObjIDModule, queryModule, moduleResp); err != nil {
+		return 0, nil, err
 	}
-
-	// search internal modules
-	queryModule := &metadata.QueryInput{}
-	cond = condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKDefaultField).NotEq(common.DefaultFlagDefaultValue)
-	queryModule.Condition = cond.ToMapStr()
-	_, modules, err := b.module.FindModule(kit, moduleObj, queryModule)
-	if nil != err {
-		return 0, nil, kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error())
+	if err := moduleResp.CCError(); err != nil {
+		blog.ErrorJSON("query module error. filter: %s, result: %s, rid: %s", queryModule, moduleResp, kit.Rid)
+		return 0, nil, err
 	}
 
 	// construct result
 	result = &metadata.InnterAppTopo{}
-	for _, set := range sets {
-		id, err := set.GetInstID()
-		if nil != err {
-			return 0, nil, kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error())
-		}
-		name, err := set.GetInstName()
-		if nil != err {
-			return 0, nil, kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error())
-		}
-
-		result.SetID = id
-		result.SetName = name
+	for _, set := range setRsp.Data.Info {
+		result.SetID = set.SetID
+		result.SetName = set.SetName
 		break // should be only one set
 	}
 
-	for _, moduleMapStr := range modules {
-		module := metadata.ModuleInst{}
-		if err := mapstruct.Decode2Struct(moduleMapStr, &module); err != nil {
-			blog.ErrorJSON("GetInternalModule failed, unmarshal module failed, module: %s, err: %s, rid: %s", moduleMapStr, err.Error(), kit.Rid)
-			return 0, nil, kit.CCError.CCError(common.CCErrCommParseDBFailed)
-		}
+	for _, module := range moduleResp.Data.Info {
+
 		result.Module = append(result.Module, metadata.InnerModule{
 			ModuleID:         module.ModuleID,
 			ModuleName:       module.ModuleName,
@@ -481,22 +442,9 @@ func (b *business) GetInternalModule(kit *rest.Kit, obj model.Object, bizID int6
 	return 0, result, nil
 }
 
-func (b *business) UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64, metaData *metadata.Metadata) error {
-	if biz, exist := data.Get(common.BKAppNameField); exist {
-		bizName, err := data.String(common.BKAppNameField)
-		if err != nil {
-			blog.Errorf("update business, but got invalid business name: %v, id: %d, rid: %s", biz, bizID, kit.Rid)
-			return kit.CCError.Error(common.CCErrCommParamsIsInvalid)
-		}
-
-		if err := b.authManager.UpdateRegisteredBusinessByID(kit.Ctx, kit.Header, bizID); err != nil {
-			blog.Errorf("update business name: %s, but update resource to auth failed, err: %v, rid: %s", bizName, err, kit.Rid)
-			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
-	}
-
+func (b *business) UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error {
 	innerCond := condition.CreateCondition()
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 
-	return b.inst.UpdateInst(kit, data, obj, innerCond, bizID, metaData)
+	return b.inst.UpdateInst(kit, data, obj, innerCond, bizID)
 }

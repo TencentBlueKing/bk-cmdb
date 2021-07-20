@@ -34,3 +34,20 @@ func (s *coreService) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 
 	ctx.RespEntity(nil)
 }
+
+func (s *coreService) FindCloudAreaHostCount(ctx *rest.Contexts) {
+	input := metadata.CloudAreaHostCount{}
+	if err := ctx.DecodeInto(&input); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	res, err := s.core.HostOperation().FindCloudAreaHostCount(ctx.Kit, input)
+	if err != nil {
+		blog.Errorf("UpdateHostCloudAreaField failed, call core operation failed, input: %+v, err: %v, rid: %v", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(res)
+}

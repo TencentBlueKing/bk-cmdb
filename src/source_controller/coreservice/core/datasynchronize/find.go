@@ -18,7 +18,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type associationFindDataInterface interface {
@@ -28,18 +28,16 @@ type associationFindDataInterface interface {
 type associationFindData struct {
 	dataClassify string
 	dataType     metadata.SynchronizeOperateDataType
-	dbProxy      dal.RDB
 	start        uint64
 	limit        uint64
 	condition    mapstr.MapStr
 }
 
-func NewSynchronizeFindAdapter(input *metadata.SynchronizeFindInfoParameter, dbProxy dal.RDB) associationFindDataInterface {
+func NewSynchronizeFindAdapter(input *metadata.SynchronizeFindInfoParameter) associationFindDataInterface {
 
 	return &associationFindData{
 		dataClassify: input.DataClassify,
 		dataType:     input.DataType,
-		dbProxy:      dbProxy,
 		start:        input.Start,
 		limit:        input.Limit,
 		condition:    input.Condition,
@@ -73,12 +71,12 @@ func (a *associationFindData) findModel(kit *rest.Kit) ([]mapstr.MapStr, uint64,
 
 func (a *associationFindData) dbQueryModel(kit *rest.Kit, tableName string) ([]mapstr.MapStr, uint64, errors.CCError) {
 	info := make([]mapstr.MapStr, 0)
-	err := a.dbProxy.Table(tableName).Find(a.condition).Start(a.start).Limit(a.limit).All(kit.Ctx, &info)
+	err := mongodb.Client().Table(tableName).Find(a.condition).Start(a.start).Limit(a.limit).All(kit.Ctx, &info)
 	if err != nil {
 		blog.Errorf("dbQueryModel info error. error:%s,rid:%s", err.Error(), kit.Rid)
 		return nil, 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
-	cnt, err := a.dbProxy.Table(tableName).Find(nil).Count(kit.Ctx)
+	cnt, err := mongodb.Client().Table(tableName).Find(nil).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("dbQueryModel count error. error:%s,rid:%s", err.Error(), kit.Rid)
 		return nil, 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
@@ -96,12 +94,12 @@ func (a *associationFindData) findAssociation(kit *rest.Kit) ([]mapstr.MapStr, u
 
 func (a *associationFindData) dbQueryAssociation(kit *rest.Kit) ([]mapstr.MapStr, uint64, errors.CCError) {
 	info := make([]mapstr.MapStr, 0)
-	err := a.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(a.condition).Start(a.start).Limit(a.limit).All(kit.Ctx, &info)
+	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(a.condition).Start(a.start).Limit(a.limit).All(kit.Ctx, &info)
 	if err != nil {
 		blog.Errorf("dbQueryAssociation info error. error:%s,rid:%s", err.Error(), kit.Rid)
 		return nil, 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
-	cnt, err := a.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(nil).Count(kit.Ctx)
+	cnt, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(nil).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("dbQueryAssociation count error. error:%s,rid:%s", err.Error(), kit.Rid)
 		return nil, 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)

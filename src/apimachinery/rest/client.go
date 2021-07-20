@@ -14,10 +14,9 @@ package rest
 
 import (
 	"strings"
+	"time"
 
 	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/metrics"
-
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -35,31 +34,37 @@ func NewRESTClient(c *util.Capability, baseUrl string) ClientInterface {
 		baseUrl = strings.Trim(baseUrl, "/")
 		baseUrl = "/" + baseUrl + "/"
 	}
+
+	if c.ToleranceLatencyTime <= 0 {
+		// set default tolerance latency time
+		c.ToleranceLatencyTime = 2 * time.Second
+	}
+
 	client := &RESTClient{
 		baseUrl:    baseUrl,
 		capability: c,
 	}
 
-	if c.Reg != nil {
-		client.requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-			Name: "cmdb_apimachinary_requests_duration_millisecond",
-			Help: "third party api request duration millisecond.",
-		}, []string{"handler", "status_code"})
-		if err := c.Reg.Register(client.requestDuration); err != nil {
-			if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-				client.requestDuration = are.ExistingCollector.(*prometheus.HistogramVec)
-			} else {
-				panic(err)
-			}
+	if c.MetricOpts.Register != nil {
+
+		var buckets []float64
+		if len(c.MetricOpts.DurationBuckets) == 0 {
+			// set default buckets
+			buckets = []float64{10, 30, 50, 70, 100, 200, 300, 400, 500, 1000, 2000, 5000}
+		} else {
+			// use user defined buckets
+			buckets = c.MetricOpts.DurationBuckets
 		}
 
-		client.requestInflight = metrics.NewGauge(prometheus.GaugeOpts{
-			Name: "cmdb_apimachinary_requests_in_flight",
-			Help: "third party api request in flight.",
-		})
-		if err := c.Reg.Register(client.requestInflight); err != nil {
+		client.requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Name:    "cmdb_apimachinary_requests_duration_millisecond",
+			Help:    "third party api request duration millisecond.",
+			Buckets: buckets,
+		}, []string{"handler", "status_code", "dimension"})
+
+		if err := c.MetricOpts.Register.Register(client.requestDuration); err != nil {
 			if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-				client.requestInflight = are.ExistingCollector.(*metrics.Gauge)
+				client.requestDuration = are.ExistingCollector.(*prometheus.HistogramVec)
 			} else {
 				panic(err)
 			}
@@ -74,7 +79,6 @@ type RESTClient struct {
 	capability *util.Capability
 
 	requestDuration *prometheus.HistogramVec
-	requestInflight *metrics.Gauge
 }
 
 func (r *RESTClient) Verb(verb VerbType) *Request {

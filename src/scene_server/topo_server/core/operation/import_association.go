@@ -18,8 +18,8 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/auth/extensions"
-	"configcenter/src/auth/meta"
+	"configcenter/src/ac/extensions"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -101,7 +101,7 @@ func NewImportAssociation(ctx context.Context, cli *association, kit *rest.Kit, 
 		queryInstConds:      make(map[string][]mapstr.MapStr),
 		instIDAttrKeyValMap: make(map[string]map[string][]*importAssociationInst),
 
-		rid: util.GetHTTPCCRequestID(kit.Header),
+		rid: kit.Rid,
 
 		authManager: authManager,
 	}

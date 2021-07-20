@@ -8,6 +8,8 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-unused-vars */
+
 import $http from '@/api'
 
 const state = {
@@ -19,7 +21,7 @@ const getters = {
 }
 
 const actions = {
-    /**
+  /**
      * 新增主机
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -27,11 +29,11 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    addHostToResource ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`hosts/add`, params, config)
-    },
+  addHostToResource({ commit, state, dispatch }, { params, config }) {
+    return $http.post('hosts/add', params, config)
+  },
 
-    /**
+  /**
      * 主机转移到业务内模块
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -39,23 +41,23 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    transferHostModule ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`hosts/modules`, params, config)
-    },
+  transferHostModule({ commit, state, dispatch }, { params, config }) {
+    return $http.post('hosts/modules', params, config)
+  },
 
-    /**
-     * 资源池主机分配至业务的空闲机模块
+  /**
+     * 主机池主机分配至业务的空闲机模块
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    transferResourcehostToIdleModule ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`hosts/modules/resource/idle`, params, config)
-    },
+  transferResourcehostToIdleModule({ commit, state, dispatch }, { params, config }) {
+    return $http.post('hosts/modules/resource/idle', params, config)
+  },
 
-    /**
+  /**
      * 主机上交至业务的故障机模块
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -63,11 +65,11 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    transferHostToFaultModule ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`hosts/modules/fault`, params, config)
-    },
+  transferHostToFaultModule({ commit, state, dispatch }, { params, config }) {
+    return $http.post('hosts/modules/fault', params, config)
+  },
 
-    /**
+  /**
      * 主机上交至业务的空闲机模块
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -75,23 +77,23 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    transferHostToIdleModule ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`hosts/modules/idle`, params, config)
-    },
+  transferHostToIdleModule({ commit, state, dispatch }, { params, config }) {
+    return $http.post('hosts/modules/idle', params, config)
+  },
 
-    /**
-     * 主机回收至资源池
+  /**
+     * 主机回收至主机池
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    transferHostToResourceModule ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`hosts/modules/resource`, params, config)
-    },
+  transferHostToResourceModule({ commit, state, dispatch }, { params, config }) {
+    return $http.post('hosts/modules/resource', params, config)
+  },
 
-    /**
+  /**
      * 转移主机至模块
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -99,9 +101,9 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    transferHostToMutipleBizModule ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`hosts/modules/biz/mutilple`, params, config)
-    }
+  transferHostToMutipleBizModule({ commit, state, dispatch }, { params, config }) {
+    return $http.post('hosts/modules/biz/mutilple', params, config)
+  }
 }
 
 const mutations = {
@@ -109,9 +111,9 @@ const mutations = {
 }
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
 }

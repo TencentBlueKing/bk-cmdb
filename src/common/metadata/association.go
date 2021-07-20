@@ -99,19 +99,19 @@ type DeleteAssociationObjectResult struct {
 	Data     string `json:"data"`
 }
 
-type SearchAssociationInstRequestCond struct {
-	ObjectAsstID string  `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id,omitempty"`
-	AsstID       string  `field:"bk_asst_id" json:"bk_asst_id,omitempty" bson:"bk_asst_id,omitempty"`
-	ObjectID     string  `field:"bk_obj_id" json:"bk_obj_id,omitempty" bson:"bk_obj_id,omitempty"`
-	AsstObjID    string  `field:"bk_asst_obj_id" json:"bk_asst_obj_id,omitempty" bson:"bk_asst_obj_id,omitempty"`
-	InstID       []int64 `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
-	AsstInstID   []int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id,omitempty" bson:"bk_asst_inst_id,omitempty"`
-	BothObjectID string  `field:"both_obj_id" json:"both_obj_id" bson:"both_obj_id"`
-	BothInstID   []int64 `field:"both_inst_id" json:"both_inst_id" bson:"both_inst_id"`
+type SearchAssociationRelatedInstRequestCond struct {
+	ObjectID string `field:"bk_obj_id" json:"bk_obj_id,omitempty" bson:"bk_obj_id,omitempty"`
+	InstID   int64  `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
 }
 
 type SearchAssociationInstRequest struct {
 	Condition mapstr.MapStr `json:"condition"` // construct condition mapstr by condition.Condition
+}
+
+type SearchAssociationRelatedInstRequest struct {
+	Fields    []string                                `json:"fields"`
+	Page      BasePage                                `json:"page"`
+	Condition SearchAssociationRelatedInstRequestCond `json:"condition"`
 }
 
 type SearchAssociationInstResult struct {
@@ -120,7 +120,6 @@ type SearchAssociationInstResult struct {
 }
 
 type CreateAssociationInstRequest struct {
-	*Metadata    `field:"metadata" json:"metadata" bson:"metadata"`
 	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id,omitempty"`
 	InstID       int64  `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
 	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id,omitempty" bson:"bk_asst_inst_id,omitempty"`
@@ -134,9 +133,19 @@ type DeleteAssociationInstRequest struct {
 	Condition mapstr.MapStr `json:"condition"`
 }
 
+type DeleteAssociationInstBatchRequest struct {
+	ObjectID string  `json:"bk_obj_id"`
+	ID       []int64 `json:"id"`
+}
+
 type DeleteAssociationInstResult struct {
 	BaseResp `json:",inline"`
 	Data     string `json:"data"`
+}
+
+type DeleteAssociationInstBatchResult struct {
+	BaseResp `json:",inline"`
+	Data     int `json:"data"`
 }
 
 type AssociationKindIDs struct {
@@ -187,8 +196,6 @@ type AssociationKind struct {
 	Direction AssociationDirection `field:"direction" json:"direction" bson:"direction"`
 	// whether this is a pre-defined kind.
 	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
-	//	define the metadata of association kind
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
 func (cli *AssociationKind) Parse(data mapstr.MapStr) (*AssociationKind, error) {
@@ -249,9 +256,6 @@ type Association struct {
 	ClassificationID string `field:"bk_classification_id" json:"-" bson:"-"`
 	ObjectIcon       string `field:"bk_obj_icon" json:"-" bson:"-"`
 	ObjectName       string `field:"bk_obj_name" json:"-" bson:"-"`
-
-	//	define the metadata of association
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
 // return field means which filed is set but is forbidden to update.
@@ -307,24 +311,24 @@ func (cli *Association) ToMapStr() mapstr.MapStr {
 // InstAsst an association definition between instances.
 type InstAsst struct {
 	// sequence ID
-	ID int64 `field:"id" json:"id"`
+	ID int64 `field:"id" json:"id,omitempty"`
 	// inst id associate to ObjectID
-	InstID int64 `field:"bk_inst_id" json:"bk_inst_id" bson:"bk_inst_id"`
+	InstID int64 `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id"`
 	// association source ObjectID
-	ObjectID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	ObjectID string `field:"bk_obj_id" json:"bk_obj_id,omitempty" bson:"bk_obj_id"`
 	// inst id associate to AsstObjectID
-	AsstInstID int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id"  bson:"bk_asst_inst_id"`
+	AsstInstID int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id,omitempty"  bson:"bk_asst_inst_id"`
 	// association target ObjectID
-	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
+	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id,omitempty" bson:"bk_asst_obj_id"`
 	// bk_supplier_account
-	OwnerID string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	OwnerID string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 	// association id between two object
-	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
+	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id"`
 	// association kind id
-	AssociationKindID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+	AssociationKindID string `field:"bk_asst_id" json:"bk_asst_id,omitempty" bson:"bk_asst_id"`
 
-	//	define the metadata of assocication kind
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	// BizID the business ID
+	BizID int64 `field:"bk_biz_id" json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
 }
 
 func (asst InstAsst) GetInstID(objID string) (instID int64, ok bool) {

@@ -39,12 +39,6 @@ func CopyHeader(h http.Header) http.Header {
 }
 
 var _ = Describe("Business Test", func() {
-	//initialize http header
-	//header := make(http.Header)
-	//header.Add(common.BKHTTPOwnerID, "0")
-	//header.Add(common.BKHTTPHeaderUser, "admin")
-	//header.Add(common.BKSupplierIDField, "0")
-	//header.Add("Content-Type", "application/json")
 
 	header := test.GetHeader()
 

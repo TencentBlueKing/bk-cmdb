@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (s *coreService) SearchInstCount(ctx *rest.Contexts) {
@@ -118,7 +119,7 @@ func (s *coreService) SearchChartWithPosition(ctx *rest.Contexts) {
 		result.Inst[index].Name = s.TranslateOperationChartName(lang, chart)
 	}
 
-	count, err := s.db.Table(common.BKTableNameChartConfig).Find(opt).Count(ctx.Kit.Ctx)
+	count, err := mongodb.Client().Table(common.BKTableNameChartConfig).Find(opt).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("search chart fail, option: %v, err: %v, rid: %v", opt, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -185,13 +186,13 @@ func (s *coreService) SearchChartCommon(ctx *rest.Contexts) {
 	}
 
 	chartConfig := make([]metadata.ChartConfig, 0)
-	if err := s.db.Table(common.BKTableNameChartConfig).Find(opt).All(ctx.Kit.Ctx, &chartConfig); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartConfig).Find(opt).All(ctx.Kit.Ctx, &chartConfig); err != nil {
 		blog.Errorf("search chart config fail, option: %v, err: %v, rid: %v", opt, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	count, err := s.db.Table(common.BKTableNameChartConfig).Find(opt).Count(ctx.Kit.Ctx)
+	count, err := mongodb.Client().Table(common.BKTableNameChartConfig).Find(opt).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("search chart fail, opt: %v, err: %v, rid: %v", opt, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -207,7 +208,7 @@ func (s *coreService) SearchChartCommon(ctx *rest.Contexts) {
 }
 
 func (s *coreService) TimerFreshData(ctx *rest.Contexts) {
-	exist, err := s.db.HasTable(context.Background(), common.BKTableNameChartData)
+	exist, err := mongodb.Client().HasTable(context.Background(), common.BKTableNameChartData)
 	if err != nil {
 		blog.Errorf("TimerFreshData, update timer chart data fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		ctx.RespEntity(false)
@@ -217,7 +218,7 @@ func (s *coreService) TimerFreshData(ctx *rest.Contexts) {
 		ctx.RespEntity(false)
 		return
 	}
-
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	err = s.core.StatisticOperation().TimerFreshData(ctx.Kit)
 	if err != nil {
 		blog.Errorf("TimerFreshData fail, err: %v, rid: %v", err, ctx.Kit.Rid)
@@ -235,7 +236,7 @@ func (s *coreService) SearchCloudMapping(ctx *rest.Contexts) {
 	}
 
 	respData := new(metadata.CloudMapping)
-	if err := s.db.Table(common.BKTableNameChartConfig).Find(opt).All(ctx.Kit.Ctx, respData); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartConfig).Find(opt).All(ctx.Kit.Ctx, respData); err != nil {
 		blog.Errorf("search cloud mapping fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return

@@ -117,43 +117,51 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 }
 
 func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
-	w.Config.Site.DomainUrl = current.ConfigMap["site.domain_url"] + "/"
-	w.Config.Site.HtmlRoot = current.ConfigMap["site.html_root"]
-	w.Config.Site.ResourcesPath = current.ConfigMap["site.resources_path"]
-	w.Config.Site.BkLoginUrl = current.ConfigMap["site.bk_login_url"]
-	w.Config.Site.AppCode = current.ConfigMap["site.app_code"]
-	w.Config.Site.CheckUrl = current.ConfigMap["site.check_url"]
-	w.Config.Site.AuthScheme = current.ConfigMap["site.authscheme"]
-	if w.Config.Site.AuthScheme == "" {
-		w.Config.Site.AuthScheme = "internal"
-	}
-	w.Config.Site.FullTextSearch = current.ConfigMap["site.full_text_search"]
-	if w.Config.Site.FullTextSearch == "" {
-		w.Config.Site.FullTextSearch = "off"
-	}
-	w.Config.Site.AccountUrl = current.ConfigMap["site.bk_account_url"]
-	w.Config.Site.BkHttpsLoginUrl = current.ConfigMap["site.bk_https_login_url"]
-	w.Config.Site.HttpsDomainUrl = current.ConfigMap["site.https_domain_url"]
-	w.Config.Site.PaasDomainUrl = current.ConfigMap["site.paas_domain_url"]
+	domainUrl, _ := cc.String("webServer.site.domainUrl")
+	w.Config.Site.DomainUrl = domainUrl + "/"
+	w.Config.Site.HtmlRoot, _ = cc.String("webServer.site.htmlRoot")
+	w.Config.Site.ResourcesPath, _ = cc.String("webServer.site.resourcesPath")
+	w.Config.Site.BkLoginUrl, _ = cc.String("webServer.site.bkLoginUrl")
+	w.Config.Site.AppCode, _ = cc.String("webServer.site.appCode")
+	w.Config.Site.CheckUrl, _ = cc.String("webServer.site.checkUrl")
 
-	w.Config.Session.Name = current.ConfigMap["session.name"]
-	w.Config.Session.MultipleOwner = current.ConfigMap["session.multiple_owner"]
-	w.Config.Session.DefaultLanguage = current.ConfigMap["session.defaultlanguage"]
-	w.Config.LoginVersion = current.ConfigMap["login.version"]
+	authscheme, err := cc.String("webServer.site.authscheme")
+	if err != nil {
+		w.Config.Site.AuthScheme = "internal"
+	} else {
+		w.Config.Site.AuthScheme = authscheme
+	}
+
+	fullTextSearch, err := cc.String("es.fullTextSearch")
+	if err != nil {
+		w.Config.Site.FullTextSearch = "off"
+	} else {
+		w.Config.Site.FullTextSearch = fullTextSearch
+	}
+
+	w.Config.Site.AccountUrl, _ = cc.String("webServer.site.bkAccountUrl")
+	w.Config.Site.BkHttpsLoginUrl, _ = cc.String("webServer.site.bkHttpsLoginUrl")
+	w.Config.Site.HttpsDomainUrl, _ = cc.String("webServer.site.httpsDomainUrl")
+	w.Config.Site.PaasDomainUrl, _ = cc.String("webServer.site.paasDomainUrl")
+	w.Config.Site.HelpDocUrl, _ = cc.String("webServer.site.helpDocUrl")
+
+	w.Config.Session.Name, _ = cc.String("webServer.session.name")
+	w.Config.Session.MultipleOwner, _ = cc.String("webServer.session.multipleOwner")
+	w.Config.Session.DefaultLanguage, _ = cc.String("webServer.session.defaultlanguage")
+	w.Config.LoginVersion, _ = cc.String("webServer.login.version")
 	if "" == w.Config.Session.DefaultLanguage {
 		w.Config.Session.DefaultLanguage = "zh-cn"
 	}
 
-	w.Config.Version = current.ConfigMap["api.version"]
-	w.Config.AgentAppUrl = current.ConfigMap["app.agent_app_url"]
-	w.Config.AuthCenter.AppCode = current.ConfigMap["app.auth_app_code"]
-	w.Config.AuthCenter.URL = current.ConfigMap["app.auth_url"]
+	w.Config.Version, _ = cc.String("webServer.api.version")
+	w.Config.AgentAppUrl, _ = cc.String("webServer.app.agentAppUrl")
+	w.Config.AuthCenter.AppCode, _ = cc.String("webServer.app.authAppCode")
+	w.Config.AuthCenter.URL, _ = cc.String("webServer.app.authUrl")
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
-	w.Config.ConfigMap = current.ConfigMap
-
-	if esbConfig, err := esb.ParseEsbConfig(current.ConfigMap); err == nil {
+	if esbConfig, err := esb.ParseEsbConfig("webServer"); err == nil {
 		esb.UpdateEsbConfig(*esbConfig)
 	}
+	w.Config.DisableOperationStatistic, _ = cc.Bool("operationServer.disableOperationStatistic")
 
 }
 

@@ -12,7 +12,11 @@
 
 package json
 
-import "github.com/json-iterator/go"
+import (
+	"strings"
+
+	jsoniter "github.com/json-iterator/go"
+)
 
 var iteratorJson = jsoniter.Config{
 	EscapeHTML:             true,
@@ -39,4 +43,9 @@ func UnmarshalFromString(str string, v interface{}) error {
 
 func Unmarshal(data []byte, v interface{}) error {
 	return iteratorJson.Unmarshal(data, v)
+}
+
+func UnmarshalArray(items []string, result interface{}) error {
+	strArrJSON := "[" + strings.Join(items, ",") + "]"
+	return iteratorJson.Unmarshal([]byte(strArrJSON), result)
 }

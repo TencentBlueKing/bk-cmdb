@@ -22,10 +22,10 @@ import (
 
 // BaseResp common result struct
 type BaseResp struct {
-	Result      bool         `json:"result" mapstructure:"result"`
-	Code        int          `json:"bk_error_code" mapstructure:"bk_error_code"`
-	ErrMsg      string       `json:"bk_error_msg" mapstructure:"bk_error_msg"`
-	Permissions []Permission `json:"permission" mapstructure:"permission"`
+	Result      bool           `json:"result" mapstructure:"result"`
+	Code        int            `json:"bk_error_code" mapstructure:"bk_error_code"`
+	ErrMsg      string         `json:"bk_error_msg" mapstructure:"bk_error_msg"`
+	Permissions *IamPermission `json:"permission" mapstructure:"permission"`
 }
 
 // CCError 根据response返回的信息产生错误
@@ -55,6 +55,91 @@ type JsonStringResp struct {
 	Data string
 }
 
+// JsonCntInfoResp defines a response that do not parse the data's count and info fields
+// to a struct but decode it to a json string if possible
+type JsonCntInfoResp struct {
+	BaseResp
+	Data CntInfoString `json:"data"`
+}
+
+type CntInfoString struct {
+	Count int64 `json:"count"`
+	// info is a json array string field.
+	Info string `json:"info"`
+}
+
+type IamPermission struct {
+	SystemID   string      `json:"system_id"`
+	SystemName string      `json:"system_name"`
+	Actions    []IamAction `json:"actions"`
+}
+
+type IamAction struct {
+	ID                   string            `json:"id"`
+	Name                 string            `json:"name"`
+	RelatedResourceTypes []IamResourceType `json:"related_resource_types"`
+}
+
+type IamResourceType struct {
+	SystemID   string                  `json:"system_id"`
+	SystemName string                  `json:"system_name"`
+	Type       string                  `json:"type"`
+	TypeName   string                  `json:"type_name"`
+	Instances  [][]IamResourceInstance `json:"instances,omitempty"`
+	Attributes []IamResourceAttribute  `json:"attributes,omitempty"`
+}
+
+type IamResourceInstance struct {
+	Type     string `json:"type"`
+	TypeName string `json:"type_name"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+}
+
+type IamResourceAttribute struct {
+	ID     string                      `json:"id"`
+	Values []IamResourceAttributeValue `json:"values"`
+}
+
+type IamResourceAttributeValue struct {
+	ID string `json:"id"`
+}
+
+type IamInstanceWithCreator struct {
+	System    string                `json:"system"`
+	Type      string                `json:"type"`
+	ID        string                `json:"id"`
+	Name      string                `json:"name"`
+	Creator   string                `json:"creator"`
+	Ancestors []IamInstanceAncestor `json:"ancestors,omitempty"`
+}
+
+type IamInstancesWithCreator struct {
+	System    string        `json:"system"`
+	Type      string        `json:"type"`
+	Creator   string        `json:"creator"`
+	Instances []IamInstance `json:"instances"`
+}
+
+type IamInstance struct {
+	ID        string                `json:"id"`
+	Name      string                `json:"name"`
+	Ancestors []IamInstanceAncestor `json:"ancestors,omitempty"`
+}
+
+type IamInstanceAncestor struct {
+	System string `json:"system"`
+	Type   string `json:"type"`
+	ID     string `json:"id"`
+}
+
+type IamCreatorActionPolicy struct {
+	Action struct {
+		ID string `json:"id"`
+	} `json:"action"`
+	PolicyID int64 `json:"policy_id"`
+}
+
 // Permission  describes all the authorities that a user
 // is need, when he attempts to operate a resource.
 // Permission is used only when a user do not have the authority to
@@ -82,7 +167,7 @@ type Resource struct {
 	ResourceID       string `json:"resource_id"`
 }
 
-func NewNoPermissionResp(permission []Permission) BaseResp {
+func NewNoPermissionResp(permission *IamPermission) BaseResp {
 	return BaseResp{
 		Result:      false,
 		Code:        common.CCNoPermission,
@@ -177,6 +262,12 @@ type CreateManyDataResult struct {
 // CreateOneDataResult the data struct definition in create one function result
 type CreateOneDataResult struct {
 	Created CreatedDataResult `json:"created"`
+}
+
+// SearchResp common search response
+type SearchResp struct {
+	BaseResp `json:",inline"`
+	Data     SearchDataResult `json:"data"`
 }
 
 // SearchDataResult common search data result
@@ -274,4 +365,14 @@ type OperaterException struct {
 type Uint64DataResponse struct {
 	BaseResp `json:",inline"`
 	Data     uint64 `json:"data"`
+}
+
+type TransferException struct {
+	HostID []int64 `json:"bk_host_id"`
+	ErrMsg string  `json:"bk_error_msg"`
+}
+
+type TransferExceptionResult struct {
+	BaseResp `json:",inline"`
+	Data     TransferException `json:"data"`
 }

@@ -76,6 +76,20 @@ func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID
 	return
 }
 
+func (t *instanceClient) SearchModuleByCondition(ctx context.Context, appID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
+	subPath := "/findmany/module/biz/%s"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(s).
+		SubResourcef(subPath, appID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (t *instanceClient) SearchModuleBatch(ctx context.Context, appID string, h http.Header, s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error) {
 	resp = new(metadata.MapArrayResponse)
 	subPath := "/findmany/module/bk_biz_id/%s"
@@ -83,6 +97,20 @@ func (t *instanceClient) SearchModuleBatch(ctx context.Context, appID string, h 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(s).
+		SubResourcef(subPath, appID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (t *instanceClient) SearchModuleWithRelation(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+	subPath := "/findmany/module/with_relation/biz/%s"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
 		SubResourcef(subPath, appID).
 		WithHeaders(h).
 		Do().

@@ -18,9 +18,7 @@ import (
 	"regexp"
 	"strings"
 
-	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
-
+	"configcenter/src/apiserver/service/match"
 	"github.com/emicklei/go-restful"
 )
 
@@ -29,11 +27,12 @@ type URLPath string
 
 // FilterChain url path filter
 func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
-	rid := util.GetHTTPCCRequestID(req.Request.Header)
-
 	var serverType RequestType
 	var err error
+
 	switch {
+	case u.WithCache(req):
+		serverType = CacheType
 	case u.WithTopo(req):
 		serverType = TopoType
 	case u.WithHost(req):
@@ -50,24 +49,27 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 		return TaskType, nil
 	case u.WithAdmin(req):
 		return AdminType, nil
+	case u.WithCloud(req):
+		return CloudType, nil
 	default:
+		if server, isHit := match.FilterMatch(req); isHit {
+			return RequestType(server), nil
+		}
 		serverType = UnknownType
 		err = errors.New("unknown requested with backend process")
 	}
-	blog.V(7).Infof("FilterChain match %s server, url: %s, rid: %s", serverType, req.Request.URL, rid)
+
 	return serverType, err
 }
 
-var topoURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(inst|object|objects|topo|biz|module|set)/.*$", verbs))
+var topoURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(inst|object|objects|topo|biz|module|set|resource)/.*$", verbs))
+var objectURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/object$", verbs))
 
 // WithTopo parse topo api's url
 func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	topoRoot := "/topo/v3"
 	from, to := rootPath, topoRoot
 	switch {
-	case strings.HasPrefix(string(*u), rootPath+"/audit/"):
-		from, to, isHit = rootPath, topoRoot, true
-
 	case strings.HasPrefix(string(*u), rootPath+"/biz/"):
 		from, to, isHit = rootPath+"/biz", topoRoot+"/app", true
 
@@ -75,6 +77,9 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, topoRoot, true
 
 	case topoURLRegexp.MatchString(string(*u)):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case objectURLRegexp.MatchString(string(*u)):
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/identifier/"):
@@ -86,24 +91,7 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case strings.HasPrefix(string(*u), rootPath+"/module/"):
 		from, to, isHit = rootPath, topoRoot, true
 
-		// Attention:
-		// do not change the check sequences.
-	case string(*u) == rootPath+"/object":
-		from, to, isHit = rootPath, topoRoot, true
-
-	case string(*u) == rootPath+"/objects":
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/object/attr"):
-		from, to, isHit = rootPath+"/object/attr", topoRoot+"/objectattr", true
-
 	case strings.HasPrefix(string(*u), rootPath+"/object/"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/objects/"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/objectatt/"):
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/set/"):
@@ -117,10 +105,6 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 
 	case strings.Contains(string(*u), "/objectattr"):
 		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/object"):
-		from, to, isHit = rootPath, topoRoot, true
-
 	case strings.Contains(string(*u), "/objectunique"):
 		from, to, isHit = rootPath, topoRoot, true
 
@@ -146,6 +130,12 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case strings.Contains(string(*u), "/topopath"):
 		from, to, isHit = rootPath, topoRoot, true
 
+	case strings.Contains(string(*u), "/instassttopo"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/objecttopology"):
+		from, to, isHit = rootPath, topoRoot, true
+
 	case strings.Contains(string(*u), "/topoassociationtype"):
 		from, to, isHit = rootPath, topoRoot, true
 
@@ -168,6 +158,15 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.Contains(string(*u), "/find/full_text"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/find/audit_dict"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/findmany/audit_list"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/find/audit"):
 		from, to, isHit = rootPath, topoRoot, true
 
 	case topoURLRegexp.MatchString(string(*u)):
@@ -200,19 +199,17 @@ func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
 	case strings.HasPrefix(string(*u), rootPath+"/hosts/"):
 		from, to, isHit = rootPath, hostRoot, true
 
-	case string(*u) == (rootPath + "/userapi"):
+	// dynamic grouping URL matching, and proxy to host server.
+	case string(*u) == (rootPath + "/dynamicgroup"):
 		from, to, isHit = rootPath, hostRoot, true
 
-	case strings.HasPrefix(string(*u), rootPath+"/userapi/"):
+	case strings.HasPrefix(string(*u), rootPath+"/dynamicgroup/"):
 		from, to, isHit = rootPath, hostRoot, true
 
 	case string(*u) == (rootPath + "/usercustom"):
 		from, to, isHit = rootPath, hostRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/usercustom/"):
-		from, to, isHit = rootPath, hostRoot, true
-
-	case string(*u) == (rootPath + "/findmany/modulehost"):
 		from, to, isHit = rootPath, hostRoot, true
 
 	case hostCloudAreaURLRegexp.MatchString(string(*u)):
@@ -365,7 +362,49 @@ func (u *URLPath) WithAdmin(req *restful.Request) (isHit bool) {
 	return false
 }
 
+var cloudUrlRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/cloud/.*$", verbs))
+
+// WithCloud transform cloud's url
+func (u *URLPath) WithCloud(req *restful.Request) (isHit bool) {
+	cloudRoot := "/cloud/v3"
+	from, to := rootPath, cloudRoot
+
+	switch {
+	case strings.HasPrefix(string(*u), rootPath+"/cloud/"):
+		from, to, isHit = rootPath, cloudRoot, true
+	case cloudUrlRegexp.MatchString(string(*u)):
+		from, to, isHit = rootPath, cloudRoot, true
+	default:
+		isHit = false
+	}
+
+	if isHit {
+		u.revise(req, from, to)
+		return true
+	}
+	return false
+}
+
 func (u URLPath) revise(req *restful.Request, from, to string) {
 	req.Request.RequestURI = to + req.Request.RequestURI[len(from):]
 	req.Request.URL.Path = to + req.Request.URL.Path[len(from):]
+}
+
+// WithCache transform cache service's url
+func (u *URLPath) WithCache(req *restful.Request) (isHit bool) {
+	cacheRoot := "/cache/v3"
+	from, to := rootPath, cacheRoot
+
+	switch {
+	case strings.HasPrefix(string(*u), rootPath+"/cache/"):
+		from, to, isHit = rootPath+"/cache", cacheRoot, true
+	default:
+		isHit = false
+	}
+
+	if isHit {
+		u.revise(req, from, to)
+		return true
+	}
+	return false
 }

@@ -13,26 +13,30 @@
 package service
 
 import (
+	"net/http"
+	"net/http/httputil"
 	"os"
+	"runtime"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*options.ServerOption
 	Engine   *backbone.Engine
-	CacheCli *redis.Client
+	CacheCli redis.Client
 	*logics.Logics
 	Config  *options.Config
 	Session sessions.RedisStore
@@ -40,15 +44,34 @@ type Service struct {
 
 func (s *Service) WebService() *gin.Engine {
 	setGinMode()
-	ws := gin.Default()
+	ws := gin.New()
+	ws.Use(gin.Logger())
 
 	ws.Use(middleware.RequestIDMiddleware)
 	ws.Use(sessions.Sessions(s.Config.Session.Name, s.Session))
 	ws.Use(middleware.ValidLogin(*s.Config, s.Discovery()))
+	ws.Use(func(c *gin.Context) {
+		defer func() {
+			// suppresses logging of a stack when err is ErrAbortHandler, same as net/http
+			if err := recover(); err != nil {
+				if err != http.ErrAbortHandler {
+					stack := make([]byte, 10000)
+					nbytes := runtime.Stack(stack, false)
+					if nbytes < len(stack) {
+						stack = stack[:nbytes]
+					}
+					request, _ := httputil.DumpRequest(c.Request, false)
+					blog.Errorf("[Recovery] recovered:\n%s\n%s\n%s", string(request), err, string(stack))
+				}
+				c.AbortWithStatus(500)
+			}
+		}()
+		c.Next()
+	})
 	middleware.Engine = s.Engine
 
 	ws.Static("/static", s.Config.Site.HtmlRoot)
-	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot + "/index.html", s.Config.Site.HtmlRoot + "/login.html")
+	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot+"/index.html", s.Config.Site.HtmlRoot+"/login.html")
 
 	ws.POST("/hosts/import", s.ImportHost)
 	ws.POST("/hosts/export", s.ExportHost)
@@ -85,6 +108,11 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/netproperty/import", s.ImportNetProperty)
 	ws.POST("/netproperty/export", s.ExportNetProperty)
 	ws.GET("/netcollect/importtemplate/netproperty", s.BuildDownLoadNetPropertyExcelTemplate)
+
+	// if no route, redirect to 404 page
+	ws.NoRoute(func(c *gin.Context) {
+		c.Redirect(302, "/#/404")
+	})
 
 	return ws
 }
@@ -138,5 +166,6 @@ func (s *Service) Healthz(c *gin.Context) {
 		Result:  meta.IsHealthy,
 		Message: meta.Message,
 	}
+	answer.SetCommonResponse()
 	c.JSON(200, answer)
 }

@@ -15,6 +15,7 @@ package transaction
 import (
 	"context"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"configcenter/src/apimachinery/rest"
@@ -36,18 +37,13 @@ type Transaction interface {
 	autoRun(ctx context.Context, h http.Header, run func() error) error
 }
 
-func (t *txn) NewTransaction(enableTxn bool, h http.Header, opts ...metadata.TxnOption) (Transaction, error) {
-	if !enableTxn {
-		return new(transaction), nil
-	}
-
+func (t *txn) NewTransaction(h http.Header, opts ...metadata.TxnOption) (Transaction, error) {
 	cap, err := local.GenTxnCableAndSetHeader(h, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	transaction := &transaction{
-		enableTxn: enableTxn,
 		sessionID: cap.SessionID,
 		timeout:   cap.Timeout,
 		client:    t.client,
@@ -55,17 +51,13 @@ func (t *txn) NewTransaction(enableTxn bool, h http.Header, opts ...metadata.Txn
 	return transaction, nil
 }
 
-func (t *txn) AutoRunTxn(ctx context.Context, enableTxn bool, h http.Header, run func() error, opts ...metadata.TxnOption) error {
-	if !enableTxn {
-		return run()
-	}
-
+func (t *txn) AutoRunTxn(ctx context.Context, h http.Header, run func() error, opts ...metadata.TxnOption) error {
 	// to avoid nested txn
 	if h.Get(common.TransactionIdHeader) != "" {
 		return run()
 	}
 
-	txn, err := t.NewTransaction(enableTxn, h, opts...)
+	txn, err := t.NewTransaction(h, opts...)
 	if err != nil {
 		return ccErr.New(common.CCErrCommStartTransactionFailed, err.Error())
 	}
@@ -93,10 +85,6 @@ func (t *transaction) CommitTransaction(ctx context.Context, h http.Header) erro
 		panic("invalid transaction usage.")
 	}
 	t.locked = true
-
-	if !t.enableTxn {
-		return nil
-	}
 
 	subPath := "/update/transaction/commit"
 	body := metadata.TxnCapable{
@@ -130,10 +118,6 @@ func (t *transaction) AbortTransaction(ctx context.Context, h http.Header) error
 	}
 	t.locked = true
 
-	if !t.enableTxn {
-		return nil
-	}
-
 	subPath := "/update/transaction/abort"
 	body := metadata.TxnCapable{
 		Timeout:   t.timeout,
@@ -159,7 +143,24 @@ func (t *transaction) AbortTransaction(ctx context.Context, h http.Header) error
 	return nil
 }
 
-func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() error) error {
+func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() error) (err error) {
+	rid := util.GetHTTPCCRequestID(h)
+
+	defer func() {
+		// if panic ,abort the transaction to avoid WriteConflict when the uncommitted data was processed in another transaction
+		if panicErr := recover(); panicErr != nil {
+			blog.ErrorfDepthf(3, "run transaction,but server panic, err: %v, rid: %s, debug strace:%s", panicErr, rid, debug.Stack())
+			err = ccErr.New(common.CCErrCommInternalServerError, common.GetIdentification()+" Internal Server Error")
+
+			abortErr := t.AbortTransaction(ctx, h)
+			if abortErr != nil {
+				blog.ErrorfDepthf(3, "abort the transaction failed, err: %v, rid: %s", abortErr, rid)
+				return
+			}
+			blog.V(4).InfoDepthf(3, "abort the transaction success. rid: %s", rid)
+		}
+	}()
+
 	if run == nil {
 		return errors.New("run function can not be nil")
 	}
@@ -167,14 +168,6 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 	if t.locked {
 		panic("invalid transaction usage.")
 	}
-	t.locked = true
-
-	if !t.enableTxn {
-		return run()
-	}
-	rid := util.GetHTTPCCRequestID(h)
-	// revise the locked to false, so that we can commit or abort the transaction.
-	t.locked = false
 
 	runErr := run()
 	if runErr != nil {
@@ -191,7 +184,7 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 	}
 
 	// run() logic success, then commit the transaction.
-	err := t.CommitTransaction(ctx, h)
+	err = t.CommitTransaction(ctx, h)
 	if err != nil {
 		blog.ErrorfDepthf(2, "commit the transaction failed, err: %v, rid: %s", err, rid)
 		return err

@@ -23,15 +23,43 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
-
 	"github.com/emicklei/go-restful"
 	"github.com/mssola/user_agent"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-const ns = "cmdb_"
+// a global register which is used to collect metrics we need.
+// it will be initialized when process is up for safe usage.
+// and then be revised later when service is initialized.
+var globalRegister prometheus.Registerer
+
+func init() {
+	// set default global register
+	globalRegister = prometheus.DefaultRegisterer
+}
+
+// Register must only be called after backbone engine is started.
+func Register() prometheus.Registerer {
+	return globalRegister
+}
+
+const Namespace = "cmdb"
+
+// labels
+const (
+	LabelHandler     = "handler"
+	LabelHTTPStatus  = "status_code"
+	LabelOrigin      = "origin"
+	LabelProcessName = "process_name"
+	LabelAppCode     = "app_code"
+	LabelHost        = "host"
+)
+
+// labels
+const (
+	KeySelectedRoutePath string = "SelectedRoutePath"
+)
 
 // Config metrics config
 type Config struct {
@@ -54,23 +82,28 @@ type Service struct {
 func NewService(conf Config) *Service {
 	registry := prometheus.NewRegistry()
 	register := prometheus.WrapRegistererWith(prometheus.Labels{LabelProcessName: conf.ProcessName, LabelHost: strings.Split(conf.ProcessInstance, ":")[0]}, registry)
+
+	// set up global register
+	globalRegister = register
+
 	srv := Service{conf: conf, registry: register}
 
 	srv.requestTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: ns + "http_request_total",
+			Name: Namespace + "_http_request_total",
 			Help: "http request total.",
 		},
-		[]string{LabelHandler, LabelHTTPStatus, LabelOrigin, LabelAppCode, LabelUser, LabelRealIP},
+		[]string{LabelHandler, LabelHTTPStatus, LabelOrigin, LabelAppCode},
 	)
 	register.MustRegister(srv.requestTotal)
 
 	srv.requestDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: ns + "http_request_duration_millisecond",
-			Help: "Histogram of latencies for HTTP requests.",
+			Name:    Namespace + "_http_request_duration_millisecond",
+			Help:    "Histogram of latencies for HTTP requests.",
+			Buckets: []float64{10, 30, 50, 70, 100, 200, 300, 400, 500, 1000, 2000, 5000},
 		},
-		[]string{LabelHandler, LabelAppCode, LabelUser, LabelRealIP},
+		[]string{LabelHandler, LabelAppCode},
 	)
 	register.MustRegister(srv.requestDuration)
 	register.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
@@ -81,23 +114,6 @@ func NewService(conf Config) *Service {
 	)
 	return &srv
 }
-
-// labels
-const (
-	LabelHandler     = "handler"
-	LabelHTTPStatus  = "status_code"
-	LabelOrigin      = "origin"
-	LabelProcessName = "process_name"
-	LabelHost        = "host"
-	LabelAppCode     = "app_code"
-	LabelUser        = "user"
-	LabelRealIP      = "real_ip"
-)
-
-// labels
-const (
-	KeySelectedRoutePath string = "SelectedRoutePath"
-)
 
 // Registry returns the prometheus.Registerer
 func (s *Service) Registry() prometheus.Registerer {
@@ -141,27 +157,21 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 			}
 			uri = requestUrl.Path
 		}
-		duration := util.ToMillisecond(time.Since(before))
 
 		if !utf8.ValidString(uri) {
 			blog.Errorf("uri: %s not utf-8", uri)
 			return
 		}
 
-		s.requestDuration.With(s.label(LabelHandler, uri,
-			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode),
-			LabelUser, r.Header.Get(common.BKHTTPHeaderUser),
-			LabelRealIP, getUserIP(r),
-		)).Observe(duration)
+		s.requestDuration.With(s.label(LabelHandler, uri, LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode))).
+			Observe(float64(time.Since(before) / time.Millisecond))
+
 		s.requestTotal.With(s.label(
 			LabelHandler, uri,
 			LabelHTTPStatus, strconv.Itoa(resp.StatusCode()),
 			LabelOrigin, getOrigin(r.Header),
 			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode),
-			LabelUser, r.Header.Get(common.BKHTTPHeaderUser),
-			LabelRealIP, getUserIP(r),
 		)).Inc()
-
 	})
 }
 
@@ -196,19 +206,4 @@ func getOrigin(header http.Header) string {
 	}
 
 	return "Unknown"
-}
-
-func getUserIP(r *http.Request) string {
-	address := r.Header.Get("X-Real-Ip")
-	if address == "" {
-		address = r.Header.Get("X-Forwarded-For")
-	}
-	if address == "" {
-		address = r.RemoteAddr
-	}
-	index := strings.LastIndex(address, ":")
-	if index != -1 {
-		return address[:index]
-	}
-	return address
 }

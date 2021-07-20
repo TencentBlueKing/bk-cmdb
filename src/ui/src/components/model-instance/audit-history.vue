@@ -1,182 +1,166 @@
 <template>
-    <div class="history">
-        <div class="history-filter">
-            <cmdb-form-date-range class="filter-item filter-range"
-                v-model="dateRange"
-                @input="handlePageChange(1)">
-            </cmdb-form-date-range>
-            <cmdb-form-objuser class="filter-item filter-user"
-                v-model="operator"
-                :exclude="false"
-                :multiple="false"
-                :palceholder="$t('操作账号')"
-                @input="handlePageChange(1)">
-            </cmdb-form-objuser>
-        </div>
-        <bk-table class="history-table"
-            v-bkloading="{ isLoading: $loading('getHostAuditLog') }"
-            :data="history"
-            :pagination="pagination"
-            :max-height="$APP.height - 325"
-            :row-style="{ cursor: 'pointer' }"
-            @page-change="handlePageChange"
-            @page-limit-change="handleSizeChange"
-            @sort-change="handleSortChange"
-            @row-click="handleRowClick">
-            <bk-table-column :label="$t('操作描述')" :formatter="getFormatterDesc"></bk-table-column>
-            <bk-table-column prop="user" :label="$t('操作账号')" sortable="custom"></bk-table-column>
-            <bk-table-column prop="operation_time" :label="$t('操作时间')" sortable="custom">
-                <template slot-scope="{ row }">
-                    {{$tools.formatTime(row['operation_time'])}}
-                </template>
-            </bk-table-column>
-            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
-        </bk-table>
-        <bk-sideslider
-            v-transfer-dom
-            :is-show.sync="details.show"
-            :width="800"
-            :title="$t('操作详情')">
-            <cmdb-host-history-details :details="details.data" slot="content"></cmdb-host-history-details>
-        </bk-sideslider>
+  <div class="history">
+    <div class="history-filter">
+      <cmdb-form-date-range class="filter-item filter-range"
+        v-model="condition.operation_time"
+        :clearable="false"
+        @input="handlePageChange(1)">
+      </cmdb-form-date-range>
+      <cmdb-form-objuser class="filter-item filter-user"
+        v-model="condition.user"
+        :exclude="false"
+        :multiple="false"
+        :palceholder="$t('操作账号')"
+        @input="handlePageChange(1)">
+      </cmdb-form-objuser>
     </div>
+    <bk-table class="history-table"
+      v-bkloading="{ isLoading: $loading(requestId) }"
+      :data="history"
+      :pagination="pagination"
+      :max-height="$APP.height - 325"
+      :row-style="{ cursor: 'pointer' }"
+      @page-change="handlePageChange"
+      @page-limit-change="handleSizeChange"
+      @row-click="handleRowClick">
+      <bk-table-column :label="$t('操作描述')" :formatter="getFormatterDesc"></bk-table-column>
+      <bk-table-column prop="user" :label="$t('操作账号')"></bk-table-column>
+      <bk-table-column prop="operation_time" :label="$t('操作时间')">
+        <template slot-scope="{ row }">
+          {{$tools.formatTime(row['operation_time'])}}
+        </template>
+      </bk-table-column>
+      <cmdb-table-empty slot="empty" :stuff="table.stuff">{{$t('暂无数据')}}</cmdb-table-empty>
+    </bk-table>
+  </div>
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
-    import cmdbHostHistoryDetails from '@/components/audit-history/details'
-    export default {
-        components: {
-            cmdbHostHistoryDetails
+  import AuditDetails from '@/components/audit-history/details.js'
+  export default {
+    props: {
+      category: {
+        type: String,
+        required: true
+      },
+      resourceId: {
+        type: [Number, String]
+      },
+      resourceType: {
+        type: String,
+        default: ''
+      }
+    },
+    data() {
+      const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
+      return {
+        history: [],
+        dictionary: [],
+        condition: {
+          operation_time: [today, today],
+          user: '',
+          category: this.category,
+          resource_id: this.resourceId,
+          resource_type: this.resourceType
         },
-        props: {
-            target: {
-                type: String,
-                default: ''
-            },
-            instId: {
-                type: Number
-            },
-            resourceType: {
-                type: String,
-                default: ''
-            }
+        table: {
+          stuff: {
+            type: 'default',
+            payload: {}
+          }
         },
-        data () {
-            return {
-                dateRange: [],
-                operator: '',
-                history: [],
-                pagination: {
-                    count: 0,
-                    current: 1,
-                    limit: 10
-                },
-                table: {
-                    stuff: {
-                        type: 'default',
-                        payload: {
-                            emptyText: this.$t('bk.table.emptyText')
-                        }
-                    }
-                },
-                sort: '-operation_time',
-                details: {
-                    show: false,
-                    data: null
-                }
-            }
+        pagination: {
+          count: 0,
+          current: 1,
+          limit: 10
         },
-        computed: {
-        },
-        created () {
-            this.getHistory()
-        },
-        methods: {
-            ...mapActions('operationAudit', ['getUserOperationLog']),
-            getFormatterDesc (row) {
-                const funcActions = this.$store.state.operationAudit.funcActions
-                const modules = [...funcActions.business, ...funcActions.resource].filter(item => [this.resourceType, 'instance_association'].includes(item.id))
-                const operations = modules.reduce((acc, item) => acc.concat(item.operations), [])
-                const actionSet = {}
-                operations.forEach(operation => {
-                    actionSet[operation.id] = this.$t(operation.name)
-                })
-                let action = ''
-                if (row.label) {
-                    const label = Object.keys(row.label)[0]
-                    action = actionSet[`${row.resource_type}-${row.action}-${label}`]
-                } else {
-                    action = actionSet[`${row.resource_type}-${row.action}`]
-                }
-                let name = ''
-                const data = row.operation_detail
-                if (['assign_host', 'unassign_host', 'transfer_host_module'].includes(row.action)) {
-                    name = data.bk_host_innerip
-                } else if (['instance_association'].includes(row.resource_type)) {
-                    name = data.target_instance_name
-                } else {
-                    name = data.resource_name
-                }
-                return `${action}"${name}"`
-            },
-            async getHistory (event) {
-                try {
-                    const condition = {
-                        resource_id: Number(this.instId)
-                    }
-                    if (this.dateRange.length) {
-                        condition.operation_time = [this.dateRange[0] + ' 00:00:00', this.dateRange[1] + ' 23:59:59']
-                    }
-                    if (this.operator) {
-                        condition.user = this.operator
-                    }
-
-                    const data = await this.getUserOperationLog({
-                        objId: this.target,
-                        params: {
-                            condition,
-                            limit: this.pagination.limit,
-                            sort: this.sort,
-                            start: (this.pagination.current - 1) * this.pagination.limit
-                        },
-                        config: {
-                            cancelPrevious: true,
-                            requestId: 'getUserOperationLog'
-                        }
-                    })
-
-                    this.history = data.info
-                    this.pagination.count = data.count
-
-                    if (event) {
-                        this.table.stuff.type = 'search'
-                    }
-                } catch (e) {
-                    console.log(e)
-                    this.history = []
-                    this.pagination.count = 0
-                }
-            },
-            handlePageChange (page) {
-                this.pagination.current = page
-                this.getHistory(true)
-            },
-            handleSizeChange (size) {
-                this.pagination.limit = size
-                this.pagination.current = 1
-                this.getHistory()
-            },
-            handleSortChange (sort) {
-                this.sort = this.$tools.getSort(sort)
-                this.getHistory()
-            },
-            handleRowClick (item) {
-                this.details.data = item
-                this.details.show = true
-            }
+        requestId: Symbol('getList')
+      }
+    },
+    created() {
+      this.getAuditDictionary()
+      this.getHistory()
+    },
+    methods: {
+      async getAuditDictionary() {
+        try {
+          this.dictionary = await this.$store.dispatch('audit/getDictionary', {
+            fromCache: true,
+            globalPermission: false
+          })
+        } catch (error) {
+          this.dictionary = []
         }
+      },
+      async getHistory() {
+        try {
+          const { info, count } = await this.$store.dispatch('audit/getList', {
+            params: {
+              condition: this.getUsefulConditon(),
+              page: {
+                ...this.$tools.getPageParams(this.pagination),
+                sort: '-operation_time'
+              }
+            },
+            config: {
+              requestId: this.requestId,
+              globalPermission: false
+            }
+          })
+          this.pagination.count = count
+          this.history = info
+        } catch ({ permission }) {
+          if (permission) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission }
+            }
+          }
+          this.history = []
+        }
+      },
+      getUsefulConditon() {
+        const usefuleCondition = {}
+        Object.keys(this.condition).forEach((key) => {
+          const value = this.condition[key]
+          if (String(value).length) {
+            usefuleCondition[key] = value
+          }
+        })
+        if (usefuleCondition.operation_time) {
+          const [start, end] = usefuleCondition.operation_time
+          usefuleCondition.operation_time = {
+            start: `${start} 00:00:00`,
+            end: `${end} 23:59:59`
+          }
+        }
+        return usefuleCondition
+      },
+      getFormatterDesc(row) {
+        const type = this.dictionary.find(type => type.id === row.resource_type) || {}
+        const action = (type.operations || []).find(action => action.id === row.action) || {}
+        return `${action.name || row.action}${type.name || row.resource_type}`
+      },
+      handlePageChange(page) {
+        this.pagination.current = page
+        this.getHistory(true)
+      },
+      handleSizeChange(size) {
+        this.pagination.limit = size
+        this.pagination.current = 1
+        this.getHistory()
+      },
+      handleSortChange(sort) {
+        this.sort = this.$tools.getSort(sort)
+        this.getHistory()
+      },
+      handleRowClick(item) {
+        AuditDetails.show({
+          id: item.id
+        })
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

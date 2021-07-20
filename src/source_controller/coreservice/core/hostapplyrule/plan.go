@@ -24,6 +24,8 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
+
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -47,7 +49,7 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 		},
 	}
 	hosts := make([]metadata.HostMapStr, 0)
-	if err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(hostFilter).All(kit.Ctx, &hosts); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(hostFilter).All(kit.Ctx, &hosts); err != nil {
 		blog.ErrorJSON("GenerateApplyPlan failed, list hosts failed, filter: %s, err: %s, rid: %s", hostFilter, err.Error(), rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -78,7 +80,7 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 			common.BKDBIN: util.IntArrayUnique(cloudIDs),
 		},
 	}
-	if err := p.dbProxy.Table(common.BKTableNameBasePlat).Find(cloudFilter).All(kit.Ctx, &clouds); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBasePlat).Find(cloudFilter).All(kit.Ctx, &clouds); err != nil {
 		blog.ErrorJSON("GenerateApplyPlan failed, read cloud failed, filter: %s, err: %s, rid: %s",
 			cloudFilter, err.Error(), rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -296,7 +298,7 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option m
 		},
 	}
 	relations := make([]metadata.ModuleHost, 0)
-	if err := p.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(relationFilter).All(kit.Ctx, &relations); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(relationFilter).All(kit.Ctx, &relations); err != nil {
 		blog.ErrorJSON("RunHostApplyOnHosts failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, relationFilter, err.Error(), rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -311,7 +313,7 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option m
 		},
 		common.HostApplyEnabledField: true,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules); err != nil {
 		blog.ErrorJSON("RunHostApplyOnHosts failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameBaseModule, moduleFilter, err.Error(), rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}

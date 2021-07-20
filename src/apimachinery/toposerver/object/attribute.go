@@ -21,7 +21,7 @@ import (
 
 func (t *object) CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectattr"
+	subPath := "/create/objectattr"
 
 	err = t.client.Post().
 		WithContext(ctx).
@@ -35,7 +35,7 @@ func (t *object) CreateObjectAtt(ctx context.Context, h http.Header, obj *metada
 
 func (t *object) SelectObjectAttWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectattr/search"
+	subPath := "/find/objectattr"
 
 	err = t.client.Post().
 		WithContext(ctx).
@@ -49,7 +49,7 @@ func (t *object) SelectObjectAttWithParams(ctx context.Context, h http.Header, d
 
 func (t *object) UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectattr/%s"
+	subPath := "/update/objectattr/%s"
 
 	err = t.client.Put().
 		WithContext(ctx).
@@ -63,7 +63,7 @@ func (t *object) UpdateObjectAtt(ctx context.Context, objID string, h http.Heade
 
 func (t *object) DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectattr/%s"
+	subPath := "/delete/objectattr/%s"
 
 	err = t.client.Delete().
 		WithContext(ctx).

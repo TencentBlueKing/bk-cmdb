@@ -121,14 +121,14 @@ var SupportOperators = map[Operator]bool{
 	OperatorsEndsWith:     true,
 	OperatorNotEndsWith:   true,
 
-	OperatorIsEmpty:    false,
-	OperatorIsNotEmpty: false,
+	OperatorIsEmpty:    true,
+	OperatorIsNotEmpty: true,
 
-	OperatorIsNull:    false,
-	OperatorIsNotNull: false,
+	OperatorIsNull:    true,
+	OperatorIsNotNull: true,
 
 	OperatorExist:    true,
-	OperatorNotExist: false,
+	OperatorNotExist: true,
 }
 
 func (op Operator) Validate() error {
@@ -281,15 +281,16 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 		}
 	case OperatorNotBeginsWith:
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBNot: fmt.Sprintf("^%s", r.Value),
+			common.BKDBNot: map[string]interface{}{common.BKDBLIKE: fmt.Sprintf("^%s", r.Value)},
 		}
 	case OperatorContains:
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBLIKE: fmt.Sprintf("%s", r.Value),
+			common.BKDBLIKE:    fmt.Sprintf("%s", r.Value),
+			common.BKDBOPTIONS: "i",
 		}
 	case OperatorNotContains:
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBNot: fmt.Sprintf("%s", r.Value),
+			common.BKDBNot: map[string]interface{}{common.BKDBLIKE: fmt.Sprintf("%s", r.Value)},
 		}
 	case OperatorsEndsWith:
 		filter[r.Field] = map[string]interface{}{
@@ -297,7 +298,7 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 		}
 	case OperatorNotEndsWith:
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBNot: fmt.Sprintf("%s$", r.Value),
+			common.BKDBNot: map[string]interface{}{common.BKDBLIKE: fmt.Sprintf("%s$", r.Value)},
 		}
 	case OperatorIsEmpty:
 		// array empty
@@ -339,7 +340,7 @@ type CombinedRule struct {
 
 var (
 	// 嵌套层级的深度按树的高度计算，查询条件最大深度为3即最多嵌套2层
-	MaxDeep           = 3
+	MaxDeep = 3
 )
 
 func (r CombinedRule) GetDeep() int {

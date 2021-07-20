@@ -14,17 +14,13 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"reflect"
 	"strconv"
 	"sync"
 	"time"
 
-	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	enableauth "configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
@@ -42,12 +38,11 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-	dalredis "configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdpartyclient/esbserver"
-	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/esbserver"
+	"configcenter/src/thirdparty/esbserver/esbutil"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"gopkg.in/redis.v5"
 )
 
 const (
@@ -79,22 +74,22 @@ type DataCollectionConfig struct {
 	MongoDB mongo.Config
 
 	// CCRedis CC main redis configs.
-	CCRedis dalredis.Config
+	CCRedis redis.Config
 
 	// SnapRedis snap redis configs.
-	SnapRedis dalredis.Config
+	SnapRedis redis.Config
 
 	// DiscoverRedis discover redis configs.
-	DiscoverRedis dalredis.Config
+	DiscoverRedis redis.Config
 
 	// NetCollectRedis net collection redis configs.
-	NetCollectRedis dalredis.Config
+	NetCollectRedis redis.Config
 
 	// ESB blueking ESB configs.
 	Esb esbutil.EsbConfig
 
-	// AuthConfig auth configs.
-	AuthConfig authcenter.AuthConfig
+	// DefaultAppName default name of this app.
+	DefaultAppName string
 }
 
 // DataCollection is data collection server.
@@ -118,16 +113,16 @@ type DataCollection struct {
 	db dal.RDB
 
 	// redisCli is cc main cache redis client.
-	redisCli *redis.Client
+	redisCli redis.Client
 
 	// snapCli is snap redis client.
-	snapCli *redis.Client
+	snapCli redis.Client
 
 	// disCli is discover redis client.
-	disCli *redis.Client
+	disCli redis.Client
 
 	// netCli is net collect redis client.
-	netCli *redis.Client
+	netCli redis.Client
 
 	// authManager is auth manager.
 	authManager *extensions.AuthManager
@@ -193,7 +188,7 @@ func (c *DataCollection) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
 	c.hostConfigUpdateMu.Lock()
 	defer c.hostConfigUpdateMu.Unlock()
 
-	if len(curr.ConfigMap) > 0 {
+	if len(curr.ConfigData) > 0 {
 		// NOTE: allow to update configs with empty values?
 		// NOTE: what is prev used for? build a compare logic here?
 
@@ -201,14 +196,11 @@ func (c *DataCollection) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
 			c.config = &DataCollectionConfig{}
 		}
 
-		if data, err := json.MarshalIndent(curr.ConfigMap, "", "  "); err == nil {
-			blog.V(3).Infof("DataCollection| on host config update event: \n%s", data)
-		}
-
+		blog.V(3).Infof("DataCollection| on host config update event: \n%s", string(curr.ConfigData))
 		// ESB configs.
-		c.config.Esb.Addrs = curr.ConfigMap["esb.addr"]
-		c.config.Esb.AppCode = curr.ConfigMap["esb.appCode"]
-		c.config.Esb.AppSecret = curr.ConfigMap["esb.appSecret"]
+		c.config.Esb.Addrs, _ = cc.String("datacollection.esb.addr")
+		c.config.Esb.AppCode, _ = cc.String("datacollection.esb.appCode")
+		c.config.Esb.AppSecret, _ = cc.String("datacollection.esb.appSecret")
 	}
 }
 
@@ -251,27 +243,21 @@ func (c *DataCollection) initConfigs() error {
 	}
 
 	// snap redis.
-	c.config.SnapRedis, err = c.engine.WithRedis("snap-redis")
+	c.config.SnapRedis, err = c.engine.WithRedis("redis.snap")
 	if err != nil {
 		return fmt.Errorf("init snap redis configs, %+v", err)
 	}
 
 	// discover redis.
-	c.config.DiscoverRedis, err = c.engine.WithRedis("discover-redis")
+	c.config.DiscoverRedis, err = c.engine.WithRedis("redis.discover")
 	if err != nil {
 		return fmt.Errorf("init discover redis configs, %+v", err)
 	}
 
 	// netcollect redis.
-	c.config.NetCollectRedis, err = c.engine.WithRedis("netcollect-redis")
+	c.config.NetCollectRedis, err = c.engine.WithRedis("redis.netcollect")
 	if err != nil {
 		return fmt.Errorf("init netcollect redis configs, %+v", err)
-	}
-
-	// authorization.
-	c.config.AuthConfig, err = c.engine.WithAuth()
-	if err != nil {
-		return fmt.Errorf("init authorization configs, %+v", err)
 	}
 
 	return nil
@@ -300,7 +286,7 @@ func (c *DataCollection) initModules() error {
 	c.service.SetLogics(mgoCli, esb)
 
 	// connect to cc main redis.
-	redisCli, err := dalredis.NewFromConfig(c.config.CCRedis)
+	redisCli, err := redis.NewFromConfig(c.config.CCRedis)
 	if err != nil {
 		return fmt.Errorf("connect to cc main redis, %+v", err)
 	}
@@ -310,7 +296,7 @@ func (c *DataCollection) initModules() error {
 
 	// connect to snap redis.
 	if c.config.SnapRedis.Enable != "false" {
-		snapCli, err := dalredis.NewFromConfig(c.config.SnapRedis)
+		snapCli, err := redis.NewFromConfig(c.config.SnapRedis)
 		if err != nil {
 			return fmt.Errorf("connect to snap redis, %+v", err)
 		}
@@ -321,7 +307,7 @@ func (c *DataCollection) initModules() error {
 
 	// connect to discover redis.
 	if c.config.DiscoverRedis.Enable != "false" {
-		disCli, err := dalredis.NewFromConfig(c.config.DiscoverRedis)
+		disCli, err := redis.NewFromConfig(c.config.DiscoverRedis)
 		if nil != err {
 			return fmt.Errorf("connect to discover redis, %+v", err)
 		}
@@ -332,7 +318,7 @@ func (c *DataCollection) initModules() error {
 
 	// connect to net collect redis.
 	if c.config.NetCollectRedis.Enable != "false" {
-		netCli, err := dalredis.NewFromConfig(c.config.NetCollectRedis)
+		netCli, err := redis.NewFromConfig(c.config.NetCollectRedis)
 		if nil != err {
 			return fmt.Errorf("connect to netcollect redis, %+v", err)
 		}
@@ -342,13 +328,8 @@ func (c *DataCollection) initModules() error {
 	}
 
 	// handle authorize.
-	if enableauth.IsAuthed() {
-		authorize, err := auth.NewAuthorize(nil, c.config.AuthConfig, c.engine.Metric().Registry())
-		if err != nil {
-			return fmt.Errorf("create new authorize failed, %+v", err)
-		}
-		c.authManager = extensions.NewAuthManager(c.engine.CoreAPI, authorize)
-		blog.Infof("DataCollection| init modules, create authorize success[%+v]", c.config.AuthConfig)
+	if enableauth.EnableAuthorize() {
+		c.authManager = extensions.NewAuthManager(c.engine.CoreAPI)
 	}
 
 	return nil
@@ -399,7 +380,7 @@ func (c *DataCollection) discoverMessageTopic(defaultAppID string) []string {
 func (c *DataCollection) netcollectMessageTopic(defaultAppID string) []string {
 	return []string{
 		// current netcollect topic name.
-		fmt.Sprintf("netdevice2"),
+		fmt.Sprintf("netdevice%s", defaultAppID),
 	}
 }
 
@@ -501,9 +482,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 func (c *DataCollection) setSnapshotBizName() error {
 	tryCnt := 30
+	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 	for i := 1; i <= tryCnt; i++ {
 		time.Sleep(time.Second * 2)
-		res, err := c.engine.CoreAPI.CoreService().System().SearchConfigAdmin(context.Background(), http.Header{})
+		res, err := c.engine.CoreAPI.CoreService().System().SearchConfigAdmin(context.Background(), header)
 		if err != nil {
 			blog.Warnf("setSnapshotBizName failed,  try count:%d, SearchConfigAdmin err: %v", i, err)
 			continue

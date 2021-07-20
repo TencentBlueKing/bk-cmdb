@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -26,10 +25,10 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/multilingual"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type InstanceMainline struct {
-	dbProxy   dal.RDB
 	bkBizID   int64
 	modelTree *metadata.TopoModelNode
 
@@ -52,7 +51,6 @@ type InstanceMainline struct {
 func NewInstanceMainline(lang language.DefaultCCLanguageIf, proxy dal.DB, bkBizID int64) (*InstanceMainline, error) {
 	im := &InstanceMainline{
 		lang:              lang,
-		dbProxy:           proxy,
 		bkBizID:           bkBizID,
 		objectParentMap:   map[string]string{},
 		setInstances:      make([]mapstr.MapStr, 0),
@@ -89,7 +87,7 @@ func (im *InstanceMainline) LoadSetInstances(ctx context.Context, header http.He
 		common.BKAppIDField: im.bkBizID,
 	}
 	filter = util.SetQueryOwner(filter, util.GetOwnerID(header))
-	err := im.dbProxy.Table(common.BKTableNameBaseSet).Find(filter).All(ctx, &im.setInstances)
+	err := mongodb.Client().Table(common.BKTableNameBaseSet).Find(filter).All(ctx, &im.setInstances)
 	if err != nil {
 		blog.Errorf("get set instances by business:%d failed, %+v, cond: %#v, rid: %s", im.bkBizID, err, filter, rid)
 		return fmt.Errorf("get set instances by business:%d failed, %+v", im.bkBizID, err)
@@ -105,7 +103,7 @@ func (im *InstanceMainline) LoadModuleInstances(ctx context.Context, header http
 		common.BKAppIDField: im.bkBizID,
 	}
 	filter = util.SetQueryOwner(filter, util.GetOwnerID(header))
-	err := im.dbProxy.Table(common.BKTableNameBaseModule).Find(filter).All(ctx, &im.moduleInstances)
+	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).All(ctx, &im.moduleInstances)
 	if err != nil {
 		blog.Errorf("get module instances by business:%d failed, err:%v, cond: %#v, rid: %s", im.bkBizID, err, filter, rid)
 		return fmt.Errorf("get module instances by business:%d failed, %+v", im.bkBizID, err)
@@ -123,10 +121,10 @@ func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context, header ht
 		common.BKObjIDField: map[string]interface{}{
 			common.BKDBIN: im.modelIDs,
 		},
-		common.MetadataLabelBiz: strconv.FormatInt(im.bkBizID, 10),
+		common.BKAppIDField: im.bkBizID,
 	}
 	filter = util.SetQueryOwner(filter, util.GetOwnerID(header))
-	err = im.dbProxy.Table(common.BKTableNameBaseInst).Find(filter).All(ctx, &im.mainlineInstances)
+	err = mongodb.Client().Table(common.BKTableNameBaseInst).Find(filter).All(ctx, &im.mainlineInstances)
 	if err != nil {
 		blog.Errorf("get other mainline instances by business:%d failed, err: %v, cond: %#v, rid: %s", im.bkBizID, err, filter, rid)
 		return fmt.Errorf("get other mainline instances by business:%d failed, %+v", im.bkBizID, err)
@@ -150,7 +148,7 @@ func (im *InstanceMainline) ConstructBizTopoInstance(ctx context.Context, header
 		common.BKAppIDField: im.bkBizID,
 	}
 	bizFilter = util.SetQueryOwner(bizFilter, util.GetOwnerID(header))
-	err := im.dbProxy.Table(common.BKTableNameBaseApp).Find(bizFilter).One(ctx, &im.businessInstance)
+	err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(bizFilter).One(ctx, &im.businessInstance)
 	if err != nil {
 		blog.Errorf("get business instances by business:%d failed, err: %+v, cond: %#v, rid: %s", im.bkBizID, err, rid)
 		return fmt.Errorf("get business instances by business:%d failed, err: %+v", im.bkBizID, err)
@@ -304,7 +302,7 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, he
 		}
 		filter = util.SetQueryOwner(filter, util.GetOwnerID(header))
 		missedInstances := make([]mapstr.MapStr, 0)
-		err := im.dbProxy.Table(common.BKTableNameBaseInst).Find(filter).All(ctx, &missedInstances)
+		err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(filter).All(ctx, &missedInstances)
 		if err != nil {
 			blog.Errorf("get common instances with ID:%d failed, %+v, rid: %s", topoInstance.ParentInstanceID, err, rid)
 			return err
@@ -396,8 +394,8 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, heade
 					}
 					cond = util.SetQueryOwner(cond, util.GetOwnerID(header))
 					inst := mapstr.MapStr{}
-					if err := im.dbProxy.Table(common.BKTableNameBaseInst).Find(cond).One(context.Background(), &inst); err != nil {
-						if isNotFound := im.dbProxy.IsNotFoundError(err); !isNotFound {
+					if err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(cond).One(context.Background(), &inst); err != nil {
+						if isNotFound := mongodb.Client().IsNotFoundError(err); !isNotFound {
 							blog.Errorf("get mainline instances failed, filter: %+v, err: %+v, rid: %s", cond, err, rid)
 							return fmt.Errorf("get other mainline instances failed, filer: %+v, err: %+v", cond, err)
 						} else {

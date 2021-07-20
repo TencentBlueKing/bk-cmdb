@@ -13,157 +13,143 @@
 package service
 
 import (
-	"encoding/json"
-	"net/http"
-
-	"configcenter/src/auth"
-	authmeta "configcenter/src/auth/meta"
+	"configcenter/src/ac"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-
-	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) LockHost(req *restful.Request, resp *restful.Response) {
+func (s *Service) LockHost(ctx *rest.Contexts) {
 
-	srvData := s.newSrvComm(req.Request.Header)
 	input := &metadata.HostLockRequest{}
 
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
-		blog.Errorf("lock host , but decode body failed, err: %s, rid:%s", err.Error(), srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	if err := ctx.DecodeInto(&input); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
+
 	if 0 == len(input.IDS) {
-		blog.Errorf("lock host, id_list is empty,input:%+v, rid:%s", input, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "id_list")})
+		blog.Errorf("lock host, id_list is empty,input:%+v, rid:%s", input, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "id_list"))
 		return
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, input.IDS...); err != nil {
-		if err != auth.NoAuthorizeError {
+	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, input.IDS...); err != nil {
+		if err != ac.NoAuthorizeError {
 			blog.Errorf("check host authorization failed, hosts: %+v, err: %v", input.IDS, err)
-			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, input.IDS)
+		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, input.IDS)
 		if err != nil {
-			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		resp.WriteEntity(perm)
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
-		err := srvData.lgc.LockHost(srvData.ctx, input)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.Logic.LockHost(ctx.Kit, input)
 		if nil != err {
-			blog.Errorf("lock host, handle host lock error, error:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+			blog.Errorf("lock host, handle host lock error, error:%s, input:%+v,rid:%s", err.Error(), input, ctx.Kit.Rid)
 			return err
 		}
 		return nil
 	})
 
 	if txnErr != nil {
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr})
+		ctx.RespAutoError(txnErr)
 		return
 	}
-	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
+	ctx.RespEntity(nil)
 }
 
-func (s *Service) UnlockHost(req *restful.Request, resp *restful.Response) {
+func (s *Service) UnlockHost(ctx *rest.Contexts) {
 
-	srvData := s.newSrvComm(req.Request.Header)
 	input := &metadata.HostLockRequest{}
-
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
-		blog.Errorf("unlock host , but decode body failed, err: %s, rid:%s", err.Error(), srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	if err := ctx.DecodeInto(&input); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 	if 0 == len(input.IDS) {
-		blog.Errorf("unlock host, id_list is empty, input:%+v,rid:%s", input, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "id_list")})
+		blog.Errorf("unlock host, id_list is empty, input:%+v,rid:%s", input, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "id_list"))
 		return
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, input.IDS...); err != nil {
-		if err != auth.NoAuthorizeError {
-			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", input.IDS, err, srvData.rid)
-			_ = resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, input.IDS...); err != nil {
+		if err != ac.NoAuthorizeError {
+			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", input.IDS, err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, input.IDS)
+		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, input.IDS)
 		if err != nil {
-			blog.Errorf("gen no permission response failed, err: %v, rid: %s", err, srvData.rid)
-			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			blog.Errorf("gen no permission response failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		resp.WriteEntity(perm)
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
-		err := srvData.lgc.UnlockHost(srvData.ctx, input)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.Logic.UnlockHost(ctx.Kit, input)
 		if nil != err {
-			blog.Errorf("unlock host, handle host unlock error, error:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+			blog.Errorf("unlock host, handle host unlock error, error:%s, input:%+v,rid:%s", err.Error(), input, ctx.Kit.Rid)
 			return err
 		}
 		return nil
 	})
 
 	if txnErr != nil {
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr})
+		ctx.RespAutoError(txnErr)
 		return
 	}
-	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
+	ctx.RespEntity(nil)
 }
 
-func (s *Service) QueryHostLock(req *restful.Request, resp *restful.Response) {
+func (s *Service) QueryHostLock(ctx *rest.Contexts) {
 
-	srvData := s.newSrvComm(req.Request.Header)
 	input := &metadata.QueryHostLockRequest{}
-
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
-		blog.Errorf("query lock host , but decode body failed, err: %s, rid:%s", err.Error(), srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	if err := ctx.DecodeInto(&input); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
+
 	if 0 == len(input.IDS) {
-		blog.Errorf("query lock host, id_list is empty, input:%+v,rid:%s", input, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "id_list")})
+		blog.Errorf("query lock host, id_list is empty, input:%+v,rid:%s", input, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "id_list"))
 		return
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, input.IDS...); err != nil {
-		if err != auth.NoAuthorizeError {
-			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", input.IDS, err, srvData.rid)
-			_ = resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, input.IDS...); err != nil {
+		if err != ac.NoAuthorizeError {
+			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", input.IDS, err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, input.IDS)
+		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, input.IDS)
 		if err != nil {
-			blog.Errorf("gen no permission response failed, err: %v, rid: %s", err, srvData.rid)
-			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			blog.Errorf("gen no permission response failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		resp.WriteEntity(perm)
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
 	}
 
-	hostLockInfos, err := srvData.lgc.QueryHostLock(srvData.ctx, input)
+	hostLockInfos, err := s.Logic.QueryHostLock(ctx.Kit, input)
 	if nil != err {
-		blog.Errorf("query lock host, handle query host lock error, error:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
+		blog.Errorf("query lock host, handle query host lock error, error:%s, input:%+v,rid:%s", err.Error(), input, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
-
-	_ = resp.WriteEntity(metadata.HostLockResultResponse{
-		BaseResp: metadata.SuccessBaseResp,
-		Data:     hostLockInfos,
-	})
+	ctx.RespEntity(hostLockInfos)
 }

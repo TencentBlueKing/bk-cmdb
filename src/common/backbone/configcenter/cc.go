@@ -20,7 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	crd "configcenter/src/common/confregdiscover"
 	"configcenter/src/common/errors"
@@ -30,8 +29,7 @@ import (
 
 var confC *CC
 
-func NewConfigCenter(ctx context.Context, client *zk.ZkClient, confPath string, handler *CCHandler) error {
-	disc := crd.NewZkRegDiscover(client)
+func NewConfigCenter(ctx context.Context, disc crd.ConfRegDiscvIf, confPath string, handler *CCHandler) error {
 	return New(ctx, confPath, disc, handler)
 }
 
@@ -66,19 +64,23 @@ type CCHandler struct {
 	OnExtraUpdate    ProcHandlerFunc
 	OnLanguageUpdate func(previous, current map[string]language.LanguageMap)
 	OnErrorUpdate    func(previous, current map[string]errors.ErrorCode)
+	OnMongodbUpdate  func(previous, current ProcessConfig)
+	OnRedisUpdate    func(previous, current ProcessConfig)
 }
 
 type CC struct {
 	sync.Mutex
 	// used to stop the config center gracefully.
-	ctx           context.Context
-	disc          crd.ConfRegDiscvIf
-	handler       *CCHandler
-	procName      string
-	previousProc  *ProcessConfig
-	previousExtra *ProcessConfig
-	previousLang  map[string]language.LanguageMap
-	previousError map[string]errors.ErrorCode
+	ctx             context.Context
+	disc            crd.ConfRegDiscvIf
+	handler         *CCHandler
+	procName        string
+	previousProc    *ProcessConfig
+	previousExtra   *ProcessConfig
+	previousMongodb *ProcessConfig
+	previousRedis   *ProcessConfig
+	previousLang    map[string]language.LanguageMap
+	previousError   map[string]errors.ErrorCode
 }
 
 func (c *CC) run() error {
@@ -87,8 +89,21 @@ func (c *CC) run() error {
 	if err != nil {
 		return err
 	}
+
 	extraConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureExtra)
 	extraConfEvent, err := c.disc.Discover(extraConfPath)
+	if err != nil {
+		return err
+	}
+
+	mongodbConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureMongo)
+	mongodbConfEvent, err := c.disc.Discover(mongodbConfPath)
+	if err != nil {
+		return err
+	}
+
+	redisConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureRedis)
+	redisConfEvent, err := c.disc.Discover(redisConfPath)
 	if err != nil {
 		return err
 	}
@@ -104,18 +119,24 @@ func (c *CC) run() error {
 	}
 
 	go func() {
-		select {
-		case pEvent := <-commonConfEvent:
-			c.onProcChange(pEvent)
-		case pEvent := <-extraConfEvent:
-			c.onExtraChange(pEvent)
-		case eEvent := <-errEvent:
-			c.onErrorChange(eEvent)
-		case langEvent := <-langEvent:
-			c.onLanguageChange(langEvent)
-		case <-c.ctx.Done():
-			blog.Warnf("config center event watch stopped because of context done.")
-			return
+		for {
+			select {
+			case pEvent := <-commonConfEvent:
+				c.onProcChange(pEvent)
+			case pEvent := <-extraConfEvent:
+				c.onExtraChange(pEvent)
+			case pEvent := <-mongodbConfEvent:
+				c.onMongodbChange(pEvent)
+			case pEvent := <-redisConfEvent:
+				c.onRedisChange(pEvent)
+			case eEvent := <-errEvent:
+				c.onErrorChange(eEvent)
+			case langEvent := <-langEvent:
+				c.onLanguageChange(langEvent)
+			case <-c.ctx.Done():
+				blog.Warnf("config center event watch stopped because of context done.")
+				return
+			}
 		}
 	}()
 	return nil
@@ -127,16 +148,15 @@ func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
 		return
 	}
 
-	now, err := ParseConfigWithData(cur.Data)
-	if err != nil {
-		blog.Errorf("config center received event that *%s* config has changed, but parse failed, err: %v", types.CCConfigureCommon, err)
-		return
-	}
-
+	now := ParseConfigWithData(cur.Data)
 	c.Lock()
 	defer c.Unlock()
 	prev := c.previousProc
 	c.previousProc = now
+	if err := SetCommonFromByte(now.ConfigData); err != nil {
+		blog.Errorf("add updated configuration error: %v", err)
+		return
+	}
 	if c.handler != nil {
 		if c.handler.OnProcessUpdate != nil {
 			go c.handler.OnProcessUpdate(*prev, *now)
@@ -150,12 +170,7 @@ func (c *CC) onExtraChange(cur *crd.DiscoverEvent) {
 		return
 	}
 
-	now, err := ParseConfigWithData(cur.Data)
-	if err != nil {
-		blog.Errorf("config center received event that *%s* config has changed, but parse failed, err: %v", types.CCConfigureExtra, err)
-		return
-	}
-
+	now := ParseConfigWithData(cur.Data)
 	c.Lock()
 	defer c.Unlock()
 	prev := c.previousExtra
@@ -163,9 +178,53 @@ func (c *CC) onExtraChange(cur *crd.DiscoverEvent) {
 		prev = &ProcessConfig{}
 	}
 	c.previousExtra = now
+	if err := SetExtraFromByte(now.ConfigData); err != nil {
+		blog.Errorf("add updated extra configuration error: %v", err)
+		return
+	}
 	if c.handler != nil {
 		if c.handler.OnExtraUpdate != nil {
 			go c.handler.OnExtraUpdate(*prev, *now)
+		}
+	}
+}
+
+func (c *CC) onMongodbChange(cur *crd.DiscoverEvent) {
+	if cur.Err != nil {
+		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureCommon, cur.Err)
+		return
+	}
+	now := ParseConfigWithData(cur.Data)
+	c.Lock()
+	defer c.Unlock()
+	prev := c.previousMongodb
+	if prev == nil {
+		prev = &ProcessConfig{}
+	}
+	c.previousMongodb = now
+	if c.handler != nil {
+		if c.handler.OnMongodbUpdate != nil {
+			go c.handler.OnMongodbUpdate(*prev, *now)
+		}
+	}
+}
+
+func (c *CC) onRedisChange(cur *crd.DiscoverEvent) {
+	if cur.Err != nil {
+		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureCommon, cur.Err)
+		return
+	}
+	now := ParseConfigWithData(cur.Data)
+	c.Lock()
+	defer c.Unlock()
+	prev := c.previousRedis
+	if prev == nil {
+		prev = &ProcessConfig{}
+	}
+	c.previousRedis = now
+	if c.handler != nil {
+		if c.handler.OnRedisUpdate != nil {
+			go c.handler.OnRedisUpdate(*prev, *now)
 		}
 	}
 }
@@ -219,6 +278,8 @@ func (c *CC) sync() {
 	blog.Infof("start sync config from config center.")
 	c.syncProc()
 	c.syncExtra()
+	c.syncMongodb()
+	c.syncRedis()
 	c.syncLang()
 	c.syncErr()
 	go func() {
@@ -233,6 +294,8 @@ func (c *CC) sync() {
 			// then call their handler.
 			c.syncProc()
 			c.syncExtra()
+			c.syncMongodb()
+			c.syncRedis()
 			c.syncLang()
 			c.syncErr()
 			time.Sleep(15 * time.Second)
@@ -249,11 +312,7 @@ func (c *CC) syncProc() {
 		return
 	}
 
-	conf, err := ParseConfigWithData([]byte(data))
-	if err != nil {
-		blog.Errorf("config center sync process config, but parse failed, err: %v", err)
-		return
-	}
+	conf := ParseConfigWithData([]byte(data))
 
 	c.Lock()
 	if reflect.DeepEqual(conf, c.previousProc) {
@@ -281,11 +340,7 @@ func (c *CC) syncExtra() {
 		return
 	}
 
-	conf, err := ParseConfigWithData([]byte(data))
-	if err != nil {
-		blog.Errorf("config center sync *extra* config, but parse failed, err: %v", err)
-		return
-	}
+	conf := ParseConfigWithData([]byte(data))
 
 	c.Lock()
 	if reflect.DeepEqual(conf, c.previousExtra) {
@@ -302,6 +357,62 @@ func (c *CC) syncExtra() {
 	c.Unlock()
 
 	c.onExtraChange(event)
+
+}
+
+func (c *CC) syncMongodb() {
+	blog.V(5).Infof("start sync mongo config from config center.")
+	mongoPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureMongo)
+	data, err := c.disc.Read(mongoPath)
+	if err != nil {
+		blog.Errorf("sync *mongo* config failed, node: %s, err: %v", mongoPath, err)
+		return
+	}
+
+	conf := ParseConfigWithData([]byte(data))
+	c.Lock()
+	if reflect.DeepEqual(conf, c.previousMongodb) {
+		blog.V(5).Infof("sync *mongo* config, but nothing is changed.")
+		c.Unlock()
+		return
+	}
+	event := &crd.DiscoverEvent{
+		Err:  nil,
+		Data: []byte(data),
+	}
+
+	c.Unlock()
+
+	c.onMongodbChange(event)
+
+}
+
+func (c *CC) syncRedis() {
+	blog.V(5).Infof("start sync redis config from config center.")
+	redisPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureRedis)
+	data, err := c.disc.Read(redisPath)
+	if err != nil {
+		blog.Errorf("sync *redis* config failed, node: %s, err: %v", redisPath, err)
+		return
+	}
+
+	conf := ParseConfigWithData([]byte(data))
+
+	c.Lock()
+	if reflect.DeepEqual(conf, c.previousRedis) {
+		blog.V(5).Infof("sync *redis* config, but nothing is changed.")
+		c.Unlock()
+		return
+	}
+
+	event := &crd.DiscoverEvent{
+		Err:  nil,
+		Data: []byte(data),
+	}
+
+	c.Unlock()
+
+	c.onRedisChange(event)
 
 }
 

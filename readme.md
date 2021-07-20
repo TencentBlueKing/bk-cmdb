@@ -4,7 +4,6 @@
 [![Release Version](https://img.shields.io/badge/release-3.2.19-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/pulls)
 [![BK Pipelines Status](https://api.bkdevops.qq.com/process/api/external/pipelines/projects/cc/p-c02db56ac633447eb2e740b3fd0b6d2b/badge?X-DEVOPS-PROJECT-ID=cc)](http://api.bkdevops.qq.com/process/api-html/user/builds/projects/cc/pipelines/p-c02db56ac633447eb2e740b3fd0b6d2b/latestFinished?X-DEVOPS-PROJECT-ID=cc)
-[![Build Status](https://travis-ci.org/Tencent/bk-cmdb.svg?branch=master)](https://travis-ci.org/Tencent/bk-cmdb)
 
 
 [(English Documents Available)](readme_en.md)
@@ -23,7 +22,7 @@
 * [架构设计](docs/overview/architecture.md)
 * [代码目录](docs/overview/code_framework.md)
 
-![front-page](docs/resource/img/frontpage.jpg)
+![front-page](docs/resource/img/frontpage.png)
 
 ## Features
 * 拓扑化的主机管理：主机基础属性、主机快照数据、主机归属关系管理
