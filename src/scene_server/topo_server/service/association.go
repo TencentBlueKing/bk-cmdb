@@ -123,7 +123,7 @@ func (s *Service) SearchObjectByClassificationID(ctx *rest.Contexts) {
 
 // SearchBusinessTopoWithStatistics calculate how many service instances on each topo instance node
 func (s *Service) SearchBusinessTopoWithStatistics(ctx *rest.Contexts) {
-	resp, err := s.searchBusinessTopo(ctx, true, true)
+	resp, err := s.searchBusinessTopo(ctx, false, true)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -168,39 +168,33 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
 	return topoInstRst, nil
 }
 
-// SearchBusinessTopoNodeHostAndServiceInstanceCount calculate how many service instances on each topo instance node amd how many hosts
-func (s *Service) SearchBusinessTopoNodeHostAndServiceInstanceCount(ctx *rest.Contexts) {
-	resp, err := s.searchBusinessTopoNodeHostAndServiceInstancesCount(ctx)
-	if nil != err {
+// GetTopoNodeHostAndSerInstCount calculate how many service instances amd how many hosts on toponode
+func (s *Service) GetTopoNodeHostAndSerInstCount(ctx *rest.Contexts) {
+	id, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	if err != nil {
+		blog.Errorf("GetTopoNodeHostAndSerInstCount failed to parse the path params id(%s), error info is %s , "+
+			"rid: %s", ctx.Request.PathParameter("app_id"), err.Error(), ctx.Kit.Rid)
+		return
+	}
+
+	input := new(metadata.HostAndSerInstCountOption)
+	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(resp)
-}
-
-func (s *Service) searchBusinessTopoNodeHostAndServiceInstancesCount(ctx *rest.Contexts) ([]*metadata.TopoInstNodeHostAndServiceInstCount, error) {
-	id, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
-	if nil != err {
-		blog.Errorf("[api-asst] failed to parse the path params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("app_id"), err.Error(), ctx.Kit.Rid)
-
-		return nil, err
-	}
-	input := new(metadata.SearchBizTopoNodeHostAndServiceInstCountOption)
-	if err := ctx.DecodeInto(input); err != nil {
-		ctx.RespAutoError(err)
-		return nil, err
-	}
 
 	if len(input.Condition) > common.BKParamMaxLength {
-		return nil, ctx.Kit.CCError.Error(common.CCErrorParamExceedMaxLength)
+		err := ctx.Kit.CCError.Error(common.CCErrorParamExceedMaxLength)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	topoInstHostCountRst, err := s.Core.AssociationOperation().SearchTopoNodeHostAndServiceInstCount(ctx.Kit, id, input)
+	result, err := s.Core.AssociationOperation().TopoNodeHostAndSerInstCount(ctx.Kit, id, input)
 	if err != nil {
-		return nil, err
+		ctx.RespAutoError(err)
+		return
 	}
-
-	return topoInstHostCountRst, nil
+	ctx.RespEntity(result)
 }
 
 func SortTopoInst(instData []*metadata.TopoInstRst) {

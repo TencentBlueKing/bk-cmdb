@@ -324,6 +324,7 @@ type EventOperation interface {
 
 type CommonOperation interface {
 	GetDistinctField(kit *rest.Kit, param *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder)
+	GetDistinctCount(kit *rest.Kit, param *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder)
 }
 
 type core struct {

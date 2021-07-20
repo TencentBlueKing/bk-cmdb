@@ -61,7 +61,7 @@ type InstanceInterface interface {
 	SearchSetBatch(ctx context.Context, appID string, h http.Header, s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error)
 	SearchInstsNames(ctx context.Context, h http.Header, s *metadata.SearchInstsNamesOption) (resp *metadata.ArrayResponse, err error)
 	GetTopoNodeHostAndServiceInstCount(ctx context.Context, h http.Header, objID int64,
-		s *metadata.SearchBizTopoNodeHostAndServiceInstCountOption) (resp *metadata.GetTopoNodeHostAndServiceInstCountResult, err error)
+		s *metadata.HostAndSerInstCountOption) (resp *metadata.GetHostAndSerInstCountResult, err error)
 }
 
 type instanceClient struct {
