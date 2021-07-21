@@ -81,14 +81,7 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 			return
 		}
 
-		if !resp.Result {
-			blog.Errorf("search object association with cond[%v] failed, err: %s, rid: %s",
-				cond, resp.ErrMsg, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.New(resp.Code, resp.ErrMsg))
-			return
-		}
-
-		ctx.RespEntity(resp.Data)
+		ctx.RespEntity(resp)
 		return
 	}
 
@@ -110,43 +103,7 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(resp.Data)
-}
-
-func (s *Service) SearchObjectAssociationByObjIDs(ctx *rest.Contexts) {
-	data := mapstr.MapStr{}
-	if err := ctx.DecodeInto(&data); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	objIDArray, exist := data.Get(metadata.AssociationFieldObjectID)
-	if !exist {
-		blog.Errorf("bk_obj_id can't be non-existent, rid: %s", ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, metadata.AssociationFieldObjectID))
-		return
-	}
-
-	val, ok := objIDArray.([]interface{})
-	if !ok {
-		blog.Errorf("object ID must be array, rid: %s", ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, metadata.AssociationFieldObjectID))
-		return
-	}
-
-	if len(val) == 0 {
-		blog.Errorf("object ID is empty, rid: %s", ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, metadata.AssociationFieldObjectID))
-		return
-	}
-
-	resp, err := s.Logics.AssociationOperation().SearchObjectAssociationByObjIDs(ctx.Kit, val)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntity(resp.Data)
+	ctx.RespEntity(resp)
 }
 
 // DeleteObjectAssociation delete object association
