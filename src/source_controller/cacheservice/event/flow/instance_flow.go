@@ -297,7 +297,7 @@ func (f *InstanceFlow) classifyEvents(es []*types.Event, oidDetailMap map[oidCol
 		if e.OperationType == types.Delete {
 			doc, exist := oidDetailMap[oidCollKey{oid: e.Oid, coll: e.Collection}]
 			if !exist {
-				blog.Errorf("run flow, received %s event, but delete doc[oid: %s] detail not exists, rid: %s",
+				blog.Errorf("run flow, received %s %s event, but delete doc[oid: %s] detail not exists, rid: %s",
 					f.key.Collection(), e.OperationType, e.Oid, rid)
 				continue
 			}
