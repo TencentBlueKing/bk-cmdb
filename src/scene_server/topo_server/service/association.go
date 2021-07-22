@@ -704,12 +704,7 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 		return
 	}
 
-	if ret.Code != 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
-		return
-	}
-
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(ret)
 }
 
 //Search all associations of certain model instance,by regarding the instance as both Association source and Association target.
@@ -812,15 +807,13 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 
 	var ret *metadata.DeleteAssociationInstResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
-		idList := []int64{id}
-		ret, err = s.Logics.InstAssociationOperation().DeleteInstAssociation(ctx.Kit, objID, idList)
+		rsp, err := s.Logics.InstAssociationOperation().DeleteInstAssociation(ctx.Kit, objID, []int64{id})
 		if err != nil {
 			return err
 		}
 
-		if ret.Code != 0 {
-			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
+		if rsp != 0 {
+			ret.Data = common.CCSuccessStr
 		}
 
 		return nil
@@ -854,16 +847,13 @@ func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 
 	result := &metadata.DeleteAssociationInstBatchResult{}
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var ret *metadata.DeleteAssociationInstResult
-		var err error
-		ret, err = s.Logics.InstAssociationOperation().DeleteInstAssociation(ctx.Kit, request.ObjectID, request.ID)
+
+		rsp, err := s.Logics.InstAssociationOperation().DeleteInstAssociation(ctx.Kit, request.ObjectID, request.ID)
 		if err != nil {
 			return err
 		}
-		if err = ret.CCError(); err != nil {
-			return err
-		}
-		result.Data = len(request.ID)
+
+		result.Data = int(rsp)
 		return nil
 	})
 	if txnErr != nil {
