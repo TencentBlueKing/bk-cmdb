@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	types2 "configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal"
@@ -33,9 +34,7 @@ import (
 	"configcenter/src/thirdparty/monitor"
 	"configcenter/src/thirdparty/monitor/meta"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
 type flowOptions struct {
@@ -478,7 +477,7 @@ func getDeleteEventDetails(es []*types.Event, db dal.DB, metrics *event.EventMet
 			"coll": collection,
 		}
 
-		docs := make([]bsonx.Doc, 0)
+		docs := make([]map[string]interface{}, 0)
 		err := db.Table(common.BKTableNameDelArchive).Find(filter).All(context.Background(), &docs)
 		if err != nil {
 			metrics.CollectMongoError()
@@ -488,13 +487,14 @@ func getDeleteEventDetails(es []*types.Event, db dal.DB, metrics *event.EventMet
 		}
 
 		for _, doc := range docs {
-			byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
+			oid := util.GetStrByInterface(doc["oid"])
+			byt, err := json.Marshal(doc["detail"])
 			if err != nil {
 				blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
-					collection, doc.Lookup("oid").String(), err)
+					collection, oid, err)
 				return nil, false, err
 			}
-			oidDetailMap[oidCollKey{oid: doc.Lookup("oid").String(), coll: collection}] = byt
+			oidDetailMap[oidCollKey{oid: oid, coll: collection}] = byt
 		}
 	}
 

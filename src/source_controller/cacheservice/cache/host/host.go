@@ -32,8 +32,6 @@ import (
 
 	rawRedis "github.com/go-redis/redis/v7"
 	"github.com/tidwall/gjson"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
 type hostCache struct {
@@ -115,14 +113,14 @@ func (h *hostCache) onDelete(e *types.Event) {
 		"oid":  e.Oid,
 		"coll": common.BKTableNameBaseHost,
 	}
-	doc := bsonx.Doc{}
+	doc := make(map[string]interface{})
 	err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), &doc)
 	if err != nil {
 		blog.Errorf("received delete host event, but get archive deleted doc from mongodb failed, oid: %s, err: %v", e.Oid, err)
 		return
 	}
 
-	byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
+	byt, err := json.Marshal(doc["detail"])
 	if err != nil {
 		blog.Errorf("received delete host event, but marshal doc to bytes failed, oid: %s, err: %v", e.Oid, err)
 		return
