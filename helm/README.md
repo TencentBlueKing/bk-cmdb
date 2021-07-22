@@ -7,7 +7,7 @@
 
 ## 准备 bk-cmdb 镜像
 - 方式一：使用docker build构建镜像, 详情请参考[制作docker镜像](./build-image.md)
-- 方式二：从docker hub下载 `docker pull ccr.ccs.tencentyun.com/bk.io/cmdb-standalone:v3.9.28`
+- 方式二：从docker hub下载 `docker pull ccr.ccs.tencentyun.com/bk.io/cmdb-standalone:latest`
 
 ## 制作 chart
 
@@ -31,7 +31,7 @@ service:
 
 
 # vim Chart.yaml
-appVersion: "v3.9.28"  <- (镜像版本)
+appVersion: "latest"  <- (镜像版本)
 ```
 
 
@@ -78,18 +78,19 @@ starting: cmdb_procserver
 starting: cmdb_taskserver
 starting: cmdb_toposerver
 starting: cmdb_webserver
-root       8809      0  0 02:28 ?        00:00:31 ./cmdb_adminserver --addrport=10.244.0.15:60004 --logtostderr=false --log-dir=./logs --v=3 --config=configures/migrate.yaml
-root       8826      0  0 02:28 ?        00:00:35 ./cmdb_apiserver --addrport=10.244.0.15:8080 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root       8874      0  0 02:28 ?        00:00:41 ./cmdb_cloudserver --addrport=10.244.0.15:60013 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false --enable_cryptor=false
-root       8893      0  1 02:28 ?        00:01:02 ./cmdb_coreservice --addrport=10.244.0.15:50009 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181
-root       9123      0  0 02:28 ?        00:00:35 ./cmdb_datacollection --addrport=10.244.0.15:60005 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root       9539      0  1 02:28 ?        00:01:06 ./cmdb_eventserver --addrport=10.244.0.15:60009 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root       9775      0  0 02:28 ?        00:00:34 ./cmdb_hostserver --addrport=10.244.0.15:60001 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root      10073      0  0 02:28 ?        00:00:31 ./cmdb_operationserver --addrport=10.244.0.15:60011 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root      10094      0  0 02:28 ?        00:00:30 ./cmdb_procserver --addrport=10.244.0.15:60003 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root      10116      0  0 02:28 ?        00:00:38 ./cmdb_taskserver --addrport=10.244.0.15:60012 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181
-root      10140      0  0 02:28 ?        00:00:31 ./cmdb_toposerver --addrport=10.244.0.15:60002 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root      10159      0  0 02:28 ?        00:00:26 ./cmdb_webserver --addrport=10.244.0.15:80 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181
+root       8809      0  0 02:28 ?        00:00:31 ./cmdb_adminserver --addrport=127.0.0.1:60004 --logtostderr=false --log-dir=./logs --v=3 
+--config=configures/migrate.yaml
+root       8826      0  0 02:28 ?        00:00:35 ./cmdb_apiserver --addrport=127.0.0.1:8080 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
+root       8874      0  0 02:28 ?        00:00:41 ./cmdb_cloudserver --addrport=127.0.0.1:60013 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false --enable_cryptor=false
+root       8893      0  1 02:28 ?        00:01:02 ./cmdb_coreservice --addrport=127.0.0.1:50009 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181
+root       9123      0  0 02:28 ?        00:00:35 ./cmdb_datacollection --addrport=127.0.0.1:60005 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
+root       9539      0  1 02:28 ?        00:01:06 ./cmdb_eventserver --addrport=127.0.0.1:60009 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
+root       9775      0  0 02:28 ?        00:00:34 ./cmdb_hostserver --addrport=127.0.0.1:60001 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
+root      10073      0  0 02:28 ?        00:00:31 ./cmdb_operationserver --addrport=127.0.0.1:60011 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
+root      10094      0  0 02:28 ?        00:00:30 ./cmdb_procserver --addrport=127.0.0.1:60003 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
+root      10116      0  0 02:28 ?        00:00:38 ./cmdb_taskserver --addrport=127.0.0.1:60012 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181
+root      10140      0  0 02:28 ?        00:00:31 ./cmdb_toposerver --addrport=127.0.0.1:60002 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
+root      10159      0  0 02:28 ?        00:00:26 ./cmdb_webserver --addrport=127.0.0.1:80 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181
 process count should be: 12 , now: 12
 Not Running: cmdb_authserver
 ```
