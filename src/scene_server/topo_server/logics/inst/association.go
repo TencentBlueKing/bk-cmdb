@@ -228,13 +228,10 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 
 	}
 
-	result := &metadata.SearchInstAssociationListResult{
-		Inst: instInfo,
-		Association: metadata.InstanceAsst{
-			Src: objSrcAsstArr,
-			Dst: objDstAsstArr,
-		},
-	}
+	result := &metadata.SearchInstAssociationListResult{}
+	result.Inst = instInfo
+	result.Association.Src = objSrcAsstArr
+	result.Association.Dst = objDstAsstArr
 
 	return result, rsp.Data.Count, nil
 }
