@@ -99,7 +99,7 @@ Not Running: cmdb_authserver
 ```bash
 # kubectl get svc
 NAME                    TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
-bk-cmdb-chart           NodePort    10.109.98.83     <none>        8090:31664/TCP                 13h
+bk-cmdb-chart           NodePort    127.0.0.2     <none>        8090:31664/TCP                 13h
 ```
 
 ## 运行效果
