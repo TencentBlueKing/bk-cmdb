@@ -317,6 +317,7 @@
     }
     .relation-id {
         vertical-align: middle;
+        line-height: 18px;
     }
     .text-primary {
         cursor: pointer;

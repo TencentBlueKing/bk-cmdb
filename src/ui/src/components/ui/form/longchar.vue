@@ -7,6 +7,7 @@
     :rows="row"
     :maxlength="maxlength"
     :clearable="!disabled"
+    @blur="handleBlur"
     @enter="handleEnter"
     @on-change="handleChange">
   </bk-input>
@@ -57,6 +58,9 @@
       },
       handleEnter(value) {
         this.$emit('enter', value)
+      },
+      handleBlur(value) {
+        this.$emit('blur', value)
       },
       focus() {
         this.$el.querySelector('textarea').focus()

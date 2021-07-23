@@ -406,7 +406,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	searchCond.Condition = handleSpecialBusinessFieldSearchCond(searchCond.Condition, userFields)
 
 	// parse business id from user's condition for testing.
-	var bizIDs []int64
+	var bizIDs, authBizIDs []int64
 	biz, exist := searchCond.Condition[common.BKAppIDField]
 	if exist {
 		// constrict that bk_biz_id field can only be a numeric value,
@@ -464,20 +464,24 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 			}
 			appList = append(appList, bizID)
 		}
-
 		if len(bizIDs) > 0 {
 			// this means that user want to find a specific business.
 			// now we check if he has this authority.
 			for _, bizID := range bizIDs {
-				if !util.InArray(bizID, appList) {
-					noAuthResp, err := s.AuthManager.GenFindBusinessNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
-					if err != nil {
-						ctx.RespErrorCodeOnly(common.CCErrTopoAppSearchFailed, "")
-						return
-					}
-					ctx.RespEntity(noAuthResp)
-					return
+				if util.InArray(bizID, appList) {
+					// authBizIDs store the authorized bizIDs
+					authBizIDs = append(authBizIDs, bizID)
 				}
+			}
+			if len(authBizIDs) > 0 {
+				searchCond.Condition[common.BKAppIDField] = mapstr.MapStr{common.BKDBIN: authBizIDs}
+			} else {
+				// if there are no qualified bizIDs, return null
+				result := mapstr.MapStr{}
+				result.Set("count", 0)
+				result.Set("info", []mapstr.MapStr{})
+				ctx.RespEntity(result)
+				return
 			}
 			// now you have the authority.
 		} else {
