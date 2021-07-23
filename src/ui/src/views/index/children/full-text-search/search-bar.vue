@@ -19,7 +19,10 @@
         <i class="bk-icon icon-search"></i>
         {{$t('搜索')}}
       </bk-button>
+      <advanced-setting-popover class="advanced-link" />
     </div>
+
+    <advanced-setting-result class="advanced-result" />
 
     <div class="search-popover suggestion" v-show="showSuggestion">
       <ul class="list suggestion-list">
@@ -63,17 +66,21 @@
   import useSuggestion from './use-suggestion'
   import useHistory from './use-history'
   import useRoute from './use-route.js'
+  import AdvancedSettingPopover from './advanced-setting-popover.vue'
+  import AdvancedSettingResult from './advanced-setting-result.vue'
 
   export default defineComponent({
+    components: {
+      AdvancedSettingPopover,
+      AdvancedSettingResult
+    },
     setup(props, { root }) {
       const { $store, $routerActions, $route } = root
       const { route } = useRoute(root)
 
       const keyword = ref('')
       watch(() => route.value.query, (query) => {
-        if (query.keyword) {
-          keyword.value = query.keyword
-        }
+        keyword.value = query.keyword || ''
       }, { immediate: true })
 
       const focusWithin = ref(false)
@@ -103,6 +110,7 @@
         $routerActions.redirect({
           name: $route.name,
           query: {
+            ...route.value.query,
             keyword: keyword.value,
             t: Date.now()
           }
@@ -179,6 +187,7 @@
         keyword,
         result,
         searchInput,
+
         handleInput,
         handleSearch,
         handlClearHistory
@@ -190,13 +199,14 @@
 <style lang="scss" scoped>
   .search-bar {
     position: relative;
-    max-width: 726px;
+    max-width: 806px;
     margin: 0 auto;
 
     .input-bar {
       height: 42px;
       z-index: 999;
       display: flex;
+      align-items: center;
       .search-input {
         flex: 1;
         /deep/ {
@@ -227,7 +237,14 @@
           margin: -2px 4px 0 0;
         }
       }
+      .advanced-link {
+        margin-left: 12px;
+      }
     }
+  }
+
+  .advanced-result {
+    margin-top: 10px;
   }
 
   .search-popover {

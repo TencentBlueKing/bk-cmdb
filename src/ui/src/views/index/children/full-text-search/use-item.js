@@ -4,7 +4,8 @@ import {
   MENU_RESOURCE_BUSINESS_DETAILS,
   MENU_RESOURCE_HOST_DETAILS,
   MENU_RESOURCE_BUSINESS_HISTORY,
-  MENU_MODEL_DETAILS
+  MENU_MODEL_DETAILS,
+  MENU_BUSINESS_HOST_AND_SERVICE
 } from '@/dictionary/menu-symbol'
 import { getPropertyText } from '@/utils/tools'
 
@@ -18,21 +19,35 @@ export default function useItem(list, root) {
   const normalizationList = computed(() => {
     const normalizationList = []
     list.value.forEach((item) => {
-      const { type, source } = item
+      const { key, kind, source } = item
       const newItem = { ...item }
-      if (type === 'host') {
-        newItem.title = source.bk_host_innerip.join(',')
+      if (kind === 'instance' && key === 'host') {
+        newItem.type = key
+        newItem.title = Array.isArray(source.bk_host_innerip) ? source.bk_host_innerip.join(',') : source.bk_host_innerip
         newItem.typeName = root.$t('主机')
         newItem.linkTo = handleGoResourceHost
-      } else if (type === 'instance') {
-        newItem.title = source.bk_inst_name
-        newItem.typeName = getModelName(source)
-        newItem.linkTo = handleGoInstace
-      } else if (type === 'biz') {
+      } else if (kind === 'instance' && key === 'biz') {
+        newItem.type = key
         newItem.title = source.bk_biz_name
         newItem.typeName = root.$t('业务')
         newItem.linkTo = handleGoBusiness
-      } else if (type === 'model') {
+      } else if (kind === 'instance' && key === 'set') {
+        newItem.type = key
+        newItem.title = source.bk_set_name
+        newItem.typeName = root.$t('集群')
+        newItem.linkTo = handleGoTopo
+      } else if (kind === 'instance' && key === 'module') {
+        newItem.type = key
+        newItem.title = source.bk_module_name
+        newItem.typeName = root.$t('模块')
+        newItem.linkTo = handleGoTopo
+      } else if (kind === 'instance') {
+        newItem.type = kind
+        newItem.title = source.bk_inst_name
+        newItem.typeName = getModelName(source)
+        newItem.linkTo = handleGoInstace
+      } else if (kind === 'model') {
+        newItem.type = kind
         newItem.title = source.bk_obj_name
         newItem.typeName = root.$t('模型')
         newItem.linkTo = handleGoModel
@@ -97,6 +112,22 @@ export default function useItem(list, root) {
       history: true
     })
   }
+  const handleGoTopo = (data) => {
+    const nodeMap = {
+      set: `${data.key}-${data.source.bk_set_id}`,
+      module: `${data.key}-${data.source.bk_module_id}`,
+    }
+    root.$routerActions.redirect({
+      name: MENU_BUSINESS_HOST_AND_SERVICE,
+      params: {
+        bizId: data.source.bk_biz_id
+      },
+      query: {
+        node: nodeMap[data.key]
+      },
+      history: true
+    })
+  }
 
   return {
     normalizationList
@@ -106,9 +137,9 @@ export default function useItem(list, root) {
 export const getText = (property, data, thisProperty) => {
   let propertyValue = getPropertyText(property, data.source)
 
-  if (!Object.keys(data.highlight).includes(thisProperty)) {
-    return propertyValue || '--'
-  }
+  // if (!Object.keys(data?.highlight).includes(thisProperty)) {
+  return propertyValue || '--'
+  // }
 
   // 对highlight属性值做高亮标签处理
   propertyValue = getHighlightValue(propertyValue, data, thisProperty)
@@ -116,7 +147,7 @@ export const getText = (property, data, thisProperty) => {
 }
 
 export const getHighlightValue = (value, data, thisProperty) => {
-  const highlightValue = data.highlight[thisProperty]
+  const highlightValue = data?.highlight?.[thisProperty]
   if (!highlightValue) {
     return value
   }

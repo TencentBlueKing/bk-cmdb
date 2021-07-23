@@ -8,10 +8,10 @@
         v-html="`${$t('模型ID')}：${getHighlightValue(data.source.bk_obj_id, data, 'bk_obj_id')}`"></div>
       <div class="desc-item">{{$t('所属模型分组')}}：{{classificationName}}</div>
       <dl class="model-group-list">
-        <div class="group" v-for="({ properties }, index) in groupedProperties" :key="index">
-          <dt class="group-name">{{$t('模型字段')}}</dt>
+        <div class="group" v-for="(item, index) in groupedProperties" :key="index">
+          <dt class="group-name">{{item.group.bk_group_name}}</dt>
           <dd class="property-list">
-            <div class="property-item" v-for="(property, childIndex) in properties" :key="childIndex">
+            <div class="property-item" v-for="(property, childIndex) in item.properties" :key="childIndex">
               {{property.bk_property_name}}（{{fieldTypeMap[property.bk_property_type]}}）
             </div>
           </dd>
