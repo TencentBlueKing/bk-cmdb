@@ -345,15 +345,15 @@ func (r *FullTextSearchReq) GenerateESQuery() (elastic.Query, []string, []*FullT
 	// main query.
 	query := elastic.NewBoolQuery()
 	queryConditions := make(map[string][]interface{})
-
 	if len(r.OwnerID) != 0 {
 		query.Must(elastic.NewMatchQuery(metadata.IndexPropertyBKSupplierAccount, r.OwnerID))
 	}
 	if len(r.BizID) != 0 {
 		query.Must(elastic.NewMatchQuery(metadata.IndexPropertyBKBizID, r.BizID))
 	}
+	query.Must(elastic.NewQueryStringQuery(r.QueryString))
 
-	// ignore biz name
+	//ignore biz name
 	resourcePool := elastic.NewMatchQuery(common.BKAppNameField, "资源池")
 	query.MustNot(resourcePool)
 
@@ -498,11 +498,9 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 		dataKind := util.GetStrByInterface(source[metadata.IndexPropertyDataKind])
 		metaID, err := util.GetInt64ByInterface(source[metadata.IndexPropertyID])
 		if err != nil {
-			blog.Errorf("bbbbbbbbbbbbbbbbbbbbbbbbbb query objectIDs[%s], objectID[%s],err=[%v] rid: %s", objectIDs, objectID, err, ctx.Kit.Rid)
+			blog.Errorf(" query meta data fail,objectIDs[%s], objectID[%s],err=[%v] rid: %s", objectIDs, objectID, err, ctx.Kit.Rid)
 			continue
 		}
-		blog.Errorf("ccccccccccccccccccccccccccccccccccccccccccccccccccc query metaID[%d], objectID[%s], dataKind[%v],rid: %s",
-			metaID, objectID, dataKind, ctx.Kit.Rid)
 		// parse meta fields.
 		if dataKind == metadata.DataKindModel {
 			objectIDs = append(objectIDs, objectID)
