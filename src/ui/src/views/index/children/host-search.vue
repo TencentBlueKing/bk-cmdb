@@ -84,9 +84,7 @@
       },
       async handleSearch() {
         const searchList = this.getSearchList()
-        if (searchList.length > 500) {
-          this.$warn(this.$t('最多支持搜索500条数据'))
-        } else if (searchList.length) {
+        if (searchList.length) {
           const IPList = []
           const IPWithCloudList = []
           const assetList = []
