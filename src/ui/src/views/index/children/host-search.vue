@@ -192,7 +192,10 @@
       handleClickAdvancedSearch() {
         this.$routerActions.redirect({
           name: MENU_RESOURCE_HOST,
-          query: { adv: 1 },
+          query: {
+            adv: 1,
+            scope: 'all'
+          },
           history: false
         })
       }
