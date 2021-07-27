@@ -143,14 +143,21 @@ func (s *Service) StatusToFailure(ctx *rest.Contexts) {
 func (s *Service) TimerDeleteHistoryTask(ctx context.Context) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
+	flag := false
 	for {
-		time.Sleep(time.Minute * 1)
-		if weekday := time.Now().Weekday(); weekday != 6 {
+		time.Sleep(time.Hour * 6)
+
+		if time.Now().Weekday() != time.Saturday {
+			flag = false
 			continue
 		}
 
 		isMaster := s.Engine.ServiceManageInterface.IsMaster()
 		if !isMaster {
+			continue
+		}
+
+		if flag {
 			continue
 		}
 
@@ -160,6 +167,7 @@ func (s *Service) TimerDeleteHistoryTask(ctx context.Context) {
 			blog.Errorf("delete redundancy task failed, err: %v, rid: %s", err, rid)
 			return
 		}
+		flag = true
 		blog.Infof("delete redundancy task completed, time: %v", time.Now())
 	}
 }
@@ -168,6 +176,9 @@ func (s *Service) deleteRedundancyTask(ctx context.Context) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	for {
+
+		// use aggregate to search task, need latest docs of every flag in cc_apitask
+		// redundancy task status is successed and create time is not the latest
 		aggregateCond := []map[string]interface{}{
 			{common.BKDBSort: map[string]interface{}{common.CreateTimeField: -1}},
 			{common.BKDBGroup: map[string]interface{}{
@@ -202,8 +213,9 @@ func (s *Service) deleteRedundancyTask(ctx context.Context) error {
 
 		if len(taskIDs) != 0 {
 			cond.Condition = map[string]interface{}{
-				common.BKTaskIDField: map[string]interface{}{
-					common.BKDBNIN: taskIDs,
+				common.BKDBOR: []map[string]interface{}{
+					{common.BKTaskIDField: map[string]interface{}{common.BKDBNIN: taskIDs}},
+					{common.BKStatusField: 200},
 				},
 			}
 		}
