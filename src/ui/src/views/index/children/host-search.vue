@@ -112,6 +112,11 @@
       },
       async handleSearch(force = '') {
         const searchList = this.getSearchList()
+        if (searchList.length > 10000) {
+          this.$warn(this.$t('最多支持搜索10000条数据'))
+          return
+        }
+
         if (searchList.length) {
           const IPList = []
           const IPWithCloudList = []
