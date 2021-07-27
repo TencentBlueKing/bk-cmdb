@@ -624,6 +624,7 @@ const (
 	BKClusterTimeField = "cluster_time"
 	BKEventTypeField   = "type"
 	BKStartAtTimeField = "start_at_time"
+	BKSubResourceField = "bk_sub_resource"
 )
 
 const (
@@ -1180,7 +1181,7 @@ const (
 
 const (
 	NameFieldMaxLength         = 256
-	MainlineNameFieldMaxLength = 32
+	MainlineNameFieldMaxLength = 256
 
 	// 用于表示还未设置服务模板的情况，比如没有绑定服务模板
 	ServiceTemplateIDNotSet = 0

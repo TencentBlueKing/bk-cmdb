@@ -11,12 +11,12 @@
           @click="nextStep">
           {{$t('下一步')}}
         </bk-button>
-        <bk-button theme="default">{{$t('取消')}}</bk-button>
+        <bk-button theme="default" @click="close">{{$t('取消')}}</bk-button>
       </template>
       <template v-if="currentStep === 2">
         <bk-button class="mr10" theme="default" @click="previousStep">{{$t('上一步')}}</bk-button>
         <bk-button class="mr10" theme="primary" :disabled="exportDisabled" @click="startTask">{{$t('开始导出')}}</bk-button>
-        <bk-button theme="default">{{$t('取消')}}</bk-button>
+        <bk-button theme="default" @click="close">{{$t('取消')}}</bk-button>
       </template>
     </div>
   </cmdb-sticky-layout>
@@ -46,6 +46,7 @@
       }, { setState }] = useState()
       const nextStep = () => setState({ step: currentStep.value + 1 })
       const previousStep = () => setState({ step: currentStep.value - 1 })
+      const close = () => setState({ visible: false })
       const stepComponent = computed(() => {
         const map = {
           1: exportProperty.name,
@@ -73,7 +74,8 @@
         nextStep,
         previousStep,
         stepComponent,
-        startTask
+        startTask,
+        close
       }
     },
     data() {

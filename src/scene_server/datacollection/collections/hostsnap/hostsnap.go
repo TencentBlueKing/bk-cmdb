@@ -186,8 +186,8 @@ func (h *HostSnap) Analyze(msg *string) error {
 		h.saveHostsnap(header, &val, hostID)
 	}
 
-	// window restriction on request
-	if !h.window.canPassWindow() {
+	// window restriction on request when no apiVer information reported
+	if !val.Get("data.apiVer").Exists() && !h.window.canPassWindow() {
 		if blog.V(4) {
 			blog.Infof("not within the time window that can pass, skip host snapshot data update, host id: %d, ip: %s, cloud id: %d, rid: %s",
 				hostID, innerIP, cloudID, rid)

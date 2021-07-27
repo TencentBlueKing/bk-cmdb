@@ -10,27 +10,28 @@
  * limitations under the License.
  */
 
-package collections
+#ifndef _GSE_DATA_CHANNELID_FILTER_H_
+#define _GSE_DATA_CHANNELID_FILTER_H_
 
-import (
-	"configcenter/src/common"
-	"configcenter/src/storage/dal/types"
-)
+#include <vector>
+#include "datacell.h"
+#include "datafilter.h"
+namespace gse { 
+namespace dataserver {
 
-func init() {
+class ChannelId_Filter : public IDataFilter
+{
+public:
+    ChannelId_Filter();
+    virtual ~ChannelId_Filter();
 
-	registerIndexes("cc_InstanceObjectIDMapping", commInstanceObjectIDMappingIndexes)
+    void Filtering(const vector<DataCell*>& in, vector<DataCell*>& out);
+    bool IsFiltered(DataCell* data);
+
+protected:
+private:
+};
 
 }
-
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
-
-var commInstanceObjectIDMappingIndexes = []types.Index{
-	{
-		Name: common.CCLogicIndexNamePrefix + "InstID",
-		Keys: map[string]int32{
-			common.BKInstIDField: 1,
-		},
-		Background: true,
-	},
 }
+#endif // _GSE_DATA_CHANNELID_FILTER_H_
