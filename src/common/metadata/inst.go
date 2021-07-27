@@ -213,3 +213,10 @@ func NewManyCommInstResultDetail() *CreateManyCommInstResultDetail {
 		Error:          make(map[int64]string, 0),
 	}
 }
+
+type InstBatchInfo struct {
+	// BatchInfo batch info
+	// map[rownumber]map[property_id][date]
+	BatchInfo map[int64]mapstr.MapStr `json:"BatchInfo"`
+	InputType string                  `json:"input_type"`
+}
