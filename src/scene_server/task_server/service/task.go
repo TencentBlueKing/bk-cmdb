@@ -20,9 +20,10 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-
-	"github.com/robfig/cron"
+	"configcenter/src/common/util"
 )
+
+const step uint64 = 1000
 
 func (s *Service) CreateTask(ctx *rest.Contexts) {
 	input := new(metadata.CreateTaskRequest)
@@ -138,80 +139,78 @@ func (s *Service) StatusToFailure(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-//TimerDeleteHistoryTask delete apitask history message
+// TimerDeleteHistoryTask delete apitask history message
 func (s *Service) TimerDeleteHistoryTask(ctx context.Context) {
-	c := cron.New()
+	rid := util.ExtractRequestIDFromContext(ctx)
 
-	_, err := c.AddFunc("@weekly", func() {
+	for {
+		time.Sleep(time.Minute * 1)
+		if weekday := time.Now().Weekday(); weekday != 6 {
+			continue
+		}
+
 		isMaster := s.Engine.ServiceManageInterface.IsMaster()
-		if isMaster {
-			blog.Infof("begin delete redundancy task, time: %v", time.Now())
-			err := s.deleteRedundancyTask(ctx)
-			if err != nil {
-				blog.Errorf("delete redundancy task failed, err: %v", err)
-				return
-			}
+		if !isMaster {
+			continue
+		}
+
+		blog.Infof("begin delete redundancy task, time: %v", time.Now())
+		err := s.deleteRedundancyTask(ctx)
+		if err != nil {
+			blog.Errorf("delete redundancy task failed, err: %v, rid: %s", err, rid)
+			return
 		}
 		blog.Infof("delete redundancy task completed, time: %v", time.Now())
-	})
-
-	if err != nil {
-		blog.Errorf("new cron failed, please contact developer, err: %v", err)
-		return
-	}
-	c.Start()
-
-	select {
-	case <-ctx.Done():
-		return
 	}
 }
 
 func (s *Service) deleteRedundancyTask(ctx context.Context) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 
-	aggregateCond := []map[string]interface{}{
-		{common.BKDBSort: map[string]interface{}{common.CreateTimeField: -1}},
-		{common.BKDBGroup: map[string]interface{}{
-			"_id": "$bk_inst_id",
-			"doc": map[string]interface{}{"$first": "$$ROOT"},
-		}},
-		{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},
-		{common.BKDBProject: map[string]interface{}{common.BKTaskIDField: 1, common.BKStatusField: 1}},
-	}
+	for {
+		aggregateCond := []map[string]interface{}{
+			{common.BKDBSort: map[string]interface{}{common.CreateTimeField: -1}},
+			{common.BKDBGroup: map[string]interface{}{
+				"_id": "$bk_inst_id",
+				"doc": map[string]interface{}{"$first": "$$ROOT"},
+			}},
+			{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},
+			{common.BKDBProject: map[string]interface{}{common.BKTaskIDField: 1, common.BKStatusField: 1}},
+			{common.BKDBLimit: step},
+		}
 
-	result := make([]metadata.APITaskDetail, 0)
-	if err := s.DB.Table(common.BKTableNameAPITask).AggregateAll(ctx, aggregateCond, &result); err != nil {
-		blog.Errorf("list latest task failed, err: %s", err.Error())
-		return err
-	}
+		result := make([]metadata.APITaskDetail, 0)
+		if err := s.DB.Table(common.BKTableNameAPITask).AggregateAll(ctx, aggregateCond, &result); err != nil {
+			blog.Errorf("list latest task failed, err: %v, rid: %s", err, rid)
+			return err
+		}
 
-	if len(result) == 0 {
-		return nil
-	}
+		if len(result) == 0 {
+			return nil
+		}
 
-	var taskIDs []string
-	for _, item := range result {
-		if !item.Status.IsSuccessful() {
-			taskIDs = append(taskIDs, item.TaskID)
+		var taskIDs []string
+		for _, item := range result {
+			if !item.Status.IsSuccessful() {
+				taskIDs = append(taskIDs, item.TaskID)
+			}
+		}
+
+		cond := &metadata.DeleteOption{
+			Condition: map[string]interface{}{common.BKStatusField: 200},
+		}
+
+		if len(taskIDs) != 0 {
+			cond.Condition = map[string]interface{}{
+				common.BKTaskIDField: map[string]interface{}{
+					common.BKDBNIN: taskIDs,
+				},
+			}
+		}
+
+		if err := s.DB.Table(common.BKTableNameAPITask).Delete(ctx, cond.Condition); err != nil {
+			blog.Errorf("delete redundancy task failed, err: %v, rid: %s", err, rid)
+			return err
 		}
 	}
-
-	cond := &metadata.DeleteOption{
-		Condition: map[string]interface{}{common.BKStatusField: 200},
-	}
-
-	if len(taskIDs) != 0 {
-		cond.Condition = map[string]interface{}{
-			common.BKTaskIDField: map[string]interface{}{
-				common.BKDBNIN: taskIDs,
-			},
-		}
-	}
-
-	if err := s.DB.Table(common.BKTableNameAPITask).Delete(ctx, cond.Condition); err != nil {
-		blog.Errorf("delete redundancy task failed, err: %s", err.Error())
-		return err
-	}
-
-	return nil
 }

@@ -211,6 +211,9 @@ const (
 
 	// BKDBReplaceRoot the db operator
 	BKDBReplaceRoot = "$replaceRoot"
+
+	// BKDBLimit the db operator to limit return number of doc
+	BKDBLimit = "$limit"
 )
 
 const (
