@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -89,6 +90,9 @@ type SearchResult struct {
 
 	// Source mongodb metadata.
 	Source interface{} `json:"source"`
+
+	// Highlight highlight keywords
+	Highlight map[string][]string `json:"highlight"`
 }
 
 // Aggregation fulltext search aggregation.
@@ -708,5 +712,93 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 	}
 	response.Hits = metadatas
 
+	for _, v := range response.Hits {
+		blog.Errorf("nnnnnnnnnnnnnnnnnnnnnnnnnnnn v: %+v", v)
+	}
+
+	rawString := strings.Trim(request.QueryString, "*")
+	for _, hit := range mainSearchResult.Hits.Hits {
+		blog.Errorf("vvvvvvvvvvvvvvvvvvvvvvvvvvvv v: %s", hit.Highlight)
+		sr := SearchResult{}
+		sr.setHit(ctx.Kit.Ctx, hit, request.BizID, rawString)
+
+		for i := range response.Hits {
+			response.Hits[i].Highlight = sr.Highlight
+		}
+	}
+
+	for _, v := range response.Hits {
+		blog.Errorf("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm v: %+v", v)
+	}
 	ctx.RespEntity(response)
+	return
+}
+
+func (sr *SearchResult) setHit(ctx context.Context, searchHit *elastic.SearchHit, bkBizId, rawString string) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	sourceTmp := make(map[string]interface{})
+
+	err := json.Unmarshal(searchHit.Source, &(sourceTmp))
+	if err != nil {
+		blog.Warnf("full_text_find unmarshal search result source err: %+v, rid: %s", err, rid)
+		sr.Source = nil
+	}
+	blog.Errorf("000000000000000000000000000 sourceTmp: %+v,Highlight: %v", sourceTmp, searchHit.Highlight)
+
+	sr.dealHighlight(sourceTmp, searchHit.Highlight, bkBizId, rawString)
+	return
+}
+
+func (sr *SearchResult) dealHighlight(source map[string]interface{}, highlight elastic.SearchHitHighlight, bkBizId, rawString string) {
+
+	isObject := true
+	var bkObjId, oldHighlightObjId string
+	if _, ok := source["meta_bk_obj_id"]; ok {
+		bkObjId = source["meta_bk_obj_id"].(string)
+		oldHighlightObjId = "<em>" + bkObjId + "</em>"
+	} else {
+		isObject = false
+	}
+	oldHighlightBizId := "<em>" + bkBizId + "</em>"
+
+	blog.Errorf("1111111111111111111111 highlight: %v,oldHighlightObjId: %v,oldHighlightBizId: %v", highlight, oldHighlightObjId, oldHighlightBizId)
+
+	for key, values := range highlight {
+		if key == "bk_obj_id" || key == "bk_obj_id.keyword" {
+			// judge if raw query string in bk_obj_id, if not, ignore bk_obj_id highlight
+			rawStringInObjId := false
+			for _, value := range values {
+				if strings.Contains(value, rawString) {
+					rawStringInObjId = true
+					break
+				} else {
+					continue
+				}
+			}
+			if !rawStringInObjId {
+				delete(highlight, key)
+			}
+		} else if key == "meta_bk_biz_id" || key == "meta_bk_obj_id" {
+			delete(highlight, key)
+		} else {
+			// we don't need highlight with bk_obj_id and bk_biz_id, just like <em>bk_obj_id</em>, <em>bk_biz_id</em>
+			// replace it <em>bk_obj_id</em> be bk_obj_id (do not need <em>)
+			for i := range values {
+				blog.Errorf("2222222222222222222222222 i: %v", i)
+
+				if isObject && strings.Contains(values[i], oldHighlightObjId) {
+					blog.Errorf("33333333333333333333333 values: %v,oldHighlightObjId: %v", values[i], oldHighlightObjId)
+
+					values[i] = strings.Replace(values[i], oldHighlightObjId, bkObjId, -1)
+				}
+				if strings.Contains(values[i], oldHighlightBizId) {
+					blog.Errorf("4444444444444444444444444 values: %v，oldHighlightBizId: %v", values[i], oldHighlightBizId)
+
+					values[i] = strings.Replace(values[i], oldHighlightBizId, bkBizId, -1)
+				}
+			}
+		}
+	}
+	blog.Errorf("5555555555555555555 highlight: %v,oldHighlightObjId: %v,oldHighlightBizId: %v", highlight, oldHighlightObjId, oldHighlightBizId)
+	sr.Highlight = highlight
 }

@@ -77,6 +77,11 @@ func (es *EsSrv) Search(ctx context.Context, query elastic.Query, indexes []stri
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 
+	// search highlight
+	highlight := elastic.NewHighlight()
+	highlight.Field("*")
+	highlight.RequireFieldMatch(false)
+
 	searchSource := elastic.NewSearchSource()
 	searchSource.From(from)
 	searchSource.Size(size)
@@ -84,6 +89,7 @@ func (es *EsSrv) Search(ctx context.Context, query elastic.Query, indexes []stri
 	searchResult, err := es.Client.Search().
 		Index(indexes...).
 		SearchSource(searchSource).
+		Query(query).Highlight(highlight). // specify the query and highlight
 		Query(query).
 		Pretty(true).
 		Do(ctx)
