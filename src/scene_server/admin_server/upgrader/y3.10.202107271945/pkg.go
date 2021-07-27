@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_10_202107082011
+package y3_10_202107271945
 
 import (
 	"context"
@@ -22,13 +22,13 @@ import (
 
 func init() {
 
-	upgrader.RegistUpgrader("y3.9.202107082004", upgrade)
+	upgrader.RegistUpgrader("y3.10.202107271945", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = deleteTaskInvalidHistory(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202107082004] remove task invalid history failed, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.10.202107271945] remove task invalid history failed, error  %s", err.Error())
 		return err
 	}
 
