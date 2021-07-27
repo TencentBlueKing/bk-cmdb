@@ -183,7 +183,8 @@ func (s *Service) GetTopoNodeHostAndSerInstCount(ctx *rest.Contexts) {
 		return
 	}
 
-	if len(input.Condition) > common.BKParamMaxLength {
+	const BKParamMaxLength = 1000
+	if len(input.Condition) > BKParamMaxLength {
 		err := ctx.Kit.CCError.Error(common.CCErrorParamExceedMaxLength)
 		ctx.RespAutoError(err)
 		return

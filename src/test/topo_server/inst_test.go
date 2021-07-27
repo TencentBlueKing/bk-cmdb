@@ -537,7 +537,7 @@ var _ = Describe("inst test", func() {
 		cond1 := metadata.Condition{ObjID: "set", InstID: instId}
 		conds := make([]metadata.Condition, 0)
 		conds = append(conds, cond1)
-		input := &metadata.SearchBizTopoNodeHostAndServiceInstCountOption{
+		input := &metadata.HostAndSerInstCountOption{
 			Condition: conds,
 		}
 		rsp, err := instClient.GetTopoNodeHostAndServiceInstCount(context.Background(), header, instId, input)

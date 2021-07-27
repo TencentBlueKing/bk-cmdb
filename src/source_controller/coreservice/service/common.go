@@ -54,12 +54,12 @@ func (s *coreService) GetDistinctCount(ctx *rest.Contexts) {
 		return
 	}
 
-	ret, err := s.core.CommonOperation().GetDistinctCount(ctx.Kit, option)
+	count, err := s.core.CommonOperation().GetDistinctCount(ctx.Kit, option)
 
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(ret)
+	ctx.RespEntity(count)
 }

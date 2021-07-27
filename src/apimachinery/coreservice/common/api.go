@@ -47,7 +47,7 @@ func (p *common) GetDistinctField(ctx context.Context, h http.Header, option *me
 // GetDistinctCount 根据条件获取指定表中满足条件数据的数量
 func (p *common) GetDistinctCount(ctx context.Context, h http.Header, option *metadata.DistinctFieldOption) (int64,
 	errors.CCErrorCoder) {
-	ret := new(metadata.ArrayResponse)
+	ret := new(metadata.HostCountResponse)
 	subPath := "/findmany/common/distinct_count"
 
 	err := p.client.Post().
@@ -60,11 +60,11 @@ func (p *common) GetDistinctCount(ctx context.Context, h http.Header, option *me
 
 	if err != nil {
 		blog.Errorf("CreateServiceCategory failed, http request failed, err: %+v", err)
-		return int64(len(ret.Data)), errors.CCHttpError
+		return ret.Data, errors.CCHttpError
 	}
 	if ret.CCError() != nil {
-		return int64(len(ret.Data)), ret.CCError()
+		return ret.Data, ret.CCError()
 	}
 
-	return int64(len(ret.Data)), nil
+	return ret.Data, nil
 }
