@@ -16,7 +16,6 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -43,23 +42,22 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string,
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "ip.data")
 	}
 
-	cond := condition.CreateCondition()
-
-	or := []mapstr.MapStr{
-		{
-			common.BKHostInnerIPField: map[string]interface{}{
-				common.BKDBIN: param.IP.Data,
-			},
-		}, {
-			common.BKHostOuterIPField: map[string]interface{}{
-				common.BKDBIN: param.IP.Data,
+	cond := mapstr.MapStr{
+		common.BKDBOR: []mapstr.MapStr{
+			{
+				common.BKHostInnerIPField: map[string]interface{}{
+					common.BKDBIN: param.IP.Data,
+				},
+			}, {
+				common.BKHostOuterIPField: map[string]interface{}{
+					common.BKDBIN: param.IP.Data,
+				},
 			},
 		},
 	}
 
-	cond.NewOR().MapStrArr(or)
 	if param.IP.CloudID != nil {
-		cond.Field(common.BKCloudIDField).In(param.IP.CloudID)
+		cond.Set(common.BKCloudIDField, param.IP.CloudID)
 	}
 
 	if param.Page.Limit > common.BKMaxPageSize {
@@ -70,7 +68,7 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string,
 	}
 
 	hostQuery := &metadata.QueryCondition{
-		Condition: cond.ToMapStr(),
+		Condition: cond,
 		Fields:    []string{common.BKHostIDField},
 		Page:      param.Page,
 	}
