@@ -28,6 +28,7 @@
             :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id)"
             :show-unit="false"
             :property="column"
+            :multiple="column.bk_obj_id !== 'host'"
             @click.native.stop="handleValueClick(row, column)">
           </cmdb-property-value>
         </template>

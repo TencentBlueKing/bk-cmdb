@@ -800,8 +800,11 @@ func (c *Collection) AddColumn(ctx context.Context, column string, value interfa
 }
 
 // RenameColumn rename a column for the collection
-func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string) error {
+func (c *Collection) RenameColumn(ctx context.Context, filter types.Filter, oldName, newColumn string) error {
 	mtc.collectOperCount(c.collName, columnOper)
+	if filter == nil {
+		filter = dtype.Document{}
+	}
 
 	start := time.Now()
 	defer func() {
@@ -810,7 +813,7 @@ func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string
 
 	datac := dtype.Document{"$rename": dtype.Document{oldName: newColumn}}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, dtype.Document{}, datac)
+		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, datac)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, columnOper)
 			return err
