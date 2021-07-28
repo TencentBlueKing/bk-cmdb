@@ -160,6 +160,7 @@ func (lgc *Logics) Detail(ctx context.Context, taskID string) (*metadata.APITask
 	return &rows[0], nil
 }
 
+// DeleteTask delete task
 func (lgc *Logics) DeleteTask(ctx context.Context, taskCond *metadata.DeleteOption) error {
 	if len(taskCond.Condition) == 0 {
 		blog.Errorf("task condition is empty, rid: %s", lgc.rid)
