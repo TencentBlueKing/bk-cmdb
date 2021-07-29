@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"configcenter/src/common/mapstr"
 	"fmt"
 	"io"
 	"regexp"
@@ -24,6 +23,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
@@ -480,9 +480,8 @@ func (assoc *association) getHostSvcInstCountByModuleIDs(kit *rest.Kit,
 			if err != nil {
 				blog.Errorf("get distinct host count failed, err: %v, objID: %s, instID: %s, rid: %s", err,
 					common.BKModuleIDField, moduleID, kit.Rid)
-				if firstErr == nil {
-					firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-				}
+				firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+
 				return
 			}
 
@@ -499,11 +498,15 @@ func (assoc *association) getHostSvcInstCountByModuleIDs(kit *rest.Kit,
 	}
 	wg.Wait()
 
+	if firstErr != nil {
+		return nil, firstErr
+	}
+
 	for idx, count := range svcInstCounts {
 		results[idx].ServiceInstanceCount = count
 	}
 
-	return results, firstErr
+	return results, nil
 }
 
 // getHostSvcInstCountBySetIDs get host and service instace count by set ids
@@ -535,9 +538,8 @@ func (assoc *association) getHostSvcInstCountBySetIDs(kit *rest.Kit,
 			if err != nil {
 				blog.Errorf("get distinct host count failed, err: %v, objID: %s, instID: %s, rid: %s", err,
 					common.BKSetIDField, setID, kit.Rid)
-				if firstErr == nil {
-					firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-				}
+				firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+
 				return
 			}
 
@@ -553,6 +555,10 @@ func (assoc *association) getHostSvcInstCountBySetIDs(kit *rest.Kit,
 	}
 	wg.Wait()
 
+	if firstErr != nil {
+		return nil, firstErr
+	}
+
 	svcInstCounts, e := assoc.getServiceInstCount(kit, common.BKModuleIDField, moduleIDs)
 	if e != nil {
 		blog.Errorf("get service instance count failed, err: %v, objID: %s, instID: %s, rid: %s", e,
@@ -564,7 +570,7 @@ func (assoc *association) getHostSvcInstCountBySetIDs(kit *rest.Kit,
 		results[idx].ServiceInstanceCount = count
 	}
 
-	return results, firstErr
+	return results, nil
 }
 
 // getCustomLevHostSvcInstCount get coustom level host and service instace
@@ -589,9 +595,8 @@ func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
 			if err != nil {
 				blog.Errorf("find hosts by topo failed, get set ID by topo err: %v, objID: %s, instID: %d, "+
 					"rid:%s", err, objID, instID, kit.Rid)
-				if firstErr == nil {
-					firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-				}
+				firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+
 				return
 			}
 
@@ -600,9 +605,8 @@ func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
 			if err != nil {
 				blog.Errorf("get distinct host count failed, err: %v, objID: %s, instIDs: %, rid: %s", err,
 					common.BKSetIDField, setIDArr, kit.Rid)
-				if firstErr == nil {
-					firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-				}
+				firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+
 				return
 			}
 
@@ -610,9 +614,8 @@ func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
 			setRelModuleMap, e := assoc.getSetRelationModule(kit, setIDArr)
 			if e != nil {
 				blog.Errorf("get set module rel map failed, err: %s, rid: %s", e.Error(), kit.Rid)
-				if firstErr == nil {
-					firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-				}
+				firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+
 				return
 			}
 			moduleIDs := make([]int64, 0)
@@ -627,9 +630,8 @@ func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
 			if e != nil {
 				blog.Errorf("get service instance count failed, err: %v, objID: %s, instIDs: %s, rid: %s", e,
 					common.BKSetIDField, moduleIDs, kit.Rid)
-				if firstErr == nil {
-					firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-				}
+				firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+
 				return
 			}
 
