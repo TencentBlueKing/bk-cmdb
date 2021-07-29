@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal"
@@ -29,9 +30,7 @@ import (
 	"configcenter/src/storage/driver/mongodb/instancemapping"
 	"configcenter/src/storage/stream/types"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
 type Client struct {
@@ -179,8 +178,8 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 			detail := string(byt)
 			return &detail, true, nil
 		} else {
-			doc := new(bsonx.Doc)
-			err := c.db.Table(common.BKTableNameDelArchive).Find(filter).Fields(detailFields...).One(kit.Ctx, doc)
+			doc := make(map[string]interface{})
+			err := c.db.Table(common.BKTableNameDelArchive).Find(filter).Fields(detailFields...).One(kit.Ctx, &doc)
 			if err != nil {
 				if c.db.IsNotFoundError(err) {
 					return nil, false, nil
@@ -190,7 +189,7 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 				return nil, false, fmt.Errorf("get archive deleted doc from mongo failed, err: %v", err)
 			}
 
-			byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
+			byt, err := json.Marshal(doc["detail"])
 			if err != nil {
 				blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
 					key.Collection(), node.Oid, err)
@@ -615,7 +614,7 @@ func (c *Client) searchDeletedEventDetailsFromMongo(kit *rest.Kit, coll string, 
 			}
 		}
 	} else {
-		docs := make([]bsonx.Doc, 0)
+		docs := make([]map[string]interface{}, 0)
 		err := c.db.Table(common.BKTableNameDelArchive).Find(deleteFilter).Fields(detailFields...).All(kit.Ctx, &docs)
 		if err != nil {
 			blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oids: %+v, err: %v, "+
@@ -624,8 +623,8 @@ func (c *Client) searchDeletedEventDetailsFromMongo(kit *rest.Kit, coll string, 
 		}
 
 		for _, doc := range docs {
-			oid := doc.Lookup("oid").String()
-			detailJson, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
+			oid := util.GetStrByInterface(doc["oid"])
+			detailJson, err := json.Marshal(doc["detail"])
 			if err != nil {
 				blog.Errorf("marshal detail failed, oid: %s, err: %v, rid: %s", oid, err, kit.Rid)
 				return nil, fmt.Errorf("marshal detail failed, oid: %s, err: %v", oid, err)
