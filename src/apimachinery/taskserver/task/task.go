@@ -22,7 +22,8 @@ import (
 )
 
 // Create  新加任务， name 任务名，flag:任务标识，留给业务方做识别任务，instID:任务的执行源实例id，data 每一项任务需要的参数
-func (t *task) Create(ctx context.Context, header http.Header, name, flag string, instID int64, data []interface{}) (resp *metadata.CreateTaskResponse, err error) {
+func (t *task) Create(ctx context.Context, header http.Header, name, flag string, instID int64,
+	data []interface{}) (resp *metadata.CreateTaskResponse, err error) {
 	resp = new(metadata.CreateTaskResponse)
 	subPath := "/task/create"
 	body := metadata.CreateTaskRequest{
@@ -84,6 +85,7 @@ func (t *task) TaskDetail(ctx context.Context, header http.Header, taskID string
 	return
 }
 
+// DeleteTask delete task
 func (t *task) DeleteTask(ctx context.Context, header http.Header, taskCond *metadata.DeleteOption) error {
 	resp := new(metadata.Response)
 	subPath := "/task/deletemany"

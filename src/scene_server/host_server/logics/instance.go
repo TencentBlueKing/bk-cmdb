@@ -204,7 +204,8 @@ func (lgc *Logics) SearchInstance(kit *rest.Kit, objID string, input *meta.Query
 }
 
 // GetInstIDNameInfo get instance ids and id to name map by condition
-func (lgc *Logics) GetInstIDNameInfo(kit *rest.Kit, objID string, cond mapstr.MapStr) (map[int64]string, []int64, error) {
+func (lgc *Logics) GetInstIDNameInfo(kit *rest.Kit, objID string, cond mapstr.MapStr) (map[int64]string, []int64,
+	error) {
 	idField := meta.GetInstIDFieldByObjID(objID)
 	nameField := meta.GetInstNameFieldName(objID)
 

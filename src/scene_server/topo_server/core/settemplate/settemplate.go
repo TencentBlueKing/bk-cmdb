@@ -261,6 +261,7 @@ func (st *setTemplate) SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateI
 	return nil
 }
 
+// DispatchTask4ModuleSync dispatch synchronize task
 func (st *setTemplate) DispatchTask4ModuleSync(kit *rest.Kit, indexKey string, setID int64,
 	tasks ...metadata.SyncModuleTask) (metadata.APITaskDetail, errors.CCErrorCoder) {
 	taskDetail := metadata.APITaskDetail{}
