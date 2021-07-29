@@ -56,7 +56,9 @@ type InstOperationInterface interface {
 }
 
 // NewInstOperation create a new inst operation instance
-func NewInstOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) InstOperationInterface {
+func NewInstOperation(client apimachinery.ClientSetInterface,
+	authManager *extensions.AuthManager) InstOperationInterface {
+
 	return &commonInst{
 		clientSet:   client,
 		authManager: authManager,
@@ -119,7 +121,8 @@ func (c *commonInst) CreateInst(kit *rest.Kit, obj metadata.Object,
 
 	if assoc != nil {
 		if err := c.validMainLineParentID(kit, assoc, data); err != nil {
-			blog.Errorf("the mainline object(%s) parent id invalid, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
+			blog.Errorf("the mainline object(%s) parent id invalid, err: %v, rid: %s",
+				obj.ObjectID, err, kit.Rid)
 			return nil, err
 		}
 	}
@@ -216,22 +219,23 @@ func (c *commonInst) CreateManyInstance(kit *rest.Kit, objID string,
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, objID, cond)
 	if err != nil {
-		blog.Errorf("create many instances, generate audit log failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("create many instances, generate audit log failed, err: %v, rid: %s",
+			err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrAuditGenerateLogFailed, err.Error())
 	}
 
 	// save audit log.
 	err = audit.SaveAuditLog(kit, auditLog...)
 	if err != nil {
-		blog.Errorf("creat many instances, save audit log failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("creat many instances, save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 	return resp, nil
 }
 
 // CreateInstBatch batch create instance by excel
-func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj metadata.Object, batchInfo *metadata.InstBatchInfo) (*BatchResult,
-	error) {
+func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj metadata.Object,
+	batchInfo *metadata.InstBatchInfo) (*BatchResult, error) {
 
 	isMainline, err := c.validObject(kit, obj)
 	if err != nil {
@@ -258,8 +262,8 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj metadata.Object, batchIn
 	for line, inst := range batchInfo.BatchInfo {
 		objID, exist := inst[common.BKObjIDField]
 		if exist == true && objID != obj.ObjectID {
-			blog.Errorf("create object[%s] instance batch failed, bk_obj_id field conflict with url field, rid: %s",
-				obj.ObjectID, kit.Rid)
+			blog.Errorf("create object[%s] instance batch failed, bk_obj_id field conflict with url field,"+
+				"rid: %s", obj.ObjectID, kit.Rid)
 			return nil, kit.CCError.Errorf(common.CCErrorTopoObjectInstanceObjIDFieldConflictWithURL, line)
 		}
 	}
@@ -302,7 +306,8 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj metadata.Object, batchIn
 			// generate audit log of instance.
 			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit,
 				metadata.AuditUpdate).WithUpdateFields(colInput)
-			auditLog, ccErr := audit.GenerateAuditLogByCondGetData(generateAuditParameter, obj.GetObjectID(), filter)
+			auditLog, ccErr := audit.GenerateAuditLogByCondGetData(generateAuditParameter,
+				obj.GetObjectID(), filter)
 			if ccErr != nil {
 				blog.Errorf(" update inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 				return nil, ccErr
@@ -334,7 +339,8 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj metadata.Object, batchIn
 		rsp, err := c.clientSet.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, obj.ObjectID, instCond)
 		if err != nil {
 			blog.Errorf("failed to create object instance, err: %v, rid: %s", err, kit.Rid)
-			errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error())
+			errStr := c.language.CreateDefaultCCLanguageIf(
+				util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error())
 			colIdxList = append(colIdxList, int(colIdx))
 			colIdxErrMap[int(colIdx)] = errStr
 			continue
@@ -342,7 +348,8 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj metadata.Object, batchIn
 
 		if err = rsp.CCError(); err != nil {
 			blog.Errorf("failed to create object instance ,err: %v, rid: %s", err, kit.Rid)
-			errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error())
+			errStr := c.language.CreateDefaultCCLanguageIf(
+				util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error())
 			colIdxList = append(colIdxList, int(colIdx))
 			colIdxErrMap[int(colIdx)] = errStr
 			continue
@@ -351,7 +358,8 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj metadata.Object, batchIn
 		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
 
 		if rsp.Data.Created.ID == 0 {
-			blog.Errorf("unexpected error, instances created success, but get id failed, err: %+v, rid: %s", err, kit.Rid)
+			blog.Errorf("unexpected error, instances created success, but get id failed, err: %+v, rid: %s",
+				err, kit.Rid)
 			continue
 		}
 
@@ -505,7 +513,8 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 		for index, instance := range delInsts {
 			instID, err := instance.Int64(common.GetInstIDField(objID))
 			if err != nil {
-				blog.ErrorJSON("can not convert ID to int64, err: %s, inst: %s, rid: %s", err, instance, kit.Rid)
+				blog.Errorf("can not convert ID to int64, err: %v, inst: %#v, rid: %s",
+					err, instance, kit.Rid)
 				return kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.GetInstIDField(objID))
 			}
 			delInstIDs[index] = instID
@@ -513,7 +522,8 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 			if objID == common.BKInnerObjIDSet {
 				bizID, err := instance.Int64(common.BKAppIDField)
 				if err != nil {
-					blog.ErrorJSON("can not convert biz ID to int64, err: %s, set: %s, rid: %s", err, instance, kit.Rid)
+					blog.Errorf("can not convert biz ID to int64, err: %v, set: %#v, rid: %s",
+						err, instance, kit.Rid)
 					return kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
 				}
 				bizSetMap[bizID] = append(bizSetMap[bizID], instID)
@@ -523,10 +533,18 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 		// if any instance has been bind to a instance by the association, then these instances should not be deleted.
 		input := &metadata.Condition{
 			Condition: mapstr.MapStr{common.BKDBOR: []mapstr.MapStr{
-				{common.BKObjIDField: objID, common.BKInstIDField: mapstr.MapStr{common.BKDBIN: delInstIDs}},
-				{common.BKAsstObjIDField: objID, common.BKAsstInstIDField: mapstr.MapStr{common.BKDBIN: delInstIDs}},
+				{
+					common.BKObjIDField:  objID,
+					common.BKInstIDField: mapstr.MapStr{common.BKDBIN: delInstIDs},
+				},
+				{
+					common.BKAsstObjIDField:  objID,
+					common.BKAsstInstIDField: mapstr.MapStr{common.BKDBIN: delInstIDs},
+				},
 			}}}
-		cnt, err := c.clientSet.CoreService().Association().CountInstanceAssociations(kit.Ctx, kit.Header, objID, input)
+
+		cnt, err := c.clientSet.CoreService().Association().
+			CountInstanceAssociations(kit.Ctx, kit.Header, objID, input)
 		if err != nil {
 			blog.Errorf("count instance association failed, err: %v, rid: %s", err, kit.Rid)
 			return err
@@ -560,12 +578,14 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 		dc := &metadata.DeleteOption{Condition: delCond}
 		rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, objID, dc)
 		if err != nil {
-			blog.ErrorJSON("delete inst failed, err: %s, cond: %s rid: %s", err, delCond, kit.Rid)
+			blog.Errorf("delete inst failed, err: %v, cond: %#v, rid: %s",
+				err, delCond, kit.Rid)
 			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if err := rsp.CCError(); err != nil {
-			blog.ErrorJSON("delete inst failed, err: %s, cond: %s rid: %s", err, delCond, kit.Rid)
+			blog.Errorf("delete inst failed, err: %v, cond: %#v, rid: %s",
+				err, delCond, kit.Rid)
 			return err
 		}
 	}
@@ -573,8 +593,11 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 	// clear set template sync status for set instances
 	for bizID, setIDs := range bizSetMap {
 		if len(setIDs) != 0 {
-			if ccErr := c.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, setIDs); ccErr != nil {
-				blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDs, ccErr.Error(), kit.Rid)
+			ccErr := c.clientSet.CoreService().SetTemplate().
+				DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, setIDs)
+			if ccErr != nil {
+				blog.Errorf("failed to delete set template sync status failed, "+
+					"bizID: %d, setIDs: %+v, err: %v, rid: %s", bizID, setIDs, ccErr, kit.Rid)
 				return ccErr
 			}
 		}
@@ -1006,8 +1029,10 @@ func (c *commonInst) hasHost(kit *rest.Kit, instances []mapstr.MapStr, objID str
 	for index, instance := range instances {
 		instID, err := instance.Int64(common.GetInstIDField(objID))
 		if err != nil {
-			blog.ErrorJSON("can not convert ID to int64, err: %s, inst: %s, rid: %s", err, instance, kit.Rid)
-			return nil, false, kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.GetInstIDField(objID))
+			blog.Errorf("can not convert ID to int64, err: %v, inst: %#v, rid: %s",
+				err, instance, kit.Rid)
+			return nil, false, kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt,
+				common.GetInstIDField(objID))
 		}
 		instIDs[index] = instID
 	}
@@ -1107,8 +1132,10 @@ func (c *commonInst) hasHost(kit *rest.Kit, instances []mapstr.MapStr, objID str
 			for index, instance := range childRsp.Info {
 				instID, err := instance.Int64(common.GetInstIDField(childObjID))
 				if err != nil {
-					blog.Errorf("can not convert ID to int64, err: %v, inst: %s, rid: %s", err, instance, kit.Rid)
-					return nil, false, kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.GetInstIDField(childObjID))
+					blog.Errorf("can not convert ID to int64, err: %v, inst: %s, rid: %s",
+						err, instance, kit.Rid)
+					return nil, false, kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt,
+						common.GetInstIDField(childObjID))
 				}
 				parentIDs[index] = instID
 			}
@@ -1232,7 +1259,8 @@ func (c *commonInst) getObjectWithInsts(kit *rest.Kit, object metadata.Object,
 
 		rspItems, err := c.FindInst(kit, objPair.Object.ObjectID, &metadata.QueryInput{Condition: innerCond})
 		if err != nil {
-			blog.Errorf("failed to search the insts by the condition(%#v), err: %v, rid: %s", innerCond, err, kit.Rid)
+			blog.Errorf("failed to search the insts by the condition(%#v), err: %v, rid: %s",
+				innerCond, err, kit.Rid)
 			return result, err
 		}
 

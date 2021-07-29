@@ -41,10 +41,12 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	}
 }
 
+// ClassificationOperation return a classification provide ClassificationOperationInterface
 func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
 	return c.classification
 }
 
+// InstOperation return a inst provide InstOperationInterface
 func (c *logics) InstOperation() inst.InstOperationInterface {
 	return c.inst
 }
