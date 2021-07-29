@@ -103,6 +103,9 @@
   import RouterQuery from '@/router/query'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import FilterStore from '@/components/filters/store'
+  import {
+    MENU_BUSINESS_HOST_AND_SERVICE
+  } from '@/dictionary/menu-symbol'
   export default {
     components: {
       CreateNode,
@@ -229,6 +232,10 @@
         this.filterUnwatch && this.filterUnwatch()
       },
       setDefaultState() {
+        // 非业务拓扑主页面不触发设置节点选中等，防止查询条件非预期的被清除
+        if (this.$route.name !== MENU_BUSINESS_HOST_AND_SERVICE) {
+          return
+        }
         const defaultNode = this.getDefaultNode()
         if (defaultNode) {
           const { tree } = this.$refs
