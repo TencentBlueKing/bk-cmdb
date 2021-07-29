@@ -185,20 +185,24 @@ func replaceEnName(rid string, rowMap mapstr.MapStr, usernameMap map[string]stri
 			continue
 		}
 
-		newUserList := []string{}
 		userListString, ok := rowMap[property].(string)
 		if !ok {
 			blog.Errorf("convert variable rowMap[%s] type to string field , rowMap: %v, rowMap type: %T, rid: %s",
 				property, rowMap[property], rowMap[property], rid)
 			return nil, fmt.Errorf("convert variable rowMap[%s] type to string field", property)
 		}
-		enNameList := strings.Split(userListString, ",")
+		userListString = strings.TrimSpace(userListString)
+		if userListString == "" {
+			continue
+		}
 
-		for _, item := range enNameList {
-			username := usernameMap[item]
+		newUserList := []string{}
+		enNameList := strings.Split(userListString, ",")
+		for _, enName := range enNameList {
+			username := usernameMap[enName]
 			if username == "" {
 				// return the original user name and remind that the user is nonexistent in '()'
-				username = fmt.Sprintf("%s(%s)", item, defLang.Language("nonexistent_user"))
+				username = fmt.Sprintf("%s(%s)", enName, defLang.Language("nonexistent_user"))
 			}
 			newUserList = append(newUserList, username)
 		}
