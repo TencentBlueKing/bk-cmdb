@@ -140,3 +140,17 @@ type SearchBriefBizTopoResult struct {
 	BaseResp `json:",inline"`
 	Data     []*SetTopo
 }
+
+// GetHostAndSerInstCountResult 获取topo节点主机/服务实例数量结构
+type GetHostAndSerInstCountResult struct {
+	BaseResp `json:",inline"`
+	Data     []*TopoNodeCount
+}
+
+// TopoNodeCount 获取topo节点主机/服务实例数量结果
+type TopoNodeCount struct {
+	ObjID                string `json:"bk_obj_id"`
+	InstID               int64  `json:"bk_inst_id"`
+	HostCount            int64  `json:"host_count"`
+	ServiceInstanceCount int64  `json:"service_instance_count"`
+}
