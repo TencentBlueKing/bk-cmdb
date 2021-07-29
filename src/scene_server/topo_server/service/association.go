@@ -172,8 +172,8 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
 func (s *Service) GetTopoNodeHostAndSerInstCount(ctx *rest.Contexts) {
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if err != nil {
-		blog.Errorf("GetTopoNodeHostAndSerInstCount failed to parse the path params id(%s), error info is %s , "+
-			"rid: %s", ctx.Request.PathParameter("app_id"), err.Error(), ctx.Kit.Rid)
+		blog.Errorf("parse biz id: %s from url path failed, error info is: %s , "+
+			"rid: %s", ctx.Request.PathParameter("bk_biz_id"), err, ctx.Kit.Rid)
 		return
 	}
 
