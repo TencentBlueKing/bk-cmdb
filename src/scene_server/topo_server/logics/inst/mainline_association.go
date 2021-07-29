@@ -196,9 +196,11 @@ func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID
 	withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, errors.CCError) {
 	// read mainline object association and construct child relation map excluding host
 	mainlineAsstRsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
-	if nil != err {
-		blog.Errorf("search mainline association failed, error: %s, rid: %s", err.Error(), kit.Rid)
+		&metadata.QueryCondition{Condition: map[string]interface{}{
+			common.AssociationKindIDField: common.AssociationKindMainline,
+		}})
+	if err != nil {
+		blog.Errorf("search mainline association failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 	mainlineObjectChildMap := make(map[string]string)
@@ -272,21 +274,22 @@ func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID
 		childDefaultSetMap := make(map[int64][]*metadata.TopoInstRst)
 		for _, instance := range instanceRsp.Info {
 			instID, err := instance.Int64(metadata.GetInstIDFieldByObjID(objectID))
-			if nil != err {
-				blog.ErrorJSON("get instance %s id failed, err: %s, rid: %s", instance, err, kit.Rid)
+			if err != nil {
+				blog.Errorf("get instance %#v id failed, err: %v, rid: %s", instance, err, kit.Rid)
 				return nil, err
 			}
 			instIDs = append(instIDs, instID)
 			instName, err := instance.String(metadata.GetInstNameFieldName(objectID))
-			if nil != err {
-				blog.ErrorJSON("get instance %s name failed, err: %s, rid: %s", instance, err, kit.Rid)
+			if err != nil {
+				blog.Errorf("get instance %#v name failed, err: %v, rid: %s", instance, err, kit.Rid)
 				return nil, err
 			}
 			defaultValue := 0
 			if defaultFieldValue, exist := instance[common.BKDefaultField]; exist {
 				defaultValue, err = util.GetIntByInterface(defaultFieldValue)
 				if err != nil {
-					blog.ErrorJSON("get instance %s default failed, err: %s, rid: %s", instance, err, kit.Rid)
+					blog.Errorf("get instance %#v default failed, err: %v, rid: %s",
+						instance, err, kit.Rid)
 					return nil, err
 				}
 			}
@@ -314,7 +317,8 @@ func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID
 				if bizID == 0 {
 					bizID, err = instance.Int64(common.BKAppIDField)
 					if err != nil {
-						blog.ErrorJSON("get instance %s biz id failed, err: %s, rid: %s", instance, err, kit.Rid)
+						blog.Errorf("get instance %#v biz id failed, err: %v, rid: %s",
+							instance, err, kit.Rid)
 						return nil, err
 					}
 				}
@@ -324,7 +328,7 @@ func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID
 			} else {
 				parentID, err := instance.Int64(common.BKParentIDField)
 				if err != nil {
-					blog.ErrorJSON("get instance %s parent id failed, err: %s, rid: %s", instance, err, kit.Rid)
+					blog.Errorf("get instance %#v parent id failed, err: %v, rid: %s", instance, err, kit.Rid)
 					return nil, err
 				}
 				if objectID == common.BKInnerObjIDSet && defaultValue == common.DefaultResSetFlag {
@@ -364,7 +368,8 @@ func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID
 
 	if withStatistics && len(results) > 0 {
 		if err := assoc.fillStatistics(kit, bizID, moduleIDs, results); err != nil {
-			blog.Errorf("[SearchMainlineAssociationInstTopo] fill statistics data failed, bizID: %d, err: %v, rid: %s", bizID, err, kit.Rid)
+			blog.Errorf("fill statistics data failed, bizID: %d, err: %v, rid: %s",
+				bizID, err, kit.Rid)
 			return nil, err
 		}
 	}
@@ -683,7 +688,9 @@ func (assoc *association) createInst(kit *rest.Kit, objID string, data mapstr.Ma
 }
 
 // TODO need check this function is here or move to other file
-func (assoc *association) fillStatistics(kit *rest.Kit, bizID int64, moduleIDs []int64, topoInsts []*metadata.TopoInstRst) errors.CCError {
+func (assoc *association) fillStatistics(kit *rest.Kit, bizID int64,
+	moduleIDs []int64, topoInsts []*metadata.TopoInstRst) errors.CCError {
+
 	// get service instance count
 	option := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
@@ -691,10 +698,11 @@ func (assoc *association) fillStatistics(kit *rest.Kit, bizID int64, moduleIDs [
 			Limit: common.BKNoLimit,
 		},
 	}
-	serviceInstances, err := assoc.clientSet.CoreService().Process().ListServiceInstance(kit.Ctx, kit.Header, option)
-	if err != nil {
-		blog.Errorf("fillStatistics failed, list service instances failed, option: %+v, err: %s, rid: %s", option, err.Error(), kit.Rid)
-		return err
+	serviceInstances, ccErr := assoc.clientSet.CoreService().Process().ListServiceInstance(kit.Ctx, kit.Header, option)
+	if ccErr != nil {
+		blog.Errorf("list service instances failed, option: %+v, err: %v, rid: %s",
+			option, ccErr, kit.Rid)
+		return ccErr
 	}
 	moduleServiceInstanceCount := make(map[int64]int64)
 	for _, serviceInstance := range serviceInstances.Info {
@@ -706,10 +714,11 @@ func (assoc *association) fillStatistics(kit *rest.Kit, bizID int64, moduleIDs [
 		ApplicationID: bizID,
 		Fields:        []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
-	hostModules, e := assoc.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, listHostOption)
-	if e != nil {
-		blog.Errorf("fillStatistics failed, list host modules failed, option: %+v, err: %s, rid: %s", listHostOption, e.Error(), kit.Rid)
-		return e
+	hostModules, err := assoc.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, listHostOption)
+	if err != nil {
+		blog.Errorf("list host modules failed, option: %+v, err: %v, rid: %s",
+			listHostOption, err, kit.Rid)
+		return err
 	}
 	// topoObjectID -> topoInstanceID -> []hostIDs
 	customLevel := "custom_level"
@@ -722,17 +731,20 @@ func (assoc *association) fillStatistics(kit *rest.Kit, bizID int64, moduleIDs [
 		if _, exist := hostCount[common.BKInnerObjIDModule][hostModule.ModuleID]; exist == false {
 			hostCount[common.BKInnerObjIDModule][hostModule.ModuleID] = make([]int64, 0)
 		}
-		hostCount[common.BKInnerObjIDModule][hostModule.ModuleID] = append(hostCount[common.BKInnerObjIDModule][hostModule.ModuleID], hostModule.HostID)
+		hostCount[common.BKInnerObjIDModule][hostModule.ModuleID] = append(
+			hostCount[common.BKInnerObjIDModule][hostModule.ModuleID], hostModule.HostID)
 
 		if _, exist := hostCount[common.BKInnerObjIDSet][hostModule.SetID]; exist == false {
 			hostCount[common.BKInnerObjIDSet][hostModule.SetID] = make([]int64, 0)
 		}
-		hostCount[common.BKInnerObjIDSet][hostModule.SetID] = append(hostCount[common.BKInnerObjIDSet][hostModule.SetID], hostModule.HostID)
+		hostCount[common.BKInnerObjIDSet][hostModule.SetID] = append(
+			hostCount[common.BKInnerObjIDSet][hostModule.SetID], hostModule.HostID)
 
 		if _, exist := hostCount[common.BKInnerObjIDApp][hostModule.AppID]; exist == false {
 			hostCount[common.BKInnerObjIDApp][hostModule.AppID] = make([]int64, 0)
 		}
-		hostCount[common.BKInnerObjIDApp][hostModule.AppID] = append(hostCount[common.BKInnerObjIDApp][hostModule.AppID], hostModule.HostID)
+		hostCount[common.BKInnerObjIDApp][hostModule.AppID] = append(
+			hostCount[common.BKInnerObjIDApp][hostModule.AppID], hostModule.HostID)
 	}
 	for _, objectID := range []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule} {
 		for key := range hostCount[objectID] {
@@ -747,9 +759,11 @@ func (assoc *association) fillStatistics(kit *rest.Kit, bizID int64, moduleIDs [
 			Limit: common.BKNoLimit,
 		},
 	}
-	hostApplyRules, err := assoc.clientSet.CoreService().HostApplyRule().ListHostApplyRule(kit.Ctx, kit.Header, bizID, listApplyRuleOption)
+	hostApplyRules, err := assoc.clientSet.CoreService().
+		HostApplyRule().ListHostApplyRule(kit.Ctx, kit.Header, bizID, listApplyRuleOption)
 	if err != nil {
-		blog.ErrorJSON("fillStatistics failed, ListHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, listApplyRuleOption, err, kit.Rid)
+		blog.Errorf("list host apply rule failed, bizID: %s, option: %#v, err: %v, rid: %s",
+			bizID, listApplyRuleOption, err, kit.Rid)
 		return err
 	}
 	moduleRuleCount := make(map[int64]int64)
