@@ -50,12 +50,12 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	maxTopoLevel int) (*metadata.Object, error) {
 
 	if data.AsstObjID == "" {
-		blog.ErrorJSON("bk_asst_obj_id empty, input: %s, rid: %s", data, kit.Rid)
+		blog.Errorf("bk_asst_obj_id empty, input: %#v, rid: %s", data, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKAsstObjIDField)
 	}
 
 	if data.ClassificationID == "" {
-		blog.ErrorJSON("bk_classification_id empty, input: %s, rid: %s", data, kit.Rid)
+		blog.Errorf("bk_classification_id empty, input: %#v, rid: %s", data, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKClassificationIDField)
 	}
 
@@ -331,8 +331,8 @@ func (assoc *association) IsMainlineObject(kit *rest.Kit, objID string) (bool, e
 }
 
 // TODO after merge , delete this func and use SetMainlineInstAssociation in inst/mainline_association
-func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parent, current,
-	child *metadata.Object) ([]int64, error) {
+func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit,
+	parent, current *metadata.Object) ([]int64, error) {
 
 	defaultCond := &metadata.QueryInput{}
 	cond := mapstr.New()
@@ -378,7 +378,8 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parent, curr
 		// create the instance now.
 		instID, err := assoc.createInst(kit, current.ObjectID, currentInst)
 		if err != nil {
-			blog.Errorf("failed to create object(%s) default inst, err: %v, rid: %s", current.ObjectID, err, kit.Rid)
+			blog.Errorf("failed to create object(%s) default inst, err: %v, rid: %s",
+				current.ObjectID, err, kit.Rid)
 			return nil, err
 		}
 
@@ -701,13 +702,14 @@ func (assoc *association) CreateObject(kit *rest.Kit, isMainline bool, data maps
 		rsppAttr, err := assoc.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header,
 			pAttr.ObjectID, &metadata.CreateModelAttributes{Attributes: []metadata.Attribute{pAttr}})
 		if err != nil {
-			blog.Errorf("failed to request coreService to create model attrs, err: %v, ObjectID: %s, input: %#v, "+
-				"rid: %s", err, pAttr.ObjectID, pAttr, kit.Rid)
+			blog.Errorf("failed to request coreService to create model attrs, "+
+				"err: %v, ObjectID: %s, input: %#v, rid: %s", err, pAttr.ObjectID, pAttr, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if err = rsppAttr.CCError(); err != nil {
-			blog.Errorf("create model attrs failed, ObjectID: %s, input: %#v, rid: %s", pAttr.ObjectID, pAttr, kit.Rid)
+			blog.Errorf("create model attrs failed, ObjectID: %s, input: %#v, rid: %s",
+				pAttr.ObjectID, pAttr, kit.Rid)
 			return nil, err
 		}
 
@@ -738,7 +740,8 @@ func (assoc *association) CreateObject(kit *rest.Kit, isMainline bool, data maps
 		Ispre:   false,
 	}
 	// NOTICE: 2021年03月29日  唯一索引与index.MainLineInstanceUniqueIndex,index.InstanceUniqueIndex定义强依赖
-	// 原因：建立模型之前要将表和表中的索引提前建立，mongodb 4.2.6(4.4之前)事务中不能建表，事务操作表中数据操作和建表，建立索引为互斥操作。
+	// 原因：建立模型之前要将表和表中的索引提前建立，mongodb 4.2.6(4.4之前)事务中不能建表
+	// 事务操作表中数据操作和建表，建立索引为互斥操作。
 	resp, err := assoc.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header,
 		uni.ObjID, metadata.CreateModelAttrUnique{Data: uni})
 	if err != nil {
@@ -792,7 +795,8 @@ func IsValid(kit *rest.Kit, isUpdate bool, data mapstr.MapStr) (*metadata.Object
 		if err := util.ValidModelNameField(data[metadata.ModelFieldObjectName],
 			metadata.ModelFieldObjectName, kit.CCError); err != nil {
 			blog.Errorf("failed to valid the object name(%s), rid: %s", metadata.ModelFieldObjectName, kit.Rid)
-			return nil, kit.CCError.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectName+" "+err.Error())
+			return nil, kit.CCError.New(common.CCErrCommParamsIsInvalid,
+				metadata.ModelFieldObjectName+" "+err.Error())
 		}
 	}
 
