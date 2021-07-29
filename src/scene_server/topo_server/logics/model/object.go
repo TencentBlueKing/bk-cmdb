@@ -70,7 +70,7 @@ func (o *object) IsValidObject(kit *rest.Kit, objID string) error {
 
 	objItems, err := o.FindObject(kit, checkObjCond)
 	if err != nil {
-		blog.Errorf("failed to check the object repeated, err: %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("failed to check the object repeated, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
@@ -89,8 +89,8 @@ func (o *object) FindSingleObject(kit *rest.Kit, objectID string) (*metadata.Obj
 
 	objs, err := o.FindObject(kit, cond)
 	if err != nil {
-		blog.Errorf("get model failed, failed to get model by supplier account(%s) objects(%s), err: %s, rid: %s",
-			kit.SupplierAccount, objectID, err.Error(), kit.Rid)
+		blog.Errorf("get model failed, failed to get model by supplier account(%s) objects(%s), "+
+			"err: %v, rid: %s", kit.SupplierAccount, objectID, err, kit.Rid)
 		return nil, err
 	}
 
@@ -115,7 +115,7 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 
 	obj, err := o.IsValid(kit, false, data)
 	if err != nil {
-		blog.Errorf("valid data(%#v) failed, err: %s, rid: %s", data, err.Error(), kit.Rid)
+		blog.Errorf("valid data(%#v) failed, err: %v, rid: %s", data, err, kit.Rid)
 		return nil, err
 	}
 
@@ -145,7 +145,7 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 	cnt, err := o.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameObjDes,
 		[]map[string]interface{}{filter})
 	if err != nil {
-		blog.Errorf("get object number by filter failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("get object number by filter failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
@@ -163,7 +163,7 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 
 	objRsp, err := o.clientSet.CoreService().Model().CreateModel(kit.Ctx, kit.Header, &metadata.CreateModel{Spec: *obj})
 	if err != nil {
-		blog.Errorf("failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("create object failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -187,7 +187,7 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 	rspGrp, err := o.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header,
 		obj.ObjectID, metadata.CreateModelAttributeGroup{Data: groupData})
 	if err != nil {
-		blog.Errorf("create attribute group failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("create attribute group failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -352,7 +352,7 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
 
 	objs, err := o.FindObject(kit, cond)
 	if err != nil {
-		blog.Errorf("failed to find objects, the condition is (%v) err: %s, rid: %s", cond, err.Error(), kit.Rid)
+		blog.Errorf("failed to find objects, the condition is (%v) err: %v, rid: %s", cond, err, kit.Rid)
 		return err
 	}
 	// shouldn't return 404 error here, legacy implements just ignore not found error
@@ -509,7 +509,8 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 	}
 
 	if err = objs.CCError(); err != nil {
-		blog.Errorf("failed to search the objects by the condition(%#v) , err: %v, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("failed to search the objects by the condition(%#v) , err: %v, rid: %s",
+			cond, err, kit.Rid)
 		return nil, err
 	}
 
@@ -536,7 +537,8 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 	}
 
 	if err = asstItems.CCError(); err != nil {
-		blog.Errorf("failed to search the objects(%#v) association info , err: %v, rid: %s", objectIDs, err, kit.Rid)
+		blog.Errorf("failed to search the objects(%#v) association info , err: %v, rid: %s",
+			objectIDs, err, kit.Rid)
 		return nil, err
 	}
 
@@ -591,12 +593,13 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 	)
 
 	if err != nil {
-		blog.Errorf("find object failed, cond: %#v, err: %s, rid: %s", cond, err.Error(), kit.Rid)
+		blog.Errorf("find object failed, cond: %#v, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if err = asstObjs.CCError(); err != nil {
-		blog.Errorf("failed to search the objects by the condition(%#v) , err: %v, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("failed to search the objects by the condition(%#v) , err: %v, rid: %s",
+			cond, err, kit.Rid)
 		return nil, err
 	}
 
@@ -608,7 +611,7 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 	// search direction of association
 	isFromMap, err := o.isFrom(kit, asstObjIDs, assocObjsMap)
 	if err != nil {
-		blog.Errorf("check direction of association failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("check direction of association failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
@@ -645,12 +648,13 @@ func (o *object) FindObject(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Objec
 		&metadata.QueryCondition{Condition: cond},
 	)
 	if err != nil {
-		blog.Errorf("find object failed, cond: %+v, err: %s, rid: %s", cond, err.Error(), kit.Rid)
+		blog.Errorf("find object failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if err = rsp.CCError(); err != nil {
-		blog.Errorf("failed to search the objects by the condition(%#v) , err: %v, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("failed to search the objects by the condition(%#v) , err: %v, rid: %s",
+			cond, err, kit.Rid)
 		return nil, err
 	}
 
@@ -675,12 +679,14 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 			})
 
 		if err != nil {
-			blog.Errorf("search object by bk_obj_name(%s) failed, err: %v, rid: %s", obj.ObjectName, err, kit.Rid)
+			blog.Errorf("search object by bk_obj_name(%s) failed, err: %v, rid: %s",
+				obj.ObjectName, err, kit.Rid)
 			return err
 		}
 
 		if err = result.CCError(); err != nil {
-			blog.Errorf("search object by bk_obj_name(%s) failed, err: %v, rid: %s", obj.ObjectName, err, kit.Rid)
+			blog.Errorf("search object by bk_obj_name(%s) failed, err: %v, rid: %s",
+				obj.ObjectName, err, kit.Rid)
 			return err
 		}
 
@@ -704,7 +710,8 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 
 	// generate audit log of object attribute group.
 	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(data)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).
+		WithUpdateFields(data)
 	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.ID, nil)
 	if err != nil {
 		blog.Errorf("generate audit log failed before update object, objName: %s, err: %v, rid: %s",
