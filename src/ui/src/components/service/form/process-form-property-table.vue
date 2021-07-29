@@ -13,7 +13,7 @@
         <component class="content-value"
           size="small"
           font-size="small"
-          v-bind="$tools.getValidateEvents(property)"
+          v-bind="$tools.getValidateEvents(column)"
           v-validate="$tools.getValidateRules(column)"
           :disabled="isLocked(rowProps)"
           :data-vv-name="column.bk_property_id"
@@ -139,6 +139,7 @@
             justify-content: flex-start;
             .content-value:not(.bk-switcher) {
                 flex: 1;
+                width: calc(100% - 24px);
             }
             .content-value.bk-switcher ~ .content-lock {
                 background-color: transparent;

@@ -1,7 +1,6 @@
 <template>
   <cmdb-input-select
     name="ip"
-    style="width: 100%"
     :placeholder="$t('请选择或输入IP')"
     :options="IPList"
     v-bind="$attrs"
