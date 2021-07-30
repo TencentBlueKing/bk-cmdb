@@ -25,6 +25,7 @@ import (
 
 const step uint64 = 1000
 
+// CreateTask create a task
 func (s *Service) CreateTask(ctx *rest.Contexts) {
 	input := new(metadata.CreateTaskRequest)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -41,6 +42,7 @@ func (s *Service) CreateTask(ctx *rest.Contexts) {
 	ctx.RespEntity(taskInfo)
 }
 
+// ListTask list the task by input condition
 func (s *Service) ListTask(ctx *rest.Contexts) {
 
 	input := new(metadata.ListAPITaskRequest)
@@ -62,6 +64,7 @@ func (s *Service) ListTask(ctx *rest.Contexts) {
 	})
 }
 
+// ListLatestTask list the latest task
 func (s *Service) ListLatestTask(ctx *rest.Contexts) {
 	input := new(metadata.ListAPITaskLatestRequest)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -79,6 +82,7 @@ func (s *Service) ListLatestTask(ctx *rest.Contexts) {
 	ctx.RespEntity(infos)
 }
 
+// DetailTask show a task detail
 func (s *Service) DetailTask(ctx *rest.Contexts) {
 	srvData := s.newSrvComm(ctx.Kit.Header)
 	taskInfo, err := srvData.lgc.Detail(srvData.ctx, ctx.Request.PathParameter("task_id"))
@@ -90,6 +94,7 @@ func (s *Service) DetailTask(ctx *rest.Contexts) {
 	ctx.RespEntity(map[string]interface{}{"info": taskInfo})
 }
 
+// DeleteTask delete task by condition
 func (s *Service) DeleteTask(ctx *rest.Contexts) {
 	srvData := s.newSrvComm(ctx.Kit.Header)
 
@@ -108,6 +113,7 @@ func (s *Service) DeleteTask(ctx *rest.Contexts) {
 	ctx.RespEntity(common.CCSuccessStr)
 }
 
+// StatusToSuccess change the task which task_id in path status to success
 func (s *Service) StatusToSuccess(ctx *rest.Contexts) {
 	taskID := ctx.Request.PathParameter("task_id")
 	subTaskID := ctx.Request.PathParameter("sub_task_id")
@@ -121,6 +127,7 @@ func (s *Service) StatusToSuccess(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// StatusToSuccess change the task which task_id in path status to failure
 func (s *Service) StatusToFailure(ctx *rest.Contexts) {
 	taskID := ctx.Request.PathParameter("task_id")
 	subTaskID := ctx.Request.PathParameter("sub_task_id")
