@@ -10,21 +10,10 @@
  * limitations under the License.
  */
 
-package registerdiscover
+package service_mange
 
-// RegDiscvServer define the register and discover function interface
-type RegDiscvServer interface {
-	// Ping to ping server
-	Ping() error
-	// RegisterAndWatch register server info into register-discover service platform,
-	// and watch to keep it alive
-	RegisterAndWatch(key string, data []byte) error
-	// GetServNodes get server nodes
-	GetServNodes(key string) ([]string, error)
-	// discover server from the register-discover service platform
-	Discover(key string) (<-chan *DiscoverEvent, error)
-	// Cancel to stop server register and discover
-	Cancel()
-	// ClearRegisterPath to delete server register path from zk
-	ClearRegisterPath() error
+type ClientInterface interface {
+	Put(key, val string) error
+	Get(path string) ([]string, error)
+	Delete(key string) error
 }

@@ -16,7 +16,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
-	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/backbone/service_mange/etcd"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
@@ -54,7 +54,7 @@ type Interface interface {
 }
 
 // NewServiceDiscovery new a simple discovery module which can be used to get alive server address
-func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
+func NewServiceDiscovery(client *etcd.EtcdCli) (DiscoveryInterface, error) {
 	disc := registerdiscover.NewRegDiscoverEx(client)
 
 	d := &discover{

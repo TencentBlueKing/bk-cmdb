@@ -13,9 +13,7 @@
 package registerdiscover
 
 import (
-	"time"
-
-	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/backbone/service_mange/etcd"
 )
 
 // DiscoverEvent if servers chenged, will create a discover event
@@ -31,30 +29,19 @@ type RegDiscover struct {
 	rdServer RegDiscvServer
 }
 
-// NewRegDiscover used to create a object of RegDiscover
-func NewRegDiscover(client *zk.ZkClient, timeout time.Duration) *RegDiscover {
-	regDiscv := &RegDiscover{
-		rdServer: nil,
-	}
-
-	regDiscv.rdServer = RegDiscvServer(NewZkRegDiscv(client))
-
-	return regDiscv
-}
-
 // NewRegDiscoverEx used to create a object of RegDiscover
-func NewRegDiscoverEx(client *zk.ZkClient) *RegDiscover {
+func NewRegDiscoverEx(client *etcd.EtcdCli) *RegDiscover {
 	regDiscv := &RegDiscover{
 		rdServer: nil,
 	}
 
-	regDiscv.rdServer = RegDiscvServer(NewZkRegDiscv(client))
+	regDiscv.rdServer = NewEtcdRegDiscv(client)
 
 	return regDiscv
 }
 
 // RegisterAndWatchService register service info into register-discover platform
-// and then watch the service info, if not exist, then register again
+// and then watch the service info
 // key is the index of registered service
 // data is the service information
 func (rd *RegDiscover) RegisterAndWatchService(key string, data []byte) error {
@@ -80,7 +67,7 @@ func (rd *RegDiscover) Cancel() {
 	rd.rdServer.Cancel()
 }
 
-// ClearRegisterPath to delete server register path from zk
+// ClearRegisterPath to delete server register path
 func (rd *RegDiscover) ClearRegisterPath() error {
 	return rd.rdServer.ClearRegisterPath()
 }

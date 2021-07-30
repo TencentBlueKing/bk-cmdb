@@ -21,25 +21,25 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/backbone/service_mange"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
-	"configcenter/src/common/zkclient"
 
 	"github.com/emicklei/go-restful"
 )
 
 type Limiter struct {
-	zkCli        *zkclient.ZkClient
+	client       service_mange.ClientInterface
 	rules        map[string]*metadata.LimiterRule
 	lock         sync.RWMutex
 	syncDuration time.Duration
 }
 
-func NewLimiter(zkCli *zkclient.ZkClient) *Limiter {
+func NewLimiter(cli service_mange.ClientInterface) *Limiter {
 	return &Limiter{
-		zkCli:        zkCli,
+		client:       cli,
 		syncDuration: 5 * time.Second,
 	}
 }
@@ -62,35 +62,24 @@ func (l *Limiter) SyncLimiterRules() error {
 
 func (l *Limiter) syncLimiterRules(path string) error {
 	blog.V(5).Infof("syncing limiter rules for path:%s", path)
-	children, err := l.zkCli.GetChildren(path)
+	values, err := l.client.Get(path)
 	if err != nil {
-		if err == zkclient.ErrNoNode {
-			// if no rules, set rules to be empty
-			l.setRules(make(map[string]*metadata.LimiterRule))
-			return nil
-		}
-		blog.Errorf("fail to GetChildren for path:%s, err:%s", path, err.Error())
+		l.setRules(make(map[string]*metadata.LimiterRule))
+		blog.Errorf("fail to Get for path:%s, err:%s", path, err)
 		return err
 	}
-
 	rules := make(map[string]*metadata.LimiterRule)
-	for _, child := range children {
-		data, err := l.zkCli.Get(path + "/" + child)
-		if err != nil {
-			blog.Errorf("fail to Get for path:%s, err:%s", path, err.Error())
-			continue
-		}
-
+	for _, val := range values {
 		rule := new(metadata.LimiterRule)
-		err = json.Unmarshal([]byte(data), rule)
+		err = json.Unmarshal([]byte(val), rule)
 		if err != nil {
-			blog.Errorf("fail to Unmarshal for child:%s, data:%s, err:%s", child, data, err.Error())
+			blog.Errorf("fail to Unmarshal for data:%s, err:%s", val, err.Error())
 			continue
 		}
 
 		err = rule.Verify()
 		if err != nil {
-			blog.Errorf("fail to Verify for child:%s, rule:%v, err:%s", child, rule, err.Error())
+			blog.Errorf("fail to Verify for rule:%v, err:%s", rule, err.Error())
 			continue
 		}
 

@@ -64,7 +64,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("connect redis server failed, err: %s", err.Error())
 	}
 
-	limiter := service.NewLimiter(engine.ServiceManageClient().Client())
+	limiter := service.NewLimiter(engine.ServiceManageClient())
 	err = limiter.SyncLimiterRules()
 	if err != nil {
 		blog.Infof("SyncLimiterRules failed, err: %v", err)
@@ -102,4 +102,3 @@ func (h *APIServer) onApiServerConfigUpdate(previous, current cc.ProcessConfig) 
 }
 
 const waitForSeconds = 180
-

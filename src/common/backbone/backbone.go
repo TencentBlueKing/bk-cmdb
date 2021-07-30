@@ -24,7 +24,8 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/backbone/service_mange"
+	"configcenter/src/common/backbone/service_mange/etcd"
 	"configcenter/src/common/blog"
 	crd "configcenter/src/common/confregdiscover"
 	"configcenter/src/common/errors"
@@ -56,25 +57,17 @@ type BackboneParameter struct {
 	SrvInfo *types.ServerInfo
 }
 
-func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClient, error) {
+func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*etcd.EtcdCli, error) {
 	var err error
 	for retry := 0; retry < maxRetry; retry++ {
-		client := zk.NewZkClient(svcManagerAddr, 40*time.Second)
-		if err = client.Start(); err != nil {
+		client, err := etcd.NewEtcdClient(svcManagerAddr, 5*time.Second) // TODO 这里时间使用可配置的方法
+		if err != nil {
 			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
 			time.Sleep(time.Second * 2)
 			continue
 		}
-
-		if err = client.Ping(); err != nil {
-			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
-			time.Sleep(time.Second * 2)
-			continue
-		}
-
 		return client, nil
 	}
-
 	return nil, err
 }
 
@@ -232,7 +225,7 @@ type Engine struct {
 	CoreAPI            apimachinery.ClientSetInterface
 	apiMachineryConfig *util.APIMachineryConfig
 
-	client                 *zk.ZkClient
+	client                 service_mange.ClientInterface
 	ServiceManageInterface discovery.ServiceManageInterface
 	SvcDisc                ServiceRegisterInterface
 	discovery              discovery.DiscoveryInterface
@@ -257,7 +250,7 @@ func (e *Engine) ApiMachineryConfig() *util.APIMachineryConfig {
 	return e.apiMachineryConfig
 }
 
-func (e *Engine) ServiceManageClient() *zk.ZkClient {
+func (e *Engine) ServiceManageClient() service_mange.ClientInterface {
 	return e.client
 }
 

@@ -15,10 +15,10 @@ package cloudsync
 import (
 	"context"
 
+	"configcenter/src/common/backbone/service_mange"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/zkclient"
 	"configcenter/src/scene_server/cloud_server/logics"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -29,7 +29,7 @@ const (
 )
 
 type SyncConf struct {
-	ZKClient  *zkclient.ZkClient
+	Client    service_mange.ClientInterface
 	Logics    *logics.Logics
 	AddrPort  string
 	MongoConf local.MongoConf
@@ -46,7 +46,7 @@ func CloudSync(conf *SyncConf) error {
 	ctx := context.Background()
 
 	schedulerConf := &SchedulerConf{
-		ZKClient:  conf.ZKClient,
+		Client:    conf.Client,
 		Logics:    conf.Logics,
 		AddrPort:  conf.AddrPort,
 		MongoConf: conf.MongoConf,

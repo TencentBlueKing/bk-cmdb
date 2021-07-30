@@ -15,7 +15,7 @@ package backbone
 import (
 	"encoding/json"
 
-	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/backbone/service_mange/etcd"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 	"configcenter/src/framework/core/errors"
@@ -32,7 +32,7 @@ type ServiceRegisterInterface interface {
 	ClearRegisterPath() error
 }
 
-func NewServiceRegister(client *zk.ZkClient) (ServiceRegisterInterface, error) {
+func NewServiceRegister(client *etcd.EtcdCli) (ServiceRegisterInterface, error) {
 	s := new(serviceRegister)
 	s.client = registerdiscover.NewRegDiscoverEx(client)
 	return s, nil
