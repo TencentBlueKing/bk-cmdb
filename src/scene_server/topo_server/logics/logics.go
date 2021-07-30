@@ -33,7 +33,7 @@ type logics struct {
 	businessOperation inst.BusinessOperationInterface
 }
 
-// New create a logics manager , languageIf language.CCLanguageIf
+// New create a logics manager
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
 
