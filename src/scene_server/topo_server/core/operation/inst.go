@@ -1007,6 +1007,7 @@ func (c *commonInst) FindInstTopo(kit *rest.Kit, obj model.Object, instID int64,
 	return len(results), results, nil
 }
 
+// FindInstByAssociationInst deprecated function.
 func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, objID string, asstParamCond *AssociationParams) (*metadata.InstResult, error) {
 
 	instCond := map[string]interface{}{}
@@ -1037,6 +1038,19 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, objID string, asst
 							instCond[objCondition.Field] = map[string]interface{}{
 								objCondition.Operator: objCondition.Value,
 							}
+						}
+					} else if objCondition.Operator == common.BKDBLT ||
+						objCondition.Operator == common.BKDBLTE ||
+						objCondition.Operator == common.BKDBGT ||
+						objCondition.Operator == common.BKDBGTE {
+
+						// fix condition covered when do date range search action.
+						// ISSUE: https://github.com/Tencent/bk-cmdb/issues/5302
+						if _, isExist := instCond[objCondition.Field]; !isExist {
+							instCond[objCondition.Field] = make(map[string]interface{})
+						}
+						if condValue, ok := instCond[objCondition.Field].(map[string]interface{}); ok {
+							condValue[objCondition.Operator] = objCondition.Value
 						}
 					} else {
 						// deal self condition

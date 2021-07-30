@@ -305,6 +305,9 @@ func (s *Service) generateGseConfigChannel(streamToID int64, header http.Header,
 				StreamToID: streamToID,
 				Redis: &metadata.GseConfigRouteRedis{
 					ChannelName: fmt.Sprintf("snapshot%d", biz.BizID),
+					// compatible for the older version of gse that uses DataSet+BizID as channel name
+					DataSet: "snapshot",
+					BizID:   biz.BizID,
 				},
 			},
 		}},

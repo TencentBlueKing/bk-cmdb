@@ -46,5 +46,5 @@ func initConfigAdmin(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 		}
 	}
 
-	return upgrader.UpgradeConfigAdmin(ctx, db)
+	return upgrader.UpgradeConfigAdmin(ctx, db, "y3.8.202006092135")
 }

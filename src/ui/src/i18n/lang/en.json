@@ -196,6 +196,7 @@
     "实例ID": "Instance ID",
     "主机ID": "Host ID",
     "业务ID": "Business ID",
+    "模型ID": "Model ID",
     "最大支持搜索32个字符": "Maximum support for searching 32 characters",
     "操作审计": "Audit",
     "运营统计": "Statistics",
@@ -322,6 +323,7 @@
     "请输入ID": "Please enter ID",
     "请输入关键词": "Enter key word",
     "模型分组": "Model group",
+    "所属模型分组": "Model group",
     "新建分组": "New group",
     "新建业务分组": "New business group",
     "唯一标识": "ID",
@@ -1038,6 +1040,7 @@
     "更新收藏成功": "Update collection success",
     "该名字已经存在": "The name already exists",
     "已归档业务": "Archived business",
+    "已归档": "Archived",
     "删除历史": "Delete history",
     "模型显示设置": "Model display settings",
     "关系显示设置": "Relationship display setting",
@@ -1444,5 +1447,8 @@
     "请先选择操作对象": "Please select operation target",
     "账号": "Account",
     "模糊": "fuzzy",
-    "模板名称将作为实例化后的模块名": "The template name will be used as the module name after instantiation"
+    "模板名称将作为实例化后的模块名": "The template name will be used as the module name after instantiation",
+    "该字段已被设为不可编辑，自动应用规则失效": "The field has been set as non-editable, and the auto-apply rule is invalid",
+    "主机属性设置为不可编辑状态后提示": "After being set to non-editable state, it will affect the configured automatic application rules, please be aware",
+    "检测到输入框中包含非标准IP格式字符串，请选择以XXX自动解析": "It is detected that the input box contains a non-standard IP format string, please choose {c1} or {c2} to automatically parse it."
 }

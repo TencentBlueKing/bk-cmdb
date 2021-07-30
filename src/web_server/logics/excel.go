@@ -66,7 +66,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, "instIDKey", objID)
 		}
 		// 使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
-		rowMap, err = replaceEnName(rid, rowMap, usernameMap, propertyList)
+		rowMap, err = replaceEnName(rid, rowMap, usernameMap, propertyList, ccLang)
 		if err != nil {
 			blog.Errorf("rebuild user list field, rid: %s", rid)
 			return err
@@ -164,7 +164,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		}
 
 		// 使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
-		rowMap, err = replaceEnName(rid, rowMap, usernameMap, propertyList)
+		rowMap, err = replaceEnName(rid, rowMap, usernameMap, propertyList, ccLang)
 		if err != nil {
 			blog.Errorf("rebuild user list field, rid: %s", rid)
 			return err
@@ -386,12 +386,12 @@ func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.Kv
 
 }
 
-func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int) map[int]metadata.ExcelAssocation {
+func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int) map[int]metadata.ExcelAssociation {
 
 	rowCnt := len(sheet.Rows)
 	index := firstRow
 
-	asstInfoArr := make(map[int]metadata.ExcelAssocation, 0)
+	asstInfoArr := make(map[int]metadata.ExcelAssociation, 0)
 	for ; index < rowCnt; index++ {
 		row := sheet.Rows[index]
 		op := row.Cells[associationOPColIndex].String()
@@ -402,7 +402,7 @@ func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int) map[int]metadata.E
 		asstObjID := row.Cells[assciationAsstObjIDIndex].String()
 		srcInst := row.Cells[assciationSrcInstIndex].String()
 		dstInst := row.Cells[assciationDstInstIndex].String()
-		asstInfoArr[index] = metadata.ExcelAssocation{
+		asstInfoArr[index] = metadata.ExcelAssociation{
 			ObjectAsstID: asstObjID,
 			Operate:      getAssociationExcelOperateFlag(op),
 			SrcPrimary:   srcInst,
@@ -423,13 +423,13 @@ func GetCustomFields(filterFields []string, customFieldsStr string) []string {
 	return getCustomFields(filterFields, customFieldsStr)
 }
 
-func getAssociationExcelOperateFlag(op string) metadata.ExcelAssocationOperate {
-	opFlag := metadata.ExcelAssocationOperateError
+func getAssociationExcelOperateFlag(op string) metadata.ExcelAssociationOperate {
+	opFlag := metadata.ExcelAssociationOperateError
 	switch op {
 	case associationOPAdd:
-		opFlag = metadata.ExcelAssocationOperateAdd
+		opFlag = metadata.ExcelAssociationOperateAdd
 	case associationOPDelete:
-		opFlag = metadata.ExcelAssocationOperateDelete
+		opFlag = metadata.ExcelAssociationOperateDelete
 	}
 
 	return opFlag

@@ -22,6 +22,7 @@ import (
 	"unicode/utf8"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	cErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/querybuilder"
@@ -648,6 +649,7 @@ func (p *SocketBindType) IP(host map[string]interface{}) (string, error) {
 		}
 		ip = util.GetStrByInterface(host[common.BKHostOuterIPField])
 	default:
+		blog.Errorf("process template bind info ip is invalid, socket bind type: %s", *p)
 		return "", errors.New("process template bind info ip is invalid")
 	}
 
@@ -1480,8 +1482,10 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 		}
 	}
 	if pt.Priority.Value != nil {
-		if *pt.Priority.Value < 1 || *pt.Priority.Value > 10000 {
-			return "priority", fmt.Errorf("field %s value must in range [1, 10000]", "priority")
+		if *pt.Priority.Value < common.MinProcessPrio || *pt.Priority.Value > common.MaxProcessPrio {
+			return "priority",
+				fmt.Errorf("field %s value must in range [%d, %d]", "priority",
+					common.MinProcessPrio, common.MaxProcessPrio)
 		}
 	}
 
@@ -1496,7 +1500,7 @@ func (pt *ProcessProperty) Update(input ProcessProperty, rawProperty map[string]
 	selfVal := reflect.ValueOf(pt).Elem()
 	inputVal := reflect.ValueOf(input)
 	fieldCount := selfVal.NumField()
-	updateIgnoreField := []string{"FuncName", "ProcessName"}
+	updateIgnoreField := []string{"FuncName"}
 	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
 		fieldName := selfType.Field(fieldIdx).Name
 		if util.InArray(fieldName, updateIgnoreField) == true {

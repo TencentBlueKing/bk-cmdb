@@ -1,5 +1,5 @@
 <template>
-  <bk-select style="width: 100%"
+  <bk-select
     v-model="localValue"
     v-bind="$attrs"
     :clearable="false">

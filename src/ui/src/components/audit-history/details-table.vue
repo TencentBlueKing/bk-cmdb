@@ -160,11 +160,11 @@
           if (!this.modelId) {
             return false
           }
-          this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
-            params: {
-              bk_obj_id: this.modelId
-            }
-          })
+          const params = { bk_obj_id: this.modelId }
+          if (this.details.bk_biz_id) {
+            params.bk_biz_id = this.details.bk_biz_id
+          }
+          this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', { params })
         } catch (error) {
           this.properties = []
           console.error(error)

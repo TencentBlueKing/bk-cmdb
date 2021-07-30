@@ -109,32 +109,36 @@ func (s *Service) UpdateSetTemplate(ctx *rest.Contexts) {
 			return err
 		}
 
-		filter := &metadata.QueryCondition{
-			Page: metadata.BasePage{
-				Limit: common.BKNoLimit,
-			},
-			Fields: []string{common.BKSetIDField},
-			Condition: mapstr.MapStr(map[string]interface{}{
-				common.BKAppIDField:         bizID,
+		filter := &metadata.DistinctFieldOption{
+			TableName: common.GetInstTableName(common.BKInnerObjIDSet),
+			Field:     common.BKSetIDField,
+			Filter: map[string]interface{}{
 				common.BKSetTemplateIDField: setTemplateID,
-			}),
+			},
 		}
-		setInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDSet, filter)
+
+		setIDs, err := s.Engine.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, filter)
 		if err != nil {
-			blog.Errorf("UpdateSetTemplate failed, ListSetTplRelatedSets failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("get set id failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
-		for _, item := range setInstanceResult.Data.Info {
-			setID, err := util.GetInt64ByInterface(item[common.BKSetIDField])
-			if err != nil {
-				blog.ErrorJSON("UpdateSetTemplate failed, ListSetTplRelatedSets failed, set: %s, err: %s, rid: %s", item, err, ctx.Kit.Rid)
-				return ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
-			}
-			if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(ctx.Kit, setID); err != nil {
-				blog.Errorf("UpdateSetTemplate failed, UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", setID, err, ctx.Kit.Rid)
-				return ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
-			}
+
+		if len(setIDs) == 0 {
+			blog.Errorf("get set id failed, GetDistinctField return is empty, rid: %s", ctx.Kit.Rid)
+			return nil
 		}
+
+		setID, err := util.SliceInterfaceToInt64(setIDs)
+		if err != nil {
+			blog.Errorf("set id is not int, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+			return err
+		}
+
+		if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(ctx.Kit, setTemplateID, setID); err != nil {
+			blog.Errorf("update set sync status failed, setID: %d, err: %+v, rid: %s", setID, err, ctx.Kit.Rid)
+			return err
+		}
+
 		return nil
 	})
 
@@ -616,49 +620,7 @@ func (s *Service) DiffSetTplWithInst(ctx *rest.Contexts) {
 		result.ModuleHostCount = moduleHostsCount
 	}
 
-	// 补偿：检查集群与模板版本号不同，但是又没有差异的情况，更新集群版本号到最新
-	for _, setDiff := range setDiffs {
-		if setDiff.NeedSync == true || setDiff.SetTemplateVersion == setDiff.SetDetail.SetTemplateVersion {
-			continue
-		}
-		if err := s.UpdateSetVersion(ctx.Kit, bizID, setDiff.SetID, setDiff.SetTemplateVersion); err != nil {
-			blog.Errorf("DiffSetTplWithInst failed, UpdateSetVersion failed, bizID: %d, setID: %d, version: %d, err: %+v, rid: %s",
-				bizID, setDiff.SetID, setDiff.SetTemplateVersion, err, ctx.Kit.Rid)
-		}
-	}
 	ctx.RespEntity(result)
-}
-
-func (s *Service) UpdateSetVersion(kit *rest.Kit, bizID, setID, setTemplateVersion int64) errors.CCErrorCoder {
-	updateOption := &metadata.UpdateOption{
-		Condition: map[string]interface{}{
-			common.BKAppIDField: bizID,
-			common.BKSetIDField: setID,
-		},
-		Data: map[string]interface{}{
-			common.BKSetTemplateVersionField: setTemplateVersion,
-		},
-	}
-
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
-		updateResult, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, updateOption)
-		if err != nil {
-			blog.Errorf("UpdateSetVersion failed, UpdateInstance of set failed, option: %+v, err: %+v, rid: %s", updateOption, err, kit.Rid)
-			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if ccErr := updateResult.CCError(); ccErr != nil {
-			blog.Errorf("UpdateSetVersion failed, UpdateInstance of set failed, option: %+v, response: %+v, rid: %s", updateOption, updateResult, kit.Rid)
-			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		blog.Errorf("UpdateSetVersion failed, err: %v, rid: %s", txnErr, kit.Rid)
-		return txnErr.(errors.CCErrorCoder)
-	}
-
-	return nil
 }
 
 func (s *Service) SyncSetTplToInst(ctx *rest.Contexts) {
@@ -682,20 +644,24 @@ func (s *Service) SyncSetTplToInst(ctx *rest.Contexts) {
 		return
 	}
 
+	taskCond := metadata.ListAPITaskDetail{
+		SetID: option.SetIDs,
+		Fields: []string{
+			common.BKStatusField,
+			common.MetaDataSynchronizeFlagField,
+			common.BKInstIDField,
+		},
+	}
 	// NOTE: 如下处理不能杜绝所有发提交任务, 可通过前端防双击的方式限制绝大部分情况
-	setSyncStatus, err := s.getSetSyncStatus(ctx.Kit, option.SetIDs...)
+	setSyncStatus, err := s.Core.SetTemplateOperation().GetLatestSyncTaskDetail(ctx.Kit, taskCond)
 	if err != nil {
 		blog.Errorf("SyncSetTplToInst failed, getSetSyncStatus failed, setIDs: %+v, err: %s, rid: %s", option.SetIDs, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	for _, setID := range option.SetIDs {
-		setStatus, ok := setSyncStatus[setID]
-		if ok == false {
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTaskNotFound))
-			return
-		}
-		if setStatus == nil {
+		setStatus, exist := setSyncStatus[setID]
+		if !exist {
 			continue
 		}
 		if setStatus.Status.IsFinished() == false {
@@ -767,21 +733,28 @@ func (s *Service) GetSetSyncDetails(ctx *rest.Contexts) {
 		}
 		option.SetIDs = setIDs
 	}
-	ctx.RespEntityWithError(s.getSetSyncStatus(ctx.Kit, option.SetIDs...))
-}
 
-func (s *Service) getSetSyncStatus(kit *rest.Kit, setIDs ...int64) (map[int64]*metadata.APITaskDetail, error) {
-	// db.getCollection('cc_APITask').find({"detail.data.set.bk_set_id": 18}).sort({"create_time": -1}).limit(1)
-	setStatus := make(map[int64]*metadata.APITaskDetail)
-	for _, setID := range setIDs {
-		taskDetail, err := s.Core.SetTemplateOperation().GetLatestSyncTaskDetail(kit, setID)
-		if err != nil {
-			blog.Errorf("getSetSyncStatus failed, GetLatestSyncTaskDetail failed, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
-			taskDetail = nil
-		}
-		setStatus[setID] = taskDetail
+	taskCond := metadata.ListAPITaskDetail{
+		SetID: option.SetIDs,
+		Fields: []string{
+			common.BKStatusField,
+			common.MetaDataSynchronizeFlagField,
+			common.BKInstIDField,
+			"detail.status",
+			"detail.data.module_diff.bk_module_name",
+			"detail.response.baseresp.errmsg",
+		},
 	}
-	return setStatus, nil
+
+	taskDetail, err := s.Core.SetTemplateOperation().GetLatestSyncTaskDetail(ctx.Kit, taskCond)
+	if err != nil {
+		blog.Errorf("get the latest task detail failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(taskDetail)
+	return
 }
 
 func (s *Service) ListSetTemplateSyncHistory(ctx *rest.Contexts) {
@@ -880,7 +853,7 @@ func (s *Service) BatchCheckSetInstUpdateToDateStatus(ctx *rest.Contexts) {
 			ctx.RespAutoError(err)
 			return
 		}
-		batchResult = append(batchResult, oneResult)
+		batchResult = append(batchResult, *oneResult)
 	}
 	ctx.RespEntity(batchResult)
 }

@@ -409,12 +409,11 @@
             padding: 0;
             box-shadow: 0 3px 9px 0 rgba(0, 0, 0, .1);
         }
-    }
-
-    .search-input {
-        .bk-form-input {
-            &:focus {
-                border-color: #c4c6cc !important;
+        .search-input {
+            .bk-form-input {
+                &:focus {
+                    border-color: #c4c6cc !important;
+                }
             }
         }
     }

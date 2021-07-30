@@ -30,7 +30,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (assoc *association) ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string, importData map[int]metadata.ExcelAssocation, languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error) {
+func (assoc *association) ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string, importData map[int]metadata.ExcelAssociation, languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error) {
 	ia := NewImportAssociation(ctx, assoc, kit, objID, importData, assoc.authManager, languageIf.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)))
 	err = ia.ParsePrimaryKey()
 	if err != nil {
@@ -60,7 +60,7 @@ type importAssociation struct {
 	objID      string
 	cli        *association
 	ctx        context.Context
-	importData map[int]metadata.ExcelAssocation
+	importData map[int]metadata.ExcelAssociation
 	kit        *rest.Kit
 	language   language.DefaultCCLanguageIf
 
@@ -86,7 +86,7 @@ type importAssociationInterface interface {
 	ImportAssociation() map[int]string
 }
 
-func NewImportAssociation(ctx context.Context, cli *association, kit *rest.Kit, objID string, importData map[int]metadata.ExcelAssocation, authManager *extensions.AuthManager, languageIf language.DefaultCCLanguageIf) importAssociationInterface {
+func NewImportAssociation(ctx context.Context, cli *association, kit *rest.Kit, objID string, importData map[int]metadata.ExcelAssociation, authManager *extensions.AuthManager, languageIf language.DefaultCCLanguageIf) importAssociationInterface {
 	return &importAssociation{
 		objID:      objID,
 		cli:        cli,
@@ -145,7 +145,7 @@ func (ia *importAssociation) importAssociation() {
 			ia.parseImportDataErr[idx] = ia.language.Languagef("import_association_id_not_found", asstInfo.ObjectAsstID)
 			continue
 		}
-		srcInstID, err := ia.getInstIDByPrimaryKey(ia.objID, asstInfo.SrcPrimary)
+		srcInstID, err := ia.getInstIDByPrimaryKey(asstID.ObjectID, asstInfo.SrcPrimary)
 		if err != nil {
 			ia.parseImportDataErr[idx] = err.Error()
 			continue
@@ -155,7 +155,7 @@ func (ia *importAssociation) importAssociation() {
 			ia.parseImportDataErr[idx] = err.Error()
 			continue
 		}
-		err = ia.authManager.AuthorizeByInstanceID(ia.ctx, ia.kit.Header, meta.Update, ia.objID, srcInstID)
+		err = ia.authManager.AuthorizeByInstanceID(ia.ctx, ia.kit.Header, meta.Update, asstID.ObjectID, srcInstID)
 		if err != nil {
 			ia.parseImportDataErr[idx] = err.Error()
 			continue
@@ -166,11 +166,11 @@ func (ia *importAssociation) importAssociation() {
 			continue
 		}
 		switch asstInfo.Operate {
-		case metadata.ExcelAssocationOperateAdd:
+		case metadata.ExcelAssociationOperateAdd:
 
 			conds := condition.CreateCondition()
 			conds.Field(common.AssociationObjAsstIDField).Eq(asstInfo.ObjectAsstID)
-			conds.Field(common.BKObjIDField).Eq(ia.objID)
+			conds.Field(common.BKObjIDField).Eq(asstID.ObjectID)
 			conds.Field(common.BKInstIDField).Eq(srcInstID)
 			conds.Field(common.AssociatedObjectIDField).Eq(asstID.AsstObjID)
 			isExist, err := ia.isExistInstAsst(idx, conds, dstInstID, asstID.Mapping)
@@ -183,10 +183,10 @@ func (ia *importAssociation) importAssociation() {
 			}
 
 			ia.addSrcAssociation(idx, asstID.AssociationName, srcInstID, dstInstID)
-		case metadata.ExcelAssocationOperateDelete:
+		case metadata.ExcelAssociationOperateDelete:
 			conds := condition.CreateCondition()
 			conds.Field(common.AssociationObjAsstIDField).Eq(asstInfo.ObjectAsstID)
-			conds.Field(common.BKObjIDField).Eq(ia.objID)
+			conds.Field(common.BKObjIDField).Eq(asstID.ObjectID)
 			conds.Field(common.BKInstIDField).Eq(srcInstID)
 			conds.Field(common.AssociatedObjectIDField).Eq(asstID.AsstObjID)
 			conds.Field(common.BKAsstInstIDField).Eq(dstInstID)
@@ -206,7 +206,9 @@ func (ia *importAssociation) getAssociationInfo() error {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.AssociationObjAsstIDField).In(associationFlag)
-	cond.Field(common.BKObjIDField).Eq(ia.objID)
+	or := cond.NewOR()
+	or.Item(map[string]interface{}{common.BKObjIDField: ia.objID})
+	or.Item(map[string]interface{}{common.BKAsstObjIDField: ia.objID})
 	queryInput := &metadata.QueryCondition{Condition: cond.ToMapStr()}
 
 	rsp, err := ia.cli.clientSet.CoreService().Association().ReadModelAssociation(ia.ctx, ia.kit.Header, queryInput)
@@ -229,8 +231,16 @@ func (ia *importAssociation) getAssociationInfo() error {
 
 func (ia *importAssociation) getAssociationObjProperty() error {
 	var objIDArr []string
+	uniqueObjIDMap := make(map[string]struct{}, 0)
 	for _, info := range ia.asstIDInfoMap {
-		objIDArr = append(objIDArr, info.AsstObjID)
+		if _, ok := uniqueObjIDMap[info.ObjectID]; !ok {
+			uniqueObjIDMap[info.ObjectID] = struct{}{}
+			objIDArr = append(objIDArr, info.ObjectID)
+		}
+		if _, ok := uniqueObjIDMap[info.AsstObjID]; !ok {
+			uniqueObjIDMap[info.ObjectID] = struct{}{}
+			objIDArr = append(objIDArr, info.AsstObjID)
+		}
 	}
 	objIDArr = append(objIDArr, ia.objID)
 
@@ -294,15 +304,15 @@ func (ia *importAssociation) parseImportDataPrimary() {
 			ia.parseImportDataErr[idx] = ia.language.Languagef("import_asstid_not_foud", info.ObjectAsstID)
 			continue
 		}
-		srcCond, err := ia.parseImportDataPrimaryItem(ia.objID, info.SrcPrimary)
+		srcCond, err := ia.parseImportDataPrimaryItem(associationInst.ObjectID, info.SrcPrimary)
 		if err != nil {
 			ia.parseImportDataErr[idx] = err.Error()
 		} else {
-			_, ok = ia.queryInstConds[ia.objID]
+			_, ok = ia.queryInstConds[associationInst.ObjectID]
 			if !ok {
-				ia.queryInstConds[ia.objID] = make([]mapstr.MapStr, 0)
+				ia.queryInstConds[associationInst.ObjectID] = make([]mapstr.MapStr, 0)
 			}
-			ia.queryInstConds[ia.objID] = append(ia.queryInstConds[ia.objID], srcCond)
+			ia.queryInstConds[associationInst.ObjectID] = append(ia.queryInstConds[associationInst.ObjectID], srcCond)
 		}
 		dstCond, err := ia.parseImportDataPrimaryItem(associationInst.AsstObjID, info.DstPrimary)
 		if err != nil {
@@ -373,6 +383,7 @@ func (ia *importAssociation) getInstDataByConds() error {
 		if err != nil {
 			return err
 		}
+
 		for _, inst := range instArr {
 			ia.parseInstToImportAssociationInst(objID, instIDKey, inst)
 		}
@@ -474,7 +485,7 @@ func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID,
 	inst := metadata.CreateOneInstanceAssociation{}
 	inst.Data.ObjectAsstID = asstFlag
 	inst.Data.InstID = instID
-	inst.Data.ObjectID = ia.objID
+	inst.Data.ObjectID = asstInfo.ObjectID
 	inst.Data.AsstObjectID = asstInfo.AsstObjID
 	inst.Data.AsstInstID = assInstID
 	inst.Data.AssociationKindID = asstInfo.AsstKindID

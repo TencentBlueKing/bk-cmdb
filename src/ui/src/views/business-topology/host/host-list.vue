@@ -28,6 +28,7 @@
             :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id)"
             :show-unit="false"
             :property="column"
+            :multiple="column.bk_obj_id !== 'host'"
             @click.native.stop="handleValueClick(row, column)">
           </cmdb-property-value>
         </template>
@@ -115,14 +116,13 @@
         return FilterStore.header
       }
     },
+    watch: {
+      $route() {
+        this.initFilterStore()
+      }
+    },
     created() {
-      setupFilterStore({
-        bk_biz_id: this.bizId,
-        header: {
-          custom: this.$route.meta.customInstanceColumn,
-          global: 'host_global_custom_table_columns'
-        }
-      })
+      this.initFilterStore()
       this.unwatchRouter = RouterQuery.watch('*', ({
         tab = 'hostList',
         node,
@@ -159,6 +159,18 @@
           // eslint-disable-next-line no-underscore-dangle
           settingReference && settingReference._tippy && settingReference._tippy.disable()
         }, 1000)
+      },
+      initFilterStore() {
+        const currentRouteName = this.$route.name
+        if (this.storageRouteName === currentRouteName) return
+        this.storageRouteName = currentRouteName
+        setupFilterStore({
+          bk_biz_id: this.bizId,
+          header: {
+            custom: this.$route.meta.customInstanceColumn,
+            global: 'host_global_custom_table_columns'
+          }
+        })
       },
       getColumnSortable(column) {
         const isHostProperty = column.bk_obj_id === 'host'
@@ -287,17 +299,21 @@
           idle: this.openModuleSelector,
           business: this.openModuleSelector,
           acrossBusiness: this.openAcrossBusiness,
-          resource: this.openResourceConfirm
+          resource: this.openResourceConfirm,
+          increment: this.openModuleSelector
         }
         actionMap[type] && actionMap[type](type)
       },
       openModuleSelector(type) {
         const props = {
-          moduleType: type,
+          moduleType: type === 'increment' ? 'business' : type,
+          transferType: type,
           business: this.currentBusiness
         }
         if (type === 'idle') {
           props.title = this.$t('转移主机到空闲模块')
+        } else if (type === 'increment') {
+          props.title = this.$t('追加主机到业务模块')
         } else {
           props.title = this.$t('转移主机到业务模块')
           const { selection } = this.table
@@ -377,8 +393,9 @@
       },
       handleDialogConfirm() {
         this.dialog.show = false
+        const type = this.dialog.props.transferType || this.dialog.props.moduleType
         if (this.dialog.component === ModuleSelector.name) {
-          if (this.dialog.props.moduleType === 'idle') {
+          if (type === 'idle') {
             const isAllIdleSetHost = this.table.selection.every((data) => {
               const modules = data.module
               return modules.every(module => module.default !== 0)
@@ -386,22 +403,26 @@
             if (isAllIdleSetHost) {
               // eslint-disable-next-line prefer-rest-params
               this.transferDirectly(...arguments)
-            } else {
-              // eslint-disable-next-line prefer-rest-params
-              this.gotoTransferPage(...arguments)
+              return
             }
-          } else {
             // eslint-disable-next-line prefer-rest-params
             this.gotoTransferPage(...arguments)
+            return
           }
-        } else if (this.dialog.component === MoveToResourceConfirm.name) {
           // eslint-disable-next-line prefer-rest-params
-          this.moveHostToResource(...arguments)
-        } else if (this.dialog.component === AcrossBusinessModuleSelector.name) {
+          this.gotoTransferPage(...arguments)
+          return
+        }
+        if (this.dialog.component === MoveToResourceConfirm.name) {
           // eslint-disable-next-line prefer-rest-params
-          this.moveHostToOtherBusiness(...arguments)
-        } else if (this.dialog.component === AcrossBusinessConfirm.name) {
-          this.openAcrossBusinessModuleSelector()
+          return this.moveHostToResource(...arguments)
+        }
+        if (this.dialog.component === AcrossBusinessModuleSelector.name) {
+          // eslint-disable-next-line prefer-rest-params
+          return this.moveHostToOtherBusiness(...arguments)
+        }
+        if (this.dialog.component === AcrossBusinessConfirm.name) {
+          return this.openAcrossBusinessModuleSelector()
         }
       },
       async transferDirectly(modules) {
@@ -420,7 +441,6 @@
             requestId: this.request.moveToIdleModule
           })
           Bus.$emit('refresh-count', {
-            type: 'host_count',
             hosts: [...this.table.selection],
             target: internalModule
           })
@@ -445,7 +465,7 @@
         this.$routerActions.redirect({
           name: MENU_BUSINESS_TRANSFER_HOST,
           params: {
-            type: this.dialog.props.moduleType
+            type: this.dialog.props.transferType || this.dialog.props.moduleType
           },
           query,
           history: true
@@ -492,7 +512,6 @@
       },
       refreshHost() {
         Bus.$emit('refresh-count', {
-          type: 'host_count',
           hosts: [...this.table.selection]
         })
         this.table.selection = []

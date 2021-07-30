@@ -37,6 +37,8 @@ type AssociationOperationInterface interface {
 	DeleteMainlineAssociation(kit *rest.Kit, objID string) error
 	SearchMainlineAssociationTopo(kit *rest.Kit, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
 	SearchMainlineAssociationInstTopo(kit *rest.Kit, objID string, instID int64, withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, errors.CCError)
+	TopoNodeHostAndSerInstCount(kit *rest.Kit, instID int64, input *metadata.HostAndSerInstCountOption) ([]*metadata.
+		TopoNodeHostAndSerInstCount, errors.CCError)
 	IsMainlineObject(kit *rest.Kit, objID string) (bool, error)
 
 	CreateCommonAssociation(kit *rest.Kit, data *metadata.Association) (*metadata.Association, error)
@@ -72,7 +74,7 @@ type AssociationOperationInterface interface {
 	CreateInst(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
 	DeleteInst(kit *rest.Kit, assoIDList []int64, bkObjId string) (resp *metadata.DeleteAssociationInstResult, err error)
 
-	ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string, importData map[int]metadata.ExcelAssocation, languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error)
+	ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string, importData map[int]metadata.ExcelAssociation, languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error)
 
 	SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, grp GroupOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory)
 }
@@ -923,6 +925,10 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 	}
 	createResult, err := assoc.clientSet.CoreService().Association().CreateInstAssociation(kit.Ctx, kit.Header, &input)
 	if err != nil {
+		blog.Errorf("create instance association failed, do coreservice create failed, err: %+v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+	if err := createResult.CCError(); err != nil {
 		blog.Errorf("create instance association failed, do coreservice create failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, err
 	}

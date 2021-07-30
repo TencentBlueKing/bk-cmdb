@@ -38,7 +38,8 @@
                       :data-vv-as="property['bk_property_name']"
                       :placeholder="getPlaceholder(property)"
                       :auto-select="false"
-                      v-validate="getValidateRules(property)"
+                      v-bind="$tools.getValidateEvents(property)"
+                      v-validate="$tools.getValidateRules(property)"
                       v-model.trim="values[property['bk_property_id']]['value']">
                     </component>
                     <span class="property-lock-state"
@@ -186,7 +187,7 @@
         return `cmdb-form-${type}`
       },
       getPropertyEditStatus(property) {
-        const uneditable = ['bk_func_name', 'bk_process_name'].includes(property.bk_property_id) && !this.isCreatedService
+        const uneditable = ['bk_func_name'].includes(property.bk_property_id) && !this.isCreatedService
         return this.type === 'update' && uneditable
       },
       changedValues() {
@@ -224,7 +225,7 @@
             }
           }
         })
-        this.values = Object.assign({}, this.values, restValues, this.inst)
+        this.values = Object.assign({}, this.values, restValues, this.$tools.clone(this.inst))
         const timer = setTimeout(() => {
           this.refrenceValues = this.$tools.clone(this.values)
           clearTimeout(timer)
@@ -256,9 +257,6 @@
       getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
-      },
-      getValidateRules(property) {
-        return this.$tools.getValidateRules(property)
       },
       getFormError(property) {
         if (property.bk_property_type === 'table') {

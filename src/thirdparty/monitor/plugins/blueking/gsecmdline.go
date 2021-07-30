@@ -34,7 +34,8 @@ func NewGseCmdline() (*GseCmdline, error) {
 
 // Report send the data to bk-monitor
 func (g *GseCmdline) Report(data string) error {
-	cmd := exec.Command("gsecmdline", "-d", strconv.FormatInt(config.MonitorCfg.DataID, 10), "-j", data)
+	cmd := exec.Command(config.MonitorCfg.GsecmdlinePath, "-d", strconv.FormatInt(config.MonitorCfg.DataID, 10),
+		"-D", "-s", data, "-S", config.MonitorCfg.DomainSocketPath)
 	if err := cmd.Start(); err != nil {
 		blog.Errorf("Report failed, command err:%v, data:%s", err, data)
 		return fmt.Errorf("GseCmdline Report failed")
@@ -47,9 +48,8 @@ func (g *GseCmdline) Report(data string) error {
 	return nil
 }
 
-// isAvailable judge whether the GseCmdline is available
 func (g *GseCmdline) isAvailable() bool {
-	cmd := exec.Command("gsecmdline", "-v")
+	cmd := exec.Command(config.MonitorCfg.GsecmdlinePath, "-v")
 	tryCnt := 3
 	for i := 0; i < tryCnt; i++ {
 		if err := cmd.Run(); err != nil {

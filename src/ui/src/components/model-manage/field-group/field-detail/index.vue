@@ -214,6 +214,11 @@
         charMap: ['singlechar', 'longchar']
       }
     },
+    provide() {
+      return {
+        customObjId: this.customObjId
+      }
+    },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters(['supplierAccount', 'userName']),

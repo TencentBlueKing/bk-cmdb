@@ -4,6 +4,7 @@
       <label class="filter-label fl">{{$t('关联列表')}}</label>
       <cmdb-selector class="fl" style="width: 280px;"
         :list="options"
+        searchable
         setting-key="bk_obj_asst_id"
         display-key="_label"
         @on-selected="handleSelectObj">
@@ -413,6 +414,7 @@
         const { isSource } = this
         return this.searchInstAssociation({
           params: {
+            bk_obj_id: isSource ? this.objId : option.bk_obj_id,
             condition: {
               bk_asst_id: option.bk_asst_id,
               bk_obj_asst_id: option.bk_obj_asst_id,
@@ -558,7 +560,12 @@
         })
       },
       getHostCondition() {
-        const condition = [{ bk_obj_id: 'host', condition: [], fields: [] }]
+        const condition = [
+          { bk_obj_id: 'host', condition: [], fields: [] },
+          { bk_obj_id: 'biz', condition: [], fields: [] },
+          { bk_obj_id: 'module', condition: [], fields: [] },
+          { bk_obj_id: 'set', condition: [], fields: [] }
+        ]
         const property = this.getProperty(this.filter.id)
         if (this.filter.value !== '' && property) {
           condition[0].condition.push({
@@ -612,6 +619,7 @@
       setTableList(data, asstObjId) {
         // const properties = this.properties
         this.table.pagination.count = data.count
+        this.table.originalList = Object.freeze(data.info.slice())
         if (asstObjId === 'host') {
           data.info = data.info.map(item => item.host)
         }

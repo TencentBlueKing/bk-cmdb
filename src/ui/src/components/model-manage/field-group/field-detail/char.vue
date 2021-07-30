@@ -6,7 +6,8 @@
       name="option"
       v-model="localValue"
       :disabled="isReadOnly"
-      v-validate="'validRegExp'"
+      data-vv-validate-on="blur"
+      v-validate="'remoteRegular'"
       @input="handleInput">
     </textarea>
     <p class="form-error">{{errors.first('option')}}</p>
@@ -41,6 +42,9 @@
     methods: {
       handleInput() {
         this.$emit('input', this.localValue)
+      },
+      validate() {
+        return this.$validator.validateAll()
       }
     }
   }

@@ -419,6 +419,25 @@ type TopoInstRst struct {
 	Child    []*TopoInstRst `json:"child"`
 }
 
+// TopoNodeHostAndSerInstCount topo节点主机/服务实例数量
+type TopoNodeHostAndSerInstCount struct {
+	ObjID                string `json:"bk_obj_id"`
+	InstID               int64  `json:"bk_inst_id"`
+	HostCount            int64  `json:"host_count"`
+	ServiceInstanceCount int64  `json:"service_instance_count"`
+}
+
+// HostAndSerInstCountOption 获取主机/服务实例查询参数结构
+type HostAndSerInstCountOption struct {
+	Condition []Condition `json:"condition"`
+}
+
+// Condition 获取主机/服务实例入参条件
+type Condition struct {
+	ObjID  string `json:"bk_obj_id"`
+	InstID int64  `json:"bk_inst_id"`
+}
+
 type TopoInstRstVisitor func(tir *TopoInstRst)
 
 func (tir *TopoInstRst) DeepFirstTraverse(visitor TopoInstRstVisitor) {
@@ -459,7 +478,7 @@ type ResponeImportAssociationData struct {
 
 // ResponeImportAssociation  import association result
 type RequestImportAssociation struct {
-	AssociationInfoMap map[int]ExcelAssocation `json:"association_info"`
+	AssociationInfoMap map[int]ExcelAssociation `json:"association_info"`
 }
 
 // RequestInstAssociationObjectID 要求根据实例信息（实例的模型ID，实例ID）和模型ID（关联关系中的源，目的模型ID）, 返回关联关系的请求参数

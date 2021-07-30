@@ -12,7 +12,6 @@
 package metadata
 
 import (
-	"fmt"
 	"time"
 
 	"configcenter/src/common/errors"
@@ -24,8 +23,6 @@ type SetTemplate struct {
 	ID    int64  `field:"id" json:"id" bson:"id"`
 	Name  string `field:"name" json:"name" bson:"name"`
 	BizID int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
-
-	Version int64 `field:"version" json:"version" bson:"version" mapstructure:"version"`
 
 	// 通用字段
 	Creator         string    `field:"creator" json:"creator" bson:"creator"`
@@ -77,9 +74,4 @@ type SetTemplateSyncStatus struct {
 
 	Status SyncStatus `field:"status" json:"status" bson:"status" mapstructure:"status"`
 	TaskID string     `field:"task_id" json:"task_id" bson:"task_id" mapstructure:"task_id"`
-}
-
-// GetSetTemplateSyncIndex 返回task_server中任务的检索值(flag)
-func GetSetTemplateSyncIndex(setID int64) string {
-	return fmt.Sprintf("set_template_sync:%d", setID)
 }
