@@ -21,21 +21,28 @@ import (
 // Logics provides management interface for operations of model and instance and related resources like association
 type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
+	AttributeOperation() model.AttributeOperationInterface
 }
 
 type logics struct {
 	classification model.ClassificationOperationInterface
+	attribute      model.AttributeOperationInterface
 }
 
 // New create a logics manager
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
+	attributeOperation := model.NewAttributeOperation(client, authManager)
 
 	return &logics{
 		classification: classificationOperation,
+		attribute:      attributeOperation,
 	}
 }
 
-func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
-	return c.classification
+func (l *logics) ClassificationOperation() model.ClassificationOperationInterface {
+	return l.classification
+}
+func (l *logics) AttributeOperation() model.AttributeOperationInterface {
+	return l.attribute
 }

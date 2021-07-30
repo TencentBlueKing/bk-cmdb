@@ -59,15 +59,13 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 	var attrInfo []*metadata.ObjAttDes
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		attr, err := s.Core.AttributeOperation().CreateObjectAttribute(ctx.Kit, data, modelBizID)
+		attr, err := s.Logics.AttributeOperation().CreateObjectAttribute(ctx.Kit, data, modelBizID)
 		if nil != err {
 			return err
 		}
 
-		attribute := attr.Attribute()
-		cond := condition.CreateCondition()
-		cond.Field("id").Eq(attribute.ID)
-		attrInfo, err = s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, modelBizID)
+		cond := mapstr.MapStr{common.BKFieldID: attr.ID}
+		attrInfo, err = s.Logics.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, modelBizID)
 		if err != nil {
 			blog.Errorf("create object attribute success, but get attributes detail failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh)
@@ -173,7 +171,7 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 	data.Remove(common.BKPropertyGroupField)
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Core.AttributeOperation().UpdateObjectAttribute(ctx.Kit, data, id, bizID)
+		err := s.Logics.AttributeOperation().UpdateObjectAttribute(ctx.Kit, data, id, bizID)
 		if err != nil {
 			return err
 		}
@@ -199,9 +197,7 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := condition.CreateCondition()
-	cond.Field(metadata.AttributeFieldID).Eq(id)
-
+	cond := mapstr.MapStr{metadata.AttributeFieldID: id}
 	listRuleOption := metadata.ListHostApplyRuleOption{
 		ModuleIDs: []int64{id},
 		Page: metadata.BasePage{
@@ -225,7 +221,7 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Core.AttributeOperation().DeleteObjectAttribute(ctx.Kit, cond, modelType.BizID)
+	err = s.Logics.AttributeOperation().DeleteObjectAttribute(ctx.Kit, cond, modelType.BizID)
 	if err != nil {
 		blog.Errorf("delete object attribute failed, DeleteObjectAttribute failed, params: %+v, err: %+v, rid: %s", ctx.Kit, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -286,18 +282,13 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 		return
 	}
 	data := dataWithModelBizID.Data
-	cond := condition.CreateCondition()
 	data.Remove(metadata.PageName)
-	if err := cond.Parse(data); nil != err {
-		blog.Errorf("search object attribute, but failed to parse the data into condition, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	cond.Field(metadata.AttributeFieldIsSystem).NotEq(true)
-	cond.Field(metadata.AttributeFieldIsAPI).NotEq(true)
-	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
+	data[metadata.AttributeFieldIsSystem] = false
+	data[metadata.AttributeFieldIsAPI] = false
+	data[common.BKObjIDField] = common.BKInnerObjIDHost
 
-	attributes, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, dataWithModelBizID.ModelBizID)
+	attributes, err := s.Logics.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond,
+		dataWithModelBizID.ModelBizID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
