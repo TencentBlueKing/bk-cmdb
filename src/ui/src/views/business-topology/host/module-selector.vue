@@ -216,7 +216,7 @@
         }])
       },
       getBusinessModules() {
-        return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
+        return this.$store.dispatch('objectMainLineModule/getInstTopo', {
           bizId: this.bizId,
           config: {
             requestId: this.request.business

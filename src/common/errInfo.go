@@ -478,7 +478,7 @@ const (
 	CCErrorSetNameDuplicated       = 1101108
 
 	// CCErrorCheckRegularFailed check regular expression failed
-	CCErrorCheckRegularFailed = 1101109
+	CCErrorCheckRegularFailed   = 1101109
 
 	// CCErrorTopObjectUniqueIndexNotFound  模型xx的唯一校验xx不存在
 	CCErrorTopObjectUniqueIndexNotFound = 1101110

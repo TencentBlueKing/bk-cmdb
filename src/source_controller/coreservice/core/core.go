@@ -319,6 +319,7 @@ type AuthOperation interface {
 
 type CommonOperation interface {
 	GetDistinctField(kit *rest.Kit, param *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder)
+	GetDistinctCount(kit *rest.Kit, param *metadata.DistinctFieldOption) (int64, errors.CCErrorCoder)
 }
 
 type core struct {
