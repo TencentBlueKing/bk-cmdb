@@ -10,27 +10,27 @@
  * limitations under the License.
  */
 
-package common
+package y3_9_202107271940
 
 import (
 	"context"
-	"net/http"
 
-	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/metadata"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-type CommonInterface interface {
-	GetDistinctField(ctx context.Context, h http.Header, option *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder)
-	GetDistinctCount(ctx context.Context, h http.Header, option *metadata.DistinctFieldOption) (int64,
-		errors.CCErrorCoder)
+func init() {
+
+	upgrader.RegistUpgrader("y3.9.202107271940", upgrade)
 }
 
-func NewCommonInterfaceClient(client rest.ClientInterface) CommonInterface {
-	return &common{client: client}
-}
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	err = deleteTaskInvalidHistory(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202107271940] remove task invalid history failed, error  %s", err.Error())
+		return err
+	}
 
-type common struct {
-	client rest.ClientInterface
+	return
 }

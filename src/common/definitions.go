@@ -73,6 +73,7 @@ const (
 
 	// BKTopoBusinessLevelDefault the mainline topo level default level
 	BKTopoBusinessLevelDefault = 7
+
 )
 
 const (
@@ -211,6 +212,9 @@ const (
 
 	// BKDBReplaceRoot the db operator
 	BKDBReplaceRoot = "$replaceRoot"
+
+	// BKDBLimit the db operator to limit return number of doc
+	BKDBLimit = "$limit"
 )
 
 const (
@@ -1219,6 +1223,7 @@ const (
 	OptionOther          = "其他"
 	TimerPattern         = "^[\\d]+\\:[\\d]+$"
 	SyncSetTaskName      = "sync-settemplate2set"
+	SyncSetTaskFlag      = "set_template_sync"
 
 	BKHostState = "bk_state"
 )

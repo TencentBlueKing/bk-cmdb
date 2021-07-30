@@ -386,6 +386,8 @@ func (s *coreService) initCommon(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/common/distinct_field", Handler: s.GetDistinctField})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/common/distinct_count",
+		Handler: s.GetDistinctCount})
 
 	utility.AddToRestfulWebService(web)
 }
