@@ -441,7 +441,6 @@
             requestId: this.request.moveToIdleModule
           })
           Bus.$emit('refresh-count', {
-            type: 'host_count',
             hosts: [...this.table.selection],
             target: internalModule
           })
@@ -513,7 +512,6 @@
       },
       refreshHost() {
         Bus.$emit('refresh-count', {
-          type: 'host_count',
           hosts: [...this.table.selection]
         })
         this.table.selection = []
