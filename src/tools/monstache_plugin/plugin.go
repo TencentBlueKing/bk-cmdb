@@ -46,8 +46,9 @@ const (
 
 const (
 	// default metaId
-	nullMetaId = "0"
-	configPath = "./etc/extra.toml"
+	nullMetaId  = "0"
+	mongoMetaId = "_id"
+	configPath  = "./etc/extra.toml"
 )
 
 // elastic indexes.
@@ -378,6 +379,10 @@ func analysisDocument(document map[string]interface{}, colletion string) (string
 			return "", nil, errors.New(fmt.Sprintf("missing: %s,err: %v", common.BKInstIDField, err))
 		}
 		id = instId
+	}
+	// metaID no need to store
+	if document[mongoMetaId] != nil {
+		delete(document, mongoMetaId)
 	}
 
 	// analysis keywords.
