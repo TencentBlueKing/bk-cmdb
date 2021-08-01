@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
+	"configcenter/src/thirdparty/hooks/process"
 )
 
 type DeleteCategoryInput struct {
@@ -627,8 +628,8 @@ func (p *SocketBindType) NeedIPFromHost() bool {
 }
 
 func (p *SocketBindType) IP(host map[string]interface{}) (string, error) {
-	if p == nil {
-		return "", errors.New("process template bind info ip is not set or is empty")
+	if p == nil || *p == "" {
+		return "", process.ValidateProcessBindIPEmptyHook()
 	}
 
 	var ip string
@@ -651,10 +652,6 @@ func (p *SocketBindType) IP(host map[string]interface{}) (string, error) {
 	default:
 		blog.Errorf("process template bind info ip is invalid, socket bind type: %s", *p)
 		return "", errors.New("process template bind info ip is invalid")
-	}
-
-	if ip == "" {
-		return "127.0.0.1", nil
 	}
 
 	index := strings.Index(strings.Trim(ip, ","), ",")
@@ -1679,7 +1676,7 @@ type PropertyBindIP struct {
 
 func (ti *PropertyBindIP) Validate() error {
 	if ti.Value == nil || len(*ti.Value) == 0 {
-		return errors.New("ip is not set or is empty")
+		return process.ValidateProcessBindIPEmptyHook()
 	}
 
 	if err := ti.Value.Validate(); err != nil {
