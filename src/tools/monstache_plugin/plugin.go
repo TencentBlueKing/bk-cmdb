@@ -46,9 +46,11 @@ const (
 
 const (
 	// default metaId
-	nullMetaId  = "0"
-	mongoMetaId = "_id"
-	configPath  = "./etc/extra.toml"
+	nullMetaId     = "0"
+	mongoMetaId    = "_id"
+	mongoCreatTime = "create_time"
+	mongoLastTime  = "last_time"
+	configPath     = "./etc/extra.toml"
 )
 
 // elastic indexes.
@@ -380,9 +382,16 @@ func analysisDocument(document map[string]interface{}, colletion string) (string
 		}
 		id = instId
 	}
-	// metaID no need to store
+
+	// metaID creattime lasttime no need to store
 	if document[mongoMetaId] != nil {
 		delete(document, mongoMetaId)
+	}
+	if document[mongoCreatTime] != nil {
+		delete(document, mongoCreatTime)
+	}
+	if document[mongoLastTime] != nil {
+		delete(document, mongoLastTime)
 	}
 
 	// analysis keywords.
