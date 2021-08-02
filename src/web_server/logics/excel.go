@@ -254,8 +254,20 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 	if _, ok := AsstObjectUniqueIDMap[objID]; ok {
 		hasSelfAssociation = true
 	}
+
 	var asstIDArr []string
 	for _, asst := range asstList {
+
+		// 只导出自关联关系时的判断
+		// 防止仅导出自关联但fetch多个关联关系导致被关联对象uniqueID未传值初始化为0使getAssociationData返回报错
+		if len(AsstObjectUniqueIDMap) == 1 && hasSelfAssociation {
+			if asst.ObjectID == asst.AsstObjID {
+				asstIDArr = append(asstIDArr, asst.AssociationName)
+				break
+			}
+			continue
+		}
+
 		_, ok := AsstObjectUniqueIDMap[asst.ObjectID]
 		if ok {
 			asstIDArr = append(asstIDArr, asst.AssociationName)
