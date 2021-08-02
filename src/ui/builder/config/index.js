@@ -4,15 +4,20 @@
 
 const path = require('path')
 const fs = require('fs')
+const parseArgs = require('minimist')
 
 const config = {
   BUILD_TITLE: '',
   BUILD_OUTPUT: '../bin/enterprise/cmdb'
 }
 
+const argv = parseArgs(process.argv.slice(2))
+
 process.argv.slice(2).forEach((str) => {
-  const argv = str.split('=')
-  config[argv[0]] = argv.slice(1).join('=')
+  const arg = str.split('=')
+  if (Object.prototype.hasOwnProperty.call(config, arg[0])) {
+    config[arg[0]] = arg.slice(1).join('=')
+  }
 })
 process.CMDB_CONFIG = config
 const dev = {
@@ -77,9 +82,10 @@ const dev = {
   cssSourceMap: true
 }
 
-const isCustomDevConfigExist = fs.existsSync(path.resolve(__dirname, 'index.dev.js'))
+const customDevConfigPath = path.resolve(__dirname, `index.dev.${argv.env || 'ee'}.js`)
+const isCustomDevConfigExist = fs.existsSync(customDevConfigPath)
 if (isCustomDevConfigExist) {
-  const customDevConfig = require('./index.dev.js')
+  const customDevConfig = require(customDevConfigPath)
   Object.assign(dev, customDevConfig)
 }
 
