@@ -998,6 +998,7 @@ const (
 	HostOSTypeEnumWindows = "2"
 	HostOSTypeEnumAIX     = "3"
 	HostOSTypeEnumUNIX    = "4"
+	HostOSTypeEnumSolaris = "5"
 )
 
 const (
