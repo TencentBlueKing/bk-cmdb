@@ -552,7 +552,20 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 
 	// merge model attribute keywords,
 	// all attributes with model metadata is ONE elastic document.
+
 	for _, attribute := range modelAttrs {
+
+		// metaID creattime lasttime no need to store
+		if attribute[mongoMetaId] != nil {
+			delete(attribute, mongoMetaId)
+		}
+		if attribute[mongoCreatTime] != nil {
+			delete(attribute, mongoCreatTime)
+		}
+		if attribute[mongoLastTime] != nil {
+			delete(attribute, mongoLastTime)
+		}
+
 		jsonDoc, err := ccjson.MarshalToString(attribute)
 		if err != nil {
 			return fmt.Errorf("marshal model attributes object[%s] failed, %+v, %+v", objectID, attribute, err)
