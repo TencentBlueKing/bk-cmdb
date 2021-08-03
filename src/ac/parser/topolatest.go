@@ -2047,6 +2047,8 @@ var (
 	findBusinessInstanceTopologyPathRegexp                 = regexp.MustCompile(`^/api/v3/find/topopath/biz/[0-9]+/?$`)
 	findHostApplyRelatedObjectTopologyRegex                = regexp.MustCompile(`^/api/v3/find/topoinst/bk_biz_id/([0-9]+)/host_apply_rule_related/?$`)
 	findBusinessInstanceTopologyWithStatisticsLatestRegexp = regexp.MustCompile(`^/api/v3/find/topoinst_with_statistics/biz/[0-9]+/?$`)
+	findTopoNodeHostAndServiceInstCountLatestRegexp        = regexp.MustCompile(
+		`^/api/v3/find/topoinstnode/host_serviceinst_count/[0-9]+/?$`)
 )
 
 func (ps *parseStream) mainlineLatest() *parseStream {
@@ -2144,17 +2146,96 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// find business instance topology operation.
 	// also is find mainline instance topology operation.
-	if ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) ||
-		ps.hitRegexp(findBusinessInstanceTopologyPathRegexp, http.MethodPost) ||
-		ps.hitRegexp(findBusinessInstanceTopologyWithStatisticsLatestRegexp, http.MethodPost) {
+	if  ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find business instance topology, but got invalid url")
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			ps.err = err
+			ps.err = fmt.Errorf("parse biz id from url failed, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceTopology,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find business instance topology operation.
+	// also is find mainline instance topology operation.
+	if ps.hitRegexp(findBusinessInstanceTopologyPathRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("find business instance topology, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("parse biz id from url failed, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceTopology,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find business instance topology operation.
+	// also is find mainline instance topology operation.
+	if ps.hitRegexp(findBusinessInstanceTopologyWithStatisticsLatestRegexp, http.MethodPost)  {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("find business instance topology, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("parse biz id from url failed, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceTopology,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	// get toponode host and service instance count
+	if ps.hitRegexp(findTopoNodeHostAndServiceInstCountLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("find topo node host and service instance count, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("parse biz id from url failed, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
 			return ps
 		}
 
