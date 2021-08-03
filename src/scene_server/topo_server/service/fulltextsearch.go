@@ -481,13 +481,16 @@ func (s *Service) fullTextAggregation(ctx *rest.Contexts, esQueries []*FullTextS
 }
 
 // fullTextMetadata returns metadata base on the elastic hits.
-func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit) ([]SearchResult, error) {
+func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit, request FullTextSearchReq) ([]SearchResult, error) {
 	var (
 		objectIDs     []string
 		searchResults []SearchResult
 	)
 
 	instMetadataConditions := make(map[string][]int64)
+
+	insHights := make(map[string]map[string][]string)
+	objHights := make(map[string]map[string][]string)
 
 	// set read preference.
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
@@ -502,14 +505,32 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 		dataKind := util.GetStrByInterface(source[metadata.IndexPropertyDataKind])
 		metaID, err := util.GetInt64ByInterface(source[metadata.IndexPropertyID])
 		if err != nil {
-			blog.Errorf(" query meta data fail,objectIDs[%s], objectID[%s],err=[%v] rid: %s", objectIDs, objectID, err, ctx.Kit.Rid)
+			blog.Errorf(" query meta data fail,objectID[%s],err=[%v] rid: %s", objectID, err, ctx.Kit.Rid)
 			continue
 		}
+		for k := range hit.Highlight {
+			if k == "meta_bk_obj_id" {
+				delete(hit.Highlight, k)
+			}
+		}
+
 		// parse meta fields.
 		if dataKind == metadata.DataKindModel {
 			objectIDs = append(objectIDs, objectID)
+			if objHights[objectID] == nil {
+				objHights[objectID] = make(map[string][]string)
+			}
+
+			objHights[objectID] = hit.Highlight
+			blog.Errorf("00000000000000000 Highlight %v", hit.Highlight)
+
 		} else if dataKind == metadata.DataKindInstance {
 			instMetadataConditions[objectID] = append(instMetadataConditions[objectID], metaID)
+			if insHights[objectID] == nil {
+				insHights[objectID] = make(map[string][]string)
+			}
+			insHights[objectID] = hit.Highlight
+			blog.Errorf("1111111111111111111 Highlight %v", hit.Highlight)
 		} else {
 			blog.Warnf("fulltext handle search source, unknown data kind[%s], rid: %s", dataKind, ctx.Kit.Rid)
 		}
@@ -527,11 +548,13 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 	}
 
 	for _, object := range objects {
-		searchResults = append(searchResults, SearchResult{
-			Kind:   metadata.DataKindModel,
-			Key:    object.Object().ObjectID,
-			Source: object.Object(),
-		})
+		searchRes := SearchResult{}
+		searchRes.Highlight = make(map[string][]string)
+		searchRes.Kind = metadata.DataKindModel
+		searchRes.Key = object.Object().ObjectID
+		searchRes.Source = object.Object()
+		searchRes.Highlight = objHights[object.Object().ObjectID]
+		searchResults = append(searchResults, searchRes)
 	}
 
 	// query metadata instance.
@@ -630,11 +653,14 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 		}
 
 		for _, instance := range result.Info {
-			searchResults = append(searchResults, SearchResult{
-				Kind:   metadata.DataKindInstance,
-				Key:    objectID,
-				Source: instance,
-			})
+			searchRes := SearchResult{}
+			searchRes.Highlight = make(map[string][]string)
+			searchRes.Kind = metadata.DataKindInstance
+			searchRes.Key = objectID
+			searchRes.Source = instance
+			searchRes.Highlight = insHights[objectID]
+			searchResults = append(searchResults, searchRes)
+
 		}
 	}
 
@@ -696,15 +722,17 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 	// build response data.
 	// when objId is not nil,mainSearchResult.Hits.TotalHits.Value is inaccurate ,
 	// so we must use sum of each subCountQueries result
-	response := FullTextSearchResp{Total: total}
-	if total == 0 {
+	response := FullTextSearchResp{}
+	if mainSearchResult.Hits.TotalHits.Value != 0 {
+		response = FullTextSearchResp{Total: total}
+	} else {
 		ctx.RespEntity(response)
 		return
 	}
 	response.Aggregations = aggregations
 
 	// metadata search.
-	metadatas, err := s.fullTextMetadata(ctx, mainSearchResult.Hits.Hits)
+	metadatas, err := s.fullTextMetadata(ctx, mainSearchResult.Hits.Hits, request)
 	if err != nil {
 		blog.Errorf("fulltext metadata search failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextFindErr))
@@ -712,24 +740,6 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 	}
 	response.Hits = metadatas
 
-	for _, v := range response.Hits {
-		blog.Errorf("nnnnnnnnnnnnnnnnnnnnnnnnnnnn v: %+v", v)
-	}
-
-	rawString := strings.Trim(request.QueryString, "*")
-	for _, hit := range mainSearchResult.Hits.Hits {
-		blog.Errorf("vvvvvvvvvvvvvvvvvvvvvvvvvvvv v: %s", hit.Highlight)
-		sr := SearchResult{}
-		sr.setHit(ctx.Kit.Ctx, hit, request.BizID, rawString)
-
-		for i := range response.Hits {
-			response.Hits[i].Highlight = sr.Highlight
-		}
-	}
-
-	for _, v := range response.Hits {
-		blog.Errorf("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm v: %+v", v)
-	}
 	ctx.RespEntity(response)
 	return
 }

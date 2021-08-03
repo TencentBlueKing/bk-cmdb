@@ -50,6 +50,7 @@ const (
 	mongoMetaId    = "_id"
 	mongoCreatTime = "create_time"
 	mongoLastTime  = "last_time"
+	mongoObjId     = "bk_obj_id"
 	configPath     = "./etc/extra.toml"
 )
 
@@ -380,6 +381,10 @@ func analysisDocument(document map[string]interface{}, colletion string) (string
 
 			return "", nil, errors.New(fmt.Sprintf("missing: %s,err: %v", common.BKInstIDField, err))
 		}
+		// inst table no need to store the bk_obj_id
+		if document[mongoObjId] != nil {
+			delete(document, mongoObjId)
+		}
 		id = instId
 	}
 
@@ -393,7 +398,9 @@ func analysisDocument(document map[string]interface{}, colletion string) (string
 	if document[mongoLastTime] != nil {
 		delete(document, mongoLastTime)
 	}
-
+	if document[mongoObjId] != nil {
+		delete(document, mongoObjId)
+	}
 	// analysis keywords.
 	jsonDoc, err := ccjson.MarshalToString(document)
 	if err != nil {
@@ -565,7 +572,9 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 		if attribute[mongoLastTime] != nil {
 			delete(attribute, mongoLastTime)
 		}
-
+		if attribute[mongoObjId] != nil {
+			delete(attribute, mongoObjId)
+		}
 		jsonDoc, err := ccjson.MarshalToString(attribute)
 		if err != nil {
 			return fmt.Errorf("marshal model attributes object[%s] failed, %+v, %+v", objectID, attribute, err)
