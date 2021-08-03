@@ -2047,6 +2047,8 @@ var (
 	findBusinessInstanceTopologyPathRegexp                 = regexp.MustCompile(`^/api/v3/find/topopath/biz/[0-9]+/?$`)
 	findHostApplyRelatedObjectTopologyRegex                = regexp.MustCompile(`^/api/v3/find/topoinst/bk_biz_id/([0-9]+)/host_apply_rule_related/?$`)
 	findBusinessInstanceTopologyWithStatisticsLatestRegexp = regexp.MustCompile(`^/api/v3/find/topoinst_with_statistics/biz/[0-9]+/?$`)
+	findTopoNodeHostAndServiceInstCountLatestRegexp        = regexp.MustCompile(
+		`^/api/v3/find/topoinstnode/host_serviceinst_count/[0-9]+/?$`)
 )
 
 func (ps *parseStream) mainlineLatest() *parseStream {
@@ -2146,7 +2148,8 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 	// also is find mainline instance topology operation.
 	if ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) ||
 		ps.hitRegexp(findBusinessInstanceTopologyPathRegexp, http.MethodPost) ||
-		ps.hitRegexp(findBusinessInstanceTopologyWithStatisticsLatestRegexp, http.MethodPost) {
+		ps.hitRegexp(findBusinessInstanceTopologyWithStatisticsLatestRegexp, http.MethodPost) ||
+		ps.hitRegexp(findTopoNodeHostAndServiceInstCountLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find business instance topology, but got invalid url")
 			return ps

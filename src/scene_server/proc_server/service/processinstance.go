@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	processhook "configcenter/src/thirdparty/hooks/process"
 )
 
 func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
@@ -514,11 +515,14 @@ func (ps *ProcServer) validateProcessInstance(kit *rest.Kit, process *metadata.P
 	// validate that process bind info must have ip and port and protocol
 	for _, bindInfo := range process.BindInfo {
 		if bindInfo.Std.IP == nil || len(*bindInfo.Std.IP) == 0 {
-			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKIP)
-		}
-		matched, err := regexp.MatchString(ipRegex, *bindInfo.Std.IP)
-		if err != nil || !matched {
-			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcBindInfo+"."+common.BKIP)
+			if err := processhook.ValidateProcessBindIPEmptyHook(); err != nil {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKIP)
+			}
+		} else {
+			matched, err := regexp.MatchString(ipRegex, *bindInfo.Std.IP)
+			if err != nil || !matched {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcBindInfo+"."+common.BKIP)
+			}
 		}
 
 		if bindInfo.Std.Port == nil || len(*bindInfo.Std.Port) == 0 {

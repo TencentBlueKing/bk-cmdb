@@ -212,6 +212,9 @@ const (
 
 	// BKDBReplaceRoot the db operator
 	BKDBReplaceRoot = "$replaceRoot"
+
+	// BKDBLimit the db operator to limit return number of doc
+	BKDBLimit = "$limit"
 )
 
 const (
@@ -995,6 +998,7 @@ const (
 	HostOSTypeEnumWindows = "2"
 	HostOSTypeEnumAIX     = "3"
 	HostOSTypeEnumUNIX    = "4"
+	HostOSTypeEnumSolaris = "5"
 )
 
 const (
@@ -1220,6 +1224,7 @@ const (
 	OptionOther          = "其他"
 	TimerPattern         = "^[\\d]+\\:[\\d]+$"
 	SyncSetTaskName      = "sync-settemplate2set"
+	SyncSetTaskFlag      = "set_template_sync"
 
 	BKHostState = "bk_state"
 )
