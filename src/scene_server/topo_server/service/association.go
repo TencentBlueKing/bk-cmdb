@@ -25,8 +25,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/model"
-
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 )
@@ -55,11 +53,12 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 		return
 	}
 
-	var ret model.Object
+	var ret *metadata.Object
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 
 		var err error
-		ret, err = s.Core.AssociationOperation().CreateMainlineAssociation(ctx.Kit, mainLineAssociation, s.Config.BusinessTopoLevelMax)
+		ret, err = s.Logics.AssociationOperation().CreateMainlineAssociation(ctx.Kit, mainLineAssociation,
+			s.Config.BusinessTopoLevelMax)
 		if err != nil {
 			blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", mainLineAssociation.ObjectID, err, ctx.Kit.Rid)
 			return err
@@ -81,7 +80,7 @@ func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 
 	// do with transaction
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		if err := s.Core.AssociationOperation().DeleteMainlineAssociation(ctx.Kit, objID); err != nil {
+		if err := s.Logics.AssociationOperation().DeleteMainlineAssociation(ctx.Kit, objID); err != nil {
 			blog.Errorf("DeleteMainlineAssociation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrTopoObjectDeleteFailed)
 		}
@@ -98,15 +97,8 @@ func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 
 // SearchMainLineObjectTopo search the main line topo
 func (s *Service) SearchMainLineObjectTopo(ctx *rest.Contexts) {
-	bizObj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("[api-asst] failed to find the biz object, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	// get biz model related mainline models (mainline relationship model)
-	resp, err := s.Core.AssociationOperation().SearchMainlineAssociationTopo(ctx.Kit, bizObj)
+	resp, err := s.Logics.AssociationOperation().SearchMainlineAssociationTopo(ctx.Kit, common.BKInnerObjIDApp)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
