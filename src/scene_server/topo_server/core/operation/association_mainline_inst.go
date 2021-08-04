@@ -596,7 +596,20 @@ func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
 				blog.Errorf("find hosts by topo failed, get set ID by topo err: %v, objID: %s, instID: %d, "+
 					"rid:%s", err, objID, instID, kit.Rid)
 				firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+				return
+			}
 
+			if len(setIDArr) == 0 {
+				topoNodeCount := &metadata.TopoNodeHostAndSerInstCount{
+					ObjID:                objID,
+					InstID:               instID,
+					HostCount:            0,
+					ServiceInstanceCount: 0,
+				}
+
+				lock.Lock()
+				results = append(results, topoNodeCount)
+				lock.Unlock()
 				return
 			}
 
@@ -606,7 +619,6 @@ func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
 				blog.Errorf("get distinct host count failed, err: %v, objID: %s, instIDs: %, rid: %s", err,
 					common.BKSetIDField, setIDArr, kit.Rid)
 				firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-
 				return
 			}
 
@@ -622,24 +634,29 @@ func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
 			for _, moduleSlice := range setRelModuleMap {
 				moduleIDs = append(moduleIDs, moduleSlice...)
 			}
-			moduleIDs = util.IntArrayUnique(moduleIDs)
 
-			cond := make([][]int64, 0)
-			cond = append(cond, moduleIDs)
-			svcInstCount, e := assoc.getServiceInstCount(kit, common.BKModuleIDField, cond)
-			if e != nil {
-				blog.Errorf("get service instance count failed, err: %v, objID: %s, instIDs: %s, rid: %s", e,
-					common.BKSetIDField, moduleIDs, kit.Rid)
-				firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			svcInstCount := int64(0)
+			if len(moduleIDs) > 0 {
+				moduleIDs = util.IntArrayUnique(moduleIDs)
 
-				return
+				cond := make([][]int64, 0)
+				cond = append(cond, moduleIDs)
+				svcInstCounts, e := assoc.getServiceInstCount(kit, common.BKModuleIDField, cond)
+				if e != nil {
+					blog.Errorf("get service instance count failed, err: %v, objID: %s, instIDs: %s, rid: %s", e,
+						common.BKSetIDField, moduleIDs, kit.Rid)
+					firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+					return
+				}
+
+				svcInstCount = svcInstCounts[0]
 			}
 
 			topoNodeCount := &metadata.TopoNodeHostAndSerInstCount{
 				ObjID:                objID,
 				InstID:               instID,
 				HostCount:            hostCount,
-				ServiceInstanceCount: svcInstCount[0],
+				ServiceInstanceCount: svcInstCount,
 			}
 
 			lock.Lock()
@@ -685,7 +702,14 @@ func (assoc *association) getHostSvcInstCountByBizID(kit *rest.Kit,
 // getServiceInstCount get toponode service instance count
 func (assoc *association) getServiceInstCount(kit *rest.Kit, objID string, instIDs [][]int64) ([]int64, error) {
 	filters := make([]map[string]interface{}, 0)
-	for _, instID := range instIDs {
+	results := make([]int64, len(instIDs))
+	zeroIndexMap := make(map[int]struct{})
+
+	for idx, instID := range instIDs {
+		if len(instID) == 0 {
+			zeroIndexMap[idx] = struct{}{}
+			continue
+		}
 		filters = append(filters, mapstr.MapStr{objID: mapstr.MapStr{common.BKDBIN: instID}})
 	}
 
@@ -697,7 +721,20 @@ func (assoc *association) getServiceInstCount(kit *rest.Kit, objID string, instI
 		return svcInstCount, err
 	}
 
-	return svcInstCount, nil
+	if len(zeroIndexMap) == 0 {
+		return svcInstCount, nil
+	}
+
+	index := 0
+	for i := 0; i < len(instIDs); i++ {
+		if _, exists := zeroIndexMap[i]; exists {
+			results[i] = 0
+			continue
+		}
+		results[i] = svcInstCount[index]
+		index++
+	}
+	return results, nil
 }
 
 // getDistinctHostCount get distinct host count

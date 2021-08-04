@@ -10,6 +10,7 @@
     :popover-options="{
       boundary: 'window'
     }"
+    v-bind="$attrs"
     ref="selector">
     <bk-option v-for="(option, index) in options"
       :key="index"

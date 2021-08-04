@@ -138,7 +138,8 @@
         rules.required = true
         // IP字段在模板上被构造为枚举，无法通过ip的正则，此处忽略IP正则
         if (property.bk_property_id === 'ip') {
-          delete rules.regex
+          rules.required = false
+          delete rules.remoteString
         }
         return rules
       },
@@ -223,7 +224,10 @@
                 }
             }
             .content-value {
-                flex: 1;
+                &:not(.bk-switcher) {
+                  flex: 1;
+                  width: calc(100% - 24px);
+                }
                 &.control-active /deep/ {
                     .bk-form-input,
                     .bk-form-textarea,
