@@ -163,7 +163,17 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
-	err = s.Logics.BuildHostExcelFromData(ctx, objID, fields, nil, hostInfo, file, header, 0, usernameMap, propertyList)
+	mainlineAsstRsp, err := s.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, header,
+		&metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.
+			AssociationKindMainline}})
+	if nil != err {
+		blog.Errorf("search mainline association failed, error: %s, rid: %s", err.Error(), rid)
+		return
+	}
+
+	var customLen = int(mainlineAsstRsp.Data.Count) - 3
+	err = s.Logics.BuildHostExcelFromData(ctx, objID, fields, nil, hostInfo, file, header, 0, usernameMap,
+		propertyList, customLen)
 	if nil != err {
 		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)

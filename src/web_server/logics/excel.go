@@ -87,7 +87,9 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 }
 
 // BuildHostExcelFromData product excel from data
-func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64, usernameMap map[string]string, propertyList []string) error {
+func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property,
+	filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64,
+	usernameMap map[string]string, propertyList []string, customLen int) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -99,9 +101,27 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 	}
 	extFieldsTopoID := "cc_ext_field_topo"
 	extFieldsBizID := "cc_ext_biz"
+	extFieldsModuleID := "cc_ext_module"
+	extFieldsSetID := "cc_ext_set"
 	extFields := map[string]string{
 		extFieldsTopoID: ccLang.Language("web_ext_field_topo"),
 		extFieldsBizID:  ccLang.Language("biz_property_bk_biz_name"),
+		extFieldsModuleID:  ccLang.Language("bk_module_name"),
+		extFieldsSetID:     ccLang.Language("bk_set_name"),
+	}
+	extFieldsCustomID1 := "cc_ext_custom1"
+	extFieldsCustomID2 := "cc_ext_custom2"
+	extFieldsCustomID3 := "cc_ext_custom3"
+	switch customLen {
+	case 1:
+		extFields[extFieldsCustomID1] = ccLang.Language("custom_name1")
+	case 2:
+		extFields[extFieldsCustomID1] = ccLang.Language("custom_name1")
+		extFields[extFieldsCustomID2] = ccLang.Language("custom_name2")
+	case 3:
+		extFields[extFieldsCustomID1] = ccLang.Language("custom_name1")
+		extFields[extFieldsCustomID2] = ccLang.Language("custom_name2")
+		extFields[extFieldsCustomID3] = ccLang.Language("custom_name3")
 	}
 	fields = addExtFields(fields, extFields)
 	addSystemField(fields, common.BKInnerObjIDHost, ccLang)
@@ -156,6 +176,103 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 			}
 		}
 
+		result, err := lgc.getTopoMainlineInstRoot(ctx, header, modelBizID, moduleMap)
+		if err != nil {
+			blog.Errorf("get topo mainline instance root failed, err: %s, rid: %s", err.Error(), rid)
+		}
+
+		var moduleStr, setStr, customStr1, customStr2, customStr3 string
+		for _, res := range result.Nodes {
+			length := len(res.Path) - 3
+			switch length {
+			case 1:
+				if customStr1 == "" {
+					customStr1 = res.Path[2].InstanceName
+				} else {
+					ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
+					if !ok {
+						customStr1 += "," + res.Path[2].InstanceName
+					}
+				}
+			case 2:
+				if customStr1 == "" {
+					customStr1 = res.Path[2].InstanceName
+				} else {
+					ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
+					if !ok {
+						customStr1 += "," + res.Path[2].InstanceName
+					}
+				}
+				if customStr2 == "" {
+					customStr2 = res.Path[3].InstanceName
+				} else {
+					ok := util.Contains(strings.Split(customStr2, ","), res.Path[3].InstanceName)
+					if !ok {
+						customStr2 += "," + res.Path[3].InstanceName
+					}
+				}
+			case 3:
+				if customStr1 == "" {
+					customStr1 = res.Path[2].InstanceName
+				} else {
+					ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
+					if !ok {
+						customStr1 += "," + res.Path[2].InstanceName
+					}
+				}
+
+				if customStr2 == "" {
+					customStr2 = res.Path[3].InstanceName
+				} else {
+					ok := util.Contains(strings.Split(customStr2, ","), res.Path[3].InstanceName)
+					if !ok {
+						customStr2 += "," + res.Path[3].InstanceName
+					}
+				}
+
+				if customStr3 == "" {
+					customStr3 = res.Path[4].InstanceName
+				} else {
+					ok := util.Contains(strings.Split(customStr3, ","), res.Path[4].InstanceName)
+					if !ok {
+						customStr3 += "," + res.Path[4].InstanceName
+					}
+				}
+			}
+
+			if moduleStr == "" {
+				moduleStr = res.Path[0].InstanceName
+			} else {
+				ok := util.Contains(strings.Split(moduleStr, ","), res.Path[0].InstanceName)
+				if !ok {
+					moduleStr += "," + res.Path[0].InstanceName
+				}
+			}
+
+			if setStr == "" {
+				setStr = res.Path[1].InstanceName
+			} else {
+				ok := util.Contains(strings.Split(setStr, ","), res.Path[1].InstanceName)
+				if !ok {
+					setStr += "," + res.Path[1].InstanceName
+				}
+			}
+		}
+
+		rowMap[extFieldsModuleID] = moduleStr
+		rowMap[extFieldsSetID] = setStr
+		switch customLen {
+		case 1:
+			rowMap[extFieldsCustomID1] = customStr1
+		case 2:
+			rowMap[extFieldsCustomID1] = customStr1
+			rowMap[extFieldsCustomID2] = customStr2
+		case 3:
+			rowMap[extFieldsCustomID1] = customStr1
+			rowMap[extFieldsCustomID2] = customStr2
+			rowMap[extFieldsCustomID3] = customStr3
+		}
+
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		instID, err := rowMap.Int64(instIDKey)
 		if err != nil {
@@ -180,6 +297,54 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		return err
 	}
 	return nil
+}
+
+// getTopoMainlineInstRoot get topo mainline root by instance id
+func (lgc *Logics) getTopoMainlineInstRoot(ctx context.Context, header http.Header, modelBizID int64,
+	moduleMap []interface{}) (*metadata.TopoPathResult, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	nodes := make([]metadata.TopoNode, 0)
+	for _, row := range moduleMap {
+		mapRow, ok := row.(map[string]interface{})
+		if ok {
+			moduleID, err := util.GetIntByInterface(mapRow[common.BKModuleIDField])
+			if err != nil {
+				return nil, err
+			}
+			node := metadata.TopoNode{
+				ObjectID:   common.BKInnerObjIDModule,
+				InstanceID: int64(moduleID),
+			}
+			nodes = append(nodes, node)
+		}
+	}
+	input := metadata.FindTopoPathRequest{
+		Nodes: nodes,
+	}
+
+	topoRoot, err := lgc.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx, header,
+		modelBizID, false)
+	if err != nil {
+		blog.Errorf("search mainline instance topo path failed, bizID:%d, err:%s, rid:%s", modelBizID,
+			err.Error(), rid)
+		return nil, err
+	}
+	result := &metadata.TopoPathResult{}
+	for _, node := range input.Nodes {
+		topoPath := topoRoot.TraversalFindNode(node.ObjectID, node.InstanceID)
+		path := make([]*metadata.TopoInstanceNodeSimplify, 0)
+		for _, item := range topoPath {
+			simplify := item.ToSimplify()
+			path = append(path, simplify)
+		}
+		nodeTopoPath := metadata.NodeTopoPath{
+			BizID: modelBizID,
+			Node:  node,
+			Path:  path,
+		}
+		result.Nodes = append(result.Nodes, nodeTopoPath)
+	}
+	return result, err
 }
 
 func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID string, instPrimaryInfo map[int64][]PropertyPrimaryVal, xlsxFile *xlsx.File, header http.Header, modelBizID int64) error {
