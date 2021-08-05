@@ -1,12 +1,12 @@
 <template>
-  <div class="table" v-show="hasInstance" v-bkloading="{ isLoading: loading }">
+  <div class="table" v-bkloading="{ isLoading: loading }">
     <div class="table-info clearfix" @click="expanded = !expanded">
       <div class="info-title fl">
         <i class="icon bk-icon icon-right-shape"
           :class="{ 'is-open': expanded }">
         </i>
         <span class="title-text">{{title}}</span>
-        <span class="title-count">({{instances.length}})</span>
+        <span class="title-count">({{associationInstances.length}})</span>
       </div>
       <div class="info-pagination fr" v-show="pagination.count" @click.stop>
         <span class="pagination-info">{{getPaginationInfo()}}</span>
@@ -69,7 +69,7 @@
         type: String,
         required: true
       },
-      id: {
+      targetObjId: {
         type: String,
         required: true
       },
@@ -77,16 +77,12 @@
         type: Object,
         required: true
       },
-      allInstances: {
+      associationInstances: {
         type: Array,
         required: true
       },
       objId: {
         type: String,
-        required: true
-      },
-      instId: {
-        type: Number,
         required: true
       }
     },
@@ -120,7 +116,7 @@
     computed: {
       ...mapGetters('objectModelClassify', ['models', 'getModelById']),
       model() {
-        return this.getModelById(this.id) || {}
+        return this.getModelById(this.targetObjId) || {}
       },
       permissionAuth() {
         if (this.model.bk_obj_id === 'biz') {
@@ -135,10 +131,10 @@
         return `${desc}-${this.model.bk_obj_name}`
       },
       propertyRequest() {
-        return `get_${this.id}_association_list_table_properties`
+        return `get_${this.targetObjId}_association_list_table_properties`
       },
       instanceRequest() {
-        return `get_${this.id}_association_list_table_instances`
+        return `get_${this.targetObjId}_association_list_table_instances`
       },
       page() {
         return {
@@ -152,14 +148,10 @@
       isSource() {
         return this.type === 'source'
       },
-      instances() {
-        const objAsstId = this.isSource
-          ? `${this.objId}_${this.associationType.bk_asst_id}_${this.id}`
-          : `${this.id}_${this.associationType.bk_asst_id}_${this.objId}`
-        return this.allInstances.filter(instance => instance.bk_obj_asst_id === objAsstId)
-      },
+      // 模型实例id，用于查询模型实例数据
       instanceIds() {
-        return this.instances.map(instance => (this.isSource ? instance.bk_asst_inst_id : instance.bk_inst_id))
+        // eslint-disable-next-line max-len
+        return this.associationInstances.map(instance => (this.isSource ? instance.bk_asst_inst_id : instance.bk_inst_id))
       },
       header() {
         const headerProperties = this.$tools.getDefaultHeaderProperties(this.properties)
@@ -175,9 +167,6 @@
           this.propertyRequest
         ])
       },
-      hasInstance() {
-        return this.instances.length > 0
-      },
       resourceType() {
         return this.$parent.resourceType
       },
@@ -189,9 +178,9 @@
       }
     },
     watch: {
-      instances: {
-        handler(instances) {
-          instances.length && this.expanded && this.getData()
+      associationInstances: {
+        handler(associationInstances) {
+          associationInstances.length && this.expanded && this.getData()
         },
         immediate: true
       },
@@ -216,7 +205,7 @@
         try {
           this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
             params: {
-              bk_obj_id: this.id
+              bk_obj_id: this.targetObjId
             },
             config: {
               fromCache: true,
@@ -237,7 +226,7 @@
           globalPermission: false
         }
         try {
-          switch (this.id) {
+          switch (this.targetObjId) {
             case 'host':
               promise = this.getHostInstances(config)
               break
@@ -312,11 +301,11 @@
       },
       getModelInstances(config) {
         return this.$store.dispatch('objectCommonInst/searchInst', {
-          objId: this.id,
+          objId: this.targetObjId,
           params: {
             fields: {},
             condition: {
-              [this.id]: [{
+              [this.targetObjId]: [{
                 field: 'bk_inst_id',
                 operator: '$in',
                 value: this.instanceIds
@@ -338,17 +327,18 @@
       },
       async cancelAssociation() {
         try {
-          const instance = this.instances.find((instance) => {
+          const asstInstance = this.associationInstances.find((instance) => {
             const key = this.isSource ? 'bk_asst_inst_id' : 'bk_inst_id'
+            // 关联实例数据中的模型实例id与模型实例id比较
             return instance[key] === this.confirm.id
           })
           await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
-            id: instance.id,
+            id: asstInstance.id,
             config: { data: {} }
           })
           this.hideTips()
           this.$success(this.$t('取消关联成功'))
-          this.$emit('delete-association', instance.id)
+          this.$emit('delete-association', asstInstance.id)
         } catch (e) {
           console.error(e)
         }
@@ -376,7 +366,7 @@
         const specialModel = ['host', 'biz', 'set', 'module']
         const mapping = {}
         specialModel.forEach(key => (mapping[key] = `bk_${key}_id`))
-        return item[mapping[this.id] || 'bk_inst_id']
+        return item[mapping[this.targetObjId] || 'bk_inst_id']
       },
       showTips(event, item) {
         this.confirm.item = item

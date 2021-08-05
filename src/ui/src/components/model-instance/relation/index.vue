@@ -155,6 +155,12 @@
           mainLineModels = mainLineModels.filter(model => !['biz', 'host'].includes(model.bk_obj_id))
           dataAsSource = this.getAvailableRelation(dataAsSource, mainLineModels)
           dataAsTarget = this.getAvailableRelation(dataAsTarget, mainLineModels)
+
+          // 新版视图明确展示出模型对象作为源和目标的关联数据，解决自关联的数据展示问题
+          // 自关联的关联对象数据源和目标是一样的，导致后续无法区分出源与目标的关系，因此这里直接打上type标记
+          dataAsSource = dataAsSource.map(item => ({ ...item, type: 'source' }))
+          dataAsTarget = dataAsTarget.map(item => ({ ...item, type: 'target' }))
+
           this.associationObject = [...dataAsSource, ...dataAsTarget]
           if (dataAsSource.length || dataAsTarget.length) {
             this.hasRelation = true
