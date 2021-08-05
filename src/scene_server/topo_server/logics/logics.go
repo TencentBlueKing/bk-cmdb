@@ -15,27 +15,36 @@ package logics
 import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
+	"configcenter/src/scene_server/topo_server/logics/inst"
 	"configcenter/src/scene_server/topo_server/logics/model"
 )
 
 // Logics provides management interface for operations of model and instance and related resources like association
 type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
+	ModuleOperation() inst.ModuleOperationInterface
 }
 
 type logics struct {
 	classification model.ClassificationOperationInterface
+	module         inst.ModuleOperationInterface
 }
 
 // New create a logics manager
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
+	moduleOperation := inst.NewModuleOperation(client, authManager)
 
 	return &logics{
 		classification: classificationOperation,
+		module: moduleOperation,
 	}
 }
 
-func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
-	return c.classification
+func (l *logics) ClassificationOperation() model.ClassificationOperationInterface {
+	return l.classification
+}
+
+func (l *logics) ModuleOperation() inst.ModuleOperationInterface {
+	return l.module
 }
