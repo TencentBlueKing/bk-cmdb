@@ -28,10 +28,12 @@ import (
 	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
+// BatchCreateSet batch create set
 func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("batch create set failed, parse app_id from url failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("batch create set failed, parse app_id from url failed, err: %s, rid: %s", err.Error(),
+			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
@@ -135,18 +137,12 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 }
 
 func (s *Service) createSet(kit *rest.Kit, bizID int64, obj model.Object, data mapstr.MapStr) (interface{}, error) {
-	set, err := s.Core.SetOperation().CreateSet(kit, obj, bizID, data)
+	set, err := s.Logics.SetOperation().CreateSet(kit, obj.Object(), bizID, data)
 	if err != nil {
 		return nil, err
 	}
 
-	setID, err := set.GetInstID()
-	if err != nil {
-		blog.Errorf("unexpected error, create set success, but get id field failed, err: %+v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	setTemplateID, ok := set.ToMapStr().Get(common.BKSetTemplateIDField)
+	setTemplateID, ok := data.Get(common.BKSetTemplateIDField)
 	if !ok {
 		blog.Errorf("failed to get set_template_id, rid: %s", kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKSetTemplateIDField)
@@ -158,14 +154,17 @@ func (s *Service) createSet(kit *rest.Kit, bizID int64, obj model.Object, data m
 		return nil, err
 	}
 
-	if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(kit, setTemplateIDint, []int64{setID}); err != nil {
-		blog.Errorf("createSet success, but UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", setID, err, kit.Rid)
+	if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(kit, setTemplateIDint,
+		[]int64{int64(set.Created.ID)}); err != nil {
+		blog.Errorf("createSet success, but UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s",
+			set.Created.ID, err, kit.Rid)
 	}
 	return set, nil
 }
 
+// CheckIsBuiltInSet check is build in set
 func (s *Service) CheckIsBuiltInSet(kit *rest.Kit, setIDs ...int64) errors.CCErrorCoder {
-	// 检查是否时内置集群
+	// 检查是否是内置集群
 	filter := &metadata.QueryCondition{
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
@@ -195,6 +194,7 @@ func (s *Service) CheckIsBuiltInSet(kit *rest.Kit, setIDs ...int64) errors.CCErr
 	return nil
 }
 
+// DeleteSets batch delete the set
 func (s *Service) DeleteSets(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
@@ -220,7 +220,7 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Core.SetOperation().DeleteSet(ctx.Kit, bizID, data.Delete.InstID)
+		err = s.Logics.SetOperation().DeleteSet(ctx.Kit, bizID, data.Delete.InstID)
 		if err != nil {
 			return err
 
@@ -263,7 +263,7 @@ func (s *Service) DeleteSet(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Core.SetOperation().DeleteSet(ctx.Kit, bizID, []int64{setID})
+		err = s.Logics.SetOperation().DeleteSet(ctx.Kit, bizID, []int64{setID})
 		if err != nil {
 			blog.Errorf("delete sets failed, %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -308,6 +308,7 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		// TODO find single object return value have changed
 		err = s.Core.SetOperation().UpdateSet(ctx.Kit, data, obj, bizID, setID)
 		if err != nil {
 			blog.Errorf("update set failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
@@ -364,7 +365,7 @@ func (s *Service) SearchSet(ctx *rest.Contexts) {
 	queryCond.Sort = page.Sort
 	queryCond.Limit = page.Limit
 
-	cnt, instItems, err := s.Core.SetOperation().FindSet(ctx.Kit, obj, queryCond)
+	instItems, err := s.Logics.SetOperation().FindSet(ctx.Kit, obj.GetObjectID(), queryCond)
 	if nil != err {
 		blog.Errorf("[api-set] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("obj_id"), err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -372,7 +373,7 @@ func (s *Service) SearchSet(ctx *rest.Contexts) {
 	}
 
 	result := mapstr.MapStr{}
-	result.Set("count", cnt)
+	result.Set("count", instItems.Count)
 	result.Set("info", instItems)
 
 	ctx.RespEntity(result)
