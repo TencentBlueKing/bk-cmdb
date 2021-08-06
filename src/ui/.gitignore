@@ -18,4 +18,4 @@ yarn-error.log*
 eslint.html
 
 # dev config
-/builder/config/index.dev.*.js
+/builder/config/index.dev*.js
