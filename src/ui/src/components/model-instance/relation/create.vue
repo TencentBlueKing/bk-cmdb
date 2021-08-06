@@ -343,6 +343,7 @@
       setAssociationOptions() {
         /* eslint-disable no-underscore-dangle */
         const options = this.associationObject.map((option) => {
+          // 创建模式下只使用源的视角来看，因此仅需要使用关联对象中的模型对象id与当前对象比较
           const isSource = option.bk_obj_id === this.objId
           const type = this.associationTypes.find(type => type.bk_asst_id === option.bk_asst_id)
           const model = this.models.find((model) => {
