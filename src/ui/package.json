@@ -86,6 +86,7 @@
     "html-webpack-plugin": "^5.3.1",
     "launch-editor-middleware": "^2.2.1",
     "mini-css-extract-plugin": "^1.5.0",
+    "minimist": "^1.2.5",
     "path-browserify": "^1.0.1",
     "postcss": "^8.2.10",
     "postcss-deep-scopable": "0.0.2",

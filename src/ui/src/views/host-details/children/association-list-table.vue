@@ -1,12 +1,12 @@
 <template>
-  <div class="table" v-show="instances.length" v-bkloading="{ isLoading: $loading(propertyRequest, instanceRequest) }">
+  <div class="table" v-bkloading="{ isLoading: $loading(propertyRequest, instanceRequest) }">
     <div class="table-info clearfix" @click="expanded = !expanded">
       <div class="info-title fl">
         <i class="icon bk-icon icon-right-shape"
           :class="{ 'is-open': expanded }">
         </i>
         <span class="title-text">{{title}}</span>
-        <span class="title-count">({{instances.length}})</span>
+        <span class="title-count">({{associationInstances.length}})</span>
       </div>
       <div class="info-pagination fr" v-show="pagination.count" @click.stop>
         <span class="pagination-info">{{getPaginationInfo()}}</span>
@@ -59,7 +59,6 @@
 </template>
 
 <script>
-  import { mapGetters } from 'vuex'
   import authMixin from '../mixin-auth'
   export default {
     name: 'cmdb-host-association-list-table',
@@ -75,6 +74,10 @@
       },
       associationType: {
         type: Object,
+        required: true
+      },
+      associationInstances: {
+        type: Array,
         required: true
       }
     },
@@ -106,9 +109,6 @@
       }
     },
     computed: {
-      ...mapGetters('hostDetails', [
-        'allInstances',
-      ]),
       hostId() {
         return parseInt(this.$route.params.id, 10)
       },
@@ -145,14 +145,9 @@
       isSource() {
         return this.type === 'source'
       },
-      instances() {
-        const objAsstId = this.isSource
-          ? `host_${this.associationType.bk_asst_id}_${this.id}`
-          : `${this.id}_${this.associationType.bk_asst_id}_host`
-        return this.allInstances.filter(instance => instance.bk_obj_asst_id === objAsstId)
-      },
       instanceIds() {
-        return this.instances.map(instance => (this.isSource ? instance.bk_asst_inst_id : instance.bk_inst_id))
+        // eslint-disable-next-line max-len
+        return this.associationInstances.map(instance => (this.isSource ? instance.bk_asst_inst_id : instance.bk_inst_id))
       },
       header() {
         const headerProperties = this.$tools.getDefaultHeaderProperties(this.properties)
@@ -168,8 +163,8 @@
       }
     },
     watch: {
-      instances(instances) {
-        instances.length && this.expanded && this.getData()
+      associationInstances(associationInstances) {
+        associationInstances.length && this.expanded && this.getData()
       },
       expandAll(expanded) {
         this.expanded = expanded
@@ -317,17 +312,17 @@
       },
       async cancelAssociation() {
         try {
-          const instance = this.instances.find((instance) => {
+          const asstInstance = this.associationInstances.find((instance) => {
             const key = this.isSource ? 'bk_asst_inst_id' : 'bk_inst_id'
             return instance[key] === this.confirm.id
           })
           await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
-            id: instance.id,
+            id: asstInstance.id,
             config: { data: {} }
           })
-          this.$store.commit('hostDetails/deleteAssociation', instance.id)
-          this.$success(this.$t('取消关联成功'))
           this.hideTips()
+          this.$success(this.$t('取消关联成功'))
+          this.$emit('delete-association', asstInstance.id)
         } catch (e) {
           console.error(e)
         }

@@ -264,7 +264,13 @@ const customConfigRules = [
   'namedCharacter',
   'instanceTagKey',
   'instanceTagValue',
-  'businessTopoInstNames'
+  {
+    businessTopoInstNames: (value, cb, re) => {
+      const values = value.split('\n')
+      const list = values.map(text => text.trim()).filter(text => text)
+      return list.every(text => re.test(text))
+    }
+  }
 ]
 
 const mixinConfig = () => {
@@ -279,7 +285,7 @@ const mixinConfig = () => {
 
     let validate = value => new RegExp(rule.value).test(value)
     if (useCb) {
-      validate = value => item[key](value, () => new RegExp(rule.value).test(value))
+      validate = value => item[key](value, () => new RegExp(rule.value).test(value), new RegExp(rule.value))
     }
 
     // 加入到自定义规则列表
