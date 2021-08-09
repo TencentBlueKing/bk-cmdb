@@ -122,10 +122,16 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
+	customLen, objectName, err := s.Logics.GetCustomCntAndInstName(ctx, header)
+	if err != nil {
+		blog.Errorf("get custom count and instance name failed, err: %+v, rid: %s", err, rid)
+		return
+	}
+
 	objID := common.BKInnerObjIDHost
 	filterFields := logics.GetFilterFields(objID)
 	customFields := logics.GetCustomFields(filterFields, customFieldsStr)
-	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, appID)
+	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, appID, customLen + 5)
 	if nil != err {
 		blog.Errorf("ExportHost failed, get host model fields failed, err: %+v, rid: %s", err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed,
@@ -169,16 +175,11 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
-	customLen, objectName, err := s.Logics.GetCustomCntAndInstName(ctx, header)
-	if err != nil {
-		blog.Errorf("get custom count and instance name failed, err: %+v, rid: %s", err, rid)
-		return
-	}
-
-	err = s.Logics.BuildHostExcelFromData(ctx, objID, fields, nil, hostInfo, file, header, 0, usernameMap,
+	err = s.Logics.BuildHostExcelFromData(ctx, objID, fields, nil, hostInfo, file, header, appID, usernameMap,
 		propertyList, customLen, objectName)
 	if nil != err {
-		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
+		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err,
+			rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed,
 			objID).Error(), nil)
 		_, _ = c.Writer.Write([]byte(reply))

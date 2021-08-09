@@ -55,8 +55,9 @@ type PropertyPrimaryVal struct {
 }
 
 // GetObjFieldIDs get object fields
-func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, modelBizID int64) (map[string]Property, error) {
-	fields, err := lgc.getObjFieldIDs(objID, header, modelBizID, customFields)
+func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header,
+	modelBizID int64, index int) (map[string]Property, error) {
+	fields, err := lgc.getObjFieldIDs(objID, header, modelBizID, customFields, index)
 	if nil != err {
 		return nil, fmt.Errorf("get object fields failed, err: %+v", err)
 	}
@@ -122,7 +123,8 @@ func (lgc *Logics) getObjectPrimaryFieldByObjID(objID string, header http.Header
 
 }
 
-func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID int64, customFields []string) ([]Property, error) {
+func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID int64, customFields []string,
+	index int) ([]Property, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	sort := fmt.Sprintf("%s", common.BKPropertyIndexField)
 
@@ -150,7 +152,7 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID i
 	fields := make([]Property, 0)
 	noUniqueFields := make([]Property, 0)
 	noRequiredFields := make([]Property, 0)
-	index := 1
+
 	// 第一步，选出唯一校验字段；
 	for _, field := range sortedFields {
 		if field.IsOnly == true {
