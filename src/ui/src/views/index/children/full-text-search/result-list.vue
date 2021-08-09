@@ -157,14 +157,15 @@
     padding-top: 14px;
     color: $cmdbTextColor;
     .result-item {
-      width: 65%;
       padding-bottom: 35px;
       color: #63656e;
       /deep/ {
-        em.hl {
-          color: #3a84ff !important;
-          font-style: normal !important;
-          word-break: break-all;
+        .hl {
+          em {
+            color: #3a84ff !important;
+            font-style: normal !important;
+            word-break: break-all;
+          }
         }
         .result-title {
           display: inline-block;

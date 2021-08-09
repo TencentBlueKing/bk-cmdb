@@ -1,14 +1,14 @@
 <template>
   <div class="result-item">
-    <div class="result-title" @click="data.linkTo(data)">
+    <div class="result-title" @click="data.linkTo(data.source)">
       <span v-html="`${data.typeName} - ${data.title}`"></span>
     </div>
     <div class="result-desc" v-if="properties" @click="data.linkTo(data.source)">
       <template v-for="(property, childIndex) in properties">
-        <div class="desc-item"
+        <div class="desc-item hl"
           :key="childIndex"
           v-if="data.source[property.bk_property_id]"
-          v-html="`${property.bk_property_name}：${getText(property, data, property.bk_property_id)}`">
+          v-html="`${property.bk_property_name}：${getText(property, data)}`">
         </div>
       </template>
     </div>

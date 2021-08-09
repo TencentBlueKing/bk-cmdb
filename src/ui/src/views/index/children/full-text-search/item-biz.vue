@@ -6,10 +6,10 @@
     </div>
     <div class="result-desc" v-if="properties" @click="data.linkTo(data.source)">
       <template v-for="(property, childIndex) in properties">
-        <div class="desc-item"
+        <div class="desc-item hl"
           :key="childIndex"
           v-if="data.source[property.bk_property_id]"
-          v-html="`${property.bk_property_name}：${getText(property, data, property.bk_property_id)}`">
+          v-html="`${property.bk_property_name}：${getText(property, data)}`">
         </div>
       </template>
     </div>

@@ -2,6 +2,8 @@ import { computed, isRef, ref, unref } from '@vue/composition-api'
 import debounce from 'lodash.debounce'
 import { currentSetting as advancedSetting, allModelIds } from './use-advanced-setting.js'
 
+const requestId = Symbol('fullTextSearch')
+
 export default function useResult(state, root) {
   const { $store } = root
 
@@ -63,8 +65,7 @@ export default function useResult(state, root) {
       result.value = await $store.dispatch('fullTextSearch/search', {
         params: params.value,
         config: {
-          requestId: 'search',
-          cancelPrevious: true
+          requestId
         }
       })
     } finally {

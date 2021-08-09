@@ -14,7 +14,7 @@ export default function useSuggestion(state, root) {
 
   const localForceHide = ref(false)
   watch(keyword, (keyword, old) => {
-    localForceHide.value = (!old || keyword === old)
+    localForceHide.value = keyword === old
   })
 
   const isForceHide = computed(() => forceHide.value || localForceHide.value)

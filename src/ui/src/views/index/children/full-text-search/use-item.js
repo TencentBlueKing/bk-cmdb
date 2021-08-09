@@ -35,12 +35,12 @@ export default function useItem(list, root) {
         newItem.type = key
         newItem.title = source.bk_set_name
         newItem.typeName = root.$t('集群')
-        newItem.linkTo = handleGoTopo
+        newItem.linkTo = source => handleGoTopo('set', source)
       } else if (kind === 'instance' && key === 'module') {
         newItem.type = key
         newItem.title = source.bk_module_name
         newItem.typeName = root.$t('模块')
-        newItem.linkTo = handleGoTopo
+        newItem.linkTo = source => handleGoTopo('module', source)
       } else if (kind === 'instance') {
         newItem.type = kind
         newItem.title = source.bk_inst_name
@@ -112,18 +112,18 @@ export default function useItem(list, root) {
       history: true
     })
   }
-  const handleGoTopo = (data) => {
+  const handleGoTopo = (key, source) => {
     const nodeMap = {
-      set: `${data.key}-${data.source.bk_set_id}`,
-      module: `${data.key}-${data.source.bk_module_id}`,
+      set: `${key}-${source.bk_set_id}`,
+      module: `${key}-${source.bk_module_id}`,
     }
     root.$routerActions.redirect({
       name: MENU_BUSINESS_HOST_AND_SERVICE,
       params: {
-        bizId: data.source.bk_biz_id
+        bizId: source.bk_biz_id
       },
       query: {
-        node: nodeMap[data.key]
+        node: nodeMap[key]
       },
       history: true
     })
@@ -134,27 +134,34 @@ export default function useItem(list, root) {
   }
 }
 
-export const getText = (property, data, thisProperty) => {
+export const getText = (property, data) => {
   let propertyValue = getPropertyText(property, data.source)
 
-  // if (!Object.keys(data?.highlight).includes(thisProperty)) {
-  return propertyValue || '--'
-  // }
-
   // 对highlight属性值做高亮标签处理
-  propertyValue = getHighlightValue(propertyValue, data, thisProperty)
+  propertyValue = getHighlightValue(propertyValue, data)
   return propertyValue || '--'
 }
 
-export const getHighlightValue = (value, data, thisProperty) => {
-  const highlightValue = data?.highlight?.[thisProperty]
-  if (!highlightValue) {
+export const getHighlightValue = (value, data) => {
+  const keywords = data?.highlight?.keywords
+  if (!keywords || !keywords.length) {
     return value
   }
-  // eslint-disable-next-line prefer-destructuring
-  let keyword = Array.isArray(highlightValue) ? highlightValue[0] : highlightValue
-  // eslint-disable-next-line prefer-destructuring
-  keyword = keyword.match(/<em>(.+?)<\/em>/)[1]
-  const reg = new RegExp(`(${keyword})`, 'g')
-  return String(value).replace(reg, '<em class="hl">$1</em>')
+
+  // 用匹配到的高亮词（不一定等于搜索词）去匹配给定的值，如果命中则返回完整高亮词替代原本的值
+  let matched = value
+  for (const keyword of keywords) {
+    const words = keyword.match(/<em>(.+?)<\/em>/)
+    if (!words) {
+      continue
+    }
+
+    const re = new RegExp(words[1])
+    if (re.test(value)) {
+      matched = keyword
+      break
+    }
+  }
+
+  return matched
 }
