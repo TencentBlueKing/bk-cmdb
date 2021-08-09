@@ -33,11 +33,12 @@ const (
 	limiterIntro = `
 ********************************************************
 示例:
-以下命令是在配置了ZK_ADDR环境变量的情况下使用，没有配置时也可以通过命令行参数--zk-addr指定
+以下命令是在配置了ADDR环境变量的情况下使用，没有配置时也可以通过命令行参数--addr指定
 # 列出所有策略
 ./tool_ctl limiter ls
 # 配置策略，对url限制请求次数
-./tool_ctl limiter set --rule='{"rulename":"rule1","appcode":"gse","user":"admin","ip":"","method":"POST","url":"^/api/v3/module/search/[^\\s/]+/[0-9]+/[0-9]+/?$","limit":1000,"ttl":60,"denyall":false}'
+./tool_ctl limiter set --rule='{"rulename":"rule1","appcode":"gse","user":"admin","ip":"","method":"POST",
+"url":"^/api/v3/module/search/[^\\s/]+/[0-9]+/[0-9]+/?$","limit":1000,"ttl":60,"denyall":false}'
 # 配置策略，将url直接禁掉
 ./tool_ctl limiter set --rule='{"rulename":"rule1","appcode":"gse","user":"admin","url":"^/api/v3/module/search/[^\\s/]+/[0-9]+/[0-9]+/?$","denyall":true}'
 # 获取某些策略详情
@@ -80,8 +81,10 @@ type limiterConf struct {
 
 func (c *limiterConf) addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&c.rule, "rule", "",
-		`the api limiter rule to set, a json like '{"rulename":"rule1","appcode":"gse","user":"","ip":"","method":"POST","url":"^/api/v3/module/search/[^\\s/]+/[0-9]+/[0-9]+/?$","limit":1000,"ttl":60,"denyall":false}'`)
-	cmd.PersistentFlags().StringVar(&c.rulenames, "rulenames", "", `the api limiter rule names to get or del, multiple names is separated with ',',like 'name1,name2'`)
+		`the api limiter rule to set, a json like '{"rulename":"rule1","appcode":"gse","user":"","ip":"",
+"method":"POST","url":"^/api/v3/module/search/[^\\s/]+/[0-9]+/[0-9]+/?$","limit":1000,"ttl":60,"denyall":false}'`)
+	cmd.PersistentFlags().StringVar(&c.rulenames, "rulenames", "", `the api limiter rule names to 
+get or del, multiple names is separated with ',',like 'name1,name2'`)
 }
 
 func NewLimiterCommand() *cobra.Command {
@@ -146,16 +149,16 @@ func runSetRule(c *limiterConf) error {
 		return err
 	}
 
-	zk, err := config.NewZkService(config.Conf.ZkAddr)
+	service, err := config.NewService(config.Conf.Addr)
 	if err != nil {
 		return err
 	}
 	path := fmt.Sprintf("%s/%s", types.CC_SERVLIMITER_BASEPATH, rule.RuleName)
-	exist, err := zk.ZkCli.Exist(path)
+	values, err := service.Cli.GetWithPrefix(path)
 	if err != nil {
 		return err
 	}
-	if exist {
+	if len(values) != 0 {
 		return fmt.Errorf("the rule %s has already existed", rule.RuleName)
 	}
 
@@ -164,7 +167,7 @@ func runSetRule(c *limiterConf) error {
 		return err
 	}
 
-	err = zk.ZkCli.CreateDeepNode(path, data)
+	err = service.Cli.Put(path, string(data))
 	if err != nil {
 		return err
 	}
@@ -183,20 +186,20 @@ func runGetRules(c *limiterConf) error {
 	if c.rulenames == "" {
 		return fmt.Errorf("rulenames must be set")
 	}
-	zk, err := config.NewZkService(config.Conf.ZkAddr)
+	service, err := config.NewService(config.Conf.Addr)
 	if err != nil {
 		return err
 	}
 	names := strings.Split(c.rulenames, ",")
 	for _, name := range names {
 		path := fmt.Sprintf("%s/%s", types.CC_SERVLIMITER_BASEPATH, name)
-		data, err := zk.ZkCli.Get(path)
+		value, err := service.Cli.Get(path)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stdout, "get rule %s err:%s\n", name, err)
 			continue
 		}
 		var pretty bytes.Buffer
-		err = json.Indent(&pretty, []byte(data), "", "\t")
+		err = json.Indent(&pretty, []byte(value), "", "\t")
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stdout, "get rule %s Indent err:%s\n", name, err)
 			continue
@@ -210,14 +213,14 @@ func runDelRules(c *limiterConf) error {
 	if c.rulenames == "" {
 		return fmt.Errorf("rulenames must be set")
 	}
-	zk, err := config.NewZkService(config.Conf.ZkAddr)
+	service, err := config.NewService(config.Conf.Addr)
 	if err != nil {
 		return err
 	}
 	names := strings.Split(c.rulenames, ",")
 	for _, name := range names {
 		path := fmt.Sprintf("%s/%s", types.CC_SERVLIMITER_BASEPATH, name)
-		err := zk.ZkCli.Del(path, -1)
+		err := service.Cli.Delete(path)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stdout, "del rule %s err:%s\n", name, err)
 			continue
@@ -228,28 +231,23 @@ func runDelRules(c *limiterConf) error {
 }
 
 func runListRules(c *limiterConf) error {
-	zk, err := config.NewZkService(config.Conf.ZkAddr)
+	service, err := config.NewService(config.Conf.Addr)
 	if err != nil {
 		return err
 	}
 	path := types.CC_SERVLIMITER_BASEPATH
-	children, err := zk.ZkCli.GetChildren(path)
+	values, err := service.Cli.GetWithPrefix(path)
 	if err != nil {
 		return err
 	}
-	for _, child := range children {
-		data, err := zk.ZkCli.Get(path + "/" + child)
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stdout, "list rule %s Get err:%s\n", child, err)
-			continue
-		}
+	for _, value := range values {
 		var pretty bytes.Buffer
-		err = json.Indent(&pretty, []byte(data), "", "\t")
+		err = json.Indent(&pretty, []byte(value), "", "\t")
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stdout, "list rule %s Indent err:%s\n", child, err)
+			_, _ = fmt.Fprintf(os.Stdout, "list rule Indent err:%s\n", err)
 			continue
 		}
-		_, _ = fmt.Fprintf(os.Stdout, "%s\n%s\n\n", path+"/"+child, pretty.String())
+		_, _ = fmt.Fprintf(os.Stdout, "%s\n%s\n\n", path, pretty.String())
 	}
 	return nil
 }

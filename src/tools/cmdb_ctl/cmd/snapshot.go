@@ -62,8 +62,8 @@ type snapshotCheckService struct {
 	config  map[string]string
 }
 
-func newSnapshotCheckService(zkaddr string, bizID int) (*snapshotCheckService, error) {
-	service, err := config.NewZkService(zkaddr)
+func newSnapshotCheckService(addr string, bizID int) (*snapshotCheckService, error) {
+	service, err := config.NewService(addr)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func newSnapshotCheckService(zkaddr string, bizID int) (*snapshotCheckService, e
 }
 
 func runSnapshotCheck(c *snapshotCheckConf) error {
-	srv, err := newSnapshotCheckService(config.Conf.ZkAddr, c.bizID)
+	srv, err := newSnapshotCheckService(config.Conf.Addr, c.bizID)
 	if err != nil {
 		return err
 	}
@@ -103,24 +103,18 @@ func (s *snapshotCheckService) snapshotCheck() error {
 }
 
 func (s *snapshotCheckService) checkConf() error {
-	if err := s.service.ZkCli.Ping(); err != nil {
-		if err = s.service.ZkCli.Connect(); err != nil {
-			return err
-		}
-	}
-
 	path := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureRedis)
-	strConf, err := s.service.ZkCli.Get(path)
+	strConf, err := s.service.Cli.Get(path)
 	if err != nil {
-		return fmt.Errorf("get path [%s] from zk [%v] failed: %v", path, s.service.ZkCli.ZkHost, err)
+		return fmt.Errorf("get path [%s] from zk failed: %v", path, err)
 	}
 
 	if err := cc.SetRedisFromByte([]byte(strConf)); err != nil {
-		return fmt.Errorf("get path [%s] from regdiscv [%v]  parse config failed: %v", path, s.service.ZkCli.ZkHost, err)
+		return fmt.Errorf("get path [%s] from regdiscv parse config failed: %v", path, err)
 	}
 
 	if len(strConf) == 0 {
-		return fmt.Errorf("get path [%s] from regdiscv [%v]  parse config empty", path, s.service.ZkCli.ZkHost)
+		return fmt.Errorf("get path [%s] from regdiscv parse config empty", path)
 	}
 
 	return nil
@@ -169,7 +163,8 @@ func (s *snapshotCheckService) checkHostSnapshot() error {
 		for len(stopChn) == 0 {
 			received, err := sub.ReceiveTimeout(time.Minute * 1)
 			if err != nil {
-				receiveMsgErr = fmt.Errorf("receive message from channel [%#v] in redis [%s] failed: %s", channelArr, redisConfig.Address, err.Error())
+				receiveMsgErr = fmt.Errorf("receive message from channel [%#v] in redis [%s] failed: %s",
+					channelArr, redisConfig.Address, err.Error())
 				return
 			}
 			msg, ok := received.(*rawRedis.Message)
@@ -190,7 +185,8 @@ func (s *snapshotCheckService) checkHostSnapshot() error {
 	}
 	stopChn <- true
 
-	fmt.Printf("receive message from channel [%#v] of redis [%s] count: %d(1 minute total)\n", channelArr, redisConfig.Address, receiveMsgCount)
+	fmt.Printf("receive message from channel [%#v] of redis [%s] count: %d(1 minute total)\n", channelArr,
+		redisConfig.Address, receiveMsgCount)
 	if receiveMsgCount == 0 {
 		return fmt.Errorf("not receive message from channel [%#v] of redis [%s]", channelArr, redisConfig.Address)
 	}

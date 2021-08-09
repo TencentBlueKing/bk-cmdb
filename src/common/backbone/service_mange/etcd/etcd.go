@@ -64,8 +64,8 @@ func (etcd *EtcdCli) PutAndBindLease(key, val string, ttl int64) (clientv3.Lease
 	return resp.ID, nil
 }
 
-// Get path as a prefix to get the key value
-func (etcd *EtcdCli) Get(path string) ([]string, error) {
+// GetWithPrefix path as a prefix to get the key value
+func (etcd *EtcdCli) GetWithPrefix(path string) ([]string, error) {
 	rangeResp, err := etcd.etcdCli.Get(context.Background(), path, clientv3.WithPrefix())
 	if err != nil {
 		return nil, err
@@ -75,6 +75,18 @@ func (etcd *EtcdCli) Get(path string) ([]string, error) {
 		values = append(values, string(kv.Value))
 	}
 	return values, nil
+}
+
+// Get get the key value
+func (etcd *EtcdCli) Get(path string) (string, error) {
+	rangeResp, err := etcd.etcdCli.Get(context.Background(), path)
+	if err != nil {
+		return "", err
+	}
+	for _, kv := range rangeResp.Kvs {
+		return string(kv.Value), nil
+	}
+	return "", nil
 }
 
 // Delete use a key to delete kv

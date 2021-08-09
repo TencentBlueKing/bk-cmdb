@@ -62,7 +62,7 @@ func (l *Limiter) SyncLimiterRules() error {
 
 func (l *Limiter) syncLimiterRules(path string) error {
 	blog.V(5).Infof("syncing limiter rules for path:%s", path)
-	values, err := l.client.Get(path)
+	values, err := l.client.GetWithPrefix(path)
 	if err != nil {
 		l.setRules(make(map[string]*metadata.LimiterRule))
 		blog.Errorf("fail to Get for path:%s, err:%s", path, err)

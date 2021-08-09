@@ -14,29 +14,53 @@ package cmd
 
 import (
 	"bytes"
-	"configcenter/src/tools/cmdb_ctl/app/config"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 
+	"configcenter/src/tools/cmdb_ctl/app/config"
+
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	rootCmd.AddCommand(NewZkCommand())
+	rootCmd.AddCommand(NewCenterCommand())
 }
 
-type zkConf struct {
-	path string
+type centerService struct {
+	service *config.Service
+	key     string
 }
 
-func NewZkCommand() *cobra.Command {
-	conf := new(zkConf)
+func newCenterService(addr string, key string) (*centerService, error) {
+	if key == "" {
+		return nil, errors.New("key must be set")
+	}
+	service, err := config.NewService(addr)
+	if err != nil {
+		return nil, err
+	}
+	return &centerService{
+		service: service,
+		key:     key,
+	}, nil
+}
+
+type centerConf struct {
+	key string
+}
+
+func (c *centerConf) addFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVar(&c.key, "key", "", "the center resource key")
+}
+
+func NewCenterCommand() *cobra.Command {
+	conf := new(centerConf)
 
 	cmd := &cobra.Command{
-		Use:   "zk",
-		Short: "zookeeper operations",
+		Use:   "center",
+		Short: "center operations",
 		Run: func(cmd *cobra.Command, args []string) {
 			_ = cmd.Help()
 		},
@@ -45,35 +69,27 @@ func NewZkCommand() *cobra.Command {
 	subCmds := make([]*cobra.Command, 0)
 
 	subCmds = append(subCmds, &cobra.Command{
-		Use:   "ls",
-		Short: "list children of specified zookeeper node",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runZkLsCmd(conf)
-		},
-	})
-
-	subCmds = append(subCmds, &cobra.Command{
 		Use:   "get",
-		Short: "get value of specified zookeeper node",
+		Short: "get value of specified node",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runZkGetCmd(conf)
+			return runGetCmd(conf)
 		},
 	})
 
 	subCmds = append(subCmds, &cobra.Command{
 		Use:   "del",
-		Short: "delete specified zookeeper node",
+		Short: "delete specified node",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runZkDelCmd(conf)
+			return runDelCmd(conf)
 		},
 	})
 
 	value := new(string)
 	setCmd := &cobra.Command{
 		Use:   "set",
-		Short: "set value of specified zookeeper node",
+		Short: "set value of specified node",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runZkSetCmd(conf, *value)
+			return runSetCmd(conf, *value)
 		},
 	}
 	setCmd.Flags().StringVar(value, "value", "", "the value to be set")
@@ -88,50 +104,12 @@ func NewZkCommand() *cobra.Command {
 	return cmd
 }
 
-func (c *zkConf) addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&c.path, "zk-path", "", "the zookeeper  resource path")
-}
-
-type zkService struct {
-	service *config.Service
-	path    string
-}
-
-func newZkService(zkaddr string, path string) (*zkService, error) {
-	if path == "" {
-		return nil, errors.New("zk-path must be set")
-	}
-	service, err := config.NewZkService(zkaddr)
-	if err != nil {
-		return nil, err
-	}
-	return &zkService{
-		service: service,
-		path:    path,
-	}, nil
-}
-
-func runZkLsCmd(c *zkConf) error {
-	srv, err := newZkService(config.Conf.ZkAddr, c.path)
+func runGetCmd(c *centerConf) error {
+	srv, err := newCenterService(config.Conf.Addr, c.key)
 	if err != nil {
 		return err
 	}
-	children, err := srv.service.ZkCli.GetChildren(srv.path)
-	if err != nil {
-		return err
-	}
-	for _, child := range children {
-		fmt.Fprintf(os.Stdout, "%s\n", child)
-	}
-	return nil
-}
-
-func runZkGetCmd(c *zkConf) error {
-	srv, err := newZkService(config.Conf.ZkAddr, c.path)
-	if err != nil {
-		return err
-	}
-	data, err := srv.service.ZkCli.Get(srv.path)
+	data, err := srv.service.Cli.Get(srv.key)
 	if err != nil {
 		return err
 	}
@@ -145,18 +123,18 @@ func runZkGetCmd(c *zkConf) error {
 	return nil
 }
 
-func runZkDelCmd(c *zkConf) error {
-	srv, err := newZkService(config.Conf.ZkAddr, c.path)
+func runDelCmd(c *centerConf) error {
+	srv, err := newCenterService(config.Conf.Addr, c.key)
 	if err != nil {
 		return err
 	}
-	return srv.service.ZkCli.Del(srv.path, -1)
+	return srv.service.Cli.Delete(srv.key)
 }
 
-func runZkSetCmd(c *zkConf, value string) error {
-	srv, err := newZkService(config.Conf.ZkAddr, c.path)
+func runSetCmd(c *centerConf, value string) error {
+	srv, err := newCenterService(config.Conf.Addr, c.key)
 	if err != nil {
 		return err
 	}
-	return srv.service.ZkCli.Set(srv.path, value, -1)
+	return srv.service.Cli.Put(srv.key, value)
 }

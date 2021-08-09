@@ -12,7 +12,7 @@
   --set-default      [=false]: set log level to default value
   --set-v             =""    : set log level for V logs
   --addrport          =""    : the ip address and port for the hosts to apply command, separated by comma
-  --zk-addr           =""    : the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
+  --addr              =""    : the ip address and port for hosts, separated by comma, corresponding environment variable is ADDR
   --redis-addr        =""    : assign redis server address default is 127.0.0.1:6379
   --redis-pwd         =""    : assign redis server password
   --redis-database    =""    : assign the redis database default is 0
@@ -22,11 +22,11 @@
 - 示例
 
   - ```
-    ./tool_ctl log --set-default --addrport=127.0.0.1:8080 --zk-addr=127.0.0.1:2181
+    ./tool_ctl log --set-default --addrport=127.0.0.1:8080 --addr=127.0.0.1:2181
     ```
 
   - ```
-    ./tool_ctl log --set-v=3 --addrport="127.0.0.1:8080" --zk-addr="127.0.0.1:2181"
+    ./tool_ctl log --set-v=3 --addrport="127.0.0.1:8080" --addr="127.0.0.1:2181"
     ```
 
 ### 优雅退出
@@ -51,42 +51,37 @@
     ./tool_ctl shutdown --show-pids
     ```
 
-### zookeeper操作
+### 服务配置中心操作
 - 使用方式
 
   ```
-  ./tool_ctl zk [command]
+  ./tool_ctl center [command]
   ```
 
 - 子命令
   ```
-  ls          list children of specified zookeeper node
-  get         get value of specified zookeeper node
-  del         delete specified zookeeper node
-  set         set value of specified zookeeper node
+  get         get value of specified node
+  del         delete specified node
+  set         set value of specified node
   ```
 - 命令行参数
   ```
-  --zk-path="": the zookeeper path
-  --zk-addr="": the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
+  --key="":   key-value pair key
+  --addr="":  the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
   --value="": the value to be set（仅用于set命令）
   ```
 - 示例
 
   - ```
-    ./tool_ctl zk ls --zk-path=/test --zk-addr=127.0.0.1:2181
+    ./tool_ctl center get --key=/test --addr=127.0.0.1:2181
     ```
 
   - ```
-    ./tool_ctl zk get --zk-path=/test --zk-addr=127.0.0.1:2181
+    ./tool_ctl center del --key=/test --addr=127.0.0.1:2181
     ```
 
   - ```
-    ./tool_ctl zk del --zk-path=/test --zk-addr=127.0.0.1:2181
-    ```
-
-  - ```
-    ./tool_ctl zk set --zk-path=/test --zk-addr=127.0.0.1:2181 --value=test
+    ./tool_ctl center set --key=/test --addr=127.0.0.1:2181 --value=test
     ```
     
 ### 回显服务器
@@ -115,7 +110,7 @@
 - 命令行参数
   ```
   --bizId=2: blueking business id. e.g: 2
-  --zk-addr="": the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
+  --addr="": the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
   ```
 - 示例
 

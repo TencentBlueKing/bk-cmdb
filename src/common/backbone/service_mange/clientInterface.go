@@ -14,6 +14,7 @@ package service_mange
 
 type ClientInterface interface {
 	Put(key, val string) error
-	Get(path string) ([]string, error)
+	Get(path string) (string, error)
+	GetWithPrefix(path string) ([]string, error)
 	Delete(key string) error
 }

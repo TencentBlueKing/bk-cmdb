@@ -126,7 +126,7 @@ func (e *etcdRegDiscv) Discover(path string) (<-chan *DiscoverEvent, error) {
 
 func (e *etcdRegDiscv) getServerInfoByPath(path string) *DiscoverEvent {
 	// get server infos
-	serverInfos, err := e.etcdCli.Get(path)
+	serverInfos, err := e.etcdCli.GetWithPrefix(path)
 	if err != nil {
 		fmt.Errorf("fail to get server info from etcd by path(%s), err:%s\n", path, err)
 	}
