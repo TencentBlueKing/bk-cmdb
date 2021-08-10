@@ -432,14 +432,6 @@ func (ps *ProcServer) CheckHostInBusiness(ctx *rest.Contexts, bizID int64, hostI
 	return nil
 }
 
-func (ps *ProcServer) getDefaultModule(ctx *rest.Contexts, bizID int64, defaultFlag int) (*metadata.ModuleInst, errors.CCErrorCoder) {
-	filter := map[string]interface{}{
-		common.BKAppIDField:   bizID,
-		common.BKDefaultField: defaultFlag,
-	}
-	return ps.getOneModule(ctx, filter)
-}
-
 func (ps *ProcServer) getModule(ctx *rest.Contexts, moduleID int64) (*metadata.ModuleInst, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
 		common.BKModuleIDField: moduleID,

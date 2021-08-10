@@ -685,94 +685,14 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := input.BizID
+	// TODO confirm if we need to validate the limit of the ids
 	if len(input.ServiceInstanceIDs) == 0 {
-		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "delete service instances, service_instance_ids empty", "service_instance_ids")
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "service_instance_ids"))
 		return
 	}
 
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		// when a service instance is deleted, the related data should be deleted at the same time
-		for _, serviceInstanceID := range input.ServiceInstanceIDs {
-			serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
-			if err != nil {
-				blog.Errorf("delete service instance failed, service instance not found, serviceInstanceIDs: %d", serviceInstanceID)
-				return ctx.Kit.CCError.CCError(common.CCErrProcGetProcessInstanceFailed)
-			}
-			if serviceInstance.BizID != bizID {
-				blog.Errorf("delete service instance failed, biz id from input and service instance not equal, serviceInstanceIDs: %d", serviceInstanceID)
-				return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.MetadataField)
-			}
-
-			// step1: delete the service instance relation.
-			option := &metadata.ListProcessInstanceRelationOption{
-				BusinessID:         bizID,
-				ServiceInstanceIDs: []int64{serviceInstanceID},
-			}
-			relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, option)
-			if err != nil {
-				blog.Errorf("delete service instance: %d, but list service instance relation failed.", serviceInstanceID)
-				return ctx.Kit.CCError.CCError(common.CCErrProcGetProcessInstanceRelationFailed)
-			}
-
-			if len(relations.Info) > 0 {
-				deleteOption := metadata.DeleteProcessInstanceRelationOption{
-					ServiceInstanceIDs: []int64{serviceInstanceID},
-				}
-				err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
-				if err != nil {
-					blog.Errorf("delete service instance: %d, but delete service instance relations failed.", serviceInstanceID)
-					return ctx.Kit.CCError.CCError(common.CCErrProcDeleteServiceInstancesFailed)
-				}
-
-				// step2: delete process instance belongs to this service instance.
-				processIDs := make([]int64, 0)
-				for _, r := range relations.Info {
-					processIDs = append(processIDs, r.ProcessID)
-				}
-				if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, processIDs); err != nil {
-					blog.Errorf("delete service instance: %d, but delete process instance failed.", serviceInstanceID)
-					return ctx.Kit.CCError.CCError(common.CCErrProcDeleteServiceInstancesFailed)
-				}
-			}
-
-			// step3: delete service instance.
-			deleteOption := &metadata.CoreDeleteServiceInstanceOption{
-				BizID:              bizID,
-				ServiceInstanceIDs: []int64{serviceInstanceID},
-			}
-			err = ps.CoreAPI.CoreService().Process().DeleteServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
-			if err != nil {
-				blog.Errorf("delete service instance: %d failed, err: %v", serviceInstanceID, err)
-				return ctx.Kit.CCError.CCError(common.CCErrProcDeleteServiceInstancesFailed)
-			}
-
-			// step4: check and move host from module if no serviceInstance on it
-			filter := &metadata.ListServiceInstanceOption{
-				BusinessID: bizID,
-				HostIDs:    []int64{serviceInstance.HostID},
-				ModuleIDs:  []int64{serviceInstance.ModuleID},
-			}
-			result, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, filter)
-			if err != nil {
-				blog.Errorf("get host related service instances failed, bizID: %d, serviceInstanceID: %d, err: %v", bizID, serviceInstance.HostID, err)
-				return ctx.Kit.CCError.CCError(common.CCErrProcGetServiceInstancesFailed)
-			}
-			if len(result.Info) != 0 {
-				continue
-			}
-			// just remove host from this module
-			removeHostFromModuleOption := metadata.RemoveHostsFromModuleOption{
-				ApplicationID: bizID,
-				HostID:        serviceInstance.HostID,
-				ModuleID:      serviceInstance.ModuleID,
-			}
-			if _, err := ps.CoreAPI.CoreService().Host().RemoveFromModule(ctx.Kit.Ctx, ctx.Kit.Header, &removeHostFromModuleOption); err != nil {
-				blog.Errorf("remove host from module failed, option: %+v, err: %v", removeHostFromModuleOption, err)
-				return ctx.Kit.CCError.CCError(common.CCErrHostMoveResourcePoolFail)
-			}
-		}
-		return nil
+		return ps.deleteServiceInstance(ctx.Kit, input.BizID, input.ServiceInstanceIDs)
 	})
 
 	if txnErr != nil {
@@ -780,6 +700,76 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
+}
+
+func (ps *ProcServer) deleteServiceInstance(kit *rest.Kit, bizID int64, svcInstIDs []int64) error {
+	if len(svcInstIDs) == 0 {
+		return nil
+	}
+
+	// check if all service instances are exists in the business
+	cntOpt := []map[string]interface{}{{
+		common.BKAppIDField: bizID,
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: svcInstIDs}},
+	}
+	svcInstCounts, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameServiceInstance, cntOpt)
+	if err != nil {
+		blog.Errorf("get service instances(%+v) count failed, err: %v, rid: %s", svcInstIDs, err, kit.Rid)
+		return err
+	}
+
+	if svcInstCounts[0] != int64(len(svcInstIDs)) {
+		blog.ErrorJSON("service instance ids(%+v) not all exists in business, rid: %s", svcInstIDs, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "service_instance_ids")
+	}
+
+	// when a service instance is deleted, the related data should be deleted at the same time
+	// step1: delete the service instance relation.
+	relationOpt := &metadata.ListProcessInstanceRelationOption{
+		BusinessID:         bizID,
+		ServiceInstanceIDs: svcInstIDs,
+		Page:               metadata.BasePage{Limit: common.BKNoLimit},
+	}
+	relationRes, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(kit.Ctx, kit.Header,
+		relationOpt)
+	if err != nil {
+		blog.Errorf("list service instance(%+v) relations failed, err: %v, rid: %s", svcInstIDs, err, kit.Rid)
+		return err
+	}
+
+	if len(relationRes.Info) > 0 {
+		delOpt := metadata.DeleteProcessInstanceRelationOption{
+			ServiceInstanceIDs: svcInstIDs,
+		}
+		err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(kit.Ctx, kit.Header, delOpt)
+		if err != nil {
+			blog.Errorf("delete service instance(%+v) relation failed, err: %v, rid: %s", svcInstIDs, err, kit.Rid)
+			return err
+		}
+
+		// step2: delete process instance belongs to this service instance.
+		processIDs := make([]int64, 0)
+		for _, r := range relationRes.Info {
+			processIDs = append(processIDs, r.ProcessID)
+		}
+		if err := ps.Logic.DeleteProcessInstanceBatch(kit, processIDs); err != nil {
+			blog.Errorf("delete process instances(%+v) failed, err: %v, rid: %s", processIDs, err, kit.Rid)
+			return err
+		}
+	}
+
+	// step3: delete service instance.
+	deleteOption := &metadata.CoreDeleteServiceInstanceOption{
+		BizID:              bizID,
+		ServiceInstanceIDs: svcInstIDs,
+	}
+	err = ps.CoreAPI.CoreService().Process().DeleteServiceInstance(kit.Ctx, kit.Header, deleteOption)
+	if err != nil {
+		blog.Errorf("delete service instances: %+v failed, err: %v, rid: %s", svcInstIDs, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrProcDeleteServiceInstancesFailed)
+	}
+	return nil
 }
 
 // this function works to find differences between the service template and service instances in a module.
@@ -1731,149 +1721,4 @@ func (ps *ProcServer) ServiceInstanceLabelsAggregation(ctx *rest.Contexts) {
 		aggregationData[key] = util.StrArrayUnique(aggregationData[key])
 	}
 	ctx.RespEntity(aggregationData)
-}
-
-func (ps *ProcServer) DeleteServiceInstancePreview(ctx *rest.Contexts) {
-	// step1. parse request parameters
-	input := new(metadata.DeleteServiceInstanceOption)
-	if err := ctx.DecodeInto(input); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	bizID := input.BizID
-	if len(input.ServiceInstanceIDs) == 0 {
-		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "delete service instances, service_instance_ids empty", "service_instance_ids")
-		return
-	}
-
-	// step2. get to be delete service instances and related hosts
-	listOption := &metadata.ListServiceInstanceOption{
-		BusinessID:         bizID,
-		ServiceInstanceIDs: input.ServiceInstanceIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	listToDeleteResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, listOption)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed, "generate delete preview failed, ListServiceInstance failed, listOption: %+v", listOption)
-		return
-	}
-	hostIDs := make([]int64, 0)
-	hostModules := make(map[int64][]int64)
-	for _, instance := range listToDeleteResult.Info {
-		hostIDs = append(hostIDs, instance.HostID)
-		if _, exist := hostModules[instance.HostID]; !exist {
-			hostModules[instance.HostID] = make([]int64, 0)
-		}
-		if !util.InArray(instance.ModuleID, hostModules[instance.HostID]) {
-			hostModules[instance.HostID] = append(hostModules[instance.HostID], instance.ModuleID)
-		}
-	}
-
-	// step3. get related hosts expired service instances(current minus deleted items)
-	listOption = &metadata.ListServiceInstanceOption{
-		BusinessID: bizID,
-		HostIDs:    hostIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	listCurrentResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, listOption)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed, "generate delete preview failed, get hosts related service instance failed, hostIDs: %+v", hostIDs)
-		return
-	}
-	expiredHostModule := make(map[int64][]int64)
-	for _, instance := range listCurrentResult.Info {
-		// skip to be delete serviceInstance
-		if util.InArray(instance.ID, input.ServiceInstanceIDs) {
-			continue
-		}
-
-		if _, exist := expiredHostModule[instance.HostID]; !exist {
-			expiredHostModule[instance.HostID] = make([]int64, 0)
-		}
-		expiredHostModule[instance.HostID] = append(expiredHostModule[instance.HostID], instance.ModuleID)
-	}
-
-	// get idle module
-	idleModule, err := ps.getDefaultModule(ctx, bizID, common.DefaultResModuleFlag)
-	if err != nil {
-		blog.Errorf("generate delete preview failed, getDefaultModule failed, bizID: %d, err: %+v, rid: %s", bizID, err, ctx.Kit.Rid)
-		ctx.RespWithError(err, common.CCErrGetModule, "generate delete preview failed, get idle module failed, bizID: %d", bizID)
-		return
-	}
-	idleModuleID := idleModule.ModuleID
-
-	preview := metadata.ServiceInstanceDeletePreview{
-		ToMoveModuleHosts: make([]metadata.RemoveFromModuleHost, 0),
-	}
-
-	// check host remove from modules
-	finalHostModules := make([]metadata.Host2Modules, 0)
-	for hostID, moduleIDs := range hostModules {
-		hostPreview := metadata.RemoveFromModuleHost{
-			HostID:            hostID,
-			RemoveFromModules: make([]int64, 0),
-		}
-		expiredModules, exist := expiredHostModule[hostID]
-		if !exist {
-			// host will be move to idle module
-			hostPreview.MoveToIdle = true
-			hostPreview.RemoveFromModules = moduleIDs
-			hostPreview.FinalModules = []int64{idleModuleID}
-			preview.ToMoveModuleHosts = append(preview.ToMoveModuleHosts, hostPreview)
-			finalHostModules = append(finalHostModules, metadata.Host2Modules{
-				HostID:    hostID,
-				ModuleIDs: hostPreview.FinalModules,
-			})
-			continue
-		}
-		for _, moduleID := range moduleIDs {
-			if !util.InArray(moduleID, expiredModules) {
-				// host will be remove from module:expiredModules[hostID]
-				hostPreview.RemoveFromModules = append(hostPreview.RemoveFromModules, moduleID)
-			} else {
-				hostPreview.FinalModules = append(hostPreview.FinalModules, moduleID)
-			}
-		}
-		if len(hostPreview.RemoveFromModules) > 0 {
-			preview.ToMoveModuleHosts = append(preview.ToMoveModuleHosts, hostPreview)
-		}
-		finalHostModules = append(finalHostModules, metadata.Host2Modules{
-			HostID:    hostID,
-			ModuleIDs: hostPreview.FinalModules,
-		})
-	}
-
-	finalModules := make([]int64, 0)
-	for _, item := range finalHostModules {
-		finalModules = append(finalModules, item.ModuleIDs...)
-	}
-	listRuleOption := metadata.ListHostApplyRuleOption{
-		ModuleIDs: finalModules,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	ruleResult, err := ps.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, listRuleOption)
-	if err != nil {
-		blog.Errorf("generate delete preview failed, ListHostApplyRule failed, option: %+v, err: %+v, rid: %s", listRuleOption, err, ctx.Kit.Rid)
-		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "generate delete preview failed, ListHostApplyRule failed, option: %+v", listRuleOption)
-		return
-	}
-	hostApplyPlanOption := metadata.HostApplyPlanOption{
-		HostModules: finalHostModules,
-		Rules:       ruleResult.Info,
-	}
-	applyPlan, err := ps.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(ctx.Kit.Ctx, ctx.Kit.Header, bizID, hostApplyPlanOption)
-	if err != nil {
-		blog.Errorf("generate delete preview failed, GenerateApplyPlan failed, option: %+v, err: %+v, rid: %s", hostApplyPlanOption, err, ctx.Kit.Rid)
-		ctx.RespWithError(err, common.CCErrGetModule, "generate delete preview failed, GenerateApplyPlan failed, option: %+v", hostApplyPlanOption)
-		return
-	}
-	preview.HostApplyPlan = applyPlan
-	ctx.RespEntity(preview)
 }
