@@ -186,7 +186,7 @@
   import { mapState, mapGetters, mapActions } from 'vuex'
   import cmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
   import cmdbImport from '@/components/import/import'
-  import { MENU_RESOURCE_INSTANCE_DETAILS } from '@/dictionary/menu-symbol'
+  import { MENU_RESOURCE_INSTANCE, MENU_RESOURCE_INSTANCE_DETAILS } from '@/dictionary/menu-symbol'
   import cmdbPropertySelector from '@/components/property-selector'
   import RouterQuery from '@/router/query'
   import Utils from '@/components/filters/utils'
@@ -547,6 +547,11 @@
         })
       },
       getTableData() {
+        // 防止切换到子路由产生预期外的请求
+        if (this.$route.name !== MENU_RESOURCE_INSTANCE) {
+          return
+        }
+
         this.getInstList({ cancelPrevious: true, globalPermission: false }).then((data) => {
           if (data.count && !data.info.length) {
             RouterQuery.set({
