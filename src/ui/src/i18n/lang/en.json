@@ -1449,6 +1449,9 @@
     "账号": "Account",
     "模糊": "fuzzy",
     "模板名称将作为实例化后的模块名": "The template name will be used as the module name after instantiation",
+    "该字段已被设为不可编辑，自动应用规则失效": "The field has been set as non-editable, and the auto-apply rule is invalid",
+    "主机属性设置为不可编辑状态后提示": "After being set to non-editable state, it will affect the configured automatic application rules, please be aware",
+    "检测到输入框中包含非标准IP格式字符串，请选择以XXX自动解析": "It is detected that the input box contains a non-standard IP format string, please choose {c1} or {c2} to automatically parse it.",
     "导入更新提示": "You need to export the instances and complete the modification before import",
     "导入文件大小提示": "Xlsx files within 20m",
     "导入文件拖拽提示": "Drag the file here or {clickUpload}",
@@ -1456,5 +1459,6 @@
     "数据导入中": "Importing, please wait...",
     "数据导入终止提示": "Importing, closing will not terminate the import task",
     "第N行": "The {row} row",
-    "主机导入文件提示": "Only support host in default area"
+    "主机导入文件提示": "Only support host in default area",
+    "已删除的实例": "Deleted instance"
 }

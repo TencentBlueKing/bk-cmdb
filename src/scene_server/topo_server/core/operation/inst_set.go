@@ -118,7 +118,6 @@ func (s *set) CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapst
 	}
 
 	data.Set(common.BKSetTemplateIDField, setTemplate.ID)
-	data.Set(common.BKSetTemplateVersionField, setTemplate.Version)
 	data.Remove(common.MetadataField)
 	setInstance, err := s.inst.CreateInst(kit, obj, data)
 	if err != nil {
@@ -213,6 +212,17 @@ func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 		return ccErr
 	}
 
+	taskCond := &metadata.DeleteOption{
+		Condition: map[string]interface{}{
+			common.BKInstIDField: map[string]interface{}{
+				common.BKDBIN: setIDs,
+			}}}
+	if err = s.clientSet.TaskServer().Task().DeleteTask(kit.Ctx, kit.Header, taskCond); err != nil {
+		blog.Errorf("[operation-set] failed to delete set sync task message failed, "+
+			"bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDs, err.Error(), kit.Rid)
+		return err
+	}
+
 	// clear the sets
 	return s.inst.DeleteInst(kit, common.BKInnerObjIDSet, setCond, false)
 }
@@ -232,7 +242,6 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, biz
 	data.Remove(common.BKAppIDField)
 	data.Remove(common.BKSetIDField)
 	data.Remove(common.BKSetTemplateIDField)
-	data.Remove(common.BKSetTemplateVersionField)
 
 	err := s.inst.UpdateInst(kit, data, obj, innerCond, setID)
 	if err != nil {

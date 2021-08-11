@@ -4,6 +4,7 @@
     searchable
     v-model="localValue"
     v-bind="$attrs"
+    @clear="() => $emit('clear')"
     @toggle="handleToggle">
     <bk-option v-for="(option, index) in options"
       :key="index"

@@ -1,5 +1,5 @@
 <template>
-  <div class="classify-layout clearfix" v-bkloading="{ isLoading: $loading('getObjectCommonInstanceCount') }">
+  <div class="classify-layout clearfix">
     <div class="classify-filter">
       <bk-input class="filter-input"
         clearable
@@ -16,8 +16,7 @@
           v-for="classify in classifyColumns[col - 1]"
           :key="classify['bk_classification_id']"
           :classify="classify"
-          :collection="collection"
-          :instance-count="instanceCount">
+          :collection="collection">
         </cmdb-classify-panel>
       </div>
     </div>
@@ -27,6 +26,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
+  import debounce from 'lodash.debounce'
   import {
     MENU_RESOURCE_COLLECTION,
     MENU_RESOURCE_HOST_COLLECTION,
@@ -34,7 +34,8 @@
   } from '@/dictionary/menu-symbol'
   import noSearchResults from '@/views/status/no-search-results.vue'
   import cmdbClassifyPanel from './children/classify-panel'
-  import debounce from 'lodash.debounce'
+  import useInstanceCount from './children/use-instance-count.js'
+
   export default {
     components: {
       cmdbClassifyPanel,
@@ -44,8 +45,7 @@
       return {
         filter: '',
         debounceFilter: null,
-        matchedModels: null,
-        instanceCount: []
+        matchedModels: null
       }
     },
     computed: {
@@ -89,6 +89,9 @@
         })
         return result
       },
+      modelIds() {
+        return this.filteredClassifications.map(item => item.bk_objects.map(obj => obj.bk_obj_id))
+      },
       classifyColumns() {
         const colHeight = [0, 0, 0, 0]
         const classifyColumns = [[], [], [], []]
@@ -111,7 +114,8 @@
     },
     created() {
       this.debounceFilter = debounce(this.filterModel, 300)
-      this.getInstanceCount()
+      const { fetchData: getInstanceCount } = useInstanceCount({ modelIds: this.modelIds }, this)
+      getInstanceCount()
     },
     methods: {
       filterModel() {
@@ -120,20 +124,6 @@
           this.matchedModels = models.map(model => model.bk_obj_id)
         } else {
           this.matchedModels = null
-        }
-      },
-      async getInstanceCount() {
-        try {
-          this.instanceCount = await this.$store.dispatch('objectCommonInst/getInstanceCount', {
-            config: {
-              requestId: 'getObjectCommonInstanceCount',
-              globalError: false
-            }
-          })
-        } catch (e) {
-          console.error(e)
-          this.instanceCount = []
-          this.$route.meta.view = 'error'
         }
       },
       calcWaterfallHeight(classify) {

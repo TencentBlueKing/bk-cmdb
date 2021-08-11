@@ -38,6 +38,7 @@ type InstanceInterface interface {
 	GetInternalModule(ctx context.Context, ownerID, appID string, h http.Header) (resp *metadata.SearchInnterAppTopoResult, err error)
 	SearchBriefBizTopo(ctx context.Context, h http.Header, bizID int64, input map[string]interface{}) (resp *metadata.SearchBriefBizTopoResult, err error)
 	CreateInst(ctx context.Context, objID string, h http.Header, dat interface{}) (resp *metadata.CreateInstResult, err error)
+	CreateManyCommInst(ctx context.Context, objID string, header http.Header, data metadata.CreateManyCommInst) (resp *metadata.CreateManyCommInstResult, err error)
 	DeleteInst(ctx context.Context, objID string, instID int64, h http.Header) (resp *metadata.Response, err error)
 	UpdateInst(ctx context.Context, objID string, instID int64, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	SelectInsts(ctx context.Context, ownerID string, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
@@ -60,6 +61,8 @@ type InstanceInterface interface {
 	SearchSet(ctx context.Context, ownerID string, appID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
 	SearchSetBatch(ctx context.Context, appID string, h http.Header, s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error)
 	SearchInstsNames(ctx context.Context, h http.Header, s *metadata.SearchInstsNamesOption) (resp *metadata.ArrayResponse, err error)
+	GetTopoNodeHostAndServiceInstCount(ctx context.Context, h http.Header, objID int64,
+		s *metadata.HostAndSerInstCountOption) (resp *metadata.GetHostAndSerInstCountResult, err error)
 
 	// SearchObjectInstances searches object instances.
 	SearchObjectInstances(ctx context.Context, header http.Header,

@@ -179,6 +179,23 @@ func (asst *Association) CreateInst(ctx context.Context, h http.Header, request 
 
 	return
 }
+
+func (asst *Association) CreateManyInstAssociation(ctx context.Context, header http.Header,
+	request *metadata.CreateManyInstAsstRequest) (*metadata.CreateManyInstAsstResult, error) {
+	resp := new(metadata.CreateManyInstAsstResult)
+	subPath := "/createmany/instassociation"
+
+	err := asst.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	return resp, err
+}
+
 func (asst *Association) DeleteInst(ctx context.Context, h http.Header, objID string, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error) {
 	resp = new(metadata.DeleteAssociationInstResult)
 	subPath := "/delete/instassociation/%s/%d"

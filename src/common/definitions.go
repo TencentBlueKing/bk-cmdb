@@ -73,6 +73,7 @@ const (
 
 	// BKTopoBusinessLevelDefault the mainline topo level default level
 	BKTopoBusinessLevelDefault = 7
+
 )
 
 const (
@@ -209,6 +210,15 @@ const (
 	// BKDBType selects documents where the value of the field is an instance of the specified BSON type(s).
 	// Querying by data type is useful when dealing with highly unstructured data where data types are not predictable.
 	BKDBType = "$type"
+
+	// BKDBSort the db operator
+	BKDBSort = "$sort"
+
+	// BKDBReplaceRoot the db operator
+	BKDBReplaceRoot = "$replaceRoot"
+
+	// BKDBLimit the db operator to limit return number of doc
+	BKDBLimit = "$limit"
 )
 
 const (
@@ -482,8 +492,7 @@ const (
 	BKProcessTemplateIDField = "process_template_id"
 	BKServiceCategoryIDField = "service_category_id"
 
-	BKSetTemplateIDField      = "set_template_id"
-	BKSetTemplateVersionField = "set_template_version"
+	BKSetTemplateIDField = "set_template_id"
 
 	HostApplyRuleIDField = "host_apply_rule_id"
 
@@ -619,6 +628,7 @@ const (
 	BKClusterTimeField = "cluster_time"
 	BKEventTypeField   = "type"
 	BKStartAtTimeField = "start_at_time"
+	BKSubResourceField = "bk_sub_resource"
 )
 
 const (
@@ -986,6 +996,7 @@ const (
 	HostOSTypeEnumWindows = "2"
 	HostOSTypeEnumAIX     = "3"
 	HostOSTypeEnumUNIX    = "4"
+	HostOSTypeEnumSolaris = "5"
 )
 
 const (
@@ -1025,7 +1036,7 @@ const (
 const (
 	// URLFilterWhiteList url filter white list not execute any filter
 	// multiple url separated by commas
-	URLFilterWhiteListSuffix = "/healthz,/version"
+	URLFilterWhiteListSuffix = "/healthz,/version,/monitor_healthz"
 
 	URLFilterWhiteListSepareteChar = ","
 )
@@ -1175,7 +1186,7 @@ const (
 
 const (
 	NameFieldMaxLength         = 256
-	MainlineNameFieldMaxLength = 32
+	MainlineNameFieldMaxLength = 256
 
 	// 用于表示还未设置服务模板的情况，比如没有绑定服务模板
 	ServiceTemplateIDNotSet = 0
@@ -1211,6 +1222,7 @@ const (
 	OptionOther          = "其他"
 	TimerPattern         = "^[\\d]+\\:[\\d]+$"
 	SyncSetTaskName      = "sync-settemplate2set"
+	SyncSetTaskFlag      = "set_template_sync"
 
 	BKHostState = "bk_state"
 )

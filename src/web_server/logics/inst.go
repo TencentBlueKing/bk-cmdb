@@ -107,7 +107,7 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 
 // importInsts import insts info
 func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header,
-	defLang lang.DefaultCCLanguageIf, modelBizID int64, AsstObjectUniqueIDMap map[string]int64, objectUniqueID int64) (
+	defLang lang.DefaultCCLanguageIf, modelBizID int64, asstObjectUniqueIDMap map[string]int64, objectUniqueID int64) (
 	resultData mapstr.MapStr, errCode int, err error) {
 	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -145,13 +145,13 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 
 	}
 
-	if len(f.Sheets) > 2 {
+	if len(f.Sheets) > 2 && len(asstObjectUniqueIDMap) > 0 {
 		asstInfoMap := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset)
 
 		if len(asstInfoMap) > 0 {
 			asstInfoMapInput := &metadata.RequestImportAssociation{
 				AssociationInfoMap:    asstInfoMap,
-				AsstObjectUniqueIDMap: AsstObjectUniqueIDMap,
+				AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
 				ObjectUniqueID:        objectUniqueID,
 			}
 			asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, objID, asstInfoMapInput)

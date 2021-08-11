@@ -14,6 +14,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
@@ -23,10 +24,14 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/common/util"
+	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/configures"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/monitor"
+	"configcenter/src/thirdparty/monitor/meta"
 
 	"github.com/emicklei/go-restful"
 )
@@ -85,13 +90,17 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/specify/version/{distribution}/{ownerID}").To(s.migrateSpecifyVersion))
 	api.Route(api.POST("/migrate/config/refresh").To(s.refreshConfig))
 	api.Route(api.POST("/migrate/dataid").To(s.migrateDataID))
+	api.Route(api.POST("/migrate/sync/db/index").To(s.RunSyncDBIndex))
 	api.Route(api.GET("/healthz").To(s.Healthz))
+	api.Route(api.GET("/monitor_healthz").To(s.MonitorHealth))
 
 	container.Add(api)
 
-	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
-	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
-	container.Add(healthzAPI)
+	// common api
+	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	commonAPI.Route(commonAPI.GET("/healthz").To(s.Healthz))
+	commonAPI.Route(commonAPI.GET("/version").To(restfulservice.Version))
+	container.Add(commonAPI)
 
 	return container
 }
@@ -139,4 +148,18 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	answer.SetCommonResponse()
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteEntity(answer)
+}
+
+func (s *Service) MonitorHealth(req *restful.Request, resp *restful.Response) {
+	rid := util.GenerateRID()
+	alam := &meta.Alarm{
+		RequestID: rid,
+		Type:      meta.EventTestInfo,
+		Detail:    fmt.Sprintf("test event link connectivity"),
+		Module:    types.CC_MODULE_MIGRATE,
+	}
+	monitor.Collect(alam)
+	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteEntity(metadata.NewSuccessResp(alam))
+
 }

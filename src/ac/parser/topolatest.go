@@ -514,6 +514,7 @@ const (
 	findObjectInstanceAssociationLatestPattern        = "/api/v3/find/instassociation"
 	findObjectInstanceAssociationRelatedLatestPattern = "/api/v3/find/instassociation/related"
 	createObjectInstanceAssociationLatestPattern      = "/api/v3/create/instassociation"
+	createObjectManyInstanceAssociationLatestPattern  = "/api/v3/createmany/instassociation"
 )
 
 var (
@@ -709,6 +710,121 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		return ps
 	}
 
+	if ps.hitPattern(createObjectManyInstanceAssociationLatestPattern, http.MethodPost) {
+		val, err := ps.RequestCtx.getValueFromBody(common.AssociationObjAsstIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		associationObjAsstID := val.String()
+		filter := mapstr.MapStr{
+			common.AssociationObjAsstIDField: associationObjAsstID,
+		}
+		asst, err := ps.getModelAssociation(filter)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		modelFilter := mapstr.MapStr{
+			common.BKObjIDField: mapstr.MapStr{
+				common.BKDBIN: []interface{}{
+					asst[0].ObjectID,
+					asst[0].AsstObjID,
+				},
+			},
+		}
+		models, err := ps.searchModels(modelFilter)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		instances, err := ps.RequestCtx.getValueFromBody("details")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		for _, instance := range instances.Array() {
+			instanceMap := instance.Map()
+			instID := instanceMap[common.BKInstIDField]
+			asstInstID := instanceMap[common.BKAsstInstIDField]
+			instanceID := instID.Int()
+			if instanceID <= 0 {
+				ps.err = errors.New("invalid bk_inst_id value")
+				return ps
+			}
+
+			asstInstIDInt := asstInstID.Int()
+			if asstInstIDInt <= 0 {
+				ps.err = errors.New("invalid bk_asst_inst_id value")
+				return ps
+			}
+			// 处理模型自关联的情况
+			if len(models) == 1 {
+				instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID)
+				if err != nil {
+					ps.err = err
+					return ps
+				}
+
+				ps.Attribute.Resources = []meta.ResourceAttribute{
+					{
+						Basic: meta.Basic{
+							Type:       instanceType,
+							Action:     meta.Update,
+							InstanceID: instanceID,
+						},
+						Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
+						BusinessID: bizID,
+					},
+					{
+						Basic: meta.Basic{
+							Type:       instanceType,
+							Action:     meta.Update,
+							InstanceID: asstInstIDInt,
+						},
+						Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
+						BusinessID: bizID,
+					},
+				}
+				return ps
+			}
+
+			for _, model := range models {
+				var instID int64
+				if model.ObjectID == asst[0].ObjectID {
+					instID = instanceID
+				} else {
+					instID = asstInstIDInt
+				}
+				instanceType, err := ps.getInstanceTypeByObject(model.ObjectID)
+				if err != nil {
+					ps.err = err
+					return ps
+				}
+
+				ps.Attribute.Resources = append(ps.Attribute.Resources,
+					meta.ResourceAttribute{
+						Basic: meta.Basic{
+							Type:       instanceType,
+							Action:     meta.Update,
+							InstanceID: instID,
+						},
+						Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+						BusinessID: bizID,
+					})
+			}
+		}
+		return ps
+	}
+
 	// delete object's instance association operation. for web
 	if ps.hitRegexp(deleteObjectInstanceAssociationLatestRegexp, http.MethodDelete) {
 		objID := ps.RequestCtx.Elements[4]
@@ -838,6 +954,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 var (
 	createObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/create/instance/object/[^\s/]+/?$`)
+	createObjectManyInstanceLatestRegexp      = regexp.MustCompile(`^/api/v3/createmany/instance/object/[^\s/]+/?$`)
 	findObjectInstanceAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/find/instassociation/object/[^\s/]+/?$`)
 	updateObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/update/instance/object/[^\s/]+/inst/[0-9]+/?$`)
 	updateObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/updatemany/instance/object/[^\s/]+/?$`)
@@ -896,6 +1013,44 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
+		return ps
+	}
+
+	if ps.hitRegexp(createObjectManyInstanceLatestRegexp, http.MethodPost) {
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		var modelType = meta.ModelInstance
+		isMainline, err := ps.isMainlineModel(objID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if isMainline {
+			modelType = meta.MainlineInstance
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   modelType,
+					Action: meta.Create,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+			},
+		}
+
 		return ps
 	}
 
@@ -1022,13 +1177,53 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		var modelType = meta.ModelInstance
+		isMainline, err := ps.isMainlineModel(objID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		if isMainline {
+			// special logic for mainline object's instance authorization.
+			modelType = meta.MainlineInstance
+		}
+
+		instIDs := make([]int64, 0)
+		val, err := ps.RequestCtx.getValueFromBody("delete.inst_ids")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		val.ForEach(
+			func(key, value gjson.Result) bool {
+				instIDs = append(instIDs, value.Int())
+				return true
+			})
+
+		for _, instID := range instIDs {
+			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
-					Action: meta.SkipAction,
+					Type:       modelType,
+					Action:     meta.Delete,
+					InstanceID: instID,
 				},
-			},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+			})
 		}
 		return ps
 	}
@@ -2123,6 +2318,8 @@ var (
 	findBusinessInstanceTopologyPathRegexp                 = regexp.MustCompile(`^/api/v3/find/topopath/biz/[0-9]+/?$`)
 	findHostApplyRelatedObjectTopologyRegex                = regexp.MustCompile(`^/api/v3/find/topoinst/bk_biz_id/([0-9]+)/host_apply_rule_related/?$`)
 	findBusinessInstanceTopologyWithStatisticsLatestRegexp = regexp.MustCompile(`^/api/v3/find/topoinst_with_statistics/biz/[0-9]+/?$`)
+	findTopoNodeHostAndServiceInstCountLatestRegexp        = regexp.MustCompile(
+		`^/api/v3/find/topoinstnode/host_serviceinst_count/[0-9]+/?$`)
 )
 
 func (ps *parseStream) mainlineLatest() *parseStream {
@@ -2220,17 +2417,96 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// find business instance topology operation.
 	// also is find mainline instance topology operation.
-	if ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) ||
-		ps.hitRegexp(findBusinessInstanceTopologyPathRegexp, http.MethodPost) ||
-		ps.hitRegexp(findBusinessInstanceTopologyWithStatisticsLatestRegexp, http.MethodPost) {
+	if  ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find business instance topology, but got invalid url")
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			ps.err = err
+			ps.err = fmt.Errorf("parse biz id from url failed, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceTopology,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find business instance topology operation.
+	// also is find mainline instance topology operation.
+	if ps.hitRegexp(findBusinessInstanceTopologyPathRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("find business instance topology, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("parse biz id from url failed, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceTopology,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find business instance topology operation.
+	// also is find mainline instance topology operation.
+	if ps.hitRegexp(findBusinessInstanceTopologyWithStatisticsLatestRegexp, http.MethodPost)  {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("find business instance topology, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("parse biz id from url failed, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceTopology,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	// get toponode host and service instance count
+	if ps.hitRegexp(findTopoNodeHostAndServiceInstCountLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("find topo node host and service instance count, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("parse biz id from url failed, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
 			return ps
 		}
 

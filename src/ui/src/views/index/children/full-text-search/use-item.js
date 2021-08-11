@@ -93,15 +93,19 @@ export default function useItem(list, root) {
     })
   }
   const handleGoBusiness = (source) => {
-    const name = source.bk_data_status === 'disabled' ? MENU_RESOURCE_BUSINESS_HISTORY : MENU_RESOURCE_BUSINESS_DETAILS
-    root.$routerActions.redirect({
-      name,
-      params: {
-        bizId: source.bk_biz_id,
-        bizName: source.bk_biz_name
-      },
-      history: true
-    })
+    if (source.bk_data_status === 'disabled') {
+      root.$routerActions.redirect({
+        name: MENU_RESOURCE_BUSINESS_HISTORY,
+        params: { bizName: source.bk_biz_name },
+        history: true
+      })
+    } else {
+      root.$routerActions.redirect({
+        name: MENU_RESOURCE_BUSINESS_DETAILS,
+        params: { bizId: source.bk_biz_id },
+        history: true
+      })
+    }
   }
   const handleGoModel = (model) => {
     root.$routerActions.redirect({

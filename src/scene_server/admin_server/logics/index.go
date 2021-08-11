@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"configcenter/src/common"
@@ -38,8 +39,23 @@ import (
 */
 
 func DBSync(e *backbone.Engine, db dal.RDB, options options.Config) {
-	RunSyncDBTableIndex(context.Background(), e, db, options)
+	f := func() {
+		defaultDBTable = db
+		fmt.Println(defaultDBTable)
+	}
+	once.Do(f)
+
+	go func() {
+		RunSyncDBTableIndex(context.Background(), e, db, options)
+	}()
+
 }
+
+var (
+	once sync.Once
+
+	defaultDBTable dal.RDB
+)
 
 type dbTable struct {
 	db                         dal.RDB
@@ -88,7 +104,7 @@ func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB,
 				}
 				blog.Infof("end sync table rid: %s", rid)
 				time.Sleep(time.Second * time.Duration(options.ShardingTable.TableInterval))
-				blog.Infof("end syncxxxx table rid: %s", rid)
+				blog.Infof("end sync table rid: %s", rid)
 
 			} else {
 				blog.Infof("start table common index rid: %s", rid)
@@ -109,6 +125,36 @@ func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB,
 
 }
 
+func RunSyncDBIndex(ctx context.Context, e *backbone.Engine) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	ccErr := e.CCErr.CreateDefaultCCErrorIf("en")
+
+	if defaultDBTable == nil {
+		blog.Errorf("db client not initialization is complete, rid: %s", rid)
+		return ccErr.CCError(common.CCErrCommDBSelectFailed)
+	}
+	// defaultDBTable DBSync 负责在启动时候初始化
+	dbReady, err := upgrader.DBReady(ctx, defaultDBTable)
+	if err != nil {
+		blog.Errorf("Check whether the db initialization is complete error. err: %s rid: %s", err.Error(), rid)
+		return ccErr.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if !dbReady {
+		blog.Errorf("db not initialization is complete, rid: %s", rid)
+		return ccErr.CCError(common.CCErrCommDBSelectFailed)
+
+	}
+
+	dt := &dbTable{db: defaultDBTable, rid: rid}
+	blog.Infof("start table common index rid: %s", rid)
+	if err := dt.syncIndexes(ctx); err != nil {
+		blog.Errorf("model table sync error. err: %s, rid: %s", err.Error(), dt.rid)
+	}
+	blog.Infof("end sync table index rid: %s", rid)
+
+	return nil
+}
+
 // 同步表中定义的索引
 func (dt *dbTable) syncIndexes(ctx context.Context) error {
 	if err := dt.syncDBTableIndexes(ctx); err != nil {
@@ -124,8 +170,20 @@ func (dt *dbTable) syncDBTableIndexes(ctx context.Context) error {
 	deprecatedIndexNames := index.DeprecatedIndexName()
 	tableIndexes := index.TableIndexes()
 
+	dtIndexesMap, err := dt.findSyncIndexesLogicUnique(ctx)
+	if err != nil {
+		blog.ErrorJSON("find db logic unique error. err: %s, rid: %s", err, dt.rid)
+		return err
+	}
+
+	for dt, indexes := range dtIndexesMap {
+		tableIndexes[dt] = append(tableIndexes[dt], indexes...)
+	}
+
 	for tableName, indexes := range tableIndexes {
+		blog.Infof("start sync table(%s) index, rid: %s", tableName, dt.rid)
 		deprecatedTableIndexNames := deprecatedIndexNames[tableName]
+
 		if err := dt.syncIndexesToDB(ctx, tableName, indexes, deprecatedTableIndexNames); err != nil {
 			blog.Warnf("sync table (%s) index error. err: %s, rid: %s", tableName, err.Error(), dt.rid)
 			continue
@@ -213,6 +271,59 @@ func (dt *dbTable) syncIndexesToDB(ctx context.Context, tableName string,
 
 }
 
+func (dt *dbTable) findSyncIndexesLogicUnique(ctx context.Context) (map[string][]types.Index, error) {
+	objs := make([]metadata.Object, 0)
+	if err := dt.db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKObjIDField,
+		common.BKIsPre, common.BKOwnerIDField).All(ctx, &objs); err != nil {
+		blog.Errorf("get all common object id  error. err: %s, rid: %s", err.Error(), dt.rid)
+		return nil, err
+	}
+
+	tbIndexes := make(map[string][]types.Index)
+	for _, obj := range objs {
+		blog.Infof("start object(%s) sharding table rid: %s", obj.ObjectID, dt.rid)
+
+		instTable := common.GetObjectInstTableName(obj.ObjectID, obj.OwnerID)
+		instAsstTable := common.GetObjectInstAsstTableName(obj.ObjectID, obj.OwnerID)
+
+		uniques, err := dt.findObjUniques(ctx, obj.ObjectID)
+		if err != nil {
+			blog.Errorf("object(%s) logic unique to db index error. err: %s, rid: %s",
+				obj.ObjectID, err.Error(), dt.rid)
+			return nil, err
+		}
+		objIndexes := append(index.InstanceIndexes(), uniques...)
+		// 内置模型不需要简表
+		if !obj.IsPre {
+			tbIndexes[instTable] = append(index.InstanceIndexes(), objIndexes...)
+		} else {
+			tb := ""
+			switch obj.ObjectID {
+			case common.BKInnerObjIDHost:
+				tb = common.BKTableNameBaseHost
+			case common.BKInnerObjIDApp:
+				tb = common.BKTableNameBaseApp
+			case common.BKInnerObjIDModule:
+				tb = common.BKTableNameBaseModule
+			case common.BKInnerObjIDSet:
+				tb = common.BKTableNameBaseSet
+			case common.BKInnerObjIDPlat:
+				tb = common.BKTableNameBasePlat
+			case common.BKInnerObjIDProc:
+				tb = common.BKTableNameBaseProcess
+			}
+			if tb != "" {
+				tbIndexes[tb] = uniques
+			}
+
+		}
+		tbIndexes[instAsstTable] = index.InstanceAssociationIndexes()
+
+	}
+
+	return tbIndexes, nil
+}
+
 func (dt *dbTable) tryUpdateTableIndex(ctx context.Context, tableName string,
 	dbIndex, logicIndex types.Index) error {
 	if index.IndexEqual(dbIndex, logicIndex) {
@@ -220,8 +331,7 @@ func (dt *dbTable) tryUpdateTableIndex(ctx context.Context, tableName string,
 		return nil
 	} else {
 		// 说明索引不等， 删除原有的索引，
-		if err := dt.db.Table(tableName).DropIndex(ctx, logicIndex.Name); err != nil &&
-			!ErrDropIndexNameNotFound(err) {
+		if err := dt.db.Table(tableName).DropIndex(ctx, logicIndex.Name); err != nil {
 			blog.Errorf("remove table(%s) index(%s) error. err: %s, rid: %s",
 				tableName, logicIndex.Name, err.Error(), dt.rid)
 			return err
@@ -274,8 +384,14 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 		if err != nil {
 			blog.Errorf("object(%s) logic unique to db index error. err: %s, rid: %s",
 				obj.ObjectID, err.Error(), dt.rid)
-			// TODO: 报错
-			// 服务降级，只是不处理唯一索引
+			monitor.Collect(&meta.Alarm{
+				RequestID: dt.rid,
+				Type:      meta.MongoDDLFatalError,
+				Detail:    fmt.Sprintf("query %s collection logic unique detail failed", instTable),
+				Module:    types2.CC_MODULE_MIGRATE,
+				Dimension: map[string]string{"hit_create_collection": "yes"},
+			})
+			return err
 		}
 
 		objIndexes := append(index.InstanceIndexes(), uniques...)
@@ -431,7 +547,7 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 func (dt *dbTable) createIndexes(ctx context.Context, tableName string, indexes []types.Index) {
 
 	for _, index := range indexes {
-		if err := dt.db.Table(tableName).CreateIndex(ctx, index); err != nil && !dt.db.IsDuplicatedError(err) {
+		if err := dt.db.Table(tableName).CreateIndex(ctx, index); err != nil {
 			// 不影响后需执行，
 			// TODO: 报警
 			blog.WarnJSON("create table(%s) error. index: %s, err: %s, rid: %s", tableName, index, err, dt.rid)

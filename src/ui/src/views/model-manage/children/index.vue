@@ -57,13 +57,13 @@
             <span class="text-primary" @click="isEditName = false">{{$t('取消')}}</span>
           </template>
         </div>
-        <div class="model-text ml10"
+        <div class="model-text instance-count"
           v-if="!activeModel['bk_ispaused'] && activeModel.bk_classification_id !== 'bk_biz_topo'">
           <span>{{$t('实例数量')}}：</span>
-          <div class="text-content-count"
-            :title="modelStatisticsSet[activeModel['bk_obj_id']] || 0"
-            @click="handleGoInstance">
-            <span>{{modelStatisticsSet[activeModel['bk_obj_id']] || 0}}</span>
+          <div class="text-content-count" @click="handleGoInstance">
+            <cmdb-loading :loading="$loading(request.instanceCount)">
+              {{modelInstanceCount}}
+            </cmdb-loading>
             <i class="icon-cc-share"></i>
           </div>
         </div>
@@ -191,6 +191,7 @@
   import has from 'has'
   import theRelation from './relation'
   import theVerification from './verification'
+  import cmdbLoading from '@/components/loading/index.vue'
   import theFieldGroup from '@/components/model-manage/field-group'
   import theChooseIcon from '@/components/model-manage/choose-icon/_choose-icon'
   import cmdbImport from '@/components/import/import'
@@ -209,7 +210,8 @@
       theRelation,
       theVerification,
       theChooseIcon,
-      cmdbImport
+      cmdbImport,
+      cmdbLoading
     },
     data() {
       return {
@@ -222,7 +224,7 @@
         },
         isIconListShow: false,
         isEditName: false,
-        modelStatisticsSet: {},
+        modelInstanceCount: null,
         importField: {
           show: false,
           templateUrl: ''
@@ -231,6 +233,9 @@
           success: null,
           insert_failed: null,
           update_failed: null
+        },
+        request: {
+          instanceCount: Symbol('instanceCount')
         }
       }
     },
@@ -295,6 +300,9 @@
     },
     created() {
       this.initObject()
+    },
+    beforeDestroy() {
+      this.$http.cancelRequest(this.request.instanceCount)
     },
     methods: {
       handleTabChange(tab) {
@@ -384,27 +392,29 @@
         this.setActiveModel({ ...this.activeModel, ...this.modelParams })
         this.isEditName = false
       },
-      async initObject() {
-        await this.getModelStatistics()
+      initObject() {
         const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
         if (model) {
           this.$store.commit('objectModel/setActiveModel', model)
           this.initModelInfo()
+          this.getModelInstanceCount()
         } else {
           this.$routerActions.redirect({ name: 'status404' })
         }
       },
-      async getModelStatistics() {
-        const modelStatisticsSet = {}
-        const res = await this.$store.dispatch('objectModelClassify/getClassificationsObjectStatistics', {
+      async getModelInstanceCount() {
+        const result = await this.$store.dispatch('objectCommonInst/searchInstanceCount', {
+          params: {
+            condition: { obj_ids: [this.activeModel.bk_obj_id] }
+          },
           config: {
-            requestId: 'getClassificationsObjectStatistics'
+            requestId: this.request.instanceCount,
+            globalError: false
           }
         })
-        res.forEach((item) => {
-          modelStatisticsSet[item.bk_obj_id] = item.instance_count
-        })
-        this.modelStatisticsSet = modelStatisticsSet
+
+        const [data] = result
+        this.modelInstanceCount = data?.error ? '--' : data?.inst_count
       },
       initModelInfo() {
         this.modelInfo = {
@@ -670,11 +680,11 @@
                 }
             }
             .text-content-count {
-                display: inline-block;
-                vertical-align: middle;
+                display: flex;
+                align-items: center;
                 color: #3a84ff;
                 cursor: pointer;
-                >span {
+                /deep/ span {
                     font-size: 14px;
                     vertical-align: middle;
                 }
@@ -699,6 +709,11 @@
             .text-primary {
                 cursor: pointer;
                 margin-left: 5px;
+            }
+
+            &.instance-count {
+              display: flex;
+              margin-left: 10px;
             }
         }
         .restart-btn {

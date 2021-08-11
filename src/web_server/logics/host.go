@@ -182,7 +182,7 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 
 // importHosts import host info
 func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
-	modelBizID int64, moduleID int64, AsstObjectUniqueIDMap map[string]int64,
+	modelBizID int64, moduleID int64, asstObjectUniqueIDMap map[string]int64,
 	objectUniqueID int64) *metadata.ResponseDataMapStr {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -262,7 +262,7 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 		}
 	}
 
-	if len(f.Sheets) < 2 {
+	if len(f.Sheets) < 2 || len(asstObjectUniqueIDMap) == 0 {
 		return result
 	}
 
@@ -274,7 +274,7 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 
 	asstInfoMapInput := &metadata.RequestImportAssociation{
 		AssociationInfoMap:    asstInfoMap,
-		AsstObjectUniqueIDMap: AsstObjectUniqueIDMap,
+		AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
 		ObjectUniqueID:        objectUniqueID,
 	}
 	asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, common.BKInnerObjIDHost, asstInfoMapInput)
@@ -450,7 +450,9 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 	if len(f.Sheets) < 2 {
 		return result
 	}
-
+	if len(f.Sheets[1].Rows[common.HostAddMethodExcelAssociationIndexOffset].Cells) < 2 {
+		return result
+	}
 	// if len(f.Sheets) >= 2, the second sheet is association data to be import
 	asstInfoMap := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset)
 	if len(asstInfoMap) == 0 {

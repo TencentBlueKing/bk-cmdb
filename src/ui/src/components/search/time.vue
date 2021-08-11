@@ -1,9 +1,11 @@
 <template>
   <bk-date-picker
     type="datetimerange"
+    transfer
     :value="localValue"
     v-bind="$attrs"
     format="yyyy-MM-dd HH:mm:ss"
+    @clear="() => $emit('clear')"
     @change="handleChange"
     @open-change="handleToggle">
   </bk-date-picker>

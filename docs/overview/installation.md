@@ -236,6 +236,24 @@ index = "cmdb.cc_hostbase"
 [[mapping]]
 namespace = "cmdb.cc_ObjDes"
 index = "cmdb.cc_objdes"
+
+[[script]]
+#namespace = "cmdb_oa.cc_ObjectBase_pub_"
+# this script does not declare a namespace
+# it is global to all collections
+routing = true
+script = """
+var re = new RegExp("cmdb.cc_ObjectBase_(.*)_pub_")
+module.exports = function(doc, ns, updateDesc) {
+    if(re.test(ns)) {
+        doc["_meta_monstache"] = {"index":"cmdb.cc_objectbase"};
+    }
+    // the doc namespace e.g. test.test is passed as the 2nd arg
+        // if available, an object containing the update description is passed as the 3rd arg
+    return  doc
+}
+"""
+
 ```
 添加新的 direct-read-namespaces，change-stream-namespaces 需要添加对应的 mapping。
 

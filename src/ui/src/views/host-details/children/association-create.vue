@@ -4,6 +4,7 @@
       <label class="filter-label fl">{{$t('关联列表')}}</label>
       <cmdb-selector class="fl" style="width: 280px;"
         :list="options"
+        searchable
         setting-key="bk_obj_asst_id"
         display-key="_label"
         @on-selected="handleSelectObj">
@@ -562,7 +563,9 @@
       getHostCondition() {
         const condition = [
           { bk_obj_id: 'host', condition: [], fields: [] },
-          { bk_obj_id: 'biz', condition: [], fields: ['bk_module_id'] }
+          { bk_obj_id: 'biz', condition: [], fields: [] },
+          { bk_obj_id: 'module', condition: [], fields: [] },
+          { bk_obj_id: 'set', condition: [], fields: [] }
         ]
         const property = this.getProperty(this.filter.id)
         if (this.filter.value !== '' && property) {
@@ -620,9 +623,6 @@
         this.table.originalList = Object.freeze(data.info.slice())
         if (asstObjId === 'host') {
           data.info = data.info.map(item => item.host)
-        }
-        if (asstObjId === this.objId) {
-          data.info = data.info.filter(item => item[this.instanceIdKey] !== this.instId)
         }
         this.table.list = data.info
       },

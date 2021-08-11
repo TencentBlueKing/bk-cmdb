@@ -186,8 +186,8 @@ func (h *HostSnap) Analyze(msg *string) error {
 		h.saveHostsnap(header, &val, hostID)
 	}
 
-	// window restriction on request
-	if !h.window.canPassWindow() {
+	// window restriction on request when no apiVer information reported
+	if !val.Get("data.apiVer").Exists() && !h.window.canPassWindow() {
 		if blog.V(4) {
 			blog.Infof("not within the time window that can pass, skip host snapshot data update, host id: %d, ip: %s, cloud id: %d, rid: %s",
 				hostID, innerIP, cloudID, rid)
@@ -334,6 +334,9 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 		// to do
 		osname = platform
 		ostype = common.HostOSTypeEnumUNIX
+	case "solaris":
+		osname = platform
+		ostype = common.HostOSTypeEnumSolaris
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
@@ -523,6 +526,9 @@ func parseV10Setter(val *gjson.Result, innerIP, outerIP string) (map[string]inte
 		//  to do
 		osname = platform
 		ostype = common.HostOSTypeEnumUNIX
+	case "solaris":
+		osname = platform
+		ostype = common.HostOSTypeEnumSolaris
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}

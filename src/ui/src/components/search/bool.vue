@@ -2,7 +2,8 @@
   <bk-select
     v-model="localValue"
     v-bind="$attrs"
-    @toggle="handleToggle">
+    @toggle="handleToggle"
+    @clear="() => $emit('clear')">
     <bk-option id="true" name="true"></bk-option>
     <bk-option id="false" name="false"></bk-option>
   </bk-select>

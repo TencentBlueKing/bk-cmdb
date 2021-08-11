@@ -69,7 +69,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, "instIDKey", objID)
 		}
 		// 使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
-		rowMap, err = replaceEnName(rid, rowMap, usernameMap, propertyList)
+		rowMap, err = replaceEnName(rid, rowMap, usernameMap, propertyList, ccLang)
 		if err != nil {
 			blog.Errorf("rebuild user list field, rid: %s", rid)
 			return err
@@ -172,7 +172,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		}
 
 		// 使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
-		rowMap, err = replaceEnName(rid, rowMap, usernameMap, propertyList)
+		rowMap, err = replaceEnName(rid, rowMap, usernameMap, propertyList, ccLang)
 		if err != nil {
 			blog.Errorf("rebuild user list field, rid: %s", rid)
 			return err
@@ -254,8 +254,20 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 	if _, ok := AsstObjectUniqueIDMap[objID]; ok {
 		hasSelfAssociation = true
 	}
+
 	var asstIDArr []string
 	for _, asst := range asstList {
+
+		// 只导出自关联关系时的判断
+		// 防止仅导出自关联但fetch多个关联关系导致被关联对象uniqueID未传值初始化为0使getAssociationData返回报错
+		if len(AsstObjectUniqueIDMap) == 1 && hasSelfAssociation {
+			if asst.ObjectID == asst.AsstObjID {
+				asstIDArr = append(asstIDArr, asst.AssociationName)
+				break
+			}
+			continue
+		}
+
 		_, ok := AsstObjectUniqueIDMap[asst.ObjectID]
 		if ok {
 			asstIDArr = append(asstIDArr, asst.AssociationName)
@@ -374,6 +386,18 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 		blog.Errorf("get %s fields error: %v, rid: %s", objID, err, rid)
 		return err
 	}
+
+	asstSheet, err := file.AddSheet("association")
+	if err != nil {
+		blog.Errorf("setExcelRowDataByIndex add excel  association sheet error. err:%s, rid:%s", err.Error(), rid)
+		return err
+	}
+	asstList, err := lgc.getObjectAssociation(ctx, header, objID, modelBizID)
+	if err != nil {
+		return err
+	}
+	productExcelAssociationHeader(ctx, asstSheet, defLang, 0, asstList)
+
 	blog.V(5).Infof("BuildExcelTemplate fields count:%d, rid: %s", fields, rid)
 	productExcelHeader(ctx, fields, filterFields, sheet, defLang)
 	ProductExcelCommentSheet(ctx, file, defLang)

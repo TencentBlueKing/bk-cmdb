@@ -122,6 +122,8 @@ func (s *Service) initBusinessAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topomodelmainline", Handler: s.SearchMainLineObjectTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topoinst/biz/{bk_biz_id}", Handler: s.SearchBusinessTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topoinst_with_statistics/biz/{bk_biz_id}", Handler: s.SearchBusinessTopoWithStatistics})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topoinstnode/host_serviceinst_count/{bk_biz_id}",
+		Handler: s.GetTopoNodeHostAndSerInstCount})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topoinst/bk_biz_id/{bk_biz_id}/host_apply_rule_related", Handler: s.SearchRuleRelatedTopoNodes})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topopath/biz/{bk_biz_id}", Handler: s.SearchTopoPath})
 
@@ -142,6 +144,7 @@ func (s *Service) initBusinessAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation", Handler: s.SearchAssociationInst})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/related", Handler: s.SearchAssociationRelatedInst})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/instassociation", Handler: s.CreateAssociationInst})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/instassociation", Handler: s.CreateManyInstAssociation})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/instassociation/{bk_obj_id}/{association_id}", Handler: s.DeleteAssociationInst})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/instassociation/batch", Handler: s.DeleteAssociationInstBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/instance_associations/object/{bk_obj_id}", Handler: s.SearchInstanceAssociations})
@@ -170,6 +173,7 @@ func (s *Service) initBusinessInst(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/instance/object/{bk_obj_id}", Handler: s.CreateInst})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/instance/object/{bk_obj_id}", Handler: s.CreateManyInstance})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/instance/object/{bk_obj_id}/inst/{inst_id}", Handler: s.DeleteInst})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/instance/object/{bk_obj_id}", Handler: s.DeleteInsts})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/instance/object/{bk_obj_id}/inst/{inst_id}", Handler: s.UpdateInst})

@@ -40,14 +40,6 @@ var (
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "bkInstId_bkObjId",
-			Keys: map[string]int32{
-				"bk_inst_id": 1,
-				"bk_obj_id":  1,
-			},
-			Background: true,
-		},
-		{
 			Name: common.CCLogicIndexNamePrefix + "bkAsstObjId_bkAsstInstId",
 			Keys: map[string]int32{
 				"bk_asst_obj_id":  1,

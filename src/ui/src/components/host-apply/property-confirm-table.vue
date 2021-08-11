@@ -14,7 +14,9 @@
           </bk-button>
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('主机名称')" prop="expect_host.bk_host_name"></bk-table-column>
+      <bk-table-column :label="$t('主机名称')" prop="expect_host.bk_host_name">
+        <template slot-scope="{ row }">{{row.expect_host.bk_host_name || '--'}}</template>
+      </bk-table-column>
       <bk-table-column
         :label="$t('修改值')"
         width="530"
@@ -152,8 +154,8 @@
         this.table.pagination.count = value
       }
     },
-    created() {
-      this.getHostPropertyList()
+    async created() {
+      await this.getHostPropertyList()
       this.setTableList()
     },
     methods: {
@@ -195,12 +197,12 @@
         const conflictSeparator = <span class={`conflict-separator${!conflictCount ? ' resolved' : ''}`}>；</span>
 
         return (
-                    <div>
-                        { resultConflicts.reduce((acc, x) => (acc === null ? [x] : [acc, conflictSeparator, x]), null) }
-                        { (resultConflicts.length && resultUpdates.length) ? conflictSeparator : '' }
-                        { resultUpdates.reduce((acc, x) => (acc === null ? [x] : [acc, '；', x]), null) }
-                    </div>
-                )
+            <div>
+                { resultConflicts.reduce((acc, x) => (acc === null ? [x] : [acc, conflictSeparator, x]), null) }
+                { (resultConflicts.length && resultUpdates.length) ? conflictSeparator : '' }
+                { resultUpdates.reduce((acc, x) => (acc === null ? [x] : [acc, '；', x]), null) }
+            </div>
+        )
       },
       getPropertyGroups() {
         return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
@@ -232,13 +234,15 @@
         this.slider.title = `${this.$t('属性详情')}【${row.expect_host.bk_host_innerip}】`
         this.slider.content = 'detail'
         const properties = this.propertyList
-        const inst = row.expect_host
         // 云区域数据
         row.cloud_area.bk_inst_name = row.cloud_area.bk_cloud_name
         row.cloud_area.bk_inst_id = row.cloud_area.bk_cloud_id
-        inst.bk_cloud_id = [row.cloud_area]
         try {
-          const propertyGroups = await this.getPropertyGroups()
+          const [inst, propertyGroups] = await Promise.all([
+            this.getHostInfo(row),
+            this.getPropertyGroups()
+          ])
+          inst.bk_cloud_id = [row.cloud_area]
           this.details.inst = inst
           this.details.properties = properties
           this.details.propertyGroups = propertyGroups
@@ -249,6 +253,31 @@
           this.details.properties = []
           this.details.propertyGroups = []
           this.slider.isShow = false
+        }
+      },
+      async getHostInfo(row) {
+        try {
+          const { info } = this.$store.dispatch('hostSearch/searchHost', {
+            params: {
+              bk_biz_id: this.bizId,
+              condition: ['biz', 'set', 'module'].map(model => ({
+                bk_obj_id: model,
+                condition: [],
+                fields: [`bk_${model}_id`]
+              })).concat({
+                bk_obj_id: 'host',
+                condition: [{ field: 'bk_host_id', operator: '$eq', value: row.expect_host.bk_host_id }],
+                fields: []
+              }),
+              ip: { flag: 'bk_host_innerip', exact: 1, data: [] },
+              page: { start: 0, limit: 1 }
+            }
+          })
+          const host = info ? info.host : {}
+          return { ...host, ...row.expect_host }
+        } catch (error) {
+          console.error(error)
+          return { ...row.expect_host }
         }
       },
       handleShowConflict(row) {

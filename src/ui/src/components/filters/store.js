@@ -458,6 +458,4 @@ export async function setupFilterStore(config = {}) {
   return FilterStore
 }
 
-window.FilterStore = FilterStore
-
 export default FilterStore

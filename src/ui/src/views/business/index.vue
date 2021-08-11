@@ -29,41 +29,19 @@
       <div class="options-filter clearfix fr">
         <cmdb-property-selector
           class="filter-selector fl"
-          v-model="filter.id"
+          v-model="filter.field"
           :properties="properties">
         </cmdb-property-selector>
         <component class="filter-value fl"
-          v-if="['enum', 'list', 'organization'].includes(filter.type)"
-          :is="`cmdb-form-${filter.type}`"
-          :options="$tools.getEnumOptions(properties, filter.id)"
-          :allow-clear="true"
-          :auto-select="false"
+          :is="`cmdb-search-${filterType}`"
+          :placeholder="filterPlaceholder"
+          :class="filterType"
+          v-bind="filterComponentProps"
           v-model="filter.value"
-          :clearable="true"
-          font-size="medium"
-          @on-selected="handleFilterData(true)"
-          @on-checked="handleFilterData(true)">
+          @change="handleFilterValueChange"
+          @enter="handleFilterValueEnter"
+          @clear="handleFilterValueEnter">
         </component>
-        <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
-          v-else-if="filter.type === 'int'"
-          v-model.number="filter.value"
-          clearable
-          font-size="medium"
-          right-icon="icon-search"
-          :placeholder="$t('快速查询')"
-          @enter="handleFilterData(true)"
-          @clear="handleFilterData(false)">
-        </bk-input>
-        <bk-input class="filter-value cmdb-form-input fl" type="text"
-          v-else
-          v-model.trim="filter.value"
-          clearable
-          font-size="medium"
-          right-icon="icon-search"
-          :placeholder="$t('快速查询')"
-          @enter="handleFilterData(true)"
-          @clear="handleFilterData(false)">
-        </bk-input>
       </div>
     </div>
     <bk-table class="business-table"
@@ -172,6 +150,9 @@
   import { MENU_RESOURCE_BUSINESS_HISTORY, MENU_RESOURCE_BUSINESS_DETAILS } from '@/dictionary/menu-symbol'
   import cmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
   import cmdbPropertySelector from '@/components/property-selector'
+  import RouterQuery from '@/router/query'
+  import Utils from '@/components/filters/utils'
+  import throttle from  'lodash.throttle'
   export default {
     components: {
       cmdbColumnsConfig,
@@ -199,10 +180,9 @@
           }
         },
         filter: {
-          id: 'bk_biz_name',
+          field: 'bk_biz_name',
           value: '',
-          type: 'singlechar',
-          sendValue: ''
+          operator: '$eq'
         },
         slider: {
           show: false,
@@ -249,12 +229,29 @@
       },
       model() {
         return this.getModelById('biz') || {}
+      },
+      filterProperty() {
+        const property = this.properties.find(property => property.bk_property_id === this.filter.field)
+        return property || null
+      },
+      filterType() {
+        if (this.filterProperty) {
+          return this.filterProperty.bk_property_type
+        }
+        return 'singlechar'
+      },
+      filterPlaceholder() {
+        return Utils.getPlaceholder(this.filterProperty)
+      },
+      filterComponentProps() {
+        return Utils.getBindProps(this.filterProperty)
       }
     },
     watch: {
-      'filter.id'(id) {
-        this.filter.value = ''
-        this.filter.type = (this.$tools.getProperty(this.properties, id) || {}).bk_property_type
+      'filter.field'() {
+        const defaultData = Utils.getDefaultData(this.filterProperty)
+        this.filter.value = defaultData.value
+        this.filter.operator = defaultData.operator
       },
       'slider.show'(show) {
         if (!show) {
@@ -282,16 +279,30 @@
           this.getPropertyGroups(),
           this.setTableHeader()
         ])
-
-        // 配合全文检索过滤列表
-        if (this.$route.params.bizName) {
-          this.filter.sendValue = this.$route.params.bizName
-          this.filter.value = this.$route.params.bizName
-        }
-        this.getTableData()
+        this.throttleGetTableData = throttle(this.getTableData, 300, { leading: false, trailing: true })
+        this.unwatch = RouterQuery.watch('*', async ({
+          page = 1,
+          limit = this.table.pagination.limit,
+          filter = '',
+          operator = '',
+          field = 'bk_biz_name'
+        }) => {
+          this.filter.field = field
+          this.table.pagination.current = parseInt(page, 10)
+          this.table.pagination.limit = parseInt(limit, 10)
+          await this.$nextTick()
+          const defaultData = Utils.getDefaultData(this.filterProperty)
+          this.filter.operator = operator || defaultData.operator
+          // eslint-disable-next-line max-len
+          this.filter.value = this.formatFilterValue({ value: filter, operator: this.filter.operator }, defaultData.value)
+          this.throttleGetTableData()
+        }, { immediate: true })
       } catch (e) {
         // ignore
       }
+    },
+    beforeDestroy() {
+      this.unwatch()
     },
     methods: {
       ...mapActions('objectModelFieldGroup', ['searchGroup']),
@@ -365,12 +376,34 @@
           config: Object.assign({ requestId: 'post_searchBusiness_list' }, config)
         })
       },
-      handleFilterData(withFilter = true) {
-        this.table.pagination.current = 1
-        this.filter.sendValue = this.filter.value
-        this.getTableData(withFilter)
+      formatFilterValue({ value: currentValue, operator }, defaultValue) {
+        let value = currentValue.toString().length ? currentValue : defaultValue
+        const isNumber = ['int', 'float'].includes(this.filterType)
+        if (isNumber && value) {
+          value = parseFloat(value, 10)
+        } else if (operator === '$in') {
+          // eslint-disable-next-line no-nested-ternary
+          value = Array.isArray(value) ? value : !!value ? [value] : []
+        } else if (Array.isArray(value)) {
+          value = value.filter(value => !!value)
+        }
+        return value
       },
-      getTableData(event) {
+      handleFilterValueChange() {
+        const hasEnterEvnet = ['float', 'int', 'longchar', 'singlechar']
+        if (hasEnterEvnet.includes(this.filterType)) return
+        this.handleFilterValueEnter()
+      },
+      handleFilterValueEnter() {
+        RouterQuery.set({
+          _t: Date.now(),
+          page: 1,
+          field: this.filter.field,
+          filter: this.filter.value,
+          operator: this.filter.operator
+        })
+      },
+      getTableData() {
         this.getBusinessList({ cancelPrevious: true, globalPermission: false }).then((data) => {
           if (data.count && !data.info.length) {
             this.table.pagination.current -= 1
@@ -379,16 +412,15 @@
           this.table.list = data.info
           this.table.pagination.count = data.count
 
-          this.table.stuff.type = event ? 'search' : 'default'
+          this.table.stuff.type = this.filter.value.toString().length ? 'search' : 'default'
 
           return data
         })
           .catch(({ permission }) => {
-            if (permission) {
-              this.table.stuff = {
-                type: 'permission',
-                payload: { permission }
-              }
+            if (!permission) return
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission }
             }
           })
       },
@@ -404,17 +436,24 @@
             sort: this.table.sort
           }
         }
-        if (this.filter.id && String(this.filter.sendValue).length) {
-          const filterType = this.filter.type
-          let filterValue = this.filter.sendValue
-          if (filterType === 'bool') {
-            const convertValue = [true, false].find(bool => bool.toString() === filterValue)
-            filterValue = convertValue === undefined ? filterValue : convertValue
-          } else if (filterType === 'int') {
-            filterValue = isNaN(parseInt(filterValue, 10)) ? filterValue : parseInt(filterValue, 10)
-          }
-          params.condition[this.filter.id] = filterValue
+        if (!this.filter.value.toString()) {
+          return params
         }
+        if (this.filter.operator === '$range') {
+          const [start, end] = this.filter.value
+          params.condition[this.filter.field] = {
+            $gte: start,
+            $lte: end
+          }
+          return params
+        }
+        if (this.filterType === 'objuser') {
+          const filterValue  = this.filter.value
+          const multiple = filterValue.length > 1
+          params.condition[this.filter.field] = multiple ? { $in: filterValue } : filterValue.toString()
+          return params
+        }
+        params.condition[this.filter.field] = { [this.filter.operator]: this.filter.value }
         return params
       },
       async handleEdit(inst) {

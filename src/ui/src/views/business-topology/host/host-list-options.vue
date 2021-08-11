@@ -54,6 +54,7 @@
         </ul>
       </bk-dropdown-menu>
       <bk-dropdown-menu class="option ml10" trigger="click"
+        v-show="isNormalNode"
         font-size="medium"
         :disabled="!hasSelection"
         @show="isAddToOpen = true"
@@ -68,15 +69,15 @@
             :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
             <span href="javascript:void(0)"
               slot-scope="{ disabled }"
-              :class="{ disabled: !isNormalModuleNode || disabled }"
-              @click="handleTransfer($event, 'increment', !isNormalModuleNode)">
+              :class="{ disabled }"
+              @click="handleTransfer($event, 'increment', false)">
               {{$t('业务模块')}}
             </span>
           </cmdb-auth>
         </ul>
       </bk-dropdown-menu>
       <bk-dropdown-menu class="option ml10" trigger="click"
-        v-show="!isIdleSetModules"
+        v-show="isNormalModuleNode"
         font-size="medium"
         :disabled="!hasSelection"
         @show="isRemoveMenuOpen = true"
@@ -230,10 +231,11 @@
       hasSelection() {
         return !!this.selection.length
       },
+      isNormalNode() {
+        return this.selectedNode && this.selectedNode.data.default === 0
+      },
       isNormalModuleNode() {
-        return this.selectedNode
-          && this.selectedNode.data.bk_obj_id === 'module'
-          && this.selectedNode.data.default === 0
+        return this.isNormalNode && this.selectedNode.data.bk_obj_id === 'module'
       },
       isIdleModule() {
         return this.selection.every((data) => {
@@ -394,14 +396,18 @@
       handleCopy(property) {
         const copyText = this.selection.map((data) => {
           const modelId = property.bk_obj_id
-          const [modelData] = Array.isArray(data[modelId]) ? data[modelId] : [data[modelId]]
+          const modelData = data[modelId]
           if (property.id === this.IPWithCloudSymbol) {
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
             return `${cloud}:${ip}`
           }
-          const value = modelData[property.bk_property_id]
-          return this.$tools.getPropertyCopyValue(value, property)
+          const propertyId = property.bk_property_id
+          if (Array.isArray(modelData)) {
+            const value = modelData.map(item => this.$tools.getPropertyCopyValue(item[propertyId], property))
+            return value.join(',')
+          }
+          return this.$tools.getPropertyCopyValue(modelData[propertyId], property)
         })
         this.$copyText(copyText.join('\n')).then(() => {
           this.$success(this.$t('复制成功'))

@@ -182,13 +182,17 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		}
 		break
 	}
+
+	if err := service.BackgroundTask(*process.Config); err != nil {
+		return err
+	}
 	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
 	if err != nil {
 		return err
 	}
 
 	errors.SetGlobalCCError(engine.CCErr)
-	go service.BackgroundTask(*process.Config)
+
 	select {
 	case <-ctx.Done():
 	}

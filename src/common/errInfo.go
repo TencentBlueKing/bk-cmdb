@@ -478,7 +478,7 @@ const (
 	CCErrorSetNameDuplicated       = 1101108
 
 	// CCErrorCheckRegularFailed check regular expression failed
-	CCErrorCheckRegularFailed = 1101109
+	CCErrorCheckRegularFailed   = 1101109
 
 	// CCErrorTopObjectUniqueIndexNotFound  模型xx的唯一校验xx不存在
 	CCErrorTopObjectUniqueIndexNotFound = 1101110
@@ -631,38 +631,40 @@ const (
 	CCErrAuditTakeSnapshotFailed = 1109002
 	CCErrAuditSelectFailed       = 1109003
 	CCErrAuditSelectTimeout      = 1109004
+	CCErrAuditGenerateLogFailed  = 1109005
 
 	// host server
-	CCErrHostGetFail              = 1110001
-	CCErrHostUpdateFail           = 1110002
-	CCErrHostUpdateFieldFail      = 1110003
-	CCErrHostCreateFail           = 1110004
-	CCErrHostModifyFail           = 1110005
-	CCErrHostDeleteFail           = 1110006
-	CCErrHostFiledValdFail        = 1110007
-	CCErrHostNotFound             = 1110008
-	CCErrHostLength               = 1110009
-	CCErrHostDetailFail           = 1111011
-	CCErrHostSnap                 = 1110011
-	CCErrHostFeildValidFail       = 1110012
-	CCErrHostFavCreateFail        = 1110013
-	CCErrHostEmptyFavName         = 1110014
-	CCErrHostFavUpdateFail        = 1110015
-	CCErrHostFavDeleteFail        = 1110016
-	CCErrHostFavGetFail           = 1110017
-	CCErrHostHisCreateFail        = 1110018
-	CCErrHostHisGetFail           = 1110019
-	CCErrHostCustomCreateFail     = 1110020
-	CCErrHostCustomGetFail        = 1110021
-	CCErrHostCustomGetDefaultFail = 1110022
-	CCErrHostNotINAPP             = 1110023
-	CCErrHostNotINAPPFail         = 1110024
-	CCErrHostDELResourcePool      = 1110025
-	CCErrHostAddRelationFail      = 1110026
-	CCErrHostMoveResourcePoolFail = 1110027
-	CCErrHostEditRelationPoolFail = 1110028
-	CCErrAddHostToModule          = 1110029
-	CCErrAddHostToModuleFailStr   = 1110030
+	CCErrHostGetFail               = 1110001
+	CCErrHostUpdateFail            = 1110002
+	CCErrHostUpdateFieldFail       = 1110003
+	CCErrHostCreateFail            = 1110004
+	CCErrHostModifyFail            = 1110005
+	CCErrHostDeleteFail            = 1110006
+	CCErrHostFiledValdFail         = 1110007
+	CCErrHostNotFound              = 1110008
+	CCErrHostLength                = 1110009
+	CCErrHostDetailFail            = 1111011
+	CCErrHostSnap                  = 1110011
+	CCErrHostFeildValidFail        = 1110012
+	CCErrHostFavCreateFail         = 1110013
+	CCErrHostEmptyFavName          = 1110014
+	CCErrHostFavUpdateFail         = 1110015
+	CCErrHostFavDeleteFail         = 1110016
+	CCErrHostFavGetFail            = 1110017
+	CCErrHostHisCreateFail         = 1110018
+	CCErrHostHisGetFail            = 1110019
+	CCErrHostCustomCreateFail      = 1110020
+	CCErrHostCustomGetFail         = 1110021
+	CCErrHostCustomGetDefaultFail  = 1110022
+	CCErrHostNotINAPP              = 1110023
+	CCErrHostNotINAPPFail          = 1110024
+	CCErrHostDELResourcePool       = 1110025
+	CCErrHostAddRelationFail       = 1110026
+	CCErrHostMoveResourcePoolFail  = 1110027
+	CCErrHostEditRelationPoolFail  = 1110028
+	CCErrAddHostToModule           = 1110029
+	CCErrAddHostToModuleFailStr    = 1110030
+	CCErrTransferHostToArchivedApp = 1110031
 
 	// hostserver api machinery new error code
 	CCErrAddUserCustomQueryFailed       = 1110040
@@ -808,6 +810,8 @@ const (
 	CCERrrCoreServiceSubsetUniqueRuleExist = 1113051
 	// CCERrrCoreServiceSupersetUniqueRuleExist 所选字段组合和已有规则重复，请勿创建冗余规则
 	CCERrrCoreServiceSupersetUniqueRuleExist = 1113052
+	CCERrrCoreServiceConcurrent              = 1113053
+
 	// CCErrCoreServiceResourceDirectoryNotExistErr 资源池目录不存在
 	CCErrCoreServiceResourceDirectoryNotExistErr = 1113033
 	// CCErrCoreServiceHostNotUnderAnyResourceDirectory 主机不在任意资源池目录下
@@ -818,6 +822,8 @@ const (
 	CCErrCoreServiceCreateDBUniqueIndex = 1113036
 	// CCErrCoreServiceSearchDBUniqueIndex 获取db唯一索引失败
 	CCErrCoreServiceSearchDBUniqueIndex = 1113037
+	// CCErrCoreServiceCreateDBUniqueIndex 创建唯一索引失败,现有数据有重复值
+	CCErrCoreServiceCreateDBUniqueIndexDuplicateValue = 1113039
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
