@@ -813,6 +813,9 @@ const (
 	// HostAddMethodExcelAssociationIndexOffset
 	HostAddMethodExcelAssociationIndexOffset = 2
 
+	// HostAddMethodExcelDefaultIndex
+	HostAddMethodExcelDefaultIndex = 1
+
 	/*EXCEL color AARRGGBB :
 	AA means Alpha
 	RRGGBB means Red, in hex.

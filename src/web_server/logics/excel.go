@@ -43,7 +43,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 		return err
 
 	}
-	addSystemField(fields, common.BKInnerObjIDObject, ccLang)
+	addSystemField(fields, common.BKInnerObjIDObject, ccLang, 1)
 
 	if 0 == len(filter) {
 		filter = getFilterFields(objID)
@@ -87,7 +87,9 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 }
 
 // BuildHostExcelFromData product excel from data
-func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64, usernameMap map[string]string, propertyList []string) error {
+func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property,
+	filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64,
+	usernameMap map[string]string, propertyList []string, customLen int, objName []string) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -97,16 +99,44 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		blog.Errorf("BuildHostExcelFromData add excel sheet error, err:%s, rid:%s", err.Error(), rid)
 		return err
 	}
+
+	extFieldKey := make([]string, 0)
 	extFieldsTopoID := "cc_ext_field_topo"
 	extFieldsBizID := "cc_ext_biz"
+	extFieldsModuleID := "cc_ext_module"
+	extFieldsSetID := "cc_ext_set"
+	extFieldKey = append(extFieldKey, extFieldsTopoID, extFieldsBizID)
 	extFields := map[string]string{
-		extFieldsTopoID: ccLang.Language("web_ext_field_topo"),
-		extFieldsBizID:  ccLang.Language("biz_property_bk_biz_name"),
+		extFieldsTopoID:   ccLang.Language("web_ext_field_topo"),
+		extFieldsBizID:    ccLang.Language("biz_property_bk_biz_name"),
+		extFieldsModuleID: ccLang.Language("bk_module_name"),
+		extFieldsSetID:    ccLang.Language("bk_set_name"),
 	}
-	fields = addExtFields(fields, extFields)
-	addSystemField(fields, common.BKInnerObjIDHost, ccLang)
+	extFieldsCustomID1 := "cc_ext_custom1"
+	extFieldsCustomID2 := "cc_ext_custom2"
+	extFieldsCustomID3 := "cc_ext_custom3"
+	switch customLen {
+	case 1:
+		extFields[extFieldsCustomID1] = objName[0]
+		extFieldKey = append(extFieldKey, extFieldsCustomID1, extFieldsSetID, extFieldsModuleID)
+	case 2:
+		extFields[extFieldsCustomID1] = objName[1]
+		extFields[extFieldsCustomID2] = objName[0]
+		extFieldKey = append(extFieldKey, extFieldsCustomID2, extFieldsCustomID1, extFieldsSetID, extFieldsModuleID)
+	case 3:
+		extFields[extFieldsCustomID1] = objName[2]
+		extFields[extFieldsCustomID2] = objName[1]
+		extFields[extFieldsCustomID3] = objName[0]
+		extFieldKey = append(extFieldKey, extFieldsCustomID3, extFieldsCustomID2, extFieldsCustomID1, extFieldsSetID,
+			extFieldsModuleID)
+	default:
+		extFieldKey = append(extFieldKey, extFieldsSetID, extFieldsModuleID)
+	}
 
-	productExcelHeader(ctx, fields, filter, sheet, ccLang)
+	fields = addExtFields(fields, extFields, extFieldKey)
+	addSystemField(fields, common.BKInnerObjIDHost, ccLang, customLen+5)
+
+	productHostExcelHeader(ctx, fields, filter, sheet, ccLang, customLen, objName)
 
 	instPrimaryKeyValMap := make(map[int64][]PropertyPrimaryVal)
 	// indexID := getFieldsIDIndexMap(fields)
@@ -135,7 +165,6 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 			rowMap.Set(common.BKCloudIDField, cloudArea)
 		}
 
-		// set extended fields
 		moduleMap, ok := hostData[common.BKInnerObjIDModule].([]interface{})
 		if ok {
 			topos := util.GetStrValsFromArrMapInterfaceByKey(moduleMap, "TopModuleName")
@@ -152,8 +181,106 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 						toposNobiz = append(toposNobiz, topo[idx+len(logics.SplitFlag):])
 					}
 				}
-				rowMap[extFieldsTopoID] = strings.Join(toposNobiz, "\n")
+				rowMap[extFieldsTopoID] = strings.Join(toposNobiz, ",")
 			}
+		}
+
+		result, err := lgc.getTopoMainlineInstRoot(ctx, header, modelBizID, moduleMap)
+		if err != nil || result == nil{
+			blog.Errorf("get topo mainline instance root failed, err: %s, rid: %s", err, rid)
+			return err
+		}
+
+		var moduleStr, setStr, customStr1, customStr2, customStr3 string
+		for _, res := range result.Nodes {
+			length := len(res.Path) - 3
+			switch length {
+			case 1:
+				if customStr1 == "" {
+					customStr1 = res.Path[2].InstanceName
+				} else {
+					ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
+					if !ok {
+						customStr1 += "," + res.Path[2].InstanceName
+					}
+				}
+			case 2:
+				if customStr1 == "" {
+					customStr1 = res.Path[2].InstanceName
+				} else {
+					ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
+					if !ok {
+						customStr1 += "," + res.Path[2].InstanceName
+					}
+				}
+				if customStr2 == "" {
+					customStr2 = res.Path[3].InstanceName
+				} else {
+					ok := util.Contains(strings.Split(customStr2, ","), res.Path[3].InstanceName)
+					if !ok {
+						customStr2 += "," + res.Path[3].InstanceName
+					}
+				}
+			case 3:
+				if customStr1 == "" {
+					customStr1 = res.Path[2].InstanceName
+				} else {
+					ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
+					if !ok {
+						customStr1 += "," + res.Path[2].InstanceName
+					}
+				}
+
+				if customStr2 == "" {
+					customStr2 = res.Path[3].InstanceName
+				} else {
+					ok := util.Contains(strings.Split(customStr2, ","), res.Path[3].InstanceName)
+					if !ok {
+						customStr2 += "," + res.Path[3].InstanceName
+					}
+				}
+
+				if customStr3 == "" {
+					customStr3 = res.Path[4].InstanceName
+				} else {
+					ok := util.Contains(strings.Split(customStr3, ","), res.Path[4].InstanceName)
+					if !ok {
+						customStr3 += "," + res.Path[4].InstanceName
+					}
+				}
+			}
+
+			if moduleStr == "" {
+				moduleStr = res.Path[0].InstanceName
+			} else {
+				ok := util.Contains(strings.Split(moduleStr, ","), res.Path[0].InstanceName)
+				if !ok {
+					moduleStr += "," + res.Path[0].InstanceName
+				}
+			}
+
+			if setStr == "" {
+				setStr = res.Path[1].InstanceName
+			} else {
+				ok := util.Contains(strings.Split(setStr, ","), res.Path[1].InstanceName)
+				if !ok {
+					setStr += "," + res.Path[1].InstanceName
+				}
+			}
+		}
+
+		rowMap[extFieldsModuleID] = moduleStr
+		rowMap[extFieldsSetID] = setStr
+		switch customLen {
+		case 1:
+			rowMap[extFieldsCustomID1] = customStr1
+		case 2:
+			rowMap[extFieldsCustomID1] = customStr1
+			rowMap[extFieldsCustomID2] = customStr2
+		case 3:
+			rowMap[extFieldsCustomID1] = customStr1
+			rowMap[extFieldsCustomID2] = customStr2
+			rowMap[extFieldsCustomID3] = customStr3
 		}
 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
@@ -180,6 +307,121 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		return err
 	}
 	return nil
+}
+
+// getTopoMainlineInstRoot get topo mainline inst root
+func (lgc *Logics) getTopoMainlineInstRoot(ctx context.Context, header http.Header, modelBizID int64,
+	moduleMap []interface{}) (*metadata.TopoPathResult, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	nodes := make([]metadata.TopoNode, 0)
+	for _, row := range moduleMap {
+		mapRow, ok := row.(map[string]interface{})
+		if ok {
+			moduleID, err := util.GetIntByInterface(mapRow[common.BKModuleIDField])
+			if err != nil {
+				return nil, err
+			}
+			node := metadata.TopoNode{
+				ObjectID:   common.BKInnerObjIDModule,
+				InstanceID: int64(moduleID),
+			}
+			nodes = append(nodes, node)
+		}
+	}
+	input := metadata.FindTopoPathRequest{
+		Nodes: nodes,
+	}
+
+	topoRoot, err := lgc.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx, header,
+		modelBizID, false)
+	if err != nil {
+		blog.Errorf("search mainline instance topo path failed, bizID:%d, err:%s, rid:%s", modelBizID,
+			err.Error(), rid)
+		return nil, err
+	}
+	result := &metadata.TopoPathResult{}
+	for _, node := range input.Nodes {
+		topoPath := topoRoot.TraversalFindNode(node.ObjectID, node.InstanceID)
+		path := make([]*metadata.TopoInstanceNodeSimplify, 0)
+		for _, item := range topoPath {
+			simplify := item.ToSimplify()
+			path = append(path, simplify)
+		}
+		nodeTopoPath := metadata.NodeTopoPath{
+			BizID: modelBizID,
+			Node:  node,
+			Path:  path,
+		}
+		result.Nodes = append(result.Nodes, nodeTopoPath)
+	}
+	return result, err
+}
+
+// GetCustomCntAndInstName get custom level count and instance name
+func (lgc *Logics) GetCustomCntAndInstName(ctx context.Context, header http.Header) (int, []string, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	mainlineAsstRsp, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, header,
+		&metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.
+			AssociationKindMainline}})
+	if nil != err {
+		blog.Errorf("search mainline association failed, error: %s, rid: %s", err.Error(), rid)
+		return 0, []string{}, err
+	}
+
+	mainlineObjectChildMap := make(map[string]string, 0)
+	objectName := make([]string, 0)
+	customLen := 0
+	isMainline := false
+	for _, asst := range mainlineAsstRsp.Data.Info {
+		if asst.ObjectID == common.BKInnerObjIDHost {
+			continue
+		}
+		mainlineObjectChildMap[asst.AsstObjID] = asst.ObjectID
+		if asst.AsstObjID == common.BKInnerObjIDApp {
+			isMainline = true
+		}
+	}
+	if !isMainline {
+		return customLen, objectName, nil
+	}
+
+	// get all mainline object name map
+	objectIDs := make([]string, 0)
+	for objectID := common.BKInnerObjIDApp; len(objectID) != 0; objectID = mainlineObjectChildMap[objectID] {
+		objectIDs = append(objectIDs, objectID)
+	}
+	cond := make([]string, 0)
+	for _, obj := range objectIDs {
+		if obj == common.BKInnerObjIDApp || obj == common.BKInnerObjIDSet || obj == common.BKInnerObjIDModule {
+			continue
+		}
+		cond = append(cond, obj)
+	}
+
+	input := &metadata.QueryCondition{
+		Fields: []string{common.BKObjNameField, common.BKAsstObjIDField},
+		Condition: mapstr.MapStr{
+			common.BKObjIDField: mapstr.MapStr{common.BKDBIN: cond},
+		},
+	}
+
+	objects, err := lgc.CoreAPI.CoreService().Model().ReadModel(ctx, header, input)
+	if nil != err {
+		blog.ErrorJSON("search mainline objects(%s) failed, error: %s, rid: %s", objectIDs, err.Error(), rid)
+		return customLen, objectName, err
+	}
+
+	for _, objID := range objectIDs {
+		for _, val := range objects.Data.Info {
+			if val.Spec.ObjectID == objID {
+				objectName = append(objectName, val.Spec.ObjectName)
+			}
+		}
+	}
+
+	customLen = int(mainlineAsstRsp.Data.Count) - 3
+
+	return customLen, objectName, nil
 }
 
 func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID string, instPrimaryInfo map[int64][]PropertyPrimaryVal, xlsxFile *xlsx.File, header http.Header, modelBizID int64) error {
@@ -278,7 +520,10 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 	if objID == common.BKInnerObjIDHost {
 		filterFields = append(filterFields, common.BKCloudIDField)
 	}
-	fields, err := lgc.GetObjFieldIDs(objID, filterFields, nil, header, modelBizID)
+
+	fields, err := lgc.GetObjFieldIDs(objID, filterFields, nil, header, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
+
 	if err != nil {
 		blog.Errorf("get %s fields error:%s, rid: %s", objID, err.Error(), rid)
 		return err
