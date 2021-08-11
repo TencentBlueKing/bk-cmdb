@@ -34,7 +34,7 @@ func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourc
 			return nil, errors.New("policy with invalid content field")
 		}
 
-		list, err := a.countContent(ctx, p.Operator, content, resourceType)
+		list, err := a.countContent(ctx, p.Operator, content, resourceType, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -117,13 +117,46 @@ func (a *Authorize) countIamIDKey(op operator.OperType, fv *operator.FieldValue)
 }
 
 // count all the resource ids according to the operator and content, eg policies.
-func (a *Authorize) countContent(ctx context.Context, op operator.OperType, content *operator.Content, resourceType types.ResourceType) (
+func (a *Authorize) countContent(ctx context.Context, op operator.OperType, content *operator.Content, resourceType types.ResourceType, level int) (
 	[]string, error) {
 
 	allAttrFieldValue := make([]*operator.FieldValue, 0)
 	allList := make([][]string, 0)
-	for _, policy := range content.Content {
 
+	// if strategy levels exceed CcMaxPolicyLevel return.
+	if level >= types.CcMaxAuthPolicyLevel {
+		return nil, errors.New(fmt.Sprintf("policy exceed max level, max level is: %d", types.CcMaxAuthPolicyLevel))
+	}
+
+	fieldMap := make(map[string]struct{})
+
+	// if the strategy contain "any" and its parent operator is "OR" return ids directly.
+	for _, conPolicy := range content.Content {
+		if conPolicy.Operator == operator.Any && op == operator.Or {
+			ids, err := a.countAny(ctx, conPolicy, resourceType)
+			if err != nil {
+				return nil, err
+			}
+			allList = append(allList, ids)
+			// if we find this case,ignore multiple fields or not ,return ids directly.
+			return calculateSet(op, allList)
+		}
+		fv, can := conPolicy.Element.(*operator.FieldValue)
+		if !can {
+			return nil, errors.New("policy with invalid FieldValue field")
+		}
+		// TODO: we must confirm that multiple fields in same level is illegal
+		// generate the field key
+		fieldTmp := fmt.Sprintf("%s%s", fv.Field.Resource, fv.Field.Attribute)
+		fieldMap[fieldTmp] = struct{}{}
+	}
+
+	// the same level do not support multiple fields.
+	if len(fieldMap) > 1 {
+		return nil, errors.New(fmt.Sprintf("do not support different field in the same policy level"))
+	}
+
+	for _, policy := range content.Content {
 		switch policy.Operator {
 		case operator.And, operator.Or:
 			content, can := policy.Element.(*operator.Content)
@@ -131,7 +164,7 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OperType, cont
 				return nil, errors.New("policy with invalid content field")
 			}
 
-			list, err := a.countContent(ctx, policy.Operator, content, resourceType)
+			list, err := a.countContent(ctx, policy.Operator, content, resourceType, level+1)
 			if err != nil {
 				return nil, err
 			}
