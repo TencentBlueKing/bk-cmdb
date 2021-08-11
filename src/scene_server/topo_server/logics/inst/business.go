@@ -34,7 +34,8 @@ type BusinessOperationInterface interface {
 	// CreateBusiness create business
 	CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error)
 	// FindBiz find biz
-	FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error)
+	FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest, disableCounter bool) (count int,
+		results []mapstr.MapStr, err error)
 	// UpdateBusiness update business
 	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj metadata.Object, bizID int64) error
 	// HasHosts check if this business still has hosts.
@@ -65,21 +66,20 @@ var (
 
 // CreateBusiness create business
 func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error) {
-	// TODO 临时调用
+	// TODO 调用inst中createInst
 	bizInst, err := b.createInst(kit, metadata.Object{ObjectID: common.BKInnerObjIDApp}, data)
-	if nil != err {
-		blog.Errorf("[operation-biz] failed to create business, error info is %s, rid: %s", err.Error(), kit.Rid)
+	if err != nil {
+		blog.Errorf("create business failed, err: %v, data: %#v, rid: %s", err, data, kit.Rid)
 		return nil, err
 	}
-
 	bizID := int64(bizInst.Created.ID)
 
 	// create set
-	// TODO 临时调用
+	// TODO 调用obj中FindSingleObject
 	objSet, err := b.findSingleObject(kit, common.BKInnerObjIDSet)
-	if nil != err {
-		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
-		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
+	if err != nil {
+		blog.Errorf("failed to search the set, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
 	}
 	setData := mapstr.MapStr{
 		common.BKAppIDField:    bizID,
@@ -88,30 +88,29 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 		common.BKDefaultField:  common.DefaultResSetFlag,
 	}
 
-	// TODO 临时调用，合并后修改
+	// TODO 调用set中CreateSet
 	setInst, err := b.createSet(kit, *objSet, setData)
-	if nil != err {
-		blog.Errorf("create business failed to create business, error info is %s, rid: %s", err.Error(), kit.Rid)
-		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
+	if err != nil {
+		blog.Errorf("create business failed, err: %s, rid: %s", err, kit.Rid)
+		return nil, err
 	}
-
 	setID := int64(setInst.Created.ID)
 
 	// create module
-	// TODO 临时调用，合并后修改
+	// TODO 调用obj中FindSingleObject
 	objModule, err := b.findSingleObject(kit, common.BKInnerObjIDModule)
-	if nil != err {
-		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
-		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
+	if err != nil {
+		blog.Errorf("failed to search the set, %v, rid: %s", err, kit.Rid)
+		return nil, err
 	}
 
 	defaultCategory, err := b.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx, kit.Header)
 	if err != nil {
 		blog.Errorf("failed to search default category, err: %+v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.New(common.CCErrProcGetDefaultServiceCategoryFailed, err.Error())
+		return nil, err
 	}
 
-	idleModuleData := mapstr.MapStr{
+	moduleData := mapstr.MapStr{
 		common.BKSetIDField:             setID,
 		common.BKInstParentStr:          setID,
 		common.BKAppIDField:             bizID,
@@ -121,79 +120,53 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 		common.BKSetTemplateIDField:     common.SetTemplateIDNotSet,
 		common.BKServiceCategoryIDField: defaultCategory.ID,
 	}
-
-	// TODO 调用临时函数，合并后修改
-	_, err = b.createModule(kit, *objModule, bizID, setID, idleModuleData)
-	if nil != err {
-		blog.Errorf("create business failed to create business, error info is %s, rid: %s", err.Error(), kit.Rid)
-		//return bizInst, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
-		return data, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
+	// TODO 调用module中CreateModule
+	_, err = b.createModule(kit, *objModule, bizID, setID, moduleData)
+	if err != nil {
+		blog.Errorf("create business failed, err: %v, rid: %s", err, kit.Rid)
+		return data, err
 	}
 
 	// create fault module
-	faultModuleData := mapstr.MapStr{
-		common.BKSetIDField:             setID,
-		common.BKInstParentStr:          setID,
-		common.BKAppIDField:             bizID,
-		common.BKModuleNameField:        common.DefaultFaultModuleName,
-		common.BKDefaultField:           common.DefaultFaultModuleFlag,
-		common.BKServiceTemplateIDField: common.ServiceTemplateIDNotSet,
-		common.BKSetTemplateIDField:     common.SetTemplateIDNotSet,
-		common.BKServiceCategoryIDField: defaultCategory.ID,
-	}
-
-	// TODO 调用临时函数，合并后修改
-	_, err = b.createModule(kit, *objModule, bizID, setID, faultModuleData)
-	if nil != err {
-		blog.Errorf("create business failed to create business, error info is %s, rid: %s", err.Error(), kit.Rid)
-		return data, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
+	moduleData.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
+	moduleData.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
+	// TODO 调用module中CreateModule
+	_, err = b.createModule(kit, *objModule, bizID, setID, moduleData)
+	if err != nil {
+		blog.Errorf("create business failed, err: %v, rid: %s", err, kit.Rid)
+		return data, err
 	}
 
 	// create recycle module
-	recycleModuleData := mapstr.MapStr{
-		common.BKSetIDField:             setID,
-		common.BKInstParentStr:          setID,
-		common.BKAppIDField:             bizID,
-		common.BKModuleNameField:        common.DefaultRecycleModuleName,
-		common.BKDefaultField:           common.DefaultRecycleModuleFlag,
-		common.BKServiceTemplateIDField: common.ServiceTemplateIDNotSet,
-		common.BKSetTemplateIDField:     common.SetTemplateIDNotSet,
-		common.BKServiceCategoryIDField: defaultCategory.ID,
-	}
-
-	// TODO 调用临时函数，合并后修改
-	_, err = b.createModule(kit, *objModule, bizID, setID, recycleModuleData)
-	if nil != err {
-		blog.Errorf("create business failed, create recycle module failed, err: %s, rid: %s",
-			err.Error(), kit.Rid)
-		return data, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
+	moduleData.Set(common.BKModuleNameField, common.DefaultRecycleModuleName)
+	moduleData.Set(common.BKDefaultField, common.DefaultRecycleModuleFlag)
+	// TODO 调用module中CreateModule
+	_, err = b.createModule(kit, *objModule, bizID, setID, moduleData)
+	if err != nil {
+		blog.Errorf("create recycle module failed, err: %v, rid: %s", err, kit.Rid)
+		return data, err
 	}
 
 	return data, nil
 }
 
 // FindBiz FindBiz
-func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr,
-	err error) {
+func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest, disableCounter bool) (count int,
+	results []mapstr.MapStr, err error) {
 	if !cond.Condition.Exists(common.BKDefaultField) {
 		cond.Condition[common.BKDefaultField] = 0
 	}
 	query := &metadata.QueryCondition{
-		Fields:    cond.Fields,
-		Condition: cond.Condition,
-		Page:      cond.Page,
+		Fields:         cond.Fields,
+		Condition:      cond.Condition,
+		Page:           cond.Page,
+		DisableCounter: disableCounter,
 	}
 
 	result, err := b.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, query)
 	if err != nil {
-		blog.ErrorJSON("failed to find business by query condition: %s, err: %s, rid: %s", query, err.Error(),
-			kit.Rid)
+		blog.Errorf("find business by query failed, condition: %s, err: %v, rid: %s", query, err, kit.Rid)
 		return 0, nil, err
-	}
-	if !result.Result {
-		blog.ErrorJSON("failed to find business by query condition: %s, err: %s, rid: %s", query, result.ErrMsg,
-			kit.Rid)
-		return 0, nil, kit.CCError.Errorf(result.Code, result.ErrMsg)
 	}
 
 	return result.Data.Count, result.Data.Info, err
@@ -211,29 +184,25 @@ func (b *business) UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj metadat
 
 // HasHosts check if this business still has hosts.
 func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
-	option := &metadata.HostModuleRelationRequest{
-		ApplicationID: bizID,
-		Fields:        []string{common.BKHostIDField},
-		Page:          metadata.BasePage{Limit: 1},
-	}
+	option := new(metadata.HostModuleRelationRequest)
+	option.ApplicationID = bizID
+	option.Fields = []string{common.BKHostIDField}
+	option.Page = metadata.BasePage{Limit: 1}
+
 	rsp, err := b.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, option)
-	if nil != err {
-		blog.Errorf("[operation-set] failed to request the object controller, error info is %s", err.Error())
-		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	if err != nil {
+		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, kit.Rid)
+		return false, err
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-set]  failed to search the host set configures, error info is %s", rsp.ErrMsg)
-		return false, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return 0 != len(rsp.Data.Info), nil
+	return len(rsp.Data.Info) != 0, nil
 }
 
 //	GenerateAchieveBusinessName 生成归档后的业务名称
 //	- 业务归档的时候，自动重命名为"foo-archived"
 //	- 归档的时候，如果发现已经存在同名的"foo-archived", 自动在其后+1, 比如 "foo-archived-1", "foo-archived-2"
 func (b *business) GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (achieveName string, err error) {
+
 	queryBusinessRequest := &metadata.QueryBusinessRequest{
 		Fields: []string{common.BKAppNameField},
 		Page: metadata.BasePage{
@@ -245,7 +214,7 @@ func (b *business) GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (a
 			},
 		},
 	}
-	count, data, err := b.FindBiz(kit, queryBusinessRequest)
+	count, data, err := b.FindBiz(kit, queryBusinessRequest, false)
 	if err != nil {
 		return "", err
 	}
@@ -265,9 +234,8 @@ func (b *business) GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (a
 		}
 		num, err := util.GetInt64ByInterface(numPart)
 		if err != nil {
-			blog.Errorf("GenerateBusinessAchieveName failed, GetInt64ByInterface failed, numPart: %s, "+
-				"err: %+v, rid: %s", numPart, err, kit.Rid)
-			return "", kit.CCError.CCError(common.CCErrCommParseDataFailed)
+			blog.Errorf("GetInt64ByInterface failed, numPart: %s, err: %v, rid: %s", numPart, err, kit.Rid)
+			return "", err
 		}
 		existNums = append(existNums, num)
 	}
@@ -289,7 +257,7 @@ func (b *business) findSingleObject(kit *rest.Kit, objectID string) (*metadata.O
 	cond.Field(common.BKObjIDField).Eq(objectID)
 
 	objs, err := b.findObject(kit, cond)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("get model failed, failed to get model by supplier account(%s) objects(%s), err: %s, "+
 			"rid: %s", kit.SupplierAccount, objectID, err.Error(), kit.Rid)
 		return nil, err
@@ -301,7 +269,6 @@ func (b *business) findSingleObject(kit *rest.Kit, objectID string) (*metadata.O
 		return nil, kit.CCError.New(common.CCErrTopoObjectSelectFailed, kit.CCError.Error(common.CCErrCommNotFound).
 			Error())
 	}
-
 	if len(objs) > 1 {
 		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) get multiple, result:"+
 			" %+v, rid: %s", kit.SupplierAccount, objectID, objs, kit.Rid)
@@ -455,7 +422,7 @@ func (b *business) findObject(kit *rest.Kit, cond condition.Condition) ([]metada
 
 	rsp, err := b.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header,
 		&metadata.QueryCondition{Condition: fCond})
-	if nil != err {
+	if err != nil {
 		blog.Errorf("[operation-obj] find object failed, cond: %+v, err: %s, rid: %s", fCond, err.Error(),
 			kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -514,7 +481,8 @@ func (b *business) createModule(kit *rest.Kit, obj metadata.Object, bizID, setID
 
 	if serviceCategoryID == 0 && serviceTemplateID == 0 {
 		// set default service template id
-		defaultServiceCategory, err := b.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx, kit.Header)
+		defaultServiceCategory, err := b.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx,
+			kit.Header)
 		if err != nil {
 			blog.Errorf("create module failed, GetDefaultServiceCategory failed, err: %s, rid: %s", err.Error(),
 				kit.Rid)
