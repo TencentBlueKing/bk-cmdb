@@ -1269,7 +1269,7 @@ const (
 
 // configcenter
 const (
-	BKDefaultConfigCenter = "zookeeper"
+	BKDefaultConfigCenter = "etcd"
 )
 
 const (

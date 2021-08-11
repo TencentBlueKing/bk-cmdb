@@ -163,11 +163,12 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	}
 
 	// add default configcenter
-	zkdisc := crd.NewZkRegDiscover(client)
+	etcd := crd.NewConfRegDiscover(client)
 	configCenter := &cc.ConfigCenter{
 		Type:               common.BKDefaultConfigCenter,
-		ConfigCenterDetail: zkdisc,
+		ConfigCenterDetail: etcd,
 	}
+
 	cc.AddConfigCenter(configCenter)
 
 	// get the real configuration center.
@@ -178,7 +179,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("new config center failed, err: %v", err)
 	}
 
-	err = handleNotice(ctx, client.Client(), input.SrvInfo.Instance())
+	err = handleNotice(ctx, client, input.SrvInfo.Instance())
 	if err != nil {
 		return nil, fmt.Errorf("handle notice failed, err: %v", err)
 	}

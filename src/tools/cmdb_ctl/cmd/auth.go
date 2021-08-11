@@ -29,7 +29,7 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
-	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/backbone/service_mange/etcd"
 	"configcenter/src/common/blog"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
@@ -97,16 +97,13 @@ func newAuthService(c *authConf) (*authService, error) {
 		return nil, errors.New("resource must be set via resource flag or resource file specified by rsc-file flag")
 	}
 
-	client := zk.NewZkClient(config.Conf.ZkAddr, 40*time.Second)
-	if err := client.Start(); err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.ZkAddr, err)
-	}
-	if err := client.Ping(); err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.ZkAddr, err)
+	client, err := etcd.NewEtcdClient(config.Conf.Addr, 5*time.Second)
+	if err != nil {
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.Addr, err)
 	}
 	serviceDiscovery, err := discovery.NewServiceDiscovery(client)
 	if err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.ZkAddr, err)
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.Addr, err)
 	}
 	apiMachineryConfig := &util.APIMachineryConfig{
 		QPS:       1000,

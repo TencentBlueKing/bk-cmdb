@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/backbone/service_mange"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/confregdiscover"
 	"configcenter/src/common/errors"
@@ -40,10 +40,10 @@ type ConfCenter struct {
 }
 
 // NewConfCenter create a ConfCenter object
-func NewConfCenter(ctx context.Context, client *zk.ZkClient) *ConfCenter {
+func NewConfCenter(ctx context.Context, client service_mange.ClientInterface) *ConfCenter {
 	return &ConfCenter{
 		ctx:          ctx,
-		confRegDiscv: confregdiscover.NewZkRegDiscover(client),
+		confRegDiscv: confregdiscover.NewConfRegDiscover(client),
 	}
 }
 

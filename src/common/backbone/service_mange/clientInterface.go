@@ -12,9 +12,13 @@
 
 package service_mange
 
+import "context"
+
 type ClientInterface interface {
 	Put(key, val string) error
 	Get(path string) (string, error)
 	GetWithPrefix(path string) ([]string, error)
 	Delete(key string) error
+	Ping() error
+	Watch(ctx context.Context, key string) (<-chan string, error)
 }

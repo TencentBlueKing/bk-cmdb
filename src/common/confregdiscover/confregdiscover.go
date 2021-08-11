@@ -13,7 +13,11 @@
 package confregdiscover
 
 import (
-	"configcenter/src/common/backbone/service_mange/zk"
+	"context"
+	"fmt"
+	"time"
+
+	"configcenter/src/common/backbone/service_mange"
 )
 
 //DiscoverEvent if servers changed, will create a discover event
@@ -25,47 +29,71 @@ type DiscoverEvent struct { //
 
 // ConfRegDiscover is config register and discover
 type ConfRegDiscover struct {
-	confRD ConfRegDiscvIf
+	client  service_mange.ClientInterface
+	cancel  context.CancelFunc
+	rootCtx context.Context
 }
 
 // NewConfRegDiscover used to create a object of ConfRegDiscover
-func NewConfRegDiscover(client *zk.ZkClient) *ConfRegDiscover {
-	confRD := &ConfRegDiscover{
-		confRD: nil,
+func NewConfRegDiscover(cli service_mange.ClientInterface) *ConfRegDiscover {
+	confRegDiscover := &ConfRegDiscover{
+		client: cli,
 	}
-
-	confRD.confRD = ConfRegDiscvIf(NewZkRegDiscover(client))
-
-	return confRD
-}
-
-// NewConfRegDiscoverWithTimeOut used to create a object
-func NewConfRegDiscoverWithTimeOut(client *zk.ZkClient) *ConfRegDiscover {
-	confRD := &ConfRegDiscover{
-		confRD: nil,
-	}
-
-	confRD.confRD = ConfRegDiscvIf(NewZkRegDiscover(client))
-
-	return confRD
+	confRegDiscover.rootCtx, confRegDiscover.cancel = context.WithCancel(context.Background())
+	return confRegDiscover
 }
 
 // Ping to ping server
 func (crd *ConfRegDiscover) Ping() error {
-	return crd.confRD.Ping()
+	return crd.client.Ping()
 }
 
 //Write the configure data
 func (crd *ConfRegDiscover) Write(key string, data []byte) error {
-	return crd.confRD.Write(key, data)
+	return crd.client.Put(key, string(data))
 }
 
-// Read the configure data
+// Read read the configure data
 func (crd *ConfRegDiscover) Read(path string) (string, error) {
-	return crd.confRD.Read(path)
+	return crd.client.Get(path)
 }
 
-//DiscoverConfig discover the config wether is changed
-func (crd *ConfRegDiscover) DiscoverConfig(key string) (<-chan *DiscoverEvent, error) {
-	return crd.confRD.Discover(key)
+// Discover discover the config data
+func (crd *ConfRegDiscover) Discover(key string) (<-chan *DiscoverEvent, error) {
+	env := make(chan *DiscoverEvent, 1)
+	go crd.loopDiscover(key, env)
+	return env, nil
+}
+
+func (crd *ConfRegDiscover) loopDiscover(key string, env chan *DiscoverEvent) {
+	for {
+		discvEnv := &DiscoverEvent{
+			Err: nil,
+			Key: key,
+		}
+
+		data, err := crd.client.Get(key)
+		if err != nil {
+			fmt.Printf("fail to watch context for path(%s), err:%s\n", key, err.Error())
+			discvEnv.Err = err
+			env <- discvEnv
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		discvEnv.Data = []byte(data)
+
+		// write into discoverEvent channel
+		env <- discvEnv
+
+		time.Sleep(2 * time.Second)
+
+		select {
+		case <-crd.rootCtx.Done():
+			fmt.Printf("discover path(%s) done\n", key)
+			return
+		default:
+			fmt.Printf("watch found the content of path(%s) value\n", key)
+		}
+	}
 }

@@ -22,14 +22,14 @@ import (
 	"github.com/rs/xid"
 )
 
-// zk path
+// service path
 const (
-	CC_SERV_BASEPATH        = "/cc/services/endpoints"
-	CC_SERVCONF_BASEPATH    = "/cc/services/config"
-	CC_SERVERROR_BASEPATH   = "/cc/services/errors"
-	CC_SERVLANG_BASEPATH    = "/cc/services/language"
-	CC_SERVNOTICE_BASEPATH  = "/cc/services/notice"
-	CC_SERVLIMITER_BASEPATH = "/cc/services/limiter"
+	CC_SERV_BASEPATH        = "/bk_CMDB/endpoints"
+	CC_SERVCONF_BASEPATH    = "/bk_CMDB/config"
+	CC_SERVERROR_BASEPATH   = "/bk_CMDB/errors"
+	CC_SERVLANG_BASEPATH    = "/bk_CMDB/language"
+	CC_SERVNOTICE_BASEPATH  = "/bk_CMDB/notice"
+	CC_SERVLIMITER_BASEPATH = "/bk_CMDB/limiter"
 
 	CC_DISCOVERY_PREFIX = "cc_"
 )
@@ -68,10 +68,10 @@ var AllModule = map[string]bool{
 	CC_MODULE_EVENTSERVER:    true,
 	CC_MODULE_CORESERVICE:    true,
 	// CC_MODULE_SYNCHRONZESERVER: true,
-	CC_MODULE_OPERATION: true,
-	CC_MODULE_TASK:      true,
-	CC_MODULE_CLOUD:     true,
-	CC_MODULE_AUTH:      true,
+	CC_MODULE_OPERATION:    true,
+	CC_MODULE_TASK:         true,
+	CC_MODULE_CLOUD:        true,
+	CC_MODULE_AUTH:         true,
 	CC_MODULE_CACHESERVICE: true,
 }
 

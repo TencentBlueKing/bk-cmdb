@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/backbone/service_mange/etcd"
 	"configcenter/src/common/blog"
 
-	"github.com/coreos/etcd/clientv3"
+	"go.etcd.io/etcd/client/v3"
 )
 
 const (
@@ -57,8 +57,12 @@ func NewEtcdRegDiscv(client *etcd.EtcdCli) RegDiscvServer {
 }
 
 func (e *etcdRegDiscv) Ping() error {
+	return e.etcdCli.Ping()
+}
+
+func (e *etcdRegDiscv) pingLease() error {
 	for !e.isClearRegister {
-		if err := e.etcdCli.Ping(e.leaseid); err != nil {
+		if err := e.etcdCli.PingLease(e.leaseid); err != nil {
 			return err
 		}
 		select {
@@ -81,6 +85,7 @@ func (e *etcdRegDiscv) RegisterAndWatch(path string, data []byte) error {
 		return err
 	}
 	e.leaseid = leaseID
+	go e.pingLease()
 	return nil
 }
 

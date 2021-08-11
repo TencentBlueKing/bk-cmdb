@@ -16,21 +16,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
+	"configcenter/src/common/backbone/service_mange"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
-	"configcenter/src/common/zkclient"
-
-	"github.com/samuel/go-zookeeper/zk"
 )
 
 type noticeHandler struct {
-	client   *zkclient.ZkClient
+	client   service_mange.ClientInterface
 	addrport string
 }
 
-func handleNotice(ctx context.Context, client *zkclient.ZkClient, addrport string) error {
+func handleNotice(ctx context.Context, client service_mange.ClientInterface, addrport string) error {
 	handler := &noticeHandler{
 		client:   client,
 		addrport: addrport,
@@ -48,54 +45,37 @@ func (handler *noticeHandler) handleLogNotice(ctx context.Context) error {
 		"v":        blog.GetV(),
 	}
 	go func() {
-		defer handler.client.Del(logVPath, -1)
-		var ch <-chan zk.Event
-		var err error
+		defer handler.client.Delete(logVPath)
 		for {
-			_, _, ch, err = handler.client.GetW(logVPath)
+			val, err := handler.client.Get(logVPath)
 			if err != nil {
-				blog.Errorf("log watch failed, will watch after 10s, path: %s, err: %s", logVPath, err.Error())
-				if handler.client.IsConnectionError(err) {
-					if conErr := handler.client.Connect(); conErr != nil {
-						blog.Errorf("fail to watch register node(%s), reason: connect closed. retry connect err:%s\n", logVPath, conErr.Error())
-						time.Sleep(10 * time.Second)
-					}
-					continue
-				}
-
-				switch err {
-				case zk.ErrNoNode:
-					data["v"] = blog.GetV()
-					logVData, _ := json.Marshal(data)
-					err = handler.client.CreateDeepNode(logVPath, logVData)
-					if err != nil {
-						blog.Errorf("fail to register node(%s), err:%s\n", logVPath, err.Error())
-					}
-				}
+				blog.Errorf("fail to get node(%s), err:%s\n", logVPath, err.Error())
 				continue
 			}
+			if val == "" {
+				data["v"] = blog.GetV()
+				logVData, _ := json.Marshal(data)
+				err = handler.client.Put(logVPath, string(logVData))
+				if err != nil {
+					blog.Errorf("fail to register node(%s), err:%s\n", logVPath, err.Error())
+					continue
+				}
+			}
+			err = json.Unmarshal([]byte(val), &data)
+			if err != nil {
+				blog.Errorf("fail to unmarshal data(%v), err:%s\n", val, err.Error())
+				continue
+			}
+			blog.SetV(data["v"])
 			select {
-			case event := <-ch:
-				if event.Type != zk.EventNodeDataChanged {
-					continue
-				}
-				dat, err := handler.client.Get(logVPath)
-				if err != nil {
-					blog.Errorf("fail to get node(%s), err:%s\n", logVPath, err.Error())
-					continue
-				}
-				err = json.Unmarshal([]byte(dat), &data)
-				if err != nil {
-					blog.Errorf("fail to unmarshal data(%v), err:%s\n", dat, err.Error())
-					continue
-				}
-				blog.SetV(data["v"])
 			case <-ctx.Done():
 				blog.Warnf("log watch stopped because of context done.")
-				_ = handler.client.Del(logVPath, -1)
+				_ = handler.client.Delete(logVPath)
 				logPath := fmt.Sprintf("%s/%s/%s", types.CC_SERVNOTICE_BASEPATH, "log", handler.addrport)
-				_ = handler.client.Del(logPath, -1)
+				_ = handler.client.Delete(logPath)
 				return
+			default:
+				blog.Infof("update log level, node(%s)\n", logVPath)
 			}
 		}
 	}()

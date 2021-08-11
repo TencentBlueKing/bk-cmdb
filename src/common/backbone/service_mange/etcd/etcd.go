@@ -14,10 +14,15 @@ package etcd
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"strings"
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
+	"configcenter/src/common/blog"
+
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	"go.etcd.io/etcd/client/v3"
 )
 
 type EtcdCli struct {
@@ -44,8 +49,8 @@ func (etcd *EtcdCli) Stop() error {
 	return nil
 }
 
-// Ping renew the lease
-func (etcd *EtcdCli) Ping(leaseid clientv3.LeaseID) error {
+// PingLease renew the lease
+func (etcd *EtcdCli) PingLease(leaseid clientv3.LeaseID) error {
 	if _, err := etcd.etcdCli.KeepAlive(context.Background(), leaseid); err != nil {
 		return err
 	}
@@ -103,4 +108,34 @@ func (e *EtcdCli) Put(key, val string) error {
 		return err
 	}
 	return nil
+}
+
+func (etcd *EtcdCli) Ping() error {
+	// TODO
+	return nil
+}
+
+func (etcd *EtcdCli) Watch(ctx context.Context, key string) (<-chan string, error) {
+	strChan := make(chan string)
+	go func() {
+		stringChan := strChan
+		watcher := clientv3.NewWatcher(etcd.etcdCli)
+		watchChan := watcher.Watch(ctx, key)
+		for watchResp := range watchChan {
+			for _, event := range watchResp.Events {
+				log.Printf("%+v", event)
+				switch event.Type {
+				case mvccpb.PUT:
+					stringChan <- string(event.Kv.Value)
+				}
+			}
+			select {
+			case <-ctx.Done():
+				blog.Warnf("watch stopped because of context done.")
+			default:
+				fmt.Printf("watch found the content of path(%s) changed\n", key)
+			}
+		}
+	}()
+	return strChan, nil
 }
