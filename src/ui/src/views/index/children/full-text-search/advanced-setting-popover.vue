@@ -24,11 +24,11 @@
           <div class="content">
             <div class="setting-item" v-show="targets.includes('model')">
               <label class="label">模型</label>
-              <model-selector multiple class="form-el" placeholder="默认全部" v-model="models" />
+              <model-selector multiple searchable class="form-el" placeholder="默认全部" v-model="models" />
             </div>
             <div class="setting-item" v-show="targets.includes('instance')">
               <label class="label">实例</label>
-              <model-selector multiple class="form-el" placeholder="默认全部" v-model="instances" />
+              <model-selector multiple searchable class="form-el" placeholder="默认全部" v-model="instances" />
             </div>
           </div>
         </div>

@@ -102,9 +102,8 @@
     height: var(--itemHeight);
     overflow: hidden;
     color: $cmdbTextColor;
-    background-color: #FAFBFD;
+    background-color: #FFF;
     font-size: 14px;
-    border-bottom: 1px solid #dde4eb;
     transition: all .125s ease-out;
 
     .category-item {

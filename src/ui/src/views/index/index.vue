@@ -120,7 +120,8 @@
       .search-top {
         padding-top: 50px;
         position: sticky;
-        background: #FAFBFD;
+        background: #FFF;
+        border-bottom: 1px solid #dde4eb;
         top: 0;
       }
     }

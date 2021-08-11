@@ -1,10 +1,10 @@
 <template>
-  <div class="setting-tags">
+  <div class="setting-tags" v-show="customized">
     <div class="tag-item target">检索对象：{{targetScopes}}</div>
     <div class="tag-item" v-for="(item, index) in targetModels" :key="index" v-bk-overflow-tips>
       {{item.targetName}}：{{item.models}}
     </div>
-    <bk-button class="reset" text
+    <bk-button class="reset" text size="small"
       @click="handleClear">
       {{$t('清空所有')}}
     </bk-button>
@@ -36,6 +36,15 @@
         return targetModels
       })
 
+      const customized = computed(() => {
+        const changedModels = []
+        currentSetting.targets.forEach((target) => {
+          const modelIds = currentSetting[`${target}s`]
+          changedModels.push(modelIds.length > 0)
+        })
+        return changedModels.some(changed => changed)
+      })
+
       const targetScopes = computed(() => currentSetting.targets.map(target => targetMap[target]).join(' | '))
 
       const handleClear = () => {
@@ -49,6 +58,7 @@
       }
 
       return {
+        customized,
         targetMap,
         targetScopes,
         targetModels,
@@ -94,7 +104,6 @@
 
     .reset {
       flex: none;
-      margin-left: 6px;
     }
   }
 </style>
