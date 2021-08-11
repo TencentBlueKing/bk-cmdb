@@ -324,14 +324,14 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 }
 
 // ProductExcelHeader Excel文件头部，
-func productExcelHeader(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
+func productExcelHeader(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet,
+	defLang lang.DefaultCCLanguageIf) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
 	//橙棕色
 	cellStyle := getCellStyle(common.ExcelFirstColumnCellColor, common.ExcelHeaderFirstRowFontColor)
 	//粉色
 	colStyle := getCellStyle(common.ExcelHeaderFirstColumnColor, common.ExcelHeaderFirstRowFontColor)
-
 	sheet.Col(0).Width = 18
 	//字典中的值为国际化之后的"业务拓扑"和"业务名"，用来做判断，命中即变化相应的cell颜色。
 	bizTopoMap := map[string]int{
@@ -465,7 +465,9 @@ func productHostExcelHeader(ctx context.Context, fields map[string]Property, fil
 		bizTopoMap[objName[0]] = 1
 	}
 
-	firstColFields := []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType, common.ExcelFirstColumnFieldID, common.ExcelFirstColumnInstData}
+	firstColFields := []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType,
+		common.ExcelFirstColumnFieldID, common.ExcelFirstColumnInstData}
+
 	for index, field := range firstColFields {
 		cellName := sheet.Cell(index, 0)
 		fieldName := defLang.Language(field)

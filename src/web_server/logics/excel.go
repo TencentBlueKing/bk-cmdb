@@ -43,7 +43,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 		return err
 
 	}
-	addSystemField(fields, common.BKInnerObjIDObject, ccLang)
+	addSystemField(fields, common.BKInnerObjIDObject, ccLang, 1)
 
 	if 0 == len(filter) {
 		filter = getFilterFields(objID)
@@ -134,7 +134,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 	}
 
 	fields = addExtFields(fields, extFields, extFieldKey)
-	addSystemField(fields, common.BKInnerObjIDHost, ccLang)
+	addSystemField(fields, common.BKInnerObjIDHost, ccLang, customLen+5)
 
 	productHostExcelHeader(ctx, fields, filter, sheet, ccLang, customLen, objName)
 
@@ -181,13 +181,14 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 						toposNobiz = append(toposNobiz, topo[idx+len(logics.SplitFlag):])
 					}
 				}
-				rowMap[extFieldsTopoID] = strings.Join(toposNobiz, "\n")
+				rowMap[extFieldsTopoID] = strings.Join(toposNobiz, ",")
 			}
 		}
 
 		result, err := lgc.getTopoMainlineInstRoot(ctx, header, modelBizID, moduleMap)
-		if err != nil {
-			blog.Errorf("get topo mainline instance root failed, err: %s, rid: %s", err.Error(), rid)
+		if err != nil || result == nil{
+			blog.Errorf("get topo mainline instance root failed, err: %s, rid: %s", err, rid)
+			return err
 		}
 
 		var moduleStr, setStr, customStr1, customStr2, customStr3 string
@@ -519,7 +520,7 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 	if objID == common.BKInnerObjIDHost {
 		filterFields = append(filterFields, common.BKCloudIDField)
 	}
-	fields, err := lgc.GetObjFieldIDs(objID, filterFields, nil, header, modelBizID)
+	fields, err := lgc.GetObjFieldIDs(objID, filterFields, nil, header, modelBizID, common.HostAddMethodExcelDefaultIndex)
 	if err != nil {
 		blog.Errorf("get %s fields error:%s, rid: %s", objID, err.Error(), rid)
 		return err

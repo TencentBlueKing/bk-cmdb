@@ -131,7 +131,8 @@ func (s *Service) ExportInst(c *gin.Context) {
 	file = xlsx.NewFile()
 
 	customFields := logics.GetCustomFields(nil, customFieldsStr)
-	fields, err := s.Logics.GetObjFieldIDs(objID, nil, customFields, pheader, modelBizID)
+	fields, err := s.Logics.GetObjFieldIDs(objID, nil, customFields, pheader, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
 	if err != nil {
 		blog.Errorf("export object instance, but get object:%s attribute field failed, err: %v, rid: %s", objID, err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
