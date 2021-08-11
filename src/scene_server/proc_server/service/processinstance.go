@@ -757,42 +757,36 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 			Limit: common.BKNoLimit,
 		},
 	}
-	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, listOption)
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header,
+		listOption)
 	if err != nil {
-		blog.Errorf("DeleteProcessInstance failed, ListProcessInstanceRelation failed, option: %+v, err: %+v, rid: %s", listOption, err, ctx.Kit.Rid)
-		ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "delete process instance: %+v, but list instance relation failed.", input.ProcessInstanceIDs)
+		blog.Errorf("list process relation failed, option: %#v, err: %v, rid: %s", listOption, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
+
 	templateProcessIDs := make([]string, 0)
+	serviceInstanceExistsMap := make(map[int64]struct{}, 0)
 	for _, relation := range relations.Info {
+		// get processes that are created by template, can not delete them
 		if relation.ProcessTemplateID != common.ServiceTemplateIDNotSet {
 			templateProcessIDs = append(templateProcessIDs, strconv.FormatInt(relation.ProcessID, 10))
 		}
+
+		// get service instances to check if all of their processes are deleted
+		serviceInstanceExistsMap[relation.ServiceInstanceID] = struct{}{}
 	}
+
 	if len(templateProcessIDs) > 0 {
 		invalidProcesses := strings.Join(templateProcessIDs, ",")
-		blog.Errorf("DeleteProcessInstance failed, some process:%s initialized by template, rid: %s", invalidProcesses, ctx.Kit.Rid)
+		blog.Errorf("some process: %s are initialized by template, rid: %s", invalidProcesses, ctx.Kit.Rid)
 		err := ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate, invalidProcesses)
-		ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "delete process instance: %v, but delete instance relation failed.", input.ProcessInstanceIDs)
+		ctx.RespAutoError(err)
 		return
 	}
 
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		// delete process relation at the same time.
-		deleteOption := metadata.DeleteProcessInstanceRelationOption{}
-		deleteOption.ProcessIDs = input.ProcessInstanceIDs
-		err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
-		if err != nil {
-			blog.Errorf("delete process instance: %v, but delete instance relation failed.", input.ProcessInstanceIDs)
-			return ctx.Kit.CCError.CCError(common.CCErrProcDeleteProcessFailed)
-		}
-
-		if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, input.ProcessInstanceIDs); err != nil {
-			blog.Errorf("delete process instance:%v failed, err: %v", input.ProcessInstanceIDs, err)
-			return ctx.Kit.CCError.CCError(common.CCErrProcDeleteProcessFailed)
-		}
-
-		return nil
+		return ps.deleteProcessInstance(ctx.Kit, input.BizID, input.ProcessInstanceIDs, serviceInstanceExistsMap)
 	})
 
 	if txnErr != nil {
@@ -800,6 +794,79 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
+}
+
+func (ps *ProcServer) deleteProcessInstance(kit *rest.Kit, bizID int64, procIDs []int64,
+	svcInstExistsMap map[int64]struct{}) error {
+
+	if len(procIDs) == 0 {
+		return nil
+	}
+
+	// delete process relations at the same time.
+	deleteOpt := metadata.DeleteProcessInstanceRelationOption{
+		BusinessID: &bizID,
+		ProcessIDs: procIDs,
+	}
+	err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(kit.Ctx, kit.Header, deleteOpt)
+	if err != nil {
+		blog.Errorf("delete process relation failed, err: %v, option: %#v, rid: %s", err, deleteOpt, kit.Rid)
+		return err
+	}
+
+	if err := ps.Logic.DeleteProcessInstanceBatch(kit, procIDs); err != nil {
+		blog.Errorf("delete process instance by ids: %+v failed, err: %v", procIDs, err)
+		return err
+	}
+
+	// get service instance to processes relations after processes are deleted to check if they have other processes
+	if len(svcInstExistsMap) == 0 {
+		return nil
+	}
+	serviceInstanceIDs := make([]int64, 0)
+	for serviceInstanceID := range svcInstExistsMap {
+		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstanceID)
+	}
+
+	svcOpt := &metadata.ListProcessInstanceRelationOption{
+		BusinessID:         bizID,
+		ServiceInstanceIDs: serviceInstanceIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	svcRelations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(kit.Ctx, kit.Header,
+		svcOpt)
+	if err != nil {
+		blog.Errorf("list service relation failed, option: %#v, err: %v, rid: %s", svcOpt, err, kit.Rid)
+		return err
+	}
+
+	// exclude those service instances that has other process instances
+	for _, relation := range svcRelations.Info {
+		delete(svcInstExistsMap, relation.ServiceInstanceID)
+	}
+	if len(svcInstExistsMap) == 0 {
+		return nil
+	}
+
+	delSvcInstIDs := make([]int64, 0)
+	for serviceInstanceID := range svcInstExistsMap {
+		delSvcInstIDs = append(delSvcInstIDs, serviceInstanceID)
+	}
+
+	// remove the service instances whose last process is deleted
+	deleteOption := &metadata.CoreDeleteServiceInstanceOption{
+		BizID:              bizID,
+		ServiceInstanceIDs: delSvcInstIDs,
+	}
+	err = ps.CoreAPI.CoreService().Process().DeleteServiceInstance(kit.Ctx, kit.Header, deleteOption)
+	if err != nil {
+		blog.Errorf("delete service instances: %+v failed, err: %v, rid: %s", delSvcInstIDs, err, kit.Rid)
+		return err
+	}
+
+	return nil
 }
 
 func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
