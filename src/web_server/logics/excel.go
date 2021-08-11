@@ -520,7 +520,10 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 	if objID == common.BKInnerObjIDHost {
 		filterFields = append(filterFields, common.BKCloudIDField)
 	}
-	fields, err := lgc.GetObjFieldIDs(objID, filterFields, nil, header, modelBizID, common.HostAddMethodExcelDefaultIndex)
+
+	fields, err := lgc.GetObjFieldIDs(objID, filterFields, nil, header, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
+
 	if err != nil {
 		blog.Errorf("get %s fields error:%s, rid: %s", objID, err.Error(), rid)
 		return err

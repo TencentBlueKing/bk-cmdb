@@ -178,7 +178,8 @@ func (s *Service) ExportHost(c *gin.Context) {
 	err = s.Logics.BuildHostExcelFromData(ctx, objID, fields, nil, hostInfo, file, header, appID, usernameMap,
 		propertyList, customLen, objectName)
 	if nil != err {
-		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
+		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err,
+			rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed,
 			objID).Error(), nil)
 		_, _ = c.Writer.Write([]byte(reply))
