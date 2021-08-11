@@ -20,8 +20,8 @@ import (
 
 // SelectObjectTopoGraphics select object topo graphics
 func (s *Service) SelectObjectTopoGraphics(ctx *rest.Contexts) {
-	resp, err := s.Logics.GraphicsOperation().SelectObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"),
-		ctx.Request.PathParameter("scope_id"))
+	resp, err := s.Logics.GraphicsOperation().SelectObjectTopoGraphics(ctx.Kit,
+		ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"))
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -39,8 +39,8 @@ func (s *Service) UpdateObjectTopoGraphicsNew(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Logics.GraphicsOperation().UpdateObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"),
-			ctx.Request.PathParameter("scope_id"), input.Origin)
+		err := s.Logics.GraphicsOperation().UpdateObjectTopoGraphics(ctx.Kit,
+			ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"), input.Origin)
 		if err != nil {
 			return err
 		}

@@ -54,23 +54,18 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 		return nodes, nil
 	}
 
-	graphCondition := &metadata.TopoGraphics{
-		ScopeType: scopeType,
-		ScopeID:   scopeID,
-	}
+	graphCondition := new(metadata.TopoGraphics)
+	graphCondition.ScopeType = scopeType
+	graphCondition.ScopeID = scopeID
 
 	rsp, err := g.clientSet.CoreService().TopoGraphics().SearchTopoGraphics(kit.Ctx, kit.Header, graphCondition)
-	if nil != err {
-		blog.Errorf("search the graphics failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-	if err = rsp.CCError(); err != nil {
+	if err != nil {
 		blog.Errorf("search the graphics failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
 	dbNodes := rsp.Data
-	graphNodes := map[string]*metadata.TopoGraphics{}
+	graphNodes := make(map[string]*metadata.TopoGraphics, 0)
 	for index, node := range dbNodes {
 		graphNodes[node.NodeType+node.ObjID+strconv.Itoa(node.InstID)] = &dbNodes[index]
 	}
@@ -78,7 +73,7 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 	// TODO 调用 asst 中 searchObjectAssociation
 	assts, err := g.searchObjectAssociation(kit, "")
 	if err != nil {
-		blog.Errorf("select object asst failed, err: %s, rid: %v", err, kit.Rid)
+		blog.Errorf("select object asst failed, err: %v, rid: %v", err, kit.Rid)
 		return nil, err
 	}
 
@@ -90,7 +85,7 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 	// TODO obj 中的 FindObject
 	objs, err := g.findObject(kit, nil)
 	if err != nil {
-		blog.Errorf("SelectObject failed, err: %s, rid: %v", err, kit.Rid)
+		blog.Errorf("SelectObject failed, err: %v, rid: %v", err, kit.Rid)
 		return nil, err
 	}
 
@@ -107,7 +102,7 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 
 	associationKindMap, err = g.findAssociationTypeByAsstKindID(kit, asstKindIDs)
 	if err != nil {
-		blog.ErrorJSON("select object topo graphics failed, err: %v, kinds: %#v, rid: %s", err, asstKindIDs,
+		blog.Errorf("select object topo graphics failed, err: %v, kinds: %#v, rid: %s", err, asstKindIDs,
 			kit.Rid)
 		return nil, err
 	}
@@ -115,13 +110,14 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 	for _, obj := range objs {
 		node := g.genTopoNode(obj, kit.SupplierAccount, graphNodes)
 		for _, asst := range objAssts[obj.ObjectID] {
-			node.Assts = append(node.Assts, metadata.GraphAsst{
+			tmp := metadata.GraphAsst{
 				NodeType:              "obj",
 				ObjID:                 asst.AsstObjID,
 				InstID:                asst.ID,
 				AssociationKindInstID: associationKindMap[asst.AsstKindID].ID,
 				Label:                 map[string]string{},
-			})
+			}
+			node.Assts = append(node.Assts, tmp)
 		}
 		nodes = append(nodes, node)
 	}
@@ -141,15 +137,11 @@ func (g *graphics) findAssociationTypeByAsstKindID(kit *rest.Kit, asstKindIDs []
 		Condition: typeCond,
 	})
 	if err != nil {
-		blog.ErrorJSON("get association kind failed, err: %v, kinds: %#v rid: %s", err, asstKindIDs, kit.Rid)
-		return nil, err
-	}
-	if err = resp.CCError(); err != nil {
-		blog.ErrorJSON("get association kind failed, err: %v, kinds: %#v rid: %s", err, asstKindIDs, kit.Rid)
+		blog.Errorf("get association kind failed, err: %v, kinds: %#v rid: %s", err, asstKindIDs, kit.Rid)
 		return nil, err
 	}
 	if len(resp.Data.Info) != len(asstKindIDs) {
-		blog.ErrorJSON("get association kind failed, err: %v, kinds: %#v rid: %s", resp.ErrMsg, asstKindIDs,
+		blog.Errorf("get association kind failed, err: %v, kinds: %#v rid: %s", resp.ErrMsg, asstKindIDs,
 			kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrTopoGetAssociationKindFailed, asstKindIDs)
 	}
@@ -170,7 +162,6 @@ func (g graphics) genTopoNode(obj metadata.Object, supplierAccount string,
 		NodeType:        "obj",
 		ObjID:           obj.ObjectID,
 		IsPre:           obj.IsPre,
-		InstID:          0,
 		NodeName:        obj.ObjectName,
 		Icon:            obj.ObjIcon,
 		SupplierAccount: supplierAccount,
@@ -197,13 +188,9 @@ func (g *graphics) UpdateObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 		datas[index].SetScopeID(scopeID)
 	}
 
-	rsp, err := g.clientSet.CoreService().TopoGraphics().UpdateTopoGraphics(kit.Ctx, kit.Header, datas)
+	_, err := g.clientSet.CoreService().TopoGraphics().UpdateTopoGraphics(kit.Ctx, kit.Header, datas)
 	if err != nil {
-		blog.ErrorJSON("UpdateGraphics failed ,err: %v, datas: %#v, rid: %v", err, datas, kit.Rid)
-		return err
-	}
-	if err = rsp.CCError(); err != nil {
-		blog.ErrorJSON("UpdateGraphics failed ,err: %v, datas: %#v, rid: %v", err, datas, kit.Rid)
+		blog.Errorf("UpdateGraphics failed ,err: %v, datas: %#v, rid: %s", err, datas, kit.Rid)
 		return err
 	}
 
@@ -214,12 +201,7 @@ func (g *graphics) UpdateObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 func (g *graphics) findObject(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Object, error) {
 	rsp, err := g.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header,
 		&metadata.QueryCondition{Condition: cond})
-	if nil != err {
-		blog.ErrorJSON("find object failed, err: %v, cond: %#v, rid: %v", err, cond, kit.Rid)
-		return nil, err
-	}
-
-	if err = rsp.CCError(); err != nil {
+	if err != nil {
 		blog.ErrorJSON("find object failed, err: %v, cond: %#v, rid: %v", err, cond, kit.Rid)
 		return nil, err
 	}
@@ -235,13 +217,8 @@ func (g *graphics) searchObjectAssociation(kit *rest.Kit, objID string) ([]metad
 
 	rsp, err := g.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
 		&metadata.QueryCondition{Condition: cond})
-	if nil != err {
-		blog.ErrorJSON("search object association failed, err: %v, input: %#v, rid: %s", err, cond, kit.Rid)
-		return nil, err
-	}
-
-	if err = rsp.CCError(); err != nil {
-		blog.ErrorJSON("search object association failed, err: %v, input: %#v, rid: %s", err, cond, kit.Rid)
+	if err != nil {
+		blog.Errorf("search object association failed, err: %v, input: %#v, rid: %s", err, cond, kit.Rid)
 		return nil, err
 	}
 
