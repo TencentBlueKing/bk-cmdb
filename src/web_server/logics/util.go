@@ -155,24 +155,26 @@ func getCellStyle(fgColor, fontColor string) *xlsx.Style {
 }
 
 // addExtFields  add extra fields,
-func addExtFields(fields map[string]Property, extFields map[string]string) map[string]Property {
+func addExtFields(fields map[string]Property, extFields map[string]string, extFieldKey []string) map[string]Property {
 	excelColIndex := 0
-	for _, field := range fields {
-		if excelColIndex < field.ExcelColIndex {
-			excelColIndex = field.ExcelColIndex
-		}
-	}
-	excelColIndex++
-	for extFieldID, extFieldName := range extFields {
-
+	for _, extFieldID := range extFieldKey {
 		fields[extFieldID] = Property{
 			ID:            "",
-			Name:          extFieldName,
+			Name:          extFields[extFieldID],
 			NotObjPropery: true,
 			ExcelColIndex: excelColIndex,
 		}
 		excelColIndex++
 	}
+
+	for _, field := range fields {
+		if excelColIndex < field.ExcelColIndex {
+			excelColIndex = field.ExcelColIndex
+		}
+	}
+
+	excelColIndex++
+
 	return fields
 }
 

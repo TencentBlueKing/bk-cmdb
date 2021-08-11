@@ -122,10 +122,16 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
+	customLen, objectName, err := s.Logics.GetCustomCntAndInstName(ctx, header)
+	if err != nil {
+		blog.Errorf("get custom count and instance name failed, err: %+v, rid: %s", err, rid)
+		return
+	}
+
 	objID := common.BKInnerObjIDHost
 	filterFields := logics.GetFilterFields(objID)
 	customFields := logics.GetCustomFields(filterFields, customFieldsStr)
-	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, appID)
+	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, appID, customLen + 5)
 	if nil != err {
 		blog.Errorf("ExportHost failed, get host model fields failed, err: %+v, rid: %s", err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed,
@@ -169,17 +175,8 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
-	mainlineAsstRsp, err := s.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, header,
-		&metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.
-			AssociationKindMainline}})
-	if nil != err {
-		blog.Errorf("search mainline association failed, error: %s, rid: %s", err.Error(), rid)
-		return
-	}
-
-	var customLen = int(mainlineAsstRsp.Data.Count) - 3
 	err = s.Logics.BuildHostExcelFromData(ctx, objID, fields, nil, hostInfo, file, header, appID, usernameMap,
-		propertyList, customLen)
+		propertyList, customLen, objectName)
 	if nil != err {
 		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err,
 			rid)
