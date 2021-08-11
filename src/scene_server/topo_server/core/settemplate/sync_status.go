@@ -42,19 +42,16 @@ func (st *setTemplate) GetOneSet(kit *rest.Kit, setID int64) (metadata.SetInst, 
 		blog.ErrorJSON("GetOneSet failed, db select failed, filter: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
 		return set, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if ccErr := instResult.CCError(); ccErr != nil {
-		blog.ErrorJSON("GetOneSet failed, read instance failed, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
-		return set, ccErr
-	}
-	if len(instResult.Data.Info) == 0 {
+
+	if len(instResult.Info) == 0 {
 		blog.ErrorJSON("GetOneSet failed, not found, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
 		return set, kit.CCError.CCError(common.CCErrCommNotFound)
 	}
-	if len(instResult.Data.Info) > 1 {
+	if len(instResult.Info) > 1 {
 		blog.ErrorJSON("GetOneSet failed, got multiple, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
 		return set, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
 	}
-	if err := mapstruct.Decode2StructWithHook(instResult.Data.Info[0], &set); err != nil {
+	if err := mapstruct.Decode2StructWithHook(instResult.Info[0], &set); err != nil {
 		blog.ErrorJSON("GetOneSet failed, unmarshal set failed, instResult: %s, err: %s, rid: %s", instResult, err.Error(), kit.Rid)
 		return set, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}

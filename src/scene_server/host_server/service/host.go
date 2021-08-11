@@ -108,16 +108,12 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 			return
 		}
-		if !rsp.Result {
-			blog.ErrorJSON("DeleteHostBatch read host association failed , err message: %s, rid: %s", rsp.ErrMsg, ctx.Kit.Rid)
-			ctx.RespAutoError(rsp.CCError())
-			return
-		}
-		if rsp.Data.Count <= 0 {
+
+		if rsp.Count <= 0 {
 			continue
 		}
 		asstInstMap := make(map[string][]int64, 0)
-		for _, asst := range rsp.Data.Info {
+		for _, asst := range rsp.Info {
 			if asst.ObjectID == common.BKInnerObjIDHost && iHostID == asst.InstID {
 				asstInstMap[asst.AsstObjectID] = append(asstInstMap[asst.AsstObjectID], asst.AsstInstID)
 			} else if asst.AsstObjectID == common.BKInnerObjIDHost && iHostID == asst.AsstInstID {
@@ -144,12 +140,8 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 				return
 			}
-			if !instRsp.Result {
-				blog.ErrorJSON("DeleteHostBatch read associated instances failed , err message: %s, rid: %s", instRsp.ErrMsg, ctx.Kit.Rid)
-				ctx.RespAutoError(instRsp.CCError())
-				return
-			}
-			if len(instRsp.Data.Info) > 0 {
+
+			if len(instRsp.Info) > 0 {
 				blog.ErrorJSON("DeleteHostBatch host %s has been associated, can't be deleted, rid: %s", iHostID, ctx.Kit.Rid)
 				ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrTopoInstHasBeenAssociation, iHostID))
 				return
@@ -177,14 +169,10 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 				Opt:   meta.DeleteOption{Condition: map[string]interface{}{common.BKDBOR: delConds}},
 				ObjID: common.BKInnerObjIDHost,
 			}
-			delRsp, err := s.CoreAPI.CoreService().Association().DeleteInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+			_, err := s.CoreAPI.CoreService().Association().DeleteInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 			if err != nil {
 				blog.ErrorJSON("DeleteHostBatch delete host redundant association do request failed , err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 				return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-			}
-			if !delRsp.Result {
-				blog.ErrorJSON("DeleteHostBatch delete host redundant association failed , err message: %s, rid: %s", delRsp.ErrMsg, ctx.Kit.Rid)
-				return delRsp.CCError()
 			}
 		}
 		appID, err := s.Logic.GetDefaultAppID(ctx.Kit)
@@ -636,15 +624,12 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 			Condition: mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDArr}},
 			Data:      mapstr.NewFromMap(data),
 		}
-		result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, opt)
+		_, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.BKInnerObjIDHost, opt)
 		if err != nil {
 			blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v, input: %+v, param: %+v, rid: %s",
 				err, data, opt, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !result.Result {
-			blog.ErrorJSON("UpdateHostBatch failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, ctx.Kit.Rid)
-			return result.CCError()
 		}
 
 		// save audit log.
@@ -731,14 +716,11 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 			}
 
 			// to update data.
-			result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, opt)
+			_, err = s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+				common.BKInnerObjIDHost, opt)
 			if err != nil {
 				blog.Errorf("UpdateHostPropertyBatch UpdateInstance http do error, err: %v,input:%+v,param:%+v,rid:%s", err, data, opt, ctx.Kit.Rid)
 				return err
-			}
-			if !result.Result {
-				blog.Errorf("UpdateHostPropertyBatch UpdateObject http response error, err code:%d,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, result.Error(), data, opt, ctx.Kit.Rid)
-				return result.CCError()
 			}
 
 			// add audit log.
@@ -962,12 +944,9 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 			blog.Errorf("remove hostModuleConfig, http do error, error:%v, params:%v, input:%+v, rid:%s", err, hmInput, data, ctx.Kit.Rid)
 			return err
 		}
-		if !configResult.Result {
-			blog.Errorf("remove hostModuleConfig http reply error, result:%v, params:%v, input:%+v, rid:%s", configResult, hmInput, data, ctx.Kit.Rid)
-			return err
-		}
+
 		hostIDMHMap := make(map[int64][]meta.ModuleHost, 0)
-		for _, item := range configResult.Data.Info {
+		for _, item := range configResult.Info {
 			hostIDMHMap[item.HostID] = append(hostIDMHMap[item.HostID], item)
 		}
 
@@ -1333,15 +1312,11 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 				Condition: mapstr.MapStr{common.BKHostIDField: intHostID},
 				Data:      mapstr.NewFromMap(hostInfo),
 			}
-			result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, opt)
+			_, err = s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+				common.BKInnerObjIDHost, opt)
 			if err != nil {
 				blog.ErrorJSON("UpdateImportHosts UpdateInstance http do error, err: %v,input:%+v,param:%+v,rid:%s", err, hostList.HostInfo, opt, ctx.Kit.Rid)
 				errMsg = append(errMsg, ccLang.Languagef("import_host_update_fail", index, err.Error()))
-				continue
-			}
-			if !result.Result {
-				blog.ErrorJSON("UpdateImportHosts failed, UpdateInstance failed, param:%s, response: %s, rid:%s", opt, result, ctx.Kit.Rid)
-				errMsg = append(errMsg, ccLang.Languagef("import_host_update_fail", index, result.ErrMsg))
 				continue
 			}
 

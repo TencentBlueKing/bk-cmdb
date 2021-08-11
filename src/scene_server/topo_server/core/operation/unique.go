@@ -54,38 +54,30 @@ func (a *unique) Create(kit *rest.Kit, objectID string, request *metadata.Create
 		blog.Errorf("[UniqueOperation] create for %s, %#v failed %v, rid: %s", objectID, request, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrTopoObjectUniqueCreateFailed)
 	}
-	if !resp.Result {
-		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
-	}
 
-	return &metadata.RspID{ID: int64(resp.Data.Created.ID)}, nil
+	return &metadata.RspID{ID: int64(resp.Created.ID)}, nil
 }
 
 func (a *unique) Update(kit *rest.Kit, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (err error) {
 	update := metadata.UpdateModelAttrUnique{
 		Data: *request,
 	}
-	resp, err := a.clientSet.CoreService().Model().UpdateModelAttrUnique(kit.Ctx, kit.Header, objectID, id, update)
+	_, err = a.clientSet.CoreService().Model().UpdateModelAttrUnique(kit.Ctx, kit.Header, objectID, id, update)
 	if err != nil {
 		blog.Errorf("[UniqueOperation] update for %s, %d, %#v failed %v, rid: %s", objectID, id, request, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoObjectUniqueUpdateFailed)
-	}
-	if !resp.Result {
-		return kit.CCError.New(resp.Code, resp.ErrMsg)
 	}
 
 	return nil
 }
 
 func (a *unique) Delete(kit *rest.Kit, objectID string, id uint64) (err error) {
-	resp, err := a.clientSet.CoreService().Model().DeleteModelAttrUnique(kit.Ctx, kit.Header, objectID, id)
+	_, err = a.clientSet.CoreService().Model().DeleteModelAttrUnique(kit.Ctx, kit.Header, objectID, id)
 	if err != nil {
 		blog.Errorf("[UniqueOperation] delete for %s, %d failed %v, rid: %s", objectID, id, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoObjectUniqueDeleteFailed)
 	}
-	if !resp.Result {
-		return kit.CCError.New(resp.Code, resp.ErrMsg)
-	}
+
 	return nil
 }
 
@@ -100,8 +92,6 @@ func (a *unique) Search(kit *rest.Kit, objectID string) (objectUniques []metadat
 		blog.Errorf("[UniqueOperation] search for %s, failed %v, rid: %s", objectID, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrTopoObjectUniqueSearchFailed)
 	}
-	if !resp.Result {
-		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
-	}
-	return resp.Data.Info, nil
+
+	return resp.Info, nil
 }

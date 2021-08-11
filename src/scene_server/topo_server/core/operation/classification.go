@@ -137,14 +137,11 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 	}
 
 	// to delete.
-	rsp, err := c.clientSet.CoreService().Model().DeleteModelClassification(kit.Ctx, kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+	_, err = c.clientSet.CoreService().Model().DeleteModelClassification(kit.Ctx, kit.Header,
+		&metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return err
-	}
-	if !rsp.Result {
-		blog.Errorf("failed to delete the classification, error info is %s, rid: %s", rsp.ErrMsg, kit.Rid)
-		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	// save audit log.
@@ -166,13 +163,8 @@ func (c *classification) FindClassificationWithObjects(kit *rest.Kit, cond condi
 		return nil, err
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s, rid: %s", fCond, rsp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
 	clsIDs := make([]string, 0)
-	for _, cls := range rsp.Data.Info {
+	for _, cls := range rsp.Info {
 		clsIDs = append(clsIDs, cls.ClassificationID)
 	}
 	clsIDs = util.StrArrayUnique(clsIDs)
@@ -182,19 +174,16 @@ func (c *classification) FindClassificationWithObjects(kit *rest.Kit, cond condi
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
-	if !queryObjectResp.Result {
-		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s, rid: %s", fCond, queryObjectResp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(queryObjectResp.Code, queryObjectResp.ErrMsg)
-	}
+
 	objMap := make(map[string][]metadata.Object)
 	objIDs := make([]string, 0)
-	for _, info := range queryObjectResp.Data.Info {
+	for _, info := range queryObjectResp.Info {
 		objIDs = append(objIDs, info.ObjectID)
 		objMap[info.ObjCls] = append(objMap[info.ObjCls], info)
 	}
 
 	datas := make([]metadata.ClassificationWithObject, 0)
-	for _, cls := range rsp.Data.Info {
+	for _, cls := range rsp.Info {
 		clsItem := metadata.ClassificationWithObject{
 			Classification: cls,
 			Objects:        []metadata.Object{},
@@ -217,12 +206,7 @@ func (c *classification) FindClassification(kit *rest.Kit, cond condition.Condit
 		return nil, err
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s, rid: %s", cond.ToMapStr(), rsp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	clsItems := model.CreateClassification(kit, c.clientSet, rsp.Data.Info)
+	clsItems := model.CreateClassification(kit, c.clientSet, rsp.Info)
 	return clsItems, nil
 }
 

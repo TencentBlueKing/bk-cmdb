@@ -88,7 +88,7 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.StringIDCount
 	info := make([]metadata.StringIDCount, 0)
 	info = append(info, metadata.StringIDCount{
 		ID:    "model",
-		Count: result.Data.Count, // 去除内置的模型(主机、集群等)
+		Count: result.Count, // 去除内置的模型(主机、集群等)
 	})
 
 	opt := make(map[string]interface{})

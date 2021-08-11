@@ -26,7 +26,7 @@ import (
 )
 
 func (s *Service) CreateHostApplyRule(ctx *rest.Contexts) {
-	rid :=ctx.Kit.Rid
+	rid := ctx.Kit.Rid
 
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -243,7 +243,7 @@ func (s *Service) BatchCreateOrUpdateHostApplyRule(ctx *rest.Contexts) {
 		}
 	}
 	if firstErr != nil {
-		ctx.RespEntityWithError(batchResult,firstErr)
+		ctx.RespEntityWithError(batchResult, firstErr)
 		return
 	}
 	ctx.RespEntity(batchResult)
@@ -316,13 +316,10 @@ func (s *Service) generateApplyPlan(ctx *rest.Contexts, bizID int64, planRequest
 		blog.Errorf("generateApplyPlan failed, err: %+v, rid: %s", err, rid)
 		return planResult, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if hostRelations.Code != 0 {
-		blog.ErrorJSON("generateApplyPlan failed, response failed, filter: %s, response: %s, err: %s, rid: %s", relationRequest, hostRelations, err, rid)
-		return planResult, errors.New(hostRelations.Code, hostRelations.ErrMsg)
-	}
+
 	hostModuleMap := make(map[int64][]int64)
 	moduleIDs := make([]int64, 0)
-	for _, item := range hostRelations.Data.Info {
+	for _, item := range hostRelations.Info {
 		if _, exist := hostModuleMap[item.HostID]; exist == false {
 			hostModuleMap[item.HostID] = make([]int64, 0)
 		}
@@ -430,7 +427,7 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		// enable host apply on module
 		moduleUpdateOption := &metadata.UpdateOption{
@@ -443,14 +440,11 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 				common.HostApplyEnabledField: true,
 			},
 		}
-		updateModuleResult, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleUpdateOption)
+		_, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.BKInnerObjIDModule, moduleUpdateOption)
 		if err != nil {
 			blog.ErrorJSON("GenerateApplyPlan failed, UpdateInstance of module http failed, option: %s, err: %v, rid:%s", moduleUpdateOption, err, rid)
 			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if ccErr := updateModuleResult.CCError(); ccErr != nil {
-			blog.ErrorJSON("GenerateApplyPlan failed, UpdateInstance of module failed, option: %s, result: %s, rid:%s", moduleUpdateOption, updateModuleResult, rid)
-			return ccErr
 		}
 
 		// save rules to database
@@ -516,24 +510,15 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 			},
 		}
 
-		updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, 
+		_, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 			common.BKInnerObjIDHost, updateOption)
 		if err != nil {
 			blog.ErrorJSON("run host apply rule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
 			for _, hostID := range hostIDs {
 				hostApplyResult := metadata.HostApplyResult{HostID: hostID}
-				hostApplyResult.SetError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
-				hostApplyResults = append(hostApplyResults, hostApplyResult)
-			}
-			continue
-		}
-
-		if ccErr := updateResult.CCError(); ccErr != nil {
-			blog.ErrorJSON("run host apply rule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, rid)
-
-			for _, hostID := range hostIDs {
-				hostApplyResult := metadata.HostApplyResult{HostID: hostID}
-				hostApplyResult.SetError(ccErr)
+				if ccErr, ok := err.(errors.CCErrorCoder); ok {
+					hostApplyResult.SetError(ccErr)
+				}
 				hostApplyResults = append(hostApplyResults, hostApplyResult)
 			}
 			continue
@@ -590,13 +575,10 @@ func (s *Service) listHostRelatedApplyRule(ctx *rest.Contexts, bizID int64, opti
 		blog.Errorf("listHostRelatedApplyRule failed, GetHostModuleRelation failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, relationOption, err, rid)
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if ccErr := relationResult.CCError(); ccErr != nil {
-		blog.Errorf("listHostRelatedApplyRule failed, GetHostModuleRelation failed, option: %s, result: %s, rid: %s", relationOption, relationResult, rid)
-		return nil, ccErr
-	}
+
 	hostModuleIDMap := make(map[int64][]int64)
 	moduleIDs := make([]int64, 0)
-	for _, item := range relationResult.Data.Info {
+	for _, item := range relationResult.Info {
 		moduleIDs = append(moduleIDs, item.ModuleID)
 		if _, exist := hostModuleIDMap[item.HostID]; exist == false {
 			hostModuleIDMap[item.HostID] = make([]int64, 0)
@@ -622,12 +604,9 @@ func (s *Service) listHostRelatedApplyRule(ctx *rest.Contexts, bizID int64, opti
 		blog.ErrorJSON("listHostRelatedApplyRule failed, ReadInstance of module failed, option: %s, err: %s, rid: %s", moduleFilter, err.Error(), rid)
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if ccErr := moduleResult.CCError(); ccErr != nil {
-		blog.ErrorJSON("listHostRelatedApplyRule failed, ReadInstance of module failed, filter: %s, result: %s, rid: %s", moduleFilter, moduleResult, rid)
-		return nil, ccErr
-	}
+
 	validModuleIDs := make([]int64, 0)
-	for _, item := range moduleResult.Data.Info {
+	for _, item := range moduleResult.Info {
 		moduleID, err := util.GetInt64ByInterface(item[common.BKModuleIDField])
 		if err != nil {
 			blog.ErrorJSON("listHostRelatedApplyRule failed, ReadInstance of module failed, parse module data failed, filter: %s, item: %s, rid: %s", moduleFilter, item, rid)

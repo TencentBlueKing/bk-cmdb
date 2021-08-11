@@ -38,18 +38,14 @@ func (h *attributeGroupAuditLog) GenerateAuditLog(parameter *generateAuditCommon
 				err.Error(), kit.Rid)
 			return nil, err
 		}
-		if rsp.Result != true {
-			blog.Errorf("generate audit log of attribute group failed, failed to read attribute group, rsp code is %v, err: %s, rid: %s",
-				rsp.Code, rsp.ErrMsg, kit.Rid)
-			return nil, rsp.CCError()
-		}
-		if len(rsp.Data.Info) <= 0 {
+
+		if len(rsp.Info) <= 0 {
 			blog.Errorf("generate audit log of model attribute failed, failed to read attribute group, err: %s, rid: %s",
 				kit.CCError.CCError(common.CCErrorModelNotFound), kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrorModelNotFound)
 		}
 
-		data = &rsp.Data.Info[0]
+		data = &rsp.Info[0]
 	}
 
 	objName, err := h.getObjNameByObjID(kit, data.ObjectID)

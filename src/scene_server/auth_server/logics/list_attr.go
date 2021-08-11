@@ -36,7 +36,7 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.Att
 		Fields: []string{common.BKPropertyIDField, common.BKPropertyNameField},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 	}
-	var res *metadata.ReadModelAttrResult
+	var res *metadata.QueryModelAttributeDataResult
 	var err error
 
 	// read all non-inner model attributes for SysInstance resource, add object id to distinguish
@@ -56,11 +56,8 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.Att
 		blog.ErrorJSON("read model attribute failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
 		return nil, err
 	}
-	if !res.Result {
-		blog.ErrorJSON("read model attribute failed, error code: %s, error message: %s, param: %s, rid: %s", res.Code, res.ErrMsg, param, kit.Rid)
-		return nil, res.CCError()
-	}
-	if len(res.Data.Info) == 0 {
+
+	if len(res.Info) == 0 {
 		return attrs, nil
 	}
 
@@ -68,7 +65,7 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.Att
 	objIDNameMap := make(map[string]string)
 	if resourceType == iam.SysInstance {
 		objIDs := make([]string, 0)
-		for _, attr := range res.Data.Info {
+		for _, attr := range res.Info {
 			objIDs = append(objIDs, attr.ObjectID)
 		}
 		modelRes, err := lgc.CoreAPI.CoreService().Model().ReadModelWithAttribute(kit.Ctx, kit.Header, &metadata.QueryCondition{
@@ -89,7 +86,7 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.Att
 		}
 	}
 
-	for _, attr := range res.Data.Info {
+	for _, attr := range res.Info {
 		displayName := attr.PropertyName
 		if resourceType == iam.SysInstance {
 			displayName = objIDNameMap[attr.ObjectID] + "-" + attr.PropertyName

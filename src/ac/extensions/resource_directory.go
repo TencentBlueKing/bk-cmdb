@@ -43,7 +43,7 @@ func (am *AuthManager) collectResourceDirectoryByDirectoryIDs(ctx context.Contex
 		return nil, fmt.Errorf("get directory by id failed, err: %+v", err)
 	}
 	directoryArr := make([]ModuleSimplify, 0)
-	for _, cls := range result.Data.Info {
+	for _, cls := range result.Info {
 		directory := ModuleSimplify{}
 		_, err = directory.Parse(cls)
 		if err != nil {

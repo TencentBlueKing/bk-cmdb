@@ -95,14 +95,11 @@ func (s *special) BkSystemInstall(ctx context.Context, appName string, input *me
 			Data:      input.HostInfo,
 			Condition: mapstr.MapStr{common.BKHostIDField: hostID},
 		}
-		resp, httpDoErr := s.lgc.CoreAPI.CoreService().Instance().UpdateInstance(ctx, s.kit.Header, common.BKInnerObjIDHost, updateInput)
+		_, httpDoErr := s.lgc.CoreAPI.CoreService().Instance().UpdateInstance(ctx, s.kit.Header,
+			common.BKInnerObjIDHost, updateInput)
 		if httpDoErr != nil {
 			blog.ErrorJSON("BkSystemInstall update host instance http do error.  err:%s, input:%s,  update parameter:%s, rid:%s", httpDoErr, input, updateInput, s.kit.Rid)
 			return s.kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if err := resp.CCError(); err != nil {
-			blog.ErrorJSON("BkSystemInstall update host instance http reply error.  err:%s, input:%s,  update parameter:%s, rid:%s", err.Error(), input, updateInput, s.kit.Rid)
-			return err
 		}
 	}
 
@@ -187,12 +184,8 @@ func (s *special) bkSystemInstallAddHostInstance(ctx context.Context, input *met
 		blog.ErrorJSON("BkSystemInstall create host instance http do error.  err:%s, data:%s, rid:%s", httpDoErr, input.HostInfo, s.kit.Rid)
 		return 0, s.kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if err := resp.CCError(); err != nil {
-		blog.ErrorJSON("BkSystemInstall create host instance http reply error.  err:%s, data:%s, rid:%s", err.Error(), input.HostInfo, s.kit.Rid)
-		return 0, err
-	}
 
-	return int64(resp.Data.Created.ID), nil
+	return int64(resp.Created.ID), nil
 
 }
 
@@ -310,13 +303,11 @@ func (s *special) bkSystemInstallProc(ctx context.Context, appID int64, moduleID
 				Data:      info,
 				Condition: updateCond.ToMapStr(),
 			}
-			resp, httpDoErr := s.lgc.CoreAPI.CoreService().Instance().UpdateInstance(ctx, s.kit.Header, common.BKInnerObjIDProc, procUpdateOpt)
+			_, httpDoErr := s.lgc.CoreAPI.CoreService().Instance().UpdateInstance(ctx, s.kit.Header,
+				common.BKInnerObjIDProc, procUpdateOpt)
 			if httpDoErr != nil {
 				blog.ErrorJSON("bkSystemInstallProc UpdateInstance  http do error.  err:%s, data:%s, rid:%s", httpDoErr, appID, searchSrvInstRelationCond, s.kit.Rid)
 				return httpDoErr
-			}
-			if err := resp.CCError(); err != nil {
-				blog.ErrorJSON("bkSystemInstallProc UpdateInstance  http reply error. err:%s, update params:%s, rid:%s", err, procUpdateOpt, s.kit.Rid)
 			}
 		}
 

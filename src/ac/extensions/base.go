@@ -14,7 +14,6 @@ package extensions
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"sync/atomic"
@@ -52,18 +51,14 @@ func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header htt
 		return 0, err
 	}
 
-	if !result.Result {
-		return 0, errors.New(result.ErrMsg)
-	}
-
 	supplier := util.GetOwnerID(header)
-	for idx, biz := range result.Data.Info {
+	for idx, biz := range result.Info {
 		if supplier == biz[common.BkSupplierAccount].(string) {
-			if !result.Data.Info[idx].Exists(common.BKAppIDField) {
+			if !result.Info[idx].Exists(common.BKAppIDField) {
 				// this can not be happen normally.
 				return 0, fmt.Errorf("can not find resource pool business id")
 			}
-			bizID, err := result.Data.Info[idx].Int64(common.BKAppIDField)
+			bizID, err := result.Info[idx].Int64(common.BKAppIDField)
 			if err != nil {
 				return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
 			}

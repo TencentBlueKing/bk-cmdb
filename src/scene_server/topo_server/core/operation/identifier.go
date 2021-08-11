@@ -76,17 +76,13 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *meta
 		blog.Errorf("query host failed. error: %v, input: %+v,  rid:%s", err, hostQuery, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !hostRet.Result {
-		blog.ErrorJSON("query host failed, output:%s, condition:%s, rid:%s", hostRet, hostQuery, kit.Rid)
-		return nil, kit.CCError.New(hostRet.Code, hostRet.ErrMsg)
-	}
 
-	if len(hostRet.Data.Info) == 0 {
+	if len(hostRet.Info) == 0 {
 		return &metadata.SearchHostIdentifierData{Count: 0, Info: []metadata.HostIdentifier{}}, nil
 	}
 
 	var hostIDs []int64
-	for _, hostInfo := range hostRet.Data.Info {
+	for _, hostInfo := range hostRet.Info {
 		hostID, err := hostInfo.Int64(common.BKHostIDField)
 		if err != nil {
 			blog.Errorf("bk_host_id not int . error: %v, host info:%s,  rid:%s", err, hostInfo, kit.Rid)
@@ -107,11 +103,5 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *meta
 		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.ErrorJSON("search identifier failed, reply: %s, ids: %s, condition: %s, rid: %s", rsp, hostIDs,
-			queryHostIdentifier, kit.Rid)
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return &rsp.Data, nil
+	return rsp, nil
 }

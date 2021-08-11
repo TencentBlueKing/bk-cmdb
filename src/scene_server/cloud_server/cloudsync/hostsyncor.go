@@ -241,14 +241,9 @@ func (h *HostSyncor) syncDestroyedVpcs(hostResource *metadata.CloudHostResource,
 		blog.Errorf("syncDestroyedVpcs ReadInstance failed, error: %v query:%#v, rid:%s", err, query, h.readKit.Rid)
 		return err
 	}
-	if false == res.Result {
-		blog.Errorf("syncDestroyedVpcs failed, query:%#v, err code:%d, err msg:%s, rid:%s", query, res.Code,
-			res.ErrMsg, h.readKit.Rid)
-		return fmt.Errorf("%s", res.ErrMsg)
-	}
 
 	hostIDs := make([]int64, 0)
-	for _, host := range res.Data.Info {
+	for _, host := range res.Info {
 		hostID, _ := host.Int64(common.BKHostIDField)
 		hostIDs = append(hostIDs, hostID)
 	}
@@ -462,15 +457,11 @@ func (h *HostSyncor) getCloudId(vpcID string) (int64, error) {
 		blog.Errorf("getCloudId failed, error: %v query:%#v, rid:%s", err, query, h.readKit.Rid)
 		return 0, err
 	}
-	if false == res.Result {
-		blog.Errorf("getCloudId failed, query:%#v, err code:%d, err msg:%s, rid:%s", query, res.Code, res.ErrMsg,
-			h.readKit.Rid)
-		return 0, fmt.Errorf("%s", res.ErrMsg)
-	}
-	if len(res.Data.Info) == 0 {
+
+	if len(res.Info) == 0 {
 		return 0, nil
 	}
-	cloudID, err := res.Data.Info[0].Int64(common.BKCloudIDField)
+	cloudID, err := res.Info[0].Int64(common.BKCloudIDField)
 	if err != nil {
 		blog.Errorf("getCloudId failed, err:%v, query:%#v, rid:%s", err, query, h.readKit.Rid)
 		return 0, nil
@@ -503,13 +494,7 @@ func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *met
 		return 0, err
 	}
 
-	if false == createRes.Result {
-		blog.Errorf("createCloudArea failed, error code:%d,err msg:%s,input:%#v, rid:%s", createRes.Code,
-			createRes.ErrMsg, cloudArea, h.readKit.Rid)
-		return 0, fmt.Errorf("%s", createRes.ErrMsg)
-	}
-
-	cloudID := int64(createRes.Data.Created.ID)
+	cloudID := int64(createRes.Created.ID)
 
 	// generate audit log.
 	audit := auditlog.NewCloudAreaAuditLog(h.logics.CoreAPI.CoreService())
@@ -568,16 +553,12 @@ func (h *HostSyncor) getLocalHosts(cloudIDs []int64) ([]*metadata.CloudHost, err
 		blog.Errorf("getLocalHosts failed, error: %v query:%#v, rid:%s", err, query, h.readKit.Rid)
 		return nil, err
 	}
-	if false == res.Result {
-		blog.Errorf("getLocalHosts failed, query:%#v, err code:%d, err msg:%s, rid:%s", query, res.Code, res.ErrMsg,
-			h.readKit.Rid)
-		return nil, fmt.Errorf("%s", res.ErrMsg)
-	}
-	if len(res.Data.Info) == 0 {
+
+	if len(res.Info) == 0 {
 		return nil, nil
 	}
 
-	for _, host := range res.Data.Info {
+	for _, host := range res.Info {
 		instID, _ := host.String(common.BKCloudInstIDField)
 		hostStatus, _ := host.String(common.BKCloudHostStatusField)
 		privateIp, _ := host.String(common.BKHostInnerIPField)
@@ -678,12 +659,8 @@ func (h *HostSyncor) addHost(cHost *metadata.CloudHost) (string, error) {
 		blog.Errorf("addHost fail,err:%s, input:%+v, rid:%s", err.Error(), host, h.readKit.Rid)
 		return "", err
 	}
-	if !result.Result {
-		blog.Errorf("addHost fail,err:%s, input:%+v, rid:%s", result.ErrMsg, host, h.readKit.Rid)
-		return "", fmt.Errorf("%s", result.ErrMsg)
-	}
 
-	hostID := int64(result.Data.Created.ID)
+	hostID := int64(result.Created.ID)
 
 	// 获取资源池业务id
 	condition := mapstr.MapStr{
@@ -699,17 +676,13 @@ func (h *HostSyncor) addHost(cHost *metadata.CloudHost) (string, error) {
 		blog.Errorf("addHost fail,err:%s, cond:%+v, rid:%s", err.Error(), *cond, h.readKit.Rid)
 		return "", err
 	}
-	if !res.Result {
-		blog.Errorf("addHost fail,err:%s, cond:%+v, rid:%s", res.ErrMsg, *cond, h.readKit.Rid)
-		return "", fmt.Errorf("%s", res.ErrMsg)
-	}
 
-	if len(res.Data.Info) == 0 {
+	if len(res.Info) == 0 {
 		blog.Errorf("addHost fail,err:%s, cond:%+v, rid:%s", "no default biz is found", *cond, h.readKit.Rid)
 		return "", fmt.Errorf("%s", "no default biz is found")
 	}
 
-	appID, err := res.Data.Info[0].Int64(common.BKAppIDField)
+	appID, err := res.Info[0].Int64(common.BKAppIDField)
 	if err != nil {
 		blog.Errorf("addHost fail,err:%s, cond:%+v, rid:%s", err.Error(), *cond, h.readKit.Rid)
 		return "", err
@@ -816,15 +789,13 @@ func (h *HostSyncor) updateHost(cloudInstID string, updateInfo map[string]interf
 	}
 	input.Condition = map[string]interface{}{common.BKCloudInstIDField: cloudInstID}
 	input.Data = updateInfo
-	uResult, err := h.logics.CoreAPI.CoreService().Instance().UpdateInstance(h.writeKit.Ctx, h.writeKit.Header, common.BKInnerObjIDHost, input)
+	_, err := h.logics.CoreAPI.CoreService().Instance().UpdateInstance(h.writeKit.Ctx, h.writeKit.Header,
+		common.BKInnerObjIDHost, input)
 	if err != nil {
 		blog.Errorf("updateHost fail,err:%s, input:%+v, rid:%s", err.Error(), *input, h.readKit.Rid)
 		return err
 	}
-	if !uResult.Result {
-		blog.Errorf("updateHost fail,err:%s, input:%+v, rid:%s", uResult.ErrMsg, *input, h.readKit.Rid)
-		return uResult.CCError()
-	}
+
 	return nil
 }
 
@@ -931,14 +902,11 @@ func (h *HostSyncor) updateDestroyedCloudArea(cloudIDs []int64) error {
 	}
 
 	// to update.
-	uResult, err := h.logics.CoreAPI.CoreService().Instance().UpdateInstance(h.writeKit.Ctx, h.writeKit.Header, common.BKInnerObjIDPlat, input)
+	_, err = h.logics.CoreAPI.CoreService().Instance().UpdateInstance(h.writeKit.Ctx, h.writeKit.Header,
+		common.BKInnerObjIDPlat, input)
 	if err != nil {
 		blog.Errorf("updateDestroyedCloudArea fail,err:%s, input:%+v, rid:%s", err.Error(), *input, h.readKit.Rid)
 		return err
-	}
-	if !uResult.Result {
-		blog.Errorf("updateDestroyedCloudArea fail,err:%s, input:%+v, rid:%s", uResult.ErrMsg, *input, h.readKit.Rid)
-		return uResult.CCError()
 	}
 
 	// save audit log.
@@ -1031,14 +999,11 @@ func (h *HostSyncor) getHostDetail(kit *rest.Kit, cond mapstr.MapStr) ([]mapstr.
 		blog.Errorf("getHostDetail failed, error: %v query:%#v, rid:%s", err, query, kit.Rid)
 		return nil, err
 	}
-	if false == res.Result {
-		blog.Errorf("getHostDetail failed, query:%#v, err msg:%s, rid:%s", query, res.ErrMsg, kit.Rid)
-		return nil, fmt.Errorf("%s", res.ErrMsg)
-	}
-	if len(res.Data.Info) == 0 {
+
+	if len(res.Info) == 0 {
 		blog.Errorf("getHostDetail fail, host is not found, query:%#v, rid:%s", query, kit.Rid)
 		return nil, fmt.Errorf("host is not found")
 	}
 
-	return res.Data.Info, nil
+	return res.Info, nil
 }

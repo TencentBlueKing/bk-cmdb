@@ -259,12 +259,8 @@ func (h *hostModuleLog) getHostModuleConfig(kit *rest.Kit) ([]metadata.ModuleHos
 		blog.Errorf("get host module config failed, http do error, err: %s, input: %+v, rid: %s", err.Error(), conds, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("get host module config failed, http respond error, err code: %d, err msg: %s, input: %+v, rid: %s",
-			result.Code, result.ErrMsg, conds, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
-	return result.Data.Info, nil
+
+	return result.Info, nil
 }
 
 func (h *hostModuleLog) getInnerIP(kit *rest.Kit) ([]mapstr.MapStr, errors.CCError) {
@@ -281,13 +277,8 @@ func (h *hostModuleLog) getInnerIP(kit *rest.Kit) ([]mapstr.MapStr, errors.CCErr
 		blog.Errorf("get hosts failed, http do error, err: %v, input: %+v, rid: %s", err, query, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("get hosts failed, http respond error, err code: %d, err msg: %s, input: %+v, rid: %s",
-			result.Code, result.ErrMsg, query, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
-	return result.Data.Info, nil
+	return result.Info, nil
 }
 
 func (h *hostModuleLog) getModules(kit *rest.Kit, moduleIds []int64) ([]mapstr.MapStr, errors.CCError) {
@@ -304,13 +295,8 @@ func (h *hostModuleLog) getModules(kit *rest.Kit, moduleIds []int64) ([]mapstr.M
 		blog.Errorf("get modules failed, http do error, err: %v, input: %+v, rid: %s", err, query, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("get modules failed, http respond error, err code: %d, err msg: %s, input: %+v, rid: %s",
-			result.Code, result.ErrMsg, query, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
-	return result.Data.Info, nil
+	return result.Info, nil
 }
 
 func (h *hostModuleLog) getSets(kit *rest.Kit, setIDs []int64) ([]mapstr.MapStr, errors.CCError) {
@@ -327,12 +313,8 @@ func (h *hostModuleLog) getSets(kit *rest.Kit, setIDs []int64) ([]mapstr.MapStr,
 		blog.Errorf("get sets failed, err: %v, input: %+v, rid: %s", err, query, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("get sets failed, http response error, err code: %d, err msg: %s, input: %+v, rid: %s",
-			result.Code, result.ErrMsg, query, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
-	return result.Data.Info, nil
+
+	return result.Info, nil
 }
 
 func (h *hostModuleLog) getApps(kit *rest.Kit, appIDs []int64) ([]mapstr.MapStr, errors.CCError) {
@@ -349,12 +331,8 @@ func (h *hostModuleLog) getApps(kit *rest.Kit, appIDs []int64) ([]mapstr.MapStr,
 		blog.Errorf("get business failed, http do error, err: %v, input: %+v, rid: %s", err, query, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("get business failed, http response error, err code: %d, err msg: %s, input: %+v, rid: %s",
-			result.Code, result.ErrMsg, query, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
-	return result.Data.Info, nil
+
+	return result.Info, nil
 }
 
 // GenerateAuditLog generate audit log of host module relate.

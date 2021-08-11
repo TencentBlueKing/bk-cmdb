@@ -41,7 +41,7 @@ func (am *AuthManager) collectSetBySetIDs(ctx context.Context, header http.Heade
 		return nil, fmt.Errorf("get sets by id failed, err: %+v", err)
 	}
 	sets := make([]SetSimplify, 0)
-	for _, cls := range result.Data.Info {
+	for _, cls := range result.Info {
 		set := SetSimplify{}
 		_, err = set.Parse(cls)
 		if err != nil {

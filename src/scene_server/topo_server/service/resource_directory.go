@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -63,25 +62,16 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if !rsp.Result {
-		blog.ErrorJSON("CreateResourceDirectory, failed to CreateInstance, errMsg: %s, rid: %s", rsp.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.New(rsp.Code, rsp.ErrMsg))
-		return
-	}
 
-	query := &metadata.QueryCondition{Condition: mapstr.MapStr{common.BKModuleIDField: rsp.Data.Created.ID}}
+	query := &metadata.QueryCondition{Condition: mapstr.MapStr{common.BKModuleIDField: rsp.Created.ID}}
 	readInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, query)
 	if err != nil {
 		blog.ErrorJSON("CreateResourceDirectory success, but add host audit log failed, err: %s,rid:%s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	if !readInstanceResult.Result {
-		blog.ErrorJSON("CreateResourceDirectory success, but add host audit log failed, err: %s,rid:%s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.New(rsp.Code, rsp.ErrMsg))
-		return
-	}
-	if len(readInstanceResult.Data.Info) <= 0 {
+
+	if len(readInstanceResult.Info) <= 0 {
 		err := fmt.Errorf("not find resource directory")
 		blog.Errorf("create resource directory success, but add host audit log failed, err: %v, rid: %s",
 			err, ctx.Kit.Rid)
@@ -92,7 +82,7 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 	// generate audit log.
 	audit := auditlog.NewResourceDirAuditLog(s.Engine.CoreAPI.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
-	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, int64(rsp.Data.Created.ID), bizID, readInstanceResult.Data.Info[0])
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, int64(rsp.Created.ID), bizID, readInstanceResult.Info[0])
 	if err != nil {
 		blog.Errorf("generate audit log failed after create resource directory, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -110,8 +100,8 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 	if auth.EnableAuthorize() {
 		iamInstance := metadata.IamInstanceWithCreator{
 			Type:    string(iam.SysResourcePoolDirectory),
-			ID:      strconv.FormatUint(rsp.Data.Created.ID, 10),
-			Name:    util.GetStrByInterface(readInstanceResult.Data.Info[0][common.BKModuleNameField]),
+			ID:      strconv.FormatUint(rsp.Created.ID, 10),
+			Name:    util.GetStrByInterface(readInstanceResult.Info[0][common.BKModuleNameField]),
 			Creator: ctx.Kit.User,
 		}
 		_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
@@ -122,7 +112,7 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 		}
 	}
 
-	ctx.RespEntity(rsp.Data)
+	ctx.RespEntity(rsp)
 }
 
 func (s *Service) getResourcePoolIDAndSetID(ctx *rest.Contexts) (string, int64, int64, error) {
@@ -134,19 +124,16 @@ func (s *Service) getResourcePoolIDAndSetID(ctx *rest.Contexts) (string, int64, 
 		blog.ErrorJSON("getResourcePoolIDAndSetID, failed to find business by query condition: %s, err: %s, rid: %s", query, err.Error(), ctx.Kit.Rid)
 		return "", 0, 0, err
 	}
-	if !bizRsp.Result {
-		return "", 0, 0, ctx.Kit.CCError.New(bizRsp.Code, bizRsp.ErrMsg)
-	}
-	if bizRsp.Data.Count <= 0 {
+	if bizRsp.Count <= 0 {
 		return "", 0, 0, fmt.Errorf("get resource pool info success, but count < 0")
 	}
 
-	intBizID, err := bizRsp.Data.Info[0].Int64(common.BKAppIDField)
+	intBizID, err := bizRsp.Info[0].Int64(common.BKAppIDField)
 	if err != nil {
 		blog.Errorf("getResourcePoolIDAndSetID, bizID convert to float64 failed, err:%v, rid: %v", err, ctx.Kit.Rid)
 		return "", 0, 0, err
 	}
-	bizName, err := bizRsp.Data.Info[0].String(common.BKAppNameField)
+	bizName, err := bizRsp.Info[0].String(common.BKAppNameField)
 	if err != nil {
 		blog.Errorf("getResourcePoolIDAndSetID, bizName convert to string failed, err:%v, rid: %v", err, ctx.Kit.Rid)
 		return "", 0, 0, err
@@ -158,14 +145,11 @@ func (s *Service) getResourcePoolIDAndSetID(ctx *rest.Contexts) (string, int64, 
 		blog.ErrorJSON("getResourcePoolIDAndSetID, failed to find business by query condition: %s, err: %s, rid: %s", query, err.Error(), ctx.Kit.Rid)
 		return "", 0, 0, err
 	}
-	if !setRsp.Result {
-		return "", 0, 0, ctx.Kit.CCError.New(setRsp.Code, setRsp.ErrMsg)
-	}
-	if setRsp.Data.Count <= 0 {
+	if setRsp.Count <= 0 {
 		return "", 0, 0, fmt.Errorf("get set info success, but count < 0")
 	}
 
-	intSetID, err := setRsp.Data.Info[0].Int64(common.BKSetIDField)
+	intSetID, err := setRsp.Info[0].Int64(common.BKSetIDField)
 	if err != nil {
 		blog.Errorf("getResourcePoolIDAndSetID, setID convert to float64 failed, err:%v, rid: %v", err, ctx.Kit.Rid)
 		return "", 0, 0, err
@@ -229,11 +213,6 @@ func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if !rsp.Result {
-		blog.ErrorJSON("UpdateResourceDirectory, failed to UpdateInstance, errMsg: %s, rid: %s", rsp.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.New(rsp.Code, rsp.ErrMsg))
-		return
-	}
 
 	// save audit log.
 	if err := audit.SaveAuditLog(ctx.Kit, *auditLog); err != nil {
@@ -242,7 +221,7 @@ func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(rsp.Data)
+	ctx.RespEntity(rsp)
 }
 
 func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
@@ -299,16 +278,11 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if !rsp.Result {
-		blog.ErrorJSON("SearchResourceDirectory, failed to SearchResourceDirectory, errMsg: %s, rid: %s", rsp.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.New(rsp.Code, rsp.ErrMsg))
-		return
-	}
 
 	moduleIDArr := make([]int64, 0)
 	mapModuleIdInfo := make(map[int64]mapstr.MapStr)
 	IdleMoudleID := int64(0)
-	for _, item := range rsp.Data.Info {
+	for _, item := range rsp.Info {
 		moduleID, err := item.Int64(common.BKModuleIDField)
 		if err != nil {
 			blog.ErrorJSON("SearchResourceDirectory fail with moduleID convert from interface to int64 failed, err: %s, rid: %s", err, ctx.Kit.Rid)
@@ -350,7 +324,7 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 	moduleHostsCount := make(map[int64]int64)
-	for _, item := range hostModuleRelations.Data.Info {
+	for _, item := range hostModuleRelations.Info {
 		if _, exist := moduleHostsCount[item.ModuleID]; exist == false {
 			moduleHostsCount[item.ModuleID] = 0
 		}
@@ -367,7 +341,7 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 	}
 
 	ret := make(map[string]interface{}, 0)
-	ret["count"] = rsp.Data.Count
+	ret["count"] = rsp.Count
 	ret["info"] = retInfo
 	ctx.RespEntity(ret)
 }
@@ -422,19 +396,15 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if !curData.Result {
-		blog.ErrorJSON("DeleteResourceDirectory success but fail to create audiLog, errMsg: %s, rid: %s", curData.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.New(curData.Code, curData.ErrMsg))
-		return
-	}
-	if len(curData.Data.Info) <= 0 {
+
+	if len(curData.Info) <= 0 {
 		blog.Errorf("DeleteResourceDirectory fail, resource pool directory not exist, bk_module_id: %d, rid: %s", intModuleID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrorTopoOperateReourceDirFailNotExist, s.Language.Language(language, "delete")))
 		return
 	}
 
 	// 空闲机目录不能被删除
-	moduleDefault, err := curData.Data.Info[0].Int64(common.BKDefaultField)
+	moduleDefault, err := curData.Info[0].Int64(common.BKDefaultField)
 	if err != nil {
 		blog.ErrorJSON("DeleteResourceDirectory fail, idle module can not delete, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -449,7 +419,7 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 	// generate audit log.
 	audit := auditlog.NewResourceDirAuditLog(s.Engine.CoreAPI.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
-	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, intModuleID, bizID, curData.Data.Info[0])
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, intModuleID, bizID, curData.Info[0])
 	if err != nil {
 		blog.Errorf("generate audit log failed before delete resource directory, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -464,11 +434,6 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if !rsp.Result {
-		blog.ErrorJSON("DeleteResourceDirectory, failed to DeleteInstance, errMsg: %s, rid: %s", rsp.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.New(rsp.Code, rsp.ErrMsg))
-		return
-	}
 
 	// save audit log.
 	if err := audit.SaveAuditLog(ctx.Kit, *auditLog); err != nil {
@@ -477,7 +442,7 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(rsp.Data)
+	ctx.RespEntity(rsp)
 }
 
 func (s *Service) hasHost(ctx *rest.Contexts, bizID int64, setIDs, moduleIDS []int64) (bool, error) {
@@ -497,12 +462,7 @@ func (s *Service) hasHost(ctx *rest.Contexts, bizID int64, setIDs, moduleIDS []i
 		return false, ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[resource-directory]  failed to search the host module configures, err: %s, rid: %s", rsp.ErrMsg, ctx.Kit.Rid)
-		return false, ctx.Kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return 0 != len(rsp.Data.Info), nil
+	return 0 != len(rsp.Info), nil
 }
 
 // 获取云同步任务有关联的所有资源池目录

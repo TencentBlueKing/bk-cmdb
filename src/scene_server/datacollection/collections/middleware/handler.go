@@ -119,18 +119,14 @@ func (d *Discover) GetInst(ownerID, objID string, instKey string, cond map[strin
 		blog.Errorf("search inst failed, cond: %s, error: %s, rid: %s", cond, err.Error(), rid)
 		return nil, fmt.Errorf("search inst failed: %s", err.Error())
 	}
-	if !resp.Result {
-		blog.Errorf("search inst failed, cond: %s, error message: %s, rid: %s", cond, resp.ErrMsg, rid)
-		return nil, fmt.Errorf("search inst failed: %s", resp.ErrMsg)
-	}
 
-	if len(resp.Data.Info) > 0 {
-		val, err := json.Marshal(resp.Data.Info[0])
+	if len(resp.Info) > 0 {
+		val, err := json.Marshal(resp.Info[0])
 		if err != nil {
 			blog.Errorf("%s: flush to redis marshal failed: %s", instKey, err)
 		}
 		d.TrySetRedis(instKey, val, cacheTime)
-		return resp.Data.Info[0], nil
+		return resp.Info[0], nil
 	}
 
 	return nil, nil
@@ -157,15 +153,12 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		blog.Errorf("search model unique failed, cond: %s, error: %s, rid: %s", cond, err.Error(), rid)
 		return fmt.Errorf("search model unique failed: %s", err.Error())
 	}
-	if !uniqueResp.Result {
-		blog.Errorf("search model unique failed, cond: %s, error message: %s, rid: %s", cond, uniqueResp.ErrMsg, rid)
-		return fmt.Errorf("search model unique failed: %s", uniqueResp.ErrMsg)
-	}
-	if uniqueResp.Data.Count != 1 {
+
+	if uniqueResp.Count != 1 {
 		return fmt.Errorf("model %s has wrong must check unique num", objID)
 	}
 	keyIDs := make([]int64, 0)
-	for _, key := range uniqueResp.Data.Info[0].Keys {
+	for _, key := range uniqueResp.Info[0].Keys {
 		keyIDs = append(keyIDs, int64(key.ID))
 	}
 	keys := make([]string, 0)
@@ -181,15 +174,13 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		blog.Errorf("search model attribute failed, cond: %s, error: %s, rid: %s", cond, err.Error(), rid)
 		return fmt.Errorf("search model attribute failed: %s", err.Error())
 	}
-	if !attrResp.Result {
-		blog.Errorf("search model attribute failed, cond: %s, error message: %s, rid: %s", cond, attrResp.ErrMsg, rid)
-		return fmt.Errorf("search model attribute failed: %s", attrResp.ErrMsg)
-	}
-	if attrResp.Data.Count <= 0 {
+
+	if attrResp.Count <= 0 {
 		blog.Errorf("unique model attribute count illegal, cond: %s, rid: %s", cond, rid)
-		return fmt.Errorf("search model attribute failed: %s", attrResp.ErrMsg)
+		return fmt.Errorf("search model attribute failed, return is empty")
 	}
-	for _, attr := range attrResp.Data.Info {
+
+	for _, attr := range attrResp.Info {
 		keys = append(keys, attr.PropertyID)
 	}
 
@@ -227,10 +218,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 			blog.Errorf("search model failed %s", err.Error())
 			return fmt.Errorf("search model failed: %s", err.Error())
 		}
-		if !resp.Result {
-			blog.Errorf("search model failed %s", resp.ErrMsg)
-			return fmt.Errorf("search model failed: %s", resp.ErrMsg)
-		}
+
 		blog.Infof("create inst result: %v", resp)
 
 		// add audit log.
@@ -356,10 +344,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		blog.Errorf("search model failed %s", err.Error())
 		return fmt.Errorf("search model failed: %s", err.Error())
 	}
-	if !resp.Result {
-		blog.Errorf("search model failed %s", resp.ErrMsg)
-		return fmt.Errorf("search model failed: %s", resp.ErrMsg)
-	}
+
 	blog.Infof("update inst result: %v", resp)
 	d.TryUnsetRedis(instKeyStr)
 

@@ -191,13 +191,8 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iam.TypeID, fil
 		return nil, err
 	}
 
-	if err := result.CCError(); err != nil {
-		blog.Errorf("read object %s instances failed, err: %v, rid: %s", objID, err, kit.Rid)
-		return nil, err
-	}
-
-	instances := make([]types.InstanceResource, len(result.Data.Info))
-	for index, instance := range result.Data.Info {
+	instances := make([]types.InstanceResource, len(result.Info))
+	for index, instance := range result.Info {
 		instances[index] = types.InstanceResource{
 			ID:          util.GetStrByInterface(instance[common.BKInstIDField]),
 			DisplayName: util.GetStrByInterface(instance[common.BKInstNameField]),
@@ -205,7 +200,7 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iam.TypeID, fil
 	}
 
 	return &types.ListInstanceResult{
-		Count:   int64(result.Data.Count),
+		Count:   int64(result.Count),
 		Results: instances,
 	}, nil
 }
@@ -226,10 +221,10 @@ func (lgc *Logics) getModelObjectIDWithIamParentID(kit *rest.Kit, parentID strin
 		return "", err
 	}
 
-	if len(result.Data.Info) != 1 {
+	if len(result.Info) != 1 {
 		return "", fmt.Errorf("got multiple model with id: %s", parentID)
 	}
-	return result.Data.Info[0].ObjectID, nil
+	return result.Info[0].ObjectID, nil
 }
 
 // ListHostInstance list host instances
@@ -313,8 +308,8 @@ func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page t
 	}
 
 	// get cloud area to generate host display name
-	cloudIDs := make([]int64, len(hostResp.Data.Info))
-	for index, host := range hostResp.Data.Info {
+	cloudIDs := make([]int64, len(hostResp.Info))
+	for index, host := range hostResp.Info {
 		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
 		if err != nil {
 			return nil, err
@@ -329,7 +324,7 @@ func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page t
 	}
 
 	instances := make([]types.InstanceResource, 0)
-	for _, host := range hostResp.Data.Info {
+	for _, host := range hostResp.Info {
 		cloudID, _ := util.GetInt64ByInterface(host[common.BKCloudIDField])
 		instances = append(instances, types.InstanceResource{
 			ID:          util.GetStrByInterface(host[common.BKHostIDField]),
@@ -338,7 +333,7 @@ func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page t
 	}
 
 	return &types.ListInstanceResult{
-		Count:   int64(hostResp.Data.Count),
+		Count:   int64(hostResp.Count),
 		Results: instances,
 	}, nil
 }

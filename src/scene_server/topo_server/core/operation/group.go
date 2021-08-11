@@ -112,14 +112,11 @@ func (g *group) DeleteObjectGroup(kit *rest.Kit, groupID int64) error {
 
 	// to delete.
 	cond := condition.CreateCondition().Field(common.BKFieldID).Eq(groupID)
-	rsp, err := g.clientSet.CoreService().Model().DeleteAttributeGroupByCondition(kit.Ctx, kit.Header, metadata.DeleteOption{Condition: cond.ToMapStr()})
+	_, err = g.clientSet.CoreService().Model().DeleteAttributeGroupByCondition(kit.Ctx, kit.Header,
+		metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-grp]failed to request object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return err
-	}
-	if !rsp.Result {
-		blog.Errorf("[operation-grp]failed to delete the group(%d), err: %s, rid: %s", groupID, rsp.ErrMsg, kit.Rid)
-		return kit.CCError.Error(common.CCErrTopoObjectGroupDeleteFailed)
 	}
 
 	// save audit log.
@@ -140,12 +137,7 @@ func (g *group) FindObjectGroup(kit *rest.Kit, cond condition.Condition, modelBi
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[opeartion-grp] failed to search the group by the condition(%#v), error info is %s, rid: %s", fCond, rsp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return model.CreateGroup(kit, g.clientSet, rsp.Data.Info), nil
+	return model.CreateGroup(kit, g.clientSet, rsp.Info), nil
 }
 
 func (g *group) FindGroupByObject(kit *rest.Kit, objID string, cond condition.Condition, modelBizID int64) ([]model.GroupInterface, error) {
@@ -158,12 +150,7 @@ func (g *group) FindGroupByObject(kit *rest.Kit, objID string, cond condition.Co
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-grp] failed to search the group of the object(%s) by the condition (%#v), error info is %s, rid: %s", objID, fCond, rsp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return model.CreateGroup(kit, g.clientSet, rsp.Data.Info), nil
+	return model.CreateGroup(kit, g.clientSet, rsp.Info), nil
 }
 
 func (g *group) UpdateObjectAttributeGroup(kit *rest.Kit, conds []metadata.PropertyGroupObjectAtt, modelBizID int64) error {
@@ -189,15 +176,10 @@ func (g *group) UpdateObjectAttributeGroup(kit *rest.Kit, conds []metadata.Prope
 			Data:      mapstr.NewFromStruct(cond.Data, "json"),
 		}
 
-		rsp, err := g.clientSet.CoreService().Model().UpdateModelAttrsByCondition(kit.Ctx, kit.Header, &input)
+		_, err := g.clientSet.CoreService().Model().UpdateModelAttrsByCondition(kit.Ctx, kit.Header, &input)
 		if nil != err {
 			blog.Errorf("[operation-grp] failed to set the group  by the condition (%#v), error info is %s , rid: %s", cond, err.Error(), kit.Rid)
 			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-
-		if !rsp.Result {
-			blog.Errorf("[operation-grp] failed to set the group  by the condition (%#v), error info is %s , rid: %s", cond, rsp.ErrMsg, kit.Rid)
-			return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 		}
 	}
 
@@ -216,15 +198,10 @@ func (g *group) DeleteObjectAttributeGroup(kit *rest.Kit, objID, propertyID, gro
 		},
 	}
 
-	rsp, err := g.clientSet.CoreService().Model().UpdateModelAttrs(kit.Ctx, kit.Header, objID, &input)
+	_, err := g.clientSet.CoreService().Model().UpdateModelAttrs(kit.Ctx, kit.Header, objID, &input)
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to set the group , error info is %s , rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if !rsp.Result {
-		blog.Errorf("[operation-grp] failed to set the group , error info is %s , rid: %s", rsp.ErrMsg, kit.Rid)
-		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
@@ -250,14 +227,10 @@ func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondi
 	}
 
 	// to update.
-	rsp, err := g.clientSet.CoreService().Model().UpdateAttributeGroupByCondition(kit.Ctx, kit.Header, input)
+	_, err = g.clientSet.CoreService().Model().UpdateAttributeGroupByCondition(kit.Ctx, kit.Header, input)
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to set the group to the new data (%#v) by the condition (%#v), error info is %s , rid: %s", cond.Data, cond.Condition, err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !rsp.Result {
-		blog.Errorf("[operation-grp] failed to set the group to the new data (%#v) by the condition (%#v), error info is %s , rid: %s", cond.Data, cond.Condition, rsp.ErrMsg, kit.Rid)
-		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	// save audit log.

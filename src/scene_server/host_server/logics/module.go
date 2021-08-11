@@ -41,20 +41,16 @@ func (lgc *Logics) GetResourcePoolModuleID(kit *rest.Kit, condition mapstr.MapSt
 		blog.Errorf("GetResourcePoolModuleID http do error, err:%s,input:%+v,rid:%s", err.Error(), query, kit.Rid)
 		return -1, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("GetResourcePoolModuleID http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
-		return -1, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
-	if len(result.Data.Info) == 0 {
-		blog.Errorf("GetResourcePoolModuleID http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
+	if len(result.Info) == 0 {
+		blog.Errorf("GetResourcePoolModuleID http response error,input:%+v,rid:%s", query, kit.Rid)
 		return -1, kit.CCError.Error(common.CCErrTopoGetAppFailed)
 	}
 
 	supplier := kit.SupplierAccount
-	for idx, mod := range result.Data.Info {
+	for idx, mod := range result.Info {
 		if supplier == mod[common.BkSupplierAccount].(string) {
-			return result.Data.Info[idx].Int64(common.BKModuleIDField)
+			return result.Info[idx].Int64(common.BKModuleIDField)
 		}
 	}
 
@@ -74,12 +70,8 @@ func (lgc *Logics) GetNormalModuleByModuleID(kit *rest.Kit, appID, moduleID int6
 		blog.Errorf("GetNormalModuleByModuleID http do error, err:%s,input:%#v,rid:%s", err.Error(), query, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("GetNormalModuleByModuleID http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
-	return result.Data.Info, nil
+	return result.Info, nil
 }
 
 func (lgc *Logics) GetModuleIDByCond(kit *rest.Kit, cond metadata.ConditionWithTime) (
@@ -103,13 +95,9 @@ func (lgc *Logics) GetModuleIDByCond(kit *rest.Kit, cond metadata.ConditionWithT
 		blog.Errorf("GetModuleIDByCond http do error, err:%s,input:%+v,rid:%s", err.Error(), query, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("GetModuleIDByCond http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
 	moduleIDArr := make([]int64, 0)
-	for _, i := range result.Data.Info {
+	for _, i := range result.Info {
 		moduleID, err := i.Int64(common.BKModuleIDField)
 		if err != nil {
 			blog.Errorf("GetModuleIDByCond convert  module id to int error, err:%s, module:%+v,input:%+v,rid:%s", err.Error(), i, query, kit.Rid)
@@ -133,13 +121,9 @@ func (lgc *Logics) GetModuleMapByCond(kit *rest.Kit, fields []string, cond mapst
 		blog.Errorf("GetModuleMapByCond http do error, err:%s,input:%+v,rid:%s", err.Error(), query, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("GetModuleMapByCond http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
 	moduleMap := make(map[int64]types.MapStr)
-	for _, info := range result.Data.Info {
+	for _, info := range result.Info {
 		id, err := info.Int64(common.BKModuleIDField)
 		if err != nil {
 			blog.Errorf("GetModuleMapByCond convert  module id to int error, err:%s, module:%+v,input:%+v,rid:%s", err.Error(), info, query, kit.Rid)
@@ -417,10 +401,8 @@ func (lgc *Logics) convertHostIDToHostIP(kit *rest.Kit, hostIDArr []int64) []str
 	if err != nil {
 		blog.Warnf("convertHostIDToHostIP http do error. err:%s, input:%#v, rid:%s", err.Error(), input, kit.Rid)
 	}
-	if !result.Result {
-		blog.Warnf("convertHostIDToHostIP http response error. result:%#v, input:%#v, rid:%s", result, input, kit.Rid)
-	}
-	for _, host := range result.Data.Info {
+
+	for _, host := range result.Info {
 		hostID, err := host.Int64(common.BKHostIDField)
 		if err != nil {
 			// can't not foud host id , skip

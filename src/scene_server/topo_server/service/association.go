@@ -281,16 +281,12 @@ func (s *Service) getSetDetailOfTopo(ctx *rest.Contexts, bizID int64, input *met
 			blog.Errorf("getSetDetailOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
 			return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
-		if !setResult.Result {
-			blog.Errorf("getSetDetailOfTopo failed, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
-			return nil, setResult.CCError()
-		}
 
-		if len(setResult.Data.Info) == 0 {
+		if len(setResult.Info) == 0 {
 			break
 		}
 
-		for _, info := range setResult.Data.Info {
+		for _, info := range setResult.Info {
 			setID, _ := info.Int64(common.BKSetIDField)
 			if !originSetFields[common.BKDefaultField] {
 				info.Remove(common.BKDefaultField)
@@ -299,7 +295,7 @@ func (s *Service) getSetDetailOfTopo(ctx *rest.Contexts, bizID int64, input *met
 		}
 
 		start += pageSize
-		if len(setResult.Data.Info) < pageSize {
+		if len(setResult.Info) < pageSize {
 			hasNext = false
 		}
 	}
@@ -341,16 +337,12 @@ func (s *Service) getModuleInfoOfTopo(ctx *rest.Contexts, bizID int64, input *me
 			blog.Errorf("getModuleInfoOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
 			return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
-		if !moduleResult.Result {
-			blog.Errorf("getModuleInfoOfTopo failed, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
-			return nil, nil, moduleResult.CCError()
-		}
 
-		if len(moduleResult.Data.Info) == 0 {
+		if len(moduleResult.Info) == 0 {
 			break
 		}
 
-		for _, info := range moduleResult.Data.Info {
+		for _, info := range moduleResult.Info {
 			setID, _ := info.Int64(common.BKSetIDField)
 			moduleID, _ := info.Int64(common.BKModuleIDField)
 			setModuleMap[setID] = append(setModuleMap[setID], moduleID)
@@ -365,7 +357,7 @@ func (s *Service) getModuleInfoOfTopo(ctx *rest.Contexts, bizID int64, input *me
 		}
 
 		start += pageSize
-		if len(moduleResult.Data.Info) < pageSize {
+		if len(moduleResult.Info) < pageSize {
 			hasNext = false
 		}
 	}
@@ -393,7 +385,7 @@ func (s *Service) getHostInfoOfTopo(ctx *rest.Contexts, bizID int64, input *meta
 		blog.Errorf("getHostInfoOfTopo failed, option: %+v, err: %s, rid: %s", relationOption, err.Error(), ctx.Kit.Rid)
 		return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	for _, relation := range hostModuleRelations.Data.Info {
+	for _, relation := range hostModuleRelations.Info {
 		hostIDArr = append(hostIDArr, relation.HostID)
 		moduleHostMap[relation.ModuleID] = append(moduleHostMap[relation.ModuleID], relation.HostID)
 	}
@@ -424,22 +416,18 @@ func (s *Service) getHostInfoOfTopo(ctx *rest.Contexts, bizID int64, input *meta
 				blog.Errorf("getHostInfoOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
 				return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 			}
-			if !hostResult.Result {
-				blog.Errorf("getHostInfoOfTopo failed, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
-				return nil, nil, hostResult.CCError()
-			}
 
-			if len(hostResult.Data.Info) == 0 {
+			if len(hostResult.Info) == 0 {
 				break
 			}
 
-			for _, info := range hostResult.Data.Info {
+			for _, info := range hostResult.Info {
 				hostID, _ := info.Int64(common.BKHostIDField)
 				hostDetail[hostID] = info
 			}
 
 			start += pageSize
-			if len(hostResult.Data.Info) < pageSize {
+			if len(hostResult.Info) < pageSize {
 				hasNext = false
 			}
 		}
@@ -488,12 +476,7 @@ func (s *Service) SearchAssociationType(ctx *rest.Contexts) {
 		return
 	}
 
-	if ret.Code != 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
-		return
-	}
-
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(ret)
 }
 
 func (s *Service) SearchObjectAssocWithAssocKindList(ctx *rest.Contexts) {

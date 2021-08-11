@@ -585,14 +585,10 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
 	}
 
 	// DeleteModelCascade 将会删除模型/模型属性/属性分组/唯一校验
-	rsp, err := o.clientSet.CoreService().Model().DeleteModelCascade(kit.Ctx, kit.Header, id)
+	_, err = o.clientSet.CoreService().Model().DeleteModelCascade(kit.Ctx, kit.Header, id)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to request the object controller, err: %s, rid: %s", err.Error(), kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !rsp.Result {
-		blog.Errorf("[operation-obj] failed to delete the object by the id(%d), rid: %s", id, kit.Rid)
-		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
+		return err
 	}
 
 	// save audit log.
@@ -648,13 +644,9 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition) ([]meta
 				blog.Errorf("find object topo failed, because get association kind[%s] failed, err: %v, rid: %s", asst.AsstKindID, err, kit.Rid)
 				return nil, kit.CCError.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
 			}
-			if !resp.Result {
-				blog.Errorf("find object topo failed, because get association kind[%s] failed, err: %v, rid: %s", asst.AsstKindID, resp.ErrMsg, kit.Rid)
-				return nil, kit.CCError.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
-			}
 
 			// should only be one association kind.
-			if len(resp.Data.Info) == 0 {
+			if len(resp.Info) == 0 {
 				blog.Errorf("find object topo failed, because get association kind[%s] failed, err: can not find this association kind., rid: %s", asst.AsstKindID, kit.Rid)
 				return nil, kit.CCError.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
 			}
@@ -671,8 +663,8 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition) ([]meta
 			for _, asstObj := range asstObjs {
 				assocObject := asstObj.Object()
 				tmp := metadata.ObjectTopo{}
-				tmp.Label = resp.Data.Info[0].AssociationKindName
-				tmp.LabelName = resp.Data.Info[0].AssociationKindName
+				tmp.Label = resp.Info[0].AssociationKindName
+				tmp.LabelName = resp.Info[0].AssociationKindName
 				tmp.From.ObjID = object.ObjectID
 				cls, err := obj.GetClassification()
 				if nil != err {
@@ -721,12 +713,7 @@ func (o *object) FindObject(kit *rest.Kit, cond condition.Condition) ([]model.Ob
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , error info is %s, rid: %s", fCond, rsp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return model.CreateObject(kit, o.clientSet, rsp.Data.Info), nil
+	return model.CreateObject(kit, o.clientSet, rsp.Info), nil
 }
 
 func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error {

@@ -98,12 +98,7 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 			return nil, cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if !rsp.Result {
-			blog.Errorf("[inst-inst] failed to search the inst, error info is %s, rid: %s", rsp.ErrMsg, cli.kit.Rid)
-			return nil, cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-		}
-
-		return CreateInst(cli.kit, cli.clientSet, targetModel, rsp.Data.Info), nil
+		return CreateInst(cli.kit, cli.clientSet, targetModel, rsp.Info), nil
 	}
 
 	// search hosts
@@ -113,12 +108,7 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 		return nil, cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[inst-inst] failed to search the inst, error info is %s, rid: %s", rsp.ErrMsg, cli.kit.Rid)
-		return nil, cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return CreateInst(cli.kit, cli.clientSet, targetModel, mapstr.NewArrayFromMapStr(rsp.Data.Info)), nil
+	return CreateInst(cli.kit, cli.clientSet, targetModel, mapstr.NewArrayFromMapStr(rsp.Info)), nil
 
 }
 
@@ -144,12 +134,7 @@ func (cli *inst) Create() error {
 		return err
 	}
 
-	if !rsp.Result {
-		blog.Errorf("failed to create object instance ,error info is %v, rid: %s", rsp.ErrMsg, rid)
-		return cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	cli.datas.Set(cli.target.GetInstIDFieldName(), rsp.Data.Created.ID)
+	cli.datas.Set(cli.target.GetInstIDFieldName(), rsp.Created.ID)
 
 	return nil
 }
@@ -181,15 +166,10 @@ func (cli *inst) UpdateInstance(filter condition.Condition, data mapstr.MapStr, 
 		Condition: filter.ToMapStr(),
 		Data:      data,
 	}
-	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(cli.kit.Ctx, cli.kit.Header, objID, &updateOption)
+	_, err := cli.clientSet.CoreService().Instance().UpdateInstance(cli.kit.Ctx, cli.kit.Header, objID, &updateOption)
 	if nil != err {
 		blog.Errorf("failed to update object(%s)'s instances, err: %s, rid: %s", objID, err.Error(), rid)
 		return cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if !rsp.Result {
-		blog.Errorf("failed to update object(%s)'s instances, err: %s, rid: %s", objID, rsp.ErrMsg, rid)
-		return cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	// read the updated data
@@ -263,12 +243,7 @@ func (cli *inst) CheckInstanceExists(nonInnerAttributes []model.AttributeInterfa
 		return false, nil, cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("failed to search the object(%s) instances, err: %s, rid: %s", objID, rsp.ErrMsg, rid)
-		return false, nil, cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return 0 != rsp.Data.Count, cond, nil
+	return 0 != rsp.Count, cond, nil
 }
 
 func (cli *inst) Save(data mapstr.MapStr) error {

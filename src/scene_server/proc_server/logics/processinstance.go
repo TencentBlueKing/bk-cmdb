@@ -59,7 +59,7 @@ func (lgc *Logic) ListProcessInstances(kit *rest.Kit, bizID int64, serviceInstan
 	}
 
 	processIDPropertyMap := map[int64]mapstr.MapStr{}
-	for _, process := range processResult.Data.Info {
+	for _, process := range processResult.Info {
 		processIDVal, exist := process.Get(common.BKProcessIDField)
 		if !exist {
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParseDataFailed, "list process instance failed, parse "+
@@ -104,13 +104,8 @@ func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !ret.Result {
-		blog.Errorf("rid: %s list process instance with procID: %d failed, err: %v", kit.Rid, procIDs, ret.ErrMsg)
-		return nil, ret.CCError()
-	}
-
 	processes := make([]metadata.Process, 0)
-	for _, p := range ret.Data.Info {
+	for _, p := range ret.Info {
 		process := new(metadata.Process)
 		if err := p.MarshalJSONInto(process); err != nil {
 			return nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
@@ -134,17 +129,12 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !ret.Result {
-		blog.Errorf("GetProcessInstanceWithID failed, get process instance with procID: %d failed, err: %v, rid: %s", procID, ret.ErrMsg, kit.Rid)
-		return nil, ret.CCError()
-	}
-
 	process := new(metadata.Process)
-	if len(ret.Data.Info) == 0 {
+	if len(ret.Info) == 0 {
 		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 	}
 
-	if err := ret.Data.Info[0].MarshalJSONInto(process); err != nil {
+	if err := ret.Info[0].MarshalJSONInto(process); err != nil {
 		blog.Errorf("GetProcessInstanceWithID failed err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -161,16 +151,12 @@ func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr
 		},
 	}
 
-	result, err := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
+	_, err := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
 		blog.ErrorJSON("UpdateProcessInstance failed, UpdateInstance http request failed, option: %s, err: %s, rid: %s", option, err.Error(), kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !result.Result {
-		blog.ErrorJSON("UpdateProcessInstance failed, UpdateInstance failed, option: %s, response: %s, rid: %s", option, result, kit.Rid)
-		return errors.New(result.Code, result.ErrMsg)
-	}
 	return nil
 }
 
@@ -182,15 +168,10 @@ func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) errors.CCEr
 		},
 	}
 
-	result, err := lgc.CoreAPI.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
+	_, err := lgc.CoreAPI.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
 		blog.ErrorJSON("DeleteProcessInstance failed, DeleteInstance failed, option: %s, err: %s, rid: %s", option, err.Error(), rid)
 		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if !result.Result {
-		blog.Errorf("rid: %s, delete process instance: %d failed, err: %s", kit.Rid, procID, result.ErrMsg)
-		return errors.New(result.Code, result.ErrMsg)
 	}
 
 	return nil
@@ -207,14 +188,9 @@ func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) err
 			},
 		}),
 	}
-	result, err := lgc.CoreAPI.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
+	_, err := lgc.CoreAPI.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
 		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if !result.Result {
-		blog.Errorf("rid: %s, delete process instance: %d failed, err: %s", kit.Rid, procIDs, result.ErrMsg)
-		return result.CCError()
 	}
 
 	return nil
@@ -230,12 +206,7 @@ func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, processData map[string]in
 		return 0, errors.CCHttpError
 	}
 
-	if !result.Result {
-		blog.Errorf("rid: %s, create process instance: %+v failed, err: %s", kit.Rid, processData, result.ErrMsg)
-		return 0, errors.New(result.Code, result.ErrMsg)
-	}
-
-	return int64(result.Data.Created.ID), nil
+	return int64(result.Created.ID), nil
 }
 
 func (lgc *Logic) CreateProcessInstances(kit *rest.Kit, processDatas []map[string]interface{}) ([]int64, errors.CCErrorCoder) {
@@ -254,18 +225,14 @@ func (lgc *Logic) CreateProcessInstances(kit *rest.Kit, processDatas []map[strin
 		blog.Errorf("CreateProcessInstances failed, http request failed, err: %+v, inputParam:%#v, rid: %s", err, inputParam, kit.Rid)
 		return nil, errors.CCHttpError
 	}
-	if !result.Result {
-		blog.Errorf("CreateProcessInstances failed, http request failed, err: %+v, inputParam:%#v, rid: %s", result.ErrMsg, inputParam, kit.Rid)
-		return nil, errors.New(result.Code, result.ErrMsg)
-	}
 
-	if len(processDatas) != len(result.Data.Created) {
+	if len(processDatas) != len(result.Created) {
 		blog.Errorf("CreateProcessInstances failed, len(processes) != len(result.Created), inputParam: %#v, rid: %s", inputParam, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrProcCreateProcessFailed)
 	}
 
 	processIDs := make([]int64, len(processDatas))
-	for idx, created := range result.Data.Created {
+	for idx, created := range result.Created {
 		processIDs[idx] = int64(created.ID)
 	}
 
@@ -608,13 +575,8 @@ func (lgc *Logic) GetHostIPMapByID(kit *rest.Kit, hostIDs []int64) (map[int64]ma
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !hostRes.Result {
-		blog.Errorf("get hosts failed, err: %s, hostIDs: %+v, rid: %s", hostRes.ErrMsg, hostIDs, kit.Rid)
-		return nil, hostRes.CCError()
-	}
-
 	hostMap := make(map[int64]map[string]interface{})
-	for _, host := range hostRes.Data.Info {
+	for _, host := range hostRes.Info {
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
 			blog.Errorf("host id invalid, err: %s, host: %+v, rid: %s", err.Error(), host, kit.Rid)

@@ -160,7 +160,7 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		return
 	}
-	if models.Data.Count <= 0 {
+	if models.Count <= 0 {
 		ctx.RespEntity(nil)
 		return
 	}

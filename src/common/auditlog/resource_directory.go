@@ -36,18 +36,14 @@ func (h *resourceDirAuditLog) GenerateAuditLog(parameter *generateAuditCommonPar
 				err.Error(), parameter.kit.Rid)
 			return nil, err
 		}
-		if rsp.Result != true {
-			blog.Errorf("generate audit log of resource directory failed, failed to read resource directory, rsp code is %v, err: %s, rid: %s",
-				rsp.Code, rsp.ErrMsg, parameter.kit.Rid)
-			return nil, parameter.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-		}
-		if len(rsp.Data.Info) <= 0 {
+
+		if len(rsp.Info) <= 0 {
 			blog.Errorf("generate audit log of resource directory failed, not find resource directory, instModuleID: %d, rid: %s",
 				instModuleID, parameter.kit.Rid)
 			return nil, fmt.Errorf("generate audit log of resource directory failed, not find resource directory")
 		}
 
-		data = rsp.Data.Info[0]
+		data = rsp.Info[0]
 	}
 
 	// get resource directory name.

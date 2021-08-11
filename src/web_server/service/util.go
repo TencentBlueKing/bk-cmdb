@@ -45,10 +45,6 @@ func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, i
 		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), rid)
 		return nil, nil, err
 	}
-	if !attrRsp.Result {
-		blog.Errorf("failed to search the object(%s), err: %s, rid: %s", objID, attrRsp.ErrMsg, rid)
-		return nil, nil, err
-	}
 
 	usernameList := []string{}
 	propertyList := []string{}
@@ -63,7 +59,7 @@ func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, i
 				return nil, nil, err
 			}
 		}
-		for _, item := range attrRsp.Data.Info {
+		for _, item := range attrRsp.Info {
 			propertyList = append(propertyList, item.PropertyID)
 			if info[item.PropertyID] != nil {
 				username, ok := info[item.PropertyID].(string)

@@ -16,12 +16,13 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
-func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.AuditLog) (*metadata.Response, error) {
+func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.AuditLog) (
+	*metadata.Response, error) {
+
 	resp := new(metadata.Response)
 	subPath := "/create/auditlog"
 
@@ -34,17 +35,19 @@ func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...m
 		Into(resp)
 
 	if err != nil {
-		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		return nil, errors.CCHttpError
 	}
 
-	if !resp.Result {
-		return nil, resp.CCError()
+	if err = resp.CCError(); err != nil {
+		return nil, err
 	}
 
 	return resp, nil
 }
 
-func (inst *auditlog) SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryCondition) (*metadata.AuditQueryResult, error) {
+func (inst *auditlog) SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryCondition) (
+	*metadata.AuditQueryResult, error) {
+
 	resp := new(metadata.AuditQueryResult)
 	subPath := "/read/auditlog"
 
@@ -57,11 +60,11 @@ func (inst *auditlog) SearchAuditLog(ctx context.Context, h http.Header, param m
 		Into(resp)
 
 	if err != nil {
-		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		return nil, errors.CCHttpError
 	}
 
-	if !resp.Result {
-		return nil, resp.CCError()
+	if err = resp.CCError(); err != nil {
+		return nil, err
 	}
 
 	return resp, nil

@@ -31,11 +31,8 @@ func (lgc *Logics) findInstance(ctx context.Context, objID string, input *metada
 		blog.Errorf("FindInstance ReadInstance http do error, error: %s,input:  %#v,rid:%s", err.Error(), input, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("FindInstance ReadInstance http reply error, error code: %d, error message: %s,input:  %#v,rid:%s", result.Code, result.ErrMsg, input, lgc.rid)
-		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
-	}
-	return &result.Data, nil
+
+	return result, nil
 }
 
 func (lgc *Logics) find(ctx context.Context, input *metadata.SynchronizeFindInfoParameter) (*metadata.InstDataInfo, errors.CCError) {

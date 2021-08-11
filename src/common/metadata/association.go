@@ -43,12 +43,14 @@ type SearchAssociationTypeRequest struct {
 	Condition map[string]interface{} `json:"condition"`
 }
 
+type SearchAssociationType struct {
+	Count int                `json:"count"`
+	Info  []*AssociationKind `json:"info"`
+}
+
 type SearchAssociationTypeResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Count int                `json:"count"`
-		Info  []*AssociationKind `json:"info"`
-	} `json:"data"`
+	Data     SearchAssociationType `json:"data"`
 }
 
 type CreateAssociationTypeResult struct {

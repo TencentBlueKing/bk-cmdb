@@ -44,7 +44,7 @@ func (am *AuthManager) collectProcessesByIDs(ctx context.Context, header http.He
 		return nil, fmt.Errorf("get processes by id failed, err: %+v", err)
 	}
 	processes := make([]ProcessSimplify, 0)
-	for _, item := range result.Data.Info {
+	for _, item := range result.Info {
 		process := ProcessSimplify{}
 		_, err = process.Parse(item)
 		if err != nil {

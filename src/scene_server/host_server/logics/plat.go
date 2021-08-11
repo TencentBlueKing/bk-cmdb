@@ -34,12 +34,8 @@ func (lgc *Logics) IsPlatExist(kit *rest.Kit, cond mapstr.MapStr) (bool, errors.
 		blog.Errorf("IsPlatExist http do error, err:%s, cond:%#v,rid:%s", err.Error(), cond, kit.Rid)
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("IsPlatExist http response error, err code:%d, err msg:%s, cond:%#v,rid:%s", result.Code, result.ErrMsg, cond, kit.Rid)
-		return false, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
-	if 1 == result.Data.Count {
+	if 1 == result.Count {
 		return true, nil
 	}
 

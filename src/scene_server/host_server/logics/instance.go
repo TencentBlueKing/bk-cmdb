@@ -126,10 +126,6 @@ func (lgc *Logics) getRawInstAsst(kit *rest.Kit, objID string, IDs []string, que
 		blog.Errorf("getRawInstAsst SearchObjects http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, input, kit.Rid)
 		return nil, 0, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !rtn.Result {
-		blog.Errorf("getRawInstAsst SearchObjects http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", rtn.Code, rtn.ErrMsg, objID, input, kit.Rid)
-		return nil, 0, kit.CCError.New(rtn.Code, rtn.ErrMsg)
-	}
 
 	delarry := func(s []string, i int) []string {
 		s[len(s)-1], s[i] = s[i], s[len(s)-1]
@@ -137,7 +133,7 @@ func (lgc *Logics) getRawInstAsst(kit *rest.Kit, objID string, IDs []string, que
 	}
 
 	allInst := make([]InstNameAsst, 0)
-	for _, info := range rtn.Data.Info {
+	for _, info := range rtn.Info {
 		if val, exist := info[instName]; exist {
 			inst := InstNameAsst{}
 			if name, can := val.(string); can {
@@ -181,5 +177,5 @@ func (lgc *Logics) getRawInstAsst(kit *rest.Kit, objID string, IDs []string, que
 		allInst = append(allInst, InstNameAsst{ID: ID})
 	}
 
-	return allInst, rtn.Data.Count, nil
+	return allInst, rtn.Count, nil
 }

@@ -13,8 +13,6 @@
 package logics
 
 import (
-	"fmt"
-
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -81,21 +79,17 @@ func (lgc *Logics) GetVpcCloudArea(kit *rest.Kit, vpcIDs []string) (map[string]i
 		blog.Errorf("GetVpcCloudIDs fail, rid:%s, err:%s, query:%+v", kit.Rid, err.Error(), *query)
 		return nil, err
 	}
-	if !result.Result {
-		blog.Errorf("GetVpcCloudIDs fail, rid:%s, err:%s, query:%+v", kit.Rid, result.ErrMsg, *query)
-		return nil, fmt.Errorf("%s", result.ErrMsg)
-	}
 
 	ret := make(map[string]int64)
-	for _, info := range result.Data.Info {
+	for _, info := range result.Info {
 		cloudID, err := info.Int64(common.BKCloudIDField)
 		if err != nil {
-			blog.Errorf("GetVpcCloudIDs fail, rid:%s, err:%s, info:%+v", kit.Rid, err.Error(), result.Data.Info)
+			blog.Errorf("GetVpcCloudIDs fail, rid:%s, err:%s, info:%+v", kit.Rid, err.Error(), result.Info)
 			return nil, err
 		}
 		vpcID, err := info.String(common.BKVpcID)
 		if err != nil {
-			blog.Errorf("GetVpcCloudIDs fail, rid:%s, err:%s, info:%+v", kit.Rid, err.Error(), result.Data.Info)
+			blog.Errorf("GetVpcCloudIDs fail, rid:%s, err:%s, info:%+v", kit.Rid, err.Error(), result.Info)
 			return nil, err
 		}
 		ret[vpcID] = cloudID

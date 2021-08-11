@@ -1353,9 +1353,9 @@ var _ = Describe("batch_update_host test", func() {
 					common.BKHostIDField: hostId1,
 					"properties": map[string]interface{}{
 						"bk_asset_id": "batch_update1",
-						"operator":     "admin",
-						"bk_comment":   "test",
-						"bk_isp_name":  "1",
+						"operator":    "admin",
+						"bk_comment":  "test",
+						"bk_isp_name": "1",
 					},
 				},
 				{
@@ -1427,8 +1427,7 @@ var _ = Describe("multiple ip host validation test", func() {
 		}
 		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
 		util.RegisterResponse(addHostResult)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(addHostResult.Result).To(Equal(false), addHostResult.ToString())
+		Expect(err).To(HaveOccurred())
 
 		By("add hosts with one same ip using api")
 		input = &metadata.CreateModelInstance{
@@ -1439,8 +1438,7 @@ var _ = Describe("multiple ip host validation test", func() {
 		}
 		addHostResult, err = test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
 		util.RegisterResponse(addHostResult)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(addHostResult.Result).To(Equal(false), addHostResult.ToString())
+		Expect(err).To(HaveOccurred())
 	})
 })
 

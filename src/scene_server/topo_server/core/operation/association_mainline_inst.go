@@ -220,7 +220,7 @@ func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID
 	}
 	mainlineObjectChildMap := make(map[string]string)
 	isMainline := false
-	for _, asst := range mainlineAsstRsp.Data.Info {
+	for _, asst := range mainlineAsstRsp.Info {
 		if asst.ObjectID == common.BKInnerObjIDHost {
 			continue
 		}
@@ -413,7 +413,7 @@ func (assoc *association) fillStatistics(kit *rest.Kit, bizID int64, moduleIDs [
 	hostCount[common.BKInnerObjIDSet] = make(map[int64][]int64)
 	hostCount[common.BKInnerObjIDModule] = make(map[int64][]int64)
 	hostCount[customLevel] = make(map[int64][]int64)
-	for _, hostModule := range hostModules.Data.Info {
+	for _, hostModule := range hostModules.Info {
 		if _, exist := hostCount[common.BKInnerObjIDModule][hostModule.ModuleID]; exist == false {
 			hostCount[common.BKInnerObjIDModule][hostModule.ModuleID] = make([]int64, 0)
 		}

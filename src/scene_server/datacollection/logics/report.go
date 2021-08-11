@@ -248,11 +248,8 @@ func (lgc *Logics) findAttrs(header http.Header, objIDs ...string) ([]metadata.A
 		blog.Errorf("[NetDevice][findAttrs] for %v failed, err: %v, rid: %s", objIDs, err, rid)
 		return nil, err
 	}
-	if !resp.Result {
-		blog.Errorf("[NetDevice][findAttrs] for %v failed, err: %v, rid: %s", objIDs, resp, rid)
-		return nil, err
-	}
-	return resp.Data.Info, nil
+
+	return resp.Info, nil
 }
 
 func (lgc *Logics) findObjectMap(header http.Header, objIDs ...string) (map[string]metadata.Object, error) {
@@ -282,12 +279,8 @@ func (lgc *Logics) findObject(header http.Header, filter mapstr.MapStr) ([]metad
 		blog.Errorf("[NetDevice][findObject] by %+v failed, err: %v, rid: %s", filter, err, rid)
 		return nil, err
 	}
-	if !resp.Result {
-		blog.Errorf("[NetDevice][findObject] by %+v failed, err: %v, rid: %s", filter, resp, rid)
-		return nil, err
-	}
 
-	return resp.Data.Info, nil
+	return resp.Info, nil
 }
 
 func (lgc *Logics) findInstMap(header http.Header, objectID string, query *metadata.QueryCondition) (map[int64]mapstr.MapStr, error) {
@@ -314,11 +307,8 @@ func (lgc *Logics) findInst(header http.Header, objectID string, query *metadata
 		blog.Errorf("[NetDevice][findInst] by %+v failed, err: %v, rid: %s", query, err, rid)
 		return nil, err
 	}
-	if !resp.Result {
-		blog.Errorf("[NetDevice][findInst] by %+v failed, err: %+v, rid: %s", query, resp, rid)
-		return nil, err
-	}
-	return resp.Data.Info, nil
+
+	return resp.Info, nil
 }
 
 func (lgc *Logics) findInstAssociation(header http.Header, objectID string, instID int64) ([]*metadata.InstAsst, error) {

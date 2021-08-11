@@ -103,33 +103,55 @@ func (h *host) DeleteHostFromSystem(ctx context.Context, header http.Header, inp
 }
 
 // GetHostModuleRelation get host module relation
-func (h *host) GetHostModuleRelation(ctx context.Context, header http.Header, input *metadata.HostModuleRelationRequest) (resp *metadata.HostConfig, err error) {
-	resp = new(metadata.HostConfig)
+func (h *host) GetHostModuleRelation(ctx context.Context, header http.Header,
+	input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error) {
+
+	resp := new(metadata.HostConfig)
 	subPath := "/read/module/host/relation"
 
-	err = h.client.Post().
+	err := h.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 // FindIdentifier  query host identifier
-func (h *host) FindIdentifier(ctx context.Context, header http.Header, input *metadata.SearchHostIdentifierParam) (resp *metadata.SearchHostIdentifierResult, err error) {
-	resp = new(metadata.SearchHostIdentifierResult)
+func (h *host) FindIdentifier(ctx context.Context, header http.Header, input *metadata.SearchHostIdentifierParam) (
+	*metadata.SearchHostIdentifierData, error) {
+
+	resp := new(metadata.SearchHostIdentifierResult)
 	subPath := "/read/host/indentifier"
 
-	err = h.client.Post().
+	err := h.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 func (h *host) GetHostByID(ctx context.Context, header http.Header, hostID int64) (resp *metadata.HostInstanceResult, err error) {
@@ -145,18 +167,28 @@ func (h *host) GetHostByID(ctx context.Context, header http.Header, hostID int64
 	return resp, err
 }
 
-func (h *host) GetHosts(ctx context.Context, header http.Header, opt *metadata.QueryInput) (resp *metadata.GetHostsResult, err error) {
-	resp = new(metadata.GetHostsResult)
+func (h *host) GetHosts(ctx context.Context, header http.Header, opt *metadata.QueryInput) (*metadata.HostInfo, error) {
+
+	resp := new(metadata.GetHostsResult)
 	subPath := "/findmany/hosts/search"
 
-	err = h.client.Post().
+	err := h.client.Post().
 		Body(opt).
 		WithContext(ctx).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return resp, err
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 func (h *host) LockHost(ctx context.Context, header http.Header, input *metadata.HostLockRequest) (resp *metadata.HostLockResponse, err error) {

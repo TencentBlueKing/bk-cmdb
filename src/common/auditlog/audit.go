@@ -51,12 +51,7 @@ func (a *audit) getInstByCond(kit *rest.Kit, objID string, condition map[string]
 			return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 		}
 
-		if !rsp.Result {
-			blog.ErrorfDepthf(1, "get host by cond %+v failed, err: %s, rid: %s", condition, rsp.ErrMsg, kit.Rid)
-			return nil, rsp.CCError()
-		}
-
-		return rsp.Data.Info, nil
+		return rsp.Info, nil
 	default:
 		input := &metadata.QueryCondition{Condition: condition}
 		if len(fields) != 0 {
@@ -69,12 +64,7 @@ func (a *audit) getInstByCond(kit *rest.Kit, objID string, condition map[string]
 			return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 		}
 
-		if !rsp.Result {
-			blog.ErrorfDepthf(1, "get host by cond %+v failed, err: %s, rid: %s", condition, rsp.ErrMsg, kit.Rid)
-			return nil, rsp.CCError()
-		}
-
-		return rsp.Data.Info, nil
+		return rsp.Info, nil
 	}
 }
 
@@ -113,14 +103,11 @@ func (a *audit) getObjNameByObjID(kit *rest.Kit, objID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if resp.Result != true {
-		return "", kit.CCError.New(resp.Code, resp.ErrMsg)
-	}
-	if len(resp.Data.Info) <= 0 {
+	if len(resp.Info) <= 0 {
 		return "", kit.CCError.CCError(common.CCErrorModelNotFound)
 	}
 
-	return resp.Data.Info[0].ObjectName, nil
+	return resp.Info[0].ObjectName, nil
 }
 
 // getDefaultAppID get default businessID under designated supplier account.

@@ -243,14 +243,10 @@ func (h *HostSnap) Analyze(msg *string) error {
 		CanEditAll: true,
 	}
 
-	res, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, header, common.BKInnerObjIDHost, opt)
+	_, err = h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, header, common.BKInnerObjIDHost, opt)
 	if err != nil {
 		blog.Errorf("snapshot changed, update host %d/%s snapshot failed, err: %v, rid: %s", hostID, innerIP, err, rid)
 		return err
-	}
-	if !res.Result {
-		blog.Errorf("snapshot changed, update host %d/%s snapshot failed, err: %s, rid: %s", hostID, innerIP, res.ErrMsg, rid)
-		return fmt.Errorf("update snapshot failed, err: %s", res.ErrMsg)
 	}
 
 	// save audit log.

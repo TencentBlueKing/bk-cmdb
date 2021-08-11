@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -279,12 +278,8 @@ func (a *attribute) FindBusinessAttribute(kit *rest.Kit, cond mapstr.MapStr) ([]
 		blog.Errorf("find business attributes failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !resp.Result {
-		blog.Errorf("find business attributes failed, err: %s rid: %s", resp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
-	}
 
-	return resp.Data.Info, nil
+	return resp.Info, nil
 }
 
 func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition, modelBizID int64) ([]model.AttributeInterface, error) {
@@ -305,12 +300,7 @@ func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition,
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-attr] failed to search attribute by the condition(%#v), error info is %s, rid: %s", fCond, rsp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return model.CreateAttribute(kit, a.clientSet, rsp.Data.Info), nil
+	return model.CreateAttribute(kit, a.clientSet, rsp.Info), nil
 }
 
 func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error {
@@ -333,14 +323,10 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 		Condition: cond,
 		Data:      data,
 	}
-	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(kit.Ctx, kit.Header, &input)
+	_, err = a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(kit.Ctx, kit.Header, &input)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !rsp.Result {
-		blog.Errorf("[operation-attr] failed to update the attribute by the attr-id(%d), error info is %s, rid: %s", attID, rsp.ErrMsg, kit.Rid)
-		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	// save audit log.
@@ -361,15 +347,11 @@ func (a *attribute) isMainlineModel(kit *rest.Kit, modelID string) (bool, error)
 		return false, err
 	}
 
-	if !asst.Result {
-		return false, errors.New(asst.Code, asst.ErrMsg)
-	}
-
-	if len(asst.Data.Info) <= 0 {
+	if len(asst.Info) <= 0 {
 		return false, fmt.Errorf("model association [%+v] not found", cond)
 	}
 
-	for _, mainline := range asst.Data.Info {
+	for _, mainline := range asst.Info {
 		if mainline.ObjectID == modelID {
 			return true, nil
 		}
@@ -390,10 +372,5 @@ func (a *attribute) UpdateObjectAttributeIndex(kit *rest.Kit, objID string, data
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-attr] failed to update the attribute index by the attr-id(%d), error info is %s, rid: %s", attID, rsp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return rsp.Data, nil
+	return rsp, nil
 }

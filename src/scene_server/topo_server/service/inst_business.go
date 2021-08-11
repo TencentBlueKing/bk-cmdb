@@ -322,13 +322,13 @@ func (s *Service) GetBusinessBasicInfo(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if len(result.Data.Info) == 0 {
+	if len(result.Info) == 0 {
 		blog.Errorf("GetBusinessBasicInfo failed, get business by id not found, bizID: %d, rid: %s", bizID, ctx.Kit.Rid)
 		err := ctx.Kit.CCError.CCError(common.CCErrCommNotFound)
 		ctx.RespAutoError(err)
 		return
 	}
-	bizData := result.Data.Info[0]
+	bizData := result.Info[0]
 	ctx.RespEntity(bizData)
 }
 
@@ -649,7 +649,7 @@ func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
 	}
 	setHostIDs := make([]int64, 0)
 	moduleHostIDs := make(map[int64][]int64, 0)
-	for _, relation := range hostModuleRelations.Data.Info {
+	for _, relation := range hostModuleRelations.Info {
 		setHostIDs = append(setHostIDs, relation.HostID)
 		if _, ok := moduleHostIDs[relation.ModuleID]; ok == false {
 			moduleHostIDs[relation.ModuleID] = make([]int64, 0)

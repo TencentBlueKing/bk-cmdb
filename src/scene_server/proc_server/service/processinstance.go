@@ -143,7 +143,7 @@ func (ps *ProcServer) UpdateProcessInstancesByIDs(ctx *rest.Contexts) {
 	}
 
 	raws := make([]map[string]interface{}, 0)
-	for _, process := range processResult.Data.Info {
+	for _, process := range processResult.Info {
 		for k, v := range input.UpdateData {
 			process[k] = v
 		}
@@ -455,15 +455,15 @@ func (ps *ProcServer) getOneModule(ctx *rest.Contexts, filter map[string]interfa
 		blog.Errorf("getModule failed, filter: %+v, err: %s, rid: %s", filter, err.Error(), ctx.Kit.Rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, err)
 	}
-	if len(modules.Data.Info) == 0 {
+	if len(modules.Info) == 0 {
 		blog.Errorf("getModule failed, filter: %+v, err: %+v, rid: %s", filter, "not found", ctx.Kit.Rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, "not found")
 	}
-	if len(modules.Data.Info) > 1 {
+	if len(modules.Info) > 1 {
 		blog.Errorf("getModule failed, filter: %+v, err: %+v, rid: %s", filter, "get multiple", ctx.Kit.Rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, "get multiple modules")
 	}
-	module := modules.Data.Info[0]
+	module := modules.Info[0]
 	moduleInst := &metadata.ModuleInst{}
 	if err := module.ToStructByTag(moduleInst, "field"); err != nil {
 		blog.Errorf("getModule failed, marshal json failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.Kit.Rid)
@@ -486,7 +486,7 @@ func (ps *ProcServer) getModules(ctx *rest.Contexts, moduleIDs []int64) ([]*meta
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, err)
 	}
 	moduleInsts := make([]*metadata.ModuleInst, 0)
-	for _, module := range modules.Data.Info {
+	for _, module := range modules.Info {
 		moduleInst := new(metadata.ModuleInst)
 		if err := module.ToStructByTag(moduleInst, "field"); err != nil {
 			blog.Errorf("getModules failed, unmarshal json failed, module: %+v, err: %+v, rid: %s", module, err, ctx.Kit.Rid)
@@ -601,7 +601,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 		return ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	for _, proc := range listResult.Data.Info {
+	for _, proc := range listResult.Info {
 		// check process name unique
 		if process.ProcessName != nil {
 			if procName, _ := proc.String(common.BKProcessNameField); procName == *process.ProcessName {
@@ -726,7 +726,7 @@ func (ps *ProcServer) validateManyRawInstanceUnique(ctx *rest.Contexts, serviceI
 		return ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	for _, proc := range listResult.Data.Info {
+	for _, proc := range listResult.Info {
 		// check process name unique
 		if procName, _ := proc.String(common.BKProcessNameField); processNamesMap[procName] {
 			blog.ErrorJSON("validateManyRawInstanceUnique failed, bk_process_name duplicated under service instance, serviceInstanceID: %s, filterCond: %s, err: %s, rid: %s",
@@ -908,7 +908,7 @@ func (ps *ProcServer) ListProcessInstancesNameIDsInModule(ctx *rest.Contexts) {
 	processNameIDs := make(map[string][]int64)
 	sortedProcessNames := make([]string, 0)
 
-	for _, process := range processResult.Data.Info {
+	for _, process := range processResult.Info {
 		processID, err := process.Int64(common.BKProcessIDField)
 		if err != nil {
 			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "ListProcessInstancesNameIDsInModule failed, process: %#v, err: %+v", process, err)
@@ -999,18 +999,14 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 			return
 		}
-		if !moduleResult.Result {
-			blog.Errorf("ListProcessRelatedInfo failed, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
-			ctx.RespAutoError(moduleResult.CCError())
-		}
 
-		if len(moduleResult.Data.Info) == 0 {
+		if len(moduleResult.Info) == 0 {
 			ctx.RespEntityWithCount(0, []interface{}{})
 			return
 		}
 
-		mIDs := make([]int64, len(moduleResult.Data.Info))
-		for idx, info := range moduleResult.Data.Info {
+		mIDs := make([]int64, len(moduleResult.Info))
+		for idx, info := range moduleResult.Info {
 			mID, _ := info.Int64(common.BKModuleIDField)
 			mIDs[idx] = mID
 		}
@@ -1162,25 +1158,21 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if !processResult.Result {
-		blog.Errorf("ListProcessRelatedInfo failed, reqParam: %v, err: %v, rid:%s", *reqParam, err, ctx.Kit.Rid)
-		ctx.RespAutoError(processResult.CCError())
-	}
 
-	if len(processResult.Data.Info) == 0 {
+	if len(processResult.Info) == 0 {
 		ctx.RespEntityWithCount(0, []interface{}{})
 		return
 	}
 
-	processIDsNeed := make([]int64, len(processResult.Data.Info))
+	processIDsNeed := make([]int64, len(processResult.Info))
 	processDetailMap := map[int64]interface{}{}
-	for idx, process := range processResult.Data.Info {
+	for idx, process := range processResult.Info {
 		processID, _ := process.Int64(common.BKProcessIDField)
 		processIDsNeed[idx] = processID
 		processDetailMap[processID] = process
 	}
 
-	ps.listProcessRelatedInfo(ctx, bizID, processIDsNeed, processDetailMap, int64(processResult.Data.Count))
+	ps.listProcessRelatedInfo(ctx, bizID, processIDsNeed, processDetailMap, int64(processResult.Count))
 }
 
 // listProcessRelatedInfo list process related info according to process info
@@ -1266,12 +1258,8 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if !hostResult.Result {
-		blog.Errorf("ListProcessRelatedInfo failed, param: %v, err: %v, rid:%s", *hostParam, err, ctx.Kit.Rid)
-		ctx.RespAutoError(hostResult.CCError())
-	}
 
-	for _, host := range hostResult.Data.Info {
+	for _, host := range hostResult.Info {
 		hostID, _ := host.Int64(common.BKHostIDField)
 		cloudID, _ := host.Int64(common.BKCloudIDField)
 		innerIP, _ := host.String(common.BKHostInnerIPField)
@@ -1299,12 +1287,8 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if !moduleResult.Result {
-		blog.Errorf("ListProcessRelatedInfo failed, param: %v, err: %v, rid:%s", *moduleParam, err, ctx.Kit.Rid)
-		ctx.RespAutoError(moduleResult.CCError())
-	}
 
-	for _, module := range moduleResult.Data.Info {
+	for _, module := range moduleResult.Info {
 		moduleID, _ := module.Int64(common.BKModuleIDField)
 		moduleName, _ := module.String(common.BKModuleNameField)
 		moduleDetailMap[moduleID] = metadata.ModuleDetailOfP{
@@ -1336,12 +1320,8 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if !setResult.Result {
-		blog.Errorf("ListProcessRelatedInfo failed, param: %v, err: %v, rid:%s", *setParam, err, ctx.Kit.Rid)
-		ctx.RespAutoError(setResult.CCError())
-	}
 
-	for _, set := range setResult.Data.Info {
+	for _, set := range setResult.Info {
 		setID, _ := set.Int64(common.BKSetIDField)
 		setName, _ := set.String(common.BKSetNameField)
 		setEnv, _ := set.String(common.BKSetEnvField)
@@ -1413,7 +1393,7 @@ func (ps *ProcServer) ListProcessInstancesDetailsByIDs(ctx *rest.Contexts) {
 
 	processIDPropertyMap := map[int64]mapstr.MapStr{}
 	sortedprocessIDs := make([]int64, 0)
-	for _, process := range processResult.Data.Info {
+	for _, process := range processResult.Info {
 		processID, err := process.Int64(common.BKProcessIDField)
 		if err != nil {
 			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "ListProcessInstancesDetailsByIDs failed, process: %#v, err: %+v", process, err)
@@ -1475,7 +1455,7 @@ func (ps *ProcServer) ListProcessInstancesDetailsByIDs(ctx *rest.Contexts) {
 		processInstanceList = append(processInstanceList, processDetail)
 	}
 
-	ctx.RespEntityWithCount(int64(processResult.Data.Count), processInstanceList)
+	ctx.RespEntityWithCount(int64(processResult.Count), processInstanceList)
 }
 
 // ListProcessInstancesDetails get process instances details by their ids
@@ -1518,12 +1498,8 @@ func (ps *ProcServer) ListProcessInstancesDetails(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if !processResult.Result {
-		blog.Errorf("ListProcessInstancesDetails failed, reqParam: %v, err: %v, rid:%s", *reqParam, err, ctx.Kit.Rid)
-		ctx.RespAutoError(processResult.CCError())
-	}
 
-	ctx.RespEntity(processResult.Data.Info)
+	ctx.RespEntity(processResult.Info)
 }
 
 var UnbindServiceTemplateOnModuleEnable = true

@@ -119,12 +119,7 @@ func (g *group) Create() error {
 		return g.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[model-grp] failed to create the group(%s), err: is %s, rid: %s", g.grp.GroupID, rsp.ErrMsg, g.kit.Rid)
-		return g.kit.CCError.Error(common.CCErrTopoObjectGroupCreateFailed)
-	}
-
-	g.grp.ID = int64(rsp.Data.Created.ID)
+	g.grp.ID = int64(rsp.Created.ID)
 
 	return nil
 }
@@ -227,13 +222,8 @@ func (g *group) GetAttributes() ([]AttributeInterface, error) {
 		return nil, g.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("failed to search the object(%s), err: %s, rid: %s", g.grp.ObjectID, rsp.ErrMsg, g.kit.Rid)
-		return nil, g.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
 	rstItems := make([]AttributeInterface, 0)
-	for _, item := range rsp.Data.Info {
+	for _, item := range rsp.Info {
 
 		attr := &attribute{
 			attr:      item,
@@ -257,12 +247,7 @@ func (g *group) search(cond condition.Condition) ([]metadata.Group, error) {
 		return nil, err
 	}
 
-	if !rsp.Result {
-		blog.Errorf("failed to search the classification, err: %s, rid: %s", rsp.ErrMsg, g.kit.Rid)
-		return nil, g.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return rsp.Data.Info, nil
+	return rsp.Info, nil
 }
 
 func (g *group) Save(data mapstr.MapStr) error {

@@ -45,7 +45,7 @@ func (am *AuthManager) collectModuleByModuleIDs(ctx context.Context, header http
 		return nil, fmt.Errorf("get modules by id failed, err: %+v", err)
 	}
 	modules := make([]ModuleSimplify, 0)
-	for _, cls := range result.Data.Info {
+	for _, cls := range result.Info {
 		module := ModuleSimplify{}
 		_, err = module.Parse(cls)
 		if err != nil {

@@ -47,18 +47,16 @@ func (s *Service) IsSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, 
 		blog.Errorf("IsSetInitializedByTemplate failed, failed to search set instance, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
 		return false, errors.NewFromStdError(err, common.CCErrCommHTTPDoRequestFailed)
 	}
-	if result.Code != 0 {
-		return false, errors.NewCCError(result.Code, result.ErrMsg)
-	}
-	if len(result.Data.Info) == 0 {
+
+	if len(result.Info) == 0 {
 		blog.ErrorJSON("IsSetInitializedByTemplate failed, set:%d not found, rid: %s", setID, kit.Rid)
 		return false, kit.CCError.CCError(common.CCErrCommNotFound)
 	}
-	if len(result.Data.Info) > 1 {
+	if len(result.Info) > 1 {
 		blog.ErrorJSON("IsSetInitializedByTemplate failed, set:%d got multiple, rid: %s", setID, kit.Rid)
 		return false, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
 	}
-	setData := result.Data.Info[0]
+	setData := result.Info[0]
 	setTemplateID, err := util.GetInt64ByInterface(setData[common.BKSetTemplateIDField])
 	if err != nil {
 		blog.ErrorJSON("IsSetInitializedByTemplate failed, decode set failed, data: %s, err: %s, rid: %s", setData)
@@ -147,11 +145,8 @@ func (s *Service) CheckIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) errors
 		blog.Errorf("[operation-module] failed read module instance, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if rsp.Result == false || rsp.Code != 0 {
-		blog.ErrorJSON("[operation-set] failed read module instance, option: %s, response: %s, rid: %s", qc, rsp, kit.Rid)
-		return errors.New(rsp.Code, rsp.ErrMsg)
-	}
-	if rsp.Data.Count > 0 {
+
+	if rsp.Count > 0 {
 		return kit.CCError.CCError(common.CCErrorTopoForbiddenDeleteBuiltInSetModule)
 	}
 	return nil
@@ -348,12 +343,8 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if instanceResult.Code != 0 {
-		blog.ErrorJSON("ListModulesByServiceTemplateID failed, ReadInstance failed, filter: %s, response: %s, rid: %s", qc, instanceResult, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(instanceResult.Code, instanceResult.ErrMsg))
-		return
-	}
-	ctx.RespEntity(instanceResult.Data)
+
+	ctx.RespEntity(instanceResult)
 }
 
 // SearchModuleInOneSet search module in one set
@@ -484,12 +475,8 @@ func (s *Service) SearchModuleBatch(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if !instanceResult.Result {
-		blog.ErrorJSON("SearchModuleBatch failed, ReadInstance failed, filter: %s, response: %s, rid: %s", qc, instanceResult, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(instanceResult.Code, instanceResult.ErrMsg))
-		return
-	}
-	ctx.RespEntity(instanceResult.Data.Info)
+
+	ctx.RespEntity(instanceResult.Info)
 }
 
 // SearchModuleWithRelation search the modules by set's ids and service template's ids under application
@@ -549,13 +536,8 @@ func (s *Service) SearchModuleWithRelation(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if !instanceResult.Result {
-		blog.ErrorJSON("SearchModuleWithRelation failed, ReadInstance failed, filter: %s, response: %s, rid: %s", qc, instanceResult, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(instanceResult.Code, instanceResult.ErrMsg))
-		return
-	}
 
-	ctx.RespEntityWithCount(int64(instanceResult.Data.Count), instanceResult.Data.Info)
+	ctx.RespEntityWithCount(int64(instanceResult.Count), instanceResult.Info)
 	return
 }
 
@@ -671,7 +653,7 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 		},
 	}
 
-	var result *metadata.UpdatedOptionResult
+	var result *metadata.UpdatedCount
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		result, err = s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, updateOption)
@@ -679,10 +661,7 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 			blog.Errorf("SearchRuleRelatedModules failed, http request failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
-		if ccErr := result.CCError(); ccErr != nil {
-			blog.ErrorJSON("SearchRuleRelatedModules failed, update module instance failed, updateOption: %s, response: %s, rid: %s", updateOption, result, ctx.Kit.Rid)
-			return ccErr
-		}
+
 		if requestBody.ClearRules {
 			listRuleOption := metadata.ListHostApplyRuleOption{
 				ModuleIDs: []int64{moduleID},
@@ -716,5 +695,5 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(result.Data)
+	ctx.RespEntity(result)
 }

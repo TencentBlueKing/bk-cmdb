@@ -124,15 +124,11 @@ func (o *object) IsMainlineObject() (bool, error) {
 		return false, err
 	}
 
-	if !asst.Result {
-		return false, asst.CCError()
-	}
-
-	if len(asst.Data.Info) <= 0 {
+	if len(asst.Info) <= 0 {
 		return false, fmt.Errorf("model association [%+v] not found", cond)
 	}
 
-	for _, mainline := range asst.Data.Info {
+	for _, mainline := range asst.Info {
 		if mainline.ObjectID == o.GetObjectID() || mainline.AsstObjID == o.GetObjectID() {
 			return true, nil
 		}
@@ -142,19 +138,15 @@ func (o *object) IsMainlineObject() (bool, error) {
 }
 
 func (o *object) searchAttributes(cond condition.Condition) ([]AttributeInterface, error) {
-	rsp, err := o.clientSet.CoreService().Model().ReadModelAttr(o.kit.Ctx, o.kit.Header, o.obj.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := o.clientSet.CoreService().Model().ReadModelAttr(o.kit.Ctx, o.kit.Header, o.obj.ObjectID,
+		&metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 		return nil, o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("failed to search the object(%s), error info is %s, rid: %s", o.obj.ObjectID, rsp.ErrMsg, o.kit.Rid)
-		return nil, o.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
 	rstItems := make([]AttributeInterface, 0)
-	for _, item := range rsp.Data.Info {
+	for _, item := range rsp.Info {
 
 		attr := &attribute{
 			attr:       item,
@@ -171,18 +163,14 @@ func (o *object) searchAttributes(cond condition.Condition) ([]AttributeInterfac
 }
 
 func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
-	rsp, err := o.clientSet.CoreService().Model().ReadModel(o.kit.Ctx, o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := o.clientSet.CoreService().Model().ReadModel(o.kit.Ctx, o.kit.Header,
+		&metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 		return nil, o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("failed to search the object(%s), error info is %s, rid: %s", o.obj.ObjectID, rsp.ErrMsg, o.kit.Rid)
-		return nil, o.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return rsp.Data.Info, nil
+	return rsp.Info, nil
 }
 
 // GetMainlineParentObject get mainline relationship model
@@ -192,19 +180,22 @@ func (o *object) GetMainlineParentObject() (Object, error) {
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
-	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(o.kit.Ctx, o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(o.kit.Ctx, o.kit.Header,
+		&metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[model-obj] failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
+		blog.Errorf("[model-obj] failed to request the object controller, error info is %s, rid: %s",
+			err.Error(), o.kit.Rid)
 		return nil, err
 	}
 
-	for _, asst := range rsp.Data.Info {
+	for _, asst := range rsp.Info {
 		cond := condition.CreateCondition()
 		cond.Field(common.BKObjIDField).Eq(asst.AsstObjID)
 
 		rspRst, err := o.search(cond)
 		if nil != err {
-			blog.Errorf("[model-obj] failed to search the object(%s)'s parent, error info is %s, rid: %s", asst.ObjectID, err.Error(), o.kit.Rid)
+			blog.Errorf("[model-obj] failed to search the object(%s)'s parent, error info is %s, rid: %s",
+				asst.ObjectID, err.Error(), o.kit.Rid)
 			return nil, err
 		}
 
@@ -224,13 +215,15 @@ func (o *object) GetSetObject() (Object, error) {
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet)
 	rspRst, err := o.search(cond)
 	if nil != err {
-		blog.Errorf("[model-obj] failed to search the object(%s)'s child, error info is %s, rid: %s", common.BKInnerObjIDSet, err.Error(), o.kit.Rid)
+		blog.Errorf("[model-obj] failed to search the object(%s)'s child, error info is %s, rid: %s",
+			common.BKInnerObjIDSet, err.Error(), o.kit.Rid)
 		return nil, err
 	}
 
 	objItems := CreateObject(o.kit, o.clientSet, rspRst)
 	if len(objItems) > 1 {
-		blog.Errorf("[model-obj] get multiple(%d) children for object(%s), rid: %s", len(objItems), common.BKInnerObjIDSet, o.kit.Rid)
+		blog.Errorf("[model-obj] get multiple(%d) children for object(%s), rid: %s", len(objItems),
+			common.BKInnerObjIDSet, o.kit.Rid)
 	}
 	for _, item := range objItems {
 		// only one child in the main-line
@@ -245,24 +238,28 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 	cond.Field(common.BKAsstObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
-	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(o.kit.Ctx, o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(o.kit.Ctx, o.kit.Header,
+		&metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[model-obj] failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
+		blog.Errorf("[model-obj] failed to request the object controller, error info is %s, rid: %s",
+			err.Error(), o.kit.Rid)
 		return nil, err
 	}
 
-	for _, asst := range rsp.Data.Info {
+	for _, asst := range rsp.Info {
 		cond := condition.CreateCondition()
 		cond.Field(common.BKObjIDField).Eq(asst.ObjectID)
 		rspRst, err := o.search(cond)
 		if nil != err {
-			blog.Errorf("[model-obj] failed to search the object(%s)'s child, error info is %s, rid: %s", asst.ObjectID, err.Error(), o.kit.Rid)
+			blog.Errorf("[model-obj] failed to search the object(%s)'s child, error info is %s, rid: %s",
+				asst.ObjectID, err.Error(), o.kit.Rid)
 			return nil, err
 		}
 
 		objItems := CreateObject(o.kit, o.clientSet, rspRst)
 		if len(objItems) > 1 {
-			blog.Errorf("[model-obj] get multiple(%d) children for object(%s), rid: %s", len(objItems), asst.ObjectID, o.kit.Rid)
+			blog.Errorf("[model-obj] get multiple(%d) children for object(%s), rid: %s", len(objItems),
+				asst.ObjectID, o.kit.Rid)
 		}
 		for _, item := range objItems {
 			// only one child in the main-line
@@ -274,14 +271,16 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 }
 
 func (o *object) searchAssoObjects(isNeedChild bool, cond condition.Condition) ([]ObjectAssoPair, error) {
-	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(o.kit.Ctx, o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(o.kit.Ctx, o.kit.Header,
+		&metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[model-obj] failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
+		blog.Errorf("[model-obj] failed to request the object controller, error info is %s, rid: %s",
+			err.Error(), o.kit.Rid)
 		return nil, err
 	}
 
 	pair := make([]ObjectAssoPair, 0)
-	for _, asst := range rsp.Data.Info {
+	for _, asst := range rsp.Info {
 		cond := condition.CreateCondition()
 		if isNeedChild {
 			cond.Field(metadata.ModelFieldObjectID).Eq(asst.AsstObjID)
@@ -290,12 +289,14 @@ func (o *object) searchAssoObjects(isNeedChild bool, cond condition.Condition) (
 		}
 		rspRst, err := o.search(cond)
 		if nil != err {
-			blog.Errorf("[model-obj] failed to search the object(%s)'s parent, error info is %s, rid: %s", asst.ObjectID, err.Error(), o.kit.Rid)
+			blog.Errorf("[model-obj] failed to search the object(%s)'s parent, error info is %s, rid: %s",
+				asst.ObjectID, err.Error(), o.kit.Rid)
 			return nil, err
 		}
 
 		if len(rspRst) == 0 {
-			blog.Errorf("search asso object, but can not found object with cond: %v, rid: %s", cond.ToMapStr(), o.kit.Rid)
+			blog.Errorf("search asso object, but can not found object with cond: %v, rid: %s", cond.ToMapStr(),
+				o.kit.Rid)
 			return nil, fmt.Errorf("can not found object %v", cond.ToMapStr())
 		}
 
@@ -329,18 +330,14 @@ func (o *object) SetMainlineParentObject(relateToObjID string) error {
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
-	resp, err := o.clientSet.CoreService().Association().DeleteModelAssociation(o.kit.Ctx, o.kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+	_, err := o.clientSet.CoreService().Association().DeleteModelAssociation(o.kit.Ctx, o.kit.Header,
+		&metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if err != nil {
-		blog.Errorf("update mainline object[%s] association to %s, search object association failed, err: %v, rid: %s", o.kit.Rid,
-			o.obj.ObjectID, relateToObjID, err)
-		return o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("update mainline object[%s] association to %s, search object association failed, "+
+			"err: %v, rid: %s", o.kit.Rid, o.obj.ObjectID, relateToObjID, err)
+		return err
 	}
 
-	if !resp.Result {
-		blog.Errorf("update mainline object[%s] association to %s, search object association failed, err: %v, rid: %s", o.kit.Rid,
-			o.obj.ObjectID, relateToObjID, resp.ErrMsg)
-		return o.kit.CCError.Errorf(resp.Code, resp.ErrMsg)
-	}
 	return o.CreateMainlineObjectAssociation(relateToObjID)
 }
 
@@ -364,15 +361,11 @@ func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
 		IsPre:      &defined,
 	}
 
-	result, err := o.clientSet.CoreService().Association().CreateMainlineModelAssociation(o.kit.Ctx, o.kit.Header, &metadata.CreateModelAssociation{Spec: association})
+	_, err := o.clientSet.CoreService().Association().CreateMainlineModelAssociation(o.kit.Ctx, o.kit.Header,
+		&metadata.CreateModelAssociation{Spec: association})
 	if err != nil {
 		blog.Errorf("[model-obj] create mainline object association failed, err: %v, rid: %s", err, o.kit.Rid)
 		return err
-	}
-
-	if result.Code != common.CCSuccess {
-		blog.Errorf("[model-obj] create mainline object association failed, err: %s, rid: %s", result.ErrMsg, o.kit.Rid)
-		return o.kit.CCError.Error(result.Code)
 	}
 
 	return nil
@@ -476,12 +469,7 @@ func (o *object) Create() error {
 		return o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("failed to search the object(%s), error info is %s, rid: %s", o.obj.ObjectID, rsp.ErrMsg, o.kit.Rid)
-		return o.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	o.obj.ID = int64(rsp.Data.Created.ID)
+	o.obj.ID = int64(rsp.Created.ID)
 
 	return nil
 }
@@ -523,15 +511,10 @@ func (o *object) Update(data mapstr.MapStr) error {
 			Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(item.ID).ToMapStr(),
 			Data:      data,
 		}
-		rsp, err := o.clientSet.CoreService().Model().UpdateModel(o.kit.Ctx, o.kit.Header, &input)
+		_, err := o.clientSet.CoreService().Model().UpdateModel(o.kit.Ctx, o.kit.Header, &input)
 		if nil != err {
 			blog.Errorf("failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 			return o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-
-		if !rsp.Result {
-			blog.Errorf("failed to search the object(%s), error info is %s, rid: %s", o.obj.ObjectID, rsp.ErrMsg, o.kit.Rid)
-			return o.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 		}
 	}
 	return nil
@@ -608,13 +591,8 @@ func (o *object) GetUniques() ([]Unique, error) {
 		return nil, o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("failed to search the object(%s), error info is %s, rid: %s", o.obj.ObjectID, rsp.ErrMsg, o.kit.Rid)
-		return nil, o.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
 	rstItems := make([]Unique, 0)
-	for _, item := range rsp.Data.Info {
+	for _, item := range rsp.Info {
 		grp := &unique{
 			data:      item,
 			kit:       o.kit,
@@ -663,13 +641,8 @@ func (o *object) GetGroups() ([]GroupInterface, error) {
 		return nil, o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("failed to search the object(%s), error info is %s, rid: %s", o.obj.ObjectID, rsp.ErrMsg, o.kit.Rid)
-		return nil, o.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
 	rstItems := make([]GroupInterface, 0)
-	for _, item := range rsp.Data.Info {
+	for _, item := range rsp.Info {
 		grp := NewGroup(o.kit, o.clientSet, 0)
 		grp.SetGroup(item)
 		rstItems = append(rstItems, grp)
@@ -693,12 +666,7 @@ func (o *object) GetClassification() (Classification, error) {
 		return nil, o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("failed to search the object(%s), error info is %s, rid: %s", o.obj.ObjectID, rsp.ErrMsg, o.kit.Rid)
-		return nil, o.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	for _, item := range rsp.Data.Info {
+	for _, item := range rsp.Info {
 
 		return &classification{
 			cls:       item,

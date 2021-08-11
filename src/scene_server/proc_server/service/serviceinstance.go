@@ -202,12 +202,9 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 		blog.ErrorJSON("ReadModelAttr failed, err: %s, attrCond: %s, rid: %s", e.Error(), attrCond, rid)
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if err := attrRes.CCError(); err != nil {
-		blog.ErrorJSON("ReadModelAttr failed, err: %s, attrCond: %s, rid: %s", err.Error(), attrCond, rid)
-		return nil, err
-	}
+
 	attrMap := make(map[int64]string)
-	for _, attr := range attrRes.Data.Info {
+	for _, attr := range attrRes.Info {
 		attrMap[attr.ID] = attr.PropertyID
 	}
 
@@ -225,14 +222,11 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 				common.BKHostIDField: hostID,
 			},
 		}
-		updateResult, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, updateOption)
+		_, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.BKInnerObjIDHost, updateOption)
 		if err != nil {
 			blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
 			return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if err := updateResult.CCError(); err != nil {
-			blog.ErrorJSON("RunHostApplyRule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, rid)
-			return nil, err
 		}
 	}
 	return serviceInstanceIDs, nil
@@ -328,7 +322,7 @@ func (ps *ProcServer) createServiceInstancesPreview(ctx *rest.Contexts, input me
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	isDefaultModuleMap := make(map[int64]bool)
-	for _, module := range defaultModules.Data.Info {
+	for _, module := range defaultModules.Info {
 		moduleID, err := module.Int64(common.BKModuleIDField)
 		if err != nil {
 			blog.ErrorJSON("parse module from db failed, module: %s, err: %s, rid: %s", module, err.Error(), rid)
@@ -353,7 +347,7 @@ func (ps *ProcServer) createServiceInstancesPreview(ctx *rest.Contexts, input me
 	preModuleIDs := make([]int64, 0)
 	hostModuleMap := make(map[int64][]int64)
 	hostRemoveModuleMap := make(map[int64]int64)
-	for _, relation := range hostModuleRelationRes.Data.Info {
+	for _, relation := range hostModuleRelationRes.Info {
 		moduleID := relation.ModuleID
 		hostID := relation.HostID
 		if hostModuleMap[relation.HostID] == nil {
@@ -381,7 +375,7 @@ func (ps *ProcServer) createServiceInstancesPreview(ctx *rest.Contexts, input me
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	enableModuleMap := make(map[int64]bool)
-	for _, module := range enabledModules.Data.Info {
+	for _, module := range enabledModules.Info {
 		moduleID, err := module.Int64(common.BKModuleIDField)
 		if err != nil {
 			blog.ErrorJSON("parse module from db failed, module: %s, err: %s, rid: %s", module, err.Error(), rid)
@@ -563,19 +557,14 @@ func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if !moduleInsts.Result {
-		blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, ReadInstance failed, filter: %s, response: %s, rid: %s", qc, moduleInsts, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(moduleInsts.Code, moduleInsts.ErrMsg))
-		return
-	}
 
 	// get the list of module by moduleInsts
-	modules := make([]int64, moduleInsts.Data.Count)
-	for _, moduleInst := range moduleInsts.Data.Info {
+	modules := make([]int64, moduleInsts.Count)
+	for _, moduleInst := range moduleInsts.Info {
 		moduleID, err := util.GetInt64ByInterface(moduleInst[common.BKModuleIDField])
 		if err != nil {
 			blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, GetInt64ByInterface failed, moduleInst: %s, err: %#v, rid: %s", moduleInsts, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.New(moduleInsts.Code, moduleInsts.ErrMsg))
+			ctx.RespAutoError(err)
 			return
 		}
 		modules = append(modules, moduleID)
@@ -881,7 +870,7 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	attributeMap := make(map[string]metadata.Attribute)
-	for _, attr := range attrResult.Data.Info {
+	for _, attr := range attrResult.Info {
 		attributeMap[attr.PropertyID] = attr
 	}
 
@@ -1191,7 +1180,7 @@ func (ps *ProcServer) CalculateModuleAttributeDifference(ctx context.Context, he
 		return nil, errors.New(common.CCErrCommDBSelectFailed, "db select failed")
 	}
 	attributeMap := make(map[string]metadata.Attribute)
-	for _, attr := range attrResult.Data.Info {
+	for _, attr := range attrResult.Info {
 		attributeMap[attr.PropertyID] = attr
 	}
 	if module.ServiceCategoryID != serviceTpl.ServiceCategoryID {
@@ -1315,17 +1304,12 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 				},
 			},
 		}
-		resp, e := ps.CoreAPI.CoreService().Instance().
+		_, e := ps.CoreAPI.CoreService().Instance().
 			UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleUpdateOption)
 		if e != nil {
 			blog.ErrorJSON("UpdateInstance http do error, option: %s, err: %s, rid:%s",
 				moduleUpdateOption, e.Error(), rid)
 			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if ccErr := resp.CCError(); ccErr != nil {
-			blog.ErrorJSON("UpdateInstance http reply error, option: %s, result: %s, rid: %s",
-				moduleUpdateOption, resp, rid)
-			return ccErr
 		}
 	}
 

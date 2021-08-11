@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -79,15 +78,10 @@ func (s *Service) FindManyCloudArea(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if false == res.Result {
-		blog.Errorf("FindManyCloudArea http reply error.  query:%#v, err code:%d, err msg:%s, rid:%s", query, res.Code, res.ErrMsg, rid)
-		ctx.RespAutoError(res.CCError())
-		return
-	}
 
 	// 查询云区域时附带云同步任务ID信息
 	if input.SyncTaskIDs {
-		err = s.addPlatSyncTaskIDs(ctx, &res.Data.Info)
+		err = s.addPlatSyncTaskIDs(ctx, &res.Info)
 		if err != nil {
 			blog.ErrorJSON("FindManyCloudArea failed, addPlatSyncTaskIDs err: %v, rid: %s", err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostFindManyCloudAreaAddSyncTaskIDsFieldFail))
@@ -96,8 +90,8 @@ func (s *Service) FindManyCloudArea(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(map[string]interface{}{
-		"info":  res.Data.Info,
-		"count": res.Data.Count,
+		"info":  res.Info,
+		"count": res.Count,
 	})
 }
 
@@ -138,28 +132,23 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 			return ctx.Kit.CCError.CCError(common.CCErrTopoInstCreateFailed)
 		}
 
-		if false == res.Result {
-			blog.Errorf("CreatePlatBatch failed, CreateManyInstance error.err code:%d,err msg:%s,input:%+v,rid:%s", res.Code, res.ErrMsg, input, ctx.Kit.Rid)
-			return errors.New(res.Code, res.ErrMsg)
-		}
-
-		if len(res.Data.Repeated) > 0 {
-			blog.Errorf("CreatePlatBatch failed, err:#v,input:%+v,rid:%s", res.Data.Repeated, input, ctx.Kit.Rid)
+		if len(res.Repeated) > 0 {
+			blog.Errorf("CreatePlatBatch failed, err:#v,input:%+v,rid:%s", res.Repeated, input, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrCommDuplicateItem)
 		}
 
-		if len(res.Data.Exceptions) > 0 {
-			blog.Errorf("CreatePlatBatch failed, err:#v,input:%+v,rid:%s", res.Data.Exceptions, input, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(int(res.Data.Exceptions[0].Code), res.Data.Exceptions[0].Message)
+		if len(res.Exceptions) > 0 {
+			blog.Errorf("CreatePlatBatch failed, err:#v,input:%+v,rid:%s", res.Exceptions, input, ctx.Kit.Rid)
+			return ctx.Kit.CCError.New(int(res.Exceptions[0].Code), res.Exceptions[0].Message)
 		}
 
-		if len(res.Data.Created) == 0 {
+		if len(res.Created) == 0 {
 			blog.Errorf("CreatePlatBatch failed, no plat was found,input:%+v,rid:%s", input, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrTopoCloudNotFound)
 		}
 
-		platIDs := make([]int64, len(res.Data.Created))
-		for i, created := range res.Data.Created {
+		platIDs := make([]int64, len(res.Created))
+		for i, created := range res.Created {
 			platIDs[i] = int64(created.ID)
 			result[i] = metadata.CreateManyCloudAreaElem{
 				CloudID: int64(created.ID),
@@ -183,8 +172,8 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 
 		// register cloud area resource creator action to iam
 		if auth.EnableAuthorize() {
-			iamInstances := make([]metadata.IamInstance, len(res.Data.Created))
-			for index, created := range res.Data.Created {
+			iamInstances := make([]metadata.IamInstance, len(res.Created))
+			for index, created := range res.Created {
 				iamInstances[index] = metadata.IamInstance{
 					ID:   strconv.FormatUint(created.ID, 10),
 					Name: util.GetStrByInterface(input.Data[created.OriginIndex][common.BKCloudNameField]),
@@ -232,7 +221,7 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 		Data: mapstr.NewFromMap(input),
 	}
 
-	var res *metadata.CreatedOneOptionResult
+	var res *metadata.CreateOneDataResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		res, err = s.CoreAPI.CoreService().Instance().CreateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDPlat, instInfo)
@@ -241,12 +230,7 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 			return ctx.Kit.CCError.CCError(common.CCErrTopoInstCreateFailed)
 		}
 
-		if false == res.Result {
-			blog.Errorf("GetPlat error.err code:%d,err msg:%s,input:%+v,rid:%s", res.Code, res.ErrMsg, input, ctx.Kit.Rid)
-			return errors.New(res.Code, res.ErrMsg)
-		}
-
-		platID := int64(res.Data.Created.ID)
+		platID := int64(res.Created.ID)
 
 		// generate audit log.
 		audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
@@ -288,7 +272,7 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(res.Data)
+	ctx.RespEntity(res)
 
 }
 
@@ -319,14 +303,9 @@ func (s *Service) DeletePlat(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
 		return
 	}
-	if !hostRes.Result {
-		blog.Errorf("DelPlat search host http response error.err code:%d,err msg:%s, input:%+v,rid:%s", hostRes.Code, hostRes.ErrMsg, platID, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
-		return
-	}
 
 	// only empty plat could be delete
-	if 0 < hostRes.Data.Count {
+	if 0 < hostRes.Count {
 		blog.Errorf("DelPlat plat [%d] has host data, can not delete,rid:%s", platID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoHasHostCheckFailed))
 		return
@@ -354,15 +333,11 @@ func (s *Service) DeletePlat(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		res, err := s.CoreAPI.CoreService().Instance().DeleteInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDPlat, delCond)
+		_, err := s.CoreAPI.CoreService().Instance().DeleteInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.BKInnerObjIDPlat, delCond)
 		if nil != err {
 			blog.Errorf("DelPlat do error: %v, input:%d,rid:%s", err, platID, ctx.Kit.Rid)
 			return ctx.Kit.CCError.Errorf(common.CCErrTopoInstDeleteFailed)
-		}
-
-		if false == res.Result {
-			blog.Errorf("DelPlat http response error. err code:%d,err msg:%s,input:%s,rid:%s", res.Code, res.ErrMsg, platID, ctx.Kit.Rid)
-			return res.CCError()
 		}
 
 		// save audit log.
@@ -449,14 +424,11 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 
 	// to update.
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		res, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDPlat, updateOption)
+		_, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.BKInnerObjIDPlat, updateOption)
 		if nil != err {
 			blog.ErrorJSON("UpdatePlat failed, UpdateInstance failed, input:%s, err:%s, rid:%s", updateOption, err.Error(), ctx.Kit.Rid)
 			return ctx.Kit.CCError.Errorf(common.CCErrTopoInstDeleteFailed)
-		}
-		if res.Result == false || res.Code != 0 {
-			blog.ErrorJSON("UpdatePlat failed, UpdateInstance failed, input:%s, response:%s, rid:%s", updateOption, res, ctx.Kit.Rid)
-			return errors.New(res.Code, res.ErrMsg)
 		}
 
 		// save audit log.

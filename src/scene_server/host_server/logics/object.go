@@ -46,12 +46,8 @@ func (lgc *Logics) SearchObjectAttributes(kit *rest.Kit, bizID int64, objectID s
 		blog.Errorf("search object attributes failed, err: %+v, objID: %s, input: %+v, rid: %s", err, objectID, query, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("search object attributes failed, errcode: %d, errmsg: %s, objID: %s, input: %+v, rid: %s",
-			result.Code, result.ErrMsg, objectID, query, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
-	return result.Data.Info, nil
+
+	return result.Info, nil
 }
 
 func (lgc *Logics) GetTopoIDByName(kit *rest.Kit, c *meta.HostToAppModule) (int64, int64, int64, errors.CCError) {
@@ -218,16 +214,12 @@ func (lgc *Logics) getObjectByParentID(kit *rest.Kit, valArr []int64) ([]int64, 
 		blog.Errorf("getObjectByParentID http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), common.BKInnerObjIDObject, query, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("getObjectByParentID http response error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, common.BKInnerObjIDObject, query, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
-	if result.Data.Count == 0 {
+	if result.Count == 0 {
 		return instIDArr, nil
 	}
 
-	for _, info := range result.Data.Info {
+	for _, info := range result.Info {
 		id, err := info.Int64(common.BKInstIDField)
 		if err != nil {
 			blog.Errorf("getObjectByParentID failed, get int64 `bk_inst_id` field failed, instance: %+v, input: %+v, err: %+v, rid:%s", info, query, err, kit.Rid)
@@ -266,16 +258,12 @@ func (lgc *Logics) GetObjectInstByCond(kit *rest.Kit, objID string, cond []meta.
 		blog.Errorf("GetObjectInstByCond http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, query, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("GetObjectInstByCond http response error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, objID, query, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
-	if result.Data.Count == 0 {
+	if result.Count == 0 {
 		return instIDArr, nil
 	}
 
-	for _, info := range result.Data.Info {
+	for _, info := range result.Info {
 		id, err := info.Int64(outField)
 		if err != nil {
 			blog.Errorf("getObjectByParentID convert %s %s to integer error, inst info:%+v, input:%+v,rid:%s", objID, outField, info, query, kit.Rid)
@@ -300,13 +288,9 @@ func (lgc *Logics) GetHostIDByInstID(kit *rest.Kit, asstObjId string, instIDArr 
 		blog.Errorf("GetHostIDByInstID http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), common.BKTableNameInstAsst, query, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("GetHostIDByInstID http response error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, common.BKTableNameInstAsst, query, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
 	hostIDs := make([]int64, 0)
-	for _, val := range result.Data.Info {
+	for _, val := range result.Info {
 		hostIDs = append(hostIDs, val.InstID)
 	}
 

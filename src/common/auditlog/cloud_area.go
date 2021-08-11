@@ -45,7 +45,7 @@ func (h *cloudAreaAuditLog) GenerateAuditLog(parameter *generateAuditCommonParam
 
 	// mapping from cloudID to cloudData.
 	mutilCloudArea := make(map[int64]mapstr.MapStr)
-	for _, data := range res.Data.Info {
+	for _, data := range res.Info {
 		cloudID, err := data.Int64(common.BKCloudIDField)
 		if err != nil {
 			return nil, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDPlat,

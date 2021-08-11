@@ -57,7 +57,7 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 		return nil, err
 	}
 	hostModuleMap := map[int64]HostSimplify{}
-	for _, cls := range hostModuleResult.Data.Info {
+	for _, cls := range hostModuleResult.Info {
 		host := HostSimplify{
 			BKAppIDField:    cls.AppID,
 			BKModuleIDField: cls.ModuleID,
@@ -101,8 +101,8 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 			blog.V(3).Infof("get hosts by id failed, err: %+v, rid: %s", err, rid)
 			return nil, fmt.Errorf("get hosts by id failed, err: %+v", err)
 		}
-		hosts = append(hosts, result.Data.Info...)
-		count = result.Data.Count
+		hosts = append(hosts, result.Info...)
+		count = result.Count
 	}
 	return am.constructHostFromSearchResult(ctx, header, hosts)
 }

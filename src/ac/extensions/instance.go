@@ -45,7 +45,7 @@ func (am *AuthManager) collectInstancesByRawIDs(ctx context.Context, header http
 		return nil, fmt.Errorf("get instance by id failed, err: %+v", err)
 	}
 	instances := make([]InstanceSimplify, 0)
-	for _, inst := range result.Data.Info {
+	for _, inst := range result.Info {
 		instance := InstanceSimplify{}
 		_, err = instance.Parse(inst)
 		if err != nil {
@@ -163,7 +163,7 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 		object := objectIDMap[objID]
 
 		resourceType := meta.ModelInstance
-		for _, mainline := range mainlineAsst.Data.Info {
+		for _, mainline := range mainlineAsst.Info {
 			if object.ObjectID == mainline.ObjectID {
 				resourceType = meta.MainlineInstance
 			}

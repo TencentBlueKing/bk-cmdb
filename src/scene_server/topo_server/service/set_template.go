@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -389,15 +388,10 @@ func (s *Service) ListSetTplRelatedSvcTplWithStatistics(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if ccErr := relationResult.CCError(); ccErr != nil {
-		blog.Errorf("ListSetTplRelatedSvcTplWithStatistics failed, GetHostModuleRelation failed, option: %s, result: %s, rid: %s", relationOption, relationResult, ctx.Kit.Rid)
-		ctx.RespAutoError(ccErr)
-		return
-	}
 
 	// module hosts
 	svcTplIDHostIDs := make(map[int64][]int64)
-	for _, item := range relationResult.Data.Info {
+	for _, item := range relationResult.Info {
 		if svcTplID, ok := moduleIDSvcTplID[item.ModuleID]; ok {
 			svcTplIDHostIDs[svcTplID] = append(svcTplIDHostIDs[svcTplID], item.HostID)
 		}
@@ -427,7 +421,7 @@ func (s *Service) ListSetTplRelatedSvcTplWithStatistics(ctx *rest.Contexts) {
 }
 
 // ListSetTplRelatedSets get SetTemplate related sets
-func (s *Service) ListSetTplRelatedSets(kit *rest.Kit, bizID int64, setTemplateID int64, option metadata.ListSetByTemplateOption) (*metadata.QueryConditionResult, error) {
+func (s *Service) ListSetTplRelatedSets(kit *rest.Kit, bizID int64, setTemplateID int64, option metadata.ListSetByTemplateOption) (*metadata.InstDataInfo, error) {
 	filter := map[string]interface{}{
 		common.BKAppIDField:         bizID,
 		common.BKSetTemplateIDField: setTemplateID,
@@ -470,7 +464,7 @@ func (s *Service) ListSetTplRelatedSetsWeb(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	setInstanceResult := response.Data
+	setInstanceResult := response
 
 	topoTree, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header, bizID, false)
 	if err != nil {
@@ -516,13 +510,9 @@ func (s *Service) ListSetTplRelatedSetsWeb(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if relations.Result == false || relations.Code != 0 {
-		blog.ErrorJSON("SearchMainlineInstanceTopo failed, GetHostModuleRelation return false, filter: %s, result: %s, rid: %s", filter, relations, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.NewCCError(relations.Code, relations.ErrMsg))
-		return
-	}
+
 	set2Hosts := make(map[int64][]int64)
-	for _, relation := range relations.Data.Info {
+	for _, relation := range relations.Info {
 		if _, ok := set2Hosts[relation.SetID]; ok == false {
 			set2Hosts[relation.SetID] = make([]int64, 0)
 		}
@@ -606,7 +596,7 @@ func (s *Service) DiffSetTplWithInst(ctx *rest.Contexts) {
 			return
 		}
 		moduleHostsCount := make(map[int64]int64)
-		for _, item := range relationResult.Data.Info {
+		for _, item := range relationResult.Info {
 			if _, exist := moduleHostsCount[item.ModuleID]; exist == false {
 				moduleHostsCount[item.ModuleID] = 0
 			}
@@ -721,7 +711,7 @@ func (s *Service) GetSetSyncDetails(ctx *rest.Contexts) {
 			return
 		}
 		setIDs := make([]int64, 0)
-		for _, inst := range setInstanceResult.Data.Info {
+		for _, inst := range setInstanceResult.Info {
 			setID, err := inst.Int64(common.BKSetIDField)
 			if err != nil {
 				blog.Errorf("GetSetSyncStatus failed, get template related set failed, err: %+v, rid: %s", err, ctx.Kit.Rid)

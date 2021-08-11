@@ -16,21 +16,33 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
-func (asst *association) CreateAssociationType(ctx context.Context, h http.Header, input *metadata.CreateAssociationKind) (resp *metadata.CreatedOneOptionResult, err error) {
-	resp = new(metadata.CreatedOneOptionResult)
+func (asst *association) CreateAssociationType(ctx context.Context, h http.Header,
+	input *metadata.CreateAssociationKind) (*metadata.CreateOneDataResult, error) {
+
+	resp := new(metadata.CreatedOneOptionResult)
 	subPath := "/create/associationkind"
 
-	err = asst.client.Post().
+	err := asst.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 func (asst *association) CreateManyAssociation(ctx context.Context, h http.Header, input *metadata.CreateManyAssociationKind) (resp *metadata.CreatedManyOptionResult, err error) {
@@ -75,32 +87,54 @@ func (asst *association) SetManyAssociation(ctx context.Context, h http.Header, 
 	return
 }
 
-func (asst *association) UpdateAssociationType(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error) {
-	resp = new(metadata.UpdatedOptionResult)
+func (asst *association) UpdateAssociationType(ctx context.Context, h http.Header,
+	input *metadata.UpdateOption) (*metadata.UpdatedCount, error) {
+
+	resp := new(metadata.UpdatedOptionResult)
 	subPath := "/update/associationkind"
 
-	err = asst.client.Put().
+	err := asst.client.Put().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
-func (asst *association) DeleteAssociationType(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
-	resp = new(metadata.DeletedOptionResult)
+func (asst *association) DeleteAssociationType(ctx context.Context, h http.Header, input *metadata.DeleteOption) (
+	*metadata.DeletedCount, error) {
+
+	resp := new(metadata.DeletedOptionResult)
 	subPath := "/delete/associationkind"
 
-	err = asst.client.Delete().
+	err := asst.client.Delete().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 func (asst *association) DeleteAssociationCascade(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
@@ -117,46 +151,79 @@ func (asst *association) DeleteAssociationCascade(ctx context.Context, h http.He
 	return
 }
 
-func (asst *association) ReadAssociationType(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.SearchAssociationTypeResult, err error) {
-	resp = new(metadata.SearchAssociationTypeResult)
+func (asst *association) ReadAssociationType(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
+	*metadata.SearchAssociationType, error) {
+
+	resp := new(metadata.SearchAssociationTypeResult)
 	subPath := "/read/associationkind"
 
-	err = asst.client.Post().
+	err := asst.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
-func (asst *association) CreateModelAssociation(ctx context.Context, h http.Header, input *metadata.CreateModelAssociation) (resp *metadata.CreatedOneOptionResult, err error) {
-	resp = new(metadata.CreatedOneOptionResult)
+func (asst *association) CreateModelAssociation(ctx context.Context, h http.Header,
+	input *metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
+
+	resp := new(metadata.CreatedOneOptionResult)
 	subPath := "/create/modelassociation"
 
-	err = asst.client.Post().
+	err := asst.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
-func (asst *association) CreateMainlineModelAssociation(ctx context.Context, h http.Header, input *metadata.CreateModelAssociation) (resp *metadata.CreatedOneOptionResult, err error) {
-	resp = new(metadata.CreatedOneOptionResult)
+func (asst *association) CreateMainlineModelAssociation(ctx context.Context, h http.Header,
+	input *metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
+
+	resp := new(metadata.CreatedOneOptionResult)
 	subPath := "/create/mainlinemodelassociation"
 
-	err = asst.client.Post().
+	err := asst.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 func (asst *association) SetModelAssociation(ctx context.Context, h http.Header, input *metadata.SetModelAssociation) (resp *metadata.SetOptionResult, err error) {
@@ -173,46 +240,79 @@ func (asst *association) SetModelAssociation(ctx context.Context, h http.Header,
 	return
 }
 
-func (asst *association) UpdateModelAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error) {
-	resp = new(metadata.UpdatedOptionResult)
+func (asst *association) UpdateModelAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
+	*metadata.UpdatedCount, error) {
+
+	resp := new(metadata.UpdatedOptionResult)
 	subPath := "/update/modelassociation"
 
-	err = asst.client.Put().
+	err := asst.client.Put().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
-func (asst *association) ReadModelAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelAssociationResult, err error) {
-	resp = new(metadata.ReadModelAssociationResult)
+func (asst *association) ReadModelAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
+	*metadata.QueryModelAssociationResult, error) {
+
+	resp := new(metadata.ReadModelAssociationResult)
 	subPath := "/read/modelassociation"
 
-	err = asst.client.Post().
+	err := asst.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
-func (asst *association) DeleteModelAssociation(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
-	resp = new(metadata.DeletedOptionResult)
+func (asst *association) DeleteModelAssociation(ctx context.Context, h http.Header, input *metadata.DeleteOption) (
+	*metadata.DeletedCount, error) {
+
+	resp := new(metadata.DeletedOptionResult)
 	subPath := "/delete/modelassociation"
 
-	err = asst.client.Delete().
+	err := asst.client.Delete().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 func (asst *association) DeleteModelAssociationCascade(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
@@ -229,21 +329,34 @@ func (asst *association) DeleteModelAssociationCascade(ctx context.Context, h ht
 	return
 }
 
-func (asst *association) CreateInstAssociation(ctx context.Context, h http.Header, input *metadata.CreateOneInstanceAssociation) (resp *metadata.CreatedOneOptionResult, err error) {
-	resp = new(metadata.CreatedOneOptionResult)
+func (asst *association) CreateInstAssociation(ctx context.Context, h http.Header,
+	input *metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error) {
+
+	resp := new(metadata.CreatedOneOptionResult)
 	subPath := "/create/instanceassociation"
 
-	err = asst.client.Post().
+	err := asst.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
-func (asst *association) CreateManyInstAssociation(ctx context.Context, header http.Header, input *metadata.CreateManyInstanceAssociation) (*metadata.CreatedManyOptionResult, error) {
+func (asst *association) CreateManyInstAssociation(ctx context.Context, header http.Header,
+	input *metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error) {
+
 	resp := new(metadata.CreatedManyOptionResult)
 	subPath := "/createmany/instanceassociation"
 
@@ -254,7 +367,16 @@ func (asst *association) CreateManyInstAssociation(ctx context.Context, header h
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return resp, err
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 func (asst *association) SetInstAssociation(ctx context.Context, h http.Header, input *metadata.SetOneInstanceAssociation) (resp *metadata.SetOptionResult, err error) {
@@ -285,25 +407,34 @@ func (asst *association) UpdateInstAssociation(ctx context.Context, h http.Heade
 	return
 }
 
-func (asst *association) ReadInstAssociation(ctx context.Context, h http.Header, input *metadata.InstAsstQueryCondition) (
-	resp *metadata.ReadInstAssociationResult, err error) {
+func (asst *association) ReadInstAssociation(ctx context.Context, h http.Header,
+	input *metadata.InstAsstQueryCondition) (*metadata.QueryInstAssociationResult, error) {
 
-	resp = new(metadata.ReadInstAssociationResult)
+	resp := new(metadata.ReadInstAssociationResult)
 	subPath := "/read/instanceassociation"
 
-	err = asst.client.Post().
+	err := asst.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 // CountInstanceAssociations counts model instance associations num.
-func (asst *association) CountInstanceAssociations(ctx context.Context, header http.Header,
-	objID string, input *metadata.Condition) (*metadata.CountResponse, error) {
+func (asst *association) CountInstanceAssociations(ctx context.Context, header http.Header, objID string,
+	input *metadata.Condition) (*metadata.CountResponseContent, error) {
 
 	resp := new(metadata.CountResponse)
 	subPath := "/count/instanceassociation/model/%s"
@@ -316,21 +447,38 @@ func (asst *association) CountInstanceAssociations(ctx context.Context, header h
 		Do().
 		Into(resp)
 
-	return resp, err
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
-func (asst *association) DeleteInstAssociation(ctx context.Context, h http.Header, input *metadata.InstAsstDeleteOption) (
-	resp *metadata.DeletedOptionResult, err error) {
+func (asst *association) DeleteInstAssociation(ctx context.Context, h http.Header,
+	input *metadata.InstAsstDeleteOption) (*metadata.DeletedCount, error) {
 
-	resp = new(metadata.DeletedOptionResult)
+	resp := new(metadata.DeletedOptionResult)
 	subPath := "/delete/instanceassociation"
 
-	err = asst.client.Delete().
+	err := asst.client.Delete().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }

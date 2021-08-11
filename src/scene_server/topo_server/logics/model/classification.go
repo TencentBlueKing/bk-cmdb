@@ -51,7 +51,8 @@ type classification struct {
 func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr) (*metadata.Classification, error) {
 	cls, err := c.isValid(kit, true, data)
 	if err != nil {
-		blog.ErrorJSON("validate classification update data failed, err: %s, data: %s, rid: %s", err, data, kit.Rid)
+		blog.ErrorJSON("validate classification update data failed, err: %s, data: %s, rid: %s",
+			err, data, kit.Rid)
 		return nil, err
 	}
 
@@ -63,12 +64,7 @@ func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr)
 		return nil, err
 	}
 
-	if err := rsp.CCError(); err != nil {
-		blog.Errorf("create classification %s failed, err: %v, rid: %s", cls.ClassificationName, rsp.ErrMsg, kit.Rid)
-		return nil, err
-	}
-
-	cls.ID = int64(rsp.Data.Created.ID)
+	cls.ID = int64(rsp.Created.ID)
 
 	// generate audit log of object classification.
 	audit := auditlog.NewObjectClsAuditLog(c.clientSet.CoreService())
@@ -120,13 +116,9 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64) error {
 
 	// delete classification
 	delOpt := &metadata.DeleteOption{Condition: cond}
-	rsp, err := c.clientSet.CoreService().Model().DeleteModelClassification(kit.Ctx, kit.Header, delOpt)
+	_, err = c.clientSet.CoreService().Model().DeleteModelClassification(kit.Ctx, kit.Header, delOpt)
 	if err != nil {
 		blog.Errorf("delete classification %d failed, err: %v, rid: %s", id, err, kit.Rid)
-		return err
-	}
-	if err := rsp.CCError(); err != nil {
-		blog.Errorf("delete classification %d failed, err: %s, rid: %s", id, rsp.ErrMsg, kit.Rid)
 		return err
 	}
 
@@ -189,32 +181,22 @@ func (c *classification) getClassificationObjects(kit *rest.Kit, classifications
 	}
 	rsp, err := c.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, queryObjectCond)
 	if err != nil {
-		blog.Errorf("search objects but do http request failed, err: %v, clsIDs: %+v, rid: %s", err, clsIDs, kit.Rid)
+		blog.Errorf("search objects failed, err: %v, clsIDs: %+v, rid: %s", err, clsIDs, kit.Rid)
 		return nil, err
 	}
 
-	if err := rsp.CCError(); err != nil {
-		blog.Errorf("search objects failed, err: %v, clsIDs: %+v, rid: %s", rsp.ErrMsg, clsIDs, kit.Rid)
-		return nil, err
-	}
-
-	return rsp.Data.Info, nil
+	return rsp.Info, nil
 }
 
 func (c *classification) FindClassification(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Classification, error) {
 	input := &metadata.QueryCondition{Condition: cond}
 	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, input)
 	if err != nil {
-		blog.ErrorJSON("find classification but do http request failed, err: %s, cond: %s, rid: %s", err, cond, kit.Rid)
-		return nil, err
-	}
-
-	if err := rsp.CCError(); err != nil {
 		blog.ErrorJSON("find classification failed, err: %s, cond: %s, rid: %s", err, cond, kit.Rid)
 		return nil, err
 	}
 
-	return rsp.Data.Info, nil
+	return rsp.Info, nil
 }
 
 func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr, id int64) error {
@@ -243,13 +225,8 @@ func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr,
 		Condition: map[string]interface{}{metadata.ClassificationFieldID: id},
 		Data:      data,
 	}
-	rsp, err := c.clientSet.CoreService().Model().UpdateModelClassification(kit.Ctx, kit.Header, &input)
+	_, err = c.clientSet.CoreService().Model().UpdateModelClassification(kit.Ctx, kit.Header, &input)
 	if err != nil {
-		blog.Errorf("update model classification failed, err: %v, input: %#v, rid: %s", err, data, kit.Rid)
-		return err
-	}
-
-	if err := rsp.CCError(); err != nil {
 		blog.Errorf("update model classification failed, err: %v, input: %#v, rid: %s", err, data, kit.Rid)
 		return err
 	}

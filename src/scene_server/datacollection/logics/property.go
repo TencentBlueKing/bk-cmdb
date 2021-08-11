@@ -570,18 +570,14 @@ func (lgc *Logics) getObjIDsAndShowFields(pHeader http.Header, objectCond map[st
 		blog.Errorf("[NetProperty] get net device object fail, error: %v, condition [%#v], rid: %s", err, objectCond, rid)
 		return nil, nil, defErr.Error(common.CCErrObjectSelectInstFailed)
 	}
-	if !objResult.Result {
-		blog.Errorf("[NetProperty] get net device object fail, errors: %s, condition [%#v], rid: %s", objResult.ErrMsg, objectCond, rid)
-		return nil, nil, defErr.New(objResult.Code, objResult.ErrMsg)
-	}
 
-	if 0 == len(objResult.Data.Info) {
+	if 0 == len(objResult.Info) {
 		return nil, nil, nil
 	}
 
 	objIDs := make([]string, 0)
 	objIDMapobjName := map[string]objShowField{}
-	for _, obj := range objResult.Data.Info {
+	for _, obj := range objResult.Info {
 		objIDs = append(objIDs, obj.ObjectID)
 		objIDMapobjName[obj.ObjectID] = objShowField{obj.ObjectName}
 	}
@@ -655,12 +651,8 @@ func (lgc *Logics) getPropertyIDsAndShowFields(pHeader http.Header, propertyCond
 		blog.Errorf("[NetProperty] get property fail, error: %v, condition [%#v], rid: %s", err, propertyCond, rid)
 		return nil, nil, nil, defErr.Error(common.CCErrTopoObjectAttributeSelectFailed)
 	}
-	if !attrResult.Result {
-		blog.Errorf("[NetProperty] get property fail, error: %s, rid: %s", attrResult.ErrMsg, rid)
-		return nil, nil, nil, defErr.New(attrResult.Code, attrResult.ErrMsg)
-	}
 
-	objIDs, propertyIDs, propertyIDMapPropertyShowFields := lgc.assembleAttrShowFieldValue(attrResult.Data.Info)
+	objIDs, propertyIDs, propertyIDMapPropertyShowFields := lgc.assembleAttrShowFieldValue(attrResult.Info)
 
 	if 0 == len(objIDs) || 0 == len(propertyIDs) || 0 == len(propertyIDMapPropertyShowFields) {
 		blog.Errorf("[NetProperty] get property fail, property is not exist, condition [%#v], rid: %s", propertyCond, rid)

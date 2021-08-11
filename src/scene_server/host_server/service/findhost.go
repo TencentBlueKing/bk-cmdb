@@ -445,13 +445,8 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 		ctx.RespAutoError(ccErr)
 		return
 	}
-	if ccErr := appResult.CCError(); ccErr != nil {
-		blog.ErrorJSON("ListResourcePoolHosts failed, ReadInstance of default app failed, filter: %s, result: %s, rid:%s", filter, appResult, rid)
-		ccErr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		ctx.RespAutoError(ccErr)
-		return
-	}
-	if appResult.Data.Count == 0 {
+
+	if appResult.Count == 0 {
 		blog.Errorf("ListResourcePoolHosts failed, get default app failed, not found, rid: %s", rid)
 		ccErr := defErr.Error(common.CCErrCommBizNotFoundError)
 		ctx.RespAutoError(ccErr)
@@ -459,9 +454,9 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 	}
 
 	// only use biz with same supplier account if query returns multiple biz
-	bizData := appResult.Data.Info[0]
+	bizData := appResult.Info[0]
 	bizCount := 0
-	for _, biz := range appResult.Data.Info {
+	for _, biz := range appResult.Info {
 		supplier, _ := biz.String(common.BkSupplierAccount)
 		if supplier == util.GetOwnerID(header) {
 			bizCount++
@@ -569,19 +564,14 @@ func (s *Service) listBizHosts(ctx *rest.Contexts, bizID int64, parameter meta.L
 			return nil, errors.New(common.CCErrCommParamsInvalid, "set_cond")
 		}
 
-		if !setList.Result {
-			blog.Errorf("get set with cond: %v failed, err: %v, rid: %s", setCond, setErr, rid)
-			return nil, errors.New(setList.Code, setList.ErrMsg)
-		}
-
-		if len(setList.Data.Info) == 0 {
+		if len(setList.Info) == 0 {
 			return &meta.ListHostResult{
 				Count: 0,
 				Info:  []map[string]interface{}{},
 			}, nil
 		}
 
-		for _, set := range setList.Data.Info {
+		for _, set := range setList.Info {
 			id, err := util.GetInt64ByInterface(set[common.BKSetIDField])
 			if err != nil {
 				blog.Errorf("get set id: %v failed, err: %v, rid: %s", set[common.BKSetIDField], err, rid)
@@ -762,7 +752,7 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 		return
 	}
 	setMap := make(map[int64]string)
-	for _, set := range sets.Data.Info {
+	for _, set := range sets.Info {
 		setID, err := set.Int64(common.BKSetIDField)
 		if err != nil {
 			blog.ErrorJSON("set %s id invalid, error: %s, rid: %s", set, err, rid)
@@ -791,7 +781,7 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 		return
 	}
 	moduleMap := make(map[int64]string)
-	for _, module := range modules.Data.Info {
+	for _, module := range modules.Info {
 		moduleID, err := module.Int64(common.BKModuleIDField)
 		if err != nil {
 			blog.ErrorJSON("module %s id invalid, error: %s, rid: %s", module, err, rid)
@@ -967,7 +957,7 @@ func (s *Service) countTopoNodeHosts(ctx *rest.Contexts, bizID int64, option met
 			continue
 		}
 		hostIDs := make([]int64, 0)
-		for _, item := range relationResult.Data.Info {
+		for _, item := range relationResult.Info {
 			if _, ok := moduleIDMap[item.ModuleID]; ok == true {
 				hostIDs = append(hostIDs, item.HostID)
 			}

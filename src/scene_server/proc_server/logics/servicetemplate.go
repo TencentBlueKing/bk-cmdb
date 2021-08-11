@@ -40,7 +40,7 @@ func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond ma
 	}
 
 	svcTempModuleMap := make(map[int64][]*metadata.ModuleInst)
-	for _, moduleInst := range moduleRes.Data.Info {
+	for _, moduleInst := range moduleRes.Info {
 		module := new(metadata.ModuleInst)
 		if err := mapstruct.Decode2Struct(moduleInst, &module); err != nil {
 			blog.Errorf("parse module failed, err: %s, module: %s, rid: %s", err, module, kit.Rid)

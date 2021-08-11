@@ -76,12 +76,7 @@ func (m *module) hasHost(kit *rest.Kit, bizID int64, setIDs, moduleIDS []int64) 
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-module]  failed to search the host module configures, err: %s, rid: %s", rsp.ErrMsg, kit.Rid)
-		return false, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return 0 != len(rsp.Data.Info), nil
+	return 0 != len(rsp.Info), nil
 }
 
 func (m *module) validBizSetID(kit *rest.Kit, bizID int64, setID int64) error {
@@ -99,11 +94,8 @@ func (m *module) validBizSetID(kit *rest.Kit, bizID int64, setID int64) error {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !rsp.Result {
-		blog.Errorf("[operation-inst] failed to read the object(%s) inst by the condition(%#v), err: %s, rid: %s", common.BKInnerObjIDSet, cond, rsp.ErrMsg, kit.Rid)
-		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-	if rsp.Data.Count > 0 {
+
+	if rsp.Count > 0 {
 		return nil
 	}
 
@@ -265,12 +257,8 @@ func (m *module) IsModuleNameDuplicateError(kit *rest.Kit, bizID, setID int64, m
 		blog.ErrorJSON("IsModuleNameDuplicateError failed, filter: %s, err: %s, rid: %s", nameDuplicateFilter, err.Error(), kit.Rid)
 		return false, err
 	}
-	if ccErr := result.CCError(); ccErr != nil {
-		blog.ErrorJSON("IsModuleNameDuplicateError failed, result false, filter: %s, result: %s, err: %s, rid: %s",
-			nameDuplicateFilter, result, ccErr, kit.Rid)
-		return false, ccErr
-	}
-	if result.Data.Count > 0 {
+
+	if result.Count > 0 {
 		return true, nil
 	}
 	return false, nil

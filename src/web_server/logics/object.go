@@ -162,12 +162,8 @@ func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header,
 					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
 					return
 				}
-				if !count.Result {
-					objCount.Error = count.ErrMsg
-				} else {
-					objCount.InstCount = count.Data.Count
-				}
 
+				objCount.InstCount = count.Count
 			} else {
 				tableName := common.GetInstTableName(objID, common.BKDefaultOwnerID)
 				count, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(ctx, header, tableName,
@@ -217,22 +213,16 @@ func (lgc *Logics) ProcessObjectIDArray(ctx context.Context, header http.Header,
 		blog.Errorf("get object by object id failed, err: %s, rid: %s", err.Error(), rid)
 		return nil, nil, defErr.CCError(common.CCErrTopoModuleSelectFailed)
 	}
-	if !objects.Result {
-		blog.Errorf("get object by object id failed, err: %s, rid: %s", objects.ErrMsg, rid)
-		if objects.Code == 0 {
-			return nil, nil, defErr.CCError(common.CCErrTopoModuleSelectFailed)
-		}
-		return nil, nil, defErr.CCError(objects.Code)
-	}
-	if objects.Data.Count == 0 {
+
+	if objects.Count == 0 {
 		blog.Errorf("none object exist, object id: %v, err: %s, rid: %s", objectArray,
 			defErr.CCError(common.CCErrorModelNotFound).Error(), rid)
 		return nil, nil, defErr.CCError(common.CCErrorModelNotFound)
 	}
 	var nonexistentObjects []string
-	if objects.Data.Count < int64(len(objArray)) {
+	if objects.Count < int64(len(objArray)) {
 		var temp []string
-		for _, object := range objects.Data.Info {
+		for _, object := range objects.Info {
 			temp = append(temp, object.ObjectID)
 		}
 		nonexistentObjects = util.StrArrDiff(objArray, temp)

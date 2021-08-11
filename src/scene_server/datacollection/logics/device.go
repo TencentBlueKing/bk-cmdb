@@ -391,8 +391,6 @@ func (lgc *Logics) getObjIDMapObjNameFromNetDevice(
 	pHeader http.Header, netDevice []meta.NetcollectDevice) (map[string]string, error) {
 	rid := util.GetHTTPCCRequestID(pHeader)
 
-	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
-
 	objIDs := make([]string, 0)
 	for index := range netDevice {
 		objIDs = append(objIDs, netDevice[index].ObjectID)
@@ -412,13 +410,9 @@ func (lgc *Logics) getObjIDMapObjNameFromNetDevice(
 		blog.Errorf("[NetDevice] search net device object, search objectName fail, %v, rid: %s", err, rid)
 		return nil, err
 	}
-	if !objResult.Result {
-		blog.Errorf("[NetDevice] search net device object, errors: %s, rid: %s", objResult.ErrMsg, rid)
-		return nil, defErr.New(objResult.Code, objResult.ErrMsg)
-	}
 
 	objIDMapObjName := map[string]string{}
-	for _, data := range objResult.Data.Info {
+	for _, data := range objResult.Info {
 		objIDMapObjName[data.ObjectID] = data.ObjectName
 	}
 
@@ -489,7 +483,6 @@ func (lgc *Logics) getNetDeviceIDByName(deviceName string, ownerID string) (uint
 
 // get net device obj ID
 func (lgc *Logics) getNetDeviceObjIDsByCond(pHeader http.Header, objCond map[string]interface{}) ([]string, error) {
-	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 	rid := util.GetHTTPCCRequestID(pHeader)
 
 	objIDs := make([]string, 0)
@@ -502,12 +495,7 @@ func (lgc *Logics) getNetDeviceObjIDsByCond(pHeader http.Header, objCond map[str
 			return nil, err
 		}
 
-		if !objResult.Result {
-			blog.Errorf("[NetDevice] check net device object ID, errors: %s, rid: %s", objResult.ErrMsg, rid)
-			return nil, defErr.New(objResult.Code, objResult.ErrMsg)
-		}
-
-		for _, data := range objResult.Data.Info {
+		for _, data := range objResult.Info {
 			objIDs = append(objIDs, data.ObjectID)
 		}
 	}

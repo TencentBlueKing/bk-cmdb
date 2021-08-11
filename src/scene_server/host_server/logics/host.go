@@ -43,12 +43,8 @@ func (lgc *Logics) GetHostAttributes(kit *rest.Kit, bizMetaOpt mapstr.MapStr) ([
 		blog.Errorf("GetHostAttributes http do error, err:%s, input:%+v, rid:%s", err.Error(), query, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("GetHostAttributes http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
-	return result.Data.Info, nil
+	return result.Info, nil
 }
 
 func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[string]interface{}, string, errors.CCError) {
@@ -84,12 +80,8 @@ func (lgc *Logics) GetHostRelations(kit *rest.Kit, input metadata.HostModuleRela
 		blog.Errorf("GetConfigByCond http do error, err:%s, input:%+v, rid:%s", err.Error(), input, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("GetConfigByCond http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, input, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
-	return result.Data.Info, nil
+	return result.Info, nil
 }
 
 // EnterIP 将机器导入到指定模块或者空闲模块， 已经存在机器，不操作
@@ -141,10 +133,6 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 			blog.Errorf("EnterIP http do error, err:%s, input:%+v, rid:%s", err.Error(), host, kit.Rid)
 			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
-		if !result.Result {
-			blog.Errorf("EnterIP http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, host, kit.Rid)
-			return kit.CCError.New(result.Code, result.ErrMsg)
-		}
 
 		// add audit log for create host.
 		audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
@@ -163,7 +151,7 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 			return err
 		}
 
-		hostID = int64(result.Data.Created.ID)
+		hostID = int64(result.Created.ID)
 	} else if false == isIncrement {
 		// Not an additional relationship model
 		return nil
@@ -230,12 +218,8 @@ func (lgc *Logics) GetHostInfoByConds(kit *rest.Kit, cond map[string]interface{}
 		blog.Errorf("GetHostInfoByConds GetHosts http do error, err:%s, input:%+v,rid:%s", err.Error(), query, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if err := result.CCError(); err != nil {
-		blog.Errorf("GetHostInfoByConds GetHosts http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
-		return nil, err
-	}
 
-	return result.Data.Info, nil
+	return result.Info, nil
 }
 
 // SearchHostInfo search host info by QueryCondition
@@ -253,12 +237,8 @@ func (lgc *Logics) SearchHostInfo(kit *rest.Kit, cond metadata.QueryCondition) (
 		blog.Errorf("GetHostInfoByConds GetHosts http do error, err:%s, input:%+v,rid:%s", err.Error(), query, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if err := result.CCError(); err != nil {
-		blog.Errorf("GetHostInfoByConds GetHosts http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
-		return nil, err
-	}
 
-	return result.Data.Info, nil
+	return result.Info, nil
 }
 
 // HostSearch search host by multiple condition
@@ -278,13 +258,9 @@ func (lgc *Logics) GetHostIDByCond(kit *rest.Kit, cond metadata.HostModuleRelati
 		blog.Errorf("GetHostIDByCond GetModulesHostConfig http do error, err:%s, input:%+v,rid:%s", err.Error(), cond, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("GetHostIDByCond GetModulesHostConfig http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, cond, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
 	hostIDs := make([]int64, 0)
-	for _, val := range result.Data.Info {
+	for _, val := range result.Info {
 		hostIDs = append(hostIDs, val.HostID)
 	}
 
@@ -305,18 +281,14 @@ func (lgc *Logics) GetAllHostIDByCond(kit *rest.Kit, cond metadata.HostModuleRel
 			blog.Errorf("GetHostIDByCond GetModulesHostConfig http do error, err:%s, input:%+v,rid:%s", err.Error(), cond, kit.Rid)
 			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
-		if !result.Result {
-			blog.Errorf("GetHostIDByCond GetModulesHostConfig http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, cond, kit.Rid)
-			return nil, kit.CCError.New(result.Code, result.ErrMsg)
-		}
 
-		for _, val := range result.Data.Info {
+		for _, val := range result.Info {
 			hostIDs = append(hostIDs, val.HostID)
 		}
 		// 当总数大于现在的总数，使用当前返回值的总是为新的总数值
-		if cnt < int(result.Data.Count) {
+		if cnt < int(result.Count) {
 			// 获取条件的数据总数
-			cnt = int(result.Data.Count)
+			cnt = int(result.Count)
 		}
 		start += cond.Page.Limit
 		if start >= cnt {
@@ -357,12 +329,8 @@ func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond *metadata.HostModul
 		blog.Errorf("GetHostModuleRelation http do error, err:%s, input:%+v, rid:%s", err.Error(), cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if retErr := result.CCError(); retErr != nil {
-		blog.Errorf("GetHostModuleRelation http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, cond, kit.Rid)
-		return nil, retErr
-	}
 
-	return &result.Data, nil
+	return result, nil
 }
 
 // TransferHostAcrossBusiness  Transfer host across business, can only transfer between resource set modules
@@ -383,15 +351,10 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if err := moduleRes.CCError(); err != nil {
-		blog.Errorf("transfer host across business, get modules failed, err: %s, rid: %s", err.Error(), kit.Rid)
-		return err
-	}
-
 	// valid if dest module is dest biz's resource set's module, get src biz module ids
 	moduleIDArr := make([]int64, 0)
 	isDestModuleValid := false
-	for _, module := range moduleRes.Data.Info {
+	for _, module := range moduleRes.Info {
 		modID, err := module.Int64(common.BKModuleIDField)
 		if err != nil {
 			blog.ErrorJSON("transfer host across business, get module(%s) id failed, err: %s, rid: %s", module, err.Error(), kit.Rid)
@@ -565,7 +528,7 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 	}
 
 	attrIDUniqueMap := make(map[uint64]struct{})
-	for _, unique := range uniqueRsp.Data.Info {
+	for _, unique := range uniqueRsp.Info {
 		for _, key := range unique.Keys {
 			attrIDUniqueMap[key.ID] = struct{}{}
 		}
@@ -627,14 +590,10 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 			common.BKHostIDField: dstHostID,
 		},
 	}
-	result, doErr := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, input)
+	_, doErr := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, input)
 	if doErr != nil {
 		blog.ErrorJSON("CloneHostProperty UpdateInstance error. err: %s,condition:%s,rid:%s", doErr, input, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if err := result.CCError(); err != nil {
-		blog.ErrorJSON("CloneHostProperty UpdateInstance  replay error. err: %s,condition:%s,rid:%s", err, input, kit.Rid)
-		return err
 	}
 
 	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
@@ -1295,14 +1254,9 @@ func (lgc *Logics) getTopologyRank(kit *rest.Kit) (map[string]string, map[string
 		return nil, nil, nil, err
 	}
 
-	if !mainline.Result {
-		blog.Errorf("get mainline association failed, err: %s, rid: %s", mainline.ErrMsg, kit.Rid)
-		return nil, nil, nil, errors.New(mainline.Code, mainline.ErrMsg)
-	}
-
 	rankMap := make(map[string]string)
 	reverseRankMap := make(map[string]string)
-	for _, one := range mainline.Data.Info {
+	for _, one := range mainline.Info {
 		// from host to biz
 		// host:module;module:set;set:biz
 		rankMap[one.ObjectID] = one.AsstObjID
@@ -1312,13 +1266,13 @@ func (lgc *Logics) getTopologyRank(kit *rest.Kit) (map[string]string, map[string
 	rank := make([]string, 0)
 	next := "biz"
 	rank = append(rank, next)
-	for _, relation := range mainline.Data.Info {
+	for _, relation := range mainline.Info {
 		if relation.AsstObjID == next {
 			rank = append(rank, relation.ObjectID)
 			next = relation.ObjectID
 			continue
 		} else {
-			for _, rel := range mainline.Data.Info {
+			for _, rel := range mainline.Info {
 				if rel.AsstObjID == next {
 					rank = append(rank, rel.ObjectID)
 					next = rel.ObjectID
@@ -1347,11 +1301,5 @@ func (lgc *Logics) getCustomObjectInstances(kit *rest.Kit, obj string, instIDs [
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !instRes.Result {
-		blog.Errorf("get biz custom object instances failed, options: %s, err: %s, rid: %s", opts,
-			instRes.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(instRes.Code, instRes.ErrMsg)
-	}
-
-	return instRes.Data.Info, nil
+	return instRes.Info, nil
 }

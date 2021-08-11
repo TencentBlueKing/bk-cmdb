@@ -91,15 +91,10 @@ func (h *hostAuditLog) getBizIDByHostID(kit *rest.Kit, hostID int64) (int64, err
 		blog.Errorf("failed to get host module relation, hostID: %d, err: %v, rid: %s", hostID, err, kit.Rid)
 		return 0, err
 	}
-	if !moduleHost.Result {
-		blog.Errorf("failed to get host module relation, http response error, hostID: %d, errCode: %d, errMsg: %s, rid: %s", hostID,
-			moduleHost.Code, moduleHost.ErrMsg, kit.Rid)
-		return 0, kit.CCError.New(moduleHost.Code, moduleHost.ErrMsg)
-	}
 
 	var bizID int64
-	if len(moduleHost.Data.Info) > 0 {
-		bizID = moduleHost.Data.Info[0].AppID
+	if len(moduleHost.Info) > 0 {
+		bizID = moduleHost.Info[0].AppID
 	}
 
 	return bizID, nil

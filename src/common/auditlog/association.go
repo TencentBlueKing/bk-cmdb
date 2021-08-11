@@ -43,12 +43,12 @@ func (a *instanceAssociationAuditLog) GenerateAuditLog(parameter *generateAuditC
 			return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 		}
 
-		if len(result.Data.Info) == 0 || len(result.Data.Info) > 1 {
+		if len(result.Info) == 0 || len(result.Info) > 1 {
 			blog.Errorf("generate inst asst audit log failed, get instance association by id(%d) get none or multiple result, rid: %s", id, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 		}
 
-		data = &result.Data.Info[0]
+		data = &result.Info[0]
 	}
 
 	srcInstName, err := a.getInstNameByID(kit, data.ObjectID, data.InstID)

@@ -44,7 +44,7 @@ func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header,
 		return nil, fmt.Errorf("get plats by id failed, err: %+v", err)
 	}
 	plats := make([]PlatSimplify, 0)
-	for _, cls := range result.Data.Info {
+	for _, cls := range result.Info {
 		plat := PlatSimplify{}
 		_, err = plat.Parse(cls)
 		if err != nil {

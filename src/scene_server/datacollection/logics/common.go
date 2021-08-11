@@ -54,17 +54,12 @@ func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName str
 		return "", "", defErr.Errorf(common.CCErrObjectSelectInstFailed)
 	}
 
-	if !objResult.Result {
-		blog.Errorf("[NetCollect] check net device object, errors: %s, condition [%#v]", objResult.ErrMsg, objCond)
-		return "", "", defErr.New(objResult.Code, objResult.ErrMsg)
-	}
-
-	if 0 == len(objResult.Data.Info) {
+	if 0 == len(objResult.Info) {
 		blog.Errorf("[NetCollect] check net device object, device object is not exist, condition [%#v]", objCond)
 		return "", "", defErr.Errorf(common.CCErrCollectObjIDNotNetDevice)
 	}
 
-	return objResult.Data.Info[0].ObjectID, objResult.Data.Info[0].ObjectName, nil
+	return objResult.Info[0].ObjectID, objResult.Info[0].ObjectName, nil
 }
 
 // by checking if bk_property_id and bk_property_name function parameter are valid net device object property or not
@@ -97,17 +92,13 @@ func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, p
 		blog.Errorf("[NetCollect] get object attribute fail, error: %v, condition [%#v]", err, propertyCond)
 		return "", defErr.Errorf(common.CCErrTopoObjectAttributeSelectFailed)
 	}
-	if !attrResult.Result {
-		blog.Errorf("[NetCollect] check net device object property, errors: %s", attrResult.ErrMsg)
-		return "", defErr.New(attrResult.Code, attrResult.ErrMsg)
-	}
 
-	if 0 == len(attrResult.Data.Info) {
+	if 0 == len(attrResult.Info) {
 		blog.Errorf("[NetCollect] check net device object property, property is not exist, condition [%#v]", propertyCond)
 		return "", defErr.Errorf(common.CCErrCollectNetDeviceObjPropertyNotExist)
 	}
 
-	return attrResult.Data.Info[0].PropertyID, nil
+	return attrResult.Info[0].PropertyID, nil
 }
 
 // by checking if bk_device_id and bk_device_name function parameter are valid net device or not
