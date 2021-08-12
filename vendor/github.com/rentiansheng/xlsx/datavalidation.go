@@ -22,7 +22,7 @@ const (
 )
 
 const (
-	// dataValidationFormulaStrLen 255 characters+ 2 quotes
+	// dataValidationFormulaStrLen 2000 characters
 	dataValidationFormulaStrLen = 2000
 	// dataValidationFormulaStrLenErr
 	dataValidationFormulaStrLenErr = "data validation must be 0-2000 characters"
