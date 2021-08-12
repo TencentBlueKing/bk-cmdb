@@ -20,8 +20,11 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// AuditOperationInterface audit operation methods
 type AuditOperationInterface interface {
+	// SearchAuditList search audit list by query, return audit number auditlog and error
 	SearchAuditList(kit *rest.Kit, query metadata.QueryCondition) (int64, []metadata.AuditLog, error)
+	// SearchAuditDetail search audit detail by query
 	SearchAuditDetail(kit *rest.Kit, query metadata.QueryCondition) ([]metadata.AuditLog, error)
 }
 
@@ -36,20 +39,34 @@ type audit struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
+// SearchAuditList search audit list by query, return audit number auditlog and error
 func (a *audit) SearchAuditList(kit *rest.Kit, query metadata.QueryCondition) (int64, []metadata.AuditLog, error) {
+
 	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(kit.Ctx, kit.Header, query)
-	if nil != err {
-		blog.Errorf("search audit log list failed, error: %s, query: %s, rid: %s", err.Error(), query, kit.Rid)
+	if err != nil {
+		blog.Errorf("search audit log list failed, err: %v, query: %s, rid: %s", err, query, kit.Rid)
+		return 0, nil, err
+	}
+
+	if err = rsp.CCError(); err != nil {
+		blog.Errorf("search audit log list failed, err: %v, query: %s, rid: %s", err, query, kit.Rid)
 		return 0, nil, err
 	}
 
 	return rsp.Data.Count, rsp.Data.Info, nil
 }
 
+// SearchAuditDetail search audit detail by query
 func (a *audit) SearchAuditDetail(kit *rest.Kit, query metadata.QueryCondition) ([]metadata.AuditLog, error) {
+
 	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(kit.Ctx, kit.Header, query)
-	if nil != err {
-		blog.Errorf("search audit log detail list failed, error: %s, query: %s, rid: %s", err.Error(), query, kit.Rid)
+	if err != nil {
+		blog.Errorf("search audit log detail list failed, err: %v, query: %s, rid: %s", err, query, kit.Rid)
+		return nil, err
+	}
+
+	if err = rsp.CCError(); err != nil {
+		blog.Errorf("search audit log detail list failed, err: %v, query: %s, rid: %s", err, query, kit.Rid)
 		return nil, err
 	}
 
