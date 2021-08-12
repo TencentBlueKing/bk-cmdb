@@ -23,9 +23,9 @@ const (
 
 const (
 	// dataValidationFormulaStrLen 255 characters+ 2 quotes
-	dataValidationFormulaStrLen = 257
+	dataValidationFormulaStrLen = 2000
 	// dataValidationFormulaStrLenErr
-	dataValidationFormulaStrLenErr = "data validation must be 0-255 characters"
+	dataValidationFormulaStrLenErr = "data validation must be 0-2000 characters"
 )
 
 type DataValidationErrorStyle int
