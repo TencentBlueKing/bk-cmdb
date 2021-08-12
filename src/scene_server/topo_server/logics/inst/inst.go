@@ -23,11 +23,10 @@ type InstOperationInterface interface {
 	// CreateInst create instance by object and create message
 	CreateInst(kit *rest.Kit, obj metadata.Object, data mapstr.MapStr) (*metadata.CreateOneDataResult, error)
 	// CreateManyInstance batch create instance by object and create message
-	CreateManyInstance(kit *rest.Kit, objID string,
-		data []mapstr.MapStr) (*metadata.CreateManyCommInstResultDetail, error)
+	CreateManyInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) (*metadata.CreateManyCommInstResultDetail,
+		error)
 	// CreateInstBatch batch create instance by excel
-	CreateInstBatch(kit *rest.Kit, obj metadata.Object,
-		batchInfo *metadata.InstBatchInfo) (*BatchResult, error)
+	CreateInstBatch(kit *rest.Kit, obj metadata.Object, batchInfo *metadata.InstBatchInfo) (*BatchResult, error)
 	// DeleteInst delete instance by objectid and condition
 	DeleteInst(kit *rest.Kit, objectID string, cond mapstr.MapStr, needCheckHost bool) error
 	// DeleteMainlineInstWithID delete mainline instance by it's bk_inst_id
@@ -39,20 +38,20 @@ type InstOperationInterface interface {
 	// UpdateInst update instance by condition
 	UpdateInst(kit *rest.Kit, cond, data mapstr.MapStr, objID string) error
 	// SearchObjectInstances searches object instances.
-	SearchObjectInstances(kit *rest.Kit, objID string,
-		input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error)
+	SearchObjectInstances(kit *rest.Kit, objID string, input *metadata.CommonSearchFilter) (
+		*metadata.CommonSearchResult, error)
 	// CountObjectInstances counts object instances num.
-	CountObjectInstances(kit *rest.Kit, objID string,
-		input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error)
+	CountObjectInstances(kit *rest.Kit, objID string, input *metadata.CommonCountFilter) (*metadata.CommonCountResult,
+		error)
 	// FindInstChildTopo find instance's child topo
-	FindInstChildTopo(kit *rest.Kit, obj metadata.Object, instID int64,
-		query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
+	FindInstChildTopo(kit *rest.Kit, obj metadata.Object, instID int64, query *metadata.QueryInput) (int,
+		[]*CommonInstTopo, error)
 	// FindInstParentTopo find instance's parent topo
-	FindInstParentTopo(kit *rest.Kit, obj metadata.Object, instID int64,
-		query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
+	FindInstParentTopo(kit *rest.Kit, obj metadata.Object, instID int64, query *metadata.QueryInput) (int,
+		[]*CommonInstTopo, error)
 	// FindInstTopo find instance all topo which include it's child and parent
-	FindInstTopo(kit *rest.Kit, obj metadata.Object, instID int64,
-		query *metadata.QueryInput) (count int, results []CommonInstanceTopo, err error)
+	FindInstTopo(kit *rest.Kit, obj metadata.Object, instID int64, query *metadata.QueryInput) (int,
+		[]CommonInstanceTopo, error)
 }
 
 // NewInstOperation create a new inst operation instance
@@ -65,6 +64,7 @@ func NewInstOperation(client apimachinery.ClientSetInterface,
 	}
 }
 
+// BatchResult batch create instance by excel result
 type BatchResult struct {
 	Errors         []string `json:"error"`
 	Success        []string `json:"success"`
@@ -106,8 +106,8 @@ type commonInst struct {
 }
 
 // CreateInst create instance by object and create message
-func (c *commonInst) CreateInst(kit *rest.Kit, obj metadata.Object,
-	data mapstr.MapStr) (*metadata.CreateOneDataResult, error) {
+func (c *commonInst) CreateInst(kit *rest.Kit, obj metadata.Object, data mapstr.MapStr) (*metadata.CreateOneDataResult,
+	error) {
 
 	if obj.ObjectID == common.BKInnerObjIDPlat {
 		data.Set(common.BkSupplierAccount, kit.SupplierAccount)
@@ -166,8 +166,8 @@ func (c *commonInst) CreateInst(kit *rest.Kit, obj metadata.Object,
 }
 
 // CreateManyInstance batch create instance by object and create message
-func (c *commonInst) CreateManyInstance(kit *rest.Kit, objID string,
-	data []mapstr.MapStr) (*metadata.CreateManyCommInstResultDetail, error) {
+func (c *commonInst) CreateManyInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) (
+	*metadata.CreateManyCommInstResultDetail, error) {
 
 	if len(data) == 0 {
 		blog.Errorf("details cannot be empty, rid: %s", kit.Rid)
@@ -234,8 +234,8 @@ func (c *commonInst) CreateManyInstance(kit *rest.Kit, objID string,
 }
 
 // CreateInstBatch batch create instance by excel
-func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj metadata.Object,
-	batchInfo *metadata.InstBatchInfo) (*BatchResult, error) {
+func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj metadata.Object, batchInfo *metadata.InstBatchInfo) (
+	*BatchResult, error) {
 
 	isMainline, err := c.validObject(kit, obj)
 	if err != nil {
@@ -304,10 +304,9 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj metadata.Object,
 			delete(colInput, common.BKAppIDField)
 
 			// generate audit log of instance.
-			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit,
-				metadata.AuditUpdate).WithUpdateFields(colInput)
-			auditLog, ccErr := audit.GenerateAuditLogByCondGetData(generateAuditParameter,
-				obj.GetObjectID(), filter)
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).
+				WithUpdateFields(colInput)
+			auditLog, ccErr := audit.GenerateAuditLogByCondGetData(generateAuditParameter, obj.GetObjectID(), filter)
 			if ccErr != nil {
 				blog.Errorf(" update inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 				return nil, ccErr
@@ -339,8 +338,8 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj metadata.Object,
 		rsp, err := c.clientSet.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, obj.ObjectID, instCond)
 		if err != nil {
 			blog.Errorf("failed to create object instance, err: %v, rid: %s", err, kit.Rid)
-			errStr := c.language.CreateDefaultCCLanguageIf(
-				util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error())
+			errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef(
+				"import_row_int_error_str", colIdx, err.Error())
 			colIdxList = append(colIdxList, int(colIdx))
 			colIdxErrMap[int(colIdx)] = errStr
 			continue
@@ -348,8 +347,8 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj metadata.Object,
 
 		if err = rsp.CCError(); err != nil {
 			blog.Errorf("failed to create object instance ,err: %v, rid: %s", err, kit.Rid)
-			errStr := c.language.CreateDefaultCCLanguageIf(
-				util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error())
+			errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef(
+				"import_row_int_error_str", colIdx, err.Error())
 			colIdxList = append(colIdxList, int(colIdx))
 			colIdxErrMap[int(colIdx)] = errStr
 			continue
@@ -578,14 +577,12 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 		dc := &metadata.DeleteOption{Condition: delCond}
 		rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, objID, dc)
 		if err != nil {
-			blog.Errorf("delete inst failed, err: %v, cond: %#v, rid: %s",
-				err, delCond, kit.Rid)
+			blog.Errorf("delete inst failed, err: %v, cond: %#v, rid: %s", err, delCond, kit.Rid)
 			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if err := rsp.CCError(); err != nil {
-			blog.Errorf("delete inst failed, err: %v, cond: %#v, rid: %s",
-				err, delCond, kit.Rid)
+			blog.Errorf("delete inst failed, err: %v, cond: %#v, rid: %s", err, delCond, kit.Rid)
 			return err
 		}
 	}
@@ -596,8 +593,8 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 			ccErr := c.clientSet.CoreService().SetTemplate().
 				DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, setIDs)
 			if ccErr != nil {
-				blog.Errorf("failed to delete set template sync status failed, "+
-					"bizID: %d, setIDs: %+v, err: %v, rid: %s", bizID, setIDs, ccErr, kit.Rid)
+				blog.Errorf("failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %v, "+
+					"rid: %s", bizID, setIDs, ccErr, kit.Rid)
 				return ccErr
 			}
 		}
@@ -625,8 +622,8 @@ func (c *commonInst) FindInst(kit *rest.Kit, objID string, cond *metadata.QueryI
 		}
 
 		if err = rsp.CCError(); err != nil {
-			blog.Errorf("search object(%s) inst by the condition(%#v) failed, err: %v, rid: %s",
-				objID, cond, err, kit.Rid)
+			blog.Errorf("search object(%s) inst by the condition(%#v) failed, err: %v, rid: %s", objID, cond,
+				err, kit.Rid)
 			return nil, err
 		}
 
@@ -647,8 +644,8 @@ func (c *commonInst) FindInst(kit *rest.Kit, objID string, cond *metadata.QueryI
 		}
 
 		if err = rsp.CCError(); err != nil {
-			blog.Errorf("search object(%s) inst by the condition(%#v) failed, err: %v, rid: %s",
-				objID, cond, err, kit.Rid)
+			blog.Errorf("search object(%s) inst by the condition(%#v) failed, err: %v, rid: %s", objID, cond,
+				err, kit.Rid)
 			return nil, err
 		}
 
@@ -685,8 +682,8 @@ func (c *commonInst) UpdateInst(kit *rest.Kit, cond, data mapstr.MapStr, objID s
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if err = rsp.CCError(); err != nil {
-		blog.Errorf("update the object(%s) inst by the condition(%#v) failed, err: %v, rid: %s",
-			objID, cond, err, kit.Rid)
+		blog.Errorf("update the object(%s) inst by the condition(%#v) failed, err: %v, rid: %s", objID, cond,
+			err, kit.Rid)
 		return err
 	}
 
@@ -700,8 +697,8 @@ func (c *commonInst) UpdateInst(kit *rest.Kit, cond, data mapstr.MapStr, objID s
 }
 
 // SearchObjectInstances searches object instances.
-func (c *commonInst) SearchObjectInstances(kit *rest.Kit, objID string,
-	input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error) {
+func (c *commonInst) SearchObjectInstances(kit *rest.Kit, objID string, input *metadata.CommonSearchFilter) (
+	*metadata.CommonSearchResult, error) {
 
 	// search conditions.
 	cond, err := input.GetConditions()
@@ -762,23 +759,23 @@ func (c *commonInst) CountObjectInstances(kit *rest.Kit, objID string,
 }
 
 // FindInstChildTopo find instance's child topo
-func (c *commonInst) FindInstChildTopo(kit *rest.Kit, obj metadata.Object, instID int64,
-	query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error) {
+func (c *commonInst) FindInstChildTopo(kit *rest.Kit, obj metadata.Object, instID int64, query *metadata.QueryInput) (
+	int, []*CommonInstTopo, error) {
 
 	return c.findInstTopo(kit, obj, instID, query, true)
 }
 
 // FindInstParentTopo find instance's parent topo
-func (c *commonInst) FindInstParentTopo(kit *rest.Kit, obj metadata.Object, instID int64,
-	query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error) {
+func (c *commonInst) FindInstParentTopo(kit *rest.Kit, obj metadata.Object, instID int64, query *metadata.QueryInput) (
+	int, []*CommonInstTopo, error) {
 
 	return c.findInstTopo(kit, obj, instID, query, false)
 }
 
-func (c *commonInst) findInstTopo(kit *rest.Kit, obj metadata.Object, instID int64,
-	query *metadata.QueryInput, needChild bool) (count int, results []*CommonInstTopo, err error) {
+func (c *commonInst) findInstTopo(kit *rest.Kit, obj metadata.Object, instID int64, query *metadata.QueryInput,
+	needChild bool) (int, []*CommonInstTopo, error) {
 
-	results = make([]*CommonInstTopo, 0)
+	results := make([]*CommonInstTopo, 0)
 	if query == nil {
 		query = &metadata.QueryInput{
 			Condition: mapstr.MapStr{
@@ -853,8 +850,8 @@ func (c *commonInst) findInstTopo(kit *rest.Kit, obj metadata.Object, instID int
 }
 
 // FindInstTopo find instance all topo which include it's child and parent
-func (c *commonInst) FindInstTopo(kit *rest.Kit, obj metadata.Object, instID int64,
-	query *metadata.QueryInput) (count int, results []CommonInstanceTopo, err error) {
+func (c *commonInst) FindInstTopo(kit *rest.Kit, obj metadata.Object, instID int64, query *metadata.QueryInput) (int,
+	[]CommonInstanceTopo, error) {
 
 	if query == nil {
 		query = &metadata.QueryInput{Condition: mapstr.MapStr{obj.GetInstIDFieldName(): instID}}
@@ -866,6 +863,7 @@ func (c *commonInst) FindInstTopo(kit *rest.Kit, obj metadata.Object, instID int
 		return 0, nil, err
 	}
 
+	results := make([]CommonInstanceTopo, 0)
 	for _, inst := range insts.Info {
 		id, err := inst.Int64(metadata.GetInstIDFieldByObjID(obj.ObjectID))
 		if err != nil {
@@ -911,6 +909,7 @@ func (c *commonInst) FindInstTopo(kit *rest.Kit, obj metadata.Object, instID int
 }
 
 func (c *commonInst) validMainLineParentID(kit *rest.Kit, assoc *metadata.Association, data mapstr.MapStr) error {
+
 	if assoc.ObjectID == common.BKInnerObjIDApp {
 		return nil
 	}
@@ -954,7 +953,7 @@ func (c *commonInst) isValidBizInstID(kit *rest.Kit, objID string, instID int64,
 	}
 
 	rsp, err := c.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID,
-		&metadata.QueryCondition{Condition: cond})
+		&metadata.QueryCondition{Condition: cond, DisableCounter: true})
 	if err != nil {
 		blog.Errorf("failed to request object controller, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -966,7 +965,7 @@ func (c *commonInst) isValidBizInstID(kit *rest.Kit, objID string, instID int64,
 		return err
 	}
 
-	if rsp.Data.Count > 0 {
+	if len(rsp.Data.Info) > 0 {
 		return nil
 	}
 
@@ -991,7 +990,7 @@ func (c *commonInst) validObject(kit *rest.Kit, obj metadata.Object) (*metadata.
 		common.AssociationKindIDField: common.AssociationKindMainline,
 	}
 	asst, err := c.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: cond})
+		&metadata.QueryCondition{Condition: cond, DisableCounter: true})
 	if err != nil {
 		blog.Errorf("search object association failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
@@ -1073,7 +1072,10 @@ func (c *commonInst) hasHost(kit *rest.Kit, instances []mapstr.MapStr, objID str
 				common.AssociationKindIDField: common.AssociationKindMainline,
 				common.BKObjIDField: mapstr.MapStr{
 					common.BKDBNIN: []string{common.BKInnerObjIDSet, common.BKInnerObjIDModule},
-				}}}
+				},
+			},
+			DisableCounter: true,
+		}
 		asstRsp, err := c.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, mainlineCond)
 		if err != nil {
 			blog.Errorf("search mainline association failed, error: %v, rid: %s", err, kit.Rid)
@@ -1180,7 +1182,7 @@ func (c *commonInst) innerHasHost(kit *rest.Kit, moduleIDS []int64) (bool, error
 		return false, err
 	}
 
-	return 0 != len(rsp.Data.Info), nil
+	return len(rsp.Data.Info) != 0, nil
 }
 
 // GetObjectWithInsts get object with insts, get parent or child depends on needChild
@@ -1286,7 +1288,7 @@ func (c *commonInst) searchAssoObjects(kit *rest.Kit, isNeedChild bool, cond map
 	error) {
 	// TODO after merge can replace to SearchObjectAssociation
 	rsp, err := c.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: cond})
+		&metadata.QueryCondition{Condition: cond, DisableCounter: true})
 	if err != nil {
 		blog.Errorf("search object association failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
@@ -1309,7 +1311,7 @@ func (c *commonInst) searchAssoObjects(kit *rest.Kit, isNeedChild bool, cond map
 
 	// TODO after merge can replace by SearchObject
 	rspRst, err := c.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: cond})
+		&metadata.QueryCondition{Condition: cond, DisableCounter: true})
 	if err != nil {
 		blog.Errorf("search object failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
