@@ -33,6 +33,5 @@
         return this.dynamicGroupForm.propertyMap[this.target] || []
       }
     }
-        
   }
 </script>

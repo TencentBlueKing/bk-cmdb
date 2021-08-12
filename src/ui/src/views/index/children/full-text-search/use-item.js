@@ -58,16 +58,23 @@ export default function useItem(list, root) {
     return normalizationList
   })
 
-  const handleGoResourceHost = (host) => {
-    root.$routerActions.redirect({
+  const handleGoResourceHost = (host, newTab = true) => {
+    const to = {
       name: MENU_RESOURCE_HOST_DETAILS,
       params: {
         id: host.bk_host_id
       },
       history: true
-    })
+    }
+
+    if (newTab) {
+      root.$routerActions.open(to)
+      return
+    }
+
+    root.$routerActions.redirect(to)
   }
-  const handleGoInstace = (source) => {
+  const handleGoInstace = (source, newTab = true) => {
     const model = getModelById(source.bk_obj_id)
     const isPauserd = getModelById(source.bk_obj_id).bk_ispaused
     if (model.bk_classification_id === 'bk_biz_topo') {
@@ -83,45 +90,68 @@ export default function useItem(list, root) {
       })
       return
     }
-    root.$routerActions.redirect({
+
+    const to = {
       name: MENU_RESOURCE_INSTANCE_DETAILS,
       params: {
         objId: source.bk_obj_id,
         instId: source.bk_inst_id
       },
       history: true
-    })
+    }
+
+    if (newTab) {
+      root.$routerActions.open(to)
+      return
+    }
+
+    root.$routerActions.redirect(to)
   }
-  const handleGoBusiness = (source) => {
+  const handleGoBusiness = (source, newTab = true) => {
+    let to = {
+      name: MENU_RESOURCE_BUSINESS_DETAILS,
+      params: { bizId: source.bk_biz_id },
+      history: true
+    }
+
     if (source.bk_data_status === 'disabled') {
-      root.$routerActions.redirect({
+      to = {
         name: MENU_RESOURCE_BUSINESS_HISTORY,
         params: { bizName: source.bk_biz_name },
         history: true
-      })
-    } else {
-      root.$routerActions.redirect({
-        name: MENU_RESOURCE_BUSINESS_DETAILS,
-        params: { bizId: source.bk_biz_id },
-        history: true
-      })
+      }
     }
+
+    if (newTab) {
+      root.$routerActions.open(to)
+      return
+    }
+
+    root.$routerActions.redirect(to)
   }
-  const handleGoModel = (model) => {
-    root.$routerActions.redirect({
+  const handleGoModel = (model, newTab = true) => {
+    const to = {
       name: MENU_MODEL_DETAILS,
       params: {
         modelId: model.bk_obj_id
       },
       history: true
-    })
+    }
+
+    if (newTab) {
+      root.$routerActions.open(to)
+      return
+    }
+
+    root.$routerActions.redirect()
   }
-  const handleGoTopo = (key, source) => {
+  const handleGoTopo = (key, source, newTab = true) => {
     const nodeMap = {
       set: `${key}-${source.bk_set_id}`,
       module: `${key}-${source.bk_module_id}`,
     }
-    root.$routerActions.redirect({
+
+    const to = {
       name: MENU_BUSINESS_HOST_AND_SERVICE,
       params: {
         bizId: source.bk_biz_id
@@ -130,7 +160,14 @@ export default function useItem(list, root) {
         node: nodeMap[key]
       },
       history: true
-    })
+    }
+
+    if (newTab) {
+      root.$routerActions.open(to)
+      return
+    }
+
+    root.$routerActions.redirect(to)
   }
 
   return {
@@ -154,6 +191,7 @@ export const getHighlightValue = (value, data) => {
 
   // 用匹配到的高亮词（不一定等于搜索词）去匹配给定的值，如果命中则返回完整高亮词替代原本的值
   let matched = value
+  // eslint-disable-next-line no-restricted-syntax
   for (const keyword of keywords) {
     const words = keyword.match(/<em>(.+?)<\/em>/)
     if (!words) {

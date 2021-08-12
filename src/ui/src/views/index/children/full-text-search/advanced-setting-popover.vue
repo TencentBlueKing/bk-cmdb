@@ -45,7 +45,7 @@
   import { defineComponent, toRefs } from '@vue/composition-api'
   import ModelSelector  from '@/components/ui/selector/model.vue'
   import useAdvancedSetting from './use-advanced-setting.js'
-  import useRoute from './use-route.js'
+  import useRoute, { pickQuery } from './use-route.js'
 
   export default defineComponent({
     components: {
@@ -79,9 +79,10 @@
           refs.popover.showHandler()
         },
         onConfirm() {
+          const query = pickQuery(route.value.query, ['tab', 'keyword'])
           $routerActions.redirect({
             query: {
-              ...route.value.query,
+              ...query,
               t: Date.now()
             }
           })

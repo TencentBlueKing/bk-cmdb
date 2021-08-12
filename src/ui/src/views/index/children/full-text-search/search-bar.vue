@@ -65,7 +65,7 @@
   import useResult from './use-result.js'
   import useSuggestion from './use-suggestion'
   import useHistory from './use-history'
-  import useRoute from './use-route.js'
+  import useRoute, { pickQuery } from './use-route.js'
   import AdvancedSettingPopover from './advanced-setting-popover.vue'
   import AdvancedSettingResult from './advanced-setting-result.vue'
 
@@ -107,10 +107,11 @@
       const handleSearch = () => {
         $store.commit('fullTextSearch/setSearchHistory', keyword.value)
         forceHide.value = true
+        const query = pickQuery(route.value.query, ['tab'])
         $routerActions.redirect({
           name: $route.name,
           query: {
-            ...route.value.query,
+            ...query,
             keyword: keyword.value,
             t: Date.now()
           }

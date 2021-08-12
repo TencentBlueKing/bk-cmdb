@@ -14,7 +14,7 @@
 <script>
   import { computed, defineComponent } from '@vue/composition-api'
   import { targetMap, currentSetting, handleReset } from './use-advanced-setting.js'
-  import useRoute from './use-route.js'
+  import useRoute, { pickQuery } from './use-route.js'
 
   export default defineComponent({
     setup(props, { root }) {
@@ -49,9 +49,10 @@
 
       const handleClear = () => {
         handleReset()
+        const query = pickQuery(route.value.query, ['tab', 'keyword'])
         $routerActions.redirect({
           query: {
-            ...route.value.query,
+            ...query,
             t: Date.now()
           }
         })
