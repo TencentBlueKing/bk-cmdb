@@ -149,7 +149,7 @@ func (s *Service) SearchObject(ctx *rest.Contexts) {
 		return
 	}
 
-	resp, err := s.Logics.ObjectOperation().FindObject(ctx.Kit, []string{}, data)
+	resp, err := s.Logics.ObjectOperation().FindObject(ctx.Kit, make([]string, 0), data)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

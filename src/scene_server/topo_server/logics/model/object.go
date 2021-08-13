@@ -13,8 +13,6 @@
 package model
 
 import (
-	"fmt"
-
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -25,6 +23,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"fmt"
 )
 
 // ObjectOperationInterface object operation methods
@@ -68,10 +67,10 @@ func (o *object) IsValidObject(kit *rest.Kit, objID string) error {
 	}
 
 	objItems, err := o.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-		common.GetObjectInstTableName(objID, kit.SupplierAccount), []map[string]interface{}{checkObjCond})
+		common.BKTableNameObjDes, []map[string]interface{}{checkObjCond})
 	if err != nil {
-		blog.Errorf("failed to check the object repeated, err: %v, rid: %s", err, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, err.Error())
+		blog.Errorf("failed to search object(%s), err: %v, rid: %s", objID, err, kit.Rid)
+		return err
 	}
 
 	if objItems[0] == 0 {
@@ -118,9 +117,15 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 		return nil, err
 	}
 
-	if err := o.checkClassification(kit, obj.ObjCls); err != nil {
+	exist, err := o.isClassificationExist(kit, obj.ObjCls)
+	if err != nil {
 		blog.Errorf("check classification failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
+	}
+
+	if !exist {
+		blog.Errorf("classification (%s) is non-exist, cannot create object, rid: %s", obj.ObjCls, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrTopoObjectClassificationSelectFailed)
 	}
 
 	if len(obj.ObjIcon) == 0 {
@@ -162,23 +167,52 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 		return nil, err
 	}
 
-	keys := make([]metadata.UniqueKey, 0)
-	attrID, err := o.createAttrs(kit, obj.ObjectID, groupData.GroupID, groupData.GroupName, false)
+	attrs := make([]metadata.Attribute, 0)
+	// create the default inst attribute
+	attrs = append(attrs, metadata.Attribute{
+		ObjectID:          obj.ObjectID,
+		IsOnly:            true,
+		IsPre:             true,
+		Creator:           "user",
+		IsEditable:        true,
+		PropertyIndex:     -1,
+		PropertyGroup:     groupData.GroupID,
+		PropertyGroupName: groupData.GroupName,
+		IsRequired:        true,
+		PropertyType:      common.FieldTypeSingleChar,
+		PropertyID:        common.GetInstNameField(obj.ObjectID),
+		PropertyName:      common.DefaultInstName,
+		OwnerID:           kit.SupplierAccount,
+	})
+
+	if isMainline {
+		attrs = append(attrs, metadata.Attribute{
+			ObjectID:          obj.ObjectID,
+			IsOnly:            true,
+			IsPre:             true,
+			Creator:           "system",
+			IsEditable:        true,
+			IsSystem:          true,
+			PropertyIndex:     -1,
+			PropertyGroup:     groupData.GroupID,
+			PropertyGroupName: groupData.GroupName,
+			IsRequired:        true,
+			PropertyType:      common.FieldTypeInt,
+			PropertyID:        common.BKInstParentStr,
+			PropertyName:      common.BKInstParentStr,
+			OwnerID:           kit.SupplierAccount,
+		})
+	}
+
+	attrIDs, err := o.createAttrs(kit, obj.ObjectID, attrs)
 	if err != nil {
 		blog.Errorf("create model attrs failed, ObjectID: %s, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
 		return nil, err
 	}
 
-	keys = append(keys, metadata.UniqueKey{Kind: metadata.UniqueKeyKindProperty, ID: attrID})
-
-	if isMainline {
-		attrID, err := o.createAttrs(kit, obj.ObjectID, groupData.GroupID, groupData.GroupName, true)
-		if err != nil {
-			blog.Errorf("create model attrs failed, ObjectID: %s, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
-			return nil, err
-		}
-
-		keys = append(keys, metadata.UniqueKey{Kind: metadata.UniqueKeyKindProperty, ID: attrID})
+	keys := make([]metadata.UniqueKey, 0)
+	for _, id := range attrIDs {
+		keys = append(keys, metadata.UniqueKey{Kind: metadata.UniqueKeyKindProperty, ID: id})
 	}
 
 	uni := metadata.ObjectUnique{
@@ -187,7 +221,7 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 		Keys:    keys,
 		Ispre:   false,
 	}
-	// NOTICE: 2021年03月29日  唯一索引与index.MainLineInstanceUniqueIndex,index.InstanceUniqueIndex定义强依赖
+	// NOTICE: 唯一索引与index.MainLineInstanceUniqueIndex,index.InstanceUniqueIndex定义强依赖
 	// 原因：建立模型之前要将表和表中的索引提前建立，mongodb 4.2.6(4.4之前)事务中不能建表，事务操作表中数据操作和建表，建立索引为互斥操作。
 	resp, err := o.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header,
 		uni.ObjID, metadata.CreateModelAttrUnique{Data: uni})
@@ -231,8 +265,7 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
 		metadata.ModelFieldID: id,
 	}
 
-	field := []string{common.BKObjIDField, common.BKObjNameField, common.BKFieldID}
-	objs, err := o.FindObject(kit, field, cond)
+	objs, err := o.FindObject(kit, make([]string, 0), cond)
 	if err != nil {
 		blog.Errorf("failed to find objects, the condition is (%v) err: %v, rid: %s", cond, err, kit.Rid)
 		return err
@@ -297,10 +330,7 @@ func (o *object) canDelete(kit *rest.Kit, objID string) error {
 		return kit.CCError.Error(common.CCErrTopoForbiddenToDeleteModelFailed)
 	}
 
-	cond := mapstr.New()
-	if metadata.IsCommon(objID) {
-		cond.Set(common.BKObjIDField, objID)
-	}
+	cond := mapstr.MapStr{common.BKObjIDField: objID}
 
 	// step 2. ensure model has no instances
 	findInstResponse, err := o.clientSet.CoreService().Instance().CountInstances(kit.Ctx, kit.Header, objID,
@@ -326,11 +356,15 @@ func (o *object) canDelete(kit *rest.Kit, objID string) error {
 	or = append(or, mapstr.MapStr{common.BKObjIDField: objID})
 	or = append(or, mapstr.MapStr{common.AssociatedObjectIDField: objID})
 
-	assocResult, err := o.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{
-			Condition:      map[string]interface{}{common.BKDBOR: or},
-			DisableCounter: true,
-		})
+	queryCond := &metadata.QueryCondition{
+		Condition: map[string]interface{}{common.BKDBOR: []mapstr.MapStr{
+			{common.BKObjIDField: objID},
+			{common.AssociatedObjectIDField: objID},
+		}},
+		DisableCounter: true,
+	}
+
+	assocResult, err := o.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, queryCond)
 	if err != nil {
 		blog.Errorf("get object[%s] associate info failed, err: %v, rid: %s", objID, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -342,40 +376,11 @@ func (o *object) canDelete(kit *rest.Kit, objID string) error {
 	}
 
 	if len(assocResult.Data.Info) != 0 {
-		blog.Errorf("object[%s] has already associate to another one., rid: %s", objID, kit.Rid)
+		blog.Errorf("object[%s] has already associate to another one, rid: %s", objID, kit.Rid)
 		return kit.CCError.Error(common.CCErrorTopoObjectHasAlreadyAssociated)
 	}
 
 	return nil
-}
-
-func (o *object) isFrom(kit *rest.Kit, fromObjID []string, cond mapstr.MapStr) (map[string]bool, error) {
-
-	asstItems, err := o.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{
-			Condition: mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: fromObjID}},
-			Fields:    []string{common.BKAsstObjIDField, common.BKObjIDField},
-		})
-
-	if err != nil {
-		blog.Errorf("search object association failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
-	}
-
-	if err = asstItems.CCError(); err != nil {
-		blog.Errorf("search object[%s] association failed, err: %v, rid: %s", fromObjID, err, kit.Rid)
-		return nil, err
-	}
-
-	result := make(map[string]bool, 0)
-	for _, asst := range asstItems.Data.Info {
-		result[asst.AsstObjID] = false
-		if asst.AsstObjID == cond[asst.ObjectID] {
-			result[asst.AsstObjID] = true
-		}
-	}
-
-	return result, nil
 }
 
 // FindObjectTopo search object topo by condition
@@ -402,20 +407,25 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 	}
 
 	if len(objs.Data.Info) == 0 {
-		return []metadata.ObjectTopo{}, nil
+		return make([]metadata.ObjectTopo, 0), nil
 	}
 
-	var objectIDs []string
+	objectIDs := make([]string, 0)
 	objMap := make(map[string]metadata.Object, 0)
-	for index := range objs.Data.Info {
-		objectIDs = append(objectIDs, objs.Data.Info[index].ObjectID)
-		objMap[objs.Data.Info[index].ObjectID] = objs.Data.Info[index]
+	for _, item := range objs.Data.Info {
+		objectIDs = append(objectIDs, item.ObjectID)
+		objMap[item.ObjectID] = item
 	}
 
 	// search object association
 	asstItems, err := o.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
 		&metadata.QueryCondition{
-			Condition:      mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objectIDs}},
+			Condition: mapstr.MapStr{
+				common.BKDBOR: []mapstr.MapStr{
+					{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objectIDs}},
+					{common.BKAsstObjIDField: mapstr.MapStr{common.BKDBIN: objectIDs}},
+				},
+			},
 			Fields:         []string{common.AssociationKindIDField, common.BKObjIDField, common.BKAsstObjIDField},
 			DisableCounter: true,
 		})
@@ -435,13 +445,27 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 		return []metadata.ObjectTopo{}, nil
 	}
 
-	var asstKinds, asstObjIDs []string
-	assocObjsMap := mapstr.New()
-	for index := range asstItems.Data.Info {
-		asstKinds = append(asstKinds, asstItems.Data.Info[index].AsstKindID)
-		asstObjIDs = append(asstObjIDs, asstItems.Data.Info[index].AsstObjID)
-		assocObjsMap.Set(asstItems.Data.Info[index].AsstObjID, asstItems.Data.Info[index].ObjectID)
+	asstKinds := make([]string, 0)
+	asstObjIDs := make([]string, 0)
+	assocObjsMap := map[string][]string{}
+	assocAsstObjsMap := map[string][]string{}
+	for _, item := range asstItems.Data.Info {
+		asstKinds = append(asstKinds, item.AsstKindID)
+		assocObjsMap[item.ObjectID] = append(assocObjsMap[item.ObjectID], item.AsstObjID)
+		assocAsstObjsMap[item.AsstObjID] = append(assocAsstObjsMap[item.AsstObjID], item.ObjectID)
 	}
+
+	cycle := mapstr.New()
+	for _, objid := range objectIDs {
+		asstObjIDs = append(asstObjIDs, assocObjsMap[objid]...)
+
+		for _, item := range asstItems.Data.Info {
+			if objid == item.AsstObjID && util.InArray(item.ObjectID, assocObjsMap[objid]) {
+				cycle[objid] = item.ObjectID
+			}
+		}
+	}
+	asstObjIDs = util.RemoveDuplicatesAndEmpty(asstObjIDs)
 
 	// search association type
 	assocType, err := o.clientSet.CoreService().Association().ReadAssociationType(kit.Ctx, kit.Header,
@@ -462,7 +486,7 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 	}
 
 	if len(assocType.Data.Info) == 0 {
-		blog.Errorf("get association kind[%#v] failed, err: can not find this association kind., rid: %s",
+		blog.Errorf("get association kind[%#v] failed, err: can not find this association kind, rid: %s",
 			asstKinds, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrorTopoAsstKindIsNotExist)
 	}
@@ -498,15 +522,12 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 		asstObjMap[asstObjs.Data.Info[index].ObjectID] = asstObjs.Data.Info[index]
 	}
 
-	// search direction of association
-	isFromMap, err := o.isFrom(kit, asstObjIDs, assocObjsMap)
-	if err != nil {
-		blog.Errorf("check direction of association failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
 	results := make([]metadata.ObjectTopo, 0)
 	for _, assoc := range asstItems.Data.Info {
+		if !util.InArray(assoc.ObjectID, objectIDs) {
+			continue
+		}
+
 		tmp := metadata.ObjectTopo{}
 		tmp.Label = assocTypeMap[assoc.AsstKindID].AssociationKindName
 		tmp.LabelName = assocTypeMap[assoc.AsstKindID].AssociationKindName
@@ -521,7 +542,7 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 		tmp.To.Position = asstObjMap[assoc.AsstObjID].Position
 		tmp.To.ObjName = asstObjMap[assoc.AsstObjID].ObjectName
 
-		if isFromMap[objMap[assoc.ObjectID].ObjectID] {
+		if asstObjMap[assoc.AsstObjID].ObjectID == cycle[objMap[assoc.ObjectID].ObjectID] {
 			tmp.Arrows = "to,from"
 		} else {
 			tmp.Arrows = "to"
@@ -614,7 +635,6 @@ func (o *object) isValid(kit *rest.Kit, isUpdate bool, data mapstr.MapStr) (*met
 	}
 
 	if !isUpdate || data.Exists(metadata.ModelFieldObjectID) {
-
 		if err := util.ValidModelIDField(data[metadata.ModelFieldObjectID],
 			metadata.ModelFieldObjectID, kit.CCError); err != nil {
 			blog.Errorf("failed to valid the object id(%s), rid: %s", metadata.ModelFieldObjectID, kit.Rid)
@@ -643,89 +663,61 @@ func (o *object) isValid(kit *rest.Kit, isUpdate bool, data mapstr.MapStr) (*met
 	return obj, nil
 }
 
-func (o *object) checkClassification(kit *rest.Kit, clsID string) error {
+func (o *object) isClassificationExist(kit *rest.Kit, clsID string) (bool, error) {
 
-	objCls, err := o.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{
-			Condition:      mapstr.MapStr{common.BKClassificationIDField: clsID},
-			DisableCounter: true,
-		})
+	filter := make([]map[string]interface{}, 0)
+	filter = append(filter, map[string]interface{}{common.BKClassificationIDField: clsID})
+	objCls, err := o.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameObjClassification, filter)
 	if err != nil {
 		blog.Errorf("get object classification failed, err: %v, rid: %s", err, kit.Rid)
-		return err
+		return false, err
 	}
 
-	if err = objCls.CCError(); err != nil {
-		blog.Errorf("get object classification failed, err: %v, rid: %s", err, kit.Rid)
-		return err
-	}
-
-	if len(objCls.Data.Info) == 0 {
+	if len(objCls) == 0 {
 		blog.Errorf("can't find classification by params, classification: %s is not exist, rid: %s",
 			clsID, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKClassificationIDField)
+		return false, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKClassificationIDField)
 	}
 
-	return nil
+	if objCls[0] == 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
-func (o *object) createAttrs(kit *rest.Kit, objID, groupID, groupNmae string, isParent bool) (uint64, error) {
-
-	// create the default inst attribute
-	attr := metadata.Attribute{
-		ObjectID:          objID,
-		IsOnly:            true,
-		IsPre:             true,
-		Creator:           "user",
-		IsEditable:        true,
-		PropertyIndex:     -1,
-		PropertyGroup:     groupID,
-		PropertyGroupName: groupNmae,
-		IsRequired:        true,
-		PropertyType:      common.FieldTypeSingleChar,
-		PropertyID:        common.GetInstNameField(objID),
-		PropertyName:      common.DefaultInstName,
-		OwnerID:           kit.SupplierAccount,
-	}
-
-	if isParent {
-		attr.Creator = "system"
-		attr.IsSystem = true
-		attr.PropertyType = common.FieldTypeInt
-		attr.PropertyID = common.BKInstParentStr
-		attr.PropertyName = common.BKInstParentStr
-	}
+func (o *object) createAttrs(kit *rest.Kit, objID string, attrs []metadata.Attribute) ([]uint64, error) {
 
 	// create a new record
 	rspAttr, err := o.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header,
-		attr.ObjectID, &metadata.CreateModelAttributes{Attributes: []metadata.Attribute{attr}})
+		objID, &metadata.CreateModelAttributes{Attributes: attrs})
 	if err != nil {
 		blog.Errorf("failed to request coreService to create model attrs, err: %v, ObjectID: %s, input: %#v, rid: %s",
-			err, attr.ObjectID, attr, kit.Rid)
-		return 0, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			err, objID, attrs, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if err = rspAttr.CCError(); err != nil {
 		blog.Errorf("create model attrs failed, ObjectID: %s, input: %#v, err: %v, rid: %s",
-			attr.ObjectID, attr, err, kit.Rid)
-		return 0, rspAttr.CCError()
+			objID, attrs, err, kit.Rid)
+		return nil, rspAttr.CCError()
 	}
 
 	for _, exception := range rspAttr.Data.Exceptions {
-		return 0, kit.CCError.New(int(exception.Code), exception.Message)
+		return nil, kit.CCError.New(int(exception.Code), exception.Message)
 	}
 
 	if len(rspAttr.Data.Repeated) > 0 {
 		blog.Errorf("create model attrs failed, the attr is duplicated, ObjectID: %s, input: %#v, rid: %s",
-			attr.ObjectID, attr, kit.Rid)
-		return 0, kit.CCError.CCError(common.CCErrorAttributeNameDuplicated)
+			objID, attrs, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrorAttributeNameDuplicated)
 	}
 
-	if len(rspAttr.Data.Created) != 1 {
-		blog.Errorf("create model attrs created amount error, ObjectID: %s, input: %#v, rid: %s",
-			attr.ObjectID, attr, kit.Rid)
-		return 0, kit.CCError.CCError(common.CCErrTopoObjectAttributeCreateFailed)
+	result := make([]uint64, 0)
+	for _, item := range rspAttr.Data.Created {
+		result = append(result, item.ID)
 	}
 
-	return rspAttr.Data.Created[0].ID, nil
+	return result, nil
 }
