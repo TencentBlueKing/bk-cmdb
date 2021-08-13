@@ -391,7 +391,8 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	attrCond := condition.CreateCondition()
 	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
 	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
-	attrArr, err := s.Core.AttributeOperation().FindBusinessAttribute(ctx.Kit, attrCond.ToMapStr(), common.BKInnerObjIDApp)
+	attrArr, err := s.Logics.AttributeOperation().FindObjectAttribute(ctx.Kit, attrCond.ToMapStr(),
+		common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed get the business attribute, %s, rid:%s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)

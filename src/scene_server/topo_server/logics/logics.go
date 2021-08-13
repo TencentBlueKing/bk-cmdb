@@ -43,6 +43,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 func (l *logics) ClassificationOperation() model.ClassificationOperationInterface {
 	return l.classification
 }
+
 func (l *logics) AttributeOperation() model.AttributeOperationInterface {
 	return l.attribute
 }
