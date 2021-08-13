@@ -157,10 +157,11 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 		setModules[module.SetID] = append(setModules[module.SetID], module)
 	}
 
-	checkResult := make(map[int64]bool, len(setModules))
-	for idx, module := range setModules {
-		checkResult[idx] = diffModuleServiceTpl(svcTplCnt, svcTplMap, int64(len(module)), module)
-		if isInterrupt && checkResult[idx] {
+	checkResult := make(map[int64]bool, len(setIDs))
+	for _, setID := range setIDs {
+		module := setModules[setID]
+		checkResult[setID] = diffModuleServiceTpl(svcTplCnt, svcTplMap, int64(len(module)), module)
+		if isInterrupt && checkResult[setID] {
 			return checkResult, nil
 		}
 	}
