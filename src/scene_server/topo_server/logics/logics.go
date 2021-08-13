@@ -37,7 +37,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 
 	return &logics{
 		classification: classificationOperation,
-		module: moduleOperation,
+		module:         moduleOperation,
 	}
 }
 
