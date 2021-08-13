@@ -7,7 +7,6 @@
       <template v-for="(property, childIndex) in properties">
         <div class="desc-item hl"
           :key="childIndex"
-          v-if="data.source[property.bk_property_id]"
           v-html="`${property.bk_property_name}：${getText(property, data)}`">
         </div>
       </template>
@@ -31,10 +30,17 @@
         default: () => ({})
       }
     },
-    setup(props) {
+    setup(props, { root }) {
       const { propertyMap } = toRefs(props)
 
-      const properties = computed(() => propertyMap.value.set)
+      const properties = computed(() => {
+        const properties = propertyMap.value.set || []
+        properties.unshift({
+          bk_property_id: 'bk_set_id',
+          bk_property_name: root.$t('ID'),
+        })
+        return properties
+      })
 
       return {
         properties,
