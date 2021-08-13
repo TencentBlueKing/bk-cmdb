@@ -13,6 +13,9 @@
 package inst
 
 import (
+	"fmt"
+	"strings"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -25,15 +28,13 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/version"
-	"strings"
 )
 
 // SetOperationInterface set operation methods
 type SetOperationInterface interface {
-	CreateSet(kit *rest.Kit, obj metadata.Object, bizID int64, data mapstr.MapStr) (*metadata.CreateOneDataResult, error)
+	CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*metadata.CreateOneDataResult, error)
 	DeleteSet(kit *rest.Kit, bizID int64, setIDS []int64) error
-	FindSet(kit *rest.Kit, objID string, cond *metadata.QueryInput) (*metadata.InstResult, error)
-	UpdateSet(kit *rest.Kit, data mapstr.MapStr, objID string, bizID, setID int64) error
+	UpdateSet(kit *rest.Kit, data mapstr.MapStr, bizID, setID int64) error
 }
 
 // NewSetOperation create a set instance
@@ -263,23 +264,19 @@ func (s *set) FindObject(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Object, 
 }
 
 // CreateModule create a new module
-func (s *set) CreateModule(kit *rest.Kit, obj metadata.Object, bizID, setID int64,
-	data mapstr.MapStr) (*metadata.CreateOneDataResult, error) {
+func (s *set) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.MapStr) (*metadata.CreateOneDataResult,
+	error) {
 
 	data.Set(common.BKSetIDField, setID)
 	data.Set(common.BKAppIDField, bizID)
 	if !data.Exists(common.BKDefaultField) {
 		data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	}
+
 	defaultVal, err := data.Int64(common.BKDefaultField)
 	if err != nil {
 		blog.Errorf("parse default field into int failed, data: %+v, rid: %s", data, kit.Rid)
-		err := kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKDefaultField)
-		return nil, err
-	}
-
-	if err := s.validBizSetID(kit, bizID, setID); err != nil {
-		return nil, err
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKDefaultField)
 	}
 
 	// validate service category id and service template id
@@ -318,7 +315,7 @@ func (s *set) CreateModule(kit *rest.Kit, obj metadata.Object, bizID, setID int6
 		defaultServiceCategory, err := s.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx,
 			kit.Header)
 		if err != nil {
-			blog.Errorf("create module failed, GetDefaultServiceCategory failed, err: %s, rid: %s", err.Error(), kit.Rid)
+			blog.Errorf("get default service category failed, err: %s, rid: %s", err, kit.Rid)
 			return nil, kit.CCError.Errorf(common.CCErrProcGetDefaultServiceCategoryFailed)
 		}
 		serviceCategoryID = defaultServiceCategory.ID
@@ -334,7 +331,7 @@ func (s *set) CreateModule(kit *rest.Kit, obj metadata.Object, bizID, setID int6
 			return nil, err
 		}
 		if len(stResult.Info) == 0 {
-			blog.ErrorJSON("create module failed, service template not found, filter: %s, rid: %s", option, kit.Rid)
+			blog.Errorf("get service template not found, filter: %s, rid: %s", option, kit.Rid)
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 		}
 		if serviceCategoryExist == true && serviceCategoryID != stResult.Info[0].ServiceCategoryID {
@@ -349,7 +346,8 @@ func (s *set) CreateModule(kit *rest.Kit, obj metadata.Object, bizID, setID int6
 			return nil, err
 		}
 		if serviceCategory.BizID != 0 && serviceCategory.BizID != bizID {
-			blog.V(3).Info("create module failed, service category and module belong to two business, categoryBizID: %d, bizID: %d, rid: %s", serviceCategory.BizID, bizID, kit.Rid)
+			blog.V(3).Info("get service category and module belong to two business, categoryBizID: %d, "+
+				"bizID: %d, rid: %s", serviceCategory.BizID, bizID, kit.Rid)
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
 		}
 	}
@@ -365,30 +363,33 @@ func (s *set) CreateModule(kit *rest.Kit, obj metadata.Object, bizID, setID int6
 
 	// convert bk_parent_id to int
 	parentIDIf, ok := data[common.BKParentIDField]
-	if ok == true {
+	if ok {
 		parentID, err := util.GetInt64ByInterface(parentIDIf)
 		if err != nil {
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
 		}
+		if parentID != setID {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
+		}
 		data[common.BKParentIDField] = parentID
 	}
-
 	data.Remove(common.MetadataField)
+
+	// TODO 替换依赖CreateInst,obj参数从何而来？如果CreateModule()去掉obj入参？？？
+	obj := metadata.Object{}
 	inst, createErr := s.CreateInst(kit, obj, data)
 	if createErr != nil {
 		moduleNameStr, exist := data[common.BKModuleNameField]
 		if exist == false {
-			return inst, err
+			return inst, fmt.Errorf("get module name failed, moduleNameStr: %s", moduleNameStr)
 		}
 		moduleName := util.GetStrByInterface(moduleNameStr)
-		isDuplicate, err := s.IsModuleNameDuplicateError(kit, bizID, setID, moduleName, createErr)
-		if err != nil {
-			blog.Infof("create module failed and check whether is name duplicated err failed, bizID: %d, setID: %d, moduleName: %s, err: %+v, rid: %s", bizID, setID, moduleName, err, kit.Rid)
+		if _, err := s.IsModuleNameDuplicateError(kit, bizID, setID, moduleName, createErr); err != nil {
+			blog.Infof("create module failed and check whether is name duplicated err failed, bizID: %d,"+
+				"setID: %d , moduleName: %s, err: %+v, rid: %s", bizID, setID, moduleName, err, kit.Rid)
 			return inst, err
 		}
-		if isDuplicate {
-			return inst, kit.CCError.CCError(common.CCErrorTopoModuleNameDuplicated)
-		}
+
 		return inst, createErr
 	}
 
@@ -875,8 +876,7 @@ func (s *set) hasHost(kit *rest.Kit, bizID int64, setIDS []int64) (bool, error) 
 }
 
 // CreateSet create a new set
-func (s *set) CreateSet(kit *rest.Kit, obj metadata.Object, bizID int64,
-	data mapstr.MapStr) (*metadata.CreateOneDataResult, error) {
+func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*metadata.CreateOneDataResult, error) {
 	data.Set(common.BKAppIDField, bizID)
 
 	if !data.Exists(common.BKDefaultField) {
@@ -885,11 +885,10 @@ func (s *set) CreateSet(kit *rest.Kit, obj metadata.Object, bizID int64,
 	defaultVal, err := data.Int64(common.BKDefaultField)
 	if err != nil {
 		blog.Errorf("parse default field into int failed, data: %+v, rid: %s", data, kit.Rid)
-		err := kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKDefaultField)
-		return nil, err
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKDefaultField)
 	}
 
-	setTemplate := metadata.SetTemplate{}
+	setTemplate := new(metadata.SetTemplate)
 	// validate foreign key
 	if setTemplateIDIf, ok := data[common.BKSetTemplateIDField]; ok == true {
 		setTemplateID, err := util.GetInt64ByInterface(setTemplateIDIf)
@@ -902,11 +901,10 @@ func (s *set) CreateSet(kit *rest.Kit, obj metadata.Object, bizID int64,
 		if setTemplateID != common.SetTemplateIDNotSet {
 			st, err := s.clientSet.CoreService().SetTemplate().GetSetTemplate(kit.Ctx, kit.Header, bizID, setTemplateID)
 			if err != nil {
-				err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, s.language.CreateDefaultCCLanguageIf(util.
+				return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, s.language.CreateDefaultCCLanguageIf(util.
 					GetLanguage(kit.Header)).Language("set_property_set_template_id"))
-				return nil, err
 			}
-			setTemplate = st
+			setTemplate = &st
 		}
 	}
 
@@ -917,40 +915,34 @@ func (s *set) CreateSet(kit *rest.Kit, obj metadata.Object, bizID int64,
 	data.Set(common.BKSetTemplateIDField, setTemplate.ID)
 	data.Remove(common.MetadataField)
 
+	// TODO 替换CreateInst依赖 obj数据从哪来？？？
+	obj := metadata.Object{}
 	setInstance, err := s.CreateInst(kit, obj, data)
 
 	if err != nil {
-		blog.ErrorJSON("create set instance failed, object: %s, data: %s, err: %s, rid: %s", obj, data, err,
-			kit.Rid)
+		blog.Errorf("create set instance failed, object: %s, data: %s, err: %s, rid: %s", obj, data, err, kit.Rid)
 		// return this duplicate error for unique validation failed
 		if s.isSetDuplicateError(err) {
 			return setInstance, kit.CCError.CCError(common.CCErrorSetNameDuplicated)
 		}
 		return setInstance, err
 	}
-	if setTemplate.ID == 0 {
+	if setTemplate.ID == common.SetTemplateIDNotSet {
 		return setInstance, nil
 	}
-
-	setID := setInstance.Created.ID
 
 	// set create by template should create module at the same time
 	serviceTemplates, err := s.clientSet.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(kit.Ctx, kit.Header,
 		bizID, setTemplate.ID)
 	if err != nil {
-		blog.Errorf("create set failed, ListSetTplRelatedSvcTpl failed, bizID: %d, setTemplateID: %d, err: %s, "+
-			"rid: %s", bizID, setTemplate.ID, err.Error(), kit.Rid)
+		blog.Errorf("create set failed, list set tpl related svc tpl failed, bizID: %d, setTemplateID: %d, " +
+			"err: %s, rid: %s", bizID, setTemplate.ID, err, kit.Rid)
 		return setInstance, err
 	}
 
-	moduleObj, err := s.FindSingleObject(kit, common.BKInnerObjIDModule)
-	if nil != err {
-		blog.Errorf("[operation-set] failed to find module object, error info is %s, rid: %s", err.Error(),
-			kit.Rid)
-		return setInstance, err
-	}
+	setID := setInstance.Created.ID
 	for _, serviceTemplate := range serviceTemplates {
-		createModuleParam := map[string]interface{}{
+		createModuleParam := mapstr.MapStr{
 			common.BKModuleNameField:        serviceTemplate.Name,
 			common.BKServiceTemplateIDField: serviceTemplate.ID,
 			common.BKSetTemplateIDField:     setTemplate.ID,
@@ -958,8 +950,8 @@ func (s *set) CreateSet(kit *rest.Kit, obj metadata.Object, bizID int64,
 			common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
 			common.BKAppIDField:             bizID,
 		}
-		_, err := s.CreateModule(kit, *moduleObj, bizID, int64(setID), createModuleParam)
-		if err != nil {
+		// TODO 替换依赖CreateModule,目前创建模块只能一个一个创建，在CreateModule改成批量创建也是通过遍历循环创建？有区别？
+		if _, err := s.CreateModule(kit, bizID, int64(setID), createModuleParam); err != nil {
 			blog.Errorf("create set instance failed, create module instance failed, bizID: %d, setID: %d, "+
 				"param: %+v, err: %s, rid: %s", bizID, setID, createModuleParam, err.Error(), kit.Rid)
 			return setInstance, err
@@ -972,23 +964,13 @@ func (s *set) CreateSet(kit *rest.Kit, obj metadata.Object, bizID int64,
 // DeleteSet delete set
 func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 	setCond := map[string]interface{}{common.BKAppIDField: bizID}
-	if nil != setIDs {
+	if len(setIDs) > 0 {
 		setCond[common.BKSetIDField] = map[string]interface{}{common.BKDBIN: setIDs}
 	}
 
-	exists, err := s.hasHost(kit, bizID, setIDs)
-	if nil != err {
-		blog.Errorf("[operation-set] failed to check the host, error info is %s, rid: %s", err.Error(), kit.Rid)
-		return err
-	}
-
-	if exists {
-		blog.Errorf("[operation-set] the sets(%#v) has some hosts, rid: %s", setIDs, kit.Rid)
-		return kit.CCError.Error(common.CCErrTopoHasHostCheckFailed)
-	}
-
+	// TODO 替换依赖DeleteInst
 	// clear the module belong to deleted sets
-	err = s.DeleteInst(kit, common.BKInnerObjIDModule, setCond, false)
+	err := s.DeleteInst(kit, common.BKInnerObjIDModule, setCond, false)
 	if err != nil {
 		blog.Errorf("delete module failed, err: %v, cond: %#v, rid: %s", err, setCond, kit.Rid)
 		return err
@@ -997,7 +979,7 @@ func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 	// clear set template sync status
 	if ccErr := s.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID,
 		setIDs); ccErr != nil {
-		blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, "+
+		blog.Errorf("failed to delete set template sync status failed, bizID: %d, setIDs: %+v, "+
 			"err: %s, rid: %s", bizID, setIDs, ccErr.Error(), kit.Rid)
 		return ccErr
 	}
@@ -1006,25 +988,21 @@ func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 	return s.DeleteInst(kit, common.BKInnerObjIDSet, setCond, false)
 }
 
-// FindSet find set by obj id and other condition
-func (s *set) FindSet(kit *rest.Kit, objID string, cond *metadata.QueryInput) (*metadata.InstResult, error) {
-	return s.FindInst(kit, objID, cond)
-}
-
 // UpdateSet update set
-func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, objID string, bizID, setID int64) error {
-	innerCond := condition.CreateCondition()
-	innerCond.Field(common.BKAppIDField).Eq(bizID)
-	innerCond.Field(common.BKSetIDField).Eq(setID)
+func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, bizID, setID int64) error {
+	innerCond := mapstr.MapStr{
+		common.BKAppIDField: bizID,
+		common.BKSetIDField: setID,
+	}
 
 	data.Remove(common.MetadataField)
 	data.Remove(common.BKAppIDField)
 	data.Remove(common.BKSetIDField)
 	data.Remove(common.BKSetTemplateIDField)
-
-	err := s.UpdateInst(kit, innerCond.ToMapStr(), data, objID)
+	// TODO 不知前端是否会传递objID参数
+	err := s.UpdateInst(kit, innerCond, data, "")
 	if err != nil {
-		blog.ErrorJSON("update set instance failed, object: %s, data: %s, innerCond:%s, err: %s, rid: %s", objID,
+		blog.Errorf("update set instance failed, object: %s, data: %s, innerCond:%s, err: %s, rid: %s", "",
 			data, innerCond, err, kit.Rid)
 		// return this duplicate error for unique validation failed
 		if s.isSetDuplicateError(err) {
