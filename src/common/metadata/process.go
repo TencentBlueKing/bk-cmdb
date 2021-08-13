@@ -111,12 +111,6 @@ type SearchHostWithNoSvcInstOutput struct {
 	HostIDs []int64 `json:"bk_host_ids"`
 }
 
-type CreateServiceInstancePreviewInput struct {
-	BizID    int64   `json:"bk_biz_id"`
-	ModuleID int64   `json:"bk_module_id"`
-	HostIDs  []int64 `json:"bk_host_ids"`
-}
-
 type CreateRawProcessInstanceInput struct {
 	BizID             int64                   `json:"bk_biz_id"`
 	ServiceInstanceID int64                   `json:"service_instance_Id"`
