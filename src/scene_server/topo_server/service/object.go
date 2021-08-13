@@ -208,6 +208,33 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 		if err != nil {
 			return err
 		}
+
+		// sync the object name to IAM only if the object name is updated
+		if auth.EnableAuthorize() {
+			// judge whether the data contains object name
+			if _, ok := data[common.BKObjNameField]; !ok {
+				return nil
+			}
+
+			cond := condition.CreateCondition().Field(common.BKFieldID).Eq(id)
+			resp, err := s.Core.ObjectOperation().FindObject(ctx.Kit, cond)
+			if err != nil {
+				blog.ErrorJSON("find object failed, cond: %s, err: %s, rid: %s", cond, err, ctx.Kit.Rid)
+				return err
+			}
+			if len(resp) != 1 {
+				blog.ErrorJSON("find object failed, cond: %s, resp:%s, err: object count is wrong, rid: %s",
+					cond, resp, ctx.Kit.Rid)
+				return ctx.Kit.CCError.New(common.CCErrCommDBSelectFailed, "object count is wrong")
+			}
+
+			objects := []metadata.Object{resp[0].Object()}
+			if err := s.AuthManager.Viewer.UpdateView(ctx.Kit.Ctx, ctx.Kit.Header, objects); err != nil {
+				blog.Errorf("update view failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
+		}
+
 		return nil
 	})
 

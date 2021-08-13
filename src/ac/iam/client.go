@@ -67,8 +67,8 @@ type iamClientInterface interface {
 
 	// RegisterResourcesTypes register resource types in IAM
 	RegisterResourcesTypes(ctx context.Context, resTypes []ResourceType) error
-	// UpdateResourcesTypes update resource types in IAM
-	UpdateResourcesTypes(ctx context.Context, resType ResourceType) error
+	// UpdateResourcesType update resource type in IAM
+	UpdateResourcesType(ctx context.Context, resType ResourceType) error
 	// DeleteResourcesTypes delete resource types in IAM
 	DeleteResourcesTypes(ctx context.Context, resTypeIDs []TypeID) error
 
@@ -105,6 +105,7 @@ type iamClientInterface interface {
 	DeleteActionPolicies(ctx context.Context, actionID ActionID) error
 }
 
+// RegisterSystem register a system in IAM
 func (c *iamClient) RegisterSystem(ctx context.Context, sys System) error {
 	resp := new(BaseResponse)
 	result := c.client.Post().
@@ -127,6 +128,7 @@ func (c *iamClient) RegisterSystem(ctx context.Context, sys System) error {
 	return nil
 }
 
+// GetSystemInfo get a system info from IAM
 // if fields is empty, find all system info
 func (c *iamClient) GetSystemInfo(ctx context.Context, fields []SystemQueryField) (*SystemResp, error) {
 	resp := new(SystemResp)
@@ -163,6 +165,7 @@ func (c *iamClient) GetSystemInfo(ctx context.Context, fields []SystemQueryField
 	return resp, nil
 }
 
+// UpdateSystemConfig update system config in IAM
 // Note: can only update provider_config.host field.
 func (c *iamClient) UpdateSystemConfig(ctx context.Context, config *SysConfig) error {
 	sys := new(System)
@@ -189,6 +192,7 @@ func (c *iamClient) UpdateSystemConfig(ctx context.Context, config *SysConfig) e
 	return nil
 }
 
+// RegisterResourcesTypes register resource types in IAM
 func (c *iamClient) RegisterResourcesTypes(ctx context.Context, resTypes []ResourceType) error {
 	resp := new(BaseResponse)
 	result := c.client.Post().
@@ -212,7 +216,8 @@ func (c *iamClient) RegisterResourcesTypes(ctx context.Context, resTypes []Resou
 
 }
 
-func (c *iamClient) UpdateResourcesTypes(ctx context.Context, resType ResourceType) error {
+// UpdateResourcesType update resource type in IAM
+func (c *iamClient) UpdateResourcesType(ctx context.Context, resType ResourceType) error {
 	resp := new(BaseResponse)
 	result := c.client.Put().
 		SubResourcef("/api/v1/model/systems/%s/resource-types/%s", c.config.SystemID, resType.ID).
@@ -234,6 +239,7 @@ func (c *iamClient) UpdateResourcesTypes(ctx context.Context, resType ResourceTy
 	return nil
 }
 
+// DeleteResourcesTypes delete resource types in IAM
 func (c *iamClient) DeleteResourcesTypes(ctx context.Context, resTypeIDs []TypeID) error {
 
 	ids := make([]struct {
@@ -264,6 +270,7 @@ func (c *iamClient) DeleteResourcesTypes(ctx context.Context, resTypeIDs []TypeI
 	return nil
 }
 
+// RegisterActions register actions in IAM
 func (c *iamClient) RegisterActions(ctx context.Context, actions []ResourceAction) error {
 
 	resp := new(BaseResponse)
@@ -287,6 +294,7 @@ func (c *iamClient) RegisterActions(ctx context.Context, actions []ResourceActio
 	return nil
 }
 
+// UpdateAction update action in IAM
 func (c *iamClient) UpdateAction(ctx context.Context, action ResourceAction) error {
 
 	resp := new(BaseResponse)
@@ -310,6 +318,7 @@ func (c *iamClient) UpdateAction(ctx context.Context, action ResourceAction) err
 	return nil
 }
 
+// DeleteActions delete actions in IAM
 func (c *iamClient) DeleteActions(ctx context.Context, actionIDs []ActionID) error {
 	ids := make([]struct {
 		ID ActionID `json:"id"`
@@ -339,6 +348,7 @@ func (c *iamClient) DeleteActions(ctx context.Context, actionIDs []ActionID) err
 	return nil
 }
 
+// RegisterActionGroups register action groups in IAM
 func (c *iamClient) RegisterActionGroups(ctx context.Context, actionGroups []ActionGroup) error {
 
 	resp := new(BaseResponse)
@@ -362,6 +372,7 @@ func (c *iamClient) RegisterActionGroups(ctx context.Context, actionGroups []Act
 	return nil
 }
 
+// UpdateActionGroups update action groups in IAM
 func (c *iamClient) UpdateActionGroups(ctx context.Context, actionGroups []ActionGroup) error {
 
 	resp := new(BaseResponse)
@@ -408,6 +419,7 @@ func (c *iamClient) RegisterInstanceSelections(ctx context.Context, instanceSele
 	return nil
 }
 
+// UpdateInstanceSelection update instance selection in IAM
 func (c *iamClient) UpdateInstanceSelection(ctx context.Context, instanceSelection InstanceSelection) error {
 
 	resp := new(BaseResponse)
@@ -431,6 +443,7 @@ func (c *iamClient) UpdateInstanceSelection(ctx context.Context, instanceSelecti
 	return nil
 }
 
+// DeleteInstanceSelections delete instance selections in IAM
 func (c *iamClient) DeleteInstanceSelections(ctx context.Context, instanceSelectionIDs []InstanceSelectionID) error {
 	ids := make([]struct {
 		ID InstanceSelectionID `json:"id"`
@@ -460,6 +473,7 @@ func (c *iamClient) DeleteInstanceSelections(ctx context.Context, instanceSelect
 	return nil
 }
 
+// RegisterResourceCreatorActions regitser resource creator actions in IAM
 func (c *iamClient) RegisterResourceCreatorActions(ctx context.Context, resourceCreatorActions ResourceCreatorActions) error {
 
 	resp := new(BaseResponse)
@@ -483,6 +497,7 @@ func (c *iamClient) RegisterResourceCreatorActions(ctx context.Context, resource
 	return nil
 }
 
+// UpdateResourceCreatorActions update resource creator actions in IAM
 func (c *iamClient) UpdateResourceCreatorActions(ctx context.Context, resourceCreatorActions ResourceCreatorActions) error {
 
 	resp := new(BaseResponse)
@@ -506,6 +521,7 @@ func (c *iamClient) UpdateResourceCreatorActions(ctx context.Context, resourceCr
 	return nil
 }
 
+// RegisterCommonActions register common actions in IAM
 func (c *iamClient) RegisterCommonActions(ctx context.Context, commonActions []CommonAction) error {
 	resp := new(BaseResponse)
 	result := c.client.Post().
@@ -530,6 +546,7 @@ func (c *iamClient) RegisterCommonActions(ctx context.Context, commonActions []C
 	return nil
 }
 
+// UpdateCommonActions update common actions in IAM
 func (c *iamClient) UpdateCommonActions(ctx context.Context, commonActions []CommonAction) error {
 	resp := new(BaseResponse)
 	result := c.client.Put().
@@ -554,6 +571,7 @@ func (c *iamClient) UpdateCommonActions(ctx context.Context, commonActions []Com
 	return nil
 }
 
+// DeleteActionPolicies delete action policies in IAM
 func (c *iamClient) DeleteActionPolicies(ctx context.Context, actionID ActionID) error {
 	resp := new(BaseResponse)
 	result := c.client.Delete().
