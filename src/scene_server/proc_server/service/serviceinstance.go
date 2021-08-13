@@ -456,6 +456,92 @@ func (ps *ProcServer) createServiceInstancesPreview(ctx *rest.Contexts, input me
 	return previews, nil
 }
 
+// SearchHostWithNoServiceInstance used for ui to get hosts that has no service instance and can create one
+func (ps *ProcServer) SearchHostWithNoServiceInstance(ctx *rest.Contexts) {
+	input := new(metadata.SearchHostWithNoSvcInstInput)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if input.BizID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKAppIDField))
+		return
+	}
+
+	if input.ModuleID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKModuleIDField))
+		return
+	}
+
+	// get hosts that has service instances, exclude them when creating service instances
+	svcInstOpt := &metadata.ListServiceInstanceOption{
+		BusinessID: input.BizID,
+		ModuleIDs:  []int64{input.ModuleID},
+		Page:       metadata.BasePage{Limit: common.BKNoLimit},
+		HostIDs:    input.HostIDs,
+	}
+	svcInstRes, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, svcInstOpt)
+	if err != nil {
+		blog.Errorf("list service instance failed, err: %v, input: %#v, rid: %s", err, input, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	hasSvcHostIDMap := make(map[int64]struct{})
+	for _, instance := range svcInstRes.Info {
+		hasSvcHostIDMap[instance.HostID] = struct{}{}
+	}
+
+	// if input hosts are specified, exclude the previous hosts. If all of them have service instances, return nothing
+	inputHostIDs := make([]int64, 0)
+	if len(input.HostIDs) > 0 {
+		for _, hostID := range input.HostIDs {
+			if _, exists := hasSvcHostIDMap[hostID]; !exists {
+				inputHostIDs = append(inputHostIDs, hostID)
+			}
+		}
+
+		if len(inputHostIDs) == 0 {
+			ctx.RespEntity(metadata.SearchHostWithNoSvcInstOutput{HostIDs: inputHostIDs})
+			return
+		}
+	}
+
+	// get all hosts that are in the module and satisfies the input rules
+	hostOpt := &metadata.DistinctHostIDByTopoRelationRequest{
+		ApplicationIDArr: []int64{input.BizID},
+		ModuleIDArr:      []int64{input.ModuleID},
+		HostIDArr:        inputHostIDs,
+	}
+	hostRes, rawErr := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, ctx.Kit.Header, hostOpt)
+	if rawErr != nil {
+		blog.Errorf("get host ids failed, err: %v, option: %#v, rid: %s", err, hostOpt, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
+		return
+	}
+
+	if err := hostRes.CCError(); err != nil {
+		blog.Errorf("get host ids failed, err: %v, option: %#v, rid: %s", err, hostOpt, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// exclude the hosts with service instances, since input hosts are filtered before, we do not need to filter here
+	if len(input.HostIDs) > 0 {
+		ctx.RespEntity(metadata.SearchHostWithNoSvcInstOutput{HostIDs: hostRes.Data.IDArr})
+		return
+	}
+
+	hostIDs := make([]int64, 0)
+	for _, hostID := range hostRes.Data.IDArr {
+		if _, exists := hasSvcHostIDMap[hostID]; !exists {
+			hostIDs = append(hostIDs, hostID)
+		}
+	}
+	ctx.RespEntity(metadata.SearchHostWithNoSvcInstOutput{HostIDs: hostIDs})
+}
+
 func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	input := new(metadata.GetServiceInstanceInModuleInput)
 	if err := ctx.DecodeInto(input); err != nil {
