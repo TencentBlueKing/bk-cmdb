@@ -509,6 +509,25 @@ type TopoInstRst struct {
 	Child    []*TopoInstRst `json:"child"`
 }
 
+// TopoNodeHostAndSerInstCount topo节点主机/服务实例数量
+type TopoNodeHostAndSerInstCount struct {
+	ObjID                string `json:"bk_obj_id"`
+	InstID               int64  `json:"bk_inst_id"`
+	HostCount            int64  `json:"host_count"`
+	ServiceInstanceCount int64  `json:"service_instance_count"`
+}
+
+// HostAndSerInstCountOption 获取主机/服务实例查询参数结构
+type HostAndSerInstCountOption struct {
+	Condition []CountOptions `json:"condition"`
+}
+
+// CountOptions 获取主机/服务实例入参条件
+type CountOptions struct {
+	ObjID  string `json:"bk_obj_id"`
+	InstID int64  `json:"bk_inst_id"`
+}
+
 type TopoInstRstVisitor func(tir *TopoInstRst)
 
 func (tir *TopoInstRst) DeepFirstTraverse(visitor TopoInstRstVisitor) {
