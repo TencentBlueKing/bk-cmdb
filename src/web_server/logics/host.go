@@ -450,7 +450,9 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 	if len(f.Sheets) < 2 {
 		return result
 	}
-
+	if len(f.Sheets[1].Rows[common.HostAddMethodExcelAssociationIndexOffset].Cells) < 2 {
+		return result
+	}
 	// if len(f.Sheets) >= 2, the second sheet is association data to be import
 	asstInfoMap := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset)
 	if len(asstInfoMap) == 0 {

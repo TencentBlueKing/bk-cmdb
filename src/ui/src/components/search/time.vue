@@ -1,6 +1,7 @@
 <template>
   <bk-date-picker
     type="datetimerange"
+    transfer
     :value="localValue"
     v-bind="$attrs"
     format="yyyy-MM-dd HH:mm:ss"

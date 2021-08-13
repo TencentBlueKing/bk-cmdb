@@ -67,6 +67,7 @@
                     :data-vv-as="property.bk_property_name"
                     :placeholder="getPlaceholder(property)"
                     :auto-check="false"
+                    v-bind="$tools.getValidateEvents(property)"
                     v-validate="$tools.getValidateRules(property)"
                     v-model.trim="editState.value"
                     :ref="`component-${property.bk_property_id}`">
@@ -425,6 +426,9 @@
             height: 32px;
             width: 260px;
             margin: 0 4px 0 0;
+            > [class^=cmdb-form-] {
+              width: 100%;
+            }
             &.bool {
                 width: 42px;
                 height: 24px;
