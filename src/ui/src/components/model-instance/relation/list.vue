@@ -8,20 +8,17 @@
       </div>
     </div>
     <template v-else>
-      <template v-for="item in list">
-        <cmdb-relation-list-table
-          ref="associationListTable"
-          v-for="association in item.associations"
-          :key="association.id"
-          :type="item.type"
-          :id="item.id"
-          :all-instances="instances"
-          :association-type="item.associationType"
-          :obj-id="objId"
-          :inst-id="instId"
-          @delete-association="handleDeleteAssociation">
-        </cmdb-relation-list-table>
-      </template>
+      <cmdb-relation-list-table
+        ref="associationListTable"
+        v-for="item in list"
+        :key="item.id"
+        :target-obj-id="item.modelId"
+        :type="item.association.type"
+        :association-instances="item.instances"
+        :association-type="item.associationType"
+        :obj-id="objId"
+        @delete-association="handleDeleteAssociation">
+      </cmdb-relation-list-table>
     </template>
     <div class="association-empty" v-if="hasRelation && !hasRelationInstance">
       <div class="empty-content">
@@ -54,6 +51,8 @@
     },
     data() {
       return {
+        // 基于关联关系创建的实例关联列表，实例数据自身不包含所属关联关系字段数据
+        // 需要在实例关联列表中通过 bk_obj_asst_id 识别
         instances: []
       }
     },
@@ -72,28 +71,39 @@
       hasRelationInstance() {
         return !!this.instances.length
       },
-      uniqueAssociationObject() {
-        const ids = this.associationObject.map(association => association.id)
-        return [...new Set(ids)].map(id => this.associationObject.find(association => association.id === id))
-      },
       list() {
-        try {
-          const list = []
-          this.uniqueAssociationObject.forEach((association) => {
-            const isSource = association.bk_obj_id === this.objId
-            const modelId = isSource ? association.bk_asst_obj_id : association.bk_obj_id
-            list.push({
-              type: isSource ? 'source' : 'target',
-              id: modelId,
-              associationType: this.associationTypes.find(target => target.bk_asst_id === association.bk_asst_id) || {},
-              associations: [association]
+        const list = []
+        // 基于当前模型对象的所有关联关系数据，组装出关联列表
+        // 外层是关联关系，里层是关联下创建的实例关联列表
+        this.associationObject.forEach((association) => {
+          const isSource = association.type === 'source'
+
+          // 用于展示关联关系中的模型名称等
+          const modelId = isSource ? association.bk_asst_obj_id : association.bk_obj_id
+          const associationType = this.associationTypes.find(item => item.bk_asst_id === association.bk_asst_id) || {}
+
+          // 关联关系的唯一标识，用于匹配关联实例
+          const objAsstId = isSource
+            ? `${this.objId}_${associationType.bk_asst_id}_${modelId}`
+            : `${modelId}_${associationType.bk_asst_id}_${this.objId}`
+
+          list.push({
+            // 关联关系id和源或目标的关系（指向）组成唯一性
+            id: `${association.id}-${association.type}`,
+            modelId,
+            association,
+            associationType,
+            // 此关联关系下同一指向的关联实例并且关联id是匹配的
+            instances: this.instances.filter((item) => {
+              const sameType = item.bk_asst_id === association.bk_asst_id && item.type === association.type
+              const matchAsst = item.bk_obj_asst_id === objAsstId
+              return sameType && matchAsst
             })
           })
-          return list
-        } catch (e) {
-          console.log(e)
-        }
-        return []
+        })
+
+        // 过滤掉无关联实例的关联
+        return list.filter(item => item.instances.length)
       },
       loading() {
         return this.$loading([
@@ -111,10 +121,10 @@
       }
     },
     created() {
-      this.getAssociation()
+      this.getInstAssociation()
 
       bus.$on('association-change', async () => {
-        await this.getAssociation()
+        await this.getInstAssociation()
       })
 
       this.expandFirstListTable()
@@ -126,11 +136,11 @@
       ...mapActions('objectAssociation', [
         'searchObjectAssociation'
       ]),
-      async getAssociation() {
+      async getInstAssociation() {
         try {
           const sourceCondition = { bk_obj_id: this.objId, bk_inst_id: this.instId }
           const targetCondition = { bk_asst_obj_id: this.objId, bk_asst_inst_id: this.instId }
-          const [source, target] = await Promise.all([
+          let [source, target] = await Promise.all([
             this.$store.dispatch('objectAssociation/searchInstAssociation', {
               params: { condition: sourceCondition, bk_obj_id: this.objId },
               config: { requestId: 'getSourceAssociation' }
@@ -140,6 +150,8 @@
               config: { requestId: 'getTargetAssociation' }
             })
           ])
+          source = source.map(item => ({ ...item, type: 'source' }))
+          target = target.map(item => ({ ...item, type: 'target' }))
           this.instances = [...source, ...target]
         } catch (error) {
           console.error(error)
@@ -148,14 +160,14 @@
       expandFirstListTable() {
         this.$nextTick(() => {
           if (this.$refs.associationListTable) {
-            const firstAssociationListTable = this.$refs.associationListTable.find(listTable => listTable.hasInstance)
+            const [firstAssociationListTable] = this.$refs.associationListTable
             firstAssociationListTable && (firstAssociationListTable.expanded = true)
           }
         })
       },
-      handleDeleteAssociation(id) {
-        const index = this.instances.findIndex(instance => instance.id === id)
-        index > -1 && this.instances.splice(index, 1)
+      handleDeleteAssociation() {
+        // 重新获取以刷新数据
+        this.getInstAssociation()
       }
     }
   }
