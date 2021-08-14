@@ -49,6 +49,7 @@
         const LTE = '$lte'
         const GTE = '$gte'
         const RANGE = '$range' // 前端构造的操作符，真实数据中会拆分数据为gte, lte向后台传递
+        const LIKE = '$regex'
         const typeMap = {
           bool: [EQ, NE],
           date: [GTE, LTE],
@@ -59,7 +60,7 @@
           longchar: [IN, NIN],
           objuser: [IN, NIN],
           organization: [IN, NIN],
-          singlechar: [IN, NIN],
+          singlechar: [IN, NIN, LIKE],
           time: [GTE, LTE],
           timezone: [IN, NIN],
           foreignkey: [IN, NIN],
@@ -75,7 +76,8 @@
           [NIN]: this.$t('不包含'),
           [RANGE]: this.$t('数值范围'),
           [LTE]: this.$t('小于等于'),
-          [GTE]: this.$t('大于等于')
+          [GTE]: this.$t('大于等于'),
+          [LIKE]: this.$t('模糊'),
         }
         return typeMap[this.type].map(operator => ({
           id: operator,

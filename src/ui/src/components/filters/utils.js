@@ -66,6 +66,8 @@ export function getOperatorSideEffect(property, operator, value) {
   let effectValue = value
   if (operator === '$range') {
     effectValue = []
+  } else if (operator === '$regex') {
+    effectValue = Array.isArray(value) ? value[0] : value
   } else {
     const defaultValue = this.getDefaultData(property).value
     const isTypeChanged = (Array.isArray(defaultValue)) !== (Array.isArray(value))
@@ -214,7 +216,7 @@ const operatorSymbolMap = {
   $lt: '<',
   $gte: '≥',
   $lte: '≤',
-  $regex: 'Like',
+  $regex: '~=',
   $range: '≤ ≥'
 }
 export function getOperatorSymbol(operator) {
