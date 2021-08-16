@@ -73,7 +73,6 @@ const (
 
 	// BKTopoBusinessLevelDefault the mainline topo level default level
 	BKTopoBusinessLevelDefault = 7
-
 )
 
 const (
@@ -945,6 +944,8 @@ const (
 	BKHTTPSecretsEnv     = "BK-Secrets-Env"
 	// BKHTTPReadReference  query db use secondary node
 	BKHTTPReadReference = "Cc_Read_Preference"
+	// BKHTTPRequestFromWeb represents if request is from web server
+	BKHTTPRequestFromWeb = "Cc_Request_From_Web"
 )
 
 type ReadPreferenceMode string
