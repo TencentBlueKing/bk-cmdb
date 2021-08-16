@@ -23,9 +23,9 @@
         type: String,
         default: ''
       },
-      type: {
-        type: String,
-        default: 'singlechar'
+      property: {
+        type: Object,
+        default: ({})
       }
     },
     computed: {
@@ -60,7 +60,7 @@
           longchar: [IN, NIN],
           objuser: [IN, NIN],
           organization: [IN, NIN],
-          singlechar: [IN, NIN, LIKE],
+          singlechar: [IN, NIN],
           time: [GTE, LTE],
           timezone: [IN, NIN],
           foreignkey: [IN, NIN],
@@ -77,9 +77,23 @@
           [RANGE]: this.$t('数值范围'),
           [LTE]: this.$t('小于等于'),
           [GTE]: this.$t('大于等于'),
-          [LIKE]: this.$t('模糊'),
+          [LIKE]: this.$t('模糊')
         }
-        return typeMap[this.type].map(operator => ({
+
+        const {
+          bk_obj_id: modelId,
+          bk_property_id: propertyId,
+          bk_property_type: propertyType
+        } = this.property
+        const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
+        const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
+
+        // 集群、模块名称使用输入联想的tag-input，不需要模糊搜索
+        if (!(isSetName || isModuleName)) {
+          typeMap.singlechar.push(LIKE)
+        }
+
+        return typeMap[propertyType].map(operator => ({
           id: operator,
           name: Utils.getOperatorSymbol(operator),
           title: nameDescription[operator]
