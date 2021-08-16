@@ -57,7 +57,7 @@
           float: [EQ, NE, GT, LT, RANGE],
           int: [EQ, NE, GT, LT, RANGE],
           list: [IN, NIN],
-          longchar: [IN, NIN],
+          longchar: [IN, NIN, LIKE],
           objuser: [IN, NIN],
           organization: [IN, NIN],
           singlechar: [IN, NIN],
