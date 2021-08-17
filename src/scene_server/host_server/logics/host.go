@@ -330,7 +330,7 @@ func (lgc *Logics) GetAllHostIDByCond(kit *rest.Kit, cond metadata.HostModuleRel
 // GetHostModuleRelation  query host and module relation,
 // condition key use appID, moduleID,setID,HostID
 func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond *metadata.HostModuleRelationRequest) (*metadata.
-	HostConfigData, errors.CCErrorCoder) {
+HostConfigData, errors.CCErrorCoder) {
 
 	if cond.Empty() {
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPBodyEmpty)
@@ -519,16 +519,11 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 	relRsp, relErr := lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, relReq)
 	if relErr != nil {
 		blog.ErrorJSON("get host ids in biz failed, err: %s, req: %s, rid: %s", relErr, relReq, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err := relRsp.CCError(); err != nil {
-		blog.ErrorJSON("get host ids in biz failed, err: %s, req: %s, rid: %s", err, relReq, kit.Rid)
-		return err
+		return relErr
 	}
 
 	isSrcHostInBiz, isDstHostInBiz := false, false
-	for _, hostID := range relRsp.Data.IDArr {
+	for _, hostID := range relRsp {
 		if hostID == srcHostID {
 			isSrcHostInBiz = true
 		}

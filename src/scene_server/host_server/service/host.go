@@ -1011,19 +1011,13 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 	}
 
 	condition.ApplicationIDArr = []int64{data.ApplicationID}
-	hostResult, err := s.Logic.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, header, condition)
-	if err != nil {
-		blog.Errorf("get host ids failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
-		return
-	}
-	if err := hostResult.CCError(); err != nil {
-		blog.ErrorJSON("get host id by topology relation failed, error code: %s, error message: %s, cond: %s, rid: %s", hostResult.Code, hostResult.ErrMsg, condition, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+	hostIDArr, ccErr := s.Logic.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, header, condition)
+	if ccErr != nil {
+		blog.Errorf("get host ids failed, err: %v, rid: %s", ccErr, ctx.Kit.Rid)
+		ctx.RespAutoError(ccErr)
 		return
 	}
 
-	hostIDArr := hostResult.Data.IDArr
 	if 0 == len(hostIDArr) {
 		blog.Warnf("no host in set,rid:%s", ctx.Kit.Rid)
 		ctx.RespEntity(nil)

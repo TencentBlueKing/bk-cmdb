@@ -522,17 +522,25 @@ func (h *host) TransferHostResourceDirectory(ctx context.Context, header http.He
 	return nil
 }
 
-// GetDistinctHostIDByTopology get distion host id by topology relation
-func (h *host) GetDistinctHostIDByTopology(ctx context.Context, header http.Header, input *metadata.DistinctHostIDByTopoRelationRequest) (resp *metadata.DistinctIDResponse, err error) {
-	resp = new(metadata.DistinctIDResponse)
+// GetDistinctHostIDByTopology get distinct host id by topology relation
+func (h *host) GetDistinctHostIDByTopology(ctx context.Context, header http.Header,
+	input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, errors.CCErrorCoder) {
+
+	resp := new(metadata.DistinctIDResponse)
 	subPath := "/read/distinct/host_id/topology/relation"
 
-	err = h.client.Post().
+	err := h.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+	return resp.Data.IDArr, nil
 }

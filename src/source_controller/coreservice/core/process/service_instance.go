@@ -214,18 +214,6 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 		}
 	}
 
-	// transfer host to target module
-	transferConfig := &metadata.HostsModuleRelation{
-		ApplicationID: bizID,
-		HostID:        []int64{instance.HostID},
-		ModuleID:      []int64{instance.ModuleID},
-		IsIncrement:   true,
-	}
-	if err := p.dependence.TransferHostModuleDep(kit, transferConfig); err != nil {
-		blog.Errorf("CreateServiceInstance failed, transfer host module failed, transfer: %+v, instance: %+v, err: %+v, rid: %s", transferConfig, instance, err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrHostTransferModule)
-	}
-
 	return instance, nil
 }
 

@@ -68,7 +68,8 @@ type HostClientInterface interface {
 	// FindCloudAreaHostCount find host count in every cloudarea
 	FindCloudAreaHostCount(ctx context.Context, header http.Header, option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error)
 
-	GetDistinctHostIDByTopology(ctx context.Context, header http.Header, input *metadata.DistinctHostIDByTopoRelationRequest) (resp *metadata.DistinctIDResponse, err error)
+	GetDistinctHostIDByTopology(ctx context.Context, header http.Header,
+		input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, errors.CCErrorCoder)
 
 	TransferHostResourceDirectory(ctx context.Context, header http.Header, option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder
 }

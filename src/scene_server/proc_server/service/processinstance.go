@@ -398,70 +398,52 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 	return processIDs, nil
 }
 
-func (ps *ProcServer) CheckHostInBusiness(ctx *rest.Contexts, bizID int64, hostIDs []int64) errors.CCErrorCoder {
-	hostIDHit := make(map[int64]bool)
-	for _, hostID := range hostIDs {
-		hostIDHit[hostID] = false
-	}
-	hostConfigFilter := &metadata.DistinctHostIDByTopoRelationRequest{
+// checkHostsInModule check if hosts are in the business module, can only create service instance for hosts in it
+func (ps *ProcServer) checkHostsInModule(kit *rest.Kit, bizID, moduleID int64, hostIDs []int64) errors.CCErrorCoder {
+	hostFilter := &metadata.DistinctHostIDByTopoRelationRequest{
 		ApplicationIDArr: []int64{bizID},
+		ModuleIDArr:      []int64{moduleID},
 		HostIDArr:        hostIDs,
 	}
-	result, err := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, ctx.Kit.Header, hostConfigFilter)
+
+	hitHostIDs, err := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, hostFilter)
 	if err != nil {
-		blog.ErrorJSON("CheckHostInBusiness failed, GetHostModuleRelation failed, filter: %s, err: %s, rid: %s", hostConfigFilter, err.Error(), ctx.Kit.Rid)
-		e, ok := err.(errors.CCErrorCoder)
-		if ok {
-			return e
-		} else {
-			return ctx.Kit.CCError.CCError(common.CCErrWebGetHostFail)
-		}
+		blog.ErrorJSON("check host in module failed, filter: %s, err: %s, rid: %s", hostFilter, err, kit.Rid)
+		return err
 	}
-	for _, id := range result.Data.IDArr {
-		hostIDHit[id] = true
+
+	hostIDHit := make(map[int64]struct{})
+	for _, id := range hitHostIDs {
+		hostIDHit[id] = struct{}{}
 	}
+
 	invalidHost := make([]int64, 0)
-	for hostID, hit := range hostIDHit {
-		if !hit {
+	for _, hostID := range hostIDs {
+		if _, exists := hostIDHit[hostID]; !exists {
 			invalidHost = append(invalidHost, hostID)
 		}
 	}
 	if len(invalidHost) > 0 {
-		return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotBelongBusiness, invalidHost, bizID)
+		return kit.CCError.CCErrorf(common.CCErrHostModuleConfigNotMatch, invalidHost)
 	}
 	return nil
 }
 
-func (ps *ProcServer) getModule(ctx *rest.Contexts, moduleID int64) (*metadata.ModuleInst, errors.CCErrorCoder) {
-	filter := map[string]interface{}{
-		common.BKModuleIDField: moduleID,
+func (ps *ProcServer) getModule(kit *rest.Kit, moduleID int64) (*metadata.ModuleInst, errors.CCErrorCoder) {
+	filter := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKModuleIDField: moduleID,
+		},
 	}
-	return ps.getOneModule(ctx, filter)
-}
 
-func (ps *ProcServer) getOneModule(ctx *rest.Contexts, filter map[string]interface{}) (*metadata.ModuleInst, errors.CCErrorCoder) {
-	moduleFilter := &metadata.QueryCondition{
-		Condition: mapstr.MapStr(filter),
-	}
-	modules, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleFilter)
+	moduleInst := new(metadata.ModuleInst)
+	err := ps.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header,
+		common.BKInnerObjIDModule, filter, moduleInst)
 	if err != nil {
-		blog.Errorf("getModule failed, filter: %+v, err: %s, rid: %s", filter, err.Error(), ctx.Kit.Rid)
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, err)
+		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", filter, err, kit.Rid)
+		return nil, err
 	}
-	if len(modules.Data.Info) == 0 {
-		blog.Errorf("getModule failed, filter: %+v, err: %+v, rid: %s", filter, "not found", ctx.Kit.Rid)
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, "not found")
-	}
-	if len(modules.Data.Info) > 1 {
-		blog.Errorf("getModule failed, filter: %+v, err: %+v, rid: %s", filter, "get multiple", ctx.Kit.Rid)
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, "get multiple modules")
-	}
-	module := modules.Data.Info[0]
-	moduleInst := &metadata.ModuleInst{}
-	if err := module.ToStructByTag(moduleInst, "field"); err != nil {
-		blog.Errorf("getModule failed, marshal json failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.Kit.Rid)
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
-	}
+
 	return moduleInst, nil
 }
 
@@ -1603,7 +1585,7 @@ func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
 		return
 	}
 
-	module, err := ps.getModule(ctx, input.ModuleID)
+	module, err := ps.getModule(ctx.Kit, input.ModuleID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrTopoGetModuleFailed, "create service instance failed, get module failed, moduleID: %d, err: %v", input.ModuleID, err)
 		return

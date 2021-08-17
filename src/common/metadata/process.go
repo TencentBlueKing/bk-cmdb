@@ -93,20 +93,21 @@ type ModuleSyncStatus struct {
 	NeedSync bool  `json:"need_sync"`
 }
 
-type CreateServiceInstanceForServiceTemplateInput struct {
-	BizID                      int64                         `json:"bk_biz_id"`
-	Name                       string                        `json:"name"`
-	ModuleID                   int64                         `json:"bk_module_id"`
-	Instances                  []CreateServiceInstanceDetail `json:"instances"`
-	HostApplyConflictResolvers []HostApplyConflictResolver   `json:"host_apply_conflict_resolvers"`
+// CreateServiceInstanceInput create service instance with process input parameter
+type CreateServiceInstanceInput struct {
+	BizID     int64                         `json:"bk_biz_id"`
+	ModuleID  int64                         `json:"bk_module_id"`
+	Instances []CreateServiceInstanceDetail `json:"instances"`
 }
 
+// SearchHostWithNoSvcInstInput input parameter of searching hosts with no service instance under the specified module
 type SearchHostWithNoSvcInstInput struct {
 	BizID    int64   `json:"bk_biz_id"`
 	ModuleID int64   `json:"bk_module_id"`
 	HostIDs  []int64 `json:"bk_host_ids"`
 }
 
+// SearchHostWithNoSvcInstOutput ids of the hosts that have no service instance
 type SearchHostWithNoSvcInstOutput struct {
 	HostIDs []int64 `json:"bk_host_ids"`
 }

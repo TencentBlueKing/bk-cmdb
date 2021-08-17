@@ -573,9 +573,9 @@ func (assoc *association) getHostSvcInstCountBySetIDs(kit *rest.Kit,
 	return results, nil
 }
 
-// getCustomLevHostSvcInstCount get coustom level host and service instace
-func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
-	customLevels map[int64]string) ([]*metadata.TopoNodeHostAndSerInstCount, error) {
+// getCustomLevHostSvcInstCount get custom level host and service instance count
+func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit, customLevels map[int64]string) (
+	[]*metadata.TopoNodeHostAndSerInstCount, error) {
 
 	var wg sync.WaitGroup
 	var lock sync.RWMutex
@@ -591,6 +591,7 @@ func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
 				wg.Done()
 				<-pipeline
 			}()
+
 			setIDArr, err := assoc.getSetIDsByTopo(kit, objID, []int64{instID})
 			if err != nil {
 				blog.Errorf("find hosts by topo failed, get set ID by topo err: %v, objID: %s, instID: %d, "+
@@ -616,8 +617,7 @@ func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
 			// get host count by set ids
 			hostCount, err := assoc.getDistinctHostCount(kit, common.BKSetIDField, setIDArr)
 			if err != nil {
-				blog.Errorf("get distinct host count failed, err: %v, objID: %s, instIDs: %, rid: %s", err,
-					common.BKSetIDField, setIDArr, kit.Rid)
+				blog.Errorf("get distinct host count by set ids(%+v) failed, err: %v, rid: %s", setIDArr, err, kit.Rid)
 				firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 				return
 			}
@@ -627,7 +627,6 @@ func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
 			if e != nil {
 				blog.Errorf("get set module rel map failed, err: %s, rid: %s", e.Error(), kit.Rid)
 				firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-
 				return
 			}
 			moduleIDs := make([]int64, 0)
@@ -643,8 +642,7 @@ func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
 				cond = append(cond, moduleIDs)
 				svcInstCounts, e := assoc.getServiceInstCount(kit, common.BKModuleIDField, cond)
 				if e != nil {
-					blog.Errorf("get service instance count failed, err: %v, objID: %s, instIDs: %s, rid: %s", e,
-						common.BKSetIDField, moduleIDs, kit.Rid)
+					blog.Errorf("get svc inst count by modules(%+v) failed, err: %v, rid: %s", moduleIDs, e, kit.Rid)
 					firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 					return
 				}

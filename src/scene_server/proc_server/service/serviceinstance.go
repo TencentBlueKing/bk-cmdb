@@ -32,7 +32,7 @@ import (
 // 支持直接创建和通过模板创建，用 module 是否绑定模版信息区分两种情况
 // 通过模板创建时，进程信息则表现为更新
 func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
-	input := metadata.CreateServiceInstanceForServiceTemplateInput{}
+	input := metadata.CreateServiceInstanceInput{}
 	if err := ctx.DecodeInto(&input); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -55,187 +55,154 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 	ctx.RespEntity(serviceInstanceIDs)
 }
 
-func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.CreateServiceInstanceForServiceTemplateInput) ([]int64, errors.CCErrorCoder) {
+func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.CreateServiceInstanceInput) ([]int64,
+	errors.CCErrorCoder) {
+
 	rid := ctx.Kit.Rid
 	bizID := input.BizID
+	moduleID := input.ModuleID
 
-	// check hosts in business
+	// check if hosts are in the business module, and check if module is in the business
 	hostIDs := make([]int64, len(input.Instances))
 	for idx, instance := range input.Instances {
 		hostIDs[idx] = instance.HostID
 	}
 	hostIDs = util.IntArrayUnique(hostIDs)
-	if err := ps.CheckHostInBusiness(ctx, bizID, hostIDs); err != nil {
-		blog.ErrorJSON("createServiceInstances failed, CheckHostInBusiness failed, bizID: %s, hostIDs: %s, err: %s, rid: %s", bizID, hostIDs, err.Error(), rid)
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotBelongBusiness, hostIDs, bizID)
+	if err := ps.checkHostsInModule(ctx.Kit, bizID, moduleID, hostIDs); err != nil {
+		blog.Errorf("check hosts(%+v) in biz %d module %d failed, err: %v, rid: %s", hostIDs, bizID, moduleID, err, rid)
+		return nil, err
 	}
 
-	module, err := ps.getModule(ctx, input.ModuleID)
+	module, err := ps.getModule(ctx.Kit, moduleID)
 	if err != nil {
-		blog.Errorf("createServiceInstances failed, get module failed, moduleID: %d, err: %v, rid: %s", input.ModuleID, err, rid)
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, err.Error())
+		blog.Errorf("get module failed, moduleID: %d, err: %v, rid: %s", moduleID, err, rid)
+		return nil, err
 	}
 
 	if bizID != module.BizID {
-		blog.Errorf("createServiceInstances failed, module %d not belongs to biz %d, rid: %s", input.ModuleID, bizID, rid)
+		blog.Errorf("module %d not belongs to biz %d, rid: %s", moduleID, bizID, rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceHasModuleNotBelongBusiness, module.ModuleID, bizID)
 	}
 
-	serviceInstanceIDs := make([]int64, 0)
+	// create service instances
 	serviceInstances := make([]*metadata.ServiceInstance, len(input.Instances))
 	for idx, inst := range input.Instances {
 		instance := &metadata.ServiceInstance{
 			BizID:             bizID,
 			Name:              inst.ServiceInstanceName,
 			ServiceTemplateID: module.ServiceTemplateID,
-			ModuleID:          input.ModuleID,
+			ModuleID:          moduleID,
 			HostID:            inst.HostID,
 		}
 		serviceInstances[idx] = instance
 	}
 
-	serviceInstances, err = ps.CoreAPI.CoreService().Process().CreateServiceInstances(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstances)
+	serviceInstances, err = ps.CoreAPI.CoreService().Process().CreateServiceInstances(ctx.Kit.Ctx, ctx.Kit.Header,
+		serviceInstances)
 	if err != nil {
-		blog.ErrorJSON("createServiceInstances failed, serviceInstances: %s, err: %s, rid: %s", serviceInstances, err.Error(), rid)
+		blog.ErrorJSON("create service instances(%s) failed, err: %s, rid: %s", serviceInstances, err, rid)
 		return nil, err
 	}
+
+	serviceInstanceIDs := make([]int64, 0)
+	for _, serviceInstance := range serviceInstances {
+		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
+	}
+
+	if err := ps.upsertProcesses(ctx, serviceInstanceIDs, bizID, module.ServiceTemplateID, input.Instances); err != nil {
+		return nil, err
+	}
+
+	return serviceInstanceIDs, nil
+}
+
+func (ps *ProcServer) upsertProcesses(ctx *rest.Contexts, serviceInstanceIDs []int64, bizID int64,
+	serviceTemplateID int64, instances []metadata.CreateServiceInstanceDetail) errors.CCErrorCoder {
 
 	instanceIDsUpdate := make([]int64, 0)
 	instanceProcessesUpdateMap := make(map[int64][]metadata.ProcessInstanceDetail)
-	for idx, inst := range input.Instances {
-		serviceInstance := serviceInstances[idx]
-		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
-		if len(inst.Processes) > 0 {
-			if module.ServiceTemplateID == 0 {
-				// if this service have process instance to create, then create it now.
-				createProcessInput := &metadata.CreateRawProcessInstanceInput{
-					BizID:             bizID,
-					ServiceInstanceID: serviceInstance.ID,
-					Processes:         inst.Processes,
-				}
-				if _, err = ps.createProcessInstances(ctx, createProcessInput); err != nil {
-					blog.ErrorJSON("createServiceInstances failed, createProcessInstances failed, input: %s, err: %s, rid: %s", createProcessInput, err.Error(), rid)
-					return nil, err
-				}
-				// if no service instance name is set and have processes under it, update it
-				if inst.ServiceInstanceName == "" {
-					if err := ps.updateServiceInstanceName(ctx, serviceInstance.ID, inst.HostID, inst.Processes[0].ProcessData); err != nil {
-						blog.ErrorJSON("createServiceInstances failed, updateServiceInstanceName failed, serviceInstanceID: %s, hostID: %s, processData: %s, err: %s, rid: %s",
-							serviceInstance.ID, inst.HostID, inst.Processes[0].ProcessData, err.Error(), rid)
-						return nil, err
-					}
-				}
-			} else {
-				instanceIDsUpdate = append(instanceIDsUpdate, serviceInstance.ID)
-				instanceProcessesUpdateMap[serviceInstance.ID] = inst.Processes
-			}
+	for idx, inst := range instances {
+		if len(inst.Processes) == 0 {
+			continue
 		}
 
+		svcInstID := serviceInstanceIDs[idx]
+		if serviceTemplateID == 0 {
+			// if this service have process instance to create, then create it now.
+			createProcInput := &metadata.CreateRawProcessInstanceInput{
+				BizID:             bizID,
+				ServiceInstanceID: svcInstID,
+				Processes:         inst.Processes,
+			}
+			if _, err := ps.createProcessInstances(ctx, createProcInput); err != nil {
+				blog.ErrorJSON("create process failed, input: %s, err: %s, rid: %s", createProcInput, err, ctx.Kit.Rid)
+				return err
+			}
+
+			// if no service instance name is set and have processes under it, update it
+			if inst.ServiceInstanceName == "" {
+				err := ps.updateServiceInstanceName(ctx, svcInstID, inst.HostID, inst.Processes[0].ProcessData)
+				if err != nil {
+					blog.ErrorJSON("update service instance name failed, id: %s, hostID: %s, process: %s, err: %s, "+
+						"rid: %s", svcInstID, inst.HostID, inst.Processes[0].ProcessData, err, ctx.Kit.Rid)
+					return err
+				}
+			}
+		} else {
+			instanceIDsUpdate = append(instanceIDsUpdate, svcInstID)
+			instanceProcessesUpdateMap[svcInstID] = inst.Processes
+		}
+	}
+
+	if len(instanceIDsUpdate) == 0 {
+		return nil
 	}
 
 	// update processes which have process template
-	if len(instanceIDsUpdate) > 0 {
-		relationOption := &metadata.ListProcessInstanceRelationOption{
-			BusinessID:         bizID,
-			ServiceInstanceIDs: instanceIDsUpdate,
-			Page: metadata.BasePage{
-				Limit: common.BKNoLimit,
-			},
-		}
-		relationResult, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
-		if err != nil {
-			blog.ErrorJSON("createServiceInstances failed, ListProcessInstanceRelation failed, option: %s, err: %s, rid: %s", relationOption, err.Error(), rid)
-			return nil, err
-		}
-		templateID2ProcessID := make(map[int64]map[int64]int64)
-		for _, relation := range relationResult.Info {
-			if templateID2ProcessID[relation.ProcessTemplateID] == nil {
-				templateID2ProcessID[relation.ProcessTemplateID] = make(map[int64]int64)
-			}
-			templateID2ProcessID[relation.ProcessTemplateID][relation.ServiceInstanceID] = relation.ProcessID
-		}
+	relOpt := &metadata.ListProcessInstanceRelationOption{
+		BusinessID:         bizID,
+		ServiceInstanceIDs: instanceIDsUpdate,
+		Page:               metadata.BasePage{Limit: common.BKNoLimit},
+	}
+	relRes, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relOpt)
+	if err != nil {
+		blog.ErrorJSON("list process relation failed, option: %s, err: %s, rid: %s", relOpt, err, ctx.Kit.Rid)
+		return err
+	}
 
-		processesUpdate := make([]map[string]interface{}, 0)
-		for instanceID, processes := range instanceProcessesUpdateMap {
-			for _, proc := range processes {
-				templateID := proc.ProcessTemplateID
-				if instProcMap, exist := templateID2ProcessID[templateID]; exist {
-					if processID, exist := instProcMap[instanceID]; exist {
-						processData := proc.ProcessData
-						processData[common.BKProcessIDField] = processID
-						processesUpdate = append(processesUpdate, processData)
-					}
+	templateID2ProcessID := make(map[int64]map[int64]int64)
+	for _, relation := range relRes.Info {
+		if templateID2ProcessID[relation.ProcessTemplateID] == nil {
+			templateID2ProcessID[relation.ProcessTemplateID] = make(map[int64]int64)
+		}
+		templateID2ProcessID[relation.ProcessTemplateID][relation.ServiceInstanceID] = relation.ProcessID
+	}
+
+	processesUpdate := make([]map[string]interface{}, 0)
+	for instanceID, processes := range instanceProcessesUpdateMap {
+		for _, proc := range processes {
+			if instProcMap, exist := templateID2ProcessID[proc.ProcessTemplateID]; exist {
+				if processID, exist := instProcMap[instanceID]; exist {
+					processData := proc.ProcessData
+					processData[common.BKProcessIDField] = processID
+					processesUpdate = append(processesUpdate, processData)
 				}
 			}
-
-		}
-
-		if len(processesUpdate) > 0 {
-			input := metadata.UpdateRawProcessInstanceInput{
-				BizID: bizID,
-				Raw:   processesUpdate,
-			}
-			_, err = ps.updateProcessInstances(ctx, input)
-			if err != nil {
-				blog.ErrorJSON("CreateServiceInstances failed, updateProcessInstances failed, input: %s, err: %s, rid: %s", input, err.Error(), rid)
-				return nil, err
-			}
 		}
 	}
 
-	// update host by host apply rule conflict resolvers
-	attributeIDs := make([]int64, 0)
-	for _, rule := range input.HostApplyConflictResolvers {
-		attributeIDs = append(attributeIDs, rule.AttributeID)
-	}
-	attrCond := &metadata.QueryCondition{
-		Fields: []string{common.BKFieldID, common.BKPropertyIDField},
-		Page:   metadata.BasePage{Limit: common.BKNoLimit},
-		Condition: map[string]interface{}{
-			common.BKFieldID: map[string]interface{}{
-				common.BKDBIN: attributeIDs,
-			},
-		},
-	}
-	attrRes, e := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, attrCond)
-	if e != nil {
-		blog.ErrorJSON("ReadModelAttr failed, err: %s, attrCond: %s, rid: %s", e.Error(), attrCond, rid)
-		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if err := attrRes.CCError(); err != nil {
-		blog.ErrorJSON("ReadModelAttr failed, err: %s, attrCond: %s, rid: %s", err.Error(), attrCond, rid)
-		return nil, err
-	}
-	attrMap := make(map[int64]string)
-	for _, attr := range attrRes.Data.Info {
-		attrMap[attr.ID] = attr.PropertyID
+	if len(processesUpdate) > 0 {
+		input := metadata.UpdateRawProcessInstanceInput{
+			BizID: bizID,
+			Raw:   processesUpdate,
+		}
+		if _, err = ps.updateProcessInstances(ctx, input); err != nil {
+			blog.ErrorJSON("update process instances failed, input: %s, err: %s, rid: %s", input, err, ctx.Kit.Rid)
+			return err
+		}
 	}
 
-	hostAttrMap := make(map[int64]map[string]interface{})
-	for _, rule := range input.HostApplyConflictResolvers {
-		if hostAttrMap[rule.HostID] == nil {
-			hostAttrMap[rule.HostID] = make(map[string]interface{})
-		}
-		hostAttrMap[rule.HostID][attrMap[rule.AttributeID]] = rule.PropertyValue
-	}
-	for hostID, hostData := range hostAttrMap {
-		updateOption := &metadata.UpdateOption{
-			Data: hostData,
-			Condition: map[string]interface{}{
-				common.BKHostIDField: hostID,
-			},
-		}
-		updateResult, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, updateOption)
-		if err != nil {
-			blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
-			return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if err := updateResult.CCError(); err != nil {
-			blog.ErrorJSON("RunHostApplyRule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, rid)
-			return nil, err
-		}
-	}
-	return serviceInstanceIDs, nil
+	return nil
 }
 
 func (ps *ProcServer) updateServiceInstanceName(ctx *rest.Contexts, serviceInstanceID, hostID int64, processData map[string]interface{}) errors.CCErrorCoder {
@@ -319,14 +286,8 @@ func (ps *ProcServer) SearchHostWithNoServiceInstance(ctx *rest.Contexts) {
 		ModuleIDArr:      []int64{input.ModuleID},
 		HostIDArr:        inputHostIDs,
 	}
-	hostRes, rawErr := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, ctx.Kit.Header, hostOpt)
-	if rawErr != nil {
-		blog.Errorf("get host ids failed, err: %v, option: %#v, rid: %s", err, hostOpt, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
-		return
-	}
-
-	if err := hostRes.CCError(); err != nil {
+	hostRes, err := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, ctx.Kit.Header, hostOpt)
+	if err != nil {
 		blog.Errorf("get host ids failed, err: %v, option: %#v, rid: %s", err, hostOpt, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -334,12 +295,12 @@ func (ps *ProcServer) SearchHostWithNoServiceInstance(ctx *rest.Contexts) {
 
 	// exclude the hosts with service instances, since input hosts are filtered before, we do not need to filter here
 	if len(input.HostIDs) > 0 {
-		ctx.RespEntity(metadata.SearchHostWithNoSvcInstOutput{HostIDs: hostRes.Data.IDArr})
+		ctx.RespEntity(metadata.SearchHostWithNoSvcInstOutput{HostIDs: hostRes})
 		return
 	}
 
 	hostIDs := make([]int64, 0)
-	for _, hostID := range hostRes.Data.IDArr {
+	for _, hostID := range hostRes {
 		if _, exists := hasSvcHostIDMap[hostID]; !exists {
 			hostIDs = append(hostIDs, hostID)
 		}
@@ -743,7 +704,7 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, module id empty, option: %s, rid: %s", diffOption, rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
-	module, err := ps.getModule(ctx, diffOption.ModuleID)
+	module, err := ps.getModule(ctx.Kit, diffOption.ModuleID)
 	if err != nil {
 		blog.Errorf("diffServiceInstanceWithTemplate failed, getModule failed, moduleID: %d, err: %+v, rid: %s", diffOption.ModuleID, err, rid)
 		return nil, err
