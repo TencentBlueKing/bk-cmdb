@@ -123,7 +123,7 @@ func (s *Service) SearchObjectByClassificationID(ctx *rest.Contexts) {
 
 // SearchBusinessTopoWithStatistics calculate how many service instances on each topo instance node
 func (s *Service) SearchBusinessTopoWithStatistics(ctx *rest.Contexts) {
-	resp, err := s.searchBusinessTopo(ctx, false, true)
+	resp, err := s.searchBusinessTopo(ctx, true, true)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
