@@ -60,7 +60,7 @@ type Table interface {
 	// AddColumn 添加字段
 	AddColumn(ctx context.Context, column string, value interface{}) error
 	// RenameColumn 重命名字段
-	RenameColumn(ctx context.Context, oldName, newColumn string) error
+	RenameColumn(ctx context.Context, filter Filter, oldName, newColumn string) error
 	// DropColumn 移除字段
 	DropColumn(ctx context.Context, field string) error
 	// 根据条件移除字段

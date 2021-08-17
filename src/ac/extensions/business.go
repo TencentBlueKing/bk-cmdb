@@ -14,12 +14,9 @@ package extensions
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
-	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -99,32 +96,4 @@ func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.He
 	}
 
 	return am.AuthorizeByBusiness(ctx, header, action, businesses...)
-}
-
-func (am *AuthManager) GenFindBusinessNoPermissionResp(ctx context.Context, header http.Header, businessID int64) (*metadata.BaseResp, error) {
-	businesses, err := am.collectBusinessByIDs(ctx, header, businessID)
-	if err != nil {
-		return nil, err
-	}
-	if len(businesses) != 1 {
-		return nil, errors.New("get business detail failed")
-	}
-	permission := &metadata.IamPermission{
-		SystemID: iam.SystemIDCMDB,
-		Actions: []metadata.IamAction{{
-			ID: string(iam.FindBusiness),
-			RelatedResourceTypes: []metadata.IamResourceType{{
-				SystemID: iam.SystemIDCMDB,
-				Type:     string(iam.Business),
-				Instances: [][]metadata.IamResourceInstance{{{
-					Type: string(iam.Business),
-					ID:   strconv.FormatInt(businessID, 10),
-				}, {
-					Type: string(iam.Business),
-				}}},
-			}},
-		}},
-	}
-	resp := metadata.NewNoPermissionResp(permission)
-	return &resp, nil
 }

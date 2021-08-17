@@ -42,7 +42,8 @@
             }"
             :node-height="36"
             :before-select="beforeSelect"
-            @select-change="handleModuleSelectChange">
+            @select-change="handleModuleSelectChange"
+            @expand-change="handleExpandChange">
             <div class="node-info clearfix" slot-scope="{ node, data }">
               <template v-if="data.bk_obj_id !== 'host'">
                 <i class="internal-node-icon fl"
@@ -54,9 +55,11 @@
                   {{data.bk_obj_name[0]}}
                 </i>
               </template>
-              <span class="node-count fr" v-if="data.bk_obj_id !== 'host'">
+              <cmdb-loading v-if="data.bk_obj_id !== 'host'"
+                :class="['node-count fr', { 'is-selected': node.selected }]"
+                :loading="['pending', undefined].includes(data.status)">
                 {{getNodeCount(data)}}
-              </span>
+              </cmdb-loading>
               <span class="node-name" :title="node.name">{{node.name}}</span>
             </div>
           </bk-big-tree>
@@ -73,9 +76,11 @@
   import { mapGetters } from 'vuex'
   import HostTable from './host-table.vue'
   import debounce from 'lodash.debounce'
+  import CmdbLoading from '@/components/loading/loading'
   export default {
     components: {
-      HostTable
+      HostTable,
+      CmdbLoading
     },
     props: {
       selected: {
@@ -133,15 +138,11 @@
             bk_obj_id: 'set',
             bk_inst_id: internal.bk_set_id,
             bk_inst_name: internal.bk_set_name,
-            host_count: internal.host_count,
-            service_instance_count: internal.service_instance_count,
             default: internal.default,
             child: this.$tools.sort((internal.module || []), 'default').map(module => ({
               bk_obj_id: 'module',
               bk_inst_id: module.bk_module_id,
               bk_inst_name: module.bk_module_name,
-              host_count: module.host_count,
-              service_instance_count: module.service_instance_count,
               default: module.default
             }))
           }
@@ -150,6 +151,8 @@
           this.topoModuleList = this.getTopoModuleList(topology)
           const defaultNodeId = this.getNodeId(topology[0])
           this.$refs.tree.setExpanded(defaultNodeId)
+          const defaultNode = this.$refs.tree.getNodeById(defaultNodeId)
+          this.setNodeCount([defaultNode, ...defaultNode.children])
         } catch (e) {
           console.error(e)
         }
@@ -161,7 +164,7 @@
         return this.isModule(node)
       },
       getInstanceTopology() {
-        return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
+        return this.$store.dispatch('objectMainLineModule/getInstTopo', {
           bizId: this.bizId
         })
       },
@@ -296,13 +299,44 @@
       isTemplate(node) {
         return node.data.service_template_id || node.data.set_template_id
       },
+      handleExpandChange(node) {
+        if (!node.expanded) return
+        this.setNodeCount([node, ...node.children])
+      },
       getNodeCount(data) {
         const count = data.host_count
         if (typeof count === 'number') {
           return count > 999 ? '999+' : count
         }
         return 0
-      }
+      },
+      async setNodeCount(targetNodes, force = false) {
+        const nodes = force
+          ? targetNodes
+          : targetNodes.filter(({ data }) => !['pending', 'finished'].includes(data.status))
+        if (!nodes.length) return
+        nodes.forEach(({ data }) => this.$set(data, 'status', 'pending'))
+        try {
+          const result = await this.$store.dispatch('objectMainLineModule/getTopoStatistics', {
+            bizId: this.bizId,
+            params: {
+              condition: nodes.map(({ data }) => ({ bk_obj_id: data.bk_obj_id, bk_inst_id: data.bk_inst_id }))
+            }
+          })
+          nodes.forEach(({ data }) => {
+            // eslint-disable-next-line
+            const count = result.find(count => count.bk_obj_id === data.bk_obj_id && count.bk_inst_id === data.bk_inst_id)
+            this.$set(data, 'status', 'finished')
+            this.$set(data, 'host_count', count.host_count)
+            this.$set(data, 'service_instance_count', count.service_instance_count)
+          })
+        } catch (error) {
+          console.error(error)
+          nodes.forEach((node) => {
+            this.$set(node.data, 'status', 'error')
+          })
+        }
+      },
     }
   }
 </script>
@@ -381,6 +415,9 @@
             &.is-selected {
                 background-color: #a2c5fd;
                 color: #fff;
+            }
+            &.loading {
+              background-color: transparent;
             }
         }
         .internal-node-icon{

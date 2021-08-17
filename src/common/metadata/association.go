@@ -497,8 +497,6 @@ type TopoInst struct {
 	ObjID                string `json:"bk_obj_id"`
 	ObjName              string `json:"bk_obj_name"`
 	Default              int    `json:"default"`
-	HostCount            int64  `json:"host_count"`
-	ServiceInstanceCount int64  `json:"service_instance_count,omitempty"`
 	ServiceTemplateID    int64  `json:"service_template_id,omitempty"`
 	SetTemplateID        int64  `json:"set_template_id,omitempty"`
 	HostApplyEnabled     *bool  `json:"host_apply_enabled,omitempty"`
@@ -509,6 +507,25 @@ type TopoInst struct {
 type TopoInstRst struct {
 	TopoInst `json:",inline"`
 	Child    []*TopoInstRst `json:"child"`
+}
+
+// TopoNodeHostAndSerInstCount topo节点主机/服务实例数量
+type TopoNodeHostAndSerInstCount struct {
+	ObjID                string `json:"bk_obj_id"`
+	InstID               int64  `json:"bk_inst_id"`
+	HostCount            int64  `json:"host_count"`
+	ServiceInstanceCount int64  `json:"service_instance_count"`
+}
+
+// HostAndSerInstCountOption 获取主机/服务实例查询参数结构
+type HostAndSerInstCountOption struct {
+	Condition []CountOptions `json:"condition"`
+}
+
+// CountOptions 获取主机/服务实例入参条件
+type CountOptions struct {
+	ObjID  string `json:"bk_obj_id"`
+	InstID int64  `json:"bk_inst_id"`
 }
 
 type TopoInstRstVisitor func(tir *TopoInstRst)

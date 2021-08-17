@@ -43,6 +43,7 @@
                       :data-vv-name="property['bk_property_id']"
                       :auto-select="false"
                       :placeholder="getPlaceholder(property)"
+                      v-bind="$tools.getValidateEvents(property)"
                       v-validate="getValidateRules(property)"
                       v-model.trim="values[property['bk_property_id']]">
                     </component>

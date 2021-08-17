@@ -13,7 +13,6 @@
 package settemplate
 
 import (
-	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -90,21 +89,6 @@ func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int6
 	}
 
 	return instResult.Data.Info, nil
-}
-
-func getSetIDFromTaskDetail(kit *rest.Kit, detail metadata.APITaskDetail) (int64, error) {
-	if len(detail.Flag) == 0 {
-		blog.Errorf("task detail is empty")
-		return 0, kit.CCError.CCErrorf(common.CCErrCommInstDataNil, detail.Flag)
-	}
-
-	setID, err := strconv.ParseInt(detail.Flag[len("set_template_sync:"):], 10, 64)
-	if err != nil {
-		blog.Errorf("getSetIDFromTaskDetail failed, err: %+v, rid: %s", err, kit.Rid)
-		return 0, err
-	}
-
-	return setID, nil
 }
 
 func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64, isInterrupt bool) (map[int64]bool,
@@ -250,6 +234,7 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, s
 			common.BKTaskIDField,
 			common.BKStatusField,
 			common.MetaDataSynchronizeFlagField,
+			common.BKInstIDField,
 		},
 	}
 	details, err := st.GetLatestSyncTaskDetail(kit, taskCond)
@@ -314,14 +299,11 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
 		return nil, kit.CCError.CCError(common.CCErrTaskListTaskFail)
 	}
 
-	var setIndex []string
 	latestTaskResult := make(map[int64]*metadata.APITaskDetail)
-	for _, item := range taskCond.SetID {
-		setIndex = append(setIndex, metadata.GetSetTemplateSyncIndex(item))
-	}
 
 	setRelatedTaskFilter := map[string]interface{}{
-		"flag": map[string]interface{}{common.BKDBIN: setIndex},
+		"bk_inst_id": map[string]interface{}{common.BKDBIN: taskCond.SetID},
+		"flag":       common.SyncSetTaskFlag,
 	}
 	listTaskOption := new(metadata.ListAPITaskLatestRequest)
 	listTaskOption.Condition = setRelatedTaskFilter
@@ -334,7 +316,6 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
 	}
 
 	if listResult == nil || len(listResult.Data) == 0 {
-		blog.Info("list set sync tasks result empty, option: %s, result: %s, rid: %s", listTaskOption, listTaskOption, kit.Rid)
 		return latestTaskResult, nil
 	}
 
@@ -343,12 +324,9 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
 			clearSetSyncTaskDetail(&APITask)
 		}
 
-		setID, err := getSetIDFromTaskDetail(kit, APITask)
-		if err != nil {
-			blog.Errorf("get setID from task failed, err: %+v, rid: %s", err, kit.Rid)
-			return nil, err.(errors.CCErrorCoder)
+		if APITask.InstID != 0 {
+			latestTaskResult[APITask.InstID] = &APITask
 		}
-		latestTaskResult[setID] = &APITask
 	}
 
 	return latestTaskResult, nil
@@ -388,19 +366,32 @@ func (st *setTemplate) TriggerCheckSetTemplateSyncingStatus(kit *rest.Kit, bizID
 	return nil
 }
 
+// ListSetTemplateSyncStatus batch search set template sync status
 func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, bizID int64,
 	option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
 
 	responseInfo := metadata.MultipleSetTemplateSyncStatus{}
 
 	filterTemp := &metadata.QueryCondition{
-		Page:      option.Page,
-		Condition: mapstr.MapStr{common.BKSetTemplateIDField: option.SetTemplateID, common.BKAppIDField: bizID},
+		Page:   option.Page,
+		Fields: []string{common.BKSetIDField},
+		Condition: mapstr.MapStr{
+			common.BKSetTemplateIDField: option.SetTemplateID,
+			common.BKAppIDField:         bizID,
+		},
 	}
+
+	if len(option.SearchKey) != 0 {
+		filterTemp.Condition.Set(
+			common.BKSetNameField, mapstr.MapStr{
+				common.BKDBLIKE:    option.SearchKey,
+				common.BKDBOPTIONS: "i"},
+		)
+	}
+
 	if len(option.SetIDs) != 0 {
 		filterTemp.Condition[common.BKSetIDField] = mapstr.MapStr{common.BKDBIN: option.SetIDs}
 	}
-	filterTemp.Fields = []string{common.BKSetIDField, common.BKSetNameField, common.BkSupplierAccount}
 
 	var setInfoResp metadata.ResponseSetInstance
 	err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header,
@@ -416,28 +407,18 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, bizID int64,
 		return metadata.MultipleSetTemplateSyncStatus{}, err
 	}
 
-	responseInfo.Count = int64(setInfoResp.Data.Count)
 	setIDs := make([]int64, len(setInfoResp.Data.Info))
-	responseInfo.Info = make([]metadata.SetTemplateSyncStatus, len(setInfoResp.Data.Info))
 
 	for idx, setInfo := range setInfoResp.Data.Info {
 		setIDs[idx] = setInfo.SetID
-		// setInfoResp 只返回了部分字段，新加字段注意修改
-		responseInfo.Info[idx] = metadata.SetTemplateSyncStatus{
-			SetID:           setInfo.SetID,
-			Name:            setInfo.SetName,
-			BizID:           bizID,
-			SetTemplateID:   option.SetTemplateID,
-			SupplierAccount: setInfo.SupplierAccount,
-		}
 	}
 
 	// 使用存在模块
 	option.SetIDs = setIDs
 	result, err := st.client.CoreService().SetTemplate().ListSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, option)
 	if err != nil {
-		blog.ErrorJSON("ListSetTemplateSyncStatus failed, core service search failed, option: %s, err: %s, rid: %s",
-			option, err.Error(), kit.Rid)
+		blog.ErrorJSON("ListSetTemplateSyncStatus failed, core service search failed, "+
+			"option: %s, err: %s, rid: %s", option, err.Error(), kit.Rid)
 		return metadata.MultipleSetTemplateSyncStatus{}, err
 	}
 
@@ -447,18 +428,22 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, bizID int64,
 		setTempSyncMap[info.SetID] = info
 		if !info.Status.IsFinished() {
 			go func(info metadata.SetTemplateSyncStatus) {
-				st.TriggerCheckSetTemplateSyncingStatus(kit.NewKit(), info.BizID, info.SetTemplateID, []int64{info.SetID})
+				st.TriggerCheckSetTemplateSyncingStatus(kit.NewKit(),
+					info.BizID, info.SetTemplateID, []int64{info.SetID})
 			}(info)
 		}
 
 	}
-	// 如果在同步表中有数据，使用同步表中的数据
-	for idx, row := range responseInfo.Info {
-		if newRow, ok := setTempSyncMap[row.SetID]; ok {
-			responseInfo.Info[idx] = newRow
+
+	setTemplateStatusRsp := make([]metadata.SetTemplateSyncStatus, 0)
+	for _, setID := range setIDs {
+		if setSync, exist := setTempSyncMap[setID]; exist {
+			setTemplateStatusRsp = append(setTemplateStatusRsp, setSync)
 		}
 	}
 
-	return responseInfo, nil
+	responseInfo.Count = int64(len(setTemplateStatusRsp))
+	responseInfo.Info = setTemplateStatusRsp
 
+	return responseInfo, nil
 }

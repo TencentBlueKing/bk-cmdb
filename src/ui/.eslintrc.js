@@ -50,13 +50,6 @@ module.exports = {
     // eslint-config-tencent 未配置，默认为关闭，此处打开
     'no-extra-semi': 'error',
 
-    // 禁止行尾有空格
-    // https://eslint.org/docs/rules/no-trailing-spaces
-    // eslint-config-tencent，打开，避免在行尾添加空格
-    'no-trailing-spaces': ['error', {
-      skipBlankLines: true // 允许在空行使用空白符，eslint-config-tencent 未配置，默认为不允许，此处允许
-    }],
-
     // 注释的斜线或 * 后必须有空格
     // https://eslint.org/docs/rules/spaced-comment
     // eslint-config-tencent，打开always与此处配置一致，options未配置

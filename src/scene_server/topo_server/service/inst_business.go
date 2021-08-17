@@ -322,13 +322,13 @@ func (s *Service) GetBusinessBasicInfo(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if len(result.Info) == 0 {
+	if len(result.Data.Info) == 0 {
 		blog.Errorf("GetBusinessBasicInfo failed, get business by id not found, bizID: %d, rid: %s", bizID, ctx.Kit.Rid)
 		err := ctx.Kit.CCError.CCError(common.CCErrCommNotFound)
 		ctx.RespAutoError(err)
 		return
 	}
-	bizData := result.Info[0]
+	bizData := result.Data.Info[0]
 	ctx.RespEntity(bizData)
 }
 
@@ -406,7 +406,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	searchCond.Condition = handleSpecialBusinessFieldSearchCond(searchCond.Condition, userFields)
 
 	// parse business id from user's condition for testing.
-	var bizIDs []int64
+	var bizIDs, authBizIDs []int64
 	biz, exist := searchCond.Condition[common.BKAppIDField]
 	if exist {
 		// constrict that bk_biz_id field can only be a numeric value,
@@ -464,20 +464,24 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 			}
 			appList = append(appList, bizID)
 		}
-
 		if len(bizIDs) > 0 {
 			// this means that user want to find a specific business.
 			// now we check if he has this authority.
 			for _, bizID := range bizIDs {
-				if !util.InArray(bizID, appList) {
-					noAuthResp, err := s.AuthManager.GenFindBusinessNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
-					if err != nil {
-						ctx.RespErrorCodeOnly(common.CCErrTopoAppSearchFailed, "")
-						return
-					}
-					ctx.RespEntity(noAuthResp)
-					return
+				if util.InArray(bizID, appList) {
+					// authBizIDs store the authorized bizIDs
+					authBizIDs = append(authBizIDs, bizID)
 				}
+			}
+			if len(authBizIDs) > 0 {
+				searchCond.Condition[common.BKAppIDField] = mapstr.MapStr{common.BKDBIN: authBizIDs}
+			} else {
+				// if there are no qualified bizIDs, return null
+				result := mapstr.MapStr{}
+				result.Set("count", 0)
+				result.Set("info", []mapstr.MapStr{})
+				ctx.RespEntity(result)
+				return
 			}
 			// now you have the authority.
 		} else {
@@ -601,7 +605,7 @@ func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
 		return
 	}
 	if innerAppTopo == nil {
-		blog.ErrorJSON("GetInternalModuleWithStatistics failed, GetInternalModule return unexpected type: %s, rid: %s", innerAppTopo, ctx.Kit.Rid)
+		blog.ErrorJSON("get internal module with statistics failed, type: %s, rid: %s", innerAppTopo, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -617,9 +621,11 @@ func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
 			Limit: common.BKNoLimit,
 		},
 	}
-	hostApplyRules, err := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, listApplyRuleOption)
+	hostApplyRules, err := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx,
+		ctx.Kit.Header, bizID, listApplyRuleOption)
 	if err != nil {
-		blog.Errorf("fillStatistics failed, ListHostApplyRule failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, listApplyRuleOption, err, ctx.Kit.Rid)
+		blog.Errorf("fillStatistics failed, ListHostApplyRule failed, bizID: %d, option: %+v, err: %+v, rid: %s",
+			bizID, listApplyRuleOption, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -631,40 +637,10 @@ func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
 		moduleRuleCount[item.ModuleID] += 1
 	}
 
-	// count hosts
-	listHostOption := &metadata.HostModuleRelationRequest{
-		ApplicationID: bizID,
-		SetIDArr:      []int64{innerAppTopo.SetID},
-		ModuleIDArr:   moduleIDArr,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
-	}
-	hostModuleRelations, e := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, listHostOption)
-	if e != nil {
-		blog.Errorf("GetInternalModuleWithStatistics failed, list host modules failed, option: %+v, err: %s, rid: %s", listHostOption, e.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(e)
-		return
-	}
-	setHostIDs := make([]int64, 0)
-	moduleHostIDs := make(map[int64][]int64, 0)
-	for _, relation := range hostModuleRelations.Info {
-		setHostIDs = append(setHostIDs, relation.HostID)
-		if _, ok := moduleHostIDs[relation.ModuleID]; ok == false {
-			moduleHostIDs[relation.ModuleID] = make([]int64, 0)
-		}
-		moduleHostIDs[relation.ModuleID] = append(moduleHostIDs[relation.ModuleID], relation.HostID)
-	}
 	set := mapstr.NewFromStruct(innerAppTopo, "field")
-	set["host_count"] = len(util.IntArrayUnique(setHostIDs))
 	modules := make([]mapstr.MapStr, 0)
 	for _, module := range innerAppTopo.Module {
 		moduleItem := mapstr.NewFromStruct(module, "field")
-		moduleItem["host_count"] = 0
-		if hostIDs, ok := moduleHostIDs[module.ModuleID]; ok == true {
-			moduleItem["host_count"] = len(util.IntArrayUnique(hostIDs))
-		}
 		moduleItem["host_apply_rule_count"] = 0
 		if ruleCount, ok := moduleRuleCount[module.ModuleID]; ok == true {
 			moduleItem["host_apply_rule_count"] = ruleCount

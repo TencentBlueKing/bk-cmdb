@@ -639,6 +639,7 @@ func (s *Service) SyncSetTplToInst(ctx *rest.Contexts) {
 		Fields: []string{
 			common.BKStatusField,
 			common.MetaDataSynchronizeFlagField,
+			common.BKInstIDField,
 		},
 	}
 	// NOTE: 如下处理不能杜绝所有发提交任务, 可通过前端防双击的方式限制绝大部分情况
@@ -728,6 +729,7 @@ func (s *Service) GetSetSyncDetails(ctx *rest.Contexts) {
 		Fields: []string{
 			common.BKStatusField,
 			common.MetaDataSynchronizeFlagField,
+			common.BKInstIDField,
 			"detail.status",
 			"detail.data.module_diff.bk_module_name",
 			"detail.response.baseresp.errmsg",
