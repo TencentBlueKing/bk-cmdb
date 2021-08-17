@@ -312,6 +312,18 @@ type SearchAssociationKindResult struct {
 	Info  []AssociationKind `json:"info"`
 }
 
+// QueryModelAssociationResult query model association result definition
+type QueryModelAssociationResult struct {
+	Count uint64        `json:"count"`
+	Info  []Association `json:"info"`
+}
+
+// QueryInstAssociationResult query inst association result definition
+type QueryInstAssociationResult struct {
+	Count uint64     `json:"count"`
+	Info  []InstAsst `json:"info"`
+}
+
 // ReadModelAttrResult  read model attribute api http response return result struct
 type ReadModelAttrResult struct {
 	BaseResp `json:",inline"`
@@ -346,19 +358,13 @@ type ReadModelUniqueResult struct {
 }
 
 type ReadModelAssociationResult struct {
-	BaseResp
-	Data struct {
-		Count uint64        `json:"count"`
-		Info  []Association `json:"info"`
-	}
+	BaseResp `json:",inline"`
+	Data     QueryModelAssociationResult `json:"data"`
 }
 
 type ReadInstAssociationResult struct {
-	BaseResp
-	Data struct {
-		Count uint64     `json:"count"`
-		Info  []InstAsst `json:"info"`
-	}
+	BaseResp `json:",inline"`
+	Data     QueryInstAssociationResult `json:"data"`
 }
 
 // OperaterException  result

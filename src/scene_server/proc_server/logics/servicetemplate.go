@@ -32,15 +32,15 @@ func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond ma
 			common.BKServiceCategoryIDField},
 	}
 
-	moduleRes, rawErr := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
-		moduleFilter)
+	moduleRes, rawErr := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
+		common.BKInnerObjIDModule, moduleFilter)
 	if rawErr != nil {
 		blog.ErrorJSON("get modules failed, err: %s, input: %s, rid: %s", rawErr, moduleFilter, kit.Rid)
 		return nil, nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	svcTempModuleMap := make(map[int64][]*metadata.ModuleInst)
-	for _, moduleInst := range moduleRes.Data.Info {
+	for _, moduleInst := range moduleRes.Info {
 		module := new(metadata.ModuleInst)
 		if err := mapstruct.Decode2Struct(moduleInst, &module); err != nil {
 			blog.Errorf("parse module failed, err: %s, module: %s, rid: %s", err, module, kit.Rid)
