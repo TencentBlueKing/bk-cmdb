@@ -273,7 +273,7 @@
         return firstNode || null
       },
       getInstanceTopology() {
-        return this.$store.dispatch('objectMainLineModule/getInstTopo', {
+        return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
           bizId: this.bizId,
           config: {
             requestId: this.request.instance
