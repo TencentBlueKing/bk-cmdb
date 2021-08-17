@@ -70,13 +70,13 @@ const actions = {
   },
 
   /**
-     * 获取实例拓扑实例数
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {String} bizId 业务id
-     * @return {promises} promises 对象
-     */
+   * 获取实例拓扑实例数
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {String} bizId 业务id
+   * @return {promises} promises 对象
+   */
   getInstTopoInstanceNum({ commit, state, dispatch, rootGetters }, { bizId, config }) {
     return $http.post(`/find/topoinst_with_statistics/biz/${bizId}`, {}, config)
   },
@@ -111,6 +111,30 @@ const actions = {
 
   getTopoPath(context, { bizId, params, config }) {
     return $http.post(`find/topopath/biz/${bizId}`, params, config)
+  },
+  /**
+   * 接口设置查询上限为1000，按照limit进行请求拆分，调用方无感知
+   */
+  async getTopoStatistics(context, { bizId, params }) {
+    const queue = []
+    const limit = 1000
+    const nodes = params.condition
+    let index = 0
+    while (index < nodes.length) {
+      queue.push($http.post(`find/topoinstnode/host_serviceinst_count/${bizId}`, {
+        condition: nodes.slice(index, index + limit)
+      }))
+      index = index + limit
+    }
+    try {
+      const results = await Promise.all(queue)
+      return results.reduce((result, current) => {
+        result.push(...current)
+        return result
+      }, [])
+    } catch (error) {
+      return Promise.reject(error)
+    }
   }
 }
 

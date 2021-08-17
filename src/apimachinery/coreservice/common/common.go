@@ -16,13 +16,15 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/common/metadata"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 )
 
 type CommonInterface interface {
 	GetDistinctField(ctx context.Context, h http.Header, option *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder)
+	GetDistinctCount(ctx context.Context, h http.Header, option *metadata.DistinctFieldOption) (int64,
+		errors.CCErrorCoder)
 }
 
 func NewCommonInterfaceClient(client rest.ClientInterface) CommonInterface {

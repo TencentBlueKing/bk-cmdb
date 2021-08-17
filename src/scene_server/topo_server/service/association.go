@@ -178,6 +178,36 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
 	return topoInstRst, nil
 }
 
+// GetTopoNodeHostAndSerInstCount calculate how many service instances amd how many hosts on toponode
+func (s *Service) GetTopoNodeHostAndSerInstCount(ctx *rest.Contexts) {
+	id, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	if err != nil {
+		blog.Errorf("parse biz id: %s from url path failed, error info is: %s , "+
+			"rid: %s", ctx.Request.PathParameter("bk_biz_id"), err, ctx.Kit.Rid)
+		return
+	}
+
+	input := new(metadata.HostAndSerInstCountOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	const BKParamMaxLength = 1000
+	if len(input.Condition) > BKParamMaxLength {
+		err := ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "condition length")
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result, err := s.Core.AssociationOperation().TopoNodeHostAndSerInstCount(ctx.Kit, id, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
+}
+
 func SortTopoInst(instData []*metadata.TopoInstRst) {
 	for _, data := range instData {
 		instNameInGBK, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader([]byte(data.InstName)), simplifiedchinese.GBK.NewEncoder()))

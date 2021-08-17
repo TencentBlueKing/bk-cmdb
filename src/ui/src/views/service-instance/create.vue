@@ -350,8 +350,12 @@
           const [innerIP] = host.bk_host_innerip.split(',')
           return innerIP || mapping[1]
         }
-        const [outerIP] = host.bk_host_outerip.split(',')
-        return outerIP || mapping[1]
+        // 第一外网IP
+        if (ipValue === '4') {
+          const [outerIP] = host.bk_host_outerip.split(',')
+          return outerIP || mapping[1]
+        }
+        return ''
       },
       getEditState(instance) {
         return instance.editing

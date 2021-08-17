@@ -5,6 +5,7 @@
     :maxlength="maxlength"
     :disabled="disabled"
     v-bind="$attrs"
+    @blur="handleBlur"
     @change="handleChange"
     @enter="handleEnter">
   </bk-input>
@@ -50,6 +51,9 @@
       },
       handleEnter(value) {
         this.$emit('enter', value)
+      },
+      handleBlur(value) {
+        this.$emit('blur', value)
       },
       focus() {
         this.$el.querySelector('input').focus()
