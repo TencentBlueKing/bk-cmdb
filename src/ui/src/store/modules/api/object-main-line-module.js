@@ -70,6 +70,18 @@ const actions = {
   },
 
   /**
+   * 获取实例拓扑实例数
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {String} bizId 业务id
+   * @return {promises} promises 对象
+   */
+  getInstTopoInstanceNum({ commit, state, dispatch, rootGetters }, { bizId, config }) {
+    return $http.post(`/find/topoinst_with_statistics/biz/${bizId}`, {}, config)
+  },
+
+  /**
      * 获取子节点实例
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -94,7 +106,7 @@ const actions = {
      * @return {promises} promises 对象
      */
   getInternalTopo({ commit, state, dispatch, rootGetters }, { bizId, config }) {
-    return $http.get(`topo/internal/${rootGetters.supplierAccount}/${bizId}`, config)
+    return $http.get(`topo/internal/${rootGetters.supplierAccount}/${bizId}/with_statistics`, config)
   },
 
   getTopoPath(context, { bizId, params, config }) {
