@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SaveAuditLog api of save audit log
 func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.AuditLog) (
 	*metadata.Response, error) {
 
@@ -45,6 +46,7 @@ func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...m
 	return resp, nil
 }
 
+// SearchAuditLog api of search audit log
 func (inst *auditlog) SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryCondition) (
 	*metadata.AuditQueryResult, error) {
 

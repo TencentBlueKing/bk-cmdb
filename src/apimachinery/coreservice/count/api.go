@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// GetCountByFilter search number array of needed by filters
 func (s *count) GetCountByFilter(ctx context.Context, h http.Header, table string, filters []map[string]interface{}) (
 	[]int64, errors.CCErrorCoder) {
 

@@ -164,6 +164,7 @@ func (s *Service) createSet(kit *rest.Kit, bizID int64, obj model.Object, data m
 	return set, nil
 }
 
+// CheckIsBuiltInSet check if set is built-in set
 func (s *Service) CheckIsBuiltInSet(kit *rest.Kit, setIDs ...int64) errors.CCErrorCoder {
 	// 检查是否时内置集群
 	filter := &metadata.QueryCondition{
@@ -180,9 +181,11 @@ func (s *Service) CheckIsBuiltInSet(kit *rest.Kit, setIDs ...int64) errors.CCErr
 		},
 	}
 
-	rsp, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter)
+	rsp, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
+		filter)
 	if nil != err {
-		blog.ErrorJSON("CheckIsBuiltInSet failed, ReadInstance failed, option: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
+		blog.ErrorJSON("CheckIsBuiltInSet failed, ReadInstance failed, option: %s, err: %s, rid: %s", filter,
+			err.Error(), kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -413,7 +416,8 @@ func (s *Service) SearchSetBatch(ctx *rest.Contexts) {
 		},
 		Condition: cond,
 	}
-	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDSet, qc)
+	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDSet, qc)
 	if err != nil {
 		blog.Errorf("SearchModuleBatch failed, http request failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))

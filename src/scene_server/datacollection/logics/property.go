@@ -560,14 +560,18 @@ type propertyShowField struct {
 }
 
 // get obj ID list and get field to show by map (bk_obj_id --> bk_obj_name)
-func (lgc *Logics) getObjIDsAndShowFields(pHeader http.Header, objectCond map[string]interface{}) ([]string, map[string]objShowField, error) {
+func (lgc *Logics) getObjIDsAndShowFields(pHeader http.Header, objectCond map[string]interface{}) ([]string,
+	map[string]objShowField, error) {
+
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 	rid := util.GetHTTPCCRequestID(pHeader)
 	objectCond[common.BKClassificationIDField] = common.BKNetwork
 
-	objResult, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), pHeader, &meta.QueryCondition{Condition: objectCond})
+	objResult, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), pHeader,
+		&meta.QueryCondition{Condition: objectCond})
 	if nil != err {
-		blog.Errorf("[NetProperty] get net device object fail, error: %v, condition [%#v], rid: %s", err, objectCond, rid)
+		blog.Errorf("[NetProperty] get net device object fail, error: %v, condition [%#v], rid: %s", err, objectCond,
+			rid)
 		return nil, nil, defErr.Error(common.CCErrObjectSelectInstFailed)
 	}
 
@@ -642,11 +646,14 @@ func (lgc *Logics) assembleDeviceShowFieldValue(deviceData []meta.NetcollectDevi
 }
 
 // get objectID, property ID list and get field to show by map (bk_property_id --> bk_property_name, ...)
-func (lgc *Logics) getPropertyIDsAndShowFields(pHeader http.Header, propertyCond map[string]interface{}) ([]string, []string, map[string]propertyShowField, error) {
+func (lgc *Logics) getPropertyIDsAndShowFields(pHeader http.Header, propertyCond map[string]interface{}) ([]string,
+	[]string, map[string]propertyShowField, error) {
+
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 	rid := util.GetHTTPCCRequestID(pHeader)
 
-	attrResult, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(), pHeader, &meta.QueryCondition{Condition: propertyCond})
+	attrResult, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(), pHeader,
+		&meta.QueryCondition{Condition: propertyCond})
 	if nil != err {
 		blog.Errorf("[NetProperty] get property fail, error: %v, condition [%#v], rid: %s", err, propertyCond, rid)
 		return nil, nil, nil, defErr.Error(common.CCErrTopoObjectAttributeSelectFailed)
@@ -655,7 +662,8 @@ func (lgc *Logics) getPropertyIDsAndShowFields(pHeader http.Header, propertyCond
 	objIDs, propertyIDs, propertyIDMapPropertyShowFields := lgc.assembleAttrShowFieldValue(attrResult.Info)
 
 	if 0 == len(objIDs) || 0 == len(propertyIDs) || 0 == len(propertyIDMapPropertyShowFields) {
-		blog.Errorf("[NetProperty] get property fail, property is not exist, condition [%#v], rid: %s", propertyCond, rid)
+		blog.Errorf("[NetProperty] get property fail, property is not exist, condition [%#v], rid: %s", propertyCond,
+			rid)
 		return nil, nil, nil, nil
 	}
 

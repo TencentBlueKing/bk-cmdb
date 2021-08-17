@@ -43,13 +43,16 @@ type unique struct {
 	authManager *extensions.AuthManager
 }
 
-func (a *unique) Create(kit *rest.Kit, objectID string, request *metadata.CreateUniqueRequest) (uniqueID *metadata.RspID, err error) {
+// Create unique
+func (a *unique) Create(kit *rest.Kit, objectID string, request *metadata.CreateUniqueRequest) (
+	uniqueID *metadata.RspID, err error) {
 	unique := metadata.ObjectUnique{
 		ObjID: request.ObjID,
 		Keys:  request.Keys,
 	}
 
-	resp, err := a.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header, objectID, metadata.CreateModelAttrUnique{Data: unique})
+	resp, err := a.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header, objectID,
+		metadata.CreateModelAttrUnique{Data: unique})
 	if err != nil {
 		blog.Errorf("[UniqueOperation] create for %s, %#v failed %v, rid: %s", objectID, request, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrTopoObjectUniqueCreateFailed)
@@ -58,6 +61,7 @@ func (a *unique) Create(kit *rest.Kit, objectID string, request *metadata.Create
 	return &metadata.RspID{ID: int64(resp.Created.ID)}, nil
 }
 
+// Update unique
 func (a *unique) Update(kit *rest.Kit, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (err error) {
 	update := metadata.UpdateModelAttrUnique{
 		Data: *request,
@@ -71,6 +75,7 @@ func (a *unique) Update(kit *rest.Kit, objectID string, id uint64, request *meta
 	return nil
 }
 
+// Delete unique
 func (a *unique) Delete(kit *rest.Kit, objectID string, id uint64) (err error) {
 	_, err = a.clientSet.CoreService().Model().DeleteModelAttrUnique(kit.Ctx, kit.Header, objectID, id)
 	if err != nil {
@@ -81,6 +86,7 @@ func (a *unique) Delete(kit *rest.Kit, objectID string, id uint64) (err error) {
 	return nil
 }
 
+// Search unique
 func (a *unique) Search(kit *rest.Kit, objectID string) (objectUniques []metadata.ObjectUnique, err error) {
 	fCond := condition.CreateCondition().Field(common.BKObjIDField).Eq(objectID).ToMapStr()
 

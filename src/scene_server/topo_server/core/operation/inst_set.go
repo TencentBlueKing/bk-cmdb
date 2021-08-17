@@ -67,7 +67,8 @@ func (s *set) hasHost(kit *rest.Kit, bizID int64, setIDS []int64) (bool, error) 
 	}
 	rsp, err := s.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, option)
 	if nil != err {
-		blog.Errorf("[operation-set] failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-set] failed to request the object controller, error info is %s, rid: %s",
+			err.Error(), kit.Rid)
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -177,6 +178,7 @@ func (s *set) isSetDuplicateError(inputErr error) bool {
 	return false
 }
 
+// DeleteSet delete set and set sync status and task
 func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 	setCond := map[string]interface{}{common.BKAppIDField: bizID}
 	if nil != setIDs {
@@ -202,8 +204,10 @@ func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 	}
 
 	// clear set template sync status
-	if ccErr := s.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, setIDs); ccErr != nil {
-		blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDs, ccErr.Error(), kit.Rid)
+	if ccErr := s.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID,
+		setIDs); ccErr != nil {
+		blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, "+
+			"err: %s, rid: %s", bizID, setIDs, ccErr.Error(), kit.Rid)
 		return ccErr
 	}
 

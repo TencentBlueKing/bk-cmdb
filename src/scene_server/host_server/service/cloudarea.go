@@ -72,7 +72,8 @@ func (s *Service) FindManyCloudArea(ctx *rest.Contexts) {
 		Page:      input.Page,
 	}
 
-	res, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDPlat, query)
+	res, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDPlat,
+		query)
 	if nil != err {
 		blog.Errorf("FindManyCloudArea http do error: %v query:%#v,rid:%s", err, query, rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
@@ -126,9 +127,11 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 	result := make([]metadata.CreateManyCloudAreaElem, len(input.Data))
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		res, err := s.CoreAPI.CoreService().Instance().CreateManyInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDPlat, instInfo)
+		res, err := s.CoreAPI.CoreService().Instance().CreateManyInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.BKInnerObjIDPlat, instInfo)
 		if nil != err {
-			blog.Errorf("CreatePlatBatch failed, CreateManyInstance error: %s, input:%+v,rid:%s", err.Error(), input, ctx.Kit.Rid)
+			blog.Errorf("CreatePlatBatch failed, CreateManyInstance error: %s, input:%+v,rid:%s", err.Error(), input,
+				ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrTopoInstCreateFailed)
 		}
 
@@ -184,7 +187,8 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 				Instances: iamInstances,
 				Creator:   user,
 			}
-			_, err = s.AuthManager.Authorizer.BatchRegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstancesWithCreator)
+			_, err = s.AuthManager.Authorizer.BatchRegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header,
+				iamInstancesWithCreator)
 			if err != nil {
 				blog.Errorf("register created cloud area to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
@@ -224,8 +228,9 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 	var res *metadata.CreateOneDataResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		res, err = s.CoreAPI.CoreService().Instance().CreateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDPlat, instInfo)
-		if nil != err {
+		res, err = s.CoreAPI.CoreService().Instance().CreateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.BKInnerObjIDPlat, instInfo)
+		if err != nil {
 			blog.Errorf("CreatePlat error: %s, input:%+v,rid:%s", err.Error(), input, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrTopoInstCreateFailed)
 		}
@@ -257,7 +262,8 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 				}},
 				Creator: user,
 			}
-			_, err = s.AuthManager.Authorizer.BatchRegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			_, err = s.AuthManager.Authorizer.BatchRegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header,
+				iamInstance)
 			if err != nil {
 				blog.Errorf("register created cloud area to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
@@ -364,7 +370,8 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 	platIDStr := ctx.Request.PathParameter(common.BKCloudIDField)
 	platID, err := util.GetInt64ByInterface(platIDStr)
 	if nil != err {
-		blog.Infof("UpdatePlat failed, parse platID failed, platID: %s, err: %s, rid:%s", platIDStr, err.Error(), ctx.Kit.Rid)
+		blog.Infof("UpdatePlat failed, parse platID failed, platID: %s, err: %s, rid:%s", platIDStr, err.Error(),
+			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField))
 		return
 	}
@@ -414,7 +421,8 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 
 	// generate audit log.
 	audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate).WithUpdateFields(toUpdate)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit,
+		metadata.AuditUpdate).WithUpdateFields(toUpdate)
 	logs, err := audit.GenerateAuditLog(generateAuditParameter, []int64{platID})
 	if err != nil {
 		blog.Errorf("generate audit log failed before update cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
@@ -427,7 +435,8 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 		_, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 			common.BKInnerObjIDPlat, updateOption)
 		if nil != err {
-			blog.ErrorJSON("UpdatePlat failed, UpdateInstance failed, input:%s, err:%s, rid:%s", updateOption, err.Error(), ctx.Kit.Rid)
+			blog.ErrorJSON("UpdatePlat failed, UpdateInstance failed, input:%s, err:%s, rid:%s", updateOption,
+				err.Error(), ctx.Kit.Rid)
 			return ctx.Kit.CCError.Errorf(common.CCErrTopoInstDeleteFailed)
 		}
 

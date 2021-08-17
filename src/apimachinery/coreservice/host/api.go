@@ -16,10 +16,8 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 // TransferToInnerModule  transfer host to inner module  eg:idle module and fault module
@@ -167,6 +165,7 @@ func (h *host) GetHostByID(ctx context.Context, header http.Header, hostID int64
 	return resp, err
 }
 
+// GetHosts search hosts
 func (h *host) GetHosts(ctx context.Context, header http.Header, opt *metadata.QueryInput) (*metadata.HostInfo, error) {
 
 	resp := new(metadata.GetHostsResult)
@@ -469,12 +468,14 @@ func (h *host) GetHostModulesIDs(ctx context.Context, header http.Header, dat *m
 	return
 }
 
-func (h *host) ListHosts(ctx context.Context, header http.Header, option *metadata.ListHosts) (*metadata.ListHostResult, error) {
+// ListHosts get hosts list
+func (h *host) ListHosts(ctx context.Context, header http.Header, option *metadata.ListHosts) (*metadata.ListHostResult,
+	error) {
 	type Result struct {
 		metadata.BaseResp `json:",inline"`
 		Data              *metadata.ListHostResult `json:"data"`
 	}
-	result := Result{}
+	result := new(Result)
 	subPath := "/findmany/hosts/list_hosts"
 
 	err := h.client.Post().
@@ -483,18 +484,21 @@ func (h *host) ListHosts(ctx context.Context, header http.Header, option *metada
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
-		Into(&result)
+		Into(result)
 	if err != nil {
-		return result.Data, err
+		return nil, errors.CCHttpError
 	}
-	if result.Code > 0 || result.Result == false {
-		return result.Data, errors.New(result.Code, result.ErrMsg)
+
+	if err = result.CCError(); err != nil {
+		return nil, err
 	}
+
 	return result.Data, nil
 }
 
-func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header, option metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder {
-	rid := util.GetHTTPCCRequestID(header)
+// UpdateHostCloudAreaField update host's cloud area
+func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header,
+	option metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder {
 
 	result := metadata.BaseResp{}
 	subPath := "/updatemany/hosts/cloudarea_field"
@@ -507,12 +511,13 @@ func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header,
 		Do().
 		Into(&result)
 	if err != nil {
-		blog.Errorf("UpdateHostCloudAreaField failed, http request failed, err: %+v, rid: %s", err, rid)
 		return errors.CCHttpError
 	}
-	if result.Code > 0 || result.Result == false {
-		return errors.New(result.Code, result.ErrMsg)
+
+	if ccErr := result.CCError(); err != nil {
+		return ccErr
 	}
+
 	return nil
 }
 
@@ -530,8 +535,9 @@ func (h *host) FindCloudAreaHostCount(ctx context.Context, header http.Header, o
 	return
 }
 
-func (h *host) TransferHostResourceDirectory(ctx context.Context, header http.Header, option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
-	rid := util.GetHTTPCCRequestID(header)
+// TransferHostResourceDirectory transfer host resource directory
+func (h *host) TransferHostResourceDirectory(ctx context.Context, header http.Header,
+	option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
 
 	result := metadata.BaseResp{}
 	subPath := "/host/transfer/resource/directory"
@@ -544,11 +550,11 @@ func (h *host) TransferHostResourceDirectory(ctx context.Context, header http.He
 		Do().
 		Into(&result)
 	if err != nil {
-		blog.Errorf("TransferHostResourceDirectory failed, http request failed, err: %+v, rid: %s", err, rid)
 		return errors.CCHttpError
 	}
-	if result.Code > 0 || result.Result == false {
-		return errors.New(result.Code, result.ErrMsg)
+
+	if ccErr := result.CCError(); err != nil {
+		return ccErr
 	}
 
 	return nil

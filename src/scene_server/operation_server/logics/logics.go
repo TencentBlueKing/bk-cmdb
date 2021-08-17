@@ -72,6 +72,7 @@ func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.StringIDCount, err
 	return ret, nil
 }
 
+// GetModelAndInstCount count model and inst
 func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.StringIDCount, error) {
 	cond := &metadata.QueryCondition{}
 	condition := mapstr.MapStr{

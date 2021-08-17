@@ -80,15 +80,17 @@ func (a *audit) getInstNameByID(kit *rest.Kit, objID string, instID int64) (stri
 	}
 
 	if len(insts) != 1 {
-		blog.Errorf("failed to getting instance name, instance not one, instID: %d, objID: %d, rid: %s", instID, objID, kit.Rid)
+		blog.Errorf("failed to getting instance name, instance not one, instID: %d, objID: %d, rid: %s",
+			instID, objID, kit.Rid)
 		return "", kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, instIDField)
 	}
 
 	instName, convErr := insts[0].String(instNameField)
 	if convErr != nil {
-		blog.Errorf("getting instance name failed, failed to %s fields convert to string, instID: %d, data: %+v, rid: %s",
-			instNameField, instID, insts[0], kit.Rid)
-		return "", kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, objID, instNameField, "string", convErr.Error())
+		blog.Errorf("getting instance name failed, failed to %s fields convert to string, instID: %d, "+
+			"data: %+v, rid: %s", instNameField, instID, insts[0], kit.Rid)
+		return "", kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, objID, instNameField, "string",
+			convErr.Error())
 	}
 
 	return instName, nil

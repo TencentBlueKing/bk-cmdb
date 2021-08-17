@@ -27,6 +27,7 @@ import (
 	"configcenter/src/storage/driver/redis"
 )
 
+// GetOneSet search a set
 func (st *setTemplate) GetOneSet(kit *rest.Kit, setID int64) (metadata.SetInst, errors.CCErrorCoder) {
 	set := metadata.SetInst{}
 
@@ -47,11 +48,13 @@ func (st *setTemplate) GetOneSet(kit *rest.Kit, setID int64) (metadata.SetInst, 
 		return set, kit.CCError.CCError(common.CCErrCommNotFound)
 	}
 	if len(instResult.Info) > 1 {
-		blog.ErrorJSON("GetOneSet failed, got multiple, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
+		blog.ErrorJSON("GetOneSet failed, got multiple, filter: %s, instResult: %s, rid: %s", filter, instResult,
+			kit.Rid)
 		return set, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
 	}
 	if err := mapstruct.Decode2StructWithHook(instResult.Info[0], &set); err != nil {
-		blog.ErrorJSON("GetOneSet failed, unmarshal set failed, instResult: %s, err: %s, rid: %s", instResult, err.Error(), kit.Rid)
+		blog.ErrorJSON("GetOneSet failed, unmarshal set failed, instResult: %s, err: %s, rid: %s", instResult,
+			err.Error(), kit.Rid)
 		return set, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 	return set, nil

@@ -92,9 +92,11 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 	queryInput.Condition = cond.ToMapStr()
 
 	if targetModel.Object().ObjectID != common.BKInnerObjIDHost {
-		rsp, err := cli.clientSet.CoreService().Instance().ReadInstance(cli.kit.Ctx, cli.kit.Header, targetModel.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
+		rsp, err := cli.clientSet.CoreService().Instance().ReadInstance(cli.kit.Ctx, cli.kit.Header,
+			targetModel.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
 		if nil != err {
-			blog.Errorf("[inst-inst] failed to request the object controller , error info is %s, rid: %s", err.Error(), cli.kit.Rid)
+			blog.Errorf("[inst-inst] failed to request the object controller, error info is %s, rid: %s",
+				err.Error(), cli.kit.Rid)
 			return nil, cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
@@ -104,7 +106,8 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 	// search hosts
 	rsp, err := cli.clientSet.CoreService().Host().GetHosts(cli.kit.Ctx, cli.kit.Header, queryInput)
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s, rid: %s", err.Error(), cli.kit.Rid)
+		blog.Errorf("[inst-inst] failed to request the object controller, error info is %s, rid: %s", err.Error(),
+			cli.kit.Rid)
 		return nil, cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -112,6 +115,7 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 
 }
 
+// Create instance
 func (cli *inst) Create() error {
 	rid := cli.kit.Rid
 	objID := cli.target.GetObjectID()
@@ -150,7 +154,9 @@ func (cli *inst) Update(data mapstr.MapStr) error {
 	return cli.kit.CCError.CCError(common.CCErrCommNotFound)
 }
 
-func (cli *inst) UpdateInstance(filter condition.Condition, data mapstr.MapStr, nonInnerAttributes []model.AttributeInterface) error {
+// UpdateInstance update instance
+func (cli *inst) UpdateInstance(filter condition.Condition, data mapstr.MapStr,
+	nonInnerAttributes []model.AttributeInterface) error {
 	// not allowed to update these fields, need to use specialized function
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.BKAppIDField)
@@ -175,7 +181,8 @@ func (cli *inst) UpdateInstance(filter condition.Condition, data mapstr.MapStr, 
 	// read the updated data
 	instItems, err := cli.searchInsts(cli.target, filter)
 	if nil != err {
-		blog.ErrorJSON("[inst-inst] failed to search updated data, cond: %s, err: %s, rid: %s", filter.ToMapStr(), err.Error(), rid)
+		blog.ErrorJSON("[inst-inst] failed to search updated data, cond: %s, err: %s, rid: %s", filter.ToMapStr(),
+			err.Error(), rid)
 		return err
 	}
 
@@ -192,7 +199,9 @@ func (cli *inst) IsExists() (bool, error) {
 	return exist, err
 }
 
-func (cli *inst) CheckInstanceExists(nonInnerAttributes []model.AttributeInterface) (exist bool, filter condition.Condition, err error) {
+// CheckInstanceExists check if instance existed
+func (cli *inst) CheckInstanceExists(nonInnerAttributes []model.AttributeInterface) (exist bool,
+	filter condition.Condition, err error) {
 	rid := cli.kit.Rid
 	objID := cli.target.GetObjectID()
 	instIDField := cli.target.GetInstIDFieldName()

@@ -43,6 +43,7 @@ type SearchAssociationTypeRequest struct {
 	Condition map[string]interface{} `json:"condition"`
 }
 
+// SearchAssociationType struct for search association type
 type SearchAssociationType struct {
 	Count int                `json:"count"`
 	Info  []*AssociationKind `json:"info"`
@@ -492,15 +493,15 @@ func (cli *MainlineObjectTopo) ToMapStr() mapstr.MapStr {
 
 // TopoInst 实例拓扑结构
 type TopoInst struct {
-	InstID               int64  `json:"bk_inst_id"`
-	InstName             string `json:"bk_inst_name"`
-	ObjID                string `json:"bk_obj_id"`
-	ObjName              string `json:"bk_obj_name"`
-	Default              int    `json:"default"`
-	ServiceTemplateID    int64  `json:"service_template_id,omitempty"`
-	SetTemplateID        int64  `json:"set_template_id,omitempty"`
-	HostApplyEnabled     *bool  `json:"host_apply_enabled,omitempty"`
-	HostApplyRuleCount   *int64 `json:"host_apply_rule_count,omitempty"`
+	InstID             int64  `json:"bk_inst_id"`
+	InstName           string `json:"bk_inst_name"`
+	ObjID              string `json:"bk_obj_id"`
+	ObjName            string `json:"bk_obj_name"`
+	Default            int    `json:"default"`
+	ServiceTemplateID  int64  `json:"service_template_id,omitempty"`
+	SetTemplateID      int64  `json:"set_template_id,omitempty"`
+	HostApplyEnabled   *bool  `json:"host_apply_enabled,omitempty"`
+	HostApplyRuleCount *int64 `json:"host_apply_rule_count,omitempty"`
 }
 
 // TopoInstRst 拓扑实例

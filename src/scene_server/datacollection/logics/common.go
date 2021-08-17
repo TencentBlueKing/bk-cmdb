@@ -48,9 +48,11 @@ func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName str
 		objCond[common.BKObjIDField] = objID
 	}
 
-	objResult, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), pheader, &meta.QueryCondition{Condition: objCond})
+	objResult, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), pheader,
+		&meta.QueryCondition{Condition: objCond})
 	if nil != err {
-		blog.Errorf("[NetCollect] check net device object, get net device object fail, error: %v, condition [%#v]", err, objCond)
+		blog.Errorf("[NetCollect] check net device object, get net device object fail, error: %v, condition [%#v]",
+			err, objCond)
 		return "", "", defErr.Errorf(common.CCErrObjectSelectInstFailed)
 	}
 
@@ -64,7 +66,8 @@ func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName str
 
 // by checking if bk_property_id and bk_property_name function parameter are valid net device object property or not
 // one of bk_property_id and bk_property_name can be empty and will return bk_property_id value if no error
-func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, propertyID, propertyName string) (string, error) {
+func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, propertyID, propertyName string) (string,
+	error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	if "" == netDeviceObjID {
@@ -87,14 +90,16 @@ func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, p
 		propertyCond[common.BKPropertyIDField] = propertyID
 	}
 
-	attrResult, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(), pheader, &meta.QueryCondition{Condition: propertyCond})
+	attrResult, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(), pheader,
+		&meta.QueryCondition{Condition: propertyCond})
 	if nil != err {
 		blog.Errorf("[NetCollect] get object attribute fail, error: %v, condition [%#v]", err, propertyCond)
 		return "", defErr.Errorf(common.CCErrTopoObjectAttributeSelectFailed)
 	}
 
 	if 0 == len(attrResult.Info) {
-		blog.Errorf("[NetCollect] check net device object property, property is not exist, condition [%#v]", propertyCond)
+		blog.Errorf("[NetCollect] check net device object property, property is not exist, condition [%#v]",
+			propertyCond)
 		return "", defErr.Errorf(common.CCErrCollectNetDeviceObjPropertyNotExist)
 	}
 

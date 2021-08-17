@@ -31,7 +31,8 @@ func parseModelBizID(data string) (int64, error) {
 
 // 依照"bk_obj_id"和"bk_property_type":"objuser"查询"cc_ObjAttDes"集合,得到"bk_property_id"的值;
 // 然后以它的值为key,取得Info中的value,然后以value作为param访问ESB,得到其中文名。
-func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, infoList []mapstr.MapStr) (map[string]string, []string, error) {
+func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, infoList []mapstr.MapStr) (
+	map[string]string, []string, error) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	cond := metadata.QueryCondition{
 		Fields: []string{metadata.AttributeFieldPropertyID},
@@ -54,8 +55,10 @@ func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, i
 		if objID == common.BKInnerObjIDHost {
 			info, ok = info[common.BKInnerObjIDHost].(map[string]interface{})
 			if !ok {
-				err = fmt.Errorf("failed to cast %s instance info from interface{} to map[string]interface{}, rid: %s", objID, rid)
-				blog.Errorf("failed to cast %s instance info from interface{} to map[string]interface{}, rid: %s", objID, rid)
+				err = fmt.Errorf("failed to cast %s instance info from interface{} to map[string]interface{}, "+
+					"rid: %s", objID, rid)
+				blog.Errorf("failed to cast %s instance info from interface{} to map[string]interface{}, rid: %s",
+					objID, rid)
 				return nil, nil, err
 			}
 		}

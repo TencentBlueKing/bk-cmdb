@@ -28,7 +28,9 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header http.Header, rawData []mapstr.MapStr) ([]HostSimplify, error) {
+func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header http.Header, rawData []mapstr.MapStr) (
+	[]HostSimplify, error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	hostIDs := make([]int64, 0)
@@ -53,7 +55,8 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 		return nil, err
 	}
 	if len(rawData) == 0 {
-		err = fmt.Errorf("get host:%+v layer failed, get host module config by host id not found, maybe hostID invalid", hostIDs)
+		err = fmt.Errorf("get host:%+v layer failed, get host module config by host id not found, "+
+			"maybe hostID invalid", hostIDs)
 		return nil, err
 	}
 	hostModuleMap := map[int64]HostSimplify{}
@@ -79,7 +82,9 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 	return hosts, nil
 }
 
-func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Header, hostIDs ...int64) ([]HostSimplify, error) {
+func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Header, hostIDs ...int64) ([]HostSimplify,
+	error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length

@@ -108,12 +108,14 @@ func (g *group) IsValid(isUpdate bool, data mapstr.MapStr) error {
 	return nil
 }
 
+// Create attribute group
 func (g *group) Create() error {
 	if err := g.IsValid(false, g.grp.ToMapStr()); nil != err {
 		return err
 	}
 
-	rsp, err := g.clientSet.CoreService().Model().CreateAttributeGroup(g.kit.Ctx, g.kit.Header, g.GetObjectID(), metadata.CreateModelAttributeGroup{Data: g.grp})
+	rsp, err := g.clientSet.CoreService().Model().CreateAttributeGroup(g.kit.Ctx, g.kit.Header, g.GetObjectID(),
+		metadata.CreateModelAttributeGroup{Data: g.grp})
 	if nil != err {
 		blog.Errorf("[model-grp] failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return g.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -211,12 +213,14 @@ func (g *group) ToMapStr() mapstr.MapStr {
 	return mapstr.SetValueToMapStrByTags(&g.grp)
 }
 
+// GetAttributes search object attribute
 func (g *group) GetAttributes() ([]AttributeInterface, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AttributeFieldObjectID).Eq(g.grp.ObjectID).
 		Field(metadata.AttributeFieldPropertyGroup).Eq(g.grp.GroupID)
 
-	rsp, err := g.clientSet.CoreService().Model().ReadModelAttr(g.kit.Ctx, g.kit.Header, g.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := g.clientSet.CoreService().Model().ReadModelAttr(g.kit.Ctx, g.kit.Header, g.GetObjectID(),
+		&metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return nil, g.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -241,7 +245,8 @@ func (g *group) search(cond condition.Condition) ([]metadata.Group, error) {
 	if g.bizID > 0 {
 		cond.Field(common.BKAppIDField).Eq(g.bizID)
 	}
-	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroup(g.kit.Ctx, g.kit.Header, g.GetObjectID(), metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroup(g.kit.Ctx, g.kit.Header, g.GetObjectID(),
+		metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return nil, err

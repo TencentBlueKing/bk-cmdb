@@ -444,10 +444,12 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 // app id : host belong app id
 // module id: host belong module id
 // host : host info
-func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs []int64, toInternalModule bool, host map[string]interface{}) (int64, error) {
+func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs []int64, toInternalModule bool,
+	host map[string]interface{}) (int64, error) {
 	ip, _ := host[common.BKHostInnerIPField].(string)
 	if cloudID < 0 {
-		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, h.ccLang.Language("import_host_cloudID_invalid")))
+		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip,
+			h.ccLang.Language("import_host_cloudID_invalid")))
 	}
 
 	// determine if the cloud area exists
@@ -459,7 +461,8 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 
 		}
 		if !isExist {
-			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, h.ccErr.Errorf(common.CCErrTopoCloudNotFound).Error()))
+			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip,
+				h.ccErr.Errorf(common.CCErrTopoCloudNotFound).Error()))
 
 		}
 	}
@@ -519,7 +522,8 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 
 // ExtractAlreadyExistHosts extract hosts that already in db(same innerIP host)
 // return: map[hostKey]hostID
-func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos map[int64]map[string]interface{}) (map[string]int64, error) {
+func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos map[int64]map[string]interface{}) (
+	map[string]int64, error) {
 	// step1. extract all innerIP from hostInfos
 	var ipArr []string
 	for _, host := range hostInfos {
@@ -554,7 +558,8 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 	}
 	hResult, err := h.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.pheader, common.BKInnerObjIDHost, query)
 	if err != nil {
-		blog.Errorf("GetHostIDByHostInfoArr ReadInstance http do err. error:%s, input:%#v, rid:%s", err.Error(), query, h.rid)
+		blog.Errorf("GetHostIDByHostInfoArr ReadInstance http do err. error:%s, input:%#v, rid:%s", err.Error(),
+			query, h.rid)
 		return nil, h.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -564,9 +569,11 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 		key := generateHostCloudKey(host[common.BKHostInnerIPField], host[common.BKCloudIDField])
 		hostID, err := host.Int64(common.BKHostIDField)
 		if err != nil {
-			blog.Errorf("GetHostIDByHostInfoArr get hostID error. err:%s, hostInfo:%#v, rid:%s", err.Error(), host, h.rid)
+			blog.Errorf("GetHostIDByHostInfoArr get hostID error. err:%s, hostInfo:%#v, rid:%s", err.Error(), host,
+				h.rid)
 			// message format: `convert %s  field %s to %s error %s`
-			return hostMap, h.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+			return hostMap, h.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost,
+				common.BKHostIDField, "int", err.Error())
 		}
 		hostMap[key] = hostID
 	}

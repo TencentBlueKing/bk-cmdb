@@ -48,6 +48,7 @@ type classification struct {
 	authManager *extensions.AuthManager
 }
 
+// CreateClassification create classification
 func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr) (*metadata.Classification, error) {
 	cls, err := c.isValid(kit, true, data)
 	if err != nil {
@@ -86,6 +87,7 @@ func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr)
 	return cls, nil
 }
 
+// DeleteClassification delete classification
 func (c *classification) DeleteClassification(kit *rest.Kit, id int64) error {
 	cond := map[string]interface{}{metadata.ClassificationFieldID: id}
 	clsItems, err := c.FindClassification(kit, cond)
@@ -188,6 +190,7 @@ func (c *classification) getClassificationObjects(kit *rest.Kit, classifications
 	return rsp.Info, nil
 }
 
+// FindClassification search classification
 func (c *classification) FindClassification(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Classification, error) {
 	input := &metadata.QueryCondition{Condition: cond}
 	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, input)
@@ -199,6 +202,7 @@ func (c *classification) FindClassification(kit *rest.Kit, cond mapstr.MapStr) (
 	return rsp.Info, nil
 }
 
+// UpdateClassification update classification by id
 func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr, id int64) error {
 	// remove unchangeable fields.
 	data.Remove(metadata.ClassFieldClassificationID)

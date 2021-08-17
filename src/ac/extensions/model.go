@@ -27,8 +27,11 @@ import (
 	"configcenter/src/common/util"
 )
 
-// collectObjectsByObjectIDs collect business object that belongs to business or global object, which both id must in objectIDs
-func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header http.Header, businessID int64, objectIDs ...string) ([]metadata.Object, error) {
+// collectObjectsByObjectIDs collect business object that belongs to business or global object,
+// which both id must in objectIDs
+func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header http.Header, businessID int64,
+	objectIDs ...string) ([]metadata.Object, error) {
+
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	objectIDs = util.StrArrayUnique(objectIDs)
 

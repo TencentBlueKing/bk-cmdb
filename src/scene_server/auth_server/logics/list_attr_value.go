@@ -24,7 +24,7 @@ import (
 	"configcenter/src/scene_server/auth_server/types"
 )
 
-// list enumeration attribute options of instance type resource
+// ListAttrValue list enumeration attribute options of instance type resource
 func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListAttrValueFilter,
 	page types.Page) (*types.ListAttrValueResult, error) {
 
@@ -69,7 +69,8 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iam.TypeID, filter 
 
 	marshaledOptions, err := json.Marshal(attr.Option)
 	if err != nil {
-		blog.ErrorJSON("marshal model attribute option failed, error: %s, option: %v, rid: %s", err.Error(), attr.Option, kit.Rid)
+		blog.ErrorJSON("marshal model attribute option failed, error: %s, option: %v, rid: %s", err.Error(),
+			attr.Option, kit.Rid)
 		return nil, err
 	}
 	options := metadata.AttributesOptions{}

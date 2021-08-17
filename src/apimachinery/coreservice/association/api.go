@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateAssociationType api of create association type
 func (asst *association) CreateAssociationType(ctx context.Context, h http.Header,
 	input *metadata.CreateAssociationKind) (*metadata.CreateOneDataResult, error) {
 
@@ -87,6 +88,7 @@ func (asst *association) SetManyAssociation(ctx context.Context, h http.Header, 
 	return
 }
 
+// UpdateAssociationType api of update association type
 func (asst *association) UpdateAssociationType(ctx context.Context, h http.Header,
 	input *metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
@@ -112,6 +114,7 @@ func (asst *association) UpdateAssociationType(ctx context.Context, h http.Heade
 	return &resp.Data, nil
 }
 
+// DeleteAssociationType api of delete association type
 func (asst *association) DeleteAssociationType(ctx context.Context, h http.Header, input *metadata.DeleteOption) (
 	*metadata.DeletedCount, error) {
 
@@ -151,6 +154,7 @@ func (asst *association) DeleteAssociationCascade(ctx context.Context, h http.He
 	return
 }
 
+// ReadAssociationType api of search association type
 func (asst *association) ReadAssociationType(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 	*metadata.SearchAssociationType, error) {
 
@@ -176,6 +180,7 @@ func (asst *association) ReadAssociationType(ctx context.Context, h http.Header,
 	return &resp.Data, nil
 }
 
+// CreateModelAssociation api of create object association
 func (asst *association) CreateModelAssociation(ctx context.Context, h http.Header,
 	input *metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
 
@@ -201,6 +206,7 @@ func (asst *association) CreateModelAssociation(ctx context.Context, h http.Head
 	return &resp.Data, nil
 }
 
+// CreateMainlineModelAssociation api of create mainline object association
 func (asst *association) CreateMainlineModelAssociation(ctx context.Context, h http.Header,
 	input *metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
 
@@ -240,6 +246,7 @@ func (asst *association) SetModelAssociation(ctx context.Context, h http.Header,
 	return
 }
 
+// UpdateModelAssociation api of update object association
 func (asst *association) UpdateModelAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {
 
@@ -265,6 +272,7 @@ func (asst *association) UpdateModelAssociation(ctx context.Context, h http.Head
 	return &resp.Data, nil
 }
 
+// ReadModelAssociation api of search object association
 func (asst *association) ReadModelAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 	*metadata.QueryModelAssociationResult, error) {
 
@@ -290,6 +298,7 @@ func (asst *association) ReadModelAssociation(ctx context.Context, h http.Header
 	return &resp.Data, nil
 }
 
+// DeleteModelAssociation api of delete object association
 func (asst *association) DeleteModelAssociation(ctx context.Context, h http.Header, input *metadata.DeleteOption) (
 	*metadata.DeletedCount, error) {
 
@@ -329,6 +338,7 @@ func (asst *association) DeleteModelAssociationCascade(ctx context.Context, h ht
 	return
 }
 
+// CreateInstAssociation api of create object instances association
 func (asst *association) CreateInstAssociation(ctx context.Context, h http.Header,
 	input *metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error) {
 
@@ -354,6 +364,7 @@ func (asst *association) CreateInstAssociation(ctx context.Context, h http.Heade
 	return &resp.Data, nil
 }
 
+// CreateManyInstAssociation api of batch create object instances association
 func (asst *association) CreateManyInstAssociation(ctx context.Context, header http.Header,
 	input *metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error) {
 
@@ -407,6 +418,7 @@ func (asst *association) UpdateInstAssociation(ctx context.Context, h http.Heade
 	return
 }
 
+// ReadInstAssociation api of search object instances association
 func (asst *association) ReadInstAssociation(ctx context.Context, h http.Header,
 	input *metadata.InstAsstQueryCondition) (*metadata.QueryInstAssociationResult, error) {
 
@@ -458,6 +470,7 @@ func (asst *association) CountInstanceAssociations(ctx context.Context, header h
 	return &resp.Data, nil
 }
 
+// DeleteInstAssociation api of delete object instances associationS
 func (asst *association) DeleteInstAssociation(ctx context.Context, h http.Header,
 	input *metadata.InstAsstDeleteOption) (*metadata.DeletedCount, error) {
 

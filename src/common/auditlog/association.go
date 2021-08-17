@@ -24,7 +24,8 @@ type instanceAssociationAuditLog struct {
 	audit
 }
 
-// GenerateAuditLog generate audit log of instance association, if data is nil, will auto get data by id and instance association.
+// GenerateAuditLog generate audit log of instance association,
+// if data is nil, will auto get data by id and instance association.
 func (a *instanceAssociationAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, id int64, objID string,
 	data *metadata.InstAsst) (*metadata.AuditLog, error) {
 	kit := parameter.kit
@@ -39,12 +40,14 @@ func (a *instanceAssociationAuditLog) GenerateAuditLog(parameter *generateAuditC
 
 		result, err := a.clientSet.Association().ReadInstAssociation(kit.Ctx, kit.Header, &cond)
 		if err != nil {
-			blog.Errorf("generate inst asst audit log failed, get instance association failed, err: %v, rid: %s", err, kit.Rid)
+			blog.Errorf("generate inst asst audit log failed, get instance association failed, err: %v, rid: %s",
+				err, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 		}
 
 		if len(result.Info) == 0 || len(result.Info) > 1 {
-			blog.Errorf("generate inst asst audit log failed, get instance association by id(%d) get none or multiple result, rid: %s", id, kit.Rid)
+			blog.Errorf("generate inst asst audit log failed, get instance association by id(%d) get none or "+
+				"multiple result, rid: %s", id, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 		}
 

@@ -29,7 +29,8 @@ func (lgc *Logics) IsPlatExist(kit *rest.Kit, cond mapstr.MapStr) (bool, errors.
 		Fields:    []string{common.BKCloudIDField},
 	}
 
-	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPlat, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPlat,
+		query)
 	if err != nil {
 		blog.Errorf("IsPlatExist http do error, err:%s, cond:%#v,rid:%s", err.Error(), cond, kit.Rid)
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)

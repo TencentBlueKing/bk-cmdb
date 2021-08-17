@@ -203,6 +203,7 @@ func (p *setTemplate) ListSetServiceTemplateRelations(ctx context.Context, heade
 	return ret.Data, nil
 }
 
+// ListSetTplRelatedSvcTpl search related about set template and service template
 func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.Header, bizID int64,
 	setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder) {
 
@@ -255,6 +256,7 @@ func (p *setTemplate) UpdateManySetTemplateSyncStatus(ctx context.Context, heade
 	return nil
 }
 
+// DeleteSetTemplateSyncStatus delete set template sync status
 func (p *setTemplate) DeleteSetTemplateSyncStatus(ctx context.Context, header http.Header, bizID int64,
 	setIDs []int64) errors.CCErrorCoder {
 

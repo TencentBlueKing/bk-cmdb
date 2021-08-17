@@ -63,6 +63,7 @@ func (lgc *Logics) SearchVpc(kit *rest.Kit, accountID int64, vpcOpt *metadata.Se
 	return result, nil
 }
 
+// GetVpcCloudArea get cloud area about vpc by vpcIDs
 func (lgc *Logics) GetVpcCloudArea(kit *rest.Kit, vpcIDs []string) (map[string]int64, error) {
 	query := &metadata.QueryCondition{
 		Fields: []string{common.BKCloudIDField, common.BKVpcID},
@@ -74,7 +75,8 @@ func (lgc *Logics) GetVpcCloudArea(kit *rest.Kit, vpcIDs []string) (map[string]i
 		},
 	}
 
-	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPlat, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPlat,
+		query)
 	if err != nil {
 		blog.Errorf("GetVpcCloudIDs fail, rid:%s, err:%s, query:%+v", kit.Rid, err.Error(), *query)
 		return nil, err

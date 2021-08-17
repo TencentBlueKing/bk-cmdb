@@ -284,7 +284,8 @@ func (c *commonInst) isValidBizInstID(kit *rest.Kit, obj metadata.Object, instID
 	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit
 
-	rsp, err := c.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, obj.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := c.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, obj.GetObjectID(),
+		&metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -391,8 +392,9 @@ func (c *commonInst) CreateInst(kit *rest.Kit, obj model.Object, data mapstr.Map
 	return item, nil
 }
 
-func (c *commonInst) CreateManyInstance(kit *rest.Kit, obj model.Object,
-	data []mapstr.MapStr) (*metadata.CreateManyCommInstResultDetail, error) {
+// CreateManyInstance batch create instance
+func (c *commonInst) CreateManyInstance(kit *rest.Kit, obj model.Object, data []mapstr.MapStr) (
+	*metadata.CreateManyCommInstResultDetail, error) {
 	object := obj.Object()
 
 	if len(data) == 0 {
@@ -466,7 +468,8 @@ func (c *commonInst) innerHasHost(kit *rest.Kit, moduleIDS []int64) (bool, error
 	}
 	rsp, err := c.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, option)
 	if nil != err {
-		blog.Errorf("[operation-module] failed to request the object controller, err: %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-module] failed to request the object controller, err: %s, rid: %s", err.Error(),
+			kit.Rid)
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -583,7 +586,8 @@ func (c *commonInst) hasHost(kit *rest.Kit, instances []mapstr.MapStr, objID str
 				instID, err := instance.Int64(common.GetInstIDField(childObjID))
 				if err != nil {
 					blog.ErrorJSON("can not convert ID to int64, err: %s, inst: %s, rid: %s", err, instance, kit.Rid)
-					return nil, false, kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.GetInstIDField(childObjID))
+					return nil, false, kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt,
+						common.GetInstIDField(childObjID))
 				}
 				parentIDs[index] = instID
 			}
@@ -702,8 +706,10 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 	// clear set template sync status for set instances
 	for bizID, setIDs := range bizSetMap {
 		if len(setIDs) != 0 {
-			if ccErr := c.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, setIDs); ccErr != nil {
-				blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDs, ccErr.Error(), kit.Rid)
+			if ccErr := c.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header,
+				bizID, setIDs); ccErr != nil {
+				blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, "+
+					"setIDs: %+v, err: %s, rid: %s", bizID, setIDs, ccErr.Error(), kit.Rid)
 				return ccErr
 			}
 		}
@@ -718,6 +724,7 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 	return nil
 }
 
+// DeleteMainlineInstWithID delete mainline insta by instID
 func (c *commonInst) DeleteMainlineInstWithID(kit *rest.Kit, obj model.Object, instID int64) error {
 	object := obj.Object()
 	// if this instance has been bind to a instance by the association, then this instance should not be deleted.
@@ -765,7 +772,8 @@ func (c *commonInst) DeleteInst(kit *rest.Kit, objectID string, cond mapstr.MapS
 	return c.deleteInstByCond(kit, objectID, cond, needCheckHost)
 }
 
-func (c *commonInst) convertInstIDIntoStruct(kit *rest.Kit, asstObj metadata.Association, instIDS []string, needAsstDetail bool, modelBizID int64) ([]metadata.InstNameAsst, error) {
+func (c *commonInst) convertInstIDIntoStruct(kit *rest.Kit, asstObj metadata.Association, instIDS []string,
+	needAsstDetail bool, modelBizID int64) ([]metadata.InstNameAsst, error) {
 
 	obj, err := c.obj.FindSingleObject(kit, asstObj.AsstObjID)
 	if nil != err {
@@ -1200,8 +1208,8 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, objID string, asst
 }
 
 // SearchObjectInstances searches object instances.
-func (c *commonInst) SearchObjectInstances(kit *rest.Kit, objID string,
-	input *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error) {
+func (c *commonInst) SearchObjectInstances(kit *rest.Kit, objID string, input *metadata.CommonSearchFilter) (
+	*metadata.CommonSearchResult, error) {
 
 	// search conditions.
 	cond, err := input.GetConditions()
@@ -1232,8 +1240,8 @@ func (c *commonInst) SearchObjectInstances(kit *rest.Kit, objID string,
 }
 
 // CountObjectInstances counts object instances num.
-func (c *commonInst) CountObjectInstances(kit *rest.Kit, objID string,
-	input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error) {
+func (c *commonInst) CountObjectInstances(kit *rest.Kit, objID string, input *metadata.CommonCountFilter) (
+	*metadata.CommonCountResult, error) {
 
 	// count conditions.
 	cond, err := input.GetConditions()
@@ -1255,7 +1263,9 @@ func (c *commonInst) CountObjectInstances(kit *rest.Kit, objID string,
 	return &metadata.CommonCountResult{Count: resp.Count}, nil
 }
 
-func (c *commonInst) FindOriginInst(kit *rest.Kit, objID string, cond *metadata.QueryInput) (*metadata.InstResult, errors.CCError) {
+// FindOriginInst search origin instance
+func (c *commonInst) FindOriginInst(kit *rest.Kit, objID string, cond *metadata.QueryInput) (*metadata.InstResult,
+	errors.CCError) {
 	switch objID {
 	case common.BKInnerObjIDHost:
 		rsp, err := c.clientSet.CoreService().Host().GetHosts(kit.Ctx, kit.Header, cond)
@@ -1293,7 +1303,9 @@ func (c *commonInst) FindInst(kit *rest.Kit, obj model.Object, cond *metadata.Qu
 	return rsp.Count, inst.CreateInst(kit, c.clientSet, obj, rsp.Info), nil
 }
 
-func (c *commonInst) UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
+// UpdateInst update instance
+func (c *commonInst) UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition,
+	instID int64) error {
 	// not allowed to update these fields, need to use specialized function
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.BKAppIDField)

@@ -34,7 +34,9 @@ type identifier struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *metadata.SearchIdentifierParam) (*metadata.SearchHostIdentifierData, error) {
+// SearchIdentifier search identifier
+func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *metadata.SearchIdentifierParam) (
+	*metadata.SearchHostIdentifierData, error) {
 	if len(param.IP.Data) == 0 {
 		blog.Errorf("host ip can't be empty, rid: %s", kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "ip.data")
@@ -71,7 +73,8 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *meta
 		Fields:    []string{common.BKHostIDField},
 		Page:      param.Page,
 	}
-	hostRet, err := g.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, hostQuery)
+	hostRet, err := g.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost,
+		hostQuery)
 	if nil != err {
 		blog.Errorf("query host failed. error: %v, input: %+v,  rid:%s", err, hostQuery, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed)

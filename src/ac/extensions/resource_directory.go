@@ -28,7 +28,9 @@ import (
  * module instance
  */
 
-func (am *AuthManager) collectResourceDirectoryByDirectoryIDs(ctx context.Context, header http.Header, directoryIDs ...int64) ([]ModuleSimplify, error) {
+func (am *AuthManager) collectResourceDirectoryByDirectoryIDs(ctx context.Context, header http.Header,
+	directoryIDs ...int64) ([]ModuleSimplify, error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
@@ -42,6 +44,7 @@ func (am *AuthManager) collectResourceDirectoryByDirectoryIDs(ctx context.Contex
 		blog.V(3).Infof("get directory by id failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get directory by id failed, err: %+v", err)
 	}
+
 	directoryArr := make([]ModuleSimplify, 0)
 	for _, cls := range result.Info {
 		directory := ModuleSimplify{}

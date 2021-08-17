@@ -26,15 +26,17 @@ type InstanceClientInterface interface {
 		*metadata.CreateOneDataResult, error)
 	CreateManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.CreateManyModelInstance) (
 		*metadata.CreateManyDataResult, error)
-	SetManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.SetManyModelInstance) (resp *metadata.SetOptionResult, err error)
+	SetManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.SetManyModelInstance) (
+		resp *metadata.SetOptionResult, err error)
 	UpdateInstance(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
 		*metadata.UpdatedCount, error)
 	ReadInstance(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (
 		*metadata.InstDataInfo, error)
 	DeleteInstance(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (
 		*metadata.DeletedCount, error)
-	DeleteInstanceCascade(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
-	//  ReadInstanceStruct 按照结构体返回实例数据
+	DeleteInstanceCascade(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (
+		resp *metadata.DeletedOptionResult, err error)
+	// ReadInstanceStruct 按照结构体返回实例数据
 	ReadInstanceStruct(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition,
 		result interface{}) (err errors.CCErrorCoder)
 

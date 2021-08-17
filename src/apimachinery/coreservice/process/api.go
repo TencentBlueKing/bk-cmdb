@@ -44,6 +44,7 @@ func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, cate
 	return &ret.Data, nil
 }
 
+// GetServiceCategory search service category
 func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categoryID int64) (*metadata.ServiceCategory,
 	errors.CCErrorCoder) {
 
@@ -68,6 +69,7 @@ func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categor
 	return &ret.Data, nil
 }
 
+// GetDefaultServiceCategory search default service category
 func (p *process) GetDefaultServiceCategory(ctx context.Context, h http.Header) (*metadata.ServiceCategory, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceCategoryResult)
 	subPath := "/find/process/default_service_category"
@@ -299,6 +301,7 @@ func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, temp
 	return nil
 }
 
+// ListServiceTemplates search service templates
 func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, option *metadata.ListServiceTemplateOption) (
 	*metadata.MultipleServiceTemplate, errors.CCErrorCoder) {
 
@@ -581,6 +584,7 @@ func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, opti
 	return nil
 }
 
+// ListServiceInstance search service inst
 func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceOption) (
 	*metadata.MultipleServiceInstance, errors.CCErrorCoder) {
 

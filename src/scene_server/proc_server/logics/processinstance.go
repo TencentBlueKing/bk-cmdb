@@ -33,7 +33,8 @@ func (lgc *Logic) ListProcessInstances(kit *rest.Kit, bizID int64, serviceInstan
 		BusinessID:         bizID,
 		ServiceInstanceIDs: []int64{serviceInstanceID},
 	}
-	relationsResult, err := lgc.CoreAPI.CoreService().Process().ListProcessInstanceRelation(kit.Ctx, kit.Header, &relationOption)
+	relationsResult, err := lgc.CoreAPI.CoreService().Process().ListProcessInstanceRelation(kit.Ctx, kit.Header,
+		&relationOption)
 	if err != nil {
 		return nil, kit.CCError.CCErrorf(common.CCErrProcGetServiceInstancesFailed, "list process instance "+
 			"relation failed, bizID: %d, serviceInstanceID: %d, err: %+v", bizID, serviceInstanceID, err)
@@ -52,7 +53,8 @@ func (lgc *Logic) ListProcessInstances(kit *rest.Kit, bizID int64, serviceInstan
 		Condition: filter,
 		Fields:    fields,
 	}
-	processResult, ccErr := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, reqParam)
+	processResult, ccErr := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
+		common.BKInnerObjIDProc, reqParam)
 	if nil != ccErr {
 		return nil, kit.CCError.CCErrorf(common.CCErrProcGetServiceInstancesFailed, "list process instance "+
 			"property failed, bizID: %d, processIDs: %+v, err: %+v", bizID, processIDs, ccErr)
@@ -63,7 +65,8 @@ func (lgc *Logic) ListProcessInstances(kit *rest.Kit, bizID int64, serviceInstan
 		processIDVal, exist := process.Get(common.BKProcessIDField)
 		if !exist {
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParseDataFailed, "list process instance failed, parse "+
-				"bk_process_id from process property failed, field not exist, bizID: %d, processIDs: %+v", bizID, processIDs)
+				"bk_process_id from process property failed, field not exist, bizID: %d, processIDs: %+v", bizID,
+				processIDs)
 		}
 		processID, err := util.GetInt64ByInterface(processIDVal)
 		if err != nil {
@@ -98,7 +101,8 @@ func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]
 			},
 		}),
 	}
-	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, reqParam)
+	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc,
+		reqParam)
 	if nil != err {
 		blog.Errorf("rid: %s list process instance with procID: %d failed, err: %v", kit.Rid, procIDs, err)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -123,9 +127,11 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 
 	reqParam := new(metadata.QueryCondition)
 	reqParam.Condition = condition
-	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, reqParam)
+	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc,
+		reqParam)
 	if nil != err {
-		blog.Errorf("GetProcessInstanceWithID failed, get process instance with procID: %d failed, err: %v, rid: %s", procID, err, kit.Rid)
+		blog.Errorf("GetProcessInstanceWithID failed, get process instance with procID: %d failed, err: %v, rid: %s",
+			procID, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -153,7 +159,8 @@ func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr
 
 	_, err := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
-		blog.ErrorJSON("UpdateProcessInstance failed, UpdateInstance http request failed, option: %s, err: %s, rid: %s", option, err.Error(), kit.Rid)
+		blog.ErrorJSON("UpdateProcessInstance failed, UpdateInstance http request failed, option: %s, err: %s, "+
+			"rid: %s", option, err.Error(), kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -170,7 +177,8 @@ func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) errors.CCEr
 
 	_, err := lgc.CoreAPI.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
-		blog.ErrorJSON("DeleteProcessInstance failed, DeleteInstance failed, option: %s, err: %s, rid: %s", option, err.Error(), rid)
+		blog.ErrorJSON("DeleteProcessInstance failed, DeleteInstance failed, option: %s, err: %s, rid: %s", option,
+			err.Error(), rid)
 		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -196,11 +204,14 @@ func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) err
 	return nil
 }
 
-func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, processData map[string]interface{}) (int64, errors.CCErrorCoder) {
+// CreateProcessInstance create process instance
+func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, processData map[string]interface{}) (int64,
+	errors.CCErrorCoder) {
 	inputParam := metadata.CreateModelInstance{
 		Data: processData,
 	}
-	result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &inputParam)
+	result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc,
+		&inputParam)
 	if err != nil {
 		blog.Errorf("CreateProcessInstance failed, http request failed, err: %+v, rid: %s", err, kit.Rid)
 		return 0, errors.CCHttpError
@@ -209,7 +220,9 @@ func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, processData map[string]in
 	return int64(result.Created.ID), nil
 }
 
-func (lgc *Logic) CreateProcessInstances(kit *rest.Kit, processDatas []map[string]interface{}) ([]int64, errors.CCErrorCoder) {
+// CreateProcessInstances batch create process instances
+func (lgc *Logic) CreateProcessInstances(kit *rest.Kit, processDatas []map[string]interface{}) ([]int64,
+	errors.CCErrorCoder) {
 
 	data := make([]mapstr.MapStr, len(processDatas))
 	for idx := range processDatas {
@@ -220,14 +233,17 @@ func (lgc *Logic) CreateProcessInstances(kit *rest.Kit, processDatas []map[strin
 		Datas: data,
 	}
 
-	result, err := lgc.CoreAPI.CoreService().Instance().CreateManyInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &inputParam)
+	result, err := lgc.CoreAPI.CoreService().Instance().CreateManyInstance(kit.Ctx, kit.Header,
+		common.BKInnerObjIDProc, &inputParam)
 	if err != nil {
-		blog.Errorf("CreateProcessInstances failed, http request failed, err: %+v, inputParam:%#v, rid: %s", err, inputParam, kit.Rid)
+		blog.Errorf("CreateProcessInstances failed, http request failed, err: %+v, inputParam:%#v, rid: %s", err,
+			inputParam, kit.Rid)
 		return nil, errors.CCHttpError
 	}
 
 	if len(processDatas) != len(result.Created) {
-		blog.Errorf("CreateProcessInstances failed, len(processes) != len(result.Created), inputParam: %#v, rid: %s", inputParam, kit.Rid)
+		blog.Errorf("CreateProcessInstances failed, len(processes) != len(result.Created), inputParam: %#v, rid: %s",
+			inputParam, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrProcCreateProcessFailed)
 	}
 
@@ -562,7 +578,8 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 }
 
 // GetHostIPMapByID get host ID to ip data map by host IDs, used for bind ip with first inner or outer IP
-func (lgc *Logic) GetHostIPMapByID(kit *rest.Kit, hostIDs []int64) (map[int64]map[string]interface{}, errors.CCErrorCoder) {
+func (lgc *Logic) GetHostIPMapByID(kit *rest.Kit, hostIDs []int64) (map[int64]map[string]interface{},
+	errors.CCErrorCoder) {
 	hostReq := metadata.QueryInput{
 		Condition: map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}},
 		Fields:    common.BKHostIDField + "," + common.BKHostInnerIPField + "," + common.BKHostOuterIPField,

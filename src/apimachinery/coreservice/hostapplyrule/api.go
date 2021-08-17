@@ -119,6 +119,7 @@ func (p *hostApplyRule) GetHostApplyRule(ctx context.Context, header http.Header
 	return ret.Data, nil
 }
 
+// ListHostApplyRule search host apply rule
 func (p *hostApplyRule) ListHostApplyRule(ctx context.Context, header http.Header, bizID int64,
 	option metadata.ListHostApplyRuleOption) (metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder) {
 
@@ -136,9 +137,9 @@ func (p *hostApplyRule) ListHostApplyRule(ctx context.Context, header http.Heade
 		Into(&ret)
 
 	if err != nil {
-		blog.Errorf("ListHostApplyRule failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
+
 	if ccErr := ret.CCError(); ccErr != nil {
 		return ret.Data, ccErr
 	}

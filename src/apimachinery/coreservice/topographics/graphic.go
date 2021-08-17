@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SearchTopoGraphics search topo's graphics
 func (t *meta) SearchTopoGraphics(ctx context.Context, h http.Header, dat *metadata.TopoGraphics) (
 	[]metadata.TopoGraphics, error) {
 
@@ -45,6 +46,7 @@ func (t *meta) SearchTopoGraphics(ctx context.Context, h http.Header, dat *metad
 	return resp.Data, nil
 }
 
+// UpdateTopoGraphics update topo's graphics
 func (t *meta) UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) error {
 	data := map[string]interface{}{
 		"data": dat,

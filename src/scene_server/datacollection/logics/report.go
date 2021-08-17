@@ -243,7 +243,8 @@ func (lgc *Logics) findAttrs(header http.Header, objIDs ...string) ([]metadata.A
 	rid := util.GetHTTPCCRequestID(header)
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).In(objIDs)
-	resp, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(), header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	resp, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(), header,
+		&metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("[NetDevice][findAttrs] for %v failed, err: %v, rid: %s", objIDs, err, rid)
 		return nil, err
@@ -300,7 +301,8 @@ func (lgc *Logics) findInstMap(header http.Header, objectID string, query *metad
 	return instMap, nil
 }
 
-func (lgc *Logics) findInst(header http.Header, objectID string, query *metadata.QueryCondition) ([]mapstr.MapStr, error) {
+func (lgc *Logics) findInst(header http.Header, objectID string, query *metadata.QueryCondition) ([]mapstr.MapStr,
+	error) {
 	rid := util.GetHTTPCCRequestID(header)
 	resp, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(context.Background(), header, objectID, query)
 	if err != nil {

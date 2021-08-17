@@ -21,7 +21,7 @@ import (
 	"configcenter/src/scene_server/auth_server/types"
 )
 
-// list enumeration attributes of instance type resource
+// ListAttr list enumeration attributes of instance type resource
 func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.AttrResource, error) {
 	attrs := make([]types.AttrResource, 0)
 	objID := getInstanceResourceObjID(resourceType)
@@ -68,15 +68,16 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.Att
 		for _, attr := range res.Info {
 			objIDs = append(objIDs, attr.ObjectID)
 		}
-		modelRes, err := lgc.CoreAPI.CoreService().Model().ReadModelWithAttribute(kit.Ctx, kit.Header, &metadata.QueryCondition{
-			Fields: []string{common.BKObjIDField, common.BKObjNameField},
-			Page:   metadata.BasePage{Limit: common.BKNoLimit},
-			Condition: map[string]interface{}{
-				common.BKObjIDField: map[string]interface{}{
-					common.BKDBIN: objIDs,
+		modelRes, err := lgc.CoreAPI.CoreService().Model().ReadModelWithAttribute(kit.Ctx, kit.Header,
+			&metadata.QueryCondition{
+				Fields: []string{common.BKObjIDField, common.BKObjNameField},
+				Page:   metadata.BasePage{Limit: common.BKNoLimit},
+				Condition: map[string]interface{}{
+					common.BKObjIDField: map[string]interface{}{
+						common.BKDBIN: objIDs,
+					},
 				},
-			},
-		})
+			})
 		if err != nil {
 			blog.Errorf("get model failed, error: %s, rid: %s", err.Error(), kit.Rid)
 			return nil, err

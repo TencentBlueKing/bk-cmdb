@@ -553,7 +553,8 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
 	cond.Field(metadata.ModelFieldID).Eq(id)
 	objs, err := o.FindObject(kit, cond)
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to find objects, the condition is (%v) err: %s, rid: %s", cond, err.Error(), kit.Rid)
+		blog.Errorf("[operation-obj] failed to find objects, the condition is (%v) err: %s, rid: %s", cond,
+			err.Error(), kit.Rid)
 		return err
 	}
 	// shouldn't return 404 error here, legacy implements just ignore not found error
@@ -593,7 +594,8 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
 
 	// save audit log.
 	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
-		blog.Errorf("delete object %s success, save audit log failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
+		blog.Errorf("delete object %s success, save audit log failed, err: %v, rid: %s", object.ObjectName, err,
+			kit.Rid)
 		return err
 	}
 
@@ -615,6 +617,7 @@ func (o *object) isFrom(kit *rest.Kit, fromObjID, toObjID string) (bool, error) 
 	return false, nil
 }
 
+// FindObjectTopo search object topo
 func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition) ([]metadata.ObjectTopo, error) {
 	objs, err := o.FindObject(kit, cond)
 	if nil != err {
@@ -641,13 +644,15 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition) ([]meta
 
 			resp, err := o.asst.SearchType(kit, request)
 			if err != nil {
-				blog.Errorf("find object topo failed, because get association kind[%s] failed, err: %v, rid: %s", asst.AsstKindID, err, kit.Rid)
+				blog.Errorf("find object topo failed, because get association kind[%s] failed, err: %v, rid: %s",
+					asst.AsstKindID, err, kit.Rid)
 				return nil, kit.CCError.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
 			}
 
 			// should only be one association kind.
 			if len(resp.Info) == 0 {
-				blog.Errorf("find object topo failed, because get association kind[%s] failed, err: can not find this association kind., rid: %s", asst.AsstKindID, kit.Rid)
+				blog.Errorf("find object topo failed, because get association kind[%s] failed, "+
+					"err: can not find this association kind., rid: %s", asst.AsstKindID, kit.Rid)
 				return nil, kit.CCError.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
 			}
 
@@ -704,10 +709,12 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition) ([]meta
 	return results, nil
 }
 
+// FindObject search object
 func (o *object) FindObject(kit *rest.Kit, cond condition.Condition) ([]model.Object, error) {
 	fCond := cond.ToMapStr()
 
-	rsp, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: fCond})
+	rsp, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header,
+		&metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-obj] find object failed, cond: %+v, err: %s, rid: %s", fCond, err.Error(), kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)

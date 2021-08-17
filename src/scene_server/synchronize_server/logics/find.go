@@ -25,10 +25,12 @@ const (
 	defaultLimit = 100
 )
 
-func (lgc *Logics) findInstance(ctx context.Context, objID string, input *metadata.QueryCondition) (*metadata.InstDataInfo, error) {
+func (lgc *Logics) findInstance(ctx context.Context, objID string, input *metadata.QueryCondition) (
+	*metadata.InstDataInfo, error) {
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, objID, input)
 	if err != nil {
-		blog.Errorf("FindInstance ReadInstance http do error, error: %s,input:  %#v,rid:%s", err.Error(), input, lgc.rid)
+		blog.Errorf("FindInstance ReadInstance http do error, error: %s,input:  %#v,rid:%s", err.Error(), input,
+			lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 

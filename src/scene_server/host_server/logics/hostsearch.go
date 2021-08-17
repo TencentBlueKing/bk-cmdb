@@ -320,15 +320,18 @@ func (sh *searchHost) fetchHostCloudCacheInfo() (map[int64]*InstNameAsst, errors
 			common.BKDBIN: sh.searchCloudIDs,
 		},
 	}
-	result, err := sh.lgc.CoreAPI.CoreService().Instance().ReadInstance(sh.ctx, sh.pheader, common.BKInnerObjIDPlat, queryInput)
+	result, err := sh.lgc.CoreAPI.CoreService().Instance().ReadInstance(sh.ctx, sh.pheader, common.BKInnerObjIDPlat,
+		queryInput)
 	if err != nil {
-		blog.Errorf("fetchHostCloudCacheInfo SearchObjects http do error, err:%s,input:%+v,rid:%s", err.Error(), queryInput, sh.ccRid)
+		blog.Errorf("fetchHostCloudCacheInfo SearchObjects http do error, err:%s,input:%+v,rid:%s", err.Error(),
+			queryInput, sh.ccRid)
 		return nil, sh.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	cloudInfoMap := make(map[int64]*InstNameAsst)
 	for _, info := range result.Info {
-		asstInst, err := sh.convInstInfoToAssociateInfo(common.BKCloudIDField, common.BKCloudNameField, common.BKInnerObjIDPlat, info)
+		asstInst, err := sh.convInstInfoToAssociateInfo(common.BKCloudIDField, common.BKCloudNameField,
+			common.BKInnerObjIDPlat, info)
 		if err != nil {
 			return nil, err
 		}

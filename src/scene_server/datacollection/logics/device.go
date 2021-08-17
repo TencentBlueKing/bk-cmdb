@@ -387,8 +387,9 @@ func (lgc *Logics) updateExistingDeviceByDeviceName(deviceInfo meta.NetcollectDe
 }
 
 // get objID map objName from objID of net device
-func (lgc *Logics) getObjIDMapObjNameFromNetDevice(
-	pHeader http.Header, netDevice []meta.NetcollectDevice) (map[string]string, error) {
+func (lgc *Logics) getObjIDMapObjNameFromNetDevice(pHeader http.Header, netDevice []meta.NetcollectDevice) (
+	map[string]string, error) {
+
 	rid := util.GetHTTPCCRequestID(pHeader)
 
 	objIDs := make([]string, 0)
@@ -405,7 +406,8 @@ func (lgc *Logics) getObjIDMapObjNameFromNetDevice(
 		}
 	}
 
-	objResult, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), pHeader, &meta.QueryCondition{Condition: objCond})
+	objResult, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), pHeader,
+		&meta.QueryCondition{Condition: objCond})
 	if nil != err {
 		blog.Errorf("[NetDevice] search net device object, search objectName fail, %v, rid: %s", err, rid)
 		return nil, err
@@ -473,8 +475,8 @@ func (lgc *Logics) getNetDeviceIDByName(deviceName string, ownerID string) (uint
 	result := meta.NetcollectDevice{}
 
 	if err := lgc.db.Table(common.BKTableNameNetcollectDevice).Find(queryParams).All(lgc.ctx, &result); nil != err {
-		blog.Errorf("[NetDevice] get net device ID by name, query device fail, error information is %v, params:%v, rid: %s",
-			err, queryParams, rid)
+		blog.Errorf("[NetDevice] get net device ID by name, query device fail, error information is %v, params:%v, "+
+			"rid: %s", err, queryParams, rid)
 		return 0, err
 	}
 
@@ -489,7 +491,8 @@ func (lgc *Logics) getNetDeviceObjIDsByCond(pHeader http.Header, objCond map[str
 
 	if _, ok := objCond[common.BKObjNameField]; ok {
 		objCond[common.BKClassificationIDField] = common.BKNetwork
-		objResult, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), pHeader, &meta.QueryCondition{Condition: objCond})
+		objResult, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), pHeader,
+			&meta.QueryCondition{Condition: objCond})
 		if nil != err {
 			blog.Errorf("[NetDevice] check net device object ID, search objectName fail, %v, rid: %s", err, rid)
 			return nil, err

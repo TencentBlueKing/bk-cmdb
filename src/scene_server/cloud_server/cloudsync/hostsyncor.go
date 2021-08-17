@@ -217,7 +217,8 @@ func (h *HostSyncor) getCloudHostResource(task *metadata.CloudSyncTask, accountC
 }
 
 // 同步被销毁的VPC相关资源
-func (h *HostSyncor) syncDestroyedVpcs(hostResource *metadata.CloudHostResource, syncResult *metadata.SyncResult) error {
+func (h *HostSyncor) syncDestroyedVpcs(hostResource *metadata.CloudHostResource,
+	syncResult *metadata.SyncResult) error {
 	if len(hostResource.DestroyedVpcs) == 0 {
 		return nil
 	}
@@ -488,7 +489,8 @@ func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *met
 		Data: mapstr.NewFromMap(cloudArea),
 	}
 
-	createRes, err := h.logics.CoreAPI.CoreService().Instance().CreateInstance(h.writeKit.Ctx, h.writeKit.Header, common.BKInnerObjIDPlat, instInfo)
+	createRes, err := h.logics.CoreAPI.CoreService().Instance().CreateInstance(h.writeKit.Ctx, h.writeKit.Header,
+		common.BKInnerObjIDPlat, instInfo)
 	if nil != err {
 		blog.Errorf("createCloudArea failed, error: %s, input:%#v, rid:%s", err.Error(), cloudArea, h.readKit.Rid)
 		return 0, err
@@ -607,14 +609,15 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 		metadata.AuditCreate).WithOperateFrom(metadata.FromCloudSync)
 	curData, err := h.getHostDetailByInstIDs(h.readKit, instIDs)
 	if err != nil {
-		blog.Errorf("addHosts getHostDetailByInstIDs err:%s, instIDs:%#v, rid:%s", err.Error(), instIDs, h.readKit.Rid)
+		blog.Errorf("addHosts getHostDetailByInstIDs err:%s, instIDs:%#v, rid:%s", err.Error(), instIDs,
+			h.readKit.Rid)
 	}
 
 	for _, data := range curData {
 		hostID, innerIP, err := getHostIDAndIP(data)
 		if err != nil {
-			blog.Errorf("generate audit log failed after create host, failed to get hostID and hostIP, err: %v, rid: %s",
-				err, h.readKit.Rid)
+			blog.Errorf("generate audit log failed after create host, failed to get hostID and hostIP, "+
+				"err: %v, rid: %s", err, h.readKit.Rid)
 			return nil, err
 		}
 
@@ -654,7 +657,8 @@ func (h *HostSyncor) addHost(cHost *metadata.CloudHost) (string, error) {
 		Data: host,
 	}
 
-	result, err := h.logics.CoreAPI.CoreService().Instance().CreateInstance(h.writeKit.Ctx, h.writeKit.Header, common.BKInnerObjIDHost, input)
+	result, err := h.logics.CoreAPI.CoreService().Instance().CreateInstance(h.writeKit.Ctx, h.writeKit.Header,
+		common.BKInnerObjIDHost, input)
 	if err != nil {
 		blog.Errorf("addHost fail,err:%s, input:%+v, rid:%s", err.Error(), host, h.readKit.Rid)
 		return "", err
@@ -736,13 +740,14 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 		if len(preData) <= 0 {
 			blog.Errorf("generate audit log failed, not find host data, instID: %s, rid: %s", host.InstanceId,
 				h.readKit.Rid)
-			return nil, fmt.Errorf("generate audit log failed, not find host data when bk_cloud_inst_id is %s", host.InstanceId)
+			return nil, fmt.Errorf("generate audit log failed, not find host data when bk_cloud_inst_id is %s",
+				host.InstanceId)
 		}
 
 		hostID, innerIP, err := getHostIDAndIP(preData[0])
 		if err != nil {
-			blog.Errorf("generate audit log failed before update host, failed to get hostID and hostIP, err: %v, rid: %s",
-				err, h.readKit.Rid)
+			blog.Errorf("generate audit log failed before update host, failed to get hostID and hostIP,"+
+				" err: %v, rid: %s", err, h.readKit.Rid)
 			return nil, err
 		}
 
@@ -994,7 +999,8 @@ func (h *HostSyncor) getHostDetail(kit *rest.Kit, cond mapstr.MapStr) ([]mapstr.
 	query := &metadata.QueryCondition{
 		Condition: cond,
 	}
-	res, err := h.logics.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, query)
+	res, err := h.logics.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost,
+		query)
 	if nil != err {
 		blog.Errorf("getHostDetail failed, error: %v query:%#v, rid:%s", err, query, kit.Rid)
 		return nil, err

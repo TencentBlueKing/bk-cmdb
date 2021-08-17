@@ -34,6 +34,7 @@ func (m *model) CreateManyModelClassification(ctx context.Context, h http.Header
 	return
 }
 
+// CreateModelClassification create object classification
 func (m *model) CreateModelClassification(ctx context.Context, h http.Header,
 	input *metadata.CreateOneModelClassification) (*metadata.CreateOneDataResult, error) {
 
@@ -87,6 +88,7 @@ func (m *model) SetModelClassification(ctx context.Context, h http.Header, input
 	return
 }
 
+// UpdateModelClassification update object classification
 func (m *model) UpdateModelClassification(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {
 
@@ -112,6 +114,7 @@ func (m *model) UpdateModelClassification(ctx context.Context, h http.Header, in
 	return &resp.Data, nil
 }
 
+// DeleteModelClassification delete object classification
 func (m *model) DeleteModelClassification(ctx context.Context, h http.Header,
 	input *metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
@@ -137,6 +140,7 @@ func (m *model) DeleteModelClassification(ctx context.Context, h http.Header,
 	return &resp.Data, nil
 }
 
+// ReadModelClassification search object classification
 func (m *model) ReadModelClassification(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 	*metadata.QueryModelClassificationDataResult, error) {
 
@@ -162,6 +166,7 @@ func (m *model) ReadModelClassification(ctx context.Context, h http.Header, inpu
 	return &resp.Data, nil
 }
 
+// CreateModel create object
 func (m *model) CreateModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (
 	*metadata.CreateOneDataResult, error) {
 
@@ -201,8 +206,9 @@ func (m *model) SetModel(ctx context.Context, h http.Header, input *metadata.Set
 	return
 }
 
-func (m *model) UpdateModel(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
-	*metadata.UpdatedCount, error) {
+// UpdateModel update object
+func (m *model) UpdateModel(ctx context.Context, h http.Header, input *metadata.UpdateOption) (*metadata.UpdatedCount,
+	error) {
 
 	resp := new(metadata.UpdatedOptionResult)
 	subPath := "/update/model"
@@ -239,6 +245,7 @@ func (m *model) DeleteModel(ctx context.Context, h http.Header, input *metadata.
 	return
 }
 
+// DeleteModelCascade delete object, attrs, group, unique
 func (m *model) DeleteModelCascade(ctx context.Context, h http.Header, modelID int64) (*metadata.DeletedCount, error) {
 
 	resp := new(metadata.DeletedOptionResult)
@@ -276,8 +283,10 @@ func (m *model) ReadModelWithAttribute(ctx context.Context, h http.Header, input
 	return
 }
 
+// ReadModel search object
 func (m *model) ReadModel(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 	*metadata.QueryModelDataResult, error) {
+
 	resp := new(metadata.ReadModelResult)
 	subPath := "/read/model"
 
@@ -300,6 +309,7 @@ func (m *model) ReadModel(ctx context.Context, h http.Header, input *metadata.Qu
 	return &resp.Data, err
 }
 
+// CreateModelAttrs create object attrs
 func (m *model) CreateModelAttrs(ctx context.Context, h http.Header, objID string,
 	input *metadata.CreateModelAttributes) (*metadata.CreateManyDataResult, error) {
 
@@ -325,6 +335,7 @@ func (m *model) CreateModelAttrs(ctx context.Context, h http.Header, objID strin
 	return &resp.Data, nil
 }
 
+// UpdateModelAttrs update object attrs
 func (m *model) UpdateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {
 
@@ -350,6 +361,7 @@ func (m *model) UpdateModelAttrs(ctx context.Context, h http.Header, objID strin
 	return &resp.Data, nil
 }
 
+// UpdateModelAttrsIndex update object attrs index
 func (m *model) UpdateModelAttrsIndex(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
 	*metadata.UpdateAttrIndexData, error) {
 
@@ -375,6 +387,7 @@ func (m *model) UpdateModelAttrsIndex(ctx context.Context, h http.Header, objID 
 	return resp.Data, nil
 }
 
+// UpdateModelAttrsByCondition update object attrs by condition
 func (m *model) UpdateModelAttrsByCondition(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {
 
@@ -428,6 +441,7 @@ func (m *model) DeleteModelAttr(ctx context.Context, h http.Header, objID string
 	return
 }
 
+// ReadModelAttr search object attrs
 func (m *model) ReadModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (
 	*metadata.QueryModelAttributeDataResult, error) {
 
@@ -453,8 +467,9 @@ func (m *model) ReadModelAttr(ctx context.Context, h http.Header, objID string, 
 	return &resp.Data, nil
 }
 
-func (m *model) ReadModelAttrByCondition(ctx context.Context, h http.Header,
-	input *metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
+// ReadModelAttrByCondition search object attrs by condition
+func (m *model) ReadModelAttrByCondition(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
+	*metadata.QueryModelAttributeDataResult, error) {
 
 	resp := new(metadata.ReadModelAttrResult)
 	subPath := "/read/model/attributes"
@@ -478,6 +493,7 @@ func (m *model) ReadModelAttrByCondition(ctx context.Context, h http.Header,
 	return &resp.Data, nil
 }
 
+// ReadAttributeGroup search attribute group
 func (m *model) ReadAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.QueryCondition) (
 	*metadata.QueryModelAttributeGroupDataResult, error) {
 
@@ -503,6 +519,7 @@ func (m *model) ReadAttributeGroup(ctx context.Context, h http.Header, objID str
 	return &resp.Data, nil
 }
 
+// ReadAttributeGroupByCondition search attribute group by condition
 func (m *model) ReadAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.QueryCondition) (
 	*metadata.QueryModelAttributeGroupDataResult, error) {
 
@@ -528,6 +545,7 @@ func (m *model) ReadAttributeGroupByCondition(ctx context.Context, h http.Header
 	return &resp.Data, nil
 }
 
+// CreateAttributeGroup creaete attribute group
 func (m *model) CreateAttributeGroup(ctx context.Context, h http.Header, objID string,
 	input metadata.CreateModelAttributeGroup) (*metadata.CreateOneDataResult, error) {
 
@@ -566,6 +584,7 @@ func (m *model) UpdateAttributeGroup(ctx context.Context, h http.Header, objID s
 	return
 }
 
+// UpdateAttributeGroupByCondition update attribute group by condition
 func (m *model) UpdateAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {
 
@@ -617,6 +636,7 @@ func (m *model) DeleteAttributeGroup(ctx context.Context, h http.Header, objID s
 	return
 }
 
+// DeleteAttributeGroupByCondition delete attribute group by condition
 func (m *model) DeleteAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.DeleteOption) (
 	*metadata.DeletedCount, error) {
 
@@ -642,6 +662,7 @@ func (m *model) DeleteAttributeGroupByCondition(ctx context.Context, h http.Head
 	return &resp.Data, nil
 }
 
+// CreateModelAttrUnique create object attribute unique
 func (m *model) CreateModelAttrUnique(ctx context.Context, h http.Header, objID string,
 	data metadata.CreateModelAttrUnique) (*metadata.CreateOneDataResult, error) {
 
@@ -667,6 +688,7 @@ func (m *model) CreateModelAttrUnique(ctx context.Context, h http.Header, objID 
 	return &resp.Data, nil
 }
 
+// UpdateModelAttrUnique update object attrs unique
 func (m *model) UpdateModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64,
 	data metadata.UpdateModelAttrUnique) (*metadata.UpdatedCount, error) {
 
@@ -692,6 +714,7 @@ func (m *model) UpdateModelAttrUnique(ctx context.Context, h http.Header, objID 
 	return &resp.Data, nil
 }
 
+// DeleteModelAttrUnique delete object attrs unique
 func (m *model) DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (
 	*metadata.DeletedCount, error) {
 
@@ -716,6 +739,7 @@ func (m *model) DeleteModelAttrUnique(ctx context.Context, h http.Header, objID 
 	return &resp.Data, nil
 }
 
+// ReadModelAttrUnique search object attrs unique
 func (m *model) ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (
 	*metadata.QueryUniqueResult, error) {
 

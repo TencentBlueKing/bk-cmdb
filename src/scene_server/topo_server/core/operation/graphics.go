@@ -50,6 +50,7 @@ func (g *graphics) SetProxy(obj ObjectOperationInterface, asst AssociationOperat
 	g.asst = asst
 }
 
+// SelectObjectTopoGraphics select object topo graphics
 func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID string) ([]metadata.TopoGraphics, error) {
 	graphCondition := &metadata.TopoGraphics{}
 	graphCondition.SetScopeType(scopeType)
@@ -118,13 +119,15 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 
 				resp, err := g.asst.SearchType(kit, request)
 				if err != nil {
-					blog.Errorf("select object topo graph failed, because get association kind[%s] failed, err: %v, rid: %s", asst.AsstKindID, err, kit.Rid)
+					blog.Errorf("select object topo graph failed, because get association kind[%s] failed, err: %v, "+
+						"rid: %s", asst.AsstKindID, err, kit.Rid)
 					return nil, kit.CCError.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
 				}
 
 				// should only be one association kind.
 				if len(resp.Info) == 0 {
-					blog.Errorf("select object topo graph failed, because get association kind[%s] failed, err: can not find this association kind., rid: %s", asst.AsstKindID, kit.Rid)
+					blog.Errorf("select object topo graph failed, because get association kind[%s] failed, "+
+						"err: can not find this association kind., rid: %s", asst.AsstKindID, kit.Rid)
 					return nil, kit.CCError.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
 				}
 
@@ -144,7 +147,9 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 	return nodes, nil
 }
 
-func (g *graphics) UpdateObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID string, datas []metadata.TopoGraphics) error {
+// UpdateObjectTopoGraphics update object topo graphics
+func (g *graphics) UpdateObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID string,
+	datas []metadata.TopoGraphics) error {
 	for index := range datas {
 		datas[index].SetScopeType(scopeType)
 		datas[index].SetScopeID(scopeID)

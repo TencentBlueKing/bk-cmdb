@@ -77,6 +77,7 @@ func (ps *parseStream) getClassIDWithObject(obj string) (int64, error) {
 }
 
 func (ps *parseStream) searchModels(cond mapstr.MapStr) ([]metadata.Object, error) {
+
 	model, err := ps.engine.CoreAPI.CoreService().Model().ReadModel(context.Background(), ps.RequestCtx.Header,
 		&metadata.QueryCondition{Condition: cond})
 	if err != nil {
@@ -91,8 +92,9 @@ func (ps *parseStream) searchModels(cond mapstr.MapStr) ([]metadata.Object, erro
 }
 
 func (ps *parseStream) getModelAttribute(cond mapstr.MapStr) ([]metadata.Attribute, error) {
-	attr, err := ps.engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(), ps.RequestCtx.Header,
-		&metadata.QueryCondition{Condition: cond})
+
+	attr, err := ps.engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(),
+		ps.RequestCtx.Header, &metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +103,7 @@ func (ps *parseStream) getModelAttribute(cond mapstr.MapStr) ([]metadata.Attribu
 		return nil, fmt.Errorf("attribute [%+v] not found", cond)
 	}
 
-	attrs := []metadata.Attribute{}
+	attrs := make([]metadata.Attribute, 0)
 	for _, info := range attr.Info {
 		attrs = append(attrs, info)
 	}
@@ -109,11 +111,13 @@ func (ps *parseStream) getModelAttribute(cond mapstr.MapStr) ([]metadata.Attribu
 }
 
 func (ps *parseStream) getCls(clsID string) (metadata.Classification, error) {
-	model, err := ps.engine.CoreAPI.CoreService().Model().ReadModelClassification(context.Background(), ps.RequestCtx.Header,
-		&metadata.QueryCondition{Condition: mapstr.MapStr{common.BKClassificationIDField: clsID}})
+
+	model, err := ps.engine.CoreAPI.CoreService().Model().ReadModelClassification(context.Background(),
+		ps.RequestCtx.Header, &metadata.QueryCondition{Condition: mapstr.MapStr{common.BKClassificationIDField: clsID}})
 	if err != nil {
 		return metadata.Classification{}, err
 	}
+
 	if len(model.Info) <= 0 {
 		return metadata.Classification{}, fmt.Errorf("model classification [%s] not found", clsID)
 	}
@@ -121,12 +125,14 @@ func (ps *parseStream) getCls(clsID string) (metadata.Classification, error) {
 }
 
 func (ps *parseStream) getAttributeGroup(cond interface{}) ([]metadata.Group, error) {
+
 	mspstrCond, err := mapstr.NewFromInterface(cond)
 	if err != nil {
 		return nil, err
 	}
-	groups, err := ps.engine.CoreAPI.CoreService().Model().ReadAttributeGroupByCondition(context.Background(), ps.RequestCtx.Header,
-		metadata.QueryCondition{Condition: mspstrCond})
+
+	groups, err := ps.engine.CoreAPI.CoreService().Model().ReadAttributeGroupByCondition(context.Background(),
+		ps.RequestCtx.Header, metadata.QueryCondition{Condition: mspstrCond})
 	if err != nil {
 		return nil, err
 	}
@@ -149,8 +155,9 @@ func (ps *parseStream) isMainlineModel(modelID string) (bool, error) {
 }
 
 func (ps *parseStream) getModelAssociation(cond mapstr.MapStr) ([]metadata.Association, error) {
-	asst, err := ps.engine.CoreAPI.CoreService().Association().ReadModelAssociation(context.Background(), ps.RequestCtx.Header,
-		&metadata.QueryCondition{Condition: cond})
+
+	asst, err := ps.engine.CoreAPI.CoreService().Association().ReadModelAssociation(context.Background(),
+		ps.RequestCtx.Header, &metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		return nil, err
 	}
@@ -163,8 +170,12 @@ func (ps *parseStream) getModelAssociation(cond mapstr.MapStr) ([]metadata.Assoc
 }
 
 func (ps *parseStream) getInstAssociation(objID string, cond mapstr.MapStr) (metadata.InstAsst, error) {
-	asst, err := ps.engine.CoreAPI.CoreService().Association().ReadInstAssociation(context.Background(), ps.RequestCtx.Header,
-		&metadata.InstAsstQueryCondition{Cond: metadata.QueryCondition{Condition: cond}, ObjID: objID})
+
+	asst, err := ps.engine.CoreAPI.CoreService().Association().ReadInstAssociation(context.Background(),
+		ps.RequestCtx.Header, &metadata.InstAsstQueryCondition{
+			Cond:  metadata.QueryCondition{Condition: cond},
+			ObjID: objID,
+		})
 	if err != nil {
 		return metadata.InstAsst{}, err
 	}
@@ -202,11 +213,16 @@ func (ps *parseStream) getInstanceTypeByObject(objID string) (meta.ResourceType,
 }
 
 func (ps *parseStream) getBizIDByHostID(hostID int64) (int64, error) {
-	result, err := ps.engine.CoreAPI.CoreService().Host().GetHostModuleRelation(context.Background(), ps.RequestCtx.Header,
-		&metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}, Fields: []string{common.BKAppIDField}})
+
+	result, err := ps.engine.CoreAPI.CoreService().Host().GetHostModuleRelation(context.Background(),
+		ps.RequestCtx.Header, &metadata.HostModuleRelationRequest{
+			HostIDArr: []int64{hostID},
+			Fields:    []string{common.BKAppIDField},
+		})
 	if err != nil {
 		return 0, err
 	}
+
 	for _, relation := range result.Info {
 		return relation.AppID, nil
 	}
@@ -229,8 +245,8 @@ func (ps *parseStream) getOneClassification(cond mapstr.MapStr) (metadata.Classi
 }
 
 func (ps *parseStream) getClassification(cond mapstr.MapStr) ([]metadata.Classification, error) {
-	classificationResult, err := ps.engine.CoreAPI.CoreService().Model().ReadModelClassification(context.Background(), ps.RequestCtx.Header,
-		&metadata.QueryCondition{Condition: cond})
+	classificationResult, err := ps.engine.CoreAPI.CoreService().Model().ReadModelClassification(context.Background(),
+		ps.RequestCtx.Header, &metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +261,8 @@ func (ps *parseStream) getClassification(cond mapstr.MapStr) ([]metadata.Classif
 func (ps *parseStream) getModelUnique(cond mapstr.MapStr) (metadata.ObjectUnique, error) {
 	unique := metadata.ObjectUnique{}
 	filter := metadata.QueryCondition{Condition: cond}
-	modelUniqueResult, err := ps.engine.CoreAPI.CoreService().Model().ReadModelAttrUnique(context.Background(), ps.RequestCtx.Header, filter)
+	modelUniqueResult, err := ps.engine.CoreAPI.CoreService().Model().ReadModelAttrUnique(context.Background(),
+		ps.RequestCtx.Header, filter)
 	if err != nil {
 		return unique, err
 	}
@@ -253,6 +270,7 @@ func (ps *parseStream) getModelUnique(cond mapstr.MapStr) (metadata.ObjectUnique
 	if len(modelUniqueResult.Info) <= 0 {
 		return unique, fmt.Errorf("model unique [%+v] not found", cond)
 	}
+
 	if len(modelUniqueResult.Info) > 1 {
 		return unique, fmt.Errorf("get multiple model unique with [%+v]", cond)
 	}
@@ -377,14 +395,16 @@ func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
 		if dirSupplierAccount == supplierAccount {
 			id, err := util.GetInt64ByInterface(directory[common.BKModuleIDField])
 			if err != nil {
-				return 0, errors.New(common.CCErrorUnknownOrUnrecognizedError, "invalid resource pool default directory id")
+				return 0, errors.New(common.CCErrorUnknownOrUnrecognizedError,
+					"invalid resource pool default directory id")
 			}
 
 			resourcePoolDefaultDirIDMap.Store(supplierAccount, id)
 			return id, nil
 		}
 	}
-	return 0, errors.New(common.CCErrCommParamsIsInvalid, "directory with the supplier account does not exist")
+	return 0, errors.New(common.CCErrCommParamsIsInvalid,
+		"directory with the supplier account does not exist")
 }
 
 // generateUpdateInstanceResource generate update instance auth resource by their object type

@@ -113,8 +113,9 @@ func ConvAttrOption(attrItems map[int]map[string]interface{}) {
 	}
 }
 
-func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header,
-	cond *metadata.ObjectCountParams) (*metadata.ObjectCountResult, error) {
+// GetObjectCount search object count
+func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header, cond *metadata.ObjectCountParams) (
+	*metadata.ObjectCountResult, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
@@ -196,8 +197,9 @@ func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header,
 	return resp, nil
 }
 
-func (lgc *Logics) ProcessObjectIDArray(ctx context.Context, header http.Header,
-	objectArray []string) ([]string, []string, error) {
+// ProcessObjectIDArray process objectIDs
+func (lgc *Logics) ProcessObjectIDArray(ctx context.Context, header http.Header, objectArray []string) ([]string,
+	[]string, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 

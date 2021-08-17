@@ -60,6 +60,7 @@ func (cli *classification) ToMapStr() mapstr.MapStr {
 	return rst
 }
 
+// GetObjects search object
 func (cli *classification) GetObjects() ([]Object, error) {
 
 	cond := condition.CreateCondition()
@@ -106,6 +107,7 @@ func (cli *classification) IsValid(isUpdate bool, data mapstr.MapStr) error {
 	return nil
 }
 
+// Create classification
 func (cli *classification) Create() error {
 
 	if err := cli.IsValid(false, cli.cls.ToMapStr()); nil != err {
@@ -131,6 +133,7 @@ func (cli *classification) Create() error {
 	return nil
 }
 
+// Update classification
 func (cli *classification) Update(data mapstr.MapStr) error {
 
 	data.Remove(metadata.ClassFieldClassificationID)

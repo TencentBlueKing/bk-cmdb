@@ -122,7 +122,10 @@ func (i *instanceAuditLog) generateAuditLog(parameter *generateAuditCommonParame
 }
 
 func (i *instanceAuditLog) isMainline(kit *rest.Kit, objID string) (bool, error) {
-	cond := &metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline},
+	cond := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.AssociationKindIDField: common.AssociationKindMainline,
+		},
 	}
 
 	asst, err := i.clientSet.Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)

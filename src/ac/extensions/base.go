@@ -23,6 +23,7 @@ import (
 	"configcenter/src/ac/parser"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -31,9 +32,11 @@ import (
 // business or not.
 var resourcePoolBusinessID int64
 
+// getResourcePoolBusinessID to get bizID of resource pool
 // this function is concurrent safe.
 func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header http.Header) (int64, error) {
 
+	rid := util.ExtractRequestIDFromContext(ctx)
 	// this operation is concurrent safe
 	if atomic.LoadInt64(&resourcePoolBusinessID) != 0 {
 		// resource pool business id is already set, return directly.
@@ -48,6 +51,7 @@ func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header htt
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, query)
 	if err != nil {
+		blog.Errorf("get biz by query failed, err: %v, rid: %s", err, rid)
 		return 0, err
 	}
 

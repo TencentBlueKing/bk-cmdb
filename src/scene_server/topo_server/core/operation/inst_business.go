@@ -69,6 +69,7 @@ func (b *business) SetProxy(set SetOperationInterface, module ModuleOperationInt
 	b.obj = obj
 }
 
+// HasHosts check if biz has hosts
 func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 	option := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
@@ -84,11 +85,13 @@ func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 	return 0 != len(rsp.Info), nil
 }
 
+// CreateBusiness create biz
 func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
 
 	defaultFieldVal, err := data.Int64(common.BKDefaultField)
 	if nil != err {
-		blog.Errorf("[operation-biz] failed to create business, error info is did not set the default field, %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-biz] failed to create business, error info is did not set the default field, %s, "+
+			"rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 	if defaultFieldVal == int64(common.DefaultAppFlag) && kit.SupplierAccount != common.BKDefaultOwnerID {
@@ -99,7 +102,8 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 		defaultOwnerHeader := util.CloneHeader(kit.Header)
 		defaultOwnerHeader.Set(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
 
-		asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, defaultOwnerHeader, &metadata.QueryCondition{Condition: asstQuery})
+		asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, defaultOwnerHeader,
+			&metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
 			blog.Errorf("create business failed to get default assoc, error info is %s, rid: %s", err.Error(), kit.Rid)
 			return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -108,7 +112,8 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 		expectAssts := asstRsp.Info
 		blog.Infof("copy asst for %s, %+v, rid: %s", kit.SupplierAccount, expectAssts, kit.Rid)
 
-		existAsstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: asstQuery})
+		existAsstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
+			&metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
 			blog.Errorf("create business failed to get default assoc, error info is %s, rid: %s", err.Error(), kit.Rid)
 			return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -138,7 +143,8 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 					&metadata.CreateModelAssociation{Spec: asst})
 			}
 			if nil != err {
-				blog.Errorf("create business failed to copy default assoc, error info is %s, rid: %s", err.Error(), kit.Rid)
+				blog.Errorf("create business failed to copy default assoc, error info is %s, rid: %s", err.Error(),
+					kit.Rid)
 				return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
 			}
 		}
@@ -247,7 +253,9 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 	return bizInst, nil
 }
 
-func (b *business) FindBusiness(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error) {
+// FindBusiness search biz
+func (b *business) FindBusiness(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr,
+	err error) {
 
 	cond.Condition[common.BKDefaultField] = 0
 	query := &metadata.QueryCondition{
@@ -264,7 +272,10 @@ func (b *business) FindBusiness(kit *rest.Kit, cond *metadata.QueryBusinessReque
 
 	return result.Count, result.Info, err
 }
-func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error) {
+
+// FindBiz search biz
+func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr,
+	err error) {
 	if !cond.Condition.Exists(common.BKDefaultField) {
 		cond.Condition[common.BKDefaultField] = 0
 	}

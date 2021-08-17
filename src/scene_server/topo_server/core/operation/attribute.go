@@ -269,6 +269,7 @@ func (a *attribute) FindObjectAttributeWithDetail(kit *rest.Kit, cond condition.
 	return results, nil
 }
 
+// FindBusinessAttribute search biz attribute
 func (a *attribute) FindBusinessAttribute(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Attribute, error) {
 	opt := &metadata.QueryCondition{
 		Condition: cond,
@@ -282,7 +283,9 @@ func (a *attribute) FindBusinessAttribute(kit *rest.Kit, cond mapstr.MapStr) ([]
 	return resp.Info, nil
 }
 
-func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition, modelBizID int64) ([]model.AttributeInterface, error) {
+// FindObjectAttribute search object attribute
+func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition, modelBizID int64) (
+	[]model.AttributeInterface, error) {
 	limits := cond.GetLimit()
 	sort := cond.GetSort()
 	start := cond.GetStart()
@@ -296,13 +299,15 @@ func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition,
 
 	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, opt)
 	if nil != err {
-		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	return model.CreateAttribute(kit, a.clientSet, rsp.Info), nil
 }
 
+// UpdateObjectAttribute update object attribute
 func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error {
 	cond := make(map[string]interface{})
 	util.AddModelBizIDCondition(cond, modelBizID)
@@ -325,7 +330,8 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	}
 	_, err = a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(kit.Ctx, kit.Header, &input)
 	if nil != err {
-		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -360,7 +366,9 @@ func (a *attribute) isMainlineModel(kit *rest.Kit, modelID string) (bool, error)
 	return false, nil
 }
 
-func (a *attribute) UpdateObjectAttributeIndex(kit *rest.Kit, objID string, data mapstr.MapStr, attID int64) (*metadata.UpdateAttrIndexData, error) {
+// UpdateObjectAttributeIndex update object attribute index
+func (a *attribute) UpdateObjectAttributeIndex(kit *rest.Kit, objID string, data mapstr.MapStr, attID int64) (
+	*metadata.UpdateAttrIndexData, error) {
 	input := metadata.UpdateOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(attID).ToMapStr(),
 		Data:      data,
@@ -368,7 +376,8 @@ func (a *attribute) UpdateObjectAttributeIndex(kit *rest.Kit, objID string, data
 
 	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsIndex(kit.Ctx, kit.Header, objID, &input)
 	if nil != err {
-		blog.Errorf("[operation-attr] failed to request object CoreService, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-attr] failed to request object CoreService, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 

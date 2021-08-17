@@ -72,7 +72,8 @@ func (m *module) hasHost(kit *rest.Kit, bizID int64, setIDs, moduleIDS []int64) 
 	}
 	rsp, err := m.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, option)
 	if nil != err {
-		blog.Errorf("[operation-module] failed to request the object controller, err: %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-module] failed to request the object controller, err: %s, rid: %s", err.Error(),
+			kit.Rid)
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -89,7 +90,8 @@ func (m *module) validBizSetID(kit *rest.Kit, bizID int64, setID int64) error {
 	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit
 
-	rsp, err := m.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := m.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
+		&metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -231,7 +233,9 @@ func (m *module) CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int6
 	return inst, nil
 }
 
-func (m *module) IsModuleNameDuplicateError(kit *rest.Kit, bizID, setID int64, moduleName string, inputErr error) (bool, error) {
+// IsModuleNameDuplicateError check if module name duplicated
+func (m *module) IsModuleNameDuplicateError(kit *rest.Kit, bizID, setID int64, moduleName string, inputErr error) (bool,
+	error) {
 
 	ccErr, ok := inputErr.(errors.CCErrorCoder)
 	if ok == false {
@@ -252,9 +256,11 @@ func (m *module) IsModuleNameDuplicateError(kit *rest.Kit, bizID, setID int64, m
 			common.BKModuleNameField: moduleName,
 		},
 	}
-	result, err := m.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule, nameDuplicateFilter)
+	result, err := m.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		nameDuplicateFilter)
 	if err != nil {
-		blog.ErrorJSON("IsModuleNameDuplicateError failed, filter: %s, err: %s, rid: %s", nameDuplicateFilter, err.Error(), kit.Rid)
+		blog.ErrorJSON("IsModuleNameDuplicateError failed, filter: %s, err: %s, rid: %s", nameDuplicateFilter,
+			err.Error(), kit.Rid)
 		return false, err
 	}
 

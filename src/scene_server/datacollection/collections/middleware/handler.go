@@ -104,7 +104,9 @@ func (d *Discover) TryUnsetRedis(key string) {
 	}
 }
 
-func (d *Discover) GetInst(ownerID, objID string, instKey string, cond map[string]interface{}) (map[string]interface{}, error) {
+// GetInst get instance by objid,instkey and condition
+func (d *Discover) GetInst(ownerID, objID string, instKey string, cond map[string]interface{}) (map[string]interface{},
+	error) {
 	rid := util.GetHTTPCCRequestID(d.httpHeader)
 	instData, err := d.GetInstFromRedis(instKey)
 	if err == nil {
@@ -114,7 +116,8 @@ func (d *Discover) GetInst(ownerID, objID string, instKey string, cond map[strin
 		blog.Errorf("get inst from redis error: %s", err)
 	}
 
-	resp, err := d.CoreAPI.CoreService().Instance().ReadInstance(d.ctx, d.httpHeader, objID, &metadata.QueryCondition{Condition: cond})
+	resp, err := d.CoreAPI.CoreService().Instance().ReadInstance(d.ctx, d.httpHeader, objID,
+		&metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		blog.Errorf("search inst failed, cond: %s, error: %s, rid: %s", cond, err.Error(), rid)
 		return nil, fmt.Errorf("search inst failed: %s", err.Error())
@@ -132,6 +135,7 @@ func (d *Discover) GetInst(ownerID, objID string, instKey string, cond map[strin
 	return nil, nil
 }
 
+// UpdateOrCreateInst update instance if existed, or create it if non-exist
 func (d *Discover) UpdateOrCreateInst(msg *string) error {
 	if msg == nil {
 		return fmt.Errorf("message nil")
@@ -148,7 +152,8 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		common.BKObjIDField: objID,
 		"must_check":        true,
 	}
-	uniqueResp, err := d.CoreAPI.CoreService().Model().ReadModelAttrUnique(d.ctx, d.httpHeader, metadata.QueryCondition{Condition: cond})
+	uniqueResp, err := d.CoreAPI.CoreService().Model().ReadModelAttrUnique(d.ctx, d.httpHeader,
+		metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		blog.Errorf("search model unique failed, cond: %s, error: %s, rid: %s", cond, err.Error(), rid)
 		return fmt.Errorf("search model unique failed: %s", err.Error())
@@ -169,7 +174,8 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 			common.BKDBIN: keyIDs,
 		},
 	}
-	attrResp, err := d.CoreAPI.CoreService().Model().ReadModelAttr(d.ctx, d.httpHeader, objID, &metadata.QueryCondition{Condition: cond})
+	attrResp, err := d.CoreAPI.CoreService().Model().ReadModelAttr(d.ctx, d.httpHeader, objID,
+		&metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		blog.Errorf("search model attribute failed, cond: %s, error: %s, rid: %s", cond, err.Error(), rid)
 		return fmt.Errorf("search model attribute failed: %s", err.Error())
@@ -213,7 +219,8 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 	instIDField := common.GetInstIDField(objID)
 
 	if len(inst) <= 0 {
-		resp, err := d.CoreAPI.CoreService().Instance().CreateInstance(d.ctx, d.httpHeader, objID, &metadata.CreateModelInstance{Data: bodyData})
+		resp, err := d.CoreAPI.CoreService().Instance().CreateInstance(d.ctx, d.httpHeader, objID,
+			&metadata.CreateModelInstance{Data: bodyData})
 		if err != nil {
 			blog.Errorf("search model failed %s", err.Error())
 			return fmt.Errorf("search model failed: %s", err.Error())
@@ -236,7 +243,8 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 
 			// generate audit log for create instance.
 			data := []mapstr.MapStr{mapstr.NewFromMap(bodyData)}
-			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate).WithOperateFrom(metadata.FromDataCollection)
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit,
+				metadata.AuditCreate).WithOperateFrom(metadata.FromDataCollection)
 			auditLog, err := audit.GenerateAuditLog(generateAuditParameter, objID, data)
 			if err != nil {
 				blog.Errorf("generate instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
@@ -273,7 +281,8 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 				relateObj, ok := relateList[0].(map[string]interface{})
 
 				if ok && (relateObj["id"] != "" && relateObj["id"] != "0" && relateObj["id"] != nil) {
-					blog.Infof("skip updating single relation attr: [%s]=%v, since it is existed:%v.", defaultRelateAttr, attrValue, relateObj["id"])
+					blog.Infof("skip updating single relation attr: [%s]=%v, since it is existed:%v.",
+						defaultRelateAttr, attrValue, relateObj["id"])
 				} else {
 					if val, ok := attrValue.(string); ok && val != "" {
 						dataChange[defaultRelateAttr] = val

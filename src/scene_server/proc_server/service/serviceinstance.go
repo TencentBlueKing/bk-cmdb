@@ -55,7 +55,8 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 	ctx.RespEntity(serviceInstanceIDs)
 }
 
-func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.CreateServiceInstanceForServiceTemplateInput) ([]int64, errors.CCErrorCoder) {
+func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts,
+	input metadata.CreateServiceInstanceForServiceTemplateInput) ([]int64, errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
 	bizID := input.BizID
 
@@ -66,18 +67,21 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 	}
 	hostIDs = util.IntArrayUnique(hostIDs)
 	if err := ps.CheckHostInBusiness(ctx, bizID, hostIDs); err != nil {
-		blog.ErrorJSON("createServiceInstances failed, CheckHostInBusiness failed, bizID: %s, hostIDs: %s, err: %s, rid: %s", bizID, hostIDs, err.Error(), rid)
+		blog.ErrorJSON("createServiceInstances failed, CheckHostInBusiness failed, bizID: %s, hostIDs: %s, err: %s, "+
+			"rid: %s", bizID, hostIDs, err.Error(), rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotBelongBusiness, hostIDs, bizID)
 	}
 
 	module, err := ps.getModule(ctx, input.ModuleID)
 	if err != nil {
-		blog.Errorf("createServiceInstances failed, get module failed, moduleID: %d, err: %v, rid: %s", input.ModuleID, err, rid)
+		blog.Errorf("createServiceInstances failed, get module failed, moduleID: %d, err: %v, rid: %s",
+			input.ModuleID, err, rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, err.Error())
 	}
 
 	if bizID != module.BizID {
-		blog.Errorf("createServiceInstances failed, module %d not belongs to biz %d, rid: %s", input.ModuleID, bizID, rid)
+		blog.Errorf("createServiceInstances failed, module %d not belongs to biz %d, rid: %s", input.ModuleID, bizID,
+			rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceHasModuleNotBelongBusiness, module.ModuleID, bizID)
 	}
 
@@ -94,9 +98,11 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 		serviceInstances[idx] = instance
 	}
 
-	serviceInstances, err = ps.CoreAPI.CoreService().Process().CreateServiceInstances(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstances)
+	serviceInstances, err = ps.CoreAPI.CoreService().Process().CreateServiceInstances(ctx.Kit.Ctx, ctx.Kit.Header,
+		serviceInstances)
 	if err != nil {
-		blog.ErrorJSON("createServiceInstances failed, serviceInstances: %s, err: %s, rid: %s", serviceInstances, err.Error(), rid)
+		blog.ErrorJSON("createServiceInstances failed, serviceInstances: %s, err: %s, rid: %s", serviceInstances,
+			err.Error(), rid)
 		return nil, err
 	}
 
@@ -114,13 +120,16 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 					Processes:         inst.Processes,
 				}
 				if _, err = ps.createProcessInstances(ctx, createProcessInput); err != nil {
-					blog.ErrorJSON("createServiceInstances failed, createProcessInstances failed, input: %s, err: %s, rid: %s", createProcessInput, err.Error(), rid)
+					blog.ErrorJSON("createServiceInstances failed, createProcessInstances failed, input: %s, err: %s,"+
+						" rid: %s", createProcessInput, err.Error(), rid)
 					return nil, err
 				}
 				// if no service instance name is set and have processes under it, update it
 				if inst.ServiceInstanceName == "" {
-					if err := ps.updateServiceInstanceName(ctx, serviceInstance.ID, inst.HostID, inst.Processes[0].ProcessData); err != nil {
-						blog.ErrorJSON("createServiceInstances failed, updateServiceInstanceName failed, serviceInstanceID: %s, hostID: %s, processData: %s, err: %s, rid: %s",
+					if err := ps.updateServiceInstanceName(ctx, serviceInstance.ID, inst.HostID,
+						inst.Processes[0].ProcessData); err != nil {
+						blog.ErrorJSON("createServiceInstances failed, updateServiceInstanceName failed, "+
+							"serviceInstanceID: %s, hostID: %s, processData: %s, err: %s, rid: %s",
 							serviceInstance.ID, inst.HostID, inst.Processes[0].ProcessData, err.Error(), rid)
 						return nil, err
 					}
@@ -142,9 +151,11 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 				Limit: common.BKNoLimit,
 			},
 		}
-		relationResult, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
+		relationResult, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx,
+			ctx.Kit.Header, relationOption)
 		if err != nil {
-			blog.ErrorJSON("createServiceInstances failed, ListProcessInstanceRelation failed, option: %s, err: %s, rid: %s", relationOption, err.Error(), rid)
+			blog.ErrorJSON("createServiceInstances failed, ListProcessInstanceRelation failed, option: %s, err: %s, "+
+				"rid: %s", relationOption, err.Error(), rid)
 			return nil, err
 		}
 		templateID2ProcessID := make(map[int64]map[int64]int64)
@@ -177,7 +188,8 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 			}
 			_, err = ps.updateProcessInstances(ctx, input)
 			if err != nil {
-				blog.ErrorJSON("CreateServiceInstances failed, updateProcessInstances failed, input: %s, err: %s, rid: %s", input, err.Error(), rid)
+				blog.ErrorJSON("CreateServiceInstances failed, updateProcessInstances failed, input: %s, err: %s, "+
+					"rid: %s", input, err.Error(), rid)
 				return nil, err
 			}
 		}
@@ -197,7 +209,8 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 			},
 		},
 	}
-	attrRes, e := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, attrCond)
+	attrRes, e := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDHost, attrCond)
 	if e != nil {
 		blog.ErrorJSON("ReadModelAttr failed, err: %s, attrCond: %s, rid: %s", e.Error(), attrCond, rid)
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -225,7 +238,8 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 		_, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 			common.BKInnerObjIDHost, updateOption)
 		if err != nil {
-			blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
+			blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption,
+				err.Error(), rid)
 			return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
 	}
@@ -270,33 +284,39 @@ func (ps *ProcServer) CreateServiceInstancesPreview(ctx *rest.Contexts) {
 	ctx.RespEntity(previews)
 }
 
-func (ps *ProcServer) createServiceInstancesPreview(ctx *rest.Contexts, input metadata.CreateServiceInstancePreviewInput) ([]metadata.HostTransferPreview, errors.CCErrorCoder) {
+func (ps *ProcServer) createServiceInstancesPreview(ctx *rest.Contexts,
+	input metadata.CreateServiceInstancePreviewInput) ([]metadata.HostTransferPreview, errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
 	bizID := input.BizID
 
 	// check hosts in business
 	hostIDs := input.HostIDs
 	if err := ps.CheckHostInBusiness(ctx, bizID, hostIDs); err != nil {
-		blog.ErrorJSON("createServiceInstances failed, CheckHostInBusiness failed, bizID: %s, hostIDs: %s, err: %s, rid: %s", bizID, hostIDs, err.Error(), rid)
+		blog.ErrorJSON("createServiceInstances failed, CheckHostInBusiness failed, bizID: %s, hostIDs: %s, err: %s, "+
+			"rid: %s", bizID, hostIDs, err.Error(), rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotBelongBusiness, hostIDs, bizID)
 	}
 	// check module in business
 	module, ccErr := ps.getModule(ctx, input.ModuleID)
 	if ccErr != nil {
-		blog.Errorf("createServiceInstances failed, get module failed, moduleID: %d, err: %v, rid: %s", input.ModuleID, ccErr, rid)
+		blog.Errorf("createServiceInstances failed, get module failed, moduleID: %d, err: %v, rid: %s",
+			input.ModuleID, ccErr, rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, ccErr.Error())
 	}
 	if bizID != module.BizID {
-		blog.Errorf("createServiceInstances failed, module %d not belongs to biz %d, rid: %s", input.ModuleID, bizID, rid)
+		blog.Errorf("createServiceInstances failed, module %d not belongs to biz %d, rid: %s", input.ModuleID, bizID,
+			rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceHasModuleNotBelongBusiness, module.ModuleID, bizID)
 	}
 
 	// get module service template
 	var serviceTemplate *metadata.ServiceTemplateDetail
 	if module.ServiceTemplateID != common.ServiceTemplateIDNotSet {
-		serviceTemplateDetails, err := ps.CoreAPI.CoreService().Process().ListServiceTemplateDetail(ctx.Kit.Ctx, ctx.Kit.Header, bizID, module.ServiceTemplateID)
+		serviceTemplateDetails, err := ps.CoreAPI.CoreService().Process().ListServiceTemplateDetail(ctx.Kit.Ctx,
+			ctx.Kit.Header, bizID, module.ServiceTemplateID)
 		if err != nil {
-			blog.Errorf("ListServiceTemplateDetail failed, err: %s, bizID: %d, serviceTemplateID: %d, rid: %s", err.Error(), bizID, module.ServiceTemplateID, ctx.Kit.Rid)
+			blog.Errorf("ListServiceTemplateDetail failed, err: %s, bizID: %d, serviceTemplateID: %d, rid: %s",
+				err.Error(), bizID, module.ServiceTemplateID, ctx.Kit.Rid)
 			return nil, err
 		}
 		for _, serviceTemplateDetail := range serviceTemplateDetails.Info {
@@ -316,9 +336,11 @@ func (ps *ProcServer) createServiceInstancesPreview(ctx *rest.Contexts, input me
 			},
 		},
 	}
-	defaultModules, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, &moduleCondition)
+	defaultModules, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDModule, &moduleCondition)
 	if err != nil {
-		blog.ErrorJSON("ReadInstance of %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameBaseModule, moduleCondition, err.Error(), rid)
+		blog.ErrorJSON("ReadInstance of %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameBaseModule,
+			moduleCondition, err.Error(), rid)
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	isDefaultModuleMap := make(map[int64]bool)
@@ -332,16 +354,18 @@ func (ps *ProcServer) createServiceInstancesPreview(ctx *rest.Contexts, input me
 	}
 
 	// get host module info
-	hostModuleRelationRes, err := ps.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, &metadata.HostModuleRelationRequest{
-		ApplicationID: bizID,
-		HostIDArr:     hostIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
-	})
+	hostModuleRelationRes, err := ps.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header,
+		&metadata.HostModuleRelationRequest{
+			ApplicationID: bizID,
+			HostIDArr:     hostIDs,
+			Page: metadata.BasePage{
+				Limit: common.BKNoLimit,
+			},
+			Fields: []string{common.BKModuleIDField, common.BKHostIDField},
+		})
 	if err != nil {
-		blog.Errorf("GetHostModuleRelation failed, err: %v, bizID: %d, hostIDs: %+v, rid: %s", err, input.BizID, hostIDs, rid)
+		blog.Errorf("GetHostModuleRelation failed, err: %v, bizID: %d, hostIDs: %+v, rid: %s", err, input.BizID,
+			hostIDs, rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrHostModuleConfigFailed, err.Error())
 	}
 	preModuleIDs := make([]int64, 0)
@@ -369,9 +393,11 @@ func (ps *ProcServer) createServiceInstancesPreview(ctx *rest.Contexts, input me
 		},
 		common.HostApplyEnabledField: true,
 	}
-	enabledModules, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, &moduleCondition)
+	enabledModules, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDModule, &moduleCondition)
 	if err != nil {
-		blog.ErrorJSON("ReadInstance of %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameBaseModule, moduleCondition, err.Error(), rid)
+		blog.ErrorJSON("ReadInstance of %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameBaseModule,
+			moduleCondition, err.Error(), rid)
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	enableModuleMap := make(map[int64]bool)
@@ -407,9 +433,11 @@ func (ps *ProcServer) createServiceInstancesPreview(ctx *rest.Contexts, input me
 			Limit: common.BKNoLimit,
 		},
 	}
-	rules, ccErr := ps.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, ruleOption)
+	rules, ccErr := ps.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
+		ruleOption)
 	if ccErr != nil {
-		blog.ErrorJSON("ListHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, ruleOption, ccErr.Error(), rid)
+		blog.ErrorJSON("ListHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, ruleOption,
+			ccErr.Error(), rid)
 		return nil, ccErr
 	}
 
@@ -417,9 +445,12 @@ func (ps *ProcServer) createServiceInstancesPreview(ctx *rest.Contexts, input me
 		Rules:       rules.Info,
 		HostModules: hostModules,
 	}
-	hostApplyPlanResult, ccErr := ps.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(ctx.Kit.Ctx, ctx.Kit.Header, bizID, planOption)
+	hostApplyPlanResult, ccErr := ps.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(ctx.Kit.Ctx,
+		ctx.Kit.Header, bizID, planOption)
 	if ccErr != nil {
-		blog.ErrorJSON("TransferHostWithAutoClearServiceInstance failed, generateApplyPlan failed, core service GenerateApplyPlan failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, planOption, ccErr.Error(), rid)
+		blog.ErrorJSON("TransferHostWithAutoClearServiceInstance failed, generateApplyPlan failed, "+
+			"core service GenerateApplyPlan failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, planOption,
+			ccErr.Error(), rid)
 		return nil, ccErr
 	}
 	hostApplyPlanMap := make(map[int64]metadata.OneHostApplyPlan)
@@ -844,7 +875,8 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOption metadata.DiffOneModuleWithTemplateOption) (*metadata.ModuleDiffWithTemplateDetail, errors.CCErrorCoder) {
+func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts,
+	diffOption metadata.DiffOneModuleWithTemplateOption) (*metadata.ModuleDiffWithTemplateDetail, errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
 
 	if diffOption.ModuleID == 0 {
@@ -853,7 +885,8 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 	}
 	module, err := ps.getModule(ctx, diffOption.ModuleID)
 	if err != nil {
-		blog.Errorf("diffServiceInstanceWithTemplate failed, getModule failed, moduleID: %d, err: %+v, rid: %s", diffOption.ModuleID, err, rid)
+		blog.Errorf("diffServiceInstanceWithTemplate failed, getModule failed, moduleID: %d, err: %+v, rid: %s",
+			diffOption.ModuleID, err, rid)
 		return nil, err
 	}
 
@@ -864,9 +897,11 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 			common.BKObjIDField: common.BKInnerObjIDProc,
 		}),
 	}
-	attrResult, e := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDProc, cond)
+	attrResult, e := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDProc, cond)
 	if e != nil {
-		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ReadModelAttr failed, option: %s, err: %s, rid: %s", cond, e, rid)
+		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ReadModelAttr failed, option: %s, err: %s, rid: %s",
+			cond, e, rid)
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	attributeMap := make(map[string]metadata.Attribute)
@@ -879,9 +914,11 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		BusinessID:         module.BizID,
 		ServiceTemplateIDs: []int64{module.ServiceTemplateID},
 	}
-	processTemplates, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, listProcessTemplateOption)
+	processTemplates, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header,
+		listProcessTemplateOption)
 	if err != nil {
-		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ListProcessTemplates failed, option: %s, err: %s, rid: %s", listProcessTemplateOption, err, rid)
+		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ListProcessTemplates failed, option: %s, err: %s, "+
+			"rid: %s", listProcessTemplateOption, err, rid)
 		return nil, err
 	}
 
@@ -901,9 +938,11 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		ServiceTemplateID: module.ServiceTemplateID,
 		ModuleIDs:         []int64{diffOption.ModuleID},
 	}
-	serviceInstances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceOption)
+	serviceInstances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		serviceOption)
 	if err != nil {
-		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ListServiceInstance failed, option: %s, err: %s, rid: %s", serviceOption, err, rid)
+		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ListServiceInstance failed, option: %s, err: %s, "+
+			"rid: %s", serviceOption, err, rid)
 		return nil, err
 	}
 
@@ -920,9 +959,11 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		ServiceInstanceIDs: serviceInstanceIDs,
 	}
 
-	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &option)
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header,
+		&option)
 	if err != nil {
-		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ListProcessInstanceRelation failed, option: %s, err: %s, rid: %s", option, err.Error(), rid)
+		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ListProcessInstanceRelation failed, option: %s, "+
+			"err: %s, rid: %s", option, err.Error(), rid)
 		return nil, err
 	}
 	serviceRelationMap := make(map[int64][]metadata.ProcessInstanceRelation)
@@ -959,7 +1000,8 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 	// find all the process instance detail by ids
 	processDetails, err := ps.Logic.ListProcessInstanceWithIDs(ctx.Kit, procIDs)
 	if err != nil {
-		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ListProcessInstanceWithIDs err:%s, procIDs: %s, rid: %s", err, procIDs, rid)
+		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ListProcessInstanceWithIDs err:%s, procIDs: %s, "+
+			"rid: %s", err, procIDs, rid)
 		return nil, err
 	}
 	procID2Detail := make(map[int64]*metadata.Process)
@@ -1078,11 +1120,12 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		processTemplateName := records[0].ProcessName
 		serviceInstances := make([]metadata.ServiceDifferenceDetails, 0)
 		for _, record := range records {
-			serviceInstances = append(serviceInstances, metadata.ServiceDifferenceDetails{ServiceInstance: metadata.SrvInstBriefInfo{
-				ID:        record.ServiceInstance.ID,
-				Name:      record.ServiceInstance.Name,
-				SvcTempID: record.ServiceInstance.ServiceTemplateID,
-			}})
+			serviceInstances = append(serviceInstances,
+				metadata.ServiceDifferenceDetails{ServiceInstance: metadata.SrvInstBriefInfo{
+					ID:        record.ServiceInstance.ID,
+					Name:      record.ServiceInstance.Name,
+					SvcTempID: record.ServiceInstance.ServiceTemplateID,
+				}})
 		}
 		moduleDifference.Unchanged = append(moduleDifference.Unchanged, metadata.ServiceInstanceDifference{
 			ProcessTemplateID:    unchangedID,
@@ -1118,11 +1161,12 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 	for addedID, records := range added {
 		sInstances := make([]metadata.ServiceDifferenceDetails, 0)
 		for _, s := range records {
-			sInstances = append(sInstances, metadata.ServiceDifferenceDetails{ServiceInstance: metadata.SrvInstBriefInfo{
-				ID:        s.ServiceInstance.ID,
-				Name:      s.ServiceInstance.Name,
-				SvcTempID: s.ServiceInstance.ServiceTemplateID,
-			}})
+			sInstances = append(sInstances, metadata.ServiceDifferenceDetails{
+				ServiceInstance: metadata.SrvInstBriefInfo{
+					ID:        s.ServiceInstance.ID,
+					Name:      s.ServiceInstance.Name,
+					SvcTempID: s.ServiceInstance.ServiceTemplateID,
+				}})
 		}
 
 		moduleDifference.Added = append(moduleDifference.Added, metadata.ServiceInstanceDifference{
@@ -1135,7 +1179,8 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 
 	moduleChangedAttributes, err := ps.CalculateModuleAttributeDifference(ctx.Kit.Ctx, ctx.Kit.Header, *module)
 	if err != nil {
-		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, CalculateModuleAttributeDifference failed, module: %s, err: %s, rid: %s", module, err.Error(), rid)
+		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, CalculateModuleAttributeDifference failed, "+
+			"module: %s, err: %s, rid: %s", module, err.Error(), rid)
 		return nil, err
 	}
 	moduleDifference.ChangedAttributes = moduleChangedAttributes
@@ -1151,7 +1196,9 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 	return &moduleDifference, nil
 }
 
-func (ps *ProcServer) CalculateModuleAttributeDifference(ctx context.Context, header http.Header, module metadata.ModuleInst) ([]metadata.ModuleChangedAttribute, errors.CCErrorCoder) {
+// CalculateModuleAttributeDifference calculate object's attribute difference
+func (ps *ProcServer) CalculateModuleAttributeDifference(ctx context.Context, header http.Header,
+	module metadata.ModuleInst) ([]metadata.ModuleChangedAttribute, errors.CCErrorCoder) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	changedAttributes := make([]metadata.ModuleChangedAttribute, 0)
@@ -1243,7 +1290,8 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(make(map[string]interface{}))
 }
 
-func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOption metadata.SyncServiceInstanceByTemplateOption) errors.CCErrorCoder {
+func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts,
+	syncOption metadata.SyncServiceInstanceByTemplateOption) errors.CCErrorCoder {
 	rid := ctx.Kit.Rid
 	bizID := syncOption.BizID
 
@@ -1322,13 +1370,16 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 			Limit: common.BKNoLimit,
 		},
 	}
-	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceOption)
+	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		serviceInstanceOption)
 	if err != nil {
-		blog.ErrorJSON("syncServiceInstanceByTemplate failed, ListServiceInstance failed, option: %s, err: %s, rid: %s", serviceInstanceOption, err.Error(), rid)
+		blog.ErrorJSON("syncServiceInstanceByTemplate failed, ListServiceInstance failed, option: %s, err: %s, "+
+			"rid: %s", serviceInstanceOption, err.Error(), rid)
 		return err
 	}
 	if serviceInstanceResult.Count == 0 {
-		blog.V(3).Infof("syncServiceInstanceByTemplate success, no service instance found, option: %+v, rid: %s", serviceInstanceOption, rid)
+		blog.V(3).Infof("syncServiceInstanceByTemplate success, no service instance found, option: %+v, rid: %s",
+			serviceInstanceOption, rid)
 		return nil
 	}
 	serviceInstanceIDs := make([]int64, 0)
@@ -1344,9 +1395,11 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 		BusinessID:         bizID,
 		ServiceTemplateIDs: serviceTemplateIDs,
 	}
-	processTemplate, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, processTemplateFilter)
+	processTemplate, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header,
+		processTemplateFilter)
 	if err != nil {
-		blog.ErrorJSON("syncServiceInstanceByTemplate failed, ListProcessTemplates failed, option: %s, err: %s, rid: %s", processTemplateFilter, err.Error(), rid)
+		blog.ErrorJSON("syncServiceInstanceByTemplate failed, ListProcessTemplates failed, option: %s, err: %s, "+
+			"rid: %s", processTemplateFilter, err.Error(), rid)
 		return err
 	}
 	processTemplateMap := make(map[int64]*metadata.ProcessTemplate)
@@ -1360,9 +1413,11 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 		BusinessID:         bizID,
 		ServiceInstanceIDs: serviceInstanceIDs,
 	}
-	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header,
+		relationOption)
 	if err != nil {
-		blog.ErrorJSON("syncServiceInstanceByTemplate failed, ListProcessInstanceRelation failed, option: %s, err: %s, rid: %s", relationOption, err.Error(), rid)
+		blog.ErrorJSON("syncServiceInstanceByTemplate failed, ListProcessInstanceRelation failed, option: %s, "+
+			"err: %s, rid: %s", relationOption, err.Error(), rid)
 		return err
 	}
 	procIDs := make([]int64, 0)
@@ -1374,7 +1429,8 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 	// find all the process instance in process instance relation.
 	processInstances, err := ps.Logic.ListProcessInstanceWithIDs(ctx.Kit, procIDs)
 	if err != nil {
-		blog.ErrorJSON("syncServiceInstanceByTemplate failed, ListProcessInstanceWithIDs failed, procIDs: %s, err: %s, rid: %s", procIDs, err.Error(), rid)
+		blog.ErrorJSON("syncServiceInstanceByTemplate failed, ListProcessInstanceWithIDs failed, procIDs: %s, "+
+			"err: %s, rid: %s", procIDs, err.Error(), rid)
 		return err
 	}
 	processInstanceMap := make(map[int64]*metadata.Process)
@@ -1404,7 +1460,8 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 		if !exist {
 			// something is wrong, but can this process instance,
 			// but we can find it in the process instance relation.
-			blog.Warnf("force sync process instance according to process template: %d, but can not find the process instance: %d, rid: %s", r.ProcessTemplateID, r.ProcessID, rid)
+			blog.Warnf("force sync process instance according to process template: %d, "+
+				"but can not find the process instance: %d, rid: %s", r.ProcessTemplateID, r.ProcessID, rid)
 			continue
 		}
 		serviceInstance2ProcessMap[r.ServiceInstanceID] = append(serviceInstance2ProcessMap[r.ServiceInstanceID], p)
@@ -1481,14 +1538,17 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 	// remove processes whose template has been removed
 	if len(removedProcessIDs) != 0 {
 		if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, removedProcessIDs); err != nil {
-			blog.Errorf("syncServiceInstanceByTemplate failed, DeleteProcessInstance failed, processID: %d, err: %s, rid: %s", removedProcessIDs, err.Error(), rid)
+			blog.Errorf("syncServiceInstanceByTemplate failed, DeleteProcessInstance failed, processID: %d, err: %s, "+
+				"rid: %s", removedProcessIDs, err.Error(), rid)
 			return err
 		}
 		// remove process instance relation now.
 		deleteOption := metadata.DeleteProcessInstanceRelationOption{}
 		deleteOption.ProcessIDs = removedProcessIDs
-		if err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption); err != nil {
-			blog.ErrorJSON("syncServiceInstanceByTemplate failed, DeleteProcessInstanceRelation failed, option: %s, err: %s, rid: %s", deleteOption, err.Error(), rid)
+		if err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header,
+			deleteOption); err != nil {
+			blog.ErrorJSON("syncServiceInstanceByTemplate failed, DeleteProcessInstanceRelation failed, option: %s, "+
+				"err: %s, rid: %s", deleteOption, err.Error(), rid)
 			return err
 		}
 	}
@@ -1530,12 +1590,14 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 		// create process instances in batch
 		processIDs, err := ps.Logic.CreateProcessInstances(ctx.Kit, processDatas)
 		if err != nil {
-			blog.ErrorJSON("syncServiceInstanceByTemplate failed, CreateProcessInstances err: %s, processDatas: %s, rid: %s", err, processDatas, ctx.Kit.Rid)
+			blog.ErrorJSON("syncServiceInstanceByTemplate failed, CreateProcessInstances err: %s, processDatas: %s, "+
+				"rid: %s", err, processDatas, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrSyncServiceInstanceByTemplateFailed)
 		}
 
 		if len(processIDs) != len(procInstRelations) {
-			blog.Error("syncServiceInstanceByTemplate failed, the count of processIDs must be equal with the count of procInstRelations")
+			blog.Error("syncServiceInstanceByTemplate failed, " +
+				"the count of processIDs must be equal with the count of procInstRelations")
 			return nil
 		}
 
@@ -1543,9 +1605,11 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 		for idx, processID := range processIDs {
 			procInstRelations[idx].ProcessID = processID
 		}
-		_, err = ps.CoreAPI.CoreService().Process().CreateProcessInstanceRelations(ctx.Kit.Ctx, ctx.Kit.Header, procInstRelations)
+		_, err = ps.CoreAPI.CoreService().Process().CreateProcessInstanceRelations(ctx.Kit.Ctx, ctx.Kit.Header,
+			procInstRelations)
 		if err != nil {
-			blog.ErrorJSON("syncServiceInstanceByTemplate failed, CreateProcessInstanceRelations err: %s, relations: %s, rid: %s", err, procInstRelations, ctx.Kit.Rid)
+			blog.ErrorJSON("syncServiceInstanceByTemplate failed, CreateProcessInstanceRelations err: %s, "+
+				"relations: %s, rid: %s", err, procInstRelations, ctx.Kit.Rid)
 			return err
 		}
 	}

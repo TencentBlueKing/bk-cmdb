@@ -303,6 +303,7 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// GetBusinessBasicInfo search biz basic info
 func (s *Service) GetBusinessBasicInfo(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
@@ -316,19 +317,20 @@ func (s *Service) GetBusinessBasicInfo(ctx *rest.Contexts) {
 			common.BKAppIDField: bizID,
 		},
 	}
-	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDApp, query)
+	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDApp, query)
 	if err != nil {
 		blog.Errorf("failed to get business by id, bizID: %s, err: %s, rid: %s", bizID, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	if len(result.Data.Info) == 0 {
+	if len(result.Info) == 0 {
 		blog.Errorf("GetBusinessBasicInfo failed, get business by id not found, bizID: %d, rid: %s", bizID, ctx.Kit.Rid)
 		err := ctx.Kit.CCError.CCError(common.CCErrCommNotFound)
 		ctx.RespAutoError(err)
 		return
 	}
-	bizData := result.Data.Info[0]
+	bizData := result.Info[0]
 	ctx.RespEntity(bizData)
 }
 
@@ -406,7 +408,8 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	searchCond.Condition = handleSpecialBusinessFieldSearchCond(searchCond.Condition, userFields)
 
 	// parse business id from user's condition for testing.
-	var bizIDs, authBizIDs []int64
+	bizIDs := make([]int64, 0)
+	authBizIDs := make([]int64, 0)
 	biz, exist := searchCond.Condition[common.BKAppIDField]
 	if exist {
 		// constrict that bk_biz_id field can only be a numeric value,
@@ -448,9 +451,11 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 			ResourceType: meta.Business,
 			Action:       meta.Find,
 		}
-		authorizedResources, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
+		authorizedResources, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header,
+			authInput)
 		if err != nil {
-			blog.Errorf("[api-biz] SearchBusiness failed, ListAuthorizedResources failed, user: %s, err: %s, rid: %s", ctx.Kit.User, err.Error(), ctx.Kit.Rid)
+			blog.Errorf("[api-biz] SearchBusiness failed, ListAuthorizedResources failed, user: %s, err: %s, "+
+				"rid: %s", ctx.Kit.User, err.Error(), ctx.Kit.Rid)
 			ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")
 			return
 		}
@@ -592,6 +597,7 @@ func (s *Service) GetInternalModule(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// GetInternalModuleWithStatistics get internal object by statistics
 func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {

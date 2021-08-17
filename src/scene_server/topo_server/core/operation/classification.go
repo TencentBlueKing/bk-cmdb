@@ -99,6 +99,7 @@ func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr)
 	return cls, nil
 }
 
+// DeleteClassification delete classification
 func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond condition.Condition) error {
 
 	if 0 < id {
@@ -120,7 +121,8 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 		}
 
 		if 0 != len(objs) {
-			blog.Warnf("[operation-cls] the classification(%s) has some objects, forbidden to delete, rid: %s", cls.Classify().ClassificationID, kit.Rid)
+			blog.Warnf("[operation-cls] the classification(%s) has some objects, forbidden to delete, rid: %s",
+				cls.Classify().ClassificationID, kit.Rid)
 			return kit.CCError.Error(common.CCErrTopoObjectClassificationHasObject)
 		}
 
@@ -140,7 +142,8 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 	_, err = c.clientSet.CoreService().Model().DeleteModelClassification(kit.Ctx, kit.Header,
 		&metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
 		return err
 	}
 
@@ -154,12 +157,16 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 	return nil
 }
 
-func (c *classification) FindClassificationWithObjects(kit *rest.Kit, cond condition.Condition) ([]metadata.ClassificationWithObject, error) {
+// FindClassificationWithObjects search classification by objects
+func (c *classification) FindClassificationWithObjects(kit *rest.Kit, cond condition.Condition) (
+	[]metadata.ClassificationWithObject, error) {
 	fCond := cond.ToMapStr()
 
-	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: fCond})
+	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header,
+		&metadata.QueryCondition{Condition: fCond})
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
 		return nil, err
 	}
 
@@ -169,9 +176,11 @@ func (c *classification) FindClassificationWithObjects(kit *rest.Kit, cond condi
 	}
 	clsIDs = util.StrArrayUnique(clsIDs)
 	queryObjectCond := condition.CreateCondition().Field(common.BKClassificationIDField).In(clsIDs)
-	queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: queryObjectCond.ToMapStr()})
+	queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header,
+		&metadata.QueryCondition{Condition: queryObjectCond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
 		return nil, err
 	}
 
@@ -197,12 +206,15 @@ func (c *classification) FindClassificationWithObjects(kit *rest.Kit, cond condi
 	return datas, nil
 }
 
+// FindClassification search classification
 func (c *classification) FindClassification(kit *rest.Kit, cond condition.Condition) ([]model.Classification, error) {
 	fCond := cond.ToMapStr()
 
-	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: fCond})
+	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header,
+		&metadata.QueryCondition{Condition: fCond})
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-cls]failed to request the object controller, error"+
+			"info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
 

@@ -27,19 +27,22 @@ type resourceDirAuditLog struct {
 }
 
 // GenerateAuditLog generate audit log of resource directory, if data is nil, will auto get data by instModuleID.
-func (h *resourceDirAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, instModuleID, bizID int64, data mapstr.MapStr) (*metadata.AuditLog, error) {
+func (h *resourceDirAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, instModuleID, bizID int64,
+	data mapstr.MapStr) (*metadata.AuditLog, error) {
+
 	if data == nil {
 		query := &metadata.QueryCondition{Condition: mapstr.MapStr{common.BKModuleIDField: instModuleID}}
-		rsp, err := h.clientSet.Instance().ReadInstance(parameter.kit.Ctx, parameter.kit.Header, common.BKInnerObjIDModule, query)
+		rsp, err := h.clientSet.Instance().ReadInstance(parameter.kit.Ctx, parameter.kit.Header,
+			common.BKInnerObjIDModule, query)
 		if err != nil {
-			blog.Errorf("generate audit log of resource directory failed, failed to read resource directory, err: %v, rid: %s",
-				err.Error(), parameter.kit.Rid)
+			blog.Errorf("generate audit log of resource directory failed, failed to read resource directory,"+
+				" err: %v, rid: %s", err.Error(), parameter.kit.Rid)
 			return nil, err
 		}
 
 		if len(rsp.Info) <= 0 {
-			blog.Errorf("generate audit log of resource directory failed, not find resource directory, instModuleID: %d, rid: %s",
-				instModuleID, parameter.kit.Rid)
+			blog.Errorf("generate audit log of resource directory failed, not find resource directory,"+
+				"instModuleID: %d, rid: %s", instModuleID, parameter.kit.Rid)
 			return nil, fmt.Errorf("generate audit log of resource directory failed, not find resource directory")
 		}
 

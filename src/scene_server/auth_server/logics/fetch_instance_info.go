@@ -378,12 +378,15 @@ func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iam.TypeID, in
 	return iamPath, nil
 }
 
-func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, hostList []int64) (map[int64][]string, error) {
+func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, hostList []int64) (map[int64][]string,
+	error) {
+
 	if resourceType != iam.Host {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
-	// get host iam path, either in resource pool directory or in business TODO: support host in business module when topology is supported
+	// get host iam path, either in resource pool directory or in business
+	// TODO: support host in business module when topology is supported
 	defaultBizID, err := lgc.GetResourcePoolBizID(kit)
 	if err != nil {
 		return nil, err

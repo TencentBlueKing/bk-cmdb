@@ -116,6 +116,7 @@ func (o *object) IsCommon() bool {
 	return o.obj.IsCommon()
 }
 
+// IsMainlineObject check whether is mainline object
 func (o *object) IsMainlineObject() (bool, error) {
 	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
 	asst, err := o.clientSet.CoreService().Association().ReadModelAssociation(o.kit.Ctx, o.kit.Header,
@@ -210,6 +211,7 @@ func (o *object) GetMainlineParentObject() (Object, error) {
 	return nil, io.EOF
 }
 
+// GetSetObject search set
 func (o *object) GetSetObject() (Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet)
@@ -232,6 +234,7 @@ func (o *object) GetSetObject() (Object, error) {
 	return nil, io.EOF
 }
 
+// GetMainlineChildObject get mainline relationship model
 func (o *object) GetMainlineChildObject() (Object, error) {
 
 	cond := condition.CreateCondition()
@@ -325,6 +328,7 @@ func (o *object) GetChildObject() ([]ObjectAssoPair, error) {
 	return o.searchAssoObjects(true, cond)
 }
 
+// SetMainlineParentObject set mainline object's parent
 func (o *object) SetMainlineParentObject(relateToObjID string) error {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
@@ -345,6 +349,7 @@ func (o *object) generateObjectAssociatioinID(srcObjID, asstID, destObjID string
 	return fmt.Sprintf("%s_%s_%s", srcObjID, asstID, destObjID)
 }
 
+// CreateMainlineObjectAssociation create mainline object association
 func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
 	objAsstID := o.generateObjectAssociatioinID(o.obj.ObjectID, common.AssociationKindMainline, relateToObjID)
 	defined := false
@@ -443,6 +448,8 @@ func (o *object) IsValid(isUpdate bool, data mapstr.MapStr) error {
 
 	return nil
 }
+
+// Create object
 func (o *object) Create() error {
 
 	if err := o.IsValid(false, o.obj.ToMapStr()); nil != err {
@@ -474,6 +481,7 @@ func (o *object) Create() error {
 	return nil
 }
 
+// Update object
 func (o *object) Update(data mapstr.MapStr) error {
 
 	data.Remove(metadata.ModelFieldObjectID)
@@ -583,10 +591,12 @@ func (o *object) CreateUnique() Unique {
 	}
 }
 
+// GetUniques search object attr unique
 func (o *object) GetUniques() ([]Unique, error) {
 	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(o.obj.ObjectID)
-	rsp, err := o.clientSet.CoreService().Model().ReadModelAttrUnique(o.kit.Ctx, o.kit.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
-	if nil != err {
+	rsp, err := o.clientSet.CoreService().Model().ReadModelAttrUnique(o.kit.Ctx, o.kit.Header,
+		metadata.QueryCondition{Condition: cond.ToMapStr()})
+	if err != nil {
 		blog.Errorf("failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 		return nil, o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
@@ -630,6 +640,7 @@ func (o *object) GetAttributes() ([]AttributeInterface, error) {
 	return o.searchAttributes(cond)
 }
 
+// GetGroups search attr group
 func (o *object) GetGroups() ([]GroupInterface, error) {
 
 	cond := condition.CreateCondition()
@@ -655,12 +666,14 @@ func (o *object) SetClassification(class Classification) {
 	o.obj.ObjCls = class.Classify().ClassificationID
 }
 
+// GetClassification get object classification
 func (o *object) GetClassification() (Classification, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(meta.ClassFieldClassificationID).Eq(o.obj.ObjCls)
 
-	rsp, err := o.clientSet.CoreService().Model().ReadModelClassification(o.kit.Ctx, o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := o.clientSet.CoreService().Model().ReadModelClassification(o.kit.Ctx, o.kit.Header,
+		&metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 		return nil, o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)

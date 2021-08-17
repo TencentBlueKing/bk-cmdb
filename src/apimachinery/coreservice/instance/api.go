@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// CreateInstance create instance
 func (inst *instance) CreateInstance(ctx context.Context, h http.Header, objID string,
 	input *metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error) {
 
@@ -47,6 +48,7 @@ func (inst *instance) CreateInstance(ctx context.Context, h http.Header, objID s
 	return &resp.Data, nil
 }
 
+// CreateManyInstance batch create instances
 func (inst *instance) CreateManyInstance(ctx context.Context, h http.Header, objID string,
 	input *metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error) {
 
@@ -86,6 +88,7 @@ func (inst *instance) SetManyInstance(ctx context.Context, h http.Header, objID 
 	return
 }
 
+// UpdateInstance update instance
 func (inst *instance) UpdateInstance(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {
 
@@ -111,6 +114,7 @@ func (inst *instance) UpdateInstance(ctx context.Context, h http.Header, objID s
 	return &resp.Data, nil
 }
 
+// ReadInstance search instance
 func (inst *instance) ReadInstance(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (
 	*metadata.InstDataInfo, error) {
 
@@ -136,6 +140,7 @@ func (inst *instance) ReadInstance(ctx context.Context, h http.Header, objID str
 	return &resp.Data, nil
 }
 
+// DeleteInstance delete instance
 func (inst *instance) DeleteInstance(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (
 	*metadata.DeletedCount, error) {
 
