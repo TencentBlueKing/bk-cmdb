@@ -558,3 +558,23 @@ func (t *genericTransfer) countByCond(kit *rest.Kit, conds mapstr.MapStr, tableN
 
 	return cnt, nil
 }
+
+func (t *genericTransfer) isAppArchived(kit *rest.Kit) (bool, errors.CCErrorCoder) {
+	cond := mapstr.MapStr{
+		common.BKAppIDField:      t.bizID,
+		common.BKDataStatusField: "disabled",
+	}
+
+	cnt, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(cond).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("get app info error. err:%s, table:%s,cond:%s, rid:%s",
+			err.Error(), common.BKTableNameBaseApp, cond, kit.Rid)
+		return false, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	if cnt != 0 {
+		return true, nil
+	}
+
+	return false, nil
+}

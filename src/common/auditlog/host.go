@@ -33,13 +33,13 @@ func (h *hostAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter,
 
 // GenerateAuditLogByHostIDGetBizID generate audit log of host, auto get bizID by hostID and host topology relate,
 // if data is nil, will auto get host current data by hostID, meanwhile update hostIP if hostIP is "".
-func (h *hostAuditLog) GenerateAuditLogByHostIDGetBizID(parameter *generateAuditCommonParameter, hostID int64, innerIP string,
-	data map[string]interface{}) (*metadata.AuditLog, error) {
+func (h *hostAuditLog) GenerateAuditLogByHostIDGetBizID(parameter *generateAuditCommonParameter, hostID int64,
+	innerIP string, data map[string]interface{}) (*metadata.AuditLog, error) {
 	// get bizID by hostID and host topology related.
 	bizID, err := h.getBizIDByHostID(parameter.kit, hostID)
 	if err != nil {
-		blog.Errorf("generate host audit log failed, failed to get bizID by hostID, hostID: %d, innerIP: %s, err: %v, rid: %s",
-			hostID, innerIP, err, parameter.kit.Rid)
+		blog.Errorf("generate host audit log failed, failed to get bizID by hostID, hostID: %d, innerIP: %s, "+
+			"err: %v, rid: %s", hostID, innerIP, err, parameter.kit.Rid)
 		return nil, err
 	}
 
@@ -56,8 +56,8 @@ func (h *hostAuditLog) generateAuditLog(parameter *generateAuditCommonParameter,
 		var err error
 		data, innerIP, err = h.getHostInstanceDetailByHostID(kit, hostID)
 		if err != nil {
-			blog.Errorf("generate host audit log failed, failed to get host instance by bizID, hostID: %d, err: %v, rid: %s",
-				hostID, err, kit.Rid)
+			blog.Errorf("generate host audit log failed, failed to get host instance by bizID, hostID: %d, "+
+				"err: %v, rid: %s", hostID, err, kit.Rid)
 			return nil, err
 		}
 
@@ -91,22 +91,18 @@ func (h *hostAuditLog) getBizIDByHostID(kit *rest.Kit, hostID int64) (int64, err
 		blog.Errorf("failed to get host module relation, hostID: %d, err: %v, rid: %s", hostID, err, kit.Rid)
 		return 0, err
 	}
-	if !moduleHost.Result {
-		blog.Errorf("failed to get host module relation, http response error, hostID: %d, errCode: %d, errMsg: %s, rid: %s", hostID,
-			moduleHost.Code, moduleHost.ErrMsg, kit.Rid)
-		return 0, kit.CCError.New(moduleHost.Code, moduleHost.ErrMsg)
-	}
 
 	var bizID int64
-	if len(moduleHost.Data.Info) > 0 {
-		bizID = moduleHost.Data.Info[0].AppID
+	if len(moduleHost.Info) > 0 {
+		bizID = moduleHost.Info[0].AppID
 	}
 
 	return bizID, nil
 }
 
 // getHostInstanceDetailByHostID get host data and hostIP by hostID.
-func (h *hostAuditLog) getHostInstanceDetailByHostID(kit *rest.Kit, hostID int64) (map[string]interface{}, string, error) {
+func (h *hostAuditLog) getHostInstanceDetailByHostID(kit *rest.Kit, hostID int64) (map[string]interface{}, string,
+	error) {
 	// get host details.
 	result, err := h.clientSet.Host().GetHostByID(kit.Ctx, kit.Header, hostID)
 	if err != nil {
@@ -114,8 +110,8 @@ func (h *hostAuditLog) getHostInstanceDetailByHostID(kit *rest.Kit, hostID int64
 		return nil, "", kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("get host instance detail failed, http response error, err code: %d, err msg: %s, hostID: %d, rid: %s",
-			result.Code, result.ErrMsg, hostID, kit.Rid)
+		blog.Errorf("get host instance detail failed, http response error, err code: %d, err msg: %s, "+
+			"hostID: %d, rid: %s", result.Code, result.ErrMsg, hostID, kit.Rid)
 		return nil, "", kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
@@ -126,9 +122,10 @@ func (h *hostAuditLog) getHostInstanceDetailByHostID(kit *rest.Kit, hostID int64
 
 	ip, ok := hostInfo[common.BKHostInnerIPField].(string)
 	if !ok {
-		blog.Errorf("get host instance detail failed, convert bk_host_innerip to string error, hostID: %d, hostInfo: %+v, rid: %d",
-			hostID, hostInfo, kit.Rid)
-		return nil, "", kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", "not string")
+		blog.Errorf("get host instance detail failed, convert bk_host_innerip to string error, hostID: %d, "+
+			"hostInfo: %+v, rid: %d", hostID, hostInfo, kit.Rid)
+		return nil, "", kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost,
+			common.BKHostInnerIPField, "string", "not string")
 
 	}
 

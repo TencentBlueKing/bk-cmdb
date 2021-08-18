@@ -21,7 +21,8 @@ import (
 )
 
 type CountClientInterface interface {
-	GetCountByFilter(ctx context.Context, h http.Header, table string, filters []map[string]interface{}) ([]int64, errors.CCErrorCoder)
+	GetCountByFilter(ctx context.Context, h http.Header, table string, filters []map[string]interface{}) ([]int64,
+		errors.CCErrorCoder)
 }
 
 func NewCountClientInterface(client rest.ClientInterface) CountClientInterface {

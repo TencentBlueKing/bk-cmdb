@@ -27,8 +27,11 @@ import (
 	"configcenter/src/common/util"
 )
 
-// collectObjectsByObjectIDs collect business object that belongs to business or global object, which both id must in objectIDs
-func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header http.Header, businessID int64, objectIDs ...string) ([]metadata.Object, error) {
+// collectObjectsByObjectIDs collect business object that belongs to business or global object,
+// which both id must in objectIDs
+func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header http.Header, businessID int64,
+	objectIDs ...string) ([]metadata.Object, error) {
+
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	objectIDs = util.StrArrayUnique(objectIDs)
 
@@ -43,14 +46,14 @@ func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header htt
 	if err != nil {
 		return nil, fmt.Errorf("get model by id: %+v failed, err: %+v", objectIDs, err)
 	}
-	if len(resp.Data.Info) == 0 {
+	if len(resp.Info) == 0 {
 		return nil, fmt.Errorf("get model by id: %+v failed, not found", objectIDs)
 	}
-	if len(resp.Data.Info) != len(objectIDs) {
+	if len(resp.Info) != len(objectIDs) {
 		return nil, fmt.Errorf("get model by id: %+v failed, get multiple model", objectIDs)
 	}
 
-	return resp.Data.Info, nil
+	return resp.Info, nil
 }
 
 // MakeResourcesByObjects make object resource with businessID and objects

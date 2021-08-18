@@ -43,15 +43,11 @@ func (cli *inst) updateMainlineAssociation(child Inst, parentID int64) error {
 		},
 		Condition: cond.ToMapStr(),
 	}
-	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(cli.kit.Ctx, cli.kit.Header, object.ObjectID, &input)
+	_, err = cli.clientSet.CoreService().Instance().UpdateInstance(cli.kit.Ctx, cli.kit.Header, object.ObjectID,
+		&input)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request object controller, error info %s, rid: %s", err.Error(), cli.kit.Rid)
 		return cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if !rsp.Result {
-		blog.Errorf("[inst-inst] failed to update the association, err: %s, rid: %s", rsp.ErrMsg, cli.kit.Rid)
-		return cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
@@ -69,12 +65,7 @@ func (cli *inst) searchInstAssociation(cond condition.Condition, objID string) (
 		return nil, cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[inst-inst] failed to search the inst association, err: %s, rid: %s", rsp.ErrMsg, cli.kit.Rid)
-		return nil, cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return rsp.Data.Info, nil
+	return rsp.Info, nil
 
 }
 
@@ -91,15 +82,10 @@ func (cli *inst) deleteInstAssociation(instID, asstInstID int64, objID, asstObjI
 		Opt:   metadata.DeleteOption{Condition: cond.ToMapStr()},
 		ObjID: objID,
 	}
-	rsp, err := cli.clientSet.CoreService().Association().DeleteInstAssociation(cli.kit.Ctx, cli.kit.Header, delOpt)
+	_, err := cli.clientSet.CoreService().Association().DeleteInstAssociation(cli.kit.Ctx, cli.kit.Header, delOpt)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request the object controller , err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if !rsp.Result {
-		blog.Errorf("[inst-inst] failed to delete the inst association, err: %s, rid: %s", rsp.ErrMsg, cli.kit.Rid)
-		return cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
