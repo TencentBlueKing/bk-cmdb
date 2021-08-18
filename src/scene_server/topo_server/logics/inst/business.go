@@ -169,7 +169,7 @@ func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest, d
 		return 0, nil, err
 	}
 
-	return result.Data.Count, result.Data.Info, err
+	return result.Count, result.Info, err
 }
 
 // UpdateBusiness update business
@@ -195,7 +195,7 @@ func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 		return false, err
 	}
 
-	return len(rsp.Data.Info) != 0, nil
+	return len(rsp.Info) != 0, nil
 }
 
 //	GenerateAchieveBusinessName 生成归档后的业务名称
@@ -308,15 +308,10 @@ func (b *business) updateInst(kit *rest.Kit, cond, data mapstr.MapStr, objID str
 	}
 
 	// to update.
-	rsp, err := b.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, objID, &inputParams)
+	_, err := b.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, objID, &inputParams)
 	if err != nil {
 		blog.Errorf("update instance failed, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("update the object(%s) inst by the condition(%#v) failed, err: %v, rid: %s",
-			objID, cond, err, kit.Rid)
-		return err
 	}
 
 	// save audit log.
@@ -343,17 +338,12 @@ func (b *business) createSet(kit *rest.Kit, obj metadata.Object, data mapstr.Map
 		return nil, err
 	}
 
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("failed to create object instance ,err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	if rsp.Data.Created.ID == 0 {
+	if rsp.Created.ID == 0 {
 		blog.Errorf("failed to create object instance, return nothing, rid: %s", kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrTopoInstCreateFailed)
 	}
 
-	data.Set(obj.GetInstIDFieldName(), rsp.Data.Created.ID)
+	data.Set(obj.GetInstIDFieldName(), rsp.Created.ID)
 	// for audit log.
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	audit := auditlog.NewInstanceAudit(b.clientSet.CoreService())
@@ -369,7 +359,7 @@ func (b *business) createSet(kit *rest.Kit, obj metadata.Object, data mapstr.Map
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
-	return &rsp.Data, nil
+	return rsp, nil
 }
 
 func (b *business) createInst(kit *rest.Kit, obj metadata.Object, data mapstr.MapStr) (*metadata.CreateOneDataResult,
@@ -388,17 +378,12 @@ func (b *business) createInst(kit *rest.Kit, obj metadata.Object, data mapstr.Ma
 		return nil, err
 	}
 
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("failed to create object instance ,err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	if rsp.Data.Created.ID == 0 {
+	if rsp.Created.ID == 0 {
 		blog.Errorf("failed to create object instance, return nothing, rid: %s", kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrTopoInstCreateFailed)
 	}
 
-	data.Set(obj.GetInstIDFieldName(), rsp.Data.Created.ID)
+	data.Set(obj.GetInstIDFieldName(), rsp.Created.ID)
 	// for audit log.
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	audit := auditlog.NewInstanceAudit(b.clientSet.CoreService())
@@ -414,7 +399,7 @@ func (b *business) createInst(kit *rest.Kit, obj metadata.Object, data mapstr.Ma
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
-	return &rsp.Data, nil
+	return rsp, nil
 }
 
 func (b *business) findObject(kit *rest.Kit, cond condition.Condition) ([]metadata.Object, error) {
@@ -428,13 +413,7 @@ func (b *business) findObject(kit *rest.Kit, cond condition.Condition) ([]metada
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , error info is %s, "+
-			"rid: %s", fCond, rsp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return rsp.Data.Info, nil
+	return rsp.Info, nil
 }
 
 // TODO 这个函数后续会调用module CreateModule，这里先这么写
