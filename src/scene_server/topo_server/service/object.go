@@ -149,12 +149,13 @@ func (s *Service) SearchObject(ctx *rest.Contexts) {
 		return
 	}
 
-	resp, err := s.Logics.ObjectOperation().FindObject(ctx.Kit, make([]string, 0), data)
+	query := &metadata.QueryCondition{Condition: data, DisableCounter: true}
+	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModel(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(resp)
+	ctx.RespEntity(resp.Info)
 }
 
 // SearchObjectTopo search the object topo

@@ -22,33 +22,25 @@ import (
 // Logics provides management interface for operations of model and instance and related resources like association
 type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
-	UniqueOperation() model.UniqueOperationInterface
 	ObjectOperation() model.ObjectOperationInterface
-	AuditOperation() operation.AuditOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
 }
 
 type logics struct {
 	classification model.ClassificationOperationInterface
-	unique         model.UniqueOperationInterface
 	object         model.ObjectOperationInterface
-	audit          operation.AuditOperationInterface
 	identifier     operation.IdentifierOperationInterface
 }
 
 // New create a logics manager
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
-	uniqueOperation := model.NewUniqueOperation(client, authManager)
 	objectOperation := model.NewObjectOperation(client, authManager)
-	AuditOperation := operation.NewAuditOperation(client)
 	IdentifierOperation := operation.NewIdentifier(client)
 
 	return &logics{
 		classification: classificationOperation,
-		unique:         uniqueOperation,
 		object:         objectOperation,
-		audit:          AuditOperation,
 		identifier:     IdentifierOperation,
 	}
 }
@@ -57,16 +49,8 @@ func (c *logics) ClassificationOperation() model.ClassificationOperationInterfac
 	return c.classification
 }
 
-func (c *logics) UniqueOperation() model.UniqueOperationInterface {
-	return c.unique
-}
-
 func (c *logics) ObjectOperation() model.ObjectOperationInterface {
 	return c.object
-}
-
-func (c *logics) AuditOperation() operation.AuditOperationInterface {
-	return c.audit
 }
 
 func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
