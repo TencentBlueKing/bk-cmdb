@@ -39,8 +39,8 @@ type ObjectOperationInterface interface {
 	FindSingleObject(kit *rest.Kit, field []string, objectID string) (*metadata.Object, error)
 	// UpdateObject update a common object by id
 	UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
-	// IsValidObject check whether objID is a real model's bk_obj_id field in backend
-	IsValidObject(kit *rest.Kit, objID string) error
+	// IsObjectExist check whether objID is a real model's bk_obj_id field in backend
+	IsObjectExist(kit *rest.Kit, objID string) (bool, error)
 }
 
 // NewObjectOperation create a new object operation instance
@@ -58,8 +58,8 @@ type object struct {
 	authManager *extensions.AuthManager
 }
 
-// IsValidObject check whether objID is a real model's bk_obj_id field in backend
-func (o *object) IsValidObject(kit *rest.Kit, objID string) error {
+// IsObjectExist check whether objID is a real model's bk_obj_id field in backend
+func (o *object) IsObjectExist(kit *rest.Kit, objID string) (bool, error) {
 
 	checkObjCond := mapstr.MapStr{
 		common.BKObjIDField: objID,
@@ -69,14 +69,14 @@ func (o *object) IsValidObject(kit *rest.Kit, objID string) error {
 		common.BKTableNameObjDes, []map[string]interface{}{checkObjCond})
 	if err != nil {
 		blog.Errorf("failed to search object(%s), err: %v, rid: %s", objID, err, kit.Rid)
-		return err
+		return false, err
 	}
 
 	if objItems[0] == 0 {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField)
+		return false, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField)
 	}
 
-	return nil
+	return true, nil
 }
 
 // FindSingleObject find a object by objectID
