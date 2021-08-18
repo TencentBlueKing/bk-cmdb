@@ -330,13 +330,8 @@ func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filt
 			return nil, err
 		}
 
-		if err := result.CCError(); err != nil {
-			blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, instIDs, err, kit.Rid)
-			return nil, err
-		}
-
 		// covert id and display_name field
-		for _, instance := range result.Data.Info {
+		for _, instance := range result.Info {
 			instance[types.IDField] = util.GetStrByInterface(instance[common.BKInstIDField])
 			if instance[common.BKInstNameField] != nil {
 				instance[types.NameField] = util.GetStrByInterface(instance[common.BKInstNameField])
@@ -383,12 +378,15 @@ func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iam.TypeID, in
 	return iamPath, nil
 }
 
-func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, hostList []int64) (map[int64][]string, error) {
+func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, hostList []int64) (map[int64][]string,
+	error) {
+
 	if resourceType != iam.Host {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
-	// get host iam path, either in resource pool directory or in business TODO: support host in business module when topology is supported
+	// get host iam path, either in resource pool directory or in business
+	// TODO: support host in business module when topology is supported
 	defaultBizID, err := lgc.GetResourcePoolBizID(kit)
 	if err != nil {
 		return nil, err
@@ -407,18 +405,12 @@ func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, hostLi
 		return nil, err
 	}
 
-	if !res.Result {
-		blog.Errorf("GetHostModuleRelation by host id %v failed, err: %v, rid: %s", hostList,
-			res.Code, res.ErrMsg, kit.Rid)
-		return nil, res.CCError()
-	}
-
-	if len(res.Data.Info) == 0 {
+	if len(res.Info) == 0 {
 		return make(map[int64][]string), nil
 	}
 
 	relationMap := make(map[int64][]string)
-	for _, relation := range res.Data.Info {
+	for _, relation := range res.Info {
 		var path string
 		if relation.AppID == defaultBizID {
 			path = "/" + string(iam.SysResourcePoolDirectory) + "," + strconv.FormatInt(relation.ModuleID, 10) + "/"

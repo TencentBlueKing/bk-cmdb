@@ -14,12 +14,9 @@ package extensions
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
-	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -32,7 +29,9 @@ import (
  * business related auth interface
  */
 
-func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Header, businessIDs ...int64) ([]BusinessSimplify, error) {
+func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Header, businessIDs ...int64) (
+	[]BusinessSimplify, error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
@@ -48,7 +47,7 @@ func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Hea
 	}
 	blog.V(5).Infof("get businesses by id result: %+v", result)
 	instances := make([]BusinessSimplify, 0)
-	for _, cls := range result.Data.Info {
+	for _, cls := range result.Info {
 		instance := BusinessSimplify{}
 		_, err = instance.Parse(cls)
 		if err != nil {
@@ -99,32 +98,4 @@ func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.He
 	}
 
 	return am.AuthorizeByBusiness(ctx, header, action, businesses...)
-}
-
-func (am *AuthManager) GenFindBusinessNoPermissionResp(ctx context.Context, header http.Header, businessID int64) (*metadata.BaseResp, error) {
-	businesses, err := am.collectBusinessByIDs(ctx, header, businessID)
-	if err != nil {
-		return nil, err
-	}
-	if len(businesses) != 1 {
-		return nil, errors.New("get business detail failed")
-	}
-	permission := &metadata.IamPermission{
-		SystemID: iam.SystemIDCMDB,
-		Actions: []metadata.IamAction{{
-			ID: string(iam.FindBusiness),
-			RelatedResourceTypes: []metadata.IamResourceType{{
-				SystemID: iam.SystemIDCMDB,
-				Type:     string(iam.Business),
-				Instances: [][]metadata.IamResourceInstance{{{
-					Type: string(iam.Business),
-					ID:   strconv.FormatInt(businessID, 10),
-				}, {
-					Type: string(iam.Business),
-				}}},
-			}},
-		}},
-	}
-	resp := metadata.NewNoPermissionResp(permission)
-	return &resp, nil
 }

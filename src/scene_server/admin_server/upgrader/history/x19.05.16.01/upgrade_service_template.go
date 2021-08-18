@@ -365,6 +365,8 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 								if !matched {
 									bindIP, err := tplBindIP.IP(hostMap[moduleHost.HostID])
 									if err != nil {
+										blog.Errorf("replace bind ip failed,"+
+											" template bind_ip: %#v, err: %v", tplBindIP, err)
 										return err
 									}
 									*inst.BindIP = bindIP

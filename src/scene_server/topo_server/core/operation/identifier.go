@@ -34,7 +34,9 @@ type identifier struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *metadata.SearchIdentifierParam) (*metadata.SearchHostIdentifierData, error) {
+// SearchIdentifier search identifier
+func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *metadata.SearchIdentifierParam) (
+	*metadata.SearchHostIdentifierData, error) {
 	if len(param.IP.Data) == 0 {
 		blog.Errorf("host ip can't be empty, rid: %s", kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "ip.data")
@@ -71,22 +73,19 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *meta
 		Fields:    []string{common.BKHostIDField},
 		Page:      param.Page,
 	}
-	hostRet, err := g.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, hostQuery)
+	hostRet, err := g.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost,
+		hostQuery)
 	if nil != err {
 		blog.Errorf("query host failed. error: %v, input: %+v,  rid:%s", err, hostQuery, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !hostRet.Result {
-		blog.ErrorJSON("query host failed, output:%s, condition:%s, rid:%s", hostRet, hostQuery, kit.Rid)
-		return nil, kit.CCError.New(hostRet.Code, hostRet.ErrMsg)
-	}
 
-	if len(hostRet.Data.Info) == 0 {
+	if len(hostRet.Info) == 0 {
 		return &metadata.SearchHostIdentifierData{Count: 0, Info: []metadata.HostIdentifier{}}, nil
 	}
 
 	var hostIDs []int64
-	for _, hostInfo := range hostRet.Data.Info {
+	for _, hostInfo := range hostRet.Info {
 		hostID, err := hostInfo.Int64(common.BKHostIDField)
 		if err != nil {
 			blog.Errorf("bk_host_id not int . error: %v, host info:%s,  rid:%s", err, hostInfo, kit.Rid)
@@ -107,11 +106,5 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *meta
 		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.ErrorJSON("search identifier failed, reply: %s, ids: %s, condition: %s, rid: %s", rsp, hostIDs,
-			queryHostIdentifier, kit.Rid)
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return &rsp.Data, nil
+	return rsp, nil
 }
