@@ -21,7 +21,7 @@
                     <i class="property-name-tooltips icon-cc-tips"
                       v-if="property['placeholder']"
                       v-bk-tooltips="{
-                        trigger: 'click',
+                        trigger: 'mouseenter',
                         content: htmlEncode(property['placeholder'])
                       }">
                     </i>
