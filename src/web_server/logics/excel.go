@@ -130,16 +130,19 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		if _, exist := fields[common.BKCloudIDField]; exist {
 			cloudAreaArr, err := rowMap.MapStrArray(common.BKCloudIDField)
 			if err != nil {
-				blog.ErrorJSON("build host excel failed, cloud area not array, host: %s, err: %s, rid: %s", hostData, err, rid)
+				blog.ErrorJSON("build host excel failed, cloud area not array, host: %s, err: %s, rid: %s", hostData,
+					err, rid)
 				return ccErr.CCError(common.CCErrCommReplyDataFormatError)
 			}
 
 			if len(cloudAreaArr) != 1 {
-				blog.ErrorJSON("build host excel failed, host has many cloud areas, host: %s, err: %s, rid: %s", hostData, err, rid)
+				blog.ErrorJSON("build host excel failed, host has many cloud areas, host: %s, err: %s, rid: %s",
+					hostData, err, rid)
 				return ccErr.CCError(common.CCErrCommReplyDataFormatError)
 			}
 
-			cloudArea := fmt.Sprintf("%v[%v]", cloudAreaArr[0][common.BKInstNameField], cloudAreaArr[0][common.BKInstIDField])
+			cloudArea := fmt.Sprintf("%v[%v]", cloudAreaArr[0][common.BKInstNameField],
+				cloudAreaArr[0][common.BKInstIDField])
 			rowMap.Set(common.BKCloudIDField, cloudArea)
 		}
 
@@ -167,7 +170,8 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		instID, err := rowMap.Int64(instIDKey)
 		if err != nil {
-			blog.Errorf("setExcelRowDataByIndex inst:%+v, not inst id key:%s, objID:%s, rid:%s", rowMap, instIDKey, objID, rid)
+			blog.Errorf("setExcelRowDataByIndex inst:%+v, not inst id key:%s, objID:%s, rid:%s", rowMap, instIDKey,
+				objID, rid)
 			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, instIDKey, objID)
 		}
 
@@ -284,8 +288,8 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 	if err != nil {
 		return err
 	}
-	asstData, objInstData, err := lgc.getAssociationData(ctx, header, objID, instAsst, modelBizID, AsstObjectUniqueIDMap,
-		selfObjectUniqueID)
+	asstData, objInstData, err := lgc.getAssociationData(ctx, header, objID, instAsst, modelBizID,
+		AsstObjectUniqueIDMap, selfObjectUniqueID)
 	if err != nil {
 		return err
 	}

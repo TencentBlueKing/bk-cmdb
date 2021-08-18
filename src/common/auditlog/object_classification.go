@@ -25,30 +25,28 @@ type objectClsAuditLog struct {
 }
 
 // GenerateAuditLog generate audit of model classification, if data is nil, will auto get current model classification data by id.
-func (h *objectClsAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, id int64, data *metadata.Classification) (
-	*metadata.AuditLog, error) {
+func (h *objectClsAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, id int64,
+	data *metadata.Classification) (*metadata.AuditLog, error) {
+
 	kit := parameter.kit
 	if data == nil {
 		// get current model classification data by id.
 		query := mapstr.MapStr{metadata.ClassificationFieldID: id}
-		rsp, err := h.clientSet.Model().ReadModelClassification(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
+		rsp, err := h.clientSet.Model().ReadModelClassification(kit.Ctx, kit.Header,
+			&metadata.QueryCondition{Condition: query})
 		if err != nil {
-			blog.Errorf("generate audit log of model classification failed, failed to read model classification, err: %v, rid: %s",
-				err.Error(), kit.Rid)
+			blog.Errorf("generate audit log of model classification failed, failed to read model classification,"+
+				" err: %v, rid: %s", err.Error(), kit.Rid)
 			return nil, err
 		}
-		if rsp.Result != true {
-			blog.Errorf("generate audit log of model classification failed, failed to read model classification, rsp code is %v, err: %s, rid: %s",
-				rsp.Code, rsp.ErrMsg, kit.Rid)
-			return nil, rsp.CCError()
-		}
-		if len(rsp.Data.Info) <= 0 {
-			blog.Errorf("generate audit log of model classification failed, failed to read model classification, err: %s, rid: %s",
-				kit.CCError.CCError(common.CCErrorModelNotFound), kit.Rid)
+
+		if len(rsp.Info) <= 0 {
+			blog.Errorf("generate audit log of model classification failed, failed to read model classification,"+
+				" err: %s, rid: %s", kit.CCError.CCError(common.CCErrorModelNotFound), kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrorModelNotFound)
 		}
 
-		data = &rsp.Data.Info[0]
+		data = &rsp.Info[0]
 	}
 
 	return &metadata.AuditLog{

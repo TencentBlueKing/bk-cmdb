@@ -29,7 +29,9 @@ import (
  * business related auth interface
  */
 
-func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Header, businessIDs ...int64) ([]BusinessSimplify, error) {
+func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Header, businessIDs ...int64) (
+	[]BusinessSimplify, error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
@@ -45,7 +47,7 @@ func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Hea
 	}
 	blog.V(5).Infof("get businesses by id result: %+v", result)
 	instances := make([]BusinessSimplify, 0)
-	for _, cls := range result.Data.Info {
+	for _, cls := range result.Info {
 		instance := BusinessSimplify{}
 		_, err = instance.Parse(cls)
 		if err != nil {

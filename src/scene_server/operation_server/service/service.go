@@ -173,12 +173,14 @@ func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessCo
 	}
 }
 
+// ParseTimerConfigFromKV parse timer from kv
 func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[string]string) (string, error) {
 	// 若是timer没配置，或者解析失败，给一个默认的定时时间
 	defaultSpec := "30 0 * * *"
 	specStr, err := cc.String(prefix + ".spec")
 	if err != nil {
-		blog.Errorf("parse timer config failed, missing 'spec' configuration for timer, set timer-spec default value: 00:30")
+		blog.Errorf("parse timer config failed, missing 'spec' configuration for timer, " +
+			"set timer-spec default value: 00:30")
 		return defaultSpec, nil
 	}
 	spec, err := parseTimerConfig(specStr)

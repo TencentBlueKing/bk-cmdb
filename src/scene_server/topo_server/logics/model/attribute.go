@@ -82,7 +82,7 @@ func (f *FieldValid) ValidID(kit *rest.Kit, value string) error {
 			f.lang.Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
 	}
 	match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, value)
-	if nil != err {
+	if err != nil {
 		return err
 	}
 
@@ -187,7 +187,6 @@ func (a *attribute) isPropertyTypeIntEnumListSingleLong(propertyType string) boo
 
 // checkObjectExist 检查当前objID在数据库中是否存在
 func (a *attribute) checkObjectExist(kit *rest.Kit, objID string) error {
-
 	checkObjCond := mapstr.MapStr{
 		common.BKObjIDField: objID,
 	}
@@ -213,42 +212,40 @@ func (a *attribute) CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr) (*metad
 
 	err := mapstr.SetValueToStructByTags(&grp, data)
 	if nil != err {
-		blog.Errorf("[operation-grp] failed to parse the group data(%#v), error info is %s, rid: %s", data, err.Error(), kit.Rid)
+		blog.Errorf("failed to parse the group data(%#v), error info is %s, rid: %s", data, err.Error(), kit.Rid)
 		return nil, err
 	}
 
 	//  check the object
 	if err = a.checkObjectExist(kit, grp.ObjectID); nil != err {
-		blog.Errorf("[operation-grp] the group (%#v) is in valid, rid: %s", data, kit.Rid)
+		blog.Errorf("the group (%#v) is in valid, rid: %s", data, kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoObjectGroupCreateFailed, err.Error())
 	}
 
 	// create a new group
 	rsp, err := a.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header, grp.ObjectID,
 		metadata.CreateModelAttributeGroup{Data: grp})
-	if nil != err {
-		blog.Errorf("[operation-grp] failed to save the group data (%#v), error info is %s, rid: %s", data, err.Error(), kit.Rid)
+	if err != nil {
+		blog.Errorf("failed to save the group data (%#v), error info is %s, rid: %s", data, err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoObjectGroupCreateFailed, err.Error())
 	}
-	if !rsp.Result {
-		blog.Errorf("[model-grp] failed to create the group(%s), err: is %s, rid: %s", grp.GroupID, rsp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrTopoObjectGroupCreateFailed)
-	}
 
-	grp.ID = int64(rsp.Data.Created.ID)
+	grp.ID = int64(rsp.Created.ID)
 
 	// generate audit log of object attribute group.
 	audit := auditlog.NewAttributeGroupAuditLog(a.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, grp.ID, &grp)
 	if err != nil {
-		blog.Errorf("create object attribute group %s success, but generate audit log failed, err: %v, rid: %s", grp.GroupName, err, kit.Rid)
+		blog.Errorf("create object attribute group %s success, but generate audit log failed, err: %v, rid: %s",
+			grp.GroupName, err, kit.Rid)
 		return nil, err
 	}
 
 	// save audit log.
 	if err = audit.SaveAuditLog(kit, *auditLog); err != nil {
-		blog.Errorf("create object attribute group %s success, but save audit log failed, err: %v, rid: %s", grp.GroupName, err, kit.Rid)
+		blog.Errorf("create object attribute group %s success, but save audit log failed, err: %v, rid: %s",
+			grp.GroupName, err, kit.Rid)
 		return nil, err
 	}
 
@@ -272,10 +269,8 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 		return nil, kit.CCError.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
 	}
 
-	if yes {
-		if data.IsRequired {
-			return nil, kit.CCError.Error(common.CCErrTopoCanNotAddRequiredAttributeForMainlineModel)
-		}
+	if yes && data.IsRequired {
+		return nil, kit.CCError.Error(common.CCErrTopoCanNotAddRequiredAttributeForMainlineModel)
 	}
 
 	// check the object id
@@ -283,58 +278,43 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 		return nil, kit.CCError.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
 	}
 
-	cond := mapstr.MapStr{
+	filters := make([]map[string]interface{}, 0)
+	filters = append(filters, mapstr.MapStr{
 		common.BKObjIDField:           data.ObjectID,
 		common.BKPropertyGroupIDField: data.PropertyGroup,
 		common.BKAppIDField:           data.BizID,
-	}
-	queryCond := metadata.QueryCondition{
-		Condition:      cond,
-		DisableCounter: true,
-	}
-	groupResult, err := a.clientSet.CoreService().Model().ReadAttributeGroupByCondition(kit.Ctx, kit.Header, queryCond)
-	if nil != err {
-		blog.Errorf("failed to request the attr group, err: %s, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}, mapstr.MapStr{
+		common.BKObjIDField:           data.ObjectID,
+		common.BKPropertyGroupIDField: common.BKBizDefault,
+		common.BKAppIDField:           data.BizID,
+	})
+
+	resp, e := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNamePropertyGroup,
+		filters)
+	if e != nil {
+		blog.Errorf("get property group failed, filters: %+v., err: %s, rid: %d.", data, e, kit.Rid)
+		return nil, e
 	}
 
-	// create the default group
-	if len(groupResult.Data.Info) == 0 {
-		if data.BizID > 0 {
-			cond := mapstr.MapStr{
-				common.BKObjIDField:           data.ObjectID,
-				common.BKPropertyGroupIDField: common.BKBizDefault,
+	if resp[0] == 0 && data.BizID > 0 {
+		if resp[1] == 0 {
+			group := metadata.Group{
+				IsDefault:  true,
+				GroupIndex: -1,
+				GroupName:  common.BKBizDefault,
+				GroupID:    common.BKBizDefault,
+				ObjectID:   data.ObjectID,
+				OwnerID:    data.OwnerID,
+				BizID:      data.BizID,
 			}
-			queryCond := metadata.QueryCondition{
-				Condition:      cond,
-				DisableCounter: true,
+			if _, err := a.CreateObjectGroup(kit, mapstr.MapStr{"field": group}); err != nil {
+				blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
+				return nil, kit.CCError.Error(common.CCErrTopoObjectGroupCreateFailed)
 			}
-			groupResult, err := a.clientSet.CoreService().Model().ReadAttributeGroupByCondition(kit.Ctx, kit.Header,
-				queryCond)
-			if nil != err {
-				blog.Errorf("failed to request the attr group, err: %s, rid: %s", err, kit.Rid)
-				return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-			}
-			if len(groupResult.Data.Info) == 0 {
-				group := metadata.Group{
-					IsDefault:  true,
-					GroupIndex: -1,
-					GroupName:  common.BKBizDefault,
-					GroupID:    common.BKBizDefault,
-					ObjectID:   data.ObjectID,
-					OwnerID:    data.OwnerID,
-					BizID:      data.BizID,
-				}
-
-				if _, err := a.CreateObjectGroup(kit, mapstr.MapStr{"field": group}); err != nil {
-					blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
-					return nil, kit.CCError.Error(common.CCErrTopoObjectGroupCreateFailed)
-				}
-			}
-			data.PropertyGroup = common.BKBizDefault
-		} else {
-			data.PropertyGroup = common.BKDefaultField
 		}
+		data.PropertyGroup = common.BKBizDefault
+	} else {
+		data.PropertyGroup = common.BKDefaultField
 	}
 
 	if err := a.IsValid(kit, false, data); nil != err {
@@ -462,12 +442,12 @@ func (a *attribute) UpdateObjectAttributeIndex(kit *rest.Kit, objID string, data
 	}
 
 	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsIndex(kit.Ctx, kit.Header, objID, &input)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("failed to update module attr index, err: %s, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	return rsp.Data, nil
+	return rsp, nil
 }
 
 // isMainlineModel check is mainline model by module id
@@ -484,7 +464,7 @@ func (a *attribute) isMainlineModel(kit *rest.Kit, modelID string) (bool, error)
 		return false, err
 	}
 
-	for _, mainline := range asst.Data.Info {
+	for _, mainline := range asst.Info {
 		if mainline.ObjectID == modelID {
 			return true, nil
 		}
@@ -525,16 +505,29 @@ func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, objID
 		cond.Remove(metadata.PageName)
 	}
 
-	opt := &metadata.QueryCondition{
-		Condition:      cond,
-		DisableCounter: true,
-		Page:           metadata.BasePage{Limit: int(limit), Start: int(start), Sort: sort},
+	var modelBizID int64
+	modelBizIDStr, exist := cond.Get(common.BKAppIDField)
+	if exist {
+		modelBizID = modelBizIDStr.(int64)
 	}
+
+	cond.Remove(common.BKAppIDField)
+	opt := new(metadata.QueryCondition)
+	if objID != "" {
+		opt.DisableCounter = true
+		opt.Condition = cond
+	} else {
+		util.AddModelBizIDCondition(cond, modelBizID)
+		opt.Condition = cond
+		opt.DisableCounter = true
+		opt.Page = metadata.BasePage{Limit: int(limit), Start: int(start), Sort: sort}
+	}
+
 	resp, err := a.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, opt)
 	if err != nil {
 		blog.Errorf("find business attributes failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	return resp.Data.Info, nil
+	return resp.Info, nil
 }

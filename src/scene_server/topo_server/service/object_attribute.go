@@ -53,9 +53,8 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 
 	var attrInfo *metadata.ObjAttDes
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
 		attr, err := s.Logics.AttributeOperation().CreateObjectAttribute(ctx.Kit, attr)
-		if nil != err {
+		if err != nil {
 			return err
 		}
 
@@ -115,7 +114,7 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 	}
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
 	if nil != err {
-		blog.Errorf("failed to parse the path params id(%s), err: %s, rid: %s", ctx.Request.PathParameter("id"),
+		blog.Errorf("failed to parse the path params id: %s, err: %s, rid: %s", ctx.Request.PathParameter("id"),
 			err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -230,8 +229,8 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-att] failed to parse the params id(%s), error info is %s , rid: %s",
-			ctx.Request.PathParameter("id"), err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the params id(%s), err: %s , rid: %s", ctx.Request.PathParameter("id"),
+			err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoPathParamPaserFailed))
 		return
 	}
@@ -239,9 +238,9 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 	var result *metadata.UpdateAttrIndexData
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		result, err = s.Core.AttributeOperation().UpdateObjectAttributeIndex(ctx.Kit, objID, data, id)
+		result, err = s.Logics.AttributeOperation().UpdateObjectAttributeIndex(ctx.Kit, objID, data, id)
 		if err != nil {
-			blog.Errorf("UpdateObjectAttributeIndex failed, error info is %s , rid: %s", err.Error(), ctx.Kit.Rid)
+			blog.Errorf("UpdateObjectAttributeIndex failed, err: %s , rid: %s", err.Error(), ctx.Kit.Rid)
 			return err
 		}
 		return nil

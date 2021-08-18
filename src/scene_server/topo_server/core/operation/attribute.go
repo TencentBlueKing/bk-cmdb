@@ -267,6 +267,7 @@ func (a *attribute) FindObjectAttributeWithDetail(kit *rest.Kit, cond condition.
 	return results, nil
 }
 
+// FindBusinessAttribute search biz attribute
 func (a *attribute) FindBusinessAttribute(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Attribute, error) {
 	opt := &metadata.QueryCondition{
 		Condition: cond,
@@ -276,15 +277,13 @@ func (a *attribute) FindBusinessAttribute(kit *rest.Kit, cond mapstr.MapStr) ([]
 		blog.Errorf("find business attributes failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !resp.Result {
-		blog.Errorf("find business attributes failed, err: %s rid: %s", resp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
-	}
 
-	return resp.Data.Info, nil
+	return resp.Info, nil
 }
 
-func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition, modelBizID int64) ([]model.AttributeInterface, error) {
+// FindObjectAttribute search object attribute
+func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition, modelBizID int64) (
+	[]model.AttributeInterface, error) {
 	limits := cond.GetLimit()
 	sort := cond.GetSort()
 	start := cond.GetStart()
@@ -298,18 +297,15 @@ func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition,
 
 	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, opt)
 	if nil != err {
-		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-attr] failed to search attribute by the condition(%#v), error info is %s, rid: %s", fCond, rsp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return model.CreateAttribute(kit, a.clientSet, rsp.Data.Info), nil
+	return model.CreateAttribute(kit, a.clientSet, rsp.Info), nil
 }
 
+// UpdateObjectAttribute update object attribute
 func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error {
 	cond := make(map[string]interface{})
 	util.AddModelBizIDCondition(cond, modelBizID)
@@ -330,14 +326,11 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 		Condition: cond,
 		Data:      data,
 	}
-	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(kit.Ctx, kit.Header, &input)
+	_, err = a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(kit.Ctx, kit.Header, &input)
 	if nil != err {
-		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !rsp.Result {
-		blog.Errorf("[operation-attr] failed to update the attribute by the attr-id(%d), error info is %s, rid: %s", attID, rsp.ErrMsg, kit.Rid)
-		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	// save audit log.
@@ -350,17 +343,33 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	return nil
 }
 
+// isMainlineModel check is mainline model by module id
 func (a *attribute) isMainlineModel(kit *rest.Kit, modelID string) (bool, error) {
-	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
-	if _, err := a.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: cond}); err != nil {
+	cond := mapstr.MapStr{
+		common.AssociationKindIDField: common.AssociationKindMainline,
+	}
+	queryCond := &metadata.QueryCondition{
+		Condition:      cond,
+		DisableCounter: true,
+	}
+	asst, err := a.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, queryCond)
+	if err != nil {
 		return false, err
+	}
+
+	for _, mainline := range asst.Info {
+		if mainline.ObjectID == modelID {
+			return true, nil
+		}
 	}
 
 	return false, nil
 }
 
-func (a *attribute) UpdateObjectAttributeIndex(kit *rest.Kit, objID string, data mapstr.MapStr, attID int64) (*metadata.UpdateAttrIndexData, error) {
+
+// UpdateObjectAttributeIndex update object attribute index
+func (a *attribute) UpdateObjectAttributeIndex(kit *rest.Kit, objID string, data mapstr.MapStr, attID int64) (
+	*metadata.UpdateAttrIndexData, error) {
 	input := metadata.UpdateOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(attID).ToMapStr(),
 		Data:      data,
@@ -368,14 +377,10 @@ func (a *attribute) UpdateObjectAttributeIndex(kit *rest.Kit, objID string, data
 
 	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsIndex(kit.Ctx, kit.Header, objID, &input)
 	if nil != err {
-		blog.Errorf("[operation-attr] failed to request object CoreService, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-attr] failed to request object CoreService, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-attr] failed to update the attribute index by the attr-id(%d), error info is %s, rid: %s", attID, rsp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return rsp.Data, nil
+	return rsp, nil
 }

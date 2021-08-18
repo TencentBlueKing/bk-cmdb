@@ -31,7 +31,9 @@ import (
  * instance represent common instances here
  */
 
-func (am *AuthManager) collectInstancesByRawIDs(ctx context.Context, header http.Header, modelID string, ids ...int64) ([]InstanceSimplify, error) {
+func (am *AuthManager) collectInstancesByRawIDs(ctx context.Context, header http.Header, modelID string, ids ...int64) (
+	[]InstanceSimplify, error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
@@ -45,7 +47,7 @@ func (am *AuthManager) collectInstancesByRawIDs(ctx context.Context, header http
 		return nil, fmt.Errorf("get instance by id failed, err: %+v", err)
 	}
 	instances := make([]InstanceSimplify, 0)
-	for _, inst := range result.Data.Info {
+	for _, inst := range result.Info {
 		instance := InstanceSimplify{}
 		_, err = instance.Parse(inst)
 		if err != nil {
@@ -120,7 +122,10 @@ func (am *AuthManager) collectObjectsByInstances(ctx context.Context, header htt
 	return instanceIDObjectMap, nil
 }
 
-func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http.Header, action meta.Action, instances ...InstanceSimplify) ([]meta.ResourceAttribute, error) {
+// MakeResourcesByInstances make the resources by simplify instances and action
+func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http.Header, action meta.Action,
+	instances ...InstanceSimplify) ([]meta.ResourceAttribute, error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	if len(instances) == 0 {
@@ -144,7 +149,8 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 	for _, instance := range instances {
 		object, exist := instanceIDObjectMap[instance.InstanceID]
 		if !exist {
-			blog.Errorf("MakeResourcesByInstances failed, unexpected err, instance related object not found, instance: %+v, instanceIDObjectMap: %+v, rid: %s", instance, instanceIDObjectMap, rid)
+			blog.Errorf("MakeResourcesByInstances failed, unexpected err, instance related object not found, "+
+				"instance: %+v, instanceIDObjectMap: %+v, rid: %s", instance, instanceIDObjectMap, rid)
 			return nil, errors.New("unexpected err, get instance related model failed, not found")
 		}
 		objectIDInstancesMap[object.ID] = append(objectIDInstancesMap[object.ID], instance)
@@ -152,7 +158,9 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 	}
 
 	mainlineAsst, err := am.clientSet.CoreService().Association().ReadModelAssociation(ctx, header,
-		&metadata.QueryCondition{Condition: mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}})
+		&metadata.QueryCondition{
+			Condition: mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline},
+		})
 	if err != nil {
 		blog.Errorf("list mainline models failed, err: %+v, rid: %s", err, rid)
 		return nil, err
@@ -163,7 +171,7 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 		object := objectIDMap[objID]
 
 		resourceType := meta.ModelInstance
-		for _, mainline := range mainlineAsst.Data.Info {
+		for _, mainline := range mainlineAsst.Info {
 			if object.ObjectID == mainline.ObjectID {
 				resourceType = meta.MainlineInstance
 			}
@@ -171,12 +179,15 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 
 		parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, object)
 		if err != nil {
-			blog.Errorf("MakeResourcesByObjects failed, make parent auth resource by objects failed, object: %+v, err: %+v, rid: %s", object, err, rid)
+			blog.Errorf("MakeResourcesByObjects failed, make parent auth resource by objects failed, "+
+				"object: %+v, err: %+v, rid: %s", object, err, rid)
 			return nil, fmt.Errorf("make parent auth resource by objects failed, err: %+v", err)
 		}
 		if len(parentResources) != 1 {
-			blog.Errorf("MakeResourcesByInstances failed, make parent auth resource by objects failed, get %d with object %s, rid: %s", len(parentResources), object.ObjectID, rid)
-			return nil, fmt.Errorf("make parent auth resource by objects failed, get %d with object %d", len(parentResources), object.ID)
+			blog.Errorf("MakeResourcesByInstances failed, make parent auth resource by objects failed, "+
+				"get %d with object %s, rid: %s", len(parentResources), object.ObjectID, rid)
+			return nil, fmt.Errorf("make parent auth resource by objects failed, get %d with object %d",
+				len(parentResources), object.ID)
 		}
 
 		parentResource := parentResources[0]
