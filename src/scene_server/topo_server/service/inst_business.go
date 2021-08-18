@@ -597,6 +597,7 @@ func (s *Service) GetInternalModule(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// GetInternalModuleWithStatistics get internal object by statistics
 func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
