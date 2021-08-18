@@ -392,7 +392,6 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 		DisableCounter: true,
 	}
 	asstItems, err := o.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, queryAsst)
-
 	if err != nil {
 		blog.Errorf("failed to search the objects(%#v) association info , err: %v, rid: %s", objectIDs, err, kit.Rid)
 		return nil, err
@@ -478,8 +477,10 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 		tmp.To.Position = asstObjMap[assoc.AsstObjID].Position
 		tmp.To.ObjName = asstObjMap[assoc.AsstObjID].ObjectName
 
-		if _, exist := assocObjsMap[assoc.AsstObjID][assoc.ObjectID]; exist {
-			tmp.Arrows = "to,from"
+		if result, exist := assocObjsMap[assoc.AsstObjID]; exist {
+			if _, exist := result[assoc.ObjectID]; exist {
+				tmp.Arrows = "to,from"
+			}
 		} else {
 			tmp.Arrows = "to"
 		}

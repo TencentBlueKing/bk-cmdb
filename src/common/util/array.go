@@ -166,11 +166,11 @@ func RemoveDuplicatesAndEmptyByMap(target []string) []string {
 			continue
 		}
 
-		lens := len(tempMap)
-		tempMap[item] = struct{}{}
-		if len(tempMap) != lens {
-			result = append(result, item)
+		if _, exist := tempMap[item]; exist {
+			continue
 		}
+		tempMap[item] = struct{}{}
+		result = append(result, item)
 	}
 
 	return result
