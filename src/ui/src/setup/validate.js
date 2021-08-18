@@ -3,6 +3,8 @@ import { language } from '@/i18n'
 import veeValidate, { Validator } from 'vee-validate'
 import cnMessages from 'vee-validate/dist/locale/zh_CN'
 import stringLength from 'utf8-byte-length'
+import regularRemoteValidate from './regular-remote-validate'
+import stringRemoteValidate from './string-remote-validate'
 
 /* eslint-disable no-useless-escape */
 
@@ -183,7 +185,9 @@ const dictionary = {
       businessTopoInstNames: () => '格式不正确，不能包含特殊字符\ | / : * , < > " ? #及空格',
       reservedWord: () => '不能以"bk_"开头',
       ipSearchRuls: () => '暂不支持不同云区域的混合搜索',
-      validRegExp: () => '请输入合法的正则表达式'
+      validRegExp: () => '请输入合法的正则表达式',
+      remoteRegular: () => '请输入合法的正则表达式',
+      remoteString: () => '请输入符合自定义校验规则的内容'
     },
     custom: {
       asst: {
@@ -226,7 +230,9 @@ const dictionary = {
       businessTopoInstNames: () => 'The format is incorrect and cannot contain special characters \ | / : * , < > " ? # and space',
       reservedWord: () => 'Can not start with "bk_"',
       ipSearchRuls: () => 'Hybrid search of different cloud regions is not supported at the moment',
-      validRegExp: () => 'Please enter valid regular express'
+      validRegExp: () => 'Please enter valid regular express',
+      remoteRegular: () => 'Please input valid regular expression',
+      remoteString: () => 'Please input correct content that matchs ths custom rules'
     },
     custom: {
       asst: {
@@ -258,7 +264,13 @@ const customConfigRules = [
   'namedCharacter',
   'instanceTagKey',
   'instanceTagValue',
-  'businessTopoInstNames'
+  {
+    businessTopoInstNames: (value, cb, re) => {
+      const values = value.split('\n')
+      const list = values.map(text => text.trim()).filter(text => text)
+      return list.every(text => re.test(text))
+    }
+  }
 ]
 
 const mixinConfig = () => {
@@ -273,7 +285,7 @@ const mixinConfig = () => {
 
     let validate = value => new RegExp(rule.value).test(value)
     if (useCb) {
-      validate = value => item[key](value, () => new RegExp(rule.value).test(value))
+      validate = value => item[key](value, () => new RegExp(rule.value).test(value), new RegExp(rule.value))
     }
 
     // 加入到自定义规则列表
@@ -292,6 +304,9 @@ const mixinConfig = () => {
     }
   }
 }
+
+Validator.extend('remoteRegular', regularRemoteValidate)
+Validator.extend('remoteString', stringRemoteValidate, { paramNames: ['regular'] })
 
 export function setupValidator(app) {
   mixinConfig()

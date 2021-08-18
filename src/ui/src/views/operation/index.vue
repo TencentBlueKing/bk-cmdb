@@ -105,6 +105,7 @@
           </div>
           <div class="chart-date" v-if="item.showDate">
             <bk-date-picker
+              transfer
               :options="options"
               @change="dateChange"
               class="options-filter"

@@ -29,7 +29,9 @@ import (
  * set instance
  */
 
-func (am *AuthManager) collectSetBySetIDs(ctx context.Context, header http.Header, setIDs ...int64) ([]SetSimplify, error) {
+func (am *AuthManager) collectSetBySetIDs(ctx context.Context, header http.Header, setIDs ...int64) ([]SetSimplify,
+	error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	cond := metadata.QueryCondition{
@@ -40,8 +42,9 @@ func (am *AuthManager) collectSetBySetIDs(ctx context.Context, header http.Heade
 		blog.V(3).Infof("get sets by id failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get sets by id failed, err: %+v", err)
 	}
+
 	sets := make([]SetSimplify, 0)
-	for _, cls := range result.Data.Info {
+	for _, cls := range result.Info {
 		set := SetSimplify{}
 		_, err = set.Parse(cls)
 		if err != nil {

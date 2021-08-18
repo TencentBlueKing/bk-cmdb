@@ -76,7 +76,7 @@
             <span class="mr5">{{classification['bk_classification_name']}}</span>
             <span class="number">({{classification['bk_objects'].length}})</span>
           </div>
-          <template v-if="isEditable(classification) && !classification._disabled">
+          <template v-if="isEditable(classification) && modelType !== 'disabled'">
             <cmdb-auth v-if="!mainLoading" class="group-btn ml5"
               :auth="{ type: $OPERATION.C_MODEL, relation: [classification.id] }">
               <bk-button slot-scope="{ disabled }"
@@ -120,7 +120,7 @@
             :key="modelIndex">
             <div class="info-model"
               :class="{
-                'radius': classification._disabled || classification['bk_classification_id'] === 'bk_biz_topo'
+                'radius': model.bk_ispaused || classification['bk_classification_id'] === 'bk_biz_topo'
               }"
               @click="modelClick(model)">
               <div class="icon-box">
@@ -131,7 +131,7 @@
                 <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
               </div>
             </div>
-            <div v-if="!classification._disabled && model.bk_classification_id !== 'bk_biz_topo'"
+            <div v-if="!model.bk_ispaused && model.bk_classification_id !== 'bk_biz_topo'"
               class="info-instance"
               @click="handleGoInstance(model)">
               <i class="icon-cc-share"></i>
@@ -297,33 +297,37 @@
       ...mapGetters('objectModelClassify', [
         'classifications'
       ]),
-      enableClassifications() {
-        const enableClassifications = []
+      allClassifications() {
+        const allClassifications = []
         this.classifications.forEach((classification) => {
-          enableClassifications.push({
+          allClassifications.push({
             ...classification,
-            bk_objects: classification.bk_objects.filter(model => !model.bk_ispaused && !model.bk_ishidden),
-            _disabled: false
+            bk_objects: classification.bk_objects
+              .filter(model => !model.bk_ishidden)
+              .sort((a, b) => a.bk_ispaused - b.bk_ispaused),
           })
         })
-        return enableClassifications
+        return allClassifications
+      },
+      enableClassifications() {
+        const enableClassifications = []
+        this.allClassifications.forEach((classification) => {
+          enableClassifications.push({
+            ...classification,
+            bk_objects: classification.bk_objects.filter(model => !model.bk_ispaused),
+          })
+        })
+        return enableClassifications.filter(item => item.bk_objects.length)
       },
       disabledClassifications() {
         const disabledClassifications = []
         this.classifications.forEach((classification) => {
-          const disabledModels = classification.bk_objects.filter(model => model.bk_ispaused && !model.bk_ishidden)
-          if (disabledModels.length) {
-            disabledClassifications.push({
-              ...classification,
-              bk_objects: disabledModels,
-              _disabled: true
-            })
-          }
+          disabledClassifications.push({
+            ...classification,
+            bk_objects: classification.bk_objects.filter(model => model.bk_ispaused),
+          })
         })
-        return disabledClassifications
-      },
-      allClassifications() {
-        return [...this.enableClassifications, ...this.disabledClassifications]
+        return disabledClassifications.filter(item => item.bk_objects.length)
       },
       currentClassifications() {
         if (!this.searchModel) {
