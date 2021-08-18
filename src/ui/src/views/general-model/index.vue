@@ -66,6 +66,7 @@
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
           :class="filterType"
+          :fuzzy="queryModeIsFuzzy"
           v-bind="filterComponentProps"
           v-model="filter.value"
           @change="handleFilterValueChange"
@@ -74,6 +75,7 @@
         </component>
         <bk-checkbox class="filter-exact" size="small"
           v-if="allowFuzzyQuery"
+          @change="onQueryModeChange"
           v-model="filter.fuzzy_query">
           {{$t('模糊')}}
         </bk-checkbox>
@@ -218,6 +220,8 @@
             payload: {}
           }
         },
+        // 查询模式
+        queryModeIsFuzzy: false,
         filter: {
           field: '',
           value: '',
@@ -308,7 +312,7 @@
       },
       allowFuzzyQuery() {
         return ['singlechar', 'longchar'].includes(this.filterType)
-      }
+      },
     },
     watch: {
       'filter.field'() {
@@ -324,11 +328,13 @@
       },
       'filter.fuzzy_query'(fuzzy) {
         if (!this.allowFuzzyQuery) return
+
         if (fuzzy) {
           this.filter.value = ''
           this.filter.operator = '$regex'
           return
         }
+
         const defaultData = Utils.getDefaultData(this.filterProperty)
         this.filter.value = defaultData.value
         this.filter.operator = defaultData.operator
@@ -360,10 +366,11 @@
         filter = '',
         operator = '',
         fuzzy = false,
-        field = 'bk_inst_name'
+        field = 'bk_inst_name',
       }) => {
         this.filter.field = field
         this.filter.fuzzy_query = fuzzy.toString() === 'true'
+        this.queryModeIsFuzzy = Boolean(fuzzy)
         this.table.pagination.current = parseInt(page, 10)
         this.table.pagination.limit = parseInt(limit, 10)
         await this.$nextTick()
@@ -392,6 +399,9 @@
         'batchDeleteInst',
         'searchInstById'
       ]),
+      onQueryModeChange(val) {
+        this.queryModeIsFuzzy = val
+      },
       setDynamicBreadcrumbs() {
         this.$store.commit('setTitle', this.model.bk_obj_name)
       },
