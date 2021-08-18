@@ -64,10 +64,9 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 		return nil, err
 	}
 
-	dbNodes := rsp.Data
 	graphNodes := make(map[string]*metadata.TopoGraphics, 0)
-	for index, node := range dbNodes {
-		graphNodes[node.NodeType+node.ObjID+strconv.Itoa(node.InstID)] = &dbNodes[index]
+	for index, node := range rsp {
+		graphNodes[node.NodeType+node.ObjID+strconv.Itoa(node.InstID)] = &rsp[index]
 	}
 
 	// TODO 调用 asst 中 searchObjectAssociation
@@ -140,14 +139,14 @@ func (g *graphics) findAssociationTypeByAsstKindID(kit *rest.Kit, asstKindIDs []
 		blog.Errorf("get association kind failed, err: %v, kinds: %#v rid: %s", err, asstKindIDs, kit.Rid)
 		return nil, err
 	}
-	if len(resp.Data.Info) != len(asstKindIDs) {
-		blog.Errorf("get association kind failed, err: %v, kinds: %#v rid: %s", resp.ErrMsg, asstKindIDs,
+	if resp.Count != len(asstKindIDs) {
+		blog.Errorf("get association kind failed, err: %v, kinds: %#v rid: %s", resp, asstKindIDs,
 			kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrTopoGetAssociationKindFailed, asstKindIDs)
 	}
 
 	var associationKindMap = make(map[string]*metadata.AssociationKind)
-	for _, kind := range resp.Data.Info {
+	for _, kind := range resp.Info {
 		associationKindMap[kind.AssociationKindID] = kind
 	}
 
@@ -188,7 +187,7 @@ func (g *graphics) UpdateObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 		datas[index].SetScopeID(scopeID)
 	}
 
-	_, err := g.clientSet.CoreService().TopoGraphics().UpdateTopoGraphics(kit.Ctx, kit.Header, datas)
+	err := g.clientSet.CoreService().TopoGraphics().UpdateTopoGraphics(kit.Ctx, kit.Header, datas)
 	if err != nil {
 		blog.Errorf("UpdateGraphics failed ,err: %v, datas: %#v, rid: %s", err, datas, kit.Rid)
 		return err
@@ -206,7 +205,7 @@ func (g *graphics) findObject(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Obj
 		return nil, err
 	}
 
-	return rsp.Data.Info, nil
+	return rsp.Info, nil
 }
 
 func (g *graphics) searchObjectAssociation(kit *rest.Kit, objID string) ([]metadata.Association, error) {
@@ -222,11 +221,10 @@ func (g *graphics) searchObjectAssociation(kit *rest.Kit, objID string) ([]metad
 		return nil, err
 	}
 
-	return rsp.Data.Info, nil
+	return rsp.Info, nil
 }
 
-func (g *graphics) searchType(kit *rest.Kit, request *metadata.SearchAssociationTypeRequest) (resp *metadata.
-	SearchAssociationTypeResult, err error) {
+func (g *graphics) searchType(kit *rest.Kit, request *metadata.SearchAssociationTypeRequest) (*metadata.SearchAssociationType, error) {
 	input := metadata.QueryCondition{
 		Condition: request.Condition,
 		Page:      metadata.BasePage{Limit: request.Limit, Start: request.Start, Sort: request.Sort},
