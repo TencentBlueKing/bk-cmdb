@@ -27,28 +27,35 @@ func init() {
 
 //  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 
-var commObjDesIndexes = []types.Index{}
+var commObjDesIndexes = []types.Index{
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "bkObjID",
+		Keys: map[string]int32{
+			common.BKObjIDField: 1,
+		},
+		Unique: true,
+		PartialFilterExpression: map[string]interface{}{
+			common.BKObjIDField: map[string]string{common.BKDBType: "string"},
+		},
+	},
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "bkObjName",
+		Keys: map[string]int32{
+			common.BKObjNameField: 1,
+		},
+		Unique: true,
+		PartialFilterExpression: map[string]interface{}{
+			common.BKObjNameField: map[string]string{common.BKDBType: "string"},
+		},
+	},
+}
 
 // deprecated 未规范化前的索引，只允许删除不允许新加和修改，
 var deprecatedObjDesIndexes = []types.Index{
 	{
-		Name: "bk_obj_id_1",
-		Keys: map[string]int32{
-			"bk_obj_id": 1,
-		},
-		Background: true,
-	},
-	{
 		Name: "bk_classification_id_1",
 		Keys: map[string]int32{
 			"bk_classification_id": 1,
-		},
-		Background: true,
-	},
-	{
-		Name: "bk_obj_name_1",
-		Keys: map[string]int32{
-			"bk_obj_name": 1,
 		},
 		Background: true,
 	},
