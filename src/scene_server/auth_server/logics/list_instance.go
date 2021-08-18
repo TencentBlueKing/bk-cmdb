@@ -66,7 +66,8 @@ func (lgc *Logics) listInstance(kit *rest.Kit, cond map[string]interface{}, reso
 }
 
 // searchAuthResource search auth resource instances from database
-func (lgc *Logics) searchAuthResource(kit *rest.Kit, param metadata.PullResourceParam, resourceType iam.TypeID) (*metadata.PullResourceResult, error) {
+func (lgc *Logics) searchAuthResource(kit *rest.Kit, param metadata.PullResourceParam, resourceType iam.TypeID) (
+	*metadata.PullResourceResult, error) {
 	param.Collection = getResourceTableName(resourceType)
 	if param.Collection == "" {
 		blog.Errorf("request type %s is invalid, rid: %s", resourceType, kit.Rid)
@@ -104,7 +105,10 @@ func (lgc *Logics) ListSystemInstance(kit *rest.Kit, resourceType iam.TypeID, fi
 
 	cond := make(map[string]interface{})
 	if len(filter.Keyword) != 0 {
-		cond[GetResourceNameField(resourceType)] = map[string]interface{}{common.BKDBLIKE: filter.Keyword, common.BKDBOPTIONS: "i"}
+		cond[GetResourceNameField(resourceType)] = map[string]interface{}{
+			common.BKDBLIKE:    filter.Keyword,
+			common.BKDBOPTIONS: "i",
+		}
 	}
 
 	if len(extraCond) > 0 {
@@ -126,7 +130,10 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, resourceType iam.TypeID, 
 	}
 
 	if len(filter.Keyword) != 0 {
-		cond[GetResourceNameField(resourceType)] = map[string]interface{}{common.BKDBLIKE: filter.Keyword, common.BKDBOPTIONS: "i"}
+		cond[GetResourceNameField(resourceType)] = map[string]interface{}{
+			common.BKDBLIKE:    filter.Keyword,
+			common.BKDBOPTIONS: "i",
+		}
 	}
 
 	if filter.Parent == nil {
@@ -140,7 +147,8 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, resourceType iam.TypeID, 
 	// if filter parent id is not int64 type, return empty result
 	id, err := strconv.ParseInt(filter.Parent.ID, 10, 64)
 	if err != nil {
-		blog.Errorf("filter.parent.id %s parse int failed, error: %s, rid: %s", filter.Parent.ID, err.Error(), kit.Rid)
+		blog.Errorf("filter.parent.id %s parse int failed, error: %s, rid: %s", filter.Parent.ID, err.Error(),
+			kit.Rid)
 		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 	}
 
@@ -191,13 +199,8 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iam.TypeID, fil
 		return nil, err
 	}
 
-	if err := result.CCError(); err != nil {
-		blog.Errorf("read object %s instances failed, err: %v, rid: %s", objID, err, kit.Rid)
-		return nil, err
-	}
-
-	instances := make([]types.InstanceResource, len(result.Data.Info))
-	for index, instance := range result.Data.Info {
+	instances := make([]types.InstanceResource, len(result.Info))
+	for index, instance := range result.Info {
 		instances[index] = types.InstanceResource{
 			ID:          util.GetStrByInterface(instance[common.BKInstIDField]),
 			DisplayName: util.GetStrByInterface(instance[common.BKInstNameField]),
@@ -205,7 +208,7 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iam.TypeID, fil
 	}
 
 	return &types.ListInstanceResult{
-		Count:   int64(result.Data.Count),
+		Count:   int64(result.Count),
 		Results: instances,
 	}, nil
 }
@@ -226,10 +229,10 @@ func (lgc *Logics) getModelObjectIDWithIamParentID(kit *rest.Kit, parentID strin
 		return "", err
 	}
 
-	if len(result.Data.Info) != 1 {
+	if len(result.Info) != 1 {
 		return "", fmt.Errorf("got multiple model with id: %s", parentID)
 	}
-	return result.Data.Info[0].ObjectID, nil
+	return result.Info[0].ObjectID, nil
 }
 
 // ListHostInstance list host instances
@@ -258,7 +261,8 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iam.TypeID, filt
 
 	parentID, err := strconv.ParseInt(filter.Parent.ID, 10, 64)
 	if err != nil {
-		blog.ErrorJSON("parse parent id %s to int64 failed, error: %s, rid: %s", filter.Parent.ID, err.Error(), kit.Rid)
+		blog.ErrorJSON("parse parent id %s to int64 failed, error: %s, rid: %s", filter.Parent.ID, err.Error(),
+			kit.Rid)
 		return nil, err
 	}
 
@@ -290,7 +294,8 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iam.TypeID, filt
 	return lgc.listHostInstanceFromCache(kit, hostRsp.Data.IDArr, page)
 }
 
-func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page types.Page, keyword string) (*types.ListInstanceResult, error) {
+func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page types.Page, keyword string) (
+	*types.ListInstanceResult, error) {
 	condition := make(map[string]interface{})
 
 	if len(hostIDs) != 0 {
@@ -313,8 +318,8 @@ func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page t
 	}
 
 	// get cloud area to generate host display name
-	cloudIDs := make([]int64, len(hostResp.Data.Info))
-	for index, host := range hostResp.Data.Info {
+	cloudIDs := make([]int64, len(hostResp.Info))
+	for index, host := range hostResp.Info {
 		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
 		if err != nil {
 			return nil, err
@@ -329,7 +334,7 @@ func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page t
 	}
 
 	instances := make([]types.InstanceResource, 0)
-	for _, host := range hostResp.Data.Info {
+	for _, host := range hostResp.Info {
 		cloudID, _ := util.GetInt64ByInterface(host[common.BKCloudIDField])
 		instances = append(instances, types.InstanceResource{
 			ID:          util.GetStrByInterface(host[common.BKHostIDField]),
@@ -338,7 +343,7 @@ func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page t
 	}
 
 	return &types.ListInstanceResult{
-		Count:   int64(hostResp.Data.Count),
+		Count:   int64(hostResp.Count),
 		Results: instances,
 	}, nil
 }
@@ -349,7 +354,8 @@ type hostInstance struct {
 	CloudID int64  `json:"bk_cloud_id"`
 }
 
-func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, page types.Page) (*types.ListInstanceResult, error) {
+func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, page types.Page) (
+	*types.ListInstanceResult, error) {
 
 	// if hostIDs are set, get hosts from cache returns hosts using ids directly without paging, we need to do it here
 	hosts := make([]hostInstance, 0)
@@ -373,7 +379,8 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 				IDs:    hostIDs[offset:limit],
 				Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
 			}
-			hostArrStr, err := lgc.CoreAPI.CacheService().Cache().Host().ListHostWithHostID(kit.Ctx, kit.Header, listHostParam)
+			hostArrStr, err := lgc.CoreAPI.CacheService().Cache().Host().ListHostWithHostID(kit.Ctx, kit.Header,
+				listHostParam)
 			if err != nil {
 				blog.Errorf("get hosts from cache failed, err: %v, hostIDs: %+v", err, hostIDs)
 				return nil, err
@@ -397,7 +404,8 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 			},
 		}
 
-		cnt, hostArrStr, err := lgc.CoreAPI.CacheService().Cache().Host().ListHostWithPage(kit.Ctx, kit.Header, listHostParam)
+		cnt, hostArrStr, err := lgc.CoreAPI.CacheService().Cache().Host().ListHostWithPage(kit.Ctx, kit.Header,
+			listHostParam)
 		if err != nil {
 			blog.Errorf("get hosts from cache failed, err: %v, hostIDs: %+v", err, hostIDs)
 			return nil, err

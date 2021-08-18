@@ -281,9 +281,16 @@ func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit, inputP
 	switch mappingType {
 	case metadata.OneToOneMapping:
 		mlocker := lock.NewMLocker(driverRedis.Client())
-		instkey := genAssoInstLockKey(inputParam.Data.InstID, inputParam.Data.ObjectAsstID)
-		asstInstkey := genAssoInstLockKey(inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID)
-		locked, err := mlocker.MLock(kit.Rid, 10, time.Minute, lock.StrFormat(instkey), lock.StrFormat(asstInstkey))
+
+		// if one instance is associated with itself, then lock this instance, or else lock both instance
+		instkey := lock.StrFormat(genAssoInstLockKey(inputParam.Data.InstID, inputParam.Data.ObjectAsstID))
+		lockKeys := []lock.StrFormat{instkey}
+		if inputParam.Data.InstID != inputParam.Data.AsstInstID {
+			asstInstkey := lock.StrFormat(genAssoInstLockKey(inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID))
+			lockKeys = append(lockKeys, asstInstkey)
+		}
+
+		locked, err := mlocker.MLock(kit.Rid, 10, time.Minute, lockKeys...)
 		if err != nil {
 			blog.Errorf("obtain lock failed. err: %v, rid: %s", err, kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCERrrCoreServiceConcurrent)

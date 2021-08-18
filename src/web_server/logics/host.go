@@ -443,14 +443,17 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 		}
 		result, resultErr = lgc.CoreAPI.ApiServer().UpdateHost(context.Background(), header, params)
 		if nil != resultErr {
-			blog.Errorf("UpdateHosts update host http request  error:%s, rid:%s", resultErr.Error(), util.GetHTTPCCRequestID(header))
+			blog.Errorf("UpdateHosts update host http request  error:%s, rid:%s", resultErr.Error(),
+				util.GetHTTPCCRequestID(header))
 		}
 	}
 
 	if len(f.Sheets) < 2 {
 		return result
 	}
-
+	if len(f.Sheets[1].Rows[common.HostAddMethodExcelAssociationIndexOffset].Cells) < 2 {
+		return result
+	}
 	// if len(f.Sheets) >= 2, the second sheet is association data to be import
 	asstInfoMap := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset)
 	if len(asstInfoMap) == 0 {
@@ -462,9 +465,11 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 		AsstObjectUniqueIDMap: AsstObjectUniqueIDMap,
 		ObjectUniqueID:        objectUniqueID,
 	}
-	asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, common.BKInnerObjIDHost, asstInfoMapInput)
+	asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, common.BKInnerObjIDHost,
+		asstInfoMapInput)
 	if nil != asstResultErr {
-		blog.Errorf("ImportHosts logics http request import association error:%s, rid:%s", asstResultErr.Error(), util.GetHTTPCCRequestID(header))
+		blog.Errorf("ImportHosts logics http request import association error:%s, rid:%s", asstResultErr.Error(),
+			util.GetHTTPCCRequestID(header))
 		return &metadata.ResponseDataMapStr{
 			BaseResp: metadata.BaseResp{
 				Result: false,

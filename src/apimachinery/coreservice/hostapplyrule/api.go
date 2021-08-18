@@ -119,7 +119,10 @@ func (p *hostApplyRule) GetHostApplyRule(ctx context.Context, header http.Header
 	return ret.Data, nil
 }
 
-func (p *hostApplyRule) ListHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.ListHostApplyRuleOption) (metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder) {
+// ListHostApplyRule search host apply rule
+func (p *hostApplyRule) ListHostApplyRule(ctx context.Context, header http.Header, bizID int64,
+	option metadata.ListHostApplyRuleOption) (metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder) {
+
 	ret := struct {
 		metadata.BaseResp
 		Data metadata.MultipleHostApplyRuleResult `json:"data"`
@@ -134,11 +137,11 @@ func (p *hostApplyRule) ListHostApplyRule(ctx context.Context, header http.Heade
 		Into(&ret)
 
 	if err != nil {
-		blog.Errorf("ListHostApplyRule failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
-	if ret.CCError() != nil {
-		return ret.Data, ret.CCError()
+
+	if ccErr := ret.CCError(); ccErr != nil {
+		return ret.Data, ccErr
 	}
 
 	return ret.Data, nil
