@@ -120,7 +120,7 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 		delete(removedResourceTypeMap, resourceType.ID)
 		// if current resource type is registered, update it, or else register it
 		if existResourceTypeMap[resourceType.ID] {
-			if err = i.client.UpdateResourcesTypes(ctx, resourceType); err != nil {
+			if err = i.client.UpdateResourcesType(ctx, resourceType); err != nil {
 				blog.ErrorJSON("update resource type %s failed, error: %s, input resource type: %s",
 					resourceType.ID, err.Error(), resourceType)
 				return err

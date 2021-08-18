@@ -41,6 +41,8 @@ type Viewer interface {
 	CreateView(ctx context.Context, header http.Header, objects []metadata.Object) error
 	// DeleteView delete iam view for objects
 	DeleteView(ctx context.Context, header http.Header, objects []metadata.Object) error
+	// UpdateView update iam view for objects
+	UpdateView(ctx context.Context, header http.Header, objects []metadata.Object) error
 }
 
 type AuthorizeInterface interface {
