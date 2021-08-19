@@ -200,7 +200,8 @@ func (option ListSetTemplateSyncStatusOption) ToFilter() map[string]interface{} 
 	}
 	if len(option.SearchKey) != 0 {
 		filter[common.BKSetNameField] = map[string]interface{}{
-			common.BKDBLIKE: fmt.Sprintf(".*%s.*", option.SearchKey),
+			common.BKDBLIKE:    fmt.Sprintf(".*%s.*", option.SearchKey),
+			common.BKDBOPTIONS: "i",
 		}
 	}
 	return filter

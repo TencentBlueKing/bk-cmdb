@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/version"
+	"configcenter/src/scene_server/topo_server/logics/model"
 )
 
 // ModuleOperationInterface module operation methods
@@ -47,6 +48,7 @@ func NewModuleOperation(client apimachinery.ClientSetInterface,
 type module struct {
 	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
+	obj         model.ObjectOperationInterface
 }
 
 // CreateInst create instance by object and create message
@@ -65,17 +67,13 @@ func (m *module) CreateInst(kit *rest.Kit, obj metadata.Object, data mapstr.MapS
 		blog.Errorf("failed to create object instance, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("failed to create object instance ,err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
 
-	if rsp.Data.Created.ID == 0 {
+	if rsp.Created.ID == 0 {
 		blog.Errorf("failed to create object instance, return nothing, rid: %s", kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrTopoInstCreateFailed)
 	}
 
-	data.Set(obj.GetInstIDFieldName(), rsp.Data.Created.ID)
+	data.Set(obj.GetInstIDFieldName(), rsp.Created.ID)
 	// for audit log.
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	audit := auditlog.NewInstanceAudit(m.clientSet.CoreService())
@@ -91,7 +89,7 @@ func (m *module) CreateInst(kit *rest.Kit, obj metadata.Object, data mapstr.MapS
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
-	return &rsp.Data, nil
+	return rsp, nil
 }
 
 // DeleteInst delete instance by objectid and condition
@@ -159,12 +157,7 @@ func (m *module) deleteInstByCond(kit *rest.Kit, objectID string, cond mapstr.Ma
 			return err
 		}
 
-		if err = cnt.CCError(); err != nil {
-			blog.Errorf("count instance association failed, err: %v, rid: %s", err, kit.Rid)
-			return err
-		}
-
-		if cnt.Data.Count != 0 {
+		if cnt.Count != 0 {
 			return kit.CCError.CCError(common.CCErrorInstHasAsst)
 		}
 
@@ -185,15 +178,10 @@ func (m *module) deleteInstByCond(kit *rest.Kit, objectID string, cond mapstr.Ma
 			delCond[common.BKObjIDField] = objID
 		}
 		dc := &metadata.DeleteOption{Condition: delCond}
-		rsp, err := m.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, objID, dc)
+		_, err = m.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, objID, dc)
 		if err != nil {
 			blog.ErrorJSON("delete inst failed, err: %s, cond: %s rid: %s", err, delCond, kit.Rid)
 			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-
-		if err := rsp.CCError(); err != nil {
-			blog.ErrorJSON("delete inst failed, err: %s, cond: %s rid: %s", err, delCond, kit.Rid)
-			return err
 		}
 	}
 
@@ -229,14 +217,8 @@ func (m *module) FindInst(kit *rest.Kit, objID string, cond *metadata.QueryInput
 			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if err = rsp.CCError(); err != nil {
-			blog.Errorf("search object(%s) inst by the condition(%#v) failed, err: %v, rid: %s",
-				objID, cond, err, kit.Rid)
-			return nil, err
-		}
-
-		result.Count = rsp.Data.Count
-		result.Info = rsp.Data.Info
+		result.Count = rsp.Count
+		result.Info = rsp.Info
 		return result, nil
 
 	default:
@@ -251,14 +233,8 @@ func (m *module) FindInst(kit *rest.Kit, objID string, cond *metadata.QueryInput
 			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if err = rsp.CCError(); err != nil {
-			blog.Errorf("search object(%s) inst by the condition(%#v) failed, err: %v, rid: %s",
-				objID, cond, err, kit.Rid)
-			return nil, err
-		}
-
-		result.Count = rsp.Data.Count
-		result.Info = rsp.Data.Info
+		result.Count = rsp.Count
+		result.Info = rsp.Info
 		return result, nil
 	}
 }
@@ -328,14 +304,9 @@ func (m *module) hasHosts(kit *rest.Kit, instances []mapstr.MapStr, objID string
 			return nil, false, err
 		}
 
-		if err = asstRsp.CCError(); err != nil {
-			blog.Errorf("search mainline association failed, error: %v, rid: %s", err, kit.Rid)
-			return nil, false, err
-		}
-
 		objChildMap := make(map[string]string)
 		isMainline := false
-		for _, asst := range asstRsp.Data.Info {
+		for _, asst := range asstRsp.Info {
 			if asst.ObjectID == common.BKInnerObjIDHost {
 				continue
 			}
@@ -422,12 +393,7 @@ func (m *module) innerHasHost(kit *rest.Kit, moduleIDS []int64) (bool, error) {
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("failed to search the host module configures, err: %v, rid: %s", err, kit.Rid)
-		return false, err
-	}
-
-	return 0 != len(rsp.Data.Info), nil
+	return 0 != len(rsp.Info), nil
 }
 
 // UpdateInst update instance by condition
@@ -451,15 +417,10 @@ func (m *module) UpdateInst(kit *rest.Kit, cond, data mapstr.MapStr, objID strin
 	}
 
 	// to update.
-	rsp, err := m.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, objID, &inputParams)
+	_, err := m.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, objID, &inputParams)
 	if err != nil {
 		blog.Errorf("update instance failed, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("update the object(%s) inst by the condition(%#v) failed, err: %v, rid: %s",
-			objID, cond, err, kit.Rid)
-		return err
 	}
 
 	// save audit log.
@@ -491,16 +452,16 @@ func (m *module) IsModuleNameDuplicateError(kit *rest.Kit, bizID, setID int64, m
 		return err
 	}
 
-	if result.Data.Count > 0 {
+	if result.Count > 0 {
 		return kit.CCError.CCError(common.CCErrorTopoModuleNameDuplicated)
 	}
+
 	return nil
 }
 
 // CreateModule create a new module
 func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.MapStr) (*metadata.CreateOneDataResult,
 	error) {
-
 	data.Set(common.BKSetIDField, setID)
 	data.Set(common.BKAppIDField, bizID)
 	if !data.Exists(common.BKDefaultField) {
@@ -522,17 +483,16 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 	// 4. serviceCategoryID unset && serviceTemplateID unset, then module create with default category
 	var serviceCategoryID int64
 	serviceCategoryIDIf, serviceCategoryExist := data.Get(common.BKServiceCategoryIDField)
-	if serviceCategoryExist == true {
-		scID, err := util.GetInt64ByInterface(serviceCategoryIDIf)
+	if serviceCategoryExist {
+		serviceCategoryID, err = util.GetInt64ByInterface(serviceCategoryIDIf)
 		if err != nil {
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
 		}
-		serviceCategoryID = scID
 	}
 
 	var serviceTemplateID int64
 	serviceTemplateIDIf, serviceTemplateFieldExist := data.Get(common.BKServiceTemplateIDField)
-	if serviceTemplateFieldExist == true {
+	if serviceTemplateFieldExist {
 		serviceTemplateID, err = util.GetInt64ByInterface(serviceTemplateIDIf)
 		if err != nil {
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
@@ -590,7 +550,7 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 
 	// set default set template
 	_, exist := data[common.BKSetTemplateIDField]
-	if exist == false {
+	if !exist {
 		data[common.BKSetTemplateIDField] = common.SetTemplateIDNotSet
 	}
 
@@ -608,12 +568,18 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 	}
 	data.Remove(common.MetadataField)
 
-	// TODO 替换依赖CreateInst,obj参数从何而来？如果CreateModule()去掉obj入参？？？
-	obj := metadata.Object{}
-	inst, createErr := m.CreateInst(kit, obj, data)
+	// TODO 替换依赖CreateInst(),obj如何获取???，原由前端获取传递，现直接获取???
+	field := []string{common.BKObjIDField, common.BKFieldID, common.BKObjNameField}
+	obj, err := m.obj.FindSingleObject(kit, field, common.BKInnerObjIDModule)
+	if err != nil {
+		blog.Errorf("create module failed, failed to search set model, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, err
+	}
+
+	inst, createErr := m.CreateInst(kit, *obj, data)
 	if createErr != nil {
 		moduleNameStr, exist := data[common.BKModuleNameField]
-		if exist == false {
+		if !exist {
 			return inst, fmt.Errorf("get module name failed, moduleNameStr: %s", moduleNameStr)
 		}
 		moduleName := util.GetStrByInterface(moduleNameStr)
@@ -641,9 +607,9 @@ func (m *module) DeleteModule(kit *rest.Kit, bizID int64, setIDs, moduleIDs []in
 		innerCond[common.BKModuleIDField] = map[string]interface{}{common.BKDBIN: moduleIDs}
 	}
 
-	// TODO 替换依赖DeleteInst
+	// TODO 替换依赖DeleteInst, 依赖中对该module下是否有主机进行校验
 	// module table doesn't have metadata field
-	err := m.DeleteInst(kit, common.BKInnerObjIDModule, innerCond, false)
+	err := m.DeleteInst(kit, common.BKInnerObjIDModule, innerCond, true)
 	if err != nil {
 		blog.Errorf("delete module failed, DeleteInst failed, err: %+v, rid: %s", err, kit.Rid)
 		return err
@@ -654,12 +620,6 @@ func (m *module) DeleteModule(kit *rest.Kit, bizID int64, setIDs, moduleIDs []in
 
 // UpdateModule update module
 func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, moduleID int64) error {
-	objIDStr, ok := data.Get(common.BKObjIDField)
-	if !ok {
-		return kit.CCError.CCErrorf(common.CCErrCommNotFound)
-	}
-	objID := util.GetStrByInterface(objIDStr)
-
 	innerCond := mapstr.MapStr{
 		common.BKAppIDField:    bizID,
 		common.BKSetIDField:    setID,
@@ -674,15 +634,15 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 	}
 
 	moduleInstance := new(metadata.ModuleInst)
-	if err := m.clientSet.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, objID, findCond,
-		moduleInstance); err != nil {
+	if err := m.clientSet.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		findCond, moduleInstance); err != nil {
 		blog.Errorf("list modules failed, bizID: %s, setID: %s, moduleID: %s, err: %s, rid: %s", bizID, setID,
 			moduleID, err, kit.Rid)
 		return err
 	}
 
 	// 检查并提示禁止修改集群模板ID字段
-	if val, ok := data[common.BKSetTemplateIDField]; ok == true {
+	if val, ok := data[common.BKSetTemplateIDField]; ok {
 		setTemplateID, err := util.GetInt64ByInterface(val)
 		if err != nil {
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
@@ -692,8 +652,8 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 		}
 	}
 
-	// 检查并提示禁止修改集服务模板ID字段
-	if val, ok := data[common.BKServiceTemplateIDField]; ok == true {
+	// 检查并提示禁止修改服务模板ID字段
+	if val, ok := data[common.BKServiceTemplateIDField]; ok {
 		serviceTemplateID, err := util.GetInt64ByInterface(val)
 		if err != nil {
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
@@ -705,7 +665,7 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 
 	if moduleInstance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
 		// 检查并提示禁止修改服务分类
-		if val, ok := data[common.BKServiceCategoryIDField]; ok == true {
+		if val, ok := data[common.BKServiceCategoryIDField]; ok {
 			serviceCategoryID, err := util.GetInt64ByInterface(val)
 			if err != nil {
 				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
@@ -715,10 +675,10 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 			}
 		}
 
-		// 检查并提示禁止修改通过模板创建的模块名称
-		if val, ok := data[common.BKModuleNameField]; ok == true {
+		// 检查并提示禁止修改通过服务模板创建的模块名称
+		if val, ok := data[common.BKModuleNameField]; ok {
 			name := util.GetStrByInterface(val)
-			if len(name) == 0 {
+			if name == "" {
 				delete(data, common.BKModuleNameField)
 			} else if name != moduleInstance.ModuleName {
 				return kit.CCError.CCError(common.CCErrorTopoUpdateModuleFromTplNameForbidden)
@@ -731,11 +691,12 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 	data.Remove(common.BKModuleIDField)
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.MetadataField)
+
 	// TODO 后续替换依赖UpdateInst
-	updateErr := m.UpdateInst(kit, innerCond, data, objID)
+	updateErr := m.UpdateInst(kit, innerCond, data, common.BKInnerObjIDModule)
 	if updateErr != nil {
 		moduleNameStr, exist := data[common.BKModuleNameField]
-		if exist == false {
+		if !exist {
 			return updateErr
 		}
 		moduleName := util.GetStrByInterface(moduleNameStr)

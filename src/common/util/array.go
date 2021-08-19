@@ -157,3 +157,21 @@ func ReverseArrayString(t []string) []string {
 	}
 	return t
 }
+
+func RemoveDuplicatesAndEmptyByMap(target []string) []string {
+	result := make([]string, 0)
+	tempMap := map[string]struct{}{}
+	for _, item := range target {
+		if item == "" {
+			continue
+		}
+
+		if _, exist := tempMap[item]; exist {
+			continue
+		}
+		tempMap[item] = struct{}{}
+		result = append(result, item)
+	}
+
+	return result
+}

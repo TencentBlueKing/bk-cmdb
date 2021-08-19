@@ -167,7 +167,7 @@ export default class Graphics {
     this.relayout()
     return elements
   }
-  
+
   /**
    * 重新布局
    */

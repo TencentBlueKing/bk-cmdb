@@ -8,16 +8,16 @@
       </div>
     </div>
     <template v-else>
-      <template v-for="item in list">
-        <cmdb-host-association-list-table
-          ref="associationListTable"
-          v-for="association in item.associations"
-          :key="association.id"
-          :type="item.type"
-          :id="item.id"
-          :association-type="item.associationType">
-        </cmdb-host-association-list-table>
-      </template>
+      <cmdb-host-association-list-table
+        ref="associationListTable"
+        v-for="item in list"
+        :key="item.id"
+        :type="item.type"
+        :id="item.modelId"
+        :association-instances="item.instances"
+        :association-type="item.associationType"
+        @delete-association="handleDeleteAssociation">
+      </cmdb-host-association-list-table>
     </template>
   </div>
 </template>
@@ -51,20 +51,33 @@
           const associations = [...this.source, ...this.target]
           associations.forEach((association, index) => {
             const isSource = index < this.source.length
+            const type = isSource ? 'source' : 'target'
+
             const modelId = isSource ? association.bk_asst_obj_id : association.bk_obj_id
-            const item = list.find(item => (isSource ? item.source === 'host' : item.target === 'host'))
-            if (item) {
-              item.associations.push(association)
-            } else {
-              list.push({
-                type: isSource ? 'source' : 'target',
-                id: modelId,
-                associationType: this.associationTypes.find(target => target.bk_asst_id === association.bk_asst_id),
-                associations: [association]
+            const associationType = this.associationTypes.find(item => item.bk_asst_id === association.bk_asst_id) || {}
+
+            // 关联关系的唯一标识，用于匹配关联实例
+            const objAsstId = isSource
+              ? `host_${associationType.bk_asst_id}_${modelId}`
+              : `${modelId}_${associationType.bk_asst_id}_host`
+
+            list.push({
+              // 关联关系id和源或目标的关系（指向）组成唯一性
+              id: `${association.id}-${type}`,
+              type,
+              modelId,
+              associationType,
+              // 此关联关系下同一指向的关联实例并且关联id是匹配的
+              instances: this.allInstances.filter((item) => {
+                const sameType = item.bk_asst_id === association.bk_asst_id && item.type === type
+                const matchAsst = item.bk_obj_asst_id === objAsstId
+                return sameType && matchAsst
               })
-            }
+            })
           })
-          return list
+
+          // 过滤掉无关联实例的关联
+          return list.filter(item => item.instances.length)
         } catch (e) {
           console.error(e)
           return []
@@ -92,9 +105,8 @@
     },
     created() {
       this.getData()
-      bus.$on('association-change', async () => {
-        const instances = await this.getInstAssociation()
-        this.$store.commit('hostDetails/setInstances', instances)
+      bus.$on('association-change', () => {
+        this.getData()
       })
     },
     beforeDestroy() {
@@ -112,7 +124,7 @@
           ])
           const mainLineModels = mainLine.filter(model => !['biz', 'host'].includes(model.bk_obj_id))
           const availabelSource = this.getAvailableAssociation(source, [], mainLineModels)
-          const availabelTarget = this.getAvailableAssociation(target, availabelSource, mainLineModels)
+          const availabelTarget = this.getAvailableAssociation(target, [], mainLineModels)
           this.setState({
             source: availabelSource,
             target: availabelTarget,
@@ -165,7 +177,7 @@
         try {
           const sourceCondition = { bk_obj_id: 'host', bk_inst_id: this.id }
           const targetCondition = { bk_asst_obj_id: 'host', bk_asst_inst_id: this.id }
-          const [source, target] = await Promise.all([
+          let [source, target] = await Promise.all([
             this.$store.dispatch('objectAssociation/searchInstAssociation', {
               params: { condition: sourceCondition, bk_obj_id: 'host' },
               config: { requestId: 'getSourceAssociation' }
@@ -175,6 +187,8 @@
               config: { requestId: 'getTargetAssociation' }
             })
           ])
+          source = source.map(item => ({ ...item, type: 'source' }))
+          target = target.map(item => ({ ...item, type: 'target' }))
           return [...source, ...target]
         } catch (error) {
           console.error(error)
@@ -189,6 +203,10 @@
           const isExist = reference.some(target => target.id === association.id)
           return !isMainLine && !isExist
         })
+      },
+      handleDeleteAssociation() {
+        // 重新获取以刷新数据
+        this.getData()
       }
     }
   }

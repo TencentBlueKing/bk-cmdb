@@ -27,6 +27,7 @@
           :options="property.option || []"
           :placeholder="$t('请输入xx', { name: property.bk_property_name })"
           v-validate="getValidateRules(property)"
+          v-bind="$tools.getValidateEvents(property)"
           v-model.trim="values[property['bk_property_id']]">
         </component>
         <div v-else>
@@ -36,6 +37,7 @@
             :options="property.option || []"
             :placeholder="$t('请输入xx', { name: property.bk_property_name })"
             v-validate="getValidateRules(property)"
+            v-bind="$tools.getValidateEvents(property)"
             v-model.trim="values[property['bk_property_id']]">
           </bk-input>
         </div>

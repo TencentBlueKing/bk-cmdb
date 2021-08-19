@@ -189,6 +189,22 @@ func (t *instanceClient) SearchInstsNames(ctx context.Context, h http.Header, s 
 	return
 }
 
+// GetTopoNodeHostAndServiceInstCount get toponode host and service instance count by instance id
+func (t *instanceClient) GetTopoNodeHostAndServiceInstCount(ctx context.Context, h http.Header, objID int64,
+	s *metadata.HostAndSerInstCountOption) (resp *metadata.GetHostAndSerInstCountResult, err error) {
+	resp = new(metadata.GetHostAndSerInstCountResult)
+	subPath := "/find/topoinstnode/host_serviceinst_count/%d"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(s).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 // SearchObjectInstances is search object instances api in toposerver.
 func (t *instanceClient) SearchObjectInstances(ctx context.Context, header http.Header,
 	objID string, input *metadata.CommonSearchFilter) (*metadata.Response, error) {
