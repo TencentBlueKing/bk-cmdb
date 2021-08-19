@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/version"
+	"configcenter/src/scene_server/topo_server/logics/model"
 )
 
 // SetOperationInterface set operation methods
@@ -47,6 +48,7 @@ func NewSetOperation(client apimachinery.ClientSetInterface, languageIf language
 
 type set struct {
 	clientSet apimachinery.ClientSetInterface
+	obj       model.ObjectOperationInterface
 	language  language.CCLanguageIf
 }
 
@@ -844,15 +846,15 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*metada
 	data.Set(common.BKSetTemplateIDField, setTemplate.ID)
 	data.Remove(common.MetadataField)
 
-	// TODO 替换FindSingleObject, CreateInst依赖
 	field := []string{common.BKObjIDField, common.BKFieldID, common.BKObjNameField}
-	obj, err := s.FindSingleObject(kit, field, common.BKInnerObjIDSet)
+	obj, err := s.obj.FindSingleObject(kit, field, common.BKInnerObjIDSet)
 	if err != nil {
 		blog.Errorf("failed to get single obj, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
-	setInstance, err := s.CreateInst(kit, *obj, data)
 
+	//TODO 替换CreateInst依赖
+	setInstance, err := s.CreateInst(kit, *obj, data)
 	if err != nil {
 		blog.Errorf("create set instance failed, object: %s, data: %s, err: %s, rid: %s", obj, data, err, kit.Rid)
 		// return this duplicate error for unique validation failed
