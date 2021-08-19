@@ -22,32 +22,37 @@ import (
 // Logics provides management interface for operations of model and instance and related resources like association
 type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
-	GraphicsOperation() operation.GraphicsOperationInterface
+	ObjectOperation() model.ObjectOperationInterface
+	IdentifierOperation() operation.IdentifierOperationInterface
 }
 
-// logics logics
 type logics struct {
-	classification    model.ClassificationOperationInterface
-	graphicsOperation operation.GraphicsOperationInterface
+	classification model.ClassificationOperationInterface
+	object         model.ObjectOperationInterface
+	identifier     operation.IdentifierOperationInterface
 }
 
 // New create a logics manager
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
-	graphicsOperation := operation.NewGraphics(client, authManager)
+	objectOperation := model.NewObjectOperation(client, authManager)
+	IdentifierOperation := operation.NewIdentifier(client)
 
 	return &logics{
-		classification:    classificationOperation,
-		graphicsOperation: graphicsOperation,
+		classification: classificationOperation,
+		object:         objectOperation,
+		identifier:     IdentifierOperation,
 	}
 }
 
-// ClassificationOperation classification operation
 func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
 	return c.classification
 }
 
-// GraphicsOperation graphics operation
-func (c logics) GraphicsOperation() operation.GraphicsOperationInterface {
-	return c.graphicsOperation
+func (c *logics) ObjectOperation() model.ObjectOperationInterface {
+	return c.object
+}
+
+func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
+	return c.identifier
 }
