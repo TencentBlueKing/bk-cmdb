@@ -38,6 +38,12 @@ const (
 	// max limit of a page
 	BKMaxPageSize = 1000
 
+	// BKMaxDelPageSize max limit of delete operation
+	BKMaxDelBatchLimit = 200
+
+	// BKMaxDelDocPageLimit maximum number of documents deleted consecutively quantity
+	BKMaxDelDocPageLimit = 10000
+
 	// max limit of instance count
 	BKMaxInstanceLimit = 500
 
@@ -73,7 +79,6 @@ const (
 
 	// BKTopoBusinessLevelDefault the mainline topo level default level
 	BKTopoBusinessLevelDefault = 7
-
 )
 
 const (
@@ -266,6 +271,9 @@ const (
 
 	// TimeTransferModel the time transferModel field
 	TimeTransferModel = "2006-01-02 15:04:05"
+
+	// TimeDayTransferModel the time transferModel field
+	TimeDayTransferModel = "2006-01-02"
 
 	// BKCloudTaskID the cloud sync task id
 	BKCloudTaskID = "bk_task_id"

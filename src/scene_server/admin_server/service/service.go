@@ -86,6 +86,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/specify/version/{distribution}/{ownerID}").To(s.migrateSpecifyVersion))
 	api.Route(api.POST("/migrate/config/refresh").To(s.refreshConfig))
 	api.Route(api.POST("/migrate/dataid").To(s.migrateDataID))
+	api.Route(api.POST("/delete/auditlog").To(s.DeleteAuditLog))
 
 	container.Add(api)
 
