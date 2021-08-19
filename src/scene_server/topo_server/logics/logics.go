@@ -15,6 +15,7 @@ package logics
 import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
+	"configcenter/src/scene_server/topo_server/logics/inst"
 	"configcenter/src/scene_server/topo_server/logics/model"
 	"configcenter/src/scene_server/topo_server/logics/operation"
 )
@@ -24,12 +25,14 @@ type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
 	ObjectOperation() model.ObjectOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
+	BusinessOperation() inst.BusinessOperationInterface
 }
 
 type logics struct {
 	classification model.ClassificationOperationInterface
 	object         model.ObjectOperationInterface
 	identifier     operation.IdentifierOperationInterface
+	business       inst.BusinessOperationInterface
 }
 
 // New create a logics manager
@@ -37,11 +40,14 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	classificationOperation := model.NewClassificationOperation(client, authManager)
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
+	businessOperation := inst.NewBusinessOperation(client, authManager)
+	businessOperation.SetProxy(objectOperation)
 
 	return &logics{
 		classification: classificationOperation,
 		object:         objectOperation,
 		identifier:     IdentifierOperation,
+		business:       businessOperation,
 	}
 }
 
@@ -55,4 +61,8 @@ func (c *logics) ObjectOperation() model.ObjectOperationInterface {
 
 func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
 	return c.identifier
+}
+
+func (c *logics) BusinessOperation() inst.BusinessOperationInterface {
+	return c.business
 }

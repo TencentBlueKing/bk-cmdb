@@ -13,6 +13,7 @@
 package inst
 
 import (
+	"configcenter/src/scene_server/topo_server/logics/model"
 	"fmt"
 	"regexp"
 	"strings"
@@ -44,6 +45,9 @@ type BusinessOperationInterface interface {
 	//	- 业务归档的时候，自动重命名为"foo-archived"
 	//	- 归档的时候，如果发现已经存在同名的"foo-archived", 自动在其后+1, 比如 "foo-archived-1", "foo-archived-2"
 	GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (achieveName string, err error)
+
+	//
+	SetProxy(obj model.ObjectOperationInterface)
 }
 
 // NewBusinessOperation create a business instance
@@ -58,11 +62,16 @@ func NewBusinessOperation(client apimachinery.ClientSetInterface,
 type business struct {
 	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
+	obj         model.ObjectOperationInterface
 }
 
 var (
 	numRegex = regexp.MustCompile(`^\d+$`)
 )
+
+func (b *business) SetProxy(obj model.ObjectOperationInterface) {
+	b.obj = obj
+}
 
 // CreateBusiness create business
 func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error) {
@@ -75,8 +84,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 	bizID := int64(bizInst.Created.ID)
 
 	// create set
-	// TODO 调用obj中FindSingleObject
-	objSet, err := b.findSingleObject(kit, common.BKInnerObjIDSet)
+	objSet, err := b.obj.FindSingleObject(kit, nil, common.BKInnerObjIDSet)
 	if err != nil {
 		blog.Errorf("failed to search the set, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
@@ -98,7 +106,8 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 
 	// create module
 	// TODO 调用obj中FindSingleObject
-	objModule, err := b.findSingleObject(kit, common.BKInnerObjIDModule)
+	objModule, err := b.obj.FindSingleObject(kit, nil, common.BKInnerObjIDModule)
+	//objModule, err := b.findSingleObject(kit, common.BKInnerObjIDModule)
 	if err != nil {
 		blog.Errorf("failed to search the set, %v, rid: %s", err, kit.Rid)
 		return nil, err
@@ -408,7 +417,7 @@ func (b *business) findObject(kit *rest.Kit, cond condition.Condition) ([]metada
 	rsp, err := b.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header,
 		&metadata.QueryCondition{Condition: fCond})
 	if err != nil {
-		blog.Errorf("[operation-obj] find object failed, cond: %+v, err: %s, rid: %s", fCond, err.Error(),
+		blog.Errorf("find object failed, cond: %+v, err: %s, rid: %s", fCond, err.Error(),
 			kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
