@@ -24,12 +24,14 @@ type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
 	ObjectOperation() model.ObjectOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
+	GraphicsOperation() operation.GraphicsOperationInterface
 }
 
 type logics struct {
 	classification model.ClassificationOperationInterface
 	object         model.ObjectOperationInterface
 	identifier     operation.IdentifierOperationInterface
+	graphics       operation.GraphicsOperationInterface
 }
 
 // New create a logics manager
@@ -37,22 +39,32 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	classificationOperation := model.NewClassificationOperation(client, authManager)
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
+	graphicsOperation := operation.NewGraphics(client, authManager)
 
 	return &logics{
 		classification: classificationOperation,
 		object:         objectOperation,
 		identifier:     IdentifierOperation,
+		graphics:       graphicsOperation,
 	}
 }
 
+// ClassificationOperation return a inst provide ClassificationOperation
 func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
 	return c.classification
 }
 
+// ObjectOperation return a inst provide ObjectOperation
 func (c *logics) ObjectOperation() model.ObjectOperationInterface {
 	return c.object
 }
 
+// IdentifierOperation return a inst provide IdentifierOperation
 func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
 	return c.identifier
+}
+
+// GraphicsOperation return a inst provide GraphicsOperation
+func (c *logics) GraphicsOperation() operation.GraphicsOperationInterface {
+	return c.graphics
 }

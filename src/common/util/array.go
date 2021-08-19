@@ -158,6 +158,7 @@ func ReverseArrayString(t []string) []string {
 	return t
 }
 
+// RemoveDuplicatesAndEmptyByMap remove duplicate and empty slice's to the map
 func RemoveDuplicatesAndEmptyByMap(target []string) []string {
 	result := make([]string, 0)
 	tempMap := map[string]struct{}{}

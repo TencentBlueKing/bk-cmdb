@@ -81,16 +81,15 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 		objAssts[asst.ObjectID] = append(objAssts[asst.ObjectID], asst)
 	}
 
-	// TODO obj 中的 FindObject
-	objs, err := g.findObject(kit, nil)
+	objs, err := g.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, nil)
 	if err != nil {
-		blog.Errorf("SelectObject failed, err: %v, rid: %v", err, kit.Rid)
+		blog.ErrorJSON("find object failed, err: %v, rid: %v", err, kit.Rid)
 		return nil, err
 	}
 
 	asstKindIDs := make([]string, 0)
 	var associationKindMap = make(map[string]*metadata.AssociationKind, 0)
-	for _, obj := range objs {
+	for _, obj := range objs.Info {
 		for _, asst := range objAssts[obj.ObjectID] {
 			if _, ok := associationKindMap[asst.AsstKindID]; !ok {
 				asstKindIDs = append(asstKindIDs, asst.AsstKindID)
@@ -106,7 +105,7 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 		return nil, err
 	}
 
-	for _, obj := range objs {
+	for _, obj := range objs.Info {
 		node := g.genTopoNode(obj, kit.SupplierAccount, graphNodes)
 		for _, asst := range objAssts[obj.ObjectID] {
 			tmp := metadata.GraphAsst{
@@ -197,17 +196,6 @@ func (g *graphics) UpdateObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 }
 
 // TODO 暂时使用的函数
-func (g *graphics) findObject(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Object, error) {
-	rsp, err := g.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: cond})
-	if err != nil {
-		blog.ErrorJSON("find object failed, err: %v, cond: %#v, rid: %v", err, cond, kit.Rid)
-		return nil, err
-	}
-
-	return rsp.Info, nil
-}
-
 func (g *graphics) searchObjectAssociation(kit *rest.Kit, objID string) ([]metadata.Association, error) {
 	cond := mapstr.MapStr{}
 	if len(objID) != 0 {
