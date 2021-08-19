@@ -75,20 +75,15 @@ func (s *set) validObject(kit *rest.Kit, obj metadata.Object) (*metadata.Associa
 		return nil, err
 	}
 
-	if err = asst.CCError(); err != nil {
-		blog.Errorf("search object association failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	if len(asst.Data.Info) > 1 {
+	if len(asst.Info) > 1 {
 		return nil, kit.CCError.CCErrorf(common.CCErrTopoGotMultipleAssociationInstance)
 	}
 
-	if len(asst.Data.Info) == 0 {
+	if len(asst.Info) == 0 {
 		return nil, nil
 	}
 
-	return &asst.Data.Info[0], nil
+	return &asst.Info[0], nil
 }
 
 // isValidBizInstID check biz id and set id valid
@@ -113,13 +108,7 @@ func (s *set) isValidBizInstID(kit *rest.Kit, objID string, instID int64, bizID 
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("failed to read the object(%s) inst by the condition(%#v), err: %v, rid: %s", objID, cond,
-			err, kit.Rid)
-		return err
-	}
-
-	if rsp.Data.Count > 0 {
+	if rsp.Count > 0 {
 		return nil
 	}
 
@@ -164,18 +153,18 @@ func (s *set) CreateInst(kit *rest.Kit, obj metadata.Object,
 		data.Set(common.BkSupplierAccount, kit.SupplierAccount)
 	}
 
-	assoc, err := s.validObject(kit, obj)
-	if err != nil {
-		blog.Errorf("valid object (%s) failed, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
-		return nil, err
-	}
-
-	if assoc != nil {
-		if err := s.validMainLineParentID(kit, assoc, data); err != nil {
-			blog.Errorf("the mainline object(%s) parent id invalid, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
-			return nil, err
-		}
-	}
+	//assoc, err := s.validObject(kit, obj)
+	//if err != nil {
+	//	blog.Errorf("valid object (%s) failed, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
+	//	return nil, err
+	//}
+	//
+	//if assoc != nil {
+	//	if err := s.validMainLineParentID(kit, assoc, data); err != nil {
+	//		blog.Errorf("the mainline object(%s) parent id invalid, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
+	//		return nil, err
+	//	}
+	//}
 
 	data.Set(common.BKObjIDField, obj.ObjectID)
 
@@ -185,17 +174,13 @@ func (s *set) CreateInst(kit *rest.Kit, obj metadata.Object,
 		blog.Errorf("failed to create object instance, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("failed to create object instance ,err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
 
-	if rsp.Data.Created.ID == 0 {
+	if rsp.Created.ID == 0 {
 		blog.Errorf("failed to create object instance, return nothing, rid: %s", kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrTopoInstCreateFailed)
 	}
 
-	data.Set(obj.GetInstIDFieldName(), rsp.Data.Created.ID)
+	data.Set(obj.GetInstIDFieldName(), rsp.Created.ID)
 	// for audit log.
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	audit := auditlog.NewInstanceAudit(s.clientSet.CoreService())
@@ -211,38 +196,36 @@ func (s *set) CreateInst(kit *rest.Kit, obj metadata.Object,
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
-	return &rsp.Data, nil
+	return rsp, nil
 }
 
-// FindSingleObject find single object
-func (s *set) FindSingleObject(kit *rest.Kit, objectID string) (*metadata.Object, error) {
+// FindSingleObject find a object by objectID
+func (s *set) FindSingleObject(kit *rest.Kit, field []string, objectID string) (*metadata.Object, error) {
 
-	cond := mapstr.MapStr{
-		common.BKObjIDField: objectID,
+	queryCond := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKObjIDField: objectID},
+		Fields:         field,
+		DisableCounter: true,
 	}
-
-	objs, err := s.FindObject(kit, cond)
+	objs, err := s.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, queryCond)
 	if err != nil {
-		blog.Errorf("get model failed, failed to get model by supplier account(%s) objects(%s), err: %s, rid: %s",
-			kit.SupplierAccount, objectID, err.Error(), kit.Rid)
+		blog.Errorf("get model failed, failed to get model objects(%s), err: %v, rid: %s", objectID, err, kit.Rid)
 		return nil, err
 	}
 
-	if len(objs) == 0 {
-		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) not found, result: %+v, "+
-			"rid: %s", kit.SupplierAccount, objectID, objs, kit.Rid)
+	if len(objs.Info) == 0 {
+		blog.Errorf("get model failed, objects(%s) not found, result: %+v, rid: %s", objectID, objs, kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoObjectSelectFailed,
 			kit.CCError.Error(common.CCErrCommNotFound).Error())
 	}
 
-	if len(objs) > 1 {
-		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) get multiple, result: %+v, "+
-			"rid: %s", kit.SupplierAccount, objectID, objs, kit.Rid)
+	if len(objs.Info) > 1 {
+		blog.Errorf("get model failed, objects(%s) get multiple, result: %+v, rid: %s", objectID, objs, kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoObjectSelectFailed,
 			kit.CCError.Error(common.CCErrCommGetMultipleObject).Error())
 	}
 
-	return &objs[0], nil
+	return &objs.Info[0], nil
 }
 
 // FindObject find object
@@ -255,12 +238,7 @@ func (s *set) FindObject(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Object, 
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("failed to search the objects by the condition(%#v) , err: %v, rid: %s", cond, err, kit.Rid)
-		return nil, err
-	}
-
-	return rsp.Data.Info, nil
+	return rsp.Info, nil
 }
 
 // CreateModule create a new module
@@ -413,11 +391,8 @@ func (s *set) validBizSetID(kit *rest.Kit, bizID int64, setID int64) error {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !rsp.Result {
-		blog.Errorf("[operation-inst] failed to read the object(%s) inst by the condition(%#v), err: %s, rid: %s", common.BKInnerObjIDSet, cond, rsp.ErrMsg, kit.Rid)
-		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-	if rsp.Data.Count > 0 {
+
+	if rsp.Count > 0 {
 		return nil
 	}
 
@@ -453,12 +428,8 @@ func (s *set) IsModuleNameDuplicateError(kit *rest.Kit, bizID, setID int64, modu
 		blog.ErrorJSON("IsModuleNameDuplicateError failed, filter: %s, err: %s, rid: %s", nameDuplicateFilter, err.Error(), kit.Rid)
 		return false, err
 	}
-	if ccErr := result.CCError(); ccErr != nil {
-		blog.ErrorJSON("IsModuleNameDuplicateError failed, result false, filter: %s, result: %s, err: %s, rid: %s",
-			nameDuplicateFilter, result, ccErr, kit.Rid)
-		return false, ccErr
-	}
-	if result.Data.Count > 0 {
+
+	if result.Count > 0 {
 		return true, nil
 	}
 	return false, nil
@@ -529,12 +500,7 @@ func (s *set) deleteInstByCond(kit *rest.Kit, objectID string, cond mapstr.MapSt
 			return err
 		}
 
-		if err = cnt.CCError(); err != nil {
-			blog.Errorf("count instance association failed, err: %v, rid: %s", err, kit.Rid)
-			return err
-		}
-
-		if cnt.Data.Count != 0 {
+		if cnt.Count != 0 {
 			return kit.CCError.CCError(common.CCErrorInstHasAsst)
 		}
 
@@ -555,15 +521,10 @@ func (s *set) deleteInstByCond(kit *rest.Kit, objectID string, cond mapstr.MapSt
 			delCond[common.BKObjIDField] = objID
 		}
 		dc := &metadata.DeleteOption{Condition: delCond}
-		rsp, err := s.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, objID, dc)
+		_, err = s.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, objID, dc)
 		if err != nil {
 			blog.ErrorJSON("delete inst failed, err: %s, cond: %s rid: %s", err, delCond, kit.Rid)
 			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-
-		if err := rsp.CCError(); err != nil {
-			blog.ErrorJSON("delete inst failed, err: %s, cond: %s rid: %s", err, delCond, kit.Rid)
-			return err
 		}
 	}
 
@@ -599,14 +560,8 @@ func (s *set) FindInst(kit *rest.Kit, objID string, cond *metadata.QueryInput) (
 			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if err = rsp.CCError(); err != nil {
-			blog.Errorf("search object(%s) inst by the condition(%#v) failed, err: %v, rid: %s",
-				objID, cond, err, kit.Rid)
-			return nil, err
-		}
-
-		result.Count = rsp.Data.Count
-		result.Info = rsp.Data.Info
+		result.Count = rsp.Count
+		result.Info = rsp.Info
 		return result, nil
 
 	default:
@@ -621,14 +576,8 @@ func (s *set) FindInst(kit *rest.Kit, objID string, cond *metadata.QueryInput) (
 			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if err = rsp.CCError(); err != nil {
-			blog.Errorf("search object(%s) inst by the condition(%#v) failed, err: %v, rid: %s",
-				objID, cond, err, kit.Rid)
-			return nil, err
-		}
-
-		result.Count = rsp.Data.Count
-		result.Info = rsp.Data.Info
+		result.Count = rsp.Count
+		result.Info = rsp.Info
 		return result, nil
 	}
 }
@@ -698,14 +647,9 @@ func (s *set) hasHosts(kit *rest.Kit, instances []mapstr.MapStr, objID string, c
 			return nil, false, err
 		}
 
-		if err = asstRsp.CCError(); err != nil {
-			blog.Errorf("search mainline association failed, error: %v, rid: %s", err, kit.Rid)
-			return nil, false, err
-		}
-
 		objChildMap := make(map[string]string)
 		isMainline := false
-		for _, asst := range asstRsp.Data.Info {
+		for _, asst := range asstRsp.Info {
 			if asst.ObjectID == common.BKInnerObjIDHost {
 				continue
 			}
@@ -792,12 +736,7 @@ func (s *set) innerHasHost(kit *rest.Kit, moduleIDS []int64) (bool, error) {
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("failed to search the host module configures, err: %v, rid: %s", err, kit.Rid)
-		return false, err
-	}
-
-	return 0 != len(rsp.Data.Info), nil
+	return 0 != len(rsp.Info), nil
 }
 
 // UpdateInst update instance by condition
@@ -821,15 +760,10 @@ func (s *set) UpdateInst(kit *rest.Kit, cond, data mapstr.MapStr, objID string) 
 	}
 
 	// to update.
-	rsp, err := s.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, objID, &inputParams)
+	_, err := s.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, objID, &inputParams)
 	if err != nil {
 		blog.Errorf("update instance failed, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("update the object(%s) inst by the condition(%#v) failed, err: %v, rid: %s",
-			objID, cond, err, kit.Rid)
-		return err
 	}
 
 	// save audit log.
@@ -844,7 +778,7 @@ func (s *set) UpdateInst(kit *rest.Kit, cond, data mapstr.MapStr, objID string) 
 // isSetDuplicateError check set exist
 func (s *set) isSetDuplicateError(inputErr error) bool {
 	ccErr, ok := inputErr.(errors.CCErrorCoder)
-	if ok == false {
+	if !ok {
 		return false
 	}
 
@@ -867,12 +801,7 @@ func (s *set) hasHost(kit *rest.Kit, bizID int64, setIDS []int64) (bool, error) 
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-set]  failed to search the host set configures, error info is %s, rid: %s", rsp.ErrMsg, kit.Rid)
-		return false, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return 0 != len(rsp.Data.Info), nil
+	return 0 != len(rsp.Info), nil
 }
 
 // CreateSet create a new set
@@ -890,7 +819,7 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*metada
 
 	setTemplate := new(metadata.SetTemplate)
 	// validate foreign key
-	if setTemplateIDIf, ok := data[common.BKSetTemplateIDField]; ok == true {
+	if setTemplateIDIf, ok := data[common.BKSetTemplateIDField]; ok {
 		setTemplateID, err := util.GetInt64ByInterface(setTemplateIDIf)
 		if err != nil {
 			blog.Errorf("parse set_template_id field into int failed, id: %+v, rid: %s", setTemplateIDIf, kit.Rid)
@@ -915,9 +844,14 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*metada
 	data.Set(common.BKSetTemplateIDField, setTemplate.ID)
 	data.Remove(common.MetadataField)
 
-	// TODO 替换CreateInst依赖 obj数据从哪来？？？
-	obj := metadata.Object{}
-	setInstance, err := s.CreateInst(kit, obj, data)
+	// TODO 替换FindSingleObject, CreateInst依赖
+	field := []string{common.BKObjIDField, common.BKFieldID, common.BKObjNameField}
+	obj, err := s.FindSingleObject(kit, field, common.BKInnerObjIDSet)
+	if err != nil {
+		blog.Errorf("failed to get single obj, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, err
+	}
+	setInstance, err := s.CreateInst(kit, *obj, data)
 
 	if err != nil {
 		blog.Errorf("create set instance failed, object: %s, data: %s, err: %s, rid: %s", obj, data, err, kit.Rid)
@@ -935,7 +869,7 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*metada
 	serviceTemplates, err := s.clientSet.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(kit.Ctx, kit.Header,
 		bizID, setTemplate.ID)
 	if err != nil {
-		blog.Errorf("create set failed, list set tpl related svc tpl failed, bizID: %d, setTemplateID: %d, " +
+		blog.Errorf("create set failed, list set tpl related svc tpl failed, bizID: %d, setTemplateID: %d, "+
 			"err: %s, rid: %s", bizID, setTemplate.ID, err, kit.Rid)
 		return setInstance, err
 	}
@@ -968,9 +902,9 @@ func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 		setCond[common.BKSetIDField] = map[string]interface{}{common.BKDBIN: setIDs}
 	}
 
-	// TODO 替换依赖DeleteInst
+	// TODO 替换依赖DeleteInst,依赖中检测该set下是否有主机
 	// clear the module belong to deleted sets
-	err := s.DeleteInst(kit, common.BKInnerObjIDModule, setCond, false)
+	err := s.DeleteInst(kit, common.BKInnerObjIDModule, setCond, true)
 	if err != nil {
 		blog.Errorf("delete module failed, err: %v, cond: %#v, rid: %s", err, setCond, kit.Rid)
 		return err
@@ -996,7 +930,7 @@ func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 	}
 
 	// clear the sets
-	return s.DeleteInst(kit, common.BKInnerObjIDSet, setCond, false)
+	return s.DeleteInst(kit, common.BKInnerObjIDSet, setCond, true)
 }
 
 // UpdateSet update set
@@ -1010,8 +944,8 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, bizID, setID int64) e
 	data.Remove(common.BKAppIDField)
 	data.Remove(common.BKSetIDField)
 	data.Remove(common.BKSetTemplateIDField)
-	// TODO 不知前端是否会传递objID参数
-	err := s.UpdateInst(kit, innerCond, data, "")
+	// TODO 替换依赖
+	err := s.UpdateInst(kit, innerCond, data, common.BKInnerObjIDSet)
 	if err != nil {
 		blog.Errorf("update set instance failed, object: %s, data: %s, innerCond:%s, err: %s, rid: %s", "",
 			data, innerCond, err, kit.Rid)

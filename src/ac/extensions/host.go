@@ -28,7 +28,9 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header http.Header, rawData []mapstr.MapStr) ([]HostSimplify, error) {
+func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header http.Header, rawData []mapstr.MapStr) (
+	[]HostSimplify, error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	hostIDs := make([]int64, 0)
@@ -53,11 +55,12 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 		return nil, err
 	}
 	if len(rawData) == 0 {
-		err = fmt.Errorf("get host:%+v layer failed, get host module config by host id not found, maybe hostID invalid", hostIDs)
+		err = fmt.Errorf("get host:%+v layer failed, get host module config by host id not found, "+
+			"maybe hostID invalid", hostIDs)
 		return nil, err
 	}
 	hostModuleMap := map[int64]HostSimplify{}
-	for _, cls := range hostModuleResult.Data.Info {
+	for _, cls := range hostModuleResult.Info {
 		host := HostSimplify{
 			BKAppIDField:    cls.AppID,
 			BKModuleIDField: cls.ModuleID,
@@ -79,7 +82,9 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 	return hosts, nil
 }
 
-func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Header, hostIDs ...int64) ([]HostSimplify, error) {
+func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Header, hostIDs ...int64) ([]HostSimplify,
+	error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
@@ -101,8 +106,8 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 			blog.V(3).Infof("get hosts by id failed, err: %+v, rid: %s", err, rid)
 			return nil, fmt.Errorf("get hosts by id failed, err: %+v", err)
 		}
-		hosts = append(hosts, result.Data.Info...)
-		count = result.Data.Count
+		hosts = append(hosts, result.Info...)
+		count = result.Count
 	}
 	return am.constructHostFromSearchResult(ctx, header, hosts)
 }

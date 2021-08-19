@@ -30,7 +30,7 @@ import (
 // BatchCreateSet batch create set
 func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("batch create set failed, parse biz id from url failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
@@ -55,7 +55,7 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 	batchCreateResult := make([]OneSetCreateResult, 0)
 	var firstErr error
 	for idx, set := range batchBody.Sets {
-		if _, ok := set[common.BkSupplierAccount]; ok == false {
+		if _, ok := set[common.BkSupplierAccount]; !ok {
 			set[common.BkSupplierAccount] = batchBody.BkSupplierAccount
 		}
 		set[common.BKAppIDField] = bizID
@@ -98,8 +98,8 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 	}
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
-		blog.Errorf("[api-set]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+	if err != nil {
+		blog.Errorf("failed to parse the biz id from url, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
@@ -147,7 +147,7 @@ func (s *Service) createSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (int
 	return set, nil
 }
 
-// CheckIsBuiltInSet check is build in set
+// CheckIsBuiltInSet check if set is built-in set
 func (s *Service) CheckIsBuiltInSet(kit *rest.Kit, setIDs ...int64) errors.CCErrorCoder {
 	// 检查是否是内置集群
 	filter := &metadata.QueryCondition{
@@ -268,14 +268,14 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 	}
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("failed to parse the biz id from url, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
 
 	setID, err := strconv.ParseInt(ctx.Request.PathParameter("set_id"), 10, 64)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("failed to parse the set id from url, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "set id"))
 		return
@@ -400,5 +400,6 @@ func (s *Service) SearchSetBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(instanceResult.Data.Info)
+	ctx.RespEntity(instanceResult.Info)
+
 }

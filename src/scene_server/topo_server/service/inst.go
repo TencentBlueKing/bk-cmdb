@@ -666,21 +666,15 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if !uniqueResp.Result {
-		blog.ErrorJSON("search model unique failed, cond: %s, error message: %s, rid: %s",
-			cond, uniqueResp.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(uniqueResp.Error())
-		return
-	}
 
-	if uniqueResp.Data.Count == 0 {
+	if uniqueResp.Count == 0 {
 		blog.ErrorJSON("model %s unique field not found, cond: %s, rid: %s",
 			objID, cond, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrorTopObjectUniqueIndexNotFound, objID, id))
 		return
 	}
 
-	if uniqueResp.Data.Count != 1 {
+	if uniqueResp.Count != 1 {
 		blog.ErrorJSON("model %s unique field count > 1, cond: %s, rid: %s",
 			objID, cond, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoObjectUniqueSearchFailed))
@@ -688,7 +682,7 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 	}
 
 	keyIDs := make([]int64, 0)
-	for _, key := range uniqueResp.Data.Info[0].Keys {
+	for _, key := range uniqueResp.Info[0].Keys {
 		keyIDs = append(keyIDs, int64(key.ID))
 	}
 
@@ -706,13 +700,8 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if !attrResp.Result {
-		blog.ErrorJSON("search model attribute failed, cond: %s, error message: %s, rid: %s",
-			cond, attrResp.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(attrResp.Error())
-		return
-	}
-	if attrResp.Data.Count <= 0 {
+
+	if attrResp.Count <= 0 {
 		blog.ErrorJSON("unique model attribute count illegal, cond: %s, rid: %s", cond, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoObjectUniqueSearchFailed))
 		return
@@ -720,8 +709,8 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 
 	instIDKey := metadata.GetInstIDFieldByObjID(objID)
 	keys := []string{instIDKey}
-	attrIDNameMap := make(map[string]string, len(attrResp.Data.Info))
-	for _, attr := range attrResp.Data.Info {
+	attrIDNameMap := make(map[string]string, len(attrResp.Info))
+	for _, attr := range attrResp.Info {
 		keys = append(keys, attr.PropertyID)
 		attrIDNameMap[attr.PropertyID] = attr.PropertyName
 	}

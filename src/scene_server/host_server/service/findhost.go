@@ -417,6 +417,7 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 	ctx.RespEntity(result.Data)
 }
 
+// ListResourcePoolHosts list hosts of resource pool
 func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 	header := ctx.Request.Request.Header
 	rid := ctx.Kit.Rid
@@ -437,20 +438,17 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 			common.BKDefaultField: common.DefaultAppFlag,
 		},
 	}
-	appResult, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, header, common.BKInnerObjIDApp, filter)
+	appResult, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, header, common.BKInnerObjIDApp,
+		filter)
 	if err != nil {
-		blog.Errorf("ListResourcePoolHosts failed, ReadInstance of default app failed, filter: %+v, err: %#v, rid:%s", filter, err, rid)
+		blog.Errorf("ListResourcePoolHosts failed, ReadInstance of default app failed, filter: %+v, err: %#v, "+
+			"rid:%s", filter, err, rid)
 		ccErr := defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 		ctx.RespAutoError(ccErr)
 		return
 	}
-	if ccErr := appResult.CCError(); ccErr != nil {
-		blog.ErrorJSON("ListResourcePoolHosts failed, ReadInstance of default app failed, filter: %s, result: %s, rid:%s", filter, appResult, rid)
-		ccErr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		ctx.RespAutoError(ccErr)
-		return
-	}
-	if appResult.Data.Count == 0 {
+
+	if appResult.Count == 0 {
 		blog.Errorf("ListResourcePoolHosts failed, get default app failed, not found, rid: %s", rid)
 		ccErr := defErr.Error(common.CCErrCommBizNotFoundError)
 		ctx.RespAutoError(ccErr)
@@ -458,9 +456,9 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 	}
 
 	// only use biz with same supplier account if query returns multiple biz
-	bizData := appResult.Data.Info[0]
+	bizData := appResult.Info[0]
 	bizCount := 0
-	for _, biz := range appResult.Data.Info {
+	for _, biz := range appResult.Info {
 		supplier, _ := biz.String(common.BkSupplierAccount)
 		if supplier == util.GetOwnerID(header) {
 			bizCount++
@@ -477,7 +475,8 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 	// get biz ID
 	bizID, err := util.GetInt64ByInterface(bizData[common.BKAppIDField])
 	if err != nil {
-		blog.ErrorJSON("ListResourcePoolHosts failed, parse app data failed, bizData: %s, err: %s, rid: %s", bizData, err.Error(), rid)
+		blog.ErrorJSON("ListResourcePoolHosts failed, parse app data failed, bizData: %s, err: %s, rid: %s", bizData,
+			err.Error(), rid)
 		ccErr := defErr.Error(common.CCErrCommParseDataFailed)
 		ctx.RespAutoError(ccErr)
 		return
@@ -486,14 +485,15 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 	// do host search
 	hostResult, ccErr := s.listBizHosts(ctx, bizID, parameter)
 	if ccErr != nil {
-		blog.ErrorJSON("ListResourcePoolHosts failed, listBizHosts failed, bizID: %s, parameter: %s, err: %s, rid:%s", bizID, parameter, ccErr.Error(), rid)
+		blog.ErrorJSON("ListResourcePoolHosts failed, listBizHosts failed, bizID: %s, parameter: %s, err: %s, "+
+			"rid:%s", bizID, parameter, ccErr.Error(), rid)
 		ctx.RespAutoError(ccErr)
 		return
 	}
 	ctx.RespEntity(hostResult)
 }
 
-// ListHosts list host under business specified by path parameter
+// ListBizHosts list host under business specified by path parameter
 func (s *Service) ListBizHosts(ctx *rest.Contexts) {
 
 	rid := ctx.Kit.Rid
@@ -506,7 +506,8 @@ func (s *Service) ListBizHosts(ctx *rest.Contexts) {
 	}
 
 	if key, err := parameter.Validate(); err != nil {
-		blog.ErrorJSON("ListBizHosts failed, Validate failed,parameter:%s, err: %s, rid:%s", parameter, err, ctx.Kit.Rid)
+		blog.ErrorJSON("ListBizHosts failed, Validate failed,parameter:%s, err: %s, rid:%s", parameter, err,
+			ctx.Kit.Rid)
 		ccErr := defErr.CCErrorf(common.CCErrCommParamsInvalid, key)
 		ctx.RespAutoError(ccErr)
 		return
@@ -525,14 +526,16 @@ func (s *Service) ListBizHosts(ctx *rest.Contexts) {
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	hostResult, ccErr := s.listBizHosts(ctx, bizID, parameter)
 	if ccErr != nil {
-		blog.ErrorJSON("ListBizHosts failed, listBizHosts failed, bizID: %s, parameter: %s, err: %s, rid:%s", bizID, parameter, ccErr.Error(), rid)
+		blog.ErrorJSON("ListBizHosts failed, listBizHosts failed, bizID: %s, parameter: %s, err: %s, rid:%s", bizID,
+			parameter, ccErr.Error(), rid)
 		ctx.RespAutoError(ccErr)
 		return
 	}
 	ctx.RespEntity(hostResult)
 }
 
-func (s *Service) listBizHosts(ctx *rest.Contexts, bizID int64, parameter meta.ListHostsParameter) (result *meta.ListHostResult, ccErr errors.CCErrorCoder) {
+func (s *Service) listBizHosts(ctx *rest.Contexts, bizID int64, parameter meta.ListHostsParameter) (
+	result *meta.ListHostResult, ccErr errors.CCErrorCoder) {
 	header := ctx.Kit.Header
 	rid := ctx.Kit.Rid
 	defErr := ctx.Kit.CCError
@@ -627,7 +630,8 @@ func (s *Service) ListHostsWithNoBiz(ctx *rest.Contexts) {
 	}
 
 	if key, err := parameter.Validate(); err != nil {
-		blog.ErrorJSON("ListHostsWithNoBiz failed, decode body failed,parameter:%s, err: %#v, rid:%s", parameter, err, ctx.Kit.Rid)
+		blog.ErrorJSON("ListHostsWithNoBiz failed, decode body failed,parameter:%s, err: %#v, rid:%s", parameter,
+			err, ctx.Kit.Rid)
 		ccErr := defErr.CCErrorf(common.CCErrCommParamsInvalid, key)
 		ctx.RespAutoError(ccErr)
 		return
@@ -820,8 +824,9 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 	}
 
 	if len(otherModuleIDs) > 0 {
-		moduleFilter := map[string]interface{}{common.BKModuleIDField: map[string]interface{}{common.BKDBIN:
-		otherModuleIDs}}
+		moduleFilter := map[string]interface{}{
+			common.BKModuleIDField: map[string]interface{}{common.BKDBIN: otherModuleIDs},
+		}
 		otherModuleMap, _, err := s.Logic.GetInstIDNameInfo(ctx.Kit, common.BKInnerObjIDModule, moduleFilter)
 		if err != nil {
 			blog.ErrorJSON("get module by filter(%s) failed, err: %s, rid: %s", moduleFilter, err, ctx.Kit.Rid)
@@ -992,7 +997,7 @@ func (s *Service) countTopoNodeHosts(ctx *rest.Contexts, bizID int64, option met
 			continue
 		}
 		hostIDs := make([]int64, 0)
-		for _, item := range relationResult.Data.Info {
+		for _, item := range relationResult.Info {
 			if _, ok := moduleIDMap[item.ModuleID]; ok == true {
 				hostIDs = append(hostIDs, item.HostID)
 			}

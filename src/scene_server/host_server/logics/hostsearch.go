@@ -320,19 +320,18 @@ func (sh *searchHost) fetchHostCloudCacheInfo() (map[int64]*InstNameAsst, errors
 			common.BKDBIN: sh.searchCloudIDs,
 		},
 	}
-	result, err := sh.lgc.CoreAPI.CoreService().Instance().ReadInstance(sh.ctx, sh.pheader, common.BKInnerObjIDPlat, queryInput)
+	result, err := sh.lgc.CoreAPI.CoreService().Instance().ReadInstance(sh.ctx, sh.pheader, common.BKInnerObjIDPlat,
+		queryInput)
 	if err != nil {
-		blog.Errorf("fetchHostCloudCacheInfo SearchObjects http do error, err:%s,input:%+v,rid:%s", err.Error(), queryInput, sh.ccRid)
+		blog.Errorf("fetchHostCloudCacheInfo SearchObjects http do error, err:%s,input:%+v,rid:%s", err.Error(),
+			queryInput, sh.ccRid)
 		return nil, sh.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !result.Result {
-		blog.Errorf("fetchHostCloudCacheInfo SearchObjects http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, queryInput, sh.ccRid)
-		return nil, sh.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	cloudInfoMap := make(map[int64]*InstNameAsst)
-	for _, info := range result.Data.Info {
-		asstInst, err := sh.convInstInfoToAssociateInfo(common.BKCloudIDField, common.BKCloudNameField, common.BKInnerObjIDPlat, info)
+	for _, info := range result.Info {
+		asstInst, err := sh.convInstInfoToAssociateInfo(common.BKCloudIDField, common.BKCloudNameField,
+			common.BKInnerObjIDPlat, info)
 		if err != nil {
 			return nil, err
 		}
@@ -711,17 +710,13 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 		blog.Errorf("get hosts failed, err: %v, rid: %s", err, sh.ccRid)
 		return err
 	}
-	if !gResult.Result {
-		blog.Errorf("get host failed, error code:%d, error message:%s, rid: %s", gResult.Code, gResult.ErrMsg, sh.ccRid)
-		return sh.ccErr.New(gResult.Code, gResult.ErrMsg)
-	}
 
-	if len(gResult.Data.Info) == 0 {
+	if len(gResult.Info) == 0 {
 		sh.noData = true
 	}
 
 	if !sh.paged {
-		sh.totalHostCnt = gResult.Data.Count
+		sh.totalHostCnt = gResult.Count
 	}
 
 	if sh.searchedHostIDs == nil {
@@ -731,7 +726,7 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 		sh.searchCloudIDs = make([]int64, 0)
 	}
 
-	for _, host := range gResult.Data.Info {
+	for _, host := range gResult.Info {
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
 			return err
