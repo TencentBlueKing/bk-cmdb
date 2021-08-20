@@ -44,8 +44,9 @@
       },
       displayText() {
         const count = this.value.length
+        const [firstIp] = this.value
         if (count > 2) {
-          return this.$i18n.locale === 'en' ? `${count} in all` : `${count}个`
+          return this.$i18n.locale === 'en' ? `${firstIp}...etc ${count} IPs in all` : `${firstIp}...等${count}个IP`
         }
         return this.value.join(' | ')
       }
