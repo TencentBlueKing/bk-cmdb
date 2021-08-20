@@ -24,7 +24,7 @@ import (
 	"configcenter/src/scene_server/auth_server/types"
 )
 
-// list enumeration attribute options of instance type resource
+// ListAttrValue list enumeration attribute options of instance type resource
 func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListAttrValueFilter,
 	page types.Page) (*types.ListAttrValueResult, error) {
 
@@ -43,7 +43,7 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iam.TypeID, filter 
 		Fields: []string{common.BKPropertyTypeField, common.BKOptionField},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 	}
-	var res *metadata.ReadModelAttrResult
+	var res *metadata.QueryModelAttributeDataResult
 	var err error
 
 	// read all non-inner model attributes for SysInstance resource, add object id to distinguish
@@ -56,15 +56,12 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iam.TypeID, filter 
 		blog.ErrorJSON("read model attribute failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
 		return nil, err
 	}
-	if !res.Result {
-		blog.ErrorJSON("read model attribute failed, error code: %s, error message: %s, param: %s, rid: %s", res.Code, res.ErrMsg, param, kit.Rid)
-		return nil, res.Error()
-	}
-	if len(res.Data.Info) == 0 {
+
+	if len(res.Info) == 0 {
 		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
 	}
 
-	attr := res.Data.Info[0]
+	attr := res.Info[0]
 	attrType = attr.PropertyType
 	if attrType != common.FieldTypeEnum {
 		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
@@ -72,7 +69,8 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iam.TypeID, filter 
 
 	marshaledOptions, err := json.Marshal(attr.Option)
 	if err != nil {
-		blog.ErrorJSON("marshal model attribute option failed, error: %s, option: %v, rid: %s", err.Error(), attr.Option, kit.Rid)
+		blog.ErrorJSON("marshal model attribute option failed, error: %s, option: %v, rid: %s", err.Error(),
+			attr.Option, kit.Rid)
 		return nil, err
 	}
 	options := metadata.AttributesOptions{}

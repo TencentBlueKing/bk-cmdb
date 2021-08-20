@@ -104,6 +104,12 @@ type ArrayResponse struct {
 	Data     []interface{} `json:"data"`
 }
 
+// HostCountResponse host count
+type HostCountResponse struct {
+	BaseResp `json:",inline"`
+	Data     int64 `json:"data"`
+}
+
 type MapArrayResponse struct {
 	BaseResp `json:",inline"`
 	Data     []mapstr.MapStr `json:"data"`

@@ -38,7 +38,8 @@
                       :data-vv-as="property['bk_property_name']"
                       :placeholder="getPlaceholder(property)"
                       :auto-select="false"
-                      v-validate="getValidateRules(property)"
+                      v-bind="$tools.getValidateEvents(property)"
+                      v-validate="$tools.getValidateRules(property)"
                       v-model.trim="values[property['bk_property_id']]['value']">
                     </component>
                     <span class="property-lock-state"
@@ -256,9 +257,6 @@
       getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
-      },
-      getValidateRules(property) {
-        return this.$tools.getValidateRules(property)
       },
       getFormError(property) {
         if (property.bk_property_type === 'table') {

@@ -71,61 +71,53 @@ func (g *unique) GetObjectID() string {
 	return g.data.ObjID
 }
 
+// Create unique
 func (g *unique) Create() error {
 	data := metadata.ObjectUnique{
 		ObjID: g.data.ObjID,
 		Keys:  g.data.Keys,
 	}
 
-	rsp, err := g.clientSet.CoreService().Model().CreateModelAttrUnique(g.kit.Ctx, g.kit.Header, g.data.ObjID, metadata.CreateModelAttrUnique{Data: data})
+	rsp, err := g.clientSet.CoreService().Model().CreateModelAttrUnique(g.kit.Ctx, g.kit.Header, g.data.ObjID,
+		metadata.CreateModelAttrUnique{Data: data})
 	if nil != err {
 		blog.Errorf("[model-unique] failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return g.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[model-unique] failed to create the unique(%#v), error info is is %s, rid: %s", g.data, rsp.ErrMsg, g.kit.Rid)
-		return g.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	g.data.ID = uint64(rsp.Data.Created.ID)
+	g.data.ID = uint64(rsp.Created.ID)
 	return nil
 }
 
+// Update unique
 func (g *unique) Update(data mapstr.MapStr) error {
 	updateReq := metadata.UpdateUniqueRequest{
 		Keys: g.data.Keys,
 	}
 
-	rsp, err := g.clientSet.CoreService().Model().UpdateModelAttrUnique(g.kit.Ctx, g.kit.Header, g.data.ObjID, g.data.ID, metadata.UpdateModelAttrUnique{Data: updateReq})
+	_, err := g.clientSet.CoreService().Model().UpdateModelAttrUnique(g.kit.Ctx, g.kit.Header, g.data.ObjID,
+		g.data.ID, metadata.UpdateModelAttrUnique{Data: updateReq})
 	if nil != err {
 		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return err
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[model-unique]failed to update the object %s(%d) to  %v, error info is %s, rid: %s", g.data.ObjID, g.data.ID, updateReq, err.Error(), g.kit.Rid)
-		return g.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
 	return nil
 }
 
+// Save create or update unique
 func (g *unique) Save(data mapstr.MapStr) error {
 	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(g.data.ObjID)
-	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(g.kit.Ctx, g.kit.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
+	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(g.kit.Ctx, g.kit.Header,
+		metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return err
-	}
-
-	if !searchResp.Result {
-		blog.Errorf("[model-unique]failed to search the object unique by %s, err: %s, rid: %s", g.data.ObjID, searchResp.ErrMsg, g.kit.Rid)
-		return g.kit.CCError.New(searchResp.Code, searchResp.ErrMsg)
 	}
 
 	keyhash := g.data.KeysHash()
 	var exists *metadata.ObjectUnique
-	for _, uni := range searchResp.Data.Info {
+	for _, uni := range searchResp.Info {
 		if uni.KeysHash() == keyhash {
 			exists = &uni
 			break
@@ -139,21 +131,18 @@ func (g *unique) Save(data mapstr.MapStr) error {
 	return g.Create()
 }
 
+// IsExists check unique if exists
 func (g *unique) IsExists() (bool, error) {
 	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(g.data.ObjID)
-	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(g.kit.Ctx, g.kit.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
+	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(g.kit.Ctx, g.kit.Header,
+		metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return false, err
 	}
 
-	if !searchResp.Result {
-		blog.Errorf("[model-unique]failed to search the object unique by %s, err: %s, rid: %s", g.data.ObjID, searchResp.ErrMsg, g.kit.Rid)
-		return false, g.kit.CCError.New(searchResp.Code, searchResp.ErrMsg)
-	}
-
 	keyhash := g.data.KeysHash()
-	for _, uni := range searchResp.Data.Info {
+	for _, uni := range searchResp.Info {
 		if uni.KeysHash() == keyhash {
 			return true, nil
 		}
