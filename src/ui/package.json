@@ -78,7 +78,7 @@
     "css-loader": "^5.2.3",
     "css-minimizer-webpack-plugin": "^2.0.0",
     "eslint": "^7.24.0",
-    "eslint-config-tencent": "^1.0.0",
+    "eslint-config-tencent": "^1.0.2",
     "eslint-friendly-formatter": "^4.0.1",
     "eslint-plugin-vue": "^7.9.0",
     "eslint-webpack-plugin": "^2.5.3",
@@ -116,6 +116,5 @@
     "last 2 versions",
     "not ie <= 8"
   ],
-  "readme": "ERROR: No README data found!",
-  "peerDependencies": {}
+  "readme": "ERROR: No README data found!"
 }
