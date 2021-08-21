@@ -90,7 +90,6 @@
   import ViewSwitcher from '../common/view-switcher'
   import Bus from '../common/bus'
   import RouterQuery from '@/router/query'
-  // import { MENU_BUSINESS_DELETE_SERVICE } from '@/dictionary/menu-symbol'
   import { mapGetters } from 'vuex'
   import { Validator } from 'vee-validate'
   import { MULTIPLE_IP_REGEXP } from '@/dictionary/regexp.js'
@@ -245,6 +244,7 @@
                 }
               })
               this.$success(this.$t('删除成功'))
+              Bus.$emit('delete-complete')
               return true
             } catch (e) {
               console.error(e)

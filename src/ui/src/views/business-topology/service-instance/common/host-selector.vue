@@ -92,6 +92,10 @@
         type: Number,
         required: true
       },
+      withTemplate: {
+        type: Boolean,
+        required: true
+      },
       exist: {
         type: Array,
         default: () => ([])
@@ -180,6 +184,10 @@
         }
       },
       async getNoServiceInstanceHost() {
+        if (!this.withTemplate) {
+          return
+        }
+
         try {
           const result = await this.$store.dispatch('serviceInstance/getNoServiceInstanceHost', {
             params: {
@@ -194,7 +202,6 @@
         }
       },
       getParams() {
-        console.log(this.pagination)
         const params = {
           bk_biz_id: this.bizId,
           ip: {
@@ -243,6 +250,11 @@
         })
       },
       getSelectable(row) {
+        // 非模板创建不限制重复添加服务实例
+        if (!this.withTemplate) {
+          return true
+        }
+
         return this.noServiceInstanceHost.includes(row.host.bk_host_id)
       },
       handleToggleSelect(selection) {
@@ -252,7 +264,6 @@
         this.handleSelectionChange(selection)
       },
       handleSelectionChange(selection) {
-        console.log(selection, 'sss')
         const ids = [...new Set(selection.map(data => data.host.bk_host_id))]
         const unselected = this.list.filter(item => !ids.includes(item.host.bk_host_id))
 

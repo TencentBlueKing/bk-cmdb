@@ -197,7 +197,7 @@
     }
 }
 
-.bk-popconfirm-content {
+.bk-popconfirm-content:not(.del-confirm) {
     .popconfirm-operate {
         display: flex;
         justify-content: flex-end;

@@ -92,6 +92,7 @@
       return {
         hasScrollbar: false,
         hosts: [],
+        instances: [],
         belongModule: {},
         tab: {
           active: null
@@ -139,19 +140,7 @@
       activeTab() {
         // 新版中只有“新增服务实例”
         return this.tabList[0]
-      },
-      instances() {
-        const hotsIds = this.hosts.map(item => item.host.bk_host_id)
-        const instances = []
-        hotsIds.forEach((id) => {
-          instances.push({
-            bk_host_id: id,
-            name: '',
-            editing: { name: false }
-          })
-        })
-        return instances
-      },
+      }
     },
     created() {
       this.getSelectedHost()
@@ -181,6 +170,9 @@
           this.$store.commit('setGlobalLoading', this.hasScrollbar)
           const result = await this.getHostInfo(queryHostIds)
           this.hosts = result.info || []
+
+          // 根据主机创建服务实例列表
+          this.setInstances()
         } catch (e) {
           console.error(e)
         } finally {
@@ -253,6 +245,18 @@
           }
         })
       },
+      setInstances() {
+        const hotsIds = this.hosts.map(item => item.host.bk_host_id)
+        const instances = []
+        hotsIds.forEach((id) => {
+          instances.push({
+            bk_host_id: id,
+            name: '',
+            editing: { name: false }
+          })
+        })
+        this.instances = instances
+      },
       getName(instance) {
         if (instance.name) {
           return instance.name
@@ -321,7 +325,8 @@
       handleSelectHost() {
         this.dialog.componentProps = {
           exist: this.hosts,
-          moduleId: this.moduleId
+          moduleId: this.moduleId,
+          withTemplate: this.withTemplate
         }
         this.dialog.component = HostSelector
         this.dialog.show = true
@@ -382,7 +387,6 @@
       async handleConfirm() {
         try {
           const serviceInstanceTables = this.$refs.serviceInstanceTable
-          const { confirmTable } = this.$refs
           const params = {
             bk_module_id: this.moduleId,
             bk_biz_id: this.bizId
@@ -397,9 +401,6 @@
               }
             })
           }
-          if (confirmTable) {
-            params.host_apply_conflict_resolvers = this.getHostApplyConflictResolvers()
-          }
 
           await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
             params
@@ -410,22 +411,6 @@
         } catch (e) {
           console.error(e)
         }
-      },
-      getHostApplyConflictResolvers() {
-        const { conflictResolveResult } = this.$refs.confirmTable
-        const conflictResolvers = []
-        Object.keys(conflictResolveResult).forEach((key) => {
-          const propertyList = conflictResolveResult[key]
-          propertyList.forEach((property) => {
-            conflictResolvers.push({
-              bk_host_id: Number(key),
-              bk_attribute_id: property.id,
-              // eslint-disable-next-line no-underscore-dangle
-              bk_property_value: property.__extra__.value
-            })
-          })
-        })
-        return conflictResolvers
       },
       handleEditName(instance) {
         this.instances.forEach(instance => (instance.editing.name = false))

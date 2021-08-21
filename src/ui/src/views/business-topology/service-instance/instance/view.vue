@@ -6,6 +6,8 @@
 </template>
 
 <script>
+  import RouterQuery from '@/router/query'
+  import Bus from '../common/bus'
   import InstanceOptions from './options'
   import InstanceList from './list'
   export default {
@@ -16,6 +18,19 @@
     },
     data() {
       return {}
+    },
+    created() {
+      Bus.$on('delete-complete', this.refreshView)
+    },
+    beforeDestroy() {
+      Bus.$off('delete-complete', this.refreshView)
+    },
+    methods: {
+      refreshView() {
+        RouterQuery.set({
+          _t: Date.now()
+        })
+      }
     }
   }
 </script>

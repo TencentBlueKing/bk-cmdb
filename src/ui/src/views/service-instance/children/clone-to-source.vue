@@ -238,7 +238,7 @@
             params: {
               name: this.$parent.module.bk_module_name,
               bk_biz_id: this.bizId,
-              bk_module_id: this.$route.params.moduleId,
+              bk_module_id: Number(this.$route.params.moduleId),
               instances: [
                 {
                   bk_host_id: this.hostId,

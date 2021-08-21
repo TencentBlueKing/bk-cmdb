@@ -42,12 +42,17 @@
         </cmdb-auth>
         <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
           v-if="!row.relation.process_template_id">
-          <bk-button slot-scope="{ disabled }"
-            theme="primary" text
-            :disabled="disabled"
-            @click="handleDelete(row)">
-            {{$t('删除')}}
-          </bk-button>
+          <bk-popconfirm trigger="click" slot-scope="{ disabled }"
+            ext-popover-cls="del-confirm"
+            :content="$t('确定删除该进程')"
+            confirm-loading
+            @confirm="handleDelete(row)">
+            <bk-button
+              theme="primary" text
+              :disabled="disabled">
+              {{$t('删除')}}
+            </bk-button>
+          </bk-popconfirm>
         </cmdb-auth>
       </template>
     </bk-table-column>
@@ -232,22 +237,17 @@
           console.error(error)
         }
       },
-      handleDelete(row) {
-        this.$bkInfo({
-          title: this.$t('确定删除该进程'),
-          confirmFn: async () => {
-            try {
-              await this.dispatchDelete([row.process_id])
-              if (this.list.length === 1) {
-                this.refreshParentList()
-              } else {
-                this.getList()
-              }
-            } catch (error) {
-              console.error(error)
-            }
+      async handleDelete(row) {
+        try {
+          await this.dispatchDelete([row.process_id])
+          if (this.list.length === 1) {
+            this.refreshParentList()
+          } else {
+            this.getList()
           }
-        })
+        } catch (error) {
+          console.error(error)
+        }
       },
       async handeBatchDelete(name) {
         if (name !== this.process.bk_process_name) {

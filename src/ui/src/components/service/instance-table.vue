@@ -241,7 +241,7 @@
       handleEditName() {
         this.$emit('edit-name')
         this.$nextTick(() => {
-          this.$refs.nameEditForm.focus()
+          this.$refs.nameEditForm && this.$refs.nameEditForm.focus()
         })
       },
       handleConfirmEditName(name) {
