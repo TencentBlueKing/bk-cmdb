@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 )
 
@@ -32,22 +31,29 @@ func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond ma
 			common.BKServiceCategoryIDField},
 	}
 
-	moduleRes, rawErr := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
-		moduleFilter)
-	if rawErr != nil {
-		blog.ErrorJSON("get modules failed, err: %s, input: %s, rid: %s", rawErr, moduleFilter, kit.Rid)
-		return nil, nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	modules := make([]*metadata.ModuleInst, 0)
+	err := lgc.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		moduleFilter, &modules)
+	if err != nil {
+		blog.ErrorJSON("get modules failed, err: %s, input: %s, rid: %s", err, moduleFilter, kit.Rid)
+		return nil, nil, err
+	}
+
+	moduleSyncStatuses := make([]metadata.ModuleSyncStatus, 0)
+	svcTempSyncStatuses := make([]metadata.SvcTempSyncStatus, 0)
+	if len(modules) == 0 {
+		return svcTempSyncStatuses, moduleSyncStatuses, nil
 	}
 
 	svcTempModuleMap := make(map[int64][]*metadata.ModuleInst)
-	for _, moduleInst := range moduleRes.Data.Info {
-		module := new(metadata.ModuleInst)
-		if err := mapstruct.Decode2Struct(moduleInst, &module); err != nil {
-			blog.Errorf("parse module failed, err: %s, module: %s, rid: %s", err, module, kit.Rid)
-			return nil, nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
+	for _, module := range modules {
+		if module.ServiceTemplateID != common.ServiceTemplateIDNotSet {
+			svcTempModuleMap[module.ServiceTemplateID] = append(svcTempModuleMap[module.ServiceTemplateID], module)
 		}
+	}
 
-		svcTempModuleMap[module.ServiceTemplateID] = append(svcTempModuleMap[module.ServiceTemplateID], module)
+	if len(svcTempModuleMap) == 0 {
+		return svcTempSyncStatuses, moduleSyncStatuses, nil
 	}
 
 	svcTempIDs := make([]int64, 0)
@@ -69,8 +75,6 @@ func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond ma
 		return nil, nil, err
 	}
 
-	moduleSyncStatuses := make([]metadata.ModuleSyncStatus, 0)
-	svcTempSyncStatuses := make([]metadata.SvcTempSyncStatus, 0)
 	for _, svcTemp := range templates.Info {
 		modules := svcTempModuleMap[svcTemp.ID]
 
@@ -97,12 +101,11 @@ func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond ma
 func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceTemplate, modules []*metadata.ModuleInst,
 	isPartial bool) (bool, []metadata.ModuleSyncStatus, errors.CCErrorCoder) {
 
-	moduleStatuses := make([]metadata.ModuleSyncStatus, 0)
+	statuses := make([]metadata.ModuleSyncStatus, 0)
 	var wg sync.WaitGroup
 	var firstErr errors.CCErrorCoder
 	pipeline := make(chan bool, 10)
-	isFinish := false
-	needSync := false
+	isFinish, needSync, isProcTempMapSet := false, false, false
 	procTempMap := make(map[int64]*metadata.ProcessTemplate)
 
 	for _, module := range modules {
@@ -111,28 +114,18 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 		}
 
 		// check if module info has difference with service template
-		if module.ModuleName != svcTemp.Name {
+		if module.ModuleName != svcTemp.Name || module.ServiceCategoryID != svcTemp.ServiceCategoryID {
 			if isPartial {
-				return true, moduleStatuses, nil
+				return true, statuses, nil
 			}
 
-			moduleStatuses = append(moduleStatuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: true})
-			needSync = true
-			continue
-		}
-
-		if module.ServiceCategoryID != svcTemp.ServiceCategoryID {
-			if isPartial {
-				return true, moduleStatuses, nil
-			}
-
-			moduleStatuses = append(moduleStatuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: true})
+			statuses = append(statuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: true})
 			needSync = true
 			continue
 		}
 
 		// get process templates to compare with the processes of the module
-		if len(procTempMap) == 0 {
+		if !isProcTempMapSet {
 			procTempOpt := &metadata.ListProcessTemplatesOption{
 				BusinessID:         svcTemp.BizID,
 				ServiceTemplateIDs: []int64{svcTemp.ID},
@@ -147,6 +140,7 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 			for idx, procTemp := range procTemps.Info {
 				procTempMap[procTemp.ID] = &procTemps.Info[idx]
 			}
+			isProcTempMapSet = true
 		}
 
 		pipeline <- true
@@ -178,12 +172,12 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 					return
 				}
 
-				moduleStatuses = append(moduleStatuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: true})
+				statuses = append(statuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: true})
 				needSync = true
 				return
 			}
 
-			moduleStatuses = append(moduleStatuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: false})
+			statuses = append(statuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: false})
 		}(module)
 	}
 
@@ -191,7 +185,7 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 	if firstErr != nil {
 		return false, nil, firstErr
 	}
-	return needSync, moduleStatuses, nil
+	return needSync, statuses, nil
 }
 
 func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.ModuleInst,
@@ -210,8 +204,16 @@ func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.Mod
 		return false, err
 	}
 
+	// need to sync when the module has process templates but has no service instances, or
 	if len(serviceInstances.Info) == 0 {
+		if len(procTempMap) > 0 {
+			return true, nil
+		}
 		return false, nil
+	}
+
+	if len(procTempMap) == 0 {
+		return true, nil
 	}
 
 	serviceInstanceIDs := make([]int64, 0)
