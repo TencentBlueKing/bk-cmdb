@@ -133,6 +133,7 @@
       handleFilterChange(filters) {
         this.filters = filters
         RouterQuery.set({
+          node: this.selectedNode.id,
           page: 1,
           _t: Date.now()
         })
@@ -171,6 +172,7 @@
       handlePageChange(page) {
         this.pagination.current = page
         RouterQuery.set({
+          node: this.selectedNode.id,
           page,
           _t: Date.now()
         })

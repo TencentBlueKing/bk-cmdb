@@ -158,6 +158,7 @@
       selectedNode() {
         this.searchValue = []
         RouterQuery.set({
+          node: this.selectedNode.id,
           instanceName: ''
         })
         Bus.$emit('filter-change', this.searchValue)

@@ -107,6 +107,7 @@
       },
       handlePageChange(page) {
         RouterQuery.set({
+          node: this.selectedNode.id,
           page,
           _t: Date.now()
         })
