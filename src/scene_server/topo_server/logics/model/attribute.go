@@ -13,10 +13,8 @@
 package model
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
-	"strings"
 	"unicode/utf8"
 
 	"configcenter/src/ac/extensions"
@@ -27,6 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -38,7 +37,6 @@ type AttributeOperationInterface interface {
 	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error
 	UpdateObjectAttributeIndex(kit *rest.Kit, objID string, data mapstr.MapStr,
 		attID int64) (*metadata.UpdateAttrIndexData, error)
-	FindObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, objID string) ([]metadata.Attribute, error)
 }
 
 // NewAttributeOperation create a new attribute operation instance
@@ -51,65 +49,9 @@ func NewAttributeOperation(client apimachinery.ClientSetInterface,
 }
 
 type attribute struct {
-	FieldValid
+	lang        language.DefaultCCLanguageIf
 	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
-}
-
-// FieldValid field valid method
-type FieldValid struct {
-	lang language.DefaultCCLanguageIf
-}
-
-// Valid valid the field
-func (f *FieldValid) Valid(kit *rest.Kit, data mapstr.MapStr, fieldID string) (string, error) {
-
-	val, err := data.String(fieldID)
-	if nil != err {
-		return val, kit.CCError.New(common.CCErrCommParamsIsInvalid, fieldID+" "+err.Error())
-	}
-	if 0 == len(val) {
-		return val, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, fieldID)
-	}
-
-	return val, nil
-}
-
-// ValidID check the property ID
-func (f *FieldValid) ValidID(kit *rest.Kit, value string) error {
-	if common.AttributeIDMaxLength < utf8.RuneCountInString(value) {
-		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
-			f.lang.Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
-	}
-	match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, value)
-	if err != nil {
-		return err
-	}
-
-	if !match {
-		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, value)
-	}
-
-	return nil
-}
-
-// ValidName check the name
-func (f *FieldValid) ValidName(kit *rest.Kit, value string) error {
-	if common.AttributeNameMaxLength < utf8.RuneCountInString(value) {
-		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
-			f.lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
-	}
-	value = strings.TrimSpace(value)
-	return nil
-}
-
-// ValidPlaceHolder check the PlaceHolder
-func (f *FieldValid) ValidPlaceHolder(kit *rest.Kit, value string) error {
-	if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(value) {
-		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
-			f.lang.Language("model_attr_placeholder"), common.AttributePlaceHolderMaxLength)
-	}
-	return nil
 }
 
 // IsValid check is valid
@@ -121,52 +63,47 @@ func (a *attribute) IsValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 
 	// check if property type for creation is valid, can't update property type
 	if !isUpdate {
-		if _, err := a.FieldValid.Valid(kit, data.ToMapStr(), metadata.AttributeFieldPropertyType); nil != err {
-			return err
+		if data.PropertyType == "" {
+			return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
 		}
 	}
 
 	if !isUpdate || data.ToMapStr().Exists(metadata.AttributeFieldPropertyID) {
-		val, err := a.FieldValid.Valid(kit, data.ToMapStr(), metadata.AttributeFieldPropertyID)
-		if nil != err {
+		if common.AttributeIDMaxLength < utf8.RuneCountInString(data.PropertyID) {
+			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
+				a.lang.Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
+		}
+		match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, data.PropertyID)
+		if err != nil {
 			return err
 		}
-		if err = a.FieldValid.ValidID(kit, val); nil != err {
-			return err
+
+		if !match {
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, data.PropertyID)
 		}
 	}
 
 	if !isUpdate || data.ToMapStr().Exists(metadata.AttributeFieldPropertyName) {
-		val, err := a.FieldValid.Valid(kit, data.ToMapStr(), metadata.AttributeFieldPropertyName)
-		if nil != err {
-			return err
-		}
-		if err = a.FieldValid.ValidName(kit, val); nil != err {
-			return err
+		if common.AttributeNameMaxLength < utf8.RuneCountInString(data.PropertyName) {
+			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
+				a.lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
 		}
 	}
 
 	// check option validity for creation,
 	// update validation is in coreservice cause property type need to be obtained from db
 	if !isUpdate {
-		propertyType, err := data.ToMapStr().String(metadata.AttributeFieldPropertyType)
-		if nil != err {
-			return kit.CCError.New(common.CCErrCommParamsIsInvalid, err.Error())
-		}
-
-		option, exists := data.ToMapStr().Get(metadata.AttributeFieldOption)
-		if exists && a.isPropertyTypeIntEnumListSingleLong(propertyType) {
-			if err := util.ValidPropertyOption(propertyType, option, kit.CCError); nil != err {
+		if a.isPropertyTypeIntEnumListSingleLong(data.PropertyType) {
+			if err := util.ValidPropertyOption(data.PropertyType, data.Option, kit.CCError); nil != err {
 				return err
 			}
 		}
 	}
 
-	if val, ok := data.ToMapStr()[metadata.AttributeFieldPlaceHolder]; ok && val != "" {
-		if placeholder, ok := val.(string); ok {
-			if err := a.FieldValid.ValidPlaceHolder(kit, placeholder); nil != err {
-				return err
-			}
+	if data.Placeholder != "" {
+		if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(data.Placeholder) {
+			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, a.lang.Language("model_attr_placeholder"),
+				common.AttributePlaceHolderMaxLength)
 		}
 	}
 
@@ -185,8 +122,8 @@ func (a *attribute) isPropertyTypeIntEnumListSingleLong(propertyType string) boo
 	}
 }
 
-// checkObjectExist 检查当前objID在数据库中是否存在
-func (a *attribute) checkObjectExist(kit *rest.Kit, objID string) error {
+// isObjExists 检查当前objID在数据库中是否存在
+func (a *attribute) isObjExists(kit *rest.Kit, objID string) error {
 	checkObjCond := mapstr.MapStr{
 		common.BKObjIDField: objID,
 	}
@@ -217,7 +154,7 @@ func (a *attribute) CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr) (*metad
 	}
 
 	//  check the object
-	if err = a.checkObjectExist(kit, grp.ObjectID); nil != err {
+	if err = a.isObjExists(kit, grp.ObjectID); nil != err {
 		blog.Errorf("the group (%#v) is in valid, rid: %s", data, kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoObjectGroupCreateFailed, err.Error())
 	}
@@ -266,7 +203,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 	yes, err := a.isMainlineModel(kit, data.ObjectID)
 	if err != nil {
 		blog.Errorf("not allow to add required attribute to mainline object: %+v. "+"rid: %d.", data, kit.Rid)
-		return nil, kit.CCError.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
+		return nil, err
 	}
 
 	if yes && data.IsRequired {
@@ -274,8 +211,8 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 	}
 
 	// check the object id
-	if err = a.checkObjectExist(kit, data.ObjectID); err != nil {
-		return nil, kit.CCError.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
+	if err = a.isObjExists(kit, data.ObjectID); err != nil {
+		return nil, err
 	}
 
 	filters := make([]map[string]interface{}, 0)
@@ -307,9 +244,10 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 				OwnerID:    data.OwnerID,
 				BizID:      data.BizID,
 			}
+			// TODO 替换依赖直接传递&group参数
 			if _, err := a.CreateObjectGroup(kit, mapstr.MapStr{"field": group}); err != nil {
 				blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
-				return nil, kit.CCError.Error(common.CCErrTopoObjectGroupCreateFailed)
+				return nil, err
 			}
 		}
 		data.PropertyGroup = common.BKBizDefault
@@ -354,23 +292,36 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 
 // DeleteObjectAttribute delete object attribute
 func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, modelBizID int64) error {
-	cond[common.BKAppIDField] = modelBizID
-	attrItems, err := a.FindObjectAttribute(kit, cond, "")
-	if nil != err {
-		blog.Errorf("failed to find the attributes by the cond(%v), err: %v, rid: %s", cond, err, kit.Rid)
-		return kit.CCError.New(common.CCErrTopoObjectAttributeDeleteFailed, err.Error())
+	attr := new(metadata.Attribute)
+	if err := mapstruct.Decode2Struct(cond, attr); err != nil {
+		blog.Errorf("unmarshal mapstr data into module failed, module: %s, err: %s, rid: %s", cond, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommParseDBFailed)
+	}
+	if err := a.IsValid(kit, false, attr); nil != err {
+		return err
 	}
 
 	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
 
-	deleteCond, exist := cond.Get(metadata.AttributeFieldID)
-	if !exist {
-		blog.Errorf("failed to get delete cond, err: %v, rid: %s", cond, err, kit.Rid)
-		return errors.New("get attribute field id failed")
+	util.AddModelBizIDCondition(cond, modelBizID)
+	queryCond := &metadata.QueryCondition{
+		Condition: cond,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		DisableCounter: true,
+	}
+	attrItems, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, queryCond)
+	if err != nil {
+		blog.Errorf("failed to find the attributes by the cond(%v), err: %v, rid: %s", cond, err, kit.Rid)
+		return kit.CCError.New(common.CCErrTopoObjectAttributeDeleteFailed, err.Error())
 	}
 
-	for _, attrItem := range attrItems {
+	auditLogArr := make([]metadata.AuditLog, 0)
+	attrID := make([]string, 0)
+	var objID string
+	for _, attrItem := range attrItems.Info {
 		// generate audit log of model attribute.
 		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, attrItem.ID, &attrItem)
 		if err != nil {
@@ -378,20 +329,26 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, mod
 				err, kit.Rid)
 			return err
 		}
+		auditLogArr = append(auditLogArr, *auditLog)
+		attrID = append(attrID, attrItem.PropertyID)
+		objID = attrItem.ObjectID
+	}
 
-		// delete the attribute.
-		if _, err := a.clientSet.CoreService().Model().DeleteModelAttr(kit.Ctx, kit.Header, attrItem.ObjectID,
-			&metadata.DeleteOption{Condition: mapstr.MapStr{metadata.AttributeFieldID: deleteCond}}); err != nil {
-			blog.Errorf("delete object attribute failed, err: %v, rid: %s", err, kit.Rid)
-			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
+	deleteCond := &metadata.DeleteOption{
+		Condition: mapstr.MapStr{
+			common.BKDBIN: attrID,
+		},
+	}
+	// delete the attribute.
+	if _, err := a.clientSet.CoreService().Model().DeleteModelAttr(kit.Ctx, kit.Header, objID, deleteCond); err != nil {
+		blog.Errorf("delete object attribute failed, err: %v, rid: %s", err, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
 
-		// save audit log.
-		if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
-			blog.Errorf("delete object attribute %s success, but save audit log failed, err: %v, rid: %s",
-				attrItem.PropertyName, err, kit.Rid)
-			return err
-		}
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, auditLogArr...); err != nil {
+		blog.Errorf("delete object attribute success, but save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
 
 	return nil
@@ -471,63 +428,4 @@ func (a *attribute) isMainlineModel(kit *rest.Kit, modelID string) (bool, error)
 	}
 
 	return false, nil
-}
-
-// FindObjectAttribute find attribute by obj id
-func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, objID string) ([]metadata.Attribute, error) {
-	var limit, start int64
-	var sort string
-	if cond.Exists(metadata.PageName) {
-		page, err := cond.MapStr(metadata.PageName)
-		if err != nil {
-			blog.Errorf("page info convert to mapstr failed, page: %v, err: %v, rid: %s", cond[metadata.PageName],
-				err, kit.Rid)
-			return nil, err
-		}
-
-		limit, err = page.Int64(metadata.PageLimit)
-		if err != nil {
-			blog.Errorf("get limit from page failed, page: %v, err: %v, rid: %s", page, err, kit.Rid)
-			return nil, err
-		}
-
-		start, err = page.Int64(metadata.PageStart)
-		if err != nil {
-			blog.Errorf("get start from page failed, page: %v, err: %v, rid: %s", page, err, kit.Rid)
-			return nil, err
-		}
-
-		s, exist := page.Get(metadata.PageSort)
-		if !exist {
-			sort = common.BKFieldID
-		}
-		sort = s.(string)
-		cond.Remove(metadata.PageName)
-	}
-
-	var modelBizID int64
-	modelBizIDStr, exist := cond.Get(common.BKAppIDField)
-	if exist {
-		modelBizID = modelBizIDStr.(int64)
-	}
-
-	cond.Remove(common.BKAppIDField)
-	opt := new(metadata.QueryCondition)
-	if objID != "" {
-		opt.DisableCounter = true
-		opt.Condition = cond
-	} else {
-		util.AddModelBizIDCondition(cond, modelBizID)
-		opt.Condition = cond
-		opt.DisableCounter = true
-		opt.Page = metadata.BasePage{Limit: int(limit), Start: int(start), Sort: sort}
-	}
-
-	resp, err := a.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, opt)
-	if err != nil {
-		blog.Errorf("find business attributes failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	return resp.Info, nil
 }

@@ -13,6 +13,8 @@
 package operation
 
 import (
+	"fmt"
+
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -343,18 +345,16 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	return nil
 }
 
-// isMainlineModel check is mainline model by module id
 func (a *attribute) isMainlineModel(kit *rest.Kit, modelID string) (bool, error) {
-	cond := mapstr.MapStr{
-		common.AssociationKindIDField: common.AssociationKindMainline,
-	}
-	queryCond := &metadata.QueryCondition{
-		Condition:      cond,
-		DisableCounter: true,
-	}
-	asst, err := a.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, queryCond)
+	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
+	asst, err := a.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
+		&metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		return false, err
+	}
+
+	if len(asst.Info) <= 0 {
+		return false, fmt.Errorf("model association [%+v] not found", cond)
 	}
 
 	for _, mainline := range asst.Info {
@@ -365,7 +365,6 @@ func (a *attribute) isMainlineModel(kit *rest.Kit, modelID string) (bool, error)
 
 	return false, nil
 }
-
 
 // UpdateObjectAttributeIndex update object attribute index
 func (a *attribute) UpdateObjectAttributeIndex(kit *rest.Kit, objID string, data mapstr.MapStr, attID int64) (

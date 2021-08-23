@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // CreateObjectAttribute create a new object attribute
@@ -30,7 +31,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	// do not support adding preset attribute by api
+	// do not support add preset attribute by api
 	attr.IsPre = false
 	isBizCustomField := false
 	// adapt input path param with bk_biz_id
@@ -83,18 +84,55 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 	data := dataWithModelBizID.Data
-	data[common.BKAppIDField] = dataWithModelBizID.ModelBizID
+	util.AddModelBizIDCondition(data, dataWithModelBizID.ModelBizID)
 	data[metadata.AttributeFieldIsSystem] = true
 	data[metadata.AttributeFieldIsAPI] = true
 
-	resp, err := s.Logics.AttributeOperation().FindObjectAttribute(ctx.Kit, data, "")
+	var limit, start int64
+	var sort string
+	if data.Exists(metadata.PageName) {
+		page, err := data.MapStr(metadata.PageName)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+
+		limit, err = page.Int64(metadata.PageLimit)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+
+		start, err = page.Int64(metadata.PageStart)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+
+		s, exist := page.Get(metadata.PageSort)
+		if !exist {
+			sort = common.BKFieldID
+		}
+		sort = s.(string)
+		data.Remove(metadata.PageName)
+	}
+
+	queryCond := &metadata.QueryCondition{
+		Condition: data,
+		Page: metadata.BasePage{
+			Limit: int(limit),
+			Start: int(start),
+			Sort:  sort,
+		},
+	}
+	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(ctx.Kit.Ctx, ctx.Kit.Header, queryCond)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	attrInfos := make([]*metadata.ObjAttDes, 0)
-	for _, attr := range resp {
+	for _, attr := range resp.Info {
 		attrInfo := &metadata.ObjAttDes{
 			Attribute:         attr,
 			PropertyGroupName: attr.PropertyGroupName,
@@ -164,7 +202,7 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("id", ctx.Request.PathParameter("id"))
 	id, err := paramPath.Int64("id")
-	if nil != err {
+	if err != nil {
 		blog.Errorf("failed to parse the path params id: %s, err: %s , rid: %s", ctx.Request.PathParameter("id"),
 			err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -263,32 +301,61 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 	data := dataWithModelBizID.Data
 	data[metadata.AttributeFieldIsSystem] = false
 	data[metadata.AttributeFieldIsAPI] = false
-	data[common.BKObjIDField] = common.BKInnerObjIDHost
-	data[common.BKAppIDField] = dataWithModelBizID.ModelBizID
+	util.AddModelBizIDCondition(data, dataWithModelBizID.ModelBizID)
 
-	attributes, err := s.Logics.AttributeOperation().FindObjectAttribute(ctx.Kit, data, common.BKInnerObjIDHost)
+	var limit, start int64
+	var sort string
+	if data.Exists(metadata.PageName) {
+		page, err := data.MapStr(metadata.PageName)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+
+		limit, err = page.Int64(metadata.PageLimit)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+
+		start, err = page.Int64(metadata.PageStart)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+
+		s, exist := page.Get(metadata.PageSort)
+		if !exist {
+			sort = common.BKFieldID
+		}
+		sort = s.(string)
+		data.Remove(metadata.PageName)
+	}
+
+	queryCond := &metadata.QueryCondition{
+		Condition: data,
+		Page: metadata.BasePage{
+			Limit: int(limit),
+			Start: int(start),
+			Sort:  sort,
+		},
+	}
+
+	result, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDHost, queryCond)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	attrInfos := make([]*metadata.ObjAttDes, 0)
-	for _, attr := range attributes {
-		attrInfo := &metadata.ObjAttDes{
-			Attribute:         attr,
-			PropertyGroupName: attr.PropertyGroupName,
-		}
-		attrInfos = append(attrInfos, attrInfo)
-	}
-
 	hostAttributes := make([]metadata.HostObjAttDes, 0)
-	for _, item := range attrInfos {
-		if item == nil {
-			continue
-		}
+	for _, item := range result.Info {
 		hostApplyEnabled := metadata.CheckAllowHostApplyOnField(item.PropertyID)
 		hostAttribute := metadata.HostObjAttDes{
-			ObjAttDes:        *item,
+			ObjAttDes: metadata.ObjAttDes{
+				Attribute:         item,
+				PropertyGroupName: item.PropertyGroupName,
+			},
 			HostApplyEnabled: hostApplyEnabled,
 		}
 		hostAttributes = append(hostAttributes, hostAttribute)

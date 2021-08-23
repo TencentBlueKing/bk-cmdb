@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/mapstruct"
@@ -390,19 +389,23 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	attrCond := condition.CreateCondition()
-	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
-	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
-	attrArr, err := s.Logics.AttributeOperation().FindObjectAttribute(ctx.Kit, attrCond.ToMapStr(),
-		common.BKInnerObjIDApp)
-	if nil != err {
+	opt := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			metadata.AttributeFieldObjectID:     common.BKInnerObjIDApp,
+			metadata.AttributeFieldPropertyType: common.FieldTypeUser,
+		},
+		DisableCounter: true,
+	}
+	attrArr, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDApp, opt)
+	if err != nil {
 		blog.Errorf("failed get the business attribute, %s, rid:%s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	// userFieldArr Fields in the business are user-type fields
 	var userFields []string
-	for _, attribute := range attrArr {
+	for _, attribute := range attrArr.Info {
 		userFields = append(userFields, attribute.PropertyID)
 	}
 

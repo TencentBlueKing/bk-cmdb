@@ -327,45 +327,26 @@ func (m *modelAttribute) DeleteModelAttributes(kit *rest.Kit, objID string, inpu
 	return &metadata.DeletedCount{Count: cnt}, err
 }
 
-func (m *modelAttribute) SearchModelAttributes(kit *rest.Kit, objID string,
-	inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
-	dataResult := &metadata.QueryModelAttributeDataResult{
-		Info: []metadata.Attribute{},
+func (m *modelAttribute) SearchModelAttributes(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
+
+	if err := m.model.isValid(kit, objID); nil != err {
+		blog.Errorf("request(%s): it is failed to check if the model(%s) is valid, error info is %s", kit.Rid, objID, err.Error())
+		return nil, err
 	}
-	if objID != "" {
-		if err := m.model.isValid(kit, objID); nil != err {
-			blog.Errorf("request(%s): it is failed to check if the model(%s) is valid, error info is %s", kit.Rid,
-				objID, err.Error())
-			return nil, err
-		}
 
-		inputParam.Condition[common.BKObjIDField] = objID
-		inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
+	inputParam.Condition[common.BKObjIDField] = objID
+	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
 
-		attrResult, err := m.newSearch(kit, inputParam.Condition)
-		if err != nil {
-			blog.Errorf("request(%s): it is failed to search the attributes of the model(%s), error info is %s",
-				kit.Rid, objID, err.Error())
-			return nil, err
-		}
-
-		dataResult.Count = int64(len(attrResult))
-		dataResult.Info = attrResult
-		return dataResult, nil
-	} else {
-		inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
-
-		attrResult, err := m.searchWithSort(kit, inputParam)
-		if err != nil {
-			blog.Errorf("request(%s): it is failed to search the attributes of the model(%+v), error info is %s",
-				kit.Rid, inputParam, err.Error())
-			return &metadata.QueryModelAttributeDataResult{}, err
-		}
-
-		dataResult.Count = int64(len(attrResult))
-		dataResult.Info = attrResult
-		return dataResult, nil
+	attrResult, err := m.newSearch(kit, inputParam.Condition)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to search the attributes of the model(%s), error info is %s", kit.Rid, objID, err.Error())
+		return nil, err
 	}
+
+	return &metadata.QueryModelAttributeDataResult{
+		Count: int64(len(attrResult)),
+		Info:  attrResult,
+	}, nil
 }
 
 func (m *modelAttribute) SearchModelAttributesByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
