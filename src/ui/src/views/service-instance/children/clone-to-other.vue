@@ -52,14 +52,14 @@
 
 <script>
   import { mapGetters } from 'vuex'
-  import HostSelector from '@/views/business-topology/host/host-selector-new'
-  import serviceInstanceTable from '@/components/service/instance-table.vue'
+  import HostSelector from '@/views/business-topology/service-instance/common/host-selector.vue'
+  import ServiceInstanceTable from '@/components/service/instance-table.vue'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   export default {
     name: 'clone-to-other',
     components: {
-      serviceInstanceTable,
-      [HostSelector.name]: HostSelector
+      HostSelector,
+      ServiceInstanceTable
     },
     props: {
       module: {
@@ -96,6 +96,12 @@
       },
       setId() {
         return parseInt(this.$route.params.setId, 10)
+      },
+      withTemplate() {
+        if (this.module.service_template_id) {
+          return true
+        }
+        return false
       }
     },
     mounted() {
@@ -106,10 +112,11 @@
     },
     methods: {
       handleAddHost() {
-        this.dialog.component = HostSelector.name
+        this.dialog.component = HostSelector
         this.dialog.props = {
           exist: this.hosts,
-          exclude: [this.hostId]
+          moduleId: this.moduleId,
+          withTemplate: this.withTemplate
         }
         this.dialog.show = true
       },
