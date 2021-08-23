@@ -46,7 +46,8 @@
                 @delete-instance="handleDeleteInstance"
                 @edit-name="handleEditName(instance)"
                 @confirm-edit-name="handleConfirmEditName(instance, ...arguments)"
-                @cancel-edit-name="handleCancelEditName(instance)">
+                @cancel-edit-name="handleCancelEditName(instance)"
+                @change-process="handleChangeProcess">
               </service-instance-table>
             </transition-group>
           </div>
@@ -55,12 +56,18 @@
     </div>
     <div class="options" :class="{ 'is-sticky': hasScrollbar }">
       <cmdb-auth class="mr5" :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
-        <bk-button slot-scope="{ disabled }"
-          theme="primary"
-          :disabled="!hosts.length || disabled"
-          @click="handleConfirm">
-          {{$t('确定')}}
-        </bk-button>
+        <div slot-scope="{ disabled }"
+          v-bk-tooltips="{
+            content: $t('请补充服务实例的进程等相关配置信息'),
+            theme: 'light',
+            disabled: !hosts.length || hasProcess
+          }">
+          <bk-button theme="primary"
+            :disabled="!hosts.length || disabled || !hasProcess"
+            @click="handleConfirm">
+            {{$t('确定')}}
+          </bk-button>
+        </div>
       </cmdb-auth>
       <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
     </div>
@@ -119,7 +126,8 @@
           preview: Symbol('review'),
           hostInfo: Symbol('hostInfo')
         },
-        processChangeState: {}
+        processChangeState: {},
+        hasProcess: false
       }
     },
     computed: {
@@ -402,9 +410,13 @@
             })
           }
 
-          await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
-            params
-          })
+
+          // 非模板创建，自动过滤未添加进程的空实例
+          if (!this.withTemplate && params.instances) {
+            params.instances = params.instances.filter(instance => instance.processes?.length)
+          }
+
+          await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', { params })
 
           this.$success(this.$t('添加成功'))
           this.handleBackToModule()
@@ -425,6 +437,12 @@
       },
       handleBackToModule() {
         this.$routerActions.back()
+      },
+      handleChangeProcess() {
+        const serviceInstanceTables = this.$refs.serviceInstanceTable
+        if (serviceInstanceTables) {
+          this.hasProcess = serviceInstanceTables.some(instanceTable => instanceTable?.processList?.length)
+        }
       },
       resizeHandler() {
         this.$nextTick(() => {

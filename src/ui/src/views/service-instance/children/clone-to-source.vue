@@ -51,7 +51,7 @@
         <bk-button slot-scope="{ disabled }"
           class="options-button"
           theme="primary"
-          :disabled="!!repeatedProcesses.length || disabled"
+          :disabled="!!repeatedProcesses.length || disabled || !cloneProcesses.length"
           @click="doClone">
           {{$t('确定')}}
         </bk-button>

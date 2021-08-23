@@ -9,10 +9,10 @@
             onHide: () => $refs.tipsContent.style.display = 'none',
             theme: 'light',
             allowHtml: true,
-            disabled: hasHost
+            disabled: hasHost && !isEmptyServiceTemplate
           }">
           <bk-button theme="primary"
-            :disabled="disabled || !hasHost"
+            :disabled="disabled || !hasHost || isEmptyServiceTemplate"
             @click="handleCreate">
             {{$t('新增')}}
           </bk-button>
@@ -75,11 +75,18 @@
       <view-switcher class="ml10" active="instance"></view-switcher>
     </div>
     <span class="tips-content" ref="tipsContent">
-      <i18n path="当前模块主机为空，请先XXX" tag="p">
+      <i18n path="当前模块主机为空，请先XXX" tag="p" v-if="!hasHost">
         <a href="javascript:;"
           class="action-link" place="action"
           @click="handleClickAddHost">
           {{$t('添加主机')}}
+        </a>
+      </i18n>
+      <i18n path="当前模块所属的服务模板内进程信息为空，请先XXX" tag="p" v-else-if="isEmptyServiceTemplate">
+        <a href="javascript:;"
+          class="action-link" place="action"
+          @click="handleGoServiceTemplate">
+          {{$t('前往补充')}}
         </a>
       </i18n>
     </span>
@@ -101,6 +108,7 @@
       return {
         selection: [],
         hasDifference: false,
+        hasProcessTemplate: false,
         allExpanded: false,
         historyLabels: {},
         searchValue: [],
@@ -116,7 +124,7 @@
         return this.selectedNode && this.selectedNode.data.service_template_id
       },
       hasHost() {
-        return this.selectedNode && this.selectedNode.data.host_count
+        return this.selectedNode && this.selectedNode.data?.host_count > 0
       },
       nameFilterIndex() {
         return this.searchValue.findIndex(data => data.id === 'name')
@@ -140,13 +148,19 @@
           return list.slice(1)
         }
         return list.slice(0)
+      },
+      isEmptyServiceTemplate() {
+        return this.withTemplate && !this.hasProcessTemplate
       }
     },
     watch: {
       withTemplate: {
         immediate: true,
         handler(withTemplate) {
-          withTemplate && this.checkDifference()
+          if (withTemplate) {
+            this.checkProcessTemplate()
+            this.checkDifference()
+          }
         }
       },
       searchMenuList() {
@@ -308,6 +322,20 @@
           console.error(error)
         }
       },
+      async checkProcessTemplate() {
+        try {
+          const processData = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
+            params: {
+              page: { start: 0, limit: 1 },
+              bk_biz_id: this.bizId,
+              service_template_id: this.selectedNode.data.service_template_id
+            }
+          })
+          this.hasProcessTemplate = processData.info?.length > 0
+        } catch (error) {
+          console.error(error)
+        }
+      },
       handleSyncTemplate() {
         this.$routerActions.redirect({
           name: 'syncServiceFromModule',
@@ -363,6 +391,20 @@
           _t: Date.now(),
           page: '',
           limit: ''
+        })
+      },
+      handleGoServiceTemplate() {
+        this.$routerActions.redirect({
+          name: 'operationalTemplate',
+          params: {
+            templateId: this.selectedNode.data.service_template_id,
+            moduleId: this.selectedNode.data.bk_inst_id
+          },
+          query: {
+            node: this.selectedNode.id,
+            tab: 'nodeInfo'
+          },
+          history: true
         })
       }
     }

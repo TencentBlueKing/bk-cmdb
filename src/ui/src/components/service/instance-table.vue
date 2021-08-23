@@ -169,6 +169,17 @@
         return header
       }
     },
+    watch: {
+      processList: {
+        immediate: true,
+        handler() {
+          this.$emit('change-process')
+        }
+      },
+      sourceProcesses(value) {
+        this.processList = this.$tools.clone(value)
+      }
+    },
     created() {
       this.getProcessProperties()
       this.getProcessPropertyGroups()
