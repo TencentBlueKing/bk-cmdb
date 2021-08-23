@@ -138,6 +138,11 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 			return nil, ccErr
 		}
 
+		if len(listProcTplResult.Info) == 0 {
+			blog.Errorf("create service instance for service template with no process is not allowed")
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
+
 		// get host data for bind IP if needed
 		host := metadata.HostMapStr{}
 		filter := map[string]interface{}{common.BKHostIDField: instance.HostID}

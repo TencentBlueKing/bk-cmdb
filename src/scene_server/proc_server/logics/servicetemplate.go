@@ -31,24 +31,29 @@ func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond ma
 			common.BKServiceCategoryIDField},
 	}
 
-	modules := make([]*metadata.ModuleInst, 0)
-	err := lgc.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
-		moduleFilter, &modules)
+	moduleRes := new(metadata.ResponseModuleInstance)
+	err := lgc.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header,
+		common.BKInnerObjIDModule, moduleFilter, moduleRes)
 	if err != nil {
-		blog.ErrorJSON("get modules failed, err: %s, input: %s, rid: %s", err, moduleFilter, kit.Rid)
+		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", moduleFilter, err, kit.Rid)
+		return nil, nil, err
+	}
+
+	if err := moduleRes.CCError(); err != nil {
+		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", moduleFilter, err, kit.Rid)
 		return nil, nil, err
 	}
 
 	moduleSyncStatuses := make([]metadata.ModuleSyncStatus, 0)
 	svcTempSyncStatuses := make([]metadata.SvcTempSyncStatus, 0)
-	if len(modules) == 0 {
+	if len(moduleRes.Data.Info) == 0 {
 		return svcTempSyncStatuses, moduleSyncStatuses, nil
 	}
 
 	svcTempModuleMap := make(map[int64][]*metadata.ModuleInst)
-	for _, module := range modules {
+	for _, module := range moduleRes.Data.Info {
 		if module.ServiceTemplateID != common.ServiceTemplateIDNotSet {
-			svcTempModuleMap[module.ServiceTemplateID] = append(svcTempModuleMap[module.ServiceTemplateID], module)
+			svcTempModuleMap[module.ServiceTemplateID] = append(svcTempModuleMap[module.ServiceTemplateID], &module)
 		}
 	}
 

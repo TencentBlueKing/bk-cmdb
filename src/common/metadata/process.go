@@ -292,7 +292,17 @@ type ServiceDifferenceDetails struct {
 	ServiceInstance   SrvInstBriefInfo          `json:"service_instance"`
 	Process           *Process                  `json:"process"`
 	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
+	// Flag represents the changes of the service instance. 0 for changed, 1 for added, 2 for deleted
+	Flag ServiceDifferenceFlag `json:"flag"`
 }
+
+type ServiceDifferenceFlag int64
+
+const (
+	ServiceChanged ServiceDifferenceFlag = 0
+	ServiceAdded   ServiceDifferenceFlag = 1
+	ServiceRemoved ServiceDifferenceFlag = 2
+)
 
 type SrvInstBriefInfo struct {
 	ID        int64  `field:"id" json:"id"`

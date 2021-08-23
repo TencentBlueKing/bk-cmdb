@@ -436,15 +436,25 @@ func (ps *ProcServer) getModule(kit *rest.Kit, moduleID int64) (*metadata.Module
 		},
 	}
 
-	moduleInst := new(metadata.ModuleInst)
+	moduleRes := new(metadata.ResponseModuleInstance)
 	err := ps.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header,
-		common.BKInnerObjIDModule, filter, moduleInst)
+		common.BKInnerObjIDModule, filter, moduleRes)
 	if err != nil {
 		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", filter, err, kit.Rid)
 		return nil, err
 	}
 
-	return moduleInst, nil
+	if err := moduleRes.CCError(); err != nil {
+		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", filter, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(moduleRes.Data.Info) != 1 {
+		blog.Errorf("get not one module by id $d, data: %#v, rid: %s", moduleID, moduleRes.Data.Info, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, "get none or multiple modules")
+	}
+
+	return &moduleRes.Data.Info[0], nil
 }
 
 func (ps *ProcServer) getModules(ctx *rest.Contexts, moduleIDs []int64) ([]*metadata.ModuleInst, errors.CCErrorCoder) {
