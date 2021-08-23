@@ -21,7 +21,7 @@ import (
 )
 
 type AssociationClientInterface interface {
-	UpdateAssociationType(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
+	UpdateAssociationType(ctx context.Context, h http.Header, input interface{}) (
 		*metadata.UpdatedCount, error)
 	DeleteAssociationType(ctx context.Context, h http.Header, input *metadata.DeleteOption) (
 		*metadata.DeletedCount, error)
@@ -44,7 +44,7 @@ type AssociationClientInterface interface {
 		*metadata.CreateOneDataResult, error)
 	SetModelAssociation(ctx context.Context, h http.Header, input *metadata.SetModelAssociation) (
 		resp *metadata.SetOptionResult, err error)
-	UpdateModelAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (*metadata.UpdatedCount,
+	UpdateModelAssociation(ctx context.Context, h http.Header, input interface{}) (*metadata.UpdatedCount,
 		error)
 	ReadModelAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 		*metadata.QueryModelAssociationResult, error)

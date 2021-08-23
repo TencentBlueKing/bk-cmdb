@@ -13,12 +13,12 @@
 package service
 
 import (
-	"configcenter/src/common/mapstr"
 	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -74,14 +74,16 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 			return
 		}
 
-		resp, err := s.Logics.AssociationOperation().SearchObjectAssociation(ctx.Kit, cond)
+		input := &metadata.QueryCondition{Condition: cond}
+		resp, err := s.Engine.CoreAPI.CoreService().Association().ReadModelAssociation(ctx.Kit.Ctx, ctx.Kit.Header,
+			input)
 		if err != nil {
 			blog.Errorf("search object association with cond[%v] failed, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
+			ctx.RespAutoError(err)
 			return
 		}
 
-		ctx.RespEntity(resp)
+		ctx.RespEntity(resp.Info)
 		return
 	}
 
@@ -98,12 +100,15 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	resp, err := s.Logics.AssociationOperation().SearchObjectAssociationByObjIDs(ctx.Kit, []interface{}{objID})
+	input := &metadata.QueryCondition{Condition: mapstr.MapStr{
+		common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objID},
+	}}
+	resp, err := s.Engine.CoreAPI.CoreService().Association().ReadModelAssociation(ctx.Kit.Ctx, ctx.Kit.Header, input)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(resp)
+	ctx.RespEntity(resp.Info)
 }
 
 // DeleteObjectAssociation delete object association
@@ -148,7 +153,7 @@ func (s *Service) UpdateObjectAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	data := new(mapstr.MapStr)
+	data := new(metadata.Association)
 	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return
