@@ -34,7 +34,7 @@
       const { propertyMap } = toRefs(props)
 
       const properties = computed(() => {
-        const properties = propertyMap.value.set || []
+        const properties = (propertyMap.value.set || []).slice()
         properties.unshift({
           bk_property_id: 'bk_set_id',
           bk_property_name: root.$t('ID'),
