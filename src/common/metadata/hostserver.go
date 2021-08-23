@@ -791,13 +791,13 @@ type TopoNodeHostCount struct {
 }
 
 type TransferHostWithAutoClearServiceInstanceOption struct {
-	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids"`
+	HostIDs []int64 `json:"bk_host_ids"`
 
-	RemoveFromNode *TopoNode `field:"remove_from_node" json:"remove_from_node"`
-	AddToModules   []int64   `field:"add_to_modules" json:"add_to_modules"`
-	// 主机从 RemoveFromNode 移除后如果不再属于其它模块， 默认转移到空闲机模块
-	// DefaultInternalModule 支持调整这种模型行为，可设置成待回收模块或者故障机模块
-	DefaultInternalModule int64 `field:"default_internal_module" json:"default_internal_module"`
+	RemoveFromModules []int64 `json:"remove_from_modules,omitempty"`
+	AddToModules      []int64 `json:"add_to_modules,omitempty"`
+	// 主机从 RemoveFromModules 移除后如果不再属于其它模块， 默认转移到空闲机模块
+	// DefaultInternalModule 支持调整这种默认行为，可设置成待回收模块或者故障机模块
+	DefaultInternalModule int64 `json:"default_internal_module,omitempty"`
 
 	Options TransferOptions `field:"options" json:"options"`
 }

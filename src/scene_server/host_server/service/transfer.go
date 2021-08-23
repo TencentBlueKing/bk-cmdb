@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -46,6 +45,13 @@ transfer模块 实现带实例自动清除的主机转移操作
 // - 如果 add_to_modules 是普通模块，主机当前数据空先机/故障机/待回收模块中的一个，必须显式指定 remove_from_node(可指定成业务节点), 否则报主机不能属于互斥模块错误
 // - 模块同时出现在 add_to_modules 和 remove_from_node 时，不会导致对应的服务实例被删除然后重新添加
 func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.V(7).Infof("parse bizID from url failed, bizID: %s, err: %+v, rid: %s", bizIDStr, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+		return
+	}
 
 	option := metadata.TransferHostWithAutoClearServiceInstanceOption{}
 	if err := ctx.DecodeInto(&option); nil != err {
@@ -53,42 +59,15 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 		return
 	}
 
-	if len(option.HostIDs) == 0 {
-		err := ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_host_ids")
-		ctx.RespAutoError(err)
+	if ccErr := s.validateTransferHostWithAutoClearServiceInstanceOption(ctx.Kit, bizID, option); ccErr != nil {
+		ctx.RespAutoError(ccErr)
 		return
 	}
 
-	if option.RemoveFromNode == nil && option.AddToModules == nil {
-		err := ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "add_to_modules")
-		ctx.RespAutoError(err)
-		return
-	}
-
-	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	transferPlans, err := s.generateTransferPlans(ctx.Kit, bizID, false, option)
 	if err != nil {
-		blog.V(7).Infof("parse bizID from url failed, bizID: %s, err: %+v, rid: %s", bizIDStr, ctx.Kit.Rid)
-		err := ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
-		ctx.RespAutoError(err)
-		return
-	}
-	if len(option.AddToModules) != 0 {
-		if ccErr := s.validateModules(ctx, bizID, option.AddToModules, "add_to_modules"); ccErr != nil {
-			ctx.RespAutoError(ccErr)
-			return
-		}
-	}
-	if option.DefaultInternalModule != 0 {
-		if ccErr := s.validateModules(ctx, bizID, []int64{option.DefaultInternalModule}, "default_internal_module"); ccErr != nil {
-			ctx.RespAutoError(ccErr)
-			return
-		}
-	}
-
-	transferPlans, err := s.generateTransferPlans(ctx, bizID, false, option)
-	if err != nil {
-		blog.ErrorJSON("TransferHostWithAutoClearServiceInstance failed, generateTransferPlans failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), ctx.Kit.Rid)
+		blog.ErrorJSON("generate transfer plans failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -106,7 +85,7 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 		for _, item := range option.Options.ServiceInstanceOptions {
 			moduleIDs = append(moduleIDs, item.ModuleID)
 		}
-		modules, err := s.getModules(ctx, bizID, moduleIDs)
+		modules, err := s.getModules(ctx.Kit, bizID, moduleIDs)
 		if err != nil {
 			blog.ErrorJSON("TransferHostWithAutoClearServiceInstance, get modules failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), ctx.Kit.Rid)
 			return err
@@ -344,176 +323,11 @@ func (s *Service) createOrUpdateServiceInstance(ctx *rest.Contexts, bizID int64,
 	return nil
 }
 
-func (s *Service) runTransferPlans(ctx *rest.Contexts, bizID int64, transferPlan metadata.HostTransferPlan) errors.CCErrorCoder {
-	rid := ctx.Kit.Rid
-	var transferHostResult *metadata.OperaterException
-	var err error
-	var option interface{}
-	if transferPlan.IsTransferToInnerModule == true {
-		transferOption := &metadata.TransferHostToInnerModule{
-			ApplicationID: bizID,
-			HostID:        []int64{transferPlan.HostID},
-			ModuleID:      transferPlan.FinalModules[0],
-		}
-		option = transferOption
-		transferHostResult, err = s.CoreAPI.CoreService().Host().TransferToInnerModule(ctx.Kit.Ctx, ctx.Kit.Header, transferOption)
-	} else {
-		transferOption := &metadata.HostsModuleRelation{
-			ApplicationID: bizID,
-			HostID:        []int64{transferPlan.HostID},
-			ModuleID:      transferPlan.FinalModules,
-			IsIncrement:   false,
-		}
-		option = transferOption
-		transferHostResult, err = s.CoreAPI.CoreService().Host().TransferToNormalModule(ctx.Kit.Ctx, ctx.Kit.Header, transferOption)
-	}
-	if err != nil {
-		blog.ErrorJSON("runTransferPlans failed, transfer hosts failed, option: %s, err: %s, rid: %s", option, err.Error(), rid)
-		return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if transferHostResult.Result == false {
-		blog.ErrorJSON("runTransferPlans failed, transfer hosts failed, option: %s, result: %s, rid: %s", option, transferHostResult, rid)
-		return errors.New(transferHostResult.Code, transferHostResult.ErrMsg)
-	}
+func (s *Service) generateTransferPlans(kit *rest.Kit, bizID int64, withHostApply bool,
+	option metadata.TransferHostWithAutoClearServiceInstanceOption) ([]metadata.HostTransferPlan, errors.CCErrorCoder) {
+	rid := kit.Rid
 
-	return nil
-}
-
-func (s *Service) removeServiceInstanceRelatedResource(ctx *rest.Contexts, transferPlan []metadata.HostTransferPlan, bizID int64) errors.CCErrorCoder {
-	rid := ctx.Kit.Rid
-
-	// Step1 calculate to be delete service instances
-	// we list the service instance with host ids in and modules ids in
-	// It's obvious that we may find service instance more than we want,
-	// so we need to remove these later.
-	allHostIDs, allRemovedModuleIDs := make([]int64, 0), make([]int64, 0)
-	allHostIDsMap := make(map[int64]map[int64]bool)
-	for _, plan := range transferPlan {
-		allHostIDs = append(allHostIDs, plan.HostID)
-		if allHostIDsMap[plan.HostID] == nil {
-			allHostIDsMap[plan.HostID] = make(map[int64]bool)
-		}
-		for _, modID := range plan.ToRemoveFromModules {
-			allHostIDsMap[plan.HostID][modID] = true
-		}
-		allRemovedModuleIDs = append(allRemovedModuleIDs, plan.ToRemoveFromModules...)
-	}
-
-	listServiceInstanceOption := &metadata.ListServiceInstanceOption{
-		BusinessID: bizID,
-		HostIDs:    allHostIDs,
-		ModuleIDs:  allRemovedModuleIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	serviceInstances, ccErr := s.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, listServiceInstanceOption)
-	if ccErr != nil {
-		blog.ErrorJSON("delete service instance, ListServiceInstance failed, option: %s, err: %s, rid: %s", listServiceInstanceOption, ccErr.Error(), rid)
-		return ccErr
-	}
-	serviceInstanceIDs := make([]int64, 0)
-	for _, instance := range serviceInstances.Info {
-		// filter out the real service instance, the others will be ignored.
-		_, exist := allHostIDsMap[instance.HostID][instance.ModuleID]
-		if !exist {
-			// this service instance is not what we need.
-			// it's because this service instance is belong to this host, but do not belongs to
-			// the modules that this host to be removed from
-			continue
-		}
-		serviceInstanceIDs = append(serviceInstanceIDs, instance.ID)
-	}
-
-	// clear service instance if necessary
-	if len(serviceInstanceIDs) > 0 {
-		// step2.1 delete process instance relation
-		listRelationOption := &metadata.ListProcessInstanceRelationOption{
-			BusinessID:         bizID,
-			ServiceInstanceIDs: serviceInstanceIDs,
-			Page: metadata.BasePage{
-				Limit: common.BKNoLimit,
-			},
-		}
-		relationResult, ccErr := s.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, listRelationOption)
-		if ccErr != nil {
-			blog.ErrorJSON("runTransferPlans failed, ListProcessInstanceRelation failed, option: %s, err: %s, rid: %s", listRelationOption, ccErr.Error(), rid)
-			return ccErr
-		}
-		processIDs := make([]int64, 0)
-		for _, relation := range relationResult.Info {
-			processIDs = append(processIDs, relation.ProcessID)
-		}
-
-		if len(processIDs) > 0 {
-			deleteRelationOption := metadata.DeleteProcessInstanceRelationOption{
-				BusinessID:         &bizID,
-				ServiceInstanceIDs: serviceInstanceIDs,
-			}
-			ccErr = s.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteRelationOption)
-			if ccErr != nil {
-				blog.ErrorJSON("runTransferPlans failed, DeleteProcessInstanceRelation failed, option: %s, err: %s, rid: %s", deleteRelationOption, ccErr.Error(), rid)
-				return ccErr
-			}
-
-			// step2.2 delete process instance
-			processDeleteOption := &metadata.DeleteOption{
-				Condition: map[string]interface{}{
-					common.BKProcessIDField: map[string]interface{}{
-						common.BKDBIN: processIDs,
-					},
-				},
-			}
-			deleteProcessResult, err := s.CoreAPI.CoreService().Instance().DeleteInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDProc, processDeleteOption)
-			if err != nil {
-				blog.ErrorJSON("runTransferPlans failed, DeleteInstance of process failed, option: %s, err: %s, rid: %s", processDeleteOption, err.Error(), rid)
-				return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-			}
-			if deleteProcessResult.Result == false {
-				blog.ErrorJSON("runTransferPlans failed, DeleteInstance of process failed, option: %s, result: %s, rid: %s", processDeleteOption, deleteProcessResult, rid)
-				return errors.New(deleteProcessResult.Code, deleteProcessResult.ErrMsg)
-			}
-		}
-
-		// step2.3 delete service instance
-		deleteServiceInstanceOption := &metadata.CoreDeleteServiceInstanceOption{
-			BizID:              bizID,
-			ServiceInstanceIDs: serviceInstanceIDs,
-		}
-		ccErr = s.CoreAPI.CoreService().Process().DeleteServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, deleteServiceInstanceOption)
-		if ccErr != nil {
-			blog.ErrorJSON("runTransferPlans failed, DeleteServiceInstance failed, option: %s, err: %s, rid: %s", deleteServiceInstanceOption, ccErr.Error(), rid)
-			return ccErr
-		}
-	}
-	return nil
-}
-
-func (s *Service) generateTransferPlans(ctx *rest.Contexts, bizID int64, withHostApply bool, option metadata.TransferHostWithAutoClearServiceInstanceOption) ([]metadata.HostTransferPlan, errors.CCErrorCoder) {
-	rid := ctx.Kit.Rid
-
-	// step1. resolve host remove from modules
-	removeFromModules := make([]int64, 0)
-	if option.RemoveFromNode != nil {
-		topoTree, ccErr := s.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header, bizID, false)
-		if ccErr != nil {
-			blog.Errorf("TransferHostWithAutoClearServiceInstance failed, SearchMainlineInstanceTopo failed, bizID: %d, err: %s, rid: %s", bizID, ccErr.Error(), rid)
-			return nil, ccErr
-		}
-		topoNodePath := topoTree.TraversalFindNode(option.RemoveFromNode.ObjectID, option.RemoveFromNode.InstanceID)
-		if len(topoNodePath) == 0 {
-			blog.Errorf("TransferHostWithAutoClearServiceInstance failed, remove_from_node invalid, bizID: %d, rid: %s", bizID, rid)
-			err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "remove_from_node")
-			return nil, err
-		}
-		topoNodePath[0].DeepFirstTraversal(func(node *metadata.TopoInstanceNode) {
-			if node.ObjectID == common.BKInnerObjIDModule {
-				removeFromModules = append(removeFromModules, node.InstanceID)
-			}
-		})
-	}
-
-	// step2. get host module config
+	// get host module config
 	hostModuleOption := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
 		HostIDArr:     option.HostIDs,
@@ -522,17 +336,18 @@ func (s *Service) generateTransferPlans(ctx *rest.Contexts, bizID int64, withHos
 		},
 		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
 	}
-	hostModuleResult, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, hostModuleOption)
+	hostModuleResult, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header,
+		hostModuleOption)
 	if err != nil {
-		blog.ErrorJSON("TransferHostWithAutoClearServiceInstance failed, GetHostModuleRelation failed, option: %s, err: %s, rid: %s", hostModuleOption, err.Error(), rid)
-		err := ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		blog.ErrorJSON("get host module relation failed, option: %s, err: %s, rid: %s", hostModuleOption, err, rid)
+		err := kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		return nil, err
 	}
-	if hostModuleResult.Result == false {
-		blog.ErrorJSON("TransferHostWithAutoClearServiceInstance failed, GetHostModuleRelation failed, option: %s, result: %s, rid: %s", hostModuleOption, hostModuleResult, rid)
-		err := errors.New(hostModuleResult.Code, hostModuleResult.ErrMsg)
+	if err := hostModuleResult.CCError(); err != nil {
+		blog.ErrorJSON("get host module relation failed, option: %s, err: %s, rid: %s", hostModuleOption, err, rid)
 		return nil, err
 	}
+
 	hostModulesIDMap := make(map[int64][]int64)
 	for _, item := range hostModuleResult.Data.Info {
 		if _, exist := hostModulesIDMap[item.HostID]; exist == false {
@@ -541,24 +356,28 @@ func (s *Service) generateTransferPlans(ctx *rest.Contexts, bizID int64, withHos
 		hostModulesIDMap[item.HostID] = append(hostModulesIDMap[item.HostID], item.ModuleID)
 	}
 
-	// get inner modules
-	innerModules, ccErr := s.getInnerModules(ctx, bizID)
+	// get inner modules and default inner module to transfer when hosts is removed from all modules
+	innerModules, ccErr := s.getInnerModules(kit, bizID)
 	if ccErr != nil {
 		return nil, ccErr
 	}
-	innerModuleIDs := make([]int64, 0)
+
+	innerModuleIDMap := make(map[int64]struct{}, 0)
 	defaultInternalModuleID := int64(0)
 	for _, module := range innerModules {
-		innerModuleIDs = append(innerModuleIDs, module.ModuleID)
+		innerModuleIDMap[module.ModuleID] = struct{}{}
 		if module.Default == int64(common.DefaultResModuleFlag) {
 			defaultInternalModuleID = module.ModuleID
 		}
 	}
 	if defaultInternalModuleID == 0 {
-		blog.InfoJSON("TransferHostWithAutoClearServiceInstance failed, defaultInternalModuleID not found, bizID: %s, innerModules: %s, rid: %s", bizID, innerModules, rid)
+		blog.InfoJSON("default internal module ID not found, bizID: %s, modules: %s, rid: %s", bizID, innerModules, rid)
 	}
-	if option.DefaultInternalModule != 0 && util.InArray(option.DefaultInternalModule, innerModuleIDs) == false {
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "default_internal_module")
+
+	if option.DefaultInternalModule != 0 {
+		if _, exists := innerModuleIDMap[option.DefaultInternalModule]; !exists {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "default_internal_module")
+		}
 	}
 	if option.DefaultInternalModule != 0 {
 		defaultInternalModuleID = option.DefaultInternalModule
@@ -566,17 +385,19 @@ func (s *Service) generateTransferPlans(ctx *rest.Contexts, bizID int64, withHos
 
 	transferPlans := make([]metadata.HostTransferPlan, 0)
 	for hostID, currentInModules := range hostModulesIDMap {
-		transferPlan := generateTransferPlan(currentInModules, removeFromModules, option.AddToModules, defaultInternalModuleID)
+		transferPlan := generateTransferPlan(currentInModules, option.RemoveFromModules, option.AddToModules,
+			defaultInternalModuleID)
 		transferPlan.HostID = hostID
 		// check module compatibility
 		finalModuleCount := len(transferPlan.FinalModules)
 		for _, moduleID := range transferPlan.FinalModules {
-			if util.InArray(moduleID, innerModuleIDs) && finalModuleCount != 1 {
-				return nil, ctx.Kit.CCError.CCError(common.CCErrHostTransferFinalModuleConflict)
+			if _, exists := innerModuleIDMap[moduleID]; !exists {
+				continue
 			}
-			if util.InArray(moduleID, innerModuleIDs) && finalModuleCount == 1 {
-				transferPlan.IsTransferToInnerModule = true
+			if finalModuleCount != 1 {
+				return nil, kit.CCError.CCError(common.CCErrHostTransferFinalModuleConflict)
 			}
+			transferPlan.IsTransferToInnerModule = true
 		}
 		transferPlans = append(transferPlans, transferPlan)
 	}
@@ -591,23 +412,19 @@ func (s *Service) generateTransferPlans(ctx *rest.Contexts, bizID int64, withHos
 	for _, item := range transferPlans {
 		finalModuleIDs = append(finalModuleIDs, item.FinalModules...)
 	}
+
 	ruleOption := metadata.ListHostApplyRuleOption{
 		ModuleIDs: finalModuleIDs,
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 	}
-	rules, ccErr := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, ruleOption)
+	rules, ccErr := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(kit.Ctx, kit.Header, bizID, ruleOption)
 	if ccErr != nil {
-		blog.ErrorJSON("TransferHostWithAutoClearServiceInstance failed, generateApplyPlan failed, ListHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, ruleOption, ccErr.Error(), rid)
+		blog.ErrorJSON("list apply rule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, ruleOption, ccErr, rid)
 		return transferPlans, ccErr
 	}
-	hostModules := make([]metadata.Host2Modules, 0)
-	moduleIDs := make([]int64, 0)
-	for _, item := range transferPlans {
-		moduleIDs = append(moduleIDs, item.FinalModules...)
-	}
-	moduleIDs = util.IntArrayUnique(moduleIDs)
+
 	moduleCondition := metadata.QueryCondition{
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
@@ -615,32 +432,36 @@ func (s *Service) generateTransferPlans(ctx *rest.Contexts, bizID int64, withHos
 		Fields: []string{common.BKModuleIDField},
 		Condition: map[string]interface{}{
 			common.BKModuleIDField: map[string]interface{}{
-				common.BKDBIN: moduleIDs,
+				common.BKDBIN: finalModuleIDs,
 			},
 			common.HostApplyEnabledField: true,
 		},
 	}
-	enabledModules, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, &moduleCondition)
+	enabledModules, err := s.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
+		common.BKInnerObjIDModule, &moduleCondition)
 	if err != nil {
-		blog.ErrorJSON("RunHostApplyOnHosts failed, ReadInstance of %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameBaseModule, moduleCondition, err.Error(), rid)
-		return transferPlans, ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		blog.ErrorJSON("get host apply enabled modules failed, filter: %s, err: %s, rid: %s", moduleCondition, err, rid)
+		return transferPlans, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
+
 	enableModuleMap := make(map[int64]bool)
 	for _, item := range enabledModules.Data.Info {
 		moduleID, err := util.GetInt64ByInterface(item[common.BKModuleIDField])
 		if err != nil {
-			blog.ErrorJSON("RunHostApplyOnHosts failed, parse module from db failed, module: %s, err: %s, rid: %s", item, err.Error(), rid)
-			return transferPlans, ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed)
+			blog.ErrorJSON("parse module from db failed, module: %s, err: %s, rid: %s", item, err, rid)
+			return transferPlans, kit.CCError.CCError(common.CCErrCommParseDBFailed)
 		}
 		enableModuleMap[moduleID] = true
 	}
+
+	hostModules := make([]metadata.Host2Modules, 0)
 	for _, item := range transferPlans {
 		host2Module := metadata.Host2Modules{
 			HostID:    item.HostID,
 			ModuleIDs: make([]int64, 0),
 		}
 		for _, moduleID := range item.FinalModules {
-			if _, exist := enableModuleMap[moduleID]; exist == true {
+			if _, exist := enableModuleMap[moduleID]; exist {
 				host2Module.ModuleIDs = append(host2Module.ModuleIDs, moduleID)
 			}
 		}
@@ -653,9 +474,11 @@ func (s *Service) generateTransferPlans(ctx *rest.Contexts, bizID int64, withHos
 		ConflictResolvers: option.Options.HostApplyConflictResolvers,
 	}
 
-	hostApplyPlanResult, ccErr := s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(ctx.Kit.Ctx, ctx.Kit.Header, bizID, planOption)
+	hostApplyPlanResult, ccErr := s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(kit.Ctx, kit.Header, bizID,
+		planOption)
 	if ccErr != nil {
-		blog.ErrorJSON("TransferHostWithAutoClearServiceInstance failed, generateApplyPlan failed, core service GenerateApplyPlan failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, planOption, ccErr.Error(), rid)
+		blog.ErrorJSON("generate apply plan failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, planOption, ccErr,
+			rid)
 		return transferPlans, ccErr
 	}
 	hostApplyPlanMap := make(map[int64]metadata.OneHostApplyPlan)
@@ -664,7 +487,7 @@ func (s *Service) generateTransferPlans(ctx *rest.Contexts, bizID int64, withHos
 	}
 	for index, transferPlan := range transferPlans {
 		applyPlan, ok := hostApplyPlanMap[transferPlan.HostID]
-		if ok == false {
+		if !ok {
 			continue
 		}
 		transferPlans[index].HostApplyPlan = applyPlan
@@ -679,53 +502,65 @@ func (s *Service) generateTransferPlans(ctx *rest.Contexts, bizID int64, withHos
 // param removeFrom: 从哪些模块中移除
 // param addTo: 添加到哪些模块
 // param defaultInternalModuleID: 默认内置模块ID
-func generateTransferPlan(currentIn []int64, removeFrom []int64, addTo []int64, defaultInternalModuleID int64) metadata.HostTransferPlan {
-	plan := metadata.HostTransferPlan{}
+func generateTransferPlan(currentIn []int64, removeFrom []int64, addTo []int64,
+	defaultInternalModuleID int64) metadata.HostTransferPlan {
 
-	// 主机最终所在模块列表
+	removeFromModuleMap := make(map[int64]struct{})
+	for _, moduleID := range removeFrom {
+		removeFromModuleMap[moduleID] = struct{}{}
+	}
+
+	// 主机最终所在模块列表，包括当前所在模块和新增模块，不包括移出模块
 	finalModules := make([]int64, 0)
+	finalModuleMap := make(map[int64]struct{})
+	// 主机将会被移出的模块列表，包括当前所在模块里在移出模块中的模块
+	realRemoveModules := make([]int64, 0)
+	realRemoveModuleMap := make(map[int64]struct{})
 	for _, moduleID := range currentIn {
-		if util.InArray(moduleID, removeFrom) {
+		if _, exists := removeFromModuleMap[moduleID]; exists {
+			if _, exists := realRemoveModuleMap[moduleID]; !exists {
+				realRemoveModuleMap[moduleID] = struct{}{}
+				realRemoveModules = append(realRemoveModules, moduleID)
+			}
 			continue
 		}
+		if _, exists := finalModuleMap[moduleID]; exists {
+			continue
+		}
+		finalModuleMap[moduleID] = struct{}{}
 		finalModules = append(finalModules, moduleID)
 	}
-	finalModules = append(finalModules, addTo...)
-	finalModules = util.IntArrayUnique(finalModules)
+
+	// 主机将会被新加到的模块列表，包括新增模块里不在当前模块的模块
+	realAddModules := make([]int64, 0)
+	for _, moduleID := range addTo {
+		if _, exists := removeFromModuleMap[moduleID]; exists {
+			continue
+		}
+		if _, exists := finalModuleMap[moduleID]; exists {
+			continue
+		}
+		finalModuleMap[moduleID] = struct{}{}
+		finalModules = append(finalModules, moduleID)
+		realAddModules = append(realAddModules, moduleID)
+	}
+
 	if len(finalModules) == 0 {
 		finalModules = []int64{defaultInternalModuleID}
 	}
-	plan.FinalModules = finalModules
 
-	// 主机将会被移出的模块列表
-	realRemoveModules := make([]int64, 0)
-	for _, moduleID := range currentIn {
-		if util.InArray(moduleID, finalModules) {
-			continue
-		}
-		realRemoveModules = append(realRemoveModules, moduleID)
+	return metadata.HostTransferPlan{
+		FinalModules:        finalModules,
+		ToRemoveFromModules: realRemoveModules,
+		ToAddToModules:      realAddModules,
 	}
-	realRemoveModules = util.IntArrayUnique(realRemoveModules)
-	plan.ToRemoveFromModules = realRemoveModules
-
-	// 主机将会被新加到的模块列表
-	realAddModules := make([]int64, 0)
-	for _, moduleID := range finalModules {
-		if util.InArray(moduleID, currentIn) {
-			continue
-		}
-		realAddModules = append(realAddModules, moduleID)
-	}
-	realAddModules = util.IntArrayUnique(realAddModules)
-	plan.ToAddToModules = realAddModules
-
-	return plan
 }
 
-func (s *Service) validateModules(ctx *rest.Contexts, bizID int64, moduleIDs []int64, field string) errors.CCErrorCoder {
+func (s *Service) validateModules(kit *rest.Kit, bizID int64, moduleIDs []int64, field string) errors.CCErrorCoder {
 	if len(moduleIDs) == 0 {
 		return nil
 	}
+
 	moduleIDs = util.IntArrayUnique(moduleIDs)
 	filter := []map[string]interface{}{{
 		common.BKAppIDField: bizID,
@@ -734,72 +569,51 @@ func (s *Service) validateModules(ctx *rest.Contexts, bizID int64, moduleIDs []i
 		},
 	}}
 
-	moduleCounts, err := s.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameBaseModule, filter)
+	moduleCounts, err := s.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameBaseModule, filter)
 	if err != nil {
 		return err
 	}
 
 	if len(moduleCounts) == 0 || moduleCounts[0] != int64(len(moduleIDs)) {
-		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, field)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, field)
 	}
 	return nil
 }
 
-func (s *Service) getModule(ctx *rest.Contexts, bizID int64, moduleID int64) (metadata.ModuleInst, errors.CCErrorCoder) {
-	modules, err := s.getModules(ctx, bizID, []int64{moduleID})
-	if err != nil {
-		return metadata.ModuleInst{}, err
-	}
-	if len(modules) == 0 {
-		blog.Errorf("getModule failed, not found, module ID: %d, rid: %s", moduleID, ctx.Kit.Rid)
-		return metadata.ModuleInst{}, ctx.Kit.CCError.CCError(common.CCErrCommNotFound)
-	}
-	return modules[0], nil
-}
-
-func (s *Service) getModules(ctx *rest.Contexts, bizID int64, moduleIDs []int64) ([]metadata.ModuleInst, errors.CCErrorCoder) {
+func (s *Service) getModules(kit *rest.Kit, bizID int64, ids []int64) ([]metadata.ModuleInst, errors.CCErrorCoder) {
 	query := &metadata.QueryCondition{
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Fields: []string{
 			common.BKModuleIDField,
-			common.BKDefaultField,
-			common.BKModuleNameField,
-			common.BKAppIDField,
-			common.BKSetIDField,
 			common.BKServiceTemplateIDField,
 		},
 		Condition: map[string]interface{}{
 			common.BKAppIDField: bizID,
 			common.BKModuleIDField: map[string]interface{}{
-				common.BKDBIN: moduleIDs,
+				common.BKDBIN: ids,
 			},
 		},
 	}
-	result, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, query)
+
+	moduleRes := new(metadata.ResponseModuleInstance)
+	err := s.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule, query,
+		&moduleRes)
 	if err != nil {
-		blog.ErrorJSON("GetModules failed, http do error, input:%+v, err:%s, rid:%s", query, err.Error(), ctx.Kit.Rid)
-		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("get modules failed, input: %#v, err: %v, rid:%s", query, err, kit.Rid)
+		return nil, err
 	}
-	if !result.Result {
-		blog.ErrorJSON("GetModules failed, result failed, input:%+v, response: %s, rid:%s", query, result, ctx.Kit.Rid)
-		return nil, errors.New(result.Code, result.ErrMsg)
-	}
-
-	modules := make([]metadata.ModuleInst, 0)
-	for _, item := range result.Data.Info {
-		module := metadata.ModuleInst{}
-		if err := mapstruct.Decode2Struct(item, &module); err != nil {
-			return nil, ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
-		}
-		modules = append(modules, module)
+	if err := moduleRes.CCError(); err != nil {
+		blog.Errorf("get modules failed, input: %#v, err: %v, rid:%s", query, err, kit.Rid)
+		return nil, err
 	}
 
-	return modules, nil
+	return moduleRes.Data.Info, nil
 }
 
-func (s *Service) getInnerModules(ctx *rest.Contexts, bizID int64) ([]metadata.ModuleInst, errors.CCErrorCoder) {
+func (s *Service) getInnerModules(kit *rest.Kit, bizID int64) ([]metadata.ModuleInst, errors.CCErrorCoder) {
 	query := &metadata.QueryCondition{
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
@@ -807,9 +621,6 @@ func (s *Service) getInnerModules(ctx *rest.Contexts, bizID int64) ([]metadata.M
 		Fields: []string{
 			common.BKModuleIDField,
 			common.BKDefaultField,
-			common.BKModuleNameField,
-			common.BKAppIDField,
-			common.BKSetIDField,
 		},
 		Condition: map[string]interface{}{
 			common.BKAppIDField: bizID,
@@ -818,33 +629,35 @@ func (s *Service) getInnerModules(ctx *rest.Contexts, bizID int64) ([]metadata.M
 			},
 		},
 	}
-	result, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, query)
+
+	moduleRes := new(metadata.ResponseModuleInstance)
+	err := s.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule, query,
+		&moduleRes)
 	if err != nil {
-		blog.ErrorJSON("GetInnerModules failed, http do error, input:%+v, err:%s, rid:%s", query, err.Error(), ctx.Kit.Rid)
-		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("get modules failed, input: %#v, err: %v, rid:%s", query, err, kit.Rid)
+		return nil, err
 	}
-	if !result.Result {
-		blog.ErrorJSON("GetInnerModules failed, result failed, input:%+v, response: %s, rid:%s", query, result, ctx.Kit.Rid)
-		return nil, errors.New(result.Code, result.ErrMsg)
-	}
-
-	modules := make([]metadata.ModuleInst, 0)
-	for _, item := range result.Data.Info {
-		module := metadata.ModuleInst{}
-		if err := mapstruct.Decode2Struct(item, &module); err != nil {
-			return nil, ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
-		}
-		modules = append(modules, module)
+	if err := moduleRes.CCError(); err != nil {
+		blog.Errorf("get modules failed, input: %#v, err: %v, rid:%s", query, err, kit.Rid)
+		return nil, err
 	}
 
-	return modules, nil
+	return moduleRes.Data.Info, nil
 }
 
-// TransferHostWithAutoClearServiceInstancePreview generate a preview of changes for TransferHostWithAutoClearServiceInstance operation
+// TransferHostWithAutoClearServiceInstancePreview generate a preview of changes for
+// TransferHostWithAutoClearServiceInstance operation
 // 接口请求参数跟转移是一致的
 // 主机从模块删除时提供了将要删除的服务实例信息
 // 主机添加到新模块时，提供了模块对应的服务模板（如果有）
 func (s *Service) TransferHostWithAutoClearServiceInstancePreview(ctx *rest.Contexts) {
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.V(7).Infof("parse bizID from url failed, bizID: %s, err: %+v, rid: %s", bizIDStr, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+		return
+	}
 
 	option := metadata.TransferHostWithAutoClearServiceInstanceOption{}
 	if err := ctx.DecodeInto(&option); nil != err {
@@ -852,46 +665,19 @@ func (s *Service) TransferHostWithAutoClearServiceInstancePreview(ctx *rest.Cont
 		return
 	}
 
-	if len(option.HostIDs) == 0 {
-		err := ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_host_ids")
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if option.RemoveFromNode == nil && option.AddToModules == nil {
-		err := ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "add_to_modules")
-		ctx.RespAutoError(err)
-		return
-	}
-
-	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
-	if err != nil {
-		blog.V(7).Infof("parse bizID from url failed, bizID: %s, err: %+v, rid: %s", bizIDStr, ctx.Kit.Rid)
-		err := ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if len(option.AddToModules) != 0 {
-		if ccErr := s.validateModules(ctx, bizID, option.AddToModules, "add_to_modules"); ccErr != nil {
-			ctx.RespAutoError(ccErr)
-			return
-		}
-	}
-	if option.DefaultInternalModule != 0 {
-		if ccErr := s.validateModules(ctx, bizID, []int64{option.DefaultInternalModule}, "default_internal_module"); ccErr != nil {
-			ctx.RespAutoError(ccErr)
-			return
-		}
-	}
-
-	transferPlans, ccErr := s.generateTransferPlans(ctx, bizID, true, option)
-	if ccErr != nil {
-		blog.ErrorJSON("TransferHostWithAutoClearServiceInstancePreview failed, generateTransferPlans failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, ccErr.Error(), ctx.Kit.Rid)
+	if ccErr := s.validateTransferHostWithAutoClearServiceInstanceOption(ctx.Kit, bizID, option); ccErr != nil {
 		ctx.RespAutoError(ccErr)
 		return
 	}
+
+	transferPlans, ccErr := s.generateTransferPlans(ctx.Kit, bizID, true, option)
+	if ccErr != nil {
+		blog.ErrorJSON("generate transfer plans failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, ccErr,
+			ctx.Kit.Rid)
+		ctx.RespAutoError(ccErr)
+		return
+	}
+
 	addModuleIDs := make([]int64, 0)
 	removeModuleIDs := make([]int64, 0)
 	for _, plan := range transferPlans {
@@ -900,59 +686,75 @@ func (s *Service) TransferHostWithAutoClearServiceInstancePreview(ctx *rest.Cont
 	}
 
 	// get to remove service instances
-	listSrvInstOption := &metadata.ListServiceInstanceOption{
-		BusinessID: bizID,
-		HostIDs:    option.HostIDs,
-		ModuleIDs:  removeModuleIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	srvInstResult, ccErr := s.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, listSrvInstOption)
-	if ccErr != nil {
-		blog.ErrorJSON("TransferHostWithAutoClearServiceInstancePreview failed, ListServiceInstance failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, listSrvInstOption, ccErr.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ccErr)
-		return
-	}
-	moduleServiceInstanceMap := make(map[int64][]metadata.ServiceInstance)
-	for _, item := range srvInstResult.Info {
-		if _, exist := moduleServiceInstanceMap[item.ModuleID]; exist == false {
-			moduleServiceInstanceMap[item.ModuleID] = make([]metadata.ServiceInstance, 0)
+	moduleHostSrvInstMap := make(map[int64]map[int64][]metadata.ServiceInstance)
+	if len(removeModuleIDs) > 0 {
+		listSrvInstOption := &metadata.ListServiceInstanceOption{
+			BusinessID: bizID,
+			HostIDs:    option.HostIDs,
+			ModuleIDs:  removeModuleIDs,
+			Page: metadata.BasePage{
+				Limit: common.BKNoLimit,
+			},
 		}
-		moduleServiceInstanceMap[item.ModuleID] = append(moduleServiceInstanceMap[item.ModuleID], item)
+
+		srvInstResult, ccErr := s.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+			listSrvInstOption)
+		if ccErr != nil {
+			blog.ErrorJSON("list service instance failed, bizID: %s, option: %s, err: %s, rid: %s", bizID,
+				listSrvInstOption, ccErr, ctx.Kit.Rid)
+			ctx.RespAutoError(ccErr)
+			return
+		}
+		for _, item := range srvInstResult.Info {
+			if _, exist := moduleHostSrvInstMap[item.ModuleID]; !exist {
+				moduleHostSrvInstMap[item.ModuleID] = make(map[int64][]metadata.ServiceInstance, 0)
+			}
+			if _, exist := moduleHostSrvInstMap[item.ModuleID][item.HostID]; !exist {
+				moduleHostSrvInstMap[item.ModuleID][item.HostID] = make([]metadata.ServiceInstance, 0)
+			}
+			moduleHostSrvInstMap[item.ModuleID][item.HostID] = append(moduleHostSrvInstMap[item.ModuleID][item.HostID],
+				item)
+		}
 	}
 
-	// get add to modules
-	modules, ccErr := s.getModules(ctx, bizID, addModuleIDs)
-	if ccErr != nil {
-		blog.ErrorJSON("TransferHostWithAutoClearServiceInstancePreview failed, ListServiceInstance failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, listSrvInstOption, ccErr.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ccErr)
-		return
-	}
-
-	// get service template related to add modules
-	serviceTemplateIDs := make([]int64, 0)
-	for _, module := range modules {
-		if module.ServiceTemplateID == common.ServiceTemplateIDNotSet {
-			continue
-		}
-		serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
-	}
-	serviceTemplateDetails, ccErr := s.CoreAPI.CoreService().Process().ListServiceTemplateDetail(ctx.Kit.Ctx, ctx.Kit.Header, bizID, serviceTemplateIDs...)
-	if ccErr != nil {
-		blog.ErrorJSON("TransferHostWithAutoClearServiceInstancePreview failed, ListServiceTemplateDetail failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, listSrvInstOption, ccErr.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ccErr)
-		return
-	}
-	serviceTemplateMap := make(map[int64]metadata.ServiceTemplateDetail)
-	for _, templateDetail := range serviceTemplateDetails.Info {
-		serviceTemplateMap[templateDetail.ServiceTemplate.ID] = templateDetail
-	}
 	moduleServiceTemplateMap := make(map[int64]metadata.ServiceTemplateDetail)
-	for _, module := range modules {
-		templateDetail, exist := serviceTemplateMap[module.ServiceTemplateID]
-		if exist == true {
-			moduleServiceTemplateMap[module.ModuleID] = templateDetail
+	if len(addModuleIDs) > 0 {
+		// get add to modules
+		modules, ccErr := s.getModules(ctx.Kit, bizID, addModuleIDs)
+		if ccErr != nil {
+			blog.Errorf("get modules failed, err: %v, bizID: %d, module ids: %+v, rid: %s", ccErr, bizID, addModuleIDs,
+				ctx.Kit.Rid)
+			ctx.RespAutoError(ccErr)
+			return
+		}
+
+		// get service template related to add modules
+		serviceTemplateIDs := make([]int64, 0)
+		for _, module := range modules {
+			if module.ServiceTemplateID == common.ServiceTemplateIDNotSet {
+				continue
+			}
+			serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
+		}
+
+		serviceTemplateDetails, ccErr := s.CoreAPI.CoreService().Process().ListServiceTemplateDetail(ctx.Kit.Ctx,
+			ctx.Kit.Header, bizID, serviceTemplateIDs...)
+		if ccErr != nil {
+			blog.Errorf("list service template detail failed, bizID: %s, option: %s, err: %s, rid: %s", bizID,
+				serviceTemplateIDs, ccErr, ctx.Kit.Rid)
+			ctx.RespAutoError(ccErr)
+			return
+		}
+
+		serviceTemplateMap := make(map[int64]metadata.ServiceTemplateDetail)
+		for _, templateDetail := range serviceTemplateDetails.Info {
+			serviceTemplateMap[templateDetail.ServiceTemplate.ID] = templateDetail
+		}
+		for _, module := range modules {
+			templateDetail, exist := serviceTemplateMap[module.ServiceTemplateID]
+			if exist {
+				moduleServiceTemplateMap[module.ModuleID] = templateDetail
+			}
 		}
 	}
 
@@ -965,21 +767,24 @@ func (s *Service) TransferHostWithAutoClearServiceInstancePreview(ctx *rest.Cont
 			ToAddToModules:      make([]metadata.AddToModuleInfo, 0),
 			HostApplyPlan:       plan.HostApplyPlan,
 		}
+
 		for _, moduleID := range plan.ToRemoveFromModules {
 			removeInfo := metadata.RemoveFromModuleInfo{
 				ModuleID:         moduleID,
 				ServiceInstances: make([]metadata.ServiceInstance, 0),
 			}
-			serviceInstances, exist := moduleServiceInstanceMap[moduleID]
+			hostSrvInstMap, exist := moduleHostSrvInstMap[moduleID]
+			if !exist {
+				continue
+			}
+
+			serviceInstances, exist := hostSrvInstMap[moduleID]
 			if exist {
-				for _, serviceInstance := range serviceInstances {
-					if serviceInstance.HostID == preview.HostID {
-						removeInfo.ServiceInstances = append(removeInfo.ServiceInstances, serviceInstance)
-					}
-				}
+				removeInfo.ServiceInstances = append(removeInfo.ServiceInstances, serviceInstances...)
 			}
 			preview.ToRemoveFromModules = append(preview.ToRemoveFromModules, removeInfo)
 		}
+
 		for _, moduleID := range plan.ToAddToModules {
 			addInfo := metadata.AddToModuleInfo{
 				ModuleID:        moduleID,
@@ -995,4 +800,30 @@ func (s *Service) TransferHostWithAutoClearServiceInstancePreview(ctx *rest.Cont
 	}
 	ctx.RespEntity(previews)
 	return
+}
+
+func (s *Service) validateTransferHostWithAutoClearServiceInstanceOption(kit *rest.Kit, bizID int64,
+	option metadata.TransferHostWithAutoClearServiceInstanceOption) errors.CCErrorCoder {
+
+	if len(option.HostIDs) == 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "bk_host_ids")
+	}
+
+	if len(option.RemoveFromModules) == 0 && len(option.AddToModules) == 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "remove_from_modules or add_to_modules")
+	}
+
+	if option.DefaultInternalModule != 0 && len(option.AddToModules) != 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "add_to_modules & default_internal_module")
+	}
+
+	if len(option.AddToModules) != 0 {
+		return s.validateModules(kit, bizID, option.AddToModules, "add_to_modules")
+	}
+
+	if option.DefaultInternalModule != 0 {
+		return s.validateModules(kit, bizID, []int64{option.DefaultInternalModule}, "default_internal_module")
+	}
+
+	return nil
 }
