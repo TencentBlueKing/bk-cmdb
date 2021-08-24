@@ -354,6 +354,20 @@ func (m *associationInstance) SearchInstanceAssociation(kit *rest.Kit, inputPara
 	return dataResult, nil
 }
 
+// CountInstanceAssociations counts target model instance associations num.
+func (m *associationInstance) CountInstanceAssociations(kit *rest.Kit, input *metadata.CountCondition) (
+	*metadata.CommonCountResult, error) {
+
+	count, err := m.countInstanceAssociation(kit, input.Condition)
+	if err != nil {
+		blog.Errorf("count model instance associations failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, err
+	}
+	result := &metadata.CommonCountResult{Count: count}
+
+	return result, nil
+}
+
 func (m *associationInstance) DeleteInstanceAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	inputParam.Condition = util.SetModOwner(inputParam.Condition, kit.SupplierAccount)
 	cnt, err := m.instCount(kit, inputParam.Condition)

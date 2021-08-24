@@ -23,8 +23,9 @@ import (
 func (s *coreService) HasInstance(kit *rest.Kit, objIDS []string) (exists bool, err error) {
 
 	// TODO: need to implement a new query function which is used to count the instances for the all objIDS
+	cond := &metadata.CountCondition{}
 	for _, objID := range objIDS {
-		results, err := s.core.InstanceOperation().SearchModelInstance(kit, objID, metadata.QueryCondition{})
+		results, err := s.core.InstanceOperation().CountModelInstances(kit, objID, cond)
 		if nil != err {
 			return false, err
 		}
@@ -46,11 +47,12 @@ func (s *coreService) HasAssociation(kit *rest.Kit, objIDS []string) (exists boo
 	cond.Or(&mongo.In{Key: metadata.AssociationFieldAsstID, Val: objIDS})
 
 	// check the model association
-	queryResult, err := s.core.AssociationOperation().SearchModelAssociation(kit, metadata.QueryCondition{Condition: cond.ToMapStr()})
+	countCond := &metadata.CountCondition{Condition: cond.ToMapStr()}
+	result, err := s.core.AssociationOperation().CountModelAssociations(kit, countCond)
 	if nil != err {
 		return false, err
 	}
-	if 0 != queryResult.Count {
+	if 0 != result.Count {
 		return true, nil
 	}
 

@@ -88,6 +88,7 @@ type InstanceOperation interface {
 	CreateManyModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error)
 	UpdateModelInstance(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	SearchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
+	CountModelInstances(kit *rest.Kit, objID string, inputParam *metadata.CountCondition) (*metadata.CommonCountResult, error)
 	DeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
@@ -111,6 +112,7 @@ type ModelAssociation interface {
 	SetModelAssociation(kit *rest.Kit, inputParam metadata.SetModelAssociation) (*metadata.SetDataResult, error)
 	UpdateModelAssociation(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	SearchModelAssociation(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
+	CountModelAssociations(kit *rest.Kit, inputParam *metadata.CountCondition) (*metadata.CommonCountResult, error)
 	DeleteModelAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModelAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
@@ -120,6 +122,7 @@ type InstanceAssociation interface {
 	CreateOneInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error)
 	CreateManyInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error)
 	SearchInstanceAssociation(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
+	CountInstanceAssociations(kit *rest.Kit, inputParam *metadata.CountCondition) (*metadata.CommonCountResult, error)
 	DeleteInstanceAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
 
