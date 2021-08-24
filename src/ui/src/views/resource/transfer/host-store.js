@@ -10,7 +10,7 @@ const store = new Vue({
     isSelected() {
       return !!this.hosts.length
     },
-    
+
     bizSet() {
       const bizSet = new Set()
       this.hosts.forEach((host) => {
@@ -19,7 +19,7 @@ const store = new Vue({
       })
       return bizSet
     },
-    
+
     isSameBiz() {
       return this.bizSet.size === 1
     },
@@ -30,14 +30,14 @@ const store = new Vue({
         return module.default === 1
       })
     },
-    
+
     isAllIdleSet() {
       return this.hosts.every((host) => {
         const [module] = host.module
         return module.default !== 0
       })
     },
-    
+
     uniqueBusiness() {
       if (this.isSameBiz) {
         const [bizId] = Array.from(this.bizSet)
@@ -57,15 +57,15 @@ const store = new Vue({
     clear() {
       this.hosts = []
     },
-    
+
     setSelected(hosts = []) {
       this.hosts = hosts
     },
-    
+
     getSelected() {
       return this.hosts
     },
-    
+
     setBusinessList(businessList) {
       this.businessList = businessList
     }

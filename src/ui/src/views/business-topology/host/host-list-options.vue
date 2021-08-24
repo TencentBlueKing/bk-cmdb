@@ -396,14 +396,18 @@
       handleCopy(property) {
         const copyText = this.selection.map((data) => {
           const modelId = property.bk_obj_id
-          const [modelData] = Array.isArray(data[modelId]) ? data[modelId] : [data[modelId]]
+          const modelData = data[modelId]
           if (property.id === this.IPWithCloudSymbol) {
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
             return `${cloud}:${ip}`
           }
-          const value = modelData[property.bk_property_id]
-          return this.$tools.getPropertyCopyValue(value, property)
+          const propertyId = property.bk_property_id
+          if (Array.isArray(modelData)) {
+            const value = modelData.map(item => this.$tools.getPropertyCopyValue(item[propertyId], property))
+            return value.join(',')
+          }
+          return this.$tools.getPropertyCopyValue(modelData[propertyId], property)
         })
         this.$copyText(copyText.join('\n')).then(() => {
           this.$success(this.$t('复制成功'))

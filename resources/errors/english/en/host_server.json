@@ -29,6 +29,7 @@
 	"1110028": "Failed to modify host relationship",
 	"1110029": "Failed to add host to module",
 	"1110030": "Failed to add host to module, error:%s",
+	"1110031": "Failed to transfer host to biz, biz has been archived",
 
 	"1110040": "Create custom query failed, %s",
 	"1110041": "Modify custom query failed, %s",

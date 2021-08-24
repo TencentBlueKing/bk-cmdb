@@ -36,12 +36,12 @@ func updateEnablePortAttribute(ctx context.Context, db dal.RDB, conf *upgrader.C
 }
 
 func updateProcessAndProcTemplateEnablePortAttribute(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	if err := db.Table(common.BKTableNameBaseProcess).RenameColumn(ctx, "bk_port_enable", common.BKProcPortEnable); err != nil {
+	if err := db.Table(common.BKTableNameBaseProcess).RenameColumn(ctx, nil, "bk_port_enable", common.BKProcPortEnable); err != nil {
 		blog.Errorf("update process bk_port_enable field to %s failed, err: %s, %s", common.BKProcPortEnable, err.Error())
 		return fmt.Errorf("update process bk_port_enable field to %s failed, err: %s", common.BKProcPortEnable, err.Error())
 	}
 
-	if err := db.Table(common.BKTableNameProcessTemplate).RenameColumn(ctx, "property.bk_port_enable", "property."+common.BKProcPortEnable); err != nil {
+	if err := db.Table(common.BKTableNameProcessTemplate).RenameColumn(ctx, nil, "property.bk_port_enable", "property."+common.BKProcPortEnable); err != nil {
 		blog.Errorf("update process template bk_port_enable field to %s failed, err: %s", common.BKProcPortEnable, err.Error())
 		return fmt.Errorf("update process template bk_port_enable field to %s failed, err: %s", common.BKProcPortEnable, err.Error())
 	}

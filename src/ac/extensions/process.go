@@ -29,7 +29,9 @@ import (
  * process
  */
 
-func (am *AuthManager) collectProcessesByIDs(ctx context.Context, header http.Header, ids ...int64) ([]ProcessSimplify, error) {
+func (am *AuthManager) collectProcessesByIDs(ctx context.Context, header http.Header, ids ...int64) ([]ProcessSimplify,
+	error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
@@ -44,7 +46,7 @@ func (am *AuthManager) collectProcessesByIDs(ctx context.Context, header http.He
 		return nil, fmt.Errorf("get processes by id failed, err: %+v", err)
 	}
 	processes := make([]ProcessSimplify, 0)
-	for _, item := range result.Data.Info {
+	for _, item := range result.Info {
 		process := ProcessSimplify{}
 		_, err = process.Parse(item)
 		if err != nil {
