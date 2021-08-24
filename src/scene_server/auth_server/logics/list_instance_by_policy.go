@@ -29,8 +29,9 @@ import (
 )
 
 // list resource instances that user is privileged to access by policy
-func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
-	page types.Page, extraCond map[string]interface{}) (*types.ListInstanceResult, error) {
+func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID,
+	filter *types.ListInstanceByPolicyFilter, page types.Page, extraCond map[string]interface{}) (
+	*types.ListInstanceResult, error) {
 
 	if resourceType == iam.Host {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
@@ -58,7 +59,8 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID, 
 
 	cond, err := lgc.parseFilterToMongo(kit.Ctx, kit.Header, filter.Expression, resourceType)
 	if err != nil {
-		blog.ErrorJSON("parse request filter expression %s failed, error: %s, rid: %s", filter.Expression, err.Error(), kit.Rid)
+		blog.ErrorJSON("parse request filter expression %s failed, error: %s, rid: %s",
+			filter.Expression, err.Error(), kit.Rid)
 		return nil, err
 	}
 
@@ -88,7 +90,8 @@ func (lgc *Logics) ListHostByPolicy(kit *rest.Kit, resourceType iam.TypeID, filt
 
 	cond, err := lgc.parseFilterToMongo(kit.Ctx, kit.Header, filter.Expression, resourceType)
 	if err != nil {
-		blog.ErrorJSON("parse request filter expression %s failed, error: %s, rid: %s", filter.Expression, err.Error(), kit.Rid)
+		blog.ErrorJSON("parse request filter expression %s failed, error: %s, rid: %s",
+			filter.Expression, err.Error(), kit.Rid)
 		return nil, err
 	}
 
@@ -149,10 +152,13 @@ func (lgc *Logics) ListHostByPolicy(kit *rest.Kit, resourceType iam.TypeID, filt
 	}, nil
 }
 
-func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.ListInstanceByPolicyFilter, error) {
+// ValidateListInstanceByPolicyRequest validate the request
+func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types.PullResourceReq) (
+	*types.ListInstanceByPolicyFilter, error) {
 	filter, ok := req.Filter.(types.ListInstanceByPolicyFilter)
 	if !ok {
-		blog.ErrorJSON("request filter %s is not the right type for list_instance_by_policy method, rid: %s", req.Filter, kit.Rid)
+		blog.ErrorJSON("request filter %s is not the right type for list_instance_by_policy method, rid: %s",
+			req.Filter, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "filter")
 	}
 
@@ -164,7 +170,8 @@ func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types
 }
 
 // list resource instances that user is privileged to access by policy
-func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) ([]string, error) {
+func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) (
+	[]string, error) {
 	resourceType := iam.TypeID(opts.Type)
 	rid := util.ExtractRequestIDFromContext(ctx)
 	supplierAccount := util.ExtractOwnerFromContext(ctx)
@@ -177,7 +184,7 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 		objID, err := lgc.GetObjIDFromResourceType(ctx, header, resourceType)
 		if err != nil {
 			blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
-				err, resourceType, util.ExtractRequestIDFromContext(ctx))
+				err, resourceType, rid)
 			return nil, err
 		}
 		collection = common.GetObjectInstTableName(objID, supplierAccount)
@@ -189,31 +196,12 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 		return nil, fmt.Errorf("request type %s is invalid", opts.Type)
 	}
 
-	var policy *operator.Policy
-	if len(opts.Attributes) == 1 {
-		op := opts.Operator
-		// the op can only be Any(eg: the admin user) and Equal
-		if op != operator.Any {
-			op = operator.Equal
-		}
-		policy = &operator.Policy{
-			Operator: op,
-			Element:  opts.Attributes[0],
-		}
-	} else {
-		policyArr := make([]*operator.Policy, len(opts.Attributes))
-		for index, element := range opts.Attributes {
-			policyArr[index] = &operator.Policy{
-				Operator: operator.Equal,
-				Element:  element,
-			}
-		}
-		policy = &operator.Policy{
-			Operator: opts.Operator,
-			Element: &operator.Content{
-				Content: policyArr,
-			},
-		}
+	// get aggregated policy for all attribute policies
+	policy, err := lgc.getAggrPolicy(opts.Operator, opts.AttrPolicies)
+	if err != nil {
+		blog.ErrorJSON("get aggregated policy failed, error: %s, operator:%s, attrPolicies: %s, rid: %s",
+			err, opts.Operator, opts.AttrPolicies, rid)
+		return nil, err
 	}
 
 	cond, err := lgc.parseFilterToMongo(ctx, header, policy, resourceType)
@@ -274,4 +262,31 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 		idList = append(idList, id)
 	}
 	return idList, nil
+}
+
+// getAggrPolicy get aggregated policy for all attribute policies
+func (lgc *Logics) getAggrPolicy(opType operator.OperType, attrPolicies []*operator.Policy) (*operator.Policy, error) {
+	if len(attrPolicies) == 0 {
+		return nil, fmt.Errorf("attribute policies can't be empty")
+	}
+
+	var policy *operator.Policy
+	// if operator is 'or' and 'and', the policy's element is used as type Content
+	// else, the policy's element is used as type FieldValue
+	if opType == operator.Or || opType == operator.And {
+		policy = &operator.Policy{
+			Operator: opType,
+			Element: &operator.Content{
+				Content: attrPolicies,
+			},
+		}
+	} else {
+		// in this condition, the length of attribute policies must be 1
+		if len(attrPolicies) != 1 {
+			return nil, fmt.Errorf("the length of attribute policies is not 1, policies:%#v", attrPolicies)
+		}
+		policy = attrPolicies[0]
+	}
+
+	return policy, nil
 }

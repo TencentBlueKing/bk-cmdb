@@ -66,12 +66,12 @@ func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourc
 
 		} else {
 			// TODO: cause we do not support _bk_iam_path_ field for now
-			// So we only need to check resource's attribute field.
+			// So we only need to get resource's other attribute policy.
 
 			opts := &types.ListWithAttributes{
-				Operator:   p.Operator,
-				Attributes: []*operator.FieldValue{fv},
-				Type:       resourceType,
+				Operator:     p.Operator,
+				AttrPolicies: []*operator.Policy{p},
+				Type:         resourceType,
 			}
 
 			ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)
@@ -120,7 +120,7 @@ func (a *Authorize) countIamIDKey(op operator.OperType, fv *operator.FieldValue)
 func (a *Authorize) countContent(ctx context.Context, op operator.OperType, content *operator.Content, resourceType types.ResourceType) (
 	[]string, error) {
 
-	allAttrFieldValue := make([]*operator.FieldValue, 0)
+	allAttrPolicies := make([]*operator.Policy, 0)
 	allList := make([][]string, 0)
 	for _, policy := range content.Content {
 
@@ -161,17 +161,17 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OperType, cont
 
 			} else {
 				// TODO: cause we do not support _bk_iam_path_ field for now
-				// So we only need to check resource's attribute field.
-				allAttrFieldValue = append(allAttrFieldValue, fv)
+				// So we only need to get resource's other attribute policy.
+				allAttrPolicies = append(allAttrPolicies, policy)
 			}
 		}
 	}
 
-	if len(allAttrFieldValue) != 0 {
+	if len(allAttrPolicies) != 0 {
 		opts := &types.ListWithAttributes{
-			Operator:   op,
-			Attributes: allAttrFieldValue,
-			Type:       resourceType,
+			Operator:     op,
+			AttrPolicies: allAttrPolicies,
+			Type:         resourceType,
 		}
 
 		ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)
@@ -187,15 +187,15 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OperType, cont
 }
 
 func (a *Authorize) countAny(ctx context.Context, policy *operator.Policy, resourceType types.ResourceType) ([]string, error) {
-	fv, can := policy.Element.(*operator.FieldValue)
+	_, can := policy.Element.(*operator.FieldValue)
 	if !can {
 		return nil, errors.New("policy operator any with invalid FieldValue field")
 	}
 
 	opts := &types.ListWithAttributes{
-		Operator:   policy.Operator,
-		Attributes: []*operator.FieldValue{fv},
-		Type:       resourceType,
+		Operator:     policy.Operator,
+		AttrPolicies: []*operator.Policy{policy},
+		Type:         resourceType,
 	}
 
 	ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)

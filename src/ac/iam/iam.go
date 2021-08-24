@@ -184,7 +184,7 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 	if len(removedResourceActionMap) > 0 {
 		removedResourceActionIDs := make([]ActionID, len(removedResourceActionMap))
 		idx := 0
-		// before deleting action, the dependent action polices must be deleted
+		// before deleting action, the dependent action policies must be deleted
 		for resourceActionID := range removedResourceActionMap {
 			if err = i.client.DeleteActionPolicies(ctx, resourceActionID); err != nil {
 				blog.Errorf("delete action %s policies failed, err: %v", resourceActionID, err)
@@ -334,7 +334,7 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 	if len(deletedActions) > 0 {
 		blog.Infof("begin delete actions, count:%d, detail:%v, rid: %s", len(deletedActions), deletedActions, rid)
 
-		// before deleting action, the dependent action polices must be deleted
+		// before deleting action, the dependent action policies must be deleted
 		for _, actionID := range deletedActions {
 			if err = i.client.DeleteActionPolicies(ctx, actionID); err != nil {
 				blog.Errorf("sync iam sysInstances failed, delete action %s policies err: %s, rid: %s",
@@ -443,7 +443,7 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 
 	// delete unnecessary actions in iam
 	if len(deletedActions) > 0 {
-		// before deleting action, the dependent action polices must be deleted
+		// before deleting action, the dependent action policies must be deleted
 		for _, actionID := range deletedActions {
 			if err = i.client.DeleteActionPolicies(ctx, actionID); err != nil {
 				blog.ErrorJSON("delete cmdb resource failed, delete action %s policies err: %s, rid: %s",
