@@ -26,11 +26,11 @@ func (s *coreService) IsInstanceExist(kit *rest.Kit, objID string, instID uint64
 	cond.Element(&mongo.Eq{Key: instIDFieldName, Val: instID})
 	countCond := &metadata.CountCondition{Condition: cond.ToMapStr()}
 	result, err := s.core.InstanceOperation().CountModelInstances(kit, objID, countCond)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("search model instance error: %v, rid: %s", err, kit.Rid)
 		return false, err
 	}
-	if 0 == result.Count {
+	if result.Count == 0 {
 		return false, nil
 	}
 	return true, nil

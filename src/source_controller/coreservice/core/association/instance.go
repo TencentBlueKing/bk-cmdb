@@ -363,9 +363,8 @@ func (m *associationInstance) CountInstanceAssociations(kit *rest.Kit, input *me
 		blog.Errorf("count model instance associations failed, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
-	result := &metadata.CommonCountResult{Count: count}
 
-	return result, nil
+	return &metadata.CommonCountResult{Count: count}, nil
 }
 
 func (m *associationInstance) DeleteInstanceAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {

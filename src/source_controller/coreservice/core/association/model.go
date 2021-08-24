@@ -160,21 +160,20 @@ func (m *associationModel) CountModelAssociations(kit *rest.Kit, input *metadata
 	*metadata.CommonCountResult, error) {
 
 	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(input.Condition, kit.SupplierAccount))
-	if nil != err {
+	if err != nil {
 		blog.Errorf("convert the condition (%v) from mapstr into condition object, err: %s, rid: %s",
 			input.Condition, err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrCommPostInputParseError, err.Error())
 	}
 
 	count, err := m.count(kit, cond)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("count model associations by the condition (%#v) failed, err: %s, rid: %s", cond.ToMapStr(),
-			err.Error(), kit.Rid,)
+			err.Error(), kit.Rid)
 		return nil, err
 	}
-	result := &metadata.CommonCountResult{Count: count}
 
-	return result, nil
+	return &metadata.CommonCountResult{Count: count}, nil
 }
 
 func (m *associationModel) DeleteModelAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {

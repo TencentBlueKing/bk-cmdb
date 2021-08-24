@@ -30,23 +30,27 @@ func (s *coreService) IsInstAsstExist(kit *rest.Kit, objID string, instID uint64
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID}, &mongo.Eq{Key: common.BKInstIDField, Val: instID})
 	countCond := &metadata.CountCondition{Condition: cond.ToMapStr()}
 	objInstsRst, err := s.core.AssociationOperation().CountInstanceAssociations(kit, countCond)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("search instance association err: %v, rid: %s", err, kit.Rid)
 		return false, err
 	}
+	if objInstsRst.Count > 0 {
+		return true, nil
+	}
+
 	cond = mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKAsstObjIDField, Val: objID}, &mongo.Eq{Key: common.BKAsstInstIDField, Val: instID})
 	countCond = &metadata.CountCondition{Condition: cond.ToMapStr()}
 	objAsstInstsRst, err := s.core.AssociationOperation().CountInstanceAssociations(kit, countCond)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("search instance to association err: %v, rid: %s", err, kit.Rid)
 		return false, err
 	}
-	if 0 < objInstsRst.Count || 0 < objAsstInstsRst.Count {
+	if objAsstInstsRst.Count > 0 {
 		return true, nil
 	}
-	return false, nil
 
+	return false, nil
 }
 
 // DeleteInstAsst used to delete inst asst
