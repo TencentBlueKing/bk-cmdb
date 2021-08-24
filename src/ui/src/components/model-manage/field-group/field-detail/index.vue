@@ -361,7 +361,7 @@
         this.$emit('save', fieldId)
       },
       getPreFieldUpdateParams() {
-        const allowKey = ['option', 'unit', 'placeholder']
+        const allowKey = ['option', 'unit', 'placeholder', 'bk_property_name']
         const params = {}
         allowKey.forEach((key) => {
           params[key] = this.fieldInfo[key]
