@@ -203,7 +203,10 @@ func (p *setTemplate) ListSetServiceTemplateRelations(ctx context.Context, heade
 	return ret.Data, nil
 }
 
-func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder) {
+// ListSetTplRelatedSvcTpl search related about set template and service template
+func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.Header, bizID int64,
+	setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder) {
+
 	ret := struct {
 		metadata.BaseResp
 		Data []metadata.ServiceTemplate `json:"data"`
@@ -218,11 +221,11 @@ func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.H
 		Into(&ret)
 
 	if err != nil {
-		blog.Errorf("ListSetTplRelatedSvcTpl failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.CCError() != nil {
-		return nil, ret.CCError()
+
+	if ccErr := ret.CCError(); ccErr != nil {
+		return nil, ccErr
 	}
 
 	return ret.Data, nil
@@ -253,7 +256,10 @@ func (p *setTemplate) UpdateManySetTemplateSyncStatus(ctx context.Context, heade
 	return nil
 }
 
-func (p *setTemplate) DeleteSetTemplateSyncStatus(ctx context.Context, header http.Header, bizID int64, setIDs []int64) errors.CCErrorCoder {
+// DeleteSetTemplateSyncStatus delete set template sync status
+func (p *setTemplate) DeleteSetTemplateSyncStatus(ctx context.Context, header http.Header, bizID int64,
+	setIDs []int64) errors.CCErrorCoder {
+
 	ret := struct {
 		metadata.BaseResp
 	}{}
@@ -272,11 +278,10 @@ func (p *setTemplate) DeleteSetTemplateSyncStatus(ctx context.Context, header ht
 		Into(&ret)
 
 	if err != nil {
-		blog.Errorf("DeleteSetTemplateSyncStatus failed, http request failed, err: %+v", err)
 		return errors.CCHttpError
 	}
-	if ret.CCError() != nil {
-		return ret.CCError()
+	if ccErr := ret.CCError(); err != nil {
+		return ccErr
 	}
 
 	return nil

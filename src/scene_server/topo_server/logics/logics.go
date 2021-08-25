@@ -17,15 +17,21 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/scene_server/topo_server/logics/inst"
 	"configcenter/src/scene_server/topo_server/logics/model"
+	"configcenter/src/scene_server/topo_server/logics/operation"
 )
 
 // Logics provides management interface for operations of model and instance and related resources like association
 type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
+	ObjectOperation() model.ObjectOperationInterface
+	IdentifierOperation() operation.IdentifierOperationInterface
 	InstAssociationOperation() inst.AssociationOperationInterface
 }
 
 type logics struct {
+	classification model.ClassificationOperationInterface
+	object         model.ObjectOperationInterface
+	identifier     operation.IdentifierOperationInterface
 	classification  model.ClassificationOperationInterface
 	instassociation inst.AssociationOperationInterface
 }
@@ -33,9 +39,14 @@ type logics struct {
 // New create a logics manager
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
+	objectOperation := model.NewObjectOperation(client, authManager)
+	IdentifierOperation := operation.NewIdentifier(client)
 	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
 
 	return &logics{
+		classification: classificationOperation,
+		object:         objectOperation,
+		identifier:     IdentifierOperation,
 		classification:  classificationOperation,
 		instassociation: instAssociationOperation,
 	}
@@ -43,6 +54,14 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 
 func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
 	return c.classification
+}
+
+func (c *logics) ObjectOperation() model.ObjectOperationInterface {
+	return c.object
+}
+
+func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
+	return c.identifier
 }
 
 func (c *logics) InstAssociationOperation() inst.AssociationOperationInterface {

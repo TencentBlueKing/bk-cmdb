@@ -28,6 +28,7 @@
             :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id)"
             :show-unit="false"
             :property="column"
+            :multiple="column.bk_obj_id !== 'host'"
             @click.native.stop="handleValueClick(row, column)">
           </cmdb-property-value>
         </template>
@@ -440,7 +441,6 @@
             requestId: this.request.moveToIdleModule
           })
           Bus.$emit('refresh-count', {
-            type: 'host_count',
             hosts: [...this.table.selection],
             target: internalModule
           })
@@ -512,7 +512,6 @@
       },
       refreshHost() {
         Bus.$emit('refresh-count', {
-          type: 'host_count',
           hosts: [...this.table.selection]
         })
         this.table.selection = []

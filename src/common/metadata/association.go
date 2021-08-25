@@ -43,12 +43,15 @@ type SearchAssociationTypeRequest struct {
 	Condition map[string]interface{} `json:"condition"`
 }
 
+// SearchAssociationType struct for search association type
+type SearchAssociationType struct {
+	Count int                `json:"count"`
+	Info  []*AssociationKind `json:"info"`
+}
+
 type SearchAssociationTypeResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Count int                `json:"count"`
-		Info  []*AssociationKind `json:"info"`
-	} `json:"data"`
+	Data     SearchAssociationType `json:"data"`
 }
 
 type CreateAssociationTypeResult struct {
@@ -498,23 +501,40 @@ func (cli *MainlineObjectTopo) ToMapStr() mapstr.MapStr {
 
 // TopoInst 实例拓扑结构
 type TopoInst struct {
-	InstID               int64  `json:"bk_inst_id"`
-	InstName             string `json:"bk_inst_name"`
-	ObjID                string `json:"bk_obj_id"`
-	ObjName              string `json:"bk_obj_name"`
-	Default              int    `json:"default"`
-	HostCount            int64  `json:"host_count"`
-	ServiceInstanceCount int64  `json:"service_instance_count,omitempty"`
-	ServiceTemplateID    int64  `json:"service_template_id,omitempty"`
-	SetTemplateID        int64  `json:"set_template_id,omitempty"`
-	HostApplyEnabled     *bool  `json:"host_apply_enabled,omitempty"`
-	HostApplyRuleCount   *int64 `json:"host_apply_rule_count,omitempty"`
+	InstID             int64  `json:"bk_inst_id"`
+	InstName           string `json:"bk_inst_name"`
+	ObjID              string `json:"bk_obj_id"`
+	ObjName            string `json:"bk_obj_name"`
+	Default            int    `json:"default"`
+	ServiceTemplateID  int64  `json:"service_template_id,omitempty"`
+	SetTemplateID      int64  `json:"set_template_id,omitempty"`
+	HostApplyEnabled   *bool  `json:"host_apply_enabled,omitempty"`
+	HostApplyRuleCount *int64 `json:"host_apply_rule_count,omitempty"`
 }
 
 // TopoInstRst 拓扑实例
 type TopoInstRst struct {
 	TopoInst `json:",inline"`
 	Child    []*TopoInstRst `json:"child"`
+}
+
+// TopoNodeHostAndSerInstCount topo节点主机/服务实例数量
+type TopoNodeHostAndSerInstCount struct {
+	ObjID                string `json:"bk_obj_id"`
+	InstID               int64  `json:"bk_inst_id"`
+	HostCount            int64  `json:"host_count"`
+	ServiceInstanceCount int64  `json:"service_instance_count"`
+}
+
+// HostAndSerInstCountOption 获取主机/服务实例查询参数结构
+type HostAndSerInstCountOption struct {
+	Condition []CountOptions `json:"condition"`
+}
+
+// CountOptions 获取主机/服务实例入参条件
+type CountOptions struct {
+	ObjID  string `json:"bk_obj_id"`
+	InstID int64  `json:"bk_inst_id"`
 }
 
 type TopoInstRstVisitor func(tir *TopoInstRst)

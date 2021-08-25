@@ -21,8 +21,9 @@ import (
 )
 
 type TopoGraphicsInterface interface {
-	SearchTopoGraphics(ctx context.Context, h http.Header, dat *metadata.TopoGraphics) (resp *metadata.SearchTopoGraphicsResult, err error)
-	UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) (resp *metadata.UpdateResult, err error)
+	SearchTopoGraphics(ctx context.Context, h http.Header, dat *metadata.TopoGraphics) (
+		[]metadata.TopoGraphics, error)
+	UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) error
 }
 
 func NewTopoGraphicsInterface(client rest.ClientInterface) TopoGraphicsInterface {
