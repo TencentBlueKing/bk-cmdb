@@ -81,7 +81,13 @@
               v-for="(instance, instanceIndex) in module.service_instances"
               :key="instanceIndex"
               @click="handleViewDiff(instance, module)">
-              <span class="instance-name" v-bk-overflow-tips>{{instance.service_instance.name}}</span>
+              <span class="instance-name" v-bk-overflow-tips="{ content: instance.service_instance.name }">
+                {{instance.service_instance.name}}
+                <label :class="['instance-change-type', changeTypes[instance.flag][1]]"
+                  v-if="changeTypes[instance.flag]">
+                  {{changeTypes[instance.flag][0]}}
+                </label>
+              </span>
               <span class="instance-diff-count"
                 v-if="instance.changed_attributes">
                 ({{instance.changed_attributes.length}})
@@ -138,7 +144,8 @@
             instance: null,
             type: ''
           }
-        }
+        },
+        changeTypes: { 1: ['新增', 'add'], 2: ['删除', 'del'] }
       }
     },
     computed: {
@@ -214,6 +221,9 @@
       },
       async getDifference() {
         try {
+          // 以模块聚合的列表，一个模块对应一条记录
+          // 每条记录分别以 added changed removed unchanged 来分类变化的进程的信息其中包含service_instances为关联的服务实例
+          // 每条记录中的changed_attributes表示服务模板除进程信息外的属性修改，如服务分类
           const differences = await this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
             params: {
               bk_module_ids: this.modules,
@@ -221,9 +231,14 @@
               bk_biz_id: this.bizId
             }
           })
+
+          // 视图中以“进程”视角查看，同时按变化的类型分tab
           const processList = []
           const differenceType = ['changed', 'added', 'removed']
+
+          // 是否存在服务分类的变更，存在的话会以单独的tab展示
           let changedCategory = null
+
           differences.forEach((difference) => {
             differenceType.forEach((type) => {
               difference[type].forEach((info) => {
@@ -231,26 +246,31 @@
                 // eslint-disable-next-line max-len
                 const item = processList.find(item => item.type === type && item.process_template_id === info.process_template_id)
                 if (item) {
+                  // 同一进程与类型的只需要往modules中添加
                   item.modules.push(moduleInfo)
                 } else {
                   const newItem = {
                     type,
                     process_template_id: info.process_template_id,
                     process_template_name: info.process_template_name,
-                    modules: [moduleInfo]
+                    modules: [moduleInfo] // 这一个进程有用到的服务实例对应的模块集合
                   }
                   const length = processList.push(newItem)
                   newItem.confirmed = length === 1
                 }
               })
             })
+
             changedCategory = (difference.changed_attributes || []).find(attr => attr.property_id === 'service_category_id')
           })
+
+          // 放一个单独的服务分类变更tab
           if (changedCategory) {
             const categoryInfo = await this.getServiceCategoryDifference(changedCategory)
             categoryInfo.confirmed = !processList.length
             processList.push(categoryInfo)
           }
+
           this.processList = processList
           this.activeIndex = 0
         } catch (e) {
@@ -549,7 +569,6 @@
             margin: 10px 80px 0 0;
             padding: 0 4px;
             height: 22px;
-            border: 1px solid $borderColor;
             background-color: #FAFBFD;
             font-size: 12px;
             cursor: pointer;
@@ -563,11 +582,31 @@
                 }
             }
             .instance-name {
-                padding-right: 20px;
+                padding-right: 28px;
+                position: relative;
                 @include ellipsis;
             }
             .instance-diff-count {
                 color: #C4C6CC;
+            }
+            .instance-change-type {
+                position: absolute;
+                right: -2px;
+                top: -2px;
+                width: 30px;
+                height: 18px;
+                border-radius: 2px;
+                text-align: center;
+                font-size: 12px;
+                transform: scale(0.833);
+                &.del {
+                    color: #ea3636;
+                    background: #ffdddd;
+                }
+                &.add {
+                    color: #20a342;
+                    background: #dff9e4;
+                }
             }
         }
     }
