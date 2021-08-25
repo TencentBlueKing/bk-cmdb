@@ -29,10 +29,9 @@ type Logics interface {
 }
 
 type logics struct {
-	classification model.ClassificationOperationInterface
-	object         model.ObjectOperationInterface
-	identifier     operation.IdentifierOperationInterface
 	classification  model.ClassificationOperationInterface
+	object          model.ObjectOperationInterface
+	identifier      operation.IdentifierOperationInterface
 	instassociation inst.AssociationOperationInterface
 }
 
@@ -44,10 +43,9 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
 
 	return &logics{
-		classification: classificationOperation,
-		object:         objectOperation,
-		identifier:     IdentifierOperation,
 		classification:  classificationOperation,
+		object:          objectOperation,
+		identifier:      IdentifierOperation,
 		instassociation: instAssociationOperation,
 	}
 }

@@ -707,6 +707,7 @@ func (s *Service) CountInstanceAssociations(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchAssociationInst search instance association
 func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 	request := &metadata.SearchAssociationInstRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -768,6 +769,7 @@ func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 	ctx.RespEntity(ret.Data)
 }
 
+// CreateAssociationInst create instance associaiton
 func (s *Service) CreateAssociationInst(ctx *rest.Contexts) {
 	request := &metadata.CreateAssociationInstRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -796,6 +798,7 @@ func (s *Service) CreateAssociationInst(ctx *rest.Contexts) {
 	ctx.RespEntity(ret.Data)
 }
 
+// CreateManyInstAssociation batch create instance association
 func (s *Service) CreateManyInstAssociation(ctx *rest.Contexts) {
 	request := &metadata.CreateManyInstAsstRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -814,6 +817,7 @@ func (s *Service) CreateManyInstAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(ret)
 }
 
+// DeleteAssociationInst delete instance association
 func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter(common.BKObjIDField)
 	if len(objID) == 0 {
@@ -848,6 +852,7 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 	ctx.RespEntity(ret.Data)
 }
 
+// DeleteAssociationInstBatch batch delete instance association
 func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 	request := &metadata.DeleteAssociationInstBatchRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -859,7 +864,8 @@ func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 		return
 	}
 	if len(request.ID) > common.BKMaxInstanceLimit {
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommPageLimitIsExceeded, "The number of ID should be less than 500."))
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommPageLimitIsExceeded,
+			"The number of ID should be less than 500."))
 		return
 	}
 	if len(request.ObjectID) == 0 {
