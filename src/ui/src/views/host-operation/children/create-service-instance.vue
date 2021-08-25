@@ -161,15 +161,43 @@
         return ''
       },
       getServiceInstanceOptions() {
-        return this.instances.map((instance, index) => {
+        const instanceOptions = {
+          created: [],
+          updated: []
+        }
+
+        this.instances.forEach((instance, index) => {
           const component = this.$refs.serviceInstance.find(component => component.index === index)
-          return {
-            bk_module_id: instance.bk_module_id,
-            bk_host_id: instance.bk_host_id,
-            service_instance_name: instance.name,
-            processes: this.getChangedProcessList(instance, component)
+          const processes = this.getChangedProcessList(instance, component)
+
+          // 有模板
+          if (instance.service_template) {
+            // 默认全部放入created但无需设置processes字段
+            instanceOptions.created.push({
+              bk_module_id: instance.bk_module_id,
+              bk_host_id: instance.bk_host_id
+            })
+            // updated仅放入有修改过的进程信息
+            if (processes.length) {
+              instanceOptions.updated.push({
+                bk_module_id: instance.bk_module_id,
+                bk_host_id: instance.bk_host_id,
+                processes
+              })
+            }
+          } else {
+            // 无模板，在created中放入有添加进程的
+            if (processes.length) {
+              instanceOptions.created.push({
+                bk_module_id: instance.bk_module_id,
+                bk_host_id: instance.bk_host_id,
+                processes
+              })
+            }
           }
         })
+
+        return instanceOptions
       },
       /**
        * 解决后端性能问题: 用服务模板生成的实例仅传递有被用户主动触发过编辑的进程信息
