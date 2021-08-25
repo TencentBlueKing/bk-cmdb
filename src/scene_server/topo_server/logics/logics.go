@@ -17,33 +17,50 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/scene_server/topo_server/logics/inst"
 	"configcenter/src/scene_server/topo_server/logics/model"
+	"configcenter/src/scene_server/topo_server/logics/operation"
 )
 
 // Logics provides management interface for operations of model and instance and related resources like association
 type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
 	InstOperation() inst.InstOperationInterface
+	ObjectOperation() model.ObjectOperationInterface
+	IdentifierOperation() operation.IdentifierOperationInterface
 }
 
 type logics struct {
 	classification model.ClassificationOperationInterface
 	inst           inst.InstOperationInterface
+	object         model.ObjectOperationInterface
+	identifier     operation.IdentifierOperationInterface
 }
 
 // New create a logics manager
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
 	instOperation := inst.NewInstOperation(client, authManager)
+	objectOperation := model.NewObjectOperation(client, authManager)
+	IdentifierOperation := operation.NewIdentifier(client)
 
 	return &logics{
 		classification: classificationOperation,
 		inst:           instOperation,
+		object:         objectOperation,
+		identifier:     IdentifierOperation,
 	}
 }
 
 // ClassificationOperation return a classification provide ClassificationOperationInterface
 func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
 	return c.classification
+}
+
+func (c *logics) ObjectOperation() model.ObjectOperationInterface {
+	return c.object
+}
+
+func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
+	return c.identifier
 }
 
 // InstOperation return a inst provide InstOperationInterface
