@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/util"
 )
 
 // SetInst contains partial fields of a real set
@@ -219,4 +220,24 @@ type InstBatchInfo struct {
 	// map[rownumber]map[property_id][date]
 	BatchInfo map[int64]mapstr.MapStr `json:"BatchInfo"`
 	InputType string                  `json:"input_type"`
+}
+
+// GetInstID get inst id by objid
+func GetInstID(objID string, data mapstr.MapStr) (int64, error) {
+	return data.Int64(GetInstIDFieldByObjID(objID))
+}
+
+// GetInstName get inst name by objid
+func GetInstName(objID string, data mapstr.MapStr) (string, error) {
+	return data.String(GetInstNameFieldName(objID))
+}
+
+// GetBizID get biz id by inst data
+func GetBizID(data mapstr.MapStr) (int64, error) {
+	return util.GetInt64ByInterface(data[common.BKAppIDField])
+}
+
+// GetParentID get parent id by inst data
+func GetParentID(data mapstr.MapStr) (int64, error) {
+	return util.GetInt64ByInterface(data[common.BKParentIDField])
 }
