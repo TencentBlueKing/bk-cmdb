@@ -22,8 +22,10 @@ import (
 )
 
 type HostClientInterface interface {
-	TransferToInnerModule(ctx context.Context, h http.Header, input *metadata.TransferHostToInnerModule) (resp *metadata.OperaterException, err error)
-	TransferToNormalModule(ctx context.Context, header http.Header, input *metadata.HostsModuleRelation) (resp *metadata.OperaterException, err error)
+	TransferToInnerModule(ctx context.Context, h http.Header, input *metadata.TransferHostToInnerModule) (
+		[]metadata.ExceptionResult, errors.CCErrorCoder)
+	TransferToNormalModule(ctx context.Context, header http.Header, input *metadata.HostsModuleRelation) (
+		[]metadata.ExceptionResult, errors.CCErrorCoder)
 	TransferToAnotherBusiness(ctx context.Context, header http.Header, input *metadata.TransferHostsCrossBusinessRequest) (resp *metadata.OperaterException, err error)
 
 	RemoveFromModule(ctx context.Context, header http.Header, input *metadata.RemoveHostsFromModuleOption) (resp *metadata.OperaterException, err error)

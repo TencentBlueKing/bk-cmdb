@@ -1094,37 +1094,33 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 				newModuleIDArr = append(newModuleIDArr, item.ModuleID)
 			}
 
-			var opResult *meta.OperaterException
+			var opResult []meta.ExceptionResult
+			var ccErr errors.CCErrorCoder
 			if toEmptyModule {
 				input := &meta.TransferHostToInnerModule{
 					ApplicationID: data.ApplicationID,
 					ModuleID:      idleModuleID,
 					HostID:        []int64{hostID},
 				}
-				opResult, err = s.Logic.CoreAPI.CoreService().Host().TransferToInnerModule(ctx.Kit.Ctx, ctx.Kit.Header, input)
+				opResult, ccErr = s.Logic.CoreAPI.CoreService().Host().TransferToInnerModule(ctx.Kit.Ctx, ctx.Kit.Header, input)
 			} else {
 				input := &meta.HostsModuleRelation{
 					ApplicationID: data.ApplicationID,
 					HostID:        []int64{hostID},
 					ModuleID:      newModuleIDArr,
 				}
-				opResult, err = s.Logic.CoreAPI.CoreService().Host().TransferToNormalModule(ctx.Kit.Ctx, ctx.Kit.Header, input)
+				opResult, ccErr = s.Logic.CoreAPI.CoreService().Host().TransferToNormalModule(ctx.Kit.Ctx, ctx.Kit.Header, input)
 			}
 
-			if err != nil {
-				blog.Errorf("MoveSetHost2IdleModule handle error. err:%s, to idle module:%v, input:%#v, hostID:%d, rid:%s", err.Error(), toEmptyModule, data, hostID, ctx.Kit.Rid)
-				ccErr := ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-				exceptionArr = append(exceptionArr, meta.ExceptionResult{Code: int64(ccErr.GetCode()), Message: ccErr.Error(), OriginIndex: hostID})
-			}
-			if !opResult.Result {
-				if len(opResult.Data) > 0 {
-					blog.Errorf("MoveSetHost2IdleModule handle reply error. result:%#v, to idle module:%v, input:%#v, hostID:%d, rid:%s", opResult, toEmptyModule, data, hostID, ctx.Kit.Rid)
-					exceptionArr = append(exceptionArr, opResult.Data...)
+			if ccErr != nil {
+				blog.Errorf("transfer host failed, err: %v, result: %#v, to idle module:%v, input: %#v, rid: %s",
+					err, opResult, toEmptyModule, data, ctx.Kit.Rid)
+				if len(opResult) > 0 {
+					exceptionArr = append(exceptionArr, opResult...)
 				} else {
-					blog.Errorf("MoveSetHost2IdleModule handle reply error. result:%#v, to idle module:%v, input:%#v, hostID:%d, rid:%s", opResult, toEmptyModule, data, hostID, ctx.Kit.Rid)
 					exceptionArr = append(exceptionArr, meta.ExceptionResult{
-						Code:        int64(opResult.Code),
-						Message:     opResult.ErrMsg,
+						Code:        int64(ccErr.GetCode()),
+						Message:     ccErr.Error(),
 						OriginIndex: hostID,
 					})
 				}

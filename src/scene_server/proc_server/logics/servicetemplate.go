@@ -51,9 +51,10 @@ func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond ma
 	}
 
 	svcTempModuleMap := make(map[int64][]*metadata.ModuleInst)
-	for _, module := range moduleRes.Data.Info {
+	for index, module := range moduleRes.Data.Info {
 		if module.ServiceTemplateID != common.ServiceTemplateIDNotSet {
-			svcTempModuleMap[module.ServiceTemplateID] = append(svcTempModuleMap[module.ServiceTemplateID], &module)
+			svcTempModuleMap[module.ServiceTemplateID] = append(svcTempModuleMap[module.ServiceTemplateID],
+				&moduleRes.Data.Info[index])
 		}
 	}
 

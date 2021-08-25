@@ -250,23 +250,18 @@ func (s *special) bkSystemGetInstallModuleID(ctx context.Context, appID int64, s
 }
 
 // bksystemInstallAddHostInstance only all host and module relation
-func (s *special) bkSystemInstallModule(ctx context.Context, appID, hostID int64, moduleIDArr []int64) (err errors.CCError) {
-
+func (s *special) bkSystemInstallModule(ctx context.Context, appID, hostID int64, moduleIDArr []int64) errors.CCError {
 	input := &metadata.HostsModuleRelation{
-		ApplicationID: appID,
-		HostID:        []int64{hostID},
-		ModuleID:      moduleIDArr,
-		IsIncrement:   true,
+		ApplicationID:         appID,
+		HostID:                []int64{hostID},
+		ModuleID:              moduleIDArr,
+		IsIncrement:           true,
+		NeedAutoCreateSvcInst: true,
 	}
 
-	resp, httpDoErr := s.lgc.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, s.kit.Header, input)
-	if httpDoErr != nil {
-		blog.ErrorJSON("bkSystemInstallModule add host moduel relation  http do error.  err:%s, data:%s, rid:%s", httpDoErr, input, s.kit.Rid)
-		return s.kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err := resp.CCError(); err != nil {
-		blog.ErrorJSON("bkSystemInstallModule add host moduel relation  http reply error.  err:%s, data:%s, rid:%s", err, input, s.kit.Rid)
+	resp, err := s.lgc.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, s.kit.Header, input)
+	if err != nil {
+		blog.Errorf("transfer host failed, err: %v, resp: %#v, input: %#v, rid:%s", err, resp, input, s.kit.Rid)
 		return err
 	}
 

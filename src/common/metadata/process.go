@@ -310,17 +310,16 @@ type SrvInstBriefInfo struct {
 	SvcTempID int64  `field:"service_template_id" json:"service_template_id"`
 }
 
-type CreateServiceInstanceOption struct {
+type ServiceInstanceOptions struct {
+	Created []UpsertServiceInstanceInfo `json:"created,omitempty"`
+	Updated []UpsertServiceInstanceInfo `json:"updated,omitempty"`
+}
+
+type UpsertServiceInstanceInfo struct {
 	ModuleID int64 `json:"bk_module_id"`
 	HostID   int64 `json:"bk_host_id"`
 	// Processes parameter usable only when create instance with raw
-	Processes []ProcessCreateOrUpdateInfo `json:"processes"`
-}
-
-type ProcessCreateOrUpdateInfo struct {
-	// ProcessTemplateID indicate which process to update if service instance bound with a template
-	ProcessTemplateID int64                  `json:"process_template_id"`
-	ProcessInfo       map[string]interface{} `json:"process_info"`
+	Processes []ProcessInstanceDetail `json:"processes,omitempty"`
 }
 
 type CreateServiceInstanceDetail struct {

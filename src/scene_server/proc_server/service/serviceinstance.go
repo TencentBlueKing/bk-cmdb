@@ -58,25 +58,15 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.CreateServiceInstanceInput) ([]int64,
 	errors.CCErrorCoder) {
 
+	if len(input.Instances) == 0 {
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "instances")
+	}
+
 	rid := ctx.Kit.Rid
 	bizID := input.BizID
 	moduleID := input.ModuleID
 
 	// check if hosts are in the business module, and check if module is in the business
-	hostIDs := make([]int64, len(input.Instances))
-	hasProcess := false
-	for idx, instance := range input.Instances {
-		hostIDs[idx] = instance.HostID
-		if len(instance.Processes) > 0 {
-			hasProcess = true
-		}
-	}
-	hostIDs = util.IntArrayUnique(hostIDs)
-	if err := ps.checkHostsInModule(ctx.Kit, bizID, moduleID, hostIDs); err != nil {
-		blog.Errorf("check hosts(%+v) in biz %d module %d failed, err: %v, rid: %s", hostIDs, bizID, moduleID, err, rid)
-		return nil, err
-	}
-
 	module, err := ps.getModule(ctx.Kit, moduleID)
 	if err != nil {
 		blog.Errorf("get module failed, moduleID: %d, err: %v, rid: %s", moduleID, err, rid)
@@ -88,13 +78,13 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceHasModuleNotBelongBusiness, moduleID, bizID)
 	}
 
+	if module.Default != 0 {
+		blog.Errorf("can not create service instance for inner module %d, rid: %s", moduleID, rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+
 	// check if process exists, can not create service instance with no process
-	if module.ServiceTemplateID == common.ServiceTemplateIDNotSet {
-		if !hasProcess {
-			blog.Errorf("create service instance in module(%d) with no process, rid: %s", module.ModuleID, rid)
-			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "instances.processes")
-		}
-	} else {
+	if module.ServiceTemplateID != common.ServiceTemplateIDNotSet {
 		procTempFilter := []map[string]interface{}{{common.BKServiceTemplateIDField: module.ServiceTemplateID}}
 		count, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
 			common.BKTableNameProcessTemplate, procTempFilter)
@@ -107,6 +97,23 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 			blog.Errorf("service template(%d) has no process template, rid: %s", module.ServiceTemplateID, rid)
 			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 		}
+	}
+
+	hostIDs := make([]int64, len(input.Instances))
+	for idx, instance := range input.Instances {
+		hostIDs[idx] = instance.HostID
+
+		if module.ServiceTemplateID == common.ServiceTemplateIDNotSet && len(instance.Processes) == 0 {
+			blog.Errorf("create srv inst(%#v) in module(%d) with no process, rid: %s", instance, module.ModuleID, rid)
+			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "instances.processes")
+		}
+	}
+
+	// check if hosts are in the business module
+	hostIDs = util.IntArrayUnique(hostIDs)
+	if err := ps.checkHostsInModule(ctx.Kit, bizID, moduleID, hostIDs); err != nil {
+		blog.Errorf("check hosts(%+v) in biz %d module %d failed, err: %v, rid: %s", hostIDs, bizID, moduleID, err, rid)
+		return nil, err
 	}
 
 	// create service instances

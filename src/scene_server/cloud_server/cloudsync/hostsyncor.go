@@ -721,17 +721,10 @@ func (h *HostSyncor) addHost(cHost *metadata.CloudHost) (string, error) {
 		ModuleID:      cHost.SyncDir,
 		HostID:        []int64{hostID},
 	}
-	hResult, err := h.logics.CoreAPI.CoreService().Host().TransferToInnerModule(h.writeKit.Ctx, h.writeKit.Header, opt)
+	exception, err := h.logics.CoreAPI.CoreService().Host().TransferToInnerModule(h.writeKit.Ctx, h.writeKit.Header, opt)
 	if err != nil {
-		blog.Errorf("addHost fail,err:%s, opt:%+v, rid:%s", err.Error(), *opt, h.readKit.Rid)
+		blog.Errorf("transfer host failed, err: %v, expt: %#v, opt: %#v, rid:%s", err, exception, *opt, h.readKit.Rid)
 		return "", err
-	}
-	if !hResult.Result {
-		blog.Errorf("addHost fail,err:%s, opt:%+v, rid:%s", hResult.ErrMsg, *opt, h.readKit.Rid)
-		if len(hResult.Data) > 0 {
-			return "", fmt.Errorf("%s", hResult.Data[0].Message)
-		}
-		return "", hResult.CCError()
 	}
 
 	return cHost.PrivateIp, nil
