@@ -308,9 +308,16 @@ func (a *Authorize) authResourceAttribute(ctx context.Context, op operator.OperT
 
 	listOpts := &types.ListWithAttributes{
 		Operator:     op,
-		IDList:       []string{rsc.ID},
 		AttrPolicies: attrPolicies,
 		Type:         rsc.Type,
+	}
+
+	// in some cases, the resource id can be empty
+	// eg: when a user has a policy on host's attribute, the action and resources is like following:
+	// {"action":{"id":"edit_biz_host"},
+	// "resources":[{"system":"bk_cmdb","type":"host","id":"","attribute":{"_bk_iam_path_":["/biz,2/"]}}]}
+	if rsc.ID != "" {
+		listOpts.IDList = []string{rsc.ID}
 	}
 
 	idList, err := a.fetcher.ListInstancesWithAttributes(ctx, listOpts)
