@@ -125,6 +125,7 @@ type SearchAssociationInstResult struct {
 	Data     []*InstAsst `json:"data"`
 }
 
+// SearchInstAssociationListResult the struct of list instance association result
 type SearchInstAssociationListResult struct {
 	Association struct {
 		Src []InstAsst `json:"src"`

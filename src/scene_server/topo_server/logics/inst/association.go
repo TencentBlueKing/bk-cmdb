@@ -1,9 +1,6 @@
 package inst
 
 import (
-	"fmt"
-	"strings"
-
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -213,9 +210,8 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (
 	*metadata.CreateAssociationInstResult, error) {
 
-	cond := mapstr.MapStr{common.AssociationObjAsstIDField: request.ObjectAsstID}
-	result, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: cond})
+	cond := &metadata.QueryCondition{Condition: mapstr.MapStr{common.AssociationObjAsstIDField: request.ObjectAsstID}}
+	result, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		blog.Errorf("search object association with cond[%#v] failed, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, err
@@ -226,42 +222,39 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotExist)
 	}
 
-	objectAsst := result.Info[0]
-
-	objID := objectAsst.ObjectID
-	asstObjID := objectAsst.AsstObjID
-
 	switch result.Info[0].Mapping {
 	case metadata.OneToOneMapping:
 		// search instances belongs to this association.
-		cond := mapstr.MapStr{
-			common.AssociationObjAsstIDField: request.ObjectAsstID,
-			common.BKInstIDField:             request.InstID,
+		cond := &metadata.SearchAssociationInstRequest{
+			Condition: mapstr.MapStr{
+				common.AssociationObjAsstIDField: request.ObjectAsstID,
+				common.BKInstIDField:             request.InstID,
+			},
+			ObjID: result.Info[0].ObjectID,
 		}
 
-		instance, err := assoc.SearchInstAssociation(kit,
-			&metadata.SearchAssociationInstRequest{Condition: cond, ObjID: objID})
+		instance, err := assoc.SearchInstAssociation(kit, cond)
 		if err != nil {
-			blog.Errorf("create association instance, but check instance with cond[%#v] failed, err: %v, rid: %s",
-				cond, err, kit.Rid)
-			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+			blog.Errorf("check instance with cond[%#v] failed, err: %v, rid: %s", cond, err, kit.Rid)
+			return nil, err
 		}
 
 		if len(instance) >= 1 {
 			return nil, kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
 		}
 
-		cond = mapstr.MapStr{
-			common.AssociationObjAsstIDField: request.ObjectAsstID,
-			common.BKAsstInstIDField:         request.AsstInstID,
+		cond = &metadata.SearchAssociationInstRequest{
+			Condition: mapstr.MapStr{
+				common.AssociationObjAsstIDField: request.ObjectAsstID,
+				common.BKAsstInstIDField:         request.AsstInstID,
+			},
+			ObjID: result.Info[0].ObjectID,
 		}
 
-		instance, err = assoc.SearchInstAssociation(kit,
-			&metadata.SearchAssociationInstRequest{Condition: cond, ObjID: objID})
+		instance, err = assoc.SearchInstAssociation(kit, cond)
 		if err != nil {
-			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v, rid: %s",
-				cond, err, kit.Rid)
-			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+			blog.Errorf("check instance with cond[%v] failed, err: %v, rid: %s", cond, err, kit.Rid)
+			return nil, err
 		}
 
 		if len(instance) >= 1 {
@@ -269,17 +262,18 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 		}
 	case metadata.OneToManyMapping:
 
-		cond = mapstr.MapStr{
-			common.AssociationObjAsstIDField: request.ObjectAsstID,
-			common.BKAsstInstIDField:         request.AsstInstID,
+		cond := &metadata.SearchAssociationInstRequest{
+			Condition: mapstr.MapStr{
+				common.AssociationObjAsstIDField: request.ObjectAsstID,
+				common.BKAsstInstIDField:         request.AsstInstID,
+			},
+			ObjID: result.Info[0].ObjectID,
 		}
 
-		instance, err := assoc.SearchInstAssociation(kit,
-			&metadata.SearchAssociationInstRequest{Condition: cond, ObjID: objID})
+		instance, err := assoc.SearchInstAssociation(kit, cond)
 		if err != nil {
-			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v, rid: %s",
-				cond, err, kit.Rid)
-			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+			blog.Errorf("check instance with cond[%v] failed, err: %v, rid: %s", cond, err, kit.Rid)
+			return nil, err
 		}
 
 		if len(instance) >= 1 {
@@ -295,26 +289,24 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 			ObjectAsstID:      request.ObjectAsstID,
 			InstID:            request.InstID,
 			AsstInstID:        request.AsstInstID,
-			ObjectID:          objID,
-			AsstObjectID:      asstObjID,
-			AssociationKindID: objectAsst.AsstKindID,
+			ObjectID:          result.Info[0].ObjectID,
+			AsstObjectID:      result.Info[0].AsstObjID,
+			AssociationKindID: result.Info[0].AsstKindID,
 		},
 	}
 	createResult, err := assoc.clientSet.CoreService().Association().CreateInstAssociation(kit.Ctx, kit.Header, &input)
 	if err != nil {
-		blog.Errorf("create instance association failed, do coreservice create failed, err: %+v, rid: %s",
-			err, kit.Rid)
+		blog.Errorf("create instance association failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
-	instanceAssociationID := int64(createResult.Created.ID)
-	resp := &metadata.CreateAssociationInstResult{Data: metadata.RspID{ID: instanceAssociationID}}
-	input.Data.ID = instanceAssociationID
+	instAssociationID := int64(createResult.Created.ID)
+	input.Data.ID = int64(createResult.Created.ID)
 
 	// generate audit log.
 	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, instanceAssociationID, objID, &input.Data)
+	generateAuditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParam, instAssociationID, result.Info[0].ObjectID, &input.Data)
 	if err != nil {
 		blog.Errorf(" delete inst asst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
@@ -327,7 +319,7 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
-	return resp, err
+	return &metadata.CreateAssociationInstResult{Data: metadata.RspID{ID: instAssociationID}}, err
 }
 
 // CreateManyInstAssociation create many associations between instances
@@ -402,47 +394,16 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit, request *meta
 // DeleteInstAssociation method will remove docs from both source-asst-collection and target-asst-collection, which is atomicity.
 func (assoc *association) DeleteInstAssociation(kit *rest.Kit, objID string, asstIDList []int64) (uint64, error) {
 
-	// asstIDList check duplicate
-	idMap := make(map[int64]struct{})
-	for _, id := range asstIDList {
-		if id <= 0 {
-			blog.Errorf("input id list contains illegal id %d, rid: %s", id, kit.Rid)
-			return 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, id)
-		}
-		if _, exists := idMap[id]; exists {
-			blog.Errorf("input id list contains duplicate id %d, rid: %s", id, kit.Rid)
-			return 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, id)
-		}
-		idMap[id] = struct{}{}
-	}
 	// search association Instances
 	cond := mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: asstIDList}}
-	searchCondition := metadata.InstAsstQueryCondition{
-		Cond: metadata.QueryCondition{
-			Condition:      cond,
-			DisableCounter: true,
-		},
+	searchCondition := &metadata.InstAsstQueryCondition{
+		Cond:  metadata.QueryCondition{Condition: cond, DisableCounter: true},
 		ObjID: objID,
 	}
-	data, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, &searchCondition)
+	data, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, searchCondition)
 	if err != nil {
 		blog.Errorf("get instance association failed, err: %v, rid: %s", err, kit.Rid)
 		return 0, err
-	}
-
-	if len(data.Info) != len(idMap) {
-		errStr := ""
-		for _, dataRst := range data.Info {
-			delete(idMap, dataRst.ID)
-		}
-
-		for idNotExist := range idMap {
-			errStr = fmt.Sprintf("%s,%d", errStr, idNotExist)
-		}
-
-		errStr = strings.TrimPrefix(errStr, ",")
-		blog.Errorf("%s in ID list does not exists, searchCondition: %#v, rid: %s", errStr, searchCondition, kit.Rid)
-		return 0, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, errStr)
 	}
 
 	// get different association models, check whether they are exists.
@@ -451,34 +412,25 @@ func (assoc *association) DeleteInstAssociation(kit *rest.Kit, objID string, ass
 	for _, instAsst := range data.Info {
 		objAsstMap[instAsst.ObjectAsstID] = struct{}{}
 	}
-
 	for objAsstID := range objAsstMap {
 		objAsstList = append(objAsstList, objAsstID)
 	}
-
-	searchCond := mapstr.MapStr{common.AssociationObjAsstIDField: mapstr.MapStr{common.BKDBIN: objAsstList}}
+	param := []map[string]interface{}{{common.AssociationObjAsstIDField: mapstr.MapStr{common.BKDBIN: objAsstList}}}
 	// NOTE this interface call maybe can change into SearchObject function
-	assInfoResult, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: searchCond})
-
+	cnt, err := assoc.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameObjAsst,
+		param)
 	if err != nil {
-		blog.Errorf("search object association with cond[%v] failed, err: %v, rid: %s", searchCond, err, kit.Rid)
+		blog.Errorf("search object association with cond[%v] failed, err: %v, rid: %s", param, err, kit.Rid)
 		return 0, err
 	}
 
-	if len(assInfoResult.Info) != len(objAsstList) {
-		blog.Errorf("got unexpected number of model associations %d which should be %d, searchCondition: %#v, rid: %s",
-			len(assInfoResult.Info), len(objAsstList), searchCond, kit.Rid)
+	if cnt[0] != int64(len(objAsstList)) {
+		blog.Errorf("number of model associations %d which should be %d, param: %#v, rid: %s", cnt[0],
+			len(objAsstList), param, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommNotFound)
 	}
 
-	input := metadata.InstAsstDeleteOption{
-		Opt: metadata.DeleteOption{
-			Condition: cond,
-		},
-		ObjID: objID,
-	}
-
+	input := metadata.InstAsstDeleteOption{Opt: metadata.DeleteOption{Condition: cond}, ObjID: objID}
 	rsp, err := assoc.clientSet.CoreService().Association().DeleteInstAssociation(kit.Ctx, kit.Header, &input)
 	if err != nil {
 		blog.Errorf("delete instance association failed, err: %s, input: %#v, rid: %s", err, input, kit.Rid)
@@ -492,7 +444,7 @@ func (assoc *association) DeleteInstAssociation(kit *rest.Kit, objID string, ass
 	// generate audit log.
 	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
-	auditList := []metadata.AuditLog{}
+	auditList := make([]metadata.AuditLog, 0)
 	for i, asstID := range asstIDList {
 		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, asstID, objID, &data.Info[i])
 		if err != nil {
