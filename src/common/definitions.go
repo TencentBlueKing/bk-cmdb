@@ -38,12 +38,6 @@ const (
 	// max limit of a page
 	BKMaxPageSize = 1000
 
-	// BKMaxDelPageSize max limit of delete operation
-	BKMaxDelBatchLimit = 200
-
-	// BKMaxDelDocPageLimit maximum number of documents deleted consecutively quantity
-	BKMaxDelDocPageLimit = 10000
-
 	// max limit of instance count
 	BKMaxInstanceLimit = 500
 
