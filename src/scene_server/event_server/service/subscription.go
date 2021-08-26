@@ -217,31 +217,35 @@ func (s *Service) ListSubscriptions(ctx *rest.Contexts) {
 
 		authorizedResources, err := s.authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
 		if err != nil {
-			blog.ErrorJSON("list authorized subscribe resources failed, err: %v, cond: %s, rid: %s", err, authInput, ctx.Kit.Rid)
+			blog.ErrorJSON("list authorized subscribe resources failed, err: %v, cond: %s, rid: %s", err,
+				authInput, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
-
-		subscriptions := make([]int64, 0)
-		for _, resourceID := range authorizedResources {
-			subscriptionID, err := strconv.ParseInt(resourceID, 10, 64)
-			if err != nil {
-				blog.Errorf("parse resourceID(%s) failed, err: %v, rid: %s", resourceID, err, ctx.Kit.Rid)
-				ctx.RespAutoError(err)
-				return
+		// if isAny flag is true means we have all subscriptionId's authority,else we should add the subscriptionId to
+		// the data.Condition.
+		if !authorizedResources.IsAny {
+			subscriptions := make([]int64, 0)
+			for _, resourceID := range authorizedResources.Ids {
+				subscriptionID, err := strconv.ParseInt(resourceID, 10, 64)
+				if err != nil {
+					blog.Errorf("parse resourceID(%s) failed, err: %v, rid: %s", resourceID, err, ctx.Kit.Rid)
+					ctx.RespAutoError(err)
+					return
+				}
+				subscriptions = append(subscriptions, subscriptionID)
 			}
-			subscriptions = append(subscriptions, subscriptionID)
-		}
 
-		data.Condition = map[string]interface{}{
-			common.BKDBAND: []map[string]interface{}{
-				data.Condition,
-				{
-					common.BKSubscriptionIDField: map[string]interface{}{
-						common.BKDBIN: subscriptions,
+			data.Condition = map[string]interface{}{
+				common.BKDBAND: []map[string]interface{}{
+					data.Condition,
+					{
+						common.BKSubscriptionIDField: map[string]interface{}{
+							common.BKDBIN: subscriptions,
+						},
 					},
 				},
-			},
+			}
 		}
 	}
 

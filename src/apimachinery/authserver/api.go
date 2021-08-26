@@ -71,10 +71,10 @@ func (a *authServer) AuthorizeAnyBatch(ctx context.Context, h http.Header, input
 	return response.Data, nil
 }
 
-func (a *authServer) ListAuthorizedResources(ctx context.Context, h http.Header, input meta.ListAuthorizedResourcesParam) ([]string, error) {
+func (a *authServer) ListAuthorizedResources(ctx context.Context, h http.Header, input meta.ListAuthorizedResourcesParam) (types.AuthorizeList, error) {
 	response := new(struct {
 		metadata.BaseResp `json:",inline"`
-		Data              []string `json:"data"`
+		Data              types.AuthorizeList `json:"data"`
 	})
 	subPath := "/findmany/authorized_resource"
 
@@ -87,10 +87,10 @@ func (a *authServer) ListAuthorizedResources(ctx context.Context, h http.Header,
 		Into(response)
 
 	if err != nil {
-		return nil, errors.CCHttpError
+		return types.AuthorizeList{}, errors.CCHttpError
 	}
 	if response.Code != 0 {
-		return nil, response.CCError()
+		return types.AuthorizeList{}, response.CCError()
 	}
 
 	return response.Data, nil

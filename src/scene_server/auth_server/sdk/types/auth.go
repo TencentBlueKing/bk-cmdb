@@ -59,6 +59,11 @@ type Options struct {
 	Metric prometheus.Registerer
 }
 
+type AuthorizeList struct {
+	Ids   []string `json:"ids"`
+	IsAny bool     `json:"isAny"`
+}
+
 type ResourceType string
 
 // Decision describes the authorize decision, have already been authorized(true) or not(false)

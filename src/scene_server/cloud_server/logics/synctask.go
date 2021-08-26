@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
+	params "configcenter/src/common/paraparse"
 )
 
 func (lgc *Logics) SearchVpc(kit *rest.Kit, accountID int64, vpcOpt *metadata.SearchVpcOption) (*metadata.VpcHostCntResult, error) {
@@ -160,25 +160,28 @@ func (lgc *Logics) SearchSyncTask(kit *rest.Kit, option *metadata.SearchSyncTask
 	}
 
 	if auth.EnableAuthorize() {
-		list, err := lgc.ListAuthorizedResources(kit, meta.CloudResourceTask, meta.Find)
+		list, isAny, err := lgc.ListAuthorizedResources(kit, meta.CloudResourceTask, meta.Find)
 		if err != nil {
 			blog.Errorf("SearchSyncTask failed, rid:%s, option:%+v, ListAuthorizedResources err:%+v", kit.Rid, option, err)
 			return nil, err
 		}
 
-		if option.Condition == nil {
-			option.Condition = make(map[string]interface{})
-		}
+		// if isAny is false,we should add the taskIds conditions,else we don't add this condition
+		if !isAny {
+			if option.Condition == nil {
+				option.Condition = make(map[string]interface{})
+			}
 
-		option.Condition = map[string]interface{}{
-			common.BKDBAND: []map[string]interface{}{
-				option.Condition,
-				{
-					common.BKCloudSyncTaskID: map[string]interface{}{
-						common.BKDBIN: list,
+			option.Condition = map[string]interface{}{
+				common.BKDBAND: []map[string]interface{}{
+					option.Condition,
+					{
+						common.BKCloudSyncTaskID: map[string]interface{}{
+							common.BKDBIN: list,
+						},
 					},
 				},
-			},
+			}
 		}
 	}
 
