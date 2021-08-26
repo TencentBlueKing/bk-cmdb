@@ -49,18 +49,22 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	}
 }
 
+// ClassificationOperation return a classification provide ClassificationOperationInterface
 func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
 	return c.classification
 }
 
+// ObjectOperation return a object provide ObjectOperationInterface
 func (c *logics) ObjectOperation() model.ObjectOperationInterface {
 	return c.object
 }
 
+// IdentifierOperation return a identifier provide IdentifierOperationInterface
 func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
 	return c.identifier
 }
 
+// AssociationOperation return a association provide AssociationOperationInterface
 func (c *logics) AssociationOperation() model.AssociationOperationInterface {
 	return c.association
 }
