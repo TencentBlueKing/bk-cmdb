@@ -22,8 +22,10 @@ import (
 
 type ProcessClientInterface interface {
 	CreateProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
-	DeleteProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
-	SearchProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	DeleteProcessInstance(ctx context.Context, h http.Header,
+		data *metadata.DeleteProcessInstanceInServiceInstanceInput) error
+	SearchProcessInstance(ctx context.Context, h http.Header, data *metadata.ListProcessInstancesOption) (
+		[]metadata.ProcessInstance, error)
 	UpdateProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 
 	CreateProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)

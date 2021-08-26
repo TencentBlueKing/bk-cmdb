@@ -100,6 +100,11 @@ type CreateServiceInstanceInput struct {
 	Instances []CreateServiceInstanceDetail `json:"instances"`
 }
 
+type CreateServiceInstanceResp struct {
+	BaseResp
+	ServiceInstanceIDs []int64 `json:"data"`
+}
+
 // SearchHostWithNoSvcInstInput input parameter of searching hosts with no service instance under the specified module
 type SearchHostWithNoSvcInstInput struct {
 	BizID    int64   `json:"bk_biz_id"`
@@ -438,6 +443,11 @@ type ListServiceInstancesWithHostInput struct {
 type ListProcessInstancesOption struct {
 	BizID             int64 `json:"bk_biz_id"`
 	ServiceInstanceID int64 `json:"service_instance_id"`
+}
+
+type ListProcessInstancesRsp struct {
+	BaseResp
+	Data []ProcessInstance `json:"data"`
 }
 
 type ListProcessInstancesNameIDsOption struct {

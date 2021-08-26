@@ -166,6 +166,9 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 		pipeline := make(chan bool, 300)
 		wg := sync.WaitGroup{}
 		for _, plan := range separatePlans {
+			if firstErr != nil {
+				break
+			}
 			pipeline <- true
 			wg.Add(1)
 			go func(plan metadata.HostTransferPlan) {
@@ -204,6 +207,10 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 
 			}(plan)
 		}
+		wg.Wait()
+		if firstErr != nil {
+			return firstErr
+		}
 
 		// create or update related service instance
 		moduleSvcInstMap := make(map[int64][]metadata.CreateServiceInstanceDetail)
@@ -216,17 +223,20 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 			}
 		}
 
+		wg = sync.WaitGroup{}
 		for moduleID, svcInst := range moduleSvcInstMap {
-			// TODO change to metadata.CreateServiceInstanceInput
-			svrInstOpt := map[string]interface{}{
-				common.BKAppIDField: bizID,
-				"bk_module_id":      moduleID,
-				"instances":         svcInst,
+			if firstErr != nil {
+				break
 			}
-
 			pipeline <- true
 			wg.Add(1)
-			go func(svrInstOpt map[string]interface{}) {
+
+			svrInstOpt := &metadata.CreateServiceInstanceInput{
+				BizID:     bizID,
+				ModuleID:  moduleID,
+				Instances: svcInst,
+			}
+			go func(svrInstOpt *metadata.CreateServiceInstanceInput) {
 				var ccErr errors.CCErrorCoder
 				defer func() {
 					if ccErr != nil {
@@ -234,29 +244,20 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 							firstErr = ccErr
 						}
 					}
-
-					svcInstRes, err := s.CoreAPI.ProcServer().Service().CreateServiceInstance(ctx.Kit.Ctx,
-						ctx.Kit.Header, svrInstOpt)
-					if err != nil {
-						blog.ErrorJSON("create service instance failed, err: %v, option: %#v, rid: %s", err, svrInstOpt,
-							ctx.Kit.Rid)
-						ccErr = ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-						return
-					}
-					if ccErr := svcInstRes.CCError(); ccErr != nil {
-						blog.ErrorJSON("create service instance failed, err: %v, option: %#v, rid: %s", ccErr,
-							svrInstOpt, ctx.Kit.Rid)
-						return
-					}
-
 					<-pipeline
 					wg.Done()
 				}()
 
+				_, ccErr = s.CoreAPI.ProcServer().Service().CreateServiceInstance(ctx.Kit.Ctx,
+					ctx.Kit.Header, svrInstOpt)
+				if ccErr != nil {
+					blog.ErrorJSON("create service instance failed, err: %v, option: %#v, rid: %s", ccErr, svrInstOpt,
+						ctx.Kit.Rid)
+					return
+				}
 			}(svrInstOpt)
 		}
 		wg.Wait()
-
 		if firstErr != nil {
 			return firstErr
 		}
@@ -391,9 +392,11 @@ func (s *Service) generateTransferPlans(kit *rest.Kit, bizID int64, withHostAppl
 	}
 
 	innerModuleIDMap := make(map[int64]struct{}, 0)
+	innerModuleIDs := make([]int64, 0)
 	defaultInternalModuleID := int64(0)
 	for _, module := range innerModules {
 		innerModuleIDMap[module.ModuleID] = struct{}{}
+		innerModuleIDs = append(innerModuleIDs, module.ModuleID)
 		if module.Default == int64(common.DefaultResModuleFlag) {
 			defaultInternalModuleID = module.ModuleID
 		}
@@ -413,6 +416,11 @@ func (s *Service) generateTransferPlans(kit *rest.Kit, bizID int64, withHostAppl
 
 	transferPlans := make([]metadata.HostTransferPlan, 0)
 	for hostID, currentInModules := range hostModulesIDMap {
+		// if host is currently in inner module and is going to append to another module, transfer to that module
+		if len(option.RemoveFromModules) == 0 {
+			option.RemoveFromModules = innerModuleIDs
+		}
+
 		transferPlan := generateTransferPlan(currentInModules, option.RemoveFromModules, option.AddToModules,
 			defaultInternalModuleID)
 		transferPlan.HostID = hostID
