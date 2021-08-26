@@ -24,6 +24,7 @@ type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
 	ObjectOperation() model.ObjectOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
+	AssociationOperation() model.AssociationOperationInterface
 }
 
 type logics struct {
@@ -38,7 +39,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	classificationOperation := model.NewClassificationOperation(client, authManager)
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
-	associationOperation := model.NewAssociationOperation(client, authManager)
+	associationOperation := model.NewAssociationOperation(client, authManager, objectOperation)
 
 	return &logics{
 		classification: classificationOperation,
@@ -48,18 +49,22 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	}
 }
 
+// ClassificationOperation return a classification provide ClassificationOperationInterface
 func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
 	return c.classification
 }
 
+// ObjectOperation return a object provide ObjectOperationInterface
 func (c *logics) ObjectOperation() model.ObjectOperationInterface {
 	return c.object
 }
 
+// IdentifierOperation return a identifier provide IdentifierOperationInterface
 func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
 	return c.identifier
 }
 
+// AssociationOperation return a object association provide AssociationOperationInterface
 func (c *logics) AssociationOperation() model.AssociationOperationInterface {
 	return c.association
 }

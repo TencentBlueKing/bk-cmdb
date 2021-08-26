@@ -43,16 +43,18 @@ type AssociationOperationInterface interface {
 
 // NewAssociationOperation create a new association operation instance
 func NewAssociationOperation(client apimachinery.ClientSetInterface,
-	authManager *extensions.AuthManager) AssociationOperationInterface {
+	authManager *extensions.AuthManager, obj ObjectOperationInterface) AssociationOperationInterface {
 	return &association{
 		clientSet:   client,
 		authManager: authManager,
+		obj:         obj,
 	}
 }
 
 type association struct {
 	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
+	obj         ObjectOperationInterface
 }
 
 // CreateMainlineAssociation create mainline object association
@@ -69,37 +71,20 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKClassificationIDField)
 	}
 
-	mainlineCnt, ccErr := assoc.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-		common.BKTableNameObjAsst, []map[string]interface{}{
-			{common.AssociationKindIDField: common.AssociationKindMainline},
-		})
+	mlCond := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline},
+	}
+	mainlineAsst, ccErr := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, mlCond)
 	if ccErr != nil {
 		blog.Errorf("failed to check the mainline topo level, err: %v, rid: %s", ccErr, kit.Rid)
 		return nil, ccErr
 	}
 
-	// 总层数等于关联关系数加1
-	if level := int(mainlineCnt[0]) + 1; level >= maxTopoLevel {
-		blog.Errorf("the mainline topo level is %d, the max limit is %d, rid: %s",
-			level, maxTopoLevel, kit.Rid)
+	// 总层数等于关联关系数加1，通过count查出的数量与实际主线模型数量差1个
+	if len(mainlineAsst.Info)+1 >= maxTopoLevel {
+		blog.Errorf("the mainline topo level is %d, the max limit is %d, rid: %s", len(mainlineAsst.Info)+1,
+			maxTopoLevel, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrTopoBizTopoLevelOverLimit)
-	}
-
-	// find the mainline parent object
-	parentObjID := data.AsstObjID
-
-	// find the mainline child object for the parent
-	childObj, err := assoc.getMainlineNodeObject(kit, parentObjID, true)
-	if err != nil {
-		blog.Errorf("failed to find the child object of the object(%s), err: %v, rid: %s",
-			parentObjID, err, kit.Rid)
-		return nil, err
-	}
-
-	// check and create the association mainline object
-	if err = assoc.IsValidObject(kit, data.ObjectID); err == nil {
-		blog.Errorf("the object(%s) is duplicate, rid: %s", data.ObjectID, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, data.ObjectID)
 	}
 
 	objData := mapstr.MapStr{
@@ -114,8 +99,23 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		return nil, err
 	}
 
+	// find the mainline parent object
+	parentObjID := data.AsstObjID
+	var childObjID string
+	for _, item := range mainlineAsst.Info {
+		if item.AsstObjID == parentObjID {
+			childObjID = item.ObjectID
+		}
+	}
+
+	if len(childObjID) == 0 {
+		blog.Errorf("object(%s) has not got any mainline child object, rid: %s", parentObjID, kit.Rid)
+		return nil, fmt.Errorf("mainline object(%s) has no child", parentObjID)
+	}
+
 	// update the mainline topo inst association
-	createdInstIDs, err := assoc.SetMainlineInstAssociation(kit, parentObjID, currentObj)
+	createdInstIDs, err := assoc.SetMainlineInstAssociation(kit, parentObjID, childObjID, currentObj.ObjectID,
+		currentObj.ObjectName)
 	if err != nil {
 		blog.Errorf("failed set the mainline inst association, err: %s, rid: %s", err, kit.Rid)
 		return nil, err
@@ -127,9 +127,9 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		return nil, err
 	}
 
-	if err = assoc.setMainlineParentObject(kit, childObj.ObjectID, currentObj.ObjectID); err != nil {
+	if err = assoc.setMainlineParentObject(kit, childObjID, currentObj.ObjectID); err != nil {
 		blog.Errorf("update mainline current object's[%s] child object[%s] association to current failed, "+
-			"err: %v, rid: %s", currentObj.ObjectID, childObj.ObjectID, err, kit.Rid)
+			"err: %v, rid: %s", currentObj.ObjectID, childObjID, err, kit.Rid)
 		return nil, err
 	}
 
@@ -137,9 +137,7 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	audit := auditlog.NewInstanceAudit(assoc.clientSet.CoreService())
 
 	cond := map[string]interface{}{
-		currentObj.GetInstIDFieldName(): map[string]interface{}{
-			common.BKDBIN: createdInstIDs,
-		},
+		currentObj.GetInstIDFieldName(): map[string]interface{}{common.BKDBIN: createdInstIDs},
 	}
 
 	// generate audit log.
@@ -162,6 +160,10 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 // DeleteMainlineAssociation delete mainline association by objID
 func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, targetObjID string) error {
 
+	if common.IsInnerModel(targetObjID) {
+		return kit.CCError.Errorf(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
+	}
+
 	mainlineCond := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{
 			common.AssociationKindIDField: common.AssociationKindMainline,
@@ -172,18 +174,12 @@ func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, targetObjID s
 	}
 	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, mainlineCond)
 	if err != nil {
-		blog.Errorf("search mainline association failed, err: %v, rid: %s", err, kit.Rid)
-		return err
-	}
-
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("search mainline association failed, cond: %#v, err: %v, rid: %s",
-			mainlineCond, err, kit.Rid)
+		blog.Errorf("search mainline association failed, cond: %#v, err: %v, rid: %s", mainlineCond, err, kit.Rid)
 		return err
 	}
 
 	var parentObjID, childObjID string
-	for _, assoc := range rsp.Data.Info {
+	for _, assoc := range rsp.Info {
 		if assoc.AsstObjID == targetObjID {
 			childObjID = assoc.ObjectID
 		}
@@ -193,21 +189,28 @@ func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, targetObjID s
 		}
 	}
 
-	if err = assoc.ResetMainlineInstAssociation(kit, targetObjID); err != nil {
-		blog.Errorf("failed to delete the object(%s)'s instance, error info %s, rid: %s",
-			targetObjID, err, kit.Rid)
+	if len(childObjID) == 0 || len(parentObjID) == 0 {
+		blog.Errorf("target object(%s) has no parent or child, rid: %s", targetObjID, kit.Rid)
+		return fmt.Errorf("mainline object(%s) has no parent or child", targetObjID)
+	}
+
+	if err = assoc.ResetMainlineInstAssociation(kit, targetObjID, childObjID); err != nil {
+		blog.Errorf("failed to delete the object(%s)'s instance, err: %v, rid: %s", targetObjID, err, kit.Rid)
 		return err
 	}
 
 	// delete this object related association.
-	cond := mapstr.MapStr{
-		common.BKDBOR: []mapstr.MapStr{
-			{metadata.AssociationFieldObjectID: targetObjID},
-			{metadata.AssociationFieldAssociationObjectID: targetObjID},
-		},
+	// a pre-defined association can not be updated.
+	if rsp.Info[0].IsPre != nil && *rsp.Info[0].IsPre {
+		blog.Errorf("it's a pre-defined association, can not be deleted, cond: %#v, rid: %s", mainlineCond, kit.Rid)
+		return kit.CCError.CCError(common.CCErrorTopoDeletePredefinedAssociation)
 	}
 
-	if err = assoc.deleteAssociation(kit, cond); err != nil {
+	// delete the object association
+	_, err = assoc.clientSet.CoreService().Association().DeleteModelAssociation(kit.Ctx, kit.Header,
+		&metadata.DeleteOption{Condition: mainlineCond.Condition})
+	if err != nil {
+		blog.Errorf("delete object association failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
@@ -219,8 +222,24 @@ func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, targetObjID s
 		}
 	}
 
-	// delete objects
-	if err = assoc.DeleteObject(kit, targetObjID, false); err != nil {
+	// object的删除函数通过object的id进行删除，需要在这里查一次object的id
+	objIDCond := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.BKObjIDField: targetObjID},
+		Fields:    []string{common.BKFieldID},
+	}
+	objIDRsp, err := assoc.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, objIDCond)
+	if err != nil {
+		blog.Errorf("get object(%s) id field failed, err: %v, rid: %s", targetObjID, err, kit.Rid)
+		return err
+	}
+
+	if len(objIDRsp.Info) == 0 {
+		blog.Errorf("get object(%s) id field failed, object is non-exist, rid: %s", targetObjID, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrTopoObjectSelectFailed)
+	}
+
+	//delete objects
+	if err = assoc.obj.DeleteObject(kit, objIDRsp.Info[0].ID, false); err != nil {
 		blog.Errorf("failed to delete the object(%s), err: %v, rid: %s", targetObjID, err, kit.Rid)
 		return err
 	}
@@ -233,30 +252,23 @@ func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, targetObjID s
 func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit,
 	targetObjID string) ([]*metadata.MainlineObjectTopo, error) {
 
-	result := make([]*metadata.MainlineObjectTopo, 0)
-
 	if len(targetObjID) == 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommInstDataNil, common.BKObjIDField)
 	}
 
-	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
-
-	mainlineAssoc, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: cond})
-	if err != nil {
-		blog.Errorf("search mainline association failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline},
 	}
-
-	if err = mainlineAssoc.CCError(); err != nil {
-		blog.Errorf("search mainline association failed, cond: %#v, err: %v, rid: %s", cond, err, kit.Rid)
+	mainlineAssoc, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("search mainline association failed, cond: %#v, err: %v, rid: %s", query, err, kit.Rid)
 		return nil, err
 	}
 
 	childMap := make(map[string]string)
 	parentMap := make(map[string]string)
 	needFind := []string{targetObjID}
-	for _, asso := range mainlineAssoc.Data.Info {
+	for _, asso := range mainlineAssoc.Info {
 		childMap[asso.AsstObjID] = asso.ObjectID
 		parentMap[asso.ObjectID] = asso.AsstObjID
 	}
@@ -280,25 +292,21 @@ func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit,
 	}
 	objMsg, err := assoc.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, queryCond)
 	if err != nil {
-		blog.Errorf("search objects[%#v] failed, err: %v, rid: %s", needFind, err, kit.Rid)
-		return nil, err
-	}
-
-	if err = objMsg.CCError(); err != nil {
-		blog.Errorf("search objects[%#v] failed, cond: %#v, err: %v, rid: %s",
-			needFind, queryCond, err, kit.Rid)
+		blog.Errorf("search objects[%#v] failed, cond: %#v, err: %v, rid: %s", needFind, queryCond, err, kit.Rid)
 		return nil, err
 	}
 
 	objMap := map[string]metadata.Object{}
-	for _, obj := range objMsg.Data.Info {
+	for _, obj := range objMsg.Info {
 		objMap[obj.ObjectID] = obj
 	}
 
+	result := make([]*metadata.MainlineObjectTopo, 0)
 	for _, objID := range needFind {
 
 		result = append(result, &metadata.MainlineObjectTopo{
 			ObjID:      objID,
+			ObjName:    objMap[objID].ObjectName,
 			OwnerID:    objMap[objID].OwnerID,
 			NextObj:    childMap[objID],
 			NextName:   objMap[childMap[objID]].ObjectName,
@@ -312,37 +320,35 @@ func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit,
 
 // IsMainlineObject check whether objID is mainline object or not
 func (assoc *association) IsMainlineObject(kit *rest.Kit, objID string) (bool, error) {
-	cond := mapstr.MapStr{
-		common.AssociationKindIDField: common.AssociationKindMainline,
-		common.BKDBOR: []mapstr.MapStr{
-			{common.BKObjIDField: objID},
-			{common.BKAsstObjIDField: objID},
-		},
+	filter := []map[string]interface{}{
+		{common.AssociationKindIDField: common.AssociationKindMainline,
+			common.BKDBOR: []mapstr.MapStr{
+				{common.BKObjIDField: objID},
+				{common.BKAsstObjIDField: objID},
+			}},
 	}
-	asst, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: cond})
+	asstCnt, err := assoc.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameObjAsst, filter)
 	if err != nil {
+		blog.Errorf("check object(%s) if is mainline object failed, err: %v, rid: %s", objID, err, kit.Rid)
 		return false, err
 	}
 
-	if err = asst.Error(); err != nil {
-		return false, err
+	if len(asstCnt) <= 0 {
+		blog.Errorf("get association by filter: %#v failed, return is empty, rid: %s", filter, kit.Rid)
+		return false, kit.CCError.CCError(common.CCErrorTopoObjectAssociationNotExist)
 	}
 
-	if len(asst.Data.Info) <= 0 {
-		return false, fmt.Errorf("model association [%+v] not found", cond)
+	if asstCnt[0] == 0 {
+		return false, nil
 	}
 
-	if len(asst.Data.Info) > 0 {
-		return true, nil
-	}
-
-	return false, nil
+	return true, nil
 }
 
 // TODO after merge , delete this func and use SetMainlineInstAssociation in inst/mainline_association
-func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit,
-	parentObjID string, current *metadata.Object) ([]int64, error) {
+func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parentObjID, childObjID, currentObjID,
+	currentObjName string) ([]int64, error) {
 
 	defaultCond := &metadata.QueryInput{}
 	cond := mapstr.New()
@@ -354,27 +360,28 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit,
 	// TODO replace to FindInst in inst/inst.go after merge
 	parentInsts, err := assoc.FindInst(kit, parentObjID, defaultCond)
 	if err != nil {
-		blog.Errorf("failed to find parent object(%s) inst, err: %v, rid: %s",
-			parentObjID, err, kit.Rid)
+		blog.Errorf("failed to find parent object(%s) inst, err: %v, rid: %s", parentObjID, err, kit.Rid)
 		return nil, err
 	}
 
 	createdInstIDs := make([]int64, len(parentInsts.Info))
-	expectParent2Children := map[int64][]mapstr.MapStr{}
+	expectParent2Children := make(map[int64][]int64)
 	// filters out special character for mainline instances
 	re, _ := regexp.Compile(`[#/,><|]`)
-	instanceName := re.ReplaceAllString(current.ObjectName, "")
+	instanceName := re.ReplaceAllString(currentObjName, "")
+	var parentInstIDs []int64
 	// create current object instance for each parent instance and insert the current instance to
 	for _, parentInst := range parentInsts.Info {
-		id, err := parentInst.Int64(metadata.GetInstIDFieldByObjID(parentObjID))
+		id, err := parentInst.Int64(common.GetInstIDField(parentObjID))
 		if err != nil {
 			blog.Errorf("failed to find the inst id, err: %v, rid: %s", err, kit.Rid)
 			return nil, err
 		}
+		parentInstIDs = append(parentInstIDs, id)
 
 		// we create the current object's instance for each parent instance belongs to the parent object.
-		currentInst := mapstr.MapStr{common.BKObjIDField: current.ObjectID}
-		currentInst.Set(current.GetInstNameFieldName(), instanceName)
+		currentInst := mapstr.MapStr{common.BKObjIDField: currentObjID}
+		currentInst.Set(common.GetInstNameField(currentObjID), instanceName)
 		// set current instance's parent id to parent instance's id, so that they can be chained.
 		currentInst.Set(common.BKInstParentStr, id)
 
@@ -387,144 +394,70 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit,
 		}
 
 		// create the instance now.
-		instID, err := assoc.createInst(kit, current.ObjectID, currentInst)
+		currentInstID, err := assoc.createInst(kit, currentObjID, currentInst)
 		if err != nil {
-			blog.Errorf("failed to create object(%s) default inst, err: %v, rid: %s",
-				current.ObjectID, err, kit.Rid)
+			blog.Errorf("failed to create object(%s) default inst, err: %v, rid: %s", currentObjID, err, kit.Rid)
 			return nil, err
 		}
 
-		createdInstIDs = append(createdInstIDs, int64(instID))
-
-		// reset the child's parent instance's parent id to current instance's id.
-		children, err := assoc.getMainlineInst(kit, parentObjID, parentInst, true)
-		if err != nil {
-			blog.Errorf("failed to get the object(%s) mainline child inst, err: %v, rid: %s",
-				parentObjID, err, kit.Rid)
-			return nil, err
-		}
-
-		expectParent2Children[int64(instID)] = children
+		createdInstIDs = append(createdInstIDs, int64(currentInstID))
 	}
 
-	for parentID, children := range expectParent2Children {
-		for _, child := range children {
-			// set the child's parent
-			if err = assoc.SetMainlineParentInst(kit, child, parentID); err != nil {
-				blog.Errorf("failed to set the object mainline child inst, err: %v, rid: %s",
-					err, kit.Rid)
-				return nil, err
-			}
+	// reset the child's parent instance's parent id to current instance's id.
+	childInst, err := assoc.getMainlineChildInst(kit, parentObjID, childObjID, parentInstIDs)
+	if err != nil {
+		blog.Errorf("failed to get the object(%s) mainline child inst, err: %v, rid: %s",
+			parentObjID, err, kit.Rid)
+		return nil, err
+	}
+
+	for _, child := range childInst {
+		childID, err := child.Int64(common.GetInstIDField(childObjID))
+		if err != nil {
+			blog.Errorf("failed to get the inst id from the inst(%#v), rid: %s", child, kit.Rid)
+			continue
+		}
+
+		parentID, err := child.Int64(common.BKParentIDField)
+		if err != nil {
+			blog.Errorf("failed to get the object(%s) mainline parent id, "+
+				"the current inst(%v), err: %v, rid: %s", childObjID, child, err, kit.Rid)
+			continue
+		}
+		expectParent2Children[parentID] = append(expectParent2Children[parentID], childID)
+	}
+
+	for parentID, childIDs := range expectParent2Children {
+		if err = assoc.updateMainlineAssociation(kit, childIDs, childObjID, parentID); err != nil {
+			blog.Errorf("failed to set the object mainline child inst, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
 		}
 	}
 	return createdInstIDs, nil
 }
 
-// getMainlineObject get mainline relationship model
-// the parent not exactly mean parent in a tree case
-func (assoc *association) getMainlineNodeObject(kit *rest.Kit,
-	objID string, isChild bool) (*metadata.Object, error) {
-
-	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
-
-	if isChild {
-		cond.Set(common.BKAsstObjIDField, objID)
-	} else {
-		cond.Set(common.BKObjIDField, objID)
-	}
-
-	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: cond})
-	if err != nil {
-		blog.Errorf("search object association failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("search object association failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	for _, asst := range rsp.Data.Info {
-		if isChild {
-			cond = mapstr.MapStr{common.BKObjIDField: asst.ObjectID}
-		} else {
-			cond = mapstr.MapStr{common.BKObjIDField: asst.AsstObjID}
-		}
-
-		// TODO after merge this logic can be replace by FindObject
-		rspRst, err := assoc.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header,
-			&metadata.QueryCondition{Condition: cond})
-		if err != nil {
-			blog.Errorf("request to search object failed, err: %v, rid: %s", err, kit.Rid)
-			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-
-		if err = rspRst.CCError(); err != nil {
-			blog.Errorf("request to search object failed, err: %v, rid: %s", err, kit.Rid)
-			return nil, err
-		}
-
-		if len(rspRst.Data.Info) > 1 {
-			blog.Errorf("get multiple(%d) children/parent for object(%s), rid: %s",
-				len(rspRst.Data.Info), asst.ObjectID, kit.Rid)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, asst.AsstObjID)
-		}
-
-		for _, item := range rspRst.Data.Info {
-			// only one parent in the main-line
-			return &item, nil
-		}
-
-	}
-
-	return &metadata.Object{}, nil
-}
-
 // TODO after merge this func need to be deleted, replace to the func of depend on mainline instance association
-func (assoc *association) getMainlineInst(kit *rest.Kit, objID string, inst mapstr.MapStr,
-	needChild bool) ([]mapstr.MapStr, error) {
+func (assoc *association) getMainlineChildInst(kit *rest.Kit, objID, childObjID string, instIDs []int64) (
+	[]mapstr.MapStr, error) {
 
-	mainlineObj, err := assoc.getMainlineNodeObject(kit, objID, needChild)
-	if err != nil {
-		blog.Errorf("failed to get object, err: %v, rid: %s", objID, err, kit.Rid)
-		return nil, err
-	}
-
-	instID, err := inst.Int64(metadata.GetInstIDFieldByObjID(objID))
-	parentID, err := inst.Int64(common.BKInstParentStr)
-
-	cond := mapstr.New()
-	if mainlineObj.IsCommon() {
-		cond.Set(metadata.ModelFieldObjectID, mainlineObj.ObjectID)
-	} else if mainlineObj.ObjectID == common.BKInnerObjIDSet {
+	cond := mapstr.MapStr{common.BKInstParentStr: mapstr.MapStr{common.BKDBIN: instIDs}}
+	if metadata.IsCommon(childObjID) {
+		cond.Set(metadata.ModelFieldObjectID, childObjID)
+	} else if childObjID == common.BKInnerObjIDSet {
 		cond.Set(common.BKDefaultField, mapstr.MapStr{common.BKDBNE: common.DefaultResSetFlag})
 	}
 
-	if needChild {
-		cond.Set(common.BKInstParentStr, instID)
-	} else {
-		cond.Set(mainlineObj.GetInstIDFieldName(), parentID)
+	instCond := &metadata.QueryInput{
+		Condition: cond,
+		Fields:    fmt.Sprintf("%s,%s", common.GetInstIDField(childObjID), common.BKParentIDField),
 	}
-
-	instRsp, err := assoc.FindInst(kit, mainlineObj.ObjectID, &metadata.QueryInput{Condition: cond})
+	instRsp, err := assoc.FindInst(kit, childObjID, instCond)
 	if err != nil {
-		blog.Errorf("search inst by object(%s) failed, err: %v, rid: %s",
-			mainlineObj.ObjectID, err, kit.Rid)
+		blog.Errorf("search inst by object(%s) failed, err: %v, rid: %s", childObjID, err, kit.Rid)
 		return nil, err
 	}
 
 	return instRsp.Info, nil
-}
-
-// TODO after merge this func need to be deleted, replace to the func of depend on mainline instance association
-func (assoc *association) SetMainlineParentInst(kit *rest.Kit, childInst mapstr.MapStr, instID int64) error {
-	if err := assoc.updateMainlineAssociation(kit, childInst, instID); err != nil {
-		blog.Errorf("failed to update the mainline association, err: %v, rid: %s", err, kit.Rid)
-		return err
-	}
-
-	return nil
 }
 
 // IsValidObject check whether objID is a real model's bk_obj_id field in backend
@@ -541,16 +474,10 @@ func (assoc *association) IsValidObject(kit *rest.Kit, objID string) error {
 	)
 	if err != nil {
 		blog.Errorf("find object failed, cond: %+v, err: %v, rid: %s", checkObjCond, err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err = objItems.CCError(); err != nil {
-		blog.Errorf("failed to search the objects by the condition(%#v) , err: %v, rid: %s",
-			checkObjCond, err, kit.Rid)
 		return err
 	}
 
-	if len(objItems.Data.Info) == 0 {
+	if len(objItems.Info) == 0 {
 		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField)
 	}
 
@@ -575,12 +502,7 @@ func (assoc *association) CreateObject(kit *rest.Kit, isMainline bool,
 		return nil, err
 	}
 
-	if err = objCls.CCError(); err != nil {
-		blog.Errorf("get object classification failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	if len(objCls.Data.Info) == 0 {
+	if len(objCls.Info) == 0 {
 		blog.Errorf("can't find classification by params, classification: %s is not exist, rid: %s",
 			obj.ObjCls, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKClassificationIDField)
@@ -613,17 +535,11 @@ func (assoc *association) CreateObject(kit *rest.Kit, isMainline bool,
 	objRsp, err := assoc.clientSet.CoreService().Model().CreateModel(kit.Ctx, kit.Header,
 		&metadata.CreateModel{Spec: *obj})
 	if err != nil {
-		blog.Errorf("failed to request the object controller, error info is %s, rid: %s",
-			err.Error(), kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err = objRsp.CCError(); err != nil {
 		blog.Errorf("failed to search the object(%s), err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
 		return nil, err
 	}
 
-	obj.ID = int64(objRsp.Data.Created.ID)
+	obj.ID = int64(objRsp.Created.ID)
 
 	// create the default group
 	groupData := metadata.Group{
@@ -635,16 +551,10 @@ func (assoc *association) CreateObject(kit *rest.Kit, isMainline bool,
 		OwnerID:    obj.OwnerID,
 	}
 
-	rspGrp, err := assoc.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header,
+	_, err = assoc.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header,
 		obj.ObjectID, metadata.CreateModelAttributeGroup{Data: groupData})
 	if err != nil {
-		blog.Errorf("create attribute group failed, err: %s, rid: %s", err.Error(), kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err = rspGrp.CCError(); err != nil {
-		blog.Errorf("create attribute group[%s] failed, err: %v, rid: %s",
-			groupData.GroupID, err, kit.Rid)
+		blog.Errorf("create attribute group[%s] failed, err: %v, rid: %s", groupData.GroupID, err, kit.Rid)
 		return nil, err
 	}
 
@@ -670,34 +580,28 @@ func (assoc *association) CreateObject(kit *rest.Kit, isMainline bool,
 	rspAttr, err := assoc.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header,
 		attr.ObjectID, &metadata.CreateModelAttributes{Attributes: []metadata.Attribute{attr}})
 	if err != nil {
-		blog.Errorf("failed to request coreService to create model attrs, "+
-			"err: %v, ObjectID: %s, input: %#v, rid: %s", err, attr.ObjectID, attr, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err = rspAttr.CCError(); err != nil {
 		blog.Errorf("create model attrs failed, ObjectID: %s, input: %#v, err: %v, rid: %s",
 			attr.ObjectID, attr, err, kit.Rid)
-		return nil, rspAttr.CCError()
+		return nil, err
 	}
 
-	for _, exception := range rspAttr.Data.Exceptions {
+	for _, exception := range rspAttr.Exceptions {
 		return nil, kit.CCError.New(int(exception.Code), exception.Message)
 	}
 
-	if len(rspAttr.Data.Repeated) > 0 {
+	if len(rspAttr.Repeated) > 0 {
 		blog.Errorf("create model attrs failed, the attr is duplicated, ObjectID: %s, input: %#v, rid: %s",
 			attr.ObjectID, attr, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrorAttributeNameDuplicated)
 	}
 
-	if len(rspAttr.Data.Created) != 1 {
+	if len(rspAttr.Created) != 1 {
 		blog.Errorf("create model attrs created amount error, ObjectID: %s, input: %#v, rid: %s",
 			attr.ObjectID, attr, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrTopoObjectAttributeCreateFailed)
 	}
 
-	attr.ID = int64(rspAttr.Data.Created[0].ID)
+	attr.ID = int64(rspAttr.Created[0].ID)
 
 	keys = append(keys, metadata.UniqueKey{Kind: metadata.UniqueKeyKindProperty, ID: uint64(attr.ID)})
 
@@ -722,33 +626,26 @@ func (assoc *association) CreateObject(kit *rest.Kit, isMainline bool,
 		rsppAttr, err := assoc.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header,
 			pAttr.ObjectID, &metadata.CreateModelAttributes{Attributes: []metadata.Attribute{pAttr}})
 		if err != nil {
-			blog.Errorf("failed to request coreService to create model attrs, "+
-				"err: %v, ObjectID: %s, input: %#v, rid: %s", err, pAttr.ObjectID, pAttr, kit.Rid)
-			return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-
-		if err = rsppAttr.CCError(); err != nil {
-			blog.Errorf("create model attrs failed, ObjectID: %s, input: %#v, rid: %s",
-				pAttr.ObjectID, pAttr, kit.Rid)
+			blog.Errorf("create model attrs failed, ObjectID: %s, input: %#v, rid: %s", pAttr.ObjectID, pAttr, kit.Rid)
 			return nil, err
 		}
 
-		for _, exception := range rsppAttr.Data.Exceptions {
+		for _, exception := range rsppAttr.Exceptions {
 			return nil, kit.CCError.New(int(exception.Code), exception.Message)
 		}
 
-		if len(rsppAttr.Data.Repeated) > 0 {
+		if len(rsppAttr.Repeated) > 0 {
 			blog.Errorf("create model attrs failed, the attr is duplicated, "+
 				"ObjectID: %s, input: %#v, rid: %s", pAttr.ObjectID, pAttr, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrorAttributeNameDuplicated)
 		}
 
-		if len(rsppAttr.Data.Created) != 1 {
+		if len(rsppAttr.Created) != 1 {
 			blog.Errorf("create model attrs created amount error, ObjectID: %s, input: %#v, rid: %s",
 				pAttr.ObjectID, pAttr, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrTopoObjectAttributeCreateFailed)
 		}
-		pAttr.ID = int64(rsppAttr.Data.Created[0].ID)
+		pAttr.ID = int64(rsppAttr.Created[0].ID)
 
 		keys = append(keys, metadata.UniqueKey{Kind: metadata.UniqueKeyKindProperty, ID: uint64(pAttr.ID)})
 	}
@@ -762,13 +659,9 @@ func (assoc *association) CreateObject(kit *rest.Kit, isMainline bool,
 	// NOTICE: 2021年03月29日  唯一索引与index.MainLineInstanceUniqueIndex,index.InstanceUniqueIndex定义强依赖
 	// 原因：建立模型之前要将表和表中的索引提前建立，mongodb 4.2.6(4.4之前)事务中不能建表
 	// 事务操作表中数据操作和建表，建立索引为互斥操作。
-	resp, err := assoc.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header,
+	_, err = assoc.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header,
 		uni.ObjID, metadata.CreateModelAttrUnique{Data: uni})
 	if err != nil {
-		blog.Errorf("create unique for %s failed, err: %v, rid: %s", uni.ObjID, err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrTopoObjectUniqueCreateFailed)
-	}
-	if err = resp.CCError(); err != nil {
 		blog.Errorf("create unique for %s failed, err: %v, rid: %s", uni.ObjID, err, kit.Rid)
 		return nil, err
 	}
@@ -845,17 +738,11 @@ func (assoc *association) FindInst(kit *rest.Kit, objID string,
 		rsp, err := assoc.clientSet.CoreService().Host().GetHosts(kit.Ctx, kit.Header, cond)
 		if err != nil {
 			blog.Errorf("get host failed, err: %v, rid: %s", err, kit.Rid)
-			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-
-		if err = rsp.CCError(); err != nil {
-			blog.Errorf("search object(%s) inst by the condition(%#v) failed, err: %v, rid: %s",
-				objID, cond, err, kit.Rid)
 			return nil, err
 		}
 
-		result.Count = rsp.Data.Count
-		result.Info = rsp.Data.Info
+		result.Count = rsp.Count
+		result.Info = rsp.Info
 		return result, nil
 
 	default:
@@ -867,17 +754,11 @@ func (assoc *association) FindInst(kit *rest.Kit, objID string,
 		rsp, err := assoc.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, input)
 		if err != nil {
 			blog.Errorf("search instance failed, err: %v, rid: %s", err, kit.Rid)
-			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-
-		if err = rsp.CCError(); err != nil {
-			blog.Errorf("search object(%s) inst by the condition(%#v) failed, err: %v, rid: %s",
-				objID, cond, err, kit.Rid)
 			return nil, err
 		}
 
-		result.Count = rsp.Data.Count
-		result.Info = rsp.Data.Info
+		result.Count = rsp.Count
+		result.Info = rsp.Info
 		return result, nil
 	}
 }
@@ -893,32 +774,16 @@ func (assoc *association) createInst(kit *rest.Kit, objID string, data mapstr.Ma
 		return 0, err
 	}
 
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("failed to create object instance ,err: %v, rid: %s", err, kit.Rid)
-		return 0, err
-	}
-
-	return rsp.Data.Created.ID, nil
+	return rsp.Created.ID, nil
 }
 
 // TODO after merge this func need to be deleted, replace to the func of depend on mainline instance association
-func (assoc *association) updateMainlineAssociation(kit *rest.Kit, child mapstr.MapStr, parentID int64) error {
+func (assoc *association) updateMainlineAssociation(kit *rest.Kit, childID []int64, childObjID string,
+	parentID int64) error {
 
-	childObj, err := child.String(common.BKObjIDField)
-	if err != nil {
-		blog.Errorf("get object id in child instance failed, child: %#v, err: %v, rid: %s",
-			child, err, kit.Rid)
-		return err
-	}
-
-	childID, err := child.Int64(metadata.GetInstIDFieldByObjID(childObj))
-	if err != nil {
-		return err
-	}
-
-	cond := mapstr.MapStr{metadata.GetInstIDFieldByObjID(childObj): childID}
-	if metadata.IsCommon(childObj) {
-		cond.Set(metadata.ModelFieldObjectID, childObj)
+	cond := mapstr.MapStr{common.GetInstIDField(childObjID): mapstr.MapStr{common.BKDBIN: childID}}
+	if metadata.IsCommon(childObjID) {
+		cond.Set(metadata.ModelFieldObjectID, childObjID)
 	}
 
 	input := metadata.UpdateOption{
@@ -927,14 +792,9 @@ func (assoc *association) updateMainlineAssociation(kit *rest.Kit, child mapstr.
 		},
 		Condition: cond,
 	}
-	rsp, err := assoc.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, childObj, &input)
+	_, err := assoc.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, childObjID, &input)
 	if err != nil {
-		blog.Errorf("failed to request object controller, err: %v, rid: %s", err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("failed to update the association, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("failed to update instance of object(%s), err: %v, rid: %s", childObjID, err, kit.Rid)
 		return err
 	}
 
@@ -947,20 +807,14 @@ func (assoc *association) setMainlineParentObject(kit *rest.Kit, childObjID, par
 		common.AssociationKindIDField: common.AssociationKindMainline,
 	}
 
-	resp, err := assoc.clientSet.CoreService().Association().DeleteModelAssociation(kit.Ctx, kit.Header,
+	_, err := assoc.clientSet.CoreService().Association().DeleteModelAssociation(kit.Ctx, kit.Header,
 		&metadata.DeleteOption{Condition: cond})
 	if err != nil {
 		blog.Errorf("update mainline object[%s] association to %s, search object association failed, "+
 			"err: %v, rid: %s", childObjID, parentObjID, err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err = resp.CCError(); err != nil {
-		blog.Errorf("update mainline object[%s] association to %s, search object association failed,"+
-			" err: %v, rid: %s",
-			childObjID, parentObjID, err, kit.Rid)
 		return err
 	}
+
 	return assoc.createMainlineObjectAssociation(kit, childObjID, parentObjID)
 }
 
@@ -981,14 +835,9 @@ func (assoc *association) createMainlineObjectAssociation(kit *rest.Kit, childOb
 		IsPre:      &defined,
 	}
 
-	result, err := assoc.clientSet.CoreService().Association().CreateMainlineModelAssociation(kit.Ctx, kit.Header,
+	_, err := assoc.clientSet.CoreService().Association().CreateMainlineModelAssociation(kit.Ctx, kit.Header,
 		&metadata.CreateModelAssociation{Spec: association})
 	if err != nil {
-		blog.Errorf("create mainline object association failed, err: %v, rid: %s", err, kit.Rid)
-		return err
-	}
-
-	if err = result.CCError(); err != nil {
 		blog.Errorf("create mainline object association failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -997,7 +846,7 @@ func (assoc *association) createMainlineObjectAssociation(kit *rest.Kit, childOb
 }
 
 // TODO this func need to replace to ResetMainlineInstAssociation in inst/mainline_association
-func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObjID string) error {
+func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObjID, childObjID string) error {
 
 	cond := mapstr.New()
 	if metadata.IsCommon(currentObjID) {
@@ -1012,11 +861,34 @@ func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObj
 		return err
 	}
 
+	instIDs := make([]int64, len(currentInsts.Info))
+	instParentMap := map[int64]int64{}
+	for _, currInst := range currentInsts.Info {
+		instID, err := currInst.Int64(common.GetInstIDField(currentObjID))
+		if err != nil {
+			blog.Errorf("get inst id in current insts failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+
+		instIDs = append(instIDs, instID)
+
+		currInstParentID, err := currInst.Int64(common.BKInstParentStr)
+		if err != nil {
+			blog.Errorf("get bk_parent_id in current insts failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+
+		instParentMap[instID] = currInstParentID
+	}
+
+	children, err := assoc.getMainlineChildInst(kit, currentObjID, childObjID, instIDs)
+	if err != nil {
+		return err
+	}
+
 	// 检查实例删除后，会不会出现重名冲突
-	var canReset bool
-	var repeatedInstName string
-	if canReset, repeatedInstName, err = assoc.checkInstNameRepeat(kit, currentObjID,
-		currentInsts.Info); err != nil {
+	canReset, repeatedInstName, err := assoc.checkInstNameRepeat(kit, instParentMap, children)
+	if err != nil {
 		blog.Errorf("can not be reset, err: %+v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -1030,42 +902,46 @@ func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObj
 
 	// NEED FIX: 下面循环中的continue ，会在处理实例异常的时候跳过当前拓扑的处理，此方式可能会导致某个业务拓扑失败，但是不会影响所有。
 	// 修改 currentInsts 所有孩子结点的父节点，为 currentInsts 的父节点，并删除 currentInsts
-	for _, currentInst := range currentInsts.Info {
-		instID, err := currentInst.Int64(metadata.GetInstIDFieldByObjID(currentObjID))
+
+	childIDMap := make(map[int64][]int64)
+	for _, child := range children {
+		childInstID, err := child.Int64(common.GetInstIDField(currentObjID))
 		if err != nil {
-			blog.Errorf("failed to get the inst id from the inst(%#v), rid: %s", currentInst, kit.Rid)
+			blog.Errorf("get inst id in current insts failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+
+		childParentID, err := child.Int64(common.BKInstParentStr)
+		if err != nil {
+			blog.Errorf("get bk_parent_id in current insts failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+
+		childIDMap[childParentID] = append(childIDMap[childParentID], childInstID)
+	}
+
+	parentChildMap := map[int64][]int64{}
+	for inst, parent := range instParentMap {
+		parentChildMap[parent] = append(parentChildMap[parent], childIDMap[inst]...)
+	}
+
+	// set the child's parent
+	for parent, child := range parentChildMap {
+		if len(child) == 0 {
 			continue
 		}
 
-		parentID, err := currentInst.Int64(common.BKInstParentStr)
-		if err != nil {
-			blog.Errorf("failed to get the object(%s) mainline parent id, the current inst(%v), "+
-				"err: %v, rid: %s", currentObjID, currentInst, err, kit.Rid)
-			continue
+		if err = assoc.updateMainlineAssociation(kit, child, childObjID, parent); err != nil {
+			blog.Errorf("failed to set the object mainline child inst, parent: %d, child: %v, err: %v, rid: %s",
+				parent, child, err, kit.Rid)
+			return err
 		}
+	}
 
-		// reset the child's parent
-		children, err := assoc.getMainlineInst(kit, currentObjID, currentInst, true)
-		if err != nil {
-			blog.Errorf("failed to get the object(%s) mainline child inst, err: %v, rid: %s",
-				currentObjID, err, kit.Rid)
-			continue
-		}
-		for _, child := range children {
-			// set the child's parent
-			if err = assoc.SetMainlineParentInst(kit, child, parentID); err != nil {
-				blog.Errorf("failed to set the object mainline child inst, err: %v, rid: %s",
-					err, kit.Rid)
-				continue
-			}
-		}
-
-		// delete the current inst
-		if err := assoc.DeleteMainlineInstWithID(kit, currentObjID, instID); err != nil {
-			blog.Errorf("failed to delete the current inst(%#v), err: %v, rid: %s",
-				currentInst, err, kit.Rid)
-			continue
-		}
+	// delete the current inst
+	if err := assoc.DeleteMainlineInstWithID(kit, currentObjID, instIDs); err != nil {
+		blog.Errorf("failed to delete the current inst, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
 
 	return nil
@@ -1074,33 +950,38 @@ func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObj
 // checkInstNameRepeat 检查如果将 currentInsts 都删除之后，拥有共同父节点的孩子结点会不会出现名字冲突
 // 如果有冲突，返回 (false, 冲突实例名, nil)
 // TODO after merge this func need to be deleted, replace to the func of depend on mainline instance association
-func (assoc *association) checkInstNameRepeat(kit *rest.Kit, currentObjID string,
-	currentInsts []mapstr.MapStr) (canReset bool, repeatedInstName string, err error) {
+func (assoc *association) checkInstNameRepeat(kit *rest.Kit, instParentMap map[int64]int64, children []mapstr.MapStr) (
+	canReset bool, repeatedInstName string, err error) {
 
-	// TODO: 返回值将bool值与出错情况分开 (bool, error)
-	instNames := map[string]bool{}
-	for _, currInst := range currentInsts {
-		currInstParentID, err := currInst.Int64(common.BKInstParentStr)
+	parentChildName := map[int64]map[string]struct{}{}
+	for _, child := range children {
+		instName, err := child.String(common.BKInstNameField)
 		if err != nil {
 			return false, "", err
 		}
 
-		children, err := assoc.getMainlineInst(kit, currentObjID, currInst, true)
+		childInstID, err := child.Int64(common.BKInstParentStr)
 		if err != nil {
+			blog.Errorf("get child parent id in child insts failed, err: %v, rid: %s", err, kit.Rid)
 			return false, "", err
 		}
 
-		for _, child := range children {
-			instName, err := child.String(common.BKInstNameField)
-			if err != nil {
-				return false, "", err
+		for instID, parentID := range instParentMap {
+			if instID != childInstID {
+				continue
 			}
-			key := fmt.Sprintf("%d_%s", currInstParentID, instName)
-			if _, ok := instNames[key]; ok {
+
+			childName, exist := parentChildName[parentID]
+			if !exist {
+				childName = make(map[string]struct{})
+				parentChildName[parentID] = childName
+			}
+
+			if _, exist := childName[instName]; exist {
 				return false, instName, nil
 			}
 
-			instNames[key] = true
+			childName[instName] = struct{}{}
 		}
 	}
 
@@ -1109,14 +990,14 @@ func (assoc *association) checkInstNameRepeat(kit *rest.Kit, currentObjID string
 
 // TODO should be deleted after merge, and which call this func use DeleteMainlineInstWithID in inst/inst.go to replace
 // DeleteMainlineInstWithID delete mainline instance by it's bk_inst_id
-func (assoc *association) DeleteMainlineInstWithID(kit *rest.Kit, objID string, instID int64) error {
+func (assoc *association) DeleteMainlineInstWithID(kit *rest.Kit, objID string, instIDs []int64) error {
 
 	// if this instance has been bind to a instance by the association, then this instance should not be deleted.
 	cnt, err := assoc.clientSet.CoreService().Association().CountInstanceAssociations(kit.Ctx, kit.Header, objID,
 		&metadata.Condition{
 			Condition: mapstr.MapStr{common.BKDBOR: []mapstr.MapStr{
-				{common.BKObjIDField: objID, common.BKInstIDField: instID},
-				{common.BKAsstObjIDField: objID, common.BKAsstInstIDField: instID},
+				{common.BKObjIDField: objID, common.BKInstIDField: mapstr.MapStr{common.BKDBIN: instIDs}},
+				{common.BKAsstObjIDField: objID, common.BKAsstInstIDField: mapstr.MapStr{common.BKDBIN: instIDs}},
 			}},
 		})
 	if err != nil {
@@ -1124,17 +1005,12 @@ func (assoc *association) DeleteMainlineInstWithID(kit *rest.Kit, objID string, 
 		return err
 	}
 
-	if err = cnt.CCError(); err != nil {
-		blog.Errorf("count association by object(%s) failed, err: %s, rid: %s", objID, err, kit.Rid)
-		return err
-	}
-
-	if cnt.Data.Count > 0 {
+	if cnt.Count > 0 {
 		return kit.CCError.CCError(common.CCErrorInstHasAsst)
 	}
 
 	// delete this instance now.
-	delCond := mapstr.MapStr{metadata.GetInstIDFieldByObjID(objID): instID}
+	delCond := mapstr.MapStr{metadata.GetInstIDFieldByObjID(objID): mapstr.MapStr{common.BKDBIN: instIDs}}
 	if metadata.IsCommon(objID) {
 		delCond.Set(common.BKObjIDField, objID)
 	}
@@ -1152,15 +1028,9 @@ func (assoc *association) DeleteMainlineInstWithID(kit *rest.Kit, objID string, 
 	ops := metadata.DeleteOption{
 		Condition: delCond,
 	}
-	rsp, err := assoc.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, objID, &ops)
+	_, err = assoc.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, objID, &ops)
 	if err != nil {
-		blog.Errorf("request to delete instance by condition failed, cond: %#v, err: %v", ops, err)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("failed to delete the object(%s) inst by the condition(%#v), err: %v",
-			objID, ops, err)
+		blog.Errorf("failed to delete the object(%s) inst by the condition(%#v), err: %v", objID, ops, err)
 		return err
 	}
 
@@ -1168,190 +1038,6 @@ func (assoc *association) DeleteMainlineInstWithID(kit *rest.Kit, objID string, 
 	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
 		blog.Errorf("delete inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.Error(common.CCErrAuditSaveLogFailed)
-	}
-
-	return nil
-}
-
-func (assoc *association) deleteAssociation(kit *rest.Kit, cond mapstr.MapStr) error {
-	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: cond})
-	if err != nil {
-		blog.Errorf("get association with cond[%v] failed, err: %v, rid: %s", cond, err, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("get association with cond[%v] failed, err: %v, rid: %s", cond, err, kit.Rid)
-		return err
-	}
-
-	if len(rsp.Data.Info) < 1 {
-		// we assume this association has already been deleted.
-		blog.Errorf("can not get association with cond[%v], rid: %s", cond, kit.Rid)
-		return nil
-	}
-
-	// a pre-defined association can not be updated.
-	if rsp.Data.Info[0].IsPre != nil && *rsp.Data.Info[0].IsPre {
-		blog.Errorf("it's a pre-defined association, can not be deleted, cond: %#v, rid: %s", cond, kit.Rid)
-		return kit.CCError.CCError(common.CCErrorTopoDeletePredefinedAssociation)
-	}
-
-	// delete the object association
-	result, err := assoc.clientSet.CoreService().Association().DeleteModelAssociation(kit.Ctx, kit.Header,
-		&metadata.DeleteOption{Condition: cond})
-	if err != nil {
-		blog.Errorf("delete object association failed, err: %v, rid: %s", err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err = result.CCError(); err != nil {
-		blog.Errorf("failed to create the association (%#v) , err: %s, rid: %s", cond, err, kit.Rid)
-		return err
-	}
-
-	return nil
-}
-
-// TODO should be deleted after merge, model/object has been already implement
-func (assoc *association) DeleteObject(kit *rest.Kit, targetObjID string, needCheckInst bool) error {
-	if len(targetObjID) <= 0 {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
-	}
-
-	// get model by id
-	cond := mapstr.MapStr{
-		common.BKObjIDField: targetObjID,
-	}
-
-	resp, err := assoc.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: cond},
-	)
-	if err != nil {
-		blog.Errorf("find object failed, cond: %+v, err: %s, rid: %s", cond, err.Error(), kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err = resp.CCError(); err != nil {
-		blog.Errorf("failed to search the objects by the condition(%#v) , err: %v, rid: %s",
-			cond, err, kit.Rid)
-		return err
-	}
-
-	objs := resp.Data.Info
-
-	// shouldn't return 404 error here, legacy implements just ignore not found error
-	if len(objs) == 0 {
-		blog.V(3).Infof("object not found, condition: %v, rid: %s", cond, kit.Rid)
-		return nil
-	}
-	if len(objs) > 1 {
-		return kit.CCError.CCError(common.CCErrCommGetMultipleObject)
-	}
-	obj := objs[0]
-
-	// check whether it can be deleted
-	if needCheckInst {
-		if err = assoc.CanDelete(kit, obj); err != nil {
-			return err
-		}
-	}
-
-	// generate audit log of object.
-	audit := auditlog.NewObjectAuditLog(assoc.clientSet.CoreService())
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
-	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.ID, &obj)
-	if err != nil {
-		blog.Errorf("generate audit log failed before delete object, objName: %s, err: %v, rid: %s",
-			obj.ObjectName, err, kit.Rid)
-		return err
-	}
-
-	// DeleteModelCascade 将会删除模型/模型属性/属性分组/唯一校验
-	rsp, err := assoc.clientSet.CoreService().Model().DeleteModelCascade(kit.Ctx, kit.Header, obj.ID)
-	if err != nil {
-		blog.Errorf("failed to request the object controller, err: %v, rid: %s", err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if err = rsp.CCError(); err != nil {
-		blog.Errorf("failed to delete the object by the id(%d), err: %v, rid: %s",
-			obj.ID, err, kit.Rid)
-		return err
-	}
-
-	// save audit log.
-	if err = audit.SaveAuditLog(kit, *auditLog); err != nil {
-		blog.Errorf("delete object %s success, save audit log failed, err: %v, rid: %s",
-			obj.ObjectName, err, kit.Rid)
-		return err
-	}
-
-	return nil
-}
-
-// TODO should be deleted after merge
-// CanDelete return nil only when:
-// 1. not inner model
-// 2. model has no instances
-// 3. model has no association with other model
-func (assoc *association) CanDelete(kit *rest.Kit, targetObj metadata.Object) error {
-	// step 1. ensure not inner model
-	if common.IsInnerModel(targetObj.GetObjectID()) {
-		return kit.CCError.Error(common.CCErrTopoForbiddenToDeleteModelFailed)
-	}
-
-	cond := mapstr.New()
-	if targetObj.IsCommon() {
-		cond.Set(common.BKObjIDField, targetObj.ObjectID)
-	}
-
-	// step 2. ensure model has no instances
-	input := &metadata.Condition{Condition: cond}
-	findInstResponse, err := assoc.clientSet.CoreService().Instance().CountInstances(kit.Ctx, kit.Header,
-		targetObj.ObjectID, input)
-
-	if err != nil {
-		blog.Errorf("failed to check if it (%s) has some insts, err: %v, rid: %s",
-			targetObj.ObjectID, err, kit.Rid)
-		return err
-	}
-
-	if err = findInstResponse.CCError(); err != nil {
-		blog.Errorf("failed to check if it (%s) has some insts, err: %v, rid: %s",
-			targetObj.ObjectID, err, kit.Rid)
-		return err
-	}
-
-	if findInstResponse.Data.Count != 0 {
-		blog.Errorf("the object [%s] has been instantiated and cannot be deleted, rid: %s",
-			targetObj.ObjectID, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrTopoObjectHasSomeInstsForbiddenToDelete, targetObj.ObjectID)
-	}
-
-	// step 3. ensure model has no association with other model
-	or := make([]interface{}, 0)
-	or = append(or, mapstr.MapStr{common.BKObjIDField: targetObj.ObjectID})
-	or = append(or, mapstr.MapStr{common.AssociatedObjectIDField: targetObj.ObjectID})
-
-	assocResult, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: map[string]interface{}{common.BKDBOR: or}})
-	if err != nil {
-		blog.Errorf("check object[%s] can be deleted, but get object associate info failed, err: %v, rid: %s",
-			targetObj.ObjectID, err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err = assocResult.CCError(); err != nil {
-		blog.Errorf("get object[%s] associate info failed, err: %v, rid: %s",
-			targetObj.ObjectID, err, kit.Rid)
-		return kit.CCError.Error(assocResult.Code)
-	}
-
-	if len(assocResult.Data.Info) != 0 {
-		blog.Errorf("object[%s] has already associate to another one., rid: %s",
-			targetObj.ObjectID, kit.Rid)
-		return kit.CCError.Error(common.CCErrorTopoObjectHasAlreadyAssociated)
 	}
 
 	return nil

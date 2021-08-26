@@ -39,7 +39,8 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 	mainLineAssociation := &metadata.Association{}
 	_, err := mainLineAssociation.Parse(data)
 	if nil != err {
-		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s, rid: %s", data, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s, rid: %s", data, err.Error(),
+			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "mainline object"))
 		return
 	}
@@ -53,14 +54,15 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 		return
 	}
 
-	var ret *metadata.Object
+	ret := new(metadata.Object)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 
 		var err error
 		ret, err = s.Logics.AssociationOperation().CreateMainlineAssociation(ctx.Kit, mainLineAssociation,
 			s.Config.BusinessTopoLevelMax)
 		if err != nil {
-			blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", mainLineAssociation.ObjectID, err, ctx.Kit.Rid)
+			blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", mainLineAssociation.ObjectID, err,
+				ctx.Kit.Rid)
 			return err
 		}
 		return nil
