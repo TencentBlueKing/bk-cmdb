@@ -466,7 +466,7 @@
         })
       },
       updateInstanceInfo() {
-        // todo 需要后端提供接口查询数据变更后的服务实例信息，用于更新服务实例名
+        this.$emit('update-instance')
       }
     }
   }

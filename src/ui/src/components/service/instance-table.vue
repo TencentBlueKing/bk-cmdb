@@ -175,9 +175,6 @@
         handler() {
           this.$emit('change-process')
         }
-      },
-      sourceProcesses(value) {
-        this.processList = this.$tools.clone(value)
       }
     },
     created() {

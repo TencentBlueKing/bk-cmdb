@@ -258,6 +258,7 @@
         const instances = []
         hotsIds.forEach((id) => {
           instances.push({
+            bk_module_id: this.moduleId,
             bk_host_id: id,
             name: '',
             editing: { name: false }
@@ -386,7 +387,7 @@
        * 解决后端性能问题: 记录用服务模板生成的实例是否触发编辑动作
        */
       handleEditProcess(instance, processIndex) {
-        if (!instance.service_template) return
+        if (!this.withTemplate) return
         const key = `${instance.bk_module_id}-${instance.bk_host_id}`
         const state = this.processChangeState[key] || new Set()
         state.add(processIndex)
@@ -439,10 +440,12 @@
         this.$routerActions.back()
       },
       handleChangeProcess() {
-        const serviceInstanceTables = this.$refs.serviceInstanceTable
-        if (serviceInstanceTables) {
-          this.hasProcess = serviceInstanceTables.some(instanceTable => instanceTable?.processList?.length)
-        }
+        this.$nextTick(() => {
+          const serviceInstanceTables = this.$refs.serviceInstanceTable
+          if (serviceInstanceTables) {
+            this.hasProcess = serviceInstanceTables.some(instanceTable => instanceTable?.processList?.length)
+          }
+        })
       },
       resizeHandler() {
         this.$nextTick(() => {

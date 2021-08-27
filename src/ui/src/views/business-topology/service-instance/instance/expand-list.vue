@@ -202,7 +202,7 @@
             }
           })
           if (this.list.length === 1) {
-            this.$emit('update-list', [])
+            Bus.$emit('delete-complete')
           } else {
             this.getList()
           }

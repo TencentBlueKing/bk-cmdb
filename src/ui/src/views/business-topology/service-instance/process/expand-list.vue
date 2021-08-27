@@ -64,6 +64,7 @@
   import { processTableHeader } from '@/dictionary/table-header'
   import { mapGetters } from 'vuex'
   import Bus from '../common/bus'
+  import RootBus from '@/utils/bus'
   import Form from '@/components/service/form/form.js'
   import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
   import RouterQuery from '@/router/query'
@@ -278,6 +279,7 @@
         })
       },
       refreshParentList() {
+        RootBus.$emit('refresh-count-by-node')
         RouterQuery.set({
           _t: Date.now(),
           page: 1

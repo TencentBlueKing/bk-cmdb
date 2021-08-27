@@ -54,6 +54,7 @@
         :expanded="index === 0"
         :current-view="currentView"
         @delete-instance="handleDeleteInstance"
+        @update-instance="handleUpdateInstance"
         @check-change="handleCheckChange"
         @edit-name="handleEditName(instance)"
         @edit-name-success="handleEditNameSuccess(instance, ...arguments)"
@@ -264,6 +265,9 @@
         this.$set(this.searchSelect[2], 'children', keyOption)
       },
       handleDeleteInstance() {
+        this.getHostSeriveInstances()
+      },
+      handleUpdateInstance() {
         this.getHostSeriveInstances()
       },
       handleEditName(instance) {

@@ -8,6 +8,7 @@
 <script>
   import RouterQuery from '@/router/query'
   import Bus from '../common/bus'
+  import RootBus from '@/utils/bus'
   import InstanceOptions from './options'
   import InstanceList from './list'
   export default {
@@ -27,6 +28,9 @@
     },
     methods: {
       refreshView() {
+        // 通知刷新左侧树节点中的服务实例数
+        RootBus.$emit('refresh-count-by-node')
+
         RouterQuery.set({
           _t: Date.now()
         })
