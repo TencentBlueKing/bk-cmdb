@@ -23,9 +23,9 @@
         type: String,
         default: ''
       },
-      type: {
-        type: String,
-        default: 'singlechar'
+      property: {
+        type: Object,
+        default: ({})
       }
     },
     computed: {
@@ -49,6 +49,7 @@
         const LTE = '$lte'
         const GTE = '$gte'
         const RANGE = '$range' // 前端构造的操作符，真实数据中会拆分数据为gte, lte向后台传递
+        const LIKE = '$regex'
         const typeMap = {
           bool: [EQ, NE],
           date: [GTE, LTE],
@@ -56,7 +57,7 @@
           float: [EQ, NE, GT, LT, RANGE],
           int: [EQ, NE, GT, LT, RANGE],
           list: [IN, NIN],
-          longchar: [IN, NIN],
+          longchar: [IN, NIN, LIKE],
           objuser: [IN, NIN],
           organization: [IN, NIN],
           singlechar: [IN, NIN],
@@ -75,9 +76,24 @@
           [NIN]: this.$t('不包含'),
           [RANGE]: this.$t('数值范围'),
           [LTE]: this.$t('小于等于'),
-          [GTE]: this.$t('大于等于')
+          [GTE]: this.$t('大于等于'),
+          [LIKE]: this.$t('模糊')
         }
-        return typeMap[this.type].map(operator => ({
+
+        const {
+          bk_obj_id: modelId,
+          bk_property_id: propertyId,
+          bk_property_type: propertyType
+        } = this.property
+        const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
+        const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
+
+        // 集群、模块名称使用输入联想的tag-input，不需要模糊搜索
+        if (!(isSetName || isModuleName)) {
+          typeMap.singlechar.push(LIKE)
+        }
+
+        return typeMap[propertyType].map(operator => ({
           id: operator,
           name: Utils.getOperatorSymbol(operator),
           title: nameDescription[operator]

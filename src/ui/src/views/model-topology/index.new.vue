@@ -147,6 +147,7 @@
       :is-show.sync="addBusinessLevel.showDialog"
       :is-main-line="true"
       :title="$t('新建层级')"
+      :operating="creating"
       @confirm="handleCreateBusinessLevel"
     ></the-create-model>
   </div>
@@ -220,7 +221,8 @@
         loading: true,
         isTopoHover: false,
         createAuth: false,
-        hideModelConfigKey: 'model_custom_hide_models'
+        hideModelConfigKey: 'model_custom_hide_models',
+        creating: false,
       }
     },
     computed: {
@@ -1167,6 +1169,8 @@
       },
       async handleCreateBusinessLevel(data) {
         try {
+          this.creating = true
+
           await this.createMainlineObject({
             params: {
               bk_asst_obj_id: this.addBusinessLevel.parent.bk_obj_id,
@@ -1195,6 +1199,8 @@
         } catch (e) {
           console.log(e)
         }
+
+        this.creating = false
       },
       cancelCreateBusinessLevel() {
         this.addBusinessLevel.parent = null

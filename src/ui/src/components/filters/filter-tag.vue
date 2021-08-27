@@ -43,7 +43,7 @@
       selected() {
         return FilterStore.selected.filter((property) => {
           const { value } = this.condition[property.id]
-          return value !== null && !!value.toString().length
+          return value !== null && value !== undefined && !!value.toString().length
         })
       },
       showClear() {

@@ -37,6 +37,7 @@
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
           :class="filterType"
+          :fuzzy="true"
           v-bind="filterComponentProps"
           v-model="filter.value"
           @change="handleFilterValueChange"
@@ -185,7 +186,7 @@
         filter: {
           field: 'bk_biz_name',
           value: '',
-          operator: '$eq'
+          operator: '$regex'
         },
         slider: {
           show: false,
@@ -288,7 +289,6 @@
           page = 1,
           limit = this.table.pagination.limit,
           filter = '',
-          operator = '',
           field = 'bk_biz_name'
         }) => {
           this.filter.field = field
@@ -296,7 +296,6 @@
           this.table.pagination.limit = parseInt(limit, 10)
           await this.$nextTick()
           const defaultData = Utils.getDefaultData(this.filterProperty)
-          this.filter.operator = operator || defaultData.operator
           // eslint-disable-next-line max-len
           this.filter.value = this.formatFilterValue({ value: filter, operator: this.filter.operator }, defaultData.value)
           this.throttleGetTableData()
