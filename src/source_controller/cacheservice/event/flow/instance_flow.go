@@ -350,6 +350,9 @@ func (f *InstanceFlow) doInsertEvents(chainNodesMap map[string][]*watch.ChainNod
 		}
 
 		for coll, chainNodes := range chainNodesMap {
+			if len(chainNodes) == 0 {
+				continue
+			}
 			key := f.getKeyByCollection(coll)
 
 			if err := f.watchDB.Table(key.ChainCollection()).Insert(sc, chainNodes); err != nil {
@@ -386,11 +389,14 @@ func (f *InstanceFlow) doInsertEvents(chainNodesMap map[string][]*watch.ChainNod
 	if txnErr != nil {
 		blog.Errorf("do insert flow events failed, err: %v, rid: %s", txnErr, rid)
 
-		chainNodes := chainNodesMap[conflictColl]
-		key := f.getKeyByCollection(conflictColl)
-
-		rid = rid + ":" + chainNodes[0].Oid
 		if retryWithReduce {
+			chainNodes := chainNodesMap[conflictColl]
+			if len(chainNodes) == 0 {
+				return false, nil
+			}
+			key := f.getKeyByCollection(conflictColl)
+
+			rid = rid + ":" + chainNodes[0].Oid
 			monitor.Collect(&meta.Alarm{
 				RequestID: rid,
 				Type:      meta.EventFatalError,
