@@ -25,26 +25,26 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
-	"configcenter/src/common/zkclient"
+	"configcenter/src/common/registerdiscover"
 
 	"github.com/emicklei/go-restful"
 )
 
 type Limiter struct {
-	zkCli        *zkclient.ZkClient
+	rd           *registerdiscover.RegDiscv
 	rules        map[string]*metadata.LimiterRule
 	lock         sync.RWMutex
 	syncDuration time.Duration
 }
 
-func NewLimiter(zkCli *zkclient.ZkClient) *Limiter {
+func NewLimiter(rd *registerdiscover.RegDiscv) *Limiter {
 	return &Limiter{
-		zkCli:        zkCli,
+		rd:           rd,
 		syncDuration: 5 * time.Second,
 	}
 }
 
-// SyncLimiterRules sync the api limiter rules from zk
+// SyncLimiterRules sync the api limiter rules from register and discover
 func (l *Limiter) SyncLimiterRules() error {
 	blog.Info("begin SyncLimiterRules")
 	path := types.CC_SERVLIMITER_BASEPATH
@@ -62,35 +62,22 @@ func (l *Limiter) SyncLimiterRules() error {
 
 func (l *Limiter) syncLimiterRules(path string) error {
 	blog.V(5).Infof("syncing limiter rules for path:%s", path)
-	children, err := l.zkCli.GetChildren(path)
+	kvs, err := l.rd.GetWithPrefix(path)
 	if err != nil {
-		if err == zkclient.ErrNoNode {
-			// if no rules, set rules to be empty
-			l.setRules(make(map[string]*metadata.LimiterRule))
-			return nil
-		}
-		blog.Errorf("fail to GetChildren for path:%s, err:%s", path, err.Error())
+		blog.Errorf("fail to get key: %s, err: %v", path, err)
 		return err
 	}
 
 	rules := make(map[string]*metadata.LimiterRule)
-	for _, child := range children {
-		data, err := l.zkCli.Get(path + "/" + child)
-		if err != nil {
-			blog.Errorf("fail to Get for path:%s, err:%s", path, err.Error())
-			continue
-		}
-
+	for _, kv := range kvs {
 		rule := new(metadata.LimiterRule)
-		err = json.Unmarshal([]byte(data), rule)
-		if err != nil {
-			blog.Errorf("fail to Unmarshal for child:%s, data:%s, err:%s", child, data, err.Error())
+		if err := json.Unmarshal([]byte(kv.Value), rule); err != nil {
+			blog.Errorf("fail to Unmarshal limiter rule: %s, err: %v", kv.Value, err)
 			continue
 		}
 
-		err = rule.Verify()
-		if err != nil {
-			blog.Errorf("fail to Verify for child:%s, rule:%v, err:%s", child, rule, err.Error())
+		if err := rule.Verify(); err != nil {
+			blog.Errorf("fail to verify  limiter rule: %v, err:%v", rule, err)
 			continue
 		}
 

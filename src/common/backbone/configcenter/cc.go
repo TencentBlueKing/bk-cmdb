@@ -21,22 +21,22 @@ import (
 	"time"
 
 	"configcenter/src/common/blog"
-	crd "configcenter/src/common/confregdiscover"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 )
 
 var confC *CC
 
-func NewConfigCenter(ctx context.Context, disc crd.ConfRegDiscvIf, confPath string, handler *CCHandler) error {
-	return New(ctx, confPath, disc, handler)
+func NewConfigCenter(ctx context.Context, rd *registerdiscover.RegDiscv, confPath string, handler *CCHandler) error {
+	return newCC(ctx, confPath, rd, handler)
 }
 
-func New(ctx context.Context, confPath string, disc crd.ConfRegDiscvIf, handler *CCHandler) error {
+func newCC(ctx context.Context, confPath string, rd *registerdiscover.RegDiscv, handler *CCHandler) error {
 	confC = &CC{
 		ctx:           ctx,
-		disc:          disc,
+		rd:            rd,
 		handler:       handler,
 		previousProc:  new(ProcessConfig),
 		previousLang:  make(map[string]language.LanguageMap),
@@ -72,7 +72,7 @@ type CC struct {
 	sync.Mutex
 	// used to stop the config center gracefully.
 	ctx             context.Context
-	disc            crd.ConfRegDiscvIf
+	rd              *registerdiscover.RegDiscv
 	handler         *CCHandler
 	procName        string
 	previousProc    *ProcessConfig
@@ -85,35 +85,35 @@ type CC struct {
 
 func (c *CC) run() error {
 	commonConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureCommon)
-	commonConfEvent, err := c.disc.Discover(commonConfPath)
+	commonConfEvent, err := c.rd.Watch(c.ctx, commonConfPath)
 	if err != nil {
 		return err
 	}
 
 	extraConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureExtra)
-	extraConfEvent, err := c.disc.Discover(extraConfPath)
+	extraConfEvent, err := c.rd.Watch(c.ctx, extraConfPath)
 	if err != nil {
 		return err
 	}
 
 	mongodbConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureMongo)
-	mongodbConfEvent, err := c.disc.Discover(mongodbConfPath)
+	mongodbConfEvent, err := c.rd.Watch(c.ctx, mongodbConfPath)
 	if err != nil {
 		return err
 	}
 
 	redisConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureRedis)
-	redisConfEvent, err := c.disc.Discover(redisConfPath)
+	redisConfEvent, err := c.rd.Watch(c.ctx, redisConfPath)
 	if err != nil {
 		return err
 	}
 
-	langEvent, err := c.disc.Discover(types.CC_SERVLANG_BASEPATH)
+	langEvent, err := c.rd.Watch(c.ctx, types.CC_SERVLANG_BASEPATH)
 	if err != nil {
 		return err
 	}
 
-	errEvent, err := c.disc.Discover(types.CC_SERVERROR_BASEPATH)
+	errEvent, err := c.rd.Watch(c.ctx, types.CC_SERVERROR_BASEPATH)
 	if err != nil {
 		return err
 	}
@@ -142,13 +142,20 @@ func (c *CC) run() error {
 	return nil
 }
 
-func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
+func (c *CC) onProcChange(cur *registerdiscover.DiscoverEvent) {
 	if cur.Err != nil {
-		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureCommon, cur.Err)
+		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureCommon,
+			cur.Err)
 		return
 	}
 
-	now := ParseConfigWithData(cur.Data)
+	if cur.Type != registerdiscover.EVENT_PUT {
+		blog.Infof("config center received event that %s config has changed, but not put event",
+			types.CCConfigureCommon)
+		return
+	}
+
+	now := parseConfigWithData([]byte(cur.Value))
 	c.Lock()
 	defer c.Unlock()
 	prev := c.previousProc
@@ -164,13 +171,19 @@ func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
 	}
 }
 
-func (c *CC) onExtraChange(cur *crd.DiscoverEvent) {
+func (c *CC) onExtraChange(cur *registerdiscover.DiscoverEvent) {
 	if cur.Err != nil {
-		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureExtra, cur.Err)
+		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureExtra,
+			cur.Err)
 		return
 	}
 
-	now := ParseConfigWithData(cur.Data)
+	if cur.Type != registerdiscover.EVENT_PUT {
+		blog.Infof("config center received event that %s config has changed, but not put event", types.CCConfigureExtra)
+		return
+	}
+
+	now := parseConfigWithData([]byte(cur.Value))
 	c.Lock()
 	defer c.Unlock()
 	prev := c.previousExtra
@@ -189,12 +202,19 @@ func (c *CC) onExtraChange(cur *crd.DiscoverEvent) {
 	}
 }
 
-func (c *CC) onMongodbChange(cur *crd.DiscoverEvent) {
+func (c *CC) onMongodbChange(cur *registerdiscover.DiscoverEvent) {
 	if cur.Err != nil {
-		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureCommon, cur.Err)
+		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureMongo,
+			cur.Err)
 		return
 	}
-	now := ParseConfigWithData(cur.Data)
+
+	if cur.Type != registerdiscover.EVENT_PUT {
+		blog.Infof("config center received event that %s config has changed, but not put event", types.CCConfigureMongo)
+		return
+	}
+
+	now := parseConfigWithData([]byte(cur.Value))
 	c.Lock()
 	defer c.Unlock()
 	prev := c.previousMongodb
@@ -209,12 +229,19 @@ func (c *CC) onMongodbChange(cur *crd.DiscoverEvent) {
 	}
 }
 
-func (c *CC) onRedisChange(cur *crd.DiscoverEvent) {
+func (c *CC) onRedisChange(cur *registerdiscover.DiscoverEvent) {
 	if cur.Err != nil {
-		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureCommon, cur.Err)
+		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureRedis,
+			cur.Err)
 		return
 	}
-	now := ParseConfigWithData(cur.Data)
+
+	if cur.Type != registerdiscover.EVENT_PUT {
+		blog.Infof("config center received event that %s config has changed, but not put event", types.CCConfigureRedis)
+		return
+	}
+
+	now := parseConfigWithData([]byte(cur.Value))
 	c.Lock()
 	defer c.Unlock()
 	prev := c.previousRedis
@@ -229,16 +256,20 @@ func (c *CC) onRedisChange(cur *crd.DiscoverEvent) {
 	}
 }
 
-func (c *CC) onErrorChange(cur *crd.DiscoverEvent) {
-
+func (c *CC) onErrorChange(cur *registerdiscover.DiscoverEvent) {
 	if cur.Err != nil {
-		blog.Errorf("config center received event that *ERROR CODE* config has changed, but got err: %v", cur.Err)
+		blog.Errorf("config center received event that error code config has changed, but got err: %v", cur.Err)
+		return
+	}
+
+	if cur.Type != registerdiscover.EVENT_PUT {
+		blog.Infof("config center received event that error code config has changed, but not put event")
 		return
 	}
 
 	now := make(map[string]errors.ErrorCode)
-	if err := json.Unmarshal(cur.Data, &now); err != nil {
-		blog.Errorf("config center received event that *ERROR CODE* config has changed, but unmarshal err: %v", err)
+	if err := json.Unmarshal([]byte(cur.Value), &now); err != nil {
+		blog.Errorf("config center received event that error code config has changed, but unmarshal err: %v", err)
 		return
 	}
 
@@ -252,15 +283,20 @@ func (c *CC) onErrorChange(cur *crd.DiscoverEvent) {
 	}
 }
 
-func (c *CC) onLanguageChange(cur *crd.DiscoverEvent) {
+func (c *CC) onLanguageChange(cur *registerdiscover.DiscoverEvent) {
 	if cur.Err != nil {
-		blog.Errorf("config center received event that *LANGUAGE* config has changed, but got err: %v", cur.Err)
+		blog.Errorf("config center received event that language config has changed, but got err: %v", cur.Err)
+		return
+	}
+
+	if cur.Type != registerdiscover.EVENT_PUT {
+		blog.Infof("config center received event that language config has changed, but not put event")
 		return
 	}
 
 	now := make(map[string]language.LanguageMap)
-	if err := json.Unmarshal(cur.Data, &now); err != nil {
-		blog.Errorf("config center received event that *LANGUAGE* config has changed, but unmarshal err: %v", err)
+	if err := json.Unmarshal([]byte(cur.Value), &now); err != nil {
+		blog.Errorf("config center received event that language config has changed, but unmarshal err: %v", err)
 		return
 	}
 
@@ -290,8 +326,8 @@ func (c *CC) sync() {
 			default:
 
 			}
-			// sync the data from zk, and compare if it has been changed.
-			// then call their handler.
+			// sync the data from register&discover and compare with previous version,
+			// if it has been changed, then call their handler to update
 			c.syncProc()
 			c.syncExtra()
 			c.syncMongodb()
@@ -306,13 +342,13 @@ func (c *CC) sync() {
 func (c *CC) syncProc() {
 	blog.V(5).Infof("start sync proc config from config center.")
 	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureCommon)
-	data, err := c.disc.Read(procPath)
+	data, err := c.rd.Get(procPath)
 	if err != nil {
 		blog.Errorf("sync process config failed, node: %s, err: %v", procPath, err)
 		return
 	}
 
-	conf := ParseConfigWithData([]byte(data))
+	conf := parseConfigWithData([]byte(data))
 
 	c.Lock()
 	if reflect.DeepEqual(conf, c.previousProc) {
@@ -321,136 +357,143 @@ func (c *CC) syncProc() {
 		return
 	}
 
-	event := &crd.DiscoverEvent{
-		Err:  nil,
-		Data: []byte(data),
+	event := &registerdiscover.DiscoverEvent{
+		Err:   nil,
+		Type:  registerdiscover.EVENT_PUT,
+		Key:   procPath,
+		Value: data,
 	}
 
 	c.Unlock()
 	c.onProcChange(event)
-
 }
 
 func (c *CC) syncExtra() {
-	blog.V(5).Infof("start sync proc config from config center.")
-	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureExtra)
-	data, err := c.disc.Read(procPath)
+	blog.V(5).Infof("start sync extra config from config center.")
+	extraPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureExtra)
+	data, err := c.rd.Get(extraPath)
 	if err != nil {
-		blog.Errorf("sync *extra* config failed, node: %s, err: %v", procPath, err)
+		blog.Errorf("sync extra config failed, node: %s, err: %v", extraPath, err)
 		return
 	}
 
-	conf := ParseConfigWithData([]byte(data))
+	conf := parseConfigWithData([]byte(data))
 
 	c.Lock()
 	if reflect.DeepEqual(conf, c.previousExtra) {
-		blog.V(5).Infof("sync *extra* config, but nothing is changed.")
+		blog.V(5).Infof("sync extra config, but nothing is changed.")
 		c.Unlock()
 		return
 	}
 
-	event := &crd.DiscoverEvent{
-		Err:  nil,
-		Data: []byte(data),
+	event := &registerdiscover.DiscoverEvent{
+		Err:   nil,
+		Type:  registerdiscover.EVENT_PUT,
+		Key:   extraPath,
+		Value: data,
 	}
 
 	c.Unlock()
-
 	c.onExtraChange(event)
-
 }
 
 func (c *CC) syncMongodb() {
 	blog.V(5).Infof("start sync mongo config from config center.")
 	mongoPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureMongo)
-	data, err := c.disc.Read(mongoPath)
+	data, err := c.rd.Get(mongoPath)
 	if err != nil {
-		blog.Errorf("sync *mongo* config failed, node: %s, err: %v", mongoPath, err)
+		blog.Errorf("sync mongo config failed, node: %s, err: %v", mongoPath, err)
 		return
 	}
 
-	conf := ParseConfigWithData([]byte(data))
+	conf := parseConfigWithData([]byte(data))
+
 	c.Lock()
 	if reflect.DeepEqual(conf, c.previousMongodb) {
-		blog.V(5).Infof("sync *mongo* config, but nothing is changed.")
+		blog.V(5).Infof("sync mongo config, but nothing is changed.")
 		c.Unlock()
 		return
 	}
-	event := &crd.DiscoverEvent{
-		Err:  nil,
-		Data: []byte(data),
+
+	event := &registerdiscover.DiscoverEvent{
+		Err:   nil,
+		Type:  registerdiscover.EVENT_PUT,
+		Key:   mongoPath,
+		Value: data,
 	}
 
 	c.Unlock()
-
 	c.onMongodbChange(event)
-
 }
 
 func (c *CC) syncRedis() {
 	blog.V(5).Infof("start sync redis config from config center.")
 	redisPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureRedis)
-	data, err := c.disc.Read(redisPath)
+	data, err := c.rd.Get(redisPath)
 	if err != nil {
-		blog.Errorf("sync *redis* config failed, node: %s, err: %v", redisPath, err)
+		blog.Errorf("sync redis config failed, node: %s, err: %v", redisPath, err)
 		return
 	}
 
-	conf := ParseConfigWithData([]byte(data))
+	conf := parseConfigWithData([]byte(data))
 
 	c.Lock()
 	if reflect.DeepEqual(conf, c.previousRedis) {
-		blog.V(5).Infof("sync *redis* config, but nothing is changed.")
+		blog.V(5).Infof("sync redis config, but nothing is changed.")
 		c.Unlock()
 		return
 	}
 
-	event := &crd.DiscoverEvent{
-		Err:  nil,
-		Data: []byte(data),
+	event := &registerdiscover.DiscoverEvent{
+		Err:   nil,
+		Type:  registerdiscover.EVENT_PUT,
+		Key:   redisPath,
+		Value: data,
 	}
 
 	c.Unlock()
-
 	c.onRedisChange(event)
-
 }
 
 func (c *CC) syncLang() {
-	blog.V(5).Infof("start sync lang config from config center.")
-	data, err := c.disc.Read(types.CC_SERVLANG_BASEPATH)
+	blog.V(5).Infof("start sync language config from config center.")
+	langPath := types.CC_SERVLANG_BASEPATH
+	data, err := c.rd.Get(langPath)
 	if err != nil {
-		blog.Errorf("sync process config failed, node: %s, err: %v", types.CC_SERVLANG_BASEPATH, err)
+		blog.Errorf("sync language config failed, node: %s, err: %v", langPath, err)
 		return
 	}
 
 	lang := make(map[string]language.LanguageMap)
 	if err := json.Unmarshal([]byte(data), &lang); err != nil {
-		blog.Errorf("sync *LANGUAGE* config, but unmarshal failed, err: %v", err)
+		blog.Errorf("sync language config, but unmarshal failed, err: %v", err)
 		return
 	}
 
 	c.Lock()
-
 	if reflect.DeepEqual(lang, c.previousLang) {
 		blog.V(5).Infof("sync language config, but nothing is changed.")
 		c.Unlock()
 		return
 	}
 
-	event := &crd.DiscoverEvent{
-		Err:  nil,
-		Data: []byte(data),
+	event := &registerdiscover.DiscoverEvent{
+		Err:   nil,
+		Type:  registerdiscover.EVENT_PUT,
+		Key:   langPath,
+		Value: data,
 	}
+
 	c.Unlock()
 	c.onLanguageChange(event)
 }
 
 func (c *CC) syncErr() {
-	blog.V(5).Infof("start sync error config from config center.")
-	data, err := c.disc.Read(types.CC_SERVERROR_BASEPATH)
+	blog.V(5).Infof("start sync error code config from config center.")
+	errPath := types.CC_SERVERROR_BASEPATH
+	data, err := c.rd.Get(errPath)
 	if err != nil {
-		blog.Errorf("sync process config failed, node: %s, err: %v", types.CC_SERVERROR_BASEPATH, err)
+		blog.Errorf("sync error code config failed, node: %s, err: %v", errPath, err)
 		return
 	}
 
@@ -467,10 +510,13 @@ func (c *CC) syncErr() {
 		return
 	}
 
-	event := &crd.DiscoverEvent{
-		Err:  nil,
-		Data: []byte(data),
+	event := &registerdiscover.DiscoverEvent{
+		Err:   nil,
+		Type:  registerdiscover.EVENT_PUT,
+		Key:   errPath,
+		Value: data,
 	}
+
 	c.Unlock()
 	c.onErrorChange(event)
 }

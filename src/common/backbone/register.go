@@ -15,7 +15,6 @@ package backbone
 import (
 	"encoding/json"
 
-	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 	"configcenter/src/framework/core/errors"
@@ -24,22 +23,26 @@ import (
 type ServiceRegisterInterface interface {
 	// Ping to ping server
 	Ping() error
-	// register local server info, it can only be called for once.
+	// register local server info, it can only be called for once
 	Register(path string, c types.ServerInfo) error
+	// Unregister delete service register key from register and discover
+	Unregister() error
 	// Cancel to stop server register and discover
 	Cancel()
-	// ClearRegisterPath to delete server register path from zk
-	ClearRegisterPath() error
 }
 
-func NewServiceRegister(client *zk.ZkClient) (ServiceRegisterInterface, error) {
-	s := new(serviceRegister)
-	s.client = registerdiscover.NewRegDiscoverEx(client)
-	return s, nil
+func NewServiceRegister(rd *registerdiscover.RegDiscv) (ServiceRegisterInterface, error) {
+	return &serviceRegister{rd: rd}, nil
 }
 
 type serviceRegister struct {
-	client *registerdiscover.RegDiscover
+	rd     *registerdiscover.RegDiscv
+	regKey string
+}
+
+// Ping to ping server
+func (s *serviceRegister) Ping() error {
+	return s.rd.Ping()
 }
 
 func (s *serviceRegister) Register(path string, c types.ServerInfo) error {
@@ -52,20 +55,17 @@ func (s *serviceRegister) Register(path string, c types.ServerInfo) error {
 		return err
 	}
 
-	return s.client.RegisterAndWatchService(path, js)
+	s.regKey = path
+
+	return s.rd.RegisterAndKeepAlive(path, string(js))
 }
 
-// Ping to ping server
-func (s *serviceRegister) Ping() error {
-	return s.client.Ping()
+// Unregister delete service register key from register and discover
+func (s *serviceRegister) Unregister() error {
+	return s.rd.Delete(s.regKey)
 }
 
 // Cancel to stop server register and discover
 func (s *serviceRegister) Cancel() {
-	s.client.Cancel()
-}
-
-// ClearRegisterPath to delete server register path from zk
-func (s *serviceRegister) ClearRegisterPath() error {
-	return s.client.ClearRegisterPath()
+	s.rd.Cancel()
 }

@@ -62,11 +62,11 @@ type logService struct {
 	addrport []string
 }
 
-func newLogService(zkaddr string, addrport string) (*logService, error) {
+func newLogService(rdaddr string, addrport string) (*logService, error) {
 	if addrport == "" {
 		return nil, errors.New("addrport must set via flag or environment variable")
 	}
-	service, err := config.NewZkService(zkaddr)
+	service, err := config.NewRegDiscv(rdaddr)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func runLog(c *logConf) error {
 		return fmt.Errorf("can't set log level to v and default at the same time")
 	}
 
-	srv, err := newLogService(config.Conf.ZkAddr, c.addrPort)
+	srv, err := newLogService(config.Conf.RegDiscv, c.addrPort)
 	if err != nil {
 		return err
 	}
@@ -104,13 +104,11 @@ func runLog(c *logConf) error {
 
 func (s *logService) setV(v int32) error {
 	for _, addr := range s.addrport {
-		if err := s.service.ZkCli.Ping(); err != nil {
-			if err = s.service.ZkCli.Connect(); err != nil {
-				return err
-			}
+		if err := s.service.RegDiscv.Ping(); err != nil {
+			return err
 		}
 		logVPath := fmt.Sprintf("%s/%s/%s/v", types.CC_SERVNOTICE_BASEPATH, "log", addr)
-		logVData, err := s.service.ZkCli.Get(logVPath)
+		logVData, err := s.service.RegDiscv.Get(logVPath)
 		if err != nil {
 			return err
 		}
@@ -124,7 +122,7 @@ func (s *logService) setV(v int32) error {
 		if err != nil {
 			return err
 		}
-		if err = s.service.ZkCli.Update(logVPath, string(dat)); err != nil {
+		if err = s.service.RegDiscv.Put(logVPath, string(dat)); err != nil {
 			return err
 		}
 	}
@@ -133,13 +131,11 @@ func (s *logService) setV(v int32) error {
 
 func (s *logService) setDefault() error {
 	for _, addr := range s.addrport {
-		if err := s.service.ZkCli.Ping(); err != nil {
-			if err = s.service.ZkCli.Connect(); err != nil {
-				return err
-			}
+		if err := s.service.RegDiscv.Ping(); err != nil {
+			return err
 		}
 		logVPath := fmt.Sprintf("%s/%s/%s/v", types.CC_SERVNOTICE_BASEPATH, "log", addr)
-		logVData, err := s.service.ZkCli.Get(logVPath)
+		logVData, err := s.service.RegDiscv.Get(logVPath)
 		if err != nil {
 			return err
 		}
@@ -153,7 +149,7 @@ func (s *logService) setDefault() error {
 		if err != nil {
 			return err
 		}
-		if err = s.service.ZkCli.Update(logVPath, string(dat)); err != nil {
+		if err = s.service.RegDiscv.Put(logVPath, string(dat)); err != nil {
 			return err
 		}
 	}

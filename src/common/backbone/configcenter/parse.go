@@ -16,7 +16,7 @@ type ProcessConfig struct {
 	ConfigData []byte
 }
 
-func ParseConfigWithData(data []byte) *ProcessConfig {
+func parseConfigWithData(data []byte) *ProcessConfig {
 
 	return &ProcessConfig{ConfigData: data}
 }

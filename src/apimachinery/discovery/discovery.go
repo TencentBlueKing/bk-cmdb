@@ -16,14 +16,13 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
-	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 )
 
 type ServiceManageInterface interface {
-	// 判断当前进程是否为master 进程， 服务注册节点的第一个节点
+	// 判断当前进程是否为master进程
 	IsMaster() bool
 }
 
@@ -47,16 +46,14 @@ type DiscoveryInterface interface {
 }
 
 type Interface interface {
-	// 获取注册在zk上的所有服务节点
+	// 获取注册在服务发现上的所有服务节点
 	GetServers() ([]string, error)
 	// 最新的服务节点信息存放在该channel里，可被用来消费，以监听服务节点的变化
 	GetServersChan() chan []string
 }
 
 // NewServiceDiscovery new a simple discovery module which can be used to get alive server address
-func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
-	disc := registerdiscover.NewRegDiscoverEx(client)
-
+func NewServiceDiscovery(rd *registerdiscover.RegDiscv) (DiscoveryInterface, error) {
 	d := &discover{
 		servers: make(map[string]*server),
 	}
@@ -71,7 +68,7 @@ func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
 			continue
 		}
 		path := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, component)
-		svr, err := newServerDiscover(disc, path, component)
+		svr, err := newServerDiscover(rd, path, component)
 		if err != nil {
 			return nil, fmt.Errorf("discover %s failed, err: %v", component, err)
 		}
@@ -79,11 +76,16 @@ func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
 		d.servers[component] = svr
 	}
 
+	electPath := fmt.Sprintf("%s/%s", types.CC_SERV_ELECTPATH, curServiceName)
+	master := newServerMaster(rd, electPath, curServiceName)
+	d.master = master
+
 	return d, nil
 }
 
 type discover struct {
 	servers map[string]*server
+	master  *master
 }
 
 func (d *discover) ApiServer() Interface {
@@ -144,7 +146,7 @@ func (d *discover) CacheService() Interface {
 
 // IsMaster check whether current is master
 func (d *discover) IsMaster() bool {
-	return d.servers[common.GetIdentification()].IsMaster(common.GetServerInfo().UUID)
+	return d.master.IsMaster()
 }
 
 // Server 根据服务名获取服务再服务发现组件中的相关信息

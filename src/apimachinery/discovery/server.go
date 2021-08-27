@@ -13,17 +13,19 @@
 package discovery
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 )
 
-func newServerDiscover(disc *registerdiscover.RegDiscover, path, name string) (*server, error) {
-	discoverChan, eventErr := disc.DiscoverService(path)
+func newServerDiscover(disc *registerdiscover.RegDiscv, path, name string) (*server, error) {
+	discoverChan, eventErr := disc.Watch(context.Background(), path)
 	if nil != eventErr {
 		return nil, eventErr
 	}
@@ -31,9 +33,10 @@ func newServerDiscover(disc *registerdiscover.RegDiscover, path, name string) (*
 	svr := &server{
 		path:         path,
 		name:         name,
-		servers:      make([]*types.ServerInfo, 0),
+		servers:      make(map[string]*types.ServerInfo, 0),
 		discoverChan: discoverChan,
 		serversChan:  make(chan []string, 1),
+		rd:           disc,
 	}
 
 	svr.run()
@@ -46,9 +49,10 @@ type server struct {
 	// server's name
 	name         string
 	path         string
-	servers      []*types.ServerInfo
+	servers      map[string]*types.ServerInfo
 	discoverChan <-chan *registerdiscover.DiscoverEvent
 	serversChan  chan []string
+	rd           *registerdiscover.RegDiscv
 }
 
 func (s *server) GetServers() ([]string, error) {
@@ -63,13 +67,18 @@ func (s *server) GetServers() ([]string, error) {
 		return []string{}, fmt.Errorf("oops, there is no %s can be used", s.name)
 	}
 
+	var servers_array []*types.ServerInfo
+	for _, server := range s.servers {
+		servers_array = append(servers_array, server)
+	}
+
 	var infos []*types.ServerInfo
 	if s.next < num-1 {
 		s.next = s.next + 1
-		infos = append(s.servers[s.next-1:], s.servers[:s.next-1]...)
+		infos = append(servers_array[s.next-1:], servers_array[:s.next-1]...)
 	} else {
 		s.next = 0
-		infos = append(s.servers[num-1:], s.servers[:num-1]...)
+		infos = append(servers_array[num-1:], servers_array[:num-1]...)
 	}
 	s.Unlock()
 
@@ -81,48 +90,63 @@ func (s *server) GetServers() ([]string, error) {
 	return servers, nil
 }
 
-// IsMaster 判断当前进程是否为master 进程， 服务注册节点的第一个节点
-// 注册地址不能作为区分标识，因为不同的机器可能用一样的域名作为注册地址，所以用uuid区分
-func (s *server) IsMaster(UUID string) bool {
-	if s == nil {
-		return false
-	}
-	s.RLock()
-	defer s.RUnlock()
-	if 0 < len(s.servers) {
-		return s.servers[0].UUID == UUID
-	}
-	return false
-
-}
-
 func (s *server) run() {
-	blog.Infof("start to discover cc component from zk, path:[%s].", s.path)
-	go func() {
-		for svr := range s.discoverChan {
-			blog.Warnf("received one zk event from path %s.", s.path)
-			if svr.Err != nil {
-				blog.Errorf("get zk event with error about path[%s]. err: %v", s.path, svr.Err)
-				continue
-			}
-
-			if len(svr.Server) <= 0 {
-				blog.Warnf("get zk event with 0 instance with path[%s], reset its servers", s.path)
-				s.resetServer()
-				s.setServersChan()
-				continue
-			}
-
-			s.updateServer(svr.Server)
-			s.setServersChan()
-		}
-	}()
+	go s.loopWatchUpdates()
+	// loop compare server info in case watch encountered error
+	go s.loopSyncUpdates()
 }
 
-func (s *server) resetServer() {
-	s.Lock()
-	defer s.Unlock()
-	s.servers = make([]*types.ServerInfo, 0)
+func (s *server) loopWatchUpdates() {
+	blog.Infof("start to discover cc component from register and discover, path:[%s]", s.path)
+	for event := range s.discoverChan {
+		blog.Infof("received one event from path: %s", s.path)
+		if event.Err != nil {
+			blog.Errorf("discovery received event err: %v", event.Err)
+			continue
+		}
+
+		switch event.Type {
+		case registerdiscover.EVENT_PUT:
+			s.updateServer(event.Key, event.Value)
+			s.setServersChan()
+		case registerdiscover.EVENT_DEL:
+			s.removeServer(event.Key, event.Value)
+			s.setServersChan()
+		default:
+			blog.Errorf("discovery received unknown event type: %v", event.Type)
+			continue
+		}
+	}
+}
+
+func (s *server) loopSyncUpdates() {
+	var oldServer map[string]bool
+	for {
+		infos, err := s.rd.GetWithPrefix(s.path)
+		if err != nil {
+			blog.Errorf("discovery failed to sync from path: %s, err: %v", s.path, err)
+			time.Sleep(3 * time.Second)
+			continue
+		}
+		isUpdated := false
+		newServer := make(map[string]bool)
+		if len(infos) != len(oldServer) {
+			isUpdated = true
+		}
+		for _, server := range infos {
+			if !isUpdated && !oldServer[server.Value] {
+				isUpdated = true
+			}
+			newServer[server.Value] = true
+		}
+		oldServer = newServer
+		if isUpdated {
+			s.resetServers(infos)
+		}
+
+		// loop sync every 3 seconds
+		time.Sleep(3 * time.Second)
+	}
 }
 
 // 当监听到服务节点变化时，将最新的服务节点信息放入该channel里
@@ -134,7 +158,7 @@ func (s *server) setServersChan() {
 	s.serversChan <- s.getInstances()
 }
 
-// 获取zk上最新的服务节点信息channel
+// 获取服务发现上最新的服务节点信息channel
 func (s *server) GetServersChan() chan []string {
 	return s.serversChan
 }
@@ -150,40 +174,77 @@ func (s *server) getInstances() []string {
 	return addrArr
 }
 
-func (s *server) updateServer(svrs []string) {
-	servers := make([]*types.ServerInfo, 0)
+func (s *server) updateServer(key, data string) {
+	if key == "" {
+		blog.Errorf("discovery received invalid event, for key is empty")
+		return
+	}
 
-	for _, svr := range svrs {
-		server := new(types.ServerInfo)
-		if err := json.Unmarshal([]byte(svr), server); err != nil {
-			blog.Errorf("unmarshal server info failed, zk path[%s], err: %v", s.path, err)
+	server := new(types.ServerInfo)
+	if err := json.Unmarshal([]byte(data), server); err != nil {
+		blog.Errorf("unmarshal server info failed, key: %s, info:%s, err: %v", key, data, err)
+		return
+	}
+	if server.Port == 0 {
+		blog.Errorf("invalid port 0, with discovery key: %s", key)
+		return
+	}
+	if len(server.RegisterIP) == 0 {
+		blog.Errorf("invalid ip with discovery key: %s", key)
+		return
+	}
+	if server.Scheme != "https" {
+		server.Scheme = "http"
+	}
+
+	s.Lock()
+	s.servers[key] = server
+	s.Unlock()
+
+	blog.Infof("update component with new server instance: %v, key: %s", data, key)
+}
+
+func (s *server) removeServer(key, data string) {
+	if key == "" {
+		blog.Errorf("discovery received invalid event, for key is empty")
+		return
+	}
+
+	s.Lock()
+	delete(s.servers, key)
+	s.Unlock()
+
+	blog.Infof("remove component server instance: %v, key: %s", data, key)
+}
+
+func (s *server) resetServers(kvs []registerdiscover.KeyVal) {
+	servers := make(map[string]*types.ServerInfo, 0)
+
+	for _, kv := range kvs {
+		if kv.Key == "" {
+			blog.Errorf("discovery sync invalid server info for key is empty")
 			continue
 		}
-
+		server := new(types.ServerInfo)
+		if err := json.Unmarshal([]byte(kv.Value), server); err != nil {
+			blog.Errorf("unmarshal server info failed, key: %s, info:%s, err: %v", kv.Key, kv.Value, err)
+			continue
+		}
+		if server.Port == 0 {
+			blog.Errorf("invalid port 0, with discovery key: %s", kv.Key)
+			return
+		}
+		if len(server.RegisterIP) == 0 {
+			blog.Errorf("invalid ip with discovery key: %s", kv.Key)
+			return
+		}
 		if server.Scheme != "https" {
 			server.Scheme = "http"
 		}
-
-		if server.Port == 0 {
-			blog.Errorf("invalid port 0, with zk path: %s", s.path)
-			continue
-		}
-
-		if len(server.RegisterIP) == 0 {
-			blog.Errorf("invalid ip with zk path: %s", s.path)
-			continue
-		}
-
-		servers = append(servers, server)
+		servers[kv.Key] = server
 	}
 
-	if len(servers) != 0 {
-		s.Lock()
-		s.servers = servers
-		s.Unlock()
-
-		if blog.V(5) {
-			blog.InfoJSON("update component with new server instance %s about path: %s", servers, s.path)
-		}
-	}
+	s.Lock()
+	s.servers = servers
+	s.Unlock()
 }

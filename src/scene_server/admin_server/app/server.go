@@ -121,7 +121,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	process.Core = engine
-	process.ConfigCenter = configures.NewConfCenter(ctx, engine.ServiceManageClient())
+	process.ConfigCenter = configures.NewConfCenter(ctx, engine.RegDiscv())
 
 	// adminserver conf not depend discovery
 	err = process.ConfigCenter.Start(

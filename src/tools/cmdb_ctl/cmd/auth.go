@@ -20,7 +20,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"time"
 
 	"configcenter/src/ac"
 	"configcenter/src/ac/iam"
@@ -29,7 +28,7 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
-	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/blog"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
@@ -97,16 +96,20 @@ func newAuthService(c *authConf) (*authService, error) {
 		return nil, errors.New("resource must be set via resource flag or resource file specified by rsc-file flag")
 	}
 
-	client := zk.NewZkClient(config.Conf.ZkAddr, 40*time.Second)
-	if err := client.Start(); err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.ZkAddr, err)
+	regdiscvConf := &registerdiscover.Config{
+		Host: config.Conf.RegDiscv,
+		TLS:  nil,
 	}
-	if err := client.Ping(); err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.ZkAddr, err)
-	}
-	serviceDiscovery, err := discovery.NewServiceDiscovery(client)
+	rd, err := registerdiscover.NewRegDiscv(regdiscvConf)
 	if err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.ZkAddr, err)
+		return nil, err
+	}
+	if err := rd.Ping(); err != nil {
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.RegDiscv, err)
+	}
+	serviceDiscovery, err := discovery.NewServiceDiscovery(rd)
+	if err != nil {
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.RegDiscv, err)
 	}
 	apiMachineryConfig := &util.APIMachineryConfig{
 		QPS:       1000,

@@ -16,88 +16,60 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
-	"configcenter/src/common/zkclient"
-
-	"github.com/samuel/go-zookeeper/zk"
 )
 
 type noticeHandler struct {
-	client   *zkclient.ZkClient
+	regdiscv *registerdiscover.RegDiscv
 	addrport string
 }
 
-func handleNotice(ctx context.Context, client *zkclient.ZkClient, addrport string) error {
+func handleNotice(ctx context.Context, rd *registerdiscover.RegDiscv, addrport string) error {
 	handler := &noticeHandler{
-		client:   client,
+		regdiscv: rd,
 		addrport: addrport,
 	}
-	if err := handler.handleLogNotice(ctx); err != nil {
-		return err
-	}
-	return nil
+	return handler.handleLogNotice(ctx)
 }
 
 func (handler *noticeHandler) handleLogNotice(ctx context.Context) error {
 	logVPath := fmt.Sprintf("%s/%s/%s/v", types.CC_SERVNOTICE_BASEPATH, "log", handler.addrport)
+	ch, err := handler.regdiscv.Watch(ctx, logVPath)
+	if err != nil {
+		return err
+	}
+
+	go func () {
+		handler.waitLogNoticeEvent(ctx, ch)
+		// delete logv key when exit
+		handler.regdiscv.Delete(logVPath)
+	}()
+
+	return nil
+}
+
+func (handler *noticeHandler) waitLogNoticeEvent(ctx context.Context, ch <-chan *registerdiscover.DiscoverEvent) {
 	data := map[string]int32{
 		"defaultV": blog.GetV(),
 		"v":        blog.GetV(),
 	}
-	go func() {
-		defer handler.client.Del(logVPath, -1)
-		var ch <-chan zk.Event
-		var err error
-		for {
-			_, _, ch, err = handler.client.GetW(logVPath)
-			if err != nil {
-				blog.Errorf("log watch failed, will watch after 10s, path: %s, err: %s", logVPath, err.Error())
-				if handler.client.IsConnectionError(err) {
-					if conErr := handler.client.Connect(); conErr != nil {
-						blog.Errorf("fail to watch register node(%s), reason: connect closed. retry connect err:%s\n", logVPath, conErr.Error())
-						time.Sleep(10 * time.Second)
-					}
-					continue
-				}
 
-				switch err {
-				case zk.ErrNoNode:
-					data["v"] = blog.GetV()
-					logVData, _ := json.Marshal(data)
-					err = handler.client.CreateDeepNode(logVPath, logVData)
-					if err != nil {
-						blog.Errorf("fail to register node(%s), err:%s\n", logVPath, err.Error())
-					}
-				}
-				continue
-			}
-			select {
-			case event := <-ch:
-				if event.Type != zk.EventNodeDataChanged {
-					continue
-				}
-				dat, err := handler.client.Get(logVPath)
-				if err != nil {
-					blog.Errorf("fail to get node(%s), err:%s\n", logVPath, err.Error())
-					continue
-				}
-				err = json.Unmarshal([]byte(dat), &data)
-				if err != nil {
-					blog.Errorf("fail to unmarshal data(%v), err:%s\n", dat, err.Error())
+	for {
+		select {
+		case event := <-ch:
+			if event.Type == registerdiscover.EVENT_PUT {
+				if err := json.Unmarshal([]byte(event.Value), &data); err != nil {
+					blog.Errorf("fail to unmarshal data(%s), err: %s", event.Value, err.Error())
 					continue
 				}
 				blog.SetV(data["v"])
-			case <-ctx.Done():
-				blog.Warnf("log watch stopped because of context done.")
-				_ = handler.client.Del(logVPath, -1)
-				logPath := fmt.Sprintf("%s/%s/%s", types.CC_SERVNOTICE_BASEPATH, "log", handler.addrport)
-				_ = handler.client.Del(logPath, -1)
-				return
 			}
+		case <-ctx.Done():
+			blog.Infof("watch stopped because of context done")
+			return
 		}
-	}()
-	return nil
+	}
 }

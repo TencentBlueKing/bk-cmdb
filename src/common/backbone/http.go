@@ -29,10 +29,9 @@ import (
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/ssl"
-	"configcenter/src/common/zkclient"
 )
 
-func ListenAndServe(c Server, svcDisc ServiceRegisterInterface, cancel context.CancelFunc) error {
+func ListenAndServe(c Server, register ServiceRegisterInterface, cancel context.CancelFunc) error {
 	handler := c.Handler
 	if c.PProfEnabled {
 		rootMux := http.NewServeMux()
@@ -51,8 +50,8 @@ func ListenAndServe(c Server, svcDisc ServiceRegisterInterface, cancel context.C
 			select {
 			case sig := <-exit:
 				blog.Infof("receive signal %v, begin to shutdown", sig)
-				svcDisc.Cancel()
-				if err := svcDisc.ClearRegisterPath(); err != nil && err != zkclient.ErrNoNode {
+				register.Cancel()
+				if err := register.Unregister(); err != nil {
 					break
 				}
 				time.Sleep(time.Second * 5)

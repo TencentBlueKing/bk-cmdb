@@ -15,10 +15,9 @@ package config
 import (
 	"errors"
 	"os"
-	"strings"
 	"time"
 
-	"configcenter/src/common/zkclient"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
@@ -30,7 +29,7 @@ import (
 var Conf *Config
 
 type Config struct {
-	ZkAddr      string
+	RegDiscv    string
 	MongoURI    string
 	MongoRsName string
 	RedisConf   redis.Config
@@ -38,31 +37,44 @@ type Config struct {
 
 // AddFlags add flags
 func (c *Config) AddFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&c.ZkAddr, "zk-addr", os.Getenv("ZK_ADDR"), "the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR")
+	cmd.PersistentFlags().StringVar(&c.RegDiscv, "regdiscv", os.Getenv("REGDISCV_ADDR"),
+		"the regdiscv address, separated by comma, corresponding environment variable is REGDISCV_ADDR")
 	// TODO add zkuser and zkpwd
-	cmd.PersistentFlags().StringVar(&c.MongoURI, "mongo-uri", os.Getenv("MONGO_URI"), "the mongodb URI, eg. mongodb://127.0.0.1:27017/cmdb, corresponding environment variable is MONGO_URI")
+	cmd.PersistentFlags().StringVar(&c.MongoURI, "mongo-uri", os.Getenv("MONGO_URI"),
+		"the mongodb URI, eg. mongodb://127.0.0.1:27017/cmdb, corresponding environment variable is MONGO_URI")
 	cmd.PersistentFlags().StringVar(&c.MongoRsName, "mongo-rs-name", "rs0", "mongodb replica set name")
-	cmd.PersistentFlags().StringVar(&c.RedisConf.Address, "redis-addr", "127.0.0.1:6379", "assign redis server address default is 127.0.0.1:6379")
-	cmd.PersistentFlags().StringVar(&c.RedisConf.MasterName, "redis-mastername", "", "assign redis server master name defalut is null")
-	cmd.PersistentFlags().StringVar(&c.RedisConf.Password, "redis-pwd", "", "assign redis server password default is null")
-	cmd.PersistentFlags().StringVar(&c.RedisConf.SentinelPassword, "redis-sentinelpwd", "", "assign the redis sentinel password  default is null")
-	cmd.PersistentFlags().StringVar(&c.RedisConf.Database, "redis-database", "0", "assign the redis database  default is 0")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.Address, "redis-addr", "127.0.0.1:6379",
+		"assign redis server address default is 127.0.0.1:6379")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.MasterName, "redis-mastername", "",
+		"assign redis server master name defalut is null")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.Password, "redis-pwd", "",
+		"assign redis server password default is null")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.SentinelPassword, "redis-sentinelpwd", "",
+		"assign the redis sentinel password  default is null")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.Database, "redis-database", "0",
+		"assign the redis database  default is 0")
 	return
 }
 
 type Service struct {
-	ZkCli   *zkclient.ZkClient
+	RegDiscv   *registerdiscover.RegDiscv
 	DbProxy dal.RDB
 }
 
-func NewZkService(zkAddr string) (*Service, error) {
-	if zkAddr == "" {
-		return nil, errors.New("zk-addr must set via flag or environment variable")
+func NewRegDiscv(rdAddr string) (*Service, error) {
+	regdiscvConf := &registerdiscover.Config{
+		Host: rdAddr,
+		TLS:  nil,
 	}
+	rd, err := registerdiscover.NewRegDiscv(regdiscvConf)
+	if err != nil {
+		return nil, err
+	}
+
 	service := &Service{
-		ZkCli: zkclient.NewZkClient(strings.Split(zkAddr, ",")),
+		RegDiscv: rd,
 	}
-	if err := service.ZkCli.Connect(); err != nil {
+	if err := service.RegDiscv.Ping(); err != nil {
 		return nil, err
 	}
 	return service, nil

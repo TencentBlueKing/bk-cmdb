@@ -24,13 +24,13 @@ import (
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta := metric.HealthMeta{IsHealthy: true}
 
-	// zk health status
-	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
+	// register and discover health status
+	rdItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
 	if err := s.Engine.Ping(); err != nil {
-		zkItem.IsHealthy = false
-		zkItem.Message = err.Error()
+		rdItem.IsHealthy = false
+		rdItem.Message = err.Error()
 	}
-	meta.Items = append(meta.Items, zkItem)
+	meta.Items = append(meta.Items, rdItem)
 
 	// coreservice
 	coreSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_CORESERVICE}

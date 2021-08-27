@@ -13,7 +13,7 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
-	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/backbone/registerdiscover"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/test/run"
@@ -29,7 +29,7 @@ var reportDir string
 var db *local.Mongo
 
 type TestConfig struct {
-	ZkAddr         string
+	RegDiscv       string
 	Concurrent     int
 	SustainSeconds float64
 	TotalRequest   int64
@@ -46,7 +46,7 @@ type RedisConfig struct {
 }
 
 func init() {
-	flag.StringVar(&tConfig.ZkAddr, "zk-addr", "127.0.0.1:2181", "zk discovery addresses, comma separated.")
+	flag.StringVar(&tConfig.RegDiscv, "regdiscv", "127.0.0.1:2379", "discovery addresses, comma separated.")
 	flag.IntVar(&tConfig.Concurrent, "concurrent", 100, "concurrent request during the load test.")
 	flag.Float64Var(&tConfig.SustainSeconds, "sustain-seconds", 10, "the load test sustain time in seconds ")
 	flag.Int64Var(&tConfig.TotalRequest, "total-request", 0, "the load test total request,it has higher priority than SustainSeconds")
@@ -67,7 +67,13 @@ func init() {
 	fmt.Println("before suit")
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
-	client := zk.NewZkClient(tConfig.ZkAddr, 40*time.Second)
+	regdiscvConf := &registerdiscover.Config{
+		Host: tConfig.Regdiscv,
+		TLS: nil,
+	}
+	rd, err := registerdiscover.NewRegDiscv(regdiscvConf)
+	Expect(err).Should(BeNil())
+	Expect(rd.Ping()).Should(BeNil())
 	var err error
 	mongoConfig := local.MongoConf{
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
@@ -77,9 +83,7 @@ func init() {
 	}
 	db, err = local.NewMgo(mongoConfig, time.Minute)
 	Expect(err).Should(BeNil())
-	Expect(client.Start()).Should(BeNil())
-	Expect(client.Ping()).Should(BeNil())
-	disc, err := discovery.NewServiceDiscovery(client)
+	disc, err := discovery.NewServiceDiscovery(rd)
 	Expect(err).Should(BeNil())
 	c := &util.APIMachineryConfig{
 		QPS:       20000,
