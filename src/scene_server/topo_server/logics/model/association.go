@@ -27,7 +27,7 @@ type AssociationOperationInterface interface {
 	DeleteAssociationType(kit *rest.Kit, asstTypeID int64) error
 	CreateCommonAssociation(kit *rest.Kit, data *metadata.Association) (*metadata.Association, error)
 	DeleteAssociationWithPreCheck(kit *rest.Kit, associationID int64) error
-	UpdateObjectAssociation(kit *rest.Kit, data metadata.Association, assoID int64) error
+	UpdateObjectAssociation(kit *rest.Kit, data mapstr.MapStr, assoID int64) error
 	SearchObjectAssocWithAssocKindList(kit *rest.Kit, asstKindIDs []string) (resp *metadata.AssociationList, err error)
 }
 
@@ -215,9 +215,9 @@ func (assoc *association) DeleteAssociationWithPreCheck(kit *rest.Kit, associati
 }
 
 // UpdateObjectAssociation update object association by assoID
-func (assoc *association) UpdateObjectAssociation(kit *rest.Kit, data metadata.Association, assoID int64) error {
+func (assoc *association) UpdateObjectAssociation(kit *rest.Kit, data mapstr.MapStr, assoID int64) error {
 
-	if field, can := data.CanUpdate(); !can {
+	if field, can := canUpdate(data); !can {
 		blog.Warnf("request to update a forbidden update field[%s], rid: %s", assoID, field, kit.Rid)
 		return kit.CCError.CCError(common.CCErrorTopoObjectAssociationUpdateForbiddenFields)
 	}
@@ -246,9 +246,9 @@ func (assoc *association) UpdateObjectAssociation(kit *rest.Kit, data metadata.A
 		return err
 	}
 
-	updateCond := mapstr.MapStr{
-		"condition": mapstr.MapStr{common.BKFieldID: assoID},
-		"data":      data,
+	updateCond := &metadata.UpdateOption{
+		Condition: mapstr.MapStr{common.BKFieldID: assoID},
+		Data:      data,
 	}
 	_, err = assoc.clientSet.CoreService().Association().UpdateModelAssociation(kit.Ctx, kit.Header, updateCond)
 	if err != nil {
@@ -319,4 +319,44 @@ func (assoc *association) isObjectInAssocValid(kit *rest.Kit, objectID, asstObje
 	}
 
 	return nil
+}
+
+func canUpdate(data mapstr.MapStr) (field string, can bool) {
+	id, err := data.Int64(common.BKFieldID)
+	if err != nil || id != 0 {
+		return "id", false
+	}
+
+	_, exist := data.Get(common.BkSupplierAccount)
+	if !exist {
+		return "bk_supplier_account", false
+	}
+
+	_, exist = data.Get(common.AssociationObjAsstIDField)
+	if !exist {
+		return "bk_obj_asst_id", false
+	}
+
+	_, exist = data.Get(common.BKObjIDField)
+	if !exist {
+		return "bk_obj_id", false
+	}
+
+	_, exist = data.Get(common.BKAsstObjIDField)
+	if !exist {
+		return "bk_asst_obj_id", false
+	}
+
+	_, exist = data.Get("mapping")
+	if !exist {
+		return "mapping", false
+	}
+
+	_, exist = data.Get("ispre")
+	if !exist {
+		return "ispre", false
+	}
+
+	// only on delete, association kind id, alias name can be update.
+	return "", true
 }

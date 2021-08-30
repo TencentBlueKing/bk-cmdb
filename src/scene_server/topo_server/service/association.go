@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
 
@@ -596,13 +595,10 @@ func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
 		return
 	}
 
+	var ret *metadata.UpdateAssociationTypeResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		input := mapstr.MapStr{
-			"conditon": mapstr.MapStr{common.BKFieldID: asstTypeID},
-			"data":     request,
-		}
-		_, err = s.Engine.CoreAPI.CoreService().Association().UpdateAssociationType(ctx.Kit.Ctx, ctx.Kit.Header, input)
+		ret, err = s.Core.AssociationOperation().UpdateType(ctx.Kit, asstTypeID, request)
 		if err != nil {
 			return err
 		}

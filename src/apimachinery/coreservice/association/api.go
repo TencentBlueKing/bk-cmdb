@@ -89,7 +89,7 @@ func (asst *association) SetManyAssociation(ctx context.Context, h http.Header, 
 }
 
 // UpdateAssociationType api of update association type
-func (asst *association) UpdateAssociationType(ctx context.Context, h http.Header, input interface{}) (
+func (asst *association) UpdateAssociationType(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {
 
 	resp := new(metadata.UpdatedOptionResult)
@@ -247,7 +247,7 @@ func (asst *association) SetModelAssociation(ctx context.Context, h http.Header,
 }
 
 // UpdateModelAssociation api of update object association
-func (asst *association) UpdateModelAssociation(ctx context.Context, h http.Header, input interface{}) (
+func (asst *association) UpdateModelAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {
 
 	resp := new(metadata.UpdatedOptionResult)

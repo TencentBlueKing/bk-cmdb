@@ -153,14 +153,14 @@ func (s *Service) UpdateObjectAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	data := new(metadata.Association)
-	if err := ctx.DecodeInto(data); err != nil {
+	data := mapstr.New()
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Logics.AssociationOperation().UpdateObjectAssociation(ctx.Kit, *data, id)
+		err = s.Logics.AssociationOperation().UpdateObjectAssociation(ctx.Kit, data, id)
 		if err != nil {
 			return err
 		}
