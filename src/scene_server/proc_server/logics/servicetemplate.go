@@ -210,15 +210,31 @@ func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.Mod
 		return false, err
 	}
 
-	// need to sync when the module has process templates but has no service instances, or
+	// get host ids by module
+	hostIDFilter := []map[string]interface{}{{
+		common.BKModuleIDField: module.ModuleID,
+		common.BKAppIDField:    module.BizID,
+	}}
+	hostIDCount, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameModuleHostConfig, hostIDFilter)
+	if err != nil {
+		blog.Errorf("get host id count failed, err: %v, option: %#v, rid: %s", err, hostIDFilter, kit.Rid)
+		return false, err
+	}
+
+	// need to sync when the module has process templates and hosts but has no service instances
 	if len(serviceInstances.Info) == 0 {
-		if len(procTempMap) > 0 {
-			return true, nil
+		if hostIDCount[0] == 0 || len(procTempMap) == 0 {
+			return false, nil
 		}
-		return false, nil
+		return true, nil
 	}
 
 	if len(procTempMap) == 0 {
+		return true, nil
+	}
+
+	if int64(len(serviceInstances.Info)) != hostIDCount[0] {
 		return true, nil
 	}
 
