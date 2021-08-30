@@ -15,6 +15,7 @@ package logics
 import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
+	"configcenter/src/scene_server/topo_server/logics/inst"
 	"configcenter/src/scene_server/topo_server/logics/model"
 	"configcenter/src/scene_server/topo_server/logics/operation"
 )
@@ -29,13 +30,10 @@ type Logics interface {
 }
 
 type logics struct {
-	classification model.ClassificationOperationInterface
-	object         model.ObjectOperationInterface
-	identifier     operation.IdentifierOperationInterface
-	association    model.AssociationOperationInterface
 	classification  model.ClassificationOperationInterface
 	object          model.ObjectOperationInterface
 	identifier      operation.IdentifierOperationInterface
+	association     model.AssociationOperationInterface
 	instassociation inst.AssociationOperationInterface
 }
 
@@ -48,13 +46,10 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
 
 	return &logics{
-		classification: classificationOperation,
-		object:         objectOperation,
-		identifier:     IdentifierOperation,
-		association:    associationOperation,
 		classification:  classificationOperation,
 		object:          objectOperation,
 		identifier:      IdentifierOperation,
+		association:     associationOperation,
 		instassociation: instAssociationOperation,
 	}
 }
