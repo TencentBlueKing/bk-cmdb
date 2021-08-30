@@ -89,8 +89,8 @@ func (asst *association) SetManyAssociation(ctx context.Context, h http.Header, 
 }
 
 // UpdateAssociationType api of update association type
-func (asst *association) UpdateAssociationType(ctx context.Context, h http.Header,
-	input *metadata.UpdateOption) (*metadata.UpdatedCount, error) {
+func (asst *association) UpdateAssociationType(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
+	*metadata.UpdatedCount, error) {
 
 	resp := new(metadata.UpdatedOptionResult)
 	subPath := "/update/associationkind"

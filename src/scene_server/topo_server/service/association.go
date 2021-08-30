@@ -509,7 +509,11 @@ func (s *Service) SearchAssociationType(ctx *rest.Contexts) {
 		request.Condition = make(map[string]interface{}, 0)
 	}
 
-	ret, err := s.Core.AssociationOperation().SearchType(ctx.Kit, request)
+	input := &metadata.QueryCondition{
+		Condition: request.Condition,
+		Page:      request.BasePage,
+	}
+	ret, err := s.Engine.CoreAPI.CoreService().Association().ReadAssociationType(ctx.Kit.Ctx, ctx.Kit.Header, input)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -518,6 +522,7 @@ func (s *Service) SearchAssociationType(ctx *rest.Contexts) {
 	ctx.RespEntity(ret)
 }
 
+// SearchObjectAssocWithAssocKindList search object association by association kind
 func (s *Service) SearchObjectAssocWithAssocKindList(ctx *rest.Contexts) {
 
 	ids := new(metadata.AssociationKindIDs)
@@ -526,7 +531,7 @@ func (s *Service) SearchObjectAssocWithAssocKindList(ctx *rest.Contexts) {
 		return
 	}
 
-	resp, err := s.Core.AssociationOperation().SearchObjectAssocWithAssocKindList(ctx.Kit, ids.AsstIDs)
+	resp, err := s.Logics.AssociationOperation().SearchObjectAssocWithAssocKindList(ctx.Kit, ids.AsstIDs)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -534,6 +539,7 @@ func (s *Service) SearchObjectAssocWithAssocKindList(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
+// CreateAssociationType create association kind
 func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 	request := &metadata.AssociationKind{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -541,23 +547,21 @@ func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 		return
 	}
 
-	var ret *metadata.CreateAssociationTypeResult
+	var ret *metadata.CreateOneDataResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().CreateType(ctx.Kit, request)
+		input := &metadata.CreateAssociationKind{Data: *request}
+		ret, err = s.Engine.CoreAPI.CoreService().Association().CreateAssociationType(ctx.Kit.Ctx, ctx.Kit.Header,
+			input)
 		if err != nil {
 			return err
-		}
-
-		if ret.Code != 0 {
-			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
 		}
 
 		// register association type resource creator action to iam
 		if auth.EnableAuthorize() {
 			iamInstance := metadata.IamInstanceWithCreator{
 				Type:    string(iam.SysAssociationType),
-				ID:      strconv.FormatInt(ret.Data.ID, 10),
+				ID:      strconv.FormatInt(int64(ret.Created.ID), 10),
 				Name:    request.AssociationKindName,
 				Creator: ctx.Kit.User,
 			}
@@ -574,9 +578,10 @@ func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(metadata.RspID{ID: int64(ret.Created.ID)})
 }
 
+// UpdateAssociationType update association kind
 func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
 	request := &metadata.UpdateAssociationTypeRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -598,9 +603,6 @@ func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
 			return err
 		}
 
-		if ret.Code != 0 {
-			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
-		}
 		return nil
 	})
 
@@ -608,9 +610,10 @@ func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(nil)
 }
 
+// DeleteAssociationType delete association kind
 func (s *Service) DeleteAssociationType(ctx *rest.Contexts) {
 	asstTypeID, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
 	if err != nil {
@@ -618,17 +621,12 @@ func (s *Service) DeleteAssociationType(ctx *rest.Contexts) {
 		return
 	}
 
-	var ret *metadata.DeleteAssociationTypeResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
-		ret, err = s.Core.AssociationOperation().DeleteType(ctx.Kit, asstTypeID)
+		err := s.Logics.AssociationOperation().DeleteAssociationType(ctx.Kit, asstTypeID)
 		if err != nil {
 			return err
 		}
 
-		if ret.Code != 0 {
-			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
-		}
 		return nil
 	})
 
@@ -636,7 +634,7 @@ func (s *Service) DeleteAssociationType(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(nil)
 }
 
 // SearchInstanceAssociations searches object instance associations with the input conditions.
