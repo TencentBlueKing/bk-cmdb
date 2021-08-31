@@ -219,8 +219,8 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 	ruleResult, err := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
 		0, listRuleOption)
 	if err != nil {
-		blog.Errorf("delete object attribute failed, get host apply rule failed, listRuleOption: %+v, err: %+v, "+
-			"rid: %s", listRuleOption, err, ctx.Kit.Rid)
+		blog.Errorf("get host apply rule failed, listRuleOption: %+v, err: %+v, rid: %s", listRuleOption, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -276,7 +276,12 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 	var result *metadata.UpdateAttrIndexData
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		result, err = s.Logics.AttributeOperation().UpdateObjectAttributeIndex(ctx.Kit, objID, data, id)
+			input := metadata.UpdateOption{
+				Condition: mapstr.MapStr{common.BKFieldID: id},
+				Data:      data,
+			}
+		result, err = s.Engine.CoreAPI.CoreService().Model().UpdateModelAttrsIndex(ctx.Kit.Ctx, ctx.Kit.Header, objID,
+			&input)
 		if err != nil {
 			blog.Errorf("UpdateObjectAttributeIndex failed, err: %s , rid: %s", err.Error(), ctx.Kit.Rid)
 			return err
