@@ -26,6 +26,7 @@ type Logics interface {
 	AttributeOperation() model.AttributeOperationInterface
 	ObjectOperation() model.ObjectOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
+	AssociationOperation() model.AssociationOperationInterface
 }
 
 type logics struct {
@@ -33,6 +34,7 @@ type logics struct {
 	attribute      model.AttributeOperationInterface
 	object         model.ObjectOperationInterface
 	identifier     operation.IdentifierOperationInterface
+	association    model.AssociationOperationInterface
 }
 
 // New create a logics manager
@@ -41,27 +43,37 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	attributeOperation := model.NewAttributeOperation(client, languageIf, authManager)
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
+	associationOperation := model.NewAssociationOperation(client, authManager)
 
 	return &logics{
 		classification: classificationOperation,
+		attribute:      attributeOperation,
 		object:         objectOperation,
 		identifier:     IdentifierOperation,
-		attribute:      attributeOperation,
+		association:    associationOperation,
 	}
-}
-
-func (l *logics) ClassificationOperation() model.ClassificationOperationInterface {
-	return l.classification
 }
 
 func (l *logics) AttributeOperation() model.AttributeOperationInterface {
 	return l.attribute
 }
 
-func (l *logics) ObjectOperation() model.ObjectOperationInterface {
-	return l.object
+// ClassificationOperation return a classification provide ClassificationOperationInterface
+func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
+	return c.classification
 }
 
-func (l *logics) IdentifierOperation() operation.IdentifierOperationInterface {
-	return l.identifier
+// ObjectOperation return a object provide ObjectOperationInterface
+func (c *logics) ObjectOperation() model.ObjectOperationInterface {
+	return c.object
+}
+
+// IdentifierOperation return a identifier provide IdentifierOperationInterface
+func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
+	return c.identifier
+}
+
+// AssociationOperation return a association provide AssociationOperationInterface
+func (c *logics) AssociationOperation() model.AssociationOperationInterface {
+	return c.association
 }
