@@ -230,11 +230,10 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 			return nil, err
 		}
 
-		for _, cnt := range instCnt {
-			if cnt >= 1 {
-				return nil, kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
-			}
+		if instCnt[0] >= 1 {
+			return nil, kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
 		}
+
 	default:
 		// after all the check, new association instance can be created.
 	}
