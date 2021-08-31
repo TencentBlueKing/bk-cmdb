@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -368,6 +369,15 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	if err != nil {
 		blog.Errorf("generate audit log failed before update model attribute, attID: %d, err: %v, rid: %s",
 			attID, err, kit.Rid)
+		return err
+	}
+
+	attr := new(metadata.Attribute)
+	if err := mapstruct.Decode2Struct(cond, attr); err != nil {
+		blog.Errorf("unmarshal mapstr data into module failed, module: %s, err: %s, rid: %s", cond, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommParseDBFailed)
+	}
+	if err := a.IsValid(kit, true, attr); nil != err {
 		return err
 	}
 
