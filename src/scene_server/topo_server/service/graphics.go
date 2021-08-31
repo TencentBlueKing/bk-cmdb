@@ -31,8 +31,8 @@ func (s *Service) SelectObjectTopoGraphics(ctx *rest.Contexts) {
 
 // UpdateObjectTopoGraphicsNew update object topo graphics
 func (s *Service) UpdateObjectTopoGraphicsNew(ctx *rest.Contexts) {
-	input := metadata.UpdateTopoGraphicsInput{}
-	err := ctx.DecodeInto(&input)
+	input := new(metadata.UpdateTopoGraphicsInput)
+	err := ctx.DecodeInto(input)
 	if nil != err {
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsIsInvalid, "not set anything"))
 		return

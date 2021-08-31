@@ -69,33 +69,27 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 		graphNodes[node.NodeType+node.ObjID+strconv.Itoa(node.InstID)] = &rsp[index]
 	}
 
-	// TODO 调用 asst 中 searchObjectAssociation
-	assts, err := g.searchObjectAssociation(kit, "")
+	assts, err := g.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, nil)
 	if err != nil {
-		blog.Errorf("select object asst failed, err: %v, rid: %v", err, kit.Rid)
+		blog.Errorf("search object association failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
 	objAssts := make(map[string][]metadata.Association, 0)
-	for _, asst := range assts {
+	asstKindIDs := make([]string, 0)
+	var associationKindMap = make(map[string]*metadata.AssociationKind, 0)
+	for _, asst := range assts.Info {
 		objAssts[asst.ObjectID] = append(objAssts[asst.ObjectID], asst)
+		if _, ok := associationKindMap[asst.AsstKindID]; !ok {
+			asstKindIDs = append(asstKindIDs, asst.AsstKindID)
+			associationKindMap[asst.AsstKindID] = nil
+		}
 	}
 
 	objs, err := g.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, nil)
 	if err != nil {
 		blog.ErrorJSON("find object failed, err: %v, rid: %v", err, kit.Rid)
 		return nil, err
-	}
-
-	asstKindIDs := make([]string, 0)
-	var associationKindMap = make(map[string]*metadata.AssociationKind, 0)
-	for _, obj := range objs.Info {
-		for _, asst := range objAssts[obj.ObjectID] {
-			if _, ok := associationKindMap[asst.AsstKindID]; !ok {
-				asstKindIDs = append(asstKindIDs, asst.AsstKindID)
-				associationKindMap[asst.AsstKindID] = nil
-			}
-		}
 	}
 
 	associationKindMap, err = g.findAssociationTypeByAsstKindID(kit, asstKindIDs)
@@ -125,15 +119,16 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 func (g *graphics) findAssociationTypeByAsstKindID(kit *rest.Kit, asstKindIDs []string) (
 	map[string]*metadata.AssociationKind, error) {
 
-	typeCond := mapstr.MapStr{
+	cond := mapstr.MapStr{
 		common.AssociationKindIDField: map[string][]string{
 			common.BKDBIN: asstKindIDs,
 		},
 	}
-	// TODO 调用asst中SearchType
-	resp, err := g.searchType(kit, &metadata.SearchAssociationTypeRequest{
-		Condition: typeCond,
-	})
+	input := metadata.QueryCondition{
+		Condition: cond,
+	}
+
+	resp, err := g.clientSet.CoreService().Association().ReadAssociationType(kit.Ctx, kit.Header, &input)
 	if err != nil {
 		blog.Errorf("get association kind failed, err: %v, kinds: %#v rid: %s", err, asstKindIDs, kit.Rid)
 		return nil, err
@@ -193,30 +188,4 @@ func (g *graphics) UpdateObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 	}
 
 	return nil
-}
-
-// TODO 暂时使用的函数
-func (g *graphics) searchObjectAssociation(kit *rest.Kit, objID string) ([]metadata.Association, error) {
-	cond := mapstr.MapStr{}
-	if len(objID) != 0 {
-		cond.Set(common.BKObjIDField, objID)
-	}
-
-	rsp, err := g.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: cond})
-	if err != nil {
-		blog.Errorf("search object association failed, err: %v, input: %#v, rid: %s", err, cond, kit.Rid)
-		return nil, err
-	}
-
-	return rsp.Info, nil
-}
-
-func (g *graphics) searchType(kit *rest.Kit, request *metadata.SearchAssociationTypeRequest) (*metadata.SearchAssociationType, error) {
-	input := metadata.QueryCondition{
-		Condition: request.Condition,
-		Page:      metadata.BasePage{Limit: request.Limit, Start: request.Start, Sort: request.Sort},
-	}
-
-	return g.clientSet.CoreService().Association().ReadAssociationType(kit.Ctx, kit.Header, &input)
 }
