@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
 
@@ -595,10 +596,9 @@ func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
 		return
 	}
 
-	var ret *metadata.UpdateAssociationTypeResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().UpdateType(ctx.Kit, asstTypeID, request)
+		_, err = s.Core.AssociationOperation().UpdateType(ctx.Kit, asstTypeID, request)
 		if err != nil {
 			return err
 		}
@@ -668,7 +668,7 @@ func (s *Service) SearchInstanceAssociations(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(result)
+	ctx.RespEntity(mapstr.MapStr{"info": result})
 }
 
 // CountInstanceAssociations counts object instance associations with the input conditions.
@@ -718,14 +718,19 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 		return
 	}
 
+	cond := &metadata.InstAsstQueryCondition{
+		Cond:  metadata.QueryCondition{Condition: request.Condition},
+		ObjID: request.ObjID,
+	}
+
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	ret, err := s.Logics.InstAssociationOperation().SearchInstAssociation(ctx.Kit, request)
+	ret, err := s.Engine.CoreAPI.CoreService().Association().ReadInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(ret)
+	ctx.RespEntity(ret.Info)
 }
 
 //Search all associations of certain model instance,by regarding the instance as both Association source and Association target.
@@ -775,7 +780,7 @@ func (s *Service) CreateAssociationInst(ctx *rest.Contexts) {
 		return
 	}
 
-	var ret *metadata.CreateAssociationInstResult
+	var ret *metadata.RspID
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		ret, err = s.Logics.InstAssociationOperation().CreateInstanceAssociation(ctx.Kit, request)
@@ -783,9 +788,6 @@ func (s *Service) CreateAssociationInst(ctx *rest.Contexts) {
 			return err
 		}
 
-		if ret.Code != 0 {
-			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
-		}
 		return nil
 	})
 
@@ -793,7 +795,7 @@ func (s *Service) CreateAssociationInst(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(ret)
 }
 
 // CreateManyInstAssociation batch create instance association
@@ -829,15 +831,10 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 		return
 	}
 
-	var ret *metadata.DeleteAssociationInstResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		rsp, err := s.Logics.InstAssociationOperation().DeleteInstAssociation(ctx.Kit, objID, []int64{id})
+		_, err := s.Logics.InstAssociationOperation().DeleteInstAssociation(ctx.Kit, objID, []int64{id})
 		if err != nil {
 			return err
-		}
-
-		if rsp != 0 {
-			ret.Data = common.CCSuccessStr
 		}
 
 		return nil
@@ -847,7 +844,7 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(nil)
 }
 
 // DeleteAssociationInstBatch batch delete instance association
@@ -862,8 +859,7 @@ func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 		return
 	}
 	if len(request.ID) > common.BKMaxInstanceLimit {
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommPageLimitIsExceeded,
-			"The number of ID should be less than 500."))
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}
 	if len(request.ObjectID) == 0 {

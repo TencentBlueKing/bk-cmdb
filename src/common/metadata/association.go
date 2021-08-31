@@ -622,8 +622,9 @@ type NodeTopoPath struct {
 	Path  []*TopoInstanceNodeSimplify `json:"topo_path" mapstructure:"topo_path"`
 }
 
+// InstAsstQueryCondition query condition of instancea association
 type InstAsstQueryCondition struct {
-	Cond  QueryCondition `json:"cond"`
+	Cond  QueryCondition `json:"condition"`
 	ObjID string         `json:"bk_obj_id"`
 }
 
