@@ -24,14 +24,14 @@ type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
 	ObjectOperation() model.ObjectOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
-	GraphicsOperation() operation.GraphicsOperationInterface
+	AssociationOperation() model.AssociationOperationInterface
 }
 
 type logics struct {
 	classification model.ClassificationOperationInterface
 	object         model.ObjectOperationInterface
 	identifier     operation.IdentifierOperationInterface
-	graphics       operation.GraphicsOperationInterface
+	association    model.AssociationOperationInterface
 }
 
 // New create a logics manager
@@ -39,32 +39,32 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	classificationOperation := model.NewClassificationOperation(client, authManager)
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
-	graphicsOperation := operation.NewGraphics(client, authManager)
+	associationOperation := model.NewAssociationOperation(client, authManager)
 
 	return &logics{
 		classification: classificationOperation,
 		object:         objectOperation,
 		identifier:     IdentifierOperation,
-		graphics:       graphicsOperation,
+		association:    associationOperation,
 	}
 }
 
-// ClassificationOperation return a inst provide ClassificationOperation
+// ClassificationOperation return a classification provide ClassificationOperationInterface
 func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
 	return c.classification
 }
 
-// ObjectOperation return a inst provide ObjectOperation
+// ObjectOperation return a object provide ObjectOperationInterface
 func (c *logics) ObjectOperation() model.ObjectOperationInterface {
 	return c.object
 }
 
-// IdentifierOperation return a inst provide IdentifierOperation
+// IdentifierOperation return a identifier provide IdentifierOperationInterface
 func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
 	return c.identifier
 }
 
-// GraphicsOperation return a inst provide GraphicsOperation
-func (c *logics) GraphicsOperation() operation.GraphicsOperationInterface {
-	return c.graphics
+// AssociationOperation return a association provide AssociationOperationInterface
+func (c *logics) AssociationOperation() model.AssociationOperationInterface {
+	return c.association
 }
