@@ -37,7 +37,7 @@ func NewViewer(client apimachinery.ClientSetInterface, iam *IAM) *viewer {
 	}
 }
 
-// CreateView create iam view for a object
+// CreateView create iam view for objects
 func (v *viewer) CreateView(ctx context.Context, header http.Header, objects []metadata.Object) error {
 	if !auth.EnableAuthorize() {
 		return nil
@@ -63,7 +63,7 @@ func (v *viewer) CreateView(ctx context.Context, header http.Header, objects []m
 	return nil
 }
 
-// DeleteView delete iam view for a object
+// DeleteView delete iam view for objects
 func (v *viewer) DeleteView(ctx context.Context, header http.Header, objects []metadata.Object) error {
 	if !auth.EnableAuthorize() {
 		return nil
@@ -79,6 +79,32 @@ func (v *viewer) DeleteView(ctx context.Context, header http.Header, objects []m
 	}
 
 	if err := v.unregisterModelResourceTypes(ctx, objects); err != nil {
+		return err
+	}
+
+	if err := v.updateModelActionGroups(ctx, header); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateView update iam view for objects
+func (v *viewer) UpdateView(ctx context.Context, header http.Header, objects []metadata.Object) error {
+	if !auth.EnableAuthorize() {
+		return nil
+	}
+
+	// update order: 1.ResourceType 2.InstanceSelection 3.Action 4.ActionGroup
+	if err := v.updateModelResourceTypes(ctx, objects); err != nil {
+		return err
+	}
+
+	if err := v.updateModelInstanceSelections(ctx, objects); err != nil {
+		return err
+	}
+
+	if err := v.updateModelActions(ctx, objects); err != nil {
 		return err
 	}
 
@@ -119,6 +145,22 @@ func (v *viewer) unregisterModelResourceTypes(ctx context.Context, objects []met
 	return nil
 }
 
+// updateModelResourceTypes update resource types for models
+func (v *viewer) updateModelResourceTypes(ctx context.Context, objects []metadata.Object) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	resourceTypes := genDynamicResourceTypes(objects)
+	for _, resourceType := range resourceTypes {
+		if err := v.iam.client.UpdateResourcesType(ctx, resourceType); err != nil {
+			blog.ErrorJSON("update resourceType failed, error: %s, objects: %s, resourceTypes: %s，"+
+				"resourceType:%s, rid:%s",
+				err.Error(), objects, resourceTypes, resourceType, rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
 // registerModelInstanceSelections register instanceSelections for models
 func (v *viewer) registerModelInstanceSelections(ctx context.Context, objects []metadata.Object) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -144,6 +186,22 @@ func (v *viewer) unregisterModelInstanceSelections(ctx context.Context, objects 
 		blog.ErrorJSON("unregister instanceSelections failed, error: %s, objects: %s, instanceSelections: %s, rid:%s",
 			err.Error(), objects, instanceSelections, rid)
 		return err
+	}
+
+	return nil
+}
+
+// updateModelInstanceSelections update instanceSelections for models
+func (v *viewer) updateModelInstanceSelections(ctx context.Context, objects []metadata.Object) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	instanceSelections := genDynamicInstanceSelections(objects)
+	for _, instanceSelection := range instanceSelections {
+		if err := v.iam.client.UpdateInstanceSelection(ctx, instanceSelection); err != nil {
+			blog.ErrorJSON("update instanceSelections failed, error: %s, objects: %s, instanceSelections: %s, "+
+				"instanceSelection: %s, rid: %s",
+				err.Error(), objects, instanceSelections, instanceSelection, rid)
+			return err
+		}
 	}
 
 	return nil
@@ -182,6 +240,21 @@ func (v *viewer) unregisterModelActions(ctx context.Context, objects []metadata.
 		blog.ErrorJSON("unregister actions failed, error: %s, objects: %s, actionIDs: %s, rid:%s",
 			err.Error(), objects, actionIDs, rid)
 		return err
+	}
+
+	return nil
+}
+
+// updateModelActions update actions for models
+func (v *viewer) updateModelActions(ctx context.Context, objects []metadata.Object) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	actions := genDynamicActions(objects)
+	for _, action := range actions {
+		if err := v.iam.client.UpdateAction(ctx, action); err != nil {
+			blog.ErrorJSON("update action failed, error: %s, objects: %s, actions: %s, action: %s, rid: %s",
+				err.Error(), objects, actions, action, rid)
+			return err
+		}
 	}
 
 	return nil
