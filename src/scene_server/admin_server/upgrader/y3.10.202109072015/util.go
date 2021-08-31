@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_10_202108202015
+package y3_10_202109072015
 
 import (
 	"fmt"
@@ -48,70 +48,78 @@ func parseInstancePolicy(policy *operator.Policy) (*parsedInstancePolicy, error)
 
 	// parse policy which is composed of multiple sub policies, combine these parsed results into one
 	if op == operator.And || op == operator.Or {
-		content, ok := policy.Element.(*operator.Content)
-		if !ok {
-			return nil, fmt.Errorf("invalid policy with unknown element type: %s", reflect.TypeOf(policy.Element))
-		}
-		if content == nil || len(content.Content) == 0 {
-			return nil, fmt.Errorf("policy op(%s) content can't be empty", op)
-		}
+		return parseCombinedInstancePolicy(policy)
+	}
 
-		// instance id policy can only be combined with its object policy in a policy with and operator like:
-		// {"op":"AND","content":[{"op":"in","field":"sys_instance.id","value":["1","2"]},
-		// {"op":"starts_with","field":"sys_instance._bk_iam_path_","value":"/sys_instance_model,1/"}]}
-		if op == operator.And {
-			if len(content.Content) != 2 {
-				return nil, fmt.Errorf("instance policy op(%s) content length is invalid", op)
-			}
+	return parseAutomaticInstancePolicy(policy)
+}
 
-			var instanceIDs []int64
-			var objectID int64
+func parseCombinedInstancePolicy(policy *operator.Policy) (*parsedInstancePolicy, error) {
+	content, ok := policy.Element.(*operator.Content)
+	if !ok {
+		return nil, fmt.Errorf("invalid policy with unknown element type: %s", reflect.TypeOf(policy.Element))
+	}
+	if content == nil || len(content.Content) == 0 {
+		return nil, fmt.Errorf("policy op(%s) content can't be empty", policy.Operator)
+	}
 
-			for _, content := range content.Content {
-				parsedSubPolicy, err := parseInstancePolicy(content)
-				if err != nil {
-					return nil, err
-				}
-
-				if len(parsedSubPolicy.instanceIDs) > 0 {
-					instanceIDs = parsedSubPolicy.instanceIDs
-					continue
-				}
-
-				if len(parsedSubPolicy.objectIDs) > 0 {
-					if len(parsedSubPolicy.objectIDs) != 1 {
-						return nil, fmt.Errorf("instance policy op(%s) has instances in multiple objects", op)
-					}
-					objectID = parsedSubPolicy.objectIDs[0]
-				}
-			}
-
-			return &parsedInstancePolicy{objInstIDMap: map[int64][]int64{objectID: instanceIDs}}, nil
+	// instance id policy can only be combined with its object policy in a policy with and operator like:
+	// {"op":"AND","content":[{"op":"in","field":"sys_instance.id","value":["1","2"]},
+	// {"op":"starts_with","field":"sys_instance._bk_iam_path_","value":"/sys_instance_model,1/"}]}
+	if policy.Operator == operator.And {
+		if len(content.Content) != 2 {
+			return nil, fmt.Errorf("instance policy op(%s) content length is invalid", policy.Operator)
 		}
 
-		// or operator policy contains all objects and instances in all parsed sub policies
-		parsedPolicy := new(parsedInstancePolicy)
+		var instanceIDs []int64
+		var objectID int64
+
 		for _, content := range content.Content {
 			parsedSubPolicy, err := parseInstancePolicy(content)
 			if err != nil {
 				return nil, err
 			}
 
-			if parsedPolicy.isAny {
-				return &parsedInstancePolicy{isAny: true}, nil
+			if len(parsedSubPolicy.instanceIDs) > 0 {
+				instanceIDs = parsedSubPolicy.instanceIDs
+				continue
 			}
 
-			parsedPolicy.objectIDs = append(parsedPolicy.objectIDs, parsedSubPolicy.objectIDs...)
-			if parsedPolicy.objInstIDMap == nil {
-				parsedPolicy.objInstIDMap = make(map[int64][]int64)
-			}
-			for objID, instIDs := range parsedSubPolicy.objInstIDMap {
-				parsedPolicy.objInstIDMap[objID] = instIDs
+			if len(parsedSubPolicy.objectIDs) > 0 {
+				if len(parsedSubPolicy.objectIDs) != 1 {
+					return nil, fmt.Errorf("instance policy op(%s) has instances in multiple objects", policy.Operator)
+				}
+				objectID = parsedSubPolicy.objectIDs[0]
 			}
 		}
-		return parsedPolicy, nil
+
+		return &parsedInstancePolicy{objInstIDMap: map[int64][]int64{objectID: instanceIDs}}, nil
 	}
 
+	// or operator policy contains all objects and instances in all parsed sub policies
+	parsedPolicy := new(parsedInstancePolicy)
+	for _, content := range content.Content {
+		parsedSubPolicy, err := parseInstancePolicy(content)
+		if err != nil {
+			return nil, err
+		}
+
+		if parsedPolicy.isAny {
+			return &parsedInstancePolicy{isAny: true}, nil
+		}
+
+		parsedPolicy.objectIDs = append(parsedPolicy.objectIDs, parsedSubPolicy.objectIDs...)
+		if parsedPolicy.objInstIDMap == nil {
+			parsedPolicy.objInstIDMap = make(map[int64][]int64)
+		}
+		for objID, instIDs := range parsedSubPolicy.objInstIDMap {
+			parsedPolicy.objInstIDMap[objID] = instIDs
+		}
+	}
+	return parsedPolicy, nil
+}
+
+func parseAutomaticInstancePolicy(policy *operator.Policy) (*parsedInstancePolicy, error) {
 	fieldValue, ok := policy.Element.(*operator.FieldValue)
 	if !ok {
 		return nil, fmt.Errorf("invalid policy with unknown element type: %s", reflect.TypeOf(policy.Element).String())
@@ -123,35 +131,34 @@ func parseInstancePolicy(policy *operator.Policy) (*parsedInstancePolicy, error)
 		return nil, fmt.Errorf("invalid instance policy with invalid element field resource: %s", field.Resource)
 	}
 
-	attribute := field.Attribute
 	value := fieldValue.Value
 
-	switch attribute {
+	switch field.Attribute {
 	case types.IamIDKey:
 		var ids []int64
 		// one id's policy uses equal operator, while multiple ids are aggregated into one policy with in operator
-		switch op {
+		switch policy.Operator {
 		case operator.Equal:
 			id, err := util.GetInt64ByInterface(value)
 			if err != nil {
-				return nil, fmt.Errorf("parse policy op(%s) id value(%#v) to int failed, err: %v", op, value, err)
+				return nil, fmt.Errorf("parse policy op(%s) id value(%#v) failed, err: %v", policy.Operator, value, err)
 			}
 			ids = []int64{id}
 		case operator.In:
 			valueArr, ok := value.([]interface{})
 			if !ok || len(valueArr) == 0 {
-				return nil, fmt.Errorf("policy op(%s) value(%#v) isn't array type or is empty", op, value)
+				return nil, fmt.Errorf("policy op(%s) value(%#v) isn't array type or is empty", policy.Operator, value)
 			}
 			var err error
 			ids = make([]int64, len(valueArr))
 			for index, val := range valueArr {
 				ids[index], err = util.GetInt64ByInterface(val)
 				if err != nil {
-					return nil, fmt.Errorf("parse policy op(%s) id value(%#v) to int failed, err: %v", op, val, err)
+					return nil, fmt.Errorf("parse policy op(%s) id(%#v) failed, err: %v", policy.Operator, val, err)
 				}
 			}
 		default:
-			return nil, fmt.Errorf("policy id field operator %s not supported", op)
+			return nil, fmt.Errorf("policy id field operator %s not supported", policy.Operator)
 		}
 
 		switch field.Resource {
@@ -168,7 +175,7 @@ func parseInstancePolicy(policy *operator.Policy) (*parsedInstancePolicy, error)
 			return nil, fmt.Errorf("invalid iam path policy with invalid element field resource: %s", field.Resource)
 		}
 
-		switch op {
+		switch policy.Operator {
 		case operator.StartWith:
 			iamPath, ok := value.(string)
 			if !ok {
@@ -195,9 +202,9 @@ func parseInstancePolicy(policy *operator.Policy) (*parsedInstancePolicy, error)
 			}
 			return &parsedInstancePolicy{objectIDs: []int64{id}}, nil
 		default:
-			return nil, fmt.Errorf("policy id field operator %s not supported", op)
+			return nil, fmt.Errorf("policy id field operator %s not supported", policy.Operator)
 		}
 	default:
-		return nil, fmt.Errorf("policy element field attribute %s not supported", attribute)
+		return nil, fmt.Errorf("policy element field attribute %s not supported", field.Attribute)
 	}
 }

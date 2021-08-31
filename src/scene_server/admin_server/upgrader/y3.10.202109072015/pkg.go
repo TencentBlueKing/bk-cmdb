@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_10_202108202015
+package y3_10_202109072015
 
 import (
 	"context"
@@ -22,14 +22,14 @@ import (
 )
 
 func init() {
-	upgrader.RegisterUpgraderWithIAM("y3.10.202108202015", upgrade)
+	upgrader.RegisterUpgraderWithIAM("y3.10.202109072015", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, iam *iam.IAM, conf *upgrader.Config) (err error) {
-	blog.Info("y3.10.202108202015, migrate iam system instances")
+	blog.Info("y3.10.202109072015, migrate iam system instances")
 
 	if err := migrateIAMSysInstances(ctx, db, iam, conf); err != nil {
-		blog.Errorf("[upgrade y3.10.202108202015] migrate iam system instances failed, error:%s", err.Error())
+		blog.Errorf("[upgrade y3.10.202109072015] migrate iam system instances failed, error:%s", err.Error())
 		return err
 	}
 
