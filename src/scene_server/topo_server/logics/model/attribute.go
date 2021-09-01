@@ -38,11 +38,12 @@ type AttributeOperationInterface interface {
 }
 
 // NewAttributeOperation create a new attribute operation instance
-func NewAttributeOperation(client apimachinery.ClientSetInterface,
-	authManager *extensions.AuthManager) AttributeOperationInterface {
+func NewAttributeOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager,
+	languageIf language.CCLanguageIf) AttributeOperationInterface {
 	return &attribute{
 		clientSet:   client,
 		authManager: authManager,
+		lang:        languageIf,
 	}
 }
 
@@ -189,9 +190,9 @@ func (a *attribute) CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr) (*metad
 	return &grp, nil
 }
 
-// createObjectGroup create object group by condition
-func (a *attribute) createObjectGroup(kit *rest.Kit, data *metadata.Attribute) error {
-	filters := make([]map[string]interface{}, 0)
+// checkAttributeGroupExist check attribute group exist, not exist create default group
+func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attribute) error {
+	filters := make([]map[string]interface{}, 1)
 	cond := mapstr.MapStr{
 		common.BKObjIDField:           data.ObjectID,
 		common.BKPropertyGroupIDField: data.PropertyGroup,
@@ -207,7 +208,7 @@ func (a *attribute) createObjectGroup(kit *rest.Kit, data *metadata.Attribute) e
 
 	if resp[0] == 0 {
 		if data.BizID > 0 {
-			filters := make([]map[string]interface{}, 0)
+			filters := make([]map[string]interface{}, 1)
 			cond := mapstr.MapStr{
 				common.BKObjIDField:           data.ObjectID,
 				common.BKPropertyGroupIDField: common.BKBizDefault,
@@ -271,7 +272,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 		return nil, err
 	}
 
-	if err = a.createObjectGroup(kit, data); err != nil {
+	if err = a.checkAttributeGroupExist(kit, data); err != nil {
 		blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
 		return nil, err
 	}
@@ -327,7 +328,7 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, mod
 
 	if len(attrItems.Info) == 0 {
 		blog.Errorf("failed to find the attributes by the cond(%v), err: %v, rid: %s", cond, err, kit.Rid)
-		return err
+		return nil
 	}
 
 	auditLogArr := make([]metadata.AuditLog, 0)
@@ -373,16 +374,6 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	cond := make(map[string]interface{})
 	util.AddModelBizIDCondition(cond, modelBizID)
 
-	// generate audit log of model attribute.
-	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(data)
-	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, attID, nil)
-	if err != nil {
-		blog.Errorf("generate audit log failed before update model attribute, attID: %d, err: %v, rid: %s",
-			attID, err, kit.Rid)
-		return err
-	}
-
 	attr := new(metadata.Attribute)
 	if err := mapstruct.Decode2Struct(cond, attr); err != nil {
 		blog.Errorf("unmarshal mapstr data into module failed, module: %s, err: %s, rid: %s", cond, err, kit.Rid)
@@ -393,14 +384,23 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	}
 
 	// to update.
-	cond[common.BKFieldID] = attID
 	input := metadata.UpdateOption{
-		Condition: cond,
+		Condition: mapstr.MapStr{common.BKFieldID: attID},
 		Data:      data,
 	}
 	if _, err := a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(kit.Ctx, kit.Header, &input); err != nil {
 		blog.Errorf("failed to update module attr, err: %s, rid: %s", err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	// generate audit log of model attribute.
+	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(data)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, attID, nil)
+	if err != nil {
+		blog.Errorf("generate audit log failed before update model attribute, attID: %d, err: %v, rid: %s",
+			attID, err, kit.Rid)
+		return err
 	}
 
 	// save audit log.
