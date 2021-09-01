@@ -189,14 +189,19 @@ func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondi
 	}
 
 	input := metadata.UpdateOption{
-		Data: mapstr.MapStr{
+		Condition: mapstr.MapStr{
 			common.BKFieldID: cond.Condition.ID,
 		},
-		Condition: mapstr.MapStr{
-			"bk_group_name":  cond.Data.Name,
-			"bk_group_index": cond.Data.Index,
-			"is_collapse":    cond.Data.IsCollapse,
-		},
+		Data: mapstr.MapStr{},
+	}
+	if cond.Data.Name != nil {
+		input.Data.Set(common.BKPropertyGroupNameField, cond.Data.Name)
+	}
+	if cond.Data.IsCollapse != nil {
+		input.Data.Set(common.BKIsCollapseField, cond.Data.IsCollapse)
+	}
+	if cond.Data.Index != nil {
+		input.Data.Set(common.BKPropertyGroupIndexField, cond.Data.Index)
 	}
 
 	// generate audit log of object attribute group.
@@ -251,10 +256,15 @@ func (g *group) UpdateObjectAttributeGroup(kit *rest.Kit, conds []metadata.Prope
 		return err
 	}
 
-	grpMap := make(map[string]metadata.Group)
+	grpMap := make(map[string]struct{})
 	for _, grp := range grps {
-		grpMap[grp.GroupID] = grp
+		if _, ok := grpMap[grp.GroupID]; ok {
+			blog.Errorf("there is more than one group (%s), rid: %s", grp.GroupID, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.GroupFieldGroupID)
+		}
+		grpMap[grp.GroupID] = struct{}{}
 	}
+
 	for _, propertyGroupID := range propertyGroupIDs {
 		if _, ok := grpMap[propertyGroupID]; !ok {
 			blog.Errorf("group (%s) does not exist, rid: %s", propertyGroupID, kit.Rid)
@@ -265,13 +275,13 @@ func (g *group) UpdateObjectAttributeGroup(kit *rest.Kit, conds []metadata.Prope
 	for _, cond := range conds {
 		input := metadata.UpdateOption{
 			Condition: mapstr.MapStr{
-				"bk_supplier_account": cond.Condition.OwnerID,
-				"bk_obj_id":           cond.Condition.ObjectID,
-				"bk_property_id":      cond.Condition.PropertyID,
+				common.BKOwnerIDField:    cond.Condition.OwnerID,
+				common.BKObjIDField:      cond.Condition.ObjectID,
+				common.BKPropertyIDField: cond.Condition.PropertyID,
 			},
 			Data: mapstr.MapStr{
-				"bk_property_group": cond.Data.PropertyGroupID,
-				"bk_property_index": cond.Data.PropertyIndex,
+				common.BKPropertyGroupField: cond.Data.PropertyGroupID,
+				common.BKPropertyIndexField: cond.Data.PropertyIndex,
 			},
 		}
 
