@@ -38,24 +38,22 @@ type AttributeOperationInterface interface {
 }
 
 // NewAttributeOperation create a new attribute operation instance
-func NewAttributeOperation(client apimachinery.ClientSetInterface, languageIf language.DefaultCCLanguageIf,
+func NewAttributeOperation(client apimachinery.ClientSetInterface,
 	authManager *extensions.AuthManager) AttributeOperationInterface {
 	return &attribute{
 		clientSet:   client,
 		authManager: authManager,
-		lang:        languageIf,
 	}
 }
 
 type attribute struct {
-	lang        language.DefaultCCLanguageIf
+	lang        language.CCLanguageIf
 	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
 }
 
 // IsValid check is valid
 func (a *attribute) IsValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribute) error {
-
 	if data.PropertyID == common.BKInstParentStr {
 		return nil
 	}
@@ -70,7 +68,8 @@ func (a *attribute) IsValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 	if !isUpdate || data.ToMapStr().Exists(metadata.AttributeFieldPropertyID) {
 		if common.AttributeIDMaxLength < utf8.RuneCountInString(data.PropertyID) {
 			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
-				a.lang.Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
+				a.lang.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language(
+					"model_attr_bk_property_id"), common.AttributeIDMaxLength)
 		}
 		match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, data.PropertyID)
 		if err != nil {
@@ -85,7 +84,8 @@ func (a *attribute) IsValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 	if !isUpdate || data.ToMapStr().Exists(metadata.AttributeFieldPropertyName) {
 		if common.AttributeNameMaxLength < utf8.RuneCountInString(data.PropertyName) {
 			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
-				a.lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
+				a.lang.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language(
+					"model_attr_bk_property_name"), common.AttributeNameMaxLength)
 		}
 	}
 
@@ -101,7 +101,8 @@ func (a *attribute) IsValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 
 	if data.Placeholder != "" {
 		if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(data.Placeholder) {
-			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, a.lang.Language("model_attr_placeholder"),
+			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
+				a.lang.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language("model_attr_placeholder"),
 				common.AttributePlaceHolderMaxLength)
 		}
 	}
