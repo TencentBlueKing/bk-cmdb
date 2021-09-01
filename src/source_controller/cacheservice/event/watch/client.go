@@ -452,7 +452,7 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 		if node.EventType == watch.Delete {
 			deletedOids = append(deletedOids, node.Oid)
 
-			if coll == common.BKTableNameBaseInst {
+			if coll == common.BKTableNameBaseInst || coll == common.BKTableNameMainlineInstance {
 				deleteInstIDs = append(deleteInstIDs, node.InstanceID)
 			}
 		} else {
@@ -463,7 +463,7 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 			}
 			oids = append(oids, objectId)
 
-			if coll == common.BKTableNameBaseInst {
+			if coll == common.BKTableNameBaseInst || coll == common.BKTableNameMainlineInstance {
 				instIDs = append(instIDs, node.InstanceID)
 			}
 		}
@@ -504,7 +504,7 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 					oidDetailMap[index] = string(detailJson)
 				}
 			}
-		} else if coll == common.BKTableNameBaseInst {
+		} else if coll == common.BKTableNameBaseInst || coll == common.BKTableNameMainlineInstance {
 			instObjMappings, err := instancemapping.GetInstanceObjectMapping(instIDs)
 			if err != nil {
 				blog.Errorf("get object ids from instance ids(%+v) failed, err: %v, rid: %s", instIDs, err, kit.Rid)
@@ -516,8 +516,8 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 				if _, ok := objIDOwnerIDInstIDsMap[row.ObjectID]; !ok {
 					objIDOwnerIDInstIDsMap[row.ObjectID] = make(map[string][]int64, 0)
 				}
-				objIDOwnerIDInstIDsMap[row.ObjectID][row.ObjectID] =
-					append(objIDOwnerIDInstIDsMap[row.ObjectID][row.ObjectID], row.ID)
+				objIDOwnerIDInstIDsMap[row.ObjectID][row.OwnerID] =
+					append(objIDOwnerIDInstIDsMap[row.ObjectID][row.OwnerID], row.ID)
 			}
 
 			for objID, ownerIDInstMap := range objIDOwnerIDInstIDsMap {
@@ -592,7 +592,7 @@ func (c *Client) searchDeletedEventDetailsFromMongo(kit *rest.Kit, coll string, 
 		"oid": map[string]interface{}{common.BKDBIN: deletedOids},
 	}
 
-	if coll == common.BKTableNameBaseInst {
+	if coll == common.BKTableNameBaseInst || coll == common.BKTableNameMainlineInstance {
 		deleteFilter["detail.bk_inst_id"] = map[string]interface{}{common.BKDBIN: deleteInstIDs}
 	} else {
 		deleteFilter["coll"] = coll
