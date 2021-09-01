@@ -38,6 +38,7 @@ type logics struct {
 	association     model.AssociationOperationInterface
 	instassociation inst.AssociationOperationInterface
 	graphics        operation.GraphicsOperationInterface
+	group           model.GroupOperationInterface
 }
 
 // New create a logics manager
@@ -58,6 +59,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		association:     associationOperation,
 		instassociation: instAssociationOperation,
 		graphics:        graphicsOperation,
+		group:           groupOperation,
 	}
 }
 

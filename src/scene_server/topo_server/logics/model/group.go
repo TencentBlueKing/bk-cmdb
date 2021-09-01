@@ -117,6 +117,7 @@ func (g *group) CreateObjectGroup(kit *rest.Kit, data *metadata.Group) (*metadat
 
 // DeleteObjectGroup delete object group
 func (g *group) DeleteObjectGroup(kit *rest.Kit, groupID int64) error {
+
 	// generate audit log of object attribute group.
 	audit := auditlog.NewAttributeGroupAuditLog(g.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
@@ -151,6 +152,7 @@ func (g *group) DeleteObjectGroup(kit *rest.Kit, groupID int64) error {
 func (g *group) FindObjectGroup(kit *rest.Kit, cond mapstr.MapStr, modelBizID int64) ([]metadata.Group, error) {
 
 	util.AddModelBizIDCondition(cond, modelBizID)
+
 	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroupByCondition(kit.Ctx, kit.Header,
 		metadata.QueryCondition{Condition: cond})
 	if err != nil {
