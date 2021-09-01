@@ -28,6 +28,7 @@ type Logics interface {
 	AssociationOperation() model.AssociationOperationInterface
 	InstAssociationOperation() inst.AssociationOperationInterface
 	GraphicsOperation() operation.GraphicsOperationInterface
+	GroupOperation() model.GroupOperationInterface
 }
 
 type logics struct {
@@ -37,6 +38,7 @@ type logics struct {
 	association     model.AssociationOperationInterface
 	instassociation inst.AssociationOperationInterface
 	graphics        operation.GraphicsOperationInterface
+	group           model.GroupOperationInterface
 }
 
 // New create a logics manager
@@ -47,6 +49,8 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	associationOperation := model.NewAssociationOperation(client, authManager)
 	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
 	graphicsOperation := operation.NewGraphics(client, authManager)
+	groupOperation := model.NewGroupOperation(client)
+	groupOperation.SetProxy(objectOperation)
 
 	return &logics{
 		classification:  classificationOperation,
@@ -55,6 +59,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		association:     associationOperation,
 		instassociation: instAssociationOperation,
 		graphics:        graphicsOperation,
+		group:           groupOperation,
 	}
 }
 
@@ -86,4 +91,9 @@ func (c *logics) InstAssociationOperation() inst.AssociationOperationInterface {
 // GraphicsOperation return a inst provide GraphicsOperation
 func (c *logics) GraphicsOperation() operation.GraphicsOperationInterface {
 	return c.graphics
+}
+
+// GroupOperation return a inst provide GroupOperationInterface
+func (c *logics) GroupOperation() model.GroupOperationInterface {
+	return c.group
 }
