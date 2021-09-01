@@ -189,6 +189,62 @@ func (a *attribute) CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr) (*metad
 	return &grp, nil
 }
 
+// createObjectGroup create object group by condition
+func (a *attribute) createObjectGroup(kit *rest.Kit, data *metadata.Attribute) error {
+	filters := make([]map[string]interface{}, 0)
+	cond := mapstr.MapStr{
+		common.BKObjIDField:           data.ObjectID,
+		common.BKPropertyGroupIDField: data.PropertyGroup,
+	}
+	util.AddModelBizIDCondition(cond, data.BizID)
+	filters = append(filters, cond)
+	resp, e := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNamePropertyGroup,
+		filters)
+	if e != nil {
+		blog.Errorf("get property group failed, filters: %+v., err: %s, rid: %d.", data, e, kit.Rid)
+		return e
+	}
+
+	if resp[0] == 0 {
+		if data.BizID > 0 {
+			filters := make([]map[string]interface{}, 0)
+			cond := mapstr.MapStr{
+				common.BKObjIDField:           data.ObjectID,
+				common.BKPropertyGroupIDField: common.BKBizDefault,
+			}
+			util.AddModelBizIDCondition(cond, data.BizID)
+			filters = append(filters, cond)
+			resp, e := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+				common.BKTableNamePropertyGroup, filters)
+			if e != nil {
+				blog.Errorf("get property group failed, filters: %+v., err: %s, rid: %d.", data, e, kit.Rid)
+				return e
+			}
+			if resp[0] == 0 {
+				group := metadata.Group{
+					IsDefault:  true,
+					GroupIndex: -1,
+					GroupName:  common.BKBizDefault,
+					GroupID:    common.BKBizDefault,
+					ObjectID:   data.ObjectID,
+					OwnerID:    data.OwnerID,
+					BizID:      data.BizID,
+				}
+				// TODO 替换依赖直接传递&group参数
+				if _, err := a.CreateObjectGroup(kit, mapstr.MapStr{"field": group}); err != nil {
+					blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
+					return err
+				}
+			}
+			data.PropertyGroup = common.BKBizDefault
+		} else {
+			data.PropertyGroup = common.BKDefaultField
+		}
+	}
+
+	return nil
+}
+
 // CreateObjectAttribute create object attribute
 func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error) {
 	if data.IsOnly {
@@ -215,55 +271,9 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 		return nil, err
 	}
 
-	filters := make([]map[string]interface{}, 0)
-	cond := mapstr.MapStr{
-		common.BKObjIDField:           data.ObjectID,
-		common.BKPropertyGroupIDField: data.PropertyGroup,
-	}
-	util.AddModelBizIDCondition(cond, data.BizID)
-	filters = append(filters, cond)
-	resp, e := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNamePropertyGroup,
-		filters)
-	if e != nil {
-		blog.Errorf("get property group failed, filters: %+v., err: %s, rid: %d.", data, e, kit.Rid)
-		return nil, e
-	}
-
-	if resp[0] == 0 {
-		if data.BizID > 0 {
-			filters := make([]map[string]interface{}, 0)
-			cond := mapstr.MapStr{
-				common.BKObjIDField:           data.ObjectID,
-				common.BKPropertyGroupIDField: common.BKBizDefault,
-			}
-			util.AddModelBizIDCondition(cond, data.BizID)
-			filters = append(filters, cond)
-			resp, e := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-				common.BKTableNamePropertyGroup, filters)
-			if e != nil {
-				blog.Errorf("get property group failed, filters: %+v., err: %s, rid: %d.", data, e, kit.Rid)
-				return nil, e
-			}
-			if resp[0] == 0 {
-				group := metadata.Group{
-					IsDefault:  true,
-					GroupIndex: -1,
-					GroupName:  common.BKBizDefault,
-					GroupID:    common.BKBizDefault,
-					ObjectID:   data.ObjectID,
-					OwnerID:    data.OwnerID,
-					BizID:      data.BizID,
-				}
-				// TODO 替换依赖直接传递&group参数
-				if _, err := a.CreateObjectGroup(kit, mapstr.MapStr{"field": group}); err != nil {
-					blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
-					return nil, err
-				}
-			}
-			data.PropertyGroup = common.BKBizDefault
-		} else {
-			data.PropertyGroup = common.BKDefaultField
-		}
+	if err = a.createObjectGroup(kit, data); err != nil {
+		blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
+		return nil, err
 	}
 
 	if err := a.IsValid(kit, false, data); err != nil {

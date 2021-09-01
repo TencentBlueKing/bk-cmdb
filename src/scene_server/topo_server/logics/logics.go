@@ -53,6 +53,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	}
 }
 
+// AttributeOperation return a attribute provide AttributeOperationInterface
 func (l *logics) AttributeOperation() model.AttributeOperationInterface {
 	return l.attribute
 }
