@@ -15,6 +15,7 @@ package logics
 import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
+	"configcenter/src/scene_server/topo_server/logics/inst"
 	"configcenter/src/scene_server/topo_server/logics/model"
 	"configcenter/src/scene_server/topo_server/logics/operation"
 )
@@ -25,15 +26,17 @@ type Logics interface {
 	ObjectOperation() model.ObjectOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
 	AssociationOperation() model.AssociationOperationInterface
+	InstAssociationOperation() inst.AssociationOperationInterface
 	GraphicsOperation() operation.GraphicsOperationInterface
 }
 
 type logics struct {
-	classification model.ClassificationOperationInterface
-	object         model.ObjectOperationInterface
-	identifier     operation.IdentifierOperationInterface
-	association    model.AssociationOperationInterface
-	graphics       operation.GraphicsOperationInterface
+	classification  model.ClassificationOperationInterface
+	object          model.ObjectOperationInterface
+	identifier      operation.IdentifierOperationInterface
+	association     model.AssociationOperationInterface
+	instassociation inst.AssociationOperationInterface
+	graphics        operation.GraphicsOperationInterface
 }
 
 // New create a logics manager
@@ -42,14 +45,16 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
 	associationOperation := model.NewAssociationOperation(client, authManager)
+	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
 	graphicsOperation := operation.NewGraphics(client, authManager)
 
 	return &logics{
-		classification: classificationOperation,
-		object:         objectOperation,
-		identifier:     IdentifierOperation,
-		association:    associationOperation,
-		graphics:       graphicsOperation,
+		classification:  classificationOperation,
+		object:          objectOperation,
+		identifier:      IdentifierOperation,
+		association:     associationOperation,
+		instassociation: instAssociationOperation,
+		graphics:        graphicsOperation,
 	}
 }
 
@@ -71,6 +76,11 @@ func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
 // AssociationOperation return a association provide AssociationOperationInterface
 func (c *logics) AssociationOperation() model.AssociationOperationInterface {
 	return c.association
+}
+
+// InstAssociationOperation return a instance association provide AssociationOperationInterface
+func (c *logics) InstAssociationOperation() inst.AssociationOperationInterface {
+	return c.instassociation
 }
 
 // GraphicsOperation return a inst provide GraphicsOperation
