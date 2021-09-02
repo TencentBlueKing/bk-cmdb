@@ -183,7 +183,6 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 		blog.Errorf("search object association with cond[%#v] failed, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, err
 	}
-
 	if len(result.Info) == 0 {
 		blog.Errorf("can not find object association[%s]. rid: %s", request.ObjectAsstID, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotExist)
@@ -194,18 +193,11 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 		// search instances belongs to this association.
 		tableName := common.GetObjectInstAsstTableName(result.Info[0].ObjectID, kit.SupplierAccount)
 		queryFilter := []map[string]interface{}{
-			{
-				common.AssociationObjAsstIDField: request.ObjectAsstID,
-				common.BKInstIDField:             request.InstID,
-			},
-			{
-				common.AssociationObjAsstIDField: request.ObjectAsstID,
-				common.BKAsstInstIDField:         request.AsstInstID,
-			},
+			{common.AssociationObjAsstIDField: request.ObjectAsstID, common.BKInstIDField: request.InstID},
+			{common.AssociationObjAsstIDField: request.ObjectAsstID, common.BKAsstInstIDField: request.AsstInstID},
 		}
-		instCnt, err := assoc.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName,
-			queryFilter)
-		if err != nil {
+		instCnt, e := assoc.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName, queryFilter)
+		if e != nil {
 			blog.Errorf("check instance with cond[%#v] failed, err: %v, rid: %s", queryFilter, err, kit.Rid)
 			return nil, err
 		}
@@ -218,22 +210,16 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 	case metadata.OneToManyMapping:
 		tableName := common.GetObjectInstAsstTableName(result.Info[0].ObjectID, kit.SupplierAccount)
 		queryFilter := []map[string]interface{}{
-			{
-				common.AssociationObjAsstIDField: request.ObjectAsstID,
-				common.BKAsstInstIDField:         request.AsstInstID,
-			},
+			{common.AssociationObjAsstIDField: request.ObjectAsstID, common.BKAsstInstIDField: request.AsstInstID},
 		}
-		instCnt, err := assoc.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName,
-			queryFilter)
-		if err != nil {
+		instCnt, e := assoc.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName, queryFilter)
+		if e != nil {
 			blog.Errorf("check instance with cond[%#v] failed, err: %v, rid: %s", queryFilter, err, kit.Rid)
 			return nil, err
 		}
-
 		if instCnt[0] >= 1 {
 			return nil, kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
 		}
-
 	default:
 		// after all the check, new association instance can be created.
 	}
@@ -257,20 +243,9 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 	instAssociationID := int64(createResult.Created.ID)
 	input.Data.ID = int64(createResult.Created.ID)
 
-	// generate audit log.
-	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
-	generateAuditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-	auditLog, err := audit.GenerateAuditLog(generateAuditParam, instAssociationID, result.Info[0].ObjectID, &input.Data)
-	if err != nil {
-		blog.Errorf(" delete inst asst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+	if err := assoc.generateAndSaveAuditLog(kit, instAssociationID, result.Info[0].ObjectID, &input.Data); err != nil {
+		blog.Errorf("generate and save audit log failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, err
-	}
-
-	// save audit log.
-	err = audit.SaveAuditLog(kit, *auditLog)
-	if err != nil {
-		blog.Errorf("delete inst asst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
 	return &metadata.RspID{ID: instAssociationID}, err
@@ -345,7 +320,8 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit, request *meta
 	return resp, nil
 }
 
-// DeleteInstAssociation method will remove docs from both source-asst-collection and target-asst-collection, which is atomicity.
+// DeleteInstAssociation method will remove docs from both source-asst-collection and target-asst-collection,
+//which is atomicity.
 func (assoc *association) DeleteInstAssociation(kit *rest.Kit, objID string, asstIDList []int64) (uint64, error) {
 
 	if len(asstIDList) == 0 {
@@ -471,6 +447,26 @@ func (assoc *association) CheckAssociations(kit *rest.Kit, objectID string, inst
 			blog.ErrorJSON("delete dirty assts failed, err: %s, cond: %s, rid: %s", err, delOpt, kit.Rid)
 			return err
 		}
+	}
+	return nil
+}
+
+func (assoc *association) generateAndSaveAuditLog(kit *rest.Kit, instAssociationID int64, objID string,
+	input *metadata.InstAsst) error {
+	// generate audit log.
+	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
+	generateAuditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParam, instAssociationID, objID, input)
+	if err != nil {
+		blog.Errorf(" delete inst asst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	// save audit log.
+	err = audit.SaveAuditLog(kit, *auditLog)
+	if err != nil {
+		blog.Errorf("delete inst asst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
 	return nil
 }
