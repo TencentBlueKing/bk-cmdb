@@ -45,7 +45,8 @@ type logics struct {
 }
 
 // New create a logics manager
-func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager, languageIf language.CCLanguageIf) Logics {
+func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager,
+	languageIf language.CCLanguageIf) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
 	attributeOperation := model.NewAttributeOperation(client, authManager, languageIf)
 	objectOperation := model.NewObjectOperation(client, authManager)
