@@ -51,6 +51,7 @@ type attribute struct {
 	lang        language.CCLanguageIf
 	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
+	grp         GroupOperationInterface
 }
 
 // IsValid check is valid
@@ -144,52 +145,6 @@ func (a *attribute) isObjExists(kit *rest.Kit, objID string) error {
 	return nil
 }
 
-// CreateObjectGroup create object groupdataValidationFormulaStrLen
-func (a *attribute) CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr) (*metadata.Group, error) {
-	grp := metadata.Group{}
-
-	err := mapstr.SetValueToStructByTags(&grp, data)
-	if nil != err {
-		blog.Errorf("failed to parse the group data(%#v), error info is %s, rid: %s", data, err.Error(), kit.Rid)
-		return nil, err
-	}
-
-	//  check the object
-	if err = a.isObjExists(kit, grp.ObjectID); nil != err {
-		blog.Errorf("the group (%#v) is in valid, rid: %s", data, kit.Rid)
-		return nil, kit.CCError.New(common.CCErrTopoObjectGroupCreateFailed, err.Error())
-	}
-
-	// create a new group
-	rsp, err := a.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header, grp.ObjectID,
-		metadata.CreateModelAttributeGroup{Data: grp})
-	if err != nil {
-		blog.Errorf("failed to save the group data (%#v), error info is %s, rid: %s", data, err.Error(), kit.Rid)
-		return nil, kit.CCError.New(common.CCErrTopoObjectGroupCreateFailed, err.Error())
-	}
-
-	grp.ID = int64(rsp.Created.ID)
-
-	// generate audit log of object attribute group.
-	audit := auditlog.NewAttributeGroupAuditLog(a.clientSet.CoreService())
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, grp.ID, &grp)
-	if err != nil {
-		blog.Errorf("create object attribute group %s success, but generate audit log failed, err: %v, rid: %s",
-			grp.GroupName, err, kit.Rid)
-		return nil, err
-	}
-
-	// save audit log.
-	if err = audit.SaveAuditLog(kit, *auditLog); err != nil {
-		blog.Errorf("create object attribute group %s success, but save audit log failed, err: %v, rid: %s",
-			grp.GroupName, err, kit.Rid)
-		return nil, err
-	}
-
-	return &grp, nil
-}
-
 // checkAttributeGroupExist check attribute group exist, not exist create default group
 func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attribute) error {
 	filters := make([]map[string]interface{}, 1)
@@ -206,41 +161,43 @@ func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attri
 		return e
 	}
 
-	if resp[0] == 0 {
-		if data.BizID > 0 {
-			filters := make([]map[string]interface{}, 1)
-			cond := mapstr.MapStr{
-				common.BKObjIDField:           data.ObjectID,
-				common.BKPropertyGroupIDField: common.BKBizDefault,
-			}
-			util.AddModelBizIDCondition(cond, data.BizID)
-			filters = append(filters, cond)
-			resp, e := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-				common.BKTableNamePropertyGroup, filters)
-			if e != nil {
-				blog.Errorf("get property group failed, filters: %+v., err: %s, rid: %d.", data, e, kit.Rid)
-				return e
-			}
-			if resp[0] == 0 {
-				group := metadata.Group{
-					IsDefault:  true,
-					GroupIndex: -1,
-					GroupName:  common.BKBizDefault,
-					GroupID:    common.BKBizDefault,
-					ObjectID:   data.ObjectID,
-					OwnerID:    data.OwnerID,
-					BizID:      data.BizID,
-				}
-				// TODO 替换依赖直接传递&group参数
-				if _, err := a.CreateObjectGroup(kit, mapstr.MapStr{"field": group}); err != nil {
-					blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
-					return err
-				}
-			}
-			data.PropertyGroup = common.BKBizDefault
-		} else {
-			data.PropertyGroup = common.BKDefaultField
+	if resp[0] > 0 {
+		blog.Errorf("property group exist, filters: %+v., rid: %d.", data, kit.Rid)
+		return nil
+	}
+
+	if data.BizID > 0 {
+		filters := make([]map[string]interface{}, 1)
+		cond := mapstr.MapStr{
+			common.BKObjIDField:           data.ObjectID,
+			common.BKPropertyGroupIDField: common.BKBizDefault,
 		}
+		util.AddModelBizIDCondition(cond, data.BizID)
+		filters = append(filters, cond)
+		resp, e := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+			common.BKTableNamePropertyGroup, filters)
+		if e != nil {
+			blog.Errorf("get property group failed, filters: %+v., err: %s, rid: %d.", data, e, kit.Rid)
+			return e
+		}
+		if resp[0] == 0 {
+			group := metadata.Group{
+				IsDefault:  true,
+				GroupIndex: -1,
+				GroupName:  common.BKBizDefault,
+				GroupID:    common.BKBizDefault,
+				ObjectID:   data.ObjectID,
+				OwnerID:    data.OwnerID,
+				BizID:      data.BizID,
+			}
+			if _, err := a.grp.CreateObjectGroup(kit, &group); err != nil {
+				blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
+				return err
+			}
+		}
+		data.PropertyGroup = common.BKBizDefault
+	} else {
+		data.PropertyGroup = common.BKDefaultField
 	}
 
 	return nil
