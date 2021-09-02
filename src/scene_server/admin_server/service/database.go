@@ -31,14 +31,14 @@ type metaId struct {
 }
 
 const (
-	// BKMaxDelPageSize max limit of delete operation
+	// BKMaxDelPageSize max limit of delete operation.
 	maxDelBatchLimit = 200
-	// BKMaxDelDocPageLimit maximum number of documents deleted consecutively quantity
+	// BKMaxDelDocPageLimit maximum number of documents deleted consecutively quantity.
 	maxDelDocPageLimit = 10000
 )
 
 type deleteAuditLogReq struct {
-	// delete logs before this day
+	// delete logs before this day,the date format like '2021-08-19'.
 	BeforeDay string `json:"beforeDay"`
 }
 type deleteAuditLogRsp struct {
@@ -70,14 +70,14 @@ func (s *Service) getMinObjIDAndMinDay(baseDay int64, rid string) (primitive.Obj
 			break
 		}
 	}
-	blog.V(5).Infof("getMinObjIDAndMinDay,the min day is: %s,rid: %s", baseDay, rid)
+	blog.Infof("getMinObjIDAndMinDay,the min day is: %s,rid: %s", baseDay, rid)
 
 	return objId, baseDay, nil
 }
 
 // DeleteAuditLog delete user specified audit logs.
 // 删除策略: 1、首先找到最早一天的审计日志，从前向后一天一天的删除审计日志。
-//          2、每次批量删除200条日志。为了防止删除导致的cpu和磁盘io过高，每删除10000条日志需要sleep 5秒钟
+//          2、每次批量删除200条日志。为了防止删除导致的cpu和磁盘io过高，每删除10000条日志需要sleep 5秒钟。
 func (s *Service) DeleteAuditLog(req *restful.Request, resp *restful.Response) {
 
 	rHeader := req.Request.Header
@@ -92,7 +92,7 @@ func (s *Service) DeleteAuditLog(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusBadRequest, &errInfo)
 		return
 	}
-	blog.V(5).Infof("deleteAuditLog,the user specified date is: %s,rid: %s", param.BeforeDay, rid)
+	blog.Infof("deleteAuditLog,the user specified date is: %s,rid: %s", param.BeforeDay, rid)
 
 	// convert string format to timestamp.
 	baseDay := util.TimeStrToUnixSecondDefault(param.BeforeDay)
@@ -155,11 +155,11 @@ func (s *Service) DeleteAuditLog(req *restful.Request, resp *restful.Response) {
 			t := time.Unix(minDay, 0)
 			dateStr := t.Format("2006-01-02")
 
-			blog.V(9).Infof("the delete date is: %s,the number of deleted items is: %d,rid: %s",
+			blog.Infof("the delete date is: %s,the number of deleted items is: %d,rid: %s",
 				dateStr, total, rid)
 		}
 	}
-	blog.V(5).Infof(" delete all completed audit logs,the num: %d,rid: %s", total, rid)
+	blog.Infof(" delete all completed audit logs,the num: %d,rid: %s", total, rid)
 
 	response.Num = total
 	_ = resp.WriteEntity(metadata.NewSuccessResp(response))
