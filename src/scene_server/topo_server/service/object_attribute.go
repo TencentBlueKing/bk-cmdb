@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -52,13 +53,15 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		isBizCustomField = true
 	}
 
-	var attrInfo *metadata.ObjAttDes
+	attrInfo := new(metadata.ObjAttDes)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		attr, err := s.Logics.AttributeOperation().CreateObjectAttribute(ctx.Kit, attr)
 		if err != nil {
 			return err
 		}
-
+		if attr == nil {
+			return err
+		}
 		attrInfo.Attribute = *attr
 		attrInfo.PropertyGroupName = attr.PropertyGroupName
 
@@ -85,8 +88,8 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 	}
 	data := dataWithModelBizID.Data
 	util.AddModelBizIDCondition(data, dataWithModelBizID.ModelBizID)
-	data[metadata.AttributeFieldIsSystem] = true
-	data[metadata.AttributeFieldIsAPI] = true
+	data[metadata.AttributeFieldIsSystem] = false
+	data[metadata.AttributeFieldIsAPI] = false
 
 	var limit, start int64
 	var sort string
@@ -131,12 +134,22 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
+	grpMap, err := s.getPropertyGroupName(ctx, resp.Info, dataWithModelBizID.ModelBizID)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
 	attrInfos := make([]*metadata.ObjAttDes, 0)
 	for _, attr := range resp.Info {
 		attrInfo := &metadata.ObjAttDes{
-			Attribute:         attr,
-			PropertyGroupName: attr.PropertyGroupName,
+			Attribute: attr,
 		}
+		grpName, ok := grpMap[attr.PropertyGroup]
+		if !ok {
+			blog.Errorf("failed to get property group name, attr: %s, property: %s", attr, attr.PropertyGroup)
+			return
+		}
+		attrInfo.PropertyGroupName = grpName
 		attrInfos = append(attrInfos, attrInfo)
 	}
 
@@ -209,7 +222,6 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := mapstr.MapStr{metadata.AttributeFieldID: id}
 	listRuleOption := metadata.ListHostApplyRuleOption{
 		ModuleIDs: []int64{id},
 		Page: metadata.BasePage{
@@ -235,6 +247,7 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
+	cond := mapstr.MapStr{metadata.AttributeFieldID: id}
 	err = s.Logics.AttributeOperation().DeleteObjectAttribute(ctx.Kit, cond, modelType.BizID)
 	if err != nil {
 		blog.Errorf("delete object attribute failed, params: %+v, err: %+v, rid: %s", ctx.Kit, err, ctx.Kit.Rid)
@@ -276,14 +289,14 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 	var result *metadata.UpdateAttrIndexData
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-			input := metadata.UpdateOption{
-				Condition: mapstr.MapStr{common.BKFieldID: id},
-				Data:      data,
-			}
+		input := metadata.UpdateOption{
+			Condition: mapstr.MapStr{common.BKFieldID: id},
+			Data:      data,
+		}
 		result, err = s.Engine.CoreAPI.CoreService().Model().UpdateModelAttrsIndex(ctx.Kit.Ctx, ctx.Kit.Header, objID,
 			&input)
 		if err != nil {
-			blog.Errorf("UpdateObjectAttributeIndex failed, err: %s , rid: %s", err.Error(), ctx.Kit.Rid)
+			blog.Errorf("update object attribute index failed, err: %v , rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -353,17 +366,57 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 		return
 	}
 
+	grpMap, err := s.getPropertyGroupName(ctx, result.Info, dataWithModelBizID.ModelBizID)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	hostAttributes := make([]metadata.HostObjAttDes, 0)
 	for _, item := range result.Info {
 		hostApplyEnabled := metadata.CheckAllowHostApplyOnField(item.PropertyID)
 		hostAttribute := metadata.HostObjAttDes{
 			ObjAttDes: metadata.ObjAttDes{
-				Attribute:         item,
-				PropertyGroupName: item.PropertyGroupName,
+				Attribute: item,
 			},
 			HostApplyEnabled: hostApplyEnabled,
 		}
+		grpName, ok := grpMap[item.PropertyGroup]
+		if !ok {
+			blog.Errorf("failed to get property group name, attr: %s, property: %s", item, item.PropertyGroup)
+			return
+		}
+		hostAttribute.ObjAttDes.PropertyGroupName = grpName
 		hostAttributes = append(hostAttributes, hostAttribute)
 	}
 	ctx.RespEntity(hostAttributes)
+}
+
+func (s *Service) getPropertyGroupName(ctx *rest.Contexts, attrs []metadata.Attribute,
+	modelBizID int64) (map[string]string, error) {
+	grpCond := condition.CreateCondition()
+	grpOrCond := grpCond.NewOR()
+	for _, attr := range attrs {
+		grpOrCond.Item(map[string]interface{}{
+			metadata.GroupFieldGroupID:  attr.PropertyGroup,
+			metadata.GroupFieldObjectID: attr.ObjectID,
+		})
+	}
+	util.AddModelBizIDCondition(grpCond.ToMapStr(), modelBizID)
+	cond := metadata.QueryCondition{
+		Condition:      grpCond.ToMapStr(),
+		DisableCounter: true,
+	}
+	rsp, err := s.Engine.CoreAPI.CoreService().Model().ReadAttributeGroupByCondition(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	if err != nil {
+		blog.Errorf("failed to get attr group, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		return nil, err
+	}
+
+	grpMap := make(map[string]string)
+	for _, grp := range rsp.Info {
+		grpMap[grp.GroupID] = grp.GroupName
+	}
+
+	return grpMap, nil
 }

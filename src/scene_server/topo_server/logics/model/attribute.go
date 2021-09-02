@@ -35,6 +35,7 @@ type AttributeOperationInterface interface {
 	CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
 	DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, modelBizID int64) error
 	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error
+	SetProxy(grp GroupOperationInterface)
 }
 
 // NewAttributeOperation create a new attribute operation instance
@@ -54,6 +55,11 @@ type attribute struct {
 	grp         GroupOperationInterface
 }
 
+// SetProxy SetProxy
+func (a *attribute) SetProxy(grp GroupOperationInterface) {
+	a.grp = grp
+}
+
 // IsValid check is valid
 func (a *attribute) IsValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribute) error {
 	if data.PropertyID == common.BKInstParentStr {
@@ -61,10 +67,8 @@ func (a *attribute) IsValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 	}
 
 	// check if property type for creation is valid, can't update property type
-	if !isUpdate {
-		if data.PropertyType == "" {
-			return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
-		}
+	if !isUpdate && data.PropertyType == "" {
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
 	}
 
 	if !isUpdate || data.ToMapStr().Exists(metadata.AttributeFieldPropertyID) {
@@ -147,13 +151,12 @@ func (a *attribute) isObjExists(kit *rest.Kit, objID string) error {
 
 // checkAttributeGroupExist check attribute group exist, not exist create default group
 func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attribute) error {
-	filters := make([]map[string]interface{}, 1)
 	cond := mapstr.MapStr{
 		common.BKObjIDField:           data.ObjectID,
 		common.BKPropertyGroupIDField: data.PropertyGroup,
 	}
 	util.AddModelBizIDCondition(cond, data.BizID)
-	filters = append(filters, cond)
+	filters := []map[string]interface{}{cond}
 	resp, e := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNamePropertyGroup,
 		filters)
 	if e != nil {
@@ -167,13 +170,12 @@ func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attri
 	}
 
 	if data.BizID > 0 {
-		filters := make([]map[string]interface{}, 1)
 		cond := mapstr.MapStr{
 			common.BKObjIDField:           data.ObjectID,
 			common.BKPropertyGroupIDField: common.BKBizDefault,
 		}
 		util.AddModelBizIDCondition(cond, data.BizID)
-		filters = append(filters, cond)
+		filters := []map[string]interface{}{cond}
 		resp, e := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 			common.BKTableNamePropertyGroup, filters)
 		if e != nil {
@@ -284,7 +286,7 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, mod
 	}
 
 	if len(attrItems.Info) == 0 {
-		blog.Errorf("failed to find the attributes by the cond(%v), err: %v, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("not find the attributes by the cond(%v), rid: %s", cond, kit.Rid)
 		return nil
 	}
 
@@ -347,7 +349,7 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	}
 	if _, err := a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(kit.Ctx, kit.Header, &input); err != nil {
 		blog.Errorf("failed to update module attr, err: %s, rid: %s", err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		return err
 	}
 
 	// generate audit log of model attribute.

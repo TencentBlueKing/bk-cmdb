@@ -56,6 +56,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	graphicsOperation := operation.NewGraphics(client, authManager)
 	groupOperation := model.NewGroupOperation(client)
 	groupOperation.SetProxy(objectOperation)
+	attributeOperation.SetProxy(groupOperation)
 
 	return &logics{
 		classification:  classificationOperation,
