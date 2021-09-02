@@ -33,7 +33,8 @@ type GraphicsOperationInterface interface {
 }
 
 // NewGraphics create a new graphics operation instance
-func NewGraphics(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) GraphicsOperationInterface {
+func NewGraphics(client apimachinery.ClientSetInterface,
+	authManager *extensions.AuthManager) GraphicsOperationInterface {
 	return &graphics{
 		clientSet:   client,
 		authManager: authManager,
