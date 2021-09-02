@@ -15,6 +15,7 @@ package logics
 import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
+	"configcenter/src/common/language"
 	"configcenter/src/scene_server/topo_server/logics/inst"
 	"configcenter/src/scene_server/topo_server/logics/model"
 	"configcenter/src/scene_server/topo_server/logics/operation"
@@ -44,9 +45,10 @@ type logics struct {
 }
 
 // New create a logics manager
-func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Logics {
+func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager,
+	languageIf language.CCLanguageIf) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
-	instOperation := inst.NewInstOperation(client, authManager)
+	instOperation := inst.NewInstOperation(client, languageIf, authManager)
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
 	associationOperation := model.NewAssociationOperation(client, authManager)

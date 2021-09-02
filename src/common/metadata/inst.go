@@ -16,7 +16,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/util"
 )
 
 // SetInst contains partial fields of a real set
@@ -234,10 +233,10 @@ func GetInstName(objID string, data mapstr.MapStr) (string, error) {
 
 // GetBizID get biz id by inst data
 func GetBizID(data mapstr.MapStr) (int64, error) {
-	return util.GetInt64ByInterface(data[common.BKAppIDField])
+	return data.Int64(common.BKAppIDField)
 }
 
 // GetParentID get parent id by inst data
 func GetParentID(data mapstr.MapStr) (int64, error) {
-	return util.GetInt64ByInterface(data[common.BKParentIDField])
+	return data.Int64(common.BKParentIDField)
 }
