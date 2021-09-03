@@ -72,6 +72,11 @@
           property && presetProperties.value.push(property)
         })
         selection.value.push(...presetProperties.value)
+
+        exportState.defaultSelectedFields.value.forEach((field) => {
+          const property = value.find(property => property.bk_property_id === field)
+          property && selection.value.indexOf(property) === -1 && selection.value.push(property)
+        })
       })
       const isPreset = property => presetProperties.value.includes(property)
 

@@ -263,6 +263,9 @@
         const clipboardList = FilterStore.header.slice()
         clipboardList.splice(1, 0, IPWithCloud)
         return clipboardList
+      },
+      tableHeaderPropertyIdList() {
+        return this.$parent.tableHeader.map(item => item.bk_property_id)
       }
     },
     methods: {
@@ -311,6 +314,7 @@
           bk_biz_id: this.bizId,
           bk_obj_id: 'host',
           presetFields: ['bk_cloud_id', 'bk_host_innerip'],
+          defaultSelectedFields: this.tableHeaderPropertyIdList,
           count: this.selection.length,
           submit: (state, task) => {
             const { fields, exportRelation  } = state
@@ -343,6 +347,7 @@
           bk_biz_id: this.bizId,
           bk_obj_id: 'host',
           presetFields: ['bk_cloud_id', 'bk_host_innerip'],
+          defaultSelectedFields: this.tableHeaderPropertyIdList,
           count: this.count,
           submit: (state, task) => {
             const { fields, exportRelation  } = state
