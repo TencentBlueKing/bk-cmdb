@@ -17,8 +17,6 @@ import (
 	"regexp"
 	"strings"
 
-	"configcenter/src/ac/extensions"
-	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -28,34 +26,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
-
-// AssociationOperationInterface association operation methods
-type AssociationOperationInterface interface {
-	// CreateMainlineAssociation create mainline object association
-	CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association, maxTopoLevel int) (*metadata.Object, error)
-	// DeleteMainlineAssociation delete mainline association by objID
-	DeleteMainlineAssociation(kit *rest.Kit, objID string) error
-	// SearchMainlineAssociationTopo get mainline topo of special model
-	SearchMainlineAssociationTopo(kit *rest.Kit, targetObjID string) ([]*metadata.MainlineObjectTopo, error)
-	// IsMainlineObject check whether objID is mainline object or not
-	IsMainlineObject(kit *rest.Kit, objID string) (bool, error)
-}
-
-// NewAssociationOperation create a new association operation instance
-func NewAssociationOperation(client apimachinery.ClientSetInterface,
-	authManager *extensions.AuthManager, obj ObjectOperationInterface) AssociationOperationInterface {
-	return &association{
-		clientSet:   client,
-		authManager: authManager,
-		obj:         obj,
-	}
-}
-
-type association struct {
-	clientSet   apimachinery.ClientSetInterface
-	authManager *extensions.AuthManager
-	obj         ObjectOperationInterface
-}
 
 // CreateMainlineAssociation create mainline object association
 func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association,
