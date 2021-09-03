@@ -43,7 +43,7 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 
 	// forbidden create inner model instance with common api
 	if common.IsInnerModel(objID) {
-		blog.Errorf("create instance failed, create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		blog.Errorf("create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
 		return
 	}
@@ -717,7 +717,7 @@ func (s *Service) SearchInstByAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	data := new(operation.AssociationParams)
+	data := new(inst.AssociationParams)
 	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -725,9 +725,9 @@ func (s *Service) SearchInstByAssociation(ctx *rest.Contexts) {
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
-	result, err := s.Core.InstOperation().FindInstByAssociationInst(ctx.Kit, objID, data)
+	result, err := s.Logics.InstOperation().FindInstByAssociationInst(ctx.Kit, objID, data)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to find the objects(%s), err: %v, rid: %s", objID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

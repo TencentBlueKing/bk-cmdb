@@ -214,6 +214,7 @@ func NewManyCommInstResultDetail() *CreateManyCommInstResultDetail {
 	}
 }
 
+// InstBatchInfo info struct of batch create or update inst
 type InstBatchInfo struct {
 	// BatchInfo batch info
 	// map[rownumber]map[property_id][date]
