@@ -151,16 +151,15 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 	}
 	input := params.SearchParams{}
 	appIDList := make([]int64, 0)
-
-	// if any Flag is false,we should parse the appIds, else we find all the ids
-	//  TODO:  confirm input is no condition
+	// if any Flag is false, we should parse the appIds, else we find all.
 	if !authorizedResources.IsAny {
 		appIDList := make([]int64, 0)
 		for _, resourceID := range authorizedResources.Ids {
 			bizID, err := strconv.ParseInt(resourceID, 10, 64)
 			if err != nil {
 				blog.Errorf("parse bizID(%s) failed, err: %v, rid: %s", bizID, err, rid)
-				resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+				resp.WriteError(http.StatusInternalServerError,
+					&metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 				return
 			}
 			appIDList = append(appIDList, bizID)
@@ -185,7 +184,7 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 	}
 
 	if !result.Result {
-		blog.Errorf("get authorized business list,  auth anyFlag is: %v, but get apps[%v] failed, err: %v, rid: %s",
+		blog.Errorf("get authorized business list,auth anyFlag is: %v, but get apps[%v] failed, err: %v, rid: %s",
 			authorizedResources.IsAny, appIDList, result.ErrMsg, rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return

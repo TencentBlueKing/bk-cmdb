@@ -13,6 +13,7 @@
 package logics
 
 import (
+	"errors"
 	"fmt"
 
 	"configcenter/src/ac/meta"
@@ -168,19 +169,30 @@ func (lgc *Logics) SearchSyncTask(kit *rest.Kit, option *metadata.SearchSyncTask
 
 		// if isAny is false,we should add the taskIds conditions,else we don't add this condition
 		if !isAny {
-			if option.Condition == nil {
-				option.Condition = make(map[string]interface{})
+
+			if len(list) == 0 {
+				blog.Errorf("get authIds failed, rid: %s, option:%+v", kit.Rid, option)
+				return nil, errors.New("get authIds failed")
 			}
 
-			option.Condition = map[string]interface{}{
-				common.BKDBAND: []map[string]interface{}{
-					option.Condition,
-					{
-						common.BKCloudSyncTaskID: map[string]interface{}{
-							common.BKDBIN: list,
+			if len(option.Condition) == 0 {
+				option.Condition = make(map[string]interface{})
+				option.Condition = map[string]interface{}{
+					common.BKCloudSyncTaskID: map[string]interface{}{
+						common.BKDBIN: list,
+					},
+				}
+			} else {
+				option.Condition = map[string]interface{}{
+					common.BKDBAND: []map[string]interface{}{
+						option.Condition,
+						{
+							common.BKCloudSyncTaskID: map[string]interface{}{
+								common.BKDBIN: list,
+							},
 						},
 					},
-				},
+				}
 			}
 		}
 	}

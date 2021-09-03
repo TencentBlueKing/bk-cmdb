@@ -36,7 +36,7 @@ type Authorizer interface {
 	// Note: opts.Resources is not required.
 	// the returned list may be huge, we do not do result paging
 	ListAuthorizedInstances(ctx context.Context, opts *types.AuthOptions, resourceType types.ResourceType) (
-		types.AuthorizeList, error)
+		*types.AuthorizeList, error)
 }
 
 type ResourceFetcher interface {

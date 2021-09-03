@@ -217,7 +217,7 @@ func (s *Service) ListSubscriptions(ctx *rest.Contexts) {
 
 		authorizedResources, err := s.authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
 		if err != nil {
-			blog.ErrorJSON("list authorized subscribe resources failed, err: %v, cond: %s, rid: %s", err,
+			blog.ErrorJSON("list authorized subscribe resources failed, err: %s, cond: %s, rid: %s", err,
 				authInput, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return

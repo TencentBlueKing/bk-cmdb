@@ -21,44 +21,45 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
-func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourceType types.ResourceType) (types.AuthorizeList, error) {
+func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourceType types.ResourceType) (
+	*types.AuthorizeList, error) {
 
 	if hasIamPath(p) {
-		return types.AuthorizeList{}, errors.New("policy content has _bk_iam_path_, not support for now")
+		return nil, errors.New("policy content has _bk_iam_path_, not support for now")
 	}
 	//  please refer to the issue #5579 for specific permission scenario classification.
 	switch p.Operator {
 	case operator.And, operator.Or:
 		content, can := p.Element.(*operator.Content)
 		if !can {
-			return types.AuthorizeList{}, errors.New("policy with invalid content field")
+			return nil, errors.New("policy with invalid content field")
 		}
 
 		list, err := a.countContent(ctx, p.Operator, content, resourceType)
 		if err != nil {
-			return types.AuthorizeList{}, err
+			return nil, err
 		}
 
 		return list, nil
 
 	case operator.Any:
 		//  if the operator is any,set isAny flag is true.
-		return types.AuthorizeList{IsAny: true}, nil
+		return &types.AuthorizeList{IsAny: true}, nil
 
 	default:
 		fv, can := p.Element.(*operator.FieldValue)
 		if !can {
-			return types.AuthorizeList{}, errors.New("policy with invalid FieldValue field")
+			return nil, errors.New("policy with invalid FieldValue field")
 		}
 
 		if fv.Field.Attribute == operator.IamIDKey {
 
 			ids, err := a.countIamIDKey(p.Operator, fv)
 			if err != nil {
-				return types.AuthorizeList{}, err
+				return nil, err
 			}
 
-			return types.AuthorizeList{Ids: ids}, nil
+			return &types.AuthorizeList{Ids: ids}, nil
 
 		} else {
 			// TODO: cause we do not support _bk_iam_path_ field for now
@@ -71,10 +72,10 @@ func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourc
 
 			ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)
 			if err != nil {
-				return types.AuthorizeList{}, fmt.Errorf("list instance with %s attribute failed, err: %v", p.Operator, err)
+				return nil, fmt.Errorf("list instance with %s attribute failed, err: %v", p.Operator, err)
 			}
 
-			return types.AuthorizeList{Ids: ids}, nil
+			return &types.AuthorizeList{Ids: ids}, nil
 		}
 
 	}
@@ -118,6 +119,7 @@ func preAnalyzeContent(op operator.OperType, content *operator.Content) error {
 
 	for _, conPolicy := range content.Content {
 		fv, can := conPolicy.Element.(*operator.FieldValue)
+		// 不支持多层嵌套场景，此处直接返回
 		if !can {
 			return errors.New("policy with invalid FieldValue field")
 		}
@@ -135,15 +137,15 @@ func preAnalyzeContent(op operator.OperType, content *operator.Content) error {
 }
 
 // count all the resource ids according to the operator and content, eg policies.
-func (a *Authorize) countContent(ctx context.Context, op operator.OperType, content *operator.Content, resourceType types.ResourceType) (
-	idList types.AuthorizeList, err error) {
+func (a *Authorize) countContent(ctx context.Context, op operator.OperType, content *operator.Content,
+	resourceType types.ResourceType) (idList *types.AuthorizeList, err error) {
 
 	allAttrFieldValue := make([]*operator.FieldValue, 0)
 	allList := make([]types.AuthorizeList, 0)
 
 	err = preAnalyzeContent(op, content)
 	if err != nil {
-		return types.AuthorizeList{}, err
+		return nil, err
 	}
 
 	for _, policy := range content.Content {
@@ -151,29 +153,29 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OperType, cont
 		case operator.And, operator.Or:
 			content, can := policy.Element.(*operator.Content)
 			if !can {
-				return types.AuthorizeList{}, errors.New("policy with invalid content field")
+				return nil, errors.New("policy with invalid content field")
 			}
 
 			list, err := a.countContent(ctx, policy.Operator, content, resourceType)
 			if err != nil {
-				return types.AuthorizeList{}, err
+				return nil, err
 			}
-			allList = append(allList, list)
+			allList = append(allList, *list)
 
 		case operator.Any:
 			// if policy operator is Any,we don't need to find. calculateSet handle "and","or","any" etc...
 			idList.IsAny = true
-			allList = append(allList, idList)
+			allList = append(allList, *idList)
 		default:
 			fv, can := policy.Element.(*operator.FieldValue)
 			if !can {
-				return types.AuthorizeList{}, errors.New("policy with invalid FieldValue field")
+				return nil, errors.New("policy with invalid FieldValue field")
 			}
 
 			if fv.Field.Attribute == operator.IamIDKey {
 				list, err := a.countIamIDKey(policy.Operator, fv)
 				if err != nil {
-					return types.AuthorizeList{}, err
+					return nil, err
 				}
 				allList = append(allList, types.AuthorizeList{Ids: list})
 
@@ -195,7 +197,7 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OperType, cont
 
 		ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)
 		if err != nil {
-			return types.AuthorizeList{}, fmt.Errorf("list instance with any attribute failed, err: %v", err)
+			return nil, fmt.Errorf("list instance with any attribute failed, err: %v", err)
 		}
 
 		allList = append(allList, types.AuthorizeList{Ids: ids})
@@ -204,31 +206,10 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OperType, cont
 	return calculateSet(op, allList)
 }
 
-func (a *Authorize) countAny(ctx context.Context, policy *operator.Policy, resourceType types.ResourceType) (
-	authList types.AuthorizeList, err error) {
-	fv, can := policy.Element.(*operator.FieldValue)
-	if !can {
-		return types.AuthorizeList{}, errors.New("policy operator any with invalid FieldValue field")
-	}
-
-	opts := &types.ListWithAttributes{
-		Operator:   policy.Operator,
-		Attributes: []*operator.FieldValue{fv},
-		Type:       resourceType,
-	}
-
-	ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)
-	if err != nil {
-		return types.AuthorizeList{}, fmt.Errorf("list instance with any attribute failed, err: %v", err)
-	}
-	authList.Ids = ids
-	return authList, nil
-}
-
-func calculateSetForAnd(sets []types.AuthorizeList, cnt int) (types.AuthorizeList, error) {
+func calculateSetForAnd(sets []types.AuthorizeList, cnt int) (*types.AuthorizeList, error) {
 
 	if cnt == 1 {
-		return sets[0], nil
+		return &sets[0], nil
 	}
 
 	// now, at least we have two set
@@ -251,7 +232,7 @@ func calculateSetForAnd(sets []types.AuthorizeList, cnt int) (types.AuthorizeLis
 	}
 	// if all the sets's isAny is true ,set the isAny flag is true.
 	if !baseFlag {
-		return types.AuthorizeList{IsAny: true}, nil
+		return &types.AuthorizeList{IsAny: true}, nil
 	}
 	for _, base := range sets[idBase].Ids {
 
@@ -283,19 +264,19 @@ func calculateSetForAnd(sets []types.AuthorizeList, cnt int) (types.AuthorizeLis
 			set = append(set, base)
 		}
 	}
-	return types.AuthorizeList{Ids: set}, nil
+	return &types.AuthorizeList{Ids: set}, nil
 }
 
-func calculateSetForOr(sets []types.AuthorizeList, cnt int) (types.AuthorizeList, error) {
+func calculateSetForOr(sets []types.AuthorizeList, cnt int) (*types.AuthorizeList, error) {
 	if cnt == 1 {
-		return sets[0], nil
+		return &sets[0], nil
 	}
 	// now, at least we have two set.
 	all := make(map[string]struct{})
 	for _, set := range sets {
 		// op is "OR" and the set's isAny is true,return flag true.
 		if set.IsAny {
-			return types.AuthorizeList{IsAny: true}, nil
+			return &types.AuthorizeList{IsAny: true}, nil
 		}
 
 		for _, ele := range set.Ids {
@@ -308,19 +289,19 @@ func calculateSetForOr(sets []types.AuthorizeList, cnt int) (types.AuthorizeList
 		set = append(set, ele)
 	}
 
-	return types.AuthorizeList{Ids: set}, nil
+	return &types.AuthorizeList{Ids: set}, nil
 
 }
 
-// Note: op must be one of And or Or
-func calculateSet(op operator.OperType, sets []types.AuthorizeList) (types.AuthorizeList, error) {
+// calculateSet: put the authorized instance ID into the Ids, op must be one of And or Or.
+func calculateSet(op operator.OperType, sets []types.AuthorizeList) (*types.AuthorizeList, error) {
 	if sets == nil {
-		return types.AuthorizeList{}, errors.New("sets can not be nil")
+		return nil, errors.New("sets can not be nil")
 	}
 
 	cnt := len(sets)
 	if cnt == 0 {
-		return types.AuthorizeList{}, nil
+		return &types.AuthorizeList{}, nil
 	}
 
 	switch op {
@@ -329,7 +310,7 @@ func calculateSet(op operator.OperType, sets []types.AuthorizeList) (types.Autho
 	case operator.And:
 		return calculateSetForAnd(sets, cnt)
 	default:
-		return types.AuthorizeList{}, fmt.Errorf("operator %s is not support to calculate set", op)
+		return nil, fmt.Errorf("operator %s is not support to calculate set", op)
 	}
 }
 

@@ -165,7 +165,9 @@ func (a *Authorize) listUserPolicyBatchWithCompress(ctx context.Context,
 	return allPolicies, nil
 }
 
-func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *types.AuthOptions, resourceType types.ResourceType) (types.AuthorizeList, error) {
+// ListAuthorizedInstances list a user's all the authorized resource instance list with an action.
+func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *types.AuthOptions,
+	resourceType types.ResourceType) (*types.AuthorizeList, error) {
 	// find user's policy with action
 	getOpt := types.GetPolicyOption{
 		System:  opts.System,
@@ -176,10 +178,10 @@ func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *types.Aut
 	}
 	policy, err := a.iam.GetUserPolicy(ctx, &getOpt)
 	if err != nil {
-		return types.AuthorizeList{}, err
+		return nil, err
 	}
 	if policy == nil || policy.Operator == "" {
-		return types.AuthorizeList{}, nil
+		return &types.AuthorizeList{}, nil
 	}
 	return a.countPolicy(ctx, policy, resourceType)
 }

@@ -118,7 +118,7 @@ func (s *Service) UpdateBusiness(ctx *rest.Contexts) {
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-business]failed to parse the bizId, error: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the bizId, error: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
@@ -239,8 +239,7 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 		page.Sort = sortParam
 	}
 	if errKey, err := page.Validate(true); err != nil {
-		blog.Errorf("[api-biz] SearchReducedBusinessList failed, page parameter invalid, errKey: %s, err: %s, "+
-			"rid: %s", errKey, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("page parameter invalid, errKey: %v, err: %s, rid: %s", errKey, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
 		return
 	}
@@ -278,7 +277,12 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 				}
 				appList = append(appList, bizID)
 			}
-
+			if len(appList) == 0 {
+				blog.Errorf("ListAuthorizedResources failed, user: %s,err: %v, rid: %s",
+					ctx.Kit.User, err, ctx.Kit.Rid)
+				ctx.RespAutoError(err)
+				return
+			}
 			// sort for prepare to find business with page.
 			sort.Sort(util.Int64Slice(appList))
 			// user can only find business that is already authorized.
@@ -385,7 +389,6 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 }
 
 // SearchBusiness search the business by condition
-// func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	searchCond := new(metadata.QueryBusinessRequest)
 	if err := ctx.DecodeInto(&searchCond); nil != err {
@@ -481,8 +484,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 				appList = append(appList, bizID)
 			}
 			if len(bizIDs) > 0 {
-				// this means that user want to find a specific business.
-				// now we check if he has this authority.
+				// this means that user want to find a specific business.now we check if he has this authority.
 				for _, bizID := range bizIDs {
 					if util.InArray(bizID, appList) {
 						// authBizIDs store the authorized bizIDs
@@ -501,6 +503,12 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 				}
 				// now you have the authority.
 			} else {
+				if len(appList) == 0 {
+					blog.Errorf("get appList is fail, user: %s, err: %v,rid: %s", ctx.Kit.User, err, ctx.Kit.Rid)
+					ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")
+					return
+				}
+
 				// sort for prepare to find business with page.
 				sort.Sort(util.Int64Slice(appList))
 				// user can only find business that is already authorized.

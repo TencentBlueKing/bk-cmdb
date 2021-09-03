@@ -421,7 +421,9 @@ func (lgc *Logics) GetCloudAccountConfBatch(kit *rest.Kit, accountIDs []int64) (
 	return accountConfs, nil
 }
 
-func (lgc *Logics) ListAuthorizedResources(kit *rest.Kit, typ meta.ResourceType, act meta.Action) ([]int64, bool, error) {
+// ListAuthorizedResources 获取有权限的资源id列表
+func (lgc *Logics) ListAuthorizedResources(kit *rest.Kit, typ meta.ResourceType, act meta.Action) (
+	[]int64, bool, error) {
 
 	authInput := meta.ListAuthorizedResourcesParam{
 		UserName:     kit.User,
