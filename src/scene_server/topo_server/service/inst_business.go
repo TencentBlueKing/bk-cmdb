@@ -268,7 +268,6 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 		sort.Sort(util.Int64Slice(appList))
 		// user can only find business that is already authorized.
 		query.Condition[common.BKAppIDField] = mapstr.MapStr{common.BKDBIN: appList}
-
 	}
 
 	cnt, instItems, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, query, false)
@@ -446,8 +445,8 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 		authorizedResources, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header,
 			authInput)
 		if err != nil {
-			blog.Errorf("[api-biz] SearchBusiness failed, ListAuthorizedResources failed, user: %s, err: %s, "+
-				"rid: %s", ctx.Kit.User, err.Error(), ctx.Kit.Rid)
+			blog.Errorf("SearchBusiness failed, ListAuthorizedResources failed, user: %s, err: %v, rid: %s",
+				ctx.Kit.User, err, ctx.Kit.Rid)
 			ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")
 			return
 		}

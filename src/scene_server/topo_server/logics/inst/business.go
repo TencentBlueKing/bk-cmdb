@@ -85,13 +85,11 @@ func (b *business) SetProxy(obj model.ObjectOperationInterface) {
 
 // CreateBusiness create business
 func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error) {
-
 	// this is a new supplier owner and prepare to create a new business.
 	if err := b.createAssociationByNewSupplier(kit, data); err != nil {
 		blog.Errorf("create business failed, err: %v, data: %#v, rid: %s", err, data, kit.Rid)
 		return nil, err
 	}
-
 	// TODO 调用inst中createInst
 	bizInst, err := b.createInst(kit, metadata.Object{ObjectID: common.BKInnerObjIDApp}, data)
 	if err != nil {
@@ -112,7 +110,6 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 		common.BKSetNameField:  common.DefaultResSetName,
 		common.BKDefaultField:  common.DefaultResSetFlag,
 	}
-
 	// TODO 调用set中CreateSet
 	setInst, err := b.createSet(kit, *objSet, setData)
 	if err != nil {
@@ -148,7 +145,6 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 		blog.Errorf("create business failed, err: %v, rid: %s", err, kit.Rid)
 		return data, err
 	}
-
 	// create fault module
 	moduleData.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
 	moduleData.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
@@ -157,7 +153,6 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 		blog.Errorf("create business failed, err: %v, rid: %s", err, kit.Rid)
 		return data, err
 	}
-
 	// create recycle module
 	moduleData.Set(common.BKModuleNameField, common.DefaultRecycleModuleName)
 	moduleData.Set(common.BKDefaultField, common.DefaultRecycleModuleFlag)
@@ -166,7 +161,6 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 		blog.Errorf("create recycle module failed, err: %v, rid: %s", err, kit.Rid)
 		return data, err
 	}
-
 	return data, nil
 }
 
@@ -417,7 +411,8 @@ func (b *business) validateMainlineObjectRule(kit *rest.Kit, src, dest string) (
 	// if dest object is not biz, then the src and dest object should be the neighbour.
 	// if dest object is biz, we do not check the src or dest is neighbour or not.
 	if (dest != common.BKInnerObjIDApp) && (math.Abs(float64(srcDestPriority)) > 1) {
-		return 0, fmt.Errorf("src[%s] model and dest[%s] model should be neighbour in the mainline topology", src, dest)
+		return 0, fmt.Errorf("src[%s] model and dest[%s] model should be neighbour in the mainline topology",
+			src, dest)
 	}
 
 	return srcDestPriority, nil
