@@ -28,7 +28,7 @@ import (
 )
 
 // CreateMainlineAssociation create mainline object association
-func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association,
+func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadata.MainlineAssociation,
 	maxTopoLevel int) (*metadata.Object, error) {
 
 	if data.AsstObjID == "" {
@@ -64,10 +64,6 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		common.BKClassificationIDField: data.ClassificationID,
 		common.BkSupplierAccount:       data.OwnerID,
 	}
-	currentObj, err := assoc.CreateObject(kit, true, objData)
-	if err != nil {
-		return nil, err
-	}
 
 	// find the mainline parent object
 	parentObjID := data.AsstObjID
@@ -75,18 +71,23 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	for _, item := range mainlineAsst.Info {
 		if item.AsstObjID == parentObjID {
 			childObjID = item.ObjectID
+			break
 		}
 	}
 
 	if len(childObjID) == 0 {
 		blog.Errorf("object(%s) has not got any mainline child object, rid: %s", parentObjID, kit.Rid)
-		return nil, fmt.Errorf("mainline object(%s) has no child", parentObjID)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, parentObjID)
+	}
+
+	currentObj, err := assoc.CreateObject(kit, true, objData)
+	if err != nil {
+		return nil, err
 	}
 
 	// update the mainline topo inst association
-	createdInstIDs, err := assoc.SetMainlineInstAssociation(kit, parentObjID, childObjID, currentObj.ObjectID,
-		currentObj.ObjectName)
-	if err != nil {
+	if _, err = assoc.SetMainlineInstAssociation(kit, parentObjID, childObjID, currentObj.ObjectID,
+		currentObj.ObjectName); err != nil {
 		blog.Errorf("failed set the mainline inst association, err: %s, rid: %s", err, kit.Rid)
 		return nil, err
 	}
@@ -101,27 +102,6 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		blog.Errorf("update mainline current object's[%s] child object[%s] association to current failed, "+
 			"err: %v, rid: %s", currentObj.ObjectID, childObjID, err, kit.Rid)
 		return nil, err
-	}
-
-	// create audit log for the created instances.
-	audit := auditlog.NewInstanceAudit(assoc.clientSet.CoreService())
-
-	cond := map[string]interface{}{
-		currentObj.GetInstIDFieldName(): map[string]interface{}{common.BKDBIN: createdInstIDs},
-	}
-
-	// generate audit log.
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-	auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, currentObj.GetObjectID(), cond)
-	if err != nil {
-		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	err = audit.SaveAuditLog(kit, auditLog...)
-	if err != nil {
-		blog.Errorf("creat inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrAuditSaveLogFailed)
 	}
 
 	return currentObj, nil
@@ -150,6 +130,13 @@ func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, targetObjID s
 
 	var parentObjID, childObjID string
 	for _, assoc := range rsp.Info {
+		// delete this object related association.
+		// a pre-defined association can not be updated.
+		if assoc.IsPre != nil && *assoc.IsPre {
+			blog.Errorf("it's a pre-defined association, can not be deleted, cond: %#v, rid: %s", mainlineCond, kit.Rid)
+			return kit.CCError.CCError(common.CCErrorTopoDeletePredefinedAssociation)
+		}
+
 		if assoc.AsstObjID == targetObjID {
 			childObjID = assoc.ObjectID
 		}
@@ -161,7 +148,7 @@ func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, targetObjID s
 
 	if len(childObjID) == 0 || len(parentObjID) == 0 {
 		blog.Errorf("target object(%s) has no parent or child, rid: %s", targetObjID, kit.Rid)
-		return fmt.Errorf("mainline object(%s) has no parent or child", targetObjID)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, targetObjID)
 	}
 
 	if err = assoc.ResetMainlineInstAssociation(kit, targetObjID, childObjID); err != nil {
@@ -169,11 +156,9 @@ func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, targetObjID s
 		return err
 	}
 
-	// delete this object related association.
-	// a pre-defined association can not be updated.
-	if rsp.Info[0].IsPre != nil && *rsp.Info[0].IsPre {
-		blog.Errorf("it's a pre-defined association, can not be deleted, cond: %#v, rid: %s", mainlineCond, kit.Rid)
-		return kit.CCError.CCError(common.CCErrorTopoDeletePredefinedAssociation)
+	if err = assoc.createMainlineObjectAssociation(kit, childObjID, parentObjID); err != nil {
+		blog.Errorf("failed to update the association, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
 
 	// delete the object association
@@ -184,32 +169,14 @@ func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, targetObjID s
 		return err
 	}
 
-	if len(childObjID) != 0 {
-		// FIX: 正常情况下 childObj 不可能为 nil，只有在拓扑异常的时候才会出现
-		if err = assoc.createMainlineObjectAssociation(kit, childObjID, parentObjID); err != nil {
-			blog.Errorf("failed to update the association, err: %v, rid: %s", err, kit.Rid)
-			return err
-		}
-	}
-
 	// object的删除函数通过object的id进行删除，需要在这里查一次object的id
 	objIDCond := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{common.BKObjIDField: targetObjID},
-		Fields:    []string{common.BKFieldID},
+		Condition:      mapstr.MapStr{common.BKObjIDField: targetObjID},
+		Fields:         []string{common.BKFieldID},
+		DisableCounter: true,
 	}
-	objIDRsp, err := assoc.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, objIDCond)
-	if err != nil {
-		blog.Errorf("get object(%s) id field failed, err: %v, rid: %s", targetObjID, err, kit.Rid)
-		return err
-	}
-
-	if len(objIDRsp.Info) == 0 {
-		blog.Errorf("get object(%s) id field failed, object is non-exist, rid: %s", targetObjID, err, kit.Rid)
-		return kit.CCError.CCError(common.CCErrTopoObjectSelectFailed)
-	}
-
 	//delete objects
-	if err = assoc.obj.DeleteObject(kit, objIDRsp.Info[0].ID, false); err != nil {
+	if err = assoc.obj.DeleteObject(kit, objIDCond, false); err != nil {
 		blog.Errorf("failed to delete the object(%s), err: %v, rid: %s", targetObjID, err, kit.Rid)
 		return err
 	}
@@ -403,6 +370,27 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parentObjID,
 			return nil, err
 		}
 	}
+
+	// create audit log for the created instances.
+	audit := auditlog.NewInstanceAudit(assoc.clientSet.CoreService())
+
+	cond = map[string]interface{}{
+		metadata.GetInstIDFieldByObjID(currentObjID): map[string]interface{}{common.BKDBIN: createdInstIDs},
+	}
+	// generate audit log.
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, currentObjID, cond)
+	if err != nil {
+		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	err = audit.SaveAuditLog(kit, auditLog...)
+	if err != nil {
+		blog.Errorf("creat inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrAuditSaveLogFailed)
+	}
+
 	return createdInstIDs, nil
 }
 
@@ -780,16 +768,14 @@ func (assoc *association) setMainlineParentObject(kit *rest.Kit, childObjID, par
 	_, err := assoc.clientSet.CoreService().Association().DeleteModelAssociation(kit.Ctx, kit.Header,
 		&metadata.DeleteOption{Condition: cond})
 	if err != nil {
-		blog.Errorf("update mainline object[%s] association to %s, search object association failed, "+
-			"err: %v, rid: %s", childObjID, parentObjID, err, kit.Rid)
+		blog.Errorf("delete object(%s) association failed, err: %v, rid: %s", childObjID, err, kit.Rid)
 		return err
 	}
 
 	return assoc.createMainlineObjectAssociation(kit, childObjID, parentObjID)
 }
 
-func (assoc *association) createMainlineObjectAssociation(kit *rest.Kit, childObjID,
-	parentObjID string) error {
+func (assoc *association) createMainlineObjectAssociation(kit *rest.Kit, childObjID, parentObjID string) error {
 	objAsstID := fmt.Sprintf("%s_%s_%s", childObjID, common.AssociationKindMainline, parentObjID)
 	defined := false
 	association := metadata.Association{

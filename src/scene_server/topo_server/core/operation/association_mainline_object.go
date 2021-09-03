@@ -136,11 +136,14 @@ func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit, targetObj
 
 }
 
-func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association, maxTopoLevel int) (model.Object, error) {
+// CreateMainlineAssociation create mainline object association
+func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadata.MainlineAssociation,
+	maxTopoLevel int) (model.Object, error) {
 	// find the mainline module's head, which is biz.
 	bizObj, err := assoc.obj.FindSingleObject(kit, common.BKInnerObjIDApp)
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
 		return nil, err
 	}
 
@@ -155,12 +158,14 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	}
 	items, err := assoc.SearchMainlineAssociationTopo(kit, bizObj)
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
 		return nil, err
 	}
 
 	if len(items) >= maxTopoLevel {
-		blog.Errorf("[operation-asst] the mainline topo level is %d, the max limit is %d, rid: %s", len(items), maxTopoLevel, kit.Rid)
+		blog.Errorf("[operation-asst] the mainline topo level is %d, the max limit is %d, rid: %s", len(items),
+			maxTopoLevel, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrTopoBizTopoLevelOverLimit)
 	}
 
@@ -169,11 +174,13 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	switch t := err.(type) {
 	case nil:
 	default:
-		blog.Errorf("[operation-asst] failed to find the single object(%s), error info is %s, rid: %s", data.ObjectID, t.Error(), kit.Rid)
+		blog.Errorf("[operation-asst] failed to find the single object(%s), error info is %s, rid: %s", data.ObjectID,
+			t.Error(), kit.Rid)
 		return nil, t
 	case errors.CCErrorCoder:
 		if t.GetCode() == common.CCErrTopoObjectSelectFailed {
-			blog.Errorf("[operation-asst] failed to find the single object(%s), error info is %s, rid: %s", data.ObjectID, t.Error(), kit.Rid)
+			blog.Errorf("[operation-asst] failed to find the single object(%s), error info is %s, rid: %s",
+				data.ObjectID, t.Error(), kit.Rid)
 			return nil, t
 		}
 	}
@@ -182,7 +189,8 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	// find the mainline child object for the parent
 	childObj, err := parentObj.GetMainlineChildObject()
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to find the child object for the object(%s), error info is %s, rid: %s", pObject.ObjectID, err.Error(), kit.Rid)
+		blog.Errorf("[operation-asst] failed to find the child object for the object(%s), error info is %s, rid: %s",
+			pObject.ObjectID, err.Error(), kit.Rid)
 		return nil, err
 	}
 
@@ -207,19 +215,20 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	// update the mainline topo inst association
 	createdInstIDs, err := assoc.SetMainlineInstAssociation(kit, parentObj, currentObj, childObj)
 	if nil != err {
-		blog.Errorf("[operation-asst] failed set the mainline inst association, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-asst] failed set the mainline inst association, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
 		return nil, err
 	}
 
 	if err = currentObj.CreateMainlineObjectAssociation(pObject.ObjectID); err != nil {
-		blog.Errorf("[operation-asst] create mainline object[%s] association related to object[%s] failed, err: %v, rid: %s", kit.Rid,
-			cObj.ObjectID, pObject.ObjectID, err)
+		blog.Errorf("[operation-asst] create mainline object[%s] association related to object[%s] failed, err: %v,"+
+			"rid: %s", kit.Rid, cObj.ObjectID, pObject.ObjectID, err)
 		return nil, err
 	}
 
 	if err = childObj.SetMainlineParentObject(cObj.ObjectID); err != nil {
-		blog.Errorf("[operation-asst] update mainline current object's[%s] child object[%s] association to current failed, err: %v, rid: %s", kit.Rid,
-			cObj.ObjectID, childObj.Object().ObjectID, err)
+		blog.Errorf("[operation-asst] update mainline current object's[%s] child object[%s] association to current "+
+			"failed, err: %v, rid: %s", kit.Rid, cObj.ObjectID, childObj.Object().ObjectID, err)
 		return nil, err
 	}
 

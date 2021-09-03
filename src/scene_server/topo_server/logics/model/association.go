@@ -32,7 +32,8 @@ type AssociationOperationInterface interface {
 
 	// Mainline
 	// CreateMainlineAssociation create mainline object association
-	CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association, maxTopoLevel int) (*metadata.Object, error)
+	CreateMainlineAssociation(kit *rest.Kit, data *metadata.MainlineAssociation, maxTopoLevel int) (
+		*metadata.Object, error)
 	// DeleteMainlineAssociation delete mainline association by objID
 	DeleteMainlineAssociation(kit *rest.Kit, objID string) error
 	// SearchMainlineAssociationTopo get mainline topo of special model

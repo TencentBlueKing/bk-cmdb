@@ -217,7 +217,7 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 
 	//delete model
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Logics.ObjectOperation().DeleteObject(ctx.Kit, id, true)
+		err = s.Logics.ObjectOperation().DeleteObjectByID(ctx.Kit, id, true)
 		if err != nil {
 			return err
 		}

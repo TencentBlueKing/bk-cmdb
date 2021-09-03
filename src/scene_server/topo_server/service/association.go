@@ -26,23 +26,16 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 )
 
 // CreateMainLineObject create a new model in the main line topo
 func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); err != nil {
+	data := new(metadata.MainlineAssociation)
+	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
-		return
-	}
-	mainLineAssociation := &metadata.Association{}
-	_, err := mainLineAssociation.Parse(data)
-	if nil != err {
-		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s, rid: %s", data, err.Error(),
-			ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "mainline object"))
 		return
 	}
 
@@ -50,7 +43,7 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 	// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 	// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
 	// Collection minimum is Timestamp(1616747878, 5)
-	if err := s.createObjectTableByObjectID(ctx, mainLineAssociation.ObjectID, true); err != nil {
+	if err := s.createObjectTableByObjectID(ctx, data.ObjectID, true); err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "mainline object"))
 		return
 	}
@@ -59,11 +52,10 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 
 		var err error
-		ret, err = s.Logics.AssociationOperation().CreateMainlineAssociation(ctx.Kit, mainLineAssociation,
+		ret, err = s.Logics.AssociationOperation().CreateMainlineAssociation(ctx.Kit, data,
 			s.Config.BusinessTopoLevelMax)
 		if err != nil {
-			blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", mainLineAssociation.ObjectID, err,
-				ctx.Kit.Rid)
+			blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", data.ObjectID, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -84,7 +76,7 @@ func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 	// do with transaction
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		if err := s.Logics.AssociationOperation().DeleteMainlineAssociation(ctx.Kit, objID); err != nil {
-			blog.Errorf("DeleteMainlineAssociation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("delete mainline association failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrTopoObjectDeleteFailed)
 		}
 		return nil
