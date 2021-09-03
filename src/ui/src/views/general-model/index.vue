@@ -151,6 +151,7 @@
           :uneditable-properties="['bk_inst_name']"
           :properties="properties"
           :property-groups="propertyGroups"
+          :save-auth="saveAuth"
           :object-unique="objectUnique"
           @on-submit="handleMultipleSave"
           @on-cancel="handleMultipleCancel">
@@ -313,6 +314,12 @@
       allowFuzzyQuery() {
         return ['singlechar', 'longchar'].includes(this.filterType)
       },
+      saveAuth() {
+        return this.table.checked.map(instId => ({
+          type: this.$OPERATION.U_INST,
+          relation: [this.model.id, parseInt(instId, 10)]
+        }))
+      }
     },
     watch: {
       'filter.field'() {
