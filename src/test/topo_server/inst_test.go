@@ -426,7 +426,7 @@ var _ = Describe("inst test", func() {
 		rsp, err := instClient.DeleteInst(context.Background(), "cc_test", instId, header)
 		util.RegisterResponse(rsp)
 		Expect(err).Should(BeNil())
-		Expect(rsp.Result).To(Equal(false))
+		Expect(rsp.Result).To(Equal(true))
 	})
 
 	It("search inst", func() {

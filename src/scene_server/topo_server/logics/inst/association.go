@@ -173,7 +173,8 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 	return result, rsp.Count, nil
 }
 
-func (assoc *association) mappingCheck(kit *rest.Kit, objID string, mapping metadata.AssociationMapping,
+// checkInstAsstMapping use to check if instance association mapping correct, used by CreateInstanceAssociation
+func (assoc *association) checkInstAsstMapping(kit *rest.Kit, objID string, mapping metadata.AssociationMapping,
 	input *metadata.CreateAssociationInstRequest) error {
 
 	tableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
@@ -243,7 +244,7 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotExist)
 	}
 
-	if err := assoc.mappingCheck(kit, result.Info[0].ObjectID, result.Info[0].Mapping, request); err != nil {
+	if err := assoc.checkInstAsstMapping(kit, result.Info[0].ObjectID, result.Info[0].Mapping, request); err != nil {
 		blog.Errorf("check mapping failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
