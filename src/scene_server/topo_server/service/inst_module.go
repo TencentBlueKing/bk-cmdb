@@ -719,3 +719,113 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(result)
 }
+
+// GetInternalModule Get Internal Module by bizID
+func (s *Service) GetInternalModule(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	_, result, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, bizID)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(result)
+}
+
+// GetInternalModuleWithStatistics get internal module with statistics by bizID
+func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error()))
+		return
+	}
+
+	_, innerAppTopo, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, bizID)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if innerAppTopo == nil {
+		blog.ErrorJSON("GetInternalModule return unexpected type: %s, rid: %s", innerAppTopo, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	moduleIDArr := make([]int64, 0)
+	for _, item := range innerAppTopo.Module {
+		moduleIDArr = append(moduleIDArr, item.ModuleID)
+	}
+
+	// count host apply rules
+	listApplyRuleOption := metadata.ListHostApplyRuleOption{
+		ModuleIDs: moduleIDArr,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	hostApplyRules, err := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx,
+		ctx.Kit.Header, bizID, listApplyRuleOption)
+	if err != nil {
+		blog.ErrorJSON("ListHostApplyRule failed, bizID: %d, option: %+v, err: %v, rid: %s", bizID,
+			listApplyRuleOption, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	moduleRuleCount := make(map[int64]int64)
+	for _, item := range hostApplyRules.Info {
+		if _, exist := moduleRuleCount[item.ModuleID]; exist == false {
+			moduleRuleCount[item.ModuleID] = 0
+		}
+		moduleRuleCount[item.ModuleID] += 1
+	}
+
+	// count hosts
+	listHostOption := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		SetIDArr:      []int64{innerAppTopo.SetID},
+		ModuleIDArr:   moduleIDArr,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
+	}
+	hostModuleRelations, e := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header,
+		listHostOption)
+	if e != nil {
+		blog.ErrorJSON("list host modules failed, option: %+v, err: %v, rid: %s", listHostOption, e, ctx.Kit.Rid)
+		ctx.RespAutoError(e)
+		return
+	}
+	setHostIDs := make([]int64, 0)
+	moduleHostIDs := make(map[int64][]int64, 0)
+	for _, relation := range hostModuleRelations.Info {
+		setHostIDs = append(setHostIDs, relation.HostID)
+		if _, ok := moduleHostIDs[relation.ModuleID]; ok == false {
+			moduleHostIDs[relation.ModuleID] = make([]int64, 0)
+		}
+		moduleHostIDs[relation.ModuleID] = append(moduleHostIDs[relation.ModuleID], relation.HostID)
+	}
+	set := mapstr.NewFromStruct(innerAppTopo, "field")
+	set["host_count"] = len(util.IntArrayUnique(setHostIDs))
+	modules := make([]mapstr.MapStr, 0)
+	for _, module := range innerAppTopo.Module {
+		moduleItem := mapstr.NewFromStruct(module, "field")
+		moduleItem["host_count"] = 0
+		if hostIDs, ok := moduleHostIDs[module.ModuleID]; ok == true {
+			moduleItem["host_count"] = len(util.IntArrayUnique(hostIDs))
+		}
+		moduleItem["host_apply_rule_count"] = 0
+		if ruleCount, ok := moduleRuleCount[module.ModuleID]; ok == true {
+			moduleItem["host_apply_rule_count"] = ruleCount
+		}
+		modules = append(modules, moduleItem)
+	}
+	set["module"] = modules
+	ctx.RespEntity(set)
+}

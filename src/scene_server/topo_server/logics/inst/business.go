@@ -13,8 +13,8 @@
 package inst
 
 import (
-	"configcenter/src/scene_server/topo_server/logics/model"
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
 
@@ -24,10 +24,12 @@ import (
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/topo_server/logics/model"
 )
 
 // BusinessOperationInterface business operation methods
@@ -45,8 +47,15 @@ type BusinessOperationInterface interface {
 	//	- 业务归档的时候，自动重命名为"foo-archived"
 	//	- 归档的时候，如果发现已经存在同名的"foo-archived", 自动在其后+1, 比如 "foo-archived-1", "foo-archived-2"
 	GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (achieveName string, err error)
-
-	//
+	// GetBriefTopologyNodeRelation is used to get directly related business topology node information.
+	// As is, you can find modules belongs to a set; or you can find the set a module belongs to.
+	// It has rules as follows:
+	// 1. if src object is biz, then the destination object can be any mainline object except biz.
+	// 2. destination object can be biz. otherwise, src and destination object should be the neighbour.
+	// this api only return business topology relations.
+	GetBriefTopologyNodeRelation(kit *rest.Kit, opts *metadata.GetBriefBizRelationOptions) ([]*metadata.
+		BriefBizRelations, error)
+	// SetProxy SetProxy
 	SetProxy(obj model.ObjectOperationInterface)
 }
 
@@ -69,12 +78,20 @@ var (
 	numRegex = regexp.MustCompile(`^\d+$`)
 )
 
+// SetProxy SetProxy
 func (b *business) SetProxy(obj model.ObjectOperationInterface) {
 	b.obj = obj
 }
 
 // CreateBusiness create business
 func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error) {
+
+	// this is a new supplier owner and prepare to create a new business.
+	if err := b.createAssociationByNewSupplier(kit, data); err != nil {
+		blog.Errorf("create business failed, err: %v, data: %#v, rid: %s", err, data, kit.Rid)
+		return nil, err
+	}
+
 	// TODO 调用inst中createInst
 	bizInst, err := b.createInst(kit, metadata.Object{ObjectID: common.BKInnerObjIDApp}, data)
 	if err != nil {
@@ -105,9 +122,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 	setID := int64(setInst.Created.ID)
 
 	// create module
-	// TODO 调用obj中FindSingleObject
 	objModule, err := b.obj.FindSingleObject(kit, nil, common.BKInnerObjIDModule)
-	//objModule, err := b.findSingleObject(kit, common.BKInnerObjIDModule)
 	if err != nil {
 		blog.Errorf("failed to search the set, %v, rid: %s", err, kit.Rid)
 		return nil, err
@@ -118,7 +133,6 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 		blog.Errorf("failed to search default category, err: %+v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
-
 	moduleData := mapstr.MapStr{
 		common.BKSetIDField:             setID,
 		common.BKInstParentStr:          setID,
@@ -130,8 +144,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 		common.BKServiceCategoryIDField: defaultCategory.ID,
 	}
 	// TODO 调用module中CreateModule
-	_, err = b.createModule(kit, *objModule, bizID, setID, moduleData)
-	if err != nil {
+	if _, err = b.createModule(kit, *objModule, bizID, setID, moduleData); err != nil {
 		blog.Errorf("create business failed, err: %v, rid: %s", err, kit.Rid)
 		return data, err
 	}
@@ -140,8 +153,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 	moduleData.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
 	moduleData.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
 	// TODO 调用module中CreateModule
-	_, err = b.createModule(kit, *objModule, bizID, setID, moduleData)
-	if err != nil {
+	if _, err = b.createModule(kit, *objModule, bizID, setID, moduleData); err != nil {
 		blog.Errorf("create business failed, err: %v, rid: %s", err, kit.Rid)
 		return data, err
 	}
@@ -150,8 +162,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 	moduleData.Set(common.BKModuleNameField, common.DefaultRecycleModuleName)
 	moduleData.Set(common.BKDefaultField, common.DefaultRecycleModuleFlag)
 	// TODO 调用module中CreateModule
-	_, err = b.createModule(kit, *objModule, bizID, setID, moduleData)
-	if err != nil {
+	if _, err = b.createModule(kit, *objModule, bizID, setID, moduleData); err != nil {
 		blog.Errorf("create recycle module failed, err: %v, rid: %s", err, kit.Rid)
 		return data, err
 	}
@@ -258,6 +269,259 @@ func (b *business) GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (a
 	}
 
 	return fmt.Sprintf("%s-archived-%d", bizName, maxNum+1), nil
+}
+
+// GetBriefTopologyNodeRelation is used to get directly related business topology node information.
+// As is, you can find modules belongs to a set; or you can find the set a module belongs to.
+// It has rules as follows:
+// 1. if src object is biz, then the destination object can be any mainline object except biz.
+// 2. destination object can be biz. otherwise, src and destination object should be the neighbour.
+// this api only return business topology relations.
+func (b *business) GetBriefTopologyNodeRelation(kit *rest.Kit, opts *metadata.GetBriefBizRelationOptions) (
+	[]*metadata.BriefBizRelations, error) {
+
+	// validate the source and destination model is mainline model or not.
+	srcDestPriority, err := b.validateMainlineObjectRule(kit, opts.SrcBizObj, opts.DestBizObj)
+	if err != nil {
+		blog.Errorf("check object is mainline object failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	filter := make(mapstr.MapStr)
+	switch opts.SrcBizObj {
+	case common.BKInnerObjIDApp:
+		filter[common.BKAppIDField] = mapstr.MapStr{common.BKDBIN: opts.SrcInstIDs}
+		return b.genBriefTopologyNodeRelation(kit, filter, opts.DestBizObj, common.BKAppIDField,
+			common.GetInstIDField(opts.DestBizObj), &opts.Page)
+
+	case common.BKInnerObjIDSet:
+		switch opts.DestBizObj {
+		case common.BKInnerObjIDApp:
+			filter[common.BKSetIDField] = mapstr.MapStr{common.BKDBIN: opts.SrcInstIDs}
+			return b.genBriefTopologyNodeRelation(kit, filter, common.BKInnerObjIDSet, common.BKSetIDField,
+				common.BKAppIDField, &opts.Page)
+
+		case common.BKInnerObjIDModule:
+			filter[common.BKSetIDField] = mapstr.MapStr{common.BKDBIN: opts.SrcInstIDs}
+			return b.genBriefTopologyNodeRelation(kit, filter, common.BKInnerObjIDModule, common.BKSetIDField,
+				common.BKModuleIDField, &opts.Page)
+
+		default:
+			// search custom level model instance with set ids. which is set's parent id list
+			filter[common.BKSetIDField] = mapstr.MapStr{common.BKDBIN: opts.SrcInstIDs}
+			return b.genBriefTopologyNodeRelation(kit, filter, common.BKInnerObjIDSet, common.BKSetIDField,
+				common.BKParentIDField, &opts.Page)
+		}
+
+	case common.BKInnerObjIDModule:
+		switch opts.DestBizObj {
+		case common.BKInnerObjIDApp:
+			filter[common.BKModuleIDField] = mapstr.MapStr{common.BKDBIN: opts.SrcInstIDs}
+			return b.genBriefTopologyNodeRelation(kit, filter, common.BKInnerObjIDModule, common.BKModuleIDField,
+				common.BKAppIDField, &opts.Page)
+
+		case common.BKInnerObjIDSet:
+			filter[common.BKModuleIDField] = mapstr.MapStr{common.BKDBIN: opts.SrcInstIDs}
+			return b.genBriefTopologyNodeRelation(kit, filter, common.BKInnerObjIDModule, common.BKModuleIDField,
+				common.BKSetIDField, &opts.Page)
+
+		default:
+			blog.Errorf("it's not allow to find destination object %s with source module model. rid: %s",
+				opts.DestBizObj, kit.Rid)
+			return nil, errors.New(common.CCErrCommParamsInvalid, "dest_biz_obj")
+		}
+
+	default:
+		switch opts.DestBizObj {
+		case common.BKInnerObjIDApp:
+			filter[common.BKInstIDField] = mapstr.MapStr{common.BKDBIN: opts.SrcInstIDs}
+			return b.genBriefTopologyNodeRelation(kit, filter, opts.SrcBizObj, common.BKInstIDField,
+				common.BKAppIDField, &opts.Page)
+
+		case common.BKInnerObjIDSet:
+			filter[common.BKParentIDField] = mapstr.MapStr{common.BKDBIN: opts.SrcInstIDs}
+			return b.genBriefTopologyNodeRelation(kit, filter, common.BKInnerObjIDSet, common.BKParentIDField,
+				common.BKSetIDField, &opts.Page)
+
+		default:
+			if srcDestPriority < 0 {
+				// src object is the parent of destination object
+				filter[common.BKParentIDField] = mapstr.MapStr{common.BKDBIN: opts.SrcInstIDs}
+				// src inst id bk_parent_id, dest inst id bk_inst_id, this scene is different with others.
+				return b.genBriefTopologyNodeRelation(kit, filter, opts.DestBizObj, common.BKParentIDField,
+					common.BKInstIDField, &opts.Page)
+			}
+
+			// destination object is the parent of src object
+			filter[common.BKInstIDField] = mapstr.MapStr{common.BKDBIN: opts.SrcInstIDs}
+			return b.genBriefTopologyNodeRelation(kit, filter, opts.SrcBizObj, common.BKInstIDField,
+				common.BKParentIDField, &opts.Page)
+		}
+	}
+}
+
+func (b *business) validateMainlineObjectRule(kit *rest.Kit, src, dest string) (int, error) {
+	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
+	asst, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
+		&metadata.QueryCondition{Condition: cond})
+	if err != nil {
+		return 0, err
+	}
+
+	if len(asst.Info) <= 0 {
+		return 0, fmt.Errorf("invalid biz mainline object topology")
+	}
+
+	next, idx := common.BKInnerObjIDApp, 0
+	// save the mainline object with it's index with map
+	rankMap := make(map[string]int)
+	rankMap[next] = idx
+	for _, relation := range asst.Info {
+		if relation.AsstObjID == next {
+			next = relation.ObjectID
+			idx += 1
+			rankMap[next] = idx
+			continue
+		}
+
+		for _, rel := range asst.Info {
+			if rel.AsstObjID == next {
+				next = rel.ObjectID
+				idx += 1
+				rankMap[next] = idx
+				break
+			}
+		}
+
+	}
+
+	// src, dest object should all be mainline object.
+	srcIdx, destIdx := 0, 0
+	srcIdx, exist := rankMap[src]
+	if !exist {
+		return 0, fmt.Errorf("%s is not mainline object", src)
+	}
+
+	destIdx, exist = rankMap[dest]
+	if !exist {
+		return 0, fmt.Errorf("%s is not mainline object", dest)
+	}
+
+	srcDestPriority := srcIdx - destIdx
+
+	if src == common.BKInnerObjIDApp {
+		// if src object is biz, then do not care about if the destination object is neighbour or not.
+		return srcDestPriority, nil
+	}
+
+	// if dest object is not biz, then the src and dest object should be the neighbour.
+	// if dest object is biz, we do not check the src or dest is neighbour or not.
+	if (dest != common.BKInnerObjIDApp) && (math.Abs(float64(srcDestPriority)) > 1) {
+		return 0, fmt.Errorf("src[%s] model and dest[%s] model should be neighbour in the mainline topology", src, dest)
+	}
+
+	return srcDestPriority, nil
+}
+
+func (b *business) genBriefTopologyNodeRelation(kit *rest.Kit, filter mapstr.MapStr, destObj, srcInstField,
+	destInstField string, page *metadata.BasePage) ([]*metadata.BriefBizRelations, error) {
+
+	// set sort field with destination object instance field as default.
+	page.Sort = common.GetInstIDField(destObj)
+
+	input := &metadata.QueryCondition{
+		// set all the possible fields.
+		Fields: []string{common.BKAppIDField, common.BKParentIDField, common.BKSetIDField, common.BKModuleIDField,
+			common.BKInstIDField},
+		Page:           *page,
+		Condition:      filter,
+		DisableCounter: true,
+	}
+	result, err := b.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, destObj, input)
+	if err != nil {
+		blog.ErrorJSON("get biz mainline object %s instance with filter: %s failed, err: %v, rid: %s",
+			destObj, input, err, kit.Rid)
+		return nil, err
+	}
+
+	relations := make([]*metadata.BriefBizRelations, 0)
+	for _, one := range result.Info {
+		relations = append(relations, &metadata.BriefBizRelations{
+			Business: one[common.BKAppIDField],
+			// source object's instance id, field different with object's type
+			SrcInstID: one[srcInstField],
+			// destination object's instance id, field different with object's type
+			DestInstID: one[destInstField],
+		})
+	}
+
+	return relations, nil
+}
+
+func (b *business) createAssociationByNewSupplier(kit *rest.Kit, data mapstr.MapStr) error {
+	defaultFieldVal, err := data.Int64(common.BKDefaultField)
+	if err != nil {
+		blog.Errorf("failed to create business, error info is did not set the default field,err: %v, rid: %s",
+			err, kit.Rid)
+		return err
+	}
+	if defaultFieldVal != int64(common.DefaultAppFlag) || kit.SupplierAccount == common.BKDefaultOwnerID {
+		return nil
+	}
+
+	asstQuery := map[string]interface{}{
+		common.BKOwnerIDField: common.BKDefaultOwnerID,
+	}
+	defaultOwnerHeader := util.CloneHeader(kit.Header)
+	defaultOwnerHeader.Set(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
+
+	asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, defaultOwnerHeader,
+		&metadata.QueryCondition{Condition: asstQuery})
+	if err != nil {
+		blog.Errorf("create business failed to get default assoc, err: %v, rid: %s", err, kit.Rid)
+		return kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
+
+	expectAssts := asstRsp.Info
+	blog.Infof("copy asst for %s, %+v, rid: %s", kit.SupplierAccount, expectAssts, kit.Rid)
+
+	existAsstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
+		&metadata.QueryCondition{Condition: asstQuery})
+	if err != nil {
+		blog.Errorf("create business failed to get default assoc, err: %v, rid: %v", err, kit.Rid)
+		return err
+	}
+
+	existAssts := existAsstRsp.Info
+
+expectLoop:
+	for _, asst := range expectAssts {
+		asst.OwnerID = kit.SupplierAccount
+		for _, existAsst := range existAssts {
+			if existAsst.ObjectID == asst.ObjectID &&
+				existAsst.AsstObjID == asst.AsstObjID &&
+				existAsst.AsstKindID == asst.AsstKindID {
+				continue expectLoop
+			}
+		}
+
+		var err error
+		if asst.AsstKindID == common.AssociationKindMainline {
+			// bk_mainline is a inner association type that can only create in special case,
+			// so we separate bk_mainline association type creation with a independent method,
+			_, err = b.clientSet.CoreService().Association().CreateMainlineModelAssociation(kit.Ctx, kit.Header,
+				&metadata.CreateModelAssociation{Spec: asst})
+		} else {
+			_, err = b.clientSet.CoreService().Association().CreateModelAssociation(kit.Ctx, kit.Header,
+				&metadata.CreateModelAssociation{Spec: asst})
+		}
+		if err != nil {
+			blog.Errorf("create business failed to copy default assoc, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+	}
+
+	return nil
 }
 
 // TODO 以下为临时函数

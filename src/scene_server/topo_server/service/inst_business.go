@@ -156,7 +156,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 	query := &metadata.QueryBusinessRequest{
 		Condition: mapstr.MapStr{common.BKAppIDField: bizID},
 	}
-	_, bizs, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, query, true)
+	_, bizs, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, query, false)
 	if len(bizs) <= 0 {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
 		return
@@ -229,11 +229,6 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 	sortParam := ctx.Request.QueryParameter("sort")
 	if len(sortParam) > 0 {
 		page.Sort = sortParam
-	}
-	if errKey, err := page.Validate(true); err != nil {
-		blog.Errorf("page parameter invalid, errKey: %s, err: %v, rid: %s", errKey, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
 	}
 	query := &metadata.QueryBusinessRequest{
 		Fields: []string{common.BKAppIDField, common.BKAppNameField},
@@ -381,7 +376,7 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 // func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	searchCond := new(metadata.QueryBusinessRequest)
-	if err := ctx.DecodeInto(&searchCond); nil != err {
+	if err := ctx.DecodeInto(&searchCond); err != nil {
 		blog.Errorf("failed to parse the params, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
 		return
@@ -391,7 +386,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
 	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
 	attrArr, err := s.Core.AttributeOperation().FindBusinessAttribute(ctx.Kit, attrCond.ToMapStr())
-	if nil != err {
+	if err != nil {
 		blog.Errorf("failed get the business attribute, %s, rid:%s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -501,8 +496,8 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	// can only find normal business, but not resource pool business
 	searchCond.Condition[common.BKDefaultField] = 0
 
-	cnt, instItems, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, searchCond, true)
-	if nil != err {
+	cnt, instItems, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, searchCond, false)
+	if err != nil {
 		blog.Errorf("find business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -572,114 +567,6 @@ func (s *Service) CreateDefaultBusiness(ctx *rest.Contexts) {
 	ctx.RespEntity(business)
 }
 
-func (s *Service) GetInternalModule(ctx *rest.Contexts) {
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.SetReadPreference(common.SecondaryPreferredMode)
-
-	_, result, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, bizID)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntity(result)
-}
-
-func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error()))
-		return
-	}
-
-	_, innerAppTopo, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, bizID)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	if innerAppTopo == nil {
-		blog.ErrorJSON("GetInternalModule return unexpected type: %s, rid: %s", innerAppTopo, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	moduleIDArr := make([]int64, 0)
-	for _, item := range innerAppTopo.Module {
-		moduleIDArr = append(moduleIDArr, item.ModuleID)
-	}
-
-	// count host apply rules
-	listApplyRuleOption := metadata.ListHostApplyRuleOption{
-		ModuleIDs: moduleIDArr,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	hostApplyRules, err := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx,
-		ctx.Kit.Header, bizID, listApplyRuleOption)
-	if err != nil {
-		blog.ErrorJSON("ListHostApplyRule failed, bizID: %d, option: %+v, err: %v, rid: %s", bizID,
-			listApplyRuleOption, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	moduleRuleCount := make(map[int64]int64)
-	for _, item := range hostApplyRules.Info {
-		if _, exist := moduleRuleCount[item.ModuleID]; exist == false {
-			moduleRuleCount[item.ModuleID] = 0
-		}
-		moduleRuleCount[item.ModuleID] += 1
-	}
-
-	// count hosts
-	listHostOption := &metadata.HostModuleRelationRequest{
-		ApplicationID: bizID,
-		SetIDArr:      []int64{innerAppTopo.SetID},
-		ModuleIDArr:   moduleIDArr,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
-	}
-	hostModuleRelations, e := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header,
-		listHostOption)
-	if e != nil {
-		blog.ErrorJSON("list host modules failed, option: %+v, err: %v, rid: %s", listHostOption, e, ctx.Kit.Rid)
-		ctx.RespAutoError(e)
-		return
-	}
-	setHostIDs := make([]int64, 0)
-	moduleHostIDs := make(map[int64][]int64, 0)
-	for _, relation := range hostModuleRelations.Info {
-		setHostIDs = append(setHostIDs, relation.HostID)
-		if _, ok := moduleHostIDs[relation.ModuleID]; ok == false {
-			moduleHostIDs[relation.ModuleID] = make([]int64, 0)
-		}
-		moduleHostIDs[relation.ModuleID] = append(moduleHostIDs[relation.ModuleID], relation.HostID)
-	}
-	set := mapstr.NewFromStruct(innerAppTopo, "field")
-	set["host_count"] = len(util.IntArrayUnique(setHostIDs))
-	modules := make([]mapstr.MapStr, 0)
-	for _, module := range innerAppTopo.Module {
-		moduleItem := mapstr.NewFromStruct(module, "field")
-		moduleItem["host_count"] = 0
-		if hostIDs, ok := moduleHostIDs[module.ModuleID]; ok == true {
-			moduleItem["host_count"] = len(util.IntArrayUnique(hostIDs))
-		}
-		moduleItem["host_apply_rule_count"] = 0
-		if ruleCount, ok := moduleRuleCount[module.ModuleID]; ok == true {
-			moduleItem["host_apply_rule_count"] = ruleCount
-		}
-		modules = append(modules, moduleItem)
-	}
-	set["module"] = modules
-	ctx.RespEntity(set)
-}
-
 // ListAllBusinessSimplify list all businesses with return only several fields
 func (s *Service) ListAllBusinessSimplify(ctx *rest.Contexts) {
 	page := metadata.BasePage{
@@ -688,11 +575,6 @@ func (s *Service) ListAllBusinessSimplify(ctx *rest.Contexts) {
 	sortParam := ctx.Request.QueryParameter("sort")
 	if len(sortParam) > 0 {
 		page.Sort = sortParam
-	}
-	if errKey, err := page.Validate(true); err != nil {
-		blog.ErrorJSON("page parameter invalid, errKey: %s, err: %v, rid: %s", errKey, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
 	}
 
 	fields := []string{
@@ -747,7 +629,7 @@ func (s *Service) GetBriefTopologyNodeRelation(ctx *rest.Contexts) {
 		return
 	}
 
-	relations, err := s.Core.BusinessOperation().GetBriefTopologyNodeRelation(ctx.Kit, options)
+	relations, err := s.Logics.BusinessOperation().GetBriefTopologyNodeRelation(ctx.Kit, options)
 	if err != nil {
 		blog.Errorf("get brief topology node relation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
