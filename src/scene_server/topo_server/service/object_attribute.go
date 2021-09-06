@@ -164,12 +164,13 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("failed to parse the path params id: %s, err: %s, rid: %s", ctx.Request.PathParameter("id"),
 			err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
+
 	// adapt input path param with bk_biz_id
 	var bizID int64
 	if bizIDStr := ctx.Request.PathParameter(common.BKAppIDField); bizIDStr != "" {
