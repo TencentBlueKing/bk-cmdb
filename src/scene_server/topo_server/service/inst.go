@@ -659,33 +659,30 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 		common.BKObjIDField: objID,
 		common.BKFieldID:    id,
 	}
-	uniqueResp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrUnique(ctx.Kit.Ctx, ctx.Kit.Header, metadata.QueryCondition{Condition: cond})
+	uniqueResp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrUnique(ctx.Kit.Ctx, ctx.Kit.Header,
+		metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		blog.ErrorJSON("search model unique failed, cond: %s, error: %s, rid: %s", cond, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if !uniqueResp.Result {
-		blog.ErrorJSON("search model unique failed, cond: %s, error message: %s, rid: %s", cond, uniqueResp.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(uniqueResp.Error())
-		return
-	}
 
-	if uniqueResp.Data.Count == 0 {
-		blog.Errorf("model %s has wrong must_check unique field not found, input: %s, cond: %s, rid: %s",
+	if uniqueResp.Count == 0 {
+		blog.ErrorJSON("model %s unique field not found, cond: %s, rid: %s",
 			objID, cond, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrorTopObjectUniqueIndexNotFound, objID, id))
 		return
 	}
 
-	if uniqueResp.Data.Count != 1 {
-		blog.Errorf("model %s has wrong must_check unique field count > 1, input: %s,rid: %s", objID, cond, ctx.Kit.Rid)
+	if uniqueResp.Count != 1 {
+		blog.ErrorJSON("model %s unique field count > 1, cond: %s, rid: %s",
+			objID, cond, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoObjectUniqueSearchFailed))
 		return
 	}
 
 	keyIDs := make([]int64, 0)
-	for _, key := range uniqueResp.Data.Info[0].Keys {
+	for _, key := range uniqueResp.Info[0].Keys {
 		keyIDs = append(keyIDs, int64(key.ID))
 	}
 
@@ -695,18 +692,16 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 			common.BKDBIN: keyIDs,
 		},
 	}
-	attrResp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, objID, &metadata.QueryCondition{Condition: cond})
+	attrResp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
+		objID, &metadata.QueryCondition{Condition: cond})
 	if err != nil {
-		blog.ErrorJSON("search model attribute failed, cond: %s, error: %s, rid: %s", cond, err.Error(), ctx.Kit.Rid)
+		blog.ErrorJSON("search model attribute failed, cond: %s, error: %s, rid: %s",
+			cond, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if !attrResp.Result {
-		blog.ErrorJSON("search model attribute failed, cond: %s, error message: %s, rid: %s", cond, attrResp.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(attrResp.Error())
-		return
-	}
-	if attrResp.Data.Count <= 0 {
+
+	if attrResp.Count <= 0 {
 		blog.ErrorJSON("unique model attribute count illegal, cond: %s, rid: %s", cond, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoObjectUniqueSearchFailed))
 		return
@@ -714,8 +709,8 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 
 	instIDKey := metadata.GetInstIDFieldByObjID(objID)
 	keys := []string{instIDKey}
-	attrIDNameMap := make(map[string]string, len(attrResp.Data.Info))
-	for _, attr := range attrResp.Data.Info {
+	attrIDNameMap := make(map[string]string, len(attrResp.Info))
+	for _, attr := range attrResp.Info {
 		keys = append(keys, attr.PropertyID)
 		attrIDNameMap[attr.PropertyID] = attr.PropertyName
 	}
@@ -741,7 +736,8 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 
 	result, err := s.Core.InstOperation().FindOriginInst(ctx.Kit, objID, query)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s",
+			ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -769,7 +765,8 @@ func (s *Service) SearchInstByObject(ctx *rest.Contexts) {
 	}
 	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s",
+			ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -787,7 +784,8 @@ func (s *Service) SearchInstByObject(ctx *rest.Contexts) {
 	query.Start = page.Start
 	cnt, instItems, err := s.Core.InstOperation().FindInst(ctx.Kit, obj, query, false)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s",
+			ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -1077,7 +1075,7 @@ func (s *Service) SearchInstAssociationUI(ctx *rest.Contexts) {
 	}
 
 	blog.V(5).Infof("input:%#v, rid:%s", input, ctx.Kit.Rid)
-	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationUIList(ctx.Kit, objID, input)
+	infos, cnt, err := s.Logics.InstAssociationOperation().SearchInstAssociationUIList(ctx.Kit, objID, input)
 	if err != nil {
 		blog.ErrorJSON("parse page illegal, input:%s, err:%s, rid:%s", input, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)

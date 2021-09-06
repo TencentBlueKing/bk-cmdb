@@ -11,12 +11,31 @@
         @blur="handleBlur"
         @keydown="handleKeydown">
       </bk-input>
-      <bk-button theme="primary" class="search-btn"
-        :loading="$loading(request.search)"
-        @click="handleSearch">
-        <i class="bk-icon icon-search"></i>
-        {{$t('搜索')}}
-      </bk-button>
+      <bk-popover v-bind="popoverProps" ref="popover">
+        <bk-button theme="primary" class="search-btn"
+          :loading="$loading(request.search)"
+          @click="handleSearch()">
+          <i class="bk-icon icon-search"></i>
+          {{$t('搜索')}}
+        </bk-button>
+        <div class="picking-popover-content" slot="content">
+          <i18n tag="p" path="检测到输入框中包含非标准IP格式字符串，请选择以XXX自动解析">
+            <span place="c1">&lt;{{$t('IP')}}&gt;</span>
+            <span place="c2">&lt;{{$t('固资编号')}}&gt;</span>
+          </i18n>
+          <div class="buttons">
+            <bk-button theme="primary" size="small" outline
+              @click="handleSearch('ip')">
+              {{$t('IP')}}
+            </bk-button>
+            <bk-button theme="primary" size="small" outline
+              @click="handleSearch('asset')">
+              {{$t('固资编号')}}
+            </bk-button>
+          </div>
+        </div>
+      </bk-popover>
+      <bk-link theme="primary" class="advanced-link" @click="handleClickAdvancedSearch">{{$t('高级筛选')}}</bk-link>
     </div>
   </div>
 </template>
@@ -34,6 +53,16 @@
         searchContent: '',
         textarea: '',
         textareaDom: null,
+        popoverProps: {
+          width: 280,
+          trigger: 'manual',
+          distance: 12,
+          theme: 'light',
+          placement: 'bottom',
+          tippyOptions: {
+            hideOnClick: true
+          }
+        },
         request: {
           search: Symbol('search')
         }
@@ -81,11 +110,14 @@
           this.handleSearch()
         }
       },
-      async handleSearch() {
+      async handleSearch(force = '') {
         const searchList = this.getSearchList()
-        if (searchList.length > 500) {
-          this.$warn(this.$t('最多支持搜索500条数据'))
-        } else if (searchList.length) {
+        if (searchList.length > 10000) {
+          this.$warn(this.$t('最多支持搜索10000条数据'))
+          return
+        }
+
+        if (searchList.length) {
           const IPList = []
           const IPWithCloudList = []
           const assetList = []
@@ -104,28 +136,45 @@
               }
             }
           })
-          console.log(IPList, IPWithCloudList, assetList, cloudIdSet)
-          // 判断是否存在IP、固资编号混合搜搜
-          if ((IPList.length || IPWithCloudList.length) && assetList.length) {
-            return this.$warn(this.$t('不支持混合搜索'))
+          console.log(IPList, IPWithCloudList, assetList, cloudIdSet, force)
+          // 判断是否存在IP、固资编号混合搜索
+          if (!force && (IPList.length || IPWithCloudList.length) && assetList.length) {
+            this.$refs.popover.showHandler()
+            return
           }
+
+          const assetSearch = () => this.handleAssetSearch(assetList)
+
+          const ipSearch = () => {
+            // 无云区域与有云区域的混合搜索
+            if (IPList.length && IPWithCloudList.length) {
+              return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
+            }
+            // 纯IP搜索
+            if (IPList.length) {
+              return this.handleIPSearch(IPList)
+            }
+            // 不同云区域+IP的混合搜索
+            if (cloudIdSet.size > 1) {
+              return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
+            }
+            this.handleIPWithCloudSearch(IPWithCloudList, cloudIdSet)
+          }
+
+          // 优先使用混合搜索下的选择
+          if (force === 'asset') {
+            return assetSearch()
+          }
+          if (force === 'ip') {
+            return ipSearch()
+          }
+
           // 纯固资编号搜索
           if (assetList.length) {
-            return this.handleAssetSearch(assetList)
+            return assetSearch()
           }
-          // 无云区域与有云区域的混合搜索
-          if (IPList.length && IPWithCloudList.length) {
-            return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
-          }
-          // 纯IP搜索
-          if (IPList.length) {
-            return this.handleIPSearch(IPList)
-          }
-          // 不同云区域+IP的混合搜索
-          if (cloudIdSet.size > 1) {
-            return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
-          }
-          this.handleIPWithCloudSearch(IPWithCloudList, cloudIdSet)
+          // IP系列搜索
+          ipSearch()
         } else {
           this.searchContent = ''
           this.textareaDom && this.textareaDom.focus()
@@ -187,6 +236,16 @@
         } catch (error) {
           console.error(true)
         }
+      },
+      handleClickAdvancedSearch() {
+        this.$routerActions.redirect({
+          name: MENU_RESOURCE_HOST,
+          query: {
+            adv: 1,
+            scope: 'all'
+          },
+          history: false
+        })
       }
     }
   }
@@ -253,5 +312,18 @@
         z-index: 1;
         cursor: text;
         @include ellipsis;
+    }
+    .advanced-link {
+      margin-left: 8px;
+      /deep/ .bk-link-text {
+        font-size: 12px;
+      }
+    }
+    .picking-popover-content {
+      padding: 6px;
+      .buttons {
+        margin-top: 12px;
+        text-align: right;
+      }
     }
 </style>

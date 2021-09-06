@@ -3,6 +3,7 @@
     <div class="options clearfix">
       <bk-date-picker style="width: 300px;" class="fl"
         type="daterange"
+        transfer
         :placeholder="$t('选择日期范围')"
         @change="hanldeFilterByDate">
       </bk-date-picker>

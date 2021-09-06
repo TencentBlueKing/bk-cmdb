@@ -151,13 +151,13 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 	blog.V(5).Infof("AuditQuery, AuditOperation auditQuery: %+v, rid: %s", auditQuery, ctx.Kit.Rid)
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	count, list, err := s.Core.AuditOperation().SearchAuditList(ctx.Kit, auditQuery)
+	rsp, err := s.Engine.CoreAPI.CoreService().Audit().SearchAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditQuery)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntityWithCount(count, list)
+	ctx.RespEntityWithCount(rsp.Data.Count, rsp.Data.Info)
 }
 
 // SearchAuditDetail search audit log detail by id
@@ -181,15 +181,21 @@ func (s *Service) SearchAuditDetail(ctx *rest.Contexts) {
 	auditDetailQuery := metadata.QueryCondition{
 		Condition: cond,
 	}
-	blog.V(5).Infof("AuditDetailQuery, AuditOperation auditDetailQuery: %+v, rid: %s", auditDetailQuery, ctx.Kit.Rid)
+	blog.V(5).Infof("AuditDetailQuery, AuditOperation auditDetailQuery: %+v, rid: %s",
+		auditDetailQuery, ctx.Kit.Rid)
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	list, err := s.Core.AuditOperation().SearchAuditDetail(ctx.Kit, auditDetailQuery)
-	if nil != err {
+	rsp, err := s.Engine.CoreAPI.CoreService().Audit().SearchAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditDetailQuery)
+	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(list)
+
+	if len(rsp.Data.Info) == 0 {
+		blog.Errorf("get no audit log detail, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKFieldID))
+	}
+	ctx.RespEntity(rsp.Data.Info)
 }
 
 func parseOperationTimeCondition(kit *rest.Kit, operationTime metadata.OperationTimeCondition) (map[string]interface{}, error) {

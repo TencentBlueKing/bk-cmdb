@@ -67,16 +67,12 @@ func (s *set) hasHost(kit *rest.Kit, bizID int64, setIDS []int64) (bool, error) 
 	}
 	rsp, err := s.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, option)
 	if nil != err {
-		blog.Errorf("[operation-set] failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-set] failed to request the object controller, error info is %s, rid: %s",
+			err.Error(), kit.Rid)
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-set]  failed to search the host set configures, error info is %s, rid: %s", rsp.ErrMsg, kit.Rid)
-		return false, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return 0 != len(rsp.Data.Info), nil
+	return 0 != len(rsp.Info), nil
 }
 
 func (s *set) CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapstr.MapStr) (inst.Inst, error) {
@@ -182,6 +178,7 @@ func (s *set) isSetDuplicateError(inputErr error) bool {
 	return false
 }
 
+// DeleteSet delete set and set sync status and task
 func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 	setCond := map[string]interface{}{common.BKAppIDField: bizID}
 	if nil != setIDs {
@@ -207,9 +204,22 @@ func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 	}
 
 	// clear set template sync status
-	if ccErr := s.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, setIDs); ccErr != nil {
-		blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDs, ccErr.Error(), kit.Rid)
+	if ccErr := s.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID,
+		setIDs); ccErr != nil {
+		blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, "+
+			"err: %s, rid: %s", bizID, setIDs, ccErr.Error(), kit.Rid)
 		return ccErr
+	}
+
+	taskCond := &metadata.DeleteOption{
+		Condition: map[string]interface{}{
+			common.BKInstIDField: map[string]interface{}{
+				common.BKDBIN: setIDs,
+			}}}
+	if err = s.clientSet.TaskServer().Task().DeleteTask(kit.Ctx, kit.Header, taskCond); err != nil {
+		blog.Errorf("[operation-set] failed to delete set sync task message failed, "+
+			"bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDs, err.Error(), kit.Rid)
+		return err
 	}
 
 	// clear the sets

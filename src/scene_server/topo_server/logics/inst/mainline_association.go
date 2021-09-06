@@ -17,8 +17,6 @@ import (
 	"regexp"
 	"strings"
 
-	"configcenter/src/ac/extensions"
-	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -28,32 +26,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
-
-// AssociationOperationInterface association operation methods
-type AssociationOperationInterface interface {
-	// SearchMainlineAssociationInstTopo search mainline association topo by objID and instID
-	SearchMainlineAssociationInstTopo(kit *rest.Kit, objID string, instID int64,
-		withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, errors.CCError)
-	// ResetMainlineInstAssociation reset mainline instance association
-	ResetMainlineInstAssociation(kit *rest.Kit, currentObjID string) error
-	// SetMainlineInstAssociation set mainline instance association by parent object and current object
-	SetMainlineInstAssociation(kit *rest.Kit, parentObjID string,
-		currObjID string, currObjName string) ([]int64, error)
-}
-
-// NewAssociationOperation create a new association operation instance
-func NewAssociationOperation(client apimachinery.ClientSetInterface,
-	authManager *extensions.AuthManager) AssociationOperationInterface {
-	return &association{
-		clientSet:   client,
-		authManager: authManager,
-	}
-}
-
-type association struct {
-	clientSet   apimachinery.ClientSetInterface
-	authManager *extensions.AuthManager
-}
 
 // ResetMainlineInstAssociation reset mainline instance association
 // while a new mainline object has been created may use this func
