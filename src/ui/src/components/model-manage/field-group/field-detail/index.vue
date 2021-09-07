@@ -28,7 +28,7 @@
             name="fieldName"
             :placeholder="$t('请输入字段名称')"
             v-model.trim="fieldInfo['bk_property_name']"
-            :disabled="isReadOnly || isSystemCreate"
+            :disabled="isReadOnly || isSystemCreate || field.ispre"
             v-validate="'required|length:128'">
           </bk-input>
           <p class="form-error">{{errors.first('fieldName')}}</p>

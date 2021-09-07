@@ -61,9 +61,9 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 		return result, err
 	}
 
-	fields := []string{common.BKHostIDField,common.BKHostInnerIPField,common.BKCloudIDField, common.BKHostNameField}
+	fields := []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField, common.BKHostNameField}
 	for _, attr := range attributes {
-		fields = append(fields, attr.PropertyName)
+		fields = append(fields, attr.PropertyID)
 	}
 
 	hosts := make([]metadata.HostMapStr, 0)
@@ -230,19 +230,18 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 		}
 
 		// check conflicts
-		firstValue := targetRules[0].PropertyValue
+		expectValue := originalValue
 		conflictedStillExist := false
 		for _, rule := range targetRules {
-			if cmp.Equal(firstValue, rule.PropertyValue) {
+			if cmp.Equal(expectValue, rule.PropertyValue) {
 				continue
 			}
-
+			expectValue = rule.PropertyValue
 			conflictedStillExist = true
 			if propertyValue, exist := resolverMap[attribute.ID]; exist {
 				conflictedStillExist = false
-				firstValue = propertyValue
+				expectValue = propertyValue
 			}
-
 			plan.ConflictFields = append(plan.ConflictFields, metadata.HostApplyConflictField{
 				AttributeID:             attributeID,
 				PropertyID:              propertyIDField,
@@ -255,30 +254,28 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 
 		if conflictedStillExist {
 			plan.UnresolvedConflictCount += 1
-			continue
 		}
 
 		// validate property value before update to host
-		if value, ok := firstValue.(string); ok {
-			firstValue = strings.TrimSpace(value)
-			targetRules[0].PropertyValue = firstValue
+		if value, ok := expectValue.(string); ok {
+			expectValue = strings.TrimSpace(value)
+			targetRules[0].PropertyValue = expectValue
 		}
-		rawErr := attribute.Validate(kit.Ctx, firstValue, propertyIDField)
+		rawErr := attribute.Validate(kit.Ctx, expectValue, propertyIDField)
 		if rawErr.ErrCode != 0 {
 			err := rawErr.ToCCError(kit.CCError)
 			blog.ErrorJSON("generateOneHostApplyPlan failed, Validate failed, "+
 				"attribute: %s, firstValue: %s, propertyIDField: %s, rawErr: %s, rid: %s",
-				attribute, firstValue, propertyIDField, rawErr, rid)
+				attribute, expectValue, propertyIDField, rawErr, rid)
 			plan.ErrCode = err.GetCode()
 			plan.ErrMsg = err.Error()
 			break
 		}
-
-		plan.ExpectHost[propertyIDField] = firstValue
+		plan.ExpectHost[propertyIDField] = expectValue
 		plan.UpdateFields = append(plan.UpdateFields, metadata.HostApplyUpdateField{
 			AttributeID:   attributeID,
 			PropertyID:    propertyIDField,
-			PropertyValue: firstValue,
+			PropertyValue: expectValue,
 		})
 	}
 

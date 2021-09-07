@@ -37,6 +37,15 @@ export function getPlaceholder(property) {
   return i18n.t('请输入xx', { name: property.bk_property_name })
 }
 
+/**
+ * 获取对应字符类型的搜索操作符和初始值类型
+ * @param {object} property 业务属性模型
+ * @param {string} property.bk_property_type 业务属性类型，如 bk_biz_name
+ * @param {object} defaultData 默认操作符和值类型
+ * @param {string} defaultData.operator 默认操作符
+ * @param {string} defaultData.value 默认值
+ * @returns {object}
+ */
 export function getDefaultData(property, defaultData = { operator: '$in', value: [] }) {
   const EQ = '$eq'
   const RANGE = '$range'
@@ -55,6 +64,7 @@ export function getDefaultData(property, defaultData = { operator: '$in', value:
     list: { operator: IN, value: [] },
     organization: { operator: IN, value: [] },
   }
+
   return {
     operator: defaultData.operator,
     value: defaultData.value,
@@ -66,6 +76,8 @@ export function getOperatorSideEffect(property, operator, value) {
   let effectValue = value
   if (operator === '$range') {
     effectValue = []
+  } else if (operator === '$regex') {
+    effectValue = Array.isArray(value) ? value[0] : value
   } else {
     const defaultValue = this.getDefaultData(property).value
     const isTypeChanged = (Array.isArray(defaultValue)) !== (Array.isArray(value))
@@ -128,7 +140,7 @@ export function transformCondition(condition, properties, header) {
   Object.keys(condition).forEach((id) => {
     const property = findProperty(id, properties)
     const { operator, value } = condition[id]
-    if (value === null || !value.toString().length) return
+    if (value === null || value === undefined || !value.toString().length) return
     // 时间类型的字段需要上升一层单独处理
     if (property.bk_property_type === 'time') {
       const [start, end] = value
@@ -214,7 +226,7 @@ const operatorSymbolMap = {
   $lt: '<',
   $gte: '≥',
   $lte: '≤',
-  $regex: 'Like',
+  $regex: '~=',
   $range: '≤ ≥'
 }
 export function getOperatorSymbol(operator) {

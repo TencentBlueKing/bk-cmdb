@@ -127,6 +127,7 @@
       },
       getUsefulConditon() {
         const usefuleCondition = {
+          bk_obj_id: this.objId,
           category: this.isHost ? 'host' : 'resource',
           resource_type: this.isHost ? 'host' : 'model_instance'
         }
