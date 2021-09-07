@@ -48,11 +48,11 @@ type logics struct {
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager,
 	languageIf language.CCLanguageIf) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
-	instOperation := inst.NewInstOperation(client, languageIf, authManager)
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
 	associationOperation := model.NewAssociationOperation(client, authManager)
 	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
+	instOperation := inst.NewInstOperation(client, languageIf, authManager, instAssociationOperation)
 	graphicsOperation := operation.NewGraphics(client, authManager)
 	groupOperation := model.NewGroupOperation(client)
 	groupOperation.SetProxy(objectOperation)

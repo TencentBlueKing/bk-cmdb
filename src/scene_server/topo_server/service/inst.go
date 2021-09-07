@@ -121,7 +121,7 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 }
 
 func (s *Service) CreateManyInstance(ctx *rest.Contexts) {
-	data := &metadata.CreateManyCommInst{}
+	data := new(metadata.CreateManyCommInst)
 	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -298,8 +298,9 @@ func (s *Service) UpdateInsts(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		instIDField := metadata.GetInstIDFieldByObjID(objID)
 		for _, item := range data.Update {
-			cond := mapstr.MapStr{metadata.GetInstIDFieldByObjID(objID): item.InstID}
+			cond := mapstr.MapStr{instIDField: item.InstID}
 			err = s.Logics.InstOperation().UpdateInst(ctx.Kit, cond, item.InstInfo, objID)
 			if err != nil {
 				blog.Errorf("failed to update the object(%s) inst (%d), the data (%#v), err: %v, rid: %s",
@@ -387,7 +388,7 @@ func (s *Service) SearchInsts(ctx *rest.Contexts) {
 		return
 	}
 
-	queryCond := &metadata.QueryCondition{}
+	queryCond := new(metadata.QueryCondition)
 	if err := ctx.DecodeInto(queryCond); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -415,7 +416,7 @@ func (s *Service) SearchObjectInstances(ctx *rest.Contexts) {
 	}
 
 	// decode input parameter.
-	input := &metadata.CommonSearchFilter{}
+	input := new(metadata.CommonSearchFilter)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -454,7 +455,7 @@ func (s *Service) CountObjectInstances(ctx *rest.Contexts) {
 	}
 
 	// decode input parameter.
-	input := &metadata.CommonCountFilter{}
+	input := new(metadata.CommonCountFilter)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -493,7 +494,7 @@ func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 		return
 	}
 
-	queryCond := &metadata.QueryCondition{}
+	queryCond := new(metadata.QueryCondition)
 	if err := ctx.DecodeInto(queryCond); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -514,7 +515,8 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
 	if err != nil {
-		blog.Errorf("search model unique url parameter id not a number, id: %s, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("search model unique url parameter id not a number, id: %s, err: %v, rid: %s",
+			ctx.Request.PathParameter("id"), err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, "id"))
 		return
 	}
@@ -578,7 +580,7 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 	}
 
 	// construct the query inst condition
-	queryCond := &metadata.QueryCondition{}
+	queryCond := new(metadata.QueryCondition)
 	if err := ctx.DecodeInto(queryCond); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -586,7 +588,7 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 
 	result, err := s.Logics.InstOperation().FindInst(ctx.Kit, objID, queryCond)
 	if err != nil {
-		blog.Errorf("failed to find the objects(%s), err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+		blog.Errorf("failed to find the object(%s) inst, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -604,7 +606,7 @@ func (s *Service) SearchInstByObject(ctx *rest.Contexts) {
 		return
 	}
 
-	queryCond := &metadata.QueryCondition{}
+	queryCond := new(metadata.QueryCondition)
 	if err := ctx.DecodeInto(queryCond); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -684,7 +686,7 @@ func (s *Service) SearchInstByInstID(ctx *rest.Contexts) {
 // 只供前端使用，用于在业务的查询主机高级筛选页面根据集群名或者模块名模糊匹配获取相应的实例列表
 func (s *Service) SearchInstsNames(ctx *rest.Contexts) {
 	defErr := ctx.Kit.CCError
-	option := &metadata.SearchInstsNamesOption{}
+	option := new(metadata.SearchInstsNamesOption)
 	if err := ctx.DecodeInto(option); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -744,16 +746,14 @@ func (s *Service) SearchInstChildTopo(ctx *rest.Contexts) {
 	}
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	filter := []map[string]interface{}{{common.BKObjIDField: objID}}
-	rsp, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
-		common.BKTableNameObjDes, filter)
+	exist, err := s.Logics.ObjectOperation().IsObjectExist(ctx.Kit, objID)
 	if err != nil {
 		blog.Errorf("failed to find the objects(%s), err: %v, rid: %s", objID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if rsp[0] == 0 {
+	if !exist {
 		blog.Errorf("object %s is non-exist, rid: %s", objID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField))
 		return
@@ -901,7 +901,7 @@ func (s *Service) SearchInstAssociationUI(ctx *rest.Contexts) {
 // SearchInstAssociationWithOtherObject  要求根据实例信息（实例的模型ID，实例ID）和模型ID（关联关系中的源，目的模型ID） 返回实例关联或者被关联模型实例得数据。
 func (s *Service) SearchInstAssociationWithOtherObject(ctx *rest.Contexts) {
 
-	reqParams := &metadata.RequestInstAssociationObjectID{}
+	reqParams := new(metadata.RequestInstAssociationObjectID)
 	if err := ctx.DecodeInto(reqParams); nil != err {
 		ctx.RespAutoError(err)
 		return

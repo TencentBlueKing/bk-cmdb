@@ -67,12 +67,13 @@ type InstOperationInterface interface {
 
 // NewInstOperation create a new inst operation instance
 func NewInstOperation(client apimachinery.ClientSetInterface, lang language.CCLanguageIf,
-	authManager *extensions.AuthManager) InstOperationInterface {
+	authManager *extensions.AuthManager, asst AssociationOperationInterface) InstOperationInterface {
 
 	return &commonInst{
 		clientSet:   client,
 		language:    lang,
 		authManager: authManager,
+		asst:        asst,
 	}
 }
 
@@ -131,6 +132,7 @@ type commonInst struct {
 	clientSet   apimachinery.ClientSetInterface
 	language    language.CCLanguageIf
 	authManager *extensions.AuthManager
+	asst        AssociationOperationInterface
 }
 
 // CreateInst create instance by object and create message
@@ -456,26 +458,11 @@ func (c *commonInst) DeleteInst(kit *rest.Kit, objectID string, cond mapstr.MapS
 		}
 
 		// if any instance has been bind to a instance by the association, then these instances should not be deleted.
-		input := &metadata.Condition{
-			Condition: mapstr.MapStr{common.BKDBOR: []mapstr.MapStr{
-				{
-					common.BKObjIDField:  objID,
-					common.BKInstIDField: mapstr.MapStr{common.BKDBIN: delInstIDs},
-				},
-				{
-					common.BKAsstObjIDField:  objID,
-					common.BKAsstInstIDField: mapstr.MapStr{common.BKDBIN: delInstIDs},
-				},
-			}}}
-
-		cnt, err := c.clientSet.CoreService().Association().CountInstanceAssociations(kit.Ctx, kit.Header, objID, input)
+		err := c.asst.CheckAssociations(kit, objID, delInstIDs)
 		if err != nil {
-			blog.Errorf("count instance association failed, err: %v, rid: %s", err, kit.Rid)
+			blog.Errorf("check object(%s) associations by instID(%v) failed, err: %v, rid: %s", objID, delInstIDs, err,
+				kit.Rid)
 			return err
-		}
-
-		if cnt.Count != 0 {
-			return kit.CCError.CCError(common.CCErrorInstHasAsst)
 		}
 
 		// generate audit log.
@@ -850,17 +837,15 @@ func (c *commonInst) findInstTopo(kit *rest.Kit, objID string, instID int64, nee
 		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, instIDField)
 	}
 
-	query := &metadata.QueryCondition{
-		Condition: map[string]interface{}{metadata.GetInstIDFieldByObjID(objID): instID},
-		Fields:    []string{instIDField},
-	}
-	inst, err := c.FindInst(kit, objID, query)
-	if err != nil {
-		blog.Errorf("failed to find the inst, err: %v, rid: %s", err, kit.Rid)
-		return 0, nil, err
+	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	filter := []map[string]interface{}{{metadata.GetInstIDFieldByObjID(objID): instID}}
+	cnt, ccErr := c.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName, filter)
+	if ccErr != nil {
+		blog.Errorf("failed to check the inst, err: %v, rid: %s", ccErr, kit.Rid)
+		return 0, nil, ccErr
 	}
 
-	if len(inst.Info) == 0 {
+	if cnt[0] == 0 {
 		blog.Errorf("inst of inst id(%d) is non-exist, rid: %s", instID, kit.Rid)
 		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, instIDField)
 	}
@@ -932,7 +917,7 @@ func (c *commonInst) FindInstTopo(kit *rest.Kit, obj metadata.Object, instID int
 	}
 
 	query := &metadata.QueryCondition{
-		Condition: map[string]interface{}{metadata.GetInstIDFieldByObjID(obj.ObjectID): instID},
+		Condition: map[string]interface{}{instIDField: instID},
 		Fields:    []string{instIDField, instNameField},
 	}
 	inst, err := c.FindInst(kit, obj.ObjectID, query)
