@@ -108,7 +108,7 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 
 	queryCond := &metadata.QueryCondition{
 		Condition: data,
-		Page: basePage,
+		Page:      basePage,
 	}
 	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(ctx.Kit.Ctx, ctx.Kit.Header, queryCond)
 	if nil != err {
@@ -324,7 +324,7 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 
 	queryCond := &metadata.QueryCondition{
 		Condition: data,
-		Page: basePage,
+		Page:      basePage,
 	}
 
 	result, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
