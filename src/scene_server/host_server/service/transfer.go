@@ -360,17 +360,13 @@ func (s *Service) generateTransferPlans(kit *rest.Kit, bizID int64, withHostAppl
 	hostModuleOption := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
 		HostIDArr:     option.HostIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
+		Page:          metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:        []string{common.BKModuleIDField, common.BKHostIDField},
 	}
-	hostModuleResult, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header,
-		hostModuleOption)
+	hostModuleResult, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, hostModuleOption)
 	if err != nil {
 		blog.ErrorJSON("get host module relation failed, option: %s, err: %s, rid: %s", hostModuleOption, err, rid)
-		err := kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		return nil, err
+		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if err := hostModuleResult.CCError(); err != nil {
 		blog.ErrorJSON("get host module relation failed, option: %s, err: %s, rid: %s", hostModuleOption, err, rid)
@@ -379,7 +375,7 @@ func (s *Service) generateTransferPlans(kit *rest.Kit, bizID int64, withHostAppl
 
 	hostModulesIDMap := make(map[int64][]int64)
 	for _, item := range hostModuleResult.Data.Info {
-		if _, exist := hostModulesIDMap[item.HostID]; exist == false {
+		if _, exist := hostModulesIDMap[item.HostID]; !exist {
 			hostModulesIDMap[item.HostID] = make([]int64, 0)
 		}
 		hostModulesIDMap[item.HostID] = append(hostModulesIDMap[item.HostID], item.ModuleID)
@@ -409,8 +405,6 @@ func (s *Service) generateTransferPlans(kit *rest.Kit, bizID int64, withHostAppl
 		if _, exists := innerModuleIDMap[option.DefaultInternalModule]; !exists {
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "default_internal_module")
 		}
-	}
-	if option.DefaultInternalModule != 0 {
 		defaultInternalModuleID = option.DefaultInternalModule
 	}
 

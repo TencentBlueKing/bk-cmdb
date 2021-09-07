@@ -22,6 +22,7 @@ func (p *process) CreateProcessInstance(ctx context.Context, h http.Header, data
 	return
 }
 
+// DeleteProcessInstance delete process instances by biz id and process ids
 func (p *process) DeleteProcessInstance(ctx context.Context, h http.Header,
 	data *metadata.DeleteProcessInstanceInServiceInstanceInput) error {
 	resp := new(metadata.Response)
@@ -44,6 +45,7 @@ func (p *process) DeleteProcessInstance(ctx context.Context, h http.Header,
 	return nil
 }
 
+// SearchProcessInstance search process instances by biz id and service instance id
 func (p *process) SearchProcessInstance(ctx context.Context, h http.Header, data *metadata.ListProcessInstancesOption) (
 	[]metadata.ProcessInstance, error) {
 

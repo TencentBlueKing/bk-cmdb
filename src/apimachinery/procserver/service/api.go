@@ -15,7 +15,8 @@ type ServiceClientInterface interface {
 	SearchServiceCategory(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	UpdateServiceCategory(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 
-	CreateServiceInstance(ctx context.Context, h http.Header, data *metadata.CreateServiceInstanceInput) ([]int64, errors.CCErrorCoder)
+	CreateServiceInstance(ctx context.Context, h http.Header, data *metadata.CreateServiceInstanceInput) ([]int64,
+		errors.CCErrorCoder)
 	UpdateServiceInstances(ctx context.Context, h http.Header, bizID int64, data map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteServiceInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	SearchServiceInstance(ctx context.Context, h http.Header, data *metadata.GetServiceInstanceInModuleInput) (

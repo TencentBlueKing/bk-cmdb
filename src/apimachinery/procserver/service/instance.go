@@ -8,6 +8,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateServiceInstance create service instances
 func (s *service) CreateServiceInstance(ctx context.Context, h http.Header, data *metadata.CreateServiceInstanceInput) (
 	[]int64, errors.CCErrorCoder) {
 
@@ -59,6 +60,7 @@ func (s *service) DeleteServiceInstance(ctx context.Context, h http.Header, data
 	return
 }
 
+// SearchServiceInstance search service instances
 func (s *service) SearchServiceInstance(ctx context.Context, h http.Header,
 	data *metadata.GetServiceInstanceInModuleInput) (*metadata.MultipleServiceInstance, error) {
 

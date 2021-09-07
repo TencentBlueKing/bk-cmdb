@@ -860,7 +860,7 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 			}
 			processes, ccErr = p.dependence.CreateProcessInstances(kit, processes)
 			if ccErr != nil {
-				blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create process instances failed, processes: %#v, err: %+v, rid: %s", processes, ccErr, kit.Rid)
+				blog.Errorf("create process instances(%#v) failed, err: %v, rid: %s", processes, ccErr, kit.Rid)
 				return ccErr
 			}
 
@@ -877,7 +877,7 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 			}
 			relations, ccErr = p.CreateProcessInstanceRelations(kit, relations)
 			if ccErr != nil {
-				blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create process relation failed, relations: %#v, err: %+v, rid: %s", relations, ccErr, kit.Rid)
+				blog.Errorf("create process relations(%#v) failed, err: %v, rid: %s", relations, ccErr, kit.Rid)
 				return ccErr
 			}
 

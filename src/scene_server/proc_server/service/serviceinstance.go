@@ -794,7 +794,7 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 
 	moduleChangedAttributes, err := ps.CalculateModuleAttributeDifference(ctx.Kit.Ctx, ctx.Kit.Header, *module)
 	if err != nil {
-		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, CalculateModuleAttributeDifference failed, module: %s, err: %s, rid: %s", module, err.Error(), rid)
+		blog.ErrorJSON("calculate module attribute difference failed, module: %s, err: %s, rid: %s", module, err, rid)
 		return nil, err
 	}
 	moduleDifference.ChangedAttributes = moduleChangedAttributes
@@ -918,9 +918,10 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 			common.BKObjIDField: common.BKInnerObjIDProc,
 		}),
 	}
-	attrResult, e := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDProc, cond)
+	attrResult, e := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDProc, cond)
 	if e != nil {
-		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, ReadModelAttr failed, option: %s, err: %s, rid: %s", cond, e, rid)
+		blog.ErrorJSON("read model attr failed, option: %s, err: %s, rid: %s", cond, e, rid)
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	attributeMap := make(map[string]metadata.Attribute)

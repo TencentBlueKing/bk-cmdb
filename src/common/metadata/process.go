@@ -100,6 +100,7 @@ type CreateServiceInstanceInput struct {
 	Instances []CreateServiceInstanceDetail `json:"instances"`
 }
 
+// CreateServiceInstanceResp create service instance response
 type CreateServiceInstanceResp struct {
 	BaseResp
 	ServiceInstanceIDs []int64 `json:"data"`
@@ -315,11 +316,13 @@ type SrvInstBriefInfo struct {
 	SvcTempID int64  `field:"service_template_id" json:"service_template_id"`
 }
 
+// ServiceInstanceOptions create or update service instance option
 type ServiceInstanceOptions struct {
 	Created []UpsertServiceInstanceInfo `json:"created,omitempty"`
 	Updated []UpsertServiceInstanceInfo `json:"updated,omitempty"`
 }
 
+// UpsertServiceInstanceInfo update or insert service instance info
 type UpsertServiceInstanceInfo struct {
 	ModuleID int64 `json:"bk_module_id"`
 	HostID   int64 `json:"bk_host_id"`
@@ -445,6 +448,7 @@ type ListProcessInstancesOption struct {
 	ServiceInstanceID int64 `json:"service_instance_id"`
 }
 
+// ListProcessInstancesRsp list process instances response
 type ListProcessInstancesRsp struct {
 	BaseResp
 	Data []ProcessInstance `json:"data"`

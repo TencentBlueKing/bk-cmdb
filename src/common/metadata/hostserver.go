@@ -819,6 +819,7 @@ type HostTransferPlan struct {
 	HostApplyPlan           OneHostApplyPlan `field:"host_apply_plan" json:"host_apply_plan" mapstructure:"host_apply_plan"`
 }
 
+// HostTransferResult transfer host result, contains the transfer status and message
 type HostTransferResult struct {
 	HostID  int64  `json:"bk_host_id"`
 	Code    int    `json:"code"`
