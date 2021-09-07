@@ -36,23 +36,13 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		return
 	}
 
-	type BatchCreateSetRequest struct {
-		// shared fields
-		BkSupplierAccount string                   `json:"bk_supplier_account"`
-		Sets              []map[string]interface{} `json:"sets"`
-	}
-	batchBody := new(BatchCreateSetRequest)
+	batchBody := new(metadata.BatchCreateSetRequest)
 	if err := ctx.DecodeInto(&batchBody); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	type OneSetCreateResult struct {
-		Index    int         `json:"index"`
-		Data     interface{} `json:"data"`
-		ErrorMsg string      `json:"error_message"`
-	}
-	batchCreateResult := make([]OneSetCreateResult, 0)
+	batchCreateResult := make([]metadata.OneSetCreateResult, 0)
 	var firstErr error
 	for idx, set := range batchBody.Sets {
 		if _, ok := set[common.BkSupplierAccount]; !ok {
@@ -60,7 +50,7 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		}
 		set[common.BKAppIDField] = bizID
 
-		var result interface{}
+		result := new(metadata.CreateOneDataResult)
 		// to avoid judging to be nested transaction, need a new header
 		ctx.Kit.Header = ctx.Kit.NewHeader()
 		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
@@ -80,7 +70,7 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		if txnErr != nil {
 			errMsg = txnErr.Error()
 		}
-		batchCreateResult = append(batchCreateResult, OneSetCreateResult{
+		batchCreateResult = append(batchCreateResult, metadata.OneSetCreateResult{
 			Index:    idx,
 			Data:     result,
 			ErrorMsg: errMsg,
@@ -121,7 +111,7 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
-func (s *Service) createSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) createSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*metadata.CreateOneDataResult, error) {
 	set, err := s.Logics.SetOperation().CreateSet(kit, bizID, data)
 	if err != nil {
 		return nil, err
@@ -139,8 +129,8 @@ func (s *Service) createSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (int
 		return nil, err
 	}
 	// TODO 替换依赖
-	if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(kit, setTemplateIDint,
-		[]int64{int64(set.Created.ID)}); err != nil {
+	_, err = s.Core.SetTemplateOperation().UpdateSetSyncStatus(kit, setTemplateIDint, []int64{int64(set.Created.ID)})
+	if err != nil {
 		blog.Errorf("create set success, but update set sync status failed, setID: %d, err: %+v, rid: %s",
 			set.Created.ID, err, kit.Rid)
 	}
@@ -183,9 +173,7 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 		return
 	}
 
-	data := struct {
-		operation.OpCondition `json:",inline"`
-	}{}
+	data := new(operation.OpCondition)
 	if err = ctx.DecodeInto(&data); nil != err {
 		blog.Errorf("failed to parse to the operation condition, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsIsInvalid, err.Error()))
@@ -282,7 +270,6 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		// TODO find single object return value have changed
 		err = s.Logics.SetOperation().UpdateSet(ctx.Kit, data, bizID, setID)
 		if err != nil {
 			blog.Errorf("update set failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
