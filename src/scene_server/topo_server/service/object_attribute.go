@@ -17,7 +17,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -53,7 +52,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		isBizCustomField = true
 	}
 
-	attrInfos := make([]*metadata.ObjAttDes, 0)
+	attrInfo := new(metadata.ObjAttDes)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		attribute, err := s.Logics.AttributeOperation().CreateObjectAttribute(ctx.Kit, attr)
 		if err != nil {
@@ -62,40 +61,11 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		if attribute == nil {
 			return err
 		}
-
-		// get property  group name
-		cond := mapstr.MapStr{
-			common.BKFieldID: attribute.ID,
-		}
-		util.AddModelBizIDCondition(cond, attr.BizID)
-		opt := &metadata.QueryCondition{
-			Condition:      cond,
-			DisableCounter: true,
-		}
-		resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(ctx.Kit.Ctx, ctx.Kit.Header, opt)
-		if err != nil {
-			blog.Errorf("failed to get model attr, err: %s, rid: %s", err, ctx.Kit.Rid)
-			return err
-		}
-
-		grpMap, err := s.getPropertyGroupName(ctx, resp.Info, attr.BizID)
-		if err != nil {
-			return err
-		}
-		for _, item := range resp.Info {
-			grpName, ok := grpMap[item.PropertyGroup]
-			if !ok {
-				blog.Errorf("failed to get property group name, attr: %s, property: %s", item, item.PropertyGroup)
-				return nil
-			}
-			attrInfos = append(attrInfos, &metadata.ObjAttDes{
-				Attribute:         item,
-				PropertyGroupName: grpName,
-			})
-		}
+		attrInfo.Attribute = *attribute
+		attrInfo.PropertyGroupName = attribute.PropertyGroupName
 
 		if isBizCustomField {
-			attrInfos[0].BizID = attr.BizID
+			attrInfo.BizID = attr.BizID
 		}
 		return nil
 	})
@@ -104,7 +74,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(attrInfos[0])
+	ctx.RespEntity(attrInfo)
 }
 
 // SearchObjectAttribute search the object attributes
@@ -119,33 +89,10 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 	data[metadata.AttributeFieldIsSystem] = false
 	data[metadata.AttributeFieldIsAPI] = false
 
-	var limit, start int64
-	var sort string
-	if data.Exists(metadata.PageName) {
-		page, err := data.MapStr(metadata.PageName)
-		if err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
-
-		limit, err = page.Int64(metadata.PageLimit)
-		if err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
-
-		start, err = page.Int64(metadata.PageStart)
-		if err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
-
-		s, exist := page.Get(metadata.PageSort)
-		if !exist {
-			sort = common.BKFieldID
-		}
-		sort = s.(string)
-		data.Remove(metadata.PageName)
+	limit, start, sort, err := s.getPageParam(data)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	queryCond := &metadata.QueryCondition{
@@ -175,6 +122,7 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		grpName, ok := grpMap[attr.PropertyGroup]
 		if !ok {
 			blog.Errorf("failed to get property group name, attr: %s, property: %s", attr, attr.PropertyGroup)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKPropertyNameField))
 			return
 		}
 		attrInfo.PropertyGroupName = grpName
@@ -309,9 +257,9 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter(common.BKObjIDField)
 
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
-	if nil != err {
-		blog.Errorf("failed to parse the params id(%s), err: %s , rid: %s", ctx.Request.PathParameter("id"),
-			err.Error(), ctx.Kit.Rid)
+	if err != nil {
+		blog.Errorf("failed to parse the id from path params, id: %s, err: %s , rid: %s",
+			ctx.Request.PathParameter("id"), err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoPathParamPaserFailed))
 		return
 	}
@@ -351,40 +299,17 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 	data[metadata.AttributeFieldIsAPI] = false
 	util.AddModelBizIDCondition(data, dataWithModelBizID.ModelBizID)
 
-	var limit, start int64
-	var sort string
-	if data.Exists(metadata.PageName) {
-		page, err := data.MapStr(metadata.PageName)
-		if err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
-
-		limit, err = page.Int64(metadata.PageLimit)
-		if err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
-
-		start, err = page.Int64(metadata.PageStart)
-		if err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
-
-		s, exist := page.Get(metadata.PageSort)
-		if !exist {
-			sort = common.BKFieldID
-		}
-		sort = s.(string)
-		data.Remove(metadata.PageName)
+	limit, start, sort, err := s.getPageParam(data)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	queryCond := &metadata.QueryCondition{
 		Condition: data,
 		Page: metadata.BasePage{
-			Limit: int(limit),
-			Start: int(start),
+			Limit: limit,
+			Start: start,
 			Sort:  sort,
 		},
 	}
@@ -414,6 +339,7 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 		grpName, ok := grpMap[item.PropertyGroup]
 		if !ok {
 			blog.Errorf("failed to get property group name, attr: %s, property: %s", item, item.PropertyGroup)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKPropertyNameField))
 			return
 		}
 		hostAttribute.ObjAttDes.PropertyGroupName = grpName
@@ -424,17 +350,23 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 
 func (s *Service) getPropertyGroupName(ctx *rest.Contexts, attrs []metadata.Attribute,
 	modelBizID int64) (map[string]string, error) {
-	grpCond := condition.CreateCondition()
-	grpOrCond := grpCond.NewOR()
+	if len(attrs) == 0 {
+		return make(map[string]string), nil
+	}
+
+	grpOrCond := make([]map[string]interface{}, 0)
 	for _, attr := range attrs {
-		grpOrCond.Item(map[string]interface{}{
+		grpOrCond = append(grpOrCond, map[string]interface{}{
 			metadata.GroupFieldGroupID:  attr.PropertyGroup,
 			metadata.GroupFieldObjectID: attr.ObjectID,
 		})
 	}
-	util.AddModelBizIDCondition(grpCond.ToMapStr(), modelBizID)
+	grpCond := map[string]interface{}{
+		common.BKDBOR: grpOrCond,
+	}
+	util.AddModelBizIDCondition(grpCond, modelBizID)
 	cond := metadata.QueryCondition{
-		Condition:      grpCond.ToMapStr(),
+		Condition:      grpCond,
 		DisableCounter: true,
 	}
 	rsp, err := s.Engine.CoreAPI.CoreService().Model().ReadAttributeGroupByCondition(ctx.Kit.Ctx, ctx.Kit.Header, cond)
@@ -449,4 +381,33 @@ func (s *Service) getPropertyGroupName(ctx *rest.Contexts, attrs []metadata.Attr
 	}
 
 	return grpMap, nil
+}
+
+func (s *Service) getPageParam(data mapstr.MapStr)(int, int, string,error) {
+	var limit, start int64
+	var sort string
+	if data.Exists(metadata.PageName) {
+		page, err := data.MapStr(metadata.PageName)
+		if err != nil {
+			return 0, 0, common.BKFieldID, err
+		}
+
+		limit, err = page.Int64(metadata.PageLimit)
+		if err != nil {
+			return 0, 0, common.BKFieldID, err
+		}
+
+		start, err = page.Int64(metadata.PageStart)
+		if err != nil {
+			return 0, 0, common.BKFieldID, err
+		}
+
+		s, exist := page.Get(metadata.PageSort)
+		if !exist {
+			sort = common.BKFieldID
+		}
+		sort = s.(string)
+		data.Remove(metadata.PageName)
+	}
+	return int(limit), int(start), sort, nil
 }
