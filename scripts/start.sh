@@ -2,7 +2,8 @@
 
 set -e
 
-proc_num=12
+# Get the number of directories starting with "cmdb_" in the current directory
+proc_num=`ls -l | grep "^d" | grep cmdb_ | grep -v cmdb_synchronizeserver | wc -l`
 withSynchronizeServer=false 
 
 
