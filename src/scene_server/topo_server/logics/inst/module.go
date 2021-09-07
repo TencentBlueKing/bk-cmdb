@@ -13,7 +13,6 @@
 package inst
 
 import (
-	"fmt"
 	"strings"
 
 	"configcenter/src/ac/extensions"
@@ -432,33 +431,6 @@ func (m *module) UpdateInst(kit *rest.Kit, cond, data mapstr.MapStr, objID strin
 	return nil
 }
 
-// IsModuleNameDuplicateError check module name is or not exist
-func (m *module) IsModuleNameDuplicateError(kit *rest.Kit, bizID, setID int64, moduleName string) error {
-	// 检测模块名重复并返回定制提示信息
-	nameDuplicateFilter := &metadata.QueryCondition{
-		Page: metadata.BasePage{
-			Limit: 1,
-		},
-		Condition: map[string]interface{}{
-			common.BKParentIDField:   setID,
-			common.BKAppIDField:      bizID,
-			common.BKModuleNameField: moduleName,
-		},
-	}
-	result, err := m.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
-		nameDuplicateFilter)
-	if err != nil {
-		blog.Errorf("module name duplicate err, filter: %s, err: %s, rid: %s", nameDuplicateFilter, err, kit.Rid)
-		return err
-	}
-
-	if result.Count > 0 {
-		return kit.CCError.CCError(common.CCErrorTopoModuleNameDuplicated)
-	}
-
-	return nil
-}
-
 // CreateModule create a new module
 func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.MapStr) (*metadata.CreateOneDataResult,
 	error) {
@@ -578,17 +550,7 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 
 	inst, createErr := m.CreateInst(kit, *obj, data)
 	if createErr != nil {
-		moduleNameStr, exist := data[common.BKModuleNameField]
-		if !exist {
-			return inst, fmt.Errorf("get module name failed, moduleNameStr: %s", moduleNameStr)
-		}
-		moduleName := util.GetStrByInterface(moduleNameStr)
-		if err := m.IsModuleNameDuplicateError(kit, bizID, setID, moduleName); err != nil {
-			blog.Infof("create module failed and check whether is name duplicated err failed, bizID: %d,"+
-				"setID: %d , moduleName: %s, err: %+v, rid: %s", bizID, setID, moduleName, err, kit.Rid)
-			return inst, err
-		}
-
+		blog.Errorf("create module failed,  err: %s, rid: %s", createErr, kit.Rid)
 		return inst, createErr
 	}
 
@@ -633,7 +595,7 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 		DisableCounter: true,
 	}
 
-	moduleInstance := new(metadata.ModuleInst)
+	moduleInstance := new(metadata.ResponseModuleInstance)
 	if err := m.clientSet.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
 		findCond, moduleInstance); err != nil {
 		blog.Errorf("list modules failed, bizID: %s, setID: %s, moduleID: %s, err: %s, rid: %s", bizID, setID,
@@ -647,7 +609,7 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 		if err != nil {
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
 		}
-		if setTemplateID != moduleInstance.SetTemplateID {
+		if setTemplateID != moduleInstance.Data.Info[0].SetTemplateID {
 			return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKSetTemplateIDField)
 		}
 	}
@@ -658,19 +620,19 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 		if err != nil {
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 		}
-		if serviceTemplateID != moduleInstance.ServiceTemplateID {
+		if serviceTemplateID != moduleInstance.Data.Info[0].ServiceTemplateID {
 			return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKServiceTemplateIDField)
 		}
 	}
 
-	if moduleInstance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
+	if moduleInstance.Data.Info[0].ServiceTemplateID != common.ServiceTemplateIDNotSet {
 		// 检查并提示禁止修改服务分类
 		if val, ok := data[common.BKServiceCategoryIDField]; ok {
 			serviceCategoryID, err := util.GetInt64ByInterface(val)
 			if err != nil {
 				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
 			}
-			if serviceCategoryID != moduleInstance.ServiceCategoryID {
+			if serviceCategoryID != moduleInstance.Data.Info[0].ServiceCategoryID {
 				return kit.CCError.CCError(common.CCErrorTopoUpdateModuleFromTplServiceCategoryForbidden)
 			}
 		}
@@ -680,7 +642,7 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 			name := util.GetStrByInterface(val)
 			if name == "" {
 				delete(data, common.BKModuleNameField)
-			} else if name != moduleInstance.ModuleName {
+			} else if name != moduleInstance.Data.Info[0].ModuleName {
 				return kit.CCError.CCError(common.CCErrorTopoUpdateModuleFromTplNameForbidden)
 			}
 		}
@@ -695,17 +657,7 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 	// TODO 后续替换依赖UpdateInst
 	updateErr := m.UpdateInst(kit, innerCond, data, common.BKInnerObjIDModule)
 	if updateErr != nil {
-		moduleNameStr, exist := data[common.BKModuleNameField]
-		if !exist {
-			return updateErr
-		}
-		moduleName := util.GetStrByInterface(moduleNameStr)
-		if err := m.IsModuleNameDuplicateError(kit, bizID, setID, moduleName); err != nil {
-			blog.Infof("update module failed and check whether is name duplicated err failed, bizID: %d, "+
-				"setID: %d,  moduleName: %s, err: %+v, rid: %s", bizID, setID, moduleName, err, kit.Rid)
-			return err
-		}
-
+		blog.Errorf("update module failed,  err: %s, rid: %s", updateErr, kit.Rid)
 		return updateErr
 	}
 

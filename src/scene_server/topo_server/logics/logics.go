@@ -26,43 +26,83 @@ type Logics interface {
 	ModuleOperation() inst.ModuleOperationInterface
 	ObjectOperation() model.ObjectOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
+	AssociationOperation() model.AssociationOperationInterface
+	InstAssociationOperation() inst.AssociationOperationInterface
+	GraphicsOperation() operation.GraphicsOperationInterface
+	GroupOperation() model.GroupOperationInterface
 }
 
 type logics struct {
-	classification model.ClassificationOperationInterface
-	module         inst.ModuleOperationInterface
-	object         model.ObjectOperationInterface
-	identifier     operation.IdentifierOperationInterface
+	classification  model.ClassificationOperationInterface
+	module          inst.ModuleOperationInterface
+	object          model.ObjectOperationInterface
+	identifier      operation.IdentifierOperationInterface
+	association     model.AssociationOperationInterface
+	instassociation inst.AssociationOperationInterface
+	graphics        operation.GraphicsOperationInterface
+	group           model.GroupOperationInterface
 }
 
 // New create a logics manager
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
 	moduleOperation := inst.NewModuleOperation(client, authManager)
-
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
+	associationOperation := model.NewAssociationOperation(client, authManager)
+	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
+	graphicsOperation := operation.NewGraphics(client, authManager)
+	groupOperation := model.NewGroupOperation(client)
+	groupOperation.SetProxy(objectOperation)
 
 	return &logics{
-		classification: classificationOperation,
-		module:         moduleOperation,
-		object:         objectOperation,
-		identifier:     IdentifierOperation,
+		classification:  classificationOperation,
+		module:          moduleOperation,
+		object:          objectOperation,
+		identifier:      IdentifierOperation,
+		association:     associationOperation,
+		instassociation: instAssociationOperation,
+		graphics:        graphicsOperation,
+		group:           groupOperation,
 	}
 }
 
-func (l *logics) ClassificationOperation() model.ClassificationOperationInterface {
-	return l.classification
-}
-
+// ModuleOperation return a module provide ModuleOperationInterface
 func (l *logics) ModuleOperation() inst.ModuleOperationInterface {
 	return l.module
 }
 
-func (l *logics) ObjectOperation() model.ObjectOperationInterface {
-	return l.object
+// ClassificationOperation return a classification provide ClassificationOperationInterface
+func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
+	return c.classification
 }
 
-func (l *logics) IdentifierOperation() operation.IdentifierOperationInterface {
-	return l.identifier
+// ObjectOperation return a object provide ObjectOperationInterface
+func (c *logics) ObjectOperation() model.ObjectOperationInterface {
+	return c.object
+}
+
+// IdentifierOperation return a identifier provide IdentifierOperationInterface
+func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
+	return c.identifier
+}
+
+// AssociationOperation return a association provide AssociationOperationInterface
+func (c *logics) AssociationOperation() model.AssociationOperationInterface {
+	return c.association
+}
+
+// InstAssociationOperation return a instance association provide AssociationOperationInterface
+func (c *logics) InstAssociationOperation() inst.AssociationOperationInterface {
+	return c.instassociation
+}
+
+// GraphicsOperation return a inst provide GraphicsOperation
+func (c *logics) GraphicsOperation() operation.GraphicsOperationInterface {
+	return c.graphics
+}
+
+// GroupOperation return a inst provide GroupOperationInterface
+func (c *logics) GroupOperation() model.GroupOperationInterface {
+	return c.group
 }

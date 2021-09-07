@@ -125,6 +125,15 @@ type SearchAssociationInstResult struct {
 	Data     []*InstAsst `json:"data"`
 }
 
+// SearchInstAssociationListResult the struct of list instance association result
+type SearchInstAssociationListResult struct {
+	Association struct {
+		Src []InstAsst `json:"src"`
+		Dst []InstAsst `json:"dst"`
+	} `json:"association"`
+	Inst map[string][]mapstr.MapStr `json:"instance"`
+}
+
 type CreateAssociationInstRequest struct {
 	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id,omitempty"`
 	InstID       int64  `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
