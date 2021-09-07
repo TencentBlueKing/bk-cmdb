@@ -25,6 +25,7 @@ import (
 type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
 	AttributeOperation() model.AttributeOperationInterface
+	InstOperation() inst.InstOperationInterface
 	ObjectOperation() model.ObjectOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
 	AssociationOperation() model.AssociationOperationInterface
@@ -36,6 +37,7 @@ type Logics interface {
 type logics struct {
 	classification  model.ClassificationOperationInterface
 	attribute       model.AttributeOperationInterface
+	inst            inst.InstOperationInterface
 	object          model.ObjectOperationInterface
 	identifier      operation.IdentifierOperationInterface
 	association     model.AssociationOperationInterface
@@ -53,6 +55,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	IdentifierOperation := operation.NewIdentifier(client)
 	associationOperation := model.NewAssociationOperation(client, authManager)
 	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
+	instOperation := inst.NewInstOperation(client, languageIf, authManager, instAssociationOperation)
 	graphicsOperation := operation.NewGraphics(client, authManager)
 	groupOperation := model.NewGroupOperation(client)
 	groupOperation.SetProxy(objectOperation)
@@ -61,6 +64,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	return &logics{
 		classification:  classificationOperation,
 		attribute:       attributeOperation,
+		inst:            instOperation,
 		object:          objectOperation,
 		identifier:      IdentifierOperation,
 		association:     associationOperation,
@@ -88,6 +92,11 @@ func (c *logics) ObjectOperation() model.ObjectOperationInterface {
 // IdentifierOperation return a identifier provide IdentifierOperationInterface
 func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
 	return c.identifier
+}
+
+// InstOperation return a inst provide InstOperationInterface
+func (c *logics) InstOperation() inst.InstOperationInterface {
+	return c.inst
 }
 
 // AssociationOperation return a association provide AssociationOperationInterface

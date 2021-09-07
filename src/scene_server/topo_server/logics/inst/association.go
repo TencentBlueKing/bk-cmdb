@@ -173,6 +173,62 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 	return result, rsp.Count, nil
 }
 
+
+// checkInstAsstMapping use to check if instance association mapping correct, used by CreateInstanceAssociation
+func (assoc *association) checkInstAsstMapping(kit *rest.Kit, objID string, mapping metadata.AssociationMapping,
+	input *metadata.CreateAssociationInstRequest) error {
+
+	tableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
+	switch mapping {
+	case metadata.OneToOneMapping:
+		// search instances belongs to this association.
+		queryFilter := []map[string]interface{}{
+			{
+				common.AssociationObjAsstIDField: input.ObjectAsstID,
+				common.BKInstIDField:             input.InstID,
+			},
+			{
+				common.AssociationObjAsstIDField: input.ObjectAsstID,
+				common.BKAsstInstIDField:         input.AsstInstID,
+			},
+		}
+		instCnt, err := assoc.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName,
+			queryFilter)
+		if err != nil {
+			blog.Errorf("check instance with cond[%#v] failed, err: %v, rid: %s", queryFilter, err, kit.Rid)
+			return err
+		}
+
+		for _, cnt := range instCnt {
+			if cnt >= 1 {
+				return kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
+			}
+		}
+	case metadata.OneToManyMapping:
+		queryFilter := []map[string]interface{}{
+			{
+				common.AssociationObjAsstIDField: input.ObjectAsstID,
+				common.BKAsstInstIDField:         input.AsstInstID,
+			},
+		}
+		instCnt, err := assoc.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName,
+			queryFilter)
+		if err != nil {
+			blog.Errorf("check instance with cond[%#v] failed, err: %v, rid: %s", queryFilter, err, kit.Rid)
+			return err
+		}
+
+		if instCnt[0] >= 1 {
+			return kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
+		}
+
+	default:
+		// after all the check, new association instance can be created.
+	}
+
+	return nil
+}
+
 // CreateInstanceAssociation create an association between instances
 func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (
 	*metadata.RspID, error) {
@@ -183,45 +239,15 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 		blog.Errorf("search object association with cond[%#v] failed, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, err
 	}
+
 	if len(result.Info) == 0 {
 		blog.Errorf("can not find object association[%s]. rid: %s", request.ObjectAsstID, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotExist)
 	}
 
-	switch result.Info[0].Mapping {
-	case metadata.OneToOneMapping:
-		// search instances belongs to this association.
-		tableName := common.GetObjectInstAsstTableName(result.Info[0].ObjectID, kit.SupplierAccount)
-		queryFilter := []map[string]interface{}{
-			{common.AssociationObjAsstIDField: request.ObjectAsstID, common.BKInstIDField: request.InstID},
-			{common.AssociationObjAsstIDField: request.ObjectAsstID, common.BKAsstInstIDField: request.AsstInstID},
-		}
-		instCnt, e := assoc.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName, queryFilter)
-		if e != nil {
-			blog.Errorf("check instance with cond[%#v] failed, err: %v, rid: %s", queryFilter, err, kit.Rid)
-			return nil, err
-		}
-
-		for _, cnt := range instCnt {
-			if cnt >= 1 {
-				return nil, kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
-			}
-		}
-	case metadata.OneToManyMapping:
-		tableName := common.GetObjectInstAsstTableName(result.Info[0].ObjectID, kit.SupplierAccount)
-		queryFilter := []map[string]interface{}{
-			{common.AssociationObjAsstIDField: request.ObjectAsstID, common.BKAsstInstIDField: request.AsstInstID},
-		}
-		instCnt, e := assoc.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName, queryFilter)
-		if e != nil {
-			blog.Errorf("check instance with cond[%#v] failed, err: %v, rid: %s", queryFilter, err, kit.Rid)
-			return nil, err
-		}
-		if instCnt[0] >= 1 {
-			return nil, kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
-		}
-	default:
-		// after all the check, new association instance can be created.
+	if err := assoc.checkInstAsstMapping(kit, result.Info[0].ObjectID, result.Info[0].Mapping, request); err != nil {
+		blog.Errorf("check mapping failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
 	}
 
 	input := metadata.CreateOneInstanceAssociation{
@@ -319,6 +345,7 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit, request *meta
 
 	return resp, nil
 }
+
 
 // DeleteInstAssociation method will remove docs from both source-asst-collection and target-asst-collection,
 //which is atomicity.
