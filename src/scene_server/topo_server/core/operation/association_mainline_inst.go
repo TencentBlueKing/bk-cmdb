@@ -788,8 +788,18 @@ func (assoc *association) getSetIDsByTopo(kit *rest.Kit, objID string, instIDs [
 	// traverse down topo till set, get set ids
 	for {
 		idField := common.GetInstIDField(childObj)
+		instCond := make(map[string]interface{})
+		instCond[common.BKParentIDField] = map[string]interface{}{
+			common.BKDBIN: instIDs,
+		}
+		// exclude default sets
+		if childObj == common.BKInnerObjIDSet {
+			instCond[common.BKDefaultField] = map[string]interface{}{
+				common.BKDBNE: common.DefaultResSetFlag,
+			}
+		}
 		query := &metadata.QueryCondition{
-			Condition: map[string]interface{}{common.BKParentIDField: map[string]interface{}{common.BKDBIN: instIDs}},
+			Condition: instCond,
 			Fields:    []string{idField},
 			Page:      metadata.BasePage{Limit: common.BKNoLimit},
 		}
