@@ -173,13 +173,12 @@ func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attri
 				blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
 				return err
 			}
+			data.PropertyGroup = common.BKBizDefault
 			data.PropertyGroupName = common.BKBizDefault
 		} else {
+			data.PropertyGroup = common.BKDefaultField
 			data.PropertyGroupName = common.BKDefaultField
 		}
-		data.PropertyGroup = common.BKBizDefault
-	} else {
-		data.PropertyGroup = common.BKDefaultField
 	}
 
 	return nil
@@ -213,7 +212,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 	}
 	if !exist {
 		blog.Errorf("obj id is not valid, obj id: %+v, rid: %d.", data.ObjectID, kit.Rid)
-		return nil, nil
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField)
 	}
 
 	if err = a.checkAttributeGroupExist(kit, data); err != nil {
@@ -308,12 +307,6 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, mod
 		objID = attrItem.ObjectID
 	}
 
-	// save audit log.
-	if err := audit.SaveAuditLog(kit, auditLogArr...); err != nil {
-		blog.Errorf("delete object attribute success, but save audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return err
-	}
-
 	// delete the attribute.
 	deleteCond := &metadata.DeleteOption{
 		Condition: mapstr.MapStr{
@@ -323,6 +316,12 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, mod
 	_, err = a.clientSet.CoreService().Model().DeleteModelAttr(kit.Ctx, kit.Header, objID, deleteCond)
 	if err != nil {
 		blog.Errorf("delete object attribute failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, auditLogArr...); err != nil {
+		blog.Errorf("delete object attribute success, but save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 

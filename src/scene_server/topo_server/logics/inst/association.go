@@ -173,7 +173,6 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 	return result, rsp.Count, nil
 }
 
-
 // checkInstAsstMapping use to check if instance association mapping correct, used by CreateInstanceAssociation
 func (assoc *association) checkInstAsstMapping(kit *rest.Kit, objID string, mapping metadata.AssociationMapping,
 	input *metadata.CreateAssociationInstRequest) error {
@@ -269,9 +268,20 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 	instAssociationID := int64(createResult.Created.ID)
 	input.Data.ID = int64(createResult.Created.ID)
 
-	if err := assoc.generateAndSaveAuditLog(kit, instAssociationID, result.Info[0].ObjectID, &input.Data); err != nil {
-		blog.Errorf("generate and save audit log failed, err: %+v, rid: %s", err, kit.Rid)
+	// generate audit log.
+	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
+	generateAuditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParam, instAssociationID, result.Info[0].ObjectID, &input.Data)
+	if err != nil {
+		blog.Errorf(" delete inst asst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
+	}
+
+	// save audit log.
+	err = audit.SaveAuditLog(kit, *auditLog)
+	if err != nil {
+		blog.Errorf("delete inst asst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
 	return &metadata.RspID{ID: instAssociationID}, err
@@ -346,9 +356,8 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit, request *meta
 	return resp, nil
 }
 
-
-// DeleteInstAssociation method will remove docs from both source-asst-collection and target-asst-collection,
-//which is atomicity.
+// DeleteInstAssociation method will remove docs from both source-asst-collection and target-asst-collection
+// which is atomicity.
 func (assoc *association) DeleteInstAssociation(kit *rest.Kit, objID string, asstIDList []int64) (uint64, error) {
 
 	if len(asstIDList) == 0 {
@@ -474,26 +483,6 @@ func (assoc *association) CheckAssociations(kit *rest.Kit, objectID string, inst
 			blog.ErrorJSON("delete dirty assts failed, err: %s, cond: %s, rid: %s", err, delOpt, kit.Rid)
 			return err
 		}
-	}
-	return nil
-}
-
-func (assoc *association) generateAndSaveAuditLog(kit *rest.Kit, instAssociationID int64, objID string,
-	input *metadata.InstAsst) error {
-	// generate audit log.
-	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
-	generateAuditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-	auditLog, err := audit.GenerateAuditLog(generateAuditParam, instAssociationID, objID, input)
-	if err != nil {
-		blog.Errorf(" delete inst asst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return err
-	}
-
-	// save audit log.
-	err = audit.SaveAuditLog(kit, *auditLog)
-	if err != nil {
-		blog.Errorf("delete inst asst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return err
 	}
 	return nil
 }

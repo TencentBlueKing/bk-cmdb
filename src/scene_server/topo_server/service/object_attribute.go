@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/mapstruct"
 	"strconv"
 
 	"configcenter/src/common"
@@ -89,19 +90,25 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 	data[metadata.AttributeFieldIsSystem] = false
 	data[metadata.AttributeFieldIsAPI] = false
 
-	limit, start, sort, err := s.getPageParam(data)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
+	basePage := metadata.BasePage{}
+	if data.Exists(metadata.PageName) {
+		page, err := data.MapStr(metadata.PageName)
+		if err != nil {
+			blog.Errorf("page info convert to mapstr failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		if err := mapstruct.Decode2Struct(page, &basePage); err != nil {
+			blog.Errorf("page info convert to struct failed, page: %v, err: %v, rid: %v", page, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		data.Remove(metadata.PageName)
 	}
 
 	queryCond := &metadata.QueryCondition{
 		Condition: data,
-		Page: metadata.BasePage{
-			Limit: int(limit),
-			Start: int(start),
-			Sort:  sort,
-		},
+		Page: basePage,
 	}
 	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(ctx.Kit.Ctx, ctx.Kit.Header, queryCond)
 	if nil != err {
@@ -299,19 +306,25 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 	data[metadata.AttributeFieldIsAPI] = false
 	util.AddModelBizIDCondition(data, dataWithModelBizID.ModelBizID)
 
-	limit, start, sort, err := s.getPageParam(data)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
+	basePage := metadata.BasePage{}
+	if data.Exists(metadata.PageName) {
+		page, err := data.MapStr(metadata.PageName)
+		if err != nil {
+			blog.Errorf("page info convert to mapstr failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		if err := mapstruct.Decode2Struct(page, &basePage); err != nil {
+			blog.Errorf("page info convert to struct failed, page: %v, err: %v, rid: %v", page, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		data.Remove(metadata.PageName)
 	}
 
 	queryCond := &metadata.QueryCondition{
 		Condition: data,
-		Page: metadata.BasePage{
-			Limit: limit,
-			Start: start,
-			Sort:  sort,
-		},
+		Page: basePage,
 	}
 
 	result, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
@@ -381,33 +394,4 @@ func (s *Service) getPropertyGroupName(ctx *rest.Contexts, attrs []metadata.Attr
 	}
 
 	return grpMap, nil
-}
-
-func (s *Service) getPageParam(data mapstr.MapStr)(int, int, string,error) {
-	var limit, start int64
-	var sort string
-	if data.Exists(metadata.PageName) {
-		page, err := data.MapStr(metadata.PageName)
-		if err != nil {
-			return 0, 0, common.BKFieldID, err
-		}
-
-		limit, err = page.Int64(metadata.PageLimit)
-		if err != nil {
-			return 0, 0, common.BKFieldID, err
-		}
-
-		start, err = page.Int64(metadata.PageStart)
-		if err != nil {
-			return 0, 0, common.BKFieldID, err
-		}
-
-		s, exist := page.Get(metadata.PageSort)
-		if !exist {
-			sort = common.BKFieldID
-		}
-		sort = s.(string)
-		data.Remove(metadata.PageName)
-	}
-	return int(limit), int(start), sort, nil
 }
