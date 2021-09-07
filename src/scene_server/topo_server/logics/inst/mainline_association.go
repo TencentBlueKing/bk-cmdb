@@ -14,7 +14,6 @@ package inst
 
 import (
 	"regexp"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -42,7 +41,7 @@ func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObj
 	defaultCond := &metadata.QueryCondition{Condition: cond}
 
 	// 获取 current 模型的所有实例
-	currentInsts, err := assoc.FindInst(kit, currentObjID, defaultCond)
+	currentInsts, err := assoc.inst.FindInst(kit, currentObjID, defaultCond)
 	if err != nil {
 		blog.Errorf("failed to find current object(%s) inst, err: %v, rid: %s", currentObjID, err, kit.Rid)
 		return err
@@ -84,7 +83,7 @@ func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObj
 		return err
 	}
 
-	if canReset == false {
+	if !canReset {
 		blog.Errorf("can not be reset, inst name repeated, inst: %s, rid: %s", repeatedInstName, kit.Rid)
 		errMsg := kit.CCError.CCError(common.CCErrTopoDeleteMainLineObjectAndInstNameRepeat).Error() +
 			" " + repeatedInstName
@@ -150,7 +149,7 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parentObjID,
 	defaultCond.Condition = cond
 	// fetch all parent instances.
 	// TODO replace to FindInst in inst/inst.go after merge
-	parentInsts, err := assoc.FindInst(kit, parentObjID, defaultCond)
+	parentInsts, err := assoc.inst.FindInst(kit, parentObjID, defaultCond)
 	if err != nil {
 		blog.Errorf("failed to find parent object(%s) inst, err: %v, rid: %s", parentObjID, err, kit.Rid)
 		return nil, err
@@ -185,13 +184,18 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parentObjID,
 		}
 
 		// create the instance now.
-		currentInstID, err := assoc.createInst(kit, currObjID, currentInst)
+		instRsp, err := assoc.inst.CreateInst(kit, currObjID, currentInst)
 		if err != nil {
 			blog.Errorf("failed to create object(%s) default inst, err: %v, rid: %s", currObjID, err, kit.Rid)
 			return nil, err
 		}
+		currentInstID, err := instRsp.Int64(common.GetInstIDField(currObjID))
+		if err != nil {
+			blog.Errorf("get current object(%s) inst id failed, err: %v, rid: %s", currObjID, err, kit.Rid)
+			return nil, err
+		}
 
-		createdInstIDs = append(createdInstIDs, int64(currentInstID))
+		createdInstIDs = append(createdInstIDs, currentInstID)
 	}
 
 	// reset the child's parent instance's parent id to current instance's id.
@@ -299,7 +303,7 @@ func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID
 				common.HostApplyEnabledField}...)
 		}
 
-		instanceRsp, err := assoc.FindInst(kit, objectID, filter)
+		instanceRsp, err := assoc.inst.FindInst(kit, objectID, filter)
 		if err != nil {
 			blog.Errorf("search inst failed, err: %s, cond:%s, rid: %s", err, instCond, kit.Rid)
 			return nil, err
@@ -430,47 +434,13 @@ func (assoc *association) getMainlineChildInst(kit *rest.Kit, objID, childObjID 
 		Condition: cond,
 		Fields:    []string{common.GetInstIDField(childObjID), common.BKParentIDField},
 	}
-	instRsp, err := assoc.FindInst(kit, childObjID, instCond)
+	instRsp, err := assoc.inst.FindInst(kit, childObjID, instCond)
 	if err != nil {
 		blog.Errorf("search inst by object(%s) failed, err: %v, rid: %s", childObjID, err, kit.Rid)
 		return nil, err
 	}
 
 	return instRsp.Info, nil
-}
-
-// FindInst search instance by condition
-// TODO need to delete after merge
-func (assoc *association) FindInst(kit *rest.Kit, objID string, cond *metadata.QueryCondition) (*metadata.InstResult,
-	error) {
-
-	switch objID {
-	case common.BKInnerObjIDHost:
-		input := &metadata.QueryInput{
-			Condition:     cond.Condition,
-			Fields:        strings.Join(cond.Fields, ","),
-			TimeCondition: cond.TimeCondition,
-			Start:         cond.Page.Start,
-			Limit:         cond.Page.Limit,
-			Sort:          cond.Page.Sort,
-		}
-		rsp, err := assoc.clientSet.CoreService().Host().GetHosts(kit.Ctx, kit.Header, input)
-		if err != nil {
-			blog.Errorf("search object(%s) inst by the input(%#v) failed, err: %v, rid: %s", objID, input, err, kit.Rid)
-			return nil, err
-		}
-
-		return &metadata.InstResult{Count: rsp.Count, Info: rsp.Info}, nil
-
-	default:
-		rsp, err := assoc.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, cond)
-		if err != nil {
-			blog.Errorf("search object(%s) inst by the cond(%#v) failed, err: %v, rid: %s", objID, cond, err, kit.Rid)
-			return nil, err
-		}
-
-		return &metadata.InstResult{Count: rsp.Count, Info: rsp.Info}, nil
-	}
 }
 
 func (assoc *association) setMainlineParentInst(kit *rest.Kit, childID []int64, childObjID string,
@@ -553,21 +523,6 @@ func (assoc *association) deleteMainlineInstWithID(kit *rest.Kit, objID string, 
 	return nil
 }
 
-// TODO should be deleted after merge
-func (assoc *association) createInst(kit *rest.Kit, objID string, data mapstr.MapStr) (uint64, error) {
-	cond := &metadata.CreateModelInstance{
-		Data: data,
-	}
-	rsp, err := assoc.clientSet.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, objID, cond)
-	if err != nil {
-		blog.Errorf("failed to create object instance, err: %v, rid: %s", err, kit.Rid)
-		return 0, err
-	}
-
-	return rsp.Created.ID, nil
-}
-
-// TODO need check this function is here or move to other file
 func (assoc *association) fillStatistics(kit *rest.Kit, bizID int64, moduleIDs []int64,
 	topoInsts []*metadata.TopoInstRst) errors.CCError {
 	// get host apply rule count

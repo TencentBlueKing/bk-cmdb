@@ -41,6 +41,8 @@ type AssociationOperationInterface interface {
 	ResetMainlineInstAssociation(kit *rest.Kit, currentObjID, childObjID string) error
 	// SetMainlineInstAssociation set mainline instance association by parent object and current object
 	SetMainlineInstAssociation(kit *rest.Kit, parentObjID, childObjID, currObjID, currObjName string) ([]int64, error)
+	// SetProxy proxy the interface
+	SetProxy(inst InstOperationInterface)
 }
 
 // NewAssociationOperation create a new association operation instance
@@ -56,6 +58,12 @@ func NewAssociationOperation(client apimachinery.ClientSetInterface,
 type association struct {
 	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
+	inst        InstOperationInterface
+}
+
+// SetProxy proxy the interface
+func (assoc *association) SetProxy(inst InstOperationInterface) {
+	assoc.inst = inst
 }
 
 // SearchInstanceAssociations searches object instance associations.
