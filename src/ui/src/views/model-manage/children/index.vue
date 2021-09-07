@@ -354,7 +354,7 @@
               this.$error(data.update_failed[0])
             } else {
               this.$success(this.$t('导入成功'))
-              this.$refs.field.initFieldList()
+              this.$refs.field && this.$refs.field.initFieldList()
             }
           } else {
             this.$error(res.bk_error_msg)
@@ -516,7 +516,7 @@
         if (res.result) {
           this.uploadResult.success = data.success
           this.$success(this.$t('导入成功'))
-          this.$refs.field.initFieldList()
+          this.$refs.field && this.$refs.field.initFieldList()
         } else {
           this.uploadResult.insert_failed = data.insert_failed
           this.uploadResult.update_failed = data.update_failed

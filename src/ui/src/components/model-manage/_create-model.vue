@@ -78,8 +78,8 @@
       </div>
     </div>
     <div slot="footer" class="footer">
-      <bk-button theme="primary" @click="confirm">{{$t('提交')}}</bk-button>
-      <bk-button theme="default" @click="cancel">{{$t('取消')}}</bk-button>
+      <bk-button theme="primary" :loading="operating" @click="confirm">{{$t('提交')}}</bk-button>
+      <bk-button theme="default" :disabled="operating" @click="cancel">{{$t('取消')}}</bk-button>
     </div>
   </bk-dialog>
 </template>
@@ -107,7 +107,11 @@
       groupId: {
         type: String,
         default: ''
-      }
+      },
+      operating: {
+        type: Boolean,
+        default: false
+      },
     },
     data() {
       return {

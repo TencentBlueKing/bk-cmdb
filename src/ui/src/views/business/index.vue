@@ -36,6 +36,7 @@
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
           :class="filterType"
+          :fuzzy="true"
           v-bind="filterComponentProps"
           v-model="filter.value"
           @change="handleFilterValueChange"
@@ -182,7 +183,7 @@
         filter: {
           field: 'bk_biz_name',
           value: '',
-          operator: '$eq'
+          operator: ''
         },
         slider: {
           show: false,
@@ -249,9 +250,7 @@
     },
     watch: {
       'filter.field'() {
-        const defaultData = Utils.getDefaultData(this.filterProperty)
-        this.filter.value = defaultData.value
-        this.filter.operator = defaultData.operator
+        this.genFilterCondition()
       },
       'slider.show'(show) {
         if (!show) {
@@ -290,11 +289,11 @@
           this.filter.field = field
           this.table.pagination.current = parseInt(page, 10)
           this.table.pagination.limit = parseInt(limit, 10)
+
           await this.$nextTick()
-          const defaultData = Utils.getDefaultData(this.filterProperty)
-          this.filter.operator = operator || defaultData.operator
-          // eslint-disable-next-line max-len
-          this.filter.value = this.formatFilterValue({ value: filter, operator: this.filter.operator }, defaultData.value)
+
+          this.genFilterCondition(filter, operator)
+
           this.throttleGetTableData()
         }, { immediate: true })
       } catch (e) {
@@ -314,6 +313,27 @@
         'createBusiness',
         'searchBusinessById'
       ]),
+      /**
+       * 通过 bk_property_id 或自定义过滤项和过滤操作符来生成过滤条件
+       * @param {string} filter 过滤项
+       * @param {string} operator 过滤操作符
+       */
+      genFilterCondition(filter = '', operator = '') {
+        const defaultData = Utils.getDefaultData(this.filterProperty)
+        const isBizName = this.filterProperty.bk_property_id === 'bk_biz_name'
+
+        // 这里的业务名称因只支持模糊搜索，且 getDefaultData 返回的过滤方式没有命中，所以只能单独加个判断
+        if (isBizName) {
+          this.filter.operator = ''
+          this.filter.value = filter || ''
+        } else {
+          this.filter.operator = operator || defaultData.operator
+          this.filter.value = this.formatFilterValue(
+            { value: filter, operator: this.filter.operator },
+            defaultData.value
+          )
+        }
+      },
       getPropertyGroups() {
         return this.searchGroup({
           objId: 'biz',
@@ -453,6 +473,12 @@
           params.condition[this.filter.field] = multiple ? { $in: filterValue } : filterValue.toString()
           return params
         }
+
+        if (this.filter.field === 'bk_biz_name') {
+          params.condition[this.filter.field] = this.filter.value.toString()
+          return params
+        }
+
         params.condition[this.filter.field] = { [this.filter.operator]: this.filter.value }
         return params
       },

@@ -65,6 +65,7 @@
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
           :class="filterType"
+          :fuzzy="queryModeIsFuzzy"
           v-bind="filterComponentProps"
           v-model="filter.value"
           @change="handleFilterValueChange"
@@ -73,6 +74,7 @@
         </component>
         <bk-checkbox class="filter-exact" size="small"
           v-if="allowFuzzyQuery"
+          @change="onQueryModeChange"
           v-model="filter.fuzzy_query">
           {{$t('模糊')}}
         </bk-checkbox>
@@ -171,7 +173,7 @@
   import { mapState, mapGetters, mapActions } from 'vuex'
   import cmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
   import cmdbImport from '@/components/import/import'
-  import { MENU_RESOURCE_INSTANCE_DETAILS } from '@/dictionary/menu-symbol'
+  import { MENU_RESOURCE_INSTANCE, MENU_RESOURCE_INSTANCE_DETAILS } from '@/dictionary/menu-symbol'
   import cmdbPropertySelector from '@/components/property-selector'
   import RouterQuery from '@/router/query'
   import Utils from '@/components/filters/utils'
@@ -203,6 +205,8 @@
             payload: {}
           }
         },
+        // 查询模式
+        queryModeIsFuzzy: false,
         filter: {
           field: '',
           value: '',
@@ -281,7 +285,7 @@
       },
       allowFuzzyQuery() {
         return ['singlechar', 'longchar'].includes(this.filterType)
-      }
+      },
     },
     watch: {
       'filter.field'() {
@@ -297,11 +301,13 @@
       },
       'filter.fuzzy_query'(fuzzy) {
         if (!this.allowFuzzyQuery) return
+
         if (fuzzy) {
           this.filter.value = ''
           this.filter.operator = '$regex'
           return
         }
+
         const defaultData = Utils.getDefaultData(this.filterProperty)
         this.filter.value = defaultData.value
         this.filter.operator = defaultData.operator
@@ -333,10 +339,11 @@
         filter = '',
         operator = '',
         fuzzy = false,
-        field = 'bk_inst_name'
+        field = 'bk_inst_name',
       }) => {
         this.filter.field = field
         this.filter.fuzzy_query = fuzzy.toString() === 'true'
+        this.queryModeIsFuzzy = Boolean(fuzzy)
         this.table.pagination.current = parseInt(page, 10)
         this.table.pagination.limit = parseInt(limit, 10)
         await this.$nextTick()
@@ -365,6 +372,9 @@
         'batchDeleteInst',
         'searchInstById'
       ]),
+      onQueryModeChange(val) {
+        this.queryModeIsFuzzy = val
+      },
       setDynamicBreadcrumbs() {
         this.$store.commit('setTitle', this.model.bk_obj_name)
       },
@@ -509,6 +519,11 @@
         })
       },
       getTableData() {
+        // 防止切换到子路由产生预期外的请求
+        if (this.$route.name !== MENU_RESOURCE_INSTANCE) {
+          return
+        }
+
         this.getInstList({ cancelPrevious: true, globalPermission: false }).then((data) => {
           if (data.count && !data.info.length) {
             RouterQuery.set({

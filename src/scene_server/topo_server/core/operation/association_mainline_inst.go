@@ -574,8 +574,8 @@ func (assoc *association) getHostSvcInstCountBySetIDs(kit *rest.Kit,
 }
 
 // getCustomLevHostSvcInstCount get coustom level host and service instace
-func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
-	customLevels map[int64]string) ([]*metadata.TopoNodeHostAndSerInstCount, error) {
+func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit, customLevels map[int64]string) (
+	[]*metadata.TopoNodeHostAndSerInstCount, error) {
 
 	var wg sync.WaitGroup
 	var lock sync.RWMutex
@@ -593,8 +593,7 @@ func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
 			}()
 			setIDArr, err := assoc.getSetIDsByTopo(kit, objID, []int64{instID})
 			if err != nil {
-				blog.Errorf("find hosts by topo failed, get set ID by topo err: %v, objID: %s, instID: %d, "+
-					"rid:%s", err, objID, instID, kit.Rid)
+				blog.Errorf("get set ID by topo err: %v, objID: %s, instID: %d, rid:%s", err, objID, instID, kit.Rid)
 				firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 				return
 			}
@@ -603,8 +602,6 @@ func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
 				topoNodeCount := &metadata.TopoNodeHostAndSerInstCount{
 					ObjID:                objID,
 					InstID:               instID,
-					HostCount:            0,
-					ServiceInstanceCount: 0,
 				}
 
 				lock.Lock()
@@ -616,8 +613,8 @@ func (assoc *association) getCustomLevHostSvcInstCount(kit *rest.Kit,
 			// get host count by set ids
 			hostCount, err := assoc.getDistinctHostCount(kit, common.BKSetIDField, setIDArr)
 			if err != nil {
-				blog.Errorf("get distinct host count failed, err: %v, objID: %s, instIDs: %, rid: %s", err,
-					common.BKSetIDField, setIDArr, kit.Rid)
+				blog.Errorf("get distinct host count err: %v, objID: %s, instIDs: %, rid: %s", err, common.BKSetIDField,
+					setIDArr, kit.Rid)
 				firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 				return
 			}
@@ -791,8 +788,18 @@ func (assoc *association) getSetIDsByTopo(kit *rest.Kit, objID string, instIDs [
 	// traverse down topo till set, get set ids
 	for {
 		idField := common.GetInstIDField(childObj)
+		instCond := make(map[string]interface{})
+		instCond[common.BKParentIDField] = map[string]interface{}{
+			common.BKDBIN: instIDs,
+		}
+		// exclude default sets
+		if childObj == common.BKInnerObjIDSet {
+			instCond[common.BKDefaultField] = map[string]interface{}{
+				common.BKDBNE: common.DefaultResSetFlag,
+			}
+		}
 		query := &metadata.QueryCondition{
-			Condition: map[string]interface{}{common.BKParentIDField: map[string]interface{}{common.BKDBIN: instIDs}},
+			Condition: instCond,
 			Fields:    []string{idField},
 			Page:      metadata.BasePage{Limit: common.BKNoLimit},
 		}

@@ -51,7 +51,7 @@
           <div class="item-content-wrapper">
             <operator-selector class="item-operator"
               v-if="!withoutOperator.includes(property.bk_property_type)"
-              :type="property.bk_property_type"
+              :property="property"
               v-model="condition[property.id].operator"
               @change="handleOperatorChange(property, ...arguments)">
             </operator-selector>

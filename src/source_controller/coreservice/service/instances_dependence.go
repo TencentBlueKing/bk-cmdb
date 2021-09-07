@@ -28,25 +28,29 @@ func (s *coreService) IsInstAsstExist(kit *rest.Kit, objID string, instID uint64
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID}, &mongo.Eq{Key: common.BKInstIDField, Val: instID})
-	queryCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
-	objInsts, err := s.core.AssociationOperation().SearchInstanceAssociation(kit, objID, queryCond)
-	if nil != err {
-		blog.Errorf("search instance association error %v, rid: %s", err, kit.Rid)
+	countCond := &metadata.Condition{Condition: cond.ToMapStr()}
+	objInstsRst, err := s.core.AssociationOperation().CountInstanceAssociations(kit, objID, countCond)
+	if err != nil {
+		blog.Errorf("search instance association err: %v, rid: %s", err, kit.Rid)
 		return false, err
 	}
-	cond = mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: common.BKAsstObjIDField, Val: objID}, &mongo.Eq{Key: common.BKAsstInstIDField, Val: instID})
-	queryCond = metadata.QueryCondition{Condition: cond.ToMapStr()}
-	objAsstInsts, err := s.core.AssociationOperation().SearchInstanceAssociation(kit, objID, queryCond)
-	if nil != err {
-		blog.Errorf("search instance to association error %v, rid: %s", err, kit.Rid)
-		return false, err
-	}
-	if 0 < objInsts.Count || 0 < objAsstInsts.Count {
+	if objInstsRst.Count > 0 {
 		return true, nil
 	}
-	return false, nil
 
+	cond = mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: common.BKAsstObjIDField, Val: objID}, &mongo.Eq{Key: common.BKAsstInstIDField, Val: instID})
+	countCond = &metadata.Condition{Condition: cond.ToMapStr()}
+	objAsstInstsRst, err := s.core.AssociationOperation().CountInstanceAssociations(kit, objID, countCond)
+	if err != nil {
+		blog.Errorf("search instance to association err: %v, rid: %s", err, kit.Rid)
+		return false, err
+	}
+	if objAsstInstsRst.Count > 0 {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 // DeleteInstAsst used to delete inst asst
