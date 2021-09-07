@@ -759,6 +759,7 @@ func (assoc *association) getDistinctHostCount(kit *rest.Kit, objID string, inst
 
 // getSetIDsByTopo get set IDs by custom layer node
 func (assoc *association) getSetIDsByTopo(kit *rest.Kit, objID string, instIDs []int64) ([]int64, error) {
+
 	if objID == common.BKInnerObjIDApp || objID == common.BKInnerObjIDSet || objID == common.BKInnerObjIDModule {
 		blog.Errorf("get set IDs by topo failed, obj(%s) is a inner object, rid: %s", objID, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
@@ -787,8 +788,18 @@ func (assoc *association) getSetIDsByTopo(kit *rest.Kit, objID string, instIDs [
 	// traverse down topo till set, get set ids
 	for {
 		idField := common.GetInstIDField(childObj)
+		instCond := make(map[string]interface{})
+		instCond[common.BKParentIDField] = map[string]interface{}{
+			common.BKDBIN: instIDs,
+		}
+		// exclude default sets
+		if childObj == common.BKInnerObjIDSet {
+			instCond[common.BKDefaultField] = map[string]interface{}{
+				common.BKDBNE: common.DefaultResSetFlag,
+			}
+		}
 		query := &metadata.QueryCondition{
-			Condition: map[string]interface{}{common.BKParentIDField: map[string]interface{}{common.BKDBIN: instIDs}},
+			Condition: instCond,
 			Fields:    []string{idField},
 			Page:      metadata.BasePage{Limit: common.BKNoLimit},
 		}

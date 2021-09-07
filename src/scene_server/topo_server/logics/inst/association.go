@@ -38,10 +38,9 @@ type AssociationOperationInterface interface {
 	SearchMainlineAssociationInstTopo(kit *rest.Kit, objID string, instID int64,
 		withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, errors.CCError)
 	// ResetMainlineInstAssociation reset mainline instance association
-	ResetMainlineInstAssociation(kit *rest.Kit, currentObjID string) error
+	ResetMainlineInstAssociation(kit *rest.Kit, currentObjID, childObjID string) error
 	// SetMainlineInstAssociation set mainline instance association by parent object and current object
-	SetMainlineInstAssociation(kit *rest.Kit, parentObjID string,
-		currObjID string, currObjName string) ([]int64, error)
+	SetMainlineInstAssociation(kit *rest.Kit, parentObjID, childObjID, currObjID, currObjName string) ([]int64, error)
 }
 
 // NewAssociationOperation create a new association operation instance
