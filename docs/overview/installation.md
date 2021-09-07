@@ -371,7 +371,7 @@ drwxr-xr-x 7 root root  4096 Jun 18 10:33 web
 | --auth_app_secret   | cmdb项目在蓝鲸权限中心的应用密钥                                                                                                                                                     | auth_enabled 为真时必填 | xxxxxxx                 |
 | --log_level         | 日志级别0-9, 9日志最详细                                                                                                                                                             | 否                      | 3                       |
 | --register_ip       | 进程注册到zookeeper上的IP地址，可以是域名                                                                                                                                            | 否                      | 无                      |
-| --user_info         | 登陆 web 页面的账号密码                                                                                                                                                              | 否                      | 无                      |
+| --user_info         | 登陆 web 页面的账号密码                                                                                                                                                              | 是                      | 无                      |
 
 **注:init.py 执行成功后会自动生成cmdb各服务进程所需要的配置。**
 
@@ -389,9 +389,9 @@ python init.py  \
   --mongo_port         27017 \
   --mongo_user         cc \
   --mongo_pass         cc \
-  --blueking_cmdb_url  http://127.0.0.1:8080/ \
+  --blueking_cmdb_url  http://127.0.0.1:8083/ \
   --blueking_paas_url  http://paas.domain.com \
-  --listen_port        8080 \
+  --listen_port        8083 \
   --auth_scheme        internal \
   --auth_enabled       false \
   --auth_address       https://iam.domain.com/ \
