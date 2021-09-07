@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -151,83 +150,30 @@ func (a *attribute) isObjExists(kit *rest.Kit, objID string) error {
 }
 
 // checkAttributeGroupExist check attribute group exist, not exist create default group
-//func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attribute) error {
-//	cond := mapstr.MapStr{
-//		common.BKObjIDField:           data.ObjectID,
-//		common.BKPropertyGroupIDField: data.PropertyGroup,
-//	}
-//	util.AddModelBizIDCondition(cond, data.BizID)
-//	filters := []map[string]interface{}{cond}
-//	resp, e := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNamePropertyGroup,
-//		filters)
-//	if e != nil {
-//		blog.Errorf("get property group failed, filters: %+v., err: %s, rid: %d.", data, e, kit.Rid)
-//		return e
-//	}
-//
-//	if resp[0] > 0 {
-//		blog.Errorf("property group exist, filters: %+v., rid: %d.", data, kit.Rid)
-//		return nil
-//	}
-//
-//	if data.BizID > 0 {
-//		cond := mapstr.MapStr{
-//			common.BKObjIDField:           data.ObjectID,
-//			common.BKPropertyGroupIDField: common.BKBizDefault,
-//		}
-//		util.AddModelBizIDCondition(cond, data.BizID)
-//		filters := []map[string]interface{}{cond}
-//		resp, e := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-//			common.BKTableNamePropertyGroup, filters)
-//		if e != nil {
-//			blog.Errorf("get property group failed, filters: %+v., err: %s, rid: %d.", data, e, kit.Rid)
-//			return e
-//		}
-//		if resp[0] == 0 {
-//			group := metadata.Group{
-//				IsDefault:  true,
-//				GroupIndex: -1,
-//				GroupName:  common.BKBizDefault,
-//				GroupID:    common.BKBizDefault,
-//				ObjectID:   data.ObjectID,
-//				OwnerID:    data.OwnerID,
-//				BizID:      data.BizID,
-//			}
-//			if _, err := a.grp.CreateObjectGroup(kit, &group); err != nil {
-//				blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
-//				return err
-//			}
-//		}
-//		data.PropertyGroup = common.BKBizDefault
-//	} else {
-//		data.PropertyGroup = common.BKDefaultField
-//	}
-//
-//	return nil
-//}
-
 func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attribute) error {
-	// check is the group exist
-	cond := condition.CreateCondition()
-	cond.Field(common.BKObjIDField).Eq(data.ObjectID)
-	cond.Field(common.BKPropertyGroupIDField).Eq(data.PropertyGroup)
-	groupResult, err := a.grp.FindObjectGroup(kit, cond.ToMapStr(), data.BizID)
-	if nil != err {
+	cond := mapstr.MapStr{
+		common.BKObjIDField:           data.ObjectID,
+		common.BKPropertyGroupIDField: data.PropertyGroup,
+	}
+	groupResult, err := a.grp.FindObjectGroup(kit, cond, data.BizID)
+	if err != nil {
 		blog.Errorf("failed to search the attribute group data (%#v), err: %s, rid: %s", cond, err, kit.Rid)
 		return err
 	}
+
 	// create the default group
-	if 0 == len(groupResult) {
+	if len(groupResult) == 0 {
 		if data.BizID > 0 {
-			cond := condition.CreateCondition()
-			cond.Field(common.BKObjIDField).Eq(data.ObjectID)
-			cond.Field(common.BKPropertyGroupIDField).Eq(common.BKBizDefault)
-			groupResult, err := a.grp.FindObjectGroup(kit, cond.ToMapStr(), data.BizID)
-			if nil != err {
-				blog.Errorf("failed to search the attribute group data: %#v, err: %s, rid: %s", cond, err, kit.Rid)
+			cond := mapstr.MapStr{
+				common.BKObjIDField:           data.ObjectID,
+				common.BKPropertyGroupIDField: common.BKBizDefault,
+			}
+			groupResult, err := a.grp.FindObjectGroup(kit, cond, data.BizID)
+			if err != nil {
+				blog.Errorf("failed to search the attr group data: %#v, err: %s, rid: %s", cond, err, kit.Rid)
 				return err
 			}
-			if 0 == len(groupResult) {
+			if len(groupResult) == 0 {
 				group := metadata.Group{
 					IsDefault:  true,
 					GroupIndex: -1,
@@ -238,10 +184,9 @@ func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attri
 					BizID:      data.BizID,
 				}
 
-				_, err := a.grp.CreateObjectGroup(kit, &group)
-				if nil != err {
+				if _, err := a.grp.CreateObjectGroup(kit, &group); err != nil {
 					blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
-					return kit.CCError.Error(common.CCErrTopoObjectGroupCreateFailed)
+					return err
 				}
 			}
 			data.PropertyGroup = common.BKBizDefault
@@ -309,6 +254,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 			input, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrTopoObjectAttributeCreateFailed)
 	}
+	data.ID = int64(resp.Created[0].ID)
 
 	// generate audit log of model attribute.
 	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
@@ -339,7 +285,6 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, mod
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
-		DisableCounter: true,
 	}
 	attrItems, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, queryCond)
 	if err != nil {
@@ -353,10 +298,10 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, mod
 	}
 
 	auditLogArr := make([]metadata.AuditLog, 0)
-	attrID := make([]string, 0)
+	attrID := make([]int64, 0)
+	var objID string
 	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
-	var objID string
 	for _, attrItem := range attrItems.Info {
 		// generate audit log of model attribute.
 		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, attrItem.ID, &attrItem)
@@ -366,17 +311,18 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, mod
 			return err
 		}
 		auditLogArr = append(auditLogArr, *auditLog)
-		attrID = append(attrID, attrItem.PropertyID)
+		attrID = append(attrID, attrItem.ID)
 		objID = attrItem.ObjectID
 	}
 
+	// delete the attribute.
 	deleteCond := &metadata.DeleteOption{
 		Condition: mapstr.MapStr{
-			common.BKDBIN: attrID,
+			common.BKFieldID: mapstr.MapStr{common.BKDBIN: attrID},
 		},
 	}
-	// delete the attribute.
-	if _, err := a.clientSet.CoreService().Model().DeleteModelAttr(kit.Ctx, kit.Header, objID, deleteCond); err != nil {
+	_, err = a.clientSet.CoreService().Model().DeleteModelAttr(kit.Ctx, kit.Header, objID, deleteCond)
+	if err != nil {
 		blog.Errorf("delete object attribute failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}

@@ -53,20 +53,49 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		isBizCustomField = true
 	}
 
-	attrInfo := new(metadata.ObjAttDes)
+	attrInfos := make([]*metadata.ObjAttDes, 0)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		attr, err := s.Logics.AttributeOperation().CreateObjectAttribute(ctx.Kit, attr)
+		attribute, err := s.Logics.AttributeOperation().CreateObjectAttribute(ctx.Kit, attr)
 		if err != nil {
 			return err
 		}
-		if attr == nil {
+		if attribute == nil {
 			return err
 		}
-		attrInfo.Attribute = *attr
-		attrInfo.PropertyGroupName = attr.PropertyGroupName
+
+		// get property  group name
+		cond := mapstr.MapStr{
+			common.BKFieldID: attribute.ID,
+		}
+		util.AddModelBizIDCondition(cond, attr.BizID)
+		opt := &metadata.QueryCondition{
+			Condition:      cond,
+			DisableCounter: true,
+		}
+		resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+		if err != nil {
+			blog.Errorf("failed to get model attr, err: %s, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+
+		grpMap, err := s.getPropertyGroupName(ctx, resp.Info, attr.BizID)
+		if err != nil {
+			return err
+		}
+		for _, item := range resp.Info {
+			grpName, ok := grpMap[item.PropertyGroup]
+			if !ok {
+				blog.Errorf("failed to get property group name, attr: %s, property: %s", item, item.PropertyGroup)
+				return nil
+			}
+			attrInfos = append(attrInfos, &metadata.ObjAttDes{
+				Attribute:         item,
+				PropertyGroupName: grpName,
+			})
+		}
 
 		if isBizCustomField {
-			attrInfo.BizID = attr.BizID
+			attrInfos[0].BizID = attr.BizID
 		}
 		return nil
 	})
@@ -75,8 +104,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-
-	ctx.RespEntity(attrInfo)
+	ctx.RespEntity(attrInfos[0])
 }
 
 // SearchObjectAttribute search the object attributes
@@ -271,6 +299,7 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// UpdateObjectAttributeIndex update object attribute index
 func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 	data := make(map[string]interface{})
 	if err := ctx.DecodeInto(&data); err != nil {
