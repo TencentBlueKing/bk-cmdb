@@ -37,6 +37,12 @@ func GetCurrentTimePtr() *time.Time {
 	return &now
 }
 
+// TimeStrToUnixSecondDefault convert timeStr to timestamp
+func TimeStrToUnixSecondDefault(str string) int64 {
+	parseTime, _ := time.ParseInLocation(common.TimeDayTransferModel, str, time.Local)
+	return parseTime.Unix()
+}
+
 func ConvParamsTime(data interface{}) interface{} {
 	conds, ok := data.(map[string]interface{})
 	if true != ok && nil != conds {

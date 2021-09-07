@@ -8,7 +8,7 @@
       <div class="form-wrapper">
         <operator-selector class="form-operator"
           v-if="!withoutOperator.includes(property.bk_property_type)"
-          :type="property.bk_property_type"
+          :property="property"
           v-model="operator"
           @change="handleOperatorChange"
           @toggle="handleActiveChange">
