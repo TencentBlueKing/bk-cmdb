@@ -43,7 +43,7 @@ func (s *Service) isSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, 
 	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
 		qc)
 	if err != nil {
-		blog.Errorf("failed to search set instance, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
+		blog.Errorf("failed to search set instance, setID: %d, err: %s, rid: %s", setID, err, kit.Rid)
 		return false, errors.NewFromStdError(err, common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -108,7 +108,7 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 		var err error
 		module, err = s.Logics.ModuleOperation().CreateModule(ctx.Kit, bizID, setID, data)
 		if err != nil {
-			blog.Errorf("create module failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+			blog.Errorf("create module failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -123,7 +123,7 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 }
 
 // CheckIsBuiltInModule check if object is built-in object
-func (s *Service) checkIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) errors.CCErrorCoder {
+func (s *Service) checkIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) error {
 	// 检查是否时内置集群
 	input := &metadata.Condition{
 		Condition: map[string]interface{}{
@@ -138,8 +138,8 @@ func (s *Service) checkIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) errors
 	rsp, err := s.Engine.CoreAPI.CoreService().Instance().CountInstances(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
 		input)
 	if err != nil {
-		blog.Errorf("failed read module instance, err: %s, rid: %s", err.Error(), kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("failed read module instance, err: %s, rid: %s", err, kit.Rid)
+		return err
 	}
 
 	if rsp.Count > 0 {
@@ -302,7 +302,7 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 		common.BKAppIDField:             bizID,
 	}
 
-	if requestBody.Modules != nil {
+	if len(requestBody.Modules) > 0 {
 		filter[common.BKModuleIDField] = mapstr.MapStr{
 			common.BKDBIN: requestBody.Modules,
 		}
@@ -320,7 +320,7 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		common.BKInnerObjIDModule, qc)
 	if err != nil {
-		blog.Errorf("list modules by service templateID failed, err: %v, cond: %#v, rid: %s", err, qc,
+		blog.Errorf("list modules by service templateID failed, err: %s, cond: %#v, rid: %s", err, qc,
 			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -340,7 +340,7 @@ func (s *Service) SearchModule(ctx *rest.Contexts) {
 
 	setID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKSetIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("parse the set id from the path failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("parse the set id from the path failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKSetIDField))
 		return
 	}
@@ -388,7 +388,7 @@ func (s *Service) searchModule(ctx *rest.Contexts, bizID, setID int64) {
 
 	instItems, err := s.Logics.InstOperation().FindInst(ctx.Kit, common.BKInnerObjIDModule, queryCond)
 	if err != nil {
-		blog.Errorf("search module inst failed, err: %v, cond: %#v, rid: %s", err, queryCond, ctx.Kit.Rid)
+		blog.Errorf("search module inst failed, err: %s, cond: %#v, rid: %s", err, queryCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -629,7 +629,7 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 			common.BKInnerObjIDModule, updateOption)
 		if err != nil {
 			blog.Errorf("search rule related modules failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+			return err
 		}
 
 		if requestBody.ClearRules {
@@ -730,4 +730,3 @@ func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
 	set["module"] = modules
 	ctx.RespEntity(set)
 }
-
