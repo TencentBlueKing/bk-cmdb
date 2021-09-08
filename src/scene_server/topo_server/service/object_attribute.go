@@ -99,7 +99,7 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 			return
 		}
 		if err := mapstruct.Decode2Struct(page, &basePage); err != nil {
-			blog.Errorf("page info convert to struct failed, page: %v, err: %v, rid: %v", page, err, ctx.Kit.Rid)
+			blog.Errorf("page info convert to struct failed, page: %v, err: %v, rid: %s", page, err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
@@ -315,7 +315,7 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 			return
 		}
 		if err := mapstruct.Decode2Struct(page, &basePage); err != nil {
-			blog.Errorf("page info convert to struct failed, page: %v, err: %v, rid: %v", page, err, ctx.Kit.Rid)
+			blog.Errorf("page info convert to struct failed, page: %v, err: %v, rid: %s", page, err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}

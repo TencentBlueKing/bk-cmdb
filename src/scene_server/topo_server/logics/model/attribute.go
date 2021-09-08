@@ -209,7 +209,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 		return nil, err
 	}
 	if !exist {
-		blog.Errorf("obj id is not valid, obj id: %+v, rid: %d.", data.ObjectID, kit.Rid)
+		blog.Errorf("obj id is not exist, obj id: %s, rid: %s", data.ObjectID, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField)
 	}
 
