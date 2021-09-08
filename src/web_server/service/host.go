@@ -401,7 +401,7 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 	return
 }
 
-// UpdateHost Excel update host batch
+//Excel update host batch
 func (s *Service) UpdateHosts(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromHTTPHeader(c.Request.Header)

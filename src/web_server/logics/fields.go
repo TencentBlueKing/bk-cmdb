@@ -19,10 +19,13 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/rentiansheng/xlsx"
 )
 
 // Property object fields
@@ -39,6 +42,47 @@ type Property struct {
 	IsOnly        bool
 	AsstObjID     string
 	NotExport     bool
+}
+
+// HandleFieldParam 处理Excel表格字段入参
+type HandleFieldParam struct {
+	Fields     map[string]Property
+	Rid        string
+	StyleCell  *xlsx.Style
+	Sheet      *xlsx.Sheet
+	Filter     []string
+	DefLang    lang.DefaultCCLanguageIf
+	CellStyle  *xlsx.Style
+	ColStyle   *xlsx.Style
+	BizTopoMap map[string]int
+}
+
+// HandleHostParam 处理主机数据入参
+type HandleHostParam struct {
+	RowIndex int
+	Data []mapstr.MapStr
+	CcErr errors.DefaultCCErrorIf
+	Fields map[string]Property
+	Rid string
+	ModelBizID int64
+	CustomLen int
+	ObjID string
+	UsernameMap map[string]string
+	PropertyList []string
+	ObjName []string
+	CcLang lang.DefaultCCLanguageIf
+	Sheet *xlsx.Sheet
+}
+
+// ExtField 处理主机数据导出自定义层级字段
+type ExtField struct {
+	ExtFieldsTopoID    string
+	ExtFieldsBizID     string
+	ExtFieldsModuleID  string
+	ExtFieldsSetID     string
+	ExtFieldsCustomID1 string
+	ExtFieldsCustomID2 string
+	ExtFieldsCustomID3 string
 }
 
 // PropertyGroup property group

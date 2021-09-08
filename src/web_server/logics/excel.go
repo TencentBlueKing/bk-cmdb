@@ -100,38 +100,16 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		return err
 	}
 
-	extFieldKey := make([]string, 0)
-	extFieldsTopoID := "cc_ext_field_topo"
-	extFieldsBizID := "cc_ext_biz"
-	extFieldsModuleID := "cc_ext_module"
-	extFieldsSetID := "cc_ext_set"
-	extFieldKey = append(extFieldKey, extFieldsTopoID, extFieldsBizID)
-	extFields := map[string]string{
-		extFieldsTopoID:   ccLang.Language("web_ext_field_topo"),
-		extFieldsBizID:    ccLang.Language("biz_property_bk_biz_name"),
-		extFieldsModuleID: ccLang.Language("bk_module_name"),
-		extFieldsSetID:    ccLang.Language("bk_set_name"),
+	extField := ExtField{
+		ExtFieldsTopoID:    "cc_ext_field_topo",
+		ExtFieldsBizID:     "cc_ext_biz",
+		ExtFieldsModuleID:  "cc_ext_module",
+		ExtFieldsSetID:     "cc_ext_set",
+		ExtFieldsCustomID1: "cc_ext_custom1",
+		ExtFieldsCustomID2: "cc_ext_custom2",
+		ExtFieldsCustomID3: "cc_ext_custom3",
 	}
-	extFieldsCustomID1 := "cc_ext_custom1"
-	extFieldsCustomID2 := "cc_ext_custom2"
-	extFieldsCustomID3 := "cc_ext_custom3"
-	switch customLen {
-	case 1:
-		extFields[extFieldsCustomID1] = objName[0]
-		extFieldKey = append(extFieldKey, extFieldsCustomID1, extFieldsSetID, extFieldsModuleID)
-	case 2:
-		extFields[extFieldsCustomID1] = objName[1]
-		extFields[extFieldsCustomID2] = objName[0]
-		extFieldKey = append(extFieldKey, extFieldsCustomID2, extFieldsCustomID1, extFieldsSetID, extFieldsModuleID)
-	case 3:
-		extFields[extFieldsCustomID1] = objName[2]
-		extFields[extFieldsCustomID2] = objName[1]
-		extFields[extFieldsCustomID3] = objName[0]
-		extFieldKey = append(extFieldKey, extFieldsCustomID3, extFieldsCustomID2, extFieldsCustomID1, extFieldsSetID,
-			extFieldsModuleID)
-	default:
-		extFieldKey = append(extFieldKey, extFieldsSetID, extFieldsModuleID)
-	}
+	extFields, extFieldKey := lgc.handleExtField(extField, customLen, objName, ccLang)
 
 	fields = addExtFields(fields, extFields, extFieldKey)
 	addSystemField(fields, common.BKInnerObjIDHost, ccLang, customLen+5)
@@ -141,24 +119,89 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 	instPrimaryKeyValMap := make(map[int64][]PropertyPrimaryVal)
 	// indexID := getFieldsIDIndexMap(fields)
 	rowIndex := common.HostAddMethodExcelIndexOffset
-	for _, hostData := range data {
+	handleHostParam :=  HandleHostParam {
+		RowIndex :rowIndex,
+		Data :data,
+		CcErr :ccErr,
+		Fields :fields,
+		Rid :rid,
+		ModelBizID :modelBizID,
+		CustomLen :customLen,
+		ObjID :objID,
+		UsernameMap :usernameMap,
+		PropertyList :propertyList,
+		ObjName :objName,
+		CcLang :ccLang,
+		Sheet :sheet,
+	}
+	err = lgc.handleHost(ctx, header, extField, handleHostParam, instPrimaryKeyValMap)
+	if err != nil {
+		return err
+	}
 
+	err = lgc.BuildAssociationExcelFromData(ctx, objID, instPrimaryKeyValMap, xlsxFile, header, modelBizID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// handleExtField 处理自定义层级字段
+func (lgc *Logics) handleExtField(extField ExtField, customLen int, objName []string,
+	ccLang lang.DefaultCCLanguageIf) (map[string]string, []string) {
+	extFieldKey := make([]string, 0)
+	extFieldKey = append(extFieldKey, extField.ExtFieldsTopoID, extField.ExtFieldsBizID)
+	extFields := map[string]string{
+		extField.ExtFieldsTopoID:   ccLang.Language("web_ext_field_topo"),
+		extField.ExtFieldsBizID:    ccLang.Language("biz_property_bk_biz_name"),
+		extField.ExtFieldsModuleID: ccLang.Language("bk_module_name"),
+		extField.ExtFieldsSetID:    ccLang.Language("bk_set_name"),
+	}
+
+	switch customLen {
+	case 1:
+		extFields[extField.ExtFieldsCustomID1] = objName[0]
+		extFieldKey = append(extFieldKey, extField.ExtFieldsCustomID1, extField.ExtFieldsSetID,
+			extField.ExtFieldsModuleID)
+	case 2:
+		extFields[extField.ExtFieldsCustomID1] = objName[1]
+		extFields[extField.ExtFieldsCustomID2] = objName[0]
+		extFieldKey = append(extFieldKey, extField.ExtFieldsCustomID2, extField.ExtFieldsCustomID1,
+			extField.ExtFieldsSetID, extField.ExtFieldsModuleID)
+	case 3:
+		extFields[extField.ExtFieldsCustomID1] = objName[2]
+		extFields[extField.ExtFieldsCustomID2] = objName[1]
+		extFields[extField.ExtFieldsCustomID3] = objName[0]
+		extFieldKey = append(extFieldKey, extField.ExtFieldsCustomID3, extField.ExtFieldsCustomID2,
+			extField.ExtFieldsCustomID1, extField.ExtFieldsSetID,
+			extField.ExtFieldsModuleID)
+	default:
+		extFieldKey = append(extFieldKey, extField.ExtFieldsSetID, extField.ExtFieldsModuleID)
+	}
+	return extFields, extFieldKey
+}
+
+// handleHost 处理主机数据生成Excel表格数据
+func (lgc *Logics) handleHost(ctx context.Context, header http.Header, extField ExtField, param HandleHostParam,
+	instPrimaryKeyValMap map[int64][]PropertyPrimaryVal) error {
+	for _, hostData := range param.Data {
 		rowMap, err := mapstr.NewFromInterface(hostData[common.BKInnerObjIDHost])
 		if err != nil {
-			blog.ErrorJSON("BuildHostExcelFromData failed, hostData: %s, err: %s, rid: %s", hostData, err.Error(), rid)
-			return ccErr.CCError(common.CCErrCommReplyDataFormatError)
+			blog.ErrorJSON("BuildHostExcelFromData failed, hostData: %s, err: %s, rid: %s", hostData, err.Error(),
+				param.Rid)
+			return param.CcErr.CCError(common.CCErrCommReplyDataFormatError)
 		}
 
-		if _, exist := fields[common.BKCloudIDField]; exist {
+		if _, exist := param.Fields[common.BKCloudIDField]; exist {
 			cloudAreaArr, err := rowMap.MapStrArray(common.BKCloudIDField)
 			if err != nil {
-				blog.ErrorJSON("build host excel failed, cloud area not array, host: %s, err: %s, rid: %s", hostData, err, rid)
-				return ccErr.CCError(common.CCErrCommReplyDataFormatError)
+				blog.ErrorJSON("build host excel failed, cloud area not array, host: %s, err: %s, rid: %s", hostData, err, param.Rid)
+				return param.CcErr.CCError(common.CCErrCommReplyDataFormatError)
 			}
 
 			if len(cloudAreaArr) != 1 {
-				blog.ErrorJSON("build host excel failed, host has many cloud areas, host: %s, err: %s, rid: %s", hostData, err, rid)
-				return ccErr.CCError(common.CCErrCommReplyDataFormatError)
+				blog.ErrorJSON("build host excel failed, host has many cloud areas, host: %s, err: %s, rid: %s", hostData, err, param.Rid)
+				return param.CcErr.CCError(common.CCErrCommReplyDataFormatError)
 			}
 
 			cloudArea := fmt.Sprintf("%v[%v]", cloudAreaArr[0][common.BKInstNameField], cloudAreaArr[0][common.BKInstIDField])
@@ -171,7 +214,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 			if len(topos) > 0 {
 				idx := strings.Index(topos[0], logics.SplitFlag)
 				if idx > 0 {
-					rowMap[extFieldsBizID] = topos[0][:idx]
+					rowMap[extField.ExtFieldsBizID] = topos[0][:idx]
 				}
 
 				toposNobiz := make([]string, 0)
@@ -181,132 +224,133 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 						toposNobiz = append(toposNobiz, topo[idx+len(logics.SplitFlag):])
 					}
 				}
-				rowMap[extFieldsTopoID] = strings.Join(toposNobiz, ",")
+				rowMap[extField.ExtFieldsTopoID] = strings.Join(toposNobiz, ",")
 			}
 		}
 
-		result, err := lgc.getTopoMainlineInstRoot(ctx, header, modelBizID, moduleMap)
-		if err != nil || result == nil{
-			blog.Errorf("get topo mainline instance root failed, err: %s, rid: %s", err, rid)
+		result, err := lgc.getTopoMainlineInstRoot(ctx, header, param.ModelBizID, moduleMap)
+		if err != nil || result == nil {
+			blog.Errorf("get topo mainline instance root failed, err: %s, rid: %s", err, param.Rid)
 			return err
 		}
+		lgc.handleCustomField(result, rowMap, extField, param.CustomLen)
 
-		var moduleStr, setStr, customStr1, customStr2, customStr3 string
-		for _, res := range result.Nodes {
-			length := len(res.Path) - 3
-			switch length {
-			case 1:
-				if customStr1 == "" {
-					customStr1 = res.Path[2].InstanceName
-				} else {
-					ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
-					if !ok {
-						customStr1 += "," + res.Path[2].InstanceName
-					}
-				}
-			case 2:
-				if customStr1 == "" {
-					customStr1 = res.Path[2].InstanceName
-				} else {
-					ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
-					if !ok {
-						customStr1 += "," + res.Path[2].InstanceName
-					}
-				}
-				if customStr2 == "" {
-					customStr2 = res.Path[3].InstanceName
-				} else {
-					ok := util.Contains(strings.Split(customStr2, ","), res.Path[3].InstanceName)
-					if !ok {
-						customStr2 += "," + res.Path[3].InstanceName
-					}
-				}
-			case 3:
-				if customStr1 == "" {
-					customStr1 = res.Path[2].InstanceName
-				} else {
-					ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
-					if !ok {
-						customStr1 += "," + res.Path[2].InstanceName
-					}
-				}
-
-				if customStr2 == "" {
-					customStr2 = res.Path[3].InstanceName
-				} else {
-					ok := util.Contains(strings.Split(customStr2, ","), res.Path[3].InstanceName)
-					if !ok {
-						customStr2 += "," + res.Path[3].InstanceName
-					}
-				}
-
-				if customStr3 == "" {
-					customStr3 = res.Path[4].InstanceName
-				} else {
-					ok := util.Contains(strings.Split(customStr3, ","), res.Path[4].InstanceName)
-					if !ok {
-						customStr3 += "," + res.Path[4].InstanceName
-					}
-				}
-			}
-
-			if moduleStr == "" {
-				moduleStr = res.Path[0].InstanceName
-			} else {
-				ok := util.Contains(strings.Split(moduleStr, ","), res.Path[0].InstanceName)
-				if !ok {
-					moduleStr += "," + res.Path[0].InstanceName
-				}
-			}
-
-			if setStr == "" {
-				setStr = res.Path[1].InstanceName
-			} else {
-				ok := util.Contains(strings.Split(setStr, ","), res.Path[1].InstanceName)
-				if !ok {
-					setStr += "," + res.Path[1].InstanceName
-				}
-			}
-		}
-
-		rowMap[extFieldsModuleID] = moduleStr
-		rowMap[extFieldsSetID] = setStr
-		switch customLen {
-		case 1:
-			rowMap[extFieldsCustomID1] = customStr1
-		case 2:
-			rowMap[extFieldsCustomID1] = customStr1
-			rowMap[extFieldsCustomID2] = customStr2
-		case 3:
-			rowMap[extFieldsCustomID1] = customStr1
-			rowMap[extFieldsCustomID2] = customStr2
-			rowMap[extFieldsCustomID3] = customStr3
-		}
-
-		instIDKey := metadata.GetInstIDFieldByObjID(objID)
+		instIDKey := metadata.GetInstIDFieldByObjID(param.ObjID)
 		instID, err := rowMap.Int64(instIDKey)
 		if err != nil {
-			blog.Errorf("setExcelRowDataByIndex inst:%+v, not inst id key:%s, objID:%s, rid:%s", rowMap, instIDKey, objID, rid)
-			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, instIDKey, objID)
+			blog.Errorf("setExcelRowDataByIndex inst:%+v, not inst id key:%s, objID:%s, rid:%s", rowMap, instIDKey,
+				param.ObjID, param.Rid)
+			return param.CcErr.Errorf(common.CCErrCommInstFieldNotFound, instIDKey, param.ObjID)
 		}
 
 		// 使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
-		rowMap, err = replaceEnName(rid, rowMap, usernameMap, propertyList, ccLang)
+		rowMap, err = replaceEnName(param.Rid, rowMap, param.UsernameMap, param.PropertyList, param.CcLang)
 		if err != nil {
-			blog.Errorf("rebuild user list field, rid: %s", rid)
+			blog.Errorf("rebuild user list field, rid: %s", param.Rid)
 			return err
 		}
 
-		primaryKeyArr := setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
+		primaryKeyArr := setExcelRowDataByIndex(rowMap, param.Sheet, param.RowIndex, param.Fields)
 		instPrimaryKeyValMap[instID] = primaryKeyArr
-		rowIndex++
-	}
-
-	err = lgc.BuildAssociationExcelFromData(ctx, objID, instPrimaryKeyValMap, xlsxFile, header, modelBizID)
-	if err != nil {
-		return err
+		param.RowIndex++
 	}
 	return nil
+}
+
+// handleCustomField 处理自定义成层级数据
+func (lgc *Logics) handleCustomField(result *metadata.TopoPathResult, rowMap mapstr.MapStr, extField ExtField,
+	customLen int) {
+	var moduleStr, setStr, customStr1, customStr2, customStr3 string
+	for _, res := range result.Nodes {
+		length := len(res.Path) - 3
+		switch length {
+		case 1:
+			if customStr1 == "" {
+				customStr1 = res.Path[2].InstanceName
+			} else {
+				ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
+				if !ok {
+					customStr1 += "," + res.Path[2].InstanceName
+				}
+			}
+		case 2:
+			if customStr1 == "" {
+				customStr1 = res.Path[2].InstanceName
+			} else {
+				ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
+				if !ok {
+					customStr1 += "," + res.Path[2].InstanceName
+				}
+			}
+			if customStr2 == "" {
+				customStr2 = res.Path[3].InstanceName
+			} else {
+				ok := util.Contains(strings.Split(customStr2, ","), res.Path[3].InstanceName)
+				if !ok {
+					customStr2 += "," + res.Path[3].InstanceName
+				}
+			}
+		case 3:
+			if customStr1 == "" {
+				customStr1 = res.Path[2].InstanceName
+			} else {
+				ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
+				if !ok {
+					customStr1 += "," + res.Path[2].InstanceName
+				}
+			}
+
+			if customStr2 == "" {
+				customStr2 = res.Path[3].InstanceName
+			} else {
+				ok := util.Contains(strings.Split(customStr2, ","), res.Path[3].InstanceName)
+				if !ok {
+					customStr2 += "," + res.Path[3].InstanceName
+				}
+			}
+
+			if customStr3 == "" {
+				customStr3 = res.Path[4].InstanceName
+			} else {
+				ok := util.Contains(strings.Split(customStr3, ","), res.Path[4].InstanceName)
+				if !ok {
+					customStr3 += "," + res.Path[4].InstanceName
+				}
+			}
+		}
+
+		if moduleStr == "" {
+			moduleStr = res.Path[0].InstanceName
+		} else {
+			ok := util.Contains(strings.Split(moduleStr, ","), res.Path[0].InstanceName)
+			if !ok {
+				moduleStr += "," + res.Path[0].InstanceName
+			}
+		}
+
+		if setStr == "" {
+			setStr = res.Path[1].InstanceName
+		} else {
+			ok := util.Contains(strings.Split(setStr, ","), res.Path[1].InstanceName)
+			if !ok {
+				setStr += "," + res.Path[1].InstanceName
+			}
+		}
+	}
+
+	rowMap[extField.ExtFieldsModuleID] = moduleStr
+	rowMap[extField.ExtFieldsSetID] = setStr
+	switch customLen {
+	case 1:
+		rowMap[extField.ExtFieldsCustomID1] = customStr1
+	case 2:
+		rowMap[extField.ExtFieldsCustomID1] = customStr1
+		rowMap[extField.ExtFieldsCustomID2] = customStr2
+	case 3:
+		rowMap[extField.ExtFieldsCustomID1] = customStr1
+		rowMap[extField.ExtFieldsCustomID2] = customStr2
+		rowMap[extField.ExtFieldsCustomID3] = customStr3
+	}
 }
 
 // getTopoMainlineInstRoot get topo mainline inst root
