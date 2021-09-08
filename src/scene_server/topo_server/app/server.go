@@ -139,7 +139,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		AuthManager: authManager,
 		Es:          essrv,
 		Core:        core.New(engine.CoreAPI, authManager, engine.Language),
-		Logics:      logics.New(engine.CoreAPI, authManager),
+		Logics:      logics.New(engine.CoreAPI, authManager, engine.Language),
 		Error:       engine.CCErr,
 		Config:      server.Config,
 	}

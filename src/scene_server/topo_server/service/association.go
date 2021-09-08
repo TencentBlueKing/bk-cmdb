@@ -152,7 +152,7 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
 	if len(ctx.Request.QueryParameter("with_default")) > 0 {
 		withDefault = true
 	}
-	topoInstRst, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit, common.BKInnerObjIDApp, id, withStatistics, withDefault)
+	topoInstRst, err := s.Logics.InstAssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit, common.BKInnerObjIDApp, id, withStatistics, withDefault)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (s *Service) GetTopoNodeHostAndSerInstCount(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := s.Core.AssociationOperation().TopoNodeHostAndSerInstCount(ctx.Kit, id, input)
+	result, err := s.Logics.InstAssociationOperation().TopoNodeHostAndSerInstCount(ctx.Kit, id, input)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

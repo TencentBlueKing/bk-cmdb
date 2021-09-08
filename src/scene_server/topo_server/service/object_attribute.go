@@ -17,25 +17,23 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // CreateObjectAttribute create a new object attribute
 func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
-	dataWithModelBizID := MapStrWithModelBizID{}
-	if err := ctx.DecodeInto(&dataWithModelBizID); err != nil {
+	attr := new(metadata.Attribute)
+	if err := ctx.DecodeInto(&attr); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	data := dataWithModelBizID.Data
-	modelBizID := dataWithModelBizID.ModelBizID
 
-	// do not support adding preset attribute by api
-	data.Set(common.BKIsPre, false)
-
+	// do not support add preset attribute by api
+	attr.IsPre = false
 	isBizCustomField := false
 	// adapt input path param with bk_biz_id
 	if bizIDStr := ctx.Request.PathParameter(common.BKAppIDField); bizIDStr != "" {
@@ -51,34 +49,24 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 			return
 		}
-		modelBizID = bizID
-		data.Set(common.BKAppIDField, modelBizID)
+		attr.BizID = bizID
 		isBizCustomField = true
 	}
 
-	var attrInfo []*metadata.ObjAttDes
+	attrInfo := new(metadata.ObjAttDes)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
-		attr, err := s.Core.AttributeOperation().CreateObjectAttribute(ctx.Kit, data, modelBizID)
-		if nil != err {
+		attribute, err := s.Logics.AttributeOperation().CreateObjectAttribute(ctx.Kit, attr)
+		if err != nil {
 			return err
 		}
-
-		attribute := attr.Attribute()
-		cond := condition.CreateCondition()
-		cond.Field("id").Eq(attribute.ID)
-		attrInfo, err = s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, modelBizID)
-		if err != nil {
-			blog.Errorf("create object attribute success, but get attributes detail failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh)
+		if attribute == nil {
+			return err
 		}
-		if len(attrInfo) <= 0 {
-			blog.Errorf("create object attribute success, but get attributes detail failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh)
-		}
+		attrInfo.Attribute = *attribute
+		attrInfo.PropertyGroupName = attribute.PropertyGroupName
 
 		if isBizCustomField {
-			attrInfo[0].BizID = modelBizID
+			attrInfo.BizID = attr.BizID
 		}
 		return nil
 	})
@@ -87,8 +75,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-
-	ctx.RespEntity(attrInfo[0])
+	ctx.RespEntity(attrInfo)
 }
 
 // SearchObjectAttribute search the object attributes
@@ -99,40 +86,57 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 	data := dataWithModelBizID.Data
-	modelBizID := dataWithModelBizID.ModelBizID
+	util.AddModelBizIDCondition(data, dataWithModelBizID.ModelBizID)
+	data[metadata.AttributeFieldIsSystem] = false
+	data[metadata.AttributeFieldIsAPI] = false
 
-	cond := condition.CreateCondition()
+	basePage := metadata.BasePage{}
 	if data.Exists(metadata.PageName) {
 		page, err := data.MapStr(metadata.PageName)
 		if err != nil {
-			blog.Errorf("SearchObjectAttribute failed, page info convert to mapstr failed, page: %v, err: %v, rid: %s", data[metadata.PageName], err, ctx.Kit.Rid)
+			blog.Errorf("page info convert to mapstr failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
-		if err := cond.SetPage(page); err != nil {
-			blog.Errorf("SearchObjectAttribute, cond set page failed, page: %v, err: %v, rid: %v", page, err, ctx.Kit.Rid)
+		if err := mapstruct.Decode2Struct(page, &basePage); err != nil {
+			blog.Errorf("page info convert to struct failed, page: %v, err: %v, rid: %s", page, err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
 		data.Remove(metadata.PageName)
 	}
 
-	if err := cond.Parse(data); nil != err {
-		blog.Errorf("search object attribute, but failed to parse the data into condition, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+	queryCond := &metadata.QueryCondition{
+		Condition: data,
+		Page:      basePage,
 	}
-
-	cond.Field(metadata.AttributeFieldIsSystem).NotEq(true)
-	cond.Field(metadata.AttributeFieldIsAPI).NotEq(true)
-
-	resp, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, modelBizID)
+	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(ctx.Kit.Ctx, ctx.Kit.Header, queryCond)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(resp)
+	grpMap, err := s.getPropertyGroupName(ctx, resp.Info, dataWithModelBizID.ModelBizID)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	attrInfos := make([]*metadata.ObjAttDes, 0)
+	for _, attr := range resp.Info {
+		attrInfo := &metadata.ObjAttDes{
+			Attribute: attr,
+		}
+		grpName, ok := grpMap[attr.PropertyGroup]
+		if !ok {
+			blog.Errorf("failed to get property group name, attr: %s, property: %s", attr, attr.PropertyGroup)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKPropertyNameField))
+			return
+		}
+		attrInfo.PropertyGroupName = grpName
+		attrInfos = append(attrInfos, attrInfo)
+	}
+
+	ctx.RespEntity(attrInfos)
 }
 
 // UpdateObjectAttribute update the object attribute
@@ -143,11 +147,13 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
-	if nil != err {
-		blog.Errorf("[api-att] failed to parse the path params id(%s), error info is %s, rid: %s", ctx.Request.PathParameter("id"), err.Error(), ctx.Kit.Rid)
+	if err != nil {
+		blog.Errorf("failed to parse the path params id: %s, err: %s, rid: %s", ctx.Request.PathParameter("id"),
+			err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
+
 	// adapt input path param with bk_biz_id
 	var bizID int64
 	if bizIDStr := ctx.Request.PathParameter(common.BKAppIDField); bizIDStr != "" {
@@ -173,7 +179,7 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 	data.Remove(common.BKPropertyGroupField)
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Core.AttributeOperation().UpdateObjectAttribute(ctx.Kit, data, id, bizID)
+		err := s.Logics.AttributeOperation().UpdateObjectAttribute(ctx.Kit, data, id, bizID)
 		if err != nil {
 			return err
 		}
@@ -193,14 +199,12 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("id", ctx.Request.PathParameter("id"))
 	id, err := paramPath.Int64("id")
-	if nil != err {
-		blog.Errorf("[api-att] failed to parse the path params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("id"), err.Error(), ctx.Kit.Rid)
+	if err != nil {
+		blog.Errorf("failed to parse the path params id: %s, err: %s , rid: %s", ctx.Request.PathParameter("id"),
+			err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-
-	cond := condition.CreateCondition()
-	cond.Field(metadata.AttributeFieldID).Eq(id)
 
 	listRuleOption := metadata.ListHostApplyRuleOption{
 		ModuleIDs: []int64{id},
@@ -208,9 +212,11 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 			Limit: common.BKNoLimit,
 		},
 	}
-	ruleResult, err := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, 0, listRuleOption)
+	ruleResult, err := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
+		0, listRuleOption)
 	if err != nil {
-		blog.Errorf("delete object attribute failed, ListHostApplyRule failed, listRuleOption: %+v, err: %+v, rid: %s", listRuleOption, err, ctx.Kit.Rid)
+		blog.Errorf("get host apply rule failed, listRuleOption: %+v, err: %+v, rid: %s", listRuleOption, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -225,9 +231,10 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Core.AttributeOperation().DeleteObjectAttribute(ctx.Kit, cond, modelType.BizID)
+	cond := mapstr.MapStr{metadata.AttributeFieldID: id}
+	err = s.Logics.AttributeOperation().DeleteObjectAttribute(ctx.Kit, cond, modelType.BizID)
 	if err != nil {
-		blog.Errorf("delete object attribute failed, DeleteObjectAttribute failed, params: %+v, err: %+v, rid: %s", ctx.Kit, err, ctx.Kit.Rid)
+		blog.Errorf("delete object attribute failed, params: %+v, err: %+v, rid: %s", ctx.Kit, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -236,8 +243,10 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 		deleteRuleOption := metadata.DeleteHostApplyRuleOption{
 			RuleIDs: ruleIDs,
 		}
-		if err := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, 0, deleteRuleOption); err != nil {
-			blog.Errorf("delete object attribute success, but DeleteHostApplyRule failed, params: %+v, err: %+v, rid: %s", deleteRuleOption, err, ctx.Kit.Rid)
+		if err := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, 0,
+			deleteRuleOption); err != nil {
+			blog.Errorf("delete host apply rule failed, params: %+v, err: %+v, rid: %s", deleteRuleOption, err,
+				ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
@@ -245,6 +254,7 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// UpdateObjectAttributeIndex update object attribute index
 func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 	data := make(map[string]interface{})
 	if err := ctx.DecodeInto(&data); err != nil {
@@ -254,8 +264,9 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter(common.BKObjIDField)
 
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
-	if nil != err {
-		blog.Errorf("[api-att] failed to parse the params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("id"), err.Error(), ctx.Kit.Rid)
+	if err != nil {
+		blog.Errorf("failed to parse the id from path params, id: %s, err: %s , rid: %s",
+			ctx.Request.PathParameter("id"), err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoPathParamPaserFailed))
 		return
 	}
@@ -263,9 +274,14 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 	var result *metadata.UpdateAttrIndexData
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		result, err = s.Core.AttributeOperation().UpdateObjectAttributeIndex(ctx.Kit, objID, data, id)
+		input := metadata.UpdateOption{
+			Condition: mapstr.MapStr{common.BKFieldID: id},
+			Data:      data,
+		}
+		result, err = s.Engine.CoreAPI.CoreService().Model().UpdateModelAttrsIndex(ctx.Kit.Ctx, ctx.Kit.Header, objID,
+			&input)
 		if err != nil {
-			blog.Errorf("UpdateObjectAttributeIndex failed, error info is %s , rid: %s", err.Error(), ctx.Kit.Rid)
+			blog.Errorf("update object attribute index failed, err: %v , rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -286,33 +302,96 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 		return
 	}
 	data := dataWithModelBizID.Data
-	cond := condition.CreateCondition()
-	data.Remove(metadata.PageName)
-	if err := cond.Parse(data); nil != err {
-		blog.Errorf("search object attribute, but failed to parse the data into condition, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	cond.Field(metadata.AttributeFieldIsSystem).NotEq(true)
-	cond.Field(metadata.AttributeFieldIsAPI).NotEq(true)
-	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
+	data[metadata.AttributeFieldIsSystem] = false
+	data[metadata.AttributeFieldIsAPI] = false
+	util.AddModelBizIDCondition(data, dataWithModelBizID.ModelBizID)
 
-	attributes, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, dataWithModelBizID.ModelBizID)
+	basePage := metadata.BasePage{}
+	if data.Exists(metadata.PageName) {
+		page, err := data.MapStr(metadata.PageName)
+		if err != nil {
+			blog.Errorf("page info convert to mapstr failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		if err := mapstruct.Decode2Struct(page, &basePage); err != nil {
+			blog.Errorf("page info convert to struct failed, page: %v, err: %v, rid: %s", page, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		data.Remove(metadata.PageName)
+	}
+
+	queryCond := &metadata.QueryCondition{
+		Condition: data,
+		Page:      basePage,
+	}
+
+	result, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDHost, queryCond)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	grpMap, err := s.getPropertyGroupName(ctx, result.Info, dataWithModelBizID.ModelBizID)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	hostAttributes := make([]metadata.HostObjAttDes, 0)
-	for _, item := range attributes {
-		if item == nil {
-			continue
-		}
+	for _, item := range result.Info {
 		hostApplyEnabled := metadata.CheckAllowHostApplyOnField(item.PropertyID)
 		hostAttribute := metadata.HostObjAttDes{
-			ObjAttDes:        *item,
+			ObjAttDes: metadata.ObjAttDes{
+				Attribute: item,
+			},
 			HostApplyEnabled: hostApplyEnabled,
 		}
+		grpName, ok := grpMap[item.PropertyGroup]
+		if !ok {
+			blog.Errorf("failed to get property group name, attr: %s, property: %s", item, item.PropertyGroup)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKPropertyNameField))
+			return
+		}
+		hostAttribute.ObjAttDes.PropertyGroupName = grpName
 		hostAttributes = append(hostAttributes, hostAttribute)
 	}
 	ctx.RespEntity(hostAttributes)
+}
+
+func (s *Service) getPropertyGroupName(ctx *rest.Contexts, attrs []metadata.Attribute,
+	modelBizID int64) (map[string]string, error) {
+	if len(attrs) == 0 {
+		return make(map[string]string), nil
+	}
+
+	grpOrCond := make([]map[string]interface{}, 0)
+	for _, attr := range attrs {
+		grpOrCond = append(grpOrCond, map[string]interface{}{
+			metadata.GroupFieldGroupID:  attr.PropertyGroup,
+			metadata.GroupFieldObjectID: attr.ObjectID,
+		})
+	}
+	grpCond := map[string]interface{}{
+		common.BKDBOR: grpOrCond,
+	}
+	util.AddModelBizIDCondition(grpCond, modelBizID)
+	cond := metadata.QueryCondition{
+		Condition:      grpCond,
+		DisableCounter: true,
+	}
+	rsp, err := s.Engine.CoreAPI.CoreService().Model().ReadAttributeGroupByCondition(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	if err != nil {
+		blog.Errorf("failed to get attr group, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		return nil, err
+	}
+
+	grpMap := make(map[string]string)
+	for _, grp := range rsp.Info {
+		grpMap[grp.GroupID] = grp.GroupName
+	}
+
+	return grpMap, nil
 }

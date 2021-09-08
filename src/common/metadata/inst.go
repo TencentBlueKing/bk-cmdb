@@ -213,3 +213,50 @@ func NewManyCommInstResultDetail() *CreateManyCommInstResultDetail {
 		Error:          make(map[int64]string, 0),
 	}
 }
+
+// InstBatchInfo info struct of batch create or update inst
+type InstBatchInfo struct {
+	// BatchInfo batch info
+	// map[rownumber]map[property_id][date]
+	BatchInfo map[int64]mapstr.MapStr `json:"BatchInfo"`
+	InputType string                  `json:"input_type"`
+}
+
+// GetInstID get inst id by objid
+func GetInstID(objID string, data mapstr.MapStr) (int64, error) {
+	return data.Int64(GetInstIDFieldByObjID(objID))
+}
+
+// GetInstName get inst name by objid
+func GetInstName(objID string, data mapstr.MapStr) (string, error) {
+	return data.String(GetInstNameFieldName(objID))
+}
+
+// GetBizID get biz id by inst data
+func GetBizID(data mapstr.MapStr) (int64, error) {
+	return data.Int64(common.BKAppIDField)
+}
+
+// GetParentID get parent id by inst data
+func GetParentID(data mapstr.MapStr) (int64, error) {
+	return data.Int64(common.BKParentIDField)
+}
+
+type opcondition struct {
+	InstID []int64 `json:"inst_ids"`
+}
+
+type deleteCondition struct {
+	opcondition `json:",inline"`
+}
+
+type updateCondition struct {
+	InstID   int64                  `json:"inst_id"`
+	InstInfo map[string]interface{} `json:"datas"`
+}
+
+// OpCondition the condition operation
+type OpCondition struct {
+	Delete deleteCondition   `json:"delete"`
+	Update []updateCondition `json:"update"`
+}
