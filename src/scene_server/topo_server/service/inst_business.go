@@ -101,7 +101,7 @@ func (s *Service) UpdateBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
+	obj, err := s.Logics.ObjectOperation().FindSingleObject(ctx.Kit, nil, common.BKInnerObjIDApp)
 	if err != nil {
 		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -116,7 +116,7 @@ func (s *Service) UpdateBusiness(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Logics.BusinessOperation().UpdateBusiness(ctx.Kit, data, obj.Object(), bizID)
+		err = s.Logics.BusinessOperation().UpdateBusiness(ctx.Kit, data, *obj, bizID)
 		if err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
+	obj, err := s.Logics.ObjectOperation().FindSingleObject(ctx.Kit, nil, common.BKInnerObjIDApp)
 	if err != nil {
 		blog.Errorf("search business failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -171,7 +171,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 	updateData := mapstr.MapStr{}
 	switch common.DataStatusFlag(ctx.Request.PathParameter("flag")) {
 	case common.DataStatusDisabled:
-		if err := s.Core.AssociationOperation().CheckAssociation(ctx.Kit, obj.Object().ObjectID, bizID); err != nil {
+		if err := s.Core.AssociationOperation().CheckAssociation(ctx.Kit, obj.ObjectID, bizID); err != nil {
 			ctx.RespAutoError(err)
 			return
 		}
@@ -204,7 +204,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Logics.BusinessOperation().UpdateBusiness(ctx.Kit, updateData, obj.Object(), bizID)
+		err = s.Logics.BusinessOperation().UpdateBusiness(ctx.Kit, updateData, *obj, bizID)
 		if err != nil {
 			blog.Errorf("UpdateBusinessStatus failed, run update failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
