@@ -184,6 +184,7 @@
       })
       Bus.$on('instance-selection-change', this.handleInstanceSelectionChange)
       Bus.$on('update-labels', this.updateHistoryLabels)
+      Bus.$on('delete-complete', this.checkDifference)
       this.setFilter()
       this.updateHistoryLabels()
     },
@@ -191,6 +192,7 @@
       this.unwatch()
       Bus.$off('instance-selection-change', this.handleInstanceSelectionChange)
       Bus.$off('update-labels', this.updateHistoryLabels)
+      Bus.$off('delete-complete', this.checkDifference)
     },
     methods: {
       async updateHistoryLabels() {
@@ -303,6 +305,10 @@
         }
       },
       async checkDifference() {
+        if (!this.withTemplate) {
+          return
+        }
+
         try {
           // eslint-disable-next-line max-len
           const { modules: syncStatus = [] } = await this.$store.dispatch('serviceTemplate/getServiceTemplateSyncStatus', {
