@@ -33,7 +33,8 @@ type ModuleOperationInterface interface {
 }
 
 // NewModuleOperation create a new module
-func NewModuleOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) ModuleOperationInterface {
+func NewModuleOperation(client apimachinery.ClientSetInterface,
+	authManager *extensions.AuthManager) ModuleOperationInterface {
 	return &module{
 		clientSet:   client,
 		authManager: authManager,
@@ -46,6 +47,7 @@ type module struct {
 	inst        InstOperationInterface
 }
 
+// SetProxy 初始化依赖
 func (m *module) SetProxy(inst InstOperationInterface) {
 	m.inst = inst
 }
@@ -94,45 +96,9 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "service_template_id can not be 0")
 	}
 
-	if serviceCategoryID == 0 && serviceTemplateID == 0 {
-		// set default service template id
-		defaultServiceCategory, err := m.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx, kit.Header)
-		if err != nil {
-			blog.Errorf("get default service category failed, err: %s, rid: %s", err, kit.Rid)
-			return nil, kit.CCError.Errorf(common.CCErrProcGetDefaultServiceCategoryFailed)
-		}
-		serviceCategoryID = defaultServiceCategory.ID
-	} else if serviceTemplateID != common.ServiceTemplateIDNotSet {
-		// 校验 serviceCategoryID 与 serviceTemplateID 对应
-		templateIDs := []int64{serviceTemplateID}
-		option := metadata.ListServiceTemplateOption{
-			BusinessID:         bizID,
-			ServiceTemplateIDs: templateIDs,
-		}
-		stResult, err := m.clientSet.CoreService().Process().ListServiceTemplates(kit.Ctx, kit.Header, &option)
-		if err != nil {
-			return nil, err
-		}
-		if len(stResult.Info) == 0 {
-			blog.Errorf("get service template not found, filter: %s, rid: %s", option, kit.Rid)
-			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
-		}
-		if serviceCategoryExist == true && serviceCategoryID != stResult.Info[0].ServiceCategoryID {
-			return nil, kit.CCError.Error(common.CCErrProcServiceTemplateAndCategoryNotCoincide)
-		}
-		serviceCategoryID = stResult.Info[0].ServiceCategoryID
-	} else {
-		// 检查 service category id 是否有效
-		serviceCategory, err := m.clientSet.CoreService().Process().GetServiceCategory(kit.Ctx, kit.Header,
-			serviceCategoryID)
-		if err != nil {
-			return nil, err
-		}
-		if serviceCategory.BizID != 0 && serviceCategory.BizID != bizID {
-			blog.V(3).Info("get service category and module belong to two business, categoryBizID: %d, "+
-				"bizID: %d, rid: %s", serviceCategory.BizID, bizID, kit.Rid)
-			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
-		}
+	if err := m.checkServiceTemplateParam(kit, serviceCategoryID, serviceTemplateID, bizID,
+		serviceCategoryExist); err != nil {
+		return nil, err
 	}
 	data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
 	data.Set(common.BKServiceTemplateIDField, serviceTemplateID)
@@ -167,6 +133,51 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 	return inst, nil
 }
 
+func (m *module) checkServiceTemplateParam(kit *rest.Kit, serviceCategoryID, serviceTemplateID, bizID int64,
+	serviceCategoryExist bool) error{
+	if serviceCategoryID == 0 && serviceTemplateID == 0 {
+		// set default service template id
+		defaultServiceCategory, err := m.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx, kit.Header)
+		if err != nil {
+			blog.Errorf("get default service category failed, err: %s, rid: %s", err, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrProcGetDefaultServiceCategoryFailed)
+		}
+		serviceCategoryID = defaultServiceCategory.ID
+	} else if serviceTemplateID != common.ServiceTemplateIDNotSet {
+		// 校验 serviceCategoryID 与 serviceTemplateID 对应
+		templateIDs := []int64{serviceTemplateID}
+		option := metadata.ListServiceTemplateOption{
+			BusinessID:         bizID,
+			ServiceTemplateIDs: templateIDs,
+		}
+		stResult, err := m.clientSet.CoreService().Process().ListServiceTemplates(kit.Ctx, kit.Header, &option)
+		if err != nil {
+			return err
+		}
+		if len(stResult.Info) == 0 {
+			blog.Errorf("get service template not found, filter: %s, rid: %s", option, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
+		if serviceCategoryExist == true && serviceCategoryID != stResult.Info[0].ServiceCategoryID {
+			return kit.CCError.Error(common.CCErrProcServiceTemplateAndCategoryNotCoincide)
+		}
+		serviceCategoryID = stResult.Info[0].ServiceCategoryID
+	} else {
+		// 检查 service category id 是否有效
+		serviceCategory, err := m.clientSet.CoreService().Process().GetServiceCategory(kit.Ctx, kit.Header,
+			serviceCategoryID)
+		if err != nil {
+			return err
+		}
+		if serviceCategory.BizID != 0 && serviceCategory.BizID != bizID {
+			blog.V(3).Info("get service category and module belong to two business, categoryBizID: %d, "+
+				"bizID: %d, rid: %s", serviceCategory.BizID, bizID, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+		}
+	}
+	return nil
+}
+
 // DeleteModule delete module
 func (m *module) DeleteModule(kit *rest.Kit, bizID int64, setIDs, moduleIDs []int64) error {
 	innerCond := map[string]interface{}{common.BKAppIDField: bizID}
@@ -182,7 +193,7 @@ func (m *module) DeleteModule(kit *rest.Kit, bizID int64, setIDs, moduleIDs []in
 	// module table doesn't have metadata field
 	err := m.inst.DeleteInst(kit, common.BKInnerObjIDModule, innerCond, true)
 	if err != nil {
-		blog.Errorf("delete module failed, DeleteInst failed, err: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("delete module failed, err: %s, rid: %s", err, kit.Rid)
 		return err
 	}
 
@@ -207,7 +218,7 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 	moduleInstance := new(metadata.ResponseModuleInstance)
 	if err := m.clientSet.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
 		findCond, moduleInstance); err != nil {
-		blog.Errorf("list modules failed, bizID: %s, setID: %s, moduleID: %s, err: %s, rid: %s", bizID, setID,
+		blog.Errorf("get list modules failed, bizID: %d, setID: %d, moduleID: %d, err: %s, rid: %s", bizID, setID,
 			moduleID, err, kit.Rid)
 		return err
 	}
