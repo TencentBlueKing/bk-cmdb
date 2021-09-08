@@ -31,8 +31,8 @@ type SearchSort struct {
 	Field string `json:"field"`
 }
 
-// SearchModule search module condition
-type SearchModule struct {
+// SearchModuleCondition search module condition
+type SearchModuleCondition struct {
 	Condition map[string]interface{} `json:"condition"`
 	Page      BasePage               `json:"page"`
 	Fields    []string               `json:"fields,omitempty"`

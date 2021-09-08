@@ -13,6 +13,8 @@
 package service
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -21,7 +23,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
-	"strconv"
 )
 
 const (
@@ -76,7 +77,8 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if err != nil {
-		blog.Errorf("failed to parse the biz id, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("failed to parse the biz id: %s, err: %s, rid: %s", ctx.Request.PathParameter("app_id"),
+			err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
 	}
@@ -289,7 +291,7 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 			requestBody.Page.Limit = common.BKDefaultLimit
 		}
 		if requestBody.Page.IsIllegal() {
-			blog.Errorf("page is isIllegal, rid:%s, page:%#v", ctx.Kit.Rid, requestBody.Page)
+			blog.Errorf("page is isIllegal, rid: %s, page: %+v", ctx.Kit.Rid, requestBody.Page)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 			return
 		}
@@ -318,8 +320,9 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		common.BKInnerObjIDModule, qc)
 	if err != nil {
-		blog.Errorf("list modules by service templateID failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
+		blog.Errorf("list modules by service templateID failed, err: %v, cond: %#v, rid: %s", err, qc,
+			ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -358,8 +361,8 @@ func (s *Service) SearchModuleByCondition(ctx *rest.Contexts) {
 }
 
 func (s *Service) searchModule(ctx *rest.Contexts, bizID, setID int64) {
-	searchCond := new(metadata.SearchModule)
-	if err := ctx.DecodeInto(&searchCond); nil != err {
+	searchCond := new(metadata.SearchModuleCondition)
+	if err := ctx.DecodeInto(searchCond); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -385,17 +388,12 @@ func (s *Service) searchModule(ctx *rest.Contexts, bizID, setID int64) {
 
 	instItems, err := s.Logics.InstOperation().FindInst(ctx.Kit, common.BKInnerObjIDModule, queryCond)
 	if err != nil {
-		blog.Errorf("failed to find the object, objID: %d, err: %s, rid: %s",
-			ctx.Request.PathParameter("obj_id"), err, ctx.Kit.Rid)
+		blog.Errorf("search module inst failed, err: %v, cond: %#v, rid: %s", err, queryCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	result := mapstr.MapStr{}
-	result.Set("count", instItems.Count)
-	result.Set("info", instItems)
-
-	ctx.RespEntity(result)
+	ctx.RespEntity(instItems)
 	return
 }
 
@@ -439,7 +437,7 @@ func (s *Service) SearchModuleBatch(ctx *rest.Contexts) {
 		common.BKInnerObjIDModule, qc)
 	if err != nil {
 		blog.Errorf("search module batch failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -501,7 +499,7 @@ func (s *Service) SearchModuleWithRelation(ctx *rest.Contexts) {
 		common.BKInnerObjIDModule, qc)
 	if err != nil {
 		blog.Errorf("search module with relation failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntityWithCount(int64(instanceResult.Count), instanceResult.Info)
@@ -537,7 +535,7 @@ func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {
 		ctx.Kit.Header, bizID, requestBody)
 	if err != nil {
 		blog.Errorf("search rule related modules failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -673,3 +671,63 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(result)
 }
+
+// GetInternalModuleWithStatistics get internal object by statistics
+func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	_, innerAppTopo, err := s.Logics.ModuleOperation().GetInternalModule(ctx.Kit, bizID)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if innerAppTopo == nil {
+		blog.Errorf("get internal module with statistics failed, type: %#v, rid: %s", innerAppTopo, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	moduleIDArr := make([]int64, 0)
+	for _, item := range innerAppTopo.Module {
+		moduleIDArr = append(moduleIDArr, item.ModuleID)
+	}
+
+	// count host apply rules
+	listApplyRuleOption := metadata.ListHostApplyRuleOption{
+		ModuleIDs: moduleIDArr,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	hostApplyRules, err := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx,
+		ctx.Kit.Header, bizID, listApplyRuleOption)
+	if err != nil {
+		blog.Errorf("get list host apply rule failed, bizID: %d, err: %s, rid: %s", bizID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	moduleRuleCount := make(map[int64]int64)
+	for _, item := range hostApplyRules.Info {
+		if _, exist := moduleRuleCount[item.ModuleID]; !exist {
+			moduleRuleCount[item.ModuleID] = 0
+		}
+		moduleRuleCount[item.ModuleID] += 1
+	}
+
+	set := mapstr.NewFromStruct(innerAppTopo, "field")
+	modules := make([]mapstr.MapStr, 0)
+	for _, module := range innerAppTopo.Module {
+		moduleItem := mapstr.NewFromStruct(module, "field")
+		moduleItem["host_apply_rule_count"] = 0
+		if ruleCount, ok := moduleRuleCount[module.ModuleID]; ok {
+			moduleItem["host_apply_rule_count"] = ruleCount
+		}
+		modules = append(modules, moduleItem)
+	}
+	set["module"] = modules
+	ctx.RespEntity(set)
+}
+

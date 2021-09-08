@@ -17,6 +17,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -29,6 +30,7 @@ type ModuleOperationInterface interface {
 	CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.MapStr) (*mapstr.MapStr, error)
 	DeleteModule(kit *rest.Kit, bizID int64, setID, moduleIDS []int64) error
 	UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, moduleID int64) error
+	GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder)
 	SetProxy(inst InstOperationInterface)
 }
 
@@ -52,6 +54,99 @@ func (m *module) SetProxy(inst InstOperationInterface) {
 	m.inst = inst
 }
 
+// GetInternalModule 获取内置模型
+func (m *module) GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo,
+	err errors.CCErrorCoder) {
+	// get set model
+	querySet := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKAppIDField:   bizID,
+			common.BKDefaultField: common.DefaultResSetFlag,
+		},
+		Fields: []string{common.BKSetIDField, common.BKSetNameField},
+	}
+	querySet.Page.Limit = 1
+
+	setRsp := &metadata.ResponseSetInstance{}
+	// 返回数据不包含自定义字段
+	if err = m.clientSet.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
+		querySet, setRsp); err != nil {
+		return 0, nil, err
+	}
+	if err := setRsp.CCError(); err != nil {
+		blog.Errorf("query set failed, err: %s, rid: %s", err, kit.Rid)
+		return 0, nil, err
+	}
+
+	// search modules
+	queryModule := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+			common.BKDefaultField: map[string]interface{}{
+				common.BKDBNE: 0,
+			},
+		},
+		Fields: []string{common.BKModuleIDField, common.BKModuleNameField, common.BKDefaultField,
+			common.HostApplyEnabledField},
+	}
+	queryModule.Page.Limit = common.BKNoLimit
+
+	moduleResp := &metadata.ResponseModuleInstance{}
+	// 返回数据不包含自定义字段
+	if err = m.clientSet.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header,
+		common.BKInnerObjIDModule, queryModule, moduleResp); err != nil {
+		return 0, nil, err
+	}
+	if err := moduleResp.CCError(); err != nil {
+		blog.Errorf("query module failed, err: %s, rid: %s", err, kit.Rid)
+		return 0, nil, err
+	}
+
+	// construct result
+	result = &metadata.InnterAppTopo{}
+	for _, set := range setRsp.Data.Info {
+		result.SetID = set.SetID
+		result.SetName = set.SetName
+		break // should be only one set
+	}
+
+	for _, module := range moduleResp.Data.Info {
+		result.Module = append(result.Module, metadata.InnerModule{
+			ModuleID:         module.ModuleID,
+			ModuleName:       module.ModuleName,
+			Default:          module.Default,
+			HostApplyEnabled: module.HostApplyEnabled,
+		})
+	}
+
+	return 0, result, nil
+}
+
+func (m *module) validBizSetID(kit *rest.Kit, bizID int64, setID int64) error {
+	cond := mapstr.MapStr{
+		common.BKDBOR: []mapstr.MapStr{
+			{common.BKSetIDField: setID},
+			{common.BKAppIDField: bizID},
+		},
+	}
+
+	query := &metadata.QueryCondition{
+		Condition: cond,
+	}
+
+	rsp, err := m.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, query)
+	if err != nil {
+		blog.Errorf("get module instance failed, err: %s, rid: %s", err, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if rsp.Count > 0 {
+		return nil
+	}
+
+	return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField+"/"+common.BKSetIDField)
+}
+
 // CreateModule create a new module
 func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.MapStr) (*mapstr.MapStr, error) {
 	data.Set(common.BKSetIDField, setID)
@@ -64,6 +159,9 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 	if err != nil {
 		blog.Errorf("parse default field into int failed, data: %#v, rid: %s", data, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKDefaultField)
+	}
+	if err := m.validBizSetID(kit, bizID, setID); err != nil {
+		return nil, err
 	}
 
 	// validate service category id and service template id
@@ -134,7 +232,7 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 }
 
 func (m *module) checkServiceTemplateParam(kit *rest.Kit, serviceCategoryID, serviceTemplateID, bizID int64,
-	serviceCategoryExist bool) error{
+	serviceCategoryExist bool) error {
 	if serviceCategoryID == 0 && serviceTemplateID == 0 {
 		// set default service template id
 		defaultServiceCategory, err := m.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx, kit.Header)
@@ -170,8 +268,8 @@ func (m *module) checkServiceTemplateParam(kit *rest.Kit, serviceCategoryID, ser
 			return err
 		}
 		if serviceCategory.BizID != 0 && serviceCategory.BizID != bizID {
-			blog.V(3).Info("get service category and module belong to two business, categoryBizID: %d, "+
-				"bizID: %d, rid: %s", serviceCategory.BizID, bizID, kit.Rid)
+			blog.V(3).Info("service category and module belong to two business, categoryBizID: %d, bizID: %d, "+
+				"rid: %s", serviceCategory.BizID, bizID, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
 		}
 	}
@@ -220,7 +318,13 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 		findCond, moduleInstance); err != nil {
 		blog.Errorf("get list modules failed, bizID: %d, setID: %d, moduleID: %d, err: %s, rid: %s", bizID, setID,
 			moduleID, err, kit.Rid)
-		return err
+		return kit.CCError.CCError(common.CCErrCommParseDBFailed)
+	}
+	if moduleInstance.Data.Count > 1 {
+		return kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject)
+	}
+	if len(moduleInstance.Data.Info) == 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommNotFound)
 	}
 
 	// 检查并提示禁止修改集群模板ID字段
