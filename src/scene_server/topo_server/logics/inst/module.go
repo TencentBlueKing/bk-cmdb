@@ -62,7 +62,7 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 
 	defaultVal, err := data.Int64(common.BKDefaultField)
 	if err != nil {
-		blog.Errorf("parse default field into int failed, data: %+v, rid: %s", data, kit.Rid)
+		blog.Errorf("parse default field into int failed, data: %#v, rid: %s", data, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKDefaultField)
 	}
 
@@ -126,7 +126,7 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 
 	inst, createErr := m.inst.CreateInst(kit, common.BKInnerObjIDModule, data)
 	if createErr != nil {
-		blog.Errorf("create module failed,  err: %s, rid: %s", createErr, kit.Rid)
+		blog.Errorf("create module failed, err: %s, rid: %s", createErr, kit.Rid)
 		return inst, createErr
 	}
 
