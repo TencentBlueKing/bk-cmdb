@@ -34,12 +34,10 @@ var (
 // while a mainline object deleted may use this func
 func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObjID, childObjID string) error {
 
-	cond := mapstr.New()
+	defaultCond := &metadata.QueryCondition{Condition: mapstr.New()}
 	if metadata.IsCommon(currentObjID) {
-		cond.Set(common.BKObjIDField, currentObjID)
+		defaultCond.Condition.Set(common.BKObjIDField, currentObjID)
 	}
-	// TODO 确认是否需要设置分页
-	defaultCond := &metadata.QueryCondition{Condition: cond}
 
 	// 获取 current 模型的所有实例
 	currentInsts, err := assoc.inst.FindInst(kit, currentObjID, defaultCond)
@@ -86,14 +84,10 @@ func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObj
 
 	if !canReset {
 		blog.Errorf("can not be reset, inst name repeated, inst: %s, rid: %s", repeatedInstName, kit.Rid)
-		errMsg := kit.CCError.CCError(common.CCErrTopoDeleteMainLineObjectAndInstNameRepeat).Error() +
-			" " + repeatedInstName
-		return kit.CCError.New(common.CCErrTopoDeleteMainLineObjectAndInstNameRepeat, errMsg)
+		return kit.CCError.CCError(common.CCErrTopoDeleteMainLineObjectAndInstNameRepeat)
 	}
 
-	// NEED FIX: 下面循环中的continue ，会在处理实例异常的时候跳过当前拓扑的处理，此方式可能会导致某个业务拓扑失败，但是不会影响所有。
 	// 修改 currentInsts 所有孩子结点的父节点，为 currentInsts 的父节点，并删除 currentInsts
-
 	childIDMap := make(map[int64][]int64)
 	for _, child := range children {
 		childInstID, err := child.Int64(common.GetInstIDField(currentObjID))
@@ -142,14 +136,12 @@ func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObj
 func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parentObjID, childObjID, currObjID,
 	currObjName string) ([]int64, error) {
 
-	defaultCond := &metadata.QueryCondition{}
-	cond := mapstr.New()
+	defaultCond := &metadata.QueryCondition{Condition: mapstr.New()}
 	if metadata.IsCommon(parentObjID) {
-		cond.Set(common.BKObjIDField, parentObjID)
+		defaultCond.Condition.Set(common.BKObjIDField, parentObjID)
 	}
-	defaultCond.Condition = cond
+
 	// fetch all parent instances.
-	// TODO replace to FindInst in inst/inst.go after merge
 	parentInsts, err := assoc.inst.FindInst(kit, parentObjID, defaultCond)
 	if err != nil {
 		blog.Errorf("failed to find parent object(%s) inst, err: %v, rid: %s", parentObjID, err, kit.Rid)
@@ -202,8 +194,7 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parentObjID,
 	// reset the child's parent instance's parent id to current instance's id.
 	childInst, err := assoc.getMainlineChildInst(kit, parentObjID, childObjID, parentInstIDs)
 	if err != nil {
-		blog.Errorf("failed to get the object(%s) mainline child inst, err: %v, rid: %s",
-			parentObjID, err, kit.Rid)
+		blog.Errorf("failed to get the object(%s) mainline child inst, err: %v, rid: %s", parentObjID, err, kit.Rid)
 		return nil, err
 	}
 
@@ -216,8 +207,7 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parentObjID,
 
 		parentID, err := child.Int64(common.BKParentIDField)
 		if err != nil {
-			blog.Errorf("failed to get the object(%s) mainline parent id, "+
-				"the current inst(%v), err: %v, rid: %s", childObjID, child, err, kit.Rid)
+			blog.Errorf("get parent id failed, current inst(%v), err: %v, rid: %s", child, err, kit.Rid)
 			continue
 		}
 		expectParent2Children[parentID] = append(expectParent2Children[parentID], childID)
