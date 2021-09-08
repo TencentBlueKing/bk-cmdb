@@ -944,10 +944,10 @@ func (s *Service) SearchInstAssociationWithOtherObject(ctx *rest.Contexts) {
 		return
 	}
 
-	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationSingleObjectInstInfo(ctx.Kit,
+	infos, cnt, err := s.Logics.InstOperation().SearchInstAssociationSingleObjectInstInfo(ctx.Kit,
 		reqParams.Condition.AssociationObjectID, input, reqParams.Condition.IsTargetObject)
 	if err != nil {
-		blog.ErrorJSON("parse page illegal, input:%s, err:%s, rid:%s", input, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("parse page illegal, input: %#v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
