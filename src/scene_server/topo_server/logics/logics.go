@@ -15,6 +15,8 @@ package logics
 import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
+	"configcenter/src/common/language"
+	"configcenter/src/scene_server/topo_server/logics/inst"
 	"configcenter/src/scene_server/topo_server/logics/model"
 	"configcenter/src/scene_server/topo_server/logics/operation"
 )
@@ -22,37 +24,87 @@ import (
 // Logics provides management interface for operations of model and instance and related resources like association
 type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
+	InstOperation() inst.InstOperationInterface
 	ObjectOperation() model.ObjectOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
+	AssociationOperation() model.AssociationOperationInterface
+	InstAssociationOperation() inst.AssociationOperationInterface
+	GraphicsOperation() operation.GraphicsOperationInterface
+	GroupOperation() model.GroupOperationInterface
 }
 
 type logics struct {
-	classification model.ClassificationOperationInterface
-	object         model.ObjectOperationInterface
-	identifier     operation.IdentifierOperationInterface
+	classification  model.ClassificationOperationInterface
+	inst            inst.InstOperationInterface
+	object          model.ObjectOperationInterface
+	identifier      operation.IdentifierOperationInterface
+	association     model.AssociationOperationInterface
+	instassociation inst.AssociationOperationInterface
+	graphics        operation.GraphicsOperationInterface
+	group           model.GroupOperationInterface
 }
 
 // New create a logics manager
-func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Logics {
+func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager,
+	languageIf language.CCLanguageIf) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
+	associationOperation := model.NewAssociationOperation(client, authManager)
+	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
+	instOperation := inst.NewInstOperation(client, languageIf, authManager, instAssociationOperation)
+	graphicsOperation := operation.NewGraphics(client, authManager)
+	groupOperation := model.NewGroupOperation(client)
+	groupOperation.SetProxy(objectOperation)
 
 	return &logics{
-		classification: classificationOperation,
-		object:         objectOperation,
-		identifier:     IdentifierOperation,
+		classification:  classificationOperation,
+		inst:            instOperation,
+		object:          objectOperation,
+		identifier:      IdentifierOperation,
+		association:     associationOperation,
+		instassociation: instAssociationOperation,
+		graphics:        graphicsOperation,
+		group:           groupOperation,
 	}
 }
 
+// ClassificationOperation return a classification provide ClassificationOperationInterface
 func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
 	return c.classification
 }
 
+// ObjectOperation return a object provide ObjectOperationInterface
 func (c *logics) ObjectOperation() model.ObjectOperationInterface {
 	return c.object
 }
 
+// IdentifierOperation return a identifier provide IdentifierOperationInterface
 func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
 	return c.identifier
+}
+
+// InstOperation return a inst provide InstOperationInterface
+func (c *logics) InstOperation() inst.InstOperationInterface {
+	return c.inst
+}
+
+// AssociationOperation return a association provide AssociationOperationInterface
+func (c *logics) AssociationOperation() model.AssociationOperationInterface {
+	return c.association
+}
+
+// InstAssociationOperation return a instance association provide AssociationOperationInterface
+func (c *logics) InstAssociationOperation() inst.AssociationOperationInterface {
+	return c.instassociation
+}
+
+// GraphicsOperation return a inst provide GraphicsOperation
+func (c *logics) GraphicsOperation() operation.GraphicsOperationInterface {
+	return c.graphics
+}
+
+// GroupOperation return a inst provide GroupOperationInterface
+func (c *logics) GroupOperation() model.GroupOperationInterface {
+	return c.group
 }

@@ -21,8 +21,8 @@ import (
 )
 
 type AssociationClientInterface interface {
-	UpdateAssociationType(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
-		*metadata.UpdatedCount, error)
+	UpdateAssociationType(ctx context.Context, h http.Header, input *metadata.UpdateOption) (*metadata.UpdatedCount,
+		error)
 	DeleteAssociationType(ctx context.Context, h http.Header, input *metadata.DeleteOption) (
 		*metadata.DeletedCount, error)
 	ReadAssociationType(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
