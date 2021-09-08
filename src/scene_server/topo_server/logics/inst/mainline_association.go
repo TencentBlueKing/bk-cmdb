@@ -105,7 +105,7 @@ func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObj
 	// 修改 currentInsts 所有孩子结点的父节点，为 currentInsts 的父节点，并删除 currentInsts
 	parentChildMap := map[int64][]int64{}
 	for _, child := range children {
-		childInstID, err := child.Int64(common.GetInstIDField(currentObjID))
+		childInstID, err := child.Int64(common.GetInstIDField(childObjID))
 		if err != nil {
 			blog.Errorf("get inst id in current insts failed, err: %v, rid: %s", err, kit.Rid)
 			return err
@@ -504,6 +504,7 @@ func (assoc *association) deleteMainlineInstWithID(kit *rest.Kit, objID string, 
 
 	if err := assoc.CheckAssociations(kit, objID, instID); err != nil {
 		blog.Errorf("check object(%s) insts(%v) associations failed, err: %v, rid: %s", objID, instID, err, kit.Rid)
+		return err
 	}
 
 	// delete this instance now.
