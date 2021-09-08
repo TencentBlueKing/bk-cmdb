@@ -24,6 +24,7 @@ import (
 // Logics provides management interface for operations of model and instance and related resources like association
 type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
+	AttributeOperation() model.AttributeOperationInterface
 	InstOperation() inst.InstOperationInterface
 	ObjectOperation() model.ObjectOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
@@ -31,11 +32,11 @@ type Logics interface {
 	InstAssociationOperation() inst.AssociationOperationInterface
 	GraphicsOperation() operation.GraphicsOperationInterface
 	GroupOperation() model.GroupOperationInterface
-	BusinessOperation() inst.BusinessOperationInterface
 }
 
 type logics struct {
 	classification  model.ClassificationOperationInterface
+	attribute       model.AttributeOperationInterface
 	inst            inst.InstOperationInterface
 	object          model.ObjectOperationInterface
 	identifier      operation.IdentifierOperationInterface
@@ -43,13 +44,13 @@ type logics struct {
 	instassociation inst.AssociationOperationInterface
 	graphics        operation.GraphicsOperationInterface
 	group           model.GroupOperationInterface
-	business        inst.BusinessOperationInterface
 }
 
 // New create a logics manager
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager,
 	languageIf language.CCLanguageIf) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
+	attributeOperation := model.NewAttributeOperation(client, authManager, languageIf)
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
 	associationOperation := model.NewAssociationOperation(client, authManager)
@@ -58,11 +59,11 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	graphicsOperation := operation.NewGraphics(client, authManager)
 	groupOperation := model.NewGroupOperation(client)
 	groupOperation.SetProxy(objectOperation)
-	businessOperation := inst.NewBusinessOperation(client, authManager)
-	businessOperation.SetProxy(objectOperation)
+	attributeOperation.SetProxy(groupOperation, objectOperation)
 
 	return &logics{
 		classification:  classificationOperation,
+		attribute:       attributeOperation,
 		inst:            instOperation,
 		object:          objectOperation,
 		identifier:      IdentifierOperation,
@@ -70,8 +71,12 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		instassociation: instAssociationOperation,
 		graphics:        graphicsOperation,
 		group:           groupOperation,
-		business:        businessOperation,
 	}
+}
+
+// AttributeOperation return a attribute provide AttributeOperationInterface
+func (l *logics) AttributeOperation() model.AttributeOperationInterface {
+	return l.attribute
 }
 
 // ClassificationOperation return a classification provide ClassificationOperationInterface
@@ -112,9 +117,4 @@ func (c *logics) GraphicsOperation() operation.GraphicsOperationInterface {
 // GroupOperation return a inst provide GroupOperationInterface
 func (c *logics) GroupOperation() model.GroupOperationInterface {
 	return c.group
-}
-
-// BusinessOperation return a inst provide BusinessOperation
-func (c *logics) BusinessOperation() inst.BusinessOperationInterface {
-	return c.business
 }
