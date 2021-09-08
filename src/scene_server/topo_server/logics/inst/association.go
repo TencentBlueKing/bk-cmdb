@@ -41,6 +41,10 @@ type AssociationOperationInterface interface {
 	ResetMainlineInstAssociation(kit *rest.Kit, currentObjID, childObjID string) error
 	// SetMainlineInstAssociation set mainline instance association by parent object and current object
 	SetMainlineInstAssociation(kit *rest.Kit, parentObjID, childObjID, currObjID, currObjName string) ([]int64, error)
+	// TopoNodeHostAndSerInstCount get topo node host and service instance count
+	TopoNodeHostAndSerInstCount(kit *rest.Kit, instID int64,
+		input *metadata.HostAndSerInstCountOption) ([]*metadata.TopoNodeHostAndSerInstCount, errors.CCError)
+
 	// SetProxy proxy the interface
 	SetProxy(inst InstOperationInterface)
 }

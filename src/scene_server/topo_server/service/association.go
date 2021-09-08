@@ -201,7 +201,7 @@ func (s *Service) GetTopoNodeHostAndSerInstCount(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := s.Core.AssociationOperation().TopoNodeHostAndSerInstCount(ctx.Kit, id, input)
+	result, err := s.Logics.InstAssociationOperation().TopoNodeHostAndSerInstCount(ctx.Kit, id, input)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
