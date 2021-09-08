@@ -15,6 +15,7 @@ package logics
 import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
+	"configcenter/src/common/language"
 	"configcenter/src/scene_server/topo_server/logics/inst"
 	"configcenter/src/scene_server/topo_server/logics/model"
 	"configcenter/src/scene_server/topo_server/logics/operation"
@@ -24,6 +25,7 @@ import (
 type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
 	ModuleOperation() inst.ModuleOperationInterface
+	InstOperation() inst.InstOperationInterface
 	ObjectOperation() model.ObjectOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
 	AssociationOperation() model.AssociationOperationInterface
@@ -35,6 +37,7 @@ type Logics interface {
 type logics struct {
 	classification  model.ClassificationOperationInterface
 	module          inst.ModuleOperationInterface
+	inst            inst.InstOperationInterface
 	object          model.ObjectOperationInterface
 	identifier      operation.IdentifierOperationInterface
 	association     model.AssociationOperationInterface
@@ -44,20 +47,24 @@ type logics struct {
 }
 
 // New create a logics manager
-func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Logics {
+func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager,
+	languageIf language.CCLanguageIf) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
 	moduleOperation := inst.NewModuleOperation(client, authManager)
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
 	associationOperation := model.NewAssociationOperation(client, authManager)
 	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
+	instOperation := inst.NewInstOperation(client, languageIf, authManager, instAssociationOperation)
 	graphicsOperation := operation.NewGraphics(client, authManager)
 	groupOperation := model.NewGroupOperation(client)
 	groupOperation.SetProxy(objectOperation)
+	moduleOperation.SetProxy(instOperation)
 
 	return &logics{
 		classification:  classificationOperation,
 		module:          moduleOperation,
+		inst:            instOperation,
 		object:          objectOperation,
 		identifier:      IdentifierOperation,
 		association:     associationOperation,
@@ -85,6 +92,11 @@ func (c *logics) ObjectOperation() model.ObjectOperationInterface {
 // IdentifierOperation return a identifier provide IdentifierOperationInterface
 func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
 	return c.identifier
+}
+
+// InstOperation return a inst provide InstOperationInterface
+func (c *logics) InstOperation() inst.InstOperationInterface {
+	return c.inst
 }
 
 // AssociationOperation return a association provide AssociationOperationInterface

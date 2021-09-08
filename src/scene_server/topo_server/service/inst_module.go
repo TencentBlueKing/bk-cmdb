@@ -13,18 +13,15 @@
 package service
 
 import (
-	"strconv"
-	"strings"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	parser "configcenter/src/common/paraparse"
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
+	"strconv"
 )
 
 const (
@@ -105,7 +102,7 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 		return
 	}
 
-	var module *metadata.CreateOneDataResult
+	var module *mapstr.MapStr
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		module, err = s.Logics.ModuleOperation().CreateModule(ctx.Kit, bizID, setID, data)
@@ -120,18 +117,14 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	// TODO 创建完module需要返回什么数据类型???,*metadata.CreateOneDataResult这个数据类型是不可以的，除非前端获取到这个数据中的id值，然后
-	// TODO 再通过id异步获取刚刚创建好的数据???,是否多了一次请求???
+
 	ctx.RespEntity(module)
 }
 
 // CheckIsBuiltInModule check if object is built-in object
-func (s *Service) CheckIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) errors.CCErrorCoder {
+func (s *Service) checkIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) errors.CCErrorCoder {
 	// 检查是否时内置集群
-	qc := &metadata.QueryCondition{
-		Page: metadata.BasePage{
-			Limit: 0,
-		},
+	input := &metadata.Condition{
 		Condition: map[string]interface{}{
 			common.BKModuleIDField: map[string]interface{}{
 				common.BKDBIN: moduleIDs,
@@ -141,9 +134,8 @@ func (s *Service) CheckIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) errors
 			},
 		},
 	}
-
-	rsp, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
-		qc)
+	rsp, err := s.Engine.CoreAPI.CoreService().Instance().CountInstances(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		input)
 	if err != nil {
 		blog.Errorf("failed read module instance, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -194,7 +186,7 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 	}
 
 	// 不允许直接删除内置模块
-	if err := s.CheckIsBuiltInModule(ctx.Kit, moduleID); err != nil {
+	if err := s.checkIsBuiltInModule(ctx.Kit, moduleID); err != nil {
 		blog.Errorf("check is built in module failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -368,48 +360,32 @@ func (s *Service) SearchModuleByCondition(ctx *rest.Contexts) {
 }
 
 func (s *Service) searchModule(ctx *rest.Contexts, bizID, setID int64) {
-	data := struct {
-		parser.SearchParams `json:",inline"`
-		// compatible for api /module/search/{owner_id}/{app_id}/{set_id}
-		SetID int64 `json:"bk_set_id"`
-	}{}
-	if err := ctx.DecodeInto(&data); nil != err {
+	searchCond := new(metadata.SearchModule)
+	if err := ctx.DecodeInto(&searchCond); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
-	paramsCond := data.SearchParams
-	if paramsCond.Condition == nil {
-		paramsCond.Condition = mapstr.New()
-	}
 
-	paramsCond.Condition[common.BKAppIDField] = bizID
+	if searchCond.Condition == nil {
+		searchCond.Condition = mapstr.New()
+	}
+	searchCond.Condition[common.BKAppIDField] = bizID
 
 	// compatible for api /module/search/{owner_id}/{app_id}/{set_id}
-	if data.SetID > 0 {
-		paramsCond.Condition[common.BKSetIDField] = data.SetID
+	if searchCond.SetID > 0 {
+		searchCond.Condition[common.BKSetIDField] = searchCond.SetID
 	}
 	if setID > 0 {
-		paramsCond.Condition[common.BKSetIDField] = setID
+		searchCond.Condition[common.BKSetIDField] = setID
 	}
 
-	queryCond := &metadata.QueryInput{}
-	queryCond.Condition = paramsCond.Condition
-	queryCond.Fields = strings.Join(paramsCond.Fields, ",")
-	page := metadata.ParsePage(paramsCond.Page)
-	queryCond.Limit = page.Limit
-	queryCond.Sort = page.Sort
-	queryCond.Start = page.Start
-
-	// TODO FindInst依赖中直接传objID即common.BKInnerObjIDModule, 下面依赖 替换后可以删除该段
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDModule)
-	if nil != err {
-		blog.Errorf("failed to search the module, %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+	queryCond := &metadata.QueryCondition{
+		Fields:    searchCond.Fields,
+		Condition: searchCond.Condition,
+		Page:      searchCond.Page,
 	}
 
-	// TODO 直接替换成FindInst依赖，FindModule中数据的转换已经在依赖中实现
-	cnt, instItems, err := s.Core.ModuleOperation().FindModule(ctx.Kit, obj, queryCond)
+	instItems, err := s.Logics.InstOperation().FindInst(ctx.Kit, common.BKInnerObjIDModule, queryCond)
 	if err != nil {
 		blog.Errorf("failed to find the objects(%s), error info is %s, rid: %s",
 			ctx.Request.PathParameter("obj_id"), err.Error(), ctx.Kit.Rid)
@@ -418,7 +394,7 @@ func (s *Service) searchModule(ctx *rest.Contexts, bizID, setID int64) {
 	}
 
 	result := mapstr.MapStr{}
-	result.Set("count", cnt)
+	result.Set("count", instItems.Count)
 	result.Set("info", instItems)
 
 	ctx.RespEntity(result)
