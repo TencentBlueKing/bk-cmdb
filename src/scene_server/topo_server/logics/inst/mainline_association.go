@@ -27,8 +27,14 @@ import (
 )
 
 var (
-	re = regexp.MustCompile(`[#/,><|]`)
+	mainlineSpecialCharacterRegexp = regexp.MustCompile(`[#/,><|]`)
 )
+
+type buildTopoInstRst struct {
+	result    []*metadata.TopoInstRst
+	moduleIDs []int64
+	bizID     int64
+}
 
 // ResetMainlineInstAssociation reset mainline instance association
 // while a mainline object deleted may use this func
@@ -55,19 +61,19 @@ func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObj
 	for _, currInst := range currentInsts.Info {
 		instID, err := currInst.Int64(common.GetInstIDField(currentObjID))
 		if err != nil {
-			blog.Errorf("get inst id in current insts failed, err: %v, rid: %s", err, kit.Rid)
+			blog.Errorf("get inst id(%d) in current insts failed, err: %v, rid: %s", instID, err, kit.Rid)
 			return err
 		}
 
 		instIDs = append(instIDs, instID)
 
-		currInstParentID, err := currInst.Int64(common.BKInstParentStr)
+		instParentID, err := currInst.Int64(common.BKInstParentStr)
 		if err != nil {
-			blog.Errorf("get bk_parent_id in current insts failed, err: %v, rid: %s", err, kit.Rid)
+			blog.Errorf("get bk_parent_id(%d) in current insts failed, err: %v, rid: %s", instParentID, err, kit.Rid)
 			return err
 		}
 
-		instParentMap[instID] = currInstParentID
+		instParentMap[instID] = instParentID
 	}
 
 	children, err := assoc.getMainlineChildInst(kit, currentObjID, childObjID, instIDs)
@@ -88,7 +94,7 @@ func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObj
 	}
 
 	// 修改 currentInsts 所有孩子结点的父节点，为 currentInsts 的父节点，并删除 currentInsts
-	childIDMap := make(map[int64][]int64)
+	parentChildMap := map[int64][]int64{}
 	for _, child := range children {
 		childInstID, err := child.Int64(common.GetInstIDField(currentObjID))
 		if err != nil {
@@ -102,12 +108,7 @@ func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObj
 			return err
 		}
 
-		childIDMap[childParentID] = append(childIDMap[childParentID], childInstID)
-	}
-
-	parentChildMap := map[int64][]int64{}
-	for inst, parent := range instParentMap {
-		parentChildMap[parent] = append(parentChildMap[parent], childIDMap[inst]...)
+		parentChildMap[instParentMap[childParentID]] = append(parentChildMap[instParentMap[childParentID]], childInstID)
 	}
 
 	// set the child's parent
@@ -151,7 +152,7 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parentObjID,
 	createdInstIDs := make([]int64, len(parentInsts.Info))
 	expectParent2Children := make(map[int64][]int64)
 	// filters out special character for mainline instances
-	instanceName := re.ReplaceAllString(currObjName, "")
+	instanceName := mainlineSpecialCharacterRegexp.ReplaceAllString(currObjName, "")
 	var parentInstIDs []int64
 	// create current object instance for each parent instance and insert the current instance to
 	for _, parentInst := range parentInsts.Info {
@@ -257,89 +258,70 @@ func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID
 		objectIDs = append(objectIDs, objectID)
 	}
 
-	objectNameMap := make(map[string]string)
-	objects, err := assoc.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: mapstr.MapStr{
-			common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objectIDs}},
-		})
+	queryCond = &metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objectIDs}},
+		Fields:    []string{common.BKObjIDField, common.BKObjNameField},
+	}
+	objects, err := assoc.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, queryCond)
 	if err != nil {
 		blog.Errorf("search mainline objects(%s) failed, err: %V, rid: %s", objectIDs, err, kit.Rid)
 		return nil, err
 	}
 
+	objectNameMap := make(map[string]string)
 	for _, object := range objects.Info {
 		objectNameMap[object.GetObjectID()] = object.ObjectName
 	}
 
-	// traverse and fill instance topology data
-	results := make([]*metadata.TopoInstRst, 0)
-	var parents []*metadata.TopoInstRst
-	instCond := map[string]interface{}{
-		common.GetInstIDField(objID): instID,
+	results, err := assoc.buildTopoInstRst(kit, instID, objID, objectNameMap, mainlineObjectChildMap, withDefault,
+		withStatistics)
+	if err != nil {
+		blog.Errorf("build topo inst result failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
 	}
-	var bizID int64
-	moduleIDs := make([]int64, 0)
-	for objectID := objID; len(objectID) != 0; objectID = mainlineObjectChildMap[objectID] {
-		filter := &metadata.QueryCondition{Condition: instCond}
-		if objectID != objID {
-			filter.Page.Sort = common.BKDefaultField
-		}
-
-		filter.Fields = []string{common.GetInstIDField(objectID), common.GetInstNameField(objectID),
-			common.BKDefaultField, common.BKParentIDField, common.BKAppIDField}
-		if objectID == common.BKInnerObjIDSet {
-			filter.Fields = append(filter.Fields, common.BKSetTemplateIDField)
-		} else if objectID == common.BKInnerObjIDModule {
-			filter.Fields = append(filter.Fields, []string{common.BKServiceTemplateIDField, common.BKSetTemplateIDField,
-				common.HostApplyEnabledField}...)
-		}
-
-		instanceRsp, err := assoc.inst.FindInst(kit, objectID, filter)
-		if err != nil {
-			blog.Errorf("search inst failed, err: %s, cond:%s, rid: %s", err, instCond, kit.Rid)
+	if withStatistics && len(results.result) > 0 {
+		if err := assoc.fillStatistics(kit, results.bizID, results.moduleIDs, results.result); err != nil {
+			blog.Errorf("fill statistics data failed, bizID: %d, err: %v, rid: %s", results.bizID, err, kit.Rid)
 			return nil, err
 		}
-		// already reached the deepest level, stop the loop
-		if len(instanceRsp.Info) == 0 {
-			break
+	}
+	return results.result, nil
+}
+
+func (assoc *association) buildTopoInstRst(kit *rest.Kit, instID int64, objID string, objNameMap,
+	mlObjChildMap map[string]string, withDefault, withStatistics bool) (*buildTopoInstRst, error) {
+
+	results := new(buildTopoInstRst)
+	parents := make([]*metadata.TopoInstRst, 0)
+	instCond := map[string]interface{}{common.GetInstIDField(objID): instID}
+	for objectID := objID; len(objectID) != 0; objectID = mlObjChildMap[objectID] {
+
+		instanceRsp, err := assoc.searchMainlineObjInstForTopo(kit, objectID, instCond, objectID != objID)
+		if err != nil {
+			blog.Errorf("search topo mainline inst failed, objID: %s, err: %v, rid: %s", objectID, err, kit.Rid)
+			return nil, err
 		}
+
+		if len(instanceRsp) == 0 {
+			return nil, nil
+		}
+
 		instIDs := make([]int64, 0)
-		objectName := objectNameMap[objectID]
+		objectName := objNameMap[objectID]
 		instances := make([]*metadata.TopoInstRst, 0)
 		// map parentID to its children, not including default set
 		childInstMap := make(map[int64][]*metadata.TopoInstRst)
 		// map parentID to its default set children, default sets are children of biz
 		childDefaultSetMap := make(map[int64][]*metadata.TopoInstRst)
-		for _, instance := range instanceRsp.Info {
-			instID, err := instance.Int64(common.GetInstIDField(objectID))
+		for _, instance := range instanceRsp {
+			topoInst, instIDArr, err := assoc.makeTopoInstRst(kit, objectID, objectName, instance, instIDs)
 			if err != nil {
-				blog.Errorf("get instance %#v id failed, err: %v, rid: %s", instance, err, kit.Rid)
+				blog.Errorf("make topo inst result failed, err: %v, rid: %s", err, kit.Rid)
 				return nil, err
 			}
-			instIDs = append(instIDs, instID)
-			instName, err := instance.String(common.GetInstNameField(objectID))
-			if err != nil {
-				blog.Errorf("get instance %#v name failed, err: %v, rid: %s", instance, err, kit.Rid)
-				return nil, err
-			}
-			defaultValue := 0
-			if defaultFieldValue, exist := instance[common.BKDefaultField]; exist {
-				defaultValue, err = util.GetIntByInterface(defaultFieldValue)
-				if err != nil {
-					blog.Errorf("get instance %#v default failed, err: %v, rid: %s", instance, err, kit.Rid)
-					return nil, err
-				}
-			}
-			topoInst := &metadata.TopoInstRst{
-				TopoInst: metadata.TopoInst{
-					InstID:   instID,
-					InstName: instName,
-					ObjID:    objectID,
-					ObjName:  objectName,
-					Default:  defaultValue,
-				},
-				Child: []*metadata.TopoInstRst{},
-			}
+
+			instIDs = append(instIDs, instIDArr...)
+
 			if withStatistics {
 				if objectID == common.BKInnerObjIDSet {
 					topoInst.SetTemplateID, _ = instance.Int64(common.BKSetTemplateIDField)
@@ -349,10 +331,10 @@ func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID
 					topoInst.SetTemplateID, _ = instance.Int64(common.BKSetTemplateIDField)
 					enabled, _ := instance.Bool(common.HostApplyEnabledField)
 					topoInst.HostApplyEnabled = &enabled
-					moduleIDs = append(moduleIDs, instID)
+					results.moduleIDs = append(results.moduleIDs, instID)
 				}
-				if bizID == 0 {
-					bizID, err = instance.Int64(common.BKAppIDField)
+				if results.bizID == 0 {
+					results.bizID, err = instance.Int64(common.BKAppIDField)
 					if err != nil {
 						blog.Errorf("get instance %#v biz id failed, err: %v, rid: %s", instance, err, kit.Rid)
 						return nil, err
@@ -360,14 +342,14 @@ func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID
 				}
 			}
 			if objectID == objID {
-				results = append(results, topoInst)
+				results.result = append(results.result, topoInst)
 			} else {
 				parentID, err := instance.Int64(common.BKParentIDField)
 				if err != nil {
 					blog.Errorf("get instance %#v parent id failed, err: %v, rid: %s", instance, err, kit.Rid)
 					return nil, err
 				}
-				if objectID == common.BKInnerObjIDSet && defaultValue == common.DefaultResSetFlag {
+				if objectID == common.BKInnerObjIDSet && topoInst.Default == common.DefaultResSetFlag {
 					childDefaultSetMap[parentID] = append(childDefaultSetMap[parentID], topoInst)
 				} else {
 					childInstMap[parentID] = append(childInstMap[parentID], topoInst)
@@ -379,36 +361,89 @@ func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID
 		for _, parentInst := range parents {
 			parentInst.Child = append(parentInst.Child, childInstMap[parentInst.InstID]...)
 		}
+
 		if objectID == common.BKInnerObjIDSet && objID == common.BKInnerObjIDApp {
-			for _, parentInst := range results {
+			for _, parentInst := range results.result {
 				parentInst.Child = append(parentInst.Child, childDefaultSetMap[parentInst.InstID]...)
 			}
 		}
 		// set current instances as parents and generate condition for next level
 		instCond = make(map[string]interface{})
-		if mainlineObjectChildMap[objectID] == common.BKInnerObjIDSet {
+		if mlObjChildMap[objectID] == common.BKInnerObjIDSet {
 			if withDefault {
 				// default sets are children of biz, so need to add biz into parent condition
-				instIDs = append(instIDs, bizID)
+				instIDs = append(instIDs, results.bizID)
 			} else {
-				instCond[common.BKDefaultField] = map[string]interface{}{
-					common.BKDBNE: common.DefaultResSetFlag,
-				}
+				instCond[common.BKDefaultField] = map[string]interface{}{common.BKDBNE: common.DefaultResSetFlag}
 			}
 		}
 		parents = instances
-		instCond[common.BKInstParentStr] = map[string]interface{}{
-			common.BKDBIN: instIDs,
-		}
+		instCond[common.BKInstParentStr] = map[string]interface{}{common.BKDBIN: instIDs}
 	}
 
-	if withStatistics && len(results) > 0 {
-		if err := assoc.fillStatistics(kit, bizID, moduleIDs, results); err != nil {
-			blog.Errorf("fill statistics data failed, bizID: %d, err: %v, rid: %s", bizID, err, kit.Rid)
-			return nil, err
+	return results, nil
+}
+
+func (assoc *association) searchMainlineObjInstForTopo(kit *rest.Kit, objID string, instCond map[string]interface{},
+	isSortDefault bool) ([]mapstr.MapStr, error) {
+
+	filter := &metadata.QueryCondition{Condition: instCond}
+	if isSortDefault {
+		filter.Page.Sort = common.BKDefaultField
+	}
+
+	filter.Fields = []string{common.GetInstIDField(objID), common.GetInstNameField(objID),
+		common.BKDefaultField, common.BKParentIDField, common.BKAppIDField}
+	if objID == common.BKInnerObjIDSet {
+		filter.Fields = append(filter.Fields, common.BKSetTemplateIDField)
+	} else if objID == common.BKInnerObjIDModule {
+		filter.Fields = append(filter.Fields, []string{common.BKServiceTemplateIDField, common.BKSetTemplateIDField,
+			common.HostApplyEnabledField}...)
+	}
+
+	instanceRsp, err := assoc.inst.FindInst(kit, objID, filter)
+	if err != nil {
+		blog.Errorf("search inst failed, err: %s, cond:%s, rid: %s", err, instCond, kit.Rid)
+		return nil, err
+	}
+
+	return instanceRsp.Info, nil
+}
+
+func (assoc *association) makeTopoInstRst(kit *rest.Kit, objID, objName string, inst mapstr.MapStr, instIDs []int64) (
+	*metadata.TopoInstRst, []int64, error) {
+
+	instID, err := inst.Int64(common.GetInstIDField(objID))
+	if err != nil {
+		blog.Errorf("get instance %#v id failed, err: %v, rid: %s", inst, err, kit.Rid)
+		return nil, nil, err
+	}
+	instIDs = append(instIDs, instID)
+	instName, err := inst.String(common.GetInstNameField(objID))
+	if err != nil {
+		blog.Errorf("get instance %#v name failed, err: %v, rid: %s", inst, err, kit.Rid)
+		return nil, nil, err
+	}
+	defaultValue := 0
+	if defaultFieldValue, exist := inst[common.BKDefaultField]; exist {
+		defaultValue, err = util.GetIntByInterface(defaultFieldValue)
+		if err != nil {
+			blog.Errorf("get instance %#v default failed, err: %v, rid: %s", inst, err, kit.Rid)
+			return nil, nil, err
 		}
 	}
-	return results, nil
+	topoInst := &metadata.TopoInstRst{
+		TopoInst: metadata.TopoInst{
+			InstID:   instID,
+			InstName: instName,
+			ObjID:    objID,
+			ObjName:  objName,
+			Default:  defaultValue,
+		},
+		Child: []*metadata.TopoInstRst{},
+	}
+
+	return topoInst, instIDs, nil
 }
 
 func (assoc *association) getMainlineChildInst(kit *rest.Kit, objID, childObjID string, instIDs []int64) (
@@ -463,21 +498,8 @@ func (assoc *association) setMainlineParentInst(kit *rest.Kit, childID []int64, 
 
 func (assoc *association) deleteMainlineInstWithID(kit *rest.Kit, objID string, instID []int64) error {
 
-	// if this instance has been bind to a instance by the association, then this instance should not be deleted.
-	cnt, err := assoc.clientSet.CoreService().Association().CountInstanceAssociations(kit.Ctx, kit.Header, objID,
-		&metadata.Condition{
-			Condition: mapstr.MapStr{common.BKDBOR: []mapstr.MapStr{
-				{common.BKObjIDField: objID, common.BKInstIDField: mapstr.MapStr{common.BKDBIN: instID}},
-				{common.BKAsstObjIDField: objID, common.BKAsstInstIDField: mapstr.MapStr{common.BKDBIN: instID}},
-			}},
-		})
-	if err != nil {
-		blog.Errorf("count association by object(%s) failed, err: %s, rid: %s", objID, err, kit.Rid)
-		return err
-	}
-
-	if cnt.Count > 0 {
-		return kit.CCError.CCError(common.CCErrorInstHasAsst)
+	if err := assoc.CheckAssociations(kit, objID, instID); err != nil {
+		blog.Errorf("check object(%s) insts(%v) associations failed, err: %v, rid: %s", objID, instID, err, kit.Rid)
 	}
 
 	// delete this instance now.
@@ -561,29 +583,24 @@ func (assoc *association) checkInstNameRepeat(kit *rest.Kit, instParentMap map[i
 			return false, "", err
 		}
 
-		childInstID, err := child.Int64(common.BKInstParentStr)
+		childParentID, err := child.Int64(common.BKInstParentStr)
 		if err != nil {
 			blog.Errorf("get child parent id in child insts failed, err: %v, rid: %s", err, kit.Rid)
 			return false, "", err
 		}
 
-		for instID, parentID := range instParentMap {
-			if instID != childInstID {
-				continue
-			}
-
-			childName, exist := parentChildName[parentID]
-			if !exist {
-				childName = make(map[string]struct{})
-				parentChildName[parentID] = childName
-			}
-
-			if _, exist := childName[instName]; exist {
-				return false, instName, nil
-			}
-
-			childName[instName] = struct{}{}
+		childNameMap, exist := parentChildName[instParentMap[childParentID]]
+		if !exist {
+			parentChildName[instParentMap[childParentID]] = map[string]struct{}{instName: {}}
+			continue
 		}
+
+		if _, exist := childNameMap[instName]; exist {
+			return false, instName, nil
+		}
+
+		childNameMap[instName] = struct{}{}
+
 	}
 
 	return true, "", nil
