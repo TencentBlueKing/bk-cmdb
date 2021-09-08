@@ -36,6 +36,15 @@ type buildTopoInstRst struct {
 	bizID     int64
 }
 
+// NewBuildTopoInstRst return a buildTopoInstRst struct instance
+func NewBuildTopoInstRst() *buildTopoInstRst {
+	return &buildTopoInstRst{
+		result:    make([]*metadata.TopoInstRst, 0),
+		moduleIDs: make([]int64, 0),
+		bizID:     0,
+	}
+}
+
 // ResetMainlineInstAssociation reset mainline instance association
 // while a mainline object deleted may use this func
 func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObjID, childObjID string) error {
@@ -285,15 +294,17 @@ func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID
 			return nil, err
 		}
 	}
+
 	return results.result, nil
 }
 
 func (assoc *association) buildTopoInstRst(kit *rest.Kit, instID int64, objID string, objNameMap,
 	mlObjChildMap map[string]string, withDefault, withStatistics bool) (*buildTopoInstRst, error) {
 
-	results := new(buildTopoInstRst)
+	results := NewBuildTopoInstRst()
 	parents := make([]*metadata.TopoInstRst, 0)
 	instCond := map[string]interface{}{common.GetInstIDField(objID): instID}
+
 	for objectID := objID; len(objectID) != 0; objectID = mlObjChildMap[objectID] {
 
 		instanceRsp, err := assoc.searchMainlineObjInstForTopo(kit, objectID, instCond, objectID != objID)
@@ -303,20 +314,16 @@ func (assoc *association) buildTopoInstRst(kit *rest.Kit, instID int64, objID st
 		}
 
 		if len(instanceRsp) == 0 {
-			return nil, nil
+			return results, nil
 		}
 
 		instIDs := make([]int64, 0)
-		objectName := objNameMap[objectID]
 		instances := make([]*metadata.TopoInstRst, 0)
-		// map parentID to its children, not including default set
 		childInstMap := make(map[int64][]*metadata.TopoInstRst)
-		// map parentID to its default set children, default sets are children of biz
 		childDefaultSetMap := make(map[int64][]*metadata.TopoInstRst)
 		for _, instance := range instanceRsp {
-			topoInst, instIDArr, err := assoc.makeTopoInstRst(kit, objectID, objectName, instance, instIDs)
+			topoInst, instIDArr, err := assoc.makeTopoInstRst(kit, objectID, objNameMap[objectID], instance, instIDs)
 			if err != nil {
-				blog.Errorf("make topo inst result failed, err: %v, rid: %s", err, kit.Rid)
 				return nil, err
 			}
 
@@ -357,7 +364,6 @@ func (assoc *association) buildTopoInstRst(kit *rest.Kit, instID int64, objID st
 			}
 			instances = append(instances, topoInst)
 		}
-		// set children for parents, default sets are children of biz
 		for _, parentInst := range parents {
 			parentInst.Child = append(parentInst.Child, childInstMap[parentInst.InstID]...)
 		}
@@ -367,11 +373,9 @@ func (assoc *association) buildTopoInstRst(kit *rest.Kit, instID int64, objID st
 				parentInst.Child = append(parentInst.Child, childDefaultSetMap[parentInst.InstID]...)
 			}
 		}
-		// set current instances as parents and generate condition for next level
 		instCond = make(map[string]interface{})
 		if mlObjChildMap[objectID] == common.BKInnerObjIDSet {
 			if withDefault {
-				// default sets are children of biz, so need to add biz into parent condition
 				instIDs = append(instIDs, results.bizID)
 			} else {
 				instCond[common.BKDefaultField] = map[string]interface{}{common.BKDBNE: common.DefaultResSetFlag}
