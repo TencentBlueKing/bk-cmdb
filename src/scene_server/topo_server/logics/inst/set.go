@@ -48,6 +48,7 @@ type set struct {
 	language  language.CCLanguageIf
 }
 
+// SetProxy 初始化依赖
 func (s *set) SetProxy(inst InstOperationInterface, module ModuleOperationInterface) {
 	s.inst = inst
 	s.module = module
@@ -73,7 +74,6 @@ func (s *set) getSetTemplate(kit *rest.Kit, data mapstr.MapStr, bizID int64) (me
 	// validate foreign key
 	setTemplateIDIf, ok := data[common.BKSetTemplateIDField]
 	if !ok {
-		blog.Errorf("get set template id failed, data: %#v, rid: %s", data, kit.Rid)
 		return setTemplate, nil
 	}
 
@@ -84,17 +84,18 @@ func (s *set) getSetTemplate(kit *rest.Kit, data mapstr.MapStr, bizID int64) (me
 			GetLanguage(kit.Header)).Language("set_property_set_template_id"))
 		return setTemplate, err
 	}
-	if setTemplateID != common.SetTemplateIDNotSet {
-		st, err := s.clientSet.CoreService().SetTemplate().GetSetTemplate(kit.Ctx, kit.Header, bizID, setTemplateID)
-		if err != nil {
-			blog.Errorf("get set template failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID,
-				setTemplateID, kit.Rid)
-			return setTemplate, err
-		}
-		setTemplate = st
+	if setTemplateID == common.SetTemplateIDNotSet {
+		return setTemplate, nil
 	}
 
-	return setTemplate, nil
+	st, err := s.clientSet.CoreService().SetTemplate().GetSetTemplate(kit.Ctx, kit.Header, bizID, setTemplateID)
+	if err != nil {
+		blog.Errorf("get set template failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID,
+			setTemplateID, kit.Rid)
+		return setTemplate, err
+	}
+
+	return st, nil
 }
 
 // CreateSet create a new set
