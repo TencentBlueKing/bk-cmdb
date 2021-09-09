@@ -32,9 +32,7 @@ type ObjectOperationInterface interface {
 	// CreateObject create common object
 	CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr) (*metadata.Object, error)
 	// DeleteObject delete model by query condition
-	DeleteObject(kit *rest.Kit, query *metadata.QueryCondition, needCheckInst bool) error
-	// DeleteObjectByID delete model by id
-	DeleteObjectByID(kit *rest.Kit, id int64, needCheckInst bool) error
+	DeleteObject(kit *rest.Kit, cond mapstr.MapStr, needCheckInst bool) error
 	// FindObjectTopo search object topo by condition
 	FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.ObjectTopo, error)
 	// FindSingleObject find a object by objectID
@@ -241,24 +239,15 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 	return obj, nil
 }
 
-// DeleteObjectByID delete model by id
-func (o *object) DeleteObjectByID(kit *rest.Kit, id int64, needCheckInst bool) error {
-	if id <= 0 {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID)
-	}
+// DeleteObject delete model by query condition
+func (o *object) DeleteObject(kit *rest.Kit, cond mapstr.MapStr, needCheckInst bool) error {
 
-	// get model by id
+	// get model by conditon
 	query := &metadata.QueryCondition{
-		Condition:      mapstr.MapStr{metadata.ModelFieldID: id},
+		Condition:      cond,
 		Fields:         make([]string, 0),
 		DisableCounter: true,
 	}
-
-	return o.DeleteObject(kit, query, needCheckInst)
-}
-
-// DeleteObject delete model by query condition
-func (o *object) DeleteObject(kit *rest.Kit, query *metadata.QueryCondition, needCheckInst bool) error {
 
 	objs, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, query)
 	if err != nil {

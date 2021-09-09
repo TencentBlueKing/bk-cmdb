@@ -52,14 +52,6 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		return nil, kit.CCError.CCError(common.CCErrTopoBizTopoLevelOverLimit)
 	}
 
-	objData := mapstr.MapStr{
-		common.BKObjIDField:            data.ObjectID,
-		common.BKObjNameField:          data.ObjectName,
-		common.BKObjIconField:          data.ObjectIcon,
-		common.BKClassificationIDField: data.ClassificationID,
-		common.BkSupplierAccount:       data.OwnerID,
-	}
-
 	// find the mainline parent object
 	parentObjID := data.AsstObjID
 	var childObjID string
@@ -75,6 +67,13 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, parentObjID)
 	}
 
+	objData := mapstr.MapStr{
+		common.BKObjIDField:            data.ObjectID,
+		common.BKObjNameField:          data.ObjectName,
+		common.BKObjIconField:          data.ObjectIcon,
+		common.BKClassificationIDField: data.ClassificationID,
+		common.BkSupplierAccount:       data.OwnerID,
+	}
 	currentObj, err := assoc.obj.CreateObject(kit, true, objData)
 	if err != nil {
 		return nil, err
@@ -165,11 +164,7 @@ func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, targetObjID s
 	}
 
 	// object的删除函数通过object的id进行删除，需要在这里查一次object的id
-	objIDCond := &metadata.QueryCondition{
-		Condition:      mapstr.MapStr{common.BKObjIDField: targetObjID},
-		Fields:         []string{common.BKFieldID},
-		DisableCounter: true,
-	}
+	objIDCond := mapstr.MapStr{common.BKObjIDField: targetObjID}
 	//delete objects
 	if err = assoc.obj.DeleteObject(kit, objIDCond, false); err != nil {
 		blog.Errorf("failed to delete the object(%s), err: %v, rid: %s", targetObjID, err, kit.Rid)
@@ -181,8 +176,8 @@ func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, targetObjID s
 
 // SearchMainlineAssociationTopo get mainline topo of special model
 // result is a list with targetObj as head, so if you want a full topo, target must be biz model.
-func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit,
-	targetObjID string) ([]*metadata.MainlineObjectTopo, error) {
+func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit, targetObjID string) (
+	[]*metadata.MainlineObjectTopo, error) {
 
 	if len(targetObjID) == 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommInstDataNil, common.BKObjIDField)
@@ -199,13 +194,13 @@ func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit,
 
 	childMap := make(map[string]string)
 	parentMap := make(map[string]string)
-	needFind := []string{targetObjID}
 	for _, asso := range mainlineAssoc.Info {
 		childMap[asso.AsstObjID] = asso.ObjectID
 		parentMap[asso.ObjectID] = asso.AsstObjID
 	}
 
 	// 遍历获取以targetObj为头的topo切片
+	needFind := []string{targetObjID}
 	cursor := targetObjID
 	for {
 		child, exist := childMap[cursor]
