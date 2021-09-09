@@ -51,8 +51,11 @@ var (
 	updateBusinessStatusRegexp       = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
 )
 
-const findReducedBusinessList = `/api/v3/biz/with_reduced`
-const findSimplifiedBusinessList = `/api/v3/biz/simplify`
+const (
+	findReducedBusinessListPattern      = `/api/v3/biz/with_reduced`
+	findSimplifiedBusinessListPattern   = `/api/v3/biz/simplify`
+	updatemanyBizPropertyPattern        = `/api/v3/updatemany/biz/property`
+)
 
 func (ps *parseStream) business() *parseStream {
 	if ps.shouldReturn() {
@@ -60,7 +63,7 @@ func (ps *parseStream) business() *parseStream {
 	}
 
 	// find reduced business list for the user with any business resources
-	if ps.hitPattern(findReducedBusinessList, http.MethodGet) {
+	if ps.hitPattern(findReducedBusinessListPattern, http.MethodGet) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
@@ -73,7 +76,7 @@ func (ps *parseStream) business() *parseStream {
 	}
 
 	// find simplified business list with limited fields return
-	if ps.hitPattern(findSimplifiedBusinessList, http.MethodGet) {
+	if ps.hitPattern(findSimplifiedBusinessListPattern, http.MethodGet) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
@@ -237,6 +240,19 @@ func (ps *parseStream) business() *parseStream {
 				},
 				// we don't know if one or more business is to find, so we assume it's a find many
 				// business operation.
+			},
+		}
+		return ps
+	}
+
+	// batch update business properties
+	if ps.hitPattern(updatemanyBizPropertyPattern, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
 			},
 		}
 		return ps

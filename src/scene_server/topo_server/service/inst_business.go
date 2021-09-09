@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/ac"
 	"encoding/json"
 	"reflect"
 	"sort"
@@ -225,6 +226,135 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
+}
+
+// UpdateBizPropertyBatch batch update business properties
+func (s *Service) UpdateBizPropertyBatch(ctx *rest.Contexts) {
+	param := new(metadata.UpdateBizPropertyBatchParameter)
+	if err := ctx.DecodeInto(&param); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
+	if nil != err {
+		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	updateCond := condition.CreateCondition()
+	if param.EditAll == true {
+		if s.AuthManager.Enabled() {
+			bizList, err := s.getAllEditableBiz(ctx)
+			if err != nil {
+				ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")
+				return
+			}
+			updateCond.Field(common.BKAppIDField).In(bizList)
+		}
+	} else {
+		bizList := param.BizID
+		if len(bizList) > common.BKMaxPageSize {
+			blog.Errorf("bk_biz_id len %d exceed max page size %d, rid:%s", len(bizList),
+				common.BKMaxPageSize, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "update",
+				common.BKMaxPageSize))
+			return
+		}
+		// check authorization
+		if err := s.checkBizEditable(ctx, bizList); err != nil {
+			// resp in checkBizEditable, need not resp again
+			return
+		}
+		updateCond.Field(common.BKAppIDField).In(bizList)
+	}
+
+	// exclude archived biz
+	updateCond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
+	// exclude default biz
+	updateCond.Field(common.BKDefaultField).NotEq(common.DefaultAppFlag)
+
+	data, err := mapstr.NewFromInterface(param.Properties)
+	if err != nil {
+		blog.Errorf("update biz property batch convert properties[%v] to mapstr failed, err: %v, rid: %s",
+			param.Properties, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	// cannot update biz bk_data_status
+	data.Remove(common.BKDataStatusField)
+
+	// update biz instances
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := s.Core.BusinessOperation().UpdateBusinessByCond(ctx.Kit, data, obj, updateCond); err != nil {
+			blog.Errorf("update many biz err: %+v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+func (s *Service) getAllEditableBiz(ctx *rest.Contexts) ([]int64, error) {
+	bizList := make([]int64, 0)
+	if s.AuthManager.Enabled() == false {
+		return bizList, nil
+	}
+
+	authInput := meta.ListAuthorizedResourcesParam{
+		UserName:     ctx.Kit.User,
+		ResourceType: meta.Business,
+		Action:       meta.Update,
+	}
+	authorizedResources, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
+	if err != nil {
+		blog.Errorf("get editable biz err: %s, user: %s, rid: %s", err.Error(), ctx.Kit.User, ctx.Kit.Rid)
+		return bizList, err
+	}
+
+	for _, resourceID := range authorizedResources {
+		bizID, err := strconv.ParseInt(resourceID, 10, 64)
+		if err != nil {
+			blog.Errorf("parse bizID(%s) failed, err: %v, rid: %s", resourceID, err, ctx.Kit.Rid)
+			return bizList, err
+		}
+		bizList = append(bizList, bizID)
+	}
+
+	return bizList, nil
+}
+
+func (s *Service) checkBizEditable(ctx *rest.Contexts, bizList []int64) error {
+	if s.AuthManager.Enabled() == false {
+		return nil
+	}
+
+	err := s.AuthManager.AuthorizeByBusinessID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, bizList...)
+	if err == nil {
+		return nil
+	}
+	if err != ac.NoAuthorizeError {
+		blog.ErrorJSON("check biz authorization failed, biz: %+v, err: %s, rid: %s", bizList, err.Error(),
+			ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+		return err
+	}
+
+	perm, err := s.AuthManager.GenBizBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, bizList)
+	if err != nil && err != ac.NoAuthorizeError {
+		blog.ErrorJSON("biz authorization get permission failed, biz: %+v, err: %s, rid: %s", bizList,
+			err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+		return err
+	}
+	ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
+	return ac.NoAuthorizeError
 }
 
 // find business list with these info：

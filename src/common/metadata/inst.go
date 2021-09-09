@@ -188,6 +188,13 @@ type SearchInstsNamesOption struct {
 	Name  string `json:"name"`
 }
 
+// UpdateBizPropertyBatchParameter batch update business properties parameter
+type UpdateBizPropertyBatchParameter struct {
+	EditAll    bool                   `json:"edit_all"`
+	BizID      []int64                `json:"bk_biz_id"`
+	Properties map[string]interface{} `json:"properties"`
+}
+
 var ObjsForSearchName = map[string]bool{
 	common.BKInnerObjIDSet:    true,
 	common.BKInnerObjIDModule: true,

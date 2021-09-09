@@ -38,6 +38,7 @@ type BusinessOperationInterface interface {
 	FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error)
 	GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder)
 	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error
+	UpdateBusinessByCond(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition) error
 	HasHosts(kit *rest.Kit, bizID int64) (bool, error)
 	SetProxy(set SetOperationInterface, module ModuleOperationInterface, inst InstOperationInterface, obj ObjectOperationInterface)
 	GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (achieveName string, err error)
@@ -447,4 +448,8 @@ func (b *business) UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.O
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 
 	return b.inst.UpdateInst(kit, data, obj, innerCond, bizID)
+}
+
+func (b *business) UpdateBusinessByCond(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition) error {
+	return b.inst.UpdateInst(kit, data, obj, cond, -1)
 }
