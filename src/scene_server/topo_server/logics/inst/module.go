@@ -74,7 +74,7 @@ func (m *module) GetInternalModule(kit *rest.Kit, bizID int64) (count int, resul
 		return 0, nil, err
 	}
 	if err := setRsp.CCError(); err != nil {
-		blog.Errorf("query set failed, err: %s, rid: %s", err, kit.Rid)
+		blog.Errorf("query set failed, err: %v, rid: %s", err, kit.Rid)
 		return 0, nil, err
 	}
 
@@ -98,7 +98,7 @@ func (m *module) GetInternalModule(kit *rest.Kit, bizID int64) (count int, resul
 		return 0, nil, err
 	}
 	if err := moduleResp.CCError(); err != nil {
-		blog.Errorf("query module failed, err: %s, rid: %s", err, kit.Rid)
+		blog.Errorf("query module failed, err: %v, rid: %s", err, kit.Rid)
 		return 0, nil, err
 	}
 
@@ -132,7 +132,7 @@ func (m *module) validBizSetID(kit *rest.Kit, bizID int64, setID int64) error {
 
 	rsp, err := m.clientSet.CoreService().Instance().CountInstances(kit.Ctx, kit.Header, common.BKInnerObjIDSet, query)
 	if err != nil {
-		blog.Errorf("get module instance failed, err: %s, rid: %s", err, kit.Rid)
+		blog.Errorf("get module instance failed, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -221,7 +221,7 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 
 	inst, createErr := m.inst.CreateInst(kit, common.BKInnerObjIDModule, data)
 	if createErr != nil {
-		blog.Errorf("create module failed, err: %s, rid: %s", createErr, kit.Rid)
+		blog.Errorf("create module failed, err: %v, rid: %s", createErr, kit.Rid)
 		return inst, createErr
 	}
 
@@ -234,7 +234,7 @@ func (m *module) checkServiceTemplateParam(kit *rest.Kit, serviceCategoryID, ser
 		// set default service template id
 		defaultServiceCategory, err := m.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx, kit.Header)
 		if err != nil {
-			blog.Errorf("get default service category failed, err: %s, rid: %s", err, kit.Rid)
+			blog.Errorf("get default service category failed, err: %v, rid: %s", err, kit.Rid)
 			return serviceCategoryID, kit.CCError.Errorf(common.CCErrProcGetDefaultServiceCategoryFailed)
 		}
 		serviceCategoryID = defaultServiceCategory.ID
@@ -288,7 +288,7 @@ func (m *module) DeleteModule(kit *rest.Kit, bizID int64, setIDs, moduleIDs []in
 	// module table doesn't have metadata field
 	err := m.inst.DeleteInst(kit, common.BKInnerObjIDModule, innerCond, true)
 	if err != nil {
-		blog.Errorf("delete module failed, err: %s, rid: %s", err, kit.Rid)
+		blog.Errorf("delete module failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
@@ -313,18 +313,17 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 	moduleInstance := new(metadata.ResponseModuleInstance)
 	if err := m.clientSet.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
 		findCond, moduleInstance); err != nil {
-		blog.Errorf("get list modules failed, bizID: %d, setID: %d, moduleID: %d, err: %s, rid: %s", bizID, setID,
-			moduleID, err, kit.Rid)
+		blog.Errorf("get list modules failed, findCond: %#v, err: %v, rid: %s", findCond, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommParseDBFailed)
+	}
+	if err := moduleInstance.CCError(); err != nil {
+		return err
 	}
 	if moduleInstance.Data.Count > 1 {
 		return kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject)
 	}
 	if len(moduleInstance.Data.Info) == 0 {
 		return kit.CCError.CCErrorf(common.CCErrCommNotFound)
-	}
-	if err := moduleInstance.CCError(); err != nil {
-		return err
 	}
 
 	// 检查并提示禁止修改集群模板ID字段
@@ -380,7 +379,7 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 
 	updateErr := m.inst.UpdateInst(kit, innerCond, data, common.BKInnerObjIDModule)
 	if updateErr != nil {
-		blog.Errorf("update module failed,  err: %s, rid: %s", updateErr, kit.Rid)
+		blog.Errorf("update module failed,  err: %v, rid: %s", updateErr, kit.Rid)
 		return updateErr
 	}
 

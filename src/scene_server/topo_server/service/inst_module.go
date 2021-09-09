@@ -43,7 +43,7 @@ func (s *Service) isSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, 
 	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
 		qc)
 	if err != nil {
-		blog.Errorf("failed to search set instance, setID: %d, err: %s, rid: %s", setID, err, kit.Rid)
+		blog.Errorf("failed to search set instance, setID: %d, err: %v, rid: %s", setID, err, kit.Rid)
 		return false, errors.NewFromStdError(err, common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -60,7 +60,7 @@ func (s *Service) isSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, 
 
 	setTemplateID, err := util.GetInt64ByInterface(setData[common.BKSetTemplateIDField])
 	if err != nil {
-		blog.Errorf("decode set failed, data: %#v, err: %s, rid: %s", setData, err, kit.Rid)
+		blog.Errorf("decode set failed, data: %#v, err: %v, rid: %s", setData, err, kit.Rid)
 		return false, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
@@ -77,7 +77,7 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if err != nil {
-		blog.Errorf("failed to parse the biz id: %s, err: %s, rid: %s", ctx.Request.PathParameter("app_id"),
+		blog.Errorf("failed to parse the biz id: %s, err: %v, rid: %s", ctx.Request.PathParameter("app_id"),
 			err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
@@ -85,7 +85,7 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 
 	setID, err := strconv.ParseInt(ctx.Request.PathParameter("set_id"), 10, 64)
 	if err != nil {
-		blog.Errorf("failed to parse the set id, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("failed to parse the set id, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKSetIDField))
 		return
 	}
@@ -93,7 +93,7 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 	// 通过集群模板创建的模板禁止直接操作(只能通过集群模板同步)
 	initializedByTemplate, err := s.isSetInitializedByTemplate(ctx.Kit, setID)
 	if err != nil {
-		blog.Errorf("set initialized template failed, setID: %d, err: %s, rid: %s", setID, err, ctx.Kit.Rid)
+		blog.Errorf("set initialized template failed, setID: %d, err: %v, rid: %s", setID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -108,7 +108,7 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 		var err error
 		module, err = s.Logics.ModuleOperation().CreateModule(ctx.Kit, bizID, setID, data)
 		if err != nil {
-			blog.Errorf("create module failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("create module failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -138,7 +138,7 @@ func (s *Service) checkIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) error 
 	rsp, err := s.Engine.CoreAPI.CoreService().Instance().CountInstances(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
 		input)
 	if err != nil {
-		blog.Errorf("failed read module instance, err: %s, rid: %s", err, kit.Rid)
+		blog.Errorf("failed read module instance, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
@@ -153,14 +153,14 @@ func (s *Service) checkIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) error 
 func (s *Service) DeleteModule(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if err != nil {
-		blog.Errorf("parse the biz id from path failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse the biz id from path failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
 
 	setID, err := strconv.ParseInt(ctx.Request.PathParameter("set_id"), 10, 64)
 	if err != nil {
-		blog.Errorf("parse the set id from path failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse the set id from path failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "set id"))
 		return
 	}
@@ -168,7 +168,7 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 	// 通过集群模板创建的模板禁止直接操作(只能通过集群模板同步)
 	initializedByTemplate, err := s.isSetInitializedByTemplate(ctx.Kit, setID)
 	if err != nil {
-		blog.Errorf("set initialized template failed, setID: %d, err: %s, rid: %s", setID, err, ctx.Kit.Rid)
+		blog.Errorf("set initialized template failed, setID: %d, err: %v, rid: %s", setID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -181,14 +181,14 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 
 	moduleID, err := strconv.ParseInt(ctx.Request.PathParameter("module_id"), 10, 64)
 	if err != nil {
-		blog.Errorf("parse the module id from path, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse the module id from path, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "module id"))
 		return
 	}
 
 	// 不允许直接删除内置模块
 	if err := s.checkIsBuiltInModule(ctx.Kit, moduleID); err != nil {
-		blog.Errorf("check is built in module failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("check is built in module failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -196,7 +196,7 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Logics.ModuleOperation().DeleteModule(ctx.Kit, bizID, []int64{setID}, []int64{moduleID})
 		if err != nil {
-			blog.Errorf("delete module failed, delete operation failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("delete module failed, delete operation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -220,21 +220,21 @@ func (s *Service) UpdateModule(ctx *rest.Contexts) {
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("parse the biz id from path, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse the biz id from path, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
 
 	setID, err := strconv.ParseInt(ctx.Request.PathParameter("set_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("parse the set id from the path, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse the set id from the path, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "set id"))
 		return
 	}
 
 	moduleID, err := strconv.ParseInt(ctx.Request.PathParameter("module_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("parse the module id from the path, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse the module id from the path, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "module id"))
 		return
 	}
@@ -242,7 +242,7 @@ func (s *Service) UpdateModule(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Logics.ModuleOperation().UpdateModule(ctx.Kit, data, bizID, setID, moduleID)
 		if err != nil {
-			blog.Errorf("update module failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("update module failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -259,14 +259,14 @@ func (s *Service) UpdateModule(ctx *rest.Contexts) {
 func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("parse bk_biz_id failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse bk_biz_id failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
 	}
 
 	serviceTemplateID, e := strconv.ParseInt(ctx.Request.PathParameter(common.BKServiceTemplateIDField), 10, 64)
 	if e != nil {
-		blog.Errorf("parse service_template_id field failed, err: %s, rid: %s", e, ctx.Kit.Rid)
+		blog.Errorf("parse service_template_id field failed, err: %v, rid: %s", e, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKServiceTemplateIDField))
 		return
 	}
@@ -320,7 +320,7 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		common.BKInnerObjIDModule, qc)
 	if err != nil {
-		blog.Errorf("list modules by service templateID failed, err: %s, cond: %#v, rid: %s", err, qc,
+		blog.Errorf("list modules by service templateID failed, err: %v, cond: %#v, rid: %s", err, qc,
 			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -333,14 +333,14 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 func (s *Service) SearchModule(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("parse the biz id from the path failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse the biz id from the path failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
 	}
 
 	setID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKSetIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("parse the set id from the path failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse the set id from the path failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKSetIDField))
 		return
 	}
@@ -352,7 +352,7 @@ func (s *Service) SearchModule(ctx *rest.Contexts) {
 func (s *Service) SearchModuleByCondition(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("parse the biz id from the path failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse the biz id from the path failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
 	}
@@ -388,7 +388,7 @@ func (s *Service) searchModule(ctx *rest.Contexts, bizID, setID int64) {
 
 	instItems, err := s.Logics.InstOperation().FindInst(ctx.Kit, common.BKInnerObjIDModule, queryCond)
 	if err != nil {
-		blog.Errorf("search module inst failed, err: %s, cond: %#v, rid: %s", err, queryCond, ctx.Kit.Rid)
+		blog.Errorf("search module inst failed, err: %v, cond: %#v, rid: %s", err, queryCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -436,7 +436,7 @@ func (s *Service) SearchModuleBatch(ctx *rest.Contexts) {
 	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		common.BKInnerObjIDModule, qc)
 	if err != nil {
-		blog.Errorf("search module batch failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("search module batch failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -498,7 +498,7 @@ func (s *Service) SearchModuleWithRelation(ctx *rest.Contexts) {
 	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		common.BKInnerObjIDModule, qc)
 	if err != nil {
-		blog.Errorf("search module with relation failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("search module with relation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -510,7 +510,7 @@ func (s *Service) SearchModuleWithRelation(ctx *rest.Contexts) {
 func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("parse bk_biz_id from the path failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse bk_biz_id from the path failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
 	}
@@ -526,7 +526,7 @@ func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {
 		return
 	}
 	if key, err := requestBody.QueryFilter.Validate(&querybuilder.RuleOption{NeedSameSliceElementType: true}); err != nil {
-		blog.Errorf("search query_filter.%s validate failed, err: %s, rid: %s", key, err, ctx.Kit.Rid)
+		blog.Errorf("search query_filter.%s validate failed, err: %v, rid: %s", key, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "query_filter."+key))
 		return
 	}
@@ -534,7 +534,7 @@ func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {
 	modules, err := s.Engine.CoreAPI.CoreService().HostApplyRule().SearchRuleRelatedModules(ctx.Kit.Ctx,
 		ctx.Kit.Header, bizID, requestBody)
 	if err != nil {
-		blog.Errorf("search rule related modules failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("search rule related modules failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -542,7 +542,7 @@ func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {
 	topoRoot, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx,
 		ctx.Kit.Header, bizID, false)
 	if err != nil {
-		blog.Errorf("search mainline instance topo failed, bizID: %d, err: %s, rid: %s", bizID, err, ctx.Kit.Rid)
+		blog.Errorf("search mainline instance topo failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -595,14 +595,14 @@ func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {
 func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("parse bk_biz_id failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse bk_biz_id failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
 	}
 
 	moduleID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKModuleIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("parse bk_module_id failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse bk_module_id failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKModuleIDField))
 		return
 	}
@@ -628,7 +628,7 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 		result, err = s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 			common.BKInnerObjIDModule, updateOption)
 		if err != nil {
-			blog.Errorf("search rule related modules failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("search rule related modules failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 
@@ -705,7 +705,7 @@ func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
 	hostApplyRules, err := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx,
 		ctx.Kit.Header, bizID, listApplyRuleOption)
 	if err != nil {
-		blog.Errorf("get list host apply rule failed, bizID: %d, err: %s, rid: %s", bizID, err, ctx.Kit.Rid)
+		blog.Errorf("get list host apply rule failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
