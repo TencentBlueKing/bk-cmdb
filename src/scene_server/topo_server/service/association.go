@@ -103,15 +103,22 @@ func (s *Service) SearchMainLineObjectTopo(ctx *rest.Contexts) {
 
 // SearchObjectByClassificationID search the object by classification ID
 func (s *Service) SearchObjectByClassificationID(ctx *rest.Contexts) {
-	bizObj, err := s.Logics.ObjectOperation().FindSingleObject(ctx.Kit, make([]string, 0),
-		ctx.Request.PathParameter("bk_obj_id"))
-	if nil != err {
-		blog.Errorf("[api-asst] failed to find the biz object, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	exist, err := s.Logics.ObjectOperation().IsObjectExist(ctx.Kit, objID)
+	if err != nil {
+		blog.Errorf("find the object(%s) failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	resp, err := s.Logics.AssociationOperation().SearchMainlineAssociationTopo(ctx.Kit, bizObj.ObjectID)
+	if !exist {
+		blog.Errorf("object(%s) is non-exist, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField))
+		return
+	}
+
+	resp, err := s.Logics.AssociationOperation().SearchMainlineAssociationTopo(ctx.Kit, objID)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
