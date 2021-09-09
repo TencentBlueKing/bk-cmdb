@@ -267,8 +267,8 @@ var _ = Describe("business test", func() {
 		input := metadata.UpdateBizPropertyBatchParameter {
 			Properties: map[string]interface{}{
 				"operator": "test",
-				"edit_all": true,
 			},
+			EditAll: true,
 		}
 
 		rsp, err := apiServerClient.UpdateBizPropertyBatch(context.Background(), header, input)
@@ -281,8 +281,8 @@ var _ = Describe("business test", func() {
 		input := metadata.UpdateBizPropertyBatchParameter {
 			Properties: map[string]interface{}{
 				"operator": "test",
-				"edit_all": false,
 			},
+			EditAll: false,
 			BizID: []int64{},
 		}
 
