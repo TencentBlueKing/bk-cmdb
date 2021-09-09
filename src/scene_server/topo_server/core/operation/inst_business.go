@@ -443,6 +443,7 @@ func (b *business) GetInternalModule(kit *rest.Kit,
 	return 0, result, nil
 }
 
+// UpdateBusinessByCond update business instances bizID
 func (b *business) UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error {
 	innerCond := condition.CreateCondition()
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
@@ -450,6 +451,8 @@ func (b *business) UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.O
 	return b.inst.UpdateInst(kit, data, obj, innerCond, bizID)
 }
 
-func (b *business) UpdateBusinessByCond(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition) error {
+// UpdateBusinessByCond update business instances by condition
+func (b *business) UpdateBusinessByCond(kit *rest.Kit, data mapstr.MapStr, obj model.Object,
+	cond condition.Condition) error {
 	return b.inst.UpdateInst(kit, data, obj, cond, -1)
 }
