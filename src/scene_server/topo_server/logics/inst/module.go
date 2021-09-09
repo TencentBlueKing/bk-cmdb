@@ -250,7 +250,7 @@ func (m *module) checkServiceTemplateParam(kit *rest.Kit, serviceCategoryID, ser
 			return serviceCategoryID, err
 		}
 		if len(stResult.Info) == 0 {
-			blog.Errorf("get service template not found, filter: %s, rid: %s", option, kit.Rid)
+			blog.Errorf("get service template not found, filter: %#v, rid: %s", option, kit.Rid)
 			return serviceCategoryID, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 		}
 		if serviceCategoryExist == true && serviceCategoryID != stResult.Info[0].ServiceCategoryID {
