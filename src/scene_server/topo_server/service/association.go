@@ -154,6 +154,7 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
 	if len(ctx.Request.QueryParameter("with_default")) > 0 {
 		withDefault = true
 	}
+
 	topoInstRst, err := s.Logics.InstAssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit,
 		common.BKInnerObjIDApp, id, withStatistics, withDefault)
 	if err != nil {
