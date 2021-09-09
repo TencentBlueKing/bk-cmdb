@@ -262,8 +262,8 @@ func (s *Service) DeleteSet(ctx *rest.Contexts) {
 
 // UpdateSet update the set
 func (s *Service) UpdateSet(ctx *rest.Contexts) {
-	data := new(mapstr.MapStr)
-	if err := ctx.DecodeInto(data); err != nil {
+	data := make(mapstr.MapStr)
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -283,7 +283,7 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Logics.SetOperation().UpdateSet(ctx.Kit, *data, bizID, setID)
+		err = s.Logics.SetOperation().UpdateSet(ctx.Kit, data, bizID, setID)
 		if err != nil {
 			blog.Errorf("update set failed, data: %#v, setID: %d, err: %v, rid: %s", data, setID, err, ctx.Kit.Rid)
 			return err

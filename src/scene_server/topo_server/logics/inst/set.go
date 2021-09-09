@@ -71,23 +71,27 @@ func (s *set) isSetDuplicateError(inputErr error) bool {
 func (s *set) getSetTemplate(kit *rest.Kit, data mapstr.MapStr, bizID int64) (metadata.SetTemplate, error) {
 	setTemplate := metadata.SetTemplate{}
 	// validate foreign key
-	if setTemplateIDIf, ok := data[common.BKSetTemplateIDField]; ok {
-		setTemplateID, err := util.GetInt64ByInterface(setTemplateIDIf)
+	setTemplateIDIf, ok := data[common.BKSetTemplateIDField]
+	if !ok {
+		blog.Errorf("get set template id failed, data: %#v, rid: %s", data, kit.Rid)
+		return setTemplate, nil
+	}
+
+	setTemplateID, err := util.GetInt64ByInterface(setTemplateIDIf)
+	if err != nil {
+		blog.Errorf("parse set_template_id field into int failed, err: %v, rid: %s", err, kit.Rid)
+		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, s.language.CreateDefaultCCLanguageIf(util.
+			GetLanguage(kit.Header)).Language("set_property_set_template_id"))
+		return setTemplate, err
+	}
+	if setTemplateID != common.SetTemplateIDNotSet {
+		st, err := s.clientSet.CoreService().SetTemplate().GetSetTemplate(kit.Ctx, kit.Header, bizID, setTemplateID)
 		if err != nil {
-			blog.Errorf("parse set_template_id field into int failed, err: %v, rid: %s", err, kit.Rid)
-			err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, s.language.CreateDefaultCCLanguageIf(util.
-				GetLanguage(kit.Header)).Language("set_property_set_template_id"))
+			blog.Errorf("get set template failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID,
+				setTemplateID, kit.Rid)
 			return setTemplate, err
 		}
-		if setTemplateID != common.SetTemplateIDNotSet {
-			st, err := s.clientSet.CoreService().SetTemplate().GetSetTemplate(kit.Ctx, kit.Header, bizID, setTemplateID)
-			if err != nil {
-				blog.Errorf("get set template failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID,
-					setTemplateID, kit.Rid)
-				return setTemplate, err
-			}
-			setTemplate = st
-		}
+		setTemplate = st
 	}
 
 	return setTemplate, nil
@@ -165,8 +169,8 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*mapstr
 		}
 
 		if _, err := s.module.CreateModule(kit, bizID, setID, createModuleParam); err != nil {
-			blog.Errorf("create module instance failed, bizID: %d, setID: %d, "+
-				"param: %#v, err: %v, rid: %s", bizID, setID, createModuleParam, err, kit.Rid)
+			blog.Errorf("create module instance failed, bizID: %d, setID: %d, param: %#v, err: %v, rid: %s", bizID,
+				setID, createModuleParam, err, kit.Rid)
 			return setInstance, err
 		}
 	}
