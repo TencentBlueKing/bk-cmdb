@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
@@ -261,6 +262,51 @@ var _ = Describe("business test", func() {
 
 	It("update nonexist business enable status enable", func() {
 		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusEnable, "1000", header)
+		util.RegisterResponse(rsp)
+		Expect(err).Should(BeNil())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It(fmt.Sprintf("batch update business properties by bk_biz_id = [%s]", bizId2), func() {
+		bizID, err := strconv.ParseInt(bizId2, 10, 64)
+		Expect(err).Should(BeNil())
+		input := metadata.UpdateBizPropertyBatchParameter {
+			Properties: map[string]interface{}{
+				"operator": "test",
+			},
+		}
+		input.BizID = append(input.BizID, bizID)
+
+		rsp, err := apiServerClient.UpdateBizPropertyBatch(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It(fmt.Sprintf("batch update business properties by edit_all"), func() {
+		input := metadata.UpdateBizPropertyBatchParameter {
+			Properties: map[string]interface{}{
+				"operator": "test",
+				"edit_all": true,
+			},
+		}
+
+		rsp, err := apiServerClient.UpdateBizPropertyBatch(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It(fmt.Sprintf("batch update business properties with by bk_biz_id = []"), func() {
+		input := metadata.UpdateBizPropertyBatchParameter {
+			Properties: map[string]interface{}{
+				"operator": "test",
+				"edit_all": false,
+			},
+			BizID: []int64{},
+		}
+
+		rsp, err := apiServerClient.UpdateBizPropertyBatch(context.Background(), header, input)
 		util.RegisterResponse(rsp)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
