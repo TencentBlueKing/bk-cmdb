@@ -508,7 +508,7 @@ func (assoc *association) deleteMainlineInstWithID(kit *rest.Kit, objID string, 
 	}
 
 	// delete this instance now.
-	delCond := mapstr.MapStr{common.GetInstIDField(objID): instID}
+	delCond := mapstr.MapStr{common.GetInstIDField(objID): mapstr.MapStr{common.BKDBIN: instID}}
 	if metadata.IsCommon(objID) {
 		delCond.Set(common.BKObjIDField, objID)
 	}
@@ -523,11 +523,8 @@ func (assoc *association) deleteMainlineInstWithID(kit *rest.Kit, objID string, 
 	}
 
 	// to delete.
-	ops := metadata.DeleteOption{
-		Condition: delCond,
-	}
-	_, err = assoc.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, objID, &ops)
-	if err != nil {
+	ops := metadata.DeleteOption{Condition: delCond}
+	if _, err = assoc.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, objID, &ops); err != nil {
 		blog.Errorf("failed to delete the object(%s) inst by the condition(%#v), err: %v", objID, ops, err)
 		return err
 	}

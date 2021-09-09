@@ -179,7 +179,7 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 	idStr := ctx.Request.PathParameter(common.BKFieldID)
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if nil != err {
-		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", idStr, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the path params id(%s), err: %v , rid: %s", idStr, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKFieldID))
 		return
 	}
@@ -210,14 +210,15 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 	idStr := ctx.Request.PathParameter(common.BKFieldID)
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if nil != err {
-		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", idStr, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the path params id(%s), err: %v , rid: %s", idStr, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID))
 		return
 	}
 
+	condition := mapstr.MapStr{common.BKFieldID: id}
 	//delete model
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Logics.ObjectOperation().DeleteObject(ctx.Kit, id, true)
+		err = s.Logics.ObjectOperation().DeleteObject(ctx.Kit, condition, true)
 		if err != nil {
 			return err
 		}

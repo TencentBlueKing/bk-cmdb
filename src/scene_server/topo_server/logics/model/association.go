@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/logics/inst"
 )
 
 // AssociationOperationInterface association operation methods
@@ -29,6 +30,21 @@ type AssociationOperationInterface interface {
 	DeleteAssociationWithPreCheck(kit *rest.Kit, associationID int64) error
 	UpdateObjectAssociation(kit *rest.Kit, data mapstr.MapStr, assoID int64) error
 	SearchObjectAssocWithAssocKindList(kit *rest.Kit, asstKindIDs []string) (resp *metadata.AssociationList, err error)
+
+	// Mainline
+	// CreateMainlineAssociation create mainline object association
+	CreateMainlineAssociation(kit *rest.Kit, data *metadata.MainlineAssociation, maxTopoLevel int) (
+		*metadata.Object, error)
+	// DeleteMainlineAssociation delete mainline association by objID
+	DeleteMainlineAssociation(kit *rest.Kit, objID string) error
+	// SearchMainlineAssociationTopo get mainline topo of special model
+	SearchMainlineAssociationTopo(kit *rest.Kit, targetObjID string) ([]*metadata.MainlineObjectTopo, error)
+	// IsMainlineObject check whether objID is mainline object or not
+	IsMainlineObject(kit *rest.Kit, objID string) (bool, error)
+
+	// SetProxy proxy the interface
+	SetProxy(object ObjectOperationInterface, inst inst.InstOperationInterface,
+		instasst inst.AssociationOperationInterface)
 }
 
 // NewAssociationOperation create a new association operation instance
@@ -43,6 +59,18 @@ func NewAssociationOperation(client apimachinery.ClientSetInterface,
 type association struct {
 	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
+	obj         ObjectOperationInterface
+	inst        inst.InstOperationInterface
+	instasst    inst.AssociationOperationInterface
+}
+
+// SetProxy proxy the interface
+func (assoc *association) SetProxy(object ObjectOperationInterface, inst inst.InstOperationInterface,
+	instasst inst.AssociationOperationInterface) {
+
+	assoc.obj = object
+	assoc.inst = inst
+	assoc.instasst = instasst
 }
 
 // DeleteAssociationType delete association type except bk_mainline
