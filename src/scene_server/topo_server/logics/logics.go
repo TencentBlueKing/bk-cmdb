@@ -58,9 +58,12 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	IdentifierOperation := operation.NewIdentifier(client)
 	associationOperation := model.NewAssociationOperation(client, authManager)
 	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
-	instOperation := inst.NewInstOperation(client, languageIf, authManager, instAssociationOperation)
+	instOperation := inst.NewInstOperation(client, languageIf, authManager)
 	graphicsOperation := operation.NewGraphics(client, authManager)
 	groupOperation := model.NewGroupOperation(client)
+
+	instOperation.SetProxy(instAssociationOperation)
+	instAssociationOperation.SetProxy(instOperation)
 	groupOperation.SetProxy(objectOperation)
 	moduleOperation.SetProxy(instOperation)
 	attributeOperation.SetProxy(groupOperation, objectOperation)
