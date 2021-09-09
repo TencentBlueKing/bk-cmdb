@@ -196,7 +196,7 @@ func (inst *instance) ReadInstanceStruct(ctx context.Context, h http.Header, obj
 		Into(result)
 
 	if err != nil {
-		blog.ErrorJSON("ReadInstanceStruct failed, http request failed, err: %s, filter: %s, rid: %s", err, input, rid)
+		blog.Errorf("search instance failed, err: %v, filter: %#v, rid: %s", err, input, rid)
 		return errors.CCHttpError
 	}
 

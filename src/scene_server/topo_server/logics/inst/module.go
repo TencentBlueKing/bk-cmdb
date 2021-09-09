@@ -237,7 +237,8 @@ func (m *module) checkServiceTemplateParam(kit *rest.Kit, serviceCategoryID, ser
 	serviceCategoryExist bool) (int64, error) {
 	if serviceCategoryID == 0 && serviceTemplateID == 0 {
 		// set default service template id
-		defaultServiceCategory, err := m.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx, kit.Header)
+		defaultServiceCategory, err := m.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx,
+			kit.Header)
 		if err != nil {
 			blog.Errorf("get default service category failed, err: %v, rid: %s", err, kit.Rid)
 			return serviceCategoryID, kit.CCError.Errorf(common.CCErrProcGetDefaultServiceCategoryFailed)
@@ -258,7 +259,7 @@ func (m *module) checkServiceTemplateParam(kit *rest.Kit, serviceCategoryID, ser
 			blog.Errorf("get service template not found, filter: %#v, rid: %s", option, kit.Rid)
 			return serviceCategoryID, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 		}
-		if serviceCategoryExist == true && serviceCategoryID != stResult.Info[0].ServiceCategoryID {
+		if serviceCategoryExist && serviceCategoryID != stResult.Info[0].ServiceCategoryID {
 			return serviceCategoryID, kit.CCError.Error(common.CCErrProcServiceTemplateAndCategoryNotCoincide)
 		}
 		serviceCategoryID = stResult.Info[0].ServiceCategoryID
@@ -302,11 +303,8 @@ func (m *module) DeleteModule(kit *rest.Kit, bizID int64, setIDs, moduleIDs []in
 
 // UpdateModule update module
 func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, moduleID int64) error {
-	innerCond := mapstr.MapStr{
-		common.BKAppIDField:    bizID,
-		common.BKSetIDField:    setID,
-		common.BKModuleIDField: moduleID,
-	}
+
+	innerCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKSetIDField: setID, common.BKModuleIDField: moduleID}
 
 	findCond := &metadata.QueryCondition{
 		Fields: []string{common.BKSetTemplateIDField, common.BKServiceTemplateIDField, common.BKServiceCategoryIDField,
@@ -324,63 +322,16 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 	if err := moduleInstance.CCError(); err != nil {
 		return err
 	}
-	if moduleInstance.Data.Count > 1 {
+	if len(moduleInstance.Data.Info) > 1 {
 		return kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject)
 	}
 	if len(moduleInstance.Data.Info) == 0 {
 		return kit.CCError.CCErrorf(common.CCErrCommNotFound)
 	}
 
-	// 检查并提示禁止修改集群模板ID字段
-	if val, ok := data[common.BKSetTemplateIDField]; ok {
-		setTemplateID, err := util.GetInt64ByInterface(val)
-		if err != nil {
-			blog.Errorf("get set template id failed, err: %v, rid: %s", err, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
-		}
-		if setTemplateID != moduleInstance.Data.Info[0].SetTemplateID {
-			blog.Errorf("forbidden to modify set template id, rid: %s", kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKSetTemplateIDField)
-		}
-	}
-
-	// 检查并提示禁止修改服务模板ID字段
-	if val, ok := data[common.BKServiceTemplateIDField]; ok {
-		serviceTemplateID, err := util.GetInt64ByInterface(val)
-		if err != nil {
-			blog.Errorf("get set service template id failed, err: %v, rid: %s", err, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
-		}
-		if serviceTemplateID != moduleInstance.Data.Info[0].ServiceTemplateID {
-			blog.Errorf("forbidden to modify set service template id, rid: %s", kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKServiceTemplateIDField)
-		}
-	}
-
-	if moduleInstance.Data.Info[0].ServiceTemplateID != common.ServiceTemplateIDNotSet {
-		// 检查并提示禁止修改服务分类
-		if val, ok := data[common.BKServiceCategoryIDField]; ok {
-			serviceCategoryID, err := util.GetInt64ByInterface(val)
-			if err != nil {
-				blog.Errorf("get service category id failed, err: %v, rid: %s", err, kit.Rid)
-				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
-			}
-			if serviceCategoryID != moduleInstance.Data.Info[0].ServiceCategoryID {
-				blog.Errorf("forbidden to modify service category id, rid: %s", kit.Rid)
-				return kit.CCError.CCError(common.CCErrorTopoUpdateModuleFromTplServiceCategoryForbidden)
-			}
-		}
-
-		// 检查并提示禁止修改通过服务模板创建的模块名称
-		if val, ok := data[common.BKModuleNameField]; ok {
-			name := util.GetStrByInterface(val)
-			if name == "" {
-				delete(data, common.BKModuleNameField)
-			} else if name != moduleInstance.Data.Info[0].ModuleName {
-				blog.Errorf("forbidden to modify module name by service template create, rid: %s", kit.Rid)
-				return kit.CCError.CCError(common.CCErrorTopoUpdateModuleFromTplNameForbidden)
-			}
-		}
+	if err := validUpdateModuleData(kit, data, moduleInstance.Data.Info[0]); err != nil {
+		blog.Errorf("valid input data by module instance failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
 
 	data.Remove(common.BKAppIDField)
@@ -393,6 +344,62 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 	if updateErr != nil {
 		blog.Errorf("update module failed,  err: %v, rid: %s", updateErr, kit.Rid)
 		return updateErr
+	}
+
+	return nil
+}
+
+func validUpdateModuleData(kit *rest.Kit, data mapstr.MapStr, module metadata.ModuleInst) error {
+	// 检查并提示禁止修改集群模板ID字段
+	if val, ok := data[common.BKSetTemplateIDField]; ok {
+		setTemplateID, err := util.GetInt64ByInterface(val)
+		if err != nil {
+			blog.Errorf("get set template id failed, err: %v, rid: %s", err, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+		}
+		if setTemplateID != module.SetTemplateID {
+			blog.Errorf("forbidden to modify set template id, rid: %s", kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKSetTemplateIDField)
+		}
+	}
+
+	// 检查并提示禁止修改服务模板ID字段
+	if val, ok := data[common.BKServiceTemplateIDField]; ok {
+		serviceTemplateID, err := util.GetInt64ByInterface(val)
+		if err != nil {
+			blog.Errorf("get set service template id failed, err: %v, rid: %s", err, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
+		if serviceTemplateID != module.ServiceTemplateID {
+			blog.Errorf("forbidden to modify set service template id, rid: %s", kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKServiceTemplateIDField)
+		}
+	}
+
+	if module.ServiceTemplateID != common.ServiceTemplateIDNotSet {
+		// 检查并提示禁止修改服务分类
+		if val, ok := data[common.BKServiceCategoryIDField]; ok {
+			serviceCategoryID, err := util.GetInt64ByInterface(val)
+			if err != nil {
+				blog.Errorf("get service category id failed, err: %v, rid: %s", err, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+			}
+			if serviceCategoryID != module.ServiceCategoryID {
+				blog.Errorf("forbidden to modify service category id, rid: %s", kit.Rid)
+				return kit.CCError.CCError(common.CCErrorTopoUpdateModuleFromTplServiceCategoryForbidden)
+			}
+		}
+
+		// 检查并提示禁止修改通过服务模板创建的模块名称
+		if val, ok := data[common.BKModuleNameField]; ok {
+			name := util.GetStrByInterface(val)
+			if name == "" {
+				delete(data, common.BKModuleNameField)
+			} else if name != module.ModuleName {
+				blog.Errorf("forbidden to modify module name by service template create, rid: %s", kit.Rid)
+				return kit.CCError.CCError(common.CCErrorTopoUpdateModuleFromTplNameForbidden)
+			}
+		}
 	}
 
 	return nil
