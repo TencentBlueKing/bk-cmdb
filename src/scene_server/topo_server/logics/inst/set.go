@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/version"
-	"configcenter/src/scene_server/topo_server/logics/model"
 )
 
 // SetOperationInterface set operation methods
@@ -31,7 +30,7 @@ type SetOperationInterface interface {
 	CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*mapstr.MapStr, error)
 	DeleteSet(kit *rest.Kit, bizID int64, setIDS []int64) error
 	UpdateSet(kit *rest.Kit, data mapstr.MapStr, bizID, setID int64) error
-	SetProxy(obj model.ObjectOperationInterface, inst InstOperationInterface)
+	SetProxy(inst InstOperationInterface, module ModuleOperationInterface)
 }
 
 // NewSetOperation create a set instance
@@ -45,13 +44,13 @@ func NewSetOperation(client apimachinery.ClientSetInterface, languageIf language
 type set struct {
 	clientSet apimachinery.ClientSetInterface
 	inst      InstOperationInterface
-	obj       model.ObjectOperationInterface
+	module    ModuleOperationInterface
 	language  language.CCLanguageIf
 }
 
-func (s *set) SetProxy(obj model.ObjectOperationInterface, inst InstOperationInterface) {
+func (s *set) SetProxy(inst InstOperationInterface, module ModuleOperationInterface) {
 	s.inst = inst
-	s.obj = obj
+	s.module = module
 }
 
 // isSetDuplicateError check set exist
@@ -68,160 +67,30 @@ func (s *set) isSetDuplicateError(inputErr error) bool {
 	return false
 }
 
-// 依赖需要删除
-func (s *set) validBizSetID(kit *rest.Kit, bizID int64, setID int64) error {
-	cond := mapstr.MapStr{
-		common.BKDBOR: []mapstr.MapStr{
-			{common.BKSetIDField: setID},
-			{common.BKAppIDField: bizID},
-		},
-	}
-
-	query := &metadata.QueryCondition{
-		Condition: cond,
-	}
-
-	rsp, err := s.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, query)
-	if err != nil {
-		blog.Errorf("get module instance failed, err: %v, rid: %s", err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if rsp.Count > 0 {
-		return nil
-	}
-
-	return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField+"/"+common.BKSetIDField)
-}
-
-// CreateModule create a new module 依赖需要删除
-func (s *set) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.MapStr) (*mapstr.MapStr, error) {
-	data.Set(common.BKSetIDField, setID)
-	data.Set(common.BKAppIDField, bizID)
-	if !data.Exists(common.BKDefaultField) {
-		data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
-	}
-
-	defaultVal, err := data.Int64(common.BKDefaultField)
-	if err != nil {
-		blog.Errorf("parse default field into int failed, data: %#v, rid: %s", data, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKDefaultField)
-	}
-	if err := s.validBizSetID(kit, bizID, setID); err != nil {
-		return nil, err
-	}
-
-	// validate service category id and service template id
-	// 如果服务分类没有设置，则从服务模版中获取，如果服务模版也没有设置，则参数错误
-	// 有效参数参数形式:
-	// 1. serviceCategoryID > 0  && serviceTemplateID == 0
-	// 2. serviceCategoryID unset && serviceTemplateID > 0
-	// 3. serviceCategoryID > 0 && serviceTemplateID > 0 && serviceTemplate.ServiceCategoryID == serviceCategoryID
-	// 4. serviceCategoryID unset && serviceTemplateID unset, then module create with default category
-	var serviceCategoryID int64
-	serviceCategoryIDIf, serviceCategoryExist := data.Get(common.BKServiceCategoryIDField)
-	if serviceCategoryExist {
-		serviceCategoryID, err = util.GetInt64ByInterface(serviceCategoryIDIf)
+// getSetTemplate get set template
+func (s *set) getSetTemplate(kit *rest.Kit, data mapstr.MapStr, bizID int64) (metadata.SetTemplate, error) {
+	setTemplate := metadata.SetTemplate{}
+	// validate foreign key
+	if setTemplateIDIf, ok := data[common.BKSetTemplateIDField]; ok {
+		setTemplateID, err := util.GetInt64ByInterface(setTemplateIDIf)
 		if err != nil {
-			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+			blog.Errorf("parse set_template_id field into int failed, err: %v, rid: %s", err, kit.Rid)
+			err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, s.language.CreateDefaultCCLanguageIf(util.
+				GetLanguage(kit.Header)).Language("set_property_set_template_id"))
+			return setTemplate, err
+		}
+		if setTemplateID != common.SetTemplateIDNotSet {
+			st, err := s.clientSet.CoreService().SetTemplate().GetSetTemplate(kit.Ctx, kit.Header, bizID, setTemplateID)
+			if err != nil {
+				blog.Errorf("get set template failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID,
+					setTemplateID, kit.Rid)
+				return setTemplate, err
+			}
+			setTemplate = st
 		}
 	}
 
-	var serviceTemplateID int64
-	serviceTemplateIDIf, serviceTemplateFieldExist := data.Get(common.BKServiceTemplateIDField)
-	if serviceTemplateFieldExist {
-		serviceTemplateID, err = util.GetInt64ByInterface(serviceTemplateIDIf)
-		if err != nil {
-			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
-		}
-	}
-
-	// if need create module using service template
-	if serviceTemplateID == 0 && !version.CanCreateSetModuleWithoutTemplate && defaultVal == 0 {
-		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "service_template_id can not be 0")
-	}
-
-	if err := s.checkServiceTemplateParam(kit, serviceCategoryID, serviceTemplateID, bizID,
-		serviceCategoryExist); err != nil {
-		return nil, err
-	}
-	data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
-	data.Set(common.BKServiceTemplateIDField, serviceTemplateID)
-	data.Set(common.HostApplyEnabledField, false)
-
-	// set default set template
-	_, exist := data[common.BKSetTemplateIDField]
-	if !exist {
-		data[common.BKSetTemplateIDField] = common.SetTemplateIDNotSet
-	}
-
-	// convert bk_parent_id to int
-	parentIDIf, ok := data[common.BKParentIDField]
-	if ok {
-		parentID, err := util.GetInt64ByInterface(parentIDIf)
-		if err != nil {
-			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
-		}
-		if parentID != setID {
-			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
-		}
-		data[common.BKParentIDField] = parentID
-	}
-	data.Remove(common.MetadataField)
-
-	inst, createErr := s.inst.CreateInst(kit, common.BKInnerObjIDModule, data)
-	if createErr != nil {
-		blog.Errorf("create module failed, err: %v, rid: %s", createErr, kit.Rid)
-		return inst, createErr
-	}
-
-	return inst, nil
-}
-
-// 依赖需要删除
-func (s *set) checkServiceTemplateParam(kit *rest.Kit, serviceCategoryID, serviceTemplateID, bizID int64,
-	serviceCategoryExist bool) error {
-	if serviceCategoryID == 0 && serviceTemplateID == 0 {
-		// set default service template id
-		defaultServiceCategory, err := s.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx, kit.Header)
-		if err != nil {
-			blog.Errorf("get default service category failed, err: %v, rid: %s", err, kit.Rid)
-			return err
-		}
-		serviceCategoryID = defaultServiceCategory.ID
-	} else if serviceTemplateID != common.ServiceTemplateIDNotSet {
-		// 校验 serviceCategoryID 与 serviceTemplateID 对应
-		templateIDs := []int64{serviceTemplateID}
-		option := metadata.ListServiceTemplateOption{
-			BusinessID:         bizID,
-			ServiceTemplateIDs: templateIDs,
-		}
-		stResult, err := s.clientSet.CoreService().Process().ListServiceTemplates(kit.Ctx, kit.Header, &option)
-		if err != nil {
-			return err
-		}
-		if len(stResult.Info) == 0 {
-			blog.Errorf("get service template not found, filter: %s, rid: %s", option, kit.Rid)
-			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
-		}
-		if serviceCategoryExist == true && serviceCategoryID != stResult.Info[0].ServiceCategoryID {
-			return kit.CCError.Error(common.CCErrProcServiceTemplateAndCategoryNotCoincide)
-		}
-		serviceCategoryID = stResult.Info[0].ServiceCategoryID
-	} else {
-		// 检查 service category id 是否有效
-		serviceCategory, err := s.clientSet.CoreService().Process().GetServiceCategory(kit.Ctx, kit.Header,
-			serviceCategoryID)
-		if err != nil {
-			return err
-		}
-		if serviceCategory.BizID != 0 && serviceCategory.BizID != bizID {
-			blog.V(3).Info("service category and module belong to two business, categoryBizID: %d, bizID: %d, "+
-				"rid: %s", serviceCategory.BizID, bizID, kit.Rid)
-			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
-		}
-	}
-	return nil
+	return setTemplate, nil
 }
 
 // CreateSet create a new set
@@ -237,23 +106,10 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*mapstr
 		return nil, err
 	}
 
-	setTemplate := metadata.SetTemplate{}
-	// validate foreign key
-	if setTemplateIDIf, ok := data[common.BKSetTemplateIDField]; ok {
-		setTemplateID, err := util.GetInt64ByInterface(setTemplateIDIf)
-		if err != nil {
-			blog.Errorf("parse set_template_id field into int failed, err: %v, rid: %s", err, kit.Rid)
-			err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, s.language.CreateDefaultCCLanguageIf(util.
-				GetLanguage(kit.Header)).Language("set_property_set_template_id"))
-			return nil, err
-		}
-		if setTemplateID != common.SetTemplateIDNotSet {
-			st, err := s.clientSet.CoreService().SetTemplate().GetSetTemplate(kit.Ctx, kit.Header, bizID, setTemplateID)
-			if err != nil {
-				return nil, err
-			}
-			setTemplate = st
-		}
+	setTemplate, err := s.getSetTemplate(kit, data, bizID)
+	if err != nil {
+		blog.Errorf("get set template failed, data: %#v, err: %s, rid: %s", data, err, kit.Rid)
+		return nil, err
 	}
 
 	// if need create set using set template
@@ -274,6 +130,11 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*mapstr
 		}
 		return setInstance, err
 	}
+	if setInstance == nil {
+		blog.Errorf("create set returns nil pointer, data: %#v, rid: %s", bizID, data, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrTopoSetCreateFailed)
+	}
+
 	if setTemplate.ID == common.SetTemplateIDNotSet {
 		return setInstance, nil
 	}
@@ -282,8 +143,8 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*mapstr
 	serviceTemplates, err := s.clientSet.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(kit.Ctx, kit.Header,
 		bizID, setTemplate.ID)
 	if err != nil {
-		blog.Errorf("get list set tpl related svc tpl failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s",
-			bizID, setTemplate.ID, err, kit.Rid)
+		blog.Errorf("list set tpl related svc tpl failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID,
+			setTemplate.ID, err, kit.Rid)
 		return setInstance, err
 	}
 
@@ -303,8 +164,7 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*mapstr
 			common.BKAppIDField:             bizID,
 		}
 
-		// TODO 替换依赖CreateModule
-		if _, err := s.CreateModule(kit, bizID, setID, createModuleParam); err != nil {
+		if _, err := s.module.CreateModule(kit, bizID, setID, createModuleParam); err != nil {
 			blog.Errorf("create module instance failed, bizID: %d, setID: %d, "+
 				"param: %#v, err: %v, rid: %s", bizID, setID, createModuleParam, err, kit.Rid)
 			return setInstance, err
@@ -331,17 +191,13 @@ func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 	// clear set template sync status
 	if ccErr := s.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID,
 		setIDs); ccErr != nil {
-		blog.Errorf("failed to delete set template sync status failed, bizID: %d, setIDs: %#v, "+
-			"err: %v, rid: %s", bizID, setIDs, ccErr.Error(), kit.Rid)
+		blog.Errorf("delete set template sync status failed, bizID: %d, setIDs: %#v, err: %v, rid: %s", bizID,
+			setIDs, ccErr, kit.Rid)
 		return ccErr
 	}
 
 	taskCond := &metadata.DeleteOption{
-		Condition: map[string]interface{}{
-			common.BKInstIDField: map[string]interface{}{
-				common.BKDBIN: setIDs,
-			},
-		},
+		Condition: setCond,
 	}
 	if err = s.clientSet.TaskServer().Task().DeleteTask(kit.Ctx, kit.Header, taskCond); err != nil {
 		blog.Errorf("failed to delete set sync task message failed, bizID: %d, setIDs: %#v, err: %v, rid: %s",
@@ -361,6 +217,7 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, bizID, setID int64) e
 	}
 
 	data.Remove(common.MetadataField)
+	data.Remove(common.BKAppIDField)
 	data.Remove(common.BKSetIDField)
 	data.Remove(common.BKSetTemplateIDField)
 

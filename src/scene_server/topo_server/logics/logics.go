@@ -25,6 +25,8 @@ import (
 type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
 	SetOperation() inst.SetOperationInterface
+	ModuleOperation() inst.ModuleOperationInterface
+	AttributeOperation() model.AttributeOperationInterface
 	InstOperation() inst.InstOperationInterface
 	ObjectOperation() model.ObjectOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
@@ -35,10 +37,12 @@ type Logics interface {
 }
 
 type logics struct {
-	classification model.ClassificationOperationInterface
-	set            inst.SetOperationInterface
-	object         model.ObjectOperationInterface
-	identifier     operation.IdentifierOperationInterface
+	classification  model.ClassificationOperationInterface
+	set             inst.SetOperationInterface
+	object          model.ObjectOperationInterface
+	identifier      operation.IdentifierOperationInterface
+	module          inst.ModuleOperationInterface
+	attribute       model.AttributeOperationInterface
 	inst            inst.InstOperationInterface
 	association     model.AssociationOperationInterface
 	instassociation inst.AssociationOperationInterface
@@ -51,32 +55,50 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	languageIf language.CCLanguageIf) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
 	setOperation := inst.NewSetOperation(client, languageIf)
+	moduleOperation := inst.NewModuleOperation(client, authManager)
+	attributeOperation := model.NewAttributeOperation(client, authManager, languageIf)
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
 	associationOperation := model.NewAssociationOperation(client, authManager)
 	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
-	instOperation := inst.NewInstOperation(client, languageIf, authManager, instAssociationOperation)
+	instOperation := inst.NewInstOperation(client, languageIf, authManager)
 	graphicsOperation := operation.NewGraphics(client, authManager)
 	groupOperation := model.NewGroupOperation(client)
-	groupOperation.SetProxy(objectOperation)
-	setOperation.SetProxy(objectOperation, instOperation)
 
+	instOperation.SetProxy(instAssociationOperation)
+	instAssociationOperation.SetProxy(instOperation)
+	groupOperation.SetProxy(objectOperation)
+	setOperation.SetProxy(instOperation, moduleOperation)
+	moduleOperation.SetProxy(instOperation)
+	attributeOperation.SetProxy(groupOperation, objectOperation)
 	return &logics{
-		classification: classificationOperation,
-		set:            setOperation,
-		object:         objectOperation,
-		identifier:     IdentifierOperation,
-		inst: instOperation,
-		association: associationOperation,
+		classification:  classificationOperation,
+		set:             setOperation,
+		object:          objectOperation,
+		identifier:      IdentifierOperation,
+		inst:            instOperation,
+		association:     associationOperation,
+		module:          moduleOperation,
+		attribute:       attributeOperation,
 		instassociation: instAssociationOperation,
-		graphics: graphicsOperation,
-		group: groupOperation,
+		graphics:        graphicsOperation,
+		group:           groupOperation,
 	}
 }
 
 // SetOperation return a setOperation provide SetOperationInterface
 func (c *logics) SetOperation() inst.SetOperationInterface {
 	return c.set
+}
+
+// ModuleOperation return a module provide ModuleOperationInterface
+func (c *logics) ModuleOperation() inst.ModuleOperationInterface {
+	return c.module
+}
+
+// AttributeOperation return a attribute provide AttributeOperationInterface
+func (c *logics) AttributeOperation() model.AttributeOperationInterface {
+	return c.attribute
 }
 
 // ClassificationOperation return a classification provide ClassificationOperationInterface

@@ -29,11 +29,11 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("batch create set failed, parse biz id from url failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
 
-	batchBody := new(metadata.BatchCreateSetRequest)
+	batchBody := metadata.BatchCreateSetRequest{}
 	if err := ctx.DecodeInto(&batchBody); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -47,7 +47,7 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		}
 		set[common.BKAppIDField] = bizID
 
-		result := &mapstr.MapStr{}
+		result := new(mapstr.MapStr)
 		// to avoid judging to be nested transaction, need a new header
 		ctx.Kit.Header = ctx.Kit.NewHeader()
 		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
@@ -88,11 +88,11 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id from url, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
 
-	resp := &mapstr.MapStr{}
+	resp := new(mapstr.MapStr)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		resp, err = s.createSet(ctx.Kit, bizID, data)
@@ -115,6 +115,11 @@ func (s *Service) createSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*ma
 	if err != nil {
 		blog.Errorf("create set failed, bizID: %d, data: %#v, err: %v, rid: %s", bizID, data, err, kit.Rid)
 		return nil, err
+	}
+
+	if set == nil {
+		blog.Errorf("create set returns nil pointer, biz: %d, data: %#v, rid: %s", bizID, data, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrTopoSetCreateFailed)
 	}
 
 	setID, err := metadata.GetInstID(common.BKInnerObjIDSet, *set)
@@ -145,10 +150,7 @@ func (s *Service) createSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*ma
 // checkIsBuiltInSet check if set is built-in set
 func (s *Service) checkIsBuiltInSet(kit *rest.Kit, setIDs ...int64) error {
 	// 检查是否是内置集群
-	filter := &metadata.QueryCondition{
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
+	cond := &metadata.Condition{
 		Condition: map[string]interface{}{
 			common.BKSetIDField: map[string]interface{}{
 				common.BKDBIN: setIDs,
@@ -159,9 +161,9 @@ func (s *Service) checkIsBuiltInSet(kit *rest.Kit, setIDs ...int64) error {
 		},
 	}
 
-	rsp, e := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter)
+	rsp, e := s.Engine.CoreAPI.CoreService().Instance().CountInstances(kit.Ctx, kit.Header, common.BKInnerObjIDSet, cond)
 	if e != nil {
-		blog.Errorf("check is built in set failed, option: %s, err: %v, rid: %s", filter, e, kit.Rid)
+		blog.Errorf("check is built in set failed, option: %s, err: %v, rid: %s", cond, e, kit.Rid)
 		return e
 	}
 
@@ -177,19 +179,19 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id from url, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
 
 	data := new(operation.OpCondition)
-	if err = ctx.DecodeInto(&data); err != nil {
+	if err = ctx.DecodeInto(data); err != nil {
 		blog.Errorf("failed to parse to the operation condition, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
 	setIDs := data.Delete.InstID
-	// 检查是否时内置集群
+	// 检查是否是内置集群
 	if err := s.checkIsBuiltInSet(ctx.Kit, setIDs...); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -223,14 +225,14 @@ func (s *Service) DeleteSet(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id from url, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
 
 	setID, err := strconv.ParseInt(ctx.Request.PathParameter("set_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the set id from url, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "set id"))
 		return
 	}
 
@@ -260,8 +262,8 @@ func (s *Service) DeleteSet(ctx *rest.Contexts) {
 
 // UpdateSet update the set
 func (s *Service) UpdateSet(ctx *rest.Contexts) {
-	data := mapstr.MapStr{}
-	if err := ctx.DecodeInto(&data); err != nil {
+	data := new(mapstr.MapStr)
+	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -269,19 +271,19 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id from url, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
 
 	setID, err := strconv.ParseInt(ctx.Request.PathParameter("set_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the set id from url, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "set id"))
 		return
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Logics.SetOperation().UpdateSet(ctx.Kit, data, bizID, setID)
+		err = s.Logics.SetOperation().UpdateSet(ctx.Kit, *data, bizID, setID)
 		if err != nil {
 			blog.Errorf("update set failed, data: %#v, setID: %d, err: %v, rid: %s", data, setID, err, ctx.Kit.Rid)
 			return err
@@ -303,12 +305,12 @@ func (s *Service) SearchSet(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id from url, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
 
 	queryCond := new(metadata.QueryCondition)
-	if err = ctx.DecodeInto(&queryCond); err != nil {
+	if err = ctx.DecodeInto(queryCond); err != nil {
 		blog.Errorf("search set failed, decode parameter condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return

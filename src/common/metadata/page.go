@@ -23,6 +23,7 @@ const (
 	PageName         = "page"
 	PageSort         = "sort"
 	PageStart        = "start"
+	PageLimit        = "limit"
 	DBFields         = "fields"
 	DBQueryCondition = "condition"
 )

@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/mapstruct"
@@ -390,18 +389,23 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	attrCond := condition.CreateCondition()
-	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
-	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
-	attrArr, err := s.Core.AttributeOperation().FindBusinessAttribute(ctx.Kit, attrCond.ToMapStr())
-	if nil != err {
+	opt := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			metadata.AttributeFieldObjectID:     common.BKInnerObjIDApp,
+			metadata.AttributeFieldPropertyType: common.FieldTypeUser,
+		},
+		DisableCounter: true,
+	}
+	attrArr, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDApp, opt)
+	if err != nil {
 		blog.Errorf("failed get the business attribute, %s, rid:%s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	// userFieldArr Fields in the business are user-type fields
 	var userFields []string
-	for _, attribute := range attrArr {
+	for _, attribute := range attrArr.Info {
 		userFields = append(userFields, attribute.PropertyID)
 	}
 
@@ -595,66 +599,6 @@ func (s *Service) GetInternalModule(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(result)
-}
-
-// GetInternalModuleWithStatistics get internal object by statistics
-func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error()))
-		return
-	}
-
-	_, innerAppTopo, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, bizID)
-	if nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-	if innerAppTopo == nil {
-		blog.ErrorJSON("get internal module with statistics failed, type: %s, rid: %s", innerAppTopo, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	moduleIDArr := make([]int64, 0)
-	for _, item := range innerAppTopo.Module {
-		moduleIDArr = append(moduleIDArr, item.ModuleID)
-	}
-
-	// count host apply rules
-	listApplyRuleOption := metadata.ListHostApplyRuleOption{
-		ModuleIDs: moduleIDArr,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	hostApplyRules, err := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx,
-		ctx.Kit.Header, bizID, listApplyRuleOption)
-	if err != nil {
-		blog.Errorf("fillStatistics failed, ListHostApplyRule failed, bizID: %d, option: %+v, err: %+v, rid: %s",
-			bizID, listApplyRuleOption, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	moduleRuleCount := make(map[int64]int64)
-	for _, item := range hostApplyRules.Info {
-		if _, exist := moduleRuleCount[item.ModuleID]; exist == false {
-			moduleRuleCount[item.ModuleID] = 0
-		}
-		moduleRuleCount[item.ModuleID] += 1
-	}
-
-	set := mapstr.NewFromStruct(innerAppTopo, "field")
-	modules := make([]mapstr.MapStr, 0)
-	for _, module := range innerAppTopo.Module {
-		moduleItem := mapstr.NewFromStruct(module, "field")
-		moduleItem["host_apply_rule_count"] = 0
-		if ruleCount, ok := moduleRuleCount[module.ModuleID]; ok == true {
-			moduleItem["host_apply_rule_count"] = ruleCount
-		}
-		modules = append(modules, moduleItem)
-	}
-	set["module"] = modules
-	ctx.RespEntity(set)
 }
 
 // ListAllBusinessSimplify list all businesses with return only several fields
