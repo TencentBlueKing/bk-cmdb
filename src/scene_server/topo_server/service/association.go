@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/model"
 
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
@@ -34,16 +33,9 @@ import (
 
 // CreateMainLineObject create a new model in the main line topo
 func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); err != nil {
+	data := new(metadata.MainlineAssociation)
+	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
-		return
-	}
-	mainLineAssociation := &metadata.Association{}
-	_, err := mainLineAssociation.Parse(data)
-	if nil != err {
-		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s, rid: %s", data, err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "mainline object"))
 		return
 	}
 
@@ -51,18 +43,19 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 	// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 	// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
 	// Collection minimum is Timestamp(1616747878, 5)
-	if err := s.createObjectTableByObjectID(ctx, mainLineAssociation.ObjectID, true); err != nil {
+	if err := s.createObjectTableByObjectID(ctx, data.ObjectID, true); err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "mainline object"))
 		return
 	}
 
-	var ret model.Object
+	ret := new(metadata.Object)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 
 		var err error
-		ret, err = s.Core.AssociationOperation().CreateMainlineAssociation(ctx.Kit, mainLineAssociation, s.Config.BusinessTopoLevelMax)
+		ret, err = s.Logics.AssociationOperation().CreateMainlineAssociation(ctx.Kit, data,
+			s.Config.BusinessTopoLevelMax)
 		if err != nil {
-			blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", mainLineAssociation.ObjectID, err, ctx.Kit.Rid)
+			blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", data.ObjectID, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -82,8 +75,8 @@ func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 
 	// do with transaction
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		if err := s.Core.AssociationOperation().DeleteMainlineAssociation(ctx.Kit, objID); err != nil {
-			blog.Errorf("DeleteMainlineAssociation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		if err := s.Logics.AssociationOperation().DeleteMainlineAssociation(ctx.Kit, objID); err != nil {
+			blog.Errorf("delete mainline association failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrTopoObjectDeleteFailed)
 		}
 		return nil
@@ -99,15 +92,8 @@ func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 
 // SearchMainLineObjectTopo search the main line topo
 func (s *Service) SearchMainLineObjectTopo(ctx *rest.Contexts) {
-	bizObj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("[api-asst] failed to find the biz object, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	// get biz model related mainline models (mainline relationship model)
-	resp, err := s.Core.AssociationOperation().SearchMainlineAssociationTopo(ctx.Kit, bizObj)
+	resp, err := s.Logics.AssociationOperation().SearchMainlineAssociationTopo(ctx.Kit, common.BKInnerObjIDApp)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -117,14 +103,22 @@ func (s *Service) SearchMainLineObjectTopo(ctx *rest.Contexts) {
 
 // SearchObjectByClassificationID search the object by classification ID
 func (s *Service) SearchObjectByClassificationID(ctx *rest.Contexts) {
-	bizObj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"))
-	if nil != err {
-		blog.Errorf("[api-asst] failed to find the biz object, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	exist, err := s.Logics.ObjectOperation().IsObjectExist(ctx.Kit, objID)
+	if err != nil {
+		blog.Errorf("find the object(%s) failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	resp, err := s.Core.AssociationOperation().SearchMainlineAssociationTopo(ctx.Kit, bizObj)
+	if !exist {
+		blog.Errorf("object(%s) is non-exist, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField))
+		return
+	}
+
+	resp, err := s.Logics.AssociationOperation().SearchMainlineAssociationTopo(ctx.Kit, objID)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -157,7 +151,8 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
 	withStatistics, withSortName bool) ([]*metadata.TopoInstRst, error) {
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-asst] failed to parse the path params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("app_id"), err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the path params id(%s), err: %v , rid: %s", ctx.Request.PathParameter("app_id"),
+			err, ctx.Kit.Rid)
 
 		return nil, err
 	}

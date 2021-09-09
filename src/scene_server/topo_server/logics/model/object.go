@@ -31,8 +31,8 @@ import (
 type ObjectOperationInterface interface {
 	// CreateObject create common object
 	CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr) (*metadata.Object, error)
-	// DeleteObject delete common object
-	DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
+	// DeleteObject delete model by query condition
+	DeleteObject(kit *rest.Kit, cond mapstr.MapStr, needCheckInst bool) error
 	// FindObjectTopo search object topo by condition
 	FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.ObjectTopo, error)
 	// FindSingleObject find a object by objectID
@@ -239,26 +239,24 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 	return obj, nil
 }
 
-// DeleteObject delete model by id
-func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error {
-	if id <= 0 {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID)
-	}
+// DeleteObject delete model by query condition
+func (o *object) DeleteObject(kit *rest.Kit, cond mapstr.MapStr, needCheckInst bool) error {
 
-	// get model by id
+	// get model by conditon
 	query := &metadata.QueryCondition{
-		Condition:      mapstr.MapStr{metadata.ModelFieldID: id},
+		Condition:      cond,
 		Fields:         make([]string, 0),
 		DisableCounter: true,
 	}
+
 	objs, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, query)
 	if err != nil {
-		blog.Errorf("failed to find objects(%d), err: %v, rid: %s", id, err, kit.Rid)
+		blog.Errorf("failed to find objects by query(%#v), err: %v, rid: %s", query, err, kit.Rid)
 		return err
 	}
 	// shouldn't return 404 error here, legacy implements just ignore not found error
 	if len(objs.Info) == 0 {
-		blog.V(3).Infof("object(%d) not found, rid: %s", id, kit.Rid)
+		blog.V(3).Infof("object not found, rid: %s", kit.Rid)
 		return nil
 	}
 
@@ -286,9 +284,9 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
 	}
 
 	// DeleteModelCascade 将会删除模型/模型属性/属性分组/唯一校验
-	_, err = o.clientSet.CoreService().Model().DeleteModelCascade(kit.Ctx, kit.Header, id)
+	_, err = o.clientSet.CoreService().Model().DeleteModelCascade(kit.Ctx, kit.Header, obj.ID)
 	if err != nil {
-		blog.Errorf("delete the object by the id(%d) failed, err: %v, rid: %s", id, err, kit.Rid)
+		blog.Errorf("delete the object by the id(%d) failed, err: %v, rid: %s", obj.ID, err, kit.Rid)
 		return err
 	}
 
