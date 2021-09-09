@@ -25,8 +25,13 @@ import (
 type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
 	SetOperation() inst.SetOperationInterface
+	InstOperation() inst.InstOperationInterface
 	ObjectOperation() model.ObjectOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
+	AssociationOperation() model.AssociationOperationInterface
+	InstAssociationOperation() inst.AssociationOperationInterface
+	GraphicsOperation() operation.GraphicsOperationInterface
+	GroupOperation() model.GroupOperationInterface
 }
 
 type logics struct {
@@ -34,6 +39,11 @@ type logics struct {
 	set            inst.SetOperationInterface
 	object         model.ObjectOperationInterface
 	identifier     operation.IdentifierOperationInterface
+	inst            inst.InstOperationInterface
+	association     model.AssociationOperationInterface
+	instassociation inst.AssociationOperationInterface
+	graphics        operation.GraphicsOperationInterface
+	group           model.GroupOperationInterface
 }
 
 // New create a logics manager
@@ -43,27 +53,68 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	setOperation := inst.NewSetOperation(client, languageIf)
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
+	associationOperation := model.NewAssociationOperation(client, authManager)
+	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
+	instOperation := inst.NewInstOperation(client, languageIf, authManager, instAssociationOperation)
+	graphicsOperation := operation.NewGraphics(client, authManager)
+	groupOperation := model.NewGroupOperation(client)
+	groupOperation.SetProxy(objectOperation)
+	setOperation.SetProxy(objectOperation, instOperation)
 
 	return &logics{
 		classification: classificationOperation,
 		set:            setOperation,
 		object:         objectOperation,
 		identifier:     IdentifierOperation,
+		inst: instOperation,
+		association: associationOperation,
+		instassociation: instAssociationOperation,
+		graphics: graphicsOperation,
+		group: groupOperation,
 	}
 }
 
-func (l *logics) ClassificationOperation() model.ClassificationOperationInterface {
-	return l.classification
+// SetOperation return a setOperation provide SetOperationInterface
+func (c *logics) SetOperation() inst.SetOperationInterface {
+	return c.set
 }
 
-func (l *logics) SetOperation() inst.SetOperationInterface {
-	return l.set
+// ClassificationOperation return a classification provide ClassificationOperationInterface
+func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
+	return c.classification
 }
 
-func (l *logics) ObjectOperation() model.ObjectOperationInterface {
-	return l.object
+// ObjectOperation return a object provide ObjectOperationInterface
+func (c *logics) ObjectOperation() model.ObjectOperationInterface {
+	return c.object
 }
 
-func (l *logics) IdentifierOperation() operation.IdentifierOperationInterface {
-	return l.identifier
+// IdentifierOperation return a identifier provide IdentifierOperationInterface
+func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
+	return c.identifier
+}
+
+// InstOperation return a inst provide InstOperationInterface
+func (c *logics) InstOperation() inst.InstOperationInterface {
+	return c.inst
+}
+
+// AssociationOperation return a association provide AssociationOperationInterface
+func (c *logics) AssociationOperation() model.AssociationOperationInterface {
+	return c.association
+}
+
+// InstAssociationOperation return a instance association provide AssociationOperationInterface
+func (c *logics) InstAssociationOperation() inst.AssociationOperationInterface {
+	return c.instassociation
+}
+
+// GraphicsOperation return a inst provide GraphicsOperation
+func (c *logics) GraphicsOperation() operation.GraphicsOperationInterface {
+	return c.graphics
+}
+
+// GroupOperation return a inst provide GroupOperationInterface
+func (c *logics) GroupOperation() model.GroupOperationInterface {
+	return c.group
 }
