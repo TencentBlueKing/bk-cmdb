@@ -63,17 +63,18 @@ type InstOperationInterface interface {
 	// IsMainline check if object is mainline object
 	// TODO after mainline associaiton merged change to its
 	IsMainline(kit *rest.Kit, objID string) (bool, error)
+	// SetProxy proxy the interface
+	SetProxy(instAssoc AssociationOperationInterface)
 }
 
 // NewInstOperation create a new inst operation instance
 func NewInstOperation(client apimachinery.ClientSetInterface, lang language.CCLanguageIf,
-	authManager *extensions.AuthManager, asst AssociationOperationInterface) InstOperationInterface {
+	authManager *extensions.AuthManager) InstOperationInterface {
 
 	return &commonInst{
 		clientSet:   client,
 		language:    lang,
 		authManager: authManager,
-		asst:        asst,
 	}
 }
 
@@ -133,6 +134,11 @@ type commonInst struct {
 	language    language.CCLanguageIf
 	authManager *extensions.AuthManager
 	asst        AssociationOperationInterface
+}
+
+// SetProxy proxy the interface
+func (c *commonInst) SetProxy(instAssoc AssociationOperationInterface) {
+	c.asst = instAssoc
 }
 
 // CreateInst create instance by object and create message

@@ -24,6 +24,7 @@ import (
 // Logics provides management interface for operations of model and instance and related resources like association
 type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
+	ModuleOperation() inst.ModuleOperationInterface
 	AttributeOperation() model.AttributeOperationInterface
 	InstOperation() inst.InstOperationInterface
 	ObjectOperation() model.ObjectOperationInterface
@@ -37,6 +38,7 @@ type Logics interface {
 
 type logics struct {
 	classification  model.ClassificationOperationInterface
+	module          inst.ModuleOperationInterface
 	attribute       model.AttributeOperationInterface
 	inst            inst.InstOperationInterface
 	object          model.ObjectOperationInterface
@@ -52,21 +54,27 @@ type logics struct {
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager,
 	languageIf language.CCLanguageIf) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
+	moduleOperation := inst.NewModuleOperation(client, authManager)
 	attributeOperation := model.NewAttributeOperation(client, authManager, languageIf)
 	objectOperation := model.NewObjectOperation(client, authManager)
 	IdentifierOperation := operation.NewIdentifier(client)
 	associationOperation := model.NewAssociationOperation(client, authManager)
 	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
-	instOperation := inst.NewInstOperation(client, languageIf, authManager, instAssociationOperation)
+	instOperation := inst.NewInstOperation(client, languageIf, authManager)
 	graphicsOperation := operation.NewGraphics(client, authManager)
 	groupOperation := model.NewGroupOperation(client)
+
+	instOperation.SetProxy(instAssociationOperation)
+	instAssociationOperation.SetProxy(instOperation)
 	groupOperation.SetProxy(objectOperation)
+	moduleOperation.SetProxy(instOperation)
 	attributeOperation.SetProxy(groupOperation, objectOperation)
 	businessOperation := inst.NewBusinessOperation(client, authManager)
 	businessOperation.SetProxy(objectOperation, instOperation)
 
 	return &logics{
 		classification:  classificationOperation,
+		module:          moduleOperation,
 		attribute:       attributeOperation,
 		inst:            instOperation,
 		object:          objectOperation,
@@ -79,6 +87,11 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	}
 }
 
+
+// ModuleOperation return a module provide ModuleOperationInterface
+func (c *logics) ModuleOperation() inst.ModuleOperationInterface {
+	return c.module
+}
 // AttributeOperation return a attribute provide AttributeOperationInterface
 func (c *logics) AttributeOperation() model.AttributeOperationInterface {
 	return c.attribute
