@@ -31,6 +31,14 @@ type SearchSort struct {
 	Field string `json:"field"`
 }
 
+// SearchModuleCondition search module condition
+type SearchModuleCondition struct {
+	Condition map[string]interface{} `json:"condition"`
+	Page      BasePage               `json:"page"`
+	Fields    []string               `json:"fields,omitempty"`
+	SetID     int64                  `json:"bk_set_id"`
+}
+
 // QueryCondition the common query condition definition
 type QueryCondition struct {
 	Fields    []string      `json:"fields"`
