@@ -70,7 +70,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	moduleOperation.SetProxy(instOperation)
 	attributeOperation.SetProxy(groupOperation, objectOperation)
 	businessOperation := inst.NewBusinessOperation(client, authManager)
-	businessOperation.SetProxy(objectOperation, instOperation)
+	businessOperation.SetProxy(objectOperation, instOperation, moduleOperation)
 
 	return &logics{
 		classification:  classificationOperation,
@@ -87,11 +87,11 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	}
 }
 
-
 // ModuleOperation return a module provide ModuleOperationInterface
 func (c *logics) ModuleOperation() inst.ModuleOperationInterface {
 	return c.module
 }
+
 // AttributeOperation return a attribute provide AttributeOperationInterface
 func (c *logics) AttributeOperation() model.AttributeOperationInterface {
 	return c.attribute
