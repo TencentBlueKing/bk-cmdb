@@ -246,26 +246,6 @@ var _ = Describe("business test", func() {
 		Expect(rsp.Result).To(Equal(false))
 	})
 
-	It(fmt.Sprintf("update business enable status bk_biz_id = %s", bizId2), func() {
-		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled, bizId2, header)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-	})
-
-	It("update nonexist business enable status diable", func() {
-		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled, "1000", header)
-		util.RegisterResponse(rsp)
-		Expect(err).Should(BeNil())
-		Expect(rsp.Result).To(Equal(false))
-	})
-
-	It("update nonexist business enable status enable", func() {
-		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusEnable, "1000", header)
-		util.RegisterResponse(rsp)
-		Expect(err).Should(BeNil())
-		Expect(rsp.Result).To(Equal(false))
-	})
 
 	It(fmt.Sprintf("batch update business properties by bk_biz_id = [%s]", bizId2), func() {
 		bizID, err := strconv.ParseInt(bizId2, 10, 64)
@@ -307,6 +287,27 @@ var _ = Describe("business test", func() {
 		}
 
 		rsp, err := apiServerClient.UpdateBizPropertyBatch(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).Should(BeNil())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It(fmt.Sprintf("update business enable status bk_biz_id = %s", bizId2), func() {
+		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled, bizId2, header)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It("update nonexist business enable status diable", func() {
+		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled, "1000", header)
+		util.RegisterResponse(rsp)
+		Expect(err).Should(BeNil())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("update nonexist business enable status enable", func() {
+		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusEnable, "1000", header)
 		util.RegisterResponse(rsp)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
