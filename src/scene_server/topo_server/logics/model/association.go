@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/logics/inst"
 )
 
 // AssociationOperationInterface association operation methods
@@ -40,15 +41,18 @@ type AssociationOperationInterface interface {
 	SearchMainlineAssociationTopo(kit *rest.Kit, targetObjID string) ([]*metadata.MainlineObjectTopo, error)
 	// IsMainlineObject check whether objID is mainline object or not
 	IsMainlineObject(kit *rest.Kit, objID string) (bool, error)
+
+	// SetProxy proxy the interface
+	SetProxy(object ObjectOperationInterface, inst inst.InstOperationInterface,
+		instasst inst.AssociationOperationInterface)
 }
 
 // NewAssociationOperation create a new association operation instance
 func NewAssociationOperation(client apimachinery.ClientSetInterface,
-	authManager *extensions.AuthManager, obj ObjectOperationInterface) AssociationOperationInterface {
+	authManager *extensions.AuthManager) AssociationOperationInterface {
 	return &association{
 		clientSet:   client,
 		authManager: authManager,
-		obj:         obj,
 	}
 }
 
@@ -56,6 +60,17 @@ type association struct {
 	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
 	obj         ObjectOperationInterface
+	inst        inst.InstOperationInterface
+	instasst    inst.AssociationOperationInterface
+}
+
+// SetProxy proxy the interface
+func (assoc *association) SetProxy(object ObjectOperationInterface, inst inst.InstOperationInterface,
+	instasst inst.AssociationOperationInterface) {
+
+	assoc.obj = object
+	assoc.inst = inst
+	assoc.instasst = instasst
 }
 
 // DeleteAssociationType delete association type except bk_mainline

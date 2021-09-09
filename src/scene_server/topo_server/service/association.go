@@ -103,14 +103,15 @@ func (s *Service) SearchMainLineObjectTopo(ctx *rest.Contexts) {
 
 // SearchObjectByClassificationID search the object by classification ID
 func (s *Service) SearchObjectByClassificationID(ctx *rest.Contexts) {
-	bizObj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"))
+	bizObj, err := s.Logics.ObjectOperation().FindSingleObject(ctx.Kit, make([]string, 0),
+		ctx.Request.PathParameter("bk_obj_id"))
 	if nil != err {
 		blog.Errorf("[api-asst] failed to find the biz object, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	resp, err := s.Core.AssociationOperation().SearchMainlineAssociationTopo(ctx.Kit, bizObj)
+	resp, err := s.Logics.AssociationOperation().SearchMainlineAssociationTopo(ctx.Kit, bizObj.ObjectID)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -143,7 +144,8 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
 	withStatistics, withSortName bool) ([]*metadata.TopoInstRst, error) {
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-asst] failed to parse the path params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("app_id"), err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the path params id(%s), err: %v , rid: %s", ctx.Request.PathParameter("app_id"),
+			err, ctx.Kit.Rid)
 
 		return nil, err
 	}
@@ -152,7 +154,8 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
 	if len(ctx.Request.QueryParameter("with_default")) > 0 {
 		withDefault = true
 	}
-	topoInstRst, err := s.Logics.InstAssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit, common.BKInnerObjIDApp, id, withStatistics, withDefault)
+	topoInstRst, err := s.Logics.InstAssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit,
+		common.BKInnerObjIDApp, id, withStatistics, withDefault)
 	if err != nil {
 		return nil, err
 	}
