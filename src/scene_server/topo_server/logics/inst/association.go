@@ -6,6 +6,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -16,28 +17,36 @@ type AssociationOperationInterface interface {
 	// SearchInstanceAssociations searches object instance associations.
 	SearchInstanceAssociations(kit *rest.Kit, objID string, input *metadata.CommonSearchFilter) (
 		[]metadata.InstAsst, error)
-
 	// CountInstanceAssociations counts object instance associations num.
 	CountInstanceAssociations(kit *rest.Kit, objID string, input *metadata.CommonCountFilter) (
 		*metadata.CommonCountResult, error)
-
 	// SearchInstAssociationUIList instance association data related to instances, return by pagination
 	SearchInstAssociationUIList(kit *rest.Kit, objID string, query *metadata.QueryCondition) (
 		*metadata.SearchInstAssociationListResult, uint64, error)
-
 	// CreateInstanceAssociation create an association between instances
 	CreateInstanceAssociation(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (
 		*metadata.RspID, error)
-
 	// CreateManyInstAssociation create many associations between instances
 	CreateManyInstAssociation(kit *rest.Kit, request *metadata.CreateManyInstAsstRequest) (
 		*metadata.CreateManyInstAsstResultDetail, error)
-
 	// DeleteInstAssociation delete association between instances
 	DeleteInstAssociation(kit *rest.Kit, objID string, asstIDList []int64) (uint64, error)
-
 	// CheckAssociations returns error if the instances has associations with exist instances, clear dirty associations
 	CheckAssociations(*rest.Kit, string, []int64) error
+
+	// SearchMainlineAssociationInstTopo search mainline association topo by objID and instID
+	SearchMainlineAssociationInstTopo(kit *rest.Kit, objID string, instID int64,
+		withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, errors.CCError)
+	// ResetMainlineInstAssociation reset mainline instance association
+	ResetMainlineInstAssociation(kit *rest.Kit, currentObjID, childObjID string) error
+	// SetMainlineInstAssociation set mainline instance association by parent object and current object
+	SetMainlineInstAssociation(kit *rest.Kit, parentObjID, childObjID, currObjID, currObjName string) ([]int64, error)
+	// TopoNodeHostAndSerInstCount get topo node host and service instance count
+	TopoNodeHostAndSerInstCount(kit *rest.Kit, instID int64,
+		input *metadata.HostAndSerInstCountOption) ([]*metadata.TopoNodeHostAndSerInstCount, errors.CCError)
+
+	// SetProxy proxy the interface
+	SetProxy(inst InstOperationInterface)
 }
 
 // NewAssociationOperation create a new association operation instance
@@ -53,6 +62,12 @@ func NewAssociationOperation(client apimachinery.ClientSetInterface,
 type association struct {
 	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
+	inst        InstOperationInterface
+}
+
+// SetProxy proxy the interface
+func (assoc *association) SetProxy(inst InstOperationInterface) {
+	assoc.inst = inst
 }
 
 // SearchInstanceAssociations searches object instance associations.

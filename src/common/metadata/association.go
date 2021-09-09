@@ -354,10 +354,6 @@ type Association struct {
 	// describe whether this association is a pre-defined association or not,
 	// if true, it means this association is used by cmdb itself.
 	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
-
-	ClassificationID string `field:"bk_classification_id" json:"-" bson:"-"`
-	ObjectIcon       string `field:"bk_obj_icon" json:"-" bson:"-"`
-	ObjectName       string `field:"bk_obj_name" json:"-" bson:"-"`
 }
 
 // return field means which filed is set but is forbidden to update.
@@ -408,6 +404,15 @@ func (cli *Association) Parse(data mapstr.MapStr) (*Association, error) {
 // ToMapStr to mapstr
 func (cli *Association) ToMapStr() mapstr.MapStr {
 	return mapstr.SetValueToMapStrByTags(cli)
+}
+
+// MainlineAssociation defines the mainline association between two objects.
+type MainlineAssociation struct {
+	Association `json:",inline"`
+
+	ClassificationID string `json:"bk_classification_id,omitempty" bson:"-"`
+	ObjectIcon       string `json:"bk_obj_icon,omitempty" bson:"-"`
+	ObjectName       string `json:"bk_obj_name,omitempty" bson:"-"`
 }
 
 // InstAsst an association definition between instances.

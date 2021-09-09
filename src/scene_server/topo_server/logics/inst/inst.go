@@ -63,20 +63,18 @@ type InstOperationInterface interface {
 	FindInstChildTopo(kit *rest.Kit, objID string, instID int64) (int, []*CommonInstTopo, error)
 	// FindInstTopo find instance all topo which include it's child and parent
 	FindInstTopo(kit *rest.Kit, obj metadata.Object, instID int64) (int, []CommonInstanceTopo, error)
-	// IsMainline check if object is mainline object
-	// TODO after mainline associaiton merged change to its
-	IsMainline(kit *rest.Kit, objID string) (bool, error)
+	// SetProxy proxy the interface
+	SetProxy(instAssoc AssociationOperationInterface)
 }
 
 // NewInstOperation create a new inst operation instance
 func NewInstOperation(client apimachinery.ClientSetInterface, lang language.CCLanguageIf,
-	authManager *extensions.AuthManager, asst AssociationOperationInterface) InstOperationInterface {
+	authManager *extensions.AuthManager) InstOperationInterface {
 
 	return &commonInst{
 		clientSet:   client,
 		language:    lang,
 		authManager: authManager,
-		asst:        asst,
 	}
 }
 
@@ -136,6 +134,11 @@ type commonInst struct {
 	language    language.CCLanguageIf
 	authManager *extensions.AuthManager
 	asst        AssociationOperationInterface
+}
+
+// SetProxy proxy the interface
+func (c *commonInst) SetProxy(instAssoc AssociationOperationInterface) {
+	c.asst = instAssoc
 }
 
 // CreateInst create instance by object and create message
@@ -274,13 +277,18 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, objID string, batchInfo *met
 	}
 
 	// forbidden create mainline instance with common api
-	isMainline, err := c.IsMainline(kit, objID)
-	if err != nil {
-		blog.Errorf("check whether model %s is mainline object failed, err: %+v, rid: %s", objID, err, kit.Rid)
-		return nil, err
+	filter := []map[string]interface{}{{
+		common.BKDBOR:                 []mapstr.MapStr{{common.BKObjIDField: objID}, {common.BKAsstObjIDField: objID}},
+		common.AssociationKindIDField: common.AssociationKindMainline,
+	}}
+	cnt, ccErr := c.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameObjAsst,
+		filter)
+	if ccErr != nil {
+		blog.Errorf("count object(%s) mainline association failed, err: %v, rid: %s", objID, ccErr, kit.Rid)
+		return nil, ccErr
 	}
 
-	if isMainline {
+	if cnt[0] != 0 {
 		return nil, kit.CCError.CCError(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
 	}
 
@@ -1141,22 +1149,6 @@ func (c *commonInst) validObject(kit *rest.Kit, objID string, data mapstr.MapStr
 	return nil
 }
 
-// IsMainline check if object is mainline object
-func (c *commonInst) IsMainline(kit *rest.Kit, objID string) (bool, error) {
-	filter := []map[string]interface{}{{
-		common.BKDBOR:                 []mapstr.MapStr{{common.BKObjIDField: objID}, {common.BKAsstObjIDField: objID}},
-		common.AssociationKindIDField: common.AssociationKindMainline,
-	}}
-	cnt, ccErr := c.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameObjAsst,
-		filter)
-	if ccErr != nil {
-		blog.Errorf("count object(%s) mainline association failed, err: %v, rid: %s", objID, ccErr, kit.Rid)
-		return false, ccErr
-	}
-
-	return cnt[0] != 0, nil
-}
-
 // hasHost get objID and instances map for mainline instances with its children topology, and check if they have hosts
 func (c *commonInst) hasHost(kit *rest.Kit, instances []mapstr.MapStr, objID string, checkHost bool) (
 	map[string][]mapstr.MapStr, bool, error) {
@@ -1398,7 +1390,6 @@ func (c *commonInst) getAssociatedObjectWithInsts(kit *rest.Kit, objID string, i
 	return result, relation, nil
 }
 
-// TODO maybe can add this to model/association
 func (c *commonInst) searchAssoObjects(kit *rest.Kit, needChild bool, cond mapstr.MapStr) ([]ObjectAssoPair,
 	error) {
 

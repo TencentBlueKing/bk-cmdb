@@ -136,7 +136,7 @@ func (s *Service) CreateManyInstance(ctx *rest.Contexts) {
 		return
 	}
 
-	isMainline, err := s.Logics.InstOperation().IsMainline(ctx.Kit, objID)
+	isMainline, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, objID)
 	if err != nil {
 		blog.Errorf("check if object(%s) is mainline object failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -176,7 +176,7 @@ func (s *Service) DeleteInsts(ctx *rest.Contexts) {
 	}
 
 	// forbidden create mainline instance with common api
-	isMainline, err := s.Logics.InstOperation().IsMainline(ctx.Kit, objID)
+	isMainline, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, objID)
 	if err != nil {
 		blog.Errorf("check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -227,7 +227,7 @@ func (s *Service) DeleteInst(ctx *rest.Contexts) {
 	}
 
 	// forbidden create mainline instance with common api
-	isMainline, err := s.Logics.InstOperation().IsMainline(ctx.Kit, objID)
+	isMainline, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, objID)
 	if err != nil {
 		blog.Errorf("check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -287,7 +287,7 @@ func (s *Service) UpdateInsts(ctx *rest.Contexts) {
 	}
 
 	// forbidden create mainline instance with common api
-	isMainline, err := s.Logics.InstOperation().IsMainline(ctx.Kit, objID)
+	isMainline, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, objID)
 	if err != nil {
 		blog.Errorf("check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -348,7 +348,7 @@ func (s *Service) UpdateInst(ctx *rest.Contexts) {
 	}
 
 	// forbidden create mainline instance with common api
-	isMainline, err := s.Logics.InstOperation().IsMainline(ctx.Kit, objID)
+	isMainline, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, objID)
 	if err != nil {
 		blog.Errorf("check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
