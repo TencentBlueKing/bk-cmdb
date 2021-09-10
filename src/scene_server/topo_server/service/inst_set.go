@@ -43,7 +43,7 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 	var firstErr error
 	for idx, set := range batchBody.Sets {
 		if _, ok := set[common.BkSupplierAccount]; !ok {
-			set[common.BkSupplierAccount] = batchBody.BkSupplierAccount
+			set[common.BkSupplierAccount] = ctx.Kit.SupplierAccount
 		}
 		set[common.BKAppIDField] = bizID
 
