@@ -787,6 +787,7 @@
         useExport.default({
           title: this.$t('导出选中'),
           bk_obj_id: this.objId,
+          defaultSelectedFields: this.table.header.map(item => item.id),
           count: this.table.checked.length,
           submit: (state, task) => {
             const { fields, exportRelation  } = state

@@ -12,6 +12,7 @@ const defaultState = {
   step: 1,
   status: null,
   presetFields: [],
+  defaultSelectedFields: [],
   fields: [],
   relations: {},
   exportRelation: false,

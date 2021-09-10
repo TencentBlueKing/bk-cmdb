@@ -197,6 +197,9 @@
       table() {
         return this.$parent.table
       },
+      tableHeaderPropertyIdList() {
+        return this.$parent.tableHeader.map(item => item.bk_property_id)
+      },
       isAllResourceHost() {
         return this.table.selection.every(({ biz }) => {
           const [currentBiz] = biz
@@ -556,6 +559,7 @@
           title: this.$t('导出选中'),
           bk_obj_id: 'host',
           presetFields: ['bk_cloud_id', 'bk_host_innerip'],
+          defaultSelectedFields: this.tableHeaderPropertyIdList,
           count: this.table.selection.length,
           submit: (state, task) => {
             const { fields, exportRelation  } = state
@@ -583,6 +587,7 @@
           bk_biz_id: this.bizId,
           bk_obj_id: 'host',
           presetFields: ['bk_cloud_id', 'bk_host_innerip'],
+          defaultSelectedFields: this.tableHeaderPropertyIdList,
           count: this.table.pagination.count,
           submit: (state, task) => {
             const { fields, exportRelation  } = state
