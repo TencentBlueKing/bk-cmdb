@@ -103,7 +103,7 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 		return
 	}
 
-	var module *mapstr.MapStr
+	module := make(mapstr.MapStr)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		module, err = s.Logics.ModuleOperation().CreateModule(ctx.Kit, bizID, setID, data)

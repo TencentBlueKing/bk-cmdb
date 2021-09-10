@@ -27,7 +27,7 @@ import (
 
 // ModuleOperationInterface module operation methods
 type ModuleOperationInterface interface {
-	CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.MapStr) (*mapstr.MapStr, error)
+	CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.MapStr) (mapstr.MapStr, error)
 	DeleteModule(kit *rest.Kit, bizID int64, setID, moduleIDS []int64) error
 	UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, moduleID int64) error
 	GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder)
@@ -144,7 +144,7 @@ func (m *module) validBizSetID(kit *rest.Kit, bizID int64, setID int64) error {
 }
 
 // CreateModule create a new module
-func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.MapStr) (*mapstr.MapStr, error) {
+func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.MapStr) (mapstr.MapStr, error) {
 	data.Set(common.BKSetIDField, setID)
 	data.Set(common.BKAppIDField, bizID)
 	if !data.Exists(common.BKDefaultField) {
