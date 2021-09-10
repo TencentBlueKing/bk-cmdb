@@ -228,7 +228,7 @@ func (v *viewer) unregisterModelActions(ctx context.Context, objects []metadata.
 		actionIDs = append(actionIDs, genDynamicActionIDs(obj)...)
 	}
 
-	// before deleting action, the dependent action polices must be deleted
+	// before deleting action, the dependent action policies must be deleted
 	for _, actionID := range actionIDs {
 		if err := v.iam.client.DeleteActionPolicies(ctx, actionID); err != nil {
 			blog.Errorf("delete action %s policies failed, err: %s, rid: %s", actionID, err, rid)

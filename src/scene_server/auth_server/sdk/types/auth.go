@@ -176,7 +176,7 @@ type ListWithAttributes struct {
 	Operator operator.OperType `json:"op"`
 	// resource instance id list, this list is not required, it also
 	// one of the query filter with Operator.
-	IDList     []string               `json:"ids"`
-	Attributes []*operator.FieldValue `json:"attributes"`
-	Type       ResourceType           `json:"type"`
+	IDList       []string           `json:"ids"`
+	AttrPolicies []*operator.Policy `json:"attr_policies"`
+	Type         ResourceType       `json:"type"`
 }
