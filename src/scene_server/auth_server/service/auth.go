@@ -108,13 +108,14 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 		},
 		Resources: resources,
 	}
-	resourceIDs, err := s.authorizer.ListAuthorizedInstances(ctx.Kit.Ctx, ops, types.ResourceType(*iamResourceType))
+	authorizeList, err := s.authorizer.ListAuthorizedInstances(ctx.Kit.Ctx, ops, types.ResourceType(*iamResourceType))
 	if err != nil {
-		blog.ErrorJSON("ListAuthorizedInstances failed, err: %+v, input: %s, ops: %s, input: %s, rid: %s", err, input, ops, input, ctx.Kit.Rid)
+		blog.ErrorJSON("ListAuthorizedInstances failed, err: %+v,  ops: %s, input: %s, rid: %s", err, ops,
+			input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(resourceIDs)
+	ctx.RespEntity(authorizeList)
 }
 
 // GetNoAuthSkipUrl returns the redirect url to iam for user to apply for specific authorizations

@@ -205,23 +205,26 @@ func (s *Service) SearchAccount(ctx *rest.Contexts) {
 	}
 
 	if auth.EnableAuthorize() {
-		list, err := s.Logics.ListAuthorizedResources(ctx.Kit, meta.CloudAccount, meta.FindMany)
+		list, isAny, err := s.Logics.ListAuthorizedResources(ctx.Kit, meta.CloudAccount, meta.FindMany)
 		if err != nil {
 			ctx.RespAutoError(err)
 			return
 		}
-		if option.Condition == nil {
-			option.Condition = make(map[string]interface{})
-		}
-		option.Condition = map[string]interface{}{
-			common.BKDBAND: []map[string]interface{}{
-				option.Condition,
-				{
-					common.BKCloudAccountID: map[string]interface{}{
-						common.BKDBIN: list,
+		// if isAny is false,we should add the accountIds conditions,else we don't add this condition
+		if !isAny {
+			if option.Condition == nil {
+				option.Condition = make(map[string]interface{})
+			}
+			option.Condition = map[string]interface{}{
+				common.BKDBAND: []map[string]interface{}{
+					option.Condition,
+					{
+						common.BKCloudAccountID: map[string]interface{}{
+							common.BKDBIN: list,
+						},
 					},
 				},
-			},
+			}
 		}
 	}
 
