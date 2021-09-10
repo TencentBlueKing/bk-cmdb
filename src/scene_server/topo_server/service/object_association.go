@@ -188,8 +188,8 @@ func (s *Service) ImportInstanceAssociation(ctx *rest.Contexts) {
 	var ret metadata.ResponeImportAssociationData
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().ImportInstAssociation(ctx.Kit.Ctx, ctx.Kit, objID,
-			request.AssociationInfoMap, request.AsstObjectUniqueIDMap, request.ObjectUniqueID, s.Language)
+		ret, err = s.Logics.ImportAssociationOperation().ImportInstAssociation(ctx.Kit, s.Language, objID,
+			request.AssociationInfoMap, request.AsstObjectUniqueIDMap, request.ObjectUniqueID)
 		if err != nil {
 			return err
 		}
@@ -218,8 +218,8 @@ func (s *Service) FindAssociationByObjectAssociationID(ctx *rest.Contexts) {
 	var association []metadata.Association
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		association, err = s.Core.AssociationOperation().FindAssociationByObjectAssociationID(ctx.Kit.Ctx, ctx.Kit,
-			objID, request.ObjAsstIDArr)
+		association, err = s.Logics.ImportAssociationOperation().FindAssociationByObjectAssociationID(ctx.Kit, objID,
+			request.ObjAsstIDArr)
 		if err != nil {
 			return err
 		}
