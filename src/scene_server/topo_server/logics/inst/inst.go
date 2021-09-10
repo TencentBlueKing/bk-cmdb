@@ -48,9 +48,6 @@ type InstOperationInterface interface {
 	// FindInstByAssociationInst deprecated function.
 	FindInstByAssociationInst(kit *rest.Kit, objID string, asstParamCond *AssociationParams) (*metadata.InstResult,
 		error)
-	// SearchInstAssociationSingleObjectInstInfo 与实例有关系的实例关系数据,以分页的方式返回
-	SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, objID string, query *metadata.QueryCondition,
-		isTargetObject bool) ([]metadata.InstBaseInfo, int, error)
 	// UpdateInst update instance by condition
 	UpdateInst(kit *rest.Kit, cond, data mapstr.MapStr, objID string) error
 	// SearchObjectInstances searches object instances.
@@ -729,70 +726,6 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, objID string,
 		query.Fields = fields
 	}
 	return c.FindInst(kit, objID, query)
-}
-
-// SearchInstAssociationSingleObjectInstInfo 与实例有关系的实例关系数据,以分页的方式返回
-// objID 根据条件查询出来关联关系，需要返回实例信息（实例名，实例ID）的模型ID
-func (c *commonInst) SearchInstAssociationSingleObjectInstInfo(kit *rest.Kit, objID string,
-	query *metadata.QueryCondition, isTargetObject bool) ([]metadata.InstBaseInfo, int, error) {
-
-	queryCond := &metadata.InstAsstQueryCondition{ObjID: objID}
-	if query != nil {
-		queryCond.Cond = *query
-	}
-
-	rsp, err := c.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, queryCond)
-	if nil != err {
-		blog.Errorf("ReadInstAssociation http do error, err: %s, rid: %s", err.Error(), kit.Rid)
-		return nil, 0, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
-	}
-
-	if len(rsp.Info) == 0 {
-		return nil, 0, nil
-	}
-
-	objIDInstIDArr := make([]int64, 0)
-	for _, instAsst := range rsp.Info {
-		if isTargetObject {
-			objIDInstIDArr = append(objIDInstIDArr, instAsst.InstID)
-		} else {
-			objIDInstIDArr = append(objIDInstIDArr, instAsst.AsstInstID)
-		}
-	}
-
-	idField := metadata.GetInstIDFieldByObjID(objID)
-	nameField := metadata.GetInstNameFieldName(objID)
-	input := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{idField: mapstr.MapStr{common.BKDBIN: objIDInstIDArr}},
-		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit},
-		Fields:    []string{nameField, idField},
-	}
-	instResp, err := c.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, input)
-	if err != nil {
-		blog.Errorf("search object(%s) inst failed, input:%s, err: %v, rid: %s", objID, err, input, kit.Rid)
-		return nil, 0, err
-	}
-
-	result := make([]metadata.InstBaseInfo, 0)
-	for _, row := range instResp.Info {
-		id, err := row.Int64(idField)
-		if err != nil {
-			blog.Errorf("get inst id field(%s) failed. err: %v, inst: %s, rid: %s", idField, err, row, kit.Rid)
-			// CCErrCommInstFieldConvertFail  convert %s  field %s to %s error %s
-			return nil, 0, kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, objID, idField, "int", err.Error())
-		}
-		name, err := row.String(nameField)
-		if err != nil {
-			blog.Errorf("get inst name field(%s) failed. err: %v, inst: %s, rid: %s", nameField, err, row, kit.Rid)
-			// CCErrCommInstFieldConvertFail  convert %s  field %s to %s error %s
-			return nil, 0, kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, objID, nameField, "string",
-				err.Error())
-		}
-
-		result = append(result, metadata.InstBaseInfo{ID: id, Name: name})
-	}
-
-	return result, len(rsp.Info), nil
 }
 
 // UpdateInst update instance by condition
