@@ -32,6 +32,7 @@ type Logics interface {
 	IdentifierOperation() operation.IdentifierOperationInterface
 	AssociationOperation() model.AssociationOperationInterface
 	InstAssociationOperation() inst.AssociationOperationInterface
+	ImportAssociationOperation() operation.AssociationOperationInterface
 	GraphicsOperation() operation.GraphicsOperationInterface
 	GroupOperation() model.GroupOperationInterface
 }
@@ -48,6 +49,7 @@ type logics struct {
 	instassociation inst.AssociationOperationInterface
 	graphics        operation.GraphicsOperationInterface
 	group           model.GroupOperationInterface
+	importassociation operation.AssociationOperationInterface
 }
 
 // New create a logics manager
@@ -61,6 +63,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	IdentifierOperation := operation.NewIdentifier(client)
 	associationOperation := model.NewAssociationOperation(client, authManager)
 	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
+	importAssociationOperation := operation.NewAssociationOperation(client, authManager)
 	instOperation := inst.NewInstOperation(client, languageIf, authManager)
 	graphicsOperation := operation.NewGraphics(client, authManager)
 	groupOperation := model.NewGroupOperation(client)
@@ -84,6 +87,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		instassociation: instAssociationOperation,
 		graphics:        graphicsOperation,
 		group:           groupOperation,
+		importassociation: importAssociationOperation,
 	}
 }
 
@@ -91,7 +95,6 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 func (c *logics) SetOperation() inst.SetOperationInterface {
 	return c.set
 }
-
 // ModuleOperation return a module provide ModuleOperationInterface
 func (c *logics) ModuleOperation() inst.ModuleOperationInterface {
 	return c.module
@@ -130,6 +133,11 @@ func (c *logics) AssociationOperation() model.AssociationOperationInterface {
 // InstAssociationOperation return a instance association provide AssociationOperationInterface
 func (c *logics) InstAssociationOperation() inst.AssociationOperationInterface {
 	return c.instassociation
+}
+
+// ImportAssociationOperation return a import association provide AssociationOperationInterface
+func (c *logics) ImportAssociationOperation() operation.AssociationOperationInterface {
+	return c.importassociation
 }
 
 // GraphicsOperation return a inst provide GraphicsOperation
