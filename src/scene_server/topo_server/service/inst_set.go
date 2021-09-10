@@ -47,7 +47,7 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		}
 		set[common.BKAppIDField] = bizID
 
-		result := new(mapstr.MapStr)
+		result := mapstr.MapStr{}
 		// to avoid judging to be nested transaction, need a new header
 		ctx.Kit.Header = ctx.Kit.NewHeader()
 		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
@@ -92,7 +92,7 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 		return
 	}
 
-	resp := new(mapstr.MapStr)
+	resp := mapstr.MapStr{}
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		resp, err = s.createSet(ctx.Kit, bizID, data)
@@ -110,7 +110,7 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
-func (s *Service) createSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*mapstr.MapStr, error) {
+func (s *Service) createSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (mapstr.MapStr, error) {
 	set, err := s.Logics.SetOperation().CreateSet(kit, bizID, data)
 	if err != nil {
 		blog.Errorf("create set failed, bizID: %d, data: %#v, err: %v, rid: %s", bizID, data, err, kit.Rid)
@@ -122,7 +122,7 @@ func (s *Service) createSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*ma
 		return nil, kit.CCError.CCError(common.CCErrTopoSetCreateFailed)
 	}
 
-	setID, err := metadata.GetInstID(common.BKInnerObjIDSet, *set)
+	setID, err := metadata.GetInstID(common.BKInnerObjIDSet, set)
 	if err != nil {
 		blog.Errorf("get set inst id failed, data: %#v, err: %v, rid: %s", set, err, kit.Rid)
 		return nil, err

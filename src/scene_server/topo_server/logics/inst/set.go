@@ -27,7 +27,7 @@ import (
 
 // SetOperationInterface set operation methods
 type SetOperationInterface interface {
-	CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*mapstr.MapStr, error)
+	CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (mapstr.MapStr, error)
 	DeleteSet(kit *rest.Kit, bizID int64, setIDS []int64) error
 	UpdateSet(kit *rest.Kit, data mapstr.MapStr, bizID, setID int64) error
 	SetProxy(inst InstOperationInterface, module ModuleOperationInterface)
@@ -99,7 +99,7 @@ func (s *set) getSetTemplate(kit *rest.Kit, data mapstr.MapStr, bizID int64) (me
 }
 
 // CreateSet create a new set
-func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*mapstr.MapStr, error) {
+func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (mapstr.MapStr, error) {
 	data.Set(common.BKAppIDField, bizID)
 
 	if !data.Exists(common.BKDefaultField) {
@@ -131,9 +131,9 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*mapstr
 		blog.Errorf("create set instance failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
 		// return this duplicate error for unique validation failed
 		if s.isSetDuplicateError(err) {
-			return setInstance, kit.CCError.CCError(common.CCErrorSetNameDuplicated)
+			return *setInstance, kit.CCError.CCError(common.CCErrorSetNameDuplicated)
 		}
-		return setInstance, err
+		return *setInstance, err
 	}
 	if setInstance == nil {
 		blog.Errorf("create set returns nil pointer, data: %#v, rid: %s", bizID, data, kit.Rid)
@@ -141,7 +141,7 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*mapstr
 	}
 
 	if setTemplate.ID == common.SetTemplateIDNotSet {
-		return setInstance, nil
+		return *setInstance, nil
 	}
 
 	// set create by template should create module at the same time
@@ -150,13 +150,13 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*mapstr
 	if err != nil {
 		blog.Errorf("list set tpl related svc tpl failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID,
 			setTemplate.ID, err, kit.Rid)
-		return setInstance, err
+		return *setInstance, err
 	}
 
 	setID, err := metadata.GetInstID(common.BKInnerObjIDSet, *setInstance)
 	if err != nil {
 		blog.Errorf("get inst id failed, err: %v, rid: %s", err, kit.Rid)
-		return setInstance, err
+		return *setInstance, err
 	}
 
 	for _, serviceTemplate := range serviceTemplates {
@@ -172,11 +172,11 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (*mapstr
 		if _, err := s.module.CreateModule(kit, bizID, setID, createModuleParam); err != nil {
 			blog.Errorf("create module instance failed, bizID: %d, setID: %d, param: %#v, err: %v, rid: %s", bizID,
 				setID, createModuleParam, err, kit.Rid)
-			return setInstance, err
+			return *setInstance, err
 		}
 	}
 
-	return setInstance, nil
+	return *setInstance, nil
 }
 
 // DeleteSet delete set
