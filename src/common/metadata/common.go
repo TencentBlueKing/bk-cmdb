@@ -396,9 +396,7 @@ type CommonSearchResult struct {
 
 // BatchCreateSetRequest batch create set request struct
 type BatchCreateSetRequest struct {
-	// shared fields
-	BkSupplierAccount string                   `json:"bk_supplier_account"`
-	Sets              []map[string]interface{} `json:"sets"`
+	Sets []map[string]interface{} `json:"sets"`
 }
 
 // OneSetCreateResult create one set return result
