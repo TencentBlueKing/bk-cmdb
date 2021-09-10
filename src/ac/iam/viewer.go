@@ -119,7 +119,7 @@ func (v *viewer) UpdateView(ctx context.Context, header http.Header, objects []m
 func (v *viewer) registerModelResourceTypes(ctx context.Context, objects []metadata.Object) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	resourceTypes := genDynamicResourceTypes(objects)
-	if err := v.iam.client.RegisterResourcesTypes(ctx, resourceTypes); err != nil {
+	if err := v.iam.Client.RegisterResourcesTypes(ctx, resourceTypes); err != nil {
 		blog.ErrorJSON("register resourceTypes failed, error: %s, objects: %s, resourceTypes: %s， rid:%s",
 			err.Error(), objects, resourceTypes, rid)
 		return err
@@ -136,7 +136,7 @@ func (v *viewer) unregisterModelResourceTypes(ctx context.Context, objects []met
 	for _, resourceType := range resourceTypes {
 		typeIDs = append(typeIDs, resourceType.ID)
 	}
-	if err := v.iam.client.DeleteResourcesTypes(ctx, typeIDs); err != nil {
+	if err := v.iam.Client.DeleteResourcesTypes(ctx, typeIDs); err != nil {
 		blog.ErrorJSON("unregister resourceTypes failed, error: %s, objects: %s, resourceTypes: %s, rid:%s",
 			err.Error(), objects, resourceTypes, rid)
 		return err
@@ -165,7 +165,7 @@ func (v *viewer) updateModelResourceTypes(ctx context.Context, objects []metadat
 func (v *viewer) registerModelInstanceSelections(ctx context.Context, objects []metadata.Object) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	instanceSelections := genDynamicInstanceSelections(objects)
-	if err := v.iam.client.RegisterInstanceSelections(ctx, instanceSelections); err != nil {
+	if err := v.iam.Client.RegisterInstanceSelections(ctx, instanceSelections); err != nil {
 		blog.ErrorJSON("register instanceSelections failed, error: %s, objects: %s, instanceSelections: %s, rid:%s",
 			err.Error(), objects, instanceSelections, rid)
 		return err
@@ -182,7 +182,7 @@ func (v *viewer) unregisterModelInstanceSelections(ctx context.Context, objects 
 	for _, instanceSelection := range instanceSelections {
 		instanceSelectionIDs = append(instanceSelectionIDs, instanceSelection.ID)
 	}
-	if err := v.iam.client.DeleteInstanceSelections(ctx, instanceSelectionIDs); err != nil {
+	if err := v.iam.Client.DeleteInstanceSelections(ctx, instanceSelectionIDs); err != nil {
 		blog.ErrorJSON("unregister instanceSelections failed, error: %s, objects: %s, instanceSelections: %s, rid:%s",
 			err.Error(), objects, instanceSelections, rid)
 		return err
@@ -211,7 +211,7 @@ func (v *viewer) updateModelInstanceSelections(ctx context.Context, objects []me
 func (v *viewer) registerModelActions(ctx context.Context, objects []metadata.Object) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	actions := genDynamicActions(objects)
-	if err := v.iam.client.RegisterActions(ctx, actions); err != nil {
+	if err := v.iam.Client.RegisterActions(ctx, actions); err != nil {
 		blog.ErrorJSON("register actions failed, error: %s, objects: %s, actions: %s, rid:%s",
 			err.Error(), objects, actions, rid)
 		return err
@@ -230,13 +230,13 @@ func (v *viewer) unregisterModelActions(ctx context.Context, objects []metadata.
 
 	// before deleting action, the dependent action policies must be deleted
 	for _, actionID := range actionIDs {
-		if err := v.iam.client.DeleteActionPolicies(ctx, actionID); err != nil {
+		if err := v.iam.Client.DeleteActionPolicies(ctx, actionID); err != nil {
 			blog.Errorf("delete action %s policies failed, err: %s, rid: %s", actionID, err, rid)
 			return err
 		}
 	}
 
-	if err := v.iam.client.DeleteActions(ctx, actionIDs); err != nil {
+	if err := v.iam.Client.DeleteActions(ctx, actionIDs); err != nil {
 		blog.ErrorJSON("unregister actions failed, error: %s, objects: %s, actionIDs: %s, rid:%s",
 			err.Error(), objects, actionIDs, rid)
 		return err
@@ -271,7 +271,7 @@ func (v *viewer) updateModelActionGroups(ctx context.Context, header http.Header
 	}
 	actionGroups := GenerateActionGroups(objects)
 
-	if err := v.iam.client.UpdateActionGroups(ctx, actionGroups); err != nil {
+	if err := v.iam.Client.UpdateActionGroups(ctx, actionGroups); err != nil {
 		blog.ErrorJSON("update actionGroups failed, error: %s, actionGroups: %s, rid:%s",
 			err.Error(), actionGroups, rid)
 		return err
