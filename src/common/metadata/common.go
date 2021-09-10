@@ -394,6 +394,18 @@ type CommonSearchResult struct {
 	Info []interface{} `json:"info"`
 }
 
+// BatchCreateSetRequest batch create set request struct
+type BatchCreateSetRequest struct {
+	Sets []map[string]interface{} `json:"sets"`
+}
+
+// OneSetCreateResult create one set return result
+type OneSetCreateResult struct {
+	Index    int         `json:"index"`
+	Data     interface{} `json:"data"`
+	ErrorMsg string      `json:"error_message"`
+}
+
 // CommonSearchFilter is a common search action filter struct,
 // such like search instance or instance associations.
 // And the conditions must abide by query filter.

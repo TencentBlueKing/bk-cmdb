@@ -24,6 +24,7 @@ import (
 // Logics provides management interface for operations of model and instance and related resources like association
 type Logics interface {
 	ClassificationOperation() model.ClassificationOperationInterface
+	SetOperation() inst.SetOperationInterface
 	ModuleOperation() inst.ModuleOperationInterface
 	AttributeOperation() model.AttributeOperationInterface
 	InstOperation() inst.InstOperationInterface
@@ -37,23 +38,25 @@ type Logics interface {
 }
 
 type logics struct {
-	classification    model.ClassificationOperationInterface
-	module            inst.ModuleOperationInterface
-	attribute         model.AttributeOperationInterface
-	inst              inst.InstOperationInterface
-	object            model.ObjectOperationInterface
-	identifier        operation.IdentifierOperationInterface
-	association       model.AssociationOperationInterface
-	instassociation   inst.AssociationOperationInterface
+	classification  model.ClassificationOperationInterface
+	set             inst.SetOperationInterface
+	object          model.ObjectOperationInterface
+	identifier      operation.IdentifierOperationInterface
+	module          inst.ModuleOperationInterface
+	attribute       model.AttributeOperationInterface
+	inst            inst.InstOperationInterface
+	association     model.AssociationOperationInterface
+	instassociation inst.AssociationOperationInterface
+	graphics        operation.GraphicsOperationInterface
+	group           model.GroupOperationInterface
 	importassociation operation.AssociationOperationInterface
-	graphics          operation.GraphicsOperationInterface
-	group             model.GroupOperationInterface
 }
 
 // New create a logics manager
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager,
 	languageIf language.CCLanguageIf) Logics {
 	classificationOperation := model.NewClassificationOperation(client, authManager)
+	setOperation := inst.NewSetOperation(client, languageIf)
 	moduleOperation := inst.NewModuleOperation(client, authManager)
 	attributeOperation := model.NewAttributeOperation(client, authManager, languageIf)
 	objectOperation := model.NewObjectOperation(client, authManager)
@@ -69,24 +72,29 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	instAssociationOperation.SetProxy(instOperation)
 	associationOperation.SetProxy(objectOperation, instOperation, instAssociationOperation)
 	groupOperation.SetProxy(objectOperation)
+	setOperation.SetProxy(instOperation, moduleOperation)
 	moduleOperation.SetProxy(instOperation)
 	attributeOperation.SetProxy(groupOperation, objectOperation)
-
 	return &logics{
-		classification:    classificationOperation,
-		module:            moduleOperation,
-		attribute:         attributeOperation,
-		inst:              instOperation,
-		object:            objectOperation,
-		identifier:        IdentifierOperation,
-		association:       associationOperation,
-		instassociation:   instAssociationOperation,
+		classification:  classificationOperation,
+		set:             setOperation,
+		object:          objectOperation,
+		identifier:      IdentifierOperation,
+		inst:            instOperation,
+		association:     associationOperation,
+		module:          moduleOperation,
+		attribute:       attributeOperation,
+		instassociation: instAssociationOperation,
+		graphics:        graphicsOperation,
+		group:           groupOperation,
 		importassociation: importAssociationOperation,
-		graphics:          graphicsOperation,
-		group:             groupOperation,
 	}
 }
 
+// SetOperation return a setOperation provide SetOperationInterface
+func (c *logics) SetOperation() inst.SetOperationInterface {
+	return c.set
+}
 // ModuleOperation return a module provide ModuleOperationInterface
 func (c *logics) ModuleOperation() inst.ModuleOperationInterface {
 	return c.module
