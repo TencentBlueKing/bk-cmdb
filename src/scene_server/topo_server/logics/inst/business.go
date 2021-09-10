@@ -21,7 +21,6 @@ import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
-	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -33,7 +32,7 @@ import (
 // BusinessOperationInterface business operation methods
 type BusinessOperationInterface interface {
 	// CreateBusiness create business
-	CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (*mapstr.MapStr, error)
+	CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error)
 	// FindBiz find biz
 	FindBiz(kit *rest.Kit, cond *metadata.QueryCondition, disableCounter bool) (count int,
 		results []mapstr.MapStr, err error)
@@ -73,19 +72,19 @@ type business struct {
 }
 
 // SetProxy SetProxy
-func (b *business) SetProxy(inst InstOperationInterface,
-	module ModuleOperationInterface, set SetOperationInterface) {
+func (b *business) SetProxy(inst InstOperationInterface, module ModuleOperationInterface, set SetOperationInterface) {
 	b.inst = inst
 	b.module = module
 	b.set = set
 }
 
 // CreateBusiness create business
-func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (*mapstr.MapStr, error) {
+func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error) {
 
 	// this is a new supplier owner and prepare to create a new business.
 	if err := b.createAssociationByNewSupplier(kit, data); err != nil {
-		blog.Errorf("create business failed, err: %v, data: %#v, rid: %s", err, data, kit.Rid)
+		blog.Errorf("create association for new default biz of different supplier account, err: %v, data: %#v, "+
+			"rid: %s", err, data, kit.Rid)
 		return nil, err
 	}
 
@@ -109,12 +108,12 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (*mapstr.Ma
 	}
 	setInst, err := b.set.CreateSet(kit, bizID, setData)
 	if err != nil {
-		blog.Errorf("create business failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("create set failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 	setID, err := setInst.Int64(common.BKSetIDField)
 	if err != nil {
-		blog.Errorf("create business failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("create set failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
@@ -136,16 +135,16 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (*mapstr.Ma
 	}
 
 	if _, err = b.module.CreateModule(kit, bizID, setID, moduleData); err != nil {
-		blog.Errorf("create business failed, err: %v, rid: %s", err, kit.Rid)
-		return &data, err
+		blog.Errorf("create module failed, err: %v, rid: %s", err, kit.Rid)
+		return data, err
 	}
 
 	// create fault module
 	moduleData.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
 	moduleData.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
 	if _, err = b.module.CreateModule(kit, bizID, setID, moduleData); err != nil {
-		blog.Errorf("create business failed, err: %v, rid: %s", err, kit.Rid)
-		return &data, err
+		blog.Errorf("create fault module failed, err: %v, rid: %s", err, kit.Rid)
+		return data, err
 	}
 
 	// create recycle module
@@ -153,10 +152,10 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (*mapstr.Ma
 	moduleData.Set(common.BKDefaultField, common.DefaultRecycleModuleFlag)
 	if _, err = b.module.CreateModule(kit, bizID, setID, moduleData); err != nil {
 		blog.Errorf("create recycle module failed, err: %v, rid: %s", err, kit.Rid)
-		return &data, err
+		return data, err
 	}
 
-	return &bizInst, nil
+	return bizInst, nil
 }
 
 // FindBiz FindBiz
@@ -165,16 +164,11 @@ func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryCondition, disable
 	if !cond.Condition.Exists(common.BKDefaultField) {
 		cond.Condition[common.BKDefaultField] = 0
 	}
-	query := &metadata.QueryCondition{
-		Fields:         cond.Fields,
-		Condition:      cond.Condition,
-		Page:           cond.Page,
-		DisableCounter: disableCounter,
-	}
+	cond.DisableCounter = disableCounter
 
-	result, err := b.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, query)
+	result, err := b.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, cond)
 	if err != nil {
-		blog.Errorf("find business by query failed, condition: %s, err: %v, rid: %s", query, err, kit.Rid)
+		blog.Errorf("find business by query failed, condition: %s, err: %v, rid: %s", cond, err, kit.Rid)
 		return 0, nil, err
 	}
 
@@ -194,7 +188,7 @@ func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 		return false, err
 	}
 
-	return len(rsp.Info) != 0, nil
+	return rsp.Count != 0, nil
 }
 
 var (
@@ -344,6 +338,7 @@ func (b *business) GetBriefTopologyNodeRelation(kit *rest.Kit, opts *metadata.Ge
 }
 
 func (b *business) validateMainlineObjectRule(kit *rest.Kit, src, dest string) (int, error) {
+
 	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
 	asst, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
 		&metadata.QueryCondition{Condition: cond})
@@ -382,12 +377,12 @@ func (b *business) validateMainlineObjectRule(kit *rest.Kit, src, dest string) (
 	srcIdx, destIdx := 0, 0
 	srcIdx, exist := rankMap[src]
 	if !exist {
-		return 0, fmt.Errorf("%s is not mainline object", src)
+		return 0, kit.CCError.New(common.CCErrorTopoMainlineObjectAssociationNotExist, src)
 	}
 
 	destIdx, exist = rankMap[dest]
 	if !exist {
-		return 0, fmt.Errorf("%s is not mainline object", dest)
+		return 0, kit.CCError.New(common.CCErrorTopoMainlineObjectAssociationNotExist, dest)
 	}
 
 	srcDestPriority := srcIdx - destIdx
@@ -400,8 +395,7 @@ func (b *business) validateMainlineObjectRule(kit *rest.Kit, src, dest string) (
 	// if dest object is not biz, then the src and dest object should be the neighbour.
 	// if dest object is biz, we do not check the src or dest is neighbour or not.
 	if (dest != common.BKInnerObjIDApp) && (math.Abs(float64(srcDestPriority)) > 1) {
-		return 0, fmt.Errorf("src[%s] model and dest[%s] model should be neighbour in the mainline topology",
-			src, dest)
+		return 0, kit.CCError.New(common.CCErrCommTopoModuleNotFoundError, src)
 	}
 
 	return srcDestPriority, nil
@@ -506,44 +500,4 @@ expectLoop:
 	}
 
 	return nil
-}
-
-// TODO 以下为临时函数
-func (b *business) createSet(kit *rest.Kit, obj metadata.Object, data mapstr.MapStr) (*metadata.CreateOneDataResult,
-	error) {
-	if obj.ObjectID == common.BKInnerObjIDPlat {
-		data.Set(common.BkSupplierAccount, kit.SupplierAccount)
-	}
-
-	data.Set(common.BKObjIDField, obj.ObjectID)
-
-	instCond := &metadata.CreateModelInstance{Data: data}
-	rsp, err := b.clientSet.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, obj.ObjectID, instCond)
-	if err != nil {
-		blog.Errorf("failed to create object instance, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	if rsp.Created.ID == 0 {
-		blog.Errorf("failed to create object instance, return nothing, rid: %s", kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrTopoInstCreateFailed)
-	}
-
-	data.Set(obj.GetInstIDFieldName(), rsp.Created.ID)
-	// for audit log.
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-	audit := auditlog.NewInstanceAudit(b.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.GetObjectID(), []mapstr.MapStr{data})
-	if err != nil {
-		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	err = audit.SaveAuditLog(kit, auditLog...)
-	if err != nil {
-		blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
-	}
-
-	return rsp, nil
 }
