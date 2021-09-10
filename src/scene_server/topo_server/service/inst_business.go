@@ -50,7 +50,7 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 
 	data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	// do with transaction
-	var business mapstr.MapStr
+	var business *mapstr.MapStr
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		business, err = s.Logics.BusinessOperation().CreateBusiness(ctx.Kit, data)
@@ -115,8 +115,12 @@ func (s *Service) UpdateBusiness(ctx *rest.Contexts) {
 		return
 	}
 
+	cond := mapstr.MapStr{
+		common.BKAppIDField: bizID,
+	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Logics.BusinessOperation().UpdateBusiness(ctx.Kit, data, *obj, bizID)
+		err = s.Logics.InstOperation().UpdateInst(ctx.Kit, cond, data, obj.ObjectID)
 		if err != nil {
 			return err
 		}
@@ -153,7 +157,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	query := &metadata.QueryBusinessRequest{
+	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{common.BKAppIDField: bizID},
 	}
 	_, bizs, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, query, false)
@@ -171,7 +175,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 	updateData := mapstr.MapStr{}
 	switch common.DataStatusFlag(ctx.Request.PathParameter("flag")) {
 	case common.DataStatusDisabled:
-		if err := s.Core.AssociationOperation().CheckAssociation(ctx.Kit, obj.ObjectID, bizID); err != nil {
+		if err := s.Core.AssociationOperation().CheckAssociation(ctx.Kit, common.BKInnerObjIDApp, bizID); err != nil {
 			ctx.RespAutoError(err)
 			return
 		}
@@ -203,8 +207,12 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		return
 	}
 
+	cond := mapstr.MapStr{
+		common.BKAppIDField: bizID,
+	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Logics.BusinessOperation().UpdateBusiness(ctx.Kit, updateData, *obj, bizID)
+		err = s.Logics.InstOperation().UpdateInst(ctx.Kit, cond, updateData, obj.ObjectID)
 		if err != nil {
 			blog.Errorf("UpdateBusinessStatus failed, run update failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -230,7 +238,7 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 	if len(sortParam) > 0 {
 		page.Sort = sortParam
 	}
-	query := &metadata.QueryBusinessRequest{
+	query := &metadata.QueryCondition{
 		Fields: []string{common.BKAppIDField, common.BKAppNameField},
 		Page:   page,
 		Condition: mapstr.MapStr{
@@ -329,8 +337,8 @@ func (s *Service) GetBusinessBasicInfo(ctx *rest.Contexts) {
 // user1,user3
 // user2,user1
 // user2,user1,user4
-const exactUserRegexp = `(^USER_PLACEHOLDER$)|(^USER_PLACEHOLDER[,]{1})|([,]{1}USER_PLACEHOLDER[,]{1})|([,
-]{1}USER_PLACEHOLDER$)`
+const exactUserRegexp = `(^USER_PLACEHOLDER$)|(^USER_PLACEHOLDER[,]{1})|([,]{1}USER_PLACEHOLDER[,]{1})` +
+	`|([,]{1}USER_PLACEHOLDER$)`
 
 func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFieldArr []string) map[string]interface{} {
 	output := make(map[string]interface{})
@@ -375,7 +383,7 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 // SearchBusiness search the business by condition
 // func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 func (s *Service) SearchBusiness(ctx *rest.Contexts) {
-	searchCond := new(metadata.QueryBusinessRequest)
+	searchCond := new(metadata.QueryCondition)
 	if err := ctx.DecodeInto(&searchCond); err != nil {
 		blog.Errorf("failed to parse the params, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
@@ -446,7 +454,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 		authorizedResources, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header,
 			authInput)
 		if err != nil {
-			blog.Errorf("SearchBusiness failed, ListAuthorizedResources failed, user: %s, err: %v, rid: %s",
+			blog.Errorf("SearchBusiness failed, list authorized resources failed, user: %s, err: %v, rid: %s",
 				ctx.Kit.User, err, ctx.Kit.Rid)
 			ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")
 			return
@@ -514,7 +522,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 func (s *Service) SearchOwnerResourcePoolBusiness(ctx *rest.Contexts) {
 
 	supplierAccount := ctx.Request.PathParameter("owner_id")
-	query := metadata.QueryBusinessRequest{
+	query := metadata.QueryCondition{
 		Condition: mapstr.MapStr{
 			common.BKDefaultField:    common.DefaultAppFlag,
 			common.BkSupplierAccount: supplierAccount,
@@ -549,7 +557,7 @@ func (s *Service) CreateDefaultBusiness(ctx *rest.Contexts) {
 
 	data.Set(common.BKDefaultField, common.DefaultAppFlag)
 
-	var business mapstr.MapStr
+	var business *mapstr.MapStr
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		business, err = s.Logics.BusinessOperation().CreateBusiness(ctx.Kit, data)
@@ -600,7 +608,7 @@ func (s *Service) ListAllBusinessSimplify(ctx *rest.Contexts) {
 		common.BKAppNameField,
 	}
 
-	query := &metadata.QueryBusinessRequest{
+	query := &metadata.QueryCondition{
 		Fields: fields,
 		Page:   page,
 		Condition: mapstr.MapStr{

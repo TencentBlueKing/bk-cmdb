@@ -28,18 +28,15 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/logics/model"
 )
 
 // BusinessOperationInterface business operation methods
 type BusinessOperationInterface interface {
 	// CreateBusiness create business
-	CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error)
+	CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (*mapstr.MapStr, error)
 	// FindBiz find biz
-	FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest, disableCounter bool) (count int,
+	FindBiz(kit *rest.Kit, cond *metadata.QueryCondition, disableCounter bool) (count int,
 		results []mapstr.MapStr, err error)
-	// UpdateBusiness update business
-	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj metadata.Object, bizID int64) error
 	// HasHosts check if this business still has hosts.
 	HasHosts(kit *rest.Kit, bizID int64) (bool, error)
 	//	GenerateAchieveBusinessName 生成归档后的业务名称
@@ -55,7 +52,7 @@ type BusinessOperationInterface interface {
 	GetBriefTopologyNodeRelation(kit *rest.Kit, opts *metadata.GetBriefBizRelationOptions) ([]*metadata.
 		BriefBizRelations, error)
 	// SetProxy SetProxy
-	SetProxy(obj model.ObjectOperationInterface, inst InstOperationInterface, module ModuleOperationInterface)
+	SetProxy(inst InstOperationInterface, module ModuleOperationInterface, set SetOperationInterface)
 }
 
 // NewBusinessOperation create a business instance
@@ -70,25 +67,21 @@ func NewBusinessOperation(client apimachinery.ClientSetInterface,
 type business struct {
 	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
-	obj         model.ObjectOperationInterface
 	inst        InstOperationInterface
 	module      ModuleOperationInterface
+	set         SetOperationInterface
 }
 
-var (
-	numRegex = regexp.MustCompile(`^\d+$`)
-)
-
 // SetProxy SetProxy
-func (b *business) SetProxy(obj model.ObjectOperationInterface, inst InstOperationInterface,
-	module ModuleOperationInterface) {
-	b.obj = obj
+func (b *business) SetProxy(inst InstOperationInterface,
+	module ModuleOperationInterface, set SetOperationInterface) {
 	b.inst = inst
 	b.module = module
+	b.set = set
 }
 
 // CreateBusiness create business
-func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error) {
+func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (*mapstr.MapStr, error) {
 
 	// this is a new supplier owner and prepare to create a new business.
 	if err := b.createAssociationByNewSupplier(kit, data); err != nil {
@@ -108,24 +101,22 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 	}
 
 	// create set
-	objSet, err := b.obj.FindSingleObject(kit, nil, common.BKInnerObjIDSet)
-	if err != nil {
-		blog.Errorf("failed to search the set, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
 	setData := mapstr.MapStr{
 		common.BKAppIDField:    bizID,
 		common.BKInstParentStr: bizID,
 		common.BKSetNameField:  common.DefaultResSetName,
 		common.BKDefaultField:  common.DefaultResSetFlag,
 	}
-	// TODO 调用set中CreateSet
-	setInst, err := b.createSet(kit, *objSet, setData)
+	setInst, err := b.set.CreateSet(kit, bizID, setData)
 	if err != nil {
 		blog.Errorf("create business failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
-	setID := int64(setInst.Created.ID)
+	setID, err := setInst.Int64(common.BKSetIDField)
+	if err != nil {
+		blog.Errorf("create business failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
 
 	// create module
 	defaultCategory, err := b.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx, kit.Header)
@@ -146,29 +137,30 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 
 	if _, err = b.module.CreateModule(kit, bizID, setID, moduleData); err != nil {
 		blog.Errorf("create business failed, err: %v, rid: %s", err, kit.Rid)
-		return data, err
+		return &data, err
 	}
+
 	// create fault module
 	moduleData.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
 	moduleData.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
-	//if _, err = b.createModule(kit, *objModule, bizID, setID, moduleData); err != nil {
 	if _, err = b.module.CreateModule(kit, bizID, setID, moduleData); err != nil {
 		blog.Errorf("create business failed, err: %v, rid: %s", err, kit.Rid)
-		return data, err
+		return &data, err
 	}
+
 	// create recycle module
 	moduleData.Set(common.BKModuleNameField, common.DefaultRecycleModuleName)
 	moduleData.Set(common.BKDefaultField, common.DefaultRecycleModuleFlag)
 	if _, err = b.module.CreateModule(kit, bizID, setID, moduleData); err != nil {
 		blog.Errorf("create recycle module failed, err: %v, rid: %s", err, kit.Rid)
-		return data, err
+		return &data, err
 	}
 
-	return *bizInst, nil
+	return &bizInst, nil
 }
 
 // FindBiz FindBiz
-func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest, disableCounter bool) (count int,
+func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryCondition, disableCounter bool) (count int,
 	results []mapstr.MapStr, err error) {
 	if !cond.Condition.Exists(common.BKDefaultField) {
 		cond.Condition[common.BKDefaultField] = 0
@@ -189,15 +181,6 @@ func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest, d
 	return result.Count, result.Info, err
 }
 
-// UpdateBusiness update business
-func (b *business) UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj metadata.Object, bizID int64) error {
-	cond := mapstr.MapStr{
-		common.BKAppIDField: bizID,
-	}
-
-	return b.inst.UpdateInst(kit, cond, data, obj.ObjectID)
-}
-
 // HasHosts check if this business still has hosts.
 func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 	option := new(metadata.HostModuleRelationRequest)
@@ -214,12 +197,16 @@ func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 	return len(rsp.Info) != 0, nil
 }
 
+var (
+	numRegex = regexp.MustCompile(`^\d+$`)
+)
+
 //	GenerateAchieveBusinessName 生成归档后的业务名称
 //	- 业务归档的时候，自动重命名为"foo-archived"
 //	- 归档的时候，如果发现已经存在同名的"foo-archived", 自动在其后+1, 比如 "foo-archived-1", "foo-archived-2"
 func (b *business) GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (achieveName string, err error) {
 
-	queryBusinessRequest := &metadata.QueryBusinessRequest{
+	queryBusinessRequest := &metadata.QueryCondition{
 		Fields: []string{common.BKAppNameField},
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,

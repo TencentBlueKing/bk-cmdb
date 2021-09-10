@@ -35,21 +35,23 @@ type Logics interface {
 	ImportAssociationOperation() operation.AssociationOperationInterface
 	GraphicsOperation() operation.GraphicsOperationInterface
 	GroupOperation() model.GroupOperationInterface
+	BusinessOperation() inst.BusinessOperationInterface
 }
 
 type logics struct {
-	classification  model.ClassificationOperationInterface
-	set             inst.SetOperationInterface
-	object          model.ObjectOperationInterface
-	identifier      operation.IdentifierOperationInterface
-	module          inst.ModuleOperationInterface
-	attribute       model.AttributeOperationInterface
-	inst            inst.InstOperationInterface
-	association     model.AssociationOperationInterface
-	instassociation inst.AssociationOperationInterface
-	graphics        operation.GraphicsOperationInterface
-	group           model.GroupOperationInterface
+	classification    model.ClassificationOperationInterface
+	set               inst.SetOperationInterface
+	object            model.ObjectOperationInterface
+	identifier        operation.IdentifierOperationInterface
+	module            inst.ModuleOperationInterface
+	attribute         model.AttributeOperationInterface
+	inst              inst.InstOperationInterface
+	association       model.AssociationOperationInterface
+	instassociation   inst.AssociationOperationInterface
+	graphics          operation.GraphicsOperationInterface
+	group             model.GroupOperationInterface
 	importassociation operation.AssociationOperationInterface
+	business          inst.BusinessOperationInterface
 }
 
 // New create a logics manager
@@ -67,6 +69,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	instOperation := inst.NewInstOperation(client, languageIf, authManager)
 	graphicsOperation := operation.NewGraphics(client, authManager)
 	groupOperation := model.NewGroupOperation(client)
+	businessOperation := inst.NewBusinessOperation(client, authManager)
 
 	instOperation.SetProxy(instAssociationOperation)
 	instAssociationOperation.SetProxy(instOperation)
@@ -75,19 +78,21 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	setOperation.SetProxy(instOperation, moduleOperation)
 	moduleOperation.SetProxy(instOperation)
 	attributeOperation.SetProxy(groupOperation, objectOperation)
+	businessOperation.SetProxy(instOperation, moduleOperation, setOperation)
 	return &logics{
-		classification:  classificationOperation,
-		set:             setOperation,
-		object:          objectOperation,
-		identifier:      IdentifierOperation,
-		inst:            instOperation,
-		association:     associationOperation,
-		module:          moduleOperation,
-		attribute:       attributeOperation,
-		instassociation: instAssociationOperation,
-		graphics:        graphicsOperation,
-		group:           groupOperation,
+		classification:    classificationOperation,
+		set:               setOperation,
+		object:            objectOperation,
+		identifier:        IdentifierOperation,
+		inst:              instOperation,
+		association:       associationOperation,
+		module:            moduleOperation,
+		attribute:         attributeOperation,
+		instassociation:   instAssociationOperation,
+		graphics:          graphicsOperation,
+		group:             groupOperation,
 		importassociation: importAssociationOperation,
+		business:          businessOperation,
 	}
 }
 
@@ -95,6 +100,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 func (c *logics) SetOperation() inst.SetOperationInterface {
 	return c.set
 }
+
 // ModuleOperation return a module provide ModuleOperationInterface
 func (c *logics) ModuleOperation() inst.ModuleOperationInterface {
 	return c.module
@@ -148,4 +154,9 @@ func (c *logics) GraphicsOperation() operation.GraphicsOperationInterface {
 // GroupOperation return a inst provide GroupOperationInterface
 func (c *logics) GroupOperation() model.GroupOperationInterface {
 	return c.group
+}
+
+// BusinessOperation return a inst provide BusinessOperation
+func (c *logics) BusinessOperation() inst.BusinessOperationInterface {
+	return c.business
 }
