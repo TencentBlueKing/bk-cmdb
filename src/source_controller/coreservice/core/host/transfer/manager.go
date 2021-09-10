@@ -48,19 +48,21 @@ func New(dependence OperationDependence, hostApplyDependence HostApplyRuleDepend
 }
 
 // NewHostModuleTransfer business normal module transfer
-func (manager *TransferManager) NewHostModuleTransfer(kit *rest.Kit, bizID int64, moduleIDArr []int64, isIncr bool) *genericTransfer {
+func (manager *TransferManager) NewHostModuleTransfer(kit *rest.Kit, bizID int64, moduleIDArr []int64, isIncr bool,
+	needAutoCreateSvcInst bool) *genericTransfer {
 	return &genericTransfer{
-		dependent:   manager.dependence,
-		moduleIDArr: moduleIDArr,
-		bizID:       bizID,
-		isIncrement: isIncr,
+		dependent:             manager.dependence,
+		moduleIDArr:           moduleIDArr,
+		bizID:                 bizID,
+		isIncrement:           isIncr,
+		needAutoCreateSvcInst: needAutoCreateSvcInst,
 	}
 }
 
-// TransferHostToInnerModule transfer host to inner module, default module contain(idle module, fault module)
+// TransferToInnerModule transfer host to inner module, default module contain(idle module, fault module)
 func (manager *TransferManager) TransferToInnerModule(kit *rest.Kit, input *metadata.TransferHostToInnerModule) error {
 
-	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, []int64{input.ModuleID}, false)
+	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, []int64{input.ModuleID}, false, false)
 
 	exit, err := transfer.HasInnerModule(kit)
 	if err != nil {
@@ -92,7 +94,7 @@ func (manager *TransferManager) TransferToInnerModule(kit *rest.Kit, input *meta
 	return nil
 }
 
-// TransferHostModule transfer host to use add module
+// TransferToNormalModule transfer host to use add module
 // 目标模块不能为空闲机模块
 func (manager *TransferManager) TransferToNormalModule(kit *rest.Kit, input *metadata.HostsModuleRelation) error {
 	// 确保目标模块不能为空闲机模块
@@ -114,7 +116,8 @@ func (manager *TransferManager) TransferToNormalModule(kit *rest.Kit, input *met
 		return kit.CCError.CCError(common.CCErrCoreServiceTransferToDefaultModuleUseWrongMethod)
 	}
 
-	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, input.ModuleID, input.IsIncrement)
+	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, input.ModuleID, input.IsIncrement,
+		input.NeedAutoCreateSvcInst)
 
 	err = transfer.ValidParameter(kit)
 	if err != nil {
@@ -138,7 +141,7 @@ func (manager *TransferManager) TransferToNormalModule(kit *rest.Kit, input *met
 	return nil
 }
 
-// RemoveHostFromModule 将主机从模块中移出
+// RemoveFromModule 将主机从模块中移出
 // 如果主机属于n+1个模块（n>0），操作之后，主机属于n个模块
 // 如果主机属于1个模块, 且非空闲机模块，操作之后，主机属于空闲机模块
 // 如果主机属于空闲机模块，操作失败
@@ -195,10 +198,11 @@ func (manager *TransferManager) RemoveFromModule(kit *rest.Kit, input *metadata.
 	}
 	if len(targetModuleIDs) > 0 {
 		option := metadata.HostsModuleRelation{
-			ApplicationID: input.ApplicationID,
-			HostID:        []int64{input.HostID},
-			ModuleID:      targetModuleIDs,
-			IsIncrement:   false,
+			ApplicationID:         input.ApplicationID,
+			HostID:                []int64{input.HostID},
+			ModuleID:              targetModuleIDs,
+			IsIncrement:           false,
+			NeedAutoCreateSvcInst: false,
 		}
 		err := manager.TransferToNormalModule(kit, &option)
 		if err != nil {
@@ -230,10 +234,10 @@ func (manager *TransferManager) RemoveFromModule(kit *rest.Kit, input *metadata.
 	return nil
 }
 
-// TransferHostCrossBusiness Host cross-business transfer
+// TransferToAnotherBusiness Host cross-business transfer
 func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit,
 	input *metadata.TransferHostsCrossBusinessRequest) error {
-	transfer := manager.NewHostModuleTransfer(kit, input.DstApplicationID, input.DstModuleIDArr, false)
+	transfer := manager.NewHostModuleTransfer(kit, input.DstApplicationID, input.DstModuleIDArr, false, true)
 	transfer.SetCrossBusiness(kit, input.SrcApplicationID)
 	var err error
 	err = transfer.ValidParameter(kit)
@@ -400,7 +404,7 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 
 // DeleteHost delete host module relation and host info
 func (manager *TransferManager) DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) error {
-	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, nil, false)
+	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, nil, false, false)
 	return transfer.DeleteHosts(kit, input.HostIDArr)
 }
 

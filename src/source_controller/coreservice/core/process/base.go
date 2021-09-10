@@ -30,7 +30,6 @@ type processOperation struct {
 type OperationDependence interface {
 	CreateProcessInstance(kit *rest.Kit, process *metadata.Process) (*metadata.Process, errors.CCErrorCoder)
 	CreateProcessInstances(kit *rest.Kit, processes []*metadata.Process) ([]*metadata.Process, errors.CCErrorCoder)
-	TransferHostModuleDep(kit *rest.Kit, input *metadata.HostsModuleRelation) error
 }
 
 // New create a new model manager instance

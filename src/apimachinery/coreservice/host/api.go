@@ -23,33 +23,51 @@ import (
 )
 
 // TransferToInnerModule  transfer host to inner module  eg:idle module and fault module
-func (h *host) TransferToInnerModule(ctx context.Context, header http.Header, input *metadata.TransferHostToInnerModule) (resp *metadata.OperaterException, err error) {
-	resp = new(metadata.OperaterException)
+func (h *host) TransferToInnerModule(ctx context.Context, header http.Header,
+	input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.OperaterException)
 	subPath := "/set/module/host/relation/inner/module"
 
-	err = h.client.Post().
+	err := h.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.Data, resp.CCError()
+	}
+	return resp.Data, nil
 }
 
-// TransferHostModule  transfer host to  module
-func (h *host) TransferToNormalModule(ctx context.Context, header http.Header, input *metadata.HostsModuleRelation) (resp *metadata.OperaterException, err error) {
-	resp = new(metadata.OperaterException)
+// TransferToNormalModule  transfer host to normal module
+func (h *host) TransferToNormalModule(ctx context.Context, header http.Header, input *metadata.HostsModuleRelation) (
+	[]metadata.ExceptionResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.OperaterException)
 	subPath := "/set/module/host/relation/module"
 
-	err = h.client.Post().
+	err := h.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.Data, resp.CCError()
+	}
+	return resp.Data, nil
 }
 
 // RemoveFromModule 将主机从模块中移出
@@ -522,17 +540,25 @@ func (h *host) TransferHostResourceDirectory(ctx context.Context, header http.He
 	return nil
 }
 
-// GetDistinctHostIDByTopology get distion host id by topology relation
-func (h *host) GetDistinctHostIDByTopology(ctx context.Context, header http.Header, input *metadata.DistinctHostIDByTopoRelationRequest) (resp *metadata.DistinctIDResponse, err error) {
-	resp = new(metadata.DistinctIDResponse)
+// GetDistinctHostIDByTopology get distinct host id by topology relation
+func (h *host) GetDistinctHostIDByTopology(ctx context.Context, header http.Header,
+	input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, errors.CCErrorCoder) {
+
+	resp := new(metadata.DistinctIDResponse)
 	subPath := "/read/distinct/host_id/topology/relation"
 
-	err = h.client.Post().
+	err := h.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+	return resp.Data.IDArr, nil
 }

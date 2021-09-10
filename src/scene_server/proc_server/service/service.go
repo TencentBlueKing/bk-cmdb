@@ -104,7 +104,8 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 
 	// service instance
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance", Handler: ps.CreateServiceInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/preview", Handler: ps.CreateServiceInstancesPreview})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/host/with_no_service_instance",
+		Handler: ps.SearchHostWithNoServiceInstance})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance", Handler: ps.SearchServiceInstancesInModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/web/service_instance", Handler: ps.SearchServiceInstancesInModuleWeb})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service/set_template/list_service_instance/biz/{bk_biz_id}", Handler: ps.SearchServiceInstancesBySetTemplate})
@@ -113,7 +114,6 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/details", Handler: ps.ListServiceInstancesDetails})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/proc/service_instance/biz/{bk_biz_id}", Handler: ps.UpdateServiceInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/service_instance", Handler: ps.DeleteServiceInstance})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/deletemany/proc/service_instance/preview", Handler: ps.DeleteServiceInstancePreview})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/proc/service_instance/difference", Handler: ps.DiffServiceInstanceWithTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_instance/sync", Handler: ps.SyncServiceInstanceByTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/service_instance/labels", Handler: ps.ServiceInstanceAddLabels})

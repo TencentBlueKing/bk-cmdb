@@ -193,22 +193,17 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 	}
 
 	params := &metadata.HostsModuleRelation{
-		ApplicationID: appID,
-		HostID:        []int64{hostID},
-		ModuleID:      []int64{moduleID},
-		IsIncrement:   isIncrement,
+		ApplicationID:         appID,
+		HostID:                []int64{hostID},
+		ModuleID:              []int64{moduleID},
+		IsIncrement:           isIncrement,
+		NeedAutoCreateSvcInst: true,
 	}
 	hmResult, ccErr := lgc.CoreAPI.CoreService().Host().TransferToNormalModule(kit.Ctx, kit.Header, params)
 	if ccErr != nil {
-		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, err:%s, rid:%s", appID, hostID, ccErr.Error(), kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !hmResult.Result {
-		blog.Errorf("transfer host to normal module failed, error params:{appID:%d, hostID:%d}, result:%#v, rid:%s", appID, hostID, hmResult, kit.Rid)
-		if len(hmResult.Data) > 0 {
-			return kit.CCError.New(int(hmResult.Data[0].Code), hmResult.Data[0].Message)
-		}
-		return kit.CCError.New(hmResult.Code, hmResult.ErrMsg)
+		blog.Errorf("transfer host to normal module failed, err: %v, params: %#v, result: %#v, rid:%s", ccErr, params,
+			hmResult, kit.Rid)
+		return ccErr
 	}
 
 	if err := hmAudit.SaveAudit(kit); err != nil {
@@ -330,7 +325,7 @@ func (lgc *Logics) GetAllHostIDByCond(kit *rest.Kit, cond metadata.HostModuleRel
 // GetHostModuleRelation  query host and module relation,
 // condition key use appID, moduleID,setID,HostID
 func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond *metadata.HostModuleRelationRequest) (*metadata.
-	HostConfigData, errors.CCErrorCoder) {
+HostConfigData, errors.CCErrorCoder) {
 
 	if cond.Empty() {
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPBodyEmpty)
@@ -519,16 +514,11 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 	relRsp, relErr := lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, relReq)
 	if relErr != nil {
 		blog.ErrorJSON("get host ids in biz failed, err: %s, req: %s, rid: %s", relErr, relReq, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err := relRsp.CCError(); err != nil {
-		blog.ErrorJSON("get host ids in biz failed, err: %s, req: %s, rid: %s", err, relReq, kit.Rid)
-		return err
+		return relErr
 	}
 
 	isSrcHostInBiz, isDstHostInBiz := false, false
-	for _, hostID := range relRsp.Data.IDArr {
+	for _, hostID := range relRsp {
 		if hostID == srcHostID {
 			isSrcHostInBiz = true
 		}

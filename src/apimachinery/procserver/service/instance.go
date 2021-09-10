@@ -4,21 +4,32 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
-func (s *service) CreateServiceInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+// CreateServiceInstance create service instances
+func (s *service) CreateServiceInstance(ctx context.Context, h http.Header, data *metadata.CreateServiceInstanceInput) (
+	[]int64, errors.CCErrorCoder) {
+
+	resp := new(metadata.CreateServiceInstanceResp)
 	subPath := "/create/proc/service_instance"
 
-	err = s.client.Post().
+	err := s.client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return nil, resp.CCError()
+	}
+	return resp.ServiceInstanceIDs, nil
 }
 
 func (s *service) UpdateServiceInstances(ctx context.Context, h http.Header, bizID int64, data map[string]interface{}) (resp *metadata.Response, err error) {
@@ -49,18 +60,28 @@ func (s *service) DeleteServiceInstance(ctx context.Context, h http.Header, data
 	return
 }
 
-func (s *service) SearchServiceInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+// SearchServiceInstance search service instances
+func (s *service) SearchServiceInstance(ctx context.Context, h http.Header,
+	data *metadata.GetServiceInstanceInModuleInput) (*metadata.MultipleServiceInstance, error) {
+
+	resp := new(metadata.MultipleServiceInstanceResult)
 	subPath := "/findmany/proc/service_instance"
 
-	err = s.client.Post().
+	err := s.client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return nil, resp.CCError()
+	}
+	return &resp.Data, nil
 }
 
 func (s *service) SearchServiceInstanceBySetTemplate(ctx context.Context, appID string, h http.Header, data map[string]interface{}) (resp *metadata.ResponseInstData, err error) {
