@@ -31,21 +31,23 @@ type Logics interface {
 	IdentifierOperation() operation.IdentifierOperationInterface
 	AssociationOperation() model.AssociationOperationInterface
 	InstAssociationOperation() inst.AssociationOperationInterface
+	ImportAssociationOperation() operation.AssociationOperationInterface
 	GraphicsOperation() operation.GraphicsOperationInterface
 	GroupOperation() model.GroupOperationInterface
 }
 
 type logics struct {
-	classification  model.ClassificationOperationInterface
-	module          inst.ModuleOperationInterface
-	attribute       model.AttributeOperationInterface
-	inst            inst.InstOperationInterface
-	object          model.ObjectOperationInterface
-	identifier      operation.IdentifierOperationInterface
-	association     model.AssociationOperationInterface
-	instassociation inst.AssociationOperationInterface
-	graphics        operation.GraphicsOperationInterface
-	group           model.GroupOperationInterface
+	classification    model.ClassificationOperationInterface
+	module            inst.ModuleOperationInterface
+	attribute         model.AttributeOperationInterface
+	inst              inst.InstOperationInterface
+	object            model.ObjectOperationInterface
+	identifier        operation.IdentifierOperationInterface
+	association       model.AssociationOperationInterface
+	instassociation   inst.AssociationOperationInterface
+	importassociation operation.AssociationOperationInterface
+	graphics          operation.GraphicsOperationInterface
+	group             model.GroupOperationInterface
 }
 
 // New create a logics manager
@@ -58,6 +60,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	IdentifierOperation := operation.NewIdentifier(client)
 	associationOperation := model.NewAssociationOperation(client, authManager)
 	instAssociationOperation := inst.NewAssociationOperation(client, authManager)
+	importAssociationOperation := operation.NewAssociationOperation(client, authManager)
 	instOperation := inst.NewInstOperation(client, languageIf, authManager)
 	graphicsOperation := operation.NewGraphics(client, authManager)
 	groupOperation := model.NewGroupOperation(client)
@@ -70,24 +73,25 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	attributeOperation.SetProxy(groupOperation, objectOperation)
 
 	return &logics{
-		classification:  classificationOperation,
-		module:          moduleOperation,
-		attribute:       attributeOperation,
-		inst:            instOperation,
-		object:          objectOperation,
-		identifier:      IdentifierOperation,
-		association:     associationOperation,
-		instassociation: instAssociationOperation,
-		graphics:        graphicsOperation,
-		group:           groupOperation,
+		classification:    classificationOperation,
+		module:            moduleOperation,
+		attribute:         attributeOperation,
+		inst:              instOperation,
+		object:            objectOperation,
+		identifier:        IdentifierOperation,
+		association:       associationOperation,
+		instassociation:   instAssociationOperation,
+		importassociation: importAssociationOperation,
+		graphics:          graphicsOperation,
+		group:             groupOperation,
 	}
 }
-
 
 // ModuleOperation return a module provide ModuleOperationInterface
 func (c *logics) ModuleOperation() inst.ModuleOperationInterface {
 	return c.module
 }
+
 // AttributeOperation return a attribute provide AttributeOperationInterface
 func (c *logics) AttributeOperation() model.AttributeOperationInterface {
 	return c.attribute
@@ -121,6 +125,11 @@ func (c *logics) AssociationOperation() model.AssociationOperationInterface {
 // InstAssociationOperation return a instance association provide AssociationOperationInterface
 func (c *logics) InstAssociationOperation() inst.AssociationOperationInterface {
 	return c.instassociation
+}
+
+// ImportAssociationOperation return a import association provide AssociationOperationInterface
+func (c *logics) ImportAssociationOperation() operation.AssociationOperationInterface {
+	return c.importassociation
 }
 
 // GraphicsOperation return a inst provide GraphicsOperation
