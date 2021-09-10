@@ -267,10 +267,7 @@
           await this.$http.post(`host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, {
             bk_host_ids: [this.host.bk_host_id],
             default_internal_module: internalModule.data.bk_inst_id,
-            remove_from_node: {
-              bk_inst_id: this.bizId,
-              bk_obj_id: 'biz'
-            }
+            is_remove_from_all: true
           }, {
             requestId: this.request.moveToIdleModule
           })

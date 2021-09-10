@@ -4,7 +4,7 @@ import { MENU_BUSINESS, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu
 export default [{
   name: 'createServiceInstance',
   path: 'service/instance/create/set/:setId/module/:moduleId',
-  component: () => import('./create.vue'),
+  component: () => import('./create.new.vue'),
   meta: new Meta({
     owner: MENU_BUSINESS,
     menu: {

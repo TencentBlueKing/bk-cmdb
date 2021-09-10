@@ -16,17 +16,22 @@
     </cmdb-auth>
     <cmdb-auth tag="span" class="operation-item"
       :auth="{ type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }"
-      @click.native.stop
-      @click="handleDelete">
-      {{$t('删除')}}
+      @click.native.stop>
+      <bk-popconfirm trigger="click"
+        ext-popover-cls="del-confirm"
+        :content="$t('确定删除该服务实例')"
+        confirm-loading
+        @confirm="handleDelete">
+        {{$t('删除')}}
+      </bk-popconfirm>
     </cmdb-auth>
   </div>
 </template>
 
 <script>
   import { mapGetters } from 'vuex'
+  import Bus from '../common/bus'
   import createProcessMixin from './create-process-mixin'
-  import { MENU_BUSINESS_DELETE_SERVICE } from '@/dictionary/menu-symbol'
   export default {
     mixins: [createProcessMixin],
     props: {
@@ -53,15 +58,23 @@
           history: true
         })
       },
-      handleDelete() {
-        this.$routerActions.redirect({
-          name: MENU_BUSINESS_DELETE_SERVICE,
-          params: {
-            ids: this.row.id,
-            moduleId: this.selectedNode.data.bk_inst_id
-          },
-          history: true
-        })
+      async handleDelete() {
+        try {
+          await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
+            config: {
+              data: {
+                service_instance_ids: [this.row.id],
+                bk_biz_id: this.bizId
+              }
+            }
+          })
+          this.$success(this.$t('删除成功'))
+          Bus.$emit('delete-complete')
+          return true
+        } catch (e) {
+          console.error(e)
+          return false
+        }
       }
     }
   }
