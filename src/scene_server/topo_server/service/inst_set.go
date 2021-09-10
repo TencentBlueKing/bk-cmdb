@@ -47,7 +47,7 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		}
 		set[common.BKAppIDField] = bizID
 
-		result := mapstr.MapStr{}
+		result := make(mapstr.MapStr)
 		// to avoid judging to be nested transaction, need a new header
 		ctx.Kit.Header = ctx.Kit.NewHeader()
 		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
@@ -92,7 +92,7 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 		return
 	}
 
-	resp := mapstr.MapStr{}
+	resp := make(mapstr.MapStr)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		resp, err = s.createSet(ctx.Kit, bizID, data)

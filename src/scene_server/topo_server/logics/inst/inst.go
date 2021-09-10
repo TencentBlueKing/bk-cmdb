@@ -33,7 +33,7 @@ import (
 // InstOperationInterface inst operation methods
 type InstOperationInterface interface {
 	// CreateInst create instance by object and create message
-	CreateInst(kit *rest.Kit, objID string, data mapstr.MapStr) (*mapstr.MapStr, error)
+	CreateInst(kit *rest.Kit, objID string, data mapstr.MapStr) (mapstr.MapStr, error)
 	// CreateManyInstance batch create instance by object and create message
 	CreateManyInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) (*metadata.CreateManyCommInstResultDetail,
 		error)
@@ -139,7 +139,7 @@ func (c *commonInst) SetProxy(instAssoc AssociationOperationInterface) {
 }
 
 // CreateInst create instance by object and create message
-func (c *commonInst) CreateInst(kit *rest.Kit, objID string, data mapstr.MapStr) (*mapstr.MapStr, error) {
+func (c *commonInst) CreateInst(kit *rest.Kit, objID string, data mapstr.MapStr) (mapstr.MapStr, error) {
 
 	if err := c.validObject(kit, objID, data); err != nil {
 		blog.Errorf("check object (%s) if is mainline object failed, err: %v, rid: %s", objID, err, kit.Rid)
@@ -191,7 +191,7 @@ func (c *commonInst) CreateInst(kit *rest.Kit, objID string, data mapstr.MapStr)
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
-	return &inst.Info[0], nil
+	return inst.Info[0], nil
 }
 
 // CreateManyInstance batch create instance by object and create message

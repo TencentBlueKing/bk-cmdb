@@ -102,7 +102,7 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 		return
 	}
 
-	setInst := new(mapstr.MapStr)
+	setInst := make(mapstr.MapStr)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		setInst, err = s.Logics.InstOperation().CreateInst(ctx.Kit, objID, data)
