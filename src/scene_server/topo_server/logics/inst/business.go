@@ -177,18 +177,21 @@ func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryCondition, disable
 
 // HasHosts check if this business still has hosts.
 func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
-	option := new(metadata.HostModuleRelationRequest)
-	option.ApplicationID = bizID
-	option.Fields = []string{common.BKHostIDField}
-	option.Page = metadata.BasePage{Limit: 1}
 
-	rsp, err := b.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, option)
+	option := []map[string]interface{}{{
+		common.BKAppIDField: map[string]interface{}{
+			common.BKDBEQ: bizID,
+		},
+	}}
+
+	rsp, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseApp,
+		option)
 	if err != nil {
 		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, kit.Rid)
 		return false, err
 	}
 
-	return rsp.Count != 0, nil
+	return rsp[0] != 1, nil
 }
 
 var (
