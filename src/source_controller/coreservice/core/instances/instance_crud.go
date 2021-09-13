@@ -143,6 +143,10 @@ func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID in
 func (m *instanceManager) countInstance(kit *rest.Kit, objID string, cond mapstr.MapStr) (count uint64, err error) {
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 
+	if cond == nil {
+		cond = make(map[string]interface{})
+	}
+
 	if common.IsObjectInstShardingTable(tableName) {
 		objIDCond, ok := cond[common.BKObjIDField]
 		if ok && objIDCond != objID {

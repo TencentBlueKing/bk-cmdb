@@ -480,7 +480,8 @@ func (s *Service) fullTextAggregation(ctx *rest.Contexts, esQueries []*FullTextS
 }
 
 // fullTextMetadata returns metadata base on the elastic hits.
-func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit, request FullTextSearchReq) ([]SearchResult, error) {
+func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit, request FullTextSearchReq) (
+	[]SearchResult, error) {
 
 	// for meta_bk_obj_id in es.
 	objectIDs := make([]string, 0)
@@ -811,8 +812,8 @@ func (sr *SearchResult) dealHighlight(source map[string]interface{}, highlight e
 		} else if key == metadata.IndexPropertyBKBizID {
 			delete(highlight, key)
 		} else {
-			// we don't need highlight with meta_bk_obj_id and meta_bk_biz_id, just like <em>meta_bk_obj_id</em>, <em>meta_bk_biz_id</em>
-			// replace it <em>meta_bk_obj_id</em> be bk_obj_id (do not need <em>)
+			// we don't need highlight with meta_bk_obj_id and meta_bk_biz_id, just like <em>meta_bk_obj_id</em>,
+			// <em>meta_bk_biz_id</em>. Replace it <em>meta_bk_obj_id</em> be bk_obj_id (do not need <em>)
 			for i := range values {
 				vLower := strings.ToLower(values[i])
 				if isObject && strings.Contains(vLower, oldHighlightObjId) && !strings.Contains(vLower, inputKey) {
