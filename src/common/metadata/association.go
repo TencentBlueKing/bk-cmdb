@@ -43,12 +43,15 @@ type SearchAssociationTypeRequest struct {
 	Condition map[string]interface{} `json:"condition"`
 }
 
+// SearchAssociationType struct for search association type
+type SearchAssociationType struct {
+	Count int                `json:"count"`
+	Info  []*AssociationKind `json:"info"`
+}
+
 type SearchAssociationTypeResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Count int                `json:"count"`
-		Info  []*AssociationKind `json:"info"`
-	} `json:"data"`
+	Data     SearchAssociationType `json:"data"`
 }
 
 type CreateAssociationTypeResult struct {
@@ -120,6 +123,15 @@ type SearchAssociationRelatedInstRequest struct {
 type SearchAssociationInstResult struct {
 	BaseResp `json:",inline"`
 	Data     []*InstAsst `json:"data"`
+}
+
+// SearchInstAssociationListResult the struct of list instance association result
+type SearchInstAssociationListResult struct {
+	Association struct {
+		Src []InstAsst `json:"src"`
+		Dst []InstAsst `json:"dst"`
+	} `json:"association"`
+	Inst map[string][]mapstr.MapStr `json:"instance"`
 }
 
 type CreateAssociationInstRequest struct {
@@ -342,10 +354,6 @@ type Association struct {
 	// describe whether this association is a pre-defined association or not,
 	// if true, it means this association is used by cmdb itself.
 	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
-
-	ClassificationID string `field:"bk_classification_id" json:"-" bson:"-"`
-	ObjectIcon       string `field:"bk_obj_icon" json:"-" bson:"-"`
-	ObjectName       string `field:"bk_obj_name" json:"-" bson:"-"`
 }
 
 // return field means which filed is set but is forbidden to update.
@@ -396,6 +404,15 @@ func (cli *Association) Parse(data mapstr.MapStr) (*Association, error) {
 // ToMapStr to mapstr
 func (cli *Association) ToMapStr() mapstr.MapStr {
 	return mapstr.SetValueToMapStrByTags(cli)
+}
+
+// MainlineAssociation defines the mainline association between two objects.
+type MainlineAssociation struct {
+	Association `json:",inline"`
+
+	ClassificationID string `json:"bk_classification_id,omitempty" bson:"-"`
+	ObjectIcon       string `json:"bk_obj_icon,omitempty" bson:"-"`
+	ObjectName       string `json:"bk_obj_name,omitempty" bson:"-"`
 }
 
 // InstAsst an association definition between instances.
@@ -490,15 +507,15 @@ func (cli *MainlineObjectTopo) ToMapStr() mapstr.MapStr {
 
 // TopoInst 实例拓扑结构
 type TopoInst struct {
-	InstID               int64  `json:"bk_inst_id"`
-	InstName             string `json:"bk_inst_name"`
-	ObjID                string `json:"bk_obj_id"`
-	ObjName              string `json:"bk_obj_name"`
-	Default              int    `json:"default"`
-	ServiceTemplateID    int64  `json:"service_template_id,omitempty"`
-	SetTemplateID        int64  `json:"set_template_id,omitempty"`
-	HostApplyEnabled     *bool  `json:"host_apply_enabled,omitempty"`
-	HostApplyRuleCount   *int64 `json:"host_apply_rule_count,omitempty"`
+	InstID             int64  `json:"bk_inst_id"`
+	InstName           string `json:"bk_inst_name"`
+	ObjID              string `json:"bk_obj_id"`
+	ObjName            string `json:"bk_obj_name"`
+	Default            int    `json:"default"`
+	ServiceTemplateID  int64  `json:"service_template_id,omitempty"`
+	SetTemplateID      int64  `json:"set_template_id,omitempty"`
+	HostApplyEnabled   *bool  `json:"host_apply_enabled,omitempty"`
+	HostApplyRuleCount *int64 `json:"host_apply_rule_count,omitempty"`
 }
 
 // TopoInstRst 拓扑实例

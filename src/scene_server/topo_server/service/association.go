@@ -24,8 +24,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/model"
 
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
@@ -33,16 +33,9 @@ import (
 
 // CreateMainLineObject create a new model in the main line topo
 func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); err != nil {
+	data := new(metadata.MainlineAssociation)
+	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
-		return
-	}
-	mainLineAssociation := &metadata.Association{}
-	_, err := mainLineAssociation.Parse(data)
-	if nil != err {
-		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s, rid: %s", data, err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "mainline object"))
 		return
 	}
 
@@ -50,18 +43,19 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 	// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 	// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
 	// Collection minimum is Timestamp(1616747878, 5)
-	if err := s.createObjectTableByObjectID(ctx, mainLineAssociation.ObjectID, true); err != nil {
+	if err := s.createObjectTableByObjectID(ctx, data.ObjectID, true); err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "mainline object"))
 		return
 	}
 
-	var ret model.Object
+	ret := new(metadata.Object)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 
 		var err error
-		ret, err = s.Core.AssociationOperation().CreateMainlineAssociation(ctx.Kit, mainLineAssociation, s.Config.BusinessTopoLevelMax)
+		ret, err = s.Logics.AssociationOperation().CreateMainlineAssociation(ctx.Kit, data,
+			s.Config.BusinessTopoLevelMax)
 		if err != nil {
-			blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", mainLineAssociation.ObjectID, err, ctx.Kit.Rid)
+			blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", data.ObjectID, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -81,8 +75,8 @@ func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 
 	// do with transaction
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		if err := s.Core.AssociationOperation().DeleteMainlineAssociation(ctx.Kit, objID); err != nil {
-			blog.Errorf("DeleteMainlineAssociation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		if err := s.Logics.AssociationOperation().DeleteMainlineAssociation(ctx.Kit, objID); err != nil {
+			blog.Errorf("delete mainline association failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrTopoObjectDeleteFailed)
 		}
 		return nil
@@ -98,15 +92,8 @@ func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 
 // SearchMainLineObjectTopo search the main line topo
 func (s *Service) SearchMainLineObjectTopo(ctx *rest.Contexts) {
-	bizObj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("[api-asst] failed to find the biz object, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	// get biz model related mainline models (mainline relationship model)
-	resp, err := s.Core.AssociationOperation().SearchMainlineAssociationTopo(ctx.Kit, bizObj)
+	resp, err := s.Logics.AssociationOperation().SearchMainlineAssociationTopo(ctx.Kit, common.BKInnerObjIDApp)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -116,14 +103,22 @@ func (s *Service) SearchMainLineObjectTopo(ctx *rest.Contexts) {
 
 // SearchObjectByClassificationID search the object by classification ID
 func (s *Service) SearchObjectByClassificationID(ctx *rest.Contexts) {
-	bizObj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"))
-	if nil != err {
-		blog.Errorf("[api-asst] failed to find the biz object, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	exist, err := s.Logics.ObjectOperation().IsObjectExist(ctx.Kit, objID)
+	if err != nil {
+		blog.Errorf("find the object(%s) failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	resp, err := s.Core.AssociationOperation().SearchMainlineAssociationTopo(ctx.Kit, bizObj)
+	if !exist {
+		blog.Errorf("object(%s) is non-exist, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField))
+		return
+	}
+
+	resp, err := s.Logics.AssociationOperation().SearchMainlineAssociationTopo(ctx.Kit, objID)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -156,7 +151,8 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
 	withStatistics, withSortName bool) ([]*metadata.TopoInstRst, error) {
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-asst] failed to parse the path params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("app_id"), err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the path params id(%s), err: %v , rid: %s", ctx.Request.PathParameter("app_id"),
+			err, ctx.Kit.Rid)
 
 		return nil, err
 	}
@@ -165,7 +161,9 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
 	if len(ctx.Request.QueryParameter("with_default")) > 0 {
 		withDefault = true
 	}
-	topoInstRst, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit, common.BKInnerObjIDApp, id, withStatistics, withDefault)
+
+	topoInstRst, err := s.Logics.InstAssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit,
+		common.BKInnerObjIDApp, id, withStatistics, withDefault)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +198,7 @@ func (s *Service) GetTopoNodeHostAndSerInstCount(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := s.Core.AssociationOperation().TopoNodeHostAndSerInstCount(ctx.Kit, id, input)
+	result, err := s.Logics.InstAssociationOperation().TopoNodeHostAndSerInstCount(ctx.Kit, id, input)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -282,7 +280,8 @@ func (s *Service) SearchBriefBizTopo(ctx *rest.Contexts) {
 }
 
 // getSetDetailOfTopo get set detail of topo
-func (s *Service) getSetDetailOfTopo(ctx *rest.Contexts, bizID int64, input *metadata.SearchBriefBizTopoOption) (map[int64]map[string]interface{}, errors.CCErrorCoder) {
+func (s *Service) getSetDetailOfTopo(ctx *rest.Contexts, bizID int64, input *metadata.SearchBriefBizTopoOption) (
+	map[int64]map[string]interface{}, errors.CCErrorCoder) {
 	setDetail := make(map[int64]map[string]interface{})
 	originSetFields := make(map[string]bool)
 	for _, field := range input.SetFields {
@@ -306,21 +305,19 @@ func (s *Service) getSetDetailOfTopo(ctx *rest.Contexts, bizID int64, input *met
 
 	for hasNext {
 		param.Page.Start = start
-		setResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDSet, param)
+		setResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.BKInnerObjIDSet, param)
 		if nil != err {
-			blog.Errorf("getSetDetailOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
+			blog.Errorf("getSetDetailOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s",
+				param, err, ctx.Kit.Rid)
 			return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
-		if !setResult.Result {
-			blog.Errorf("getSetDetailOfTopo failed, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
-			return nil, setResult.CCError()
-		}
 
-		if len(setResult.Data.Info) == 0 {
+		if len(setResult.Info) == 0 {
 			break
 		}
 
-		for _, info := range setResult.Data.Info {
+		for _, info := range setResult.Info {
 			setID, _ := info.Int64(common.BKSetIDField)
 			if !originSetFields[common.BKDefaultField] {
 				info.Remove(common.BKDefaultField)
@@ -329,7 +326,7 @@ func (s *Service) getSetDetailOfTopo(ctx *rest.Contexts, bizID int64, input *met
 		}
 
 		start += pageSize
-		if len(setResult.Data.Info) < pageSize {
+		if len(setResult.Info) < pageSize {
 			hasNext = false
 		}
 	}
@@ -366,21 +363,19 @@ func (s *Service) getModuleInfoOfTopo(ctx *rest.Contexts, bizID int64, input *me
 
 	for hasNext {
 		param.Page.Start = start
-		moduleResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, param)
+		moduleResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.BKInnerObjIDModule, param)
 		if nil != err {
-			blog.Errorf("getModuleInfoOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
+			blog.Errorf("getModuleInfoOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s",
+				param, err, ctx.Kit.Rid)
 			return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
-		if !moduleResult.Result {
-			blog.Errorf("getModuleInfoOfTopo failed, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
-			return nil, nil, moduleResult.CCError()
-		}
 
-		if len(moduleResult.Data.Info) == 0 {
+		if len(moduleResult.Info) == 0 {
 			break
 		}
 
-		for _, info := range moduleResult.Data.Info {
+		for _, info := range moduleResult.Info {
 			setID, _ := info.Int64(common.BKSetIDField)
 			moduleID, _ := info.Int64(common.BKModuleIDField)
 			setModuleMap[setID] = append(setModuleMap[setID], moduleID)
@@ -395,7 +390,7 @@ func (s *Service) getModuleInfoOfTopo(ctx *rest.Contexts, bizID int64, input *me
 		}
 
 		start += pageSize
-		if len(moduleResult.Data.Info) < pageSize {
+		if len(moduleResult.Info) < pageSize {
 			hasNext = false
 		}
 	}
@@ -418,12 +413,13 @@ func (s *Service) getHostInfoOfTopo(ctx *rest.Contexts, bizID int64, input *meta
 		},
 		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
 	}
-	hostModuleRelations, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
+	hostModuleRelations, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx,
+		ctx.Kit.Header, relationOption)
 	if err != nil {
 		blog.Errorf("getHostInfoOfTopo failed, option: %+v, err: %s, rid: %s", relationOption, err.Error(), ctx.Kit.Rid)
 		return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	for _, relation := range hostModuleRelations.Data.Info {
+	for _, relation := range hostModuleRelations.Info {
 		hostIDArr = append(hostIDArr, relation.HostID)
 		moduleHostMap[relation.ModuleID] = append(moduleHostMap[relation.ModuleID], relation.HostID)
 	}
@@ -449,27 +445,25 @@ func (s *Service) getHostInfoOfTopo(ctx *rest.Contexts, bizID int64, input *meta
 
 		for hasNext {
 			param.Page.Start = start
-			hostResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, param)
+			hostResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+				common.BKInnerObjIDHost, param)
 			if nil != err {
-				blog.Errorf("getHostInfoOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
+				blog.Errorf("getHostInfoOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, "+
+					"rid:%s", param, err, ctx.Kit.Rid)
 				return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 			}
-			if !hostResult.Result {
-				blog.Errorf("getHostInfoOfTopo failed, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
-				return nil, nil, hostResult.CCError()
-			}
 
-			if len(hostResult.Data.Info) == 0 {
+			if len(hostResult.Info) == 0 {
 				break
 			}
 
-			for _, info := range hostResult.Data.Info {
+			for _, info := range hostResult.Info {
 				hostID, _ := info.Int64(common.BKHostIDField)
 				hostDetail[hostID] = info
 			}
 
 			start += pageSize
-			if len(hostResult.Data.Info) < pageSize {
+			if len(hostResult.Info) < pageSize {
 				hasNext = false
 			}
 		}
@@ -502,6 +496,7 @@ func (s *Service) constructBizTopo(setDetail, moduleDetail, hostDetail map[int64
 	return bizTopo
 }
 
+// SearchAssociationType search association type
 func (s *Service) SearchAssociationType(ctx *rest.Contexts) {
 	request := &metadata.SearchAssociationTypeRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -512,20 +507,20 @@ func (s *Service) SearchAssociationType(ctx *rest.Contexts) {
 		request.Condition = make(map[string]interface{}, 0)
 	}
 
-	ret, err := s.Core.AssociationOperation().SearchType(ctx.Kit, request)
+	input := &metadata.QueryCondition{
+		Condition: request.Condition,
+		Page:      request.BasePage,
+	}
+	ret, err := s.Engine.CoreAPI.CoreService().Association().ReadAssociationType(ctx.Kit.Ctx, ctx.Kit.Header, input)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if ret.Code != 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
-		return
-	}
-
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(ret)
 }
 
+// SearchObjectAssocWithAssocKindList search object association by association kind
 func (s *Service) SearchObjectAssocWithAssocKindList(ctx *rest.Contexts) {
 
 	ids := new(metadata.AssociationKindIDs)
@@ -534,7 +529,7 @@ func (s *Service) SearchObjectAssocWithAssocKindList(ctx *rest.Contexts) {
 		return
 	}
 
-	resp, err := s.Core.AssociationOperation().SearchObjectAssocWithAssocKindList(ctx.Kit, ids.AsstIDs)
+	resp, err := s.Logics.AssociationOperation().SearchObjectAssocWithAssocKindList(ctx.Kit, ids.AsstIDs)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -542,6 +537,7 @@ func (s *Service) SearchObjectAssocWithAssocKindList(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
+// CreateAssociationType create association kind
 func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 	request := &metadata.AssociationKind{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -549,23 +545,21 @@ func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 		return
 	}
 
-	var ret *metadata.CreateAssociationTypeResult
+	var ret *metadata.CreateOneDataResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().CreateType(ctx.Kit, request)
+		input := &metadata.CreateAssociationKind{Data: *request}
+		ret, err = s.Engine.CoreAPI.CoreService().Association().CreateAssociationType(ctx.Kit.Ctx, ctx.Kit.Header,
+			input)
 		if err != nil {
 			return err
-		}
-
-		if ret.Code != 0 {
-			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
 		}
 
 		// register association type resource creator action to iam
 		if auth.EnableAuthorize() {
 			iamInstance := metadata.IamInstanceWithCreator{
 				Type:    string(iam.SysAssociationType),
-				ID:      strconv.FormatInt(ret.Data.ID, 10),
+				ID:      strconv.FormatInt(int64(ret.Created.ID), 10),
 				Name:    request.AssociationKindName,
 				Creator: ctx.Kit.User,
 			}
@@ -582,9 +576,10 @@ func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(metadata.RspID{ID: int64(ret.Created.ID)})
 }
 
+// UpdateAssociationType update association kind
 func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
 	request := &metadata.UpdateAssociationTypeRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -598,17 +593,13 @@ func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
 		return
 	}
 
-	var ret *metadata.UpdateAssociationTypeResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().UpdateType(ctx.Kit, asstTypeID, request)
+		_, err = s.Core.AssociationOperation().UpdateType(ctx.Kit, asstTypeID, request)
 		if err != nil {
 			return err
 		}
 
-		if ret.Code != 0 {
-			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
-		}
 		return nil
 	})
 
@@ -616,9 +607,10 @@ func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(nil)
 }
 
+// DeleteAssociationType delete association kind
 func (s *Service) DeleteAssociationType(ctx *rest.Contexts) {
 	asstTypeID, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
 	if err != nil {
@@ -626,17 +618,12 @@ func (s *Service) DeleteAssociationType(ctx *rest.Contexts) {
 		return
 	}
 
-	var ret *metadata.DeleteAssociationTypeResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
-		ret, err = s.Core.AssociationOperation().DeleteType(ctx.Kit, asstTypeID)
+		err := s.Logics.AssociationOperation().DeleteAssociationType(ctx.Kit, asstTypeID)
 		if err != nil {
 			return err
 		}
 
-		if ret.Code != 0 {
-			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
-		}
 		return nil
 	})
 
@@ -644,7 +631,7 @@ func (s *Service) DeleteAssociationType(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(nil)
 }
 
 // SearchInstanceAssociations searches object instance associations with the input conditions.
@@ -671,14 +658,14 @@ func (s *Service) SearchInstanceAssociations(ctx *rest.Contexts) {
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
 	// search instance associations.
-	result, err := s.Core.AssociationOperation().SearchInstanceAssociations(ctx.Kit, objID, input)
+	result, err := s.Logics.InstAssociationOperation().SearchInstanceAssociations(ctx.Kit, objID, input)
 	if err != nil {
 		blog.Errorf("search object[%s] instance associations failed, err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(result)
+	ctx.RespEntity(mapstr.MapStr{"info": result})
 }
 
 // CountInstanceAssociations counts object instance associations with the input conditions.
@@ -705,7 +692,7 @@ func (s *Service) CountInstanceAssociations(ctx *rest.Contexts) {
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
 	// count instance associations.
-	result, err := s.Core.AssociationOperation().CountInstanceAssociations(ctx.Kit, objID, input)
+	result, err := s.Logics.InstAssociationOperation().CountInstanceAssociations(ctx.Kit, objID, input)
 	if err != nil {
 		blog.Errorf("count object[%s] instance associations failed, err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -715,6 +702,7 @@ func (s *Service) CountInstanceAssociations(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchAssociationInst search instance association
 func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 	request := &metadata.SearchAssociationInstRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -727,19 +715,19 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 		return
 	}
 
+	cond := &metadata.InstAsstQueryCondition{
+		Cond:  metadata.QueryCondition{Condition: request.Condition},
+		ObjID: request.ObjID,
+	}
+
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	ret, err := s.Core.AssociationOperation().SearchInst(ctx.Kit, request)
+	ret, err := s.Engine.CoreAPI.CoreService().Association().ReadInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if ret.Code != 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
-		return
-	}
-
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(ret.Info)
 }
 
 //Search all associations of certain model instance,by regarding the instance as both Association source and Association target.
@@ -781,6 +769,7 @@ func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 	ctx.RespEntity(ret.Data)
 }
 
+// CreateAssociationInst create instance associaiton
 func (s *Service) CreateAssociationInst(ctx *rest.Contexts) {
 	request := &metadata.CreateAssociationInstRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -788,17 +777,14 @@ func (s *Service) CreateAssociationInst(ctx *rest.Contexts) {
 		return
 	}
 
-	var ret *metadata.CreateAssociationInstResult
+	var ret *metadata.RspID
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().CreateInst(ctx.Kit, request)
+		ret, err = s.Logics.InstAssociationOperation().CreateInstanceAssociation(ctx.Kit, request)
 		if err != nil {
 			return err
 		}
 
-		if ret.Code != 0 {
-			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
-		}
 		return nil
 	})
 
@@ -806,9 +792,10 @@ func (s *Service) CreateAssociationInst(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(ret)
 }
 
+// CreateManyInstAssociation batch create instance association
 func (s *Service) CreateManyInstAssociation(ctx *rest.Contexts) {
 	request := &metadata.CreateManyInstAsstRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -817,7 +804,7 @@ func (s *Service) CreateManyInstAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	ret, err := s.Core.AssociationOperation().CreateManyInstAssociation(ctx.Kit, request)
+	ret, err := s.Logics.InstAssociationOperation().CreateManyInstAssociation(ctx.Kit, request)
 	if err != nil {
 		blog.Errorf("create many instance association failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -827,6 +814,7 @@ func (s *Service) CreateManyInstAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(ret)
 }
 
+// DeleteAssociationInst delete instance association
 func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter(common.BKObjIDField)
 	if len(objID) == 0 {
@@ -840,17 +828,10 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 		return
 	}
 
-	var ret *metadata.DeleteAssociationInstResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
-		idList := []int64{id}
-		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, objID, idList)
+		_, err := s.Logics.InstAssociationOperation().DeleteInstAssociation(ctx.Kit, objID, []int64{id})
 		if err != nil {
 			return err
-		}
-
-		if ret.Code != 0 {
-			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
 		}
 
 		return nil
@@ -860,9 +841,10 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(nil)
 }
 
+// DeleteAssociationInstBatch batch delete instance association
 func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 	request := &metadata.DeleteAssociationInstBatchRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -874,7 +856,7 @@ func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 		return
 	}
 	if len(request.ID) > common.BKMaxInstanceLimit {
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommPageLimitIsExceeded, "The number of ID should be less than 500."))
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}
 	if len(request.ObjectID) == 0 {
@@ -884,16 +866,13 @@ func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 
 	result := &metadata.DeleteAssociationInstBatchResult{}
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var ret *metadata.DeleteAssociationInstResult
-		var err error
-		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, request.ObjectID, request.ID)
+
+		rsp, err := s.Logics.InstAssociationOperation().DeleteInstAssociation(ctx.Kit, request.ObjectID, request.ID)
 		if err != nil {
 			return err
 		}
-		if err = ret.CCError(); err != nil {
-			return err
-		}
-		result.Data = len(request.ID)
+
+		result.Data = int(rsp)
 		return nil
 	})
 	if txnErr != nil {

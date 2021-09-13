@@ -136,6 +136,7 @@ func getLimitConfig(config string, defaultValue, minValue int) int {
 	return limit
 }
 
+// Analyze analyze host snap
 func (h *HostSnap) Analyze(msg *string) error {
 	if msg == nil {
 		return fmt.Errorf("message nil")
@@ -189,8 +190,8 @@ func (h *HostSnap) Analyze(msg *string) error {
 	// window restriction on request when no apiVer information reported
 	if !val.Get("data.apiVer").Exists() && !h.window.canPassWindow() {
 		if blog.V(4) {
-			blog.Infof("not within the time window that can pass, skip host snapshot data update, host id: %d, ip: %s, cloud id: %d, rid: %s",
-				hostID, innerIP, cloudID, rid)
+			blog.Infof("not within the time window that can pass, skip host snapshot data update, host id: %d, "+
+				"ip: %s, cloud id: %d, rid: %s", hostID, innerIP, cloudID, rid)
 		}
 		return nil
 	}
@@ -207,8 +208,8 @@ func (h *HostSnap) Analyze(msg *string) error {
 		return nil
 	}
 
-	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, rid: %s",
-		hostID, innerIP, cloudID, host, raw, rid)
+	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, "+
+		"rid: %s", hostID, innerIP, cloudID, host, raw, rid)
 
 	// get audit interface of host.
 	audit := auditlog.NewHostAudit(h.CoreAPI.CoreService())
@@ -226,7 +227,8 @@ func (h *HostSnap) Analyze(msg *string) error {
 		WithOperateFrom(metadata.FromDataCollection).WithUpdateFields(setter)
 	auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, innerIP, nil)
 	if err != nil {
-		blog.Errorf("generate host snap audit log failed before update host, host: %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
+		blog.Errorf("generate host snap audit log failed before update host, host: %d/%s, err: %v, rid: %s", hostID,
+			innerIP, err, rid)
 		return err
 	}
 
@@ -243,19 +245,16 @@ func (h *HostSnap) Analyze(msg *string) error {
 		CanEditAll: true,
 	}
 
-	res, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, header, common.BKInnerObjIDHost, opt)
+	_, err = h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, header, common.BKInnerObjIDHost, opt)
 	if err != nil {
 		blog.Errorf("snapshot changed, update host %d/%s snapshot failed, err: %v, rid: %s", hostID, innerIP, err, rid)
 		return err
 	}
-	if !res.Result {
-		blog.Errorf("snapshot changed, update host %d/%s snapshot failed, err: %s, rid: %s", hostID, innerIP, res.ErrMsg, rid)
-		return fmt.Errorf("update snapshot failed, err: %s", res.ErrMsg)
-	}
 
 	// save audit log.
 	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
-		blog.Errorf("save host snap audit log failed after update host, host %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
+		blog.Errorf("save host snap audit log failed after update host, host %d/%s, err: %v, rid: %s", hostID,
+			innerIP, err, rid)
 		return err
 	}
 

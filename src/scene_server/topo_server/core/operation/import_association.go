@@ -55,6 +55,7 @@ func (assoc *association) ImportInstAssociation(ctx context.Context, kit *rest.K
 	return resp, err
 }
 
+// FindAssociationByObjectAssociationID search association by object associationID
 func (assoc *association) FindAssociationByObjectAssociationID(ctx context.Context, kit *rest.Kit, objID string,
 	asstIDArr []string) ([]metadata.Association, errors.CCError) {
 
@@ -73,12 +74,8 @@ func (assoc *association) FindAssociationByObjectAssociationID(ctx context.Conte
 			err.Error(), input, kit.Rid)
 		return nil, err
 	}
-	if err := resp.CCError(); err != nil {
-		blog.ErrorJSON("find object by association http reply error. reply: %s, input: %s, rid: %s",
-			resp, input, kit.Rid)
-		return nil, err
-	}
-	return resp.Data.Info, nil
+
+	return resp.Info, nil
 }
 
 type importAssociationInst struct {
@@ -282,17 +279,13 @@ func (ia *importAssociation) getAssociationInfo() error {
 
 	rsp, err := ia.cli.clientSet.CoreService().Association().ReadModelAssociation(ia.ctx, ia.kit.Header, queryInput)
 	if nil != err {
-		blog.Errorf("[getAssociationInfo] failed to request the object controller , error info is %s, input:%+v, rid:%s", err.Error(), queryInput, ia.rid)
+		blog.Errorf("[getAssociationInfo] failed to request the object controller , error info is %s, input:%+v, "+
+			"rid:%s", err.Error(), queryInput, ia.rid)
 		return ia.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[getAssociationInfo] failed to search the inst association, error info is %s, input:%+v, rid:%s", rsp.ErrMsg, queryInput, ia.rid)
-		return ia.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	for index := range rsp.Data.Info {
-		ia.asstIDInfoMap[rsp.Data.Info[index].AssociationName] = &rsp.Data.Info[index]
+	for index := range rsp.Info {
+		ia.asstIDInfoMap[rsp.Info[index].AssociationName] = &rsp.Info[index]
 	}
 
 	return nil
@@ -311,14 +304,16 @@ func (ia *importAssociation) getAssociationObjProperty() error {
 	uniqueCond.Field(common.BKFieldID).In(uniqueIDArr)
 
 	uniqueQueryCond := metadata.QueryCondition{Condition: uniqueCond.ToMapStr()}
-	uniqueResult, err := ia.cli.clientSet.CoreService().Model().ReadModelAttrUnique(ia.ctx, ia.kit.Header, uniqueQueryCond)
+	uniqueResult, err := ia.cli.clientSet.CoreService().Model().ReadModelAttrUnique(ia.ctx, ia.kit.Header,
+		uniqueQueryCond)
 	if err != nil {
-		blog.ErrorJSON("[getAssociationInfo] http do error.  search model unique , error info is %s, input:%s, rid:%s", err.Error(), uniqueQueryCond, ia.rid)
+		blog.ErrorJSON("[getAssociationInfo] http do error.  search model unique, error info is %s, input:%s, "+
+			"rid:%s", err.Error(), uniqueQueryCond, ia.rid)
 		return ia.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	var propertyIDArr []uint64
-	for _, unique := range uniqueResult.Data.Info {
+	for _, unique := range uniqueResult.Info {
 		for _, property := range unique.Keys {
 			propertyIDArr = append(propertyIDArr, property.ID)
 		}
@@ -329,19 +324,16 @@ func (ia *importAssociation) getAssociationObjProperty() error {
 	cond.Field(common.BKFieldID).In(propertyIDArr)
 
 	attrCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
-	attrCond.Fields = []string{common.BKFieldID, common.BKObjIDField, common.BKPropertyIDField, common.BKPropertyNameField}
+	attrCond.Fields = []string{common.BKFieldID, common.BKObjIDField, common.BKPropertyIDField,
+		common.BKPropertyNameField}
 	rsp, err := ia.cli.clientSet.CoreService().Model().ReadModelAttrByCondition(ia.ctx, ia.kit.Header, attrCond)
 	if nil != err {
-		blog.Errorf("[getAssociationInfo] failed to  search attribute , error info is %s, input:%+v, rid:%s", err.Error(), attrCond, ia.rid)
+		blog.Errorf("[getAssociationInfo] failed to  search attribute , error info is %s, input:%+v, rid:%s",
+			err.Error(), attrCond, ia.rid)
 		return ia.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[getAssociationInfo] failed to search attribute, error code:%s, error messge: %s, input:%+v, rid:%s", rsp.Code, rsp.ErrMsg, cond, ia.rid)
-		return ia.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	for _, attr := range rsp.Data.Info {
+	for _, attr := range rsp.Info {
 		_, ok := ia.asstObjIDProperty[attr.ObjectID]
 		if !ok {
 			ia.asstObjIDProperty[attr.ObjectID] = make(map[string]metadata.Attribute)
@@ -359,20 +351,16 @@ func (ia *importAssociation) getObjProperty() error {
 	uniqueCond.Field(common.BKFieldID).In(ia.objectUniqueID)
 
 	uniqueQueryCond := metadata.QueryCondition{Condition: uniqueCond.ToMapStr()}
-	uniqueResult, err := ia.cli.clientSet.CoreService().Model().ReadModelAttrUnique(ia.ctx, ia.kit.Header, uniqueQueryCond)
+	uniqueResult, err := ia.cli.clientSet.CoreService().Model().ReadModelAttrUnique(ia.ctx, ia.kit.Header,
+		uniqueQueryCond)
 	if nil != err {
 		blog.ErrorJSON(" http do error.  search model unique , error info is %s, input:%s, rid:%s",
 			err.Error(), uniqueQueryCond, ia.rid)
 		return ia.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if nil != err {
-		blog.ErrorJSON("http reply error. search model unique , error info is %s, input:%s, rid:%s",
-			err.Error(), uniqueQueryCond, ia.rid)
-		return ia.kit.CCError.New(uniqueResult.Code, uniqueResult.ErrMsg)
-	}
 
 	var propertyIDArr []uint64
-	for _, unique := range uniqueResult.Data.Info {
+	for _, unique := range uniqueResult.Info {
 		for _, property := range unique.Keys {
 			propertyIDArr = append(propertyIDArr, property.ID)
 		}
@@ -383,19 +371,15 @@ func (ia *importAssociation) getObjProperty() error {
 	cond.Field(common.BKFieldID).In(propertyIDArr)
 
 	attrCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
-	attrCond.Fields = []string{common.BKFieldID, common.BKObjIDField, common.BKPropertyIDField, common.BKPropertyNameField}
+	attrCond.Fields = []string{common.BKFieldID, common.BKObjIDField, common.BKPropertyIDField,
+		common.BKPropertyNameField}
 	rsp, err := ia.cli.clientSet.CoreService().Model().ReadModelAttrByCondition(ia.ctx, ia.kit.Header, attrCond)
 	if nil != err {
 		blog.ErrorJSON("search attribute failed, error info is %s, input:%s, rid:%s", err.Error(), attrCond, ia.rid)
 		return ia.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if ccErr := rsp.CCError(); ccErr != nil {
-		blog.ErrorJSON("search attribute failed, resp: %s, input:%s, rid:%s", rsp, cond, ia.rid)
-		return ccErr
-	}
-
-	for _, attr := range rsp.Data.Info {
+	for _, attr := range rsp.Info {
 		ia.objIDProperty[attr.PropertyName] = attr
 	}
 
@@ -569,18 +553,15 @@ func (ia *importAssociation) getInstDataByObjIDCondArr(objID, instIDKey string, 
 	queryInput.Condition = conds.ToMapStr()
 	queryInput.Fields = fields
 
-	instSearchResult, err := ia.cli.clientSet.CoreService().Instance().ReadInstance(ia.ctx, ia.kit.Header, objID, queryInput)
+	instSearchResult, err := ia.cli.clientSet.CoreService().Instance().ReadInstance(ia.ctx, ia.kit.Header, objID,
+		queryInput)
 	if err != nil {
 		blog.ErrorJSON("failed to  search %s instance , error info is %s, input:%s, rid:%s",
 			objID, err.Error(), queryInput, ia.rid)
 		return nil, ia.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if err := instSearchResult.CCError(); err != nil {
-		blog.ErrorJSON("failed to search %s instance, reply: %s, input:%s, rid:%s",
-			objID, instSearchResult, queryInput, ia.rid)
-		return nil, err
-	}
-	return instSearchResult.Data.Info, nil
+
+	return instSearchResult.Info, nil
 }
 
 // 导入模型关联对象实例数据
@@ -661,17 +642,11 @@ func (ia *importAssociation) delSrcAssociation(idx int, objID string, cond condi
 		ObjID: objID,
 	}
 
-	result, err := ia.cli.clientSet.CoreService().Association().DeleteInstAssociation(ia.ctx, ia.kit.Header, delOpt)
+	_, err := ia.cli.clientSet.CoreService().Association().DeleteInstAssociation(ia.ctx, ia.kit.Header, delOpt)
 	if err != nil {
 		ia.parseImportDataErr[idx] = err.Error()
 		return
 	}
-
-	if !result.Result {
-		ia.parseImportDataErr[idx] = result.ErrMsg
-		return
-	}
-
 }
 
 func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID, assInstID int64) {
@@ -689,12 +664,9 @@ func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID,
 	inst.Data.AsstObjectID = asstInfo.AsstObjID
 	inst.Data.AsstInstID = assInstID
 	inst.Data.AssociationKindID = asstInfo.AsstKindID
-	rsp, err := ia.cli.clientSet.CoreService().Association().CreateInstAssociation(ia.ctx, ia.kit.Header, &inst)
+	_, err := ia.cli.clientSet.CoreService().Association().CreateInstAssociation(ia.ctx, ia.kit.Header, &inst)
 	if err != nil {
 		ia.parseImportDataErr[idx] = err.Error()
-	}
-	if !rsp.Result {
-		ia.parseImportDataErr[idx] = rsp.ErrMsg
 	}
 }
 
@@ -715,17 +687,14 @@ func (ia *importAssociation) isExistInstAsst(idx int, cond condition.Condition, 
 	}
 	rsp, err := ia.cli.clientSet.CoreService().Association().ReadInstAssociation(ia.ctx, ia.kit.Header, queryCond)
 	if err != nil {
+		ia.parseImportDataErr[idx] = err.Error()
 		return false, err
 	}
-	if !rsp.Result {
-		ia.parseImportDataErr[idx] = rsp.ErrMsg
-		return false, ia.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
 
-	if len(rsp.Data.Info) == 0 {
+	if len(rsp.Info) == 0 {
 		return false, nil
 	}
-	if rsp.Data.Info[0].AsstInstID != dstInstID &&
+	if rsp.Info[0].AsstInstID != dstInstID &&
 		asstMapping == metadata.OneToOneMapping {
 		return false, ia.kit.CCError.Errorf(common.CCErrCommDuplicateItem, "association")
 	}

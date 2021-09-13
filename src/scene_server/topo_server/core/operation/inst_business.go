@@ -69,6 +69,7 @@ func (b *business) SetProxy(set SetOperationInterface, module ModuleOperationInt
 	b.obj = obj
 }
 
+// HasHosts check if biz has hosts
 func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 	option := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
@@ -81,19 +82,16 @@ func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-set]  failed to search the host set configures, error info is %s", rsp.ErrMsg)
-		return false, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return 0 != len(rsp.Data.Info), nil
+	return 0 != len(rsp.Info), nil
 }
 
+// CreateBusiness create biz
 func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
 
 	defaultFieldVal, err := data.Int64(common.BKDefaultField)
 	if nil != err {
-		blog.Errorf("[operation-biz] failed to create business, error info is did not set the default field, %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-biz] failed to create business, error info is did not set the default field, %s, "+
+			"rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 	if defaultFieldVal == int64(common.DefaultAppFlag) && kit.SupplierAccount != common.BKDefaultOwnerID {
@@ -104,26 +102,24 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 		defaultOwnerHeader := util.CloneHeader(kit.Header)
 		defaultOwnerHeader.Set(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
 
-		asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, defaultOwnerHeader, &metadata.QueryCondition{Condition: asstQuery})
+		asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, defaultOwnerHeader,
+			&metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
 			blog.Errorf("create business failed to get default assoc, error info is %s, rid: %s", err.Error(), kit.Rid)
 			return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
 		}
-		if !asstRsp.Result {
-			return nil, kit.CCError.Error(asstRsp.Code)
-		}
-		expectAssts := asstRsp.Data.Info
+
+		expectAssts := asstRsp.Info
 		blog.Infof("copy asst for %s, %+v, rid: %s", kit.SupplierAccount, expectAssts, kit.Rid)
 
-		existAsstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: asstQuery})
+		existAsstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
+			&metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
 			blog.Errorf("create business failed to get default assoc, error info is %s, rid: %s", err.Error(), kit.Rid)
 			return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
 		}
-		if !existAsstRsp.Result {
-			return nil, kit.CCError.Error(existAsstRsp.Code)
-		}
-		existAssts := existAsstRsp.Data.Info
+
+		existAssts := existAsstRsp.Info
 
 	expectLoop:
 		for _, asst := range expectAssts {
@@ -136,23 +132,21 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 				}
 			}
 
-			var createAsstRsp *metadata.CreatedOneOptionResult
 			var err error
 			if asst.AsstKindID == common.AssociationKindMainline {
 				// bk_mainline is a inner association type that can only create in special case,
 				// so we separate bk_mainline association type creation with a independent method,
-				createAsstRsp, err = b.clientSet.CoreService().Association().CreateMainlineModelAssociation(kit.Ctx, kit.Header, &metadata.CreateModelAssociation{Spec: asst})
+				_, err = b.clientSet.CoreService().Association().CreateMainlineModelAssociation(kit.Ctx, kit.Header,
+					&metadata.CreateModelAssociation{Spec: asst})
 			} else {
-				createAsstRsp, err = b.clientSet.CoreService().Association().CreateModelAssociation(kit.Ctx, kit.Header, &metadata.CreateModelAssociation{Spec: asst})
+				_, err = b.clientSet.CoreService().Association().CreateModelAssociation(kit.Ctx, kit.Header,
+					&metadata.CreateModelAssociation{Spec: asst})
 			}
 			if nil != err {
-				blog.Errorf("create business failed to copy default assoc, error info is %s, rid: %s", err.Error(), kit.Rid)
+				blog.Errorf("create business failed to copy default assoc, error info is %s, rid: %s", err.Error(),
+					kit.Rid)
 				return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
 			}
-			if !createAsstRsp.Result {
-				return nil, kit.CCError.Error(createAsstRsp.Code)
-			}
-
 		}
 	}
 
@@ -259,7 +253,9 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 	return bizInst, nil
 }
 
-func (b *business) FindBusiness(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error) {
+// FindBusiness search biz
+func (b *business) FindBusiness(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr,
+	err error) {
 
 	cond.Condition[common.BKDefaultField] = 0
 	query := &metadata.QueryCondition{
@@ -274,13 +270,12 @@ func (b *business) FindBusiness(kit *rest.Kit, cond *metadata.QueryBusinessReque
 		return 0, nil, err
 	}
 
-	if !result.Result {
-		return 0, nil, kit.CCError.Errorf(result.Code, result.ErrMsg)
-	}
-
-	return result.Data.Count, result.Data.Info, err
+	return result.Count, result.Info, err
 }
-func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error) {
+
+// FindBiz search biz
+func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr,
+	err error) {
 	if !cond.Condition.Exists(common.BKDefaultField) {
 		cond.Condition[common.BKDefaultField] = 0
 	}
@@ -296,11 +291,7 @@ func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (
 		return 0, nil, err
 	}
 
-	if !result.Result {
-		return 0, nil, kit.CCError.Errorf(result.Code, result.ErrMsg)
-	}
-
-	return result.Data.Count, result.Data.Info, err
+	return result.Count, result.Info, err
 }
 
 var (
@@ -562,14 +553,8 @@ func (b *business) genBriefTopologyNodeRelation(kit *rest.Kit, filter mapstr.Map
 		return nil, err
 	}
 
-	if !result.Result {
-		blog.ErrorJSON("get biz mainline object %s instance with filter: %s failed, err: %v, rid: %s",
-			destObj, input, result.ErrMsg, kit.Rid)
-		return nil, errors.New(result.Code, result.ErrMsg)
-	}
-
 	relations := make([]*metadata.BriefBizRelations, 0)
-	for _, one := range result.Data.Info {
+	for _, one := range result.Info {
 		relations = append(relations, &metadata.BriefBizRelations{
 			Business: one[common.BKAppIDField],
 			// source object's instance id, field different with object's type
@@ -590,11 +575,7 @@ func (b *business) validateMainlineObjectRule(kit *rest.Kit, src, dest string) (
 		return 0, err
 	}
 
-	if !asst.Result {
-		return 0, errors.New(asst.Code, asst.ErrMsg)
-	}
-
-	if len(asst.Data.Info) <= 0 {
+	if len(asst.Info) <= 0 {
 		return 0, fmt.Errorf("invalid biz mainline object topology")
 	}
 
@@ -602,7 +583,7 @@ func (b *business) validateMainlineObjectRule(kit *rest.Kit, src, dest string) (
 	// save the mainline object with it's index with map
 	rankMap := make(map[string]int)
 	rankMap[next] = idx
-	for _, relation := range asst.Data.Info {
+	for _, relation := range asst.Info {
 		if relation.AsstObjID == next {
 			next = relation.ObjectID
 			idx += 1
@@ -610,7 +591,7 @@ func (b *business) validateMainlineObjectRule(kit *rest.Kit, src, dest string) (
 			continue
 		}
 
-		for _, rel := range asst.Data.Info {
+		for _, rel := range asst.Info {
 			if rel.AsstObjID == next {
 				next = rel.ObjectID
 				idx += 1
