@@ -38,9 +38,9 @@ type BusinessOperationInterface interface {
 		results []mapstr.MapStr, err error)
 	// HasHosts check if this business still has hosts.
 	HasHosts(kit *rest.Kit, bizID int64) (bool, error)
-	//	GenerateAchieveBusinessName 生成归档后的业务名称
-	//	- 业务归档的时候，自动重命名为"foo-archived"
-	//	- 归档的时候，如果发现已经存在同名的"foo-archived", 自动在其后+1, 比如 "foo-archived-1", "foo-archived-2"
+	// GenerateAchieveBusinessName 生成归档后的业务名称
+	// - 业务归档的时候，自动重命名为"foo-archived"
+	// - 归档的时候，如果发现已经存在同名的"foo-archived", 自动在其后+1, 比如 "foo-archived-1", "foo-archived-2"
 	GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (achieveName string, err error)
 	// GetBriefTopologyNodeRelation is used to get directly related business topology node information.
 	// As is, you can find modules belongs to a set; or you can find the set a module belongs to.
