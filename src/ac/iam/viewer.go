@@ -150,7 +150,7 @@ func (v *viewer) updateModelResourceTypes(ctx context.Context, objects []metadat
 	rid := util.ExtractRequestIDFromContext(ctx)
 	resourceTypes := genDynamicResourceTypes(objects)
 	for _, resourceType := range resourceTypes {
-		if err := v.iam.client.UpdateResourcesType(ctx, resourceType); err != nil {
+		if err := v.iam.Client.UpdateResourcesType(ctx, resourceType); err != nil {
 			blog.ErrorJSON("update resourceType failed, error: %s, objects: %s, resourceTypes: %s，"+
 				"resourceType:%s, rid:%s",
 				err.Error(), objects, resourceTypes, resourceType, rid)
@@ -196,7 +196,7 @@ func (v *viewer) updateModelInstanceSelections(ctx context.Context, objects []me
 	rid := util.ExtractRequestIDFromContext(ctx)
 	instanceSelections := genDynamicInstanceSelections(objects)
 	for _, instanceSelection := range instanceSelections {
-		if err := v.iam.client.UpdateInstanceSelection(ctx, instanceSelection); err != nil {
+		if err := v.iam.Client.UpdateInstanceSelection(ctx, instanceSelection); err != nil {
 			blog.ErrorJSON("update instanceSelections failed, error: %s, objects: %s, instanceSelections: %s, "+
 				"instanceSelection: %s, rid: %s",
 				err.Error(), objects, instanceSelections, instanceSelection, rid)
@@ -250,7 +250,7 @@ func (v *viewer) updateModelActions(ctx context.Context, objects []metadata.Obje
 	rid := util.ExtractRequestIDFromContext(ctx)
 	actions := genDynamicActions(objects)
 	for _, action := range actions {
-		if err := v.iam.client.UpdateAction(ctx, action); err != nil {
+		if err := v.iam.Client.UpdateAction(ctx, action); err != nil {
 			blog.ErrorJSON("update action failed, error: %s, objects: %s, actions: %s, action: %s, rid: %s",
 				err.Error(), objects, actions, action, rid)
 			return err

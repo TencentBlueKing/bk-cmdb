@@ -95,14 +95,14 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, lgc *logics.Logics) {
 		// new kit with a different rid, header
 		kit := newKit()
 
-		blog.Infof("start sync iam, rid: %s", kit.Rid)
-
 		// only master can run it
 		if !lgc.ServiceManageInterface.IsMaster() {
-			blog.Infof("it is not master, skip sync iam, rid: %s", kit.Rid)
-			time.Sleep(20 * time.Second)
+			blog.V(4).Infof("it is not master, skip sync iam, rid: %s", kit.Rid)
+			time.Sleep(time.Minute)
 			continue
 		}
+
+		blog.Infof("start sync iam, rid: %s", kit.Rid)
 
 		// get all custom objects (without mainline objects) in cmdb
 		objects, err := lgc.GetCustomObjects(kit.Ctx, kit.Header)
