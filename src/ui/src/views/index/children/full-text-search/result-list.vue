@@ -33,9 +33,12 @@
   import ItemModel from './item-model.vue'
   import ItemInstance from './item-instance.vue'
   import ItemHost from './item-host.vue'
+  import ItemSet from './item-set.vue'
+  import ItemModule from './item-module.vue'
   import useResult from './use-result'
   import useItem from './use-item'
   import useRoute from './use-route.js'
+  import { categories } from './use-tab.js'
 
   export default defineComponent({
     components: {
@@ -43,9 +46,9 @@
       [ItemBiz.name]: ItemBiz,
       [ItemModel.name]: ItemModel,
       [ItemInstance.name]: ItemInstance,
-      [ItemHost.name]: ItemHost
-    },
-    props: {
+      [ItemHost.name]: ItemHost,
+      [ItemSet.name]: ItemSet,
+      [ItemModule.name]: ItemModule,
     },
     setup(props, { root, emit }) {
       const { $store, $route, $routerActions } = root
@@ -61,38 +64,52 @@
 
       // 依赖query参数启动与响应
       watch(() => route.value.query, (query) => {
-        const { ps: limit = 10, p: page = 1 } = query
+        const { ps: limit = 10, p: page = 1, tab } = query
         pagination.limit = Number(limit)
         pagination.current = Number(page)
-        getSearchResult()
+        if (tab === 'fullText') {
+          getSearchResult()
+        }
       }, { immediate: true })
 
       // 结果列表
       const hitList = computed(() => result.value.hits || [])
       const { normalizationList: list } = useItem(hitList, root)
 
+      // 根据当前分类设置分页总数
+      watch(categories, (categories) => {
+        const { c: objId, k: kind } = route.value.query
+        const current = categories.find((item) => {
+          if (kind === 'model') {
+            return item.kind === kind
+          }
+          return item.kind === kind && item.id === objId
+        })
+
+        if (current) {
+          pagination.total = current.total
+        } else {
+          pagination.total = result.value.total
+        }
+      })
+
       // 统一查询对象属性
       const propertyMap = ref({})
       watch(result, async (result) => {
         emit('complete', result)
 
-        const aggregations = result.aggregations || []
         const hits = result.hits || []
-        const objIds = aggregations.filter(item => item.kind !== 'model').map(item => item.key)
-        const modelObjIds = hits.filter(item => item.type === 'model').map(item => item.source.bk_obj_id)
-        const mergedObjIds = [...objIds, ...modelObjIds]
-        if (!mergedObjIds.length) {
+        const modelIds = hits.map(item => item.key)
+        if (!modelIds.length) {
           return
         }
 
         propertyMap.value = await $store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
           params: {
-            bk_obj_id: { $in: mergedObjIds },
+            bk_obj_id: { $in: [...new Set(modelIds)] },
             bk_supplier_account: $store.getters.supplierAccount
           }
         })
-
-        pagination.total = result.total
       })
 
       watch(fetching, fetching => emit('update:fetching', fetching))
@@ -132,7 +149,7 @@
 
 <style lang="scss" scoped>
   .result-list {
-    width: 90%;
+    width: 1280px;
     margin: 0 auto;
   }
 
@@ -140,14 +157,15 @@
     padding-top: 14px;
     color: $cmdbTextColor;
     .result-item {
-      width: 65%;
       padding-bottom: 35px;
       color: #63656e;
       /deep/ {
-        em.hl {
-          color: #3a84ff !important;
-          font-style: normal !important;
-          word-break: break-all;
+        .hl {
+          em {
+            color: #3a84ff !important;
+            font-style: normal !important;
+            word-break: break-all;
+          }
         }
         .result-title {
           display: inline-block;

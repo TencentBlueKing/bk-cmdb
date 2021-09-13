@@ -77,20 +77,20 @@
     },
     methods: {
       handleChangeTab(name) {
-        this.activeName = name
+        this.$router.push({
+          query: {
+            ...this.$route.query,
+            tab: name
+          }
+        })
       },
       setLayout() {
         const { query } = this.$route
-        const showFullText = has(query, 'keyword')
+        this.activeName = query.tab || 'host'
 
-        this.showResultList = showFullText
+        this.showResultList = has(query, 'keyword')
         // 暂只有全文检索需要显示查询结果
         this.fullTextSearchProps.showResultList = this.showResultList
-        if (this.isFullTextSearch && this.fullTextSearchProps.showResultList) {
-          this.activeName = 'fullText'
-        } else {
-          this.activeName = 'host'
-        }
       },
       handleSearchComplete(result) {
         this.searchResult = result
@@ -120,13 +120,14 @@
       .search-top {
         padding-top: 50px;
         position: sticky;
-        background: #FAFBFD;
+        background: #FFF;
+        border-bottom: 1px solid #dde4eb;
         top: 0;
       }
     }
 
     .search-tab {
-      max-width: 726px;
+      max-width: 806px;
       margin: 0 auto;
       font-size: 0;
       .tab-item {

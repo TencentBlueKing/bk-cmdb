@@ -1,8 +1,10 @@
 import { computed, ref, watch } from '@vue/composition-api'
+import useRoute from './use-route.js'
 
 export default function useHistory(state, root) {
   const { $store, $routerActions, $route } = root
   const { keyword, focusWithin, forceHide } = state
+  const { route } = useRoute(root)
 
   $store.commit('fullTextSearch/getSearchHistory')
   const historyList = computed(() => $store.state.fullTextSearch.searchHistory)
@@ -51,6 +53,7 @@ export default function useHistory(state, root) {
     $routerActions.redirect({
       name: $route.name,
       query: {
+        ...route.value.query,
         keyword: history,
         t: Date.now()
       }

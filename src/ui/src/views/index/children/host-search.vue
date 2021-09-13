@@ -255,7 +255,7 @@
     .host-search-layout {
         position: relative;
         width: 100%;
-        max-width: 726px;
+        max-width: 806px;
         height: 42px;
         margin: 0 auto;
     }

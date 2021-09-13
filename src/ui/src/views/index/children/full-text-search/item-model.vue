@@ -4,15 +4,17 @@
       <span v-html="`${data.typeName} - ${data.title}`"></span>
     </div>
     <div class="result-desc" @click="data.linkTo(data.source)">
-      <div class="desc-item"
-        v-html="`${$t('模型ID')}：${getHighlightValue(data.source.bk_obj_id, data, 'bk_obj_id')}`"></div>
+      <div class="desc-item hl" v-html="`${$t('唯一标识')}：${getHighlightValue(data.source.bk_obj_id, data)}`"></div>
+      <div class="desc-item hl" v-html="`${$t('模型名称')}：${getHighlightValue(data.source.bk_obj_name, data)}`"></div>
       <div class="desc-item">{{$t('所属模型分组')}}：{{classificationName}}</div>
       <dl class="model-group-list">
-        <div class="group" v-for="(group, index) in groupedProperties" :key="index">
-          <dt class="group-name">{{$t('模型字段')}}</dt>
+        <div class="group" v-for="(item, index) in groupedProperties" :key="index">
+          <dt class="group-name">{{item.group.bk_group_name}}</dt>
           <dd class="property-list">
-            <div class="property-item" v-for="(property, childIndex) in group.properties" :key="childIndex">
-              {{property.bk_property_name}}（{{fieldTypeMap[property.bk_property_type]}}）
+            <div class="property-item" v-for="(property, childIndex) in item.properties" :key="childIndex">
+              （<span class="hl" v-html="`${$t('字段名称')}：${getHighlightValue(property.bk_property_name, data)}`"></span>
+              <span class="hl" v-html="`${$t('唯一标识')}：${getHighlightValue(property.bk_property_id, data)}`"></span>
+              <span>{{$t('字段类型')}}：{{fieldTypeMap[property.bk_property_type]}}</span>）
             </div>
           </dd>
         </div>
