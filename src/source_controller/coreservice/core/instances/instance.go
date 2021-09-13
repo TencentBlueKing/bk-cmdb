@@ -113,11 +113,23 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, i
 		err = m.validCreateInstanceData(kit, objID, item, allValidators[bizID])
 		if err != nil {
 			blog.Errorf("validate instance data for create action error, err:%v, objID:%s, item:%#v, rid:%s", err, objID, item, kit.Rid)
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Data:        item,
-				OriginIndex: int64(idx),
-			})
+			// 由于此err返回的类型可能是mongo返回的error，也可能是经过转化之后的CCError，当返回值是mongo返回的error的场景下没有
+			// GetCode方法。
+			if errInfo, ok := err.(errors.CCErrorCoder); ok {
+				dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
+					Message:     err.Error(),
+					Code:        int64(errInfo.GetCode()),
+					Data:        instance,
+					OriginIndex: int64(idx),
+				})
+			} else {
+				dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
+					Message:     err.Error(),
+					Code:        common.CCErrorUnknownOrUnrecognizedError,
+					Data:        instance,
+					OriginIndex: int64(idx),
+				})
+			}
 			continue
 		}
 
