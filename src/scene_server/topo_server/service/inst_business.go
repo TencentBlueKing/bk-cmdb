@@ -566,24 +566,6 @@ func (s *Service) CreateDefaultBusiness(ctx *rest.Contexts) {
 	ctx.RespEntity(business)
 }
 
-func (s *Service) GetInternalModule(ctx *rest.Contexts) {
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error()))
-		return
-	}
-
-	ctx.SetReadPreference(common.SecondaryPreferredMode)
-
-	_, result, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, bizID)
-	if nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntity(result)
-}
-
 // ListAllBusinessSimplify list all businesses with return only several fields
 func (s *Service) ListAllBusinessSimplify(ctx *rest.Contexts) {
 	page := metadata.BasePage{
