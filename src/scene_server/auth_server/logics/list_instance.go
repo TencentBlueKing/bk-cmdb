@@ -269,25 +269,21 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iam.TypeID, filt
 		relationReq = &metadata.DistinctHostIDByTopoRelationRequest{ModuleIDArr: []int64{parentID}}
 	}
 
-	hostRsp, err := lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, relationReq)
+	hostIDs, err := lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, relationReq)
 	if err != nil {
 		blog.Errorf("get host ids by parent failed, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
-	if err := hostRsp.Error(); err != nil {
-		blog.Errorf("get host ids by parent failed, err: %s, rid: %s", err.Error(), kit.Rid)
-		return nil, hostRsp.Error()
-	}
 
-	if len(hostRsp.Data.IDArr) == 0 || int64(len(hostRsp.Data.IDArr)) <= page.Offset {
+	if len(hostIDs) == 0 || int64(len(hostIDs)) <= page.Offset {
 		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 	}
 
 	if filter.Keyword != "" {
-		return lgc.listHostInstanceFromDB(kit, hostRsp.Data.IDArr, page, filter.Keyword)
+		return lgc.listHostInstanceFromDB(kit, hostIDs, page, filter.Keyword)
 	}
 
-	return lgc.listHostInstanceFromCache(kit, hostRsp.Data.IDArr, page)
+	return lgc.listHostInstanceFromCache(kit, hostIDs, page)
 }
 
 func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page types.Page, keyword string) (*types.ListInstanceResult, error) {

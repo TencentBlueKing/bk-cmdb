@@ -490,7 +490,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 	}
 
 	hostID := int64(result.Data.Created.ID)
-	var hResult *metadata.OperaterException
+	var hResult []metadata.ExceptionResult
 	var option interface{}
 	if toInternalModule == true {
 		if len(moduleIDs) == 0 {
@@ -515,15 +515,8 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 
 	}
 	if err != nil {
-		blog.Errorf("add host module by ip:%s  err:%s,input:%+v,rid:%s", ip, err.Error(), option, h.rid)
+		blog.Errorf("transfer host failed, err: %v, result: %#v, input: %#v, rid: %s", err, hResult, option, h.rid)
 		return 0, err
-	}
-	if !hResult.Result {
-		blog.Errorf("add host module by ip:%s , result:%#v, input:%#v, rid:%s", ip, hResult.Code, option, h.rid)
-		if len(hResult.Data) > 0 {
-			return 0, h.ccErr.New(int(hResult.Data[0].Code), hResult.Data[0].Message)
-		}
-		return 0, hResult.CCError()
 	}
 
 	return hostID, nil

@@ -272,11 +272,15 @@
               globalPermission: false
             }
           })
-          this.hostData.disList = res.info.host
-          this.instData.disList = res.info.inst
-          res.info.nav.forEach((item) => {
-            this.getNavData(item, 'nav')
-          })
+          this.hostData.disList = res.info.host || []
+          this.instData.disList = res.info.instt || []
+
+          if (res.info.nav && res.info.nav.length) {
+            res.info.nav.forEach((item) => {
+              this.getNavData(item, 'nav')
+            })
+          }
+
           this.hostData.disList.forEach((item) => {
             this.getNavData(item, 'host')
           })
@@ -284,7 +288,9 @@
             this.getNavData(item, 'inst')
           })
         } catch ({ permission }) {
-          this.$route.meta.view = 'permission'
+          if (permission) {
+            this.$route.meta.view = 'permission'
+          }
         }
       },
       async getNavData(item, type) {

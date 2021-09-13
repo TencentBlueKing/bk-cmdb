@@ -44,6 +44,14 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.Create,
 	}, {
+		Name:           "searchHostWithNoServiceInstancePattern",
+		Description:    "获取无服务实例的主机",
+		Pattern:        "/api/v3/findmany/proc/host/with_no_service_instance",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.HostInstance,
+		ResourceAction: meta.FindMany,
+	}, {
 		Name:           "findServiceInstancePattern",
 		Description:    "list 服务实例",
 		Pattern:        "/api/v3/findmany/proc/service_instance",

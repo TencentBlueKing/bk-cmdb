@@ -151,20 +151,24 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      ...mapGetters('businessHost', ['topologyModels', 'propertyMap'])
+      ...mapGetters('businessHost', ['topologyModels', 'propertyMap']),
+      ...mapGetters('businessHost', ['selectedNode'])
     },
     watch: {
       filter(value) {
         this.handleFilter()
         RouterQuery.set('keyword', value)
       },
-      active(value) {
-        const map = {
-          hostList: 'host_count',
-          serviceInstance: 'service_instance_count'
-        }
-        if (Object.keys(map).includes(value)) {
-          this.nodeCountType = map[value]
+      active: {
+        immediate: true,
+        handler(value) {
+          const map = {
+            hostList: 'host_count',
+            serviceInstance: 'service_instance_count'
+          }
+          if (Object.keys(map).includes(value)) {
+            this.nodeCountType = map[value]
+          }
         }
       },
       isBlueKing(flag) {
@@ -177,6 +181,7 @@
     },
     created() {
       Bus.$on('refresh-count', this.refreshCount)
+      Bus.$on('refresh-count-by-node', this.refreshCountByNode)
       this.initTopology()
     },
     mounted() {
@@ -185,6 +190,7 @@
     beforeDestroy() {
       this.destroyWatcher()
       Bus.$off('refresh-count', this.refreshCount)
+      Bus.$off('refresh-count-by-node', this.refreshCountByNode)
       clearInterval(this.timer)
       removeResizeListener(this.$el, this.handleResize)
     },
@@ -606,6 +612,15 @@
           return true
         })
         this.setNodeCount(uniqueNodes, true)
+      },
+      refreshCountByNode(node) {
+        const currentNode = node || this.selectedNode
+        const nodes = []
+        const treeNode = this.$refs.tree.getNodeById(currentNode.id)
+        if (treeNode) {
+          nodes.push(treeNode, ...treeNode.parents)
+        }
+        this.setNodeCount(nodes, true)
       },
       handleResize() {
         this.$refs.tree.resize()

@@ -398,7 +398,9 @@ func parseAttributesToBatchOptions(rid string, user meta.UserInfo, resources ...
 	return ops, decisions, nil
 }
 
-func (a *authorizer) ListAuthorizedResources(ctx context.Context, h http.Header, input meta.ListAuthorizedResourcesParam) ([]string, error) {
+// ListAuthorizedResources 获取用户有的资源id权限列表
+func (a *authorizer) ListAuthorizedResources(ctx context.Context, h http.Header,
+	input meta.ListAuthorizedResourcesParam) (*types.AuthorizeList, error) {
 	return a.authClientSet.ListAuthorizedResources(ctx, h, input)
 }
 

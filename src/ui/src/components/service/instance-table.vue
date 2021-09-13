@@ -169,6 +169,14 @@
         return header
       }
     },
+    watch: {
+      processList: {
+        immediate: true,
+        handler() {
+          this.$emit('change-process')
+        }
+      }
+    },
     created() {
       this.getProcessProperties()
       this.getProcessPropertyGroups()
@@ -241,7 +249,7 @@
       handleEditName() {
         this.$emit('edit-name')
         this.$nextTick(() => {
-          this.$refs.nameEditForm.focus()
+          this.$refs.nameEditForm && this.$refs.nameEditForm.focus()
         })
       },
       handleConfirmEditName(name) {

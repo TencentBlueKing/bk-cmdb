@@ -82,10 +82,11 @@ type HostSyncList struct {
 }
 
 type HostsModuleRelation struct {
-	ApplicationID int64   `json:"bk_biz_id"`
-	HostID        []int64 `json:"bk_host_id"`
-	ModuleID      []int64 `json:"bk_module_id"`
-	IsIncrement   bool    `json:"is_increment"`
+	ApplicationID         int64   `json:"bk_biz_id"`
+	HostID                []int64 `json:"bk_host_id"`
+	ModuleID              []int64 `json:"bk_module_id"`
+	IsIncrement           bool    `json:"is_increment"`
+	NeedAutoCreateSvcInst bool    `json:"need_auto_create_service_instances"`
 }
 
 type HostModuleConfig struct {
@@ -782,20 +783,22 @@ type TopoNodeHostCount struct {
 }
 
 type TransferHostWithAutoClearServiceInstanceOption struct {
-	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids"`
+	HostIDs []int64 `json:"bk_host_ids"`
 
-	RemoveFromNode *TopoNode `field:"remove_from_node" json:"remove_from_node"`
-	AddToModules   []int64   `field:"add_to_modules" json:"add_to_modules"`
-	// 主机从 RemoveFromNode 移除后如果不再属于其它模块， 默认转移到空闲机模块
-	// DefaultInternalModule 支持调整这种模型行为，可设置成待回收模块或者故障机模块
-	DefaultInternalModule int64 `field:"default_internal_module" json:"default_internal_module"`
+	RemoveFromModules []int64 `json:"remove_from_modules,omitempty"`
+	AddToModules      []int64 `json:"add_to_modules,omitempty"`
+	// 主机从 RemoveFromModules 移除后如果不再属于其它模块， 默认转移到空闲机模块
+	// DefaultInternalModule 支持调整这种默认行为，可设置成待回收模块或者故障机模块
+	DefaultInternalModule int64 `json:"default_internal_module,omitempty"`
+	// IsRemoveFromAll if set, remove host from all of its current modules, if not, use remove_from_modules
+	IsRemoveFromAll bool `json:"is_remove_from_all"`
 
-	Options TransferOptions `field:"options" json:"options"`
+	Options TransferOptions `json:"options,omitempty"`
 }
 
 type TransferOptions struct {
-	ServiceInstanceOptions     []CreateServiceInstanceOption `field:"service_instance_options" json:"service_instance_options"`
-	HostApplyConflictResolvers []HostApplyConflictResolver   `field:"host_apply_conflict_resolvers" json:"host_apply_conflict_resolvers" bson:"host_apply_conflict_resolvers" mapstructure:"host_apply_conflict_resolvers"`
+	ServiceInstanceOptions     ServiceInstanceOptions      `json:"service_instance_options"`
+	HostApplyConflictResolvers []HostApplyConflictResolver `json:"host_apply_conflict_resolvers"`
 }
 
 type HostTransferPlan struct {
@@ -805,6 +808,13 @@ type HostTransferPlan struct {
 	ToAddToModules          []int64          `field:"to_add_to_modules" json:"to_add_to_modules"`
 	IsTransferToInnerModule bool             `field:"is_transfer_to_inner_module" json:"is_transfer_to_inner_module"`
 	HostApplyPlan           OneHostApplyPlan `field:"host_apply_plan" json:"host_apply_plan" mapstructure:"host_apply_plan"`
+}
+
+// HostTransferResult transfer host result, contains the transfer status and message
+type HostTransferResult struct {
+	HostID  int64  `json:"bk_host_id"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }
 
 type RemoveFromModuleInfo struct {

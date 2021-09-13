@@ -93,18 +93,29 @@ type ModuleSyncStatus struct {
 	NeedSync bool  `json:"need_sync"`
 }
 
-type CreateServiceInstanceForServiceTemplateInput struct {
-	BizID                      int64                         `json:"bk_biz_id"`
-	Name                       string                        `json:"name"`
-	ModuleID                   int64                         `json:"bk_module_id"`
-	Instances                  []CreateServiceInstanceDetail `json:"instances"`
-	HostApplyConflictResolvers []HostApplyConflictResolver   `json:"host_apply_conflict_resolvers"`
+// CreateServiceInstanceInput create service instance with process input parameter
+type CreateServiceInstanceInput struct {
+	BizID     int64                         `json:"bk_biz_id"`
+	ModuleID  int64                         `json:"bk_module_id"`
+	Instances []CreateServiceInstanceDetail `json:"instances"`
 }
 
-type CreateServiceInstancePreviewInput struct {
+// CreateServiceInstanceResp create service instance response
+type CreateServiceInstanceResp struct {
+	BaseResp
+	ServiceInstanceIDs []int64 `json:"data"`
+}
+
+// SearchHostWithNoSvcInstInput input parameter of searching hosts with no service instance under the specified module
+type SearchHostWithNoSvcInstInput struct {
 	BizID    int64   `json:"bk_biz_id"`
 	ModuleID int64   `json:"bk_module_id"`
 	HostIDs  []int64 `json:"bk_host_ids"`
+}
+
+// SearchHostWithNoSvcInstOutput ids of the hosts that have no service instance
+type SearchHostWithNoSvcInstOutput struct {
+	HostIDs []int64 `json:"bk_host_ids"`
 }
 
 type CreateRawProcessInstanceInput struct {
@@ -287,7 +298,17 @@ type ServiceDifferenceDetails struct {
 	ServiceInstance   SrvInstBriefInfo          `json:"service_instance"`
 	Process           *Process                  `json:"process"`
 	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
+	// Flag represents the changes of the service instance. 0 for changed, 1 for added, 2 for deleted
+	Flag ServiceDifferenceFlag `json:"flag"`
 }
+
+type ServiceDifferenceFlag int64
+
+const (
+	ServiceChanged ServiceDifferenceFlag = 0
+	ServiceAdded   ServiceDifferenceFlag = 1
+	ServiceRemoved ServiceDifferenceFlag = 2
+)
 
 type SrvInstBriefInfo struct {
 	ID        int64  `field:"id" json:"id"`
@@ -295,17 +316,18 @@ type SrvInstBriefInfo struct {
 	SvcTempID int64  `field:"service_template_id" json:"service_template_id"`
 }
 
-type CreateServiceInstanceOption struct {
+// ServiceInstanceOptions create or update service instance option
+type ServiceInstanceOptions struct {
+	Created []UpsertServiceInstanceInfo `json:"created,omitempty"`
+	Updated []UpsertServiceInstanceInfo `json:"updated,omitempty"`
+}
+
+// UpsertServiceInstanceInfo update or insert service instance info
+type UpsertServiceInstanceInfo struct {
 	ModuleID int64 `json:"bk_module_id"`
 	HostID   int64 `json:"bk_host_id"`
 	// Processes parameter usable only when create instance with raw
-	Processes []ProcessCreateOrUpdateInfo `json:"processes"`
-}
-
-type ProcessCreateOrUpdateInfo struct {
-	// ProcessTemplateID indicate which process to update if service instance bound with a template
-	ProcessTemplateID int64                  `json:"process_template_id"`
-	ProcessInfo       map[string]interface{} `json:"process_info"`
+	Processes []ProcessInstanceDetail `json:"processes,omitempty"`
 }
 
 type CreateServiceInstanceDetail struct {
@@ -424,6 +446,12 @@ type ListServiceInstancesWithHostInput struct {
 type ListProcessInstancesOption struct {
 	BizID             int64 `json:"bk_biz_id"`
 	ServiceInstanceID int64 `json:"service_instance_id"`
+}
+
+// ListProcessInstancesRsp list process instances response
+type ListProcessInstancesRsp struct {
+	BaseResp
+	Data []ProcessInstance `json:"data"`
 }
 
 type ListProcessInstancesNameIDsOption struct {

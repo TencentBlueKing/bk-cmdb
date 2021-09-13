@@ -133,6 +133,7 @@
       handleFilterChange(filters) {
         this.filters = filters
         RouterQuery.set({
+          node: this.selectedNode.id,
           page: 1,
           _t: Date.now()
         })
@@ -171,6 +172,7 @@
       handlePageChange(page) {
         this.pagination.current = page
         RouterQuery.set({
+          node: this.selectedNode.id,
           page,
           _t: Date.now()
         })
@@ -237,6 +239,14 @@
       },
       handleCancelEditName(row) {
         row.editing.name = false
+      },
+      handleClickAddHost() {
+        RouterQuery.set({
+          tab: 'hostList',
+          _t: Date.now(),
+          page: '',
+          limit: ''
+        })
       }
     }
   }
@@ -279,5 +289,12 @@
                 padding-left: 80px !important;
             }
         }
+    }
+    .empty-content {
+      .text-btn {
+        font-size: 14px;
+        margin-left: 2px;
+        height: auto;
+      }
     }
 </style>

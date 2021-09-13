@@ -36,12 +36,17 @@
         </cmdb-auth>
         <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
           v-if="!row.relation.process_template_id">
-          <bk-button slot-scope="{ disabled }"
-            theme="primary" text
-            :disabled="disabled"
-            @click="handleDelete(row)">
-            {{$t('删除')}}
-          </bk-button>
+          <bk-popconfirm trigger="click" slot-scope="{ disabled }"
+            ext-popover-cls="del-confirm"
+            :content="$t('确定删除该进程')"
+            confirm-loading
+            @confirm="handleDelete(row)">
+            <bk-button
+              theme="primary" text
+              :disabled="disabled">
+              {{$t('删除')}}
+            </bk-button>
+          </bk-popconfirm>
         </cmdb-auth>
       </div>
     </bk-table-column>
@@ -185,44 +190,26 @@
           console.error(error)
         }
       },
-      handleDelete(row) {
-        this.$bkInfo({
-          title: this.$t('确定删除该进程'),
-          confirmFn: async () => {
-            try {
-              await this.$store.dispatch('processInstance/deleteServiceInstanceProcess', {
-                config: {
-                  data: {
-                    bk_biz_id: this.bizId,
-                    process_instance_ids: [row.property.bk_process_id]
-                  },
-                  requestId: this.request.delete
-                }
-              })
-              if (this.list.length === 1) {
-                this.$emit('update-list', [])
-              } else {
-                this.getList()
-              }
-            } catch (error) {
-              console.error(error)
+      async handleDelete(row) {
+        try {
+          await this.$store.dispatch('processInstance/deleteServiceInstanceProcess', {
+            config: {
+              data: {
+                bk_biz_id: this.bizId,
+                process_instance_ids: [row.property.bk_process_id]
+              },
+              requestId: this.request.delete
             }
+          })
+          if (this.list.length === 1) {
+            Bus.$emit('delete-complete')
+          } else {
+            this.getList()
           }
-        })
+        } catch (error) {
+          console.error(error)
+        }
       }
     }
   }
 </script>
-
-<style lang="scss" scoped>
-    .options-wrapper {
-        display: none;
-    }
-    /deep/ {
-        .bk-table-row:hover {
-            .options-wrapper {
-                display: block;
-            }
-        }
-    }
-</style>
