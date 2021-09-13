@@ -81,13 +81,6 @@ func (b *business) SetProxy(inst InstOperationInterface, module ModuleOperationI
 // CreateBusiness create business
 func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error) {
 
-	// this is a new supplier owner and prepare to create a new business.
-	if err := b.createAssociationByNewSupplier(kit, data); err != nil {
-		blog.Errorf("create association for new default biz of different supplier account, err: %v, data: %#v, "+
-			"rid: %s", err, data, kit.Rid)
-		return nil, err
-	}
-
 	bizInst, err := b.inst.CreateInst(kit, common.BKInnerObjIDApp, data)
 	if err != nil {
 		blog.Errorf("create business failed, err: %v, data: %#v, rid: %s", err, data, kit.Rid)
@@ -434,70 +427,4 @@ func (b *business) genBriefTopologyNodeRelation(kit *rest.Kit, filter mapstr.Map
 	}
 
 	return relations, nil
-}
-
-func (b *business) createAssociationByNewSupplier(kit *rest.Kit, data mapstr.MapStr) error {
-	defaultFieldVal, err := data.Int64(common.BKDefaultField)
-	if err != nil {
-		blog.Errorf("failed to create business, error info is did not set the default field,err: %v, rid: %s",
-			err, kit.Rid)
-		return err
-	}
-	if defaultFieldVal != int64(common.DefaultAppFlag) || kit.SupplierAccount == common.BKDefaultOwnerID {
-		return nil
-	}
-
-	asstQuery := map[string]interface{}{
-		common.BKOwnerIDField: common.BKDefaultOwnerID,
-	}
-	defaultOwnerHeader := util.CloneHeader(kit.Header)
-	defaultOwnerHeader.Set(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
-
-	asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, defaultOwnerHeader,
-		&metadata.QueryCondition{Condition: asstQuery})
-	if err != nil {
-		blog.Errorf("create business failed to get default assoc, err: %v, rid: %s", err, kit.Rid)
-		return kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
-	}
-
-	expectAssts := asstRsp.Info
-	blog.Infof("copy asst for %s, %+v, rid: %s", kit.SupplierAccount, expectAssts, kit.Rid)
-
-	existAsstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: asstQuery})
-	if err != nil {
-		blog.Errorf("create business failed to get default assoc, err: %v, rid: %v", err, kit.Rid)
-		return err
-	}
-
-	existAssts := existAsstRsp.Info
-
-expectLoop:
-	for _, asst := range expectAssts {
-		asst.OwnerID = kit.SupplierAccount
-		for _, existAsst := range existAssts {
-			if existAsst.ObjectID == asst.ObjectID &&
-				existAsst.AsstObjID == asst.AsstObjID &&
-				existAsst.AsstKindID == asst.AsstKindID {
-				continue expectLoop
-			}
-		}
-
-		var err error
-		if asst.AsstKindID == common.AssociationKindMainline {
-			// bk_mainline is a inner association type that can only create in special case,
-			// so we separate bk_mainline association type creation with a independent method,
-			_, err = b.clientSet.CoreService().Association().CreateMainlineModelAssociation(kit.Ctx, kit.Header,
-				&metadata.CreateModelAssociation{Spec: asst})
-		} else {
-			_, err = b.clientSet.CoreService().Association().CreateModelAssociation(kit.Ctx, kit.Header,
-				&metadata.CreateModelAssociation{Spec: asst})
-		}
-		if err != nil {
-			blog.Errorf("create business failed to copy default assoc, err: %v, rid: %s", err, kit.Rid)
-			return err
-		}
-	}
-
-	return nil
 }
