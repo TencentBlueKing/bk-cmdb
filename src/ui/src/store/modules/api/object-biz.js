@@ -91,6 +91,16 @@ const actions = {
   },
 
   /**
+     * 批量彻底删除业务
+     * @param {Function} commit store commit mutation hander
+     * @param {Array} bizIds 业务id列表
+     * @return {promises} promises 对象
+     */
+  compeltelyDeleteBusinesses({ commit, state, dispatch, rootGetters }, { bizIds, config }) {
+    return $http.post('deletemany/biz', { bk_biz_id: bizIds }, config)
+  },
+
+  /**
      * 查询业务
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
