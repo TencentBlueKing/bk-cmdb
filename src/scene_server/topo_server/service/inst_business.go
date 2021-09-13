@@ -30,13 +30,12 @@ import (
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/thirdparty/hooks"
 )
 
 // CreateBusiness create a new business
 func (s *Service) CreateBusiness(ctx *rest.Contexts) {
-	data := mapstr.MapStr{}
+	data := make(mapstr.MapStr)
 	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -48,19 +47,12 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	// do with transaction
-	var business inst.Inst
+	var business mapstr.MapStr
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		business, err = s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, data)
+		business, err = s.Logics.BusinessOperation().CreateBusiness(ctx.Kit, data)
 		if err != nil {
 			blog.Errorf("create business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -69,13 +61,13 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 		// register business resource creator action to iam
 		if auth.EnableAuthorize() {
 			var bizID int64
-			if bizID, err = business.GetBizID(); err != nil {
-				blog.ErrorJSON("get biz id failed, err: %s, biz: %s, rid: %s", err, business, ctx.Kit.Rid)
+			if bizID, err = business.Int64(common.BKAppIDField); err != nil {
+				blog.Errorf("get biz id failed, err: %v, biz: %#v, rid: %s", err, business, ctx.Kit.Rid)
 				return err
 			}
 			var bizName string
-			if bizName, err = business.GetInstName(); err != nil {
-				blog.ErrorJSON("get biz name failed, err: %s, biz: %s, rid: %s", err, business, ctx.Kit.Rid)
+			if bizName, err = business.String(common.BKAppNameField); err != nil {
+				blog.Errorf("get biz name failed, err: %v, biz: %#v, rid: %s", err, business, ctx.Kit.Rid)
 				return err
 			}
 			iamInstance := metadata.IamInstanceWithCreator{
@@ -102,28 +94,25 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 
 // UpdateBusiness update the business
 func (s *Service) UpdateBusiness(ctx *rest.Contexts) {
-	data := mapstr.MapStr{}
+	data := make(mapstr.MapStr)
 	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
-		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
-		return
+	cond := mapstr.MapStr{
+		common.BKAppIDField: bizID,
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, data, obj, bizID)
+		err = s.Logics.InstOperation().UpdateInst(ctx.Kit, cond, data, common.BKInnerObjIDApp)
 		if err != nil {
 			return err
 		}
@@ -147,44 +136,38 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
-		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
-		return
-	}
-	query := &metadata.QueryBusinessRequest{
+	query := &metadata.QueryCondition{
+		Fields:    []string{common.BKAppNameField},
 		Condition: mapstr.MapStr{common.BKAppIDField: bizID},
 	}
-	_, bizs, err := s.Core.BusinessOperation().FindBiz(ctx.Kit, query)
+	_, bizs, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, query)
 	if len(bizs) <= 0 {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
 		return
 	}
-	biz := metadata.BizBasicInfo{}
-	if err := mapstruct.Decode2Struct(bizs[0], &biz); err != nil {
-		blog.Errorf("[api-business]failed, parse biz failed, biz: %+v, err: %s, rid: %s", bizs[0], err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed))
+	bizName, err := bizs[0].String(common.BKAppNameField)
+	if err != nil {
+		blog.Errorf("parse biz failed, biz: %+v, err: %v, rid: %s", bizs[0], err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 
-	updateData := mapstr.New()
+	updateData := make(mapstr.MapStr)
 	switch common.DataStatusFlag(ctx.Request.PathParameter("flag")) {
 	case common.DataStatusDisabled:
-		if err := s.Core.AssociationOperation().CheckAssociation(ctx.Kit, obj.Object().ObjectID, bizID); nil != err {
+		if err := s.Core.AssociationOperation().CheckAssociation(ctx.Kit, common.BKInnerObjIDApp, bizID); err != nil {
 			ctx.RespAutoError(err)
 			return
 		}
 
 		// check if this business still has hosts.
-		has, err := s.Core.BusinessOperation().HasHosts(ctx.Kit, bizID)
+		has, err := s.Logics.BusinessOperation().HasHosts(ctx.Kit, bizID)
 		if err != nil {
 			ctx.RespAutoError(err)
 			return
@@ -193,7 +176,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoArchiveBusinessHasHost))
 			return
 		}
-		achieveBizName, err := s.Core.BusinessOperation().GenerateAchieveBusinessName(ctx.Kit, biz.BizName)
+		achieveBizName, err := s.Logics.BusinessOperation().GenerateAchieveBusinessName(ctx.Kit, bizName)
 		if err != nil {
 			ctx.RespAutoError(err)
 			return
@@ -210,8 +193,12 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		return
 	}
 
+	cond := mapstr.MapStr{
+		common.BKAppIDField: bizID,
+	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, updateData, obj, bizID)
+		err = s.Logics.InstOperation().UpdateInst(ctx.Kit, cond, updateData, common.BKInnerObjIDApp)
 		if err != nil {
 			blog.Errorf("UpdateBusinessStatus failed, run update failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -237,12 +224,7 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 	if len(sortParam) > 0 {
 		page.Sort = sortParam
 	}
-	if errKey, err := page.Validate(true); err != nil {
-		blog.Errorf("[api-biz] SearchReducedBusinessList failed, page parameter invalid, errKey: %s, err: %s, rid: %s", errKey, err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
-		return
-	}
-	query := &metadata.QueryBusinessRequest{
+	query := &metadata.QueryCondition{
 		Fields: []string{common.BKAppIDField, common.BKAppNameField},
 		Page:   page,
 		Condition: mapstr.MapStr{
@@ -257,10 +239,12 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 			ResourceType: meta.Business,
 			Action:       meta.ViewBusinessResource,
 		}
-		authorizedResources, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
+		authorizedResources, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header,
+			authInput)
 		if err != nil {
-			blog.Errorf("[api-biz] SearchReducedBusinessList failed, ListAuthorizedResources failed, user: %s, err: %s, rid: %s", ctx.Kit.User, err.Error(), ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoGetAuthorizedBusinessListFailed))
+			blog.Errorf("list authorized resources failed, user: %s, err: %v, rid: %s", ctx.Kit.User, err,
+				ctx.Kit.Rid)
+			ctx.RespAutoError(err)
 			return
 		}
 		appList := make([]int64, 0)
@@ -268,7 +252,7 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 			bizID, err := strconv.ParseInt(resourceID, 10, 64)
 			if err != nil {
 				blog.Errorf("parse bizID(%s) failed, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
-				ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+				ctx.RespAutoError(err)
 				return
 			}
 			appList = append(appList, bizID)
@@ -278,12 +262,12 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 		sort.Sort(util.Int64Slice(appList))
 		// user can only find business that is already authorized.
 		query.Condition[common.BKAppIDField] = mapstr.MapStr{common.BKDBIN: appList}
-
 	}
 
-	cnt, instItems, err := s.Core.BusinessOperation().FindBiz(ctx.Kit, query)
-	if nil != err {
-		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("obj_id"), err.Error(), ctx.Kit.Rid)
+	cnt, instItems, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, query)
+	if err != nil {
+		blog.Errorf("find object %s failed, err: %v, rid: %s", ctx.Request.PathParameter("obj_id"), err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -296,18 +280,19 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 		datas = append(datas, inst)
 	}
 
-	result := mapstr.MapStr{}
-	result.Set("count", cnt)
-	result.Set("info", datas)
+	result := mapstr.MapStr{
+		"count": cnt,
+		"info":  datas,
+	}
 	ctx.RespEntity(result)
 }
 
 // GetBusinessBasicInfo search biz basic info
 func (s *Service) GetBusinessBasicInfo(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
-		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
+	if err != nil {
+		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	query := &metadata.QueryCondition{
@@ -319,12 +304,12 @@ func (s *Service) GetBusinessBasicInfo(ctx *rest.Contexts) {
 	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		common.BKInnerObjIDApp, query)
 	if err != nil {
-		blog.Errorf("failed to get business by id, bizID: %s, err: %s, rid: %s", bizID, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("get business failed, bizID: %s, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	if len(result.Info) == 0 {
-		blog.Errorf("GetBusinessBasicInfo failed, get business by id not found, bizID: %d, rid: %s", bizID, ctx.Kit.Rid)
+		blog.Errorf("get business by id not found, bizID: %d, rid: %s", bizID, ctx.Kit.Rid)
 		err := ctx.Kit.CCError.CCError(common.CCErrCommNotFound)
 		ctx.RespAutoError(err)
 		return
@@ -338,7 +323,8 @@ func (s *Service) GetBusinessBasicInfo(ctx *rest.Contexts) {
 // user1,user3
 // user2,user1
 // user2,user1,user4
-const exactUserRegexp = `(^USER_PLACEHOLDER$)|(^USER_PLACEHOLDER[,]{1})|([,]{1}USER_PLACEHOLDER[,]{1})|([,]{1}USER_PLACEHOLDER$)`
+const exactUserRegexp = `(^USER_PLACEHOLDER$)|(^USER_PLACEHOLDER[,]{1})|([,]{1}USER_PLACEHOLDER[,]{1})` +
+	`|([,]{1}USER_PLACEHOLDER$)`
 
 func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFieldArr []string) map[string]interface{} {
 	output := make(map[string]interface{})
@@ -360,7 +346,8 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 			if util.InStrArr(userFieldArr, i) {
 				for _, user := range strings.Split(strings.Trim(targetStr, ","), ",") {
 					// search with exactly the user's name with regexpF
-					like := strings.Replace(exactUserRegexp, "USER_PLACEHOLDER", gparams.SpecialCharChange(user), -1)
+					like := strings.Replace(exactUserRegexp, "USER_PLACEHOLDER", gparams.SpecialCharChange(user),
+						-1)
 					exactAnd = append(exactAnd, mapstr.MapStr{i: mapstr.MapStr{common.BKDBLIKE: like}})
 				}
 			} else {
@@ -382,8 +369,8 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 // SearchBusiness search the business by condition
 // func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 func (s *Service) SearchBusiness(ctx *rest.Contexts) {
-	searchCond := new(metadata.QueryBusinessRequest)
-	if err := ctx.DecodeInto(&searchCond); nil != err {
+	searchCond := new(metadata.QueryCondition)
+	if err := ctx.DecodeInto(&searchCond); err != nil {
 		blog.Errorf("failed to parse the params, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
 		return
@@ -458,8 +445,8 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 		authorizedResources, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header,
 			authInput)
 		if err != nil {
-			blog.Errorf("[api-biz] SearchBusiness failed, ListAuthorizedResources failed, user: %s, err: %s, "+
-				"rid: %s", ctx.Kit.User, err.Error(), ctx.Kit.Rid)
+			blog.Errorf("list authorized resources failed, user: %s, err: %v, rid: %s", ctx.Kit.User, err,
+				ctx.Kit.Rid)
 			ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")
 			return
 		}
@@ -486,7 +473,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 				searchCond.Condition[common.BKAppIDField] = mapstr.MapStr{common.BKDBIN: authBizIDs}
 			} else {
 				// if there are no qualified bizIDs, return null
-				result := mapstr.MapStr{}
+				result := make(mapstr.MapStr)
 				result.Set("count", 0)
 				result.Set("info", []mapstr.MapStr{})
 				ctx.RespEntity(result)
@@ -508,14 +495,14 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	// can only find normal business, but not resource pool business
 	searchCond.Condition[common.BKDefaultField] = 0
 
-	cnt, instItems, err := s.Core.BusinessOperation().FindBiz(ctx.Kit, searchCond)
-	if nil != err {
+	cnt, instItems, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, searchCond)
+	if err != nil {
 		blog.Errorf("find business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	result := mapstr.MapStr{}
+	result := make(mapstr.MapStr)
 	result.Set("count", cnt)
 	result.Set("info", instItems)
 
@@ -526,49 +513,45 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 func (s *Service) SearchOwnerResourcePoolBusiness(ctx *rest.Contexts) {
 
 	supplierAccount := ctx.Request.PathParameter("owner_id")
-	query := metadata.QueryBusinessRequest{
+	query := metadata.QueryCondition{
 		Condition: mapstr.MapStr{
 			common.BKDefaultField:    common.DefaultAppFlag,
 			common.BkSupplierAccount: supplierAccount,
 		},
 	}
 
-	cnt, instItems, err := s.Core.BusinessOperation().FindBiz(ctx.Kit, &query)
-	if nil != err {
-		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("obj_id"), err.Error(), ctx.Kit.Rid)
+	cnt, instItems, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, &query)
+	if err != nil {
+		blog.Errorf("find objects(%s) failed, err: %v, rid: %s", ctx.Request.PathParameter("obj_id"), err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	if cnt == 0 {
 		blog.InfoJSON("cond:%s, header:%s, rid:%s", query, ctx.Kit.Header, ctx.Kit.Rid)
 	}
-	result := mapstr.MapStr{}
-	result.Set("count", cnt)
-	result.Set("info", instItems)
+	result := mapstr.MapStr{
+		"count": cnt,
+		"info":  instItems,
+	}
 	ctx.RespEntity(result)
 	return
 }
 
 // CreateDefaultBusiness create the default business
 func (s *Service) CreateDefaultBusiness(ctx *rest.Contexts) {
-	data := mapstr.MapStr{}
+	data := make(mapstr.MapStr)
 	if err := ctx.DecodeInto(&data); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
 	data.Set(common.BKDefaultField, common.DefaultAppFlag)
 
-	var business inst.Inst
+	var business mapstr.MapStr
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		business, err = s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, data)
+		business, err = s.Logics.BusinessOperation().CreateBusiness(ctx.Kit, data)
 		if err != nil {
 			blog.Errorf("create business failed, err: %+v", err)
 			return err
@@ -583,24 +566,6 @@ func (s *Service) CreateDefaultBusiness(ctx *rest.Contexts) {
 	ctx.RespEntity(business)
 }
 
-func (s *Service) GetInternalModule(ctx *rest.Contexts) {
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error()))
-		return
-	}
-
-	ctx.SetReadPreference(common.SecondaryPreferredMode)
-
-	_, result, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, bizID)
-	if nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntity(result)
-}
-
 // ListAllBusinessSimplify list all businesses with return only several fields
 func (s *Service) ListAllBusinessSimplify(ctx *rest.Contexts) {
 	page := metadata.BasePage{
@@ -610,27 +575,22 @@ func (s *Service) ListAllBusinessSimplify(ctx *rest.Contexts) {
 	if len(sortParam) > 0 {
 		page.Sort = sortParam
 	}
-	if errKey, err := page.Validate(true); err != nil {
-		blog.Errorf("[api-biz] ListAllBusinessSimplify failed, page parameter invalid, errKey: %s, err: %s, rid: %s", errKey, err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
-		return
-	}
 
 	fields := []string{
 		common.BKAppIDField,
 		common.BKAppNameField,
 	}
 
-	query := &metadata.QueryBusinessRequest{
+	query := &metadata.QueryCondition{
 		Fields: fields,
 		Page:   page,
 		Condition: mapstr.MapStr{
 			common.BKDataStatusField: mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled},
 		},
 	}
-	cnt, instItems, err := s.Core.BusinessOperation().FindBiz(ctx.Kit, query)
-	if nil != err {
-		blog.Errorf("ListAllBusinessSimplify failed, FindBusiness failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+	cnt, instItems, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, query)
+	if err != nil {
+		blog.Errorf("find business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -638,8 +598,8 @@ func (s *Service) ListAllBusinessSimplify(ctx *rest.Contexts) {
 	for _, item := range instItems {
 		business := metadata.BizBasicInfo{}
 		if err := mapstruct.Decode2Struct(item, &business); err != nil {
-			blog.Errorf("ListAllBusinessSimplify failed, decode biz from db failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed))
+			blog.Errorf("decode biz from db failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
 			return
 		}
 		businesses = append(businesses, business)
@@ -663,12 +623,12 @@ func (s *Service) GetBriefTopologyNodeRelation(ctx *rest.Contexts) {
 
 	rawErr := options.Validate()
 	if rawErr.ErrCode != 0 {
-		blog.Errorf("get brief topology node relation, validate failed, err: %v, rid: %s", rawErr.Args, ctx.Kit.Rid)
+		blog.Errorf("validate failed, err: %v, rid: %s", rawErr.Args, ctx.Kit.Rid)
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
-	relations, err := s.Core.BusinessOperation().GetBriefTopologyNodeRelation(ctx.Kit, options)
+	relations, err := s.Logics.BusinessOperation().GetBriefTopologyNodeRelation(ctx.Kit, options)
 	if err != nil {
 		blog.Errorf("get brief topology node relation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

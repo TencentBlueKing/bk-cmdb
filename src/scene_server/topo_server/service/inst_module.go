@@ -730,3 +730,22 @@ func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
 	set["module"] = modules
 	ctx.RespEntity(set)
 }
+
+// GetInternalModule get internal module
+func (s *Service) GetInternalModule(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
+	if nil != err {
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error()))
+		return
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	_, result, err := s.Logics.ModuleOperation().GetInternalModule(ctx.Kit, bizID)
+	if nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(result)
+}
