@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202108121033
+package y3_9_202109132155
 
 import (
 	"context"
@@ -21,14 +21,14 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.9.202108121033", upgrade)
+	upgrader.RegistUpgrader("y3.9.202109132155", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.9.202108121033")
+	blog.Infof("start execute y3.9.202109132155")
 
 	if err = removeNoProcSvcInst(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.9.202108121033] remove service instances with no process failed, err: %v", err)
+		blog.Errorf("[upgrade y3.9.202109132155] remove service instances with no process failed, err: %v", err)
 		return err
 	}
 
