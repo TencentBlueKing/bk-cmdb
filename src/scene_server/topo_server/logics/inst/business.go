@@ -34,7 +34,7 @@ type BusinessOperationInterface interface {
 	// CreateBusiness create business
 	CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error)
 	// FindBiz find biz
-	FindBiz(kit *rest.Kit, cond *metadata.QueryCondition, disableCounter bool) (count int,
+	FindBiz(kit *rest.Kit, cond *metadata.QueryCondition) (count int,
 		results []mapstr.MapStr, err error)
 	// HasHosts check if this business still has hosts.
 	HasHosts(kit *rest.Kit, bizID int64) (bool, error)
@@ -159,12 +159,11 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 }
 
 // FindBiz FindBiz
-func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryCondition, disableCounter bool) (count int,
+func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryCondition) (count int,
 	results []mapstr.MapStr, err error) {
 	if !cond.Condition.Exists(common.BKDefaultField) {
 		cond.Condition[common.BKDefaultField] = 0
 	}
-	cond.DisableCounter = disableCounter
 
 	result, err := b.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, cond)
 	if err != nil {
@@ -179,28 +178,26 @@ func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryCondition, disable
 func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 
 	option := []map[string]interface{}{{
-		common.BKAppIDField: map[string]interface{}{
-			common.BKDBEQ: bizID,
-		},
+		common.BKAppIDField: bizID,
 	}}
 
-	rsp, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseApp,
-		option)
+	rsp, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameModuleHostConfig, option)
 	if err != nil {
 		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, kit.Rid)
 		return false, err
 	}
 
-	return rsp[0] != 1, nil
+	return rsp[0] != 0, nil
 }
 
 var (
 	numRegex = regexp.MustCompile(`^\d+$`)
 )
 
-//	GenerateAchieveBusinessName 生成归档后的业务名称
-//	- 业务归档的时候，自动重命名为"foo-archived"
-//	- 归档的时候，如果发现已经存在同名的"foo-archived", 自动在其后+1, 比如 "foo-archived-1", "foo-archived-2"
+// GenerateAchieveBusinessName 生成归档后的业务名称
+// - 业务归档的时候，自动重命名为"foo-archived"
+// - 归档的时候，如果发现已经存在同名的"foo-archived", 自动在其后+1, 比如 "foo-archived-1", "foo-archived-2"
 func (b *business) GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (achieveName string, err error) {
 
 	queryBusinessRequest := &metadata.QueryCondition{
@@ -214,7 +211,7 @@ func (b *business) GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (a
 			},
 		},
 	}
-	count, data, err := b.FindBiz(kit, queryBusinessRequest, false)
+	count, data, err := b.FindBiz(kit, queryBusinessRequest)
 	if err != nil {
 		return "", err
 	}
