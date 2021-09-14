@@ -533,6 +533,7 @@ type DeleteCMDBResourceParam struct {
 	TypeIDs              []TypeID
 }
 
+// ListPoliciesParams list iam policies parameter
 type ListPoliciesParams struct {
 	ActionID  ActionID
 	Page      int64
@@ -540,23 +541,27 @@ type ListPoliciesParams struct {
 	Timestamp int64
 }
 
+// ListPoliciesResp list iam policies response
 type ListPoliciesResp struct {
 	BaseResponse
 	Data *ListPoliciesData `json:"data"`
 }
 
+// ListPoliciesData list policy data, which represents iam policies
 type ListPoliciesData struct {
 	Metadata PolicyMetadata `json:"metadata"`
 	Count    int64          `json:"count"`
 	Results  []PolicyResult `json:"results"`
 }
 
+// PolicyMetadata iam policy metadata
 type PolicyMetadata struct {
 	System    string       `json:"system"`
 	Action    ActionWithID `json:"action"`
 	Timestamp int64        `json:"timestamp"`
 }
 
+// PolicyResult iam policy result
 type PolicyResult struct {
 	Version    string           `json:"version"`
 	ID         int64            `json:"id"`
@@ -565,12 +570,14 @@ type PolicyResult struct {
 	ExpiredAt  int64            `json:"expired_at"`
 }
 
+// PolicySubject policy subject, which represents user or user group for now
 type PolicySubject struct {
 	Type string `json:"type"`
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
+// SimplifiedInstance simplified instance with only id and name
 type SimplifiedInstance struct {
 	InstanceID   int64  `json:"bk_inst_id" bson:"bk_inst_id"`
 	InstanceName string `json:"bk_inst_name" bson:"bk_inst_name"`

@@ -35,6 +35,10 @@ type AttributeOperationInterface interface {
 	CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
 	DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, modelBizID int64) error
 	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error
+	// CreateObjectBatch upsert object attributes
+	CreateObjectBatch(kit *rest.Kit, data map[string]metadata.ImportObjectData) (mapstr.MapStr, error)
+	// FindObjectBatch find object to attributes mapping
+	FindObjectBatch(kit *rest.Kit, objIDs []string) (mapstr.MapStr, error)
 	SetProxy(grp GroupOperationInterface, obj ObjectOperationInterface)
 }
 
@@ -398,4 +402,240 @@ func (a *attribute) isMainlineModel(kit *rest.Kit, modelID string) (bool, error)
 	}
 
 	return false, nil
+}
+
+type rowInfo struct {
+	Row  int64  `json:"row"`
+	Info string `json:"info"`
+	// value can empty, eg: parse error
+	PropID string `json:"bk_property_id"`
+}
+
+type createObjectBatchObjResult struct {
+	// 异常错误，比如接卸该行数据失败， 查询数据失败
+	Errors []rowInfo `json:"errors,omitempty"`
+	// 新加属性失败
+	InsertFailed []rowInfo `json:"insert_failed,omitempty"`
+	// 更新属性失败
+	UpdateFailed []rowInfo `json:"update_failed,omitempty"`
+	// 成功数据的信息
+	Success []rowInfo `json:"success,omitempty"`
+	// 失败信息，如模型不存在
+	Error string `json:"error,omitempty"`
+}
+
+// CreateObjectBatch this method doesn't act as it's name, it create or update model's attributes indeed.
+// it only operate on model already exist, that is to say no new model will be created.
+func (a *attribute) CreateObjectBatch(kit *rest.Kit, inputDataMap map[string]metadata.ImportObjectData) (mapstr.MapStr,
+	error) {
+
+	result := mapstr.New()
+	hasError := false
+	for objID, inputData := range inputDataMap {
+		// check if the object exists
+		isObjExists, err := a.obj.IsObjectExist(kit, objID)
+		if err != nil {
+			result[objID] = createObjectBatchObjResult{
+				Error: fmt.Sprintf("check if object(%s) exists failed, err: %v", objID, err),
+			}
+			hasError = true
+			continue
+		}
+		if !isObjExists {
+			result[objID] = createObjectBatchObjResult{Error: fmt.Sprintf("object (%s) does not exist", objID)}
+			hasError = true
+			continue
+		}
+
+		// get group name to property id map
+		groupNames := make([]string, 0)
+		for _, attr := range inputData.Attr {
+			if len(attr.PropertyGroupName) == 0 {
+				continue
+			}
+			groupNames = append(groupNames, attr.PropertyGroupName)
+		}
+
+		grpNameIDMap := make(map[string]string)
+		if len(groupNames) > 0 {
+			grpCond := metadata.QueryCondition{
+				Condition: mapstr.MapStr{
+					metadata.GroupFieldGroupName: mapstr.MapStr{common.BKDBIN: groupNames},
+					metadata.GroupFieldObjectID:  objID,
+				},
+				Fields: []string{metadata.GroupFieldGroupID, metadata.GroupFieldGroupName},
+				Page:   metadata.BasePage{Limit: common.BKNoLimit},
+			}
+
+			grpRsp, err := a.clientSet.CoreService().Model().ReadAttributeGroup(kit.Ctx, kit.Header, objID, grpCond)
+			if err != nil {
+				result[objID] = createObjectBatchObjResult{
+					Error: fmt.Sprintf("find object group failed, err: %v, cond: %#v", err, grpCond),
+				}
+				hasError = true
+				continue
+			}
+
+			for _, grp := range grpRsp.Info {
+				grpNameIDMap[grp.GroupName] = grp.GroupID
+			}
+		}
+
+		// upsert the object's attribute
+		result[objID], hasError = a.upsertObjectAttrBatch(kit, objID, inputData.Attr, grpNameIDMap)
+	}
+
+	if hasError {
+		return result, kit.CCError.Error(common.CCErrCommNotAllSuccess)
+	}
+	return result, nil
+}
+
+func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attributes map[int64]metadata.Attribute,
+	grpNameIDMap map[string]string) (createObjectBatchObjResult, bool) {
+
+	objRes := createObjectBatchObjResult{}
+	hasError := false
+	for idx, attr := range attributes {
+		propID := attr.PropertyID
+		if propID == common.BKInstParentStr {
+			continue
+		}
+
+		if err := a.IsValid(kit, true, &attr); err != nil {
+			blog.Errorf("attribute(%#v) is invalid, rid: %s", attr, err, kit.Rid)
+			objRes.Errors = append(objRes.Errors, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
+			hasError = true
+			continue
+		}
+
+		attr.OwnerID = kit.SupplierAccount
+		attr.ObjectID = objID
+
+		if len(attr.PropertyGroupName) != 0 {
+			groupID, exists := grpNameIDMap[attr.PropertyGroupName]
+			if exists {
+				attr.PropertyGroup = groupID
+			} else {
+				grp := metadata.CreateModelAttributeGroup{
+					Data: metadata.Group{
+						GroupName: attr.PropertyGroupName,
+						GroupID:   NewGroupID(false),
+						ObjectID:  objID,
+						OwnerID:   kit.SupplierAccount,
+						BizID:     attr.BizID,
+					}}
+
+				_, err := a.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header, objID, grp)
+				if err != nil {
+					blog.Errorf("create attribute group[%#v] failed, err: %v, rid: %s", grp, err, kit.Rid)
+					objRes.Errors = append(objRes.Errors, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
+					hasError = true
+					continue
+				}
+				attr.PropertyGroup = grp.Data.GroupID
+			}
+		} else {
+			attr.PropertyGroup = NewGroupID(true)
+		}
+
+		// check if attribute exists, if exists, update these attributes, otherwise, create the attribute
+		attrCond := mapstr.MapStr{metadata.AttributeFieldObjectID: objID, metadata.AttributeFieldPropertyID: propID}
+		util.AddModelBizIDCondition(attrCond, attr.BizID)
+
+		attrCnt, err := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+			common.BKTableNameObjAttDes, []map[string]interface{}{attrCond})
+		if err != nil {
+			blog.Errorf("count attribute failed, err: %v, cond: %#v, rid: %s", err, attrCond, kit.Rid)
+			objRes.Errors = append(objRes.Errors, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
+			hasError = true
+			continue
+		}
+
+		if attrCnt[0] == 0 {
+			// create attribute
+			createAttrOpt := &metadata.CreateModelAttributes{Attributes: []metadata.Attribute{attr}}
+			_, err := a.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header, objID, createAttrOpt)
+			if err != nil {
+				blog.Errorf("create attribute(%#v) failed, ObjID: %s, err: %v, rid: %s", attr, objID, err, kit.Rid)
+				objRes.InsertFailed = append(objRes.InsertFailed, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
+				hasError = true
+				continue
+			}
+		} else {
+			// update attribute
+			updateAttrOpt := metadata.UpdateOption{Condition: attrCond, Data: attr.ToMapStr()}
+			_, err := a.clientSet.CoreService().Model().UpdateModelAttrs(kit.Ctx, kit.Header, objID, &updateAttrOpt)
+			if err != nil {
+				blog.Errorf("failed to update module attr, err: %s, rid: %s", err, kit.Rid)
+				objRes.UpdateFailed = append(objRes.UpdateFailed, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
+				hasError = true
+				continue
+			}
+		}
+
+		objRes.Success = append(objRes.Success, rowInfo{Row: idx, PropID: attr.PropertyID})
+	}
+
+	return objRes, hasError
+}
+
+// FindObjectBatch find object to attribute mapping batch
+func (a *attribute) FindObjectBatch(kit *rest.Kit, objIDs []string) (mapstr.MapStr, error) {
+	result := mapstr.New()
+
+	for _, objID := range objIDs {
+		attrCond := &metadata.QueryCondition{
+			Condition: mapstr.MapStr{
+				metadata.AttributeFieldObjectID: objID,
+				metadata.AttributeFieldIsSystem: false,
+				metadata.AttributeFieldIsAPI:    false,
+				common.BKAppIDField:             0,
+			},
+			Page: metadata.BasePage{Limit: common.BKNoLimit},
+		}
+		attrRsp, err := a.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, attrCond)
+		if err != nil {
+			blog.Errorf("get object(%s) not inner attributes failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+
+		if len(attrRsp.Info) == 0 {
+			result.Set(objID, mapstr.MapStr{"attr": attrRsp.Info})
+			continue
+		}
+
+		groupIDs := make([]string, 0)
+		for _, attr := range attrRsp.Info {
+			groupIDs = append(groupIDs, attr.PropertyGroup)
+		}
+
+		grpCond := metadata.QueryCondition{
+			Condition: mapstr.MapStr{
+				metadata.GroupFieldGroupID:  mapstr.MapStr{common.BKDBIN: groupIDs},
+				metadata.GroupFieldObjectID: objID,
+			},
+			Fields: []string{metadata.GroupFieldGroupID, metadata.GroupFieldGroupName},
+			Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		}
+
+		grpRsp, err := a.clientSet.CoreService().Model().ReadAttributeGroup(kit.Ctx, kit.Header, objID, grpCond)
+		if err != nil {
+			blog.Errorf("find object group failed, err: %v, cond: %#v, rid: %s", err, grpCond, kit.Rid)
+			return nil, err
+		}
+
+		grpIDNameMap := make(map[string]string)
+		for _, grp := range grpRsp.Info {
+			grpIDNameMap[grp.GroupID] = grp.GroupName
+		}
+
+		for idx, attr := range attrRsp.Info {
+			attrRsp.Info[idx].PropertyGroupName = grpIDNameMap[attr.PropertyGroup]
+		}
+
+		result.Set(objID, mapstr.MapStr{"attr": attrRsp.Info})
+	}
+
+	return result, nil
 }

@@ -16,7 +16,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/settemplate"
+	"configcenter/src/scene_server/topo_server/logics/settemplate"
 )
 
 func (s *Service) SyncModuleTaskHandler(ctx *rest.Contexts) {
@@ -24,8 +24,8 @@ func (s *Service) SyncModuleTaskHandler(ctx *rest.Contexts) {
 	backendWorker := settemplate.BackendWorker{
 		ClientSet:       s.Engine.CoreAPI,
 		Engine:          s.Engine,
-		ObjectOperation: s.Core.ObjectOperation(),
-		ModuleOperation: s.Core.ModuleOperation(),
+		ObjectOperation: s.Logics.ObjectOperation(),
+		ModuleOperation: s.Logics.ModuleOperation(),
 	}
 	task := &metadata.SyncModuleTask{}
 	if err := ctx.DecodeInto(task); err != nil {

@@ -21,6 +21,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/rs/xid"
 )
 
 // GroupOperationInterface group operation methods
@@ -320,4 +322,13 @@ func (g *group) DeleteObjectAttributeGroup(kit *rest.Kit, objID, propertyID, gro
 	}
 
 	return nil
+}
+
+// NewGroupID generate new group id, default group has a specific id
+func NewGroupID(isDefault bool) string {
+	if isDefault {
+		return "default"
+	} else {
+		return xid.New().String()
+	}
 }

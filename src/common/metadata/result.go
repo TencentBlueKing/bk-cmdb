@@ -114,12 +114,14 @@ type IamInstanceWithCreator struct {
 	Ancestors []IamInstanceAncestor `json:"ancestors,omitempty"`
 }
 
+// IamInstances iam instances
 type IamInstances struct {
 	System    string        `json:"system"`
 	Type      string        `json:"type"`
 	Instances []IamInstance `json:"instances"`
 }
 
+// IamInstancesWithCreator iam instances with creator
 type IamInstancesWithCreator struct {
 	IamInstances `json:",inline"`
 	Creator      string `json:"creator"`
@@ -142,10 +144,12 @@ type IamCreatorActionPolicy struct {
 	PolicyID int64        `json:"policy_id"`
 }
 
+// ActionWithID iam creator action with only action id
 type ActionWithID struct {
 	ID string `json:"id"`
 }
 
+// IamBatchOperateInstanceAuthReq batch grant or revoke iam instance auth request
 type IamBatchOperateInstanceAuthReq struct {
 	Asynchronous bool             `json:"asynchronous"`
 	Operate      IamAuthOperation `json:"operate"`
@@ -163,11 +167,13 @@ const (
 	IamRevokeOperation = "revoke"
 )
 
+// IamSubject iam subject that can be authorized, right now it represents user or user group
 type IamSubject struct {
 	Type string `json:"type"`
 	Id   string `json:"id"`
 }
 
+// IamBatchOperateInstanceAuthRes batch operate iam instance auth response
 type IamBatchOperateInstanceAuthRes struct {
 	Action   ActionWithID `json:"action"`
 	PolicyID int64        `json:"policy_id"`

@@ -144,7 +144,7 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 		IsDefault:  true,
 		GroupIndex: -1,
 		GroupName:  "Default",
-		GroupID:    "default",
+		GroupID:    NewGroupID(true),
 		ObjectID:   obj.ObjectID,
 		OwnerID:    obj.OwnerID,
 	}

@@ -246,3 +246,13 @@ type ObjectCountDetails struct {
 	InstCount uint64 `json:"inst_count"`
 	Error     string `json:"error"`
 }
+
+// ImportObjectData import object attribute data
+type ImportObjectData struct {
+	Attr map[int64]Attribute `json:"attr"`
+}
+
+// ExportObjectCondition export object attribute condition
+type ExportObjectCondition struct {
+	ObjIDs []string `json:"condition"`
+}

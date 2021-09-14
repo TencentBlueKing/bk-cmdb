@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/topo_server/app/options"
-	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/logics"
 	"configcenter/src/thirdparty/elasticsearch"
 
@@ -32,7 +31,6 @@ import (
 
 type Service struct {
 	Engine      *backbone.Engine
-	Core        core.Core
 	Logics      logics.Logics
 	Config      options.Config
 	AuthManager *extensions.AuthManager

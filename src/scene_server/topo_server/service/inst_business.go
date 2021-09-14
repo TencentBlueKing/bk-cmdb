@@ -163,7 +163,8 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 	updateData := make(mapstr.MapStr)
 	switch common.DataStatusFlag(ctx.Request.PathParameter("flag")) {
 	case common.DataStatusDisabled:
-		if err := s.Core.AssociationOperation().CheckAssociation(ctx.Kit, common.BKInnerObjIDApp, bizID); err != nil {
+		err := s.Logics.InstAssociationOperation().CheckAssociations(ctx.Kit, common.BKInnerObjIDApp, []int64{bizID})
+		if err != nil {
 			ctx.RespAutoError(err)
 			return
 		}
