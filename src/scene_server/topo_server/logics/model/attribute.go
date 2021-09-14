@@ -28,11 +28,16 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/topo_server/core/operation"
+
+	"github.com/rs/xid"
 )
 
 // AttributeOperationInterface attribute operation methods
 type AttributeOperationInterface interface {
 	CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
+	CreateObjectAttributeBatch(kit *rest.Kit, data map[string]operation.ImportObjectData) (mapstr.MapStr, error)
+	FindObjectAttributeBatch(kit *rest.Kit, objIDs []string) (mapstr.MapStr, error)
 	DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, modelBizID int64) error
 	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error
 	SetProxy(grp GroupOperationInterface, obj ObjectOperationInterface)
@@ -54,6 +59,13 @@ type attribute struct {
 	authManager *extensions.AuthManager
 	grp         GroupOperationInterface
 	obj         ObjectOperationInterface
+}
+
+type rowInfo struct {
+	Row  int64  `json:"row"`
+	Info string `json:"info"`
+	// value can empty, eg:parse error
+	PropertyID string `json:"bk_property_id"`
 }
 
 // SetProxy SetProxy
@@ -134,7 +146,7 @@ func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attri
 	}
 	groupResult, err := a.grp.FindGroupByObject(kit, data.ObjectID, cond, data.BizID)
 	if err != nil {
-		blog.Errorf("failed to search the attribute group data (%#v), err: %s, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("failed to search the attribute group data (%#v), err: %v, rid: %s", cond, err, kit.Rid)
 		return err
 	}
 
@@ -156,7 +168,7 @@ func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attri
 	}
 	bizDefaultGroupResult, err := a.grp.FindGroupByObject(kit, data.ObjectID, bizDefaultGroupCond, data.BizID)
 	if err != nil {
-		blog.Errorf("failed to search the attr group data: %#v, err: %s, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("failed to search the attr group data: %#v, err: %v, rid: %s", cond, err, kit.Rid)
 		return err
 	}
 
@@ -172,7 +184,7 @@ func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attri
 		}
 
 		if _, err := a.grp.CreateObjectGroup(kit, &group); err != nil {
-			blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
+			blog.Errorf("failed to create the default group, err: %v, rid: %s", err, kit.Rid)
 			return err
 		}
 	}
@@ -214,7 +226,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 	}
 
 	if err = a.checkAttributeGroupExist(kit, data); err != nil {
-		blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
+		blog.Errorf("failed to create the default group, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
@@ -265,6 +277,236 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 	}
 
 	return data, nil
+}
+
+// setCreateObjectBatchObjResult set create object batch obj result
+func (a *attribute) setCreateObjectBatchObjResult(objID string, result mapstr.MapStr, itemErr, addErr, setErr,
+	succInfo []rowInfo) {
+	subResult := mapstr.New()
+	if len(itemErr) > 0 {
+		subResult["errors"] = itemErr
+	}
+	if len(addErr) > 0 {
+		subResult["insert_failed"] = addErr
+	}
+	if len(setErr) > 0 {
+		subResult["update_failed"] = setErr
+	}
+	if len(succInfo) > 0 {
+		subResult["success"] = succInfo
+	}
+	if len(subResult) > 0 {
+		result[objID] = subResult
+	}
+}
+
+// CreateObjectAttributeBatch manipulate model in cc_ObjDes
+// this method does'nt act as it's name, it create or update model's attributes indeed.
+// it only operate on model already exist, that it to say no new model will be created.
+func (a *attribute) CreateObjectAttributeBatch(kit *rest.Kit, inputDataMap map[string]operation.ImportObjectData) (
+	mapstr.MapStr, error) {
+	result := make(mapstr.MapStr)
+	hasError := false
+
+	for objID, inputData := range inputDataMap {
+		subResult := make(mapstr.MapStr)
+		exist, err := a.obj.IsObjectExist(kit, objID)
+		if !exist {
+			blog.Errorf("create model patch, obj id not exist, obj id: %s, rid: %s", objID, kit.Rid)
+			continue
+		}
+		if err != nil {
+			blog.Errorf("create model patch, obj id not exist, obj id: %s, err: %v, rid: %s", objID, err, kit.Rid)
+			subResult["error"] = fmt.Sprintf("the obj id: %s is invalid", objID)
+			result[objID] = subResult
+			hasError = true
+			continue
+		}
+
+		// 异常错误，比如接卸该行数据失败， 查询数据失败
+		var itemErr []rowInfo
+		// 新加属性失败
+		var addErr []rowInfo
+		// 更新属性失败
+		var setErr []rowInfo
+		// 成功数据的信息
+		var succInfo []rowInfo
+
+		// update the object's attribute
+		for idx, attr := range inputData.Attr {
+			targetAttr := new(metadata.Attribute)
+			if err := mapstruct.Decode2Struct(attr, targetAttr); err != nil {
+				blog.Errorf("unmarshal mapstr data into module failed, module: %s, err: %s, rid: %s", attr, err,
+					kit.Rid)
+				itemErr = append(itemErr, rowInfo{Row: idx, Info: err.Error()})
+				hasError = true
+				continue
+			}
+			targetAttr.OwnerID = kit.SupplierAccount
+			targetAttr.ObjectID = objID
+
+			if targetAttr.PropertyID == common.BKInstParentStr {
+				continue
+			}
+
+			if len(targetAttr.PropertyGroupName) == 0 {
+				targetAttr.PropertyGroup = "Default"
+			}
+
+			// find group
+			itemErr, setErr, err = a.findGroupExist(kit, objID, targetAttr, itemErr, setErr, idx)
+			if err != nil {
+				hasError = true
+				continue
+			}
+
+			// create or update the attribute
+			addErr, setErr, err = a.createOrUpdateAttr(kit, objID, targetAttr, addErr, setErr, idx)
+			if err != nil {
+				hasError = true
+				continue
+			}
+
+			succInfo = append(succInfo, rowInfo{Row: idx, Info: "", PropertyID: targetAttr.PropertyID})
+		}
+
+		// 将需要返回的信息更新到result中。 这个函数会修改result参数的值
+		a.setCreateObjectBatchObjResult(objID, result, itemErr, addErr, setErr, succInfo)
+	}
+
+	if hasError {
+		return result, kit.CCError.Error(common.CCErrCommNotAllSuccess)
+	}
+
+	return result, nil
+}
+
+//
+func (a *attribute) createOrUpdateAttr(kit *rest.Kit, objID string, targetAttr *metadata.Attribute, addErr,
+	setErr []rowInfo, idx int64) ([]rowInfo, []rowInfo, error) {
+	attrCond := mapstr.MapStr{
+		metadata.AttributeFieldObjectID:   objID,
+		metadata.AttributeFieldPropertyID: targetAttr.ID,
+	}
+	util.AddModelBizIDCondition(attrCond, targetAttr.BizID)
+	queryCond := &metadata.QueryCondition{
+		Condition: attrCond,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	attrs, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, queryCond)
+	if err != nil {
+		addErr = append(addErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
+		return addErr, setErr, err
+	}
+
+	if len(attrs.Info) == 0 {
+		if _, err = a.CreateObjectAttribute(kit, targetAttr); err != nil {
+			addErr = append(addErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
+			return addErr, setErr, err
+		}
+	}
+
+	for _, attr := range attrs.Info {
+		if err := a.UpdateObjectAttribute(kit, attr.ToMapStr(), attr.ID, attr.BizID); nil != err {
+			setErr = append(setErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
+			return addErr, setErr, err
+		}
+	}
+
+	return addErr, setErr, nil
+}
+
+// findGroupExist if group not exist, create one group
+func (a *attribute) findGroupExist(kit *rest.Kit, objID string, targetAttr *metadata.Attribute, itemErr,
+	setErr []rowInfo, idx int64) ([]rowInfo, []rowInfo, error) {
+	grpCond := mapstr.MapStr{
+		metadata.GroupFieldObjectID:  objID,
+		metadata.GroupFieldGroupName: targetAttr.PropertyGroupName,
+	}
+	grps, err := a.grp.FindGroupByObject(kit, objID, grpCond, targetAttr.BizID)
+	if err != nil {
+		blog.Errorf("find object group failed, obj id: %s, group name: %s, err: %v, rid: %s", objID,
+			targetAttr.PropertyGroupName, err, kit.Rid)
+		itemErr = append(itemErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
+		return itemErr, setErr, err
+	}
+
+	if len(grps) > 0 {
+		targetAttr.PropertyGroup = grps[0].GroupID // should be only one group
+	} else {
+		g := metadata.Group{
+			GroupName: targetAttr.PropertyGroupName,
+			GroupID:   xid.New().String(),
+			ObjectID:  objID,
+			OwnerID:   kit.SupplierAccount,
+			BizID:     targetAttr.BizID,
+		}
+		group, err := a.grp.CreateObjectGroup(kit, &g)
+		if err != nil {
+			setErr = append(setErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
+			return itemErr, setErr, err
+		}
+
+		targetAttr.PropertyGroup = group.GroupID
+	}
+
+	return itemErr, setErr, nil
+}
+
+// getNonInnerAttributes get non inner object attributes
+func (a *attribute) getNonInnerAttributes(kit *rest.Kit, objID string) (*metadata.QueryModelAttributeDataResult, error) {
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			metadata.AttributeFieldObjectID: objID,
+			metadata.AttributeFieldIsSystem: false,
+			metadata.AttributeFieldIsAPI:    false,
+			common.BKAppIDField:             0,
+		},
+	}
+
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, query)
+	if err != nil {
+		blog.Errorf("get module attr failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	return rsp, nil
+}
+
+// FindObjectAttributeBatch batch get objects attributes
+func (a *attribute) FindObjectAttributeBatch(kit *rest.Kit, objIDs []string) (mapstr.MapStr, error) {
+	result := make(mapstr.MapStr)
+
+	for _, objID := range objIDs {
+		attrs, err := a.getNonInnerAttributes(kit, objID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, attr := range attrs.Info {
+			cond := mapstr.MapStr{
+				metadata.GroupFieldGroupID:  attr.PropertyGroup,
+				metadata.GroupFieldObjectID: attr.ObjectID,
+			}
+			grps, err := a.grp.FindGroupByObject(kit, attr.ObjectID, cond, attr.BizID)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, grp := range grps {
+				// should be only one
+				attr.PropertyGroupName = grp.GroupName
+			}
+		}
+
+		result.Set(objID, mapstr.MapStr{
+			"attr": attrs,
+		})
+	}
+
+	return result, nil
 }
 
 // DeleteObjectAttribute delete object attribute
@@ -331,7 +573,7 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 
 	attr := new(metadata.Attribute)
 	if err := mapstruct.Decode2Struct(data, attr); err != nil {
-		blog.Errorf("unmarshal mapstr data into module failed, module: %s, err: %s, rid: %s", attr, err, kit.Rid)
+		blog.Errorf("unmarshal mapstr data into module failed, module: %s, err: %v, rid: %s", attr, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommParseDBFailed)
 	}
 
@@ -359,7 +601,7 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 		Data:      data,
 	}
 	if _, err := a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(kit.Ctx, kit.Header, &input); err != nil {
-		blog.Errorf("failed to update module attr, err: %s, rid: %s", err, kit.Rid)
+		blog.Errorf("failed to update module attr, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 

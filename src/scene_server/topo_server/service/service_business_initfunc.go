@@ -26,8 +26,8 @@ func (s *Service) initBusinessObject(web *restful.WebService) {
 		Language: s.Engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/object", Handler: s.CreateObjectBatch})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/object", Handler: s.SearchObjectBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/object", Handler: s.CreateObjectAttributeBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/object", Handler: s.SearchObjectAttributeBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/object", Handler: s.CreateObject})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/object", Handler: s.SearchObject})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/object/{id}", Handler: s.UpdateObject})

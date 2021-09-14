@@ -15,6 +15,8 @@ package service
 import (
 	"strconv"
 
+	"configcenter/src/ac"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -22,6 +24,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
 // CreateObjectAttribute create a new object attribute
@@ -359,6 +362,70 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 		hostAttributes = append(hostAttributes, hostAttribute)
 	}
 	ctx.RespEntity(hostAttributes)
+}
+
+// CreateObjectAttributeBatch batch to create some objects attribute
+func (s *Service) CreateObjectAttributeBatch(ctx *rest.Contexts) {
+	data := new(map[string]operation.ImportObjectData)
+	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// auth: check authorization
+	objIDs := make([]string, 0)
+	for objID := range *data {
+		objIDs = append(objIDs, objID)
+	}
+
+	if err := s.AuthManager.AuthorizeByObjectIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.UpdateMany, 0,
+		objIDs...); err != nil {
+		blog.Errorf("check object authorization failed, objIDs: %#v, err: %v, rid: %s", objIDs, err, ctx.Kit.Rid)
+		if err != ac.NoAuthorizeError {
+			ctx.RespAutoError(err)
+			return
+		}
+
+		perm, err := s.AuthManager.GenObjectBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, meta.UpdateMany, 0,
+			objIDs)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
+		return
+	}
+
+	ret := make(mapstr.MapStr)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Logics.AttributeOperation().CreateObjectAttributeBatch(ctx.Kit, *data)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(ret)
+}
+
+// SearchObjectAttributeBatch batch to search some object attribute
+func (s *Service) SearchObjectAttributeBatch(ctx *rest.Contexts) {
+	data := operation.ExportObjectCondition{}
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	resp, err := s.Logics.AttributeOperation().FindObjectAttributeBatch(ctx.Kit, data.ObjIDS)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(resp)
 }
 
 func (s *Service) getPropertyGroupName(ctx *rest.Contexts, attrs []metadata.Attribute,
