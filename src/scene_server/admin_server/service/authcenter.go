@@ -26,6 +26,11 @@ import (
 )
 
 func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
+	if !auth.EnableAuthorize() {
+		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
+		return
+	}
+
 	rHeader := req.Request.Header
 	rid := util.GetHTTPCCRequestID(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
@@ -50,7 +55,15 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if err := s.iam.RegisterSystem(s.ctx, param.Host); err != nil {
+	// 由于模型实例的编辑&删除拆分为实例级别, 需要先拿到当前已存在的模型, 再进行相应的IAM注册操作
+	models, err := s.GetCustomObjects(s.ctx, rHeader)
+	if err != nil {
+		blog.Errorf("init iam failed, collect notPre-models failed, err: %s, rid:%s", err.Error(), rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.CCError(common.CCErrCommDBSelectFailed)})
+		return
+	}
+
+	if err := s.iam.RegisterSystem(s.ctx, param.Host, models); err != nil {
 		blog.Errorf("init iam failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.CCErrorf(common.CCErrCommInitAuthCenterFailed, err.Error()),

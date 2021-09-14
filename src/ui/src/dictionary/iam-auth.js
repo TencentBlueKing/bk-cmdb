@@ -51,12 +51,11 @@ export const IAM_VIEWS_NAME = {
   [IAM_VIEWS.CLOUD_ACCOUNT]: ['云账户', 'Cloud Account'],
   [IAM_VIEWS.CLOUD_RESOURCE_TASK]: ['云资源发现任务', 'Cloud Resource Task']
 }
-
 function basicTransform(cmdbAction, meta = {}) {
-  const [internalType, internalAction] = cmdbAction.split('.')
+  const [type, action] = cmdbAction.split('.')
   const inejctedMeta = {
-    resource_type: internalType,
-    action: internalAction,
+    resource_type: type,
+    action,
     ...meta
   }
   Object.keys(inejctedMeta).forEach((key) => {
@@ -149,95 +148,62 @@ export const IAM_ACTIONS = {
 
   // 实例
   C_INST: {
-    id: 'create_sys_instance',
+    id: ([modelId]) => `create_comobj_${modelId}`,
+    fixedId: 'create_comobj',
     name: ['实例创建', 'Create Instance'],
-    cmdb_action: 'modelInstance.create',
-    relation: [{
-      view: IAM_VIEWS.INSTANCE_MODEL,
-      instances: [IAM_VIEWS.INSTANCE_MODEL]
-    }],
+    cmdb_action: ([modelId]) => ({ action: 'create', type: `comobj_${modelId}` }),
+    relation: [],
     transform: (cmdbAction, relationIds = []) => {
-      const verifyMeta = basicTransform(cmdbAction, {})
-      if (relationIds.length) {
-        const [modelId] = relationIds
-        verifyMeta.parent_layers = [{
-          resource_type: 'model',
-          resource_id: modelId
-        }]
+      const { action, type } = cmdbAction(relationIds)
+      const [modelId] = relationIds
+      const verifyMeta = {
+        resource_type: type,
+        action,
+        resource_id: modelId
       }
       return verifyMeta
     }
   },
   U_INST: {
-    id: 'edit_sys_instance',
+    id: ([modelId]) => `edit_comobj_${modelId}`,
+    fixedId: 'edit_comobj',
     name: ['实例编辑', 'Update Instance'],
-    cmdb_action: 'modelInstance.update',
+    cmdb_action: ([modelId]) => ({ action: 'update', type: `comobj_${modelId}` }),
     relation: [{
-      view: IAM_VIEWS.INSTANCE,
-      instances: [IAM_VIEWS.INSTANCE_MODEL, IAM_VIEWS.INSTANCE]
+      view: ([modelId]) => `comobj_${modelId}`,
+      instances: ([modelId, instId]) => ([{ type: `comobj_${modelId}`, id: String(instId) }])
     }],
     transform: (cmdbAction, relationIds = []) => {
-      const verifyMeta = basicTransform(cmdbAction, {})
-      if (relationIds.length) {
-        const [modelId, instanceId] = relationIds
-        verifyMeta.parent_layers = [{
-          resource_type: 'model',
-          resource_id: modelId
-        }]
-        if (instanceId) {
-          verifyMeta.resource_id = instanceId
-        }
+      const { action, type } = cmdbAction(relationIds)
+      const [, instId] = relationIds
+      const verifyMeta = {
+        resource_type: type,
+        action,
+        resource_id: instId
       }
       return verifyMeta
     }
   },
   D_INST: {
-    id: 'delete_sys_instance',
+    id: ([modelId]) => `delete_comobj_${modelId}`,
+    fixedId: 'delete_comobj',
     name: ['实例删除', 'Delete Instance'],
-    cmdb_action: 'modelInstance.delete',
+    cmdb_action: ([modelId]) => ({ action: 'delete', type: `comobj_${modelId}` }),
     relation: [{
-      view: IAM_VIEWS.INSTANCE,
-      instances: [IAM_VIEWS.INSTANCE_MODEL, IAM_VIEWS.INSTANCE]
+      view: ([modelId]) => `comobj_${modelId}`,
+      instances: ([modelId, instId]) => ([{ type: `comobj_${modelId}`, id: String(instId) }])
     }],
     transform: (cmdbAction, relationIds = []) => {
-      const verifyMeta = basicTransform(cmdbAction, {})
-      if (relationIds.length) {
-        const [modelId, instanceId] = relationIds
-        verifyMeta.parent_layers = [{
-          resource_type: 'model',
-          resource_id: modelId
-        }]
-        if (instanceId) {
-          verifyMeta.resource_id = instanceId
-        }
+      const { action, type } = cmdbAction(relationIds)
+      const [, instId] = relationIds
+      const verifyMeta = {
+        resource_type: type,
+        action,
+        resource_id: instId
       }
       return verifyMeta
     }
   },
-  R_INST: {
-    id: 'find_sys_instance',
-    name: ['实例查询', 'Search Instance'],
-    cmdb_action: 'modelInstance.findMany',
-    relation: [{
-      view: IAM_VIEWS.INSTANCE,
-      instances: [IAM_VIEWS.INSTANCE_MODEL, IAM_VIEWS.INSTANCE]
-    }],
-    transform: (cmdbAction, relationIds = []) => {
-      const verifyMeta = basicTransform(cmdbAction, {})
-      if (relationIds.length) {
-        const [modelId, instanceId] = relationIds
-        verifyMeta.parent_layers = [{
-          resource_type: 'model',
-          resource_id: modelId
-        }]
-        if (instanceId) {
-          verifyMeta.resource_id = instanceId
-        }
-      }
-      return verifyMeta
-    }
-  },
-
   // 动态分组
   C_CUSTOM_QUERY: {
     id: 'create_biz_dynamic_query',

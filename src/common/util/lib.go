@@ -102,6 +102,35 @@ func NewContextFromHTTPHeader(header http.Header) context.Context {
 	return ctx
 }
 
+func NewHeaderFromContext(ctx context.Context) http.Header {
+	rid := ctx.Value(common.ContextRequestIDField)
+	ridValue, ok := rid.(string)
+	if !ok {
+		ridValue = GenerateRID()
+	}
+
+	user := ctx.Value(common.ContextRequestUserField)
+	userValue, ok := user.(string)
+	if !ok {
+		ridValue = "admin"
+	}
+
+	owner := ctx.Value(common.ContextRequestOwnerField)
+	ownerValue, ok := owner.(string)
+	if !ok {
+		ownerValue = common.BKDefaultOwnerID
+	}
+
+	header := make(http.Header)
+	header.Set(common.BKHTTPCCRequestID, ridValue)
+	header.Set(common.BKHTTPHeaderUser, userValue)
+	header.Set(common.BKHTTPOwnerID, ownerValue)
+
+	header.Add("Content-Type", "application/json")
+
+	return header
+}
+
 func BuildHeader(user string, supplierAccount string) http.Header {
 	header := make(http.Header)
 	header.Add(common.BKHTTPOwnerID, supplierAccount)

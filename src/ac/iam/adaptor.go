@@ -14,9 +14,11 @@ package iam
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"configcenter/src/ac/meta"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
@@ -46,6 +48,7 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (ActionID, []types.Resource, er
 	return action, resource, nil
 }
 
+// ConvertResourceType convert resource type from CMDB to IAM
 func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*TypeID, error) {
 	var iamResourceType TypeID
 	switch resourceType {
@@ -70,11 +73,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 		iamResourceType = SysAssociationType
 	case meta.ModelAssociation:
 		iamResourceType = SysModel
-	case meta.ModelInstanceAssociation:
-		iamResourceType = SysInstance
 	case meta.MainlineModelTopology:
-	case meta.ModelInstance:
-		iamResourceType = SysInstance
 	case meta.ModelInstanceTopology:
 		iamResourceType = SkipType
 	case meta.CloudAreaInstance:
@@ -119,12 +118,18 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 	case meta.ConfigAdmin:
 	case meta.SystemConfig:
 	default:
+		if IsCMDBSysInstance(resourceType) {
+			iamResourceType = TypeID(resourceType)
+			return &iamResourceType, nil
+		}
+
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
 
 	return &iamResourceType, nil
 }
 
+// ConvertResourceAction convert resource action from CMDB to IAM
 func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, businessID int64) (ActionID, error) {
 	if action == meta.SkipAction {
 		return Skip, nil
@@ -160,23 +165,43 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 		}
 	}
 
+	if IsCMDBSysInstance(resourceType) {
+		return ConvertSysInstanceActionID(resourceType, convertAction)
+	}
+
 	if _, exist := resourceActionMap[resourceType]; exist {
 		actionID, ok := resourceActionMap[resourceType][convertAction]
 		if ok && actionID != Unsupported {
 			return actionID, nil
 		}
 	}
+
 	return Unsupported, fmt.Errorf("unsupported type %s action: %s", resourceType, action)
 }
 
+// ConvertSysInstanceActionID convert system instances action from CMDB to IAM
+func ConvertSysInstanceActionID(resourceType meta.ResourceType, action meta.Action) (ActionID, error) {
+	var actionType ActionType
+	switch action {
+	case meta.Create:
+		actionType = Create
+	case meta.Update:
+		actionType = Edit
+	case meta.Delete:
+		actionType = Delete
+	case meta.Find:
+		actionType = View
+	default:
+		return Unsupported, fmt.Errorf("unsupported action: %s", action)
+	}
+	id := strings.TrimPrefix(string(resourceType), meta.CMDBSysInstTypePrefix)
+	if _, err := strconv.ParseInt(id, 10, 64); err != nil {
+		return Unsupported, fmt.Errorf("unsupported resource type: %s", resourceType)
+	}
+	return ActionID(fmt.Sprintf("%s_%s%s", actionType, IAMSysInstTypePrefix, id)), nil
+}
+
 var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
-	meta.ModelInstance: {
-		meta.Delete:   DeleteSysInstance,
-		meta.Update:   EditSysInstance,
-		meta.Create:   CreateSysInstance,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
-	},
 	meta.ModelAttributeGroup: {
 		meta.Delete:   EditSysModel,
 		meta.Update:   EditSysModel,
@@ -374,13 +399,6 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Delete: Skip,
 		meta.Create: Skip,
 	},
-	meta.ModelInstanceAssociation: {
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
-		meta.Update:   EditSysInstance,
-		meta.Delete:   EditSysInstance,
-		meta.Create:   EditSysInstance,
-	},
 	meta.ModelAssociation: {
 		meta.Find:     Skip,
 		meta.FindMany: Skip,
@@ -468,4 +486,238 @@ func ParseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, 
 		}
 	}
 	return instances, nil
+}
+
+// GenIAMDynamicResTypeID 生成IAM侧资源的的dynamic resource typeID
+func GenIAMDynamicResTypeID(modelID int64) TypeID {
+	return TypeID(fmt.Sprintf("%s%d", IAMSysInstTypePrefix, modelID))
+}
+
+// GenCMDBDynamicResType 生成CMDB侧资源的的dynamic resourceType
+func GenCMDBDynamicResType(modelID int64) meta.ResourceType {
+	return meta.ResourceType(fmt.Sprintf("%s%d", meta.CMDBSysInstTypePrefix, modelID))
+}
+
+// genDynamicResourceType generate dynamic resourceType
+func genDynamicResourceType(obj metadata.Object) ResourceType {
+	return ResourceType{
+		ID:      GenIAMDynamicResTypeID(obj.ID),
+		Name:    obj.ObjectName,
+		NameEn:  obj.ObjectID,
+		Parents: nil,
+		ProviderConfig: ResourceConfig{
+			Path: "/auth/v3/find/resource",
+		},
+		Version: 1,
+	}
+}
+
+// genDynamicResourceTypes generate dynamic resourceTypes
+func genDynamicResourceTypes(objects []metadata.Object) []ResourceType {
+	resourceTypes := make([]ResourceType, 0)
+	for _, obj := range objects {
+		resourceTypes = append(resourceTypes, genDynamicResourceType(obj))
+	}
+	return resourceTypes
+}
+
+// genIAMDynamicInstanceSelection generate IAM dynamic instanceSelection
+func genIAMDynamicInstanceSelection(modelID int64) InstanceSelectionID {
+	return InstanceSelectionID(fmt.Sprintf("%s%d", IAMSysInstTypePrefix, modelID))
+}
+
+// genDynamicInstanceSelection generate dynamic instanceSelection
+func genDynamicInstanceSelection(obj metadata.Object) InstanceSelection {
+	return InstanceSelection{
+		ID:     genIAMDynamicInstanceSelection(obj.ID),
+		Name:   obj.ObjectName,
+		NameEn: obj.ObjectID,
+		ResourceTypeChain: []ResourceChain{{
+			SystemID: SystemIDCMDB,
+			ID:       GenIAMDynamicResTypeID(obj.ID),
+		}},
+	}
+}
+
+// genDynamicInstanceSelections generate dynamic instanceSelections
+func genDynamicInstanceSelections(objects []metadata.Object) []InstanceSelection {
+	instanceSelections := make([]InstanceSelection, 0)
+	for _, obj := range objects {
+		instanceSelections = append(instanceSelections, genDynamicInstanceSelection(obj))
+	}
+	return instanceSelections
+}
+
+// genDynamicAction generate dynamic action
+func genDynamicAction(obj metadata.Object) []DynamicAction {
+	return []DynamicAction{
+		genDynamicCreateAction(obj),
+		genDynamicEditAction(obj),
+		genDynamicDeleteAction(obj),
+	}
+}
+
+// GenDynamicActionID generate dynamic ActionID
+func GenDynamicActionID(actionType ActionType, modelID int64) ActionID {
+	return ActionID(fmt.Sprintf("%s_%s%d", actionType, IAMSysInstTypePrefix, modelID))
+}
+
+// genDynamicCreateAction generate dynamic create action
+func genDynamicCreateAction(obj metadata.Object) DynamicAction {
+	return DynamicAction{
+		ActionID:     GenDynamicActionID(Create, obj.ID),
+		ActionType:   Create,
+		ActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "新建"),
+		ActionNameEN: fmt.Sprintf("%s %s %s", "create", obj.ObjectID, "instance"),
+	}
+}
+
+// genDynamicEditAction generate dynamic edit action
+func genDynamicEditAction(obj metadata.Object) DynamicAction {
+	return DynamicAction{
+		ActionID:     GenDynamicActionID(Edit, obj.ID),
+		ActionType:   Edit,
+		ActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "编辑"),
+		ActionNameEN: fmt.Sprintf("%s %s %s", "edit", obj.ObjectID, "instance"),
+	}
+}
+
+// genDynamicDeleteAction generate dynamic delete action
+func genDynamicDeleteAction(obj metadata.Object) DynamicAction {
+	return DynamicAction{
+		ActionID:     GenDynamicActionID(Delete, obj.ID),
+		ActionType:   Delete,
+		ActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "删除"),
+		ActionNameEN: fmt.Sprintf("%s %s %s", "delete", obj.ObjectID, "instance"),
+	}
+}
+
+// genDynamicActionSubGroup 动态的按模型生成动作分组作为‘模型实例管理’分组的subGroup
+func genDynamicActionSubGroup(obj metadata.Object) ActionGroup {
+	actions := genDynamicAction(obj)
+	actionWithIDs := make([]ActionWithID, len(actions))
+	for idx, action := range actions {
+		actionWithIDs[idx] = ActionWithID{ID: action.ActionID}
+	}
+	return ActionGroup{
+		Name:    obj.ObjectName,
+		NameEn:  obj.ObjectID,
+		Actions: actionWithIDs,
+	}
+}
+
+// genDynamicActionIDs generate dynamic model actionIDs
+func genDynamicActionIDs(object metadata.Object) []ActionID {
+	actions := genDynamicAction(object)
+	actionIDs := make([]ActionID, len(actions))
+	for idx, action := range actions {
+		actionIDs[idx] = action.ActionID
+	}
+	return actionIDs
+}
+
+// genDynamicActions generate dynamic model actions
+func genDynamicActions(objects []metadata.Object) []ResourceAction {
+	resActions := make([]ResourceAction, 0)
+	for _, obj := range objects {
+		relatedResource := []RelateResourceType{
+			{
+				SystemID:    SystemIDCMDB,
+				ID:          GenIAMDynamicResTypeID(obj.ID),
+				NameAlias:   "",
+				NameAliasEn: "",
+				Scope:       nil,
+				// 配置权限时可选择实例和配置属性, 后者用于属性鉴权
+				SelectionMode: modeAll,
+				InstanceSelections: []RelatedInstanceSelection{{
+					SystemID: SystemIDCMDB,
+					ID:       genIAMDynamicInstanceSelection(obj.ID),
+				}},
+			},
+		}
+
+		actions := genDynamicAction(obj)
+		for _, action := range actions {
+			switch action.ActionType {
+			case Create:
+				resActions = append(resActions, ResourceAction{
+					ID:                   action.ActionID,
+					Name:                 action.ActionNameCN,
+					NameEn:               action.ActionNameEN,
+					Type:                 Create,
+					RelatedResourceTypes: nil,
+					RelatedActions:       nil,
+					Version:              1,
+				})
+			case Edit:
+				resActions = append(resActions, ResourceAction{
+					ID:                   action.ActionID,
+					Name:                 action.ActionNameCN,
+					NameEn:               action.ActionNameEN,
+					Type:                 Edit,
+					RelatedActions:       nil,
+					Version:              1,
+					RelatedResourceTypes: relatedResource,
+				})
+
+			case Delete:
+				resActions = append(resActions, ResourceAction{
+					ID:                   action.ActionID,
+					Name:                 action.ActionNameCN,
+					NameEn:               action.ActionNameEN,
+					Type:                 Delete,
+					RelatedResourceTypes: relatedResource,
+					RelatedActions:       nil,
+					Version:              1,
+				})
+			default:
+				return nil
+			}
+		}
+	}
+
+	return resActions
+}
+
+// IsIAMSysInstance judge whether the resource type is a system instance in iam resource
+func IsIAMSysInstance(resourceType TypeID) bool {
+	return strings.HasPrefix(string(resourceType), IAMSysInstTypePrefix)
+}
+
+// IsCMDBSysInstance judge whether the resource type is a system instance in cmdb resource
+func IsCMDBSysInstance(resourceType meta.ResourceType) bool {
+	return strings.HasPrefix(string(resourceType), meta.CMDBSysInstTypePrefix)
+}
+
+// isIAMSysInstanceSelection judge whether the instance selection is a system instance selection in iam resource
+func isIAMSysInstanceSelection(instanceSelectionID InstanceSelectionID) bool {
+	return strings.Contains(string(instanceSelectionID), IAMSysInstTypePrefix)
+}
+
+// isIAMSysInstanceAction judge whether the action is a system instance action in iam resource
+func isIAMSysInstanceAction(actionID ActionID) bool {
+	return strings.Contains(string(actionID), IAMSysInstTypePrefix)
+}
+
+// GetModelIDFromIamSysInstance get model id from iam system instance
+func GetModelIDFromIamSysInstance(resourceType TypeID) (int64, error) {
+	if !IsIAMSysInstance(resourceType) {
+		return 0, fmt.Errorf("resourceType %s is not an iam system instance, it must start with prefix %s",
+			resourceType, IAMSysInstTypePrefix)
+	}
+	modelIDStr := strings.TrimPrefix(string(resourceType), IAMSysInstTypePrefix)
+	modelID, err := strconv.ParseInt(modelIDStr, 10, 64)
+	if err != nil {
+		blog.ErrorJSON("modelID convert to int64 failed, err:%s, input:%s", err, modelID)
+		return 0, fmt.Errorf("get model id failed, parse to int err:%s, the format of resourceType:%s is wrong",
+			err.Error(), resourceType)
+	}
+
+	return modelID, nil
+}
+
+// GetActionTypeFromIAMSysInstance get action type from iam system instance
+func GetActionTypeFromIAMSysInstance(actionID ActionID) ActionType {
+	actionIDStr := string(actionID)
+	return ActionType(actionIDStr[:strings.Index(actionIDStr, "_")])
 }

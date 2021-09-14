@@ -12,6 +12,8 @@
 
 package iam
 
+import "configcenter/src/common/metadata"
+
 var (
 	businessChain = ResourceChain{
 		SystemID: SystemIDCMDB,
@@ -20,7 +22,13 @@ var (
 )
 
 // GenerateInstanceSelections generate all the instance selections registered to IAM.
-func GenerateInstanceSelections() []InstanceSelection {
+func GenerateInstanceSelections(models []metadata.Object) []InstanceSelection {
+	instSelections := GenerateStaticInstanceSelections()
+	instSelections = append(instSelections, genDynamicInstanceSelections(models)...)
+	return instSelections
+}
+
+func GenerateStaticInstanceSelections() []InstanceSelection {
 	return []InstanceSelection{
 		{
 			ID:                BusinessSelection,
@@ -136,21 +144,6 @@ func GenerateInstanceSelections() []InstanceSelection {
 				{
 					SystemID: SystemIDCMDB,
 					ID:       SysCloudArea,
-				},
-			},
-		},
-		{
-			ID:     SysInstanceSelection,
-			Name:   "实例列表",
-			NameEn: "Instance List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysInstanceModel,
-				},
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysInstance,
 				},
 			},
 		},

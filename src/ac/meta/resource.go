@@ -31,8 +31,6 @@ const (
 	MainlineInstance         ResourceType = "mainlineInstance"
 	AssociationType          ResourceType = "associationType"
 	ModelAssociation         ResourceType = "modelAssociation"
-	ModelInstanceAssociation ResourceType = "modelInstanceAssociation"
-	ModelInstance            ResourceType = "modelInstance"
 	ModelInstanceTopology    ResourceType = "modelInstanceTopology"
 	ModelTopology            ResourceType = "modelTopology"
 	ModelClassification      ResourceType = "modelClassification"
@@ -63,6 +61,11 @@ const (
 	CloudAccount             ResourceType = "cloudAccount"
 	CloudResourceTask        ResourceType = "cloudResourceTask"
 	ConfigAdmin              ResourceType = "configAdmin"
+)
+
+const (
+	// CMDB侧资源的通用模型实例前缀标识
+	CMDBSysInstTypePrefix = "comobj_"
 )
 
 const (

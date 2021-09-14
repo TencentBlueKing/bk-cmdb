@@ -10,18 +10,28 @@
  * limitations under the License.
  */
 
-package types
+package y3_10_202109131607
 
-// request id key, travel in context.
-const (
-	RequestIDKey       = "rid"
-	RequestIDHeaderKey = "X-Request-Id"
+import (
+	"context"
+
+	"configcenter/src/ac/iam"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-const (
-	// the key to describe the auth path that this resource need to auth.
-	// only if the path is matched one of the use's auth policy, then a use's
-	// have this resource's operate authorize.
-	IamPathKey = "_bk_iam_path_"
-	IamIDKey   = "id"
-)
+func init() {
+	upgrader.RegisterUpgraderWithIAM("y3.10.202109131607", upgrade)
+}
+
+func upgrade(ctx context.Context, db dal.RDB, iam *iam.IAM, conf *upgrader.Config) (err error) {
+	blog.Info("y3.10.202109131607, migrate iam system instances")
+
+	if err := migrateIAMSysInstances(ctx, db, iam, conf); err != nil {
+		blog.Errorf("[upgrade y3.10.202109131607] migrate iam system instances failed, error:%s", err.Error())
+		return err
+	}
+
+	return nil
+}

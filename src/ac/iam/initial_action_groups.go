@@ -12,8 +12,20 @@
 
 package iam
 
+import "configcenter/src/common/metadata"
+
 // GenerateActionGroups generate all the resource action groups registered to IAM.
-func GenerateActionGroups() []ActionGroup {
+func GenerateActionGroups(objects []metadata.Object) []ActionGroup {
+	ActionGroups := GenerateStaticActionGroups()
+
+	// generate model instance manage action groups, contains model instance related actions which are dynamic
+	ActionGroups = append(ActionGroups, GenModelInstanceManageActionGroups(objects)...)
+
+	return ActionGroups
+}
+
+// GenerateStaticActionGroups generate all the static resource action groups.
+func GenerateStaticActionGroups() []ActionGroup {
 	ActionGroups := make([]ActionGroup, 0)
 
 	// generate business manage action groups, contains business related actions
@@ -228,21 +240,6 @@ func genResourceManageActionGroups() []ActionGroup {
 					},
 				},
 				{
-					Name:   "实例",
-					NameEn: "Configuration Instance",
-					Actions: []ActionWithID{
-						{
-							ID: CreateSysInstance,
-						},
-						{
-							ID: EditSysInstance,
-						},
-						{
-							ID: DeleteSysInstance,
-						},
-					},
-				},
-				{
 					Name:   "云账户",
 					NameEn: "Cloud Account",
 					Actions: []ActionWithID{
@@ -332,7 +329,7 @@ func genModelManageActionGroups() []ActionGroup {
 	return []ActionGroup{
 		{
 			Name:   "模型管理",
-			NameEn: "Model Mange",
+			NameEn: "Model Manage",
 			SubGroups: []ActionGroup{
 				{
 					Name:   "模型分组",
@@ -392,6 +389,20 @@ func genModelManageActionGroups() []ActionGroup {
 					},
 				},
 			},
+		},
+	}
+}
+
+func GenModelInstanceManageActionGroups(objects []metadata.Object) []ActionGroup {
+	subGroups := []ActionGroup{}
+	for _, obj := range objects {
+		subGroups = append(subGroups, genDynamicActionSubGroup(obj))
+	}
+	return []ActionGroup{
+		{
+			Name:      "模型实例管理",
+			NameEn:    "Model instance Manage",
+			SubGroups: subGroups,
 		},
 	}
 }

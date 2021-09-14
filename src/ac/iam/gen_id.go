@@ -68,8 +68,6 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 		}
 	case meta.ModelClassification:
 		return genModelClassificationResource(act, rscType, a)
-	case meta.ModelInstance, meta.ModelInstanceAssociation:
-		return genModelInstanceResource(act, rscType, a)
 	case meta.AssociationType:
 		return genAssociationTypeResource(act, rscType, a)
 	case meta.ModelAttribute:
@@ -92,6 +90,10 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 		return make([]types.Resource, 0), nil
 	case meta.ProcessServiceCategory:
 		return genProcessServiceCategoryResource(act, rscType, a)
+	default:
+		if IsCMDBSysInstance(a.Basic.Type) {
+			return genSysInstanceResource(act, rscType, a)
+		}
 	}
 
 	return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", a.Type)
@@ -643,28 +645,20 @@ func genBizModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttrib
 	return []types.Resource{r}, nil
 }
 
-func genModelInstanceResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+func genSysInstanceResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
 	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
 	}
 
-	// because we have to compatible to the any verify ,so we check the layers.
-	// and if layer is 0, the exact authorize status is false as expected.
-	if len(att.Layers) > 0 {
-		if act == CreateSysInstance {
-			r.Type = types.ResourceType(SysInstanceModel)
-			r.ID = strconv.FormatInt(att.Layers[0].InstanceID, 10)
-			return []types.Resource{r}, nil
-		}
+	// create action do not related to instance authorize
+	if att.Action == meta.Create || att.Action == meta.CreateMany {
+		return make([]types.Resource, 0), nil
+	}
 
+	if att.InstanceID > 0 {
 		r.ID = strconv.FormatInt(att.InstanceID, 10)
-
-		// authorize based on a model
-		r.Attribute = map[string]interface{}{
-			types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", SysInstanceModel, att.Layers[0].InstanceID)},
-		}
 	}
 
 	return []types.Resource{r}, nil

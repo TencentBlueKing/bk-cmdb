@@ -67,6 +67,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 	// TODO: add business id for these filter rules to resources.
 	// add object unique operation.
 	if ps.hitRegexp(createObjectUniqueLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("add object unique, but got invalid url")
+			return ps
+		}
+
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
@@ -94,6 +99,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// update object unique operation.
 	if ps.hitRegexp(updateObjectUniqueLatestRegexp, http.MethodPut) {
+		if len(ps.RequestCtx.Elements) != 8 {
+			ps.err = errors.New("update object unique, but got invalid url")
+			return ps
+		}
+
 		uniqueID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object unique, but got invalid unique id %s", ps.RequestCtx.Elements[7])
@@ -127,6 +137,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// delete object unique operation.
 	if ps.hitRegexp(deleteObjectUniqueLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 8 {
+			ps.err = errors.New("delete object unique, but got invalid url")
+			return ps
+		}
+
 		uniqueID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object unique, but got invalid unique id %s", ps.RequestCtx.Elements[7])
@@ -160,6 +175,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// find model unique operation
 	if ps.hitRegexp(findObjectUniqueLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("find object unique, but got invalid url")
+			return ps
+		}
+
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
@@ -231,6 +251,11 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 
 	// update association kind operation
 	if ps.hitRegexp(updateAssociationKindLatestRegexp, http.MethodPut) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("update association kind, but got invalid url")
+			return ps
+		}
+
 		kindID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update association kind, but got invalid kind id %s", ps.RequestCtx.Elements[5])
@@ -251,6 +276,11 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 
 	// delete association kind operation
 	if ps.hitRegexp(deleteAssociationKindLatestRegexp, http.MethodDelete) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("delete association kind, but got invalid url")
+			return ps
+		}
+
 		kindID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("delete association kind, but got invalid kind id %s", ps.RequestCtx.Elements[5])
@@ -413,6 +443,11 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// delete object association operation
 	if ps.hitRegexp(deleteObjectAssociationLatestRegexp, http.MethodDelete) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("delete object association, but got invalid url")
+			return ps
+		}
+
 		assoID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("delete object association, but got invalid association id %s", ps.RequestCtx.Elements[4])
@@ -540,11 +575,33 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
+		val, err := ps.RequestCtx.getValueFromBody(common.BKObjIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		objID := val.Value()
+		if objID == nil {
+			ps.err = fmt.Errorf("find object instance's association object instance info failed, " +
+				"no bk_obj_id was found in request body")
+			return ps
+		}
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstanceAssociation,
+					Type:   instanceType,
 					Action: meta.FindMany,
 				},
 			},
@@ -565,11 +622,28 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
+		objID := ps.RequestCtx.Elements[5]
+		if len(objID) == 0 {
+			ps.err = fmt.Errorf("search instance associations failed, got empty object id")
+			return ps
+		}
+
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstanceAssociation,
+					Type:   instanceType,
 					Action: meta.FindMany,
 				},
 			},
@@ -590,21 +664,18 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.ModelInstanceAssociation,
-					Action: meta.FindMany,
-				},
-			},
+		objID := ps.RequestCtx.Elements[5]
+		if len(objID) == 0 {
+			ps.err = fmt.Errorf("count instance associations failed, got empty object id")
+			return ps
 		}
-		return ps
-	}
 
-	// find instance's association operation.
-	if ps.hitPattern(findObjectInstanceAssociationRelatedLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -614,7 +685,49 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstanceAssociation,
+					Type:   instanceType,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find instance's association related info operation.
+	if ps.hitPattern(findObjectInstanceAssociationRelatedLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		val, err := ps.RequestCtx.getValueFromBody("condition.bk_obj_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		objID := val.Value()
+		if objID == nil {
+			ps.err = fmt.Errorf("find instance's association related info failed, " +
+				"no condition.bk_obj_id was found in request body")
+			return ps
+		}
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   instanceType,
 					Action: meta.FindMany,
 				},
 			},
@@ -674,6 +787,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			ps.err = errors.New("invalid bk_asst_inst_id value")
 			return ps
 		}
+
 		// 处理模型自关联的情况
 		if len(models) == 1 {
 			instRes, err := ps.generateUpdateInstanceResource(&models[0], instanceID)
@@ -698,7 +812,6 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			} else {
 				instID = asstInstID
 			}
-
 			instRes, err := ps.generateUpdateInstanceResource(&model, instID)
 			if err != nil {
 				ps.err = err
@@ -740,12 +853,6 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		instances, err := ps.RequestCtx.getValueFromBody("details")
 		if err != nil {
 			ps.err = err
@@ -754,72 +861,49 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		for _, instance := range instances.Array() {
 			instanceMap := instance.Map()
 			instID := instanceMap[common.BKInstIDField]
-			asstInstID := instanceMap[common.BKAsstInstIDField]
+			asstInstanceID := instanceMap[common.BKAsstInstIDField]
 			instanceID := instID.Int()
 			if instanceID <= 0 {
 				ps.err = errors.New("invalid bk_inst_id value")
 				return ps
 			}
 
-			asstInstIDInt := asstInstID.Int()
-			if asstInstIDInt <= 0 {
+			asstInstID := asstInstanceID.Int()
+			if asstInstID <= 0 {
 				ps.err = errors.New("invalid bk_asst_inst_id value")
 				return ps
 			}
+
 			// 处理模型自关联的情况
 			if len(models) == 1 {
-				instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID)
+				instRes, err := ps.generateUpdateInstanceResource(&models[0], instanceID)
+				if err != nil {
+					ps.err = err
+					return ps
+				}
+				asstInstRes, err := ps.generateUpdateInstanceResource(&models[0], asstInstID)
 				if err != nil {
 					ps.err = err
 					return ps
 				}
 
-				ps.Attribute.Resources = []meta.ResourceAttribute{
-					{
-						Basic: meta.Basic{
-							Type:       instanceType,
-							Action:     meta.Update,
-							InstanceID: instanceID,
-						},
-						Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-						BusinessID: bizID,
-					},
-					{
-						Basic: meta.Basic{
-							Type:       instanceType,
-							Action:     meta.Update,
-							InstanceID: asstInstIDInt,
-						},
-						Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-						BusinessID: bizID,
-					},
-				}
-				return ps
-			}
+				ps.Attribute.Resources = []meta.ResourceAttribute{*instRes, *asstInstRes}
+			} else {
+				for _, model := range models {
+					var instID int64
+					if model.ObjectID == asst[0].ObjectID {
+						instID = instanceID
+					} else {
+						instID = asstInstID
+					}
+					instRes, err := ps.generateUpdateInstanceResource(&model, instID)
+					if err != nil {
+						ps.err = err
+						return ps
+					}
 
-			for _, model := range models {
-				var instID int64
-				if model.ObjectID == asst[0].ObjectID {
-					instID = instanceID
-				} else {
-					instID = asstInstIDInt
+					ps.Attribute.Resources = append(ps.Attribute.Resources, *instRes)
 				}
-				instanceType, err := ps.getInstanceTypeByObject(model.ObjectID)
-				if err != nil {
-					ps.err = err
-					return ps
-				}
-
-				ps.Attribute.Resources = append(ps.Attribute.Resources,
-					meta.ResourceAttribute{
-						Basic: meta.Basic{
-							Type:       instanceType,
-							Action:     meta.Update,
-							InstanceID: instID,
-						},
-						Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-						BusinessID: bizID,
-					})
 			}
 		}
 		return ps
@@ -827,6 +911,11 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// delete object's instance association operation. for web
 	if ps.hitRegexp(deleteObjectInstanceAssociationLatestRegexp, http.MethodDelete) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("delete object's instance association, but got invalid url")
+			return ps
+		}
+
 		objID := ps.RequestCtx.Elements[4]
 		if len(objID) == 0 {
 			ps.err = fmt.Errorf("delete object instance association, but got empty object id")
@@ -897,21 +986,19 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.ModelInstanceAssociation,
-					Action: meta.DeleteMany,
-				},
-			},
-		}
-		return ps
-	}
 
-	// find object instance's association operation.
-	if ps.hitRegexp(findObjectInstanceTopologyUILatestRegexp, http.MethodPost) {
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		val, err := ps.RequestCtx.getValueFromBody(common.BKObjIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		objID := val.Value()
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -921,7 +1008,49 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstanceAssociation,
+					Type:   instanceType,
+					Action: meta.DeleteMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find object instance topology ui operation.
+	if ps.hitRegexp(findObjectInstanceTopologyUILatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 14 {
+			ps.err = errors.New("find object instance topology ui, but got invalid url")
+			return ps
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		objID := ps.RequestCtx.Elements[6]
+		if len(objID) == 0 {
+			ps.err = fmt.Errorf("find object instance topology ui failed, got empty object id")
+			return ps
+		}
+
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   instanceType,
 					Action: meta.FindMany,
 				},
 			},
@@ -937,11 +1066,33 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
+		val, err := ps.RequestCtx.getValueFromBody("condition.bk_obj_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		objID := val.Value()
+		if objID == nil {
+			ps.err = fmt.Errorf("find object instance's association object instance info failed, " +
+				"no condition.bk_obj_id was found in request body")
+			return ps
+		}
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstanceAssociation,
+					Type:   instanceType,
 					Action: meta.FindMany,
 				},
 			},
@@ -979,15 +1130,18 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 	// create instance operation
 	if ps.hitRegexp(createObjectInstanceLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("create instance, but got invalid url")
+			return ps
+		}
+
 		objID := ps.RequestCtx.Elements[5]
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
 		if err != nil {
 			ps.err = err
 			return ps
 		}
-
-		var modelType = meta.ModelInstance
-		isMainline, err := ps.isMainlineModel(objID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -999,39 +1153,35 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		if isMainline {
-			modelType = meta.MainlineInstance
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   modelType,
+					Type:   instanceType,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
+
 		return ps
 	}
 
 	if ps.hitRegexp(createObjectManyInstanceLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("create instance, but got invalid url")
+			return ps
+		}
+
 		objID := ps.RequestCtx.Elements[5]
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
 		if err != nil {
 			ps.err = err
 			return ps
 		}
-
-		var modelType = meta.ModelInstance
-		isMainline, err := ps.isMainlineModel(objID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
 		if err != nil {
 			ps.err = err
 			return ps
-		}
-		if isMainline {
-			modelType = meta.MainlineInstance
 		}
 
 		bizID, err := ps.RequestCtx.getBizIDFromBody()
@@ -1044,10 +1194,9 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   modelType,
+					Type:   instanceType,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 
@@ -1061,10 +1210,22 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   instanceType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1092,15 +1253,10 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-
-		var modelType = meta.ModelInstance
-		isMainline, err := ps.isMainlineModel(objectID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
 		if err != nil {
 			ps.err = err
 			return ps
-		}
-		if isMainline {
-			modelType = meta.MainlineInstance
 		}
 
 		bizID, err := ps.RequestCtx.getBizIDFromBody()
@@ -1113,11 +1269,10 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       modelType,
+					Type:       instanceType,
 					Action:     meta.Update,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -1132,6 +1287,11 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 		objectID := ps.RequestCtx.Elements[5]
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objectID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1159,11 +1319,10 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.ModelInstance,
+					Type:       instanceType,
 					Action:     meta.UpdateMany,
 					InstanceID: id,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			})
 		}
 
@@ -1183,8 +1342,12 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-
-		var modelType = meta.ModelInstance
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		
 		isMainline, err := ps.isMainlineModel(objID)
 		if err != nil {
 			ps.err = err
@@ -1199,7 +1362,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 		if isMainline {
 			// special logic for mainline object's instance authorization.
-			modelType = meta.MainlineInstance
+			instanceType = meta.MainlineInstance
 		}
 
 		instIDs := make([]int64, 0)
@@ -1218,11 +1381,10 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       modelType,
+					Type:       instanceType,
 					Action:     meta.Delete,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			})
 		}
 		return ps
@@ -1248,9 +1410,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-
-		var modelType = meta.ModelInstance
-		isMainline, err := ps.isMainlineModel(objID)
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1262,20 +1422,14 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		if isMainline {
-			// special logic for mainline object's instance authorization.
-			modelType = meta.MainlineInstance
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       modelType,
+					Type:       instanceType,
 					Action:     meta.Delete,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 
@@ -1338,10 +1492,22 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   instanceType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1356,10 +1522,27 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
+		objID := ps.RequestCtx.Elements[5]
+		if len(objID) == 0 {
+			ps.err = fmt.Errorf("find object instance topology ui failed, got empty object id")
+			return ps
+		}
+
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   instanceType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1374,10 +1557,27 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
+		objID := ps.RequestCtx.Elements[5]
+		if len(objID) == 0 {
+			ps.err = fmt.Errorf("find object instance topology ui failed, got empty object id")
+			return ps
+		}
+
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   instanceType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1392,10 +1592,22 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   instanceType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1410,10 +1622,22 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   instanceType,
 					Action: meta.SkipAction,
 				},
 			},

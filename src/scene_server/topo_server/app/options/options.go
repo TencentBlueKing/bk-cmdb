@@ -13,6 +13,7 @@
 package options
 
 import (
+	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/redis"
@@ -30,6 +31,8 @@ type Config struct {
 	Redis                redis.Config
 	ConfigMap            map[string]string
 	Es                   elasticsearch.EsConfig
+	// Auth is auth config
+	Auth iam.AuthConfig
 }
 
 func NewServerOption() *ServerOption {

@@ -18,8 +18,10 @@ import (
 	"strings"
 	"sync"
 
+	"configcenter/src/ac/meta"
 	"configcenter/src/common/auth"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/scene_server/auth_server/sdk/operator"
 )
 
 const (
@@ -98,6 +100,19 @@ type System struct {
 	Clients            string     `json:"clients,omitempty"`
 	ProviderConfig     *SysConfig `json:"provider_config"`
 }
+
+// SystemQueryField is system query field for searching system info
+type SystemQueryField string
+
+const (
+	FieldBaseInfo               SystemQueryField = "base_info"
+	FieldResourceTypes          SystemQueryField = "resource_types"
+	FieldActions                SystemQueryField = "actions"
+	FieldActionGroups           SystemQueryField = "action_groups"
+	FieldInstanceSelections     SystemQueryField = "instance_selections"
+	FieldResourceCreatorActions SystemQueryField = "resource_creator_actions"
+	FieldCommonActions          SystemQueryField = "common_actions"
+)
 
 type SysConfig struct {
 	Host string `json:"host,omitempty"`
@@ -182,9 +197,12 @@ const (
 
 // describe resource type defined and registered to iam.
 type ResourceType struct {
-	ID             TypeID         `json:"id"`
-	Name           string         `json:"name"`
-	NameEn         string         `json:"name_en"`
+	// unique id
+	ID TypeID `json:"id"`
+	// unique name
+	Name   string `json:"name"`
+	NameEn string `json:"name_en"`
+	// unique description
 	Description    string         `json:"description"`
 	DescriptionEn  string         `json:"description_en"`
 	Parents        []Parent       `json:"parents"`
@@ -213,6 +231,13 @@ const (
 	Edit   ActionType = "edit"
 	List   ActionType = "list"
 )
+
+var ActionTypeIDNameMap = map[ActionType]string{
+	Create: "新建",
+	Edit:   "编辑",
+	Delete: "删除",
+	View:   "查询",
+}
 
 type ActionID string
 
@@ -269,10 +294,6 @@ const (
 	EditCloudArea   ActionID = "edit_cloud_area"
 	DeleteCloudArea ActionID = "delete_cloud_area"
 
-	CreateSysInstance ActionID = "create_sys_instance"
-	EditSysInstance   ActionID = "edit_sys_instance"
-	DeleteSysInstance ActionID = "delete_sys_instance"
-
 	CreateCloudAccount ActionID = "create_cloud_account"
 	EditCloudAccount   ActionID = "edit_cloud_account"
 	DeleteCloudAccount ActionID = "delete_cloud_account"
@@ -321,6 +342,11 @@ const (
 	Skip ActionID = "skip"
 )
 
+const (
+	// IAM侧资源的通用模型实例前缀标识
+	IAMSysInstTypePrefix = meta.CMDBSysInstTypePrefix
+)
+
 type ResourceAction struct {
 	// must be a unique id in the whole system.
 	ID ActionID `json:"id"`
@@ -333,13 +359,25 @@ type ResourceAction struct {
 	Version              int                  `json:"version"`
 }
 
+// 选择类型, 资源在权限中心产品上配置权限时的作用范围
+type SelectionMode string
+
+const (
+	// 仅可选择实例, 默认值
+	modeInstance SelectionMode = "instance"
+	// 仅可配置属性, 此时instance_selections配置不生效
+	modeAttribute SelectionMode = "attribute"
+	// 可以同时选择实例和配置属性
+	modeAll SelectionMode = "all"
+)
+
 type RelateResourceType struct {
 	SystemID           string                     `json:"system_id"`
 	ID                 TypeID                     `json:"id"`
 	NameAlias          string                     `json:"name_alias"`
 	NameAliasEn        string                     `json:"name_alias_en"`
 	Scope              *Scope                     `json:"scope"`
-	SelectionMode      string                     `json:"selection_mode"`
+	SelectionMode      SelectionMode              `json:"selection_mode"`
 	InstanceSelections []RelatedInstanceSelection `json:"related_instance_selections"`
 }
 
@@ -391,7 +429,6 @@ const (
 	SysModelSelection                  InstanceSelectionID = "sys_model"
 	SysModelEventSelection             InstanceSelectionID = "sys_model_event"
 	MainlineModelEventSelection        InstanceSelectionID = "mainline_model_event"
-	SysInstanceSelection               InstanceSelectionID = "sys_instance"
 	SysInstanceModelSelection          InstanceSelectionID = "sys_instance_model"
 	SysAssociationTypeSelection        InstanceSelectionID = "sys_association_type"
 	SysCloudAreaSelection              InstanceSelectionID = "sys_cloud_area"
@@ -403,10 +440,13 @@ const (
 )
 
 type InstanceSelection struct {
-	ID                InstanceSelectionID `json:"id"`
-	Name              string              `json:"name"`
-	NameEn            string              `json:"name_en"`
-	ResourceTypeChain []ResourceChain     `json:"resource_type_chain"`
+	// unique
+	ID InstanceSelectionID `json:"id"`
+	// unique
+	Name string `json:"name"`
+	// unique
+	NameEn            string          `json:"name_en"`
+	ResourceTypeChain []ResourceChain `json:"resource_type_chain"`
 }
 
 type ResourceChain struct {
@@ -477,4 +517,61 @@ type CommonAction struct {
 	Name        string         `json:"name"`
 	EnglishName string         `json:"name_en"`
 	Actions     []ActionWithID `json:"actions"`
+}
+
+// DynamicAction is dynamic model action
+type DynamicAction struct {
+	ActionID     ActionID
+	ActionType   ActionType
+	ActionNameCN string
+	ActionNameEN string
+}
+
+type DeleteCMDBResourceParam struct {
+	ActionIDs            []ActionID
+	InstanceSelectionIDs []InstanceSelectionID
+	TypeIDs              []TypeID
+}
+
+type ListPoliciesParams struct {
+	ActionID  ActionID
+	Page      int64
+	PageSize  int64
+	Timestamp int64
+}
+
+type ListPoliciesResp struct {
+	BaseResponse
+	Data *ListPoliciesData `json:"data"`
+}
+
+type ListPoliciesData struct {
+	Metadata PolicyMetadata `json:"metadata"`
+	Count    int64          `json:"count"`
+	Results  []PolicyResult `json:"results"`
+}
+
+type PolicyMetadata struct {
+	System    string       `json:"system"`
+	Action    ActionWithID `json:"action"`
+	Timestamp int64        `json:"timestamp"`
+}
+
+type PolicyResult struct {
+	Version    string           `json:"version"`
+	ID         int64            `json:"id"`
+	Subject    PolicySubject    `json:"subject"`
+	Expression *operator.Policy `json:"expression"`
+	ExpiredAt  int64            `json:"expired_at"`
+}
+
+type PolicySubject struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type SimplifiedInstance struct {
+	InstanceID   int64  `json:"bk_inst_id" bson:"bk_inst_id"`
+	InstanceName string `json:"bk_inst_name" bson:"bk_inst_name"`
 }

@@ -54,7 +54,7 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	preVersion, finishedVersions, err := upgrader.Upgrade(s.ctx, s.db, s.cache, updateCfg)
+	preVersion, finishedVersions, err := upgrader.Upgrade(s.ctx, s.db, s.cache, s.iam, updateCfg)
 	if err != nil {
 		blog.Errorf("db upgrade failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
@@ -230,7 +230,7 @@ func (s *Service) migrateSpecifyVersion(req *restful.Request, resp *restful.Resp
 		return
 	}
 
-	err := upgrader.UpgradeSpecifyVersion(s.ctx, s.db, s.cache, updateCfg, input.Version)
+	err := upgrader.UpgradeSpecifyVersion(s.ctx, s.db, s.cache, s.iam, updateCfg, input.Version)
 	if err != nil {
 		blog.Errorf("db upgrade specify failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{

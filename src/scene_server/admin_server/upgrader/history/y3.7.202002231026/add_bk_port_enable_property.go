@@ -32,7 +32,7 @@ func addProcEnablePortProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 		common.BKObjIDField:         common.BKInnerObjIDProc,
 	}
 	maxIdxAttr := &Attribute{}
-	err := db.Table(common.BKTableNameObjAttDes).Find(maxIdxCond).Sort(fmt.Sprintf("%s:-1", 
+	err := db.Table(common.BKTableNameObjAttDes).Find(maxIdxCond).Sort(fmt.Sprintf("%s:-1",
 		common.BKPropertyIndexField)).One(ctx, maxIdxAttr)
 	if err != nil {
 		blog.ErrorJSON("get proerty max index value error.cond:%s, err:%s", maxIdxCond, err.Error())

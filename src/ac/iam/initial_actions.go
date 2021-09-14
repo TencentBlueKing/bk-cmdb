@@ -12,6 +12,8 @@
 
 package iam
 
+import "configcenter/src/common/metadata"
+
 var (
 	businessResource = RelateResourceType{
 		SystemID:    SystemIDCMDB,
@@ -78,9 +80,6 @@ var ActionIDNameMap = map[ActionID]string{
 	CreateCloudArea:                     "云区域创建",
 	EditCloudArea:                       "云区域编辑",
 	DeleteCloudArea:                     "云区域删除",
-	CreateSysInstance:                   "实例创建",
-	EditSysInstance:                     "实例编辑",
-	DeleteSysInstance:                   "实例删除",
 	CreateCloudAccount:                  "云账户新建",
 	EditCloudAccount:                    "云账户编辑",
 	DeleteCloudAccount:                  "云账户删除",
@@ -115,7 +114,13 @@ var ActionIDNameMap = map[ActionID]string{
 }
 
 // GenerateActions generate all the actions registered to IAM.
-func GenerateActions() []ResourceAction {
+func GenerateActions(objects []metadata.Object) []ResourceAction {
+	resourceActionList := GenerateStaticActions()
+	resourceActionList = append(resourceActionList, genDynamicActions(objects)...)
+	return resourceActionList
+}
+
+func GenerateStaticActions() []ResourceAction {
 	resourceActionList := make([]ResourceAction, 0)
 	// add business resource actions
 	resourceActionList = append(resourceActionList, genBusinessHostActions()...)
@@ -133,7 +138,6 @@ func GenerateActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genResourcePoolDirectoryActions()...)
 	resourceActionList = append(resourceActionList, genBusinessActions()...)
 	resourceActionList = append(resourceActionList, genCloudAreaActions()...)
-	resourceActionList = append(resourceActionList, genModelInstanceActions()...)
 	resourceActionList = append(resourceActionList, genCloudAccountActions()...)
 	resourceActionList = append(resourceActionList, genCloudResourceTaskActions()...)
 	resourceActionList = append(resourceActionList, genModelActions()...)
@@ -156,11 +160,13 @@ func genBusinessHostActions() []ResourceAction {
 	}}
 
 	relatedResource := []RelateResourceType{{
-		SystemID:           SystemIDCMDB,
-		ID:                 Host,
-		NameAlias:          "",
-		NameAliasEn:        "",
-		Scope:              nil,
+		SystemID:    SystemIDCMDB,
+		ID:          Host,
+		NameAlias:   "",
+		NameAliasEn: "",
+		Scope:       nil,
+		// 配置权限时可选择实例和配置属性, 后者用于属性鉴权
+		SelectionMode:      modeAll,
 		InstanceSelections: hostSelection,
 	}}
 
@@ -516,11 +522,13 @@ func genResourcePoolHostActions() []ResourceAction {
 	}}
 
 	relatedResource := []RelateResourceType{{
-		SystemID:           SystemIDCMDB,
-		ID:                 Host,
-		NameAlias:          "",
-		NameAliasEn:        "",
-		Scope:              nil,
+		SystemID:    SystemIDCMDB,
+		ID:          Host,
+		NameAlias:   "",
+		NameAliasEn: "",
+		Scope:       nil,
+		// 配置权限时可选择实例和配置属性, 后者用于属性鉴权
+		SelectionMode:      modeAll,
 		InstanceSelections: hostSelection,
 	}}
 
@@ -731,79 +739,6 @@ func genCloudAreaActions() []ResourceAction {
 		RelatedActions:       nil,
 		Version:              1,
 	})
-
-	return actions
-}
-
-func genModelInstanceActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       SysInstanceSelection,
-	}}
-
-	relatedResource := []RelateResourceType{
-		{
-			SystemID:           SystemIDCMDB,
-			ID:                 SysInstance,
-			NameAlias:          "",
-			NameAliasEn:        "",
-			Scope:              nil,
-			InstanceSelections: selection,
-		},
-	}
-
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:     CreateSysInstance,
-		Name:   ActionIDNameMap[CreateSysInstance],
-		NameEn: "Create Instance",
-		Type:   Create,
-		RelatedResourceTypes: []RelateResourceType{
-			{
-				SystemID:    SystemIDCMDB,
-				ID:          SysInstanceModel,
-				NameAlias:   "",
-				NameAliasEn: "",
-				Scope:       nil,
-				InstanceSelections: []RelatedInstanceSelection{{
-					SystemID: SystemIDCMDB,
-					ID:       SysInstanceModelSelection,
-				}},
-			},
-		},
-		RelatedActions: nil,
-		Version:        1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   EditSysInstance,
-		Name:                 ActionIDNameMap[EditSysInstance],
-		NameEn:               "Edit Instance",
-		Type:                 Edit,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteSysInstance,
-		Name:                 ActionIDNameMap[DeleteSysInstance],
-		NameEn:               "Delete Instance",
-		Type:                 Delete,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	// actions = append(actions, ResourceAction{
-	// 	ID:                   FindSysInstance,
-	// 	Name:                 ActionIDNameMap[FindSysInstance],
-	// 	NameEn:               "View Instance",
-	// 	Type:                 View,
-	// 	RelatedResourceTypes: relatedResource,
-	// 	RelatedActions:       nil,
-	// 	Version:              1,
-	// })
 
 	return actions
 }

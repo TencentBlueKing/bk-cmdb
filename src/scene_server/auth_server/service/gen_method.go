@@ -81,17 +81,6 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 			},
 		}, nil
 
-	case iam.SysInstance:
-		return types.ResourcePullMethod{
-			ListAttr:          s.lgc.ListAttr,
-			ListAttrValue:     s.lgc.ListAttrValue,
-			ListInstance:      s.lgc.ListModelInstance,
-			FetchInstanceInfo: s.lgc.FetchObjInstInfo,
-			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
-				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
-			},
-		}, nil
-
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizSetTemplate:
 		return types.ResourcePullMethod{
 			ListInstance: s.lgc.ListBusinessInstance,
@@ -234,6 +223,17 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 		return types.ResourcePullMethod{}, nil
 
 	default:
+		if iam.IsIAMSysInstance(resourceType) {
+			return types.ResourcePullMethod{
+				ListAttr:          s.lgc.ListAttr,
+				ListAttrValue:     s.lgc.ListAttrValue,
+				ListInstance:      s.lgc.ListModelInstance,
+				FetchInstanceInfo: s.lgc.FetchObjInstInfo,
+				ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
+					return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
+				},
+			}, nil
+		}
 		return types.ResourcePullMethod{}, fmt.Errorf("gen method failed: unsupported resource type: %s", resourceType)
 	}
 }

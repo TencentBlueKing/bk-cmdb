@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -161,27 +162,25 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 	resultResources := make([]meta.ResourceAttribute, 0)
 	for objID, instances := range objectIDInstancesMap {
 		object := objectIDMap[objID]
-
-		resourceType := meta.ModelInstance
+		resourceType := iam.GenCMDBDynamicResType(object.ID)
 		for _, mainline := range mainlineAsst.Data.Info {
 			if object.ObjectID == mainline.ObjectID {
 				resourceType = meta.MainlineInstance
 			}
 		}
 
-		parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, object)
-		if err != nil {
-			blog.Errorf("MakeResourcesByObjects failed, make parent auth resource by objects failed, object: %+v, err: %+v, rid: %s", object, err, rid)
-			return nil, fmt.Errorf("make parent auth resource by objects failed, err: %+v", err)
-		}
-		if len(parentResources) != 1 {
-			blog.Errorf("MakeResourcesByInstances failed, make parent auth resource by objects failed, get %d with object %s, rid: %s", len(parentResources), object.ObjectID, rid)
-			return nil, fmt.Errorf("make parent auth resource by objects failed, get %d with object %d", len(parentResources), object.ID)
-		}
+		if resourceType == meta.MainlineInstance {
+			parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, object)
+			if err != nil {
+				blog.Errorf("MakeResourcesByObjects failed, make parent auth resource by objects failed, object: %+v, err: %+v, rid: %s", object, err, rid)
+				return nil, fmt.Errorf("make parent auth resource by objects failed, err: %+v", err)
+			}
+			if len(parentResources) != 1 {
+				blog.Errorf("MakeResourcesByInstances failed, make parent auth resource by objects failed, get %d with object %s, rid: %s", len(parentResources), object.ObjectID, rid)
+				return nil, fmt.Errorf("make parent auth resource by objects failed, get %d with object %d", len(parentResources), object.ID)
+			}
 
-		parentResource := parentResources[0]
-		resources := make([]meta.ResourceAttribute, 0)
-		for _, instance := range instances {
+			parentResource := parentResources[0]
 			layers := parentResource.Layers
 			layers = append(layers, meta.Item{
 				Type:       parentResource.Type,
@@ -189,21 +188,42 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 				Name:       parentResource.Name,
 				InstanceID: parentResource.InstanceID,
 			})
-			resource := meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Action:     action,
-					Type:       resourceType,
-					Name:       instance.Name,
-					InstanceID: instance.InstanceID,
-				},
-				SupplierAccount: util.GetOwnerID(header),
-				BusinessID:      businessIDMap[instance.InstanceID],
-				Layers:          layers,
-			}
+			resources := make([]meta.ResourceAttribute, 0)
+			for _, instance := range instances {
 
-			resources = append(resources, resource)
+				resource := meta.ResourceAttribute{
+					Basic: meta.Basic{
+						Action:     action,
+						Type:       resourceType,
+						Name:       instance.Name,
+						InstanceID: instance.InstanceID,
+					},
+					SupplierAccount: util.GetOwnerID(header),
+					BusinessID:      businessIDMap[instance.InstanceID],
+					Layers:          layers,
+				}
+
+				resources = append(resources, resource)
+			}
+			resultResources = append(resultResources, resources...)
+		} else {
+			resources := make([]meta.ResourceAttribute, 0)
+			for _, instance := range instances {
+				resource := meta.ResourceAttribute{
+					Basic: meta.Basic{
+						Action:     action,
+						Type:       resourceType,
+						Name:       instance.Name,
+						InstanceID: instance.InstanceID,
+					},
+					SupplierAccount: util.GetOwnerID(header),
+					BusinessID:      businessIDMap[instance.InstanceID],
+				}
+
+				resources = append(resources, resource)
+			}
+			resultResources = append(resultResources, resources...)
 		}
-		resultResources = append(resultResources, resources...)
 	}
 	return resultResources, nil
 }
