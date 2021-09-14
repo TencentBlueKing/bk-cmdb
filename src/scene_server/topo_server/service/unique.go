@@ -38,16 +38,14 @@ func (s *Service) CreateObjectUnique(ctx *rest.Contexts) {
 	objectID := ctx.Request.PathParameter(common.BKObjIDField)
 
 	// mainline object's unique can not be changed.
-	yes, err := s.Core.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
+	yes, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	if yes {
-		if util.InStrArr(ForbiddenModifyMainlineObjectUniqueWhiteList, objectID) == false {
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged))
-			return
-		}
+	if yes && !util.InStrArr(ForbiddenModifyMainlineObjectUniqueWhiteList, objectID) {
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged))
+		return
 	}
 
 	result := new(metadata.RspID)
@@ -60,8 +58,7 @@ func (s *Service) CreateObjectUnique(ctx *rest.Contexts) {
 		rsp, err := s.Engine.CoreAPI.CoreService().Model().CreateModelAttrUnique(ctx.Kit.Ctx, ctx.Kit.Header, objectID,
 			unique)
 		if err != nil {
-			blog.Errorf("[CreateObjectUnique] create for [%s] failed: %v, raw: %#v, rid: %s", objectID, err,
-				request, ctx.Kit.Rid)
+			blog.Errorf("create unique for [%s] failed: %v, raw: %#v, rid: %s", objectID, err, request, ctx.Kit.Rid)
 			return err
 		}
 
@@ -106,16 +103,14 @@ func (s *Service) UpdateObjectUnique(ctx *rest.Contexts) {
 	}
 
 	// mainline object's unique can not be changed.
-	yes, err := s.Core.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
+	yes, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	if yes {
-		if util.InStrArr(ForbiddenModifyMainlineObjectUniqueWhiteList, objectID) == false {
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged))
-			return
-		}
+	if yes && !util.InStrArr(ForbiddenModifyMainlineObjectUniqueWhiteList, objectID) {
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged))
+		return
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
@@ -123,7 +118,7 @@ func (s *Service) UpdateObjectUnique(ctx *rest.Contexts) {
 		_, err := s.Engine.CoreAPI.CoreService().Model().UpdateModelAttrUnique(ctx.Kit.Ctx, ctx.Kit.Header, objectID,
 			id, unique)
 		if err != nil {
-			blog.Errorf("[UpdateObjectUnique] update for [%s](%d) failed: %v, raw: %#v, rid: %s",
+			blog.Errorf("update unique for [%s](%d) failed: %v, raw: %#v, rid: %s",
 				objectID, id, err, request, ctx.Kit.Rid)
 			return err
 		}
@@ -147,16 +142,14 @@ func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
 	}
 
 	// mainline object's unique can not be changed.
-	yes, err := s.Core.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
+	yes, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	if yes {
-		if util.InStrArr(ForbiddenModifyMainlineObjectUniqueWhiteList, objectID) == false {
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged))
-			return
-		}
+	if yes && !util.InStrArr(ForbiddenModifyMainlineObjectUniqueWhiteList, objectID) {
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged))
+		return
 	}
 
 	cond := metadata.QueryCondition{Condition: mapstr.MapStr{common.BKObjIDField: objectID}}
@@ -167,7 +160,7 @@ func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
 	}
 
 	if len(uniques.Info) <= 1 {
-		blog.Errorf("[DeleteObjectUnique][%s] unique should have more than one, rid: %s", objectID, ctx.Kit.Rid)
+		blog.Errorf("[%s] unique should have more than one, rid: %s", objectID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoObjectUniqueShouldHaveMoreThanOne))
 		return
 	}
@@ -176,7 +169,7 @@ func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
 		_, err := s.Engine.CoreAPI.CoreService().Model().DeleteModelAttrUnique(ctx.Kit.Ctx, ctx.Kit.Header, objectID,
 			id)
 		if err != nil {
-			blog.Errorf("[DeleteObjectUnique] delete [%s](%d) failed: %v, rid: %s", objectID, id, err, ctx.Kit.Rid)
+			blog.Errorf("delete [%s] unique(%d) failed: %v, rid: %s", objectID, id, err, ctx.Kit.Rid)
 			return err
 		}
 
@@ -196,7 +189,7 @@ func (s *Service) SearchObjectUnique(ctx *rest.Contexts) {
 	cond := metadata.QueryCondition{Condition: mapstr.MapStr{common.BKObjIDField: objectID}}
 	uniques, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrUnique(ctx.Kit.Ctx, ctx.Kit.Header, cond)
 	if err != nil {
-		blog.Errorf("[SearchObjectUnique] search for [%s] failed: %v, rid: %s", objectID, err, ctx.Kit.Rid)
+		blog.Errorf("search unique for [%s] failed: %v, rid: %s", objectID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

@@ -145,7 +145,7 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 		return nil, 0, err
 	}
 
-	objIDInstIDMap := make(map[string][]int64, 0)
+	objIDInstIDMap := make(map[string][]int64)
 	objSrcAsstArr := make([]metadata.InstAsst, 0)
 	objDstAsstArr := make([]metadata.InstAsst, 0)
 	for _, instAsst := range rsp.Info {
@@ -159,7 +159,7 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 		}
 	}
 
-	instInfo := make(map[string][]mapstr.MapStr, 0)
+	instInfo := make(map[string][]mapstr.MapStr)
 	for instObjID, instIDArr := range objIDInstIDMap {
 
 		idField := metadata.GetInstIDFieldByObjID(instObjID)
@@ -516,9 +516,9 @@ func (assoc *association) SearchInstAssociationSingleObjectInstInfo(kit *rest.Ki
 	}
 
 	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, queryCond)
-	if nil != err {
-		blog.Errorf("ReadInstAssociation http do error, err: %s, rid: %s", err.Error(), kit.Rid)
-		return nil, 0, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	if err != nil {
+		blog.Errorf("search inst association failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, 0, err
 	}
 
 	if len(rsp.Info) == 0 {

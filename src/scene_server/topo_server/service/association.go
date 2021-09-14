@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -593,10 +594,16 @@ func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
 		return
 	}
 
+	input := metadata.UpdateOption{
+		Condition: mapstr.MapStr{common.BKFieldID: asstTypeID},
+		Data:      mapstr.NewFromStruct(request, "json"),
+	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		_, err = s.Core.AssociationOperation().UpdateType(ctx.Kit, asstTypeID, request)
+		_, err = s.Engine.CoreAPI.CoreService().Association().UpdateAssociationType(ctx.Kit.Ctx, ctx.Kit.Header, &input)
 		if err != nil {
+			blog.Errorf("update association type failed, kind id: %d, err: %v, rid: %s", asstTypeID, err, ctx.Kit.Rid)
 			return err
 		}
 
@@ -734,39 +741,54 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 	request := &metadata.SearchAssociationRelatedInstRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, err.Error()))
+		ctx.RespAutoError(err)
 		return
 	}
 	//check condition
 	if request.Condition.InstID == 0 || request.Condition.ObjectID == "" {
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "'bk_inst_id' and 'bk_obj_id' should not be empty."))
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_inst_id/bk_obj_id"))
 		return
 	}
 	//check fields,if there's none param,return err.
 	if len(request.Fields) == 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "there should be at least one param in 'fields'."))
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "fields"))
 		return
 	}
 	//Use id as sort parameters
 	request.Page.Sort = common.BKFieldID
 	//check Maximum limit
 	if request.Page.Limit > common.BKMaxInstanceLimit {
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "The maximum limit should be less than 500."))
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommXXExceedLimit, "limit", 500))
 		return
 	}
 
-	ret, err := s.Core.AssociationOperation().SearchAssociationRelatedInst(ctx.Kit, request)
+	cond := metadata.QueryCondition{
+		Fields: request.Fields,
+		Page:   request.Page,
+		Condition: mapstr.MapStr{
+			condition.BKDBOR: []mapstr.MapStr{
+				{
+					common.BKObjIDField:  request.Condition.ObjectID,
+					common.BKInstIDField: request.Condition.InstID,
+				},
+				{
+					common.BKAsstObjIDField:  request.Condition.ObjectID,
+					common.BKAsstInstIDField: request.Condition.InstID,
+				},
+			},
+		},
+	}
+	queryCond := &metadata.InstAsstQueryCondition{
+		ObjID: request.Condition.ObjectID,
+		Cond:  cond,
+	}
+	ret, err := s.Engine.CoreAPI.CoreService().Association().ReadInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, queryCond)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if err := ret.CCError(); err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
-		return
-	}
-
-	ctx.RespEntity(ret.Data)
+	ctx.RespEntity(ret.Info)
 }
 
 // CreateAssociationInst create instance associaiton
