@@ -57,6 +57,7 @@
        */
       rowKey: {
         type: String,
+        required: true,
         default: ''
       },
       /**
@@ -64,21 +65,7 @@
        */
       reserveSelection: {
         type: Boolean,
-        default: false
-      },
-      /**
-       * 取消跨页全选是否提示用户
-       */
-      cancelTooltip: {
-        type: Boolean,
         default: true
-      },
-      /**
-       * 取消跨页全选时的提示
-       */
-      cancelTooltipText: {
-        type: String,
-        default: '已取消跨页全选'
       },
       /**
        * 全选当页禁用开关
@@ -94,13 +81,24 @@
         type: Boolean,
         default: false
       },
+      /**
+       * 是否支持半选状态
+       */
+      indeterminate: {
+        type: Boolean,
+        default: false
+      }
     },
     data() {
       return {
         items: [],
-        reservedItems: [], // 记住的选项
+        reservedSelectedItems: [], // 记住的已选项
+        reservedUnselectedItems: [], // 全选时，记住的未选项
         isPageSelected: false, // 全选当页
+        onCrossPageMode: false, // 是否在跨页全选模式
         isAllSelected: false, // 全选所有
+        pageSelectionIndeterminate: false,
+        allSelectionIndeterminate: false,
       }
     },
     computed: {
@@ -132,45 +130,32 @@
         this.items = cloneDeep(this.data)
 
         if (this.reserveSelection && this.rowKey) {
-          if (this.isAllSelected) {
-            this.generatePageSelection(true)
-          } else {
-            this.generatePageSelection()
-          }
+          this.generateItemSelection()
 
-          const selectabeItemslLen = this.selectableItems.length
-          this.isPageSelected = this.selectedItems.length === selectabeItemslLen && selectabeItemslLen > 0
+          this.generatePageSelection()
         } else {
           this.clearSelection()
         }
       },
       emitItems() {
-        const { isAllSelected, reserveSelection, reservedItems } = this
+        const { onCrossPageMode, reserveSelection, reservedSelectedItems } = this
         let { selectedItems } = this
 
-        if (isAllSelected) {
+        if (onCrossPageMode) {
           selectedItems = []
         } else if (reserveSelection) {
-          selectedItems = reservedItems
+          selectedItems = reservedSelectedItems
         }
 
-        this.$emit('selection-change', selectedItems, isAllSelected)
+        this.$emit('selection-change', selectedItems, onCrossPageMode, this.reservedUnselectedItems)
         this.$emit('update:selectedValue', selectedItems)
-        this.$emit('update:allSelected', isAllSelected)
+        this.$emit('update:unselectedValue', this.reservedUnselectedItems)
+        this.$emit('update:allSelected', onCrossPageMode)
       },
-      toggleItemSelection() {
-        this.isPageSelected = this.selectedItems.length === this.selectableItems.length
-        if (!this.isPageSelected && this.isAllSelected) {
-          this.clearSelection()
-          this.$bkMessage({
-            message: this.cancelTooltipText,
-          })
-        }
-      },
-      setReservedItem(item) {
+      setReservedItem(arr, item, checked) {
         const findItemIndex = (item) => {
           let itemIndex = -1
-          this.reservedItems.forEach((i, index) => {
+          arr.forEach((i, index) => {
             if (i[this.rowKey] === item[this.rowKey]) {
               itemIndex = index
             }
@@ -180,65 +165,56 @@
 
         const itemIndex = findItemIndex(item)
 
-        if (itemIndex === -1 && item.checked) {
-          this.reservedItems.push(item)
-        } else if (!item.checked) {
-          this.reservedItems.splice(itemIndex, 1)
+        if (itemIndex === -1 && item.checked === checked) {
+          arr.push(item)
+        } else if (item.checked !== checked) {
+          arr.splice(itemIndex, 1)
         }
       },
       handleItemSelectionChange(item) {
-        this.toggleItemSelection()
-        this.setReservedItem(item)
-      },
-      generatePageSelection(val) {
-        this.items = this.items.map((i, index) => {
-          let disabled = false
-          let checked = false
+        if (this.onCrossPageMode) {
+          this.setReservedItem(this.reservedUnselectedItems, item, false)
+        } else {
+          this.setReservedItem(this.reservedSelectedItems, item, true)
+        }
 
-          if (this.selectable && typeof this.selectable === 'function') {
-            disabled = !this.selectable(i, index)
-          }
-
-          if (disabled) {
-            return { ...i, checked: false, disabled }
-          }
-
-          if (this.reserveSelection) {
-            checked = this.reservedItems.some(reservedItem => reservedItem[this.rowKey] === i[this.rowKey])
-          }
-
-
-          if (val !== undefined && typeof val === 'boolean') {
-            return { ...i, checked: val }
-          }
-
-          return { ...i, checked }
-        })
+        this.generatePageSelection()
       },
       handlePageSelectionChange(isSelected) {
-        this.generatePageSelection(isSelected)
+        if (this.indeterminate && this.pageSelectionIndeterminate) {
+          this.generateItemSelection(false)
+        } else {
+          this.generateItemSelection(isSelected)
+        }
 
         this.items.forEach((item) => {
-          this.setReservedItem(item)
+          if (this.onCrossPageMode) {
+            this.setReservedItem(this.reservedUnselectedItems, item, false)
+          } else {
+            this.setReservedItem(this.reservedSelectedItems, item, true)
+          }
         })
 
-        if (!isSelected && this.isAllSelected) {
-          this.clearSelection()
-          this.$bkMessage({
-            message: this.cancelTooltipText,
-          })
-        }
+        this.$nextTick(() => {
+          this.generatePageSelection()
+        })
       },
       handleAllSelectionChange(isSelected) {
-        this.generatePageSelection(isSelected)
-        this.isPageSelected = isSelected
-        this.reservedItems = []
-      },
-      clearSelection() {
-        this.isPageSelected = false
-        this.isAllSelected = false
-        this.reservedItems = []
-        this.generatePageSelection(false)
+        this.generateItemSelection(isSelected)
+
+        if (this.indeterminate && this.allSelectionIndeterminate) {
+          this.onCrossPageMode = false
+          this.clearSelection()
+        } else {
+          this.onCrossPageMode = isSelected
+        }
+
+        this.reservedSelectedItems = []
+        this.reservedUnselectedItems = []
+
+        this.$nextTick(() => {
+          this.generatePageSelection()
+        })
       },
       columnHeader() {
         return (
@@ -251,16 +227,18 @@
           >
             <div>
               <bk-checkbox
+                indeterminate={this.pageSelectionIndeterminate}
+                class={{ 'is-total-selected': this.onCrossPageMode, 'page-select-checkbox': true }}
                 disabled={this.pageSelectionDisabled}
-                class={{ 'is-total-selected': this.isAllSelected }}
                 vModel={this.isPageSelected}
                 onChange={this.handlePageSelectionChange}
               ></bk-checkbox>
             </div>
             <template slot="content">
               <bk-checkbox
+                indeterminate={this.allSelectionIndeterminate}
                 disabled={this.allSelectionDisabled}
-                class={{ 'is-total-selected': this.isAllSelected }}
+                class={{ 'is-total-selected': this.onCrossPageMode, 'all-select-checkbox': true }}
                 vModel={this.isAllSelected}
                 onChange={this.handleAllSelectionChange}
               >
@@ -271,12 +249,75 @@
         </div>
         )
       },
+      // 生成页面全选状态
+      generatePageSelection() {
+        const selectabeItemslLen = this.selectableItems.length
+        const selectedItemsLen = this.selectedItems.length
+
+        this.isPageSelected = selectedItemsLen === selectabeItemslLen && selectabeItemslLen > 0
+
+        if (this.indeterminate) {
+          this.isAllSelected = this.reservedUnselectedItems.length === 0 && this.onCrossPageMode
+          this.pageSelectionIndeterminate = selectedItemsLen > 0 && !this.isPageSelected
+          this.allSelectionIndeterminate = this.reservedUnselectedItems.length > 0 && !this.isAllSelected
+        } else {
+          this.isAllSelected = this.onCrossPageMode
+        }
+      },
+      // 生成单个项目选择状态
+      generateItemSelection(currentChecked) {
+        this.items = this.items.map((i, index) => {
+          // 如果传入了当前选中值，则让所有选项变为当前选中值
+          if (currentChecked !== undefined && typeof currentChecked === 'boolean') {
+            return { ...i, checked: currentChecked }
+          }
+
+          // 当跨页全选时，默认为选中状态，非跨页全选时则默认为未选中状态
+          let checked = this.onCrossPageMode
+
+          // 不可选的选项一律置灰
+          if (this.selectable && typeof this.selectable === 'function') {
+            const disabled = !this.selectable(i, index)
+            if (disabled) {
+              return { ...i, checked: false, disabled }
+            }
+          }
+
+          // 记住选择状态
+          if (this.reserveSelection) {
+            if (this.onCrossPageMode) {
+              // 跨页全选时，记住没有选择的项目
+              checked = !this.reservedUnselectedItems
+                .some(unselectedItem => unselectedItem[this.rowKey] === i[this.rowKey])
+            } else {
+              // 非跨页全选时，记住已选择的项目
+              checked = this.reservedSelectedItems.some(selectedItem => selectedItem[this.rowKey] === i[this.rowKey])
+            }
+          }
+
+          return { ...i, checked }
+        })
+      },
+      // 清除所有选择状态
+      clearSelection() {
+        this.isPageSelected = false
+        this.onCrossPageMode = false
+
+        if (this.indeterminate) {
+          this.pageSelectionIndeterminate = false
+          this.allSelectionIndeterminate = false
+        }
+
+        this.reservedSelectedItems = []
+        this.reservedUnselectedItems = []
+        this.generateItemSelection(false)
+      },
     },
   }
 </script>
-
 <style lang="scss">
-.bk-form-checkbox.is-checked.is-total-selected .bk-checkbox{
+.bk-form-checkbox.is-checked.is-total-selected .bk-checkbox,
+.bk-form-checkbox.is-indeterminate.is-total-selected .bk-checkbox {
   background-color: #2dcb56;
   border-color: #2dcb56;
 }
