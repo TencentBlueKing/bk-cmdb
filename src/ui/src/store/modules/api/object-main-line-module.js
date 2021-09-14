@@ -106,7 +106,7 @@ const actions = {
      * @return {promises} promises 对象
      */
   getInternalTopo({ commit, state, dispatch, rootGetters }, { bizId, config }) {
-    return $http.get(`topo/internal/${rootGetters.supplierAccount}/${bizId}/with_statistics`, config)
+    return $http.get(`topo/internal/${rootGetters.supplierAccount}/${bizId}`, config)
   },
 
   getTopoPath(context, { bizId, params, config }) {

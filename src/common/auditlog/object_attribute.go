@@ -25,31 +25,28 @@ type objectAttributeAuditLog struct {
 }
 
 // GenerateAuditLog generate audit of model attribute, if data is nil, will auto get current model attribute data by id.
-func (h *objectAttributeAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, id int64, data *metadata.Attribute) (
-	*metadata.AuditLog, error) {
+func (h *objectAttributeAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, id int64,
+	data *metadata.Attribute) (*metadata.AuditLog, error) {
 	kit := parameter.kit
 
 	if data == nil {
 		// get current model attribute data by id.
 		query := mapstr.MapStr{metadata.AttributeFieldID: id}
-		rsp, err := h.clientSet.Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
+		rsp, err := h.clientSet.Model().ReadModelAttrByCondition(kit.Ctx, kit.Header,
+			&metadata.QueryCondition{Condition: query})
 		if err != nil {
-			blog.Errorf("generate audit log of model attribute failed, failed to read model attribute, err: %v, rid: %s",
-				err.Error(), kit.Rid)
+			blog.Errorf("generate audit log of model attribute failed, failed to read model attribute, err: %v, "+
+				"rid: %s", err.Error(), kit.Rid)
 			return nil, err
 		}
-		if rsp.Result != true {
-			blog.Errorf("generate audit log of model attribute failed, failed to read model attribute, rsp code is %v, err: %s, rid: %s",
-				rsp.Code, rsp.ErrMsg, kit.Rid)
-			return nil, rsp.CCError()
-		}
-		if len(rsp.Data.Info) <= 0 {
-			blog.Errorf("generate audit log of model attribute failed, failed to read model attribute, err: %s, rid: %s",
-				kit.CCError.CCError(common.CCErrorModelNotFound), kit.Rid)
+
+		if len(rsp.Info) <= 0 {
+			blog.Errorf("generate audit log of model attribute failed, failed to read model attribute, err: %s, "+
+				"rid: %s", kit.CCError.CCError(common.CCErrorModelNotFound), kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrorModelNotFound)
 		}
 
-		data = &rsp.Data.Info[0]
+		data = &rsp.Info[0]
 	}
 
 	objName, err := h.getObjNameByObjID(kit, data.ObjectID)

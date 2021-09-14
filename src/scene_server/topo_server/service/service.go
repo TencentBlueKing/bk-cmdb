@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
+	"configcenter/src/scene_server/topo_server/logics"
 	"configcenter/src/thirdparty/elasticsearch"
 
 	"github.com/emicklei/go-restful"
@@ -32,6 +33,7 @@ import (
 type Service struct {
 	Engine      *backbone.Engine
 	Core        core.Core
+	Logics      logics.Logics
 	Config      options.Config
 	AuthManager *extensions.AuthManager
 	Es          *elasticsearch.EsSrv
@@ -47,7 +49,8 @@ func (s *Service) WebService() *restful.Container {
 	}
 
 	api := new(restful.WebService)
-	api.Path("/topo/v3/").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/topo/v3/").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).
+		Produces(restful.MIME_JSON)
 
 	// init service actions
 	s.initService(api)

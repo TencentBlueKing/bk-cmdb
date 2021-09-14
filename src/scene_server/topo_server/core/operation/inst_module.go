@@ -72,16 +72,12 @@ func (m *module) hasHost(kit *rest.Kit, bizID int64, setIDs, moduleIDS []int64) 
 	}
 	rsp, err := m.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, option)
 	if nil != err {
-		blog.Errorf("[operation-module] failed to request the object controller, err: %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-module] failed to request the object controller, err: %s, rid: %s", err.Error(),
+			kit.Rid)
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-module]  failed to search the host module configures, err: %s, rid: %s", rsp.ErrMsg, kit.Rid)
-		return false, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return 0 != len(rsp.Data.Info), nil
+	return 0 != len(rsp.Info), nil
 }
 
 func (m *module) validBizSetID(kit *rest.Kit, bizID int64, setID int64) error {
@@ -94,16 +90,14 @@ func (m *module) validBizSetID(kit *rest.Kit, bizID int64, setID int64) error {
 	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit
 
-	rsp, err := m.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := m.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
+		&metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !rsp.Result {
-		blog.Errorf("[operation-inst] failed to read the object(%s) inst by the condition(%#v), err: %s, rid: %s", common.BKInnerObjIDSet, cond, rsp.ErrMsg, kit.Rid)
-		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-	if rsp.Data.Count > 0 {
+
+	if rsp.Count > 0 {
 		return nil
 	}
 
@@ -239,7 +233,9 @@ func (m *module) CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int6
 	return inst, nil
 }
 
-func (m *module) IsModuleNameDuplicateError(kit *rest.Kit, bizID, setID int64, moduleName string, inputErr error) (bool, error) {
+// IsModuleNameDuplicateError check if module name duplicated
+func (m *module) IsModuleNameDuplicateError(kit *rest.Kit, bizID, setID int64, moduleName string, inputErr error) (bool,
+	error) {
 
 	ccErr, ok := inputErr.(errors.CCErrorCoder)
 	if ok == false {
@@ -260,17 +256,15 @@ func (m *module) IsModuleNameDuplicateError(kit *rest.Kit, bizID, setID int64, m
 			common.BKModuleNameField: moduleName,
 		},
 	}
-	result, err := m.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule, nameDuplicateFilter)
+	result, err := m.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		nameDuplicateFilter)
 	if err != nil {
-		blog.ErrorJSON("IsModuleNameDuplicateError failed, filter: %s, err: %s, rid: %s", nameDuplicateFilter, err.Error(), kit.Rid)
+		blog.ErrorJSON("IsModuleNameDuplicateError failed, filter: %s, err: %s, rid: %s", nameDuplicateFilter,
+			err.Error(), kit.Rid)
 		return false, err
 	}
-	if ccErr := result.CCError(); ccErr != nil {
-		blog.ErrorJSON("IsModuleNameDuplicateError failed, result false, filter: %s, result: %s, err: %s, rid: %s",
-			nameDuplicateFilter, result, ccErr, kit.Rid)
-		return false, ccErr
-	}
-	if result.Data.Count > 0 {
+
+	if result.Count > 0 {
 		return true, nil
 	}
 	return false, nil

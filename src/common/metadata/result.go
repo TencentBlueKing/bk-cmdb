@@ -345,22 +345,39 @@ type SearchAssociationKindResult struct {
 	Info  []AssociationKind `json:"info"`
 }
 
+// QueryModelAssociationResult query model association result definition
+type QueryModelAssociationResult struct {
+	Count uint64        `json:"count"`
+	Info  []Association `json:"info"`
+}
+
+// QueryInstAssociationResult query inst association result definition
+type QueryInstAssociationResult struct {
+	Count uint64     `json:"count"`
+	Info  []InstAsst `json:"info"`
+}
+
 // ReadModelAttrResult  read model attribute api http response return result struct
 type ReadModelAttrResult struct {
 	BaseResp `json:",inline"`
 	Data     QueryModelAttributeDataResult `json:"data"`
 }
 
-// ReadModelClassifitionResult  read model classifition api http response return result struct
-type ReadModelClassifitionResult struct {
+// ReadModelClassificationResult  read model classification api http response return result struct
+type ReadModelClassificationResult struct {
 	BaseResp `json:",inline"`
 	Data     QueryModelClassificationDataResult `json:"data"`
 }
 
-// ReadModelResult  read model classifition api http response return result struct
-type ReadModelResult struct {
+// ReadModelWithAttributeResult  read model with its attributes api http response return result struct
+type ReadModelWithAttributeResult struct {
 	BaseResp `json:",inline"`
 	Data     QueryModelWithAttributeDataResult `json:"data"`
+}
+
+type ReadModelResult struct {
+	BaseResp `json:",inline"`
+	Data     QueryModelDataResult `json:"data"`
 }
 
 type ReadModelAttributeGroupResult struct {
@@ -374,19 +391,13 @@ type ReadModelUniqueResult struct {
 }
 
 type ReadModelAssociationResult struct {
-	BaseResp
-	Data struct {
-		Count uint64        `json:"count"`
-		Info  []Association `json:"info"`
-	}
+	BaseResp `json:",inline"`
+	Data     QueryModelAssociationResult `json:"data"`
 }
 
 type ReadInstAssociationResult struct {
-	BaseResp
-	Data struct {
-		Count uint64     `json:"count"`
-		Info  []InstAsst `json:"info"`
-	}
+	BaseResp `json:",inline"`
+	Data     QueryInstAssociationResult `json:"data"`
 }
 
 // OperaterException  result

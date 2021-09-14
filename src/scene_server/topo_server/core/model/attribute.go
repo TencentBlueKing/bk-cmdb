@@ -70,14 +70,9 @@ func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
 		return nil, a.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("failed to search the object(%s), err: %s, rid: %s", objID, rsp.ErrMsg, a.kit.Rid)
-		return nil, a.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
 	models := []metadata.Object{}
-	for index := range rsp.Data.Info {
-		models = append(models, rsp.Data.Info[index].Spec)
+	for index := range rsp.Info {
+		models = append(models, rsp.Info[index])
 	}
 	return models, nil
 
@@ -170,6 +165,7 @@ func (a *attribute) IsValid(isUpdate bool, data mapstr.MapStr) error {
 	return nil
 }
 
+// Create object attribute
 func (a *attribute) Create() error {
 
 	if err := a.IsValid(false, a.attr.ToMapStr()); nil != err {
@@ -183,33 +179,32 @@ func (a *attribute) Create() error {
 	input := metadata.CreateModelAttributes{Attributes: []metadata.Attribute{a.attr}}
 	rsp, err := a.clientSet.CoreService().Model().CreateModelAttrs(a.kit.Ctx, a.kit.Header, a.attr.ObjectID, &input)
 	if nil != err {
-		blog.ErrorJSON("failed to request coreService to create model attrs, the err: %s, ObjectID: %s, input: %s, rid: %s", err.Error(), a.attr.ObjectID, input, a.kit.Rid)
+		blog.ErrorJSON("failed to request coreService to create model attrs, the err: %s, ObjectID: %s, input: %s, "+
+			"rid: %s", err.Error(), a.attr.ObjectID, input, a.kit.Rid)
 		return a.kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.ErrorJSON("create model attrs failed, ObjectID: %s, input: %s, rid: %s", a.attr.ObjectID, input, a.kit.Rid)
-		return rsp.CCError()
-	}
-
-	for _, exception := range rsp.Data.Exceptions {
+	for _, exception := range rsp.Exceptions {
 		return a.kit.CCError.New(int(exception.Code), exception.Message)
 	}
 
-	if len(rsp.Data.Repeated) > 0 {
-		blog.ErrorJSON("create model attrs failed, the attr is duplicated, ObjectID: %s, input: %s, rid: %s", a.attr.ObjectID, input, a.kit.Rid)
+	if len(rsp.Repeated) > 0 {
+		blog.ErrorJSON("create model attrs failed, the attr is duplicated, ObjectID: %s, input: %s, rid: %s",
+			a.attr.ObjectID, input, a.kit.Rid)
 		return a.kit.CCError.CCError(common.CCErrorAttributeNameDuplicated)
 	}
 
-	if len(rsp.Data.Created) != 1 {
-		blog.ErrorJSON("create model attrs created amount error, ObjectID: %s, input: %s, rid: %s", a.attr.ObjectID, input, a.kit.Rid)
+	if len(rsp.Created) != 1 {
+		blog.ErrorJSON("create model attrs created amount error, ObjectID: %s, input: %s, rid: %s", a.attr.ObjectID,
+			input, a.kit.Rid)
 		return a.kit.CCError.CCError(common.CCErrTopoObjectAttributeCreateFailed)
 	}
-	a.attr.ID = int64(rsp.Data.Created[0].ID)
+	a.attr.ID = int64(rsp.Created[0].ID)
 
 	return nil
 }
 
+// Update object attribute
 func (a *attribute) Update(data mapstr.MapStr) error {
 
 	data.Remove(metadata.AttributeFieldPropertyID)
@@ -234,32 +229,24 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(a.attr.ID).ToMapStr(),
 		Data:      data,
 	}
-	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrs(a.kit.Ctx, a.kit.Header, a.attr.ObjectID, &input)
+	_, err = a.clientSet.CoreService().Model().UpdateModelAttrs(a.kit.Ctx, a.kit.Header, a.attr.ObjectID, &input)
 	if nil != err {
 		blog.Errorf("failed to request object controller, err: %s, rid: %s", err.Error(), a.kit.Rid)
 		return err
 	}
 
-	if !rsp.Result {
-		blog.Errorf("failed to update the object attribute(%s), err: %s, rid: %s", a.attr.PropertyID, rsp.ErrMsg, a.kit.Rid)
-		return a.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
 	return nil
 }
 func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, error) {
 
-	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(a.kit.Ctx, a.kit.Header, a.attr.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(a.kit.Ctx, a.kit.Header, a.attr.ObjectID,
+		&metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request to object controller, err: %s, rid: %s", err.Error(), a.kit.Rid)
 		return nil, err
 	}
 
-	if !rsp.Result {
-		blog.Errorf("failed to query the object controller, cond: %#v, err: %s, rid: %s", cond, rsp.ErrMsg, a.kit.Rid)
-		return nil, a.kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	return rsp.Data.Info, nil
+	return rsp.Info, nil
 }
 func (a *attribute) IsExists() (bool, error) {
 
@@ -319,28 +306,26 @@ func (a *attribute) SetGroup(grp GroupInterface) {
 	a.attr.PropertyGroupName = group.GroupName
 }
 
+// GetGroup search attribute group
 func (a *attribute) GetGroup() (GroupInterface, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(metadata.GroupFieldGroupID).Eq(a.attr.PropertyGroup)
 	cond.Field(metadata.GroupFieldObjectID).Eq(a.attr.ObjectID)
 
-	rsp, err := a.clientSet.CoreService().Model().ReadAttributeGroup(a.kit.Ctx, a.kit.Header, a.attr.ObjectID, metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := a.clientSet.CoreService().Model().ReadAttributeGroup(a.kit.Ctx, a.kit.Header, a.attr.ObjectID,
+		metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-grp] failed to request the coreservice, err: %s, rid: %s", err.Error(), a.kit.Rid)
 		return nil, a.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[model-grp] failed to search the group of the object(%s) by the condition (%#v), err: %s, rid: %s", a.attr.ObjectID, cond.ToMapStr(), rsp.ErrMsg, a.kit.Rid)
-		return nil, a.kit.CCError.New(rsp.Code, rsp.ErrMsg)
+	if len(rsp.Info) == 0 {
+		return CreateGroup(a.kit, a.clientSet, []metadata.Group{{GroupID: "default", GroupName: "Default",
+			OwnerID: a.attr.OwnerID, ObjectID: a.attr.ObjectID}})[0], nil
 	}
 
-	if 0 == len(rsp.Data.Info) {
-		return CreateGroup(a.kit, a.clientSet, []metadata.Group{{GroupID: "default", GroupName: "Default", OwnerID: a.attr.OwnerID, ObjectID: a.attr.ObjectID}})[0], nil
-	}
-
-	return CreateGroup(a.kit, a.clientSet, rsp.Data.Info)[0], nil // should be one group
+	return CreateGroup(a.kit, a.clientSet, rsp.Info)[0], nil // should be one group
 }
 
 func (a *attribute) SetSupplierAccount(supplierAccount string) {

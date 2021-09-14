@@ -22,15 +22,25 @@ import (
 )
 
 type HostApplyRuleInterface interface {
-	CreateHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.CreateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder)
-	UpdateHostApplyRule(ctx context.Context, header http.Header, bizID int64, ruleID int64, option metadata.UpdateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder)
-	GetHostApplyRule(ctx context.Context, header http.Header, bizID int64, ruleID int64) (metadata.HostApplyRule, errors.CCErrorCoder)
-	ListHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.ListHostApplyRuleOption) (metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder)
-	DeleteHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.DeleteHostApplyRuleOption) errors.CCErrorCoder
-	GenerateApplyPlan(ctx context.Context, header http.Header, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder)
-	SearchRuleRelatedModules(ctx context.Context, header http.Header, bizID int64, option metadata.SearchRuleRelatedModulesOption) ([]metadata.Module, errors.CCErrorCoder)
-	BatchUpdateHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.BatchCreateOrUpdateApplyRuleOption) (metadata.BatchCreateOrUpdateHostApplyRuleResult, errors.CCErrorCoder)
-	RunHostApplyOnHosts(ctx context.Context, header http.Header, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder)
+	CreateHostApplyRule(ctx context.Context, header http.Header, bizID int64,
+		option metadata.CreateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder)
+	UpdateHostApplyRule(ctx context.Context, header http.Header, bizID int64, ruleID int64,
+		option metadata.UpdateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder)
+	GetHostApplyRule(ctx context.Context, header http.Header, bizID int64, ruleID int64) (metadata.HostApplyRule,
+		errors.CCErrorCoder)
+	ListHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.ListHostApplyRuleOption) (
+		metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder)
+	DeleteHostApplyRule(ctx context.Context, header http.Header, bizID int64,
+		option metadata.DeleteHostApplyRuleOption) errors.CCErrorCoder
+	GenerateApplyPlan(ctx context.Context, header http.Header, bizID int64, option metadata.HostApplyPlanOption) (
+		metadata.HostApplyPlanResult, errors.CCErrorCoder)
+	SearchRuleRelatedModules(ctx context.Context, header http.Header, bizID int64,
+		option metadata.SearchRuleRelatedModulesOption) ([]metadata.Module, errors.CCErrorCoder)
+	BatchUpdateHostApplyRule(ctx context.Context, header http.Header, bizID int64,
+		option metadata.BatchCreateOrUpdateApplyRuleOption) (metadata.BatchCreateOrUpdateHostApplyRuleResult,
+		errors.CCErrorCoder)
+	RunHostApplyOnHosts(ctx context.Context, header http.Header, bizID int64,
+		option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder)
 }
 
 func NewHostApplyRuleClient(client rest.ClientInterface) HostApplyRuleInterface {

@@ -339,7 +339,7 @@ func getValueType(value interface{}) string {
 	return ""
 }
 
-// get resource id's actual field
+// GetResourceIDField get resource id's actual field
 func GetResourceIDField(resourceType iam.TypeID) string {
 	switch resourceType {
 	case iam.Host:
@@ -368,7 +368,8 @@ func GetResourceIDField(resourceType iam.TypeID) string {
 		return common.BKCloudTaskID
 	case iam.Business, iam.BusinessForHostTrans:
 		return common.BKAppIDField
-	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
+	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory,
+		iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldID
 	//case iam.Set:
 	//	return common.BKSetIDField
@@ -382,7 +383,7 @@ func GetResourceIDField(resourceType iam.TypeID) string {
 	}
 }
 
-// get resource display name's actual field
+// GetResourceNameField get resource display name's actual field
 func GetResourceNameField(resourceType iam.TypeID) string {
 	switch resourceType {
 	case iam.Host:
@@ -403,7 +404,8 @@ func GetResourceNameField(resourceType iam.TypeID) string {
 		return common.BKCloudSyncTaskName
 	case iam.Business, iam.BusinessForHostTrans:
 		return common.BKAppNameField
-	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
+	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory,
+		iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldName
 	//case iam.Set:
 	//	return common.BKSetNameField

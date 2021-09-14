@@ -553,7 +553,7 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) (*met
 	cond.Field(metadata.ModelFieldID).Eq(id)
 	objs, err := o.FindObject(kit, cond)
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to find objects, the condition is (%v) err: %s, rid: %s", cond, err.Error(), kit.Rid)
+		blog.Errorf("failed to find objects, the condition is (%v) err: %s, rid: %s", cond, err.Error(), kit.Rid)
 		return nil, err
 	}
 	// shouldn't return 404 error here, legacy implements just ignore not found error
@@ -585,21 +585,18 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) (*met
 	}
 
 	// DeleteModelCascade 将会删除模型/模型属性/属性分组/唯一校验
-	rsp, err := o.clientSet.CoreService().Model().DeleteModelCascade(kit.Ctx, kit.Header, id)
+	_, err = o.clientSet.CoreService().Model().DeleteModelCascade(kit.Ctx, kit.Header, id)
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to request the object controller, err: %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !rsp.Result {
-		blog.Errorf("[operation-obj] failed to delete the object by the id(%d), rid: %s", id, kit.Rid)
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	// save audit log.
 	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
-		blog.Errorf("delete object %s success, save audit log failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
+		blog.Errorf("delete object %s success, save audit failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
 		return nil, err
 	}
+	
 	return &object, nil
 }
 
@@ -618,6 +615,7 @@ func (o *object) isFrom(kit *rest.Kit, fromObjID, toObjID string) (bool, error) 
 	return false, nil
 }
 
+// FindObjectTopo search object topo
 func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition) ([]metadata.ObjectTopo, error) {
 	objs, err := o.FindObject(kit, cond)
 	if nil != err {
@@ -644,17 +642,15 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition) ([]meta
 
 			resp, err := o.asst.SearchType(kit, request)
 			if err != nil {
-				blog.Errorf("find object topo failed, because get association kind[%s] failed, err: %v, rid: %s", asst.AsstKindID, err, kit.Rid)
-				return nil, kit.CCError.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
-			}
-			if !resp.Result {
-				blog.Errorf("find object topo failed, because get association kind[%s] failed, err: %v, rid: %s", asst.AsstKindID, resp.ErrMsg, kit.Rid)
+				blog.Errorf("find object topo failed, because get association kind[%s] failed, err: %v, rid: %s",
+					asst.AsstKindID, err, kit.Rid)
 				return nil, kit.CCError.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
 			}
 
 			// should only be one association kind.
-			if len(resp.Data.Info) == 0 {
-				blog.Errorf("find object topo failed, because get association kind[%s] failed, err: can not find this association kind., rid: %s", asst.AsstKindID, kit.Rid)
+			if len(resp.Info) == 0 {
+				blog.Errorf("find object topo failed, because get association kind[%s] failed, "+
+					"err: can not find this association kind., rid: %s", asst.AsstKindID, kit.Rid)
 				return nil, kit.CCError.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
 			}
 
@@ -670,8 +666,8 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition) ([]meta
 			for _, asstObj := range asstObjs {
 				assocObject := asstObj.Object()
 				tmp := metadata.ObjectTopo{}
-				tmp.Label = resp.Data.Info[0].AssociationKindName
-				tmp.LabelName = resp.Data.Info[0].AssociationKindName
+				tmp.Label = resp.Info[0].AssociationKindName
+				tmp.LabelName = resp.Info[0].AssociationKindName
 				tmp.From.ObjID = object.ObjectID
 				cls, err := obj.GetClassification()
 				if nil != err {
@@ -711,25 +707,18 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition) ([]meta
 	return results, nil
 }
 
+// FindObject search object
 func (o *object) FindObject(kit *rest.Kit, cond condition.Condition) ([]model.Object, error) {
 	fCond := cond.ToMapStr()
 
-	rsp, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: fCond})
+	rsp, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header,
+		&metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-obj] find object failed, cond: %+v, err: %s, rid: %s", fCond, err.Error(), kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , error info is %s, rid: %s", fCond, rsp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	models := make([]metadata.Object, 0)
-	for index := range rsp.Data.Info {
-		models = append(models, rsp.Data.Info[index].Spec)
-	}
-	return model.CreateObject(kit, o.clientSet, models), nil
+	return model.CreateObject(kit, o.clientSet, rsp.Info), nil
 }
 
 func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error {

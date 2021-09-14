@@ -94,6 +94,7 @@ func getInstanceResourceObjID(resourceType iam.TypeID) string {
 
 var resourcePoolBizID int64
 
+// GetResourcePoolBizID search bizID of resource pool
 func (lgc *Logics) GetResourcePoolBizID(kit *rest.Kit) (int64, error) {
 	if resourcePoolBizID != 0 {
 		return resourcePoolBizID, nil
@@ -105,28 +106,26 @@ func (lgc *Logics) GetResourcePoolBizID(kit *rest.Kit) (int64, error) {
 		Fields:    []string{common.BKAppIDField, common.BkSupplierAccount},
 	}
 
-	bizResp, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, input)
+	bizResp, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp,
+		input)
 	if err != nil {
 		blog.Errorf("find resource pool biz failed, err: %s, rid: %s", err.Error(), kit.Rid)
 		return 0, err
 	}
 
-	if !bizResp.Result {
-		blog.Errorf("find resource pool biz failed, err code: %d, err msg: %s, rid: %s", bizResp.Code, bizResp.ErrMsg, kit.Rid)
-		return 0, bizResp.Error()
-	}
-
-	if len(bizResp.Data.Info) <= 0 {
+	if len(bizResp.Info) <= 0 {
 		blog.Errorf("find no resource pool biz, rid: %s", kit.Rid)
 		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	for _, biz := range bizResp.Data.Info {
+	for _, biz := range bizResp.Info {
 		if util.GetStrByInterface(biz[common.BkSupplierAccount]) == kit.SupplierAccount {
 			resourcePoolBizID, err = util.GetInt64ByInterface(biz[common.BKAppIDField])
 			if nil != err {
-				blog.ErrorJSON("find resource pool biz failed, parse biz id failed, biz: %s, err: %s, rid: %s", bizResp.Data.Info[0][common.BKAppIDField], err.Error(), kit.Rid)
-				return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+				blog.ErrorJSON("find resource pool biz failed, parse biz id failed, biz: %s, err: %s, rid: %s",
+					bizResp.Info[0][common.BKAppIDField], err.Error(), kit.Rid)
+				return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp,
+					common.BKAppIDField, "int", err.Error())
 			}
 			return resourcePoolBizID, nil
 		}
@@ -142,19 +141,15 @@ func (lgc *Logics) getCloudNameMapByIDs(kit *rest.Kit, cloudIDs []int64) (map[in
 		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 		Condition: map[string]interface{}{common.BKCloudIDField: map[string]interface{}{common.BKDBIN: cloudIDs}},
 	}
-	cloudRsp, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPlat, &cloudParam)
+	cloudRsp, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPlat,
+		&cloudParam)
 	if err != nil {
 		blog.Errorf("get cloud areas failed, err: %v,cloudIDs: %+v", err, cloudIDs)
 		return nil, err
 	}
 
-	if !cloudRsp.Result {
-		blog.Errorf("get cloud areas failed, err: %v,cloudIDs: %+v", cloudRsp.ErrMsg, cloudIDs)
-		return nil, cloudRsp.CCError()
-	}
-
 	cloudMap := make(map[int64]string)
-	for _, cloud := range cloudRsp.Data.Info {
+	for _, cloud := range cloudRsp.Info {
 		cloudID, err := util.GetInt64ByInterface(cloud[common.BKCloudIDField])
 		if err != nil {
 			blog.Errorf("parse cloud area id failed, err: %v,cloud: %+v", err, cloud)
@@ -188,14 +183,14 @@ func (lgc *Logics) GetModelsIDNameMap(kit *rest.Kit, modelIDs []int64) (map[int6
 		blog.ErrorJSON("get models failed, err:%s, cond:%s, rid:%s", err, cond, kit.Rid)
 		return nil, fmt.Errorf("get models failed, err: %+v", err)
 	}
-	if len(resp.Data.Info) == 0 {
+	if len(resp.Info) == 0 {
 		blog.ErrorJSON("get models failed, no model was found, cond:%s, rid:%s", cond, kit.Rid)
 		return nil, fmt.Errorf("get models failed, no model was found")
 	}
 
 	objIDNameMap := make(map[int64]string)
-	for _, item := range resp.Data.Info {
-		objIDNameMap[item.Spec.ID] = item.Spec.ObjectName
+	for _, item := range resp.Info {
+		objIDNameMap[item.ID] = item.ObjectName
 	}
 
 	return objIDNameMap, nil
@@ -252,14 +247,14 @@ func (lgc *Logics) GetObjIDFromResourceType(ctx context.Context, header http.Hea
 		blog.ErrorJSON("get model failed, err:%s, cond:%s, rid:%s", err, cond, rid)
 		return "", fmt.Errorf("get model failed, err: %+v", err)
 	}
-	if len(resp.Data.Info) == 0 {
+	if len(resp.Info) == 0 {
 		blog.ErrorJSON("get model failed, no model was found, cond:%s, rid:%s", cond, rid)
 		return "", fmt.Errorf("get model failed, no model was found")
 	}
 
-	for _, item := range resp.Data.Info {
-		modelObjIDMap.set(item.Spec.ID, item.Spec.ObjectID)
-		return item.Spec.ObjectID, nil
+	for _, item := range resp.Info {
+		modelObjIDMap.set(item.ID, item.ObjectID)
+		return item.ObjectID, nil
 	}
 
 	return modelObjIDMap.get(modelID), nil

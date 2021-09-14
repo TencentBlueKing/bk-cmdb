@@ -271,7 +271,8 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 		}
 
 		if err := audit.SaveAudit(ctx.Kit); err != nil {
-			blog.Errorf("TransferHostWithAutoClearServiceInstance failed, save audit log failed, err: %s, HostIDs: %+v, rid: %s", err.Error(), option.HostIDs, ctx.Kit.Rid)
+			blog.Errorf("TransferHostWithAutoClearServiceInstance failed, save audit log failed, err: %s, " +
+				"HostIDs: %+v, rid: %s", err.Error(), option.HostIDs, ctx.Kit.Rid)
 			return err
 		}
 
@@ -312,13 +313,9 @@ func (s *Service) updateHostByHostApplyConflictResolvers(kit *rest.Kit,
 		blog.Errorf("read model attr failed, err: %v, attrCond: %#v, rid: %s", err, attCond, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if ccErr := attrRes.CCError(); ccErr != nil {
-		blog.Errorf("read model attr failed, err: %v, attrCond: %#v, rid: %s", err, attCond, kit.Rid)
-		return ccErr
-	}
 
 	attrMap := make(map[int64]string)
-	for _, attr := range attrRes.Data.Info {
+	for _, attr := range attrRes.Info {
 		attrMap[attr.ID] = attr.PropertyID
 	}
 
@@ -337,16 +334,13 @@ func (s *Service) updateHostByHostApplyConflictResolvers(kit *rest.Kit,
 				common.BKHostIDField: hostID,
 			},
 		}
-		updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header,
+		_, err := s.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header,
 			common.BKInnerObjIDHost, updateOption)
 		if err != nil {
 			blog.ErrorJSON("update host failed, option: %#v, err: %v, rid: %s", updateOption, err, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
-		if ccErr := updateResult.CCError(); ccErr != nil {
-			blog.ErrorJSON("update host failed, option: %#v, err: %v, rid: %s", updateOption, ccErr, kit.Rid)
-			return ccErr
-		}
+		
 	}
 
 	return nil
@@ -368,13 +362,9 @@ func (s *Service) generateTransferPlans(kit *rest.Kit, bizID int64, withHostAppl
 		blog.ErrorJSON("get host module relation failed, option: %s, err: %s, rid: %s", hostModuleOption, err, rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if err := hostModuleResult.CCError(); err != nil {
-		blog.ErrorJSON("get host module relation failed, option: %s, err: %s, rid: %s", hostModuleOption, err, rid)
-		return nil, err
-	}
 
 	hostModulesIDMap := make(map[int64][]int64)
-	for _, item := range hostModuleResult.Data.Info {
+	for _, item := range hostModuleResult.Info {
 		if _, exist := hostModulesIDMap[item.HostID]; !exist {
 			hostModulesIDMap[item.HostID] = make([]int64, 0)
 		}
@@ -481,7 +471,7 @@ func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64, plans []met
 	}
 
 	enableModuleMap := make(map[int64]bool)
-	for _, item := range enabledModules.Data.Info {
+	for _, item := range enabledModules.Info {
 		moduleID, err := util.GetInt64ByInterface(item[common.BKModuleIDField])
 		if err != nil {
 			blog.ErrorJSON("parse module from db failed, module: %s, err: %s, rid: %s", item, err, kit.Rid)

@@ -21,7 +21,7 @@ import (
 )
 
 func TestIssue1720(t *testing.T) {
-	testData := ReadModelResult{
+	testData := ReadModelWithAttributeResult{
 		Data: QueryModelWithAttributeDataResult{
 			Info: []SearchModelInfo{
 				SearchModelInfo{
@@ -43,7 +43,7 @@ func TestIssue1720(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf("input data:%s", inputData)
 
-	out := &ReadModelResult{}
+	out := &ReadModelWithAttributeResult{}
 	err = json.Unmarshal(inputData, out)
 	require.NoError(t, err)
 	t.Logf("out:%s %s", out.Data.Info[0].Spec.CreateTime.String(), out.Data.Info[0].Attributes[0].CreateTime.String())

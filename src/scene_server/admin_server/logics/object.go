@@ -37,15 +37,11 @@ func (l *Logics) GetCustomObjects(ctx context.Context, header http.Header) ([]me
 	if err != nil {
 		return nil, fmt.Errorf("get custom models failed, err: %+v", err)
 	}
-	if len(resp.Data.Info) == 0 {
+	
+	if len(resp.Info) == 0 {
 		blog.Info("get custom models failed, no custom model is found")
 		return nil, fmt.Errorf("no custom model is found")
 	}
 
-	objects := make([]metadata.Object, 0)
-	for _, item := range resp.Data.Info {
-		objects = append(objects, item.Spec)
-	}
-
-	return objects, nil
+	return resp.Info, nil
 }

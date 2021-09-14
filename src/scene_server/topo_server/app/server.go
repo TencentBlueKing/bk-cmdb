@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
+	"configcenter/src/scene_server/topo_server/logics"
 	"configcenter/src/scene_server/topo_server/service"
 	"configcenter/src/storage/driver/redis"
 	"configcenter/src/thirdparty/elasticsearch"
@@ -155,6 +156,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		AuthManager: authManager,
 		Es:          essrv,
 		Core:        core.New(engine.CoreAPI, authManager, engine.Language),
+		Logics:      logics.New(engine.CoreAPI, authManager, engine.Language),
 		Error:       engine.CCErr,
 		Config:      server.Config,
 	}

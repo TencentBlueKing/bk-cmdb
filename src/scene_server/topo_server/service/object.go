@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
@@ -111,23 +110,22 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 		return
 	}
 
-	var rsp model.Object
+	var rsp *metadata.Object
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		rsp, err = s.Core.ObjectOperation().CreateObject(ctx.Kit, false, *data)
+		rsp, err = s.Logics.ObjectOperation().CreateObject(ctx.Kit, false, *data)
 		if nil != err {
 			return err
 		}
 
 		if auth.EnableAuthorize() {
-			objects := []metadata.Object{rsp.Object()}
+			objects := []metadata.Object{*rsp}
 			iamInstances := []metadata.IamInstanceWithCreator{{
 				Type:    string(iam.SysModel),
-				ID:      strconv.FormatInt(rsp.Object().ID, 10),
-				Name:    rsp.Object().ObjectName,
+				ID:      strconv.FormatInt(rsp.ID, 10),
+				Name:    rsp.ObjectName,
 				Creator: ctx.Kit.User,
-			},
-			}
+			}}
 			if err := s.AuthManager.CreateObjectOnIAM(ctx.Kit.Ctx, ctx.Kit.Header, objects, iamInstances); err != nil {
 				blog.ErrorJSON("create object on iam failed, objects: %s, iam instances: %s, err: %s, rid: %s",
 					objects, iamInstances, err, ctx.Kit.Rid)
@@ -146,40 +144,30 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 
 // SearchObject search some objects by condition
 func (s *Service) SearchObject(ctx *rest.Contexts) {
-	data := new(mapstr.MapStr)
-	if err := ctx.DecodeInto(data); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	cond := condition.CreateCondition()
-	if err := cond.Parse(*data); nil != err {
+	data := mapstr.New()
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	resp, err := s.Core.ObjectOperation().FindObject(ctx.Kit, cond)
+	query := &metadata.QueryCondition{Condition: data, DisableCounter: true}
+	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModel(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(resp)
+	ctx.RespEntity(resp.Info)
 }
 
 // SearchObjectTopo search the object topo
 func (s *Service) SearchObjectTopo(ctx *rest.Contexts) {
-	data := new(mapstr.MapStr)
-	if err := ctx.DecodeInto(data); err != nil {
+	data := mapstr.New()
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	cond := condition.CreateCondition()
-	err := cond.Parse(*data)
-	if nil != err {
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoObjectSelectFailed, err.Error()))
-		return
-	}
 
-	resp, err := s.Core.ObjectOperation().FindObjectTopo(ctx.Kit, cond)
+	resp, err := s.Logics.ObjectOperation().FindObjectTopo(ctx.Kit, data)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -192,7 +180,7 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 	idStr := ctx.Request.PathParameter(common.BKFieldID)
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if nil != err {
-		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", idStr, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the path params id(%s), err: %v , rid: %s", idStr, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKFieldID))
 		return
 	}
@@ -204,7 +192,7 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Core.ObjectOperation().UpdateObject(ctx.Kit, data, id)
+		err = s.Logics.ObjectOperation().UpdateObject(ctx.Kit, data, id)
 		if err != nil {
 			return err
 		}
@@ -250,15 +238,15 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 	idStr := ctx.Request.PathParameter(common.BKFieldID)
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if nil != err {
-		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", idStr, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the path params id(%s), err: %v , rid: %s", idStr, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID))
 		return
 	}
 
-	obj := &metadata.Object{}
-	//delete model
+	var obj *metadata.Object
+	cond := mapstr.MapStr{common.BKFieldID: id}
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		obj, err = s.Core.ObjectOperation().DeleteObject(ctx.Kit, id, true)
+		obj, err = s.Logics.ObjectOperation().DeleteObject(ctx.Kit, cond, true)
 		if err != nil {
 			return err
 		}

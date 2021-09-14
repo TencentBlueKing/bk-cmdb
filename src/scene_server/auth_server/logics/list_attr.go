@@ -21,7 +21,7 @@ import (
 	"configcenter/src/scene_server/auth_server/types"
 )
 
-// list enumeration and list type attributes of instance type resource
+// ListAttr list enumeration and list type attributes of instance type resource
 func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.AttrResource, error) {
 	attrs := make([]types.AttrResource, 0)
 	objID := getInstanceResourceObjID(resourceType)
@@ -51,20 +51,18 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.Att
 			return nil, err
 		}
 	}
+	
 	res, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, &param)
 	if err != nil {
 		blog.ErrorJSON("read model attribute failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
 		return nil, err
 	}
-	if !res.Result {
-		blog.ErrorJSON("read model attribute failed, error code: %s, error message: %s, param: %s, rid: %s", res.Code, res.ErrMsg, param, kit.Rid)
-		return nil, res.CCError()
-	}
-	if len(res.Data.Info) == 0 {
+
+	if len(res.Info) == 0 {
 		return attrs, nil
 	}
 
-	for _, attr := range res.Data.Info {
+	for _, attr := range res.Info {
 		displayName := attr.PropertyName
 		attrs = append(attrs, types.AttrResource{
 			ID:          attr.PropertyID,

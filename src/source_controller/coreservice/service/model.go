@@ -158,6 +158,30 @@ func (s *coreService) CascadeDeleteModel(ctx *rest.Contexts) {
 }
 
 func (s *coreService) SearchModel(ctx *rest.Contexts) {
+	inputData := metadata.QueryCondition{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	dataResult, err := s.core.ModelOperation().SearchModel(ctx.Kit, inputData)
+	if nil != err {
+		ctx.RespEntityWithError(dataResult, err)
+		return
+	}
+
+	// translate
+	lang := s.Language(ctx.Kit.Header)
+	for modelIdx := range dataResult.Info {
+		if needTranslateObjMap[dataResult.Info[modelIdx].ObjectID] {
+			dataResult.Info[modelIdx].ObjectName = s.TranslateObjectName(lang, &dataResult.Info[modelIdx])
+		}
+	}
+
+	ctx.RespEntity(dataResult)
+}
+
+func (s *coreService) SearchModelWithAttribute(ctx *rest.Contexts) {
 
 	inputData := metadata.QueryCondition{}
 	if err := ctx.DecodeInto(&inputData); nil != err {

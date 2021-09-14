@@ -127,6 +127,7 @@ func ClearDatabase() {
 	}
 	db.Close()
 	clientSet.AdminServer().Migrate(context.Background(), "0", "community", GetHeader())
+	clientSet.AdminServer().RunSyncDBIndex(context.Background(), GetHeader())
 }
 
 func GetReportUrl() string {

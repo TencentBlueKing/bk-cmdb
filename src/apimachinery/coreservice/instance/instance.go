@@ -22,20 +22,27 @@ import (
 )
 
 type InstanceClientInterface interface {
-	CreateInstance(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelInstance) (resp *metadata.CreatedOneOptionResult, err error)
-	CreateManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.CreateManyModelInstance) (resp *metadata.CreatedManyOptionResult, err error)
-	SetManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.SetManyModelInstance) (resp *metadata.SetOptionResult, err error)
-	UpdateInstance(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
-	ReadInstance(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error)
-	DeleteInstance(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
-	DeleteInstanceCascade(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
+	CreateInstance(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelInstance) (
+		*metadata.CreateOneDataResult, error)
+	CreateManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.CreateManyModelInstance) (
+		*metadata.CreateManyDataResult, error)
+	SetManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.SetManyModelInstance) (
+		resp *metadata.SetOptionResult, err error)
+	UpdateInstance(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
+		*metadata.UpdatedCount, error)
+	ReadInstance(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (
+		*metadata.InstDataInfo, error)
+	DeleteInstance(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (
+		*metadata.DeletedCount, error)
+	DeleteInstanceCascade(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (
+		resp *metadata.DeletedOptionResult, err error)
 	// ReadInstanceStruct 按照结构体返回实例数据
 	ReadInstanceStruct(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition,
 		result interface{}) (err errors.CCErrorCoder)
 
 	// CountInstances counts model instances num.
-	CountInstances(ctx context.Context, header http.Header,
-		objID string, input *metadata.Condition) (*metadata.CountResponse, error)
+	CountInstances(ctx context.Context, header http.Header, objID string, input *metadata.Condition) (
+		*metadata.CountResponseContent, error)
 	GetInstanceObjectMapping(ctx context.Context, h http.Header, ids []int64) ([]metadata.ObjectMapping,
 		errors.CCErrorCoder)
 }
