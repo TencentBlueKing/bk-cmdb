@@ -1,0 +1,454 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.,
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the ",License",); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an ",AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package settemplate
+
+import (
+	"time"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/lock"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/redis"
+)
+
+func (st *setTemplate) getSets(kit *rest.Kit, setTemplateID int64, setIDs []int64) ([]metadata.SetInst,
+	errors.CCErrorCoder) {
+
+	filter := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKSetIDField:         map[string]interface{}{common.BKDBIN: setIDs},
+			common.BKSetTemplateIDField: setTemplateID,
+		},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+
+	instResult := new(metadata.ResponseSetInstance)
+	err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter,
+		instResult)
+	if err != nil {
+		blog.Errorf("read sets failed, filter: %#v, err: %v, rid: %s", filter, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if ccErr := instResult.CCError(); ccErr != nil {
+		blog.Errorf("read sets failed, filter: %#v, err: %v, rid: %s", filter, ccErr, kit.Rid)
+		return nil, ccErr
+	}
+
+	if len(instResult.Data.Info) == 0 {
+		blog.Errorf("sets not found, filter: %#v, rid: %s", filter, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
+	}
+
+	if instResult.Data.Count != len(setIDs) {
+		blog.Errorf("some setIDs are invalid, filter: %#v, result: %#v, rid: %s", filter, instResult.Data.Info, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_set_ids")
+	}
+
+	return instResult.Data.Info, nil
+}
+
+func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64,
+	isInterrupt bool) (map[int64]bool, errors.CCErrorCoder) {
+
+	if len(setIDs) == 0 {
+		blog.Errorf("array of set_id is empty, rid: %s", kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKSetIDField)
+	}
+
+	serviceTemplates, err := st.client.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(kit.Ctx, kit.Header, bizID,
+		setTemplateID)
+	if err != nil {
+		blog.Errorf("list set template related service template failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s",
+			bizID, setTemplateID, err, kit.Rid)
+		return nil, err
+	}
+
+	svcTplCnt := int64(len(serviceTemplates))
+	svcTplMap := make(map[int64]metadata.ServiceTemplate, svcTplCnt)
+	for _, serviceTemplate := range serviceTemplates {
+		svcTplMap[serviceTemplate.ID] = serviceTemplate
+	}
+
+	moduleFilter := &metadata.QueryCondition{
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Fields: []string{
+			common.BKSetIDField,
+			common.BKModuleIDField,
+			common.BKSetTemplateIDField,
+			common.BKModuleNameField,
+			common.BKServiceTemplateIDField,
+		},
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKSetTemplateIDField: setTemplateID,
+			common.BKSetIDField: map[string]interface{}{
+				common.BKDBIN: setIDs,
+			},
+		}),
+	}
+
+	modulesInstResult := new(metadata.ResponseModuleInstance)
+	if err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		moduleFilter, modulesInstResult); err != nil {
+		blog.Errorf("list modules failed, bizID: %s, setTemplateID: %s, setIDs: %+v, err: %v, rid: %s", bizID,
+			setTemplateID, setIDs, err, kit.Rid)
+		return nil, err
+	}
+
+	if err := modulesInstResult.CCError(); err != nil {
+		blog.Errorf("list modules failed, bizID: %s, setTemplateID: %s, setIDs: %+v, err: %v, rid: %s", bizID,
+			setTemplateID, setIDs, err, kit.Rid)
+		return nil, err
+	}
+
+	setModules := make(map[int64][]metadata.ModuleInst, len(modulesInstResult.Data.Info))
+	for _, module := range modulesInstResult.Data.Info {
+		if _, exist := setModules[module.SetID]; !exist {
+			setModules[module.SetID] = make([]metadata.ModuleInst, 0)
+		}
+		setModules[module.SetID] = append(setModules[module.SetID], module)
+	}
+
+	checkResult := make(map[int64]bool, len(setIDs))
+	for _, setID := range setIDs {
+		module := setModules[setID]
+		checkResult[setID] = diffModuleServiceTpl(svcTplCnt, svcTplMap, int64(len(module)), module)
+		if isInterrupt && checkResult[setID] {
+			return checkResult, nil
+		}
+	}
+
+	return checkResult, nil
+}
+
+// diffModuleServiceTpl check different of modules with template in one set
+func diffModuleServiceTpl(serviceTplCnt int64, serviceTemplates map[int64]metadata.ServiceTemplate, moduleCnt int64,
+	modules []metadata.ModuleInst) bool {
+	/*
+		depend on logic in func DiffServiceTemplateWithModules
+		if the number of the module and the template is not the same, it changed
+		if the name of the module and the template is not the same, it changed
+		this function only use to check if module and template are the same
+	*/
+
+	if serviceTplCnt != moduleCnt {
+		return true
+	}
+
+	for _, module := range modules {
+		template, ok := serviceTemplates[module.ServiceTemplateID]
+		if !ok {
+			return true
+		}
+		if template.Name != module.ModuleName {
+			return true
+		}
+	}
+
+	return false
+}
+
+// UpdateSetSyncStatus update set sync status by sync task details, create if not exists
+func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, setID []int64) (
+	[]metadata.SetTemplateSyncStatus, errors.CCErrorCoder) {
+
+	if setTemplateID == common.SetTemplateIDNotSet {
+		blog.V(4).Infof("set not bound with template, setID: %d, rid: %s", setID, kit.Rid)
+		return make([]metadata.SetTemplateSyncStatus, 0), nil
+	}
+
+	// get set details to generate sync status's set info
+	sets, err := st.getSets(kit, setTemplateID, setID)
+	if err != nil {
+		blog.Errorf("get sets failed, setIDs: %+v, err: %v, rid: %s", setID, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(sets) == 0 {
+		blog.Errorf("get sets success but return is empty setID: %+v, rid: %s", setID, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKSetIDField)
+	}
+
+	// check if sets need sync
+	bizID := sets[0].BizID
+	needSyncs, err := st.isSyncRequired(kit, bizID, setTemplateID, setID, false)
+	if err != nil {
+		blog.Errorf("check sync required failed, templateID: %d, setID: %d, err: %v, rid: %s", setTemplateID, setID,
+			err, kit.Rid)
+		return nil, err
+	}
+
+	if len(needSyncs) == 0 {
+		blog.Errorf("check sync required return empty, tempID: %d, setID: %d, rid: %s", setTemplateID, setID, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommInternalServerError)
+	}
+
+	// get set template sync task
+	taskCond := metadata.ListAPITaskDetail{
+		SetID: setID,
+		Fields: []string{common.CreateTimeField, common.LastTimeField, common.BKUser, common.BKTaskIDField,
+			common.BKStatusField, common.MetaDataSynchronizeFlagField, common.BKInstIDField},
+	}
+	details, err := st.GetLatestSyncTaskDetail(kit, taskCond)
+	if err != nil {
+		return nil, err
+	}
+
+	// get previous set template sync status
+	option := metadata.ListSetTemplateSyncStatusOption{
+		BizID:         bizID,
+		SetIDs:        setID,
+		SetTemplateID: setTemplateID,
+		Page:          metadata.BasePage{Limit: common.BKNoLimit},
+	}
+
+	prevStatuses, err := st.ListSetTemplateSyncStatus(kit, bizID, option)
+	if err != nil {
+		blog.Errorf("list set template sync status failed, option: %#v, err: %v, rid: %s", option, err, kit.Rid)
+		return nil, err
+	}
+	prevStatusMap := make(map[int64]metadata.SetTemplateSyncStatus)
+	for _, status := range prevStatuses.Info {
+		prevStatusMap[status.SetID] = status
+	}
+
+	return st.upsertSetSyncStatus(kit, sets, needSyncs, details, prevStatusMap)
+}
+
+func (st *setTemplate) upsertSetSyncStatus(kit *rest.Kit, sets []metadata.SetInst, needSyncs map[int64]bool,
+	details map[int64]*metadata.APITaskDetail, prevStatusMap map[int64]metadata.SetTemplateSyncStatus) (
+	[]metadata.SetTemplateSyncStatus, errors.CCErrorCoder) {
+
+	setSyncStatus := make([]metadata.SetTemplateSyncStatus, 0)
+	for _, set := range sets {
+		// generate sync status by set info
+		syncStatus := metadata.SetTemplateSyncStatus{
+			SetID:           set.SetID,
+			Name:            set.SetName,
+			BizID:           set.BizID,
+			SetTemplateID:   set.SetTemplateID,
+			SupplierAccount: set.SupplierAccount,
+			Status:          metadata.SyncStatusFinished,
+		}
+
+		if needSyncs[set.SetID] {
+			syncStatus.Status = metadata.SyncStatusWaiting
+		}
+
+		// if sync task not exists, use previous status if exists, or else use current user and set info
+		if _, ok := details[set.SetID]; !ok {
+			if prevSyncStatus, exists := prevStatusMap[set.SetID]; exists {
+				syncStatus.Creator = prevSyncStatus.Creator
+				syncStatus.CreateTime = prevSyncStatus.CreateTime
+				syncStatus.LastTime = prevSyncStatus.LastTime
+				syncStatus.TaskID = prevSyncStatus.TaskID
+			} else {
+				syncStatus.Creator = kit.User
+				syncStatus.CreateTime = set.CreateTime
+				syncStatus.LastTime = set.LastTime
+			}
+			setSyncStatus = append(setSyncStatus, syncStatus)
+			continue
+		}
+
+		// set sync status info by sync task info
+		syncStatus.Creator = details[set.SetID].User
+		syncStatus.CreateTime = metadata.Time{Time: details[set.SetID].CreateTime}
+		syncStatus.LastTime = metadata.Time{Time: details[set.SetID].LastTime}
+		syncStatus.TaskID = details[set.SetID].TaskID
+
+		if !details[set.SetID].Status.IsFinished() {
+			syncStatus.Status = metadata.SyncStatusSyncing
+		}
+
+		if details[set.SetID].Status.IsFailure() {
+			syncStatus.Status = metadata.SyncStatusFailure
+		}
+
+		setSyncStatus = append(setSyncStatus, syncStatus)
+	}
+
+	err := st.client.CoreService().SetTemplate().UpdateManySetTemplateSyncStatus(kit.Ctx, kit.Header, setSyncStatus)
+	if err != nil {
+		blog.Errorf("update set template sync status(%#v) failed, err: %v, rid: %s", setSyncStatus, err, kit.Rid)
+		return nil, err
+	}
+
+	return setSyncStatus, nil
+
+}
+
+func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
+	taskCond metadata.ListAPITaskDetail) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder) {
+
+	if len(taskCond.SetID) == 0 {
+		blog.Errorf("set id is empty, rid: %s", kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKSetIDField)
+	}
+
+	latestTaskResult := make(map[int64]*metadata.APITaskDetail)
+
+	setRelatedTaskFilter := map[string]interface{}{
+		"bk_inst_id": map[string]interface{}{common.BKDBIN: taskCond.SetID},
+		"flag":       common.SyncSetTaskFlag,
+	}
+	listTaskOption := &metadata.ListAPITaskLatestRequest{
+		Condition: setRelatedTaskFilter,
+		Fields:    taskCond.Fields,
+	}
+
+	listResult, err := st.client.TaskServer().Task().ListLatestTask(kit.Ctx, kit.Header, common.SyncSetTaskName,
+		listTaskOption)
+	if err != nil {
+		blog.Errorf("list set sync tasks failed, option: %s, err: %v, rid: %s", listTaskOption, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrTaskListTaskFail)
+	}
+
+	if listResult == nil || len(listResult.Data) == 0 {
+		return latestTaskResult, nil
+	}
+
+	for _, APITask := range listResult.Data {
+		if len(taskCond.Fields) == 0 {
+			clearSetSyncTaskDetail(&APITask)
+		}
+
+		if APITask.InstID != 0 {
+			latestTaskResult[APITask.InstID] = &APITask
+		}
+	}
+
+	return latestTaskResult, nil
+}
+
+func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
+	detail.Header = util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+	for taskIdx := range detail.Detail {
+		subTaskDetail, ok := detail.Detail[taskIdx].Data.(map[string]interface{})
+		if !ok {
+			blog.Warnf("expect map[string]interface{}, got unexpected type, data: %+v", detail.Detail[taskIdx].Data)
+			detail.Detail[taskIdx].Data = nil
+		}
+		delete(subTaskDetail, "header")
+	}
+}
+
+// TriggerCheckSetTemplateSyncingStatus  触发对正在同步中任务的状态改变处理
+func (st *setTemplate) TriggerCheckSetTemplateSyncingStatus(kit *rest.Kit, bizID, setTemplateID int64,
+	setID []int64) errors.CCErrorCoder {
+
+	setTempLock := lock.NewLocker(redis.Client())
+	key := lock.GetLockKey(lock.CheckSetTemplateSyncFormat, setID)
+	locked, err := setTempLock.Lock(key, time.Minute)
+	if err != nil {
+		blog.Errorf("get sync set template lock failed, set template id: %d, setID: %d, err: %v, rid: %s",
+			setTemplateID, setID, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommRedisOPErr)
+	}
+	if locked {
+		defer setTempLock.Unlock()
+		_, err := st.UpdateSetSyncStatus(kit, setTemplateID, setID)
+		if err != nil {
+			return err
+		}
+
+	} else {
+		blog.Warnf("skip task, reason not get lock. template id: %d, setID: %d, rid: %s", setTemplateID, setID, kit.Rid)
+	}
+	return nil
+}
+
+// ListSetTemplateSyncStatus batch search set template sync status
+func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, bizID int64,
+	option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
+
+	filter := &metadata.QueryCondition{
+		Page:   option.Page,
+		Fields: []string{common.BKSetIDField},
+		Condition: mapstr.MapStr{
+			common.BKSetTemplateIDField: option.SetTemplateID,
+			common.BKAppIDField:         bizID,
+		},
+	}
+
+	if len(option.SearchKey) != 0 {
+		filter.Condition.Set(
+			common.BKSetNameField, mapstr.MapStr{
+				common.BKDBLIKE:    option.SearchKey,
+				common.BKDBOPTIONS: "i"},
+		)
+	}
+
+	if len(option.SetIDs) != 0 {
+		filter.Condition[common.BKSetIDField] = mapstr.MapStr{common.BKDBIN: option.SetIDs}
+	}
+
+	var setInfoResp metadata.ResponseSetInstance
+	err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
+		filter, &setInfoResp)
+	if err != nil {
+		blog.Errorf("get set failed, option: %#v, err: %v, rid: %s", filter, err, kit.Rid)
+		return metadata.MultipleSetTemplateSyncStatus{}, err
+	}
+	if err := setInfoResp.CCError(); err != nil {
+		blog.Errorf("get set failed, option: %#v, err: %v, rid: %s", filter, err, kit.Rid)
+		return metadata.MultipleSetTemplateSyncStatus{}, err
+	}
+
+	setIDs := make([]int64, len(setInfoResp.Data.Info))
+	for idx, setInfo := range setInfoResp.Data.Info {
+		setIDs[idx] = setInfo.SetID
+	}
+
+	// 使用存在模块
+	option.SetIDs = setIDs
+	result, err := st.client.CoreService().SetTemplate().ListSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, option)
+	if err != nil {
+		blog.Errorf("list set template sync status failed, option: %#v, err: %v, rid: %s", option, err, kit.Rid)
+		return metadata.MultipleSetTemplateSyncStatus{}, err
+	}
+
+	setTempSyncMap := make(map[int64]metadata.SetTemplateSyncStatus, len(result.Info))
+	// 处理当前需要同步任务的状态
+	for _, info := range result.Info {
+		setTempSyncMap[info.SetID] = info
+		if !info.Status.IsFinished() {
+			go func(info metadata.SetTemplateSyncStatus) {
+				st.TriggerCheckSetTemplateSyncingStatus(kit.NewKit(),
+					info.BizID, info.SetTemplateID, []int64{info.SetID})
+			}(info)
+		}
+
+	}
+
+	setTemplateStatusRsp := make([]metadata.SetTemplateSyncStatus, 0)
+	for _, setID := range setIDs {
+		if setSync, exist := setTempSyncMap[setID]; exist {
+			setTemplateStatusRsp = append(setTemplateStatusRsp, setSync)
+		}
+	}
+
+	return metadata.MultipleSetTemplateSyncStatus{
+		Count: int64(len(setTemplateStatusRsp)),
+		Info:  setTemplateStatusRsp,
+	}, nil
+}

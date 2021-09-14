@@ -25,7 +25,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -529,22 +528,26 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 	// set read preference.
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	// query metadata model.
-	modelCondition := condition.CreateCondition()
-	modelCondition.Field(common.BKObjIDField).In(objectIDs)
-	objects, err := s.Core.ObjectOperation().FindObject(ctx.Kit, modelCondition)
+	modelCondition := &metadata.QueryCondition{
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
+		Condition:      mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objectIDs}},
+		DisableCounter: true,
+	}
+
+	objects, err := s.Engine.CoreAPI.CoreService().Model().ReadModel(ctx.Kit.Ctx, ctx.Kit.Header, modelCondition)
 	if err != nil {
-		blog.Errorf("search object fail,object: %v,rid: %s", objectIDs, ctx.Kit.Rid)
+		blog.Errorf("get objects(%+v) failed, err: %v, rid: %s", objectIDs, err, ctx.Kit.Rid)
 		return nil, err
 	}
 
 	// model result.
-	for _, object := range objects {
+	for _, object := range objects.Info {
 		searchRes := SearchResult{}
 		rawString := strings.Trim(request.QueryString, "*")
-		searchRes.setHit(ctx.Kit.Ctx, objHits[object.Object().ObjectID], request.BizID, rawString)
+		searchRes.setHit(ctx.Kit.Ctx, objHits[object.ObjectID], request.BizID, rawString)
 		searchRes.Kind = metadata.DataKindModel
-		searchRes.Key = object.Object().ObjectID
-		searchRes.Source = object.Object()
+		searchRes.Key = object.ObjectID
+		searchRes.Source = object
 		searchResults = append(searchResults, searchRes)
 	}
 
@@ -630,7 +633,7 @@ func (s *Service) fullTextSearchForInstance(ctx *rest.Contexts, instMetadataCond
 
 		input = fullTextSearchForInstanceCond(objectID, ids)
 		// search object instances.
-		result, err := s.Core.InstOperation().SearchObjectInstances(ctx.Kit, objectID, input)
+		result, err := s.Logics.InstOperation().SearchObjectInstances(ctx.Kit, objectID, input)
 		if err != nil {
 			blog.Errorf("search object instances fail,objectID: %s,ids: %v,rid: %s", objectID, ids, ctx.Kit.Rid)
 			continue

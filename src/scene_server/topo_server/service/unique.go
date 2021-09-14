@@ -38,7 +38,7 @@ func (s *Service) CreateObjectUnique(ctx *rest.Contexts) {
 	objectID := ctx.Request.PathParameter(common.BKObjIDField)
 
 	// mainline object's unique can not be changed.
-	yes, err := s.Core.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
+	yes, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -106,7 +106,7 @@ func (s *Service) UpdateObjectUnique(ctx *rest.Contexts) {
 	}
 
 	// mainline object's unique can not be changed.
-	yes, err := s.Core.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
+	yes, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -147,7 +147,7 @@ func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
 	}
 
 	// mainline object's unique can not be changed.
-	yes, err := s.Core.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
+	yes, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

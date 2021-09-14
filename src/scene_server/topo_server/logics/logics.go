@@ -19,6 +19,7 @@ import (
 	"configcenter/src/scene_server/topo_server/logics/inst"
 	"configcenter/src/scene_server/topo_server/logics/model"
 	"configcenter/src/scene_server/topo_server/logics/operation"
+	"configcenter/src/scene_server/topo_server/logics/settemplate"
 )
 
 // Logics provides management interface for operations of model and instance and related resources like association
@@ -36,6 +37,7 @@ type Logics interface {
 	GraphicsOperation() operation.GraphicsOperationInterface
 	GroupOperation() model.GroupOperationInterface
 	BusinessOperation() inst.BusinessOperationInterface
+	SetTemplateOperation() settemplate.SetTemplate
 }
 
 type logics struct {
@@ -52,6 +54,7 @@ type logics struct {
 	group             model.GroupOperationInterface
 	importassociation operation.AssociationOperationInterface
 	business          inst.BusinessOperationInterface
+	setTemplate       settemplate.SetTemplate
 }
 
 // New create a logics manager
@@ -70,6 +73,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	graphicsOperation := operation.NewGraphics(client, authManager)
 	groupOperation := model.NewGroupOperation(client)
 	businessOperation := inst.NewBusinessOperation(client, authManager)
+	setTemplate := settemplate.NewSetTemplate(client)
 
 	instOperation.SetProxy(instAssociationOperation)
 	instAssociationOperation.SetProxy(instOperation)
@@ -93,70 +97,76 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		group:             groupOperation,
 		importassociation: importAssociationOperation,
 		business:          businessOperation,
+		setTemplate:       setTemplate,
 	}
 }
 
 // SetOperation return a setOperation provide SetOperationInterface
-func (c *logics) SetOperation() inst.SetOperationInterface {
-	return c.set
+func (l *logics) SetOperation() inst.SetOperationInterface {
+	return l.set
 }
 
 // ModuleOperation return a module provide ModuleOperationInterface
-func (c *logics) ModuleOperation() inst.ModuleOperationInterface {
-	return c.module
+func (l *logics) ModuleOperation() inst.ModuleOperationInterface {
+	return l.module
 }
 
 // AttributeOperation return a attribute provide AttributeOperationInterface
-func (c *logics) AttributeOperation() model.AttributeOperationInterface {
-	return c.attribute
+func (l *logics) AttributeOperation() model.AttributeOperationInterface {
+	return l.attribute
 }
 
 // ClassificationOperation return a classification provide ClassificationOperationInterface
-func (c *logics) ClassificationOperation() model.ClassificationOperationInterface {
-	return c.classification
+func (l *logics) ClassificationOperation() model.ClassificationOperationInterface {
+	return l.classification
 }
 
 // ObjectOperation return a object provide ObjectOperationInterface
-func (c *logics) ObjectOperation() model.ObjectOperationInterface {
-	return c.object
+func (l *logics) ObjectOperation() model.ObjectOperationInterface {
+	return l.object
 }
 
 // IdentifierOperation return a identifier provide IdentifierOperationInterface
-func (c *logics) IdentifierOperation() operation.IdentifierOperationInterface {
-	return c.identifier
+func (l *logics) IdentifierOperation() operation.IdentifierOperationInterface {
+	return l.identifier
 }
 
 // InstOperation return a inst provide InstOperationInterface
-func (c *logics) InstOperation() inst.InstOperationInterface {
-	return c.inst
+func (l *logics) InstOperation() inst.InstOperationInterface {
+	return l.inst
 }
 
 // AssociationOperation return a association provide AssociationOperationInterface
-func (c *logics) AssociationOperation() model.AssociationOperationInterface {
-	return c.association
+func (l *logics) AssociationOperation() model.AssociationOperationInterface {
+	return l.association
 }
 
 // InstAssociationOperation return a instance association provide AssociationOperationInterface
-func (c *logics) InstAssociationOperation() inst.AssociationOperationInterface {
-	return c.instassociation
+func (l *logics) InstAssociationOperation() inst.AssociationOperationInterface {
+	return l.instassociation
 }
 
 // ImportAssociationOperation return a import association provide AssociationOperationInterface
-func (c *logics) ImportAssociationOperation() operation.AssociationOperationInterface {
-	return c.importassociation
+func (l *logics) ImportAssociationOperation() operation.AssociationOperationInterface {
+	return l.importassociation
 }
 
 // GraphicsOperation return a inst provide GraphicsOperation
-func (c *logics) GraphicsOperation() operation.GraphicsOperationInterface {
-	return c.graphics
+func (l *logics) GraphicsOperation() operation.GraphicsOperationInterface {
+	return l.graphics
 }
 
 // GroupOperation return a inst provide GroupOperationInterface
-func (c *logics) GroupOperation() model.GroupOperationInterface {
-	return c.group
+func (l *logics) GroupOperation() model.GroupOperationInterface {
+	return l.group
 }
 
 // BusinessOperation return a inst provide BusinessOperation
-func (c *logics) BusinessOperation() inst.BusinessOperationInterface {
-	return c.business
+func (l *logics) BusinessOperation() inst.BusinessOperationInterface {
+	return l.business
+}
+
+// SetTemplateOperation set template operation
+func (l *logics) SetTemplateOperation() settemplate.SetTemplate {
+	return l.setTemplate
 }

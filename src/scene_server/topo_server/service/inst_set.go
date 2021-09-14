@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
 // BatchCreateSet batch create set
@@ -140,7 +139,7 @@ func (s *Service) createSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (map
 		return nil, err
 	}
 
-	if _, err = s.Core.SetTemplateOperation().UpdateSetSyncStatus(kit, setTemplateIDint, []int64{setID}); err != nil {
+	if _, err = s.Logics.SetTemplateOperation().UpdateSetSyncStatus(kit, setTemplateIDint, []int64{setID}); err != nil {
 		blog.Errorf("update set sync status failed, setID: %d, err: %v, rid: %s", setID, err, kit.Rid)
 	}
 
@@ -183,7 +182,7 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 		return
 	}
 
-	data := new(operation.OpCondition)
+	data := new(metadata.OpCondition)
 	if err = ctx.DecodeInto(data); err != nil {
 		blog.Errorf("failed to parse to the operation condition, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

@@ -814,12 +814,13 @@ func (s *Service) SearchInstAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := condition.CreateCondition()
-	condOR := cond.NewOR()
-	condOR.Item(map[string]interface{}{common.BKObjIDField: objID, common.BKInstIDField: instID})
-	condOR.Item(map[string]interface{}{common.BKAsstObjIDField: objID, common.BKAsstInstIDField: instID})
-	input := &metadata.QueryCondition{
-		Condition: cond.ToMapStr(),
+	input := metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKDBOR: []mapstr.MapStr{
+				{common.BKObjIDField: objID, common.BKInstIDField: instID},
+				{common.BKAsstObjIDField: objID, common.BKAsstInstIDField: instID},
+			},
+		},
 		Page: metadata.BasePage{
 			Limit: int(limit),
 			Start: int(start),
@@ -827,23 +828,24 @@ func (s *Service) SearchInstAssociation(ctx *rest.Contexts) {
 	}
 
 	if input.IsIllegal() {
-		blog.ErrorJSON("parse page illegal, input:%s,rid:%s", input, ctx.Kit.Rid)
+		blog.ErrorJSON("parse page illegal, input: %s, rid: %s", input, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}
 
 	blog.V(5).Infof("input:%#v, rid:%s", input, ctx.Kit.Rid)
-	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationList(ctx.Kit, objID, input)
+	queryCond := &metadata.InstAsstQueryCondition{
+		ObjID: objID,
+		Cond:  input,
+	}
+
+	rsp, err := s.Engine.CoreAPI.CoreService().Association().ReadInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, queryCond)
 	if err != nil {
-		blog.ErrorJSON("parse page illegal, input:%s, err:%s, rid:%s", input, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("read instance association failed, err: %v, cond: %#v, rid: %s", err, queryCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(map[string]interface{}{
-		"info":  infos,
-		"count": cnt,
-		"page":  input.Page,
-	})
+	ctx.RespEntity(rsp)
 }
 
 func (s *Service) SearchInstAssociationUI(ctx *rest.Contexts) {

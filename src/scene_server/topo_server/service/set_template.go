@@ -133,7 +133,7 @@ func (s *Service) UpdateSetTemplate(ctx *rest.Contexts) {
 			return err
 		}
 
-		if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(ctx.Kit, setTemplateID, setID); err != nil {
+		if _, err := s.Logics.SetTemplateOperation().UpdateSetSyncStatus(ctx.Kit, setTemplateID, setID); err != nil {
 			blog.Errorf("update set sync status failed, setID: %d, err: %+v, rid: %s", setID, err, ctx.Kit.Rid)
 			return err
 		}
@@ -569,7 +569,7 @@ func (s *Service) DiffSetTplWithInst(ctx *rest.Contexts) {
 		return
 	}
 
-	setDiffs, err := s.Core.SetTemplateOperation().DiffSetTplWithInst(ctx.Kit, bizID, setTemplateID, option)
+	setDiffs, err := s.Logics.SetTemplateOperation().DiffSetTplWithInst(ctx.Kit, bizID, setTemplateID, option)
 	if err != nil {
 		blog.Errorf("DiffSetTplWithInst failed, operation failed, bizID: %d, setTemplateID: %d, option: %+v, err: %s,"+
 			" rid: %s", bizID, setTemplateID, option, err.Error(), ctx.Kit.Rid)
@@ -656,7 +656,7 @@ func (s *Service) SyncSetTplToInst(ctx *rest.Contexts) {
 		},
 	}
 	// NOTE: 如下处理不能杜绝所有发提交任务, 可通过前端防双击的方式限制绝大部分情况
-	setSyncStatus, err := s.Core.SetTemplateOperation().GetLatestSyncTaskDetail(ctx.Kit, taskCond)
+	setSyncStatus, err := s.Logics.SetTemplateOperation().GetLatestSyncTaskDetail(ctx.Kit, taskCond)
 	if err != nil {
 		blog.Errorf("SyncSetTplToInst failed, getSetSyncStatus failed, setIDs: %+v, err: %s, rid: %s", option.SetIDs,
 			err.Error(), ctx.Kit.Rid)
@@ -675,7 +675,7 @@ func (s *Service) SyncSetTplToInst(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		if err := s.Core.SetTemplateOperation().SyncSetTplToInst(ctx.Kit, bizID, setTemplateID, option); err != nil {
+		if err := s.Logics.SetTemplateOperation().SyncSetTplToInst(ctx.Kit, bizID, setTemplateID, option); err != nil {
 			blog.Errorf("SyncSetTplToInst failed, operation failed, bizID: %d, setTemplateID: %d, "+
 				"option: %+v err: %s, rid: %s", bizID, setTemplateID, option, err.Error(), ctx.Kit.Rid)
 			return err
@@ -754,7 +754,7 @@ func (s *Service) GetSetSyncDetails(ctx *rest.Contexts) {
 		},
 	}
 
-	taskDetail, err := s.Core.SetTemplateOperation().GetLatestSyncTaskDetail(ctx.Kit, taskCond)
+	taskDetail, err := s.Logics.SetTemplateOperation().GetLatestSyncTaskDetail(ctx.Kit, taskCond)
 	if err != nil {
 		blog.Errorf("get the latest task detail failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -803,7 +803,7 @@ func (s *Service) ListSetTemplateSyncStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := s.Core.SetTemplateOperation().ListSetTemplateSyncStatus(ctx.Kit, bizID, option)
+	result, err := s.Logics.SetTemplateOperation().ListSetTemplateSyncStatus(ctx.Kit, bizID, option)
 	if err != nil {
 		blog.ErrorJSON("ListSetTemplateSyncStatus failed, core service search failed, option: %s, err: %s, rid: %s", option, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -829,7 +829,7 @@ func (s *Service) CheckSetInstUpdateToDateStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := s.Core.SetTemplateOperation().CheckSetInstUpdateToDateStatus(ctx.Kit, bizID, setTemplateID)
+	result, err := s.Logics.SetTemplateOperation().CheckSetInstUpdateToDateStatus(ctx.Kit, bizID, setTemplateID)
 	if err != nil {
 		blog.ErrorJSON("CheckSetInstUpdateToDateStatus failed, call core implement failed, bizID: %d, setTemplateID: %d, err: %s, rid: %s", bizID, setTemplateID, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -855,7 +855,7 @@ func (s *Service) BatchCheckSetInstUpdateToDateStatus(ctx *rest.Contexts) {
 
 	batchResult := make([]metadata.SetTemplateUpdateToDateStatus, 0)
 	for _, setTemplateID := range option.SetTemplateIDs {
-		oneResult, err := s.Core.SetTemplateOperation().CheckSetInstUpdateToDateStatus(ctx.Kit, bizID, setTemplateID)
+		oneResult, err := s.Logics.SetTemplateOperation().CheckSetInstUpdateToDateStatus(ctx.Kit, bizID, setTemplateID)
 		if err != nil {
 			blog.ErrorJSON("BatchCheckSetInstUpdateToDateStatus failed, CheckSetInstUpdateToDateStatus failed, bizID: %d, setTemplateID: %d, err: %s, rid: %s", bizID, setTemplateID, err.Error(), ctx.Kit.Rid)
 			ctx.RespAutoError(err)

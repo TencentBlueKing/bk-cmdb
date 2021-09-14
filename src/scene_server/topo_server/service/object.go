@@ -22,16 +22,14 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
 // CreateObjectBatch batch to create some objects
 func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
-	data := new(map[string]operation.ImportObjectData)
+	data := new(map[string]metadata.ImportObjectData)
 	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -43,14 +41,16 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 		objIDs = append(objIDs, objID)
 	}
 
-	if err := s.AuthManager.AuthorizeByObjectIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.UpdateMany, 0, objIDs...); err != nil {
+	err := s.AuthManager.AuthorizeByObjectIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.UpdateMany, 0, objIDs...)
+	if err != nil {
 		blog.Errorf("check object authorization failed, objIDs: %+v, err: %v, rid: %s", objIDs, err, ctx.Kit.Rid)
 		if err != ac.NoAuthorizeError {
 			ctx.RespAutoError(err)
 			return
 		}
 
-		perm, err := s.AuthManager.GenObjectBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, meta.UpdateMany, 0, objIDs)
+		perm, err := s.AuthManager.GenObjectBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, meta.UpdateMany, 0,
+			objIDs)
 		if err != nil {
 			ctx.RespAutoError(err)
 			return
@@ -62,7 +62,7 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 	var ret mapstr.MapStr
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.ObjectOperation().CreateObjectBatch(ctx.Kit, *data)
+		ret, err = s.Logics.AttributeOperation().CreateObjectBatch(ctx.Kit, *data)
 		if err != nil {
 			return err
 		}
@@ -78,14 +78,12 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 
 // SearchObjectBatch batch to search some objects
 func (s *Service) SearchObjectBatch(ctx *rest.Contexts) {
-	data := struct {
-		operation.ExportObjectCondition `json:",inline"`
-	}{}
+	data := metadata.ExportObjectCondition{}
 	if err := ctx.DecodeInto(&data); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
-	resp, err := s.Core.ObjectOperation().FindObjectBatch(ctx.Kit, data.ObjIDS)
+	resp, err := s.Logics.AttributeOperation().FindObjectBatch(ctx.Kit, data.ObjIDs)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -204,19 +202,23 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 				return nil
 			}
 
-			cond := condition.CreateCondition().Field(common.BKFieldID).Eq(id)
-			resp, err := s.Core.ObjectOperation().FindObject(ctx.Kit, cond)
+			cond := &metadata.QueryCondition{
+				Page:           metadata.BasePage{Limit: common.BKNoLimit},
+				Condition:      mapstr.MapStr{common.BKFieldID: id},
+				DisableCounter: true,
+			}
+
+			resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModel(ctx.Kit.Ctx, ctx.Kit.Header, cond)
 			if err != nil {
 				blog.ErrorJSON("find object failed, cond: %s, err: %s, rid: %s", cond, err, ctx.Kit.Rid)
 				return err
 			}
-			if len(resp) != 1 {
-				blog.ErrorJSON("find object failed, cond: %s, resp:%s, err: object count is wrong, rid: %s",
-					cond, resp, ctx.Kit.Rid)
+			if len(resp.Info) != 1 {
+				blog.ErrorJSON("object count is wrong, id: %d, resp: %#v, rid: %s", id, resp, ctx.Kit.Rid)
 				return ctx.Kit.CCError.New(common.CCErrCommDBSelectFailed, "object count is wrong")
 			}
 
-			objects := []metadata.Object{resp[0].Object()}
+			objects := []metadata.Object{resp.Info[0]}
 			if err := s.AuthManager.Viewer.UpdateView(ctx.Kit.Ctx, ctx.Kit.Header, objects); err != nil {
 				blog.Errorf("update view failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
@@ -298,25 +300,6 @@ func (s *Service) createObjectTable(ctx *rest.Contexts, object map[string]interf
 
 	}
 	return nil
-}
-
-// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
-// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
-// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
-// Collection minimum is Timestamp(1616747878, 5)
-func (s *Service) createObjectTableBatch(ctx *rest.Contexts, objectMap map[string]operation.ImportObjectData) error {
-
-	input := &metadata.CreateModelTable{
-		IsMainLine: false,
-	}
-	for objID := range objectMap {
-		if objID != "" {
-			input.ObjectIDs = append(input.ObjectIDs, objID)
-
-		}
-	}
-
-	return s.Engine.CoreAPI.CoreService().Model().CreateModelTables(ctx.Kit.Ctx, ctx.Kit.Header, input)
 }
 
 // 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，

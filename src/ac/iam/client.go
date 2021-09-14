@@ -598,6 +598,7 @@ func (c *iamClient) DeleteActionPolicies(ctx context.Context, actionID ActionID)
 	return nil
 }
 
+// ListPolicies list iam policies
 func (c *iamClient) ListPolicies(ctx context.Context, params *ListPoliciesParams) (*ListPoliciesData, error) {
 	parsedParams := map[string]string{"action_id": string(params.ActionID)}
 	if params.Page != 0 {
