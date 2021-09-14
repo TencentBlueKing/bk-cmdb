@@ -401,6 +401,7 @@ func (s *Service) CreateObjectAttributeBatch(ctx *rest.Contexts) {
 		var err error
 		ret, err = s.Logics.AttributeOperation().CreateObjectAttributeBatch(ctx.Kit, *data)
 		if err != nil {
+			blog.Errorf("create object attr batch failed, data: %#v, err: %v,  rid: %s", data, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -413,18 +414,21 @@ func (s *Service) CreateObjectAttributeBatch(ctx *rest.Contexts) {
 	ctx.RespEntity(ret)
 }
 
-// SearchObjectAttributeBatch batch to search some object attribute
+// SearchObjectAttributeBatch batch to search some objects attribute
 func (s *Service) SearchObjectAttributeBatch(ctx *rest.Contexts) {
 	data := operation.ExportObjectCondition{}
 	if err := ctx.DecodeInto(&data); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	resp, err := s.Logics.AttributeOperation().FindObjectAttributeBatch(ctx.Kit, data.ObjIDS)
 	if err != nil {
+		blog.Errorf("find obj attr batch failed, data: %#v, err: %v, rid: %s", data.ObjIDS, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
+
 	ctx.RespEntity(resp)
 }
 

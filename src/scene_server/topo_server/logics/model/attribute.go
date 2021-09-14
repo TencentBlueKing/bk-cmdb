@@ -312,11 +312,11 @@ func (a *attribute) CreateObjectAttributeBatch(kit *rest.Kit, inputDataMap map[s
 		subResult := make(mapstr.MapStr)
 		exist, err := a.obj.IsObjectExist(kit, objID)
 		if !exist {
-			blog.Errorf("create model patch, obj id not exist, obj id: %s, rid: %s", objID, kit.Rid)
+			blog.Errorf("obj id not exist, obj id: %s, rid: %s", objID, kit.Rid)
 			continue
 		}
 		if err != nil {
-			blog.Errorf("create model patch, obj id not exist, obj id: %s, err: %v, rid: %s", objID, err, kit.Rid)
+			blog.Errorf("check obj id exist failed, obj id: %s, err: %v, rid: %s", objID, err, kit.Rid)
 			subResult["error"] = fmt.Sprintf("the obj id: %s is invalid", objID)
 			result[objID] = subResult
 			hasError = true
@@ -336,8 +336,7 @@ func (a *attribute) CreateObjectAttributeBatch(kit *rest.Kit, inputDataMap map[s
 		for idx, attr := range inputData.Attr {
 			targetAttr := new(metadata.Attribute)
 			if err := mapstruct.Decode2Struct(attr, targetAttr); err != nil {
-				blog.Errorf("unmarshal mapstr data into module failed, module: %s, err: %s, rid: %s", attr, err,
-					kit.Rid)
+				blog.Errorf("unmarshal mapstr data into struct failed, err: %v, rid: %s", attr, err, kit.Rid)
 				itemErr = append(itemErr, rowInfo{Row: idx, Info: err.Error()})
 				hasError = true
 				continue
@@ -381,7 +380,7 @@ func (a *attribute) CreateObjectAttributeBatch(kit *rest.Kit, inputDataMap map[s
 	return result, nil
 }
 
-//
+// createOrUpdateAttr create or update module attr by condition
 func (a *attribute) createOrUpdateAttr(kit *rest.Kit, objID string, targetAttr *metadata.Attribute, addErr,
 	setErr []rowInfo, idx int64) ([]rowInfo, []rowInfo, error) {
 	attrCond := mapstr.MapStr{
