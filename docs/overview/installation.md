@@ -138,7 +138,7 @@ mongodb以集群的方式启动，需加入参数--replSet,如--replSet=rs0
 
 插件基于Monstache v6.0.0+, 需要依赖Elasticsearch v7+和MongoDB v4.2+。
 
-阅读[蓝鲸CMDB全文检索插件文档](../../src/tools/monstache_plugin/README.md), 按照指引进行安装部署。
+阅读[蓝鲸CMDB全文检索插件文档](../../src/tools/monstache/README.md), 按照指引进行安装部署。
 
 ### 8. 部署CMDB
 
