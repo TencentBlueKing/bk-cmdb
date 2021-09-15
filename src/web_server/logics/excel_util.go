@@ -438,7 +438,7 @@ func productExcelHeader(ctx context.Context, fields map[string]Property, filter 
 
 // productHostExcelHeader Excel文件头部，
 func productHostExcelHeader(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet,
-	defLang lang.DefaultCCLanguageIf, customLen int, objName []string) {
+	defLang lang.DefaultCCLanguageIf, objName []string) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
 	//橙棕色
@@ -446,23 +446,15 @@ func productHostExcelHeader(ctx context.Context, fields map[string]Property, fil
 	//粉色
 	colStyle := getCellStyle(common.ExcelHeaderFirstColumnColor, common.ExcelHeaderFirstRowFontColor)
 	sheet.Col(0).Width = 18
-	//字典中的值为国际化之后的"业务拓扑"和"业务名"，用来做判断，命中即变化相应的cell颜色。
+	//字典中的值为国际化之后的"业务拓扑"和"业务名"，"集群"，”模块“，用来做判断，命中即变化相应的cell颜色。
 	bizTopoMap := map[string]int{
 		defLang.Language("web_ext_field_topo"):       1,
 		defLang.Language("biz_property_bk_biz_name"): 1,
 		defLang.Language("bk_module_name"):           1,
 		defLang.Language("bk_set_name"):              1,
 	}
-	switch customLen {
-	case 1:
-		bizTopoMap[objName[0]] = 1
-	case 2:
-		bizTopoMap[objName[1]] = 1
-		bizTopoMap[objName[0]] = 1
-	case 3:
-		bizTopoMap[objName[2]] = 1
-		bizTopoMap[objName[1]] = 1
-		bizTopoMap[objName[0]] = 1
+	for _, name := range objName {
+		bizTopoMap[name] = 1
 	}
 
 	firstColFields := []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType,

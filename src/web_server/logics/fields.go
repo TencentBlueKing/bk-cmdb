@@ -74,17 +74,6 @@ type HandleHostParam struct {
 	Sheet *xlsx.Sheet
 }
 
-// ExtField 处理主机数据导出自定义层级字段
-type ExtField struct {
-	ExtFieldsTopoID    string
-	ExtFieldsBizID     string
-	ExtFieldsModuleID  string
-	ExtFieldsSetID     string
-	ExtFieldsCustomID1 string
-	ExtFieldsCustomID2 string
-	ExtFieldsCustomID3 string
-}
-
 // PropertyGroup property group
 type PropertyGroup struct {
 	Name  string
@@ -350,8 +339,7 @@ func addSystemField(fields map[string]Property, objID string, defLang lang.Defau
 		PropertyType:  common.FieldTypeInt,
 		Group:         "defalut",
 		ExcelColIndex: index,
-		// why set ExcelColIndex=index? because ExcelColIndex=customLen + biztopo + biz + set + moudle used by tip
-		//column
+		// ExcelColIndex=tip + biztopo + biz + set + moudle + customLen, the former indexes is used by these columns
 	}
 
 	switch objID {

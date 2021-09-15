@@ -172,7 +172,6 @@ func addExtFields(fields map[string]Property, extFields map[string]string, extFi
 			excelColIndex = field.ExcelColIndex
 		}
 	}
-	excelColIndex++
 
 	return fields
 }

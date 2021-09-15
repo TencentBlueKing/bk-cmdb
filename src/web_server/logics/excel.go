@@ -89,122 +89,74 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 // BuildHostExcelFromData product excel from data
 func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property,
 	filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64,
-	usernameMap map[string]string, propertyList []string, customLen int, objName []string) error {
+	usernameMap map[string]string, propertyList []string, objNames, objIDs []string) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
 	sheet, err := xlsxFile.AddSheet("host")
 	if err != nil {
-		blog.Errorf("BuildHostExcelFromData add excel sheet error, err:%s, rid:%s", err.Error(), rid)
+		blog.Errorf("add excel sheet failed, err: %v, rid: %s", err, rid)
 		return err
 	}
-
-	extField := ExtField{
-		ExtFieldsTopoID:    "cc_ext_field_topo",
-		ExtFieldsBizID:     "cc_ext_biz",
-		ExtFieldsModuleID:  "cc_ext_module",
-		ExtFieldsSetID:     "cc_ext_set",
-		ExtFieldsCustomID1: "cc_ext_custom1",
-		ExtFieldsCustomID2: "cc_ext_custom2",
-		ExtFieldsCustomID3: "cc_ext_custom3",
+	extFieldKey := make([]string, 0)
+	extFieldsTopoID := "cc_ext_field_topo"
+	extFieldsBizID := "cc_ext_biz"
+	extFieldsModuleID := "cc_ext_module"
+	extFieldsSetID := "cc_ext_set"
+	extFieldKey = append(extFieldKey, extFieldsTopoID, extFieldsBizID)
+	extFields := map[string]string{
+		extFieldsTopoID:   ccLang.Language("web_ext_field_topo"),
+		extFieldsBizID:    ccLang.Language("biz_property_bk_biz_name"),
+		extFieldsModuleID: ccLang.Language("bk_module_name"),
+		extFieldsSetID:    ccLang.Language("bk_set_name"),
 	}
-	extFields, extFieldKey := lgc.handleExtField(extField, customLen, objName, ccLang)
+	for _, objID := range objIDs {
+		extFieldKey = append(extFieldKey, "cc_ext_"+objID) // 生成key,用于赋值遍历主机数据进行赋值
+	}
+	for idx, objName := range objNames {
+		extFields[extFieldKey[idx+2]] = objName // 2 自定义层级名称在extFieldKey切片中起始位置为2，0,1索引为业务拓扑和业务名
+	}
 
+	extFieldKey = append(extFieldKey, extFieldsSetID, extFieldsModuleID)
 	fields = addExtFields(fields, extFields, extFieldKey)
-	addSystemField(fields, common.BKInnerObjIDHost, ccLang, customLen+5)
+	addSystemField(fields, common.BKInnerObjIDHost, ccLang, len(objNames)+5)
 
-	productHostExcelHeader(ctx, fields, filter, sheet, ccLang, customLen, objName)
+	productHostExcelHeader(ctx, fields, filter, sheet, ccLang, objNames)
 
 	instPrimaryKeyValMap := make(map[int64][]PropertyPrimaryVal)
-	// indexID := getFieldsIDIndexMap(fields)
 	rowIndex := common.HostAddMethodExcelIndexOffset
-	handleHostParam :=  HandleHostParam {
-		RowIndex :rowIndex,
-		Data :data,
-		CcErr :ccErr,
-		Fields :fields,
-		Rid :rid,
-		ModelBizID :modelBizID,
-		CustomLen :customLen,
-		ObjID :objID,
-		UsernameMap :usernameMap,
-		PropertyList :propertyList,
-		ObjName :objName,
-		CcLang :ccLang,
-		Sheet :sheet,
-	}
-	err = lgc.handleHost(ctx, header, extField, handleHostParam, instPrimaryKeyValMap)
-	if err != nil {
-		return err
-	}
 
-	err = lgc.BuildAssociationExcelFromData(ctx, objID, instPrimaryKeyValMap, xlsxFile, header, modelBizID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// handleExtField 处理自定义层级字段
-func (lgc *Logics) handleExtField(extField ExtField, customLen int, objName []string,
-	ccLang lang.DefaultCCLanguageIf) (map[string]string, []string) {
-	extFieldKey := make([]string, 0)
-	extFieldKey = append(extFieldKey, extField.ExtFieldsTopoID, extField.ExtFieldsBizID)
-	extFields := map[string]string{
-		extField.ExtFieldsTopoID:   ccLang.Language("web_ext_field_topo"),
-		extField.ExtFieldsBizID:    ccLang.Language("biz_property_bk_biz_name"),
-		extField.ExtFieldsModuleID: ccLang.Language("bk_module_name"),
-		extField.ExtFieldsSetID:    ccLang.Language("bk_set_name"),
-	}
-
-	switch customLen {
-	case 1:
-		extFields[extField.ExtFieldsCustomID1] = objName[0]
-		extFieldKey = append(extFieldKey, extField.ExtFieldsCustomID1, extField.ExtFieldsSetID,
-			extField.ExtFieldsModuleID)
-	case 2:
-		extFields[extField.ExtFieldsCustomID1] = objName[1]
-		extFields[extField.ExtFieldsCustomID2] = objName[0]
-		extFieldKey = append(extFieldKey, extField.ExtFieldsCustomID2, extField.ExtFieldsCustomID1,
-			extField.ExtFieldsSetID, extField.ExtFieldsModuleID)
-	case 3:
-		extFields[extField.ExtFieldsCustomID1] = objName[2]
-		extFields[extField.ExtFieldsCustomID2] = objName[1]
-		extFields[extField.ExtFieldsCustomID3] = objName[0]
-		extFieldKey = append(extFieldKey, extField.ExtFieldsCustomID3, extField.ExtFieldsCustomID2,
-			extField.ExtFieldsCustomID1, extField.ExtFieldsSetID,
-			extField.ExtFieldsModuleID)
-	default:
-		extFieldKey = append(extFieldKey, extField.ExtFieldsSetID, extField.ExtFieldsModuleID)
-	}
-	return extFields, extFieldKey
-}
-
-// handleHost 处理主机数据生成Excel表格数据
-func (lgc *Logics) handleHost(ctx context.Context, header http.Header, extField ExtField, param HandleHostParam,
-	instPrimaryKeyValMap map[int64][]PropertyPrimaryVal) error {
-	for _, hostData := range param.Data {
+	for _, hostData := range data {
 		rowMap, err := mapstr.NewFromInterface(hostData[common.BKInnerObjIDHost])
 		if err != nil {
-			blog.ErrorJSON("BuildHostExcelFromData failed, hostData: %s, err: %s, rid: %s", hostData, err.Error(),
-				param.Rid)
-			return param.CcErr.CCError(common.CCErrCommReplyDataFormatError)
+			blog.Errorf("build host excel data failed, hostData: %#v, err: %v, rid: %s", hostData, err, rid)
+			return ccErr.CCError(common.CCErrCommReplyDataFormatError)
 		}
 
-		if _, exist := param.Fields[common.BKCloudIDField]; exist {
+		// handle custom extFieldKey,前两个元素为业务拓扑、业务，后两个元素为集群、模块，中间的为自定义层级列
+		for idx, field := range extFieldKey[2 : len(extFieldKey)-2] {
+			rowMap[field] = hostData[objIDs[idx]]
+		}
+		rowMap[extFieldsSetID] = hostData[common.BKInnerObjIDSet] // 添加集群列
+		rowMap[extFieldsModuleID] = hostData["modules"]           // 添加模块列
+
+		if _, exist := fields[common.BKCloudIDField]; exist {
 			cloudAreaArr, err := rowMap.MapStrArray(common.BKCloudIDField)
 			if err != nil {
-				blog.ErrorJSON("build host excel failed, cloud area not array, host: %s, err: %s, rid: %s", hostData, err, param.Rid)
-				return param.CcErr.CCError(common.CCErrCommReplyDataFormatError)
+				blog.Errorf("build host excel failed, cloud area not array, host: %#v, err: %v, rid: %s",
+					hostData, err, rid)
+				return ccErr.CCError(common.CCErrCommReplyDataFormatError)
 			}
 
 			if len(cloudAreaArr) != 1 {
-				blog.ErrorJSON("build host excel failed, host has many cloud areas, host: %s, err: %s, rid: %s", hostData, err, param.Rid)
-				return param.CcErr.CCError(common.CCErrCommReplyDataFormatError)
+				blog.Errorf("build host excel failed, host has many cloud areas, host: %#v, err: %v, rid: %s",
+					hostData, err, rid)
+				return ccErr.CCError(common.CCErrCommReplyDataFormatError)
 			}
 
-			cloudArea := fmt.Sprintf("%v[%v]", cloudAreaArr[0][common.BKInstNameField], cloudAreaArr[0][common.BKInstIDField])
+			cloudArea := fmt.Sprintf("%v[%v]", cloudAreaArr[0][common.BKInstNameField],
+				cloudAreaArr[0][common.BKInstIDField])
 			rowMap.Set(common.BKCloudIDField, cloudArea)
 		}
 
@@ -214,7 +166,7 @@ func (lgc *Logics) handleHost(ctx context.Context, header http.Header, extField 
 			if len(topos) > 0 {
 				idx := strings.Index(topos[0], logics.SplitFlag)
 				if idx > 0 {
-					rowMap[extField.ExtFieldsBizID] = topos[0][:idx]
+					rowMap[extFieldsBizID] = topos[0][:idx]
 				}
 
 				toposNobiz := make([]string, 0)
@@ -224,248 +176,36 @@ func (lgc *Logics) handleHost(ctx context.Context, header http.Header, extField 
 						toposNobiz = append(toposNobiz, topo[idx+len(logics.SplitFlag):])
 					}
 				}
-				rowMap[extField.ExtFieldsTopoID] = strings.Join(toposNobiz, ",")
+				rowMap[extFieldsTopoID] = strings.Join(toposNobiz, ", ")
 			}
 		}
 
-		result, err := lgc.getTopoMainlineInstRoot(ctx, header, param.ModelBizID, moduleMap)
-		if err != nil || result == nil {
-			blog.Errorf("get topo mainline instance root failed, err: %s, rid: %s", err, param.Rid)
-			return err
-		}
-		lgc.handleCustomField(result, rowMap, extField, param.CustomLen)
-
-		instIDKey := metadata.GetInstIDFieldByObjID(param.ObjID)
+		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		instID, err := rowMap.Int64(instIDKey)
 		if err != nil {
 			blog.Errorf("setExcelRowDataByIndex inst:%+v, not inst id key:%s, objID:%s, rid:%s", rowMap, instIDKey,
-				param.ObjID, param.Rid)
-			return param.CcErr.Errorf(common.CCErrCommInstFieldNotFound, instIDKey, param.ObjID)
+				objID, rid)
+			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, instIDKey, objID)
 		}
 
 		// 使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
-		rowMap, err = replaceEnName(param.Rid, rowMap, param.UsernameMap, param.PropertyList, param.CcLang)
+		rowMap, err = replaceEnName(rid, rowMap, usernameMap, propertyList, ccLang)
 		if err != nil {
-			blog.Errorf("rebuild user list field, rid: %s", param.Rid)
+			blog.Errorf("rebuild user list field, rid: %s", rid)
 			return err
 		}
 
-		primaryKeyArr := setExcelRowDataByIndex(rowMap, param.Sheet, param.RowIndex, param.Fields)
+		primaryKeyArr := setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
 		instPrimaryKeyValMap[instID] = primaryKeyArr
-		param.RowIndex++
+		rowIndex++
+	}
+
+	err = lgc.BuildAssociationExcelFromData(ctx, objID, instPrimaryKeyValMap, xlsxFile, header, modelBizID)
+	if err != nil {
+		blog.Errorf("build association excel data failed, err: %v, rid: %s", err, rid)
+		return err
 	}
 	return nil
-}
-
-// handleCustomField 处理自定义成层级数据
-func (lgc *Logics) handleCustomField(result *metadata.TopoPathResult, rowMap mapstr.MapStr, extField ExtField,
-	customLen int) {
-	var moduleStr, setStr, customStr1, customStr2, customStr3 string
-	for _, res := range result.Nodes {
-		length := len(res.Path) - 3
-		switch length {
-		case 1:
-			if customStr1 == "" {
-				customStr1 = res.Path[2].InstanceName
-			} else {
-				ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
-				if !ok {
-					customStr1 += "," + res.Path[2].InstanceName
-				}
-			}
-		case 2:
-			if customStr1 == "" {
-				customStr1 = res.Path[2].InstanceName
-			} else {
-				ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
-				if !ok {
-					customStr1 += "," + res.Path[2].InstanceName
-				}
-			}
-			if customStr2 == "" {
-				customStr2 = res.Path[3].InstanceName
-			} else {
-				ok := util.Contains(strings.Split(customStr2, ","), res.Path[3].InstanceName)
-				if !ok {
-					customStr2 += "," + res.Path[3].InstanceName
-				}
-			}
-		case 3:
-			if customStr1 == "" {
-				customStr1 = res.Path[2].InstanceName
-			} else {
-				ok := util.Contains(strings.Split(customStr1, ","), res.Path[2].InstanceName)
-				if !ok {
-					customStr1 += "," + res.Path[2].InstanceName
-				}
-			}
-
-			if customStr2 == "" {
-				customStr2 = res.Path[3].InstanceName
-			} else {
-				ok := util.Contains(strings.Split(customStr2, ","), res.Path[3].InstanceName)
-				if !ok {
-					customStr2 += "," + res.Path[3].InstanceName
-				}
-			}
-
-			if customStr3 == "" {
-				customStr3 = res.Path[4].InstanceName
-			} else {
-				ok := util.Contains(strings.Split(customStr3, ","), res.Path[4].InstanceName)
-				if !ok {
-					customStr3 += "," + res.Path[4].InstanceName
-				}
-			}
-		}
-
-		if moduleStr == "" {
-			moduleStr = res.Path[0].InstanceName
-		} else {
-			ok := util.Contains(strings.Split(moduleStr, ","), res.Path[0].InstanceName)
-			if !ok {
-				moduleStr += "," + res.Path[0].InstanceName
-			}
-		}
-
-		if setStr == "" {
-			setStr = res.Path[1].InstanceName
-		} else {
-			ok := util.Contains(strings.Split(setStr, ","), res.Path[1].InstanceName)
-			if !ok {
-				setStr += "," + res.Path[1].InstanceName
-			}
-		}
-	}
-
-	rowMap[extField.ExtFieldsModuleID] = moduleStr
-	rowMap[extField.ExtFieldsSetID] = setStr
-	switch customLen {
-	case 1:
-		rowMap[extField.ExtFieldsCustomID1] = customStr1
-	case 2:
-		rowMap[extField.ExtFieldsCustomID1] = customStr1
-		rowMap[extField.ExtFieldsCustomID2] = customStr2
-	case 3:
-		rowMap[extField.ExtFieldsCustomID1] = customStr1
-		rowMap[extField.ExtFieldsCustomID2] = customStr2
-		rowMap[extField.ExtFieldsCustomID3] = customStr3
-	}
-}
-
-// getTopoMainlineInstRoot get topo mainline inst root
-func (lgc *Logics) getTopoMainlineInstRoot(ctx context.Context, header http.Header, modelBizID int64,
-	moduleMap []interface{}) (*metadata.TopoPathResult, error) {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	nodes := make([]metadata.TopoNode, 0)
-	for _, row := range moduleMap {
-		mapRow, ok := row.(map[string]interface{})
-		if ok {
-			moduleID, err := util.GetIntByInterface(mapRow[common.BKModuleIDField])
-			if err != nil {
-				return nil, err
-			}
-			node := metadata.TopoNode{
-				ObjectID:   common.BKInnerObjIDModule,
-				InstanceID: int64(moduleID),
-			}
-			nodes = append(nodes, node)
-		}
-	}
-	input := metadata.FindTopoPathRequest{
-		Nodes: nodes,
-	}
-
-	topoRoot, err := lgc.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx, header,
-		modelBizID, false)
-	if err != nil {
-		blog.Errorf("search mainline instance topo path failed, bizID:%d, err:%s, rid:%s", modelBizID,
-			err.Error(), rid)
-		return nil, err
-	}
-	result := &metadata.TopoPathResult{}
-	for _, node := range input.Nodes {
-		topoPath := topoRoot.TraversalFindNode(node.ObjectID, node.InstanceID)
-		path := make([]*metadata.TopoInstanceNodeSimplify, 0)
-		for _, item := range topoPath {
-			simplify := item.ToSimplify()
-			path = append(path, simplify)
-		}
-		nodeTopoPath := metadata.NodeTopoPath{
-			BizID: modelBizID,
-			Node:  node,
-			Path:  path,
-		}
-		result.Nodes = append(result.Nodes, nodeTopoPath)
-	}
-	return result, err
-}
-
-// GetCustomCntAndInstName get custom level count and instance name
-func (lgc *Logics) GetCustomCntAndInstName(ctx context.Context, header http.Header) (int, []string, error) {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	mainlineAsstRsp, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, header,
-		&metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.
-			AssociationKindMainline}})
-	if nil != err {
-		blog.Errorf("search mainline association failed, error: %s, rid: %s", err.Error(), rid)
-		return 0, []string{}, err
-	}
-
-	mainlineObjectChildMap := make(map[string]string, 0)
-	objectName := make([]string, 0)
-	customLen := 0
-	isMainline := false
-	for _, asst := range mainlineAsstRsp.Data.Info {
-		if asst.ObjectID == common.BKInnerObjIDHost {
-			continue
-		}
-		mainlineObjectChildMap[asst.AsstObjID] = asst.ObjectID
-		if asst.AsstObjID == common.BKInnerObjIDApp {
-			isMainline = true
-		}
-	}
-	if !isMainline {
-		return customLen, objectName, nil
-	}
-
-	// get all mainline object name map
-	objectIDs := make([]string, 0)
-	for objectID := common.BKInnerObjIDApp; len(objectID) != 0; objectID = mainlineObjectChildMap[objectID] {
-		objectIDs = append(objectIDs, objectID)
-	}
-	cond := make([]string, 0)
-	for _, obj := range objectIDs {
-		if obj == common.BKInnerObjIDApp || obj == common.BKInnerObjIDSet || obj == common.BKInnerObjIDModule {
-			continue
-		}
-		cond = append(cond, obj)
-	}
-
-	input := &metadata.QueryCondition{
-		Fields: []string{common.BKObjNameField, common.BKAsstObjIDField},
-		Condition: mapstr.MapStr{
-			common.BKObjIDField: mapstr.MapStr{common.BKDBIN: cond},
-		},
-	}
-
-	objects, err := lgc.CoreAPI.CoreService().Model().ReadModel(ctx, header, input)
-	if nil != err {
-		blog.ErrorJSON("search mainline objects(%s) failed, error: %s, rid: %s", objectIDs, err.Error(), rid)
-		return customLen, objectName, err
-	}
-
-	for _, objID := range objectIDs {
-		for _, val := range objects.Data.Info {
-			if val.Spec.ObjectID == objID {
-				objectName = append(objectName, val.Spec.ObjectName)
-			}
-		}
-	}
-
-	customLen = int(mainlineAsstRsp.Data.Count) - 3
-
-	return customLen, objectName, nil
 }
 
 func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID string, instPrimaryInfo map[int64][]PropertyPrimaryVal, xlsxFile *xlsx.File, header http.Header, modelBizID int64) error {
