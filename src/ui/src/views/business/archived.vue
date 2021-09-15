@@ -285,27 +285,4 @@
             font-size: 0;
         }
     }
-
-
-    .close,
-            .close-trigger{
-                position: absolute;
-                top: -25px;
-                right: 5px;
-            }
-            .close-trigger,
-            .close-confirm-trigger {
-                color: #979ba5;
-                width: 26px;
-                height: 26px;
-                line-height: 26px;
-                text-align: center;
-                border-radius: 50%;
-                font-weight: 700;
-                font-size: 22px;
-                cursor: pointer;
-                &:hover {
-                    background-color: #f0f1f5;
-                }
-            }
 </style>
