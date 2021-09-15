@@ -80,8 +80,8 @@
         row-key="bk_biz_id"
         indeterminate
         ref="batchSelectionColumn"
-        :selected-value.sync="selectedRows"
-        :unselected-value.sync="unselectedRows"
+        :selected-rows.sync="selectedRows"
+        :unselected-rows.sync="unselectedRows"
         :all-selected.sync="editAll"
         :data="table.list"
       >
