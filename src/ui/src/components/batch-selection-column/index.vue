@@ -8,10 +8,11 @@
   >
     <template #default="{ $index }">
       <bk-checkbox
-        v-if="items[$index]"
-        :disabled="items[$index].disabled"
-        @change="handleItemSelectionChange(items[$index])"
-        v-model="items[$index].checked"
+        v-if="rows[$index]"
+        :disabled="rows[$index].disabled"
+        @change="handleRowSelectionChange(rows[$index])"
+        v-model="rows[$index].checked"
+        @click.native.stop
       ></bk-checkbox>
     </template>
   </bk-table-column>
@@ -33,7 +34,14 @@
       /**
        * 已选择数据
        */
-      selectedValue: {
+      selectedRows: {
+        type: Array,
+        default: () => [],
+      },
+      /**
+       * 反选数据
+       */
+      unselectedRows: {
         type: Array,
         default: () => [],
       },
@@ -91,9 +99,9 @@
     },
     data() {
       return {
-        items: [],
-        reservedSelectedItems: [], // 记住的已选项
-        reservedUnselectedItems: [], // 全选时，记住的未选项
+        rows: [],
+        reservedSelectedRows: [], // 记住的已选项
+        reservedUnselectedRows: [], // 全选时，记住的未选项
         isPageSelected: false, // 全选当页
         onCrossPageMode: false, // 是否在跨页全选模式
         isAllSelected: false, // 全选所有
@@ -102,96 +110,94 @@
       }
     },
     computed: {
-      selectedItems() {
-        if (!this.items?.length) return []
-        return this.items.filter(i => i.checked)
+      innerSelectedRows() {
+        if (!this.rows?.length) return []
+        return this.rows.filter(i => i.checked)
       },
-      selectableItems() {
-        if (!this.items?.length) return []
-        return this.items.filter(i => !i.disabled)
+      selectableRows() {
+        if (!this.rows?.length) return []
+        return this.rows.filter(i => !i.disabled)
       }
     },
     watch: {
       data: {
         immediate: true,
         handler() {
-          this.initItems()
+          this.initRows()
         },
       },
-      items: {
+      rows: {
         deep: true,
         handler() {
-          this.emitItems()
+          this.emitRows()
         },
       },
     },
     methods: {
-      initItems() {
-        this.items = cloneDeep(this.data)
+      initRows() {
+        this.rows = cloneDeep(this.data)
 
         if (this.reserveSelection && this.rowKey) {
-          this.generateItemSelection()
-
+          this.generateRowSelection()
           this.generatePageSelection()
         } else {
           this.clearSelection()
         }
       },
-      emitItems() {
-        const { onCrossPageMode, reserveSelection, reservedSelectedItems } = this
-        let { selectedItems } = this
+      emitRows() {
+        const { onCrossPageMode, reserveSelection, reservedSelectedRows } = this
+        let { innerSelectedRows } = this
 
         if (onCrossPageMode) {
-          selectedItems = []
+          innerSelectedRows = []
         } else if (reserveSelection) {
-          selectedItems = reservedSelectedItems
+          innerSelectedRows = reservedSelectedRows
         }
 
-        this.$emit('selection-change', selectedItems, onCrossPageMode, this.reservedUnselectedItems)
-        this.$emit('update:selectedValue', selectedItems)
-        this.$emit('update:unselectedValue', this.reservedUnselectedItems)
+        this.$emit('selection-change', innerSelectedRows, onCrossPageMode, this.reservedUnselectedRows)
+        this.$emit('update:selectedRows', innerSelectedRows)
+        this.$emit('update:unselectedRows', this.reservedUnselectedRows)
         this.$emit('update:allSelected', onCrossPageMode)
       },
-      setReservedItem(arr, item, checked) {
-        const findItemIndex = (item) => {
-          let itemIndex = -1
+      setReservedRow(arr, row, checked) {
+        const findRowIndex = (row) => {
+          let rowIndex = -1
           arr.forEach((i, index) => {
-            if (i[this.rowKey] === item[this.rowKey]) {
-              itemIndex = index
+            if (i[this.rowKey] === row[this.rowKey]) {
+              rowIndex = index
             }
           })
-          return itemIndex
+          return rowIndex
         }
 
-        const itemIndex = findItemIndex(item)
+        const rowIndex = findRowIndex(row)
 
-        if (itemIndex === -1 && item.checked === checked) {
-          arr.push(item)
-        } else if (item.checked !== checked) {
-          arr.splice(itemIndex, 1)
+        if (rowIndex === -1 && row.checked === checked) {
+          arr.push(row)
+        } else if (row.checked !== checked) {
+          arr.splice(rowIndex, 1)
         }
       },
-      handleItemSelectionChange(item) {
+      handleRowSelectionChange(row) {
         if (this.onCrossPageMode) {
-          this.setReservedItem(this.reservedUnselectedItems, item, false)
+          this.setReservedRow(this.reservedUnselectedRows, row, false)
         } else {
-          this.setReservedItem(this.reservedSelectedItems, item, true)
+          this.setReservedRow(this.reservedSelectedRows, row, true)
         }
-
         this.generatePageSelection()
       },
       handlePageSelectionChange(isSelected) {
         if (this.indeterminate && this.pageSelectionIndeterminate) {
-          this.generateItemSelection(false)
+          this.generateRowSelection(true)
         } else {
-          this.generateItemSelection(isSelected)
+          this.generateRowSelection(isSelected)
         }
 
-        this.items.forEach((item) => {
+        this.rows.forEach((row) => {
           if (this.onCrossPageMode) {
-            this.setReservedItem(this.reservedUnselectedItems, item, false)
+            this.setReservedRow(this.reservedUnselectedRows, row, false)
           } else {
-            this.setReservedItem(this.reservedSelectedItems, item, true)
+            this.setReservedRow(this.reservedSelectedRows, row, true)
           }
         })
 
@@ -200,17 +206,16 @@
         })
       },
       handleAllSelectionChange(isSelected) {
-        this.generateItemSelection(isSelected)
+        this.generateRowSelection(isSelected)
 
         if (this.indeterminate && this.allSelectionIndeterminate) {
-          this.onCrossPageMode = false
-          this.clearSelection()
+          this.onCrossPageMode = true
         } else {
           this.onCrossPageMode = isSelected
         }
 
-        this.reservedSelectedItems = []
-        this.reservedUnselectedItems = []
+        this.reservedSelectedRows = []
+        this.reservedUnselectedRows = []
 
         this.$nextTick(() => {
           this.generatePageSelection()
@@ -251,22 +256,22 @@
       },
       // 生成页面全选状态
       generatePageSelection() {
-        const selectabeItemslLen = this.selectableItems.length
-        const selectedItemsLen = this.selectedItems.length
+        const selectabeRowslLen = this.selectableRows.length
+        const selectedRowsLen = this.innerSelectedRows.length
 
-        this.isPageSelected = selectedItemsLen === selectabeItemslLen && selectabeItemslLen > 0
+        this.isPageSelected = selectedRowsLen === selectabeRowslLen && selectabeRowslLen > 0
 
         if (this.indeterminate) {
-          this.isAllSelected = this.reservedUnselectedItems.length === 0 && this.onCrossPageMode
-          this.pageSelectionIndeterminate = selectedItemsLen > 0 && !this.isPageSelected
-          this.allSelectionIndeterminate = this.reservedUnselectedItems.length > 0 && !this.isAllSelected
+          this.isAllSelected = this.reservedUnselectedRows.length === 0 && this.onCrossPageMode
+          this.pageSelectionIndeterminate = selectedRowsLen > 0 && !this.isPageSelected
+          this.allSelectionIndeterminate = this.reservedUnselectedRows.length > 0 && !this.isAllSelected
         } else {
           this.isAllSelected = this.onCrossPageMode
         }
       },
       // 生成单个项目选择状态
-      generateItemSelection(currentChecked) {
-        this.items = this.items.map((i, index) => {
+      generateRowSelection(currentChecked) {
+        this.rows = this.rows.map((i, index) => {
           // 如果传入了当前选中值，则让所有选项变为当前选中值
           if (currentChecked !== undefined && typeof currentChecked === 'boolean') {
             return { ...i, checked: currentChecked }
@@ -287,11 +292,11 @@
           if (this.reserveSelection) {
             if (this.onCrossPageMode) {
               // 跨页全选时，记住没有选择的项目
-              checked = !this.reservedUnselectedItems
-                .some(unselectedItem => unselectedItem[this.rowKey] === i[this.rowKey])
+              checked = !this.reservedUnselectedRows
+                .some(unselectedRow => unselectedRow[this.rowKey] === i[this.rowKey])
             } else {
               // 非跨页全选时，记住已选择的项目
-              checked = this.reservedSelectedItems.some(selectedItem => selectedItem[this.rowKey] === i[this.rowKey])
+              checked = this.reservedSelectedRows.some(selectedRow => selectedRow[this.rowKey] === i[this.rowKey])
             }
           }
 
@@ -308,9 +313,14 @@
           this.allSelectionIndeterminate = false
         }
 
-        this.reservedSelectedItems = []
-        this.reservedUnselectedItems = []
-        this.generateItemSelection(false)
+        this.reservedSelectedRows = []
+        this.reservedUnselectedRows = []
+        this.generateRowSelection(false)
+      },
+      toglleRowSelection(row) {
+        const currentRow = this.rows.find(r => row[this.rowKey] === r[this.rowKey])
+        currentRow.checked = !currentRow.checked
+        this.handleRowSelectionChange(currentRow)
       },
     },
   }
