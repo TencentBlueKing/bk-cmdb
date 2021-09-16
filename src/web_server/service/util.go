@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"strings"
 
 	"configcenter/src/common"
@@ -91,19 +92,22 @@ func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, i
 func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[string]string, error) {
 	defErr := s.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(c.Request.Header))
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
-	userListStr := strings.Join(userList, ",")
+	userListEsb := make([]*metadata.LoginSystemUserInfo, 0)
 	usernameMap := map[string]string{}
+
 	if userList != nil && len(userList) != 0 {
 		params := make(map[string]string)
-		params["exact_lookups"] = userListStr
 		params["fields"] = "username,display_name"
 		user := plugins.CurrentPlugin(c, s.Config.LoginVersion)
-
-		userListEsb, errNew := user.GetUserList(c, params)
-		if errNew != nil {
-			blog.ErrorJSON("get user list from ESB failed, err: %s, rid: %s", errNew.ToCCError(defErr).Error(), rid)
-			userListEsb = []*metadata.LoginSystemUserInfo{}
-			return nil, errNew.ToCCError(defErr)
+		userListStr := s.getUserListStr(userList)
+		for _, subStr := range userListStr {
+			params["exact_lookups"] = subStr
+			userListEsbSub, errNew := user.GetUserList(c, params)
+			if errNew != nil {
+				blog.Errorf("get user list from ESB failed, err: %s, rid: %s", errNew.ToCCError(defErr), rid)
+				return nil, errNew.ToCCError(defErr)
+			}
+			userListEsb = append(userListEsb, userListEsbSub...)
 		}
 
 		for _, userInfo := range userListEsb {
@@ -113,4 +117,31 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 		return usernameMap, nil
 	}
 	return usernameMap, nil
+}
+
+// getUserListStr get user list str
+func (s *Service) getUserListStr(userList []string) []string {
+	userListLen := len(userList)
+	userListStr := make([]string, 0)
+	const getUserMaxCount = 100
+	if userListLen <= getUserMaxCount {
+		userStr := strings.Join(userList, ",")
+		userListStr = append(userListStr, userStr)
+		return userListStr
+	}
+
+	n := math.Ceil(float64(userListLen) / float64(getUserMaxCount))
+	for i := 0; i < int(n); i++ {
+		if i+1 == int(n) {
+			subUserList := userList[(int(n)-1)*getUserMaxCount : userListLen]
+			userStr := strings.Join(subUserList, ",")
+			userListStr = append(userListStr, userStr)
+		} else {
+			subUserList := userList[i*getUserMaxCount : (i+1)*getUserMaxCount]
+			userStr := strings.Join(subUserList, ",")
+			userListStr = append(userListStr, userStr)
+		}
+	}
+
+	return userListStr
 }
