@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"math"
 	"strings"
 
 	"configcenter/src/common"
@@ -130,14 +129,13 @@ func (s *Service) getUserListStr(userList []string) []string {
 		return userListStr
 	}
 
-	n := math.Ceil(float64(userListLen) / float64(getUserMaxCount))
-	for i := 0; i < int(n); i++ {
-		if i+1 == int(n) {
-			subUserList := userList[(int(n)-1)*getUserMaxCount : userListLen]
+	for i := 0; i < userListLen; i = i + getUserMaxCount {
+		if i+getUserMaxCount < userListLen {
+			subUserList := userList[i : i+getUserMaxCount]
 			userStr := strings.Join(subUserList, ",")
 			userListStr = append(userListStr, userStr)
 		} else {
-			subUserList := userList[i*getUserMaxCount : (i+1)*getUserMaxCount]
+			subUserList := userList[i:userListLen]
 			userStr := strings.Join(subUserList, ",")
 			userListStr = append(userListStr, userStr)
 		}
