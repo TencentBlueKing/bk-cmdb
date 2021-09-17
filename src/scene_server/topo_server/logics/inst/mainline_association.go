@@ -322,12 +322,12 @@ func (assoc *association) buildTopoInstRst(kit *rest.Kit, instID int64, objID st
 		childInstMap := make(map[int64][]*metadata.TopoInstRst)
 		childDefaultSetMap := make(map[int64][]*metadata.TopoInstRst)
 		for _, instance := range instanceRsp {
-			topoInst, instIDArr, err := assoc.makeTopoInstRst(kit, objectID, objNameMap[objectID], instance, instIDs)
+			topoInst, err := assoc.makeTopoInstRst(kit, objectID, objNameMap[objectID], instance)
 			if err != nil {
 				return nil, err
 			}
 
-			instIDs = append(instIDs, instIDArr...)
+			instIDs = append(instIDs, topoInst.InstID)
 
 			if withStatistics {
 				if objectID == common.BKInnerObjIDSet {
@@ -414,26 +414,26 @@ func (assoc *association) searchMainlineObjInstForTopo(kit *rest.Kit, objID stri
 	return instanceRsp.Info, nil
 }
 
-func (assoc *association) makeTopoInstRst(kit *rest.Kit, objID, objName string, inst mapstr.MapStr, instIDs []int64) (
-	*metadata.TopoInstRst, []int64, error) {
+func (assoc *association) makeTopoInstRst(kit *rest.Kit, objID, objName string, inst mapstr.MapStr) (
+	*metadata.TopoInstRst, error) {
 
 	instID, err := inst.Int64(common.GetInstIDField(objID))
 	if err != nil {
 		blog.Errorf("get instance %#v id failed, err: %v, rid: %s", inst, err, kit.Rid)
-		return nil, nil, err
+		return nil, err
 	}
-	instIDs = append(instIDs, instID)
+
 	instName, err := inst.String(common.GetInstNameField(objID))
 	if err != nil {
 		blog.Errorf("get instance %#v name failed, err: %v, rid: %s", inst, err, kit.Rid)
-		return nil, nil, err
+		return nil, err
 	}
 	defaultValue := 0
 	if defaultFieldValue, exist := inst[common.BKDefaultField]; exist {
 		defaultValue, err = util.GetIntByInterface(defaultFieldValue)
 		if err != nil {
 			blog.Errorf("get instance %#v default failed, err: %v, rid: %s", inst, err, kit.Rid)
-			return nil, nil, err
+			return nil, err
 		}
 	}
 	topoInst := &metadata.TopoInstRst{
@@ -447,7 +447,7 @@ func (assoc *association) makeTopoInstRst(kit *rest.Kit, objID, objName string, 
 		Child: []*metadata.TopoInstRst{},
 	}
 
-	return topoInst, instIDs, nil
+	return topoInst, nil
 }
 
 func (assoc *association) getMainlineChildInst(kit *rest.Kit, objID, childObjID string, instIDs []int64) (
