@@ -93,21 +93,25 @@ func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, i
 
 func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[string]string, error) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
-	userListStr := strings.Join(userList, ",")
 	usernameMap := map[string]string{}
+	userListEsb := make([]*metadata.LoginSystemUserInfo, 0)
 
 	if userList != nil && len(userList) != 0 {
 		config := s.Config.ConfigMap
-		config["exact_lookups"] = userListStr
 		config["fields"] = "username,display_name"
 		user := plugins.CurrentPlugin(c, s.Config.LoginVersion)
+		userListStr := s.getUserListStr(userList)
 
-		userListEsb, err := user.GetUserList(c, config)
-		if err != nil {
-			blog.ErrorJSON("get user list from ESB failed, err: %s, rid: %s", err.Error(), rid)
-			userListEsb = []*metadata.LoginSystemUserInfo{}
-			return nil, err
+		for _, subStr := range userListStr {
+			config["exact_lookups"] = subStr
+			userListEsbSub, err := user.GetUserList(c, config)
+			if err != nil {
+				blog.Errorf("get user list from ESB failed, err: %s, rid: %s", err, rid)
+				return nil, err
+			}
+			userListEsb = append(userListEsb, userListEsbSub...)
 		}
+
 		for _, userInfo := range userListEsb {
 			username := fmt.Sprintf("%s(%s)", userInfo.EnName, userInfo.CnName)
 			usernameMap[userInfo.EnName] = username
@@ -115,4 +119,30 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 		return usernameMap, nil
 	}
 	return usernameMap, nil
+}
+
+// getUserListStr get user list str
+func (s *Service) getUserListStr(userList []string) []string {
+	userListLen := len(userList)
+	userListStr := make([]string, 0)
+	const getUserMaxCount = 100
+	if userListLen <= getUserMaxCount {
+		userStr := strings.Join(userList, ",")
+		userListStr = append(userListStr, userStr)
+		return userListStr
+	}
+
+	for i := 0; i < userListLen; i += getUserMaxCount {
+		if i+getUserMaxCount < userListLen {
+			subUserList := userList[i : i+getUserMaxCount]
+			userStr := strings.Join(subUserList, ",")
+			userListStr = append(userListStr, userStr)
+		} else {
+			subUserList := userList[i:userListLen]
+			userStr := strings.Join(subUserList, ",")
+			userListStr = append(userListStr, userStr)
+		}
+	}
+
+	return userListStr
 }

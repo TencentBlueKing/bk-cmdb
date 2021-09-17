@@ -643,280 +643,371 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 	}
 
 	process := make(mapstr.MapStr)
+
+	changed = changed || pt.checkProcNumAsDefaultValue(t, i, process)
+	changed = changed || pt.checkStopCmdAsDefaultValue(t, i, process)
+	changed = changed || pt.checkRestartCmdAsDefaultValue(t, i, process)
+	changed = changed || pt.checkForceStopCmdAsDefaultValue(t, i, process)
+	changed = changed || pt.checkFuncNameAsDefaultValue(t, i, process)
+	changed = changed || pt.checkWorkPathAsDefaultValue(t, i, process)
+	changed = changed || pt.checkBindIPAsDefaultValue(t, i, process)
+	changed = changed || pt.checkPriorityAsDefaultValue(t, i, process)
+	changed = changed || pt.checkReloadCmdAsDefaultValue(t, i, process)
+	changed = changed || pt.checkProcessNameAsDefaultValue(t, i, process)
+	changed = changed || pt.checkPortAsDefaultValue(t, i, process)
+	changed = changed || pt.checkPidFileAsDefaultValue(t, i, process)
+	changed = changed || pt.checkAutoStartAsDefaultValue(t, i, process)
+	changed = changed || pt.checkAutoTimeGapSecondsAsDefaultValue(t, i, process)
+	changed = changed || pt.checkStartCmdAsDefaultValue(t, i, process)
+	changed = changed || pt.checkFuncIDAsDefaultValue(t, i, process)
+	changed = changed || pt.checkUserAsDefaultValue(t, i, process)
+	changed = changed || pt.checkTimeoutSecondsAsDefaultValue(t, i, process)
+	changed = changed || pt.checkProtocolAsDefaultValue(t, i, process)
+	changed = changed || pt.checkDescriptionAsDefaultValue(t, i, process)
+	changed = changed || pt.checkStartParamRegexAsDefaultValue(t, i, process)
+
+	return process, changed
+}
+
+func (pt *ProcessTemplate) checkProcNumAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.ProcNum.AsDefaultValue) {
 		if t.ProcNum.Value == nil && i.ProcNum != nil {
 			process["proc_num"] = nil
-			changed = true
+			return true
 		} else if t.ProcNum.Value != nil && i.ProcNum == nil {
 			process["proc_num"] = *t.ProcNum.Value
-			changed = true
+			return true
 		} else if t.ProcNum.Value != nil && i.ProcNum != nil && *t.ProcNum.Value != *i.ProcNum {
 			process["proc_num"] = *t.ProcNum.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkStopCmdAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.StopCmd.AsDefaultValue) {
 		if t.StopCmd.Value == nil && i.StopCmd != nil {
 			process["stop_cmd"] = nil
-			changed = true
+			return true
 		} else if t.StopCmd.Value != nil && i.StopCmd == nil {
 			process["stop_cmd"] = *t.StopCmd.Value
-			changed = true
+			return true
 		} else if t.StopCmd.Value != nil && i.StopCmd != nil && *t.StopCmd.Value != *i.StopCmd {
 			process["stop_cmd"] = *t.StopCmd.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkRestartCmdAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.RestartCmd.AsDefaultValue) {
 		if t.RestartCmd.Value == nil && i.RestartCmd != nil {
 			process["restart_cmd"] = nil
-			changed = true
+			return true
 		} else if t.RestartCmd.Value != nil && i.RestartCmd == nil {
 			process["restart_cmd"] = *t.RestartCmd.Value
-			changed = true
+			return true
 		} else if t.RestartCmd.Value != nil && i.RestartCmd != nil && *t.RestartCmd.Value != *i.RestartCmd {
 			process["restart_cmd"] = *t.RestartCmd.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkForceStopCmdAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.ForceStopCmd.AsDefaultValue) {
 		if t.ForceStopCmd.Value == nil && i.ForceStopCmd != nil {
 			process["face_stop_cmd"] = nil
-			changed = true
+			return true
 		} else if t.ForceStopCmd.Value != nil && i.ForceStopCmd == nil {
 			process["face_stop_cmd"] = *t.ForceStopCmd.Value
-			changed = true
+			return true
 		} else if t.ForceStopCmd.Value != nil && i.ForceStopCmd != nil && *t.ForceStopCmd.Value != *i.ForceStopCmd {
 			process["face_stop_cmd"] = *t.ForceStopCmd.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkFuncNameAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.FuncName.AsDefaultValue) {
 		if t.FuncName.Value == nil && i.FuncName != nil {
 			process["bk_func_name"] = nil
-			changed = true
+			return true
 		} else if t.FuncName.Value != nil && i.FuncName == nil {
 			process["bk_func_name"] = *t.FuncName.Value
-			changed = true
+			return true
 		} else if t.FuncName.Value != nil && i.FuncName != nil && *t.FuncName.Value != *i.FuncName {
 			process["bk_func_name"] = *t.FuncName.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkWorkPathAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.WorkPath.AsDefaultValue) {
 		if t.WorkPath.Value == nil && i.WorkPath != nil {
 			process["work_path"] = nil
-			changed = true
+			return true
 		} else if t.WorkPath.Value != nil && i.WorkPath == nil {
 			process["work_path"] = *t.WorkPath.Value
-			changed = true
+			return true
 		} else if t.WorkPath.Value != nil && i.WorkPath != nil && *t.WorkPath.Value != *i.WorkPath {
 			process["work_path"] = *t.WorkPath.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkBindIPAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.BindIP.AsDefaultValue) {
 		if t.BindIP.Value == nil && i.BindIP != nil {
 			process["bind_ip"] = nil
-			changed = true
+			return true
 		} else if t.BindIP.Value != nil && i.BindIP == nil {
 			process["bind_ip"] = t.BindIP.Value.IP()
-			changed = true
+			return true
 		} else if t.BindIP.Value != nil && i.BindIP != nil && t.BindIP.Value.IP() != *i.BindIP {
 			process["bind_ip"] = t.BindIP.Value.IP()
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkPriorityAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.Priority.AsDefaultValue) {
 		if t.Priority.Value != nil && i.Priority == nil {
 			process["priority"] = *t.Priority.Value
-			changed = true
+			return true
 		} else if t.Priority.Value == nil && i.Priority != nil {
 			process["priority"] = nil
-			changed = true
+			return true
 		} else if t.Priority.Value != nil && i.Priority != nil && *t.Priority.Value != *i.Priority {
 			process["priority"] = *t.Priority.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkReloadCmdAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.ReloadCmd.AsDefaultValue) {
 		if t.ReloadCmd.Value == nil && i.ReloadCmd != nil {
 			process["reload_cmd"] = nil
-			changed = true
+			return true
 		} else if t.ReloadCmd.Value != nil && i.ReloadCmd == nil {
 			process["reload_cmd"] = *t.ReloadCmd.Value
-			changed = true
+			return true
 		} else if t.ReloadCmd.Value != nil && i.ReloadCmd != nil && *t.ReloadCmd.Value != *i.ReloadCmd {
 			process["reload_cmd"] = *t.ReloadCmd.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkProcessNameAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.ProcessName.AsDefaultValue) {
 		if t.ProcessName.Value == nil && i.ProcessName != nil {
 			process["bk_process_name"] = nil
-			changed = true
+			return true
 		} else if t.ProcessName.Value != nil && i.ProcessName == nil {
 			process["bk_process_name"] = *t.ProcessName.Value
-			changed = true
+			return true
 		} else if t.ProcessName.Value != nil && i.ProcessName != nil && *t.ProcessName.Value != *i.ProcessName {
 			process["bk_process_name"] = *t.ProcessName.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkPortAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.Port.AsDefaultValue) {
 		if t.Port.Value == nil && i.Port != nil {
 			process["port"] = nil
-			changed = true
+			return true
 		} else if t.Port.Value != nil && i.Port == nil {
 			process["port"] = *t.Port.Value
-			changed = true
+			return true
 		} else if t.Port.Value != nil && i.Port != nil && *t.Port.Value != *i.Port {
 			process["port"] = *t.Port.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkPidFileAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.PidFile.AsDefaultValue) {
 		if t.PidFile.Value == nil && i.PidFile != nil {
 			process["pid_file"] = nil
-			changed = true
+			return true
 		} else if t.PidFile.Value != nil && i.PidFile == nil {
 			process["pid_file"] = *t.PidFile.Value
-			changed = true
+			return true
 		} else if t.PidFile.Value != nil && i.PidFile != nil && *t.PidFile.Value != *i.PidFile {
 			process["pid_file"] = *t.PidFile.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkAutoStartAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.AutoStart.AsDefaultValue) {
 		if t.AutoStart.Value == nil && i.AutoStart != nil {
 			process["auto_start"] = nil
-			changed = true
+			return true
 		} else if t.AutoStart.Value != nil && i.AutoStart == nil {
 			process["auto_start"] = *t.AutoStart.Value
-			changed = true
+			return true
 		} else if t.AutoStart.Value != nil && i.AutoStart != nil && *t.AutoStart.Value != *i.AutoStart {
 			process["auto_start"] = *t.AutoStart.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkAutoTimeGapSecondsAsDefaultValue(t *ProcessProperty, i *Process,
+	process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.AutoTimeGapSeconds.AsDefaultValue) {
 		if t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap == nil {
 			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
-			changed = true
+			return true
 		} else if t.AutoTimeGapSeconds.Value == nil && i.AutoTimeGap != nil {
 			process["auto_time_gap"] = nil
-			changed = true
-		} else if t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap != nil && *t.AutoTimeGapSeconds.Value != *i.AutoTimeGap {
+			return true
+		} else if t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap != nil &&
+			*t.AutoTimeGapSeconds.Value != *i.AutoTimeGap {
 			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkStartCmdAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.StartCmd.AsDefaultValue) {
 		if t.StartCmd.Value == nil && i.StartCmd != nil {
 			process["start_cmd"] = nil
-			changed = true
+			return true
 		} else if t.StartCmd.Value != nil && i.StartCmd == nil {
 			process["start_cmd"] = *t.StartCmd.Value
-			changed = true
+			return true
 		} else if t.StartCmd.Value != nil && i.StartCmd != nil && *t.StartCmd.Value != *i.StartCmd {
 			process["start_cmd"] = *t.StartCmd.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkFuncIDAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.FuncID.AsDefaultValue) {
 		if t.FuncID.Value == nil && i.FuncID != nil {
 			process["bk_func_id"] = nil
-			changed = true
+			return true
 		} else if t.FuncID.Value != nil && i.FuncID == nil {
 			process["bk_func_id"] = *t.FuncID.Value
-			changed = true
+			return true
 		} else if t.FuncID.Value != nil && i.FuncID != nil && *t.FuncID.Value != *i.FuncID {
 			process["bk_func_id"] = *t.FuncID.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkUserAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.User.AsDefaultValue) {
 		if t.User.Value == nil && i.User != nil {
 			process["user"] = nil
-			changed = true
+			return true
 		} else if t.User.Value != nil && i.User == nil {
 			process["user"] = *t.User.Value
-			changed = true
+			return true
 		} else if t.User.Value != nil && i.User != nil && *t.User.Value != *i.User {
 			process["user"] = *t.User.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkTimeoutSecondsAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.TimeoutSeconds.AsDefaultValue) {
 		if t.TimeoutSeconds.Value != nil && i.TimeoutSeconds == nil {
 			process["timeout"] = *t.TimeoutSeconds.Value
-			changed = true
+			return true
 		} else if t.TimeoutSeconds.Value == nil && i.TimeoutSeconds != nil {
 			process["timeout"] = nil
-			changed = true
-		} else if t.TimeoutSeconds.Value != nil && i.TimeoutSeconds != nil && *t.TimeoutSeconds.Value != *i.TimeoutSeconds {
+			return true
+		} else if t.TimeoutSeconds.Value != nil && i.TimeoutSeconds != nil &&
+			*t.TimeoutSeconds.Value != *i.TimeoutSeconds {
 			process["timeout"] = *t.TimeoutSeconds.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkProtocolAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.Protocol.AsDefaultValue) {
 		if t.Protocol.Value == nil && i.Protocol != nil {
 			process["protocol"] = nil
-			changed = true
+			return true
 		} else if t.Protocol.Value != nil && i.Protocol == nil {
 			process["protocol"] = *t.Protocol.Value
-			changed = true
+			return true
 		} else if t.Protocol.Value != nil && i.Protocol != nil && *t.Protocol.Value != *i.Protocol {
 			process["protocol"] = *t.Protocol.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkDescriptionAsDefaultValue(t *ProcessProperty, i *Process, process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.Description.AsDefaultValue) {
 		if t.Description.Value == nil && i.Description != nil {
 			process["description"] = nil
-			changed = true
+			return true
 		} else if t.Description.Value != nil && i.Description == nil {
 			process["description"] = *t.Description.Value
-			changed = true
+			return true
 		} else if t.Description.Value != nil && i.Description != nil && *t.Description.Value != *i.Description {
 			process["description"] = *t.Description.Value
-			changed = true
+			return true
 		}
 	}
+	return false
+}
 
+func (pt *ProcessTemplate) checkStartParamRegexAsDefaultValue(t *ProcessProperty, i *Process,
+	process mapstr.MapStr) bool {
 	if IsAsDefaultValue(t.StartParamRegex.AsDefaultValue) {
 		if t.StartParamRegex.Value == nil && i.StartParamRegex != nil {
 			process["bk_start_param_regex"] = nil
-			changed = true
+			return true
 		} else if t.StartParamRegex.Value != nil && i.StartParamRegex == nil {
 			process["bk_start_param_regex"] = *t.StartParamRegex.Value
-			changed = true
-		} else if t.StartParamRegex.Value != nil && i.StartParamRegex != nil && *t.StartParamRegex.Value != *i.StartParamRegex {
+			return true
+		} else if t.StartParamRegex.Value != nil && i.StartParamRegex != nil &&
+			*t.StartParamRegex.Value != *i.StartParamRegex {
 			process["bk_start_param_regex"] = *t.StartParamRegex.Value
-			changed = true
+			return true
 		}
 	}
-
-	return process, changed
+	return false
 }
 
 // FilterEditableFields only return editable fields
@@ -1405,7 +1496,7 @@ func (si *ServiceInstance) Validate() (field string, err error) {
 
 type ServiceInstanceDetail struct {
 	ServiceInstance
-	ProcessInstances  []ProcessInstanceNG `field:"process_instances" json:"process_instances" bson:"process_instances"`
+	ProcessInstances []ProcessInstanceNG `field:"process_instances" json:"process_instances" bson:"process_instances"`
 }
 
 type ServiceInstanceWithTopoPath struct {
