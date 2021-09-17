@@ -886,8 +886,8 @@ func (pt *ProcessTemplate) checkAutoTimeGapSecondsAsDefaultValue(t *ProcessPrope
 		} else if t.AutoTimeGapSeconds.Value == nil && i.AutoTimeGap != nil {
 			process["auto_time_gap"] = nil
 			return true
-		} else if t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap != nil && *t.AutoTimeGapSeconds.Value != *i.
-			AutoTimeGap {
+		} else if t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap != nil &&
+			*t.AutoTimeGapSeconds.Value != *i.AutoTimeGap {
 			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
 			return true
 		}
@@ -951,8 +951,8 @@ func (pt *ProcessTemplate) checkTimeoutSecondsAsDefaultValue(t *ProcessProperty,
 		} else if t.TimeoutSeconds.Value == nil && i.TimeoutSeconds != nil {
 			process["timeout"] = nil
 			return true
-		} else if t.TimeoutSeconds.Value != nil && i.TimeoutSeconds != nil && *t.TimeoutSeconds.Value != *i.
-			TimeoutSeconds {
+		} else if t.TimeoutSeconds.Value != nil && i.TimeoutSeconds != nil &&
+			*t.TimeoutSeconds.Value != *i.TimeoutSeconds {
 			process["timeout"] = *t.TimeoutSeconds.Value
 			return true
 		}
@@ -1001,8 +1001,8 @@ func (pt *ProcessTemplate) checkStartParamRegexAsDefaultValue(t *ProcessProperty
 		} else if t.StartParamRegex.Value != nil && i.StartParamRegex == nil {
 			process["bk_start_param_regex"] = *t.StartParamRegex.Value
 			return true
-		} else if t.StartParamRegex.Value != nil && i.StartParamRegex != nil && *t.StartParamRegex.Value != *i.
-			StartParamRegex {
+		} else if t.StartParamRegex.Value != nil && i.StartParamRegex != nil &&
+			*t.StartParamRegex.Value != *i.StartParamRegex {
 			process["bk_start_param_regex"] = *t.StartParamRegex.Value
 			return true
 		}
