@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 )
 
@@ -190,9 +191,8 @@ type SearchInstsNamesOption struct {
 
 // UpdateBizPropertyBatchParameter batch update business properties parameter
 type UpdateBizPropertyBatchParameter struct {
-	EditAll    bool                   `json:"edit_all"`
-	BizID      []int64                `json:"bk_biz_id"`
 	Properties map[string]interface{} `json:"properties"`
+	Condition  mapstr.MapStr          `json:"condition"`
 }
 
 var ObjsForSearchName = map[string]bool{

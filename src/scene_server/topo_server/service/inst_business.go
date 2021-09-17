@@ -243,32 +243,70 @@ func (s *Service) UpdateBizPropertyBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	updateCond := condition.CreateCondition()
-	if param.EditAll == true {
-		if s.AuthManager.Enabled() {
-			bizList, err := s.getAllEditableBiz(ctx)
-			if err != nil {
-				ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")
-				return
-			}
-			updateCond.Field(common.BKAppIDField).In(bizList)
-		}
-	} else {
-		bizList := param.BizID
-		if len(bizList) > common.BKMaxPageSize {
-			blog.Errorf("bk_biz_id len %d exceed max page size %d, rid:%s", len(bizList),
-				common.BKMaxPageSize, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "update",
-				common.BKMaxPageSize))
-			return
-		}
-		// check authorization
-		if err := s.checkBizEditable(ctx, bizList); err != nil {
-			// resp in checkBizEditable, need not resp again
-			return
-		}
-		updateCond.Field(common.BKAppIDField).In(bizList)
+	attrCond := condition.CreateCondition()
+	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
+	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
+	attrArr, err := s.Core.AttributeOperation().FindBusinessAttribute(ctx.Kit, attrCond.ToMapStr())
+	if nil != err {
+		blog.Errorf("failed get the business attribute, %s, rid:%s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
+	// userFieldArr Fields in the business are user-type fields
+	var userFields []string
+	for _, attribute := range attrArr {
+		userFields = append(userFields, attribute.PropertyID)
+	}
+
+	param.Condition = handleSpecialBusinessFieldSearchCond(param.Condition, userFields)
+
+	page := metadata.BasePage{
+		Limit: common.BKNoLimit,
+	}
+	fields := []string{
+		common.BKAppIDField,
+	}
+
+	query := &metadata.QueryBusinessRequest{
+		Fields: fields,
+		Page:   page,
+		Condition: param.Condition,
+	}
+	// can only find normal business, but not resource pool business
+	query.Condition[common.BKDefaultField] = 0
+
+	_, instItems, err := s.Core.BusinessOperation().FindBiz(ctx.Kit, query)
+	if nil != err {
+		blog.Errorf("find business failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	bizIDs := make([]int64, 0)
+	for _, item := range instItems {
+		business := metadata.BizBasicInfo{}
+		if err := mapstruct.Decode2Struct(item, &business); err != nil {
+			blog.Errorf("decode business from db failed, item: %+v, err: %s, rid: %s", item, err.Error(),
+				ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed))
+			return
+		}
+		bizIDs = append(bizIDs, business.BizID)
+	}
+
+	if len(bizIDs) <= 0 {
+		blog.Errorf("found no business by condition, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
+		return
+	}
+
+	// check authorization
+	if err := s.checkBizEditable(ctx, bizIDs); err != nil {
+		// resp in checkBizEditable, need not resp again
+		return
+	}
+
+	updateCond := condition.CreateCondition()
+	updateCond.Field(common.BKAppIDField).In(bizIDs)
 
 	// exclude archived biz
 	updateCond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
@@ -299,35 +337,6 @@ func (s *Service) UpdateBizPropertyBatch(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
-}
-
-func (s *Service) getAllEditableBiz(ctx *rest.Contexts) ([]int64, error) {
-	bizList := make([]int64, 0)
-	if s.AuthManager.Enabled() == false {
-		return bizList, nil
-	}
-
-	authInput := meta.ListAuthorizedResourcesParam{
-		UserName:     ctx.Kit.User,
-		ResourceType: meta.Business,
-		Action:       meta.Update,
-	}
-	authorizedResources, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
-	if err != nil {
-		blog.Errorf("get editable biz err: %s, user: %s, rid: %s", err.Error(), ctx.Kit.User, ctx.Kit.Rid)
-		return bizList, err
-	}
-
-	for _, resourceID := range authorizedResources {
-		bizID, err := strconv.ParseInt(resourceID, 10, 64)
-		if err != nil {
-			blog.Errorf("parse bizID(%s) failed, err: %v, rid: %s", resourceID, err, ctx.Kit.Rid)
-			return bizList, err
-		}
-		bizList = append(bizList, bizID)
-	}
-
-	return bizList, nil
 }
 
 func (s *Service) checkBizEditable(ctx *rest.Contexts, bizList []int64) error {

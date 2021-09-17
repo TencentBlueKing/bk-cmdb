@@ -246,29 +246,18 @@ var _ = Describe("business test", func() {
 		Expect(rsp.Result).To(Equal(false))
 	})
 
-
-	It(fmt.Sprintf("batch update business properties by bk_biz_id = [%s]", bizId2), func() {
+	It(fmt.Sprintf("batch update business properties by condition bk_biz_id in [%s]", bizId2), func() {
 		bizID, err := strconv.ParseInt(bizId2, 10, 64)
 		Expect(err).Should(BeNil())
 		input := metadata.UpdateBizPropertyBatchParameter {
 			Properties: map[string]interface{}{
 				"operator": "test",
 			},
-		}
-		input.BizID = append(input.BizID, bizID)
-
-		rsp, err := apiServerClient.UpdateBizPropertyBatch(context.Background(), header, input)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-	})
-
-	It(fmt.Sprintf("batch update business properties by edit_all"), func() {
-		input := metadata.UpdateBizPropertyBatchParameter {
-			Properties: map[string]interface{}{
-				"operator": "test",
+			Condition: map[string]interface{}{
+				"bk_biz_id": map[string]interface{}{
+					"$in": []int64{bizID},
+				},
 			},
-			EditAll: true,
 		}
 
 		rsp, err := apiServerClient.UpdateBizPropertyBatch(context.Background(), header, input)
@@ -277,13 +266,16 @@ var _ = Describe("business test", func() {
 		Expect(rsp.Result).To(Equal(true))
 	})
 
-	It(fmt.Sprintf("batch update business properties with by bk_biz_id = []"), func() {
+	It(fmt.Sprintf("batch update business properties by condition bk_biz_id in []"), func() {
 		input := metadata.UpdateBizPropertyBatchParameter {
 			Properties: map[string]interface{}{
 				"operator": "test",
 			},
-			EditAll: false,
-			BizID: []int64{},
+			Condition: map[string]interface{}{
+				"bk_biz_id": map[string]interface{}{
+					"$in": make([]int64, 0),
+				},
+			},
 		}
 
 		rsp, err := apiServerClient.UpdateBizPropertyBatch(context.Background(), header, input)
