@@ -129,7 +129,7 @@ func (s *Service) getUserListStr(userList []string) []string {
 		return userListStr
 	}
 
-	for i := 0; i < userListLen; i = i + getUserMaxCount {
+	for i := 0; i < userListLen; i += getUserMaxCount {
 		if i+getUserMaxCount < userListLen {
 			subUserList := userList[i : i+getUserMaxCount]
 			userStr := strings.Join(subUserList, ",")
