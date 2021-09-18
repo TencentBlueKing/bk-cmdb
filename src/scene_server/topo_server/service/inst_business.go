@@ -243,54 +243,10 @@ func (s *Service) UpdateBizPropertyBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	attrCond := condition.CreateCondition()
-	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
-	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
-	attrArr, err := s.Core.AttributeOperation().FindBusinessAttribute(ctx.Kit, attrCond.ToMapStr())
-	if nil != err {
-		blog.Errorf("failed get the business attribute, %s, rid:%s", err.Error(), ctx.Kit.Rid)
+	bizIDs, err := s.getBizIDByCond(ctx, param.Condition)
+	if err != nil {
 		ctx.RespAutoError(err)
-		return
-	}
-	// userFieldArr Fields in the business are user-type fields
-	var userFields []string
-	for _, attribute := range attrArr {
-		userFields = append(userFields, attribute.PropertyID)
-	}
-
-	param.Condition = handleSpecialBusinessFieldSearchCond(param.Condition, userFields)
-
-	page := metadata.BasePage{
-		Limit: common.BKNoLimit,
-	}
-	fields := []string{
-		common.BKAppIDField,
-	}
-
-	query := &metadata.QueryBusinessRequest{
-		Fields: fields,
-		Page:   page,
-		Condition: param.Condition,
-	}
-	// can only find normal business, but not resource pool business
-	query.Condition[common.BKDefaultField] = 0
-
-	_, instItems, err := s.Core.BusinessOperation().FindBiz(ctx.Kit, query)
-	if nil != err {
-		blog.Errorf("find business failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	bizIDs := make([]int64, 0)
-	for _, item := range instItems {
-		business := metadata.BizBasicInfo{}
-		if err := mapstruct.Decode2Struct(item, &business); err != nil {
-			blog.Errorf("decode business from db failed, item: %+v, err: %s, rid: %s", item, err.Error(),
-				ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed))
-			return
-		}
-		bizIDs = append(bizIDs, business.BizID)
+		return;
 	}
 
 	if len(bizIDs) <= 0 {
@@ -337,6 +293,59 @@ func (s *Service) UpdateBizPropertyBatch(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
+}
+
+func (s *Service) getBizIDByCond(ctx *rest.Contexts, cond mapstr.MapStr) ([]int64, error) {
+	bizIDs := make([]int64, 0)
+
+	attrCond := condition.CreateCondition()
+	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
+	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
+	attrArr, err := s.Core.AttributeOperation().FindBusinessAttribute(ctx.Kit, attrCond.ToMapStr())
+	if nil != err {
+		blog.Errorf("failed get the business attribute, %s, rid:%s", err.Error(), ctx.Kit.Rid)
+		return bizIDs, err
+	}
+	// userFieldArr Fields in the business are user-type fields
+	var userFields []string
+	for _, attribute := range attrArr {
+		userFields = append(userFields, attribute.PropertyID)
+	}
+
+	cond = handleSpecialBusinessFieldSearchCond(cond, userFields)
+
+	page := metadata.BasePage{
+		Limit: common.BKNoLimit,
+	}
+	fields := []string{
+		common.BKAppIDField,
+	}
+
+	query := &metadata.QueryBusinessRequest{
+		Fields: fields,
+		Page:   page,
+		Condition: cond,
+	}
+	// can only find normal business, but not resource pool business
+	query.Condition[common.BKDefaultField] = 0
+
+	_, instItems, err := s.Core.BusinessOperation().FindBiz(ctx.Kit, query)
+	if nil != err {
+		blog.Errorf("find business failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		return bizIDs, err
+	}
+
+	for _, item := range instItems {
+		business := metadata.BizBasicInfo{}
+		if err := mapstruct.Decode2Struct(item, &business); err != nil {
+			blog.Errorf("decode business from db failed, item: %+v, err: %s, rid: %s", item, err.Error(),
+				ctx.Kit.Rid)
+			return bizIDs, ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed)
+		}
+		bizIDs = append(bizIDs, business.BizID)
+	}
+
+	return bizIDs, nil
 }
 
 func (s *Service) checkBizEditable(ctx *rest.Contexts, bizList []int64) error {
