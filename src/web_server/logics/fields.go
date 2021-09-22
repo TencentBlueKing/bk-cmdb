@@ -59,19 +59,19 @@ type HandleFieldParam struct {
 
 // HandleHostParam 处理主机数据入参
 type HandleHostParam struct {
-	RowIndex int
-	Data []mapstr.MapStr
-	CcErr errors.DefaultCCErrorIf
-	Fields map[string]Property
-	Rid string
-	ModelBizID int64
-	CustomLen int
-	ObjID string
-	UsernameMap map[string]string
+	RowIndex     int
+	Data         []mapstr.MapStr
+	CcErr        errors.DefaultCCErrorIf
+	Fields       map[string]Property
+	Rid          string
+	ModelBizID   int64
+	CustomLen    int
+	ObjID        string
+	UsernameMap  map[string]string
 	PropertyList []string
-	ObjName []string
-	CcLang lang.DefaultCCLanguageIf
-	Sheet *xlsx.Sheet
+	ObjName      []string
+	CcLang       lang.DefaultCCLanguageIf
+	Sheet        *xlsx.Sheet
 }
 
 // PropertyGroup property group
@@ -339,7 +339,6 @@ func addSystemField(fields map[string]Property, objID string, defLang lang.Defau
 		PropertyType:  common.FieldTypeInt,
 		Group:         "defalut",
 		ExcelColIndex: index,
-		// ExcelColIndex=tip + biztopo + biz + set + moudle + customLen, the former indexes is used by these columns
 	}
 
 	switch objID {

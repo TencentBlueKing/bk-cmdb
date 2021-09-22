@@ -43,6 +43,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 		return err
 
 	}
+	// index=1 表格数据的起始索引，excel表格数据第一列为字段说明，第二列为数据列
 	addSystemField(fields, common.BKInnerObjIDObject, ccLang, 1)
 
 	if 0 == len(filter) {
@@ -111,15 +112,19 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		extFieldsModuleID: ccLang.Language("bk_module_name"),
 		extFieldsSetID:    ccLang.Language("bk_set_name"),
 	}
+	// 生成key,用于赋值遍历主机数据进行赋值
 	for _, objID := range objIDs {
-		extFieldKey = append(extFieldKey, "cc_ext_"+objID) // 生成key,用于赋值遍历主机数据进行赋值
+		extFieldKey = append(extFieldKey, "cc_ext_"+objID)
 	}
+
+	// 2 自定义层级名称在extFieldKey切片中起始位置为2，0,1索引为业务拓扑和业务名
 	for idx, objName := range objNames {
-		extFields[extFieldKey[idx+2]] = objName // 2 自定义层级名称在extFieldKey切片中起始位置为2，0,1索引为业务拓扑和业务名
+		extFields[extFieldKey[idx+2]] = objName
 	}
 
 	extFieldKey = append(extFieldKey, extFieldsSetID, extFieldsModuleID)
 	fields = addExtFields(fields, extFields, extFieldKey)
+	// len(objNames)+5=tip + biztopo + biz + set + moudle + customLen, the former indexes is used by these columns
 	addSystemField(fields, common.BKInnerObjIDHost, ccLang, len(objNames)+5)
 
 	productHostExcelHeader(ctx, fields, filter, sheet, ccLang, objNames)
@@ -138,20 +143,18 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		for idx, field := range extFieldKey[2 : len(extFieldKey)-2] {
 			rowMap[field] = hostData[objIDs[idx]]
 		}
-		rowMap[extFieldsSetID] = hostData[common.BKInnerObjIDSet] // 添加集群列
-		rowMap[extFieldsModuleID] = hostData["modules"]           // 添加模块列
+		rowMap[extFieldsSetID] = hostData["sets"]
+		rowMap[extFieldsModuleID] = hostData["modules"]
 
 		if _, exist := fields[common.BKCloudIDField]; exist {
 			cloudAreaArr, err := rowMap.MapStrArray(common.BKCloudIDField)
 			if err != nil {
-				blog.Errorf("build host excel failed, cloud area not array, host: %#v, err: %v, rid: %s",
-					hostData, err, rid)
+				blog.Errorf("get cloud id failed, host: %#v, err: %v, rid: %s", hostData, err, rid)
 				return ccErr.CCError(common.CCErrCommReplyDataFormatError)
 			}
 
 			if len(cloudAreaArr) != 1 {
-				blog.Errorf("build host excel failed, host has many cloud areas, host: %#v, err: %v, rid: %s",
-					hostData, err, rid)
+				blog.Errorf("host has many cloud areas, host: %#v, err: %v, rid: %s", hostData, err, rid)
 				return ccErr.CCError(common.CCErrCommReplyDataFormatError)
 			}
 
@@ -183,8 +186,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		instID, err := rowMap.Int64(instIDKey)
 		if err != nil {
-			blog.Errorf("setExcelRowDataByIndex inst:%+v, not inst id key:%s, objID:%s, rid:%s", rowMap, instIDKey,
-				objID, rid)
+			blog.Errorf("get inst id failed, inst: %#v, , err: %v, rid: %s", rowMap, err, rid)
 			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, instIDKey, objID)
 		}
 
