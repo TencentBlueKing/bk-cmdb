@@ -443,8 +443,8 @@ errors:
 # 指定language的路径
 language:
   res: conf/language
-# 指定monstache插件配置文件
-monstache_plugin:
+# 指定monstache相关配置文件
+monstache:
   res: monstache/etc
     '''
 
