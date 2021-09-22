@@ -38,6 +38,17 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(input.Processes) == 0 {
+		ctx.RespEntity([]int64{})
+		blog.Infof("no process to create, return")
+		return
+	}
+	if len(input.Processes) > common.BKMaxUpdateOrCreatePageSize {
+		blog.Errorf("process num exceed the limit, input: %+v", input)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
 	var processIDs []int64
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
@@ -189,6 +200,11 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 
 	if len(input.Raw) == 0 {
 		ctx.RespEntity([]int64{})
+		return
+	}
+
+	if len(input.Raw) > common.BKMaxUpdateOrCreatePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}
 
@@ -763,6 +779,18 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 	input := new(metadata.DeleteProcessInstanceInServiceInstanceInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(input.ProcessInstanceIDs) == 0 {
+		ctx.RespEntity([]int64{})
+		blog.Infof("no process to delete, return")
+		return
+	}
+
+	if len(input.ProcessInstanceIDs) > common.BKMaxDeletePageSize {
+		blog.Errorf("process num exceed the limit, input: %+v", input)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}
 

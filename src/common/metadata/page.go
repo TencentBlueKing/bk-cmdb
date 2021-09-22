@@ -37,7 +37,7 @@ type BasePage struct {
 
 func (page BasePage) Validate(allowNoLimit bool) (string, error) {
 	if page.Limit > common.BKMaxPageSize {
-		if page.Limit != common.BKNoLimit || allowNoLimit != true {
+		if page.Limit != common.BKNoLimit || allowNoLimit != true || page.Limit <= 0 {
 			return "limit", fmt.Errorf("exceed max page size: %d", common.BKMaxPageSize)
 		}
 	}
@@ -47,6 +47,15 @@ func (page BasePage) Validate(allowNoLimit bool) (string, error) {
 // IsIllegal  limit is illegal
 func (page BasePage) IsIllegal() bool {
 	if page.Limit > common.BKMaxPageSize && page.Limit != common.BKNoLimit ||
+		page.Limit <= 0 {
+		return true
+	}
+	return false
+}
+
+// IsIllegal  limit is illegal
+func (page BasePage) IsIllegalLimit() bool {
+	if page.Limit > common.BKMaxLimitSize && page.Limit != common.BKNoLimit ||
 		page.Limit <= 0 {
 		return true
 	}

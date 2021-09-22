@@ -38,6 +38,16 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(input.Instances) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "service_instance_ids"))
+		return
+	}
+
+	if len(input.Instances) > common.BKMaxUpdateOrCreatePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
 	var serviceInstanceIDs []int64
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
@@ -347,6 +357,11 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(input.HostIDs) > common.BKMaxLimitSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
 	bizID := input.BizID
 	option := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
@@ -423,6 +438,13 @@ func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	if input.Page.IsIllegal() {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		blog.Errorf("request page limit %d exceeds max page size, rid: %s", input.Page.Limit, ctx.Kit.Rid)
+		return
+	}
+
 	if input.SetTemplateID == 0 {
 		blog.Errorf("SearchServiceInstancesBySetTemplate failed, lost input params SetTemplateID, rid: %s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsLostField, "set_template_id"))
@@ -437,7 +459,7 @@ func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 	qc := &metadata.QueryCondition{
 		Fields: []string{common.BKModuleIDField},
 		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
+			Limit: input.Page.Limit,
 		},
 		Condition: cond,
 	}
@@ -485,6 +507,16 @@ func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(input.HostIDs) > common.BKMaxPageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+	if input.Page.IsIllegalLimit() {
+		blog.Errorf("parse page illegal, input:%#v,rid:%s", input, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
 	option := &metadata.ListServiceInstanceOption{
 		BusinessID: input.BizID,
 		ModuleIDs:  []int64{input.ModuleID},
@@ -507,6 +539,16 @@ func (ps *ProcServer) ListServiceInstancesDetails(ctx *rest.Contexts) {
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
+	}
+
+	if input.Page.IsIllegalLimit() {
+		blog.Errorf("parse page illegal, input:%#v,rid:%s", input, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+	// set default sort
+	if input.Page.Sort == "" {
+		input.Page.Sort = "-" + common.CreateTimeField
 	}
 
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstanceDetail(ctx.Kit.Ctx, ctx.Kit.Header, input)
@@ -564,9 +606,13 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		return
 	}
 
-	// TODO confirm if we need to validate the limit of the ids
 	if len(input.ServiceInstanceIDs) == 0 {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "service_instance_ids"))
+		return
+	}
+
+	if len(input.ServiceInstanceIDs) > common.BKMaxDeletePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}
 
@@ -1274,7 +1320,7 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts,
 			Limit: common.BKNoLimit,
 		},
 	}
-	
+
 	// get service templates
 	serviceTemplates, err := ps.CoreAPI.CoreService().Process().
 		ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, listSvcTempCond)
@@ -1424,7 +1470,7 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts,
 		blog.Errorf("create service instances(%#v) failed, err: %v, rid: %s", srvInstToAdd, err, rid)
 		return err
 	}
-	
+
 	if len(serviceInstanceIDs) == 0 {
 		return nil
 	}
@@ -1745,6 +1791,17 @@ func (ps *ProcServer) ServiceInstanceAddLabels(ctx *rest.Contexts) {
 		return
 	}
 
+	// InstanceIDs must be set
+	if len(option.InstanceIDs) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "instanceIDs"))
+		return
+	}
+
+	if len(option.InstanceIDs) > common.BKMaxUpdateOrCreatePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		if err := ps.CoreAPI.CoreService().Label().AddLabel(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameServiceInstance, option); err != nil {
 			blog.Errorf("ServiceInstanceAddLabels failed, option: %+v, err: %v", option, err)
@@ -1764,6 +1821,17 @@ func (ps *ProcServer) ServiceInstanceRemoveLabels(ctx *rest.Contexts) {
 	option := selector.LabelRemoveOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
+		return
+	}
+
+	// InstanceIDs must be set
+	if len(option.InstanceIDs) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "InstanceIDs"))
+		return
+	}
+
+	if len(option.InstanceIDs) > common.BKMaxDeletePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}
 

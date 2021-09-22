@@ -179,6 +179,13 @@ func (o *UpdateServiceInstanceOption) Validate() (rawError cErr.RawErrorInfo) {
 		}
 	}
 
+	if len(o.Data) > common.BKMaxUpdateOrCreatePageSize {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"data"},
+		}
+	}
+
 	for _, inst := range o.Data {
 		if inst.ServiceInstanceID <= 0 {
 			return cErr.RawErrorInfo{
@@ -1507,9 +1514,9 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 		}
 	}
 	if pt.Priority.Value != nil {
-		if *pt.Priority.Value <  common.MinProcessPrio || *pt.Priority.Value > common.MaxProcessPrio {
+		if *pt.Priority.Value < common.MinProcessPrio || *pt.Priority.Value > common.MaxProcessPrio {
 			return "priority", fmt.Errorf("field %s value must in range [%d, %d]", "priority",
-					common.MinProcessPrio, common.MaxProcessPrio)
+				common.MinProcessPrio, common.MaxProcessPrio)
 		}
 	}
 
