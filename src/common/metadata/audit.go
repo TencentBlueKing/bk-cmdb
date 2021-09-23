@@ -597,10 +597,11 @@ func GetResourceTypeByObjID(objID string, isMainline bool) ResourceType {
 	}
 }
 
+// GetAuditTypesByCategory return audittype array by check category
 func GetAuditTypesByCategory(category string) []AuditType {
 	switch category {
 	case "business":
-		return []AuditType{BusinessResourceType}
+		return []AuditType{BusinessResourceType, DynamicGroupType}
 	case "resource":
 		return []AuditType{BusinessType, ModelInstanceType, CloudResourceType}
 	case "host":
