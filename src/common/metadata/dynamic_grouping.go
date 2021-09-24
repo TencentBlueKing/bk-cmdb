@@ -149,7 +149,7 @@ func validAttributeValueType(attrType string, value interface{}) error {
 		switch value.(type) {
 		case string, int:
 		default:
-			return fmt.Errorf("attribute only support string value, and value, %+v", value)
+			return fmt.Errorf("attribute only support string value, and int value, %+v", value)
 		}
 	case numericType:
 		if !util.IsNumeric(value) {
