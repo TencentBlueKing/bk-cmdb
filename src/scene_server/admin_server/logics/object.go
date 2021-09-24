@@ -18,29 +18,49 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 )
 
-// GetCustomObjects get objects which are custom(without mainline objects).
+// GetCustomObjects get all custom objects(without inner and mainline objects that authorize separately)
 func (l *Logics) GetCustomObjects(ctx context.Context, header http.Header) ([]metadata.Object, error) {
-	resp, err := l.CoreAPI.CoreService().Model().ReadModel(ctx, header, &metadata.QueryCondition{
+	// get mainline objects
+	assoCond := &metadata.QueryCondition{
+		Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline},
+		Fields:    []string{common.BKObjIDField},
+	}
+	assoRsp, err := l.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, header, assoCond)
+	if err != nil {
+		return nil, fmt.Errorf("get custom models failed, read model association cond:%#v, err: %#v", assoCond, err)
+	}
+
+	// get all excluded objectIDs
+	excludedObjIDs := []string{
+		common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule,
+		common.BKInnerObjIDHost, common.BKInnerObjIDProc, common.BKInnerObjIDPlat,
+	}
+	for _, association := range assoRsp.Info {
+		if !metadata.IsCommon(association.ObjectID) {
+			excludedObjIDs = append(excludedObjIDs, association.ObjectID)
+		}
+	}
+
+	objCond := &metadata.QueryCondition{
 		Fields: []string{common.BKObjIDField, common.BKObjNameField, common.BKFieldID},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 		Condition: map[string]interface{}{
 			common.BKIsPre: false,
-			common.BKClassificationIDField: map[string]interface{}{
-				common.BKDBNE: "bk_biz_topo",
+			common.BKObjIDField: map[string]interface{}{
+				common.BKDBNIN: excludedObjIDs,
 			},
 		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("get custom models failed, err: %+v", err)
 	}
-	
+	resp, err := l.CoreAPI.CoreService().Model().ReadModel(ctx, header, objCond)
+	if err != nil {
+		return nil, fmt.Errorf("get custom models failed, read model cond:%#v, err: %#v", objCond, err)
+	}
+
 	if len(resp.Info) == 0 {
-		blog.Info("get custom models failed, no custom model is found")
-		return nil, fmt.Errorf("no custom model is found")
+		return nil, fmt.Errorf("get custom models failed, no custom model is found")
 	}
 
 	return resp.Info, nil
