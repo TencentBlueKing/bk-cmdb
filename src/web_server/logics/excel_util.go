@@ -328,12 +328,12 @@ func productExcelHeader(ctx context.Context, fields map[string]Property, filter 
 	defLang lang.DefaultCCLanguageIf) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
-	//橙棕色
+	// 橙棕色
 	cellStyle := getCellStyle(common.ExcelFirstColumnCellColor, common.ExcelHeaderFirstRowFontColor)
-	//粉色
+	// 粉色
 	colStyle := getCellStyle(common.ExcelHeaderFirstColumnColor, common.ExcelHeaderFirstRowFontColor)
 	sheet.Col(0).Width = 18
-	//字典中的值为国际化之后的"业务拓扑"和"业务名"，用来做判断，命中即变化相应的cell颜色。
+	// 字典中的值为国际化之后的"业务拓扑"和"业务名"，用来做判断，命中即变化相应的cell颜色。
 	bizTopoMap := map[string]int{
 		defLang.Language("web_ext_field_topo"):       1,
 		defLang.Language("biz_property_bk_biz_name"): 1,
@@ -373,17 +373,17 @@ func productHostExcelHeader(ctx context.Context, fields map[string]Property, fil
 	defLang lang.DefaultCCLanguageIf, objName []string) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
-	//橙棕色
+	// 橙棕色
 	cellStyle := getCellStyle(common.ExcelFirstColumnCellColor, common.ExcelHeaderFirstRowFontColor)
-	//粉色
+	// 粉色
 	colStyle := getCellStyle(common.ExcelHeaderFirstColumnColor, common.ExcelHeaderFirstRowFontColor)
 	sheet.Col(0).Width = 18
-	//字典中的值为国际化之后的"业务拓扑"和"业务名"，"集群"，”模块“，用来做判断，命中即变化相应的cell颜色。
+	// 字典中的值为国际化之后的"业务拓扑"和"业务名"，"集群"，”模块“，用来做判断，命中即变化相应的cell颜色。
 	bizTopoMap := map[string]int{
-		defLang.Language("web_ext_field_topo"):       1,
-		defLang.Language("biz_property_bk_biz_name"): 1,
-		defLang.Language("bk_module_name"):           1,
-		defLang.Language("bk_set_name"):              1,
+		defLang.Language("web_ext_field_topo"):        1,
+		defLang.Language("biz_property_bk_biz_name"):  1,
+		defLang.Language("web_ext_field_module_name"): 1,
+		defLang.Language("web_ext_field_set_name"):    1,
 	}
 	for _, name := range objName {
 		bizTopoMap[name] = 1
@@ -473,7 +473,7 @@ func handleFields(handleFieldParam HandleFieldParam) {
 		case common.FieldTypeBool:
 			dd := xlsx.NewXlsxCellDataValidation(true, true, true)
 			if err := dd.SetDropList([]string{fieldTypeBoolTrue, fieldTypeBoolFalse}); err != nil {
-				blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, handleFieldParam.Rid)
+				blog.Errorf("set drop list failed, err: %v, rid: %s", err, handleFieldParam.Rid)
 			}
 			handleFieldParam.Sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
 			handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeString)

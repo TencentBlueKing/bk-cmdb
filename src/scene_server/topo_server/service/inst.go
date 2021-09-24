@@ -1004,3 +1004,22 @@ func (s *Service) SearchInstAssociationWithOtherObject(ctx *rest.Contexts) {
 		"page":  input.Page,
 	})
 }
+
+// FindInsts find insts by cond
+func (s *Service) FindInsts(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	data := new(metadata.QueryCondition)
+	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	sets, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, objID, data)
+	if err != nil {
+		blog.Errorf("failed to get inst, obj id: %s, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(sets.Data)
+}

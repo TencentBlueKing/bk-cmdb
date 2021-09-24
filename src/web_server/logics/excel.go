@@ -100,17 +100,19 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		blog.Errorf("add excel sheet failed, err: %v, rid: %s", err, rid)
 		return err
 	}
-	extFieldKey := make([]string, 0)
+
 	extFieldsTopoID := "cc_ext_field_topo"
 	extFieldsBizID := "cc_ext_biz"
 	extFieldsModuleID := "cc_ext_module"
 	extFieldsSetID := "cc_ext_set"
+	extFieldKey := make([]string, 0)
 	extFieldKey = append(extFieldKey, extFieldsTopoID, extFieldsBizID)
+
 	extFields := map[string]string{
 		extFieldsTopoID:   ccLang.Language("web_ext_field_topo"),
 		extFieldsBizID:    ccLang.Language("biz_property_bk_biz_name"),
-		extFieldsModuleID: ccLang.Language("bk_module_name"),
-		extFieldsSetID:    ccLang.Language("bk_set_name"),
+		extFieldsModuleID: ccLang.Language("web_ext_field_module_name"),
+		extFieldsSetID:    ccLang.Language("web_ext_field_set_name"),
 	}
 	// 生成key,用于赋值遍历主机数据进行赋值
 	for _, objID := range objIDs {
@@ -186,14 +188,14 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		instID, err := rowMap.Int64(instIDKey)
 		if err != nil {
-			blog.Errorf("get inst id failed, inst: %#v, , err: %v, rid: %s", rowMap, err, rid)
+			blog.Errorf("get inst id failed, inst: %#v, err: %v, rid: %s", rowMap, err, rid)
 			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, instIDKey, objID)
 		}
 
 		// 使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
 		rowMap, err = replaceEnName(rid, rowMap, usernameMap, propertyList, ccLang)
 		if err != nil {
-			blog.Errorf("rebuild user list field, rid: %s", rid)
+			blog.Errorf("rebuild user list field, err: %v, rid: %s", err, rid)
 			return err
 		}
 

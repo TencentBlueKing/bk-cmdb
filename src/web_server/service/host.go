@@ -501,7 +501,7 @@ func (s *Service) getCustomData(ctx context.Context, header http.Header, instIDs
 		Fields: []string{common.BKInstIDField, common.BKInstNameField, common.BKInstParentStr},
 	}
 
-	insts, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx, header, objID, query)
+	insts, err := s.Engine.CoreAPI.ApiServer().ReadInstance(ctx, header, objID, query)
 	if err != nil {
 		blog.Errorf("get custom level inst data failed, query cond: %#v, err: %v, rid: %s", query, err, rid)
 		return nil, nil, nil, err
@@ -527,7 +527,7 @@ func (s *Service) getCustomData(ctx context.Context, header http.Header, instIDs
 
 		instName, err := inst.String(common.BKInstNameField)
 		if err != nil {
-			blog.Errorf("get inst name failed, rid: %s", rid)
+			blog.Errorf("get inst name failed, err: %v, rid: %s", err, rid)
 			return nil, nil, nil, err
 		}
 		instIdNameMap[instID] = instName
@@ -539,17 +539,18 @@ func (s *Service) getCustomData(ctx context.Context, header http.Header, instIDs
 // getCustomObjectInfo get custom instance object info
 func (s *Service) getCustomObjectInfo(ctx context.Context, header http.Header) ([]string, []string, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	mainlineAsstRsp, err := s.Engine.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, header,
-		&metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.
-			AssociationKindMainline}})
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.AssociationKindIDField: common.AssociationKindMainline,
+		},
+	}
+	mainlineAsstRsp, err := s.Engine.CoreAPI.ApiServer().ReadModuleAssociation(context.Background(), header, query)
 	if err != nil {
 		blog.Errorf("search mainline association failed, err: %v, rid: %s", err, rid)
 		return nil, nil, err
 	}
 
 	mainlineObjectChildMap := make(map[string]string, 0)
-	objectName := make([]string, 0)
-
 	for _, asst := range mainlineAsstRsp.Data.Info {
 		if asst.ObjectID == common.BKInnerObjIDHost {
 			continue
@@ -557,7 +558,7 @@ func (s *Service) getCustomObjectInfo(ctx context.Context, header http.Header) (
 		mainlineObjectChildMap[asst.AsstObjID] = asst.ObjectID
 	}
 
-	// get all mainline object name map
+	// get all mainline custom object id
 	objectIDs := make([]string, 0)
 	for objectID := common.BKInnerObjIDApp; len(objectID) != 0; objectID = mainlineObjectChildMap[objectID] {
 		if objectID == common.BKInnerObjIDApp || objectID == common.BKInnerObjIDSet ||
@@ -577,7 +578,8 @@ func (s *Service) getCustomObjectInfo(ctx context.Context, header http.Header) (
 		},
 	}
 
-	objects, err := s.Engine.CoreAPI.CoreService().Model().ReadModel(ctx, header, input)
+	objectName := make([]string, 0)
+	objects, err := s.Logics.CoreAPI.ApiServer().ReadModel(context.Background(), header, input)
 	if err != nil {
 		blog.Errorf("search mainline obj failed, objIDs: %#v, err: %v, rid: %s", objectIDs, err, rid)
 		return objectName, util.ReverseArrayString(objectIDs), err
@@ -603,6 +605,7 @@ func (s *Service) handleModule(hostInfo []mapstr.MapStr, rid string) error {
 	for _, data := range hostInfo {
 		moduleMap, exist := data[common.BKInnerObjIDModule].([]interface{})
 		if !exist {
+			blog.Errorf("get module map data from host data failed, not exist, data: %#v, rid: %s", data, rid)
 			return fmt.Errorf("from host data get module map, not exist, rid: %s", rid)
 		}
 
@@ -616,13 +619,14 @@ func (s *Service) handleModule(hostInfo []mapstr.MapStr, rid string) error {
 
 			moduleName, err := rowMap.String(common.BKModuleNameField)
 			if err != nil {
+				blog.Errorf("get module name from host data failed, err: %v, rid: %s", err, rid)
 				return fmt.Errorf("from host data get module name, not exist, rid: %s", rid)
 			}
 			moduleNameMap[moduleName] = idx
 		}
 
 		var moduleStr string
-		for moduleName, _ := range moduleNameMap {
+		for moduleName := range moduleNameMap {
 			if moduleStr == "" {
 				moduleStr = moduleName
 			} else {
@@ -643,6 +647,7 @@ func (s *Service) handleSet(hostInfo []mapstr.MapStr, rid string) ([]int64, map[
 	for _, data := range hostInfo {
 		setMap, exist := data[common.BKInnerObjIDSet].([]interface{})
 		if !exist {
+			blog.Errorf("get set map data from host data, not exist, data: %#v, rid: %s", data, rid)
 			return nil, nil, fmt.Errorf("from host data get set map, not exist, rid: %s", rid)
 		}
 
@@ -669,6 +674,7 @@ func (s *Service) handleSet(hostInfo []mapstr.MapStr, rid string) ([]int64, map[
 
 			setName, err := rowMap.String(common.BKSetNameField)
 			if err != nil {
+				blog.Errorf("get set name from host data failed, err: %v, rid: %s", err, rid)
 				return nil, nil, fmt.Errorf("from host data get set name, not exist, rid: %s", rid)
 			}
 			setNameMap[setName] = idx
@@ -688,7 +694,7 @@ func (s *Service) handleSet(hostInfo []mapstr.MapStr, rid string) ([]int64, map[
 		hostSetMap[hostID] = setSubIDs
 
 		var setStr string
-		for setName, _ := range setNameMap {
+		for setName := range setNameMap {
 			if setStr == "" {
 				setStr = setName
 			} else {
@@ -714,7 +720,7 @@ func (s *Service) getSetParentID(ctx context.Context, header http.Header, setIDs
 		Fields: []string{common.BKSetIDField, common.BKInstParentStr, common.BKSetNameField},
 	}
 
-	sets, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, querySet)
+	sets, err := s.Engine.CoreAPI.ApiServer().ReadInstance(ctx, header, common.BKInnerObjIDSet, querySet)
 	if err != nil {
 		blog.Errorf("get set data failed, cond: %#v, err: %v,rid:%s", querySet, err, rid)
 		return nil, nil, err
@@ -737,6 +743,7 @@ func (s *Service) getSetParentID(ctx context.Context, header http.Header, setIDs
 		setID, err := set.Int64(common.BKSetIDField)
 		if err != nil {
 			blog.Errorf("get set id failed, err: %v, rid: %s", err, rid)
+			return nil, nil, err
 		}
 		setCustomMap[setID] = parentID
 	}
@@ -767,11 +774,11 @@ func (s *Service) handleCustomData(ctx context.Context, header http.Header, host
 			}
 
 			customStr := ""
-			for k, _ := range customNameMap {
+			for customName := range customNameMap {
 				if customStr == "" {
-					customStr = k
+					customStr = customName
 				} else {
-					customStr += "," + k
+					customStr += "," + customName
 				}
 			}
 
@@ -788,6 +795,7 @@ func (s *Service) handleCustomData(ctx context.Context, header http.Header, host
 			hostID, err := rowMap.Int64(common.BKHostIDField)
 			if err != nil {
 				blog.Errorf("get host id failed, host id: %s, err: %v, rid: %s", hostID, err, rid)
+				return err
 			}
 
 			data[objID] = hostCustomNameMap[hostID]

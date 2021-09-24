@@ -244,3 +244,20 @@ func (s *Service) GetModelStatistics(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(result.Data)
 }
+
+// SearchModel search some model by condition
+func (s *Service) SearchModel(ctx *rest.Contexts) {
+	data := new(metadata.QueryCondition)
+	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModel(ctx.Kit.Ctx, ctx.Kit.Header, data)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(resp.Data)
+}
