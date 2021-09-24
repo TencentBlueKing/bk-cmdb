@@ -1,5 +1,7 @@
 <template>
-  <cmdb-sticky-layout class="create-template-wrapper" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
+  <cmdb-sticky-layout class="create-template-wrapper"
+    v-test-id.businessServiceTemplate="insideMode !== 'edit' ? 'addForm' : 'editForm'"
+    v-bkloading="{ isLoading: $loading(Object.values(request)) }">
     <div class="info-group">
       <h3>{{$t('基本属性')}}</h3>
       <div class="template-info clearfix"
@@ -29,13 +31,14 @@
                 <p class="form-error">{{errors.first('templateName')}}</p>
               </template>
               <template v-if="isEditName">
-                <i class="form-confirm edit-icon bk-icon icon-check-1 fl" @click="handleConfirmSaveName"></i>
-                <i class="form-cancel edit-icon bk-icon icon-close fl" @click="handleCancelEditName"></i>
+                <i class="form-confirm edit-icon bk-icon icon-check-1 fl" @click="handleConfirmSaveName" text
+                  v-test-id.businessServiceTemplate="'confirmSaveName'"></i>
+                <i class="form-cancel edit-icon bk-icon icon-close fl" @click="handleCancelEditName" text></i>
               </template>
               <template v-else-if="!isCreateMode">
                 <span class="template-name" :title="formData.templateName">{{formData.templateName}}</span>
                 <cmdb-auth :auth="auth">
-                  <bk-button slot-scope="{ disabled }" text
+                  <bk-button slot-scope="{ disabled }" text v-test-id="'editName'"
                     theme="primary"
                     :disabled="disabled"
                     @click="handleEditName">
@@ -105,7 +108,8 @@
                 <p class="form-error">{{errors.first('secondaryClassificationId')}}</p>
               </div>
               <template v-if="isEditCategory">
-                <i class="form-confirm edit-icon bk-icon icon-check-1" @click="handleSaveCategory"></i>
+                <i class="form-confirm edit-icon bk-icon icon-check-1" @click="handleSaveCategory"
+                  v-test-id.businessServiceTemplate="'confirmSaveCategory'"></i>
                 <i class="form-cancel edit-icon bk-icon icon-close" @click="handleCancelEditCategory"></i>
               </template>
             </template>
@@ -115,7 +119,7 @@
               {{getServiceCategory()}}
             </span>
             <cmdb-auth :auth="auth">
-              <bk-button slot-scope="{ disabled }" text
+              <bk-button slot-scope="{ disabled }" text v-test-id="'editCategory'"
                 theme="primary"
                 :disabled="disabled"
                 @click="handleEditCategory">
@@ -148,7 +152,7 @@
       <div class="precess-box">
         <div class="process-create" v-if="isFormMode">
           <cmdb-auth :auth="auth">
-            <bk-button slot-scope="{ disabled }"
+            <bk-button slot-scope="{ disabled }" v-test-id="'createProcess'"
               class="create-btn"
               theme="default"
               :disabled="disabled"
@@ -180,7 +184,7 @@
         'is-sticky': sticky
       }">
       <cmdb-auth class="mr5" :auth="auth">
-        <bk-button slot-scope="{ disabled }"
+        <bk-button slot-scope="{ disabled }" v-test-id="'submit'"
           theme="primary"
           :disabled="disabled"
           :loading="submitting"
@@ -188,7 +192,7 @@
           {{getButtonText()}}
         </bk-button>
       </cmdb-auth>
-      <bk-button @click="handleReturn" v-show="isFormMode">{{$t('取消')}}</bk-button>
+      <bk-button @click="handleReturn" v-show="isFormMode" v-test-id="'cancel'">{{$t('取消')}}</bk-button>
     </div>
     <bk-sideslider
       v-transfer-dom
@@ -197,7 +201,7 @@
       :width="800"
       :before-close="handleSliderBeforeClose">
       <template slot="content" v-if="slider.show">
-        <process-form
+        <process-form v-test-id.businessServiceTemplate="'processForm'"
           ref="processForm"
           :auth="auth"
           :properties="properties"

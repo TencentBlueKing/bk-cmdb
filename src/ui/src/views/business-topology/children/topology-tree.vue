@@ -1,12 +1,12 @@
 <template>
   <section class="tree-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
-    <bk-input class="tree-search"
+    <bk-input class="tree-search" v-test-id
       clearable
       right-icon="bk-icon icon-search"
       :placeholder="$t('请输入关键词')"
       v-model="filter">
     </bk-input>
-    <bk-big-tree ref="tree" class="topology-tree"
+    <bk-big-tree ref="tree" class="topology-tree" v-test-id
       selectable
       display-matched-node-descendants
       :height="$APP.height - 160"
@@ -46,7 +46,7 @@
               }">
               {{$t('新建')}}
             </i>
-            <bk-button v-else class="node-button"
+            <bk-button v-else class="node-button" v-test-id="'createNode'"
               theme="primary"
               :disabled="disabled"
               @click.stop="showCreateDialog(node)">

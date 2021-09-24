@@ -1,5 +1,5 @@
 <template>
-  <bk-table class="process-table" ref="processTable"
+  <bk-table class="process-table" ref="processTable" v-test-id.businessHostAndService="'processList'"
     v-bkloading="{ isLoading: $loading(request.getProcessList) }"
     row-class-name="process-table-row"
     :data="list"
