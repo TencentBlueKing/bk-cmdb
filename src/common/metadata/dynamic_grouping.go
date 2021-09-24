@@ -146,8 +146,10 @@ func (c *DynamicGroupCondition) Validate(attributeMap map[string]string) error {
 func validAttributeValueType(attrType string, value interface{}) error {
 	switch attrType {
 	case stringType:
-		if _, ok := value.(string); !ok {
-			return fmt.Errorf("attribute only support string value, not support value, %+v", value)
+		switch value.(type) {
+		case string, int:
+		default:
+			return fmt.Errorf("attribute only support string value, and value, %+v", value)
 		}
 	case numericType:
 		if !util.IsNumeric(value) {
