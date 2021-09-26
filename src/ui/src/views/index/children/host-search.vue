@@ -1,7 +1,7 @@
 <template>
   <div class="host-search-layout">
     <div class="search-bar">
-      <bk-input class="search-input"
+      <bk-input class="search-input" v-test-id
         ref="searchInput"
         type="textarea"
         :placeholder="$t('首页主机搜索提示语')"
@@ -12,7 +12,7 @@
         @keydown="handleKeydown">
       </bk-input>
       <bk-popover v-bind="popoverProps" ref="popover">
-        <bk-button theme="primary" class="search-btn"
+        <bk-button theme="primary" class="search-btn" v-test-id="'search'"
           :loading="$loading(request.search)"
           @click="handleSearch()">
           <i class="bk-icon icon-search"></i>
@@ -24,11 +24,11 @@
             <span place="c2">&lt;{{$t('固资编号')}}&gt;</span>
           </i18n>
           <div class="buttons">
-            <bk-button theme="primary" size="small" outline
+            <bk-button theme="primary" size="small" outline v-test-id="'ipSearch'"
               @click="handleSearch('ip')">
               {{$t('IP')}}
             </bk-button>
-            <bk-button theme="primary" size="small" outline
+            <bk-button theme="primary" size="small" outline v-test-id="'assetSearch'"
               @click="handleSearch('asset')">
               {{$t('固资编号')}}
             </bk-button>

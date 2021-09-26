@@ -13,16 +13,16 @@
           </span>
         </div>
         <div class="tab-content">
-          <host-search v-if="activeName === 'host'"></host-search>
-          <full-text-search-bar v-else />
+          <host-search v-if="activeName === 'host'" v-test-id></host-search>
+          <full-text-search-bar v-else v-test-id />
         </div>
-        <full-text-search-result-tab
+        <full-text-search-result-tab v-test-id
           v-if="fullTextSearchProps.showResultList"
           :result="searchResult" />
       </div>
       <div class="search-content">
         <div class="loading-ghost" v-show="loading" v-bkloading="{ isLoading: loading }"></div>
-        <full-text-search-result-list v-show="!loading" v-if="fullTextSearchProps.showResultList"
+        <full-text-search-result-list v-show="!loading" v-if="fullTextSearchProps.showResultList" v-test-id
           @complete="handleSearchComplete"
           :fetching.sync="loading" />
       </div>

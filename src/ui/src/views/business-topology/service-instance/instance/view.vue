@@ -1,5 +1,5 @@
 <template>
-  <section class="view-instance">
+  <section class="view-instance" v-test-id="'viewInst'">
     <instance-options class="instance-options"></instance-options>
     <instance-list class="instance-list"></instance-list>
   </section>

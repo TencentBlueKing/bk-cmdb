@@ -1,8 +1,8 @@
 <template>
   <div class="list-layout">
-    <host-list-options @transfer="handleTransfer"></host-list-options>
+    <host-list-options @transfer="handleTransfer" v-test-id></host-list-options>
     <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
-    <bk-table class="host-table"
+    <bk-table class="host-table" v-test-id.businessHostAndService="'hostList'"
       ref="table"
       v-bkloading="{ isLoading: $loading(Object.values(request)) }"
       :data="table.data"

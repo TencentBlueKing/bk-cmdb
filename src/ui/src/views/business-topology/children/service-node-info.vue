@@ -23,7 +23,7 @@
       <template slot="details-options">
         <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [business] }">
           <template slot-scope="{ disabled }">
-            <bk-button class="button-edit"
+            <bk-button class="button-edit" v-test-id="'edit'"
               theme="primary"
               :disabled="disabled"
               @click="handleEdit">
@@ -39,7 +39,7 @@
                 {{$t('删除节点')}}
               </bk-button>
             </span>
-            <bk-button class="btn-delete" v-else
+            <bk-button class="btn-delete" v-else v-test-id="'del'"
               hover-theme="danger"
               :disabled="disabled"
               @click="handleDelete">

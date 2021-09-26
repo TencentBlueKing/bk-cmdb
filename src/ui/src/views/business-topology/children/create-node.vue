@@ -45,7 +45,7 @@
       </div>
     </div>
     <div class="node-create-options">
-      <bk-button theme="primary"
+      <bk-button theme="primary" v-test-id="'createNodeSave'"
         :disabled="$loading() || errors.any()"
         @click="handleSave">
         {{$t('提交')}}
