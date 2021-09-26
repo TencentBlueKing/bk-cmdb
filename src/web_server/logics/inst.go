@@ -33,7 +33,9 @@ import (
 func (lgc *Logics) GetImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header, headerRow int, isInst bool, defLang lang.DefaultCCLanguageIf, modelBizID int64) (map[int]map[string]interface{}, []string, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, modelBizID)
+	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
+
 	if nil != err {
 		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
 	}

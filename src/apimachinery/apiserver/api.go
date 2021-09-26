@@ -403,3 +403,54 @@ func (a *apiServer) ListHostWithoutApp(ctx context.Context, h http.Header, optio
 
 	return
 }
+
+// ReadModuleAssociation get mainline topo model association
+func (a *apiServer) ReadModuleAssociation(ctx context.Context, h http.Header,
+	cond *metadata.QueryCondition) (resp *metadata.SearchAsstModelResp, err error) {
+	resp = new(metadata.SearchAsstModelResp)
+	subPath := "/find/instassociation/model"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+// ReadModel read object model data by obj id
+func (a *apiServer) ReadModel(ctx context.Context, h http.Header, cond *metadata.QueryCondition) (resp *metadata.
+	ReadModelResult, err error) {
+	resp = new(metadata.ReadModelResult)
+	subPath := "/find/object/model"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+// ReadInstance read instance by obj id and condition
+func (a *apiServer) ReadInstance(ctx context.Context, h http.Header, objID string,
+	cond *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error) {
+	resp = new(metadata.QueryConditionResult)
+	subPath := "/find/instance/%s"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
