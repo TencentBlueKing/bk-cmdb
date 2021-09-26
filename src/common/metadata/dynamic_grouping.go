@@ -171,9 +171,9 @@ const (
 func getAttributeType(attributeType string) (string, error) {
 	switch attributeType {
 	case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeEnum, common.FieldTypeDate, common.FieldTypeTime,
-		common.FieldTypeTimeZone, common.FieldTypeUser, common.FieldTypeList, common.FieldTypeOrganization:
+		common.FieldTypeTimeZone, common.FieldTypeUser, common.FieldTypeList:
 		return stringType, nil
-	case common.FieldTypeInt, common.FieldTypeFloat:
+	case common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeOrganization:
 		return numericType, nil
 	case common.FieldTypeBool:
 		return boolType, nil
