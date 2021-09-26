@@ -57,6 +57,26 @@ type HandleFieldParam struct {
 	BizTopoMap map[string]int
 }
 
+// HanlehHostDataParam 处理主机数据生成excel表格数据入参
+type HanlehHostDataParam struct {
+	HostData             []mapstr.MapStr
+	ExtFieldsTopoID      string
+	ExtFieldsBizID       string
+	ExtFieldsModuleID    string
+	ExtFieldsSetID       string
+	CcErr                errors.DefaultCCErrorIf
+	ExtFieldKey          []string
+	UsernameMap          map[string]string
+	PropertyList         []string
+	CcLang               lang.DefaultCCLanguageIf
+	Sheet                *xlsx.Sheet
+	Rid                  string
+	ObjID                string
+	ObjIDs               []string
+	Fields               map[string]Property
+	InstPrimaryKeyValMap map[int64][]PropertyPrimaryVal
+}
+
 // HandleHostParam 处理主机数据入参
 type HandleHostParam struct {
 	RowIndex     int
