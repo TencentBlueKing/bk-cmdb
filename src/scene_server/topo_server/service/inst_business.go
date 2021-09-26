@@ -256,28 +256,41 @@ func (s *Service) UpdateBizPropertyBatch(ctx *rest.Contexts) {
 	}
 
 	// check authorization
-	if err := s.checkBizEditable(ctx, bizIDs); err != nil {
-		// resp in checkBizEditable, need not resp again
-		return
+	if s.AuthManager.Enabled() {
+		if err := s.AuthManager.AuthorizeByBusinessID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, bizIDs...); err ==
+			ac.NoAuthorizeError {
+			perm, err := s.AuthManager.GenBizBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, bizIDs)
+			if err != nil && err != ac.NoAuthorizeError {
+				blog.Errorf("get biz permission failed, biz: %v, err: %v, rid: %s", bizIDs, err, ctx.Kit.Rid)
+				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+				return
+			}
+			ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
+			return
+		} else if err != nil {
+			blog.Errorf("biz authorize failed, biz: %v, err: %v, rid: %s", bizIDs, err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+			return
+		}
 	}
 
-	updateCond := condition.CreateCondition()
-	updateCond.Field(common.BKAppIDField).In(bizIDs)
-
-	// exclude archived biz
-	updateCond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
-	// exclude default biz
-	updateCond.Field(common.BKDefaultField).NotEq(common.DefaultAppFlag)
-
-	data, err := mapstr.NewFromInterface(param.Properties)
-	if err != nil {
-		blog.Errorf("update biz property batch convert properties[%v] to mapstr failed, err: %v, rid: %s",
-			param.Properties, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+	updateCond := mapstr.MapStr{
+		common.BKAppIDField: mapstr.MapStr{
+			common.BKDBIN: bizIDs,
+		},
+		// exclude archived biz
+		common.BKDataStatusField: mapstr.MapStr{
+			common.BKDBNE: common.DataStatusDisabled,
+		},
+		// exclude default biz
+		common.BKDefaultField: mapstr.MapStr{
+			common.BKDBNE: common.DefaultAppFlag,
+		},
 	}
+
+	data := param.Properties
 	// cannot update biz bk_data_status
-	data.Remove(common.BKDataStatusField)
+	delete(data, common.BKDataStatusField)
 
 	// update biz instances
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
@@ -296,15 +309,13 @@ func (s *Service) UpdateBizPropertyBatch(ctx *rest.Contexts) {
 }
 
 func (s *Service) getBizIDByCond(ctx *rest.Contexts, cond mapstr.MapStr) ([]int64, error) {
-	bizIDs := make([]int64, 0)
-
 	attrCond := condition.CreateCondition()
 	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
 	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
 	attrArr, err := s.Core.AttributeOperation().FindBusinessAttribute(ctx.Kit, attrCond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed get the business attribute, %s, rid:%s", err.Error(), ctx.Kit.Rid)
-		return bizIDs, err
+		return nil, err
 	}
 	// userFieldArr Fields in the business are user-type fields
 	var userFields []string
@@ -332,9 +343,10 @@ func (s *Service) getBizIDByCond(ctx *rest.Contexts, cond mapstr.MapStr) ([]int6
 	_, instItems, err := s.Core.BusinessOperation().FindBiz(ctx.Kit, query)
 	if nil != err {
 		blog.Errorf("find business failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		return bizIDs, err
+		return nil, err
 	}
 
+	bizIDs := make([]int64, 0)
 	for _, item := range instItems {
 		business := metadata.BizBasicInfo{}
 		if err := mapstruct.Decode2Struct(item, &business); err != nil {
@@ -346,33 +358,6 @@ func (s *Service) getBizIDByCond(ctx *rest.Contexts, cond mapstr.MapStr) ([]int6
 	}
 
 	return bizIDs, nil
-}
-
-func (s *Service) checkBizEditable(ctx *rest.Contexts, bizList []int64) error {
-	if s.AuthManager.Enabled() == false {
-		return nil
-	}
-
-	err := s.AuthManager.AuthorizeByBusinessID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, bizList...)
-	if err == nil {
-		return nil
-	}
-	if err != ac.NoAuthorizeError {
-		blog.ErrorJSON("check biz authorization failed, biz: %+v, err: %s, rid: %s", bizList, err.Error(),
-			ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
-		return err
-	}
-
-	perm, err := s.AuthManager.GenBizBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, bizList)
-	if err != nil && err != ac.NoAuthorizeError {
-		blog.ErrorJSON("biz authorization get permission failed, biz: %+v, err: %s, rid: %s", bizList,
-			err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
-		return err
-	}
-	ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
-	return ac.NoAuthorizeError
 }
 
 // find business list with these info：

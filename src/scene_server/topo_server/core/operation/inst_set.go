@@ -16,7 +16,6 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
@@ -232,20 +231,24 @@ func (s *set) FindSet(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput
 }
 
 func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID, setID int64) error {
-
-	innerCond := condition.CreateCondition()
-
-	innerCond.Field(common.BKAppIDField).Eq(bizID)
-	innerCond.Field(common.BKSetIDField).Eq(setID)
+	innerCond := mapstr.MapStr{
+		common.BKAppIDField: mapstr.MapStr{
+			common.BKDBEQ: bizID,
+		},
+		common.BKSetIDField: mapstr.MapStr{
+			common.BKDBEQ: setID,
+		},
+	}
 
 	data.Remove(common.MetadataField)
 	data.Remove(common.BKAppIDField)
 	data.Remove(common.BKSetIDField)
 	data.Remove(common.BKSetTemplateIDField)
 
-	err := s.inst.UpdateInst(kit, data, obj, innerCond, setID)
+	err := s.inst.UpdateInst(kit, data, obj, innerCond)
 	if err != nil {
-		blog.ErrorJSON("update set instance failed, object: %s, data: %s, innerCond:%s, err: %s, rid: %s", obj, data, innerCond, err, kit.Rid)
+		blog.Errorf("update set instance failed, object: %+v, data: %+v, innerCond: %+v, err: %v, rid: %s", obj,
+			data, innerCond, err, kit.Rid)
 		// return this duplicate error for unique validation failed
 		if s.isSetDuplicateError(err) {
 			return kit.CCError.CCError(common.CCErrorSetNameDuplicated)
