@@ -323,38 +323,28 @@ func (s *Service) getBizIDByCond(ctx *rest.Contexts, cond mapstr.MapStr) ([]int6
 		userFields = append(userFields, attribute.PropertyID)
 	}
 
-	cond = handleSpecialBusinessFieldSearchCond(cond, userFields)
-
-	page := metadata.BasePage{
-		Limit: common.BKNoLimit,
-	}
-	fields := []string{
-		common.BKAppIDField,
-	}
-
-	query := &metadata.QueryBusinessRequest{
-		Fields: fields,
-		Page:   page,
-		Condition: cond,
-	}
+	filter := handleSpecialBusinessFieldSearchCond(cond, userFields)
 	// can only find normal business, but not resource pool business
-	query.Condition[common.BKDefaultField] = 0
+	filter[common.BKDefaultField] = mapstr.MapStr{
+		common.BKDBNE: common.DefaultAppFlag,
+	}
 
-	_, instItems, err := s.Core.BusinessOperation().FindBiz(ctx.Kit, query)
-	if nil != err {
-		blog.Errorf("find business failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+	distinctOpt := &metadata.DistinctFieldOption{
+		TableName: common.BKTableNameBaseApp,
+		Field:     common.BKAppIDField,
+		Filter:    filter,
+	}
+
+	rst, err := s.Engine.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, distinctOpt)
+	if err != nil {
+		blog.Errorf("get biz ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt, err, ctx.Kit.Rid)
 		return nil, err
 	}
 
-	bizIDs := make([]int64, 0)
-	for _, item := range instItems {
-		business := metadata.BizBasicInfo{}
-		if err := mapstruct.Decode2Struct(item, &business); err != nil {
-			blog.Errorf("decode business from db failed, item: %+v, err: %s, rid: %s", item, err.Error(),
-				ctx.Kit.Rid)
-			return bizIDs, ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed)
-		}
-		bizIDs = append(bizIDs, business.BizID)
+	bizIDs, err := util.SliceInterfaceToInt64(rst)
+	if err != nil {
+		blog.Errorf("biz ids to int failed, biz ids: %v, err: %v, rid: %s", rst, err, ctx.Kit.Rid)
+		return nil, err
 	}
 
 	return bizIDs, nil
