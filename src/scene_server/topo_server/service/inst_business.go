@@ -25,7 +25,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/mapstruct"
@@ -292,21 +291,19 @@ func (s *Service) UpdateBizPropertyBatch(ctx *rest.Contexts) {
 }
 
 func (s *Service) getBizIDByCond(ctx *rest.Contexts, cond mapstr.MapStr) ([]int64, error) {
-	attrCond := condition.CreateCondition()
-	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
-	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
-	queryCond := &metadata.QueryCondition{
-		Condition: attrCond.ToMapStr(),
-		Page:      metadata.BasePage{
-			Limit: common.BKNoLimit,
+	opt := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			metadata.AttributeFieldObjectID:     common.BKInnerObjIDApp,
+			metadata.AttributeFieldPropertyType: common.FieldTypeUser,
 		},
+		DisableCounter: true,
 	}
-	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(ctx.Kit.Ctx, ctx.Kit.Header, queryCond)
+	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDApp, opt)
 	if err != nil {
-		blog.Errorf("get business attributes failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("failed to get the business attribute, err: %v, rid:%s", err, ctx.Kit.Rid)
 		return nil, err
 	}
-	
 	// userFieldArr Fields in the business are user-type fields
 	var userFields []string
 	for _, attribute := range resp.Info {
