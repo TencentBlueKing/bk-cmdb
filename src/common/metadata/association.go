@@ -125,6 +125,18 @@ type SearchAssociationInstResult struct {
 	Data     []*InstAsst `json:"data"`
 }
 
+// AsstResult model item result
+type AsstResult struct {
+	Count int           `json:"count"`
+	Info  []Association `json:"info"`
+}
+
+// SearchAsstModelResp query association model result
+type SearchAsstModelResp struct {
+	BaseResp `json:",inline"`
+	Data     AsstResult `json:"data"`
+}
+
 // SearchInstAssociationListResult the struct of list instance association result
 type SearchInstAssociationListResult struct {
 	Association struct {

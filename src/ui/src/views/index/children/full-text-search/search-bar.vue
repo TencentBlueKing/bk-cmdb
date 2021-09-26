@@ -14,7 +14,7 @@
         @enter="handleSearch"
         @clear="handleClear">
       </bk-input>
-      <bk-button theme="primary" class="search-btn"
+      <bk-button theme="primary" class="search-btn" v-test-id="'search'"
         @click="handleSearch">
         <i class="bk-icon icon-search"></i>
         {{$t('搜索')}}

@@ -11,7 +11,7 @@
             allowHtml: true,
             disabled: hasHost && !isEmptyServiceTemplate
           }">
-          <bk-button theme="primary"
+          <bk-button theme="primary" v-test-id="'create'"
             :disabled="disabled || !hasHost || isEmptyServiceTemplate"
             @click="handleCreate">
             {{$t('新增')}}
@@ -19,11 +19,11 @@
         </div>
       </cmdb-auth>
       <bk-dropdown-menu class="ml10" trigger="click" font-size="medium">
-        <bk-button slot="dropdown-trigger">
+        <bk-button slot="dropdown-trigger" v-test-id="'moreAction'">
           {{$t('实例操作')}}
           <i class="bk-icon icon-angle-down"></i>
         </bk-button>
-        <ul class="menu-list" slot="dropdown-content">
+        <ul class="menu-list" slot="dropdown-content" v-test-id="'moreAction'">
           <cmdb-auth tag="li" class="menu-item"
             :auth="{ type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }">
             <span class="menu-option" slot-scope="{ disabled: authDisabled }"

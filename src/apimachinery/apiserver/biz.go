@@ -73,3 +73,18 @@ func (a *apiServer) SearchBiz(ctx context.Context, ownerID string, h http.Header
 		Into(resp)
 	return
 }
+
+// UpdateBizPropertyBatch batch update business properties
+func (a *apiServer) UpdateBizPropertyBatch(ctx context.Context, h http.Header,
+	param metadata.UpdateBizPropertyBatchParameter) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/updatemany/biz/property"
+	err = a.client.Put().
+		WithContext(ctx).
+		Body(param).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}

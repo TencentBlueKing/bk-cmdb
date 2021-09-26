@@ -7,7 +7,7 @@
     </cmdb-tips>
     <div class="template-filter clearfix">
       <cmdb-auth class="fl mr10" :auth="{ type: $OPERATION.C_SERVICE_TEMPLATE, relation: [bizId] }">
-        <bk-button slot-scope="{ disabled }"
+        <bk-button slot-scope="{ disabled }" v-test-id="'create'"
           theme="primary"
           :disabled="disabled"
           @click="operationTemplate()">
@@ -56,7 +56,7 @@
         </bk-input>
       </div>
     </div>
-    <bk-table class="template-table"
+    <bk-table class="template-table" v-test-id="'templateList'"
       v-bkloading="{ isLoading: $loading(request.list) }"
       :data="table.list"
       :pagination="table.pagination"
@@ -116,7 +116,7 @@
                   v-bk-tooltips.top="$t('不可删除')">
                   {{$t('删除')}}
                 </span>
-                <bk-button v-else
+                <bk-button v-else v-test-id="'delTemplate'"
                   theme="primary"
                   :disabled="disabled"
                   :text="true"

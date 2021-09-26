@@ -813,6 +813,9 @@ const (
 	// HostAddMethodExcelAssociationIndexOffset
 	HostAddMethodExcelAssociationIndexOffset = 2
 
+	// HostAddMethodExcelDefaultIndex 生成表格数据起始索引，第一列为字段说明
+	HostAddMethodExcelDefaultIndex = 1
+
 	/*EXCEL color AARRGGBB :
 	AA means Alpha
 	RRGGBB means Red, in hex.
