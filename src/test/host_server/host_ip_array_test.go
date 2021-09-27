@@ -42,7 +42,7 @@ var _ = Describe("host ip array validation test", func() {
 		Expect(err).To(BeNil())
 
 		redisCfg := redis.Config{
-			Address:  tConf.RedisCfg.RedisAdress,
+			Address:  tConf.RedisCfg.RedisAddress,
 			Password: tConf.RedisCfg.RedisPasswd,
 			Database: "0",
 		}

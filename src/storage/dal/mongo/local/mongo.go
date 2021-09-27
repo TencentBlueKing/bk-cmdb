@@ -838,6 +838,9 @@ func (c *Collection) DropIndex(ctx context.Context, indexName string) error {
 	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
 	_, err := indexView.DropOne(ctx, indexName)
 	if err != nil {
+		if strings.Contains(err.Error(), "IndexNotFound") {
+			return nil
+		}
 		mtc.collectErrorCount(c.collName, indexDropOper)
 		return err
 	}
