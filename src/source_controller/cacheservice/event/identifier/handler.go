@@ -59,6 +59,16 @@ func (f *identityHandler) setLastWatchToken(ctx context.Context, data map[string
 	tokenInfo := mapstr.MapStr{
 		f.key.Collection(): data,
 	}
+
+	// update id and cursor field if set, to compensate for the scenario of searching with an outdated but latest cursor
+	if id, exists := data[common.BKFieldID]; exists {
+		tokenInfo[common.BKFieldID] = id
+	}
+
+	if cursor, exists := data[common.BKCursorField]; exists {
+		tokenInfo[common.BKCursorField] = cursor
+	}
+
 	if err := f.watchDB.Table(common.BKTableNameWatchToken).Update(ctx, filter, tokenInfo); err != nil {
 		blog.Errorf("set host identity %s last watch token failed, err: %v, data: %+v", f.key.Collection(),
 			err, tokenInfo)
