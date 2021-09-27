@@ -69,6 +69,18 @@ const actions = {
   },
 
   /**
+     * 批量修改业务
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+  batchUpdateBusiness({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.put('updatemany/biz/property', params, config)
+  },
+
+  /**
      * 归档业务
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
