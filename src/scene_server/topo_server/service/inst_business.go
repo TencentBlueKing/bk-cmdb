@@ -67,13 +67,13 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 				blog.Errorf("get biz id failed, err: %v, biz: %#v, rid: %s", err, business, ctx.Kit.Rid)
 				return err
 			}
-			
+
 			var bizName string
 			if bizName, err = business.String(common.BKAppNameField); err != nil {
 				blog.Errorf("get biz name failed, err: %v, biz: %#v, rid: %s", err, business, ctx.Kit.Rid)
 				return err
 			}
-			
+
 			iamInstance := metadata.IamInstanceWithCreator{
 				Type:    string(iam.Business),
 				ID:      strconv.FormatInt(bizID, 10),
@@ -297,7 +297,7 @@ func (s *Service) getBizIDByCond(ctx *rest.Contexts, cond mapstr.MapStr) ([]int6
 	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
 	queryCond := &metadata.QueryCondition{
 		Condition: attrCond.ToMapStr(),
-		Page:      metadata.BasePage{
+		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 	}
@@ -306,7 +306,7 @@ func (s *Service) getBizIDByCond(ctx *rest.Contexts, cond mapstr.MapStr) ([]int6
 		blog.Errorf("get business attributes failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return nil, err
 	}
-	
+
 	// userFieldArr Fields in the business are user-type fields
 	var userFields []string
 	for _, attribute := range resp.Info {
@@ -351,7 +351,7 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 	if len(sortParam) > 0 {
 		page.Sort = sortParam
 	}
-	
+
 	query := &metadata.QueryCondition{
 		Fields: []string{common.BKAppIDField, common.BKAppNameField},
 		Page:   page,
@@ -374,7 +374,7 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoGetAuthorizedBusinessListFailed))
 			return
 		}
-		
+
 		// if isAny is false,we should add bizIds condition.
 		if !authorizedRes.IsAny {
 			appList := make([]int64, 0)
@@ -388,9 +388,7 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 				appList = append(appList, bizID)
 			}
 			if len(appList) == 0 {
-				blog.Errorf("ListAuthorizedResources failed, user: %s,err: %v, rid: %s",
-					ctx.Kit.User, err, ctx.Kit.Rid)
-				ctx.RespAutoError(err)
+				ctx.RespEntityWithCount(0, make([]mapstr.MapStr, 0))
 				return
 			}
 			// sort for prepare to find business with page.
@@ -450,7 +448,7 @@ func (s *Service) GetBusinessBasicInfo(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	
+
 	bizData := result.Info[0]
 	ctx.RespEntity(bizData)
 }
@@ -624,8 +622,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 				// now you have the authority.
 			} else {
 				if len(appList) == 0 {
-					blog.Errorf("get appList is fail, user: %s, err: %v,rid: %s", ctx.Kit.User, err, ctx.Kit.Rid)
-					ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")
+					ctx.RespEntityWithCount(0, make([]mapstr.MapStr, 0))
 					return
 				}
 
