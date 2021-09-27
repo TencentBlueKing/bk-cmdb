@@ -272,15 +272,12 @@ func (lgc *Logics) notExistAppModuleHost(kit *rest.Kit, appID int64, moduleIDs [
 
 	hmResult, err := lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, hostModuleInput)
 	if err != nil {
-		blog.ErrorJSON("existAppModule, GetDistinctHostIDByTopology http do error, err: %s, input:%s,rid:%s", err, hostModuleInput, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.ErrorJSON("get host ID by topology failed, err: %s, input:%s,rid:%s", err, hostModuleInput, kit.Rid)
+		return nil, err
 	}
-	if !hmResult.Result {
-		blog.ErrorJSON("existAppModule, GetDistinctHostIDByTopology http reply error, result: %s, input:%s,rid:%s", hmResult, hostModuleInput, kit.Rid)
-		return nil, kit.CCError.New(hmResult.Code, hmResult.ErrMsg)
-	}
+
 	hostIDMap := make(map[int64]bool, 0)
-	for _, id := range hmResult.Data.IDArr {
+	for _, id := range hmResult {
 		hostIDMap[id] = true
 	}
 	var errHostIDArr []int64

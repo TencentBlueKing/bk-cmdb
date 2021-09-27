@@ -133,16 +133,6 @@ func (s *coreService) HostIdentifier(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.SearchHostIdentifierData{Info: hostIdentifierArr, Count: len(hostIdentifierArr)})
 }
 
-// TransferHostModuleDep is a TransferHostModule dependence
-func (s *coreService) TransferHostModuleDep(kit *rest.Kit, input *metadata.HostsModuleRelation) error {
-	err := s.core.HostOperation().TransferToNormalModule(kit, input)
-	if err != nil {
-		blog.Errorf("transfer host to normal module failed. err: %s, rid: %s", err.Error(), kit.Rid)
-		return err
-	}
-	return nil
-}
-
 func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 	hostID, err := strconv.Atoi(ctx.Request.PathParameter("bk_host_id"))
 	if err != nil {

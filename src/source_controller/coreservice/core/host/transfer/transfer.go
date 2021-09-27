@@ -33,6 +33,8 @@ type genericTransfer struct {
 	// Incr=true is added to the module
 	// Incr=false delete exist module, add current module
 	isIncrement bool
+	// needAutoCreateSvcInst whether service instances should be created when target modules have template
+	needAutoCreateSvcInst bool
 	// cross-business transfer module
 	// From the A business to the B business module
 	crossBizTransfer bool
@@ -97,8 +99,10 @@ func (t *genericTransfer) Transfer(kit *rest.Kit, hostIDs []int64) errors.CCErro
 	}
 
 	// auto create service instance if necessary
-	if err := t.autoCreateServiceInstance(kit, hostIDs); err != nil {
-		return err
+	if t.needAutoCreateSvcInst {
+		if err := t.autoCreateServiceInstance(kit, hostIDs); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -311,6 +315,12 @@ func (t *genericTransfer) delHostModuleRelationItem(kit *rest.Kit, bizID int64, 
 		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
 	if isDefault {
 		relationCond[common.BKModuleIDField] = map[string]interface{}{common.BKDBIN: t.innerModuleID}
+	} else {
+		if len(t.moduleIDArr) > 0 {
+			relationCond[common.BKModuleIDField] = map[string]interface{}{
+				common.BKDBNIN: t.moduleIDArr,
+			}
+		}
 	}
 
 	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Delete(kit.Ctx, relationCond)
@@ -325,32 +335,34 @@ func (t *genericTransfer) delHostModuleRelationItem(kit *rest.Kit, bizID int64, 
 
 // AddSingleHostModuleRelation add single host module relation
 func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostIDs []int64) errors.CCErrorCoder {
+	if len(hostIDs) == 0 || len(t.moduleIDArr) == 0 {
+		return nil
+	}
+
 	bizID := t.bizID
 	existHostModuleIDMap := make(map[int64]map[int64]struct{}, 0)
 
-	// append method, filter already exist modules
-	if t.isIncrement {
-		cond := map[string]interface{}{
-			common.BKAppIDField:    t.bizID,
-			common.BKHostIDField:   map[string]interface{}{common.BKDBIN: hostIDs},
-			common.BKModuleIDField: map[string]interface{}{common.BKDBIN: t.moduleIDArr},
-		}
-		condMap := util.SetQueryOwner(cond, kit.SupplierAccount)
+	// filter already exist modules
+	cond := map[string]interface{}{
+		common.BKAppIDField:    t.bizID,
+		common.BKHostIDField:   map[string]interface{}{common.BKDBIN: hostIDs},
+		common.BKModuleIDField: map[string]interface{}{common.BKDBIN: t.moduleIDArr},
+	}
+	condMap := util.SetQueryOwner(cond, kit.SupplierAccount)
 
-		relationArr := make([]metadata.ModuleHost, 0)
-		err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(condMap).Fields(common.BKHostIDField,
-			common.BKModuleIDField).All(kit.Ctx, &relationArr)
-		if err != nil {
-			blog.ErrorJSON("add host relation, retrieve original data error. err:%v, cond:%s, rid:%s", err, condMap, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
-		}
+	relationArr := make([]metadata.ModuleHost, 0)
+	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(condMap).Fields(common.BKHostIDField,
+		common.BKModuleIDField).All(kit.Ctx, &relationArr)
+	if err != nil {
+		blog.ErrorJSON("add host relation, retrieve original data error. err:%v, cond:%s, rid:%s", err, condMap, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
 
-		for _, item := range relationArr {
-			if _, ok := existHostModuleIDMap[item.HostID]; !ok {
-				existHostModuleIDMap[item.HostID] = make(map[int64]struct{}, 0)
-			}
-			existHostModuleIDMap[item.HostID][item.ModuleID] = struct{}{}
+	for _, item := range relationArr {
+		if _, ok := existHostModuleIDMap[item.HostID]; !ok {
+			existHostModuleIDMap[item.HostID] = make(map[int64]struct{}, 0)
 		}
+		existHostModuleIDMap[item.HostID][item.ModuleID] = struct{}{}
 	}
 
 	var insertDataArr []mapstr.MapStr
@@ -373,7 +385,7 @@ func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostIDs []int64) 
 		return nil
 	}
 
-	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Insert(kit.Ctx, insertDataArr)
+	err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Insert(kit.Ctx, insertDataArr)
 	if err != nil {
 		blog.Errorf("add host module relation, add module host relation error: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)

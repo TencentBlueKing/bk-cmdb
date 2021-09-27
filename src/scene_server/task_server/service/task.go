@@ -148,88 +148,63 @@ func (s *Service) StatusToFailure(ctx *rest.Contexts) {
 
 // TimerDeleteHistoryTask delete apitask history message
 func (s *Service) TimerDeleteHistoryTask(ctx context.Context) {
-	rid := util.ExtractRequestIDFromContext(ctx)
-
-	flag := false
 	for {
-		time.Sleep(time.Hour * 6)
-
-		if time.Now().Weekday() != time.Saturday {
-			flag = false
-			continue
-		}
+		time.Sleep(time.Hour * 24)
 
 		isMaster := s.Engine.ServiceManageInterface.IsMaster()
 		if !isMaster {
 			continue
 		}
 
-		if flag {
-			continue
-		}
+		rid := util.GenerateRID()
 
-		blog.Infof("begin delete redundancy task, time: %v", time.Now())
-		err := s.deleteRedundancyTask(ctx)
+		blog.Infof("begin delete redundancy task, time: %v, rid: %s", time.Now(), rid)
+		err := s.deleteRedundancyTask(ctx, rid)
 		if err != nil {
 			blog.Errorf("delete redundancy task failed, err: %v, rid: %s", err, rid)
-			return
+			continue
 		}
-		flag = true
-		blog.Infof("delete redundancy task completed, time: %v", time.Now())
+		blog.Infof("delete redundancy task completed, time: %v, rid: %s", time.Now(), rid)
 	}
 }
 
-func (s *Service) deleteRedundancyTask(ctx context.Context) error {
-	rid := util.ExtractRequestIDFromContext(ctx)
+// deleteRedundancyTask delete redundancy tasks from a month ago
+func (s *Service) deleteRedundancyTask(ctx context.Context, rid string) error {
 
 	for {
-
-		// use aggregate to search task, need latest docs of every flag in cc_apitask
-		// redundancy task status is successed and create time is not the latest
-		aggregateCond := []map[string]interface{}{
-			{common.BKDBSort: map[string]interface{}{common.CreateTimeField: -1}},
-			{common.BKDBGroup: map[string]interface{}{
-				"_id": "$bk_inst_id",
-				"doc": map[string]interface{}{"$first": "$$ROOT"},
-			}},
-			{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},
-			{common.BKDBProject: map[string]interface{}{common.BKTaskIDField: 1, common.BKStatusField: 1}},
-			{common.BKDBLimit: step},
+		cond := map[string]interface{}{
+			common.LastTimeField: map[string]interface{}{
+				common.BKDBLT: time.Now().AddDate(0, -1, 0),
+			},
 		}
 
-		result := make([]metadata.APITaskDetail, 0)
-		if err := s.DB.Table(common.BKTableNameAPITask).AggregateAll(ctx, aggregateCond, &result); err != nil {
-			blog.Errorf("list latest task failed, err: %v, rid: %s", err, rid)
+		tasks := make([]metadata.APITaskDetail, 0)
+		err := s.DB.Table(common.BKTableNameAPITask).Find(cond).Fields(common.BKTaskIDField).Limit(100).All(ctx, &tasks)
+		if err != nil {
+			blog.Errorf("get one month ago tasks failed, err: %v, cond: %#v, rid: %s", err, cond, rid)
 			return err
 		}
 
-		if len(result) == 0 {
+		if len(tasks) == 0 {
+			blog.Infof("found no redundancy tasks, rid: %s", rid)
 			return nil
 		}
 
 		var taskIDs []string
-		for _, item := range result {
-			if !item.Status.IsSuccessful() {
-				taskIDs = append(taskIDs, item.TaskID)
-			}
+		for _, task := range tasks {
+			taskIDs = append(taskIDs, task.TaskID)
 		}
 
-		cond := &metadata.DeleteOption{
-			Condition: map[string]interface{}{common.BKStatusField: 200},
+		deleteCond := map[string]interface{}{
+			common.BKTaskIDField: map[string]interface{}{common.BKDBIN: taskIDs},
 		}
 
-		if len(taskIDs) != 0 {
-			cond.Condition = map[string]interface{}{
-				common.BKDBOR: []map[string]interface{}{
-					{common.BKTaskIDField: map[string]interface{}{common.BKDBNIN: taskIDs}},
-					{common.BKStatusField: 200},
-				},
-			}
-		}
-
-		if err := s.DB.Table(common.BKTableNameAPITask).Delete(ctx, cond.Condition); err != nil {
+		if err := s.DB.Table(common.BKTableNameAPITask).Delete(ctx, deleteCond); err != nil {
 			blog.Errorf("delete redundancy task failed, err: %v, rid: %s", err, rid)
 			return err
 		}
+
+		blog.Infof("delete %d redundancy tasks successful, rid: %s", len(tasks), rid)
+		time.Sleep(time.Second * 20)
 	}
 }

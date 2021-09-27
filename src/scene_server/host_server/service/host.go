@@ -1011,19 +1011,13 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 	}
 
 	condition.ApplicationIDArr = []int64{data.ApplicationID}
-	hostResult, err := s.Logic.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, header, condition)
-	if err != nil {
-		blog.Errorf("get host ids failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
-		return
-	}
-	if err := hostResult.CCError(); err != nil {
-		blog.ErrorJSON("get host id by topology relation failed, error code: %s, error message: %s, cond: %s, rid: %s", hostResult.Code, hostResult.ErrMsg, condition, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+	hostIDArr, ccErr := s.Logic.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, header, condition)
+	if ccErr != nil {
+		blog.Errorf("get host ids failed, err: %v, rid: %s", ccErr, ctx.Kit.Rid)
+		ctx.RespAutoError(ccErr)
 		return
 	}
 
-	hostIDArr := hostResult.Data.IDArr
 	if 0 == len(hostIDArr) {
 		blog.Warnf("no host in set,rid:%s", ctx.Kit.Rid)
 		ctx.RespEntity(nil)
@@ -1100,37 +1094,33 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 				newModuleIDArr = append(newModuleIDArr, item.ModuleID)
 			}
 
-			var opResult *meta.OperaterException
+			var opResult []meta.ExceptionResult
+			var ccErr errors.CCErrorCoder
 			if toEmptyModule {
 				input := &meta.TransferHostToInnerModule{
 					ApplicationID: data.ApplicationID,
 					ModuleID:      idleModuleID,
 					HostID:        []int64{hostID},
 				}
-				opResult, err = s.Logic.CoreAPI.CoreService().Host().TransferToInnerModule(ctx.Kit.Ctx, ctx.Kit.Header, input)
+				opResult, ccErr = s.Logic.CoreAPI.CoreService().Host().TransferToInnerModule(ctx.Kit.Ctx, ctx.Kit.Header, input)
 			} else {
 				input := &meta.HostsModuleRelation{
 					ApplicationID: data.ApplicationID,
 					HostID:        []int64{hostID},
 					ModuleID:      newModuleIDArr,
 				}
-				opResult, err = s.Logic.CoreAPI.CoreService().Host().TransferToNormalModule(ctx.Kit.Ctx, ctx.Kit.Header, input)
+				opResult, ccErr = s.Logic.CoreAPI.CoreService().Host().TransferToNormalModule(ctx.Kit.Ctx, ctx.Kit.Header, input)
 			}
 
-			if err != nil {
-				blog.Errorf("MoveSetHost2IdleModule handle error. err:%s, to idle module:%v, input:%#v, hostID:%d, rid:%s", err.Error(), toEmptyModule, data, hostID, ctx.Kit.Rid)
-				ccErr := ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-				exceptionArr = append(exceptionArr, meta.ExceptionResult{Code: int64(ccErr.GetCode()), Message: ccErr.Error(), OriginIndex: hostID})
-			}
-			if !opResult.Result {
-				if len(opResult.Data) > 0 {
-					blog.Errorf("MoveSetHost2IdleModule handle reply error. result:%#v, to idle module:%v, input:%#v, hostID:%d, rid:%s", opResult, toEmptyModule, data, hostID, ctx.Kit.Rid)
-					exceptionArr = append(exceptionArr, opResult.Data...)
+			if ccErr != nil {
+				blog.Errorf("transfer host failed, err: %v, result: %#v, to idle module:%v, input: %#v, rid: %s",
+					err, opResult, toEmptyModule, data, ctx.Kit.Rid)
+				if len(opResult) > 0 {
+					exceptionArr = append(exceptionArr, opResult...)
 				} else {
-					blog.Errorf("MoveSetHost2IdleModule handle reply error. result:%#v, to idle module:%v, input:%#v, hostID:%d, rid:%s", opResult, toEmptyModule, data, hostID, ctx.Kit.Rid)
 					exceptionArr = append(exceptionArr, meta.ExceptionResult{
-						Code:        int64(opResult.Code),
-						Message:     opResult.ErrMsg,
+						Code:        int64(ccErr.GetCode()),
+						Message:     ccErr.Error(),
 						OriginIndex: hostID,
 					})
 				}

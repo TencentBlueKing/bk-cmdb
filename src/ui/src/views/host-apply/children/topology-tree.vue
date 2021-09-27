@@ -236,7 +236,7 @@
         this.treeStat = this.getTreeStat()
       },
       getTopologyData() {
-        return this.$store.dispatch('objectMainLineModule/getInstTopo', {
+        return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
           bizId: this.business,
           config: {
             params: {

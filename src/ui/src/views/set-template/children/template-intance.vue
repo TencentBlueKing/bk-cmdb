@@ -4,7 +4,7 @@
       <div class="options clearfix">
         <div class="fl">
           <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }">
-            <bk-button slot-scope="{ disabled }"
+            <bk-button slot-scope="{ disabled }" v-test-id.businessSetTemplate="'batchSync'"
               theme="primary"
               :disabled="disabled || !checkedList.length"
               @click="handleBatchSync">
@@ -37,7 +37,7 @@
           </icon-button>
         </div>
       </div>
-      <bk-table class="instance-table"
+      <bk-table class="instance-table" v-test-id.businessSetTemplate="'instanceTable'"
         ref="instanceTable"
         v-bkloading="{ isLoading: $loading('getSetInstanceData') }"
         :data="displayList"

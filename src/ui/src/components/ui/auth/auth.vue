@@ -4,6 +4,7 @@
     v-cursor="{
       active: !isAuthorized,
       auth: auth,
+      authResults,
       onclick
     }"
     :class="{ disabled }"

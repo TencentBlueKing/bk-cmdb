@@ -21,7 +21,6 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -38,6 +37,7 @@ type BusinessOperationInterface interface {
 	FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error)
 	GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder)
 	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error
+	UpdateBusinessByCond(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond mapstr.MapStr) error
 	HasHosts(kit *rest.Kit, bizID int64) (bool, error)
 	SetProxy(set SetOperationInterface, module ModuleOperationInterface, inst InstOperationInterface, obj ObjectOperationInterface)
 	GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (achieveName string, err error)
@@ -442,9 +442,17 @@ func (b *business) GetInternalModule(kit *rest.Kit,
 	return 0, result, nil
 }
 
+// UpdateBusiness update business instances by bizID
 func (b *business) UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error {
-	innerCond := condition.CreateCondition()
-	innerCond.Field(common.BKAppIDField).Eq(bizID)
+	cond := mapstr.MapStr{
+		common.BKAppIDField: mapstr.MapStr{
+			common.BKDBEQ: bizID,
+		},
+	}
+	return b.inst.UpdateInst(kit, data, obj, cond)
+}
 
-	return b.inst.UpdateInst(kit, data, obj, innerCond, bizID)
+// UpdateBusinessByCond update business instances by condition
+func (b *business) UpdateBusinessByCond(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond mapstr.MapStr) error {
+	return b.inst.UpdateInst(kit, data, obj, cond)
 }

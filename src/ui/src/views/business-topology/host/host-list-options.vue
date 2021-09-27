@@ -2,14 +2,14 @@
   <div class="options-layout clearfix">
     <div class="options options-left fl">
       <cmdb-auth class="option" :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
-        <bk-button theme="primary" slot-scope="{ disabled }"
+        <bk-button theme="primary" slot-scope="{ disabled }" v-test-id="'addHost'"
           :disabled="disabled || !isNormalModuleNode"
           :title="isNormalModuleNode ? '' : $t('仅能在业务模块下新增')"
           @click="handleAddHost">
           {{$t('新增')}}
         </bk-button>
       </cmdb-auth>
-      <bk-button class="ml10"
+      <bk-button class="ml10" v-test-id="'edit'"
         :disabled="!hasSelection"
         @click="handleMultipleEdit">
         {{$t('编辑')}}
@@ -19,13 +19,13 @@
         :disabled="!hasSelection"
         @show="isTransferMenuOpen = true"
         @hide="isTransferMenuOpen = false">
-        <bk-button slot="dropdown-trigger"
+        <bk-button slot="dropdown-trigger" v-test-id="'transfer'"
           :disabled="!hasSelection">
           <span>{{$t('转移至')}}</span>
           <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isTransferMenuOpen }]"></i>
         </bk-button>
-        <ul class="bk-dropdown-list" slot="dropdown-content">
-          <cmdb-auth tag="li" class="bk-dropdown-item"
+        <ul class="bk-dropdown-list" slot="dropdown-content" v-test-id="'transfer'">
+          <cmdb-auth tag="li" class="bk-dropdown-item" v-test-id="'transferIdle'"
             :auth="[
               { type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] },
               { type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] },
@@ -34,7 +34,7 @@
             @click="handleTransfer($event, 'idle', false)">
             {{$t('空闲模块')}}
           </cmdb-auth>
-          <cmdb-auth tag="li" class="bk-dropdown-item"
+          <cmdb-auth tag="li" class="bk-dropdown-item" v-test-id="'transferBusiness'"
             :auth="[
               { type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] },
               { type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] },
@@ -43,11 +43,11 @@
             @click="handleTransfer($event, 'business', false)">
             {{$t('业务模块')}}
           </cmdb-auth>
-          <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]"
+          <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]" v-test-id="'transferResource'"
             @click="handleTransfer($event, 'resource', !isIdleModule)">
             {{$t('主机池')}}
           </li>
-          <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]"
+          <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]" v-test-id="'transferAcrossBusiness'"
             @click="handleTransfer($event, 'acrossBusiness', !isIdleModule)">
             {{$t('其他业务')}}
           </li>
@@ -59,13 +59,13 @@
         :disabled="!hasSelection"
         @show="isAddToOpen = true"
         @hide="isAddToOpen = false">
-        <bk-button slot="dropdown-trigger"
+        <bk-button slot="dropdown-trigger" v-test-id="'addTo'"
           :disabled="!hasSelection">
           <span>{{$t('追加至')}}</span>
           <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isAddToOpen }]"></i>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content">
-          <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
+          <cmdb-auth tag="li" class="bk-dropdown-item with-auth" v-test-id="'addToBiz'"
             :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
             <span href="javascript:void(0)"
               slot-scope="{ disabled }"
@@ -82,13 +82,13 @@
         :disabled="!hasSelection"
         @show="isRemoveMenuOpen = true"
         @hide="isRemoveMenuOpen = false">
-        <bk-button slot="dropdown-trigger"
+        <bk-button slot="dropdown-trigger" v-test-id="'remove'"
           :disabled="!hasSelection">
           <span>{{$t('移出')}}</span>
           <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isRemoveMenuOpen }]"></i>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content">
-          <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
+          <cmdb-auth tag="li" class="bk-dropdown-item with-auth" v-test-id="'remove'"
             :auth="{ type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }">
             <span href="javascript:void(0)"
               slot-scope="{ disabled }"
@@ -99,7 +99,7 @@
           </cmdb-auth>
         </ul>
       </bk-dropdown-menu>
-      <cmdb-clipboard-selector class="options-clipboard ml10"
+      <cmdb-clipboard-selector class="options-clipboard ml10" v-test-id
         label-key="bk_property_name"
         :list="clipboardList"
         :disabled="!hasSelection"
@@ -109,18 +109,20 @@
         font-size="medium"
         @show="isMoreMenuOpen = true"
         @hide="isMoreMenuOpen = false">
-        <bk-button slot="dropdown-trigger">
+        <bk-button slot="dropdown-trigger" v-test-id="'more'">
           <span>{{$t('更多')}}</span>
           <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isMoreMenuOpen }]"></i>
         </bk-button>
-        <ul class="bk-dropdown-list" slot="dropdown-content">
-          <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)">
+        <ul class="bk-dropdown-list" slot="dropdown-content" v-test-id="'more'">
+          <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)"
+            v-test-id="'export'">
             {{$t('导出选中')}}
           </li>
-          <li :class="['bk-dropdown-item', { disabled: !count }]" @click="handleBatchExport($event)">
+          <li :class="['bk-dropdown-item', { disabled: !count }]" @click="handleBatchExport($event)"
+            v-test-id="'batchExport'">
             {{$t('导出全部')}}
           </li>
-          <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
+          <cmdb-auth tag="li" class="bk-dropdown-item with-auth" v-test-id="'importUpdate'"
             :auth="{ type: $OPERATION.U_HOST, relation: [bizId] }">
             <span href="javascript:void(0)"
               slot-scope="{ disabled }"
@@ -133,14 +135,14 @@
       </bk-dropdown-menu>
     </div>
     <div class="options options-right">
-      <filter-fast-search class="option-fast-search"></filter-fast-search>
-      <filter-collection class="option-collection ml10"></filter-collection>
-      <icon-button class="option-filter ml10"
+      <filter-fast-search class="option-fast-search" v-test-id></filter-fast-search>
+      <filter-collection class="option-collection ml10" v-test-id></filter-collection>
+      <icon-button class="option-filter ml10" v-test-id="'advancedSearch'"
         icon="icon-cc-funnel" v-bk-tooltips.top="$t('高级筛选')"
         @click="handleSetFilters">
       </icon-button>
     </div>
-    <edit-multiple-host ref="editMultipleHost"
+    <edit-multiple-host ref="editMultipleHost" v-test-id
       :properties="hostProperties"
       :selection="$parent.table.selection">
     </edit-multiple-host>
@@ -401,22 +403,25 @@
       },
       handleDialogConfirm() {
         if (this.dialog.component === HostSelector.name) {
+          // 最新的逻辑中新增主机等于转移主机到当前模块，跳转到转移主机页面指定type=add
           // eslint-disable-next-line prefer-rest-params
           this.gotoTransferPage(...arguments)
         }
       },
       gotoTransferPage(selected) {
+        const query = {
+          sourceModel: this.selectedNode.data.bk_obj_id,
+          sourceId: this.selectedNode.data.bk_inst_id,
+          targetModules: this.selectedNode.data.bk_inst_id,
+          resources: selected.map(item => item.host.bk_host_id).join(','),
+          node: this.selectedNode.id
+        }
         this.$routerActions.redirect({
-          name: 'createServiceInstance',
+          name: MENU_BUSINESS_TRANSFER_HOST,
           params: {
-            setId: this.selectedNode.parent.data.bk_inst_id,
-            moduleId: this.selectedNode.data.bk_inst_id
+            type: 'add'
           },
-          query: {
-            resources: selected.map(item => item.host.bk_host_id).join(','),
-            title: this.selectedNode.data.bk_inst_name,
-            node: this.selectedNode.id
-          },
+          query,
           history: true
         })
       },

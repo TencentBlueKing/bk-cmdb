@@ -313,6 +313,12 @@ type DefaultModuleHostConfigParams struct {
 	ModuleID      int64   `json:"bk_module_id"`
 }
 
+// CountCondition is common condition parameter struct for count operation
+type CountCondition struct {
+	// Condition conditions
+	Condition map[string]interface{} `json:"condition"`
+}
+
 // common search struct
 type SearchParams struct {
 	Condition map[string]interface{} `json:"condition"`
@@ -367,4 +373,10 @@ type BkBaseResp struct {
 type BKResponse struct {
 	BkBaseResp `json:",inline"`
 	Data       interface{} `json:"data"`
+}
+
+// CommonCountResult is common count action result.
+type CommonCountResult struct {
+	// Count count result.
+	Count uint64 `json:"count"`
 }

@@ -188,6 +188,29 @@ type SearchInstsNamesOption struct {
 	Name  string `json:"name"`
 }
 
+// UpdateBizPropertyBatchParameter batch update business properties parameter
+/* e.g.:
+{
+    "properties":{
+      "bk_biz_developer":"developer",
+      "bk_biz_maintainer": "maintainer",
+      "bk_biz_name":"biz_test",
+      "bk_biz_productor": "productor",
+      "bk_biz_tester":"tester",
+      "operator": "operator"
+    },
+    "condition": {
+        "bk_biz_id": {"$in": [3,4]}"
+    }
+}
+ */
+type UpdateBizPropertyBatchParameter struct {
+	// Properties is business property keys and values to be updated
+	Properties map[string]interface{} `json:"properties"`
+	// Condition is business property update condition
+	Condition  map[string]interface{} `json:"condition"`
+}
+
 var ObjsForSearchName = map[string]bool{
 	common.BKInnerObjIDSet:    true,
 	common.BKInnerObjIDModule: true,

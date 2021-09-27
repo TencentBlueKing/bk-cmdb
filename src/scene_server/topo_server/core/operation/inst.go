@@ -48,7 +48,7 @@ type InstOperationInterface interface {
 	FindInstChildTopo(kit *rest.Kit, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
 	FindInstParentTopo(kit *rest.Kit, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
 	FindInstTopo(kit *rest.Kit, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []CommonInstTopoV2, err error)
-	UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error
+	UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond mapstr.MapStr) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface)
 }
@@ -1195,51 +1195,43 @@ func (c *commonInst) FindInst(kit *rest.Kit, obj model.Object, cond *metadata.Qu
 	return rsp.Count, inst.CreateInst(kit, c.clientSet, obj, rsp.Info), nil
 }
 
-func (c *commonInst) UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
+// UpdateInst updates instances by condition
+func (c *commonInst) UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond mapstr.MapStr) error {
 	// not allowed to update these fields, need to use specialized function
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.BKAppIDField)
 
-	// update association
-	query := &metadata.QueryInput{}
-	query.Condition = cond.ToMapStr()
-	query.Limit = common.BKNoLimit
-	if 0 < instID {
-		innerCond := condition.CreateCondition()
-		innerCond.Field(obj.GetInstIDFieldName()).Eq(instID)
-		query.Condition = innerCond.ToMapStr()
-	}
-
-	fCond := cond.ToMapStr()
 	inputParams := metadata.UpdateOption{
 		Data:      data,
-		Condition: fCond,
+		Condition: cond,
 	}
 
 	// generate audit log of instance.
 	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(data)
-	auditLog, ccErr := audit.GenerateAuditLogByCondGetData(generateAuditParameter, obj.GetObjectID(), fCond)
+	auditLog, ccErr := audit.GenerateAuditLogByCondGetData(generateAuditParameter, obj.GetObjectID(), cond)
 	if ccErr != nil {
-		blog.Errorf(" update inst, generate audit log failed, err: %v, rid: %s", ccErr, kit.Rid)
+		blog.Errorf(" update inst failed to generate audit log, err: %v, rid: %s", ccErr, kit.Rid)
 		return ccErr
 	}
 
 	// to update.
-	rsp, err := c.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, obj.GetObjectID(), &inputParams)
+	rsp, err := c.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, obj.GetObjectID(),
+		&inputParams)
 	if nil != err {
-		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("update inst failed to request object controller, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !rsp.Result {
-		blog.Errorf("[operation-inst] failed to set the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, fCond, rsp.ErrMsg, kit.Rid)
+		blog.Errorf("update inst failed to set the object(%s) inst by the condition(%#v), err: %s, rid: %s",
+			obj.Object().ObjectID, cond, rsp.ErrMsg, kit.Rid)
 		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	// save audit log.
 	err = audit.SaveAuditLog(kit, auditLog...)
 	if err != nil {
-		blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("update inst failed to save audit log, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 	return nil

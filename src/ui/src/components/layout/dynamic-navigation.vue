@@ -1,5 +1,5 @@
 <template>
-  <nav class="nav-layout"
+  <nav class="nav-layout" v-test-id.dynamic="'asideNav'"
     :class="{ 'sticked': navStick }"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave">
@@ -7,7 +7,7 @@
       :class="{ unfold: unfold, flexible: !navStick }">
       <div class="business-wrapper" v-show="isBusinessNav">
         <transition name="fade">
-          <cmdb-business-selector class="business-selector"
+          <cmdb-business-selector class="business-selector" v-test-id.dynamic
             v-show="unfold"
             show-apply-permission
             :popover-options="{

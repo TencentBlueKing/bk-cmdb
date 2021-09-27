@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
@@ -21,32 +22,51 @@ func (p *process) CreateProcessInstance(ctx context.Context, h http.Header, data
 	return
 }
 
-func (p *process) DeleteProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+// DeleteProcessInstance delete process instances by biz id and process ids
+func (p *process) DeleteProcessInstance(ctx context.Context, h http.Header,
+	data *metadata.DeleteProcessInstanceInServiceInstanceInput) error {
+	resp := new(metadata.Response)
 	subPath := "/delete/proc/process_instance"
 
-	err = p.client.Delete().
+	err := p.client.Delete().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+	return nil
 }
 
-func (p *process) SearchProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+// SearchProcessInstance search process instances by biz id and service instance id
+func (p *process) SearchProcessInstance(ctx context.Context, h http.Header, data *metadata.ListProcessInstancesOption) (
+	[]metadata.ProcessInstance, error) {
+
+	resp := new(metadata.ListProcessInstancesRsp)
 	subPath := "/findmany/proc/process_instance"
 
-	err = p.client.Post().
+	err := p.client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return nil, resp.CCError()
+	}
+	return resp.Data, nil
 }
 
 func (p *process) UpdateProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {

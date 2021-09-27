@@ -1,16 +1,17 @@
 <template>
   <div class="cagetory-input" v-click-outside="handleCancel">
-    <bk-input type="text"
+    <bk-input type="text" v-test-id
       :ref="inputRef"
       :placeholder="placeholder"
       v-model="localValue"
       @enter="handleConfirm">
     </bk-input>
     <div class="operation">
-      <span class="text-primary btn-confirm"
+      <span class="text-primary btn-confirm" v-test-id.businessServiceCategory="'btnConfirm'"
         @click.stop="handleConfirm">{{$t('确定')}}
       </span>
-      <span class="text-primary" @click="handleCancel">{{$t('取消')}}</span>
+      <span class="text-primary" @click="handleCancel"
+        v-test-id.businessServiceCategory="'btnCancel'">{{$t('取消')}}</span>
     </div>
   </div>
 </template>

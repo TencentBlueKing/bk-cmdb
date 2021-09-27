@@ -421,7 +421,9 @@ func (lgc *Logics) GetCloudAccountConfBatch(kit *rest.Kit, accountIDs []int64) (
 	return accountConfs, nil
 }
 
-func (lgc *Logics) ListAuthorizedResources(kit *rest.Kit, typ meta.ResourceType, act meta.Action) ([]int64, error) {
+// ListAuthorizedResources 获取有权限的资源id列表
+func (lgc *Logics) ListAuthorizedResources(kit *rest.Kit, typ meta.ResourceType, act meta.Action) (
+	[]int64, bool, error) {
 
 	authInput := meta.ListAuthorizedResourcesParam{
 		UserName:     kit.User,
@@ -432,17 +434,21 @@ func (lgc *Logics) ListAuthorizedResources(kit *rest.Kit, typ meta.ResourceType,
 	authList, err := lgc.authorizer.ListAuthorizedResources(kit.Ctx, kit.Header, authInput)
 	if err != nil {
 		blog.ErrorJSON("list authorized %s failed, options: %s, err: %v, rid: %s", typ, authInput, err, kit.Rid)
-		return nil, err
+		return nil, false, err
+	}
+	// if isAny flag is true,return directly
+	if authList.IsAny {
+		return nil, true, err
 	}
 
 	accountIDList := make([]int64, 0)
-	for _, id := range authList {
+	for _, id := range authList.Ids {
 		subscriptionID, err := strconv.ParseInt(id, 10, 64)
 		if err != nil {
 			blog.Errorf("parse account id(%s) failed, err: %v, rid: %s", id, err, kit.Rid)
-			return nil, err
+			return nil, false, err
 		}
 		accountIDList = append(accountIDList, subscriptionID)
 	}
-	return accountIDList, nil
+	return accountIDList, false, nil
 }
