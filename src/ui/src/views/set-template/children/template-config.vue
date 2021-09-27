@@ -1,5 +1,7 @@
 <template>
-  <section class="layout" v-bkloading="{ isLoading: $loading('createSetTemplate') }">
+  <section class="layout"
+    v-test-id.businessSetTemplate="mode === 'create' ? 'addForm' : 'editForm'"
+    v-bkloading="{ isLoading: $loading('createSetTemplate') }">
     <div class="layout-row">
       <label class="row-label" :title="$t('模板名称')">{{$t('模板名称')}}</label>
       <template v-if="isViewMode">
@@ -57,7 +59,7 @@
             ? { type: $OPERATION.C_SET_TEMPLATE, relation: [bizId] }
             : { type: $OPERATION.U_SET_TEMPLATE, relation: [bizId, templateId]
             }">
-          <bk-button slot-scope="{ disabled }"
+          <bk-button slot-scope="{ disabled }" v-test-id="'submit'"
             class="options-confirm"
             theme="primary"
             :disabled="disabled || !hasChange"

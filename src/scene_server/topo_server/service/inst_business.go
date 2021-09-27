@@ -19,11 +19,13 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac"
 	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/mapstruct"
@@ -214,6 +216,128 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
+}
+
+// UpdateBizPropertyBatch batch update business properties
+func (s *Service) UpdateBizPropertyBatch(ctx *rest.Contexts) {
+	param := new(metadata.UpdateBizPropertyBatchParameter)
+	if err := ctx.DecodeInto(&param); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizIDs, err := s.getBizIDByCond(ctx, param.Condition)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(bizIDs) <= 0 {
+		blog.Errorf("found no business by condition, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
+		return
+	}
+
+	// check authorization
+	if s.AuthManager.Enabled() {
+		if err := s.AuthManager.AuthorizeByBusinessID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, bizIDs...); err ==
+			ac.NoAuthorizeError {
+			perm, err := s.AuthManager.GenBizBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, bizIDs)
+			if err != nil && err != ac.NoAuthorizeError {
+				blog.Errorf("get biz permission failed, biz: %v, err: %v, rid: %s", bizIDs, err, ctx.Kit.Rid)
+				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+				return
+			}
+			ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
+			return
+		} else if err != nil {
+			blog.Errorf("biz authorize failed, biz: %v, err: %v, rid: %s", bizIDs, err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+			return
+		}
+	}
+
+	updateCond := mapstr.MapStr{
+		common.BKAppIDField: mapstr.MapStr{
+			common.BKDBIN: bizIDs,
+		},
+		// exclude archived biz
+		common.BKDataStatusField: mapstr.MapStr{
+			common.BKDBNE: common.DataStatusDisabled,
+		},
+		// exclude default biz
+		common.BKDefaultField: mapstr.MapStr{
+			common.BKDBNE: common.DefaultAppFlag,
+		},
+	}
+
+	data := param.Properties
+	// cannot update biz bk_data_status
+	delete(data, common.BKDataStatusField)
+
+	// update biz instances
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err = s.Logics.InstOperation().UpdateInst(ctx.Kit, updateCond, data, common.BKInnerObjIDApp)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+func (s *Service) getBizIDByCond(ctx *rest.Contexts, cond mapstr.MapStr) ([]int64, error) {
+	attrCond := condition.CreateCondition()
+	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
+	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
+	queryCond := &metadata.QueryCondition{
+		Condition: attrCond.ToMapStr(),
+		Page:      metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(ctx.Kit.Ctx, ctx.Kit.Header, queryCond)
+	if err != nil {
+		blog.Errorf("get business attributes failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		return nil, err
+	}
+	
+	// userFieldArr Fields in the business are user-type fields
+	var userFields []string
+	for _, attribute := range resp.Info {
+		userFields = append(userFields, attribute.PropertyID)
+	}
+
+	filter := handleSpecialBusinessFieldSearchCond(cond, userFields)
+	// can only find normal business, but not resource pool business
+	filter[common.BKDefaultField] = mapstr.MapStr{
+		common.BKDBNE: common.DefaultAppFlag,
+	}
+
+	distinctOpt := &metadata.DistinctFieldOption{
+		TableName: common.BKTableNameBaseApp,
+		Field:     common.BKAppIDField,
+		Filter:    filter,
+	}
+
+	rst, err := s.Engine.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, distinctOpt)
+	if err != nil {
+		blog.Errorf("get biz ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt, err, ctx.Kit.Rid)
+		return nil, err
+	}
+
+	bizIDs, err := util.SliceInterfaceToInt64(rst)
+	if err != nil {
+		blog.Errorf("biz ids to int failed, biz ids: %v, err: %v, rid: %s", rst, err, ctx.Kit.Rid)
+		return nil, err
+	}
+
+	return bizIDs, nil
 }
 
 // find business list with these info：

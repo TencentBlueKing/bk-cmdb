@@ -24,7 +24,7 @@
       <bk-table-column :label="$t('操作')" prop="operation" v-if="showOperation">
         <template slot-scope="{ row, $index }">
           <cmdb-auth :auth="auth">
-            <bk-button slot-scope="{ disabled }"
+            <bk-button slot-scope="{ disabled }" v-test-id="'editProcess'"
               class="mr10"
               theme="primary"
               :disabled="disabled"
@@ -34,7 +34,7 @@
             </bk-button>
           </cmdb-auth>
           <cmdb-auth :auth="auth">
-            <bk-button slot-scope="{ disabled }"
+            <bk-button slot-scope="{ disabled }" v-test-id="'delProcess'"
               theme="primary"
               :disabled="disabled"
               :text="true"

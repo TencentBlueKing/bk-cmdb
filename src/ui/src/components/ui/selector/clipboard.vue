@@ -1,11 +1,11 @@
 <template>
   <bk-dropdown-menu trigger="click" :disabled="disabled" font-size="medium">
-    <bk-button class="clipboard-trigger" theme="default" slot="dropdown-trigger"
+    <bk-button class="clipboard-trigger" theme="default" slot="dropdown-trigger" v-test-id="'copy'"
       :disabled="disabled">
       {{$t('复制')}}
       <i class="bk-icon icon-angle-down"></i>
     </bk-button>
-    <ul class="clipboard-list" slot="dropdown-content">
+    <ul class="clipboard-list" slot="dropdown-content" v-test-id="'copy'">
       <li v-for="(item, index) in list"
         class="clipboard-item"
         :key="index"

@@ -33,7 +33,7 @@
     <bk-table-column :label="$t('操作')" width="150" fixed="right" :resizable="false">
       <template slot-scope="{ row }">
         <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
-          <bk-button slot-scope="{ disabled }"
+          <bk-button slot-scope="{ disabled }" v-test-id="'edit'"
             theme="primary" text
             :disabled="disabled"
             @click="handleEdit(row)">
@@ -47,7 +47,7 @@
             :content="$t('确定删除该进程')"
             confirm-loading
             @confirm="handleDelete(row)">
-            <bk-button
+            <bk-button v-test-id="'del'"
               theme="primary" text
               :disabled="disabled">
               {{$t('删除')}}

@@ -1,11 +1,11 @@
 <template>
-  <header class="header-layout">
+  <header class="header-layout" v-test-id.global="'header'">
     <div class="logo">
       <router-link class="logo-link" to="/index">
         {{$t('蓝鲸配置平台')}}
       </router-link>
     </div>
-    <nav class="header-nav">
+    <nav class="header-nav" v-test-id.global="'headerNav'">
       <router-link class="header-link"
         v-for="nav in menu"
         :to="getHeaderLink(nav)"

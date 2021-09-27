@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
@@ -240,6 +241,44 @@ var _ = Describe("business test", func() {
 			"life_cycle":  "2",
 		}
 		rsp, err := apiServerClient.UpdateBiz(context.Background(), "0", bizId, header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).Should(BeNil())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It(fmt.Sprintf("batch update business properties by condition bk_biz_id in [%s]", bizId2), func() {
+		bizID, err := strconv.ParseInt(bizId2, 10, 64)
+		Expect(err).Should(BeNil())
+		input := metadata.UpdateBizPropertyBatchParameter {
+			Properties: map[string]interface{}{
+				"operator": "test",
+			},
+			Condition: map[string]interface{}{
+				"bk_biz_id": map[string]interface{}{
+					"$in": []int64{bizID},
+				},
+			},
+		}
+
+		rsp, err := apiServerClient.UpdateBizPropertyBatch(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It(fmt.Sprintf("batch update business properties by condition bk_biz_id in []"), func() {
+		input := metadata.UpdateBizPropertyBatchParameter {
+			Properties: map[string]interface{}{
+				"operator": "test",
+			},
+			Condition: map[string]interface{}{
+				"bk_biz_id": map[string]interface{}{
+					"$in": make([]int64, 0),
+				},
+			},
+		}
+
+		rsp, err := apiServerClient.UpdateBizPropertyBatch(context.Background(), header, input)
 		util.RegisterResponse(rsp)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))

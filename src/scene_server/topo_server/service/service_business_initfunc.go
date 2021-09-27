@@ -33,6 +33,7 @@ func (s *Service) initBusinessObject(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/object/{id}", Handler: s.UpdateObject})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/object/{id}", Handler: s.DeleteObject})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objecttopology", Handler: s.SearchObjectTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/object/model", Handler: s.SearchModel})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -149,6 +150,8 @@ func (s *Service) initBusinessAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/instassociation/batch", Handler: s.DeleteAssociationInstBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/instance_associations/object/{bk_obj_id}", Handler: s.SearchInstanceAssociations})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/instance_associations/object/{bk_obj_id}", Handler: s.CountInstanceAssociations})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/model",
+		Handler: s.SearchModuleAssociation})
 
 	// topo search methods
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/object/{bk_obj_id}", Handler: s.SearchInstByAssociation})
@@ -186,6 +189,7 @@ func (s *Service) initBusinessInst(web *restful.WebService) {
 	})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instdetail/object/{bk_obj_id}/inst/{inst_id}", Handler: s.SearchInstByInstID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/object/instances/names", Handler: s.SearchInstsNames})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instance/{bk_obj_id}", Handler: s.FindInsts})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/instances/object/{bk_obj_id}", Handler: s.SearchObjectInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/instances/object/{bk_obj_id}", Handler: s.CountObjectInstances})
 
