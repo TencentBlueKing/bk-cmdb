@@ -2,16 +2,13 @@
   <div class="business-layout">
     <div class="business-options clearfix">
       <cmdb-auth class="fl" :auth="{ type: $OPERATION.C_BUSINESS }">
-        <template #default="{ disabled }">
-          <bk-button
-            class="fl"
-            theme="primary"
-            :disabled="disabled"
-            @click="handleCreate"
-          >
-            {{ $t("新建") }}
-          </bk-button>
-        </template>
+        <bk-button slot-scope="{ disabled }"
+          class="fl"
+          theme="primary"
+          :disabled="disabled"
+          @click="handleCreate">
+          {{$t('新建')}}
+        </bk-button>
       </cmdb-auth>
       <cmdb-auth :auth="{ type: $OPERATION.U_BUSINESS }">
         <template #default="{ disabled }">
@@ -25,25 +22,19 @@
         </template>
       </cmdb-auth>
       <div class="options-button fr">
-        <cmdb-auth
-          class="inline-block-middle"
-          :auth="{ type: $OPERATION.BUSINESS_ARCHIVE }"
-        >
-          <icon-button
-            slot-scope="{ disabled }"
+        <cmdb-auth class="inline-block-middle" :auth="{ type: $OPERATION.BUSINESS_ARCHIVE }">
+          <icon-button slot-scope="{ disabled }"
             class="mr10"
             icon="icon-cc-history"
             v-bk-tooltips.top="$t('查看已归档业务')"
             :disabled="disabled"
-            @click="routeToHistory"
-          >
+            @click="routeToHistory">
           </icon-button>
         </cmdb-auth>
         <icon-button
           icon="icon-cc-setting"
           v-bk-tooltips.top="$t('列表显示属性配置')"
-          @click="columnsConfig.show = true"
-        >
+          @click="columnsConfig.show = true">
         </icon-button>
       </div>
       <div class="options-filter clearfix fr">
@@ -51,11 +42,9 @@
           class="filter-selector fl"
           v-model="filter.field"
           :properties="properties"
-          :object-unique="objectUnique"
-        >
+          :object-unique="objectUnique">
         </cmdb-property-selector>
-        <component
-          class="filter-value fl"
+        <component class="filter-value fl"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
           :class="filterType"
@@ -64,21 +53,18 @@
           v-model="filter.value"
           @change="handleFilterValueChange"
           @enter="handleFilterValueEnter"
-          @clear="handleFilterValueEnter"
-        >
+          @clear="handleFilterValueEnter">
         </component>
       </div>
     </div>
-    <bk-table
-      class="business-table"
+    <bk-table class="business-table"
       v-bkloading="{ isLoading: $loading('post_searchBusiness_list') }"
       :data="table.list"
       :pagination="table.pagination"
       :max-height="$APP.height - 200"
       @sort-change="handleSortChange"
       @page-limit-change="handleSizeChange"
-      @page-change="handlePageChange"
-    >
+      @page-change="handlePageChange">
       <batch-selection-column
         width="60px"
         row-key="bk_biz_id"
@@ -90,53 +76,40 @@
         :data="table.list"
       >
       </batch-selection-column>
-      <bk-table-column
-        v-for="column in table.header"
+      <bk-table-column v-for="column in table.header"
         sortable="custom"
         :key="column.id"
         :prop="column.id"
         :label="column.name"
         min-width="80"
-        show-overflow-tooltip
-      >
+        show-overflow-tooltip>
         <template slot-scope="{ row }">
           <cmdb-property-value
             :theme="column.id === 'bk_biz_id' ? 'primary' : 'default'"
             :value="row[column.id]"
             :show-unit="false"
             :property="column.property"
-            @click.native.stop="handleValueClick(row, column)"
-          >
+            @click.native.stop="handleValueClick(row, column)">
           </cmdb-property-value>
         </template>
       </bk-table-column>
       <bk-table-column :label="$t('操作')" fixed="right">
         <template slot-scope="{ row }">
-          <cmdb-auth
-            @click.native.stop
-            :auth="{
-              type: $OPERATION.BUSINESS_ARCHIVE,
-              relation: [row.bk_biz_id]
-            }"
-          >
+          <cmdb-auth @click.native.stop :auth="{ type: $OPERATION.BUSINESS_ARCHIVE, relation: [row.bk_biz_id] }">
             <template slot-scope="{ disabled }">
-              <span
-                class="text-primary"
-                style="color: #dcdee5 !important; cursor: not-allowed"
+              <span class="text-primary"
+                style="color: #dcdee5 !important; cursor: not-allowed;"
                 v-if="row['bk_biz_name'] === '蓝鲸' && !disabled"
                 v-bk-tooltips.top="$t('内置业务不可归档')"
-                @click.stop
-              >
-                {{ $t("归档") }}
+                @click.stop>
+                {{$t('归档')}}
               </span>
-              <bk-button
-                v-else
+              <bk-button v-else
                 theme="primary"
                 :disabled="disabled"
                 :text="true"
-                @click.stop="handleDelete(row)"
-              >
-                {{ $t("归档") }}
+                @click.stop="handleDelete(row)">
+                {{$t('归档')}}
               </bk-button>
             </template>
           </cmdb-auth>
@@ -145,25 +118,16 @@
       <cmdb-table-empty
         slot="empty"
         :stuff="table.stuff"
-        :auth="{ type: $OPERATION.C_BUSINESS }"
-      >
+        :auth="{ type: $OPERATION.C_BUSINESS }">
         <i18n path="业务列表提示语" class="table-empty-tips">
-          <bk-link
-            theme="primary"
-            place="auth"
-            @click="handleApplyPermission"
-          >{{ $t("申请查看权限") }}</bk-link
-          >
+          <bk-link theme="primary" place="auth" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
           <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS }" place="create">
-            <bk-button
-              slot-scope="{ disabled }"
-              text
+            <bk-button slot-scope="{ disabled }" text
               theme="primary"
               class="text-btn"
               :disabled="disabled"
-              @click="handleCreate"
-            >
-              {{ $t("立即创建") }}
+              @click="handleCreate">
+              {{$t('立即创建')}}
             </bk-button>
           </cmdb-auth>
         </i18n>
@@ -174,19 +138,9 @@
       :is-show.sync="slider.show"
       :title="slider.title"
       :width="800"
-      :before-close="handleSliderBeforeClose"
-    >
-      <bk-tab
-        :active.sync="tab.active"
-        type="unborder-card"
-        slot="content"
-        v-if="slider.show"
-      >
-        <bk-tab-panel
-          name="attribute"
-          :label="$t('属性')"
-          style="width: calc(100% + 40px); margin: 0 -20px"
-        >
+      :before-close="handleSliderBeforeClose">
+      <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.show">
+        <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
           <cmdb-form
             ref="form"
             :object-unique="objectUnique"
@@ -196,8 +150,7 @@
             :type="attribute.type"
             :save-auth="saveAuth"
             @on-submit="handleSave"
-            @on-cancel="handleSliderBeforeClose"
-          >
+            @on-cancel="handleSliderBeforeClose">
           </cmdb-form>
         </bk-tab-panel>
       </bk-tab>
@@ -250,8 +203,7 @@
         :disabled-columns="columnsConfig.disabledColumns"
         @on-apply="handleApplayColumnsConfig"
         @on-cancel="columnsConfig.show = false"
-        @on-reset="handleResetColumnsConfig"
-      >
+        @on-reset="handleResetColumnsConfig">
       </cmdb-columns-config>
     </bk-sideslider>
   </div>
@@ -260,10 +212,7 @@
 <script>
   import { translateAuth } from '@/setup/permission'
   import { mapState, mapGetters, mapActions } from 'vuex'
-  import {
-    MENU_RESOURCE_BUSINESS_HISTORY,
-    MENU_RESOURCE_BUSINESS_DETAILS,
-  } from '@/dictionary/menu-symbol'
+  import { MENU_RESOURCE_BUSINESS_HISTORY, MENU_RESOURCE_BUSINESS_DETAILS } from '@/dictionary/menu-symbol'
   import cmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
   import cmdbPropertySelector from '@/components/property-selector'
   import RouterQuery from '@/router/query'
@@ -287,16 +236,16 @@
           pagination: {
             count: 0,
             current: 1,
-            ...this.$tools.getDefaultPaginationConfig(),
+            ...this.$tools.getDefaultPaginationConfig()
           },
           defaultSort: 'bk_biz_id',
           sort: 'bk_biz_id',
           stuff: {
             type: 'default',
             payload: {
-              resource: this.$t('业务'),
-            },
-          },
+              resource: this.$t('业务')
+            }
+          }
         },
         selectedRows: [],
         unselectedRows: [],
@@ -304,32 +253,32 @@
         filter: {
           field: 'bk_biz_name',
           value: '',
-          operator: '',
+          operator: ''
         },
         slider: {
           show: false,
-          title: '',
+          title: ''
         },
         batchUpdateSlider: {
           show: false,
           loading: false,
         },
         tab: {
-          active: 'attribute',
+          active: 'attribute'
         },
         attribute: {
           type: null,
           inst: {
             edit: {},
-            details: {},
-          },
+            details: {}
+          }
         },
         columnsConfig: {
           show: false,
           selected: [],
-          disabledColumns: ['bk_biz_id', 'bk_biz_name'],
+          disabledColumns: ['bk_biz_id', 'bk_biz_name']
         },
-        columnsConfigKey: 'biz_custom_table_columns',
+        columnsConfigKey: 'biz_custom_table_columns'
       }
     },
     computed: {
@@ -348,8 +297,7 @@
         const { type } = this.attribute
         if (type === 'create') {
           return { type: this.$OPERATION.C_BUSINESS }
-        }
-        if (type === 'update') {
+        } if (type === 'update') {
           return { type: this.$OPERATION.U_BUSINESS }
         }
         return null
@@ -372,7 +320,7 @@
       },
       filterComponentProps() {
         return Utils.getBindProps(this.filterProperty)
-      },
+      }
     },
     watch: {
       'filter.field'() {
@@ -385,7 +333,7 @@
       },
       customBusinessColumns() {
         this.setTableHeader()
-      },
+      }
     },
     async created() {
       try {
@@ -393,45 +341,38 @@
           injectId: 'biz',
           params: {
             bk_obj_id: 'biz',
-            bk_supplier_account: this.supplierAccount,
+            bk_supplier_account: this.supplierAccount
           },
           config: {
             requestId: 'post_searchObjectAttribute_biz',
-            fromCache: true,
-          },
+            fromCache: true
+          }
         })
         await Promise.all([
           this.getPropertyGroups(),
           this.getObjectUnique(),
-          this.setTableHeader(),
+          this.setTableHeader()
         ])
-        this.throttleGetTableData = throttle(this.getTableData, 300, {
-          leading: false,
-          trailing: true,
-        })
-        this.unwatch = RouterQuery.watch(
-          '*',
-          async ({
-            page = 1,
-            limit = this.table.pagination.limit,
-            filter = '',
-            operator = '',
-            field = 'bk_biz_name',
-          }) => {
-            this.filter.field = field
-            this.table.pagination.current = parseInt(page, 10)
-            this.table.pagination.limit = parseInt(limit, 10)
+        this.throttleGetTableData = throttle(this.getTableData, 300, { leading: false, trailing: true })
+        this.unwatch = RouterQuery.watch('*', async ({
+          page = 1,
+          limit = this.table.pagination.limit,
+          filter = '',
+          operator = '',
+          field = 'bk_biz_name'
+        }) => {
+          this.filter.field = field
+          this.table.pagination.current = parseInt(page, 10)
+          this.table.pagination.limit = parseInt(limit, 10)
 
-            await this.$nextTick()
+          await this.$nextTick()
 
-            this.genFilterCondition(filter, operator)
+          this.genFilterCondition(filter, operator)
 
-            this.throttleGetTableData()
-          },
-          { immediate: true }
-        )
+          this.throttleGetTableData()
+        }, { immediate: true })
       } catch (e) {
-      // ignore
+        // ignore
       }
     },
     beforeDestroy() {
@@ -446,7 +387,7 @@
         'updateBusiness',
         'batchUpdateBusiness',
         'createBusiness',
-        'searchBusinessById',
+        'searchBusinessById'
       ]),
       /**
        * 通过 bk_property_id 或自定义过滤项和过滤操作符来生成过滤条件
@@ -514,36 +455,28 @@
           params: {},
           config: {
             fromCache: true,
-            requestId: 'post_searchGroup_biz',
-          },
+            requestId: 'post_searchGroup_biz'
+          }
         }).then((groups) => {
           this.propertyGroups = groups
           return groups
         })
       },
       getObjectUnique() {
-        return this.$store
-          .dispatch('objectUnique/searchObjectUniqueConstraints', {
-            objId: 'biz',
-            params: {},
-          })
-          .then((data) => {
-            this.objectUnique = data
-            return data
-          })
+        return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+          objId: 'biz',
+          params: {}
+        }).then((data) => {
+          this.objectUnique = data
+          return data
+        })
       },
       setTableHeader() {
         return new Promise((resolve) => {
           // eslint-disable-next-line max-len
-          const customColumns = this.customBusinessColumns.length
-            ? this.customBusinessColumns
-            : this.globalCustomColumns
+          const customColumns = this.customBusinessColumns.length ? this.customBusinessColumns : this.globalCustomColumns
           // eslint-disable-next-line max-len
-          const headerProperties = this.$tools.getHeaderProperties(
-            this.properties,
-            customColumns,
-            this.columnsConfig.disabledColumns
-          )
+          const headerProperties = this.$tools.getHeaderProperties(this.properties, customColumns, this.columnsConfig.disabledColumns)
           resolve(headerProperties)
         }).then((properties) => {
           this.updateTableHeader(properties)
@@ -554,7 +487,7 @@
         this.table.header = properties.map(property => ({
           id: property.bk_property_id,
           name: this.$tools.getHeaderPropertyName(property),
-          property,
+          property
         }))
       },
       handleValueClick(row, column) {
@@ -564,9 +497,9 @@
         this.$routerActions.redirect({
           name: MENU_RESOURCE_BUSINESS_DETAILS,
           params: {
-            bizId: row.bk_biz_id,
+            bizId: row.bk_biz_id
           },
-          history: true,
+          history: true
         })
       },
       handleSortChange(sort) {
@@ -584,10 +517,7 @@
       getBusinessList(config = { cancelPrevious: true }) {
         return this.searchBusiness({
           params: this.getSearchParams(),
-          config: Object.assign(
-            { requestId: 'post_searchBusiness_list' },
-            config
-          ),
+          config: Object.assign({ requestId: 'post_searchBusiness_list' }, config)
         })
       },
       formatFilterValue({ value: currentValue, operator }, defaultValue) {
@@ -615,51 +545,42 @@
           page: 1,
           field: this.filter.field,
           filter: this.filter.value,
-          operator: this.filter.operator,
+          operator: this.filter.operator
         })
       },
       getTableData() {
-        this.getBusinessList({ cancelPrevious: true, globalPermission: false })
-          .then((data) => {
-            if (data.count && !data.info.length) {
-              this.table.pagination.current -= 1
-              this.getTableData()
-            }
-            this.table.list = data.info
-            this.table.pagination.count = data.count
+        this.getBusinessList({ cancelPrevious: true, globalPermission: false }).then((data) => {
+          if (data.count && !data.info.length) {
+            this.table.pagination.current -= 1
+            this.getTableData()
+          }
+          this.table.list = data.info
+          this.table.pagination.count = data.count
 
-            this.table.stuff.type = this.filter.value.toString().length
-              ? 'search'
-              : 'default'
+          this.table.stuff.type = this.filter.value.toString().length ? 'search' : 'default'
 
-            return data
-          })
+          return data
+        })
           .catch(({ permission }) => {
             if (!permission) return
             this.table.stuff = {
               type: 'permission',
-              payload: { permission },
+              payload: { permission }
             }
           })
       },
-      getSearchParams(page, fields) {
+      getSearchParams() {
         const params = {
           condition: {
-            bk_data_status: { $ne: 'disabled' },
+            bk_data_status: { $ne: 'disabled' }
           },
-          fields: fields || [],
+          fields: [],
           page: {
-            start:
-              this.table.pagination.limit * (this.table.pagination.current - 1),
+            start: this.table.pagination.limit * (this.table.pagination.current - 1),
             limit: this.table.pagination.limit,
-            sort: this.table.sort,
-          },
+            sort: this.table.sort
+          }
         }
-
-        if (page) {
-          params.page = Object.assign({}, params.page, page)
-        }
-
         if (!this.filter.value.toString()) {
           return params
         }
@@ -667,16 +588,14 @@
           const [start, end] = this.filter.value
           params.condition[this.filter.field] = {
             $gte: start,
-            $lte: end,
+            $lte: end
           }
           return params
         }
         if (this.filterType === 'objuser') {
-          const filterValue = this.filter.value
+          const filterValue  = this.filter.value
           const multiple = filterValue.length > 1
-          params.condition[this.filter.field] = multiple
-            ? { $in: filterValue }
-            : filterValue.toString()
+          params.condition[this.filter.field] = multiple ? { $in: filterValue } : filterValue.toString()
           return params
         }
 
@@ -685,16 +604,11 @@
           return params
         }
 
-        params.condition[this.filter.field] = {
-          [this.filter.operator]: this.filter.value,
-        }
+        params.condition[this.filter.field] = { [this.filter.operator]: this.filter.value }
         return params
       },
       async handleEdit(inst) {
-        const bizNameProperty = this.$tools.getProperty(
-          this.properties,
-          'bk_biz_name'
-        )
+        const bizNameProperty = this.$tools.getProperty(this.properties, 'bk_biz_name')
         bizNameProperty.isreadonly = inst.bk_biz_name === '蓝鲸'
         this.attribute.inst.edit = inst
         this.attribute.type = 'update'
@@ -716,20 +630,16 @@
               this.getTableData()
               this.$http.cancel('post_searchBusiness_$ne_disabled')
             })
-          },
+          }
         })
       },
       handleSave(values, changedValues, originalValues, type) {
         if (type === 'update') {
           this.updateBusiness({
             bizId: originalValues.bk_biz_id,
-            params: values,
+            params: values
           }).then(() => {
-            this.attribute.inst.details = Object.assign(
-              {},
-              originalValues,
-              values
-            )
+            this.attribute.inst.details = Object.assign({}, originalValues, values)
             this.getTableData()
             this.closeCreateSlider()
             this.$success(this.$t('修改成功'))
@@ -738,10 +648,10 @@
         } else {
           delete values.bk_biz_id // properties中注入了前端自定义的bk_biz_id属性
           this.createBusiness({
-            params: values,
+            params: values
           }).then(() => {
             this.handlePageChange(1)
-            this.closeCreateSlider()
+            this.handleCancel()
             this.$success(this.$t('创建成功'))
             this.$http.cancel('post_searchBusiness_$ne_disabled')
           })
@@ -754,20 +664,20 @@
       },
       handleApplayColumnsConfig(properties) {
         this.$store.dispatch('userCustom/saveUsercustom', {
-          [this.columnsConfigKey]: properties.map(property => property.bk_property_id),
+          [this.columnsConfigKey]: properties.map(property => property.bk_property_id)
         })
         this.columnsConfig.show = false
       },
       handleResetColumnsConfig() {
         this.$store.dispatch('userCustom/saveUsercustom', {
-          [this.columnsConfigKey]: [],
+          [this.columnsConfigKey]: []
         })
         this.columnsConfig.show = false
       },
       routeToHistory() {
         this.$routerActions.redirect({
           name: MENU_RESOURCE_BUSINESS_HISTORY,
-          history: true,
+          history: true
         })
       },
       handleSliderBeforeClose() {
@@ -796,7 +706,7 @@
                 },
                 cancelFn: () => {
                   resolve(false)
-                },
+                }
               })
             })
           }
@@ -814,65 +724,63 @@
         try {
           const permission = translateAuth({
             type: this.$OPERATION.R_BUSINESS,
-            relation: [],
+            relation: []
           })
-          const url = await this.$store.dispatch('auth/getSkipUrl', {
-            params: permission,
-          })
+          const url = await this.$store.dispatch('auth/getSkipUrl', { params: permission })
           window.open(url)
         } catch (e) {
           console.error(e)
         }
-      },
-    },
+      }
+    }
   }
 </script>
 
 <style lang="scss" scoped>
-.business-layout {
-  padding: 15px 20px 0;
-}
-.options-filter {
-  position: relative;
-  margin-right: 10px;
-  .filter-selector {
-    width: 120px;
-    border-radius: 2px 0 0 2px;
-    margin-right: -1px;
-  }
-  .filter-value {
-    width: 320px;
-    border-radius: 0 2px 2px 0;
-    /deep/ .bk-form-input {
-      border-radius: 0 2px 2px 0;
+    .business-layout {
+        padding: 15px 20px 0;
     }
-  }
-  .filter-search {
-    position: absolute;
-    right: 10px;
-    top: 9px;
-    cursor: pointer;
-  }
-}
-.options-button {
-  font-size: 0;
-  .bk-button {
-    width: 32px;
-    padding: 0;
-    /deep/ .bk-icon {
-      line-height: 14px;
+    .options-filter{
+        position: relative;
+        margin-right: 10px;
+        .filter-selector{
+            width: 120px;
+            border-radius: 2px 0 0 2px;
+            margin-right: -1px;
+        }
+        .filter-value{
+            width: 320px;
+            border-radius: 0 2px 2px 0;
+            /deep/ .bk-form-input {
+                border-radius: 0 2px 2px 0;
+            }
+        }
+        .filter-search{
+            position: absolute;
+            right: 10px;
+            top: 9px;
+            cursor: pointer;
+        }
     }
-  }
-}
-.business-table {
-  margin-top: 14px;
-}
-.table-empty-tips {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  .text-btn {
-    font-size: 14px;
-  }
-}
+    .options-button{
+        font-size: 0;
+        .bk-button {
+            width: 32px;
+            padding: 0;
+            /deep/ .bk-icon {
+                line-height: 14px;
+            }
+        }
+    }
+    .business-table{
+        margin-top: 14px;
+    }
+    .table-empty-tips {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        .text-btn {
+            font-size: 14px;
+        }
+    }
 </style>
