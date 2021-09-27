@@ -77,9 +77,22 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, iam *iamtype.IAM, c
 		return err
 	}
 
+	fields := []iamtype.SystemQueryField{iamtype.FieldActions}
+	iamResp, err := iam.Client.GetSystemInfo(ctx, fields)
+	if err != nil {
+		blog.Errorf("get system info failed, error: %v", err)
+		return err
+	}
+	iamActionMap := make(map[iamtype.ActionID]struct{})
+	for _, action := range iamResp.Data.Actions {
+		iamActionMap[action.ID] = struct{}{}
+	}
 	// migrate instance auth policies
 	instanceActions := []iamtype.ActionID{"create_sys_instance", "edit_sys_instance", "delete_sys_instance"}
 	for _, action := range instanceActions {
+		if _, ok := iamActionMap[action]; !ok {
+			continue
+		}
 		if err := migrateModelInstancePermission(ctx, action, db, iam, objects); err != nil {
 			blog.Errorf("[upgrade y3.10.202106301057] migrate model instance authorization failed, error: %v", err)
 			return err
