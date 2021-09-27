@@ -169,7 +169,7 @@ func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types
 	return &filter, nil
 }
 
-// list resource instances that user is privileged to access by policy
+// ListInstancesWithAttributes list resource instances that user is privileged to access by policy
 func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) (
 	[]string, error) {
 	resourceType := iam.TypeID(opts.Type)
@@ -183,8 +183,7 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	if iam.IsIAMSysInstance(resourceType) {
 		objID, err := lgc.GetObjIDFromResourceType(ctx, header, resourceType)
 		if err != nil {
-			blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
-				err, resourceType, rid)
+			blog.Errorf("get object id from resource type(%s) failed, err: %v, rid: %s", resourceType, err, rid)
 			return nil, err
 		}
 		collection = common.GetObjectInstTableName(objID, supplierAccount)
@@ -210,15 +209,13 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 		return nil, err
 	}
 	if cond == nil {
-		return []string{}, nil
+		return make([]string, 0), nil
 	}
 
 	if len(opts.IDList) > 0 {
 		idCond := make(map[string]interface{})
 		if isResourceIDStringType(resourceType) {
-			idCond[idField] = map[string]interface{}{
-				common.BKDBIN: opts.IDList,
-			}
+			idCond[idField] = map[string]interface{}{common.BKDBIN: opts.IDList}
 		} else {
 			ids := make([]int64, len(opts.IDList))
 			for idx, idStr := range opts.IDList {
@@ -229,14 +226,10 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 				}
 				ids[idx] = id
 			}
-			idCond[idField] = map[string]interface{}{
-				common.BKDBIN: ids,
-			}
+			idCond[idField] = map[string]interface{}{common.BKDBIN: ids}
 		}
 
-		cond = map[string]interface{}{
-			common.BKDBAND: []map[string]interface{}{idCond, cond},
-		}
+		cond = map[string]interface{}{common.BKDBAND: []map[string]interface{}{idCond, cond}}
 	}
 
 	param := metadata.PullResourceParam{
@@ -247,13 +240,12 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	}
 	res, err := lgc.CoreAPI.CoreService().Auth().SearchAuthResource(ctx, header, param)
 	if err != nil {
-		blog.ErrorJSON("search auth resource failed, error: %s, param: %s, rid: %s", err.Error(), param, rid)
+		blog.Errorf("search auth resource failed, err: %v, param: %#v, rid: %s", err, param, rid)
 		return nil, err
 	}
-	if !res.Result {
-		blog.ErrorJSON("search auth resource failed, error code: %s, error message: %s, param: %s, rid: %s",
-			res.Code, res.ErrMsg, param, rid)
-		return nil, res.Error()
+	if err := res.CCError(); err != nil {
+		blog.Errorf("search auth resource failed, err: %v, param: %#v, rid: %s", err, param, rid)
+		return nil, err
 	}
 
 	idList := make([]string, 0)
