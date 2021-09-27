@@ -79,9 +79,12 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, iam *iamtype.IAM, c
 
 	fields := []iamtype.SystemQueryField{iamtype.FieldActions}
 	iamResp, err := iam.Client.GetSystemInfo(ctx, fields)
-	iamActions := iamResp.Data.Actions
+	if err != nil {
+		blog.Errorf("get system info failed, error: %v", err)
+		return err
+	}
 	iamActionMap := make(map[iamtype.ActionID]struct{})
-	for _, action := range iamActions {
+	for _, action := range iamResp.Data.Actions {
 		iamActionMap[action.ID] = struct{}{}
 	}
 	// migrate instance auth policies
