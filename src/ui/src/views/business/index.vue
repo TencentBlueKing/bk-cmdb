@@ -11,9 +11,13 @@
           >
             {{ $t("新建") }}
           </bk-button>
+        </template>
+      </cmdb-auth>
+      <cmdb-auth :auth="{ type: $OPERATION.U_BUSINESS }">
+        <template #default="{ disabled }">
           <bk-button
             class="ml10"
-            :disabled="selectedRows.length === 0 && !editAll"
+            :disabled="(selectedRows.length === 0 && !editAll) || disabled"
             @click="handleBatchEdit"
           >
             {{ $t("批量编辑") }}
