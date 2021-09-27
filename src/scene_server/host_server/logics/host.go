@@ -98,10 +98,8 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 	}
 	ipArr := strings.Split(ip, ",")
 	conds := mapstr.MapStr{
-		common.BKHostInnerIPField: map[string]interface{}{
-			common.BKDBIN: ipArr,
-		},
-		common.BKCloudIDField: cloudID,
+		common.BKHostInnerIPField: map[string]interface{}{common.BKDBIN: ipArr},
+		common.BKCloudIDField:     cloudID,
 	}
 	hostList, err := lgc.GetHostInfoByConds(kit, conds)
 	if nil != err {
@@ -114,56 +112,17 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 		host[common.BKHostInnerIPField] = ip
 		host[common.BKCloudIDField] = cloudID
 		host["import_from"] = common.HostAddMethodAgent
-		defaultFields, hasErr := lgc.getHostFields(kit)
-		if nil != hasErr {
-			return hasErr
-		}
-		//补充未填写字段的默认值
-		for _, field := range defaultFields {
-			_, ok := host[field.PropertyID]
-			if !ok {
-				if true == util.IsStrProperty(field.PropertyType) {
-					host[field.PropertyID] = ""
-				} else {
-					host[field.PropertyID] = nil
-				}
-			}
-		}
-
-		result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost,
-			&metadata.CreateModelInstance{Data: host})
+		hostID, err = lgc.addHost(kit, appID, host)
 		if err != nil {
-			blog.Errorf("EnterIP http do error, err:%s, input:%+v, rid:%s", err.Error(), host, kit.Rid)
-			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-
-		// add audit log for create host.
-		audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
-		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, hostID, appID, "", nil)
-		if err != nil {
-			blog.Errorf("generate audit log failed after create host, hostID: %d, appID: %d, err: %v, rid: %s",
-				hostID, appID, err, kit.Rid)
 			return err
 		}
-
-		// save audit log.
-		if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
-			blog.Errorf("save audit log failed after create host, hostID: %d, appID: %d,err: %v, rid: %s", hostID,
-				appID, err, kit.Rid)
-			return err
-		}
-
-		hostID = int64(result.Created.ID)
-	} else if false == isIncrement {
+	} else if !isIncrement {
 		// Not an additional relationship model
 		return nil
 	} else {
-
 		hostID, err = util.GetInt64ByInterface(hostList[0][common.BKHostIDField])
 		if err != nil {
-			blog.Errorf("EnterIP  get hostID error, err:%s,inst:%+v,input:%+v, rid:%s", err.Error(), hostList[0],
-				host, kit.Rid)
+			blog.Errorf("get hostID failed, err: %v, inst:%+v, input:%+v, rid:%s", err, hostList[0], host, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost,
 				common.BKHostIDField, "int", err.Error()) // "查询主机信息失败"
 		}
@@ -174,8 +133,7 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 
 		}
 		if false == bl {
-			blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, "+
-				"rid:%s", appID, hostID, kit.Rid)
+			blog.Errorf("Host(%d) does not belong to the application(%d), rid:%s", hostID, appID, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrHostNotINAPPFail, hostID)
 		}
 
@@ -204,6 +162,49 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 		return err
 	}
 	return nil
+}
+
+func (lgc *Logics) addHost(kit *rest.Kit, appID int64, host map[string]interface{}) (int64, errors.CCError) {
+	defaultFields, hasErr := lgc.getHostFields(kit)
+	if nil != hasErr {
+		return 0, hasErr
+	}
+	//补充未填写字段的默认值
+	for _, field := range defaultFields {
+		_, ok := host[field.PropertyID]
+		if !ok {
+			if true == util.IsStrProperty(field.PropertyType) {
+				host[field.PropertyID] = ""
+			} else {
+				host[field.PropertyID] = nil
+			}
+		}
+	}
+
+	result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost,
+		&metadata.CreateModelInstance{Data: host})
+	if err != nil {
+		blog.Errorf("create host failed, err: %v, input: %#v, rid: %s", err, host, kit.Rid)
+		return 0, err
+	}
+	hostID := int64(result.Created.ID)
+
+	// add audit log for create host.
+	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, hostID, appID, "", nil)
+	if err != nil {
+		blog.Errorf("generate audit log failed, hostID: %d, appID: %d, err: %v, rid: %s", hostID, appID, err, kit.Rid)
+		return 0, err
+	}
+
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("save audit log failed, hostID: %d, appID: %d, err: %v, rid: %s", hostID, appID, err, kit.Rid)
+		return 0, err
+	}
+
+	return hostID, nil
 }
 
 // GetHostInfoByConds search host info by condition

@@ -156,46 +156,8 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 		return nil, err
 	}
 
-	attrs := make([]metadata.Attribute, 0)
-	// create the default inst attribute
-	attrs = append(attrs, metadata.Attribute{
-		ObjectID:          obj.ObjectID,
-		IsOnly:            true,
-		IsPre:             true,
-		Creator:           "user",
-		IsEditable:        true,
-		PropertyIndex:     -1,
-		PropertyGroup:     groupData.GroupID,
-		PropertyGroupName: groupData.GroupName,
-		IsRequired:        true,
-		PropertyType:      common.FieldTypeSingleChar,
-		PropertyID:        common.GetInstNameField(obj.ObjectID),
-		PropertyName:      common.DefaultInstName,
-		OwnerID:           kit.SupplierAccount,
-	})
-
-	if isMainline {
-		attrs = append(attrs, metadata.Attribute{
-			ObjectID:          obj.ObjectID,
-			IsOnly:            true,
-			IsPre:             true,
-			Creator:           "system",
-			IsEditable:        true,
-			IsSystem:          true,
-			PropertyIndex:     -1,
-			PropertyGroup:     groupData.GroupID,
-			PropertyGroupName: groupData.GroupName,
-			IsRequired:        true,
-			PropertyType:      common.FieldTypeInt,
-			PropertyID:        common.BKInstParentStr,
-			PropertyName:      common.BKInstParentStr,
-			OwnerID:           kit.SupplierAccount,
-		})
-	}
-
-	attrIDs, err := o.createAttrs(kit, obj.ObjectID, attrs)
+	attrIDs, err := o.createDefaultAttrs(kit, isMainline, obj, groupData)
 	if err != nil {
-		blog.Errorf("create model attrs failed, ObjectID: %s, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
 		return nil, err
 	}
 
@@ -224,15 +186,13 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.ID, nil)
 	if err != nil {
-		blog.Errorf("create object %s success, but generate audit log failed, err: %v, rid: %s",
-			obj.ObjectName, err, kit.Rid)
+		blog.Errorf("generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
 	// save audit log.
 	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
-		blog.Errorf("create object %s success, but save audit log failed, err: %v, rid: %s",
-			obj.ObjectName, err, kit.Rid)
+		blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
@@ -591,13 +551,49 @@ func (o *object) isClassificationExist(kit *rest.Kit, clsID string) (bool, error
 	return true, nil
 }
 
-func (o *object) createAttrs(kit *rest.Kit, objID string, attrs []metadata.Attribute) ([]uint64, error) {
+func (o *object) createDefaultAttrs(kit *rest.Kit, isMainline bool, obj *metadata.Object,
+	groupData metadata.Group) ([]uint64, error) {
 
-	// create a new record
+	attrs := make([]metadata.Attribute, 0)
+	attrs = append(attrs, metadata.Attribute{
+		ObjectID:          obj.ObjectID,
+		IsOnly:            true,
+		IsPre:             true,
+		Creator:           "user",
+		IsEditable:        true,
+		PropertyIndex:     -1,
+		PropertyGroup:     groupData.GroupID,
+		PropertyGroupName: groupData.GroupName,
+		IsRequired:        true,
+		PropertyType:      common.FieldTypeSingleChar,
+		PropertyID:        common.GetInstNameField(obj.ObjectID),
+		PropertyName:      common.DefaultInstName,
+		OwnerID:           kit.SupplierAccount,
+	})
+
+	if isMainline {
+		attrs = append(attrs, metadata.Attribute{
+			ObjectID:          obj.ObjectID,
+			IsOnly:            true,
+			IsPre:             true,
+			Creator:           "system",
+			IsEditable:        true,
+			IsSystem:          true,
+			PropertyIndex:     -1,
+			PropertyGroup:     groupData.GroupID,
+			PropertyGroupName: groupData.GroupName,
+			IsRequired:        true,
+			PropertyType:      common.FieldTypeInt,
+			PropertyID:        common.BKInstParentStr,
+			PropertyName:      common.BKInstParentStr,
+			OwnerID:           kit.SupplierAccount,
+		})
+	}
+
 	param := &metadata.CreateModelAttributes{Attributes: attrs}
-	rspAttr, err := o.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header, objID, param)
+	rspAttr, err := o.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header, obj.ObjectID, param)
 	if err != nil {
-		blog.Errorf("create model attrs failed, object: %s, input: %#v, err: %v, rid: %s", objID, param, err, kit.Rid)
+		blog.Errorf("create model(%s) attrs failed, input: %#v, err: %v, rid: %s", obj.ObjectID, param, err, kit.Rid)
 		return nil, err
 	}
 
@@ -606,8 +602,7 @@ func (o *object) createAttrs(kit *rest.Kit, objID string, attrs []metadata.Attri
 	}
 
 	if len(rspAttr.Repeated) > 0 {
-		blog.Errorf("create model attrs failed, the attr is duplicated, ObjectID: %s, input: %#v, rid: %s",
-			objID, attrs, kit.Rid)
+		blog.Errorf("attr(%#v) is duplicated, objID: %s, rid: %s", rspAttr.Repeated, obj.ObjectID, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrorAttributeNameDuplicated)
 	}
 
