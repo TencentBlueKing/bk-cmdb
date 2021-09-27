@@ -302,32 +302,25 @@ func (s *Service) generateApplyPlan(ctx *rest.Contexts, bizID int64, planRequest
 	metadata.HostApplyPlanResult, errors.CCErrorCoder) {
 
 	rid := ctx.Kit.Rid
-	var planResult metadata.HostApplyPlanResult
 
-	relationRequest := &metadata.HostModuleRelationRequest{
+	relationReq := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
 		ModuleIDArr:   planRequest.ModuleIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
+		Page:          metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:        []string{common.BKModuleIDField, common.BKHostIDField},
 	}
 	if planRequest.HostIDs != nil {
-		relationRequest.HostIDArr = planRequest.HostIDs
+		relationReq.HostIDArr = planRequest.HostIDs
 	}
-	hostRelations, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header,
-		relationRequest)
+	hostRelations, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationReq)
 	if err != nil {
-		blog.Errorf("generateApplyPlan failed, err: %+v, rid: %s", err, rid)
-		return planResult, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, rid)
+		return metadata.HostApplyPlanResult{}, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	hostModuleMap := make(map[int64][]int64)
 	moduleIDs := make([]int64, 0)
 	for _, item := range hostRelations.Info {
-		if _, exist := hostModuleMap[item.HostID]; exist == false {
-			hostModuleMap[item.HostID] = make([]int64, 0)
-		}
 		hostModuleMap[item.HostID] = append(hostModuleMap[item.HostID], item.ModuleID)
 		moduleIDs = append(moduleIDs, item.ModuleID)
 	}
@@ -341,16 +334,13 @@ func (s *Service) generateApplyPlan(ctx *rest.Contexts, bizID int64, planRequest
 
 	ruleOption := metadata.ListHostApplyRuleOption{
 		ModuleIDs: moduleIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 	}
 	rules, ccErr := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
 		ruleOption)
 	if ccErr != nil {
-		blog.ErrorJSON("generateApplyPlan failed, ListHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s",
-			bizID, ruleOption, ccErr.Error(), rid)
-		return planResult, ccErr
+		blog.Errorf("list host apply rule failed, bizID: %d, opt: %#v, err: %v, rid: %s", bizID, ruleOption, ccErr, rid)
+		return metadata.HostApplyPlanResult{}, ccErr
 	}
 
 	now := time.Now()
@@ -363,34 +353,17 @@ func (s *Service) generateApplyPlan(ctx *rest.Contexts, bizID int64, planRequest
 					continue OuterLoop
 				}
 			}
-			rules.Info = append(rules.Info, metadata.HostApplyRule{
-				ID:              0,
-				BizID:           bizID,
-				ModuleID:        item.ModuleID,
-				AttributeID:     item.AttributeID,
-				PropertyValue:   item.PropertyValue,
-				Creator:         ctx.Kit.User,
-				Modifier:        ctx.Kit.User,
-				CreateTime:      now,
-				LastTime:        now,
-				SupplierAccount: ctx.Kit.SupplierAccount,
+			rules.Info = append(rules.Info, metadata.HostApplyRule{BizID: bizID, ModuleID: item.ModuleID,
+				AttributeID: item.AttributeID, PropertyValue: item.PropertyValue, Creator: ctx.Kit.User,
+				Modifier: ctx.Kit.User, CreateTime: now, LastTime: now, SupplierAccount: ctx.Kit.SupplierAccount,
 			})
 		}
 	}
 
 	// filter out removed rules
-	if planRequest.RemoveRuleIDs == nil {
-		planRequest.RemoveRuleIDs = make([]int64, 0)
-	}
-	if planRequest.IgnoreRuleIDs == nil {
-		planRequest.IgnoreRuleIDs = make([]int64, 0)
-	}
 	finalRules := make([]metadata.HostApplyRule, 0)
 	for _, item := range rules.Info {
-		if util.InArray(item.ID, planRequest.RemoveRuleIDs) == true {
-			continue
-		}
-		if util.InArray(item.ID, planRequest.IgnoreRuleIDs) == true {
+		if util.InArray(item.ID, planRequest.RemoveRuleIDs) || util.InArray(item.ID, planRequest.IgnoreRuleIDs) {
 			continue
 		}
 		finalRules = append(finalRules, item)
@@ -402,11 +375,10 @@ func (s *Service) generateApplyPlan(ctx *rest.Contexts, bizID int64, planRequest
 		ConflictResolvers: planRequest.ConflictResolvers,
 	}
 
-	planResult, ccErr = s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
+	planResult, ccErr := s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
 		planOption)
-	if err != nil {
-		blog.ErrorJSON("generateApplyPlan failed, core service GenerateApplyPlan failed, bizID: %s, option: %s, "+
-			"err: %s, rid: %s", bizID, planOption, ccErr.Error(), rid)
+	if ccErr != nil {
+		blog.Errorf("generate apply plan failed, bizID: %d, opt: %#v, err: %v, rid: %s", bizID, planOption, ccErr, rid)
 		return planResult, ccErr
 	}
 	planResult.Rules = rules.Info
@@ -581,17 +553,15 @@ func (s *Service) listHostRelatedApplyRule(ctx *rest.Contexts, bizID int64,
 	rid := ctx.Kit.Rid
 
 	relationOption := &metadata.HostModuleRelationRequest{
-		HostIDArr: option.HostIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
+		ApplicationID: bizID,
+		HostIDArr:     option.HostIDs,
+		Page:          metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:        []string{common.BKModuleIDField, common.BKHostIDField},
 	}
 	relationResult, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header,
 		relationOption)
 	if err != nil {
-		blog.Errorf("listHostRelatedApplyRule failed, GetHostModuleRelation failed, bizID: %d, option: %+v, err: %+v,"+
-			" rid: %s", bizID, relationOption, err, rid)
+		blog.Errorf("get host module relation failed, option: %+v, err: %v, rid: %s", relationOption, err, rid)
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -599,17 +569,12 @@ func (s *Service) listHostRelatedApplyRule(ctx *rest.Contexts, bizID int64,
 	moduleIDs := make([]int64, 0)
 	for _, item := range relationResult.Info {
 		moduleIDs = append(moduleIDs, item.ModuleID)
-		if _, exist := hostModuleIDMap[item.HostID]; exist == false {
-			hostModuleIDMap[item.HostID] = make([]int64, 0)
-		}
 		hostModuleIDMap[item.HostID] = append(hostModuleIDMap[item.HostID], item.ModuleID)
 	}
 
 	// filter enabled modules
 	moduleFilter := &metadata.QueryCondition{
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 		Fields: []string{common.BKModuleIDField},
 		Condition: map[string]interface{}{
 			common.BKModuleIDField: map[string]interface{}{
@@ -621,8 +586,7 @@ func (s *Service) listHostRelatedApplyRule(ctx *rest.Contexts, bizID int64,
 	moduleResult, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		common.BKInnerObjIDModule, moduleFilter)
 	if err != nil {
-		blog.ErrorJSON("listHostRelatedApplyRule failed, ReadInstance of module failed, option: %s, err: %s, "+
-			"rid: %s", moduleFilter, err.Error(), rid)
+		blog.Errorf("get module failed, option: %#v, err: %v, rid: %s", moduleFilter, err, rid)
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -630,8 +594,7 @@ func (s *Service) listHostRelatedApplyRule(ctx *rest.Contexts, bizID int64,
 	for _, item := range moduleResult.Info {
 		moduleID, err := util.GetInt64ByInterface(item[common.BKModuleIDField])
 		if err != nil {
-			blog.ErrorJSON("listHostRelatedApplyRule failed, ReadInstance of module failed, parse module data failed,"+
-				" filter: %s, item: %s, rid: %s", moduleFilter, item, rid)
+			blog.Errorf("parse module id failed, err: %v, module: %#v, rid: %s", err, item, rid)
 			return nil, ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed)
 		}
 		validModuleIDs = append(validModuleIDs, moduleID)
@@ -639,39 +602,30 @@ func (s *Service) listHostRelatedApplyRule(ctx *rest.Contexts, bizID int64,
 
 	ruleOption := metadata.ListHostApplyRuleOption{
 		ModuleIDs: validModuleIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 	}
 	ruleResult, ccErr := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
 		bizID, ruleOption)
 	if ccErr != nil {
-		blog.ErrorJSON("listHostRelatedApplyRule failed, ListHostApplyRule failed, bizID: %s, option: %s, err: %s, "+
-			"rid: %s", bizID, option, ccErr.Error(), rid)
+		blog.Errorf("list host apply rule failed, bizID: %d, option: %#v, err: %v, rid: %s", bizID, option, ccErr, rid)
 		return nil, ccErr
 	}
 	// moduleID -> []hostApplyRule
 	moduleRules := make(map[int64][]metadata.HostApplyRule)
 	for _, item := range ruleResult.Info {
-		if _, exist := moduleRules[item.ModuleID]; exist == false {
-			moduleRules[item.ModuleID] = make([]metadata.HostApplyRule, 0)
-		}
 		moduleRules[item.ModuleID] = append(moduleRules[item.ModuleID], item)
 	}
 
 	// hostID -> []moduleIDs
 	result := make(map[int64][]metadata.HostApplyRule)
 	for _, hostID := range option.HostIDs {
-		if _, exist := result[hostID]; exist == false {
-			result[hostID] = make([]metadata.HostApplyRule, 0)
-		}
 		moduleIDs, exist := hostModuleIDMap[hostID]
-		if exist == false {
+		if !exist {
 			continue
 		}
 		for _, moduleID := range moduleIDs {
 			rules, exist := moduleRules[moduleID]
-			if exist == true {
+			if exist {
 				result[hostID] = append(result[hostID], rules...)
 			}
 		}
