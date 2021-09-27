@@ -165,13 +165,33 @@ export const IAM_ACTIONS = {
     }
   },
   U_INST: {
-    id: ([modelId]) => `edit_comobj_${modelId}`,
+    id: (relation) => {
+      const [[levelOne]] = relation
+      if (Array.isArray(levelOne)) {
+        return `edit_comobj_${[levelOne[0]]}`
+      }
+      return `edit_comobj_${relation[0]}`
+    },
     fixedId: 'edit_comobj',
     name: ['实例编辑', 'Update Instance'],
     cmdb_action: ([modelId]) => ({ action: 'update', type: `comobj_${modelId}` }),
     relation: [{
-      view: ([modelId]) => `comobj_${modelId}`,
-      instances: ([modelId, instId]) => ([{ type: `comobj_${modelId}`, id: String(instId) }])
+      view: (relation) => {
+        const [[levelOne]] = relation
+        if (Array.isArray(levelOne)) {
+          return `comobj_${[levelOne[0]]}`
+        }
+        return `comobj_${relation[0]}`
+      },
+      instances: (relation) => {
+        const [[levelOne]] = relation
+        if (Array.isArray(levelOne)) {
+          const [modelId, instId] = levelOne
+          return ([{ type: `comobj_${modelId}`, id: String(instId) }])
+        }
+        const [modelId, instId] = relation
+        return ([{ type: `comobj_${modelId}`, id: String(instId) }])
+      }
     }],
     transform: (cmdbAction, relationIds = []) => {
       const { action, type } = cmdbAction(relationIds)
@@ -185,13 +205,33 @@ export const IAM_ACTIONS = {
     }
   },
   D_INST: {
-    id: ([modelId]) => `delete_comobj_${modelId}`,
+    id: (relation) => {
+      const [[levelOne]] = relation
+      if (Array.isArray(levelOne)) {
+        return `delete_comobj_${[levelOne[0]]}`
+      }
+      return `delete_comobj_${relation[0]}`
+    },
     fixedId: 'delete_comobj',
     name: ['实例删除', 'Delete Instance'],
     cmdb_action: ([modelId]) => ({ action: 'delete', type: `comobj_${modelId}` }),
     relation: [{
-      view: ([modelId]) => `comobj_${modelId}`,
-      instances: ([modelId, instId]) => ([{ type: `comobj_${modelId}`, id: String(instId) }])
+      view: (relation) => {
+        const [[levelOne]] = relation
+        if (Array.isArray(levelOne)) {
+          return `comobj_${[levelOne[0]]}`
+        }
+        return `comobj_${relation[0]}`
+      },
+      instances: (relation) => {
+        const [[levelOne]] = relation
+        if (Array.isArray(levelOne)) {
+          const [modelId, instId] = levelOne
+          return ([{ type: `comobj_${modelId}`, id: String(instId) }])
+        }
+        const [modelId, instId] = relation
+        return ([{ type: `comobj_${modelId}`, id: String(instId) }])
+      }
     }],
     transform: (cmdbAction, relationIds = []) => {
       const { action, type } = cmdbAction(relationIds)

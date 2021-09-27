@@ -149,7 +149,6 @@
           :properties="properties"
           :property-groups="propertyGroups"
           :save-auth="saveAuth"
-          :object-unique="objectUnique"
           @on-submit="handleMultipleSave"
           @on-cancel="handleMultipleCancel">
         </cmdb-form-multiple>
