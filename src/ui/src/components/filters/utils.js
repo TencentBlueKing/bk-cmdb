@@ -122,6 +122,8 @@ export function findPropertyByPropertyId(propertyId, properties, modelId) {
 function createTimeCondition() {
   return { oper: 'and', rules: [] }
 }
+// eslint-disable-next-line no-useless-escape
+const escapeCharRE = /([\*\.\?\+\$\^\[\]\(\)\{\}\|\\\/])/g
 export function transformCondition(condition, properties, header) {
   const conditionMap = {
     host: [],
@@ -167,7 +169,7 @@ export function transformCondition(condition, properties, header) {
       submitCondition.push({
         field: property.bk_property_id,
         operator,
-        value
+        value: operator === '$regex' ? value.replace(escapeCharRE, '\\$1') : value
       })
     }
   })
