@@ -246,7 +246,7 @@ func (s *Service) UpdateBizPropertyBatch(ctx *rest.Contexts) {
 	bizIDs, err := s.getBizIDByCond(ctx, param.Condition)
 	if err != nil {
 		ctx.RespAutoError(err)
-		return;
+		return
 	}
 
 	if len(bizIDs) <= 0 {
@@ -401,9 +401,7 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 				appList = append(appList, bizID)
 			}
 			if len(appList) == 0 {
-				blog.Errorf("ListAuthorizedResources failed, user: %s,err: %v, rid: %s",
-					ctx.Kit.User, err, ctx.Kit.Rid)
-				ctx.RespAutoError(err)
+				ctx.RespEntityWithCount(0, make([]mapstr.MapStr, 0))
 				return
 			}
 			// sort for prepare to find business with page.
@@ -627,8 +625,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 				// now you have the authority.
 			} else {
 				if len(appList) == 0 {
-					blog.Errorf("get appList is fail, user: %s, err: %v,rid: %s", ctx.Kit.User, err, ctx.Kit.Rid)
-					ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")
+					ctx.RespEntityWithCount(0, make([]mapstr.MapStr, 0))
 					return
 				}
 
