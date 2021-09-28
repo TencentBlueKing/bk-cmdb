@@ -743,29 +743,30 @@ func (p ProtocolType) Validate() error {
 }
 
 type Process struct {
-	ProcNum         *int64         `field:"proc_num" json:"proc_num" bson:"proc_num" structs:"proc_num" mapstructure:"proc_num"`
-	StopCmd         *string        `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd" structs:"stop_cmd" mapstructure:"stop_cmd"`
-	RestartCmd      *string        `field:"restart_cmd" json:"restart_cmd" bson:"restart_cmd" structs:"restart_cmd" mapstructure:"restart_cmd"`
-	ForceStopCmd    *string        `field:"face_stop_cmd" json:"face_stop_cmd" bson:"face_stop_cmd" structs:"face_stop_cmd" mapstructure:"face_stop_cmd"`
-	ProcessID       int64          `field:"bk_process_id" json:"bk_process_id" bson:"bk_process_id" structs:"bk_process_id" mapstructure:"bk_process_id"`
-	FuncName        *string        `field:"bk_func_name" json:"bk_func_name" bson:"bk_func_name" structs:"bk_func_name" mapstructure:"bk_func_name"`
-	WorkPath        *string        `field:"work_path" json:"work_path" bson:"work_path" structs:"work_path" mapstructure:"work_path"`
-	Priority        *int64         `field:"priority" json:"priority" bson:"priority" structs:"priority" mapstructure:"priority"`
-	ReloadCmd       *string        `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd" structs:"reload_cmd" mapstructure:"reload_cmd"`
-	ProcessName     *string        `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" structs:"bk_process_name" mapstructure:"bk_process_name"`
-	PidFile         *string        `field:"pid_file" json:"pid_file" bson:"pid_file" structs:"pid_file" mapstructure:"pid_file"`
-	AutoStart       *bool          `field:"auto_start" json:"auto_start" bson:"auto_start" structs:"auto_start" mapstructure:"auto_start"`
-	StartCheckSecs  *int64         `field:"bk_start_check_secs" json:"bk_start_check_secs" bson:"bk_start_check_secs" structs:"bk_start_check_secs" mapstructure:"bk_start_check_secs"`
-	LastTime        time.Time      `field:"last_time" json:"last_time" bson:"last_time" structs:"last_time" mapstructure:"last_time"`
-	CreateTime      time.Time      `field:"create_time" json:"create_time" bson:"create_time" structs:"create_time" mapstructure:"create_time"`
-	BusinessID      int64          `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" structs:"bk_biz_id" mapstructure:"bk_biz_id"`
-	StartCmd        *string        `field:"start_cmd" json:"start_cmd" bson:"start_cmd" structs:"start_cmd" mapstructure:"start_cmd"`
-	User            *string        `field:"user" json:"user" bson:"user" structs:"user" mapstructure:"user"`
-	TimeoutSeconds  *int64         `field:"timeout" json:"timeout" bson:"timeout" structs:"timeout" mapstructure:"timeout"`
-	Description     *string        `field:"description" json:"description" bson:"description" structs:"description" mapstructure:"description"`
-	SupplierAccount string         `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" structs:"bk_supplier_account" mapstructure:"bk_supplier_account"`
-	StartParamRegex *string        `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex" mapstructure:"bk_start_param_regex"`
-	BindInfo        []ProcBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
+	ProcNum           *int64         `field:"proc_num" json:"proc_num" bson:"proc_num" structs:"proc_num" mapstructure:"proc_num"`
+	StopCmd           *string        `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd" structs:"stop_cmd" mapstructure:"stop_cmd"`
+	RestartCmd        *string        `field:"restart_cmd" json:"restart_cmd" bson:"restart_cmd" structs:"restart_cmd" mapstructure:"restart_cmd"`
+	ForceStopCmd      *string        `field:"face_stop_cmd" json:"face_stop_cmd" bson:"face_stop_cmd" structs:"face_stop_cmd" mapstructure:"face_stop_cmd"`
+	ProcessID         int64          `field:"bk_process_id" json:"bk_process_id" bson:"bk_process_id" structs:"bk_process_id" mapstructure:"bk_process_id"`
+	FuncName          *string        `field:"bk_func_name" json:"bk_func_name" bson:"bk_func_name" structs:"bk_func_name" mapstructure:"bk_func_name"`
+	WorkPath          *string        `field:"work_path" json:"work_path" bson:"work_path" structs:"work_path" mapstructure:"work_path"`
+	Priority          *int64         `field:"priority" json:"priority" bson:"priority" structs:"priority" mapstructure:"priority"`
+	ReloadCmd         *string        `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd" structs:"reload_cmd" mapstructure:"reload_cmd"`
+	ProcessName       *string        `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" structs:"bk_process_name" mapstructure:"bk_process_name"`
+	PidFile           *string        `field:"pid_file" json:"pid_file" bson:"pid_file" structs:"pid_file" mapstructure:"pid_file"`
+	AutoStart         *bool          `field:"auto_start" json:"auto_start" bson:"auto_start" structs:"auto_start" mapstructure:"auto_start"`
+	StartCheckSecs    *int64         `field:"bk_start_check_secs" json:"bk_start_check_secs" bson:"bk_start_check_secs" structs:"bk_start_check_secs" mapstructure:"bk_start_check_secs"`
+	LastTime          time.Time      `field:"last_time" json:"last_time" bson:"last_time" structs:"last_time" mapstructure:"last_time"`
+	CreateTime        time.Time      `field:"create_time" json:"create_time" bson:"create_time" structs:"create_time" mapstructure:"create_time"`
+	BusinessID        int64          `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" structs:"bk_biz_id" mapstructure:"bk_biz_id"`
+	StartCmd          *string        `field:"start_cmd" json:"start_cmd" bson:"start_cmd" structs:"start_cmd" mapstructure:"start_cmd"`
+	User              *string        `field:"user" json:"user" bson:"user" structs:"user" mapstructure:"user"`
+	TimeoutSeconds    *int64         `field:"timeout" json:"timeout" bson:"timeout" structs:"timeout" mapstructure:"timeout"`
+	Description       *string        `field:"description" json:"description" bson:"description" structs:"description" mapstructure:"description"`
+	SupplierAccount   string         `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" structs:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	StartParamRegex   *string        `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex" mapstructure:"bk_start_param_regex"`
+	ServiceInstanceID int64          `field:"service_instance_id" json:"service_instance_id" bson:"service_instance_id" mapstructure:"service_instance_id"`
+	BindInfo          []ProcBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
 }
 
 func (p *Process) Map() map[string]interface{} {
@@ -774,29 +775,30 @@ func (p *Process) Map() map[string]interface{} {
 		bindInfoArr = append(bindInfoArr, row.toKV())
 	}
 	procMap := map[string]interface{}{
-		common.BKProcInstNum:      p.ProcNum,
-		common.BKProcStopCmd:      p.StopCmd,
-		common.BKProcRestartCmd:   p.RestartCmd,
-		"face_stop_cmd":           p.ForceStopCmd,
-		common.BKProcessIDField:   p.ProcessID,
-		common.BKFuncName:         p.FuncName,
-		common.BKWorkPath:         p.WorkPath,
-		"priority":                p.Priority,
-		common.BKProcReloadCmd:    p.ReloadCmd,
-		common.BKProcessNameField: p.ProcessName,
-		common.BKProcPidFile:      p.PidFile,
-		"auto_start":              p.AutoStart,
-		"bk_start_check_secs":     p.StartCheckSecs,
-		common.BKAppIDField:       p.BusinessID,
-		common.BKProcStartCmd:     p.StartCmd,
-		common.BKUser:             p.User,
-		common.BKProcTimeOut:      p.TimeoutSeconds,
-		common.BKDescriptionField: p.Description,
-		common.BKOwnerIDField:     p.SupplierAccount,
-		common.BKStartParamRegex:  p.StartParamRegex,
-		common.BKProcBindInfo:     bindInfoArr,
-		common.CreateTimeField:    p.CreateTime,
-		common.LastTimeField:      p.LastTime,
+		common.BKProcInstNum:            p.ProcNum,
+		common.BKProcStopCmd:            p.StopCmd,
+		common.BKProcRestartCmd:         p.RestartCmd,
+		"face_stop_cmd":                 p.ForceStopCmd,
+		common.BKProcessIDField:         p.ProcessID,
+		common.BKFuncName:               p.FuncName,
+		common.BKWorkPath:               p.WorkPath,
+		"priority":                      p.Priority,
+		common.BKProcReloadCmd:          p.ReloadCmd,
+		common.BKProcessNameField:       p.ProcessName,
+		common.BKProcPidFile:            p.PidFile,
+		"auto_start":                    p.AutoStart,
+		"bk_start_check_secs":           p.StartCheckSecs,
+		common.BKAppIDField:             p.BusinessID,
+		common.BKProcStartCmd:           p.StartCmd,
+		common.BKUser:                   p.User,
+		common.BKProcTimeOut:            p.TimeoutSeconds,
+		common.BKDescriptionField:       p.Description,
+		common.BKOwnerIDField:           p.SupplierAccount,
+		common.BKStartParamRegex:        p.StartParamRegex,
+		common.BKProcBindInfo:           bindInfoArr,
+		common.CreateTimeField:          p.CreateTime,
+		common.LastTimeField:            p.LastTime,
+		common.BKServiceInstanceIDField: p.ServiceInstanceID,
 	}
 
 	return procMap
@@ -912,7 +914,10 @@ func IsAsDefaultValue(asDefaultValue *bool) bool {
 	return false
 }
 
-func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string, host map[string]interface{}) (*Process, error) {
+// NewProcess generate a new process from process template
+func (pt *ProcessTemplate) NewProcess(bizID, svcInstID int64, supplierAccount string, host map[string]interface{}) (
+	*Process, error) {
+
 	now := time.Now()
 	processInstance := &Process{
 		LastTime:        now,
@@ -940,6 +945,7 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string, host 
 	processInstance.TimeoutSeconds = property.TimeoutSeconds.Value
 	processInstance.Description = property.Description.Value
 	processInstance.StartParamRegex = property.StartParamRegex.Value
+	processInstance.ServiceInstanceID = svcInstID
 
 	var err error
 	processInstance.BindInfo, err = property.BindInfo.NewProcBindInfo(host)
@@ -1507,9 +1513,9 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 		}
 	}
 	if pt.Priority.Value != nil {
-		if *pt.Priority.Value <  common.MinProcessPrio || *pt.Priority.Value > common.MaxProcessPrio {
+		if *pt.Priority.Value < common.MinProcessPrio || *pt.Priority.Value > common.MaxProcessPrio {
 			return "priority", fmt.Errorf("field %s value must in range [%d, %d]", "priority",
-					common.MinProcessPrio, common.MaxProcessPrio)
+				common.MinProcessPrio, common.MaxProcessPrio)
 		}
 	}
 
