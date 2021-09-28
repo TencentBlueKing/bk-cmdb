@@ -188,6 +188,12 @@ func (st *setTemplate) SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateI
 		blog.V(3).Infof("dispatch synchronize task on set[%#v], rid: %s", setDiff, kit.Rid)
 		tasks := make([]metadata.SyncModuleTask, 0)
 		for _, moduleDiff := range setDiff.ModuleDiffs {
+
+			// skip unmodified modules
+			if moduleDiff.DiffType == metadata.ModuleDiffUnchanged {
+				continue
+			}
+
 			task := metadata.SyncModuleTask{
 				Set:         setDiff.SetDetail,
 				ModuleDiff:  moduleDiff,
