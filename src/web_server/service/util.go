@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -91,22 +93,44 @@ func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, i
 func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[string]string, error) {
 	defErr := s.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(c.Request.Header))
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
-	userListEsb := make([]*metadata.LoginSystemUserInfo, 0)
 	usernameMap := map[string]string{}
 
 	if userList != nil && len(userList) != 0 {
 		params := make(map[string]string)
 		params["fields"] = "username,display_name"
 		user := plugins.CurrentPlugin(c, s.Config.LoginVersion)
+		// 处理请求的用户数据，每100个用户组成一个字符串进行用户数据的获取
 		userListStr := s.getUserListStr(userList)
+		var wg sync.WaitGroup
+		var lock sync.RWMutex
+		var firstErr errors.CCErrorCoder
+		pipeline := make(chan bool, 10)
+		userListEsb := make([]*metadata.LoginSystemUserInfo, 0)
 		for _, subStr := range userListStr {
-			params["exact_lookups"] = subStr
-			userListEsbSub, errNew := user.GetUserList(c, params)
-			if errNew != nil {
-				blog.Errorf("get user list from ESB failed, err: %s, rid: %s", errNew.ToCCError(defErr), rid)
-				return nil, errNew.ToCCError(defErr)
-			}
-			userListEsb = append(userListEsb, userListEsbSub...)
+			pipeline <- true
+			wg.Add(1)
+			go func(subStr string) {
+				defer func() {
+					wg.Done()
+					<-pipeline
+				}()
+				params["exact_lookups"] = subStr
+				userListEsbSub, errNew := user.GetUserList(c, params)
+				if errNew != nil {
+					blog.Errorf("get user list from ESB failed, err: %s, rid: %s", errNew.ToCCError(defErr), rid)
+					firstErr = errNew.ToCCError(defErr)
+					return
+				}
+
+				lock.Lock()
+				userListEsb = append(userListEsb, userListEsbSub...)
+				lock.Unlock()
+			}(subStr)
+		}
+		wg.Wait()
+
+		if firstErr != nil {
+			return nil, firstErr
 		}
 
 		for _, userInfo := range userListEsb {
