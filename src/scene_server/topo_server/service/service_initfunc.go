@@ -61,6 +61,7 @@ func (s *Service) initBusiness(web *restful.WebService) {
 		Handler: s.UpdateBusinessStatus})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/biz/property",
 		Handler: s.UpdateBizPropertyBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/deletemany/biz", Handler: s.DeleteBusiness})
 	// utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/app/search/{owner_id}", Handler: s.SearchBusiness})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/app/{app_id}/basic_info",
 		Handler: s.GetBusinessBasicInfo})

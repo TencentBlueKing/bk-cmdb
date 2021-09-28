@@ -38,6 +38,7 @@ type BusinessOperationInterface interface {
 	GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder)
 	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error
 	UpdateBusinessByCond(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond mapstr.MapStr) error
+	DeleteBusiness(kit *rest.Kit, bizIDs []int64) error
 	HasHosts(kit *rest.Kit, bizID int64) (bool, error)
 	SetProxy(set SetOperationInterface, module ModuleOperationInterface, inst InstOperationInterface, obj ObjectOperationInterface)
 	GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (achieveName string, err error)
@@ -455,4 +456,370 @@ func (b *business) UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.O
 // UpdateBusinessByCond update business instances by condition
 func (b *business) UpdateBusinessByCond(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond mapstr.MapStr) error {
 	return b.inst.UpdateInst(kit, data, obj, cond)
+}
+
+// DeleteBusiness delete business instances by condition
+func (b *business) DeleteBusiness(kit *rest.Kit, bizIDs []int64) error {
+	for _, bizID := range bizIDs {
+		if err := b.cleanBizAndRelatedResources(kit, bizID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (b *business) cleanBizAndRelatedResources(kit *rest.Kit, bizID int64) error {
+	// 1. clean host
+	// archived business has no host, need not clean host
+	// 2. clean module/set template
+	if err := b.cleanTemplate(kit, bizID); err != nil {
+		return err
+	}
+	// 3. clean process
+	if err := b.cleanProcess(kit, bizID); err != nil {
+		return err
+	}
+	// 4. clean service instance
+	if err := b.cleanServiceInstance(kit, bizID); err != nil {
+		return err
+	}
+	// 5. clean module
+	if err := b.cleanModule(kit, bizID); err != nil {
+		return err
+	}
+	// 6. clean set
+	if err := b.cleanSet(kit, bizID); err != nil {
+		return err
+	}
+	// 7. clean biz
+	if err := b.cleanBiz(kit, bizID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *business) cleanTemplate(kit *rest.Kit, bizID int64) error {
+	// 1. clean process template
+	if err := b.cleanProcessTemplate(kit, bizID); err != nil {
+		return err
+	}
+	// 2. clean service template
+	if err := b.cleanServiceTemplate(kit, bizID); err != nil {
+		return err
+	}
+	// 3. clean set template and set service template relation
+	if err := b.cleanSetTemplate(kit, bizID); err != nil {
+		return err
+	}
+	// 4. clean service category
+	if err := b.cleanServiceCategory(kit, bizID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *business) cleanProcessTemplate(kit *rest.Kit, bizID int64) error {
+	distinctOpt := &metadata.DistinctFieldOption{
+		TableName: common.BKTableNameProcessTemplate,
+		Field:     common.BKFieldID,
+		Filter:    mapstr.MapStr{
+			common.BKAppIDField: bizID,
+		},
+	}
+	rst, errDistinct := b.clientSet.CoreService().Common().GetDistinctField(kit.Ctx, kit.Header, distinctOpt)
+	if errDistinct != nil {
+		blog.Errorf("get process template ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt,
+			errDistinct, kit.Rid)
+		return errDistinct
+	}
+
+	ids, err := util.SliceInterfaceToInt64(rst)
+	if err != nil {
+		blog.Errorf("process template ids to int failed, ids: %v, err: %v, rid: %s", rst, err, kit.Rid)
+		return err
+	}
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	if err := b.clientSet.CoreService().Process().DeleteProcessTemplateBatch(kit.Ctx, kit.Header, ids); err != nil {
+		blog.Errorf("batch delete process template err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (b *business) cleanServiceTemplate(kit *rest.Kit, bizID int64) error {
+	distinctOpt := &metadata.DistinctFieldOption{
+		TableName: common.BKTableNameServiceTemplate,
+		Field:     common.BKFieldID,
+		Filter:    mapstr.MapStr{
+			common.BKAppIDField: bizID,
+		},
+	}
+	rst, errDistinct := b.clientSet.CoreService().Common().GetDistinctField(kit.Ctx, kit.Header, distinctOpt)
+	if errDistinct != nil {
+		blog.Errorf("get service template ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt,
+			errDistinct, kit.Rid)
+		return errDistinct
+	}
+
+	ids, err := util.SliceInterfaceToInt64(rst)
+	if err != nil {
+		blog.Errorf("service template ids to int failed, ids: %v, err: %v, rid: %s", rst, err, kit.Rid)
+		return err
+	}
+
+	for _, id := range ids {
+		if err := b.clientSet.CoreService().Process().DeleteServiceTemplate(kit.Ctx, kit.Header, id); err != nil {
+			blog.Errorf("failed to delete service template, id: %v, err: %v, rid: %s", id, err, kit.Rid)
+			return err
+		}
+	}
+	return nil
+}
+
+func (b *business) cleanSetTemplate(kit *rest.Kit, bizID int64) error {
+	distinctOpt := &metadata.DistinctFieldOption{
+		TableName: common.BKTableNameSetTemplate,
+		Field:     common.BKFieldID,
+		Filter:    mapstr.MapStr{
+			common.BKAppIDField: bizID,
+		},
+	}
+	rst, errDistinct := b.clientSet.CoreService().Common().GetDistinctField(kit.Ctx, kit.Header, distinctOpt)
+	if errDistinct != nil {
+		blog.Errorf("get set template ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt,
+			errDistinct, kit.Rid)
+		return errDistinct
+	}
+
+	ids, err := util.SliceInterfaceToInt64(rst)
+	if err != nil {
+		blog.Errorf("set template ids to int failed, ids: %v, err: %v, rid: %s", rst, err, kit.Rid)
+		return err
+	}
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	opt := metadata.DeleteSetTemplateOption{
+		SetTemplateIDs: ids,
+	}
+	if err := b.clientSet.CoreService().SetTemplate().DeleteSetTemplate(kit.Ctx, kit.Header, bizID, opt); err != nil {
+		blog.Errorf("batch delete set template err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (b *business) cleanServiceCategory(kit *rest.Kit, bizID int64) error {
+	distinctOpt := &metadata.DistinctFieldOption{
+		TableName: common.BKTableNameServiceCategory,
+		Field:     common.BKFieldID,
+		Filter:    mapstr.MapStr{
+			common.BKAppIDField: bizID,
+		},
+	}
+	rst, errDistinct := b.clientSet.CoreService().Common().GetDistinctField(kit.Ctx, kit.Header, distinctOpt)
+	if errDistinct != nil {
+		blog.Errorf("get service category ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt,
+			errDistinct, kit.Rid)
+		return errDistinct
+	}
+
+	ids, err := util.SliceInterfaceToInt64(rst)
+	if err != nil {
+		blog.Errorf("service category ids to int failed, ids: %v, err: %v, rid: %s", rst, err, kit.Rid)
+		return err
+	}
+
+	for _, id := range ids {
+		if err := b.clientSet.CoreService().Process().DeleteServiceCategory(kit.Ctx, kit.Header, id); err != nil{
+			blog.Errorf("failed to delete service category, id: %v, err: %v, rid: %s", id, err, kit.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (b *business) cleanProcess(kit *rest.Kit, bizID int64) error {
+	distinctOpt := &metadata.DistinctFieldOption{
+		TableName: common.BKTableNameProcessInstanceRelation,
+		Field:     common.BKProcessIDField,
+		Filter:    mapstr.MapStr{
+			common.BKAppIDField: bizID,
+		},
+	}
+	rstDist, errDist := b.clientSet.CoreService().Common().GetDistinctField(kit.Ctx, kit.Header, distinctOpt)
+	if errDist != nil {
+		blog.Errorf("get process ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt, errDist,
+			kit.Rid)
+		return errDist
+	}
+
+	ids, err := util.SliceInterfaceToInt64(rstDist)
+	if err != nil {
+		blog.Errorf("process ids to int failed, ids: %v, err: %v, rid: %s", rstDist, err, kit.Rid)
+		return err
+	}
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	// clean process instance association
+	if err := b.cleanInstAsst(kit, common.BKInnerObjIDProc, ids); err != nil {
+		return err
+	}
+
+	// clean process process instance
+	optDelProc := metadata.DeleteOption{
+		Condition: mapstr.MapStr{
+			common.BKProcessIDField: mapstr.MapStr{
+				common.BKDBIN: ids,
+			},
+		},
+	}
+	rstDel, err := b.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc,
+		&optDelProc)
+	if err != nil {
+		blog.Errorf("failed to delete process instance, ids: %v, err: %v, rid: %s", ids, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !rstDel.Result {
+		blog.Errorf("failed to delete process instance, ids: %v, err: %v, rid: %s,", ids, rstDel.ErrMsg, kit.Rid)
+		return errors.New(rstDel.Code, rstDel.ErrMsg)
+	}
+
+	// clean process instance relation
+	optDelProcInstRel := metadata.DeleteProcessInstanceRelationOption{
+		BusinessID: &bizID,
+		ProcessIDs: ids,
+	}
+	if err := b.clientSet.CoreService().Process().DeleteProcessInstanceRelation(kit.Ctx, kit.Header, optDelProcInstRel);
+	err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *business) cleanServiceInstance(kit *rest.Kit, bizID int64) error {
+	distinctOpt := &metadata.DistinctFieldOption{
+		TableName: common.BKTableNameServiceInstance,
+		Field:     common.BKFieldID,
+		Filter:    mapstr.MapStr{
+			common.BKAppIDField: bizID,
+		},
+	}
+	rst, errDistinct := b.clientSet.CoreService().Common().GetDistinctField(kit.Ctx, kit.Header, distinctOpt)
+	if errDistinct != nil {
+		blog.Errorf("get service instance ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt,
+			errDistinct, kit.Rid)
+		return errDistinct
+	}
+
+	ids, err := util.SliceInterfaceToInt64(rst)
+	if err != nil {
+		blog.Errorf("service instance ids to int failed, ids: %v, err: %v, rid: %s", rst, err, kit.Rid)
+		return err
+	}
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	optDel := &metadata.CoreDeleteServiceInstanceOption{
+		BizID: bizID,
+		ServiceInstanceIDs: ids,
+	}
+	if err := b.clientSet.CoreService().Process().DeleteServiceInstance(kit.Ctx, kit.Header, optDel); err != nil {
+		blog.Errorf("failed to delete service instance, option: %+v, err: %v, rid: %s", optDel, err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (b *business) cleanModule(kit *rest.Kit, bizID int64) error {
+	return b.module.DeleteModule(kit, bizID, nil, nil)
+}
+
+func (b *business) cleanSet(kit *rest.Kit, bizID int64) error {
+	distinctOpt := &metadata.DistinctFieldOption{
+		TableName: common.BKTableNameBaseSet,
+		Field:     common.BKSetIDField,
+		Filter:    mapstr.MapStr{
+			common.BKAppIDField: bizID,
+		},
+	}
+	rst, errDistinct := b.clientSet.CoreService().Common().GetDistinctField(kit.Ctx, kit.Header, distinctOpt)
+	if errDistinct != nil {
+		blog.Errorf("get set ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt, errDistinct, kit.Rid)
+		return errDistinct
+	}
+
+	ids, err := util.SliceInterfaceToInt64(rst)
+	if err != nil {
+		blog.Errorf("set ids to int failed, ids: %v, err: %v, rid: %s", rst, err, kit.Rid)
+		return err
+	}
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	return b.set.DeleteSet(kit, bizID, ids)
+}
+
+func (b *business) cleanBiz(kit *rest.Kit, bizID int64) error {
+	cond := mapstr.MapStr{
+		common.BKAppIDField: bizID,
+	}
+	return b.inst.DeleteInst(kit, common.BKInnerObjIDApp, cond, false)
+}
+
+func (b *business) cleanInstAsst(kit *rest.Kit, objID string, instIDs []int64) error {
+	if len(instIDs) == 0 {
+		return nil
+	}
+
+	cond := &metadata.DeleteOption{
+		Condition: mapstr.MapStr{
+			common.BKDBOR: []mapstr.MapStr{
+				{
+					common.BKObjIDField: objID,
+					common.BKInstIDField: mapstr.MapStr{
+						common.BKDBIN: instIDs,
+					},
+				},
+				{
+					common.BKObjIDField: objID,
+					common.BKAsstInstIDField: mapstr.MapStr{
+						common.BKDBIN: instIDs,
+					},
+				},
+			},
+		},
+	}
+	rsp, err := b.clientSet.CoreService().Association().DeleteInstAssociation(kit.Ctx, kit.Header, cond)
+	if nil != err {
+		blog.Errorf("failed to request delete inst association, err: %v, rid: %s", err, kit.Rid)
+		return kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !rsp.Result {
+		blog.Errorf("failed to delete inst association, err: %s, rid: %s", rsp.ErrMsg, kit.Rid)
+		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return nil
 }
