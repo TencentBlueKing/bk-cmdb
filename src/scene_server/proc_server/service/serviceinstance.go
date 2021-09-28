@@ -1717,6 +1717,30 @@ func (ps *ProcServer) ListServiceInstancesWithHostWeb(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// ServiceInstanceUpdateLabels Update service instance label operation.
+func (ps *ProcServer) ServiceInstanceUpdateLabels(ctx *rest.Contexts) {
+	option := selector.LabelUpdateOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := ps.CoreAPI.CoreService().Label().UpdateLabel(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.BKTableNameServiceInstance, option); err != nil {
+			blog.Errorf("ServiceInstanceUpdateLabels failed, option: %+v, err: %v", option, err)
+			return ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
 func (ps *ProcServer) ServiceInstanceAddLabels(ctx *rest.Contexts) {
 	option := selector.LabelAddOption{}
 	if err := ctx.DecodeInto(&option); err != nil {

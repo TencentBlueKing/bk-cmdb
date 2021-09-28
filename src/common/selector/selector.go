@@ -24,6 +24,18 @@ type LabelAddOption struct {
 	Labels      Labels  `json:"labels"`
 }
 
+// LabelUpdateOption update instanceIDs labels.
+type LabelUpdateOption struct {
+	InstanceIDs []int64 `json:"instance_ids"`
+	Labels      Labels  `json:"labels"`
+}
+
+// LabelUpdateRequest update instanceIDs labels request.
+type LabelUpdateRequest struct {
+	Option    LabelUpdateOption `json:"option"`
+	TableName string            `json:"table_name"`
+}
+
 type LabelAddRequest struct {
 	Option    LabelAddOption `json:"option"`
 	TableName string         `json:"table_name"`
