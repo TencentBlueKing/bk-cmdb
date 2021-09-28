@@ -13,8 +13,6 @@
 package logics
 
 import (
-	"errors"
-
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -168,8 +166,7 @@ func (lgc *Logics) SearchSyncTask(kit *rest.Kit, option *metadata.SearchSyncTask
 		if !isAny {
 
 			if len(list) == 0 {
-				blog.Errorf("get authIds failed, rid: %s, option:%+v", kit.Rid, option)
-				return nil, errors.New("get authIds failed")
+				return &metadata.MultipleCloudSyncTask{}, nil
 			}
 
 			if len(option.Condition) == 0 {
