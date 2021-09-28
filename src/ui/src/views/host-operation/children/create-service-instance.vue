@@ -36,6 +36,7 @@
       :editing="getEditState(instance)"
       :topology="$parent.getModulePath(instance.bk_module_id)"
       :templates="getServiceTemplates(instance)"
+      :addible="!instance.service_template"
       :source-processes="getSourceProcesses(instance)"
       :class="{ 'is-first': index === 0 }"
       :instance="instance"
@@ -172,13 +173,12 @@
 
           // 有模板
           if (instance.service_template) {
-            // 默认全部放入created但无需设置processes字段
-            instanceOptions.created.push({
-              bk_module_id: instance.bk_module_id,
-              bk_host_id: instance.bk_host_id
-            })
-            // updated仅放入有修改过的进程信息
             if (processes.length) {
+              // 放入到created也需要有processes
+              instanceOptions.created.push({
+                bk_module_id: instance.bk_module_id,
+                bk_host_id: instance.bk_host_id
+              })
               instanceOptions.updated.push({
                 bk_module_id: instance.bk_module_id,
                 bk_host_id: instance.bk_host_id,
