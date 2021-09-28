@@ -27,7 +27,36 @@ func init() {
 
 //  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 
-var commProcessIndexes = []types.Index{}
+var commProcessIndexes = []types.Index{
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "svcInstID_bkProcName",
+		Keys: map[string]int32{
+			common.BKServiceInstanceIDField: 1,
+			common.BKProcessNameField:       1,
+		},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			common.BKServiceInstanceIDField: map[string]string{common.BKDBType: "number"},
+			common.BKProcessNameField:       map[string]string{common.BKDBType: "string"},
+		},
+	},
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "svcInstID_bkFuncName_bkStartParamRegex",
+		Keys: map[string]int32{
+			common.BKServiceInstanceIDField: 1,
+			common.BKFuncName:               1,
+			common.BKStartParamRegex:        1,
+		},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			common.BKServiceInstanceIDField: map[string]string{common.BKDBType: "number"},
+			common.BKFuncName:               map[string]string{common.BKDBType: "string"},
+			common.BKStartParamRegex:        map[string]string{common.BKDBType: "string"},
+		},
+	},
+}
 
 // deprecated 未规范化前的索引，只允许删除不允许新加和修改，
 var deprecatedProcessIndexes = []types.Index{

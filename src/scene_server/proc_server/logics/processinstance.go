@@ -241,6 +241,17 @@ func (lgc *Logic) CreateProcessInstances(kit *rest.Kit, processDatas []map[strin
 		return nil, errors.CCHttpError
 	}
 
+	if len(result.Repeated) > 0 {
+		blog.Errorf("process data repeated, input: %#v, result: %#v, rid: %s", processDatas, result, kit.Rid)
+		errMsg := util.GetStrByInterface(result.Repeated[0].Data["err_msg"])
+		return nil, errors.NewCCError(common.CCErrCommDuplicateItem, errMsg)
+	}
+
+	if len(result.Exceptions) > 0 {
+		blog.Errorf("create process failed, input: %#v, result: %#v, rid: %s", processDatas, result, kit.Rid)
+		return nil, kit.CCError.CCErrorf(int(result.Exceptions[0].Code), result.Exceptions[0].Message)
+	}
+
 	if len(processDatas) != len(result.Created) {
 		blog.Errorf("CreateProcessInstances failed, len(processes) != len(result.Created), inputParam: %#v, rid: %s",
 			inputParam, kit.Rid)

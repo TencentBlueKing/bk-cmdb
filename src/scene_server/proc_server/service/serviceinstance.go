@@ -1274,7 +1274,7 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts,
 			Limit: common.BKNoLimit,
 		},
 	}
-	
+
 	// get service templates
 	serviceTemplates, err := ps.CoreAPI.CoreService().Process().
 		ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, listSvcTempCond)
@@ -1424,7 +1424,7 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts,
 		blog.Errorf("create service instances(%#v) failed, err: %v, rid: %s", srvInstToAdd, err, rid)
 		return err
 	}
-	
+
 	if len(serviceInstanceIDs) == 0 {
 		return nil
 	}
@@ -1600,7 +1600,7 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts,
 
 			// we can not find this process template in all this service instance,
 			// which means that a new process template need to be added to this service instance
-			newProcess, generateErr := processTemplate.NewProcess(bizID, ctx.Kit.SupplierAccount,
+			newProcess, generateErr := processTemplate.NewProcess(bizID, svcID, ctx.Kit.SupplierAccount,
 				hostMap[serviceInstance2HostMap[svcID]])
 			if generateErr != nil {
 				blog.ErrorJSON("sync service instance by template, but generate process instance by template "+
