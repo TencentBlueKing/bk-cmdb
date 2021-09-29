@@ -231,7 +231,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 // UpdateBizPropertyBatch batch update business properties
 func (s *Service) UpdateBizPropertyBatch(ctx *rest.Contexts) {
 	param := new(metadata.UpdateBizPropertyBatchParameter)
-	if err := ctx.DecodeInto(&param); nil != err {
+	if err := ctx.DecodeInto(param); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -353,7 +353,7 @@ func (s *Service) getBizIDByCond(ctx *rest.Contexts, cond mapstr.MapStr) ([]int6
 // DeleteBusiness delete archived business
 func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
 	param := new(metadata.DeleteBizParam)
-	if err := ctx.DecodeInto(&param); nil != err {
+	if err := ctx.DecodeInto(param); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -378,34 +378,10 @@ func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	// check built-in business
-	has, err := s.checkHasBuiltInBiz(ctx.Kit, param.BizID)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	if has {
-		blog.Errorf("forbidden delete built in business, rid:%s", ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoForbiddenDeleteBuiltInBiz))
-		return
-	}
-
-	// check unarchived business
-	has, err = s.checkHasUnarchivedBiz(ctx.Kit, param.BizID)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	if has {
-		blog.Errorf("forbidden delete unarchived business, rid:%s", ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoForbiddenDeleteUnarchivedBiz))
-		return
-	}
-
 	// delete biz instances and related resources
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		if err := s.Core.BusinessOperation().DeleteBusiness(ctx.Kit, param.BizID); err != nil {
-			blog.Errorf("failed to delete biz, ids: %v, err: %+v, rid: %s", param.BizID, err, ctx.Kit.Rid)
+			blog.Errorf("failed to delete biz, ids: %v, err: %v, rid: %s", param.BizID, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -416,64 +392,6 @@ func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
-}
-
-// checkHasBuiltInBiz check if business list has built-in business
-func (s *Service) checkHasBuiltInBiz(kit *rest.Kit, bizIDs []int64) (bool, error) {
-	// get biz count by filter
-	filter := []map[string]interface{}{{
-		// built in business
-		common.BKDefaultField: map[string]interface{}{
-			common.BKDBEQ: common.DefaultAppFlag,
-		},
-		common.BKAppIDField: map[string]interface{}{
-			common.BKDBIN: bizIDs,
-		},
-	}}
-	rst, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseApp,
-		filter)
-	if err != nil {
-		blog.Errorf("get biz count failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
-		return false, err
-	}
-	if len(rst) != 1 {
-		blog.Errorf("get biz count failed, for result len must be 1, filter: %+v, rid: %s", filter, kit.Rid)
-		return false, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
-	}
-
-	if rst[0] <= 0 {
-		return false, nil
-	}
-	return true, nil
-}
-
-// checkHasUnarchivedBiz check if business list has unarchived business
-func (s *Service) checkHasUnarchivedBiz(kit *rest.Kit, bizIDs []int64) (bool, error) {
-	// get biz count by filter
-	filter := []map[string]interface{}{{
-		// unarchived business
-		common.BKDataStatusField: map[string]interface{}{
-			common.BKDBNE: common.DataStatusDisabled,
-		},
-		common.BKAppIDField: map[string]interface{}{
-			common.BKDBIN: bizIDs,
-		},
-	}}
-	rst, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseApp,
-		filter)
-	if err != nil {
-		blog.Errorf("get biz count failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
-		return false, err
-	}
-	if len(rst) != 1 {
-		blog.Errorf("get biz count failed, for result len must be 1, filter: %+v, rid: %s", filter, kit.Rid)
-		return false, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
-	}
-
-	if rst[0] <= 0 {
-		return false, nil
-	}
-	return true, nil
 }
 
 // find business list with these info：
