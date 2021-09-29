@@ -94,7 +94,7 @@ func (a *apiServer) DeleteBiz(ctx context.Context, h http.Header, param metadata
 	resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/deletemany/biz"
-	err = a.client.Put().
+	err = a.client.Post().
 		WithContext(ctx).
 		Body(param).
 		SubResourcef(subPath).
