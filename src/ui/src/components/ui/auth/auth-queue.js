@@ -3,24 +3,18 @@ import debounce from 'lodash.debounce'
 import $http from '@/api'
 import { TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
 
-function filterUselssKey(data, uselessKeys) {
-  return JSON.parse(JSON.stringify(data), (key, value) => {
-    if (key === '') return value
-    if (uselessKeys.includes(key)) return undefined
-    return value
-  })
-}
-
 function equal(source, target) {
   const {
     resource_type: SResourceType,
     resource_id: SResourceId,
+    resource_id_ex: SResourceIdEx,
     action: SAction,
     bk_biz_id: SBizId
   } = source
   const {
     resource_type: TResourceType,
     resource_id: TResourceId,
+    resource_id_ex: TResourceIdEx,
     action: TAction,
     bk_biz_id: TBizId
   } = target
@@ -29,6 +23,7 @@ function equal(source, target) {
   if (
     SResourceType !== TResourceType
         || SResourceId !== TResourceId
+        || SResourceIdEx !== TResourceIdEx
         || SAction !== TAction
         || SBizId !== TBizId
         || SParentLayers.length !== TParentLayers.length
@@ -101,7 +96,6 @@ export default new Vue({
       } catch (error) {
         console.error(error)
       } finally {
-        authData = filterUselssKey(authData, ['resource_id_ex'])
         authComponents.forEach((component) => {
           // eslint-disable-next-line new-cap
           const authMetas = TRANSFORM_TO_INTERNAL(component.auth)
