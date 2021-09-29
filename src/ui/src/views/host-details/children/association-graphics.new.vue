@@ -372,7 +372,7 @@
           })
 
           // 获取节点下的拓扑元素
-          const initElements = this.getTopoElements(topoData, rootNodeId)
+          const initElements = this.getTopoElements(topoData, rootNodeId, rootObjId, rootInstId)
 
           // 组装成最终的拓扑
           elements = [...elements, ...initElements]
@@ -477,53 +477,54 @@
         }
         return nameKey[idKey]
       },
-      getTopoElements(topoData, rootNodeId) {
+      getTopoElements(topoData, rootNodeId, currentObjId, currentInstId) {
         const { association, instance } = topoData
 
         // 更新实例信息新的实例得以获取到正确的详情
         this.instanceMap = { ...this.instanceMap, ...instance }
 
-        const asstSrc = association.src || []
-        const asstDst = association.dst || []
+        // 将源和目标关联数据合并
+        const allAsst = [...(association.src || []), ...(association.dst || [])]
+
         const elements = []
 
         // 拓扑图中的所有连线数据，用于查找连线关系
         const edges = cy.edges().map(egde => egde.data())
 
         // 所有以rootNodeId为目标的关联数据
-        asstDst.forEach((item) => {
-          const nodeIdPrefix = `${item.bk_obj_id}_${item.bk_inst_id}_`
+        allAsst.forEach((item) => {
+          // 是否为源的真实逻辑
+          const isSource = item.bk_obj_id === currentObjId && item.bk_inst_id === currentInstId
+
+          const objId = isSource ? item.bk_asst_obj_id : item.bk_obj_id
+          const instId = isSource ? item.bk_asst_inst_id : item.bk_inst_id
+
+          const nodeIdPrefix = `${objId}_${instId}_`
+
           // eslint-disable-next-line no-plusplus
           const nodeId = `${nodeIdPrefix}${NODE_ID++}`
 
           // 是否存在目标是当前根节点的连接
-          const exist = edges.find(edge => edge.target === rootNodeId)
+          const exist = isSource
+            ? edges.find(edge => edge.source === rootNodeId)
+            : edges.find(edge => edge.source === rootNodeId)
+
+          const same = isSource
+            ? exist?.target.startsWith(nodeIdPrefix)
+            : exist?.source.startsWith(nodeIdPrefix)
+
           // 不存在或者存在时来源实例不同
-          if (!exist || !exist.source.startsWith(nodeIdPrefix)) {
-            const nodeOptions = this.getNodeOptions({ nodeId, objId: item.bk_obj_id, instId: item.bk_inst_id })
-            const edgeOptions = this.getEdgeOptions({ source: nodeId, target: rootNodeId, asstId: item.bk_asst_id })
+          if (!exist || !same) {
+            const nodeOptions = this.getNodeOptions({ nodeId, objId, instId })
+            const edgeOptions = this.getEdgeOptions({
+              source: isSource ? rootNodeId : nodeId,
+              target: isSource ? nodeId : rootNodeId,
+              asstId: item.bk_asst_id
+            })
             elements.push(nodeOptions)
             elements.push(edgeOptions)
 
-            this.setLegends(rootNodeId, item.bk_obj_id, nodeId)
-          }
-        })
-
-        // 所有以rootNodeId为源的关联数据
-        asstSrc.forEach((item) => {
-          // 为源时，取目标实例id
-          const nodeIdPrefix = `${item.bk_asst_obj_id}_${item.bk_asst_inst_id}_`
-          // eslint-disable-next-line no-plusplus
-          const nodeId = `${nodeIdPrefix}${NODE_ID++}`
-          const exist = edges.find(item => item.source === rootNodeId)
-          if (!exist || !exist.target.startsWith(nodeIdPrefix)) {
-            // eslint-disable-next-line max-len
-            const nodeOptions = this.getNodeOptions({ nodeId, objId: item.bk_asst_obj_id, instId: item.bk_asst_inst_id })
-            const edgeOptions = this.getEdgeOptions({ source: rootNodeId, target: nodeId, asstId: item.bk_asst_id })
-            elements.push(nodeOptions)
-            elements.push(edgeOptions)
-
-            this.setLegends(rootNodeId, item.bk_asst_obj_id, nodeId)
+            this.setLegends(rootNodeId, objId, nodeId)
           }
         })
 
@@ -595,7 +596,7 @@
         const topoData = relData.data
 
         // 根据拓扑数据获取拓扑元素，根节点为当前节点
-        const nodeElements = this.getTopoElements(topoData, id)
+        const nodeElements = this.getTopoElements(topoData, id, objId, instId)
 
         // 将元素加入到拓扑图
         cy.add(nodeElements)
