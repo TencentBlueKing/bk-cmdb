@@ -80,10 +80,9 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 			blog.ErrorJSON("update module failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err, rid)
 			return err
 		}
-	case metadata.ModuleDiffUnchanged:
-		return nil
+	// unchanged module should not be in asynchronous tasks
 	default:
-		blog.Errorf("do module sync task but diff type is invalid, moduleDiff: %#v, rid: %s", moduleDiff, rid)
+		blog.Errorf("do module sync task but diff type is invalid/unchanged, moduleDiff: %#v, rid: %s", moduleDiff, rid)
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "diff_type")
 	}
 	return nil
