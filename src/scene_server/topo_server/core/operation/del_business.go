@@ -61,20 +61,17 @@ func (b *business) checkCanDelete(kit *rest.Kit, bizIDs []int64) error {
 	}
 
 	// 3. check business has hosts
-	for _, bizID := range bizIDs {
-		has, err := b.HasHosts(kit, bizID)
-		if err != nil {
-			return err
-		}
-		if has {
-			blog.Errorf("forbidden delete business with hosts, biz id: %v, rid: %s", bizID, kit.Rid)
-			return kit.CCError.CCError(common.CCErrTopoHasHost)
-		}
+	has, err = b.checkHasHost(kit, bizIDs)
+	if err != nil {
+		return err
+	}
+	if has {
+		blog.Errorf("forbidden delete business with hosts, rid: %s", kit.Rid)
+		return kit.CCError.CCError(common.CCErrTopoHasHost)
 	}
 
 	return nil
 }
-
 
 // checkHasBuiltInBiz check if business list has built-in business
 func (b *business) checkHasBuiltInBiz(kit *rest.Kit, bizIDs []int64) (bool, error) {
@@ -128,6 +125,35 @@ func (b *business) checkHasUnarchivedBiz(kit *rest.Kit, bizIDs []int64) (bool, e
 
 	if len(rst) != 1 {
 		blog.Errorf("get biz count failed, for result len must be 1, filter: %+v, rid: %s", filter, kit.Rid)
+		return false, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
+	}
+
+	if rst[0] <= 0 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// checkHasHost check if business has hosts
+func (b *business) checkHasHost(kit *rest.Kit, bizIDs []int64) (bool, error) {
+	// get host count by filter
+	filter := []map[string]interface{}{{
+		// unarchived business
+		common.BKAppIDField: map[string]interface{}{
+			common.BKDBIN: bizIDs,
+		},
+	}}
+
+	rst, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameModuleHostConfig, filter)
+	if err != nil {
+		blog.Errorf("get host count failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
+		return false, err
+	}
+
+	if len(rst) != 1 {
+		blog.Errorf("get host count failed, for result len must be 1, filter: %+v, rid: %s", filter, kit.Rid)
 		return false, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
 	}
 
