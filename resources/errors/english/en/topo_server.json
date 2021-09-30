@@ -128,6 +128,8 @@
 	"1101106": "model not found",
 	"1101107": "the same attribute unique id exist",
 	"1101108": "the same set name exist",
+	"1101111": "forbidden remove built in business",
+	"1101112": "forbidden remove unarhived business",
 
     "": "" 
 }

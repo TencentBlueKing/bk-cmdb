@@ -231,7 +231,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 // UpdateBizPropertyBatch batch update business properties
 func (s *Service) UpdateBizPropertyBatch(ctx *rest.Contexts) {
 	param := new(metadata.UpdateBizPropertyBatchParameter)
-	if err := ctx.DecodeInto(&param); nil != err {
+	if err := ctx.DecodeInto(param); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -348,6 +348,50 @@ func (s *Service) getBizIDByCond(ctx *rest.Contexts, cond mapstr.MapStr) ([]int6
 	}
 
 	return bizIDs, nil
+}
+
+// DeleteBusiness delete archived business
+func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
+	param := new(metadata.DeleteBizParam)
+	if err := ctx.DecodeInto(param); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(param.BizID) == 0 {
+		blog.Errorf("invalid bk_biz_id len 0, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField))
+		return
+	}
+
+	if len(param.BizID) > common.BKDefaultLimit {
+		blog.Errorf("bk_biz_id len %d exceed max page size %d, rid:%s", len(param.BizID),
+			common.BKDefaultLimit, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "update",
+			common.BKDefaultLimit))
+		return
+	}
+
+	if err := hooks.ValidateDeleteBusinessHook(ctx.Kit, s.Engine.CoreAPI, param.BizID); err != nil {
+		blog.Errorf("validate delete business hook failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// delete biz instances and related resources
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := s.Core.BusinessOperation().DeleteBusiness(ctx.Kit, param.BizID); err != nil {
+			blog.Errorf("failed to delete biz, ids: %v, err: %v, rid: %s", param.BizID, err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
 }
 
 // find business list with these info：

@@ -38,6 +38,7 @@ type BusinessOperationInterface interface {
 	GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder)
 	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error
 	UpdateBusinessByCond(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond mapstr.MapStr) error
+	DeleteBusiness(kit *rest.Kit, bizIDs []int64) error
 	HasHosts(kit *rest.Kit, bizID int64) (bool, error)
 	SetProxy(set SetOperationInterface, module ModuleOperationInterface, inst InstOperationInterface, obj ObjectOperationInterface)
 	GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (achieveName string, err error)

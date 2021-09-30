@@ -63,7 +63,7 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 }
 
 var topoURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(inst|object|objects|topo|biz|module|set|resource)/.*$", verbs))
-var objectURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/object$", verbs))
+var objectURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(object|biz)$", verbs))
 
 // WithTopo parse topo api's url
 func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
