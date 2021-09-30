@@ -1457,5 +1457,6 @@
     "确定删除N个实例": "Are you sure you want to delete the selected {count} instances?",
     "确定删除该服务实例": "Are you sure to delete this service instance?",
     "当前模块所属的服务模板内进程信息为空，请先XXX": "The process information in the service template to which the current module belongs is empty, please{action}first",
-    "请补充服务实例的进程等相关配置信息": "Please add relevant configuration information such as the process of the service instance"
+    "请补充服务实例的进程等相关配置信息": "Please add relevant configuration information such as the process of the service instance",
+    "彻底删除": "Completely delete"
 }
