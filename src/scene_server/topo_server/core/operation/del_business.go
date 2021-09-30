@@ -319,7 +319,7 @@ func (b *business) cleanProcessTemplate(kit *rest.Kit, bizID int64) error {
 
 	// delete process template in batch
 	idsLen := len(ids)
-	const batchSize = common.BKMaxRecordsAtOnce
+	const batchSize = common.BKMaxPageSize
 	for i := 0; i < idsLen; i += batchSize {
 		idsBatch := make([]int64, 0)
 		if (i + batchSize) >= idsLen {
@@ -397,7 +397,7 @@ func (b *business) cleanSetTemplate(kit *rest.Kit, bizID int64) error {
 
 	// delete set template in batch
 	idsLen := len(ids)
-	const batchSize = common.BKMaxRecordsAtOnce
+	const batchSize = common.BKMaxPageSize
 	for i := 0; i < idsLen; i += batchSize {
 		idsBatch := make([]int64, 0)
 		if (i + batchSize) >= idsLen {
@@ -472,7 +472,7 @@ func (b *business) cleanProcess(kit *rest.Kit, bizID int64) error {
 
 	// delete process in batch
 	idsLen := len(ids)
-	const batchSize = common.BKMaxRecordsAtOnce
+	const batchSize = common.BKMaxPageSize
 	for i := 0; i < idsLen; i += batchSize {
 		idsBatch := make([]interface{}, 0)
 		if (i + batchSize) >= idsLen {
@@ -558,7 +558,7 @@ func (b *business) cleanServiceInstance(kit *rest.Kit, bizID int64) error {
 
 	// delete service instance in batch
 	idsLen := len(ids)
-	const batchSize = common.BKMaxRecordsAtOnce
+	const batchSize = common.BKMaxPageSize
 	for i := 0; i < idsLen; i += batchSize {
 		idsBatch := make([]int64, 0)
 		if (i + batchSize) >= idsLen {
@@ -612,7 +612,7 @@ func (b *business) cleanSet(kit *rest.Kit, bizID int64) error {
 
 	// delete set in batch
 	idsLen := len(ids)
-	const batchSize = common.BKMaxRecordsAtOnce
+	const batchSize = common.BKMaxPageSize
 	for i := 0; i < idsLen; i += batchSize {
 		idsBatch := make([]int64, 0)
 		if (i + batchSize) >= idsLen {
@@ -655,13 +655,14 @@ func (b *business) cleanTopo(kit *rest.Kit, bizID int64) error {
 
 	// delete from child of "biz"
 	childObj := childObjMap[common.BKInnerObjIDApp]
-	if childObj == "" {
-		blog.Errorf("failed to get mainline association, for child of biz is empty, rid: %s", kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrorTopoMainlineObjectAssociationNotExist)
-	}
 
 	// traverse down topo till set, delete topo instances and associations
 	for {
+		if childObj == "" {
+			blog.Errorf("failed to get mainline association, for obj id is empty, rid: %s", kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrorTopoMainlineObjectAssociationNotExist)
+		}
+
 		if childObj == common.BKInnerObjIDSet {
 			break
 		}
@@ -700,7 +701,7 @@ func (b *business) cleanTopoInstAndAsst(kit *rest.Kit, bizID int64, obj string) 
 
 	// delete topo instances and associations in batch
 	idsLen := len(ids)
-	const batchSize = common.BKMaxRecordsAtOnce
+	const batchSize = common.BKMaxPageSize
 	for i := 0; i < idsLen; i += batchSize {
 		idsBatch := make([]interface{}, 0)
 		if (i + batchSize) >= idsLen {
