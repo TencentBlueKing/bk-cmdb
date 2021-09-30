@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"strconv"
 )
 
 // DeleteBusiness delete business instances by condition
@@ -166,7 +167,9 @@ func (b *business) checkHasHost(kit *rest.Kit, bizIDs []int64) (bool, error) {
 
 func (b *business) cleanBizAndRelatedResources(kit *rest.Kit, bizID int64) error {
 	// 1. clean host
-	// archived business has no host, need not clean host
+	if err := b.cleanHost(kit, bizID); err != nil {
+		return err
+	}
 
 	// 2. clean module/set template
 	if err := b.cleanTemplate(kit, bizID); err != nil {
@@ -193,14 +196,72 @@ func (b *business) cleanBizAndRelatedResources(kit *rest.Kit, bizID int64) error
 		return err
 	}
 
-	// 7. clean biz
+	// 7. clean mainline topo
+	if err := b.cleanTopo(kit, bizID); err != nil {
+		return err
+	}
+
+	// 8. clean biz
 	if err := b.cleanBiz(kit, bizID); err != nil {
 		return err
 	}
 
-	// 8. clean property
+	// 9. clean property
 	if err := b.cleanProperty(kit, bizID); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (b *business) cleanHost(kit *rest.Kit, bizID int64) error {
+	// 1. clean host instance
+	// archived business has no host, need not clean host
+
+	// 2. clean dynamic group
+	if err := b.cleanDynamicGroup(kit, bizID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *business) cleanDynamicGroup(kit *rest.Kit, bizID int64) error {
+	distinctOpt := &metadata.DistinctFieldOption{
+		TableName: common.BKTableNameDynamicGroup,
+		Field:     common.BKFieldID,
+		Filter:    mapstr.MapStr{
+			common.BKAppIDField: bizID,
+		},
+	}
+
+	rst, errDistinct := b.clientSet.CoreService().Common().GetDistinctField(kit.Ctx, kit.Header, distinctOpt)
+	if errDistinct != nil {
+		blog.Errorf("get dynamic group ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt,
+			errDistinct, kit.Rid)
+		return errDistinct
+	}
+
+	ids, err := util.SliceInterfaceToString(rst)
+	if err != nil {
+		blog.Errorf("dynamic group ids to string failed, ids: %v, err: %v, rid: %s", rst, err, kit.Rid)
+		return err
+	}
+
+	for _, id := range ids {
+		rsp, err := b.clientSet.CoreService().Host().DeleteDynamicGroup(kit.Ctx, strconv.FormatInt(bizID, 10), id,
+			kit.Header)
+		if err != nil {
+			blog.Errorf("delete dynamic group failed, biz: %v, group id: %s, err: %v, rid: %s", bizID, id, err,
+				kit.Rid)
+			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if !rsp.Result {
+			blog.Errorf("delete dynamic group failed, biz: %v, group id: %s, err: %v, rid: %s", bizID, id,
+				rsp.ErrMsg, kit.Rid)
+			return rsp.CCError()
+		}
 	}
 
 	return nil
@@ -398,17 +459,11 @@ func (b *business) cleanProcess(kit *rest.Kit, bizID int64) error {
 		},
 	}
 
-	rstDist, errDist := b.clientSet.CoreService().Common().GetDistinctField(kit.Ctx, kit.Header, distinctOpt)
+	ids, errDist := b.clientSet.CoreService().Common().GetDistinctField(kit.Ctx, kit.Header, distinctOpt)
 	if errDist != nil {
 		blog.Errorf("get process ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt, errDist,
 			kit.Rid)
 		return errDist
-	}
-
-	ids, err := util.SliceInterfaceToInt64(rstDist)
-	if err != nil {
-		blog.Errorf("process ids to int failed, ids: %v, err: %v, rid: %s", rstDist, err, kit.Rid)
-		return err
 	}
 
 	if len(ids) == 0 {
@@ -419,7 +474,7 @@ func (b *business) cleanProcess(kit *rest.Kit, bizID int64) error {
 	idsLen := len(ids)
 	const batchSize = common.BKMaxRecordsAtOnce
 	for i := 0; i < idsLen; i += batchSize {
-		idsBatch := make([]int64, 0)
+		idsBatch := make([]interface{}, 0)
 		if (i + batchSize) >= idsLen {
 			idsBatch = ids[i:idsLen]
 		} else {
@@ -453,10 +508,16 @@ func (b *business) cleanProcess(kit *rest.Kit, bizID int64) error {
 			return errors.New(rstDel.Code, rstDel.ErrMsg)
 		}
 
+		procIDs, err := util.SliceInterfaceToInt64(idsBatch)
+		if err != nil {
+			blog.Errorf("process ids to int failed, ids: %v, err: %v, rid: %s", idsBatch, err, kit.Rid)
+			return err
+		}
+
 		// clean process instance relation
 		optDelProcInstRel := metadata.DeleteProcessInstanceRelationOption{
 			BusinessID: &bizID,
-			ProcessIDs: idsBatch,
+			ProcessIDs: procIDs,
 		}
 
 		if err := b.clientSet.CoreService().Process().DeleteProcessInstanceRelation(kit.Ctx, kit.Header,
@@ -568,6 +629,116 @@ func (b *business) cleanSet(kit *rest.Kit, bizID int64) error {
 	return nil
 }
 
+func (b *business) cleanTopo(kit *rest.Kit, bizID int64) error {
+	// get mainline association, generate map of object and its child
+	cond := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.AssociationKindIDField: common.AssociationKindMainline,
+		},
+	}
+
+	asstRes, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
+	if err != nil {
+		blog.Errorf("get mainline association err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if !asstRes.Result {
+		blog.Errorf("get mainline association err: %s, rid: %s", asstRes.ErrMsg, kit.Rid)
+		return asstRes.CCError()
+	}
+
+	childObjMap := make(map[string]string)
+	for _, asst := range asstRes.Data.Info {
+		childObjMap[asst.AsstObjID] = asst.ObjectID
+	}
+
+	// delete from child of "biz"
+	childObj := childObjMap[common.BKInnerObjIDApp]
+	if childObj == "" {
+		blog.Errorf("failed to get mainline association, for child of biz is empty, rid: %s", kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrorTopoMainlineObjectAssociationNotExist)
+	}
+
+	// traverse down topo till set, delete topo instances and associations
+	for {
+		if childObj == common.BKInnerObjIDSet {
+			break
+		}
+
+		if err := b.cleanTopoInstAndAsst(kit, bizID, childObj); err != nil {
+			return err
+		}
+
+		childObj = childObjMap[childObj]
+	}
+
+	return nil
+}
+
+func (b *business) cleanTopoInstAndAsst(kit *rest.Kit, bizID int64, obj string) error {
+	tableName := common.GetInstTableName(obj)
+	idField := common.GetInstIDField(obj)
+	distinctOpt := &metadata.DistinctFieldOption{
+		TableName: tableName,
+		Field:     idField,
+		Filter:    mapstr.MapStr{
+			common.BKAppIDField: bizID,
+		},
+	}
+
+	ids, errDist := b.clientSet.CoreService().Common().GetDistinctField(kit.Ctx, kit.Header, distinctOpt)
+	if errDist != nil {
+		blog.Errorf("get topo inst ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt, errDist,
+			kit.Rid)
+		return errDist
+	}
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	// delete topo instances and associations in batch
+	idsLen := len(ids)
+	const batchSize = common.BKMaxRecordsAtOnce
+	for i := 0; i < idsLen; i += batchSize {
+		idsBatch := make([]interface{}, 0)
+		if (i + batchSize) >= idsLen {
+			idsBatch = ids[i:idsLen]
+		} else {
+			idsBatch = ids[:i+batchSize]
+		}
+
+		// clean topo instance associations
+		if err := b.cleanInstAsst(kit, obj, idsBatch); err != nil {
+			return err
+		}
+
+		// clean topo instances
+		optDel := metadata.DeleteOption{
+			Condition: mapstr.MapStr{
+				idField: mapstr.MapStr{
+					common.BKDBIN: idsBatch,
+				},
+			},
+		}
+
+		rstDel, err := b.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, obj, &optDel)
+		if err != nil {
+			blog.Errorf("failed to delete topo instance, ids: %v, err: %v, rid: %s", idsBatch, err, kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if !rstDel.Result {
+			blog.Errorf("failed to delete topo instance, ids: %v, err: %v, rid: %s,", idsBatch, rstDel.ErrMsg,
+				kit.Rid)
+			return errors.New(rstDel.Code, rstDel.ErrMsg)
+		}
+	}
+
+	return nil
+}
+
 func (b *business) cleanBiz(kit *rest.Kit, bizID int64) error {
 	cond := mapstr.MapStr{
 		common.BKAppIDField: bizID,
@@ -656,7 +827,7 @@ func (b *business) cleanPropertyGroup(kit *rest.Kit, bizID int64) error {
 	return nil
 }
 
-func (b *business) cleanInstAsst(kit *rest.Kit, objID string, instIDs []int64) error {
+func (b *business) cleanInstAsst(kit *rest.Kit, objID string, instIDs []interface{}) error {
 	if len(instIDs) == 0 {
 		return nil
 	}
