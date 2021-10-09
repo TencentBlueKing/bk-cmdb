@@ -14,13 +14,12 @@ package iam
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/apimachinery"
-	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	commonlgc "configcenter/src/common/logics"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -264,7 +263,7 @@ func (v *viewer) updateModelActions(ctx context.Context, objects []metadata.Obje
 // for now, the update api can only support full update, not incremental update
 func (v *viewer) updateModelActionGroups(ctx context.Context, header http.Header) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	objects, err := v.getCustomObjects(ctx, header)
+	objects, err := commonlgc.GetCustomObjects(ctx, header, v.client)
 	if err != nil {
 		blog.Errorf("get custom objects failed, err: %s, rid: %s", err.Error(), rid)
 		return err
@@ -278,24 +277,4 @@ func (v *viewer) updateModelActionGroups(ctx context.Context, header http.Header
 	}
 
 	return nil
-}
-
-// getCustomObjects get objects which are custom
-func (v *viewer) getCustomObjects(ctx context.Context, header http.Header) ([]metadata.Object, error) {
-	resp, err := v.client.CoreService().Model().ReadModel(ctx, header, &metadata.QueryCondition{
-		Fields: []string{common.BKObjIDField, common.BKObjNameField, common.BKFieldID},
-		Page:   metadata.BasePage{Limit: common.BKNoLimit},
-		Condition: map[string]interface{}{
-			common.BKIsPre: false,
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("get custom objects failed, err: %+v", err)
-	}
-	
-	if len(resp.Info) == 0 {
-		return nil, fmt.Errorf("no custom objects were found")
-	}
-
-	return resp.Info, nil
 }

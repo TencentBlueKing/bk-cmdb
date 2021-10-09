@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2019 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -17,18 +17,20 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 )
 
 // GetCustomObjects get all custom objects(without inner and mainline objects that authorize separately)
-func (l *Logics) GetCustomObjects(ctx context.Context, header http.Header) ([]metadata.Object, error) {
+func GetCustomObjects(ctx context.Context, header http.Header, client apimachinery.ClientSetInterface) (
+	[]metadata.Object, error) {
 	// get mainline objects
 	assoCond := &metadata.QueryCondition{
 		Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline},
 		Fields:    []string{common.BKObjIDField},
 	}
-	assoRsp, err := l.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, header, assoCond)
+	assoRsp, err := client.CoreService().Association().ReadModelAssociation(ctx, header, assoCond)
 	if err != nil {
 		return nil, fmt.Errorf("get custom models failed, read model association cond:%#v, err: %#v", assoCond, err)
 	}
@@ -54,13 +56,13 @@ func (l *Logics) GetCustomObjects(ctx context.Context, header http.Header) ([]me
 			},
 		},
 	}
-	resp, err := l.CoreAPI.CoreService().Model().ReadModel(ctx, header, objCond)
+	resp, err := client.CoreService().Model().ReadModel(ctx, header, objCond)
 	if err != nil {
 		return nil, fmt.Errorf("get custom models failed, read model cond:%#v, err: %#v", objCond, err)
 	}
 
 	if len(resp.Info) == 0 {
-		return nil, fmt.Errorf("get custom models failed, no custom model is found")
+		return []metadata.Object{}, nil
 	}
 
 	return resp.Info, nil

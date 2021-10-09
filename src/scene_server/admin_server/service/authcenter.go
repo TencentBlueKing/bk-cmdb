@@ -19,12 +19,14 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	commonlgc "configcenter/src/common/logics"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
 )
 
+// InitAuthCenter init auth resources on IAM
 func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	if !auth.EnableAuthorize() {
 		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -45,21 +47,24 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	}{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&param); err != nil {
 		blog.Errorf("init iam failed with decode body err: %s, rid:%s", err.Error(), rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.CCError(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest,
+			&metadata.RespError{Msg: defErr.CCError(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	if param.Host == "" {
 		blog.Errorf("init iam host not set, rid:%s", rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsNeedSet, "host")})
+		_ = resp.WriteError(http.StatusBadRequest,
+			&metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsNeedSet, "host")})
 		return
 	}
 
 	// 由于模型实例的编辑&删除拆分为实例级别, 需要先拿到当前已存在的模型, 再进行相应的IAM注册操作
-	models, err := s.GetCustomObjects(s.ctx, rHeader)
+	models, err := commonlgc.GetCustomObjects(s.ctx, rHeader, s.CoreAPI)
 	if err != nil {
 		blog.Errorf("init iam failed, collect notPre-models failed, err: %s, rid:%s", err.Error(), rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.CCError(common.CCErrCommDBSelectFailed)})
+		_ = resp.WriteError(http.StatusBadRequest,
+			&metadata.RespError{Msg: defErr.CCError(common.CCErrCommDBSelectFailed)})
 		return
 	}
 

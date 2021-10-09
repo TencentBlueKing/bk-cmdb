@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	commonlgc "configcenter/src/common/logics"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/logics"
 )
@@ -104,8 +105,7 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, lgc *logics.Logics) {
 
 		blog.Infof("start sync iam, rid: %s", kit.Rid)
 
-		// get all custom objects (without mainline objects) in cmdb
-		objects, err := lgc.GetCustomObjects(kit.Ctx, kit.Header)
+		objects, err := commonlgc.GetCustomObjects(kit.Ctx, kit.Header, lgc.CoreAPI)
 		if err != nil {
 			blog.Errorf("sync iam failed, get custom objects err: %s ,rid: %s", err, kit.Rid)
 			time.Sleep(time.Duration(s.SyncIAMPeriodMinutes) * time.Minute)
