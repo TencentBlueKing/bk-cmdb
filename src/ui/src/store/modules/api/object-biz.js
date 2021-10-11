@@ -69,6 +69,18 @@ const actions = {
   },
 
   /**
+     * 批量修改业务
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+  batchUpdateBusiness({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.put('updatemany/biz/property', params, config)
+  },
+
+  /**
      * 归档业务
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -88,6 +100,16 @@ const actions = {
      */
   recoveryBusiness({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
     return $http.put(`biz/status/enable/${rootGetters.supplierAccount}/${bizId}`, params, config)
+  },
+
+  /**
+     * 批量彻底删除业务
+     * @param {Function} commit store commit mutation hander
+     * @param {Array} bizIds 业务id列表
+     * @return {promises} promises 对象
+     */
+  compeltelyDeleteBusinesses({ commit, state, dispatch, rootGetters }, { bizIds, config }) {
+    return $http.post('deletemany/biz', { bk_biz_id: bizIds }, config)
   },
 
   /**

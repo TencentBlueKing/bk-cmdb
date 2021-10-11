@@ -273,7 +273,7 @@
             }
           })
           this.hostData.disList = res.info.host || []
-          this.instData.disList = res.info.instt || []
+          this.instData.disList = res.info.inst || []
 
           if (res.info.nav && res.info.nav.length) {
             res.info.nav.forEach((item) => {

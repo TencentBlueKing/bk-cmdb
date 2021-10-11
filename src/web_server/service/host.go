@@ -215,19 +215,19 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
+	err = s.handleModule(hostInfo, rid)
+	if err != nil {
+		blog.Errorf("add module name to host failed, err: %v, rid: %s", err, rid)
+		return
+	}
+
+	setDIs, hostSetMap, err := s.handleSet(hostInfo, rid)
+	if err != nil {
+		blog.Errorf("add set name to host failed, err: %v, rid: %s", err, rid)
+		return
+	}
+
 	if len(objIDs) > 0 {
-		err = s.handleModule(hostInfo, rid)
-		if err != nil {
-			blog.Errorf("add module name to host failed, err: %v, rid: %s", err, rid)
-			return
-		}
-
-		setDIs, hostSetMap, err := s.handleSet(hostInfo, rid)
-		if err != nil {
-			blog.Errorf("add set name to host failed, err: %v, rid: %s", err, rid)
-			return
-		}
-
 		setParentIDs, setCustomMap, err := s.getSetParentID(ctx, header, setDIs, rid)
 		if err != nil {
 			blog.Errorf("get set parent id and host set rel map failed, err: %v, rid: %s", err, rid)

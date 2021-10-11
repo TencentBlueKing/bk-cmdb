@@ -483,6 +483,9 @@ const (
 	// CCErrorTopObjectUniqueIndexNotFound  模型xx的唯一校验xx不存在
 	CCErrorTopObjectUniqueIndexNotFound = 1101110
 
+	CCErrorTopoForbiddenDeleteBuiltInBiz    = 1101111
+	CCErrorTopoForbiddenDeleteUnarchivedBiz = 1101112
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group

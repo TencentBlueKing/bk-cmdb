@@ -33,6 +33,7 @@ import (
 type BusinessOperationInterface interface {
 	// CreateBusiness create business
 	CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error)
+	DeleteBusiness(kit *rest.Kit, bizIDs []int64) error
 	// FindBiz find biz
 	FindBiz(kit *rest.Kit, cond *metadata.QueryCondition) (count int,
 		results []mapstr.MapStr, err error)

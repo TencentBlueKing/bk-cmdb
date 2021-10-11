@@ -63,6 +63,7 @@ type ApiServerClientInterface interface {
 	UpdateBizDataStatus(ctx context.Context, ownerID string, flag common.DataStatusFlag, bizID string, h http.Header) (resp *metadata.Response, err error)
 	UpdateBizPropertyBatch(ctx context.Context, h http.Header, param metadata.UpdateBizPropertyBatchParameter) (
 		resp *metadata.Response, err error)
+	DeleteBiz(ctx context.Context, h http.Header, param metadata.DeleteBizParam) (resp *metadata.Response, err error)
 	SearchBiz(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
 
 	ReadModuleAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.

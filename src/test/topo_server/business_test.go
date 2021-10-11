@@ -405,4 +405,60 @@ var _ = Describe("business test", func() {
 		Expect(modulesMap[rsp.Data[0].ModuleTopos[1].Module["bk_module_name"].(string)]).To(Equal(true))
 		Expect(modulesMap[rsp.Data[0].ModuleTopos[2].Module["bk_module_name"].(string)]).To(Equal(true))
 	})
+
+	It(fmt.Sprintf("delete unarchived business bk_biz_id = %s", bizId2), func() {
+		bizID, err := strconv.ParseInt(bizId2, 10, 64)
+		Expect(err).Should(BeNil())
+		input := metadata.DeleteBizParam {
+			BizID: []int64{bizID},
+		}
+
+		rsp, err := apiServerClient.DeleteBiz(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).Should(BeNil())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It(fmt.Sprintf("update business disabled status bk_biz_id = %s", bizId2), func() {
+		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled,
+			bizId2, header)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It(fmt.Sprintf("delete archived business bk_biz_id = %s", bizId2), func() {
+		bizID, err := strconv.ParseInt(bizId2, 10, 64)
+		Expect(err).Should(BeNil())
+		input := metadata.DeleteBizParam {
+			BizID: []int64{bizID},
+		}
+
+		rsp, err := apiServerClient.DeleteBiz(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It(fmt.Sprintf("delete default business bk_biz_id = 1"), func() {
+		input := metadata.DeleteBizParam {
+			BizID: []int64{1},
+		}
+
+		rsp, err := apiServerClient.DeleteBiz(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).Should(BeNil())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It(fmt.Sprintf("delete business in []"), func() {
+		input := metadata.DeleteBizParam {
+			BizID: make([]int64, 0),
+		}
+
+		rsp, err := apiServerClient.DeleteBiz(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).Should(BeNil())
+		Expect(rsp.Result).To(Equal(false))
+	})
 })

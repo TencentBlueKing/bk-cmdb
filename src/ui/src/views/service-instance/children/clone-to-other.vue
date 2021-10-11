@@ -196,10 +196,12 @@
         this.$routerActions.back()
       },
       handleChangeProcess() {
-        const serviceInstanceTables = this.$refs.serviceInstanceTable
-        if (serviceInstanceTables) {
-          this.hasProcess = serviceInstanceTables.some(instanceTable => instanceTable?.processList?.length)
-        }
+        this.$nextTick(() => {
+          const serviceInstanceTables = this.$refs.serviceInstanceTable
+          if (serviceInstanceTables) {
+            this.hasProcess = serviceInstanceTables.some(instanceTable => instanceTable?.processList?.length)
+          }
+        })
       },
       resizeHandler() {
         this.$nextTick(() => {

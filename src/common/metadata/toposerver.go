@@ -164,6 +164,11 @@ type SearchBriefBizTopoOption struct {
 	HostFields   []string `json:"host_fields"`
 }
 
+// DeleteBizParam delete archived business parameter
+type DeleteBizParam struct {
+	BizID []int64 `json:"bk_biz_id""`
+}
+
 // Validate validates the input param
 func (o *SearchBriefBizTopoOption) Validate() (rawError errors.RawErrorInfo) {
 	if len(o.SetFields) == 0 {

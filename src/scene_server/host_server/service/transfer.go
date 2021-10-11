@@ -808,6 +808,7 @@ func (s *Service) TransferHostWithAutoClearServiceInstancePreview(ctx *rest.Cont
 			}
 			hostSrvInstMap, exist := moduleHostSrvInstMap[moduleID]
 			if !exist {
+				preview.ToRemoveFromModules = append(preview.ToRemoveFromModules, removeInfo)
 				continue
 			}
 

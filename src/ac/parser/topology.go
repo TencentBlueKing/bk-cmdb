@@ -21,6 +21,8 @@ import (
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/json"
+	"configcenter/src/common/metadata"
 )
 
 func (ps *parseStream) topology() *parseStream {
@@ -52,9 +54,10 @@ var (
 )
 
 const (
-	findReducedBusinessListPattern      = `/api/v3/biz/with_reduced`
-	findSimplifiedBusinessListPattern   = `/api/v3/biz/simplify`
-	updatemanyBizPropertyPattern        = `/api/v3/updatemany/biz/property`
+	findReducedBusinessListPattern    = `/api/v3/biz/with_reduced`
+	findSimplifiedBusinessListPattern = `/api/v3/biz/simplify`
+	updatemanyBizPropertyPattern      = `/api/v3/updatemany/biz/property`
+	deletemanyBizPropertyPattern      = `/api/v3/deletemany/biz`
 )
 
 func (ps *parseStream) business() *parseStream {
@@ -254,6 +257,33 @@ func (ps *parseStream) business() *parseStream {
 					Action: meta.SkipAction,
 				},
 			},
+		}
+		return ps
+	}
+
+	// batch delete archived businesses
+	if ps.hitPattern(deletemanyBizPropertyPattern, http.MethodPost) {
+		input := metadata.DeleteBizParam{}
+		body, err := ps.RequestCtx.getRequestBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if err := json.Unmarshal(body, &input); err != nil {
+			ps.err = fmt.Errorf("unmarshal request body failed, err: %+v", err)
+			return ps
+		}
+		ps.Attribute.Resources = make([]meta.ResourceAttribute, 0)
+		for _, bizID := range input.BizID {
+			iamResource := meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:       meta.Business,
+					// delete archived business use archive action
+					Action:     meta.Archive,
+					InstanceID: bizID,
+				},
+			}
+			ps.Attribute.Resources = append(ps.Attribute.Resources, iamResource)
 		}
 		return ps
 	}

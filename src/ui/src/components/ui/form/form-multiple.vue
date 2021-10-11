@@ -69,12 +69,13 @@
           <bk-button slot-scope="{ disabled }"
             class="button-save"
             theme="primary"
+            :loading="loading"
             :disabled="disabled || !hasChange || $loading()"
             @click="handleSave">
             {{$t('保存')}}
           </bk-button>
         </cmdb-auth>
-        <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
+        <bk-button class="button-cancel" :disabled="loading" @click="handleCancel">{{$t('取消')}}</bk-button>
       </slot>
     </div>
   </cmdb-sticky-layout>
@@ -89,6 +90,10 @@
       saveAuth: {
         type: [Object, Array],
         default: null
+      },
+      loading: {
+        type: Boolean,
+        default: false,
       }
     },
     data() {
