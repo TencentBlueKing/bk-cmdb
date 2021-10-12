@@ -11,7 +11,7 @@
     @blur="handleToggle(false, ...arguments)">
   </bk-tag-input>
   <bk-input v-else
-    v-model="localValue"
+    v-model.trim="localValue"
     v-bind="$attrs"
     @clear="() => $emit('clear')"
     @focus="handleToggle(true, ...arguments)"

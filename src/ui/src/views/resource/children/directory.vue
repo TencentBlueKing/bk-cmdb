@@ -132,6 +132,7 @@
       },
       filterDirList() {
         let list = [...this.directoryList]
+        console.log(this.dirSearch)
         if (this.dirSearch) {
           const lowerCaseSearch = this.dirSearch.toLowerCase()
           list = this.directoryList.filter(module => module.bk_module_name.toLowerCase().indexOf(lowerCaseSearch) > -1)

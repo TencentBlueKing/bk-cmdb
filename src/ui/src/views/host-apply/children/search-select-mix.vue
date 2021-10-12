@@ -7,7 +7,7 @@
     :show-condition="false"
     :show-popover-tag-change="false"
     :strink="false"
-    v-model="searchValue"
+    v-model.trim="searchValue"
     :placeholder="$t('关键字/字段值')"
     @change="handleChange"
     @menu-select="handleMenuSelect"
