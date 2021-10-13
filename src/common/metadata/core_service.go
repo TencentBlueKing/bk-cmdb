@@ -402,6 +402,7 @@ type ListServiceInstanceDetailOption struct {
 	BusinessID         int64              `json:"bk_biz_id"`
 	ModuleID           int64              `json:"bk_module_id"`
 	HostID             int64              `json:"bk_host_id"`
+	HostList           []int64            `json:"bk_host_list"`
 	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
 	Selectors          selector.Selectors `json:"selectors,omitempty"`
 	Page               BasePage           `json:"page,omitempty"`

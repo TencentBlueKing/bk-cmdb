@@ -385,9 +385,18 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 	if option.ModuleID != 0 {
 		filter[common.BKModuleIDField] = option.ModuleID
 	}
+
 	if option.HostID != 0 {
 		filter[common.BKHostIDField] = option.HostID
 	}
+	// Only one parameter between bk_host_list and bk_host_id can take effect,bk_host_id does not recommend using
+	// it again.
+	if len(option.HostList) > 0 {
+		filter[common.BKHostIDField] = map[string]interface{}{
+			common.BKDBIN: option.HostList,
+		}
+	}
+
 	if option.ServiceInstanceIDs != nil {
 		filter[common.BKFieldID] = map[string]interface{}{
 			common.BKDBIN: option.ServiceInstanceIDs,
