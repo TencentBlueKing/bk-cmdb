@@ -69,6 +69,7 @@
         width="60px"
         row-key="bk_biz_id"
         indeterminate
+        :cross-page="table.list.length < table.pagination.count"
         ref="batchSelectionColumn"
         :selected-rows.sync="selectedRows"
         :unselected-rows.sync="unselectedRows"

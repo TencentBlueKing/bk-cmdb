@@ -19,10 +19,18 @@
 </template>
 <script>
   import cloneDeep from 'lodash/cloneDeep'
+  import safeGet from 'lodash/get'
 
   export default {
     name: 'BatchSelectionColumn',
     props: {
+      /**
+       * 是否开启跨页全选，默认开启
+       */
+      crossPage: {
+        type: Boolean,
+        default: true,
+      },
       /**
        * 可选数据
        */
@@ -69,7 +77,7 @@
         default: ''
       },
       /**
-       * 支持记住上次跨页全选状态
+       * 支持记住选择状态
        */
       reserveSelection: {
         type: Boolean,
@@ -94,7 +102,7 @@
        */
       indeterminate: {
         type: Boolean,
-        default: false
+        default: true
       }
     },
     data() {
@@ -132,6 +140,14 @@
           this.emitRows()
         },
       },
+      selectedRows: {
+        immediate: true,
+        handler(val) {
+          if (this.reserveSelection) {
+            this.reservedSelectedRows = cloneDeep(val)
+          }
+        }
+      }
     },
     methods: {
       initRows() {
@@ -163,7 +179,7 @@
         const findRowIndex = (row) => {
           let rowIndex = -1
           arr.forEach((i, index) => {
-            if (i[this.rowKey] === row[this.rowKey]) {
+            if (safeGet(i, this.rowKey) === safeGet(row, this.rowKey)) {
               rowIndex = index
             }
           })
@@ -222,6 +238,18 @@
         })
       },
       columnHeader() {
+        const pageSelection = <bk-checkbox
+                indeterminate={this.pageSelectionIndeterminate}
+                class={{ 'is-total-selected': this.onCrossPageMode, 'page-select-checkbox': true }}
+                disabled={this.pageSelectionDisabled}
+                vModel={this.isPageSelected}
+                onChange={this.handlePageSelectionChange}
+              ></bk-checkbox>
+
+        if (!this.crossPage) {
+          return pageSelection
+        }
+
         return (
         <div class="batch-selection-label">
           <bk-popover
@@ -231,13 +259,7 @@
             size="regular"
           >
             <div>
-              <bk-checkbox
-                indeterminate={this.pageSelectionIndeterminate}
-                class={{ 'is-total-selected': this.onCrossPageMode, 'page-select-checkbox': true }}
-                disabled={this.pageSelectionDisabled}
-                vModel={this.isPageSelected}
-                onChange={this.handlePageSelectionChange}
-              ></bk-checkbox>
+              {pageSelection}
             </div>
             <template slot="content">
               <bk-checkbox
@@ -293,10 +315,11 @@
             if (this.onCrossPageMode) {
               // 跨页全选时，记住没有选择的项目
               checked = !this.reservedUnselectedRows
-                .some(unselectedRow => unselectedRow[this.rowKey] === i[this.rowKey])
+                .some(unselectedRow => safeGet(unselectedRow, this.rowKey) === safeGet(i, this.rowKey))
             } else {
               // 非跨页全选时，记住已选择的项目
-              checked = this.reservedSelectedRows.some(selectedRow => selectedRow[this.rowKey] === i[this.rowKey])
+              checked = this.reservedSelectedRows
+                .some(selectedRow => safeGet(selectedRow, this.rowKey) === safeGet(i, this.rowKey))
             }
           }
 
@@ -317,8 +340,8 @@
         this.reservedUnselectedRows = []
         this.generateRowSelection(false)
       },
-      toglleRowSelection(row) {
-        const currentRow = this.rows.find(r => row[this.rowKey] === r[this.rowKey])
+      toggleRowSelection(row) {
+        const currentRow = this.rows.find(r => safeGet(row, this.rowKey) === safeGet(r, this.rowKey))
         currentRow.checked = !currentRow.checked
         this.handleRowSelectionChange(currentRow)
       },
