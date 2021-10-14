@@ -13,25 +13,19 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"strings"
+	"net/http/httputil"
+	"net/url"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	webcom "configcenter/src/web_server/common"
+	webCommon "configcenter/src/web_server/common"
 
 	"github.com/gin-gonic/gin"
 )
-
-type queryProxy struct {
-	Url  string                 `json:"url"`
-	Args map[string]interface{} `json:"args"`
-}
 
 type queryProxyResp struct {
 	metadata.BaseResp `json:",inline"`
@@ -41,32 +35,27 @@ type queryProxyResp struct {
 // ProxyRequest to proxy third-party api request
 func (s *Service) ProxyRequest(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
-	webcom.SetProxyHeader(c)
+	webCommon.SetProxyHeader(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
-	query := new(queryProxy)
-	if err := c.BindJSON(query); err != nil {
-		blog.Errorf("unmarshal failed, err: %v, rid: %s", err, rid)
+	method := c.Param("method")
+	target := c.Param("target")
+	target_url := c.Param("target_url")
+
+	if len(method) == 0 || len(target) == 0 || len(target_url) == 0 {
+		blog.Errorf("path parameter must be filled in, rid: %s", rid)
 		c.JSON(http.StatusOK, metadata.BaseResp{
 			Result: false,
-			Code:   common.CCErrCommJSONUnmarshalFailed,
-			ErrMsg: err.Error(),
+			Code:   common.CCErrCommParamsIsInvalid,
+			ErrMsg: defErr.CCErrorf(common.CCErrCommParamsIsInvalid, "method/target/target_url").Error(),
 		})
 		return
 	}
 
-	if len(query.Url) == 0 {
-		c.JSON(http.StatusOK, metadata.BaseResp{Result: true})
-		return
-	}
-
-	args := make([]string, 0)
-	for k, v := range query.Args {
-		args = append(args, fmt.Sprintf("%s=%s", k, v))
-	}
-
-	token, err := c.Cookie("bk_token")
+	url, err := url.Parse(fmt.Sprintf("%s%s", s.getTargetDomainUrl(target), target_url))
 	if err != nil {
-		blog.Errorf("get bk_token failed, token: %s, err: %v, rid: %s", token, err, rid)
+		blog.Errorf("parse url failed, err: %v, rid: %s", err, rid)
 		c.JSON(http.StatusOK, metadata.BaseResp{
 			Result: false,
 			Code:   common.CCErrCommParamsIsInvalid,
@@ -74,34 +63,21 @@ func (s *Service) ProxyRequest(c *gin.Context) {
 		})
 		return
 	}
-	rsp, err := http.Get(fmt.Sprintf("%s?%s&%s", query.Url, token, strings.Join(args, "&")))
-	if err != nil {
-		return
-	}
 
-	defer rsp.Body.Close()
-	body, err := ioutil.ReadAll(rsp.Body)
-	if err != nil {
-		blog.Errorf("read response body failed, err: %v, rid: %s", err, rid)
-		c.JSON(http.StatusOK, metadata.BaseResp{
-			Result: false,
-			Code:   common.CCErrCommHTTPReadBodyFailed,
-			ErrMsg: err.Error(),
-		})
-		return
+	director := func(req *http.Request) {
+		req.URL = url
 	}
-
-	result := new(queryProxyResp)
-	if err := json.Unmarshal([]byte(string(body)), result); err != nil {
-		blog.Errorf("unmarshal failed, err: %v, rid: %s", err, rid)
-		c.JSON(http.StatusOK, metadata.BaseResp{
-			Result: false,
-			Code:   common.CCErrCommJSONUnmarshalFailed,
-			ErrMsg: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, result)
+	proxy := &httputil.ReverseProxy{Director: director}
+	c.Request.Method = "POST"
+	proxy.ServeHTTP(c.Writer, c.Request)
 	return
+}
+
+func (s *Service) getTargetDomainUrl(target string) string {
+	switch target {
+	case "usermanage":
+		return s.Config.Site.PaasDomainUrl
+	default:
+		return ""
+	}
 }

@@ -112,7 +112,7 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/regular/verify_regular_express", s.VerifyRegularExpress)
 	ws.POST("/regular/verify_regular_content_batch", s.VerifyRegularContentBatch)
 
-	ws.POST("/proxy/request", s.ProxyRequest)
+	ws.POST("/proxy/:method/:target/*target_url", s.ProxyRequest)
 
 	// common api
 	ws.GET("/healthz", s.Healthz)
