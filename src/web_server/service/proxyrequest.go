@@ -20,17 +20,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 
 	"github.com/gin-gonic/gin"
 )
-
-type queryProxyResp struct {
-	metadata.BaseResp `json:",inline"`
-	Data              interface{} `json:"data" mapstructure:"data"`
-}
 
 // ProxyRequest to proxy third-party api request
 func (s *Service) ProxyRequest(c *gin.Context) {
@@ -45,32 +39,38 @@ func (s *Service) ProxyRequest(c *gin.Context) {
 
 	if len(method) == 0 || len(target) == 0 || len(target_url) == 0 {
 		blog.Errorf("path parameter must be filled in, rid: %s", rid)
-		c.JSON(http.StatusOK, metadata.BaseResp{
-			Result: false,
-			Code:   common.CCErrCommParamsIsInvalid,
-			ErrMsg: defErr.CCErrorf(common.CCErrCommParamsIsInvalid, "method/target/target_url").Error(),
-		})
+		reply := getReturnStr(common.CCErrCommParamsIsInvalid,
+			defErr.CCErrorf(common.CCErrCommParamsIsInvalid, "method/target/target_url").Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
 
-	url, err := url.Parse(fmt.Sprintf("%s%s", s.getTargetDomainUrl(target), target_url))
+	reqDomain := s.getTargetDomainUrl(target)
+	url, err := url.Parse(fmt.Sprintf("%s%s", reqDomain, target_url))
 	if err != nil {
 		blog.Errorf("parse url failed, err: %v, rid: %s", err, rid)
-		c.JSON(http.StatusOK, metadata.BaseResp{
-			Result: false,
-			Code:   common.CCErrCommParamsIsInvalid,
-			ErrMsg: err.Error(),
-		})
+		_, _ = c.Writer.Write([]byte(err.Error()))
 		return
 	}
 
-	director := func(req *http.Request) {
-		req.URL = url
+	proxy := httputil.NewSingleHostReverseProxy(url)
+	reqMethod, err := getRequestMethod(method)
+	if err != nil {
+		blog.Errorf("get true request method failed, err: %v, rid: %s", err, rid)
+		reply := getReturnStr(common.CCErrCommParamsIsInvalid, err.Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
+		return
 	}
-	proxy := &httputil.ReverseProxy{Director: director}
-	c.Request.Method = "POST"
+
+	proxy.Director = func(req *http.Request) {
+		req.Header = c.Request.Header
+		req.Host = url.Host
+		req.URL.Scheme = url.Scheme
+		req.URL.Host = url.Host
+		req.URL.Path = target_url
+		req.Method = reqMethod
+	}
 	proxy.ServeHTTP(c.Writer, c.Request)
-	return
 }
 
 func (s *Service) getTargetDomainUrl(target string) string {
@@ -79,5 +79,16 @@ func (s *Service) getTargetDomainUrl(target string) string {
 		return s.Config.Site.PaasDomainUrl
 	default:
 		return ""
+	}
+}
+
+func getRequestMethod(method string) (string, error) {
+	switch method {
+	case "get", "GET":
+		return "GET", nil
+	case "post", "POST":
+		return "POST", nil
+	default:
+		return "", fmt.Errorf("did not support this proxy request method: %s", method)
 	}
 }
