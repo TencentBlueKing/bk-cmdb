@@ -85,36 +85,36 @@ type CC struct {
 }
 
 func (c *CC) run() error {
-	commonConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureCommon)
+	commonConfPath := fmt.Sprintf("%s/%s", types.CCDiscoverBaseConfig, types.CCConfigureCommon)
 	commonConfEvent, err := c.rd.Watch(c.ctx, commonConfPath)
 	if err != nil {
 		return err
 	}
 
-	extraConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureExtra)
+	extraConfPath := fmt.Sprintf("%s/%s", types.CCDiscoverBaseConfig, types.CCConfigureExtra)
 	extraConfEvent, err := c.rd.Watch(c.ctx, extraConfPath)
 	if err != nil {
 		return err
 	}
 
-	mongodbConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureMongo)
+	mongodbConfPath := fmt.Sprintf("%s/%s", types.CCDiscoverBaseConfig, types.CCConfigureMongo)
 	mongodbConfEvent, err := c.rd.Watch(c.ctx, mongodbConfPath)
 	if err != nil {
 		return err
 	}
 
-	redisConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureRedis)
+	redisConfPath := fmt.Sprintf("%s/%s", types.CCDiscoverBaseConfig, types.CCConfigureRedis)
 	redisConfEvent, err := c.rd.Watch(c.ctx, redisConfPath)
 	if err != nil {
 		return err
 	}
 
-	langEvent, err := c.rd.Watch(c.ctx, types.CC_SERVLANG_BASEPATH)
+	langEvent, err := c.rd.Watch(c.ctx, types.CCDiscoverBaseLang)
 	if err != nil {
 		return err
 	}
 
-	errEvent, err := c.rd.Watch(c.ctx, types.CC_SERVERROR_BASEPATH)
+	errEvent, err := c.rd.Watch(c.ctx, types.CCDiscoverBaseError)
 	if err != nil {
 		return err
 	}
@@ -308,7 +308,7 @@ func (c *CC) sync() {
 
 func (c *CC) syncProc() {
 	blog.V(5).Infof("start sync proc config from config center.")
-	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureCommon)
+	procPath := fmt.Sprintf("%s/%s", types.CCDiscoverBaseConfig, types.CCConfigureCommon)
 	data, err := c.rd.Get(procPath)
 	if err != nil {
 		blog.Errorf("sync process config failed, node: %s, err: %v", procPath, err)
@@ -336,7 +336,7 @@ func (c *CC) syncProc() {
 
 func (c *CC) syncExtra() {
 	blog.V(5).Infof("start sync extra config from config center.")
-	extraPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureExtra)
+	extraPath := fmt.Sprintf("%s/%s", types.CCDiscoverBaseConfig, types.CCConfigureExtra)
 	data, err := c.rd.Get(extraPath)
 	if err != nil {
 		blog.Errorf("sync extra config failed, node: %s, err: %v", extraPath, err)
@@ -364,7 +364,7 @@ func (c *CC) syncExtra() {
 
 func (c *CC) syncMongodb() {
 	blog.V(5).Infof("start sync mongo config from config center.")
-	mongoPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureMongo)
+	mongoPath := fmt.Sprintf("%s/%s", types.CCDiscoverBaseConfig, types.CCConfigureMongo)
 	data, err := c.rd.Get(mongoPath)
 	if err != nil {
 		blog.Errorf("sync mongo config failed, node: %s, err: %v", mongoPath, err)
@@ -392,7 +392,7 @@ func (c *CC) syncMongodb() {
 
 func (c *CC) syncRedis() {
 	blog.V(5).Infof("start sync redis config from config center.")
-	redisPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureRedis)
+	redisPath := fmt.Sprintf("%s/%s", types.CCDiscoverBaseConfig, types.CCConfigureRedis)
 	data, err := c.rd.Get(redisPath)
 	if err != nil {
 		blog.Errorf("sync redis config failed, node: %s, err: %v", redisPath, err)
@@ -420,7 +420,7 @@ func (c *CC) syncRedis() {
 
 func (c *CC) syncLang() {
 	blog.V(5).Infof("start sync language config from config center.")
-	langPath := types.CC_SERVLANG_BASEPATH
+	langPath := types.CCDiscoverBaseLang
 	data, err := c.rd.Get(langPath)
 	if err != nil {
 		blog.Errorf("sync language config failed, node: %s, err: %v", langPath, err)
@@ -452,7 +452,7 @@ func (c *CC) syncLang() {
 
 func (c *CC) syncErr() {
 	blog.V(5).Infof("start sync error code config from config center.")
-	errPath := types.CC_SERVERROR_BASEPATH
+	errPath := types.CCDiscoverBaseError
 	data, err := c.rd.Get(errPath)
 	if err != nil {
 		blog.Errorf("sync error code config failed, node: %s, err: %v", errPath, err)

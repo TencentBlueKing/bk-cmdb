@@ -42,7 +42,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	process := new(MigrateServer)
+	process := new(AdminServer)
 	process.Config = new(options.Config)
 	if err := cc.SetMigrateFromFile(op.ServConf.ExConfig); err != nil {
 		return fmt.Errorf("parse config file error %s", err.Error())
@@ -200,16 +200,16 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	return nil
 }
 
-type MigrateServer struct {
+type AdminServer struct {
 	Core         *backbone.Engine
 	Config       *options.Config
 	Service      *svc.Service
 	ConfigCenter *configures.ConfCenter
 }
 
-func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {}
+func (h *AdminServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {}
 
-func parseShardingTableConfig(process *MigrateServer) error {
+func parseShardingTableConfig(process *AdminServer) error {
 	if cc.IsExist("shardingTable.indexInterval") {
 		val, err := cc.Int64("shardingTable.indexInterval")
 		if err != nil {

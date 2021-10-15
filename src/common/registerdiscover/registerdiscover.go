@@ -111,7 +111,7 @@ func (rd *RegDiscv) Get(key string) (string, error) {
 		return "", err
 	}
 	if len(rsp.Kvs) == 0 {
-		return "", fmt.Errorf("etcd get nothing from %s", key)
+		return "", fmt.Errorf("etcd get nothing with key: %s", key)
 	}
 	value := string(rsp.Kvs[0].Value)
 	return value, nil
@@ -244,7 +244,7 @@ func (rd *RegDiscv) RegisterAndKeepAlive(key , val string) error {
 				}
 				_, err = rd.client.Put(context.Background(), key, val, clientv3.WithLease(leaseResp.ID))
 				if err != nil {
-					blog.Errorf("put with lease err: %v", err)
+					blog.Errorf("failed to put, key: %s, lease: %v, err: %v", key, leaseResp.ID, err)
 					time.Sleep(1 * time.Second)
 					continue
 				}
@@ -252,7 +252,7 @@ func (rd *RegDiscv) RegisterAndKeepAlive(key , val string) error {
 			} else {
 				// 续约租约，如果租约已经过期将curLeaseId复位到0重新走创建租约的逻辑
 				if _, err := lease.KeepAliveOnce(context.Background(), curLeaseId); err != nil {
-					blog.Errorf("keep alive lease err: %v", err)
+					blog.Errorf("failed to keep alive lease: %v, err: %v", curLeaseId, err)
 					curLeaseId = 0
 					time.Sleep(1 * time.Second)
 					continue

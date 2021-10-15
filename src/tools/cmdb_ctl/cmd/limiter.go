@@ -155,7 +155,7 @@ func runSetRule(c *limiterConf) error {
 		return err
 	}
 
-	path := fmt.Sprintf("%s/%s", types.CC_SERVLIMITER_BASEPATH, rule.RuleName)
+	path := fmt.Sprintf("%s/%s", types.CCDiscoverBaseLimiter, rule.RuleName)
 	oldrule, err := rd.RegDiscv.Get(path)
 	if err != nil {
 		return err
@@ -194,7 +194,7 @@ func runGetRules(c *limiterConf) error {
 	}
 	names := strings.Split(c.rulenames, ",")
 	for _, name := range names {
-		path := fmt.Sprintf("%s/%s", types.CC_SERVLIMITER_BASEPATH, name)
+		path := fmt.Sprintf("%s/%s", types.CCDiscoverBaseLimiter, name)
 		data, err := rd.RegDiscv.Get(path)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stdout, "get rule %s err:%s\n", name, err)
@@ -221,7 +221,7 @@ func runDelRules(c *limiterConf) error {
 	}
 	names := strings.Split(c.rulenames, ",")
 	for _, name := range names {
-		path := fmt.Sprintf("%s/%s", types.CC_SERVLIMITER_BASEPATH, name)
+		path := fmt.Sprintf("%s/%s", types.CCDiscoverBaseLimiter, name)
 		err := rd.RegDiscv.Delete(path)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stdout, "del rule %s err:%s\n", name, err)
@@ -237,7 +237,7 @@ func runListRules(c *limiterConf) error {
 	if err != nil {
 		return err
 	}
-	path := types.CC_SERVLIMITER_BASEPATH
+	path := types.CCDiscoverBaseLimiter
 	rules, err := rd.RegDiscv.GetWithPrefix(path)
 	if err != nil {
 		return err

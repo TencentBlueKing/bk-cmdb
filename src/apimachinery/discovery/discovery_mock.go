@@ -18,7 +18,7 @@ func NewMockDiscoveryInterface() DiscoveryInterface {
 
 type MockDiscovery struct{}
 
-func (d *MockDiscovery) MigrateServer() Interface {
+func (d *MockDiscovery) AdminServer() Interface {
 	return &mockServer{}
 }
 

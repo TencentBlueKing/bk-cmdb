@@ -54,7 +54,6 @@ func ListenAndServe(c Server, register ServiceRegisterInterface, cancel context.
 				register.Cancel()
 				if err := register.Unregister(); err != nil {
 					blog.Errorf("failed to unregister, err: %v", err)
-					break
 				}
 				time.Sleep(time.Second * 5)
 				server.SetKeepAlivesEnabled(false)

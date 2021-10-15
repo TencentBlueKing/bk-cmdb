@@ -279,7 +279,7 @@ func parseEvent(key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byt
 			Type:      meta.FlowFatalError,
 			Detail: fmt.Sprintf("run event flow, but get invalid %s cursor, inst id: %d, name: %s",
 				key.Collection(), instID, name),
-			Module:    types2.CC_MODULE_CACHESERVICE,
+			Module:    types2.CCModuleCacheService,
 			Dimension: map[string]string{"hit_invalid_cursor": "yes"},
 		})
 
@@ -413,7 +413,7 @@ func (f *Flow) doInsertEvents(chainNodes []*watch.ChainNode, lastTokenData map[s
 				RequestID: rid,
 				Type:      meta.EventFatalError,
 				Detail:    fmt.Sprintf("run event flow, but got conflict %s cursor with chain nodes", f.key.Collection()),
-				Module:    types2.CC_MODULE_CACHESERVICE,
+				Module:    types2.CCModuleCacheService,
 				Dimension: map[string]string{"retry_conflict_nodes": "yes"},
 			})
 

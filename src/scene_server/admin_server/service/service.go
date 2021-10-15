@@ -133,7 +133,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 
 	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_MIGRATE,
+		Module:     types.CCModuleAdmin,
 		HealthMeta: meta,
 		AtTime:     metadata.Now(),
 	}
@@ -156,7 +156,7 @@ func (s *Service) MonitorHealth(req *restful.Request, resp *restful.Response) {
 		RequestID: rid,
 		Type:      meta.EventTestInfo,
 		Detail:    fmt.Sprintf("test event link connectivity"),
-		Module:    types.CC_MODULE_MIGRATE,
+		Module:    types.CCModuleAdmin,
 	}
 	monitor.Collect(alam)
 	resp.Header().Set("Content-Type", "application/json")

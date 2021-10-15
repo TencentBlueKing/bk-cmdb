@@ -120,7 +120,7 @@ func (cs *ClientSet) ProcServer() procserver.ProcServerClientInterface {
 func (cs *ClientSet) AdminServer() adminserver.AdminServerClientInterface {
 	c := &util.Capability{
 		Client:   cs.client,
-		Discover: cs.discover.MigrateServer(),
+		Discover: cs.discover.AdminServer(),
 		Throttle: cs.throttle,
 		Mock:     cs.Mock,
 	}

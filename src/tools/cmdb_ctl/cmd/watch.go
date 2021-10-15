@@ -112,7 +112,7 @@ func runStartFromWatch(c *watchConf) error {
 		return err
 	}
 
-	path := types.CC_SERV_BASEPATH + "/" + types.CC_MODULE_EVENTSERVER
+	path := types.CCDiscoverBaseEndpoint + "/" + types.CCModuleEvent
 	kvs, err := rd.RegDiscv.GetWithPrefix(path)
 	if err != nil {
 		fmt.Printf("get from regdiscv err: %v\n", err)

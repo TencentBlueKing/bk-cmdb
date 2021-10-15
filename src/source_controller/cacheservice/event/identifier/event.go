@@ -322,7 +322,7 @@ func (f *hostIdentity) doInsertEvents(chainNodes []*watch.ChainNode, lastTokenDa
 				Type:      meta.EventFatalError,
 				Detail: fmt.Sprintf("host identifier, but got conflict %s cursor with chain nodes",
 					f.key.Collection()),
-				Module:    types2.CC_MODULE_CACHESERVICE,
+				Module:    types2.CCModuleCacheService,
 				Dimension: map[string]string{"retry_conflict_nodes": "yes"},
 			})
 

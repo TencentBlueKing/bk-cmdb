@@ -107,7 +107,7 @@ func (s *snapshotCheckService) checkConf() error {
 		return err
 	}
 
-	path := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureRedis)
+	path := fmt.Sprintf("%s/%s", types.CCDiscoverBaseConfig, types.CCConfigureRedis)
 	strConf, err := s.service.RegDiscv.Get(path)
 	if err != nil {
 		return fmt.Errorf("get path [%s] err: %v", path, err)

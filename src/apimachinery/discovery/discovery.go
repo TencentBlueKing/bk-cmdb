@@ -28,13 +28,12 @@ type ServiceManageInterface interface {
 
 type DiscoveryInterface interface {
 	ApiServer() Interface
-	MigrateServer() Interface
+	AdminServer() Interface
 	EventServer() Interface
 	HostServer() Interface
 	ProcServer() Interface
 	TopoServer() Interface
 	DataCollect() Interface
-	GseProcServer() Interface
 	CoreService() Interface
 	OperationServer() Interface
 	TaskServer() Interface
@@ -64,10 +63,10 @@ func NewServiceDiscovery(rd *registerdiscover.RegDiscv) (DiscoveryInterface, err
 	services[curServiceName] = struct{}{}
 	for component := range services {
 		// 如果所有服务都按需发现服务。这个地方时不需要配置
-		if component == types.CC_MODULE_WEBSERVER && curServiceName != types.CC_MODULE_WEBSERVER {
+		if component == types.CCModuleWeb && curServiceName != types.CCModuleWeb {
 			continue
 		}
-		path := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, component)
+		path := fmt.Sprintf("%s/%s", types.CCDiscoverBaseEndpoint, component)
 		svr, err := newServerDiscover(rd, path, component)
 		if err != nil {
 			return nil, fmt.Errorf("discover %s failed, err: %v", component, err)
@@ -76,7 +75,7 @@ func NewServiceDiscovery(rd *registerdiscover.RegDiscv) (DiscoveryInterface, err
 		d.servers[component] = svr
 	}
 
-	electPath := fmt.Sprintf("%s/%s", types.CC_SERV_ELECTPATH, curServiceName)
+	electPath := fmt.Sprintf("%s/%s", types.CCDiscoverBaseElection, curServiceName)
 	master := newServerMaster(rd, electPath, curServiceName)
 	d.master = master
 
@@ -89,59 +88,55 @@ type discover struct {
 }
 
 func (d *discover) ApiServer() Interface {
-	return d.servers[types.CC_MODULE_APISERVER]
+	return d.servers[types.CCModuleApi]
 }
 
-func (d *discover) MigrateServer() Interface {
-	return d.servers[types.CC_MODULE_MIGRATE]
+func (d *discover) AdminServer() Interface {
+	return d.servers[types.CCModuleAdmin]
 }
 
 func (d *discover) EventServer() Interface {
-	return d.servers[types.CC_MODULE_EVENTSERVER]
+	return d.servers[types.CCModuleEvent]
 }
 
 func (d *discover) HostServer() Interface {
-	return d.servers[types.CC_MODULE_HOST]
+	return d.servers[types.CCModuleHost]
 }
 
 func (d *discover) ProcServer() Interface {
-	return d.servers[types.CC_MODULE_PROC]
+	return d.servers[types.CCModuleProc]
 }
 
 func (d *discover) TopoServer() Interface {
-	return d.servers[types.CC_MODULE_TOPO]
+	return d.servers[types.CCModuleTopo]
 }
 
 func (d *discover) DataCollect() Interface {
-	return d.servers[types.CC_MODULE_DATACOLLECTION]
-}
-
-func (d *discover) GseProcServer() Interface {
-	return d.servers[types.GSE_MODULE_PROCSERVER]
+	return d.servers[types.CCModuleDataCollection]
 }
 
 func (d *discover) CoreService() Interface {
-	return d.servers[types.CC_MODULE_CORESERVICE]
+	return d.servers[types.CCModuleCoreService]
 }
 
 func (d *discover) OperationServer() Interface {
-	return d.servers[types.CC_MODULE_OPERATION]
+	return d.servers[types.CCModuleOperation]
 }
 
 func (d *discover) TaskServer() Interface {
-	return d.servers[types.CC_MODULE_TASK]
+	return d.servers[types.CCModuleTask]
 }
 
 func (d *discover) CloudServer() Interface {
-	return d.servers[types.CC_MODULE_CLOUD]
+	return d.servers[types.CCModuleCloud]
 }
 
 func (d *discover) AuthServer() Interface {
-	return d.servers[types.CC_MODULE_AUTH]
+	return d.servers[types.CCModuleAuth]
 }
 
 func (d *discover) CacheService() Interface {
-	return d.servers[types.CC_MODULE_CACHESERVICE]
+	return d.servers[types.CCModuleCacheService]
 }
 
 // IsMaster check whether current is master

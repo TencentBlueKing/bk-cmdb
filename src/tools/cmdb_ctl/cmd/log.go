@@ -107,7 +107,7 @@ func (s *logService) setV(v int32) error {
 		if err := s.service.RegDiscv.Ping(); err != nil {
 			return err
 		}
-		logVPath := fmt.Sprintf("%s/%s/%s/v", types.CC_SERVNOTICE_BASEPATH, "log", addr)
+		logVPath := fmt.Sprintf("%s/%s/%s/v", types.CCDiscoverBaseNotice, "log", addr)
 		logVData, err := s.service.RegDiscv.Get(logVPath)
 		if err != nil {
 			return err
@@ -134,7 +134,7 @@ func (s *logService) setDefault() error {
 		if err := s.service.RegDiscv.Ping(); err != nil {
 			return err
 		}
-		logVPath := fmt.Sprintf("%s/%s/%s/v", types.CC_SERVNOTICE_BASEPATH, "log", addr)
+		logVPath := fmt.Sprintf("%s/%s/%s/v", types.CCDiscoverBaseNotice, "log", addr)
 		logVData, err := s.service.RegDiscv.Get(logVPath)
 		if err != nil {
 			return err

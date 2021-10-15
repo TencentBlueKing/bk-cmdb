@@ -29,7 +29,7 @@ import (
 )
 
 func main() {
-	common.SetIdentification(types.CC_MODULE_CACHESERVICE)
+	common.SetIdentification(types.CCModuleCacheService)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	blog.InitLogs()

@@ -196,7 +196,7 @@ func validateParameter(input *BackboneParameter) error {
 func newEngine(srvInfo *types.ServerInfo, coreApi apimachinery.ClientSetInterface, reg ServiceRegisterInterface) (
 	*Engine, error) {
 
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, common.GetIdentification(), srvInfo.IP)
+	regPath := fmt.Sprintf("%s/%s/%s", types.CCDiscoverBaseEndpoint, common.GetIdentification(), srvInfo.IP)
 
 	return &Engine{
 		RegisterPath: regPath,

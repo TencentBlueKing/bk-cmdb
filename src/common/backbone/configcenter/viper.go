@@ -79,7 +79,7 @@ func loadErrorAndLanguage(errorres string, languageres string, handler *CCHandle
 }
 
 func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
-	if common.GetIdentification() == types.CC_MODULE_MIGRATE {
+	if common.GetIdentification() == types.CCModuleAdmin {
 		confPath, _ = String("confs.dir")
 	}
 
@@ -101,7 +101,7 @@ func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
 	}
 
 	// if it is admin_server, skip the loading of other files,load only error, language and common
-	if common.GetIdentification() == types.CC_MODULE_MIGRATE {
+	if common.GetIdentification() == types.CCModuleAdmin {
 		return nil
 	}
 

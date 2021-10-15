@@ -29,7 +29,7 @@ import (
 )
 
 func main() {
-	common.SetIdentification(types.CC_MODULE_AUTH)
+	common.SetIdentification(types.CCModuleAuth)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	blog.InitLogs()

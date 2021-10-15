@@ -268,7 +268,7 @@ func (c *Client) getHostIdentityEventDetailWithNodes(kit *rest.Kit, hitNodes []*
 				Type:      meta.EventFatalError,
 				Detail: fmt.Sprintf("host identity, instance id: %d is invalid, cursor: %s",
 					hitNodes[idx].InstanceID, hitNodes[idx].Cursor),
-				Module:    types2.CC_MODULE_CACHESERVICE,
+				Module:    types2.CCModuleCacheService,
 				Dimension: map[string]string{"host_identifier": "yes"},
 			})
 

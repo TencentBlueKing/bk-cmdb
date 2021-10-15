@@ -33,8 +33,8 @@ func (s *AuthService) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, zkItem)
 
 	// core service
-	coreSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_CORESERVICE}
-	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_CORESERVICE); err != nil {
+	coreSrv := metric.HealthItem{IsHealthy: true, Name: types.CCModuleCoreService}
+	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CCModuleCoreService); err != nil {
 		coreSrv.IsHealthy = false
 		coreSrv.Message = err.Error()
 	}
@@ -49,7 +49,7 @@ func (s *AuthService) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 
 	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_AUTH,
+		Module:     types.CCModuleAuth,
 		HealthMeta: meta,
 		AtTime:     metadata.Now(),
 	}

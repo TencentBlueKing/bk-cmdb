@@ -103,7 +103,7 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 		servers, err = s.discovery.TaskServer().GetServers()
 
 	case AdminType:
-		servers, err = s.discovery.MigrateServer().GetServers()
+		servers, err = s.discovery.AdminServer().GetServers()
 
 	case CloudType:
 		servers, err = s.discovery.CloudServer().GetServers()

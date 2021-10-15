@@ -395,7 +395,7 @@ func (f *InstanceFlow) doInsertEvents(chainNodesMap map[string][]*watch.ChainNod
 				RequestID: rid,
 				Type:      meta.EventFatalError,
 				Detail:    fmt.Sprintf("run event flow, but got conflict %s cursor with chain nodes", key.Collection()),
-				Module:    types2.CC_MODULE_CACHESERVICE,
+				Module:    types2.CCModuleCacheService,
 				Dimension: map[string]string{"retry_conflict_nodes": "yes"},
 			})
 

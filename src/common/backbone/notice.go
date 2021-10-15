@@ -36,7 +36,7 @@ func handleNotice(ctx context.Context, rd *registerdiscover.RegDiscv, addrport s
 }
 
 func (handler *noticeHandler) handleLogNotice(ctx context.Context) error {
-	logVPath := fmt.Sprintf("%s/%s/%s/v", types.CC_SERVNOTICE_BASEPATH, "log", handler.addrport)
+	logVPath := fmt.Sprintf("%s/%s/%s/v", types.CCDiscoverBaseNotice, "log", handler.addrport)
 	ch, err := handler.regdiscv.Watch(ctx, logVPath)
 	if err != nil {
 		return err

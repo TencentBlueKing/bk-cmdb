@@ -72,21 +72,21 @@ func (cc *ConfCenter) WriteAllConfs2Center(confDir, errRes, languageRes string) 
 		blog.Errorf("fail to write configures to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("write all configures resource to center %v success", types.CC_SERVCONF_BASEPATH)
+		blog.Infof("write all configures resource to center %v success", types.CCDiscoverBaseConfig)
 	}
 
 	if err := cc.WriteErrorRes2Center(errRes); err != nil {
 		blog.Errorf("fail to write error resource to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("write error resource to center %v success", types.CC_SERVERROR_BASEPATH)
+		blog.Infof("write error resource to center %v success", types.CCDiscoverBaseError)
 	}
 
 	if err := cc.WriteLanguageRes2Center(languageRes); err != nil {
 		blog.Errorf("fail to write language packages to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("write language packages to center %v success", types.CC_SERVLANG_BASEPATH)
+		blog.Infof("write language packages to center %v success", types.CCDiscoverBaseLang)
 	}
 
 	return nil
@@ -113,7 +113,7 @@ func (cc *ConfCenter) WriteErrorRes2Center(errorres string) error {
 	if err != nil {
 		return fmt.Errorf("unmarshal resource failed, err: %s", err)
 	}
-	key := types.CC_SERVERROR_BASEPATH
+	key := types.CCDiscoverBaseError
 	return cc.rd.Put(key, string(data))
 }
 
@@ -138,7 +138,7 @@ func (cc *ConfCenter) WriteLanguageRes2Center(languageres string) error {
 	if err != nil {
 		return err
 	}
-	key := types.CC_SERVLANG_BASEPATH
+	key := types.CCDiscoverBaseLang
 	return cc.rd.Put(key, string(data))
 }
 
@@ -157,7 +157,7 @@ func (cc *ConfCenter) WriteConfs2Center(confRootPath string) error {
 
 	for _, configName := range configs {
 		filePath := filepath.Join(confRootPath, configName+confFileSuffix)
-		key := types.CC_SERVCONF_BASEPATH + "/" + configName
+		key := types.CCDiscoverBaseConfig + "/" + configName
 		if err := cc.WriteConfigure(filePath, key); err != nil {
 			blog.Warnf("fail to write configure of %s into center", configName)
 			continue

@@ -343,7 +343,7 @@ func (dt *dbTable) tryUpdateTableIndex(ctx context.Context, tableName string,
 				RequestID: dt.rid,
 				Type:      meta.MongoDDLFatalError,
 				Detail:    fmt.Sprintf("collection(%s)  create index failed", tableName),
-				Module:    types2.CC_MODULE_MIGRATE,
+				Module:    types2.CCModuleAdmin,
 				Dimension: map[string]string{"hit_create_index": "yes"},
 			})
 			return err
@@ -388,7 +388,7 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 				RequestID: dt.rid,
 				Type:      meta.MongoDDLFatalError,
 				Detail:    fmt.Sprintf("query %s collection logic unique detail failed", instTable),
-				Module:    types2.CC_MODULE_MIGRATE,
+				Module:    types2.CCModuleAdmin,
 				Dimension: map[string]string{"hit_create_collection": "yes"},
 			})
 			return err
@@ -407,7 +407,7 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 						RequestID: dt.rid,
 						Type:      meta.MongoDDLFatalError,
 						Detail:    fmt.Sprintf("create %s collection failed", instTable),
-						Module:    types2.CC_MODULE_MIGRATE,
+						Module:    types2.CCModuleAdmin,
 						Dimension: map[string]string{"hit_create_collection": "yes"},
 					})
 				}
@@ -431,7 +431,7 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 				RequestID: dt.rid,
 				Type:      meta.MongoDDLFatalError,
 				Detail:    fmt.Sprintf("create %s collection failed", instAsstTable),
-				Module:    types2.CC_MODULE_MIGRATE,
+				Module:    types2.CCModuleAdmin,
 				Dimension: map[string]string{"hit_create_collection": "yes"},
 			})
 			dt.createIndexes(ctx, instAsstTable, index.InstanceAssociationIndexes())
@@ -510,7 +510,7 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 					RequestID: dt.rid,
 					Type:      meta.MongoDDLFatalError,
 					Detail:    fmt.Sprintf("drop collection(%s) failed", name),
-					Module:    types2.CC_MODULE_MIGRATE,
+					Module:    types2.CCModuleAdmin,
 					Dimension: map[string]string{"hit_clean_redundancy_table": "yes"},
 				})
 				continue
@@ -520,7 +520,7 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 					RequestID: dt.rid,
 					Type:      meta.MongoDDLFatalError,
 					Detail:    fmt.Sprintf("drop collection(%s) failed, reason: find table has error", name),
-					Module:    types2.CC_MODULE_MIGRATE,
+					Module:    types2.CCModuleAdmin,
 					Dimension: map[string]string{"hit_clean_redundancy_table": "yes"},
 				})
 				blog.Errorf("drop collection(%s) failed, reason: find table has error, rid: %s", name, dt.rid)
@@ -532,7 +532,7 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 				RequestID: dt.rid,
 				Type:      meta.MongoDDLFatalError,
 				Detail:    fmt.Sprintf("drop collection(%s) failed, reason: non-empty sharding table", name),
-				Module:    types2.CC_MODULE_MIGRATE,
+				Module:    types2.CCModuleAdmin,
 				Dimension: map[string]string{"hit_clean_redundancy_table": "yes"},
 			})
 			blog.Errorf("can't drop the non-empty sharding table, table name: %s, rid: %s", name, dt.rid)
@@ -555,7 +555,7 @@ func (dt *dbTable) createIndexes(ctx context.Context, tableName string, indexes 
 				RequestID: dt.rid,
 				Type:      meta.MongoDDLFatalError,
 				Detail:    fmt.Sprintf("collection(%s) create index(%s) failed", tableName, index.Name),
-				Module:    types2.CC_MODULE_MIGRATE,
+				Module:    types2.CCModuleAdmin,
 				Dimension: map[string]string{"hit_create_index": "yes"},
 			})
 		}

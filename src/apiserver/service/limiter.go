@@ -48,7 +48,7 @@ func NewLimiter(rd *registerdiscover.RegDiscv) *Limiter {
 // SyncLimiterRules sync the api limiter rules from register and discover
 func (l *Limiter) SyncLimiterRules() error {
 	blog.Info("begin SyncLimiterRules")
-	path := types.CC_SERVLIMITER_BASEPATH
+	path := types.CCDiscoverBaseLimiter
 	go func() {
 		for {
 			err := l.syncLimiterRules(path)

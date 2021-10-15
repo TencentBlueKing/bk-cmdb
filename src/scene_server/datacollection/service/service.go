@@ -143,9 +143,9 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	// topo server health status info.
 	topoItem := metric.HealthItem{
 		IsHealthy: true,
-		Name:      types.CC_MODULE_TOPO,
+		Name:      types.CCModuleTopo,
 	}
-	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_TOPO); err != nil {
+	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CCModuleTopo); err != nil {
 		topoItem.IsHealthy = false
 		topoItem.Message = err.Error()
 	}
@@ -181,7 +181,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 
 	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_DATACOLLECTION,
+		Module:     types.CCModuleDataCollection,
 		HealthMeta: meta,
 		AtTime:     metadata.Now(),
 	}
