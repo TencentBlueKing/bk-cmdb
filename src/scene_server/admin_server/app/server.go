@@ -200,6 +200,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	return nil
 }
 
+// AdminServer is data structure of adminserver
 type AdminServer struct {
 	Core         *backbone.Engine
 	Config       *options.Config

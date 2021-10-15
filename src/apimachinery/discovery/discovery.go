@@ -87,59 +87,72 @@ type discover struct {
 	master  *master
 }
 
+// ApiServer returns apiserver info
 func (d *discover) ApiServer() Interface {
 	return d.servers[types.CCModuleApi]
 }
 
+// AdminServer returns adminserver info
 func (d *discover) AdminServer() Interface {
 	return d.servers[types.CCModuleAdmin]
 }
 
+// EventServer returns eventserver info
 func (d *discover) EventServer() Interface {
 	return d.servers[types.CCModuleEvent]
 }
 
+// HostServer returns hostserver info
 func (d *discover) HostServer() Interface {
 	return d.servers[types.CCModuleHost]
 }
 
+// ProcServer returns procserver info
 func (d *discover) ProcServer() Interface {
 	return d.servers[types.CCModuleProc]
 }
 
+// TopoServer returns toposerver info
 func (d *discover) TopoServer() Interface {
 	return d.servers[types.CCModuleTopo]
 }
 
+// DataCollect returns datacollection info
 func (d *discover) DataCollect() Interface {
 	return d.servers[types.CCModuleDataCollection]
 }
 
+// CoreService returns coreservice info
 func (d *discover) CoreService() Interface {
 	return d.servers[types.CCModuleCoreService]
 }
 
+// OperationServer returns operationserver info
 func (d *discover) OperationServer() Interface {
 	return d.servers[types.CCModuleOperation]
 }
 
+// TaskServer returns taskserver info
 func (d *discover) TaskServer() Interface {
 	return d.servers[types.CCModuleTask]
 }
 
+// CloudServer returns cloudserver info
 func (d *discover) CloudServer() Interface {
 	return d.servers[types.CCModuleCloud]
 }
 
+// AuthServer returns authserver info
 func (d *discover) AuthServer() Interface {
 	return d.servers[types.CCModuleAuth]
 }
 
+// CacheService returns cacheservice info
 func (d *discover) CacheService() Interface {
 	return d.servers[types.CCModuleCacheService]
 }
 
-// IsMaster check whether current is master
+// IsMaster checks whether current instance is master
 func (d *discover) IsMaster() bool {
 	return d.master.IsMaster()
 }
