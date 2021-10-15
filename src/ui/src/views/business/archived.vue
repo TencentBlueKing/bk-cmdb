@@ -40,9 +40,9 @@
                 {{$t('恢复业务')}}
               </bk-button>
               <bk-popconfirm
-                title="确认彻底删除该业务？"
+                :title="$t('确认彻底删除该业务？')"
                 trigger="click"
-                content="一旦被清除，将无法再恢复，请谨慎操作！"
+                :content="$t('一旦被清除，将无法再恢复，请谨慎操作！')"
                 @confirm="handleCompletelyDelete(row)">
                 <bk-button
                   class="ml10"
