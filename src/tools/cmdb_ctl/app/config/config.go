@@ -28,6 +28,7 @@ import (
 
 var Conf *Config
 
+// Config is data structure of cmdb ctl config
 type Config struct {
 	RegDiscv    string
 	MongoURI    string
@@ -56,11 +57,13 @@ func (c *Config) AddFlags(cmd *cobra.Command) {
 	return
 }
 
+// Service is register and discover interface and db proxy
 type Service struct {
 	RegDiscv   *registerdiscover.RegDiscv
 	DbProxy dal.RDB
 }
 
+// NewRegDiscv creates a service object with register and discover
 func NewRegDiscv(rdAddr string) (*Service, error) {
 	regdiscvConf := &registerdiscover.Config{
 		Host: rdAddr,
@@ -80,6 +83,7 @@ func NewRegDiscv(rdAddr string) (*Service, error) {
 	return service, nil
 }
 
+// NewMongoService creates a service object with db proxy
 func NewMongoService(mongoURI string, mongoRsName string) (*Service, error) {
 	if mongoURI == "" {
 		return nil, errors.New("mongo-uri must set via flag or environment variable")

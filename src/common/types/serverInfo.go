@@ -24,13 +24,13 @@ import (
 
 // etcd path
 const (
-	CC_SERV_BASEPATH        = "/cc/services/endpoints"
-	CC_SERVCONF_BASEPATH    = "/cc/services/config"
-	CC_SERVERROR_BASEPATH   = "/cc/services/errors"
-	CC_SERVLANG_BASEPATH    = "/cc/services/language"
-	CC_SERVNOTICE_BASEPATH  = "/cc/services/notice"
-	CC_SERVLIMITER_BASEPATH = "/cc/services/limiter"
-	CC_SERV_ELECTPATH       = "/cc/services/election"
+	CC_SERV_BASEPATH        = "/bk_cmdb/endpoints"
+	CC_SERVCONF_BASEPATH    = "/bk_cmdb/config"
+	CC_SERVERROR_BASEPATH   = "/bk_cmdb/errors"
+	CC_SERVLANG_BASEPATH    = "/bk_cmdb/language"
+	CC_SERVNOTICE_BASEPATH  = "/bk_cmdb/notice"
+	CC_SERVLIMITER_BASEPATH = "/bk_cmdb/limiter"
+	CC_SERV_ELECTPATH       = "/bk_cmdb/election"
 
 	CC_DISCOVERY_PREFIX = "cc_"
 )

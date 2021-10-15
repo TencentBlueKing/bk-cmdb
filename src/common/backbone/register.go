@@ -21,16 +21,17 @@ import (
 )
 
 type ServiceRegisterInterface interface {
-	// Ping to ping server
+	// Ping ping register and discover to verify accessibility
 	Ping() error
-	// register local server info, it can only be called for once
+	// Register add service info to register and discover
 	Register(path string, c types.ServerInfo) error
 	// Unregister delete service register key from register and discover
 	Unregister() error
-	// Cancel to stop server register and discover
+	// Cancel stop service register and discover
 	Cancel()
 }
 
+// NewServiceRegister create a service register object
 func NewServiceRegister(rd *registerdiscover.RegDiscv) (ServiceRegisterInterface, error) {
 	return &serviceRegister{rd: rd}, nil
 }
@@ -40,11 +41,12 @@ type serviceRegister struct {
 	regKey string
 }
 
-// Ping to ping server
+// Ping ping register and discover to verify accessibility
 func (s *serviceRegister) Ping() error {
 	return s.rd.Ping()
 }
 
+// Register add service info to register and discover
 func (s *serviceRegister) Register(path string, c types.ServerInfo) error {
 	if c.RegisterIP == "0.0.0.0" {
 		return errors.New("register ip can not be 0.0.0.0")
@@ -65,7 +67,7 @@ func (s *serviceRegister) Unregister() error {
 	return s.rd.Delete(s.regKey)
 }
 
-// Cancel to stop server register and discover
+// Cancel stop service register and discover
 func (s *serviceRegister) Cancel() {
 	s.rd.Cancel()
 }

@@ -32,13 +32,14 @@ const (
 	EventDel EventType = 1
 )
 
-// DiscoverEvent if servers chenged, will create a discover event
+// DiscoverEvent event of service discovery
 type DiscoverEvent struct {
 	Type	EventType
 	Key    string
 	Value  string
 }
 
+// KeyVal storage key and value in register and discover
 type KeyVal struct {
 	Key   string
 	Value string
@@ -49,7 +50,7 @@ const (
 	EtcdAuthPwd  = "3.0#bkcc"
 )
 
-// Config etcd register and discover config
+// Config register and discover config
 type Config struct {
 	Host       string           // etcd host info
 	User       string           // user name for authentication
@@ -57,7 +58,7 @@ type Config struct {
 	TLS        *tls.Config      // tls config for https
 }
 
-// RegDiscv is data struct of register-discover
+// RegDiscv data structure of register and discover
 type RegDiscv struct {
 	client   *clientv3.Client
 	election *concurrency.Election
@@ -65,7 +66,7 @@ type RegDiscv struct {
 	rootCxt  context.Context
 }
 
-// NewRegDiscv create an object of RegDiscv
+// NewRegDiscv creates a register and discover object
 func NewRegDiscv(config *Config) (*RegDiscv, error) {
 	endpoints := strings.Split(config.Host, ",")
 	if len(endpoints) == 0 {
@@ -94,6 +95,7 @@ func NewRegDiscv(config *Config) (*RegDiscv, error) {
 	return regDiscv, nil
 }
 
+// Ping verifies register and discover accessibility
 func (rd *RegDiscv) Ping() error {
 	if len (rd.client.Endpoints()) == 0 {
 		return fmt.Errorf("etcd has no endpoint");
@@ -102,6 +104,7 @@ func (rd *RegDiscv) Ping() error {
 	return err
 }
 
+// Get gets corresponding value with key from register and discover
 func (rd *RegDiscv) Get(key string) (string, error) {
 	rsp, err := rd.client.Get(context.Background(), key)
 	if err != nil {
@@ -114,6 +117,7 @@ func (rd *RegDiscv) Get(key string) (string, error) {
 	return value, nil
 }
 
+// GetWithPrefix gets corresponding value with key prefix from register and discover
 func (rd *RegDiscv) GetWithPrefix(key string) ([]KeyVal, error) {
 	rsp, err := rd.client.Get(context.Background(), key, clientv3.WithPrefix())
 	if err != nil {
@@ -126,6 +130,7 @@ func (rd *RegDiscv) GetWithPrefix(key string) ([]KeyVal, error) {
 	return values, nil
 }
 
+// Put puts key and value to register and discover
 func (rd *RegDiscv) Put(key, val string) error {
 	if _, err := rd.client.Put(context.Background(), key, val); err != nil {
 		return err
@@ -133,7 +138,7 @@ func (rd *RegDiscv) Put(key, val string) error {
 	return nil
 }
 
-// Delete use a key to delete kv
+// Delete deletes key and value from register and discover
 func (rd *RegDiscv) Delete(key string) error {
 	if _, err := rd.client.Delete(context.Background(), key); err != nil {
 		return err
@@ -141,6 +146,7 @@ func (rd *RegDiscv) Delete(key string) error {
 	return nil
 }
 
+// Watch watches on a key or prefix. The watched events will be returned through the returned channel
 func (rd *RegDiscv) Watch(ctx context.Context, key string) (<-chan *DiscoverEvent, error) {
 	if len(key) == 0 {
 		return nil, fmt.Errorf("invalid empty watch key")
@@ -214,7 +220,7 @@ func (rd *RegDiscv) Resign() error {
 	return rd.election.Resign(context.Background())
 }
 
-// RegisterAndKeepAlive register a kv and keep its lease alive
+// RegisterAndKeepAlive registers a kv and keeps its lease alive
 func (rd *RegDiscv) RegisterAndKeepAlive(key , val string) error {
 	go func() {
 		lease := clientv3.NewLease(rd.client)
@@ -260,6 +266,7 @@ func (rd *RegDiscv) RegisterAndKeepAlive(key , val string) error {
 	return nil
 }
 
+// Cancel stops register and discover
 func (rd *RegDiscv) Cancel() {
 	rd.cancel()
 }

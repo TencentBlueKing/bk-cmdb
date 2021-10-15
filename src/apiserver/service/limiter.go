@@ -37,6 +37,7 @@ type Limiter struct {
 	syncDuration time.Duration
 }
 
+// NewLimiter creates a limiter object
 func NewLimiter(rd *registerdiscover.RegDiscv) *Limiter {
 	return &Limiter{
 		rd:           rd,

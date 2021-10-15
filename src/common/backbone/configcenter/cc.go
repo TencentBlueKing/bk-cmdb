@@ -29,6 +29,7 @@ import (
 
 var confC *CC
 
+// NewConfigCenter create a config center object
 func NewConfigCenter(ctx context.Context, rd *registerdiscover.RegDiscv, confPath string, handler *CCHandler) error {
 	return newCC(ctx, confPath, rd, handler)
 }

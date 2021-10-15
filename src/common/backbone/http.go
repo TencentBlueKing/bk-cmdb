@@ -31,6 +31,7 @@ import (
 	"configcenter/src/common/ssl"
 )
 
+// ListenAndServe start http server
 func ListenAndServe(c Server, register ServiceRegisterInterface, cancel context.CancelFunc) error {
 	handler := c.Handler
 	if c.PProfEnabled {

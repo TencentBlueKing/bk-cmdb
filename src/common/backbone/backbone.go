@@ -52,6 +52,7 @@ type BackboneParameter struct {
 	SrvInfo *types.ServerInfo
 }
 
+// NewBackbone create a backbone object
 func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error) {
 	// validate backbone config
 	if err := validateParameter(input); err != nil {
@@ -138,7 +139,9 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	return engine, nil
 }
 
-func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTPHandler http.Handler, pprofEnabled bool) error {
+// StartServer start http server and register to register and discover
+func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTPHandler http.Handler,
+	pprofEnabled bool) error {
 	e.server = Server{
 		ListenAddr:   e.srvInfo.IP,
 		ListenPort:   e.srvInfo.Port,
@@ -225,18 +228,22 @@ type Engine struct {
 	CCCtx    CCContextInterface
 }
 
+// Discovery return service discovery interface
 func (e *Engine) Discovery() discovery.DiscoveryInterface {
 	return e.discovery
 }
 
+// ApiMachineryConfig return api machinery config
 func (e *Engine) ApiMachineryConfig() *util.APIMachineryConfig {
 	return e.apiMachineryConfig
 }
 
+// RegDiscv return register and discover
 func (e *Engine) RegDiscv() *registerdiscover.RegDiscv {
 	return e.regdiscv
 }
 
+// Metric return metrics service
 func (e *Engine) Metric() *metrics.Service {
 	return e.metric
 }
@@ -281,10 +288,12 @@ func (e *Engine) onRedisUpdate(previous, current cc.ProcessConfig) {
 	}
 }
 
+// Ping verify register and discover accessibility
 func (e *Engine) Ping() error {
 	return e.register.Ping()
 }
 
+// WithRedis return redis config
 func (e *Engine) WithRedis(prefixes ...string) (redis.Config, error) {
 	// use default prefix if no prefix is specified, or use the first prefix
 	var prefix string
@@ -297,6 +306,7 @@ func (e *Engine) WithRedis(prefixes ...string) (redis.Config, error) {
 	return cc.Redis(prefix)
 }
 
+// WithMongo return mongo config
 func (e *Engine) WithMongo(prefixes ...string) (mongo.Config, error) {
 	var prefix string
 	if len(prefixes) == 0 {

@@ -118,24 +118,22 @@ var configLock sync.Mutex
 func (a *AuthServer) onAuthConfigUpdate(previous, current cc.ProcessConfig) {
 	configLock.Lock()
 	defer configLock.Unlock()
-	if len(current.ConfigData) > 0 {
-		if a.Config == nil {
-			a.Config = new(options.Config)
-		}
-		blog.InfoJSON("config updated: \n%s", string(current.ConfigData))
-		var err error
-		a.Config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
-		if err != nil {
-			blog.Warnf("parse auth center config failed: %v", err)
-		}
+	if a.Config == nil {
+		a.Config = new(options.Config)
+	}
+	blog.InfoJSON("config updated: \n%s", string(current.ConfigData))
+	var err error
+	a.Config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
+	if err != nil {
+		blog.Warnf("parse auth center config failed: %v", err)
+	}
 
-		a.Config.TLS, err = util.NewTLSClientConfigFromConfig("authServer", nil)
-		if err != nil {
-			blog.Warnf("parse auth center tls config failed: %v", err)
-		}
+	a.Config.TLS, err = util.NewTLSClientConfigFromConfig("authServer", nil)
+	if err != nil {
+		blog.Warnf("parse auth center tls config failed: %v", err)
+	}
 
-		if esbConfig, err := esb.ParseEsbConfig("authServer"); err == nil {
-			esb.UpdateEsbConfig(*esbConfig)
-		}
+	if esbConfig, err := esb.ParseEsbConfig("authServer"); err == nil {
+		esb.UpdateEsbConfig(*esbConfig)
 	}
 }
