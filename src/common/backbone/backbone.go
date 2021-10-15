@@ -140,12 +140,12 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 }
 
 // StartServer start http server and register to register and discover
-func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTPHandler http.Handler,
+func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, httpHandler http.Handler,
 	pprofEnabled bool) error {
 	e.server = Server{
 		ListenAddr:   e.srvInfo.IP,
 		ListenPort:   e.srvInfo.Port,
-		Handler:      e.Metric().HTTPMiddleware(HTTPHandler),
+		Handler:      e.Metric().HTTPMiddleware(httpHandler),
 		TLS:          TLSConfig{},
 		PProfEnabled: pprofEnabled,
 	}
