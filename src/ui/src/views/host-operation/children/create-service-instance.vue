@@ -169,29 +169,34 @@
 
         this.instances.forEach((instance, index) => {
           const component = this.$refs.serviceInstance.find(component => component.index === index)
-          const processes = this.getChangedProcessList(instance, component)
+          const changedProcesses = this.getChangedProcessList(instance, component)
+          const addedProcesses = this.getAddedProcessList(instance, component)
 
           // 有模板
           if (instance.service_template) {
-            if (processes.length) {
-              // 放入到created也需要有processes
+            // 空进程的不能作为添加项
+            if (addedProcesses.length) {
               instanceOptions.created.push({
                 bk_module_id: instance.bk_module_id,
                 bk_host_id: instance.bk_host_id
               })
+            }
+
+            // 有修改的项放入到updated
+            if (changedProcesses.length) {
               instanceOptions.updated.push({
                 bk_module_id: instance.bk_module_id,
                 bk_host_id: instance.bk_host_id,
-                processes
+                processes: changedProcesses
               })
             }
           } else {
             // 无模板，在created中放入有添加进程的
-            if (processes.length) {
+            if (addedProcesses.length) {
               instanceOptions.created.push({
                 bk_module_id: instance.bk_module_id,
                 bk_host_id: instance.bk_host_id,
-                processes
+                processes: addedProcesses
               })
             }
           }
@@ -230,6 +235,17 @@
         const state = this.processChangeState[key] || new Set()
         state.add(processIndex)
         this.processChangeState[key] = state
+      },
+      getAddedProcessList(instance, component) {
+        const processes = []
+        component.processList.forEach((process, index) => {
+          const item = { process_info: process }
+          if (instance.service_template) {
+            item.process_template_id = component.templates[index] ? component.templates[index].id : 0
+          }
+          processes.push(item)
+        })
+        return processes
       },
       handleEditName(instance) {
         this.instances.forEach(instance => (instance.editing.name = false))
