@@ -13,7 +13,7 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
-	"configcenter/src/common/backbone/registerdiscover"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/test/run"
@@ -68,13 +68,12 @@ func init() {
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
 	regdiscvConf := &registerdiscover.Config{
-		Host: tConfig.Regdiscv,
+		Host: tConfig.RegDiscv,
 		TLS: nil,
 	}
 	rd, err := registerdiscover.NewRegDiscv(regdiscvConf)
 	Expect(err).Should(BeNil())
 	Expect(rd.Ping()).Should(BeNil())
-	var err error
 	mongoConfig := local.MongoConf{
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
