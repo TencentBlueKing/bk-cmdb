@@ -10,107 +10,31 @@
  * limitations under the License.
  */
 
-package service
+package tool
 
 import (
-	"encoding/json"
-	"reflect"
+	"fmt"
 	"regexp"
 	"strings"
 	"sync"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/types"
 	"configcenter/src/common/util"
-	"configcenter/src/common/registerdiscover"
 
 	"github.com/emicklei/go-restful"
 )
 
 type Limiter struct {
-	rd           *registerdiscover.RegDiscv
-	rules        map[string]*metadata.LimiterRule
-	lock         sync.RWMutex
-	syncDuration time.Duration
+	rules map[string]*metadata.LimiterRule
+	lock  sync.RWMutex
 }
 
-// NewLimiter creates a limiter object
-func NewLimiter(rd *registerdiscover.RegDiscv) *Limiter {
+func NewLimiter() *Limiter {
 	return &Limiter{
-		rd:           rd,
-		syncDuration: 5 * time.Second,
+		rules: make(map[string]*metadata.LimiterRule),
 	}
-}
-
-// SyncLimiterRules sync the api limiter rules from register and discover
-func (l *Limiter) SyncLimiterRules() error {
-	blog.Info("begin SyncLimiterRules")
-	path := types.CCDiscoverBaseLimiter
-	go func() {
-		for {
-			err := l.syncLimiterRules(path)
-			if err != nil {
-				blog.Errorf("fail to syncLimiterRules for path:%s, err:%s", path, err.Error())
-			}
-			time.Sleep(l.syncDuration)
-		}
-	}()
-	return nil
-}
-
-func (l *Limiter) syncLimiterRules(path string) error {
-	blog.V(5).Infof("syncing limiter rules for path:%s", path)
-	kvs, err := l.rd.GetWithPrefix(path)
-	if err != nil {
-		blog.Errorf("fail to get key: %s, err: %v", path, err)
-		return err
-	}
-
-	rules := make(map[string]*metadata.LimiterRule)
-	for _, kv := range kvs {
-		rule := new(metadata.LimiterRule)
-		if err := json.Unmarshal([]byte(kv.Value), rule); err != nil {
-			blog.Errorf("fail to Unmarshal limiter rule: %s, err: %v", kv.Value, err)
-			continue
-		}
-
-		if err := rule.Verify(); err != nil {
-			blog.Errorf("fail to verify  limiter rule: %v, err:%v", rule, err)
-			continue
-		}
-
-		rules[rule.RuleName] = rule
-	}
-
-	l.setRules(rules)
-	return nil
-}
-
-func (l *Limiter) setRules(rules map[string]*metadata.LimiterRule) {
-	l.lock.Lock()
-	if reflect.DeepEqual(rules, l.rules) {
-		blog.V(5).Info("setRules skip, nothing is changed")
-		l.lock.Unlock()
-		return
-	}
-	l.rules = rules
-	l.lock.Unlock()
-	blog.InfoJSON("setRules success, current rules is %s", rules)
-}
-
-// GetRules get all rules of limiter
-func (l *Limiter) GetRules() map[string]*metadata.LimiterRule {
-	l.lock.RLock()
-	defer l.lock.RUnlock()
-	rules := make(map[string]*metadata.LimiterRule)
-	for k, v := range l.rules {
-		rule := *v
-		rules[k] = &rule
-	}
-	return rules
 }
 
 // LenOfRules get the count of limiter's rules
@@ -125,7 +49,11 @@ func (l *Limiter) GetMatchedRule(req *restful.Request) *metadata.LimiterRule {
 	header := req.Request.Header
 	var matchedRule *metadata.LimiterRule
 	var min int64 = 999999
-	rules := l.GetRules()
+	rules, err := l.GetAllRules()
+	if err != nil {
+		blog.Errorf("get all limit rule error, err: %v", err)
+		return matchedRule
+	}
 	for _, r := range rules {
 		if r.AppCode == "" && r.User == "" && r.IP == "" && r.Url == "" && r.Method == "" {
 			blog.Errorf("wrong rule format, one of appcode, user, ip, url, method must be set, r:%#v", *r)
@@ -162,7 +90,8 @@ func (l *Limiter) GetMatchedRule(req *restful.Request) *metadata.LimiterRule {
 		if r.Url != "" {
 			match, err := regexp.MatchString(r.Url, req.Request.RequestURI)
 			if err != nil {
-				blog.Errorf("MatchString failed, r.Url:%s, reqURI:%s, err:%s", r.Url, req.Request.RequestURI, err.Error())
+				blog.Errorf("MatchString failed, r.Url:%s, reqURI:%s, err:%s",
+					r.Url, req.Request.RequestURI, err.Error())
 				continue
 			}
 			if !match {
@@ -180,4 +109,66 @@ func (l *Limiter) GetMatchedRule(req *restful.Request) *metadata.LimiterRule {
 		}
 	}
 	return matchedRule
+}
+
+// AddRule add limit rule
+func (l *Limiter) AddRule(rule *metadata.LimiterRule) error {
+	if err := rule.Verify(); err != nil {
+		return err
+	}
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	if _, exist := l.rules[rule.RuleName]; exist {
+		return fmt.Errorf("the rule %s has already existed", rule.RuleName)
+	}
+	l.rules[rule.RuleName] = rule
+	return nil
+}
+
+// GetRules get limit rules
+func (l *Limiter) GetRules(ruleNames []string) ([]*metadata.LimiterRule, error) {
+	if ruleNames == nil {
+		return nil, fmt.Errorf("rulenames must be set")
+	}
+
+	var limiterRules []*metadata.LimiterRule
+	l.lock.RLock()
+	defer l.lock.RUnlock()
+	for _, name := range ruleNames {
+		rule, exist := l.rules[name]
+		if !exist {
+			blog.Warnf("can not find rule %s", name)
+			continue
+		}
+		limiterRules = append(limiterRules, rule)
+	}
+	return limiterRules, nil
+}
+
+// DelRules delete limit rules
+func (l *Limiter) DelRules(ruleNames []string) error {
+	if ruleNames == nil {
+		return fmt.Errorf("rulenames must be set")
+	}
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	for _, name := range ruleNames {
+		if _, exist := l.rules[name]; !exist {
+			blog.Warnf("can not delete rule, because can not find rule %s", name)
+			continue
+		}
+		delete(l.rules, name)
+	}
+	return nil
+}
+
+// GetAllRules get all limit rules
+func (l *Limiter) GetAllRules() ([]*metadata.LimiterRule, error) {
+	var limiterRules []*metadata.LimiterRule
+	l.lock.RLock()
+	defer l.lock.RUnlock()
+	for _, rule := range l.rules {
+		limiterRules = append(limiterRules, rule)
+	}
+	return limiterRules, nil
 }

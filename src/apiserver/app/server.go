@@ -21,7 +21,7 @@ import (
 	"configcenter/src/apiserver/service"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/blog"
+	"configcenter/src/common/tool"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
 
@@ -69,14 +69,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("connect redis server failed, err: %s", err.Error())
 	}
 
-	limiter := service.NewLimiter(engine.RegDiscv())
-	err = limiter.SyncLimiterRules()
-	if err != nil {
-		blog.Infof("SyncLimiterRules failed, err: %v", err)
-		return err
-	}
-
-	svc.SetConfig(engine, client, engine.Discovery(), engine.CoreAPI, cache, limiter)
+	svc.SetConfig(engine, client, engine.Discovery(), engine.CoreAPI, cache, tool.GetLimiter())
 
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
@@ -107,4 +100,3 @@ func (h *APIServer) onApiServerConfigUpdate(previous, current cc.ProcessConfig) 
 }
 
 const waitForSeconds = 180
-

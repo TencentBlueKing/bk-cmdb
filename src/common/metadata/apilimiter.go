@@ -19,17 +19,22 @@ import (
 	"configcenter/src/common/util"
 )
 
+// LimiterRuleNames is a rule for api limiter
+type LimiterRuleNames struct {
+	RuleNames []string `json:"rule_names"`
+}
+
 // LimiterRule is a rule for api limiter
 type LimiterRule struct {
-	RuleName string `json:"rulename"`
-	AppCode  string `json:"appcode"`
+	RuleName string `json:"rule_name"`
+	AppCode  string `json:"app_code"`
 	User     string `json:"user"`
 	IP       string `json:"ip"`
 	Method   string `json:"method"`
 	Url      string `json:"url"`
 	Limit    int64  `json:"limit"`
 	TTL      int64  `json:"ttl"`
-	DenyAll  bool   `json:"denyall"`
+	DenyAll  bool   `json:"deny_all"`
 }
 
 // Verify to check the fields of LimiterRule
@@ -41,7 +46,8 @@ func (r LimiterRule) Verify() error {
 		return fmt.Errorf("one of appcode, user, ip, url, method must be set")
 	}
 	if r.Method != "" {
-		if util.Normalize(r.Method) != "POST" && util.Normalize(r.Method) != "GET" && util.Normalize(r.Method) != "PUT" && util.Normalize(r.Method) != "DELETE" {
+		if util.Normalize(r.Method) != "POST" && util.Normalize(r.Method) != "GET" &&
+			util.Normalize(r.Method) != "PUT" && util.Normalize(r.Method) != "DELETE" {
 			return fmt.Errorf("method must be one of POST,GET,PUT,DELETE")
 		}
 	}

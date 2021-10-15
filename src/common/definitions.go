@@ -191,10 +191,12 @@ const (
 	// BKDBUNSET the db opeartor
 	BKDBUNSET = "$unset"
 
-	// BKDBAddToSet The $addToSet operator adds a value to an array unless the value is already present, in which case $addToSet does nothing to that array.
+	// BKDBAddToSet The $addToSet operator adds a value to an array unless the value is already present,
+	// in which case $addToSet does nothing to that array.
 	BKDBAddToSet = "$addToSet"
 
-	// BKDBPull The $pull operator removes from an existing array all instances of a value or values that match a specified condition.
+	// BKDBPull The $pull operator removes from an existing array all instances of a value or
+	// values that match a specified condition.
 	BKDBPull = "$pull"
 
 	// BKDBAll matches arrays that contain all elements specified in the query.
@@ -782,12 +784,14 @@ const (
 	//FieldTypeMainlineRegexp the mainline instance name regex expression
 	FieldTypeMainlineRegexp string = `^[^\\\|\/:\*,<>"\?#\s]+$`
 
-	//FieldTypeSingleCharRegexp the single char regex expression
-	//FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	// FieldTypeSingleCharRegexp the single char regex expression
+	// FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘
+	// ’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
 	FieldTypeSingleCharRegexp string = `\S`
 
-	//FieldTypeLongCharRegexp the long char regex expression\
-	//FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	// FieldTypeLongCharRegexp the long char regex expression\
+	// FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）
+	// ‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
 	FieldTypeLongCharRegexp string = `\S`
 )
 
@@ -1270,4 +1274,18 @@ const (
 const (
 	CCLogicUniqueIdxNamePrefix = "bkcc_unique_"
 	CCLogicIndexNamePrefix     = "bkcc_idx_"
+)
+
+// constants about dynamically adjusting the configuration
+const (
+	SettingsOperation    = "op"
+	SettingsLogLevel     = "v"
+	SettingsAction       = "action"
+	SettingsAddAction    = "add"
+	SettingsDeleteAction = "delete"
+	SettingsUpdateAction = "update"
+	SettingsGetAction    = "get"
+	SettingsGetAllAction = "getAll"
+	SettingsLog          = "log"
+	SettingsLimiter      = "limiter"
 )

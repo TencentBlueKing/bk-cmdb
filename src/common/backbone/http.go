@@ -29,17 +29,19 @@ import (
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/ssl"
+	"configcenter/src/common/tool"
 )
 
 // ListenAndServe start http server
 func ListenAndServe(c Server, register ServiceRegisterInterface, cancel context.CancelFunc) error {
 	handler := c.Handler
+	rootMux := http.NewServeMux()
+	rootMux.HandleFunc("/", c.Handler.ServeHTTP)
+	rootMux.Handle("/settings", tool.GetService())
 	if c.PProfEnabled {
-		rootMux := http.NewServeMux()
-		rootMux.HandleFunc("/", c.Handler.ServeHTTP)
 		rootMux.Handle("/debug/", http.DefaultServeMux)
-		handler = rootMux
 	}
+	handler = rootMux
 	server := &http.Server{
 		Addr:    net.JoinHostPort(c.ListenAddr, strconv.FormatUint(uint64(c.ListenPort), 10)),
 		Handler: handler,
