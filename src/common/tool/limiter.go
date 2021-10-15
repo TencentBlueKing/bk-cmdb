@@ -31,6 +31,7 @@ type Limiter struct {
 	lock  sync.RWMutex
 }
 
+// NewLimiter new a limiter struct
 func NewLimiter() *Limiter {
 	return &Limiter{
 		rules: make(map[string]*metadata.LimiterRule),
