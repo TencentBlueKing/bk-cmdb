@@ -103,7 +103,14 @@
       indeterminate: {
         type: Boolean,
         default: true
-      }
+      },
+      /**
+       * 全量数据，用于前端分页时选择所有数据，传入 fullData 则会只是用此数据作为全量数据
+       */
+      fullData: {
+        type: Array,
+        default: null
+      },
     },
     data() {
       return {
@@ -161,28 +168,37 @@
         }
       },
       emitRows() {
-        const { onCrossPageMode, reserveSelection, reservedSelectedRows } = this
+        const { onCrossPageMode, reserveSelection, reservedSelectedRows, reservedUnselectedRows } = this
         let { innerSelectedRows } = this
 
         if (onCrossPageMode) {
-          innerSelectedRows = []
+          if (this.fullData) {
+            const unselectedRowKeys = reservedUnselectedRows.map(r => safeGet(r, this.rowKey))
+            innerSelectedRows = this.fullData.filter(i => !unselectedRowKeys.includes(safeGet(i, this.rowKey)))
+          } else {
+            innerSelectedRows = []
+          }
         } else if (reserveSelection) {
           innerSelectedRows = reservedSelectedRows
         }
 
-        this.$emit('selection-change', innerSelectedRows, onCrossPageMode, this.reservedUnselectedRows)
+        this.$emit('selection-change', innerSelectedRows, reservedUnselectedRows, onCrossPageMode)
         this.$emit('update:selectedRows', innerSelectedRows)
-        this.$emit('update:unselectedRows', this.reservedUnselectedRows)
+        this.$emit('update:unselectedRows', reservedUnselectedRows)
         this.$emit('update:allSelected', onCrossPageMode)
       },
       setReservedRow(arr, row, checked) {
+        if (!this.reserveSelection) return false
+
         const findRowIndex = (row) => {
           let rowIndex = -1
+
           arr.forEach((i, index) => {
             if (safeGet(i, this.rowKey) === safeGet(row, this.rowKey)) {
               rowIndex = index
             }
           })
+
           return rowIndex
         }
 
