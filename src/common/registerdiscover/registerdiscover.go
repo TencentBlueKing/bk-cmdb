@@ -28,13 +28,12 @@ import (
 type EventType int32
 
 const (
-	EVENT_PUT		EventType = 0
-	EVENT_DEL		EventType = 1
+	EventPut EventType = 0
+	EventDel EventType = 1
 )
 
 // DiscoverEvent if servers chenged, will create a discover event
 type DiscoverEvent struct {
-	Err    error
 	Type	EventType
 	Key    string
 	Value  string
@@ -46,8 +45,8 @@ type KeyVal struct {
 }
 
 const (
-	ETCD_AUTH_USER = "cc"
-	ETCD_AUTH_PWD  = "3.0#bkcc"
+	EtcdAuthUser = "cc"
+	EtcdAuthPwd  = "3.0#bkcc"
 )
 
 // Config etcd register and discover config
@@ -78,8 +77,8 @@ func NewRegDiscv(config *Config) (*RegDiscv, error) {
 		DialTimeout:      time.Second * 5,
 		AutoSyncInterval: time.Minute * 5,
 		TLS:              config.TLS,
-		Username:         ETCD_AUTH_USER,
-		Password:         ETCD_AUTH_PWD,
+		Username:         EtcdAuthUser,
+		Password:         EtcdAuthPwd,
 	})
 	if err != nil {
 		return nil, err
@@ -143,10 +142,11 @@ func (rd *RegDiscv) Delete(key string) error {
 }
 
 func (rd *RegDiscv) Watch(ctx context.Context, key string) (<-chan *DiscoverEvent, error) {
-	ch := make(chan *DiscoverEvent, 1)
-	if ch == nil {
-		return nil, fmt.Errorf("expected watcher channel, got nil")
+	if len(key) == 0 {
+		return nil, fmt.Errorf("invalid empty watch key")
 	}
+
+	ch := make(chan *DiscoverEvent, 10)
 
 	go func() {
 		evChan := ch
@@ -156,31 +156,30 @@ func (rd *RegDiscv) Watch(ctx context.Context, key string) (<-chan *DiscoverEven
 			select {
 			case result := <-watchChan:
 				if result.Err() != nil {
-					blog.Errorf("watch get err: %v", result.Err())
+					blog.Errorf("watch key: %s, get err: %v", key, result.Err())
 					continue
 				}
 				for _, event := range result.Events {
-					blog.Infof("watch key(%s) event(%v)\n", key, event)
-					discvEvent := new(DiscoverEvent)
+					blog.Infof("watch key: %s, get event: %+v", key, event)
+					discoverEvent := new(DiscoverEvent)
 					switch event.Type {
 					case clientv3.EventTypePut:
-						discvEvent.Err = nil
-						discvEvent.Type = EVENT_PUT
-						discvEvent.Key = string(event.Kv.Key)
-						discvEvent.Value = string(event.Kv.Value)
+						discoverEvent.Type = EventPut
+						discoverEvent.Key = string(event.Kv.Key)
+						discoverEvent.Value = string(event.Kv.Value)
+						evChan <- discoverEvent
 					case clientv3.EventTypeDelete:
-						discvEvent.Err = nil
-						discvEvent.Type = EVENT_DEL
-						discvEvent.Key = string(event.Kv.Key)
+						discoverEvent.Type = EventDel
+						discoverEvent.Key = string(event.Kv.Key)
 						// delete event return previous value before delete operation
-						discvEvent.Value = string(event.PrevKv.Value)
+						discoverEvent.Value = string(event.PrevKv.Value)
+						evChan <- discoverEvent
 					default:
-						discvEvent.Err = fmt.Errorf("discover unknown event type (%v)", event.Type)
+						blog.Warnf("watch key: %s, get unknown event type: %v", key, event.Type)
 					}
-					evChan <- discvEvent
 				}
 			case <-ctx.Done():
-				blog.Infof("watch stopped because of context done")
+				blog.Infof("watch stopped because of context done, key: %s", key)
 				return
 			}
 		}
@@ -221,18 +220,26 @@ func (rd *RegDiscv) RegisterAndKeepAlive(key , val string) error {
 		lease := clientv3.NewLease(rd.client)
 		var curLeaseId clientv3.LeaseID = 0
 		for {
+			select {
+			case <-rd.rootCxt.Done():
+				blog.Infof("register and keep alive done, key: %s", key)
+				return
+			default:
+				// go through the following procedure
+			}
+
 			if curLeaseId == 0 {
-				// grant the lease with 10s
-				leaseResp, err := lease.Grant(context.Background(), 10)
+				// grant the lease with 5s
+				leaseResp, err := lease.Grant(context.Background(), 5)
 				if err != nil {
-					blog.Errorf("grant lease err: %v", err)
-					time.Sleep(3 * time.Second)
+					blog.Errorf("failed to grant lease, key: %s, err: %v", key, err)
+					time.Sleep(1 * time.Second)
 					continue
 				}
 				_, err = rd.client.Put(context.Background(), key, val, clientv3.WithLease(leaseResp.ID))
 				if err != nil {
 					blog.Errorf("put with lease err: %v", err)
-					time.Sleep(3 * time.Second)
+					time.Sleep(1 * time.Second)
 					continue
 				}
 				curLeaseId = leaseResp.ID
@@ -241,13 +248,15 @@ func (rd *RegDiscv) RegisterAndKeepAlive(key , val string) error {
 				if _, err := lease.KeepAliveOnce(context.Background(), curLeaseId); err != nil {
 					blog.Errorf("keep alive lease err: %v", err)
 					curLeaseId = 0
-					time.Sleep(3 * time.Second)
+					time.Sleep(1 * time.Second)
 					continue
 				}
 			}
-			time.Sleep(3 * time.Second)
+
+			time.Sleep(1 * time.Second)
 		}
 	}()
+
 	return nil
 }
 

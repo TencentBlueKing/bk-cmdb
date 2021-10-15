@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"sync"
 	"time"
 
@@ -67,18 +68,18 @@ func (s *server) GetServers() ([]string, error) {
 		return []string{}, fmt.Errorf("oops, there is no %s can be used", s.name)
 	}
 
-	var servers_array []*types.ServerInfo
+	var serversArray []*types.ServerInfo
 	for _, server := range s.servers {
-		servers_array = append(servers_array, server)
+		serversArray = append(serversArray, server)
 	}
 
 	var infos []*types.ServerInfo
 	if s.next < num-1 {
 		s.next = s.next + 1
-		infos = append(servers_array[s.next-1:], servers_array[:s.next-1]...)
+		infos = append(serversArray[s.next-1:], serversArray[:s.next-1]...)
 	} else {
 		s.next = 0
-		infos = append(servers_array[num-1:], servers_array[:num-1]...)
+		infos = append(serversArray[num-1:], serversArray[:num-1]...)
 	}
 	s.Unlock()
 
@@ -100,16 +101,11 @@ func (s *server) loopWatchUpdates() {
 	blog.Infof("start to discover cc component from register and discover, path:[%s]", s.path)
 	for event := range s.discoverChan {
 		blog.Infof("received one event from path: %s", s.path)
-		if event.Err != nil {
-			blog.Errorf("discovery received event err: %v", event.Err)
-			continue
-		}
-
 		switch event.Type {
-		case registerdiscover.EVENT_PUT:
+		case registerdiscover.EventPut:
 			s.updateServer(event.Key, event.Value)
 			s.setServersChan()
-		case registerdiscover.EVENT_DEL:
+		case registerdiscover.EventDel:
 			s.removeServer(event.Key, event.Value)
 			s.setServersChan()
 		default:
@@ -120,7 +116,7 @@ func (s *server) loopWatchUpdates() {
 }
 
 func (s *server) loopSyncUpdates() {
-	var oldServer map[string]bool
+	var oldServer map[string]string
 	for {
 		infos, err := s.rd.GetWithPrefix(s.path)
 		if err != nil {
@@ -128,19 +124,14 @@ func (s *server) loopSyncUpdates() {
 			time.Sleep(3 * time.Second)
 			continue
 		}
-		isUpdated := false
-		newServer := make(map[string]bool)
-		if len(infos) != len(oldServer) {
-			isUpdated = true
-		}
+
+		newServer := make(map[string]string)
 		for _, server := range infos {
-			if !isUpdated && !oldServer[server.Value] {
-				isUpdated = true
-			}
-			newServer[server.Value] = true
+			newServer[server.Key] = server.Value
 		}
-		oldServer = newServer
-		if isUpdated {
+
+		if !reflect.DeepEqual(newServer, oldServer) {
+			oldServer = newServer
 			s.resetServers(infos)
 		}
 
@@ -165,7 +156,7 @@ func (s *server) GetServersChan() chan []string {
 
 // 获取所有注册服务节点的ip:port
 func (s *server) getInstances() []string {
-	addrArr := []string{}
+	addrArr := make([]string, 0)
 	s.RLock()
 	defer s.RUnlock()
 	for _, info := range s.servers {
@@ -182,15 +173,15 @@ func (s *server) updateServer(key, data string) {
 
 	server := new(types.ServerInfo)
 	if err := json.Unmarshal([]byte(data), server); err != nil {
-		blog.Errorf("unmarshal server info failed, key: %s, info:%s, err: %v", key, data, err)
+		blog.Errorf("unmarshal server info failed, key: %s, info: %s, err: %v", key, data, err)
 		return
 	}
 	if server.Port == 0 {
-		blog.Errorf("invalid port 0, with discovery key: %s", key)
+		blog.Errorf("invalid port 0 with discovery key: %s", key)
 		return
 	}
 	if len(server.RegisterIP) == 0 {
-		blog.Errorf("invalid ip with discovery key: %s", key)
+		blog.Errorf("invalid empty register ip with discovery key: %s", key)
 		return
 	}
 	if server.Scheme != "https" {

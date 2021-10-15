@@ -60,7 +60,7 @@ func (handler *noticeHandler) waitLogNoticeEvent(ctx context.Context, ch <-chan 
 	for {
 		select {
 		case event := <-ch:
-			if event.Type == registerdiscover.EVENT_PUT {
+			if event.Type == registerdiscover.EventPut {
 				if err := json.Unmarshal([]byte(event.Value), &data); err != nil {
 					blog.Errorf("fail to unmarshal data(%s), err: %s", event.Value, err.Error())
 					continue

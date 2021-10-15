@@ -143,13 +143,7 @@ func (c *CC) run() error {
 }
 
 func (c *CC) onProcChange(cur *registerdiscover.DiscoverEvent) {
-	if cur.Err != nil {
-		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureCommon,
-			cur.Err)
-		return
-	}
-
-	if cur.Type != registerdiscover.EVENT_PUT {
+	if cur.Type != registerdiscover.EventPut {
 		blog.Infof("config center received event that %s config has changed, but not put event",
 			types.CCConfigureCommon)
 		return
@@ -172,13 +166,7 @@ func (c *CC) onProcChange(cur *registerdiscover.DiscoverEvent) {
 }
 
 func (c *CC) onExtraChange(cur *registerdiscover.DiscoverEvent) {
-	if cur.Err != nil {
-		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureExtra,
-			cur.Err)
-		return
-	}
-
-	if cur.Type != registerdiscover.EVENT_PUT {
+	if cur.Type != registerdiscover.EventPut {
 		blog.Infof("config center received event that %s config has changed, but not put event", types.CCConfigureExtra)
 		return
 	}
@@ -203,13 +191,7 @@ func (c *CC) onExtraChange(cur *registerdiscover.DiscoverEvent) {
 }
 
 func (c *CC) onMongodbChange(cur *registerdiscover.DiscoverEvent) {
-	if cur.Err != nil {
-		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureMongo,
-			cur.Err)
-		return
-	}
-
-	if cur.Type != registerdiscover.EVENT_PUT {
+	if cur.Type != registerdiscover.EventPut {
 		blog.Infof("config center received event that %s config has changed, but not put event", types.CCConfigureMongo)
 		return
 	}
@@ -230,13 +212,7 @@ func (c *CC) onMongodbChange(cur *registerdiscover.DiscoverEvent) {
 }
 
 func (c *CC) onRedisChange(cur *registerdiscover.DiscoverEvent) {
-	if cur.Err != nil {
-		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureRedis,
-			cur.Err)
-		return
-	}
-
-	if cur.Type != registerdiscover.EVENT_PUT {
+	if cur.Type != registerdiscover.EventPut {
 		blog.Infof("config center received event that %s config has changed, but not put event", types.CCConfigureRedis)
 		return
 	}
@@ -257,12 +233,7 @@ func (c *CC) onRedisChange(cur *registerdiscover.DiscoverEvent) {
 }
 
 func (c *CC) onErrorChange(cur *registerdiscover.DiscoverEvent) {
-	if cur.Err != nil {
-		blog.Errorf("config center received event that error code config has changed, but got err: %v", cur.Err)
-		return
-	}
-
-	if cur.Type != registerdiscover.EVENT_PUT {
+	if cur.Type != registerdiscover.EventPut {
 		blog.Infof("config center received event that error code config has changed, but not put event")
 		return
 	}
@@ -284,12 +255,7 @@ func (c *CC) onErrorChange(cur *registerdiscover.DiscoverEvent) {
 }
 
 func (c *CC) onLanguageChange(cur *registerdiscover.DiscoverEvent) {
-	if cur.Err != nil {
-		blog.Errorf("config center received event that language config has changed, but got err: %v", cur.Err)
-		return
-	}
-
-	if cur.Type != registerdiscover.EVENT_PUT {
+	if cur.Type != registerdiscover.EventPut {
 		blog.Infof("config center received event that language config has changed, but not put event")
 		return
 	}
@@ -358,8 +324,7 @@ func (c *CC) syncProc() {
 	}
 
 	event := &registerdiscover.DiscoverEvent{
-		Err:   nil,
-		Type:  registerdiscover.EVENT_PUT,
+		Type:  registerdiscover.EventPut,
 		Key:   procPath,
 		Value: data,
 	}
@@ -387,8 +352,7 @@ func (c *CC) syncExtra() {
 	}
 
 	event := &registerdiscover.DiscoverEvent{
-		Err:   nil,
-		Type:  registerdiscover.EVENT_PUT,
+		Type:  registerdiscover.EventPut,
 		Key:   extraPath,
 		Value: data,
 	}
@@ -416,8 +380,7 @@ func (c *CC) syncMongodb() {
 	}
 
 	event := &registerdiscover.DiscoverEvent{
-		Err:   nil,
-		Type:  registerdiscover.EVENT_PUT,
+		Type:  registerdiscover.EventPut,
 		Key:   mongoPath,
 		Value: data,
 	}
@@ -445,8 +408,7 @@ func (c *CC) syncRedis() {
 	}
 
 	event := &registerdiscover.DiscoverEvent{
-		Err:   nil,
-		Type:  registerdiscover.EVENT_PUT,
+		Type:  registerdiscover.EventPut,
 		Key:   redisPath,
 		Value: data,
 	}
@@ -478,8 +440,7 @@ func (c *CC) syncLang() {
 	}
 
 	event := &registerdiscover.DiscoverEvent{
-		Err:   nil,
-		Type:  registerdiscover.EVENT_PUT,
+		Type:  registerdiscover.EventPut,
 		Key:   langPath,
 		Value: data,
 	}
@@ -511,8 +472,7 @@ func (c *CC) syncErr() {
 	}
 
 	event := &registerdiscover.DiscoverEvent{
-		Err:   nil,
-		Type:  registerdiscover.EVENT_PUT,
+		Type:  registerdiscover.EventPut,
 		Key:   errPath,
 		Value: data,
 	}

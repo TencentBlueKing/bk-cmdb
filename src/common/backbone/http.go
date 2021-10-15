@@ -52,13 +52,14 @@ func ListenAndServe(c Server, register ServiceRegisterInterface, cancel context.
 				blog.Infof("receive signal %v, begin to shutdown", sig)
 				register.Cancel()
 				if err := register.Unregister(); err != nil {
+					blog.Errorf("failed to unregister, err: %v", err)
 					break
 				}
 				time.Sleep(time.Second * 5)
 				server.SetKeepAlivesEnabled(false)
 				err := server.Shutdown(context.Background())
 				if err != nil {
-					blog.Fatalf("Could not gracefully shutdown the server: %v \n", err)
+					blog.Fatalf("failed to gracefully shutdown, err: %v", err)
 				}
 				blog.Info("server shutdown done")
 				cancel()
