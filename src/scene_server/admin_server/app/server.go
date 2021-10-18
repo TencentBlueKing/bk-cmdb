@@ -52,6 +52,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	process.Config.Language.Res, _ = cc.String("language.res")
 	process.Config.Configures.Dir, _ = cc.String("confs.dir")
 	process.Config.Register.Address, _ = cc.String("registerServer.addrs")
+	process.Config.Register.User, _ = cc.String("registerServer.usr")
+	process.Config.Register.Password, _ = cc.String("registerServer.pwd")
+	process.Config.Register.CertFile, _ = cc.String("registerServer.certfile")
+	process.Config.Register.KeyFile, _ = cc.String("registerServer.keyfile")
+	process.Config.Register.CaFile, _ = cc.String("registerServer.cafile")
 	snapDataID, _ := cc.Int("hostsnap.dataID")
 	process.Config.SnapDataID = int64(snapDataID)
 
@@ -113,6 +118,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		ConfigUpdate: process.onHostConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
 		Regdiscv:     process.Config.Register.Address,
+		RdUser:       process.Config.Register.User,
+		RdPassword:   process.Config.Register.Password,
+		RdCertFile:   process.Config.Register.CertFile,
+		RdKeyFile:    process.Config.Register.KeyFile,
+		RdCaFile:     process.Config.Register.CaFile,
 		SrvInfo:      svrInfo,
 	}
 	engine, err := backbone.NewBackbone(ctx, input)

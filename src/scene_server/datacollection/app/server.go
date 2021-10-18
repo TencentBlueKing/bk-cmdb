@@ -153,6 +153,11 @@ func NewDataCollection(ctx context.Context, op *options.ServerOption) (*DataColl
 		ConfigUpdate: newDataCollection.OnHostConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
 		Regdiscv:     op.ServConf.RegDiscover,
+		RdUser:       op.ServConf.RdUser,
+		RdPassword:   op.ServConf.RdPassword,
+		RdCertFile:   op.ServConf.RdCertFile,
+		RdKeyFile:    op.ServConf.RdKeyFile,
+		RdCaFile:     op.ServConf.RdCaFile,
 		SrvInfo:      svrInfo,
 	})
 	if err != nil {

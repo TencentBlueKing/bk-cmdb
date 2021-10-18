@@ -106,7 +106,7 @@ func runDecodeCursor(c *watchConf) error {
 }
 
 func runStartFromWatch(c *watchConf) error {
-	rd, err := config.NewRegDiscv(config.Conf.RegDiscv)
+	rd, err := config.NewRegDiscv(config.Conf)
 	if err != nil {
 		fmt.Printf("new regdiscv failed, err: %v\n", err)
 		return err

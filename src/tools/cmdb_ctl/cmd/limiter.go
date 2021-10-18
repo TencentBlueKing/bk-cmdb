@@ -150,7 +150,7 @@ func runSetRule(c *limiterConf) error {
 		return err
 	}
 
-	rd, err := config.NewRegDiscv(config.Conf.RegDiscv)
+	rd, err := config.NewRegDiscv(config.Conf)
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func runGetRules(c *limiterConf) error {
 	if c.rulenames == "" {
 		return fmt.Errorf("rulenames must be set")
 	}
-	rd, err := config.NewRegDiscv(config.Conf.RegDiscv)
+	rd, err := config.NewRegDiscv(config.Conf)
 	if err != nil {
 		return err
 	}
@@ -215,7 +215,7 @@ func runDelRules(c *limiterConf) error {
 	if c.rulenames == "" {
 		return fmt.Errorf("rulenames must be set")
 	}
-	rd, err := config.NewRegDiscv(config.Conf.RegDiscv)
+	rd, err := config.NewRegDiscv(config.Conf)
 	if err != nil {
 		return err
 	}
@@ -233,7 +233,7 @@ func runDelRules(c *limiterConf) error {
 }
 
 func runListRules(c *limiterConf) error {
-	rd, err := config.NewRegDiscv(config.Conf.RegDiscv)
+	rd, err := config.NewRegDiscv(config.Conf)
 	if err != nil {
 		return err
 	}

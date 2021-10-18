@@ -62,8 +62,8 @@ type snapshotCheckService struct {
 	config  map[string]string
 }
 
-func newSnapshotCheckService(rdaddr string, bizID int) (*snapshotCheckService, error) {
-	service, err := config.NewRegDiscv(rdaddr)
+func newSnapshotCheckService(cfg *config.Config, bizID int) (*snapshotCheckService, error) {
+	service, err := config.NewRegDiscv(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func newSnapshotCheckService(rdaddr string, bizID int) (*snapshotCheckService, e
 }
 
 func runSnapshotCheck(c *snapshotCheckConf) error {
-	srv, err := newSnapshotCheckService(config.Conf.RegDiscv, c.bizID)
+	srv, err := newSnapshotCheckService(config.Conf, c.bizID)
 	if err != nil {
 		return err
 	}

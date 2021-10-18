@@ -13,6 +13,11 @@
   --set-v             =""    : set log level for V logs
   --addrport          =""    : the ip address and port for the hosts to apply command, separated by comma
   --regdiscv          =""    : the regdiscv address, separated by comma, corresponding environment variable is REGDISCV_ADDR
+  --rduser            =""    : user name for authentication in register and discover
+  --rdpwd             =""    : password for authentication in register and discover
+  --rdcert            =""    : cert file in register and discover
+  --rdkey             =""    : key file in register and discover
+  --rdca              =""    : CA file in register and discover
   --redis-addr        =""    : assign redis server address default is 127.0.0.1:6379
   --redis-pwd         =""    : assign redis server password
   --redis-database    =""    : assign the redis database default is 0

@@ -62,11 +62,11 @@ type logService struct {
 	addrport []string
 }
 
-func newLogService(rdaddr string, addrport string) (*logService, error) {
+func newLogService(cfg *config.Config, addrport string) (*logService, error) {
 	if addrport == "" {
 		return nil, errors.New("addrport must set via flag or environment variable")
 	}
-	service, err := config.NewRegDiscv(rdaddr)
+	service, err := config.NewRegDiscv(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func runLog(c *logConf) error {
 		return fmt.Errorf("can't set log level to v and default at the same time")
 	}
 
-	srv, err := newLogService(config.Conf.RegDiscv, c.addrPort)
+	srv, err := newLogService(config.Conf, c.addrPort)
 	if err != nil {
 		return err
 	}

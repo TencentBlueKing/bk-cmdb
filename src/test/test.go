@@ -30,6 +30,11 @@ var db *local.Mongo
 
 type TestConfig struct {
 	RegDiscv       string
+	RdUser         string
+	RdPassword     string
+	RdCertFile     string
+	RdKeyFile      string
+	RdCaFile       string
 	Concurrent     int
 	SustainSeconds float64
 	TotalRequest   int64
@@ -46,11 +51,19 @@ type RedisConfig struct {
 }
 
 func init() {
-	flag.StringVar(&tConfig.RegDiscv, "regdiscv", "127.0.0.1:2379", "discovery addresses, comma separated.")
-	flag.IntVar(&tConfig.Concurrent, "concurrent", 100, "concurrent request during the load test.")
-	flag.Float64Var(&tConfig.SustainSeconds, "sustain-seconds", 10, "the load test sustain time in seconds ")
+	flag.StringVar(&tConfig.RegDiscv, "regdiscv", "127.0.0.1:2379",
+		"discovery addresses, comma separated")
+	flag.StringVar(&tConfig.RdUser, "rduser", "",
+		"user name for authentication in register and discover")
+	flag.StringVar(&tConfig.RdPassword, "rdpwd", "",
+		"password for authentication in register and discover")
+	flag.StringVar(&tConfig.RdCertFile, "rdcert", "", "cert file in register and discover")
+	flag.StringVar(&tConfig.RdPassword, "rdkey", "", "key file in register and discover")
+	flag.StringVar(&tConfig.RdUser, "rdca", "", "CA file in register and discover")
+	flag.IntVar(&tConfig.Concurrent, "concurrent", 100, "concurrent request during the load test")
+	flag.Float64Var(&tConfig.SustainSeconds, "sustain-seconds", 10, "the load test sustain time in seconds")
 	flag.Int64Var(&tConfig.TotalRequest, "total-request", 0, "the load test total request,it has higher priority than SustainSeconds")
-	flag.IntVar(&tConfig.DBWriteKBSize, "write-size", 1, "MongoDB write size , unit is KB.")
+	flag.IntVar(&tConfig.DBWriteKBSize, "write-size", 1, "MongoDB write size , unit is KB")
 	flag.StringVar(&tConfig.RedisCfg.RedisAdress, "redis-addr", "127.0.0.1:6379", "redis host address with port")
 	flag.StringVar(&tConfig.RedisCfg.RedisPasswd, "redis-passwd", "cc", "redis password")
 	flag.StringVar(&tConfig.MongoURI, "mongo-addr", "mongodb://127.0.0.1:27017/cmdb", "mongodb URI")
@@ -68,8 +81,12 @@ func init() {
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
 	regdiscvConf := &registerdiscover.Config{
-		Host: tConfig.RegDiscv,
-		TLS: nil,
+		Host:   tConfig.RegDiscv,
+		User:   tConfig.RdUser,
+		Passwd: tConfig.RdPassword,
+		Cert:   tConfig.RdCertFile,
+		Key:    tConfig.RdKeyFile,
+		Ca:     tConfig.RdCaFile,
 	}
 	rd, err := registerdiscover.NewRegDiscv(regdiscvConf)
 	Expect(err).Should(BeNil())

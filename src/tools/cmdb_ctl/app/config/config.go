@@ -31,6 +31,11 @@ var Conf *Config
 // Config is data structure of cmdb ctl config
 type Config struct {
 	RegDiscv    string
+	RdUser		string
+	RdPassword  string
+	RdCertFile  string
+	RdKeyFile   string
+	RdCaFile    string
 	MongoURI    string
 	MongoRsName string
 	RedisConf   redis.Config
@@ -40,10 +45,18 @@ type Config struct {
 func (c *Config) AddFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&c.RegDiscv, "regdiscv", os.Getenv("REGDISCV_ADDR"),
 		"the regdiscv address, separated by comma, corresponding environment variable is REGDISCV_ADDR")
-	// TODO add zkuser and zkpwd
+	cmd.PersistentFlags().StringVar(&c.RdUser, "rduser", "",
+		"user name for authentication in register and discover")
+	cmd.PersistentFlags().StringVar(&c.RdPassword, "rdpwd", "",
+		"password for authentication in register and discover")
+	cmd.PersistentFlags().StringVar(&c.RdCertFile, "rdcert", "",
+		"cert file in register and discover")
+	cmd.PersistentFlags().StringVar(&c.RdKeyFile, "rdkey", "", "key file in register and discover")
+	cmd.PersistentFlags().StringVar(&c.RdCaFile, "rdca", "", "CA file in register and discover")
 	cmd.PersistentFlags().StringVar(&c.MongoURI, "mongo-uri", os.Getenv("MONGO_URI"),
 		"the mongodb URI, eg. mongodb://127.0.0.1:27017/cmdb, corresponding environment variable is MONGO_URI")
-	cmd.PersistentFlags().StringVar(&c.MongoRsName, "mongo-rs-name", "rs0", "mongodb replica set name")
+	cmd.PersistentFlags().StringVar(&c.MongoRsName, "mongo-rs-name", "rs0",
+		"mongodb replica set name")
 	cmd.PersistentFlags().StringVar(&c.RedisConf.Address, "redis-addr", "127.0.0.1:6379",
 		"assign redis server address default is 127.0.0.1:6379")
 	cmd.PersistentFlags().StringVar(&c.RedisConf.MasterName, "redis-mastername", "",
@@ -64,10 +77,14 @@ type Service struct {
 }
 
 // NewRegDiscv creates a service object with register and discover
-func NewRegDiscv(rdAddr string) (*Service, error) {
+func NewRegDiscv(cfg *Config) (*Service, error) {
 	regdiscvConf := &registerdiscover.Config{
-		Host: rdAddr,
-		TLS:  nil,
+		Host:   cfg.RegDiscv,
+		User:   cfg.RdUser,
+		Passwd: cfg.RdPassword,
+		Cert:   cfg.RdCertFile,
+		Key:    cfg.RdKeyFile,
+		Ca:     cfg.RdCaFile,
 	}
 	rd, err := registerdiscover.NewRegDiscv(regdiscvConf)
 	if err != nil {

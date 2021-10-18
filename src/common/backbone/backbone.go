@@ -44,8 +44,19 @@ type BackboneParameter struct {
 	ConfigUpdate cc.ProcHandlerFunc
 	ExtraUpdate  cc.ProcHandlerFunc
 
-	// service component addr
+	// register and discover addr, eg: http://127.0.0.1:2379
 	Regdiscv string
+	// user name for authentication in register and discover
+	RdUser string
+	// password for authentication in register and discover
+	RdPassword string
+	// identify secure client using this TLS certificate file in register and discover
+	RdCertFile string
+	// identify secure client using this TLS key file in register and discover
+	RdKeyFile string
+	// verify certificates of TLS-enabled secure servers using this CA bundle in register and discover
+	RdCaFile string
+
 	// config path
 	ConfigPath string
 	// http server parameter
@@ -164,9 +175,13 @@ func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, http
 func newRegDiscv(ctx context.Context, input *BackboneParameter) (*registerdiscover.RegDiscv, error) {
 	regdiscvConf := &registerdiscover.Config{
 		Host: input.Regdiscv,
-		// TODO: get User, Passwd, TLS from flag
-		TLS: nil,
+		User: input.RdUser,
+		Passwd: input.RdPassword,
+		Cert: input.RdCertFile,
+		Key: input.RdKeyFile,
+		Ca: input.RdCaFile,
 	}
+
 	return registerdiscover.NewRegDiscv(regdiscvConf)
 }
 

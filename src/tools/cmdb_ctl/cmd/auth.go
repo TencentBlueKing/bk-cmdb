@@ -98,7 +98,11 @@ func newAuthService(c *authConf) (*authService, error) {
 
 	regdiscvConf := &registerdiscover.Config{
 		Host: config.Conf.RegDiscv,
-		TLS:  nil,
+		User: config.Conf.RdUser,
+		Passwd: config.Conf.RdPassword,
+		Cert: config.Conf.RdCertFile,
+		Key: config.Conf.RdKeyFile,
+		Ca: config.Conf.RdCaFile,
 	}
 	rd, err := registerdiscover.NewRegDiscv(regdiscvConf)
 	if err != nil {

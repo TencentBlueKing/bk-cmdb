@@ -14,12 +14,12 @@ package registerdiscover
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"strings"
 	"time"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/ssl"
 
 	"go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/concurrency"
@@ -45,17 +45,14 @@ type KeyVal struct {
 	Value string
 }
 
-const (
-	EtcdAuthUser = "cc"
-	EtcdAuthPwd  = "3.0#bkcc"
-)
-
 // Config register and discover config
 type Config struct {
 	Host       string           // etcd host info
 	User       string           // user name for authentication
 	Passwd     string           // password relative to user
-	TLS        *tls.Config      // tls config for https
+	Cert       string			// identify secure client using this TLS certificate file
+	Key        string           // identify secure client using this TLS key file
+	Ca         string           // verify certificates of TLS-enabled secure servers using this CA bundle
 }
 
 // RegDiscv data structure of register and discover
@@ -73,14 +70,28 @@ func NewRegDiscv(config *Config) (*RegDiscv, error) {
 		return nil, fmt.Errorf("create regdiscv failed for no endpoints")
 	}
 
-	client, err := clientv3.New(clientv3.Config{
+	// etcd client config
+	cfg := clientv3.Config{
 		Endpoints:        endpoints,
 		DialTimeout:      time.Second * 5,
 		AutoSyncInterval: time.Minute * 5,
-		TLS:              config.TLS,
-		Username:         EtcdAuthUser,
-		Password:         EtcdAuthPwd,
-	})
+		TLS:              nil,
+		Username:         config.User,
+		Password:         config.Passwd,
+	}
+
+	// optionally, configure TLS transport
+	if config.Cert != "" && config.Key != "" && config.Ca != "" {
+		// Load client cert
+		tlsConf, err := ssl.ClientTLSConfVerity(config.Ca, config.Cert, config.Key, "")
+		if err != nil {
+			return nil, err
+		}
+		// Add TLS config
+		cfg.TLS = tlsConf
+	}
+
+	client, err := clientv3.New(cfg)
 	if err != nil {
 		return nil, err
 	}
