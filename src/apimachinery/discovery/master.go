@@ -53,15 +53,13 @@ func (m *master) campaign() {
 	val := common.GetServerInfo().RegisterIP
 	for {
 		// block until it is elected, an error occurs, or the context is cancelled
-		if err := m.rd.Campaign(m.path, val); err != nil {
+		if err := m.rd.Campaign(m.path, val, &m.isMaster); err != nil {
 			m.isMaster = false
 			blog.Errorf("discovery campaign master err: %v", err)
-			// try campaign 3 seconds later
-			time.Sleep(3 * time.Second)
-			continue
 		}
-		// if campaign return no error, it is elected as master
-		m.isMaster = true
+
+		// try campaign 3 seconds later
+		time.Sleep(3 * time.Second)
 	}
 
 }

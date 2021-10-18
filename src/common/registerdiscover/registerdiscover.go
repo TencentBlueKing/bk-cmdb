@@ -195,10 +195,10 @@ func (rd *RegDiscv) Watch(ctx context.Context, key string) (<-chan *DiscoverEven
 }
 
 // Campaign puts a value as eligible for the election. It blocks until
-// it is elected, an error occurs, or the context is cancelled.
-func (rd *RegDiscv) Campaign(key, val string) error {
-	// create session for election competition
-	session, err := concurrency.NewSession(rd.client)
+// session expires, an error occurs, or the context is cancelled.
+func (rd *RegDiscv) Campaign(key, val string, leaderFlag *bool) error {
+	// create session for election competition with ttl 5s
+	session, err := concurrency.NewSession(rd.client, concurrency.WithTTL(5))
 	if err != nil {
 		return err
 	}
@@ -207,6 +207,16 @@ func (rd *RegDiscv) Campaign(key, val string) error {
 
 	if err := rd.election.Campaign(context.Background(), val); err != nil {
 		return err
+	}
+
+	blog.Infof("elect success as leader")
+	*leaderFlag = true
+
+	select {
+	case <-session.Done():
+		blog.Infof("elect session expired, not leader any more")
+		*leaderFlag = false
+		return fmt.Errorf("elect session expired, not leader any more")
 	}
 
 	return nil
