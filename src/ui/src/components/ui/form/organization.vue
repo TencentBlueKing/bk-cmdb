@@ -59,6 +59,7 @@
 
 <script>
   import debounce from 'lodash.debounce'
+  import isEqual from 'lodash/isEqual'
   export default {
     name: 'cmdb-form-organization',
     props: {
@@ -107,8 +108,11 @@
       }
     },
     watch: {
-      value(value) {
+      value(value, oldValue) {
         this.checked = value
+        if (!isEqual(value, oldValue)) {
+          this.initTree()
+        }
       },
       checked(checked) {
         this.$emit('input', checked)
@@ -118,9 +122,6 @@
       focused(focused) {
         this.$emit('toggle', focused)
       }
-    },
-    created() {
-      this.initTree()
     },
     methods: {
       async initTree() {
