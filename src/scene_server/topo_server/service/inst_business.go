@@ -564,6 +564,15 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 		return
 	}
 
+	// parameters condition and biz_property_filter cannot be set at the same time.
+	if searchCond.Condition != nil && searchCond.BizPropertyFilter != nil {
+		blog.Errorf("failed to parse the params, condition and biz_property_filter cannot be set at the same "+
+			"time, rid: %s", ctx.Kit.Rid)
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "condition and biz_property_filter cannot be set "+
+			"at the same time")
+		return
+	}
+
 	attrCond := condition.CreateCondition()
 	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
 	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
