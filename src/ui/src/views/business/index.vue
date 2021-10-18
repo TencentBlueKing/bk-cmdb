@@ -14,7 +14,7 @@
         <template #default="{ disabled }">
           <bk-button
             class="ml10"
-            :disabled="(selectedRows.length === 0 && !editAll) || disabled"
+            :disabled="selectedRows.length === 0 || disabled"
             @click="handleBatchEdit"
           >
             {{ $t("批量编辑") }}
@@ -59,7 +59,7 @@
     </div>
     <bk-table class="business-table"
       v-bkloading="{ isLoading: $loading('post_searchBusiness_list') }"
-      :data="table.list"
+      :data="table.visibleList"
       :pagination="table.pagination"
       :max-height="$APP.height - 200"
       @sort-change="handleSortChange"
@@ -68,13 +68,12 @@
       <batch-selection-column
         width="60px"
         row-key="bk_biz_id"
-        indeterminate
-        :cross-page="table.list.length < table.pagination.count"
         ref="batchSelectionColumn"
+        indeterminate
+        :cross-page="table.visibleList.length >= table.pagination.limit"
         :selected-rows.sync="selectedRows"
-        :unselected-rows.sync="unselectedRows"
-        :all-selected.sync="editAll"
-        :data="table.list"
+        :data="table.visibleList"
+        :full-data="table.list"
       >
       </batch-selection-column>
       <bk-table-column v-for="column in table.header"
@@ -234,6 +233,7 @@
         table: {
           header: [],
           list: [],
+          visibleList: [],
           pagination: {
             count: 0,
             current: 1,
@@ -249,7 +249,6 @@
           }
         },
         selectedRows: [],
-        unselectedRows: [],
         editAll: false,
         filter: {
           field: 'bk_biz_name',
@@ -416,17 +415,12 @@
       },
       async handleMultipleSave(changedValues) {
         const includeBizIds = this.selectedRows.map(r => r.bk_biz_id)
-        const excludeBizIds = this.unselectedRows.map(r => r.bk_biz_id)
         const condition = {
           ...this.getSearchParams()?.condition
         }
 
         if (includeBizIds?.length > 0) {
           condition.bk_biz_id = { $in: includeBizIds }
-        }
-
-        if (excludeBizIds?.length > 0) {
-          condition.bk_biz_id = { $nin: excludeBizIds }
         }
 
         this.batchUpdateSlider.loading = true
@@ -437,8 +431,8 @@
           },
         })
           .then(() => {
-            this.batchUpdateSlider.show = false
             this.$refs.batchSelectionColumn.clearSelection()
+            this.batchUpdateSlider.show = false
             RouterQuery.set({
               _t: Date.now(),
             })
@@ -506,14 +500,20 @@
       handleSortChange(sort) {
         this.table.sort = this.$tools.getSort(sort)
         this.handlePageChange(1)
+        this.getTableData()
       },
       handleSizeChange(size) {
         this.table.pagination.limit = size
         this.handlePageChange(1)
+        this.renderVisibleList()
       },
       handlePageChange(page) {
         this.table.pagination.current = page
-        this.getTableData()
+        this.renderVisibleList()
+      },
+      renderVisibleList() {
+        const { limit, current } = this.table.pagination
+        this.table.visibleList = this.table.list.slice((current - 1) * limit, current * limit)
       },
       getBusinessList(config = { cancelPrevious: true }) {
         return this.searchBusiness({
@@ -560,6 +560,8 @@
 
           this.table.stuff.type = this.filter.value.toString().length ? 'search' : 'default'
 
+          this.renderVisibleList()
+
           return data
         })
           .catch(({ permission }) => {
@@ -577,8 +579,8 @@
           },
           fields: [],
           page: {
-            start: this.table.pagination.limit * (this.table.pagination.current - 1),
-            limit: this.table.pagination.limit,
+            start: 0,
+            limit: 10000,
             sort: this.table.sort
           }
         }
