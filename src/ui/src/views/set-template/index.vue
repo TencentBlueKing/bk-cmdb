@@ -26,7 +26,7 @@
           :placeholder="$t('请输入xx', { name: $t('模板名称') })"
           clearable
           right-icon="icon-search"
-          v-model="searchName"
+          v-model.trim="searchName"
           @enter="handleFilterTemplate"
           @clear="handleClearFilter">
         </bk-input>
