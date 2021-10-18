@@ -386,6 +386,13 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 		filter[common.BKModuleIDField] = option.ModuleID
 	}
 
+	if option.HostID != 0 && len(option.HostList) > 0 {
+		blog.Errorf("ListServiceInstance failed, Parameters bk_host_id and bk_host_list cannot be set at the "+
+			"same time, rid: %s", kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_host_id and bk_host_list cannot be "+
+			"set at the same time")
+	}
+
 	if option.HostID != 0 {
 		filter[common.BKHostIDField] = option.HostID
 	}
