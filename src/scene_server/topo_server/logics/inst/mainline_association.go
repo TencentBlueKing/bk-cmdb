@@ -159,7 +159,7 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parentObjID,
 	}
 
 	createdInstIDs := make([]int64, len(parentInsts.Info))
-	expectParent2Children := make(map[int64][]int64)
+	newParentCurrentMap := make(map[int64]int64)
 	// filters out special character for mainline instances
 	instanceName := mainlineSpecialCharacterRegexp.ReplaceAllString(currObjName, "")
 	var parentInstIDs []int64
@@ -198,6 +198,7 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parentObjID,
 			return nil, err
 		}
 
+		newParentCurrentMap[id] = currentInstID
 		createdInstIDs = append(createdInstIDs, currentInstID)
 	}
 
@@ -208,6 +209,7 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parentObjID,
 		return nil, err
 	}
 
+	expectParent2Children := make(map[int64][]int64)
 	for _, child := range childInst {
 		childID, err := child.Int64(common.GetInstIDField(childObjID))
 		if err != nil {
@@ -220,7 +222,8 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parentObjID,
 			blog.Errorf("get parent id failed, current inst(%v), err: %v, rid: %s", child, err, kit.Rid)
 			continue
 		}
-		expectParent2Children[parentID] = append(expectParent2Children[parentID], childID)
+		newParentID := newParentCurrentMap[parentID]
+		expectParent2Children[newParentID] = append(expectParent2Children[newParentID], childID)
 	}
 
 	for parentID, childIDs := range expectParent2Children {
