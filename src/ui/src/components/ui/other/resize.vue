@@ -63,11 +63,22 @@
         type: Number,
         default: 0
       },
-      disabled: Boolean
+      disabled: Boolean,
+      /**
+       * 将 resize 信息保存在本地的唯一标识，如果拥有此 id 将会记住上次 resize 的信息。出现重复的 id 将会互相覆盖信息，请保持此 id 的唯一性。
+       */
+      storeId: {
+        type: String,
+        default: ''
+      }
     },
     data() {
       return {
-        state: {}
+        state: {},
+        storeState: {
+          resizeWidth: '',
+          resizeHeight: '',
+        },
       }
     },
     computed: {
@@ -103,6 +114,9 @@
         }
         return max
       }
+    },
+    mounted() {
+      this.initStoreState()
     },
     methods: {
       getHandlerStyle(direction) {
@@ -165,9 +179,11 @@
           if (direction === 'right') {
             const finalLeft = parseInt($resizeProxy.style.left, 10)
             this.$el.style.width = `${finalLeft}px`
+            this.storeState.resizeWidth = `${finalLeft}px`
           } else {
             const finalTop = parseInt($resizeProxy.style.top, 10)
             this.$el.style.height = `${finalTop}px`
+            this.storeState.resizeHeight = `${finalTop}px`
           }
           $resizeProxy.style.visibility = 'hidden'
           this.$refs.resizeMask.style.display = 'none'
@@ -175,10 +191,34 @@
           document.removeEventListener('mouseup', handleMouseUp)
           document.onselectstart = null
           document.ondragstart = null
+          this.setStoreState()
         }
         document.addEventListener('mousemove', handleMouseMove)
         document.addEventListener('mouseup', handleMouseUp)
-      }
+      },
+      setStoreState() {
+        if (this.storeId) {
+          localStorage.setItem(`${this.storeId}-resizeHeight`, this.storeState.resizeHeight)
+          localStorage.setItem(`${this.storeId}-resizeWidth`, this.storeState.resizeWidth)
+        }
+      },
+      initStoreState() {
+        if (this.storeId) {
+          const storedResizeHeight = localStorage.getItem(`${this.storeId}-resizeHeight`)
+          const storedResizeWidth = localStorage.getItem(`${this.storeId}-resizeWidth`)
+
+
+          if (storedResizeWidth && this.direction === 'right') {
+            this.$el.style.width = storedResizeWidth
+            this.$refs.resizeProxy.style.left = storedResizeHeight
+          }
+
+          if (storedResizeHeight && this.direction === 'bottom') {
+            this.$el.style.height = storedResizeHeight
+            this.$refs.resizeProxy.style.top = storedResizeHeight
+          }
+        }
+      },
     }
   }
 </script>
