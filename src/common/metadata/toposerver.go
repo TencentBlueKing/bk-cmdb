@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/querybuilder"
 )
 
 type SearchInstResult struct {
@@ -69,9 +70,12 @@ type SearchTopoResult struct {
 }
 
 type QueryBusinessRequest struct {
-	Fields    []string      `json:"fields"`
-	Page      BasePage      `json:"page"`
-	Condition mapstr.MapStr `json:"condition"`
+	Fields []string `json:"fields"`
+	Page   BasePage `json:"page"`
+	// parameters condition and biz_property_filter cannot be set at the same time, The field condition is not
+	// maintained later, it is recommended to use the field biz_property_filter.
+	Condition         mapstr.MapStr             `json:"condition"`
+	BizPropertyFilter *querybuilder.QueryFilter `json:"biz_property_filter,omitempty"`
 }
 
 type UpdateBusinessStatusOption struct {
