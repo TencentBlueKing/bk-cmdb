@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -45,7 +46,14 @@ func (s *Service) ProxyRequest(c *gin.Context) {
 		return
 	}
 
-	reqDomain := s.getTargetDomainUrl(target)
+	reqDomain, err := s.getTargetDomainUrl(target)
+	if err != nil {
+		blog.Errorf("get target domain url failed, err: %v, rid: %s", err, rid)
+		reply := getReturnStr(common.CCErrCommParamsIsInvalid, err.Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
+		return
+	}
+
 	url, err := url.Parse(fmt.Sprintf("%s%s", reqDomain, target_url))
 	if err != nil {
 		blog.Errorf("parse url failed, err: %v, rid: %s", err, rid)
@@ -73,22 +81,21 @@ func (s *Service) ProxyRequest(c *gin.Context) {
 	proxy.ServeHTTP(c.Writer, c.Request)
 }
 
-func (s *Service) getTargetDomainUrl(target string) string {
+func (s *Service) getTargetDomainUrl(target string) (string, error) {
 	switch target {
 	case "usermanage":
-		return s.Config.Site.PaasDomainUrl
+		return s.Config.Site.PaasDomainUrl, nil
 	default:
-		return ""
+		return "", fmt.Errorf("did not support this target saas: %s", target)
 	}
 }
 
-func getRequestMethod(method string) (string, error) {
+func getRequestMethod(urlMethod string) (string, error) {
+	method := strings.ToUpper(urlMethod)
 	switch method {
-	case "get", "GET":
-		return "GET", nil
-	case "post", "POST":
-		return "POST", nil
+	case "GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "OPTIONS", "TRACE":
+		return method, nil
 	default:
-		return "", fmt.Errorf("did not support this proxy request method: %s", method)
+		return "", fmt.Errorf("did not support this proxy request method: %s", urlMethod)
 	}
 }
