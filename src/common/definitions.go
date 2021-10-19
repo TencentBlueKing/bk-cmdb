@@ -1275,17 +1275,3 @@ const (
 	CCLogicUniqueIdxNamePrefix = "bkcc_unique_"
 	CCLogicIndexNamePrefix     = "bkcc_idx_"
 )
-
-// constants about dynamically adjusting the configuration
-const (
-	SettingsOperation    = "op"
-	SettingsLogLevel     = "v"
-	SettingsAction       = "action"
-	SettingsAddAction    = "add"
-	SettingsDeleteAction = "delete"
-	SettingsUpdateAction = "update"
-	SettingsGetAction    = "get"
-	SettingsGetAllAction = "getAll"
-	SettingsLog          = "log"
-	SettingsLimiter      = "limiter"
-)

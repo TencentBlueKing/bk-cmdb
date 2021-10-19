@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package tool
+package setting
 
 import (
 	"strconv"
@@ -18,10 +18,21 @@ import (
 	"configcenter/src/common/blog"
 )
 
-// LogDefaultFlag log default flag
-const LogDefaultFlag = "default"
+func init() {
+	help := &help{
+		op:      SettingsLog,
+		url:     "http://ip:port/settings?op=log&v=3",
+		explain: "change the log level to 3",
+	}
+	AddHelp(help)
+}
 
-// logService the structure responsible for log adjustment
+// constants about the log
+const (
+	LogDefaultFlag = "default"
+)
+
+// LogService the structure responsible for log adjustment
 type LogService struct {
 	defaultV int32
 }

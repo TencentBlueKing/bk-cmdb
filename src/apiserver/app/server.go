@@ -21,7 +21,6 @@ import (
 	"configcenter/src/apiserver/service"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/tool"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
 
@@ -69,7 +68,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("connect redis server failed, err: %s", err.Error())
 	}
 
-	svc.SetConfig(engine, client, engine.Discovery(), engine.CoreAPI, cache, tool.GetLimiter())
+	svc.SetConfig(engine, client, engine.Discovery(), engine.CoreAPI, cache, service.NewLimiter())
 
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})

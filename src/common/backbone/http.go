@@ -27,9 +27,9 @@ import (
 	"syscall"
 	"time"
 
+	"configcenter/src/common/backbone/setting"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/ssl"
-	"configcenter/src/common/tool"
 )
 
 // ListenAndServe start http server
@@ -37,7 +37,7 @@ func ListenAndServe(c Server, register ServiceRegisterInterface, cancel context.
 	handler := c.Handler
 	rootMux := http.NewServeMux()
 	rootMux.HandleFunc("/", c.Handler.ServeHTTP)
-	rootMux.Handle("/settings", tool.GetService())
+	rootMux.Handle("/settings", setting.NewService())
 	if c.PProfEnabled {
 		rootMux.Handle("/debug/", http.DefaultServeMux)
 	}

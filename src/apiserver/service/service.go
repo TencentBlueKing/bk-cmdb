@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/rdapi"
-	"configcenter/src/common/tool"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/storage/dal/redis"
 
@@ -32,7 +31,7 @@ import (
 type Service interface {
 	WebServices() []*restful.WebService
 	SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface,
-		clientSet apimachinery.ClientSetInterface, cache redis.Client, limiter *tool.Limiter)
+		clientSet apimachinery.ClientSetInterface, cache redis.Client, limiter *Limiter)
 }
 
 // NewService create a new service instance
@@ -47,11 +46,11 @@ type service struct {
 	clientSet  apimachinery.ClientSetInterface
 	authorizer ac.AuthorizeInterface
 	cache      redis.Client
-	limiter    *tool.Limiter
+	limiter    *Limiter
 }
 
 func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface,
-	clientSet apimachinery.ClientSetInterface, cache redis.Client, limiter *tool.Limiter) {
+	clientSet apimachinery.ClientSetInterface, cache redis.Client, limiter *Limiter) {
 	s.engine = engine
 	s.client = httpClient
 	s.discovery = discovery
@@ -90,6 +89,7 @@ func (s *service) WebServices() []*restful.WebService {
 	// common api
 	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
 	commonAPI.Route(commonAPI.GET("/healthz").To(s.Healthz))
+	commonAPI.Route(commonAPI.POST("/set_limit_rule").To(s.SetLimitRule))
 	commonAPI.Route(commonAPI.GET("/version").To(restfulservice.Version))
 	allWebServices = append(allWebServices, commonAPI)
 
