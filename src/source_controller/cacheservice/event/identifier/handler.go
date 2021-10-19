@@ -143,7 +143,7 @@ func (f *identityHandler) getStartWatchTime(ctx context.Context) (*types.TimeSta
 	}
 
 	data := make(map[string]watch.LastChainNodeData)
-	err := f.watchDB.Table(common.BKTableNameWatchToken).Find(filter).One(ctx, &data)
+	err := f.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(f.key.Collection()).One(ctx, &data)
 	if err != nil {
 		blog.Errorf("get host identity %s start watch time, but find in watch token failed, err: %v",
 			f.key.Collection(), err)
