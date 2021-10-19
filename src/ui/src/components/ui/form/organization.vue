@@ -123,6 +123,9 @@
         this.$emit('toggle', focused)
       }
     },
+    created() {
+      this.initTree()
+    },
     methods: {
       async initTree() {
         await this.loadTree()
