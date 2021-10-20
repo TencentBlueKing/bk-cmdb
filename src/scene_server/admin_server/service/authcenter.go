@@ -79,3 +79,48 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 
 	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
+
+// RegisterAuthAccount register auth account to iam
+func (s *Service) RegisterAuthAccount(req *restful.Request, resp *restful.Response) {
+	if !auth.EnableAuthorize() {
+		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
+		return
+	}
+
+	rHeader := req.Request.Header
+	rid := util.GetHTTPCCRequestID(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
+	if !auth.EnableAuthorize() {
+		blog.Warnf("received iam register request, but auth not enabled, rid: %s", rid)
+		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
+		return
+	}
+
+	param := struct {
+		Host string `json:"host"`
+	}{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&param); err != nil {
+		blog.Errorf("register iam failed with decode body err: %v, rid:%s", err, rid)
+		_ = resp.WriteError(http.StatusBadRequest,
+			&metadata.RespError{Msg: defErr.CCError(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	if param.Host == "" {
+		blog.Errorf("register iam host not set, rid:%s", rid)
+		_ = resp.WriteError(http.StatusBadRequest,
+			&metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsNeedSet, "host")})
+		return
+	}
+
+	if err := s.iam.RegisterToIAM(s.ctx, param.Host); err != nil {
+		blog.Errorf("register cmdb to iam failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: err,
+		}
+		_ = resp.WriteError(http.StatusInternalServerError, result)
+		return
+	}
+
+	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
+}

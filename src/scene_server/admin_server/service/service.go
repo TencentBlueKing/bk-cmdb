@@ -84,6 +84,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Produces(restful.MIME_JSON)
 
 	api.Route(api.POST("/authcenter/init").To(s.InitAuthCenter))
+	api.Route(api.POST("/authcenter/register").To(s.RegisterAuthAccount))
 	api.Route(api.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
 	api.Route(api.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.SetSystemConfiguration))
 	api.Route(api.POST("/migrate/system/user_config/{key}/{can}").To(s.UserConfigSwitch))

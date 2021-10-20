@@ -35,7 +35,8 @@ const (
 	// CCErrCommHTTPDoRequestFailed the HTTP Request failed
 	CCErrCommHTTPDoRequestFailed = 1199002
 
-	// CCErrCommHTTPInputInvalid the input parameter is invalid, and the parameter here refers to the URL or Query parameter
+	// CCErrCommHTTPInputInvalid the input parameter is invalid, and the parameter here refers to the URL or Query
+	// parameter
 	CCErrCommHTTPInputInvalid = 1199003
 
 	// CCErrCommHTTPReadBodyFailed unable to read HTTP request body data
@@ -478,7 +479,7 @@ const (
 	CCErrorSetNameDuplicated       = 1101108
 
 	// CCErrorCheckRegularFailed check regular expression failed
-	CCErrorCheckRegularFailed   = 1101109
+	CCErrorCheckRegularFailed = 1101109
 
 	// CCErrorTopObjectUniqueIndexNotFound  模型xx的唯一校验xx不存在
 	CCErrorTopObjectUniqueIndexNotFound = 1101110
@@ -693,7 +694,8 @@ const (
 	CCErrDeleteHostFromBusiness = 1110055
 	// CCErrHostModuleConfigNotMatch hostID[%#v] not belong to business
 	CCErrHostModuleConfigNotMatch = 1110056
-	// CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed Module does not exist or there are multiple built-in modules
+	// CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed Module does not exist or there are multiple built-in
+	// modules
 	CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed = 1110057
 	CCErrHostSearchNeedObjectInstIDErr                        = 1110058
 	CCErrHostSetNotExist                                      = 1110059
@@ -830,7 +832,8 @@ const (
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
-	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %s does not exist
+	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %s does not
+	// exist
 	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
 
 	// synchronize_server 1114xxx

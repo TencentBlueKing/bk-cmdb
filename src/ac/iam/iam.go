@@ -35,6 +35,7 @@ type IAM struct {
 	Client iamClientInterface
 }
 
+// NewIAM new iam client
 func NewIAM(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer) (*IAM, error) {
 	blog.V(5).Infof("new iam with parameters tls: %+v, cfg: %+v", tls, cfg)
 	if !auth.EnableAuthorize() {
@@ -71,6 +72,7 @@ func NewIAM(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer
 	}, nil
 }
 
+// RegisterSystem register system to iam
 func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata.Object) error {
 	if !auth.EnableAuthorize() {
 		return nil
@@ -110,9 +112,11 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 			return err
 		}
 		if systemResp.Data.BaseInfo.ProviderConfig == nil {
-			blog.V(5).Infof("update system host to %s succeed", systemResp.Data.BaseInfo.ProviderConfig.Host, host)
+			blog.V(5).Infof("update system host to %s succeed",
+				systemResp.Data.BaseInfo.ProviderConfig.Host, host)
 		} else {
-			blog.V(5).Infof("update system host %s to %s succeed", systemResp.Data.BaseInfo.ProviderConfig.Host, host)
+			blog.V(5).Infof("update system host %s to %s succeed",
+				systemResp.Data.BaseInfo.ProviderConfig.Host, host)
 		}
 	}
 
@@ -203,7 +207,8 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 			idx++
 		}
 		if err = i.Client.DeleteActions(ctx, removedResourceActionIDs); err != nil {
-			blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(), removedResourceActionIDs)
+			blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(),
+				removedResourceActionIDs)
 			return err
 		}
 	}
@@ -484,8 +489,8 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 		blog.Infof("begin delete resourceTypes, count:%d, detail:%v, rid: %s",
 			len(deletedResourceTypes), deletedResourceTypes, rid)
 		if err := i.Client.DeleteResourcesTypes(ctx, deletedResourceTypes); err != nil {
-			blog.ErrorJSON("delete cmdb resource failed, delete resourceType error: %s, resourceType: %s, rid: %s",
-				err, deletedResourceTypes, rid)
+			blog.ErrorJSON("delete cmdb resource failed, delete resourceType error: %s, resourceType: %s, "+
+				"rid: %s", err, deletedResourceTypes, rid)
 			return err
 		}
 	}
@@ -495,12 +500,45 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 		cmdbActionGroups := GenerateActionGroups(objects)
 		blog.Infof("begin update actionGroups")
 		if err := i.Client.UpdateActionGroups(ctx, cmdbActionGroups); err != nil {
-			blog.ErrorJSON("delete cmdb resource failed, update actionGroups error: %s, actionGroups: %s, rid: %s",
-				err, cmdbActionGroups, rid)
+			blog.ErrorJSON("delete cmdb resource failed, update actionGroups error: %s, actionGroups: %s, "+
+				"rid: %s", err, cmdbActionGroups, rid)
 			return err
 		}
 	}
 
+	return nil
+}
+
+// RegisterToIAM register to iam
+func (i IAM) RegisterToIAM(ctx context.Context, host string) error {
+	rid := commonutil.ExtractRequestIDFromContext(ctx)
+
+	_, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
+	if err == nil {
+		return nil
+	}
+
+	if err != ErrNotFound {
+		blog.Errorf("get system info failed, error: %v, rid: %s", err, rid)
+		return err
+	}
+
+	// if iam cmdb system has not been registered, register system
+	sys := System{
+		ID:          SystemIDCMDB,
+		Name:        SystemNameCMDB,
+		EnglishName: SystemNameCMDBEn,
+		Clients:     SystemIDCMDB,
+		ProviderConfig: &SysConfig{
+			Host: host,
+			Auth: "basic",
+		},
+	}
+	if err = i.Client.RegisterSystem(ctx, sys); err != nil {
+		blog.ErrorJSON("register system %s failed, error: %v, rid: %s", sys, err, rid)
+		return err
+	}
+	blog.V(5).Infof("register new system %+v succeed", sys)
 	return nil
 }
 
@@ -636,15 +674,18 @@ type authorizer struct {
 	authClientSet authserver.AuthServerClientInterface
 }
 
+// NewAuthorizer new authorizer
 func NewAuthorizer(clientSet apimachinery.ClientSetInterface) *authorizer {
 	return &authorizer{authClientSet: clientSet.AuthServer()}
 }
 
+// AuthorizeBatch batch authorization will not pass if one of them does not have permission
 func (a *authorizer) AuthorizeBatch(ctx context.Context, h http.Header, user meta.UserInfo,
 	resources ...meta.ResourceAttribute) ([]types.Decision, error) {
 	return a.authorizeBatch(ctx, h, true, user, resources...)
 }
 
+// AuthorizeAnyBatch batch authorization will pass if one of them has permission
 func (a *authorizer) AuthorizeAnyBatch(ctx context.Context, h http.Header, user meta.UserInfo,
 	resources ...meta.ResourceAttribute) ([]types.Decision, error) {
 	return a.authorizeBatch(ctx, h, false, user, resources...)
@@ -701,7 +742,8 @@ func (a *authorizer) authorizeBatch(ctx context.Context, h http.Header, exact bo
 	return decisions, nil
 }
 
-func parseAttributesToBatchOptions(rid string, user meta.UserInfo, resources ...meta.ResourceAttribute) (*types.AuthBatchOptions, []types.Decision, error) {
+func parseAttributesToBatchOptions(rid string, user meta.UserInfo,
+	resources ...meta.ResourceAttribute) (*types.AuthBatchOptions, []types.Decision, error) {
 	if !auth.EnableAuthorize() {
 		decisions := make([]types.Decision, len(resources))
 		for i := range decisions {
@@ -762,21 +804,29 @@ func (a *authorizer) ListAuthorizedResources(ctx context.Context, h http.Header,
 	return a.authClientSet.ListAuthorizedResources(ctx, h, input)
 }
 
-func (a *authorizer) GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string, error) {
+// GetNoAuthSkipUrl get no auth skip url
+func (a *authorizer) GetNoAuthSkipUrl(ctx context.Context, h http.Header,
+	input *metadata.IamPermission) (string, error) {
 	return a.authClientSet.GetNoAuthSkipUrl(ctx, h, input)
 }
 
-func (a *authorizer) GetPermissionToApply(ctx context.Context, h http.Header, input []meta.ResourceAttribute) (*metadata.IamPermission, error) {
+// GetPermissionToApply get permission to apply
+func (a *authorizer) GetPermissionToApply(ctx context.Context, h http.Header,
+	input []meta.ResourceAttribute) (*metadata.IamPermission, error) {
 	return a.authClientSet.GetPermissionToApply(ctx, h, input)
 }
 
-func (a *authorizer) RegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstanceWithCreator) (
+// RegisterResourceCreatorAction register resourceCreator Action
+func (a *authorizer) RegisterResourceCreatorAction(ctx context.Context, h http.Header,
+	input metadata.IamInstanceWithCreator) (
 	[]metadata.IamCreatorActionPolicy, error) {
 
 	return a.authClientSet.RegisterResourceCreatorAction(ctx, h, input)
 }
 
-func (a *authorizer) BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstancesWithCreator) (
+// BatchRegisterResourceCreatorAction batch register resourceCreator action
+func (a *authorizer) BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header,
+	input metadata.IamInstancesWithCreator) (
 	[]metadata.IamCreatorActionPolicy, error) {
 
 	return a.authClientSet.BatchRegisterResourceCreatorAction(ctx, h, input)
