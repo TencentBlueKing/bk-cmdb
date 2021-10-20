@@ -511,13 +511,15 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 
 // RegisterToIAM register to iam
 func (i IAM) RegisterToIAM(ctx context.Context, host string) error {
+	rid := commonutil.ExtractRequestIDFromContext(ctx)
+
 	_, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
 	if err == nil {
 		return nil
 	}
 
 	if err != ErrNotFound {
-		blog.Errorf("get system info failed, error: %s", err.Error())
+		blog.Errorf("get system info failed, error: %v, rid: %s", err, rid)
 		return err
 	}
 
@@ -533,7 +535,7 @@ func (i IAM) RegisterToIAM(ctx context.Context, host string) error {
 		},
 	}
 	if err = i.Client.RegisterSystem(ctx, sys); err != nil {
-		blog.ErrorJSON("register system %s failed, error: %s", sys, err.Error())
+		blog.ErrorJSON("register system %s failed, error: %v, rid: %s", sys, err, rid)
 		return err
 	}
 	blog.V(5).Infof("register new system %+v succeed", sys)

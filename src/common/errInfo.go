@@ -537,7 +537,6 @@ const (
 	//  CCErrCommMigrateFailed failed to migrate
 	CCErrCommMigrateFailed        = 1105000
 	CCErrCommInitAuthCenterFailed = 1105001
-	CCErrCommRegisterToIAMFailed  = 1105002
 
 	// host controller 1106XXX
 	CCErrHostSelectInst                  = 1106000

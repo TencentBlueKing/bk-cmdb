@@ -100,7 +100,7 @@ func (s *Service) RegisterAuthAccount(req *restful.Request, resp *restful.Respon
 		Host string `json:"host"`
 	}{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&param); err != nil {
-		blog.Errorf("register iam failed with decode body err: %s, rid:%s", err.Error(), rid)
+		blog.Errorf("register iam failed with decode body err: %v, rid:%s", err, rid)
 		_ = resp.WriteError(http.StatusBadRequest,
 			&metadata.RespError{Msg: defErr.CCError(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -116,7 +116,7 @@ func (s *Service) RegisterAuthAccount(req *restful.Request, resp *restful.Respon
 	if err := s.iam.RegisterToIAM(s.ctx, param.Host); err != nil {
 		blog.Errorf("register cmdb to iam failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{
-			Msg: defErr.CCErrorf(common.CCErrCommRegisterToIAMFailed, err.Error()),
+			Msg: err,
 		}
 		_ = resp.WriteError(http.StatusInternalServerError, result)
 		return
