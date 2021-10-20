@@ -76,7 +76,7 @@ func (r *RegDiscover) Start() error {
 
 	// here: discover other services
 	// cc api server
-	apiPath := types.CC_SERV_BASEPATH + "/" + types.CC_MODULE_APISERVER
+	apiPath := types.CCDiscoverBaseEndpoint + "/" + types.CCModuleApi
 	apiEvent, err := r.rd.DiscoverService(apiPath)
 	if err != nil {
 		blog.Errorf("fail to register discover for proc server. err:%s", err.Error())
@@ -96,7 +96,7 @@ func (r *RegDiscover) Start() error {
 
 func (r *RegDiscover) GetServer(servType string) (string, error) {
 	switch servType {
-	case types.CC_MODULE_APISERVER:
+	case types.CCModuleApi:
 		return r.GetApiServ()
 	}
 	err := fmt.Errorf("there is no server discover for type(%s)", servType)
@@ -127,7 +127,7 @@ func (r *RegDiscover) GetApiServ() (string, error) {
 }
 
 func (r *RegDiscover) registerItself() error {
-	migrateServInfo := new(types.MigrateServInfo)
+	migrateServInfo := new(types.AdminServInfo)
 
 	migrateServInfo.IP = r.ip
 	migrateServInfo.Port = r.port
@@ -145,7 +145,7 @@ func (r *RegDiscover) registerItself() error {
 		return err
 	}
 
-	path := types.CC_SERV_BASEPATH + "/framework/" + r.moduleName + "/" + r.ip
+	path := types.CCDiscoverBaseEndpoint + "/framework/" + r.moduleName + "/" + r.ip
 
 	return r.rd.RegisterAndWatchService(path, data)
 }

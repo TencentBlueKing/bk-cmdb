@@ -32,7 +32,7 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// set module datacollection id.
-	common.SetIdentification(types.CC_MODULE_EVENTSERVER)
+	common.SetIdentification(types.CCModuleEvent)
 
 	// init logger.
 	blog.InitLogs()

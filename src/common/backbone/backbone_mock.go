@@ -19,10 +19,11 @@ import (
 	"configcenter/src/common/types"
 )
 
+// NewMockBackbone creates a mock backbone object
 func NewMockBackbone(c *Config) (*Engine, error) {
 	engine := &Engine{
 		CoreAPI:  apimachinery.NewMockApiMachinery(),
-		SvcDisc:  &mockDisc{},
+		register: &mockDisc{},
 		Language: language.NewFromCtx(language.EmptyLanguageSetting),
 		CCErr:    errors.NewFromCtx(errors.EmptyErrorsSetting),
 	}
@@ -32,22 +33,22 @@ func NewMockBackbone(c *Config) (*Engine, error) {
 
 type mockDisc struct{}
 
+// Ping ping register and discover to verify accessibility
 func (*mockDisc) Ping() error {
 	return nil
 }
 
-func (*mockDisc) Stop() error {
-	return nil
-}
-
+// Register add service info to register and discover
 func (*mockDisc) Register(path string, c types.ServerInfo) error {
 	return nil
 }
 
+// Cancel stop service register and discover
 func (*mockDisc) Cancel() {
 
 }
 
-func (*mockDisc) ClearRegisterPath() error {
+// Unregister delete service register key from register and discover
+func (*mockDisc) Unregister() error {
 	return nil
 }

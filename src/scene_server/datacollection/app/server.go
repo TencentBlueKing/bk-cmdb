@@ -153,6 +153,11 @@ func NewDataCollection(ctx context.Context, op *options.ServerOption) (*DataColl
 		ConfigUpdate: newDataCollection.OnHostConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
 		Regdiscv:     op.ServConf.RegDiscover,
+		RdUser:       op.ServConf.RdUser,
+		RdPassword:   op.ServConf.RdPassword,
+		RdCertFile:   op.ServConf.RdCertFile,
+		RdKeyFile:    op.ServConf.RdKeyFile,
+		RdCaFile:     op.ServConf.RdCaFile,
 		SrvInfo:      svrInfo,
 	})
 	if err != nil {
@@ -188,20 +193,15 @@ func (c *DataCollection) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
 	c.hostConfigUpdateMu.Lock()
 	defer c.hostConfigUpdateMu.Unlock()
 
-	if len(curr.ConfigData) > 0 {
-		// NOTE: allow to update configs with empty values?
-		// NOTE: what is prev used for? build a compare logic here?
-
-		if c.config == nil {
-			c.config = &DataCollectionConfig{}
-		}
-
-		blog.V(3).Infof("DataCollection| on host config update event: \n%s", string(curr.ConfigData))
-		// ESB configs.
-		c.config.Esb.Addrs, _ = cc.String("datacollection.esb.addr")
-		c.config.Esb.AppCode, _ = cc.String("datacollection.esb.appCode")
-		c.config.Esb.AppSecret, _ = cc.String("datacollection.esb.appSecret")
+	if c.config == nil {
+		c.config = &DataCollectionConfig{}
 	}
+
+	blog.V(3).Infof("DataCollection| on host config update event: \n%s", string(curr.ConfigData))
+	// ESB configs.
+	c.config.Esb.Addrs, _ = cc.String("datacollection.esb.addr")
+	c.config.Esb.AppCode, _ = cc.String("datacollection.esb.appCode")
+	c.config.Esb.AppSecret, _ = cc.String("datacollection.esb.appSecret")
 }
 
 // initConfigs inits configs for new DataCollection server.

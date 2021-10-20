@@ -42,37 +42,37 @@ type health struct {
 
 func (h *health) HealthCheck(moduleName string) (healthy bool, err error) {
 	switch moduleName {
-	case types.CC_MODULE_DATACOLLECTION:
+	case types.CCModuleDataCollection:
 		h.capability.Discover = h.disc.DataCollect()
 
-	case types.CC_MODULE_HOST:
+	case types.CCModuleHost:
 		h.capability.Discover = h.disc.HostServer()
 
-	case types.CC_MODULE_MIGRATE:
-		h.capability.Discover = h.disc.MigrateServer()
+	case types.CCModuleAdmin:
+		h.capability.Discover = h.disc.AdminServer()
 
-	case types.CC_MODULE_PROC:
+	case types.CCModuleProc:
 		h.capability.Discover = h.disc.ProcServer()
 
-	case types.CC_MODULE_TOPO:
+	case types.CCModuleTopo:
 		h.capability.Discover = h.disc.TopoServer()
 
-	case types.CC_MODULE_EVENTSERVER:
+	case types.CCModuleEvent:
 		h.capability.Discover = h.disc.EventServer()
 
-	case types.CC_MODULE_APISERVER:
+	case types.CCModuleApi:
 		h.capability.Discover = h.disc.ApiServer()
 
-	case types.CC_MODULE_CORESERVICE:
+	case types.CCModuleCoreService:
 		h.capability.Discover = h.disc.CoreService()
 
-	case types.CC_MODULE_OPERATION:
+	case types.CCModuleOperation:
 		h.capability.Discover = h.disc.OperationServer()
 
-	case types.CC_MODULE_TASK:
+	case types.CCModuleTask:
 		h.capability.Discover = h.disc.TaskServer()
 
-	case types.CC_MODULE_CLOUD:
+	case types.CCModuleCloud:
 		h.capability.Discover = h.disc.CloudServer()
 
 	default:

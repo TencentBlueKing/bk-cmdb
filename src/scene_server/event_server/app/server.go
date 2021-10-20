@@ -14,7 +14,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -76,6 +75,11 @@ func NewEventServer(ctx context.Context, op *options.ServerOption) (*EventServer
 		ConfigUpdate: newEventServer.OnHostConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
 		Regdiscv:     op.ServConf.RegDiscover,
+		RdUser:       op.ServConf.RdUser,
+		RdPassword:   op.ServConf.RdPassword,
+		RdCertFile:   op.ServConf.RdCertFile,
+		RdKeyFile:    op.ServConf.RdKeyFile,
+		RdCaFile:     op.ServConf.RdCaFile,
 		SrvInfo:      svrInfo,
 	})
 	if err != nil {
@@ -117,19 +121,8 @@ func (es *EventServer) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
 	es.hostConfigUpdateMu.Lock()
 	defer es.hostConfigUpdateMu.Unlock()
 
-	if len(curr.ConfigData) > 0 {
-		// NOTE: allow to update configs with empty values?
-		// NOTE: what is prev used for? build a compare logic here?
-
-		if es.config == nil {
-			es.config = &options.Config{}
-		}
-
-		if data, err := json.MarshalIndent(curr.ConfigData, "", "  "); err == nil {
-			blog.Infof("on host config update event: \n%s", data)
-		}
-
-		// TODO: add your configs updates here.
+	if es.config == nil {
+		es.config = &options.Config{}
 	}
 
 }

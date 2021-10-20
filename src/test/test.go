@@ -13,7 +13,7 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
-	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/test/run"
@@ -29,7 +29,12 @@ var reportDir string
 var db *local.Mongo
 
 type TestConfig struct {
-	ZkAddr         string
+	RegDiscv       string
+	RdUser         string
+	RdPassword     string
+	RdCertFile     string
+	RdKeyFile      string
+	RdCaFile       string
 	Concurrent     int
 	SustainSeconds float64
 	TotalRequest   int64
@@ -46,11 +51,19 @@ type RedisConfig struct {
 }
 
 func init() {
-	flag.StringVar(&tConfig.ZkAddr, "zk-addr", "127.0.0.1:2181", "zk discovery addresses, comma separated.")
-	flag.IntVar(&tConfig.Concurrent, "concurrent", 100, "concurrent request during the load test.")
-	flag.Float64Var(&tConfig.SustainSeconds, "sustain-seconds", 10, "the load test sustain time in seconds ")
+	flag.StringVar(&tConfig.RegDiscv, "regdiscv", "127.0.0.1:2379",
+		"discovery addresses, comma separated")
+	flag.StringVar(&tConfig.RdUser, "rduser", "",
+		"user name for authentication in register and discover")
+	flag.StringVar(&tConfig.RdPassword, "rdpwd", "",
+		"password for authentication in register and discover")
+	flag.StringVar(&tConfig.RdCertFile, "rdcert", "", "cert file in register and discover")
+	flag.StringVar(&tConfig.RdPassword, "rdkey", "", "key file in register and discover")
+	flag.StringVar(&tConfig.RdUser, "rdca", "", "CA file in register and discover")
+	flag.IntVar(&tConfig.Concurrent, "concurrent", 100, "concurrent request during the load test")
+	flag.Float64Var(&tConfig.SustainSeconds, "sustain-seconds", 10, "the load test sustain time in seconds")
 	flag.Int64Var(&tConfig.TotalRequest, "total-request", 0, "the load test total request,it has higher priority than SustainSeconds")
-	flag.IntVar(&tConfig.DBWriteKBSize, "write-size", 1, "MongoDB write size , unit is KB.")
+	flag.IntVar(&tConfig.DBWriteKBSize, "write-size", 1, "MongoDB write size , unit is KB")
 	flag.StringVar(&tConfig.RedisCfg.RedisAdress, "redis-addr", "127.0.0.1:6379", "redis host address with port")
 	flag.StringVar(&tConfig.RedisCfg.RedisPasswd, "redis-passwd", "cc", "redis password")
 	flag.StringVar(&tConfig.MongoURI, "mongo-addr", "mongodb://127.0.0.1:27017/cmdb", "mongodb URI")
@@ -67,8 +80,17 @@ func init() {
 	fmt.Println("before suit")
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
-	client := zk.NewZkClient(tConfig.ZkAddr, 40*time.Second)
-	var err error
+	regdiscvConf := &registerdiscover.Config{
+		Host:   tConfig.RegDiscv,
+		User:   tConfig.RdUser,
+		Passwd: tConfig.RdPassword,
+		Cert:   tConfig.RdCertFile,
+		Key:    tConfig.RdKeyFile,
+		Ca:     tConfig.RdCaFile,
+	}
+	rd, err := registerdiscover.NewRegDiscv(regdiscvConf)
+	Expect(err).Should(BeNil())
+	Expect(rd.Ping()).Should(BeNil())
 	mongoConfig := local.MongoConf{
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
@@ -77,9 +99,7 @@ func init() {
 	}
 	db, err = local.NewMgo(mongoConfig, time.Minute)
 	Expect(err).Should(BeNil())
-	Expect(client.Start()).Should(BeNil())
-	Expect(client.Ping()).Should(BeNil())
-	disc, err := discovery.NewServiceDiscovery(client)
+	disc, err := discovery.NewServiceDiscovery(rd)
 	Expect(err).Should(BeNil())
 	c := &util.APIMachineryConfig{
 		QPS:       20000,

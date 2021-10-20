@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
-
 	"github.com/spf13/pflag"
 )
 
@@ -71,7 +70,12 @@ type ConfConfig struct {
 }
 
 type RegisterConfig struct {
-	Address string
+	Address  string
+	User     string
+	Password string
+	CertFile string
+	KeyFile  string
+	CaFile   string
 }
 
 type ShardingTableConfig struct {

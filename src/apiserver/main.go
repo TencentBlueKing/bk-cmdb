@@ -31,7 +31,7 @@ import (
 )
 
 func main() {
-	common.SetIdentification(types.CC_MODULE_APISERVER)
+	common.SetIdentification(types.CCModuleApi)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	blog.InitLogs()

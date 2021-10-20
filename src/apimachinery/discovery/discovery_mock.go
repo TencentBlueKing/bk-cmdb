@@ -12,102 +12,96 @@
 
 package discovery
 
+// NewMockDiscoveryInterface creates a mock discovery object
 func NewMockDiscoveryInterface() DiscoveryInterface {
 	return &MockDiscovery{}
 }
 
 type MockDiscovery struct{}
 
-func (d *MockDiscovery) MigrateServer() Interface {
+// AdminServer returns adminserver info
+func (d *MockDiscovery) AdminServer() Interface {
 	return &mockServer{}
 }
 
+// ApiServer returns apiserver info
 func (d *MockDiscovery) ApiServer() Interface {
 	return &mockServer{}
 }
 
+// EventServer returns eventserver info
 func (d *MockDiscovery) EventServer() Interface {
 	return &mockServer{}
 }
 
+// HostServer returns hostserver info
 func (d *MockDiscovery) HostServer() Interface {
 	return &mockServer{}
 }
 
+// ProcServer returns procserver info
 func (d *MockDiscovery) ProcServer() Interface {
 	return &mockServer{}
 }
 
+// TopoServer returns toposerver info
 func (d *MockDiscovery) TopoServer() Interface {
 	return &mockServer{}
 }
 
+// DataCollect returns datacollection info
 func (d *MockDiscovery) DataCollect() Interface {
 	return &mockServer{}
 }
 
-func (d *MockDiscovery) AuditCtrl() Interface {
-	return &mockServer{}
-}
-
-func (d *MockDiscovery) HostCtrl() Interface {
-	return &mockServer{}
-}
-
-func (d *MockDiscovery) ObjectCtrl() Interface {
-	return &mockServer{}
-}
-
-func (d *MockDiscovery) ProcCtrl() Interface {
-	return &mockServer{}
-}
-
-func (d *MockDiscovery) GseProcServer() Interface {
-	return &mockServer{}
-}
-
+// OperationServer returns operationserver info
 func (d *MockDiscovery) OperationServer() Interface {
 	return &mockServer{}
 }
 
+// CoreService returns coreservice info
 func (d *MockDiscovery) CoreService() Interface {
 	return &mockServer{}
 }
 
+// TaskServer returns taskserver info
 func (d *MockDiscovery) TaskServer() Interface {
 	return &mockServer{}
 }
 
+// CloudServer returns cloudserver info
 func (d *MockDiscovery) CloudServer() Interface {
 	return &mockServer{}
 }
 
+// AuthServer returns authserver info
 func (d *MockDiscovery) AuthServer() Interface {
 	return &mockServer{}
 }
 
+// CacheService returns cacheservice info
 func (d *MockDiscovery) CacheService() Interface {
 	return &mockServer{}
 }
 
+// IsMaster checks whether current instance is master
 func (d *MockDiscovery) IsMaster() bool {
 	return true
 }
 
+// Server returns service info according to service name
 func (d *MockDiscovery) Server(name string) Interface {
 	return emptyServerInst
 }
 
 type mockServer struct{}
 
+// GetServers gets all service instance info
 func (*mockServer) GetServers() ([]string, error) {
 	return []string{"http://127.0.0.1:8080"}, nil
 }
 
-func (*mockServer) IsMaster(string) bool {
-	return true
-}
-
+// GetServersChan returns the channel from where the latest service info can be read
 func (s *mockServer) GetServersChan() chan []string {
 	return nil
 }

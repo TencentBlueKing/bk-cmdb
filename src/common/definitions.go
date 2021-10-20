@@ -1267,11 +1267,6 @@ const (
 	BKCloudAreaStatusAbnormal = "2"
 )
 
-// configcenter
-const (
-	BKDefaultConfigCenter = "zookeeper"
-)
-
 const (
 	CCLogicUniqueIdxNamePrefix = "bkcc_unique_"
 	CCLogicIndexNamePrefix     = "bkcc_idx_"

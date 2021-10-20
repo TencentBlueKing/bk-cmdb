@@ -15,33 +15,38 @@ package backbone
 import (
 	"encoding/json"
 
-	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 	"configcenter/src/framework/core/errors"
 )
 
 type ServiceRegisterInterface interface {
-	// Ping to ping server
+	// Ping ping register and discover to verify accessibility
 	Ping() error
-	// register local server info, it can only be called for once.
+	// Register add service info to register and discover
 	Register(path string, c types.ServerInfo) error
-	// Cancel to stop server register and discover
+	// Unregister delete service register key from register and discover
+	Unregister() error
+	// Cancel stop service register and discover
 	Cancel()
-	// ClearRegisterPath to delete server register path from zk
-	ClearRegisterPath() error
 }
 
-func NewServiceRegister(client *zk.ZkClient) (ServiceRegisterInterface, error) {
-	s := new(serviceRegister)
-	s.client = registerdiscover.NewRegDiscoverEx(client)
-	return s, nil
+// NewServiceRegister create a service register object
+func NewServiceRegister(rd *registerdiscover.RegDiscv) (ServiceRegisterInterface, error) {
+	return &serviceRegister{rd: rd}, nil
 }
 
 type serviceRegister struct {
-	client *registerdiscover.RegDiscover
+	rd     *registerdiscover.RegDiscv
+	regKey string
 }
 
+// Ping ping register and discover to verify accessibility
+func (s *serviceRegister) Ping() error {
+	return s.rd.Ping()
+}
+
+// Register add service info to register and discover
 func (s *serviceRegister) Register(path string, c types.ServerInfo) error {
 	if c.RegisterIP == "0.0.0.0" {
 		return errors.New("register ip can not be 0.0.0.0")
@@ -52,20 +57,17 @@ func (s *serviceRegister) Register(path string, c types.ServerInfo) error {
 		return err
 	}
 
-	return s.client.RegisterAndWatchService(path, js)
+	s.regKey = path
+
+	return s.rd.RegisterAndKeepAlive(path, string(js))
 }
 
-// Ping to ping server
-func (s *serviceRegister) Ping() error {
-	return s.client.Ping()
+// Unregister delete service register key from register and discover
+func (s *serviceRegister) Unregister() error {
+	return s.rd.Delete(s.regKey)
 }
 
-// Cancel to stop server register and discover
+// Cancel stop service register and discover
 func (s *serviceRegister) Cancel() {
-	s.client.Cancel()
-}
-
-// ClearRegisterPath to delete server register path from zk
-func (s *serviceRegister) ClearRegisterPath() error {
-	return s.client.ClearRegisterPath()
+	s.rd.Cancel()
 }

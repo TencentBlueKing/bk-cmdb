@@ -67,7 +67,7 @@ func (s *cacheService) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 
 	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_CACHESERVICE,
+		Module:     types.CCModuleCacheService,
 		HealthMeta: meta,
 		AtTime:     metadata.Now(),
 	}

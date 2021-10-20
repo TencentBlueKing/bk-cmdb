@@ -22,9 +22,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/confregdiscover"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/types"
@@ -35,21 +34,21 @@ import (
 
 // ConfCenter discover configure changed. get, update configures
 type ConfCenter struct {
-	confRegDiscv confregdiscover.ConfRegDiscvIf
-	ctx          context.Context
+	rd  *registerdiscover.RegDiscv
+	ctx context.Context
 }
 
 // NewConfCenter create a ConfCenter object
-func NewConfCenter(ctx context.Context, client *zk.ZkClient) *ConfCenter {
+func NewConfCenter(ctx context.Context, rd *registerdiscover.RegDiscv) *ConfCenter {
 	return &ConfCenter{
-		ctx:          ctx,
-		confRegDiscv: confregdiscover.NewZkRegDiscover(client),
+		ctx: ctx,
+		rd:  rd,
 	}
 }
 
 // Ping to ping server
 func (cc *ConfCenter) Ping() error {
-	return cc.confRegDiscv.Ping()
+	return cc.rd.Ping()
 }
 
 // Start the configure center module service
@@ -73,21 +72,21 @@ func (cc *ConfCenter) WriteAllConfs2Center(confDir, errRes, languageRes string) 
 		blog.Errorf("fail to write configures to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("write all configures resource to center %v success", types.CC_SERVCONF_BASEPATH)
+		blog.Infof("write all configures resource to center %v success", types.CCDiscoverBaseConfig)
 	}
 
 	if err := cc.WriteErrorRes2Center(errRes); err != nil {
 		blog.Errorf("fail to write error resource to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("write error resource to center %v success", types.CC_SERVERROR_BASEPATH)
+		blog.Infof("write error resource to center %v success", types.CCDiscoverBaseError)
 	}
 
 	if err := cc.WriteLanguageRes2Center(languageRes); err != nil {
 		blog.Errorf("fail to write language packages to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("write language packages to center %v success", types.CC_SERVLANG_BASEPATH)
+		blog.Infof("write language packages to center %v success", types.CCDiscoverBaseLang)
 	}
 
 	return nil
@@ -114,8 +113,8 @@ func (cc *ConfCenter) WriteErrorRes2Center(errorres string) error {
 	if err != nil {
 		return fmt.Errorf("unmarshal resource failed, err: %s", err)
 	}
-	key := types.CC_SERVERROR_BASEPATH
-	return cc.confRegDiscv.Write(key, data)
+	key := types.CCDiscoverBaseError
+	return cc.rd.Put(key, string(data))
 }
 
 func (cc *ConfCenter) WriteLanguageRes2Center(languageres string) error {
@@ -139,8 +138,8 @@ func (cc *ConfCenter) WriteLanguageRes2Center(languageres string) error {
 	if err != nil {
 		return err
 	}
-	key := types.CC_SERVLANG_BASEPATH
-	return cc.confRegDiscv.Write(key, data)
+	key := types.CCDiscoverBaseLang
+	return cc.rd.Put(key, string(data))
 }
 
 // WriteConfs2Center save configures into center.
@@ -158,7 +157,7 @@ func (cc *ConfCenter) WriteConfs2Center(confRootPath string) error {
 
 	for _, configName := range configs {
 		filePath := filepath.Join(confRootPath, configName+confFileSuffix)
-		key := types.CC_SERVCONF_BASEPATH + "/" + configName
+		key := types.CCDiscoverBaseConfig + "/" + configName
 		if err := cc.WriteConfigure(filePath, key); err != nil {
 			blog.Warnf("fail to write configure of %s into center", configName)
 			continue
@@ -192,7 +191,7 @@ func (cc *ConfCenter) WriteConfigure(confFilePath, key string) error {
 	}
 
 	blog.V(3).Infof("write configure(%s), key(%s), data(%s)", confFilePath, key, data)
-	if err := cc.confRegDiscv.Write(key, data); err != nil {
+	if err := cc.rd.Put(key, string(data)); err != nil {
 		blog.Errorf("fail to write configure(%s) data into center. err:%s", key, err.Error())
 		return err
 	}

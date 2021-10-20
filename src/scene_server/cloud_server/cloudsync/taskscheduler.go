@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/zkclient"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/scene_server/cloud_server/logics"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/reflector"
@@ -38,7 +38,7 @@ var (
 
 // 任务调度器
 type taskScheduler struct {
-	zkClient   *zkclient.ZkClient
+	rd         *registerdiscover.RegDiscv
 	logics     *logics.Logics
 	addrport   string
 	reflector  reflector.Interface
@@ -50,7 +50,7 @@ type taskScheduler struct {
 
 // 调度器配置
 type SchedulerConf struct {
-	ZKClient  *zkclient.ZkClient
+	RegDiscv  *registerdiscover.RegDiscv
 	Logics    *logics.Logics
 	AddrPort  string
 	MongoConf local.MongoConf
@@ -64,7 +64,7 @@ func NewTaskScheduler(conf *SchedulerConf) (*taskScheduler, error) {
 		return nil, err
 	}
 	return &taskScheduler{
-		zkClient:   conf.ZKClient,
+		rd:         conf.RegDiscv,
 		logics:     conf.Logics,
 		addrport:   conf.AddrPort,
 		hashring:   consistent.New(),
@@ -89,7 +89,7 @@ func (t *taskScheduler) Schedule(ctx context.Context) error {
 	return nil
 }
 
-// 监听zk的cloudserver节点变化，有变化时重置哈希环
+// 监听cloudserver节点变化，有变化时重置哈希环
 func (t *taskScheduler) watchServerNode() error {
 	go func() {
 		for servers := range t.logics.Discovery().CloudServer().GetServersChan() {

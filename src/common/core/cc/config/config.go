@@ -22,6 +22,11 @@ import (
 type CCAPIConfig struct {
 	AddrPort    string
 	RegDiscover string
+	RdUser      string
+	RdPassword  string
+	RdCertFile  string
+	RdKeyFile   string
+	RdCaFile    string
 	RegisterIP  string
 	ExConfig    string
 	Qps         int64

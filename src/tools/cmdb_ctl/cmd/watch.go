@@ -106,27 +106,23 @@ func runDecodeCursor(c *watchConf) error {
 }
 
 func runStartFromWatch(c *watchConf) error {
-	zk, err := config.NewZkService(config.Conf.ZkAddr)
+	rd, err := config.NewRegDiscv(config.Conf)
 	if err != nil {
-		fmt.Printf("new zk client failed, err: %v\n", err)
+		fmt.Printf("new regdiscv failed, err: %v\n", err)
 		return err
 	}
 
-	path := types.CC_SERV_BASEPATH + "/" + types.CC_MODULE_EVENTSERVER
-	children, err := zk.ZkCli.GetChildren(path)
+	path := types.CCDiscoverBaseEndpoint + "/" + types.CCModuleEvent
+	kvs, err := rd.RegDiscv.GetWithPrefix(path)
 	if err != nil {
-		fmt.Printf("get event server failed, err: %v\n", err)
+		fmt.Printf("get from regdiscv err: %v\n", err)
 		return err
 	}
 
 	server := ""
-	for _, child := range children {
-		node, err := zk.ZkCli.Get(path + "/" + child)
-		if err != nil {
-			return err
-		}
+	for _, kv := range kvs {
 		svr := new(types.EventServInfo)
-		if err := json.Unmarshal([]byte(node), svr); err != nil {
+		if err := json.Unmarshal([]byte(kv.Value), svr); err != nil {
 			return err
 		}
 		server = fmt.Sprintf("%s:%d", svr.RegisterIP, svr.Port)

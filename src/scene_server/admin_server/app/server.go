@@ -42,7 +42,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	process := new(MigrateServer)
+	process := new(AdminServer)
 	process.Config = new(options.Config)
 	if err := cc.SetMigrateFromFile(op.ServConf.ExConfig); err != nil {
 		return fmt.Errorf("parse config file error %s", err.Error())
@@ -52,6 +52,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	process.Config.Language.Res, _ = cc.String("language.res")
 	process.Config.Configures.Dir, _ = cc.String("confs.dir")
 	process.Config.Register.Address, _ = cc.String("registerServer.addrs")
+	process.Config.Register.User, _ = cc.String("registerServer.usr")
+	process.Config.Register.Password, _ = cc.String("registerServer.pwd")
+	process.Config.Register.CertFile, _ = cc.String("registerServer.certfile")
+	process.Config.Register.KeyFile, _ = cc.String("registerServer.keyfile")
+	process.Config.Register.CaFile, _ = cc.String("registerServer.cafile")
 	snapDataID, _ := cc.Int("hostsnap.dataID")
 	process.Config.SnapDataID = int64(snapDataID)
 
@@ -113,6 +118,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		ConfigUpdate: process.onHostConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
 		Regdiscv:     process.Config.Register.Address,
+		RdUser:       process.Config.Register.User,
+		RdPassword:   process.Config.Register.Password,
+		RdCertFile:   process.Config.Register.CertFile,
+		RdKeyFile:    process.Config.Register.KeyFile,
+		RdCaFile:     process.Config.Register.CaFile,
 		SrvInfo:      svrInfo,
 	}
 	engine, err := backbone.NewBackbone(ctx, input)
@@ -121,7 +131,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	process.Core = engine
-	process.ConfigCenter = configures.NewConfCenter(ctx, engine.ServiceManageClient())
+	process.ConfigCenter = configures.NewConfCenter(ctx, engine.RegDiscv())
 
 	// adminserver conf not depend discovery
 	err = process.ConfigCenter.Start(
@@ -200,16 +210,17 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	return nil
 }
 
-type MigrateServer struct {
+// AdminServer is data structure of adminserver
+type AdminServer struct {
 	Core         *backbone.Engine
 	Config       *options.Config
 	Service      *svc.Service
 	ConfigCenter *configures.ConfCenter
 }
 
-func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {}
+func (h *AdminServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {}
 
-func parseShardingTableConfig(process *MigrateServer) error {
+func parseShardingTableConfig(process *AdminServer) error {
 	if cc.IsExist("shardingTable.indexInterval") {
 		val, err := cc.Int64("shardingTable.indexInterval")
 		if err != nil {

@@ -293,7 +293,7 @@ func (s *Service) refreshConfig(req *restful.Request, resp *restful.Response) {
 	switch configName {
 	case "redis", "mongodb", "common", "extra":
 		filePath := filepath.Join(s.Config.Configures.Dir, configName+".yaml")
-		key := types.CC_SERVCONF_BASEPATH + "/" + configName
+		key := types.CCDiscoverBaseConfig + "/" + configName
 		err = s.ConfigCenter.WriteConfigure(filePath, key)
 	case "error":
 		err = s.ConfigCenter.WriteErrorRes2Center(s.Config.Errors.Res)

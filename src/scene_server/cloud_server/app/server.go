@@ -47,6 +47,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		ConfigUpdate: process.onCloudConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
 		Regdiscv:     op.ServConf.RegDiscover,
+		RdUser:       op.ServConf.RdUser,
+		RdPassword:   op.ServConf.RdPassword,
+		RdCertFile:   op.ServConf.RdCertFile,
+		RdKeyFile:    op.ServConf.RdKeyFile,
+		RdCaFile:     op.ServConf.RdCaFile,
 		SrvInfo:      svrInfo,
 	}
 	engine, err := backbone.NewBackbone(ctx, input)
@@ -102,7 +107,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	process.setSyncPeriod()
 	syncConf := cloudsync.SyncConf{
-		ZKClient:  service.Engine.ServiceManageClient().Client(),
+		RegDiscv:  service.Engine.RegDiscv(),
 		Logics:    process.Service.Logics,
 		AddrPort:  input.SrvInfo.Instance(),
 		MongoConf: mongoConf,

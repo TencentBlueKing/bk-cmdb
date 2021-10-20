@@ -22,57 +22,53 @@ import (
 	"github.com/rs/xid"
 )
 
-// zk path
+// register and discover key base
 const (
-	CC_SERV_BASEPATH        = "/cc/services/endpoints"
-	CC_SERVCONF_BASEPATH    = "/cc/services/config"
-	CC_SERVERROR_BASEPATH   = "/cc/services/errors"
-	CC_SERVLANG_BASEPATH    = "/cc/services/language"
-	CC_SERVNOTICE_BASEPATH  = "/cc/services/notice"
-	CC_SERVLIMITER_BASEPATH = "/cc/services/limiter"
-
-	CC_DISCOVERY_PREFIX = "cc_"
+	CCDiscoverBaseEndpoint = "/bk_cmdb/endpoints"
+	CCDiscoverBaseConfig   = "/bk_cmdb/config"
+	CCDiscoverBaseError    = "/bk_cmdb/errors"
+	CCDiscoverBaseLang     = "/bk_cmdb/language"
+	CCDiscoverBaseNotice   = "/bk_cmdb/notice"
+	CCDiscoverBaseLimiter  = "/bk_cmdb/limiter"
+	CCDiscoverBaseElection = "/bk_cmdb/election"
 )
 
 // cc modules
 const (
-	CC_MODULE_DATACOLLECTION = "datacollection"
-	CC_MODULE_HOST           = "host"
-	CC_MODULE_MIGRATE        = "migrate"
-	CC_MODULE_PROC           = "proc"
-	CC_MODULE_TOPO           = "topo"
-	CC_MODULE_APISERVER      = "apiserver"
-	CC_MODULE_WEBSERVER      = "webserver"
-	CC_MODULE_EVENTSERVER    = "eventserver"
-	CC_MODULE_CORESERVICE    = "coreservice"
-	GSE_MODULE_PROCSERVER    = "gseprocserver"
-	// CC_MODULE_SYNCHRONZESERVER multiple cmdb synchronize data server
-	CC_MODULE_SYNCHRONZESERVER = "sync"
-	CC_MODULE_OPERATION        = "operation"
-	CC_MODULE_TASK             = "task"
-	CC_MODULE_CLOUD            = "cloud"
-	CC_MODULE_AUTH             = "auth"
-	// CC_MODULE_CACHE 缓存服务
-	CC_MODULE_CACHESERVICE = "cacheservice"
+	CCModuleDataCollection = "datacollection"
+	CCModuleHost           = "hostserver"
+	CCModuleAdmin          = "adminserver"
+	CCModuleProc           = "procserver"
+	CCModuleTopo           = "toposerver"
+	CCModuleApi            = "apiserver"
+	CCModuleWeb            = "webserver"
+	CCModuleEvent          = "eventserver"
+	CCModuleCoreService    = "coreservice"
+	CCModuleSync           = "syncserver"
+	CCModuleOperation      = "operationserver"
+	CCModuleTask           = "taskserver"
+	CCModuleCloud          = "cloudserver"
+	CCModuleAuth           = "authserver"
+	CCModuleCacheService   = "cacheservice"
 )
 
 // AllModule all cc module
 var AllModule = map[string]bool{
-	CC_MODULE_DATACOLLECTION: true,
-	CC_MODULE_HOST:           true,
-	CC_MODULE_MIGRATE:        true,
-	CC_MODULE_PROC:           true,
-	CC_MODULE_TOPO:           true,
-	CC_MODULE_APISERVER:      true,
-	CC_MODULE_WEBSERVER:      true,
-	CC_MODULE_EVENTSERVER:    true,
-	CC_MODULE_CORESERVICE:    true,
-	// CC_MODULE_SYNCHRONZESERVER: true,
-	CC_MODULE_OPERATION: true,
-	CC_MODULE_TASK:      true,
-	CC_MODULE_CLOUD:     true,
-	CC_MODULE_AUTH:      true,
-	CC_MODULE_CACHESERVICE: true,
+	CCModuleDataCollection: true,
+	CCModuleHost:           true,
+	CCModuleAdmin:          true,
+	CCModuleProc:           true,
+	CCModuleTopo:           true,
+	CCModuleApi:            true,
+	CCModuleWeb:            true,
+	CCModuleEvent:          true,
+	CCModuleCoreService:    true,
+	// CCModuleSync: true,
+	CCModuleOperation:    true,
+	CCModuleTask:         true,
+	CCModuleCloud:        true,
+	CCModuleAuth:         true,
+	CCModuleCacheService: true,
 }
 
 // cc functionality define
@@ -183,8 +179,8 @@ type HostServerInfo struct {
 	ServerInfo
 }
 
-// MigrateServInfo migrate server information
-type MigrateServInfo struct {
+// AdminServInfo admin server information
+type AdminServInfo struct {
 	ServerInfo
 }
 

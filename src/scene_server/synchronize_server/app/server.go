@@ -42,6 +42,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	input := &backbone.BackboneParameter{
 		Regdiscv:     op.ServConf.RegDiscover,
+		RdUser:       op.ServConf.RdUser,
+		RdPassword:   op.ServConf.RdPassword,
+		RdCertFile:   op.ServConf.RdCertFile,
+		RdKeyFile:    op.ServConf.RdKeyFile,
+		RdCaFile:     op.ServConf.RdCaFile,
 		ConfigPath:   op.ServConf.ExConfig,
 		ConfigUpdate: synchronSrv.onSynchronizeServerConfigUpdate,
 		SrvInfo:      svrInfo,

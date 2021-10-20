@@ -12,7 +12,12 @@
   --set-default      [=false]: set log level to default value
   --set-v             =""    : set log level for V logs
   --addrport          =""    : the ip address and port for the hosts to apply command, separated by comma
-  --zk-addr           =""    : the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
+  --regdiscv          =""    : the regdiscv address, separated by comma, corresponding environment variable is REGDISCV_ADDR
+  --rduser            =""    : user name for authentication in register and discover
+  --rdpwd             =""    : password for authentication in register and discover
+  --rdcert            =""    : cert file in register and discover
+  --rdkey             =""    : key file in register and discover
+  --rdca              =""    : CA file in register and discover
   --redis-addr        =""    : assign redis server address default is 127.0.0.1:6379
   --redis-pwd         =""    : assign redis server password
   --redis-database    =""    : assign the redis database default is 0
@@ -22,11 +27,11 @@
 - 示例
 
   - ```
-    ./tool_ctl log --set-default --addrport=127.0.0.1:8080 --zk-addr=127.0.0.1:2181
+    ./tool_ctl log --set-default --addrport=127.0.0.1:8080 --regdiscv=127.0.0.1:2379
     ```
 
   - ```
-    ./tool_ctl log --set-v=3 --addrport="127.0.0.1:8080" --zk-addr="127.0.0.1:2181"
+    ./tool_ctl log --set-v=3 --addrport="127.0.0.1:8080" --regdiscv="127.0.0.1:2379"
     ```
 
 ### 优雅退出
@@ -51,44 +56,6 @@
     ./tool_ctl shutdown --show-pids
     ```
 
-### zookeeper操作
-- 使用方式
-
-  ```
-  ./tool_ctl zk [command]
-  ```
-
-- 子命令
-  ```
-  ls          list children of specified zookeeper node
-  get         get value of specified zookeeper node
-  del         delete specified zookeeper node
-  set         set value of specified zookeeper node
-  ```
-- 命令行参数
-  ```
-  --zk-path="": the zookeeper path
-  --zk-addr="": the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
-  --value="": the value to be set（仅用于set命令）
-  ```
-- 示例
-
-  - ```
-    ./tool_ctl zk ls --zk-path=/test --zk-addr=127.0.0.1:2181
-    ```
-
-  - ```
-    ./tool_ctl zk get --zk-path=/test --zk-addr=127.0.0.1:2181
-    ```
-
-  - ```
-    ./tool_ctl zk del --zk-path=/test --zk-addr=127.0.0.1:2181
-    ```
-
-  - ```
-    ./tool_ctl zk set --zk-path=/test --zk-addr=127.0.0.1:2181 --value=test
-    ```
-    
 ### 回显服务器
 - 使用方式
 
@@ -115,12 +82,12 @@
 - 命令行参数
   ```
   --bizId=2: blueking business id. e.g: 2
-  --zk-addr="": the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
+  --regdiscv="": the regdiscv address, separated by comma, corresponding environment variable is REGDISCV_ADDR
   ```
 - 示例
 
   - ```
-    ./tool_ctl snapshot --bizId=2 --zk-addr=127.0.0.1:2181
+    ./tool_ctl snapshot --bizId=2 --regdiscv=127.0.0.1:2181
     ```
 
  ### 权限中心资源操作
@@ -141,7 +108,7 @@
    -v, --logV=4: the log level of request, default, request body log level is 4
    -r, --resource="": the resource for authorize
    -f, --rsc-file="": the resource file path for authorize
-  --zk-addr="": the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
+  --regdiscv="": the regdiscv address, separated by comma, corresponding environment variable is REGDISCV_ADDR
    --supplier-account="0": the supplier id that this user belongs to（仅用于check命令）
    --user="": the name of the user（仅用于check命令）
    ```
@@ -235,7 +202,7 @@ denyall配置为false的情况下，limit和ttl配置才能生效
 
 - 示例
     ```
-      以下命令是在配置了ZK_ADDR环境变量的情况下使用，没有配置时也可以通过命令行参数--zk-addr指定
+      以下命令是在配置了REGDISCV_ADDR环境变量的情况下使用，没有配置时也可以通过命令行参数--regdiscv指定
       # 列出所有策略
       ./tool_ctl limiter ls
       # 配置策略，对url限制请求次数
@@ -395,7 +362,7 @@ denyall配置为false的情况下，limit和ttl配置才能生效
 
      ```
           监听事件:
-             ./cmdb_ctl watch start --zk-addr=127.0.0.1:2181 --fields=bk_inst_id,bk_inst_name --rsc="object_instance" \
+             ./cmdb_ctl watch start --regdiscv=127.0.0.1:2379 --fields=bk_inst_id,bk_inst_name --rsc="object_instance" \
                 --sub-rsc="bk_switch" --start-from=1626958679
           回显样式:  
             >> watch with filter:  map[]
