@@ -1,5 +1,6 @@
 {
     "1105000": "Failed to migrate data, %s",
     "1105001":"Failed to init AuthCenter, %s",
+    "1105002":"Failed to add user to auth center，%s",
     "": ""
 }

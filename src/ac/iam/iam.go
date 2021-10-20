@@ -76,44 +76,9 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 		return nil
 	}
 
-	systemResp, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
-	if err != nil && err != ErrNotFound {
-		blog.Errorf("get system info failed, error: %s", err.Error())
+	systemResp, err := i.GetSystemInfo(ctx, host)
+	if err != nil {
 		return err
-	}
-	if systemResp == nil {
-		systemResp = new(SystemResp)
-	}
-
-	// if iam cmdb system has not been registered, register system
-	if err == ErrNotFound {
-		sys := System{
-			ID:          SystemIDCMDB,
-			Name:        SystemNameCMDB,
-			EnglishName: SystemNameCMDBEn,
-			Clients:     SystemIDCMDB,
-			ProviderConfig: &SysConfig{
-				Host: host,
-				Auth: "basic",
-			},
-		}
-		if err = i.Client.RegisterSystem(ctx, sys); err != nil {
-			blog.ErrorJSON("register system %s failed, error: %s", sys, err.Error())
-			return err
-		}
-		blog.V(5).Infof("register new system %+v succeed", sys)
-	} else if systemResp.Data.BaseInfo.ProviderConfig == nil || systemResp.Data.BaseInfo.ProviderConfig.Host != host {
-		// if iam registered cmdb system has no ProviderConfig
-		// or registered host config is different with current host config, update system host config
-		if err = i.Client.UpdateSystemConfig(ctx, &SysConfig{Host: host}); err != nil {
-			blog.Errorf("update system host %s config failed, error: %s", host, err.Error())
-			return err
-		}
-		if systemResp.Data.BaseInfo.ProviderConfig == nil {
-			blog.V(5).Infof("update system host to %s succeed", systemResp.Data.BaseInfo.ProviderConfig.Host, host)
-		} else {
-			blog.V(5).Infof("update system host %s to %s succeed", systemResp.Data.BaseInfo.ProviderConfig.Host, host)
-		}
 	}
 
 	existResourceTypeMap := make(map[TypeID]bool)
@@ -203,7 +168,8 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 			idx++
 		}
 		if err = i.Client.DeleteActions(ctx, removedResourceActionIDs); err != nil {
-			blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(), removedResourceActionIDs)
+			blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(),
+				removedResourceActionIDs)
 			return err
 		}
 	}
@@ -484,8 +450,8 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 		blog.Infof("begin delete resourceTypes, count:%d, detail:%v, rid: %s",
 			len(deletedResourceTypes), deletedResourceTypes, rid)
 		if err := i.Client.DeleteResourcesTypes(ctx, deletedResourceTypes); err != nil {
-			blog.ErrorJSON("delete cmdb resource failed, delete resourceType error: %s, resourceType: %s, rid: %s",
-				err, deletedResourceTypes, rid)
+			blog.ErrorJSON("delete cmdb resource failed, delete resourceType error: %s, resourceType: %s, "+
+				"rid: %s", err, deletedResourceTypes, rid)
 			return err
 		}
 	}
@@ -495,13 +461,59 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 		cmdbActionGroups := GenerateActionGroups(objects)
 		blog.Infof("begin update actionGroups")
 		if err := i.Client.UpdateActionGroups(ctx, cmdbActionGroups); err != nil {
-			blog.ErrorJSON("delete cmdb resource failed, update actionGroups error: %s, actionGroups: %s, rid: %s",
-				err, cmdbActionGroups, rid)
+			blog.ErrorJSON("delete cmdb resource failed, update actionGroups error: %s, actionGroups: %s, "+
+				"rid: %s", err, cmdbActionGroups, rid)
 			return err
 		}
 	}
 
 	return nil
+}
+
+// GetSystemInfo get system info from iam
+func (i IAM) GetSystemInfo(ctx context.Context, host string) (*SystemResp, error) {
+	systemResp, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
+	if err != nil && err != ErrNotFound {
+		blog.Errorf("get system info failed, error: %s", err.Error())
+		return nil, err
+	}
+	if systemResp == nil {
+		systemResp = new(SystemResp)
+	}
+
+	// if iam cmdb system has not been registered, register system
+	if err == ErrNotFound {
+		sys := System{
+			ID:          SystemIDCMDB,
+			Name:        SystemNameCMDB,
+			EnglishName: SystemNameCMDBEn,
+			Clients:     SystemIDCMDB,
+			ProviderConfig: &SysConfig{
+				Host: host,
+				Auth: "basic",
+			},
+		}
+		if err = i.Client.RegisterSystem(ctx, sys); err != nil {
+			blog.ErrorJSON("register system %s failed, error: %s", sys, err.Error())
+			return nil, err
+		}
+		blog.V(5).Infof("register new system %+v succeed", sys)
+	} else if systemResp.Data.BaseInfo.ProviderConfig == nil || systemResp.Data.BaseInfo.ProviderConfig.Host != host {
+		// if iam registered cmdb system has no ProviderConfig
+		// or registered host config is different with current host config, update system host config
+		if err = i.Client.UpdateSystemConfig(ctx, &SysConfig{Host: host}); err != nil {
+			blog.Errorf("update system host %s config failed, error: %s", host, err.Error())
+			return nil, err
+		}
+		if systemResp.Data.BaseInfo.ProviderConfig == nil {
+			blog.V(5).Infof("update system host to %s succeed",
+				systemResp.Data.BaseInfo.ProviderConfig.Host, host)
+		} else {
+			blog.V(5).Infof("update system host %s to %s succeed",
+				systemResp.Data.BaseInfo.ProviderConfig.Host, host)
+		}
+	}
+	return systemResp, nil
 }
 
 // getDeletedActions get deleted actions
@@ -701,7 +713,8 @@ func (a *authorizer) authorizeBatch(ctx context.Context, h http.Header, exact bo
 	return decisions, nil
 }
 
-func parseAttributesToBatchOptions(rid string, user meta.UserInfo, resources ...meta.ResourceAttribute) (*types.AuthBatchOptions, []types.Decision, error) {
+func parseAttributesToBatchOptions(rid string, user meta.UserInfo,
+	resources ...meta.ResourceAttribute) (*types.AuthBatchOptions, []types.Decision, error) {
 	if !auth.EnableAuthorize() {
 		decisions := make([]types.Decision, len(resources))
 		for i := range decisions {
@@ -762,21 +775,25 @@ func (a *authorizer) ListAuthorizedResources(ctx context.Context, h http.Header,
 	return a.authClientSet.ListAuthorizedResources(ctx, h, input)
 }
 
-func (a *authorizer) GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string, error) {
+func (a *authorizer) GetNoAuthSkipUrl(ctx context.Context, h http.Header,
+	input *metadata.IamPermission) (string, error) {
 	return a.authClientSet.GetNoAuthSkipUrl(ctx, h, input)
 }
 
-func (a *authorizer) GetPermissionToApply(ctx context.Context, h http.Header, input []meta.ResourceAttribute) (*metadata.IamPermission, error) {
+func (a *authorizer) GetPermissionToApply(ctx context.Context, h http.Header,
+	input []meta.ResourceAttribute) (*metadata.IamPermission, error) {
 	return a.authClientSet.GetPermissionToApply(ctx, h, input)
 }
 
-func (a *authorizer) RegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstanceWithCreator) (
+func (a *authorizer) RegisterResourceCreatorAction(ctx context.Context, h http.Header,
+	input metadata.IamInstanceWithCreator) (
 	[]metadata.IamCreatorActionPolicy, error) {
 
 	return a.authClientSet.RegisterResourceCreatorAction(ctx, h, input)
 }
 
-func (a *authorizer) BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstancesWithCreator) (
+func (a *authorizer) BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header,
+	input metadata.IamInstancesWithCreator) (
 	[]metadata.IamCreatorActionPolicy, error) {
 
 	return a.authClientSet.BatchRegisterResourceCreatorAction(ctx, h, input)
