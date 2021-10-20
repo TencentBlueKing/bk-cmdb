@@ -78,9 +78,46 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 		return nil
 	}
 
-	systemResp, err := i.GetSystemInfo(ctx, host)
-	if err != nil {
+	systemResp, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
+	if err != nil && err != ErrNotFound {
+		blog.Errorf("get system info failed, error: %s", err.Error())
 		return err
+	}
+	if systemResp == nil {
+		systemResp = new(SystemResp)
+	}
+
+	// if iam cmdb system has not been registered, register system
+	if err == ErrNotFound {
+		sys := System{
+			ID:          SystemIDCMDB,
+			Name:        SystemNameCMDB,
+			EnglishName: SystemNameCMDBEn,
+			Clients:     SystemIDCMDB,
+			ProviderConfig: &SysConfig{
+				Host: host,
+				Auth: "basic",
+			},
+		}
+		if err = i.Client.RegisterSystem(ctx, sys); err != nil {
+			blog.ErrorJSON("register system %s failed, error: %s", sys, err.Error())
+			return err
+		}
+		blog.V(5).Infof("register new system %+v succeed", sys)
+	} else if systemResp.Data.BaseInfo.ProviderConfig == nil || systemResp.Data.BaseInfo.ProviderConfig.Host != host {
+		// if iam registered cmdb system has no ProviderConfig
+		// or registered host config is different with current host config, update system host config
+		if err = i.Client.UpdateSystemConfig(ctx, &SysConfig{Host: host}); err != nil {
+			blog.Errorf("update system host %s config failed, error: %s", host, err.Error())
+			return err
+		}
+		if systemResp.Data.BaseInfo.ProviderConfig == nil {
+			blog.V(5).Infof("update system host to %s succeed",
+				systemResp.Data.BaseInfo.ProviderConfig.Host, host)
+		} else {
+			blog.V(5).Infof("update system host %s to %s succeed",
+				systemResp.Data.BaseInfo.ProviderConfig.Host, host)
+		}
 	}
 
 	existResourceTypeMap := make(map[TypeID]bool)
@@ -472,50 +509,35 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 	return nil
 }
 
-// GetSystemInfo get system info from iam
-func (i IAM) GetSystemInfo(ctx context.Context, host string) (*SystemResp, error) {
-	systemResp, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
+// RegisterToIAM register to iam
+func (i IAM) RegisterToIAM(ctx context.Context, host string) error {
+	_, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
+	if err == nil {
+		return nil
+	}
+
 	if err != nil && err != ErrNotFound {
 		blog.Errorf("get system info failed, error: %s", err.Error())
-		return nil, err
-	}
-	if systemResp == nil {
-		systemResp = new(SystemResp)
+		return err
 	}
 
 	// if iam cmdb system has not been registered, register system
-	if err == ErrNotFound {
-		sys := System{
-			ID:          SystemIDCMDB,
-			Name:        SystemNameCMDB,
-			EnglishName: SystemNameCMDBEn,
-			Clients:     SystemIDCMDB,
-			ProviderConfig: &SysConfig{
-				Host: host,
-				Auth: "basic",
-			},
-		}
-		if err = i.Client.RegisterSystem(ctx, sys); err != nil {
-			blog.ErrorJSON("register system %s failed, error: %s", sys, err.Error())
-			return nil, err
-		}
-		blog.V(5).Infof("register new system %+v succeed", sys)
-	} else if systemResp.Data.BaseInfo.ProviderConfig == nil || systemResp.Data.BaseInfo.ProviderConfig.Host != host {
-		// if iam registered cmdb system has no ProviderConfig
-		// or registered host config is different with current host config, update system host config
-		if err = i.Client.UpdateSystemConfig(ctx, &SysConfig{Host: host}); err != nil {
-			blog.Errorf("update system host %s config failed, error: %s", host, err.Error())
-			return nil, err
-		}
-		if systemResp.Data.BaseInfo.ProviderConfig == nil {
-			blog.V(5).Infof("update system host to %s succeed",
-				systemResp.Data.BaseInfo.ProviderConfig.Host, host)
-		} else {
-			blog.V(5).Infof("update system host %s to %s succeed",
-				systemResp.Data.BaseInfo.ProviderConfig.Host, host)
-		}
+	sys := System{
+		ID:          SystemIDCMDB,
+		Name:        SystemNameCMDB,
+		EnglishName: SystemNameCMDBEn,
+		Clients:     SystemIDCMDB,
+		ProviderConfig: &SysConfig{
+			Host: host,
+			Auth: "basic",
+		},
 	}
-	return systemResp, nil
+	if err = i.Client.RegisterSystem(ctx, sys); err != nil {
+		blog.ErrorJSON("register system %s failed, error: %s", sys, err.Error())
+		return err
+	}
+	blog.V(5).Infof("register new system %+v succeed", sys)
+	return nil
 }
 
 // getDeletedActions get deleted actions

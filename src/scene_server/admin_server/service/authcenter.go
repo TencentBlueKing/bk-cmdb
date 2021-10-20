@@ -113,8 +113,8 @@ func (s *Service) RegisterAuthAccount(req *restful.Request, resp *restful.Respon
 		return
 	}
 
-	if _, err := s.iam.GetSystemInfo(s.ctx, param.Host); err != nil {
-		blog.Errorf("register user to iam failed, err: %v, rid: %s", err, rid)
+	if err := s.iam.RegisterToIAM(s.ctx, param.Host); err != nil {
+		blog.Errorf("register cmdb to iam failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.CCErrorf(common.CCErrCommRegisterToIAMFailed, err.Error()),
 		}
