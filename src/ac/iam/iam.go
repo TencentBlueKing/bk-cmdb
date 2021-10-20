@@ -516,7 +516,7 @@ func (i IAM) RegisterToIAM(ctx context.Context, host string) error {
 		return nil
 	}
 
-	if err != nil && err != ErrNotFound {
+	if err != ErrNotFound {
 		blog.Errorf("get system info failed, error: %s", err.Error())
 		return err
 	}
