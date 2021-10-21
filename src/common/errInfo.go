@@ -243,7 +243,6 @@ const (
 	CCErrAPIGetAuthorizedAppListFromAuthFailed = 1100001
 	CCErrAPIGetUserResourceAuthStatusFailed    = 1100002
 	CCErrAPINoObjectInstancesIsFound           = 1100003
-	CCErrAPINoCurrentLimitingOperation         = 1100004
 
 	// toposerver 1101XXX
 	// CCErrTopoInstCreateFailed unable to create the instance

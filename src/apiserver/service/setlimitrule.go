@@ -14,6 +14,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common"
@@ -94,6 +95,6 @@ func (s *service) SetLimitRule(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("adjust limiter operation error, can't find the relevant operation action function " +
 			"to adjust.")
 		resp.WriteError(http.StatusBadRequest,
-			&meta.RespError{Msg: defErr.Error(common.CCErrAPINoCurrentLimitingOperation)})
+			&meta.RespError{Msg: fmt.Errorf("can't find the relevant operation action function to adjust")})
 	}
 }
