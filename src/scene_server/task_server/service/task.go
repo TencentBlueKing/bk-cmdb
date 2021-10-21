@@ -32,8 +32,23 @@ func (s *Service) CreateTask(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	srvData := s.newSrvComm(ctx.Kit.Header)
-	taskInfo, err := srvData.lgc.Create(srvData.ctx, input)
+	taskInfo, err := s.Logics.Create(ctx.Kit, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(taskInfo)
+}
+
+// CreateTaskBatch create task batch
+func (s *Service) CreateTaskBatch(ctx *rest.Contexts) {
+	input := make([]metadata.CreateTaskRequest, 0)
+	if err := ctx.DecodeInto(&input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	taskInfo, err := s.Logics.CreateBatch(ctx.Kit, input)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -50,8 +65,7 @@ func (s *Service) ListTask(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	srvData := s.newSrvComm(ctx.Kit.Header)
-	infos, cnt, err := srvData.lgc.List(srvData.ctx, ctx.Request.PathParameter("name"), input)
+	infos, cnt, err := s.Logics.List(ctx.Kit, ctx.Request.PathParameter("name"), input)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -72,8 +86,7 @@ func (s *Service) ListLatestTask(ctx *rest.Contexts) {
 		return
 	}
 
-	srvData := s.newSrvComm(ctx.Kit.Header)
-	infos, err := srvData.lgc.ListLatestTask(srvData.ctx, ctx.Request.PathParameter("name"), input)
+	infos, err := s.Logics.ListLatestTask(ctx.Kit, ctx.Request.PathParameter("name"), input)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -84,8 +97,7 @@ func (s *Service) ListLatestTask(ctx *rest.Contexts) {
 
 // DetailTask show a task detail
 func (s *Service) DetailTask(ctx *rest.Contexts) {
-	srvData := s.newSrvComm(ctx.Kit.Header)
-	taskInfo, err := srvData.lgc.Detail(srvData.ctx, ctx.Request.PathParameter("task_id"))
+	taskInfo, err := s.Logics.Detail(ctx.Kit, ctx.Request.PathParameter("task_id"))
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -96,7 +108,6 @@ func (s *Service) DetailTask(ctx *rest.Contexts) {
 
 // DeleteTask delete task by condition
 func (s *Service) DeleteTask(ctx *rest.Contexts) {
-	srvData := s.newSrvComm(ctx.Kit.Header)
 
 	input := new(metadata.DeleteOption)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -104,7 +115,7 @@ func (s *Service) DeleteTask(ctx *rest.Contexts) {
 		return
 	}
 
-	err := srvData.lgc.DeleteTask(srvData.ctx, input)
+	err := s.Logics.DeleteTask(ctx.Kit, input)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -118,8 +129,7 @@ func (s *Service) StatusToSuccess(ctx *rest.Contexts) {
 	taskID := ctx.Request.PathParameter("task_id")
 	subTaskID := ctx.Request.PathParameter("sub_task_id")
 
-	srvData := s.newSrvComm(ctx.Kit.Header)
-	err := srvData.lgc.ChangeStatusToSuccess(srvData.ctx, taskID, subTaskID)
+	err := s.Logics.ChangeStatusToSuccess(ctx.Kit, taskID, subTaskID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -137,8 +147,7 @@ func (s *Service) StatusToFailure(ctx *rest.Contexts) {
 		return
 	}
 
-	srvData := s.newSrvComm(ctx.Kit.Header)
-	err := srvData.lgc.ChangeStatusToFailure(srvData.ctx, taskID, subTaskID, input)
+	err := s.Logics.ChangeStatusToFailure(ctx.Kit, taskID, subTaskID, input)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

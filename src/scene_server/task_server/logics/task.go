@@ -13,13 +13,13 @@
 package logics
 
 import (
-	"context"
 	"net/http"
 	"strings"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 
@@ -27,25 +27,25 @@ import (
 )
 
 // Create add task
-func (lgc *Logics) Create(ctx context.Context, input *metadata.CreateTaskRequest) (metadata.APITaskDetail, error) {
+func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (metadata.APITaskDetail, error) {
 
 	dbTask := metadata.APITaskDetail{}
 	input.Name = strings.TrimSpace(input.Name)
 
 	if input.Name == "" {
-		return dbTask, lgc.ccErr.Errorf(common.CCErrCommParamsNeedString, "name")
+		return dbTask, kit.CCError.Errorf(common.CCErrCommParamsNeedString, "name")
 	}
 
 	if len(input.Data) == 0 {
-		return dbTask, lgc.ccErr.Errorf(common.CCErrCommParamsNeedString, "data")
+		return dbTask, kit.CCError.Errorf(common.CCErrCommParamsNeedString, "data")
 	}
 
 	dbTask.TaskID = getStrTaskID("id")
 	dbTask.Name = input.Name
-	dbTask.User = lgc.user
+	dbTask.User = kit.User
 	dbTask.Flag = input.Flag
 	dbTask.InstID = input.InstID
-	dbTask.Header = GetDBHTTPHeader(lgc.header)
+	dbTask.Header = GetDBHTTPHeader(kit.Header)
 	dbTask.Status = metadata.APITaskStatusNew
 	dbTask.CreateTime = time.Now()
 	dbTask.LastTime = time.Now()
@@ -56,42 +56,95 @@ func (lgc *Logics) Create(ctx context.Context, input *metadata.CreateTaskRequest
 			Status:    metadata.APITaskStatusNew,
 		})
 	}
-	err := lgc.db.Table(common.BKTableNameAPITask).Insert(ctx, dbTask)
+	err := lgc.db.Table(common.BKTableNameAPITask).Insert(kit.Ctx, dbTask)
 	if err != nil {
-		blog.ErrorJSON("create task table:%s, data:%s, err:%s, rid:%s", common.BKTableNameAPITask, dbTask, err.Error(), lgc.rid)
-		return dbTask, lgc.ccErr.Error(common.CCErrCommDBInsertFailed)
+		blog.Errorf("create task failed, data: %#v, err: %v, rid: %s", dbTask, err, kit.Rid)
+		return dbTask, kit.CCError.Error(common.CCErrCommDBInsertFailed)
 	}
 	return dbTask, nil
 }
 
+// CreateBatch create task batch
+func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest) ([]metadata.APITaskDetail,
+	error) {
+
+	if len(tasks) == 0 {
+		return make([]metadata.APITaskDetail, 0), nil
+	}
+
+	now := time.Now()
+	dbTask := metadata.APITaskDetail{
+		User:       kit.User,
+		Header:     GetDBHTTPHeader(kit.Header),
+		Status:     metadata.APITaskStatusNew,
+		CreateTime: now,
+		LastTime:   now,
+	}
+
+	dbTasks := make([]metadata.APITaskDetail, len(tasks))
+	for index, task := range tasks {
+		task.Name = strings.TrimSpace(task.Name)
+		if task.Name == "" {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "name")
+		}
+
+		if len(task.Data) == 0 {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "data")
+		}
+
+		dbTask.TaskID = getStrTaskID("id")
+		dbTask.Name = task.Name
+		dbTask.Flag = task.Flag
+		dbTask.InstID = task.InstID
+		dbTask.Detail = make([]metadata.APISubTaskDetail, 0)
+		for _, taskItem := range task.Data {
+			dbTask.Detail = append(dbTask.Detail, metadata.APISubTaskDetail{
+				SubTaskID: getStrTaskID("sid"),
+				Data:      taskItem,
+				Status:    metadata.APITaskStatusNew,
+			})
+		}
+
+		dbTasks[index] = dbTask
+	}
+
+	err := lgc.db.Table(common.BKTableNameAPITask).Insert(kit.Ctx, dbTasks)
+	if err != nil {
+		blog.Errorf("create tasks(%#v) failed, err: %v, rid: %s", dbTasks, err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
+	}
+	return dbTasks, nil
+}
+
 // List list task
-func (lgc *Logics) List(ctx context.Context, name string, input *metadata.ListAPITaskRequest) ([]metadata.APITaskDetail, uint64, error) {
+func (lgc *Logics) List(kit *rest.Kit, name string, input *metadata.ListAPITaskRequest) ([]metadata.APITaskDetail,
+	uint64, error) {
+
 	if input == nil {
-		input = &metadata.ListAPITaskRequest{}
+		input = new(metadata.ListAPITaskRequest)
 	}
 	if input.Condition == nil {
 		input.Condition = mapstr.New()
 	}
 	input.Condition.Set("name", name)
 	if input.Page.IsIllegal() {
-		return nil, 0, lgc.ccErr.Errorf(common.CCErrCommPageLimitIsExceeded)
+		return nil, 0, kit.CCError.Errorf(common.CCErrCommPageLimitIsExceeded)
 	}
-	cnt, err := lgc.db.Table(common.BKTableNameAPITask).Find(input.Condition).Count(ctx)
+	cnt, err := lgc.db.Table(common.BKTableNameAPITask).Find(input.Condition).Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("list task table:%s, input:%s, err:%s, rid:%s", common.BKTableNameAPITask, input, err.Error(), lgc.rid)
-		return nil, 0, lgc.ccErr.Error(common.CCErrCommDBSelectFailed)
+		blog.Errorf("list task failed, data: %#v, err: %v, rid: %s", input, err, kit.Rid)
+		return nil, 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
 	rows := make([]metadata.APITaskDetail, 0)
-	err = lgc.db.Table(common.BKTableNameAPITask).Find(input.Condition).
-		Start(uint64(input.Page.Start)).Limit(uint64(input.Page.Limit)).
-		Sort(input.Page.Sort).All(ctx, &rows)
+	err = lgc.db.Table(common.BKTableNameAPITask).Find(input.Condition).Start(uint64(input.Page.Start)).
+		Limit(uint64(input.Page.Limit)).Sort(input.Page.Sort).All(kit.Ctx, &rows)
 
 	return rows, cnt, nil
 }
 
 // ListLatestTask list latest task
-func (lgc *Logics) ListLatestTask(ctx context.Context, name string,
+func (lgc *Logics) ListLatestTask(kit *rest.Kit, name string,
 	input *metadata.ListAPITaskLatestRequest) ([]metadata.APITaskDetail, error) {
 	/*
 		aggregateCond parameter of aggregate to search the latest created task in input.Condition need.
@@ -134,8 +187,8 @@ func (lgc *Logics) ListLatestTask(ctx context.Context, name string,
 	}
 
 	result := make([]metadata.APITaskDetail, 0)
-	if err := lgc.db.Table(common.BKTableNameAPITask).AggregateAll(ctx, aggregateCond, &result); err != nil {
-		blog.Errorf("list latest task failed, aggregateCond: %v, err: %v, rid: %v", aggregateCond, err, lgc.rid)
+	if err := lgc.db.Table(common.BKTableNameAPITask).AggregateAll(kit.Ctx, aggregateCond, &result); err != nil {
+		blog.Errorf("list latest task failed, aggregateCond: %v, err: %v, rid: %v", aggregateCond, err, kit.Rid)
 		return nil, err
 	}
 
@@ -143,16 +196,16 @@ func (lgc *Logics) ListLatestTask(ctx context.Context, name string,
 }
 
 // Detail  task detail
-func (lgc *Logics) Detail(ctx context.Context, taskID string) (*metadata.APITaskDetail, error) {
+func (lgc *Logics) Detail(kit *rest.Kit, taskID string) (*metadata.APITaskDetail, error) {
 
 	condition := mapstr.New()
 	condition.Set("task_id", taskID)
 
 	rows := make([]metadata.APITaskDetail, 0)
-	err := lgc.db.Table(common.BKTableNameAPITask).Find(condition).All(ctx, &rows)
+	err := lgc.db.Table(common.BKTableNameAPITask).Find(condition).All(kit.Ctx, &rows)
 	if err != nil {
-		blog.ErrorJSON("detail task table:%s, input:%s, err:%s, rid:%s", common.BKTableNameAPITask, condition, err.Error(), lgc.rid)
-		return nil, lgc.ccErr.Error(common.CCErrCommDBSelectFailed)
+		blog.Errorf("get task detail failed, data: %#v, err: %v, rid: %s", condition, err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 	if len(rows) == 0 {
 		return nil, nil
@@ -161,15 +214,15 @@ func (lgc *Logics) Detail(ctx context.Context, taskID string) (*metadata.APITask
 }
 
 // DeleteTask delete task
-func (lgc *Logics) DeleteTask(ctx context.Context, taskCond *metadata.DeleteOption) error {
+func (lgc *Logics) DeleteTask(kit *rest.Kit, taskCond *metadata.DeleteOption) error {
 	if len(taskCond.Condition) == 0 {
-		blog.Errorf("task condition is empty, rid: %s", lgc.rid)
-		return lgc.ccErr.CCErrorf(common.CCErrCommInstDataNil, "task condition")
+		blog.Errorf("task condition is empty, rid: %s", kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommInstDataNil, "task condition")
 	}
 
-	err := lgc.db.Table(common.BKTableNameAPITask).Delete(ctx, taskCond.Condition)
+	err := lgc.db.Table(common.BKTableNameAPITask).Delete(kit.Ctx, taskCond.Condition)
 	if err != nil {
-		blog.Errorf("delete task failed, err: %s, rid: %s", err.Error(), lgc.rid)
+		blog.Errorf("delete task failed, err: %v, cond: %#v, rid: %s", err, taskCond, kit.Rid)
 		return err
 	}
 
@@ -177,45 +230,47 @@ func (lgc *Logics) DeleteTask(ctx context.Context, taskCond *metadata.DeleteOpti
 }
 
 // ChangeStatusToSuccess task status change to success
-func (lgc *Logics) ChangeStatusToSuccess(ctx context.Context, taskID, subTaskID string) error {
+func (lgc *Logics) ChangeStatusToSuccess(kit *rest.Kit, taskID, subTaskID string) error {
 
 	if taskID == "" {
-		return lgc.ccErr.CCErrorf(common.CCErrCommParamsNeedSet, "task_id")
+		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "task_id")
 	}
 	if subTaskID == "" {
-		return lgc.ccErr.CCErrorf(common.CCErrCommParamsNeedSet, "sub_task_id")
+		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "sub_task_id")
 	}
-	return lgc.changeStatus(ctx, taskID, subTaskID, metadata.APITaskStatusSuccess, nil)
+	return lgc.changeStatus(kit, taskID, subTaskID, metadata.APITaskStatusSuccess, nil)
 }
 
 // ChangeStatusToFailure change status to failure
-func (lgc *Logics) ChangeStatusToFailure(ctx context.Context, taskID, subTaskID string, errResponse *metadata.Response) error {
+func (lgc *Logics) ChangeStatusToFailure(kit *rest.Kit, taskID, subTaskID string, errResponse *metadata.Response) error {
 
 	if taskID == "" {
-		return lgc.ccErr.CCErrorf(common.CCErrCommParamsNeedSet, "task_id")
+		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "task_id")
 	}
 	if subTaskID == "" {
-		return lgc.ccErr.CCErrorf(common.CCErrCommParamsNeedSet, "sub_task_id")
+		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "sub_task_id")
 	}
 	if errResponse == nil || errResponse.Code == 0 {
-		return lgc.ccErr.CCError(common.CCErrTaskErrResponseEmtpyFail)
+		return kit.CCError.CCError(common.CCErrTaskErrResponseEmtpyFail)
 	}
-	return lgc.changeStatus(ctx, taskID, subTaskID, metadata.APITAskStatusFail, errResponse)
+	return lgc.changeStatus(kit, taskID, subTaskID, metadata.APITAskStatusFail, errResponse)
 }
 
-func (lgc *Logics) changeStatus(ctx context.Context, taskID, subTaskID string, status metadata.APITaskStatus, errResponse *metadata.Response) error {
+func (lgc *Logics) changeStatus(kit *rest.Kit, taskID, subTaskID string, status metadata.APITaskStatus,
+	errResponse *metadata.Response) error {
+
 	condition := mapstr.New()
 	condition.Set("task_id", taskID)
 
 	rows := make([]metadata.APITaskDetail, 0)
-	err := lgc.db.Table(common.BKTableNameAPITask).Find(condition).All(ctx, &rows)
+	err := lgc.db.Table(common.BKTableNameAPITask).Find(condition).All(kit.Ctx, &rows)
 	if err != nil {
-		blog.ErrorJSON("change task status, table:%s, input:%s, err:%s, rid:%s", common.BKTableNameAPITask, condition, err.Error(), lgc.rid)
-		return lgc.ccErr.Error(common.CCErrCommDBSelectFailed)
+		blog.Errorf("get task status failed, input: %#v, err: %v, rid:%s", condition, err, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 	if len(rows) == 0 {
-		blog.ErrorJSON("change task status, table:%s, input:%s, task not found, rid:%s", common.BKTableNameAPITask, condition, err.Error(), lgc.rid)
-		return lgc.ccErr.CCError(common.CCErrTaskNotFound)
+		blog.Errorf("get task status, input: %#v, task not found, rid: %s", condition, kit.Rid)
+		return kit.CCError.CCError(common.CCErrTaskNotFound)
 	}
 
 	existSubTask := false
@@ -223,22 +278,23 @@ func (lgc *Logics) changeStatus(ctx context.Context, taskID, subTaskID string, s
 	for _, subTask := range rows[0].Detail {
 		if subTask.SubTaskID == subTaskID {
 			existSubTask = true
-			if (subTask.Status == metadata.APITaskStatusNew || subTask.Status == metadata.APITaskStatuExecute) && subTask.Status != status {
+			if (subTask.Status == metadata.APITaskStatusNew || subTask.Status == metadata.APITaskStatuExecute) &&
+				subTask.Status != status {
 				canChangeStatus = true
 			}
 			break
 		}
 	}
 	if !existSubTask {
-		return lgc.ccErr.CCError(common.CCErrTaskSubTaskNotFound)
+		return kit.CCError.CCError(common.CCErrTaskSubTaskNotFound)
 	}
 	if !canChangeStatus {
-		return lgc.ccErr.CCError(common.CCErrTaskStatusNotAllowChangeTo)
+		return kit.CCError.CCError(common.CCErrTaskStatusNotAllowChangeTo)
 	}
 
-	updateConditon := mapstr.New()
-	updateConditon.Set("task_id", taskID)
-	updateConditon.Set("detail.sub_task_id", subTaskID)
+	updateCondition := mapstr.New()
+	updateCondition.Set("task_id", taskID)
+	updateCondition.Set("detail.sub_task_id", subTaskID)
 	updateData := mapstr.New()
 	updateData.Set("detail.$.status", status)
 	updateData.Set(common.LastTimeField, time.Now())
@@ -247,39 +303,32 @@ func (lgc *Logics) changeStatus(ctx context.Context, taskID, subTaskID string, s
 		updateData.Set("status", status)
 		updateData.Set("detail.$.response", errResponse)
 	}
-	err = lgc.db.Table(common.BKTableNameAPITask).Update(ctx, updateConditon, updateData)
+	err = lgc.db.Table(common.BKTableNameAPITask).Update(kit.Ctx, updateCondition, updateData)
 	if err != nil {
-		blog.ErrorJSON("change task status, table:%s, input:%s, err:%s, rid:%s", common.BKTableNameAPITask, condition, err.Error(), lgc.rid)
-		return lgc.ccErr.Error(common.CCErrCommDBSelectFailed)
+		blog.Errorf("change task status failed, data: %#v, err: %v, rid:%s", updateData, err, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
 	// 如果修改为执行成功。 判断是否所有的子项都成功。如果都成功，则任务完成
 	if status == metadata.APITaskStatusSuccess {
-		rows := make([]metadata.APITaskDetail, 0)
-		err := lgc.db.Table(common.BKTableNameAPITask).Find(condition).All(ctx, &rows)
-		if err != nil {
-			blog.ErrorJSON("change task status, table:%s, input:%s, err:%s, rid:%s", common.BKTableNameAPITask, condition, err.Error(), lgc.rid)
-			return lgc.ccErr.Error(common.CCErrCommDBSelectFailed)
-		}
 		allSuccess := true
 		for _, subTask := range rows[0].Detail {
-
-			if subTask.Status != metadata.APITaskStatusSuccess {
-				canChangeStatus = false
+			if subTask.SubTaskID != subTaskID && subTask.Status != metadata.APITaskStatusSuccess {
+				allSuccess = false
 				break
 			}
 		}
 		if allSuccess {
-			updateConditon := mapstr.New()
-			updateConditon.Set("task_id", taskID)
+			updateCondition := mapstr.New()
+			updateCondition.Set("task_id", taskID)
 			updateData := mapstr.New()
 			updateData.Set("status", metadata.APITaskStatusSuccess)
 			updateData.Set(common.LastTimeField, time.Now())
 
-			err = lgc.db.Table(common.BKTableNameAPITask).Update(ctx, updateConditon, updateData)
+			err = lgc.db.Table(common.BKTableNameAPITask).Update(kit.Ctx, updateCondition, updateData)
 			if err != nil {
-				blog.ErrorJSON("change task status, table:%s, input:%s, err:%s, rid:%s", common.BKTableNameAPITask, condition, err.Error(), lgc.rid)
-				return lgc.ccErr.Error(common.CCErrCommDBSelectFailed)
+				blog.Errorf("change task status failed, data: %#v, err: %v, rid:%s", updateData, err, kit.Rid)
+				return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 			}
 		}
 	}

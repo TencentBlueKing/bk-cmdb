@@ -350,11 +350,11 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
 		return nil, kit.CCError.CCError(common.CCErrTaskListTaskFail)
 	}
 
-	if listResult == nil || len(listResult.Data) == 0 {
+	if len(listResult) == 0 {
 		return latestTaskResult, nil
 	}
 
-	for _, APITask := range listResult.Data {
+	for _, APITask := range listResult {
 		if len(taskCond.Fields) == 0 {
 			clearSetSyncTaskDetail(&APITask)
 		}

@@ -134,6 +134,11 @@ type CreateTaskResponse struct {
 	Data APITaskDetail `json:"data"`
 }
 
+type CreateTaskBatchResponse struct {
+	BaseResp
+	Data []APITaskDetail `json:"data"`
+}
+
 type TaskDetailResponse struct {
 	BaseResp
 	Data struct {

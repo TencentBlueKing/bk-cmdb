@@ -1230,6 +1230,8 @@ const (
 	TimerPattern         = "^[\\d]+\\:[\\d]+$"
 	SyncSetTaskName      = "sync-settemplate2set"
 	SyncSetTaskFlag      = "set_template_sync"
+	SyncModuleTaskName   = "sync-servicetemplate2module"
+	SyncModuleTaskFlag   = "service_template_sync"
 
 	BKHostState = "bk_state"
 )

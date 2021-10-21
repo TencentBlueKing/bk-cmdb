@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/task_server/app/options"
+	"configcenter/src/scene_server/task_server/logics"
 	tasksvc "configcenter/src/scene_server/task_server/service"
 	"configcenter/src/storage/dal/redis"
 
@@ -86,11 +87,18 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("new mongo client failed, err: %s", err.Error())
 	}
 
+	initErr := db.InitTxnManager(cacheDB)
+	if initErr != nil {
+		blog.Errorf("init txn manager failed, err: %v", initErr)
+		return initErr
+	}
+
 	service.Engine = engine
 	service.Config = taskSrv.Config
 	service.CacheDB = cacheDB
 	service.DB = db
 	taskSrv.Core = engine
+	service.Logics = logics.NewLogics(engine.CoreAPI, db)
 	taskSrv.Service = service
 
 	//Cron job delete history task

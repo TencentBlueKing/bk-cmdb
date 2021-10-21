@@ -128,8 +128,11 @@
 	"1101106": "model not found",
 	"1101107": "the same attribute unique id exist",
 	"1101108": "the same set name exist",
+	"1101109": "regular expression is invalid",
+	"1101110": "get topology node host/service instance count condition length exceeds the limit",
 	"1101111": "forbidden remove built in business",
 	"1101112": "forbidden remove unarhived business",
+	"1101113": "sync service instance task is running",
 
-    "": "" 
+    "": ""
 }

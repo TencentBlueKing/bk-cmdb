@@ -269,21 +269,15 @@ func (st *setTemplate) DispatchTask4ModuleSync(kit *rest.Kit, indexKey string, s
 	for _, task := range tasks {
 		tasksData = append(tasksData, task)
 	}
-	createTaskResult, err := st.client.TaskServer().Task().
-		Create(kit.Ctx, kit.Header, common.SyncSetTaskName, indexKey, setID, tasksData)
+	createTaskResult, err := st.client.TaskServer().Task().Create(kit.Ctx, kit.Header, common.SyncSetTaskName, indexKey,
+		setID, tasksData)
 	if err != nil {
 		blog.ErrorJSON("dispatch synchronize task failed, task: %s, err: %s, rid: %s", tasks, err.Error(), kit.Rid)
 		return taskDetail, errors.CCHttpError
 	}
-	if ccErr := createTaskResult.CCError(); ccErr != nil {
-		blog.ErrorJSON("dispatch synchronize task failed, task: %s, result: %s, rid: %s",
-			tasks, createTaskResult, kit.Rid)
-		return taskDetail, ccErr
-	}
 	blog.InfoJSON("dispatch synchronize task success, task: %s, create result: %s, rid: %s",
 		tasks, createTaskResult, kit.Rid)
-	taskDetail = createTaskResult.Data
-	return taskDetail, nil
+	return createTaskResult, nil
 }
 
 // DiffServiceTemplateWithModules diff modules with template in one set

@@ -134,6 +134,10 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	// module
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/template_binding_on_module", Handler: ps.RemoveTemplateBindingOnModule})
 
+	// task
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/service_instance/task",
+		Handler: ps.DoSyncServiceInstanceTask})
+
 	utility.AddToRestfulWebService(web)
 }
 
