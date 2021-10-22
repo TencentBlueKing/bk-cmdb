@@ -51,6 +51,28 @@ func (l *Limiter) LenOfRules() int {
 	return len(l.rules)
 }
 
+func (l *Limiter) addRule(rule *metadata.LimiterRule) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	l.rules[rule.RuleName] = rule
+}
+
+func (l *Limiter) removeRule(ruleName string) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	delete(l.rules, ruleName)
+}
+
+func (l *Limiter) getAllRules() []*metadata.LimiterRule {
+	var limiterRules []*metadata.LimiterRule
+	l.lock.RLock()
+	defer l.lock.RUnlock()
+	for _, rule := range l.rules {
+		limiterRules = append(limiterRules, rule)
+	}
+	return limiterRules
+}
+
 // SyncLimiterRules sync the api limiter rules from register and discover
 func (l *Limiter) SyncLimiterRules(ctx context.Context) error {
 	blog.Info("begin SyncLimiterRules")
@@ -70,8 +92,7 @@ func (l *Limiter) SyncLimiterRules(ctx context.Context) error {
 			blog.Errorf("fail to verify  limiter rule: %v, err:%v", rule, err)
 			continue
 		}
-
-		l.rules[rule.RuleName] = rule
+		l.addRule(rule)
 	}
 
 	limitChan, err := l.rd.Watch(ctx, types.CCDiscoverBaseLimiter)
@@ -113,10 +134,7 @@ func (l *Limiter) updateLimiterRule(key, data string) {
 		blog.Errorf("fail to verify limiter rule: %v, err: %v", rule, err)
 		return
 	}
-
-	l.lock.Lock()
-	defer l.lock.Unlock()
-	l.rules[rule.RuleName] = rule
+	l.addRule(rule)
 }
 
 func (l *Limiter) removeLimiterRule(key, data string) {
@@ -125,10 +143,8 @@ func (l *Limiter) removeLimiterRule(key, data string) {
 		return
 	}
 
-	l.lock.Lock()
-	defer l.lock.Unlock()
 	splitArray := strings.Split(key, "/")
-	delete(l.rules, splitArray[len(splitArray)-1])
+	l.removeRule(splitArray[len(splitArray)-1])
 
 	blog.Infof("remove limiter rule: %v, key: %s", data, splitArray[len(splitArray)-1])
 }
@@ -138,11 +154,7 @@ func (l *Limiter) GetMatchedRule(req *restful.Request) *metadata.LimiterRule {
 	header := req.Request.Header
 	var matchedRule *metadata.LimiterRule
 	var min int64 = 999999
-	rules, err := l.GetAllRules()
-	if err != nil {
-		blog.Errorf("get all limit rule error, err: %v", err)
-		return matchedRule
-	}
+	rules := l.getAllRules()
 	for _, r := range rules {
 		if r.AppCode == "" && r.User == "" && r.IP == "" && r.Url == "" && r.Method == "" {
 			blog.Errorf("wrong rule format, one of appcode, user, ip, url, method must be set, r:%#v", *r)
@@ -205,21 +217,21 @@ func (l *Limiter) AddRule(rule *metadata.LimiterRule) error {
 	if err := rule.Verify(); err != nil {
 		return err
 	}
-	l.lock.Lock()
-	defer l.lock.Unlock()
-	if _, exist := l.rules[rule.RuleName]; exist {
+
+	path := fmt.Sprintf("%s/%s", types.CCDiscoverBaseLimiter, rule.RuleName)
+	oldRule, err := l.rd.Get(path)
+
+	if err != nil && err != registerdiscover.ErrNoKey {
+		return err
+	}
+	if len(oldRule) != 0 {
 		return fmt.Errorf("the rule %s has already existed", rule.RuleName)
 	}
 
-	// add rule to local cache
-	l.rules[rule.RuleName] = rule
-
-	// add rule to etcd
 	data, err := json.Marshal(rule)
 	if err != nil {
 		return err
 	}
-	path := fmt.Sprintf("%s/%s", types.CCDiscoverBaseLimiter, rule.RuleName)
 	err = l.rd.Put(path, string(data))
 	if err != nil {
 		return err
@@ -234,12 +246,16 @@ func (l *Limiter) GetRules(ruleNames []string) ([]*metadata.LimiterRule, error) 
 	}
 
 	var limiterRules []*metadata.LimiterRule
-	l.lock.RLock()
-	defer l.lock.RUnlock()
 	for _, name := range ruleNames {
-		rule, exist := l.rules[name]
-		if !exist {
-			blog.Warnf("can not find rule %s", name)
+		path := fmt.Sprintf("%s/%s", types.CCDiscoverBaseLimiter, name)
+		data, err := l.rd.Get(path)
+		if err != nil {
+			blog.Errorf("get rule %s err: %v", name, err)
+			continue
+		}
+		rule := new(metadata.LimiterRule)
+		if err := json.Unmarshal([]byte(data), rule); err != nil {
+			blog.Errorf("unmarshal rule info failed, data: %s, err: %v", data, err)
 			continue
 		}
 		limiterRules = append(limiterRules, rule)
@@ -252,8 +268,6 @@ func (l *Limiter) DelRules(ruleNames []string) error {
 	if ruleNames == nil {
 		return fmt.Errorf("rulenames must be set")
 	}
-	l.lock.Lock()
-	defer l.lock.Unlock()
 	for _, name := range ruleNames {
 		// delete rule in etcd
 		path := fmt.Sprintf("%s/%s", types.CCDiscoverBaseLimiter, name)
@@ -261,12 +275,6 @@ func (l *Limiter) DelRules(ruleNames []string) error {
 		if err != nil {
 			blog.Warnf("delete rule error in etcd, name %s, err: %v", name, err)
 		}
-		// delete local rule
-		if _, exist := l.rules[name]; !exist {
-			blog.Warnf("can not delete rule, because can not find rule %s", name)
-			continue
-		}
-		delete(l.rules, name)
 	}
 	return nil
 }
@@ -274,9 +282,16 @@ func (l *Limiter) DelRules(ruleNames []string) error {
 // GetAllRules get all limit rules
 func (l *Limiter) GetAllRules() ([]*metadata.LimiterRule, error) {
 	var limiterRules []*metadata.LimiterRule
-	l.lock.RLock()
-	defer l.lock.RUnlock()
-	for _, rule := range l.rules {
+	rules, err := l.rd.GetWithPrefix(types.CCDiscoverBaseLimiter)
+	if err != nil {
+		return nil, err
+	}
+	for _, data := range rules {
+		rule := new(metadata.LimiterRule)
+		if err := json.Unmarshal([]byte(data.Value), rule); err != nil {
+			blog.Errorf("unmarshal rule info failed, rule: %s, err: %v", data.Value, err)
+			continue
+		}
 		limiterRules = append(limiterRules, rule)
 	}
 	return limiterRules, nil
