@@ -470,6 +470,12 @@ type SyncModuleServiceInstanceByTemplateOption struct {
 	ModuleID int64 `json:"bk_module_id"`
 }
 
+// FindServiceTemplateSyncStatusOption find service template sync status option
+type FindServiceTemplateSyncStatusOption struct {
+	ModuleIDs         []int64 `json:"bk_module_ids"`
+	ServiceTemplateID int64   `json:"service_template_id"`
+}
+
 type ListServiceInstancesWithHostInput struct {
 	BizID     int64              `json:"bk_biz_id"`
 	HostID    int64              `json:"bk_host_id"`

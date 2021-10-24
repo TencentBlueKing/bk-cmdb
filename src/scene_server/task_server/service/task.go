@@ -23,8 +23,6 @@ import (
 	"configcenter/src/common/util"
 )
 
-const step uint64 = 1000
-
 // CreateTask create a task
 func (s *Service) CreateTask(ctx *rest.Contexts) {
 	input := new(metadata.CreateTaskRequest)
@@ -216,4 +214,38 @@ func (s *Service) deleteRedundancyTask(ctx context.Context, rid string) error {
 		blog.Infof("delete %d redundancy tasks successful, rid: %s", len(tasks), rid)
 		time.Sleep(time.Second * 20)
 	}
+}
+
+// ListLatestSyncStatus list latest api task sync status
+func (s *Service) ListLatestSyncStatus(ctx *rest.Contexts) {
+	input := new(metadata.ListLatestSyncStatusRequest)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	infos, err := s.Logics.ListLatestSyncStatus(ctx.Kit, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(infos)
+}
+
+// ListSyncStatusHistory list api task sync status history
+func (s *Service) ListSyncStatusHistory(ctx *rest.Contexts) {
+	input := new(metadata.QueryCondition)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	infos, err := s.Logics.ListSyncStatusHistory(ctx.Kit, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(infos)
 }

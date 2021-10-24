@@ -579,7 +579,6 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 		return kit.CCError.Error(common.CCErrTopoHasHostCheckFailed)
 	}
 
-	bizSetMap := make(map[int64][]int64)
 	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
 	auditLogs := make([]metadata.AuditLog, 0)
 
@@ -592,15 +591,6 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 				return kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.GetInstIDField(objID))
 			}
 			delInstIDs[index] = instID
-
-			if objID == common.BKInnerObjIDSet {
-				bizID, err := instance.Int64(common.BKAppIDField)
-				if err != nil {
-					blog.ErrorJSON("can not convert biz ID to int64, err: %s, set: %s, rid: %s", err, instance, kit.Rid)
-					return kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
-				}
-				bizSetMap[bizID] = append(bizSetMap[bizID], instID)
-			}
 		}
 
 		// if any instance has been bind to a instance by the association, then these instances should not be deleted.
@@ -635,16 +625,6 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 		if err := rsp.CCError(); err != nil {
 			blog.ErrorJSON("delete inst failed, err: %s, cond: %s rid: %s", err, delCond, kit.Rid)
 			return err
-		}
-	}
-
-	// clear set template sync status for set instances
-	for bizID, setIDs := range bizSetMap {
-		if len(setIDs) != 0 {
-			if ccErr := c.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, setIDs); ccErr != nil {
-				blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDs, ccErr.Error(), kit.Rid)
-				return ccErr
-			}
 		}
 	}
 

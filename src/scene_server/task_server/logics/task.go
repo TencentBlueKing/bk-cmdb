@@ -28,11 +28,10 @@ import (
 
 // Create add task
 func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (metadata.APITaskDetail, error) {
-
 	dbTask := metadata.APITaskDetail{}
-	input.Name = strings.TrimSpace(input.Name)
+	input.TaskType = strings.TrimSpace(input.TaskType)
 
-	if input.Name == "" {
+	if input.TaskType == "" {
 		return dbTask, kit.CCError.Errorf(common.CCErrCommParamsNeedString, "name")
 	}
 
@@ -41,9 +40,8 @@ func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (met
 	}
 
 	dbTask.TaskID = getStrTaskID("id")
-	dbTask.Name = input.Name
 	dbTask.User = kit.User
-	dbTask.Flag = input.Flag
+	dbTask.TaskType = input.TaskType
 	dbTask.InstID = input.InstID
 	dbTask.Header = GetDBHTTPHeader(kit.Header)
 	dbTask.Status = metadata.APITaskStatusNew
@@ -59,6 +57,22 @@ func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (met
 	err := lgc.db.Table(common.BKTableNameAPITask).Insert(kit.Ctx, dbTask)
 	if err != nil {
 		blog.Errorf("create task failed, data: %#v, err: %v, rid: %s", dbTask, err, kit.Rid)
+		return dbTask, kit.CCError.Error(common.CCErrCommDBInsertFailed)
+	}
+
+	taskHistory := metadata.APITaskSyncStatus{
+		TaskID:          dbTask.TaskID,
+		TaskType:        input.TaskType,
+		InstID:          input.InstID,
+		Status:          metadata.APITaskStatusNew,
+		Creator:         kit.User,
+		CreateTime:      dbTask.CreateTime,
+		LastTime:        dbTask.LastTime,
+		SupplierAccount: kit.SupplierAccount,
+	}
+
+	if err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Insert(kit.Ctx, taskHistory); err != nil {
+		blog.Errorf("create task sync history failed, data: %#v, err: %v, rid: %s", taskHistory, err, kit.Rid)
 		return dbTask, kit.CCError.Error(common.CCErrCommDBInsertFailed)
 	}
 	return dbTask, nil
@@ -81,10 +95,19 @@ func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest
 		LastTime:   now,
 	}
 
+	taskHistory := metadata.APITaskSyncStatus{
+		Status:          metadata.APITaskStatusNew,
+		Creator:         kit.User,
+		CreateTime:      now,
+		LastTime:        now,
+		SupplierAccount: kit.SupplierAccount,
+	}
+
 	dbTasks := make([]metadata.APITaskDetail, len(tasks))
+	taskHistories := make([]metadata.APITaskSyncStatus, len(tasks))
 	for index, task := range tasks {
-		task.Name = strings.TrimSpace(task.Name)
-		if task.Name == "" {
+		task.TaskType = strings.TrimSpace(task.TaskType)
+		if task.TaskType == "" {
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "name")
 		}
 
@@ -93,8 +116,7 @@ func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest
 		}
 
 		dbTask.TaskID = getStrTaskID("id")
-		dbTask.Name = task.Name
-		dbTask.Flag = task.Flag
+		dbTask.TaskType = task.TaskType
 		dbTask.InstID = task.InstID
 		dbTask.Detail = make([]metadata.APISubTaskDetail, 0)
 		for _, taskItem := range task.Data {
@@ -104,13 +126,22 @@ func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest
 				Status:    metadata.APITaskStatusNew,
 			})
 		}
-
 		dbTasks[index] = dbTask
+
+		taskHistory.TaskID = dbTask.TaskID
+		dbTask.TaskType = task.TaskType
+		dbTask.InstID = task.InstID
+		taskHistories[index] = taskHistory
 	}
 
 	err := lgc.db.Table(common.BKTableNameAPITask).Insert(kit.Ctx, dbTasks)
 	if err != nil {
 		blog.Errorf("create tasks(%#v) failed, err: %v, rid: %s", dbTasks, err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
+	}
+
+	if err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Insert(kit.Ctx, taskHistories); err != nil {
+		blog.Errorf("create task sync history failed, data: %#v, err: %v, rid: %s", taskHistories, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
 	}
 	return dbTasks, nil
@@ -259,8 +290,7 @@ func (lgc *Logics) ChangeStatusToFailure(kit *rest.Kit, taskID, subTaskID string
 func (lgc *Logics) changeStatus(kit *rest.Kit, taskID, subTaskID string, status metadata.APITaskStatus,
 	errResponse *metadata.Response) error {
 
-	condition := mapstr.New()
-	condition.Set("task_id", taskID)
+	condition := mapstr.MapStr{"task_id": taskID}
 
 	rows := make([]metadata.APITaskDetail, 0)
 	err := lgc.db.Table(common.BKTableNameAPITask).Find(condition).All(kit.Ctx, &rows)
@@ -278,7 +308,7 @@ func (lgc *Logics) changeStatus(kit *rest.Kit, taskID, subTaskID string, status 
 	for _, subTask := range rows[0].Detail {
 		if subTask.SubTaskID == subTaskID {
 			existSubTask = true
-			if (subTask.Status == metadata.APITaskStatusNew || subTask.Status == metadata.APITaskStatuExecute) &&
+			if (subTask.Status == metadata.APITaskStatusNew || subTask.Status == metadata.APITaskStatusExecute) &&
 				subTask.Status != status {
 				canChangeStatus = true
 			}
@@ -292,21 +322,21 @@ func (lgc *Logics) changeStatus(kit *rest.Kit, taskID, subTaskID string, status 
 		return kit.CCError.CCError(common.CCErrTaskStatusNotAllowChangeTo)
 	}
 
-	updateCondition := mapstr.New()
-	updateCondition.Set("task_id", taskID)
-	updateCondition.Set("detail.sub_task_id", subTaskID)
-	updateData := mapstr.New()
-	updateData.Set("detail.$.status", status)
-	updateData.Set(common.LastTimeField, time.Now())
+	now := time.Now()
+	updateCondition := mapstr.MapStr{"task_id": taskID, "detail.sub_task_id": subTaskID}
+	updateData := mapstr.MapStr{"detail.$.status": status, common.LastTimeField: now}
+	needUpdateHistory := false
 	if status == metadata.APITAskStatusFail {
 		// 任务的一个子任务失败，则任务失败
 		updateData.Set("status", status)
 		updateData.Set("detail.$.response", errResponse)
+
+		needUpdateHistory = true
 	}
 	err = lgc.db.Table(common.BKTableNameAPITask).Update(kit.Ctx, updateCondition, updateData)
 	if err != nil {
 		blog.Errorf("change task status failed, data: %#v, err: %v, rid:%s", updateData, err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
+		return kit.CCError.Error(common.CCErrCommDBUpdateFailed)
 	}
 
 	// 如果修改为执行成功。 判断是否所有的子项都成功。如果都成功，则任务完成
@@ -323,13 +353,24 @@ func (lgc *Logics) changeStatus(kit *rest.Kit, taskID, subTaskID string, status 
 			updateCondition.Set("task_id", taskID)
 			updateData := mapstr.New()
 			updateData.Set("status", metadata.APITaskStatusSuccess)
-			updateData.Set(common.LastTimeField, time.Now())
+			updateData.Set(common.LastTimeField, now)
+
+			needUpdateHistory = true
 
 			err = lgc.db.Table(common.BKTableNameAPITask).Update(kit.Ctx, updateCondition, updateData)
 			if err != nil {
 				blog.Errorf("change task status failed, data: %#v, err: %v, rid:%s", updateData, err, kit.Rid)
-				return kit.CCError.Error(common.CCErrCommDBSelectFailed)
+				return kit.CCError.Error(common.CCErrCommDBUpdateFailed)
 			}
+		}
+	}
+
+	updateHistoryData := mapstr.MapStr{common.BKStatusField: status, common.LastTimeField: now}
+	if needUpdateHistory {
+		err = lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Update(kit.Ctx, updateCondition, updateHistoryData)
+		if err != nil {
+			blog.Errorf("change history task status(%#v) failed, err: %v, rid: %s", updateHistoryData, err, kit.Rid)
+			return kit.CCError.Error(common.CCErrCommDBUpdateFailed)
 		}
 	}
 	return nil
@@ -355,5 +396,104 @@ func getStrTaskID(prefix string) string {
 	if prefix != "" {
 		prefix = prefix + ":"
 	}
-	return "task:" + prefix + xid.New().String()
+	return prefix + xid.New().String()
+}
+
+// ListLatestSyncStatus list latest api task sync status
+func (lgc *Logics) ListLatestSyncStatus(kit *rest.Kit, input *metadata.ListLatestSyncStatusRequest) (
+	[]metadata.APITaskSyncStatus, error) {
+
+	aggrCond := []map[string]interface{}{
+		{common.BKDBSort: map[string]interface{}{common.CreateTimeField: -1}},
+		{common.BKDBGroup: map[string]interface{}{
+			"_id": "$bk_inst_id",
+			"doc": map[string]interface{}{"$first": "$$ROOT"},
+		}},
+		{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},
+	}
+
+	var err error
+	if input.TimeCondition != nil {
+		input.Condition, err = input.TimeCondition.MergeTimeCondition(input.Condition)
+		if err != nil {
+			blog.Errorf("merge time condition failed, err: %#v, input: %s, rid: %s", err, input, kit.Rid)
+			return nil, err
+		}
+	}
+	if len(input.Condition) != 0 {
+		aggrCond = append([]map[string]interface{}{{common.BKDBMatch: input.Condition}}, aggrCond...)
+	}
+
+	if len(input.Fields) != 0 {
+		cond := map[string]int64{}
+		for _, field := range input.Fields {
+			cond[field] = 1
+		}
+		aggrCond = append(aggrCond, map[string]interface{}{
+			common.BKDBProject: cond,
+		})
+	}
+
+	result := make([]metadata.APITaskSyncStatus, 0)
+	if err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).AggregateAll(kit.Ctx, aggrCond, &result); err != nil {
+		blog.Errorf("list latest sync status failed, cond: %#v, err: %v, rid: %v", aggrCond, err, kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// ListSyncStatusHistory list api task sync status history
+func (lgc *Logics) ListSyncStatusHistory(kit *rest.Kit, input *metadata.QueryCondition) (
+	*metadata.ListAPITaskSyncStatusResult, error) {
+
+	var err error
+	if input.TimeCondition != nil {
+		input.Condition, err = input.TimeCondition.MergeTimeCondition(input.Condition)
+		if err != nil {
+			blog.Errorf("merge time condition failed, err: %#v, input: %s, rid: %s", err, input, kit.Rid)
+			return nil, err
+		}
+	}
+
+	dbQuery := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Find(input.Condition)
+
+	if input.Page.Start != 0 {
+		dbQuery.Start(uint64(input.Page.Start))
+	}
+
+	if input.Page.Limit != 0 {
+		dbQuery.Limit(uint64(input.Page.Limit))
+	}
+
+	if len(input.Page.Sort) != 0 {
+		dbQuery.Sort(input.Page.Sort)
+	}
+
+	result := &metadata.ListAPITaskSyncStatusResult{
+		Count: 0,
+		Info:  make([]metadata.APITaskSyncStatus, 0),
+	}
+	if !input.DisableCounter {
+		count, err := dbQuery.Count(kit.Ctx)
+		if err != nil {
+			blog.Errorf("get sync status history count failed, input: %#v, err: %v, rid: %v", input, err, kit.Rid)
+			return nil, err
+		}
+		if count == 0 {
+			return result, nil
+		}
+		result.Count = int64(count)
+	}
+
+	if len(input.Fields) != 0 {
+		dbQuery.Fields(input.Fields...)
+	}
+
+	if err := dbQuery.All(kit.Ctx, &result.Info); err != nil {
+		blog.Errorf("list sync status history failed, input: %#v, err: %v, rid: %v", input, err, kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
 }

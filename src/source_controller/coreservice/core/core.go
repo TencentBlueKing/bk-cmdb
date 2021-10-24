@@ -334,13 +334,6 @@ type SetTemplateOperation interface {
 	ListSetServiceTemplateRelations(kit *rest.Kit, bizID int64, setTemplateID int64) (
 		[]metadata.SetServiceTemplateRelation, errors.CCErrorCoder)
 	ListSetTplRelatedSvcTpl(kit *rest.Kit, bizID, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder)
-	UpdateSetTemplateSyncStatus(kit *rest.Kit, setID int64, option metadata.SetTemplateSyncStatus) errors.CCErrorCoder
-	ListSetTemplateSyncStatus(kit *rest.Kit, option metadata.ListSetTemplateSyncStatusOption) (
-		metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
-	ListSetTemplateSyncHistory(kit *rest.Kit, option metadata.ListSetTemplateSyncStatusOption) (
-		metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
-	DeleteSetTemplateSyncStatus(kit *rest.Kit, option metadata.DeleteSetTemplateSyncStatusOption) errors.CCErrorCoder
-	ModifySetTemplateSyncStatus(kit *rest.Kit, setID int64, sysncStatus metadata.SyncStatus) errors.CCErrorCoder
 }
 
 type HostApplyRuleOperation interface {
@@ -389,7 +382,7 @@ type SystemOperation interface {
 
 type AuthOperation interface {
 	SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64, []map[string]interface{},
-	errors.CCErrorCoder)
+		errors.CCErrorCoder)
 }
 
 type EventOperation interface {

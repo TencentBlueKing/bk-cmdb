@@ -21,17 +21,16 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// Create  新加任务， name 任务名，flag:任务标识，留给业务方做识别任务，instID:任务的执行源实例id，data 每一项任务需要的参数
-func (t *task) Create(ctx context.Context, header http.Header, name, flag string, instID int64, data []interface{}) (
+// Create 新加任务，taskType: 任务标识，留给业务方做识别任务，instID: 任务的执行源实例id，data: 每一项任务需要的参数
+func (t *task) Create(ctx context.Context, header http.Header, taskType string, instID int64, data []interface{}) (
 	metadata.APITaskDetail, error) {
 
 	resp := new(metadata.CreateTaskResponse)
 	subPath := "/task/create"
 	body := metadata.CreateTaskRequest{
-		Name:   name,
-		Flag:   flag,
-		InstID: instID,
-		Data:   data,
+		TaskType: taskType,
+		InstID:   instID,
+		Data:     data,
 	}
 
 	err := t.client.Post().
@@ -173,4 +172,54 @@ func (t *task) TaskStatusToFailure(ctx context.Context, header http.Header, task
 		Do().
 		Into(resp)
 	return
+}
+
+// ListLatestSyncStatus list latest sync status by condition
+func (t *task) ListLatestSyncStatus(ctx context.Context, header http.Header,
+	option *metadata.ListLatestSyncStatusRequest) ([]metadata.APITaskSyncStatus, errors.CCErrorCoder) {
+
+	resp := new(metadata.ListLatestSyncStatusResponse)
+	subPath := "/findmany/latest/sync_status"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, resp.CCError()
+	}
+
+	return resp.Data, nil
+}
+
+// ListSyncStatusHistory list sync status history by condition
+func (t *task) ListSyncStatusHistory(ctx context.Context, header http.Header,
+	option *metadata.QueryCondition) (*metadata.ListAPITaskSyncStatusResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.ListSyncStatusHistoryResponse)
+	subPath := "/findmany/sync_status_history"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, resp.CCError()
+	}
+
+	return resp.Data, nil
 }

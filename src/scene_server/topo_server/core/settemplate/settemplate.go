@@ -13,8 +13,6 @@
 package settemplate
 
 import (
-	"time"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -26,17 +24,15 @@ import (
 )
 
 type SetTemplate interface {
-	GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int64) ([]metadata.SetInst, errors.CCErrorCoder)
-	isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64, isInterrupt bool) (map[int64]bool, errors.CCErrorCoder)
 	DiffSetTplWithInst(kit *rest.Kit, bizID int64, setTemplateID int64,
 		option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder)
 	SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder
-	UpdateSetSyncStatus(kit *rest.Kit, setTemplateID int64, setID []int64) ([]metadata.SetTemplateSyncStatus, errors.CCErrorCoder)
 	GetLatestSyncTaskDetail(kit *rest.Kit, taskCond metadata.ListAPITaskDetail) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder)
 	CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64, setTemplateID int64) (*metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder)
-	TriggerCheckSetTemplateSyncingStatus(kit *rest.Kit, bizID, setTemplateID int64, setID []int64) errors.CCErrorCoder
-	ListSetTemplateSyncStatus(kit *rest.Kit, bizID int64,
-		option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
+	ListSetTemplateSyncHistory(kit *rest.Kit, option *metadata.ListSetTemplateSyncStatusOption) (
+		*metadata.ListAPITaskSyncStatusResult, errors.CCErrorCoder)
+	ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata.ListSetTemplateSyncStatusOption) (
+		*metadata.ListAPITaskSyncStatusResult, errors.CCErrorCoder)
 }
 
 func NewSetTemplate(client apimachinery.ClientSetInterface) SetTemplate {
@@ -210,67 +206,20 @@ func (st *setTemplate) SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateI
 			blog.InfoJSON("dispatch synchronize task on set [%s](%s) success, result: %s, rid: %s",
 				setDiff.SetDetail.SetName, setDiff.SetID, taskDetail, kit.Rid)
 		}
-
-		// 修改任务到同步中的状态
-		err = st.client.CoreService().SetTemplate().ModifySetTemplateSyncStatus(kit.Ctx, kit.Header, setDiff.SetID, metadata.SyncStatusSyncing)
-		//_, err = st.UpdateSetSyncStatus(kit, setDiff.SetID)
-		if err != nil {
-			blog.Errorf("UpdateSetSyncStatus failed, setID: %d, err: %s", setDiff.SetID, err.Error(), kit.Rid)
-			return err
-		}
-
-		// 定时更新 SetTemplateSyncStatus 状态，优化加载
-		go func(setID int64) {
-			// 指数增长轮询间隔
-			duration := 200 * time.Millisecond
-			maxDuration := 10 * time.Second
-			ticker := time.NewTimer(duration)
-			timeoutTimer := time.NewTimer(5 * time.Minute)
-
-			for {
-				select {
-				case <-timeoutTimer.C:
-					blog.Errorf("poll UpdateSetSyncStatus timeout, setID: %d, rid: %s", setID, kit.Rid)
-					return
-				case <-ticker.C:
-					setSyncStatus, err := st.UpdateSetSyncStatus(kit.NewKit(), setTemplateID, []int64{setID})
-					if err != nil {
-						blog.Errorf("update set sync status failed, setID: %d, err: %s, rid: %s",
-							setID, err.Error(), kit.Rid)
-						return
-					}
-					if len(setSyncStatus) == 0 {
-						blog.Errorf("update set sync status failed,return is empty setID: %d, err: %s, rid: %s",
-							setID, err.Error(), kit.Rid)
-						return
-					}
-					if setSyncStatus[0].Status.IsFinished() {
-						return
-					}
-
-					// set next timer
-					duration = duration * 2
-					if duration > maxDuration {
-						duration = maxDuration
-					}
-					ticker = time.NewTimer(duration)
-				}
-			}
-		}(setDiff.SetID)
 	}
 	return nil
 }
 
 // DispatchTask4ModuleSync dispatch synchronize task
-func (st *setTemplate) DispatchTask4ModuleSync(kit *rest.Kit, indexKey string, setID int64,
+func (st *setTemplate) DispatchTask4ModuleSync(kit *rest.Kit, taskType string, setID int64,
 	tasks ...metadata.SyncModuleTask) (metadata.APITaskDetail, errors.CCErrorCoder) {
+
 	taskDetail := metadata.APITaskDetail{}
 	tasksData := make([]interface{}, 0)
 	for _, task := range tasks {
 		tasksData = append(tasksData, task)
 	}
-	createTaskResult, err := st.client.TaskServer().Task().Create(kit.Ctx, kit.Header, common.SyncSetTaskName, indexKey,
-		setID, tasksData)
+	createTaskResult, err := st.client.TaskServer().Task().Create(kit.Ctx, kit.Header, taskType, setID, tasksData)
 	if err != nil {
 		blog.ErrorJSON("dispatch synchronize task failed, task: %s, err: %s, rid: %s", tasks, err.Error(), kit.Rid)
 		return taskDetail, errors.CCHttpError

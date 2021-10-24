@@ -10,28 +10,32 @@
  * limitations under the License.
  */
 
-package service
+package y3_9_202110211014
 
 import (
-	"net/http"
+	"context"
 
-	"configcenter/src/common/http/rest"
-
-	"github.com/emicklei/go-restful"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-/*
-	be careful: path has internal prefix shouldn't be route by api-server
-*/
+func init() {
+	upgrader.RegistUpgrader("y3.9.202110211014", upgrade)
+}
 
-func (s *Service) initInternalTask(web *restful.WebService) {
-	utility := rest.NewRestUtility(rest.Config{
-		ErrorIf:  s.Engine.CCErr,
-		Language: s.Engine.Language,
-	})
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	blog.Infof("start execute y3.9.202110211014")
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/internal/sync/module/task",
-		Handler: s.SyncModuleTaskHandler})
+	if err = migrateApiTask(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade y3.9.202110211014] migrate api task failed, err: %v", err)
+		return err
+	}
 
-	utility.AddToRestfulWebService(web)
+	if err = migrateAPITaskSyncStatus(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade y3.9.202110211014] migrate api task sync status failed, err: %v", err)
+		return err
+	}
+
+	return nil
 }

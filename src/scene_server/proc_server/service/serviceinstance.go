@@ -1224,20 +1224,6 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	// check if all the previous sync tasks are done to avoid syncing repeatedly
-	statusArr, err := ps.getLatestModuleSyncTaskDetail(ctx.Kit, syncOpt.ModuleIDs, []string{common.BKStatusField})
-	if err != nil {
-		blog.Errorf("get module sync status failed, ids: %#v, err: %v, rid: %s", syncOpt.ModuleIDs, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	for _, status := range statusArr {
-		if !status.Status.IsFinished() {
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoSyncSvcInstTaskIsRunning))
-			return
-		}
-	}
-
 	syncOneModuleOpt := metadata.SyncOneModuleBySvcTempOption{
 		BizID:             syncOpt.BizID,
 		ServiceTemplateID: syncOpt.ServiceTemplateID,
@@ -1246,10 +1232,9 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	for _, moduleID := range syncOpt.ModuleIDs {
 		syncOneModuleOpt.ModuleID = moduleID
 		tasks = append(tasks, metadata.CreateTaskRequest{
-			Name:   common.SyncModuleTaskName,
-			Flag:   common.SyncModuleTaskFlag,
-			InstID: moduleID,
-			Data:   []interface{}{syncOneModuleOpt},
+			TaskType: common.SyncModuleTaskFlag,
+			InstID:   moduleID,
+			Data:     []interface{}{syncOneModuleOpt},
 		})
 	}
 
@@ -1627,6 +1612,136 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 	return nil
 }
 
+// FindServiceTemplateSyncStatus find service template sync status
+func (ps *ProcServer) FindServiceTemplateSyncStatus(ctx *rest.Contexts) {
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("parse biz id %s failed, err: %v, rid: %s", bizIDStr, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField))
+		return
+	}
+
+	option := metadata.FindServiceTemplateSyncStatusOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(option.ModuleIDs) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "bk_module_ids"))
+		return
+	}
+
+	if option.ServiceTemplateID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKServiceTemplateIDField))
+		return
+	}
+
+	// compare modules with their service templates to get their sync status
+	moduleCond := map[string]interface{}{
+		common.BKAppIDField:             bizID,
+		common.BKServiceTemplateIDField: option.ServiceTemplateID,
+		common.BKModuleIDField:          map[string]interface{}{common.BKDBIN: option.ModuleIDs},
+	}
+	_, statuses, err := ps.Logic.GetSvcTempSyncStatus(ctx.Kit, bizID, moduleCond, false)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	statusMap := make(map[int64]bool)
+	for _, status := range statuses {
+		statusMap[status.ModuleID] = status.NeedSync
+	}
+
+	// get latest sync service template api task sync status by modules
+	statusOpt := &metadata.ListLatestSyncStatusRequest{
+		Condition: map[string]interface{}{
+			common.BKInstIDField:   map[string]interface{}{common.BKDBIN: option.ModuleIDs},
+			common.BKTaskTypeField: common.SyncModuleTaskFlag,
+		},
+		Fields: []string{common.BKInstIDField, common.CreateTimeField, common.LastTimeField, common.CreatorField,
+			common.BKStatusField},
+	}
+
+	taskStatusRes, err := ps.CoreAPI.TaskServer().Task().ListLatestSyncStatus(ctx.Kit.Ctx, ctx.Kit.Header, statusOpt)
+	if err != nil {
+		blog.Errorf("list latest sync status failed, option: %#v, err: %v, rid: %s", statusOpt, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	statusExistsMap := make(map[int64]struct{})
+	for _, status := range taskStatusRes {
+		statusExistsMap[status.InstID] = struct{}{}
+		// if current status and api task status does not match, use current status
+		if statusMap[status.InstID] && !status.Status.IsFinished() {
+			status.Status = metadata.APITaskStatusSuccess
+		} else if !statusMap[status.InstID] && status.Status.IsFinished() {
+			status.Status = metadata.APITaskStatusWaitExecute
+		}
+	}
+
+	// compensate for the modules that hasn't been synced before, or its latest sync task is already outdated
+	compensateModuleIDs := make([]int64, 0)
+	for _, moduleID := range option.ModuleIDs {
+		if _, exists := statusExistsMap[moduleID]; !exists {
+			compensateModuleIDs = append(compensateModuleIDs, moduleID)
+		}
+	}
+
+	compensateStatuses, err := ps.compensateSvcTempSyncStatus(ctx.Kit, compensateModuleIDs, statusMap)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(append(taskStatusRes, compensateStatuses...))
+}
+
+// compensateSvcTempSyncStatus compensate sync status for the modules with no sync task
+func (ps *ProcServer) compensateSvcTempSyncStatus(kit *rest.Kit, moduleIDs []int64, statusMap map[int64]bool) (
+	[]metadata.APITaskSyncStatus, error) {
+
+	moduleOpt := &metadata.QueryCondition{
+		Fields: []string{common.BKModuleIDField, common.CreatorField, common.CreateTimeField,
+			common.LastTimeField},
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
+		Condition:      mapstr.MapStr{common.BKModuleIDField: mapstr.MapStr{common.BKDBIN: moduleIDs}},
+		DisableCounter: true,
+	}
+	moduleRes := new(metadata.ResponseModuleInstance)
+	if err := ps.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header,
+		common.BKInnerObjIDModule, moduleOpt, &moduleRes); err != nil {
+		blog.Errorf("get modules failed, err: %v, opt: %#v, rid: %s", err, moduleOpt, kit.Rid)
+		return nil, err
+	}
+	if err := moduleRes.CCError(); err != nil {
+		blog.Errorf("get modules failed, err: %v, opt: %#v, rid: %s", err, moduleOpt, kit.Rid)
+		return nil, err
+	}
+
+	statuses := make([]metadata.APITaskSyncStatus, 0)
+	for _, module := range moduleRes.Data.Info {
+		status := metadata.APITaskSyncStatus{
+			InstID:     module.ModuleID,
+			Creator:    module.Creator,
+			CreateTime: module.CreateTime.Time,
+			LastTime:   module.LastTime.Time,
+		}
+
+		if statusMap[status.InstID] {
+			status.Status = metadata.APITaskStatusSuccess
+		} else {
+			status.Status = metadata.APITaskStatusWaitExecute
+		}
+		statuses = append(statuses, status)
+	}
+
+	return statuses, nil
+}
+
 func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
 	input := new(metadata.ListServiceInstancesWithHostInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -1799,29 +1914,4 @@ func (ps *ProcServer) ServiceInstanceLabelsAggregation(ctx *rest.Contexts) {
 		aggregationData[key] = util.StrArrayUnique(aggregationData[key])
 	}
 	ctx.RespEntity(aggregationData)
-}
-
-// getLatestModuleSyncTaskDetail get latest service template to module sync task detail by module id
-func (ps *ProcServer) getLatestModuleSyncTaskDetail(kit *rest.Kit, moduleIDs []int64, fields []string) (
-	[]metadata.APITaskDetail, errors.CCErrorCoder) {
-
-	if len(moduleIDs) == 0 {
-		return make([]metadata.APITaskDetail, 0), nil
-	}
-
-	opt := &metadata.ListAPITaskLatestRequest{
-		Condition: map[string]interface{}{
-			common.BKInstIDField:                map[string]interface{}{common.BKDBIN: moduleIDs},
-			common.MetaDataSynchronizeFlagField: common.SyncModuleTaskFlag,
-		},
-		Fields: fields,
-	}
-
-	res, err := ps.CoreAPI.TaskServer().Task().ListLatestTask(kit.Ctx, kit.Header, common.SyncModuleTaskName, opt)
-	if err != nil {
-		blog.Errorf("list latest module sync tasks failed, option: %#v, err: %v, rid: %s", opt, err, kit.Rid)
-		return nil, err
-	}
-
-	return res, nil
 }
