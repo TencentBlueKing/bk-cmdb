@@ -85,7 +85,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	需要传入host参数，是authserver的ip:port信息，如下通过curl调用：
 	curl -X POST -H 'Content-Type:application/json' -H 'BK_USER:migrate' -H 'HTTP_BLUEKING_SUPPLIER_ID:0'
 	--data '{"host": "http://cmdb-auth.service.consul:'$BK_CMDB_AUTH_PORT'"}'
-    http://ip:port/migrate/v3/authcenter/register
+    http://cmdb-admin.service.consul:$BK_CMDB_ADMIN_PORT/migrate/v3/authcenter/register
 */
 // RegisterAuthAccount register auth account to iam
 func (s *Service) RegisterAuthAccount(req *restful.Request, resp *restful.Response) {
