@@ -70,7 +70,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	limiter := service.NewLimiter(engine.RegDiscv())
-	err = limiter.SyncLimiterRules()
+	err = limiter.SyncLimiterRules(ctx)
 	if err != nil {
 		blog.Infof("SyncLimiterRules failed, err: %v", err)
 		return err
@@ -107,4 +107,3 @@ func (h *APIServer) onApiServerConfigUpdate(previous, current cc.ProcessConfig) 
 }
 
 const waitForSeconds = 180
-

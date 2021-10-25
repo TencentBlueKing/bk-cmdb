@@ -1,39 +1,5 @@
 # cmdb 小工具
 
-### 动态调整日志级别
-- 使用方式
-
-  ```
-  ./tool_ctl log [flags]
-  ```
-
-- 命令行参数
-  ```
-  --set-default      [=false]: set log level to default value
-  --set-v             =""    : set log level for V logs
-  --addrport          =""    : the ip address and port for the hosts to apply command, separated by comma
-  --regdiscv          =""    : the regdiscv address, separated by comma, corresponding environment variable is REGDISCV_ADDR
-  --rduser            =""    : user name for authentication in register and discover
-  --rdpwd             =""    : password for authentication in register and discover
-  --rdcert            =""    : cert file in register and discover
-  --rdkey             =""    : key file in register and discover
-  --rdca              =""    : CA file in register and discover
-  --redis-addr        =""    : assign redis server address default is 127.0.0.1:6379
-  --redis-pwd         =""    : assign redis server password
-  --redis-database    =""    : assign the redis database default is 0
-  --redis-mastername  =""    : assign redis server master name defalut is null
-  --redis-sentinelpwd =""    : assign the redis sentinel password  default is null
-  ```
-- 示例
-
-  - ```
-    ./tool_ctl log --set-default --addrport=127.0.0.1:8080 --regdiscv=127.0.0.1:2379
-    ```
-
-  - ```
-    ./tool_ctl log --set-v=3 --addrport="127.0.0.1:8080" --regdiscv="127.0.0.1:2379"
-    ```
-
 ### 优雅退出
 - 使用方式
 
@@ -163,57 +129,6 @@
     ./tool_ctl topo --bizId=2 --mongo-uri=mongodb://127.0.0.1:27017/cmdb
     ```
 
-### 操作api请求限流策略
-- 使用方式
-    ```
-      ./tool_ctl limiter [flags]
-      ./tool_ctl limiter [command]
-    ```
-
-- 子命令
-    ```
-      set         set api limiter rule, use with flag --rule
-      get         get api limiter rules according rule names,use with flag --rulenames
-      del         del api limiter rules, use with flag --rulenames
-      ls          list all api limiter rules
-    ```
-- 命令行参数
-    ```
-     --rule="": the api limiter rule to set, a json like '{"rulename":"rule1","appcode":"gse","user":"","ip":"","method":"POST","url":"^/api/v3/module/search/[^\\s/]+/[0-9]+/[0-9]+/?$","limit":1000,"ttl":60,"denyall":false}'
-     --rulenames="": the api limiter rule names to get or del, multiple names is separated with ',',like 'name1,name2'
-    ```
-
-- rule策略字段说明
-
-| 字段     | 类型   | 必选 | 描述                                                         |
-|----------|--------|------|--------------------------------------------------------------|
-| rulename | string | 是   | 策略名                                                       |
-| appcode  | string | 否   | 应用ID                                                       |
-| user     | string | 否   | 请求发起的用户名                                             |
-| ip       | string | 否   | api的来源ip                                                  |
-| method   | string | 否   | 请求的类型，配置的情况下只能为POST、GET、PUT、DELETE中的一种 |
-| url      | string | 否   | api的url正则表达式                                           |
-| limit    | int64  | 否   | api请求限制总次数                                            |
-| ttl      | int64  | 否   | 策略存活时间，单位为秒                                       |
-| denyall  | bool   | 否   | 是否直接禁掉请求，默认为false，为true时忽略limit和ttl参数    |
- 
-appcode、user、ip、method、url需要至少配置一项  
-denyall配置为false的情况下，limit和ttl配置才能生效
-
-- 示例
-    ```
-      以下命令是在配置了REGDISCV_ADDR环境变量的情况下使用，没有配置时也可以通过命令行参数--regdiscv指定
-      # 列出所有策略
-      ./tool_ctl limiter ls
-      # 配置策略，对url限制请求次数
-      ./tool_ctl limiter set --rule='{"rulename":"rule1","appcode":"gse","user":"admin","ip":"","method":"POST","url":"^/api/v3/module/search/[^\\s/]+/[0-9]+/[0-9]+/?$","limit":1000,"ttl":60,"denyall":false}'
-      # 配置策略，将url直接禁掉
-      ./tool_ctl limiter set --rule='{"rulename":"rule1","appcode":"gse","user":"admin","url":"^/api/v3/module/search/[^\\s/]+/[0-9]+/[0-9]+/?$","denyall":true}'
-      # 获取某些策略详情
-      ./tool_ctl limiter get --rulenames=test1,test2
-      # 删除某些策略
-      ./tool_ctl limiter del --rulenames=test1,test2
-    ```
 ### 检查yaml格式文件是否正确
 - 使用方式
     ```

@@ -14,6 +14,7 @@ package registerdiscover
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -32,11 +33,15 @@ const (
 	EventDel EventType = 1
 )
 
+var (
+	ErrNoKey = errors.New("key does not exist")
+)
+
 // DiscoverEvent event of service discovery
 type DiscoverEvent struct {
-	Type	EventType
-	Key    string
-	Value  string
+	Type  EventType
+	Key   string
+	Value string
 }
 
 // KeyVal storage key and value in register and discover
@@ -47,12 +52,12 @@ type KeyVal struct {
 
 // Config register and discover config
 type Config struct {
-	Host       string           // etcd host info
-	User       string           // user name for authentication
-	Passwd     string           // password relative to user
-	Cert       string			// identify secure client using this TLS certificate file
-	Key        string           // identify secure client using this TLS key file
-	Ca         string           // verify certificates of TLS-enabled secure servers using this CA bundle
+	Host   string // etcd host info
+	User   string // user name for authentication
+	Passwd string // password relative to user
+	Cert   string // identify secure client using this TLS certificate file
+	Key    string // identify secure client using this TLS key file
+	Ca     string // verify certificates of TLS-enabled secure servers using this CA bundle
 }
 
 // RegDiscv data structure of register and discover
@@ -108,8 +113,8 @@ func NewRegDiscv(config *Config) (*RegDiscv, error) {
 
 // Ping verifies register and discover accessibility
 func (rd *RegDiscv) Ping() error {
-	if len (rd.client.Endpoints()) == 0 {
-		return fmt.Errorf("etcd has no endpoint");
+	if len(rd.client.Endpoints()) == 0 {
+		return fmt.Errorf("etcd has no endpoint")
 	}
 	_, err := rd.client.Dial(rd.client.Endpoints()[0])
 	return err
@@ -122,7 +127,7 @@ func (rd *RegDiscv) Get(key string) (string, error) {
 		return "", err
 	}
 	if len(rsp.Kvs) == 0 {
-		return "", fmt.Errorf("etcd get nothing with key: %s", key)
+		return "", ErrNoKey
 	}
 	value := string(rsp.Kvs[0].Value)
 	return value, nil
@@ -242,7 +247,7 @@ func (rd *RegDiscv) Resign() error {
 }
 
 // RegisterAndKeepAlive registers a kv and keeps its lease alive
-func (rd *RegDiscv) RegisterAndKeepAlive(key , val string) error {
+func (rd *RegDiscv) RegisterAndKeepAlive(key, val string) error {
 	go func() {
 		lease := clientv3.NewLease(rd.client)
 		var curLeaseId clientv3.LeaseID = 0

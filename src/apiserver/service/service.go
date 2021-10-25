@@ -89,6 +89,7 @@ func (s *service) WebServices() []*restful.WebService {
 	// common api
 	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
 	commonAPI.Route(commonAPI.GET("/healthz").To(s.Healthz))
+	commonAPI.Route(commonAPI.POST("/set_limit_rule").To(s.SetLimitRule))
 	commonAPI.Route(commonAPI.GET("/version").To(restfulservice.Version))
 	allWebServices = append(allWebServices, commonAPI)
 

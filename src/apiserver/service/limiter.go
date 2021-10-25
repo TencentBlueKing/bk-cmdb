@@ -13,63 +13,74 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
-	"reflect"
+	"fmt"
 	"regexp"
 	"strings"
 	"sync"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
-	"configcenter/src/common/registerdiscover"
 
 	"github.com/emicklei/go-restful"
 )
 
 type Limiter struct {
-	rd           *registerdiscover.RegDiscv
-	rules        map[string]*metadata.LimiterRule
-	lock         sync.RWMutex
-	syncDuration time.Duration
+	rd    *registerdiscover.RegDiscv
+	rules map[string]*metadata.LimiterRule
+	lock  sync.RWMutex
 }
 
-// NewLimiter creates a limiter object
+// NewLimiter new a limiter struct
 func NewLimiter(rd *registerdiscover.RegDiscv) *Limiter {
 	return &Limiter{
-		rd:           rd,
-		syncDuration: 5 * time.Second,
+		rd:    rd,
+		rules: make(map[string]*metadata.LimiterRule),
 	}
+}
+
+// LenOfRules get the count of limiter's rules
+func (l *Limiter) LenOfRules() int {
+	l.lock.RLock()
+	defer l.lock.RUnlock()
+	return len(l.rules)
+}
+
+func (l *Limiter) addRule(rule *metadata.LimiterRule) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	l.rules[rule.RuleName] = rule
+}
+
+func (l *Limiter) removeRule(ruleName string) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	delete(l.rules, ruleName)
+}
+
+func (l *Limiter) getAllRules() []*metadata.LimiterRule {
+	var limiterRules []*metadata.LimiterRule
+	l.lock.RLock()
+	defer l.lock.RUnlock()
+	for _, rule := range l.rules {
+		limiterRules = append(limiterRules, rule)
+	}
+	return limiterRules
 }
 
 // SyncLimiterRules sync the api limiter rules from register and discover
-func (l *Limiter) SyncLimiterRules() error {
+func (l *Limiter) SyncLimiterRules(ctx context.Context) error {
 	blog.Info("begin SyncLimiterRules")
-	path := types.CCDiscoverBaseLimiter
-	go func() {
-		for {
-			err := l.syncLimiterRules(path)
-			if err != nil {
-				blog.Errorf("fail to syncLimiterRules for path:%s, err:%s", path, err.Error())
-			}
-			time.Sleep(l.syncDuration)
-		}
-	}()
-	return nil
-}
-
-func (l *Limiter) syncLimiterRules(path string) error {
-	blog.V(5).Infof("syncing limiter rules for path:%s", path)
-	kvs, err := l.rd.GetWithPrefix(path)
+	kvs, err := l.rd.GetWithPrefix(types.CCDiscoverBaseLimiter)
 	if err != nil {
-		blog.Errorf("fail to get key: %s, err: %v", path, err)
+		blog.Errorf("fail to get key: %s, err: %v", types.CCDiscoverBaseLimiter, err)
 		return err
 	}
-
-	rules := make(map[string]*metadata.LimiterRule)
 	for _, kv := range kvs {
 		rule := new(metadata.LimiterRule)
 		if err := json.Unmarshal([]byte(kv.Value), rule); err != nil {
@@ -81,43 +92,61 @@ func (l *Limiter) syncLimiterRules(path string) error {
 			blog.Errorf("fail to verify  limiter rule: %v, err:%v", rule, err)
 			continue
 		}
-
-		rules[rule.RuleName] = rule
+		l.addRule(rule)
 	}
 
-	l.setRules(rules)
+	limitChan, err := l.rd.Watch(ctx, types.CCDiscoverBaseLimiter)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for event := range limitChan {
+			blog.Infof("limiter rule received one event from path: %s", types.CCDiscoverBaseLimiter)
+			switch event.Type {
+			case registerdiscover.EventPut:
+				l.updateLimiterRule(event.Key, event.Value)
+			case registerdiscover.EventDel:
+				l.removeLimiterRule(event.Key, event.Value)
+			default:
+				blog.Errorf("limiter rule received unknown event type: %v", event.Type)
+				continue
+			}
+		}
+	}()
+
 	return nil
 }
 
-func (l *Limiter) setRules(rules map[string]*metadata.LimiterRule) {
-	l.lock.Lock()
-	if reflect.DeepEqual(rules, l.rules) {
-		blog.V(5).Info("setRules skip, nothing is changed")
-		l.lock.Unlock()
+func (l *Limiter) updateLimiterRule(key, data string) {
+	if key == "" {
+		blog.Errorf("limiter received invalid event, for key is empty")
 		return
 	}
-	l.rules = rules
-	l.lock.Unlock()
-	blog.InfoJSON("setRules success, current rules is %s", rules)
-}
 
-// GetRules get all rules of limiter
-func (l *Limiter) GetRules() map[string]*metadata.LimiterRule {
-	l.lock.RLock()
-	defer l.lock.RUnlock()
-	rules := make(map[string]*metadata.LimiterRule)
-	for k, v := range l.rules {
-		rule := *v
-		rules[k] = &rule
+	rule := new(metadata.LimiterRule)
+	if err := json.Unmarshal([]byte(data), rule); err != nil {
+		blog.Errorf("unmarshal rule info failed, key: %s, info: %s, err: %v", key, data, err)
+		return
 	}
-	return rules
+
+	if err := rule.Verify(); err != nil {
+		blog.Errorf("fail to verify limiter rule: %v, err: %v", rule, err)
+		return
+	}
+	l.addRule(rule)
 }
 
-// LenOfRules get the count of limiter's rules
-func (l *Limiter) LenOfRules() int {
-	l.lock.RLock()
-	defer l.lock.RUnlock()
-	return len(l.rules)
+func (l *Limiter) removeLimiterRule(key, data string) {
+	if key == "" {
+		blog.Errorf("limiter received invalid event, for key is empty")
+		return
+	}
+
+	splitArray := strings.Split(key, "/")
+	l.removeRule(splitArray[len(splitArray)-1])
+
+	blog.Infof("remove limiter rule: %v, key: %s", data, splitArray[len(splitArray)-1])
 }
 
 // GetMatchedRule get the matched limiter rule according request
@@ -125,7 +154,7 @@ func (l *Limiter) GetMatchedRule(req *restful.Request) *metadata.LimiterRule {
 	header := req.Request.Header
 	var matchedRule *metadata.LimiterRule
 	var min int64 = 999999
-	rules := l.GetRules()
+	rules := l.getAllRules()
 	for _, r := range rules {
 		if r.AppCode == "" && r.User == "" && r.IP == "" && r.Url == "" && r.Method == "" {
 			blog.Errorf("wrong rule format, one of appcode, user, ip, url, method must be set, r:%#v", *r)
@@ -162,7 +191,8 @@ func (l *Limiter) GetMatchedRule(req *restful.Request) *metadata.LimiterRule {
 		if r.Url != "" {
 			match, err := regexp.MatchString(r.Url, req.Request.RequestURI)
 			if err != nil {
-				blog.Errorf("MatchString failed, r.Url:%s, reqURI:%s, err:%s", r.Url, req.Request.RequestURI, err.Error())
+				blog.Errorf("MatchString failed, r.Url:%s, reqURI:%s, err:%s",
+					r.Url, req.Request.RequestURI, err.Error())
 				continue
 			}
 			if !match {
@@ -180,4 +210,89 @@ func (l *Limiter) GetMatchedRule(req *restful.Request) *metadata.LimiterRule {
 		}
 	}
 	return matchedRule
+}
+
+// AddRule add limit rule
+func (l *Limiter) AddRule(rule *metadata.LimiterRule) error {
+	if err := rule.Verify(); err != nil {
+		return err
+	}
+
+	path := fmt.Sprintf("%s/%s", types.CCDiscoverBaseLimiter, rule.RuleName)
+	oldRule, err := l.rd.Get(path)
+
+	if err != nil && err != registerdiscover.ErrNoKey {
+		return err
+	}
+	if len(oldRule) != 0 {
+		return fmt.Errorf("the rule %s has already existed", rule.RuleName)
+	}
+
+	data, err := json.Marshal(rule)
+	if err != nil {
+		return err
+	}
+	err = l.rd.Put(path, string(data))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetRules get limit rules
+func (l *Limiter) GetRules(ruleNames []string) ([]*metadata.LimiterRule, error) {
+	if ruleNames == nil {
+		return nil, fmt.Errorf("rulenames must be set")
+	}
+
+	var limiterRules []*metadata.LimiterRule
+	for _, name := range ruleNames {
+		path := fmt.Sprintf("%s/%s", types.CCDiscoverBaseLimiter, name)
+		data, err := l.rd.Get(path)
+		if err != nil {
+			blog.Errorf("get rule %s err: %v", name, err)
+			continue
+		}
+		rule := new(metadata.LimiterRule)
+		if err := json.Unmarshal([]byte(data), rule); err != nil {
+			blog.Errorf("unmarshal rule info failed, data: %s, err: %v", data, err)
+			continue
+		}
+		limiterRules = append(limiterRules, rule)
+	}
+	return limiterRules, nil
+}
+
+// DelRules delete limit rules
+func (l *Limiter) DelRules(ruleNames []string) error {
+	if ruleNames == nil {
+		return fmt.Errorf("rulenames must be set")
+	}
+	for _, name := range ruleNames {
+		// delete rule in etcd
+		path := fmt.Sprintf("%s/%s", types.CCDiscoverBaseLimiter, name)
+		err := l.rd.Delete(path)
+		if err != nil {
+			blog.Warnf("delete rule error in etcd, name %s, err: %v", name, err)
+		}
+	}
+	return nil
+}
+
+// GetAllRules get all limit rules
+func (l *Limiter) GetAllRules() ([]*metadata.LimiterRule, error) {
+	var limiterRules []*metadata.LimiterRule
+	rules, err := l.rd.GetWithPrefix(types.CCDiscoverBaseLimiter)
+	if err != nil {
+		return nil, err
+	}
+	for _, data := range rules {
+		rule := new(metadata.LimiterRule)
+		if err := json.Unmarshal([]byte(data.Value), rule); err != nil {
+			blog.Errorf("unmarshal rule info failed, rule: %s, err: %v", data.Value, err)
+			continue
+		}
+		limiterRules = append(limiterRules, rule)
+	}
+	return limiterRules, nil
 }
