@@ -22,6 +22,12 @@ type Analyzer interface {
 
 	// Mock returns mock message that could be analyzed by the Analyzer.
 	Mock() string
+
+	// IsSuccess judge whether the message is processed successfully.
+	IsSuccess() bool
+
+	// SetSuccessFlag set success flag
+	SetSuccessFlag(success bool)
 }
 
 // Porter is common porter interface. It handles

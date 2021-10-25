@@ -42,6 +42,16 @@ func NewNetCollect(ctx context.Context, db dal.RDB, authManager *extensions.Auth
 	return h
 }
 
+// IsSuccess judge whether the message is processed successfully.
+func (h *NetCollect) IsSuccess() bool {
+	return false
+}
+
+// SetSuccessFlag set success flag
+func (h *NetCollect) SetSuccessFlag(success bool) {
+	// todo
+}
+
 // Hash returns hash value base on message.
 func (h *NetCollect) Hash(cloudid, ip string) (string, error) {
 	if len(cloudid) == 0 {

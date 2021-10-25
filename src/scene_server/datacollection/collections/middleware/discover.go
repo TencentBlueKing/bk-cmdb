@@ -34,7 +34,9 @@ type Discover struct {
 
 var msgHandlerCnt = int64(0)
 
-func NewDiscover(ctx context.Context, redisCli redis.Client, backbone *backbone.Engine, authManager *extensions.AuthManager) *Discover {
+// NewDiscover new discover
+func NewDiscover(ctx context.Context, redisCli redis.Client, backbone *backbone.Engine,
+	authManager *extensions.AuthManager) *Discover {
 	header := http.Header{}
 	header.Add(bkc.BKHTTPOwnerID, bkc.BKDefaultOwnerID)
 	header.Add(bkc.BKHTTPHeaderUser, bkc.CCSystemCollectorUserName)
@@ -47,6 +49,16 @@ func NewDiscover(ctx context.Context, redisCli redis.Client, backbone *backbone.
 	}
 	discover.Engine = backbone
 	return discover
+}
+
+// IsSuccess judge whether the message is processed successfully.
+func (d *Discover) IsSuccess() bool {
+	return false
+}
+
+// SetSuccessFlag set success flag
+func (d *Discover) SetSuccessFlag(success bool) {
+	// todo
 }
 
 // Hash returns hash value base on message.
@@ -68,6 +80,7 @@ func (d *Discover) Mock() string {
 	return MockMessage
 }
 
+// Analyze analyze discover data
 func (d *Discover) Analyze(msg *string) error {
 	err := d.UpdateOrCreateInst(msg)
 	if err != nil {
