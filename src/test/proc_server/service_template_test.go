@@ -535,7 +535,8 @@ var _ = Describe("service template test", func() {
 				"bk_module_id": []int64{
 					moduleId,
 				},
-				"is_increment": true,
+				"is_increment":        true,
+				"disable_auto_create": true,
 			}
 			rsp, rawErr := hostServerClient.TransferHostModule(context.Background(), header, transInput)
 			util.RegisterResponse(rsp)
