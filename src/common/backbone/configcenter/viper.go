@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/types"
+	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
 
@@ -364,30 +365,54 @@ func Mongo(prefix string) (mongo.Config, error) {
 		c.MaxOpenConns = parser.getUint64(prefix + ".maxOpenConns")
 	}
 
-	if !parser.isSet(prefix+".maxIdleConns") || parser.getUint64(prefix+".maxIdleConns") < mongo.MinimumMaxIdleOpenConns {
+	if !parser.isSet(prefix+".maxIdleConns") ||
+		parser.getUint64(prefix+".maxIdleConns") < mongo.MinimumMaxIdleOpenConns {
 		c.MaxIdleConns = mongo.MinimumMaxIdleOpenConns
 	} else {
 		c.MaxIdleConns = parser.getUint64(prefix + ".maxIdleConns")
 	}
 
 	if !parser.isSet(prefix + ".socketTimeoutSeconds") {
-		blog.Errorf("can not find mongo.socketTimeoutSeconds config, use default value: %d", mongo.DefaultSocketTimeout)
+		blog.Errorf("can not find mongo.socketTimeoutSeconds config, use default value: %d",
+			mongo.DefaultSocketTimeout)
 		c.SocketTimeout = mongo.DefaultSocketTimeout
 		return c, nil
 	}
 
 	c.SocketTimeout = parser.getInt(prefix + ".socketTimeoutSeconds")
 	if c.SocketTimeout > mongo.MaximumSocketTimeout {
-		blog.Errorf("mongo.socketTimeoutSeconds config %d exceeds maximum value, use maximum value %d", c.SocketTimeout, mongo.MaximumSocketTimeout)
+		blog.Errorf("mongo.socketTimeoutSeconds config %d exceeds maximum value, use maximum value %d",
+			c.SocketTimeout, mongo.MaximumSocketTimeout)
 		c.SocketTimeout = mongo.MaximumSocketTimeout
 	}
 
 	if c.SocketTimeout < mongo.MinimumSocketTimeout {
-		blog.Errorf("mongo.socketTimeoutSeconds config %d less than minimum value, use minimum value %d", c.SocketTimeout, mongo.MinimumSocketTimeout)
+		blog.Errorf("mongo.socketTimeoutSeconds config %d less than minimum value, use minimum value %d",
+			c.SocketTimeout, mongo.MinimumSocketTimeout)
 		c.SocketTimeout = mongo.MinimumSocketTimeout
 	}
 
 	return c, nil
+}
+
+// Kafka return kafka configuration information according to the prefix.
+func Kafka(prefix string) (kafka.Config, error) {
+	confLock.RLock()
+	defer confLock.RUnlock()
+	brokers, _ := StringSlice(prefix + ".brokers")
+	groupID, _ := String(prefix + ".groupID")
+	topic, _ := String(prefix + ".topic")
+	partition, _ := Int64(prefix + ".partition")
+	user, _ := String(prefix + ".user")
+	pwd, _ := String(prefix + ".password")
+	return kafka.Config{
+		Brokers:   brokers,
+		GroupID:   groupID,
+		Topic:     topic,
+		Partition: partition,
+		User:      user,
+		Password:  pwd,
+	}, nil
 }
 
 // String return the string value of the configuration information according to the key.
@@ -438,6 +463,22 @@ func Int64(key string) (int64, error) {
 	return 0, err.New("config not found")
 }
 
+// StringSlice return the stringSlice value of the configuration information according to the key.
+func StringSlice(key string) ([]string, error) {
+	confLock.RLock()
+	defer confLock.RUnlock()
+	if migrateParser != nil && migrateParser.isSet(key) {
+		return migrateParser.getStringSlice(key), nil
+	}
+	if commonParser != nil && commonParser.isSet(key) {
+		return commonParser.getStringSlice(key), nil
+	}
+	if extraParser != nil && extraParser.isSet(key) {
+		return extraParser.getStringSlice(key), nil
+	}
+	return nil, err.New("config not found")
+}
+
 // Bool return the bool value of the configuration information according to the key.
 func Bool(key string) (bool, error) {
 	confLock.RLock()
@@ -472,15 +513,6 @@ func getRedisParser() *viperParser {
 
 func getMongodbParser() *viperParser {
 	return mongodbParser
-}
-
-type Parser interface {
-	GetString(string) string
-	GetInt(string) int
-	GetUint64(string) uint64
-	GetBool(string) bool
-	GetDuration(string) time.Duration
-	IsSet(path string) bool
 }
 
 type viperParser struct {
@@ -536,4 +568,8 @@ func (vp *viperParser) isSet(path string) bool {
 
 func (vp *viperParser) getInt64(path string) int64 {
 	return vp.parser.GetInt64(path)
+}
+
+func (vp *viperParser) getStringSlice(path string) []string {
+	return vp.parser.GetStringSlice(path)
 }
