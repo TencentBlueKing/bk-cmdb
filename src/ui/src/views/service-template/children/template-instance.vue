@@ -32,6 +32,32 @@
         <bk-table-column :label="$t('拓扑路径')" sortable :sort-method="sortByPath" show-overflow-tooltip>
           <span slot-scope="{ row }" class="topo-path" @click="handlePathClick(row)">{{row._path_}}</span>
         </bk-table-column>
+        <bk-table-column :label="$t('状态')" prop="status">
+          <template slot-scope="{ row }">
+            <span v-if="row.status === 'syncing'" class="sync-status">
+              <img class="svg-icon" src="../../../assets/images/icon/loading.svg" alt="">
+              {{$t('同步中')}}
+            </span>
+            <span v-else-if="row.status === 'waiting'" class="sync-status">
+              <i class="status-circle waiting"></i>
+              {{$t('待同步')}}
+            </span>
+            <span v-else-if="row.status === 'finished'" class="sync-status">
+              <i class="status-circle success"></i>
+              {{$t('已同步')}}
+            </span>
+            <span v-else-if="row.status === 'failure'"
+              class="sync-status"
+              v-bk-tooltips="{
+                content: row.fail_tips,
+                placement: 'right'
+              }">
+              <i class="status-circle fail"></i>
+              {{$t('同步失败')}}
+            </span>
+            <span v-else>--</span>
+          </template>
+        </bk-table-column>
         <bk-table-column :label="$t('上次同步时间')" sortable :sort-method="sortByTime" show-overflow-tooltip>
           <template slot-scope="{ row }">{{row.last_time | time}}</template>
         </bk-table-column>
@@ -81,7 +107,6 @@
           selection: [],
           data: [],
           backup: [],
-          syncStatus: [],
           stuff: {
             type: 'default',
             payload: {}
@@ -120,15 +145,33 @@
       this.handleFilter = debounce(this.filterData, 300)
     },
     methods: {
+      loadInstanceStatus(modules) {
+        this.$store.dispatch('serviceTemplate/getServiceTemplateInstanceStatus', {
+          bizId: this.bizId,
+          params: {
+            bk_module_ids: modules.map(module => module.bk_module_id),
+            service_template_id: parseInt(this.serviceTemplateId, 10)
+          },
+          config: {
+            requestId: this.request.status
+          }
+        }).then((res) => {
+          this.table.data = this.table.data.map((item) => {
+            const status = res.find(r => r.bk_inst_id === item.bk_module_id)?.status
+            return {
+              ...item,
+              status
+            }
+          })
+        })
+      },
       async refresh() {
         try {
           const data = await this.getTemplateInstance()
           if (data.count) {
-            const [syncStatus, topoPath] = await Promise.all([
-              this.getSyncStatus(data.info),
+            const [topoPath] = await Promise.all([
               this.getTopoPath(data.info)
             ])
-            this.table.syncStatus = syncStatus.modules
             this.table.pagination.count = data.count
             data.info.forEach((module) => {
               const topo = topoPath.nodes.find(topo => topo.topo_node.bk_inst_id === module.bk_module_id)
@@ -138,6 +181,7 @@
             })
           }
           this.table.data = Object.freeze(data.info)
+          this.loadInstanceStatus(data.info)
           this.table.backup = Object.freeze(data.info)
           Bus.$emit('module-loaded', data.count)
         } catch (e) {
@@ -182,15 +226,8 @@
           }
         })
       },
-      getSyncStatusDifference(row) {
-        return this.table.syncStatus.find(difference => difference.bk_module_id === row.bk_module_id)
-      },
       isSyncDisabled(row) {
-        const difference = this.getSyncStatusDifference(row)
-        if (difference) {
-          return !difference.need_sync
-        }
-        return true
+        return !['new', 'waiting'].includes(row.status)
       },
       handleSync(row) {
         this.$routerActions.redirect({
@@ -295,6 +332,39 @@
             font-size: 12px;
             cursor: not-allowed;
             color: #DCDEE5;
+        }
+
+        .instance-table {
+            .topo-path {
+                cursor: pointer;
+                &:hover {
+                    color: $primaryColor;
+                }
+            }
+            .sync-status {
+                color: #63656E;
+                .status-circle {
+                    display: inline-block;
+                    width: 8px;
+                    height: 8px;
+                    margin-right: 4px;
+                    border-radius: 50%;
+                    &.waiting {
+                        background-color: #3A84FF;
+                    }
+                    &.success {
+                        background-color: #2DCB56;
+                    }
+                    &.fail {
+                        background-color: #EA3536;
+                    }
+                }
+                .svg-icon {
+                    @include inlineBlock;
+                    margin-top: -4px;
+                    width: 16px;
+                }
+            }
         }
     }
 </style>

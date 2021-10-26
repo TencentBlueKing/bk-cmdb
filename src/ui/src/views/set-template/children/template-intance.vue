@@ -55,7 +55,7 @@
         <bk-table-column :label="$t('主机数量')" prop="host_count"></bk-table-column>
         <bk-table-column :label="$t('状态')" prop="status">
           <template slot-scope="{ row }">
-            <span v-if="row.status === 'syncing'" class="sync-status">
+            <span v-if="row.status === 'executing'" class="sync-status">
               <img class="svg-icon" src="../../../assets/images/icon/loading.svg" alt="">
               {{$t('同步中')}}
             </span>
@@ -101,7 +101,7 @@
                 </bk-button>
                 <bk-button v-else
                   text
-                  :disabled="disabled || ['syncing', 'finished'].includes(row.status)"
+                  :disabled="disabled || ['executing', 'finished'].includes(row.status)"
                   @click="handleSync(row)">
                   {{$t('去同步')}}
                 </bk-button>
@@ -166,7 +166,7 @@
           id: 'waiting',
           name: this.$t('待同步')
         }, {
-          id: 'syncing',
+          id: 'executing',
           name: this.$t('同步中')
         }, {
           id: 'failure',
@@ -379,7 +379,7 @@
         this.handleFilter(1, true)
       },
       handleSelectable(row) {
-        return !['syncing', 'finished'].includes(row.status)
+        return !['executing', 'finished'].includes(row.status)
       },
       handleBatchSync() {
         this.$store.commit('setFeatures/setSyncIdMap', {
@@ -419,7 +419,7 @@
               requestId: 'syncTemplateToInstances'
             }
           })
-          row.status = 'syncing'
+          row.status = 'executing'
           this.$success(this.$t('提交同步成功'))
         } catch (e) {
           console.error(e)

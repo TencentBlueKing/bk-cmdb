@@ -60,7 +60,7 @@
     created() {
       switch (this.type) {
         case 'added':
-          this.initTemplateData()
+          this.initChangedData()
           break
         case 'changed':
           this.initChangedData()
@@ -129,7 +129,7 @@
         let value = row.property_value
         const templateValue = row.template_property_value
         if (type === 'after') {
-          value = Object.prototype.toString.call(templateValue) === '[object Object]' ? templateValue.value : templateValue
+          value = Object.prototype.toString.call(templateValue) === '[object Object]' ? templateValue : templateValue
         }
         if (this.type !== 'others') {
           const property = this.properties.find(property => property.bk_property_id === propertyId)

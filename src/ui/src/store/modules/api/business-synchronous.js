@@ -29,6 +29,30 @@ const actions = {
     return $http.post('find/proc/service_instance/difference', params, config)
   },
   /**
+   * 获取进程模板 diff 状态
+   */
+  getProcessTplDiffState({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post(`findmany/topo/service_template_sync_status/bk_biz_id/${params.bk_biz_id}`, params, config)
+  },
+  /**
+   * 获取已修改的进程模板列表
+   */
+  getAllProcessTplDiffs({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post('/find/proc/service_template/general_difference', params, config)
+  },
+  /**
+   * 获取单个进程模板 diff 概况
+   */
+  getProcessTplDiff({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post('/find/proc/process_template/difference', params, config)
+  },
+  /**
+   * 获取单个进程模板 diff 详情
+   */
+  getProcessTplDiffDetails({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post('/find/proc/service_instance/difference_details', params, config)
+  },
+  /**
      * 批量更新服务实例中的进程信息，保持和服务模板一致
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
