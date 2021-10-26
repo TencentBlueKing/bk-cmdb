@@ -139,31 +139,50 @@
         handler(active) {
           active && this.refresh()
         }
-      }
+      },
+    },
+    destroyed() {
+      clearTimeout(this.pollingTimer)
     },
     created() {
       this.handleFilter = debounce(this.filterData, 300)
     },
     methods: {
-      loadInstanceStatus(modules) {
+      loadInstanceStatus() {
+        if (this.table.data?.length === 0) return false
+
         this.$store.dispatch('serviceTemplate/getServiceTemplateInstanceStatus', {
           bizId: this.bizId,
           params: {
-            bk_module_ids: modules.map(module => module.bk_module_id),
+            bk_module_ids: this.table.data.map(module => module.bk_module_id),
             service_template_id: parseInt(this.serviceTemplateId, 10)
           },
           config: {
             requestId: this.request.status
           }
         }).then((res) => {
-          this.table.data = this.table.data.map((item) => {
-            const status = res.find(r => r.bk_inst_id === item.bk_module_id)?.status
-            return {
-              ...item,
-              status
+          this.table.data.forEach((item) => {
+            const newStatus = res.find(r => r.bk_inst_id === item.bk_module_id)?.status
+            if (newStatus) {
+              this.$set(item, 'status', newStatus)
             }
           })
         })
+      },
+      polling() {
+        try {
+          if (this.pollingTimer) {
+            clearInterval(this.pollingTimer)
+            this.pollingTimer = null
+          }
+          this.pollingTimer = setInterval(() => {
+            this.loadInstanceStatus()
+          }, 10000)
+        } catch (e) {
+          console.error(e)
+          clearInterval(this.pollingTimer)
+          this.pollingTimer = null
+        }
       },
       async refresh() {
         try {
@@ -180,8 +199,9 @@
                 .join(' / ')
             })
           }
-          this.table.data = Object.freeze(data.info)
-          this.loadInstanceStatus(data.info)
+          this.table.data = data.info
+          this.loadInstanceStatus()
+          this.polling()
           this.table.backup = Object.freeze(data.info)
           Bus.$emit('module-loaded', data.count)
         } catch (e) {
@@ -200,18 +220,6 @@
           },
           config: {
             requestId: this.request.instance
-          }
-        })
-      },
-      getSyncStatus(modules) {
-        return this.$store.dispatch('serviceTemplate/getServiceTemplateSyncStatus', {
-          bizId: this.bizId,
-          params: {
-            is_partial: false,
-            bk_module_ids: modules.map(module => module.bk_module_id),
-          },
-          config: {
-            requestId: this.request.status
           }
         })
       },
