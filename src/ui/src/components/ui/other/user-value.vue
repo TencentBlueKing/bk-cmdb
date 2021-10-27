@@ -21,11 +21,21 @@
       }
     },
     data() {
-      return {
-        api: window.ESB.userManage
-      }
+      return {}
     },
     computed: {
+      api() {
+        const { userManage } = window.ESB
+        if (userManage) {
+          try {
+            const url = new URL(userManage)
+            return `${window.API_HOST}proxy/get/usermanage${url.pathname}`
+          } catch (e) {
+            console.error(e)
+          }
+        }
+        return ''
+      },
       localValue: {
         get() {
           if (this.value) {
