@@ -252,11 +252,10 @@ func (s *special) bkSystemGetInstallModuleID(ctx context.Context, appID int64, s
 // bksystemInstallAddHostInstance only all host and module relation
 func (s *special) bkSystemInstallModule(ctx context.Context, appID, hostID int64, moduleIDArr []int64) errors.CCError {
 	input := &metadata.HostsModuleRelation{
-		ApplicationID:         appID,
-		HostID:                []int64{hostID},
-		ModuleID:              moduleIDArr,
-		IsIncrement:           true,
-		NeedAutoCreateSvcInst: true,
+		ApplicationID: appID,
+		HostID:        []int64{hostID},
+		ModuleID:      moduleIDArr,
+		IsIncrement:   true,
 	}
 
 	resp, err := s.lgc.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, s.kit.Header, input)

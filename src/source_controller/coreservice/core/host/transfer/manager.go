@@ -117,7 +117,7 @@ func (manager *TransferManager) TransferToNormalModule(kit *rest.Kit, input *met
 	}
 
 	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, input.ModuleID, input.IsIncrement,
-		input.NeedAutoCreateSvcInst)
+		!input.DisableAutoCreateSvcInst)
 
 	err = transfer.ValidParameter(kit)
 	if err != nil {
@@ -198,11 +198,11 @@ func (manager *TransferManager) RemoveFromModule(kit *rest.Kit, input *metadata.
 	}
 	if len(targetModuleIDs) > 0 {
 		option := metadata.HostsModuleRelation{
-			ApplicationID:         input.ApplicationID,
-			HostID:                []int64{input.HostID},
-			ModuleID:              targetModuleIDs,
-			IsIncrement:           false,
-			NeedAutoCreateSvcInst: false,
+			ApplicationID:            input.ApplicationID,
+			HostID:                   []int64{input.HostID},
+			ModuleID:                 targetModuleIDs,
+			IsIncrement:              false,
+			DisableAutoCreateSvcInst: true,
 		}
 		err := manager.TransferToNormalModule(kit, &option)
 		if err != nil {
