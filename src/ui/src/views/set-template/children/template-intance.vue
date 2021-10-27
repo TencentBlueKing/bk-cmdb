@@ -190,6 +190,7 @@
           if (setInfo) {
             otherParams.topo_path = setInfo.topo_path || []
             otherParams.host_count = setInfo.host_count || 0
+            otherParams.bk_set_name = setInfo.bk_set_name || 0
           }
           const templateSyncInfo = this.instancesInfo[item.bk_set_id]
           const syncFail = 500
@@ -253,10 +254,17 @@
         return [...row.topo_path].reverse().map(path => path.bk_inst_name)
           .join(' / ') || '--'
       },
+      // 因为后端输出改了以后，一个临时的方式，用 bk_inst_id 来代替 bk_set_id，后续需要优化
+      formatStatusData(data) {
+        return data.map(i => ({
+          ...i,
+          bk_set_id: i.bk_inst_id
+        }))
+      },
       async getData() {
         const data = await this.getSetInstancesWithStatus('getSetInstanceData')
         this.pagination.count = data.count
-        this.list = data.info || []
+        this.list = this.formatStatusData(data.info) || []
       },
       async updateStatusData() {
         const data = await this.getSetInstancesWithStatus('updateStatusData', {
@@ -270,7 +278,7 @@
           globalError: false
         })
         const backupList = this.$tools.clone(this.checkedList)
-        this.list = data.info || []
+        this.list = this.formatStatusData(data.info) || []
         const table = this.$refs.instanceTable
         if (table) {
           this.$nextTick(() => {

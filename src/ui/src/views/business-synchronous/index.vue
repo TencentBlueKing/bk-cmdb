@@ -127,6 +127,7 @@
   import formatter from '@/filters/formatter'
   import { mapGetters } from 'vuex'
   import isEmpty from 'lodash/isEmpty'
+  import cloneDeep from 'lodash/cloneDeep'
 
   export default {
     name: 'SyncTemplate',
@@ -389,10 +390,12 @@
             if (changedServiceInstances?.service_instances?.length) {
               changedServiceInstances?.service_instances
                 .forEach((instance) => {
-                  instance.changed_attributes = this.currentDiff.changedProperties.map(i => ({
-                    property_name: i.property.bk_property_name,
-                    ...i
-                  }))
+                  if (!instance?.changed_attributes) {
+                    instance.changed_attributes = this.currentDiff.changedProperties.map(i => ({
+                      property_name: i.property.bk_property_name,
+                      ...i
+                    }))
+                  }
                 })
             }
           }
@@ -406,16 +409,22 @@
       },
       handleViewDiff(instance, moduleId) {
         this.slider.title = instance.service_instance.name
+        const instanceDetail = cloneDeep(instance)
 
         // 为了适应老的 UI 模型做的数据转换
-        instance.changed_attributes = instance.changed_attributes.map(i => ({
-          ...i,
-          property_id: i.property.bk_property_id
-        }))
+        instanceDetail.changed_attributes = instanceDetail.changed_attributes.map((i) => {
+          if (!i.property_id) {
+            return {
+              ...i,
+              property_id: i.property.bk_property_id
+            }
+          }
+          return i
+        })
 
         this.slider.props = {
           module: this.currentDiff.modules[moduleId],
-          instance,
+          instance: instanceDetail,
           type: this.currentDiff.type
         }
         this.slider.show = true

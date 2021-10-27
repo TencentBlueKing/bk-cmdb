@@ -60,7 +60,7 @@
     created() {
       switch (this.type) {
         case 'added':
-          this.initChangedData()
+          this.initAddedData()
           break
         case 'changed':
           this.initChangedData()
@@ -76,33 +76,8 @@
       initChangedData() {
         this.detailsData = this.instance.changed_attributes
       },
-      async initTemplateData() {
-        try {
-          const { info } = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
-            params: {
-              bk_biz_id: this.bizId,
-              service_template_id: this.instance.service_instance.service_template_id
-            }
-          })
-          const process = info.find(process => process.id === this.module.process_template_id)
-          const details = []
-          Object.keys(process.property).forEach((key) => {
-            const property = this.properties.find(property => property.bk_property_id === key)
-            if (property && !['', null].includes(process.property[key].value)) {
-              details.push({
-                property_id: key,
-                property_name: property.bk_property_name,
-                property_value: null,
-                template_property_value: {
-                  ...process.property[key]
-                }
-              })
-            }
-          })
-          this.detailsData = details
-        } catch (e) {
-          console.error(e)
-        }
+      initAddedData() {
+        this.detailsData  = this.instance.changed_attributes
       },
       initRemovedData() {
         const details = []
@@ -129,7 +104,7 @@
         let value = row.property_value
         const templateValue = row.template_property_value
         if (type === 'after') {
-          value = Object.prototype.toString.call(templateValue) === '[object Object]' ? templateValue : templateValue
+          value = Object.prototype.toString.call(templateValue) === '[object Object]' ? templateValue.value : templateValue
         }
         if (this.type !== 'others') {
           const property = this.properties.find(property => property.bk_property_id === propertyId)
