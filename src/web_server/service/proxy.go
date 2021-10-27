@@ -27,7 +27,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ProxyRequest to proxy third-party api request
+// ProxyRequest to proxy third-party api request to solve cross domain issue.
 func (s *Service) ProxyRequest(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	webCommon.SetProxyHeader(c)
