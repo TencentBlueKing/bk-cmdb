@@ -142,9 +142,9 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 
 		if len(transferToNormalHostIDs) > 0 && (option.IsRemoveFromAll || len(option.RemoveFromModules) == 0) {
 			transferOpt := &metadata.HostsModuleRelation{
-				ApplicationID:         bizID,
-				HostID:                transferToNormalHostIDs,
-				NeedAutoCreateSvcInst: false,
+				ApplicationID:            bizID,
+				HostID:                   transferToNormalHostIDs,
+				DisableAutoCreateSvcInst: true,
 			}
 			if option.IsRemoveFromAll {
 				transferOpt.IsIncrement = false
@@ -185,9 +185,9 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 
 				// transfer hosts in 2 scenario, add to modules and transfer to other modules
 				transferOpt := &metadata.HostsModuleRelation{
-					ApplicationID:         bizID,
-					HostID:                []int64{plan.HostID},
-					NeedAutoCreateSvcInst: false,
+					ApplicationID:            bizID,
+					HostID:                   []int64{plan.HostID},
+					DisableAutoCreateSvcInst: true,
 				}
 				if len(plan.ToRemoveFromModules) == 0 {
 					transferOpt.IsIncrement = true
