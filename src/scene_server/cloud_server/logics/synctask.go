@@ -13,8 +13,6 @@
 package logics
 
 import (
-	"fmt"
-
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"

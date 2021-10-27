@@ -147,8 +147,8 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+	
 	query := &metadata.QueryCondition{
-		Fields:    []string{common.BKAppNameField},
 		Condition: mapstr.MapStr{common.BKAppIDField: bizID},
 	}
 	_, bizs, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, query)
@@ -394,7 +394,13 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 	if len(sortParam) > 0 {
 		page.Sort = sortParam
 	}
-
+	
+	if errKey, err := page.Validate(true); err != nil {
+		blog.Errorf("page parameter invalid, errKey: %v, err: %s, rid: %s", errKey, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
+		return
+	}
+	
 	query := &metadata.QueryCondition{
 		Fields: []string{common.BKAppIDField, common.BKAppNameField},
 		Page:   page,
@@ -729,7 +735,13 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	// can only find normal business, but not resource pool business
 	searchCond.Condition[common.BKDefaultField] = 0
 
-	cnt, instItems, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, searchCond)
+	query := &metadata.QueryCondition{
+		Condition: searchCond.Condition,
+		Fields:    searchCond.Fields,
+		Page:      searchCond.Page,
+	}
+
+	cnt, instItems, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, query)
 	if err != nil {
 		blog.Errorf("find business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
