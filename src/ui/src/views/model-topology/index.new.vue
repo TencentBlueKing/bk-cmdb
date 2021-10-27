@@ -4,23 +4,21 @@
       <cmdb-auth style="display: none;" ref="addBusinessLevel" :auth="{ type: $OPERATION.SYSTEM_TOPOLOGY }"
         @update-auth="handleReceiveAuth">
       </cmdb-auth>
-      <template v-if="!topoEdit.isEdit">
-        <cmdb-auth :auth="{ type: $OPERATION.SYSTEM_MODEL_GRAPHICS }">
-          <bk-button slot-scope="{ disabled }"
-            class="edit-button"
-            theme="primary"
-            :disabled="disabled"
-            @click="handleEditTopo">
-            {{$t('编辑拓扑')}}
-          </bk-button>
-        </cmdb-auth>
-      </template>
-      <template v-else>
+      <cmdb-auth v-show="!topoEdit.isEdit" :auth="{ type: $OPERATION.SYSTEM_MODEL_GRAPHICS }">
+        <bk-button slot-scope="{ disabled }"
+          class="edit-button"
+          theme="primary"
+          :disabled="disabled"
+          @click="handleEditTopo">
+          {{$t('编辑拓扑')}}
+        </bk-button>
+      </cmdb-auth>
+      <div v-show="topoEdit.isEdit">
         <bk-button style="margin-top: -2px;" theme="primary" @click="handleExitEdit">
           {{$t('返回')}}
         </bk-button>
         <p class="edit-cue">{{$t('所有更改已自动保存')}}</p>
-      </template>
+      </div>
       <div class="vis-button-group">
         <i
           :class="['bk-cc-icon', mainFullScreen ? 'icon-cc-fullscreen-outlined-reset' : 'icon-cc-fullscreen-outlined']"
@@ -1251,8 +1249,11 @@
         height: 50px;
         background: #fff;
         font-size: 0;
+        display: flex;
+        justify-content: space-between;
         .bk-button {
             margin-right: 10px;
+            transition: none;
         }
         .edit-cue {
             display: inline-block;
