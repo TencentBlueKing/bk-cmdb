@@ -694,6 +694,11 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 			ctx.RespAutoError(err)
 			return
 		}
+
+		if len(filteredSetIDs) == 0 {
+			ctx.RespEntityWithCount(0, make([]meta.HostTopo, 0))
+			return
+		}
 	}
 
 	filteredModuleIDs := make([]int64, 0)
@@ -713,6 +718,11 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 			blog.ErrorJSON("get module by filter(%s) failed, err: %s, rid: %s", parameter.ModulePropertyFilter, err,
 				ctx.Kit.Rid)
 			ctx.RespAutoError(err)
+			return
+		}
+
+		if len(filteredModuleIDs) == 0 {
+			ctx.RespEntityWithCount(0, make([]meta.HostTopo, 0))
 			return
 		}
 	}

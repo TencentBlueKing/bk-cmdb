@@ -25,7 +25,7 @@
           </bk-select>
           <bk-input class="filter-item" right-icon="bk-icon icon-search"
             clearable
-            v-model="filterName"
+            v-model.trim="filterName"
             :placeholder="$t('请输入集群名称搜索')"
             @enter="handleSearch"
             @clear="handleSearch">

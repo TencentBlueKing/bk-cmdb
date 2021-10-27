@@ -82,11 +82,12 @@ type HostSyncList struct {
 }
 
 type HostsModuleRelation struct {
-	ApplicationID         int64   `json:"bk_biz_id"`
-	HostID                []int64 `json:"bk_host_id"`
-	ModuleID              []int64 `json:"bk_module_id"`
-	IsIncrement           bool    `json:"is_increment"`
-	NeedAutoCreateSvcInst bool    `json:"need_auto_create_service_instances"`
+	ApplicationID int64   `json:"bk_biz_id"`
+	HostID        []int64 `json:"bk_host_id"`
+	ModuleID      []int64 `json:"bk_module_id"`
+	IsIncrement   bool    `json:"is_increment"`
+	// DisableAutoCreateSvcInst disable auto create service instance when transfer to a module with process in template
+	DisableAutoCreateSvcInst bool `json:"disable_auto_create"`
 }
 
 type HostModuleConfig struct {

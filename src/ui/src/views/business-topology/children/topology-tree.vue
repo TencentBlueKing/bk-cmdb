@@ -4,7 +4,7 @@
       clearable
       right-icon="bk-icon icon-search"
       :placeholder="$t('请输入关键词')"
-      v-model="filter">
+      v-model.trim="filter">
     </bk-input>
     <bk-big-tree ref="tree" class="topology-tree" v-test-id
       selectable

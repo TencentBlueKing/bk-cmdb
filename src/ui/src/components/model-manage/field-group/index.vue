@@ -846,8 +846,8 @@
           // eslint-disable-next-line no-restricted-syntax
           for (const item of group.properties) {
             if (item.bk_property_id === property.bk_property_id) {
-              // 取移动字段新位置的前一个字段 index + 1
-              if (newIndex > 0) {
+              // 取移动字段新位置的前一个字段 index + 1，当给空字段组添加新字段时，curIndex 默认为 0
+              if (newIndex > 0 && group.properties.length !== 1) {
                 // 拖拽插件bug 跨组拖动到最后的位置index会多1
                 const index = newIndex === len ? newIndex - 2 : newIndex - 1
                 curIndex = Number(group.properties[index].bk_property_index) + 1

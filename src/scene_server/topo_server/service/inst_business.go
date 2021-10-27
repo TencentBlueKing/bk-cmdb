@@ -14,6 +14,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"sort"
 	"strconv"
@@ -30,6 +31,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/hooks"
 )
@@ -543,10 +545,19 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 
 // SearchBusiness search the business by condition
 func (s *Service) SearchBusiness(ctx *rest.Contexts) {
-	searchCond := new(metadata.QueryCondition)
+	searchCond := new(metadata.QueryBusinessRequest)
 	if err := ctx.DecodeInto(&searchCond); err != nil {
 		blog.Errorf("failed to parse the params, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
+		return
+	}
+
+	// parameters condition and biz_property_filter cannot be set at the same time.
+	if searchCond.Condition != nil && searchCond.BizPropertyFilter != nil {
+		blog.Errorf("failed to parse the params, condition and biz_property_filter cannot be set at the same "+
+			"time, rid: %s", ctx.Kit.Rid)
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "condition and biz_property_filter cannot be set "+
+			"at the same time")
 		return
 	}
 
@@ -575,6 +586,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	// parse business id from user's condition for testing.
 	bizIDs := make([]int64, 0)
 	authBizIDs := make([]int64, 0)
+	defErr := ctx.Kit.CCError
 	biz, exist := searchCond.Condition[common.BKAppIDField]
 	if exist {
 		// constrict that bk_biz_id field can only be a numeric value,
@@ -673,6 +685,41 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 				searchCond.Condition[common.BKAppIDField] = mapstr.MapStr{common.BKDBIN: appList}
 			}
 		}
+	}
+
+	// Only one of biz_property_filter and condition parameters can take effect, and condition is not recommended to
+	// continue to use it.
+	if searchCond.BizPropertyFilter != nil {
+		option := &querybuilder.RuleOption{
+			NeedSameSliceElementType: true,
+			MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
+			MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
+		}
+		
+		if key, err := searchCond.BizPropertyFilter.Validate(option); err != nil {
+			blog.Errorf("bizPropertyFilter is illegal, err: %v, rid:%s", err, ctx.Kit.Rid)
+			ccErr := defErr.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("biz.property.%s", key))
+			ctx.RespAutoError(ccErr)
+			return
+		}
+		
+		if searchCond.BizPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			blog.Errorf("bizPropertyFilter is illegal, err: %v, rid: %s", err, ctx.Kit.Rid, ctx.Kit.Rid)
+			ccErr := defErr.CCErrorf(common.CCErrCommParamsInvalid,
+				fmt.Sprintf("exceed max query condition deepth: %d", querybuilder.MaxDeep))
+			ctx.RespAutoError(ccErr)
+			return
+		}
+
+		mgoFilter, key, err := searchCond.BizPropertyFilter.ToMgo()
+		if err != nil {
+			blog.Errorf("BizPropertyFilter ToMgo failed: %s, err: %v,  rid:%s", searchCond.BizPropertyFilter,
+				err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid,
+				err.Error()+fmt.Sprintf(", biz_property_filter.%s", key)))
+			return
+		}
+		searchCond.Condition = mgoFilter
 	}
 
 	if _, ok := searchCond.Condition[common.BKDataStatusField]; !ok {

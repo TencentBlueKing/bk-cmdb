@@ -145,11 +145,10 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 	}
 
 	params := &metadata.HostsModuleRelation{
-		ApplicationID:         appID,
-		HostID:                []int64{hostID},
-		ModuleID:              []int64{moduleID},
-		IsIncrement:           isIncrement,
-		NeedAutoCreateSvcInst: true,
+		ApplicationID: appID,
+		HostID:        []int64{hostID},
+		ModuleID:      []int64{moduleID},
+		IsIncrement:   isIncrement,
 	}
 	hmResult, ccErr := lgc.CoreAPI.CoreService().Host().TransferToNormalModule(kit.Ctx, kit.Header, params)
 	if ccErr != nil {

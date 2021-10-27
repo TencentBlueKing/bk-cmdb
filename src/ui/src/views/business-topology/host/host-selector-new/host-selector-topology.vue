@@ -67,7 +67,10 @@
       </div>
     </cmdb-resize-layout>
     <div class="table-wrapper" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
-      <host-table :list="hostList" :selected="selected" @select-change="handleHostSelectChange" />
+      <host-table :list="hostList" :selected="selected"
+        :pagination.sync="hostTablePagination"
+        @pagination-change="handleHostPaginationChange"
+        @select-change="handleHostSelectChange" />
     </div>
   </div>
 </template>
@@ -106,7 +109,13 @@
           1: 'icon-cc-host-free-pool',
           2: 'icon-cc-host-breakdown',
           default: 'icon-cc-host-free-pool'
-        }
+        },
+        hostTablePagination: {
+          start: 0,
+          limit: 500,
+          count: 0,
+        },
+        currentNode: {}
       }
     },
     computed: {
@@ -181,7 +190,9 @@
           bk_biz_id: this.bizId,
           ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
           page: {
-            sort: 'bk_host_innerip'
+            sort: 'bk_host_innerip',
+            start: this.hostTablePagination.start,
+            limit: this.hostTablePagination.limit
           },
           condition: this.getDefaultSearchCondition()
         }
@@ -204,6 +215,10 @@
             requestId: this.request.host
           }
         })
+          .then((res) => {
+            this.hostTablePagination.count = res?.count || 0
+            return res
+          })
       },
       searchTopology() {
         const keyword = this.filter.keyword.toLowerCase()
@@ -253,7 +268,12 @@
         return this.filter.popover
       },
       async handleModuleSelectChange(node) {
+        this.currentNode = node
         const result = await this.searchHost(node)
+        this.hostList = result.info
+      },
+      async handleHostPaginationChange() {
+        const result = await this.searchHost(this.currentNode)
         this.hostList = result.info
       },
       handleClickFilterInput() {
