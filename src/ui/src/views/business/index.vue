@@ -653,8 +653,8 @@
           this.createBusiness({
             params: values
           }).then(() => {
-            this.handlePageChange(1)
-            this.handleCancel()
+            this.getTableData()
+            this.closeCreateSlider()
             this.$success(this.$t('创建成功'))
             this.$http.cancel('post_searchBusiness_$ne_disabled')
           })
