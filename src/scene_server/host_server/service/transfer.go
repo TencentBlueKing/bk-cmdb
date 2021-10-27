@@ -229,17 +229,62 @@ func (s *Service) transferHostWithAutoClearServiceInstance(
 				return
 			}
 
-		}(kit, plan)
-	}
-	wg.Wait()
-	if firstErr != nil {
-		return firstErr
-	}
+		if len(transferToNormalHostIDs) > 0 && (option.IsRemoveFromAll || len(option.RemoveFromModules) == 0) {
+			transferOpt := &metadata.HostsModuleRelation{
+				ApplicationID:            bizID,
+				HostID:                   transferToNormalHostIDs,
+				DisableAutoCreateSvcInst: true,
+			}
+			if option.IsRemoveFromAll {
+				transferOpt.IsIncrement = false
+				transferOpt.ModuleID = normalModuleIDs
+			} else {
+				transferOpt.IsIncrement = true
+				transferOpt.ModuleID = option.AddToModules
+			}
+			res, ccErr := s.CoreAPI.CoreService().Host().TransferToNormalModule(ctx.Kit.Ctx, ctx.Kit.Header,
+				transferOpt)
+			if ccErr != nil {
+				blog.Errorf("transfer host failed, err: %v, res: %v, option: %#v, rid: %s", ccErr, res, transferOpt,
+					ctx.Kit.Rid)
+				return ccErr
+			}
+		}
 
-	if err := s.upsertServiceInstance(kit, bizID, svcInstMap); err != nil {
-		blog.Errorf("upsert service instance(%#v) failed, err: %v, svcInstMap: %#v, rid: %s", err, svcInstMap, kit.Rid)
-		return err
-	}
+		var firstErr errors.CCErrorCoder
+		pipeline := make(chan bool, 300)
+		wg := sync.WaitGroup{}
+		for _, plan := range separatePlans {
+			if firstErr != nil {
+				break
+			}
+			pipeline <- true
+			wg.Add(1)
+			go func(plan metadata.HostTransferPlan) {
+				var ccErr errors.CCErrorCoder
+				defer func() {
+					if ccErr != nil {
+						if firstErr == nil {
+							firstErr = ccErr
+						}
+					}
+					<-pipeline
+					wg.Done()
+				}()
+
+				// transfer hosts in 2 scenario, add to modules and transfer to other modules
+				transferOpt := &metadata.HostsModuleRelation{
+					ApplicationID:            bizID,
+					HostID:                   []int64{plan.HostID},
+					DisableAutoCreateSvcInst: true,
+				}
+				if len(plan.ToRemoveFromModules) == 0 {
+					transferOpt.IsIncrement = true
+					transferOpt.ModuleID = plan.ToAddToModules
+				} else {
+					transferOpt.IsIncrement = false
+					transferOpt.ModuleID = plan.FinalModules
+				}
 
 	// update host by host apply rule conflict resolvers
 	err := s.updateHostByHostApplyConflictResolvers(kit, option.Options.HostApplyConflictResolvers)
