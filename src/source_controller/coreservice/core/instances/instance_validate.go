@@ -138,7 +138,7 @@ func (m *instanceManager) validBizID(kit *rest.Kit, bizID int64) error {
 func (m *instanceManager) newValidator(kit *rest.Kit, objID string, bizID int64) (*validator, error) {
 	validator, err := NewValidator(kit, m.dependent, objID, bizID, m.language)
 	if nil != err {
-		blog.Errorf("newValidator failed , NewValidator err:%v, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("newValidator failed , NewValidator err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 

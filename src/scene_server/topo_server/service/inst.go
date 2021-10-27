@@ -84,20 +84,13 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 		}
 
 		var setInst *inst.BatchResult
-		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-			var err error
-			setInst, err = s.Logics.InstOperation().CreateInstBatch(ctx.Kit, objID, batchInfo)
-			if err != nil {
-				blog.Errorf("failed to create new object %s, %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
-				return err
-			}
-			return nil
-		})
-
-		if txnErr != nil {
-			ctx.RespAutoError(txnErr)
-			return
+		var err error
+		setInst, err = s.Logics.InstOperation().CreateInstBatch(ctx.Kit, objID, batchInfo)
+		if err != nil {
+			blog.Errorf("failed to create new object %s, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
 		}
+
 		ctx.RespEntity(setInst)
 		return
 	}
