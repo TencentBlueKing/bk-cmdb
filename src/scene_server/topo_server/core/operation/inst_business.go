@@ -36,12 +36,6 @@ import (
 // BusinessOperationInterface business operation methods
 type BusinessOperationInterface interface {
 	CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
-
-	// UpdateBusinessIdleSetOrModule 此函数用于更新全局的空闲机池和及下面的模块，属于管理员操作，只允许将此接口提供给前端使用
-	UpdateBusinessIdleSetOrModule(kit *rest.Kit, option *metadata.ConfigUpdateSettingOption) error
-
-	// DeleteBusinessGlobalUserModule 删除用户自定义的空闲类模块，此接口只允许提供给前端，用于管理员使用
-	DeleteBusinessGlobalUserModule(kit *rest.Kit, obj model.Object, option *metadata.BuiltInModuleDeleteOption) error
 	FindBiz(kit *rest.Kit, cond *metadata.QueryCondition) (count int, results []mapstr.MapStr, err error)
 	GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder)
 	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error
