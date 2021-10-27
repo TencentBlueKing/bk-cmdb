@@ -34,7 +34,7 @@ import (
 // BusinessOperationInterface business operation methods
 type BusinessOperationInterface interface {
 	CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
-	FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error)
+	FindBiz(kit *rest.Kit, cond *metadata.QueryCondition) (count int, results []mapstr.MapStr, err error)
 	GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder)
 	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error
 	UpdateBusinessByCond(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond mapstr.MapStr) error
@@ -279,19 +279,17 @@ func (b *business) FindBusiness(kit *rest.Kit, cond *metadata.QueryBusinessReque
 
 	return result.Data.Count, result.Data.Info, err
 }
-func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error) {
+
+// obtain business information according to condition "cond".
+func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryCondition) (count int, results []mapstr.MapStr,
+	err error) {
 	if !cond.Condition.Exists(common.BKDefaultField) {
 		cond.Condition[common.BKDefaultField] = 0
 	}
-	query := &metadata.QueryCondition{
-		Fields:    cond.Fields,
-		Condition: cond.Condition,
-		Page:      cond.Page,
-	}
 
-	result, err := b.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, query)
+	result, err := b.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, cond)
 	if err != nil {
-		blog.ErrorJSON("failed to find business by query condition: %s, err: %s, rid: %s", query, err.Error(), kit.Rid)
+		blog.ErrorJSON("failed to find business by query condition: %s, err: %s, rid: %s", cond, err.Error(), kit.Rid)
 		return 0, nil, err
 	}
 
