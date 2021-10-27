@@ -252,11 +252,16 @@ func (h *HostSnap) Analyze(msg *string) error {
 		return nil
 	}
 
-	// limit the number of requests
-	if !h.rateLimit.TryAccept() {
+	// limit request from the old collection plug-in
+	if !val.Get("data.apiVer").Exists() && !h.rateLimit.TryAccept() {
 		blog.Warnf("skip host snapshot data update due to request limit, host id: %d, ip: %s, cloud id: %d, "+
 			"rid: %s", hostID, innerIP, cloudID, rid)
 		return nil
+	}
+
+	// limit the request from the new collection plug-in
+	if val.Get("data.apiVer").Exists() {
+		h.rateLimit.Accept()
 	}
 
 	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s "+
