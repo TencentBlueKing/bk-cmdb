@@ -242,9 +242,17 @@
           bk_property_type: propertyType
         } = property
         const normal = `cmdb-search-${propertyType}`
+
+        // 业务名在包含与非包含操作符时使用输入联想组件
+        if (modelId === 'biz' && propertyId === 'bk_biz_name' && this.condition[property.id].operator !== '$regex') {
+          return `cmdb-search-${modelId}`
+        }
+
+        // 资源-主机下无业务
         if (!FilterStore.bizId) {
           return normal
         }
+
         const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
         const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
         if (isSetName || isModuleName) {
