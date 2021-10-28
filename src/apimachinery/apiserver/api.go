@@ -257,6 +257,28 @@ func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID s
 	return
 }
 
+func (a *apiServer) AddInstByImport(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (
+	*metadata.ResponseDataMapStr, error) {
+
+	resp := new(metadata.ResponseDataMapStr)
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef("/create/instance/object/%s/by_import", objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+	return resp, nil
+}
+
 func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/createmany/object"
