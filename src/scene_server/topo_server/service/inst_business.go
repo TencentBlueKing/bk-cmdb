@@ -164,7 +164,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
-	query := &metadata.QueryBusinessRequest{
+	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{common.BKAppIDField: bizID},
 	}
 	_, bizs, err := s.Core.BusinessOperation().FindBiz(ctx.Kit, query)
@@ -412,7 +412,7 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
 		return
 	}
-	query := &metadata.QueryBusinessRequest{
+	query := &metadata.QueryCondition{
 		Fields: []string{common.BKAppIDField, common.BKAppNameField},
 		Page:   page,
 		Condition: mapstr.MapStr{
@@ -727,7 +727,14 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 
 	// can only find normal business, but not resource pool business
 	searchCond.Condition[common.BKDefaultField] = 0
-	cnt, instItems, err := s.Core.BusinessOperation().FindBiz(ctx.Kit, searchCond)
+
+	query := &metadata.QueryCondition{
+		Condition: searchCond.Condition,
+		Fields:    searchCond.Fields,
+		Page:      searchCond.Page,
+	}
+
+	cnt, instItems, err := s.Core.BusinessOperation().FindBiz(ctx.Kit, query)
 	if nil != err {
 		blog.Errorf("find business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -745,7 +752,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 func (s *Service) SearchOwnerResourcePoolBusiness(ctx *rest.Contexts) {
 
 	supplierAccount := ctx.Request.PathParameter("owner_id")
-	query := metadata.QueryBusinessRequest{
+	query := metadata.QueryCondition{
 		Condition: mapstr.MapStr{
 			common.BKDefaultField:    common.DefaultAppFlag,
 			common.BkSupplierAccount: supplierAccount,
@@ -902,7 +909,7 @@ func (s *Service) ListAllBusinessSimplify(ctx *rest.Contexts) {
 		common.BKAppNameField,
 	}
 
-	query := &metadata.QueryBusinessRequest{
+	query := &metadata.QueryCondition{
 		Fields: fields,
 		Page:   page,
 		Condition: mapstr.MapStr{
