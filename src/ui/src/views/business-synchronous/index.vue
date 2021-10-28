@@ -160,9 +160,8 @@
         },
         detailsLoading: false,
         instancesLoading: false,
-        instanceLimit: 500,
         confirming: false,
-        categories: []
+        serviceCategories: []
       }
     },
     computed: {
@@ -207,7 +206,7 @@
         if (process.type === 'others') {
           this.loadServiceCategoryDiff(process)
         } else {
-          this.loadProcessTplDiff(process)
+          this.loadProcessDiff(process)
         }
       },
       /**
@@ -291,16 +290,16 @@
 
           processList[0].confirmed = true
           this.processList = processList
-          this.loadProcessTplDiff(this.processList[0])
+          this.loadProcessDiff(this.processList[0])
         })
           .finally(() => {
             this.processListLoading = false
           })
       },
       /**
-       * 加载进程模板变更
+       * 加载进程变更
        */
-      loadProcessTplDiff(process) {
+      loadProcessDiff(process) {
         const params = {
           bk_module_ids: this.modules,
           service_template_id: this.templateId,
@@ -363,16 +362,16 @@
         process.confirmed = true
       },
       /**
-       * 加载服务下的全部分类，便于转换分类 ID 为可读中文
+       * 加载服务下的全部分类
        */
       loadServiceCategories() {
         return this.$store.dispatch('serviceClassification/searchServiceCategory', {
           params: { bk_biz_id: this.bizId }
         }).then(({ info }) => {
-          this.categories = info || []
+          this.serviceCategories = info || []
         })
           .catch(() => {
-            this.categories = []
+            this.serviceCategories = []
           })
       },
       /**
@@ -381,7 +380,7 @@
        * @return {Object} 分类对象
        */
       getCategoryById(categoryId) {
-        return this.categories.find(item => item.category.id === categoryId)?.category || {}
+        return this.serviceCategories.find(item => item.category.id === categoryId)?.category || {}
       },
       /**
        * 获取服务模板详情
@@ -435,8 +434,8 @@
               instance.changed_attributes = res.service_category_detail?.module_attribute.map(i => ({
                 ...i,
                 property_name: '服务分类',
-                property_value: this.categories.find(c => c.category.id === i.property_value)?.category?.name || '',
-                template_property_value: this.categories.find(c => c.category.id === i.template_property_value)?.category?.name || ''
+                property_value: this.getCategoryById(i.property_value)?.name || '',
+                template_property_value: this.getCategoryById(i.template_property_value)?.name || ''
               }))
             })
           } else {
