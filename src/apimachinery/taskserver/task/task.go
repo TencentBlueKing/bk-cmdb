@@ -86,6 +86,7 @@ func (t *task) ListTask(ctx context.Context, header http.Header, name string, da
 	return
 }
 
+// ListLatestTask list the latest task for each inst by bk_inst_id
 func (t *task) ListLatestTask(ctx context.Context, header http.Header, name string,
 	data *metadata.ListAPITaskLatestRequest) ([]metadata.APITaskDetail, errors.CCErrorCoder) {
 

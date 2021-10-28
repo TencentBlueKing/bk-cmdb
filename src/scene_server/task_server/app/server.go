@@ -101,8 +101,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.Logics = logics.NewLogics(engine.CoreAPI, db)
 	taskSrv.Service = service
 
-	//Cron job delete history task
-	go taskSrv.Service.TimerDeleteHistoryTask(ctx)
 	if err := backbone.StartServer(ctx, cancel, engine, service.WebService(), true); err != nil {
 		blog.Errorf("start backbone failed, err: %+v", err)
 		return err

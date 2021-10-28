@@ -44,9 +44,8 @@ func migrateApiTask(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			"status": 1, "create_time": 1}, Background: true},
 		"idx_lastTime_status": {Name: "idx_lastTime_status", Keys: map[string]int32{"last_time": 1, "status": 1},
 			Background: true},
-		"idx_taskType_instID": {Name: "idx_taskType_instID", Keys: map[string]int32{"task_type": 1, "bk_inst_id": 1},
-			Background: true, Unique: true, PartialFilterExpression: map[string]interface{}{"status":
-			map[string]interface{}{common.BKDBIN: []string{"0", "1", "2"}}}},
+		"idx_lastTime": {Name: "idx_lastTime", Keys: map[string]int32{"last_time": 1},
+			ExpireAfterSeconds: 30 * 24 * 60 * 60},
 	}
 
 	if err := reconcileIndexes(ctx, db, "cc_APITask", indexes); err != nil {
@@ -93,9 +92,10 @@ func migrateApiTask(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 				"status": taskStatusMapping[task.Status],
 			}
 			for idx, subTask := range task.Detail {
-				updateStatusData["detail."+strconv.FormatInt(int64(idx), 10)] = taskStatusMapping[subTask.Status]
+				key := "detail." + strconv.FormatInt(int64(idx), 10) + ".status"
+				updateStatusData[key] = taskStatusMapping[subTask.Status]
 			}
-			if err := db.Table("cc_APITaskSyncHistory").Update(ctx, updateStatusFilter, updateStatusData); err != nil {
+			if err := db.Table("cc_APITask").Update(ctx, updateStatusFilter, updateStatusData); err != nil {
 				blog.Errorf("update api task status type failed, filter: %#v, err: %v", updateStatusFilter, err)
 				return err
 			}
@@ -154,6 +154,8 @@ func migrateAPITaskSyncStatus(ctx context.Context, db dal.RDB, conf *upgrader.Co
 	indexes := map[string]types.Index{
 		"idx_instID_flag_createTime": {Name: "idx_instID_flag_createTime", Keys: map[string]int32{"bk_inst_id": 1,
 			"flag": 1, "create_time": 1}, Background: true},
+		"idx_lastTime": {Name: "idx_lastTime", Keys: map[string]int32{"last_time": 1},
+			ExpireAfterSeconds: 3 * 30 * 24 * 60 * 60},
 	}
 
 	if err := reconcileIndexes(ctx, db, "cc_APITaskSyncHistory", indexes); err != nil {
@@ -166,6 +168,10 @@ func migrateAPITaskSyncStatus(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		"task_type": "set_template_sync",
 	}
 
+	updateStatusField := map[string]interface{}{
+		"status": "executing",
+	}
+
 	historyFilter := map[string]interface{}{
 		"bk_set_id": map[string]interface{}{common.BKDBExists: true},
 	}
@@ -173,7 +179,7 @@ func migrateAPITaskSyncStatus(ctx context.Context, db dal.RDB, conf *upgrader.Co
 	for {
 		historyArr := make([]map[string]interface{}, 0)
 		err := db.Table("cc_APITaskSyncHistory").Find(historyFilter).Start(0).Limit(common.BKMaxPageSize).
-			Fields("task_id").All(ctx, &historyArr)
+			Fields("task_id", "status").All(ctx, &historyArr)
 		if err != nil {
 			blog.Errorf("get task ids to update field failed, err: %v", err)
 			return err
@@ -184,8 +190,12 @@ func migrateAPITaskSyncStatus(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		}
 
 		taskIDs := make([]interface{}, len(historyArr))
+		updateStatusTaskIDs := make([]interface{}, 0)
 		for index, history := range historyArr {
 			taskIDs[index] = history["task_id"]
+			if history["status"] == "syncing" {
+				updateStatusTaskIDs = append(updateStatusTaskIDs, history["task_id"])
+			}
 		}
 
 		filter := map[string]interface{}{
@@ -207,6 +217,19 @@ func migrateAPITaskSyncStatus(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		if err := db.Table("cc_APITaskSyncHistory").Update(ctx, filter, toAddField); err != nil {
 			blog.Errorf("add task_type to cc_APITaskSyncHistory failed, filter: %#v, err: %v", filter, err)
 			return err
+		}
+
+		if len(updateStatusTaskIDs) > 0 {
+			filter := map[string]interface{}{
+				"task_id": map[string]interface{}{
+					common.BKDBIN: updateStatusTaskIDs,
+				},
+			}
+
+			if err := db.Table("cc_APITaskSyncHistory").Update(ctx, filter, updateStatusField); err != nil {
+				blog.Errorf("update status of cc_APITaskSyncHistory failed, filter: %#v, err: %v", filter, err)
+				return err
+			}
 		}
 
 		if len(historyArr) < common.BKMaxPageSize {

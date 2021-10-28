@@ -161,7 +161,7 @@ func diffModuleServiceTpl(serviceTplCnt int64, serviceTemplates map[int64]metada
 func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
 	taskCond metadata.ListAPITaskDetail) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder) {
 
-	if len(taskCond.SetID) == 0 {
+	if len(taskCond.InstID) == 0 {
 		blog.Errorf("set id is empty, rid: %s", kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrTaskListTaskFail)
 	}
@@ -169,14 +169,15 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
 	latestTaskResult := make(map[int64]*metadata.APITaskDetail)
 
 	setRelatedTaskFilter := map[string]interface{}{
-		"bk_inst_id": map[string]interface{}{common.BKDBIN: taskCond.SetID},
-		"flag":       common.SyncSetTaskFlag,
+		common.BKInstIDField:   map[string]interface{}{common.BKDBIN: taskCond.InstID},
+		common.BKTaskTypeField: common.SyncSetTaskFlag,
 	}
 	listTaskOption := new(metadata.ListAPITaskLatestRequest)
 	listTaskOption.Condition = setRelatedTaskFilter
 	listTaskOption.Fields = taskCond.Fields
 
-	listResult, err := st.client.TaskServer().Task().ListLatestTask(kit.Ctx, kit.Header, common.SyncSetTaskFlag, listTaskOption)
+	listResult, err := st.client.TaskServer().Task().ListLatestTask(kit.Ctx, kit.Header, common.SyncSetTaskFlag,
+		listTaskOption)
 	if err != nil {
 		blog.Errorf("list set sync tasks failed, option: %s, err: %v, rid: %s", listTaskOption, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrTaskListTaskFail)
@@ -244,7 +245,7 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 		return &metadata.ListAPITaskSyncStatusResult{Count: 0, Info: make([]metadata.APITaskSyncStatus, 0)}, nil
 	}
 
-	setIDs := make([]int64, 0)
+	setIDs := make([]int64, len(setRes.Data.Info))
 	for index, set := range setRes.Data.Info {
 		setIDs[index] = set.SetID
 	}
@@ -276,15 +277,44 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 		return nil, err
 	}
 
+	reformatStatuses, err := st.rearrangeSetTempSyncStatus(kit, option, taskStatusRes, statusMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return &metadata.ListAPITaskSyncStatusResult{Count: int64(setRes.Data.Count), Info: reformatStatuses}, nil
+}
+
+// rearrangeSetTempSyncStatus set status by actual status and do another round of filter by status
+func (st *setTemplate) rearrangeSetTempSyncStatus(kit *rest.Kit, option *metadata.ListSetTemplateSyncStatusOption,
+	taskStatuses []metadata.APITaskSyncStatus, statusMap map[int64]bool) ([]metadata.APITaskSyncStatus,
+	errors.CCErrorCoder) {
+
+	statusFilterMap := make(map[metadata.APITaskStatus]struct{})
+	if len(option.Status) > 0 {
+		for _, status := range option.Status {
+			statusFilterMap[status] = struct{}{}
+		}
+	}
+
+	statuses := make([]metadata.APITaskSyncStatus, 0)
 	statusExistsMap := make(map[int64]struct{})
-	for _, status := range taskStatusRes {
+	for _, status := range taskStatuses {
 		statusExistsMap[status.InstID] = struct{}{}
 		// if current status and api task status does not match, use current status
-		if statusMap[status.InstID] && !status.Status.IsFinished() {
+		if statusMap[status.InstID] && status.Status.IsSuccessful() {
+			status.Status = metadata.APITAskStatusNeedSync
+		} else if !statusMap[status.InstID] && !status.Status.IsSuccessful() {
 			status.Status = metadata.APITaskStatusSuccess
-		} else if !statusMap[status.InstID] && status.Status.IsFinished() {
-			status.Status = metadata.APITaskStatusWaitExecute
 		}
+
+		// only returns the statuses that matches the status filter after comparing with current status
+		if len(option.Status) > 0 {
+			if _, exists := statusFilterMap[status.Status]; !exists {
+				continue
+			}
+		}
+		statuses = append(statuses, status)
 	}
 
 	// compensate for the sets that hasn't been synced before, or its latest sync task is already outdated
@@ -295,24 +325,11 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 		}
 	}
 
-	compensateStatuses, err := st.compensateSetTempSyncStatus(kit, compensateSetIDs, statusMap)
-	if err != nil {
-		return nil, err
-	}
-
-	return &metadata.ListAPITaskSyncStatusResult{Count: int64(setRes.Data.Count),
-		Info: append(taskStatusRes, compensateStatuses...)}, nil
-}
-
-// compensateSetTempSyncStatus compensate sync status for the sets with no sync task
-func (st *setTemplate) compensateSetTempSyncStatus(kit *rest.Kit, setIDs []int64, statusMap map[int64]bool) (
-	[]metadata.APITaskSyncStatus, errors.CCErrorCoder) {
-
 	setOpt := &metadata.QueryCondition{
 		Fields: []string{common.BKSetIDField, common.CreatorField, common.CreateTimeField,
 			common.LastTimeField},
 		Page:           metadata.BasePage{Limit: common.BKNoLimit},
-		Condition:      mapstr.MapStr{common.BKSetIDField: mapstr.MapStr{common.BKDBIN: setIDs}},
+		Condition:      mapstr.MapStr{common.BKSetIDField: mapstr.MapStr{common.BKDBIN: compensateSetIDs}},
 		DisableCounter: true,
 	}
 	setRes := new(metadata.ResponseSetInstance)
@@ -326,7 +343,6 @@ func (st *setTemplate) compensateSetTempSyncStatus(kit *rest.Kit, setIDs []int64
 		return nil, err
 	}
 
-	statuses := make([]metadata.APITaskSyncStatus, 0)
 	for _, set := range setRes.Data.Info {
 		status := metadata.APITaskSyncStatus{
 			InstID:     set.SetID,
@@ -336,9 +352,16 @@ func (st *setTemplate) compensateSetTempSyncStatus(kit *rest.Kit, setIDs []int64
 		}
 
 		if statusMap[status.InstID] {
-			status.Status = metadata.APITaskStatusSuccess
+			status.Status = metadata.APITAskStatusNeedSync
 		} else {
-			status.Status = metadata.APITaskStatusWaitExecute
+			status.Status = metadata.APITaskStatusSuccess
+		}
+
+		// only returns the statuses that matches the status filter after comparing with current status
+		if len(option.Status) > 0 {
+			if _, exists := statusFilterMap[status.Status]; !exists {
+				continue
+			}
 		}
 		statuses = append(statuses, status)
 	}

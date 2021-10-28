@@ -51,8 +51,8 @@ type ModuleInst struct {
 	Default           int64  `bson:"default" json:"default" field:"default" mapstructure:"default"`
 	HostApplyEnabled  bool   `bson:"host_apply_enabled" json:"host_apply_enabled" field:"host_apply_enabled" mapstructure:"host_apply_enabled"`
 	Creator           string `bson:"creator" json:"creator" field:"creator" mapstructure:"creator"`
-	CreateTime        Time   `bson:"create_time" json:"create_time" field:"create_time" mapstructure:"create_time"`
-	LastTime          Time   `bson:"last_time" json:"last_time" field:"last_time" mapstructure:"last_time"`
+	CreateTime        Time   `bson:"create_time" json:"create_time"`
+	LastTime          Time   `bson:"last_time" json:"last_time"`
 }
 
 type BizInst struct {

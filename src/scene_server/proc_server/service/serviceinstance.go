@@ -1470,6 +1470,9 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 	for serviceInstanceID, processes := range serviceInstance2ProcessMap {
 		if len(procTemps.Info) == 0 {
 			removedSvrInstIDs = append(removedSvrInstIDs, serviceInstanceID)
+			for _, process := range processes {
+				removedProcessIDs = append(removedProcessIDs, process.ProcessID)
+			}
 			continue
 		}
 
@@ -1676,10 +1679,10 @@ func (ps *ProcServer) FindServiceTemplateSyncStatus(ctx *rest.Contexts) {
 	for _, status := range taskStatusRes {
 		statusExistsMap[status.InstID] = struct{}{}
 		// if current status and api task status does not match, use current status
-		if statusMap[status.InstID] && !status.Status.IsFinished() {
+		if statusMap[status.InstID] && status.Status.IsSuccessful() {
+			status.Status = metadata.APITAskStatusNeedSync
+		} else if !statusMap[status.InstID] && !status.Status.IsSuccessful() {
 			status.Status = metadata.APITaskStatusSuccess
-		} else if !statusMap[status.InstID] && status.Status.IsFinished() {
-			status.Status = metadata.APITaskStatusWaitExecute
 		}
 	}
 
@@ -1732,9 +1735,9 @@ func (ps *ProcServer) compensateSvcTempSyncStatus(kit *rest.Kit, moduleIDs []int
 		}
 
 		if statusMap[status.InstID] {
-			status.Status = metadata.APITaskStatusSuccess
+			status.Status = metadata.APITAskStatusNeedSync
 		} else {
-			status.Status = metadata.APITaskStatusWaitExecute
+			status.Status = metadata.APITaskStatusSuccess
 		}
 		statuses = append(statuses, status)
 	}

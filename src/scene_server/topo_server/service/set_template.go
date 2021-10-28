@@ -678,7 +678,7 @@ func (s *Service) GetSetSyncDetails(ctx *rest.Contexts) {
 	}
 
 	taskCond := metadata.ListAPITaskDetail{
-		SetID: option.SetIDs,
+		InstID: option.SetIDs,
 		Fields: []string{
 			common.BKStatusField,
 			common.MetaDataSynchronizeFlagField,

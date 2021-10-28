@@ -39,6 +39,26 @@ func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (met
 		return dbTask, kit.CCError.Errorf(common.CCErrCommParamsNeedString, "data")
 	}
 
+	// check if there is another unfinished task already created, forbidden create duplicate tasks
+	// TODO: replace with index when partial filter supports $in operator
+	duplicateCond := mapstr.MapStr{
+		common.BKTaskTypeField: input.TaskType,
+		common.BKInstIDField:   input.InstID,
+		common.BKStatusField: map[string]interface{}{
+			common.BKDBIN: []metadata.APITaskStatus{metadata.APITaskStatusNew, metadata.APITaskStatusWaitExecute,
+				metadata.APITaskStatusExecute},
+		},
+	}
+	cnt, err := lgc.db.Table(common.BKTableNameAPITask).Find(duplicateCond).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("get duplicate tasks failed, err: %v, cond: %#v, rid: %s", err, duplicateCond, kit.Rid)
+		return dbTask, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	if cnt > 0 {
+		return dbTask, kit.CCError.Errorf(common.CCErrTaskCreateConflict, input.InstID)
+	}
+
 	dbTask.TaskID = getStrTaskID("id")
 	dbTask.User = kit.User
 	dbTask.TaskType = input.TaskType
@@ -54,7 +74,7 @@ func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (met
 			Status:    metadata.APITaskStatusNew,
 		})
 	}
-	err := lgc.db.Table(common.BKTableNameAPITask).Insert(kit.Ctx, dbTask)
+	err = lgc.db.Table(common.BKTableNameAPITask).Insert(kit.Ctx, dbTask)
 	if err != nil {
 		blog.Errorf("create task failed, data: %#v, err: %v, rid: %s", dbTask, err, kit.Rid)
 		return dbTask, kit.CCError.Error(common.CCErrCommDBInsertFailed)
@@ -105,15 +125,20 @@ func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest
 
 	dbTasks := make([]metadata.APITaskDetail, len(tasks))
 	taskHistories := make([]metadata.APITaskSyncStatus, len(tasks))
+	taskTypes := make([]string, len(tasks))
+	instIDs := make([]int64, len(tasks))
 	for index, task := range tasks {
 		task.TaskType = strings.TrimSpace(task.TaskType)
 		if task.TaskType == "" {
-			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "name")
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKTaskTypeField)
 		}
 
 		if len(task.Data) == 0 {
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "data")
 		}
+
+		taskTypes[index] = task.TaskType
+		instIDs[index] = task.InstID
 
 		dbTask.TaskID = getStrTaskID("id")
 		dbTask.TaskType = task.TaskType
@@ -134,8 +159,28 @@ func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest
 		taskHistories[index] = taskHistory
 	}
 
-	err := lgc.db.Table(common.BKTableNameAPITask).Insert(kit.Ctx, dbTasks)
+	// check if there is another unfinished task already created, forbidden create duplicate tasks
+	// TODO: replace with index when partial filter supports $in operator
+	duplicateCond := mapstr.MapStr{
+		common.BKTaskTypeField: map[string]interface{}{common.BKDBIN: taskTypes},
+		common.BKInstIDField:   map[string]interface{}{common.BKDBIN: instIDs},
+		common.BKStatusField: map[string]interface{}{
+			common.BKDBIN: []metadata.APITaskStatus{metadata.APITaskStatusNew, metadata.APITaskStatusWaitExecute,
+				metadata.APITaskStatusExecute},
+		},
+	}
+
+	duplicateIDs, err := lgc.db.Table(common.BKTableNameAPITask).Distinct(kit.Ctx, common.BKInstIDField, duplicateCond)
 	if err != nil {
+		blog.Errorf("get duplicate tasks failed, err: %v, cond: %#v, rid: %s", err, duplicateCond, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
+	}
+
+	if len(duplicateIDs) > 0 {
+		return nil, kit.CCError.Errorf(common.CCErrTaskCreateConflict, duplicateIDs)
+	}
+
+	if err = lgc.db.Table(common.BKTableNameAPITask).Insert(kit.Ctx, dbTasks); err != nil {
 		blog.Errorf("create tasks(%#v) failed, err: %v, rid: %s", dbTasks, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
 	}
@@ -273,7 +318,8 @@ func (lgc *Logics) ChangeStatusToSuccess(kit *rest.Kit, taskID, subTaskID string
 }
 
 // ChangeStatusToFailure change status to failure
-func (lgc *Logics) ChangeStatusToFailure(kit *rest.Kit, taskID, subTaskID string, errResponse *metadata.Response) error {
+func (lgc *Logics) ChangeStatusToFailure(kit *rest.Kit, taskID, subTaskID string,
+	errResponse *metadata.Response) error {
 
 	if taskID == "" {
 		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "task_id")

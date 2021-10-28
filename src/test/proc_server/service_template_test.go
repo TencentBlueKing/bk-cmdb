@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
@@ -961,6 +962,9 @@ var _ = Describe("service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
+
+			// wait for some time to get the async task done
+			time.Sleep(time.Second * 20)
 		})
 
 		It("search module", func() {
@@ -1645,7 +1649,7 @@ var _ = Describe("service template test", func() {
 			Expect(data.Info[0].ID).To(Equal(serviceId))
 		})
 
-		It("sync service instance and template after add and change process template", func() {
+		It("sync service instance and template after remove process template", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
 				"bk_module_ids":       []int64{moduleId},
@@ -1655,6 +1659,9 @@ var _ = Describe("service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
+
+			// wait for some time to get the async task done
+			time.Sleep(time.Second * 20)
 		})
 
 		It("search process instance", func() {

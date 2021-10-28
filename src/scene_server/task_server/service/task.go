@@ -13,14 +13,9 @@
 package service
 
 import (
-	"context"
-	"time"
-
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 // CreateTask create a task
@@ -151,69 +146,6 @@ func (s *Service) StatusToFailure(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
-}
-
-// TimerDeleteHistoryTask delete apitask history message
-func (s *Service) TimerDeleteHistoryTask(ctx context.Context) {
-	for {
-		time.Sleep(time.Hour * 24)
-
-		isMaster := s.Engine.ServiceManageInterface.IsMaster()
-		if !isMaster {
-			continue
-		}
-
-		rid := util.GenerateRID()
-
-		blog.Infof("begin delete redundancy task, time: %v, rid: %s", time.Now(), rid)
-		err := s.deleteRedundancyTask(ctx, rid)
-		if err != nil {
-			blog.Errorf("delete redundancy task failed, err: %v, rid: %s", err, rid)
-			continue
-		}
-		blog.Infof("delete redundancy task completed, time: %v, rid: %s", time.Now(), rid)
-	}
-}
-
-// deleteRedundancyTask delete redundancy tasks from a month ago
-func (s *Service) deleteRedundancyTask(ctx context.Context, rid string) error {
-
-	for {
-		cond := map[string]interface{}{
-			common.LastTimeField: map[string]interface{}{
-				common.BKDBLT: time.Now().AddDate(0, -1, 0),
-			},
-		}
-
-		tasks := make([]metadata.APITaskDetail, 0)
-		err := s.DB.Table(common.BKTableNameAPITask).Find(cond).Fields(common.BKTaskIDField).Limit(100).All(ctx, &tasks)
-		if err != nil {
-			blog.Errorf("get one month ago tasks failed, err: %v, cond: %#v, rid: %s", err, cond, rid)
-			return err
-		}
-
-		if len(tasks) == 0 {
-			blog.Infof("found no redundancy tasks, rid: %s", rid)
-			return nil
-		}
-
-		var taskIDs []string
-		for _, task := range tasks {
-			taskIDs = append(taskIDs, task.TaskID)
-		}
-
-		deleteCond := map[string]interface{}{
-			common.BKTaskIDField: map[string]interface{}{common.BKDBIN: taskIDs},
-		}
-
-		if err := s.DB.Table(common.BKTableNameAPITask).Delete(ctx, deleteCond); err != nil {
-			blog.Errorf("delete redundancy task failed, err: %v, rid: %s", err, rid)
-			return err
-		}
-
-		blog.Infof("delete %d redundancy tasks successful, rid: %s", len(tasks), rid)
-		time.Sleep(time.Second * 20)
-	}
 }
 
 // ListLatestSyncStatus list latest api task sync status

@@ -156,18 +156,19 @@ type DeleteSetTemplateSyncStatusOption struct {
 }
 
 type ListSetTemplateSyncStatusOption struct {
-	BizID         int64         `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
-	SetIDs        []int64       `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
-	TaskIDs       []string      `field:"task_ids" json:"task_ids" bson:"task_ids" mapstructure:"task_ids"`
-	SearchKey     string        `field:"search" json:"search" bson:"search" mapstructure:"search"`
-	SetTemplateID int64         `field:"set_template_id" json:"set_template_id" bson:"set_template_id" mapstructure:"set_template_id"`
-	Creator       string        `field:"creator" json:"creator,omitempty" bson:"creator" mapstructure:"creator"`
-	StartTime     *time.Time    `field:"start_time" json:"start_time,omitempty" bson:"create_time" mapstructure:"start_time"`
-	EndTime       *time.Time    `field:"end_time" json:"end_time,omitempty" bson:"end_time" mapstructure:"end_time"`
-	Status        APITaskStatus `field:"status" json:"status" bson:"status" mapstructure:"status"`
-	Page          BasePage      `field:"page" json:"page" bson:"page" mapstructure:"page"`
+	BizID         int64           `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
+	SetIDs        []int64         `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
+	TaskIDs       []string        `field:"task_ids" json:"task_ids" bson:"task_ids" mapstructure:"task_ids"`
+	SearchKey     string          `field:"search" json:"search" bson:"search" mapstructure:"search"`
+	SetTemplateID int64           `field:"set_template_id" json:"set_template_id" bson:"set_template_id" mapstructure:"set_template_id"`
+	Creator       string          `field:"creator" json:"creator,omitempty" bson:"creator" mapstructure:"creator"`
+	StartTime     *time.Time      `field:"start_time" json:"start_time,omitempty" bson:"create_time" mapstructure:"start_time"`
+	EndTime       *time.Time      `field:"end_time" json:"end_time,omitempty" bson:"end_time" mapstructure:"end_time"`
+	Status        []APITaskStatus `field:"status" json:"status" bson:"status" mapstructure:"status"`
+	Page          BasePage        `field:"page" json:"page" bson:"page" mapstructure:"page"`
 }
 
+// ToSetCond parse option to query set condition
 func (option ListSetTemplateSyncStatusOption) ToSetCond(errProxy ccErr.DefaultCCErrorIf) (map[string]interface{},
 	ccErr.CCErrorCoder) {
 
@@ -200,6 +201,7 @@ func (option ListSetTemplateSyncStatusOption) ToSetCond(errProxy ccErr.DefaultCC
 	return filter, nil
 }
 
+// ToStatusCond parse option to query sync status condition
 func (option ListSetTemplateSyncStatusOption) ToStatusCond(errProxy ccErr.DefaultCCErrorIf) (*QueryCondition,
 	ccErr.CCErrorCoder) {
 
@@ -212,21 +214,23 @@ func (option ListSetTemplateSyncStatusOption) ToStatusCond(errProxy ccErr.Defaul
 		Fields: []string{common.BKInstIDField, common.CreateTimeField, common.LastTimeField, common.CreatorField,
 			common.BKStatusField},
 		Condition: map[string]interface{}{
-			common.BKSetIDField: map[string]interface{}{
+			common.BKInstIDField: map[string]interface{}{
 				common.BKDBIN: option.SetIDs,
 			},
 			common.BKTaskTypeField: common.SyncSetTaskFlag,
 		},
 	}
 
-	if option.TaskIDs != nil {
+	if len(option.TaskIDs) != 0 {
 		condition.Condition[common.BKTaskIDField] = map[string]interface{}{
 			common.BKDBIN: option.TaskIDs,
 		}
 	}
 
 	if len(option.Status) != 0 {
-		condition.Condition[common.BKStatusField] = option.Status
+		condition.Condition[common.BKStatusField] = map[string]interface{}{
+			common.BKDBIN: option.Status,
+		}
 	}
 
 	if len(option.Creator) != 0 {

@@ -118,6 +118,9 @@ const (
 
 	// APITAskStatusFail task execute failure
 	APITAskStatusFail APITaskStatus = "failure"
+
+	// APITAskStatusNeedSync only used for instance with all tasks finished but actual status is not finished
+	APITAskStatusNeedSync APITaskStatus = "need_sync"
 )
 
 type ListAPITaskRequest struct {
@@ -151,11 +154,13 @@ type CreateTaskResponse struct {
 	Data APITaskDetail `json:"data"`
 }
 
+// CreateTaskBatchResponse batch create task response
 type CreateTaskBatchResponse struct {
 	BaseResp
 	Data []APITaskDetail `json:"data"`
 }
 
+// TaskDetailResponse api task detail response
 type TaskDetailResponse struct {
 	BaseResp
 	Data struct {
@@ -163,11 +168,13 @@ type TaskDetailResponse struct {
 	} `json:"data"`
 }
 
+// ListAPITaskDetail list api task detail condition
 type ListAPITaskDetail struct {
-	SetID  []int64  `json:"bk_set_id"`
+	InstID []int64  `json:"bk_inst_id"`
 	Fields []string `json:"fields"`
 }
 
+// ListLatestSyncStatusRequest list latest api task sync status request
 type ListLatestSyncStatusRequest struct {
 	Condition mapstr.MapStr `json:"condition"`
 	Fields    []string      `json:"fields"`
@@ -175,16 +182,19 @@ type ListLatestSyncStatusRequest struct {
 	TimeCondition *TimeCondition `json:"time_condition,omitempty"`
 }
 
+// ListLatestSyncStatusResponse list latest api task sync status response
 type ListLatestSyncStatusResponse struct {
 	BaseResp
 	Data []APITaskSyncStatus `json:"data"`
 }
 
+// ListSyncStatusHistoryResponse list api task sync history response
 type ListSyncStatusHistoryResponse struct {
 	BaseResp
 	Data *ListAPITaskSyncStatusResult `json:"data"`
 }
 
+// ListAPITaskSyncStatusResult list api task sync status paged result
 type ListAPITaskSyncStatusResult struct {
 	Count int64               `json:"count"`
 	Info  []APITaskSyncStatus `json:"info"`
