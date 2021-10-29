@@ -257,6 +257,7 @@ func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID s
 	return
 }
 
+// AddInstByImport add instances by import excel
 func (a *apiServer) AddInstByImport(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (
 	*metadata.ResponseDataMapStr, error) {
 

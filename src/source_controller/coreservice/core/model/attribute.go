@@ -327,6 +327,7 @@ func (m *modelAttribute) DeleteModelAttributes(kit *rest.Kit, objID string, inpu
 	return &metadata.DeletedCount{Count: cnt}, err
 }
 
+// SearchModelAttributes search model's attributes
 func (m *modelAttribute) SearchModelAttributes(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (
 	*metadata.QueryModelAttributeDataResult, error) {
 
