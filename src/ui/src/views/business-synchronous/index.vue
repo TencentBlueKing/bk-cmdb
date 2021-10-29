@@ -82,7 +82,9 @@
           <div class="collapse-title" slot="title">
             {{path}} {{$t('涉及实例')}}
           </div>
-          <ul class="instance-list" v-bkloading="{ isLoading: instancesLoading }">
+          <ul
+            class="instance-list"
+            v-bkloading="{ isLoading: instancesLoading }">
             <li class="instance-item"
               v-for="(instance, instanceIndex) in currentDiff.modules[moduleId].service_instances"
               :key="instanceIndex"
@@ -131,7 +133,7 @@
   import to from 'await-to-js'
 
   export default {
-    name: 'SyncTemplate',
+    name: 'BusinessSynchronous',
     components: {
       InstanceDetails
     },
@@ -422,16 +424,21 @@
            * 如果你要修改这块的代码，看明白这里的逻辑以后，可以优化一下。
            */
           let changedServiceInstances = {}
+          const categoryDetail = res?.service_category_detail
 
           // 服务分类展示方式和其他进程模板不一样，所以单独处理
           if (this.currentDiff.type === 'others') {
-            changedServiceInstances.service_instances = res.service_category_detail?.service_instance.map(i => ({
-              service_instance: i,
-              type: 'others',
-            })) || []
+            if (categoryDetail.count > 0) {
+              changedServiceInstances.service_instances = categoryDetail?.service_instance.map(i => ({
+                service_instance: i,
+                type: 'others',
+              })) || []
+            } else {
+              changedServiceInstances.service_instances = []
+            }
 
             changedServiceInstances.service_instances.forEach((instance) => {
-              instance.changed_attributes = res.service_category_detail?.module_attribute.map(i => ({
+              instance.changed_attributes = categoryDetail?.module_attribute.map(i => ({
                 ...i,
                 property_name: '服务分类',
                 property_value: this.getCategoryById(i.property_value)?.name || '',

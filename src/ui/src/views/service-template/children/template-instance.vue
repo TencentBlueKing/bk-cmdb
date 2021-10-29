@@ -27,46 +27,21 @@
         @page-limit-change="handleSizeChange"
         @page-change="handlePageChange"
         @selection-change="handleSelectionChange">
-        <bk-table-column type="selection" :selectable="checkSelectable"></bk-table-column>
+        <bk-table-column type="selection" :selectable="row => !isInstanceDisabled(row.status)"></bk-table-column>
         <bk-table-column :label="$t('模块名称')" prop="bk_module_name" show-overflow-tooltip></bk-table-column>
         <bk-table-column :label="$t('拓扑路径')" sortable :sort-method="sortByPath" show-overflow-tooltip>
           <span slot-scope="{ row }" class="topo-path" @click="handlePathClick(row)">{{row._path_}}</span>
         </bk-table-column>
-        <bk-table-column :label="$t('状态')" prop="status">
-          <template slot-scope="{ row }">
-            <span v-if="row.status === 'syncing'" class="sync-status">
-              <img class="svg-icon" src="../../../assets/images/icon/loading.svg" alt="">
-              {{$t('同步中')}}
-            </span>
-            <span v-else-if="row.status === 'waiting'" class="sync-status">
-              <i class="status-circle waiting"></i>
-              {{$t('待同步')}}
-            </span>
-            <span v-else-if="row.status === 'finished'" class="sync-status">
-              <i class="status-circle success"></i>
-              {{$t('已同步')}}
-            </span>
-            <span v-else-if="row.status === 'failure'"
-              class="sync-status"
-              v-bk-tooltips="{
-                content: row.fail_tips,
-                placement: 'right'
-              }">
-              <i class="status-circle fail"></i>
-              {{$t('同步失败')}}
-            </span>
-            <span v-else>--</span>
-          </template>
-        </bk-table-column>
+        <InstanceStatusColumn></InstanceStatusColumn>
         <bk-table-column :label="$t('上次同步时间')" sortable :sort-method="sortByTime" show-overflow-tooltip>
           <template slot-scope="{ row }">{{row.last_time | time}}</template>
         </bk-table-column>
         <bk-table-column :label="$t('操作')">
           <template slot-scope="{ row }">
-            <span class="latest-sync" v-if="isSyncDisabled(row)" v-bk-tooltips="$t('无需同步')">
-              {{$t('去同步')}}
-            </span>
-            <bk-button v-else text @click="handleSync(row)">
+            <bk-button
+              text
+              :disabled="isInstanceDisabled(row.status)"
+              @click="handleSync(row)">
               {{$t('去同步')}}
             </bk-button>
           </template>
@@ -92,7 +67,12 @@
   import debounce from 'lodash.debounce'
   import Bus from '@/utils/bus'
   import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+  import InstanceStatusColumn from './instance-status-column.vue'
   export default {
+    name: 'templateInstance',
+    components: {
+      InstanceStatusColumn
+    },
     filters: {
       time
     },
@@ -121,7 +101,6 @@
         },
         request: {
           instance: Symbol('instance'),
-          status: Symbol('status'),
           path: Symbol('path')
         },
         handleFilter: null
@@ -148,17 +127,49 @@
       this.handleFilter = debounce(this.filterData, 300)
     },
     methods: {
-      loadInstanceStatus() {
-        if (this.table.data?.length === 0) return false
+      /**
+       * 每 10 秒刷新一次实例状态
+       */
+      polling() {
+        try {
+          if (this.pollingTimer) {
+            clearInterval(this.pollingTimer)
+            this.pollingTimer = null
+          }
 
+          this.pollingTimer = setInterval(() => {
+            const syncingModules = this.table.data
+              .filter(theModule => this.isSyncing(theModule.status)).map(theModule => theModule.bk_module_id)
+            this.loadInstanceStatus(syncingModules)
+          }, 10000)
+        } catch (e) {
+          console.error(e)
+          clearInterval(this.pollingTimer)
+          this.pollingTimer = null
+        }
+      },
+      /**
+       * 判断实例是否正在同步中
+       */
+      isSyncing(status) {
+        return ['new', 'waiting', 'executing'].includes(status)
+      },
+      /**
+       * 实例是否置灰
+       */
+      isInstanceDisabled(status) {
+        return this.isSyncing(status) || status === 'finished'
+      },
+      /**
+       * 加载实例状态
+       */
+      loadInstanceStatus(moduleIds) {
+        if (moduleIds?.length === 0) return false
         this.$store.dispatch('serviceTemplate/getServiceTemplateInstanceStatus', {
           bizId: this.bizId,
           params: {
-            bk_module_ids: this.table.data.map(module => module.bk_module_id),
+            bk_module_ids: moduleIds,
             service_template_id: parseInt(this.serviceTemplateId, 10)
-          },
-          config: {
-            requestId: this.request.status
           }
         }).then((res) => {
           this.table.data.forEach((item) => {
@@ -168,21 +179,6 @@
             }
           })
         })
-      },
-      polling() {
-        try {
-          if (this.pollingTimer) {
-            clearInterval(this.pollingTimer)
-            this.pollingTimer = null
-          }
-          this.pollingTimer = setInterval(() => {
-            this.loadInstanceStatus()
-          }, 10000)
-        } catch (e) {
-          console.error(e)
-          clearInterval(this.pollingTimer)
-          this.pollingTimer = null
-        }
       },
       async refresh() {
         try {
@@ -200,7 +196,7 @@
             })
           }
           this.table.data = data.info
-          this.loadInstanceStatus()
+          this.loadInstanceStatus(this.table.data.map(i => i.bk_module_id))
           this.polling()
           this.table.backup = Object.freeze(data.info)
           Bus.$emit('module-loaded', data.count)
@@ -234,9 +230,6 @@
           }
         })
       },
-      isSyncDisabled(row) {
-        return !['new', 'waiting'].includes(row.status)
-      },
       handleSync(row) {
         this.$routerActions.redirect({
           name: 'syncServiceFromTemplate',
@@ -246,9 +239,6 @@
           },
           history: true
         })
-      },
-      checkSelectable(row) {
-        return !this.isSyncDisabled(row)
       },
       handleSelectionChange(selection) {
         this.table.selection = selection
@@ -347,30 +337,6 @@
                 cursor: pointer;
                 &:hover {
                     color: $primaryColor;
-                }
-            }
-            .sync-status {
-                color: #63656E;
-                .status-circle {
-                    display: inline-block;
-                    width: 8px;
-                    height: 8px;
-                    margin-right: 4px;
-                    border-radius: 50%;
-                    &.waiting {
-                        background-color: #3A84FF;
-                    }
-                    &.success {
-                        background-color: #2DCB56;
-                    }
-                    &.fail {
-                        background-color: #EA3536;
-                    }
-                }
-                .svg-icon {
-                    @include inlineBlock;
-                    margin-top: -4px;
-                    width: 16px;
                 }
             }
         }
