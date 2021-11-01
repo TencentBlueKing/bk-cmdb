@@ -21,7 +21,8 @@ import (
 	"configcenter/src/common/ssl"
 )
 
-func NewClient(c *TLSClientConfig) (*http.Client, error) {
+// NewClient create a new http client
+func NewClient(c *TLSClientConfig, conf ...ExtraClientConfig) (*http.Client, error) {
 	tlsConf := new(tls.Config)
 	if nil != c {
 		tlsConf.InsecureSkipVerify = c.InsecureSkipVerify
@@ -34,6 +35,12 @@ func NewClient(c *TLSClientConfig) (*http.Client, error) {
 		}
 	}
 
+	responseHeaderTimeout := 25 * time.Second
+	if len(conf) > 0 {
+		if timeout := conf[0].ResponseHeaderTimeout; timeout != 0 {
+			responseHeaderTimeout = timeout
+		}
+	}
 	transport := &http.Transport{
 		Proxy:               http.ProxyFromEnvironment,
 		TLSHandshakeTimeout: 5 * time.Second,
@@ -43,7 +50,7 @@ func NewClient(c *TLSClientConfig) (*http.Client, error) {
 			KeepAlive: 30 * time.Second,
 		}).Dial,
 		MaxIdleConnsPerHost:   100,
-		ResponseHeaderTimeout: 10 * time.Minute,
+		ResponseHeaderTimeout: responseHeaderTimeout,
 	}
 
 	client := new(http.Client)
