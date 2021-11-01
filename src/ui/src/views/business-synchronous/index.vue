@@ -9,7 +9,8 @@
           :key="index"
           :class="{
             'show-tips': !process.confirmed,
-            'is-active': currentDiff.process_template_id === process.process_template_id,
+            'is-active': currentDiff.process_template_id === process.process_template_id
+              && process.process_template_name === currentDiff.process_template_name,
             'is-remove': process.type === 'removed'
           }"
           @click="handleProcessChange(process, index)">
@@ -22,7 +23,7 @@
       <div class="change-details"
         v-bkloading="{ isLoading: detailsLoading }"
         v-if="currentDiff"
-        :key="currentDiff.process_template_id">
+        :key="`${currentDiff.process_template_id}-${currentDiff.process_template_name}`">
         <cmdb-collapse class="details-info">
           <div class="collapse-title" slot="title">
             {{$t('变更内容')}}
@@ -78,7 +79,7 @@
           v-for="(path, moduleId) of topoPath"
           :key="moduleId"
           :collapse="true"
-          @collapse-change.once="loadInstances(moduleId)">
+          @collapse-change="handleInstanceCollapseChange(moduleId, $event)">
           <div class="collapse-title" slot="title">
             {{path}} {{$t('涉及实例')}}
           </div>
@@ -398,6 +399,11 @@
         value = Object.prototype.toString.call(value) === '[object Object]' ? value.value : value
         return formatter(value, property)
       },
+      handleInstanceCollapseChange(moduleId, collapse) {
+        if (!collapse) {
+          this.loadInstances(moduleId)
+        }
+      },
       /**
        * 加载服务模板涉及的实例
        */
@@ -464,7 +470,7 @@
           }
 
           theModule.service_instance_count = changedServiceInstances?.service_instance_count || 0
-          theModule.service_instances = theModule.service_instances.concat(changedServiceInstances?.service_instances)
+          theModule.service_instances = changedServiceInstances?.service_instances
         })
           .finally(() => {
             this.instancesLoading = false
