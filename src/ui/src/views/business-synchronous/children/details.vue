@@ -16,9 +16,14 @@
           </process-bind-info-value>
         </template>
       </bk-table-column>
-      <bk-table-column prop="show_value" :label="$t('变更后')" show-overflow-tooltip>
+      <bk-table-column prop="show_value" :label="$t('变更后')">
         <template slot-scope="{ row }">
-          <cmdb-property-value v-if="row.property_id !== 'bind_info'"
+          <cmdb-property-value
+            v-if="row.property_id !== 'bind_info'"
+            v-bk-tooltips="{
+              content: getCellValue(row, 'after'),
+              duration: 500
+            }"
             :value="getCellValue(row, 'after')"
             :property="properties.find(property => property.bk_property_id === row.property_id)">
           </cmdb-property-value>
