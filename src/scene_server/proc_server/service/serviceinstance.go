@@ -1641,23 +1641,6 @@ func (ps *ProcServer) FindServiceTemplateSyncStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	// compare modules with their service templates to get their sync status
-	moduleCond := map[string]interface{}{
-		common.BKAppIDField:             bizID,
-		common.BKServiceTemplateIDField: option.ServiceTemplateID,
-		common.BKModuleIDField:          map[string]interface{}{common.BKDBIN: option.ModuleIDs},
-	}
-	_, statuses, err := ps.Logic.GetSvcTempSyncStatus(ctx.Kit, bizID, moduleCond, false)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	statusMap := make(map[int64]bool)
-	for _, status := range statuses {
-		statusMap[status.ModuleID] = status.NeedSync
-	}
-
 	// get latest sync service template api task sync status by modules
 	statusOpt := &metadata.ListLatestSyncStatusRequest{
 		Condition: map[string]interface{}{
@@ -1675,14 +1658,31 @@ func (ps *ProcServer) FindServiceTemplateSyncStatus(ctx *rest.Contexts) {
 		return
 	}
 
+	// compare modules with their service templates to get their sync status
+	moduleCond := map[string]interface{}{
+		common.BKAppIDField:             bizID,
+		common.BKServiceTemplateIDField: option.ServiceTemplateID,
+		common.BKModuleIDField:          map[string]interface{}{common.BKDBIN: option.ModuleIDs},
+	}
+	_, statuses, err := ps.Logic.GetSvcTempSyncStatus(ctx.Kit, bizID, moduleCond, false)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	statusMap := make(map[int64]bool)
+	for _, status := range statuses {
+		statusMap[status.ModuleID] = status.NeedSync
+	}
+
 	statusExistsMap := make(map[int64]struct{})
-	for _, status := range taskStatusRes {
+	for index, status := range taskStatusRes {
 		statusExistsMap[status.InstID] = struct{}{}
 		// if current status and api task status does not match, use current status
 		if statusMap[status.InstID] && status.Status.IsSuccessful() {
-			status.Status = metadata.APITAskStatusNeedSync
+			taskStatusRes[index].Status = metadata.APITAskStatusNeedSync
 		} else if !statusMap[status.InstID] && !status.Status.IsSuccessful() {
-			status.Status = metadata.APITaskStatusSuccess
+			taskStatusRes[index].Status = metadata.APITaskStatusSuccess
 		}
 	}
 

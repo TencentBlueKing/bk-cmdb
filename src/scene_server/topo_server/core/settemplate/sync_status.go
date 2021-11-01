@@ -250,13 +250,6 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 		setIDs[index] = set.SetID
 	}
 
-	// compare sets with set templates to get their sync status
-	statusMap, err := st.isSyncRequired(kit, option.BizID, option.SetTemplateID, setIDs, true)
-	if err != nil {
-		blog.Errorf("check if set need sync failed, err: %v, set ids: %+v, rid: %s", err, setIDs, kit.Rid)
-		return nil, err
-	}
-
 	// get latest sync set template api task sync status by sets
 	option.SetIDs = setIDs
 	statusCond, err := option.ToStatusCond(kit.CCError)
@@ -274,6 +267,13 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 	taskStatusRes, err := st.client.TaskServer().Task().ListLatestSyncStatus(kit.Ctx, kit.Header, statusOpt)
 	if err != nil {
 		blog.Errorf("list latest sync status failed, option: %#v, err: %v, rid: %s", statusOpt, err, kit.Rid)
+		return nil, err
+	}
+
+	// compare sets with set templates to get their sync status
+	statusMap, err := st.isSyncRequired(kit, option.BizID, option.SetTemplateID, setIDs, true)
+	if err != nil {
+		blog.Errorf("check if set need sync failed, err: %v, set ids: %+v, rid: %s", err, setIDs, kit.Rid)
 		return nil, err
 	}
 

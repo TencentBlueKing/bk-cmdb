@@ -154,8 +154,8 @@ func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest
 		dbTasks[index] = dbTask
 
 		taskHistory.TaskID = dbTask.TaskID
-		dbTask.TaskType = task.TaskType
-		dbTask.InstID = task.InstID
+		taskHistory.TaskType = task.TaskType
+		taskHistory.InstID = task.InstID
 		taskHistories[index] = taskHistory
 	}
 
