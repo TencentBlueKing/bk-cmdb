@@ -91,7 +91,7 @@
               @click="viewInstanceDiff(instance, moduleId)">
               <span class="instance-name" v-bk-overflow-tips>{{instance.service_instance.name}}</span>
               <span class="instance-diff-count"
-                v-if="instance.changed_attributes">
+                v-show="instance.changed_attributes && instance.changed_attributes.length > 0">
                 ({{instance.changed_attributes.length}})
               </span>
             </li>
