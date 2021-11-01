@@ -118,6 +118,7 @@ func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, re
 		// time out after 2 minutes, in case long request does not terminate, skip ui requests like import
 		if header.Get(common.BKHTTPRequestFromWeb) != "true" {
 			var cancel context.CancelFunc
+			// task server has some task with 2 minutes' timeout, so we set the timeout of all servers to 2 minute
 			ctx, cancel = context.WithTimeout(ctx, time.Minute*2)
 			defer cancel()
 		}
