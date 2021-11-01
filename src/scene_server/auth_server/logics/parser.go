@@ -350,7 +350,7 @@ func GetResourceIDField(resourceType iam.TypeID) string {
 		return common.BKFieldID
 	case iam.SysInstanceModel:
 		return common.BKFieldID
-	case iam.SysModelEvent:
+	case iam.SysModelEvent, iam.InstAsstEvent:
 		return common.BKFieldID
 	case iam.MainlineModelEvent:
 		return common.BKFieldID
@@ -390,7 +390,7 @@ func GetResourceNameField(resourceType iam.TypeID) string {
 		return common.BKHostInnerIPField
 	case iam.SysModelGroup:
 		return common.BKClassificationNameField
-	case iam.SysModel, iam.SysInstanceModel, iam.SysModelEvent, iam.MainlineModelEvent:
+	case iam.SysModel, iam.SysInstanceModel, iam.SysModelEvent, iam.MainlineModelEvent, iam.InstAsstEvent:
 		return common.BKObjNameField
 	case iam.SysAssociationType:
 		return common.AssociationKindNameField

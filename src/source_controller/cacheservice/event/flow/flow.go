@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"configcenter/src/apimachinery/discovery"
@@ -52,18 +53,35 @@ type oidCollKey struct {
 	coll string
 }
 
-// getDeleteEventDetailsFunc function type for getting delete event details from db del archive
+// getDeleteEventDetailsFunc function type for parsing event into chain nodes and details
 type getDeleteEventDetailsFunc func(es []*types.Event, db dal.DB, metrics *event.EventMetrics) (map[oidCollKey][]byte,
 	bool, error)
 
-func newFlow(ctx context.Context, opts flowOptions, getDeleteEventDetails getDeleteEventDetailsFunc) error {
-	flow := Flow{
+// parseEventFunc function type for getting delete event details from db del archive
+type parseEventFunc func(key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byte, id uint64, rid string) (
+	*watch.ChainNode, []byte, bool, error)
+
+func newFlow(ctx context.Context, opts flowOptions, getDeleteEventDetails getDeleteEventDetailsFunc,
+	parseEvent parseEventFunc) error {
+
+	flow := NewFlow(opts, getDeleteEventDetails, parseEvent)
+
+	return flow.RunFlow(ctx)
+}
+
+// NewFlow create a new event watch flow
+func NewFlow(opts flowOptions, getDeleteEventDetails getDeleteEventDetailsFunc, parseEvent parseEventFunc) Flow {
+	return Flow{
 		flowOptions:           opts,
 		metrics:               event.InitialMetrics(opts.key.Collection(), "watch"),
 		getDeleteEventDetails: getDeleteEventDetails,
+		parseEvent:            parseEvent,
+		cursorQueue: &cursorQueue{
+			cursorMap: make(map[string]struct{}),
+			cursorArr: make([]string, 0),
+			lock:      sync.Mutex{},
+		},
 	}
-
-	return flow.RunFlow(ctx)
 }
 
 type Flow struct {
@@ -71,9 +89,43 @@ type Flow struct {
 	metrics               *event.EventMetrics
 	tokenHandler          *flowTokenHandler
 	getDeleteEventDetails getDeleteEventDetailsFunc
+	parseEvent            parseEventFunc
+	cursorQueue           *cursorQueue
 }
 
-const batchSize = 200
+// cursorQueue saves the specific amount of previous cursors to check if event is duplicated with previous batch's event
+type cursorQueue struct {
+	cursorMap map[string]struct{}
+	cursorArr []string
+	lock      sync.Mutex
+}
+
+// checkIfConflict check if the cursor is conflict with previous cursors, maintain the length of the queue
+func (c *cursorQueue) checkIfConflict(cursor string) bool {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	if _, exists := c.cursorMap[cursor]; exists {
+		return true
+	}
+
+	if len(c.cursorArr) < cursorQueueSize {
+		c.cursorArr = append(c.cursorArr, cursor)
+		c.cursorMap[cursor] = struct{}{}
+		return false
+	}
+
+	earliestCursor := c.cursorArr[0]
+	c.cursorArr = append(c.cursorArr[1:], cursor)
+	delete(c.cursorMap, earliestCursor)
+	c.cursorMap[cursor] = struct{}{}
+
+	return false
+}
+
+const (
+	batchSize       = 200
+	cursorQueueSize = 100000
+)
 
 func (f *Flow) RunFlow(ctx context.Context) error {
 	blog.Infof("start run flow for key: %s.", f.key.Namespace())
@@ -163,7 +215,7 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		// collect event's basic metrics
 		f.metrics.CollectBasic(e)
 
-		chainNode, detailBytes, retry, err := parseEvent(f.key, e, oidDetailMap, ids[index], rid)
+		chainNode, detailBytes, retry, err := f.parseEvent(f.key, e, oidDetailMap, ids[index], rid)
 		if err != nil {
 			return retry
 		}
@@ -171,21 +223,27 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 			continue
 		}
 
-		// validate if the cursor is already exists, this is happens when the concurrent operation is very high.
-		// which will generate the same operation event with same cluster time, and generate with the same cursor
-		// in the end. if this happens, the last event will be used finally, and the former events with the same
-		// cursor will be dropped, and it's acceptable.
-		if _, exists := cursorMap[chainNode.Cursor]; exists {
-			hitConflict = true
-		}
-		cursorMap[chainNode.Cursor] = struct{}{}
-
-		oids[index] = e.ID()
-		chainNodes = append(chainNodes, chainNode)
-
 		// if hit cursor conflict, the former cursor node's detail will be overwrite by the later one, so it
 		// is not needed to remove the overlapped cursor node's detail again.
 		pipe.Set(f.key.DetailKey(chainNode.Cursor), string(detailBytes), time.Duration(f.key.TTLSeconds())*time.Second)
+
+		// validate if the cursor already exists in the batch, this happens when the concurrency is very high.
+		// which will generate the same operation event with same cluster time, and generate with the same cursor
+		// in the end. if this happens, the last event will be used finally, and the former events with the same
+		// cursor will be dropped, and it's acceptable.
+		exists := false
+		if _, exists = cursorMap[chainNode.Cursor]; exists {
+			hitConflict = true
+		}
+
+		// if the cursor is conflict with another cursor in the former batches, skip it
+		if f.cursorQueue.checkIfConflict(chainNode.Cursor) && !exists {
+			continue
+		}
+
+		cursorMap[chainNode.Cursor] = struct{}{}
+		oids[index] = e.ID()
+		chainNodes = append(chainNodes, chainNode)
 	}
 	lastTokenData := map[string]interface{}{
 		common.BKTokenField:       es[eventLen-1].Token.Data,

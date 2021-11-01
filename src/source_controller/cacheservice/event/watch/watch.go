@@ -15,6 +15,7 @@ package watch
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -503,5 +504,13 @@ func (c *Client) isNodeHitSubResource(node *watch.ChainNode, subResource string)
 	if node.SubResource == subResource {
 		return true
 	}
+
+	// compatible for the inst association event whose subresource is a combination of both source and target object id
+	for _, objID := range strings.Split(node.SubResource, ":inst_asst:") {
+		if objID == subResource {
+			return true
+		}
+	}
+
 	return false
 }

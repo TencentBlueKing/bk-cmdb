@@ -33,13 +33,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func newInstanceFlow(ctx context.Context, opts flowOptions, getDeleteEventDetails getDeleteEventDetailsFunc) error {
+func newInstanceFlow(ctx context.Context, opts flowOptions, getDeleteEventDetails getDeleteEventDetailsFunc,
+	parseEvent parseEventFunc) error {
+
 	flow := InstanceFlow{
-		Flow: Flow{
-			flowOptions:           opts,
-			metrics:               event.InitialMetrics(opts.key.Collection(), "watch"),
-			getDeleteEventDetails: getDeleteEventDetails,
-		},
+		Flow:              NewFlow(opts, getDeleteEventDetails, parseEvent),
 		mainlineObjectMap: new(mainlineObjectMap),
 	}
 
@@ -191,7 +189,7 @@ func (f *InstanceFlow) doBatch(es []*types.Event) (retry bool) {
 			f.metrics.CollectBasic(e)
 
 			idIndex := oidIndexMap[e.Oid+e.Collection]
-			chainNode, detailBytes, retry, err := parseEvent(key, e, oidDetailMap, ids[idIndex], rid)
+			chainNode, detailBytes, retry, err := f.parseEvent(key, e, oidDetailMap, ids[idIndex], rid)
 			if err != nil {
 				return retry
 			}

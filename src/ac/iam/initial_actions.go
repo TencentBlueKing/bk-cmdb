@@ -110,6 +110,7 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchProcessEvent:                   "进程数据监听",
 	WatchCommonInstanceEvent:            "模型实例事件监听",
 	WatchMainlineInstanceEvent:          "自定义拓扑层级事件监听",
+	WatchInstAsstEvent:                  "实例关联事件监听",
 	GlobalSettings:                      "全局设置",
 }
 
@@ -1209,6 +1210,28 @@ func genEventWatchActions() []ResourceAction {
 		RelatedResourceTypes: mainlineModelResource,
 		RelatedActions:       nil,
 		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:     WatchInstAsstEvent,
+		Name:   ActionIDNameMap[WatchInstAsstEvent],
+		NameEn: "Instance Association Event Listen",
+		Type:   View,
+		RelatedResourceTypes: []RelateResourceType{
+			{
+				SystemID:    SystemIDCMDB,
+				ID:          InstAsstEvent,
+				NameAlias:   "",
+				NameAliasEn: "",
+				Scope:       nil,
+				InstanceSelections: []RelatedInstanceSelection{{
+					SystemID: SystemIDCMDB,
+					ID:       InstAsstEventSelection,
+				}},
+			},
+		},
+		RelatedActions: nil,
+		Version:        1,
 	})
 	return actions
 }

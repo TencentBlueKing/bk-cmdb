@@ -131,6 +131,7 @@ const (
 	WatchProcess          Action = "process"
 	WatchCommonInstance   Action = "object_instance"
 	WatchMainlineInstance Action = "mainline_instance"
+	WatchInstAsst         Action = "inst_asst"
 
 	// can view business related resources, including business and business collection resources
 	ViewBusinessResource Action = "viewBusinessResource"

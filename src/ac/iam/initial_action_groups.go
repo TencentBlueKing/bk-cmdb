@@ -318,6 +318,9 @@ func genResourceManageActionGroups() []ActionGroup {
 						{
 							ID: WatchMainlineInstanceEvent,
 						},
+						{
+							ID: WatchInstAsstEvent,
+						},
 					},
 				},
 			},

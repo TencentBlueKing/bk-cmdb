@@ -56,8 +56,10 @@ func (f *identityHandler) setLastWatchToken(ctx context.Context, data map[string
 		"_id": event.HostIdentityKey.Collection(),
 	}
 
-	tokenInfo := mapstr.MapStr{
-		f.key.Collection(): data,
+	// only update the need fields to avoid erasing the previous exist fields
+	tokenInfo := make(mapstr.MapStr)
+	for key, value := range data {
+		tokenInfo[f.key.Collection()+"."+key] = value
 	}
 
 	// update id and cursor field if set, to compensate for the scenario of searching with an outdated but latest cursor

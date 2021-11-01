@@ -375,7 +375,12 @@ func (c *Client) searchFollowingEventChainNodesByID(kit *rest.Kit, opt *searchFo
 	}
 
 	if len(opt.subResource) > 0 {
-		filter[common.BKSubResourceField] = opt.subResource
+		// since the instance association watch event contains both source and target object id, we search by regex
+		if opt.key.Collection() == common.BKTableNameInstAsst {
+			filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBLIKE: opt.subResource}
+		} else {
+			filter[common.BKSubResourceField] = opt.subResource
+		}
 	}
 
 	nodes := make([]*watch.ChainNode, 0)
