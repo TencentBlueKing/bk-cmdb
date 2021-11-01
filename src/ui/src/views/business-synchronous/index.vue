@@ -291,9 +291,15 @@
             })
           }
 
-          processList[0].confirmed = true
+          const firstProcess = processList[0]
+          firstProcess.confirmed = true
+
+          if (firstProcess.type === 'others') {
+            this.loadServiceCategoryDiff(firstProcess)
+          } else {
+            this.loadProcessDiff(firstProcess)
+          }
           this.processList = processList
-          this.loadProcessDiff(this.processList[0])
         })
           .finally(() => {
             this.processListLoading = false
