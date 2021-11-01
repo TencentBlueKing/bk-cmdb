@@ -228,12 +228,12 @@
               globalError: false
             }
           })
-          if (response.result) {
-            this.setFileState('success')
-            this.importState.success && this.importState.success()
-          } else {
+          if (!response.result || response.data.error) {
             this.setFileState('error')
             this.setFileError(response.data)
+          } else {
+            this.setFileState('success')
+            this.importState.success && this.importState.success()
           }
         } catch (error) {
           console.error(error)
