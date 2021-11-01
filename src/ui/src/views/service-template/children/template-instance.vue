@@ -121,7 +121,7 @@
       },
     },
     destroyed() {
-      clearTimeout(this.pollingTimer)
+      clearInterval(this.pollingTimer)
     },
     created() {
       this.handleFilter = debounce(this.filterData, 300)
