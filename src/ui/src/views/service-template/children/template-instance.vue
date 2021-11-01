@@ -68,6 +68,7 @@
   import Bus from '@/utils/bus'
   import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
   import InstanceStatusColumn from './instance-status-column.vue'
+  import {  Polling } from '@/utils/polling'
   export default {
     name: 'templateInstance',
     components: {
@@ -80,6 +81,15 @@
       active: Boolean
     },
     data() {
+      // 开启自动刷新
+      this.polling =  new Polling(() => {
+        const syncingModules = this.table.data
+          .filter(theModule => this.isSyncing(theModule.status)).map(theModule => theModule.bk_module_id)
+        if (syncingModules.length > 0) {
+          this.loadInstanceStatus(syncingModules)
+        }
+      }, 5000)
+
       return {
         table: {
           filter: '',
@@ -116,38 +126,22 @@
       active: {
         immediate: true,
         handler(active) {
-          active && this.refresh()
+          if (active) {
+            this.refresh()
+            this.polling.start()
+          } else {
+            this.polling.stop()
+          }
         }
       },
     },
     destroyed() {
-      clearInterval(this.pollingTimer)
+      this.polling.stop()
     },
     created() {
       this.handleFilter = debounce(this.filterData, 300)
     },
     methods: {
-      /**
-       * 每 10 秒刷新一次实例状态
-       */
-      polling() {
-        try {
-          if (this.pollingTimer) {
-            clearInterval(this.pollingTimer)
-            this.pollingTimer = null
-          }
-
-          this.pollingTimer = setInterval(() => {
-            const syncingModules = this.table.data
-              .filter(theModule => this.isSyncing(theModule.status)).map(theModule => theModule.bk_module_id)
-            this.loadInstanceStatus(syncingModules)
-          }, 10000)
-        } catch (e) {
-          console.error(e)
-          clearInterval(this.pollingTimer)
-          this.pollingTimer = null
-        }
-      },
       /**
        * 判断实例是否正在同步中
        */
@@ -164,7 +158,6 @@
        * 加载实例状态
        */
       loadInstanceStatus(moduleIds) {
-        if (moduleIds?.length === 0) return false
         this.$store.dispatch('serviceTemplate/getServiceTemplateInstanceStatus', {
           bizId: this.bizId,
           params: {
@@ -197,7 +190,6 @@
           }
           this.table.data = data.info
           this.loadInstanceStatus(this.table.data.map(i => i.bk_module_id))
-          this.polling()
           this.table.backup = Object.freeze(data.info)
           Bus.$emit('module-loaded', data.count)
         } catch (e) {

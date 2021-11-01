@@ -102,6 +102,7 @@
   import { mapGetters } from 'vuex'
   import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
   import InstanceStatusColumn from '@/views/service-template/children/instance-status-column.vue'
+  import { Polling } from '@/utils/polling'
   /**
    * 实例状态说明：
    * 实例状态共有 need_sync、new、waiting、executing、finished、failure 6 种状态，其中：
@@ -121,6 +122,14 @@
       }
     },
     data() {
+      this.polling = new Polling(() => {
+        const needSync = this.list.some(i => this.isSyncing(i.status))
+        if (needSync) {
+          this.updateStatusData()
+          this.getInstancesInfo()
+        }
+      }, 5000)
+
       return {
         timer: null,
         list: [],
@@ -216,25 +225,22 @@
       }
     },
     watch: {
-      list() {
-        if (!this.list.length) {
-          clearInterval(this.timer)
-          this.timer = null
-        } else if (!this.timer) {
-          this.polling()
+      list: {
+        immediate: true,
+        handler() {
+          if (!this.list.length) {
+            this.polling.stop()
+          } else {
+            this.polling.start()
+          }
         }
       }
     },
     async created() {
       await this.getData()
-      if (this.list.length) {
-        this.getSetInstancesWithTopo()
-        this.getInstancesInfo()
-        this.polling()
-      }
     },
     beforeDestroy() {
-      clearInterval(this.timer)
+      this.polling.stop()
     },
     methods: {
       getTopoPath(row) {
@@ -323,22 +329,6 @@
           }
         })
         this.instancesInfo = instancesInfo
-      },
-      polling() {
-        try {
-          if (this.timer) {
-            clearInterval(this.timer)
-            this.timer = null
-          }
-          this.timer = setInterval(() => {
-            this.updateStatusData()
-            this.getInstancesInfo()
-          }, 10000)
-        } catch (e) {
-          console.error(e)
-          clearInterval(this.timer)
-          this.timer = null
-        }
       },
       handleLinkServiceTopo() {
         this.$routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
