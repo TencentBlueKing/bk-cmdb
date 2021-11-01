@@ -77,7 +77,7 @@ func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		if err := s.Logics.AssociationOperation().DeleteMainlineAssociation(ctx.Kit, objID); err != nil {
 			blog.Errorf("delete mainline association failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrTopoObjectDeleteFailed)
+			return ctx.Kit.CCError.CCErrorf(common.CCErrTopoObjectDeleteFailed, err.Error())
 		}
 		return nil
 	})
