@@ -12,7 +12,7 @@
 	"1101010": "Failed to update set information",
 	"1101011": "Failed to query set information",
 	"1101013": "Failed to create model",
-	"1101014": "Delete Model Failed",
+	"1101014": "Delete Model Failed, %s",
 	"1101015": "Update model failed",
 	"1101016": "Query model failed",
 	"1101017": "Failed to create a model properties",
