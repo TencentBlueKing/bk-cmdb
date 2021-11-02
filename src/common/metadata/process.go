@@ -144,6 +144,25 @@ type GetServiceInstanceInModuleInput struct {
 	Selectors selector.Selectors `json:"selectors"`
 }
 
+// ProcessTemplateDiffOption difference information under process template.
+type ProcessTemplateDiffOption struct {
+	BizID             int64   `json:"bk_biz_id"`
+	ServiceTemplateId int64   `json:"service_template_id"`
+	ProcessTemplateId int64   `json:"process_template_id"`
+	ModuleIDs         []int64 `json:"bk_module_ids"`
+
+	// Get service classification
+	ServiceCategory bool `json:"service_category,omitempt"`
+}
+
+// ServiceTemplateDiffOption obtain the process template difference information under the service template.
+type ServiceTemplateDiffOption struct {
+	BizID     int64   `json:"bk_biz_id"`
+	ModuleIDs []int64 `json:"bk_module_ids"`
+}
+
+const moduleMaxNum = 100
+
 type GetServiceInstanceBySetTemplateInput struct {
 	SetTemplateID int64    `json:"set_template_id"`
 	Page          BasePage `json:"page"`
@@ -245,6 +264,84 @@ type ServiceProcessInstanceDifference struct {
 	Differences         *DifferenceDetail `json:"differences" field:"differences" bson:"differences"`
 }
 
+// ServiceInstanceDiffOption Get service instance details request
+type ServiceInstanceDetailOption struct {
+	BizID             int64 `json:"bk_biz_id"`
+	ModuleID          int64 `json:"bk_module_id"`
+	ServiceTemplateId int64 `json:"service_template_id"`
+	ProcessTemplateId int64 `json:"process_template_id"`
+	ServiceCategory   bool  `json:"service_category,omitempty"`
+}
+
+// ProcessTemplateOneModuleOption process difference request for a single module.
+type ProcessTemplateOneModuleOption struct {
+	BizID             int64 `json:"bk_biz_id"`
+	ProcessTemplateId int64 `json:"process_template_id"`
+	ServiceTemplateId int64 `json:"service_template_id"`
+	ModuleID          int64 `json:"module_id"`
+}
+
+// ServiceCategoryName service category name and parent name
+type ServiceCategoryName struct {
+	Name       string `json:"name"`
+	ParentName string `json:"parent_name"`
+}
+
+// ProcessTemplateGeneralInfo Process template summary variance information.
+type ProcessTemplateGeneralInfo struct {
+	// whether the service instance has changed flag
+	Changed bool `json:"changed"`
+
+	// Process template information
+	ProcessTemplateInfo *ProcessTemplate `json:"process_template"`
+
+	// Service classification content
+	ChangedCategory *ServiceCategoryName `json:"changed_category"`
+}
+
+// ServiceCategoryDetailInfo
+type ServiceCategoryDetailInfo struct {
+	ModuleAttribute []ModuleChangedAttribute `json:"module_attribute,omitempty"`
+	ServiceInstance []SrvInstBriefInfo       `json:"service_instance"`
+	Count           uint64                   `json:"count"`
+}
+
+// ServiceInstanceDetailInfo Details of service instance information
+type ServiceInstanceDetailInfo struct {
+	TotalNum int `json:"total_count"`
+
+	// Change content of instance information
+	ServiceInstanceDetails []ServiceInstanceDifference `json:"service_instances"`
+
+	// Change content of service classification
+	ServiceCategoryDetail ServiceCategoryDetailInfo `json:"service_category_detail"`
+}
+
+// DiffWithOneModuleOption
+type DiffWithOneModuleOption struct {
+	BizID    int64 `json:"bk_biz_id"`
+	ModuleID int64 `json:"bk_module_id"`
+}
+
+const DiffMaxNum = 50
+
+// ProcessGeneralInfo summary of process templates.
+type ProcessGeneralInfo struct {
+	// Name process template alias.
+	Name string `json:"name"`
+
+	// Id process template id.
+	Id int `json:"id"`
+}
+
+// ServiceTemplateGeneralDiff changes under service template.
+type ServiceTemplateGeneralDiff struct {
+	Changed          []ProcessGeneralInfo `json:"changed"`
+	Added            []ProcessGeneralInfo `json:"added"`
+	Removed          []ProcessGeneralInfo `json:"removed"`
+	ChangedAttribute bool                 `json:"changed_attribute"`
+}
+
 type DifferenceDetail struct {
 	Unchanged []ProcessDifferenceDetail `json:"unchanged"`
 	Changed   []ProcessDifferenceDetail `json:"changed"`
@@ -300,7 +397,16 @@ type ServiceDifferenceDetails struct {
 	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
 	// Flag represents the changes of the service instance. 0 for changed, 1 for added, 2 for deleted
 	Flag ServiceDifferenceFlag `json:"flag"`
+
+	// Type represents  removed,change or added
+	Type string `json:"type"`
 }
+
+const (
+	ServiceTypeChanged = "changed"
+	ServiceTypeAdded   = "added"
+	ServiceTypeRemoved = "removed"
+)
 
 type ServiceDifferenceFlag int64
 
@@ -348,6 +454,57 @@ type ListProcessTemplateWithServiceTemplateInput struct {
 	ProcessTemplatesIDs []int64  `json:"process_template_ids"`
 	ServiceTemplateID   int64    `json:"service_template_id"`
 	Page                BasePage `json:"page" field:"page" bson:"page"`
+}
+
+// ServiceTemplateDiffOption judge the validity of parameters.
+func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() (string, bool) {
+
+	if option.BizID == 0 {
+		return fmt.Sprintf("the bizId must be set"), false
+	}
+	if len(option.ModuleIDs) == 0 {
+		return fmt.Sprintf("the moduleId must be set"), false
+	}
+	if len(option.ModuleIDs) > moduleMaxNum {
+		return fmt.Sprintf("module num is exceed the limit %d,the num is %d", moduleMaxNum,
+			len(option.ModuleIDs)), false
+	}
+	return "", true
+}
+
+// ServiceTemplateDiffOption judge the validity of parameters.
+func (option *ProcessTemplateDiffOption) ProcessTemplateOptionValidate() (string, bool) {
+
+	if option.BizID == 0 {
+		return fmt.Sprintf("the bizId must be set"), false
+	}
+	if len(option.ModuleIDs) == 0 && !option.ServiceCategory {
+		return fmt.Sprintf("the moduleId must be set"), false
+	}
+	if len(option.ModuleIDs) > moduleMaxNum {
+		return fmt.Sprintf("module num is exceed the limit %d,the num is %d", moduleMaxNum,
+			len(option.ModuleIDs)), false
+	}
+
+	return "", true
+}
+
+// ServiceTemplateDiffOption judge the validity of parameters.
+func (option *ServiceInstanceDetailOption) ServiceInstancesOptionValidate() (string, bool) {
+
+	if option.BizID == 0 {
+		return fmt.Sprintf("the bizId must be set"), false
+	}
+
+	if option.ModuleID == 0 {
+		return fmt.Sprintf("the moduleId must be set"), false
+	}
+
+	if option.ServiceTemplateId == 0 {
+		return fmt.Sprintf("the service template must be set"), false
+	}
+
+	return "", true
 }
 
 // Validate validates the input param

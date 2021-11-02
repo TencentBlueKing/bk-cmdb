@@ -729,6 +729,1093 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+func (ps *ProcServer) getHostInfo(ctx *rest.Contexts, bizId int64, moduleId int64) (
+	map[int64]map[string]interface{}, errors.CCErrorCoder) {
+
+	hostIDOpt := &metadata.DistinctHostIDByTopoRelationRequest{
+		ApplicationIDArr: []int64{bizId},
+		ModuleIDArr:      []int64{moduleId},
+	}
+
+	hostIDs, err := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, ctx.Kit.Header, hostIDOpt)
+	if err != nil {
+		blog.Errorf("get host ids failed, err: %v, option: %#v, rid: %s", err, hostIDOpt, ctx.Kit.Rid)
+		return nil, err
+	}
+
+	hostMap, err := ps.Logic.GetHostIPMapByID(ctx.Kit, hostIDs)
+	if err != nil {
+		return nil, err
+	}
+	return hostMap, nil
+}
+
+func (ps *ProcServer) getProcDetail(ctx *rest.Contexts, relations *metadata.MultipleProcessInstanceRelation) (
+	map[int64]*metadata.Process, errors.CCErrorCoder) {
+
+	procIDs := make([]int64, 0)
+	for _, r := range relations.Info {
+		procIDs = append(procIDs, r.ProcessID)
+	}
+
+	processDetails, err := ps.Logic.ListProcessInstanceWithIDs(ctx.Kit, procIDs)
+	if err != nil {
+		blog.ErrorJSON("getProcDetail failed, ListProcessInstanceWithIDs err:%s, procIDs: %s, rid: %s",
+			err, procIDs, ctx.Kit.Rid)
+		return nil, err
+	}
+
+	procID2Detail := make(map[int64]*metadata.Process)
+	for idx, p := range processDetails {
+		procID2Detail[p.ProcessID] = &processDetails[idx]
+	}
+	return procID2Detail, nil
+}
+
+func (ps *ProcServer) getRelations(ctx *rest.Contexts, module *metadata.ModuleInst,
+	sInstances *metadata.MultipleServiceInstance) (*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder) {
+
+	serviceInstanceIDs := make([]int64, 0)
+	for _, serviceInstance := range sInstances.Info {
+		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
+	}
+
+	option := metadata.ListProcessInstanceRelationOption{
+		BusinessID:         module.BizID,
+		ServiceInstanceIDs: serviceInstanceIDs,
+	}
+
+	rs, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &option)
+	if err != nil {
+		blog.ErrorJSON("getRelations failed, option: %s, err: %s, rid: %s", option, err.Error(), ctx.Kit.Rid)
+		return nil, err
+	}
+
+	return rs, nil
+}
+
+func initModuleDiffRes() (*metadata.ServiceTemplateGeneralDiff, map[string]struct{}, map[int64]struct{},
+	map[int64]struct{}) {
+	moduleDifference := &metadata.ServiceTemplateGeneralDiff{
+		Changed: make([]metadata.ProcessGeneralInfo, 0),
+		Added:   make([]metadata.ProcessGeneralInfo, 0),
+		Removed: make([]metadata.ProcessGeneralInfo, 0),
+	}
+	removed := make(map[string]struct{})
+	added := make(map[int64]struct{})
+	changed := make(map[int64]struct{})
+	return moduleDifference, removed, added, changed
+}
+
+func (ps *ProcServer) getProcIDDetailAndRelations(ctx *rest.Contexts, module *metadata.ModuleInst,
+	serviceInstances *metadata.MultipleServiceInstance) (map[int64][]metadata.ProcessInstanceRelation,
+	map[int64]*metadata.Process, errors.CCErrorCoder) {
+	relations, err := ps.getRelations(ctx, module, serviceInstances)
+	if err != nil {
+		blog.Errorf("get relations fail err: %v,rid: %s", err, ctx.Kit.Rid)
+		return nil, nil, err
+	}
+
+	serviceRelationMap := make(map[int64][]metadata.ProcessInstanceRelation)
+	for _, r := range relations.Info {
+		serviceRelationMap[r.ServiceInstanceID] = append(serviceRelationMap[r.ServiceInstanceID], r)
+	}
+
+	procID2Detail, err := ps.getProcDetail(ctx, relations)
+	if err != nil {
+		blog.Errorf("get proc detail fail err: %v,rid: %s", err, ctx.Kit.Rid)
+		return nil, nil, err
+	}
+	return serviceRelationMap, procID2Detail, nil
+}
+
+func (ps *ProcServer) getServiceCategoryDiff(ctx *rest.Contexts, diffOption *metadata.ProcessTemplateDiffOption) (
+	*metadata.ServiceCategoryName, errors.CCErrorCoder) {
+
+	rid := ctx.Kit.Rid
+	if diffOption.ModuleIDs[0] == 0 {
+		blog.ErrorJSON("module id empty, option: %s, rid: %s", diffOption, rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+
+	module, err := ps.getModule(ctx.Kit, diffOption.ModuleIDs[0])
+	if err != nil {
+		blog.Errorf("getModule failed, moduleID: %d, err: %+v, rid: %s", diffOption.ModuleIDs, err, rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, "get none or multiple modules")
+	}
+
+	serviceCategory, err := ps.CoreAPI.CoreService().Process().GetServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header,
+		module.ServiceCategoryID)
+	if err != nil {
+		blog.Errorf("serviceCategory failed, moduleID: %d,ServiceCategoryID: %d, err: %+v, rid: %s",
+			diffOption.ModuleIDs, module.ServiceCategoryID, err, rid)
+		return nil, err
+	}
+
+	res := new(metadata.ServiceCategoryName)
+	if serviceCategory.ParentID != 0 {
+		serviceParentCategory, err := ps.CoreAPI.CoreService().Process().GetServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header,
+			serviceCategory.ParentID)
+		if err != nil {
+			return nil, err
+		}
+		res.ParentName = serviceParentCategory.Name
+	}
+
+	res.Name = serviceCategory.Name
+	return res, nil
+}
+
+// processTemplateGeneralDiff 1、Calculates the number of instances of the specified process template. 2、get the
+// content of the template.
+func (ps *ProcServer) processTemplateGeneralDiff(ctx *rest.Contexts,
+	diffOption metadata.ProcessTemplateOneModuleOption) (*metadata.ProcessTemplateGeneralInfo, errors.CCErrorCoder) {
+
+	rid := ctx.Kit.Rid
+
+	if diffOption.ModuleID == 0 {
+		blog.ErrorJSON("module id empty, option: %s, rid: %s", diffOption, rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+	module, err := ps.getModule(ctx.Kit, diffOption.ModuleID)
+	if err != nil {
+		blog.Errorf("get module failed, module id: %d, err: %+v, rid: %s", diffOption.ModuleID, err, rid)
+		return nil, err
+	}
+
+	processTemplates, err := ps.getProcessTemplate(ctx, diffOption.BizID, diffOption.ServiceTemplateId)
+	if err != nil {
+		blog.Errorf("find processTemplates fail, diffOption: %v,err: %v,rid: %v", diffOption, err, rid)
+		return nil, err
+	}
+
+	pTemplateMap := make(map[int64]*metadata.ProcessTemplate)
+	for idx, pTemplate := range processTemplates.Info {
+		pTemplateMap[pTemplate.ID] = &processTemplates.Info[idx]
+	}
+
+	serviceOption := &metadata.ListServiceInstanceOption{
+		BusinessID:        module.BizID,
+		ServiceTemplateID: module.ServiceTemplateID,
+		ModuleIDs:         []int64{diffOption.ModuleID},
+	}
+
+	sInsts, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceOption)
+	if err != nil {
+		blog.ErrorJSON(" listServiceInstance failed, option: %s, err: %s, rid: %s", serviceOption, err, rid)
+		return nil, err
+	}
+
+	hostMap, err := ps.getHostInfo(ctx, diffOption.BizID, diffOption.ModuleID)
+	if err != nil {
+		blog.Errorf("get host fail option: %v,err: %v,rid: %s", diffOption, err, rid)
+		return nil, err
+	}
+
+	flag, err := ps.findInstanceChangedOrNot(ctx, module, hostMap, diffOption.ProcessTemplateId, pTemplateMap, sInsts)
+	if err != nil {
+		return nil, err
+	}
+
+	moduleDifference := new(metadata.ProcessTemplateGeneralInfo)
+	moduleDifference.ProcessTemplateInfo = pTemplateMap[diffOption.ProcessTemplateId]
+	moduleDifference.Changed = flag
+
+	return moduleDifference, nil
+}
+
+// calculate whether the service instance has changed.
+func changedServiceInstanceOrNot(results []*metadata.ProcessTemplateGeneralInfo) bool {
+
+	var flag bool
+	for _, v := range results {
+		if v.Changed {
+			flag = true
+			break
+		}
+	}
+
+	return flag
+}
+
+func (ps *ProcServer) getServiceInstances(ctx *rest.Contexts, module *metadata.ModuleInst,
+	diffOption *metadata.ServiceInstanceDetailOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder) {
+	option := &metadata.ListServiceInstanceOption{
+		BusinessID:        module.BizID,
+		ServiceTemplateID: module.ServiceTemplateID,
+		ModuleIDs:         []int64{diffOption.ModuleID},
+		Page:              metadata.BasePage{Limit: common.BKNoLimit},
+	}
+
+	serviceInstances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		option)
+	if err != nil {
+		blog.Errorf("list service instance failed, option: %s, err: %v, rid: %s", option, err, ctx.Kit.Rid)
+		return nil, err
+	}
+	return serviceInstances, nil
+}
+
+func (ps *ProcServer) getServiceCategory(ctx *rest.Contexts, moduleDiff *metadata.ServiceInstanceDetailInfo,
+	module *metadata.ModuleInst, serviceInstances *metadata.MultipleServiceInstance) errors.CCErrorCoder {
+
+	moduleChangedAttributes, err := ps.CalculateModuleAttributeDifference(ctx.Kit.Ctx, ctx.Kit.Header, *module)
+	if err != nil {
+		blog.Errorf("calculate module attribute diff failed, module: %s, err: %v, rid: %s", module, err,
+			ctx.Kit.Rid)
+		return err
+	}
+	moduleDiff.ServiceCategoryDetail.ModuleAttribute = moduleChangedAttributes
+	moduleDiff.ServiceCategoryDetail.Count = serviceInstances.Count
+	srvInstBrief := metadata.SrvInstBriefInfo{}
+	for _, v := range serviceInstances.Info {
+		srvInstBrief.ID = v.ID
+		srvInstBrief.Name = v.Name
+		srvInstBrief.SvcTempID = v.ServiceTemplateID
+		moduleDiff.ServiceCategoryDetail.ServiceInstance = append(moduleDiff.ServiceCategoryDetail.ServiceInstance,
+			srvInstBrief)
+	}
+	return nil
+}
+
+func (ps *ProcServer) getHostAndServiceInstances(ctx *rest.Contexts, diffOption *metadata.ServiceInstanceDetailOption,
+	module *metadata.ModuleInst, serviceInstances *metadata.MultipleServiceInstance) (
+	map[int64][]metadata.ProcessInstanceRelation, *metadata.MultipleProcessInstanceRelation,
+	map[int64]map[string]interface{}, []int64, *metadata.MultipleProcessTemplate, map[int64]*metadata.ProcessTemplate,
+	map[int64]struct{}, errors.CCErrorCoder) {
+
+	listProcessTemplateOption := &metadata.ListProcessTemplatesOption{
+		BusinessID:         module.BizID,
+		ServiceTemplateIDs: []int64{module.ServiceTemplateID},
+		Page: metadata.BasePage{
+			Sort: common.BKFieldID,
+		},
+		ProcessTemplateIDs: []int64{diffOption.ProcessTemplateId},
+	}
+
+	processTemplates, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header,
+		listProcessTemplateOption)
+	if err != nil {
+		blog.Errorf("list process templates failed, option: %s, err: %v, rid: %s", listProcessTemplateOption,
+			err, ctx.Kit.Rid)
+		return nil, nil, nil, []int64{}, nil, nil, nil, err
+	}
+
+	pTemplateMap := make(map[int64]*metadata.ProcessTemplate)
+	for idx, pTemplate := range processTemplates.Info {
+		pTemplateMap[pTemplate.ID] = &processTemplates.Info[idx]
+	}
+	// construct map {hostID ==> host}
+	var hostIdArray []int64
+	for _, v := range serviceInstances.Info {
+		hostIdArray = append(hostIdArray, v.HostID)
+	}
+	hostIDOpt := &metadata.DistinctHostIDByTopoRelationRequest{
+		ApplicationIDArr: []int64{diffOption.BizID},
+		ModuleIDArr:      []int64{diffOption.ModuleID},
+		HostIDArr:        hostIdArray,
+	}
+	hostIDs, err := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, ctx.Kit.Header, hostIDOpt)
+	if err != nil {
+		blog.Errorf("get host ids failed,option: %#v, err: %v, rid: %s", hostIDOpt, err, ctx.Kit.Rid)
+		return nil, nil, nil, []int64{}, nil, nil, nil, err
+	}
+	hostMap, err := ps.Logic.GetHostIPMapByID(ctx.Kit, hostIDs)
+	if err != nil {
+		return nil, nil, nil, []int64{}, nil, nil, nil, err
+	}
+
+	// construct map {ServiceInstanceID ==> []ProcessInstanceRelation}
+	serviceInstanceIDs := make([]int64, 0)
+	hostWithSrvInstMap := make(map[int64]struct{})
+
+	for _, serviceInstance := range serviceInstances.Info {
+		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
+		hostWithSrvInstMap[serviceInstance.HostID] = struct{}{}
+	}
+
+	op := metadata.ListProcessInstanceRelationOption{
+		BusinessID:         module.BizID,
+		ServiceInstanceIDs: serviceInstanceIDs,
+		ProcessTemplateID:  diffOption.ProcessTemplateId,
+	}
+
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &op)
+	if err != nil {
+		blog.Errorf("list process instance relation failed, option: %s, err: %v, rid: %s", op, err, ctx.Kit.Rid)
+		return nil, nil, nil, []int64{}, nil, nil, nil, err
+	}
+
+	serviceRelationMap := make(map[int64][]metadata.ProcessInstanceRelation)
+	for _, r := range relations.Info {
+		serviceRelationMap[r.ServiceInstanceID] = append(serviceRelationMap[r.ServiceInstanceID], r)
+	}
+
+	return serviceRelationMap, relations, hostMap, hostIDs, processTemplates, pTemplateMap, hostWithSrvInstMap, nil
+}
+
+func (ps *ProcServer) getProcAndAttributeMap(ctx *rest.Contexts, relations *metadata.MultipleProcessInstanceRelation) (
+	map[int64]*metadata.Process, map[string]metadata.Attribute, errors.CCErrorCoder) {
+
+	// find all the process instance detail by ids
+	procIDs := make([]int64, 0)
+	for _, r := range relations.Info {
+		procIDs = append(procIDs, r.ProcessID)
+	}
+	processDetails, err := ps.Logic.ListProcessInstanceWithIDs(ctx.Kit, procIDs)
+	if err != nil {
+		blog.Errorf("list process instance with ids fail, procIDs: %s, err: %v, rid: %s", procIDs, err,
+			ctx.Kit.Rid)
+		return nil, nil, err
+	}
+
+	procID2Detail := make(map[int64]*metadata.Process)
+	for idx, p := range processDetails {
+		procID2Detail[p.ProcessID] = &processDetails[idx]
+	}
+
+	// find process object's attribute
+	cond := &metadata.QueryCondition{
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKObjIDField: common.BKInnerObjIDProc,
+		}),
+	}
+
+	attrResult, e := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDProc, cond)
+	if e != nil {
+		blog.Errorf("read model attr failed, option: %s, err: %v, rid: %s", cond, e, ctx.Kit.Rid)
+		return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	attributeMap := make(map[string]metadata.Attribute)
+	for _, attr := range attrResult.Data.Info {
+		attributeMap[attr.PropertyID] = attr
+	}
+
+	return procID2Detail, attributeMap, nil
+}
+
+type recorder struct {
+	ProcessID        int64
+	ProcessName      string
+	Process          *metadata.Process
+	ServiceInstance  *metadata.ServiceInstance
+	ChangedAttribute []metadata.ProcessChangedAttribute
+}
+
+func (ps *ProcServer) serviceInstancesDetailDiff(ctx *rest.Contexts,
+	diffOption *metadata.ServiceInstanceDetailOption) (*metadata.ServiceInstanceDetailInfo, errors.CCErrorCoder) {
+
+	rid := ctx.Kit.Rid
+	module, err := ps.getModule(ctx.Kit, diffOption.ModuleID)
+	if err != nil {
+		blog.Errorf(" getModule failed, moduleID: %d, err: %+v, rid: %s", diffOption.ModuleID, err, rid)
+		return nil, err
+	}
+
+	if module.ServiceTemplateID == 0 {
+		blog.Errorf("module %d has no service template, option: %s, rid: %s", diffOption.ModuleID, rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+
+	serviceInstances, err := ps.getServiceInstances(ctx, module, diffOption)
+
+	moduleDifference := new(metadata.ServiceInstanceDetailInfo)
+	moduleDifference.TotalNum = len(serviceInstances.Info)
+
+	if diffOption.ServiceCategory {
+		err := ps.getServiceCategory(ctx, moduleDifference, module, serviceInstances)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	serviceRelationMap, relations, hostMap, hostIDs, processTemplates, pTemplateMap, hostWithSrvInstMap, err :=
+		ps.getHostAndServiceInstances(ctx, diffOption, module, serviceInstances)
+	if err != nil {
+		return nil, err
+	}
+
+	procID2Detail, attributeMap, err := ps.getProcAndAttributeMap(ctx, relations)
+	if err != nil {
+		return nil, err
+	}
+
+	removed := make(map[string][]recorder)
+	changed := make(map[int64][]recorder)
+	added := make(map[int64][]recorder)
+	processTemplateReferenced := make(map[int64]struct{})
+
+	// compare the process instance with it's process template one by one in a service instance.
+	for idx, serviceInstance := range serviceInstances.Info {
+		relations := serviceRelationMap[serviceInstance.ID]
+
+		for _, relation := range relations {
+			// record the used process template for checking whether a new process template has been added.
+			processTemplateReferenced[relation.ProcessTemplateID] = struct{}{}
+
+			process, ok := procID2Detail[relation.ProcessID]
+			if !ok {
+				process = new(metadata.Process)
+			}
+			processName := ""
+			if process.ProcessName != nil {
+				processName = *process.ProcessName
+			}
+
+			property, exist := pTemplateMap[relation.ProcessTemplateID]
+
+			if !exist {
+				// process's template doesn't exist means the template has already been removed.
+				removed[processName] = append(removed[processName], recorder{
+					ProcessID:       relation.ProcessID,
+					Process:         process,
+					ProcessName:     processName,
+					ServiceInstance: &serviceInstances.Info[idx],
+				})
+				continue
+			}
+
+			changedAttributes, isChanged, diffErr := ps.Logic.DiffWithProcessTemplate(property.Property, process,
+				hostMap[serviceInstance.HostID], attributeMap, true)
+			if diffErr != nil {
+				blog.Errorf("diff with process template failed, process ID: %d  err: %v, rid: %s",
+					relation.ProcessID, err, rid)
+				return nil, errors.New(common.CCErrCommParamsInvalid, diffErr.Error())
+			}
+
+			if !isChanged {
+				continue
+			}
+
+			// something has already changed.
+			changed[relation.ProcessTemplateID] = append(changed[relation.ProcessTemplateID], recorder{
+				ProcessID:        relation.ProcessID,
+				ProcessName:      processName,
+				ServiceInstance:  &serviceInstances.Info[idx],
+				ChangedAttribute: changedAttributes,
+			})
+		}
+
+		if _, exist := processTemplateReferenced[diffOption.ProcessTemplateId]; exist {
+			continue
+		}
+		// the process template does not exist in all the service instances, which means a new process template
+		// is added.
+		record := recorder{
+			ProcessName:     processTemplates.Info[0].ProcessName,
+			ServiceInstance: &serviceInstances.Info[idx],
+		}
+		added[diffOption.ProcessTemplateId] = append(added[diffOption.ProcessTemplateId], record)
+	}
+
+	// handle all the service instances that need to be added.
+	if len(processTemplates.Info) > 0 {
+		srvInstNameSuffix := ""
+		proc := processTemplates.Info[0].Property
+		if proc != nil {
+			if proc.ProcessName.Value != nil && len(*proc.ProcessName.Value) > 0 {
+				srvInstNameSuffix += "_" + processTemplates.Info[0].ProcessName
+			}
+			for _, bindInfo := range proc.BindInfo.Value {
+				if bindInfo.Std != nil && bindInfo.Std.Port.Value != nil {
+					srvInstNameSuffix += "_" + *bindInfo.Std.Port.Value
+					break
+				}
+			}
+		}
+
+		for _, hostID := range hostIDs {
+			if _, exists := hostWithSrvInstMap[hostID]; exists {
+				continue
+			}
+
+			srvInstName := util.GetStrByInterface(hostMap[hostID][common.BKHostInnerIPField]) + srvInstNameSuffix
+			record := recorder{
+				ProcessName: processTemplates.Info[0].ProcessName,
+				ServiceInstance: &metadata.ServiceInstance{
+					ID:                0,
+					Name:              srvInstName,
+					ServiceTemplateID: module.ServiceTemplateID,
+				},
+			}
+			added[diffOption.ProcessTemplateId] = append(added[diffOption.ProcessTemplateId], record)
+		}
+	}
+
+	getServiceInstanceDetails(removed, changed, added, moduleDifference, processTemplates)
+
+	return moduleDifference, nil
+
+}
+
+func getServiceInstanceDetails(removed map[string][]recorder,
+	changed map[int64][]recorder, added map[int64][]recorder, moduleDifference *metadata.ServiceInstanceDetailInfo,
+	processTemplates *metadata.MultipleProcessTemplate) {
+
+	// it's time to rearrange the data
+	for _, records := range removed {
+		if len(records) == 0 {
+			continue
+		}
+
+		processTemplateName := records[0].ProcessName
+
+		serviceInstances := make([]metadata.ServiceDifferenceDetails, 0)
+		for _, record := range records {
+			item := metadata.ServiceDifferenceDetails{
+				ServiceInstance: metadata.SrvInstBriefInfo{
+					ID:        record.ServiceInstance.ID,
+					Name:      record.ServiceInstance.Name,
+					SvcTempID: record.ServiceInstance.ServiceTemplateID,
+				},
+				Process: record.Process,
+			}
+			if len(processTemplates.Info) == 0 {
+				item.Type = metadata.ServiceTypeRemoved
+			} else {
+				item.Type = metadata.ServiceTypeChanged
+			}
+			serviceInstances = append(serviceInstances, item)
+		}
+		moduleDifference.ServiceInstanceDetails = append(moduleDifference.ServiceInstanceDetails,
+			metadata.ServiceInstanceDifference{
+				ProcessTemplateID:    0,
+				ProcessTemplateName:  processTemplateName,
+				ServiceInstanceCount: len(serviceInstances),
+				ServiceInstances:     serviceInstances,
+			})
+	}
+
+	for changedID, records := range changed {
+		if len(records) == 0 {
+			continue
+		}
+		serviceInstances := make([]metadata.ServiceDifferenceDetails, 0)
+		for _, record := range records {
+			serviceInstances = append(serviceInstances, metadata.ServiceDifferenceDetails{
+				ServiceInstance: metadata.SrvInstBriefInfo{
+					ID:        record.ServiceInstance.ID,
+					Name:      record.ServiceInstance.Name,
+					SvcTempID: record.ServiceInstance.ServiceTemplateID,
+				},
+				ChangedAttributes: record.ChangedAttribute,
+				Type:              metadata.ServiceTypeChanged,
+			})
+		}
+		moduleDifference.ServiceInstanceDetails = append(moduleDifference.ServiceInstanceDetails,
+			metadata.ServiceInstanceDifference{
+				ProcessTemplateID:    changedID,
+				ProcessTemplateName:  records[0].ProcessName,
+				ServiceInstanceCount: len(serviceInstances),
+				ServiceInstances:     serviceInstances,
+			})
+
+	}
+
+	for addedID, records := range added {
+		sInstances := make([]metadata.ServiceDifferenceDetails, 0)
+		for _, s := range records {
+			sInstance := metadata.ServiceDifferenceDetails{
+				ServiceInstance: metadata.SrvInstBriefInfo{
+					ID:        s.ServiceInstance.ID,
+					Name:      s.ServiceInstance.Name,
+					SvcTempID: s.ServiceInstance.ServiceTemplateID,
+				},
+			}
+			sInstance.Type = metadata.ServiceTypeAdded
+			sInstances = append(sInstances, sInstance)
+		}
+
+		moduleDifference.ServiceInstanceDetails = append(moduleDifference.ServiceInstanceDetails,
+			metadata.ServiceInstanceDifference{
+				ProcessTemplateID:    addedID,
+				ProcessTemplateName:  processTemplates.Info[0].ProcessName,
+				ServiceInstanceCount: len(sInstances),
+				ServiceInstances:     sInstances,
+			})
+	}
+}
+
+// DiffServiceInstancesDetail calc service instances detail information.
+func (ps *ProcServer) DiffServiceInstancesDetail(ctx *rest.Contexts) {
+
+	rid := ctx.Kit.Rid
+	option := new(metadata.ServiceInstanceDetailOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	msg, bFlag := option.ServiceInstancesOptionValidate()
+	if !bFlag {
+		blog.Errorf("detail option Req is invalid,option: %+v, errMsg is %s,rid: %s", *option, msg, rid)
+		err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, msg)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result, err := ps.serviceInstancesDetailDiff(ctx, option)
+	if err != nil {
+		blog.Errorf("get service instances detail diff failed, option: %s, err: %v, rid: %s", *option, err, rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(result)
+	return
+}
+
+// DiffProcessTemplateGeneralDiff compare the difference information involved in the specified process template
+func (ps *ProcServer) DiffProcessTemplateGeneral(ctx *rest.Contexts) {
+
+	rid := ctx.Kit.Rid
+	diffOption := new(metadata.ProcessTemplateDiffOption)
+	if err := ctx.DecodeInto(diffOption); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	msg, bFlag := diffOption.ProcessTemplateOptionValidate()
+	if !bFlag {
+		blog.Errorf("diffOption Req is invalid,diffOption: %+v,errMsg is %s,rid: %s", *diffOption, msg, rid)
+		err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, msg)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// the template classification content is returned directly.
+	if diffOption.ServiceCategory {
+		categoryDiff, err := ps.getServiceCategoryDiff(ctx, diffOption)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+
+		result := new(metadata.ProcessTemplateGeneralInfo)
+		result.ChangedCategory = categoryDiff
+		ctx.RespEntity(result)
+		return
+	}
+
+	var wg sync.WaitGroup
+	var firstErr errors.CCErrorCoder
+	pipeline := make(chan bool, 10)
+
+	resultTemp := make([]*metadata.ProcessTemplateGeneralInfo, 0)
+
+	for _, moduleID := range diffOption.ModuleIDs {
+
+		pipeline <- true
+		wg.Add(1)
+
+		go func(bizID, moduleID int64, serviceTemplateId int64, processTemplateId int64) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			option := metadata.ProcessTemplateOneModuleOption{
+				BizID:             bizID,
+				ModuleID:          moduleID,
+				ProcessTemplateId: processTemplateId,
+				ServiceTemplateId: serviceTemplateId,
+			}
+
+			oneModuleResult, err := ps.processTemplateGeneralDiff(ctx, option)
+			if err != nil {
+				blog.Errorf("calc diff serviceInstance template failed, option: %s,err: %v, rid: %s", option,
+					err, rid)
+
+				if firstErr == nil {
+					firstErr = err
+				}
+				return
+			}
+			resultTemp = append(resultTemp, oneModuleResult)
+
+		}(diffOption.BizID, moduleID, diffOption.ServiceTemplateId, diffOption.ProcessTemplateId)
+	}
+
+	wg.Wait()
+	if firstErr != nil {
+		ctx.RespAutoError(firstErr)
+		return
+	}
+	result := new(metadata.ProcessTemplateGeneralInfo)
+	if len(resultTemp) == 0 {
+		ctx.RespEntity(result)
+		return
+	}
+
+	flag := changedServiceInstanceOrNot(resultTemp)
+
+	result.Changed = flag
+	result.ProcessTemplateInfo = resultTemp[0].ProcessTemplateInfo
+	ctx.RespEntity(result)
+	return
+}
+
+func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, module *metadata.ModuleInst,
+	hostMap map[int64]map[string]interface{}, pTemplateMap map[int64]*metadata.ProcessTemplate,
+	serviceInstances *metadata.MultipleServiceInstance) (*metadata.ServiceTemplateGeneralDiff, errors.CCErrorCoder) {
+
+	serviceRelationMap, procID2Detail, err := ps.getProcIDDetailAndRelations(ctx, module, serviceInstances)
+	if err != nil {
+		return nil, err
+	}
+
+	processTemplateReferenced := make(map[int64]struct{})
+
+	moduleDifference, removed, added, changed := initModuleDiffRes()
+
+	for _, serviceInstance := range serviceInstances.Info {
+		relations := serviceRelationMap[serviceInstance.ID]
+
+		for _, relation := range relations {
+			processTemplateReferenced[relation.ProcessTemplateID] = struct{}{}
+			process, ok := procID2Detail[relation.ProcessID]
+			if !ok {
+				process = new(metadata.Process)
+			}
+			processName := ""
+			if process.ProcessName != nil {
+				processName = *process.ProcessName
+			}
+
+			property := pTemplateMap[relation.ProcessTemplateID]
+			if relation.ProcessTemplateID == 0 {
+				// process's template doesn't exist means the template has already been removed.
+				if _, ok := removed[processName]; !ok {
+					moduleDifference.Removed = append(moduleDifference.Removed, metadata.ProcessGeneralInfo{
+						Id:   int(relation.ProcessTemplateID),
+						Name: processName,
+					})
+					removed[processName] = struct{}{}
+				}
+				continue
+			}
+
+			_, isChanged, diffErr := ps.Logic.DiffWithProcessTemplate(property.Property, process,
+				hostMap[serviceInstance.HostID], map[string]metadata.Attribute{}, false)
+			if diffErr != nil {
+				blog.Errorf("diff with process template failed, process ID: %d  err: %v, rid: %s",
+					relation.ProcessID, err, ctx.Kit.Rid)
+				return nil, errors.New(common.CCErrCommParamsInvalid, diffErr.Error())
+			}
+
+			if !isChanged {
+				continue
+			}
+
+			if _, ok := changed[relation.ProcessTemplateID]; !ok {
+				moduleDifference.Changed = append(moduleDifference.Changed, metadata.ProcessGeneralInfo{
+					Id:   int(relation.ProcessTemplateID),
+					Name: property.ProcessName,
+				})
+				changed[relation.ProcessTemplateID] = struct{}{}
+			}
+		}
+
+		// check whether a new process template has been added.
+		for templateID, processTemplate := range pTemplateMap {
+			if _, ok := processTemplateReferenced[templateID]; ok {
+				continue
+			}
+			if _, ok := added[templateID]; !ok {
+				moduleDifference.Added = append(moduleDifference.Added, metadata.ProcessGeneralInfo{
+					Id:   int(templateID),
+					Name: processTemplate.ProcessName,
+				})
+				added[templateID] = struct{}{}
+			}
+		}
+	}
+
+	//这里得单独处理一下第一次added processTemplate的场景，第一次added的时候模块下面的主机还没有实例化
+	if len(hostMap) > 0 && len(serviceInstances.Info) == 0 {
+		for templateID, processTemplate := range pTemplateMap {
+			moduleDifference.Added = append(moduleDifference.Added, metadata.ProcessGeneralInfo{
+				Id:   int(templateID),
+				Name: processTemplate.ProcessName,
+			})
+			added[templateID] = struct{}{}
+		}
+	}
+
+	return moduleDifference, nil
+}
+
+func (ps *ProcServer) findInstanceChangedOrNot(ctx *rest.Contexts, module *metadata.ModuleInst,
+	hostMap map[int64]map[string]interface{}, processTemplateId int64, pTemplateMap map[int64]*metadata.ProcessTemplate,
+	serviceInstances *metadata.MultipleServiceInstance) (bool, errors.CCErrorCoder) {
+
+	relations, err := ps.getRelations(ctx, module, serviceInstances)
+	if err != nil {
+		return false, err
+	}
+
+	serviceRelationMap := make(map[int64][]metadata.ProcessInstanceRelation)
+	for _, r := range relations.Info {
+		serviceRelationMap[r.ServiceInstanceID] = append(serviceRelationMap[r.ServiceInstanceID], r)
+	}
+	processTemplateReferenced := make(map[int64]struct{})
+
+	procID2Detail, err := ps.getProcDetail(ctx, relations)
+	if err != nil {
+		return false, err
+	}
+
+	var found bool
+
+	for _, serviceInstance := range serviceInstances.Info {
+
+		if found {
+			break
+		}
+
+		relations := serviceRelationMap[serviceInstance.ID]
+
+		for _, relation := range relations {
+
+			processTemplateReferenced[relation.ProcessTemplateID] = struct{}{}
+
+			process, ok := procID2Detail[relation.ProcessID]
+			if !ok {
+				process = new(metadata.Process)
+			}
+
+			// a  process template has been removed.
+			property, exist := pTemplateMap[relation.ProcessTemplateID]
+			if !exist {
+				found = true
+				break
+			}
+
+			_, isChanged, diffErr := ps.Logic.DiffWithProcessTemplate(property.Property, process,
+				hostMap[serviceInstance.HostID], map[string]metadata.Attribute{}, false)
+			if diffErr != nil {
+				blog.Errorf("diff with process template failed, process ID: %d  err: %v, rid: %s",
+					relation.ProcessID, err, ctx.Kit.Rid)
+				return false, errors.New(common.CCErrCommParamsInvalid, diffErr.Error())
+			}
+
+			if !isChanged {
+				continue
+			}
+
+			found = true
+			break
+		}
+
+		// a new process template has been added.
+		if _, exist := processTemplateReferenced[processTemplateId]; !exist {
+			found = true
+			break
+		}
+	}
+
+	//when no process template is created under the service template:
+	// 1、modules created from service templates.
+	// 2、add host to module.
+	// in this scenario, there is hosts under the module,but the number of instances is 0, the number of hosts under
+	// the module needs to be calculated.
+	if serviceInstances.Count == 0 && len(hostMap) > 0 {
+		found = true
+	}
+
+	return found, nil
+}
+
+func (ps *ProcServer) serviceTemplateGeneralDiff(ctx *rest.Contexts,
+	diffOption metadata.DiffWithOneModuleOption) (*metadata.ServiceTemplateGeneralDiff, errors.CCErrorCoder) {
+
+	rid := ctx.Kit.Rid
+	if diffOption.ModuleID == 0 {
+		blog.ErrorJSON("module id empty, option: %s, rid: %s", diffOption, rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+
+	module, err := ps.getModule(ctx.Kit, diffOption.ModuleID)
+	if err != nil {
+		blog.Errorf("get module failed, moduleID: %d, err: %+v, rid: %s", diffOption.ModuleID, err, rid)
+		return nil, err
+	}
+
+	if module.ServiceTemplateID == 0 {
+		blog.Errorf("module %d has no service template, option: %s, rid: %s", diffOption.ModuleID, rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+
+	processTemplates, err := ps.getProcessTemplate(ctx, diffOption.BizID, module.ServiceTemplateID)
+	if err != nil {
+		return nil, err
+	}
+
+	serviceOption := &metadata.ListServiceInstanceOption{
+		BusinessID:        module.BizID,
+		ServiceTemplateID: module.ServiceTemplateID,
+		ModuleIDs:         []int64{diffOption.ModuleID},
+	}
+
+	sInsts, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceOption)
+	if err != nil {
+		blog.Errorf(" listServiceInstance failed, option: %s, err: %v, rid: %s", serviceOption, err, rid)
+		return nil, err
+	}
+
+	moduleDifference := &metadata.ServiceTemplateGeneralDiff{
+		Changed: make([]metadata.ProcessGeneralInfo, 0),
+		Added:   make([]metadata.ProcessGeneralInfo, 0),
+		Removed: make([]metadata.ProcessGeneralInfo, 0),
+	}
+
+	flag, err := ps.calculateModuleAttributeGeneralDifference(ctx.Kit.Ctx, ctx.Kit.Header, *module)
+	if err != nil {
+		blog.Errorf("calculate attribute difference failed, module: %s, err: %v, rid: %s", module, err, rid)
+		return nil, err
+	}
+
+	moduleDifference.ChangedAttribute = flag
+
+	// processTemplates->pTemplateMap
+	pTemplateMap := make(map[int64]*metadata.ProcessTemplate)
+
+	for idx, pTemplate := range processTemplates.Info {
+		pTemplateMap[pTemplate.ID] = &processTemplates.Info[idx]
+	}
+
+	hostMap, err := ps.getHostInfo(ctx, diffOption.BizID, diffOption.ModuleID)
+	if err != nil {
+		blog.Errorf("get host fail option: %v,err: %v,rid: %s", diffOption, err, rid)
+		return nil, err
+	}
+
+	diffTemp, err := ps.calculateGeneralDiff(ctx, module, hostMap, pTemplateMap, sInsts)
+	if err != nil {
+		return nil, err
+	}
+
+	moduleDifference.Removed = diffTemp.Removed
+	moduleDifference.Added = diffTemp.Added
+	moduleDifference.Changed = diffTemp.Changed
+
+	return moduleDifference, nil
+}
+
+func uniqueGeneralResult(origin []*metadata.ServiceTemplateGeneralDiff) *metadata.ServiceTemplateGeneralDiff {
+
+	if len(origin) == 0 {
+		return &metadata.ServiceTemplateGeneralDiff{}
+	}
+
+	addMap := make(map[int][]metadata.ProcessGeneralInfo)
+	changedMap := make(map[int][]metadata.ProcessGeneralInfo)
+	removedMap := make(map[string][]metadata.ProcessGeneralInfo)
+	attrFlag := false
+
+	for _, v := range origin {
+		for _, add := range v.Added {
+			if _, exist := addMap[add.Id]; !exist {
+				addMap[add.Id] = append(addMap[add.Id], add)
+			}
+		}
+
+		for _, changed := range v.Changed {
+			if _, exist := changedMap[changed.Id]; !exist {
+				changedMap[changed.Id] = append(changedMap[changed.Id], changed)
+			}
+		}
+
+		for _, removed := range v.Removed {
+			if _, exist := removedMap[removed.Name]; !exist {
+				removedMap[removed.Name] = append(removedMap[removed.Name], removed)
+			}
+		}
+		if !attrFlag && v.ChangedAttribute {
+			attrFlag = true
+		}
+	}
+
+	result := new(metadata.ServiceTemplateGeneralDiff)
+
+	for _, add := range addMap {
+		result.Added = append(result.Added, add...)
+	}
+	for _, changed := range changedMap {
+		result.Changed = append(result.Changed, changed...)
+	}
+	for _, removed := range removedMap {
+		result.Removed = append(result.Removed, removed...)
+	}
+
+	result.ChangedAttribute = attrFlag
+
+	return result
+}
+
+// DiffServiceTemplateGeneralDiff List which process templates have changed.
+func (ps *ProcServer) DiffServiceTemplateGeneral(ctx *rest.Contexts) {
+
+	rid := ctx.Kit.Rid
+	diffOption := new(metadata.ServiceTemplateDiffOption)
+	if err := ctx.DecodeInto(diffOption); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	msg, bFlag := diffOption.ServiceTemplateOptionValidate()
+	if !bFlag {
+		blog.Errorf("diffOption Req is invalid,diffOption: %+v,errMsg is %s,rid: %s", diffOption, msg, rid)
+		err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, msg)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	var (
+		wg       sync.WaitGroup
+		firstErr errors.CCErrorCoder
+	)
+	pipeline := make(chan bool, 10)
+	result := make([]*metadata.ServiceTemplateGeneralDiff, 0)
+
+	for _, moduleID := range diffOption.ModuleIDs {
+
+		pipeline <- true
+		wg.Add(1)
+
+		go func(bizID, moduleID int64) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			option := metadata.DiffWithOneModuleOption{
+				BizID:    bizID,
+				ModuleID: moduleID,
+			}
+			oneModuleResult, err := ps.serviceTemplateGeneralDiff(ctx, option)
+			if err != nil {
+				blog.ErrorJSON("get service template diff failed, option: %s,err: %s, rid: %s", option, err, rid)
+				if firstErr == nil {
+					firstErr = err
+				}
+				return
+			}
+			result = append(result, oneModuleResult)
+
+		}(diffOption.BizID, moduleID)
+	}
+
+	wg.Wait()
+	if firstErr != nil {
+		ctx.RespAutoError(firstErr)
+		return
+	}
+	uniqueResult := uniqueGeneralResult(result)
+	ctx.RespEntity(uniqueResult)
+}
+
 func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOption metadata.DiffOneModuleWithTemplateOption) (*metadata.ModuleDiffWithTemplateDetail, errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
 
@@ -883,13 +1970,6 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		serviceRelationMap[r.ServiceInstanceID] = append(serviceRelationMap[r.ServiceInstanceID], r)
 	}
 
-	type recorder struct {
-		ProcessID        int64
-		ProcessName      string
-		Process          *metadata.Process
-		ServiceInstance  *metadata.ServiceInstance
-		ChangedAttribute []metadata.ProcessChangedAttribute
-	}
 	removed := make(map[string][]recorder)
 	changed := make(map[int64][]recorder)
 	unchanged := make(map[int64][]recorder)
@@ -1239,6 +2319,33 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(make(map[string]interface{}))
+}
+
+func (ps *ProcServer) getProcessTemplate(ctx *rest.Contexts, bizId int64, serviceTemplateID int64) (
+	*metadata.MultipleProcessTemplate, errors.CCErrorCoder) {
+
+	listProcessTemplateOption := &metadata.ListProcessTemplatesOption{
+		Page: metadata.BasePage{
+			Sort: common.BKFieldID,
+		},
+	}
+	if bizId != 0 {
+		listProcessTemplateOption.BusinessID = bizId
+	}
+
+	if serviceTemplateID != 0 {
+		listProcessTemplateOption.ServiceTemplateIDs = []int64{serviceTemplateID}
+	}
+
+	processTemplates, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header,
+		listProcessTemplateOption)
+	if err != nil {
+		blog.ErrorJSON("istProcessTemplates failed, option: %s, err: %s, rid: %s", listProcessTemplateOption,
+			err, ctx.Kit.Rid)
+		return nil, err
+	}
+
+	return processTemplates, nil
 }
 
 func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOption metadata.SyncServiceInstanceByTemplateOption) errors.CCErrorCoder {
@@ -1653,6 +2760,26 @@ func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(instances)
+}
+
+// calculateModuleAttributeGeneralDifference calculate whether the service classification has changed.
+func (ps *ProcServer) calculateModuleAttributeGeneralDifference(ctx context.Context, header http.Header,
+	module metadata.ModuleInst) (bool, errors.CCErrorCoder) {
+
+	if module.ServiceTemplateID == common.ServiceTemplateIDNotSet {
+		return false, nil
+	}
+
+	serviceTpl, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(ctx, header, module.ServiceTemplateID)
+	if err != nil {
+		return false, err
+	}
+
+	if module.ServiceCategoryID == serviceTpl.ServiceCategoryID && module.ModuleName == serviceTpl.Name {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 // ListServiceInstancesWithHostWeb will return topo level info for each service instance
