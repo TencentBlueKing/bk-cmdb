@@ -21,9 +21,11 @@ import (
 	"configcenter/src/ac/parser"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
@@ -45,6 +47,9 @@ const (
 	CacheType       RequestType = "cache"
 )
 
+const publicKey = "public_key"
+
+// URLFilterChan url filter chan
 func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	rid := util.GetHTTPCCRequestID(req.Request.Header)
 
@@ -133,7 +138,8 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	chain.ProcessFilter(req, resp)
 }
 
-func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response,
+	fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 		rid := util.GetHTTPCCRequestID(req.Request.Header)
 		path := req.Request.URL.Path
@@ -178,7 +184,8 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			blog.InfoJSON("auth filter parsed attribute: %s, rid: %s", attribute, rid)
 		}
 
-		decisions, err := s.authorizer.AuthorizeBatch(req.Request.Context(), req.Request.Header, attribute.User, attribute.Resources...)
+		decisions, err := s.authorizer.AuthorizeBatch(req.Request.Context(), req.Request.Header, attribute.User,
+			attribute.Resources...)
 		if err != nil {
 			blog.Errorf("authFilter failed, authorized request failed, url: %s, err: %v, rid: %s", path, err, rid)
 			rsp := metadata.BaseResp{
@@ -199,21 +206,25 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		}
 
 		if !authorized {
-			permission, err := s.authorizer.GetPermissionToApply(req.Request.Context(), req.Request.Header, attribute.Resources)
+			permission, err := s.authorizer.GetPermissionToApply(req.Request.Context(), req.Request.Header,
+				attribute.Resources)
 			if err != nil {
 				blog.Errorf("get permission to apply failed, err: %v, rid: %s", err, rid)
 				rsp := metadata.BaseResp{
-					Code:   common.CCErrCommCheckAuthorizeFailed,
-					ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+					Code: common.CCErrCommCheckAuthorizeFailed,
+					ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).
+						Error(),
 					Result: false,
 				}
 				resp.WriteAsJson(rsp)
 				return
 			}
-			blog.WarnJSON("authFilter failed, url: %s, attribute: %s, permission: %s, rid: %s", path, attribute, permission, rid)
+			blog.WarnJSON("authFilter failed, url: %s, attribute: %s, permission: %s, rid: %s",
+				path, attribute, permission, rid)
 			rsp := metadata.BaseResp{
-				Code:        common.CCNoPermission,
-				ErrMsg:      errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
+				Code: common.CCNoPermission,
+				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).
+					Error(),
 				Result:      false,
 				Permissions: permission,
 			}
@@ -289,7 +300,8 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 		}
 		cnt, ok := result.(int64)
 		if !ok {
-			blog.Errorf("execute setRequestCntTTLScript failed, key:%s, rule:%#v, err: %v, rid: %s", key, *rule, result, rid)
+			blog.Errorf("execute setRequestCntTTLScript failed, key:%s, rule:%#v, err: %v, rid: %s",
+				key, *rule, result, rid)
 			fchain.ProcessFilter(req, resp)
 			return
 		}
@@ -308,4 +320,133 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 		fchain.ProcessFilter(req, resp)
 		return
 	}
+}
+
+// SourceFilter determine the source of the request and perform related operations
+func (s *service) SourceFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		header := req.Request.Header
+		rid := util.GetHTTPCCRequestID(header)
+
+		loginVersion, _ := cc.String("webServer.login.version")
+		if loginVersion == common.BKOpenSourceLoginPluginVersion || loginVersion == common.BKSkipLoginPluginVersion {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		// it means request by apiGateway
+		if util.GetGatewayName(header) != "" {
+			if err := s.doRequestFromAPIGW(req); err != nil {
+				rsp := metadata.BaseResp{
+					Code:   common.CCErrAPINoPassSourceCertification,
+					ErrMsg: err.Error(),
+					Result: false,
+				}
+				resp.WriteAsJson(rsp)
+				return
+			}
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		webToken := util.GetWebToken(header)
+		// it means request by webserver
+		if webToken != "" {
+			webTokenConfig, _ := cc.String("webServer.webToken")
+			if webTokenConfig != webToken {
+				blog.Errorf("handle request from webServer error, rid: %s", rid)
+				rsp := metadata.BaseResp{
+					Code:   common.CCErrAPINoPassSourceCertification,
+					ErrMsg: "handle request from webServer error",
+					Result: false,
+				}
+				resp.WriteAsJson(rsp)
+				return
+			}
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		// it means request by esb
+		if err := s.doRequestFromEsb(req); err != nil {
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrAPINoPassSourceCertification,
+				ErrMsg: err.Error(),
+				Result: false,
+			}
+			resp.WriteAsJson(rsp)
+			return
+		}
+
+		fchain.ProcessFilter(req, resp)
+		return
+	}
+}
+
+func (s *service) doRequestFromEsb(req *restful.Request) error {
+	header := req.Request.Header
+	rid := util.GetHTTPCCRequestID(header)
+
+	if s.GetEsbPublicKey() == "" {
+		esbResponse, err := esb.EsbClient().EsbSrv().GetApiPublicKey(req.Request.Context(), header)
+		if err != nil {
+			blog.Errorf("handle request from esb error, err: %v, rid: %s", err, rid)
+			return err
+		}
+		key, ok := esbResponse.Data[publicKey].(string)
+		if !ok {
+			blog.Errorf("handle request from esb error, can not transfer publicKey %v to string type,"+
+				" rid: %s", esbResponse.Data[publicKey], rid)
+			return fmt.Errorf("can not transfer publicKey: %v to string type", esbResponse.Data[publicKey])
+		}
+		s.SetEsbPublicKey(key)
+	}
+	jwtToken := util.GetJWTToken(header)
+	esbPublicKey := s.GetEsbPublicKey()
+	_, err := ParseToken(jwtToken, esbPublicKey)
+	if err != nil {
+		blog.Errorf("handle request from esb error, jwtToken: %s, esbPublicKey: %s, err: %v, rid: %s",
+			jwtToken, esbPublicKey, err, rid)
+		return err
+	}
+	return nil
+}
+
+func (s *service) doRequestFromAPIGW(req *restful.Request) error {
+	header := req.Request.Header
+	rid := util.GetHTTPCCRequestID(header)
+
+	key, err := cc.String("apiServer.apiGateway.publicKey")
+	if err != nil {
+		blog.Errorf("handle request from API Gateway error, err: %v, rid: %s", err, rid)
+		return err
+	}
+	token := util.GetJWTToken(header)
+	jwtSecret := "-----BEGIN PUBLIC KEY-----\n" + key + "\n-----END PUBLIC KEY-----"
+	parseToken, err := ParseToken(token, jwtSecret)
+	if err != nil {
+		blog.Errorf("handle request from API Gateway error, token: %s, publicKey: %s, err: %v, rid: %s",
+			token, jwtSecret, err, rid)
+		return err
+	}
+
+	if parseToken.User.UserName == "" {
+		blog.Errorf("handle request from API Gateway error, no setting bk_username, token: %s, "+
+			"publicKey: %s, rid: %s", token, jwtSecret, rid)
+		return fmt.Errorf("no setting bk_username")
+	}
+	if !util.SetLanguageFromApiGW(header) {
+		blog.Errorf("handle request from API Gateway error, no setting HTTP-BLUEKING-LANGUAGE, "+
+			"rid: %s", rid)
+		return fmt.Errorf("no setting HTTP-BLUEKING-LANGUAGE")
+	}
+	if !util.SetOwnerIDFromApiGW(header) {
+		blog.Errorf("handle request from API Gateway error, no setting HTTP-BLUEKING-SUPPLIER-ID,"+
+			" rid: %s", rid)
+		return fmt.Errorf("no setting HTTP-BLUEKING-SUPPLIER-ID")
+	}
+
+	header.Set(common.BKHTTPHeaderUser, parseToken.User.UserName)
+	header.Set(common.BKHTTPRequestAppCode, parseToken.App.AppCode)
+	return nil
 }

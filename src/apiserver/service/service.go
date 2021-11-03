@@ -13,6 +13,8 @@
 package service
 
 import (
+	"sync"
+
 	"configcenter/src/ac"
 	"configcenter/src/ac/iam"
 	"configcenter/src/apimachinery"
@@ -27,6 +29,8 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
+var keyLock sync.RWMutex
+
 // Service service methods
 type Service interface {
 	WebServices() []*restful.WebService
@@ -40,15 +44,17 @@ func NewService() Service {
 }
 
 type service struct {
-	engine     *backbone.Engine
-	client     HTTPClient
-	discovery  discovery.DiscoveryInterface
-	clientSet  apimachinery.ClientSetInterface
-	authorizer ac.AuthorizeInterface
-	cache      redis.Client
-	limiter    *Limiter
+	engine       *backbone.Engine
+	client       HTTPClient
+	discovery    discovery.DiscoveryInterface
+	clientSet    apimachinery.ClientSetInterface
+	authorizer   ac.AuthorizeInterface
+	cache        redis.Client
+	limiter      *Limiter
+	esbPublicKey string
 }
 
+// SetConfig set config
 func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface,
 	clientSet apimachinery.ClientSetInterface, cache redis.Client, limiter *Limiter) {
 	s.engine = engine
@@ -60,6 +66,21 @@ func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, disc
 	s.authorizer = iam.NewAuthorizer(clientSet)
 }
 
+// GetEsbPublicKey get esbPublicKey
+func (s *service) GetEsbPublicKey() string {
+	keyLock.RLock()
+	defer keyLock.RUnlock()
+	return s.esbPublicKey
+}
+
+// SetEsbPublicKey set esbPublicKey
+func (s *service) SetEsbPublicKey(key string) {
+	keyLock.Lock()
+	defer keyLock.Unlock()
+	s.esbPublicKey = key
+}
+
+// WebServices
 func (s *service) WebServices() []*restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.engine.CCErr
@@ -67,6 +88,7 @@ func (s *service) WebServices() []*restful.WebService {
 
 	ws := &restful.WebService{}
 	ws.Path(rootPath)
+	ws.Filter(s.SourceFilter())
 	ws.Filter(s.engine.Metric().RestfulMiddleWare)
 	ws.Filter(rdapi.AllGlobalFilter(getErrFun))
 	ws.Filter(rdapi.RequestLogFilter())

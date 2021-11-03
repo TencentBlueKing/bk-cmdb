@@ -948,6 +948,12 @@ const (
 	BKHTTPSecretsEnv     = "BK-Secrets-Env"
 	// BKHTTPReadReference  query db use secondary node
 	BKHTTPReadReference = "Cc_Read_Preference"
+
+	BKHTTPWebToken      = "HTTP-BK-WEB-TOKEN"
+	BKHTTPGatewayName   = "HTTP-BK-GATEWAY-NAME"
+	BKHTTPJWTToken      = "X-Bkapi-JWT"
+	BKHTTPAPIGWOwnerID  = "HTTP-BLUEKING-SUPPLIER-ID"
+	BKHTTPAPIGWLanguage = "HTTP-BLUEKING-LANGUAGE"
 )
 
 type ReadPreferenceMode string

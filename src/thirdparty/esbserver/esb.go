@@ -19,6 +19,7 @@ import (
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/thirdparty/esbserver/esb"
 	"configcenter/src/thirdparty/esbserver/esbutil"
 	"configcenter/src/thirdparty/esbserver/gse"
 	"configcenter/src/thirdparty/esbserver/iam"
@@ -33,6 +34,7 @@ type EsbClientInterface interface {
 	User() user.UserClientInterface
 	NodemanSrv() nodeman.NodeManClientInterface
 	IamSrv() iam.IamClientInterface
+	EsbSrv() esb.EsbClientInterface
 }
 
 type esbsrv struct {
@@ -41,14 +43,15 @@ type esbsrv struct {
 	userSrv    user.UserClientInterface
 	nodemanSrv nodeman.NodeManClientInterface
 	iamSrv     iam.IamClientInterface
+	esbSrv     esb.EsbClientInterface
 	sync.RWMutex
 	esbConfig *esbutil.EsbConfigSrv
 	c         *util.Capability
 }
 
 // NewEsb new a esb client
-//
-func NewEsb(apiMachineryConfig *util.APIMachineryConfig, cfgChan chan esbutil.EsbConfig, defaultCfg *esbutil.EsbConfig, reg prometheus.Registerer) (EsbClientInterface, error) {
+func NewEsb(apiMachineryConfig *util.APIMachineryConfig, cfgChan chan esbutil.EsbConfig, defaultCfg *esbutil.EsbConfig,
+	reg prometheus.Registerer) (EsbClientInterface, error) {
 	base := fmt.Sprintf("/api/c/compapi")
 
 	client, err := util.NewClient(apiMachineryConfig.TLSConfig)
@@ -72,6 +75,7 @@ func NewEsb(apiMachineryConfig *util.APIMachineryConfig, cfgChan chan esbutil.Es
 	return esb, nil
 }
 
+// GseSrv return gse service
 func (e *esbsrv) GseSrv() gse.GseClientInterface {
 	e.RLock()
 	srv := e.gseSrv
@@ -85,6 +89,7 @@ func (e *esbsrv) GseSrv() gse.GseClientInterface {
 	return srv
 }
 
+// NodemanSrv return nodeman service
 func (e *esbsrv) NodemanSrv() nodeman.NodeManClientInterface {
 	e.RLock()
 	srv := e.nodemanSrv
@@ -98,6 +103,7 @@ func (e *esbsrv) NodemanSrv() nodeman.NodeManClientInterface {
 	return srv
 }
 
+// IamSrv return iam service
 func (e *esbsrv) IamSrv() iam.IamClientInterface {
 	e.RLock()
 	srv := e.iamSrv
@@ -111,10 +117,12 @@ func (e *esbsrv) IamSrv() iam.IamClientInterface {
 	return srv
 }
 
+// GetEsbConfigSrv get esb config service
 func (e *esbsrv) GetEsbConfigSrv() *esbutil.EsbConfigSrv {
 	return e.esbConfig
 }
 
+// User return user client
 func (e *esbsrv) User() user.UserClientInterface {
 	e.RLock()
 	srv := e.userSrv
@@ -123,6 +131,20 @@ func (e *esbsrv) User() user.UserClientInterface {
 		e.Lock()
 		e.userSrv = user.NewUserClientInterface(e.client, e.esbConfig)
 		srv = e.userSrv
+		e.Unlock()
+	}
+	return srv
+}
+
+// Esb return esb service
+func (e *esbsrv) EsbSrv() esb.EsbClientInterface {
+	e.RLock()
+	srv := e.esbSrv
+	e.RUnlock()
+	if srv == nil {
+		e.Lock()
+		e.esbSrv = esb.NewEsbClientInterface(e.client, e.esbConfig)
+		srv = e.esbSrv
 		e.Unlock()
 	}
 	return srv

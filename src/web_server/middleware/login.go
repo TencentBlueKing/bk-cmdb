@@ -18,6 +18,7 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
@@ -59,6 +60,8 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 			c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
 			c.Request.Header.Add(common.BKHTTPLanguage, language)
 			c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
+			webToken, _ := cc.String("webServer.webToken")
+			c.Request.Header.Add(common.BKHTTPWebToken, webToken)
 
 			if path1 == "api" {
 				servers, err := disc.ApiServer().GetServers()

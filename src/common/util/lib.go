@@ -28,6 +28,7 @@ import (
 	"github.com/rs/xid"
 )
 
+// InStrArr judge if key in arr
 func InStrArr(arr []string, key string) bool {
 	for _, a := range arr {
 		if key == a {
@@ -37,19 +38,22 @@ func InStrArr(arr []string, key string) bool {
 	return false
 }
 
+// GetLanguage get language from header
 func GetLanguage(header http.Header) string {
 	return header.Get(common.BKHTTPLanguage)
 }
 
+// GetUser get user from header
 func GetUser(header http.Header) string {
 	return header.Get(common.BKHTTPHeaderUser)
 }
 
+// GetOwnerID get ownerID from header
 func GetOwnerID(header http.Header) string {
 	return header.Get(common.BKHTTPOwnerID)
 }
 
-// set supplier id and account in head
+// set supplier id and account in header
 func SetOwnerIDAndAccount(req *restful.Request) {
 	owner := req.Request.Header.Get(common.BKHTTPOwner)
 	if "" != owner {
@@ -63,6 +67,7 @@ func GetHTTPCCRequestID(header http.Header) string {
 	return rid
 }
 
+// ExtractRequestIDFromContext extract requestID from context
 func ExtractRequestIDFromContext(ctx context.Context) string {
 	if ctx == nil {
 		return ""
@@ -75,6 +80,7 @@ func ExtractRequestIDFromContext(ctx context.Context) string {
 	return ""
 }
 
+// ExtractOwnerFromContext extract owner from context
 func ExtractOwnerFromContext(ctx context.Context) string {
 	if ctx == nil {
 		return ""
@@ -87,10 +93,12 @@ func ExtractOwnerFromContext(ctx context.Context) string {
 	return ""
 }
 
+// NewContextFromGinContext new context from gin context
 func NewContextFromGinContext(c *gin.Context) context.Context {
 	return NewContextFromHTTPHeader(c.Request.Header)
 }
 
+// NewContextFromHTTPHeader new context from http header
 func NewContextFromHTTPHeader(header http.Header) context.Context {
 	rid := GetHTTPCCRequestID(header)
 	user := GetUser(header)
@@ -102,6 +110,7 @@ func NewContextFromHTTPHeader(header http.Header) context.Context {
 	return ctx
 }
 
+// NewHeaderFromContext new header from context
 func NewHeaderFromContext(ctx context.Context) http.Header {
 	rid := ctx.Value(common.ContextRequestIDField)
 	ridValue, ok := rid.(string)
@@ -131,6 +140,7 @@ func NewHeaderFromContext(ctx context.Context) http.Header {
 	return header
 }
 
+// BuildHeader build header
 func BuildHeader(user string, supplierAccount string) http.Header {
 	header := make(http.Header)
 	header.Add(common.BKHTTPOwnerID, supplierAccount)
@@ -140,6 +150,7 @@ func BuildHeader(user string, supplierAccount string) http.Header {
 	return header
 }
 
+// ExtractRequestUserFromContext extract request user from context
 func ExtractRequestUserFromContext(ctx context.Context) string {
 	if ctx == nil {
 		return ""
@@ -154,6 +165,7 @@ func ExtractRequestUserFromContext(ctx context.Context) string {
 
 type AtomicBool int32
 
+// NewBool new bool
 func NewBool(yes bool) *AtomicBool {
 	var n = AtomicBool(0)
 	if yes {
@@ -162,22 +174,27 @@ func NewBool(yes bool) *AtomicBool {
 	return &n
 }
 
+// SetIfNotSet set if not set
 func (b *AtomicBool) SetIfNotSet() bool {
 	return atomic.CompareAndSwapInt32((*int32)(b), 0, 1)
 }
 
+// Set set value
 func (b *AtomicBool) Set() {
 	atomic.StoreInt32((*int32)(b), 1)
 }
 
+// UnSet unset value
 func (b *AtomicBool) UnSet() {
 	atomic.StoreInt32((*int32)(b), 0)
 }
 
+// IsSet is set value
 func (b *AtomicBool) IsSet() bool {
 	return atomic.LoadInt32((*int32)(b)) == 1
 }
 
+// SetTo set to
 func (b *AtomicBool) SetTo(yes bool) {
 	if yes {
 		atomic.StoreInt32((*int32)(b), 1)
@@ -188,16 +205,27 @@ func (b *AtomicBool) SetTo(yes bool) {
 
 type IntSlice []int
 
-func (p IntSlice) Len() int           { return len(p) }
+// Len
+func (p IntSlice) Len() int { return len(p) }
+
+// Less
 func (p IntSlice) Less(i, j int) bool { return p[i] < p[j] }
-func (p IntSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+// Swap
+func (p IntSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
 type Int64Slice []int64
 
-func (p Int64Slice) Len() int           { return len(p) }
-func (p Int64Slice) Less(i, j int) bool { return p[i] < p[j] }
-func (p Int64Slice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+// Len
+func (p Int64Slice) Len() int { return len(p) }
 
+// Less
+func (p Int64Slice) Less(i, j int) bool { return p[i] < p[j] }
+
+// Swap
+func (p Int64Slice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+
+// GenerateRID generate rid
 func GenerateRID() string {
 	unused := "0000"
 	id := xid.New()
@@ -223,6 +251,7 @@ func BuildMongoSyncItemField(key string) string {
 	return BuildMongoField(common.MetadataField, common.MetaDataSynchronizeField, key)
 }
 
+// GetDefaultCCError get default CCError
 func GetDefaultCCError(header http.Header) errors.DefaultCCErrorIf {
 	globalCCError := errors.GetGlobalCCError()
 	if globalCCError == nil {
@@ -232,6 +261,7 @@ func GetDefaultCCError(header http.Header) errors.DefaultCCErrorIf {
 	return globalCCError.CreateDefaultCCErrorIf(language)
 }
 
+// CCHeader return CCHeader
 func CCHeader(header http.Header) http.Header {
 	newHeader := make(http.Header, 0)
 	newHeader.Add(common.BKHTTPCCRequestID, header.Get(common.BKHTTPCCRequestID))
@@ -285,4 +315,39 @@ func GetHTTPReadPreference(header http.Header) common.ReadPreferenceMode {
 		return common.NilMode
 	}
 	return common.ReadPreferenceMode(mode)
+}
+
+// GetWebToken get BKHTTPWebToken from header
+func GetWebToken(header http.Header) string {
+	return header.Get(common.BKHTTPWebToken)
+}
+
+// GetGatewayName get BKHTTPGatewayName from header
+func GetGatewayName(header http.Header) string {
+	return header.Get(common.BKHTTPGatewayName)
+}
+
+// GetJWTToken get jwt token from header
+func GetJWTToken(header http.Header) string {
+	return header.Get(common.BKHTTPJWTToken)
+}
+
+// SetLanguageFromApiGW set language from apigateway
+func SetLanguageFromApiGW(header http.Header) bool {
+	language := header.Get(common.BKHTTPAPIGWLanguage)
+	if language == "" {
+		return false
+	}
+	header.Set(common.BKHTTPLanguage, language)
+	return true
+}
+
+// SetOwnerIDFromApiGW set ownerID from apigateway
+func SetOwnerIDFromApiGW(header http.Header) bool {
+	ownerID := header.Get(common.BKHTTPAPIGWOwnerID)
+	if ownerID == "" {
+		return false
+	}
+	header.Set(common.BKHTTPOwnerID, ownerID)
+	return true
 }

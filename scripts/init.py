@@ -307,6 +307,8 @@ webServer:
   login:
     #登录模式
     version: $loginVersion
+  # 设置在请求头HTTP_BK_WEB_TOKEN的value值，用于给apiserver判断请求是来自webserver
+  webToken: cmdb
 # operation_server专属配置
 operationServer:
   timer:
@@ -367,6 +369,10 @@ monitor:
     rateLimiter:
       qps: 10
       burst: 20
+apiServer:
+ apiGateway:
+  # 当请求来自apiGateway时，使用此公钥进行解jwt
+  publicKey:
     '''
 
     template = FileTemplate(common_file_template_str)
