@@ -341,7 +341,7 @@ func (assoc *association) buildTopoInstRst(kit *rest.Kit, instID int64, objID st
 					topoInst.SetTemplateID, _ = instance.Int64(common.BKSetTemplateIDField)
 					enabled, _ := instance.Bool(common.HostApplyEnabledField)
 					topoInst.HostApplyEnabled = &enabled
-					results.moduleIDs = append(results.moduleIDs, instID)
+					results.moduleIDs = append(results.moduleIDs, topoInst.InstID)
 				}
 				if results.bizID == 0 {
 					results.bizID, err = instance.Int64(common.BKAppIDField)
