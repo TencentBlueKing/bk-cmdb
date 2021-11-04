@@ -32,8 +32,8 @@ type LabelUpdateOption struct {
 
 // LabelUpdateRequest update instanceIDs labels request.
 type LabelUpdateRequest struct {
-	Option    LabelUpdateOption `json:"option"`
-	TableName string            `json:"table_name"`
+	Option    *LabelUpdateOption `json:"option"`
+	TableName string             `json:"table_name"`
 }
 
 type LabelAddRequest struct {

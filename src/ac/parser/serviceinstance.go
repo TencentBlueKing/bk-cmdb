@@ -148,7 +148,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceInstance,
-		ResourceAction: meta.Create,
+		ResourceAction: meta.Update,
 	}, {
 		Name:           "removeServiceInstanceLabelsPattern",
 		Description:    "服务实例删除label",

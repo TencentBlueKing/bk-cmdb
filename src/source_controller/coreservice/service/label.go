@@ -54,8 +54,8 @@ func (s *coreService) UpdateLabels(ctx *rest.Contexts) {
 		return
 	}
 	if err := s.core.LabelOperation().UpdateLabel(ctx.Kit, inputData.TableName, inputData.Option); err != nil {
-		blog.Errorf("updateLabels failed, table: %s, option: %+v, err: %s, rid: %s", inputData.TableName,
-			inputData.Option, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("update labels failed, table: %s, option: %+v, err: %v, rid: %s", inputData.TableName,
+			inputData.Option, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

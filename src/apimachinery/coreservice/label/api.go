@@ -82,8 +82,7 @@ func (l *label) RemoveLabel(ctx context.Context, h http.Header, tableName string
 
 // UpdateLabel update service instance tag request.
 func (l *label) UpdateLabel(ctx context.Context, h http.Header, tableName string,
-	option selector.LabelUpdateOption) errors.CCErrorCoder {
-	rid := util.ExtractRequestIDFromContext(ctx)
+	option *selector.LabelUpdateOption) errors.CCErrorCoder {
 	ret := new(metadata.BaseResp)
 	subPath := "/updatemany/labels"
 
@@ -100,7 +99,6 @@ func (l *label) UpdateLabel(ctx context.Context, h http.Header, tableName string
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("updateLabel failed, http request failed, err: %+v, rid: %s", err, rid)
 		return errors.CCHttpError
 	}
 	if ret.CCError() != nil {
