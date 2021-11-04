@@ -134,7 +134,7 @@ func (p *labelOperation) RemoveLabel(kit *rest.Kit, tableName string, option sel
 		},
 	}
 	if count, err := mongodb.Client().Table(tableName).Find(countFilter).Count(kit.Ctx); err != nil {
-		blog.ErrorJSON("removel abel failed, db count instances failed, filter: %s, err: %s, rid: %s",
+		blog.ErrorJSON("remove label failed, db count instances failed, filter: %s, err: %s, rid: %s",
 			countFilter, err.Error(), kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	} else if count != uint64(len(option.InstanceIDs)) {
