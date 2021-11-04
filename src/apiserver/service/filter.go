@@ -163,7 +163,8 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			return
 		}
 
-		if !s.isPassAuth(req, resp, errFunc) {
+		if rsp := s.verifyAuthorizeStatus(req, errFunc); rsp != metadata.SuccessBaseResp {
+			resp.WriteAsJson(rsp)
 			return
 		}
 
@@ -173,7 +174,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 	}
 }
 
-func (s *service) isPassAuth(req *restful.Request, resp *restful.Response, errFunc func() errors.CCErrorIf) bool {
+func (s *service) verifyAuthorizeStatus(req *restful.Request, errFunc func() errors.CCErrorIf) metadata.BaseResp {
 	rid := util.GetHTTPCCRequestID(req.Request.Header)
 	path := req.Request.URL.Path
 	language := util.GetLanguage(req.Request.Header)
@@ -181,13 +182,11 @@ func (s *service) isPassAuth(req *restful.Request, resp *restful.Response, errFu
 	if err != nil {
 		blog.Errorf("authFilter failed, caller: %s, parse auth attribute for %s %s failed, err: %v, rid: %s",
 			req.Request.RemoteAddr, req.Request.Method, req.Request.URL.Path, err, rid)
-		rsp := metadata.BaseResp{
+		return metadata.BaseResp{
 			Code:   common.CCErrCommParseAuthAttributeFailed,
 			ErrMsg: err.Error(),
 			Result: false,
 		}
-		resp.WriteAsJson(rsp)
-		return false
 	}
 
 	if blog.V(5) {
@@ -199,13 +198,11 @@ func (s *service) isPassAuth(req *restful.Request, resp *restful.Response, errFu
 	if err != nil {
 		blog.Errorf("authFilter failed, authorized request failed, url: %s, err: %v, rid: %s",
 			path, err, rid)
-		rsp := metadata.BaseResp{
+		return metadata.BaseResp{
 			Code:   common.CCErrCommCheckAuthorizeFailed,
 			ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
 			Result: false,
 		}
-		resp.WriteAsJson(rsp)
-		return false
 	}
 
 	authorized := true
@@ -221,28 +218,22 @@ func (s *service) isPassAuth(req *restful.Request, resp *restful.Response, errFu
 			attribute.Resources)
 		if err != nil {
 			blog.Errorf("get permission to apply failed, err: %v, rid: %s", err, rid)
-			rsp := metadata.BaseResp{
-				Code: common.CCErrCommCheckAuthorizeFailed,
-				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).
-					Error(),
+			return metadata.BaseResp{
+				Code:   common.CCErrCommCheckAuthorizeFailed,
+				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
 				Result: false,
 			}
-			resp.WriteAsJson(rsp)
-			return false
 		}
 		blog.WarnJSON("authFilter failed, url: %s, attribute: %s, permission: %s, rid: %s", path, attribute,
 			permission, rid)
-		rsp := metadata.BaseResp{
-			Code: common.CCNoPermission,
-			ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).
-				Error(),
+		return metadata.BaseResp{
+			Code:        common.CCNoPermission,
+			ErrMsg:      errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
 			Result:      false,
 			Permissions: permission,
 		}
-		resp.WriteAsJson(rsp)
-		return false
 	}
-	return true
+	return metadata.SuccessBaseResp
 }
 
 // KEYS[1] is the redis key to incr and expire
@@ -332,7 +323,7 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 // JwtFilter the filter that handles the source of the jwt request
 func (s *service) JwtFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		if err := hooks.DoRequestFromAPIGWHook(req, resp); err != nil {
+		if err := hooks.DoRequestFromAPIGWHook(req); err != nil {
 			rsp := metadata.BaseResp{
 				ErrMsg: err.Error(),
 			}
