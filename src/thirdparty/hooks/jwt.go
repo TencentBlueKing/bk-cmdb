@@ -14,7 +14,7 @@ package hooks
 
 import "github.com/emicklei/go-restful"
 
-// DoRequestFromAPIGWHook do request from api gateway hook
-func DoRequestFromAPIGWHook(req *restful.Request) error {
+// ValidRequestFromAPIGWHook valid request from api gateway hook
+func ValidRequestFromAPIGWHook(req *restful.Request) error {
 	return nil
 }

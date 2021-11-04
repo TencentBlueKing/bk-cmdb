@@ -138,12 +138,9 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response,
 	fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		rid := util.GetHTTPCCRequestID(req.Request.Header)
 		path := req.Request.URL.Path
 
-		blog.V(7).Infof("authFilter on url: %s, rid: %s", path, rid)
 		if !auth.EnableAuthorize() {
-			blog.V(7).Infof("auth disabled, skip auth filter, rid: %s", rid)
 			fchain.ProcessFilter(req, resp)
 			return
 		}
@@ -163,18 +160,19 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			return
 		}
 
-		if rsp := s.verifyAuthorizeStatus(req, errFunc); rsp != metadata.SuccessBaseResp {
+		rsp, success := s.verifyAuthorizeStatus(req, errFunc)
+		if !success {
 			resp.WriteAsJson(rsp)
 			return
 		}
 
-		blog.V(7).Infof("authFilter authorize on url:%s success, rid: %s", path, rid)
 		fchain.ProcessFilter(req, resp)
 		return
 	}
 }
 
-func (s *service) verifyAuthorizeStatus(req *restful.Request, errFunc func() errors.CCErrorIf) metadata.BaseResp {
+func (s *service) verifyAuthorizeStatus(req *restful.Request,
+	errFunc func() errors.CCErrorIf) (*metadata.BaseResp, bool) {
 	rid := util.GetHTTPCCRequestID(req.Request.Header)
 	path := req.Request.URL.Path
 	language := util.GetLanguage(req.Request.Header)
@@ -182,11 +180,11 @@ func (s *service) verifyAuthorizeStatus(req *restful.Request, errFunc func() err
 	if err != nil {
 		blog.Errorf("authFilter failed, caller: %s, parse auth attribute for %s %s failed, err: %v, rid: %s",
 			req.Request.RemoteAddr, req.Request.Method, req.Request.URL.Path, err, rid)
-		return metadata.BaseResp{
+		return &metadata.BaseResp{
 			Code:   common.CCErrCommParseAuthAttributeFailed,
 			ErrMsg: err.Error(),
 			Result: false,
-		}
+		}, false
 	}
 
 	if blog.V(5) {
@@ -198,11 +196,11 @@ func (s *service) verifyAuthorizeStatus(req *restful.Request, errFunc func() err
 	if err != nil {
 		blog.Errorf("authFilter failed, authorized request failed, url: %s, err: %v, rid: %s",
 			path, err, rid)
-		return metadata.BaseResp{
+		return &metadata.BaseResp{
 			Code:   common.CCErrCommCheckAuthorizeFailed,
 			ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
 			Result: false,
-		}
+		}, false
 	}
 
 	authorized := true
@@ -218,22 +216,22 @@ func (s *service) verifyAuthorizeStatus(req *restful.Request, errFunc func() err
 			attribute.Resources)
 		if err != nil {
 			blog.Errorf("get permission to apply failed, err: %v, rid: %s", err, rid)
-			return metadata.BaseResp{
+			return &metadata.BaseResp{
 				Code:   common.CCErrCommCheckAuthorizeFailed,
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
 				Result: false,
-			}
+			}, false
 		}
 		blog.WarnJSON("authFilter failed, url: %s, attribute: %s, permission: %s, rid: %s", path, attribute,
 			permission, rid)
-		return metadata.BaseResp{
+		return &metadata.BaseResp{
 			Code:        common.CCNoPermission,
 			ErrMsg:      errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
 			Result:      false,
 			Permissions: permission,
-		}
+		}, false
 	}
-	return metadata.SuccessBaseResp
+	return nil, true
 }
 
 // KEYS[1] is the redis key to incr and expire
@@ -323,9 +321,11 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 // JwtFilter the filter that handles the source of the jwt request
 func (s *service) JwtFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		if err := hooks.DoRequestFromAPIGWHook(req); err != nil {
+		if err := hooks.ValidRequestFromAPIGWHook(req); err != nil {
 			rsp := metadata.BaseResp{
+				Code:   common.CCErrAPINoPassSourceCertification,
 				ErrMsg: err.Error(),
+				Result: false,
 			}
 			resp.WriteAsJson(rsp)
 			return
