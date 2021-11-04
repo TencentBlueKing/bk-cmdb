@@ -206,7 +206,7 @@
 
         if (rowIndex === -1 && row.checked === checked) {
           arr.push(row)
-        } else if (row.checked !== checked) {
+        } else if (row.checked !== checked && !row.disabled) {
           arr.splice(rowIndex, 1)
         }
       },
@@ -257,7 +257,7 @@
         const pageSelection = <bk-checkbox
                 indeterminate={this.pageSelectionIndeterminate}
                 class={{ 'is-total-selected': this.onCrossPageMode, 'page-select-checkbox': true }}
-                disabled={this.pageSelectionDisabled}
+                disabled={this.pageSelectionDisabled || this.selectableRows.length === 0}
                 vModel={this.isPageSelected}
                 onChange={this.handlePageSelectionChange}
               ></bk-checkbox>
@@ -312,7 +312,7 @@
         this.rows = this.rows.map((i, index) => {
           // 如果传入了当前选中值，则让所有选项变为当前选中值
           if (currentChecked !== undefined && typeof currentChecked === 'boolean') {
-            return { ...i, checked: currentChecked }
+            return { ...i, checked: currentChecked && !i.disabled }
           }
 
           // 当跨页全选时，默认为选中状态，非跨页全选时则默认为未选中状态
