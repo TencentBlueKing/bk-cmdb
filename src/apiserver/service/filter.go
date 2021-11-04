@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/thirdparty/hooks"
 
 	"github.com/emicklei/go-restful"
 )
@@ -45,6 +46,7 @@ const (
 	CacheType       RequestType = "cache"
 )
 
+// URLFilterChan url filter chan
 func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	rid := util.GetHTTPCCRequestID(req.Request.Header)
 
@@ -133,7 +135,8 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	chain.ProcessFilter(req, resp)
 }
 
-func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response,
+	fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 		rid := util.GetHTTPCCRequestID(req.Request.Header)
 		path := req.Request.URL.Path
@@ -178,9 +181,11 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			blog.InfoJSON("auth filter parsed attribute: %s, rid: %s", attribute, rid)
 		}
 
-		decisions, err := s.authorizer.AuthorizeBatch(req.Request.Context(), req.Request.Header, attribute.User, attribute.Resources...)
+		decisions, err := s.authorizer.AuthorizeBatch(req.Request.Context(), req.Request.Header, attribute.User,
+			attribute.Resources...)
 		if err != nil {
-			blog.Errorf("authFilter failed, authorized request failed, url: %s, err: %v, rid: %s", path, err, rid)
+			blog.Errorf("authFilter failed, authorized request failed, url: %s, err: %v, rid: %s",
+				path, err, rid)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommCheckAuthorizeFailed,
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
@@ -199,21 +204,25 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		}
 
 		if !authorized {
-			permission, err := s.authorizer.GetPermissionToApply(req.Request.Context(), req.Request.Header, attribute.Resources)
+			permission, err := s.authorizer.GetPermissionToApply(req.Request.Context(), req.Request.Header,
+				attribute.Resources)
 			if err != nil {
 				blog.Errorf("get permission to apply failed, err: %v, rid: %s", err, rid)
 				rsp := metadata.BaseResp{
-					Code:   common.CCErrCommCheckAuthorizeFailed,
-					ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+					Code: common.CCErrCommCheckAuthorizeFailed,
+					ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).
+						Error(),
 					Result: false,
 				}
 				resp.WriteAsJson(rsp)
 				return
 			}
-			blog.WarnJSON("authFilter failed, url: %s, attribute: %s, permission: %s, rid: %s", path, attribute, permission, rid)
+			blog.WarnJSON("authFilter failed, url: %s, attribute: %s, permission: %s, rid: %s", path, attribute,
+				permission, rid)
 			rsp := metadata.BaseResp{
-				Code:        common.CCNoPermission,
-				ErrMsg:      errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
+				Code: common.CCNoPermission,
+				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).
+					Error(),
 				Result:      false,
 				Permissions: permission,
 			}
@@ -289,7 +298,8 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 		}
 		cnt, ok := result.(int64)
 		if !ok {
-			blog.Errorf("execute setRequestCntTTLScript failed, key:%s, rule:%#v, err: %v, rid: %s", key, *rule, result, rid)
+			blog.Errorf("execute setRequestCntTTLScript failed, key:%s, rule:%#v, err: %v, rid: %s",
+				key, *rule, result, rid)
 			fchain.ProcessFilter(req, resp)
 			return
 		}
@@ -300,6 +310,22 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 				Code:   common.CCErrTooManyRequestErr,
 				ErrMsg: "too many requests",
 				Result: false,
+			}
+			resp.WriteAsJson(rsp)
+			return
+		}
+
+		fchain.ProcessFilter(req, resp)
+		return
+	}
+}
+
+// JwtFilter the filter that handles the source of the jwt request
+func (s *service) JwtFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		if err := hooks.DoRequestFromAPIGWHook(req, resp); err != nil {
+			rsp := metadata.BaseResp{
+				ErrMsg: err.Error(),
 			}
 			resp.WriteAsJson(rsp)
 			return
