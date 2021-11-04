@@ -89,6 +89,9 @@
           bk_property_type: propertyType
         } = this.property
         const normal = `cmdb-search-${propertyType}`
+        if (modelId === 'biz' && propertyId === 'bk_biz_name' && FilterStore.condition[this.property.id].operator !== '$regex') {
+          return `cmdb-search-${modelId}`
+        }
         if (!FilterStore.bizId) {
           return normal
         }
