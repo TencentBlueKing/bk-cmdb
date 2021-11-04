@@ -1685,7 +1685,7 @@ func (ps *ProcServer) ListServiceInstancesWithHostWeb(ctx *rest.Contexts) {
 
 	topoRoot, e := ps.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header, input.BizID, false)
 	if e != nil {
-		blog.Errorf("ListServiceInstancesWithHostWeb failed, search mainline instance topo failed, bizID: %d, err: %+v, riz: %s", input.BizID, e, rid)
+		blog.Errorf("search mainline instance topo failed, bizID: %d, err: %v, rid: %s", input.BizID, e, rid)
 		err := ctx.Kit.CCError.Errorf(common.CCErrTopoMainlineSelectFailed)
 		ctx.RespAutoError(err)
 		return
@@ -1715,6 +1715,31 @@ func (ps *ProcServer) ListServiceInstancesWithHostWeb(ctx *rest.Contexts) {
 		"info":  serviceInstances,
 	}
 	ctx.RespEntity(result)
+}
+
+// ServiceInstanceUpdateLabels Update service instance label operation.
+func (ps *ProcServer) ServiceInstanceUpdateLabels(ctx *rest.Contexts) {
+	option := new(selector.LabelUpdateOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := ps.CoreAPI.CoreService().Label().UpdateLabel(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.BKTableNameServiceInstance, option); err != nil {
+			blog.Errorf("serviceInstance update labels failed, option: %+v, err: %v,rid: %s", option, err,
+				ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
 }
 
 func (ps *ProcServer) ServiceInstanceAddLabels(ctx *rest.Contexts) {

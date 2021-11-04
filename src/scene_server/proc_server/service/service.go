@@ -116,8 +116,15 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/service_instance", Handler: ps.DeleteServiceInstance})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/proc/service_instance/difference", Handler: ps.DiffServiceInstanceWithTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_instance/sync", Handler: ps.SyncServiceInstanceByTemplate})
+
+	// deprecated,  only for old api
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/service_instance/labels", Handler: ps.ServiceInstanceAddLabels})
+
+	// deprecated,  only for old api
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/service_instance/labels", Handler: ps.ServiceInstanceRemoveLabels})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/updatemany/proc/service_instance/labels",
+		Handler: ps.ServiceInstanceUpdateLabels})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/labels/aggregation", Handler: ps.ServiceInstanceLabelsAggregation})
 
 	// process instance

@@ -79,3 +79,31 @@ func (l *label) RemoveLabel(ctx context.Context, h http.Header, tableName string
 
 	return nil
 }
+
+// UpdateLabel update service instance tag request.
+func (l *label) UpdateLabel(ctx context.Context, h http.Header, tableName string,
+	option *selector.LabelUpdateOption) errors.CCErrorCoder {
+	ret := new(metadata.BaseResp)
+	subPath := "/updatemany/labels"
+
+	body := selector.LabelUpdateRequest{
+		Option:    option,
+		TableName: tableName,
+	}
+	err := l.client.Post().
+		Body(body).
+		WithContext(ctx).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
+}

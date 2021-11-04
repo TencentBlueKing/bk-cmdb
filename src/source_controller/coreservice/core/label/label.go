@@ -51,7 +51,8 @@ func (p *labelOperation) AddLabel(kit *rest.Kit, tableName string, option select
 		blog.ErrorJSON("AddLabel failed, db count instances failed, filter: %s, err: %s, rid: %s", countFilter, err.Error(), kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	} else if count != uint64(len(option.InstanceIDs)) {
-		blog.ErrorJSON("AddLabel failed, some instance not valid, filter: %s, result count: %d, rid: %s", countFilter, count, kit.Rid)
+		blog.ErrorJSON("add label failed, some instance not valid, filter: %s, result count: %s, rid: %s",
+			countFilter, count, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "instance_ids")
 	}
 
@@ -77,6 +78,51 @@ func (p *labelOperation) AddLabel(kit *rest.Kit, tableName string, option select
 	return nil
 }
 
+// UpdateLabel update service instances tag.
+func (p *labelOperation) UpdateLabel(kit *rest.Kit, tableName string,
+	option *selector.LabelUpdateOption) errors.CCErrorCoder {
+	if field, err := option.Labels.Validate(); err != nil {
+		blog.Infof("validate failed, field:%s, err: %v, rid: %s", field, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "label."+field)
+	}
+
+	idField := common.GetInstIDField(tableName)
+
+	// check all instance validate
+	option.InstanceIDs = util.IntArrayUnique(option.InstanceIDs)
+	filter := map[string]interface{}{
+		idField: map[string]interface{}{
+			common.BKDBIN: option.InstanceIDs,
+		},
+	}
+
+	count, err := mongodb.Client().Table(tableName).Find(filter).Count(kit.Ctx)
+	if err != nil {
+		blog.ErrorJSON("update label, db count instances failed, filter: %s, err: %s, rid: %s", filter,
+			err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	if count != uint64(len(option.InstanceIDs)) {
+		blog.ErrorJSON("update label, some instance not valid, filter: %s, result count: %s, rid: %s", filter,
+			count, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "instance_ids")
+	}
+
+	data := &selector.LabelInstance{
+		Labels: make(map[string]string),
+	}
+	data.Labels = option.Labels
+
+	if err := mongodb.Client().Table(tableName).Update(kit.Ctx, filter, data); err != nil {
+		blog.Errorf(" update instance label failed, instanceIDs: %v, err: %v, rid: %s.", option.InstanceIDs,
+			err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
+	}
+
+	return nil
+}
+
 func (p *labelOperation) RemoveLabel(kit *rest.Kit, tableName string, option selector.LabelRemoveOption) errors.CCErrorCoder {
 	idField := common.GetInstIDField(tableName)
 
@@ -88,10 +134,12 @@ func (p *labelOperation) RemoveLabel(kit *rest.Kit, tableName string, option sel
 		},
 	}
 	if count, err := mongodb.Client().Table(tableName).Find(countFilter).Count(kit.Ctx); err != nil {
-		blog.ErrorJSON("RemoveLabel failed, db count instances failed, filter: %s, err: %s, rid: %s", countFilter, err.Error(), kit.Rid)
+		blog.ErrorJSON("remove label failed, db count instances failed, filter: %s, err: %s, rid: %s",
+			countFilter, err.Error(), kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	} else if count != uint64(len(option.InstanceIDs)) {
-		blog.ErrorJSON("RemoveLabel failed, some instance not valid, filter: %s, result count: %d, rid: %s", countFilter, count, kit.Rid)
+		blog.ErrorJSON("remove label failed, some instance not valid, filter: %s, result count: %s, rid: %s",
+			countFilter, count, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "instance_ids")
 	}
 
