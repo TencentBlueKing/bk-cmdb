@@ -15,9 +15,6 @@
           }"
           @click="handleProcessChange(process, index)">
           <span class="process-name" :title="process.process_template_name">{{process.process_template_name}}</span>
-          <span class="process-service-count"
-            v-if="process.type !== 'others' && process.total_num"
-          >{{process.total_num}}</span>
         </li>
       </ul>
       <div class="change-details"
@@ -154,7 +151,6 @@
           }
         },
         currentDiff: {
-          total_num: 0, // 当前进程模板变更内容总数
           process_template_id: '', // 当前进程模板 id
           process_template_name: '', // 当前进程模板名称
           process_template: {}, // 当前进程模板内容
@@ -342,7 +338,6 @@
           this.currentDiff.process_template_name = process.process_template_name
           this.currentDiff.changedProperties = changedProperties
 
-          process.total_num = diff.total_num
           process.confirmed = true
         })
           .finally(() => {
