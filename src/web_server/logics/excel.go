@@ -451,14 +451,21 @@ func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.Kv
 
 }
 
+// GetAssociationExcelData read sheet of association data from excel
 func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int) map[int]metadata.ExcelAssociation {
 
 	rowCnt := len(sheet.Rows)
 	index := firstRow
 
-	asstInfoArr := make(map[int]metadata.ExcelAssociation, 0)
+	asstInfoArr := make(map[int]metadata.ExcelAssociation)
 	for ; index < rowCnt; index++ {
 		row := sheet.Rows[index]
+
+		// 防止数组越界
+		if len(row.Cells) <= assciationDstInstIndex {
+			continue
+		}
+
 		op := row.Cells[associationOPColIndex].String()
 		if op == "" {
 			continue
