@@ -92,11 +92,11 @@
     },
     data() {
       // 开启自动刷新
-      this.polling =  new Polling(() => {
+      this.polling = new Polling(async () => {
         const syncingModules = this.table.data
           .filter(theModule => this.isSyncing(theModule.status)).map(theModule => theModule.bk_module_id)
         if (syncingModules.length > 0) {
-          this.loadInstanceStatus(syncingModules)
+          await to(this.loadInstanceStatus(syncingModules))
         }
       }, 5000)
 

@@ -8,19 +8,23 @@ class Polling {
 
   start() {
     try {
-      if (this.pollingTimer) return false
-      this.pollingTimer = setInterval(() => {
-        this.callback()
-      }, this.duration)
+      const pull = () => {
+        this.pollingTimer = setTimeout(() => {
+          this.callback()
+          if (!this.pollingTimer) return false
+          pull()
+        }, this.duration)
+      }
+      setTimeout(pull, this.duration)
     } catch (e) {
-      console.log(e)
       this.stop()
+      throw Error(e)
     }
   }
 
   stop() {
     this.pollingTimer = null
-    clearInterval(this.pollingTimer)
+    clearTimeout(this.pollingTimer)
   }
 }
 
