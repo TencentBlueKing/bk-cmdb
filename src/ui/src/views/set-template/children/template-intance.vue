@@ -236,8 +236,8 @@
         }
       }
     },
-    async created() {
-      await this.getData()
+    created() {
+      this.handleFilter()
     },
     beforeDestroy() {
       this.polling.stop()
