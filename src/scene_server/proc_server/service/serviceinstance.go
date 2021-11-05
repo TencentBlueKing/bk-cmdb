@@ -1115,19 +1115,19 @@ func (ps *ProcServer) serviceInstancesDetailDiff(ctx *rest.Contexts,
 
 	if module.ServiceTemplateID == 0 {
 		blog.Errorf("module %d has no service template, option: %s, rid: %s", diffOption.ModuleID, rid)
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 	}
 
 	serviceInstances, err := ps.getServiceInstances(ctx, module, diffOption)
 
 	moduleDifference := new(metadata.ServiceInstanceDetailInfo)
-	moduleDifference.TotalNum = len(serviceInstances.Info)
 
 	if diffOption.ServiceCategory {
 		err := ps.getServiceCategory(ctx, moduleDifference, module, serviceInstances)
 		if err != nil {
 			return nil, err
 		}
+		return moduleDifference, nil
 	}
 
 	serviceRelationMap, relations, hostMap, hostIDs, processTemplates, pTemplateMap, hostWithSrvInstMap, err :=
@@ -1179,8 +1179,7 @@ func (ps *ProcServer) serviceInstancesDetailDiff(ctx *rest.Contexts,
 			changedAttributes, isChanged, diffErr := ps.Logic.DiffWithProcessTemplate(property.Property, process,
 				hostMap[serviceInstance.HostID], attributeMap, true)
 			if diffErr != nil {
-				blog.Errorf("diff with process template failed, process ID: %d  err: %v, rid: %s",
-					relation.ProcessID, err, rid)
+				blog.Errorf("diff template failed, process: %d  err: %v, rid: %s", relation.ProcessID, err, rid)
 				return nil, errors.New(common.CCErrCommParamsInvalid, diffErr.Error())
 			}
 
@@ -1200,8 +1199,7 @@ func (ps *ProcServer) serviceInstancesDetailDiff(ctx *rest.Contexts,
 		if _, exist := processTemplateReferenced[diffOption.ProcessTemplateId]; exist {
 			continue
 		}
-		// the process template does not exist in all the service instances, which means a new process template
-		// is added.
+		// the process template doesn't exist in all the service instances, which means a new process template is added.
 		record := recorder{
 			ProcessName:     processTemplates.Info[0].ProcessName,
 			ServiceInstance: &serviceInstances.Info[idx],
@@ -1211,42 +1209,79 @@ func (ps *ProcServer) serviceInstancesDetailDiff(ctx *rest.Contexts,
 
 	// handle all the service instances that need to be added.
 	if len(processTemplates.Info) > 0 {
-		srvInstNameSuffix := ""
-		proc := processTemplates.Info[0].Property
-		if proc != nil {
-			if proc.ProcessName.Value != nil && len(*proc.ProcessName.Value) > 0 {
-				srvInstNameSuffix += "_" + processTemplates.Info[0].ProcessName
-			}
-			for _, bindInfo := range proc.BindInfo.Value {
-				if bindInfo.Std != nil && bindInfo.Std.Port.Value != nil {
-					srvInstNameSuffix += "_" + *bindInfo.Std.Port.Value
-					break
-				}
-			}
-		}
-
-		for _, hostID := range hostIDs {
-			if _, exists := hostWithSrvInstMap[hostID]; exists {
-				continue
-			}
-
-			srvInstName := util.GetStrByInterface(hostMap[hostID][common.BKHostInnerIPField]) + srvInstNameSuffix
-			record := recorder{
-				ProcessName: processTemplates.Info[0].ProcessName,
-				ServiceInstance: &metadata.ServiceInstance{
-					ID:                0,
-					Name:              srvInstName,
-					ServiceTemplateID: module.ServiceTemplateID,
-				},
-			}
-			added[diffOption.ProcessTemplateId] = append(added[diffOption.ProcessTemplateId], record)
-		}
+		ps.handleAddedServiceInsts(added, module, hostMap, diffOption, hostIDs, hostWithSrvInstMap, processTemplates)
+		//srvInstNameSuffix := ""
+		//proc := processTemplates.Info[0].Property
+		//if proc != nil {
+		//	if proc.ProcessName.Value != nil && len(*proc.ProcessName.Value) > 0 {
+		//		srvInstNameSuffix += "_" + processTemplates.Info[0].ProcessName
+		//	}
+		//	for _, bindInfo := range proc.BindInfo.Value {
+		//		if bindInfo.Std != nil && bindInfo.Std.Port.Value != nil {
+		//			srvInstNameSuffix += "_" + *bindInfo.Std.Port.Value
+		//			break
+		//		}
+		//	}
+		//}
+		//
+		//for _, hostID := range hostIDs {
+		//	if _, exists := hostWithSrvInstMap[hostID]; exists {
+		//		continue
+		//	}
+		//
+		//	srvInstName := util.GetStrByInterface(hostMap[hostID][common.BKHostInnerIPField]) + srvInstNameSuffix
+		//	record := recorder{
+		//		ProcessName: processTemplates.Info[0].ProcessName,
+		//		ServiceInstance: &metadata.ServiceInstance{
+		//			ID:                0,
+		//			Name:              srvInstName,
+		//			ServiceTemplateID: module.ServiceTemplateID,
+		//		},
+		//	}
+		//	added[diffOption.ProcessTemplateId] = append(added[diffOption.ProcessTemplateId], record)
+		//}
 	}
 
 	getServiceInstanceDetails(removed, changed, added, moduleDifference, processTemplates)
 
 	return moduleDifference, nil
 
+}
+
+func (ps *ProcServer) handleAddedServiceInsts(added map[int64][]recorder, module *metadata.ModuleInst,
+	hostMap map[int64]map[string]interface{}, diffOption *metadata.ServiceInstanceDetailOption, hostIDs []int64,
+	hostWithSrvInstMap map[int64]struct{}, processTemplates *metadata.MultipleProcessTemplate) {
+	srvInstNameSuffix := ""
+	proc := processTemplates.Info[0].Property
+	if proc != nil {
+		if proc.ProcessName.Value != nil && len(*proc.ProcessName.Value) > 0 {
+			srvInstNameSuffix += "_" + processTemplates.Info[0].ProcessName
+		}
+		for _, bindInfo := range proc.BindInfo.Value {
+			if bindInfo.Std != nil && bindInfo.Std.Port.Value != nil {
+				srvInstNameSuffix += "_" + *bindInfo.Std.Port.Value
+				break
+			}
+		}
+	}
+
+	for _, hostID := range hostIDs {
+		if _, exists := hostWithSrvInstMap[hostID]; exists {
+			continue
+		}
+
+		srvInstName := util.GetStrByInterface(hostMap[hostID][common.BKHostInnerIPField]) + srvInstNameSuffix
+		record := recorder{
+			ProcessName: processTemplates.Info[0].ProcessName,
+			ServiceInstance: &metadata.ServiceInstance{
+				ID:                0,
+				Name:              srvInstName,
+				ServiceTemplateID: module.ServiceTemplateID,
+			},
+		}
+		added[diffOption.ProcessTemplateId] = append(added[diffOption.ProcessTemplateId], record)
+	}
+	return
 }
 
 func getServiceInstanceDetails(removed map[string][]recorder,

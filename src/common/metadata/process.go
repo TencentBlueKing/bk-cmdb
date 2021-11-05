@@ -308,7 +308,6 @@ type ServiceCategoryDetailInfo struct {
 
 // ServiceInstanceDetailInfo Details of service instance information
 type ServiceInstanceDetailInfo struct {
-	TotalNum int `json:"total_count"`
 
 	// Change content of instance information
 	ServiceInstanceDetails []ServiceInstanceDifference `json:"service_instances"`
