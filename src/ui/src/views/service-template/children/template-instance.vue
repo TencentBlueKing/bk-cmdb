@@ -30,6 +30,7 @@
           width="60"
           :data="table.visibleList"
           :full-data="table.data"
+          ref="batchSelectionColumn"
           row-key="bk_module_id"
           :selectable="row => !isInstanceDisabled(row.status)"
           @selection-change="handleSelectionChange">
@@ -270,16 +271,18 @@
       },
       filterData() {
         this.table.filtering = true
+        this.table.pagination.current = 1
+        this.$refs.batchSelectionColumn.clearSelection()
         this.$nextTick(() => {
           if (this.table.filter) {
-            this.table.data = this.table.backup.filter((row) => {
-              // eslint-disable-next-line no-underscore-dangle
+            this.table.visibleList = this.table.data.filter((row) => {
               const path = row.topoPath.replace(/\s*(\/)\s*/g, '$1')
               const filter = this.table.filter.replace(/\s*(\/)\s*/g, '$1')
+
               return path.indexOf(filter) > -1
             })
           } else {
-            this.table.data = [...this.table.backup]
+            this.renderVisibleList()
           }
           this.table.stuff.type = this.table.filter ? 'search' : 'default'
           this.table.filtering = false
