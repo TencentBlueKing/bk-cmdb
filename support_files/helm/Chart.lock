@@ -1,0 +1,18 @@
+dependencies:
+- name: common
+  repository: https://charts.bitnami.com/bitnami
+  version: 1.8.0
+- name: redis
+  repository: https://charts.bitnami.com/bitnami
+  version: 14.8.8
+- name: mongodb
+  repository: https://charts.bitnami.com/bitnami
+  version: 10.23.10
+- name: elasticsearch
+  repository: https://charts.bitnami.com/bitnami
+  version: 17.2.0
+- name: zookeeper
+  repository: https://charts.bitnami.com/bitnami
+  version: 7.0.0
+digest: sha256:b7845ef37fd2d4e8101ad9de824eb663cb9f36fe3702afd688aca5e061acdf47
+generated: "2021-11-07T20:27:24.075121214+08:00"

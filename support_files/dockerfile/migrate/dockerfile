@@ -1,0 +1,2 @@
+FROM ccr.ccs.tencentyun.com/bk.io/centos7-cmdb:base
+RUN yum -y install jq

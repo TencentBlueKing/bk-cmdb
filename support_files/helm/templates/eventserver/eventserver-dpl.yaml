@@ -1,0 +1,104 @@
+{{- if .Values.eventserver.enabled }}
+apiVersion: {{ .Values.ApiVersion.Deployment }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-eventserver"
+  labels:
+    {{- include "bk-cmdb.labels" . | nindent 4 }}
+    component: eventserver
+spec:
+  replicas: {{ .Values.eventserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "bk-cmdb.matchLabels" . | nindent 6 }}
+      component: eventserver
+  template:
+    metadata:
+      labels:
+        {{- include "bk-cmdb.labels" . | nindent 8 }}
+        component: eventserver
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+      {{- with .Values.eventserver.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.eventserver.podAnnotations }}
+        {{ toYaml .Values.eventserver.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: eventserver
+        image: {{ .Values.image.registry }}/{{ .Values.eventserver.image.repository }}:{{ .Values.eventserver.image.tag }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        workingDir: {{ .Values.eventserver.workDir }}
+        command:
+        - ./cmdb_eventserver
+        - --addrport=$(POD_IP):{{ .Values.eventserver.port }}
+        {{- if .Values.eventserver.configDir }}
+        - --config={{ .Values.eventserver.configDir }}
+        {{- end }}
+        - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        {{- if .Values.eventserver.command.logDir }}
+        - --log-dir={{ .Values.eventserver.command.logDir }}
+        {{- end }}
+        - --v={{ .Values.eventserver.command.logLevel }}
+        - --logtostderr={{ .Values.eventserver.command.logtostderr }}
+        - "--enable-auth"
+        - {{ .Values.cmdb.auth.enable | quote }}
+
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.eventserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.eventserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        {{- if .Values.eventserver.resources }}
+        resources:
+          {{ toYaml .Values.eventserver.resources | indent 10 }}
+        {{- end }}
+
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.eventserver.env }}
+          {{ toYaml .Values.eventserver.env | indent 10 }}
+        {{- end }}
+
+        ports:
+        - containerPort: {{ .Values.eventserver.port }}
+
+      {{- if .Values.eventserver.configDir }}
+        volumeMounts:
+          - name: configures
+            mountPath: {{ .Values.eventserver.configDir }}
+      volumes:
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-eventserver-configures
+      {{- end }}
+
+      {{- with .Values.eventserver.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.eventserver.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.eventserver.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+{{- end }}

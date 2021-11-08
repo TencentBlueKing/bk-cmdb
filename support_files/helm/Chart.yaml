@@ -1,0 +1,47 @@
+apiVersion: v2
+name: bk-cmdb
+dependencies:
+  - name: common
+    repository: https://charts.bitnami.com/bitnami
+    tags:
+      - bitnami-common
+    version: 1.8.0
+  - condition: redis.enabled
+    name: redis
+    repository: https://charts.bitnami.com/bitnami
+    version: 14.8.8
+  - condition: mongodb.enabled
+    name: mongodb
+    repository: https://charts.bitnami.com/bitnami
+    version: 10.23.10
+  - condition: elasticsearch.enabled
+    name: elasticsearch
+    repository: https://charts.bitnami.com/bitnami
+    version: 17.2.0
+  - condition: zookeeper.enabled
+    name: zookeeper
+    repository: https://charts.bitnami.com/bitnami
+    version: 7.0.0
+
+
+description: A Helm chart for Kubernetes
+
+# A chart can be either an 'application' or a 'library' chart.
+#
+# Application charts are a collection of templates that can be packaged into versioned archives
+# to be deployed.
+#
+# Library charts provide useful utilities or functions for the chart developer. They're included as
+# a dependency of application charts to inject those utilities and functions into the rendering
+# pipeline. Library charts do not define any templates and therefore cannot be deployed.
+type: application
+
+# This is the chart version. This version number should be incremented each time you make changes
+# to the chart and its templates, including the app version.
+# Versions are expected to follow Semantic Versioning (https://semver.org/)
+version: 3.10.8
+# This is the version number of the application being deployed. This version number should be
+# incremented each time you make changes to the application. Versions are not expected to
+# follow Semantic Versioning. They should reflect the version the application is using.
+# It is recommended to use it with quotes.
+appVersion: "3.10.8"

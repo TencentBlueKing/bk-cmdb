@@ -1,0 +1,644 @@
+imagePullPolicy: IfNotPresent
+
+image:
+  registry: mirrors.tencent.com/bkce
+
+migrate:
+  enabled: true
+  image:
+    repository: cmdb_migrate
+    tag: v3.10.8
+
+migrateDataID:
+  enabled: false
+
+adminserver:
+  enabled: true
+  image:
+    repository: cmdb_adminserver
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir: /data/cmdb/cmdb_adminserver/configure
+  errors:
+    res: /data/cmdb/cmdb_adminserver/conf/errors
+  language:
+    res: /data/cmdb/cmdb_adminserver/conf/language
+  command:
+    logDir: /data/cmdb/cmdb_adminserver/logs
+    logLevel: 3
+    logtostderr: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  volumeMounts:
+  volumes:
+  workDir: /data/cmdb/cmdb_adminserver
+  hostsnap:
+    dataID: 1100010
+
+webserver:
+  dnsPolicy: ClusterFirst
+  hostNetwork: false
+  ingress:
+    enabled: true
+    hosts:
+      - cmdb.example.com
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    tls:
+  enabled: true
+  image:
+    repository: cmdb_webserver
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir:
+  errors:
+    res: /data/cmdb/cmdb_webserver/conf/errors
+  language:
+    res: /data/cmdb/cmdb_webserver/conf/language
+  service:
+#    type: "NodePort"
+    type: "ClusterIP"
+    ports:
+      - protocol: TCP
+        port: 80
+        targetPort: 80
+        nodePort:
+    externalPort: 80
+  command:
+    logDir: /data/cmdb/cmdb_webserver/logs
+    logLevel: 3
+    logtostderr: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  workDir: /data/cmdb/cmdb_webserver
+
+apiserver:
+  enabled: true
+  image:
+    repository: cmdb_apiserver
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir:
+  errors:
+    res: /data/cmdb/cmdb_apiserver/conf/errors
+  language:
+    res: /data/cmdb/cmdb_apiserver/conf/language
+  command:
+    logDir: /data/cmdb/cmdb_apiserver/logs
+    logLevel: 3
+    logtostderr: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  workDir: /data/cmdb/cmdb_apiserver
+
+authserver:
+  ingress:
+    enabled: true
+    hosts:
+      - cmdb-auth.example.com
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    tls:
+  enabled: true
+  image:
+    repository: cmdb_authserver
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir:
+  errors:
+    res: /data/cmdb/cmdb_authserver/conf/errors
+  language:
+    res: /data/cmdb/cmdb_authserver/conf/language
+  service:
+#    type: "NodePort"
+    type: "ClusterIP"
+    ports:
+      - protocol: TCP
+        port: 80
+        targetPort: 80
+        nodePort:
+    externalPort: 80
+  command:
+    logDir: /data/cmdb/cmdb_authserver/logs
+    logLevel: 3
+    logtostderr: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  workDir: /data/cmdb/cmdb_authserver
+
+cacheservice:
+  enabled: true
+  image:
+    repository: cmdb_cacheservice
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir:
+  errors:
+    res: /data/cmdb/cmdb_cacheservice/conf/errors
+  language:
+    res: /data/cmdb/cmdb_cacheservice/conf/language
+  command:
+    logDir: /data/cmdb/cmdb_cacheservice/logs
+    logLevel: 3
+    logtostderr: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  workDir: /data/cmdb/cmdb_cacheservice
+
+cloudserver:
+  enabled: true
+  image:
+    repository: cmdb_cloudserver
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir:
+  errors:
+    res: /data/cmdb/cmdb_cloudserver/conf/errors
+  language:
+    res: /data/cmdb/cmdb_cloudserver/conf/language
+  command:
+    logDir: /data/cmdb/cmdb_cloudserver/logs
+    logLevel: 3
+    logtostderr: false
+    enableCryptor: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  workDir: /data/cmdb/cmdb_cloudserver
+
+coreservice:
+  enabled: true
+  image:
+    repository: cmdb_coreservice
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir:
+  errors:
+    res: /data/cmdb/cmdb_coreservice/conf/errors
+  language:
+    res: /data/cmdb/cmdb_coreservice/conf/language
+  command:
+    logDir: /data/cmdb/cmdb_coreservice/logs
+    logLevel: 3
+    logtostderr: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  workDir: /data/cmdb/cmdb_coreservice
+
+datacollection:
+  enabled: true
+  image:
+    repository: cmdb_datacollection
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir:
+  errors:
+    res: /data/cmdb/cmdb_datacollection/conf/errors
+  language:
+    res: /data/cmdb/cmdb_datacollection/conf/language
+  command:
+    logDir: /data/cmdb/cmdb_datacollection/logs
+    logLevel: 3
+    logtostderr: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  workDir: /data/cmdb/cmdb_datacollection
+
+eventserver:
+  enabled: true
+  image:
+    repository: cmdb_eventserver
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir:
+  errors:
+    res: /data/cmdb/cmdb_eventserver/conf/errors
+  language:
+    res: /data/cmdb/cmdb_eventserver/conf/language
+  command:
+    logDir: /data/cmdb/cmdb_eventserver/logs
+    logLevel: 3
+    logtostderr: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  workDir: /data/cmdb/cmdb_eventserver
+
+hostserver:
+  enabled: true
+  image:
+    repository: cmdb_hostserver
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir:
+  errors:
+    res: /data/cmdb/cmdb_hostserver/conf/errors
+  language:
+    res: /data/cmdb/cmdb_hostserver/conf/language
+  command:
+    logDir: /data/cmdb/cmdb_hostserver/logs
+    logLevel: 3
+    logtostderr: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  workDir: /data/cmdb/cmdb_hostserver
+
+operationserver:
+  enabled: true
+  image:
+    repository: cmdb_operationserver
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir:
+  errors:
+    res: /data/cmdb/cmdb_operationserver/conf/errors
+  language:
+    res: /data/cmdb/cmdb_operationserver/conf/language
+  command:
+    logDir: /data/cmdb/cmdb_operationserver/logs
+    logLevel: 3
+    logtostderr: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  workDir: /data/cmdb/cmdb_operationserver
+
+procserver:
+  enabled: true
+  image:
+    repository: cmdb_procserver
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir:
+  errors:
+    res: /data/cmdb/cmdb_procserver/conf/errors
+  language:
+    res: /data/cmdb/cmdb_procserver/conf/language
+  command:
+    logDir: /data/cmdb/cmdb_procserver/logs
+    logLevel: 3
+    logtostderr: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  workDir: /data/cmdb/cmdb_procserver
+
+taskserver:
+  enabled: true
+  image:
+    repository: cmdb_taskserver
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir:
+  errors:
+    res: /data/cmdb/cmdb_taskserver/conf/errors
+  language:
+    res: /data/cmdb/cmdb_taskserver/conf/language
+  command:
+    logDir: /data/cmdb/cmdb_taskserver/logs
+    logLevel: 3
+    logtostderr: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  workDir: /data/cmdb/cmdb_taskserver
+
+toposerver:
+  enabled: true
+  image:
+    repository: cmdb_toposerver
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir:
+  errors:
+    res: /data/cmdb/cmdb_toposerver/conf/errors
+  language:
+    res: /data/cmdb/cmdb_toposerver/conf/language
+  command:
+    logDir: /data/cmdb/cmdb_toposerver/logs
+    logLevel: 3
+    logtostderr: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  workDir: /data/cmdb/cmdb_toposerver
+
+synchronizeserver:
+  enabled: true
+  image:
+    repository: cmdb_synchronizeserver
+    tag: v3.10.8
+  replicas: 1
+  port: 80
+  configDir:
+  errors:
+    res: /data/cmdb/cmdb_synchronizeserver/conf/errors
+  language:
+    res: /data/cmdb/cmdb_synchronizeserver/conf/language
+  command:
+    logDir: /data/cmdb/cmdb_synchronizeserver/logs
+    logLevel: 3
+    logtostderr: false
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+  workDir: /data/cmdb/cmdb_synchronizeserver
+
+cmdb:
+  auth:
+    enable: false
+
+ApiVersion:
+  Deployment: "apps/v1"
+
+# paas地址
+paas:
+  url: http://paas.example.com
+
+common:
+  api:
+    version: v3
+  auth:
+    address: http://bkiam-web
+    appCode: bk_cmdb
+    appSecret:
+  esb:
+    addr: http://bkapi.example.com
+    appCode: bk_cmdb
+    appSecret:
+    insecure_skip_verify: true
+  timer:
+    spec: 15:30
+  # 禁用运营统计数据统计功能，默认false，如果设置为true，将无法查看定时统计的主机、模型实例等的变化数据
+  disableOperationStatistic: false
+
+  level:
+    businessTopoMax: 3
+  es:
+    full_text_search: "off"
+    url:
+    # es 认证使用
+    usr:
+    pwd:
+  site:
+    domainUrl: http://cmdb.example.com
+    httpsDomainUrl:
+    appCode: bk_cmdb
+    checkUrl: http://bk-login-web/accounts/get_user/?bk_token=
+    resources_path: /tmp/
+    html_root: /data/cmdb/cmdb_webserver/web
+    authscheme: internal
+    full_text_search: off
+    #帮助文档地址
+    helpDocUrl:
+  session:
+    name: cc3
+    skip: 0
+    multiple_owner: 0
+    #账号密码，以 : 分割
+    userInfo: cc:cc
+  app:
+    auth_app_code:
+    auth_url:
+    agent_app_url:
+    authscheme:
+  login:
+    version: opensource
+
+  #auth_server专属配置
+  authServer:
+    #开发商ID
+    supplierID: "0"
+  #cloudServer专属配置
+  cloudServer:
+    # 加密服务使用
+    cryptor:
+      enableCryptor: false
+      # 访问密码服务来获取密钥的URL，格式如/api/v1/secrets/cloud_account
+      secretKeyUrl:
+      # 密钥服务的地址，必须以http://或者https://开头
+      secretsAddrs:
+      # 密码服务的权限凭证Token
+      secretsToken:
+      # 密码服务的项目名称
+      secretsProject:
+      # 密码服务的环境名称
+      secretsEnv:
+    syncTask:
+      syncPeriodMinutes: 5
+  #datacollection专属配置
+  datacollection:
+    hostsnap:
+      # 当主机快照数据属性,如cpu,bk_cpu_mhz,bk_disk,bk_mem这些数值型数据变动的范围大于该配置的值时，进行db数据的更新，默认值为10%，最小值为5%，以百分比为单位
+      changeRangePercent: 10
+      # 用于设置主机快照key在redis中的过期时间，该时间会有上下50%的波动，当key存在时，同一id的主机数据不会更新，默认值为10分钟，最小值为5分钟，以分钟为单位
+      changeCountExpireMinute: 10
+      # 用于设置单个服务主机快照处理请求能力，起到限流的作用，令牌桶配置，最多请求数通过burst设置。qps的默认值为40，burst的默认值为100
+      rateLimiter:
+        qps: 40
+        burst: 100
+      # 主机快照属性，如cpu,bk_cpu_mhz,bk_disk,bk_mem等数据的处理时间窗口，用于限制在指定周期的前多少分钟可以让请求通过，超过限定时间将不会处理请求。
+      # 它的下一级有三个参数，atTime,checkIntervalHours，windowMinute 当不配置windowMinute，窗口不生效。当配置了windowMinute,至少配置atTime
+      # 或者checkIntervalHours中的一个，否则不生效。当atTime和checkIntervalHours都配置时，取atTime这个配置的语义功能
+      # 如果窗口生效，启动的时候，会先跑完windowMinutes，然后再生效。
+      timeWindow:
+        # atTime，设置一天中，几点开启时间窗口，如配置成14:40，表示14:40开启窗口，如果配置格式不正确，默认值为1:00
+        atTime:
+        # checkIntervalHours，规定每隔几个小时窗口开启，单位为小时，如配置成 3，表示每隔3个小时，开启时间窗口，如果配置格式不正确，默认值为 1
+        checkIntervalHours: 1
+        # windowMinutes，代表开启时间窗口后，多长时间内请求可以通过，单位为分钟。如配置成 60，表示开启窗口时间60分钟内请求可以通过。
+        # 注意：该时间不能大于窗口每次开启的间隔时间，取值范围不能小于等于0，如果配置不正确，默认值为15
+        windowMinutes: 15
+
+  # 监控配置， monitor配置项必须存在
+  monitor:
+    # 监控插件名称，有noop，blueking， 不填时默认为noop
+    pluginName: noop
+    # 是否开启监控
+    enableMonitor: false
+    # 当使用blueking监控插件时，上报数据所需要的数据通道标识,如1500000
+    dataID: 0
+    # 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
+    queueSize: 100
+    # 采集数据用的gsecmdline命令绝对路径，默认版本需要大于等于2.0.2 ，默认路径：/usr/local/gse/plugins/bin/gsecmdline
+    gsecmdlinePath:
+    # 对应的domainsocket绝对路径，默认路径：/usr/local/gse/agent/data/ipc.state.report
+    domainSocketPath:
+    # 用于对数据上报进行频率控制和限流
+    # qps的设置范围为1～50，默认值为10
+    # burst的设置范围为1～100，默认值为20
+    rateLimiter:
+      qps: 10
+      burst: 20
+  # cacheService相关配置
+  cacheService:
+    # 业务简要拓扑缓存的定时刷新时间，默认为15分钟，最小为2分钟。每次会将所有的业务的拓扑刷新一次到缓存中
+    briefTopologySyncIntervalMinutes: 15
+
+zookeeper:
+  persistence:
+    size: 10Gi
+  enabled: true
+
+#configAndServiceCenter:
+#  addr:
+
+mongodb:
+  persistence:
+    size: 10Gi
+  enabled: true
+  architecture: replicaset
+  replicaCount: 1
+  arbiter:
+    enabled: false
+  auth:
+    enabled: true
+    username: cc
+    password: cc
+    database: cmdb
+  host: mongodb-headless.default.svc.cluster.local
+  # external mongo configuration
+  externalMongodb:
+#    host:
+#    usr:
+#    pwd:
+    database: cmdb
+#    port:
+    maxOpenConns: 3000
+    maxIdleConns: 100
+    mechanism: SCRAM-SHA-1
+    rsName: rs0
+    #mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+    socketTimeoutSeconds: 10
+    enable: true
+  watch:
+#    host:
+#    port:
+#    usr:
+#    pwd:
+    database: cmdb
+    maxOpenConns: 10
+    maxIdleConns: 5
+    mechanism: SCRAM-SHA-1
+    rsName: rs0
+    socketTimeoutSeconds: 10
+
+redis:
+  master:
+    persistence:
+      size: 10Gi
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: true
+    password: blueking
+  # external redis configuration
+  redis:
+#    host:
+#    pwd:
+    database: "0"
+    maxOpenConns: 3000
+    maxIdleConns: 1000
+
+  snap_redis:
+#    host:
+#    pwd:
+    database: "0"
+    maxOpenConns: 3000
+    maxIdleConns: 100
+
+  discover_redis:
+#    host:
+#    pwd:
+    database: "0"
+    maxOpenConns: 3000
+    maxIdleConns: 100
+
+  netcollect_redis:
+#    host:
+#    pwd:
+    database: "0"
+    maxOpenConns: 3000
+    maxIdleConns: 100
+
+elasticsearch:
+  enabled: false
+  master:
+    replicas: 1
+  coordinating:
+    replicas: 1
+  data:
+    replicas: 1
+
+monstache:
+  enabled: false
+  image:
+    repository: cmdb_monstache
+    tag: v1.0.0
+  replicas: 1
+  port: 80
+  podAnnotations: {}
+  workDir: /data/cmdb/monstache
+  configDir: /data/cmdb/monstache/etc
+  directReadDynamicIncludeRegex: cmdb.cc_ApplicationBase$|cc_SetBase$|cc_ModuleBase$|cmdb.cc_HostBase$|cmdb.cc_ObjDes$|cc_ObjAttDes$|cmdb.cc_ObjectBase_(.*)_pub_"
+    namespace-regex = "cmdb.cc_ApplicationBase$|cc_SetBase$|cc_ModuleBase$|cmdb.cc_HostBase$|cmdb.cc_ObjDes$|cc_ObjAttDes$|cmdb.cc_ObjectBase_(.*)_pub_
+  mapperPluginPath: /data/cmdb/monstache/monstache-plugin.so
+  elasticsearchShardNum: 1
+  elasticsearchReplicaNum: 1
+
+
+
+

@@ -1,0 +1,257 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-adminserver-configures
+data:
+{{/*
+  {{- $files := .Files }}
+  {{- range tuple "common.yaml" "extra.yaml" "migrate.yaml"  "mongodb.yaml" "redis.yaml" }}
+  {{ . }}: |-
+    {{ printf "configures/%s" . | $files.Get }}
+  {{- end }}
+*/}}
+  common.yaml: |-
+    #elasticsearch相关
+    es:
+      # 全文检索功能开关(取值：off/on)，默认是off，开启是on
+      fullTextSearch: {{ .Values.common.es.full_text_search | quote }}
+      #elasticsearch服务监听url，默认是[http://127.0.0.1:9200](http://127.0.0.1:9200/)
+      url: {{ include "cmdb.elasticsearch.urlAndPort" . | quote }}
+      # es 认证使用
+      #用户
+      usr: {{ .Values.common.es.usr }}
+      #密码
+      pwd: {{ .Values.common.es.pwd }}
+    # esb配置
+    esb:
+      addr: {{ .Values.common.esb.addr }}
+      appCode: {{ .Values.common.esb.appCode }}
+      appSecret: {{ .Values.common.esb.appSecret }}
+      insecureSkipVerify: {{ .Values.common.esb.insecure_skip_verify }}
+      certFile:
+      keyFile:
+      caFile:
+      password:
+    # web_server专属配置
+    webServer:
+      api:
+        version:  {{ .Values.common.api.version }}
+      #会话相关
+      session:
+        #会话名
+        name: {{ .Values.common.session.name }}
+        skip: {{ .Values.common.session.skip }}
+        #是否支持同时登录同一用户，0为不支持，1为支持
+        multipleOwner: {{ .Values.common.session.multiple_owner }}
+        #账号密码，以 : 分割
+        userInfo: {{ .Values.common.session.userInfo }}
+      site:
+        #该值表示部署完成后,输入到浏览器中访问的cmdb 网址
+        domainUrl: {{ .Values.common.site.domainUrl }}
+        httpsDomainUrl: {{ .Values.common.site.httpsDomainUrl }}
+        #登录地址
+        bkLoginUrl: {{ include "cmdb.webserver.bkLoginUrl" . }}
+        bkHttpsLoginUrl: {{ include "cmdb.webserver.bkHttpsLoginUrl" . }}
+        appCode: {{ .Values.common.site.appCode }}
+        checkUrl: {{ .Values.common.site.checkUrl }}
+        resourcesPath: {{ .Values.common.site.resources_path }}
+        #前端基础页面位置
+        htmlRoot: {{ .Values.common.site.html_root }}
+        authscheme: {{ .Values.common.site.authscheme }}
+        bkDesktopUrl:  {{ include "cmdb.webserver.bk_desktop_url" . }}
+        paasDomainUrl: {{ include "cmdb.webserver.paas_domain_url" . }}
+        #帮助文档地址
+        helpDocUrl: {{ .Values.common.site.helpDocUrl }}
+      app:
+        authAppCode: {{ .Values.common.app.auth_app_code }}
+        authUrl: {{ .Values.common.app.auth_url }}
+        agentAppUrl: {{ .Values.common.app.agent_app_url }}
+        #权限模式，web页面使用，可选值: internal, iam
+        authscheme: {{ .Values.common.app.authscheme }}
+      login:
+        # 使用的登录系统， skip-login 免登陆模式， blueking 默认登录模式， 使用蓝鲸登录, oa 使用公司oa进行登陆
+        version: {{ .Values.common.login.version }}
+      esb:
+        addr: {{ .Values.common.esb.addr }}
+        appCode: {{ .Values.common.esb.appCode }}
+        appSecret: {{ .Values.common.esb.appSecret }}
+        insecureSkipVerify: {{ .Values.common.esb.insecure_skip_verify }}
+        certFile:
+        keyFile:
+        caFile:
+        password:
+    # operation_server专属配置
+    operationServer:
+      timer:
+        #00:00-23:59,operation_server从配置文件读取的时间,默认是为00:30
+        #定时同步的时间点
+        # 00:00 - 23:59
+        spec: {{ .Values.common.timer.spec }}
+        # 禁用运营统计数据统计功能，默认false，如果设置为true，将无法查看定时统计的主机、模型实例等的变化数据
+        disableOperationStatistic: {{ .Values.common.disableOperationStatistic }}
+    #auth_server专属配置
+    authServer:
+      #蓝鲸权限中心地址,可配置多个,用,(逗号)分割
+      address: {{ .Values.common.auth.address }}
+      #cmdb项目在蓝鲸权限中心的应用编码
+      appCode: {{ .Values.common.auth.appCode }}
+      #cmdb项目在蓝鲸权限中心的应用密钥
+      appSecret: {{ .Values.common.auth.appSecret }}
+      #开发商ID
+      supplierID: {{ .Values.common.authServer.supplierID }}
+      esb:
+        addr: {{ .Values.common.esb.addr }}
+        appCode: {{ .Values.common.esb.appCode }}
+        appSecret: {{ .Values.common.esb.appSecret }}
+        insecureSkipVerify: {{ .Values.common.esb.insecure_skip_verify }}
+        certFile:
+        keyFile:
+        caFile:
+        password:
+    #cloudServer专属配置
+    cloudServer:
+      # 加密服务使用
+      cryptor:
+        enableCryptor: {{ .Values.common.cloudServer.cryptor.enableCryptor }}
+        # 访问密码服务来获取密钥的URL，格式如/api/v1/secrets/cloud_account
+        secretKeyUrl: {{ .Values.common.cloudServer.cryptor.secretKeyUrl }}
+        # 密钥服务的地址，必须以http://或者https://开头
+        secretsAddrs: {{ .Values.common.cloudServer.cryptor.secretsAddrs }}
+        # 密码服务的权限凭证Token
+        secretsToken: {{ .Values.common.cloudServer.cryptor.secretsToken }}
+        # 密码服务的项目名称
+        secretsProject: {{ .Values.common.cloudServer.cryptor.secretsProject }}
+        # 密码服务的环境名称
+        secretsEnv: {{ .Values.common.cloudServer.cryptor.secretsEnv }}
+      syncTask:
+        # 同步周期,最小为5分钟
+        syncPeriodMinutes: {{ .Values.common.cloudServer.syncTask.syncPeriodMinutes }}
+
+    #datacollection专属配置
+    datacollection:
+      hostsnap:
+        # 当主机快照数据属性,如cpu,bk_cpu_mhz,bk_disk,bk_mem这些数值型数据变动的范围大于该配置的值时，进行db数据的更新，默认值为10%，最小值为5%，以百分比为单位
+        changeRangePercent: {{ .Values.common.datacollection.hostsnap.changeRangePercent}}
+        # 用于设置主机快照key在redis中的过期时间，该时间会有上下50%的波动，当key存在时，同一id的主机数据不会更新，默认值为10分钟，最小值为5分钟，以分钟为单位
+        changeCountExpireMinute: {{ .Values.common.datacollection.hostsnap.changeCountExpireMinute}}
+        # 用于设置单个服务主机快照处理请求能力，起到限流的作用，令牌桶配置，最多请求数通过burst设置。qps的默认值为40，burst的默认值为100
+        rateLimiter:
+          qps: {{ .Values.common.datacollection.hostsnap.rateLimiter.qps }}
+          burst: {{ .Values.common.datacollection.hostsnap.rateLimiter.burst }}
+        # 主机快照属性，如cpu,bk_cpu_mhz,bk_disk,bk_mem等数据的处理时间窗口，用于限制在指定周期的前多少分钟可以让请求通过，超过限定时间将不会处理请求。
+        # 它的下一级有三个参数，atTime,checkIntervalHours，windowMinute 当不配置windowMinute，窗口不生效。当配置了windowMinute,至少配置atTime
+        # 或者checkIntervalHours中的一个，否则不生效。当atTime和checkIntervalHours都配置时，取atTime这个配置的语义功能
+        # 如果窗口生效，启动的时候，会先跑完windowMinutes，然后再生效。
+        timeWindow:
+          # atTime，设置一天中，几点开启时间窗口，如配置成14:40，表示14:40开启窗口，如果配置格式不正确，默认值为1:00
+          atTime: {{ .Values.common.datacollection.hostsnap.timeWindow.atTime }}
+          # checkIntervalHours，规定每隔几个小时窗口开启，单位为小时，如配置成 3，表示每隔3个小时，开启时间窗口，如果配置格式不正确，默认值为 1
+          checkIntervalHours: {{ .Values.common.datacollection.hostsnap.timeWindow.checkIntervalHours }}
+          # windowMinutes，代表开启时间窗口后，多长时间内请求可以通过，单位为分钟。如配置成 60，表示开启窗口时间60分钟内请求可以通过。
+          # 注意：该时间不能大于窗口每次开启的间隔时间，取值范围不能小于等于0，如果配置不正确，默认值为15
+          windowMinutes: {{ .Values.common.datacollection.hostsnap.timeWindow.windowMinutes }}
+
+    # 监控配置， monitor配置项必须存在
+    monitor:
+      # 监控插件名称，有noop，blueking， 不填时默认为noop
+      pluginName: {{ .Values.common.monitor.pluginName }}
+      # 是否开启监控
+      enableMonitor: {{ .Values.common.monitor.enableMonitor }}
+      # 当使用blueking监控插件时，上报数据所需要的数据通道标识,如1500000
+      dataID: {{ .Values.common.monitor.dataID }}
+      # 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
+      queueSize: {{ .Values.common.monitor.queueSize }}
+      # 采集数据用的gsecmdline命令绝对路径，默认版本需要大于等于2.0.2 ，默认路径：/usr/local/gse/plugins/bin/gsecmdline
+      gsecmdlinePath: {{ .Values.common.monitor.gsecmdlinePath }}
+      # 对应的domainsocket绝对路径，默认路径：/usr/local/gse/agent/data/ipc.state.report
+      domainSocketPath: {{ .Values.common.monitor.domainSocketPath }}
+      # 用于对数据上报进行频率控制和限流
+      # qps的设置范围为1～50，默认值为10
+      # burst的设置范围为1～100，默认值为20
+      rateLimiter:
+        qps: {{ .Values.common.monitor.rateLimiter.qps }}
+        burst: {{ .Values.common.monitor.rateLimiter.burst }}
+    # cacheService相关配置
+    cacheService:
+    # 业务简要拓扑缓存的定时刷新时间，默认为15分钟，最小为2分钟。每次会将所有的业务的拓扑刷新一次到缓存中
+      briefTopologySyncIntervalMinutes: {{ .Values.common.cacheService.briefTopologySyncIntervalMinutes }}
+
+  extra.yaml: |-
+    
+
+  migrate.yaml: |-
+    configServer:
+      addrs: {{ include "cmdb.configAndServiceCenter.addr" . | quote }}
+      usr:
+      pwd:
+
+    registerServer:
+      addrs: {{ include "cmdb.configAndServiceCenter.addr" . | quote }}
+      usr:
+      pwd:
+
+    confs:
+      dir: {{ .Values.adminserver.configDir }}
+
+    errors:
+      res: {{ .Values.adminserver.errors.res }}
+
+    language:
+      res: {{ .Values.adminserver.language.res }}
+
+    hostsnap:
+      dataID: {{ .Values.adminserver.hostsnap.dataID }}
+
+  mongodb.yaml: |-
+    mongodb:
+      host: {{ include "cmdb.mongodb.addr" . | quote }}
+      usr: {{ include "cmdb.mongodb.usr" . | quote }}
+      pwd: {{ include "cmdb.mongodb.pwd" . | quote }}
+      database: {{ .Values.mongodb.externalMongodb.database }}
+      port: {{ include "cmdb.mongodb.port" . | quote }}
+      maxOpenConns: {{ .Values.mongodb.externalMongodb.maxOpenConns }}
+      maxIdleConns: {{ .Values.mongodb.externalMongodb.maxIdleConns }}
+
+      mechanism: {{ .Values.mongodb.externalMongodb.mechanism }}
+      rsName: {{ .Values.mongodb.externalMongodb.rsName }}
+      #mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+      socketTimeoutSeconds: {{ .Values.mongodb.externalMongodb.socketTimeoutSeconds }}
+      enable: {{ .Values.mongodb.externalMongodb.enable }}
+
+    watch:
+      host: {{ include "cmdb.mongodb.watch.addr" . | quote }}
+      port: {{ include "cmdb.mongodb.watch.port" . | quote }}
+      usr: {{ include "cmdb.mongodb.watch.usr" . | quote }}
+      pwd: {{ include "cmdb.mongodb.watch.pwd" . | quote }}
+      database: {{ .Values.mongodb.watch.database }}
+      maxOpenConns: {{ .Values.mongodb.watch.maxOpenConns }}
+      maxIdleConns: {{ .Values.mongodb.watch.maxIdleConns }}
+      mechanism: {{ .Values.mongodb.watch.mechanism }}
+      rsName: {{ .Values.mongodb.watch.rsName }}
+      socketTimeoutSeconds: {{ .Values.mongodb.watch.socketTimeoutSeconds }}
+
+  redis.yaml: |-
+    redis:
+      host: {{ include "cmdb.redis.host" . | quote }}
+      pwd: {{ include "cmdb.redis.pwd" . | quote }}
+      database: {{ .Values.redis.redis.database }}
+      maxOpenConns: {{ .Values.redis.redis.maxOpenConns }}
+      maxIdleConns: {{ .Values.redis.redis.maxIdleConns }}
+      snap:
+        host: {{ include "cmdb.redis.snap.host" . | quote }}
+        pwd: {{ include "cmdb.redis.snap.pwd" . | quote }}
+        database: {{ .Values.redis.snap_redis.database }}
+        maxOpenConns: {{ .Values.redis.snap_redis.maxOpenConns }}
+        maxIdleConns: {{ .Values.redis.snap_redis.maxIdleConns }}
+      discover:
+        host: {{ include "cmdb.redis.discover.host" . | quote }}
+        pwd: {{ include "cmdb.redis.discover.pwd" . | quote }}
+        database: {{ .Values.redis.discover_redis.database }}
+        maxOpenConns: {{ .Values.redis.discover_redis.maxOpenConns }}
+        maxIdleConns: {{ .Values.redis.discover_redis.maxIdleConns }}
+      netcollect:
+        host: {{ include "cmdb.redis.netcollect.host" . | quote }}
+        pwd: {{ include "cmdb.redis.netcollect.pwd" . | quote }}
+        database: {{ .Values.redis.netcollect_redis.database }}
+        maxOpenConns: {{ .Values.redis.netcollect_redis.maxOpenConns }}
+        maxIdleConns: {{ .Values.redis.netcollect_redis.maxIdleConns }}
