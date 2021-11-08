@@ -132,7 +132,13 @@
       selectableRows() {
         if (!this.rows?.length) return []
         return this.rows.filter(i => !i.disabled)
-      }
+      },
+      fullDataAllDisabled() {
+        return this.fullData.every((i, index) => {
+          if (this.selectable) return !this.selectable(i, index)
+          return true
+        })
+      },
     },
     watch: {
       data: {
@@ -174,7 +180,15 @@
         if (onCrossPageMode) {
           if (this.fullData) {
             const unselectedRowKeys = reservedUnselectedRows.map(r => safeGet(r, this.rowKey))
-            innerSelectedRows = this.fullData.filter(i => !unselectedRowKeys.includes(safeGet(i, this.rowKey)))
+            innerSelectedRows = this.fullData
+              .filter((i, index) => {
+                const isSelected =  !unselectedRowKeys.includes(safeGet(i, this.rowKey))
+                if (this.selectable) {
+                  return this.selectable(i, index) && isSelected
+                }
+                return isSelected
+              })
+            console.log('innerSelectedRows', innerSelectedRows)
           } else {
             innerSelectedRows = []
           }
@@ -280,7 +294,7 @@
             <template slot="content">
               <bk-checkbox
                 indeterminate={this.allSelectionIndeterminate}
-                disabled={this.allSelectionDisabled}
+                disabled={this.allSelectionDisabled || this.fullDataAllDisabled}
                 class={{ 'is-total-selected': this.onCrossPageMode, 'all-select-checkbox': true }}
                 vModel={this.isAllSelected}
                 onChange={this.handleAllSelectionChange}
@@ -319,7 +333,7 @@
           let checked = this.onCrossPageMode
 
           // 不可选的选项一律置灰
-          if (this.selectable && typeof this.selectable === 'function') {
+          if (this.selectable) {
             const disabled = !this.selectable(i, index)
             if (disabled) {
               return { ...i, checked: false, disabled }
