@@ -277,7 +277,7 @@ func (ps *parseStream) business() *parseStream {
 		for _, bizID := range input.BizID {
 			iamResource := meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.Business,
+					Type: meta.Business,
 					// delete archived business use archive action
 					Action:     meta.Archive,
 					InstanceID: bizID,
@@ -381,7 +381,7 @@ func (ps *parseStream) mainline() *parseStream {
 }
 
 const (
-	objectStatistics         = "/api/v3/object/statistics"
+	objectStatistics = "/api/v3/object/statistics"
 )
 
 func (ps *parseStream) object() *parseStream {
@@ -963,6 +963,7 @@ var (
 	searchAuditDict   = `/api/v3/find/audit_dict`
 	searchAuditList   = `/api/v3/findmany/audit_list`
 	searchAuditDetail = `/api/v3/find/audit`
+	searchInstAudit   = regexp.MustCompile(`^/api/v3/find/inst_audit/[0-9]+/[^\s/]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -1000,6 +1001,70 @@ func (ps *parseStream) audit() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.AuditLog,
 					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(searchInstAudit, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = errors.New("find instance audit, got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find instance audit, but got invalid biz id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+
+		resourceID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find instance audit, but got invalid resource id %s", ps.RequestCtx.Elements[6])
+			return ps
+		}
+
+		objID := ps.RequestCtx.Elements[5]
+		isMainline, err := ps.isMainlineModel(objID)
+		if err != nil {
+			ps.err = fmt.Errorf("check object is mainline failed, err: %v, rid: %s", err, ps.RequestCtx.Rid)
+			return ps
+		}
+
+		if isMainline {
+			if objID == common.BKInnerObjIDHost && bizID == 1 {
+				ps.Attribute.Resources = []meta.ResourceAttribute{
+					{
+						Basic: meta.Basic{
+							Type:       meta.HostInstance,
+							InstanceID: resourceID,
+							Action:     meta.Find,
+						},
+					},
+				}
+
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					Basic: meta.Basic{
+						Type:       meta.Business,
+						InstanceID: bizID,
+						Action:     meta.ViewBusinessResource,
+					},
+				},
+			}
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.ModelInstance,
+					InstanceID: resourceID,
+					Action:     meta.Find,
 				},
 			},
 		}

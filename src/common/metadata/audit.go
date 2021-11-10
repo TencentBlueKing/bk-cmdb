@@ -99,6 +99,48 @@ type OperationTimeCondition struct {
 	End   string `json:"end"`
 }
 
+// InstAuditQueryInput search instance audit query condition
+type InstAuditQueryInput struct {
+	Condition  InstAuditCondition `json:"condition"`
+	Page       BasePage           `json:"page,omitempty"`
+	WithDetail bool               `json:"with_detail"`
+}
+
+// Validate validates the input param
+func (input *InstAuditQueryInput) Validate() errors.RawErrorInfo {
+	if input.Page.Limit <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"limit"},
+		}
+	}
+
+	if input.Page.Limit > common.BKAuditLogPageLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommPageLimitIsExceeded,
+		}
+	}
+
+	if len(input.Condition.ResourceType) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKResourceTypeField},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// InstAuditCondition instance audit condition
+type InstAuditCondition struct {
+	User          string                 `json:"user"`
+	ResourceName  string                 `json:"resource_name"`
+	ResourceType  ResourceType           `json:"resource_type" `
+	OperationTime OperationTimeCondition `json:"operation_time"`
+	// ID is an audit record's id
+	ID []int64 `json:"id"`
+}
+
 type AuditLog struct {
 	ID int64 `json:"id" bson:"id"`
 	// AuditType is a high level abstract of the resource managed by this cmdb.

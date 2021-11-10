@@ -13,6 +13,8 @@
 package service
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -236,4 +238,100 @@ func parseAuditTypeCondition(kit *rest.Kit, condition metadata.AuditQueryConditi
 	}
 
 	return nil, false
+}
+
+// SearchInstAudit search instance audit
+// 该函数仅供前端调用！
+func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
+	query := new(metadata.InstAuditQueryInput)
+	if err := ctx.DecodeInto(query); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := query.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	resourceID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKResourceIDField), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
+	if err != nil {
+		blog.Errorf("find object[%s] failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("check if object is mainline object failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if isMainline && bizID == 0 {
+		blog.Errorf("search mainline object audit must provide bizID, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	cond := mapstr.MapStr{common.BKResourceIDField: resourceID, common.BKAppIDField: bizID}
+	if query.Condition.User != "" {
+		cond[common.BKUser] = query.Condition.User
+	}
+
+	if query.Condition.ResourceName != "" {
+		cond[common.BKResourceNameField] = query.Condition.ResourceName
+	}
+
+	if query.Condition.ResourceType != "" {
+		cond[common.BKResourceTypeField] = query.Condition.ResourceType
+	}
+
+	switch query.Condition.ResourceType {
+	case metadata.InstanceAssociationRes:
+		cond[common.BKOperationDetailField+"."+"src_obj_id"] = objID
+	case metadata.ModelInstanceRes:
+		cond[common.BKOperationDetailField+"."+common.BKObjIDField] = objID
+	}
+
+	if len(query.Condition.ID) != 0 {
+		cond[common.BKFieldID] = mapstr.MapStr{common.BKDBIN: query.Condition.ID}
+	}
+
+	timeCond, _ := parseOperationTimeCondition(ctx.Kit, query.Condition.OperationTime)
+	if len(timeCond) != 0 {
+		cond[common.BKOperationTimeField] = timeCond
+	}
+
+	fields := make([]string, 0)
+	if !query.WithDetail {
+		fields = []string{common.BKFieldID, common.BKUser, common.BKResourceTypeField, common.BKActionField,
+			common.BKOperationTimeField, common.BKAppIDField, common.BKResourceIDField, common.BKResourceNameField}
+	}
+
+	auditQuery := metadata.QueryCondition{
+		Condition: cond,
+		Fields:    fields,
+		Page:      query.Page,
+	}
+	count, list, err := s.Core.AuditOperation().SearchAuditList(ctx.Kit, auditQuery)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntityWithCount(count, list)
 }
