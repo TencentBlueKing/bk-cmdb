@@ -963,7 +963,7 @@ var (
 	searchAuditDict   = `/api/v3/find/audit_dict`
 	searchAuditList   = `/api/v3/findmany/audit_list`
 	searchAuditDetail = `/api/v3/find/audit`
-	searchInstAudit   = regexp.MustCompile(`^/api/v3/find/inst_audit/[0-9]+/[^\s/]+/?$`)
+	searchInstAudit   = `/api/v3/find/inst_audit`
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -1007,33 +1007,28 @@ func (ps *parseStream) audit() *parseStream {
 		return ps
 	}
 
-	if ps.hitRegexp(searchInstAudit, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("find instance audit, got invalid url")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+	if ps.hitPattern(searchInstAudit, http.MethodPost) {
+		query := new(metadata.InstAuditQueryInput)
+		body, err := ps.RequestCtx.getRequestBody()
 		if err != nil {
-			ps.err = fmt.Errorf("find instance audit, but got invalid biz id %s", ps.RequestCtx.Elements[4])
+			ps.err = err
+			return ps
+		}
+		if err := json.Unmarshal(body, query); err != nil {
+			ps.err = fmt.Errorf("unmarshal request body failed, err: %+v", err)
 			return ps
 		}
 
-		resourceID, err := ps.RequestCtx.getValueFromBody(common.BKResourceIDField)
-		if err != nil {
-			ps.err = fmt.Errorf("find instance audit, but got invalid resource id %s", resourceID)
-			return ps
-		}
-
-		objID := ps.RequestCtx.Elements[5]
-		isMainline, err := ps.isMainlineModel(objID)
+		isMainline, err := ps.isMainlineModel(query.Condition.ObjID)
 		if err != nil {
 			ps.err = fmt.Errorf("check object is mainline failed, err: %v, rid: %s", err, ps.RequestCtx.Rid)
 			return ps
 		}
 
 		if isMainline {
-			if objID == common.BKInnerObjIDHost && bizID == 1 {
+
+			if query.Condition.ObjID == common.BKInnerObjIDHost && query.Condition.BizID < 2 {
+
 				ps.Attribute.Resources = []meta.ResourceAttribute{
 					{
 						Basic: meta.Basic{
@@ -1043,10 +1038,6 @@ func (ps *parseStream) audit() *parseStream {
 					},
 				}
 
-				if resourceID.Int() != 0 {
-					ps.Attribute.Resources[0].Basic.InstanceID = resourceID.Int()
-				}
-
 				return ps
 			}
 
@@ -1054,7 +1045,7 @@ func (ps *parseStream) audit() *parseStream {
 				{
 					Basic: meta.Basic{
 						Type:       meta.Business,
-						InstanceID: bizID,
+						InstanceID: query.Condition.BizID,
 						Action:     meta.ViewBusinessResource,
 					},
 				},
@@ -1070,10 +1061,6 @@ func (ps *parseStream) audit() *parseStream {
 					Action: meta.Find,
 				},
 			},
-		}
-
-		if resourceID.Int() != 0 {
-			ps.Attribute.Resources[0].Basic.InstanceID = resourceID.Int()
 		}
 
 		return ps

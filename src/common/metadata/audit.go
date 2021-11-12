@@ -128,12 +128,21 @@ func (input *InstAuditQueryInput) Validate() errors.RawErrorInfo {
 		}
 	}
 
+	if len(input.Condition.ObjID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
 	return errors.RawErrorInfo{}
 }
 
 // InstAuditCondition instance audit condition
 type InstAuditCondition struct {
 	User          string                 `json:"user"`
+	BizID         int64                  `json:"bk_biz_id"`
+	ObjID         string                 `json:"bk_obj_id"`
 	ResourceName  string                 `json:"resource_name"`
 	ResourceID    interface{}            `json:"resource_id"`
 	ResourceType  ResourceType           `json:"resource_type" `

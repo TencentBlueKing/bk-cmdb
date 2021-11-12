@@ -13,8 +13,6 @@
 package service
 
 import (
-	"strconv"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -254,16 +252,9 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, query.Condition.ObjID)
 	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	objID := ctx.Request.PathParameter(common.BKObjIDField)
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
-	if err != nil {
-		blog.Errorf("find object[%s] failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+		blog.Errorf("find object[%s] failed, err: %v, rid: %s", query.Condition.ObjID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -275,13 +266,17 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 		return
 	}
 
-	if isMainline && bizID == 0 {
+	if isMainline && query.Condition.BizID == 0 {
 		blog.Errorf("search mainline object audit must provide bizID, rid: %s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
 	}
 
-	cond := mapstr.MapStr{common.BKAppIDField: bizID}
+	cond := mapstr.New()
+	if query.Condition.BizID != 0 {
+		cond[common.BKAppIDField] = query.Condition.BizID
+	}
+
 	if query.Condition.User != "" {
 		cond[common.BKUser] = query.Condition.User
 	}
@@ -304,9 +299,9 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 
 	switch query.Condition.ResourceType {
 	case metadata.InstanceAssociationRes:
-		cond[common.BKOperationDetailField+"."+"src_obj_id"] = objID
+		cond[common.BKOperationDetailField+"."+"src_obj_id"] = query.Condition.ObjID
 	case metadata.ModelInstanceRes:
-		cond[common.BKOperationDetailField+"."+common.BKObjIDField] = objID
+		cond[common.BKOperationDetailField+"."+common.BKObjIDField] = query.Condition.ObjID
 	}
 
 	if len(query.Condition.ID) != 0 {
