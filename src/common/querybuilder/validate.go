@@ -83,7 +83,7 @@ func validateDatetimeStringType(value interface{}) error {
 	if err := validateStringType(value); err != nil {
 		return err
 	}
-	if _, err := time.Parse(time.RFC3339, value.(string)); err != nil {
+	if _, err := time.Parse(timeLayout, value.(string)); err != nil {
 		return err
 	}
 	return nil

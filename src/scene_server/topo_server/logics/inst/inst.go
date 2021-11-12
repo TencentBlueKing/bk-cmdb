@@ -786,6 +786,7 @@ func (c *commonInst) SearchObjectInstances(kit *rest.Kit, objID string, input *m
 	conditions := &metadata.QueryCondition{
 		Fields:         input.Fields,
 		Condition:      cond,
+		TimeCondition:  input.TimeCondition,
 		Page:           input.Page,
 		DisableCounter: true,
 	}
@@ -814,9 +815,9 @@ func (c *commonInst) CountObjectInstances(kit *rest.Kit, objID string,
 	if err != nil {
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
 	}
-
 	conditions := &metadata.Condition{
-		Condition: cond,
+		Condition:     cond,
+		TimeCondition: input.TimeCondition,
 	}
 
 	// count object instances num.
