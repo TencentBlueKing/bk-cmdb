@@ -963,7 +963,7 @@ var (
 	searchAuditDict   = `/api/v3/find/audit_dict`
 	searchAuditList   = `/api/v3/findmany/audit_list`
 	searchAuditDetail = `/api/v3/find/audit`
-	searchInstAudit   = regexp.MustCompile(`^/api/v3/find/inst_audit/[0-9]+/[^\s/]+/[0-9]+/?$`)
+	searchInstAudit   = regexp.MustCompile(`^/api/v3/find/inst_audit/[0-9]+/[^\s/]+/?$`)
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -1008,7 +1008,7 @@ func (ps *parseStream) audit() *parseStream {
 	}
 
 	if ps.hitRegexp(searchInstAudit, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 7 {
+		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find instance audit, got invalid url")
 			return ps
 		}
@@ -1019,9 +1019,9 @@ func (ps *parseStream) audit() *parseStream {
 			return ps
 		}
 
-		resourceID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		resourceID, err := ps.RequestCtx.getValueFromBody(common.BKResourceIDField)
 		if err != nil {
-			ps.err = fmt.Errorf("find instance audit, but got invalid resource id %s", ps.RequestCtx.Elements[6])
+			ps.err = fmt.Errorf("find instance audit, but got invalid resource id %s", resourceID)
 			return ps
 		}
 
@@ -1037,11 +1037,14 @@ func (ps *parseStream) audit() *parseStream {
 				ps.Attribute.Resources = []meta.ResourceAttribute{
 					{
 						Basic: meta.Basic{
-							Type:       meta.HostInstance,
-							InstanceID: resourceID,
-							Action:     meta.Find,
+							Type:   meta.HostInstance,
+							Action: meta.Find,
 						},
 					},
+				}
+
+				if resourceID.Int() != 0 {
+					ps.Attribute.Resources[0].Basic.InstanceID = resourceID.Int()
 				}
 
 				return ps
@@ -1056,18 +1059,23 @@ func (ps *parseStream) audit() *parseStream {
 					},
 				},
 			}
+
 			return ps
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:       meta.ModelInstance,
-					InstanceID: resourceID,
-					Action:     meta.Find,
+					Type:   meta.ModelInstance,
+					Action: meta.Find,
 				},
 			},
 		}
+
+		if resourceID.Int() != 0 {
+			ps.Attribute.Resources[0].Basic.InstanceID = resourceID.Int()
+		}
+
 		return ps
 	}
 

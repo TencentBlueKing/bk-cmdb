@@ -135,7 +135,9 @@ func (input *InstAuditQueryInput) Validate() errors.RawErrorInfo {
 type InstAuditCondition struct {
 	User          string                 `json:"user"`
 	ResourceName  string                 `json:"resource_name"`
+	ResourceID    interface{}            `json:"resource_id"`
 	ResourceType  ResourceType           `json:"resource_type" `
+	Action        []ActionType           `json:"action"`
 	OperationTime OperationTimeCondition `json:"operation_time"`
 	// ID is an audit record's id
 	ID []int64 `json:"id"`

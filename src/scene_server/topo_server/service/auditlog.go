@@ -260,12 +260,6 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 		return
 	}
 
-	resourceID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKResourceIDField), 10, 64)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
 	objID := ctx.Request.PathParameter(common.BKObjIDField)
 	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
 	if err != nil {
@@ -287,9 +281,13 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := mapstr.MapStr{common.BKResourceIDField: resourceID, common.BKAppIDField: bizID}
+	cond := mapstr.MapStr{common.BKAppIDField: bizID}
 	if query.Condition.User != "" {
 		cond[common.BKUser] = query.Condition.User
+	}
+
+	if query.Condition.ResourceID != "" {
+		cond[common.BKResourceIDField] = query.Condition.ResourceID
 	}
 
 	if query.Condition.ResourceName != "" {
@@ -298,6 +296,10 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 
 	if query.Condition.ResourceType != "" {
 		cond[common.BKResourceTypeField] = query.Condition.ResourceType
+	}
+
+	if len(query.Condition.Action) > 0 {
+		cond[common.BKActionField] = map[string]interface{}{common.BKDBIN: query.Condition.Action}
 	}
 
 	switch query.Condition.ResourceType {

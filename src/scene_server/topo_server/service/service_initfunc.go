@@ -45,7 +45,7 @@ func (s *Service) initAuditLog(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/audit_list", Handler: s.SearchAuditList})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/audit", Handler: s.SearchAuditDetail})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path: "/find/inst_audit/{bk_biz_id}/{bk_obj_id}/{resource_id}", Handler: s.SearchInstAudit})
+		Path: "/find/inst_audit/{bk_biz_id}/{bk_obj_id}", Handler: s.SearchInstAudit})
 
 	utility.AddToRestfulWebService(web)
 }
