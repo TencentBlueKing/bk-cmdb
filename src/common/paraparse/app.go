@@ -29,6 +29,7 @@ type SearchParams struct {
 	Fields    []string               `json:"fields,omitempty"`
 }
 
+// ParseCommonParams parse common params
 func ParseCommonParams(input []metadata.ConditionItem, output map[string]interface{}) error {
 	for _, i := range input {
 		switch i.Operator {
@@ -73,20 +74,18 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 			}
 			output[i.Field] = d
 		default:
-			d := make(map[string]interface{})
-			if i.Value == nil {
-				d[i.Operator] = i.Value
-				/*} else if reflect.TypeOf(i.Value).Kind() == reflect.String {
-				d[i.Operator] = SpecialCharChange(i.Value.(string))*/
-			} else {
-				d[i.Operator] = i.Value
+			queryCondItem, ok := output[i.Field].(map[string]interface{})
+			if !ok {
+				queryCondItem = make(map[string]interface{})
 			}
-			output[i.Field] = d
+			queryCondItem[i.Operator] = i.Value
+			output[i.Field] = queryCondItem
 		}
 	}
 	return nil
 }
 
+// SpecialCharChange
 func SpecialCharChange(targetStr string) string {
 
 	re := regexp.MustCompile("[.()\\\\|\\[\\]\\*{}\\^\\$\\?]")
