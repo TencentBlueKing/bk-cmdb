@@ -108,12 +108,6 @@ type InstAuditQueryInput struct {
 
 // Validate validates the input param
 func (input *InstAuditQueryInput) Validate() errors.RawErrorInfo {
-	if input.Page.Limit <= 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{"limit"},
-		}
-	}
 
 	if input.Page.Limit > common.BKAuditLogPageLimit {
 		return errors.RawErrorInfo{

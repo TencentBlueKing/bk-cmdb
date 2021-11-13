@@ -281,7 +281,7 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 		cond[common.BKUser] = query.Condition.User
 	}
 
-	if query.Condition.ResourceID != "" {
+	if query.Condition.ResourceID != nil {
 		cond[common.BKResourceIDField] = query.Condition.ResourceID
 	}
 
