@@ -91,6 +91,13 @@
       active: Boolean
     },
     data() {
+      this.polling = new Polling(async () => {
+        const syncingModules = this.table.data
+          .filter(theModule => this.isSyncing(theModule.status)).map(theModule => theModule.bk_module_id)
+        if (syncingModules.length > 0) {
+          await to(this.loadInstanceStatus(syncingModules))
+        }
+      }, 5000)
       return {
         table: {
           filter: '',
@@ -142,13 +149,6 @@
     },
     created() {
       this.handleFilter = debounce(this.filterData, 300)
-      this.polling = new Polling(async () => {
-        const syncingModules = this.table.data
-          .filter(theModule => this.isSyncing(theModule.status)).map(theModule => theModule.bk_module_id)
-        if (syncingModules.length > 0) {
-          await to(this.loadInstanceStatus(syncingModules))
-        }
-      }, 5000)
     },
     methods: {
       /**
