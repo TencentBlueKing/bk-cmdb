@@ -188,7 +188,6 @@
                 }
                 return isSelected
               })
-            console.log('innerSelectedRows', innerSelectedRows)
           } else {
             innerSelectedRows = []
           }
