@@ -75,7 +75,7 @@
   import Bus from '@/utils/bus'
   import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
   import InstanceStatusColumn from './instance-status-column.vue'
-  import {  Polling } from '@/utils/polling'
+  import { Polling } from '@/utils/polling'
   import BatchSelectionColumn from '@/components/batch-selection-column'
   import to from 'await-to-js'
   export default {
@@ -91,15 +91,6 @@
       active: Boolean
     },
     data() {
-      // 开启自动刷新
-      this.polling = new Polling(async () => {
-        const syncingModules = this.table.data
-          .filter(theModule => this.isSyncing(theModule.status)).map(theModule => theModule.bk_module_id)
-        if (syncingModules.length > 0) {
-          await to(this.loadInstanceStatus(syncingModules))
-        }
-      }, 5000)
-
       return {
         table: {
           filter: '',
@@ -151,6 +142,13 @@
     },
     created() {
       this.handleFilter = debounce(this.filterData, 300)
+      this.polling = new Polling(async () => {
+        const syncingModules = this.table.data
+          .filter(theModule => this.isSyncing(theModule.status)).map(theModule => theModule.bk_module_id)
+        if (syncingModules.length > 0) {
+          await to(this.loadInstanceStatus(syncingModules))
+        }
+      }, 5000)
     },
     methods: {
       /**
