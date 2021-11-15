@@ -125,8 +125,10 @@
       this.polling = new Polling(() => {
         const needSync = this.list.some(i => this.isSyncing(i.status))
         if (needSync) {
-          this.updateStatusData()
-          this.getInstancesInfo()
+          return Promise.all([
+            this.updateStatusData(),
+            this.getInstancesInfo()
+          ])
         }
       }, 5000)
 
@@ -247,7 +249,6 @@
         return [...row.topo_path].reverse().map(path => path.bk_inst_name)
           .join(' / ') || '--'
       },
-      // 因为后端输出改了以后，一个临时的方式，用 bk_inst_id 来代替 bk_set_id，后续需要优化
       formatStatusData(data) {
         return data.map(i => ({
           ...i,

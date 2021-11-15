@@ -8,23 +8,24 @@ class Polling {
     this.pollingTimer = null // 轮询的 timer
     this.callback = callback
     this.duration = duration
-    this.isStop = true // 轮询停止标识，true 为停止，false 为轮询中。
   }
 
   // 启动轮询
   start() {
+    // 阻止重复开启定时器
     if (this.pollingTimer) return false
-    this.isStop = false
-
     try {
       const pull = () => {
         // 停掉以后，避免再往队列里面插入新任务。
-        if (this.isStop) return false
-
-        this.pollingTimer = setTimeout(() => {
+        if (!this.pollingTimer) return false
+        this.pollingTimer = setTimeout(async () => {
           // 有可能轮询已经停止了，但是还有任务在队列中，所以需要告知正在队列中的任务，你可以停下来了！
-          if (this.isStop) return false
-          this.callback()
+          if (!this.pollingTimer) return false
+          try {
+            await this.callback()
+          } catch (err) {
+            console.log(err)
+          }
           pull()
         }, this.duration)
       }
@@ -38,9 +39,8 @@ class Polling {
 
   // 停止轮询
   stop() {
-    this.pollingTimer = null
     clearTimeout(this.pollingTimer)
-    this.isStop = true
+    this.pollingTimer = null
   }
 }
 

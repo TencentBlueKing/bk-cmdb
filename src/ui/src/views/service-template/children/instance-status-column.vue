@@ -16,6 +16,7 @@
       <span v-else-if="row.status === 'failure'"
         class="sync-status"
         v-bk-tooltips="{
+          disabled: !row.fail_tips,
           content: row.fail_tips,
           placement: 'right'
         }">

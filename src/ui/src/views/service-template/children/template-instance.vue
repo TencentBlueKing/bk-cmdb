@@ -20,7 +20,7 @@
       </div>
       <bk-table class="instance-table"
         ref="instanceTable"
-        v-bkloading="{ isLoading: $loading(Object.values(request)) || table.filtering }"
+        v-bkloading="{ isLoading: instancesLoading || table.filtering }"
         :data="table.visibleList"
         :pagination="table.pagination"
         :max-height="$APP.height - 250"
@@ -78,6 +78,7 @@
   import { Polling } from '@/utils/polling'
   import BatchSelectionColumn from '@/components/batch-selection-column'
   import to from 'await-to-js'
+  import cloneDeep from 'lodash/cloneDeep'
   export default {
     name: 'templateInstance',
     components: {
@@ -91,11 +92,11 @@
       active: Boolean
     },
     data() {
-      this.polling = new Polling(async () => {
+      this.polling = new Polling(() => {
         const syncingModules = this.table.data
           .filter(theModule => this.isSyncing(theModule.status)).map(theModule => theModule.bk_module_id)
         if (syncingModules.length > 0) {
-          await to(this.loadInstanceStatus(syncingModules))
+          return this.loadInstanceStatus(syncingModules)
         }
       }, 5000)
       return {
@@ -118,11 +119,8 @@
             })
           }
         },
-        request: {
-          instance: Symbol('instance'),
-          path: Symbol('path')
-        },
-        handleFilter: null
+        handleFilter: null,
+        instancesLoading: false,
       }
     },
     computed: {
@@ -138,6 +136,7 @@
           if (active) {
             this.loadIntegrationInstances()
             this.polling.start()
+            this.$refs?.batchSelectionColumn?.clearSelection()
           } else {
             this.polling.stop()
           }
@@ -155,6 +154,7 @@
        * 加载集成了状态、拓扑路径的实例
        */
       async loadIntegrationInstances() {
+        this.instancesLoading = true
         const [loadInstanceErr, data] = await to(this.loadInstance())
 
         if (loadInstanceErr) {
@@ -174,12 +174,13 @@
               .join(' / ')
           })
         }
-
         this.table.data = data.info
-        this.table.backup = Object.freeze(data.info)
+        this.table.backup = Object.freeze(cloneDeep(data.info))
+        this.table.pagination.current = 1
         this.table.pagination.count = data.count
-        this.loadInstanceStatus(this.table.data.map(i => i.bk_module_id))
+        await to(this.loadInstanceStatus(this.table.data.map(i => i.bk_module_id)))
         this.renderVisibleList()
+        this.instancesLoading = false
 
         Bus.$emit('module-loaded', data.count)
       },
@@ -190,9 +191,6 @@
         return this.$store.dispatch('serviceTemplate/getServiceTemplateModules', {
           bizId: this.bizId,
           serviceTemplateId: this.serviceTemplateId,
-          config: {
-            requestId: this.request.instance
-          }
         })
       },
       renderVisibleList() {
@@ -211,12 +209,18 @@
           }
         }).then((res) => {
           this.table.data.forEach((item) => {
-            const newStatus = res.find(r => r.bk_inst_id === item.bk_module_id)?.status
-            if (newStatus) {
-              this.$set(item, 'status', newStatus)
+            const instanceStatus = res.find(r => r.bk_inst_id === item.bk_module_id)
+            if (instanceStatus) {
+              this.$set(item, 'status', instanceStatus.status)
+              this.$set(item, 'last_time', instanceStatus.last_time)
+              this.$set(item, 'fail_tips', instanceStatus.fail_tips)
             }
           })
+          this.table.data.sort(a => (a.status === 'need_sync' ? -1 : 0))
         })
+          .catch((err) => {
+            console.log(err)
+          })
       },
       /**
        * 判断实例是否正在同步中
@@ -238,9 +242,6 @@
           bizId: this.bizId,
           params: {
             topo_nodes: modules.map(module => ({ bk_obj_id: 'module', bk_inst_id: module.bk_module_id }))
-          },
-          config: {
-            requestId: this.request.path
           }
         })
       },

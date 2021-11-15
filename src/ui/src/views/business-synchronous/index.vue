@@ -92,7 +92,7 @@
           @collapse-change="handleInstanceCollapseChange(moduleId, $event)">
           <div class="collapse-title" slot="title">
             {{path}} {{$t('涉及实例')}}
-            <span v-if="currentDiff.modules[moduleId].serviceInstanceCount > 0">
+            <span v-if="currentDiff.modules[moduleId].serviceInstanceCount !== ''">
               ({{currentDiff.modules[moduleId].serviceInstanceCount}})
             </span>
           </div>
@@ -218,7 +218,7 @@
 
         this.modules.forEach((m) => {
           modules[m] = {
-            serviceInstanceCount: 0,
+            serviceInstanceCount: '',
             serviceInstances: []
           }
         })
@@ -481,16 +481,15 @@
           .then(({ service_instances: serviceInstances, total_count: totalCount, type }) => {
             let instancesDiff = []
 
-            instancesDiff = serviceInstances.map(instance => ({
+            instancesDiff = serviceInstances?.map(instance => ({
               ...instance,
               type: type || this.currentDiff.type
             }))
-
             theModule.serviceInstanceCount = totalCount
-            theModule.serviceInstances = instancesDiff
+            theModule.serviceInstances = instancesDiff || []
           })
           .catch(() => {
-            theModule.serviceInstanceCount = 0
+            theModule.serviceInstanceCount = ''
             theModule.serviceInstances = []
           })
           .finally(() => {
