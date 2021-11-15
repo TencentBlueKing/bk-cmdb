@@ -100,7 +100,7 @@
           <!-- 实例列表 -->
           <ul
             class="instance-list"
-            v-bkloading="{ isLoading: instancesLoading }">
+            v-bkloading="{ isLoading: currentDiff.modules[moduleId].instancesLoading }">
             <li class="instance-item"
               v-for="(instance, instanceIndex) in currentDiff.modules[moduleId].serviceInstances"
               :key="instanceIndex"
@@ -473,7 +473,7 @@
        */
       loadInstances(moduleId) {
         const theModule = this.currentDiff.modules[moduleId]
-        this.instancesLoading = true
+        this.$set(theModule, 'instancesLoading', true)
         this.$store.dispatch('businessSynchronous/getDiffInstances', { params: {
           ...this.serializeParams(),
           bk_module_id: Number(moduleId),
@@ -494,7 +494,7 @@
             theModule.serviceInstances = []
           })
           .finally(() => {
-            this.instancesLoading = false
+            this.$set(theModule, 'instancesLoading', false)
           })
       },
       serializeParams() {
