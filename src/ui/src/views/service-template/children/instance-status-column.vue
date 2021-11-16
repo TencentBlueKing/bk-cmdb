@@ -33,7 +33,7 @@
    * 组件分别在集群模板实例、服务模板实例中使用，用于展示不同状态的变化，修改时要注意一起修改。
    */
   export default {
-    name: 'instance-status-column',
+    name: 'InstanceStatusColumn',
     methods: {
       /**
        * 判断实例是否正在同步中

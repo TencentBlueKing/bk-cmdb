@@ -3,11 +3,15 @@
     <div class="instance-main">
       <div class="options clearfix">
         <div class="fl">
-          <bk-button theme="primary"
-            :disabled="!table.selection.length"
-            @click="handleBatchSync">
-            {{$t('批量同步')}}
-          </bk-button>
+          <cmdb-auth :auth="auth">
+            <template #default="{ disabled }">
+              <bk-button theme="primary"
+                :disabled="!table.selection.length || disabled"
+                @click="handleBatchSync">
+                {{$t('批量同步')}}
+              </bk-button>
+            </template>
+          </cmdb-auth>
         </div>
         <div class="fr">
           <bk-input class="filter-item" right-icon="bk-icon icon-search"
@@ -45,13 +49,16 @@
         </bk-table-column>
         <bk-table-column :label="$t('操作')">
           <template slot-scope="{ row }">
-            <bk-button
-              text
-              :disabled="isInstanceDisabled(row.status)"
-              @click="handleSync(row)">
-              {{$t('去同步')}}
-            </bk-button>
-          </template>
+            <cmdb-auth :auth="auth">
+              <template #default="{ disabled }">
+                <bk-button
+                  text
+                  :disabled="isInstanceDisabled(row.status) || disabled"
+                  @click="handleSync(row)">
+                  {{$t('去同步')}}
+                </bk-button>
+              </template>
+            </cmdb-auth></template>
         </bk-table-column>
         <cmdb-table-empty slot="empty" :stuff="table.stuff">
           <div>
@@ -83,13 +90,13 @@
     name: 'templateInstance',
     components: {
       BatchSelectionColumn,
-      InstanceStatusColumn
+      InstanceStatusColumn,
     },
     filters: {
       time
     },
     props: {
-      active: Boolean
+      active: Boolean,
     },
     data() {
       this.polling = new Polling(() => {
@@ -127,6 +134,12 @@
       ...mapGetters('objectBiz', ['bizId']),
       serviceTemplateId() {
         return this.$route.params.templateId
+      },
+      auth() {
+        return {
+          type: this.$OPERATION.U_SERVICE_TEMPLATE,
+          relation: [this.bizId, Number(this.serviceTemplateId)]
+        }
       }
     },
     watch: {
