@@ -1026,8 +1026,18 @@ func (ps *parseStream) audit() *parseStream {
 		}
 
 		if isMainline {
+			if query.Condition.BizID == 0 {
+				ps.err = fmt.Errorf("bk_biz_id is invalid, rid: %s", ps.RequestCtx.Rid)
+				return ps
+			}
 
-			if query.Condition.ObjID == common.BKInnerObjIDHost && query.Condition.BizID < 2 {
+			resPoolBizID, err := ps.getResourcePoolBusinessID()
+			if err != nil {
+				ps.err = fmt.Errorf("get resource pool failed, err: %v, rid: %s", err, ps.RequestCtx.Rid)
+				return ps
+			}
+
+			if query.Condition.ObjID == common.BKInnerObjIDHost && query.Condition.BizID == resPoolBizID {
 
 				ps.Attribute.Resources = []meta.ResourceAttribute{
 					{

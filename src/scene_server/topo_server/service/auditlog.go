@@ -238,8 +238,8 @@ func parseAuditTypeCondition(kit *rest.Kit, condition metadata.AuditQueryConditi
 	return nil, false
 }
 
-// SearchInstAudit search instance audit
-// 该函数仅供前端调用！
+// SearchInstAudit search instance audit, online allow front-end to use
+// 前端在资源池内查看实例的变更记录需要针对当前用户的实例查询权限进行鉴权，原有审计查询接口鉴权条件为操作审计权限，需要进行区别
 func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 	query := new(metadata.InstAuditQueryInput)
 	if err := ctx.DecodeInto(query); err != nil {
@@ -266,7 +266,7 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 		return
 	}
 
-	if isMainline && query.Condition.BizID == 0 {
+	if isMainline && query.Condition.BizID <= 0 {
 		blog.Errorf("search mainline object audit must provide bizID, rid: %s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
@@ -308,7 +308,13 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 		cond[common.BKFieldID] = mapstr.MapStr{common.BKDBIN: query.Condition.ID}
 	}
 
-	timeCond, _ := parseOperationTimeCondition(ctx.Kit, query.Condition.OperationTime)
+	timeCond, err := parseOperationTimeCondition(ctx.Kit, query.Condition.OperationTime)
+	if err != nil {
+		blog.Errorf("parse operation time condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
 	if len(timeCond) != 0 {
 		cond[common.BKOperationTimeField] = timeCond
 	}

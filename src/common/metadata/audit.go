@@ -129,6 +129,17 @@ func (input *InstAuditQueryInput) Validate() errors.RawErrorInfo {
 		}
 	}
 
+	if IsCommon(input.Condition.ObjID) {
+		return errors.RawErrorInfo{}
+	}
+
+	if input.Condition.ObjID != common.BKInnerObjIDApp && input.Condition.ObjID != common.BKInnerObjIDHost {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
 	return errors.RawErrorInfo{}
 }
 
