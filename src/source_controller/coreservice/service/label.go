@@ -45,3 +45,19 @@ func (s *coreService) RemoveLabels(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(nil)
 }
+
+// UpdateLabels update service instance tag.
+func (s *coreService) UpdateLabels(ctx *rest.Contexts) {
+	inputData := selector.LabelUpdateRequest{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := s.core.LabelOperation().UpdateLabel(ctx.Kit, inputData.TableName, inputData.Option); err != nil {
+		blog.Errorf("update labels failed, table: %s, option: %+v, err: %v, rid: %s", inputData.TableName,
+			inputData.Option, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}

@@ -59,49 +59,6 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 		return
 	}
 
-	if data.Exists("BatchInfo") {
-		/*
-			   BatchInfo data format:
-			    {
-			      "BatchInfo": {
-			        "4": { // excel line number
-			          "bk_inst_id": 1,
-			          "bk_inst_key": "a22",
-			          "bk_inst_name": "a11",
-			          "bk_version": "121",
-			          "import_from": "1"
-					}
-				  },
-			      "input_type": "excel"
-			    }
-		*/
-		batchInfo := new(metadata.InstBatchInfo)
-		if err := data.MarshalJSONInto(batchInfo); err != nil {
-			blog.Errorf("create instance failed, import object[%s] instance batch, but got invalid BatchInfo:[%v], "+
-				"err: %+v, rid: %s", objID, batchInfo, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
-			return
-		}
-
-		var setInst *inst.BatchResult
-		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-			var err error
-			setInst, err = s.Logics.InstOperation().CreateInstBatch(ctx.Kit, objID, batchInfo)
-			if err != nil {
-				blog.Errorf("failed to create new object %s, %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
-				return err
-			}
-			return nil
-		})
-
-		if txnErr != nil {
-			ctx.RespAutoError(txnErr)
-			return
-		}
-		ctx.RespEntity(setInst)
-		return
-	}
-
 	setInst := make(mapstr.MapStr)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
@@ -154,6 +111,61 @@ func (s *Service) CreateManyInstance(ctx *rest.Contexts) {
 		blog.Errorf("failed to create %s new instances, err: %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
+	}
+
+	ctx.RespEntity(setInst)
+}
+
+// CreateInstsByImport batch create insts by excel import
+func (s *Service) CreateInstsByImport(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) {
+		blog.Errorf("create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
+
+	exist, err := s.Logics.ObjectOperation().IsObjectExist(ctx.Kit, objID)
+	if err != nil {
+		blog.Errorf("failed to search the object(%s), err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if !exist {
+		blog.Errorf("object(%s) is non-exist, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoModuleSelectFailed))
+		return
+	}
+
+	/*
+		   BatchInfo data format:
+		    {
+		      "BatchInfo": {
+		        "4": { // excel line number
+		          "bk_inst_id": 1,
+		          "bk_inst_key": "a22",
+		          "bk_inst_name": "a11",
+		          "bk_version": "121",
+		          "import_from": "1"
+				}
+			  },
+		      "input_type": "excel"
+		    }
+	*/
+	batchInfo := new(metadata.InstBatchInfo)
+	if err := ctx.DecodeInto(batchInfo); err != nil {
+		blog.Errorf("create instance failed, import object[%s] instance batch, but got invalid BatchInfo:[%v], "+
+			"err: %+v, rid: %s", objID, batchInfo, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
+		return
+	}
+
+	setInst, err := s.Logics.InstOperation().CreateInstBatch(ctx.Kit, objID, batchInfo)
+	if err != nil {
+		blog.Errorf("failed to create new object %s, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 	}
 
 	ctx.RespEntity(setInst)

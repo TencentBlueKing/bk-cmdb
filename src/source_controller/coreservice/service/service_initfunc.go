@@ -285,6 +285,7 @@ func (s *coreService) label(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/labels", Handler: s.AddLabels})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/labels", Handler: s.RemoveLabels})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/updatemany/labels", Handler: s.UpdateLabels})
 
 	utility.AddToRestfulWebService(web)
 }

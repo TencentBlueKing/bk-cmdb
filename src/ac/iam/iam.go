@@ -417,18 +417,61 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 		}
 	}
 
-	// update action_groups in iam
+	// update action_groups in iam, the action groups contains only the existed actions in iam
 	if len(addedActions) > 0 || len(deletedActions) > 0 {
+		actionMap := map[ActionID]struct{}{}
+		for _, action := range iamResp.Data.Actions {
+			if !isIAMSysInstanceAction(action.ID) {
+				actionMap[action.ID] = struct{}{}
+			}
+		}
+		for _, action := range cmdbActions {
+			actionMap[action.ID] = struct{}{}
+		}
+
 		cmdbActionGroups := GenerateActionGroups(objects)
-		blog.Infof("begin update actionGroups")
-		if err := i.Client.UpdateActionGroups(ctx, cmdbActionGroups); err != nil {
-			blog.ErrorJSON("sync iam sysInstances failed, update actionGroups error: %s, actionGroups: %s, rid: %s",
-				err, cmdbActionGroups, rid)
-			return err
+		actualActionGroups := getActionGroupWithExistAction(cmdbActionGroups, actionMap)
+
+		// if all exist actions in iam needs no action group(which happens when first initializing), **skip**
+		if len(actualActionGroups) > 0 {
+			blog.Infof("begin update actionGroups")
+			if err := i.Client.UpdateActionGroups(ctx, actualActionGroups); err != nil {
+				blog.Errorf("update action groups failed, err: %v, actionGroups: %v, rid: %s",
+					err, actualActionGroups, rid)
+				return err
+			}
 		}
 	}
 
 	return nil
+}
+
+// getActionGroupWithExistAction get action groups that has actions that exists in iam
+func getActionGroupWithExistAction(cmdbActionGroups []ActionGroup, actionMap map[ActionID]struct{}) []ActionGroup {
+	actualActionGroups := make([]ActionGroup, 0)
+
+	for _, actionGroup := range cmdbActionGroups {
+		actualActionGroup := ActionGroup{
+			Name:      actionGroup.Name,
+			NameEn:    actionGroup.NameEn,
+			SubGroups: make([]ActionGroup, 0),
+			Actions:   make([]ActionWithID, 0),
+		}
+
+		for _, action := range actionGroup.Actions {
+			if _, exists := actionMap[action.ID]; exists {
+				actualActionGroup.Actions = append(actualActionGroup.Actions, action)
+			}
+		}
+
+		actualActionGroup.SubGroups = getActionGroupWithExistAction(actionGroup.SubGroups, actionMap)
+
+		if len(actualActionGroup.SubGroups) > 0 || len(actualActionGroup.Actions) > 0 {
+			actualActionGroups = append(actualActionGroups, actualActionGroup)
+		}
+	}
+
+	return actualActionGroups
 }
 
 // DeleteCMDBResource delete unnecessary CMDB resource from IAM
@@ -540,6 +583,25 @@ func (i IAM) RegisterToIAM(ctx context.Context, host string) error {
 	}
 	blog.V(5).Infof("register new system %+v succeed", sys)
 	return nil
+}
+
+// IsRegisteredToIAM checks if cmdb is registered to iam or not
+func (i IAM) IsRegisteredToIAM(ctx context.Context) (bool, error) {
+	rid := commonutil.ExtractRequestIDFromContext(ctx)
+
+	_, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
+
+	if err == nil {
+		return true, nil
+	}
+
+	if err != ErrNotFound {
+		blog.Errorf("get system info failed, error: %v, rid: %s", err, rid)
+		return false, err
+	}
+
+	return false, nil
+
 }
 
 // getDeletedActions get deleted actions

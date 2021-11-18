@@ -91,7 +91,7 @@ func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, currentObj
 	}
 
 	// 检查实例删除后，会不会出现重名冲突
-	canReset, repeatedInstName, err := assoc.checkInstNameRepeat(kit, instParentMap, children)
+	canReset, repeatedInstName, err := assoc.checkInstNameRepeat(kit, instParentMap, childObjID, children)
 	if err != nil {
 		blog.Errorf("can not be reset, err: %+v, rid: %s", err, kit.Rid)
 		return err
@@ -341,7 +341,7 @@ func (assoc *association) buildTopoInstRst(kit *rest.Kit, instID int64, objID st
 					topoInst.SetTemplateID, _ = instance.Int64(common.BKSetTemplateIDField)
 					enabled, _ := instance.Bool(common.HostApplyEnabledField)
 					topoInst.HostApplyEnabled = &enabled
-					results.moduleIDs = append(results.moduleIDs, instID)
+					results.moduleIDs = append(results.moduleIDs, topoInst.InstID)
 				}
 				if results.bizID == 0 {
 					results.bizID, err = instance.Int64(common.BKAppIDField)
@@ -465,7 +465,11 @@ func (assoc *association) getMainlineChildInst(kit *rest.Kit, objID, childObjID 
 
 	instCond := &metadata.QueryCondition{
 		Condition: cond,
-		Fields:    []string{common.GetInstIDField(childObjID), common.BKParentIDField},
+		Fields: []string{
+			common.GetInstIDField(childObjID),
+			common.GetInstNameField(childObjID),
+			common.BKParentIDField,
+		},
 	}
 	instRsp, err := assoc.inst.FindInst(kit, childObjID, instCond)
 	if err != nil {
@@ -565,7 +569,7 @@ func (assoc *association) fillStatistics(kit *rest.Kit, bizID int64, moduleIDs [
 		tir.DeepFirstTraverse(func(node *metadata.TopoInstRst) {
 			if node.ObjID == common.BKInnerObjIDModule {
 				node.HostApplyRuleCount = new(int64)
-				*node.HostApplyRuleCount, _ = moduleRuleCount[node.InstID]
+				*node.HostApplyRuleCount = moduleRuleCount[node.InstID]
 			}
 
 			if len(node.Child) == 0 {
@@ -578,13 +582,14 @@ func (assoc *association) fillStatistics(kit *rest.Kit, bizID int64, moduleIDs [
 
 // checkInstNameRepeat 检查如果将 currentInsts 都删除之后，拥有共同父节点的孩子结点会不会出现名字冲突
 // 如果有冲突，返回 (false, 冲突实例名, nil)
-func (assoc *association) checkInstNameRepeat(kit *rest.Kit, instParentMap map[int64]int64, children []mapstr.MapStr) (
-	canReset bool, repeatedInstName string, err error) {
+func (assoc *association) checkInstNameRepeat(kit *rest.Kit, instParentMap map[int64]int64, childObjID string,
+	children []mapstr.MapStr) (canReset bool, repeatedInstName string, err error) {
 
 	parentChildName := map[int64]map[string]struct{}{}
 	for _, child := range children {
-		instName, err := child.String(common.BKInstNameField)
+		instName, err := child.String(common.GetInstNameField(childObjID))
 		if err != nil {
+			blog.Errorf("get child name in child insts failed, err: %v, rid: %s", err, kit.Rid)
 			return false, "", err
 		}
 
@@ -604,7 +609,7 @@ func (assoc *association) checkInstNameRepeat(kit *rest.Kit, instParentMap map[i
 			return false, instName, nil
 		}
 
-		childNameMap[instName] = struct{}{}
+		parentChildName[instParentMap[childParentID]][instName] = struct{}{}
 
 	}
 
@@ -617,7 +622,7 @@ func (assoc *association) TopoNodeHostAndSerInstCount(kit *rest.Kit, instID int6
 	var bizID int64
 	setIDs := make([]int64, 0)
 	moduleIDs := make([]int64, 0)
-	customLevels := make(map[int64]string, 0)
+	customLevels := make(map[int64]string)
 	for _, obj := range input.Condition {
 		switch obj.ObjID {
 		case common.BKInnerObjIDSet:
@@ -1081,7 +1086,7 @@ func (assoc *association) getSetRelationModule(kit *rest.Kit, setIDs []int64) (m
 		return nil, err
 	}
 
-	setRelModuleMap := make(map[int64][]int64, 0)
+	setRelModuleMap := make(map[int64][]int64)
 	for _, mapStr := range resp.Info {
 		setID, err := mapStr.Int64(common.BKSetIDField)
 		if err != nil {

@@ -1103,21 +1103,30 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 	return ps
 }
 
+const (
+	findObjectInstancesNamesPattern = "/api/v3/findmany/object/instances/names"
+)
+
 var (
-	createObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/create/instance/object/[^\s/]+/?$`)
+	createObjectInstanceLatestRegexp             = regexp.MustCompile(`^/api/v3/create/instance/object/[^\s/]+/?$`)
+	createObjectManyInstanceByImportLatestRegexp = regexp.MustCompile(
+		`^/api/v3/create/instance/object/[^\s/]+/by_import/?$`)
 	createObjectManyInstanceLatestRegexp      = regexp.MustCompile(`^/api/v3/createmany/instance/object/[^\s/]+/?$`)
 	findObjectInstanceAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/find/instassociation/object/[^\s/]+/?$`)
-	updateObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/update/instance/object/[^\s/]+/inst/[0-9]+/?$`)
-	updateObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/updatemany/instance/object/[^\s/]+/?$`)
-	deleteObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/deletemany/instance/object/[^\s/]+/?$`)
-	deleteObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/delete/instance/object/[^\s/]+/inst/[0-9]+/?$`)
+	updateObjectInstanceLatestRegexp          = regexp.MustCompile(
+		`^/api/v3/update/instance/object/[^\s/]+/inst/[0-9]+/?$`)
+	updateObjectInstanceBatchLatestRegexp = regexp.MustCompile(`^/api/v3/updatemany/instance/object/[^\s/]+/?$`)
+	deleteObjectInstanceBatchLatestRegexp = regexp.MustCompile(`^/api/v3/deletemany/instance/object/[^\s/]+/?$`)
+	deleteObjectInstanceLatestRegexp      = regexp.MustCompile(
+		`^/api/v3/delete/instance/object/[^\s/]+/inst/[0-9]+/?$`)
 	// TODO remove it
-	findObjectInstanceSubTopologyLatestRegexp = regexp.MustCompile(`^/api/v3/find/insttopo/object/[^\s/]+/inst/[0-9]+/?$`)
-	findObjectInstanceTopologyLatestRegexp    = regexp.MustCompile(`^/api/v3/find/instassttopo/object/[^\s/]+/inst/[0-9]+/?$`)
-	findObjectInstancesLatestRegexp           = regexp.MustCompile(`^/api/v3/find/instance/object/[^\s/]+/?$`)
-	findObjectInstancesUniqueFieldsRegexp     = regexp.MustCompile(
+	findObjectInstanceSubTopologyLatestRegexp = regexp.MustCompile(
+		`^/api/v3/find/insttopo/object/[^\s/]+/inst/[0-9]+/?$`)
+	findObjectInstanceTopologyLatestRegexp = regexp.MustCompile(
+		`^/api/v3/find/instassttopo/object/[^\s/]+/inst/[0-9]+/?$`)
+	findObjectInstancesLatestRegexp       = regexp.MustCompile(`^/api/v3/find/instance/object/[^\s/]+/?$`)
+	findObjectInstancesUniqueFieldsRegexp = regexp.MustCompile(
 		`^/api/v3/find/instance/object/[^\s/]+/unique_fields/by/unique/[0-9]+/?$`)
-	findObjectInstancesNamesRegexp = regexp.MustCompile(`^/api/v3/findmany/object/instances/names/?$`)
 
 	searchObjectInstancesRegexp = regexp.MustCompile(`^/api/v3/search/instances/object/[^\s/]+/?$`)
 	countObjectInstancesRegexp  = regexp.MustCompile(`^/api/v3/count/instances/object/[^\s/]+/?$`)
@@ -1131,6 +1140,44 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 	// create instance operation
 	if ps.hitRegexp(createObjectInstanceLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("create instance, but got invalid url")
+			return ps
+		}
+
+		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   instanceType,
+					Action: meta.Create,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// create instance operation
+	if ps.hitRegexp(createObjectManyInstanceByImportLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
 			ps.err = errors.New("create instance, but got invalid url")
 			return ps
 		}
@@ -1347,7 +1394,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		
+
 		isMainline, err := ps.isMainlineModel(objID)
 		if err != nil {
 			ps.err = err
@@ -1615,14 +1662,15 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		return ps
 	}
 
-	// find object instances' brief info
-	if ps.hitRegexp(findObjectInstancesNamesRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("find object instances' brief info, but got invalid url")
+	// find object instances' names to get set/module name for host advanced filter
+	if ps.hitPattern(findObjectInstancesNamesPattern, http.MethodPost) {
+		val, err := ps.RequestCtx.getValueFromBody(common.BKObjIDField)
+		if err != nil {
+			ps.err = err
 			return ps
 		}
+		objID := val.Value()
 
-		objID := ps.RequestCtx.Elements[5]
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
 		if err != nil {
 			ps.err = err
@@ -2641,7 +2689,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// find business instance topology operation.
 	// also is find mainline instance topology operation.
-	if  ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) {
+	if ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find business instance topology, but got invalid url")
 			return ps
@@ -2695,7 +2743,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// find business instance topology operation.
 	// also is find mainline instance topology operation.
-	if ps.hitRegexp(findBusinessInstanceTopologyWithStatisticsLatestRegexp, http.MethodPost)  {
+	if ps.hitRegexp(findBusinessInstanceTopologyWithStatisticsLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find business instance topology, but got invalid url")
 			return ps
