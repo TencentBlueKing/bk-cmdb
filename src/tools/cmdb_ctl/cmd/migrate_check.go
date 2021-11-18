@@ -30,42 +30,88 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(NewUniqueCheckCommand())
+	rootCmd.AddCommand(NewMigrateCheckCommand())
 }
 
-func NewUniqueCheckCommand() *cobra.Command {
-	return &cobra.Command{
+// NewMigrateCheckCommand new tool command for checking before migration
+func NewMigrateCheckCommand() *cobra.Command {
+	checkAll := new(bool)
+	cmd := &cobra.Command{
+		Use:   "migrate-check",
+		Short: "check if data satisfies migration constraints",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if *checkAll {
+				if err := runUniqueCheck(); err != nil {
+					return err
+				}
+				if err := runProcCheck(false); err != nil {
+					return err
+				}
+				return nil
+			} else {
+				return cmd.Help()
+			}
+		},
+	}
+	cmd.Flags().BoolVar(checkAll, "check-all", false, "check if all data satisfies migration constraints")
+
+	cmd.AddCommand(&cobra.Command{
 		Use:   "unique",
 		Short: "check if object instances satisfies unique constraints",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runUniqueCheck()
 		},
+	})
+
+	clearProc := new(bool)
+	uniqueCmd := &cobra.Command{
+		Use:   "process",
+		Short: "check if process has relation",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runProcCheck(*clearProc)
+		},
 	}
+	uniqueCmd.Flags().BoolVar(clearProc, "clear-proc", false, "clear process with no relation")
+	cmd.AddCommand(uniqueCmd)
+
+	return cmd
 }
 
-type uniqueCheckService struct {
+type migrateCheckService struct {
 	service *config.Service
 }
 
-func newUniqueCheckService(mongoURI string, mongoRsName string) (*uniqueCheckService, error) {
+func newMigrateCheckService(mongoURI string, mongoRsName string) (*migrateCheckService, error) {
 	service, err := config.NewMongoService(mongoURI, mongoRsName)
 	if err != nil {
 		return nil, err
 	}
-	return &uniqueCheckService{
+	return &migrateCheckService{
 		service: service,
 	}, nil
 }
 
 func runUniqueCheck() error {
-	srv, err := newUniqueCheckService(config.Conf.MongoURI, config.Conf.MongoRsName)
+	srv, err := newMigrateCheckService(config.Conf.MongoURI, config.Conf.MongoRsName)
 	if err != nil {
 		return err
 	}
 	return srv.checkUnique()
 }
 
-func (s *uniqueCheckService) checkUnique() error {
+func runProcCheck(clearProc bool) error {
+	srv, err := newMigrateCheckService(config.Conf.MongoURI, config.Conf.MongoRsName)
+	if err != nil {
+		return err
+	}
+	if clearProc {
+		return srv.clearProc()
+	} else {
+		return srv.checkProc()
+	}
+}
+
+func (s *migrateCheckService) checkUnique() error {
 	fmt.Println("=================================")
 	printInfo("start checking unique constraints\n")
 
@@ -129,7 +175,7 @@ func (s *uniqueCheckService) checkUnique() error {
 	return nil
 }
 
-func (s *uniqueCheckService) getAllObjectIDs(ctx context.Context) ([]string, error) {
+func (s *migrateCheckService) getAllObjectIDs(ctx context.Context) ([]string, error) {
 	printInfo("start searching for all object ids\n")
 
 	rawObjIDs, err := s.service.DbProxy.Table(common.BKTableNameObjDes).Distinct(ctx, common.BKObjIDField, nil)
@@ -145,7 +191,7 @@ func (s *uniqueCheckService) getAllObjectIDs(ctx context.Context) ([]string, err
 	return objIDs, nil
 }
 
-func (s *uniqueCheckService) getObjectUniques(ctx context.Context, objID string) ([]ObjectUnique, error) {
+func (s *migrateCheckService) getObjectUniques(ctx context.Context, objID string) ([]ObjectUnique, error) {
 	printInfo("start searching unique constraints for object %s\n", objID)
 
 	filter := map[string]interface{}{
@@ -160,7 +206,7 @@ func (s *uniqueCheckService) getObjectUniques(ctx context.Context, objID string)
 	return uniques, nil
 }
 
-func (s *uniqueCheckService) getObjAttrMap(ctx context.Context, objID string) (map[int64]metadata.Attribute, error) {
+func (s *migrateCheckService) getObjAttrMap(ctx context.Context, objID string) (map[int64]metadata.Attribute, error) {
 	printInfo("start searching object attributes for object %s\n", objID)
 
 	filter := map[string]interface{}{
@@ -197,7 +243,7 @@ func (s *uniqueCheckService) getObjAttrMap(ctx context.Context, objID string) (m
 	return attrMap, nil
 }
 
-func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID, supplierAccount string,
+func (s *migrateCheckService) checkObjectUnique(ctx context.Context, objID, supplierAccount string,
 	unique ObjectUnique, attrMap map[int64]metadata.Attribute) error {
 
 	// check if all unique keys are valid
@@ -267,9 +313,7 @@ func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID, suppl
 			"_id":   attrGroup,
 			"total": map[string]interface{}{common.BKDBSum: 1},
 		}},
-		{common.BKDBMatch: map[string]interface{}{
-			"total": map[string]interface{}{common.BKDBGT: 1},
-		}},
+		{common.BKDBMatch: map[string]interface{}{"total": map[string]interface{}{common.BKDBGT: 1}}},
 	}
 
 	var tableName string
@@ -314,4 +358,129 @@ func printInfo(format string, a ...interface{}) {
 
 func printError(format string, a ...interface{}) {
 	fmt.Printf("ERROR: %s", fmt.Sprintf(format, a...))
+}
+
+func (s *migrateCheckService) checkProc() error {
+	fmt.Println("=================================")
+	printInfo("start checking process with no relation\n")
+
+	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
+
+	procIDs, err := s.getProcWithNoRelation(ctx)
+	if err != nil {
+		return err
+	}
+
+	if len(procIDs) > 0 {
+		procLen := len(procIDs)
+		allProcesses := make([]metadata.Process, 0)
+		for start := 0; start < procLen; start += common.BKMaxPageSize {
+			limit := start + common.BKMaxPageSize
+			if limit > procLen {
+				limit = procLen
+			}
+			procFilter := map[string]interface{}{
+				common.BKProcessIDField: map[string]interface{}{common.BKDBIN: procIDs[start:limit]},
+			}
+
+			processes := make([]metadata.Process, 0)
+			err := s.service.DbProxy.Table(common.BKTableNameBaseProcess).Find(procFilter).All(ctx, &processes)
+			if err != nil {
+				return fmt.Errorf("get processes with no relation failed, procIDs: %+v, err: %v", procIDs, err)
+			}
+
+			allProcesses = append(allProcesses, processes...)
+		}
+
+		allProcessesJson, err := json.Marshal(allProcesses)
+		if err != nil {
+			printError("processes has no relations, need to delete, data: %#v\n", allProcesses)
+		} else {
+			printError("processes has no relations, need to delete, data: %s\n", string(allProcessesJson))
+		}
+	}
+
+	printInfo("checking process with no relation done\n")
+	return nil
+}
+
+func (s *migrateCheckService) clearProc() error {
+	fmt.Println("=================================")
+	printInfo("start clearing processes with no instances\n")
+
+	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
+
+	procIDs, err := s.getProcWithNoRelation(ctx)
+	if err != nil {
+		return err
+	}
+
+	procLen := len(procIDs)
+	if procLen > 0 {
+		for start := 0; start < procLen; start += common.BKMaxPageSize {
+			limit := start + common.BKMaxPageSize
+			if limit > procLen {
+				limit = procLen
+			}
+			procFilter := map[string]interface{}{
+				common.BKProcessIDField: map[string]interface{}{common.BKDBIN: procIDs[start:limit]},
+			}
+
+			err := s.service.DbProxy.Table(common.BKTableNameBaseProcess).Delete(ctx, procFilter)
+			if err != nil {
+				return fmt.Errorf("delete processes with no relation failed, procIDs: %+v, err: %v", procIDs, err)
+			}
+		}
+
+		printInfo("clear processes successful, ids: %+v\n", procIDs)
+	}
+
+	printInfo("clearing process with no relation done\n")
+	return nil
+}
+
+func (s *migrateCheckService) getProcWithNoRelation(ctx context.Context) ([]int64, error) {
+	noRelationProcIDs := make([]int64, 0)
+
+	for start := uint64(0); ; start += common.BKMaxPageSize {
+		processes := make([]struct {
+			ProcessID int64 `bson:"bk_process_id"`
+		}, 0)
+		err := s.service.DbProxy.Table(common.BKTableNameBaseProcess).Find(nil).Fields(common.BKProcessIDField).
+			Start(start).Limit(common.BKMaxPageSize).All(ctx, &processes)
+		if err != nil {
+			return nil, fmt.Errorf("get process ids failed, err: %v", err)
+		}
+
+		if len(processes) == 0 {
+			break
+		}
+
+		procIDs := make([]int64, len(processes))
+		procIDMap := make(map[int64]struct{})
+		for idx, process := range processes {
+			procIDs[idx] = process.ProcessID
+			procIDMap[process.ProcessID] = struct{}{}
+		}
+
+		// get process id to service instance id relations
+		relationFilter := map[string]interface{}{
+			common.BKProcessIDField: map[string]interface{}{common.BKDBIN: procIDs},
+		}
+		procRelations := make([]metadata.ProcessInstanceRelation, 0)
+		if err := s.service.DbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).Fields(
+			common.BKProcessIDField).All(ctx, &procRelations); err != nil {
+			return nil, fmt.Errorf("get process relations failed, procIDs: %+v, err: %v", procIDs, err)
+		}
+
+		for _, relation := range procRelations {
+			delete(procIDMap, relation.ProcessID)
+		}
+
+		for procID := range procIDMap {
+			noRelationProcIDs = append(noRelationProcIDs, procID)
+		}
+	}
+
+	return noRelationProcIDs, nil
 }
