@@ -585,6 +585,25 @@ func (i IAM) RegisterToIAM(ctx context.Context, host string) error {
 	return nil
 }
 
+// IsRegisteredToIAM checks if cmdb is registered to iam or not
+func (i IAM) IsRegisteredToIAM(ctx context.Context) (bool, error) {
+	rid := commonutil.ExtractRequestIDFromContext(ctx)
+
+	_, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
+
+	if err == nil {
+		return true, nil
+	}
+
+	if err != ErrNotFound {
+		blog.Errorf("get system info failed, error: %v, rid: %s", err, rid)
+		return false, err
+	}
+
+	return false, nil
+
+}
+
 // getDeletedActions get deleted actions
 func getDeletedActions(cmdbActionIDs []ActionID, iamActions []ResourceAction) []ActionID {
 	deletedActions := make([]ActionID, 0)

@@ -36,6 +36,19 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, iam *iamtype.IAM, c
 		return nil
 	}
 
+	// for the first installation, cmdb is not registered to iam,
+	// skip migrate iam system instances
+	isRegistered, err := iam.IsRegisteredToIAM(ctx)
+	if err != nil {
+		blog.Errorf("check iam system info failed, err: %v", err)
+		return err
+	}
+
+	if !isRegistered {
+		blog.Warnf("skip migrate iam system instances, for not registered to iam yet")
+		return nil
+	}
+
 	// get all custom objects(without inner and mainline objects that authorize separately)
 	associations := make([]metadata.Association, 0)
 	filter := mapstr.MapStr{
@@ -65,8 +78,7 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, iam *iamtype.IAM, c
 			common.BKDBNIN: excludeObjIDs,
 		},
 	}
-	err := db.Table(common.BKTableNameObjDes).Find(condition).All(ctx, &objects)
-	if err != nil {
+	if err := db.Table(common.BKTableNameObjDes).Find(condition).All(ctx, &objects); err != nil {
 		blog.Errorf("get all custom objects failed, err: %v", err)
 		return err
 	}
