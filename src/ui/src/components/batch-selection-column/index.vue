@@ -134,10 +134,13 @@
         return this.rows.filter(i => !i.disabled)
       },
       fullDataAllDisabled() {
-        return this.fullData.every((i, index) => {
-          if (this.selectable) return !this.selectable(i, index)
-          return true
-        })
+        if (this.fullData && this.selectable) {
+          return this.fullData.every((i, index) => {
+            if (this.selectable) return !this.selectable(i, index)
+            return true
+          })
+        }
+        return false
       },
     },
     watch: {
@@ -287,6 +290,10 @@
             theme="light"
             arrow={false}
             size="regular"
+            tippy-options={{
+              distance: -10,
+              duration: 100
+            }}
           >
             <div>
               {pageSelection}
@@ -379,9 +386,20 @@
   }
 </script>
 <style lang="scss">
-.bk-form-checkbox.is-checked.is-total-selected .bk-checkbox,
-.bk-form-checkbox.is-indeterminate.is-total-selected .bk-checkbox {
-  background-color: #2dcb56;
-  border-color: #2dcb56;
-}
+  .bk-form-checkbox.is-checked.is-total-selected .bk-checkbox,
+  .bk-form-checkbox.is-indeterminate.is-total-selected .bk-checkbox {
+    background-color: #2dcb56;
+    border-color: #2dcb56;
+  }
+
+  th.batch-selection-column .cell {
+    padding-right: 0;
+    padding-left: 0;
+
+    .bk-tooltip-ref{
+      padding-right: 15px;
+      padding-left: 15px;
+    }
+  }
 </style>
+
