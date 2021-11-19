@@ -325,11 +325,7 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 			common.BKOperationTimeField, common.BKAppIDField, common.BKResourceIDField, common.BKResourceNameField}
 	}
 
-	auditQuery := metadata.QueryCondition{
-		Condition: cond,
-		Fields:    fields,
-		Page:      query.Page,
-	}
+	auditQuery := metadata.QueryCondition{Condition: cond, Fields: fields, Page: query.Page}
 	count, list, err := s.Core.AuditOperation().SearchAuditList(ctx.Kit, auditQuery)
 	if err != nil {
 		ctx.RespAutoError(err)

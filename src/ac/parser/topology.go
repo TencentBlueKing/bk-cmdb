@@ -1042,8 +1042,8 @@ func (ps *parseStream) audit() *parseStream {
 				ps.Attribute.Resources = []meta.ResourceAttribute{
 					{
 						Basic: meta.Basic{
-							Type:   meta.HostInstance,
-							Action: meta.Find,
+							Type:   meta.AuditLog,
+							Action: meta.FindMany,
 						},
 					},
 				}
@@ -1068,7 +1068,7 @@ func (ps *parseStream) audit() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
-					Action: meta.Find,
+					Action: meta.SkipAction,
 				},
 			},
 		}
