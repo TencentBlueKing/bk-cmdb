@@ -34,11 +34,15 @@ import (
 func newInstAsstFlow(ctx context.Context, opts flowOptions, getDeleteEventDetails getDeleteEventDetailsFunc,
 	parseEvent parseEventFunc) error {
 
-	flow := InstAsstFlow{
-		Flow: NewFlow(opts, getDeleteEventDetails, parseEvent),
+	flow, err := NewFlow(opts, getDeleteEventDetails, parseEvent)
+	if err != nil {
+		return err
+	}
+	instAsstFlow := InstAsstFlow{
+		Flow: flow,
 	}
 
-	return flow.RunFlow(ctx)
+	return instAsstFlow.RunFlow(ctx)
 }
 
 // InstAsstFlow instance association event watch flow
@@ -128,12 +132,16 @@ func parseInstAsstEvent(key event.Key, e *types.Event, oidDetailMap map[oidCollK
 			"instance association collection event, ignore it**. doc: %s, rid: %s", e.DocBytes, rid)
 		return nil, nil, false, nil
 	default:
-		blog.Errorf("loop flow, received unsupported event operation type: %s, doc: %s, rid: %s",
-			e.OperationType, e.DocBytes, rid)
+		blog.Errorf("loop flow, received invalid event op type: %s, doc: %s, rid: %s", e.OperationType, e.DocBytes, rid)
 		return nil, nil, false, nil
 	}
 
 	instAsstID := key.InstanceID(e.DocBytes)
+	if instAsstID == 0 {
+		blog.Errorf("loop flow, received invalid event id, doc: %s, rid: %s", e.DocBytes, rid)
+		return nil, nil, false, nil
+	}
+
 	// since instance association is saved in both source and target object inst asst table, one change will generate 2
 	// events, so we change the oid to id so that the cursor of them will be the same for deduplicate
 	oid := e.Oid
@@ -165,7 +173,7 @@ func parseInstAsstEvent(key event.Key, e *types.Event, oidDetailMap map[oidCollK
 
 	objID := gjson.GetBytes(e.DocBytes, common.BKObjIDField).String()
 	asstObjID := gjson.GetBytes(e.DocBytes, common.BKAsstObjIDField).String()
-	chainNode.SubResource = objID + ":inst_asst:" + asstObjID
+	chainNode.SubResource = []string{objID, asstObjID}
 
 	detail := types.EventDetail{
 		Detail:        types.JsonString(e.DocBytes),

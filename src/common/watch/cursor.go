@@ -262,16 +262,18 @@ func (c *Cursor) Decode(cur string) error {
 	cursorType.ParseInt(typ)
 	c.Type = cursorType
 
-	// instance association events has a oid equal to the string form of id
-	if cursorType == InstAsst {
+	switch cursorType {
+	case InstAsst:
+		// instance association events use its identity id which is formatted to a string type as its event's oid.
+		// so its oid should be validate with ParseInt function.
 		_, err = strconv.ParseInt(elements[2], 10, 64)
 		if err != nil {
-			return fmt.Errorf("got invalid oid: %s, err: %v", elements[2], err)
+			return fmt.Errorf("got invalid oid: %s, should be a string formatted from int, err: %v", elements[2], err)
 		}
-	} else {
+	default:
 		_, err = primitive.ObjectIDFromHex(elements[2])
 		if err != nil {
-			return fmt.Errorf("got invalid oid: %s, err: %v", elements[2], err)
+			return fmt.Errorf("got invalid oid: %s, should be a hex string, err: %v", elements[2], err)
 		}
 	}
 	c.Oid = elements[2]

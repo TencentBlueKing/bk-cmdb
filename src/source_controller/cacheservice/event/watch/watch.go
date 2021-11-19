@@ -15,7 +15,6 @@ package watch
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -125,6 +124,8 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 		common.BKClusterTimeField: map[string]interface{}{
 			common.BKDBGT: metadata.Time{Time: time.Unix(opts.StartFrom, 0).Local()},
 		},
+		// filters out the previous version where sub resource is string type // TODO remove this
+		common.BKSubResourceField: map[string]interface{}{common.BKDBType: "array"},
 	}
 
 	node := new(watch.ChainNode)
@@ -501,13 +502,8 @@ func (c *Client) isNodeHitSubResource(node *watch.ChainNode, subResource string)
 		return true
 	}
 
-	if node.SubResource == subResource {
-		return true
-	}
-
-	// compatible for the inst association event whose subresource is a combination of both source and target object id
-	for _, objID := range strings.Split(node.SubResource, ":inst_asst:") {
-		if objID == subResource {
+	for _, subRes := range node.SubResource {
+		if subRes == subResource {
 			return true
 		}
 	}

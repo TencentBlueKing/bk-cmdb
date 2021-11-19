@@ -36,21 +36,25 @@ import (
 func newInstanceFlow(ctx context.Context, opts flowOptions, getDeleteEventDetails getDeleteEventDetailsFunc,
 	parseEvent parseEventFunc) error {
 
-	flow := InstanceFlow{
-		Flow:              NewFlow(opts, getDeleteEventDetails, parseEvent),
+	flow, err := NewFlow(opts, getDeleteEventDetails, parseEvent)
+	if err != nil {
+		return err
+	}
+	instFlow := InstanceFlow{
+		Flow:              flow,
 		mainlineObjectMap: new(mainlineObjectMap),
 	}
 
-	mainlineObjectMap, err := flow.getMainlineObjectMap(ctx)
+	mainlineObjectMap, err := instFlow.getMainlineObjectMap(ctx)
 	if err != nil {
 		blog.Errorf("run object instance watch, but get mainline objects failed, err: %v", err)
 		return err
 	}
-	flow.mainlineObjectMap.Set(mainlineObjectMap)
+	instFlow.mainlineObjectMap.Set(mainlineObjectMap)
 
-	go flow.syncMainlineObjectMap()
+	go instFlow.syncMainlineObjectMap()
 
-	return flow.RunFlow(ctx)
+	return instFlow.RunFlow(ctx)
 }
 
 // syncMainlineObjectMap refresh mainline object ID map every 5 minutes
@@ -196,7 +200,7 @@ func (f *InstanceFlow) doBatch(es []*types.Event) (retry bool) {
 			if chainNode == nil {
 				continue
 			}
-			chainNode.SubResource = gjson.GetBytes(e.DocBytes, common.BKObjIDField).String()
+			chainNode.SubResource = []string{gjson.GetBytes(e.DocBytes, common.BKObjIDField).String()}
 
 			if idIndex == eventLen-1 {
 				lastChainNode = chainNode

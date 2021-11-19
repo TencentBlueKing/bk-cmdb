@@ -57,31 +57,40 @@ type oidCollKey struct {
 type getDeleteEventDetailsFunc func(es []*types.Event, db dal.DB, metrics *event.EventMetrics) (map[oidCollKey][]byte,
 	bool, error)
 
-// parseEventFunc function type for getting delete event details from db del archive
+// parseEventFunc function type for parsing db event into chain node and detail
 type parseEventFunc func(key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byte, id uint64, rid string) (
 	*watch.ChainNode, []byte, bool, error)
 
 func newFlow(ctx context.Context, opts flowOptions, getDeleteEventDetails getDeleteEventDetailsFunc,
 	parseEvent parseEventFunc) error {
 
-	flow := NewFlow(opts, getDeleteEventDetails, parseEvent)
+	flow, err := NewFlow(opts, getDeleteEventDetails, parseEvent)
+	if err != nil {
+		return err
+	}
 
 	return flow.RunFlow(ctx)
 }
 
 // NewFlow create a new event watch flow
-func NewFlow(opts flowOptions, getDeleteEventDetails getDeleteEventDetailsFunc, parseEvent parseEventFunc) Flow {
+func NewFlow(opts flowOptions, getDelEventDetails getDeleteEventDetailsFunc, parseEvent parseEventFunc) (Flow, error) {
+	if getDelEventDetails == nil {
+		return Flow{}, fmt.Errorf("getDeleteEventDetailsFunc is not set, key: %s", opts.key.Namespace())
+	}
+
+	if parseEvent == nil {
+		return Flow{}, fmt.Errorf("parseEventFunc is not set, key: %s", opts.key.Namespace())
+	}
+
 	return Flow{
 		flowOptions:           opts,
 		metrics:               event.InitialMetrics(opts.key.Collection(), "watch"),
 		getDeleteEventDetails: getDeleteEventDetails,
 		parseEvent:            parseEvent,
 		cursorQueue: &cursorQueue{
-			cursorMap: make(map[string]struct{}),
-			cursorArr: make([]string, 0),
-			lock:      sync.Mutex{},
+			cursorQueue: make(map[string]string),
 		},
-	}
+	}, nil
 }
 
 type Flow struct {
@@ -95,36 +104,50 @@ type Flow struct {
 
 // cursorQueue saves the specific amount of previous cursors to check if event is duplicated with previous batch's event
 type cursorQueue struct {
-	cursorMap map[string]struct{}
-	cursorArr []string
-	lock      sync.Mutex
+	cursorQueue map[string]string
+	head        string
+	tail        string
+	length      int64
+	lock        sync.Mutex
 }
 
 // checkIfConflict check if the cursor is conflict with previous cursors, maintain the length of the queue
 func (c *cursorQueue) checkIfConflict(cursor string) bool {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	if _, exists := c.cursorMap[cursor]; exists {
+	if _, exists := c.cursorQueue[cursor]; exists {
 		return true
 	}
 
-	if len(c.cursorArr) < cursorQueueSize {
-		c.cursorArr = append(c.cursorArr, cursor)
-		c.cursorMap[cursor] = struct{}{}
+	if c.length <= 0 {
+		c.head = cursor
+		c.tail = cursor
+		c.cursorQueue[cursor] = ""
+		c.length++
 		return false
 	}
 
-	earliestCursor := c.cursorArr[0]
-	c.cursorArr = append(c.cursorArr[1:], cursor)
-	delete(c.cursorMap, earliestCursor)
-	c.cursorMap[cursor] = struct{}{}
+	// append cursor to the tail of the cursor queue
+	c.cursorQueue[c.tail] = cursor
+	c.cursorQueue[cursor] = ""
+	c.tail = cursor
+
+	if c.length < cursorQueueSize {
+		c.length++
+		return false
+	}
+
+	// when cursor queue length reaches the limit, remove the earliest cursor
+	newHead := c.cursorQueue[c.head]
+	delete(c.cursorQueue, c.head)
+	c.head = newHead
 
 	return false
 }
 
 const (
 	batchSize       = 200
-	cursorQueueSize = 100000
+	cursorQueueSize = 50000
 )
 
 func (f *Flow) RunFlow(ctx context.Context) error {
@@ -238,6 +261,7 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 
 		// if the cursor is conflict with another cursor in the former batches, skip it
 		if f.cursorQueue.checkIfConflict(chainNode.Cursor) && !exists {
+			f.metrics.CollectConflict()
 			continue
 		}
 
@@ -481,6 +505,7 @@ func (f *Flow) doInsertEvents(chainNodes []*watch.ChainNode, lastTokenData map[s
 
 			for index, reducedChainNode := range chainNodes {
 				if isConflictChainNode(reducedChainNode, txnErr) {
+					f.metrics.CollectConflict()
 					chainNodes = append(chainNodes[:index], chainNodes[index+1:]...)
 
 					// need do with retry with reduce
