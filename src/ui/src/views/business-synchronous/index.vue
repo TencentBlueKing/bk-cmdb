@@ -121,7 +121,6 @@
 
     <div class="batch-options">
       <bk-button class="mr10" theme="primary"
-        :disabled="!allConfirmed"
         :loading="confirming"
         @click="confirmAndSync">
         {{$t('确认并同步')}}
@@ -197,9 +196,6 @@
         return String(this.$route.params.modules).split(',')
           .map(id => Number(id))
       },
-      allConfirmed() {
-        return this.processList.every(process => process.confirmed)
-      }
     },
     async created() {
       this.initCurrentModules()
