@@ -34,6 +34,7 @@
         values.forEach((text) => {
           isIP(text) ? IP.push(text) : assets.push(text)
         })
+        FilterStore.resetPage(true)
         if (IP.length) {
           FilterStore.updateIP({
             text: IP.join('\n'),

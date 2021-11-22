@@ -775,62 +775,68 @@
         // 先给节点解锁
         cy.autolock(false)
 
-        // 1. 设置主节点位置
-        const centerPos = { x: (extent.x1 + extent.x2) / 2, y: (extent.y1 + extent.y2) / 2 }
-        const startPosY = extent.y1 + NODE_WIDTH
-        // const nodeSpace = extent.h * 0.8 / this.mainLineModelList.length
-        const nodeSpace = 200
+        try {
+          // 1. 设置主节点位置
+          const centerPos = { x: (extent.x1 + extent.x2) / 2, y: (extent.y1 + extent.y2) / 2 }
+          const startPosY = extent.y1 + NODE_WIDTH
+          // const nodeSpace = extent.h * 0.8 / this.mainLineModelList.length
+          const nodeSpace = 200
 
-        // 坚排并lock
-        this.mainLineModelList.forEach((model, i) => {
-          cy.nodes(`#${model.bk_obj_id}`).position({
-            x: centerPos.x,
-            // eslint-disable-next-line no-mixed-operators
-            y: i * nodeSpace + startPosY
+          // 坚排并lock
+          this.mainLineModelList.forEach((model, i) => {
+            cy.nodes(`#${model.bk_obj_id}`).position({
+              x: centerPos.x,
+              // eslint-disable-next-line no-mixed-operators
+              y: i * nodeSpace + startPosY
+            })
+              .lock()
           })
+
+          // 2. 摆放添加业务层级按钮节点
+          cy.nodes('.add-business-btn').positions((node) => {
+            // 所属模型节点信息
+            const modelNodeId = node.data('model').bk_obj_id
+            const modelNode = cy.nodes(`#${modelNodeId}`)
+            const modelNodePos = modelNode.position()
+            const modelNodeHeight = modelNode.outerHeight() + 10
+
+            return {
+              x: modelNodePos.x,
+              y: modelNodePos.y + modelNodeHeight
+            }
+          })
+            .style('display', isEdit ? 'element' : 'none')
             .lock()
-        })
 
-        // 2. 摆放添加业务层级按钮节点
-        cy.nodes('.add-business-btn').positions((node) => {
-          // 所属模型节点信息
-          const modelNodeId = node.data('model').bk_obj_id
-          const modelNode = cy.nodes(`#${modelNodeId}`)
-          const modelNodePos = modelNode.position()
-          const modelNodeHeight = modelNode.outerHeight() + 10
-
-          return {
-            x: modelNodePos.x,
-            y: modelNodePos.y + modelNodeHeight
+          // 3. 摆放无位置节点
+          if (this.noPositionModels?.length) {
+            const nodeCollection = cy.collection()
+            this.noPositionModels.forEach((model) => {
+              const node = cy.nodes(`#${model.bk_obj_id}`)
+              nodeCollection.merge(node)
+            })
+            const collectionBoundingBox = nodeCollection.boundingBox()
+            const nodeTotal = nodeCollection.length
+            const nodeGutter = 15
+            // 设定一行最多5个
+            const maxCountInOneRow = Math.min(nodeTotal, 5)
+            const boundingBoxW = (collectionBoundingBox.w + nodeGutter) * maxCountInOneRow
+            const rowTotal = Math.ceil(nodeTotal / maxCountInOneRow)
+            const boundingBoxH = collectionBoundingBox.h * rowTotal
+            nodeCollection.layout({
+              name: 'grid',
+              fit: false,
+              padding: 30,
+              rows: rowTotal,
+              boundingBox: { x1: extent.x2, y1: extent.y1, w: boundingBoxW, h: boundingBoxH },
+              stop: () => {
+                cy.fit()
+              }
+            }).run()
           }
-        })
-          .style('display', isEdit ? 'element' : 'none')
-          .lock()
-
-        // 3. 摆放无位置节点
-        const nodeCollection = cy.collection()
-        this.noPositionModels.forEach((model) => {
-          const node = cy.nodes(`#${model.bk_obj_id}`)
-          nodeCollection.merge(node)
-        })
-        const collectionBoundingBox = nodeCollection.boundingBox()
-        const nodeTotal = nodeCollection.length
-        const nodeGutter = 15
-        // 设定一行最多5个
-        const maxCountInOneRow = Math.min(nodeTotal, 5)
-        const boundingBoxW = (collectionBoundingBox.w + nodeGutter) * maxCountInOneRow
-        const rowTotal = Math.ceil(nodeTotal / maxCountInOneRow)
-        const boundingBoxH = collectionBoundingBox.h * rowTotal
-        nodeCollection.layout({
-          name: 'grid',
-          fit: false,
-          padding: 30,
-          rows: rowTotal,
-          boundingBox: { x1: extent.x2, y1: extent.y1, w: boundingBoxW, h: boundingBoxH },
-          stop: () => {
-            cy.fit()
-          }
-        }).run()
+        } catch (e) {
+          console.error(e)
+        }
 
         // 更新节点锁状态
         cy.autolock(!isEdit)
