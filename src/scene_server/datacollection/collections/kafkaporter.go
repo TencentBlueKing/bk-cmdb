@@ -215,6 +215,7 @@ func (c *consumerGroupHandler) readMessage(claim sarama.ConsumerGroupClaim) ([]s
 	return msgArray, lastMessage
 }
 
+// KafkaPorter is a porter to handle message from kafka.
 type KafkaPorter struct {
 	engine *backbone.Engine
 

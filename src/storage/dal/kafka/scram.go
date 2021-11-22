@@ -23,6 +23,7 @@ var (
 	SHA512 scram.HashGeneratorFcn = sha512.New
 )
 
+// XDGSCRAMClient
 type XDGSCRAMClient struct {
 	*scram.Client
 	*scram.ClientConversation
