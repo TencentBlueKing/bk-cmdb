@@ -326,6 +326,7 @@
         // tag-input组件在blur时写入数据有200ms的延迟，此处等待更长时间，避免无法写入
         this.searchTimer && clearTimeout(this.searchTimer)
         this.searchTimer = setTimeout(() => {
+          FilterStore.resetPage(true)
           FilterStore.updateSelected(this.selected) // 此处会额外触发一次watch
           FilterStore.setCondition({
             condition: this.$tools.clone(this.condition),
