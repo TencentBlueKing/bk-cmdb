@@ -64,31 +64,47 @@ func (manager *TransferManager) TransferToInnerModule(kit *rest.Kit, input *meta
 
 	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, []int64{input.ModuleID}, false, false)
 
+	isBizArchived, ccErr := transfer.isAppArchived(kit)
+	if ccErr != nil {
+		blog.Errorf("check if biz is archived failed, err: %v, rid: %s", ccErr, kit.Rid)
+		return ccErr
+	}
+
+	if isBizArchived {
+		blog.Errorf("target business has been archived, bizID: %d, rid: %s", transfer.bizID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrTransferHostToArchivedApp)
+	}
+
 	exit, err := transfer.HasInnerModule(kit)
 	if err != nil {
-		blog.ErrorJSON("TransferHostToInnerModule failed, HasInnerModule failed, input:%s, err:%s, rid:%s", input, err.Error(), kit.Rid)
+		blog.Errorf("check if moduleID is inner module failed, input: %v, err: %v, rid: %s", input, err, kit.Rid)
 		return err
 	}
 	if !exit {
-		blog.ErrorJSON("TransferHostToInnerModule validate module failed, module ID is not default module. input:%s, rid:%s", input, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCoreServiceModuleNotDefaultModuleErr, input.ModuleID, input.ApplicationID)
+		blog.Errorf("validate module failed, module ID is not default module. input: %v, rid:%s", input, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCoreServiceModuleNotDefaultModuleErr, input.ModuleID,
+			input.ApplicationID)
 	}
 	err = transfer.ValidParameter(kit)
 	if err != nil {
-		blog.ErrorJSON("TransferHostToInnerModule failed, ValidParameter failed, input:%s, err:%s, rid:%s", input, err.Error(), kit.Rid)
+		blog.Errorf("valid parameter failed, input: %v, err: %v, rid:%s", input, err, kit.Rid)
 		return err
 	}
 
 	transferErr := transfer.Transfer(kit, input.HostID)
 	if transferErr != nil {
-		blog.ErrorJSON("TransferHostToInnerModule failed, Transfer module host relation failed, input:%s, hostID:%s, err:%s, rid:%s", input, transferErr.Error(), kit.Rid)
+		blog.Errorf("transfer module host relation failed, input: %v, hostID: %s, err:%v, rid:%s", input, transferErr,
+			kit.Rid)
 		return transferErr
 	}
 	updateHostOption := metadata.UpdateHostByHostApplyRuleOption{
 		HostIDs: input.HostID,
 	}
-	if _, err := manager.hostApplyDependence.RunHostApplyOnHosts(kit, input.ApplicationID, updateHostOption); err != nil {
-		blog.Warnf("TransferHostToInnerModule success, but RunHostApplyOnHosts failed, bizID: %d, option: %+v, err: %+v, rid: %s", input.ApplicationID, updateHostOption, err, kit.Rid)
+
+	_, err = manager.hostApplyDependence.RunHostApplyOnHosts(kit, input.ApplicationID, updateHostOption)
+	if err != nil {
+		blog.Warnf("transfer hsot to inner module success, but run host apply on hosts failed, bizID: %d, option: %+v,"+
+			"err: %+v, rid: %s", input.ApplicationID, updateHostOption, err, kit.Rid)
 	}
 
 	return nil
@@ -106,36 +122,52 @@ func (manager *TransferManager) TransferToNormalModule(kit *rest.Kit, input *met
 			common.BKDBIN: input.ModuleID,
 		},
 	}
-	defaultModuleCount, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(defaultModuleFilter).Count(kit.Ctx)
+	defaultModuleCount, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(defaultModuleFilter).
+		Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("TransferToNormalModule failed, filter default module failed, filter:%s, err:%s, rid:%s", defaultModuleFilter, common.BKTableNameBaseModule, err.Error(), kit.Rid)
+		blog.Errorf("filter default module failed, filter: %v, err: %v, rid: %s", defaultModuleFilter,
+			common.BKTableNameBaseModule, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if defaultModuleCount > 0 {
-		blog.ErrorJSON("TransferToNormalModule failed, target module shouldn't be default module, input:%s, defaultModuleCount:%s, rid:%s", input, defaultModuleCount, kit.Rid)
+		blog.Errorf("target module shouldn't be default module, input: %v, defaultModuleCount: %d, rid: %s", input,
+			defaultModuleCount, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCoreServiceTransferToDefaultModuleUseWrongMethod)
 	}
 
 	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, input.ModuleID, input.IsIncrement,
 		!input.DisableAutoCreateSvcInst)
 
+	isBizArchived, err := transfer.isAppArchived(kit)
+	if err != nil {
+		blog.Errorf("check if biz is archived failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if isBizArchived {
+		blog.Errorf("target business has been archived, bizID: %d, rid: %s", transfer.bizID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrTransferHostToArchivedApp)
+	}
+
 	err = transfer.ValidParameter(kit)
 	if err != nil {
-		blog.ErrorJSON("TransferToNormalModule failed, ValidParameter failed, input:%s, err:%s, rid:%s", input, err, kit.Rid)
+		blog.Errorf("valid parameter failed, input: %v, err: %v, rid: %s", input, err, kit.Rid)
 		return err
 	}
 
 	err = transfer.Transfer(kit, input.HostID)
 	if err != nil {
-		blog.ErrorJSON("transfer to normal module failed, transfer module host relation failed. input: %s, err: %s, rid: %s", input, err, kit.Rid)
+		blog.Errorf("transfer module host relation failed. input: %v, err: %v, rid: %s", input, err, kit.Rid)
 		return err
 	}
 
 	updateHostOption := metadata.UpdateHostByHostApplyRuleOption{
 		HostIDs: input.HostID,
 	}
-	if _, err := manager.hostApplyDependence.RunHostApplyOnHosts(kit, input.ApplicationID, updateHostOption); err != nil {
-		blog.Warnf("TransferToNormalModule success, but RunHostApplyOnHosts failed, bizID: %d, option: %+v, err: %+v, rid: %s", input.ApplicationID, updateHostOption, err, kit.Rid)
+	_, err = manager.hostApplyDependence.RunHostApplyOnHosts(kit, input.ApplicationID, updateHostOption)
+	if err != nil {
+		blog.Warnf("transfer host to normal module success, but run host apply on hosts failed, bizID: %d, "+
+			"option: %+v, err: %+v, rid: %s", input.ApplicationID, updateHostOption, err, kit.Rid)
 	}
 
 	return nil

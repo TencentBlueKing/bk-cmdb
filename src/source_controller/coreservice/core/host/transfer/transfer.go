@@ -572,8 +572,13 @@ func (t *genericTransfer) countByCond(kit *rest.Kit, conds mapstr.MapStr, tableN
 }
 
 func (t *genericTransfer) isAppArchived(kit *rest.Kit) (bool, errors.CCErrorCoder) {
+
+	bizIDs := []int64{t.bizID}
+	if t.srcBizID != 0 {
+		bizIDs = append(bizIDs, t.srcBizID)
+	}
 	cond := mapstr.MapStr{
-		common.BKAppIDField:      t.bizID,
+		common.BKAppIDField:      bizIDs,
 		common.BKDataStatusField: "disabled",
 	}
 
