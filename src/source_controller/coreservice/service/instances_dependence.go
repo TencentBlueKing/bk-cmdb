@@ -95,6 +95,35 @@ func (s *coreService) SelectObjectAttWithParams(kit *rest.Kit, objID string, biz
 	return result.Info, nil
 }
 
+// SelectObjectAttributes select object attributes
+func (s *coreService) SelectObjectAttributes(kit *rest.Kit, objID string, bizIDs []int64) ([]metadata.Attribute,
+	error) {
+
+	orCond := []map[string]interface{}{
+		{common.BKAppIDField: 0},
+		{common.BKAppIDField: mapstr.MapStr{common.BKDBExists: false}},
+	}
+	if len(bizIDs) > 0 {
+		orCond = append(orCond, map[string]interface{}{
+			common.BKAppIDField: map[string]interface{}{common.BKDBIN: bizIDs}},
+		)
+	}
+
+	queryCond := metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKObjIDField: objID,
+			common.BKDBOR:       orCond,
+		},
+	}
+
+	result, err := s.core.ModelOperation().SearchModelAttributes(kit, objID, queryCond)
+	if err != nil {
+		blog.Errorf("select object(%s) attributes failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return nil, err
+	}
+	return result.Info, nil
+}
+
 // SearchUnique search unique attribute
 func (s *coreService) SearchUnique(kit *rest.Kit, objID string) (uniqueAttr []metadata.ObjectUnique, err error) {
 	condMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
