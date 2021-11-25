@@ -766,17 +766,37 @@ func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key
 		}
 	}
 
-	valMap, ok := val.(map[string]interface{})
+	subAttrMap := make(map[string]SubAttribute)
+	for _, subAttr := range subAttrs {
+		subAttrMap[subAttr.PropertyID] = subAttr
+	}
+
+	valArr, ok := val.([]interface{})
 	if !ok {
+		blog.Errorf("check value type failed, err: %v, rid: %s", err, rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
 		}
 	}
 
-	for _, subAttr := range subAttrs {
-		for subKey, subValue := range valMap {
-			if rawError := subAttr.Validate(ctx, subValue, subKey); rawError.ErrCode != 0 {
+	for _, valMap := range valArr {
+		value, ok := valMap.(map[string]interface{})
+		if !ok {
+			blog.Errorf("check value type failed, err: %v, rid: %s", err, rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{key},
+			}
+		}
+
+		for subKey, subValue := range value {
+			validator, exist := subAttrMap[subKey]
+			if !exist {
+				continue
+			}
+			if rawError := validator.Validate(ctx, subValue, subKey); rawError.ErrCode != 0 {
+				blog.Errorf("validate sub-attr failed, key: %s, val: %v, err: %v, rid: %s", subKey, subValue, err, rid)
 				return errors.RawErrorInfo{
 					ErrCode: common.CCErrCommParamsInvalid,
 					Args:    []interface{}{fmt.Sprintf("%s.%s", key, subKey)},
