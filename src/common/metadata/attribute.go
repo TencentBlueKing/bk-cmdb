@@ -736,9 +736,55 @@ func (attribute *Attribute) validOrganization(ctx context.Context, val interface
 }
 
 // validTable valid object attribute that is bool type
-func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
-	// rid := util.ExtractRequestIDFromContext(ctx)
-	// TODO 暂时不需要实现，目前只有进程和进程模板使用
+func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key string) (
+	rawError errors.RawErrorInfo) {
+
+	rid := util.ExtractRequestIDFromContext(ctx)
+	if val == nil {
+		if attribute.IsRequired {
+			blog.Errorf("params can not be null, rid: %s", rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsNeedSet,
+				Args:    []interface{}{key},
+			}
+
+		}
+		return errors.RawErrorInfo{}
+	}
+
+	if attribute.Option == nil {
+		return errors.RawErrorInfo{}
+	}
+
+	// validate within enum
+	subAttrs, err := ParseSubAttribute(ctx, attribute.Option)
+	if err != nil {
+		blog.Errorf("parse sub-attribute failed, err: %v, rid: %s", err, rid)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{key},
+		}
+	}
+
+	valMap, ok := val.(map[string]interface{})
+	if !ok {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{key},
+		}
+	}
+
+	for _, subAttr := range subAttrs {
+		for subKey, subValue := range valMap {
+			if rawError := subAttr.Validate(ctx, subValue, subKey); rawError.ErrCode != 0 {
+				return errors.RawErrorInfo{
+					ErrCode: common.CCErrCommParamsInvalid,
+					Args:    []interface{}{fmt.Sprintf("%s.%s", key, subKey)},
+				}
+			}
+		}
+	}
+
 	return errors.RawErrorInfo{}
 }
 
@@ -1092,6 +1138,8 @@ func CheckAllowHostApplyOnField(field string) bool {
 	return true
 }
 
+type SubAttributeOption []SubAttribute
+
 // SubAttribute sub attribute metadata definition
 type SubAttribute struct {
 	PropertyID    string      `field:"bk_property_id" json:"bk_property_id" bson:"bk_property_id"`
@@ -1126,4 +1174,91 @@ func (sa *SubAttribute) Validate(ctx context.Context, data interface{}, key stri
 		PropertyGroup: sa.PropertyGroup,
 	}
 	return attr.Validate(ctx, data, key)
+}
+
+// ParseSubAttribute convert val to []EnumVal
+func ParseSubAttribute(ctx context.Context, val interface{}) (SubAttributeOption, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	subAttrs := make([]SubAttribute, 0)
+	if val == nil || val == "" {
+		return subAttrs, nil
+	}
+	switch options := val.(type) {
+	case []SubAttribute:
+		return options, nil
+	case string:
+		err := json.Unmarshal([]byte(options), &subAttrs)
+		if nil != err {
+			blog.Errorf("parse sub-attribute failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+	case []interface{}:
+		if err := parseSubAttribute(options, &subAttrs); err != nil {
+			blog.Errorf("parse sub-attribute failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+	case bson.A:
+		if err := parseSubAttribute(options, &subAttrs); err != nil {
+			blog.Errorf("parse sub-attribute failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unknow val type: %#v", val)
+	}
+	return subAttrs, nil
+}
+
+func parseSubAttribute(options []interface{}, subAttrs *[]SubAttribute) error {
+	for _, optionVal := range options {
+		if option, ok := optionVal.(map[string]interface{}); ok {
+			subAttr := SubAttribute{}
+			subAttr.PropertyID = getString(option["bk_property_id"])
+			subAttr.PropertyName = getString(option["bk_property_name"])
+			subAttr.PropertyGroup = getString(option["bk_property_group"])
+			subAttr.Placeholder = getString(option["placeholder"])
+			subAttr.PropertyType = getString(option["bk_property_type"])
+			subAttr.IsAPI = getBool(option["bk_isapi"])
+			subAttr.IsEditable = getBool(option["editable"])
+			subAttr.IsReadOnly = getBool(option["isreadonly"])
+			subAttr.IsRequired = getBool(option["isrequired"])
+			subAttr.IsSystem = getBool(option["bk_issystem"])
+			subAttr.Option = option["option"]
+			subAttr.Description = getString(option["description"])
+			*subAttrs = append(*subAttrs, subAttr)
+		} else if option, ok := optionVal.(bson.M); ok {
+			subAttr := SubAttribute{}
+			subAttr.PropertyID = getString(option["bk_property_id"])
+			subAttr.PropertyName = getString(option["bk_property_name"])
+			subAttr.PropertyGroup = getString(option["bk_property_group"])
+			subAttr.Placeholder = getString(option["placeholder"])
+			subAttr.PropertyType = getString(option["bk_property_type"])
+			subAttr.IsAPI = getBool(option["bk_isapi"])
+			subAttr.IsEditable = getBool(option["editable"])
+			subAttr.IsReadOnly = getBool(option["isreadonly"])
+			subAttr.IsRequired = getBool(option["isrequired"])
+			subAttr.IsSystem = getBool(option["bk_issystem"])
+			subAttr.Option = option["option"]
+			subAttr.Description = getString(option["description"])
+			*subAttrs = append(*subAttrs, subAttr)
+		} else if option, ok := optionVal.(bson.D); ok {
+			opt := option.Map()
+			subAttr := SubAttribute{}
+			subAttr.PropertyID = getString(opt["bk_property_id"])
+			subAttr.PropertyName = getString(opt["bk_property_name"])
+			subAttr.PropertyGroup = getString(opt["bk_property_group"])
+			subAttr.Placeholder = getString(opt["placeholder"])
+			subAttr.PropertyType = getString(opt["bk_property_type"])
+			subAttr.IsAPI = getBool(opt["bk_isapi"])
+			subAttr.IsEditable = getBool(opt["editable"])
+			subAttr.IsReadOnly = getBool(opt["isreadonly"])
+			subAttr.IsRequired = getBool(opt["isrequired"])
+			subAttr.IsSystem = getBool(opt["bk_issystem"])
+			subAttr.Option = opt["option"]
+			subAttr.Description = getString(opt["description"])
+			*subAttrs = append(*subAttrs, subAttr)
+		} else {
+			return fmt.Errorf("unknow optionVal type: %#v", optionVal)
+		}
+	}
+	return nil
 }
