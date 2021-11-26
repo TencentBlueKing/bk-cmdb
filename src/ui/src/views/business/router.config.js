@@ -22,6 +22,7 @@ export default [{
   component: () => import('./details.vue'),
   meta: new Meta({
     menu: {
+      i18n: '业务详情',
       relative: MENU_RESOURCE_BUSINESS
     },
     layout: {}

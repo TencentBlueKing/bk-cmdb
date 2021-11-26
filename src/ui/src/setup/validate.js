@@ -5,10 +5,11 @@ import cnMessages from 'vee-validate/dist/locale/zh_CN'
 import stringLength from 'utf8-byte-length'
 import regularRemoteValidate from './regular-remote-validate'
 import stringRemoteValidate from './string-remote-validate'
+import store from '@/store'
+import { VALIDATION_RULE_KEYS } from '@/dictionary/validation-rule-keys'
 
-/* eslint-disable no-useless-escape */
-
-const customRules = {
+// 前端验证规则，包含默认的配置规则
+const vaidationRules = {
   length: {
     validate: (value, [length]) => stringLength(value) <= length
   },
@@ -24,7 +25,6 @@ const customRules = {
   associationId: {
     validate: value => /^[a-zA-Z][\w]*$/.test(value)
   },
-  // 未被使用
   classifyName: {
     validate: value => /^([a-zA-Z0-9_ ]|[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]){1,20}$/.test(value)
   },
@@ -43,14 +43,14 @@ const customRules = {
     validate: value => /^[a-zA-Z0-9_]*$/.test(value)
   },
   enumName: {
-    validate: value => /^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[()+-《》,，；;“”‘’。\."\' \\/:])*$/.test(value)
+    validate: value => /^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[()+-《》,，；;“”‘’。."' \\/:])*$/.test(value)
   },
   number: {
     validate: (value) => {
       if (!String(value).length) {
         return true
       }
-      return /^(\-|\+)?\d+$/.test(value)
+      return /^(-|\+)?\d+$/.test(value)
     }
   },
   isBigger: {
@@ -74,7 +74,7 @@ const customRules = {
   },
   // 服务分类名称
   namedCharacter: {
-    validate: value => /^[a-zA-Z0-9\u4e00-\u9fa5_\-:\(\)]+$/.test(value)
+    validate: value => /^[a-zA-Z0-9\u4e00-\u9fa5_\-:()]+$/.test(value)
   },
   // 服务实例标签键
   instanceTagKey: {
@@ -85,7 +85,7 @@ const customRules = {
     validate: value => /^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$/.test(value)
   },
   businessTopoInstNames: {
-    validate: value => /^[^\\\|\/:\*,<>"\?#\s]+$/.test(value)
+    validate: value => /^[^\\|/:*,<>"?#\s]+$/.test(value)
   },
   repeatTagKey: {
     validate: (value, otherValue) => otherValue.findIndex(item => item === value) === -1
@@ -107,10 +107,11 @@ const customRules = {
   setNameLen: {
     validate: (value) => {
       const nameList = value.split('\n').filter(name => name)
-      // eslint-disable-next-line no-restricted-syntax
+
       for (const name of nameList) {
         if (stringLength(name) > 256) return false
       }
+
       return true
     }
   },
@@ -150,6 +151,7 @@ const customRules = {
   }
 }
 
+// 规则提示国际化字典
 const dictionary = {
   zh_CN: {
     messages: {
@@ -182,7 +184,7 @@ const dictionary = {
       instanceTagValue: () => '请输入英文数字的组合',
       instanceTagKey: () => '请输入英文开头数字的组合',
       setNameLen: () => '请输入256个字符以内的内容',
-      businessTopoInstNames: () => '格式不正确，不能包含特殊字符\ | / : * , < > " ? #及空格',
+      businessTopoInstNames: () => '格式不正确，不能包含特殊字符 | / : * , < > " ? #及空格',
       reservedWord: () => '不能以"bk_"开头',
       ipSearchRuls: () => '暂不支持不同云区域的混合搜索',
       validRegExp: () => '请输入合法的正则表达式',
@@ -227,7 +229,7 @@ const dictionary = {
       instanceTagKey: () => 'Please enter letter, number starts with letter',
       repeatTagKey: () => 'Label key cannot be repeated',
       setNameLen: () => 'Content length max than 256',
-      businessTopoInstNames: () => 'The format is incorrect and cannot contain special characters \ | / : * , < > " ? # and space',
+      businessTopoInstNames: () => 'The format is incorrect and cannot contain special characters | / : * , < > " ? # and space',
       reservedWord: () => 'Can not start with "bk_"',
       ipSearchRuls: () => 'Hybrid search of different cloud regions is not supported at the moment',
       validRegExp: () => 'Please enter valid regular express',
@@ -242,8 +244,8 @@ const dictionary = {
   }
 }
 
-// 可配置规则清单
-const customConfigRules = [
+// 用户可配置规则的 Key
+const configurableRuleKeys = [
   {
     number: (value, cb) => {
       if (!String(value).length) {
@@ -252,18 +254,7 @@ const customConfigRules = [
       return cb()
     }
   },
-  'float',
-  'singlechar',
-  'longchar',
-  'associationId',
-  'classifyId',
-  'modelId',
-  'enumId',
-  'enumName',
-  'fieldId',
-  'namedCharacter',
-  'instanceTagKey',
-  'instanceTagValue',
+  ...Object.keys(VALIDATION_RULE_KEYS),
   {
     businessTopoInstNames: (value, cb, re) => {
       const values = value.split('\n')
@@ -273,64 +264,71 @@ const customConfigRules = [
   }
 ]
 
-const mixinConfig = () => {
-  const { validationRules = {} } = window.CMDB_CONFIG || {}
-  // eslint-disable-next-line no-restricted-syntax
-  for (const item of customConfigRules) {
-    const useCb = typeof item !== 'string'
-    const key = useCb ? Object.keys(item)[0] : item
+// 混合用户自定义验证规则
+const mixinCustomRules = () => {
+  const { globalConfig } = store.state
 
-    const rule = validationRules[key]
-    if (!rule) continue
+  for (const item of configurableRuleKeys) {
+    const isFunction = typeof item === 'function'
+    const key = isFunction ? Object.keys(item)[0] : item
 
-    let validate = value => new RegExp(rule.value).test(value)
-    if (useCb) {
-      validate = value => item[key](value, () => new RegExp(rule.value).test(value), new RegExp(rule.value))
+    if (!globalConfig.config.validationRules[key]) continue
+
+    let validate = (value) => {
+      const rule = globalConfig.config.validationRules[key]
+      return new RegExp(rule.value).test(value)
     }
 
-    // 加入到自定义规则列表
-    customRules[key] = { validate }
+    if (isFunction) {
+      validate = value => item[key](value, () => {
+        const rule = globalConfig.config.validationRules[key]
+        return new RegExp(rule.value).test(value)
+      }, new RegExp(globalConfig.config.validationRules[key].value))
+    }
+
+    // 把用户的自定义规则混入
+    vaidationRules[key] = { validate }
+
     // 提示语设置
     dictionary.zh_CN.messages[key] = (field) => {
-      // 确保总是获取最新的配置
-      const { validationRules } = window.CMDB_CONFIG
-      const rule = validationRules[key]
+      const rule = globalConfig.config.validationRules[key]
       return rule.i18n.cn.replace(/{field}/g, field)
     }
+
     dictionary.en.messages[key] = (field) => {
-      const { validationRules } = window.CMDB_CONFIG
-      const rule = validationRules[key]
+      const rule = globalConfig.config.validationRules[key]
       return rule.i18n.en.replace(/{field}/g, field)
     }
   }
 }
 
+// 扩展远程验证规则
 Validator.extend('remoteRegular', regularRemoteValidate)
 Validator.extend('remoteString', stringRemoteValidate, { paramNames: ['regular'] })
 
-export function setupValidator(app) {
-  mixinConfig()
-  // eslint-disable-next-line no-restricted-syntax
-  for (const rule in customRules) {
-    Validator.extend(rule, customRules[rule])
-  }
+export function setupValidator() {
+  mixinCustomRules()
+
+  Object.keys(vaidationRules).forEach((ruleKey) => {
+    Validator.extend(ruleKey, vaidationRules[ruleKey])
+  })
+
   if (language === 'en') {
     Validator.localize(language)
   } else {
     Validator.localize(language, cnMessages)
   }
+
   Vue.use(veeValidate, {
     locale: language,
     dictionary
   })
-
-  app.$store.commit('setValidatorSetuped')
 }
 
 export function updateValidator() {
-  mixinConfig()
-  // eslint-disable-next-line no-restricted-syntax
-  for (const rule in customRules) {
-    Validator.extend(rule, customRules[rule])
-  }
+  mixinCustomRules()
+
+  Object.keys(vaidationRules).forEach((ruleKey) => {
+    Validator.extend(ruleKey, vaidationRules[ruleKey])
+  })
 }

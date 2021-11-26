@@ -7,7 +7,7 @@ export default [{
   component: () => import('./index.vue'),
   meta: new Meta({
     menu: {
-      i18n: '模型'
+      i18n: '模型管理'
     }
   })
 }, {

@@ -67,7 +67,7 @@
             {
               props: {
                 name: 'idle',
-                label: this.$t('转移到空闲模块'),
+                label: this.$t('转移到空闲模块', { idleSet: this.$store.state.globalConfig.config.set }),
                 visible: true
               },
               component: {

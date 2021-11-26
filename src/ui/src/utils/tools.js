@@ -261,6 +261,14 @@ export function getValidateEvents(property) {
   return {}
 }
 
+/**
+ * 根据远程返回的属性生成对应的校验规则
+ * @param {Object} property 字段属性
+ * @param {String} property.bk_property_type 字段类型
+ * @param {String} property.option 额外选项
+ * @param {String} property.isrequired 是否必须
+ * @returns {Array} vee-validate 规则
+ */
 export function getValidateRules(property) {
   const rules = {}
   const {
