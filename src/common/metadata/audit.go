@@ -133,6 +133,8 @@ func (input *InstAuditQueryInput) Validate() errors.RawErrorInfo {
 		return errors.RawErrorInfo{}
 	}
 
+	// 前端目前只允许查看主机、业务、自定义模型的变更记录，因此在此限制objid不为host和biz时报错
+	// front-end only allow to see change record of host, biz, custom object
 	if input.Condition.ObjID != common.BKInnerObjIDApp && input.Condition.ObjID != common.BKInnerObjIDHost {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,

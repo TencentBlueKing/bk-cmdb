@@ -1025,6 +1025,7 @@ func (ps *parseStream) audit() *parseStream {
 			return ps
 		}
 
+		// authorize logic reference: https://github.com/Tencent/bk-cmdb/issues/5758
 		if isMainline {
 			if query.Condition.BizID == 0 {
 				ps.err = fmt.Errorf("bk_biz_id is invalid, rid: %s", ps.RequestCtx.Rid)
