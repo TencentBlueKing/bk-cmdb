@@ -451,22 +451,43 @@ func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.Kv
 
 }
 
-func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int) map[int]metadata.ExcelAssociation {
+// GetAssociationExcelData read sheet of association data from excel
+func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int, defLang lang.DefaultCCLanguageIf) (
+	map[int]metadata.ExcelAssociation, []metadata.RowMsgData) {
 
 	rowCnt := len(sheet.Rows)
 	index := firstRow
 
-	asstInfoArr := make(map[int]metadata.ExcelAssociation, 0)
+	asstInfoArr := make(map[int]metadata.ExcelAssociation)
+	errMsg := make([]metadata.RowMsgData, 0)
 	for ; index < rowCnt; index++ {
 		row := sheet.Rows[index]
-		op := row.Cells[associationOPColIndex].String()
+
+		// 获取单元格内容，使用for循环防止直接获取对应单元格数据导致数组越界
+		var asstObjID, op, srcInst, dstInst string
+		for index, item := range row.Cells {
+			switch index {
+			case assciationAsstObjIDIndex:
+				asstObjID = item.String()
+			case associationOPColIndex:
+				op = item.String()
+			case assciationSrcInstIndex:
+				srcInst = item.String()
+			case assciationDstInstIndex:
+				dstInst = item.String()
+			}
+		}
+
 		if op == "" {
 			continue
 		}
 
-		asstObjID := row.Cells[assciationAsstObjIDIndex].String()
-		srcInst := row.Cells[assciationSrcInstIndex].String()
-		dstInst := row.Cells[assciationDstInstIndex].String()
+		if asstObjID == "" || srcInst == "" || dstInst == "" {
+			err := defLang.Languagef("web_excel_row_handle_error", sheet.Name, (index + 1))
+			errMsg = append(errMsg, metadata.RowMsgData{Row: index, Msg: err})
+			continue
+		}
+
 		asstInfoArr[index] = metadata.ExcelAssociation{
 			ObjectAsstID: asstObjID,
 			Operate:      getAssociationExcelOperateFlag(op),
@@ -475,7 +496,7 @@ func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int) map[int]metadata.E
 		}
 	}
 
-	return asstInfoArr
+	return asstInfoArr, errMsg
 }
 
 // GetFilterFields 不需要展示字段
