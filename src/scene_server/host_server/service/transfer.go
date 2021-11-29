@@ -202,7 +202,7 @@ func (s *Service) transferHostWithAutoClearServiceInstance(kit *rest.Kit, bizID 
 	}
 
 	var firstErr errors.CCErrorCoder
-	pipeline := make(chan bool, 300)
+	pipeline := make(chan bool, 20)
 	wg := sync.WaitGroup{}
 	for _, plan := range transToNormalPlans {
 		if firstErr != nil {
@@ -270,7 +270,7 @@ func (s *Service) upsertServiceInstance(kit *rest.Kit, bizID int64,
 
 	wg := sync.WaitGroup{}
 	var firstErr errors.CCErrorCoder
-	pipeline := make(chan bool, 300)
+	pipeline := make(chan bool, 20)
 	for moduleID, svcInst := range moduleSvcInstMap {
 		if firstErr != nil {
 			break

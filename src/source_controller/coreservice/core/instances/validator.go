@@ -121,6 +121,7 @@ func NewValidators(kit *rest.Kit, dependent OperationDependences, objID string, 
 			language:      language,
 		}
 
+		// the instances in biz has both biz attributes and global attributes that has no biz id
 		attrArr := attrMap[0]
 		if bizID != 0 {
 			attrArr = append(attrArr, attrMap[bizID]...)

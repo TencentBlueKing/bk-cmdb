@@ -99,10 +99,13 @@ func (s *coreService) SelectObjectAttWithParams(kit *rest.Kit, objID string, biz
 func (s *coreService) SelectObjectAttributes(kit *rest.Kit, objID string, bizIDs []int64) ([]metadata.Attribute,
 	error) {
 
+	// query global attributes in model, all instances has these attributes and needs to be validated
 	orCond := []map[string]interface{}{
 		{common.BKAppIDField: 0},
 		{common.BKAppIDField: mapstr.MapStr{common.BKDBExists: false}},
 	}
+
+	// if the biz ids are defined, query the biz attributes together with global attributes for validation
 	if len(bizIDs) > 0 {
 		orCond = append(orCond, map[string]interface{}{
 			common.BKAppIDField: map[string]interface{}{common.BKDBIN: bizIDs}},
