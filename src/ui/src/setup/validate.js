@@ -191,6 +191,7 @@ const configurableRuleKeys = [
 const mixinCustomRules = () => {
   const { globalConfig } = store.state
 
+  // eslint-disable-next-line no-restricted-syntax
   for (const item of configurableRuleKeys) {
     const isFunction = typeof item === 'function'
     const key = isFunction ? Object.keys(item)[0] : item
