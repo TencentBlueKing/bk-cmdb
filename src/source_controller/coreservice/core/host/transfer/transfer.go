@@ -67,6 +67,18 @@ func (t *genericTransfer) ValidParameter(kit *rest.Kit) errors.CCErrorCoder {
 		return err
 	}
 
+	archived, err := t.isAppArchived(kit)
+	if err != nil {
+		blog.Errorf("check if app archived failed, err: %v, rid:%s", err, kit.Rid)
+		return err
+	}
+
+	if archived {
+		blog.Errorf("target business or source business has been archived, bizID: %d, srcBizID: %d, rid: %s", t.bizID,
+			t.srcBizID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrTransferHostToArchivedApp)
+	}
+
 	return nil
 }
 
@@ -584,8 +596,8 @@ func (t *genericTransfer) isAppArchived(kit *rest.Kit) (bool, errors.CCErrorCode
 
 	cnt, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(cond).Count(kit.Ctx)
 	if err != nil {
-		blog.Errorf("get app info error. err:%s, table:%s,cond:%s, rid:%s",
-			err.Error(), common.BKTableNameBaseApp, cond, kit.Rid)
+		blog.Errorf("get app info failed, err: %v, table: %s, cond:%v, rid: %s", err, common.BKTableNameBaseApp, cond,
+			kit.Rid)
 		return false, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 

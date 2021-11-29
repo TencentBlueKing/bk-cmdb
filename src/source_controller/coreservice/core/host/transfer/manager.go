@@ -64,17 +64,6 @@ func (manager *TransferManager) TransferToInnerModule(kit *rest.Kit, input *meta
 
 	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, []int64{input.ModuleID}, false, false)
 
-	isBizArchived, ccErr := transfer.isAppArchived(kit)
-	if ccErr != nil {
-		blog.Errorf("check if biz is archived failed, err: %v, rid: %s", ccErr, kit.Rid)
-		return ccErr
-	}
-
-	if isBizArchived {
-		blog.Errorf("target business has been archived, bizID: %d, rid: %s", transfer.bizID, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrTransferHostToArchivedApp)
-	}
-
 	exit, err := transfer.HasInnerModule(kit)
 	if err != nil {
 		blog.Errorf("check if moduleID is inner module failed, input: %v, err: %v, rid: %s", input, err, kit.Rid)
@@ -137,17 +126,6 @@ func (manager *TransferManager) TransferToNormalModule(kit *rest.Kit, input *met
 
 	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, input.ModuleID, input.IsIncrement,
 		!input.DisableAutoCreateSvcInst)
-
-	isBizArchived, err := transfer.isAppArchived(kit)
-	if err != nil {
-		blog.Errorf("check if biz is archived failed, err: %v, rid: %s", err, kit.Rid)
-		return err
-	}
-
-	if isBizArchived {
-		blog.Errorf("target business has been archived, bizID: %d, rid: %s", transfer.bizID, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrTransferHostToArchivedApp)
-	}
 
 	err = transfer.ValidParameter(kit)
 	if err != nil {
@@ -277,17 +255,6 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit,
 		blog.ErrorJSON("TransferToAnotherBusiness failed, ValidParameter failed, err:%s, input:%s, rid:%s",
 			err.Error(), input, kit.Rid)
 		return err
-	}
-
-	isAppArchived, err := transfer.isAppArchived(kit)
-	if err != nil {
-		blog.Errorf("valid app status failed, err:%s, input:%s, rid:%s", err.Error(), input, kit.Rid)
-		return err
-	}
-
-	if isAppArchived {
-		blog.Errorf("target business has been archived, bizID: %d, rid: %s", transfer.bizID, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrTransferHostToArchivedApp)
 	}
 
 	// attributes in legacy business
