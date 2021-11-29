@@ -208,6 +208,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
+  import { afterVerify } from '@/components/ui/auth/auth-queue.js'
   import cmdbImport from '@/components/import/import'
   import cmdbButtonGroup from '@/components/ui/other/button-group'
   import Bus from '@/utils/bus.js'
@@ -420,6 +421,11 @@
           HostStore.setBusinessList(this.businessList)
         }
       },
+      sortBusinessByAuth(authData) {
+        const list = this.businessList.map((item, index) => ({ ...item, is_pass: authData[index]?.is_pass }))
+        list.sort((itemA, itemB) => itemB?.is_pass - itemA?.is_pass)
+        this.businessList = list
+      },
       openAgentApp() {
         const { agent } = window.Site
         if (agent) {
@@ -457,6 +463,15 @@
           this.assign.placeholder = this.$t('请选择xx', { name: this.$t('业务') })
           this.assign.label = this.$t('业务列表')
           this.assign.title = this.$t('分配到业务空闲机')
+
+          // 必要的setTimeout，因依赖dialog显示并且auth完成后
+          setTimeout(() => {
+            afterVerify((authData) => {
+              this.sortBusinessByAuth(authData)
+              // 使用排序后的业务列表更新列表选项
+              this.setAssignOptions(directoryId)
+            })
+          }, 0)
         } else {
           this.assign.placeholder = this.$t('请选择xx', { name: this.$t('目录') })
           this.assign.label = this.$t('目录列表')
@@ -471,7 +486,7 @@
           this.assignOptions = this.businessList.map(item => ({
             id: item.bk_biz_id,
             name: `[${item.bk_biz_id}] ${item.bk_biz_name}`,
-            disabled: true,
+            disabled: !item?.is_pass ?? true,
             auth: {
               type: this.$OPERATION.TRANSFER_HOST_TO_BIZ,
               relation: [[[directoryId], [item.bk_biz_id]]]
