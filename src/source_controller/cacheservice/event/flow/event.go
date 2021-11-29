@@ -79,6 +79,11 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 		return err
 	}
 
+	if err := e.runInstAsst(context.Background()); err != nil {
+		blog.Errorf("run instance association event flow failed, err: %v", err)
+		return err
+	}
+
 	gc := &gc{
 		ccDB:     ccDB,
 		isMaster: isMaster,
@@ -105,7 +110,7 @@ func (e *Event) runHost(ctx context.Context) error {
 		EventStruct: new(metadata.HostMapStr),
 	}
 
-	return newFlow(ctx, opts, getHostDeleteEventDetails)
+	return newFlow(ctx, opts, getHostDeleteEventDetails, parseEvent)
 }
 
 func (e *Event) runModuleHostRelation(ctx context.Context) error {
@@ -118,7 +123,7 @@ func (e *Event) runModuleHostRelation(ctx context.Context) error {
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails)
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
 
 func (e *Event) runBiz(ctx context.Context) error {
@@ -131,7 +136,7 @@ func (e *Event) runBiz(ctx context.Context) error {
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails)
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
 
 func (e *Event) runSet(ctx context.Context) error {
@@ -144,7 +149,7 @@ func (e *Event) runSet(ctx context.Context) error {
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails)
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
 
 func (e *Event) runModule(ctx context.Context) error {
@@ -157,7 +162,7 @@ func (e *Event) runModule(ctx context.Context) error {
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails)
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
 
 func (e *Event) runObjectBase(ctx context.Context) error {
@@ -170,7 +175,7 @@ func (e *Event) runObjectBase(ctx context.Context) error {
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newInstanceFlow(ctx, opts, getDeleteEventDetails)
+	return newInstanceFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
 
 func (e *Event) runProcess(ctx context.Context) error {
@@ -183,7 +188,7 @@ func (e *Event) runProcess(ctx context.Context) error {
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails)
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
 
 func (e *Event) runProcessInstanceRelation(ctx context.Context) error {
@@ -196,5 +201,18 @@ func (e *Event) runProcessInstanceRelation(ctx context.Context) error {
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails)
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+}
+
+func (e *Event) runInstAsst(ctx context.Context) error {
+	opts := flowOptions{
+		key:         event.InstAsstKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
+	}
+
+	return newInstAsstFlow(ctx, opts, getDeleteEventDetails, parseInstAsstEvent)
 }

@@ -195,6 +195,19 @@ func genResourceWatch(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]
 		}
 		return []types.Resource{r}, nil
 
+	case WatchInstAsstEvent:
+		r := types.Resource{
+			System:    SystemIDCMDB,
+			Attribute: nil,
+		}
+
+		// do not related to instance authorize
+		r.Type = types.ResourceType(InstAsstEvent)
+		if att.InstanceID > 0 {
+			r.ID = strconv.FormatInt(att.InstanceID, 10)
+		}
+		return []types.Resource{r}, nil
+
 	default:
 		return make([]types.Resource, 0), nil
 	}

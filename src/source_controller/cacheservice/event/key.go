@@ -238,6 +238,28 @@ var HostIdentityKey = Key{
 	},
 }
 
+// InstAsstKey instance association watch key
+var InstAsstKey = Key{
+	namespace:  watchCacheNamespace + "instance_association",
+	collection: common.BKTableNameInstAsst,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		field := gjson.GetBytes(doc, common.BKFieldID)
+		if !field.Exists() {
+			return fmt.Errorf("field %s not exist", common.BKFieldID)
+		}
+
+		if field.Int() <= 0 {
+			return fmt.Errorf("invalid %s: %s, should be integer type and >= 0", common.BKFieldID, field.Raw)
+		}
+
+		return nil
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKFieldID).Int()
+	},
+}
+
 type Key struct {
 	namespace string
 	// the watching db collection name

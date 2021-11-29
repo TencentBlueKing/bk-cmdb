@@ -45,6 +45,8 @@ func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
 		key = HostIdentityKey
 	case watch.MainlineInstance:
 		key = MainlineInstanceKey
+	case watch.InstAsst:
+		key = InstAsstKey
 	default:
 		return key, fmt.Errorf("unsupported cursor type %s", res)
 	}
@@ -70,3 +72,4 @@ type HostArchive struct {
 }
 
 const ObjInstTablePrefixRegex = "^" + common.BKObjectInstShardingTablePrefix
+const InstAsstTablePrefixRegex = "^" + common.BKObjectInstAsstShardingTablePrefix

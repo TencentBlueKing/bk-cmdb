@@ -61,7 +61,7 @@ func (w *WatchEventOptions) Validate() error {
 
 	if len(w.Filter.SubResource) > 0 {
 		switch w.Resource {
-		case ObjectBase, MainlineInstance:
+		case ObjectBase, MainlineInstance, InstAsst:
 		default:
 			return fmt.Errorf("%s event cannot have sub resource", w.Resource)
 		}

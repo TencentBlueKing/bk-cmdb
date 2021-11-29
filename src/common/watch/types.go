@@ -66,7 +66,7 @@ type ChainNode struct {
 	// InstanceID object instance's ID, preserved for latter event aggregation operation
 	InstanceID int64 `json:"inst_id,omitempty" bson:"inst_id,omitempty"`
 	// SubResource the sub resource if the watched resource, eg. the object ID of the instance resource
-	SubResource string `json:"bk_sub_resource,omitempty" bson:"bk_sub_resource,omitempty"`
+	SubResource []string `json:"bk_sub_resource,omitempty" bson:"bk_sub_resource,omitempty"`
 }
 
 type LastChainNodeData struct {
