@@ -14,6 +14,7 @@ package y3_10_202109181134
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"configcenter/src/common"
@@ -144,6 +145,11 @@ func migrateSvcInstIDToProc(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 			common.BKProcessIDField, common.BKServiceInstanceIDField).All(ctx, &procRelations); err != nil {
 			blog.Errorf("get process relations failed, err: %v", err)
 			return err
+		}
+
+		if len(procRelations) != len(processes) {
+			blog.Errorf("process count differs with relation count, process ids: %+v", procIDs)
+			return fmt.Errorf("process count differs with relation count")
 		}
 
 		// set service instance id to corresponding process
