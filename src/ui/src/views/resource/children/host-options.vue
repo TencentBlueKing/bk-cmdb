@@ -259,7 +259,7 @@
           curSelected: '-1',
           placeholder: this.$t('请选择xx', { name: this.$t('业务') }),
           label: this.$t('业务列表'),
-          title: this.$t('分配到') + this.$store.state.globalConfig.config.set,
+          title: this.$t('分配到业务空闲机', { idleSet: this.$store.state.globalConfig.config.set }),
           requestId: Symbol('assignHosts')
         },
         assignOptions: [],

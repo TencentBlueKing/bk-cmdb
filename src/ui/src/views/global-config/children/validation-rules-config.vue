@@ -10,7 +10,7 @@
         <bk-input style="width: 400px;" :placeholder="$t('请填写校验提示')" v-model="rule.message"></bk-input>
         <RecoveryButton
           style="margin-left: 8px;"
-          :loading="rule.recovering"
+          :loading="rule.reseting"
           @confirm="resetRule(rule, ruleKey)">
         </RecoveryButton>
       </bk-form-item>
@@ -30,7 +30,7 @@
   import store from '@/store'
   import { t } from '@/i18n'
   import { bkMessage } from 'bk-magic-vue'
-  import { VALIDATION_RULE_KEYS } from '@/dictionary/validation-rule-keys'
+  import { PARAMETER_TYPES } from '@/dictionary/parameter-types'
   import cloneDeep from 'lodash/cloneDeep'
   import { updateValidator } from '@/setup/validate'
   import EventBus from '@/utils/bus'
@@ -45,8 +45,10 @@
     setup() {
       const globalConfig = computed(() => store.state.globalConfig)
       const defaultRuleForm = {}
-      Object.keys(VALIDATION_RULE_KEYS).forEach((key) => {
-        defaultRuleForm[key] = {}
+      Object.keys(PARAMETER_TYPES).forEach((key) => {
+        defaultRuleForm[key] = {
+          reseting: false
+        }
       })
       const ruleForm = reactive(cloneDeep(defaultRuleForm))
       const ruleFormRef = ref(null)
@@ -62,7 +64,7 @@
         }
       }
 
-      const translateRuleKey = key => t(VALIDATION_RULE_KEYS[key]) || key
+      const translateRuleKey = key => t(PARAMETER_TYPES[key]) || key
 
       const initForm = () => {
         const validationRules = cloneDeep(globalConfig.value.config.validationRules)
@@ -70,6 +72,7 @@
 
         Object.keys(validationRules).forEach((key) => {
           newRules[key] = validationRules[key]
+          newRules[key].reseting = false
           ruleFormRules[key] = [
             {
               required: true,
@@ -131,7 +134,7 @@
       }
 
       const resetRule = (rule, ruleKey) => {
-        rule.recovering = true
+        rule.reseting = true
         store.dispatch('globalConfig/resetConfig', ruleKey)
           .then(() => {
             initForm()
@@ -141,7 +144,7 @@
             })
           })
           .finally(() => {
-            rule.recovering = false
+            rule.reseting = false
           })
       }
 

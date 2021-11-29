@@ -24,9 +24,9 @@ const defaultConfig = {
   validationRules: [], // 用户自定义验证规则
   set: '', // 集群名称
   idlePool: {
-    idle: '',
-    fault: '',
-    recycle: '',
+    idle: '', // 空闲机
+    fault: '', // 故障机
+    recycle: '', // 待回收
     userModules: [] // 用户自定义模块
   }
 }
@@ -36,11 +36,11 @@ let backupRemoteConfig = null
 
 const state = () => ({
   auth: true, // 权限状态 true 为有权限，否则无
-  updating: false, // 更新状态
-  loading: false, // 加载状态
-  resetting: false,
+  updating: false, // 更新中状态
+  loading: false, // 加载中状态
+  resetting: false, // 重置中状态
   language: language === 'zh_CN' ? 'cn' : language, // 后端保存的语言代码和前端的不一致，所以需要转换一下
-  config: cloneDeep(defaultConfig)
+  config: cloneDeep(defaultConfig) // 用户自定义配置
 })
 
 /**
@@ -140,7 +140,7 @@ const serializeState = (newConfig, lang) => {
 }
 
 /**
- * 格式化验证规则，作 Base64 转换
+ * 序列化验证规则，作 Base64 转换
  * @param {Object} validationRules 验证规则
  * @param {string} lang 当前语种
  * @returns {Object}
@@ -181,7 +181,7 @@ const serializeValidationRules = (rules, lang) => {
 }
 
 /**
- * 反序列化用户自定义模块数组，主要是为了映射到 state 中
+ * 反序列化用户自定义模块数据为前端 UI 可用数据
  * @param {Array} userModules 用户自定义模块数组
  */
 const unserializeUserModules = (userModules = []) => userModules?.map(userModule => ({
@@ -193,9 +193,9 @@ const unserializeUserModules = (userModules = []) => userModules?.map(userModule
  * 序列化用户自定义模块数组
  * @param {Array} userModules 用户自定义模块数组
  */
-const serializeUserModules = (userModules = []) => userModules?.map(userModule => ({
-  module_key: userModule.moduleKey,
-  module_name: userModule.moduleName
+const serializeUserModules = (userModules = []) => userModules?.map(({ moduleKey, moduleName }) => ({
+  module_key: moduleKey,
+  module_name: moduleName
 }))
 
 
