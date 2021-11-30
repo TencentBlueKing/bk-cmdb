@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/samuel/go-zookeeper/zk"
+	"github.com/go-zookeeper/zk"
 )
 
 var (
