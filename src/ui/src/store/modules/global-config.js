@@ -2,7 +2,7 @@
  * 全局配置数据模型，提供获取全局配置、更新全局配置的能力
  * 接口数据在这里做了适配 UI 的处理，后续服务接口有更新，直接在这里更新模型即可。
  */
-import { getCurrentConfig, getDefaultConfig, updateConfig, updateIdleSet, createIdleModule, updateIdleModule, deleteIdleModule, resetConfig } from '@/services/global-config'
+import { getCurrentConfig, getDefaultConfig, updateConfig, updateIdleSet, createIdleModule, updateIdleModule, deleteIdleModule } from '@/services/global-config'
 import to from 'await-to-js'
 import { Base64 } from 'js-base64'
 import { language } from '@/i18n'
@@ -38,7 +38,6 @@ const state = () => ({
   auth: true, // 权限状态 true 为有权限，否则无
   updating: false, // 更新中状态
   loading: false, // 加载中状态
-  resetting: false, // 重置中状态
   language: language === 'zh_CN' ? 'cn' : language, // 后端保存的语言代码和前端的不一致，所以需要转换一下
   config: cloneDeep(initialConfig), // 用户自定义配置，
   defaultConfig: cloneDeep(initialConfig) // 默认配置，用于恢复初始化
@@ -216,9 +215,6 @@ const mutations = {
   setLoading(state, loading) {
     state.loading = loading
   },
-  setResetting(state, resetting) {
-    state.resetting = resetting
-  },
 }
 
 const actions = {
@@ -289,34 +285,6 @@ const actions = {
       resolve()
 
       commit('setUpdating', false)
-    })
-  },
-
-  /**
-   * 重置某项设置，重置后会进行 fetchConfig
-   * @param {string} resetItem 需要重置的项
-   */
-  resetConfig({ dispatch, commit }, resetItem) {
-    commit('setResetting', true)
-    return new Promise(async (resolve, reject) => {
-      const [restoreErr] = await to(resetConfig(resetItem))
-
-      if (restoreErr) {
-        reject(restoreErr)
-        commit('setResetting', false)
-        throw Error(`重置「${resetItem}」设置出现错误：${restoreErr.message}`)
-      }
-
-      const [fetchErr] = await to(dispatch('fetchConfig'))
-
-      if (fetchErr) {
-        reject(fetchErr)
-        commit('setResetting', false)
-        return fetchErr
-      }
-
-      resolve()
-      commit('setResetting', false)
     })
   },
 

@@ -86,12 +86,3 @@ export const deleteIdleModule = ({
   module_key: moduleKey,
   module_name: moduleName
 })
-
-/**
- * 重置指定设定
- * @param {string} restoreItem 需要恢复的指定项目名
- * @returns {Promise}
- */
-export const resetConfig = restoreItem => $http.put('admin/restore_settings', {
-  restore_item: restoreItem
-})

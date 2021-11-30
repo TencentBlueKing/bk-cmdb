@@ -8,7 +8,9 @@
         :property="ruleKey" required :label="translateRuleKey(ruleKey)">
         <bk-input style="width: 300px;" :placeholder="$t('请填写验证规则')" v-model="rule.value"></bk-input>
         <bk-input style="width: 400px;" :placeholder="$t('请填写校验提示')" v-model="rule.message"></bk-input>
-        <RecoveryButton @confirm="recoveryRule(rule, ruleKey)"></RecoveryButton>
+        <bk-button size="small" @click="recoveryRule(rule, ruleKey)" text class="recovery-button">
+          {{$t('恢复初始化')}}
+        </bk-button>
       </bk-form-item>
       <bk-form-item>
         <SaveButton @save="save" :loading="globalConfig.updating"></SaveButton>
@@ -26,7 +28,6 @@
 <script>
   import { ref, reactive, computed, defineComponent, onMounted } from '@vue/composition-api'
   import SaveButton from './save-button.vue'
-  import RecoveryButton from './recovery-button.vue'
   import store from '@/store'
   import { t } from '@/i18n'
   import { bkMessage } from 'bk-magic-vue'
@@ -38,8 +39,7 @@
   export default defineComponent({
     name: 'ValidationRulesConfig',
     components: {
-      SaveButton,
-      RecoveryButton,
+      SaveButton
     },
     setup() {
       const globalConfig = computed(() => store.state.globalConfig)
@@ -153,5 +153,6 @@
 
 .recovery-button {
   margin-left: 8px;
+  padding: 0;
 }
 </style>
