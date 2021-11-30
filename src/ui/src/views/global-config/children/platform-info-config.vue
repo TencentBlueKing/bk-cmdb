@@ -33,7 +33,13 @@
       <bk-form-item>
         <SaveButton @save="save" :loading="globalConfig.updating"></SaveButton>
         <bk-button class="action-button" @click="preview">{{$t('预览')}}</bk-button>
-        <ResetButton @reset="reset" :loading="globalConfig.resetting"></ResetButton>
+        <bk-popconfirm
+          trigger="click"
+          :title="$t('确认重置平台信息选项？')"
+          @confirm="reset"
+          :content="$t('该操作将会把平台信息选项内容重置为最后一次保存的状态，请谨慎操作！')">
+          <bk-button class="action-button">{{$t('重置')}}</bk-button>
+        </bk-popconfirm>
       </bk-form-item>
     </bk-form>
 
@@ -46,7 +52,6 @@
 <script>
   import { ref, reactive, computed, defineComponent, onMounted } from '@vue/composition-api'
   import SaveButton from './save-button.vue'
-  import ResetButton from './reset-button.vue'
   import TheFooter from '@/views/index/children/footer.vue'
   import store from '@/store'
   import { bkMessage } from 'bk-magic-vue'
@@ -58,7 +63,6 @@
   export default defineComponent({
     components: {
       SaveButton,
-      ResetButton,
       TheFooter
     },
     setup() {
@@ -128,13 +132,7 @@
       }
 
       const reset = () => {
-        store.dispatch('globalConfig/resetConfig', 'platformInfo')
-          .then(() => {
-            initForm()
-            bkMessage({
-              message: t('重置成功')
-            })
-          })
+        initForm()
       }
 
       return {

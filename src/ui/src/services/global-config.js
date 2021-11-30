@@ -11,10 +11,16 @@ export const updateConfig = globalConfig => $http.put('admin/update/system_confi
 })
 
 /**
- * 获取全局设置
+ * 获取当前用户的全局设置
  * @returns {Promise}
  */
-export const getConfig = () => $http.get('admin/find/system_config/platform_setting')
+export const getCurrentConfig = () => $http.get('admin/find/system_config/platform_setting/current')
+
+/**
+ * 获取默认的全局设置，用来恢复为默认值
+ * @returns {Promise}
+ */
+export const getDefaultConfig = () => $http.get('admin/find/system_config/platform_setting/initial')
 
 /**
  * 更新空闲机集群

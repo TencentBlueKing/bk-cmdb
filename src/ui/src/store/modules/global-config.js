@@ -2,13 +2,13 @@
  * 全局配置数据模型，提供获取全局配置、更新全局配置的能力
  * 接口数据在这里做了适配 UI 的处理，后续服务接口有更新，直接在这里更新模型即可。
  */
-import { getConfig, updateConfig, updateIdleSet, createIdleModule, updateIdleModule, deleteIdleModule, resetConfig } from '@/services/global-config'
+import { getCurrentConfig, getDefaultConfig, updateConfig, updateIdleSet, createIdleModule, updateIdleModule, deleteIdleModule, resetConfig } from '@/services/global-config'
 import to from 'await-to-js'
 import { Base64 } from 'js-base64'
 import { language } from '@/i18n'
 import cloneDeep from 'lodash/cloneDeep'
 
-const defaultConfig = {
+const initialConfig = {
   backend: {
     maxBizTopoLevel: 0, // 最大拓扑层级数
     itsm: null // itsm 只有内部版本才有
@@ -32,7 +32,7 @@ const defaultConfig = {
 }
 
 // 备份的远程数据，在国际化处理时用来拼装出全量数据。
-let backupRemoteConfig = null
+let currentConfigBackup = null
 
 const state = () => ({
   auth: true, // 权限状态 true 为有权限，否则无
@@ -40,7 +40,8 @@ const state = () => ({
   loading: false, // 加载中状态
   resetting: false, // 重置中状态
   language: language === 'zh_CN' ? 'cn' : language, // 后端保存的语言代码和前端的不一致，所以需要转换一下
-  config: cloneDeep(defaultConfig) // 用户自定义配置
+  config: cloneDeep(initialConfig), // 用户自定义配置，
+  defaultConfig: cloneDeep(initialConfig) // 默认配置，用于恢复初始化
 })
 
 /**
@@ -95,9 +96,9 @@ const serializeState = (newConfig, lang) => {
     },
     site: {
       name: {
-        ...backupRemoteConfig.site.name,
+        ...currentConfigBackup.site.name,
         i18n: {
-          ...backupRemoteConfig.site.name.i18n,
+          ...currentConfigBackup.site.name.i18n,
           [lang]: newConfig.site.name
         }
       },
@@ -105,16 +106,16 @@ const serializeState = (newConfig, lang) => {
     },
     footer: {
       contact: {
-        ...backupRemoteConfig.footer.contact,
+        ...currentConfigBackup.footer.contact,
         i18n: {
-          ...backupRemoteConfig.footer.contact.i18n,
+          ...currentConfigBackup.footer.contact.i18n,
           [lang]: newConfig.footer.contact
         }
       },
       copyright: {
-        ...backupRemoteConfig.footer.copyright,
+        ...currentConfigBackup.footer.copyright,
         i18n: {
-          ...backupRemoteConfig.footer.copyright.i18n,
+          ...currentConfigBackup.footer.copyright.i18n,
           [lang]: newConfig.footer.copyright
         }
       }
@@ -203,6 +204,9 @@ const mutations = {
   setConfig(state, config) {
     state.config = config
   },
+  setDefaultConfig(state, config) {
+    state.defaultConfig = config
+  },
   setAuth(state, auth) {
     state.auth = auth
   },
@@ -219,7 +223,20 @@ const mutations = {
 
 const actions = {
   clearConfig({ commit }) {
-    commit('setConfig', cloneDeep(defaultConfig))
+    commit('setConfig', cloneDeep(initialConfig))
+  },
+  /**
+   * 获取默认配置，用于恢复初始化操作
+   * @returns {Promise}
+   */
+  fetchDefaultConfig({ commit, state }) {
+    return getDefaultConfig()
+      .then((config) => {
+        commit('setDefaultConfig', unserializeConfig(config, state.language))
+      })
+      .catch((err) => {
+        throw Error(`获取默认全局设置出现错误：${err.message}`)
+      })
   },
   /**
    * 从后台获取配置，获取配置后会 set 配置到 state 中
@@ -227,9 +244,9 @@ const actions = {
    */
   fetchConfig({ dispatch, commit, state }) {
     commit('setLoading', true)
-    return getConfig()
+    return getCurrentConfig()
       .then((config) => {
-        backupRemoteConfig = Object.freeze(cloneDeep(config))
+        currentConfigBackup = Object.freeze(cloneDeep(config))
         commit('setConfig', unserializeConfig(config, state.language))
       })
       .catch((err) => {
@@ -277,17 +294,17 @@ const actions = {
 
   /**
    * 重置某项设置，重置后会进行 fetchConfig
-   * @param {string} restoreItem 需要重置的项
+   * @param {string} resetItem 需要重置的项
    */
-  resetConfig({ dispatch, commit }, restoreItem) {
+  resetConfig({ dispatch, commit }, resetItem) {
     commit('setResetting', true)
     return new Promise(async (resolve, reject) => {
-      const [restoreErr] = await to(resetConfig(restoreItem))
+      const [restoreErr] = await to(resetConfig(resetItem))
 
       if (restoreErr) {
         reject(restoreErr)
         commit('setResetting', false)
-        throw Error(`重置「${restoreItem}」设置出现错误：${restoreErr.message}`)
+        throw Error(`重置「${resetItem}」设置出现错误：${restoreErr.message}`)
       }
 
       const [fetchErr] = await to(dispatch('fetchConfig'))

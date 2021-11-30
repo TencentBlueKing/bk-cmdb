@@ -32,7 +32,13 @@
       </bk-form-item>
       <bk-form-item>
         <SaveButton @save="save" :loading="globalConfig.updating"></SaveButton>
-        <ResetButton @reset="reset" :loading="globalConfig.resetting"></ResetButton>
+        <bk-popconfirm
+          trigger="click"
+          :title="$t('确认重置业务通用选项？')"
+          @confirm="reset"
+          :content="$t('该操作将会把业务通用选项内容重置为最后一次保存的状态，请谨慎操作！')">
+          <bk-button class="action-button">{{$t('重置')}}</bk-button>
+        </bk-popconfirm>
       </bk-form-item>
     </bk-form>
   </div>
@@ -41,7 +47,6 @@
 <script>
   import { ref, reactive, computed, defineComponent, onMounted, onBeforeUnmount } from '@vue/composition-api'
   import store from '@/store'
-  import ResetButton from './reset-button.vue'
   import SaveButton from './save-button.vue'
   import { bkMessage } from 'bk-magic-vue'
   import { language, t } from '@/i18n'
@@ -50,7 +55,6 @@
 
   export default defineComponent({
     components: {
-      ResetButton,
       SaveButton
     },
     setup() {
@@ -139,13 +143,7 @@
       }
 
       const reset = () => {
-        store.dispatch('globalConfig/resetConfig', 'businessCommonSetting')
-          .then(() => {
-            initForm()
-            bkMessage({
-              message: t('重置成功')
-            })
-          })
+        initForm()
       }
 
       return {

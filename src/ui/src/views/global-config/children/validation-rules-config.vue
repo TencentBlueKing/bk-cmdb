@@ -8,15 +8,16 @@
         :property="ruleKey" required :label="translateRuleKey(ruleKey)">
         <bk-input style="width: 300px;" :placeholder="$t('请填写验证规则')" v-model="rule.value"></bk-input>
         <bk-input style="width: 400px;" :placeholder="$t('请填写校验提示')" v-model="rule.message"></bk-input>
-        <RecoveryButton
-          style="margin-left: 8px;"
-          :loading="rule.reseting"
-          @confirm="resetRule(rule, ruleKey)">
-        </RecoveryButton>
+        <RecoveryButton @confirm="recoveryRule(rule, ruleKey)"></RecoveryButton>
       </bk-form-item>
       <bk-form-item>
         <SaveButton @save="save" :loading="globalConfig.updating"></SaveButton>
-        <ResetButton @reset="resetAllRules" :loading="globalConfig.resetting"></ResetButton>
+        <bk-popconfirm trigger="click"
+          :title="$t('确认重置所有校验规则？')"
+          @confirm="resetAllRules"
+          :content="$t('该操作将会把所有的校验规则内容重置为最后一次保存的状态，请谨慎操作！')">
+          <bk-button class="action-button">{{$t('重置')}}</bk-button>
+        </bk-popconfirm>
       </bk-form-item>
     </bk-form>
   </div>
@@ -24,7 +25,6 @@
 
 <script>
   import { ref, reactive, computed, defineComponent, onMounted } from '@vue/composition-api'
-  import ResetButton from './reset-button.vue'
   import SaveButton from './save-button.vue'
   import RecoveryButton from './recovery-button.vue'
   import store from '@/store'
@@ -38,12 +38,12 @@
   export default defineComponent({
     name: 'ValidationRulesConfig',
     components: {
-      ResetButton,
       SaveButton,
       RecoveryButton,
     },
     setup() {
       const globalConfig = computed(() => store.state.globalConfig)
+      const defaultConfig = computed(() => store.state.globalConfig.defaultConfig)
       const defaultRuleForm = {}
       Object.keys(PARAMETER_TYPES).forEach((key) => {
         defaultRuleForm[key] = {
@@ -72,7 +72,6 @@
 
         Object.keys(validationRules).forEach((key) => {
           newRules[key] = validationRules[key]
-          newRules[key].reseting = false
           ruleFormRules[key] = [
             {
               required: true,
@@ -112,6 +111,8 @@
             validationRules: ruleForm
           })
             .then(() => {
+              initForm()
+              updateValidator()
               bkMessage({
                 message: t('保存成功')
               })
@@ -123,29 +124,12 @@
       }
 
       const resetAllRules = () => {
-        store.dispatch('globalConfig/resetConfig', 'allValidationRules')
-          .then(() => {
-            initForm()
-            updateValidator()
-            bkMessage({
-              message: t('重置成功')
-            })
-          })
+        initForm()
       }
 
-      const resetRule = (rule, ruleKey) => {
-        rule.reseting = true
-        store.dispatch('globalConfig/resetConfig', ruleKey)
-          .then(() => {
-            initForm()
-            updateValidator()
-            bkMessage({
-              message: t('重置成功')
-            })
-          })
-          .finally(() => {
-            rule.reseting = false
-          })
+      const recoveryRule = (rule, ruleKey) => {
+        rule.message = defaultConfig.value.validationRules[ruleKey].message
+        rule.value = defaultConfig.value.validationRules[ruleKey].value
       }
 
       return {
@@ -155,7 +139,7 @@
         ruleFormRules,
         ruleFormRef,
         save,
-        resetRule,
+        recoveryRule,
         resetAllRules,
       }
     }
@@ -165,5 +149,9 @@
 <style lang="scss" scoped>
 .validation-rules-config{
   width: 1000px;
+}
+
+.recovery-button {
+  margin-left: 8px;
 }
 </style>
