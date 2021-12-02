@@ -66,6 +66,9 @@ export const verifyPlatformManagementAuth = async () => {
 export default async function (app) {
   if (window.Site.authscheme === 'iam') {
     verifyPlatformManagementAuth()
+  } else {
+    // 开源版的可能没有 IAM，不需要鉴权
+    store.commit('globalConfig/setAuth', true)
   }
   getAuthorizedBusiness()
   return Promise.all([

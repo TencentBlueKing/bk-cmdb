@@ -35,7 +35,7 @@ const initialConfig = {
 let currentConfigBackup = null
 
 const state = () => ({
-  auth: true, // 权限状态 true 为有权限，否则无
+  auth: false, // 权限状态 true 为有权限，否则无
   updating: false, // 更新中状态
   loading: false, // 加载中状态
   language: language === 'zh_CN' ? 'cn' : language, // 后端保存的语言代码和前端的不一致，所以需要转换一下
