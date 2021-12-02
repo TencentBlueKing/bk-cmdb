@@ -128,6 +128,9 @@ func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
 	defer z.Unlock()
 
 	if z.ZkConn != nil {
+		if err := z.Ping(); err == nil {
+			return nil
+		}
 		z.Close()
 	}
 
