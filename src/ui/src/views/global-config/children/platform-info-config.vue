@@ -1,6 +1,6 @@
 <template>
   <div class="platform-info-config"
-    :class="`platform-info-config--${language}`"
+    :class="`is-${language}`"
     v-bkloading="{ isLoading: globalConfig.loading }">
     <div>
       <bk-popover placement="bottom">
@@ -163,7 +163,7 @@
     margin-top: 16px;
   }
 
-  &--en {
+  &.is-en {
     // inline 表单项不支持 label-width 自定义，所以只能在样式里强制设置
     ::v-deep .site-name-form-item .bk-label{
       width: 120px !important;
@@ -171,7 +171,7 @@
     }
   }
 
-  &--zh_CN {
+  &.is-zh_CN {
     // inline 表单项不支持 label-width 自定义，所以只能在样式里强制设置
     ::v-deep .site-name-form-item .bk-label{
       width: 80px !important;

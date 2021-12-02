@@ -160,21 +160,21 @@
 </script>
 
 <style lang="scss" scoped>
-@import url("../style.scss");
-.max-biz-topo-level-input{
-  width: 146px;
-}
+  @import url("../style.scss");
+  .max-biz-topo-level-input{
+    width: 146px;
+  }
 
-.itsm-wrapper {
-  display: flex;
-}
+  .itsm-wrapper {
+    display: flex;
+  }
 
-.itsm-host-wrapper {
-  width: 240px;
-}
+  .itsm-host-wrapper {
+    width: 240px;
+  }
 
-.itsm-id {
-  width: 100px;
-  margin-left: 10px;
-}
+  .itsm-id {
+    width: 100px;
+    margin-left: 10px;
+  }
 </style>
