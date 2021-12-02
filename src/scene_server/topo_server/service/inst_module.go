@@ -141,6 +141,7 @@ func (s *Service) CheckIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) errors
 			common.BKModuleIDField: map[string]interface{}{
 				common.BKDBIN: moduleIDs,
 			},
+			// 当default值不等于0或4时为内置模块
 			common.BKDefaultField: map[string]interface{}{
 				common.BKDBNIN: []int{common.DefaultFlagDefaultValue, common.DefaultResSelfDefinedModuleFlag},
 			},

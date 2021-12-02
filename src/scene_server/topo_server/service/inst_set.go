@@ -179,6 +179,7 @@ func (s *Service) CheckIsBuiltInSet(kit *rest.Kit, setIDs ...int64) errors.CCErr
 			common.BKSetIDField: map[string]interface{}{
 				common.BKDBIN: setIDs,
 			},
+			// 当default值不等于0时为内置集群
 			common.BKDefaultField: map[string]interface{}{
 				common.BKDBNE: common.DefaultFlagDefaultValue,
 			},
