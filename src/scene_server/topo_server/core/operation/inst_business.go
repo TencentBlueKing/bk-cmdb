@@ -13,6 +13,8 @@
 package operation
 
 import (
+	"configcenter/src/common/auditlog"
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -34,6 +36,8 @@ import (
 // BusinessOperationInterface business operation methods
 type BusinessOperationInterface interface {
 	CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
+	UpdateBusinessIdleSetOrModule(kit *rest.Kit, option *metadata.ConfigUpdateSettingOption) error
+	DeleteBusinessGlobalUserModule(kit *rest.Kit, obj model.Object, option *metadata.BuiltInModuleDeleteOption) error
 	FindBiz(kit *rest.Kit, cond *metadata.QueryCondition) (count int, results []mapstr.MapStr, err error)
 	GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder)
 	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error
@@ -86,6 +90,663 @@ func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 	}
 
 	return 0 != len(rsp.Data.Info), nil
+}
+
+// updateIdleModuleConfig update admin module config.
+func (b *business) updateIdleModuleConfig(kit *rest.Kit, option metadata.ModuleOption) error {
+
+	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+
+	// 获取db中platform的配置
+	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(context.Background(), header)
+	if err != nil {
+		return err
+	}
+
+	conf, oldConf := res.Data, res.Data
+	flag := false
+	updateFields := mapstr.New()
+
+	switch option.Key {
+	case common.SystemIdleModuleKey:
+		conf.BuiltInModuleConfig.IdleName = option.Name
+		updateFields.Set(common.SystemIdleModuleKey, option.Name)
+		flag = true
+	case common.SystemFaultModuleKey:
+		conf.BuiltInModuleConfig.FaultName = option.Name
+		updateFields.Set(common.SystemFaultModuleKey, option.Name)
+		flag = true
+	case common.SystemRecycleModuleKey:
+		conf.BuiltInModuleConfig.RecycleName = option.Name
+		updateFields.Set(common.SystemRecycleModuleKey, option.Name)
+
+		flag = true
+
+	default:
+		for index, module := range conf.BuiltInModuleConfig.UserModules {
+			if module.Key == option.Key {
+				conf.BuiltInModuleConfig.UserModules[index].Value = option.Name
+				updateFields.Set("user_module", option.Name)
+				flag = true
+				break
+			}
+		}
+	}
+	// flag: false 用户新增模块场景
+	if !flag {
+		conf.BuiltInModuleConfig.UserModules = append(conf.BuiltInModuleConfig.UserModules, metadata.UserModuleList{
+			Key:   option.Key,
+			Value: option.Name,
+		})
+		updateFields.Set(common.UserDefinedModules, metadata.UserModuleList{
+			Key:   option.Key,
+			Value: option.Name,
+		})
+	}
+	_, err = b.clientSet.CoreService().System().UpdatePlatformSetting(context.Background(), header, &conf)
+	if err != nil {
+		return err
+	}
+
+	err = b.savePlatformLog(kit, metadata.AuditUpdate, &oldConf, updateFields)
+	if err != nil {
+		blog.Errorf("generate audit log failed config :v,updateFields: %v err: %+v, rid: %s", oldConf,
+			updateFields, err, kit.Rid)
+	}
+	return nil
+}
+
+// savePlatformLog 平台管理的审计日志，无论是新建模块，修改模块或者集群名字还是删除用户自定义场景都是对空闲机池的修改，统一走update
+func (b *business) savePlatformLog(kit *rest.Kit, auditLog metadata.ActionType, oldConf *metadata.PlatformSettingConfig,
+	updateFields mapstr.MapStr) error {
+
+	audit := auditlog.NewPlatFormSettingAuditLog(b.clientSet.CoreService())
+	auditParam := auditlog.NewGenerateAuditCommonParameter(kit, auditLog).WithUpdateFields(updateFields)
+
+	auditLogs, err := audit.GenerateAuditLog(auditParam, oldConf)
+
+	if err != nil {
+		return err
+	}
+	if err := audit.SaveAuditLog(kit, auditLogs...); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *business) updateBuiltInSetConfig(kit *rest.Kit, setName string) error {
+
+	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+
+	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(context.Background(), header)
+	if err != nil {
+		return err
+	}
+
+	conf, oldConf := res.Data, res.Data
+	conf.BuiltInSetName = metadata.ObjectString(setName)
+
+	_, err = b.clientSet.CoreService().System().UpdatePlatformSetting(context.Background(), header, &conf)
+	if err != nil {
+		return err
+	}
+	updateFields := mapstr.New()
+	updateFields.Set(common.SystemSetName, setName)
+
+	err = b.savePlatformLog(kit, metadata.AuditUpdate, &oldConf, updateFields)
+	if err != nil {
+		blog.Errorf("generate audit log failed, config: %v,updateFields: %v err: %v, rid: %s", oldConf,
+			updateFields, err, kit.Rid)
+	}
+	return nil
+}
+
+// deleteIdlePoolConfig 更新删除用户自定义场景下的配置
+func (b *business) deleteUserModuleConfig(kit *rest.Kit, option *metadata.BuiltInModuleDeleteOption) error {
+
+	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+
+	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(context.Background(), header)
+	if err != nil {
+		return err
+
+	}
+	conf, oldConf := res.Data, res.Data
+	updateFields := mapstr.New()
+
+	for index, module := range conf.BuiltInModuleConfig.UserModules {
+		if module.Key == option.ModuleKey {
+			conf.BuiltInModuleConfig.UserModules = append(conf.BuiltInModuleConfig.UserModules[:index],
+				conf.BuiltInModuleConfig.UserModules[index+1:]...)
+			updateFields.Set(common.UserDefinedModules, metadata.UserModuleList{
+				Key:   option.ModuleKey,
+				Value: option.ModuleName,
+			})
+			break
+		}
+	}
+
+	_, err = b.clientSet.CoreService().System().UpdatePlatformSetting(context.Background(), header, &conf)
+	if err != nil {
+		return err
+	}
+	err = b.savePlatformLog(kit, metadata.AuditUpdate, &oldConf, updateFields)
+	if err != nil {
+		blog.Errorf("generate audit log failed config :v,updateFields: %v err: %+v, rid: %s", oldConf,
+			updateFields, err, kit.Rid)
+	}
+
+	return nil
+}
+
+// checkModuleNameValid check whether the module has duplicate names.
+func (b *business) checkModuleNameValid(ctx *rest.Kit, input metadata.ModuleOption) error {
+	obj, err := b.obj.FindSingleObject(ctx, common.BKInnerObjIDModule)
+	if nil != err {
+		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), ctx.Rid)
+		return err
+	}
+
+	queryCond := &metadata.QueryInput{
+		Condition: map[string]interface{}{
+			common.BKModuleNameField: input.Name,
+		},
+	}
+
+	cnt, _, err := b.module.FindModule(ctx, obj, queryCond)
+	if err != nil {
+		blog.Errorf("find module fail, queryCond: %+v,error %v, rid: %s", queryCond, err, ctx.Rid)
+		return err
+	}
+	if cnt > 0 {
+		return fmt.Errorf("update module name fail, duplicate module name")
+	}
+	return nil
+}
+
+// Validate 判断参数是否合法，注意此处合法的标准如下:
+// 1、key如果存在这个key只要名字不重复即合法
+// 2、如果不存在这个key那么合法即是新增场景
+// 3、true是更新场景，false是新增场景
+// 4、目前系统出厂的idle 、fault、recycle只支持改名字不支持删除
+func (b *business) validateUpdateName(ctx *rest.Kit, input metadata.ModuleOption) (error, bool, string) {
+
+	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(context.Background(), header)
+	if err != nil {
+		return err, false, ""
+	}
+
+	conf := res.Data
+	flag := false
+	var oldName string
+
+	switch input.Key {
+	case common.SystemIdleModuleKey:
+		if input.Name == conf.BuiltInModuleConfig.IdleName {
+			return fmt.Errorf("idle name cannot be the same"), false, ""
+		}
+		oldName = conf.BuiltInModuleConfig.IdleName
+		flag = true
+
+	case common.SystemFaultModuleKey:
+		if input.Name == conf.BuiltInModuleConfig.FaultName {
+			return fmt.Errorf("fault name cannot be the same"), false, ""
+		}
+		oldName = conf.BuiltInModuleConfig.FaultName
+		flag = true
+
+	case common.SystemRecycleModuleKey:
+		if input.Name == conf.BuiltInModuleConfig.RecycleName {
+			return fmt.Errorf("recycle name cannot be the same"), false, ""
+		}
+		oldName = conf.BuiltInModuleConfig.RecycleName
+		flag = true
+
+	default:
+		found := false
+		for _, m := range conf.BuiltInModuleConfig.UserModules {
+			if m.Key == input.Key && m.Value == input.Name {
+				return fmt.Errorf("user defined module name cannot be the same"), false, ""
+			} else if m.Key == input.Key && m.Value != input.Name {
+				oldName = m.Value
+				found = true
+				break
+			}
+		}
+
+		if found {
+			flag = true
+		}
+	}
+
+	return nil, flag, oldName
+}
+
+func (b *business) validateDeleteModuleName(ctx context.Context, option *metadata.BuiltInModuleDeleteOption) error {
+
+	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+
+	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(context.Background(), header)
+	if err != nil {
+		return err
+
+	}
+	conf := res.Data
+
+	for _, userModule := range conf.BuiltInModuleConfig.UserModules {
+		if userModule.Key == option.ModuleKey {
+			return nil
+		}
+	}
+	return fmt.Errorf("no key founded")
+}
+
+// 由于此操作是对全业务下的空闲模块做操作，所以每次只能
+// 对一个模块做操作，而且需要事务，主要分三个步骤:
+// 1、检查空闲机池下面是否有重名的，由于空闲机池下面的模块改名均需要此接口改名，所以只要查看数据库中admin_config的名字是否冲突即可
+// 2、对全网进行新增或者改名操作
+// 3、成功后将新的空闲机配置写入admin_config中。
+// 以上步骤成功后返回。均在一个事务中
+func (b *business) addUserDefinedModule(kit *rest.Kit, results []inst.Inst, data metadata.ModuleOption) error {
+
+	// create module
+	objModule, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDModule)
+	if nil != err {
+		blog.Errorf("add user define module fail, failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
+		return err
+	}
+
+	ds := make([]mapstr.MapStr, 0)
+
+	for _, result := range results {
+
+		d := result.GetValues()
+
+		setId, err := util.GetInt64ByInterface(d[common.BKSetIDField])
+		if err != nil {
+			blog.Errorf("add user define module fail, decode set failed, data: %v, err: %s, rid: %s", d, err,
+				kit.Rid)
+			return err
+		}
+
+		bizId, err := result.GetBizID()
+		if nil != err {
+			blog.Errorf("add user define module fail, error is %v, rid: %s", err, kit.Rid)
+			return err
+		}
+
+		defaultCategory, err := b.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx, kit.Header)
+		if err != nil {
+			blog.Errorf("failed to search default category, err: %+v, rid: %s", err, kit.Rid)
+			return err
+		}
+
+		userModuleData := mapstr.New()
+		userModuleData.Set(common.BKSetIDField, setId)
+		userModuleData.Set(common.BKInstParentStr, setId)
+		userModuleData.Set(common.BKAppIDField, bizId)
+
+		userModuleData.Set(common.BKModuleNameField, data.Name)
+
+		// 设置用户新增的模块标识
+		userModuleData.Set(common.BKDefaultField, common.DefaultUserResModuleFlag)
+		userModuleData.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
+		userModuleData.Set(common.BKSetTemplateIDField, common.SetTemplateIDNotSet)
+		userModuleData.Set(common.BKServiceCategoryIDField, defaultCategory.ID)
+		ds = append(ds, userModuleData)
+	}
+
+	d := &metadata.CreateManyModelInstance{Datas: ds}
+
+	objID := objModule.GetObjectID()
+	rsp, err := b.clientSet.CoreService().Instance().CreateManyInstance(kit.Ctx, kit.Header, objID, d)
+	if nil != err {
+		blog.Errorf("failed to create object instance, error info is %s, rid: %s", err.Error(), kit.Rid)
+		return err
+	}
+
+	if !rsp.Result {
+		blog.Errorf("failed to create object instance ,error info is %v, rid: %s", rsp.ErrMsg, kit.Rid)
+		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return nil
+}
+
+func (b *business) updateModuleName(kit *rest.Kit, data metadata.ModuleOption, oldName string) error {
+
+	obj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDModule)
+	if nil != err {
+		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
+		return err
+	}
+
+	var defaultFlag int
+
+	// 根据不同类型的模块获取不同的模块标记,最终获取到原来的模块名称
+	switch data.Key {
+	case common.SystemIdleModuleKey:
+		defaultFlag = common.DefaultResModuleFlag
+	case common.SystemFaultModuleKey:
+		defaultFlag = common.DefaultFaultModuleFlag
+	case common.SystemRecycleModuleKey:
+		defaultFlag = common.DefaultRecycleModuleFlag
+	default:
+		defaultFlag = common.DefaultUserResModuleFlag
+	}
+	moduleIds := make([]int64, 0)
+
+	queryCond := &metadata.QueryInput{
+		Condition: map[string]interface{}{
+			common.BKDefaultField:    defaultFlag,
+			common.BKModuleNameField: oldName,
+		},
+	}
+	cnt, instItems, err := b.module.FindModule(kit, obj, queryCond)
+	if err != nil {
+		blog.Errorf("find module fail, queryCond: %+v,error %v, rid: %s", queryCond, err, kit.Rid)
+		return err
+	}
+	if cnt == 0 {
+		return fmt.Errorf("update module name fail, no module founded")
+	}
+
+	for _, instItem := range instItems {
+		moduleId, err := util.GetInt64ByInterface(instItem[common.BKModuleIDField])
+		if err != nil {
+			blog.Errorf("update module name fail, decode module id failed, err: %s, rid: %s", err, kit.Rid)
+			return err
+		}
+		moduleIds = append(moduleIds, moduleId)
+	}
+
+	d := mapstr.New()
+	d.Set(common.BKModuleNameField, data.Name)
+	innerCond := mapstr.MapStr{
+		common.BKModuleIDField: mapstr.MapStr{
+			common.BKDBIN: moduleIds,
+		},
+	}
+
+	inputParams := metadata.UpdateOption{
+		Data:      d,
+		Condition: innerCond,
+	}
+
+	rsp, err := b.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, obj.GetObjectID(),
+		&inputParams)
+	if nil != err {
+		blog.Errorf("update inst failed to request object controller, err: %v, rid: %s", err, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !rsp.Result {
+		blog.Errorf("update inst failed to set the object(%s) inst by the condition(%#v), err: %s, rid: %s",
+			obj.Object().ObjectID, innerCond, rsp.ErrMsg, kit.Rid)
+		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return nil
+}
+
+func (b *business) deleteModuleName(kit *rest.Kit, results []inst.Inst, op *metadata.BuiltInModuleDeleteOption) error {
+
+	obj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDModule)
+	if nil != err {
+		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
+		return err
+	}
+	delInstIDs := make([]int64, 0)
+
+	queryCond := &metadata.QueryInput{
+		Condition: map[string]interface{}{
+			common.BKDefaultField:    common.DefaultUserResModuleFlag,
+			common.BKModuleNameField: op.ModuleName,
+		},
+	}
+
+	cnt, instItems, err := b.module.FindModule(kit, obj, queryCond)
+	if err != nil {
+		blog.Errorf("failed to find the module, query %s, error is %v, rid: %s", queryCond, err, kit.Rid)
+		return err
+	}
+
+	if cnt == 0 {
+		blog.Errorf("no module founded, query %s, rid: %s", queryCond, kit.Rid)
+		return fmt.Errorf("no module founded")
+	}
+	for _, instItem := range instItems {
+		moduleId, err := util.GetInt64ByInterface(instItem[common.BKModuleIDField])
+		if err != nil {
+			blog.Errorf(" decode module id failed, instItems: %s, err: %s, rid: %s", instItems, err, kit.Rid)
+			return err
+		}
+		delInstIDs = append(delInstIDs, moduleId)
+	}
+
+	delCond := map[string]interface{}{
+		common.BKModuleIDField: map[string]interface{}{common.BKDBIN: delInstIDs},
+	}
+	flag, err := b.module.HasHostInModules(kit, delInstIDs)
+	if err != nil {
+		blog.Errorf("check whether there is a host in the module failed, query %s, rid: %s", queryCond, kit.Rid)
+		return err
+	}
+
+	if flag {
+		return fmt.Errorf("there is a host in the module")
+	}
+	dc := &metadata.DeleteOption{Condition: delCond}
+	rsp, err := b.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, obj.GetObjectID(), dc)
+	if nil != err {
+		blog.Errorf("delete inst failed, err: %v, cond: %s rid: %s", err, delCond, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if err := rsp.CCError(); err != nil {
+		blog.Errorf("delete inst failed, err: %v, cond: %s rid: %s", err, delCond, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// updateBusinessSet rename business idle set.
+func (b *business) updateBusinessSet(kit *rest.Kit, setOptin metadata.SetOption) error {
+
+	obj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet)
+	if nil != err {
+		blog.Errorf("get set object failed,err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	// step 1、verify whether the cluster name is duplicate.
+	if err := b.checkSetNameValid(kit, obj, setOptin); err != nil {
+		return err
+	}
+
+	// step 2:find idle set list.
+	results, err := b.getIdleSetList(kit)
+	if err != nil {
+		return err
+	}
+
+	setIDs := make([]int64, 0)
+	for _, set := range results {
+		s := set.GetValues()
+		setID, err := util.GetInt64ByInterface(s[common.BKSetIDField])
+		if nil != err {
+			blog.Errorf("get set id failed, error is %v, rid: %s", err, kit.Rid)
+			return err
+		}
+		setIDs = append(setIDs, setID)
+	}
+
+	s := mapstr.New()
+	s.Set(common.BKSetNameField, setOptin.Name)
+
+	// step 3: update idle set name
+	err = b.set.UpdateSetForPlatform(kit, s, obj, setIDs)
+	if err != nil {
+		blog.Errorf("update set failed, rid: %s", kit.Rid)
+		return err
+	}
+
+	// step 4: update platform setting.
+	err = b.updateBuiltInSetConfig(kit, setOptin.Name)
+	if err != nil {
+		blog.Errorf("update set config failed, rid: %s", kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// UpdateBusinessIdleSet update idle set or idle module.
+func (b *business) UpdateBusinessIdleSetOrModule(kit *rest.Kit, option *metadata.ConfigUpdateSettingOption) error {
+
+	switch option.Type {
+	case metadata.ConfigUpdateTypeSet:
+		err := b.updateBusinessSet(kit, option.Set)
+		if err != nil {
+			return err
+		}
+	case metadata.ConfigUpdateTypeModule:
+		err := b.updateBusinessModule(kit, option.Module)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("type error")
+	}
+
+	return nil
+}
+
+//updateBusinessModule: 对特殊空闲机池下模块(flag:1,2,3,5)做新增或改名操作
+func (b *business) updateBusinessModule(kit *rest.Kit, module metadata.ModuleOption) error {
+
+	// step 1: check param is legal or not
+	if err := b.checkModuleNameValid(kit, module); err != nil {
+		blog.Errorf("params is illegal err: %v, config: %v,rid: %s", err, module, kit.Rid)
+		return err
+	}
+
+	err, flag, oldname := b.validateUpdateName(kit, module)
+	if err != nil {
+		blog.Errorf("params is illegal err: %v, config: %v,rid: %s", err, module, kit.Rid)
+		return err
+	}
+
+	// step 3:find idle set list
+	results, err := b.getIdleSetList(kit)
+	if err != nil {
+		return err
+	}
+
+	// step 4: add user module or rename
+	if flag {
+		err := b.updateModuleName(kit, module, oldname)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := b.addUserDefinedModule(kit, results, module)
+		if err != nil {
+			return err
+		}
+	}
+
+	// step 5: update platform config
+	err = b.updateIdleModuleConfig(kit, module)
+	if err != nil {
+		blog.Errorf("update module config failed, rid: %s", kit.Rid)
+		return err
+	}
+	return nil
+}
+
+func (b *business) checkSetNameValid(kit *rest.Kit, obj model.Object, setOptin metadata.SetOption) error {
+
+	querySet := &metadata.QueryInput{
+		Condition: map[string]interface{}{
+			common.BKSetNameField: setOptin.Name,
+		},
+	}
+
+	count, _, err := b.set.FindSet(kit, obj, querySet)
+	if err != nil {
+		blog.Errorf("find set failed err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if count > 0 {
+		blog.Errorf("update set name fail, duplicate cluster name exists,set name: %v, rid: %s",
+			setOptin.Name, kit.Rid)
+		return fmt.Errorf("update set name fail, duplicate set name")
+	}
+	return nil
+}
+
+func (b *business) getIdleSetList(kit *rest.Kit) (results []inst.Inst, err error) {
+
+	obj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet)
+	if nil != err {
+		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
+		return nil, err
+	}
+	querySet := &metadata.QueryInput{
+		Condition: map[string]interface{}{
+			common.BKDefaultField: common.DefaultResSetFlag,
+		},
+		Limit: common.BKNoLimit,
+	}
+
+	count, results, err := b.set.FindSet(kit, obj, querySet)
+	if err != nil {
+		blog.Errorf("find set failed err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	if count == 0 {
+		blog.Errorf("no set founded, rid: %s", kit.Rid)
+		return nil, fmt.Errorf("no set founded")
+	}
+	return results, nil
+}
+
+// DeleteBusinessGlobalUserModule delete user defined module，only one module can be deleted at a time.
+func (b *business) DeleteBusinessGlobalUserModule(kit *rest.Kit, obj model.Object,
+	option *metadata.BuiltInModuleDeleteOption) error {
+
+	// step 1: check param is legal or not
+	err := b.validateDeleteModuleName(kit.Ctx, option)
+	if err != nil {
+		blog.Errorf("delete global user module fail, params is illegal config: %+v,err: %v, rid:%s", option, err,
+			kit.Rid)
+		return err
+	}
+
+	// step 3:get idle set list
+	results, err := b.getIdleSetList(kit)
+	if err != nil {
+		return err
+	}
+
+	// step 4: delete user module.
+	err = b.deleteModuleName(kit, results, option)
+	if err != nil {
+		return err
+	}
+
+	// step 5: update platform config.
+	err = b.deleteUserModuleConfig(kit, option)
+	if err != nil {
+		blog.Errorf("fail to update admin config err: %v,rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
 }
 
 func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
@@ -173,11 +834,20 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
+	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+
+	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(context.Background(), header)
+	if err != nil {
+		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
+
+	conf := res.Data
 
 	setData := mapstr.New()
 	setData.Set(common.BKAppIDField, bizID)
 	setData.Set(common.BKInstParentStr, bizID)
-	setData.Set(common.BKSetNameField, common.DefaultResSetName)
+	setData.Set(common.BKSetNameField, conf.BuiltInSetName)
+
 	setData.Set(common.BKDefaultField, common.DefaultResSetFlag)
 
 	setInst, err := b.set.CreateSet(kit, objSet, bizID, setData)
@@ -209,7 +879,8 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 	idleModuleData.Set(common.BKSetIDField, setID)
 	idleModuleData.Set(common.BKInstParentStr, setID)
 	idleModuleData.Set(common.BKAppIDField, bizID)
-	idleModuleData.Set(common.BKModuleNameField, common.DefaultResModuleName)
+	idleModuleData.Set(common.BKModuleNameField, conf.BuiltInModuleConfig.IdleName)
+
 	idleModuleData.Set(common.BKDefaultField, common.DefaultResModuleFlag)
 	idleModuleData.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
 	idleModuleData.Set(common.BKSetTemplateIDField, common.SetTemplateIDNotSet)
@@ -226,7 +897,8 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 	faultModuleData.Set(common.BKSetIDField, setID)
 	faultModuleData.Set(common.BKInstParentStr, setID)
 	faultModuleData.Set(common.BKAppIDField, bizID)
-	faultModuleData.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
+	faultModuleData.Set(common.BKModuleNameField, conf.BuiltInModuleConfig.FaultName)
+
 	faultModuleData.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
 	faultModuleData.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
 	faultModuleData.Set(common.BKSetTemplateIDField, common.SetTemplateIDNotSet)
@@ -243,7 +915,8 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 	recycleModuleData.Set(common.BKSetIDField, setID)
 	recycleModuleData.Set(common.BKInstParentStr, setID)
 	recycleModuleData.Set(common.BKAppIDField, bizID)
-	recycleModuleData.Set(common.BKModuleNameField, common.DefaultRecycleModuleName)
+	recycleModuleData.Set(common.BKModuleNameField, conf.BuiltInModuleConfig.RecycleName)
+
 	recycleModuleData.Set(common.BKDefaultField, common.DefaultRecycleModuleFlag)
 	recycleModuleData.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
 	recycleModuleData.Set(common.BKSetTemplateIDField, common.SetTemplateIDNotSet)
@@ -255,9 +928,29 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 		return bizInst, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 
+	for _, module := range conf.BuiltInModuleConfig.UserModules {
+
+		// create user module
+		userModuleData := mapstr.New()
+		userModuleData.Set(common.BKSetIDField, setID)
+		userModuleData.Set(common.BKInstParentStr, setID)
+		userModuleData.Set(common.BKAppIDField, bizID)
+		userModuleData.Set(common.BKModuleNameField, module.Value)
+
+		userModuleData.Set(common.BKDefaultField, common.DefaultUserResModuleFlag)
+		userModuleData.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
+		userModuleData.Set(common.BKSetTemplateIDField, common.SetTemplateIDNotSet)
+		userModuleData.Set(common.BKServiceCategoryIDField, defaultCategory.ID)
+
+		_, err = b.module.CreateModule(kit, objModule, bizID, setID, userModuleData)
+		if nil != err {
+			blog.Errorf("create business failed, create user module failed, err: %v, rid: %s", err, kit.Rid)
+			return bizInst, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
+		}
+
+	}
 	return bizInst, nil
 }
-
 func (b *business) FindBusiness(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error) {
 
 	cond.Condition[common.BKDefaultField] = 0

@@ -33,7 +33,7 @@ type SetOperationInterface interface {
 	DeleteSet(kit *rest.Kit, bizID int64, setIDS []int64) error
 	FindSet(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error)
 	UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID, setID int64) error
-
+	UpdateSetForPlatform(kit *rest.Kit, data mapstr.MapStr, obj model.Object, setIDs []int64) error
 	SetProxy(obj ObjectOperationInterface, inst InstOperationInterface, module ModuleOperationInterface)
 }
 
@@ -254,6 +254,32 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, biz
 			return kit.CCError.CCError(common.CCErrorSetNameDuplicated)
 		}
 		return err
+	}
+
+	return nil
+}
+
+// UpdateSetForPlatform 全量更新所有的空闲机池集群名称，注意: 此函数只是用于更新平台管理的,不能上esb
+func (s *set) UpdateSetForPlatform(kit *rest.Kit, data mapstr.MapStr, obj model.Object, setIDs []int64) error {
+	innerCond := mapstr.MapStr{
+		common.BKSetIDField: mapstr.MapStr{
+			common.BKDBIN: setIDs,
+		},
+	}
+	inputParams := metadata.UpdateOption{
+		Data:      data,
+		Condition: innerCond,
+	}
+
+	rsp, err := s.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, obj.GetObjectID(),
+		&inputParams)
+	if nil != err {
+		blog.Errorf("update set name failed , err: %v, rid: %s", err, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !rsp.Result {
+		blog.Errorf("update set name failed , err: %s, rid: %s", rsp.ErrMsg, kit.Rid)
+		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil

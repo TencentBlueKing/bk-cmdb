@@ -464,6 +464,9 @@ const (
 
 	// DynamicGroupType is dynamic grouping audit type.
 	DynamicGroupType AuditType = "dynamic_grouping"
+
+	// PlatFormSettingType is platform audit type
+	PlatFormSettingType AuditType = "platform_setting"
 )
 
 type ResourceType string
@@ -506,6 +509,9 @@ const (
 	HostRes ResourceType = "host"
 
 	ResourceDirRes ResourceType = "resource_directory"
+
+	// PlatFormSettingRes platform related operation type
+	PlatFormSettingRes ResourceType = "platform_setting"
 )
 
 type OperateFromType string
@@ -606,7 +612,7 @@ func GetAuditTypesByCategory(category string) []AuditType {
 	case "host":
 		return []AuditType{HostType}
 	case "other":
-		return []AuditType{ModelType, AssociationKindType, EventPushType, DynamicGroupType}
+		return []AuditType{ModelType, AssociationKindType, EventPushType, DynamicGroupType, PlatFormSettingType}
 	}
 	return []AuditType{}
 }
@@ -768,6 +774,15 @@ var auditDict = []resourceTypeInfo{
 	{
 		ID:   DynamicGroupRes,
 		Name: "动态分组",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   PlatFormSettingRes,
+		Name: "平台管理",
 		Operations: []actionTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],

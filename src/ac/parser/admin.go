@@ -24,6 +24,7 @@ func (ps *parseStream) adminRelated() *parseStream {
 	}
 
 	ps.ConfigAdmin()
+	ps.PlatformSettingConfigAuth()
 
 	return ps
 }
@@ -46,6 +47,36 @@ var ConfigAdminConfigs = []AuthConfig{
 	},
 }
 
+var PlatformSettingConfig = []AuthConfig{
+	{
+		Name:           "findPlatformSettingConfig",
+		Description:    "查询平台配置管理",
+		Pattern:        "/api/v3/find/system_config/platform_setting",
+		HTTPMethod:     http.MethodGet,
+		ResourceType:   meta.ConfigAdmin,
+		ResourceAction: meta.Find,
+	}, {
+		Name:           "UpdatePlatformSettingConfig",
+		Description:    "更新平台配置管理",
+		Pattern:        "/api/v3/update/system_config/platform_setting",
+		HTTPMethod:     http.MethodPut,
+		ResourceType:   meta.ConfigAdmin,
+		ResourceAction: meta.Update,
+	}, {
+		Name:           "RestoreSettingsConfig",
+		Description:    "重置平台配置管理",
+		Pattern:        "/api/v3/restore_settings/system_config",
+		HTTPMethod:     http.MethodPut,
+		ResourceType:   meta.ConfigAdmin,
+		ResourceAction: meta.Update,
+	},
+}
+
 func (ps *parseStream) ConfigAdmin() *parseStream {
 	return ParseStreamWithFramework(ps, ConfigAdminConfigs)
+}
+
+// PlatformSettingConfigAuth platform auth
+func (ps *parseStream) PlatformSettingConfigAuth() *parseStream {
+	return ParseStreamWithFramework(ps, PlatformSettingConfig)
 }

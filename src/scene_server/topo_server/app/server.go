@@ -56,7 +56,8 @@ func (t *TopoServer) setBusinessTopoLevelMax() error {
 	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 	for i := 1; i <= tryCnt; i++ {
 		time.Sleep(time.Second * 2)
-		res, err := t.Core.CoreAPI.CoreService().System().SearchConfigAdmin(context.Background(), header)
+
+		res, err := t.Core.CoreAPI.CoreService().System().SearchPlatformSetting(context.Background(), header)
 		if err != nil {
 			blog.Warnf("setBusinessTopoLevelMax failed,  try count:%d, SearchConfigAdmin err: %v", i, err)
 			continue
