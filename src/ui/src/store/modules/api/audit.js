@@ -8,6 +8,12 @@ const actions = {
   },
   getDetails(context, { id, config }) {
     return $http.post('find/audit', { id: [id] }, config).then(([detail]) => detail)
+  },
+  getInstList(context, { params, config }) {
+    return $http.post('find/inst_audit', params, config)
+  },
+  getInstDetails(context, { params, config }) {
+    return $http.post('find/inst_audit', params, config).then(({ info: [detail] }) => detail)
   }
 }
 

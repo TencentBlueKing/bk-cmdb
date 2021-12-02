@@ -24,7 +24,18 @@
       [DetailsTable.name]: DetailsTable
     },
     props: {
-      id: Number
+      id: Number,
+      bizId: {
+        type: Number
+      },
+      objId: {
+        type: String,
+        required: true
+      },
+      resourceType: {
+        type: String,
+        default: ''
+      }
     },
     data() {
       return {
@@ -55,7 +66,17 @@
       async getDetails() {
         try {
           this.pending = true
-          this.details = await this.$store.dispatch('audit/getDetails', { id: this.id })
+          this.details = await this.$store.dispatch('audit/getInstDetails', {
+            params: {
+              condition: {
+                bk_biz_id: this.bizId,
+                bk_obj_id: this.objId,
+                resource_type: this.resourceType,
+                id: [this.id]
+              },
+              with_detail: true
+            }
+          })
         } catch (error) {
           console.error(error)
           this.details = null

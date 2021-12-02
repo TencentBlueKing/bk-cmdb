@@ -44,11 +44,11 @@ func (s *coreService) AbortTransaction(ctx *rest.Contexts) {
 		return
 	}
 
-	err := mongodb.Client().AbortTransaction(ctx.Kit.Ctx, cap)
+	retry, err := mongodb.Client().AbortTransaction(ctx.Kit.Ctx, cap)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommCommitTransactionFailed, err.Error()))
 		return
 	}
 
-	ctx.RespEntity(nil)
+	ctx.RespEntity(metadata.AbortTransactionResult{Retry: retry})
 }
