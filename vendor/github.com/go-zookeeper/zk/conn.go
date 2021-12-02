@@ -10,13 +10,13 @@ Possible watcher events:
 */
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"net"
-	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -28,7 +28,7 @@ import (
 var ErrNoServer = errors.New("zk: could not connect to a server")
 
 // ErrInvalidPath indicates that an operation was being attempted on
-// an invalid path. (e.g. empty path)
+// an invalid path. (e.g. empty path).
 var ErrInvalidPath = errors.New("zk: invalid path")
 
 // DefaultLogger uses the stdlib log package for logging.
@@ -54,6 +54,7 @@ type watchPathType struct {
 	wType watchType
 }
 
+// Dialer is a function to be used to establish a connection to a single host.
 type Dialer func(network, address string, timeout time.Duration) (net.Conn, error)
 
 // Logger is an interface that can be implemented to provide custom log output.
@@ -66,6 +67,7 @@ type authCreds struct {
 	auth   []byte
 }
 
+// Conn is the client connection and tracks all details for communication with the server.
 type Conn struct {
 	lastZxid         int64
 	sessionID        int64
@@ -82,6 +84,7 @@ type Conn struct {
 	eventChan      chan Event
 	eventCallback  EventCallback // may be nil
 	shouldQuit     chan struct{}
+	shouldQuitOnce sync.Once
 	pingInterval   time.Duration
 	recvTimeout    time.Duration
 	connectTimeout time.Duration
@@ -101,9 +104,10 @@ type Conn struct {
 	reconnectLatch   chan struct{}
 	setWatchLimit    int
 	setWatchCallback func([]*setWatchesRequest)
+
 	// Debug (for recurring re-auth hang)
 	debugCloseRecvLoop bool
-	debugReauthDone    chan struct{}
+	resendZkAuthFn     func(context.Context, *Conn) error
 
 	logger  Logger
 	logInfo bool // true if information messages are logged; false if only errors are logged
@@ -136,6 +140,8 @@ type response struct {
 	err  error
 }
 
+// Event is an Znode event sent by the server.
+// Refer to EventType for more details.
 type Event struct {
 	Type   EventType
 	State  State
@@ -177,15 +183,7 @@ func Connect(servers []string, sessionTimeout time.Duration, options ...connOpti
 		return nil, nil, errors.New("zk: server list must not be empty")
 	}
 
-	srvs := make([]string, len(servers))
-
-	for i, addr := range servers {
-		if strings.Contains(addr, ":") {
-			srvs[i] = addr
-		} else {
-			srvs[i] = addr + ":" + strconv.Itoa(DefaultPort)
-		}
-	}
+	srvs := FormatServers(servers)
 
 	// Randomize the order of the servers to avoid creating hotspots
 	stringShuffle(srvs)
@@ -206,6 +204,7 @@ func Connect(servers []string, sessionTimeout time.Duration, options ...connOpti
 		logger:         DefaultLogger,
 		logInfo:        true, // default is true for backwards compatability
 		buf:            make([]byte, bufferSize),
+		resendZkAuthFn: resendZkAuth,
 	}
 
 	// Set provided options.
@@ -218,9 +217,11 @@ func Connect(servers []string, sessionTimeout time.Duration, options ...connOpti
 	}
 
 	conn.setTimeouts(int32(sessionTimeout / time.Millisecond))
+	// TODO: This context should be passed in by the caller to be the connection lifecycle context.
+	ctx := context.Background()
 
 	go func() {
-		conn.loop()
+		conn.loop(ctx)
 		conn.flushRequests(ErrClosing)
 		conn.invalidateWatches(ErrClosing)
 		close(conn.eventChan)
@@ -242,7 +243,7 @@ func WithHostProvider(hostProvider HostProvider) connOption {
 	}
 }
 
-// WithLogger returns a connection option specifying a non-default Logger
+// WithLogger returns a connection option specifying a non-default Logger.
 func WithLogger(logger Logger) connOption {
 	return func(c *Conn) {
 		c.logger = logger
@@ -250,7 +251,7 @@ func WithLogger(logger Logger) connOption {
 }
 
 // WithLogInfo returns a connection option specifying whether or not information messages
-// shoud be logged.
+// should be logged.
 func WithLogInfo(logInfo bool) connOption {
 	return func(c *Conn) {
 		c.logInfo = logInfo
@@ -300,7 +301,7 @@ func WithMaxBufferSize(maxBufferSize int) connOption {
 }
 
 // WithMaxConnBufferSize sets maximum buffer size used to send and encode
-// packets to Zookeeper server. The standard Zookeepeer client for java defaults
+// packets to Zookeeper server. The standard Zookeeper client for java defaults
 // to a limit of 1mb. This option should be used for non-standard server setup
 // where znode is bigger than default 1mb.
 func WithMaxConnBufferSize(maxBufferSize int) connOption {
@@ -309,13 +310,17 @@ func WithMaxConnBufferSize(maxBufferSize int) connOption {
 	}
 }
 
+// Close will submit a close request with ZK and signal the connection to stop
+// sending and receiving packets.
 func (c *Conn) Close() {
-	close(c.shouldQuit)
+	c.shouldQuitOnce.Do(func() {
+		close(c.shouldQuit)
 
-	select {
-	case <-c.queueRequest(opClose, &closeRequest{}, &closeResponse{}, nil):
-	case <-time.After(time.Second):
-	}
+		select {
+		case <-c.queueRequest(opClose, &closeRequest{}, &closeResponse{}, nil):
+		case <-time.After(time.Second):
+		}
+	})
 }
 
 // State returns the current state of the connection.
@@ -364,7 +369,9 @@ func (c *Conn) connect() error {
 		c.serverMu.Lock()
 		c.server, retryStart = c.hostProvider.Next()
 		c.serverMu.Unlock()
+
 		c.setState(StateConnecting)
+
 		if retryStart {
 			c.flushUnsentRequests(ErrNoServer)
 			select {
@@ -382,72 +389,12 @@ func (c *Conn) connect() error {
 			c.conn = zkConn
 			c.setState(StateConnected)
 			if c.logInfo {
-				c.logger.Printf("Connected to %s", c.Server())
+				c.logger.Printf("connected to %s", c.Server())
 			}
 			return nil
 		}
 
-		c.logger.Printf("Failed to connect to %s: %+v", c.Server(), err)
-	}
-}
-
-func (c *Conn) resendZkAuth(reauthReadyChan chan struct{}) {
-	shouldCancel := func() bool {
-		select {
-		case <-c.shouldQuit:
-			return true
-		case <-c.closeChan:
-			return true
-		default:
-			return false
-		}
-	}
-
-	c.credsMu.Lock()
-	defer c.credsMu.Unlock()
-
-	defer close(reauthReadyChan)
-
-	if c.logInfo {
-		c.logger.Printf("Re-submitting `%d` credentials after reconnect",
-			len(c.creds))
-	}
-
-	for _, cred := range c.creds {
-		if shouldCancel() {
-			c.logger.Printf("Cancel rer-submitting credentials")
-			return
-		}
-		resChan, err := c.sendRequest(
-			opSetAuth,
-			&setAuthRequest{Type: 0,
-				Scheme: cred.scheme,
-				Auth:   cred.auth,
-			},
-			&setAuthResponse{},
-			nil)
-
-		if err != nil {
-			c.logger.Printf("Call to sendRequest failed during credential resubmit: %s", err)
-			// FIXME(prozlach): lets ignore errors for now
-			continue
-		}
-
-		var res response
-		select {
-		case res = <-resChan:
-		case <-c.closeChan:
-			c.logger.Printf("Recv closed, cancel re-submitting credentials")
-			return
-		case <-c.shouldQuit:
-			c.logger.Printf("Should quit, cancel re-submitting credentials")
-			return
-		}
-		if res.err != nil {
-			c.logger.Printf("Credential re-submit failed: %s", res.err)
-			// FIXME(prozlach): lets ignore errors for now
-			continue
-		}
+		c.logger.Printf("failed to connect to %s: %v", c.Server(), err)
 	}
 }
 
@@ -476,7 +423,7 @@ func (c *Conn) sendRequest(
 	return rq.recvChan, nil
 }
 
-func (c *Conn) loop() {
+func (c *Conn) loop(ctx context.Context) {
 	for {
 		if err := c.connect(); err != nil {
 			// c.Close() was called
@@ -486,36 +433,40 @@ func (c *Conn) loop() {
 		err := c.authenticate()
 		switch {
 		case err == ErrSessionExpired:
-			c.logger.Printf("Authentication failed: %s", err)
+			c.logger.Printf("authentication failed: %s", err)
 			c.invalidateWatches(err)
 		case err != nil && c.conn != nil:
-			c.logger.Printf("Authentication failed: %s", err)
+			c.logger.Printf("authentication failed: %s", err)
 			c.conn.Close()
 		case err == nil:
 			if c.logInfo {
-				c.logger.Printf("Authenticated: id=%d, timeout=%d", c.SessionID(), c.sessionTimeoutMs)
+				c.logger.Printf("authenticated: id=%d, timeout=%d", c.SessionID(), c.sessionTimeoutMs)
 			}
 			c.hostProvider.Connected()        // mark success
 			c.closeChan = make(chan struct{}) // channel to tell send loop stop
-			reauthChan := make(chan struct{}) // channel to tell send loop that authdata has been resubmitted
 
 			var wg sync.WaitGroup
+
 			wg.Add(1)
 			go func() {
-				<-reauthChan
-				if c.debugCloseRecvLoop {
-					close(c.debugReauthDone)
+				defer c.conn.Close() // causes recv loop to EOF/exit
+				defer wg.Done()
+
+				if err := c.resendZkAuthFn(ctx, c); err != nil {
+					c.logger.Printf("error in resending auth creds: %v", err)
+					return
 				}
-				err := c.sendLoop()
-				if err != nil || c.logInfo {
-					c.logger.Printf("Send loop terminated: err=%v", err)
+
+				if err := c.sendLoop(); err != nil || c.logInfo {
+					c.logger.Printf("send loop terminated: %v", err)
 				}
-				c.conn.Close() // causes recv loop to EOF/exit
-				wg.Done()
 			}()
 
 			wg.Add(1)
 			go func() {
+				defer close(c.closeChan) // tell send loop to exit
+				defer wg.Done()
+
 				var err error
 				if c.debugCloseRecvLoop {
 					err = errors.New("DEBUG: close recv loop")
@@ -523,16 +474,12 @@ func (c *Conn) loop() {
 					err = c.recvLoop(c.conn)
 				}
 				if err != io.EOF || c.logInfo {
-					c.logger.Printf("Recv loop terminated: err=%v", err)
+					c.logger.Printf("recv loop terminated: %v", err)
 				}
 				if err == nil {
 					panic("zk: recvLoop should never return nil error")
 				}
-				close(c.closeChan) // tell send loop to exit
-				wg.Done()
 			}()
-
-			c.resendZkAuth(reauthChan)
 
 			c.sendSetWatches()
 			wg.Wait()
@@ -591,6 +538,7 @@ func (c *Conn) invalidateWatches(err error) {
 	if len(c.watchers) >= 0 {
 		for pathType, watchers := range c.watchers {
 			ev := Event{Type: EventNotWatching, State: StateDisconnected, Path: pathType.path, Err: err}
+			c.sendEvent(ev) // also publish globally
 			for _, ch := range watchers {
 				ch <- ev
 				close(ch)
@@ -673,7 +621,7 @@ func (c *Conn) sendSetWatches() {
 		for _, req := range reqs {
 			_, err := c.request(opSetWatches, req, res, nil)
 			if err != nil {
-				c.logger.Printf("Failed to set previous watches: %s", err.Error())
+				c.logger.Printf("Failed to set previous watches: %v", err)
 				break
 			}
 		}
@@ -823,10 +771,12 @@ func (c *Conn) recvLoop(conn net.Conn) error {
 	buf := make([]byte, sz)
 	for {
 		// package length
-		conn.SetReadDeadline(time.Now().Add(c.recvTimeout))
+		if err := conn.SetReadDeadline(time.Now().Add(c.recvTimeout)); err != nil {
+			c.logger.Printf("failed to set connection deadline: %v", err)
+		}
 		_, err := io.ReadFull(conn, buf[:4])
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to read from connection: %v", err)
 		}
 
 		blen := int(binary.BigEndian.Uint32(buf[:4]))
@@ -939,18 +889,54 @@ func (c *Conn) queueRequest(opcode int32, req interface{}, res interface{}, recv
 		opcode:     opcode,
 		pkt:        req,
 		recvStruct: res,
-		recvChan:   make(chan response, 1),
+		recvChan:   make(chan response, 2),
 		recvFunc:   recvFunc,
 	}
-	c.sendChan <- rq
+
+	switch opcode {
+	case opClose:
+		// always attempt to send close ops.
+		select {
+		case c.sendChan <- rq:
+		case <-time.After(c.connectTimeout * 2):
+			c.logger.Printf("gave up trying to send opClose to server")
+			rq.recvChan <- response{-1, ErrConnectionClosed}
+		}
+	default:
+		// otherwise avoid deadlocks for dumb clients who aren't aware that
+		// the ZK connection is closed yet.
+		select {
+		case <-c.shouldQuit:
+			rq.recvChan <- response{-1, ErrConnectionClosed}
+		case c.sendChan <- rq:
+			// check for a tie
+			select {
+			case <-c.shouldQuit:
+				// maybe the caller gets this, maybe not- we tried.
+				rq.recvChan <- response{-1, ErrConnectionClosed}
+			default:
+			}
+		}
+	}
 	return rq.recvChan
 }
 
 func (c *Conn) request(opcode int32, req interface{}, res interface{}, recvFunc func(*request, *responseHeader, error)) (int64, error) {
 	r := <-c.queueRequest(opcode, req, res, recvFunc)
-	return r.zxid, r.err
+	select {
+	case <-c.shouldQuit:
+		// queueRequest() can be racy, double-check for the race here and avoid
+		// a potential data-race. otherwise the client of this func may try to
+		// access `res` fields concurrently w/ the async response processor.
+		// NOTE: callers of this func should check for (at least) ErrConnectionClosed
+		// and avoid accessing fields of the response object if such error is present.
+		return -1, ErrConnectionClosed
+	default:
+		return r.zxid, r.err
+	}
 }
 
+// AddAuth adds an authentication config to the connection.
 func (c *Conn) AddAuth(scheme string, auth []byte) error {
 	_, err := c.request(opSetAuth, &setAuthRequest{Type: 0, Scheme: scheme, Auth: auth}, &setAuthResponse{}, nil)
 
@@ -961,7 +947,7 @@ func (c *Conn) AddAuth(scheme string, auth []byte) error {
 	// Remember authdata so that it can be re-submitted on reconnect
 	//
 	// FIXME(prozlach): For now we treat "userfoo:passbar" and "userfoo:passbar2"
-	// as two different entries, which will be re-submitted on reconnet. Some
+	// as two different entries, which will be re-submitted on reconnect. Some
 	// research is needed on how ZK treats these cases and
 	// then maybe switch to something like "map[username] = password" to allow
 	// only single password for given user with users being unique.
@@ -977,6 +963,7 @@ func (c *Conn) AddAuth(scheme string, auth []byte) error {
 	return nil
 }
 
+// Children returns the children of a znode.
 func (c *Conn) Children(path string) ([]string, *Stat, error) {
 	if err := validatePath(path, false); err != nil {
 		return nil, nil, err
@@ -984,9 +971,13 @@ func (c *Conn) Children(path string) ([]string, *Stat, error) {
 
 	res := &getChildren2Response{}
 	_, err := c.request(opGetChildren2, &getChildren2Request{Path: path, Watch: false}, res, nil)
+	if err == ErrConnectionClosed {
+		return nil, nil, err
+	}
 	return res.Children, &res.Stat, err
 }
 
+// ChildrenW returns the children of a znode and sets a watch.
 func (c *Conn) ChildrenW(path string) ([]string, *Stat, <-chan Event, error) {
 	if err := validatePath(path, false); err != nil {
 		return nil, nil, nil, err
@@ -1005,6 +996,7 @@ func (c *Conn) ChildrenW(path string) ([]string, *Stat, <-chan Event, error) {
 	return res.Children, &res.Stat, ech, err
 }
 
+// Get gets the contents of a znode.
 func (c *Conn) Get(path string) ([]byte, *Stat, error) {
 	if err := validatePath(path, false); err != nil {
 		return nil, nil, err
@@ -1012,6 +1004,9 @@ func (c *Conn) Get(path string) ([]byte, *Stat, error) {
 
 	res := &getDataResponse{}
 	_, err := c.request(opGetData, &getDataRequest{Path: path, Watch: false}, res, nil)
+	if err == ErrConnectionClosed {
+		return nil, nil, err
+	}
 	return res.Data, &res.Stat, err
 }
 
@@ -1034,6 +1029,7 @@ func (c *Conn) GetW(path string) ([]byte, *Stat, <-chan Event, error) {
 	return res.Data, &res.Stat, ech, err
 }
 
+// Set updates the contents of a znode.
 func (c *Conn) Set(path string, data []byte, version int32) (*Stat, error) {
 	if err := validatePath(path, false); err != nil {
 		return nil, err
@@ -1041,9 +1037,16 @@ func (c *Conn) Set(path string, data []byte, version int32) (*Stat, error) {
 
 	res := &setDataResponse{}
 	_, err := c.request(opSetData, &SetDataRequest{path, data, version}, res, nil)
+	if err == ErrConnectionClosed {
+		return nil, err
+	}
 	return &res.Stat, err
 }
 
+// Create creates a znode.
+// The returned path is the new path assigned by the server, it may not be the
+// same as the input, for example when creating a sequence znode the returned path
+// will be the input path with a sequence number appended.
 func (c *Conn) Create(path string, data []byte, flags int32, acl []ACL) (string, error) {
 	if err := validatePath(path, flags&FlagSequence == FlagSequence); err != nil {
 		return "", err
@@ -1051,6 +1054,37 @@ func (c *Conn) Create(path string, data []byte, flags int32, acl []ACL) (string,
 
 	res := &createResponse{}
 	_, err := c.request(opCreate, &CreateRequest{path, data, acl, flags}, res, nil)
+	if err == ErrConnectionClosed {
+		return "", err
+	}
+	return res.Path, err
+}
+
+// CreateContainer creates a container znode and returns the path.
+func (c *Conn) CreateContainer(path string, data []byte, flags int32, acl []ACL) (string, error) {
+	if err := validatePath(path, flags&FlagSequence == FlagSequence); err != nil {
+		return "", err
+	}
+	if flags&FlagTTL != FlagTTL {
+		return "", ErrInvalidFlags
+	}
+
+	res := &createResponse{}
+	_, err := c.request(opCreateContainer, &CreateContainerRequest{path, data, acl, flags}, res, nil)
+	return res.Path, err
+}
+
+// CreateTTL creates a TTL znode, which will be automatically deleted by server after the TTL.
+func (c *Conn) CreateTTL(path string, data []byte, flags int32, acl []ACL, ttl time.Duration) (string, error) {
+	if err := validatePath(path, flags&FlagSequence == FlagSequence); err != nil {
+		return "", err
+	}
+	if flags&FlagTTL != FlagTTL {
+		return "", ErrInvalidFlags
+	}
+
+	res := &createResponse{}
+	_, err := c.request(opCreateTTL, &CreateTTLRequest{path, data, acl, flags, ttl.Milliseconds()}, res, nil)
 	return res.Path, err
 }
 
@@ -1103,6 +1137,7 @@ func (c *Conn) CreateProtectedEphemeralSequential(path string, data []byte, acl 
 	return "", err
 }
 
+// Delete deletes a znode.
 func (c *Conn) Delete(path string, version int32) error {
 	if err := validatePath(path, false); err != nil {
 		return err
@@ -1112,6 +1147,7 @@ func (c *Conn) Delete(path string, version int32) error {
 	return err
 }
 
+// Exists tells the existence of a znode.
 func (c *Conn) Exists(path string) (bool, *Stat, error) {
 	if err := validatePath(path, false); err != nil {
 		return false, nil, err
@@ -1119,6 +1155,9 @@ func (c *Conn) Exists(path string) (bool, *Stat, error) {
 
 	res := &existsResponse{}
 	_, err := c.request(opExists, &existsRequest{Path: path, Watch: false}, res, nil)
+	if err == ErrConnectionClosed {
+		return false, nil, err
+	}
 	exists := true
 	if err == ErrNoNode {
 		exists = false
@@ -1127,6 +1166,7 @@ func (c *Conn) Exists(path string) (bool, *Stat, error) {
 	return exists, &res.Stat, err
 }
 
+// ExistsW tells the existence of a znode and sets a watch.
 func (c *Conn) ExistsW(path string) (bool, *Stat, <-chan Event, error) {
 	if err := validatePath(path, false); err != nil {
 		return false, nil, nil, err
@@ -1152,6 +1192,7 @@ func (c *Conn) ExistsW(path string) (bool, *Stat, <-chan Event, error) {
 	return exists, &res.Stat, ech, err
 }
 
+// GetACL gets the ACLs of a znode.
 func (c *Conn) GetACL(path string) ([]ACL, *Stat, error) {
 	if err := validatePath(path, false); err != nil {
 		return nil, nil, err
@@ -1159,8 +1200,13 @@ func (c *Conn) GetACL(path string) ([]ACL, *Stat, error) {
 
 	res := &getAclResponse{}
 	_, err := c.request(opGetAcl, &getAclRequest{Path: path}, res, nil)
+	if err == ErrConnectionClosed {
+		return nil, nil, err
+	}
 	return res.Acl, &res.Stat, err
 }
+
+// SetACL updates the ACLs of a znode.
 func (c *Conn) SetACL(path string, acl []ACL, version int32) (*Stat, error) {
 	if err := validatePath(path, false); err != nil {
 		return nil, err
@@ -1168,9 +1214,15 @@ func (c *Conn) SetACL(path string, acl []ACL, version int32) (*Stat, error) {
 
 	res := &setAclResponse{}
 	_, err := c.request(opSetAcl, &setAclRequest{Path: path, Acl: acl, Version: version}, res, nil)
+	if err == ErrConnectionClosed {
+		return nil, err
+	}
 	return &res.Stat, err
 }
 
+// Sync flushes the channel between process and the leader of a given znode,
+// you may need it if you want identical views of ZooKeeper data for 2 client instances.
+// Please refer to the "Consistency Guarantees" section of ZK document for more details.
 func (c *Conn) Sync(path string) (string, error) {
 	if err := validatePath(path, false); err != nil {
 		return "", err
@@ -1178,9 +1230,13 @@ func (c *Conn) Sync(path string) (string, error) {
 
 	res := &syncResponse{}
 	_, err := c.request(opSync, &syncRequest{Path: path}, res, nil)
+	if err == ErrConnectionClosed {
+		return "", err
+	}
 	return res.Path, err
 }
 
+// MultiResponse is the result of a Multi call.
 type MultiResponse struct {
 	Stat   *Stat
 	String string
@@ -1213,6 +1269,9 @@ func (c *Conn) Multi(ops ...interface{}) ([]MultiResponse, error) {
 	}
 	res := &multiResponse{}
 	_, err := c.request(opMulti, req, res, nil)
+	if err == ErrConnectionClosed {
+		return nil, err
+	}
 	mr := make([]MultiResponse, len(res.Ops))
 	for i, op := range res.Ops {
 		mr[i] = MultiResponse{Stat: op.Stat, String: op.String, Error: op.Err.toError()}
@@ -1220,9 +1279,106 @@ func (c *Conn) Multi(ops ...interface{}) ([]MultiResponse, error) {
 	return mr, err
 }
 
+// IncrementalReconfig is the zookeeper reconfiguration api that allows adding and removing servers
+// by lists of members. For more info refer to the ZK documentation.
+//
+// An optional version allows for conditional reconfigurations, -1 ignores the condition.
+//
+// Returns the new configuration znode stat.
+func (c *Conn) IncrementalReconfig(joining, leaving []string, version int64) (*Stat, error) {
+	// TODO: validate the shape of the member string to give early feedback.
+	request := &reconfigRequest{
+		JoiningServers: []byte(strings.Join(joining, ",")),
+		LeavingServers: []byte(strings.Join(leaving, ",")),
+		CurConfigId:    version,
+	}
+
+	return c.internalReconfig(request)
+}
+
+// Reconfig is the non-incremental update functionality for Zookeeper where the list provided
+// is the entire new member list. For more info refer to the ZK documentation.
+//
+// An optional version allows for conditional reconfigurations, -1 ignores the condition.
+//
+// Returns the new configuration znode stat.
+func (c *Conn) Reconfig(members []string, version int64) (*Stat, error) {
+	request := &reconfigRequest{
+		NewMembers:  []byte(strings.Join(members, ",")),
+		CurConfigId: version,
+	}
+
+	return c.internalReconfig(request)
+}
+
+func (c *Conn) internalReconfig(request *reconfigRequest) (*Stat, error) {
+	response := &reconfigReponse{}
+	_, err := c.request(opReconfig, request, response, nil)
+	return &response.Stat, err
+}
+
 // Server returns the current or last-connected server name.
 func (c *Conn) Server() string {
 	c.serverMu.Lock()
 	defer c.serverMu.Unlock()
 	return c.server
+}
+
+func resendZkAuth(ctx context.Context, c *Conn) error {
+	shouldCancel := func() bool {
+		select {
+		case <-c.shouldQuit:
+			return true
+		case <-c.closeChan:
+			return true
+		default:
+			return false
+		}
+	}
+
+	c.credsMu.Lock()
+	defer c.credsMu.Unlock()
+
+	if c.logInfo {
+		c.logger.Printf("re-submitting `%d` credentials after reconnect", len(c.creds))
+	}
+
+	for _, cred := range c.creds {
+		// return early before attempting to send request.
+		if shouldCancel() {
+			return nil
+		}
+		// do not use the public API for auth since it depends on the send/recv loops
+		// that are waiting for this to return
+		resChan, err := c.sendRequest(
+			opSetAuth,
+			&setAuthRequest{Type: 0,
+				Scheme: cred.scheme,
+				Auth:   cred.auth,
+			},
+			&setAuthResponse{},
+			nil, /* recvFunc*/
+		)
+		if err != nil {
+			return fmt.Errorf("failed to send auth request: %v", err)
+		}
+
+		var res response
+		select {
+		case res = <-resChan:
+		case <-c.closeChan:
+			c.logger.Printf("recv closed, cancel re-submitting credentials")
+			return nil
+		case <-c.shouldQuit:
+			c.logger.Printf("should quit, cancel re-submitting credentials")
+			return nil
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+		if res.err != nil {
+			return fmt.Errorf("failed connection setAuth request: %v", res.err)
+		}
+	}
+
+	return nil
 }
