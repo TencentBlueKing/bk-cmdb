@@ -157,6 +157,148 @@ type DiffModuleWithTemplateOption struct {
 	PartialCompare bool `json:"partial_compare"`
 }
 
+// ProcessTemplateDiffOption difference information under process template.
+type ProcessTemplateDiffOption struct {
+	BizID             int64   `json:"bk_biz_id"`
+	ServiceTemplateId int64   `json:"service_template_id"`
+	ProcessTemplateId int64   `json:"process_template_id"`
+	ModuleIDs         []int64 `json:"bk_module_ids"`
+
+	// Get service classification
+	ServiceCategory bool `json:"service_category,omitempty"`
+}
+
+// ServiceCategoryName service category name and parent name
+type ServiceCategoryName struct {
+	Name       string `json:"name"`
+	ParentName string `json:"parent_name"`
+}
+
+// ServiceTemplateDiffOption obtain the process template difference information under the service template.
+type ServiceTemplateDiffOption struct {
+	BizID             int64   `json:"bk_biz_id"`
+	ServiceTemplateId int64   `json:"service_template_id"`
+	ModuleIDs         []int64 `json:"bk_module_ids"`
+}
+
+// ListServiceInstancesOption list service instances request.
+type ListServiceInstancesOption struct {
+	BizID             int64 `json:"bk_biz_id"`
+	ModuleID          int64 `json:"bk_module_id"`
+	ServiceTemplateId int64 `json:"service_template_id"`
+	ProcessTemplateId int64 `json:"process_template_id,omitempty"`
+
+	// ProcessTemplateName 当模板被删除场景下id为0，此时需要通过name找具体请求的模板
+	ProcessTemplateName string `json:"process_template_name,omitempty"`
+
+	// ServiceCategory 此请求是获取服务分类场景的实例列表
+	ServiceCategory bool `json:"service_category,omitempty"`
+}
+
+// ServiceInstancesInfo
+type ServiceInstancesInfo struct {
+	// service instance id
+	Id int64 `json:"id"`
+
+	// service instance name
+	Name string `json:"name"`
+}
+
+// ListServiceInstancesResult Get service instances result.
+type ListServiceInstancesResult struct {
+
+	// TotalCount 获取到的实例数量，如果大于500只显示"500+"
+	TotalCount string `json:"total_count"`
+
+	// ServiceInstances 只显示前500个实例的id和信息
+	ServiceInstances []ServiceInstancesInfo `json:"service_instances"`
+
+	// Type 本次同步类型added、removed、changed、others其中一种
+	Type string `json:"type"`
+}
+
+// ServiceInstanceDetailReq Get service instance diff detail request.
+type ServiceInstanceDetailReq struct {
+	BizID             int64 `json:"bk_biz_id"`
+	ModuleID          int64 `json:"bk_module_id"`
+	ServiceTemplateId int64 `json:"service_template_id"`
+	ProcessTemplateId int64 `json:"process_template_id,omitempty"`
+
+	// ProcessTemplateName 进程模板名字，删除场景下进程模板id是0，需要用name进行区分
+	ProcessTemplateName string `json:"process_template_name,omitempty"`
+	ServiceInstanceId   int64  `json:"service_instance_id"`
+
+	// ServiceCategory 此请求是获取服务分类场景的实例列表
+	ServiceCategory bool `json:"service_category,omitempty,omitempty"`
+}
+
+// ServiceInstanceDetailInfo Details of service instance information.
+type ServiceInstanceDetailResult struct {
+
+	// ServiceInstanceId 指定的服务实例id
+	ServiceInstanceId int64 `json:"id"`
+
+	// ServiceInstanceName 指定的服务实例name
+	ServiceInstanceName string `json:"name"`
+
+	// ChangedAttributes 改变的进程属性内容
+	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
+
+	// ModuleAttribute Service classification content
+	ModuleAttribute []ModuleChangedAttribute `json:"module_attribute,omitempty"`
+
+	// Process process details 进程模板删除场景会将删除前的进程信息通过此参数带回
+	Process *Process `json:"process"`
+
+	// Type 改变类型 added、changed、removed和others其中一种
+	Type string `json:"type"`
+}
+
+// ServiceCategoryDetailInfo 服务分类信息
+type ServiceCategoryDetailInfo struct {
+	ModuleAttribute []ModuleChangedAttribute `json:"module_attribute,omitempty"`
+	ServiceInstance []SrvInstBriefInfo       `json:"service_instance"`
+	Count           uint64                   `json:"count"`
+}
+
+// ServiceInstanceDetailInfo Details of service instance information
+type ServiceInstanceDetailInfo struct {
+	TotalNum int `json:"total_count"`
+
+	// Change content of instance information
+	ServiceInstanceDetails []ServiceInstanceDifference `json:"service_instances"`
+
+	// Change content of service classification
+	ServiceCategoryDetail ServiceCategoryDetailInfo `json:"service_category_detail"`
+}
+
+// DiffWithOneModuleOption
+type DiffWithOneModuleOption struct {
+	BizID    int64 `json:"bk_biz_id"`
+	ModuleID int64 `json:"bk_module_id"`
+}
+
+const (
+	ServiceInstancesMaxNum     = 500
+	ServiceInstancestotalCount = "500+"
+)
+
+// ProcessGeneralInfo summary of process templates.
+type ProcessGeneralInfo struct {
+	// Name process template alias.
+	Name string `json:"name"`
+
+	// Id process template id.
+	Id int `json:"id"`
+}
+
+// ServiceTemplateGeneralDiff changes under service template.
+type ServiceTemplateGeneralDiff struct {
+	Changed          []ProcessGeneralInfo `json:"changed"`
+	Added            []ProcessGeneralInfo `json:"added"`
+	Removed          []ProcessGeneralInfo `json:"removed"`
+	ChangedAttribute bool                 `json:"changed_attribute"`
+}
 type DiffOneModuleWithTemplateOption struct {
 	BizID    int64 `json:"bk_biz_id"`
 	ModuleID int64 `json:"bk_module_id"`
@@ -169,6 +311,41 @@ type UpdateServiceInstanceOption struct {
 type OneUpdatedSrvInst struct {
 	ServiceInstanceID int64                  `json:"service_instance_id"`
 	Update            map[string]interface{} `json:"update"`
+}
+
+// DiffOption judge the validity of parameters.
+type DiffOption struct {
+	BizID             int64
+	ModuleID          int64
+	ServiceTemplateId int64
+}
+
+// ServiceInstancesOptionValidate judge the validity of parameters.
+func (option *DiffOption) ServiceInstancesOptionValidate() (string, bool) {
+
+	if option.BizID == 0 {
+		return fmt.Sprintf("the biz id must be set"), false
+	}
+	if option.ModuleID == 0 {
+		return fmt.Sprintf("the module id must be set"), false
+	}
+	if option.ServiceTemplateId == 0 {
+		return fmt.Sprintf("the service template must be set"), false
+	}
+
+	return "", true
+}
+
+// ServiceTemplateOptionValidate judge the validity of parameters.
+func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() (string, bool) {
+
+	if option.BizID == 0 {
+		return fmt.Sprintf("the biz id must be set"), false
+	}
+	if len(option.ModuleIDs) == 0 {
+		return fmt.Sprintf("the module id must be set"), false
+	}
+	return "", true
 }
 
 func (o *UpdateServiceInstanceOption) Validate() (rawError cErr.RawErrorInfo) {
@@ -293,21 +470,21 @@ type ServiceInstanceDifference struct {
 	ServiceInstances     []ServiceDifferenceDetails `json:"service_instances"`
 }
 
-// ServiceDifferenceDetails 服务实例与模板差异信息
+// ServiceDifferenceDetails Difference information between service instance and template.
 type ServiceDifferenceDetails struct {
 	ServiceInstance   SrvInstBriefInfo          `json:"service_instance"`
 	Process           *Process                  `json:"process"`
 	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
-	// Flag represents the changes of the service instance. 0 for changed, 1 for added, 2 for deleted
-	Flag ServiceDifferenceFlag `json:"flag"`
+	Type              string                    `json:"type"`
 }
 
 type ServiceDifferenceFlag int64
 
 const (
-	ServiceChanged ServiceDifferenceFlag = 0
-	ServiceAdded   ServiceDifferenceFlag = 1
-	ServiceRemoved ServiceDifferenceFlag = 2
+	ServiceChanged = "changed"
+	ServiceAdded   = "added"
+	ServiceRemoved = "removed"
+	ServiceOthers  = "others"
 )
 
 type SrvInstBriefInfo struct {
