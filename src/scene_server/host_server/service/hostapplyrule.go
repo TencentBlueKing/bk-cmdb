@@ -26,7 +26,7 @@ import (
 )
 
 func (s *Service) CreateHostApplyRule(ctx *rest.Contexts) {
-	rid :=ctx.Kit.Rid
+	rid := ctx.Kit.Rid
 
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -243,7 +243,7 @@ func (s *Service) BatchCreateOrUpdateHostApplyRule(ctx *rest.Contexts) {
 		}
 	}
 	if firstErr != nil {
-		ctx.RespEntityWithError(batchResult,firstErr)
+		ctx.RespEntityWithError(batchResult, firstErr)
 		return
 	}
 	ctx.RespEntity(batchResult)
@@ -398,9 +398,10 @@ func (s *Service) generateApplyPlan(ctx *rest.Contexts, bizID int64, planRequest
 		ConflictResolvers: planRequest.ConflictResolvers,
 	}
 
-	planResult, ccErr = s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(ctx.Kit.Ctx, ctx.Kit.Header, bizID, planOption)
-	if err != nil {
-		blog.ErrorJSON("generateApplyPlan failed, core service GenerateApplyPlan failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, planOption, ccErr.Error(), rid)
+	planResult, ccErr = s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
+		planOption)
+	if ccErr != nil {
+		blog.Errorf("generate apply plan failed, bizID: %d, opt: %#v, err: %v, rid: %s", bizID, planOption, ccErr, rid)
 		return planResult, ccErr
 	}
 	planResult.Rules = rules.Info
@@ -430,7 +431,7 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		// enable host apply on module
 		moduleUpdateOption := &metadata.UpdateOption{
@@ -516,7 +517,7 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 			},
 		}
 
-		updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, 
+		updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 			common.BKInnerObjIDHost, updateOption)
 		if err != nil {
 			blog.ErrorJSON("run host apply rule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)

@@ -232,10 +232,13 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 		// check conflicts
 		expectValue := originalValue
 		conflictedStillExist := false
+		// checks if host needs to be changed by the apply rules, if not, do not append the field to the update fields
+		needChange := false
 		for _, rule := range targetRules {
 			if cmp.Equal(expectValue, rule.PropertyValue) {
 				continue
 			}
+			needChange = true
 			expectValue = rule.PropertyValue
 			conflictedStillExist = true
 			if propertyValue, exist := resolverMap[attribute.ID]; exist {
@@ -250,6 +253,10 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 				UnresolvedConflictExist: conflictedStillExist,
 			})
 			break
+		}
+
+		if !needChange {
+			continue
 		}
 
 		if conflictedStillExist {

@@ -77,13 +77,14 @@ func (t *txn) AutoRunTxn(ctx context.Context, h http.Header, run func() error, o
 
 	// if need to retry, retry for at most 3 times, each wait for a longer time than the previous one
 	rid := util.GetHTTPCCRequestID(h)
+	appCode := h.Get(common.BKHTTPRequestAppCode)
 	for retryCount := 1; retryCount <= 3; retryCount++ {
 		// if the previous operation time exceeds half of the http timeout(25s), do not retry to avoid timeout
 		if time.Now().Sub(startTime).Seconds() > 10 {
 			return ccErr.New(common.CCErrCommCommitTransactionFailed, "retry conflict transaction timeout")
 		}
 
-		blog.Warnf("retry transaction, retry count: %d, rid: %s", retryCount, rid)
+		blog.Warnf("retry transaction, retry count: %d, app code: %s, rid: %s", retryCount, appCode, rid)
 		rand.Seed(time.Now().UnixNano())
 		time.Sleep(time.Millisecond * time.Duration(rand.Intn(500)+300) * time.Duration(retryCount))
 
@@ -104,6 +105,8 @@ func (t *txn) AutoRunTxn(ctx context.Context, h http.Header, run func() error, o
 
 		// do next retry
 	}
+
+	blog.Warnf("retry transaction exceeds maximum count, **skip**, app code: %s, rid: %s", appCode, rid)
 
 	return nil
 }

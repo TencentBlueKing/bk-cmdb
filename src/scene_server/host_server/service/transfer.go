@@ -13,6 +13,8 @@
 package service
 
 import (
+	"fmt"
+	"sort"
 	"strconv"
 	"sync"
 
@@ -86,196 +88,13 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 		svcInstMap[svcInst.HostID][svcInst.ModuleID] = svcInst.Processes
 	}
 
-	transferToInnerHostIDs, transferToNormalHostIDs := make([]int64, 0), make([]int64, 0)
-	var innerModuleID int64
-	normalModuleIDs := make([]int64, 0)
-	separatePlans := make([]metadata.HostTransferPlan, 0)
-	for _, plan := range transferPlans {
-		if len(plan.ToAddToModules) == 0 && len(plan.ToRemoveFromModules) == 0 {
-			delete(svcInstMap, plan.HostID)
-			continue
-		}
-		if plan.IsTransferToInnerModule {
-			innerModuleID = plan.FinalModules[0]
-			transferToInnerHostIDs = append(transferToInnerHostIDs, plan.HostID)
-			if len(svcInstMap[plan.HostID]) != 0 {
-				delete(svcInstMap, plan.HostID)
-			}
-		} else {
-			if option.IsRemoveFromAll || len(option.RemoveFromModules) == 0 {
-				normalModuleIDs = plan.FinalModules
-				transferToNormalHostIDs = append(transferToNormalHostIDs, plan.HostID)
-			}
-			separatePlans = append(separatePlans, plan)
-			for moduleID := range svcInstMap[plan.HostID] {
-				if !util.InArray(moduleID, plan.FinalModules) {
-					delete(svcInstMap[plan.HostID], moduleID)
-				}
-			}
-		}
-	}
+	transToInnerOpt, transToNormalPlans := s.parseTransferPlans(bizID, option.IsRemoveFromAll,
+		len(option.RemoveFromModules) == 0, transferPlans, svcInstMap)
 
 	transferResult := make([]metadata.HostTransferResult, 0)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), option.HostIDs)
-		if err := audit.WithPrevious(ctx.Kit); err != nil {
-			blog.Errorf("get prev module host config for audit failed, err: %v, HostIDs: %+v, rid: %s", err,
-				option.HostIDs, ctx.Kit.Rid)
-			return err
-		}
-
-		// hosts that are transferred to inner module or removed from all previous modules have the same destination
-		// if there's no remove module, hosts are appended to same modules, can transfer together
-		if len(transferToInnerHostIDs) > 0 {
-			transferOpt := &metadata.TransferHostToInnerModule{
-				ApplicationID: bizID,
-				HostID:        transferToInnerHostIDs,
-				ModuleID:      innerModuleID,
-			}
-			res, ccErr := s.CoreAPI.CoreService().Host().TransferToInnerModule(ctx.Kit.Ctx, ctx.Kit.Header, transferOpt)
-			if ccErr != nil {
-				blog.Errorf("transfer host failed, err: %v, res: %v, option: %#v, rid: %s", ccErr, res, transferOpt,
-					ctx.Kit.Rid)
-				return ccErr
-			}
-		}
-
-		if len(transferToNormalHostIDs) > 0 && (option.IsRemoveFromAll || len(option.RemoveFromModules) == 0) {
-			transferOpt := &metadata.HostsModuleRelation{
-				ApplicationID:            bizID,
-				HostID:                   transferToNormalHostIDs,
-				DisableAutoCreateSvcInst: true,
-			}
-			if option.IsRemoveFromAll {
-				transferOpt.IsIncrement = false
-				transferOpt.ModuleID = normalModuleIDs
-			} else {
-				transferOpt.IsIncrement = true
-				transferOpt.ModuleID = option.AddToModules
-			}
-			res, ccErr := s.CoreAPI.CoreService().Host().TransferToNormalModule(ctx.Kit.Ctx, ctx.Kit.Header,
-				transferOpt)
-			if ccErr != nil {
-				blog.Errorf("transfer host failed, err: %v, res: %v, option: %#v, rid: %s", ccErr, res, transferOpt,
-					ctx.Kit.Rid)
-				return ccErr
-			}
-		}
-
-		var firstErr errors.CCErrorCoder
-		pipeline := make(chan bool, 300)
-		wg := sync.WaitGroup{}
-		for _, plan := range separatePlans {
-			if firstErr != nil {
-				break
-			}
-			pipeline <- true
-			wg.Add(1)
-			go func(plan metadata.HostTransferPlan) {
-				var ccErr errors.CCErrorCoder
-				defer func() {
-					if ccErr != nil {
-						if firstErr == nil {
-							firstErr = ccErr
-						}
-					}
-					<-pipeline
-					wg.Done()
-				}()
-
-				// transfer hosts in 2 scenario, add to modules and transfer to other modules
-				transferOpt := &metadata.HostsModuleRelation{
-					ApplicationID:            bizID,
-					HostID:                   []int64{plan.HostID},
-					DisableAutoCreateSvcInst: true,
-				}
-				if len(plan.ToRemoveFromModules) == 0 {
-					transferOpt.IsIncrement = true
-					transferOpt.ModuleID = plan.ToAddToModules
-				} else {
-					transferOpt.IsIncrement = false
-					transferOpt.ModuleID = plan.FinalModules
-				}
-
-				transRes, ccErr := s.CoreAPI.CoreService().Host().TransferToNormalModule(ctx.Kit.Ctx, ctx.Kit.Header,
-					transferOpt)
-				if ccErr != nil {
-					blog.Errorf("transfer host failed, err: %v, res: %v, option: %#v, rid: %s", ccErr, transRes,
-						transferOpt, ctx.Kit.Rid)
-					return
-				}
-
-			}(plan)
-		}
-		wg.Wait()
-		if firstErr != nil {
-			return firstErr
-		}
-
-		// create or update related service instance
-		moduleSvcInstMap := make(map[int64][]metadata.CreateServiceInstanceDetail)
-		for hostID, moduleProcMap := range svcInstMap {
-			for moduleID, processes := range moduleProcMap {
-				moduleSvcInstMap[moduleID] = append(moduleSvcInstMap[moduleID], metadata.CreateServiceInstanceDetail{
-					HostID:    hostID,
-					Processes: processes,
-				})
-			}
-		}
-
-		wg = sync.WaitGroup{}
-		for moduleID, svcInst := range moduleSvcInstMap {
-			if firstErr != nil {
-				break
-			}
-			pipeline <- true
-			wg.Add(1)
-
-			svrInstOpt := &metadata.CreateServiceInstanceInput{
-				BizID:     bizID,
-				ModuleID:  moduleID,
-				Instances: svcInst,
-			}
-			go func(svrInstOpt *metadata.CreateServiceInstanceInput) {
-				var ccErr errors.CCErrorCoder
-				defer func() {
-					if ccErr != nil {
-						if firstErr == nil {
-							firstErr = ccErr
-						}
-					}
-					<-pipeline
-					wg.Done()
-				}()
-
-				_, ccErr = s.CoreAPI.ProcServer().Service().CreateServiceInstance(ctx.Kit.Ctx,
-					ctx.Kit.Header, svrInstOpt)
-				if ccErr != nil {
-					blog.ErrorJSON("create service instance failed, err: %v, option: %#v, rid: %s", ccErr, svrInstOpt,
-						ctx.Kit.Rid)
-					return
-				}
-			}(svrInstOpt)
-		}
-		wg.Wait()
-		if firstErr != nil {
-			return firstErr
-		}
-
-		// update host by host apply rule conflict resolvers
-		err = s.updateHostByHostApplyConflictResolvers(ctx.Kit, option.Options.HostApplyConflictResolvers)
-		if err != nil {
-			blog.Errorf("update host by host apply rule conflict resolvers(%#v) failed, err: %v, rid: %s",
-				option.Options.HostApplyConflictResolvers, err, ctx.Kit.Rid)
-			return err
-		}
-
-		if err := audit.SaveAudit(ctx.Kit); err != nil {
-			blog.Errorf("TransferHostWithAutoClearServiceInstance failed, save audit log failed, err: %s, HostIDs: %+v, rid: %s", err.Error(), option.HostIDs, ctx.Kit.Rid)
-			return err
-		}
-
-		return nil
+		return s.transferHostWithAutoClearServiceInstance(ctx.Kit, bizID, option, transToInnerOpt, transToNormalPlans,
+			svcInstMap)
 	})
 
 	if txnErr != nil {
@@ -284,6 +103,210 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(transferResult)
 	return
+}
+
+// parseTransferPlans aggregate transfer plans into transfer to inner/normal module options by module ids and increment
+func (s *Service) parseTransferPlans(bizID int64, isRemoveFromAll, isRemoveFromNone bool,
+	transferPlans []metadata.HostTransferPlan, svcInstMap map[int64]map[int64][]metadata.ProcessInstanceDetail) (
+	*metadata.TransferHostToInnerModule, map[string]*metadata.HostsModuleRelation) {
+
+	// when hosts are removed from all or no current modules, the plans are the same, we use a special key for this case
+	const sameKey = "same"
+	transferToInnerHostIDs := make([]int64, 0)
+	var innerModuleID int64
+	transferToNormalPlans := make(map[string]*metadata.HostsModuleRelation)
+	for _, plan := range transferPlans {
+		// do not need to transfer, skip
+		if len(plan.ToAddToModules) == 0 && len(plan.ToRemoveFromModules) == 0 {
+			delete(svcInstMap, plan.HostID)
+			continue
+		}
+
+		// transfer to inner modules
+		if plan.IsTransferToInnerModule {
+			innerModuleID = plan.FinalModules[0]
+			transferToInnerHostIDs = append(transferToInnerHostIDs, plan.HostID)
+			if len(svcInstMap[plan.HostID]) != 0 {
+				delete(svcInstMap, plan.HostID)
+			}
+			continue
+		}
+
+		var transKey string
+		var isIncrement bool
+		var moduleIDs []int64
+
+		if len(plan.ToRemoveFromModules) == 0 {
+			isIncrement = true
+			moduleIDs = plan.ToAddToModules
+		} else {
+			isIncrement = false
+			moduleIDs = plan.FinalModules
+		}
+
+		if isRemoveFromAll || isRemoveFromNone {
+			transKey = sameKey
+		} else {
+			// we use is increment and sorted module ids to aggregate hosts with the same transfer option
+			sort.Slice(moduleIDs, func(i, j int) bool { return moduleIDs[i] < moduleIDs[j] })
+			transKey = fmt.Sprintf("%v%v", isIncrement, moduleIDs)
+		}
+
+		if _, exists := transferToNormalPlans[transKey]; !exists {
+			transferToNormalPlans[transKey] = &metadata.HostsModuleRelation{
+				ApplicationID:            bizID,
+				HostID:                   []int64{plan.HostID},
+				DisableAutoCreateSvcInst: true,
+				IsIncrement:              isIncrement,
+				ModuleID:                 moduleIDs,
+			}
+		} else {
+			transferToNormalPlans[transKey].HostID = append(transferToNormalPlans[transKey].HostID, plan.HostID)
+		}
+
+		for moduleID := range svcInstMap[plan.HostID] {
+			if !util.InArray(moduleID, plan.FinalModules) {
+				delete(svcInstMap[plan.HostID], moduleID)
+			}
+		}
+	}
+
+	var transToInnerOpt *metadata.TransferHostToInnerModule
+	if len(transferToInnerHostIDs) > 0 {
+		transToInnerOpt = &metadata.TransferHostToInnerModule{ApplicationID: bizID, HostID: transferToInnerHostIDs,
+			ModuleID: innerModuleID}
+	}
+
+	return transToInnerOpt, transferToNormalPlans
+}
+
+func (s *Service) transferHostWithAutoClearServiceInstance(
+	kit *rest.Kit,
+	bizID int64,
+	option metadata.TransferHostWithAutoClearServiceInstanceOption,
+	transToInnerOpt *metadata.TransferHostToInnerModule,
+	transToNormalPlans map[string]*metadata.HostsModuleRelation,
+	svcInstMap map[int64]map[int64][]metadata.ProcessInstanceDetail) error {
+
+	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), option.HostIDs)
+	if err := audit.WithPrevious(kit); err != nil {
+		blog.Errorf("generate host transfer audit failed, err: %v, HostIDs: %+v, rid: %s", err, option.HostIDs, kit.Rid)
+		return err
+	}
+
+	// hosts that are transferred to inner module or removed from all previous modules have the same destination
+	// if there's no remove module, hosts are appended to same modules, can transfer together
+	if transToInnerOpt != nil {
+		res, err := s.CoreAPI.CoreService().Host().TransferToInnerModule(kit.Ctx, kit.Header, transToInnerOpt)
+		if err != nil {
+			blog.Errorf("transfer host failed, err: %v, res: %v, opt: %#v, rid: %s", err, res, transToInnerOpt, kit.Rid)
+			return err
+		}
+	}
+
+	var firstErr errors.CCErrorCoder
+	pipeline := make(chan bool, 20)
+	wg := sync.WaitGroup{}
+	for _, plan := range transToNormalPlans {
+		if firstErr != nil {
+			break
+		}
+		pipeline <- true
+		wg.Add(1)
+		go func(kit *rest.Kit, plan *metadata.HostsModuleRelation) {
+			defer func() {
+				<-pipeline
+				wg.Done()
+			}()
+
+			// transfer hosts in 2 scenario, add to modules and transfer to other modules
+			res, ccErr := s.CoreAPI.CoreService().Host().TransferToNormalModule(kit.Ctx, kit.Header, plan)
+			if ccErr != nil {
+				if firstErr == nil {
+					firstErr = ccErr
+				}
+				blog.Errorf("transfer host failed, err: %v, res: %v, opt: %#v, rid: %s", ccErr, res, plan, kit.Rid)
+				return
+			}
+
+		}(kit, plan)
+	}
+	wg.Wait()
+	if firstErr != nil {
+		return firstErr
+	}
+
+	if err := s.upsertServiceInstance(kit, bizID, svcInstMap); err != nil {
+		blog.Errorf("upsert service instance(%#v) failed, err: %v, svcInstMap: %#v, rid: %s", err, svcInstMap, kit.Rid)
+		return err
+	}
+
+	// update host by host apply rule conflict resolvers
+	err := s.updateHostByHostApplyConflictResolvers(kit, option.Options.HostApplyConflictResolvers)
+	if err != nil {
+		blog.Errorf("update host by host apply rule conflict resolvers(%#v) failed, err: %v, rid: %s",
+			option.Options.HostApplyConflictResolvers, err, kit.Rid)
+		return err
+	}
+
+	if err := audit.SaveAudit(kit); err != nil {
+		blog.Errorf("save audit log failed, err: %v, HostIDs: %+v, rid: %s", err, option.HostIDs, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// upsertServiceInstance create or update related service instance in host transfer option
+func (s *Service) upsertServiceInstance(kit *rest.Kit, bizID int64,
+	svcInstMap map[int64]map[int64][]metadata.ProcessInstanceDetail) error {
+
+	moduleSvcInstMap := make(map[int64][]metadata.CreateServiceInstanceDetail)
+	for hostID, moduleProcMap := range svcInstMap {
+		for moduleID, processes := range moduleProcMap {
+			moduleSvcInstMap[moduleID] = append(moduleSvcInstMap[moduleID], metadata.CreateServiceInstanceDetail{
+				HostID:    hostID,
+				Processes: processes,
+			})
+		}
+	}
+
+	wg := sync.WaitGroup{}
+	var firstErr errors.CCErrorCoder
+	pipeline := make(chan bool, 20)
+	for moduleID, svcInst := range moduleSvcInstMap {
+		if firstErr != nil {
+			break
+		}
+		pipeline <- true
+		wg.Add(1)
+
+		svrInstOpt := &metadata.CreateServiceInstanceInput{
+			BizID:     bizID,
+			ModuleID:  moduleID,
+			Instances: svcInst,
+		}
+		go func(svrInstOpt *metadata.CreateServiceInstanceInput) {
+			defer func() {
+				<-pipeline
+				wg.Done()
+			}()
+
+			_, ccErr := s.CoreAPI.ProcServer().Service().CreateServiceInstance(kit.Ctx, kit.Header, svrInstOpt)
+			if ccErr != nil {
+				if firstErr == nil {
+					firstErr = ccErr
+				}
+				blog.Errorf("create service instance failed, err: %v, option: %#v, rid: %s", ccErr, svrInstOpt, kit.Rid)
+				return
+			}
+		}(svrInstOpt)
+	}
+	wg.Wait()
+	if firstErr != nil {
+		return firstErr
+	}
+	return nil
 }
 
 func (s *Service) updateHostByHostApplyConflictResolvers(kit *rest.Kit,
