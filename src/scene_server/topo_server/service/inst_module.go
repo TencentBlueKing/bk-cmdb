@@ -142,7 +142,7 @@ func (s *Service) CheckIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) errors
 				common.BKDBIN: moduleIDs,
 			},
 			common.BKDefaultField: map[string]interface{}{
-				common.BKDBNE: common.DefaultFlagDefaultValue,
+				common.BKDBNIN: []int{common.DefaultFlagDefaultValue, common.DefaultResSelfDefinedModuleFlag},
 			},
 		},
 	}
