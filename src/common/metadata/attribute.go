@@ -735,7 +735,7 @@ func (attribute *Attribute) validOrganization(ctx context.Context, val interface
 	return errors.RawErrorInfo{}
 }
 
-// validTable valid object attribute that is bool type
+// validTable valid object attribute that is table type
 func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key string) (
 	rawError errors.RawErrorInfo) {
 
@@ -1231,54 +1231,33 @@ func ParseSubAttribute(ctx context.Context, val interface{}) (SubAttributeOption
 func parseSubAttribute(options []interface{}, subAttrs *[]SubAttribute) error {
 	for _, optionVal := range options {
 		if option, ok := optionVal.(map[string]interface{}); ok {
-			subAttr := SubAttribute{}
-			subAttr.PropertyID = getString(option["bk_property_id"])
-			subAttr.PropertyName = getString(option["bk_property_name"])
-			subAttr.PropertyGroup = getString(option["bk_property_group"])
-			subAttr.Placeholder = getString(option["placeholder"])
-			subAttr.PropertyType = getString(option["bk_property_type"])
-			subAttr.IsAPI = getBool(option["bk_isapi"])
-			subAttr.IsEditable = getBool(option["editable"])
-			subAttr.IsReadOnly = getBool(option["isreadonly"])
-			subAttr.IsRequired = getBool(option["isrequired"])
-			subAttr.IsSystem = getBool(option["bk_issystem"])
-			subAttr.Option = option["option"]
-			subAttr.Description = getString(option["description"])
-			*subAttrs = append(*subAttrs, subAttr)
+			*subAttrs = append(*subAttrs, parseSubAttr(option))
 		} else if option, ok := optionVal.(bson.M); ok {
-			subAttr := SubAttribute{}
-			subAttr.PropertyID = getString(option["bk_property_id"])
-			subAttr.PropertyName = getString(option["bk_property_name"])
-			subAttr.PropertyGroup = getString(option["bk_property_group"])
-			subAttr.Placeholder = getString(option["placeholder"])
-			subAttr.PropertyType = getString(option["bk_property_type"])
-			subAttr.IsAPI = getBool(option["bk_isapi"])
-			subAttr.IsEditable = getBool(option["editable"])
-			subAttr.IsReadOnly = getBool(option["isreadonly"])
-			subAttr.IsRequired = getBool(option["isrequired"])
-			subAttr.IsSystem = getBool(option["bk_issystem"])
-			subAttr.Option = option["option"]
-			subAttr.Description = getString(option["description"])
-			*subAttrs = append(*subAttrs, subAttr)
+			*subAttrs = append(*subAttrs, parseSubAttr(map[string]interface{}(option)))
 		} else if option, ok := optionVal.(bson.D); ok {
-			opt := option.Map()
-			subAttr := SubAttribute{}
-			subAttr.PropertyID = getString(opt["bk_property_id"])
-			subAttr.PropertyName = getString(opt["bk_property_name"])
-			subAttr.PropertyGroup = getString(opt["bk_property_group"])
-			subAttr.Placeholder = getString(opt["placeholder"])
-			subAttr.PropertyType = getString(opt["bk_property_type"])
-			subAttr.IsAPI = getBool(opt["bk_isapi"])
-			subAttr.IsEditable = getBool(opt["editable"])
-			subAttr.IsReadOnly = getBool(opt["isreadonly"])
-			subAttr.IsRequired = getBool(opt["isrequired"])
-			subAttr.IsSystem = getBool(opt["bk_issystem"])
-			subAttr.Option = opt["option"]
-			subAttr.Description = getString(opt["description"])
-			*subAttrs = append(*subAttrs, subAttr)
+			*subAttrs = append(*subAttrs, parseSubAttr(map[string]interface{}(option.Map())))
 		} else {
 			return fmt.Errorf("unknow optionVal type: %#v", optionVal)
 		}
 	}
 	return nil
+}
+
+func parseSubAttr(options map[string]interface{}) SubAttribute {
+	subAttr := SubAttribute{}
+
+	subAttr.PropertyID = getString(options["bk_property_id"])
+	subAttr.PropertyName = getString(options["bk_property_name"])
+	subAttr.PropertyGroup = getString(options["bk_property_group"])
+	subAttr.Placeholder = getString(options["placeholder"])
+	subAttr.PropertyType = getString(options["bk_property_type"])
+	subAttr.IsAPI = getBool(options["bk_isapi"])
+	subAttr.IsEditable = getBool(options["editable"])
+	subAttr.IsReadOnly = getBool(options["isreadonly"])
+	subAttr.IsRequired = getBool(options["isrequired"])
+	subAttr.IsSystem = getBool(options["bk_issystem"])
+	subAttr.Option = options["option"]
+	subAttr.Description = getString(options["description"])
+
+	return subAttr
 }
