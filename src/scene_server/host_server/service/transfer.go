@@ -180,8 +180,11 @@ func (s *Service) parseTransferPlans(bizID int64, isRemoveFromAll, isRemoveFromN
 	return transToInnerOpt, transferToNormalPlans
 }
 
-func (s *Service) transferHostWithAutoClearServiceInstance(kit *rest.Kit, bizID int64,
-	option metadata.TransferHostWithAutoClearServiceInstanceOption, transToInnerOpt *metadata.TransferHostToInnerModule,
+func (s *Service) transferHostWithAutoClearServiceInstance(
+	kit *rest.Kit,
+	bizID int64,
+	option metadata.TransferHostWithAutoClearServiceInstanceOption,
+	transToInnerOpt *metadata.TransferHostToInnerModule,
 	transToNormalPlans map[string]*metadata.HostsModuleRelation,
 	svcInstMap map[int64]map[int64][]metadata.ProcessInstanceDetail) error {
 
