@@ -56,11 +56,14 @@ export async function getGlobalConfig(app) {
  * 验证平台管理模块的权限
  */
 export const verifyPlatformManagementAuth = async () => {
-  const [{ is_pass: globalConfigAuth }] = await verifyAuth([{
+  const [{ is_pass: isPass }] = await verifyAuth([{
     action: 'update',
     resource_type: 'configAdmin'
   }])
-  store.commit('globalConfig/setAuth', globalConfigAuth)
+
+  if (isPass) {
+    store.commit('globalConfig/setAuth', isPass)
+  }
 }
 
 export default async function (app) {
