@@ -30,7 +30,7 @@
           </bk-input>
         </div>
       </bk-form-item>
-      <bk-form-item>
+      <bk-form-item class="form-action-item">
         <SaveButton @save="save" :loading="globalConfig.updating"></SaveButton>
         <bk-popconfirm
           trigger="click"
@@ -133,6 +133,7 @@
             .then(() => {
               initForm()
               bkMessage({
+                theme: 'success',
                 message: t('保存成功')
               })
             })

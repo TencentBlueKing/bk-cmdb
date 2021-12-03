@@ -12,7 +12,7 @@
           {{$t('恢复初始化')}}
         </bk-button>
       </bk-form-item>
-      <bk-form-item>
+      <bk-form-item class="form-action-item">
         <SaveButton @save="save" :loading="globalConfig.updating"></SaveButton>
         <bk-popconfirm trigger="click"
           :title="$t('确认重置所有校验规则？')"
@@ -114,6 +114,7 @@
               initForm()
               updateValidator()
               bkMessage({
+                theme: 'success',
                 message: t('保存成功')
               })
             })

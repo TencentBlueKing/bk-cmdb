@@ -260,11 +260,20 @@
     }
 
     .icon-button {
+      display: inline-block;
+      vertical-align: middle;
       cursor: pointer;
-      color: #C4C6CC;
+      color: #979BA5;
+      margin-top: auto;
+      margin-bottom: auto;
 
       &:hover{
         color: $primaryColor;
+      }
+
+      &.remove-button {
+        margin-left: 14px;
+        font-size: 12px;
       }
     }
 }

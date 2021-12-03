@@ -65,10 +65,11 @@
     width: calc(100vw - 50px);
     left: 25px;
     bottom: 0;
-    padding: 10px 0;
+    padding-top: 8px;
+    height: 52px;
     font-size: 12px;
     text-align: center;
-    color: #C4C6CC;
+    color: $textColor;
     border-top: 1px solid #DCDEE5;
     background-color: #F5F6FA;
     z-index: 2;
@@ -79,7 +80,6 @@
 }
 
 ::v-deep .contact-link {
-  font-size: 14px;
   color: $primaryColor;
 }
 </style>
