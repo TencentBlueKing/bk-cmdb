@@ -1442,6 +1442,7 @@ func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, bizID int64, host
 	for _, serviceInst := range serviceInstances {
 
 		relations := serviceRelationMap[serviceInst.ID]
+		processTemplateReferenced = make(map[int64]struct{})
 
 		for _, relation := range relations {
 			processTemplateReferenced[relation.ProcessTemplateID] = struct{}{}
