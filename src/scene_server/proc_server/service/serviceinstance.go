@@ -1459,9 +1459,7 @@ func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, bizID int64, host
 
 				// process's template doesn't exist means the template has already been removed.
 				moduleDifference.Removed = append(moduleDifference.Removed, metadata.ProcessGeneralInfo{
-					Id:   relation.ProcessTemplateID,
-					Name: processName,
-				})
+					Id: relation.ProcessTemplateID, Name: processName})
 				continue
 			}
 
@@ -1479,9 +1477,8 @@ func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, bizID int64, host
 
 			if _, ok := changed[relation.ProcessTemplateID]; !ok {
 				moduleDifference.Changed = append(moduleDifference.Changed, metadata.ProcessGeneralInfo{
-					Id:   relation.ProcessTemplateID,
-					Name: property.ProcessName,
-				})
+					Id: relation.ProcessTemplateID, Name: property.ProcessName})
+
 				changed[relation.ProcessTemplateID] = struct{}{}
 			}
 		}
@@ -1493,9 +1490,8 @@ func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, bizID int64, host
 			}
 			if _, ok := added[templateID]; !ok {
 				moduleDifference.Added = append(moduleDifference.Added, metadata.ProcessGeneralInfo{
-					Id:   templateID,
-					Name: processTemplate.ProcessName,
-				})
+					Id: templateID, Name: processTemplate.ProcessName})
+
 				added[templateID] = struct{}{}
 			}
 		}
@@ -1505,9 +1501,8 @@ func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, bizID int64, host
 	if len(hostMap) > 0 && len(serviceInstances) == 0 {
 		for templateID, processTemplate := range pTemplateMap {
 			moduleDifference.Added = append(moduleDifference.Added, metadata.ProcessGeneralInfo{
-				Id:   templateID,
-				Name: processTemplate.ProcessName,
-			})
+				Id: templateID, Name: processTemplate.ProcessName})
+
 			added[templateID] = struct{}{}
 		}
 	}
@@ -1584,16 +1579,9 @@ func (ps *ProcServer) getHostAndServiceInstances(ctx *rest.Contexts, option *hos
 		pTemplateMap[pTemplate.ID] = &processTemplates.Info[idx]
 	}
 
-	// construct map {hostID ==> host}
-	var hostIdArray []int64
-	for _, v := range serviceInstances {
-		hostIdArray = append(hostIdArray, v.HostID)
-	}
-
 	hostIDOpt := &metadata.DistinctHostIDByTopoRelationRequest{
 		ApplicationIDArr: []int64{option.BizID},
 		ModuleIDArr:      []int64{option.ModuleID},
-		HostIDArr:        hostIdArray,
 	}
 
 	hostIDs, err := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, ctx.Kit.Header, hostIDOpt)
@@ -1838,7 +1826,7 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, option *meta
 		if !exist && option.ProcessTemplateId == 0 && processName == option.ProcessTemplateName {
 			diffDetails.Type = metadata.ServiceRemoved
 			diffDetails.Process = process
-			continue
+			return diffDetails, nil
 		}
 		//  无论是删除场景下 ProcessTemplateId 为0 还是没有找到请求的ProcessTemplateId 直接跳过就好
 		if !exist {
@@ -1859,6 +1847,7 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, option *meta
 
 		diffDetails.ChangedAttributes = changedAttributes
 		diffDetails.Type = metadata.ServiceChanged
+		return diffDetails, nil
 	}
 
 	if _, exist := processTemplateReferenced[option.ProcessTemplateId]; !exist {
