@@ -168,12 +168,6 @@ type ProcessTemplateDiffOption struct {
 	ServiceCategory bool `json:"service_category,omitempty"`
 }
 
-// ServiceCategoryName service category name and parent name
-type ServiceCategoryName struct {
-	Name       string `json:"name"`
-	ParentName string `json:"parent_name"`
-}
-
 // ServiceTemplateDiffOption obtain the process template difference information under the service template.
 type ServiceTemplateDiffOption struct {
 	BizID             int64   `json:"bk_biz_id"`
@@ -181,8 +175,20 @@ type ServiceTemplateDiffOption struct {
 	ModuleIDs         []int64 `json:"bk_module_ids"`
 }
 
-// ListServiceInstancesOption list service instances request.
-type ListServiceInstancesOption struct {
+// ServiceTemplateOptionValidate judge the validity of parameters.
+func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() (string, bool) {
+
+	if option.BizID == 0 {
+		return fmt.Sprintf("the biz id must be set"), false
+	}
+	if len(option.ModuleIDs) == 0 {
+		return fmt.Sprintf("the module id must be set"), false
+	}
+	return "", true
+}
+
+// ListDiffServiceInstancesOption list service instances request.
+type ListDiffServiceInstancesOption struct {
 	BizID             int64 `json:"bk_biz_id"`
 	ModuleID          int64 `json:"bk_module_id"`
 	ServiceTemplateId int64 `json:"service_template_id"`
@@ -195,12 +201,12 @@ type ListServiceInstancesOption struct {
 	ServiceCategory bool `json:"service_category,omitempty"`
 }
 
-// ServiceInstancesInfo
+// ServiceInstancesInfo 返回的服务实例信息只需要Id和Name
 type ServiceInstancesInfo struct {
-	// service instance id
+	// Id instance id
 	Id int64 `json:"id"`
 
-	// service instance name
+	// Name instance name
 	Name string `json:"name"`
 }
 
@@ -232,7 +238,7 @@ type ServiceInstanceDetailReq struct {
 	ServiceCategory bool `json:"service_category,omitempty,omitempty"`
 }
 
-// ServiceInstanceDetailInfo Details of service instance information.
+// ServiceInstanceDetailResult Details of service instance information.
 type ServiceInstanceDetailResult struct {
 
 	// ServiceInstanceId 指定的服务实例id
@@ -254,33 +260,9 @@ type ServiceInstanceDetailResult struct {
 	Type string `json:"type"`
 }
 
-// ServiceCategoryDetailInfo 服务分类信息
-type ServiceCategoryDetailInfo struct {
-	ModuleAttribute []ModuleChangedAttribute `json:"module_attribute,omitempty"`
-	ServiceInstance []SrvInstBriefInfo       `json:"service_instance"`
-	Count           uint64                   `json:"count"`
-}
-
-// ServiceInstanceDetailInfo Details of service instance information
-type ServiceInstanceDetailInfo struct {
-	TotalNum int `json:"total_count"`
-
-	// Change content of instance information
-	ServiceInstanceDetails []ServiceInstanceDifference `json:"service_instances"`
-
-	// Change content of service classification
-	ServiceCategoryDetail ServiceCategoryDetailInfo `json:"service_category_detail"`
-}
-
-// DiffWithOneModuleOption
-type DiffWithOneModuleOption struct {
-	BizID    int64 `json:"bk_biz_id"`
-	ModuleID int64 `json:"bk_module_id"`
-}
-
 const (
 	ServiceInstancesMaxNum     = 500
-	ServiceInstancestotalCount = "500+"
+	ServiceInstancesTotalCount = "500+"
 )
 
 // ProcessGeneralInfo summary of process templates.
@@ -289,7 +271,7 @@ type ProcessGeneralInfo struct {
 	Name string `json:"name"`
 
 	// Id process template id.
-	Id int `json:"id"`
+	Id int64 `json:"id"`
 }
 
 // ServiceTemplateGeneralDiff changes under service template.
@@ -327,24 +309,12 @@ func (option *DiffOption) ServiceInstancesOptionValidate() (string, bool) {
 		return fmt.Sprintf("the biz id must be set"), false
 	}
 	if option.ModuleID == 0 {
-		return fmt.Sprintf("the module id must be set"), false
+		return fmt.Sprintf("the module ServiceTemplateDiffOptionid must be set"), false
 	}
 	if option.ServiceTemplateId == 0 {
 		return fmt.Sprintf("the service template must be set"), false
 	}
 
-	return "", true
-}
-
-// ServiceTemplateOptionValidate judge the validity of parameters.
-func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() (string, bool) {
-
-	if option.BizID == 0 {
-		return fmt.Sprintf("the biz id must be set"), false
-	}
-	if len(option.ModuleIDs) == 0 {
-		return fmt.Sprintf("the module id must be set"), false
-	}
 	return "", true
 }
 

@@ -735,27 +735,27 @@ func uniqueGeneralResult(origin []*metadata.ServiceTemplateGeneralDiff) *metadat
 		return &metadata.ServiceTemplateGeneralDiff{}
 	}
 
-	addMap := make(map[int][]metadata.ProcessGeneralInfo)
-	changedMap := make(map[int][]metadata.ProcessGeneralInfo)
-	removedMap := make(map[string][]metadata.ProcessGeneralInfo)
+	addMap := make(map[int64]metadata.ProcessGeneralInfo)
+	changedMap := make(map[int64]metadata.ProcessGeneralInfo)
+	removedMap := make(map[string]metadata.ProcessGeneralInfo)
 	attrFlag := false
 
 	for _, v := range origin {
 		for _, add := range v.Added {
 			if _, exist := addMap[add.Id]; !exist {
-				addMap[add.Id] = append(addMap[add.Id], add)
+				addMap[add.Id] = add
 			}
 		}
 
 		for _, changed := range v.Changed {
 			if _, exist := changedMap[changed.Id]; !exist {
-				changedMap[changed.Id] = append(changedMap[changed.Id], changed)
+				changedMap[changed.Id] = changed
 			}
 		}
 
 		for _, removed := range v.Removed {
 			if _, exist := removedMap[removed.Name]; !exist {
-				removedMap[removed.Name] = append(removedMap[removed.Name], removed)
+				removedMap[removed.Name] = removed
 			}
 		}
 		if !attrFlag && v.ChangedAttribute {
@@ -766,13 +766,13 @@ func uniqueGeneralResult(origin []*metadata.ServiceTemplateGeneralDiff) *metadat
 	result := new(metadata.ServiceTemplateGeneralDiff)
 
 	for _, add := range addMap {
-		result.Added = append(result.Added, add...)
+		result.Added = append(result.Added, add)
 	}
 	for _, changed := range changedMap {
-		result.Changed = append(result.Changed, changed...)
+		result.Changed = append(result.Changed, changed)
 	}
 	for _, removed := range removedMap {
-		result.Removed = append(result.Removed, removed...)
+		result.Removed = append(result.Removed, removed)
 	}
 
 	result.ChangedAttribute = attrFlag
@@ -780,44 +780,7 @@ func uniqueGeneralResult(origin []*metadata.ServiceTemplateGeneralDiff) *metadat
 	return result
 }
 
-func (ps *ProcServer) getServiceCategoryDiff(ctx *rest.Contexts, diffOption metadata.ProcessTemplateDiffOption) (
-	*metadata.ServiceCategoryName, errors.CCErrorCoder) {
-
-	rid := ctx.Kit.Rid
-	if diffOption.ModuleIDs[0] == 0 {
-		blog.ErrorJSON("module id empty, option: %s, rid: %s", diffOption, rid)
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
-	}
-
-	module, err := ps.getModule(ctx.Kit, diffOption.ModuleIDs[0])
-	if err != nil {
-		blog.Errorf("getModule failed, moduleID: %d, err: %+v, rid: %s", diffOption.ModuleIDs, err, rid)
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, "get none or multiple modules")
-	}
-
-	serviceCategory, err := ps.CoreAPI.CoreService().Process().GetServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header,
-		module.ServiceCategoryID)
-	if err != nil {
-		blog.Errorf("serviceCategory failed, moduleID: %d,ServiceCategoryID: %d, err: %+v, rid: %s",
-			diffOption.ModuleIDs, module.ServiceCategoryID, err, rid)
-		return nil, err
-	}
-
-	res := new(metadata.ServiceCategoryName)
-	if serviceCategory.ParentID != 0 {
-		serviceParentCategory, err := ps.CoreAPI.CoreService().Process().GetServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header,
-			serviceCategory.ParentID)
-		if err != nil {
-			return nil, err
-		}
-		res.ParentName = serviceParentCategory.Name
-	}
-
-	res.Name = serviceCategory.Name
-	return res, nil
-}
-
-// DiffServiceInstanceDetail 获取单个实例的详细信息
+// DiffServiceInstanceDetail 获取单个实例的详细差异信息,分场景:新增:当前进程的详细信息。改变:前后进程差异信息。删除:删除前的进程信息。
 func (ps *ProcServer) DiffServiceInstanceDetail(ctx *rest.Contexts) {
 
 	rid := ctx.Kit.Rid
@@ -835,7 +798,7 @@ func (ps *ProcServer) DiffServiceInstanceDetail(ctx *rest.Contexts) {
 
 	msg, bFlag := op.ServiceInstancesOptionValidate()
 	if !bFlag {
-		blog.Errorf("option req is invalid,option: %+v,err: %s,rid: %s", option, msg, rid)
+		blog.Errorf("option req is invalid,option: %+v, err: %s, rid: %s", option, msg, rid)
 		err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, msg)
 		ctx.RespAutoError(err)
 		return
@@ -855,7 +818,7 @@ func (ps *ProcServer) DiffServiceInstanceDetail(ctx *rest.Contexts) {
 func (ps *ProcServer) ListDiffServiceInstances(ctx *rest.Contexts) {
 
 	rid := ctx.Kit.Rid
-	option := new(metadata.ListServiceInstancesOption)
+	option := new(metadata.ListDiffServiceInstancesOption)
 	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -869,22 +832,22 @@ func (ps *ProcServer) ListDiffServiceInstances(ctx *rest.Contexts) {
 
 	msg, bFlag := op.ServiceInstancesOptionValidate()
 	if !bFlag {
-		blog.Errorf("request option is invalid,option: %+v,err %s,rid: %s", option, msg, rid)
+		blog.Errorf("request option is invalid, option: %+v, err %s, rid: %s", option, msg, rid)
 		err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, msg)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	result, err := ps.ListServiceInstances(ctx, option)
+	result, err := ps.ListDiffServiceInstanceNum(ctx, option)
 	if err != nil {
-		blog.Errorf("list service instances failed,option: %+v, err: %s,  rid: %s", option, err, rid)
+		blog.Errorf("list service instances failed,option: %+v, err: %s, rid: %s", option, err, rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(result)
 }
 
-// DiffServiceTemplateGeneralDiff List which process templates have changed.
+// DiffServiceTemplateGeneral List which process templates have changed.
 func (ps *ProcServer) DiffServiceTemplateGeneral(ctx *rest.Contexts) {
 	rid := ctx.Kit.Rid
 	option := new(metadata.ServiceTemplateDiffOption)
@@ -895,26 +858,33 @@ func (ps *ProcServer) DiffServiceTemplateGeneral(ctx *rest.Contexts) {
 
 	msg, bFlag := option.ServiceTemplateOptionValidate()
 	if !bFlag {
-		blog.Errorf("parameters is invalid,option: %+v,err is %s,rid: %s.", option, msg, rid)
+		blog.Errorf("parameters is invalid,option: %v ,err is %s, rid: %s.", option, msg, rid)
 		err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, msg)
 		ctx.RespAutoError(err)
 		return
 	}
+
 	var (
 		wg       sync.WaitGroup
 		firstErr errors.CCErrorCoder
 	)
+
 	pipeline := make(chan bool, 10)
 	result := make([]*metadata.ServiceTemplateGeneralDiff, 0)
 
 	processTemplates, err := ps.getProcessTemplate(ctx, option.BizID, option.ServiceTemplateId)
 	if err != nil {
-		blog.Errorf("get  processTemplates failed,option: %+v,err is %v,rid: %s.", option, err, rid)
+		blog.Errorf("get  processTemplates failed,option: %v, err is %v, rid: %s", option, err, rid)
 		err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, msg)
 		ctx.RespAutoError(err)
 		return
 	}
+	// processTemplates->pTemplateMap
+	pTemplateMap := make(map[int64]*metadata.ProcessTemplate)
 
+	for idx, pTemplate := range processTemplates.Info {
+		pTemplateMap[pTemplate.ID] = &processTemplates.Info[idx]
+	}
 	for _, moduleID := range option.ModuleIDs {
 
 		pipeline <- true
@@ -926,13 +896,10 @@ func (ps *ProcServer) DiffServiceTemplateGeneral(ctx *rest.Contexts) {
 				<-pipeline
 			}()
 
-			op := metadata.DiffWithOneModuleOption{
-				BizID:    bizID,
-				ModuleID: moduleID,
-			}
-			oneModuleResult, err := ps.serviceTemplateGeneralDiff(ctx, op, processTemplates)
+			oneModuleResult, err := ps.serviceTemplateGeneralDiff(ctx, bizID, moduleID, pTemplateMap)
 			if err != nil {
-				blog.Errorf("calculate service template diff failed, err: %v, option: %+v, rid: %s", err, op, rid)
+				blog.Errorf("calc service template diff failed, err: %v, bizID: %v, moduleID: %v, rid: %s",
+					err, bizID, moduleID, rid)
 				if firstErr == nil {
 					firstErr = err
 				}
@@ -1394,39 +1361,11 @@ func (ps *ProcServer) getHostInfo(ctx *rest.Contexts, bizId int64, moduleId int6
 	return hostMap, nil
 }
 
-func (ps *ProcServer) getProcDetail(ctx *rest.Contexts, relations *metadata.MultipleProcessInstanceRelation) (
-	map[int64]*metadata.Process, errors.CCErrorCoder) {
-
-	procIDs := make([]int64, 0)
-	for _, r := range relations.Info {
-		procIDs = append(procIDs, r.ProcessID)
-	}
-
-	processDetails, err := ps.Logic.ListProcessInstanceWithIDs(ctx.Kit, procIDs)
-	if err != nil {
-		blog.ErrorJSON("list process details failed err: %s, procIDs: %s, rid: %s", err, procIDs, ctx.Kit.Rid)
-		return nil, err
-	}
-
-	procID2Detail := make(map[int64]*metadata.Process)
-	for idx, p := range processDetails {
-		procID2Detail[p.ProcessID] = &processDetails[idx]
-	}
-	return procID2Detail, nil
-}
-
-func (ps *ProcServer) getRelations(ctx *rest.Contexts, module *metadata.ModuleInst,
-	sInstances []serviceListBrief) (*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder) {
-
-	serviceInstanceIDs := make([]int64, 0)
-	for _, serviceInstance := range sInstances {
-		//serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
-
-		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.id)
-	}
+func (ps *ProcServer) getRelations(ctx *rest.Contexts, bizId int64,
+	serviceInstanceIDs []int64) (*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder) {
 
 	option := metadata.ListProcessInstanceRelationOption{
-		BusinessID:         module.BizID,
+		BusinessID:         bizId,
 		ServiceInstanceIDs: serviceInstanceIDs,
 	}
 
@@ -1452,12 +1391,13 @@ func initModuleDiffRes() (*metadata.ServiceTemplateGeneralDiff, map[int64]struct
 	return moduleDifference, added, changed
 }
 
-func (ps *ProcServer) getProcIDDetailAndRelations(ctx *rest.Contexts, module *metadata.ModuleInst,
-	serviceInstances []serviceListBrief) (map[int64][]metadata.ProcessInstanceRelation,
+func (ps *ProcServer) getProcIDDetailAndRelations(ctx *rest.Contexts, bizId int64,
+	serviceInstances []int64) (map[int64][]metadata.ProcessInstanceRelation,
 	map[int64]*metadata.Process, errors.CCErrorCoder) {
-	relations, err := ps.getRelations(ctx, module, serviceInstances)
+
+	relations, err := ps.getRelations(ctx, bizId, serviceInstances)
 	if err != nil {
-		blog.Errorf("get relations fail err: %v,rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("get relations fail err: %v, rid: %s", err, ctx.Kit.Rid)
 		return nil, nil, err
 	}
 
@@ -1466,20 +1406,31 @@ func (ps *ProcServer) getProcIDDetailAndRelations(ctx *rest.Contexts, module *me
 		serviceRelationMap[r.ServiceInstanceID] = append(serviceRelationMap[r.ServiceInstanceID], r)
 	}
 
-	procID2Detail, err := ps.getProcDetail(ctx, relations)
+	procIDs := make([]int64, 0)
+	for _, r := range relations.Info {
+		procIDs = append(procIDs, r.ProcessID)
+	}
+
+	procID2Detail, _, err := ps.getProcAndAttributeMap(ctx, procIDs)
 	if err != nil {
-		blog.Errorf("get proc detail fail err: %v,rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("get proc detail fail err: %v, rid: %s", err, ctx.Kit.Rid)
 		return nil, nil, err
 	}
+
 	return serviceRelationMap, procID2Detail, nil
 }
 
 // calculateGeneralDiff 计算每个进程模板的分类，分为三类:1、新增。2、变更。3、删除
-func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, module *metadata.ModuleInst,
-	hostMap map[int64]map[string]interface{}, pTemplateMap map[int64]*metadata.ProcessTemplate,
-	serviceInstances []serviceListBrief) (*metadata.ServiceTemplateGeneralDiff, errors.CCErrorCoder) {
+func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, bizID int64, hostMap map[int64]map[string]interface{},
+	pTemplateMap map[int64]*metadata.ProcessTemplate, serviceInstances []metadata.ServiceInstance) (
+	*metadata.ServiceTemplateGeneralDiff, errors.CCErrorCoder) {
 
-	serviceRelationMap, procID2Detail, err := ps.getProcIDDetailAndRelations(ctx, module, serviceInstances)
+	serviceInstanceIDs := make([]int64, 0)
+	for _, serviceInstance := range serviceInstances {
+		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
+	}
+
+	serviceRelationMap, procID2Detail, err := ps.getProcIDDetailAndRelations(ctx, bizID, serviceInstanceIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -1490,7 +1441,7 @@ func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, module *metadata.
 
 	for _, serviceInst := range serviceInstances {
 
-		relations := serviceRelationMap[serviceInst.id]
+		relations := serviceRelationMap[serviceInst.ID]
 
 		for _, relation := range relations {
 			processTemplateReferenced[relation.ProcessTemplateID] = struct{}{}
@@ -1508,16 +1459,16 @@ func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, module *metadata.
 
 				// process's template doesn't exist means the template has already been removed.
 				moduleDifference.Removed = append(moduleDifference.Removed, metadata.ProcessGeneralInfo{
-					Id:   int(relation.ProcessTemplateID),
+					Id:   relation.ProcessTemplateID,
 					Name: processName,
 				})
 				continue
 			}
 
 			_, isChanged, diffErr := ps.Logic.DiffWithProcessTemplate(property.Property, process,
-				hostMap[serviceInst.hostId], map[string]metadata.Attribute{}, false)
+				hostMap[serviceInst.HostID], map[string]metadata.Attribute{}, false)
 			if diffErr != nil {
-				blog.Errorf("compare template failed, process id: %d  err: %v, rid: %s", relation.ProcessID, err,
+				blog.Errorf("compare template failed, processId: %d, err: %v, rid: %s", relation.ProcessID, err,
 					ctx.Kit.Rid)
 				return nil, errors.New(common.CCErrCommParamsInvalid, diffErr.Error())
 			}
@@ -1528,7 +1479,7 @@ func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, module *metadata.
 
 			if _, ok := changed[relation.ProcessTemplateID]; !ok {
 				moduleDifference.Changed = append(moduleDifference.Changed, metadata.ProcessGeneralInfo{
-					Id:   int(relation.ProcessTemplateID),
+					Id:   relation.ProcessTemplateID,
 					Name: property.ProcessName,
 				})
 				changed[relation.ProcessTemplateID] = struct{}{}
@@ -1542,7 +1493,7 @@ func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, module *metadata.
 			}
 			if _, ok := added[templateID]; !ok {
 				moduleDifference.Added = append(moduleDifference.Added, metadata.ProcessGeneralInfo{
-					Id:   int(templateID),
+					Id:   templateID,
 					Name: processTemplate.ProcessName,
 				})
 				added[templateID] = struct{}{}
@@ -1554,7 +1505,7 @@ func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, module *metadata.
 	if len(hostMap) > 0 && len(serviceInstances) == 0 {
 		for templateID, processTemplate := range pTemplateMap {
 			moduleDifference.Added = append(moduleDifference.Added, metadata.ProcessGeneralInfo{
-				Id:   int(templateID),
+				Id:   templateID,
 				Name: processTemplate.ProcessName,
 			})
 			added[templateID] = struct{}{}
@@ -1608,7 +1559,7 @@ type hostAndServiceInstsOption struct {
 
 // getHostAndServiceInstances 获取后续计算实例列表的的基本信息
 func (ps *ProcServer) getHostAndServiceInstances(ctx *rest.Contexts, option *hostAndServiceInstsOption,
-	module *metadata.ModuleInst, serviceInstances []serviceListBrief) (
+	module *metadata.ModuleInst, serviceInstances []metadata.ServiceInstance) (
 	map[int64][]metadata.ProcessInstanceRelation, *metadata.MultipleProcessInstanceRelation,
 	map[int64]map[string]interface{}, []int64, *metadata.MultipleProcessTemplate, map[int64]*metadata.ProcessTemplate,
 	map[int64]struct{}, errors.CCErrorCoder) {
@@ -1636,8 +1587,7 @@ func (ps *ProcServer) getHostAndServiceInstances(ctx *rest.Contexts, option *hos
 	// construct map {hostID ==> host}
 	var hostIdArray []int64
 	for _, v := range serviceInstances {
-		hostIdArray = append(hostIdArray, v.hostId)
-
+		hostIdArray = append(hostIdArray, v.HostID)
 	}
 
 	hostIDOpt := &metadata.DistinctHostIDByTopoRelationRequest{
@@ -1648,13 +1598,13 @@ func (ps *ProcServer) getHostAndServiceInstances(ctx *rest.Contexts, option *hos
 
 	hostIDs, err := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, ctx.Kit.Header, hostIDOpt)
 	if err != nil {
-		blog.Errorf("get host ids failed, err: %v, option: %#v, rid: %s", err, hostIDOpt, ctx.Kit.Rid)
+		blog.Errorf("get host ids failed, err: %v, option: %v, rid: %s", err, hostIDOpt, ctx.Kit.Rid)
 		return nil, nil, nil, []int64{}, nil, nil, nil, err
 	}
 
 	hostMap, err := ps.Logic.GetHostIPMapByID(ctx.Kit, hostIDs)
 	if err != nil {
-		blog.Errorf("get host info by id failed, option: %#v, err: %v, rid: %s", hostIDOpt, err, ctx.Kit.Rid)
+		blog.Errorf("get host info by id failed, option: %v, err: %v, rid: %s", hostIDOpt, err, ctx.Kit.Rid)
 		return nil, nil, nil, []int64{}, nil, nil, nil, err
 	}
 
@@ -1663,12 +1613,13 @@ func (ps *ProcServer) getHostAndServiceInstances(ctx *rest.Contexts, option *hos
 	hostWithSrvInstMap := make(map[int64]struct{})
 
 	for _, serviceInstance := range serviceInstances {
-
-		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.id)
-		hostWithSrvInstMap[serviceInstance.hostId] = struct{}{}
+		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
+		hostWithSrvInstMap[serviceInstance.HostID] = struct{}{}
 	}
+
 	serviceRelationMap := make(map[int64][]metadata.ProcessInstanceRelation)
-	relations := new(metadata.MultipleProcessInstanceRelation)
+
+	rels := new(metadata.MultipleProcessInstanceRelation)
 	if len(serviceInstanceIDs) > 0 {
 		op := metadata.ListProcessInstanceRelationOption{
 			BusinessID:         module.BizID,
@@ -1676,29 +1627,23 @@ func (ps *ProcServer) getHostAndServiceInstances(ctx *rest.Contexts, option *hos
 			ProcessTemplateID:  option.ProcessTemplateId,
 		}
 
-		relations, err = ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &op)
+		rels, err = ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &op)
 		if err != nil {
-			blog.Errorf("list process instance relation failed, option: %s, err: %v, rid: %s", option,
-				err, ctx.Kit.Rid)
+			blog.Errorf("get process relation failed, option: %s, err: %v, rid: %s", option, err, ctx.Kit.Rid)
 			return nil, nil, nil, []int64{}, nil, nil, nil, err
 		}
 
-		for _, r := range relations.Info {
+		for _, r := range rels.Info {
 			serviceRelationMap[r.ServiceInstanceID] = append(serviceRelationMap[r.ServiceInstanceID], r)
 		}
 	}
 
-	return serviceRelationMap, relations, hostMap, hostIDs, processTemplates, pTemplateMap, hostWithSrvInstMap, nil
+	return serviceRelationMap, rels, hostMap, hostIDs, processTemplates, pTemplateMap, hostWithSrvInstMap, nil
 }
 
 // getProcAndAttributeMap 通过进程id获取进程的详细信息，注意此时的进程信息是同步之前信息
-func (ps *ProcServer) getProcAndAttributeMap(ctx *rest.Contexts, info []metadata.ProcessInstanceRelation) (
+func (ps *ProcServer) getProcAndAttributeMap(ctx *rest.Contexts, procIDs []int64) (
 	map[int64]*metadata.Process, map[string]metadata.Attribute, errors.CCErrorCoder) {
-
-	procIDs := make([]int64, 0)
-	for _, r := range info {
-		procIDs = append(procIDs, r.ProcessID)
-	}
 
 	// find all the process instance detail by ids
 	processDetails, err := ps.Logic.ListProcessInstanceWithIDs(ctx.Kit, procIDs)
@@ -1725,10 +1670,12 @@ func (ps *ProcServer) getProcAndAttributeMap(ctx *rest.Contexts, info []metadata
 		blog.ErrorJSON("read model attr failed, option: %s, err: %s, rid: %s", cond, e, ctx.Kit.Rid)
 		return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
+
 	attributeMap := make(map[string]metadata.Attribute)
 	for _, attr := range attrResult.Data.Info {
 		attributeMap[attr.PropertyID] = attr
 	}
+
 	return procID2Detail, attributeMap, nil
 }
 
@@ -1772,8 +1719,8 @@ func (ps *ProcServer) getServiceInstances(ctx *rest.Contexts, module *metadata.M
 }
 
 // getServiceListBrief 格式化获取到的字段
-func getServiceListBrief(briefInfo []metadata.ServiceInstance) ([]serviceListBrief, error) {
-	insts := make([]serviceListBrief, 0)
+func getServiceListBrief(briefInfo []metadata.ServiceInstance) ([]metadata.ServiceInstance, error) {
+	insts := make([]metadata.ServiceInstance, 0)
 	for _, k := range briefInfo {
 		hostId, err := util.GetInt64ByInterface(k.HostID)
 		if err != nil {
@@ -1785,17 +1732,17 @@ func getServiceListBrief(briefInfo []metadata.ServiceInstance) ([]serviceListBri
 		}
 		name := util.GetStrByInterface(k.Name)
 
-		insts = append(insts, serviceListBrief{
-			hostId: hostId,
-			id:     id,
-			name:   name,
+		insts = append(insts, metadata.ServiceInstance{
+			HostID: hostId,
+			ID:     id,
+			Name:   name,
 		})
 	}
 	return insts, nil
 }
 
 func (ps *ProcServer) getBriefinsts(ctx *rest.Contexts, module *metadata.ModuleInst, serviceInstanceId []int64,
-	fields []string) ([]serviceListBrief, errors.CCErrorCoder) {
+	fields []string) ([]metadata.ServiceInstance, errors.CCErrorCoder) {
 
 	serviceInts, err := ps.getServiceInstances(ctx, module, serviceInstanceId, fields)
 	if err != nil {
@@ -1835,7 +1782,6 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, option *meta
 	if err != nil {
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
-	diffDetails := new(metadata.ServiceInstanceDetailResult)
 
 	// 此处直接返回的是服务分类内容
 	if option.ServiceCategory {
@@ -1852,8 +1798,8 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, option *meta
 		ModuleID:          option.ModuleID,
 	}
 
-	fileds := []string{common.BKFieldID, common.BKHostIDField}
-	insts, err := ps.getBriefinsts(ctx, module, []int64{option.ServiceInstanceId}, fileds)
+	fields := []string{common.BKFieldID, common.BKHostIDField}
+	insts, err := ps.getBriefinsts(ctx, module, []int64{option.ServiceInstanceId}, fields)
 	if err != nil {
 		return nil, err
 	}
@@ -1862,14 +1808,18 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, option *meta
 	if err != nil {
 		return nil, err
 	}
-
-	procID2Detail, attributeMap, err := ps.getProcAndAttributeMap(ctx, relations.Info)
+	procIDs := make([]int64, 0)
+	for _, r := range relations.Info {
+		procIDs = append(procIDs, r.ProcessID)
+	}
+	procID2Detail, attributeMap, err := ps.getProcAndAttributeMap(ctx, procIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	// record the used process template for checking whether a new process template has been added to service template.
 	processTemplateReferenced := make(map[int64]struct{})
+	diffDetails := new(metadata.ServiceInstanceDetailResult)
 
 	for _, relation := range relations.Info {
 		processTemplateReferenced[relation.ProcessTemplateID] = struct{}{}
@@ -1894,7 +1844,7 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, option *meta
 		if !exist {
 			continue
 		}
-		id := insts[0].hostId
+		id := insts[0].HostID
 
 		changedAttributes, isChanged, e := ps.Logic.DiffWithProcessTemplate(property.Property, process,
 			hostMap[id], attributeMap, true)
@@ -1919,23 +1869,23 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, option *meta
 }
 
 // 服务分类改变场景下，模块下面的每个实例必然会随之变动,所以只要取前500个即可.
-func listServiceCategoryInstances(count uint64, serviceInts []serviceListBrief) *metadata.ListServiceInstancesResult {
+func listServiceCategoryInstances(count uint64, sInts []metadata.ServiceInstance) *metadata.ListServiceInstancesResult {
 
 	result := new(metadata.ListServiceInstancesResult)
 
 	if count > metadata.ServiceInstancesMaxNum {
-		result.TotalCount = metadata.ServiceInstancestotalCount
+		result.TotalCount = metadata.ServiceInstancesTotalCount
 	} else {
 		result.TotalCount = strconv.FormatUint(count, 10)
 	}
 
-	for index, v := range serviceInts {
+	for index, v := range sInts {
 		if index >= metadata.ServiceInstancesMaxNum {
 			break
 		}
 		result.ServiceInstances = append(result.ServiceInstances, metadata.ServiceInstancesInfo{
-			Id:   v.id,
-			Name: v.name,
+			Id:   v.ID,
+			Name: v.Name,
 		})
 	}
 	return result
@@ -1956,10 +1906,15 @@ func (ps *ProcServer) getModuleInfo(ctx *rest.Contexts, moduleId int64) (*metada
 	return module, nil
 }
 
-// ListServiceInstances 获取最多500个有变化的实例，大于500时只显示500+
+// ListDiffServiceInstanceNum 获取最多500个有变化的实例，大于500时只显示500+
+// compare the process instance with it's process template one by one in a service instance.
+// 当有多个进程模板都被删除的场景下，关系表中的进程模板id即relation.ProcessTemplateID都为0，我们只需要计算前端指定的进程模板即可
+// processTemplateReferenced: record the used process template for checking whether a new process template has been added
+// to service template.
+// 最后统一处理加入没有实例化的主机.
 
-func (ps *ProcServer) ListServiceInstances(ctx *rest.Contexts,
-	opt *metadata.ListServiceInstancesOption) (*metadata.ListServiceInstancesResult, errors.CCErrorCoder) {
+func (ps *ProcServer) ListDiffServiceInstanceNum(ctx *rest.Contexts, opt *metadata.ListDiffServiceInstancesOption) (
+	*metadata.ListServiceInstancesResult, errors.CCErrorCoder) {
 
 	mod, err := ps.getModuleInfo(ctx, opt.ModuleID)
 	if err != nil {
@@ -1982,51 +1937,49 @@ func (ps *ProcServer) ListServiceInstances(ctx *rest.Contexts,
 
 	op := &hostAndServiceInstsOption{BizID: opt.BizID, ModuleID: opt.ModuleID, ProcessTemplateId: opt.ProcessTemplateId}
 
-	serviceRelationMap, relations, hMap, hostIDs, pTemplates, pTemplateMap, hostWithSrvInstMap, err :=
-		ps.getHostAndServiceInstances(ctx, op, mod, insts)
+	sInstMap, relations, hMap, hostIDs, pTs, pTMap, hostInst, e := ps.getHostAndServiceInstances(ctx, op, mod, insts)
+	if e != nil {
+		return nil, err
+	}
+
+	procIDs := make([]int64, 0)
+	for _, r := range relations.Info {
+		procIDs = append(procIDs, r.ProcessID)
+	}
+
+	procID2Detail, attrMap, err := ps.getProcAndAttributeMap(ctx, procIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	procID2Detail, attributeMap, err := ps.getProcAndAttributeMap(ctx, relations.Info)
-	if err != nil {
-		return nil, err
-	}
-
-	// record the used process template for checking whether a new process template has been added to service template.
 	processTemplateReferenced := make(map[int64]struct{})
 
 	num, flag := 0, false
 
-	// compare the process instance with it's process template one by one in a service instance.
-	for _, serviceInstance := range insts {
+	for _, inst := range insts {
 		if num > metadata.ServiceInstancesMaxNum {
 			break
 		}
-		//relations := serviceRelationMap[serviceInstance[common.BKFieldID].(int64)]
-		relations := serviceRelationMap[serviceInstance.id]
+		relations := sInstMap[inst.ID]
 
 		for _, relation := range relations {
 
 			processTemplateReferenced[relation.ProcessTemplateID] = struct{}{}
 
-			process, ok := procID2Detail[relation.ProcessID]
+			proc, ok := procID2Detail[relation.ProcessID]
 			if !ok {
-				process = new(metadata.Process)
+				proc = new(metadata.Process)
 			}
 			processName := ""
-			if process.ProcessName != nil {
-				processName = *process.ProcessName
+			if proc.ProcessName != nil {
+				processName = *proc.ProcessName
 			}
 
-			p, exist := pTemplateMap[relation.ProcessTemplateID]
+			p, exist := pTMap[relation.ProcessTemplateID]
 
-			// 此处如果不存在，那么说明模板已经被删除了，记录涉及到的实例信息，只要记录实例信息即可，此步骤不需要记录所有的内容 当有多个
-			// 进程模板都被删除的场景下，关系表中的进程模板id即relation.ProcessTemplateID都为0，我们只需要计算前端指定的进程模板即可
 			if !exist && opt.ProcessTemplateId == 0 && opt.ProcessTemplateName == processName {
-
 				result.ServiceInstances = append(result.ServiceInstances, metadata.ServiceInstancesInfo{
-					Id: serviceInstance.id, Name: serviceInstance.name})
+					Id: inst.ID, Name: inst.Name})
 				flag = true
 				break
 			}
@@ -2035,18 +1988,18 @@ func (ps *ProcServer) ListServiceInstances(ctx *rest.Contexts,
 				continue
 			}
 
-			_, isChanged, dErr := ps.Logic.DiffWithProcessTemplate(p.Property, process, hMap[serviceInstance.hostId], attributeMap, false)
+			_, changed, dErr := ps.Logic.DiffWithProcessTemplate(p.Property, proc, hMap[inst.HostID], attrMap, false)
 			if dErr != nil {
 				blog.Errorf("diff fail, process ID: %d err: %v, rid: %s", relation.ProcessID, err, ctx.Kit.Rid)
 				return nil, errors.New(common.CCErrCommParamsInvalid, dErr.Error())
 			}
 
-			if !isChanged {
+			if !changed {
 				continue
 			}
 
 			result.ServiceInstances = append(result.ServiceInstances, metadata.ServiceInstancesInfo{
-				Id: serviceInstance.id, Name: serviceInstance.name})
+				Id: inst.ID, Name: inst.Name})
 			flag = true
 		}
 		if flag {
@@ -2060,17 +2013,17 @@ func (ps *ProcServer) ListServiceInstances(ctx *rest.Contexts,
 		}
 
 		result.ServiceInstances = append(result.ServiceInstances, metadata.ServiceInstancesInfo{
-			Id: serviceInstance.id, Name: serviceInstance.name})
+			Id: inst.ID, Name: inst.Name})
 		num++
 	}
 
-	// 加入没有实例化的主机.
 	if len(serviceInstances.Info) == 0 && len(hMap) > 0 {
-		result.ServiceInstances = ps.handleAddedServiceInsts(mod, hMap, opt, hostIDs, hostWithSrvInstMap, pTemplates)
+		result.ServiceInstances = ps.handleAddedServiceInsts(mod, hMap, hostIDs, hostInst, pTs)
 		num = len(hMap)
 	}
+
 	if num > metadata.ServiceInstancesMaxNum {
-		result.TotalCount = metadata.ServiceInstancestotalCount
+		result.TotalCount = metadata.ServiceInstancesTotalCount
 	} else {
 		result.TotalCount = strconv.FormatInt(int64(num), 10)
 	}
@@ -2079,7 +2032,7 @@ func (ps *ProcServer) ListServiceInstances(ctx *rest.Contexts,
 }
 
 func (ps *ProcServer) handleAddedServiceInsts(module *metadata.ModuleInst, hostMap map[int64]map[string]interface{},
-	option *metadata.ListServiceInstancesOption, hostIDs []int64, hostWithSrvInstMap map[int64]struct{},
+	hostIDs []int64, hostWithSrvInstMap map[int64]struct{},
 	processTemplates *metadata.MultipleProcessTemplate) []metadata.ServiceInstancesInfo {
 	srvInstNameSuffix := ""
 	proc := processTemplates.Info[0].Property
@@ -2108,29 +2061,23 @@ func (ps *ProcServer) handleAddedServiceInsts(module *metadata.ModuleInst, hostM
 	return added
 }
 
-type serviceListBrief struct {
-	hostId int64
-	id     int64
-	name   string
-}
-
-func (ps *ProcServer) serviceTemplateGeneralDiff(ctx *rest.Contexts, op metadata.DiffWithOneModuleOption,
-	pTemplates *metadata.MultipleProcessTemplate) (*metadata.ServiceTemplateGeneralDiff, errors.CCErrorCoder) {
+func (ps *ProcServer) serviceTemplateGeneralDiff(ctx *rest.Contexts, bizId int64, moduleId int64,
+	pTemplateMap map[int64]*metadata.ProcessTemplate) (*metadata.ServiceTemplateGeneralDiff, errors.CCErrorCoder) {
 
 	rid := ctx.Kit.Rid
-	if op.ModuleID == 0 {
-		blog.Errorf("module id empty, option: %+v, rid: %s", op, rid)
+	if moduleId == 0 {
+		blog.Errorf("module id empty, bizId: %d, moduleId: %d, rid: %s", bizId, moduleId, rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 
-	module, err := ps.getModule(ctx.Kit, op.ModuleID)
+	module, err := ps.getModule(ctx.Kit, moduleId)
 	if err != nil {
-		blog.Errorf("get module detail failed, moduleID: %d, err: %+v, rid: %s", op.ModuleID, err, rid)
+		blog.Errorf("get module detail failed, moduleID: %d, err: %+v, rid: %s", moduleId, err, rid)
 		return nil, err
 	}
 
 	if module.ServiceTemplateID == 0 {
-		blog.Errorf("module %d has no service template, option: %s, rid: %s", op.ModuleID, rid)
+		blog.Errorf("module %d has no service template, option: %s, rid: %s", moduleId, rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 
@@ -2152,25 +2099,13 @@ func (ps *ProcServer) serviceTemplateGeneralDiff(ctx *rest.Contexts, op metadata
 	}
 	moduleDifference.ChangedAttribute = flag
 
-	// processTemplates->pTemplateMap
-	pTemplateMap := make(map[int64]*metadata.ProcessTemplate)
-
-	for idx, pTemplate := range pTemplates.Info {
-		pTemplateMap[pTemplate.ID] = &pTemplates.Info[idx]
-	}
-
-	hostMap, err := ps.getHostInfo(ctx, op.BizID, op.ModuleID)
+	hostMap, err := ps.getHostInfo(ctx, bizId, moduleId)
 	if err != nil {
-		blog.Errorf("get host fail option: %+v,err: %v,rid: %s", op, err, rid)
+		blog.Errorf("get host fail bizId: %d, moduleId: %d, err: %v, rid: %s", bizId, moduleId, err, rid)
 		return nil, err
 	}
 
-	insts, e := getServiceListBrief(sInsts.Info)
-	if e != nil {
-		return nil, errors.New(common.CCErrCommDBSelectFailed, e.Error())
-	}
-
-	diffTemp, err := ps.calculateGeneralDiff(ctx, module, hostMap, pTemplateMap, insts)
+	diffTemp, err := ps.calculateGeneralDiff(ctx, module.BizID, hostMap, pTemplateMap, sInsts.Info)
 	if err != nil {
 		return nil, err
 	}
