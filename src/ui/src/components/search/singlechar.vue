@@ -26,8 +26,8 @@
     mixins: [activeMixin],
     props: {
       value: {
-        type: [String, Array],
-        default: ''
+        type: [Array, String],
+        default: () => ([])
       },
       /**
        * value 为外部输入，用 value 的数据类型来控制匹配模式不可靠，所以增加 fuzzy 属性来确定匹配模式。如果传入 fuzzy 则优先使用 fuzzy 来进行模式的切换，否则使用 value
