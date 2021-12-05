@@ -157,15 +157,15 @@ type ServiceTemplateDiffOption struct {
 }
 
 // ServiceTemplateOptionValidate judge the validity of parameters.
-func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() (string, bool) {
+func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() error {
 
 	if option.BizID == 0 {
-		return fmt.Sprintf("the biz id must be set"), false
+		return fmt.Errorf("the biz id must be set")
 	}
 	if len(option.ModuleIDs) == 0 {
-		return fmt.Sprintf("the module id must be set"), false
+		return fmt.Errorf("the module id must be set")
 	}
-	return "", true
+	return nil
 }
 
 // ListDiffServiceInstancesOption list service instances request.
@@ -242,7 +242,10 @@ type ServiceInstanceDetailResult struct {
 }
 
 const (
-	ServiceInstancesMaxNum     = 500
+	// ServiceInstancesMaxNum 对于同步服务模板场景下获取的服务实例数量最大不超过500个
+	ServiceInstancesMaxNum = 500
+
+	// ServiceInstancesTotalCount 当超过超过500的时候只给前端返回 "500+"
 	ServiceInstancesTotalCount = "500+"
 )
 
