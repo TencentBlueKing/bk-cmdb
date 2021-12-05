@@ -149,25 +149,6 @@ type GetServiceInstanceBySetTemplateInput struct {
 	Page          BasePage `json:"page"`
 }
 
-type DiffModuleWithTemplateOption struct {
-	BizID     int64   `json:"bk_biz_id"`
-	ModuleIDs []int64 `json:"bk_module_ids"`
-	// PartialCompare judge whether need compare partial and finish in advance
-	// it finish the compare in advance once one module has difference with service template
-	PartialCompare bool `json:"partial_compare"`
-}
-
-// ProcessTemplateDiffOption difference information under process template.
-type ProcessTemplateDiffOption struct {
-	BizID             int64   `json:"bk_biz_id"`
-	ServiceTemplateId int64   `json:"service_template_id"`
-	ProcessTemplateId int64   `json:"process_template_id"`
-	ModuleIDs         []int64 `json:"bk_module_ids"`
-
-	// Get service classification
-	ServiceCategory bool `json:"service_category,omitempty"`
-}
-
 // ServiceTemplateDiffOption obtain the process template difference information under the service template.
 type ServiceTemplateDiffOption struct {
 	BizID             int64   `json:"bk_biz_id"`
@@ -195,7 +176,7 @@ type ListDiffServiceInstancesOption struct {
 	ProcessTemplateId int64 `json:"process_template_id,omitempty"`
 
 	// ProcessTemplateName 当模板被删除场景下id为0，此时需要通过name找具体请求的模板
-	ProcessTemplateName string `json:"process_template_name,omitempty"`
+	ProcTemplateName string `json:"process_template_name,omitempty"`
 
 	// ServiceCategory 此请求是获取服务分类场景的实例列表
 	ServiceCategory bool `json:"service_category,omitempty"`
@@ -217,7 +198,7 @@ type ListServiceInstancesResult struct {
 	TotalCount string `json:"total_count"`
 
 	// ServiceInstances 只显示前500个实例的id和信息
-	ServiceInstances []ServiceInstancesInfo `json:"service_instances"`
+	ServiceInsts []ServiceInstancesInfo `json:"service_instances"`
 
 	// Type 本次同步类型added、removed、changed、others其中一种
 	Type string `json:"type"`
@@ -235,7 +216,7 @@ type ServiceInstanceDetailReq struct {
 	ServiceInstanceId   int64  `json:"service_instance_id"`
 
 	// ServiceCategory 此请求是获取服务分类场景的实例列表
-	ServiceCategory bool `json:"service_category,omitempty,omitempty"`
+	ServiceCategory bool `json:"service_category,omitempty"`
 }
 
 // ServiceInstanceDetailResult Details of service instance information.
@@ -281,10 +262,6 @@ type ServiceTemplateGeneralDiff struct {
 	Removed          []ProcessGeneralInfo `json:"removed"`
 	ChangedAttribute bool                 `json:"changed_attribute"`
 }
-type DiffOneModuleWithTemplateOption struct {
-	BizID    int64 `json:"bk_biz_id"`
-	ModuleID int64 `json:"bk_module_id"`
-}
 
 type UpdateServiceInstanceOption struct {
 	Data []OneUpdatedSrvInst `json:"data"`
@@ -303,19 +280,19 @@ type DiffOption struct {
 }
 
 // ServiceInstancesOptionValidate judge the validity of parameters.
-func (option *DiffOption) ServiceInstancesOptionValidate() (string, bool) {
+func (option *DiffOption) ServiceInstancesOptionValidate() error {
 
 	if option.BizID == 0 {
-		return fmt.Sprintf("the biz id must be set"), false
+		return fmt.Errorf("the biz id must be set")
 	}
 	if option.ModuleID == 0 {
-		return fmt.Sprintf("the module ServiceTemplateDiffOptionid must be set"), false
+		return fmt.Errorf("the module ServiceTemplateDiffOptionid must be set")
 	}
 	if option.ServiceTemplateId == 0 {
-		return fmt.Sprintf("the service template must be set"), false
+		return fmt.Errorf("the service template must be set")
 	}
 
-	return "", true
+	return nil
 }
 
 func (o *UpdateServiceInstanceOption) Validate() (rawError cErr.RawErrorInfo) {
@@ -374,35 +351,6 @@ type DeleteServiceInstanceOption struct {
 type CoreDeleteServiceInstanceOption struct {
 	BizID              int64   `json:"bk_biz_id"`
 	ServiceInstanceIDs []int64 `json:"service_instance_ids" field:"service_instance_ids" bson:"service_instance_ids"`
-}
-
-type FindServiceAndProcessInstanceOption struct {
-	BizID             int64 `json:"bk_biz_id" field:"bk_biz_id" bson:"bk_biz_id"`
-	ModuleID          int64 `json:"bk_module_id" field:"bk_module_id" bson:"bk_module_id"`
-	ServiceTemplateID int64 `json:"service_template_id" field:"service_template_id" bson:"service_template_id"`
-}
-
-// to describe the differences between service instance and it's service template's
-// process template's attribute.
-type ServiceProcessInstanceDifference struct {
-	ServiceInstanceID   int64             `json:"service_instance_id" field:"service_instance_id" bson:"service_instance_id"`
-	ServiceInstanceName string            `json:"service_instance_name" field:"service_instance_name" bson:"service_instance_name"`
-	BizID               int64             `json:"bk_biz_id" field:"bk_biz_id" bson:"bk_biz_id"`
-	HostID              int64             `json:"bk_host_id" field:"bk_host_id" bson:"bk_host_id"`
-	Differences         *DifferenceDetail `json:"differences" field:"differences" bson:"differences"`
-}
-
-type DifferenceDetail struct {
-	Unchanged []ProcessDifferenceDetail `json:"unchanged"`
-	Changed   []ProcessDifferenceDetail `json:"changed"`
-	Added     []ProcessDifferenceDetail `json:"added"`
-	Removed   []ProcessDifferenceDetail `json:"removed"`
-}
-
-type ProcessDifferenceDetail struct {
-	ProcessTemplateID int64                     `json:"process_template_id"`
-	ProcessInstance   Process                   `json:"process_instance"`
-	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
 }
 
 type ProcessChangedAttribute struct {

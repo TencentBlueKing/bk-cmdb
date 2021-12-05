@@ -264,7 +264,6 @@ func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.Mod
 
 	// find all the process instance detail by ids
 	procIDs := make([]int64, 0)
-	processTemplateReferenced := make(map[int64]struct{})
 	for _, relation := range relations.Info {
 		procIDs = append(procIDs, relation.ProcessID)
 	}
@@ -294,7 +293,7 @@ func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.Mod
 	}
 	for _, serviceInst := range serviceInstances.Info {
 		relations := serviceRelationMap[serviceInst.ID]
-		processTemplateReferenced = make(map[int64]struct{})
+		processTemplateReferenced := make(map[int64]struct{})
 
 		// compare the process instance with it's process template one by one
 		for _, relation := range relations {
