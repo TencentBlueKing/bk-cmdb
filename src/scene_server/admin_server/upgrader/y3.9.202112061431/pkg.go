@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202112052128
+package y3_9_202112061431
 
 import (
 	"context"
@@ -21,14 +21,14 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.9.202112052128", upgrade)
+	upgrader.RegistUpgrader("y3.9.202112061431", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.9.202112052128")
+	blog.Infof("start execute y3.9.202112061431")
 
 	if err = addProcessBindInfoOption(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.9.202112052128] add process bind_info options failed, err:  %v", err)
+		blog.Errorf("[upgrade y3.9.202112061431] add process bind_info options failed, err:  %v", err)
 		return err
 	}
 
