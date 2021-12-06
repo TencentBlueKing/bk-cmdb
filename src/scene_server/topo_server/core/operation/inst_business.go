@@ -314,7 +314,8 @@ func (b *business) validateIdleModuleConfigName(ctx *rest.Kit, input metadata.Mo
 	return nil, flag, oldName, conf
 }
 
-func (b *business) validateDeleteModuleName(ctx context.Context, option *metadata.BuiltInModuleDeleteOption) (metadata.PlatformSettingConfig, error) {
+func (b *business) validateDeleteModuleName(ctx context.Context, option *metadata.BuiltInModuleDeleteOption) (
+	metadata.PlatformSettingConfig, error) {
 
 	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 
