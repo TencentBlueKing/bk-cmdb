@@ -1200,7 +1200,7 @@ func (sa *SubAttribute) Validate(ctx context.Context, data interface{}, key stri
 	return attr.Validate(ctx, data, key)
 }
 
-// ParseSubAttribute convert val to []EnumVal
+// ParseSubAttribute convert val to []SubAttribute
 func ParseSubAttribute(ctx context.Context, val interface{}) (SubAttributeOption, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	subAttrs := make([]SubAttribute, 0)
