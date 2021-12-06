@@ -793,7 +793,11 @@ func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key
 		for subKey, subValue := range value {
 			validator, exist := subAttrMap[subKey]
 			if !exist {
-				continue
+				blog.Errorf("extra field, subKey: %s, subValue: %v, rid: %s", subKey, subValue, rid)
+				return errors.RawErrorInfo{
+					ErrCode: common.CCErrCommParamsInvalid,
+					Args:    []interface{}{fmt.Sprintf("%s.%s", key, subKey)},
+				}
 			}
 			if rawError := validator.Validate(ctx, subValue, subKey); rawError.ErrCode != 0 {
 				blog.Errorf("validate sub-attr failed, key: %s, val: %v, err: %v, rid: %s", subKey, subValue, err, rid)
