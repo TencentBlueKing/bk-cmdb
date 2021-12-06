@@ -94,6 +94,7 @@
         userModules: [] // 用户自定义模块
       }
       const idleForm = reactive(cloneDeep(defaultIdleForm))
+      const veeVlidate = new Validator()
 
       const businessTopoInstNameRule = value => ({
         required: true,
@@ -131,9 +132,6 @@
         },
         businessTopoInstNameRule(() => idleForm.buildInModules[moduleKey])
       ]
-
-      const veeVlidate = new Validator()
-
       /**
        * 生成扩展模块的验证规则
        * @param {Symbol} ruleKey 对应模块的标记，通过这个标记来找到规则所在模块

@@ -1,7 +1,7 @@
 <template>
   <div v-bkloading="{ isLoading: globalConfig.loading }">
     <bk-form ref="bizGeneralFormRef" :rules="bizGeneralFormRules" :label-width="labelWidth" :model="bizGeneralForm">
-      <bk-form-item :label="$t('业务拓扑层级')" :icon-offset="180" property="maxBizTopoLevel" required>
+      <bk-form-item :label="$t('拓扑最大可建层级')" :icon-offset="180" property="maxBizTopoLevel" required>
         <bk-input
           class="max-biz-topo-level-input"
           type="number"
@@ -12,7 +12,6 @@
             <div class="group-text">{{$t('层')}}</div>
           </template>
         </bk-input>
-        <p class="form-item-tips">{{$t('所有业务可创建的最高层级')}}</p>
       </bk-form-item>
       <bk-form-item v-if="bizGeneralForm.itsm" :label="$t('外部主机导入流程')" property="itsm" required>
         <div class="itsm-wrapper">
@@ -89,39 +88,29 @@
         maxBizTopoLevel: [
           {
             required: true,
-            message: t('请输入业务拓扑层级'),
+            message: t('请输入拓扑最大可建层级'),
             trigger: 'blur'
           }
         ],
         itsm: [
           {
             required: true,
-            validator: async () => {
-              if (isEmpty(bizGeneralForm.itsm.itsmHost)) return false
-
-              if (!validateUrl(bizGeneralForm.itsm.itsmHost)) return false
-
-              if (isEmpty(bizGeneralForm.itsm.itsmId)) return false
-
-              return true
-            },
-            message: () => {
-              if (isEmpty(bizGeneralForm.itsm.itsmHost)) {
-                return t('请输入流程所在域名')
-              }
-
-              if (isEmpty(bizGeneralForm.itsm.itsmId)) {
-                return t('请输入流程 ID')
-              }
-
-              if (!validateUrl(bizGeneralForm.itsm.itsmHost)) {
-                return t('流程域名必须为域名地址')
-              }
-
-              return ''
-            },
+            message: t('请输入流程所在域名'),
+            validator: () => !isEmpty(bizGeneralForm.itsm.itsmHost),
             trigger: 'blur'
-          }
+          },
+          {
+            required: true,
+            message: t('请输入流程 ID'),
+            validator: () => !isEmpty(bizGeneralForm.itsm.itsmId),
+            trigger: 'blur'
+          },
+          {
+            required: true,
+            message: t('流程域名必须为域名地址'),
+            validator: () => validateUrl(bizGeneralForm.itsm.itsmHost),
+            trigger: 'blur'
+          },
         ],
       }
 
@@ -162,8 +151,8 @@
 
 <style lang="scss" scoped>
   @import url("../style.scss");
-  .max-biz-topo-level-input{
-    width: 146px;
+  ::v-deep .max-biz-topo-level-input .bk-input-number{
+    width: 114px;
   }
 
   .itsm-wrapper {
