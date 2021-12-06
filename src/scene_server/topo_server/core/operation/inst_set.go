@@ -33,7 +33,7 @@ type SetOperationInterface interface {
 	DeleteSet(kit *rest.Kit, bizID int64, setIDS []int64) error
 	FindSet(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error)
 	UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID, setID int64) error
-	UpdateSetForPlatform(kit *rest.Kit, data mapstr.MapStr, obj model.Object, setIDs []int64) error
+	UpdateSetForPlatform(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond *metadata.QueryInput) error
 	SetProxy(obj ObjectOperationInterface, inst InstOperationInterface, module ModuleOperationInterface)
 }
 
@@ -260,15 +260,16 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, biz
 }
 
 // UpdateSetForPlatform 全量更新所有的空闲机池集群名称，注意: 此函数只是用于更新平台管理的,不能上esb
-func (s *set) UpdateSetForPlatform(kit *rest.Kit, data mapstr.MapStr, obj model.Object, setIDs []int64) error {
-	innerCond := mapstr.MapStr{
-		common.BKSetIDField: mapstr.MapStr{
-			common.BKDBIN: setIDs,
-		},
-	}
+func (s *set) UpdateSetForPlatform(kit *rest.Kit, data mapstr.MapStr, obj model.Object,
+	cond *metadata.QueryInput) error {
+	//innerCond := mapstr.MapStr{
+	//	common.BKSetIDField: mapstr.MapStr{
+	//		common.BKDBIN: setIDs,
+	//	},
+	//}
 	inputParams := metadata.UpdateOption{
 		Data:      data,
-		Condition: innerCond,
+		Condition: cond.Condition,
 	}
 
 	rsp, err := s.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, obj.GetObjectID(),

@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"configcenter/src/common/auditlog"
 	"context"
 	"fmt"
 	"regexp"
@@ -22,6 +21,7 @@ import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -36,7 +36,11 @@ import (
 // BusinessOperationInterface business operation methods
 type BusinessOperationInterface interface {
 	CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
+
+	// UpdateBusinessIdleSetOrModule 此函数用于更新全局的空闲机池和及下面的模块，属于管理员操作，只允许将此接口提供给前端使用
 	UpdateBusinessIdleSetOrModule(kit *rest.Kit, option *metadata.ConfigUpdateSettingOption) error
+
+	// DeleteBusinessGlobalUserModule 删除用户自定义的空闲类模块，此接口只允许提供给前端，用于管理员使用
 	DeleteBusinessGlobalUserModule(kit *rest.Kit, obj model.Object, option *metadata.BuiltInModuleDeleteOption) error
 	FindBiz(kit *rest.Kit, cond *metadata.QueryCondition) (count int, results []mapstr.MapStr, err error)
 	GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder)
@@ -93,17 +97,16 @@ func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 }
 
 // updateIdleModuleConfig update admin module config.
-func (b *business) updateIdleModuleConfig(kit *rest.Kit, option metadata.ModuleOption) error {
-
-	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+func (b *business) updateIdleModuleConfig(kit *rest.Kit, option metadata.ModuleOption,
+	config metadata.PlatformSettingConfig) error {
 
 	// 获取db中platform的配置
-	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(context.Background(), header)
-	if err != nil {
-		return err
-	}
+	//res, err := b.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, kit.Header)
+	//if err != nil {
+	//	return err
+	//}
 
-	conf, oldConf := res.Data, res.Data
+	conf, oldConf := config, config
 	flag := false
 	updateFields := mapstr.New()
 
@@ -112,21 +115,23 @@ func (b *business) updateIdleModuleConfig(kit *rest.Kit, option metadata.ModuleO
 		conf.BuiltInModuleConfig.IdleName = option.Name
 		updateFields.Set(common.SystemIdleModuleKey, option.Name)
 		flag = true
+
 	case common.SystemFaultModuleKey:
 		conf.BuiltInModuleConfig.FaultName = option.Name
 		updateFields.Set(common.SystemFaultModuleKey, option.Name)
 		flag = true
+
 	case common.SystemRecycleModuleKey:
 		conf.BuiltInModuleConfig.RecycleName = option.Name
 		updateFields.Set(common.SystemRecycleModuleKey, option.Name)
-
 		flag = true
 
 	default:
 		for index, module := range conf.BuiltInModuleConfig.UserModules {
 			if module.Key == option.Key {
 				conf.BuiltInModuleConfig.UserModules[index].Value = option.Name
-				updateFields.Set("user_module", option.Name)
+				updateFields.Set("module_name", option.Name)
+				updateFields.Set("module_key", option.Key)
 				flag = true
 				break
 			}
@@ -143,15 +148,17 @@ func (b *business) updateIdleModuleConfig(kit *rest.Kit, option metadata.ModuleO
 			Value: option.Name,
 		})
 	}
-	_, err = b.clientSet.CoreService().System().UpdatePlatformSetting(context.Background(), header, &conf)
+
+	_, err := b.clientSet.CoreService().System().UpdatePlatformSetting(context.Background(), kit.Header, &conf)
 	if err != nil {
 		return err
 	}
 
 	err = b.savePlatformLog(kit, metadata.AuditUpdate, &oldConf, updateFields)
 	if err != nil {
-		blog.Errorf("generate audit log failed config :v,updateFields: %v err: %+v, rid: %s", oldConf,
-			updateFields, err, kit.Rid)
+		blog.Errorf("generate audit log failed config: %v, updateFields: %v, err: %v, rid: %s", oldConf, updateFields,
+			err, kit.Rid)
+		return err
 	}
 	return nil
 }
@@ -176,9 +183,9 @@ func (b *business) savePlatformLog(kit *rest.Kit, auditLog metadata.ActionType, 
 
 func (b *business) updateBuiltInSetConfig(kit *rest.Kit, setName string) error {
 
-	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+	//header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 
-	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(context.Background(), header)
+	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(context.Background(), kit.Header)
 	if err != nil {
 		return err
 	}
@@ -186,7 +193,7 @@ func (b *business) updateBuiltInSetConfig(kit *rest.Kit, setName string) error {
 	conf, oldConf := res.Data, res.Data
 	conf.BuiltInSetName = metadata.ObjectString(setName)
 
-	_, err = b.clientSet.CoreService().System().UpdatePlatformSetting(context.Background(), header, &conf)
+	_, err = b.clientSet.CoreService().System().UpdatePlatformSetting(context.Background(), kit.Header, &conf)
 	if err != nil {
 		return err
 	}
@@ -202,16 +209,10 @@ func (b *business) updateBuiltInSetConfig(kit *rest.Kit, setName string) error {
 }
 
 // deleteIdlePoolConfig 更新删除用户自定义场景下的配置
-func (b *business) deleteUserModuleConfig(kit *rest.Kit, option *metadata.BuiltInModuleDeleteOption) error {
+func (b *business) deleteUserModuleConfig(kit *rest.Kit, option *metadata.BuiltInModuleDeleteOption,
+	config metadata.PlatformSettingConfig) error {
 
-	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
-
-	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(context.Background(), header)
-	if err != nil {
-		return err
-
-	}
-	conf, oldConf := res.Data, res.Data
+	conf, oldConf := config, config
 	updateFields := mapstr.New()
 
 	for index, module := range conf.BuiltInModuleConfig.UserModules {
@@ -226,14 +227,16 @@ func (b *business) deleteUserModuleConfig(kit *rest.Kit, option *metadata.BuiltI
 		}
 	}
 
-	_, err = b.clientSet.CoreService().System().UpdatePlatformSetting(context.Background(), header, &conf)
+	_, err := b.clientSet.CoreService().System().UpdatePlatformSetting(kit.Ctx, kit.Header, &conf)
 	if err != nil {
 		return err
 	}
+
 	err = b.savePlatformLog(kit, metadata.AuditUpdate, &oldConf, updateFields)
 	if err != nil {
-		blog.Errorf("generate audit log failed config :v,updateFields: %v err: %+v, rid: %s", oldConf,
-			updateFields, err, kit.Rid)
+		blog.Errorf("generate audit log failed config :v,updateFields: %v err: %v, rid: %s", oldConf, updateFields,
+			err, kit.Rid)
+		return err
 	}
 
 	return nil
@@ -269,85 +272,75 @@ func (b *business) checkModuleNameValid(ctx *rest.Kit, input metadata.ModuleOpti
 // 2、如果不存在这个key那么合法即是新增场景
 // 3、true是更新场景，false是新增场景
 // 4、目前系统出厂的idle 、fault、recycle只支持改名字不支持删除
-func (b *business) validateUpdateName(ctx *rest.Kit, input metadata.ModuleOption) (error, bool, string) {
+func (b *business) validateIdleModuleConfigName(ctx *rest.Kit, input metadata.ModuleOption) (error, bool, string,
+	metadata.PlatformSettingConfig) {
 
-	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
-	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(context.Background(), header)
+	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(ctx.Ctx, ctx.Header)
 	if err != nil {
-		return err, false, ""
+		return err, false, "", metadata.PlatformSettingConfig{}
 	}
 
 	conf := res.Data
 	flag := false
 	var oldName string
-
 	switch input.Key {
 	case common.SystemIdleModuleKey:
 		if input.Name == conf.BuiltInModuleConfig.IdleName {
-			return fmt.Errorf("idle name cannot be the same"), false, ""
+			return fmt.Errorf("idle name cannot be the same"), false, "", metadata.PlatformSettingConfig{}
 		}
 		oldName = conf.BuiltInModuleConfig.IdleName
 		flag = true
 
 	case common.SystemFaultModuleKey:
 		if input.Name == conf.BuiltInModuleConfig.FaultName {
-			return fmt.Errorf("fault name cannot be the same"), false, ""
+			return fmt.Errorf("fault name cannot be the same"), false, "", metadata.PlatformSettingConfig{}
 		}
 		oldName = conf.BuiltInModuleConfig.FaultName
 		flag = true
 
 	case common.SystemRecycleModuleKey:
 		if input.Name == conf.BuiltInModuleConfig.RecycleName {
-			return fmt.Errorf("recycle name cannot be the same"), false, ""
+			return fmt.Errorf("recycle name cannot be the same"), false, "", metadata.PlatformSettingConfig{}
 		}
 		oldName = conf.BuiltInModuleConfig.RecycleName
 		flag = true
 
 	default:
-		found := false
 		for _, m := range conf.BuiltInModuleConfig.UserModules {
-			if m.Key == input.Key && m.Value == input.Name {
-				return fmt.Errorf("user defined module name cannot be the same"), false, ""
-			} else if m.Key == input.Key && m.Value != input.Name {
-				oldName = m.Value
-				found = true
-				break
+			if m.Key == input.Key {
+				if m.Value == input.Name {
+					return fmt.Errorf("user defined module name cannot be the same"), false, "",
+						metadata.PlatformSettingConfig{}
+				} else {
+					oldName = m.Value
+					flag = true
+					break
+				}
 			}
 		}
-
-		if found {
-			flag = true
-		}
 	}
-
-	return nil, flag, oldName
+	return nil, flag, oldName, conf
 }
 
-func (b *business) validateDeleteModuleName(ctx context.Context, option *metadata.BuiltInModuleDeleteOption) error {
+func (b *business) validateDeleteModuleName(ctx context.Context, option *metadata.BuiltInModuleDeleteOption) (metadata.PlatformSettingConfig, error) {
 
 	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 
 	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(context.Background(), header)
 	if err != nil {
-		return err
-
+		return metadata.PlatformSettingConfig{}, err
 	}
 	conf := res.Data
 
 	for _, userModule := range conf.BuiltInModuleConfig.UserModules {
 		if userModule.Key == option.ModuleKey {
-			return nil
+			return conf, nil
 		}
 	}
-	return fmt.Errorf("no key founded")
+	return metadata.PlatformSettingConfig{}, fmt.Errorf("no key founded")
 }
 
-// 由于此操作是对全业务下的空闲模块做操作，所以每次只能
-// 对一个模块做操作，而且需要事务，主要分三个步骤:
-// 1、检查空闲机池下面是否有重名的，由于空闲机池下面的模块改名均需要此接口改名，所以只要查看数据库中admin_config的名字是否冲突即可
-// 2、对全网进行新增或者改名操作
-// 3、成功后将新的空闲机配置写入admin_config中。
-// 以上步骤成功后返回。均在一个事务中
+// addUserDefinedModule 增加用户的自定义模块操作
 func (b *business) addUserDefinedModule(kit *rest.Kit, results []inst.Inst, data metadata.ModuleOption) error {
 
 	// create module
@@ -358,6 +351,12 @@ func (b *business) addUserDefinedModule(kit *rest.Kit, results []inst.Inst, data
 	}
 
 	ds := make([]mapstr.MapStr, 0)
+
+	defaultCategory, err := b.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx, kit.Header)
+	if err != nil {
+		blog.Errorf("failed to search default category, err: %+v, rid: %s", err, kit.Rid)
+		return err
+	}
 
 	for _, result := range results {
 
@@ -373,12 +372,6 @@ func (b *business) addUserDefinedModule(kit *rest.Kit, results []inst.Inst, data
 		bizId, err := result.GetBizID()
 		if nil != err {
 			blog.Errorf("add user define module fail, error is %v, rid: %s", err, kit.Rid)
-			return err
-		}
-
-		defaultCategory, err := b.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx, kit.Header)
-		if err != nil {
-			blog.Errorf("failed to search default category, err: %+v, rid: %s", err, kit.Rid)
 			return err
 		}
 
@@ -435,43 +428,15 @@ func (b *business) updateModuleName(kit *rest.Kit, data metadata.ModuleOption, o
 	default:
 		defaultFlag = common.DefaultUserResModuleFlag
 	}
-	moduleIds := make([]int64, 0)
-
-	queryCond := &metadata.QueryInput{
-		Condition: map[string]interface{}{
-			common.BKDefaultField:    defaultFlag,
-			common.BKModuleNameField: oldName,
-		},
-	}
-	cnt, instItems, err := b.module.FindModule(kit, obj, queryCond)
-	if err != nil {
-		blog.Errorf("find module fail, queryCond: %+v,error %v, rid: %s", queryCond, err, kit.Rid)
-		return err
-	}
-	if cnt == 0 {
-		return fmt.Errorf("update module name fail, no module founded")
-	}
-
-	for _, instItem := range instItems {
-		moduleId, err := util.GetInt64ByInterface(instItem[common.BKModuleIDField])
-		if err != nil {
-			blog.Errorf("update module name fail, decode module id failed, err: %s, rid: %s", err, kit.Rid)
-			return err
-		}
-		moduleIds = append(moduleIds, moduleId)
-	}
 
 	d := mapstr.New()
 	d.Set(common.BKModuleNameField, data.Name)
-	innerCond := mapstr.MapStr{
-		common.BKModuleIDField: mapstr.MapStr{
-			common.BKDBIN: moduleIds,
-		},
-	}
 
 	inputParams := metadata.UpdateOption{
-		Data:      d,
-		Condition: innerCond,
+		Data: d,
+		Condition: mapstr.MapStr{
+			common.BKDefaultField:    defaultFlag,
+			common.BKModuleNameField: oldName},
 	}
 
 	rsp, err := b.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, obj.GetObjectID(),
@@ -482,14 +447,14 @@ func (b *business) updateModuleName(kit *rest.Kit, data metadata.ModuleOption, o
 	}
 	if !rsp.Result {
 		blog.Errorf("update inst failed to set the object(%s) inst by the condition(%#v), err: %s, rid: %s",
-			obj.Object().ObjectID, innerCond, rsp.ErrMsg, kit.Rid)
+			obj.Object().ObjectID, inputParams, rsp.ErrMsg, kit.Rid)
 		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
 }
 
-func (b *business) deleteModuleName(kit *rest.Kit, results []inst.Inst, op *metadata.BuiltInModuleDeleteOption) error {
+func (b *business) deleteModuleName(kit *rest.Kit, op *metadata.BuiltInModuleDeleteOption) error {
 
 	obj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDModule)
 	if nil != err {
@@ -503,6 +468,7 @@ func (b *business) deleteModuleName(kit *rest.Kit, results []inst.Inst, op *meta
 			common.BKDefaultField:    common.DefaultUserResModuleFlag,
 			common.BKModuleNameField: op.ModuleName,
 		},
+		Fields: common.BKModuleIDField,
 	}
 
 	cnt, instItems, err := b.module.FindModule(kit, obj, queryCond)
@@ -560,39 +526,27 @@ func (b *business) updateBusinessSet(kit *rest.Kit, setOptin metadata.SetOption)
 		return err
 	}
 
-	// step 1、verify whether the cluster name is duplicate.
+	// verify whether the cluster name is duplicate.
 	if err := b.checkSetNameValid(kit, obj, setOptin); err != nil {
 		return err
 	}
 
-	// step 2:find idle set list.
-	results, err := b.getIdleSetList(kit)
-	if err != nil {
-		return err
+	querySet := &metadata.QueryInput{
+		Condition: map[string]interface{}{
+			common.BKDefaultField: common.DefaultResSetFlag,
+		},
+		Limit: common.BKNoLimit,
 	}
-
-	setIDs := make([]int64, 0)
-	for _, set := range results {
-		s := set.GetValues()
-		setID, err := util.GetInt64ByInterface(s[common.BKSetIDField])
-		if nil != err {
-			blog.Errorf("get set id failed, error is %v, rid: %s", err, kit.Rid)
-			return err
-		}
-		setIDs = append(setIDs, setID)
-	}
-
 	s := mapstr.New()
 	s.Set(common.BKSetNameField, setOptin.Name)
-
-	// step 3: update idle set name
-	err = b.set.UpdateSetForPlatform(kit, s, obj, setIDs)
+	// update idle set name
+	err = b.set.UpdateSetForPlatform(kit, s, obj, querySet)
 	if err != nil {
 		blog.Errorf("update set failed, rid: %s", kit.Rid)
 		return err
 	}
 
-	// step 4: update platform setting.
+	// update platform setting.
 	err = b.updateBuiltInSetConfig(kit, setOptin.Name)
 	if err != nil {
 		blog.Errorf("update set config failed, rid: %s", kit.Rid)
@@ -602,7 +556,7 @@ func (b *business) updateBusinessSet(kit *rest.Kit, setOptin metadata.SetOption)
 	return nil
 }
 
-// UpdateBusinessIdleSet update idle set or idle module.
+// UpdateBusinessIdleSetOrModule 此函数用于更新全局的空闲机池和及下面的模块，属于管理员操作，只允许将此接口提供给前端使用
 func (b *business) UpdateBusinessIdleSetOrModule(kit *rest.Kit, option *metadata.ConfigUpdateSettingOption) error {
 
 	switch option.Type {
@@ -626,41 +580,40 @@ func (b *business) UpdateBusinessIdleSetOrModule(kit *rest.Kit, option *metadata
 //updateBusinessModule: 对特殊空闲机池下模块(flag:1,2,3,5)做新增或改名操作
 func (b *business) updateBusinessModule(kit *rest.Kit, module metadata.ModuleOption) error {
 
-	// step 1: check param is legal or not
+	// check param is legal or not
 	if err := b.checkModuleNameValid(kit, module); err != nil {
 		blog.Errorf("params is illegal err: %v, config: %v,rid: %s", err, module, kit.Rid)
 		return err
 	}
 
-	err, flag, oldname := b.validateUpdateName(kit, module)
+	err, flag, oldname, conf := b.validateIdleModuleConfigName(kit, module)
 	if err != nil {
 		blog.Errorf("params is illegal err: %v, config: %v,rid: %s", err, module, kit.Rid)
 		return err
 	}
 
-	// step 3:find idle set list
-	results, err := b.getIdleSetList(kit)
-	if err != nil {
-		return err
-	}
-
-	// step 4: add user module or rename
 	if flag {
+		// add user module or rename
 		err := b.updateModuleName(kit, module, oldname)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := b.addUserDefinedModule(kit, results, module)
+		// find idle set list
+		results, err := b.getIdleSetList(kit)
+		if err != nil {
+			return err
+		}
+		err = b.addUserDefinedModule(kit, results, module)
 		if err != nil {
 			return err
 		}
 	}
 
-	// step 5: update platform config
-	err = b.updateIdleModuleConfig(kit, module)
+	// update platform config
+	err = b.updateIdleModuleConfig(kit, module, conf)
 	if err != nil {
-		blog.Errorf("update module config failed, rid: %s", kit.Rid)
+		blog.Errorf("update module config failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 	return nil
@@ -699,7 +652,8 @@ func (b *business) getIdleSetList(kit *rest.Kit) (results []inst.Inst, err error
 		Condition: map[string]interface{}{
 			common.BKDefaultField: common.DefaultResSetFlag,
 		},
-		Limit: common.BKNoLimit,
+		Limit:  common.BKNoLimit,
+		Fields: fmt.Sprintf("%s,%s", common.BKSetIDField, common.BKAppIDField),
 	}
 
 	count, results, err := b.set.FindSet(kit, obj, querySet)
@@ -715,32 +669,26 @@ func (b *business) getIdleSetList(kit *rest.Kit) (results []inst.Inst, err error
 	return results, nil
 }
 
-// DeleteBusinessGlobalUserModule delete user defined module，only one module can be deleted at a time.
+// DeleteBusinessGlobalUserModule 删除用户自定义的空闲类模块，此接口只允许提供给前端，用于管理员使用
 func (b *business) DeleteBusinessGlobalUserModule(kit *rest.Kit, obj model.Object,
 	option *metadata.BuiltInModuleDeleteOption) error {
 
 	// step 1: check param is legal or not
-	err := b.validateDeleteModuleName(kit.Ctx, option)
+	conf, err := b.validateDeleteModuleName(kit.Ctx, option)
 	if err != nil {
-		blog.Errorf("delete global user module fail, params is illegal config: %+v,err: %v, rid:%s", option, err,
+		blog.Errorf("delete global user module fail, params is illegal config: %v, err: %v, rid:%s", option, err,
 			kit.Rid)
 		return err
 	}
 
-	// step 3:get idle set list
-	results, err := b.getIdleSetList(kit)
+	// step 2: delete user module.
+	err = b.deleteModuleName(kit, option)
 	if err != nil {
 		return err
 	}
 
-	// step 4: delete user module.
-	err = b.deleteModuleName(kit, results, option)
-	if err != nil {
-		return err
-	}
-
-	// step 5: update platform config.
-	err = b.deleteUserModuleConfig(kit, option)
+	// step 3: update platform config.
+	err = b.deleteUserModuleConfig(kit, option, conf)
 	if err != nil {
 		blog.Errorf("fail to update admin config err: %v,rid: %s", err, kit.Rid)
 		return err
