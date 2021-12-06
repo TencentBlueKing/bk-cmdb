@@ -1204,6 +1204,7 @@ func (sa *SubAttribute) Validate(ctx context.Context, data interface{}, key stri
 func ParseSubAttribute(ctx context.Context, val interface{}) (SubAttributeOption, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	subAttrs := make([]SubAttribute, 0)
+	var err error
 	if val == nil || val == "" {
 		return subAttrs, nil
 	}
@@ -1211,18 +1212,20 @@ func ParseSubAttribute(ctx context.Context, val interface{}) (SubAttributeOption
 	case []SubAttribute:
 		return options, nil
 	case string:
-		err := json.Unmarshal([]byte(options), &subAttrs)
+		err = json.Unmarshal([]byte(options), &subAttrs)
 		if nil != err {
 			blog.Errorf("parse sub-attribute failed, err: %v, rid: %s", err, rid)
 			return nil, err
 		}
 	case []interface{}:
-		if err := parseSubAttribute(options, &subAttrs); err != nil {
+		subAttrs, err = parseSubAttribute(options)
+		if err != nil {
 			blog.Errorf("parse sub-attribute failed, err: %v, rid: %s", err, rid)
 			return nil, err
 		}
 	case bson.A:
-		if err := parseSubAttribute(options, &subAttrs); err != nil {
+		subAttrs, err = parseSubAttribute(options)
+		if err != nil {
 			blog.Errorf("parse sub-attribute failed, err: %v, rid: %s", err, rid)
 			return nil, err
 		}
@@ -1232,19 +1235,22 @@ func ParseSubAttribute(ctx context.Context, val interface{}) (SubAttributeOption
 	return subAttrs, nil
 }
 
-func parseSubAttribute(options []interface{}, subAttrs *[]SubAttribute) error {
+func parseSubAttribute(options []interface{}) ([]SubAttribute, error) {
+
+	subAttrs := make([]SubAttribute, 0)
 	for _, optionVal := range options {
-		if option, ok := optionVal.(map[string]interface{}); ok {
-			*subAttrs = append(*subAttrs, parseSubAttr(option))
-		} else if option, ok := optionVal.(bson.M); ok {
-			*subAttrs = append(*subAttrs, parseSubAttr(map[string]interface{}(option)))
-		} else if option, ok := optionVal.(bson.D); ok {
-			*subAttrs = append(*subAttrs, parseSubAttr(map[string]interface{}(option.Map())))
-		} else {
-			return fmt.Errorf("unknow optionVal type: %#v", optionVal)
+		switch option := optionVal.(type) {
+		case map[string]interface{}:
+			subAttrs = append(subAttrs, parseSubAttr(option))
+		case bson.M:
+			subAttrs = append(subAttrs, parseSubAttr(map[string]interface{}(option)))
+		case bson.D:
+			subAttrs = append(subAttrs, parseSubAttr(map[string]interface{}(option.Map())))
+		default:
+			return nil, fmt.Errorf("unknow optionVal type: %#v", optionVal)
 		}
 	}
-	return nil
+	return subAttrs, nil
 }
 
 func parseSubAttr(options map[string]interface{}) SubAttribute {
