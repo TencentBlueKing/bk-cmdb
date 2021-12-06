@@ -100,12 +100,6 @@ func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 func (b *business) updateIdleModuleConfig(kit *rest.Kit, option metadata.ModuleOption,
 	config metadata.PlatformSettingConfig) error {
 
-	// 获取db中platform的配置
-	//res, err := b.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, kit.Header)
-	//if err != nil {
-	//	return err
-	//}
-
 	conf, oldConf := config, config
 	flag := false
 	updateFields := mapstr.New()
@@ -183,8 +177,6 @@ func (b *business) savePlatformLog(kit *rest.Kit, auditLog metadata.ActionType, 
 
 func (b *business) updateBuiltInSetConfig(kit *rest.Kit, setName string) error {
 
-	//header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
-
 	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(context.Background(), kit.Header)
 	if err != nil {
 		return err
@@ -202,13 +194,13 @@ func (b *business) updateBuiltInSetConfig(kit *rest.Kit, setName string) error {
 
 	err = b.savePlatformLog(kit, metadata.AuditUpdate, &oldConf, updateFields)
 	if err != nil {
-		blog.Errorf("generate audit log failed, config: %v,updateFields: %v err: %v, rid: %s", oldConf,
+		blog.Errorf("generate audit log failed, config: %v, updateFields: %v, err: %v, rid: %s", oldConf,
 			updateFields, err, kit.Rid)
 	}
 	return nil
 }
 
-// deleteIdlePoolConfig 更新删除用户自定义场景下的配置
+// deleteUserModuleConfig 更新删除用户自定义场景下的配置
 func (b *business) deleteUserModuleConfig(kit *rest.Kit, option *metadata.BuiltInModuleDeleteOption,
 	config metadata.PlatformSettingConfig) error {
 
@@ -234,7 +226,7 @@ func (b *business) deleteUserModuleConfig(kit *rest.Kit, option *metadata.BuiltI
 
 	err = b.savePlatformLog(kit, metadata.AuditUpdate, &oldConf, updateFields)
 	if err != nil {
-		blog.Errorf("generate audit log failed config :v,updateFields: %v err: %v, rid: %s", oldConf, updateFields,
+		blog.Errorf("generate audit log failed config :%v, updateFields: %v err: %v, rid: %s", oldConf, updateFields,
 			err, kit.Rid)
 		return err
 	}
@@ -258,7 +250,7 @@ func (b *business) checkModuleNameValid(ctx *rest.Kit, input metadata.ModuleOpti
 
 	cnt, _, err := b.module.FindModule(ctx, obj, queryCond)
 	if err != nil {
-		blog.Errorf("find module fail, queryCond: %+v,error %v, rid: %s", queryCond, err, ctx.Rid)
+		blog.Errorf("find module fail, queryCond: %+v, error %v, rid: %s", queryCond, err, ctx.Rid)
 		return err
 	}
 	if cnt > 0 {
@@ -346,7 +338,7 @@ func (b *business) addUserDefinedModule(kit *rest.Kit, results []inst.Inst, data
 	// create module
 	objModule, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDModule)
 	if nil != err {
-		blog.Errorf("add user define module fail, failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("add user define module fail, failed to search the set, error %s, rid: %s", err.Error(), kit.Rid)
 		return err
 	}
 
@@ -354,7 +346,7 @@ func (b *business) addUserDefinedModule(kit *rest.Kit, results []inst.Inst, data
 
 	defaultCategory, err := b.clientSet.CoreService().Process().GetDefaultServiceCategory(kit.Ctx, kit.Header)
 	if err != nil {
-		blog.Errorf("failed to search default category, err: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("failed to search default category, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
@@ -458,7 +450,7 @@ func (b *business) deleteModuleName(kit *rest.Kit, op *metadata.BuiltInModuleDel
 
 	obj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDModule)
 	if nil != err {
-		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("failed to search the set: %s, rid: %s", err.Error(), kit.Rid)
 		return err
 	}
 	delInstIDs := make([]int64, 0)
@@ -582,13 +574,13 @@ func (b *business) updateBusinessModule(kit *rest.Kit, module metadata.ModuleOpt
 
 	// check param is legal or not
 	if err := b.checkModuleNameValid(kit, module); err != nil {
-		blog.Errorf("params is illegal err: %v, config: %v,rid: %s", err, module, kit.Rid)
+		blog.Errorf("params is illegal err: %v, config: %v, rid: %s", err, module, kit.Rid)
 		return err
 	}
 
 	err, flag, oldname, conf := b.validateIdleModuleConfigName(kit, module)
 	if err != nil {
-		blog.Errorf("params is illegal err: %v, config: %v,rid: %s", err, module, kit.Rid)
+		blog.Errorf("params is illegal err: %v, config: %v ,rid: %s", err, module, kit.Rid)
 		return err
 	}
 
@@ -645,7 +637,7 @@ func (b *business) getIdleSetList(kit *rest.Kit) (results []inst.Inst, err error
 
 	obj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet)
 	if nil != err {
-		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("failed to search the set,err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
 	querySet := &metadata.QueryInput{
@@ -676,7 +668,7 @@ func (b *business) DeleteBusinessGlobalUserModule(kit *rest.Kit, obj model.Objec
 	// step 1: check param is legal or not
 	conf, err := b.validateDeleteModuleName(kit.Ctx, option)
 	if err != nil {
-		blog.Errorf("delete global user module fail, params is illegal config: %v, err: %v, rid:%s", option, err,
+		blog.Errorf("delete global user module fail, params is illegal config: %v, err: %v, rid: %s", option, err,
 			kit.Rid)
 		return err
 	}
@@ -690,7 +682,7 @@ func (b *business) DeleteBusinessGlobalUserModule(kit *rest.Kit, obj model.Objec
 	// step 3: update platform config.
 	err = b.deleteUserModuleConfig(kit, option, conf)
 	if err != nil {
-		blog.Errorf("fail to update admin config err: %v,rid: %s", err, kit.Rid)
+		blog.Errorf("fail to update admin config err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
@@ -782,9 +774,8 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
-	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 
-	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(context.Background(), header)
+	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, kit.Header)
 	if err != nil {
 		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}

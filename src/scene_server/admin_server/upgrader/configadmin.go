@@ -320,7 +320,7 @@ func UpgradePlatConfigAdmin(ctx context.Context, db dal.RDB, dir string) error {
 	if preCfg == nil {
 		err = updatePlatformConfig(ctx, db, curCfg)
 		if err != nil {
-			blog.Errorf("upgrade platform config failed, config %+v err: %v", *curCfg, err)
+			blog.Errorf("upgrade platform config failed, config %v, err: %v", *curCfg, err)
 			return err
 		}
 		return nil
@@ -444,7 +444,7 @@ func getAllConfigs(ctx context.Context, db dal.RDB, dir string) (curCfg *metadat
 	}
 	dbCfg = new(metadata.ConfigAdmin)
 	if err := json.Unmarshal([]byte(ret[common.ConfigAdminValueField].(string)), dbCfg); err != nil {
-		blog.Errorf("get  dbConfig failed, unmarshal err: %v, config: %v", err, ret[common.ConfigAdminValueField])
+		blog.Errorf("get dbConfig failed, unmarshal err: %v, config: %v", err, ret[common.ConfigAdminValueField])
 		return nil, nil, nil, err
 	}
 	return curCfg, preCfg, dbCfg, nil
@@ -507,7 +507,7 @@ func getContactInfo(links []metadata.LinksItem) metadata.ContactInfoItem {
 	return result
 }
 
-// getFinalConfig 获取最终需要保存的配置
+// getFinalPlatformConfig 获取最终需要保存的配置
 // 1、将preCfg和db存在的配置dbCfg进行对比，对于不一致的（说明有用户调过配置管理接口做过更改）,curCfg里对应的配置不做覆盖，仍为db里的数据
 // 2、如果preCfg和dbCfg如果一样的话，那么如果本次curCfg不一样，则需要升级覆盖.
 func getFinalPlatformConfig(preCfg, dbCfg *metadata.ConfigAdmin,

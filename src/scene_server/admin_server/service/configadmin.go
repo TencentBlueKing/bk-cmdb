@@ -123,7 +123,7 @@ func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restfu
 	}
 
 	if err := config.Validate(); err != nil {
-		blog.Errorf("validate param failed, err: %v, input: %v,rid: %s", err, config, rid)
+		blog.Errorf("validate param failed, err: %v, input: %v, rid: %s", err, config, rid)
 		rErr := resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 		if rErr != nil {
 			blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, rid)

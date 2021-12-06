@@ -262,11 +262,7 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, biz
 // UpdateSetForPlatform 全量更新所有的空闲机池集群名称，注意: 此函数只是用于更新平台管理的,不能上esb
 func (s *set) UpdateSetForPlatform(kit *rest.Kit, data mapstr.MapStr, obj model.Object,
 	cond *metadata.QueryInput) error {
-	//innerCond := mapstr.MapStr{
-	//	common.BKSetIDField: mapstr.MapStr{
-	//		common.BKDBIN: setIDs,
-	//	},
-	//}
+
 	inputParams := metadata.UpdateOption{
 		Data:      data,
 		Condition: cond.Condition,

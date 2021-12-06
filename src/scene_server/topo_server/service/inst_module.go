@@ -730,7 +730,7 @@ func (s *Service) UpdateGlobalSetOrModuleConfig(ctx *rest.Contexts) {
 	}
 
 	if err := option.Validate(); err != nil {
-		blog.Errorf("update global config fail,param is invalid,input: %v,error: %v,rid: %s", option, err,
+		blog.Errorf("update global config fail, param is invalid, input: %v, error: %v, rid: %s", option, err,
 			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoAppSearchFailed, fmt.Sprintf("param is invalid")))
 		return
@@ -739,7 +739,7 @@ func (s *Service) UpdateGlobalSetOrModuleConfig(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Core.BusinessOperation().UpdateBusinessIdleSetOrModule(ctx.Kit, option)
 		if err != nil {
-			blog.Errorf("update business set or module fail, option: %v,err: %v, rid: %s", option, err,
+			blog.Errorf("update business set or module fail, option: %v, err: %v, rid: %s", option, err,
 				ctx.Kit.Rid)
 			return err
 		}
@@ -764,7 +764,7 @@ func (s *Service) DeleteUserModulesSettingConfig(ctx *rest.Contexts) {
 	}
 
 	if err := option.Validate(); err != nil {
-		blog.Errorf("option is illegal  option: %+v,rid: %s.", option, ctx.Kit.Rid)
+		blog.Errorf("option is illegal option: %+v, rid: %s.", option, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoAppSearchFailed, "module key and name must be set"))
 		return
 	}

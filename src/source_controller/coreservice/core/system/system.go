@@ -111,7 +111,7 @@ func (sm *systemManager) UpdatePlatformSettingConfig(kit *rest.Kit,
 
 	bytes, err := json.Marshal(input)
 	if err != nil {
-		blog.Errorf("update config admin failed, Marshal err: %v, input: %v,rid: %s", err, *input, kit.Rid)
+		blog.Errorf("update config admin failed, Marshal err: %v, input: %v, rid: %s", err, *input, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
