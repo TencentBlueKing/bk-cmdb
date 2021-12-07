@@ -33,7 +33,7 @@ import (
 
 // AssociationOperationInterface association operation methods
 type AssociationOperationInterface interface {
-	CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association, maxTopoLevel int) (model.Object, error)
+	CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association) (model.Object, error)
 	DeleteMainlineAssociation(kit *rest.Kit, objID string) error
 	SearchMainlineAssociationTopo(kit *rest.Kit, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
 	SearchMainlineAssociationInstTopo(kit *rest.Kit, objID string, instID int64, withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, errors.CCError)

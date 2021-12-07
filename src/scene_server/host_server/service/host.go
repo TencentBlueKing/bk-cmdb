@@ -437,7 +437,7 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 	// get target biz's idle module ID
 	cond := hutil.NewOperation().WithAppID(appID).MapStr()
 	cond.Set(common.BKDefaultField, common.DefaultResModuleFlag)
-	moduleID, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
+	moduleID, _, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
 	if err != nil {
 		blog.Errorf("add host, but get module id failed, err: %s,input: %+v,rid: %s", err.Error(), hostList, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -498,7 +498,7 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 		cond := hutil.NewOperation().WithAppID(appID).MapStr()
 		cond.Set(common.BKDefaultField, common.DefaultResModuleFlag)
 		var err error
-		moduleID, err = s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
+		moduleID, _, err = s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
 		if err != nil {
 			blog.Errorf("add host, but get module id failed, err: %s,input: %+v,rid: %s", err.Error(), hostList, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
@@ -576,7 +576,7 @@ func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 	}
 
 	opt := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithAppID(appID)
-	moduleID, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, opt.MapStr())
+	moduleID, _, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, opt.MapStr())
 	if err != nil {
 		blog.Errorf("add host from agent , but get module id failed, err: %v,ownerID:%s,input:%+v,rid:%s", err, ctx.Kit.SupplierAccount, agents, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

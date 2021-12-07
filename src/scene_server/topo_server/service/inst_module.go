@@ -13,6 +13,7 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -729,4 +730,78 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(result.Data)
+}
+
+// UpdateGlobalSetOrModuleConfig update platform_setting，注意： 此接口只给前端的管理员使用不能上ESB
+func (s *Service) UpdateGlobalSetOrModuleConfig(ctx *rest.Contexts) {
+
+	option := new(metadata.ConfigUpdateSettingOption)
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err != nil {
+		blog.Errorf("update global config fail, param is invalid, input: %v, error: %v, rid: %s", option, err,
+			ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoAppSearchFailed, fmt.Sprintf("param is invalid")))
+		return
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.Core.BusinessOperation().UpdateBusinessIdleSetOrModule(ctx.Kit, option)
+		if err != nil {
+			blog.Errorf("update business set or module fail, option: %v, err: %v, rid: %s", option, err,
+				ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// UpdateIdlePoolSettingConfig update platform_setting
+func (s *Service) DeleteUserModulesSettingConfig(ctx *rest.Contexts) {
+
+	option := new(metadata.BuiltInModuleDeleteOption)
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err != nil {
+		blog.Errorf("option is illegal option: %+v, rid: %s.", option, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoAppSearchFailed, "module key and name must be set"))
+		return
+	}
+
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
+	if nil != err {
+		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+
+		err := s.Core.BusinessOperation().DeleteBusinessGlobalUserModule(ctx.Kit, obj, option)
+		if err != nil {
+			blog.Errorf("create business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
 }
