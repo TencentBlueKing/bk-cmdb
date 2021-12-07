@@ -300,7 +300,7 @@ func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.Mod
 			processTemplateReferenced[relation.ProcessTemplateID] = struct{}{}
 			process, ok := procID2Detail[relation.ProcessID]
 			if !ok {
-				blog.ErrorJSON("process doesn't exist, id: %d, rid: %s", err, relation.ProcessID, kit.Rid)
+				blog.Errorf("process doesn't exist, id: %d, rid: %s", relation.ProcessID, kit.Rid)
 				return false, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcIDField)
 			}
 

@@ -391,7 +391,7 @@ type ServiceInstanceDifference struct {
 	ServiceInstances     []ServiceDifferenceDetails `json:"service_instances"`
 }
 
-// ServiceDifferenceDetails Difference information between service instance and template.
+// ServiceDifferenceDetails different information between service instance and template.
 type ServiceDifferenceDetails struct {
 	ServiceInstance   SrvInstBriefInfo          `json:"service_instance"`
 	Process           *Process                  `json:"process"`
