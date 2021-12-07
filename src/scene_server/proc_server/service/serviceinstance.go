@@ -1314,6 +1314,7 @@ func (ps *ProcServer) getListDiffServiceInstanceNum(ctx *rest.Contexts, opt *met
 
 				d.ServiceInsts = append(d.ServiceInsts, metadata.ServiceInstancesInfo{Id: inst.ID, Name: inst.Name})
 				flag = true
+				break
 			}
 			if flag {
 				flag = false
