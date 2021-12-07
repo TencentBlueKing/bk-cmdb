@@ -136,7 +136,7 @@ func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit, targetObj
 
 }
 
-func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association, maxTopoLevel int) (model.Object, error) {
+func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association) (model.Object, error) {
 	// find the mainline module's head, which is biz.
 	bizObj, err := assoc.obj.FindSingleObject(kit, common.BKInnerObjIDApp)
 	if nil != err {
@@ -159,8 +159,21 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		return nil, err
 	}
 
-	if len(items) >= maxTopoLevel {
-		blog.Errorf("[operation-asst] the mainline topo level is %d, the max limit is %d, rid: %s", len(items), maxTopoLevel, kit.Rid)
+	res, err := assoc.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, kit.Header)
+	if err != nil {
+		blog.Errorf("get business topo level max failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.CCErrTopoObjectSelectFailed)
+
+	}
+	if res.Result == false {
+		blog.Errorf("get business topo level max failed, search config admin err: %s, rid: %s", res.ErrMsg, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.CCErrTopoObjectSelectFailed)
+
+	}
+
+	if len(items) >= int(res.Data.Backend.MaxBizTopoLevel) {
+		blog.Errorf("[operation-asst] the mainline topo level is %d, the max limit is %d, rid: %s", len(items),
+			res.Data.Backend.MaxBizTopoLevel, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrTopoBizTopoLevelOverLimit)
 	}
 
