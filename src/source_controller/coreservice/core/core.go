@@ -320,6 +320,9 @@ type ProcessOperation interface {
 type LabelOperation interface {
 	AddLabel(kit *rest.Kit, tableName string, option selector.LabelAddOption) errors.CCErrorCoder
 	RemoveLabel(kit *rest.Kit, tableName string, option selector.LabelRemoveOption) errors.CCErrorCoder
+
+	// update instances labels
+	UpdateLabel(kit *rest.Kit, tableName string, option *selector.LabelUpdateOption) errors.CCErrorCoder
 }
 
 type SetTemplateOperation interface {

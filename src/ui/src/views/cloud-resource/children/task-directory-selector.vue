@@ -85,7 +85,7 @@
         }
       },
       useIAM() {
-        return window.CMDB_CONFIG.site.authscheme === 'iam'
+        return this.$Site.authscheme === 'iam'
       }
     },
     created() {

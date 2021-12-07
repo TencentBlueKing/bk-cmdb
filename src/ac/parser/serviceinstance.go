@@ -156,7 +156,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceInstance,
-		ResourceAction: meta.Find,
+		ResourceAction: meta.Update,
 	}, {
 		Name:           "removeServiceInstanceLabelsPattern",
 		Description:    "服务实例删除label",
@@ -164,7 +164,15 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		HTTPMethod:     http.MethodDelete,
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceInstance,
-		ResourceAction: meta.Find,
+		ResourceAction: meta.Delete,
+	}, {
+		Name:           "updateServiceInstanceLabelsPattern",
+		Description:    "服务实例更新label",
+		Pattern:        "/api/v3/updatemany/proc/service_instance/labels",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceInstance,
+		ResourceAction: meta.Update,
 	}, {
 		Name:           "deleteProcessInstanceInServiceInstanceRegexp",
 		Description:    "删除进程实例",

@@ -27,10 +27,11 @@ import (
 	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
+// BatchCreateSet batch create set
 func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("batch create set failed, parse app_id from url failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("parse app_id from url failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
@@ -76,7 +77,8 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 				firstErr = err
 			}
 			if err != nil && blog.V(3) {
-				blog.InfoJSON("batch create set at index:%d failed, data: %s, err: %s, rid: %s", idx, set, err.Error(), ctx.Kit.Rid)
+				blog.Errorf("batch create set at index: %d failed, data: %s, err: %v, rid: %s",
+					idx, set, err, ctx.Kit.Rid)
 			}
 			return err
 		})
@@ -111,7 +113,7 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-set]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the biz id, error info is %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
@@ -133,6 +135,7 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
+// CheckIsBuiltInSet check is builtIn set
 func (s *Service) CheckIsBuiltInSet(kit *rest.Kit, setIDs ...int64) errors.CCErrorCoder {
 	// 检查是否时内置集群
 	filter := &metadata.QueryCondition{
@@ -143,31 +146,35 @@ func (s *Service) CheckIsBuiltInSet(kit *rest.Kit, setIDs ...int64) errors.CCErr
 			common.BKSetIDField: map[string]interface{}{
 				common.BKDBIN: setIDs,
 			},
+			// 当default值不等于0时为内置集群
 			common.BKDefaultField: map[string]interface{}{
 				common.BKDBNE: common.DefaultFlagDefaultValue,
 			},
 		},
 	}
 
-	rsp, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter)
+	rsp, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
+		filter)
 	if nil != err {
-		blog.ErrorJSON("CheckIsBuiltInSet failed, ReadInstance failed, option: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
+		blog.ErrorJSON("read instance failed, option: %s, err: %s, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if rsp.Result == false || rsp.Code != 0 {
-		blog.ErrorJSON("ReadInstance failed, ReadInstance failed, option: %s, response: %s, rid: %s", filter, rsp, kit.Rid)
+		blog.ErrorJSON("read instance failed, ReadInstance failed, option: %s, response: %s, rid: %s",
+			filter, rsp, kit.Rid)
 		return errors.New(rsp.Code, rsp.ErrMsg)
 	}
 	if rsp.Data.Count > 0 {
-		return kit.CCError.CCError(common.CCErrorTopoForbiddenDeleteBuiltInSetModule)
+		return kit.CCError.CCError(common.CCErrorTopoForbiddenDeleteOrUpdateBuiltInSetModule)
 	}
 	return nil
 }
 
+// DeleteSets delete sets
 func (s *Service) DeleteSets(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-set]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the biz id, error info is %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
@@ -176,7 +183,7 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 		operation.OpCondition `json:",inline"`
 	}{}
 	if err = ctx.DecodeInto(&data); nil != err {
-		blog.Errorf("[api-set] failed to parse to the operation condition, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse to the operation condition, error info is %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsIsInvalid, err.Error()))
 		return
 	}
@@ -213,19 +220,19 @@ func (s *Service) DeleteSet(ctx *rest.Contexts) {
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-set]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the biz id, error info is %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
 
 	setID, err := strconv.ParseInt(ctx.Request.PathParameter("set_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-set]failed to parse the set id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the set id, error info is %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "set id"))
 		return
 	}
 
-	// 检查是否时内置集群
+	// 检查是否是内置集群
 	if err := s.CheckIsBuiltInSet(ctx.Kit, setID); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -257,14 +264,14 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-set]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the biz id, error info is %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
 
 	setID, err := strconv.ParseInt(ctx.Request.PathParameter("set_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-set]failed to parse the set id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the set id, error info is %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "set id"))
 		return
 	}
@@ -272,6 +279,13 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet)
 	if nil != err {
 		blog.Errorf("update set failed,failed to search the set, %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// 不允许修改内置集群
+	if err := s.CheckIsBuiltInSet(ctx.Kit, setID); err != nil {
+		blog.Errorf("check is builtIn set failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -297,7 +311,7 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 func (s *Service) SearchSet(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-set]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to parse the biz id, error info is %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
@@ -318,7 +332,7 @@ func (s *Service) SearchSet(ctx *rest.Contexts) {
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet)
 	if nil != err {
-		blog.Errorf("[api-set]failed to search the set, %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to search the set, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -335,7 +349,8 @@ func (s *Service) SearchSet(ctx *rest.Contexts) {
 
 	cnt, instItems, err := s.Core.SetOperation().FindSet(ctx.Kit, obj, queryCond)
 	if nil != err {
-		blog.Errorf("[api-set] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("obj_id"), err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to find the objects(%s), error info is %v, rid: %s",
+			ctx.Request.PathParameter("obj_id"), err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -385,14 +400,15 @@ func (s *Service) SearchSetBatch(ctx *rest.Contexts) {
 		},
 		Condition: cond,
 	}
-	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDSet, qc)
+	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDSet, qc)
 	if err != nil {
-		blog.Errorf("SearchModuleBatch failed, http request failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("http request failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
 	if !instanceResult.Result {
-		blog.ErrorJSON("SearchModuleBatch failed, ReadInstance failed, filter: %s, response: %s, rid: %s", qc, instanceResult, ctx.Kit.Rid)
+		blog.ErrorJSON("read instance failed, filter: %s, response: %s, rid: %s", qc, instanceResult, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.New(instanceResult.Code, instanceResult.ErrMsg))
 		return
 	}

@@ -1,34 +1,10 @@
-import activeMixin from './active'
+import autocompleteMixin from './autocomplete'
 export default {
-  mixins: [activeMixin],
+  mixins: [autocompleteMixin],
   props: {
-    value: {
-      type: [String, Array]
-    },
     bizId: {
       type: Number,
       required: true
-    }
-  },
-  computed: {
-    multiple() {
-      return Array.isArray(this.value)
-    },
-    localValue: {
-      get() {
-        if (this.multiple) {
-          return this.value
-        }
-        if (this.value.trim().length) {
-          return [this.value]
-        }
-        return []
-      },
-      set(value) {
-        const emitValue = this.multiple ? [...value] : value.toString()
-        this.$emit('input', emitValue)
-        this.$emit('change', emitValue)
-      }
     }
   },
   methods: {
@@ -49,15 +25,6 @@ export default {
       } catch (error) {
         return Promise.reject(error)
       }
-    },
-    exactSearchMethod(names) {
-      if (Array.isArray(names)) {
-        return Promise.resolve(names.map(name => ({ text: name, value: name })))
-      }
-      return Promise.resolve({
-        text: names,
-        value: names
-      })
     }
   }
 }

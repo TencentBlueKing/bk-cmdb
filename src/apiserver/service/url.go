@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"configcenter/src/apiserver/service/match"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -167,6 +168,9 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/find/audit"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/find/inst_audit"):
 		from, to, isHit = rootPath, topoRoot, true
 
 	case topoURLRegexp.MatchString(string(*u)):

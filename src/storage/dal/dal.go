@@ -56,7 +56,7 @@ type DB interface {
 	// CommitTransaction 提交事务
 	CommitTransaction(context.Context, *metadata.TxnCapable) error
 	// AbortTransaction 取消事务
-	AbortTransaction(context.Context, *metadata.TxnCapable) error
+	AbortTransaction(context.Context, *metadata.TxnCapable) (bool,error)
 
 	// InitTxnManager TxnID management of initial transaction
 	InitTxnManager(r redis.Client) error

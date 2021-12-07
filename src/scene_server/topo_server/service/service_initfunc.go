@@ -44,6 +44,7 @@ func (s *Service) initAuditLog(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/audit_dict", Handler: s.SearchAuditDict})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/audit_list", Handler: s.SearchAuditList})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/audit", Handler: s.SearchAuditDetail})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/inst_audit", Handler: s.SearchInstAudit})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -101,10 +102,10 @@ func (s *Service) initModule(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/module/with_relation/biz/{bk_biz_id}",
 		Handler: s.SearchModuleWithRelation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path: "/module/bk_biz_id/{bk_biz_id}/service_template_id/{service_template_id}",
+		Path:    "/module/bk_biz_id/{bk_biz_id}/service_template_id/{service_template_id}",
 		Handler: s.ListModulesByServiceTemplateID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut,
-		Path: "/module/host_apply_enable_status/bk_biz_id/{bk_biz_id}/bk_module_id/{bk_module_id}",
+		Path:    "/module/host_apply_enable_status/bk_biz_id/{bk_biz_id}/bk_module_id/{bk_module_id}",
 		Handler: s.UpdateModuleHostApplyEnableStatus})
 
 	utility.AddToRestfulWebService(web)
@@ -136,10 +137,10 @@ func (s *Service) initInst(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/inst/search/{owner_id}/{bk_obj_id}",
 		Handler: s.SearchInsts})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path: "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}/web",
+		Path:    "/findmany/inst/association/object/{bk_obj_id}/inst_id/{id}/offset/{start}/limit/{limit}/web",
 		Handler: s.SearchInstAssociationUI})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path: "/findmany/inst/association/association_object/inst_base_info",
+		Path:    "/findmany/inst/association/association_object/inst_base_info",
 		Handler: s.SearchInstAssociationWithOtherObject})
 
 	utility.AddToRestfulWebService(web)
@@ -164,7 +165,7 @@ func (s *Service) initObjectGroup(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
-		Path: "/objectatt/group/owner/{owner_id}/object/{bk_object_id}/propertyids/{property_id}/groupids/{group_id}",
+		Path:    "/objectatt/group/owner/{owner_id}/object/{bk_object_id}/propertyids/{property_id}/groupids/{group_id}",
 		Handler: s.DeleteObjectAttributeGroup})
 
 	utility.AddToRestfulWebService(web)

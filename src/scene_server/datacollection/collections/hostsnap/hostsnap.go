@@ -31,6 +31,8 @@ import (
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/json"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
@@ -222,9 +224,16 @@ func (h *HostSnap) Analyze(msg *string) error {
 	}
 
 	// generate audit log for update host.
+	hostData := make(mapstr.MapStr)
+	err = json.Unmarshal([]byte(host), &hostData)
+	if err != nil {
+		blog.Errorf("unmarshal host %s failed, err: %v", host, err)
+		return err
+	}
+
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).
 		WithOperateFrom(metadata.FromDataCollection).WithUpdateFields(setter)
-	auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, innerIP, nil)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, 0, []mapstr.MapStr{hostData})
 	if err != nil {
 		blog.Errorf("generate host snap audit log failed before update host, host: %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
 		return err
@@ -254,7 +263,7 @@ func (h *HostSnap) Analyze(msg *string) error {
 	}
 
 	// save audit log.
-	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
 		blog.Errorf("save host snap audit log failed after update host, host %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
 		return err
 	}

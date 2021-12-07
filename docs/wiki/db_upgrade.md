@@ -24,14 +24,14 @@ cmdb 数据版本升级由当前版本号和标记了版本号的升级程序组
 ```bash
 (bk-cmdb) ➜  src git:(v3.6.x) ✗ ll scene_server/admin_server/upgrader
 total 40
--rw-r--r--   1 hoffermei  staff   2.9K Jan 13 10:26 compare.go
--rw-r--r--   1 hoffermei  staff   994B Aug 12 16:08 doc.go
--rw-r--r--   1 hoffermei  staff   7.6K Jan 13 10:26 register.go
--rw-r--r--   1 hoffermei  staff   3.2K Jan 13 10:26 util.go
-drwxr-xr-x  10 hoffermei  staff   320B Jan 13 10:26 v3.0.8
+-rw-r--r--   1 root  root   2.9K Jan 13 10:26 compare.go
+-rw-r--r--   1 root  root   994B Aug 12 16:08 doc.go
+-rw-r--r--   1 root  root   7.6K Jan 13 10:26 register.go
+-rw-r--r--   1 root  root   3.2K Jan 13 10:26 util.go
+drwxr-xr-x  10 root  root   320B Jan 13 10:26 v3.0.8
 ...
-drwxr-xr-x   5 hoffermei  staff   160B Dec 19 20:04 y3.6.201911261109
-drwxr-xr-x   4 hoffermei  staff   128B Jan  8 15:54 y3.6.201912241627
+drwxr-xr-x   5 root  root   160B Dec 19 20:04 y3.6.201911261109
+drwxr-xr-x   4 root  root   128B Jan  8 15:54 y3.6.201912241627
 (bk-cmdb) ➜  src git:(v3.6.x) ✗
 ```
 
