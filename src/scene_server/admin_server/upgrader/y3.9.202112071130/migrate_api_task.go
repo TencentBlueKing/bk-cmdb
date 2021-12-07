@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202110211014
+package y3_9_202112071130
 
 import (
 	"context"
@@ -44,8 +44,7 @@ func migrateApiTask(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			"status": 1, "create_time": 1}, Background: true},
 		"idx_lastTime_status": {Name: "idx_lastTime_status", Keys: map[string]int32{"last_time": 1, "status": 1},
 			Background: true},
-		"idx_lastTime": {Name: "idx_lastTime", Keys: map[string]int32{"last_time": 1},
-			ExpireAfterSeconds: 30 * 24 * 60 * 60},
+		"idx_lastTime": {Name: "idx_lastTime", Keys: map[string]int32{"last_time": 1}},
 	}
 
 	if err := reconcileIndexes(ctx, db, "cc_APITask", indexes); err != nil {

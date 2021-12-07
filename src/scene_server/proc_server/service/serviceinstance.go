@@ -1369,7 +1369,7 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 	}
 
 	// step 4:
-	// update module service category and name field TODO: remove this
+	// update module service category and name field
 	serviceTemplate, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(kit.Ctx, kit.Header,
 		syncOption.ServiceTemplateID)
 	if err != nil {

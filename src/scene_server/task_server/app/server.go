@@ -16,8 +16,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -101,6 +99,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.Logics = logics.NewLogics(engine.CoreAPI, db)
 	taskSrv.Service = service
 
+	// cron job delete history task
+	go taskSrv.Service.TimerDeleteHistoryTask(ctx)
+
 	if err := backbone.StartServer(ctx, cancel, engine, service.WebService(), true); err != nil {
 		blog.Errorf("start backbone failed, err: %+v", err)
 		return err
@@ -127,75 +128,6 @@ func (h *TaskServer) WebService() *restful.Container {
 
 func (h *TaskServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	if h.Config == nil {
-		h.Config = &options.Config{}
+		h.Config = new(options.Config)
 	}
-	name, _ := cc.String("taskServer.name")
-	taskNameArr := strings.Split(name, ",")
-
-	for _, name := range taskNameArr {
-		if name == "" {
-			continue
-		}
-		prefix := "taskServer." + name
-
-		strRetry, _ := cc.String(prefix + ".retry")
-		var retry int64 = 0
-		var err error
-		if strRetry != "" {
-			retry, err = strconv.ParseInt(strRetry, 10, 64)
-			if err != nil {
-				retry = 1
-				blog.Errorf("parse task name %s retry %s to int failed, err: %v", name, strRetry, err)
-			}
-		}
-
-		strLockTTL, _ := cc.String(prefix + ".lock_ttl")
-		var lockTTL int64 = 0
-		if strRetry != "" {
-			lockTTL, err = strconv.ParseInt(strLockTTL, 10, 64)
-			if err != nil {
-				lockTTL = 2
-				blog.Errorf("parse task name %s lock ttl %s to int failed, err: %v", name, strLockTTL, err)
-			}
-		}
-
-		addrFunc := func() ([]string, error) { return make([]string, 0), nil }
-		addrStr, _ := cc.String(prefix + ".addrs")
-		if len(addrStr) > 0 {
-			addrArray := strings.Split(addrStr, ",")
-			addrFunc = func() ([]string, error) {
-				return addrArray, nil
-			}
-		} else {
-			svrType, _ := cc.String(prefix + ".svr_type")
-			if len(svrType) > 0 {
-				switch svrType {
-				case types.CC_MODULE_APISERVER:
-					addrFunc = h.Core.Discovery().ApiServer().GetServers
-				case types.CC_MODULE_HOST:
-					addrFunc = h.Core.Discovery().HostServer().GetServers
-				case types.CC_MODULE_PROC:
-					addrFunc = h.Core.Discovery().ProcServer().GetServers
-				case types.CC_MODULE_TOPO:
-					addrFunc = h.Core.Discovery().TopoServer().GetServers
-				case types.CC_MODULE_TASK:
-					addrFunc = h.Core.Discovery().TaskServer().GetServers
-				default:
-				}
-			}
-		}
-		path, _ := cc.String(prefix + ".path")
-		task := tasksvc.TaskInfo{
-			Name:    name,
-			Addr:    addrFunc,
-			Path:    path,
-			Retry:   retry,
-			LockTTL: lockTTL,
-		}
-		if h.taskQueue == nil {
-			h.taskQueue = make(map[string]tasksvc.TaskInfo, 0)
-		}
-		h.taskQueue[name] = task
-	}
-
 }

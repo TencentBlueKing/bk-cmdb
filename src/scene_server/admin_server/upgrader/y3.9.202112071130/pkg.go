@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202110211014
+package y3_9_202112071130
 
 import (
 	"context"
@@ -21,19 +21,19 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.9.202110211014", upgrade)
+	upgrader.RegistUpgrader("y3.9.202112071130", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.9.202110211014")
+	blog.Infof("start execute y3.9.202112071130")
 
 	if err = migrateApiTask(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.9.202110211014] migrate api task failed, err: %v", err)
+		blog.Errorf("[upgrade y3.9.202112071130] migrate api task failed, err: %v", err)
 		return err
 	}
 
 	if err = migrateAPITaskSyncStatus(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.9.202110211014] migrate api task sync status failed, err: %v", err)
+		blog.Errorf("[upgrade y3.9.202112071130] migrate api task sync status failed, err: %v", err)
 		return err
 	}
 

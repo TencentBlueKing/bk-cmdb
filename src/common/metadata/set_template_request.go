@@ -177,7 +177,7 @@ func (option ListSetTemplateSyncStatusOption) ToSetCond(errProxy ccErr.DefaultCC
 	}
 
 	if option.SetTemplateID == 0 {
-		return nil, errProxy.CCErrorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+		return nil, errProxy.CCErrorf(common.CCErrCommParamsNeedSet, common.BKServiceTemplateIDField)
 	}
 
 	filter := map[string]interface{}{
