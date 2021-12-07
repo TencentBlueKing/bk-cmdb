@@ -126,6 +126,9 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 		Handler: ps.DiffServiceInstanceDetail})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_instance/sync", Handler: ps.SyncServiceInstanceByTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/findmany/proc/service_template_sync_status/bk_biz_id/{bk_biz_id}",
+		Handler: ps.FindServiceTemplateSyncStatus})
 
 	// deprecated,  only for old api
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/service_instance/labels", Handler: ps.ServiceInstanceAddLabels})
@@ -150,6 +153,10 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 
 	// module
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/template_binding_on_module", Handler: ps.RemoveTemplateBindingOnModule})
+
+	// task
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/service_instance/task",
+		Handler: ps.DoSyncServiceInstanceTask})
 
 	utility.AddToRestfulWebService(web)
 }

@@ -277,7 +277,7 @@ func (ps *parseStream) business() *parseStream {
 		for _, bizID := range input.BizID {
 			iamResource := meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.Business,
+					Type: meta.Business,
 					// delete archived business use archive action
 					Action:     meta.Archive,
 					InstanceID: bizID,
@@ -381,7 +381,7 @@ func (ps *parseStream) mainline() *parseStream {
 }
 
 const (
-	objectStatistics         = "/api/v3/object/statistics"
+	objectStatistics = "/api/v3/object/statistics"
 )
 
 func (ps *parseStream) object() *parseStream {
@@ -963,6 +963,7 @@ var (
 	searchAuditDict   = `/api/v3/find/audit_dict`
 	searchAuditList   = `/api/v3/findmany/audit_list`
 	searchAuditDetail = `/api/v3/find/audit`
+	searchInstAudit   = `/api/v3/find/inst_audit`
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -1003,6 +1004,76 @@ func (ps *parseStream) audit() *parseStream {
 				},
 			},
 		}
+		return ps
+	}
+
+	if ps.hitPattern(searchInstAudit, http.MethodPost) {
+		query := new(metadata.InstAuditQueryInput)
+		body, err := ps.RequestCtx.getRequestBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if err := json.Unmarshal(body, query); err != nil {
+			ps.err = fmt.Errorf("unmarshal request body failed, err: %+v", err)
+			return ps
+		}
+
+		isMainline, err := ps.isMainlineModel(query.Condition.ObjID)
+		if err != nil {
+			ps.err = fmt.Errorf("check object is mainline failed, err: %v, rid: %s", err, ps.RequestCtx.Rid)
+			return ps
+		}
+
+		// authorize logic reference: https://github.com/Tencent/bk-cmdb/issues/5758
+		if isMainline {
+			if query.Condition.BizID == 0 {
+				ps.err = fmt.Errorf("bk_biz_id is invalid, rid: %s", ps.RequestCtx.Rid)
+				return ps
+			}
+
+			resPoolBizID, err := ps.getResourcePoolBusinessID()
+			if err != nil {
+				ps.err = fmt.Errorf("get resource pool failed, err: %v, rid: %s", err, ps.RequestCtx.Rid)
+				return ps
+			}
+
+			if query.Condition.ObjID == common.BKInnerObjIDHost && query.Condition.BizID == resPoolBizID {
+
+				ps.Attribute.Resources = []meta.ResourceAttribute{
+					{
+						Basic: meta.Basic{
+							Type:   meta.AuditLog,
+							Action: meta.FindMany,
+						},
+					},
+				}
+
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					Basic: meta.Basic{
+						Type:       meta.Business,
+						InstanceID: query.Condition.BizID,
+						Action:     meta.ViewBusinessResource,
+					},
+				},
+			}
+
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+
 		return ps
 	}
 

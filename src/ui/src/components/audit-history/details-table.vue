@@ -122,7 +122,7 @@
         return `${actionName}${this.details.resource_name}`
       },
       modelId() {
-        return this.details.operation_detail.bk_obj_id
+        return this.details?.operation_detail?.bk_obj_id
       },
       modelName() {
         const model = this.$store.getters['objectModelClassify/getModelById'](this.modelId)
@@ -182,8 +182,8 @@
         this.list = [{
           field: this.$t('关联关系'),
           type: 'topology',
-          before: this.getTopoPath(this.details.operation_detail.pre_data),
-          after: this.getTopoPath(this.details.operation_detail.cur_data)
+          before: this.getTopoPath(this.details?.operation_detail?.pre_data),
+          after: this.getTopoPath(this.details?.operation_detail?.cur_data)
         }]
         this.diffList = [...this.list]
       },
@@ -198,7 +198,7 @@
         return paths.join('<br>')
       },
       setNormalList() {
-        const operationDetails = this.details.operation_detail.details || {}
+        const operationDetails = this.details?.operation_detail?.details || {}
         const before = operationDetails.pre_data || {}
         const update = operationDetails.update_fields || {}
         const after = Object.assign(operationDetails.cur_data || {}, before, update)

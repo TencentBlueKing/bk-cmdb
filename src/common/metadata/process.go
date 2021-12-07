@@ -522,15 +522,56 @@ func (o *UpdateProcessByIDsInput) Validate() (rawError cErr.RawErrorInfo) {
 	return cErr.RawErrorInfo{}
 }
 
+// SyncServiceInstanceByTemplateOption sync service instance by service template option
 type SyncServiceInstanceByTemplateOption struct {
-	BizID     int64   `json:"bk_biz_id"`
-	ModuleIDs []int64 `json:"bk_module_ids"`
+	BizID             int64   `json:"bk_biz_id"`
+	ModuleIDs         []int64 `json:"bk_module_ids"`
+	ServiceTemplateID int64   `json:"service_template_id"`
+}
+
+// Validate validates the input param
+func (s *SyncServiceInstanceByTemplateOption) Validate() (rawError cErr.RawErrorInfo) {
+	if s.BizID == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
+	if len(s.ModuleIDs) == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_module_ids"},
+		}
+	}
+
+	if s.ServiceTemplateID == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKServiceTemplateIDField},
+		}
+	}
+
+	return cErr.RawErrorInfo{}
+}
+
+// SyncOneModuleBySvcTempOption sync all service instances in one module by service template option
+type SyncOneModuleBySvcTempOption struct {
+	BizID             int64 `json:"bk_biz_id"`
+	ModuleID          int64 `json:"bk_module_id"`
+	ServiceTemplateID int64 `json:"service_template_id"`
 }
 
 // 用于同步单个模块的服务实例
 type SyncModuleServiceInstanceByTemplateOption struct {
 	BizID    int64 `json:"bk_biz_id"`
 	ModuleID int64 `json:"bk_module_id"`
+}
+
+// FindServiceTemplateSyncStatusOption find service template sync status option
+type FindServiceTemplateSyncStatusOption struct {
+	ModuleIDs         []int64 `json:"bk_module_ids"`
+	ServiceTemplateID int64   `json:"service_template_id"`
 }
 
 type ListServiceInstancesWithHostInput struct {

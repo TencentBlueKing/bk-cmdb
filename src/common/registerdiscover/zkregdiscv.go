@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/zkclient"
 
-	gozk "github.com/samuel/go-zookeeper/zk"
+	gozk "github.com/go-zookeeper/zk"
 )
 
 // ZkRegDiscv do register and discover by zookeeper

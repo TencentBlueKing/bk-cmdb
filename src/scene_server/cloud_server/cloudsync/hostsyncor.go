@@ -12,6 +12,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	ccom "configcenter/src/scene_server/cloud_server/common"
 	"configcenter/src/scene_server/cloud_server/logics"
 )
@@ -621,7 +622,6 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 
 	// 添加审计日志
 	audit := auditlog.NewHostAudit(h.logics.CoreAPI.CoreService())
-	logContext := make([]metadata.AuditLog, 0)
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(h.readKit,
 		metadata.AuditCreate).WithOperateFrom(metadata.FromCloudSync)
 	curData, err := h.getHostDetailByInstIDs(h.readKit, instIDs)
@@ -629,23 +629,11 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 		blog.Errorf("addHosts getHostDetailByInstIDs err:%s, instIDs:%#v, rid:%s", err.Error(), instIDs, h.readKit.Rid)
 	}
 
-	for _, data := range curData {
-		hostID, innerIP, err := getHostIDAndIP(data)
-		if err != nil {
-			blog.Errorf("generate audit log failed after create host, failed to get hostID and hostIP, err: %v, rid: %s",
-				err, h.readKit.Rid)
-			return nil, err
-		}
-
-		// generate audit log.
-		tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, innerIP, data)
-		if err != nil {
-			blog.Errorf("generate audit log failed after create host, hostID: %d, innerIP: %s, err: %v, rid: %s",
-				hostID, innerIP, err, h.readKit.Rid)
-			return nil, err
-		}
-
-		logContext = append(logContext, *tmpAuditLog)
+	// generate audit log.
+	logContext, err := audit.GenerateAuditLog(generateAuditParameter, 0, curData)
+	if err != nil {
+		blog.Errorf("generate audit log failed, hosts: #%v, err: %v, rid: %s", curData, err, h.readKit.Rid)
+		return nil, err
 	}
 
 	// save audit log.
@@ -736,6 +724,28 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 	syncResult.FailInfo.IPError = make(map[string]string)
 
 	// for audit log.
+	cloudInstIDs := make([]string, len(hosts))
+	for index, host := range hosts {
+		cloudInstIDs[index] = host.InstanceId
+	}
+
+	// generate audit log.
+	preData, err := h.getHostDetailByInstIDs(h.readKit, cloudInstIDs)
+	if err != nil {
+		blog.Errorf("get host detail failed, err: %v, instIDs: %+v, rid:%s", err, cloudInstIDs, h.readKit.Rid)
+		return nil, err
+	}
+	if len(preData) <= 0 {
+		blog.Errorf("generate audit log failed, not find host data, instIDs: %+v, rid: %s", cloudInstIDs, h.readKit.Rid)
+		return nil, h.readKit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudInstIDField)
+	}
+
+	preDataMap := make(map[string]mapstr.MapStr)
+	for _, host := range preData {
+		preDataMap[util.GetStrByInterface(host[common.BKCloudInstIDField])] = host
+	}
+
+	// generate audit log.
 	audit := auditlog.NewHostAudit(h.logics.CoreAPI.CoreService())
 	logContext := make([]metadata.AuditLog, 0)
 
@@ -748,31 +758,11 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 		}
 
 		// generate audit log.
-		preData, err := h.getHostDetailByInstIDs(h.readKit, []string{host.InstanceId})
-		if err != nil {
-			blog.Errorf("get host detail failed, err: %v, instID: %s, rid:%s", err, host.InstanceId, h.readKit.Rid)
-			return nil, err
-		}
-		if len(preData) <= 0 {
-			blog.Errorf("generate audit log failed, not find host data, instID: %s, rid: %s", host.InstanceId,
-				h.readKit.Rid)
-			return nil, fmt.Errorf("generate audit log failed, not find host data when bk_cloud_inst_id is %s", host.InstanceId)
-		}
-
-		hostID, innerIP, err := getHostIDAndIP(preData[0])
-		if err != nil {
-			blog.Errorf("generate audit log failed before update host, failed to get hostID and hostIP, err: %v, rid: %s",
-				err, h.readKit.Rid)
-			return nil, err
-		}
-
-		// generate audit log.
-		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(h.readKit, metadata.AuditUpdate).
+		genAuditParam := auditlog.NewGenerateAuditCommonParameter(h.readKit, metadata.AuditUpdate).
 			WithOperateFrom(metadata.FromCloudSync).WithUpdateFields(updateInfo)
-		tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, innerIP, preData[0])
+		tmpAuditLog, err := audit.GenerateAuditLog(genAuditParam, 0, []mapstr.MapStr{preDataMap[host.InstanceId]})
 		if err != nil {
-			blog.Errorf("generate audit log failed before update host, hostID: %d, innerIP: %s, err: %v, rid: %s",
-				hostID, innerIP, err, h.readKit.Rid)
+			blog.Errorf("generate audit log failed, inst id: %s, err: %v, rid: %s", host.InstanceId, err, h.readKit.Rid)
 			return nil, err
 		}
 
@@ -788,7 +778,7 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 		}
 
 		// add audit log.
-		logContext = append(logContext, *tmpAuditLog)
+		logContext = append(logContext, tmpAuditLog...)
 	}
 
 	// save audit log.
@@ -832,8 +822,6 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) (*metadata.SyncResult
 
 	// for audit log.
 	audit := auditlog.NewHostAudit(h.logics.CoreAPI.CoreService())
-	logContext := make([]metadata.AuditLog, 0)
-	innerIPs := make([]string, 0)
 	preData, err := h.getHostDetailByHostIDs(h.readKit, hostIDs)
 	if err != nil {
 		blog.Errorf("deleteDestroyedHosts getHostDetailByHostIDs err:%s, hostIDs:%#v, rid:%s", err.Error(), hostIDs,
@@ -848,38 +836,24 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) (*metadata.SyncResult
 	}
 
 	// generate audit log.
+	innerIPs := make([]string, 0)
 	for _, data := range preData {
-		hostID, err := data.Int64(common.BKHostIDField)
-		if err != nil {
-			blog.Errorf("generate audit log failed before update host, failed to get hostID, err:%s, data:%#v, rid:%s",
-				err.Error(), data, h.readKit.Rid)
-			return nil, err
-		}
 		innerIP, err := data.String(common.BKHostInnerIPField)
 		if err != nil {
-			blog.Errorf("generate audit log failed before update host, failed to get InnerIP, err:%s, data:%#v, rid:%s",
-				err.Error(), data, h.readKit.Rid)
+			blog.Errorf("get InnerIP failed, err: %v, data: %#v, rid: %s", err, data, h.readKit.Rid)
 			return nil, err
 		}
-
 		innerIPs = append(innerIPs, innerIP)
-
-		// generate audit log.
-		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(h.readKit, metadata.AuditUpdate).
-			WithOperateFrom(metadata.FromCloudSync).WithUpdateFields(updateHostData)
-		tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, innerIP, data)
-		if err != nil {
-			blog.Errorf("generate audit log failed before update host, hostID: %d, err: %v, rid: %s",
-				hostID, err, h.readKit.Rid)
-			return nil, err
-		}
-
-		// add audit log.
-		logContext = append(logContext, *tmpAuditLog)
 	}
 
-	result.SuccessInfo.Count = int64(len(hostIDs))
-	result.SuccessInfo.IPs = innerIPs
+	// generate audit log.
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(h.readKit, metadata.AuditUpdate).
+		WithOperateFrom(metadata.FromCloudSync).WithUpdateFields(updateHostData)
+	logContext, err := audit.GenerateAuditLog(generateAuditParameter, 0, preData)
+	if err != nil {
+		blog.Errorf("generate audit log failed, host ips: %+v, err: %v, rid: %s", innerIPs, err, h.readKit.Rid)
+		return nil, err
+	}
 
 	// to change state of cloud host.
 	err = h.logics.CoreAPI.CoreService().Cloud().DeleteDestroyedHostRelated(h.writeKit.Ctx, h.writeKit.Header, &metadata.DeleteDestroyedHostRelatedOption{HostIDs: hostIDs})
@@ -896,6 +870,8 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) (*metadata.SyncResult
 		}
 	}
 
+	result.SuccessInfo.Count = int64(len(hostIDs))
+	result.SuccessInfo.IPs = innerIPs
 	return result, nil
 }
 
