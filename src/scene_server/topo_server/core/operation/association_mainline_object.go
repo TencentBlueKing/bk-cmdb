@@ -136,11 +136,40 @@ func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit, targetObj
 
 }
 
+func (assoc *association) checkMaxBizTopoLevel(kit *rest.Kit, bizObj model.Object) error {
+
+	items, err := assoc.SearchMainlineAssociationTopo(kit, bizObj)
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
+		return err
+	}
+
+	res, err := assoc.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, kit.Header)
+	if err != nil {
+		blog.Errorf("get business topo level max failed, err: %v, rid: %s", err, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.CCErrTopoObjectSelectFailed)
+	}
+	if res.Result == false {
+		blog.Errorf("get business topo level max failed, search config admin err: %s, rid: %s", res.ErrMsg, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.CCErrTopoObjectSelectFailed)
+	}
+
+	if len(items) >= int(res.Data.Backend.MaxBizTopoLevel) {
+		blog.Errorf("[operation-asst] the mainline topo level is %d, the max limit is %d, rid: %s", len(items),
+			res.Data.Backend.MaxBizTopoLevel, kit.Rid)
+		return kit.CCError.Error(common.CCErrTopoBizTopoLevelOverLimit)
+	}
+	return nil
+}
+
+// CreateMainlineAssociation 创建主线拓扑
 func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association) (model.Object, error) {
 	// find the mainline module's head, which is biz.
 	bizObj, err := assoc.obj.FindSingleObject(kit, common.BKInnerObjIDApp)
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
 		return nil, err
 	}
 
@@ -153,28 +182,8 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		blog.ErrorJSON("[operation-asst] bk_classification_id empty, input: %s, rid: %s", data, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKClassificationIDField)
 	}
-	items, err := assoc.SearchMainlineAssociationTopo(kit, bizObj)
-	if nil != err {
-		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s, rid: %s", err.Error(), kit.Rid)
+	if err := assoc.checkMaxBizTopoLevel(kit, bizObj); err != nil {
 		return nil, err
-	}
-
-	res, err := assoc.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, kit.Header)
-	if err != nil {
-		blog.Errorf("get business topo level max failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.CCErrTopoObjectSelectFailed)
-
-	}
-	if res.Result == false {
-		blog.Errorf("get business topo level max failed, search config admin err: %s, rid: %s", res.ErrMsg, kit.Rid)
-		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.CCErrTopoObjectSelectFailed)
-
-	}
-
-	if len(items) >= int(res.Data.Backend.MaxBizTopoLevel) {
-		blog.Errorf("[operation-asst] the mainline topo level is %d, the max limit is %d, rid: %s", len(items),
-			res.Data.Backend.MaxBizTopoLevel, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrTopoBizTopoLevelOverLimit)
 	}
 
 	// find the mainline parent object
@@ -237,6 +246,16 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	}
 
 	// create audit log for the created instances.
+	if err := assoc.generateCreateMainlineAssociationAudit(kit, currentObj, createdInstIDs); err != nil {
+		return nil, err
+	}
+	return currentObj, nil
+}
+
+func (assoc *association) generateCreateMainlineAssociationAudit(kit *rest.Kit, currentObj model.Object,
+	createdInstIDs []int64) error {
+
+	// create audit log for the created instances.
 	audit := auditlog.NewInstanceAudit(assoc.clientSet.CoreService())
 
 	cond := map[string]interface{}{
@@ -250,14 +269,13 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, currentObj.GetObjectID(), cond)
 	if err != nil {
 		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
+		return err
 	}
 
 	err = audit.SaveAuditLog(kit, auditLog...)
 	if err != nil {
 		blog.Errorf("creat inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+		return kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
-
-	return currentObj, nil
+	return nil
 }
