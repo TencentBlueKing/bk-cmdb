@@ -1097,7 +1097,7 @@
     "主机属性自动应用功能提示": "When the host is transferred or a new module is added, it will automatically trigger the modification of host attributes according to the policy of the target module.",
     "主机搜索": "Host search",
     "全文检索": "Full Text Search",
-    "首页主机搜索提示语": "Please enter IP or asset number, separate multiple data with newline",
+    "首页主机搜索提示语": "Please enter IP or asset number, separate multiple data with commas, semicolons or newline",
     "不支持混合搜索": "Only IP or asset number is supported, mixed search is not supported",
     "最多支持搜索500条数据": "Search for up to 500 pieces of data",
     "请输入关键字，点击或回车搜索": "Please enter a keyword and click or enter to search",
