@@ -1,8 +1,8 @@
 import $http from '@/api'
 import { TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
 const actions = {
-  async getViewAuth({ rootGetters }, viewAuthData) {
-    if (rootGetters.site.authscheme !== 'iam') {
+  async getViewAuth(context, viewAuthData) {
+    if (window.Site.authscheme !== 'iam') {
       return Promise.resolve(true)
     }
     const result = await $http.post('auth/verify', {

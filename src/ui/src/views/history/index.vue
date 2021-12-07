@@ -72,6 +72,12 @@
       },
       isHost() {
         return this.objId === 'host'
+      },
+      resourceType() {
+        return this.isHost ? 'host' : 'model_instance'
+      },
+      bizId() {
+        return this.isHost ? 1 : 0
       }
     },
     watch: {
@@ -100,7 +106,7 @@
       },
       async getHistory() {
         try {
-          const { info, count } = await this.$store.dispatch('audit/getList', {
+          const { info, count } = await this.$store.dispatch('audit/getInstList', {
             params: {
               condition: this.getUsefulConditon(),
               page: {
@@ -127,9 +133,9 @@
       },
       getUsefulConditon() {
         const usefuleCondition = {
-          bk_obj_id: this.isHost ? null : this.objId,
-          category: this.isHost ? 'host' : 'resource',
-          resource_type: this.isHost ? 'host' : 'model_instance'
+          bk_obj_id: this.objId,
+          bk_biz_id: this.bizId,
+          resource_type: this.resourceType
         }
         Object.keys(this.condition).forEach((key) => {
           const value = this.condition[key]
@@ -156,7 +162,11 @@
       },
       handleRowClick(row) {
         AuditDetails.show({
-          id: row.id
+          aduitTarget: 'instance',
+          id: row.id,
+          resourceType: this.resourceType,
+          bizId: this.bizId,
+          objId: this.objId
         })
       }
     }

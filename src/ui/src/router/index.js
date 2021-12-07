@@ -9,6 +9,8 @@ import afterload from '@/setup/afterload'
 import { setupValidator } from '@/setup/validate'
 import { $error } from '@/magicbox'
 import i18n from '@/i18n'
+import { changeDocumentTitle } from '@/utils/change-document-title'
+import { OPERATION } from '@/dictionary/iam-auth'
 
 import {
   before as businessBeforeInterceptor
@@ -20,17 +22,17 @@ import {
   MENU_RESOURCE,
   MENU_MODEL,
   MENU_ANALYSIS,
-  MENU_ADMIN
+  MENU_PLATFORM_MANAGEMENT
 } from '@/dictionary/menu-symbol'
 
 import {
   indexViews,
-  adminViews,
   hostLandingViews,
   businessViews,
   resourceViews,
   modelViews,
-  analysisViews
+  analysisViews,
+  platformManagementViews
 } from '@/views'
 
 import dynamicRouterView from '@/components/layout/dynamic-router-view'
@@ -72,13 +74,6 @@ const router = new Router({
       redirect: '/index'
     },
     {
-      name: MENU_ADMIN,
-      component: dynamicRouterView,
-      children: adminViews,
-      path: '/admin',
-      redirect: '/admin/index'
-    },
-    {
       name: MENU_BUSINESS,
       components: {
         default: dynamicRouterView,
@@ -86,26 +81,63 @@ const router = new Router({
         permission: require('@/views/status/non-exist-business').default
       },
       children: businessViews,
-      path: '/business/:bizId?'
-    }, {
+      path: '/business/:bizId?',
+      meta: {
+        menu: {
+          i18n: '业务'
+        }
+      }
+    },
+    {
       name: MENU_MODEL,
       component: dynamicRouterView,
       children: modelViews,
       path: '/model',
-      redirect: '/model/index'
+      redirect: '/model/index',
+      meta: {
+        menu: {
+          i18n: '模型'
+        }
+      }
     },
     {
       name: MENU_RESOURCE,
       component: dynamicRouterView,
       children: resourceViews,
       path: '/resource',
-      redirect: '/resource/index'
-    }, {
+      redirect: '/resource/index',
+      meta: {
+        menu: {
+          i18n: '资源'
+        }
+      }
+    },
+    {
       name: MENU_ANALYSIS,
       component: dynamicRouterView,
       children: analysisViews,
       path: '/analysis',
-      redirect: '/analysis/audit'
+      redirect: '/analysis/audit',
+      meta: {
+        menu: {
+          i18n: '运营分析'
+        }
+      }
+    },
+    {
+      name: MENU_PLATFORM_MANAGEMENT,
+      component: dynamicRouterView,
+      children: platformManagementViews,
+      path: '/platform-management',
+      redirect: '/platform-management/global-config',
+      meta: {
+        auth: {
+          view: [{ type: OPERATION.R_CONFIG_ADMIN }, { type: OPERATION.U_CONFIG_ADMIN }]
+        },
+        menu: {
+          i18n: '平台管理'
+        }
+      }
     }
   ]
 })
@@ -203,6 +235,7 @@ router.afterEach(async (to, from) => {
       setupStatus.afterload = false
       await afterload(router.app, to, from)
     }
+    changeDocumentTitle()
   } catch (e) {
     setupStatus.afterload = true
     console.error(e)

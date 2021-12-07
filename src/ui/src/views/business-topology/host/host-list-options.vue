@@ -32,7 +32,7 @@
               { type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }
             ]"
             @click="handleTransfer($event, 'idle', false)">
-            {{$t('空闲模块')}}
+            {{$t('空闲模块', { idleSet: $store.state.globalConfig.config.set })}}
           </cmdb-auth>
           <cmdb-auth tag="li" class="bk-dropdown-item" v-test-id="'transferBusiness'"
             :auth="[

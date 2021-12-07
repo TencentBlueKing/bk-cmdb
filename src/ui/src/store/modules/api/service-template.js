@@ -101,7 +101,17 @@ const actions = {
 
   getServiceTemplateSyncStatus(context, { bizId, params, config }) {
     return $http.post(`findmany/proc/service_template/sync_status/biz/${bizId}`, params, config)
-  }
+  },
+
+  /**
+   * 获取服务模板实例同步状态
+   * @param {Object} params
+   * @param {Array} params.bk_module_ids 模块 id 列表
+   * @param {String} params.service_template_id 服务模板 id
+   */
+  getServiceTemplateInstanceStatus(context, { bizId, params, config }) {
+    return $http.post(`findmany/proc/service_template_sync_status/bk_biz_id/${bizId}`, params, config)
+  },
 }
 
 const mutations = {}

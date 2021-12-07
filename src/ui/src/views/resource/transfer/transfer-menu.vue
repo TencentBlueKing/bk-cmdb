@@ -11,7 +11,11 @@
         <i :class="['bk-icon icon-angle-down', { 'icon-flip': isShow }]"></i>
       </div>
       <ul class="bk-dropdown-list" slot="dropdown-content">
-        <li><a href="javascript:;" @click="transferToIdleModule">{{$t('空闲模块')}}</a></li>
+        <li>
+          <a href="javascript:;" @click="transferToIdleModule">
+            {{$store.state.globalConfig.config.idlePool.idle}}
+          </a>
+        </li>
         <li><a href="javascript:;" @click="transferToBizModule">{{$t('业务模块')}}</a></li>
         <li><a href="javascript:;" @click="transferToResourcePool">{{$t('主机池')}}</a></li>
       </ul>
@@ -82,7 +86,7 @@
         const props = {
           moduleType: 'idle',
           business: HostStore.uniqueBusiness,
-          title: this.$t('转移主机到空闲模块')
+          title: this.$t('转移主机到空闲模块', { idleSet: this.$store.state.globalConfig.config.set })
         }
         this.dialog.props = props
         this.dialog.width = 830
@@ -132,7 +136,7 @@
         }
         const { isAllIdleModule } = HostStore
         if (!isAllIdleModule) {
-          this.$error(this.$t('仅支持对空闲机模块下的主机进行操作'))
+          this.$error(this.$t('仅支持对空闲机模块下的主机进行操作', { idleModule: this.$store.state.globalConfig.config.idlePool.idle }))
           return false
         }
         const [bizId] = HostStore.bizSet
