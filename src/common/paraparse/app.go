@@ -75,9 +75,12 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 			output[i.Field] = d
 		default:
 			// 对于有两个或者更多条件的Field, 比如 B > Field > A, 先判断是否创建了这个Field的map，防止条件覆盖，导致前一个条件不生效
+			if _, ok := output[i.Field]; !ok {
+				output[i.Field] = make(map[string]interface{})
+			}
 			queryCondItem, ok := output[i.Field].(map[string]interface{})
 			if !ok {
-				queryCondItem = make(map[string]interface{})
+				return fmt.Errorf("filed %s only support for map[string]interface{} type", i.Field)
 			}
 			queryCondItem[i.Operator] = i.Value
 			output[i.Field] = queryCondItem
