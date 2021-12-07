@@ -50,6 +50,9 @@ type ModuleInst struct {
 	SetTemplateID     int64  `bson:"set_template_id" json:"set_template_id" field:"set_template_id" mapstructure:"set_template_id"`
 	Default           int64  `bson:"default" json:"default" field:"default" mapstructure:"default"`
 	HostApplyEnabled  bool   `bson:"host_apply_enabled" json:"host_apply_enabled" field:"host_apply_enabled" mapstructure:"host_apply_enabled"`
+	Creator           string `bson:"creator" json:"creator" field:"creator" mapstructure:"creator"`
+	CreateTime        Time   `bson:"create_time" json:"create_time"`
+	LastTime          Time   `bson:"last_time" json:"last_time"`
 }
 
 type BizInst struct {
@@ -203,12 +206,12 @@ type SearchInstsNamesOption struct {
         "bk_biz_id": {"$in": [3,4]}"
     }
 }
- */
+*/
 type UpdateBizPropertyBatchParameter struct {
 	// Properties is business property keys and values to be updated
 	Properties map[string]interface{} `json:"properties"`
 	// Condition is business property update condition
-	Condition  map[string]interface{} `json:"condition"`
+	Condition map[string]interface{} `json:"condition"`
 }
 
 var ObjsForSearchName = map[string]bool{

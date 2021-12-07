@@ -13,72 +13,19 @@
 package logics
 
 import (
-	"net/http"
-
-	"configcenter/src/common"
-	"configcenter/src/common/backbone"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
-	"configcenter/src/common/util"
+	"configcenter/src/apimachinery"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/redis"
 )
 
 type Logics struct {
-	*backbone.Engine
-	header  http.Header
-	rid     string
-	ccErr   errors.DefaultCCErrorIf
-	ccLang  language.DefaultCCLanguageIf
-	user    string
-	ownerID string
-	cache   redis.Client
+	CoreAPI apimachinery.ClientSetInterface
 	db      dal.RDB
 }
 
-// NewFromHeader new Logic from header
-func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
-	lang := util.GetLanguage(header)
-	rid := util.GetHTTPCCRequestID(header)
-	if rid == "" {
-		if lgc.rid == "" {
-			rid = util.GenerateRID()
-		} else {
-			rid = lgc.rid
-		}
-		header.Set(common.BKHTTPCCRequestID, rid)
-	}
-	newLgc := &Logics{
-		header:  header,
-		Engine:  lgc.Engine,
-		rid:     rid,
-		cache:   lgc.cache,
-		user:    util.GetUser(header),
-		ownerID: util.GetOwnerID(header),
-	}
-	// if language not exist, use old language
-	if lang == "" {
-		newLgc.ccErr = lgc.ccErr
-		newLgc.ccLang = lgc.ccLang
-	} else {
-		newLgc.ccErr = lgc.CCErr.CreateDefaultCCErrorIf(lang)
-		newLgc.ccLang = lgc.Language.CreateDefaultCCLanguageIf(lang)
-	}
-	return newLgc
-}
-
 // NewLogics get logics handle
-func NewLogics(b *backbone.Engine, header http.Header, cache redis.Client, db dal.RDB) *Logics {
-	lang := util.GetLanguage(header)
+func NewLogics(coreAPI apimachinery.ClientSetInterface, db dal.RDB) *Logics {
 	return &Logics{
-		Engine:  b,
-		header:  header,
-		rid:     util.GetHTTPCCRequestID(header),
-		ccErr:   b.CCErr.CreateDefaultCCErrorIf(lang),
-		ccLang:  b.Language.CreateDefaultCCLanguageIf(lang),
-		user:    util.GetUser(header),
-		ownerID: util.GetOwnerID(header),
-		cache:   cache,
+		CoreAPI: coreAPI,
 		db:      db,
 	}
 }

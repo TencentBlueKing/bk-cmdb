@@ -1228,8 +1228,10 @@ const (
 	OperationDescription = "op_desc"
 	OptionOther          = "其他"
 	TimerPattern         = "^[\\d]+\\:[\\d]+$"
-	SyncSetTaskName      = "sync-settemplate2set"
-	SyncSetTaskFlag      = "set_template_sync"
+	// BKTaskTypeField the api task type field
+	BKTaskTypeField    = "task_type"
+	SyncSetTaskFlag    = "set_template_sync"
+	SyncModuleTaskFlag = "service_template_sync"
 
 	BKHostState = "bk_state"
 )
