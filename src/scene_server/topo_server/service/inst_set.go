@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/metadata"
 	parser "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
@@ -73,7 +72,7 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		ctx.Kit.Header = ctx.Kit.NewHeader()
 		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 			var err error
-			result, err = s.createSet(ctx.Kit, bizID, obj, set)
+			result, err = s.Core.SetOperation().CreateSet(ctx.Kit, obj, bizID, set)
 			if err != nil && firstErr == nil {
 				firstErr = err
 			}
@@ -122,7 +121,7 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 	var resp interface{}
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		resp, err = s.createSet(ctx.Kit, bizID, obj, data)
+		resp, err = s.Core.SetOperation().CreateSet(ctx.Kit, obj, bizID, data)
 		if err != nil {
 			return err
 		}
@@ -134,38 +133,6 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(resp)
-}
-
-func (s *Service) createSet(kit *rest.Kit, bizID int64, obj model.Object, data mapstr.MapStr) (interface{}, error) {
-	set, err := s.Core.SetOperation().CreateSet(kit, obj, bizID, data)
-	if err != nil {
-		return nil, err
-	}
-
-	setID, err := set.GetInstID()
-	if err != nil {
-		blog.Errorf("unexpected error, create set success, but get id field failed, err: %+v, rid: %s",
-			err, kit.Rid)
-		return nil, err
-	}
-
-	setTemplateID, ok := set.ToMapStr().Get(common.BKSetTemplateIDField)
-	if !ok {
-		blog.Errorf("failed to get set_template_id, rid: %s", kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKSetTemplateIDField)
-	}
-
-	setTemplateIDint, err := util.GetInt64ByInterface(setTemplateID)
-	if err != nil {
-		blog.Errorf("failed to get set template id , type is not a int, rid: %s", kit.Rid)
-		return nil, err
-	}
-
-	if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(kit, setTemplateIDint, []int64{setID}); err != nil {
-		blog.Errorf("create set success, but UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s",
-			setID, err, kit.Rid)
-	}
-	return set, nil
 }
 
 // CheckIsBuiltInSet check is builtIn set

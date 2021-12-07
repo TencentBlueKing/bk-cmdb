@@ -45,6 +45,8 @@ type DB interface {
 	DropTable(ctx context.Context, name string) error
 	// CreateTable 创建集合
 	CreateTable(ctx context.Context, name string) error
+	// RenameTable 更新集合名称
+	RenameTable(ctx context.Context, prevName, currName string) error
 
 	IsDuplicatedError(error) bool
 	IsNotFoundError(error) bool

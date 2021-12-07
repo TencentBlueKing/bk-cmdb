@@ -21,26 +21,55 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// Create  新加任务， name 任务名，flag:任务标识，留给业务方做识别任务，instID:任务的执行源实例id，data 每一项任务需要的参数
-func (t *task) Create(ctx context.Context, header http.Header, name, flag string, instID int64,
-	data []interface{}) (resp *metadata.CreateTaskResponse, err error) {
-	resp = new(metadata.CreateTaskResponse)
+// Create 新加任务，taskType: 任务标识，留给业务方做识别任务，instID: 任务的执行源实例id，data: 每一项任务需要的参数
+func (t *task) Create(ctx context.Context, header http.Header, taskType string, instID int64, data []interface{}) (
+	metadata.APITaskDetail, error) {
+
+	resp := new(metadata.CreateTaskResponse)
 	subPath := "/task/create"
 	body := metadata.CreateTaskRequest{
-		Name:   name,
-		Flag:   flag,
-		InstID: instID,
-		Data:   data,
+		TaskType: taskType,
+		InstID:   instID,
+		Data:     data,
 	}
 
-	err = t.client.Post().
+	err := t.client.Post().
 		WithContext(ctx).
 		Body(body).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+	if err != nil {
+		return metadata.APITaskDetail{}, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return metadata.APITaskDetail{}, resp.CCError()
+	}
+	return resp.Data, nil
+}
+
+// CreateBatch create task batch, returns the created task details
+func (t *task) CreateBatch(ctx context.Context, header http.Header, tasks []metadata.CreateTaskRequest) (
+	[]metadata.APITaskDetail, error) {
+
+	resp := new(metadata.CreateTaskBatchResponse)
+	subPath := "/createmany/task"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(tasks).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, resp.CCError()
+	}
+	return resp.Data, nil
 }
 
 func (t *task) ListTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskRequest) (resp *metadata.ListAPITaskResponse, err error) {
@@ -57,18 +86,27 @@ func (t *task) ListTask(ctx context.Context, header http.Header, name string, da
 	return
 }
 
-func (t *task) ListLatestTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskLatestRequest) (resp *metadata.ListAPITaskLatestResponse, err error) {
-	resp = new(metadata.ListAPITaskLatestResponse)
+// ListLatestTask list the latest task for each inst by bk_inst_id
+func (t *task) ListLatestTask(ctx context.Context, header http.Header, name string,
+	data *metadata.ListAPITaskLatestRequest) ([]metadata.APITaskDetail, errors.CCErrorCoder) {
+
+	resp := new(metadata.ListAPITaskLatestResponse)
 	subPath := "/task/findmany/list/latest/%s"
 
-	err = t.client.Post().
+	err := t.client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath, name).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, resp.CCError()
+	}
+	return resp.Data, nil
 }
 
 func (t *task) TaskDetail(ctx context.Context, header http.Header, taskID string) (resp *metadata.TaskDetailResponse, err error) {
@@ -137,13 +175,52 @@ func (t *task) TaskStatusToFailure(ctx context.Context, header http.Header, task
 	return
 }
 
-/*
+// ListLatestSyncStatus list latest sync status by condition
+func (t *task) ListLatestSyncStatus(ctx context.Context, header http.Header,
+	option *metadata.ListLatestSyncStatusRequest) ([]metadata.APITaskSyncStatus, errors.CCErrorCoder) {
 
+	resp := new(metadata.ListLatestSyncStatusResponse)
+	subPath := "/findmany/latest/sync_status"
 
- http.MethodPost, Path: "/task/create", Handler: s.CreateTask})
- http.MethodPost, Path: "/task/findmany/list/{name}", Handler: s.ListTask})
- http.MethodPost, Path: "/task/findone/detail/{task_id}", Handler: s.DetailTask})
- http.MethodPut, Path: "/task/set/status/sucess/id/{task_id}/sub_id/{sub_task_id}", Handler: s.StatusToSuccess})
- http.MethodPut, Path: "/task/set/status/failure/id/{task_id}/sub_id/{sub_task_id}", Handler: s.StatusToFailure})
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&resp)
 
-*/
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, resp.CCError()
+	}
+
+	return resp.Data, nil
+}
+
+// ListSyncStatusHistory list sync status history by condition
+func (t *task) ListSyncStatusHistory(ctx context.Context, header http.Header,
+	option *metadata.QueryCondition) (*metadata.ListAPITaskSyncStatusResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.ListSyncStatusHistoryResponse)
+	subPath := "/findmany/sync_status_history"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, resp.CCError()
+	}
+
+	return resp.Data, nil
+}

@@ -126,6 +126,14 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.Update,
 	}, {
+		Name:           "findServiceTemplateSyncStatus",
+		Description:    "获取服务模板同步状态",
+		Pattern:        "/api/v3/findmany/proc/service_template_sync_status/bk_biz_id/{bk_biz_id}",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    BizIDFromURLGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Find,
+	}, {
 		Name:           "listServiceInstanceWithHostPattern",
 		Description:    "根据主机查询服务实例",
 		Pattern:        "/api/v3/findmany/proc/service_instance/with_host",
