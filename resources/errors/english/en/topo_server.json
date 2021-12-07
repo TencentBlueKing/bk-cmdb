@@ -117,7 +117,7 @@
     "1101095": "sync set template failed",
     "1101096": "sync set template task is running",
     "1101097": "forbidden add/remove module on set initialized by set template",
-    "1101098": "forbidden remove built in set or module",
+    "1101098": "forbidden remove or update built in set or module",
     "1101099": "the same module name exist",
 	"1101100": "parse url params failed",
 	"1101101": "Query model attributes failed, please refresh the page",

@@ -462,7 +462,7 @@ const (
 	CCErrorTopoSyncModuleTaskIsRunning = 1101096
 
 	CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate = 1101097
-	CCErrorTopoForbiddenDeleteBuiltInSetModule                  = 1101098
+	CCErrorTopoForbiddenDeleteOrUpdateBuiltInSetModule          = 1101098
 	CCErrorTopoModuleNameDuplicated                             = 1101099
 
 	CCErrorTopoPathParamPaserFailed                = 1101100
