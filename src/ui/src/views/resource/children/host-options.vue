@@ -29,14 +29,14 @@
           v-model="assign.curSelected"
           @selected="handleAssignHosts">
           <bk-option id="-1" :name="$t('分配到')" hidden></bk-option>
-          <bk-option id="toBusiness" :name="$t('业务空闲机')"></bk-option>
+          <bk-option id="toBusiness" :name="$t('业务空闲机', { idleSet: $store.state.globalConfig.config.set })"></bk-option>
           <bk-option id="toDirs" :name="$t('主机池其他目录')"></bk-option>
         </bk-select>
       </span>
       <cmdb-transfer-menu class="mr10" v-if="scope !== 1" />
       <cmdb-button-group
         class="mr10"
-        trigger-text="编辑"
+        :trigger-text="$t('编辑')"
         :buttons="editButtonGroup"
         :expand="false">
       </cmdb-button-group>
@@ -259,7 +259,7 @@
           curSelected: '-1',
           placeholder: this.$t('请选择xx', { name: this.$t('业务') }),
           label: this.$t('业务列表'),
-          title: this.$t('分配到业务空闲机'),
+          title: this.$t('分配到业务空闲机', { idleSet: this.$store.state.globalConfig.config.set }),
           requestId: Symbol('assignHosts')
         },
         assignOptions: [],
@@ -462,7 +462,7 @@
         if (id === 'toBusiness') {
           this.assign.placeholder = this.$t('请选择xx', { name: this.$t('业务') })
           this.assign.label = this.$t('业务列表')
-          this.assign.title = this.$t('分配到业务空闲机')
+          this.assign.title = this.$t('分配到业务空闲机', { idleSet: this.$store.state.globalConfig.config.set })
 
           // 必要的setTimeout，因依赖dialog显示并且auth完成后
           setTimeout(() => {

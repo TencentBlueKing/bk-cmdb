@@ -166,6 +166,7 @@
       },
       handleRowClick(item) {
         AuditDetails.show({
+          aduitTarget: 'instance',
           id: item.id,
           resourceType: this.resourceType,
           bizId: this.bizId,
