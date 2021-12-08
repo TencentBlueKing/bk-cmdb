@@ -258,10 +258,10 @@ func (ti *TopoInstance) Key() string {
 
 // TransferHostsCrossBusinessRequest Transfer host across business request parameter
 type TransferHostsCrossBusinessRequest struct {
-	SrcApplicationID int64   `json:"src_bk_biz_id"`
-	DstApplicationID int64   `json:"dst_bk_biz_id"`
-	HostIDArr        []int64 `json:"bk_host_id"`
-	DstModuleIDArr   []int64 `json:"bk_module_ids"`
+	SrcApplicationIDs []int64 `json:"src_bk_biz_id"`
+	DstApplicationID  int64   `json:"dst_bk_biz_id"`
+	HostIDArr         []int64 `json:"bk_host_id"`
+	DstModuleIDArr    []int64 `json:"bk_module_ids"`
 }
 
 // HostModuleRelationRequest gethost module relation request parameter

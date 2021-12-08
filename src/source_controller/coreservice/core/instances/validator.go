@@ -48,7 +48,7 @@ func NewValidator(kit *rest.Kit, dependent OperationDependences, objID string, b
 	valid.dependent = dependent
 	valid.language = language
 
-	result, err := dependent.SelectObjectAttWithParams(kit, objID, bizID)
+	result, err := dependent.SelectObjectAttWithParams(kit, objID, []int64{bizID})
 	if nil != err {
 		return nil, err
 	}

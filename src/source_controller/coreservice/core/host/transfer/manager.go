@@ -32,7 +32,7 @@ type TransferManager struct {
 
 type OperationDependence interface {
 	AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostIDs []int64, moduleIDs []int64) errors.CCErrorCoder
-	SelectObjectAttWithParams(kit *rest.Kit, objID string, bizID int64) (attribute []metadata.Attribute, err error)
+	SelectObjectAttWithParams(kit *rest.Kit, objID string, bizIDs []int64) (attribute []metadata.Attribute, err error)
 	UpdateModelInstance(kit *rest.Kit, objID string, param metadata.UpdateOption) (*metadata.UpdatedCount, error)
 }
 
@@ -248,7 +248,7 @@ func (manager *TransferManager) RemoveFromModule(kit *rest.Kit, input *metadata.
 func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit,
 	input *metadata.TransferHostsCrossBusinessRequest) error {
 	transfer := manager.NewHostModuleTransfer(kit, input.DstApplicationID, input.DstModuleIDArr, false, true)
-	transfer.SetCrossBusiness(kit, input.SrcApplicationID)
+	transfer.SetCrossBusiness(kit, input.SrcApplicationIDs)
 	var err error
 	err = transfer.ValidParameter(kit)
 	if err != nil {
@@ -258,10 +258,11 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit,
 	}
 
 	// attributes in legacy business
-	legacyAttributes, err := transfer.dependent.SelectObjectAttWithParams(kit, common.BKInnerObjIDHost, input.SrcApplicationID)
+	legacyAttributes, err := transfer.dependent.SelectObjectAttWithParams(kit, common.BKInnerObjIDHost,
+		input.SrcApplicationIDs)
 	if err != nil {
-		blog.ErrorJSON("select objectAtt with params failed, bizID: %s, err:%s, rid:%s", input.SrcApplicationID,
-			err.Error(), kit.Rid)
+		blog.Errorf("select objectAtt with params failed, bizIDs: %v, err: %s, rid: %s", input.SrcApplicationIDs, err,
+			kit.Rid)
 		return err
 	}
 
