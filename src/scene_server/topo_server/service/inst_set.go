@@ -103,13 +103,9 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 	}
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-<<<<<<< HEAD
-	if err != nil {
-		blog.Errorf("failed to parse the biz id from url, err: %v, rid: %s", err, ctx.Kit.Rid)
-=======
+
 	if nil != err {
 		blog.Errorf("failed to parse the biz id, error info is %v, rid: %s", err, ctx.Kit.Rid)
->>>>>>> v3.9.x
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
@@ -117,11 +113,7 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 	resp := make(mapstr.MapStr)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-<<<<<<< HEAD
 		resp, err = s.createSet(ctx.Kit, bizID, data)
-=======
-		resp, err = s.Core.SetOperation().CreateSet(ctx.Kit, obj, bizID, data)
->>>>>>> v3.9.x
 		if err != nil {
 			blog.Errorf("create set failed, bizID: %d, data: %#v, err: %v, rid: %s", bizID, data, err, ctx.Kit.Rid)
 			return err
@@ -136,7 +128,6 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
-<<<<<<< HEAD
 func (s *Service) createSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (mapstr.MapStr, error) {
 	set, err := s.Logics.SetOperation().CreateSet(kit, bizID, data)
 	if err != nil {
