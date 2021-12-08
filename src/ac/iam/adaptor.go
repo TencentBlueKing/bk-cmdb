@@ -456,11 +456,11 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Create:   Skip,
 	},
 	meta.ConfigAdmin: {
+
+		// reuse GlobalSettings permissions
 		meta.Find:   Skip,
 		meta.Update: GlobalSettings,
-		// unsupported action
 		meta.Delete: Unsupported,
-		// unsupported action
 		meta.Create: Unsupported,
 	},
 }

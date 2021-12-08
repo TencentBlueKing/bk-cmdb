@@ -444,6 +444,7 @@ func (ps *ProcServer) getModule(kit *rest.Kit, moduleID int64) (*metadata.Module
 	return &moduleRes.Data.Info[0], nil
 }
 
+<<<<<<< HEAD
 func (ps *ProcServer) getModules(ctx *rest.Contexts, moduleIDs []int64) ([]*metadata.ModuleInst, errors.CCErrorCoder) {
 	moduleFilter := &metadata.QueryCondition{
 		Condition: map[string]interface{}{
@@ -472,6 +473,8 @@ func (ps *ProcServer) getModules(ctx *rest.Contexts, moduleIDs []int64) ([]*meta
 	return moduleInsts, nil
 }
 
+=======
+>>>>>>> v3.9.x
 var (
 	ipRegex   = `^((1?\d{1,2}|2[0-4]\d|25[0-5])[.]){3}(1?\d{1,2}|2[0-4]\d|25[0-5])$`
 	portRegex = `^([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$`

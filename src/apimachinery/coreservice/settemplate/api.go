@@ -230,6 +230,7 @@ func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.H
 
 	return ret.Data, nil
 }
+<<<<<<< HEAD
 
 func (p *setTemplate) UpdateManySetTemplateSyncStatus(ctx context.Context, header http.Header, syncStatus []metadata.SetTemplateSyncStatus) errors.CCErrorCoder {
 	ret := struct {
@@ -360,3 +361,5 @@ func (p *setTemplate) ModifySetTemplateSyncStatus(ctx context.Context, header ht
 
 	return ret.CCError()
 }
+=======
+>>>>>>> v3.9.x

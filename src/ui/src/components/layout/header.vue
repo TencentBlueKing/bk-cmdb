@@ -7,7 +7,7 @@
     </div>
     <nav class="header-nav" v-test-id.global="'headerNav'">
       <router-link class="header-link"
-        v-for="nav in menu"
+        v-for="nav in visibleMenu"
         :to="getHeaderLink(nav)"
         :key="nav.id"
         :class="{
@@ -64,16 +64,22 @@
   import { mapGetters } from 'vuex'
   export default {
     data() {
-      return {
-        menu
-      }
+      return {}
     },
     computed: {
-      ...mapGetters(['site', 'userName']),
+      ...mapGetters(['userName']),
       ...mapGetters('objectBiz', ['bizId']),
       helpDocUrl() {
-        return this.site.helpDocUrl || 'http://docs.bk.tencent.com/product_white_paper/cmdb/'
-      }
+        return this.$Site.helpDocUrl || 'http://docs.bk.tencent.com/product_white_paper/cmdb/'
+      },
+      visibleMenu() {
+        return menu.filter((menuItem) => {
+          if (menuItem.i18n === '平台管理') {
+            return this.$store.state.globalConfig.auth
+          }
+          return true
+        })
+      },
     },
     methods: {
       isLinkActive(nav) {

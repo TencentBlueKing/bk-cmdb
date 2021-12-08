@@ -13,12 +13,13 @@
         fontSize: '14px',
         lineHeight: '30px'
       }">
-      {{$t('移动到空闲机的主机提示')}}
+      {{$t('移动到空闲机的主机提示', { idleModule: $store.state.globalConfig.config.idlePool.idle })}}
     </cmdb-tips>
     <bk-table class="table" :data="list">
       <bk-table-column :label="$t('操作')" show-overflow-tooltip>
-        <!-- eslint-disable-next-line -->
-                <template slot-scope="{ row }">{{$t('转移到空闲机的主机')}}</template>
+        <template #default>
+          {{$t('转移到空闲机的主机', { idleModule: $store.state.globalConfig.config.idlePool.idle })}}
+        </template>
       </bk-table-column>
       <bk-table-column :label="$t('IP')" prop="bk_host_innerip" show-overflow-tooltip>
         <template slot-scope="{ row }">{{getHostValue(row, 'bk_host_innerip') | singlechar}}</template>
@@ -44,7 +45,7 @@
     data() {
       return {
         data: [{
-          operation: this.$t('转移到空闲机')
+          operation: this.$t('转移到空闲机', { idleModule: this.$store.state.globalConfig.config.idlePool.idle })
         }]
       }
     },

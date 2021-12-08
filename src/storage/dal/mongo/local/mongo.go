@@ -798,6 +798,15 @@ func (c *Mongo) CreateTable(ctx context.Context, collName string) error {
 	return c.dbc.Database(c.dbname).RunCommand(ctx, map[string]interface{}{"create": collName}).Err()
 }
 
+// RenameTable 更新集合名称
+func (c *Mongo) RenameTable(ctx context.Context, prevName, currName string) error {
+	cmd := bson.D{
+		{"renameCollection", c.dbname + "." + prevName},
+		{"to", c.dbname + "." + currName},
+	}
+	return c.dbc.Database("admin").RunCommand(ctx, cmd).Err()
+}
+
 // CreateIndex 创建索引
 func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 	mtc.collectOperCount(c.collName, indexCreateOper)

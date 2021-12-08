@@ -243,3 +243,114 @@ func parseAuditTypeCondition(kit *rest.Kit, condition metadata.AuditQueryConditi
 
 	return nil, false
 }
+
+// SearchInstAudit search instance audit, online allow front-end to use
+// 前端在资源池内查看实例的变更记录需要针对当前用户的实例查询权限进行鉴权，原有审计查询接口鉴权条件为操作审计权限，需要进行区别
+func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
+	query := new(metadata.InstAuditQueryInput)
+	if err := ctx.DecodeInto(query); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := query.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, query.Condition.ObjID)
+	if err != nil {
+		blog.Errorf("find object[%s] failed, err: %v, rid: %s", query.Condition.ObjID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("check if object is mainline object failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if isMainline && query.Condition.BizID <= 0 {
+		blog.Errorf("search mainline object audit must provide bizID, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	cond, err := buildInstAuditCondition(ctx, query.Condition)
+	if err != nil {
+		blog.Errorf("build audit condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	fields := make([]string, 0)
+	if !query.WithDetail {
+		fields = []string{common.BKFieldID, common.BKUser, common.BKResourceTypeField, common.BKActionField,
+			common.BKOperationTimeField, common.BKAppIDField, common.BKResourceIDField, common.BKResourceNameField}
+	}
+
+	auditQuery := metadata.QueryCondition{Condition: cond, Fields: fields, Page: query.Page}
+	count, list, err := s.Core.AuditOperation().SearchAuditList(ctx.Kit, auditQuery)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntityWithCount(count, list)
+}
+
+func buildInstAuditCondition(ctx *rest.Contexts, query metadata.InstAuditCondition) (mapstr.MapStr, error) {
+
+	cond := mapstr.New()
+	// BizID用于校验当前主线实例的权限，查询条件不应设置业务id，这样会导致主线实例的审计信息返回不全
+	if query.User != "" {
+		cond[common.BKUser] = query.User
+	}
+
+	if query.ResourceID != nil {
+		cond[common.BKResourceIDField] = query.ResourceID
+	}
+
+	if query.ResourceName != "" {
+		cond[common.BKResourceNameField] = query.ResourceName
+	}
+
+	if query.ResourceType != "" {
+		cond[common.BKResourceTypeField] = query.ResourceType
+	}
+
+	if len(query.Action) > 0 {
+		cond[common.BKActionField] = map[string]interface{}{common.BKDBIN: query.Action}
+	}
+
+	switch query.ResourceType {
+	case metadata.InstanceAssociationRes:
+		cond[common.BKOperationDetailField+"."+"src_obj_id"] = query.ObjID
+	case metadata.ModelInstanceRes:
+		cond[common.BKOperationDetailField+"."+common.BKObjIDField] = query.ObjID
+	case metadata.BusinessRes, metadata.HostRes:
+		// host, biz auditlog not need bk_obj_id or operation_detail to select
+		break
+	default:
+		blog.Errorf("unsupported resource type %s when query with object id", query.ResourceType)
+		return mapstr.MapStr{}, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
+	}
+
+	if len(query.ID) != 0 {
+		cond[common.BKFieldID] = mapstr.MapStr{common.BKDBIN: query.ID}
+	}
+
+	timeCond, err := parseOperationTimeCondition(ctx.Kit, query.OperationTime)
+	if err != nil {
+		blog.Errorf("parse operation time condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		return mapstr.MapStr{}, err
+	}
+
+	if len(timeCond) != 0 {
+		cond[common.BKOperationTimeField] = timeCond
+	}
+
+	return cond, nil
+}
