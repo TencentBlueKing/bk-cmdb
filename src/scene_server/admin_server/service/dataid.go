@@ -336,7 +336,7 @@ func (s *Service) gseConfigQueryRoute(header http.Header, user string, defErr er
 		return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
 	}
 
-	return channels, nil
+	return channels, nilindex/collections/deprecatedindexname.go:43
 }
 
 // gseConfigAddRoute add host snap channel to gse

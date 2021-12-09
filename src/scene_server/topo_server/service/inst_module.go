@@ -33,10 +33,7 @@ const (
 	bkSetIdSMaxSize = 200
 )
 
-<<<<<<< HEAD
-// isSetInitializedByTemplate check if set initialized by template
-func (s *Service) isSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, errors.CCErrorCoder) {
-=======
+
 // IsSetInitializedByTemplate is set initialized by template
 func (s *Service) IsSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, errors.CCErrorCoder) {
 >>>>>>> v3.9.x

@@ -19,12 +19,8 @@ import (
 	"time"
 
 	"configcenter/src/ac/extensions"
-<<<<<<< HEAD
 	"configcenter/src/ac/iam"
-	"configcenter/src/common"
 	"configcenter/src/common/auth"
-=======
->>>>>>> v3.9.x
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"

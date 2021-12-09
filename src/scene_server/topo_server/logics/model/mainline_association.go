@@ -23,8 +23,7 @@ import (
 )
 
 // CreateMainlineAssociation create mainline object association
-func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadata.MainlineAssociation,
-	maxTopoLevel int) (*metadata.Object, error) {
+func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadata.MainlineAssociation) (*metadata.Object, error) {
 
 	if data.AsstObjID == "" {
 		blog.Errorf("bk_asst_obj_id empty, input: %#v, rid: %s", data, kit.Rid)
@@ -36,6 +35,10 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKClassificationIDField)
 	}
 
+	if err := assoc.checkMaxBizTopoLevel(kit); err != nil {
+		return nil, err
+	}
+
 	mlCond := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline},
 	}
@@ -43,13 +46,6 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	if ccErr != nil {
 		blog.Errorf("failed to check the mainline topo level, err: %v, rid: %s", ccErr, kit.Rid)
 		return nil, ccErr
-	}
-
-	// 总层数等于关联关系数加1，通过count查出的数量与实际主线模型数量差1个
-	if len(mainlineAsst.Info)+1 >= maxTopoLevel {
-		blog.Errorf("the mainline topo level is %d, the max limit is %d, rid: %s", len(mainlineAsst.Info)+1,
-			maxTopoLevel, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrTopoBizTopoLevelOverLimit)
 	}
 
 	// find the mainline parent object
@@ -99,6 +95,33 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	}
 
 	return currentObj, nil
+}
+
+func (assoc *association) checkMaxBizTopoLevel(kit *rest.Kit) error {
+
+	items, err := assoc.SearchMainlineAssociationTopo(kit, common.BKInnerObjIDApp)
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s, rid: %s", err.Error(),
+			kit.Rid)
+		return err
+	}
+
+	res, err := assoc.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, kit.Header)
+	if err != nil {
+		blog.Errorf("get business topo level max failed, err: %v, rid: %s", err, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.CCErrTopoObjectSelectFailed)
+	}
+	if res.Result == false {
+		blog.Errorf("get business topo level max failed, search config admin err: %s, rid: %s", res.ErrMsg, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.CCErrTopoObjectSelectFailed)
+	}
+
+	if len(items) >= int(res.Data.Backend.MaxBizTopoLevel) {
+		blog.Errorf("[operation-asst] the mainline topo level is %d, the max limit is %d, rid: %s", len(items),
+			res.Data.Backend.MaxBizTopoLevel, kit.Rid)
+		return kit.CCError.Error(common.CCErrTopoBizTopoLevelOverLimit)
+	}
+	return nil
 }
 
 // DeleteMainlineAssociation delete mainline association by objID
