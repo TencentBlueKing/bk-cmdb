@@ -1,0 +1,16 @@
+{{- if .Values.cloudserver.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ template "bk-cmdb.cloudserver" . }}"
+  labels:
+{{ include "common.labels.standard" . | indent 4 }}
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: {{ .Values.cloudserver.port }}
+  selector:
+{{ include "common.labels.matchLabels" . | indent 4 }}
+    component: cloudserver
+{{- end }}
