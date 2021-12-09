@@ -485,7 +485,7 @@ func (c *DataCollection) setSnapshotBizName() error {
 	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 	for i := 1; i <= tryCnt; i++ {
 		time.Sleep(time.Second * 2)
-		res, err := c.engine.CoreAPI.CoreService().System().SearchConfigAdmin(context.Background(), header)
+		res, err := c.engine.CoreAPI.CoreService().System().SearchPlatformSetting(context.Background(), header)
 		if err != nil {
 			blog.Warnf("setSnapshotBizName failed,  try count:%d, SearchConfigAdmin err: %v", i, err)
 			continue

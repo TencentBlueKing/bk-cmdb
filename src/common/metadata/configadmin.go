@@ -62,7 +62,7 @@ func (s Site) Validate() error {
 	}
 
 	if strings.TrimSpace(s.Separator) == "" {
-		return fmt.Errorf("separator  value can't be empty")
+		return fmt.Errorf("separator value can't be empty")
 	}
 	return nil
 }

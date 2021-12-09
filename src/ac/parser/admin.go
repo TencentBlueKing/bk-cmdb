@@ -19,7 +19,7 @@ import (
 	"configcenter/src/ac/meta"
 )
 
-var findSystemConfigRegexp = regexp.MustCompile(`/api/v3/find/system_config/platform_setting/[^\s/]+/?$`)
+var findSystemConfigRegexp = regexp.MustCompile(`^/api/v3/admin/find/system_config/platform_setting/[^\s/]+/?$`)
 
 func (ps *parseStream) adminRelated() *parseStream {
 	if ps.shouldReturn() {
@@ -61,7 +61,7 @@ var PlatformSettingConfig = []AuthConfig{
 	}, {
 		Name:           "UpdatePlatformSettingConfig",
 		Description:    "更新平台配置管理",
-		Pattern:        "/api/v3/update/system_config/platform_setting",
+		Pattern:        "/api/v3/admin/update/system_config/platform_setting",
 		HTTPMethod:     http.MethodPut,
 		ResourceType:   meta.ConfigAdmin,
 		ResourceAction: meta.Update,

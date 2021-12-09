@@ -53,7 +53,7 @@ func TranslateInstanceName(defLang language.DefaultCCLanguageIf, objectID string
 					v == common.DefaultRecycleModuleName) {
 				continue
 			}
-			if v, ok := inst[common.BKSetNameField]; ok && !(v == common.DefaultResSetName) {
+			if v, ok := inst[common.BKSetNameField]; ok && v != common.DefaultResSetName {
 				continue
 			}
 			// get the default's value and it's corresponding infos from defaultNameLanguagePkg
