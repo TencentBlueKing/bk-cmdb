@@ -271,19 +271,12 @@ func (s *Service) upsertServiceInstance(kit *rest.Kit, bizID int64,
 		}
 	}
 
-<<<<<<< HEAD
-		if err := audit.SaveAudit(ctx.Kit); err != nil {
-			blog.Errorf("TransferHostWithAutoClearServiceInstance failed, save audit log failed, err: %s, " +
-				"HostIDs: %+v, rid: %s", err.Error(), option.HostIDs, ctx.Kit.Rid)
-			return err
-=======
 	wg := sync.WaitGroup{}
 	var firstErr errors.CCErrorCoder
 	pipeline := make(chan bool, 20)
 	for moduleID, svcInst := range moduleSvcInstMap {
 		if firstErr != nil {
 			break
->>>>>>> v3.9.x
 		}
 		pipeline <- true
 		wg.Add(1)
@@ -369,7 +362,7 @@ func (s *Service) updateHostByHostApplyConflictResolvers(kit *rest.Kit,
 			blog.ErrorJSON("update host failed, option: %#v, err: %v, rid: %s", updateOption, err, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
-		
+
 	}
 
 	return nil

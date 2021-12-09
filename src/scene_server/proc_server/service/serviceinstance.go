@@ -1802,12 +1802,6 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-<<<<<<< HEAD
-func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts,
-	syncOption metadata.SyncServiceInstanceByTemplateOption) errors.CCErrorCoder {
-	rid := ctx.Kit.Rid
-	bizID := syncOption.BizID
-=======
 // DoSyncServiceInstanceTask do sync one module's service instance by service template task
 func (ps *ProcServer) DoSyncServiceInstanceTask(ctx *rest.Contexts) {
 	syncOption := metadata.SyncOneModuleBySvcTempOption{}
@@ -1823,7 +1817,6 @@ func (ps *ProcServer) DoSyncServiceInstanceTask(ctx *rest.Contexts) {
 		}
 		return nil
 	})
->>>>>>> v3.9.x
 
 	if txnErr != nil {
 		ctx.RespAutoError(txnErr)
@@ -1837,80 +1830,11 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 
 	module, err := ps.getModule(kit, syncOption.ModuleID)
 	if err != nil {
-<<<<<<< HEAD
-		blog.ErrorJSON("get module info failed, input: %s, err: %s, rid: %s", syncOption, err.Error(), rid)
-		return err
-	}
-
-	serviceTemplateIDs := make([]int64, 0)
-	serviceTemplateModuleMap := make(map[int64][]*metadata.ModuleInst)
-	for _, module := range modules {
-		serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
-		serviceTemplateModuleMap[module.ServiceTemplateID] = append(serviceTemplateModuleMap[module.ServiceTemplateID],
-			module)
-	}
-
-	listSvcTempCond := &metadata.ListServiceTemplateOption{
-		BusinessID:         bizID,
-		ServiceTemplateIDs: serviceTemplateIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-
-	// get service templates
-	serviceTemplates, err := ps.CoreAPI.CoreService().Process().
-		ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, listSvcTempCond)
-	if err != nil {
-		blog.ErrorJSON("ListServiceTemplates failed, input: %s, err: %s, rid: %s", listSvcTempCond, err.Error(), rid)
-		return err
-	}
-
-	// 2021年06月15日 修复模块下没有服务实例的，同步服务无效
-	// step -1:
-	// update module service category and name field
-	for _, serviceTemplate := range serviceTemplates.Info {
-		updateModules := make([]int64, 0)
-		for _, module := range serviceTemplateModuleMap[serviceTemplate.ID] {
-			if module == nil {
-				continue
-			}
-			if serviceTemplate.ServiceCategoryID != module.ServiceCategoryID ||
-				serviceTemplate.Name != module.ModuleName {
-				updateModules = append(updateModules, module.ModuleID)
-			}
-		}
-		if len(updateModules) == 0 {
-			continue
-		}
-		moduleUpdateOption := &metadata.UpdateOption{
-			Data: map[string]interface{}{
-				common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
-				common.BKModuleNameField:        serviceTemplate.Name,
-			},
-			Condition: map[string]interface{}{
-				common.BKModuleIDField: map[string]interface{}{
-					common.BKDBIN: updateModules,
-				},
-			},
-		}
-		_, e := ps.CoreAPI.CoreService().Instance().
-			UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleUpdateOption)
-		if e != nil {
-			blog.ErrorJSON("UpdateInstance http do error, option: %s, err: %s, rid:%s",
-				moduleUpdateOption, e.Error(), rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-	}
-
-	// step 0:
-=======
 		blog.Errorf("get module failed, moduleID: %d, err: %v, rid: %s", syncOption.ModuleID, err, kit.Rid)
 		return err
 	}
 
 	// step 1:
->>>>>>> v3.9.x
 	// find service instances
 	svcInstOpt := &metadata.ListServiceInstanceOption{
 		BusinessID:        syncOption.BizID,
@@ -1918,17 +1842,9 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 		ServiceTemplateID: syncOption.ServiceTemplateID,
 		Page:              metadata.BasePage{Limit: common.BKNoLimit},
 	}
-<<<<<<< HEAD
-	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header,
-		serviceInstanceOption)
-	if err != nil {
-		blog.ErrorJSON("syncServiceInstanceByTemplate failed, ListServiceInstance failed, option: %s, err: %s, "+
-			"rid: %s", serviceInstanceOption, err.Error(), rid)
-=======
 	svcInstRes, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(kit.Ctx, kit.Header, svcInstOpt)
 	if err != nil {
 		blog.ErrorJSON("list service instance failed, option: %s, err: %s, rid: %s", svcInstOpt, err, kit.Rid)
->>>>>>> v3.9.x
 		return err
 	}
 
@@ -1948,19 +1864,6 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
 	}
 
-<<<<<<< HEAD
-	// step 1:
-	// find all the process template according to the service template id
-	processTemplateFilter := &metadata.ListProcessTemplatesOption{
-		BusinessID:         bizID,
-		ServiceTemplateIDs: serviceTemplateIDs,
-	}
-	processTemplate, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header,
-		processTemplateFilter)
-	if err != nil {
-		blog.ErrorJSON("syncServiceInstanceByTemplate failed, ListProcessTemplates failed, option: %s, err: %s, "+
-			"rid: %s", processTemplateFilter, err.Error(), rid)
-=======
 	// step 2:
 	// get all host ids in the module
 	hostOpt := &metadata.DistinctHostIDByTopoRelationRequest{
@@ -1970,7 +1873,6 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 	hostIDs, err := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, hostOpt)
 	if err != nil {
 		blog.Errorf("get host ids failed, err: %v, option: %#v, rid: %s", err, hostOpt, kit.Rid)
->>>>>>> v3.9.x
 		return err
 	}
 
@@ -1979,28 +1881,6 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 		BusinessID:         syncOption.BizID,
 		ServiceTemplateIDs: []int64{syncOption.ServiceTemplateID},
 	}
-<<<<<<< HEAD
-
-	// step 2:
-	// construct map {moduleID -> []hostID}
-	hostRelationOpt := &metadata.HostModuleRelationRequest{
-		ApplicationID: bizID,
-		ModuleIDArr:   syncOption.ModuleIDs,
-		Fields:        []string{common.BKModuleIDField, common.BKHostIDField},
-	}
-	hostRelationRes, rawErr := ps.Logic.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header,
-		hostRelationOpt)
-	if rawErr != nil {
-		blog.Errorf("get host relation failed, err: %v, input: %#v, rid: %s", rawErr, hostRelationOpt, ctx.Kit.Rid)
-		return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	hostIDs := make([]int64, len(hostRelationRes.Info))
-	moduleHostMap := make(map[int64][]int64)
-	for index, relation := range hostRelationRes.Info {
-		hostIDs[index] = relation.HostID
-		moduleHostMap[relation.ModuleID] = append(moduleHostMap[relation.ModuleID], relation.HostID)
-=======
 	procTemps, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(kit.Ctx, kit.Header, procTempOpt)
 	if err != nil {
 		blog.ErrorJSON("list process templates failed, option: %s, err: %s, rid: %s", procTempOpt, err, kit.Rid)
@@ -2010,7 +1890,6 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 	processTemplateMap := make(map[int64]*metadata.ProcessTemplate)
 	for idx, t := range procTemps.Info {
 		processTemplateMap[t.ID] = &procTemps.Info[idx]
->>>>>>> v3.9.x
 	}
 
 	// step 3: handle all the service instances that need to be added
@@ -2036,8 +1915,6 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 		return err
 	}
 
-<<<<<<< HEAD
-=======
 	// step 4:
 	// update module service category and name field
 	serviceTemplate, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(kit.Ctx, kit.Header,
@@ -2070,7 +1947,6 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 		}
 	}
 
->>>>>>> v3.9.x
 	if len(serviceInstanceIDs) == 0 {
 		return nil
 	}
@@ -2081,17 +1957,9 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 		BusinessID:         syncOption.BizID,
 		ServiceInstanceIDs: serviceInstanceIDs,
 	}
-<<<<<<< HEAD
-	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header,
-		relationOption)
-	if err != nil {
-		blog.ErrorJSON("syncServiceInstanceByTemplate failed, ListProcessInstanceRelation failed, option: %s, "+
-			"err: %s, rid: %s", relationOption, err.Error(), rid)
-=======
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(kit.Ctx, kit.Header, relationOpt)
 	if err != nil {
 		blog.ErrorJSON("list process relation failed, option: %s, err: %s, rid: %s", relationOpt, err, kit.Rid)
->>>>>>> v3.9.x
 		return err
 	}
 	procIDs := make([]int64, 0)
@@ -2103,12 +1971,7 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 	// find all the process instance in process instance relation.
 	processInstances, err := ps.Logic.ListProcessInstanceWithIDs(kit, procIDs)
 	if err != nil {
-<<<<<<< HEAD
-		blog.ErrorJSON("syncServiceInstanceByTemplate failed, ListProcessInstanceWithIDs failed, procIDs: %s, "+
-			"err: %s, rid: %s", procIDs, err.Error(), rid)
-=======
 		blog.ErrorJSON("list process instance with IDs failed, procIDs: %s, err: %s, rid: %s", procIDs, err, kit.Rid)
->>>>>>> v3.9.x
 		return err
 	}
 	processInstanceMap := make(map[int64]*metadata.Process)
@@ -2124,12 +1987,7 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 		if !exist {
 			// something is wrong, but can this process instance,
 			// but we can find it in the process instance relation.
-<<<<<<< HEAD
-			blog.Warnf("force sync process instance according to process template: %d, "+
-				"but can not find the process instance: %d, rid: %s", r.ProcessTemplateID, r.ProcessID, rid)
-=======
 			blog.Warnf("but can not find the process instance: %d, rid: %s", r.ProcessTemplateID, r.ProcessID, kit.Rid)
->>>>>>> v3.9.x
 			continue
 		}
 		if _, exist := serviceInstanceWithTemplateMap[r.ServiceInstanceID]; !exist {
@@ -2218,29 +2076,16 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 
 	// remove processes whose template has been removed
 	if len(removedProcessIDs) != 0 {
-<<<<<<< HEAD
-		if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, removedProcessIDs); err != nil {
-			blog.Errorf("syncServiceInstanceByTemplate failed, DeleteProcessInstance failed, processID: %d, err: %s, "+
-				"rid: %s", removedProcessIDs, err.Error(), rid)
-=======
 		if err := ps.Logic.DeleteProcessInstanceBatch(kit, removedProcessIDs); err != nil {
 			blog.Errorf("delete process failed, processIDs: %+v, err: %s, rid: %s", removedProcessIDs, err, kit.Rid)
->>>>>>> v3.9.x
 			return err
 		}
 		// remove process instance relation now.
 		deleteOption := metadata.DeleteProcessInstanceRelationOption{}
 		deleteOption.ProcessIDs = removedProcessIDs
-<<<<<<< HEAD
-		if err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header,
-			deleteOption); err != nil {
-			blog.ErrorJSON("syncServiceInstanceByTemplate failed, DeleteProcessInstanceRelation failed, option: %s, "+
-				"err: %s, rid: %s", deleteOption, err.Error(), rid)
-=======
 		err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(kit.Ctx, kit.Header, deleteOption)
 		if err != nil {
 			blog.ErrorJSON("delete process relation failed, option: %s, err: %s, rid: %s", deleteOption, err, kit.Rid)
->>>>>>> v3.9.x
 			return err
 		}
 	}
@@ -2274,11 +2119,7 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 
 			// we can not find this process template in all this service instance,
 			// which means that a new process template need to be added to this service instance
-<<<<<<< HEAD
-			newProcess, generateErr := processTemplate.NewProcess(bizID, svcID, ctx.Kit.SupplierAccount,
-=======
 			newProcess, generateErr := processTemplate.NewProcess(syncOption.BizID, kit.SupplierAccount,
->>>>>>> v3.9.x
 				hostMap[serviceInstance2HostMap[svcID]])
 			if generateErr != nil {
 				blog.ErrorJSON("generate process instance by template %s failed, err: %s, rid: %s", processTemplate,
@@ -2299,23 +2140,12 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 		// create process instances in batch
 		processIDs, err := ps.Logic.CreateProcessInstances(kit, processDatas)
 		if err != nil {
-<<<<<<< HEAD
-			blog.ErrorJSON("syncServiceInstanceByTemplate failed, CreateProcessInstances err: %s, processDatas: %s, "+
-				"rid: %s", err, processDatas, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrSyncServiceInstanceByTemplateFailed)
-		}
-
-		if len(processIDs) != len(procInstRelations) {
-			blog.Error("syncServiceInstanceByTemplate failed, " +
-				"the count of processIDs must be equal with the count of procInstRelations")
-=======
 			blog.ErrorJSON("create process failed, err: %s, processDatas: %s, rid: %s", err, processDatas, kit.Rid)
 			return kit.CCError.CCError(common.CCErrSyncServiceInstanceByTemplateFailed)
 		}
 
 		if len(processIDs) != len(procRelations) {
 			blog.Error("the count of processIDs is not equal to the count of procInstRelations, rid: %s", kit.Rid)
->>>>>>> v3.9.x
 			return nil
 		}
 
@@ -2323,17 +2153,9 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 		for idx, processID := range processIDs {
 			procRelations[idx].ProcessID = processID
 		}
-<<<<<<< HEAD
-		_, err = ps.CoreAPI.CoreService().Process().CreateProcessInstanceRelations(ctx.Kit.Ctx, ctx.Kit.Header,
-			procInstRelations)
-		if err != nil {
-			blog.ErrorJSON("syncServiceInstanceByTemplate failed, CreateProcessInstanceRelations err: %s, "+
-				"relations: %s, rid: %s", err, procInstRelations, ctx.Kit.Rid)
-=======
 		_, err = ps.CoreAPI.CoreService().Process().CreateProcessInstanceRelations(kit.Ctx, kit.Header, procRelations)
 		if err != nil {
 			blog.ErrorJSON("create process relations(%s) failed, err: %s, rid: %s", err, procRelations, kit.Rid)
->>>>>>> v3.9.x
 			return err
 		}
 	}

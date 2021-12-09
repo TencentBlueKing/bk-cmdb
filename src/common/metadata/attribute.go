@@ -1200,7 +1200,6 @@ func (sa *SubAttribute) Validate(ctx context.Context, data interface{}, key stri
 	return attr.Validate(ctx, data, key)
 }
 
-<<<<<<< HEAD
 type EnumOptions []AttributesOption
 
 type AttributesOption struct {
@@ -1211,7 +1210,7 @@ type AttributesOption struct {
 }
 
 type ListOptions []string
-=======
+
 // ParseSubAttribute convert val to []SubAttribute
 func ParseSubAttribute(ctx context.Context, val interface{}) (SubAttributeOption, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -1283,4 +1282,3 @@ func parseSubAttr(options map[string]interface{}) SubAttribute {
 
 	return subAttr
 }
->>>>>>> v3.9.x

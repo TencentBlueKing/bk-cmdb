@@ -86,13 +86,6 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
 }
 
-<<<<<<< HEAD
-func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error) {
-	dataResult := &metadata.CreateManyDataResult{}
-	allValidators := make(map[int64]*validator)
-	for idx, item := range inputParam.Datas {
-		instance := item.Clone()
-=======
 // CreateManyModelInstance create model instances
 func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string,
 	inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error) {
@@ -109,7 +102,6 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string,
 	}
 
 	for index, item := range inputParam.Datas {
->>>>>>> v3.9.x
 		if item == nil {
 			blog.ErrorJSON("the model instance data can't be empty, input data: %s rid: %s", inputParam.Datas, kit.Rid)
 			return nil, kit.CCError.Errorf(common.CCErrCommInstDataNil, "modelInstance")
@@ -122,63 +114,56 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string,
 			return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound)
 		}
 
-<<<<<<< HEAD
-		err = m.validCreateInstanceData(kit, objID, item, allValidators[bizID])
+		err = m.validCreateInstanceData(kit, objID, item, validator)
 		if err != nil {
-			blog.Errorf("validate instance data for create action error, err:%v, objID:%s, item:%#v, rid:%s", err, objID, item, kit.Rid)
+			blog.Errorf("valid create instance data(%#v) failed, err: %v, obj: %s, rid: %s", err, item, objID, kit.Rid)
 			// 由于此err返回的类型可能是mongo返回的error，也可能是经过转化之后的CCError，当返回值是mongo返回的error的场景下没有
 			// GetCode方法。
+			var errCode int64
 			if errInfo, ok := err.(errors.CCErrorCoder); ok {
-				dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-					Message:     err.Error(),
-					Code:        int64(errInfo.GetCode()),
-					Data:        instance,
-					OriginIndex: int64(idx),
-				})
+				errCode = int64(errInfo.GetCode())
 			} else {
-				dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-					Message:     err.Error(),
-					Code:        common.CCErrorUnknownOrUnrecognizedError,
-					Data:        instance,
-					OriginIndex: int64(idx),
-				})
+				errCode = common.CCErrorUnknownOrUnrecognizedError
 			}
+
+			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
+				Message:     err.Error(),
+				Code:        errCode,
+				Data:        item,
+				OriginIndex: int64(index),
+			})
 			continue
 		}
 
 		id, err := m.save(kit, objID, item)
 		if err != nil {
+			blog.Errorf("create instance failed, err: %v, objID: %s, item: %#v, rid: %s", err, objID, item, kit.Rid)
 			if id != 0 {
 				dataResult.Repeated = append(dataResult.Repeated, metadata.RepeatedDataResult{
 					Data:        mapstr.MapStr{"err_msg": err.Error()},
-					OriginIndex: int64(idx),
+					OriginIndex: int64(index),
 				})
 			} else {
+				var errCode int64
+				if errInfo, ok := err.(errors.CCErrorCoder); ok {
+					errCode = int64(errInfo.GetCode())
+				} else {
+					errCode = common.CCErrorUnknownOrUnrecognizedError
+				}
+
 				dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 					Message:     err.Error(),
-					Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-					Data:        instance,
-					OriginIndex: int64(idx),
+					Code:        errCode,
+					Data:        item,
+					OriginIndex: int64(index),
 				})
 			}
 			continue
-=======
-		err = m.validCreateInstanceData(kit, objID, item, validator)
-		if nil != err {
-			blog.Errorf("valid create instance data(%#v) failed, err: %v, obj: %s, rid: %s", err, item, objID, kit.Rid)
-			return nil, err
-		}
-
-		id, err := m.save(kit, objID, item)
-		if nil != err {
-			blog.Errorf("create instance failed, err: %v, objID: %s, item: %#v, rid: %s", err, objID, item, kit.Rid)
-			return nil, err
->>>>>>> v3.9.x
 		}
 
 		dataResult.Created = append(dataResult.Created, metadata.CreatedDataResult{
 			ID:          id,
-			OriginIndex: int64(idx),
+			OriginIndex: int64(index),
 		})
 	}
 
@@ -250,15 +235,9 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 
 	err = m.update(kit, objID, inputParam.Data, inputParam.Condition)
 	if err != nil {
-<<<<<<< HEAD
-		blog.ErrorJSON("UpdateModelInstance update objID(%s) inst error. err:%s, data:%#v, condition:%s, rid:%s",
-			objID, err, inputParam.Condition, inputParam.Data, kit.Rid)
-		return nil, err
-=======
 		blog.Errorf("update objID(%s) inst failed, err: %v, condition: %#v, data: %#v rid: %s", objID, err,
 			inputParam.Condition, inputParam.Data, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommDBUpdateFailed)
->>>>>>> v3.9.x
 	}
 
 	if objID == common.BKInnerObjIDHost {

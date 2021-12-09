@@ -33,24 +33,12 @@ func (h *hostAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter,
 	return h.generateAuditLog(parameter, bizID, data)
 }
 
-<<<<<<< HEAD
-// GenerateAuditLogByHostIDGetBizID generate audit log of host, auto get bizID by hostID and host topology relate,
-// if data is nil, will auto get host current data by hostID, meanwhile update hostIP if hostIP is "".
-func (h *hostAuditLog) GenerateAuditLogByHostIDGetBizID(parameter *generateAuditCommonParameter, hostID int64,
-	innerIP string, data map[string]interface{}) (*metadata.AuditLog, error) {
-	// get bizID by hostID and host topology related.
-	bizID, err := h.getBizIDByHostID(parameter.kit, hostID)
-	if err != nil {
-		blog.Errorf("generate host audit log failed, failed to get bizID by hostID, hostID: %d, innerIP: %s, "+
-			"err: %v, rid: %s", hostID, innerIP, err, parameter.kit.Rid)
-=======
 // GenerateAuditLogByCond generate audit log of hosts, auto get current hosts by condition.
 func (h *hostAuditLog) GenerateAuditLogByCond(parameter *generateAuditCommonParameter, bizID int64,
 	condition map[string]interface{}) ([]metadata.AuditLog, error) {
 	data, err := h.getInstByCond(parameter.kit, common.BKInnerObjIDHost, condition, nil)
 	if err != nil {
 		blog.Errorf("get hosts failed, err: %v, condition: %#v, rid: %s", err, condition, parameter.kit.Rid)
->>>>>>> v3.9.x
 		return nil, err
 	}
 	return h.generateAuditLog(parameter, bizID, data)
@@ -69,14 +57,8 @@ func (h *hostAuditLog) generateAuditLog(parameter *generateAuditCommonParameter,
 	for index, host := range data {
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
-<<<<<<< HEAD
-			blog.Errorf("generate host audit log failed, failed to get host instance by bizID, hostID: %d, "+
-				"err: %v, rid: %s", hostID, err, kit.Rid)
-			return nil, err
-=======
 			blog.Errorf("parse host id failed, err: %v, host: %#v, rid: %s", err, host, kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
->>>>>>> v3.9.x
 		}
 		hostIDs[index] = hostID
 
@@ -98,37 +80,6 @@ func (h *hostAuditLog) generateAuditLog(parameter *generateAuditCommonParameter,
 		auditLogs[index] = auditLog
 	}
 
-<<<<<<< HEAD
-	return &metadata.AuditLog{
-		AuditType:    metadata.HostType,
-		ResourceType: metadata.HostRes,
-		Action:       parameter.action,
-		BusinessID:   bizID,
-		ResourceID:   hostID,
-		ResourceName: hostIP,
-		OperateFrom:  parameter.operateFrom,
-		OperationDetail: &metadata.InstanceOpDetail{
-			BasicOpDetail: metadata.BasicOpDetail{
-				Details: parameter.NewBasicContent(data),
-			},
-			ModelID: common.BKInnerObjIDHost,
-		},
-	}, nil
-}
-
-// getBizIDByHostID get the bizID for host belong business.
-func (h *hostAuditLog) getBizIDByHostID(kit *rest.Kit, hostID int64) (int64, error) {
-	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}, Fields: []string{common.BKAppIDField}}
-	moduleHost, err := h.clientSet.Host().GetHostModuleRelation(kit.Ctx, kit.Header, input)
-	if err != nil {
-		blog.Errorf("failed to get host module relation, hostID: %d, err: %v, rid: %s", hostID, err, kit.Rid)
-		return 0, err
-	}
-
-	var bizID int64
-	if len(moduleHost.Info) > 0 {
-		bizID = moduleHost.Info[0].AppID
-=======
 	if bizID == 0 {
 		hostBizMap, err := h.getBizIDByHostID(parameter.kit, hostIDs)
 		if err != nil {
@@ -139,27 +90,11 @@ func (h *hostAuditLog) getBizIDByHostID(kit *rest.Kit, hostID int64) (int64, err
 		for index, auditLog := range auditLogs {
 			auditLogs[index].BusinessID = hostBizMap[auditLog.ID]
 		}
->>>>>>> v3.9.x
 	}
 
 	return auditLogs, nil
 }
 
-<<<<<<< HEAD
-// getHostInstanceDetailByHostID get host data and hostIP by hostID.
-func (h *hostAuditLog) getHostInstanceDetailByHostID(kit *rest.Kit, hostID int64) (map[string]interface{}, string,
-	error) {
-	// get host details.
-	result, err := h.clientSet.Host().GetHostByID(kit.Ctx, kit.Header, hostID)
-	if err != nil {
-		blog.Errorf("get host instance detail failed, err: %v, hostID: %d, rid: %s", err, hostID, kit.Rid)
-		return nil, "", kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !result.Result {
-		blog.Errorf("get host instance detail failed, http response error, err code: %d, err msg: %s, "+
-			"hostID: %d, rid: %s", result.Code, result.ErrMsg, hostID, kit.Rid)
-		return nil, "", kit.CCError.New(result.Code, result.ErrMsg)
-=======
 // getBizIDByHostID get mapping of host id to biz id
 func (h *hostAuditLog) getBizIDByHostID(kit *rest.Kit, hostIDs []int64) (map[int64]int64, error) {
 	input := &metadata.HostModuleRelationRequest{HostIDArr: hostIDs, Fields: []string{common.BKHostIDField,
@@ -168,26 +103,11 @@ func (h *hostAuditLog) getBizIDByHostID(kit *rest.Kit, hostIDs []int64) (map[int
 	if err != nil {
 		blog.Errorf("failed to get host module relation, hostIDs: %+v, err: %v, rid: %s", hostIDs, err, kit.Rid)
 		return nil, err
->>>>>>> v3.9.x
-	}
-	if err := moduleHost.CCError(); err != nil {
-		blog.Errorf("failed to get host module relation, hostIDs: %+v, err: %v, rid: %s", hostIDs, err, kit.Rid)
-		return nil, err
 	}
 
-<<<<<<< HEAD
-	ip, ok := hostInfo[common.BKHostInnerIPField].(string)
-	if !ok {
-		blog.Errorf("get host instance detail failed, convert bk_host_innerip to string error, hostID: %d, "+
-			"hostInfo: %+v, rid: %d", hostID, hostInfo, kit.Rid)
-		return nil, "", kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost,
-			common.BKHostInnerIPField, "string", "not string")
-
-=======
 	hostBizMap := make(map[int64]int64)
-	for _, relation := range moduleHost.Data.Info {
+	for _, relation := range moduleHost.Info {
 		hostBizMap[relation.HostID] = relation.AppID
->>>>>>> v3.9.x
 	}
 
 	return hostBizMap, nil

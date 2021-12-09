@@ -237,40 +237,20 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 		resp = result
 	}
 
-<<<<<<< HEAD
 	if len(f.Sheets) < 2 || len(asstObjectUniqueIDMap) == 0 {
-		return result
-=======
-	if len(f.Sheets) < 2 {
 		resp.Result = true
 		return resp
->>>>>>> v3.9.x
 	}
 
 	// if len(f.Sheets) >= 2, the second sheet is association data to be import
 	asstInfoMap, assoErrMsg := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset,
 		defLang)
 
-<<<<<<< HEAD
-	asstInfoMapInput := &metadata.RequestImportAssociation{
-		AssociationInfoMap:    asstInfoMap,
-		AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
-		ObjectUniqueID:        objectUniqueID,
-	}
-	asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, common.BKInnerObjIDHost, asstInfoMapInput)
-	if nil != asstResultErr {
-		blog.Errorf("ImportHosts logics http request import association error:%s, rid:%s", asstResultErr.Error(), util.GetHTTPCCRequestID(header))
-		return &metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrCommHTTPDoRequestFailed,
-				ErrMsg: defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(),
-			},
-			Data: nil,
-=======
 	if len(asstInfoMap) > 0 {
 		asstInfoMapInput := &metadata.RequestImportAssociation{
-			AssociationInfoMap: asstInfoMap,
+			AssociationInfoMap:    asstInfoMap,
+			AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
+			ObjectUniqueID:        objectUniqueID,
 		}
 		asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, common.BKInnerObjIDHost,
 			asstInfoMapInput)
@@ -279,7 +259,6 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 			resp.Code = common.CCErrCommHTTPDoRequestFailed
 			resp.ErrMsg = defErr.Errorf(common.CCErrCommHTTPDoRequestFailed).Error()
 			return resp
->>>>>>> v3.9.x
 		}
 
 		assoErrMsg = append(assoErrMsg, asstResult.Data.ErrMsgMap...)
@@ -449,7 +428,7 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 		return result
 	}
 	// if len(f.Sheets) >= 2, the second sheet is association data to be import
-	asstInfoMap := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset)
+	asstInfoMap, _ := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset, defLang)
 	if len(asstInfoMap) == 0 {
 		return result
 	}

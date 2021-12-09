@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/json"
@@ -1082,10 +1083,16 @@ func (ps *parseStream) audit() *parseStream {
 			return ps
 		}
 
+		model, err := ps.getOneModel(map[string]interface{}{common.BKObjIDField: query.Condition.ObjID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   iam.GenCMDBDynamicResType(model.ID),
 					Action: meta.SkipAction,
 				},
 			},

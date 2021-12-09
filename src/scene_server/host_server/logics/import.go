@@ -513,18 +513,11 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 	return hostID, nil
 }
 
-<<<<<<< HEAD
-// ExtractAlreadyExistHosts extract hosts that already in db(same innerIP host)
-// return: map[hostKey]hostID
-func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos map[int64]map[string]interface{}) (
-	map[string]int64, error) {
-=======
 // ExtractAlreadyExistHosts extract hosts that is already in db(same innerIP+cloudID host and updated hosts with id)
 // return: map[hostKey]hostID and exists host id to host info map
 func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos map[int64]map[string]interface{}) (
 	map[string]int64, map[int64]mapstr.MapStr, error) {
 
->>>>>>> v3.9.x
 	// step1. extract all innerIP from hostInfos
 	var ipArr []string
 	hostIDs := make([]int64, 0)
@@ -574,27 +567,6 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 	}
 	hResult, err := h.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.pheader, common.BKInnerObjIDHost, query)
 	if err != nil {
-<<<<<<< HEAD
-		blog.Errorf("GetHostIDByHostInfoArr ReadInstance http do err. error:%s, input:%#v, rid:%s", err.Error(),
-			query, h.rid)
-		return nil, h.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	// step3. arrange data as a map, cloudKey: hostID
-	hostMap := make(map[string]int64, 0)
-	for _, host := range hResult.Info {
-		key := generateHostCloudKey(host[common.BKHostInnerIPField], host[common.BKCloudIDField])
-		hostID, err := host.Int64(common.BKHostIDField)
-		if err != nil {
-			blog.Errorf("GetHostIDByHostInfoArr get hostID error. err:%s, hostInfo:%#v, rid:%s", err.Error(), host,
-				h.rid)
-			// message format: `convert %s  field %s to %s error %s`
-			return hostMap, h.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost,
-=======
-		blog.Errorf("get host failed, err: %v, input: %#v, rid:%s", err, query, h.rid)
-		return nil, nil, h.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if err := hResult.CCError(); err != nil {
 		blog.Errorf("get host failed, err: %v, input: %#v, rid:%s", err, query, h.rid)
 		return nil, nil, err
 	}
@@ -602,14 +574,13 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 	// step3. arrange data as a map, cloudKey: hostID
 	hostMap := make(map[string]int64, 0)
 	hostIDMap := make(map[int64]mapstr.MapStr, 0)
-	for _, host := range hResult.Data.Info {
+	for _, host := range hResult.Info {
 		key := generateHostCloudKey(host[common.BKHostInnerIPField], host[common.BKCloudIDField])
 		hostID, err := host.Int64(common.BKHostIDField)
 		if err != nil {
 			blog.Errorf("get hostID failed, err: %v, hostInfo: %#v, rid: %s", err, host, h.rid)
 			// message format: `convert %s  field %s to %s error %s`
 			return hostMap, hostIDMap, h.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost,
->>>>>>> v3.9.x
 				common.BKHostIDField, "int", err.Error())
 		}
 		hostMap[key] = hostID

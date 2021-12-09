@@ -375,11 +375,7 @@ func (s *Service) generateApplyPlan(ctx *rest.Contexts, bizID int64, planRequest
 		ConflictResolvers: planRequest.ConflictResolvers,
 	}
 
-<<<<<<< HEAD
 	planResult, ccErr := s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
-=======
-	planResult, ccErr = s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
->>>>>>> v3.9.x
 		planOption)
 	if ccErr != nil {
 		blog.Errorf("generate apply plan failed, bizID: %d, opt: %#v, err: %v, rid: %s", bizID, planOption, ccErr, rid)
@@ -501,11 +497,7 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 			},
 		}
 
-<<<<<<< HEAD
 		_, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
-=======
-		updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
->>>>>>> v3.9.x
 			common.BKInnerObjIDHost, updateOption)
 		if err != nil {
 			blog.ErrorJSON("run host apply rule, update host failed, option: %s, err: %s, rid: %s", updateOption,

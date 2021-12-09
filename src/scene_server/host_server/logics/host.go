@@ -114,39 +114,9 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 		host["import_from"] = common.HostAddMethodAgent
 		hostID, err = lgc.addHost(kit, appID, host)
 		if err != nil {
-<<<<<<< HEAD
 			return err
 		}
 	} else if !isIncrement {
-=======
-			blog.Errorf("EnterIP http do error, err:%s, input:%+v, rid:%s", err.Error(), host, kit.Rid)
-			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !result.Result {
-			blog.Errorf("EnterIP http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, host, kit.Rid)
-			return kit.CCError.New(result.Code, result.ErrMsg)
-		}
-		hostID = int64(result.Data.Created.ID)
-
-		// add audit log for create host.
-		audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
-		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-		host[common.BKHostIDField] = hostID
-		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, appID, []mapstr.MapStr{host})
-		if err != nil {
-			blog.Errorf("generate audit log failed after create host, hostID: %d, appID: %d, err: %v, rid: %s",
-				hostID, appID, err, kit.Rid)
-			return err
-		}
-
-		// save audit log.
-		if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
-			blog.Errorf("save audit log failed after create host, hostID: %d, appID: %d,err: %v, rid: %s", hostID,
-				appID, err, kit.Rid)
-			return err
-		}
-	} else if false == isIncrement {
->>>>>>> v3.9.x
 		// Not an additional relationship model
 		return nil
 	} else {
@@ -221,15 +191,18 @@ func (lgc *Logics) addHost(kit *rest.Kit, appID int64, host map[string]interface
 	// add audit log for create host.
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, hostID, appID, "", nil)
+	host[common.BKHostIDField] = hostID
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, appID, []mapstr.MapStr{host})
 	if err != nil {
-		blog.Errorf("generate audit log failed, hostID: %d, appID: %d, err: %v, rid: %s", hostID, appID, err, kit.Rid)
+		blog.Errorf("generate audit log failed after create host, hostID: %d, appID: %d, err: %v, rid: %s",
+			hostID, appID, err, kit.Rid)
 		return 0, err
 	}
 
 	// save audit log.
-	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
-		blog.Errorf("save audit log failed, hostID: %d, appID: %d, err: %v, rid: %s", hostID, appID, err, kit.Rid)
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+		blog.Errorf("save audit log failed after create host, hostID: %d, appID: %d,err: %v, rid: %s", hostID,
+			appID, err, kit.Rid)
 		return 0, err
 	}
 
