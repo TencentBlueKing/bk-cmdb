@@ -11,7 +11,6 @@
 
   "层": "Layer(s)",
   "外部主机导入流程": "Host(s) Import Process",
-  "请输入流程所在域名": "Enter the url of ITSM",
   "外 BG 导入主机要执行的流程": "The process when host(s) import from business portal",
   "流程 ID": "Process ID",
   "请输入拓扑最大可建层级": "Enter the number of layer(s)",

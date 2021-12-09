@@ -11,7 +11,6 @@ import cloneDeep from 'lodash/cloneDeep'
 const initialConfig = {
   backend: {
     maxBizTopoLevel: 0, // 最大拓扑层级数
-    itsm: null // itsm 只有内部版本才有
   },
   site: {
     name: '蓝鲸配置平台', // 网站名
@@ -72,13 +71,6 @@ const unserializeConfig = (remoteData, lang) => {
     }
   }
 
-  if (remoteData.backend?.itsm) {
-    newState.backend.itsm = {
-      itsmHost: remoteData.backend.itsm.itsm_host,
-      itsmId: remoteData.backend.itsm.itsm_id
-    }
-  }
-
   return newState
 }
 
@@ -126,13 +118,6 @@ const serializeState = (newConfig, lang) => {
       fault: newConfig.idlePool.fault,
       recycle: newConfig.idlePool.recycle,
       user_modules: serializeUserModules(newConfig.idlePool.userModules, lang) || null
-    }
-  }
-
-  if (newConfig.backend?.itsm) {
-    data.backend.itsm = {
-      itsm_host: newConfig.backend.itsm.itsmHost,
-      itsm_id: newConfig.backend.itsm.itsmId
     }
   }
 
