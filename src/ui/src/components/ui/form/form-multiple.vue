@@ -69,8 +69,8 @@
           <bk-button slot-scope="{ disabled }"
             class="button-save"
             theme="primary"
-            :loading="loading"
-            :disabled="disabled || !hasChange || $loading()"
+            :loading="loading || allValidating"
+            :disabled="disabled || !hasChange"
             @click="handleSave">
             {{$t('保存')}}
           </bk-button>
@@ -99,6 +99,7 @@
     data() {
       return {
         isMultiple: true,
+        allValidating: false,
         values: {},
         refrenceValues: {},
         editable: {},
@@ -211,6 +212,7 @@
         return this.$tools.formatValues(multipleValues, this.properties)
       },
       handleSave() {
+        this.allValidating = true
         this.$validator.validateAll().then((result) => {
           if (result) {
             this.$emit('on-submit', this.getMultipleValues())
@@ -218,6 +220,9 @@
             this.uncollapseGroup()
           }
         })
+          .finally(() => {
+            this.allValidating = false
+          })
       },
       uncollapseGroup() {
         this.errors.items.forEach((item) => {
