@@ -24,15 +24,8 @@ func (s *Service) SyncModuleTaskHandler(ctx *rest.Contexts) {
 	// parse task body
 	backendWorker := settemplate.BackendWorker{
 		ClientSet:       s.Engine.CoreAPI,
-<<<<<<< HEAD
-		Engine:          s.Engine,
-		ObjectOperation: s.Logics.ObjectOperation(),
 		ModuleOperation: s.Logics.ModuleOperation(),
-=======
-		ObjectOperation: s.Core.ObjectOperation(),
-		ModuleOperation: s.Core.ModuleOperation(),
-		InstOperation:   s.Core.InstOperation(),
->>>>>>> v3.9.x
+		InstOperation:   s.Logics.InstOperation(),
 	}
 	task := &metadata.SyncModuleTask{}
 	if err := ctx.DecodeInto(task); err != nil {

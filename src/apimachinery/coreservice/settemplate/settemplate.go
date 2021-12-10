@@ -22,7 +22,6 @@ import (
 )
 
 type SetTemplateInterface interface {
-<<<<<<< HEAD
 	CreateSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.CreateSetTemplateOption) (
 		metadata.SetTemplate, errors.CCErrorCoder)
 	UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64,
@@ -39,26 +38,6 @@ type SetTemplateInterface interface {
 		[]metadata.SetServiceTemplateRelation, errors.CCErrorCoder)
 	ListSetTplRelatedSvcTpl(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (
 		[]metadata.ServiceTemplate, errors.CCErrorCoder)
-	UpdateManySetTemplateSyncStatus(ctx context.Context, header http.Header,
-		syncStatus []metadata.SetTemplateSyncStatus) errors.CCErrorCoder
-	ListSetTemplateSyncStatus(ctx context.Context, header http.Header, bizID int64,
-		option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
-	DeleteSetTemplateSyncStatus(ctx context.Context, header http.Header, bizID int64,
-		setIDs []int64) errors.CCErrorCoder
-	ListSetTemplateSyncHistory(ctx context.Context, header http.Header, bizID int64,
-		option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
-	ModifySetTemplateSyncStatus(ctx context.Context, header http.Header, setID int64,
-		syncStatus metadata.SyncStatus) errors.CCErrorCoder
-=======
-	CreateSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.CreateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder)
-	UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.UpdateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder)
-	DeleteSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.DeleteSetTemplateOption) errors.CCErrorCoder
-	GetSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (metadata.SetTemplate, errors.CCErrorCoder)
-	ListSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder)
-	CountSetTplInstances(ctx context.Context, header http.Header, bizID int64, option metadata.CountSetTplInstOption) (map[int64]int64, errors.CCErrorCoder)
-	ListSetServiceTemplateRelations(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) ([]metadata.SetServiceTemplateRelation, errors.CCErrorCoder)
-	ListSetTplRelatedSvcTpl(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder)
->>>>>>> v3.9.x
 }
 
 func NewSetTemplateInterfaceClient(client rest.ClientInterface) SetTemplateInterface {

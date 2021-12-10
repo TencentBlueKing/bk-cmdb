@@ -107,40 +107,6 @@ func (s *Service) UpdateSetTemplate(ctx *rest.Contexts) {
 			blog.Errorf("UpdateSetTemplate failed, do core service update failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
 			return err
 		}
-<<<<<<< HEAD
-
-		filter := &metadata.DistinctFieldOption{
-			TableName: common.GetInstTableName(common.BKInnerObjIDSet, ctx.Kit.SupplierAccount),
-			Field:     common.BKSetIDField,
-			Filter: map[string]interface{}{
-				common.BKSetTemplateIDField: setTemplateID,
-			},
-		}
-
-		setIDs, err := s.Engine.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, filter)
-		if err != nil {
-			blog.Errorf("get set id failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return err
-		}
-
-		if len(setIDs) == 0 {
-			blog.Errorf("get set id failed, GetDistinctField return is empty, rid: %s", ctx.Kit.Rid)
-			return nil
-		}
-
-		setID, err := util.SliceInterfaceToInt64(setIDs)
-		if err != nil {
-			blog.Errorf("set id is not int, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
-			return err
-		}
-
-		if _, err := s.Logics.SetTemplateOperation().UpdateSetSyncStatus(ctx.Kit, setTemplateID, setID); err != nil {
-			blog.Errorf("update set sync status failed, setID: %d, err: %+v, rid: %s", setID, err, ctx.Kit.Rid)
-			return err
-		}
-
-=======
->>>>>>> v3.9.x
 		return nil
 	})
 
@@ -650,36 +616,6 @@ func (s *Service) SyncSetTplToInst(ctx *rest.Contexts) {
 		return
 	}
 
-<<<<<<< HEAD
-	taskCond := metadata.ListAPITaskDetail{
-		SetID: option.SetIDs,
-		Fields: []string{
-			common.BKStatusField,
-			common.MetaDataSynchronizeFlagField,
-			common.BKInstIDField,
-		},
-	}
-	// NOTE: 如下处理不能杜绝所有发提交任务, 可通过前端防双击的方式限制绝大部分情况
-	setSyncStatus, err := s.Logics.SetTemplateOperation().GetLatestSyncTaskDetail(ctx.Kit, taskCond)
-	if err != nil {
-		blog.Errorf("SyncSetTplToInst failed, getSetSyncStatus failed, setIDs: %+v, err: %s, rid: %s", option.SetIDs,
-			err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	for _, setID := range option.SetIDs {
-		setStatus, exist := setSyncStatus[setID]
-		if !exist {
-			continue
-		}
-		if setStatus.Status.IsFinished() == false {
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoSyncModuleTaskIsRunning))
-			return
-		}
-	}
-
-=======
->>>>>>> v3.9.x
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		if err := s.Logics.SetTemplateOperation().SyncSetTplToInst(ctx.Kit, bizID, setTemplateID, option); err != nil {
 			blog.Errorf("SyncSetTplToInst failed, operation failed, bizID: %d, setTemplateID: %d, "+
@@ -787,7 +723,7 @@ func (s *Service) ListSetTemplateSyncHistory(ctx *rest.Contexts) {
 
 	option.BizID = bizID
 
-	result, err := s.Core.SetTemplateOperation().ListSetTemplateSyncHistory(ctx.Kit, option)
+	result, err := s.Logics.SetTemplateOperation().ListSetTemplateSyncHistory(ctx.Kit, option)
 	if err != nil {
 		blog.Errorf("list set template sync history failed, option: %#v, err: %v, rid: %s", option, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -811,13 +747,9 @@ func (s *Service) ListSetTemplateSyncStatus(ctx *rest.Contexts) {
 		return
 	}
 
-<<<<<<< HEAD
-	result, err := s.Logics.SetTemplateOperation().ListSetTemplateSyncStatus(ctx.Kit, bizID, option)
-=======
 	option.BizID = bizID
 
-	result, err := s.Core.SetTemplateOperation().ListSetTemplateSyncStatus(ctx.Kit, option)
->>>>>>> v3.9.x
+	result, err := s.Logics.SetTemplateOperation().ListSetTemplateSyncStatus(ctx.Kit, option)
 	if err != nil {
 		blog.Errorf("list set template sync status failed, option: %#v, err: %v, rid: %s", option, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

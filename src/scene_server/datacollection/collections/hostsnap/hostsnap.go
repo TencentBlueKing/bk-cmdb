@@ -261,14 +261,9 @@ func (h *HostSnap) Analyze(msg *string) error {
 	}
 
 	// save audit log.
-<<<<<<< HEAD
-	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
 		blog.Errorf("save host snap audit log failed after update host, host %d/%s, err: %v, rid: %s", hostID,
 			innerIP, err, rid)
-=======
-	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
-		blog.Errorf("save host snap audit log failed after update host, host %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
->>>>>>> v3.9.x
 		return err
 	}
 

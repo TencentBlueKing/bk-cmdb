@@ -92,12 +92,12 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 }
 
 // BuildHostExcelFromData product excel from data
-	// selfObjectUniqueID 当前导出对象使用的唯一校验id
+// selfObjectUniqueID 当前导出对象使用的唯一校验id
 func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property,
 	filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64,
 	usernameMap map[string]string, propertyList []string, objNames, objIDs []string,
 	AsstObjectUniqueIDMap map[string]int64, selfObjectUniqueID int64) error {
-	
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -139,21 +139,21 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 	productHostExcelHeader(ctx, fields, filter, sheet, ccLang, objNames)
 
 	hanlehHostDataParam := &HanlehHostDataParam{
-		HostData:             data,
-		ExtFieldsTopoID:      extFieldsTopoID,
-		ExtFieldsBizID:       extFieldsBizID,
-		ExtFieldsModuleID:    extFieldsModuleID,
-		ExtFieldsSetID:       extFieldsSetID,
-		CcErr:                ccErr,
-		ExtFieldKey:          extFieldKey,
-		UsernameMap:          usernameMap,
-		PropertyList:         propertyList,
-		CcLang:               ccLang,
-		Sheet:                sheet,
-		Rid:                  rid,
-		ObjID:                objID,
-		ObjIDs:               objIDs,
-		Fields:               fields,
+		HostData:          data,
+		ExtFieldsTopoID:   extFieldsTopoID,
+		ExtFieldsBizID:    extFieldsBizID,
+		ExtFieldsModuleID: extFieldsModuleID,
+		ExtFieldsSetID:    extFieldsSetID,
+		CcErr:             ccErr,
+		ExtFieldKey:       extFieldKey,
+		UsernameMap:       usernameMap,
+		PropertyList:      propertyList,
+		CcLang:            ccLang,
+		Sheet:             sheet,
+		Rid:               rid,
+		ObjID:             objID,
+		ObjIDs:            objIDs,
+		Fields:            fields,
 	}
 
 	instIDs, err := lgc.buildHostExcelData(hanlehHostDataParam)
@@ -571,13 +571,13 @@ func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int, defLang lang.Defau
 		var asstObjID, op, srcInst, dstInst string
 		for index, item := range row.Cells {
 			switch index {
-			case assciationAsstObjIDIndex:
+			case associationAsstObjIDIndex:
 				asstObjID = item.String()
 			case associationOPColIndex:
 				op = item.String()
-			case assciationSrcInstIndex:
+			case associationSrcInstIndex:
 				srcInst = item.String()
-			case assciationDstInstIndex:
+			case associationDstInstIndex:
 				dstInst = item.String()
 			}
 		}
@@ -586,18 +586,12 @@ func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int, defLang lang.Defau
 			continue
 		}
 
-<<<<<<< HEAD
-		asstObjID := row.Cells[associationAsstObjIDIndex].String()
-		srcInst := row.Cells[associationSrcInstIndex].String()
-		dstInst := row.Cells[associationDstInstIndex].String()
-=======
 		if asstObjID == "" || srcInst == "" || dstInst == "" {
 			err := defLang.Languagef("web_excel_row_handle_error", sheet.Name, (index + 1))
 			errMsg = append(errMsg, metadata.RowMsgData{Row: index, Msg: err})
 			continue
 		}
 
->>>>>>> v3.9.x
 		asstInfoArr[index] = metadata.ExcelAssociation{
 			ObjectAsstID: asstObjID,
 			Operate:      getAssociationExcelOperateFlag(op),

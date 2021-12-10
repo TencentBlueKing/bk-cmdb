@@ -613,31 +613,11 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 			h.readKit.Rid)
 	}
 
-<<<<<<< HEAD
-	for _, data := range curData {
-		hostID, innerIP, err := getHostIDAndIP(data)
-		if err != nil {
-			blog.Errorf("generate audit log failed after create host, failed to get hostID and hostIP, "+
-				"err: %v, rid: %s", err, h.readKit.Rid)
-			return nil, err
-		}
-
-		// generate audit log.
-		tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, innerIP, data)
-		if err != nil {
-			blog.Errorf("generate audit log failed after create host, hostID: %d, innerIP: %s, err: %v, rid: %s",
-				hostID, innerIP, err, h.readKit.Rid)
-			return nil, err
-		}
-
-		logContext = append(logContext, *tmpAuditLog)
-=======
 	// generate audit log.
 	logContext, err := audit.GenerateAuditLog(generateAuditParameter, 0, curData)
 	if err != nil {
 		blog.Errorf("generate audit log failed, hosts: #%v, err: %v, rid: %s", curData, err, h.readKit.Rid)
 		return nil, err
->>>>>>> v3.9.x
 	}
 
 	// save audit log.
@@ -755,31 +735,7 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 		}
 
 		// generate audit log.
-<<<<<<< HEAD
-		preData, err := h.getHostDetailByInstIDs(h.readKit, []string{host.InstanceId})
-		if err != nil {
-			blog.Errorf("get host detail failed, err: %v, instID: %s, rid:%s", err, host.InstanceId, h.readKit.Rid)
-			return nil, err
-		}
-		if len(preData) <= 0 {
-			blog.Errorf("generate audit log failed, not find host data, instID: %s, rid: %s", host.InstanceId,
-				h.readKit.Rid)
-			return nil, fmt.Errorf("generate audit log failed, not find host data when bk_cloud_inst_id is %s",
-				host.InstanceId)
-		}
-
-		hostID, innerIP, err := getHostIDAndIP(preData[0])
-		if err != nil {
-			blog.Errorf("generate audit log failed before update host, failed to get hostID and hostIP,"+
-				" err: %v, rid: %s", err, h.readKit.Rid)
-			return nil, err
-		}
-
-		// generate audit log.
-		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(h.readKit, metadata.AuditUpdate).
-=======
 		genAuditParam := auditlog.NewGenerateAuditCommonParameter(h.readKit, metadata.AuditUpdate).
->>>>>>> v3.9.x
 			WithOperateFrom(metadata.FromCloudSync).WithUpdateFields(updateInfo)
 		tmpAuditLog, err := audit.GenerateAuditLog(genAuditParam, 0, []mapstr.MapStr{preDataMap[host.InstanceId]})
 		if err != nil {
