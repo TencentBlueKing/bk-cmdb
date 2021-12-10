@@ -14,11 +14,13 @@ package service
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"sort"
 	"strconv"
 
 	"configcenter/src/ac/iam"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
@@ -798,6 +800,151 @@ func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(res.Info)
+}
+
+// SearchInstAssociationAndInstDetail search association, source object inst and destination object inst
+func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
+	request := metadata.InstAndAssocRequest{}
+	if err := ctx.DecodeInto(&request); err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
+
+	if err := request.Validate(); err != nil {
+		blog.Errorf("validate request failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
+
+	assocFilter, errKey, err := request.Condition.AsstFilter.ToMgo()
+	if err != nil {
+		blog.Errorf("parse asst_filter to mongo searcher failed, errKey: %s, err: %v", errKey, err)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
+		return
+	}
+
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	cond := &metadata.InstAsstQueryCondition{
+		Cond: metadata.QueryCondition{
+			Condition:      assocFilter,
+			Fields:         request.Condition.AsstFields,
+			Page:           request.Page,
+			DisableCounter: true,
+		},
+		ObjID: objID,
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	assocRsp, err := s.Engine.CoreAPI.CoreService().Association().ReadInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	if err != nil {
+		blog.Errorf("search inst association failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if !request.Condition.IsDetail {
+		ctx.RespEntity(metadata.InstAndAssocDetailData{Asst: assocRsp.Info})
+		return
+	}
+
+	result, err := s.searchInstForAssocDetail(ctx, request, objID, assocRsp.Info)
+	if err != nil {
+		blog.Errorf("search inst failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(result)
+}
+
+func (s *Service) searchInstForAssocDetail(ctx *rest.Contexts, request metadata.InstAndAssocRequest, objID string,
+	instAssts []metadata.InstAsst) (*metadata.InstAndAssocDetailData, error) {
+
+	srcObjInst := make(map[string][]int64)
+	dstObjInst := make(map[string][]int64)
+	for _, item := range instAssts {
+		if _, exist := srcObjInst[item.ObjectID]; !exist {
+			srcObjInst[item.ObjectID] = make([]int64, 0)
+		}
+
+		if _, exist := dstObjInst[item.AsstObjectID]; !exist {
+			srcObjInst[item.ObjectID] = make([]int64, 0)
+		}
+
+		srcObjInst[item.ObjectID] = append(srcObjInst[item.ObjectID], item.InstID)
+		dstObjInst[item.AsstObjectID] = append(dstObjInst[item.AsstObjectID], item.AsstInstID)
+	}
+
+	srcErrMap, err := s.AuthManager.AuthorizeByCommInstIDAndHostID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Find, objID,
+		srcObjInst[objID]...)
+	if err != nil {
+		blog.Errorf("authorize object[%s] inst failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+		return nil, err
+	}
+
+	errMsg := make(map[string]interface{})
+	if srcErrMap != nil {
+		errMsg["src_auth"] = srcErrMap
+	}
+
+	asstObjInst := make(map[string][]int64)
+	for asstObjID, insts := range dstObjInst {
+		dstErrMap, err := s.AuthManager.AuthorizeByCommInstIDAndHostID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Find,
+			asstObjID, insts...)
+		if err != nil {
+			blog.Errorf("authorize object[%s] inst failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+			return nil, err
+		}
+
+		if dstErrMap != nil {
+			errMsg[fmt.Sprintf("dst_auth_%s", asstObjID)] = dstErrMap
+		}
+
+		for _, inst := range insts {
+			if _, exist := dstErrMap[inst]; !exist {
+				asstObjInst[asstObjID] = append(asstObjInst[asstObjID], inst)
+			}
+		}
+	}
+
+	objInst := make([]int64, 0)
+	for _, inst := range srcObjInst[objID] {
+		if _, exist := srcErrMap[inst]; !exist {
+			objInst = append(objInst, inst)
+		}
+	}
+
+	srcCond := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.GetInstIDField(objID): mapstr.MapStr{common.BKDBIN: objInst}},
+		Fields:    request.Condition.SrcFields,
+	}
+	srcRsp, err := s.Logics.InstOperation().FindInst(ctx.Kit, objID, srcCond)
+	if err != nil {
+		blog.Errorf("search object[%s] inst failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+		errMsg["src_search"] = err.Error()
+	}
+
+	dstTotalRsp := make([]mapstr.MapStr, 0)
+	for asstObjID, inst := range asstObjInst {
+		dstCond := &metadata.QueryCondition{
+			Condition: mapstr.MapStr{common.GetInstIDField(asstObjID): mapstr.MapStr{common.BKDBIN: inst}},
+			Fields:    request.Condition.DstFields,
+		}
+		dstRsp, err := s.Logics.InstOperation().FindInst(ctx.Kit, asstObjID, dstCond)
+		if err != nil {
+			blog.Errorf("search object[%s] inst failed, err: %v, rid: %s", asstObjID, err, ctx.Kit.Rid)
+			errMsg["dst_search"] = err.Error()
+		}
+
+		dstTotalRsp = append(dstTotalRsp, dstRsp.Info...)
+	}
+
+	return &metadata.InstAndAssocDetailData{
+		Asst:   instAssts,
+		Src:    srcRsp.Info,
+		Dst:    dstTotalRsp,
+		ErrMsg: errMsg,
+	}, nil
 }
 
 // CreateAssociationInst create instance associaiton

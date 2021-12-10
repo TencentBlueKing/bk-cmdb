@@ -288,3 +288,34 @@ func (am *AuthManager) AuthorizeByInstances(ctx context.Context, header http.Hea
 
 	return am.batchAuthorize(ctx, header, resources...)
 }
+
+func (am *AuthManager) AuthorizeByCommInstIDAndHostID(ctx context.Context, header http.Header, action meta.Action,
+	objID string, ids ...int64) (map[int64]error, error) {
+
+	if !am.Enabled() {
+		return nil, nil
+	}
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	if objID == common.BKInnerObjIDHost {
+		return am.AuthorizeByHostID(ctx, header, action, ids...)
+	}
+
+	instances, err := am.collectInstancesByRawIDs(ctx, header, objID, ids...)
+	if err != nil {
+		return nil, fmt.Errorf("collect instance of model: %s by id %+v failed, err: %+v", objID, ids, err)
+	}
+
+	errMap := make(map[int64]error)
+	err = am.AuthorizeByInstances(ctx, header, action, instances...)
+	if err != nil {
+		for _, item := range ids {
+			errMap[item] = err
+		}
+	}
+
+	return errMap, nil
+}

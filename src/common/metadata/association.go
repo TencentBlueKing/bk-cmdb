@@ -13,9 +13,12 @@
 package metadata
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/querybuilder"
 )
 
 const (
@@ -144,6 +147,54 @@ type SearchInstAssociationListResult struct {
 		Dst []InstAsst `json:"dst"`
 	} `json:"association"`
 	Inst map[string][]mapstr.MapStr `json:"instance"`
+}
+
+// InstAndAssocRequest search inst and association detail request
+type InstAndAssocRequest struct {
+	Condition AssocFilterAndInstFilter `field:"condition" json:"condition"`
+	Page      BasePage                 `field:"page" json:"page"`
+}
+
+// InstAndAssocDetailResult search inst and association detail result
+type InstAndAssocDetailResult struct {
+	BaseResp `json:",inline"`
+	Data     InstAndAssocDetailData `json:"data"`
+}
+
+// InstAndAssocDetailData search inst and association detail return data
+type InstAndAssocDetailData struct {
+	Asst   []InstAsst      `field:"association" json:"association"`
+	Src    []mapstr.MapStr `field:"src" json:"src"`
+	Dst    []mapstr.MapStr `field:"dst" json:"dst"`
+	ErrMsg mapstr.MapStr   `field:"err_msg" json:"err_msg"`
+}
+
+// AssocFilterAndInstFilter search inst and association detail condition
+type AssocFilterAndInstFilter struct {
+	AsstFilter *querybuilder.QueryFilter `field:"asst_filter" json:"asst_filter"`
+	AsstFields []string                  `field:"asst_fields" json:"asst_fields"`
+	SrcFields  []string                  `field:"src_fields" json:"src_fields"`
+	DstFields  []string                  `field:"dst_fields" json:"dst_fields"`
+	IsDetail   bool                      `field:"is_detail" json:"is_detail"`
+}
+
+// Validate validate InstAndAssocDetailData
+func (assoc *InstAndAssocRequest) Validate() error {
+
+	if assoc.Condition.AsstFilter == nil {
+		return fmt.Errorf("asst_filter is empty")
+	}
+
+	filterOption := querybuilder.RuleOption{NeedSameSliceElementType: true}
+	if key, err := assoc.Condition.AsstFilter.Validate(&filterOption); err != nil {
+		return fmt.Errorf("asst_filter.%s is invalid, err: %v", key, err)
+	}
+
+	if assoc.Page.Limit > common.BKMaxInstanceLimit {
+		return fmt.Errorf("page limit is out of range")
+	}
+
+	return nil
 }
 
 type CreateAssociationInstRequest struct {
