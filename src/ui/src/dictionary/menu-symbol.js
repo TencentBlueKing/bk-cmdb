@@ -31,13 +31,10 @@ export const MENU_BUSINESS_SERVICE_CATEGORY = 'menu_business_service_category'
 export const MENU_BUSINESS_CUSTOM_QUERY = 'menu_business_custom_query'
 export const MENU_BUSINESS_CUSTOM_FIELDS = 'menu_business_custom_fields'
 
-<<<<<<< HEAD
-=======
 /**
  * 资源
  */
 export const MENU_RESOURCE_EVENTPUSH = 'menu_resource_eventpush'
->>>>>>> v3.9.x
 export const MENU_RESOURCE_MANAGEMENT = 'menu_resource_management'
 export const MENU_RESOURCE_BUSINESS = 'menu_resource_business'
 export const MENU_RESOURCE_BUSINESS_HISTORY = 'menu_resource_business_history'

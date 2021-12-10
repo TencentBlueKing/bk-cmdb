@@ -258,14 +258,7 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, query.Condition.ObjID)
-	if err != nil {
-		blog.Errorf("find object[%s] failed, err: %v, rid: %s", query.Condition.ObjID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	isMainline, err := obj.IsMainlineObject()
+	isMainline, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, query.Condition.ObjID)
 	if err != nil {
 		blog.Errorf("check if object is mainline object failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -292,13 +285,15 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 	}
 
 	auditQuery := metadata.QueryCondition{Condition: cond, Fields: fields, Page: query.Page}
-	count, list, err := s.Core.AuditOperation().SearchAuditList(ctx.Kit, auditQuery)
-	if err != nil {
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	rsp, err := s.Engine.CoreAPI.CoreService().Audit().SearchAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditQuery)
+	if nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntityWithCount(count, list)
+	ctx.RespEntityWithCount(rsp.Data.Count, rsp.Data.Info)
 }
 
 func buildInstAuditCondition(ctx *rest.Contexts, query metadata.InstAuditCondition) (mapstr.MapStr, error) {

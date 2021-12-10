@@ -31,13 +31,8 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-<<<<<<< HEAD
-// GetResourcePoolModuleID get moduleID of resource pool
-func (lgc *Logics) GetResourcePoolModuleID(kit *rest.Kit, condition mapstr.MapStr) (int64, errors.CCError) {
-=======
 // GetResourcePoolModuleID get module id,module name.
 func (lgc *Logics) GetResourcePoolModuleID(kit *rest.Kit, condition mapstr.MapStr) (int64, string, errors.CCError) {
->>>>>>> v3.9.x
 	query := &metadata.QueryCondition{
 		Fields:    []string{common.BKModuleIDField, common.BkSupplierAccount, common.BKModuleNameField},
 		Condition: condition,
@@ -48,36 +43,21 @@ func (lgc *Logics) GetResourcePoolModuleID(kit *rest.Kit, condition mapstr.MapSt
 		blog.Errorf("GetResourcePoolModuleID http do error, err:%s,input:%+v,rid:%s", err.Error(), query, kit.Rid)
 		return -1, "", kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-<<<<<<< HEAD
 
 	if len(result.Info) == 0 {
 		blog.Errorf("GetResourcePoolModuleID http response error,input:%+v,rid:%s", query, kit.Rid)
-		return -1, kit.CCError.Error(common.CCErrTopoGetAppFailed)
-=======
-	if !result.Result {
-		blog.Errorf("GetResourcePoolModuleID http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
-		return -1, "", kit.CCError.New(result.Code, result.ErrMsg)
-	}
-
-	if len(result.Data.Info) == 0 {
-		blog.Errorf("GetResourcePoolModuleID http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
 		return -1, "", kit.CCError.Error(common.CCErrTopoGetAppFailed)
->>>>>>> v3.9.x
 	}
 
 	supplier := kit.SupplierAccount
 	for idx, mod := range result.Info {
 		if supplier == mod[common.BkSupplierAccount].(string) {
-<<<<<<< HEAD
-			return result.Info[idx].Int64(common.BKModuleIDField)
-=======
-			moduleId, err := result.Data.Info[idx].Int64(common.BKModuleIDField)
+			moduleId, err := result.Info[idx].Int64(common.BKModuleIDField)
 			moduleName := ""
-			if name, ok := result.Data.Info[idx][common.BKModuleNameField].(string); ok {
+			if name, ok := result.Info[idx][common.BKModuleNameField].(string); ok {
 				moduleName = name
 			}
 			return moduleId, moduleName, err
->>>>>>> v3.9.x
 		}
 	}
 
