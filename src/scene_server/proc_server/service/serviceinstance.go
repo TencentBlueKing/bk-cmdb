@@ -844,7 +844,6 @@ func (ps *ProcServer) DiffServiceTemplateGeneral(ctx *rest.Contexts) {
 	ctx.RespEntity(uniqueResult)
 }
 
-
 // getHostInfo 根据bizId和moduleId获取hostMap
 func (ps *ProcServer) getHostInfo(ctx *rest.Contexts, bizId int64, moduleId int64) (map[int64]map[string]interface{},
 	errors.CCErrorCoder) {
@@ -1076,7 +1075,6 @@ func (ps *ProcServer) getHostAndServiceInsts(ctx *rest.Contexts, option *hostAnd
 		ProcessTemplateIDs: []int64{option.ProcTemplateId},
 	}
 
-
 	processTemplates, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, cond)
 	if err != nil {
 		blog.Errorf("list process templates failed, option: %s, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
@@ -1092,7 +1090,6 @@ func (ps *ProcServer) getHostAndServiceInsts(ctx *rest.Contexts, option *hostAnd
 		ApplicationIDArr: []int64{option.BizID},
 		ModuleIDArr:      []int64{option.ModuleID},
 	}
-
 
 	hostIDs, err := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, ctx.Kit.Header, hostIDOpt)
 	if err != nil {
@@ -1367,7 +1364,6 @@ func getProcDetail(procID2Detail map[int64]*metadata.Process, processID int64) (
 	}
 	return proc, procName
 }
-
 
 func (ps *ProcServer) getServiceInstances(ctx *rest.Contexts, module *metadata.ModuleInst, field []string) (
 	*metadata.MultipleServiceInstance, errors.CCErrorCoder) {
@@ -1675,7 +1671,6 @@ func (ps *ProcServer) serviceTemplateGeneralDiff(ctx *rest.Contexts, bizId int64
 	return moduleDifference, nil
 }
 
-
 // calculateModuleAttributeGeneralDifference calculate whether the service classification has changed.
 func (ps *ProcServer) calculateModuleAttributeGeneralDifference(ctx context.Context, header http.Header,
 	module metadata.ModuleInst) (bool, errors.CCErrorCoder) {
@@ -1935,15 +1930,11 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 				common.BKModuleIDField: syncOption.ModuleID,
 			},
 		}
-		resp, e := ps.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		_, e := ps.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
 			moduleUpdateOption)
 		if e != nil {
 			blog.Errorf("update module failed, option: %#v, err: %v, rid: %s", moduleUpdateOption, e, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if ccErr := resp.CCError(); ccErr != nil {
-			blog.Errorf("update module failed, option: %#v, err: %v, rid: %s", moduleUpdateOption, ccErr, kit.Rid)
-			return ccErr
 		}
 	}
 
@@ -2119,7 +2110,7 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 
 			// we can not find this process template in all this service instance,
 			// which means that a new process template need to be added to this service instance
-			newProcess, generateErr := processTemplate.NewProcess(syncOption.BizID, kit.SupplierAccount,
+			newProcess, generateErr := processTemplate.NewProcess(syncOption.BizID, svcID, kit.SupplierAccount,
 				hostMap[serviceInstance2HostMap[svcID]])
 			if generateErr != nil {
 				blog.ErrorJSON("generate process instance by template %s failed, err: %s, rid: %s", processTemplate,

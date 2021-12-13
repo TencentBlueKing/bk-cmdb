@@ -51,8 +51,6 @@ export const IAM_VIEWS_NAME = {
   [IAM_VIEWS.CLOUD_ACCOUNT]: ['云账户', 'Cloud Account'],
   [IAM_VIEWS.CLOUD_RESOURCE_TASK]: ['云资源发现任务', 'Cloud Resource Task']
 }
-<<<<<<< HEAD
-=======
 
 /**
  * 序列化鉴权字段
@@ -60,7 +58,6 @@ export const IAM_VIEWS_NAME = {
  * @param {Object} meta 额外的鉴权信息
  * @returns 序列化后的鉴权字段
  */
->>>>>>> v3.9.x
 function basicTransform(cmdbAction, meta = {}) {
   const [type, action] = cmdbAction.split('.')
   const inejctedMeta = {

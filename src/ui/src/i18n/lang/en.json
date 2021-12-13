@@ -1462,7 +1462,6 @@
     "彻底删除": "Completely delete",
     "确认彻底删除该业务？": "Are you sure compeletly delete the business?",
     "一旦被清除，将无法再恢复，请谨慎操作！": "Once cleared, it will not be restored, so please proceed with caution!",
-<<<<<<< HEAD
     "导入更新提示": "You need to export the instances and complete the modification before import",
     "导入文件大小提示": "Xlsx files within 20m",
     "导入文件拖拽提示": "Drag the file here or {clickUpload}",
@@ -1471,11 +1470,9 @@
     "数据导入终止提示": "Importing, closing will not terminate the import task",
     "第N行": "The {row} row",
     "主机导入文件提示": "Only support host in default area",
-    "已删除的实例": "Deleted instance"
-=======
+    "已删除的实例": "Deleted instance",
     "重置成功": "Successful restored",
     "转移至": "Transfer to",
     "追加至": "Append to",
     "追加主机到业务模块": "Append to Business Modules"
->>>>>>> v3.9.x
 }

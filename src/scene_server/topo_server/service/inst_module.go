@@ -756,3 +756,70 @@ func (s *Service) GetInternalModule(ctx *rest.Contexts) {
 
 	ctx.RespEntity(result)
 }
+
+// UpdateGlobalSetOrModuleConfig update platform_setting，注意： 此接口只给前端的管理员使用不能上ESB
+func (s *Service) UpdateGlobalSetOrModuleConfig(ctx *rest.Contexts) {
+
+	option := new(metadata.ConfigUpdateSettingOption)
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err != nil {
+		blog.Errorf("update global config fail, param is invalid, input: %v, error: %v, rid: %s", option, err,
+			ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoAppSearchFailed))
+		return
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.Logics.BusinessOperation().UpdateBusinessIdleSetOrModule(ctx.Kit, option)
+		if err != nil {
+			blog.Errorf("update business set or module fail, option: %v, err: %v, rid: %s", option, err,
+				ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// DeleteUserModulesSettingConfig delete user config module，注意： 此接口只给前端的管理员使用不能上ESB
+func (s *Service) DeleteUserModulesSettingConfig(ctx *rest.Contexts) {
+
+	option := new(metadata.BuiltInModuleDeleteOption)
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err != nil {
+		blog.Errorf("option is illegal option: %+v, rid: %s.", option, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoAppSearchFailed, "module key and name must be set"))
+		return
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.Logics.BusinessOperation().DeleteBusinessGlobalUserModule(ctx.Kit, option)
+		if err != nil {
+			blog.Errorf("create business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
+}
