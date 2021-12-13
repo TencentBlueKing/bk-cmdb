@@ -6,6 +6,7 @@
         type="textarea"
         :placeholder="$t('首页主机搜索提示语')"
         :rows="rows"
+        :clearable="true"
         v-model="searchContent"
         @focus="handleFocus"
         @blur="handleBlur"
@@ -45,13 +46,24 @@
   import QS from 'qs'
   import isIP from 'validator/es/lib/isIP'
   import isInt from 'validator/es/lib/isInt'
+  import FilterUtils from '@/components/filters/utils.js'
+  import { HOME_HOST_SEARCH_CONTENT_STORE_KEY } from '@/dictionary/storage-keys.js'
+
   export default {
     data() {
+      const defaultSearchContent = () => {
+        let content = ''
+        try {
+          content = JSON.parse(window.sessionStorage.getItem(HOME_HOST_SEARCH_CONTENT_STORE_KEY)) || ''
+        } catch (e) {
+          console.error(e)
+          content = ''
+        }
+        return content
+      }
       return {
         rows: 1,
-        searchText: '',
-        searchContent: '',
-        textarea: '',
+        searchContent: defaultSearchContent(),
         textareaDom: null,
         popoverProps: {
           width: 280,
@@ -69,8 +81,11 @@
       }
     },
     watch: {
-      searchContent() {
-        this.$nextTick(this.setRows)
+      searchContent: {
+        handler() {
+          this.$nextTick(this.setRows)
+        },
+        immediate: true
       }
     },
     mounted() {
@@ -78,14 +93,8 @@
     },
     methods: {
       getSearchList() {
-        const searchList = []
-        this.searchContent.split('\n').forEach((text) => {
-          const trimText = text.trim()
-          if (trimText.length) {
-            searchList.push(trimText)
-          }
-        })
-        return searchList
+        // 使用切割IP的方法分割内容，方法在此处完全适用且能与高级搜索的IP分割保持一致
+        return FilterUtils.splitIP(this.searchContent)
       },
       setRows() {
         const rows = this.searchContent.split('\n').length || 1
@@ -117,6 +126,9 @@
           return
         }
 
+        // 保存本次搜索内容
+        window.sessionStorage.setItem(HOME_HOST_SEARCH_CONTENT_STORE_KEY, JSON.stringify(this.searchContent))
+
         if (searchList.length) {
           const IPList = []
           const IPWithCloudList = []
@@ -136,7 +148,7 @@
               }
             }
           })
-          console.log(IPList, IPWithCloudList, assetList, cloudIdSet, force)
+          // console.log(IPList, IPWithCloudList, assetList, cloudIdSet, force)
           // 判断是否存在IP、固资编号混合搜索
           if (!force && (IPList.length || IPWithCloudList.length) && assetList.length) {
             this.$refs.popover.showHandler()
