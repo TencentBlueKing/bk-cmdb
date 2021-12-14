@@ -30,11 +30,12 @@ import (
 )
 
 // get date from excel file to import device
-func GetImportNetDevices(
-	header http.Header, defLang language.DefaultCCLanguageIf, f *xlsx.File) (map[int]map[string]interface{}, []string, error) {
+func GetImportNetDevices(header http.Header, defLang language.DefaultCCLanguageIf,
+	f *xlsx.File) (map[int]map[string]interface{}, []string, error) {
+
 	ctx := util.NewContextFromHTTPHeader(header)
 
-	if 0 == len(f.Sheets) {
+	if len(f.Sheets) == 0 {
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
 
@@ -45,7 +46,7 @@ func GetImportNetDevices(
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
-	return GetExcelData(ctx, sheet, fields, nil, true, 0, defLang)
+	return GetExcelData(ctx, sheet, fields, nil, true, 0, defLang, nil)
 }
 
 func BuildNetDeviceExcelFromData(ctx context.Context, defLang language.DefaultCCLanguageIf, fields map[string]Property, data []mapstr.MapStr, sheet *xlsx.Sheet) error {

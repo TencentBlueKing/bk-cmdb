@@ -20,6 +20,9 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+
 	"github.com/rentiansheng/xlsx"
 )
 
@@ -215,4 +218,49 @@ func setExcelCellIgnored(sheet *xlsx.Sheet, style *xlsx.Style, row int, col int)
 	cell := sheet.Cell(row, col)
 	cell.Value = common.ExcelCellIgnoreValue
 	cell.SetStyle(style)
+}
+
+// replaceDepartmentFullName replace attribute organization's id by fullname in export excel
+func replaceDepartmentFullName(rid string, rowMap mapstr.MapStr, org []metadata.DepartmentItem, propertyList []string,
+	defLang language.DefaultCCLanguageIf) (mapstr.MapStr, error) {
+
+	orgMap := make(map[int64]string)
+	for _, item := range org {
+		orgMap[item.ID] = item.FullName
+	}
+
+	for _, property := range propertyList {
+		orgIDInterface, exist := rowMap[property]
+		if !exist {
+			continue
+		}
+
+		orgIDList, ok := orgIDInterface.([]interface{})
+		if !ok {
+			blog.Errorf("rowMap[%s] type to array failed, rowMap: %v, rowMap type: %T, rid: %s", property,
+				rowMap[property], rowMap[property], rid)
+			return nil, fmt.Errorf("convert variable rowMap[%s] type to int array failed", property)
+		}
+
+		orgName := make([]string, 0)
+		for _, orgID := range orgIDList {
+			id, err := util.GetInt64ByInterface(orgID)
+			if err != nil {
+				blog.Errorf("convert orgID[%v] to int64 failed, type: %T, err: %v, rid: %s", orgID, orgID, err, rid)
+				return nil, fmt.Errorf("convert variable orgID[%v] type to int64 failed", orgID)
+			}
+
+			name, exist := orgMap[id]
+			if !exist {
+				blog.Errorf("orgnization[%d] does no exist, rid: %s", id, rid)
+				orgName = append(orgName, fmt.Sprintf("[%d]%s", id, defLang.Language("nonexistent_org")))
+				continue
+			}
+
+			orgName = append(orgName, fmt.Sprintf("[%d]%s", id, name))
+		}
+		rowMap[property] = strings.Join(orgName, ",")
+	}
+
+	return rowMap, nil
 }

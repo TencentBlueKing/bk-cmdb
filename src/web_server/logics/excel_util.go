@@ -32,12 +32,14 @@ import (
 )
 
 const (
-	userAliasPattern = `\([a-zA-Z0-9\@\p{Han} .,_-]*\)`
+	userBracketsPattern        = `\([a-zA-Z0-9\@\p{Han} .,_-]*\)`
+	orgnizationBracketsPattern = `\[[a-zA-Z0-9\@\p{Han} .,_-]*\]`
 )
 
 var (
-	headerRow       = common.HostAddMethodExcelIndexOffset
-	userAliasRegexp = regexp.MustCompile(userAliasPattern)
+	headerRow          = common.HostAddMethodExcelIndexOffset
+	userBracketsRegexp = regexp.MustCompile(userBracketsPattern)
+	orgBracketsRegexp  = regexp.MustCompile(orgnizationBracketsPattern)
 )
 
 // getFilterFields 不需要展示字段
@@ -190,48 +192,46 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 
 }
 
-func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fields map[string]Property, defFields common.KvMap, nameIndexMap map[int]string, defLang lang.DefaultCCLanguageIf) (host map[string]interface{}, errMsg []string) {
+func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fields map[string]Property,
+	defFields common.KvMap, nameIndexMap map[int]string, defLang lang.DefaultCCLanguageIf,
+	department map[int64]metadata.DepartmentItem) (map[string]interface{}, []string) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
-	host = make(map[string]interface{})
-	// errMsg := make([]string, 0)
+	result := make(map[string]interface{})
+	errMsg := make([]string, 0)
 	for cellIndex, cell := range row.Cells {
 		fieldName, ok := nameIndexMap[cellIndex]
-		if false == ok {
-			continue
-		}
-		if "" == strings.Trim(fieldName, "") {
-			continue
-		}
-		if "" == cell.Value {
+		if !ok || strings.Trim(fieldName, "") == "" || cell.Value == "" {
 			continue
 		}
 
 		switch cell.Type() {
 		case xlsx.CellTypeString:
-			host[fieldName] = strings.TrimSpace(cell.String())
+			result[fieldName] = strings.TrimSpace(cell.String())
 		case xlsx.CellTypeStringFormula:
-			host[fieldName] = strings.TrimSpace(cell.String())
+			result[fieldName] = strings.TrimSpace(cell.String())
 		case xlsx.CellTypeNumeric:
 			cellValue, err := cell.Float()
-			if nil != err {
-				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (cellIndex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (cellIndex + 1))
-				blog.Errorf("%d row %s column get content error:%s, rid: %s", rowIndex+1, fieldName, err.Error(), rid)
+			if err != nil {
+				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (cellIndex+1)))
+				blog.Errorf("%d row %s column get content err: %v, rid: %s", rowIndex+1, fieldName, err, rid)
 				continue
 			}
-			host[fieldName] = cellValue
+			result[fieldName] = cellValue
 		case xlsx.CellTypeBool:
 			cellValue := cell.Bool()
-			host[fieldName] = cellValue
+			result[fieldName] = cellValue
 		case xlsx.CellTypeDate:
 			cellValue, err := cell.GetTime(true)
-			if nil != err {
-				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (cellIndex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (cellIndex + 1))
-				blog.Errorf("%d row %s column get content error:%s, rid: %s", rowIndex+1, fieldName, err.Error(), rid)
+			if err != nil {
+				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName,
+					(cellIndex+1)))
+				blog.Errorf("%d row %s column get content error:%s, rid: %s", rowIndex+1, fieldName, err, rid)
 				continue
 			}
-			host[fieldName] = cellValue
+			result[fieldName] = cellValue
 		default:
-			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (cellIndex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (cellIndex + 1))
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (cellIndex+1)))
 			blog.Errorf("unknown the type, %v,   %v, rid: %s", reflect.TypeOf(cell), cell.Type(), rid)
 			continue
 		}
@@ -241,86 +241,123 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 			blog.Errorf("%d row %s field not found , rid: %s", rowIndex+1, fieldName, rid)
 			continue
 		}
-		switch field.PropertyType {
-		case common.FieldTypeBool:
-			switch host[fieldName].(type) {
-			case bool:
-			default:
-				bl, err := strconv.ParseBool(cell.Value)
-				if nil == err {
-					host[fieldName] = bl
-				}
-			}
-		case common.FieldTypeEnum:
-			option, optionOk := field.Option.([]interface{})
 
-			if optionOk {
-				host[fieldName] = getEnumIDByName(cell.Value, option)
-			}
-		case common.FieldTypeInt:
-			intVal, err := util.GetInt64ByInterface(host[fieldName])
-			// convertor int not err , set field value to correct type
-			if nil == err {
-				host[fieldName] = intVal
-			} else {
-				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName, host[fieldName], err.Error(), rid)
-			}
-		case common.FieldTypeFloat:
-			floatVal, err := util.GetFloat64ByInterface(host[fieldName])
-			if nil == err {
-				host[fieldName] = floatVal
-			} else {
-				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName, host[fieldName], err.Error(), rid)
-			}
-		case common.FieldTypeOrganization:
-			org := util.GetStrByInterface(host[fieldName])
-			if len(org) >= 2 && strings.HasPrefix(org, "[") && strings.HasSuffix(org, "]") {
-				if strings.TrimSpace(org[1:len(org)-1]) == "" {
-					host[fieldName] = []int64{}
-					break
-				}
-				orgItems := strings.Split(org[1:len(org)-1], ",")
-				orgSlice := make([]int64, len(orgItems))
-				var err error
-				for i, v := range orgItems {
-					orgSlice[i], err = strconv.ParseInt(strings.TrimSpace(v), 10, 64)
-					if err != nil {
-						blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName, host[fieldName], "not a valid organization type", rid)
-						break
-					}
-				}
-				if err == nil {
-					host[fieldName] = orgSlice
-				}
-			} else {
-				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName, host[fieldName], "not a valid organization type", rid)
-			}
-		case common.FieldTypeUser:
-			// convert userNames,  eg: " admin(admin),xiaoming(小明 ),leo(li hong),  " => "admin,xiaoming,leo"
-			userNames := util.GetStrByInterface(host[fieldName])
-			userNames = userAliasRegexp.ReplaceAllString(userNames, "")
-			userNames = strings.Trim(strings.Trim(userNames, " "), ",")
-			host[fieldName] = userNames
-		default:
-			if util.IsStrProperty(field.PropertyType) {
-				host[fieldName] = strings.TrimSpace(cell.Value)
-			}
-
-		}
-
+		result, errMsg = buildAttrByPropertyType(rid, fieldName, cell.Value, field, result, department, defLang, errMsg)
 	}
-	if 0 != len(errMsg) {
+	if len(errMsg) != 0 {
 		return nil, errMsg
 	}
-	if 0 == len(host) {
-		return host, nil
+	if len(result) == 0 {
+		return result, nil
 	}
 	for k, v := range defFields {
-		host[k] = v
+		result[k] = v
 	}
 
-	return host, nil
+	return result, nil
 
+}
+
+func buildAttrByPropertyType(rid, fieldName, cellValue string, field Property, result map[string]interface{},
+	department map[int64]metadata.DepartmentItem, defLang lang.DefaultCCLanguageIf, errMsg []string) (
+	map[string]interface{}, []string) {
+
+	switch field.PropertyType {
+	case common.FieldTypeBool:
+		switch result[fieldName].(type) {
+		case bool:
+		default:
+			if bl, err := strconv.ParseBool(cellValue); err == nil {
+				result[fieldName] = bl
+			}
+		}
+	case common.FieldTypeEnum:
+		if option, optionOk := field.Option.([]interface{}); optionOk {
+			result[fieldName] = getEnumIDByName(cellValue, option)
+		}
+	case common.FieldTypeInt:
+		// convertor int not err, set field value to correct type
+		if intVal, err := util.GetInt64ByInterface(result[fieldName]); err != nil {
+			blog.Errorf("get excel cell value error, field:%s, value:%s, err: %v, rid: %s", fieldName,
+				result[fieldName], err, rid)
+		} else {
+			result[fieldName] = intVal
+		}
+	case common.FieldTypeFloat:
+		if floatVal, err := util.GetFloat64ByInterface(result[fieldName]); err == nil {
+			result[fieldName] = floatVal
+		} else {
+			blog.Errorf("get excel cell value failed, field:%s, value:%s, err:%v, rid: %s", fieldName,
+				result[fieldName], err, rid)
+		}
+	case common.FieldTypeOrganization:
+		result, errMsg = checkOrgnization(result, department, defLang, errMsg, fieldName, rid)
+	case common.FieldTypeUser:
+		// convert userNames,  eg: " admin(admin),xiaoming(小明 ),leo(li hong),  " => "admin,xiaoming,leo"
+		userNames := util.GetStrByInterface(result[fieldName])
+		userNames = userBracketsRegexp.ReplaceAllString(userNames, "")
+		userNames = strings.Trim(strings.Trim(userNames, " "), ",")
+		result[fieldName] = userNames
+	default:
+		if util.IsStrProperty(field.PropertyType) {
+			result[fieldName] = strings.TrimSpace(cellValue)
+		}
+	}
+
+	return result, errMsg
+}
+
+func checkOrgnization(result map[string]interface{}, department map[int64]metadata.DepartmentItem,
+	defLang lang.DefaultCCLanguageIf, errMsg []string, fieldName, rid string) (map[string]interface{}, []string) {
+
+	if len(department) == 0 {
+		blog.Debug("no department in paas, rid: %s", rid)
+		errMsg = append(errMsg, defLang.Languagef("nonexistent_org"))
+		return result, errMsg
+	}
+	// convert Organization,  eg: "[1]总公司,[2]分公司" => "1,2"
+	orgStr := util.GetStrByInterface(result[fieldName])
+	if len(orgStr) <= 0 {
+		blog.Debug("get excel cell value failed, field:%s, value:%s, err:%v, rid: %s", fieldName,
+			result[fieldName], "not a valid organization type", rid)
+		errMsg = append(errMsg, "organization type is invalid")
+		return result, errMsg
+	}
+	orgItems := strings.Split(orgStr, ",")
+	org := make([]int64, len(orgItems))
+	for i, v := range orgItems {
+		var err error
+		orgID := orgBracketsRegexp.FindString(v)
+		if org[i], err = strconv.ParseInt(strings.TrimSpace(orgID[1:len(orgID)-1]), 10, 64); err != nil {
+			blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName,
+				result[fieldName], "not a valid organization type", rid)
+			errMsg = append(errMsg, defLang.Languagef("nonexistent_org"))
+			break
+		}
+
+		importDepart := v[len(orgID):]
+		dp, exist := department[org[i]]
+		if !exist {
+			blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName,
+				result[fieldName], "organization does not exist", rid)
+			errMsg = append(errMsg, defLang.Languagef("nonexistent_org"))
+			break
+		}
+
+		if len(importDepart) == 0 {
+			continue
+		}
+
+		if dp.Name != importDepart && dp.FullName != importDepart {
+			blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName,
+				result[fieldName], "organization name or full_name does not match", rid)
+			errMsg = append(errMsg, defLang.Languagef("nonexistent_org"))
+			break
+		}
+	}
+	result[fieldName] = org
+
+	return result, errMsg
 }
 
 // ProductExcelHeader Excel文件头部，

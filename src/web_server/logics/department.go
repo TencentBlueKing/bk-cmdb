@@ -13,6 +13,8 @@
 package logics
 
 import (
+	"net/http"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -70,4 +72,31 @@ func (lgc *Logics) GetDepartmentProfile(c *gin.Context, config *options.Config) 
 		return nil, errors.NewCCError(result.Code, result.Message)
 	}
 	return &result.Data, nil
+}
+
+func (lgc *Logics) getDepartmentMap(req *http.Request) (map[int64]metadata.DepartmentItem, errors.CCErrorCoder) {
+	// if no esb config, return
+	if !configcenter.IsExist("webServer.esb.addr") {
+		return nil, nil
+	}
+
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(req.Header))
+	rid := commonutil.GetHTTPCCRequestID(req.Header)
+
+	result, esbErr := esb.EsbClient().User().GetDepartment(req.Context(), req)
+	if esbErr != nil {
+		blog.Errorf("get department by esb client failed, http failed, err: %+v, rid: %s", esbErr, rid)
+		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("get department by esb client failed, result is false, err: %+v, rid: %s", result, rid)
+		return nil, errors.NewCCError(result.Code, result.Message)
+	}
+
+	dpMap := make(map[int64]metadata.DepartmentItem)
+	for _, item := range result.Data.Results {
+		dpMap[item.ID] = item
+	}
+
+	return dpMap, nil
 }

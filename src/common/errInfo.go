@@ -720,6 +720,7 @@ const (
 	CCErrWebUnknownLoginVersion         = 1111017
 	CCErrWebGetUsernameMapFail          = 1111018
 	CCErrWebHostCheckFail               = 1111019
+	CCErrWebGetDepartmentMapFail        = 1111020
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000

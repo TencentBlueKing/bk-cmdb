@@ -32,11 +32,13 @@ import (
 )
 
 // BuildExcelFromData product excel from data
-func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64, usernameMap map[string]string, propertyList []string) error {
+func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string,
+	data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64, usernameMap map[string]string,
+	propertyList []string, org []metadata.DepartmentItem, orgPropertyList []string) error {
+
 	rid := util.GetHTTPCCRequestID(header)
 
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
-	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	sheet, err := xlsxFile.AddSheet("inst")
 	if err != nil {
 		blog.Errorf("setExcelRowDataByIndex add excel sheet error, err:%s, rid:%s", err.Error(), rid)
@@ -46,7 +48,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 	// index=1 表格数据的起始索引，excel表格数据第一列为字段说明，第二列为数据列
 	addSystemField(fields, common.BKInnerObjIDObject, ccLang, 1)
 
-	if 0 == len(filter) {
+	if len(filter) == 0 {
 		filter = getFilterFields(objID)
 	} else {
 		filter = append(filter, getFilterFields(objID)...)
@@ -63,13 +65,19 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		instID, err := rowMap.Int64(instIDKey)
 		if err != nil {
-			blog.Errorf("setExcelRowDataByIndex inst:%+v, not inst id key:%s, objID:%s, rid:%s", rowMap, instIDKey, objID, rid)
-			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, "instIDKey", objID)
+			blog.Errorf("parse inst(%+v) id(key:%s) failed, err: %v, objID: %s, rid: %s", rowMap, instIDKey, err,
+				objID, rid)
 		}
 		// 使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
 		rowMap, err = replaceEnName(rid, rowMap, usernameMap, propertyList, ccLang)
 		if err != nil {
-			blog.Errorf("rebuild user list field, rid: %s", rid)
+			blog.Errorf("rebuild user list failed, err: %v, rid: %s", err, rid)
+			return err
+		}
+
+		rowMap, err = replaceDepartmentFullName(rid, rowMap, org, orgPropertyList, ccLang)
+		if err != nil {
+			blog.Errorf("rebuild organization list failed, err: %v, rid: %s", err, rid)
 			return err
 		}
 
@@ -90,7 +98,9 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 // BuildHostExcelFromData product excel from data
 func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property,
 	filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64,
-	usernameMap map[string]string, propertyList []string, objNames, objIDs []string) error {
+	usernameMap map[string]string, propertyList []string, objNames, objIDs []string, org []metadata.DepartmentItem,
+	orgPropertyList []string) error {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -132,7 +142,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 	productHostExcelHeader(ctx, fields, filter, sheet, ccLang, objNames)
 
 	instPrimaryKeyValMap := make(map[int64][]PropertyPrimaryVal)
-	hanlehHostDataParam := &HanlehHostDataParam{
+	hanlehHostDataParam := &HandlehHostDataParam{
 		HostData:             data,
 		ExtFieldsTopoID:      extFieldsTopoID,
 		ExtFieldsBizID:       extFieldsBizID,
@@ -142,6 +152,8 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		ExtFieldKey:          extFieldKey,
 		UsernameMap:          usernameMap,
 		PropertyList:         propertyList,
+		Organization:         org,
+		OrgPropertyList:      orgPropertyList,
 		CcLang:               ccLang,
 		Sheet:                sheet,
 		Rid:                  rid,
@@ -166,7 +178,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 }
 
 // buildHostExcelData 处理主机数据，生成Excel表格数据
-func (lgc *Logics) buildHostExcelData(hanlehHostDataParam *HanlehHostDataParam) error {
+func (lgc *Logics) buildHostExcelData(hanlehHostDataParam *HandlehHostDataParam) error {
 	rowIndex := common.HostAddMethodExcelIndexOffset
 	for _, hostData := range hanlehHostDataParam.HostData {
 		rowMap, err := mapstr.NewFromInterface(hostData[common.BKInnerObjIDHost])
@@ -233,7 +245,14 @@ func (lgc *Logics) buildHostExcelData(hanlehHostDataParam *HanlehHostDataParam) 
 		rowMap, err = replaceEnName(hanlehHostDataParam.Rid, rowMap, hanlehHostDataParam.UsernameMap,
 			hanlehHostDataParam.PropertyList, hanlehHostDataParam.CcLang)
 		if err != nil {
-			blog.Errorf("rebuild user list field, err: %v, rid: %s", err, hanlehHostDataParam.Rid)
+			blog.Errorf("rebuild user list failed, err: %v, rid: %s", err, hanlehHostDataParam.Rid)
+			return err
+		}
+
+		rowMap, err = replaceDepartmentFullName(hanlehHostDataParam.Rid, rowMap, hanlehHostDataParam.Organization,
+			hanlehHostDataParam.OrgPropertyList, hanlehHostDataParam.CcLang)
+		if err != nil {
+			blog.Errorf("rebuild organization list failed, err: %v, rid: %s", err, hanlehHostDataParam.Rid)
 			return err
 		}
 
@@ -382,32 +401,34 @@ func AddDownExcelHttpHeader(c *gin.Context, name string) {
 }
 
 // GetExcelData excel数据，一个kv结构，key行数（excel中的行数），value内容
-func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, defFields common.KvMap, isCheckHeader bool, firstRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, []string, error) {
+func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, defFields common.KvMap,
+	isCheckHeader bool, firstRow int, defLang lang.DefaultCCLanguageIf, department map[int64]metadata.DepartmentItem) (
+	map[int]map[string]interface{}, []string, error) {
 
 	var err error
 	nameIndexMap, err := checkExcelHeader(ctx, sheet, fields, isCheckHeader, defLang)
-	if nil != err {
+	if err != nil {
 		return nil, nil, err
 	}
 	hosts := make(map[int]map[string]interface{})
 	index := headerRow
-	if 0 != firstRow {
+	if firstRow != 0 {
 		index = firstRow
 	}
 	errMsg := make([]string, 0)
 	rowCnt := len(sheet.Rows)
 	for ; index < rowCnt; index++ {
 		row := sheet.Rows[index]
-		host, getErr := getDataFromByExcelRow(ctx, row, index, fields, defFields, nameIndexMap, defLang)
-		if 0 != len(getErr) {
+		host, getErr := getDataFromByExcelRow(ctx, row, index, fields, defFields, nameIndexMap, defLang, department)
+		if len(getErr) != 0 {
 			errMsg = append(errMsg, getErr...)
 			continue
 		}
-		if 0 != len(host) {
+		if len(host) != 0 {
 			hosts[index+1] = host
 		}
 	}
-	if 0 != len(errMsg) {
+	if len(errMsg) != 0 {
 		return nil, errMsg, nil
 	}
 
@@ -416,7 +437,9 @@ func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Prop
 }
 
 // GetExcelData excel数据，一个kv结构，key行数（excel中的行数），value内容
-func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.KvMap, firstRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, []string, error) {
+func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.KvMap, firstRow int,
+	defLang lang.DefaultCCLanguageIf, department map[int64]metadata.DepartmentItem) (map[int]map[string]interface{},
+	[]string, error) {
 
 	var err error
 	nameIndexMap, err := checkExcelHeader(ctx, sheet, nil, false, defLang)
@@ -425,25 +448,25 @@ func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.Kv
 	}
 	hosts := make(map[int]map[string]interface{})
 	index := headerRow
-	if 0 != firstRow {
+	if firstRow != 0 {
 		index = firstRow
 	}
 	errMsg := make([]string, 0)
 	rowCnt := len(sheet.Rows)
 	for ; index < rowCnt; index++ {
 		row := sheet.Rows[index]
-		host, getErr := getDataFromByExcelRow(ctx, row, index, nil, defFields, nameIndexMap, defLang)
+		host, getErr := getDataFromByExcelRow(ctx, row, index, nil, defFields, nameIndexMap, defLang, department)
 		if nil != getErr {
 			errMsg = append(errMsg, getErr...)
 			continue
 		}
-		if 0 == len(host) {
+		if len(host) != 0 {
 			hosts[index+1] = nil
 		} else {
 			hosts[index+1] = host
 		}
 	}
-	if 0 != len(errMsg) {
+	if len(errMsg) != 0 {
 		return nil, errMsg, nil
 	}
 
