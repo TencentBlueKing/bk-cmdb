@@ -1,7 +1,7 @@
 <template>
   <bk-table-column
     ref="batchSelectionColumn"
-    class-name="batch-selection-column"
+    :class-name="`batch-selection-column ${crossPage ? 'is-cross-page' : ''}`"
     :render-header="columnHeader"
     v-bind="$attrs"
     v-on="$listeners"
@@ -273,14 +273,14 @@
       columnHeader() {
         const pageSelection = <bk-checkbox
                 indeterminate={this.pageSelectionIndeterminate}
-                class={{ 'is-total-selected': this.onCrossPageMode, 'page-select-checkbox': true }}
+                class={[{ 'is-total-selected': this.onCrossPageMode }, 'page-select-checkbox']}
                 disabled={this.pageSelectionDisabled || this.selectableRows.length === 0}
                 vModel={this.isPageSelected}
                 onChange={this.handlePageSelectionChange}
               ></bk-checkbox>
 
         if (!this.crossPage) {
-          return pageSelection
+          return  <div class="batch-selection-label">{pageSelection}</div>
         }
 
         return (
@@ -295,14 +295,12 @@
               duration: 100
             }}
           >
-            <div>
-              {pageSelection}
-            </div>
+            {pageSelection}
             <template slot="content">
               <bk-checkbox
                 indeterminate={this.allSelectionIndeterminate}
                 disabled={this.allSelectionDisabled || this.fullDataAllDisabled}
-                class={{ 'is-total-selected': this.onCrossPageMode, 'all-select-checkbox': true }}
+                class={[{ 'is-total-selected': this.onCrossPageMode }, 'all-select-checkbox']}
                 vModel={this.isAllSelected}
                 onChange={this.handleAllSelectionChange}
               >
@@ -392,7 +390,7 @@
     border-color: #2dcb56;
   }
 
-  th.batch-selection-column .cell {
+  th.batch-selection-column.is-cross-page .cell {
     padding-right: 0;
     padding-left: 0;
 
