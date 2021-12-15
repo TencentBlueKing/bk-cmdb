@@ -89,7 +89,6 @@ func (sm *systemManager) SearchPlatformSettingConfig(kit *rest.Kit) (*metadata.P
 		blog.Errorf("search platform setting failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-
 	if _, ok := ret[common.ConfigAdminValueField].(string); !ok {
 		blog.Errorf("search platform setting failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -126,7 +125,7 @@ func (sm *systemManager) UpdatePlatformSettingConfig(kit *rest.Kit,
 	if err != nil {
 		blog.Errorf("update config admin failed, update err: %v, rid: %s", err, kit.Rid)
 
-		return kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed, err)
+		return kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed, err)
 	}
 
 	return nil
