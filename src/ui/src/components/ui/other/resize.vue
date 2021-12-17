@@ -70,7 +70,14 @@
       storeId: {
         type: String,
         default: ''
-      }
+      },
+      /**
+       * resize layout 的宽度，用来手动设置宽度
+       */
+      width: {
+        type: Number,
+        default: undefined
+      },
     },
     data() {
       return {
@@ -113,6 +120,13 @@
           Object.assign(max, this.max)
         }
         return max
+      }
+    },
+    watch: {
+      width(width) {
+        if (this.direction === 'right' && width !== undefined && typeof width === 'number') {
+          this.$el.style.width = `${width}px`
+        }
       }
     },
     mounted() {
