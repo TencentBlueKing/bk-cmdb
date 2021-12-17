@@ -485,6 +485,15 @@ func (m *instanceManager) CountModelInstances(kit *rest.Kit,
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField)
 	}
 
+	if input.TimeCondition != nil {
+		var err error
+		input.Condition, err = input.TimeCondition.MergeTimeCondition(input.Condition)
+		if err != nil {
+			blog.Errorf("merge time condition failed, error: %v, input: %s, rid: %s", err, input, kit.Rid)
+			return nil, err
+		}
+	}
+
 	count, err := m.countInstance(kit, objID, input.Condition)
 	if err != nil {
 		blog.Errorf("count model instances failed, err: %s, rid: %s", err.Error(), kit.Rid)

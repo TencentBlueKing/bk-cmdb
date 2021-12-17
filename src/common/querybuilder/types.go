@@ -20,6 +20,8 @@ import (
 	"configcenter/src/common"
 )
 
+const timeLayout = "2006-01-02"
+
 type Rule interface {
 	GetDeep() int
 	Validate(option *RuleOption) (string, error)
@@ -70,7 +72,7 @@ var (
 	OperatorGreater        = Operator("greater")
 	OperatorGreaterOrEqual = Operator("greater_or_equal")
 
-	// datetime operate
+	// datetime operate only use for data type
 	OperatorDatetimeLess           = Operator("datetime_less")
 	OperatorDatetimeLessOrEqual    = Operator("datetime_less_or_equal")
 	OperatorDatetimeGreater        = Operator("datetime_greater")
@@ -109,10 +111,10 @@ var SupportOperators = map[Operator]bool{
 	OperatorGreater:        true,
 	OperatorGreaterOrEqual: true,
 
-	OperatorDatetimeLess:           false,
-	OperatorDatetimeLessOrEqual:    false,
-	OperatorDatetimeGreater:        false,
-	OperatorDatetimeGreaterOrEqual: false,
+	OperatorDatetimeLess:           true,
+	OperatorDatetimeLessOrEqual:    true,
+	OperatorDatetimeGreater:        true,
+	OperatorDatetimeGreaterOrEqual: true,
 
 	OperatorBeginsWith:    true,
 	OperatorNotBeginsWith: true,
@@ -246,36 +248,36 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 			common.BKDBGTE: r.Value,
 		}
 	case OperatorDatetimeLess:
-		t, err := time.Parse(time.RFC3339, r.Value.(string))
+		_, err := time.Parse(timeLayout, r.Value.(string))
 		if err != nil {
 			return nil, "value", err
 		}
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBLT: t,
+			common.BKDBLT: r.Value.(string),
 		}
 	case OperatorDatetimeLessOrEqual:
-		t, err := time.Parse(time.RFC3339, r.Value.(string))
+		_, err := time.Parse(timeLayout, r.Value.(string))
 		if err != nil {
 			return nil, "value", err
 		}
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBLTE: t,
+			common.BKDBLTE: r.Value.(string),
 		}
 	case OperatorDatetimeGreater:
-		t, err := time.Parse(time.RFC3339, r.Value.(string))
+		_, err := time.Parse(timeLayout, r.Value.(string))
 		if err != nil {
 			return nil, "value", err
 		}
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBGT: t,
+			common.BKDBGT: r.Value.(string),
 		}
 	case OperatorDatetimeGreaterOrEqual:
-		t, err := time.Parse(time.RFC3339, r.Value.(string))
+		_, err := time.Parse(timeLayout, r.Value.(string))
 		if err != nil {
 			return nil, "value", err
 		}
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBGTE: t,
+			common.BKDBGTE: r.Value.(string),
 		}
 	case OperatorBeginsWith:
 		filter[r.Field] = map[string]interface{}{

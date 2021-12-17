@@ -634,12 +634,13 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	case common.BKTableNameProcessInstanceRelation:
 
 	case common.BKTableNameBaseInst:
+	case common.BKTableNameInstAsst:
 		// NOTE: should not use the table name for archive, the object instance and association
 		// was saved in sharding tables, we still case the BKTableNameBaseInst here for the archive
 		// error message in order to find the wrong table name used in logics level.
 
 	default:
-		if !common.IsObjectInstShardingTable(c.collName) {
+		if !common.IsObjectShardingTable(c.collName) {
 			// do not archive the delete docs
 			return nil
 		}

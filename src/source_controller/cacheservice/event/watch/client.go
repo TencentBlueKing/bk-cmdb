@@ -54,6 +54,8 @@ func (c *Client) getLatestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNode,
 		common.BKClusterTimeField: map[string]interface{}{
 			common.BKDBGTE: metadata.Time{Time: time.Now().Add(-time.Duration(key.TTLSeconds()) * time.Second).UTC()},
 		},
+		// filters out the previous version where sub resource is string type // TODO remove this
+		common.BKSubResourceField: map[string]interface{}{common.BKDBType: "array"},
 	}
 
 	node := new(watch.ChainNode)
@@ -74,6 +76,8 @@ func (c *Client) getEarliestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNod
 		common.BKClusterTimeField: map[string]interface{}{
 			common.BKDBGTE: metadata.Time{Time: time.Now().Add(-time.Duration(key.TTLSeconds()) * time.Second).UTC()},
 		},
+		// filters out the previous version where sub resource is string type // TODO remove this
+		common.BKSubResourceField: map[string]interface{}{common.BKDBType: "array"},
 	}
 
 	node := new(watch.ChainNode)
@@ -147,7 +151,11 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 		}
 
 		if key.Collection() == common.BKTableNameBaseInst || key.Collection() == common.BKTableNameMainlineInstance {
-			filter["coll"] = key.ShardingCollection(node.SubResource, kit.SupplierAccount)
+			if len(node.SubResource) == 0 {
+				blog.Errorf("%s delete event chain node has no sub resource, oid: %s", key.Collection(), node.Oid)
+				return nil, false, nil
+			}
+			filter["coll"] = key.ShardingCollection(node.SubResource[0], kit.SupplierAccount)
 		} else {
 			filter["coll"] = key.Collection()
 		}
@@ -219,7 +227,11 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 
 	collection := key.Collection()
 	if key.Collection() == common.BKTableNameBaseInst || key.Collection() == common.BKTableNameMainlineInstance {
-		collection = key.ShardingCollection(node.SubResource, kit.SupplierAccount)
+		if len(node.SubResource) == 0 {
+			blog.Errorf("%s event chain node has no sub resource, oid: %s", key.Collection(), node.Oid)
+			return nil, false, nil
+		}
+		collection = key.ShardingCollection(node.SubResource[0], kit.SupplierAccount)
 	}
 
 	if err := c.db.Table(collection).Find(filter).Fields(fields...).One(kit.Ctx, detailMap); err != nil {
@@ -281,6 +293,8 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, opts *searchFollo
 		common.BKClusterTimeField: map[string]interface{}{
 			common.BKDBGTE: metadata.Time{Time: time.Now().Add(-time.Duration(opts.key.TTLSeconds()) * time.Second).UTC()},
 		},
+		// filters out the previous version where sub resource is string type // TODO remove this
+		common.BKSubResourceField: map[string]interface{}{common.BKDBType: "array"},
 	}
 
 	node := new(watch.ChainNode)
@@ -375,7 +389,11 @@ func (c *Client) searchFollowingEventChainNodesByID(kit *rest.Kit, opt *searchFo
 	}
 
 	if len(opt.subResource) > 0 {
-		filter[common.BKSubResourceField] = opt.subResource
+		filter[common.BKSubResourceField] = map[string]interface{}{
+			common.BKDBEQ: opt.subResource,
+			// filters out the previous version where sub resource is string type // TODO remove this
+			common.BKDBType: "array",
+		}
 	}
 
 	nodes := make([]*watch.ChainNode, 0)

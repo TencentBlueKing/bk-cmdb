@@ -175,6 +175,8 @@ const (
 	SysEventWatch            TypeID = "event_watch"
 	Host                     TypeID = "host"
 	UserCustom               TypeID = "usercustom"
+	// InstAsstEvent instance association resource for resource watch
+	InstAsstEvent TypeID = "inst_asst_event"
 
 	// for resource type, which is not need to be authorized
 	SkipType TypeID = "skip_type"
@@ -333,6 +335,7 @@ const (
 	WatchProcessEvent          ActionID = "watch_process_event"
 	WatchCommonInstanceEvent   ActionID = "watch_comm_model_inst_event"
 	WatchMainlineInstanceEvent ActionID = "watch_custom_topo_layer_event"
+	WatchInstAsstEvent         ActionID = "watch_inst_asst_event"
 
 	GlobalSettings ActionID = "global_settings"
 
@@ -434,6 +437,7 @@ const (
 	SysCloudAreaSelection              InstanceSelectionID = "sys_cloud_area"
 	SysCloudAccountSelection           InstanceSelectionID = "sys_cloud_account"
 	SysCloudResourceTaskSelection      InstanceSelectionID = "sys_cloud_resource_task"
+	InstAsstEventSelection             InstanceSelectionID = "inst_asst_event"
 	// 主机池目录的两种视图，管理的资源也相同，仅名称做区分
 	SysResourcePoolDirectorySelection InstanceSelectionID = "sys_resource_pool_directory"
 	SysHostRscPoolDirectorySelection  InstanceSelectionID = "sys_host_rsc_pool_directory"

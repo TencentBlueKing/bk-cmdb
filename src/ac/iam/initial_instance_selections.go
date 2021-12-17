@@ -235,5 +235,16 @@ func GenerateStaticInstanceSelections() []InstanceSelection {
 				},
 			},
 		},
+		{
+			ID:     InstAsstEventSelection,
+			Name:   "实例关联事件列表",
+			NameEn: "Instance Association Event List",
+			ResourceTypeChain: []ResourceChain{
+				{
+					SystemID: SystemIDCMDB,
+					ID:       InstAsstEvent,
+				},
+			},
+		},
 	}
 }

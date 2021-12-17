@@ -151,3 +151,8 @@ func (em *EventMetrics) CollectRedisError() {
 func (em *EventMetrics) CollectMongoError() {
 	em.totalErrorCount.With(prometheus.Labels{"error_type": "mongo_command"}).Inc()
 }
+
+// CollectConflict collect event conflict count
+func (em *EventMetrics) CollectConflict() {
+	em.totalErrorCount.With(prometheus.Labels{"error_type": "conflict"}).Inc()
+}

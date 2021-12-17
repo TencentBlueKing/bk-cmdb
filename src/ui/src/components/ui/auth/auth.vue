@@ -35,7 +35,7 @@
         authMetas: null,
         isAuthorized: false,
         disabled: true,
-        useIAM: this.$Site.authscheme === 'iam'
+        useIAM: window.CMDB_CONFIG?.site?.authscheme === 'iam'
       }
     },
     watch: {

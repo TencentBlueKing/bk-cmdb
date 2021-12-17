@@ -33,26 +33,28 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func newInstanceFlow(ctx context.Context, opts flowOptions, getDeleteEventDetails getDeleteEventDetailsFunc) error {
-	flow := InstanceFlow{
-		Flow: Flow{
-			flowOptions:           opts,
-			metrics:               event.InitialMetrics(opts.key.Collection(), "watch"),
-			getDeleteEventDetails: getDeleteEventDetails,
-		},
+func newInstanceFlow(ctx context.Context, opts flowOptions, getDeleteEventDetails getDeleteEventDetailsFunc,
+	parseEvent parseEventFunc) error {
+
+	flow, err := NewFlow(opts, getDeleteEventDetails, parseEvent)
+	if err != nil {
+		return err
+	}
+	instFlow := InstanceFlow{
+		Flow:              flow,
 		mainlineObjectMap: new(mainlineObjectMap),
 	}
 
-	mainlineObjectMap, err := flow.getMainlineObjectMap(ctx)
+	mainlineObjectMap, err := instFlow.getMainlineObjectMap(ctx)
 	if err != nil {
 		blog.Errorf("run object instance watch, but get mainline objects failed, err: %v", err)
 		return err
 	}
-	flow.mainlineObjectMap.Set(mainlineObjectMap)
+	instFlow.mainlineObjectMap.Set(mainlineObjectMap)
 
-	go flow.syncMainlineObjectMap()
+	go instFlow.syncMainlineObjectMap()
 
-	return flow.RunFlow(ctx)
+	return instFlow.RunFlow(ctx)
 }
 
 // syncMainlineObjectMap refresh mainline object ID map every 5 minutes
@@ -191,14 +193,14 @@ func (f *InstanceFlow) doBatch(es []*types.Event) (retry bool) {
 			f.metrics.CollectBasic(e)
 
 			idIndex := oidIndexMap[e.Oid+e.Collection]
-			chainNode, detailBytes, retry, err := parseEvent(key, e, oidDetailMap, ids[idIndex], rid)
+			chainNode, detailBytes, retry, err := f.parseEvent(key, e, oidDetailMap, ids[idIndex], rid)
 			if err != nil {
 				return retry
 			}
 			if chainNode == nil {
 				continue
 			}
-			chainNode.SubResource = gjson.GetBytes(e.DocBytes, common.BKObjIDField).String()
+			chainNode.SubResource = []string{gjson.GetBytes(e.DocBytes, common.BKObjIDField).String()}
 
 			if idIndex == eventLen-1 {
 				lastChainNode = chainNode
