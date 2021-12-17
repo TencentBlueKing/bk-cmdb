@@ -880,9 +880,9 @@ func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
 				resp.ErrMsg["dst"] = err
 			}
 			if len(errMsg) != 0 {
-				resp.ErrMsg["src"] = strings.Join(errMsg, ",")
+				resp.ErrMsg["dst"] = strings.Join(errMsg, ",")
 			}
-			resp.Src = append(resp.Dst, dstRsp...)
+			resp.Dst = append(resp.Dst, dstRsp...)
 		}
 	}
 
@@ -893,7 +893,7 @@ func (s *Service) searchInstForAssocDetail(ctx *rest.Contexts, objID string, fie
 	[]mapstr.MapStr, []string, error) {
 
 	var errMsg []string
-	if metadata.IsCommon(objID) || objID != common.BKInnerObjIDHost {
+	if !metadata.IsCommon(objID) && objID != common.BKInnerObjIDHost {
 		blog.Errorf("only allow to search common object and host, rid: %s", ctx.Kit.Rid)
 		return nil, errMsg, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, objID)
 	}
