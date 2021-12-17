@@ -295,50 +295,6 @@ func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Head
 	return am.AuthorizeByHosts(ctx, header, action, hosts...)
 }
 
-// AuthorizeByHostID authenticate assigned and unassigned hosts respectively
-func (am *AuthManager) AuthorizeByHostID(ctx context.Context, header http.Header, action meta.Action,
-	hostIDs ...int64) (map[int64]error, error) {
-	rid := util.ExtractRequestIDFromContext(ctx)
-
-	if !am.Enabled() {
-		return nil, nil
-	}
-	if am.SkipReadAuthorization {
-		blog.V(4).Infof("skip authorization for reading, hosts: %+v, rid: %s", hostIDs, rid)
-		return nil, nil
-	}
-
-	if len(hostIDs) == 0 {
-		return nil, nil
-	}
-	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
-	if err != nil {
-		return nil, fmt.Errorf("authorize hosts failed, get hosts by id failed, err: %+v, rid: %s", err, rid)
-	}
-
-	resourcePoolBusinessID, err := am.getResourcePoolBusinessID(ctx, header)
-	if err != nil {
-		return nil, fmt.Errorf("authorize hosts failed, get resource pool bizID failed, err: %+v, rid: %s", err, rid)
-	}
-
-	errMap := make(map[int64]error)
-	for _, host := range hosts {
-		if host.BKAppIDField != resourcePoolBusinessID {
-			err := am.AuthorizeByBusinessID(ctx, header, meta.ViewBusinessResource, host.BKAppIDField)
-			if err != nil {
-				errMap[host.BKHostIDField] = err
-			}
-		} else {
-			err := am.AuthorizeByHosts(ctx, header, action, host)
-			if err != nil {
-				errMap[host.BKHostIDField] = err
-			}
-		}
-	}
-
-	return errMap, nil
-}
-
 func (am *AuthManager) AuthorizeCreateHost(ctx context.Context, header http.Header, bizID int64) error {
 	if !am.Enabled() {
 		return nil

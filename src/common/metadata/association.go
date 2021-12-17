@@ -175,7 +175,8 @@ type AssocFilterAndInstFilter struct {
 	AsstFields []string                  `field:"asst_fields" json:"asst_fields"`
 	SrcFields  []string                  `field:"src_fields" json:"src_fields"`
 	DstFields  []string                  `field:"dst_fields" json:"dst_fields"`
-	IsDetail   bool                      `field:"is_detail" json:"is_detail"`
+	IsSrc      bool                      `field:"is_src" json:"is_src"`
+	IsDst      bool                      `field:"is_dst" json:"is_dst"`
 }
 
 // Validate validate InstAndAssocDetailData

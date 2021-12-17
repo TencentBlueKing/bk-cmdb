@@ -51,6 +51,8 @@ type BusinessOperationInterface interface {
 	// this api only return business topology relations.
 	GetBriefTopologyNodeRelation(kit *rest.Kit, opts *metadata.GetBriefBizRelationOptions) ([]*metadata.
 		BriefBizRelations, error)
+	// GetResourcePoolBusinessID search resource pool biz id
+	GetResourcePoolBusinessID(kit *rest.Kit) (int64, error)
 	// SetProxy SetProxy
 	SetProxy(inst InstOperationInterface, module ModuleOperationInterface, set SetOperationInterface)
 }
@@ -428,4 +430,37 @@ func (b *business) genBriefTopologyNodeRelation(kit *rest.Kit, filter mapstr.Map
 	}
 
 	return relations, nil
+}
+
+// GetResourcePoolBusinessID search resource pool biz id
+func (b *business) GetResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
+
+	cond := &metadata.QueryCondition{
+		Fields:    []string{common.BKAppIDField, common.BkSupplierAccount},
+		Condition: map[string]interface{}{"default": 1},
+	}
+
+	rsp, err := b.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, cond)
+	if err != nil {
+		blog.Errorf("search resource pool id failed, err: %v, rid: %s", err, kit.Rid)
+		return 0, err
+	}
+
+	supplier := util.GetOwnerID(kit.Header)
+	for idx, biz := range rsp.Info {
+		if supplier == biz[common.BkSupplierAccount].(string) {
+			if !rsp.Info[idx].Exists(common.BKAppIDField) {
+				// this can not be happen normally.
+				return 0, fmt.Errorf("can not find resource pool business id")
+			}
+			bizID, err := rsp.Info[idx].Int64(common.BKAppIDField)
+			if err != nil {
+				return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
+			}
+
+			return bizID, nil
+		}
+	}
+
+	return 0, fmt.Errorf("get resource pool biz id failed")
 }
