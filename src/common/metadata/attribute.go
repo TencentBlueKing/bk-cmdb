@@ -1092,6 +1092,8 @@ func CheckAllowHostApplyOnField(field string) bool {
 	return true
 }
 
+type SubAttributeOption []SubAttribute
+
 // SubAttribute sub attribute metadata definition
 type SubAttribute struct {
 	PropertyID    string      `field:"bk_property_id" json:"bk_property_id" bson:"bk_property_id"`
@@ -1126,6 +1128,78 @@ func (sa *SubAttribute) Validate(ctx context.Context, data interface{}, key stri
 		PropertyGroup: sa.PropertyGroup,
 	}
 	return attr.Validate(ctx, data, key)
+}
+
+// ParseSubAttribute convert val to []SubAttribute
+func ParseSubAttribute(ctx context.Context, val interface{}) (SubAttributeOption, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	subAttrs := make([]SubAttribute, 0)
+	var err error
+	if val == nil || val == "" {
+		return subAttrs, nil
+	}
+	switch options := val.(type) {
+	case []SubAttribute:
+		return options, nil
+	case string:
+		err = json.Unmarshal([]byte(options), &subAttrs)
+		if nil != err {
+			blog.Errorf("parse sub-attribute failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+	case []interface{}:
+		subAttrs, err = parseSubAttribute(options)
+		if err != nil {
+			blog.Errorf("parse sub-attribute failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+	case bson.A:
+		subAttrs, err = parseSubAttribute(options)
+		if err != nil {
+			blog.Errorf("parse sub-attribute failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unknow val type: %#v", val)
+	}
+	return subAttrs, nil
+}
+
+func parseSubAttribute(options []interface{}) ([]SubAttribute, error) {
+
+	subAttrs := make([]SubAttribute, 0)
+	for _, optionVal := range options {
+		switch option := optionVal.(type) {
+		case map[string]interface{}:
+			subAttrs = append(subAttrs, parseSubAttr(option))
+		case bson.M:
+			subAttrs = append(subAttrs, parseSubAttr(map[string]interface{}(option)))
+		case bson.D:
+			subAttrs = append(subAttrs, parseSubAttr(map[string]interface{}(option.Map())))
+		default:
+			return nil, fmt.Errorf("unknow optionVal type: %#v", optionVal)
+		}
+	}
+	return subAttrs, nil
+}
+
+func parseSubAttr(options map[string]interface{}) SubAttribute {
+	subAttr := SubAttribute{}
+
+	subAttr.PropertyID = getString(options["bk_property_id"])
+	subAttr.PropertyName = getString(options["bk_property_name"])
+	subAttr.PropertyGroup = getString(options["bk_property_group"])
+	subAttr.Placeholder = getString(options["placeholder"])
+	subAttr.PropertyType = getString(options["bk_property_type"])
+	subAttr.IsAPI = getBool(options["bk_isapi"])
+	subAttr.IsEditable = getBool(options["editable"])
+	subAttr.IsReadOnly = getBool(options["isreadonly"])
+	subAttr.IsRequired = getBool(options["isrequired"])
+	subAttr.IsSystem = getBool(options["bk_issystem"])
+	subAttr.Option = options["option"]
+	subAttr.Description = getString(options["description"])
+
+	return subAttr
 }
 
 type EnumOptions []AttributesOption

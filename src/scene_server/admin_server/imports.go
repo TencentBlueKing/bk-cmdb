@@ -64,4 +64,5 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202107311844"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202109131607"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202109181134"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202112171521"
 )
