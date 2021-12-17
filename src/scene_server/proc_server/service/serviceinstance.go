@@ -1121,14 +1121,14 @@ func (ps *ProcServer) getHostAndServiceInsts(ctx *rest.Contexts, option *hostAnd
 
 	relations := new(metadata.MultipleProcessInstanceRelation)
 	if len(serviceInstanceIDs) > 0 {
-		op := metadata.ListProcessInstanceRelationOption{
+		o := metadata.ListProcessInstanceRelationOption{
 			BusinessID:         module.BizID,
 			ServiceInstanceIDs: serviceInstanceIDs,
 			ProcessTemplateID:  option.ProcTemplateId,
 		}
 
-		relations, e := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &op)
-		if e != nil {
+		relations, err = ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &o)
+		if err != nil {
 			blog.Errorf("get process relation failed, option: %s, err: %v, rid: %s", option, err, ctx.Kit.Rid)
 			return nil, nil, nil, []int64{}, nil, nil, nil, err
 		}
