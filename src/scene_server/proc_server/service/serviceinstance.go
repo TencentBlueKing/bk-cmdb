@@ -1116,14 +1116,14 @@ func (ps *ProcServer) getHostAndServiceInsts(ctx *rest.Contexts, option *hostAnd
 
 	relations := new(metadata.MultipleProcessInstanceRelation)
 	if len(serviceInstanceIDs) > 0 {
-		op := metadata.ListProcessInstanceRelationOption{
+		o := metadata.ListProcessInstanceRelationOption{
 			BusinessID:         module.BizID,
 			ServiceInstanceIDs: serviceInstanceIDs,
 			ProcessTemplateID:  option.ProcTemplateId,
 		}
 
-		relations, e := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &op)
-		if e != nil {
+		relations, err = ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &o)
+		if err != nil {
 			blog.Errorf("get process relation failed, option: %s, err: %v, rid: %s", option, err, ctx.Kit.Rid)
 			return nil, nil, nil, []int64{}, nil, nil, nil, err
 		}
@@ -1224,7 +1224,6 @@ func (ps *ProcServer) getProcDetailsAndAttr(ctx *rest.Contexts, procInstRelation
 	for _, r := range procInstRelations {
 		procIDs = append(procIDs, r.ProcessID)
 	}
-
 	procID2Detail, attrMap, err := ps.getProcAndAttributeMap(ctx, procIDs)
 	if err != nil {
 		return nil, nil, err
@@ -1267,14 +1266,11 @@ func (ps *ProcServer) getListDiffServiceInstanceNum(ctx *rest.Contexts, opt *met
 		if e != nil {
 			return nil, err
 		}
-
 		procID2Detail, attrMap, err := ps.getProcDetailsAndAttr(ctx, relations.Info)
 		if err != nil {
 			return nil, err
 		}
-
 		flag := false
-
 		for _, inst := range sInsts.Info {
 
 			relations := sInstMap[inst.ID]
@@ -1289,6 +1285,7 @@ func (ps *ProcServer) getListDiffServiceInstanceNum(ctx *rest.Contexts, opt *met
 				p, exist := pTMap[relation.ProcessTemplateID]
 
 				if !exist && opt.ProcessTemplateId == 0 && opt.ProcTemplateName == procName {
+
 					d.ServiceInsts = append(d.ServiceInsts, metadata.ServiceInstancesInfo{Id: inst.ID, Name: inst.Name})
 					flag = true
 					break

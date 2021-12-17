@@ -26,9 +26,12 @@ import (
 type SetTemplate interface {
 	DiffSetTplWithInst(kit *rest.Kit, bizID int64, setTemplateID int64,
 		option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder)
-	SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder
-	GetLatestSyncTaskDetail(kit *rest.Kit, taskCond metadata.ListAPITaskDetail) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder)
-	CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64, setTemplateID int64) (*metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder)
+	SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateID int64,
+		option metadata.SyncSetTplToInstOption) errors.CCErrorCoder
+	GetLatestSyncTaskDetail(kit *rest.Kit, taskCond metadata.ListAPITaskDetail) (
+		map[int64]*metadata.APITaskDetail, errors.CCErrorCoder)
+	CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64, setTemplateID int64) (
+		*metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder)
 	ListSetTemplateSyncHistory(kit *rest.Kit, option *metadata.ListSetTemplateSyncStatusOption) (
 		*metadata.ListAPITaskSyncStatusResult, errors.CCErrorCoder)
 	ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata.ListSetTemplateSyncStatusOption) (
@@ -176,7 +179,8 @@ func (st *setTemplate) DiffSetTplWithInst(kit *rest.Kit, bizID int64, setTemplat
 	return setDiffs, nil
 }
 
-func (st *setTemplate) SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
+func (st *setTemplate) SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateID int64,
+	option metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
 
 	diffOption := metadata.DiffSetTplWithInstOption{
 		SetIDs: option.SetIDs,
@@ -230,7 +234,9 @@ func (st *setTemplate) DispatchTask4ModuleSync(kit *rest.Kit, taskType string, s
 }
 
 // DiffServiceTemplateWithModules diff modules with template in one set
-func DiffServiceTemplateWithModules(serviceTemplates []metadata.ServiceTemplate, modules []metadata.ModuleInst) []metadata.SetModuleDiff {
+func DiffServiceTemplateWithModules(serviceTemplates []metadata.ServiceTemplate,
+	modules []metadata.ModuleInst) []metadata.SetModuleDiff {
+
 	svcTplMap := make(map[int64]metadata.ServiceTemplate, len(serviceTemplates))
 	svcTplHitMap := make(map[int64]bool, len(serviceTemplates))
 	for _, svcTpl := range serviceTemplates {
@@ -307,7 +313,8 @@ func (st *setTemplate) CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64
 		},
 	}
 	setResult := metadata.ResponseSetInstance{}
-	err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter, &setResult)
+	err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter,
+		&setResult)
 	if err != nil {
 		blog.Errorf(" list set failed, option: %s, err: %s, rid: %s", filter, err, kit.Rid)
 		return result, errors.CCHttpError

@@ -22,7 +22,9 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int64) ([]metadata.SetInst, errors.CCErrorCoder) {
+func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int64) ([]metadata.SetInst,
+	errors.CCErrorCoder) {
+
 	filter := &metadata.QueryCondition{}
 	filter.Condition = mapstr.MapStr{
 		common.BKSetIDField:         map[string]interface{}{common.BKDBIN: setIDs},
@@ -30,7 +32,8 @@ func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int6
 	}
 
 	instResult := new(metadata.ResponseSetInstance)
-	err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter, instResult)
+	err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter,
+		instResult)
 	if err != nil {
 		blog.Errorf("GetSets failed, db select failed, filter: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -56,8 +59,8 @@ func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int6
 	return instResult.Data.Info, nil
 }
 
-func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64, isInterrupt bool) (map[int64]bool,
-	errors.CCErrorCoder) {
+func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64,
+	isInterrupt bool) (map[int64]bool, errors.CCErrorCoder) {
 
 	if len(setIDs) == 0 {
 		blog.Errorf("array of set_id is empty, rid: %s", kit.Rid)
@@ -205,7 +208,9 @@ func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
 	for taskIdx := range detail.Detail {
 		subTaskDetail, ok := detail.Detail[taskIdx].Data.(map[string]interface{})
 		if !ok {
-			blog.Warnf("clearSetSyncTaskDetail expect map[string]interface{}, got unexpected type, data: %+v", detail.Detail[taskIdx].Data)
+			blog.Warnf("clearSetSyncTaskDetail expect map[string]interface{}, got unexpected type, data: %+v",
+				detail.Detail[taskIdx].Data)
+
 			detail.Detail[taskIdx].Data = nil
 		}
 		delete(subTaskDetail, "header")
