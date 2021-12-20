@@ -368,6 +368,36 @@ export function sort(data, compareKey) {
   return [...data].sort((A, B) => A[compareKey] - B[compareKey])
 }
 
+/**
+ * 递归对拓扑树进行自然排序
+ * @param {array} topoTree 拓扑
+ * @param {string} compareKey 需要对比的属性的 Key
+ * @param {string} [childrenKey] 后代属性的 Key
+ */
+export function sortTopoTree(topoTree, compareKey, childrenKey) {
+  if (!Array.isArray(topoTree)) {
+    throw Error('topoTree must be type of array')
+  }
+  if (!compareKey) {
+    throw Error('compareKey is required')
+  }
+
+  topoTree.sort((a, b) => {
+    if (has(a, compareKey) && has(b, compareKey)) {
+      return a[compareKey].localeCompare(b[compareKey], undefined, { sensitivity: 'base', numeric: true })
+    }
+    return 0
+  })
+
+  if (childrenKey) {
+    topoTree?.forEach((node) => {
+      if (node[childrenKey]) {
+        sortTopoTree(node[childrenKey], compareKey, childrenKey)
+      }
+    })
+  }
+}
+
 export function getPropertyCopyValue(originalValue, propertyType) {
   if (
     originalValue === ''

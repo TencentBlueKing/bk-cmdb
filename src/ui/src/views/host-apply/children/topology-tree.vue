@@ -54,6 +54,7 @@
   import { mapGetters, mapState } from 'vuex'
   import Bus from '@/utils/bus'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
+  import { sortTopoTree } from '@/utils/tools'
   export default {
     props: {
       treeOptions: {
@@ -128,13 +129,14 @@
         this.getMainLine()
       ])
 
+      sortTopoTree(data, 'bk_inst_name', 'child')
+
       // 将空闲机池放到顶部
       const root = data[0] || {}
       const children = root.child || []
       const idleIndex = children.findIndex(item => item.default === 1)
       if (idleIndex !== -1) {
         const idlePool = children[idleIndex]
-        idlePool.child.sort((a, b) => a.bk_inst_id - b.bk_inst_id)
         children.splice(idleIndex, 1)
         children.unshift(idlePool)
       }
