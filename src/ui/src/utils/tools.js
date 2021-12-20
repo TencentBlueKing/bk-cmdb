@@ -384,7 +384,16 @@ export function sortTopoTree(topoTree, compareKey, childrenKey) {
 
   topoTree.sort((a, b) => {
     if (has(a, compareKey) && has(b, compareKey)) {
-      return a[compareKey].localeCompare(b[compareKey], undefined, { sensitivity: 'base', numeric: true })
+      const valueA = a[compareKey]
+      const valueB = b[compareKey]
+
+      if (/[a-zA-Z0-9]/.test(valueA) || /[a-zA-Z0-9]/.test(valueB)) {
+        if (valueA > valueB) return 1
+        if (valueA < valueB) return -1
+        return 0
+      }
+
+      return valueA.localeCompare(valueB)
     }
     return 0
   })
