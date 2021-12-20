@@ -103,6 +103,13 @@ const actions = {
      */
   transferHostToMutipleBizModule({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/modules/biz/mutilple', params, config)
+  },
+
+  /**
+   * 跨业务转移空闲机到空闲机模块
+   */
+  transferHostToOtherBizModule({ commit, state, dispatch }, { params, config }) {
+    return $http.post('hosts/resource/cross/biz', params, config)
   }
 }
 

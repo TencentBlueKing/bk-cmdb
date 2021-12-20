@@ -86,9 +86,11 @@
           const allRelationPath = []
           relatedResourceTypes.forEach(({ instances = [] }) => {
             instances.forEach((fullPaths) => {
-              // 数据格式[type, id, label]
-              // eslint-disable-next-line max-len
-              const topoPath = fullPaths.map(pathData => [pathData.type, pathData.id, IAM_VIEWS_NAME[pathData.type][languageIndex]])
+              const topoPath = fullPaths.map((pathData) => {
+                const { type, id } = pathData
+                const label = IAM_VIEWS_NAME[type][languageIndex]
+                return [type, id, label]
+              })
               allRelationPath.push(topoPath)
             })
           })

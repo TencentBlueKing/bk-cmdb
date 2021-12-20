@@ -19,7 +19,7 @@
               :key="item.bk_biz_id"
               :id="item.bk_biz_id"
               :name="`[${item.bk_biz_id}] ${item.bk_biz_name}`"
-              :auth="{ type: $OPERATION.HOST_TRANSFER_ACROSS_BIZ, relation: [[[bizId], [item.bk_biz_id]]] }">
+              :auth="{ type: $OPERATION.HOST_TRANSFER_ACROSS_BIZ, relation: item.relation }">
             </cmdb-auth-option>
           </bk-select>
           <template v-if="targetBizId">
@@ -30,7 +30,7 @@
                 nameKey: 'bk_inst_name',
                 childrenKey: 'child'
               }"
-              :height="278"
+              :height="450"
               :node-height="36"
               :show-checkbox="isShowCheckbox"
               @node-click="handleNodeClick"
@@ -88,8 +88,11 @@
         type: String,
         default: ''
       },
+      /**
+       * 选择的机器所在业务
+       */
       business: {
-        type: Object,
+        type: [Object, Array],
         required: true
       }
     },
@@ -113,8 +116,11 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['getModelById']),
-      bizId() {
-        return this.business.bk_biz_id
+      bizIds() {
+        if (this.business?.bk_biz_id) {
+          return [this.business.bk_biz_id]
+        }
+        return this.business
       },
       targetBiz() {
         return this.businessList.find(biz => biz.bk_biz_id === this.targetBizId)
@@ -127,10 +133,20 @@
       this.getFullAmountBusiness()
     },
     methods: {
+      generateRelation(businesses) {
+        businesses.forEach((item) => {
+          const relation = []
+          this.bizIds.forEach((bizId) => {
+            relation.push([[bizId], [item.bk_biz_id]])
+          })
+          item.relation = relation
+        })
+      },
       async getFullAmountBusiness() {
         try {
           const data = await this.$http.get('biz/simplify?sort=bk_biz_id', { requestId: this.request.list })
           const availableBusiness = (data.info || []).filter(business => business.bk_biz_id !== this.bizId)
+          this.generateRelation(availableBusiness)
           this.businessList = Object.freeze(availableBusiness)
         } catch (e) {
           console.error(e)
@@ -145,7 +161,10 @@
         }
       },
       sortBusinessByAuth(authData) {
-        const list = this.businessList.map((item, index) => ({ ...item, is_pass: authData[index]?.is_pass }))
+        if (!authData) {
+          return false
+        }
+        const list = this.businessList?.map((item, index) => ({ ...item, is_pass: authData[index]?.is_pass }))
         list.sort((itemA, itemB) => itemB?.is_pass - itemA?.is_pass)
         this.businessList = list
       },
@@ -206,7 +225,8 @@
         const removeChecked = []
         checked.forEach((id) => {
           const node = this.$refs.tree.getNodeById(id)
-          if (node.data.default === currentNode.data.default) {
+          // 用户自定义空闲模块的 default 是一样的，所以增加 bk_inst_id 是否一致的判断
+          if (node.data.default === currentNode.data.default && node.data.bk_inst_id === currentNode.data.bk_inst_id) {
             currentChecked.push(id)
           } else {
             removeChecked.push(id)
