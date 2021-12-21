@@ -13,6 +13,8 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+
+	"github.com/tidwall/gjson"
 )
 
 func (ps *parseStream) hostRelated() *parseStream {
@@ -309,6 +311,7 @@ const (
 	moveHostsToBizIdleModulePattern       = "/api/v3/hosts/modules/idle"
 	moveHostsToBizRecycleModulePattern    = "/api/v3/hosts/modules/recycle"
 	moveHostAcrossBizPattern              = "/api/v3/hosts/modules/across/biz"
+	moveResourceHostAcrossBizPattern      = "/api/v3/hosts/resource/cross/biz"
 	moveRscPoolHostToRscPoolDir           = "/api/v3/host/transfer/resource/directory"
 	cleanHostInSetOrModulePattern         = "/api/v3/hosts/modules/idle/set"
 	findHostTopoRelationPattern           = "/api/v3/host/topo/relation/read"
@@ -1138,6 +1141,60 @@ func (ps *parseStream) hostTransfer() *parseStream {
 				},
 			},
 		}
+		return ps
+	}
+
+	// transfer resource hosts to another business.
+	if ps.hitPattern(moveResourceHostAcrossBizPattern, http.MethodPost) {
+
+		// src biz ids
+		bizIds := make([]int64, 0)
+		val, err := ps.RequestCtx.getValueFromBody("resource_hosts.#.src_bk_biz_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		val.ForEach(
+			func(key, value gjson.Result) bool {
+				bizIds = append(bizIds, value.Int())
+				return true
+			})
+
+		if len(bizIds) == 0 {
+			ps.err = errors.New("src bk_biz_id must be set")
+			return ps
+		}
+		val, err = ps.RequestCtx.getValueFromBody("dst_bk_biz_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		dstBizID := val.Int()
+		if dstBizID == 0 {
+			ps.err = errors.New("dst_bk_biz_id invalid")
+			return ps
+		}
+		for _, bizId := range bizIds {
+			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
+				BusinessID: bizId,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.MoveHostToAnotherBizModule,
+				},
+				Layers: []meta.Item{
+					{
+						Type:       meta.Business,
+						InstanceID: bizId,
+					},
+					{
+						Type:       meta.Business,
+						InstanceID: dstBizID,
+					},
+				},
+			})
+		}
+
 		return ps
 	}
 

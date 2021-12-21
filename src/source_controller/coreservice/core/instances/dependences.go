@@ -28,7 +28,7 @@ type OperationDependences interface {
 	DeleteInstAsst(kit *rest.Kit, objID string, instID uint64) error
 
 	// SelectObjectAttWithParams select object att with params
-	SelectObjectAttWithParams(kit *rest.Kit, objID string, bizID int64) (attribute []metadata.Attribute, err error)
+	SelectObjectAttWithParams(kit *rest.Kit, objID string, bizIDs []int64) (attribute []metadata.Attribute, err error)
 
 	// SelectObjectAttributes select object attributes
 	SelectObjectAttributes(kit *rest.Kit, objID string, bizIDs []int64) ([]metadata.Attribute, error)

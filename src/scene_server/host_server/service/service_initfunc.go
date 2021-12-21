@@ -164,6 +164,12 @@ func (s *Service) initModule(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/read", Handler: s.GetHostModuleRelation})
 	// transfer host to other business
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/across/biz", Handler: s.TransferHostAcrossBusiness})
+
+	// transfer resource host(multi business) to other business.
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/hosts/resource/cross/biz",
+		Handler: s.TransferResourceHostsAcrossBusiness})
+
 	// TODO: Deprecated, delete this api. delete host from business, used for framework
 	//utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/hosts/module/biz/delete", Handler: s.DeleteHostFromBusiness})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/topo/relation/read", Handler: s.GetAppHostTopoRelation})
