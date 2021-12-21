@@ -54,10 +54,12 @@ var (
 )
 
 const (
-	findReducedBusinessListPattern    = `/api/v3/biz/with_reduced`
-	findSimplifiedBusinessListPattern = `/api/v3/biz/simplify`
-	updatemanyBizPropertyPattern      = `/api/v3/updatemany/biz/property`
-	deletemanyBizPropertyPattern      = `/api/v3/deletemany/biz`
+	findReducedBusinessListPattern      = `/api/v3/biz/with_reduced`
+	findSimplifiedBusinessListPattern   = `/api/v3/biz/simplify`
+	updatePlatformSettingIdleSetPattern = `/api/v3/topo/update/biz/idle_set`
+	deletePlatformSettingModulePattern  = `/api/v3/topo/delete/biz/extra_moudle`
+	updatemanyBizPropertyPattern        = `/api/v3/updatemany/biz/property`
+	deletemanyBizPropertyPattern        = `/api/v3/deletemany/biz`
 )
 
 func (ps *parseStream) business() *parseStream {
@@ -284,6 +286,29 @@ func (ps *parseStream) business() *parseStream {
 				},
 			}
 			ps.Attribute.Resources = append(ps.Attribute.Resources, iamResource)
+		}
+		return ps
+	}
+	// find simplified business list with limited fields return
+	if ps.hitPattern(updatePlatformSettingIdleSetPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ConfigAdmin,
+					Action: meta.Update,
+				},
+			},
+		}
+		return ps
+	}
+	if ps.hitPattern(deletePlatformSettingModulePattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ConfigAdmin,
+					Action: meta.Update,
+				},
+			},
 		}
 		return ps
 	}

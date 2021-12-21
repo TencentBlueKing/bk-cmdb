@@ -106,6 +106,7 @@
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import FilterStore from '@/components/filters/store'
   import CmdbLoading from '@/components/loading/loading'
+  import { sortTopoTree } from '@/utils/tools'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE
   } from '@/dictionary/menu-symbol'
@@ -201,6 +202,8 @@
             this.getInstanceTopology(),
             this.getInternalTopology()
           ])
+          sortTopoTree(topology, 'bk_inst_name', 'child')
+          sortTopoTree(internal.module, 'bk_module_name')
           const root = topology[0] || {}
           const children = root.child || []
           const idlePool = {
@@ -209,7 +212,7 @@
             bk_inst_name: internal.bk_set_name,
             default: internal.default,
             is_idle_set: true,
-            child: this.$tools.sort((internal.module || []), 'default').map(module => ({
+            child: internal.module.map(module => ({
               bk_obj_id: 'module',
               bk_inst_id: module.bk_module_id,
               bk_inst_name: module.bk_module_name,

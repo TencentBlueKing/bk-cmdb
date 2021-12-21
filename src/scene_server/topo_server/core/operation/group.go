@@ -230,18 +230,25 @@ func (g *group) DeleteObjectAttributeGroup(kit *rest.Kit, objID, propertyID, gro
 	return nil
 }
 
+//  UpdateObjectGroup update object group by condition
 func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondition) error {
 	if cond.Data.Index == nil && cond.Data.Name == nil {
 		return nil
 	}
+
 	input := metadata.UpdateOption{
 		Condition: mapstr.NewFromStruct(cond.Condition, "json"),
 		Data:      mapstr.NewFromStruct(cond.Data, "json"),
 	}
 
+	if cond.ModelBizID != 0 {
+		input.Condition[common.BKAppIDField] = cond.ModelBizID
+	}
+
 	// generate audit log of object attribute group.
 	audit := auditlog.NewAttributeGroupAuditLog(g.clientSet.CoreService())
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(input.Data)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(
+		input.Data)
 	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, cond.Condition.ID, nil)
 	if err != nil {
 		blog.Errorf("generate audit log failed before update attribute group, groupName: %s, err: %v, rid: %s",
@@ -251,13 +258,15 @@ func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondi
 
 	// to update.
 	rsp, err := g.clientSet.CoreService().Model().UpdateAttributeGroupByCondition(kit.Ctx, kit.Header, input)
-	if nil != err {
-		blog.Errorf("[operation-grp] failed to set the group to the new data (%#v) by the condition (%#v), error info is %s , rid: %s", cond.Data, cond.Condition, err.Error(), kit.Rid)
+	if err != nil {
+		blog.Errorf("failed to set the group to the new data (%#v) by the condition (%#v), err: %v , rid: %s",
+			cond.Data, cond.Condition, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !rsp.Result {
-		blog.Errorf("[operation-grp] failed to set the group to the new data (%#v) by the condition (%#v), error info is %s , rid: %s", cond.Data, cond.Condition, rsp.ErrMsg, kit.Rid)
-		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
+	if ccErr := rsp.CCError(); ccErr != nil {
+		blog.Errorf("failed to set the group to the new data (%#v) by the condition (%#v), err: %v , rid: %s",
+			cond.Data, cond.Condition, ccErr, kit.Rid)
+		return ccErr
 	}
 
 	// save audit log.

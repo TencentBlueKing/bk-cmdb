@@ -435,16 +435,16 @@ func getAllConfigs(ctx context.Context, db dal.RDB, dir string) (curCfg *metadat
 
 	if ret[common.ConfigAdminValueField] == nil {
 		blog.Errorf("get config failed, db config type is error")
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("db config type is error")
 	}
-
-	if _, ok := ret[common.ConfigAdminValueField].(string); !ok {
+	config := ret[common.ConfigAdminValueField]
+	if _, ok := config.(string); !ok {
 		blog.Errorf("get config failed, db config type is error")
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("db config type is error")
 	}
 	dbCfg = new(metadata.ConfigAdmin)
-	if err := json.Unmarshal([]byte(ret[common.ConfigAdminValueField].(string)), dbCfg); err != nil {
-		blog.Errorf("get dbConfig failed, unmarshal err: %v, config: %v", err, ret[common.ConfigAdminValueField])
+	if err := json.Unmarshal([]byte(config.(string)), dbCfg); err != nil {
+		blog.Errorf("get dbConfig failed, unmarshal err: %v, config: %v", err, config)
 		return nil, nil, nil, err
 	}
 	return curCfg, preCfg, dbCfg, nil
@@ -486,7 +486,11 @@ func getContactInfo(links []metadata.LinksItem) metadata.ContactInfoItem {
 		result metadata.ContactInfoItem
 		cn, en string
 	)
+
 	linkLen := len(links)
+	if linkLen == 0 {
+		return result
+	}
 
 	if linkLen == 1 {
 		cn = fmt.Sprintf("%s[%s](%s)|", cn, links[0].I18N.CN, links[0].Value)

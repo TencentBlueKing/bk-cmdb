@@ -11,11 +11,6 @@
           <PlatformInfoConfig></PlatformInfoConfig>
         </div>
       </bk-tab-panel>
-      <bk-tab-panel name="validation-rules-config" :label="$t('字段校验规则')">
-        <div class="config-container">
-          <ValidationRulesConfig></ValidationRulesConfig>
-        </div>
-      </bk-tab-panel>
       <bk-tab-panel name="idle-pool-config" :label="$t('业务空闲机池')">
         <div class="config-container">
           <!--加 v-if 是为了每次进入时初始化表单状态 -->
@@ -30,7 +25,6 @@
   import { ref, watch, onMounted } from '@vue/composition-api'
   import BusinessGneralConfig from './children/business-general-config.vue'
   import PlatformInfoConfig from './children/platform-info-config.vue'
-  import ValidationRulesConfig from './children/validation-rules-config.vue'
   import IdlePoolConfig from './children/idle-pool-config.vue'
   import queryStore from '@/router/query'
   import store from '@/store'
@@ -42,7 +36,6 @@
     components: {
       BusinessGneralConfig,
       PlatformInfoConfig,
-      ValidationRulesConfig,
       IdlePoolConfig
     },
     setup() {

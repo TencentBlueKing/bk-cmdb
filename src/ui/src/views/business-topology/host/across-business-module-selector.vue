@@ -74,6 +74,7 @@
   import { mapGetters } from 'vuex'
   import { AuthRequestId, afterVerify } from '@/components/ui/auth/auth-queue.js'
   import ModuleCheckedList from './module-checked-list.vue'
+  import { sortTopoTree } from '@/utils/tools'
   export default {
     name: 'cmdb-across-business-module-selector',
     components: {
@@ -153,6 +154,7 @@
         try {
           this.checked = []
           const internalTop = await this.getInternalModules()
+          sortTopoTree(internalTop, 'bk_inst_name', 'child')
           this.$refs.tree.setData(internalTop)
         } catch (e) {
           this.$refs.tree.setData([])
@@ -177,7 +179,7 @@
             bk_obj_id: 'set',
             bk_obj_name: this.getModelById('set').bk_obj_name,
             default: 0,
-            child: this.$tools.sort((data.module || []), 'default').map(module => ({
+            child: data.module.map(module => ({
               bk_inst_id: module.bk_module_id,
               bk_inst_name: module.bk_module_name,
               bk_obj_id: 'module',

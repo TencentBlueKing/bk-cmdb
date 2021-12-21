@@ -100,7 +100,7 @@ func (s *Service) UpdateConfigAdmin(req *restful.Request, resp *restful.Response
 		_ = resp.WriteError(http.StatusOK, result)
 		return
 	}
-	_ = resp.WriteEntity(metadata.NewSuccessResp("udpate config admin success"))
+	_ = resp.WriteEntity(metadata.NewSuccessResp("update config admin success"))
 }
 
 // UpdatePlatformSettingConfig update platform_setting.
@@ -111,7 +111,7 @@ func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restfu
 
 	config := new(metadata.PlatformSettingConfig)
 	if err := json.NewDecoder(req.Request.Body).Decode(config); err != nil {
-		blog.Errorf(" decode param failed, err: %v, body: %v, rid: %s", err, req.Request.Body, rid)
+		blog.Errorf("decode param failed, err: %v, body: %v, rid: %s", err, req.Request.Body, rid)
 		rErr := resp.WriteError(http.StatusOK, &metadata.RespError{
 			Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed),
 		})
@@ -183,16 +183,14 @@ func (s *Service) searchCurrentConfig(rid string) (*metadata.PlatformSettingConf
 
 	cond := map[string]interface{}{"_id": common.ConfigAdminID}
 	ret := make(map[string]interface{})
-	conf := new(metadata.PlatformSettingConfig)
 
 	err := s.db.Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(s.ctx, &ret)
 	if err != nil {
-		blog.Errorf("search platform db config failed, err: %+v, rid: %s", err, rid)
+		blog.Errorf("search platform db config failed, err: %v, rid: %s", err, rid)
 		return nil, err
 	}
-
 	if ret[common.ConfigAdminValueField] == nil {
-		blog.Errorf("db config type is error,rid: %s", rid)
+		blog.Errorf("get config failed, rid: %s", rid)
 		return nil, err
 	}
 
@@ -201,6 +199,7 @@ func (s *Service) searchCurrentConfig(rid string) (*metadata.PlatformSettingConf
 		return nil, err
 	}
 
+	conf := new(metadata.PlatformSettingConfig)
 	if err := json.Unmarshal([]byte(ret[common.ConfigAdminValueField].(string)), conf); err != nil {
 		blog.Errorf("search platform config fail, unmarshal err: %v, config: %+v,rid: %s", err, ret, rid)
 		return nil, err
