@@ -290,6 +290,7 @@ func (ps *parseStream) business() *parseStream {
 		}
 		return ps
 	}
+	
 	// find simplified business list with limited fields return
 	if ps.hitPattern(updatePlatformSettingIdleSetPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -302,6 +303,7 @@ func (ps *parseStream) business() *parseStream {
 		}
 		return ps
 	}
+	
 	if ps.hitPattern(deletePlatformSettingModulePattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -313,6 +315,7 @@ func (ps *parseStream) business() *parseStream {
 		}
 		return ps
 	}
+	
 	return ps
 }
 

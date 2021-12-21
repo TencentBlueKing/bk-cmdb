@@ -639,13 +639,13 @@ const (
 )
 
 const (
-	// UserDefinedModuleKey user define idle module key.
+	// UserDefinedModules user define idle module key.
 	UserDefinedModules = "user_modules"
 
 	// SystemSetName user define idle module key.
 	SystemSetName = "set_name"
 
-	// SystemIdleModuleKey system  idle module key.
+	// SystemIdleModuleKey system idle module key.
 	SystemIdleModuleKey = "idle"
 
 	// SystemFaultModuleKey system define fault module name.

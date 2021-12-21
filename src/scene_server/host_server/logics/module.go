@@ -53,11 +53,16 @@ func (lgc *Logics) GetResourcePoolModuleID(kit *rest.Kit, condition mapstr.MapSt
 	for idx, mod := range result.Info {
 		if supplier == mod[common.BkSupplierAccount].(string) {
 			moduleId, err := result.Info[idx].Int64(common.BKModuleIDField)
+			if err != nil {
+				return moduleId, "", err
+			}
+
 			moduleName := ""
 			if name, ok := result.Info[idx][common.BKModuleNameField].(string); ok {
 				moduleName = name
+				return moduleId, moduleName, nil
 			}
-			return moduleId, moduleName, err
+			return -1, "", kit.CCError.Error(common.CCErrTopoGetModuleFailed)
 		}
 	}
 

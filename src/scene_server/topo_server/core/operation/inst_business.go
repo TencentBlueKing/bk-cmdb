@@ -474,6 +474,7 @@ func (b *business) deleteModuleName(kit *rest.Kit, op *metadata.BuiltInModuleDel
 		blog.Errorf("no module founded, query %s, rid: %s", queryCond, kit.Rid)
 		return fmt.Errorf("no module founded")
 	}
+
 	for _, instItem := range instItems {
 		moduleId, err := util.GetInt64ByInterface(instItem[common.BKModuleIDField])
 		if err != nil {
@@ -483,27 +484,31 @@ func (b *business) deleteModuleName(kit *rest.Kit, op *metadata.BuiltInModuleDel
 		delInstIDs = append(delInstIDs, moduleId)
 	}
 
-	delCond := map[string]interface{}{
+	filter := map[string]interface{}{
 		common.BKModuleIDField: map[string]interface{}{common.BKDBIN: delInstIDs},
 	}
-	flag, err := b.module.HasHostInModules(kit, delInstIDs)
+
+	count, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameModuleHostConfig, []map[string]interface{}{filter})
 	if err != nil {
-		blog.Errorf("check whether there is a host in the module failed, query %s, rid: %s", queryCond, kit.Rid)
+		blog.Errorf("failed to search module host config relation, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
-	if flag {
+	if count[0] != 0 {
+		blog.Errorf("there is a host in the module rid: %s", kit.Rid)
 		return fmt.Errorf("there is a host in the module")
 	}
-	dc := &metadata.DeleteOption{Condition: delCond}
+
+	dc := &metadata.DeleteOption{Condition: filter}
 	rsp, err := b.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, obj.GetObjectID(), dc)
-	if nil != err {
-		blog.Errorf("delete inst failed, err: %v, cond: %s rid: %s", err, delCond, kit.Rid)
+	if err != nil {
+		blog.Errorf("delete inst failed, err: %v, cond: %s rid: %s", err, filter, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if err := rsp.CCError(); err != nil {
-		blog.Errorf("delete inst failed, err: %v, cond: %s rid: %s", err, delCond, kit.Rid)
+		blog.Errorf("delete inst failed, err: %v, cond: %s rid: %s", err, filter, kit.Rid)
 		return err
 	}
 

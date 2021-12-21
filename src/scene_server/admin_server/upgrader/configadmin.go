@@ -532,9 +532,6 @@ func getContactInfo(links []metadata.LinksItem) metadata.ContactInfoItem {
 		cn, en string
 	)
 	linkLen := len(links)
-	if linkLen == 0 {
-		return result
-	}
 
 	if linkLen == 1 {
 		cn = fmt.Sprintf("%s[%s](%s)|", cn, links[0].I18N.CN, links[0].Value)

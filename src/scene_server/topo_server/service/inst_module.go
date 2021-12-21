@@ -801,7 +801,7 @@ func (s *Service) DeleteUserModulesSettingConfig(ctx *rest.Contexts) {
 	}
 
 	if err := option.Validate(); err != nil {
-		blog.Errorf("option is illegal option: %+v, rid: %s.", option, ctx.Kit.Rid)
+		blog.Errorf("option is illegal option: %+v, rid: %s", option, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoAppSearchFailed, "module key and name must be set"))
 		return
 	}

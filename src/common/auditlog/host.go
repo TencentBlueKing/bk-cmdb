@@ -87,8 +87,8 @@ func (h *hostAuditLog) generateAuditLog(parameter *generateAuditCommonParameter,
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
 		}
 
-		for index, auditLog := range auditLogs {
-			auditLogs[index].BusinessID = hostBizMap[auditLog.ID]
+		for index := range auditLogs {
+			auditLogs[index].BusinessID = hostBizMap[hostIDs[index]]
 		}
 	}
 
