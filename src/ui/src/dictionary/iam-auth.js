@@ -426,16 +426,24 @@ export const IAM_ACTIONS = {
       instances: [IAM_VIEWS.BIZ]
     }],
     transform: (cmdbAction, relationIds) => {
-      const [[[currentBizId], [targetBizId]]] = relationIds
-      const verifyMeta = basicTransform(cmdbAction)
-      verifyMeta.parent_layers = [{
-        resource_id: currentBizId,
-        resource_type: 'biz'
-      }, {
-        resource_id: targetBizId,
-        resource_type: 'biz'
-      }]
-      return verifyMeta
+      const verifyMetas = []
+
+      relationIds.forEach((relationId) => {
+        const [[currentBizId], [targetBizId]] = relationId
+        const verifyMeta = basicTransform(cmdbAction)
+
+        verifyMeta.parent_layers = [{
+          resource_id: currentBizId,
+          resource_type: 'biz'
+        }, {
+          resource_id: targetBizId,
+          resource_type: 'biz'
+        }]
+
+        verifyMetas.push(verifyMeta)
+      })
+
+      return verifyMetas
     }
   },
 
