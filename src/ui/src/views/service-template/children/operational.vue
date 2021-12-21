@@ -391,6 +391,7 @@
         }
 
         if (this.sourceTemplateId) {
+          console.log('init clone data')
           this.initCloneData()
         }
 
@@ -558,8 +559,8 @@
                 }
               })
             })
-          } else if (data[key]?.value) {
-            data[key].value = this.$tools.formatValue(data[key]?.value, property)
+          } else if (typeof data[key] === 'object') {
+            data[key].value = this.$tools.formatValue(data[key].value, property)
           }
         })
         return data
