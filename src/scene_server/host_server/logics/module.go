@@ -225,7 +225,7 @@ func (lgc *Logics) MoveHostToResourcePool(kit *rest.Kit, conf *metadata.DefaultM
 		blog.Errorf("move host to resource pool, but get module id failed, err: %v, input:%+v,param:%+v,rid:%s", err, conf, conds.Data(), kit.Rid)
 		return nil, err
 	}
-	errHostID, err := lgc.notExistAppModuleHost(kit, conf.ApplicationID, []int64{moduleID}, conf.HostIDs)
+	errHostID, err := lgc.notExistAppModuleHost(kit, []int64{conf.ApplicationID}, []int64{moduleID}, conf.HostIDs)
 	if err != nil {
 		blog.Errorf("move host to resource pool, notExistAppModuleHost error, err: %v, owneAppID: %d, input:%#v, rid:%s", err, ownerAppID, conf, kit.Rid)
 		return nil, err
@@ -237,10 +237,10 @@ func (lgc *Logics) MoveHostToResourcePool(kit *rest.Kit, conf *metadata.DefaultM
 	}
 
 	param := &metadata.TransferHostsCrossBusinessRequest{
-		SrcApplicationID: conf.ApplicationID,
-		HostIDArr:        conf.HostIDs,
-		DstApplicationID: ownerAppID,
-		DstModuleIDArr:   []int64{ownerModuleID},
+		SrcApplicationIDs: []int64{conf.ApplicationID},
+		HostIDArr:         conf.HostIDs,
+		DstApplicationID:  ownerAppID,
+		DstModuleIDArr:    []int64{ownerModuleID},
 	}
 
 	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), conf.HostIDs)
@@ -268,9 +268,10 @@ func (lgc *Logics) MoveHostToResourcePool(kit *rest.Kit, conf *metadata.DefaultM
 }
 
 // notExistAppModuleHost get hostIDs those don't exist in the modules
-func (lgc *Logics) notExistAppModuleHost(kit *rest.Kit, appID int64, moduleIDs []int64, hostIDArr []int64) ([]int64, error) {
+func (lgc *Logics) notExistAppModuleHost(kit *rest.Kit, appIDs []int64, moduleIDs []int64, hostIDArr []int64) ([]int64,
+	error) {
 	hostModuleInput := &metadata.DistinctHostIDByTopoRelationRequest{
-		ApplicationIDArr: []int64{appID},
+		ApplicationIDArr: appIDs,
 		ModuleIDArr:      moduleIDs,
 		HostIDArr:        hostIDArr,
 	}
@@ -340,7 +341,7 @@ func (lgc *Logics) AssignHostToApp(kit *rest.Kit, conf *metadata.DefaultModuleHo
 		return nil, err
 	}
 
-	errHostID, err := lgc.notExistAppModuleHost(kit, ownerAppID, resourceModuleIDs, conf.HostIDs)
+	errHostID, err := lgc.notExistAppModuleHost(kit, []int64{ownerAppID}, resourceModuleIDs, conf.HostIDs)
 	if err != nil {
 		blog.Errorf("assign host to app, notExistAppModuleHost error, err: %v, input:%+v, rid:%s", err, conf, kit.Rid)
 		return nil, err
@@ -364,10 +365,10 @@ func (lgc *Logics) AssignHostToApp(kit *rest.Kit, conf *metadata.DefaultModuleHo
 	}
 
 	assignParams := &metadata.TransferHostsCrossBusinessRequest{
-		SrcApplicationID: ownerAppID,
-		DstApplicationID: conf.ApplicationID,
-		HostIDArr:        conf.HostIDs,
-		DstModuleIDArr:   []int64{moduleID},
+		SrcApplicationIDs: []int64{ownerAppID},
+		DstApplicationID:  conf.ApplicationID,
+		HostIDArr:         conf.HostIDs,
+		DstModuleIDArr:    []int64{moduleID},
 	}
 
 	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), conf.HostIDs)

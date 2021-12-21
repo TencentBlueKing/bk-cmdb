@@ -310,8 +310,8 @@ func (lgc *Logics) GetAllHostIDByCond(kit *rest.Kit, cond metadata.HostModuleRel
 
 // GetHostModuleRelation  query host and module relation,
 // condition key use appID, moduleID,setID,HostID
-func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond *metadata.HostModuleRelationRequest) (*metadata.
-HostConfigData, errors.CCErrorCoder) {
+func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond *metadata.HostModuleRelationRequest) (
+	*metadata.HostConfigData, errors.CCErrorCoder) {
 
 	if cond.Empty() {
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPBodyEmpty)
@@ -394,7 +394,7 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 	}
 
 	// valid if hosts are in the resource set's modules of the src biz
-	notExistHostIDs, err := lgc.notExistAppModuleHost(kit, srcBizID, moduleIDArr, hostID)
+	notExistHostIDs, err := lgc.notExistAppModuleHost(kit, []int64{srcBizID}, moduleIDArr, hostID)
 	if err != nil {
 		blog.Errorf("check if biz has hosts failed, err:%v,input:{appID:%d,hostID:%d},rid:%s", err, srcBizID, hostID,
 			kit.Rid)
@@ -415,7 +415,7 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 		return err
 	}
 
-	conf := &metadata.TransferHostsCrossBusinessRequest{SrcApplicationID: srcBizID, HostIDArr: hostID,
+	conf := &metadata.TransferHostsCrossBusinessRequest{SrcApplicationIDs: []int64{srcBizID}, HostIDArr: hostID,
 		DstApplicationID: dstAppID, DstModuleIDArr: []int64{moduleID}}
 	delRet, doErr := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(kit.Ctx, kit.Header, conf)
 	if doErr != nil {
@@ -435,6 +435,239 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 		return err
 	}
 
+	return nil
+}
+
+// transResourcesValidate 对于请求参数的基本校验
+func transResourcesValidate(kit *rest.Kit, transResources []metadata.TransferResourceParam, dstAppID, moduleID int64) (
+	[]int64, errors.CCError) {
+
+	if len(transResources) == 0 {
+		return []int64{}, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "params must be set")
+	}
+
+	hostIDs := make([]int64, 0)
+	for _, srcResource := range transResources {
+		hostIDs = append(hostIDs, srcResource.HostIDs...)
+	}
+
+	// the maximum number of hosts per transfer is 500.
+	if len(hostIDs) > common.BKMaxInstanceLimit {
+		return []int64{}, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "the maximum limit should be less than 500")
+	}
+
+	if dstAppID == 0 {
+		return []int64{}, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "dst biz must be set")
+	}
+
+	if moduleID == 0 {
+		return []int64{}, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "dst module must be set")
+	}
+	return hostIDs, nil
+}
+
+// transResourcesValidateBizParams 判断所传递的参数中原业务id和目的业务id均应该不属于资源池
+func (lgc *Logics) transResourcesValidateBizParams(kit *rest.Kit, transResources []metadata.TransferResourceParam,
+	dstAppID int64) errors.CCError {
+
+	bizIDs := make([]int64, 0)
+
+	for _, resource := range transResources {
+		bizIDs = append(bizIDs, resource.SrcAppId)
+	}
+	bizIDs = append(bizIDs, dstAppID)
+
+	filter := []map[string]interface{}{{
+		common.BKDefaultField: map[string]interface{}{common.BKDBEQ: common.DefaultAppFlag},
+		common.BKAppIDField: map[string]interface{}{
+			common.BKDBIN: bizIDs,
+		},
+	}}
+
+	counts, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameBaseApp, filter)
+	if err != nil {
+		return err
+	}
+
+	if len(counts) > 1 || (len(counts) == 1 && counts[0] > 0) {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	return nil
+}
+
+// transResourcesValidateDstModuleParams 判断所传的目的moduleID 是否合法.
+// 1、目的模块必须在目的业务中。
+// 2、目的moduleID不允许是普通模块。
+func (lgc *Logics) transResourcesValidateDstModuleParams(kit *rest.Kit, moduleID int64, dstAppID int64) errors.CCError {
+
+	query := &metadata.QueryCondition{
+		Fields: []string{common.BKModuleIDField, common.BKAppIDField},
+		Condition: map[string]interface{}{
+			common.BKAppIDField:    dstAppID,
+			common.BKModuleIDField: moduleID,
+		},
+	}
+
+	moduleRes, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		query)
+	if err != nil {
+		blog.Errorf("get modules failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if len(moduleRes.Info) == 0 {
+		blog.Errorf("no dst module founded, rid: %s", kit.Rid)
+		return err
+	}
+
+	if len(moduleRes.Info) > 1 {
+		blog.Errorf("multi dst module founded, rid: %s", kit.Rid)
+		return err
+	}
+
+	defaultField, err := moduleRes.Info[0].Int64(common.BKDefaultField)
+	if err != nil {
+		blog.Errorf(" get module id failed, module: %s, err: %v, rid: %s", moduleRes.Info[0], err, kit.Rid)
+		return err
+	}
+	if defaultField == 0 {
+		blog.Errorf("module type is error, module: %s, rid: %s", moduleRes.Info[0], kit.Rid)
+		return err
+	}
+	return nil
+}
+
+// transResourcesValidateHostRelations 1、判断所有主机是否在空闲机下面。2、判断主机与业务对应关系是否一致。
+func (lgc *Logics) transResourcesValidateHostRelations(kit *rest.Kit, transResources []metadata.TransferResourceParam,
+	hostIDs []int64) errors.CCError {
+
+	queryCond := metadata.HostModuleRelationRequest{
+		HostIDArr: hostIDs,
+		Fields:    []string{common.BKAppIDField, common.BKHostIDField, common.BKModuleIDField},
+	}
+
+	mhconfig, err := lgc.GetHostRelations(kit, queryCond)
+	if err != nil {
+		blog.Errorf("get host relation error, err: %v, cond: %s, rid: %s", err, queryCond, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	//hostRelationMap 以host为维度进行整理，map[hostID]bizID
+	hostRelationMap := make(map[int64]int64, 0)
+
+	moduleIDs := make([]int64, 0)
+	for _, relation := range mhconfig {
+		// 需要校验的是主机与模块之间的关系是否合法
+		if _, ok := hostRelationMap[relation.HostID]; !ok {
+			hostRelationMap[relation.HostID] = relation.AppID
+		}
+		moduleIDs = append(moduleIDs, relation.ModuleID)
+	}
+
+	// 需要判断所有的原主机所属的模块是否均属于空闲机
+	filter := []map[string]interface{}{{
+		common.BKModuleIDField: map[string]interface{}{
+			common.BKDBIN: moduleIDs,
+		},
+		common.BKDefaultField: map[string]interface{}{
+			common.BKDBNE: common.DefaultResModuleFlag,
+		},
+	}}
+
+	counts, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseModule,
+		filter)
+	if err != nil {
+		blog.Errorf("get modules count failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
+		return err
+	}
+
+	if len(counts) > 1 || (len(counts) == 1 && counts[0] > 0) {
+		blog.Errorf("module count error, filter: %+v, count: %v, err: %v, rid: %s", filter, counts, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	for _, resource := range transResources {
+		for _, hostID := range resource.HostIDs {
+
+			// 此处校验的是主机是否存在于主机关系表中
+			if _, ok := hostRelationMap[hostID]; !ok {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
+			}
+			// 此处需要校验的是关系表中的bizID和用户传的bizID是否一致
+			if hostRelationMap[hostID] != resource.SrcAppId {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+			}
+		}
+	}
+	return nil
+}
+
+// TransferResourceHostsAcrossBusiness 支持多个业务下的空闲机模块下的主机转移到另外一个业务的空闲机池下的任意模块.
+func (lgc *Logics) TransferResourceHostsAcrossBusiness(kit *rest.Kit, transResources []metadata.TransferResourceParam,
+	dstAppID int64, moduleID int64) errors.CCError {
+
+	// step 1: 校验基本信息是否正确
+	hostIDs, err := transResourcesValidate(kit, transResources, dstAppID, moduleID)
+	if err != nil {
+		blog.Errorf("params is illegal transResources: %v, dstAppID: %d, moduleID: %d, err: %v ,rid: %s",
+			transResources, dstAppID, moduleID, err, kit.Rid)
+		return err
+	}
+	// step 2: 校验业务信息是否正确
+	if err := lgc.transResourcesValidateBizParams(kit, transResources, dstAppID); err != nil {
+		return err
+	}
+
+	// step 3: 校验主机关系是否正确
+	if err := lgc.transResourcesValidateHostRelations(kit, transResources, hostIDs); err != nil {
+		return err
+	}
+
+	// step 4: 校验目的模块是否正确
+	if err := lgc.transResourcesValidateDstModuleParams(kit, moduleID, dstAppID); err != nil {
+		return err
+	}
+
+	// get both src biz and dest biz.
+	srcBizIDs := make([]int64, 0)
+
+	for _, transResource := range transResources {
+		srcBizIDs = append(srcBizIDs, transResource.SrcAppId)
+	}
+	// do transfer and save audit log.
+	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), hostIDs)
+	if err := audit.WithPrevious(kit); err != nil {
+		blog.Errorf("get prev module host config failed, hostID: %d, src biz IDs: %d, dst biz ID: %d, moduleID: %v, "+
+			"err: %v, rid: %s", hostIDs, srcBizIDs, dstAppID, moduleID, err, kit.Rid)
+		return err
+	}
+
+	conf := &metadata.TransferHostsCrossBusinessRequest{
+		SrcApplicationIDs: srcBizIDs,
+		HostIDArr:         hostIDs,
+		DstApplicationID:  dstAppID,
+		DstModuleIDArr:    []int64{moduleID},
+	}
+
+	delRet, doErr := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(kit.Ctx, kit.Header, conf)
+	if doErr != nil {
+		blog.Errorf("http do error, err: %v, input: %v, rid: %s", doErr, conf, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if err := delRet.CCError(); err != nil {
+		blog.Errorf("http response error, err code: %d, err msg: %s, input: %v, rid: %s", delRet.Code,
+			delRet.ErrMsg, conf, kit.Rid)
+		return err
+	}
+
+	if err := audit.SaveAudit(kit); err != nil {
+		blog.Errorf("save audit log failed, hostID: %d, src biz IDs: %d, appID: %d, moduleID: %v, err: %v, rid: %s",
+			hostIDs, srcBizIDs, dstAppID, moduleID, err, kit.Rid)
+		return err
+	}
 	return nil
 }
 

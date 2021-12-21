@@ -237,12 +237,12 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 		resp = result
 	}
 
-	if len(f.Sheets) < 2 || len(asstObjectUniqueIDMap) == 0 {
+	if len(f.Sheets) <= 2 || len(asstObjectUniqueIDMap) == 0 {
 		resp.Result = true
 		return resp
 	}
 
-	// if len(f.Sheets) >= 2, the second sheet is association data to be import
+	// if len(f.Sheets) > 2, the second sheet is association data to be import
 	asstInfoMap, assoErrMsg := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset,
 		defLang)
 
