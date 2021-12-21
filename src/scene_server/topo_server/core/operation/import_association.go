@@ -30,17 +30,17 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (assoc *association) ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string, importData map[int]metadata.ExcelAssociation, languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error) {
-	ia := NewImportAssociation(ctx, assoc, kit, objID, importData, assoc.authManager, languageIf.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)))
-	err = ia.ParsePrimaryKey()
-	if err != nil {
+func (assoc *association) ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string,
+	importData map[int]metadata.ExcelAssociation, languageIf language.CCLanguageIf) (
+	resp metadata.ResponeImportAssociationData, err error) {
+
+	ia := NewImportAssociation(ctx, assoc, kit, objID, importData, assoc.authManager,
+		languageIf.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)))
+	if err = ia.ParsePrimaryKey(); err != nil {
 		return resp, err
 	}
 
 	errIdxMsgMap := ia.ImportAssociation()
-	if len(errIdxMsgMap) > 0 {
-		err = kit.CCError.Error(common.CCErrorTopoImportAssociation)
-	}
 	for row, msg := range errIdxMsgMap {
 		resp.ErrMsgMap = append(resp.ErrMsgMap, metadata.RowMsgData{
 			Row: row,
