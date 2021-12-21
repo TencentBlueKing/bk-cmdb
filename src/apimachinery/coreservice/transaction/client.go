@@ -14,6 +14,7 @@ package transaction
 
 import (
 	"context"
+	"math/rand"
 	"net/http"
 	"runtime/debug"
 	"time"
@@ -32,9 +33,9 @@ type Transaction interface {
 	// CommitTransaction is to commit the transaction.
 	CommitTransaction(ctx context.Context, h http.Header) error
 	// AbortTransaction is to abort the transaction.
-	AbortTransaction(ctx context.Context, h http.Header) error
+	AbortTransaction(ctx context.Context, h http.Header) (bool, error)
 	// autoRun can only be used at local.
-	autoRun(ctx context.Context, h http.Header, run func() error) error
+	autoRun(ctx context.Context, h http.Header, run func() error) (bool, error)
 }
 
 func (t *txn) NewTransaction(h http.Header, opts ...metadata.TxnOption) (Transaction, error) {
@@ -51,18 +52,63 @@ func (t *txn) NewTransaction(h http.Header, opts ...metadata.TxnOption) (Transac
 	return transaction, nil
 }
 
+// AutoRunTxn auto run with transaction
 func (t *txn) AutoRunTxn(ctx context.Context, h http.Header, run func() error, opts ...metadata.TxnOption) error {
 	// to avoid nested txn
 	if h.Get(common.TransactionIdHeader) != "" {
 		return run()
 	}
 
+	startTime := time.Now()
+
 	txn, err := t.NewTransaction(h, opts...)
 	if err != nil {
 		return ccErr.New(common.CCErrCommStartTransactionFailed, err.Error())
 	}
 
-	return txn.autoRun(ctx, h, run)
+	retry, err := txn.autoRun(ctx, h, run)
+	if err != nil {
+		return err
+	}
+
+	if !retry {
+		return nil
+	}
+
+	// if need to retry, retry for at most 3 times, each wait for a longer time than the previous one
+	rid := util.GetHTTPCCRequestID(h)
+	appCode := h.Get(common.BKHTTPRequestAppCode)
+	for retryCount := 1; retryCount <= 3; retryCount++ {
+		// if the previous operation time exceeds half of the http timeout(25s), do not retry to avoid timeout
+		if time.Now().Sub(startTime).Seconds() > 10 {
+			return ccErr.New(common.CCErrCommCommitTransactionFailed, "retry conflict transaction timeout")
+		}
+
+		blog.Warnf("retry transaction, retry count: %d, app code: %s, rid: %s", retryCount, appCode, rid)
+		rand.Seed(time.Now().UnixNano())
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(500)+300) * time.Duration(retryCount))
+
+		// start a new transaction to retry
+		txn, err := t.NewTransaction(h, opts...)
+		if err != nil {
+			return ccErr.New(common.CCErrCommStartTransactionFailed, err.Error())
+		}
+
+		retry, err := txn.autoRun(ctx, h, run)
+		if err != nil {
+			return err
+		}
+
+		if !retry {
+			return nil
+		}
+
+		// do next retry
+	}
+
+	blog.Warnf("retry transaction exceeds maximum count, **skip**, app code: %s, rid: %s", appCode, rid)
+
+	return nil
 }
 
 type transaction struct {
@@ -111,8 +157,8 @@ func (t *transaction) CommitTransaction(ctx context.Context, h http.Header) erro
 	return nil
 }
 
-// call core service to abort transaction
-func (t *transaction) AbortTransaction(ctx context.Context, h http.Header) error {
+// AbortTransaction call core service to abort transaction
+func (t *transaction) AbortTransaction(ctx context.Context, h http.Header) (bool, error) {
 	if t.locked {
 		panic("invalid transaction usage.")
 	}
@@ -123,7 +169,7 @@ func (t *transaction) AbortTransaction(ctx context.Context, h http.Header) error
 		Timeout:   t.timeout,
 		SessionID: t.sessionID,
 	}
-	resp := new(metadata.BaseResp)
+	resp := new(metadata.AbortTransactionResponse)
 	err := t.client.Post().
 		WithContext(ctx).
 		Body(body).
@@ -133,17 +179,17 @@ func (t *transaction) AbortTransaction(ctx context.Context, h http.Header) error
 		Into(resp)
 
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	if !resp.Result {
-		return ccErr.New(resp.Code, resp.ErrMsg)
+	if err := resp.CCError(); err != nil {
+		return false, err
 	}
 
-	return nil
+	return resp.AbortTransactionResult.Retry, nil
 }
 
-func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() error) (err error) {
+func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() error) (retry bool, err error) {
 	rid := util.GetHTTPCCRequestID(h)
 
 	defer func() {
@@ -152,7 +198,8 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 			blog.ErrorfDepthf(3, "run transaction,but server panic, err: %v, rid: %s, debug strace:%s", panicErr, rid, debug.Stack())
 			err = ccErr.New(common.CCErrCommInternalServerError, common.GetIdentification()+" Internal Server Error")
 
-			abortErr := t.AbortTransaction(ctx, h)
+			var abortErr error
+			retry, abortErr = t.AbortTransaction(ctx, h)
 			if abortErr != nil {
 				blog.ErrorfDepthf(3, "abort the transaction failed, err: %v, rid: %s", abortErr, rid)
 				return
@@ -162,7 +209,7 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 	}()
 
 	if run == nil {
-		return errors.New("run function can not be nil")
+		return false, errors.New("run function can not be nil")
 	}
 
 	if t.locked {
@@ -173,26 +220,29 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 	if runErr != nil {
 		blog.ErrorfDepthf(2, "run transaction, but run() function failed, err: %v, rid: %s", runErr, rid)
 		// run() logic failed, then abort the transaction.
-		err := t.AbortTransaction(ctx, h)
+		retry, err := t.AbortTransaction(ctx, h)
 		if err != nil {
 			blog.ErrorfDepthf(2, "abort the transaction failed, err: %v, rid: %s", err, rid)
-			return err
+			return false, err
 		}
 		blog.V(4).InfoDepthf(2, "abort the transaction success. rid: %s", rid)
+		if retry {
+			return true, nil
+		}
 		// return the run() original err
-		return runErr
+		return false, runErr
 	}
 
 	// run() logic success, then commit the transaction.
 	err = t.CommitTransaction(ctx, h)
 	if err != nil {
 		blog.ErrorfDepthf(2, "commit the transaction failed, err: %v, rid: %s", err, rid)
-		return err
+		return false, err
 	}
 	blog.V(4).InfoDepthf(2, "commit the transaction success. rid: %s", rid)
 
 	// roll back the locked flag to true to avoid call transaction function again.
 	t.locked = true
 
-	return nil
+	return false, nil
 }

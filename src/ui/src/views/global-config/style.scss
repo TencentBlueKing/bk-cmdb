@@ -1,0 +1,21 @@
+.bk-button.action-button {
+  width: 86px;
+}
+
+.form-item-tips {
+  font-size:12px;
+  line-height: normal;
+  margin-top: 4px;
+  color:#979BA5;
+}
+
+.bk-form-item + .form-action-item {
+  margin-top: 32px;
+}
+
+.bk-tooltip + .bk-tooltip,
+.bk-tooltip + .bk-button,
+.bk-button + .bk-tooltip {
+  margin-left: 4px;
+}
+

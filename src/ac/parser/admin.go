@@ -14,9 +14,12 @@ package parser
 
 import (
 	"net/http"
+	"regexp"
 
 	"configcenter/src/ac/meta"
 )
+
+var findSystemConfigRegexp = regexp.MustCompile(`^/api/v3/admin/find/system_config/platform_setting/[^\s/]+/?$`)
 
 func (ps *parseStream) adminRelated() *parseStream {
 	if ps.shouldReturn() {
@@ -24,6 +27,7 @@ func (ps *parseStream) adminRelated() *parseStream {
 	}
 
 	ps.ConfigAdmin()
+	ps.PlatformSettingConfigAuth()
 
 	return ps
 }
@@ -46,6 +50,30 @@ var ConfigAdminConfigs = []AuthConfig{
 	},
 }
 
+var PlatformSettingConfig = []AuthConfig{
+	{
+		Name:           "findPlatformSettingConfig",
+		Description:    "查询平台配置管理",
+		Regex:          findSystemConfigRegexp,
+		HTTPMethod:     http.MethodGet,
+		ResourceType:   meta.ConfigAdmin,
+		ResourceAction: meta.Find,
+	}, {
+		Name:           "UpdatePlatformSettingConfig",
+		Description:    "更新平台配置管理",
+		Pattern:        "/api/v3/admin/update/system_config/platform_setting",
+		HTTPMethod:     http.MethodPut,
+		ResourceType:   meta.ConfigAdmin,
+		ResourceAction: meta.Update,
+	},
+}
+
 func (ps *parseStream) ConfigAdmin() *parseStream {
 	return ParseStreamWithFramework(ps, ConfigAdminConfigs)
+}
+
+// PlatformSettingConfigAuth platform auth
+func (ps *parseStream) PlatformSettingConfigAuth() *parseStream {
+	return ParseStreamWithFramework(ps, PlatformSettingConfig)
+
 }

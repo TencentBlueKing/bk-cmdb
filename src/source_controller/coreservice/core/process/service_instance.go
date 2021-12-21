@@ -353,17 +353,22 @@ func (p *processOperation) ListServiceInstance(kit *rest.Kit, option metadata.Li
 	var total uint64
 	var err error
 	if total, err = mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).Count(kit.Ctx); nil != err {
-		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, filter, err, kit.Rid)
+		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
+			common.BKTableNameServiceInstance, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
+	result := new(metadata.MultipleServiceInstance)
+
 	instances := make([]metadata.ServiceInstance, 0)
-	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).Sort(option.Page.Sort).Start(
-		uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(kit.Ctx, &instances); nil != err {
-		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, filter, err, kit.Rid)
+	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).Fields(option.Fields...).Sort(
+		option.Page.Sort).Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(kit.Ctx,
+		&instances); nil != err {
+		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
+			common.BKTableNameServiceInstance, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
-	result := &metadata.MultipleServiceInstance{
+	result = &metadata.MultipleServiceInstance{
 		Count: total,
 		Info:  instances,
 	}

@@ -44,6 +44,7 @@ func (s *coreService) initModel(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model", Handler: s.CreateModel})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/model", Handler: s.SetModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model", Handler: s.UpdateModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model", Handler: s.DeleteModel})
@@ -311,6 +312,13 @@ func (s *coreService) ccSystem(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/system/user_config", Handler: s.GetSystemUserConfig})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/system/config_admin", Handler: s.SearchConfigAdmin})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet,
+		Path:    "/find/system_config/platform_setting",
+		Handler: s.SearchPlatformSettingConfig})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodGet,
+		Path:    "/update/system_config/platform_setting",
+		Handler: s.UpdatePlatformSetting})
 
 	utility.AddToRestfulWebService(web)
 }

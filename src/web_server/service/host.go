@@ -220,7 +220,6 @@ func (s *Service) ExportHost(c *gin.Context) {
 		blog.Errorf("add module name to host failed, err: %v, rid: %s", err, rid)
 		return
 	}
-
 	setDIs, hostSetMap, err := s.handleSet(hostInfo, rid)
 	if err != nil {
 		blog.Errorf("add set name to host failed, err: %v, rid: %s", err, rid)
@@ -706,6 +705,13 @@ func (s *Service) handleSet(hostInfo []mapstr.MapStr, rid string) ([]int64, map[
 	// 统计host与set关系
 	hostSetMap := make(map[int64][]int64, 0)
 	setIDs := make([]int64, 0)
+	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+	res, err := s.CoreAPI.CoreService().System().SearchPlatformSetting(context.Background(), header)
+	if err != nil {
+		return nil, nil, err
+	}
+	conf := res.Data
+
 	for _, data := range hostInfo {
 		setMap, exist := data[common.BKInnerObjIDSet].([]interface{})
 		if !exist {
@@ -747,7 +753,7 @@ func (s *Service) handleSet(hostInfo []mapstr.MapStr, rid string) ([]int64, map[
 				return nil, nil, err
 			}
 
-			if setName != common.DefaultResSetName {
+			if setName != string(conf.BuiltInSetName) {
 				setIDs = append(setIDs, setID)
 				setSubIDs = append(setSubIDs, setID)
 			}

@@ -484,7 +484,8 @@ func handleFields(handleFieldParam HandleFieldParam) {
 }
 
 // ProductExcelHeader Excel文件头部，
-func productExcelAssociationHeader(ctx context.Context, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf, instNum int, asstList []*metadata.Association) {
+func productExcelAssociationHeader(ctx context.Context, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf,
+	instNum int, asstList []*metadata.Association) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	//第一列(指标说明，橙色)

@@ -54,6 +54,7 @@ func (s *Service) isSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, 
 
 	if len(result.Info) > 1 {
 		blog.Errorf("got multiple set instance, setID: %d, rid: %s", setID, kit.Rid)
+
 		return false, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
 	}
 	setData := result.Info[0]
@@ -130,8 +131,9 @@ func (s *Service) checkIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) error 
 			common.BKModuleIDField: map[string]interface{}{
 				common.BKDBIN: moduleIDs,
 			},
+			// 当default值不等于0或4时为内置模块，其中4表示主机池中用户自定义创建的模块
 			common.BKDefaultField: map[string]interface{}{
-				common.BKDBNE: common.DefaultFlagDefaultValue,
+				common.BKDBNIN: []int{common.DefaultFlagDefaultValue, common.DefaultResSelfDefinedModuleFlag},
 			},
 		},
 	}
@@ -143,7 +145,7 @@ func (s *Service) checkIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) error 
 	}
 
 	if rsp.Count > 0 {
-		return kit.CCError.CCError(common.CCErrorTopoForbiddenDeleteBuiltInSetModule)
+		return kit.CCError.CCError(common.CCErrorTopoForbiddenDeleteOrUpdateBuiltInSetModule)
 	}
 
 	return nil
@@ -239,6 +241,13 @@ func (s *Service) UpdateModule(ctx *rest.Contexts) {
 		return
 	}
 
+	// 不允许修改内置模块
+	if err := s.checkIsBuiltInModule(ctx.Kit, moduleID); err != nil {
+		blog.Errorf("check is builtIn module failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Logics.ModuleOperation().UpdateModule(ctx.Kit, data, bizID, setID, moduleID)
 		if err != nil {
@@ -291,7 +300,7 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 			requestBody.Page.Limit = common.BKDefaultLimit
 		}
 		if requestBody.Page.IsIllegal() {
-			blog.Errorf("page is isIllegal, rid: %s, page: %+v", ctx.Kit.Rid, requestBody.Page)
+			blog.Errorf("page is illegal, page: %+v, rid: %s", requestBody.Page, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 			return
 		}
@@ -507,6 +516,7 @@ func (s *Service) SearchModuleWithRelation(ctx *rest.Contexts) {
 	return
 }
 
+// SearchRuleRelatedTopoNodes search rule related topo nodes
 func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
@@ -577,7 +587,6 @@ func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {
 			})
 		}
 	})
-
 	// unique result
 	finalNodes := make([]metadata.TopoNode, 0)
 	existMap := make(map[string]bool)
@@ -599,7 +608,6 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
 	}
-
 	moduleID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKModuleIDField), 10, 64)
 	if err != nil {
 		blog.Errorf("parse bk_module_id failed, err: %v, rid: %s", err, ctx.Kit.Rid)
@@ -664,7 +672,6 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 		}
 		return nil
 	})
-
 	if txnErr != nil {
 		ctx.RespAutoError(txnErr)
 		return
@@ -748,4 +755,71 @@ func (s *Service) GetInternalModule(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(result)
+}
+
+// UpdateGlobalSetOrModuleConfig update platform_setting，注意： 此接口只给前端的管理员使用不能上ESB
+func (s *Service) UpdateGlobalSetOrModuleConfig(ctx *rest.Contexts) {
+
+	option := new(metadata.ConfigUpdateSettingOption)
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err != nil {
+		blog.Errorf("update global config fail, param is invalid, input: %v, error: %v, rid: %s", option, err,
+			ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoAppSearchFailed))
+		return
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.Logics.BusinessOperation().UpdateBusinessIdleSetOrModule(ctx.Kit, option)
+		if err != nil {
+			blog.Errorf("update business set or module fail, option: %v, err: %v, rid: %s", option, err,
+				ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// DeleteUserModulesSettingConfig delete user config module，注意： 此接口只给前端的管理员使用不能上ESB
+func (s *Service) DeleteUserModulesSettingConfig(ctx *rest.Contexts) {
+
+	option := new(metadata.BuiltInModuleDeleteOption)
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err != nil {
+		blog.Errorf("option is illegal option: %+v, rid: %s.", option, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoAppSearchFailed, "module key and name must be set"))
+		return
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.Logics.BusinessOperation().DeleteBusinessGlobalUserModule(ctx.Kit, option)
+		if err != nil {
+			blog.Errorf("create business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
 }

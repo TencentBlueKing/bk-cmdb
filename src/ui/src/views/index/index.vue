@@ -40,7 +40,6 @@
   import fullTextSearchResultTab from './children/full-text-search/result-tab.vue'
   import theMap from './children/map'
   import theFooter from './children/footer'
-  import { mapGetters } from 'vuex'
   export default {
     name: 'index',
     components: {
@@ -61,9 +60,8 @@
       }
     },
     computed: {
-      ...mapGetters(['site']),
       isFullTextSearch() {
-        return this.site.fullTextSearch === 'on'
+        return this.$Site.fullTextSearch === 'on'
       },
       paddingTop() {
         return parseInt((this.$APP.height - 58) / 3, 10)

@@ -51,7 +51,7 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		ctx.Kit.Header = ctx.Kit.NewHeader()
 		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 			var err error
-			result, err = s.createSet(ctx.Kit, bizID, set)
+			result, err = s.Logics.SetOperation().CreateSet(ctx.Kit, bizID, set)
 			if err != nil && firstErr == nil {
 				firstErr = err
 			}
@@ -94,7 +94,7 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 	resp := make(mapstr.MapStr)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		resp, err = s.createSet(ctx.Kit, bizID, data)
+		resp, err = s.Logics.SetOperation().CreateSet(ctx.Kit, bizID, data)
 		if err != nil {
 			blog.Errorf("create set failed, bizID: %d, data: %#v, err: %v, rid: %s", bizID, data, err, ctx.Kit.Rid)
 			return err
@@ -109,43 +109,6 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
-func (s *Service) createSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (mapstr.MapStr, error) {
-	set, err := s.Logics.SetOperation().CreateSet(kit, bizID, data)
-	if err != nil {
-		blog.Errorf("create set failed, bizID: %d, data: %#v, err: %v, rid: %s", bizID, data, err, kit.Rid)
-		return nil, err
-	}
-
-	if set == nil {
-		blog.Errorf("create set returns nil pointer, biz: %d, data: %#v, rid: %s", bizID, data, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrTopoSetCreateFailed)
-	}
-
-	setID, err := metadata.GetInstID(common.BKInnerObjIDSet, set)
-	if err != nil {
-		blog.Errorf("get set inst id failed, data: %#v, err: %v, rid: %s", set, err, kit.Rid)
-		return nil, err
-	}
-
-	setTemplateID, ok := set.Get(common.BKSetTemplateIDField)
-	if !ok {
-		blog.Errorf("failed to get set_template_id, data: %#v, rid: %s", set, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKSetTemplateIDField)
-	}
-
-	setTemplateIDint, err := util.GetInt64ByInterface(setTemplateID)
-	if err != nil {
-		blog.Errorf("failed to get set template id , type is not a int, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	if _, err = s.Logics.SetTemplateOperation().UpdateSetSyncStatus(kit, setTemplateIDint, []int64{setID}); err != nil {
-		blog.Errorf("update set sync status failed, setID: %d, err: %v, rid: %s", setID, err, kit.Rid)
-	}
-
-	return set, nil
-}
-
 // checkIsBuiltInSet check if set is built-in set
 func (s *Service) checkIsBuiltInSet(kit *rest.Kit, setIDs ...int64) error {
 	// 检查是否是内置集群
@@ -154,6 +117,7 @@ func (s *Service) checkIsBuiltInSet(kit *rest.Kit, setIDs ...int64) error {
 			common.BKSetIDField: map[string]interface{}{
 				common.BKDBIN: setIDs,
 			},
+			// 当default值不等于0时为内置集群
 			common.BKDefaultField: map[string]interface{}{
 				common.BKDBNE: common.DefaultFlagDefaultValue,
 			},
@@ -167,7 +131,7 @@ func (s *Service) checkIsBuiltInSet(kit *rest.Kit, setIDs ...int64) error {
 	}
 
 	if rsp.Count > 0 {
-		return kit.CCError.CCError(common.CCErrorTopoForbiddenDeleteBuiltInSetModule)
+		return kit.CCError.CCError(common.CCErrorTopoForbiddenDeleteOrUpdateBuiltInSetModule)
 	}
 
 	return nil
@@ -278,6 +242,13 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 	if err != nil {
 		blog.Errorf("failed to parse the set id from url, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "set id"))
+		return
+	}
+
+	// 不允许修改内置集群
+	if err := s.checkIsBuiltInSet(ctx.Kit, setID); err != nil {
+		blog.Errorf("check is builtIn set failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 

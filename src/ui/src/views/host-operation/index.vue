@@ -195,7 +195,7 @@
           }
         }, {
           id: 'moveToIdleHost',
-          label: this.$t('移动到空闲机的主机'),
+          label: this.$t('移动到空闲机的主机', { idleModule: this.$store.state.globalConfig.config.idlePool.idle }),
           confirmed: false,
           showCount: true,
           component: MoveToIdleHost.name,
@@ -365,7 +365,7 @@
       },
       setBreadcrumbs() {
         const titleMap = {
-          idle: this.$t('转移到空闲模块'),
+          idle: this.$t('转移到空闲模块', { idleSet: this.$store.state.globalConfig.config.set }),
           business: this.$t('转移到业务模块'),
           remove: this.$t('移除主机'),
           increment: this.$t('追加主机'),
@@ -580,7 +580,7 @@
       handleChangeModule() {
         const props = {
           moduleType: this.type,
-          title: this.type === 'idle' ? this.$t('转移主机到空闲模块') : this.$t('转移主机到业务模块'),
+          title: this.type === 'idle' ? this.$t('转移主机到空闲模块', { idleSet: this.$store.state.globalConfig.config.set }) : this.$t('转移主机到业务模块'),
           defaultChecked: this.targetModules,
           business: this.currentBusiness
         }

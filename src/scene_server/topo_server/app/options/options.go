@@ -28,11 +28,11 @@ type ServerOption struct {
 
 type Config struct {
 	BusinessTopoLevelMax int `json:"level.businessTopoMax"`
-	Redis                redis.Config
-	ConfigMap            map[string]string
-	Es                   elasticsearch.EsConfig
 	// Auth is auth config
-	Auth iam.AuthConfig
+	Auth      iam.AuthConfig
+	Redis     redis.Config
+	ConfigMap map[string]string
+	Es        elasticsearch.EsConfig
 }
 
 func NewServerOption() *ServerOption {

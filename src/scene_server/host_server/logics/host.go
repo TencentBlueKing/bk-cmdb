@@ -191,15 +191,18 @@ func (lgc *Logics) addHost(kit *rest.Kit, appID int64, host map[string]interface
 	// add audit log for create host.
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, hostID, appID, "", nil)
+	host[common.BKHostIDField] = hostID
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, appID, []mapstr.MapStr{host})
 	if err != nil {
-		blog.Errorf("generate audit log failed, hostID: %d, appID: %d, err: %v, rid: %s", hostID, appID, err, kit.Rid)
+		blog.Errorf("generate audit log failed after create host, hostID: %d, appID: %d, err: %v, rid: %s",
+			hostID, appID, err, kit.Rid)
 		return 0, err
 	}
 
 	// save audit log.
-	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
-		blog.Errorf("save audit log failed, hostID: %d, appID: %d, err: %v, rid: %s", hostID, appID, err, kit.Rid)
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+		blog.Errorf("save audit log failed after create host, hostID: %d, appID: %d,err: %v, rid: %s", hostID,
+			appID, err, kit.Rid)
 		return 0, err
 	}
 
@@ -435,19 +438,23 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 	return nil
 }
 
-// DeleteHostFromBusiness  delete host from business,
-func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr []int64) ([]metadata.ExceptionResult, errors.CCError) {
+// DeleteHostFromBusiness  delete host from business
+func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr []int64) ([]metadata.ExceptionResult,
+	errors.CCError) {
+
+	if len(hostIDArr) == 0 {
+		return nil, nil
+	}
+
 	// ready audit log of delete host.
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
-	logContentMap := make(map[int64]*metadata.AuditLog, 0)
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
-	for _, hostID := range hostIDArr {
-		var err error
-		logContentMap[hostID], err = audit.GenerateAuditLog(generateAuditParameter, hostID, bizID, "", nil)
-		if err != nil {
-			blog.Errorf("generate host audit log failed before delete host, hostID: %d, bizID: %d, err: %v, rid: %s", hostID, bizID, err, kit.Rid)
-			return nil, err
-		}
+	auditCond := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDArr}}
+	logContents, err := audit.GenerateAuditLogByCond(generateAuditParameter, bizID, auditCond)
+	if err != nil {
+		blog.Errorf("generate host audit log failed before delete host, hostIDs: %+v, bizID: %d, err: %v, rid: %s",
+			hostIDArr, bizID, err, kit.Rid)
+		return nil, err
 	}
 
 	// to delete host.
@@ -457,29 +464,20 @@ func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr 
 	}
 	result, err := lgc.CoreAPI.CoreService().Host().DeleteHostFromSystem(kit.Ctx, kit.Header, input)
 	if err != nil {
-		blog.Errorf("TransferHostAcrossBusiness DeleteHost error, err: %v,hostID:%#v,appID:%d,rid:%s", err, hostIDArr, bizID, kit.Rid)
+		blog.Errorf("delete host failed, err: %v, hostID: %#v,appID: %d, rid: %s", err, hostIDArr, bizID, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("TransferHostAcrossBusiness DeleteHost failed, err: %v,hostID:%#v,appID:%d,rid:%s", err, hostIDArr, bizID, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
+	if err := result.CCError(); err != nil {
+		blog.Errorf("delete host failed, err: %v, hostID: %#v,appID: %d, rid: %s", err, hostIDArr, bizID, kit.Rid)
+		return nil, err
 	}
 
 	// to save audit log.
-	logContents := make([]metadata.AuditLog, len(logContentMap))
-	index := 0
-	for _, item := range logContentMap {
-		logContents[index] = *item
-		index++
-	}
-
 	if len(logContents) > 0 {
 		if err := audit.SaveAuditLog(kit, logContents...); err != nil {
-			blog.ErrorJSON("delete host in batch, but add host audit log failed, err: %s, rid: %s",
-				err, kit.Rid)
+			blog.Errorf("save delete host audit log(%#v) failed, err: %v, rid: %s", err, logContents, kit.Rid)
 			return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 		}
-
 	}
 	return nil, nil
 }
@@ -589,7 +587,8 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 	// generate audit log
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 	auditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(srcHostInfo)
-	auditLog, auditErr := audit.GenerateAuditLog(auditParam, dstHostID, appID, "", nil)
+	auditCond := map[string]interface{}{common.BKHostIDField: dstHostID}
+	auditLog, auditErr := audit.GenerateAuditLogByCond(auditParam, appID, auditCond)
 	if auditErr != nil {
 		blog.Errorf("generate audit log failed, err: %v, host id: %d, rid: %s", err, dstHostID, kit.Rid)
 		return kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
@@ -607,7 +606,7 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
 		blog.Errorf("save audit log failed, err: %v, host id: %d, rid: %s", err, dstHostID, kit.Rid)
 		return kit.CCError.CCError(common.CCErrAuditSaveLogFailed)
 	}
