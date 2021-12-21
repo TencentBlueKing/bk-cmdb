@@ -82,8 +82,7 @@ const (
 	BKTableNameSetTemplate                = "cc_SetTemplate"
 	BKTableNameSetServiceTemplateRelation = "cc_SetServiceTemplateRelation"
 	BKTableNameAPITask                    = "cc_APITask"
-	BKTableNameSetTemplateSyncStatus      = "cc_SetTemplateSyncStatus"
-	BKTableNameSetTemplateSyncHistory     = "cc_SetTemplateSyncHistory"
+	BKTableNameAPITaskSyncHistory         = "cc_APITaskSyncHistory"
 
 	// rule for host property auto apply
 	BKTableNameHostApplyRule = "cc_HostApplyRule"
@@ -144,8 +143,7 @@ var AllTables = []string{
 	BKTableNameChartData,
 	BKTableNameHostApplyRule,
 	BKTableNameAPITask,
-	BKTableNameSetTemplateSyncStatus,
-	BKTableNameSetTemplateSyncHistory,
+	BKTableNameAPITaskSyncHistory,
 	BKTableNameCloudSyncTask,
 	BKTableNameCloudAccount,
 	BKTableNameCloudSyncHistory,

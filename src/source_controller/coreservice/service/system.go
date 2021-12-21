@@ -14,6 +14,7 @@ package service
 
 import (
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
 )
 
 func (s *coreService) GetSystemUserConfig(ctx *rest.Contexts) {
@@ -27,4 +28,31 @@ func (s *coreService) SearchConfigAdmin(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(conf)
+}
+
+// SearchPlatformSettingConfig search platform setting.
+func (s *coreService) SearchPlatformSettingConfig(ctx *rest.Contexts) {
+	conf, err := s.core.SystemOperation().SearchPlatformSettingConfig(ctx.Kit)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(conf)
+}
+
+// UpdatePlatformSetting update platform setting.
+func (s *coreService) UpdatePlatformSetting(ctx *rest.Contexts) {
+
+	input := new(metadata.PlatformSettingConfig)
+	if jsErr := ctx.DecodeInto(&input); nil != jsErr {
+		ctx.RespAutoError(jsErr)
+		return
+	}
+
+	err := s.core.SystemOperation().UpdatePlatformSettingConfig(ctx.Kit, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
 }

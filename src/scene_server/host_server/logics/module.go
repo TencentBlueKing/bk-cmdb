@@ -31,35 +31,41 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-func (lgc *Logics) GetResourcePoolModuleID(kit *rest.Kit, condition mapstr.MapStr) (int64, errors.CCError) {
+// GetResourcePoolModuleID get module id,module name.
+func (lgc *Logics) GetResourcePoolModuleID(kit *rest.Kit, condition mapstr.MapStr) (int64, string, errors.CCError) {
 	query := &metadata.QueryCondition{
-		Fields:    []string{common.BKModuleIDField, common.BkSupplierAccount},
+		Fields:    []string{common.BKModuleIDField, common.BkSupplierAccount, common.BKModuleNameField},
 		Condition: condition,
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule, query)
 	if err != nil {
 		blog.Errorf("GetResourcePoolModuleID http do error, err:%s,input:%+v,rid:%s", err.Error(), query, kit.Rid)
-		return -1, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		return -1, "", kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
 		blog.Errorf("GetResourcePoolModuleID http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
-		return -1, kit.CCError.New(result.Code, result.ErrMsg)
+		return -1, "", kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
 	if len(result.Data.Info) == 0 {
 		blog.Errorf("GetResourcePoolModuleID http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
-		return -1, kit.CCError.Error(common.CCErrTopoGetAppFailed)
+		return -1, "", kit.CCError.Error(common.CCErrTopoGetAppFailed)
 	}
 
 	supplier := kit.SupplierAccount
 	for idx, mod := range result.Data.Info {
 		if supplier == mod[common.BkSupplierAccount].(string) {
-			return result.Data.Info[idx].Int64(common.BKModuleIDField)
+			moduleId, err := result.Data.Info[idx].Int64(common.BKModuleIDField)
+			moduleName := ""
+			if name, ok := result.Data.Info[idx][common.BKModuleNameField].(string); ok {
+				moduleName = name
+			}
+			return moduleId, moduleName, err
 		}
 	}
 
 	blog.Errorf("can not get resource pool module id rid:%s", kit.Rid)
-	return -1, kit.CCError.Error(common.CCErrTopoGetAppFailed)
+	return -1, "", kit.CCError.Error(common.CCErrTopoGetAppFailed)
 }
 
 func (lgc *Logics) GetNormalModuleByModuleID(kit *rest.Kit, appID, moduleID int64) ([]mapstr.MapStr, errors.CCError) {
@@ -157,7 +163,7 @@ func (lgc *Logics) GetModuleIDAndIsInternal(kit *rest.Kit, bizID, moduleID int64
 			common.BKAppIDField:   bizID,
 			common.BKDefaultField: common.DefaultResModuleFlag,
 		}
-		moduleID, err := lgc.GetResourcePoolModuleID(kit, cond)
+		moduleID, _, err := lgc.GetResourcePoolModuleID(kit, cond)
 		if err != nil {
 			blog.Errorf("GetModuleIDAndIsInternal get default moduleID failed, err: %s, bizID: %d, rid: %s", err.Error(), bizID, kit.Rid)
 			return 0, false, err
@@ -208,14 +214,14 @@ func (lgc *Logics) MoveHostToResourcePool(kit *rest.Kit, conf *metadata.DefaultM
 		ownerModuleIDCond[common.BKModuleIDField] = conf.ModuleID
 	}
 
-	ownerModuleID, err := lgc.GetResourcePoolModuleID(kit, ownerModuleIDCond)
+	ownerModuleID, _, err := lgc.GetResourcePoolModuleID(kit, ownerModuleIDCond)
 	if err != nil {
 		blog.Errorf("move host to resource pool, but get module id failed, err: %v, input:%+v,param:%+v,rid:%s", err, conf, ownerModuleIDCond, kit.Rid)
 		return nil, err
 	}
 
 	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithAppID(conf.ApplicationID)
-	moduleID, err := lgc.GetResourcePoolModuleID(kit, conds.MapStr())
+	moduleID, _, err := lgc.GetResourcePoolModuleID(kit, conds.MapStr())
 	if err != nil {
 		blog.Errorf("move host to resource pool, but get module id failed, err: %v, input:%+v,param:%+v,rid:%s", err, conf, conds.Data(), kit.Rid)
 		return nil, err
@@ -347,14 +353,15 @@ func (lgc *Logics) AssignHostToApp(kit *rest.Kit, conf *metadata.DefaultModuleHo
 	}
 
 	mConds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithAppID(conf.ApplicationID)
-	moduleID, err := lgc.GetResourcePoolModuleID(kit, mConds.MapStr())
+	moduleID, moduleName, err := lgc.GetResourcePoolModuleID(kit, mConds.MapStr())
 	if err != nil {
 		blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,params:%+v,rid:%s", err, conf, mConds.MapStr(), kit.Rid)
 		return nil, err
 	}
 	if moduleID == 0 {
-		blog.Errorf("assign host to app, but get module id failed, %s not found,input:%+v,params:%+v,rid:%s", common.DefaultResModuleName, conf, mConds.MapStr(), kit.Rid)
-		return nil, kit.CCError.Errorf(common.CCErrHostModuleNotExist, common.DefaultResModuleName)
+		blog.Errorf("assign host to app, but get module id failed, %s not found,input: %+v,params:% +v,rid: %s",
+			moduleName, conf, mConds.MapStr(), kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrHostModuleNotExist, moduleName)
 	}
 
 	assignParams := &metadata.TransferHostsCrossBusinessRequest{

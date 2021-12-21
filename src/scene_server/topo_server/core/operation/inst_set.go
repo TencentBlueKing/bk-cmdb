@@ -33,7 +33,7 @@ type SetOperationInterface interface {
 	DeleteSet(kit *rest.Kit, bizID int64, setIDS []int64) error
 	FindSet(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error)
 	UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID, setID int64) error
-
+	UpdateSetForPlatform(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond *metadata.QueryInput) error
 	SetProxy(obj ObjectOperationInterface, inst InstOperationInterface, module ModuleOperationInterface)
 }
 
@@ -205,23 +205,6 @@ func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 		return err
 	}
 
-	// clear set template sync status
-	if ccErr := s.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, setIDs); ccErr != nil {
-		blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDs, ccErr.Error(), kit.Rid)
-		return ccErr
-	}
-
-	taskCond := &metadata.DeleteOption{
-		Condition: map[string]interface{}{
-			common.BKInstIDField: map[string]interface{}{
-				common.BKDBIN: setIDs,
-			}}}
-	if err = s.clientSet.TaskServer().Task().DeleteTask(kit.Ctx, kit.Header, taskCond); err != nil {
-		blog.Errorf("[operation-set] failed to delete set sync task message failed, "+
-			"bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDs, err.Error(), kit.Rid)
-		return err
-	}
-
 	// clear the sets
 	return s.inst.DeleteInst(kit, common.BKInnerObjIDSet, setCond, false)
 }
@@ -254,6 +237,29 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, biz
 			return kit.CCError.CCError(common.CCErrorSetNameDuplicated)
 		}
 		return err
+	}
+
+	return nil
+}
+
+// UpdateSetForPlatform 全量更新所有的空闲机池集群名称，注意: 此函数只是用于更新平台管理的,不能上esb
+func (s *set) UpdateSetForPlatform(kit *rest.Kit, data mapstr.MapStr, obj model.Object,
+	cond *metadata.QueryInput) error {
+
+	inputParams := metadata.UpdateOption{
+		Data:      data,
+		Condition: cond.Condition,
+	}
+
+	rsp, err := s.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, obj.GetObjectID(),
+		&inputParams)
+	if nil != err {
+		blog.Errorf("update set name failed , err: %v, rid: %s", err, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !rsp.Result {
+		blog.Errorf("update set name failed , err: %s, rid: %s", rsp.ErrMsg, kit.Rid)
+		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil

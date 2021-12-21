@@ -47,31 +47,3 @@ type SetServiceTemplateRelation struct {
 	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
 	SupplierAccount   string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
-
-type SyncStatus string
-
-func (ss SyncStatus) IsFinished() bool {
-	return ss == SyncStatusFinished || ss == SyncStatusFailure
-}
-
-var (
-	SyncStatusWaiting  = SyncStatus("waiting")  // 等待同步
-	SyncStatusSyncing  = SyncStatus("syncing")  // 同步中
-	SyncStatusFinished = SyncStatus("finished") // 同步完成
-	SyncStatusFailure  = SyncStatus("failure")  // 同步失败
-)
-
-type SetTemplateSyncStatus struct {
-	SetID         int64  `field:"bk_set_id" json:"bk_set_id" bson:"bk_set_id" mapstructure:"bk_set_id"`
-	Name          string `field:"bk_set_name" json:"bk_set_name" bson:"bk_set_name" mapstructure:"bk_set_name"`
-	BizID         int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
-	SetTemplateID int64  `field:"set_template_id" json:"set_template_id" bson:"set_template_id" mapstructure:"set_template_id"`
-
-	Creator         string `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
-	CreateTime      Time   `field:"create_time" json:"create_time" bson:"create_time" mapstructure:"create_time"`
-	LastTime        Time   `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`
-	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
-
-	Status SyncStatus `field:"status" json:"status" bson:"status" mapstructure:"status"`
-	TaskID string     `field:"task_id" json:"task_id" bson:"task_id" mapstructure:"task_id"`
-}

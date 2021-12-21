@@ -42,10 +42,10 @@ var (
 	defaultListWatchPageSize = 500
 
 	// defaultWatchEventStepSize is default step size of watch event.
-	defaultWatchEventStepSize = 100
+	defaultWatchEventStepSize = 200
 
 	// defaultWatchEventLoopInterval is default watch event loop interval.
-	defaultWatchEventLoopInterval = 500 * time.Millisecond
+	defaultWatchEventLoopInterval = 5 * time.Second
 
 	// defaultMasterCheckInterval is default master state check interval.
 	defaultMasterCheckInterval = 3 * time.Second

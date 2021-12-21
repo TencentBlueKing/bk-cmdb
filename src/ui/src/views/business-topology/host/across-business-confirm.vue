@@ -4,6 +4,7 @@
     <i18n tag="p" path="确认跨业务转移忽略主机数量" class="content">
       <span class="count" place="count">{{count}}</span>
       <span class="invalid" place="invalid">{{invalidList.length}}</span>
+      <span place="idleModule">{{$store.state.globalConfig.config.idlePool.idle}}</span>
     </i18n>
     <invalid-list :title="$t('以下主机不能移除')" :list="invalidList"></invalid-list>
     <div class="footer">

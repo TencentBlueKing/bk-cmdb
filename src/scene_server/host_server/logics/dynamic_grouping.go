@@ -77,7 +77,7 @@ type HostDynamicGroupExecutor struct {
 
 // NewHostDynamicGroupExecutor creates a new HostDynamicGroupExecutor object.
 func NewHostDynamicGroupExecutor(kit *rest.Kit, lgc *Logics, params *metadata.HostCommonSearch,
-	fileds []string, disableCounter bool) *HostDynamicGroupExecutor {
+	fields []string, disableCounter bool) *HostDynamicGroupExecutor {
 
 	executor := &HostDynamicGroupExecutor{
 		kit:            kit,
@@ -88,7 +88,7 @@ func NewHostDynamicGroupExecutor(kit *rest.Kit, lgc *Logics, params *metadata.Ho
 		header:         kit.Header,
 		params:         params,
 		idArr:          searchHostIDArr{},
-		fields:         fileds,
+		fields:         fields,
 		disableCounter: disableCounter,
 	}
 	executor.conds.objectCondMap = make(map[string][]metadata.ConditionItem)

@@ -34,8 +34,8 @@ type ModuleOperationInterface interface {
 	CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int64, data mapstr.MapStr) (inst.Inst, error)
 	DeleteModule(kit *rest.Kit, bizID int64, setID, moduleIDS []int64) error
 	FindModule(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput) (count int, results []mapstr.MapStr, err error)
+	HasHostInModules(kit *rest.Kit, moduleIDS []int64) (bool, error)
 	UpdateModule(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID, setID, moduleID int64) error
-
 	SetProxy(inst InstOperationInterface)
 }
 
@@ -70,6 +70,28 @@ func (m *module) hasHost(kit *rest.Kit, bizID int64, setIDs, moduleIDS []int64) 
 	if len(moduleIDS) > 0 {
 		option.ModuleIDArr = moduleIDS
 	}
+	rsp, err := m.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, option)
+	if nil != err {
+		blog.Errorf("[operation-module] failed to request the object controller, err: %s, rid: %s", err.Error(), kit.Rid)
+		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[operation-module]  failed to search the host module configures, err: %s, rid: %s", rsp.ErrMsg, kit.Rid)
+		return false, kit.CCError.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return 0 != len(rsp.Data.Info), nil
+}
+
+// HasHostInModules 查找modules下是否有主机存在，参数只有modules
+func (m *module) HasHostInModules(kit *rest.Kit, moduleIDS []int64) (bool, error) {
+	option := &metadata.HostModuleRelationRequest{
+		ModuleIDArr: moduleIDS,
+		Fields:      []string{common.BKHostIDField},
+		Page:        metadata.BasePage{Limit: 1},
+	}
+
 	rsp, err := m.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, option)
 	if nil != err {
 		blog.Errorf("[operation-module] failed to request the object controller, err: %s, rid: %s", err.Error(), kit.Rid)

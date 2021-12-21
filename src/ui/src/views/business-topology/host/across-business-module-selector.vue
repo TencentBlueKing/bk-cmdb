@@ -137,11 +137,17 @@
           this.businessList = []
         } finally {
           setTimeout(() => {
-            afterVerify(() => {
+            afterVerify((authData) => {
               this.loading = false
+              this.sortBusinessByAuth(authData)
             })
           }, 0)
         }
+      },
+      sortBusinessByAuth(authData) {
+        const list = this.businessList.map((item, index) => ({ ...item, is_pass: authData[index]?.is_pass }))
+        list.sort((itemA, itemB) => itemB?.is_pass - itemA?.is_pass)
+        this.businessList = list
       },
       async getModules() {
         try {

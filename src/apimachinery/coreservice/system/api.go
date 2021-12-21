@@ -60,3 +60,36 @@ func (s *system) SearchConfigAdmin(ctx context.Context, h http.Header) (resp *me
 
 	return
 }
+
+// SearchPlatformSetting  find platform config.
+func (s *system) SearchPlatformSetting(ctx context.Context, h http.Header) (resp *metadata.PlatformSettingResult,
+	err error) {
+	resp = new(metadata.PlatformSettingResult)
+	subPath := "/find/system_config/platform_setting"
+
+	err = s.client.Get().
+		WithContext(ctx).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+// UpdatePlatformSetting update platform config.
+func (s *system) UpdatePlatformSetting(ctx context.Context, h http.Header, input *metadata.PlatformSettingConfig) (
+	resp *metadata.BaseResp, err error) {
+
+	resp = new(metadata.BaseResp)
+	subPath := "/update/system_config/platform_setting"
+	err = s.client.Get().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}

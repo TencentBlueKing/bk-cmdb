@@ -264,21 +264,15 @@ func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.Mod
 
 	// find all the process instance detail by ids
 	procIDs := make([]int64, 0)
-	processTemplateReferenced := make(map[int64]struct{})
 	for _, relation := range relations.Info {
 		procIDs = append(procIDs, relation.ProcessID)
-
-		// record the used process template for checking whether a new process template has been added to service template.
-		processTemplateReferenced[relation.ProcessTemplateID] = struct{}{}
 	}
 
+	serviceRelationMap := make(map[int64][]metadata.ProcessInstanceRelation)
+	for _, r := range relations.Info {
+		serviceRelationMap[r.ServiceInstanceID] = append(serviceRelationMap[r.ServiceInstanceID], r)
+	}
 	// check whether a new process template has been added
-	for templateID := range procTempMap {
-		if _, exist := processTemplateReferenced[templateID]; exist {
-			continue
-		}
-		return true, nil
-	}
 
 	processDetails, err := lgc.ListProcessInstanceWithIDs(kit, procIDs)
 	if err != nil {
@@ -297,31 +291,41 @@ func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.Mod
 		blog.Errorf("get host map failed, err: %v, ids: %+v, rid: %s", err, hostIDs, kit.Rid)
 		return false, err
 	}
+	for _, serviceInst := range serviceInstances.Info {
+		relations := serviceRelationMap[serviceInst.ID]
+		processTemplateReferenced := make(map[int64]struct{})
 
-	// compare the process instance with it's process template one by one
-	for _, relation := range relations.Info {
-		process, ok := procID2Detail[relation.ProcessID]
-		if !ok {
-			blog.ErrorJSON("process doesn't exist, id: %d, rid: %s", err, relation.ProcessID, kit.Rid)
-			return false, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcIDField)
+		// compare the process instance with it's process template one by one
+		for _, relation := range relations {
+			processTemplateReferenced[relation.ProcessTemplateID] = struct{}{}
+			process, ok := procID2Detail[relation.ProcessID]
+			if !ok {
+				blog.Errorf("process doesn't exist, id: %d, rid: %s", relation.ProcessID, kit.Rid)
+				return false, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcIDField)
+			}
+
+			property, exist := procTempMap[relation.ProcessTemplateID]
+			if !exist {
+				return true, nil
+			}
+
+			_, isChanged, diffErr := lgc.DiffWithProcessTemplate(property.Property, process, hostMap[relation.HostID],
+				map[string]metadata.Attribute{}, false)
+			if diffErr != nil {
+				blog.Errorf("diff process %d with template failed, err: %v, rid: %s", relation.ProcessID, diffErr, kit.Rid)
+				return false, errors.New(common.CCErrCommParamsInvalid, diffErr.Error())
+			}
+
+			if isChanged {
+				return true, nil
+			}
 		}
-
-		property, exist := procTempMap[relation.ProcessTemplateID]
-		if !exist {
-			return true, nil
-		}
-
-		_, isChanged, diffErr := lgc.DiffWithProcessTemplate(property.Property, process, hostMap[relation.HostID],
-			map[string]metadata.Attribute{}, false)
-		if diffErr != nil {
-			blog.Errorf("diff process %d with template failed, err: %v, rid: %s", relation.ProcessID, diffErr, kit.Rid)
-			return false, errors.New(common.CCErrCommParamsInvalid, diffErr.Error())
-		}
-
-		if isChanged {
+		for templateID := range procTempMap {
+			if _, exist := processTemplateReferenced[templateID]; exist {
+				continue
+			}
 			return true, nil
 		}
 	}
-
 	return false, nil
 }

@@ -30,7 +30,8 @@ func (s *Service) initInternalTask(web *restful.WebService) {
 		Language: s.Engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/internal/task", Handler: s.SyncModuleTaskHandler})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/internal/sync/module/task",
+		Handler: s.SyncModuleTaskHandler})
 
 	utility.AddToRestfulWebService(web)
 }

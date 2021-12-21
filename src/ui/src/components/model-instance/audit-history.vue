@@ -39,9 +39,12 @@
   import AuditDetails from '@/components/audit-history/details.js'
   export default {
     props: {
-      category: {
+      objId: {
         type: String,
         required: true
+      },
+      bizId: {
+        type: Number
       },
       resourceId: {
         type: [Number, String]
@@ -59,7 +62,6 @@
         condition: {
           operation_time: [today, today],
           user: '',
-          category: this.category,
           resource_id: this.resourceId,
           resource_type: this.resourceType
         },
@@ -94,7 +96,7 @@
       },
       async getHistory() {
         try {
-          const { info, count } = await this.$store.dispatch('audit/getList', {
+          const { info, count } = await this.$store.dispatch('audit/getInstList', {
             params: {
               condition: this.getUsefulConditon(),
               page: {
@@ -120,7 +122,15 @@
         }
       },
       getUsefulConditon() {
-        const usefuleCondition = {}
+        const usefuleCondition = {
+          bk_obj_id: this.objId
+        }
+
+        // 通用模型实例不传，未分配业务主机传1
+        if (!isNaN(this.bizId)) {
+          usefuleCondition.bk_biz_id = this.bizId > 0 ? this.bizId : 1
+        }
+
         Object.keys(this.condition).forEach((key) => {
           const value = this.condition[key]
           if (String(value).length) {
@@ -156,7 +166,11 @@
       },
       handleRowClick(item) {
         AuditDetails.show({
-          id: item.id
+          aduitTarget: 'instance',
+          id: item.id,
+          resourceType: this.resourceType,
+          bizId: this.bizId,
+          objId: this.objId
         })
       }
     }

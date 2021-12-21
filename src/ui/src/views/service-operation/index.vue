@@ -67,7 +67,7 @@
         moveToIdleHosts: [],
         tabList: [{
           id: 'moveToIdleHost',
-          label: this.$t('转移到空闲机的主机'),
+          label: this.$t('转移到空闲机的主机', { idleModule: this.$store.state.globalConfig.config.idlePool.idle }),
           confirmed: false,
           component: MoveToIdleHost.name,
           props: {

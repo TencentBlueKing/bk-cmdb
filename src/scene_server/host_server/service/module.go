@@ -322,7 +322,7 @@ func (s *Service) moveHostToDefaultModule(ctx *rest.Contexts, defaultModuleFlag 
 	}
 
 	moduleFilter[common.BKAppIDField] = bizID
-	moduleID, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, moduleFilter)
+	moduleID, _, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, moduleFilter)
 	if err != nil {
 		blog.ErrorJSON("move host to default module failed, get default module id failed, filter: %s, err: %s, rid: %s", moduleFilter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(defErr.Errorf(common.CCErrAddHostToModuleFailStr, "module not found"))
