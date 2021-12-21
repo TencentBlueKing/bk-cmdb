@@ -13,6 +13,8 @@
 package service
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -75,7 +77,9 @@ func (s *coreService) DeleteInstAsst(kit *rest.Kit, objID string, instID uint64)
 }
 
 // SelectObjectAttWithParams select object att with params
-func (s *coreService) SelectObjectAttWithParams(kit *rest.Kit, objID string, bizID int64) (attributeArr []metadata.Attribute, err error) {
+func (s *coreService) SelectObjectAttWithParams(kit *rest.Kit, objID string, bizIDs []int64) (
+	attributeArr []metadata.Attribute, err error) {
+
 	attributeArr = make([]metadata.Attribute, 0)
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
@@ -84,7 +88,19 @@ func (s *coreService) SelectObjectAttWithParams(kit *rest.Kit, objID string, biz
 	}
 
 	bizCond := make(mapstr.MapStr)
-	util.AddModelBizIDCondition(bizCond, bizID)
+	if len(bizIDs) > 1 {
+		if err := util.AddModelWithMultipleBizIDCondition(bizCond, bizIDs); err != nil {
+			return nil, err
+		}
+
+	} else if len(bizIDs) == 1 {
+		util.AddModelBizIDCondition(bizCond, bizIDs[0])
+
+	} else {
+		blog.Errorf("bizIDs params must be set, rid: %s", kit.Rid)
+		return nil, fmt.Errorf("biz ids params must be set")
+
+	}
 
 	queryCond.Condition.Merge(bizCond)
 	result, err := s.core.ModelOperation().SearchModelAttributes(kit, objID, queryCond)
