@@ -191,7 +191,9 @@
         this.table.backup = Object.freeze(cloneDeep(data.info))
         this.table.pagination.current = 1
         this.table.pagination.count = data.count
-        await to(this.loadInstanceStatus(this.table.data.map(i => i.bk_module_id)))
+        if (data.count > 0 && data.info?.length > 0) {
+          await to(this.loadInstanceStatus(this.table.data.map(i => i.bk_module_id)))
+        }
         this.renderVisibleList()
         this.instancesLoading = false
 
