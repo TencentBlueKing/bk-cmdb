@@ -478,12 +478,12 @@ func getAllConfigs(ctx context.Context, db dal.RDB, dir string) (curCfg *metadat
 
 	if ret[common.ConfigAdminValueField] == nil {
 		blog.Errorf("get config failed, db config type is error")
-		return nil, nil, "", err
+		return nil, nil, "", nil
 	}
 
 	if _, ok := ret[common.ConfigAdminValueField].(string); !ok {
 		blog.Errorf("get config failed, db config type is error")
-		return nil, nil, "", err
+		return nil, nil, "", nil
 	}
 
 	preCfg = new(metadata.ConfigAdmin)

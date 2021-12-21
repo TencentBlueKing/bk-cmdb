@@ -237,7 +237,7 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 	if err != nil {
 		blog.Errorf("update objID(%s) inst failed, err: %v, condition: %#v, data: %#v rid: %s", objID, err,
 			inputParam.Condition, inputParam.Data, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommDBUpdateFailed)
+		return nil, err
 	}
 
 	if objID == common.BKInnerObjIDHost {
