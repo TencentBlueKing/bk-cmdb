@@ -147,6 +147,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`/api/v3/findmany/proc/service_template_sync_status/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       6,
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.Find,
 	}, {
