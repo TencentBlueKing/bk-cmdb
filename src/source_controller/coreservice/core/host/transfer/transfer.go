@@ -25,7 +25,8 @@ import (
 )
 
 type genericTransfer struct {
-	dependent OperationDependence
+	dependent           OperationDependence
+	hostApplyDependence HostApplyRuleDependence
 
 	// depend parameter
 	moduleIDArr []int64
@@ -357,7 +358,6 @@ func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostIDs []int64) 
 		return nil
 	}
 
-	bizID := t.bizID
 	existHostModuleIDMap := make(map[int64]map[int64]struct{}, 0)
 
 	// filter already exist modules
@@ -383,19 +383,19 @@ func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostIDs []int64) 
 		existHostModuleIDMap[item.HostID][item.ModuleID] = struct{}{}
 	}
 
-	var insertDataArr []mapstr.MapStr
+	var insertDataArr []metadata.ModuleHost
 	for _, moduleID := range t.moduleIDArr {
 		for _, hostID := range hostIDs {
 			if _, ok := existHostModuleIDMap[hostID][moduleID]; ok {
 				continue
 			}
-			insertData := mapstr.MapStr{
-				common.BKAppIDField: bizID, common.BKHostIDField: hostID, common.BKModuleIDField: moduleID,
-				common.BKSetIDField: t.moduleIDSetIDMap[moduleID],
-			}
-
-			insertData = util.SetModOwner(insertData, kit.SupplierAccount)
-			insertDataArr = append(insertDataArr, insertData)
+			insertDataArr = append(insertDataArr, metadata.ModuleHost{
+				SetID:    t.moduleIDSetIDMap[moduleID],
+				ModuleID: moduleID,
+				HostID:   hostID,
+				AppID:    t.bizID,
+				OwnerID:  kit.SupplierAccount,
+			})
 		}
 	}
 
@@ -403,11 +403,17 @@ func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostIDs []int64) 
 		return nil
 	}
 
-	err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Insert(kit.Ctx, insertDataArr)
-	if err != nil {
+	if err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Insert(kit.Ctx, insertDataArr); err != nil {
 		blog.Errorf("add host module relation, add module host relation error: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
+
+	// run new module's host apply rule, prevent repeated execution of rules
+	if _, err := t.hostApplyDependence.RunHostApplyOnHosts(kit, t.bizID, insertDataArr); err != nil {
+		blog.Errorf("run host apply rule failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
 	return nil
 }
 
