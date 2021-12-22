@@ -1465,5 +1465,6 @@
     "转移至": "Transfer to",
     "追加至": "Append to",
     "追加主机到业务模块": "Append to Business Modules",
-    "仅允许业务下空闲机跨业务转移": "Only {idleModule} under the business allowed to transfer across businesses"
+    "仅允许业务下空闲机跨业务转移": "Only {idleModule} under the business allowed to transfer across businesses",
+    "转移空闲机到其他业务": "Transfer {idleModule} to ohter business"
 }
