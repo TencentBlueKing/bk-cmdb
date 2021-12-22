@@ -199,7 +199,7 @@ var InitAdminConfig = `
 {
     "backend":{
         "max_biz_topo_level":7,
-        "snapshot_biz_name":"BlueKing"
+        "snapshot_biz_name":"蓝鲸"
     },
     "site":{
          "name":{
