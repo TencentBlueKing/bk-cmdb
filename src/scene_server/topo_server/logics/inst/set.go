@@ -193,14 +193,6 @@ func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 		return err
 	}
 
-	// clear set template sync status
-	if ccErr := s.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID,
-		setIDs); ccErr != nil {
-		blog.Errorf("delete set template sync status failed, bizID: %d, setIDs: %#v, err: %v, rid: %s", bizID,
-			setIDs, ccErr, kit.Rid)
-		return ccErr
-	}
-
 	taskCond := &metadata.DeleteOption{
 		Condition: setCond,
 	}

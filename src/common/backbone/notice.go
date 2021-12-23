@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/zkclient"
 
-	"github.com/samuel/go-zookeeper/zk"
+	"github.com/go-zookeeper/zk"
 )
 
 type noticeHandler struct {

@@ -22,7 +22,8 @@
       <bk-tab-panel name="history" :label="$t('变更记录')">
         <cmdb-audit-history v-if="active === 'history'"
           resource-type="business"
-          category="resource"
+          :obj-id="objId"
+          :biz-id="bizId"
           :resource-id="bizId">
         </cmdb-audit-history>
       </bk-tab-panel>

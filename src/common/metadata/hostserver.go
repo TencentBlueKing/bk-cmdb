@@ -699,6 +699,29 @@ type TransferHostAcrossBusinessParameter struct {
 	DstModuleID int64   `json:"bk_module_id"`
 }
 
+// TransferResourceHostAcrossBusinessParam Transfer hosts across business request parameter.
+type TransferResourceHostAcrossBusinessParam struct {
+
+	// ResourceSrcHosts source host list.
+	ResourceSrcHosts []TransferResourceParam `json:"resource_hosts"`
+
+	// DstAppID destination biz.
+	DstAppID int64 `json:"dst_bk_biz_id"`
+
+	// DstModuleID destination module.
+	DstModuleID int64 `json:"dst_bk_module_id"`
+}
+
+// TransferSrcParam src biz ids and host list.
+type TransferResourceParam struct {
+
+	// SrcAppId src biz id.
+	SrcAppId int64 `json:"src_bk_biz_id"`
+
+	// HostIDs hosts to be transferred.
+	HostIDs []int64 `json:"src_bk_host_ids"`
+}
+
 // HostModuleRelationParameter get host and module  relation parameter
 type HostModuleRelationParameter struct {
 	AppID  int64   `json:"bk_biz_id"`

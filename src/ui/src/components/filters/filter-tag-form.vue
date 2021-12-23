@@ -137,6 +137,7 @@
         }
       },
       handleConfirm() {
+        FilterStore.resetPage(true)
         FilterStore.updateCondition(this.property, this.operator, this.value)
         this.$emit('confirm')
       },

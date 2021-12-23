@@ -246,17 +246,17 @@ func (c *commonInst) CreateManyInstance(kit *rest.Kit, objID string, data []maps
 	}
 	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-	auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, objID, cond)
-	if err != nil {
+	auditLog, rawErr := audit.GenerateAuditLogByCondGetData(generateAuditParameter, objID, cond)
+	if rawErr != nil {
 		blog.Errorf("create many instances, generate audit log failed, err: %v, rid: %s",
-			err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrAuditGenerateLogFailed, err.Error())
+			rawErr, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrAuditGenerateLogFailed, rawErr.Error())
 	}
 
 	// save audit log.
-	err = audit.SaveAuditLog(kit, auditLog...)
-	if err != nil {
-		blog.Errorf("creat many instances, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+	rawErr = audit.SaveAuditLog(kit, auditLog...)
+	if rawErr != nil {
+		blog.Errorf("creat many instances, save audit log failed, err: %v, rid: %s", rawErr, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 	return resp, nil
@@ -439,7 +439,6 @@ func (c *commonInst) DeleteInst(kit *rest.Kit, objectID string, cond mapstr.MapS
 		return kit.CCError.Error(common.CCErrTopoHasHostCheckFailed)
 	}
 
-	bizSetMap := make(map[int64][]int64)
 	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
 	auditLogs := make([]metadata.AuditLog, 0)
 
@@ -453,22 +452,8 @@ func (c *commonInst) DeleteInst(kit *rest.Kit, objectID string, cond mapstr.MapS
 		}
 
 		auditLogs = append(auditLogs, auditLog...)
-		if err := c.deleteInsts(kit, delInsts, objID, bizSetMap); err != nil {
+		if err := c.deleteInsts(kit, delInsts, objID); err != nil {
 			return err
-		}
-	}
-
-	// clear set template sync status for set instances
-	for bizID, setIDs := range bizSetMap {
-		if len(setIDs) == 0 {
-			continue
-		}
-
-		ccErr := c.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, setIDs)
-		if ccErr != nil {
-			blog.Errorf("delete set template sync status failed, bizID: %d, setIDs: %+v, err: %v, rid: %s", bizID,
-				setIDs, ccErr, kit.Rid)
-			return ccErr
 		}
 	}
 
@@ -481,8 +466,7 @@ func (c *commonInst) DeleteInst(kit *rest.Kit, objectID string, cond mapstr.MapS
 	return nil
 }
 
-func (c *commonInst) deleteInsts(kit *rest.Kit, delInsts []mapstr.MapStr, objID string,
-	bizSetMap map[int64][]int64) error {
+func (c *commonInst) deleteInsts(kit *rest.Kit, delInsts []mapstr.MapStr, objID string) error {
 
 	delInstIDs := make([]int64, len(delInsts))
 	for index, instance := range delInsts {
@@ -492,15 +476,6 @@ func (c *commonInst) deleteInsts(kit *rest.Kit, delInsts []mapstr.MapStr, objID 
 			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.GetInstIDField(objID))
 		}
 		delInstIDs[index] = instID
-
-		if objID == common.BKInnerObjIDSet {
-			bizID, err := instance.Int64(common.BKAppIDField)
-			if err != nil {
-				blog.Errorf("can not convert biz ID to int64, err: %v, set: %#v, rid: %s", err, instance, kit.Rid)
-				return kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
-			}
-			bizSetMap[bizID] = append(bizSetMap[bizID], instID)
-		}
 	}
 
 	// if any instance has been bind to a instance by the association, then these instances should not be deleted.

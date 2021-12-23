@@ -444,34 +444,6 @@ func (ps *ProcServer) getModule(kit *rest.Kit, moduleID int64) (*metadata.Module
 	return &moduleRes.Data.Info[0], nil
 }
 
-func (ps *ProcServer) getModules(ctx *rest.Contexts, moduleIDs []int64) ([]*metadata.ModuleInst, errors.CCErrorCoder) {
-	moduleFilter := &metadata.QueryCondition{
-		Condition: map[string]interface{}{
-			common.BKModuleIDField: map[string]interface{}{
-				common.BKDBIN: moduleIDs,
-			},
-		},
-	}
-	modules, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
-		common.BKInnerObjIDModule, moduleFilter)
-	if err != nil {
-		blog.Errorf("getModules failed, moduleIDs: %+v, err: %s, rid: %s", moduleIDs, err.Error(), ctx.Kit.Rid)
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, err)
-	}
-	moduleInsts := make([]*metadata.ModuleInst, 0)
-	for _, module := range modules.Info {
-		moduleInst := new(metadata.ModuleInst)
-		if err := module.ToStructByTag(moduleInst, "field"); err != nil {
-			blog.Errorf("getModules failed, unmarshal json failed, module: %+v, err: %+v, rid: %s",
-				module, err, ctx.Kit.Rid)
-			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
-		}
-		moduleInsts = append(moduleInsts, moduleInst)
-
-	}
-	return moduleInsts, nil
-}
-
 var (
 	ipRegex   = `^((1?\d{1,2}|2[0-4]\d|25[0-5])[.]){3}(1?\d{1,2}|2[0-4]\d|25[0-5])$`
 	portRegex = `^([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$`

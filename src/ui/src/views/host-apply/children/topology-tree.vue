@@ -18,6 +18,7 @@
       :filter-method="filterMethod"
       @select-change="handleSelectChange"
       @check-change="handleCheckChange"
+      @expand-change="handleExpandChange"
     >
       <div
         class="node-info clearfix"
@@ -53,6 +54,7 @@
   import { mapGetters, mapState } from 'vuex'
   import Bus from '@/utils/bus'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
+  import { sortTopoTree } from '@/utils/tools'
   export default {
     props: {
       treeOptions: {
@@ -127,13 +129,14 @@
         this.getMainLine()
       ])
 
+      sortTopoTree(data, 'bk_inst_name', 'child')
+
       // 将空闲机池放到顶部
       const root = data[0] || {}
       const children = root.child || []
       const idleIndex = children.findIndex(item => item.default === 1)
       if (idleIndex !== -1) {
         const idlePool = children[idleIndex]
-        idlePool.child.sort((a, b) => a.bk_inst_id - b.bk_inst_id)
         children.splice(idleIndex, 1)
         children.unshift(idlePool)
       }
@@ -284,78 +287,85 @@
       },
       handleResize() {
         this.$refs.tree.resize()
-      }
+      },
+      handleExpandChange(node) {
+        if (node.state.expanded && !node.children[0].expanded) {
+          const lastNodeLevel = node.children[0].level
+          Bus.$emit('topologyTree/expandChange', lastNodeLevel)
+        }
+      },
     }
   }
 </script>
 
 <style lang="scss" scoped>
-    .topology-tree {
-        padding: 10px 0;
-        margin-right: 2px;
-        .node-info {
-            .node-icon {
-                width: 22px;
-                height: 22px;
-                line-height: 21px;
-                text-align: center;
-                font-style: normal;
-                font-size: 12px;
-                margin: 8px 8px 0 6px;
-                border-radius: 50%;
-                background-color: #c4c6cc;
-                color: #fff;
-                &.is-template {
-                    background-color: #97aed6;
-                }
-                &.is-selected {
-                    background-color: #3a84ff;
-                }
-                &.is-leaf-icon {
-                    margin-left: 2px;
-                }
-            }
-            .config-icon {
-                position: relative;
-                top: 6px;
-                right: 4px;
-                padding: 0 5px;
-                height: 18px;
-                line-height: 17px;
-                color: #979ba5;
-                font-size: 26px;
-                text-align: center;
-                color: #2dcb56;
-            }
-            .internal-node-icon{
-                width: 20px;
-                height: 20px;
-                line-height: 20px;
-                text-align: center;
-                margin: 8px 4px 8px 0;
-                &.is-selected {
-                    color: #ffb400;
-                }
-            }
-            .info-content {
-                display: flex;
-                align-items: center;
-                line-height: 36px;
-                font-size: 14px;
-                .node-name {
-                    @include ellipsis;
-                    margin-right: 8px;
-                }
-            }
-        }
+  .topology-tree {
+      padding: 10px 0;
+      margin-right: 2px;
+      .node-info {
+        min-width: 100px;
+          .node-icon {
+              width: 22px;
+              height: 22px;
+              line-height: 21px;
+              text-align: center;
+              font-style: normal;
+              font-size: 12px;
+              margin: 8px 8px 0 6px;
+              border-radius: 50%;
+              background-color: #c4c6cc;
+              color: #fff;
+              &.is-template {
+                  background-color: #97aed6;
+              }
+              &.is-selected {
+                  background-color: #3a84ff;
+              }
+              &.is-leaf-icon {
+                  margin-left: 2px;
+              }
+          }
+          .config-icon {
+              position: relative;
+              top: 6px;
+              right: 4px;
+              padding: 0 5px;
+              height: 18px;
+              line-height: 17px;
+              color: #979ba5;
+              font-size: 26px;
+              text-align: center;
+              color: #2dcb56;
+          }
+          .internal-node-icon{
+              width: 20px;
+              height: 20px;
+              line-height: 20px;
+              text-align: center;
+              margin: 8px 4px 8px 0;
+              &.is-selected {
+                  color: #ffb400;
+              }
+          }
+          .info-content {
+              display: flex;
+              align-items: center;
+              line-height: 36px;
+              font-size: 14px;
+              .node-name {
+                  @include ellipsis;
+                  margin-right: 8px;
+              }
+          }
+      }
 
-        .empty {
-            position: absolute;
-            display: flex;
-            height: calc(100% - 30px);
-            width: 100%;
-            justify-content: center;
-            align-items: center;
-        }
-    }
+      .empty {
+          position: absolute;
+          display: flex;
+          height: calc(100% - 30px);
+          width: 100%;
+          justify-content: center;
+          align-items: center;
+      }
+  }
 </style>

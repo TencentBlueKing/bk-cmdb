@@ -5,7 +5,11 @@ export const MENU_RESOURCE = 'menu_resource'
 export const MENU_MODEL = 'menu_model'
 export const MENU_ANALYSIS = 'menu_analysis'
 export const MENU_ADMIN = 'menu_admin'
+export const MENU_PLATFORM_MANAGEMENT = 'menu_platform_management'
 
+/**
+ * 业务
+ */
 export const MENU_BUSINESS_HOST = 'menu_business_host'
 export const MENU_BUSINESS_HOST_MANAGEMENT = 'menu_business_host_management'
 export const MENU_BUSINESS_SERVICE = 'menu_business_service'
@@ -27,6 +31,10 @@ export const MENU_BUSINESS_SERVICE_CATEGORY = 'menu_business_service_category'
 export const MENU_BUSINESS_CUSTOM_QUERY = 'menu_business_custom_query'
 export const MENU_BUSINESS_CUSTOM_FIELDS = 'menu_business_custom_fields'
 
+/**
+ * 资源
+ */
+export const MENU_RESOURCE_EVENTPUSH = 'menu_resource_eventpush'
 export const MENU_RESOURCE_MANAGEMENT = 'menu_resource_management'
 export const MENU_RESOURCE_BUSINESS = 'menu_resource_business'
 export const MENU_RESOURCE_BUSINESS_HISTORY = 'menu_resource_business_history'
@@ -35,6 +43,9 @@ export const MENU_RESOURCE_HOST = 'menu_resource_host'
 export const MENU_RESOURCE_INSTANCE = 'menu_resource_instance'
 export const MENU_RESOURCE_INSTANCE_DETAILS = 'menu_resource_instance_details'
 
+/**
+ * 模型
+ */
 export const MENU_MODEL_MANAGEMENT = 'menu_model_management'
 export const MENU_MODEL_TOPOLOGY = 'menu_model_topology'
 export const MENU_MODEL_TOPOLOGY_NEW = 'menu_model_topology_new'
@@ -42,9 +53,17 @@ export const MENU_MODEL_BUSINESS_TOPOLOGY = 'menu_model_business_topology'
 export const MENU_MODEL_ASSOCIATION = 'menu_model_association'
 export const MENU_MODEL_DETAILS = 'menu_model_details'
 
+/**
+ * 运营分析
+ */
 export const MENU_ANALYSIS_AUDIT = 'menu_analysis_audit'
 export const MENU_ANALYSIS_OPERATION = 'menu_analysis_operation'
 export const MENU_ANALYSIS_STATISTICS = 'menu_analysis_statistics'
+
+/**
+ * 平台管理
+ */
+export const MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG = 'menu_platform_management_global_config'
 
 // 判断收藏的目录id
 export const MENU_RESOURCE_COLLECTION = 'menu_resource_collection'

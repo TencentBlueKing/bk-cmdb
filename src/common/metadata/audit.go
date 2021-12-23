@@ -99,6 +99,66 @@ type OperationTimeCondition struct {
 	End   string `json:"end"`
 }
 
+// InstAuditQueryInput search instance audit query condition
+type InstAuditQueryInput struct {
+	Condition  InstAuditCondition `json:"condition"`
+	Page       BasePage           `json:"page,omitempty"`
+	WithDetail bool               `json:"with_detail"`
+}
+
+// Validate validates the input param
+func (input *InstAuditQueryInput) Validate() errors.RawErrorInfo {
+
+	if input.Page.Limit > common.BKAuditLogPageLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommPageLimitIsExceeded,
+		}
+	}
+
+	if len(input.Condition.ResourceType) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKResourceTypeField},
+		}
+	}
+
+	if len(input.Condition.ObjID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if IsCommon(input.Condition.ObjID) {
+		return errors.RawErrorInfo{}
+	}
+
+	// 前端目前只允许查看主机、业务、自定义模型的变更记录，因此在此限制objid不为host和biz时报错
+	// front-end only allow to see change record of host, biz, custom object
+	if input.Condition.ObjID != common.BKInnerObjIDApp && input.Condition.ObjID != common.BKInnerObjIDHost {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// InstAuditCondition instance audit condition
+type InstAuditCondition struct {
+	User          string                 `json:"user"`
+	BizID         int64                  `json:"bk_biz_id"`
+	ObjID         string                 `json:"bk_obj_id"`
+	ResourceName  string                 `json:"resource_name"`
+	ResourceID    interface{}            `json:"resource_id"`
+	ResourceType  ResourceType           `json:"resource_type" `
+	Action        []ActionType           `json:"action"`
+	OperationTime OperationTimeCondition `json:"operation_time"`
+	// ID is an audit record's id
+	ID []int64 `json:"id"`
+}
+
 type AuditLog struct {
 	ID int64 `json:"id" bson:"id"`
 	// AuditType is a high level abstract of the resource managed by this cmdb.
@@ -464,6 +524,9 @@ const (
 
 	// DynamicGroupType is dynamic grouping audit type.
 	DynamicGroupType AuditType = "dynamic_grouping"
+
+	// PlatFormSettingType is platform audit type
+	PlatFormSettingType AuditType = "platform_setting"
 )
 
 type ResourceType string
@@ -506,6 +569,9 @@ const (
 	HostRes ResourceType = "host"
 
 	ResourceDirRes ResourceType = "resource_directory"
+
+	// PlatFormSettingRes platform related operation type
+	PlatFormSettingRes ResourceType = "platform_setting"
 )
 
 type OperateFromType string
@@ -607,7 +673,7 @@ func GetAuditTypesByCategory(category string) []AuditType {
 	case "host":
 		return []AuditType{HostType}
 	case "other":
-		return []AuditType{ModelType, AssociationKindType, EventPushType, DynamicGroupType}
+		return []AuditType{ModelType, AssociationKindType, EventPushType, DynamicGroupType, PlatFormSettingType}
 	}
 	return []AuditType{}
 }
@@ -769,6 +835,15 @@ var auditDict = []resourceTypeInfo{
 	{
 		ID:   DynamicGroupRes,
 		Name: "动态分组",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   PlatFormSettingRes,
+		Name: "平台管理",
 		Operations: []actionTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],

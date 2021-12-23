@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
@@ -915,42 +916,6 @@ var _ = Describe("service template test", func() {
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
 
-		It("compare service instance and template after change process template", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField:   bizId,
-				"bk_module_ids":       []int64{moduleId},
-				"service_template_id": serviceTemplateId,
-			}
-			rsp, err := serviceClient.DiffServiceInstanceWithTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			responseData := make([]metadata.ModuleDiffWithTemplateDetail, 0)
-			err = json.Unmarshal(j, &responseData)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(responseData).To(HaveLen(1))
-			data := responseData[0]
-			Expect(len(data.Removed)).To(Equal(0))
-			Expect(len(data.Unchanged)).To(Equal(0))
-			Expect(len(data.Added)).To(Equal(1))
-			Expect(len(data.Changed)).To(Equal(1))
-			Expect(data.Added[0].ProcessTemplateID).To(Equal(processTemplateId))
-			Expect(data.Added[0].ServiceInstanceCount).To(Equal(1))
-			Expect(len(data.Changed)).To(Equal(1))
-			Expect(data.Changed[0].ProcessTemplateID).To(Equal(processTemplateId))
-			Expect(data.Changed[0].ServiceInstanceCount).To(Equal(1))
-			Expect(data.Changed[0].ServiceInstances[0].ServiceInstance.ID).To(Equal(serviceId1))
-			Expect(len(data.Changed[0].ServiceInstances[0].ChangedAttributes)).To(Equal(2))
-			Expect(data.Changed[0].ServiceInstances[0].ChangedAttributes[0].PropertyID).To(Equal("bk_process_name"))
-			Expect(data.Changed[0].ServiceInstances[0].ChangedAttributes[0].PropertyValue).To(Equal("p1"))
-			Expect(data.Changed[0].ServiceInstances[0].ChangedAttributes[1].PropertyID).To(Equal("bk_start_param_regex"))
-			Expect(data.Changed[0].ServiceInstances[0].ChangedAttributes[1].PropertyValue).To(Equal("1234"))
-			j, err = json.Marshal(data.Changed[0].ServiceInstances[0].ChangedAttributes[1].TemplatePropertyValue)
-			Expect(j).To(ContainSubstring("\"as_default_value\":true"))
-			Expect(j).To(ContainSubstring("\"value\":\"123456\""))
-		})
-
 		It("sync service instance and template after add and change process template", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
@@ -961,6 +926,9 @@ var _ = Describe("service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
+
+			// wait for some time to get the async task done
+			time.Sleep(time.Second * 20)
 		})
 
 		It("search module", func() {
@@ -1594,32 +1562,6 @@ var _ = Describe("service template test", func() {
 			Expect(j).To(ContainSubstring("\"count\":0"))
 		})
 
-		It("compare service instance and template after add and change process template", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField:   bizId,
-				"bk_module_ids":       []int64{moduleId},
-				"service_template_id": serviceTemplateId,
-			}
-			rsp, err := serviceClient.DiffServiceInstanceWithTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			responseData := make([]metadata.ModuleDiffWithTemplateDetail, 0)
-			err = json.Unmarshal(j, &responseData)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(responseData).To(HaveLen(1))
-			data := responseData[0]
-			Expect(len(data.Removed)).To(Equal(1))
-			Expect(len(data.Unchanged)).To(Equal(0))
-			Expect(len(data.Added)).To(Equal(0))
-			Expect(len(data.Changed)).To(Equal(0))
-			Expect(data.Removed[0].ServiceInstanceCount).To(Equal(2))
-			Expect(data.Removed[0].ServiceInstances[0].ServiceInstance.ID).To(Or(Equal(serviceId), Equal(serviceId1)))
-			Expect(data.Removed[0].ServiceInstances[1].ServiceInstance.ID).To(Or(Equal(serviceId), Equal(serviceId1)))
-			Expect(data.Removed[0].ServiceInstances[1].ServiceInstance.ID).NotTo(Equal(data.Removed[0].ServiceInstances[0].ServiceInstance.ID))
-		})
-
 		It("remove service instance with template with process", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField: bizId,
@@ -1645,7 +1587,7 @@ var _ = Describe("service template test", func() {
 			Expect(data.Info[0].ID).To(Equal(serviceId))
 		})
 
-		It("sync service instance and template after add and change process template", func() {
+		It("sync service instance and template after remove process template", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
 				"bk_module_ids":       []int64{moduleId},
@@ -1655,6 +1597,9 @@ var _ = Describe("service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
+
+			// wait for some time to get the async task done
+			time.Sleep(time.Second * 20)
 		})
 
 		It("search process instance", func() {

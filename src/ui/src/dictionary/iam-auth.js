@@ -51,6 +51,13 @@ export const IAM_VIEWS_NAME = {
   [IAM_VIEWS.CLOUD_ACCOUNT]: ['云账户', 'Cloud Account'],
   [IAM_VIEWS.CLOUD_RESOURCE_TASK]: ['云资源发现任务', 'Cloud Resource Task']
 }
+
+/**
+ * 序列化鉴权字段
+ * @param {string} cmdbAction 需要鉴权的操作
+ * @param {Object} meta 额外的鉴权信息
+ * @returns 序列化后的鉴权字段
+ */
 function basicTransform(cmdbAction, meta = {}) {
   const [type, action] = cmdbAction.split('.')
   const inejctedMeta = {
@@ -423,16 +430,24 @@ export const IAM_ACTIONS = {
       instances: [IAM_VIEWS.BIZ]
     }],
     transform: (cmdbAction, relationIds) => {
-      const [[[currentBizId], [targetBizId]]] = relationIds
-      const verifyMeta = basicTransform(cmdbAction)
-      verifyMeta.parent_layers = [{
-        resource_id: currentBizId,
-        resource_type: 'biz'
-      }, {
-        resource_id: targetBizId,
-        resource_type: 'biz'
-      }]
-      return verifyMeta
+      const verifyMetas = []
+
+      relationIds.forEach((relationId) => {
+        const [[currentBizId], [targetBizId]] = relationId
+        const verifyMeta = basicTransform(cmdbAction)
+
+        verifyMeta.parent_layers = [{
+          resource_id: currentBizId,
+          resource_type: 'biz'
+        }, {
+          resource_id: targetBizId,
+          resource_type: 'biz'
+        }]
+
+        verifyMetas.push(verifyMeta)
+      })
+
+      return verifyMetas
     }
   },
 

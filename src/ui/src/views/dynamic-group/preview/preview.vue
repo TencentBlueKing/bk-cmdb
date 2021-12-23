@@ -50,7 +50,7 @@
         properties: [],
         previewProperties: [],
         table: {
-          pagination: this.$tools.getDefaultPaginationConfig(),
+          pagination: this.$tools.getDefaultPaginationConfig({}, false),
           sort: '-create_time',
           list: []
         },

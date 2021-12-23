@@ -1,13 +1,8 @@
 import { language } from '@/i18n'
 import $http from '@/api'
-import { Base64 } from 'js-base64'
-/* eslint-disable no-unused-vars */
+import { changeDocumentTitle } from '@/utils/change-document-title'
+
 const state = {
-  config: {
-    site: {},
-    validationRules: {}
-  },
-  validatorSetuped: false,
   user: window.User,
   supplier: window.Supplier,
   language,
@@ -26,7 +21,7 @@ const state = {
   headerTitle: '',
   permission: [],
   appHeight: window.innerHeight,
-  title: null,
+  title: null, // 自定义的最后一级路由的名称，用于在面包屑展示
   businessSelectorVisible: false,
   businessSelectorPromise: null,
   businessSelectorResolver: null,
@@ -36,10 +31,6 @@ const state = {
 }
 
 const getters = {
-  config: state => state.config,
-  validatorSetuped: state => state.validatorSetuped,
-  // 通过getter和CMDB_CONFIG.site获取的site值确保为页面定义和配置定义的集合
-  site: state => ({ ...window.Site, ...state.config.site }),
   user: state => state.user,
   userName: state => state.user.name,
   admin: state => state.user.admin === '1',
@@ -71,17 +62,9 @@ const actions = {
       return list
     })
   },
-  getBlueKingEditStatus({ commit }, { config }) {
+  getBlueKingEditStatus(context, { config }) {
     return $http.post('system/config/user_config/blueking_modify', {}, config)
   },
-  getConfig({ commit }, { config }) {
-    return $http.get('admin/find/system/config_admin', {}, config)
-  },
-  updateConfig({ commit }, { params, config }) {
-    return $http.put('admin/update/system/config_admin', params, config).then(() => {
-      commit('setConfig', params)
-    })
-  }
 }
 
 const mutations = {
@@ -107,6 +90,7 @@ const mutations = {
     state.appHeight = height
   },
   setTitle(state, title) {
+    changeDocumentTitle([title])
     state.title = title
   },
   setBusinessSelectorVisible(state, visible) {
@@ -123,20 +107,6 @@ const mutations = {
   setScrollerState(state, scrollerState) {
     Object.assign(state.scrollerState, scrollerState)
   },
-  setConfig(state, config) {
-    // 按照数据格式约定验证规则的正则需要baes64解码
-    const { validationRules } = config
-    // eslint-disable-next-line no-restricted-syntax
-    for (const rule of Object.values(validationRules)) {
-      rule.value = Base64.decode(rule.value)
-    }
-    state.config = { ...config }
-    window.CMDB_CONFIG = config
-    window.CMDB_CONFIG.site = { ...window.Site, ...config.site }
-  },
-  setValidatorSetuped(state) {
-    state.validatorSetuped = true
-  }
 }
 
 export default {

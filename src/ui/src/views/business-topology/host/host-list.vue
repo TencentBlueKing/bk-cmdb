@@ -311,7 +311,7 @@
           business: this.currentBusiness
         }
         if (type === 'idle') {
-          props.title = this.$t('转移主机到空闲模块')
+          props.title = this.$t('转移主机到空闲模块', { idleSet: this.$store.state.globalConfig.config.set })
         } else if (type === 'increment') {
           props.title = this.$t('追加主机到业务模块')
         } else {
@@ -383,7 +383,7 @@
           return module.default !== 1
         }).map(item => item.host.bk_host_innerip)
         if (invalidList.length === this.table.selection.length) {
-          this.$warn(this.$t('主机不属于空闲机提示'))
+          this.$warn(this.$t('主机不属于空闲机提示', { idleModule: this.$store.state.globalConfig.config.idlePool.idle }))
           return false
         }
         return invalidList

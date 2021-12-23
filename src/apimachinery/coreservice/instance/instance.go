@@ -25,7 +25,7 @@ type InstanceClientInterface interface {
 	CreateInstance(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelInstance) (
 		*metadata.CreateOneDataResult, error)
 	CreateManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.CreateManyModelInstance) (
-		*metadata.CreateManyDataResult, error)
+		*metadata.CreateManyDataResult, errors.CCErrorCoder)
 	SetManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.SetManyModelInstance) (
 		resp *metadata.SetOptionResult, err error)
 	UpdateInstance(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
