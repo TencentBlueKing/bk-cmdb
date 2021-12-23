@@ -35,6 +35,8 @@
   import AcrossBusinessModuleSelector from './across-business-module-selector.vue'
   import NoPermission from './no-permission.vue'
   import has from 'has'
+  import { ONE_TO_ONE } from '@/dictionary/host-transfer-type.js'
+
   export default {
     name: 'module-selector-with-tab',
     components: {
@@ -104,6 +106,7 @@
               component: {
                 name: AcrossBusinessModuleSelector.name,
                 props: {
+                  type: ONE_TO_ONE,
                   business: {},
                   confirmLoading: false
                 }
