@@ -228,21 +228,14 @@
               globalError: false
             }
           })
-
-          if (response.bk_error_code === 0 && response.bk_error_msg) {
-            this.setFileState('error')
-            this.setFileError({ error: [response.bk_error_msg] })
-            return false
-          }
-
           if (!response.result || response.data.error) {
             this.setFileState('error')
-            this.setFileError(response.data)
-            return false
+            const importError = response.data?.error ? response.data : { error: [response.bk_error_msg] }
+            this.setFileError(importError)
+          } else {
+            this.setFileState('success')
+            this.importState.success && this.importState.success()
           }
-
-          this.setFileState('success')
-          this.importState.success && this.importState.success()
         } catch (error) {
           console.error(error)
           this.setFileState('error')
