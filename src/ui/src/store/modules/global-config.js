@@ -83,7 +83,7 @@ const serializeState = (newConfig, lang) => {
   const data = {
     backend: {
       max_biz_topo_level: newConfig.backend.maxBizTopoLevel,
-      snapshot_biz_name: 'BlueKing',
+      snapshot_biz_name: currentConfigBackup.backend.snapshot_biz_name,
     },
     site: {
       name: {
