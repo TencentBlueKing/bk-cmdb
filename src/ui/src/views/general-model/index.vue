@@ -594,8 +594,17 @@
       updateTableHeader(properties) {
         // 将搜索项追加到表头
         const headerIds = properties.map(item => item.bk_property_id)
-        const newHeaders = this.filterSelected.filter(item => !headerIds.includes(item.bk_property_id))
-        const finalProperties = properties.concat(newHeaders)
+        let finalProperties = []
+
+        if (this.filterSelected.length >= properties.length && this.isColumnApply) {
+          // 列表项减少
+          finalProperties = properties
+          this.isColumnApply = false
+        } else {
+          // 列表项增加
+          const newHeaders = this.filterSelected.filter(item => !headerIds.includes(item.bk_property_id))
+          finalProperties = properties.concat(newHeaders)
+        }
 
         this.table.header = finalProperties.map(property => ({
           id: property.bk_property_id,
@@ -806,12 +815,14 @@
         })
       },
       handleApplyColumnsConfig(properties) {
+        this.isColumnApply = true
         this.$store.dispatch('userCustom/saveUsercustom', {
           [this.customConfigKey]: properties.map(property => property.bk_property_id)
         })
         this.columnsConfig.show = false
       },
       handleResetColumnsConfig() {
+        this.isColumnApply = true
         this.$store.dispatch('userCustom/saveUsercustom', {
           [this.customConfigKey]: []
         })
