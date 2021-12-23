@@ -190,7 +190,7 @@ func ConvertSysInstanceActionID(resourceType meta.ResourceType, action meta.Acti
 	case meta.Delete:
 		actionType = Delete
 	case meta.Find:
-		actionType = View
+		return Skip, nil
 	default:
 		return Unsupported, fmt.Errorf("unsupported action: %s", action)
 	}
