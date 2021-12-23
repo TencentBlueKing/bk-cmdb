@@ -50,6 +50,8 @@
   import { MENU_BUSINESS_TRANSFER_HOST } from '@/dictionary/menu-symbol'
   import RouterQuery from '@/router/query'
   import uniq from 'lodash.uniq'
+  import { MULTI_TO_ONE } from '@/dictionary/host-transfer-type.js'
+
   export default {
     components: {
       [ModuleSelector.name]: ModuleSelector,
@@ -173,7 +175,8 @@
         const props = {
           moduleType: 'business',
           business: moduleBizs,
-          title: this.$t('转移主机到其他业务')
+          title: this.$t('转移空闲机到其他业务', { idleModule: this.$store.state.globalConfig.config.idlePool.idle }),
+          type: MULTI_TO_ONE
         }
         this.dialog.props = props
         this.dialog.width = 830
