@@ -30,6 +30,8 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 	switch a.Basic.Type {
 	case meta.Business:
 		return genBusinessResource(act, rscType, a)
+	case meta.BizSet:
+		return genBizSetResource(act, rscType, a)
 	case meta.DynamicGrouping:
 		return genDynamicGroupingResource(act, rscType, a)
 	case meta.EventWatch:
@@ -109,6 +111,27 @@ func genBusinessResource(act ActionID, typ TypeID, attribute *meta.ResourceAttri
 
 	// create business do not related to instance authorize
 	if act == CreateBusiness {
+		return make([]types.Resource, 0), nil
+	}
+
+	// compatible for authorize any
+	if attribute.InstanceID > 0 {
+		r.ID = strconv.FormatInt(attribute.InstanceID, 10)
+	}
+
+	return []types.Resource{r}, nil
+}
+
+// generate biz set related resource id.
+func genBizSetResource(act ActionID, typ TypeID, attribute *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
+		System:    SystemIDCMDB,
+		Type:      types.ResourceType(typ),
+		Attribute: nil,
+	}
+
+	// create biz set do not related to instance authorize
+	if act == CreateBizSet {
 		return make([]types.Resource, 0), nil
 	}
 

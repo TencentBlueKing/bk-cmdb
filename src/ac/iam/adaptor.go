@@ -54,6 +54,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 	switch resourceType {
 	case meta.Business:
 		iamResourceType = Business
+	case meta.BizSet:
+		iamResourceType = BizSet
 	case meta.Model,
 		meta.ModelUnique,
 		meta.ModelAttributeGroup:
@@ -222,6 +224,13 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Update:               EditBusiness,
 		meta.Find:                 FindBusiness,
 		meta.ViewBusinessResource: ViewBusinessResource,
+	},
+	meta.BizSet: {
+		meta.Create:       CreateBizSet,
+		meta.Update:       EditBizSet,
+		meta.Delete:       DeleteBizSet,
+		meta.Find:         ViewBizSet,
+		meta.AccessBizSet: AccessBizSet,
 	},
 	meta.DynamicGrouping: {
 		meta.Delete:   DeleteBusinessCustomQuery,
