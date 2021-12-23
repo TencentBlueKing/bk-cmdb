@@ -34,13 +34,14 @@
 
 <script>
   import has from 'has'
+  import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
+  import { HOME_HOST_SEARCH_CONTENT_STORE_KEY } from '@/dictionary/storage-keys.js'
   import hostSearch from './children/host-search'
   import fullTextSearchBar from './children/full-text-search/search-bar.vue'
   import fullTextSearchResultList from './children/full-text-search/result-list.vue'
   import fullTextSearchResultTab from './children/full-text-search/result-tab.vue'
   import theMap from './children/map'
   import theFooter from './children/footer'
-  import { mapGetters } from 'vuex'
   export default {
     name: 'index',
     components: {
@@ -61,9 +62,8 @@
       }
     },
     computed: {
-      ...mapGetters(['site']),
       isFullTextSearch() {
-        return this.site.fullTextSearch === 'on'
+        return this.$Site.fullTextSearch === 'on'
       },
       paddingTop() {
         return parseInt((this.$APP.height - 58) / 3, 10)
@@ -74,6 +74,15 @@
         handler: 'setLayout',
         immediate: true
       }
+    },
+    beforeRouteEnter(to, from, next) {
+      // 来源不是搜索落地页则清除搜索内容记录
+      // eslint-disable-next-line no-underscore-dangle
+      if (from?.name !== MENU_RESOURCE_HOST || !from?.query?._f) {
+        window.sessionStorage.removeItem(HOME_HOST_SEARCH_CONTENT_STORE_KEY)
+      }
+
+      next()
     },
     methods: {
       handleChangeTab(name) {

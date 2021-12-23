@@ -1,0 +1,15 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+cd src/ui
+
+# 对 staged 的文件进行 ESlint 检查
+npx lint-staged
+
+# 如果本地安装了 bkscan 则进行敏感信息扫描
+if command -v bkscan >/dev/null 2>&1; then
+  echo '\033[32m bkscan: start scaning \033[0m' 
+  bkscan
+else 
+  echo 'bkscan is not installed.' 
+fi

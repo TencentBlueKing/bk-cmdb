@@ -244,6 +244,7 @@
   import processForm from './process-form.vue'
   import processTable from './process'
   import { mapActions, mapGetters, mapMutations } from 'vuex'
+  import to from 'await-to-js'
   import {
     MENU_BUSINESS_SERVICE_TEMPLATE,
     MENU_BUSINESS_HOST_AND_SERVICE,
@@ -317,6 +318,12 @@
       templateId() {
         return this.$route.params.templateId
       },
+      /**
+       * 被克隆的模板 ID
+       */
+      sourceTemplateId() {
+        return this.$route.params.sourceTemplateId
+      },
       isCreateMode() {
         return this.templateId === undefined
       },
@@ -377,18 +384,24 @@
         'clearLocalProcessTemplate'
       ]),
       async refresh() {
-        try {
-          await this.reload()
-          if (this.setActive) {
-            Bus.$emit('active-change', 'instance')
-            this.$route.params.active = null
-          }
-          if (this.$route.params.isEdit) {
-            this.insideMode = 'edit'
-            this.$route.params.isEdit = null
-          }
-        } catch (e) {
-          console.error(e)
+        const [reloadErr] = await to(this.reload())
+
+        if (reloadErr) {
+          throw Error(reloadErr)
+        }
+
+        if (this.sourceTemplateId) {
+          this.initCloneData()
+        }
+
+        if (this.setActive) {
+          Bus.$emit('active-change', 'instance')
+          this.$route.params.active = null
+        }
+
+        if (this.$route.params.isEdit) {
+          this.insideMode = 'edit'
+          this.$route.params.isEdit = null
         }
       },
       setBreadcrumbs() {
@@ -405,10 +418,12 @@
             this.getPropertyGroups(),
             this.getServiceClassification()
           ]
+
           if (!this.isCreateMode) {
             request.push(this.getSingleServiceTemplate())
             request.push(this.getProcessList())
           }
+
           const [properties, groups, { info: categories }, templateResponse] = await Promise.all(request)
           this.properties = properties
           this.propertyGroups = groups
@@ -419,6 +434,7 @@
           this.allSecondaryList = categoryList.filter(classification => classification.bk_parent_id)
           this.mainList = categoryList.filter(classification => !classification.bk_parent_id)
           this.allSecondaryList = categoryList.filter(classification => classification.bk_parent_id)
+
           if (!this.isCreateMode) {
             const { result, data } = templateResponse
             if (!result) {
@@ -431,21 +447,36 @@
               process_instance_count: data.process_instance_count,
               ...data.template
             }
-            // 表单数据
-            const secondCategoryId = data.template.service_category_id
-            const secondCategory = this.allSecondaryList.find(category => category.id === secondCategoryId) || {}
-            this.formData.templateId = data.template.id
-            this.formData.templateName = data.template.name
-            this.formData.mainClassification = secondCategory.bk_parent_id
-            this.formData.secondaryClassification = secondCategoryId
-            // 备份，用于取消编辑
-            this.formData.originMainClassification = secondCategory.bk_parent_id
-            this.formData.originSecondaryClassification = secondCategoryId
-            this.hasUsed = data.service_instance_count > 0
+            this.renderBaseProps(data)
           }
         } catch (e) {
           console.error(e)
         }
+      },
+      async initCloneData() {
+        this.loadSourceTemplate()
+        const [getProcessErr] = await to(this.getProcessList(this.sourceTemplateId))
+        if (!getProcessErr) {
+          this.$store.commit('serviceProcess/setLocalProcessTemplate', this.formatSubmitData(this.processList))
+        }
+      },
+      loadSourceTemplate() {
+        this.getSingleServiceTemplate(this.sourceTemplateId).then(({ data }) => {
+          this.renderBaseProps(data)
+        })
+      },
+      renderBaseProps(data) {
+        // 表单数据
+        const secondCategoryId = data.template.service_category_id
+        const secondCategory = this.allSecondaryList.find(category => category.id === secondCategoryId) || {}
+        this.formData.templateId = data.template.id
+        this.formData.templateName = data.template.name
+        this.formData.mainClassification = secondCategory.bk_parent_id
+        this.formData.secondaryClassification = secondCategoryId
+        // 备份，用于取消编辑
+        this.formData.originMainClassification = secondCategory.bk_parent_id
+        this.formData.originSecondaryClassification = secondCategoryId
+        this.hasUsed = data.service_instance_count > 0
       },
       getProperties() {
         return this.searchObjectAttribute({
@@ -470,9 +501,9 @@
           }
         })
       },
-      getSingleServiceTemplate() {
+      getSingleServiceTemplate(templateId) {
         return this.findServiceTemplate({
-          id: this.templateId,
+          id: templateId || this.templateId,
           config: {
             requestId: this.request.template,
             globalError: false,
@@ -488,12 +519,12 @@
           }
         })
       },
-      getProcessList() {
+      getProcessList(templateId) {
         this.processLoading = true
-        this.getBatchProcessTemplate({
+        return this.getBatchProcessTemplate({
           params: {
             bk_biz_id: this.bizId,
-            service_template_id: Number(this.templateId)
+            service_template_id: Number(templateId || this.templateId)
           },
           config: {
             requestId: this.request.processList
@@ -527,7 +558,7 @@
                 }
               })
             })
-          } else {
+          } else if (typeof data[key] === 'object') {
             data[key].value = this.$tools.formatValue(data[key].value, property)
           }
         })

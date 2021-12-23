@@ -1,7 +1,7 @@
 <template>
   <bk-table-column
     ref="batchSelectionColumn"
-    class-name="batch-selection-column"
+    :class-name="`batch-selection-column ${crossPage ? 'is-cross-page' : ''}`"
     :render-header="columnHeader"
     v-bind="$attrs"
     v-on="$listeners"
@@ -132,11 +132,21 @@
       selectableRows() {
         if (!this.rows?.length) return []
         return this.rows.filter(i => !i.disabled)
-      }
+      },
+      fullDataAllDisabled() {
+        if (this.fullData && this.selectable) {
+          return this.fullData.every((i, index) => {
+            if (this.selectable) return !this.selectable(i, index)
+            return true
+          })
+        }
+        return false
+      },
     },
     watch: {
       data: {
         immediate: true,
+        deep: true,
         handler() {
           this.initRows()
         },
@@ -174,7 +184,14 @@
         if (onCrossPageMode) {
           if (this.fullData) {
             const unselectedRowKeys = reservedUnselectedRows.map(r => safeGet(r, this.rowKey))
-            innerSelectedRows = this.fullData.filter(i => !unselectedRowKeys.includes(safeGet(i, this.rowKey)))
+            innerSelectedRows = this.fullData
+              .filter((i, index) => {
+                const isSelected =  !unselectedRowKeys.includes(safeGet(i, this.rowKey))
+                if (this.selectable) {
+                  return this.selectable(i, index) && isSelected
+                }
+                return isSelected
+              })
           } else {
             innerSelectedRows = []
           }
@@ -206,7 +223,7 @@
 
         if (rowIndex === -1 && row.checked === checked) {
           arr.push(row)
-        } else if (row.checked !== checked) {
+        } else if (row.checked !== checked && !row.disabled) {
           arr.splice(rowIndex, 1)
         }
       },
@@ -256,14 +273,14 @@
       columnHeader() {
         const pageSelection = <bk-checkbox
                 indeterminate={this.pageSelectionIndeterminate}
-                class={{ 'is-total-selected': this.onCrossPageMode, 'page-select-checkbox': true }}
-                disabled={this.pageSelectionDisabled}
+                class={[{ 'is-total-selected': this.onCrossPageMode }, 'page-select-checkbox']}
+                disabled={this.pageSelectionDisabled || this.selectableRows.length === 0}
                 vModel={this.isPageSelected}
                 onChange={this.handlePageSelectionChange}
               ></bk-checkbox>
 
         if (!this.crossPage) {
-          return pageSelection
+          return  <div class="batch-selection-label">{pageSelection}</div>
         }
 
         return (
@@ -273,15 +290,17 @@
             theme="light"
             arrow={false}
             size="regular"
+            tippy-options={{
+              distance: -10,
+              duration: 100
+            }}
           >
-            <div>
-              {pageSelection}
-            </div>
+            {pageSelection}
             <template slot="content">
               <bk-checkbox
                 indeterminate={this.allSelectionIndeterminate}
-                disabled={this.allSelectionDisabled}
-                class={{ 'is-total-selected': this.onCrossPageMode, 'all-select-checkbox': true }}
+                disabled={this.allSelectionDisabled || this.fullDataAllDisabled}
+                class={[{ 'is-total-selected': this.onCrossPageMode }, 'all-select-checkbox']}
                 vModel={this.isAllSelected}
                 onChange={this.handleAllSelectionChange}
               >
@@ -312,14 +331,14 @@
         this.rows = this.rows.map((i, index) => {
           // 如果传入了当前选中值，则让所有选项变为当前选中值
           if (currentChecked !== undefined && typeof currentChecked === 'boolean') {
-            return { ...i, checked: currentChecked }
+            return { ...i, checked: currentChecked && !i.disabled }
           }
 
           // 当跨页全选时，默认为选中状态，非跨页全选时则默认为未选中状态
           let checked = this.onCrossPageMode
 
           // 不可选的选项一律置灰
-          if (this.selectable && typeof this.selectable === 'function') {
+          if (this.selectable) {
             const disabled = !this.selectable(i, index)
             if (disabled) {
               return { ...i, checked: false, disabled }
@@ -365,9 +384,20 @@
   }
 </script>
 <style lang="scss">
-.bk-form-checkbox.is-checked.is-total-selected .bk-checkbox,
-.bk-form-checkbox.is-indeterminate.is-total-selected .bk-checkbox {
-  background-color: #2dcb56;
-  border-color: #2dcb56;
-}
+  .bk-form-checkbox.is-checked.is-total-selected .bk-checkbox,
+  .bk-form-checkbox.is-indeterminate.is-total-selected .bk-checkbox {
+    background-color: #2dcb56;
+    border-color: #2dcb56;
+  }
+
+  th.batch-selection-column.is-cross-page .cell {
+    padding-right: 0;
+    padding-left: 0;
+
+    .bk-tooltip-ref{
+      padding-right: 15px;
+      padding-left: 15px;
+    }
+  }
 </style>
+

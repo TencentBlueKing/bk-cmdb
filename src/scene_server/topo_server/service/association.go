@@ -56,8 +56,8 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 
 		var err error
-		ret, err = s.Logics.AssociationOperation().CreateMainlineAssociation(ctx.Kit, data,
-			s.Config.BusinessTopoLevelMax)
+
+		ret, err = s.Logics.AssociationOperation().CreateMainlineAssociation(ctx.Kit, data)
 		if err != nil {
 			blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", data.ObjectID, err, ctx.Kit.Rid)
 			return err

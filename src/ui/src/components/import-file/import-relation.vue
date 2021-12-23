@@ -228,13 +228,21 @@
               globalError: false
             }
           })
+
+          if (response.bk_error_code === 0 && response.bk_error_msg) {
+            this.setFileState('error')
+            this.setFileError({ error: [response.bk_error_msg] })
+            return false
+          }
+
           if (!response.result || response.data.error) {
             this.setFileState('error')
             this.setFileError(response.data)
-          } else {
-            this.setFileState('success')
-            this.importState.success && this.importState.success()
+            return false
           }
+
+          this.setFileState('success')
+          this.importState.success && this.importState.success()
         } catch (error) {
           console.error(error)
           this.setFileState('error')

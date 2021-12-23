@@ -50,7 +50,7 @@ func (inst *instance) CreateInstance(ctx context.Context, h http.Header, objID s
 
 // CreateManyInstance batch create instances
 func (inst *instance) CreateManyInstance(ctx context.Context, h http.Header, objID string,
-	input *metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error) {
+	input *metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, errors.CCErrorCoder) {
 
 	resp := new(metadata.CreatedManyOptionResult)
 	subPath := "/createmany/model/%s/instance"
@@ -67,7 +67,7 @@ func (inst *instance) CreateManyInstance(ctx context.Context, h http.Header, obj
 		return nil, errors.CCHttpError
 	}
 
-	if err = resp.CCError(); err != nil {
+	if err := resp.CCError(); err != nil {
 		return nil, err
 	}
 

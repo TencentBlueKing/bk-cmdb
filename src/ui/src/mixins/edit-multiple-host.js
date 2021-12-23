@@ -64,6 +64,7 @@ export default {
     },
     async handleMultipleSave(changedValues) {
       try {
+        this.slider.props.loading = true
         await this.$store.dispatch('hostUpdate/updateHost', {
           params: {
             ...changedValues,
@@ -71,12 +72,14 @@ export default {
           }
         })
         this.slider.show = false
+        this.slider.props.loading = false
         RouterQuery.set({
           _t: Date.now(),
           page: 1
         })
         this.$success(this.$t('修改成功'))
       } catch (e) {
+        this.slider.props.loading = false
         console.error(e)
       }
     },

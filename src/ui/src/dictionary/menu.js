@@ -5,6 +5,7 @@ import {
   MENU_RESOURCE,
   MENU_MODEL,
   MENU_ANALYSIS,
+  MENU_PLATFORM_MANAGEMENT,
 
   MENU_BUSINESS_HOST_AND_SERVICE,
   MENU_BUSINESS_CUSTOM_QUERY,
@@ -24,14 +25,18 @@ import {
   MENU_MODEL_TOPOLOGY_NEW,
   MENU_MODEL_BUSINESS_TOPOLOGY,
   MENU_MODEL_ASSOCIATION,
+
   MENU_ANALYSIS_AUDIT,
-  MENU_ANALYSIS_OPERATION
+  MENU_ANALYSIS_OPERATION,
+
+  MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG,
 } from './menu-symbol'
 import {
   businessViews,
   resourceViews,
   modelViews,
-  analysisViews
+  analysisViews,
+  platformManagementViews
 } from '@/views'
 
 const getMenuRoute = (views, symbol) => {
@@ -156,6 +161,15 @@ const menus = [{
     i18n: '运营统计',
     icon: 'icon-cc-statistics',
     route: getMenuRoute(analysisViews, MENU_ANALYSIS_OPERATION)
+  }]
+}, {
+  id: MENU_PLATFORM_MANAGEMENT,
+  i18n: '平台管理',
+  menu: [{
+    id: MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG,
+    i18n: '全局配置',
+    icon: 'icon-cc-setting',
+    route: getMenuRoute(platformManagementViews, MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG)
   }]
 }]
 

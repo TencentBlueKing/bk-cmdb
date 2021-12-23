@@ -24,7 +24,25 @@
       [DetailsTable.name]: DetailsTable
     },
     props: {
-      id: Number
+      id: Number,
+      bizId: {
+        type: Number
+      },
+      objId: {
+        type: String,
+      },
+      resourceType: {
+        type: String,
+        default: ''
+      },
+      /**
+       * 审计目标，不同类型的对象的权限可能不一样，所以需要区分审计目标，可选值 instance（资源实例）、common（通用），如果不需要特殊鉴权，默认为 common
+       */
+      aduitTarget: {
+        type: String,
+        default: 'common',
+        validator: val => ['instance', 'common'].includes(val)
+      }
     },
     data() {
       return {
@@ -55,7 +73,26 @@
       async getDetails() {
         try {
           this.pending = true
-          this.details = await this.$store.dispatch('audit/getDetails', { id: this.id })
+
+          if (this.aduitTarget === 'instance') {
+            this.details = await this.$store.dispatch('audit/getInstDetails', {
+              params: {
+                condition: {
+                  bk_biz_id: this.bizId,
+                  bk_obj_id: this.objId,
+                  resource_type: this.resourceType,
+                  id: [this.id]
+                },
+                with_detail: true
+              }
+            })
+          }
+
+          if (this.aduitTarget === 'common') {
+            this.details = await this.$store.dispatch('audit/getDetails', {
+              id: this.id
+            })
+          }
         } catch (error) {
           console.error(error)
           this.details = null

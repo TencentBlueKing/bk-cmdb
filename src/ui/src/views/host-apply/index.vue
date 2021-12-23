@@ -1,9 +1,12 @@
 <template>
   <div class="host-apply" v-bkloading="{ isLoading: $loading(['getHostPropertyList', 'getTopologyData']) }">
     <div class="main-wrapper">
-      <cmdb-resize-layout class="tree-layout fl"
+      <cmdb-resize-layout
+        ref="resizeLayout"
+        class="tree-layout fl"
         direction="right"
         :handler-offset="3"
+        :width="sidebarWidth"
         :min="310"
         :max="480">
         <sidebar ref="sidebar" @module-selected="handleSelectModule" @action-change="handleActionChange"></sidebar>
@@ -152,6 +155,7 @@
 <script>
   import { mapGetters } from 'vuex'
   import sidebar from './children/sidebar.vue'
+  import Bus from '@/utils/bus'
   import propertyConfigTable from './children/property-config-table'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
@@ -172,7 +176,8 @@
         clearRules: false,
         hasRule: false,
         batchAction: false,
-        hostAndServiceRouteName: MENU_BUSINESS_HOST_AND_SERVICE
+        hostAndServiceRouteName: MENU_BUSINESS_HOST_AND_SERVICE,
+        sidebarWidth: undefined,
       }
     },
     computed: {
@@ -194,6 +199,17 @@
     },
     created() {
       this.getHostPropertyList()
+    },
+    mounted() {
+      const $resizeLayoutEl = this.$refs.resizeLayout.$el
+      Bus.$on('topologyTree/expandChange', (lastNodeLevel) => {
+        const { offsetWidth } = $resizeLayoutEl
+        const visibleWidth = (lastNodeLevel + 2) * 30 + 100
+        console.log(visibleWidth)
+        if (offsetWidth < visibleWidth) {
+          this.sidebarWidth = visibleWidth
+        }
+      })
     },
     methods: {
       async getData() {

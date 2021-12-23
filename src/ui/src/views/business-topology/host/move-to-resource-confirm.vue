@@ -4,9 +4,11 @@
     <i18n tag="p" path="确认归还主机池忽略主机数量" class="content" v-if="hasInvalid">
       <span class="count" place="count">{{count}}</span>
       <span class="invalid" place="invalid">{{invalidList.length}}</span>
+      <span place="idleModule">{{$store.state.globalConfig.config.idlePool.idle}}</span>
     </i18n>
     <i18n tag="p" path="确认归还主机池主机数量" class="content" v-else>
       <span class="count" place="count">{{count}}</span>
+      <span place="idleModule">{{$store.state.globalConfig.config.idlePool.idle}}</span>
     </i18n>
     <p class="content">{{$t('归还主机池提示')}}</p>
     <div class="directory">

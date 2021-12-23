@@ -11,6 +11,9 @@ const getters = {
 const actions = {}
 
 const mutations = {
+  setLocalProcessTemplate(state, processes) {
+    state.localProcessTemplate = processes
+  },
   addLocalProcessTemplate(state, process) {
     state.localProcessTemplate.push(process)
   },

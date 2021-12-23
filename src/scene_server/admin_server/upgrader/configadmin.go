@@ -15,6 +15,7 @@ package upgrader
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -253,10 +254,34 @@ func SetConfigSiteTitle(config string) string {
 func UpgradeConfigAdmin(ctx context.Context, db dal.RDB, dir string) error {
 	setInitConfigSiteTitle()
 
-	preCfg, curCfg, dbCfg, err := getConfigs(ctx, db, dir)
+	preCfg, curCfg, dbCfgStr, err := getConfigs(ctx, db, dir)
 	if err != nil {
 		blog.Errorf("upgradeConfigAdmin failed, getConfigs err: %v", err)
 		return err
+	}
+	dbCfg := new(metadata.ConfigAdmin)
+
+	if dbCfgStr != "" {
+		// dbNewCfg 用来保存新的 PlatformSettingConfig 结构数据
+		dbNewCfg := new(metadata.PlatformSettingConfig)
+		if err := json.Unmarshal([]byte(dbCfgStr), dbNewCfg); err != nil {
+			blog.Errorf("get dbConfig failed, unmarshal err: %v, config: %v", err, dbCfgStr)
+			return err
+		}
+
+		// 此时说明数据库中是最新的配置结构不需要后面的动作升级
+		if dbNewCfg.Backend.MaxBizTopoLevel != 0 {
+			return nil
+		}
+		// dbCfg 用来保存老的ConfigAdmin结构数据
+		if err := json.Unmarshal([]byte(dbCfgStr), dbCfg); err != nil {
+			blog.Errorf("get dbConfig failed, unmarshal err: %v, config: %v", err, dbCfgStr)
+			return err
+		}
+		// 说明db中的config有问题，直接报错
+		if dbCfg.Backend.MaxBizTopoLevel == 0 {
+			return fmt.Errorf("config is error")
+		}
 	}
 
 	if err := curCfg.EncodeWithBase64(); err != nil {
@@ -267,7 +292,6 @@ func UpgradeConfigAdmin(ctx context.Context, db dal.RDB, dir string) error {
 		blog.Errorf("UpgradeConfigAdmin failed, Validate err: %v, curCfg:%#v", err, *curCfg)
 		return err
 	}
-
 	// 如果是首次进行初始化，直接保存当前配置
 	if preCfg == nil {
 		err = updateConfig(ctx, db, curCfg)
@@ -283,6 +307,7 @@ func UpgradeConfigAdmin(ctx context.Context, db dal.RDB, dir string) error {
 		blog.Errorf("UpgradeConfigAdmin failed, EncodeWithBase64 err: %v, preCfg:%#v", err, *preCfg)
 		return err
 	}
+
 	config := getFinalConfig(preCfg, curCfg, dbCfg)
 
 	err = updateConfig(ctx, db, config)
@@ -294,21 +319,146 @@ func UpgradeConfigAdmin(ctx context.Context, db dal.RDB, dir string) error {
 	return nil
 }
 
-// getConfigs 获取preCfg, curCfg, dbCfg
-func getConfigs(ctx context.Context, db dal.RDB, dir string) (preCfg, curCfg, dbCfg *metadata.ConfigAdmin, err error) {
+// UpgradePlatConfigAdmin 对平台配置进行升级:
+// 1、获取三份配置文件分别是上一份初始化配置 preCfg。数据库中保存的配置文件dbCfg。当前要升级的配置文件curCfg。
+// 2、原则是如果对于原有字段，如果preCfg与dbCfg字段相同那么直接升级到curCfg即可。 如果preCfg中的字段和dbCfg中的字段不同，说明用户改过
+// 本字段,本次升级保持用户改后的配置不变.
+func UpgradePlatConfigAdmin(ctx context.Context, db dal.RDB, dir string) error {
+
+	curCfg, preCfg, dbCfgStr, err := getAllConfigs(ctx, db, dir)
+	if err != nil {
+		blog.Errorf("upgrade platform config failed, err: %v", err)
+		return err
+	}
+
+	// dbNewCfg 用来保存新的 PlatformSettingConfig 结构数据，对于此场景dbCfgStr 必然不为空如果为空直接报错就好
+	dbNewCfg := new(metadata.PlatformSettingConfig)
+
+	if err := json.Unmarshal([]byte(dbCfgStr), dbNewCfg); err != nil {
+		blog.Errorf("get dbConfig failed, unmarshal err: %v, config: %v", err, dbCfgStr)
+		return err
+	}
+
+	// 此时说明数据库中是最新的配置结构不需要后面的动作升级
+	if dbNewCfg.Backend.MaxBizTopoLevel != 0 {
+		return nil
+	}
+
+	// dbCfg 用来保存老的ConfigAdmin结构数据
+	dbCfg := new(metadata.ConfigAdmin)
+	if err := json.Unmarshal([]byte(dbCfgStr), dbCfg); err != nil {
+		blog.Errorf("get dbConfig failed, unmarshal err: %v, config: %v", err, dbCfgStr)
+		return err
+	}
+
+	// 此场景说明数据库中的配置文件有问题，直接报错
+	if dbCfg.Backend.MaxBizTopoLevel == 0 {
+		return fmt.Errorf("config is error")
+	}
+
+	// 从这里开始场景是老的配置文件升级到新的配置文件场景
+	if err := curCfg.EncodeWithBase64(); err != nil {
+		blog.Errorf("upgrade platform config encode base64 failed, curCfg: %#v, err: %v", *curCfg, err)
+		return err
+	}
+	if err := curCfg.Validate(); err != nil {
+		blog.Errorf("upgrade platform config validate failed, curCfg: %#v, err: %v", *curCfg, err)
+		return err
+	}
+
+	// 如果是首次进行初始化，直接保存当前配置
+	if preCfg == nil {
+		err = updatePlatformConfig(ctx, db, curCfg)
+		if err != nil {
+			blog.Errorf("upgrade platform config failed, config %v, err: %v", *curCfg, err)
+			return err
+		}
+		return nil
+	}
+
+	// 对比上一次配置和db配置的差异，获取最终配置
+	if err := preCfg.EncodeWithBase64(); err != nil {
+		blog.Errorf("get preCfg config encode base64 failed, preCfg: %#v, err: %v", *preCfg, err)
+		return err
+	}
+	// 获取最终的配置文件
+	config := getFinalPlatformConfig(preCfg, dbCfg, curCfg)
+
+	err = updatePlatformConfig(ctx, db, config)
+	if err != nil {
+		blog.Errorf("update platform config failed, config: %#v, err: %v", *config, err)
+		return err
+	}
+
+	return nil
+}
+
+// getConfigs 获取preCfg, curCfg
+func getConfigs(ctx context.Context, db dal.RDB, dir string) (preCfg, curCfg *metadata.ConfigAdmin, dbCfg string, err error) {
 	var pre string
 	for index, config := range configChangeHistory {
 		if config.dir == dir {
 			cur := config.config
 			curCfg = new(metadata.ConfigAdmin)
 			if err := json.Unmarshal([]byte(cur), curCfg); err != nil {
-				blog.Errorf("get all config failed, Unmarshal err: %v, config:%+v", err, cur)
-				return nil, nil, nil, err
+				blog.Errorf("get all config failed, Unmarshal err: %v, config: %v", err, cur)
+				return nil, nil, "", err
 			}
 
 			// 第一次初始化,preCfg为nil
 			if index == 0 {
-				return nil, curCfg, nil, nil
+				return nil, curCfg, "", nil
+			}
+
+			pre = configChangeHistory[index-1].config
+			break
+		}
+	}
+	cond := map[string]interface{}{
+		"_id": common.ConfigAdminID,
+	}
+	ret := make(map[string]interface{})
+	err = db.Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(ctx, &ret)
+	if nil != err {
+		blog.Errorf("get db config failed, err: %v", err)
+		return nil, nil, "", err
+	}
+
+	if ret[common.ConfigAdminValueField] == nil {
+		blog.Errorf(" db config type is error")
+		return nil, nil, "", err
+	}
+
+	if _, ok := ret[common.ConfigAdminValueField].(string); !ok {
+		blog.Errorf("get db config type is error")
+		return nil, nil, "", err
+	}
+	preCfg = new(metadata.ConfigAdmin)
+	if err = json.Unmarshal([]byte(pre), preCfg); err != nil {
+		blog.Errorf("get all config failed, Unmarshal err: %v, config: %v", err, pre)
+		return nil, nil, "", err
+	}
+
+	return preCfg, curCfg, ret[common.ConfigAdminValueField].(string), nil
+}
+
+// getConfigs get preCfg, curCfg.
+func getAllConfigs(ctx context.Context, db dal.RDB, dir string) (curCfg *metadata.PlatformSettingConfig,
+	preCfg *metadata.ConfigAdmin, dbCfg string, err error) {
+	var pre string
+
+	for index, config := range configChangeHistory {
+		if config.dir == dir {
+			cur := config.config
+			curCfg = new(metadata.PlatformSettingConfig)
+			if err := json.Unmarshal([]byte(cur), curCfg); err != nil {
+				blog.Errorf("get all config failed, unmarshal err: %v, config: %v", err, cur)
+				return nil, nil, "", err
+			}
+
+			// 第一次初始化,preCfg为nil
+			if index == 0 {
+				return curCfg, nil, "", nil
 			}
 
 			pre = configChangeHistory[index-1].config
@@ -316,31 +466,33 @@ func getConfigs(ctx context.Context, db dal.RDB, dir string) (preCfg, curCfg, db
 		}
 	}
 
-	preCfg = new(metadata.ConfigAdmin)
-	if err = json.Unmarshal([]byte(pre), preCfg); err != nil {
-		blog.Errorf("get all config failed, Unmarshal err: %v, config:%+v", err, pre)
-		return nil, nil, nil, err
-	}
-
 	cond := map[string]interface{}{
 		"_id": common.ConfigAdminID,
 	}
-	ret := struct {
-		Config string `json:"config"`
-	}{}
+	ret := make(map[string]interface{})
 	err = db.Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(ctx, &ret)
 	if nil != err {
-		blog.Errorf("get all config failed, db find err: %+v, rid: %s", err)
-		return nil, nil, nil, err
+		blog.Errorf("get all config failed, db find err: %v", err)
+		return nil, nil, "", err
 	}
 
-	dbCfg = new(metadata.ConfigAdmin)
-	if err := json.Unmarshal([]byte(ret.Config), dbCfg); err != nil {
-		blog.Errorf("get all config failed, Unmarshal err: %v, config:%+v", err, ret.Config)
-		return nil, nil, nil, err
+	if ret[common.ConfigAdminValueField] == nil {
+		blog.Errorf("get config failed, db config type is error")
+		return nil, nil, "", nil
 	}
 
-	return preCfg, curCfg, dbCfg, nil
+	if _, ok := ret[common.ConfigAdminValueField].(string); !ok {
+		blog.Errorf("get config failed, db config type is error")
+		return nil, nil, "", nil
+	}
+
+	preCfg = new(metadata.ConfigAdmin)
+	if err = json.Unmarshal([]byte(pre), preCfg); err != nil {
+		blog.Errorf("get all config failed, unmarshal err: %v, config: %v", err, pre)
+		return nil, nil, "", err
+	}
+
+	return curCfg, preCfg, ret[common.ConfigAdminValueField].(string), nil
 }
 
 // getFinalConfig 获取最终需要保存的配置
@@ -373,6 +525,70 @@ func getFinalConfig(preCfg, curCfg, dbCfg *metadata.ConfigAdmin) *metadata.Confi
 	return curCfg
 }
 
+// 为了兼容老版本的footer信息,需要将原格式信息内容转化为markdown格式的字符串
+func getContactInfo(links []metadata.LinksItem) metadata.ContactInfoItem {
+	var (
+		result metadata.ContactInfoItem
+		cn, en string
+	)
+	linkLen := len(links)
+
+	if linkLen == 1 {
+		cn = fmt.Sprintf("%s[%s](%s)|", cn, links[0].I18N.CN, links[0].Value)
+		en = fmt.Sprintf("%s[%s](%s)|", en, links[0].I18N.EN, links[0].Value)
+		result.I18N.CN = cn
+		result.I18N.EN = en
+		return result
+	}
+
+	for i := 0; i < linkLen; i++ {
+		cn = fmt.Sprintf("%s[%s](%s)|", cn, links[i].I18N.CN, links[i].Value)
+		en = fmt.Sprintf("%s[%s](%s)|", en, links[i].I18N.EN, links[i].Value)
+
+	}
+
+	result.I18N.CN = cn[:len(cn)-1]
+	result.I18N.EN = en[:len(en)-1]
+	return result
+}
+
+// getFinalPlatformConfig 获取最终需要保存的配置
+// 1、将preCfg和db存在的配置dbCfg进行对比，对于不一致的（说明有用户调过配置管理接口做过更改）,curCfg里对应的配置不做覆盖，仍为db里的数据
+// 2、如果preCfg和dbCfg如果一样的话，那么如果本次curCfg不一样，则需要升级覆盖.
+func getFinalPlatformConfig(preCfg, dbCfg *metadata.ConfigAdmin,
+	curCfg *metadata.PlatformSettingConfig) *metadata.PlatformSettingConfig {
+
+	if preCfg.Backend.SnapshotBizName != dbCfg.Backend.SnapshotBizName {
+		curCfg.Backend.SnapshotBizName = dbCfg.Backend.SnapshotBizName
+	}
+
+	if preCfg.Backend.MaxBizTopoLevel != dbCfg.Backend.MaxBizTopoLevel {
+		curCfg.Backend.MaxBizTopoLevel = dbCfg.Backend.MaxBizTopoLevel
+	}
+
+	if preCfg.Site.Title != dbCfg.Site.Title {
+		curCfg.SiteConfig.SiteName = dbCfg.Site.Title
+	}
+
+	curCfg.FooterConfig.ContactInfo = getContactInfo(dbCfg.Site.Footer.Links)
+
+	preRuleType := reflect.TypeOf(preCfg.ValidationRules)
+	preRule := reflect.ValueOf(&preCfg.ValidationRules).Elem()
+	dbRule := reflect.ValueOf(&dbCfg.ValidationRules).Elem()
+	curRule := reflect.ValueOf(&curCfg.ValidationRules).Elem()
+
+	for i := 0; i < preRuleType.NumField(); i++ {
+		fieldName := preRuleType.Field(i).Name
+		preVal := preRule.FieldByName(fieldName).FieldByName("BaseCfgItem").FieldByName("Value").String()
+		dbVal := dbRule.FieldByName(fieldName).FieldByName("BaseCfgItem").FieldByName("Value").String()
+		if preVal != dbVal {
+			curRule.FieldByName(fieldName).FieldByName("BaseCfgItem").FieldByName("Value").SetString(dbVal)
+		}
+	}
+
+	return curCfg
+}
+
 // updateConfig 将配置更新到db里
 func updateConfig(ctx context.Context, db dal.RDB, config *metadata.ConfigAdmin) error {
 	bytes, err := json.Marshal(config)
@@ -392,6 +608,29 @@ func updateConfig(ctx context.Context, db dal.RDB, config *metadata.ConfigAdmin)
 	err = db.Table(common.BKTableNameSystem).Update(ctx, cond, data)
 	if err != nil {
 		blog.Errorf("update config failed, update err: %+v", err)
+		return err
+	}
+
+	return nil
+}
+
+// updatePlatformConfig update configuration to database.
+func updatePlatformConfig(ctx context.Context, db dal.RDB, config *metadata.PlatformSettingConfig) error {
+	bytes, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	cond := map[string]interface{}{
+		"_id": common.ConfigAdminID,
+	}
+	data := map[string]interface{}{
+		common.ConfigAdminValueField: string(bytes),
+		common.LastTimeField:         time.Now(),
+	}
+
+	err = db.Table(common.BKTableNameSystem).Update(ctx, cond, data)
+	if err != nil {
 		return err
 	}
 

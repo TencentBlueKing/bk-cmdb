@@ -6,7 +6,7 @@ const mapping = {
   $lt: 'less',
   $lte: 'less_or_equal',
   $gt: 'greater',
-  $gte: 'greater_equal',
+  $gte: 'greater_or_equal',
   $range: 'between',
   $nrange: 'not_between',
   $regex: 'contains'
