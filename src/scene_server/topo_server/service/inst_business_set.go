@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -152,4 +153,174 @@ func (s *Service) getBizSetBizCond(kit *rest.Kit, bizSetID int64) (mapstr.MapStr
 	}
 
 	return bizSetBizCond, nil
+}
+
+// FindBizSetTopo find topo nodes id and name info by parent node in biz set
+func (s *Service) FindBizSetTopo(ctx *rest.Contexts) {
+	opt := new(metadata.FindBizSetTopoOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	topo, err := s.findBizSetTopo(ctx.Kit, opt)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(topo)
+}
+
+func (s *Service) findBizSetTopo(kit *rest.Kit, opt *metadata.FindBizSetTopoOption) ([]mapstr.MapStr, error) {
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		blog.Errorf("option(%#v) is invalid, err: %v, rid: %s", opt, rawErr, kit.Rid)
+		return nil, rawErr.ToCCError(kit.CCError)
+	}
+
+	// get biz mongo condition by biz scope in biz set
+	bizSetBizCond, err := s.getBizSetBizCond(kit, opt.BizSetID)
+	if err != nil {
+		blog.Errorf("get biz cond by biz set id %d failed, err: %v, rid: %s", opt.BizSetID, err, kit.Rid)
+		return nil, err
+	}
+
+	// check if the parent node belongs to a biz that is in the biz set
+	if err := s.checkTopoNodeInBizSet(kit, opt.ParentObjID, opt.ParentID, bizSetBizCond); err != nil {
+		blog.Errorf("check if parent %s node %d in biz failed, err: %v, biz cond: %#v, rid: %s", opt.ParentObjID,
+			opt.ParentID, err, bizSetBizCond, kit.Rid)
+		return nil, err
+	}
+
+	// get parent object id to check if the parent node is a valid mainline instance that belongs to the biz set
+	var childObjID string
+	switch opt.ParentObjID {
+	case common.BKInnerObjIDBizSet:
+		if opt.ParentID != opt.BizSetID {
+			blog.Errorf("biz parent id %s is not equal to biz set id %s, rid: %s", opt.ParentID, opt.BizSetID, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
+		}
+
+		// find biz nodes by the condition in biz sets
+		bizArr, err := s.getTopoBriefInfo(kit, common.BKInnerObjIDSet, bizSetBizCond)
+		if err != nil {
+			return nil, err
+		}
+		return bizArr, nil
+	case common.BKInnerObjIDSet:
+		childObjID = common.BKInnerObjIDModule
+	case common.BKInnerObjIDModule:
+		blog.Errorf("module's child(host) is not a mainline object, **forbidden to search**, rid: %s", kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
+	default:
+		asstOpt := &metadata.QueryCondition{
+			Condition: mapstr.MapStr{
+				common.AssociationKindIDField: common.AssociationKindMainline,
+				common.BKAsstObjIDField:       opt.ParentObjID,
+			},
+		}
+
+		asst, err := s.Engine.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, asstOpt)
+		if err != nil {
+			blog.Errorf("search mainline association failed, err: %v, cond: %#v, rid: %s", err, asstOpt, kit.Rid)
+			return nil, err
+		}
+
+		if len(asst.Info) == 0 {
+			blog.Errorf("parent object %s is not mainline, **forbidden to search**, rid: %s", opt.ParentObjID, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAsstObjIDField)
+		}
+
+		childObjID = asst.Info[0].ObjectID
+	}
+
+	// find topo nodes' id and name by parent id
+	instArr, err := s.getTopoBriefInfo(kit, childObjID, mapstr.MapStr{common.BKParentIDField: opt.ParentID})
+	if err != nil {
+		return nil, err
+	}
+
+	// if there exists custom level, biz can have both default set as child and its custom level children
+	if opt.ParentObjID == common.BKInnerObjIDApp && childObjID != common.BKInnerObjIDSet {
+		setCond := mapstr.MapStr{
+			common.BKParentIDField: opt.ParentID,
+			common.BKDefaultField:  common.DefaultResSetFlag,
+		}
+
+		setArr, err := s.getTopoBriefInfo(kit, common.BKInnerObjIDSet, setCond)
+		if err != nil {
+			return nil, err
+		}
+		return append(instArr, setArr...), nil
+	}
+	return instArr, nil
+}
+
+// checkTopoNodeInBizSet check if topo node belongs to biz that is in the biz set, input contains the biz set scope cond
+func (s *Service) checkTopoNodeInBizSet(kit *rest.Kit, objID string, instID int64, bizSetBizCond mapstr.MapStr) error {
+	instOpt := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.GetInstIDField(objID): instID},
+		Fields:         []string{common.BKAppIDField},
+		Page:           metadata.BasePage{Limit: 1},
+		DisableCounter: true,
+	}
+	instRes, err := s.Logics.InstOperation().FindInst(kit, objID, instOpt)
+	if err != nil {
+		blog.Errorf("find %s inst failed, err: %v, cond: %+v, rid: %s", objID, err, instOpt, kit.Rid)
+		return err
+	}
+
+	if len(instRes.Info) == 0 {
+		blog.Errorf("inst %s/%d is not exist, rid: %s", objID, instID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, objID)
+	}
+
+	bizCond := &metadata.Condition{
+		Condition: map[string]interface{}{
+			common.BKDBAND: []mapstr.MapStr{bizSetBizCond, {common.BKAppIDField: instRes.Info[0][common.BKAppIDField]}},
+		},
+	}
+	resp, err := s.Engine.CoreAPI.CoreService().Instance().CountInstances(kit.Ctx, kit.Header,
+		common.BKInnerObjIDApp, bizCond)
+	if err != nil {
+		blog.Errorf("count biz failed, err: %v, cond: %#v, rid: %s", err, bizCond, kit.Rid)
+		return err
+	}
+
+	if resp.Count == 0 {
+		blog.Errorf("instance biz does not belong to the biz set, biz cond: %#v, rid: %s", bizCond, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, objID)
+	}
+
+	return nil
+}
+
+// getTopoBriefInfo get topo id and name by condition and parse to the form of topo node, sort in the order of inst id
+func (s *Service) getTopoBriefInfo(kit *rest.Kit, objID string, condition mapstr.MapStr) ([]mapstr.MapStr, error) {
+	instIDField := metadata.GetInstIDFieldByObjID(objID)
+	instNameField := metadata.GetInstNameFieldName(objID)
+
+	instOpt := &metadata.QueryCondition{
+		Fields:         []string{instIDField, instNameField},
+		Page:           metadata.BasePage{Limit: common.BKNoLimit, Sort: instIDField},
+		DisableCounter: true,
+		Condition:      condition,
+	}
+
+	instRes, err := s.Logics.InstOperation().FindInst(kit, objID, instOpt)
+	if err != nil {
+		blog.Errorf("find %s inst failed, err: %v, cond: %#v, rid: %s", objID, err, instOpt, kit.Rid)
+		return nil, err
+	}
+
+	topoArr := make([]mapstr.MapStr, len(instRes.Info))
+	for index, inst := range instRes.Info {
+		topoArr[index] = mapstr.MapStr{
+			common.BKObjIDField:    objID,
+			common.BKInstIDField:   inst[instIDField],
+			common.BKInstNameField: inst[instNameField],
+		}
+	}
+
+	return topoArr, nil
 }
