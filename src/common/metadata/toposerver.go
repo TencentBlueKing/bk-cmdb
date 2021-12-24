@@ -228,3 +228,8 @@ type TopoNodeCount struct {
 	HostCount            int64  `json:"host_count"`
 	ServiceInstanceCount int64  `json:"service_instance_count"`
 }
+
+// DeleteBizSetOption delete business set option
+type DeleteBizSetOption struct {
+	BizSetIDs []int64 `json:"bk_biz_set_ids"`
+}

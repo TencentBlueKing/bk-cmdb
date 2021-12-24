@@ -32,6 +32,7 @@ func (ps *parseStream) topology() *parseStream {
 	}
 
 	ps.business().
+		businessSet().
 		mainline().
 		object().
 		objectAttributeGroup().
@@ -290,7 +291,7 @@ func (ps *parseStream) business() *parseStream {
 		}
 		return ps
 	}
-	
+
 	// find simplified business list with limited fields return
 	if ps.hitPattern(updatePlatformSettingIdleSetPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -303,7 +304,7 @@ func (ps *parseStream) business() *parseStream {
 		}
 		return ps
 	}
-	
+
 	if ps.hitPattern(deletePlatformSettingModulePattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -315,7 +316,56 @@ func (ps *parseStream) business() *parseStream {
 		}
 		return ps
 	}
-	
+
+	return ps
+}
+
+const (
+	deleteBizSetPattern    = `/api/v3/deletemany/biz_set`
+)
+
+func (ps *parseStream) businessSet() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitPattern(deleteBizSetPattern, http.MethodPost) {
+		bizSetIDsVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_ids")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizSetIDArr := bizSetIDsVal.Array()
+		if len(bizSetIDArr) == 0 {
+			ps.err = errors.New("bk_biz_set_ids is not set")
+			return ps
+		}
+		if len(bizSetIDArr) > 100 {
+			ps.err = errors.New("bk_biz_set_ids exceeds maximum length 100")
+			return ps
+		}
+
+		for _, bizSetIDVal := range bizSetIDArr {
+			bizSetID := bizSetIDVal.Int()
+			if bizSetID <= 0 {
+				ps.err = errors.New("invalid biz set id")
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					Basic: meta.Basic{
+						Type:       meta.BizSet,
+						Action:     meta.Delete,
+						InstanceID: bizSetID,
+					},
+				},
+			}
+		}
+		return ps
+	}
+
 	return ps
 }
 
