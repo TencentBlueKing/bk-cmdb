@@ -322,6 +322,7 @@ func (ps *parseStream) business() *parseStream {
 
 const (
 	deleteBizSetPattern    = `/api/v3/deletemany/biz_set`
+	findBizInBizSetPattern = `/api/v3/find/biz_set/biz_list`
 )
 
 func (ps *parseStream) businessSet() *parseStream {
@@ -362,6 +363,31 @@ func (ps *parseStream) businessSet() *parseStream {
 					},
 				},
 			}
+		}
+		return ps
+	}
+
+	if ps.hitPattern(findBizInBizSetPattern, http.MethodPost) {
+		bizSetIDVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizSetID := bizSetIDVal.Int()
+		if bizSetID <= 0 {
+			ps.err = errors.New("invalid biz set id")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.AccessBizSet,
+					InstanceID: bizSetID,
+				},
+			},
 		}
 		return ps
 	}

@@ -171,7 +171,7 @@ type SearchBriefBizTopoOption struct {
 
 // DeleteBizParam delete archived business parameter
 type DeleteBizParam struct {
-	BizID []int64 `json:"bk_biz_id""`
+	BizID []int64 `json:"bk_biz_id"`
 }
 
 // Validate validates the input param
@@ -227,6 +227,13 @@ type TopoNodeCount struct {
 	InstID               int64  `json:"bk_inst_id"`
 	HostCount            int64  `json:"host_count"`
 	ServiceInstanceCount int64  `json:"service_instance_count"`
+}
+
+// FindBizInBizSetOption find all biz id and name list in biz set option
+type FindBizInBizSetOption struct {
+	BizSetID int64    `json:"bk_biz_set_id"`
+	Fields   []string `json:"fields"`
+	Page     BasePage `json:"page"`
 }
 
 // DeleteBizSetOption delete business set option
