@@ -394,6 +394,10 @@ func (option ListHostsParameter) Validate() (string, error) {
 		return fmt.Sprintf("page.%s", key), err
 	}
 
+	if option.Page.Limit == 0 {
+		return fmt.Sprintf("page.limit"), fmt.Errorf("page limit is not set")
+	}
+
 	if option.HostPropertyFilter != nil {
 		if key, err := option.HostPropertyFilter.Validate(); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
@@ -423,6 +427,10 @@ type ListHostsWithNoBizParameter struct {
 func (option ListHostsWithNoBizParameter) Validate() (string, error) {
 	if key, err := option.Page.Validate(false); err != nil {
 		return fmt.Sprintf("page.%s", key), err
+	}
+
+	if option.Page.Limit == 0 {
+		return fmt.Sprintf("page.limit"), fmt.Errorf("page limit is not set")
 	}
 
 	if option.HostPropertyFilter != nil {
@@ -561,6 +569,10 @@ type ListHosts struct {
 func (option ListHosts) Validate() (errKey string, err error) {
 	if key, err := option.Page.Validate(false); err != nil {
 		return fmt.Sprintf("page.%s", key), err
+	}
+
+	if option.Page.Limit == 0 {
+		return fmt.Sprintf("page.limit"), fmt.Errorf("page limit is not set")
 	}
 
 	if option.HostPropertyFilter != nil {
