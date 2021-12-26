@@ -30,9 +30,10 @@ const (
 
 // BasePage for paging query
 type BasePage struct {
-	Sort  string `json:"sort,omitempty" mapstructure:"sort"`
-	Limit int    `json:"limit,omitempty" mapstructure:"limit"`
-	Start int    `json:"start" mapstructure:"start"`
+	Sort        string `json:"sort,omitempty" mapstructure:"sort"`
+	Limit       int    `json:"limit,omitempty" mapstructure:"limit"`
+	Start       int    `json:"start" mapstructure:"start"`
+	EnableCount bool   `json:"enable_count,omitempty" mapstructure:"enable_count"`
 }
 
 func (page BasePage) Validate(allowNoLimit bool) (string, error) {
@@ -48,6 +49,22 @@ func (page BasePage) Validate(allowNoLimit bool) (string, error) {
 func (page BasePage) IsIllegal() bool {
 	if page.Limit > common.BKMaxPageSize && page.Limit != common.BKNoLimit ||
 		page.Limit <= 0 {
+		return true
+	}
+	return false
+}
+
+// IsIllegalWithCount limit is illegal with counter
+func (page BasePage) IsIllegalWithCount() bool {
+
+	//  此场景下如果仅仅是获取查询对象的数量，page的其余参数只能是初始化值
+	if page.EnableCount {
+		if page.Start > 0 || page.Limit > 0 || page.Sort != "" {
+			return true
+		}
+	}
+
+	if page.Limit > common.BKMaxPageSize && page.Limit != common.BKNoLimit || page.Limit <= 0 {
 		return true
 	}
 	return false

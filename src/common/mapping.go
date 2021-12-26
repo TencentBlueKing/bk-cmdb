@@ -44,6 +44,8 @@ func GetInstIDField(objType string) string {
 	switch objType {
 	case BKInnerObjIDApp:
 		return BKAppIDField
+	case BKInnerObjIDAppSet:
+		return BKAppSetIDField
 	case BKInnerObjIDSet:
 		return BKSetIDField
 	case BKInnerObjIDModule:

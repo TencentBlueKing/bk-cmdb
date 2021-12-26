@@ -238,6 +238,7 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initAssociation(web)
 	s.initAuditLog(web)
 	s.initBusiness(web)
+	s.initBusinessSet(web)
 	s.initInst(web)
 	s.initModule(web)
 	s.initSet(web)

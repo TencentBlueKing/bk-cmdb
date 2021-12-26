@@ -39,7 +39,8 @@ func (ps *parseStream) topology() *parseStream {
 		objectSet().
 		audit().
 		fullTextSearch().
-		cloudArea()
+		cloudArea().
+		businessSet()
 
 	return ps
 }

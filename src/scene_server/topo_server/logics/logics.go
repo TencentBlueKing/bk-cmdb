@@ -37,6 +37,7 @@ type Logics interface {
 	GraphicsOperation() operation.GraphicsOperationInterface
 	GroupOperation() model.GroupOperationInterface
 	BusinessOperation() inst.BusinessOperationInterface
+	BusinessSetOperation() inst.BusinessSetOperationInterface
 	SetTemplateOperation() settemplate.SetTemplate
 }
 
@@ -54,6 +55,7 @@ type logics struct {
 	group             model.GroupOperationInterface
 	importassociation operation.AssociationOperationInterface
 	business          inst.BusinessOperationInterface
+	businessSet       inst.BusinessSetOperationInterface
 	setTemplate       settemplate.SetTemplate
 }
 
@@ -73,6 +75,8 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	graphicsOperation := operation.NewGraphics(client, authManager)
 	groupOperation := model.NewGroupOperation(client)
 	businessOperation := inst.NewBusinessOperation(client, authManager)
+	businessSetOperation := inst.NewBusinessSetOperation(client, authManager)
+
 	setTemplate := settemplate.NewSetTemplate(client)
 
 	instOperation.SetProxy(instAssociationOperation)
@@ -83,6 +87,8 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	moduleOperation.SetProxy(instOperation)
 	attributeOperation.SetProxy(groupOperation, objectOperation)
 	businessOperation.SetProxy(instOperation, moduleOperation, setOperation)
+	businessSetOperation.SetProxy(instOperation)
+
 	return &logics{
 		classification:    classificationOperation,
 		set:               setOperation,
@@ -97,6 +103,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		group:             groupOperation,
 		importassociation: importAssociationOperation,
 		business:          businessOperation,
+		businessSet:       businessSetOperation,
 		setTemplate:       setTemplate,
 	}
 }
@@ -164,6 +171,11 @@ func (l *logics) GroupOperation() model.GroupOperationInterface {
 // BusinessOperation return a inst provide BusinessOperation
 func (l *logics) BusinessOperation() inst.BusinessOperationInterface {
 	return l.business
+}
+
+// BusinessOperation return a inst provide BusinessOperation
+func (l *logics) BusinessSetOperation() inst.BusinessSetOperationInterface {
+	return l.businessSet
 }
 
 // SetTemplateOperation set template operation

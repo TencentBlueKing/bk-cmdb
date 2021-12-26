@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/querybuilder"
+	"fmt"
 )
 
 type SearchInstResult struct {
@@ -72,11 +73,73 @@ type SearchTopoResult struct {
 type QueryBusinessRequest struct {
 	Fields []string `json:"fields"`
 	Page   BasePage `json:"page"`
-	// Deprecated: parameters condition and biz_property_filter cannot be set at the same time, 
+	// Deprecated: parameters condition and biz_property_filter cannot be set at the same time,
 	// The field condition is not
 	// maintained later, it is recommended to use the field biz_property_filter.
 	Condition         mapstr.MapStr             `json:"condition"`
 	BizPropertyFilter *querybuilder.QueryFilter `json:"biz_property_filter,omitempty"`
+}
+
+// PreviewBusinessSetRequest 此场景的预览用于用户创建业务集但是还没有点击创建时的中间阶段预览场景。由于此时还没有真正的创建业务集，所以
+// 并没有生成业务集实例，只能用范围条件进行获取业务范围。
+type PreviewBusinessSetRequest struct {
+	BizSetPropertyFilter *querybuilder.QueryFilter `json:"bk_biz_set_filter"`
+}
+
+// Validate validates preview business set info conditions format.
+func (option *PreviewBusinessSetRequest) Validate() error {
+	if option.BizSetPropertyFilter == nil {
+		return fmt.Errorf("condition must be set")
+	}
+	op := &querybuilder.RuleOption{
+		NeedSameSliceElementType: true,
+		MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
+		MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
+	}
+
+	if key, err := option.BizSetPropertyFilter.Validate(op); err != nil {
+		return fmt.Errorf("bizPropertyFilter is illegal,biz.property.%s", key)
+	}
+
+	if option.BizSetPropertyFilter.GetDeep() > common.BizSetConditionMaxDeep {
+		return fmt.Errorf("exceed max query condition deepth: %d", common.BizSetConditionMaxDeep)
+	}
+	return nil
+}
+
+// QueryBusinessSetRequest query business set by query builder
+type QueryBusinessSetRequest struct {
+	BizSetPropertyFilter *querybuilder.QueryFilter `json:"bk_biz_set_filter"`
+	Fields               []string                  `json:"fields"`
+
+	// Page Limit must be set less than 500
+	Page BasePage `json:"page"`
+}
+
+// Validate validates query business set info conditions format.
+func (option *QueryBusinessSetRequest) Validate() error {
+
+	if option.BizSetPropertyFilter == nil {
+		return fmt.Errorf("query params biz set filter must be set")
+	}
+
+	op := &querybuilder.RuleOption{
+		NeedSameSliceElementType: true,
+		MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
+		MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
+	}
+
+	if _, err := option.BizSetPropertyFilter.Validate(op); err != nil {
+		return fmt.Errorf("biz set property filter is illegal, err: %s", err.Error())
+	}
+
+	if option.BizSetPropertyFilter.GetDeep() > common.BizSetConditionMaxDeep {
+		return fmt.Errorf("exceed max filter condition deepth: %d", common.BizSetConditionMaxDeep)
+	}
+	if option.Page.IsIllegalWithCount() {
+		return fmt.Errorf("limit is illegal, limit:%d", option.Page.Limit)
+	}
+	return nil
 }
 
 type BriefBizRelations struct {

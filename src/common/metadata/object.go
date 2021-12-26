@@ -72,6 +72,8 @@ func GetInstIDFieldByObjID(objID string) string {
 	switch objID {
 	case common.BKInnerObjIDApp:
 		return common.BKAppIDField
+	case common.BKInnerObjIDAppSet:
+		return common.BKAppSetIDField
 	case common.BKInnerObjIDSet:
 		return common.BKSetIDField
 	case common.BKInnerObjIDModule:
@@ -146,6 +148,8 @@ func (o *Object) IsCommon() bool {
 func IsCommon(objID string) bool {
 	switch objID {
 	case common.BKInnerObjIDApp:
+		return false
+	case common.BKInnerObjIDAppSet:
 		return false
 	case common.BKInnerObjIDSet:
 		return false

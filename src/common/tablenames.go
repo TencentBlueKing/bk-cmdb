@@ -40,7 +40,10 @@ const (
 	// BKTableNameInstAsst the table name of the inst association
 	BKTableNameInstAsst = "cc_InstAsst"
 
-	BKTableNameBaseApp     = "cc_ApplicationBase"
+	BKTableNameBaseApp = "cc_ApplicationBase"
+
+	BKTableNameBaseAppSet = "cc_ApplicationSetBase"
+
 	BKTableNameBaseHost    = "cc_HostBase"
 	BKTableNameBaseModule  = "cc_ModuleBase"
 	BKTableNameBaseInst    = "cc_ObjectBase"
@@ -211,6 +214,8 @@ func GetInstTableName(objID, supplierAccount string) string {
 	switch objID {
 	case BKInnerObjIDApp:
 		return BKTableNameBaseApp
+	case BKInnerObjIDAppSet:
+		return BKTableNameBaseAppSet
 	case BKInnerObjIDSet:
 		return BKTableNameBaseSet
 	case BKInnerObjIDModule:

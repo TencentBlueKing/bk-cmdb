@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/blog"
 	"errors"
 	"fmt"
 	"regexp"
@@ -70,7 +71,7 @@ var objectURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(object|biz)
 func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	topoRoot := "/topo/v3"
 	from, to := rootPath, topoRoot
-
+	blog.Errorf("000000000000000 *u: %v", *u)
 	switch {
 	case strings.HasPrefix(string(*u), rootPath+"/search/instances"):
 		from, to, isHit = rootPath, topoRoot, true
@@ -113,8 +114,10 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 
 	case strings.Contains(string(*u), "/objectclassification"):
 		from, to, isHit = rootPath, topoRoot, true
-
 	case strings.Contains(string(*u), "/classificationobject"):
+		from, to, isHit = rootPath, topoRoot, true
+	case strings.Contains(string(*u), "/biz_set"):
+		blog.Errorf("000000000000000 *u: %v", *u)
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.Contains(string(*u), "/objectattr"):

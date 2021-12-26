@@ -463,6 +463,23 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 }
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
+func (c *Collection) InsertOne(ctx context.Context, doc interface{}) error {
+	mtc.collectOperCount(c.collName, insertOper)
+
+	start := time.Now()
+	defer func() {
+		mtc.collectOperDuration(c.collName, insertOper, time.Since(start))
+	}()
+
+	_, err := c.dbc.Database(c.dbname).Collection(c.collName).InsertOne(ctx, doc)
+	if err != nil {
+		mtc.collectErrorCount(c.collName, insertOper)
+		return err
+	}
+	return nil
+}
+
+// Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 	mtc.collectOperCount(c.collName, insertOper)
 

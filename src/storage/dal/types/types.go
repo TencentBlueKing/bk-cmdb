@@ -40,6 +40,8 @@ type Table interface {
 	AggregateAll(ctx context.Context, pipeline interface{}, result interface{}, opts ...*AggregateOpts) error
 	// Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 	Insert(ctx context.Context, docs interface{}) error
+	// InsertOne 插入数据, doc 单个数据
+	InsertOne(ctx context.Context, doc interface{}) error
 	// Update 更新数据
 	Update(ctx context.Context, filter Filter, doc interface{}) error
 	// update or insert data

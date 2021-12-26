@@ -183,7 +183,9 @@ const (
 )
 
 const (
-	Business             TypeID = "biz"
+	Business    TypeID = "biz"
+	BusinessSet TypeID = "biz_set"
+
 	BusinessForHostTrans TypeID = "biz_for_host_trans"
 	// Set                       ResourceTypeID = "set"
 	// Module                    ResourceTypeID = "module"

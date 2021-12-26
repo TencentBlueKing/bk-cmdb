@@ -401,6 +401,38 @@ type BatchCreateSetRequest struct {
 	Sets []map[string]interface{} `json:"sets"`
 }
 
+// BKBizSet biz set struct
+type CreateBizSetRequest struct {
+	BizSetAttr  map[string]interface{}    `json:"bk_biz_set_attr"`
+	BizSetScope *querybuilder.QueryFilter `json:"bk_scope"`
+}
+
+// Validate validates create biz set params
+func (op *CreateBizSetRequest) Validate() error {
+	if op.BizSetAttr == nil || op.BizSetScope == nil {
+		return fmt.Errorf("params is nil")
+	}
+
+	if name, ok := op.BizSetAttr[common.BKAppSetNameField]; !ok || name == "" {
+		return fmt.Errorf("biz set name must be set")
+	}
+
+	option := &querybuilder.RuleOption{
+		NeedSameSliceElementType: true,
+		MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
+		MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
+	}
+
+	if invalidKey, err := op.BizSetScope.Validate(option); err != nil {
+		return fmt.Errorf("conditions.%s,err: %s", invalidKey, err.Error())
+	}
+
+	if op.BizSetScope.GetDeep() > common.BizSetConditionMaxDeep {
+		return fmt.Errorf("exceed max scope condition deepth: %d", common.BizSetConditionMaxDeep)
+	}
+	return nil
+}
+
 // OneSetCreateResult create one set return result
 type OneSetCreateResult struct {
 	Index    int         `json:"index"`

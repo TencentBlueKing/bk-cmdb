@@ -79,6 +79,9 @@ const (
 	// BKInnerObjIDApp the inner object
 	BKInnerObjIDApp = "biz"
 
+	// BKInnerObjIDAppSet the inner object
+	BKInnerObjIDAppSet = "biz_set"
+
 	// BKInnerObjIDSet the inner object
 	BKInnerObjIDSet = "set"
 
@@ -243,6 +246,11 @@ const (
 	// BKAppIDField the appid field
 	BKAppIDField = "bk_biz_id"
 
+	// BKAppSetIDField the biz set field
+	BKAppSetIDField = "bk_biz_set_id"
+
+	BKAppSetScopeField = "bk_scope"
+
 	// BKIPArr the ip address
 	BKIPArr = "ipArr"
 
@@ -290,6 +298,9 @@ const (
 
 	// BKAppNameField the app name field
 	BKAppNameField = "bk_biz_name"
+
+	// BKAppSetNameField the biz set name field
+	BKAppSetNameField = "bk_biz_set_name"
 
 	// BKSetIDField the setid field
 	BKSetIDField = "bk_set_id"
@@ -447,6 +458,9 @@ const (
 	// BKSetDescField the set desc field
 	BKSetDescField = "bk_set_desc"
 
+	// BKBizSetDescField the biz set desc field
+	BKBizSetDescField = "bk_biz_set_desc"
+
 	// BKSetCapacityField the set capacity field
 	BKSetCapacityField = "bk_capacity"
 
@@ -546,6 +560,9 @@ const (
 
 	// BKMaintainersField the maintainers field
 	BKMaintainersField = "bk_biz_maintainer"
+
+	// BKMaintainersField the maintainers field
+	BKScopeField = "bk_scope"
 
 	// BKProductPMField the product pm field
 	BKProductPMField = "bk_biz_productor"
@@ -775,6 +792,9 @@ const (
 	// FieldTypeUser the user field type
 	FieldTypeUser string = "objuser"
 
+	// FieldCondition the condition for biz set
+	FieldCondition string = "condition"
+
 	// FieldTypeTimeZone the timezone field type
 	FieldTypeTimeZone string = "timezone"
 
@@ -889,6 +909,8 @@ const (
 	ExcelCellIgnoreValue = "--"
 )
 
+// BizSetConditionMaxDeep 业务集场景下querybuilder条件的最大深度不能超过2层
+const BizSetConditionMaxDeep = 2
 const (
 	// InputTypeExcel  data from excel
 	InputTypeExcel = "excel"

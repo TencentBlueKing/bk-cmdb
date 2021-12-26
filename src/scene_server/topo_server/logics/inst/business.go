@@ -34,6 +34,7 @@ import (
 type BusinessOperationInterface interface {
 	// CreateBusiness create business
 	CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error)
+
 	DeleteBusiness(kit *rest.Kit, bizIDs []int64) error
 	// FindBiz find biz
 	FindBiz(kit *rest.Kit, cond *metadata.QueryCondition) (count int,
@@ -51,7 +52,7 @@ type BusinessOperationInterface interface {
 	// 2. destination object can be biz. otherwise, src and destination object should be the neighbour.
 	// this api only return business topology relations.
 	GetBriefTopologyNodeRelation(kit *rest.Kit, opts *metadata.GetBriefBizRelationOptions) ([]*metadata.
-	BriefBizRelations, error)
+		BriefBizRelations, error)
 	// SetProxy SetProxy
 	SetProxy(inst InstOperationInterface, module ModuleOperationInterface, set SetOperationInterface)
 
