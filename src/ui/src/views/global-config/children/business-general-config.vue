@@ -1,6 +1,13 @@
 <template>
   <div v-bkloading="{ isLoading: globalConfig.loading }">
     <bk-form ref="bizGeneralFormRef" :rules="bizGeneralFormRules" :label-width="labelWidth" :model="bizGeneralForm">
+      <bk-form-item :label="$t('业务快照名称')" :icon-offset="iconOffsetLeft" property="snapshotBizName" required>
+        <bk-input
+          class="snapshot-biz-name"
+          type="text"
+          v-model.trim="bizGeneralForm.snapshotBizName">
+        </bk-input>
+      </bk-form-item>
       <bk-form-item :label="$t('拓扑最大可建层级')" :icon-offset="180" property="maxBizTopoLevel" required>
         <bk-input
           class="max-biz-topo-level-input"
@@ -35,6 +42,7 @@
   import { language, t } from '@/i18n'
   import cloneDeep from 'lodash/cloneDeep'
   import EventBus from '@/utils/bus'
+  import to from 'await-to-js'
 
   export default defineComponent({
     components: {
@@ -43,11 +51,13 @@
     setup() {
       const globalConfig = computed(() => store.state.globalConfig)
       const defaultForm = {
+        snapshotBizName: '',
         maxBizTopoLevel: ''
       }
       const bizGeneralForm = reactive(cloneDeep(defaultForm))
       const bizGeneralFormRef = ref(null)
-      const labelWidth = computed(() => (language === 'zh_CN' ? 150 : 180))
+      const labelWidth = computed(() => (language === 'zh_CN' ? 150 : 230))
+      const iconOffsetLeft =  computed(() => (language === 'zh_CN' ? 30 : 10))
 
       const initForm = () => {
         const { backend } = globalConfig.value.config
@@ -65,6 +75,21 @@
       })
 
       const bizGeneralFormRules = {
+        snapshotBizName: [
+          {
+            required: true,
+            message: t('请输入正确的业务名称'),
+            trigger: 'blur',
+            validator: async (bizName) => {
+              const [err, { info: businesses }] = await to(store.dispatch('objectBiz/getFullAmountBusiness'))
+              if (err) {
+                return false
+              }
+              const isExistedBiz = businesses?.some(biz => bizName === biz.bk_biz_name)
+              return isExistedBiz
+            }
+          }
+        ],
         maxBizTopoLevel: [
           {
             required: true,
@@ -103,7 +128,8 @@
         globalConfig,
         save,
         reset,
-        labelWidth
+        labelWidth,
+        iconOffsetLeft
       }
     }
   })
@@ -111,7 +137,13 @@
 
 <style lang="scss" scoped>
   @import url("../style.scss");
-  ::v-deep .max-biz-topo-level-input .bk-input-number{
+  .snapshot-biz-name {
+    width: 159px;
+  }
+  ::v-deep .max-biz-topo-level-input .bk-input-number {
     width: 114px;
+  }
+  [bk-language="en"] .snapshot-biz-name {
+    width: 198px;
   }
 </style>
