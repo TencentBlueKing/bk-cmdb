@@ -135,4 +135,7 @@ const (
 
 	// can view business related resources, including business and business collection resources
 	ViewBusinessResource Action = "viewBusinessResource"
+
+	// AccessBizSet access business set related resources, including business and business related resources
+	AccessBizSet Action = "accessBizSet"
 )

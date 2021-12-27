@@ -263,7 +263,8 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	}
 
 	switch audit.ResourceType {
-	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, MainlineInstanceRes, ResourceDirRes:
+	case BusinessRes, BizSetRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes,
+		MainlineInstanceRes, ResourceDirRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -324,7 +325,8 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	}
 
 	switch audit.ResourceType {
-	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, MainlineInstanceRes, ResourceDirRes:
+	case BusinessRes, BizSetRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes,
+		MainlineInstanceRes, ResourceDirRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -487,6 +489,9 @@ const (
 	// audit belongs to this kind.
 	BusinessType AuditType = "business"
 
+	// BizSetType represent operation audit of biz set itself
+	BizSetType AuditType = "biz_set"
+
 	// Business resource include resources as follows:
 	// - service template
 	// - set template
@@ -534,6 +539,7 @@ type ResourceType string
 const (
 	// business related operation type
 	BusinessRes             ResourceType = "business"
+	BizSetRes               ResourceType = "biz_set"
 	ServiceTemplateRes      ResourceType = "service_template"
 	SetTemplateRes          ResourceType = "set_template"
 	ServiceCategoryRes      ResourceType = "service_category"
@@ -617,6 +623,8 @@ const (
 
 func GetAuditTypeByObjID(objID string, isMainline bool) AuditType {
 	switch objID {
+	case common.BKInnerObjIDBizSet:
+		return BizSetType
 	case common.BKInnerObjIDApp:
 		return BusinessType
 	case common.BKInnerObjIDSet:
@@ -641,6 +649,8 @@ func GetAuditTypeByObjID(objID string, isMainline bool) AuditType {
 
 func GetResourceTypeByObjID(objID string, isMainline bool) ResourceType {
 	switch objID {
+	case common.BKInnerObjIDBizSet:
+		return BizSetRes
 	case common.BKInnerObjIDApp:
 		return BusinessRes
 	case common.BKInnerObjIDSet:
@@ -669,7 +679,7 @@ func GetAuditTypesByCategory(category string) []AuditType {
 	case "business":
 		return []AuditType{BusinessResourceType, DynamicGroupType}
 	case "resource":
-		return []AuditType{BusinessType, ModelInstanceType, CloudResourceType}
+		return []AuditType{BusinessType, BizSetType, ModelInstanceType, CloudResourceType}
 	case "host":
 		return []AuditType{HostType}
 	case "other":
@@ -739,6 +749,15 @@ var auditDict = []resourceTypeInfo{
 			actionInfoMap[AuditUpdate],
 			actionInfoMap[AuditArchive],
 			actionInfoMap[AuditRecover],
+		},
+	},
+	{
+		ID:   BizSetRes,
+		Name: "业务集",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
 		},
 	},
 	{

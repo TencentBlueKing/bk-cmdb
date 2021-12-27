@@ -77,6 +77,11 @@ var ActionIDNameMap = map[ActionID]string{
 	ArchiveBusiness:                     "业务归档",
 	FindBusiness:                        "业务查询",
 	ViewBusinessResource:                "业务访问",
+	CreateBizSet:                        "业务集新增",
+	EditBizSet:                          "业务集编辑",
+	DeleteBizSet:                        "业务集删除",
+	ViewBizSet:                          "业务集查看",
+	AccessBizSet:                        "业务集访问",
 	CreateCloudArea:                     "云区域创建",
 	EditCloudArea:                       "云区域编辑",
 	DeleteCloudArea:                     "云区域删除",
@@ -138,6 +143,7 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genResourcePoolHostActions()...)
 	resourceActionList = append(resourceActionList, genResourcePoolDirectoryActions()...)
 	resourceActionList = append(resourceActionList, genBusinessActions()...)
+	resourceActionList = append(resourceActionList, genBizSetActions()...)
 	resourceActionList = append(resourceActionList, genCloudAreaActions()...)
 	resourceActionList = append(resourceActionList, genCloudAccountActions()...)
 	resourceActionList = append(resourceActionList, genCloudResourceTaskActions()...)
@@ -686,6 +692,70 @@ func genBusinessActions() []ResourceAction {
 		Type:   View,
 		// TODO add business collection resource
 		RelatedResourceTypes: []RelateResourceType{businessResource},
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	return actions
+}
+
+func genBizSetActions() []ResourceAction {
+	bizSetResource := RelateResourceType{
+		SystemID: SystemIDCMDB,
+		ID:       BizSet,
+		InstanceSelections: []RelatedInstanceSelection{{
+			SystemID: SystemIDCMDB,
+			ID:       BizSetSelection,
+		}},
+	}
+
+	actions := make([]ResourceAction, 0)
+	actions = append(actions, ResourceAction{
+		ID:                   CreateBizSet,
+		Name:                 ActionIDNameMap[CreateBizSet],
+		NameEn:               "Create Business Set",
+		Type:                 Create,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   EditBizSet,
+		Name:                 ActionIDNameMap[EditBizSet],
+		NameEn:               "Edit Business Set",
+		Type:                 Edit,
+		RelatedResourceTypes: []RelateResourceType{bizSetResource},
+		RelatedActions:       []ActionID{ViewBizSet},
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   DeleteBizSet,
+		Name:                 ActionIDNameMap[DeleteBizSet],
+		NameEn:               "Delete Business Set",
+		Type:                 Delete,
+		RelatedResourceTypes: []RelateResourceType{bizSetResource},
+		RelatedActions:       []ActionID{ViewBizSet},
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   ViewBizSet,
+		Name:                 ActionIDNameMap[ViewBizSet],
+		NameEn:               "View Business Set",
+		Type:                 View,
+		RelatedResourceTypes: []RelateResourceType{bizSetResource},
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   AccessBizSet,
+		Name:                 ActionIDNameMap[AccessBizSet],
+		NameEn:               "Access Business Set",
+		Type:                 View,
+		RelatedResourceTypes: []RelateResourceType{bizSetResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})

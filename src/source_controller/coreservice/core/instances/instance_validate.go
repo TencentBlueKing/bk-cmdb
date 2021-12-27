@@ -84,7 +84,7 @@ func (m *instanceManager) fetchBizIDFromInstance(kit *rest.Kit, objID string, in
 			return 0, err
 		}
 		return bizID, nil
-	case common.BKInnerObjIDPlat:
+	case common.BKInnerObjIDBizSet, common.BKInnerObjIDPlat:
 		return 0, nil
 	default:
 		biz, exist := instanceData[common.BKAppIDField]

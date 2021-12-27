@@ -76,6 +76,9 @@ const (
 )
 
 const (
+	// BKInnerObjIDBizSet the inner object
+	BKInnerObjIDBizSet = "biz_set"
+
 	// BKInnerObjIDApp the inner object
 	BKInnerObjIDApp = "biz"
 
@@ -631,6 +634,10 @@ const (
 	BKEventTypeField   = "type"
 	BKStartAtTimeField = "start_at_time"
 	BKSubResourceField = "bk_sub_resource"
+
+	BKBizSetIDField   = "bk_biz_set_id"
+	BKBizSetNameField = "bk_biz_set_name"
+	BKScopeField      = "bk_scope"
 )
 
 const (

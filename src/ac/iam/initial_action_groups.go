@@ -28,6 +28,9 @@ func GenerateActionGroups(objects []metadata.Object) []ActionGroup {
 func GenerateStaticActionGroups() []ActionGroup {
 	ActionGroups := make([]ActionGroup, 0)
 
+	// generate business set manage action groups, contains business set related actions
+	ActionGroups = append(ActionGroups, genBizSetManageActionGroups()...)
+
 	// generate business manage action groups, contains business related actions
 	ActionGroups = append(ActionGroups, genBusinessManageActionGroups()...)
 
@@ -44,6 +47,20 @@ func GenerateStaticActionGroups() []ActionGroup {
 	ActionGroups = append(ActionGroups, genGlobalSettingsActionGroups()...)
 
 	return ActionGroups
+}
+
+func genBizSetManageActionGroups() []ActionGroup {
+	return []ActionGroup{
+		{
+			Name:   "业务集管理",
+			NameEn: "Business Set Manage",
+			Actions: []ActionWithID{
+				{
+					ID: AccessBizSet,
+				},
+			},
+		},
+	}
 }
 
 func genBusinessManageActionGroups() []ActionGroup {
@@ -236,6 +253,24 @@ func genResourceManageActionGroups() []ActionGroup {
 						},
 						{
 							ID: FindBusiness,
+						},
+					},
+				},
+				{
+					Name:   "业务集",
+					NameEn: "BizSet",
+					Actions: []ActionWithID{
+						{
+							ID: CreateBizSet,
+						},
+						{
+							ID: EditBizSet,
+						},
+						{
+							ID: DeleteBizSet,
+						},
+						{
+							ID: ViewBizSet,
 						},
 					},
 				},
