@@ -189,7 +189,7 @@ func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) err
 	if count, err := db.Table(common.BKTableNameObjAttDes).Find(filter).Count(ctx); err != nil {
 		blog.Errorf("find object attribute describe fail,err: %v", err)
 		return err
-	} else if count >= 5 {
+	} else if count >= 4 {
 		return nil
 	}
 

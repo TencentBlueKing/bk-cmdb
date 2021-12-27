@@ -178,7 +178,6 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		blog.Errorf("validate host attribute hook failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
-	blog.Errorf("777777777777777 instanceData: %+v", instanceData)
 	for key, val := range instanceData {
 		if key == common.BKObjIDField {
 			// common instance always has no property bk_obj_id, but this field need save to db

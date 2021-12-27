@@ -36,24 +36,12 @@ func (s *Service) CreateBusinessSet(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	mgoFilter, _, _ := data.BizSetScope.ToMgo()
 
-	blog.Errorf("55555555555555555555 data: %+v,mgoFilter: %+v", data.BizSetScope, mgoFilter)
 	if err := data.Validate(); err != nil {
 		blog.Errorf("validate create business set failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	//mgoFilter, _, _ := data.BizSetScope.ToMgo()
-	//
-	//blog.Errorf("55555555555555555555 data: %+v,mgoFilter: %+v", data.BizSetScope, mgoFilter)
-	//
-	//st := querybuilder.QueryFilter{}
-	//e := mapstruct.Decode2StructWithHook(mgoFilter, st)
-	//if e != nil {
-	//	blog.Errorf("88888888888888888888 test: %+v,key: %+v,e: %v", e)
-	//}
-	//blog.Errorf("99999999999999999999999 mgoFilter %v, type: %v,value: %+v", mgoFilter, reflect.TypeOf(st), reflect.ValueOf(st))
 
 	// do with transaction
 	var bizSet mapstr.MapStr
@@ -67,22 +55,22 @@ func (s *Service) CreateBusinessSet(ctx *rest.Contexts) {
 
 		// register business set resource creator action to iam
 		if auth.EnableAuthorize() {
-			var bizID int64
-			if bizID, err = bizSet.Int64(common.BKAppSetIDField); err != nil {
+			var bizSetID int64
+			if bizSetID, err = bizSet.Int64(common.BKAppSetIDField); err != nil {
 				blog.Errorf("get biz set id failed, err: %v, biz: %#v, rid: %s", err, bizSet, ctx.Kit.Rid)
 				return err
 			}
 
-			var bizName string
-			if bizName, err = bizSet.String(common.BKAppSetNameField); err != nil {
+			var bizSetName string
+			if bizSetName, err = bizSet.String(common.BKAppSetNameField); err != nil {
 				blog.Errorf("get biz set name failed, err: %v, biz: %#v, rid: %s", err, bizSet, ctx.Kit.Rid)
 				return err
 			}
 
 			iamInstance := metadata.IamInstanceWithCreator{
 				Type:    string(iam.BusinessSet),
-				ID:      strconv.FormatInt(bizID, 10),
-				Name:    bizName,
+				ID:      strconv.FormatInt(bizSetID, 10),
+				Name:    bizSetName,
 				Creator: ctx.Kit.User,
 			}
 			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
@@ -98,7 +86,14 @@ func (s *Service) CreateBusinessSet(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(bizSet)
+
+	bizSetID, err := bizSet.Int64(common.BKAppSetIDField)
+	if err != nil {
+		blog.Errorf("get biz set id failed, err: %v, biz: %#v, rid: %s", err, bizSet, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(bizSetID)
 }
 
 // find business set list with these info：

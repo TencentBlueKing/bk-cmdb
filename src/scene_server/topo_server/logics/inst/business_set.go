@@ -94,16 +94,14 @@ func (b *businessSet) CreateBusinessSet(kit *rest.Kit, data *metadata.CreateBizS
 		bizSetInfo[key] = value
 	}
 
-	cond, errKey, err := data.BizSetScope.ToMgo()
+	cond, errKey, err := data.BizSetScope.Filter.ToMgo()
 	if err != nil {
 		blog.Errorf(" biz set scope convert to mongo condition fail,scope: %+v, errKey: %s, err: %v, rid: %s",
 			data.BizSetScope, errKey, err, kit.Rid)
 		return mapstr.MapStr{}, err
 	}
 
-	blog.Errorf("888888888888888888888 cond: %+v", cond)
 	bizSetInfo[common.BKAppSetScopeField] = cond
-	blog.Errorf("00000000000000000000 bizSetInfo: %+v", bizSetInfo)
 	bizInst, err := b.inst.CreateInst(kit, common.BKInnerObjIDAppSet, bizSetInfo)
 	if err != nil {
 		blog.Errorf("create business failed, err: %v, data: %#v, rid: %s", err, data, kit.Rid)

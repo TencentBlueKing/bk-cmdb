@@ -401,10 +401,15 @@ type BatchCreateSetRequest struct {
 	Sets []map[string]interface{} `json:"sets"`
 }
 
+type BizSetScopeOption struct {
+	MatchAll bool                      `json:"match_all"`
+	Filter   *querybuilder.QueryFilter `json:"filter,omitempty"`
+}
+
 // BKBizSet biz set struct
 type CreateBizSetRequest struct {
-	BizSetAttr  map[string]interface{}    `json:"bk_biz_set_attr"`
-	BizSetScope *querybuilder.QueryFilter `json:"bk_scope"`
+	BizSetAttr  map[string]interface{} `json:"bk_biz_set_attr"`
+	BizSetScope *BizSetScopeOption     `json:"bk_scope"`
 }
 
 // Validate validates create biz set params
@@ -423,11 +428,11 @@ func (op *CreateBizSetRequest) Validate() error {
 		MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
 	}
 
-	if invalidKey, err := op.BizSetScope.Validate(option); err != nil {
+	if invalidKey, err := op.BizSetScope.Filter.Validate(option); err != nil {
 		return fmt.Errorf("conditions.%s,err: %s", invalidKey, err.Error())
 	}
 
-	if op.BizSetScope.GetDeep() > common.BizSetConditionMaxDeep {
+	if op.BizSetScope.Filter.GetDeep() > common.BizSetConditionMaxDeep {
 		return fmt.Errorf("exceed max scope condition deepth: %d", common.BizSetConditionMaxDeep)
 	}
 	return nil

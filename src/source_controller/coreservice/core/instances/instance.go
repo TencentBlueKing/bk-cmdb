@@ -59,7 +59,6 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 	rid := util.ExtractRequestIDFromContext(kit.Ctx)
 
 	inputParam.Data.Set(common.BKOwnerIDField, kit.SupplierAccount)
-	blog.Errorf("11111111111111111  inputParam.Data: %+v", inputParam.Data.ToMapInterface())
 	bizID, err := m.getBizIDFromInstance(kit, objID, inputParam.Data, common.ValidCreate, 0)
 	if err != nil {
 		blog.Errorf("CreateModelInstance failed, getBizIDFromInstance err:%v, objID:%s, data:%#v, rid:%s", err, objID, inputParam.Data, kit.Rid)
