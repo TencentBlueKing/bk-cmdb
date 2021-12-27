@@ -9,6 +9,8 @@
   "确认重置业务通用选项？": "Are you sure to reset business setting?",
   "该操作将会把业务通用选项内容重置为最后一次保存的状态，请谨慎操作！": "This will reset all the content of the business setting to the state of last saved.",
 
+  "业务快照名称": "Snapshot Business Name",
+  "请输入正确的业务名称": "Please enter an existed business name",
   "层": "Layer(s)",
   "外部主机导入流程": "Host(s) Import Process",
   "外 BG 导入主机要执行的流程": "The process when host(s) import from business portal",
