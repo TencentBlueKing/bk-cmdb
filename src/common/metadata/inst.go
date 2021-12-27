@@ -66,14 +66,20 @@ type BizBasicInfo struct {
 
 // BizSetInst biz set structure with pre-defined properties
 type BizSetInst struct {
-	BizSetID         int64                     `json:"bk_biz_set_id" bson:"bk_biz_set_id"`
-	BizSetName       string                    `json:"bk_biz_set_name" bson:"bk_biz_set_name"`
-	Description      string                    `json:"description" bson:"description"`
-	BizSetMaintainer string                    `json:"biz_set_maintainer" bson:"biz_set_maintainer"`
-	CreateTime       Time                      `json:"create_time" bson:"create_time"`
-	LastTime         Time                      `json:"last_time" bson:"last_time"`
-	SupplierAccount  string                    `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	Scope            *querybuilder.QueryFilter `json:"bk_scope" bson:"bk_scope"`
+	BizSetID         int64       `json:"bk_biz_set_id" bson:"bk_biz_set_id"`
+	BizSetName       string      `json:"bk_biz_set_name" bson:"bk_biz_set_name"`
+	Description      string      `json:"description" bson:"description"`
+	BizSetMaintainer string      `json:"biz_set_maintainer" bson:"biz_set_maintainer"`
+	CreateTime       Time        `json:"create_time" bson:"create_time"`
+	LastTime         Time        `json:"last_time" bson:"last_time"`
+	SupplierAccount  string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Scope            BizSetScope `json:"bk_scope" bson:"bk_scope"`
+}
+
+// BizSetScope defines the scope of biz in biz set, can be all biz or specific biz that matches the filter
+type BizSetScope struct {
+	MatchAll bool                      `json:"match_all"`
+	Filter   *querybuilder.QueryFilter `json:"filter"`
 }
 
 type CloudInst struct {

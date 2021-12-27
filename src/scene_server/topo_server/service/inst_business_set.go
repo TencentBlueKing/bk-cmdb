@@ -141,7 +141,19 @@ func (s *Service) getBizSetBizCond(kit *rest.Kit, bizSetID int64) (mapstr.MapStr
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKBizSetIDField)
 	}
 
-	bizSetBizCond, errKey, rawErr := bizSetRes.Data.Info[0].Scope.ToMgo()
+	if bizSetRes.Data.Info[0].Scope.MatchAll {
+		// do not include resource pool biz in biz set by default
+		return mapstr.MapStr{
+			common.BKDefaultField: mapstr.MapStr{common.BKDBNE: common.DefaultAppFlag},
+		}, nil
+	}
+
+	if bizSetRes.Data.Info[0].Scope.Filter == nil {
+		blog.Errorf("biz set(%#v) has no filter and is not match all, rid: %s", bizSetRes.Data.Info[0].Scope, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKBizSetIDField)
+	}
+
+	bizSetBizCond, errKey, rawErr := bizSetRes.Data.Info[0].Scope.Filter.ToMgo()
 	if rawErr != nil {
 		blog.Errorf("parse biz set scope(%#v) failed, err: %v, rid: %s", bizSetRes.Data.Info[0].Scope, rawErr, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey)
