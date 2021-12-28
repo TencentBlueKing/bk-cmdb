@@ -17,6 +17,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/errors"
 )
 
 const (
@@ -33,7 +34,7 @@ type BasePage struct {
 	Sort        string `json:"sort,omitempty" mapstructure:"sort"`
 	Limit       int    `json:"limit,omitempty" mapstructure:"limit"`
 	Start       int    `json:"start" mapstructure:"start"`
-	EnableCount bool   `json:"enable_count,omitempty" mapstructure:"enable_count"`
+	EnableCount bool   `json:"enable_count,omitempty" mapstructure:"enable_count,omitempty"`
 }
 
 func (page BasePage) Validate(allowNoLimit bool) (string, error) {
@@ -85,6 +86,40 @@ func (page BasePage) ValidateLimit(maxLimit int) error {
 	}
 
 	return nil
+}
+
+// ValidateWithEnableCount validate if page has only one of enable count and other param, and if limit is set and valid
+func (page BasePage) ValidateWithEnableCount(allowNoLimit bool, maxLimit ...int) errors.RawErrorInfo {
+	if page.EnableCount {
+		if page.Start != 0 || page.Limit != 0 || page.Sort != "" {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{"page.enable_count"},
+			}
+		}
+		return errors.RawErrorInfo{}
+	}
+
+	if page.Limit == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	limit := common.BKMaxPageSize
+	if len(maxLimit) > 0 {
+		limit = maxLimit[0]
+	}
+
+	if page.Limit > limit {
+		if allowNoLimit || page.Limit != common.BKNoLimit {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommPageLimitIsExceeded,
+			}
+		}
+	}
+	return errors.RawErrorInfo{}
 }
 
 func ParsePage(origin interface{}) BasePage {

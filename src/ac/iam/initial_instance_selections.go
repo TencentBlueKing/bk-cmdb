@@ -37,6 +37,15 @@ func GenerateStaticInstanceSelections() []InstanceSelection {
 			ResourceTypeChain: []ResourceChain{businessChain},
 		},
 		{
+			ID:     BizSetSelection,
+			Name:   "业务集列表",
+			NameEn: "Business Set List",
+			ResourceTypeChain: []ResourceChain{{
+				SystemID: SystemIDCMDB,
+				ID:       BizSet,
+			}},
+		},
+		{
 			ID:     BusinessHostTransferSelection,
 			Name:   "业务主机选择",
 			NameEn: "Business",

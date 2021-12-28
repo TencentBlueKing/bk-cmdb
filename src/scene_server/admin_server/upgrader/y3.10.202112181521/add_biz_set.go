@@ -32,7 +32,7 @@ var (
 
 func addBizSetObjectRow(ctx context.Context, db dal.RDB, ownerID string) error {
 
-	filter := mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDAppSet}
+	filter := mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDBizSet}
 
 	// 判断是否有 biz_set 的对象表，如果没有需要初始化
 	if count, err := db.Table(common.BKTableNameObjDes).Find(filter).Count(ctx); err != nil {
@@ -45,7 +45,7 @@ func addBizSetObjectRow(ctx context.Context, db dal.RDB, ownerID string) error {
 	t := metadata.Now()
 	dataRows := metadata.Object{
 		ObjCls:      "bk_organization",
-		ObjectID:    common.BKInnerObjIDAppSet,
+		ObjectID:    common.BKInnerObjIDBizSet,
 		ObjectName:  "业务集",
 		IsPre:       true,
 		ObjIcon:     "icon-cc-business-set",
@@ -93,10 +93,9 @@ func addObjectUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 	oldAttributes := make([]metadata.Attribute, 0)
 
 	cond := mapstr.New()
-	cond.Set(common.BKObjIDField, common.BKInnerObjIDAppSet)
+	cond.Set(common.BKObjIDField, common.BKInnerObjIDBizSet)
 	err := db.Table(common.BKTableNameObjAttDes).Find(cond).All(ctx, &oldAttributes)
 	if err != nil {
-		blog.Errorf("666666666666666666666  err %v", err)
 		return err
 	}
 
@@ -110,7 +109,7 @@ func addObjectUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 		})
 	}
 	unique := metadata.ObjectUnique{
-		ObjID:    common.BKInnerObjIDAppSet,
+		ObjID:    common.BKInnerObjIDBizSet,
 		Keys:     keys,
 		Ispre:    true,
 		OwnerID:  conf.OwnerID,
@@ -133,7 +132,7 @@ func addObjectUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 
 func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
-	if count, err := db.Table(common.BKTableNameBaseAppSet).Find(nil).Count(ctx); err != nil {
+	if count, err := db.Table(common.BKTableNameBaseBizSet).Find(nil).Count(ctx); err != nil {
 		return err
 	} else if count >= 1 {
 		return nil
@@ -142,7 +141,7 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	// add default biz set
 	defaultBizSet := map[string]interface{}{}
 
-	if err := db.Table(common.BKTableNameBaseAppSet).InsertOne(ctx, defaultBizSet); err != nil {
+	if err := db.Table(common.BKTableNameBaseBizSet).InsertOne(ctx, defaultBizSet); err != nil {
 		return err
 	}
 	return nil
@@ -153,14 +152,14 @@ func addBizSetPropertyGroup(ctx context.Context, db dal.RDB, ownerID string) err
 
 	rows := []*metadata.Group{
 		{
-			ObjectID:   common.BKInnerObjIDAppSet,
+			ObjectID:   common.BKInnerObjIDBizSet,
 			GroupID:    mCommon.BaseInfo,
 			GroupName:  mCommon.BaseInfoName,
 			GroupIndex: 1,
 			OwnerID:    ownerID,
 			IsDefault:  true,
 		}, {
-			ObjectID:   common.BKInnerObjIDAppSet,
+			ObjectID:   common.BKInnerObjIDBizSet,
 			GroupID:    mCommon.AppRole,
 			GroupName:  mCommon.AppRoleName,
 			GroupIndex: 2,
@@ -183,7 +182,7 @@ func addBizSetPropertyGroup(ctx context.Context, db dal.RDB, ownerID string) err
 // addBizSetObjectAttrRow update process bind info attribute
 func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) error {
 
-	filter := mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDAppSet}
+	filter := mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDBizSet}
 
 	// 判断是否有bizSet的对象属性表，如果没有需要初始化
 	if count, err := db.Table(common.BKTableNameObjAttDes).Find(filter).Count(ctx); err != nil {
@@ -193,7 +192,7 @@ func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) err
 		return nil
 	}
 
-	objID := common.BKInnerObjIDAppSet
+	objID := common.BKInnerObjIDBizSet
 
 	dataRows := []*metadata.Attribute{
 		{

@@ -183,9 +183,8 @@ const (
 )
 
 const (
-	Business    TypeID = "biz"
-	BusinessSet TypeID = "biz_set"
-
+	BizSet               TypeID = "business_set"
+	Business             TypeID = "biz"
 	BusinessForHostTrans TypeID = "biz_for_host_trans"
 	// Set                       ResourceTypeID = "set"
 	// Module                    ResourceTypeID = "module"
@@ -293,6 +292,12 @@ const (
 	ArchiveBusiness      ActionID = "archive_business"
 	FindBusiness         ActionID = "find_business"
 	ViewBusinessResource ActionID = "find_business_resource"
+
+	CreateBizSet ActionID = "create_business_set"
+	EditBizSet   ActionID = "edit_business_set"
+	DeleteBizSet ActionID = "archive_business_set"
+	ViewBizSet   ActionID = "view_business_set"
+	AccessBizSet ActionID = "access_business_set"
 
 	CreateCloudArea ActionID = "create_cloud_area"
 	EditCloudArea   ActionID = "edit_cloud_area"
@@ -425,6 +430,7 @@ const (
 	// 业务的两种视图，管理的资源也相同，仅名称做区分
 	BusinessSelection                  InstanceSelectionID = "business"
 	BusinessHostTransferSelection      InstanceSelectionID = "business_host_transfer"
+	BizSetSelection                    InstanceSelectionID = "business_set_list"
 	BizHostInstanceSelection           InstanceSelectionID = "biz_host_instance"
 	BizCustomQuerySelection            InstanceSelectionID = "biz_custom_query"
 	BizProcessServiceTemplateSelection InstanceSelectionID = "biz_process_service_template"

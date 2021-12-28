@@ -32,6 +32,7 @@ func (ps *parseStream) topology() *parseStream {
 	}
 
 	ps.business().
+		businessSet().
 		mainline().
 		object().
 		objectAttributeGroup().
@@ -53,6 +54,7 @@ var (
 	findResourcePoolBusinessRegexp   = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/search/?$`)
 	createResourcePoolBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/?$`)
 	updateBusinessStatusRegexp       = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	createBusinessSetRegexp          = regexp.MustCompile(`^/api/v3/biz_set/[^\s/]+/?$`)
 )
 
 const (
@@ -291,7 +293,7 @@ func (ps *parseStream) business() *parseStream {
 		}
 		return ps
 	}
-	
+
 	// find simplified business list with limited fields return
 	if ps.hitPattern(updatePlatformSettingIdleSetPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -304,7 +306,7 @@ func (ps *parseStream) business() *parseStream {
 		}
 		return ps
 	}
-	
+
 	if ps.hitPattern(deletePlatformSettingModulePattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -316,7 +318,159 @@ func (ps *parseStream) business() *parseStream {
 		}
 		return ps
 	}
-	
+
+	return ps
+}
+
+const (
+	deleteBizSetPattern               = `/api/v3/deletemany/biz_set`
+	findBizInBizSetPattern            = `/api/v3/find/biz_set/biz_list`
+	findBizSetTopoPattern             = `/api/v3/find/biz_set/topo_path`
+	findmanyBusinessSetRegexp         = `api/v3/findmany/biz_set`
+	findReducedBusinessSetListPattern = `/api/v3/findmany/biz_set/with_reduced`
+	previewBusinessSet                = `/api/v3/preview/biz_set`
+)
+
+func (ps *parseStream) businessSet() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitPattern(deleteBizSetPattern, http.MethodPost) {
+		bizSetIDsVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_ids")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizSetIDArr := bizSetIDsVal.Array()
+		if len(bizSetIDArr) == 0 {
+			ps.err = errors.New("bk_biz_set_ids is not set")
+			return ps
+		}
+		if len(bizSetIDArr) > 100 {
+			ps.err = errors.New("bk_biz_set_ids exceeds maximum length 100")
+			return ps
+		}
+
+		for _, bizSetIDVal := range bizSetIDArr {
+			bizSetID := bizSetIDVal.Int()
+			if bizSetID <= 0 {
+				ps.err = errors.New("invalid biz set id")
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					Basic: meta.Basic{
+						Type:       meta.BizSet,
+						Action:     meta.Delete,
+						InstanceID: bizSetID,
+					},
+				},
+			}
+		}
+		return ps
+	}
+
+	if ps.hitPattern(findBizInBizSetPattern, http.MethodPost) {
+		bizSetIDVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizSetID := bizSetIDVal.Int()
+		if bizSetID <= 0 {
+			ps.err = errors.New("invalid biz set id")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.AccessBizSet,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(findBizSetTopoPattern, http.MethodPost) {
+		bizSetIDVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizSetID := bizSetIDVal.Int()
+		if bizSetID <= 0 {
+			ps.err = errors.New("invalid biz set id")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.AccessBizSet,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+		return ps
+	}
+	// create business set, this is not a normalize api.
+	if ps.hitRegexp(createBusinessSetRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizSet,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+	// find many business set list for the user with any business set resources
+	if ps.hitPattern(findmanyBusinessSetRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizSet,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find reduced business set list for the user with any business set resources
+	if ps.hitPattern(findReducedBusinessSetListPattern, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizSet,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+	// preview business set
+	if ps.hitPattern(previewBusinessSet, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizSet,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
 	return ps
 }
 

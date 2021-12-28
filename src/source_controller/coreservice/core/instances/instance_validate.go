@@ -74,7 +74,7 @@ func (m *instanceManager) fetchBizIDFromInstance(kit *rest.Kit, objID string, in
 			return bizID, nil
 		}
 		fallthrough
-	case common.BKInnerObjIDApp, common.BKInnerObjIDAppSet, common.BKInnerObjIDSet, common.BKInnerObjIDModule,
+	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule,
 		common.BKInnerObjIDProc:
 		biz, exist := instanceData[common.BKAppIDField]
 		if exist == false {
@@ -85,7 +85,7 @@ func (m *instanceManager) fetchBizIDFromInstance(kit *rest.Kit, objID string, in
 			return 0, err
 		}
 		return bizID, nil
-	case common.BKInnerObjIDPlat:
+	case common.BKInnerObjIDBizSet, common.BKInnerObjIDPlat:
 		return 0, nil
 	default:
 		biz, exist := instanceData[common.BKAppIDField]

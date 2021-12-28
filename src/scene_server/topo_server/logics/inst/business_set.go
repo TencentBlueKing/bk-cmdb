@@ -76,7 +76,7 @@ func (b *businessSet) CreateBusinessSet(kit *rest.Kit, data *metadata.CreateBizS
 			},
 		},
 	}
-	result, err := b.inst.CountObjectInstances(kit, common.BKInnerObjIDAppSet, input)
+	result, err := b.inst.CountObjectInstances(kit, common.BKInnerObjIDBizSet, input)
 	if err != nil {
 		blog.Errorf("get biz_set name %s fail, err: %v, rid: %s", data.BizSetAttr[common.BKAppSetNameField].(string),
 			err, kit.Rid)
@@ -102,7 +102,7 @@ func (b *businessSet) CreateBusinessSet(kit *rest.Kit, data *metadata.CreateBizS
 	}
 
 	bizSetInfo[common.BKAppSetScopeField] = cond
-	bizInst, err := b.inst.CreateInst(kit, common.BKInnerObjIDAppSet, bizSetInfo)
+	bizInst, err := b.inst.CreateInst(kit, common.BKInnerObjIDBizSet, bizSetInfo)
 	if err != nil {
 		blog.Errorf("create business failed, err: %v, data: %#v, rid: %s", err, data, kit.Rid)
 		return nil, err

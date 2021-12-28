@@ -76,11 +76,13 @@ const (
 )
 
 const (
+	// BKInnerObjIDBizSet the inner object
+	BKInnerObjIDBizSet = "biz_set"
+
 	// BKInnerObjIDApp the inner object
 	BKInnerObjIDApp = "biz"
 
 	// BKInnerObjIDAppSet the inner object
-	BKInnerObjIDAppSet = "biz_set"
 
 	// BKInnerObjIDSet the inner object
 	BKInnerObjIDSet = "set"
@@ -561,13 +563,10 @@ const (
 	// BKMaintainersField the maintainers field
 	BKMaintainersField = "bk_biz_maintainer"
 
-	// BKMaintainersField the maintainers field
-	BKScopeField = "bk_scope"
-
 	// BKProductPMField the product pm field
 	BKProductPMField = "bk_biz_productor"
 
-	// BKTesterField the tester field
+	// BKTesterField the tester fieldcommon/mapping.go:51
 	BKTesterField = "bk_biz_tester"
 
 	// BKOperatorField the operator field
@@ -648,6 +647,10 @@ const (
 	BKEventTypeField   = "type"
 	BKStartAtTimeField = "start_at_time"
 	BKSubResourceField = "bk_sub_resource"
+
+	BKBizSetIDField   = "bk_biz_set_id"
+	BKBizSetNameField = "bk_biz_set_name"
+	BKScopeField      = "bk_scope"
 )
 
 const (
