@@ -31,7 +31,7 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		blog.Errorf("upgrade y3.10.202112181521 add biz set property options failed, err:  %v", err)
 		return err
 	}
-	blog.Infof("upgrade y3.10.202112181521 add biz set property options success")
+	blog.Infof("upgrade y3.10.202112181521 add biz set success")
 
 	return nil
 }

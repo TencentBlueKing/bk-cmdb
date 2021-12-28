@@ -28,7 +28,6 @@ func (inst *instance) CreateInstance(ctx context.Context, h http.Header, objID s
 
 	resp := new(metadata.CreatedOneOptionResult)
 	subPath := "/create/model/%s/instance"
-
 	err := inst.client.Post().
 		WithContext(ctx).
 		Body(input).

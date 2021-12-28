@@ -46,6 +46,15 @@ func (page BasePage) Validate(allowNoLimit bool) (string, error) {
 	return "", nil
 }
 
+// ValidateCountPage 获取数量场景下的page参数判断
+func (page BasePage) ValidateCountPage() error {
+
+	if !page.EnableCount || page.Limit > 0 || page.Sort != "" || page.Start != 0 {
+		return fmt.Errorf("params is illegal")
+	}
+	return nil
+}
+
 // IsIllegal  limit is illegal
 func (page BasePage) IsIllegal() bool {
 	if page.Limit > common.BKMaxPageSize && page.Limit != common.BKNoLimit ||
@@ -58,7 +67,7 @@ func (page BasePage) IsIllegal() bool {
 // IsIllegalWithCount limit is illegal with counter
 func (page BasePage) IsIllegalWithCount() bool {
 
-	//  此场景下如果仅仅是获取查询对象的数量，page的其余参数只能是初始化值
+	// 此场景下如果仅仅是获取查询对象的数量，page的其余参数只能是初始化值
 	if page.EnableCount {
 		if page.Start > 0 || page.Limit > 0 || page.Sort != "" {
 			return true

@@ -116,13 +116,11 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	blog.Errorf("11111111111111111111ModelBizID: %v , resp.Info: %+v", dataWithModelBizID.ModelBizID, resp.Info)
 	grpMap, err := s.getPropertyGroupName(ctx, resp.Info, dataWithModelBizID.ModelBizID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	blog.Errorf("000000000000000000 grpMap: %+v,queryCond: %v,Info: %v", grpMap, queryCond, resp.Info)
 	attrInfos := make([]*metadata.ObjAttDes, 0)
 	for _, attr := range resp.Info {
 		attrInfo := &metadata.ObjAttDes{
@@ -130,7 +128,7 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		}
 		grpName, ok := grpMap[attr.PropertyGroup]
 		if !ok {
-			blog.Errorf("failed to get property group name, attr: %v, property: %v", attr, attr.PropertyGroup)
+			blog.Errorf("failed to get property group name, attr: %s, property: %s", attr, attr.PropertyGroup)
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKPropertyNameField))
 			return
 		}
@@ -384,8 +382,6 @@ func (s *Service) getPropertyGroupName(ctx *rest.Contexts, attrs []metadata.Attr
 		Condition:      grpCond,
 		DisableCounter: true,
 	}
-
-	blog.Errorf("2222222222222222222 cond: %+v,grpCond %+v", cond, grpCond)
 	rsp, err := s.Engine.CoreAPI.CoreService().Model().ReadAttributeGroupByCondition(ctx.Kit.Ctx, ctx.Kit.Header, cond)
 	if err != nil {
 		blog.Errorf("failed to get attr group, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)

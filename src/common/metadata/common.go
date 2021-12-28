@@ -401,15 +401,16 @@ type BatchCreateSetRequest struct {
 	Sets []map[string]interface{} `json:"sets"`
 }
 
-type BizSetScopeOption struct {
+// BizSetScope defines the scope of biz in biz set, can be all biz or specific biz that matches the filter
+type BizSetScope struct {
 	MatchAll bool                      `json:"match_all"`
-	Filter   *querybuilder.QueryFilter `json:"filter,omitempty"`
+	Filter   *querybuilder.QueryFilter `json:"filter"`
 }
 
-// BKBizSet biz set struct
+// CreateBizSetRequest biz set struct
 type CreateBizSetRequest struct {
 	BizSetAttr  map[string]interface{} `json:"bk_biz_set_attr"`
-	BizSetScope *BizSetScopeOption     `json:"bk_scope"`
+	BizSetScope *BizSetScope           `json:"bk_scope"`
 }
 
 // Validate validates create biz set params
@@ -417,8 +418,10 @@ func (op *CreateBizSetRequest) Validate() error {
 	if op.BizSetAttr == nil || op.BizSetScope == nil {
 		return fmt.Errorf("params is nil")
 	}
-
-	if name, ok := op.BizSetAttr[common.BKAppSetNameField]; !ok || name == "" {
+	if op.BizSetScope.MatchAll == true && op.BizSetScope.Filter != nil {
+		return fmt.Errorf("matchall and filter params is illegal")
+	}
+	if name, ok := op.BizSetAttr[common.BKBizSetNameField]; !ok || name == "" {
 		return fmt.Errorf("biz set name must be set")
 	}
 

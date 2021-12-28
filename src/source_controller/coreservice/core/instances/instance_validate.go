@@ -74,8 +74,7 @@ func (m *instanceManager) fetchBizIDFromInstance(kit *rest.Kit, objID string, in
 			return bizID, nil
 		}
 		fallthrough
-	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule,
-		common.BKInnerObjIDProc:
+	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc:
 		biz, exist := instanceData[common.BKAppIDField]
 		if exist == false {
 			return 0, nil
@@ -178,6 +177,7 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		blog.Errorf("validate host attribute hook failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
+
 	for key, val := range instanceData {
 		if key == common.BKObjIDField {
 			// common instance always has no property bk_obj_id, but this field need save to db

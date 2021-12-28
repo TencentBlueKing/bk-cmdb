@@ -462,7 +462,7 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 	}
 }
 
-// Insert 插入数据, docs 可以为 单个数据 或者 多个数据
+// InsertOne 插入单个数据
 func (c *Collection) InsertOne(ctx context.Context, doc interface{}) error {
 	mtc.collectOperCount(c.collName, insertOper)
 

@@ -21,7 +21,6 @@ import (
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
-
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -34,7 +33,6 @@ import (
 func (s *Service) CreateBusinessSet(ctx *rest.Contexts) {
 	data := new(metadata.CreateBizSetRequest)
 	if err := ctx.DecodeInto(data); err != nil {
-
 		ctx.RespAutoError(err)
 		return
 	}
@@ -58,13 +56,13 @@ func (s *Service) CreateBusinessSet(ctx *rest.Contexts) {
 		// register business set resource creator action to iam
 		if auth.EnableAuthorize() {
 			var bizSetID int64
-			if bizSetID, err = bizSet.Int64(common.BKAppSetIDField); err != nil {
+			if bizSetID, err = bizSet.Int64(common.BKBizSetIDField); err != nil {
 				blog.Errorf("get biz set id failed, err: %v, biz: %#v, rid: %s", err, bizSet, ctx.Kit.Rid)
 				return err
 			}
 
 			var bizSetName string
-			if bizSetName, err = bizSet.String(common.BKAppSetNameField); err != nil {
+			if bizSetName, err = bizSet.String(common.BKBizSetNameField); err != nil {
 				blog.Errorf("get biz set name failed, err: %v, biz: %#v, rid: %s", err, bizSet, ctx.Kit.Rid)
 				return err
 			}
@@ -90,7 +88,7 @@ func (s *Service) CreateBusinessSet(ctx *rest.Contexts) {
 		return
 	}
 
-	bizSetID, err := bizSet.Int64(common.BKAppSetIDField)
+	bizSetID, err := bizSet.Int64(common.BKBizSetIDField)
 	if err != nil {
 		blog.Errorf("get biz set id failed, err: %v, biz: %#v, rid: %s", err, bizSet, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -140,21 +138,18 @@ func (s *Service) DeleteBizSet(ctx *rest.Contexts) {
 // 2. only returned with a few field for this business info.
 func (s *Service) PreviewBusinessSet(ctx *rest.Contexts) {
 	searchCond := new(metadata.PreviewBusinessSetRequest)
-	if err := ctx.DecodeInto(&searchCond); err != nil {
+	if err := ctx.DecodeInto(searchCond); err != nil {
 		blog.Errorf("failed to parse the params, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
+		ctx.RespAutoError(err)
 		return
 	}
-	defErr := ctx.Kit.CCError
 
 	if err := searchCond.Validate(); err != nil {
 		blog.Errorf("bizPropertyFilter is illegal, err: %v, rid:%s", err, ctx.Kit.Rid)
-		ccErr := defErr.CCErrorf(common.CCErrCommParamsInvalid, err.Error())
+		ccErr := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error())
 		ctx.RespAutoError(ccErr)
 		return
 	}
-	// Only one of biz_property_filter and condition parameters can take effect, and condition is not recommended to
-	// continue to use it.
 
 	opt := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{
@@ -220,14 +215,7 @@ func (s *Service) SearchReducedBusinessSetList(ctx *rest.Contexts) {
 	if len(sortParam) > 0 {
 		page.Sort = sortParam
 	} else {
-		page.Sort = common.BKAppSetIDField
-	}
-
-	// 此场景下获取全部的业务列表，只需要返回业务集的id和name
-	if errKey, err := page.Validate(true); err != nil {
-		blog.Errorf("page parameter invalid, errKey: %v, err: %s, rid: %s", errKey, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
-		return
+		page.Sort = common.BKBizSetIDField
 	}
 
 	bizSetList := make([]int64, 0)
@@ -236,9 +224,7 @@ func (s *Service) SearchReducedBusinessSetList(ctx *rest.Contexts) {
 		authInput := meta.ListAuthorizedResourcesParam{
 			UserName:     ctx.Kit.User,
 			ResourceType: meta.BizSet,
-
-			// TODO: 后续修改成业务集的访问权限
-			Action: meta.ViewBusinessResource,
+			Action:       meta.AccessBizSet,
 		}
 		authorizedRes, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
 		if err != nil {
@@ -259,7 +245,7 @@ func (s *Service) SearchReducedBusinessSetList(ctx *rest.Contexts) {
 				bizSetList = append(bizSetList, bizSetID)
 			}
 			if len(bizSetList) == 0 {
-				ctx.RespEntityWithCount(0, make([]mapstr.MapStr, 0))
+				ctx.RespEntity(make([]interface{}, 0))
 				return
 			}
 			// sort for prepare to find business with page.
@@ -268,23 +254,28 @@ func (s *Service) SearchReducedBusinessSetList(ctx *rest.Contexts) {
 	}
 
 	query := &metadata.CommonSearchFilter{
-		Conditions: &querybuilder.QueryFilter{
+		ObjectID: common.BKInnerObjIDBizSet,
+		Fields:   []string{common.BKBizSetIDField, common.BKBizSetNameField},
+		Page:     page,
+	}
+
+	if len(bizSetList) > 0 {
+		query.Conditions = &querybuilder.QueryFilter{
 			Rule: &querybuilder.AtomRule{
-				Field:    common.BKAppSetIDField,
+				Field:    common.BKBizSetIDField,
 				Operator: querybuilder.OperatorIn,
 				Value:    bizSetList,
 			},
-		},
-		Fields: []string{common.BKAppSetIDField, common.BKAppSetNameField},
-		Page:   page,
+		}
 	}
 	result, err := s.Logics.BusinessSetOperation().FindBizSet(ctx.Kit, query)
 	if nil != err {
 		blog.Errorf("failed to find the biz set list, error is %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespEntity(nil)
+		return
 	}
 
-	ctx.RespEntity(result)
+	ctx.RespEntity(result.Info)
 }
 
 // FindBizInBizSet find all biz id and name in biz set
@@ -349,7 +340,7 @@ func (s *Service) FindBizInBizSet(ctx *rest.Contexts) {
 // getBizSetBizCond get biz mongo condition from the biz set scope
 func (s *Service) getBizSetBizCond(kit *rest.Kit, bizSetID int64) (mapstr.MapStr, error) {
 	bizSetCond := &metadata.QueryCondition{
-		Fields:         []string{common.BKScopeField},
+		Fields:         []string{common.BKBizSetScopeField},
 		Page:           metadata.BasePage{Limit: 1},
 		Condition:      map[string]interface{}{common.BKBizSetIDField: bizSetID},
 		DisableCounter: true,
@@ -409,7 +400,6 @@ func (s *Service) FindBizSetTopo(ctx *rest.Contexts) {
 
 	topo, err := s.findBizSetTopo(ctx.Kit, opt)
 	if err != nil {
-
 		ctx.RespAutoError(err)
 		return
 	}
@@ -417,10 +407,9 @@ func (s *Service) FindBizSetTopo(ctx *rest.Contexts) {
 	ctx.RespEntity(topo)
 }
 
-func (s *Service) getAuthBizSetIDList(ctx *rest.Contexts, mgoFilter map[string]interface{}, searchCond *metadata.QueryBusinessSetRequest, bizSetIDs []int64) ([]int64, error) {
-
-	// 用户传来的biz set id list
-	//bizSetIDs := make([]int64, 0)
+// getBizSetIDList 通过用户所传条件算出的的bizSetIDs 与此用户拥有的bizSetIDs 做交集，得到用户最终能够获取到的业务集
+func (s *Service) getBizSetIDList(ctx *rest.Contexts, searchCond *metadata.QueryBusinessSetRequest, bizSetIDs []int64) (
+	[]int64, error) {
 
 	// 最终有权限的biz set list
 	authBizSetIDs := make([]int64, 0)
@@ -437,16 +426,14 @@ func (s *Service) getAuthBizSetIDList(ctx *rest.Contexts, mgoFilter map[string]i
 		ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")
 		return []int64{}, err
 	}
-	bizAuthSetList := make([]int64, 0)
 
 	// if isAny is true means we have all bizIds authority, else we should parse ids list that we have authority.
 	if authorizedRes.IsAny {
 		// if user assign the ids,add the ids to the condition.
-		if len(bizSetIDs) > 0 {
-			authBizSetIDs = bizSetIDs
-		}
+		authBizSetIDs = bizSetIDs
 
 	} else {
+		bizAuthSetList := make([]int64, 0)
 		for _, resourceID := range authorizedRes.Ids {
 			bizSetID, err := strconv.ParseInt(resourceID, 10, 64)
 			if err != nil {
@@ -456,157 +443,230 @@ func (s *Service) getAuthBizSetIDList(ctx *rest.Contexts, mgoFilter map[string]i
 			}
 			bizAuthSetList = append(bizAuthSetList, bizSetID)
 		}
-		if len(bizSetIDs) > 0 {
-			// this means that user want to find a specific business.now we check if he has this authority.
-			for _, bizSetID := range bizAuthSetList {
-				if util.InArray(bizSetID, bizAuthSetList) {
-					// authBizIDs store the authorized bizIDs
-					authBizSetIDs = append(authBizSetIDs, bizSetID)
-				}
+		// this means that user want to find a specific business.now we check if he has this authority.
+		for _, bizSetID := range bizSetIDs {
+			if util.InArray(bizSetID, bizAuthSetList) {
+				// authBizIDs store the authorized bizIDs
+				authBizSetIDs = append(authBizSetIDs, bizSetID)
 			}
-			if len(authBizSetIDs) > 0 {
-				mgoFilter[common.BKAppIDField] = mapstr.MapStr{common.BKDBIN: authBizSetIDs}
-			} else {
-				// if there are no qualified bizIDs, return null
-
-				if searchCond.Page.EnableCount {
-
-					ctx.RespEntity(&metadata.CommonCountResult{})
-				} else {
-					ctx.RespEntity(&metadata.CommonSearchResult{})
-				}
-
-				return []int64{}, err
-			}
-			// now you have the authority.
-		} else {
-			if len(bizAuthSetList) == 0 {
-				if searchCond.Page.EnableCount {
-					ctx.RespEntity(&metadata.CommonCountResult{})
-				} else {
-					ctx.RespEntity(&metadata.CommonSearchResult{})
-				}
-				return []int64{}, err
-			}
-			authBizSetIDs = bizAuthSetList
-			// sort for prepare to find business with page.
-			sort.Sort(util.Int64Slice(authBizSetIDs))
-			// user can only find business that is already authorized.
 		}
+
 	}
 	return authBizSetIDs, nil
 }
 
+// searchBizSetByUserCondition  获取包含bk_biz_set_id 的查询结果。
+func (s *Service) searchBizSetByUserCondition(ctx *rest.Contexts, filter *metadata.QueryBusinessSetRequest) (
+	*metadata.CommonSearchResult, error) {
+	query := &metadata.CommonSearchFilter{
+		ObjectID:      common.BKInnerObjIDBizSet,
+		Fields:        filter.Fields,
+		Page:          filter.Page,
+		TimeCondition: filter.TimeCondition,
+		Conditions:    filter.BizSetPropertyFilter,
+	}
+
+	result, err := s.Logics.BusinessSetOperation().FindBizSet(ctx.Kit, query)
+	if nil != err {
+		blog.Errorf("failed to find the objects(%s), error info is %s, rid: %s",
+			ctx.Request.PathParameter("obj_id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return &metadata.CommonSearchResult{}, err
+	}
+	return result, nil
+}
+
+func getBusinessSetResult(bizSetIDs []int64, bizSetFlag bool,
+	bizSetResult *metadata.CommonSearchResult) (*metadata.CommonSearchResult, error) {
+	result := new(metadata.CommonSearchResult)
+
+	for _, info := range bizSetResult.Info {
+		if _, ok := info.(*mapstr.MapStr); !ok {
+			blog.Errorf("biz set result type error,info: %+v", info)
+			return nil, fmt.Errorf("biz set result type error")
+		}
+		value := *info.(*mapstr.MapStr)
+		bizSetID, err := util.GetInt64ByInterface(value[common.BKBizSetIDField])
+		if err != nil {
+			return nil, err
+		}
+		if util.InArray(bizSetID, bizSetIDs) {
+			if !bizSetFlag {
+				delete(info.(map[string]interface{}), common.BKBizSetIDField)
+			}
+			result.Info = append(result.Info, info)
+		}
+	}
+	return result, nil
+}
+
 // SearchBusiness search the business by condition
 func (s *Service) SearchBusinessSet(ctx *rest.Contexts) {
+
+	searchCond := new(metadata.QueryBusinessSetRequest)
+	if err := ctx.DecodeInto(searchCond); err != nil {
+		blog.Errorf("failed to parse the params, error %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
+		return
+	}
+
+	// BizSetPropertyFilter
+	if searchCond.BizSetPropertyFilter != nil {
+		if err := searchCond.Validate(); err != nil {
+			blog.Errorf("the params is illegal, error is %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "")
+			return
+		}
+
+	}
+	if searchCond.Page.Sort == "" {
+		searchCond.Page.Sort = common.BKBizSetIDField
+	}
+	// 这个标记标明用户是否需要返回field
+	bizSetFlag := false
+	fields := make([]string, 0)
+
+	if len(searchCond.Fields) != 0 {
+		for _, field := range searchCond.Fields {
+			if field == common.BKBizSetIDField {
+				bizSetFlag = true
+			}
+			fields = append(fields, field)
+		}
+		if !bizSetFlag {
+			fields = append(fields, common.BKBizSetIDField)
+		}
+	} else {
+		bizSetFlag = true
+	}
+
+	bizSetResult, err := s.searchBizSetByUserCondition(ctx, searchCond)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "")
+		return
+	}
+	if len(bizSetResult.Info) == 0 {
+		ctx.RespEntity(&metadata.CommonSearchResult{})
+		return
+	}
+
+	// 需要鉴权的 biz set id list
+	userBizSetIDs := make([]int64, 0)
+	for _, info := range bizSetResult.Info {
+		if _, ok := info.(*mapstr.MapStr); !ok {
+			ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "")
+			return
+		}
+		value := *info.(*mapstr.MapStr)
+
+		bizSetID, err := util.GetInt64ByInterface(value[common.BKBizSetIDField])
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "")
+			return
+		}
+		userBizSetIDs = append(userBizSetIDs, bizSetID)
+	}
+	// 初始化将用户的业务ID
+	bizSetIDs := userBizSetIDs
+
+	if s.AuthManager.Enabled() {
+		bizSetIDs, err = s.getBizSetIDList(ctx, searchCond, userBizSetIDs)
+		if err != nil {
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKBizSetIDField))
+			return
+		}
+	}
+
+	result := new(metadata.CommonSearchResult)
+
+	// 1、只返回用户需要查询的并且有权限的业务集.2、用户没有指定获取biz_set_id场景下需要把biz_set_id删掉
+	result, err = getBusinessSetResult(bizSetIDs, bizSetFlag, bizSetResult)
+	if err != nil {
+		blog.Errorf("get business result fail err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrCommParseDataFailed, "")
+
+	}
+	ctx.RespEntity(result)
+}
+
+// CountBusinessSet count the business by condition
+func (s *Service) CountBusinessSet(ctx *rest.Contexts) {
+
 	searchCond := new(metadata.QueryBusinessSetRequest)
 	if err := ctx.DecodeInto(&searchCond); err != nil {
 		blog.Errorf("failed to parse the params, error %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
 		return
 	}
+	if searchCond.BizSetPropertyFilter != nil {
+		if err := searchCond.Validate(); err != nil {
+			blog.Errorf("the params is illegal, error is %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "")
+			return
+		}
 
-	if err := searchCond.Validate(); err != nil {
-		blog.Errorf("the params is illegal, error is %v, rid: %s", err, ctx.Kit.Rid)
+	}
+
+	searchCond.Page = metadata.BasePage{
+		Limit: common.BKNoLimit,
+		Sort:  common.BKBizSetIDField,
+	}
+	searchCond.Fields = []string{common.BKBizSetIDField}
+	bizSetResult, err := s.searchBizSetByUserCondition(ctx, searchCond)
+	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "")
 		return
 	}
 
-	// 用户传来的biz set id list
-	bizSetIDs := make([]int64, 0)
-
-	// 最终有权限的biz set list
-	authBizSetIDs := make([]int64, 0)
-
-	mgoFilter, key, err := searchCond.BizSetPropertyFilter.ToMgo()
-	if err != nil {
-		blog.Errorf("BizPropertyFilter ToMgo failed: %s, err: %v, rid:%s", searchCond.BizSetPropertyFilter,
-			err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid,
-			err.Error()+fmt.Sprintf(", biz property filter.%s", key)))
+	if len(bizSetResult.Info) == 0 {
+		ctx.RespEntity(0)
 		return
 	}
 
-	biz, exist := mgoFilter[common.BKAppSetIDField]
-	if exist {
-		// constrict that bk_biz_id field can only be a numeric value,
-		// operators like or/in/and is not allowed.
-		if bizSetCond, ok := biz.(map[string]interface{}); ok {
-			if cond, ok := bizSetCond["$eq"]; ok {
-				bizSetID, err := util.GetInt64ByInterface(cond)
-				if err != nil {
-					ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "", common.BKAppSetIDField)
-					return
-				}
-				bizSetIDs = []int64{bizSetID}
-			}
-			if cond, ok := bizSetCond["$in"]; ok {
-				if conds, ok := cond.([]interface{}); ok {
-					for _, c := range conds {
-						bizSetID, err := util.GetInt64ByInterface(c)
-						if err != nil {
-							ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "", common.BKAppSetIDField)
-							return
-						}
-						bizSetIDs = append(bizSetIDs, bizSetID)
-					}
-				}
-			}
-		} else {
-			bizSetID, err := util.GetInt64ByInterface(mgoFilter[common.BKAppSetIDField])
-			if err != nil {
-				ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppSetIDField))
-				return
-			}
-			bizSetIDs = []int64{bizSetID}
+	// 需要鉴权的 biz set id list.
+	userBizSetIDs := make([]int64, 0)
+	for _, info := range bizSetResult.Info {
+		if _, ok := info.(*mapstr.MapStr); !ok {
+			ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "")
+			return
 		}
+		value := *info.(*mapstr.MapStr)
+		bizSetID, err := util.GetInt64ByInterface(value[common.BKBizSetIDField])
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "")
+			return
+		}
+		userBizSetIDs = append(userBizSetIDs, bizSetID)
 	}
+
+	// 初始化将用户的业务ID.
+	bizSetIDs := userBizSetIDs
 
 	if s.AuthManager.Enabled() {
-		authBizSetIDs, err = s.getAuthBizSetIDList(ctx, mgoFilter, searchCond, bizSetIDs)
+		bizSetIDs, err = s.getBizSetIDList(ctx, searchCond, userBizSetIDs)
 		if err != nil {
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppSetIDField))
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKBizSetIDField))
 			return
 		}
 	}
-
-	if searchCond.Page.EnableCount {
-
-		query := &metadata.CommonCountFilter{
-			Conditions: searchCond.BizSetPropertyFilter,
-		}
-		result, err := s.Logics.BusinessSetOperation().CountBizSet(ctx.Kit, query)
-		if nil != err {
-			blog.Errorf("failed to find the objects(%s), error info is %s, rid: %s",
-				ctx.Request.PathParameter("obj_id"), err.Error(), ctx.Kit.Rid)
-			ctx.RespAutoError(err)
+	setIds := make([]int64, 0)
+	for _, info := range bizSetResult.Info {
+		if _, ok := info.(*mapstr.MapStr); !ok {
+			blog.Errorf("biz set result type error,info: %+v", info)
+			ctx.RespEntity(fmt.Errorf("biz set result type error"))
 			return
 		}
-
-		ctx.RespEntity(result)
-	} else {
-		query := &metadata.CommonSearchFilter{
-			Conditions: &querybuilder.QueryFilter{
-				Rule: &querybuilder.AtomRule{
-					Field:    common.BKAppSetIDField,
-					Operator: querybuilder.OperatorIn,
-					Value:    authBizSetIDs,
-				},
-			},
-			Fields: searchCond.Fields,
-			Page:   searchCond.Page,
-		}
-		result, err := s.Logics.BusinessSetOperation().FindBizSet(ctx.Kit, query)
-		if nil != err {
-			blog.Errorf("failed to find the objects(%s), error info is %s, rid: %s",
-				ctx.Request.PathParameter("obj_id"), err.Error(), ctx.Kit.Rid)
-			ctx.RespAutoError(err)
+		value := *info.(*mapstr.MapStr)
+		bizSetID, err := util.GetInt64ByInterface(value[common.BKBizSetIDField])
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "")
 			return
 		}
-
-		ctx.RespEntity(result)
+		if util.InArray(bizSetID, bizSetIDs) {
+			setIds = append(setIds, bizSetID)
+		}
 	}
-
+	ctx.RespEntity(len(setIds))
 }
 
 func (s *Service) findBizSetTopo(kit *rest.Kit,

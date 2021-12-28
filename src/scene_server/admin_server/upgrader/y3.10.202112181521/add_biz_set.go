@@ -13,21 +13,16 @@
 package y3_10_202112181521
 
 import (
-	"configcenter/src/common/condition"
 	"context"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	mCommon "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-)
-
-// default group
-var (
-	groupBaseInfo = mCommon.BaseInfo
 )
 
 func addBizSetObjectRow(ctx context.Context, db dal.RDB, ownerID string) error {
@@ -188,7 +183,7 @@ func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) err
 	if count, err := db.Table(common.BKTableNameObjAttDes).Find(filter).Count(ctx); err != nil {
 		blog.Errorf("find object attribute describe fail,err: %v", err)
 		return err
-	} else if count >= 4 {
+	} else if count > 10 {
 		return nil
 	}
 
@@ -197,7 +192,7 @@ func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) err
 	dataRows := []*metadata.Attribute{
 		{
 			ObjectID:      objID,
-			PropertyID:    common.BKAppSetNameField,
+			PropertyID:    common.BKBizSetNameField,
 			PropertyName:  "业务集名",
 			IsRequired:    true,
 			IsOnly:        true,
@@ -232,7 +227,7 @@ func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) err
 		},
 		{
 			ObjectID:      objID,
-			PropertyID:    common.BKScopeField,
+			PropertyID:    common.BKBizSetScopeField,
 			PropertyName:  "条件范围",
 			IsRequired:    true,
 			IsOnly:        false,
@@ -240,7 +235,7 @@ func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) err
 			IsAPI:         true,
 			IsPre:         true,
 			PropertyGroup: mCommon.BaseInfo,
-			PropertyType:  common.FieldCondition,
+			PropertyType:  common.FieldObject,
 			Option:        "",
 		},
 	}

@@ -62,7 +62,6 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		}
 	}
 
-	blog.Errorf("bbbbbbbbbbbbbbbbb instTableName: %v,inputParam: %+v", instTableName, inputParam)
 	// save object instance.
 	err = mongodb.Client().Table(instTableName).Insert(kit.Ctx, inputParam)
 	if err != nil {

@@ -32,7 +32,6 @@ func (ps *parseStream) topology() *parseStream {
 	}
 
 	ps.business().
-		businessSet().
 		mainline().
 		object().
 		objectAttributeGroup().
@@ -41,7 +40,9 @@ func (ps *parseStream) topology() *parseStream {
 		audit().
 		fullTextSearch().
 		cloudArea().
-		businessSet()
+		businessSetFindOperation().
+		businessSetOtherOperation().
+		businessSetDeleteOperation()
 
 	return ps
 }
@@ -54,7 +55,7 @@ var (
 	findResourcePoolBusinessRegexp   = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/search/?$`)
 	createResourcePoolBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/?$`)
 	updateBusinessStatusRegexp       = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
-	createBusinessSetRegexp          = regexp.MustCompile(`^/api/v3/biz_set/[^\s/]+/?$`)
+	createBusinessSetRegexp          = regexp.MustCompile(`^/api/v3/create/biz_set/[^\s/]+/?$`)
 )
 
 const (
@@ -327,11 +328,12 @@ const (
 	findBizInBizSetPattern            = `/api/v3/find/biz_set/biz_list`
 	findBizSetTopoPattern             = `/api/v3/find/biz_set/topo_path`
 	findmanyBusinessSetRegexp         = `api/v3/findmany/biz_set`
+	countwBusinessSet                 = `/api/v3/count/biz_set`
 	findReducedBusinessSetListPattern = `/api/v3/findmany/biz_set/with_reduced`
-	previewBusinessSet                = `/api/v3/preview/biz_set`
+	previewBusinessSet                = `/api/v3/biz_set/preview`
 )
 
-func (ps *parseStream) businessSet() *parseStream {
+func (ps *parseStream) businessSetDeleteOperation() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
@@ -372,7 +374,14 @@ func (ps *parseStream) businessSet() *parseStream {
 		}
 		return ps
 	}
+	return ps
 
+}
+
+func (ps *parseStream) businessSetFindOperation() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
 	if ps.hitPattern(findBizInBizSetPattern, http.MethodPost) {
 		bizSetIDVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_id")
 		if err != nil {
@@ -422,18 +431,6 @@ func (ps *parseStream) businessSet() *parseStream {
 		}
 		return ps
 	}
-	// create business set, this is not a normalize api.
-	if ps.hitRegexp(createBusinessSetRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.BizSet,
-					Action: meta.Create,
-				},
-			},
-		}
-		return ps
-	}
 	// find many business set list for the user with any business set resources
 	if ps.hitPattern(findmanyBusinessSetRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -459,6 +456,27 @@ func (ps *parseStream) businessSet() *parseStream {
 		}
 		return ps
 	}
+	return ps
+}
+
+func (ps *parseStream) businessSetOtherOperation() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	// create business set, this is not a normalize api.
+	if ps.hitRegexp(createBusinessSetRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizSet,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
 	// preview business set
 	if ps.hitPattern(previewBusinessSet, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -471,6 +489,19 @@ func (ps *parseStream) businessSet() *parseStream {
 		}
 		return ps
 	}
+	// preview business set
+	if ps.hitPattern(countwBusinessSet, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizSet,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
 	return ps
 }
 

@@ -13,11 +13,12 @@
 package metadata
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/querybuilder"
-	"fmt"
 )
 
 type SearchInstResult struct {
@@ -109,11 +110,11 @@ func (option *PreviewBusinessSetRequest) Validate() error {
 
 // QueryBusinessSetRequest query business set by query builder
 type QueryBusinessSetRequest struct {
-	BizSetPropertyFilter *querybuilder.QueryFilter `json:"bk_biz_set_filter"`
-	Fields               []string                  `json:"fields"`
-
-	// Page Limit must be set less than 500
-	Page BasePage `json:"page"`
+	BizSetPropertyFilter *querybuilder.QueryFilter `json:"bk_biz_set_filter,omitempty"`
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition *TimeCondition `json:"time_condition,omitempty"`
+	Fields        []string       `json:"fields,omitempty"`
+	Page          BasePage       `json:"page,omitempty"`
 }
 
 // Validate validates query business set info conditions format.

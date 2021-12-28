@@ -82,8 +82,6 @@ const (
 	// BKInnerObjIDApp the inner object
 	BKInnerObjIDApp = "biz"
 
-	// BKInnerObjIDAppSet the inner object
-
 	// BKInnerObjIDSet the inner object
 	BKInnerObjIDSet = "set"
 
@@ -248,11 +246,6 @@ const (
 	// BKAppIDField the appid field
 	BKAppIDField = "bk_biz_id"
 
-	// BKAppSetIDField the biz set field
-	BKAppSetIDField = "bk_biz_set_id"
-
-	BKAppSetScopeField = "bk_scope"
-
 	// BKIPArr the ip address
 	BKIPArr = "ipArr"
 
@@ -300,9 +293,6 @@ const (
 
 	// BKAppNameField the app name field
 	BKAppNameField = "bk_biz_name"
-
-	// BKAppSetNameField the biz set name field
-	BKAppSetNameField = "bk_biz_set_name"
 
 	// BKSetIDField the setid field
 	BKSetIDField = "bk_set_id"
@@ -566,7 +556,7 @@ const (
 	// BKProductPMField the product pm field
 	BKProductPMField = "bk_biz_productor"
 
-	// BKTesterField the tester fieldcommon/mapping.go:51
+	// BKTesterField the tester field
 	BKTesterField = "bk_biz_tester"
 
 	// BKOperatorField the operator field
@@ -648,9 +638,10 @@ const (
 	BKStartAtTimeField = "start_at_time"
 	BKSubResourceField = "bk_sub_resource"
 
-	BKBizSetIDField   = "bk_biz_set_id"
-	BKBizSetNameField = "bk_biz_set_name"
-	BKScopeField      = "bk_scope"
+	BKBizSetIDField    = "bk_biz_set_id"
+	BKBizSetNameField  = "bk_biz_set_name"
+	BKBizSetScopeField = "bk_scope"
+	BKBizSetMatchField = "match_all"
 )
 
 const (
@@ -795,8 +786,10 @@ const (
 	// FieldTypeUser the user field type
 	FieldTypeUser string = "objuser"
 
-	// FieldCondition the condition for biz set
-	FieldCondition string = "condition"
+	// FieldObject 此处只校验是否是对象。此校验是为了兼容biz_set中的bk_scope 的类型是 querybuilder，由于在 coreservice层解析出来的
+	// 是map[string]interface,所以只需要校验是否是对象，对于querybuilder的合法性应该放在场景层做校验。后续如果走的是object校验，都需
+	// 要在场景层进行真正的校验
+	FieldObject string = "object"
 
 	// FieldTypeTimeZone the timezone field type
 	FieldTypeTimeZone string = "timezone"

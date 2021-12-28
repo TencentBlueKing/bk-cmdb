@@ -152,7 +152,6 @@ func (c *commonInst) CreateInst(kit *rest.Kit, objID string, data mapstr.MapStr)
 	data.Set(common.BkSupplierAccount, kit.SupplierAccount)
 
 	instCond := &metadata.CreateModelInstance{Data: data}
-
 	rsp, err := c.clientSet.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, objID, instCond)
 	if err != nil {
 		blog.Errorf("failed to create object instance, err: %v, rid: %s", err, kit.Rid)

@@ -17,6 +17,7 @@ import (
 	"configcenter/src/ac/iam"
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/rdapi"
@@ -74,10 +75,7 @@ func (s *service) WebServices() []*restful.WebService {
 	ws.Filter(rdapi.RequestLogFilter())
 	ws.Filter(s.LimiterFilter())
 	ws.Produces(restful.MIME_JSON)
-	//if auth.EnableAuthorize() {
-	//	ws.Filter(s.authFilter(getErrFun))
-	//}
-	if false {
+	if auth.EnableAuthorize() {
 		ws.Filter(s.authFilter(getErrFun))
 	}
 	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))

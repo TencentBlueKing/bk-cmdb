@@ -13,6 +13,8 @@
 package inst
 
 import (
+	"fmt"
+
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -20,8 +22,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/querybuilder"
-	"fmt"
 )
 
 // BusinessOperationInterface business operation methods
@@ -33,8 +33,6 @@ type BusinessSetOperationInterface interface {
 	// FindBizSet  find biz set find biz set by cond
 	FindBizSet(kit *rest.Kit, cond *metadata.CommonSearchFilter) (*metadata.CommonSearchResult, error)
 
-	// CountBizSet  count biz set find biz set by cond
-	CountBizSet(kit *rest.Kit, cond *metadata.CommonCountFilter) (*metadata.CommonCountResult, error)
 	// SetProxy set business proxy
 	SetProxy(inst InstOperationInterface)
 }
@@ -62,30 +60,22 @@ func (b *businessSet) SetProxy(inst InstOperationInterface) {
 // CreateBusinessSet create business set
 func (b *businessSet) CreateBusinessSet(kit *rest.Kit, data *metadata.CreateBizSetRequest) (mapstr.MapStr, error) {
 
-	// 进行biz set name 的唯一性校验
-	input := &metadata.CommonCountFilter{
-		Conditions: &querybuilder.QueryFilter{
-			Rule: querybuilder.CombinedRule{
-				Condition: querybuilder.ConditionAnd,
-				Rules: []querybuilder.Rule{
-					&querybuilder.AtomRule{
-						Field:    common.BKAppSetNameField,
-						Operator: querybuilder.OperatorEqual,
-						Value:    data.BizSetAttr[common.BKAppSetNameField].(string)},
-				},
-			},
-		},
+	conditions := &metadata.Condition{
+		Condition: map[string]interface{}{common.BKBizSetNameField: data.BizSetAttr[common.BKBizSetNameField].(string)},
 	}
-	result, err := b.inst.CountObjectInstances(kit, common.BKInnerObjIDBizSet, input)
+
+	// count object instances num.
+	resp, err := b.clientSet.CoreService().Instance().CountInstances(kit.Ctx, kit.Header, common.BKInnerObjIDBizSet,
+		conditions)
 	if err != nil {
-		blog.Errorf("get biz_set name %s fail, err: %v, rid: %s", data.BizSetAttr[common.BKAppSetNameField].(string),
-			err, kit.Rid)
+		blog.Errorf("count object instances failed, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
-	if result.Count > 0 {
+
+	if resp.Count > 0 {
 		blog.Errorf("biz set name %s has been created, num: %d,err: %v, rid: %s",
-			data.BizSetAttr[common.BKAppSetNameField].(string), result.Count, err, kit.Rid)
-		return nil, fmt.Errorf("biz set name %s has been created", data.BizSetAttr[common.BKAppSetNameField].(string))
+			data.BizSetAttr[common.BKBizSetNameField].(string), resp.Count, err, kit.Rid)
+		return nil, fmt.Errorf("biz set name %s has been created", data.BizSetAttr[common.BKBizSetNameField].(string))
 	}
 
 	bizSetInfo := mapstr.New()
@@ -94,14 +84,7 @@ func (b *businessSet) CreateBusinessSet(kit *rest.Kit, data *metadata.CreateBizS
 		bizSetInfo[key] = value
 	}
 
-	cond, errKey, err := data.BizSetScope.Filter.ToMgo()
-	if err != nil {
-		blog.Errorf(" biz set scope convert to mongo condition fail,scope: %+v, errKey: %s, err: %v, rid: %s",
-			data.BizSetScope, errKey, err, kit.Rid)
-		return mapstr.MapStr{}, err
-	}
-
-	bizSetInfo[common.BKAppSetScopeField] = cond
+	bizSetInfo[common.BKBizSetScopeField] = data.BizSetScope
 	bizInst, err := b.inst.CreateInst(kit, common.BKInnerObjIDBizSet, bizSetInfo)
 	if err != nil {
 		blog.Errorf("create business failed, err: %v, data: %#v, rid: %s", err, data, kit.Rid)
@@ -117,20 +100,7 @@ func (b *businessSet) FindBizSet(kit *rest.Kit, cond *metadata.CommonSearchFilte
 
 	result, err := b.inst.SearchObjectInstances(kit, cond.ObjectID, cond)
 	if err != nil {
-		blog.Errorf("search biz set instances failed, err: %v, rid: %s", cond, err, kit.Rid)
-		return nil, err
-	}
-
-	return result, err
-}
-
-// CountBizSet count biz set by condition.
-func (b *businessSet) CountBizSet(kit *rest.Kit, cond *metadata.CommonCountFilter) (
-	*metadata.CommonCountResult, error) {
-
-	result, err := b.inst.CountObjectInstances(kit, cond.ObjectID, cond)
-	if err != nil {
-		blog.Errorf("count biz set num failed, err: %v, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("search biz set instances failed,cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, err
 	}
 
