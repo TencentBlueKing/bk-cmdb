@@ -13,8 +13,10 @@
 package parser
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 
 	"configcenter/src/ac/meta"
 )
@@ -79,6 +81,25 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   ProcessInstanceIAMResourceType,
 		ResourceAction: meta.Find,
+	}, {
+		// list process name and id by biz set regex, authorize by biz set access permission, **only for ui**
+		Name:           "listProcessInstancesNameIDsInModule",
+		Description:    "查询业务集中模块下的进程名和对应的进程ID列表",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/process_instance/name_ids/biz_set/[0-9]+/?$`),
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.BizSet,
+		ResourceAction: meta.Find,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			if len(request.Elements) != 8 {
+				return nil, fmt.Errorf("get invalid url elements length %d", len(request.Elements))
+			}
+
+			bizSetID, err := strconv.ParseInt(request.Elements[7], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[5], err)
+			}
+			return []int64{bizSetID}, nil
+		},
 	}, {
 		Name:           "listProcessInstancesDetails",
 		Description:    "查询某业务下进程ID对应的进程详情",

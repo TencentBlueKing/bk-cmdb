@@ -102,6 +102,14 @@ func (s *Service) initBizSet(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/biz_set/biz_list", Handler: s.FindBizInBizSet})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/biz_set/topo_path", Handler: s.FindBizSetTopo})
 
+	// search biz resources by biz set, with the same logic of corresponding biz interface, **only for ui**
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/set/biz_set/{bk_biz_set_id}/biz/{app_id}",
+		Handler: s.SearchSet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/findmany/module/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}/set/{bk_set_id}", Handler: s.SearchModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/find/topopath/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}", Handler: s.SearchTopoPath})
+
 	utility.AddToRestfulWebService(web)
 }
 

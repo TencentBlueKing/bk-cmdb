@@ -326,6 +326,13 @@ const (
 	findBizSetTopoPattern  = `/api/v3/find/biz_set/topo_path`
 )
 
+var (
+	// search biz resources by biz set regex, authorize by biz set access permission, **only for ui**
+	listSetInBizSetRegexp    = regexp.MustCompile(`^/api/v3/findmany/set/biz_set/[0-9]+/biz/{biz_id}/?$`)
+	listModuleInBizSetRegexp = regexp.MustCompile(`^/api/v3/findmany/module/biz_set/[0-9]+/biz/[0-9]+/set/[0-9]+/?$`)
+	findBizSetTopoPathRegexp = regexp.MustCompile(`^/api/v3/find/topopath/biz_set/[0-9]+/biz/[0-9]+/?$`)
+)
+
 func (ps *parseStream) businessSet() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -415,6 +422,81 @@ func (ps *parseStream) businessSet() *parseStream {
 				},
 			},
 		}
+		return ps
+	}
+
+	if ps.hitRegexp(listSetInBizSetRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 8 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		bizSetID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.Find,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(listModuleInBizSetRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 10 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		bizSetID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.Find,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(findBizSetTopoPathRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 8 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		bizSetID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.Find,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+
 		return ps
 	}
 

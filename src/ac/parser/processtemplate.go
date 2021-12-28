@@ -91,6 +91,25 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 		// authorization should implements in scene server
 		ResourceAction: meta.SkipAction,
 	}, {
+		// search process template by biz set regex, authorize by biz set access permission, **only for ui**
+		Name:           "findProcessTemplateBatchByBizSetRegexp",
+		Description:    "查找业务集下的进程模板",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/proc_template/biz_set/[0-9]+/?$`),
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.BizSet,
+		ResourceAction: meta.Find,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			if len(request.Elements) != 7 {
+				return nil, fmt.Errorf("get invalid url elements length %d", len(request.Elements))
+			}
+
+			bizSetID, err := strconv.ParseInt(request.Elements[6], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[5], err)
+			}
+			return []int64{bizSetID}, nil
+		},
+	}, {
 		Name:         "findProcessTemplateRegexp",
 		Description:  "获取进程模板",
 		Regex:        regexp.MustCompile(`/api/v3/find/proc/proc_template/id/([0-9]+)/?$`),
