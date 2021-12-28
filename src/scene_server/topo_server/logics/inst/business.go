@@ -444,7 +444,7 @@ func (b *business) GetResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
 
 	cond := &metadata.QueryCondition{
 		Fields:    []string{common.BKAppIDField, common.BkSupplierAccount},
-		Condition: map[string]interface{}{"default": 1},
+		Condition: map[string]interface{}{common.BKDefaultField: common.DefaultAppFlag},
 	}
 
 	rsp, err := b.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, cond)
@@ -453,23 +453,30 @@ func (b *business) GetResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
 		return 0, err
 	}
 
-	supplier := util.GetOwnerID(kit.Header)
 	for idx, biz := range rsp.Info {
-		if supplier == biz[common.BkSupplierAccount].(string) {
+		bizSupplierAccount, err := biz.String(common.BkSupplierAccount)
+		if err != nil {
+			blog.Errorf("get business supplier account failed, err: %v, rid: %s", err, kit.Rid)
+			return 0, err
+		}
+
+		if kit.SupplierAccount == bizSupplierAccount {
 			if !rsp.Info[idx].Exists(common.BKAppIDField) {
+				blog.Errorf("bk_biz_id is non-exist, rid: %s", kit.Rid)
 				// this can not be happen normally.
-				return 0, fmt.Errorf("can not find resource pool business id")
+				return 0, kit.CCError.CCError(common.CCErrTopoAppSearchFailed)
 			}
 			bizID, err := rsp.Info[idx].Int64(common.BKAppIDField)
 			if err != nil {
-				return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
+				blog.Errorf("get business id failed, err: %v, rid: %s", err, kit.Rid)
+				return 0, err
 			}
 
 			return bizID, nil
 		}
 	}
 
-	return 0, fmt.Errorf("get resource pool biz id failed")
+	return 0, kit.CCError.CCError(common.CCErrTopoAppSearchFailed)
 }
 
 // updateIdleModuleConfig update admin module config.

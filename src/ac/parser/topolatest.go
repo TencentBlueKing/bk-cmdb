@@ -1109,12 +1109,6 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		objID := ps.RequestCtx.Elements[5]
 		if len(objID) == 0 {
 			ps.err = fmt.Errorf("search instance associations failed, got empty object id")
@@ -1135,7 +1129,6 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   instanceType,
 					Action: meta.FindMany,

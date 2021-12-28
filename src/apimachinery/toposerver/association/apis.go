@@ -37,7 +37,7 @@ type AssociationInterface interface {
 	SearchObjectAssoWithAssoKindList(ctx context.Context, h http.Header, assoKindIDs metadata.AssociationKindIDs) (resp *metadata.ListAssociationsWithAssociationKindResult, err error)
 
 	SearchInstAssocAndInstDetail(ctx context.Context, header http.Header, objID string,
-		input metadata.InstAndAssocRequest) (*metadata.InstAndAssocDetailResult, error)
+		input *metadata.InstAndAssocRequest) (*metadata.InstAndAssocDetailResult, error)
 
 	// SearchInstanceAssociations searches object instance associations.
 	SearchInstanceAssociations(ctx context.Context, header http.Header,

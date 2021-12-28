@@ -14,11 +14,9 @@ package service
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"sort"
 	"strconv"
-	"strings"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
@@ -29,7 +27,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
@@ -808,13 +805,13 @@ func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
 	request := metadata.InstAndAssocRequest{}
 	if err := ctx.DecodeInto(&request); err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
+		ctx.RespAutoError(err)
 		return
 	}
 
-	if err := request.Validate(); err != nil {
-		blog.Errorf("validate request failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
+	if ccErr := request.Validate(); ccErr.ErrCode != 0 {
+		blog.Errorf("validate request failed, err: %v, rid: %s", ccErr, ctx.Kit.Rid)
+		ctx.RespAutoError(ccErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
@@ -845,7 +842,7 @@ func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
 	}
 
 	resp := metadata.InstAndAssocDetailData{Asst: assocRsp.Info}
-	if !request.Condition.IsSrc && !request.Condition.IsDst {
+	if !request.Condition.SrcDetail && !request.Condition.DstDetail {
 		ctx.RespEntity(resp)
 		return
 	}
@@ -857,31 +854,28 @@ func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
 		dstObjInst[item.AsstObjectID] = append(dstObjInst[item.AsstObjectID], item.AsstInstID)
 	}
 
-	if request.Condition.IsSrc {
+	if request.Condition.SrcDetail {
 		for obj, insts := range srcObjInst {
-			srcRsp, errMsg, err := s.searchInstForAssocDetail(ctx, obj, request.Condition.SrcFields, insts)
+			srcRsp, err := s.searchInstForAssocDetail(ctx, obj, request.Condition.SrcFields, insts)
 			if err != nil {
 				blog.Errorf("search src inst failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-				resp.ErrMsg["src"] = err
+				ctx.RespAutoError(err)
+				return
 			}
 
-			if len(errMsg) != 0 {
-				resp.ErrMsg["src"] = strings.Join(errMsg, ",")
-			}
 			resp.Src = append(resp.Src, srcRsp...)
 		}
 	}
 
-	if request.Condition.IsDst {
+	if request.Condition.DstDetail {
 		for obj, insts := range dstObjInst {
-			dstRsp, errMsg, err := s.searchInstForAssocDetail(ctx, obj, request.Condition.DstFields, insts)
+			dstRsp, err := s.searchInstForAssocDetail(ctx, obj, request.Condition.DstFields, insts)
 			if err != nil {
 				blog.Errorf("search dst inst failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-				resp.ErrMsg["dst"] = err
+				ctx.RespAutoError(err)
+				return
 			}
-			if len(errMsg) != 0 {
-				resp.ErrMsg["dst"] = strings.Join(errMsg, ",")
-			}
+
 			resp.Dst = append(resp.Dst, dstRsp...)
 		}
 	}
@@ -890,77 +884,73 @@ func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
 }
 
 func (s *Service) searchInstForAssocDetail(ctx *rest.Contexts, objID string, fields []string, insts []int64) (
-	[]mapstr.MapStr, []string, error) {
+	[]mapstr.MapStr, error) {
 
-	var errMsg []string
-	if !metadata.IsCommon(objID) && objID != common.BKInnerObjIDHost {
-		blog.Errorf("only allow to search common object and host, rid: %s", ctx.Kit.Rid)
-		return nil, errMsg, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, objID)
-	}
-
-	if objID == common.BKInnerObjIDHost {
-		input := &metadata.HostModuleRelationRequest{HostIDArr: insts}
-		relation, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, input)
-		if err != nil {
-			blog.Errorf("search host business relation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return nil, errMsg, err
-		}
-		bizHosts := make(map[int64][]int64)
-		for _, item := range relation.Info {
-			bizHosts[item.AppID] = append(bizHosts[item.AppID], item.HostID)
-		}
-
-		resourcePool, err := s.Logics.BusinessOperation().GetResourcePoolBusinessID(ctx.Kit)
-		if err != nil {
-			blog.Errorf("search resource pool business id failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return nil, errMsg, err
-		}
-
-		unAuthHosts := make([]int64, 0)
-		var authErr error
-		for biz, hosts := range bizHosts {
-			if biz != resourcePool {
-				authErr = s.AuthManager.AuthorizeByBusinessID(ctx.Kit.Ctx, ctx.Kit.Header, meta.ViewBusinessResource, biz)
-			} else {
-				authErr = s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.FindMany, hosts...)
-			}
-			if authErr != nil {
-				errMsg = append(errMsg, fmt.Sprintf("%v auth failed, err: %s", hosts, authErr))
-				unAuthHosts = append(unAuthHosts, hosts...)
-			}
-		}
-
-		hosts := util.IntArrComplementary(insts, unAuthHosts)
-		query := &metadata.QueryCondition{
-			Condition:      mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hosts}},
-			Fields:         fields,
-			DisableCounter: true,
-		}
-		rsp, err := s.Logics.InstOperation().FindInst(ctx.Kit, objID, query)
-		if err != nil {
-			blog.Errorf("search object[%s] insts failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
-			return nil, errMsg, err
-		}
-		return rsp.Info, errMsg, nil
-	}
-
-	err := s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, meta.FindMany, objID, insts...)
+	isMainline, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, objID)
 	if err != nil {
-		errMsg = append(errMsg, fmt.Sprintf("%v auth failed, err: %s", insts, err))
-		return nil, errMsg, err
+		blog.Errorf("check object is mainline failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		return nil, err
+	}
+
+	action := meta.FindMany
+	authObject := objID
+	authInst := insts
+	if isMainline {
+		action = meta.ViewBusinessResource
+		authObject = common.BKInnerObjIDApp
+		authInst = make([]int64, 0)
+		if objID == common.BKInnerObjIDHost {
+			input := &metadata.HostModuleRelationRequest{HostIDArr: insts}
+			relation, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header,
+				input)
+			if err != nil {
+				blog.Errorf("search host business relation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return nil, err
+			}
+			for _, item := range relation.Info {
+				authInst = append(authInst, item.AppID)
+			}
+		} else {
+			cond := &metadata.QueryCondition{
+				Condition:      mapstr.MapStr{common.GetInstIDField(objID): mapstr.MapStr{common.BKDBIN: insts}},
+				Fields:         []string{common.BKAppIDField},
+				DisableCounter: true,
+			}
+			rsp, err := s.Logics.InstOperation().FindInst(ctx.Kit, objID, cond)
+			if err != nil {
+				blog.Errorf("search object[%s] instance failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+				return nil, err
+			}
+
+			for _, item := range rsp.Info {
+				bizID, err := item.Int64(common.BKAppIDField)
+				if err != nil {
+					blog.Errorf("get object[%s] instance parentID failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+					return nil, err
+				}
+				authInst = append(authInst, bizID)
+			}
+		}
+	}
+
+	err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, action, authObject, authInst...)
+	if err != nil {
+		blog.Errorf("authorize object[%s] failed, action: %s, insts: %v, err: %v, rid: %s", objID, action, insts, err,
+			ctx.Kit.Rid)
+		return nil, err
 	}
 
 	query := &metadata.QueryCondition{
-		Condition:      mapstr.MapStr{common.BKInstIDField: mapstr.MapStr{common.BKDBIN: insts}},
+		Condition:      mapstr.MapStr{common.GetInstIDField(objID): mapstr.MapStr{common.BKDBIN: insts}},
 		Fields:         fields,
 		DisableCounter: true,
 	}
 	rsp, err := s.Logics.InstOperation().FindInst(ctx.Kit, objID, query)
 	if err != nil {
 		blog.Errorf("search object[%s] insts failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
-		return nil, errMsg, err
+		return nil, err
 	}
-	return rsp.Info, errMsg, nil
+	return rsp.Info, nil
 }
 
 // CreateAssociationInst create instance associaiton

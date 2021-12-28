@@ -279,7 +279,7 @@ func (asst *Association) CountInstanceAssociations(ctx context.Context, header h
 
 // SearchInstAssocAndInstDetail is search instance associations and inst detail api in toposerver.
 func (asst *Association) SearchInstAssocAndInstDetail(ctx context.Context, header http.Header, objID string,
-	input metadata.InstAndAssocRequest) (*metadata.InstAndAssocDetailResult, error) {
+	input *metadata.InstAndAssocRequest) (*metadata.InstAndAssocDetailResult, error) {
 
 	resp := new(metadata.InstAndAssocDetailResult)
 	subPath := "/find/instassociation/object/%s/inst/detail"

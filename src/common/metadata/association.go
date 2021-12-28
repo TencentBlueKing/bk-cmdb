@@ -149,12 +149,6 @@ type SearchInstAssociationListResult struct {
 	Inst map[string][]mapstr.MapStr `json:"instance"`
 }
 
-// InstAndAssocRequest search inst and association detail request
-type InstAndAssocRequest struct {
-	Condition AssocFilterAndInstFilter `field:"condition" json:"condition"`
-	Page      BasePage                 `field:"page" json:"page"`
-}
-
 // InstAndAssocDetailResult search inst and association detail result
 type InstAndAssocDetailResult struct {
 	BaseResp `json:",inline"`
@@ -163,39 +157,56 @@ type InstAndAssocDetailResult struct {
 
 // InstAndAssocDetailData search inst and association detail return data
 type InstAndAssocDetailData struct {
-	Asst   []InstAsst      `field:"association" json:"association"`
-	Src    []mapstr.MapStr `field:"src" json:"src"`
-	Dst    []mapstr.MapStr `field:"dst" json:"dst"`
-	ErrMsg mapstr.MapStr   `field:"err_msg" json:"err_msg"`
+	Asst []InstAsst      `field:"association" json:"association"`
+	Src  []mapstr.MapStr `field:"src" json:"src"`
+	Dst  []mapstr.MapStr `field:"dst" json:"dst"`
 }
 
-// AssocFilterAndInstFilter search inst and association detail condition
-type AssocFilterAndInstFilter struct {
-	AsstFilter *querybuilder.QueryFilter `field:"asst_filter" json:"asst_filter"`
-	AsstFields []string                  `field:"asst_fields" json:"asst_fields"`
-	SrcFields  []string                  `field:"src_fields" json:"src_fields"`
-	DstFields  []string                  `field:"dst_fields" json:"dst_fields"`
-	IsSrc      bool                      `field:"is_src" json:"is_src"`
-	IsDst      bool                      `field:"is_dst" json:"is_dst"`
+// InstAndAssocRequest search inst and association detail request
+type InstAndAssocRequest struct {
+	Condition struct {
+		AsstFilter *querybuilder.QueryFilter `field:"asst_filter" json:"asst_filter"`
+		AsstFields []string                  `field:"asst_fields" json:"asst_fields"`
+		SrcFields  []string                  `field:"src_fields" json:"src_fields"`
+		DstFields  []string                  `field:"dst_fields" json:"dst_fields"`
+		SrcDetail  bool                      `field:"src_detail" json:"src_detail"`
+		DstDetail  bool                      `field:"dst_detail" json:"dst_detail"`
+	} `field:"condition" json:"condition"`
+	Page BasePage `field:"page" json:"page"`
 }
 
 // Validate validate InstAndAssocDetailData
-func (assoc *InstAndAssocRequest) Validate() error {
+func (assoc *InstAndAssocRequest) Validate() errors.RawErrorInfo {
 
 	if assoc.Condition.AsstFilter == nil {
-		return fmt.Errorf("asst_filter is empty")
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"condition.asst_filter"},
+		}
 	}
 
 	filterOption := querybuilder.RuleOption{NeedSameSliceElementType: true}
 	if key, err := assoc.Condition.AsstFilter.Validate(&filterOption); err != nil {
-		return fmt.Errorf("asst_filter.%s is invalid, err: %v", key, err)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{fmt.Sprintf("condition.asst_filter.%s", key)},
+		}
 	}
 
-	if assoc.Page.Limit > common.BKMaxInstanceLimit {
-		return fmt.Errorf("page limit is out of range")
+	if assoc.Page.Limit > 200 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommPageLimitIsExceeded,
+		}
 	}
 
-	return nil
+	if assoc.Page.Limit == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }
 
 type CreateAssociationInstRequest struct {
