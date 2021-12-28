@@ -89,6 +89,38 @@ func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// ExchangeObjectGroupIndex only for frond-end to change object attrbute's group index
+func (s *Service) ExchangeObjectGroupIndex(ctx *rest.Contexts) {
+
+	query := new(metadata.ExchangeGroupIndex)
+	if err := ctx.DecodeInto(query); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(query.Condition.ID) != 2 {
+		blog.Errorf("id of group must be two, now is %d, rid: %s", len(query.Condition.ID), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKFieldID))
+		return
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := s.Core.GroupOperation().ExchangeObjectGroupIndex(ctx.Kit, query.Condition.ID); err != nil {
+			blog.Errorf("change object group index failed,err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
 // DeleteObjectGroup delete the object group
 func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
 	gid, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
