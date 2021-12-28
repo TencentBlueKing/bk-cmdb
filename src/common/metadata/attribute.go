@@ -771,25 +771,36 @@ func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key
 		subAttrMap[subAttr.PropertyID] = subAttr
 	}
 
-	valArr, ok := val.([]interface{})
-	if !ok {
-		blog.Errorf("check value type failed, err: %v, rid: %s", err, rid)
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{key},
+	var valMapArr []mapstr.MapStr
+	switch t := val.(type) {
+	case []interface{}:
+		valMapArr = make([]mapstr.MapStr, len(t))
+		for index, value := range t {
+			var valMap mapstr.MapStr
+			switch v := value.(type) {
+			case mapstr.MapStr:
+				valMap = v
+			case map[string]interface{}:
+				valMap = v
+			default:
+				blog.Errorf("check value type failed, valMap: %#v, rid: %s", valMap, rid)
+				return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+			}
+			valMapArr[index] = valMap
 		}
+	case []mapstr.MapStr:
+		valMapArr = t
+	case []map[string]interface{}:
+		valMapArr = make([]mapstr.MapStr, len(t))
+		for index, value := range t {
+			valMapArr[index] = value
+		}
+	default:
+		blog.Errorf("check value type failed, val: %#v, rid: %s", val, rid)
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
 	}
 
-	for _, valMap := range valArr {
-		value, ok := valMap.(map[string]interface{})
-		if !ok {
-			blog.Errorf("check value type failed, err: %v, rid: %s", err, rid)
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsInvalid,
-				Args:    []interface{}{key},
-			}
-		}
-
+	for _, value := range valMapArr {
 		for subKey, subValue := range value {
 			validator, exist := subAttrMap[subKey]
 			if !exist {
