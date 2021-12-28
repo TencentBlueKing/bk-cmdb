@@ -10,7 +10,7 @@
     "dev": "node builder/dev.js",
     "build": "node builder/build.js",
     "build:analyzer": "cross-env ANALYZER=true node builder/build.js",
-    "start": "npm run dev",
+    "start": "npm run dev -- --env",
     "lint": "eslint --ext .js,.vue ./src",
     "lint-output": "eslint --ext .js,.vue --output-file ./eslint.html --format html ./src",
     "lint-fix": "eslint --fix --ext .js,.vue ./src"
