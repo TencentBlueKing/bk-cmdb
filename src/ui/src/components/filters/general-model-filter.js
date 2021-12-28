@@ -39,6 +39,13 @@ export const setSearchQueryByCondition = (conditionMap = {}, properties = []) =>
     }
   })
 
+  Object.keys(query).forEach((key) => {
+    const [id] = key.split('.')
+    if (!conditionMap[id]) {
+      Reflect.deleteProperty(query, key)
+    }
+  })
+
   RouterQuery.set({
     filter_adv: QS.stringify(query, { encode: false }),
     s: 'adv',

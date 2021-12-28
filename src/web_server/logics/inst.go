@@ -119,7 +119,7 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 	insts, errMsg, err := lgc.GetImportInsts(ctx, f, objID, header, 0, true, defLang, modelBizID)
 	if err != nil {
 		blog.Errorf("get %s inst info from excel error, err: %v, rid: %s", objID, err, rid)
-		return
+		return resultData, common.CCErrWebFileContentFail, err
 	}
 	if len(errMsg) != 0 {
 		resultData.Set("err", errMsg)
