@@ -47,15 +47,15 @@ const actions = {
   },
 
   /**
-     * 修改分组基本信息
+     * 交换分组索引，用于排序
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateGroup({ commit, state, dispatch }, { params, config }) {
-    return $http.put('update/objectattgroup', params, config)
+  switchGroupIndex({ commit, state, dispatch }, { params, config }) {
+    return $http.put('update/objectattgroup/groupindex', params, config)
   },
 
   /**

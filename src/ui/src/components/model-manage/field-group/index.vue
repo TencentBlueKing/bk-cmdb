@@ -464,7 +464,7 @@
     methods: {
       ...mapActions('objectModelFieldGroup', [
         'searchGroup',
-        'updateGroup',
+        'switchGroupIndex',
         'deleteGroup',
         'createGroup',
         'updatePropertyGroup',
@@ -515,20 +515,12 @@
         return customDataIndex !== (this.bizGroupedProperties.length - 1)
       },
       handleRiseGroup(index, group) {
-        const currentGroupIndex = group.info.bk_group_index
         const previousGroup = this.groupedProperties[index - 1]
-        group.info.bk_group_index = previousGroup.info.bk_group_index
-        previousGroup.info.bk_group_index = currentGroupIndex
-        this.updateGroupIndex([group, previousGroup])
-        this.resortGroups()
+        this.updateGroupIndex(group, previousGroup)
       },
       handleDropGroup(index, group) {
-        const currentGroupIndex = group.info.bk_group_index
         const nextGroup = this.groupedProperties[index + 1]
-        group.info.bk_group_index = nextGroup.info.bk_group_index
-        nextGroup.info.bk_group_index = currentGroupIndex
-        this.updateGroupIndex([nextGroup, group])
-        this.resortGroups()
+        this.updateGroupIndex(group, nextGroup)
       },
       async resetData(filedId) {
         const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
@@ -808,27 +800,27 @@
       resortGroups() {
         this.groupedProperties.sort((groupA, groupB) => groupA.info.bk_group_index - groupB.info.bk_group_index)
       },
-      updateGroupIndex(groups) {
-        groups.forEach((group) => {
-          const params = {
+      updateGroupIndex(groupA, groupB) {
+        return this.switchGroupIndex({
+          params: {
             condition: {
-              id: group.info.id
-            },
-            data: {
-              bk_group_index: group.info.bk_group_index
+              id: [groupA.info.id, groupB.info.id]
             }
+          },
+          config: {
+            requestId: 'put_updateGroup_index',
+            cancelPrevious: true
           }
-          if (!this.isGlobalView) {
-            params.bk_biz_id = this.bizId
-          }
-          this.updateGroup({
-            params,
-            config: {
-              requestId: `put_updateGroup_index_${group.info.id}`,
-              cancelPrevious: true
-            }
-          })
+        }).then(() => {
+          const groupAIndex = groupA.info.bk_group_index
+          const groupBIndex = groupB.info.bk_group_index
+          groupA.info.bk_group_index = groupBIndex
+          groupB.info.bk_group_index = groupAIndex
+          this.resortGroups()
         })
+          .catch((err) => {
+            console.log(err)
+          })
       },
       handleDragChange(moveInfo) {
         if (has(moveInfo, 'moved') || has(moveInfo, 'added')) {
