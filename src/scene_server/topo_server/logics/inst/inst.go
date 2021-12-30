@@ -57,9 +57,9 @@ type InstOperationInterface interface {
 	CountObjectInstances(kit *rest.Kit, objID string, input *metadata.CommonCountFilter) (*metadata.CommonCountResult,
 		error)
 	// FindInstChildTopo find instance's child topo
-	FindInstChildTopo(kit *rest.Kit, objID string, instID int64) (int, []*CommonInstTopo, error)
+	FindInstChildTopo(kit *rest.Kit, objID string, instID int64) (int, []*metadata.CommonInstTopo, error)
 	// FindInstTopo find instance all topo which include it's child and parent
-	FindInstTopo(kit *rest.Kit, obj metadata.Object, instID int64) (int, []CommonInstanceTopo, error)
+	FindInstTopo(kit *rest.Kit, obj metadata.Object, instID int64) (int, []metadata.CommonInstTopoV2, error)
 	// SetProxy proxy the interface
 	SetProxy(instAssoc AssociationOperationInterface)
 }
@@ -82,20 +82,6 @@ type BatchResult struct {
 	SuccessCreated []int64  `json:"success_created"`
 	SuccessUpdated []int64  `json:"success_updated"`
 	UpdateErrors   []string `json:"update_error"`
-}
-
-// CommonInstTopo common inst topo
-type CommonInstTopo struct {
-	metadata.InstNameAsst
-	Count    int                     `json:"count"`
-	Children []metadata.InstNameAsst `json:"children"`
-}
-
-// CommonInstanceTopo set of CommonInstTopo
-type CommonInstanceTopo struct {
-	Prev []*CommonInstTopo `json:"prev"`
-	Next []*CommonInstTopo `json:"next"`
-	Curr interface{}       `json:"curr"`
 }
 
 // ObjectWithInsts a struct include object msg and insts array
@@ -807,20 +793,20 @@ func (c *commonInst) CountObjectInstances(kit *rest.Kit, objID string,
 
 // FindInstChildTopo find instance's child topo
 func (c *commonInst) FindInstChildTopo(kit *rest.Kit, objID string, instID int64) (
-	int, []*CommonInstTopo, error) {
+	int, []*metadata.CommonInstTopo, error) {
 
 	return c.findInstTopo(kit, objID, instID, true)
 }
 
 // findInstParentTopo find instance's parent topo
 func (c *commonInst) findInstParentTopo(kit *rest.Kit, objID string, instID int64) (
-	int, []*CommonInstTopo, error) {
+	int, []*metadata.CommonInstTopo, error) {
 
 	return c.findInstTopo(kit, objID, instID, false)
 }
 
-func (c *commonInst) findInstTopo(kit *rest.Kit, objID string, instID int64, needChild bool) (int, []*CommonInstTopo,
-	error) {
+func (c *commonInst) findInstTopo(kit *rest.Kit, objID string, instID int64, needChild bool) (int,
+	[]*metadata.CommonInstTopo, error) {
 
 	instIDField := metadata.GetInstIDFieldByObjID(objID)
 	if instID == 0 {
@@ -841,7 +827,7 @@ func (c *commonInst) findInstTopo(kit *rest.Kit, objID string, instID int64, nee
 		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, instIDField)
 	}
 
-	tmpResults := map[string]*CommonInstTopo{}
+	tmpResults := map[string]*metadata.CommonInstTopo{}
 
 	topoInsts, relation, err := c.getAssociatedObjectWithInsts(kit, objID, instID, needChild)
 	if err != nil {
@@ -852,7 +838,7 @@ func (c *commonInst) findInstTopo(kit *rest.Kit, objID string, instID int64, nee
 		object := topoInst.Object
 		commonInst, exists := tmpResults[object.ObjectID]
 		if !exists {
-			commonInst = &CommonInstTopo{
+			commonInst = &metadata.CommonInstTopo{
 				Children: []metadata.InstNameAsst{},
 			}
 			commonInst.ObjectName = object.ObjectName
@@ -889,7 +875,7 @@ func (c *commonInst) findInstTopo(kit *rest.Kit, objID string, instID int64, nee
 		}
 	}
 
-	results := make([]*CommonInstTopo, 0)
+	results := make([]*metadata.CommonInstTopo, 0)
 	for _, subResult := range tmpResults {
 		results = append(results, subResult)
 	}
@@ -898,7 +884,8 @@ func (c *commonInst) findInstTopo(kit *rest.Kit, objID string, instID int64, nee
 }
 
 // FindInstTopo find instance all topo which include it's child and parent
-func (c *commonInst) FindInstTopo(kit *rest.Kit, obj metadata.Object, instID int64) (int, []CommonInstanceTopo, error) {
+func (c *commonInst) FindInstTopo(kit *rest.Kit, obj metadata.Object, instID int64) (int, []metadata.CommonInstTopoV2,
+	error) {
 
 	instIDField := metadata.GetInstIDFieldByObjID(obj.ObjectID)
 	instNameField := metadata.GetInstNameFieldName(obj.ObjectID)
@@ -922,7 +909,7 @@ func (c *commonInst) FindInstTopo(kit *rest.Kit, obj metadata.Object, instID int
 		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, instIDField)
 	}
 
-	results := make([]CommonInstanceTopo, 0)
+	results := make([]metadata.CommonInstTopoV2, 0)
 	id, err := inst.Info[0].Int64(instIDField)
 	if err != nil {
 		blog.Errorf("failed to find the inst id, err: %v, rid: %s", err, kit.Rid)
@@ -955,7 +942,7 @@ func (c *commonInst) FindInstTopo(kit *rest.Kit, obj metadata.Object, instID int
 		return 0, nil, err
 	}
 
-	results = append(results, CommonInstanceTopo{
+	results = append(results, metadata.CommonInstTopoV2{
 		Prev: parentInsts,
 		Next: childInsts,
 		Curr: commonInst,
@@ -1298,7 +1285,8 @@ func (c *commonInst) getAssociatedObjectWithInsts(kit *rest.Kit, objID string, i
 
 		innerCond := &metadata.QueryCondition{
 			Condition: mapstr.MapStr{objPair.Object.GetInstIDFieldName(): mapstr.MapStr{common.BKDBIN: instIDs}},
-			Fields:    []string{metadata.GetInstIDFieldByObjID(objPair.Object.ObjectID)},
+			Fields: []string{common.GetInstIDField(objPair.Object.ObjectID),
+				common.GetInstNameField(objPair.Object.ObjectID)},
 		}
 		if objPair.Object.IsCommon() {
 			innerCond.Condition[common.BKObjIDField] = objPair.Object.ObjectID
