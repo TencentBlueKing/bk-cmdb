@@ -22,7 +22,8 @@
         <li><a href="javascript:;" @click="transferToResourcePool">{{$t('主机池')}}</a></li>
         <li>
           <a
-            v-bk-tooltips.right="{
+            v-bk-tooltips="{
+              placement: 'right-start',
               content: $t('仅允许业务下空闲机跨业务转移', { idleModule: $store.state.globalConfig.config.idlePool.idle }),
               disabled: !transferToOtherDisabled
             }"
