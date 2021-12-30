@@ -297,34 +297,23 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 	return plan, nil
 }
 
-func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder) {
-	rid := kit.Rid
-	result := metadata.MultipleHostApplyResult{
-		HostResults: make([]metadata.HostApplyResult, 0),
-	}
-	relationFilter := map[string]interface{}{
-		common.BKHostIDField: map[string]interface{}{
-			common.BKDBIN: option.HostIDs,
-		},
-	}
-	relations := make([]metadata.ModuleHost, 0)
-	if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(relationFilter).All(kit.Ctx, &relations); err != nil {
-		blog.ErrorJSON("RunHostApplyOnHosts failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, relationFilter, err.Error(), rid)
-		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
+// RunHostApplyOnHosts run host apply rule on specified host
+func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relations []metadata.ModuleHost) (
+	metadata.MultipleHostApplyResult, errors.CCErrorCoder) {
+
+	result := metadata.MultipleHostApplyResult{HostResults: make([]metadata.HostApplyResult, 0)}
 	moduleIDs := make([]int64, 0)
 	for _, item := range relations {
 		moduleIDs = append(moduleIDs, item.ModuleID)
 	}
 	modules := make([]metadata.ModuleInst, 0)
 	moduleFilter := map[string]interface{}{
-		common.BKModuleIDField: map[string]interface{}{
-			common.BKDBIN: moduleIDs,
-		},
+		common.BKModuleIDField:       map[string]interface{}{common.BKDBIN: moduleIDs},
 		common.HostApplyEnabledField: true,
 	}
-	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules); err != nil {
-		blog.ErrorJSON("RunHostApplyOnHosts failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameBaseModule, moduleFilter, err.Error(), rid)
+	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules)
+	if err != nil {
+		blog.Errorf("search modules info failed, filter: %s, err: %v, rid: %s", moduleFilter, err, kit.Rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	enableModuleMap := make(map[int64]bool)
@@ -351,13 +340,11 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option m
 	}
 	listHostApplyRuleOption := metadata.ListHostApplyRuleOption{
 		ModuleIDs: moduleIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 	}
 	rules, ccErr := p.ListHostApplyRule(kit, bizID, listHostApplyRuleOption)
 	if ccErr != nil {
-		blog.ErrorJSON("RunHostApplyOnHosts failed, ListHostApplyRule failed, option: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, listHostApplyRuleOption, ccErr.Error(), rid)
+		blog.Errorf("list host apply rule failed, opt: %v, err: %v, rid: %s", listHostApplyRuleOption, ccErr, kit.Rid)
 		return result, ccErr
 	}
 	planOption := metadata.HostApplyPlanOption{
@@ -366,44 +353,49 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option m
 	}
 	planResult, ccErr := p.GenerateApplyPlan(kit, bizID, planOption)
 	if ccErr != nil {
-		blog.ErrorJSON("RunHostApplyOnHosts failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, relationFilter, ccErr.Error(), rid)
+		blog.ErrorJSON("generate apply plan failed, option: %v, err: %v, rid: %s", planOption, ccErr, kit.Rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	for _, plan := range planResult.Plans {
-		applyResult := metadata.HostApplyResult{
-			ErrorContainer: metadata.ErrorContainer{},
-			HostID:         0,
-		}
-		updateData := plan.GetUpdateData()
-		if len(updateData) == 0 {
-			result.HostResults = append(result.HostResults, applyResult)
-			continue
-		}
 
-		updateOption := metadata.UpdateOption{
-			Condition: map[string]interface{}{
-				common.BKHostIDField: plan.HostID,
-			},
-			Data: updateData,
-		}
-		_, err := p.dependence.UpdateModelInstance(kit, common.BKInnerObjIDHost, updateOption)
-		blog.Warnf("RunHostApplyOnHosts failed, UpdateModelInstance failed, hostID: %d, updateOption: %+v, err: %+v, rid: %s", plan.HostID, updateOption, err, rid)
-		if err != nil {
-			ccErr, ok := err.(errors.CCErrorCoder)
-			if ok {
-				applyResult.SetError(ccErr)
-			} else {
-				ccErr := kit.CCError.CCError(common.CCErrHostUpdateFail)
-				applyResult.SetError(ccErr)
-			}
-		}
-		result.HostResults = append(result.HostResults, applyResult)
-	}
-
+	result.HostResults = p.carryOutPlan(kit, planResult.Plans)
 	for _, hostResult := range result.HostResults {
 		if ccErr := hostResult.GetError(); ccErr != nil {
 			result.SetError(ccErr)
 		}
 	}
 	return result, result.GetError()
+}
+
+func (p *hostApplyRule) carryOutPlan(kit *rest.Kit, plans []metadata.OneHostApplyPlan) []metadata.HostApplyResult {
+
+	hostResults := make([]metadata.HostApplyResult, 0)
+	for _, plan := range plans {
+		applyResult := metadata.HostApplyResult{
+			ErrorContainer: metadata.ErrorContainer{},
+			HostID:         0,
+		}
+		updateData := plan.GetUpdateData()
+		if len(updateData) == 0 {
+			hostResults = append(hostResults, applyResult)
+			continue
+		}
+
+		updateOption := metadata.UpdateOption{
+			Condition: map[string]interface{}{common.BKHostIDField: plan.HostID},
+			Data:      updateData,
+		}
+		if _, err := p.dependence.UpdateModelInstance(kit, common.BKInnerObjIDHost, updateOption); err != nil {
+			blog.Warnf("update host failed, hostID: %d, updateOption: %+v, err: %+v, rid: %s", plan.HostID,
+				updateOption, err, kit.Rid)
+			if ccErr, ok := err.(errors.CCErrorCoder); ok {
+				applyResult.SetError(ccErr)
+			} else {
+				ccErr := kit.CCError.CCError(common.CCErrHostUpdateFail)
+				applyResult.SetError(ccErr)
+			}
+		}
+		hostResults = append(hostResults, applyResult)
+	}
+
+	return hostResults
 }
