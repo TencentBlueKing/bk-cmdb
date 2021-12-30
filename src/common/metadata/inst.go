@@ -16,7 +16,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/querybuilder"
 )
 
 // SetInst contains partial fields of a real set
@@ -74,12 +73,6 @@ type BizSetInst struct {
 	LastTime         Time        `json:"last_time" bson:"last_time"`
 	SupplierAccount  string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	Scope            BizSetScope `json:"bk_scope" bson:"bk_scope"`
-}
-
-// BizSetScope defines the scope of biz in biz set, can be all biz or specific biz that matches the filter
-type BizSetScope struct {
-	MatchAll bool                      `json:"match_all"`
-	Filter   *querybuilder.QueryFilter `json:"filter"`
 }
 
 type CloudInst struct {

@@ -38,6 +38,14 @@ type BasePage struct {
 }
 
 func (page BasePage) Validate(allowNoLimit bool) (string, error) {
+	// 此场景下如果仅仅是获取查询对象的数量，page的其余参数只能是初始化值
+	if page.EnableCount {
+		if page.Start > 0 || page.Limit > 0 || page.Sort != "" {
+			return "page", fmt.Errorf("params page can not be set")
+		}
+		return "", nil
+	}
+
 	if page.Limit > common.BKMaxPageSize {
 		if page.Limit != common.BKNoLimit || allowNoLimit != true {
 			return "limit", fmt.Errorf("exceed max page size: %d", common.BKMaxPageSize)
