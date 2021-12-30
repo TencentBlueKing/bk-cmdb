@@ -23,6 +23,7 @@ var (
 
 var ResourceTypeIDMap = map[TypeID]string{
 	Business:                 "业务",
+	BizSet:                   "业务集",
 	BusinessForHostTrans:     "业务主机",
 	SysCloudArea:             "云区域",
 	SysResourcePoolDirectory: "主机池目录",
@@ -236,6 +237,18 @@ func genBusinessResources() []ResourceType {
 
 func genPublicResources() []ResourceType {
 	return []ResourceType{
+		{
+			ID:            BizSet,
+			Name:          ResourceTypeIDMap[BizSet],
+			NameEn:        "Business Set",
+			Description:   "业务集",
+			DescriptionEn: "business set",
+			Parents:       nil,
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/resource",
+			},
+			Version: 1,
+		},
 		{
 			ID:            Business,
 			Name:          ResourceTypeIDMap[Business],

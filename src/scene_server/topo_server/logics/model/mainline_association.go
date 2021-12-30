@@ -270,13 +270,15 @@ func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit, targetObj
 
 // IsMainlineObject check whether objID is mainline object or not
 func (assoc *association) IsMainlineObject(kit *rest.Kit, objID string) (bool, error) {
-	filter := []map[string]interface{}{
-		{common.AssociationKindIDField: common.AssociationKindMainline,
-			common.BKDBOR: []mapstr.MapStr{
-				{common.BKObjIDField: objID},
-				{common.BKAsstObjIDField: objID},
-			}},
+	// judge whether it is an inner mainline model
+	if common.IsInnerMainlineModel(objID) {
+		return true, nil
 	}
+
+	filter := []map[string]interface{}{{
+		common.AssociationKindIDField: common.AssociationKindMainline,
+		common.BKAsstObjIDField:       objID,
+	}}
 	asstCnt, err := assoc.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		common.BKTableNameObjAsst, filter)
 	if err != nil {

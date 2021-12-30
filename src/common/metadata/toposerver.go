@@ -171,7 +171,7 @@ type SearchBriefBizTopoOption struct {
 
 // DeleteBizParam delete archived business parameter
 type DeleteBizParam struct {
-	BizID []int64 `json:"bk_biz_id""`
+	BizID []int64 `json:"bk_biz_id"`
 }
 
 // Validate validates the input param
@@ -227,4 +227,49 @@ type TopoNodeCount struct {
 	InstID               int64  `json:"bk_inst_id"`
 	HostCount            int64  `json:"host_count"`
 	ServiceInstanceCount int64  `json:"service_instance_count"`
+}
+
+// FindBizInBizSetOption find all biz id and name list in biz set option
+type FindBizInBizSetOption struct {
+	BizSetID int64    `json:"bk_biz_set_id"`
+	Fields   []string `json:"fields"`
+	Page     BasePage `json:"page"`
+}
+
+// FindBizSetTopoOption find biz set topo nodes option
+type FindBizSetTopoOption struct {
+	BizSetID    int64  `json:"bk_biz_set_id"`
+	ParentObjID string `json:"bk_parent_obj_id"`
+	ParentID    int64  `json:"bk_parent_id"`
+}
+
+// Validate validate the input option, check if all required fields are set
+func (opt *FindBizSetTopoOption) Validate() errors.RawErrorInfo {
+	if opt.BizSetID == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKBizSetIDField},
+		}
+	}
+
+	if opt.ParentID == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKParentIDField},
+		}
+	}
+
+	if len(opt.ParentObjID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_parent_obj_id"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// DeleteBizSetOption delete business set option
+type DeleteBizSetOption struct {
+	BizSetIDs []int64 `json:"bk_biz_set_ids"`
 }
