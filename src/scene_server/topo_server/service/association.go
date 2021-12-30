@@ -802,6 +802,7 @@ func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 }
 
 // SearchInstAssociationAndInstDetail search association, source object inst and destination object inst
+// related issue: https://github.com/Tencent/bk-cmdb/issues/5807
 func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
 	request := metadata.InstAndAssocRequest{}
 	if err := ctx.DecodeInto(&request); err != nil {
@@ -892,6 +893,8 @@ func (s *Service) searchInstForAssocDetail(ctx *rest.Contexts, objID string, fie
 		return nil, err
 	}
 
+	// common object's auth is different from mainline object, mainline need to check business id
+	// mainline object will verify whether user has the viewBusinessResource of the business which the object belongs
 	action := meta.FindMany
 	authObject := objID
 	authInst := insts
