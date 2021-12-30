@@ -279,7 +279,8 @@ func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondi
 	return nil
 }
 
-// ExchangeObjectGroupIndex Exchange the index of two groups
+// ExchangeObjectGroupIndex exchange the group index of two groups
+// related issue: https://github.com/Tencent/bk-cmdb/issues/5873
 func (g *group) ExchangeObjectGroupIndex(kit *rest.Kit, ids []int64) error {
 
 	if len(ids) != 2 {
@@ -310,6 +311,7 @@ func (g *group) ExchangeObjectGroupIndex(kit *rest.Kit, ids []int64) error {
 	}
 
 	// custom object create will create default group, index is -1, -2 has't been used
+	// once update any group_index will cause Mongo duplicate error without temp
 	tempIndex := int64(-2)
 	groupA, groupB := rsp.Data.Info[0], rsp.Data.Info[1]
 	if groupA.BizID != groupB.BizID || groupA.ObjectID != groupB.ObjectID {
