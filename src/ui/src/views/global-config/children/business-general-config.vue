@@ -1,7 +1,12 @@
 <template>
   <div v-bkloading="{ isLoading: globalConfig.loading }">
     <bk-form ref="bizGeneralFormRef" :rules="bizGeneralFormRules" :label-width="labelWidth" :model="bizGeneralForm">
-      <bk-form-item :label="$t('业务快照名称')" :icon-offset="bizNameIconOffsetLeft" property="snapshotBizName" required>
+      <bk-form-item
+        :desc="{
+          width: 400,
+          content: $t('快照存储的业务名需要和 GSE 的数据写入配置保持一致，修改后需要重启 datacollection 服务，否则 CMDB 将会无法正常消费到主机快照数据。')
+        }"
+        :label="$t('业务快照名称')" :icon-offset="bizNameIconOffsetLeft" property="snapshotBizName" required>
         <bk-input
           class="snapshot-biz-name"
           type="text"
