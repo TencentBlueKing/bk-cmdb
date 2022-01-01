@@ -1,0 +1,183 @@
+<template>
+  <bk-dialog v-model="isShow"
+    theme="primary"
+    :width="840"
+    :mask-close="false"
+    header-position="left"
+    :title="$t('业务集预览')">
+    <div class="content" v-bkloading="{ isLoading: $loading(requestId) }">
+      <div class="content-head">
+        <i18n path="共N个业务"><em place="count" class="count">{{total}}</em></i18n>
+        <bk-input class="search-input" clearable
+          right-icon="icon-search"
+          :placeholder="$t('业务名')"
+          @enter="handleSearch"
+          @clear="handleSearch">
+        </bk-input>
+      </div>
+      <div class="content-main">
+        <ul class="business-list" v-if="total > 0">
+          <li v-for="(item, index) in businessList" :key="index" class="business-item">
+            <bk-link>{{item.bk_biz_name}}</bk-link>
+          </li>
+        </ul>
+        <bk-exception :type="keyword ? 'search-empty' : 'empty'" scene="part" v-else></bk-exception>
+      </div>
+      <div class="content-foot">
+        <bk-pagination small
+          v-bind="pagination"
+          :count="total"
+          :current.sync="pagination.current"
+          :limit.sync="pagination.limit"
+          @limit-change="pagination.current = 1" />
+      </div>
+    </div>
+  </bk-dialog>
+</template>
+
+<script>
+  import { computed, defineComponent, reactive, ref, toRefs, watchEffect } from '@vue/composition-api'
+  import businessSetService from '@/service/business-set/index.js'
+
+  export default defineComponent({
+    props: {
+      show: {
+        type: Boolean,
+        default: false
+      },
+      mode: {
+        type: String,
+        required: true,
+        defalut: 'before',
+        validator: value => ['before', 'after'].indexOf(value) !== -1
+      },
+      payload: {
+        type: Object,
+        required: true,
+        defalut: {}
+      }
+    },
+    setup(props, { emit }) {
+      const { show, mode, payload } = toRefs(props)
+
+      const isShow = computed({
+        get: () => show.value,
+        set: value => emit('update:show', value)
+      })
+      const requestId = Symbol()
+
+      const keyword = ref('')
+      const pagination = reactive({
+        current: 1,
+        limit: 15,
+        'limit-list': [15, 30, 60, 120]
+      })
+
+      const searcher = computed(() => {
+        const actions = {
+          before: businessSetService.previewOfBefore,
+          after: businessSetService.previewOfAfter
+        }
+        const params = {
+          q: keyword.value,
+          page: {
+            start: pagination.limit * (pagination.current - 1),
+            limit: pagination.limit
+          }
+        }
+
+        const { bk_scope: scope, bk_biz_set_id: bizSetId } = payload.value
+        if (mode.value === 'before') {
+          params.bk_scope = scope.filter
+        } else if (mode.value === 'after') {
+          params.bk_biz_set_id = bizSetId
+        }
+
+        const searchMethod = actions[mode.value]
+
+        return config => searchMethod(params, config)
+      })
+
+      const businessList = ref([])
+      const total = ref(0)
+
+      // searcher更新时会隐式触发此方法
+      const getList = async () => {
+        const { list, count } = await searcher.value({ requestId })
+        businessList.value = list
+        total.value = count
+      }
+
+      watchEffect(async () => {
+        // dialog组件显示状态再触发数据查询（if渲染有点问题）
+        if (!isShow.value) return
+
+        getList()
+      })
+
+      const handleSearch = (value) => {
+        keyword.value = value
+      }
+
+      return {
+        isShow,
+        requestId,
+        keyword,
+        total,
+        pagination,
+        businessList,
+        handleSearch
+      }
+    }
+  })
+</script>
+
+<style lang="scss" scoped>
+  .content {
+    .content-head {
+      display: flex;
+      justify-content: space-between;
+
+      .search-input {
+        width: 320px;
+      }
+      .count {
+        font-weight: 700;
+        font-style: normal;
+        margin: 0 2px;
+      }
+    }
+
+    .content-main {
+      min-height: 160px;
+      max-height: 220px;
+      margin: 12px 0;
+      @include scrollbar-y;
+    }
+  }
+
+  .business-list {
+    display: flex;
+    flex-wrap: wrap;
+
+    .business-item {
+      margin: 0 12px 10px 0;
+      display: flex;
+      flex: none;
+      align-items: center;
+      height: 32px;
+      background: #F5F7FA;
+      width: calc(33.333% - 12px);
+      padding-left: 4px;
+
+      &:nth-of-type(3n + 3) {
+        margin-right: 0;
+        width: 33.333%
+      }
+
+      ::v-deep .bk-link .bk-link-text {
+        font-size: 12px;
+      }
+    }
+  }
+</style>
