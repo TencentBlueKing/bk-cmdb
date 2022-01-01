@@ -69,6 +69,7 @@ export const MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG = 'menu_platform_management_
 export const MENU_RESOURCE_COLLECTION = 'menu_resource_collection'
 export const MENU_RESOURCE_HOST_COLLECTION = 'menu_resource_host_collection'
 export const MENU_RESOURCE_BUSINESS_COLLECTION = 'menu_resource_business_collection'
+export const MENU_RESOURCE_BUSINESS_SET_COLLECTION = 'menu_resource_business_set_collection'
 
 // 不同模式下不同资源的主机详情的id
 export const MENU_RESOURCE_HOST_DETAILS = 'menu_resource_host_details'
@@ -87,3 +88,6 @@ export const MENU_RESOURCE_CLOUD_AREA = 'menu_resource_cloud_area'
 export const MENU_RESOURCE_CLOUD_ACCOUNT = 'menu_resource_cloud_account'
 // 云资源发现
 export const MENU_RESOURCE_CLOUD_RESOURCE = 'menu_resource_cloud_resource'
+
+// 业务集
+export const MENU_RESOURCE_BUSINESS_SET = 'menu_resource_business_set'

@@ -58,14 +58,10 @@
     MENU_BUSINESS,
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_RESOURCE,
-    MENU_RESOURCE_BUSINESS,
-    MENU_RESOURCE_HOST,
     MENU_RESOURCE_INSTANCE,
-    // MENU_RESOURCE_MANAGEMENT,
-    MENU_RESOURCE_COLLECTION,
-    MENU_RESOURCE_HOST_COLLECTION,
-    MENU_RESOURCE_BUSINESS_COLLECTION
   } from '@/dictionary/menu-symbol'
+  import { BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
+
   export default {
     data() {
       return {
@@ -77,8 +73,8 @@
     },
     computed: {
       ...mapGetters(['navStick', 'navFold', 'admin']),
-      ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('objectModelClassify', ['classifications', 'models']),
+      ...mapGetters('userCustom', ['resourceCollection']),
       isBusinessNav() {
         const { matched } = this.$route
         if (!matched.length) {
@@ -94,21 +90,7 @@
       },
       collection() {
         if (this.owner === MENU_RESOURCE) {
-          const isHostCollected = this.usercustom[MENU_RESOURCE_HOST_COLLECTION] === undefined
-            ? true
-            : this.usercustom[MENU_RESOURCE_HOST_COLLECTION]
-          const isBusinessCollected = this.usercustom[MENU_RESOURCE_BUSINESS_COLLECTION] === undefined
-            ? true
-            : this.usercustom[MENU_RESOURCE_BUSINESS_COLLECTION]
-          const collection = [...(this.usercustom[MENU_RESOURCE_COLLECTION] || [])]
-          if (isHostCollected) {
-            collection.unshift('host')
-          }
-          if (isBusinessCollected) {
-            collection.unshift('biz')
-          }
-          // eslint-disable-next-line max-len
-          return collection.filter(modelId => this.models.some(model => model.bk_obj_id === modelId && !model.bk_ispaused))
+          return this.resourceCollection
         }
         return []
       },
@@ -198,13 +180,9 @@
         return menu.route.name === this.relativeActiveName
       },
       getCollectionRoute(model) {
-        const map = {
-          host: MENU_RESOURCE_HOST,
-          biz: MENU_RESOURCE_BUSINESS
-        }
-        if (has(map, model.bk_obj_id)) {
+        if (has(BUILTIN_MODEL_RESOURCE_MENUS, model.bk_obj_id)) {
           return {
-            name: map[model.bk_obj_id]
+            name: BUILTIN_MODEL_RESOURCE_MENUS[model.bk_obj_id]
           }
         }
         return {
