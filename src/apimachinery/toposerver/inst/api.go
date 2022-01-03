@@ -71,6 +71,10 @@ type InstanceInterface interface {
 	// CountObjectInstances counts object instances num.
 	CountObjectInstances(ctx context.Context, header http.Header,
 		objID string, input *metadata.CommonCountFilter) (*metadata.Response, error)
+
+	// SearchIdentifier search identifier.
+	SearchIdentifier(ctx context.Context, objType string, input *metadata.SearchIdentifierParam,
+		h http.Header) (*metadata.SearchHostIdentifierResult, error)
 }
 
 type instanceClient struct {

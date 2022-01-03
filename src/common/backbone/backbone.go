@@ -358,3 +358,8 @@ func (e *Engine) WithMongo(prefixes ...string) (mongo.Config, error) {
 func getRegisterPath(ip string) string {
 	return fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, common.GetIdentification(), ip)
 }
+
+// GetSrvInfo get service info
+func (e *Engine) GetSrvInfo() *types.ServerInfo {
+	return e.srvInfo
+}

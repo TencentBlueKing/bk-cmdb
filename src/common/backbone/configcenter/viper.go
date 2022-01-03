@@ -454,6 +454,22 @@ func Bool(key string) (bool, error) {
 	return false, err.New("config not found")
 }
 
+// StringSlice return the stringSlice value of the configuration information according to the key.
+func StringSlice(key string) ([]string, error) {
+	confLock.RLock()
+	defer confLock.RUnlock()
+	if migrateParser != nil && migrateParser.isSet(key) {
+		return migrateParser.getStringSlice(key), nil
+	}
+	if commonParser != nil && commonParser.isSet(key) {
+		return commonParser.getStringSlice(key), nil
+	}
+	if extraParser != nil && extraParser.isSet(key) {
+		return extraParser.getStringSlice(key), nil
+	}
+	return nil, err.New("config not found")
+}
+
 func IsExist(key string) bool {
 	confLock.RLock()
 	defer confLock.RUnlock()
@@ -536,4 +552,8 @@ func (vp *viperParser) isSet(path string) bool {
 
 func (vp *viperParser) getInt64(path string) int64 {
 	return vp.parser.GetInt64(path)
+}
+
+func (vp *viperParser) getStringSlice(path string) []string {
+	return vp.parser.GetStringSlice(path)
 }

@@ -240,3 +240,18 @@ func (t *instanceClient) CountObjectInstances(ctx context.Context, header http.H
 
 	return resp, err
 }
+
+// SearchIdentifier search identifier.
+func (t *instanceClient) SearchIdentifier(ctx context.Context, objType string, input *metadata.SearchIdentifierParam,
+	h http.Header) (resp *metadata.SearchHostIdentifierResult, err error) {
+	resp = new(metadata.SearchHostIdentifierResult)
+	subPath := "/identifier/%s/search"
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, objType).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}

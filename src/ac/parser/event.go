@@ -30,7 +30,8 @@ func (ps *parseStream) eventRelated() *parseStream {
 		return ps
 	}
 
-	ps.watch()
+	ps.watch().
+		synchostIdentifier()
 
 	return ps
 }
@@ -38,6 +39,8 @@ func (ps *parseStream) eventRelated() *parseStream {
 var (
 	watchResourceRegexp = regexp.MustCompile(`^/api/v3/event/watch/resource/\S+/?$`)
 )
+
+const syncHostIdentifier = "/api/v3/event/sync/host_identifier"
 
 func (ps *parseStream) watch() *parseStream {
 	if ps.shouldReturn() {
@@ -87,6 +90,25 @@ func (ps *parseStream) watch() *parseStream {
 		}
 
 		ps.Attribute.Resources = append(ps.Attribute.Resources, authResource)
+		return ps
+	}
+
+	return ps
+}
+
+func (ps *parseStream) synchostIdentifier() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitPattern(syncHostIdentifier, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Action: meta.SkipAction,
+				},
+			},
+		}
 		return ps
 	}
 
