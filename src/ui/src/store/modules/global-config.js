@@ -52,6 +52,7 @@ const unserializeConfig = (remoteData, lang) => {
   const newState = {
     backend: {
       maxBizTopoLevel: remoteData.backend.max_biz_topo_level,
+      snapshotBizName: remoteData.backend.snapshot_biz_name
     },
     site: {
       name: remoteData.site.name.i18n[lang],
@@ -83,7 +84,7 @@ const serializeState = (newConfig, lang) => {
   const data = {
     backend: {
       max_biz_topo_level: newConfig.backend.maxBizTopoLevel,
-      snapshot_biz_name: currentConfigBackup.backend.snapshot_biz_name,
+      snapshot_biz_name: newConfig.backend.snapshotBizName,
     },
     site: {
       name: {

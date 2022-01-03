@@ -41,6 +41,7 @@ const (
 	BKTableNameInstAsst = "cc_InstAsst"
 
 	BKTableNameBaseApp     = "cc_ApplicationBase"
+	BKTableNameBaseBizSet  = "cc_BizSetBase"
 	BKTableNameBaseHost    = "cc_HostBase"
 	BKTableNameBaseModule  = "cc_ModuleBase"
 	BKTableNameBaseInst    = "cc_ObjectBase"
@@ -211,6 +212,8 @@ func GetInstTableName(objID, supplierAccount string) string {
 	switch objID {
 	case BKInnerObjIDApp:
 		return BKTableNameBaseApp
+	case BKInnerObjIDBizSet:
+		return BKTableNameBaseBizSet
 	case BKInnerObjIDSet:
 		return BKTableNameBaseSet
 	case BKInnerObjIDModule:

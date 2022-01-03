@@ -91,6 +91,20 @@ func (s *Service) initBusiness(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+// 业务集
+func (s *Service) initBizSet(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/deletemany/biz_set", Handler: s.DeleteBizSet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/biz_set/biz_list", Handler: s.FindBizInBizSet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/biz_set/topo_path", Handler: s.FindBizSetTopo})
+
+	utility.AddToRestfulWebService(web)
+}
+
 func (s *Service) initModule(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.Engine.CCErr,
@@ -238,6 +252,7 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initAssociation(web)
 	s.initAuditLog(web)
 	s.initBusiness(web)
+	s.initBizSet(web)
 	s.initInst(web)
 	s.initModule(web)
 	s.initSet(web)

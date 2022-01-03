@@ -47,6 +47,8 @@ func getResourceTableName(resourceType iam.TypeID) string {
 		return common.BKTableNameCloudSyncTask
 	case iam.Business, iam.BusinessForHostTrans:
 		return common.BKTableNameBaseApp
+	case iam.BizSet:
+		return common.BKTableNameBaseBizSet
 	case iam.BizCustomQuery:
 		return common.BKTableNameDynamicGroup
 	case iam.BizProcessServiceTemplate:
@@ -83,6 +85,8 @@ func getInstanceResourceObjID(resourceType iam.TypeID) string {
 		return common.BKInnerObjIDPlat
 	case iam.Business, iam.BusinessForHostTrans:
 		return common.BKInnerObjIDApp
+	case iam.BizSet:
+		return common.BKInnerObjIDBizSet
 	//case iam.Set:
 	//	return common.BKInnerObjIDSet
 	//case iam.Module:
