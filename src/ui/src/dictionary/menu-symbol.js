@@ -6,6 +6,12 @@ export const MENU_MODEL = 'menu_model'
 export const MENU_ANALYSIS = 'menu_analysis'
 export const MENU_ADMIN = 'menu_admin'
 export const MENU_PLATFORM_MANAGEMENT = 'menu_platform_management'
+export const MENU_BUSINESS_SET = 'menu_business_set'
+
+/**
+ * 业务集消费视图
+ */
+export const MENU_BUSINESS_SET_TOPOLOGY = 'menu_business_set_topology'
 
 /**
  * 业务
@@ -89,5 +95,5 @@ export const MENU_RESOURCE_CLOUD_ACCOUNT = 'menu_resource_cloud_account'
 // 云资源发现
 export const MENU_RESOURCE_CLOUD_RESOURCE = 'menu_resource_cloud_resource'
 
-// 业务集
+// 业务集资源实例
 export const MENU_RESOURCE_BUSINESS_SET = 'menu_resource_business_set'

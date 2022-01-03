@@ -1483,5 +1483,8 @@
     "业务集": "Business Set",
     "业务集列表提示语": "No authorized business set, you can {auth} or {create}",
     "业务集预览": "Business set preview",
-    "共N个业务": "Total {count} businesses"
+    "共N个业务": "Total {count} businesses",
+    "业务集不存在或无权限": "Permission denied or business set non-exist",
+    "申请业务集访问权限": "Apply for business set access",
+    "创建业务集": "Create a business set"
 }

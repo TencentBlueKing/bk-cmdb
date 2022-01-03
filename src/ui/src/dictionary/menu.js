@@ -2,10 +2,13 @@ import has from 'has'
 import {
   MENU_INDEX,
   MENU_BUSINESS,
+  MENU_BUSINESS_SET,
   MENU_RESOURCE,
   MENU_MODEL,
   MENU_ANALYSIS,
   MENU_PLATFORM_MANAGEMENT,
+
+  MENU_BUSINESS_SET_TOPOLOGY,
 
   MENU_BUSINESS_HOST_AND_SERVICE,
   MENU_BUSINESS_CUSTOM_QUERY,
@@ -32,6 +35,7 @@ import {
   MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG,
 } from './menu-symbol'
 import {
+  businessSetViews,
   businessViews,
   resourceViews,
   modelViews,
@@ -56,6 +60,16 @@ const getMenuRoute = (views, symbol) => {
 const menus = [{
   id: MENU_INDEX,
   i18n: '首页'
+}, {
+  id: MENU_BUSINESS_SET,
+  i18n: '业务集',
+  visibility: false, // 在一级菜单中不显示
+  menu: [{
+    id: MENU_BUSINESS_SET_TOPOLOGY,
+    i18n: '业务集拓扑',
+    icon: 'icon-cc-host',
+    route: getMenuRoute(businessSetViews, MENU_BUSINESS_SET_TOPOLOGY)
+  }]
 }, {
   id: MENU_BUSINESS,
   i18n: '业务',
@@ -165,6 +179,7 @@ const menus = [{
 }, {
   id: MENU_PLATFORM_MANAGEMENT,
   i18n: '平台管理',
+  visibility: componentContext => componentContext.$store.state.globalConfig.auth,
   menu: [{
     id: MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG,
     i18n: '全局配置',

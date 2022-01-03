@@ -1,6 +1,8 @@
 import http from '@/api'
 import { enableCount } from '../utils.js'
 
+const authorizeRequsetId = Symbol('getAuthorizedBusinessSet')
+
 const find = async (params, config) => {
   try {
     const [list, count] = await Promise.all([
@@ -13,6 +15,21 @@ const find = async (params, config) => {
     return { count: 0, list: [] }
   }
 }
+
+const getAuthorized = async (config) => {
+  try {
+    const list = await http.get('findmany/biz_set/with_reduced?sort=bk_biz_set_id', config)
+    return list
+  } catch (error) {
+    console.error(error)
+    return []
+  }
+}
+
+const getAuthorizedWithCache = async () => getAuthorized({
+  requestId: authorizeRequsetId,
+  fromCache: true
+})
 
 const previewOfBefore = async (params, config) => {
   try {
@@ -51,5 +68,7 @@ export default {
   create,
   deleteById,
   previewOfBefore,
-  previewOfAfter
+  previewOfAfter,
+  getAuthorized,
+  getAuthorizedWithCache
 }

@@ -11,3 +11,4 @@ src/web*/cmdb_*
 *exvim*
 
 .DS_Store
+.vscode
