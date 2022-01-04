@@ -314,6 +314,10 @@ func ValidModelIDField(value interface{}, field string, errProxy errors.DefaultC
 	if !match {
 		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, field)
 	}
+
+	if strings.HasPrefix(strValue, "bk") {
+		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "bk_obj_id value can not start with bk")
+	}
 	return nil
 }
 
