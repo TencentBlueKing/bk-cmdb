@@ -9,3 +9,6 @@ src/source_controller/*/coreservice
 src/web*/*server
 src/web*/cmdb_*
 *exvim*
+
+.DS_Store
+.vscode

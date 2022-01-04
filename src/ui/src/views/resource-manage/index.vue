@@ -27,11 +27,6 @@
 <script>
   import { mapGetters } from 'vuex'
   import debounce from 'lodash.debounce'
-  import {
-    MENU_RESOURCE_COLLECTION,
-    MENU_RESOURCE_HOST_COLLECTION,
-    MENU_RESOURCE_BUSINESS_COLLECTION
-  } from '@/dictionary/menu-symbol'
   import noSearchResults from '@/views/status/no-search-results.vue'
   import cmdbClassifyPanel from './children/classify-panel'
   import useInstanceCount from './children/use-instance-count.js'
@@ -51,23 +46,7 @@
     computed: {
       ...mapGetters(['globalLoading']),
       ...mapGetters('objectModelClassify', ['classifications', 'models']),
-      ...mapGetters('userCustom', ['usercustom']),
-      collection() {
-        const isHostCollected = this.usercustom[MENU_RESOURCE_HOST_COLLECTION] === undefined
-          ? true
-          : this.usercustom[MENU_RESOURCE_HOST_COLLECTION]
-        const isBusinessCollected = this.usercustom[MENU_RESOURCE_BUSINESS_COLLECTION] === undefined
-          ? true
-          : this.usercustom[MENU_RESOURCE_BUSINESS_COLLECTION]
-        const collection = [...(this.usercustom[MENU_RESOURCE_COLLECTION] || [])]
-        if (isHostCollected) {
-          collection.push('host')
-        }
-        if (isBusinessCollected) {
-          collection.push('biz')
-        }
-        return collection.filter(modelId => this.models.some(model => model.bk_obj_id === modelId))
-      },
+      ...mapGetters('userCustom', { collection: 'resourceCollection' }),
       filteredClassifications() {
         const result = []
         const filterClassify = ['bk_biz_topo']

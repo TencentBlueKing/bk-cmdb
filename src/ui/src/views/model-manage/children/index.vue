@@ -200,10 +200,10 @@
   import modelImportExportService from '@/service/model/import-export'
   import {
     MENU_MODEL_MANAGEMENT,
-    MENU_RESOURCE_HOST,
-    MENU_RESOURCE_BUSINESS,
     MENU_RESOURCE_INSTANCE
   } from '@/dictionary/menu-symbol'
+  import { BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
+
   export default {
     name: 'ModelManagement',
     components: {
@@ -493,14 +493,10 @@
       },
       handleGoInstance() {
         const model = this.activeModel
-        const map = {
-          host: MENU_RESOURCE_HOST,
-          biz: MENU_RESOURCE_BUSINESS
-        }
-        if (has(map, model.bk_obj_id)) {
+        if (has(BUILTIN_MODEL_RESOURCE_MENUS, model.bk_obj_id)) {
           const query = model.bk_obj_id === 'host' ? { scope: 'all' } : {}
           this.$routerActions.redirect({
-            name: map[model.bk_obj_id],
+            name: BUILTIN_MODEL_RESOURCE_MENUS[model.bk_obj_id],
             query
           })
         } else {

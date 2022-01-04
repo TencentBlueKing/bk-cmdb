@@ -59,6 +59,7 @@
     "修改": "Modify",
     "删除": "Delete",
     "删除成功": "Delete Success",
+    "删除失败": "Delete Failed",
     "新建成功": "Create Success",
     "修改成功": "Update Success",
     "确定删除": "Are you sure to delete",
@@ -1476,5 +1477,14 @@
     "追加至": "Append to",
     "追加主机到业务模块": "Append to Business Modules",
     "仅允许业务下空闲机跨业务转移": "Only {idleModule} under the business allowed to transfer across businesses",
-    "转移空闲机到其他业务": "Transfer {idleModule} to other business"
+    "转移空闲机到其他业务": "Transfer {idleModule} to ohter business",
+    "业务范围选择placeholder": "Please filter the businesses that meet the conditions, if you don’t select it, it will default to all businesses",
+    "条件值不能为空": "Condition value cannot be empty",
+    "业务集": "Business Set",
+    "业务集列表提示语": "No authorized business set, you can {auth} or {create}",
+    "业务集预览": "Business set preview",
+    "共N个业务": "Total {count} businesses",
+    "业务集不存在或无权限": "Permission denied or business set non-exist",
+    "申请业务集访问权限": "Apply for business set access",
+    "创建业务集": "Create a business set"
 }

@@ -11,6 +11,7 @@ export const IAM_VIEWS = {
   CUSTOM_QUERY: 'biz_custom_query',
   // 业务列表
   BIZ: 'biz',
+  BIZ_SET: 'biz_set',
   // 跨业务转主机选择的主机所属业务的列表
   BIZ_FOR_HOST_TRANS: 'biz_for_host_trans',
   // 主机列表
@@ -707,6 +708,49 @@ export const IAM_ACTIONS = {
     })
   },
 
+  // 业务集
+  C_BUSINESS_SET: {
+    id: 'create_business_set',
+    name: ['业务集创建', 'Create Business Set'],
+    cmdb_action: 'businessSet.create'
+  },
+  U_BUSINESS_SET: {
+    id: 'edit_business_set',
+    name: ['业务集编辑', 'Update Business Set'],
+    cmdb_action: 'businessSet.update',
+    relation: [{
+      view: IAM_VIEWS.BIZ_SET,
+      instances: [IAM_VIEWS.BIZ_SET]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
+  },
+  R_BUSINESS_SET: {
+    id: 'view_business_set',
+    name: ['业务集查看', 'View Business Set'],
+    cmdb_action: 'businessSet.findMany',
+    relation: [{
+      view: IAM_VIEWS.BIZ_SET,
+      instances: [IAM_VIEWS.BIZ_SET]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
+  },
+  D_BUSINESS_SET: {
+    id: 'delete_business_set',
+    name: ['业务集删除', 'Delete Business Set'],
+    cmdb_action: 'businessSet.delete',
+    relation: [{
+      view: IAM_VIEWS.BIZ_SET,
+      instances: [IAM_VIEWS.BIZ_SET]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
+  },
+
   // 操作审计
   R_AUDIT: {
     id: 'find_audit_log',
@@ -1118,6 +1162,19 @@ export const IAM_ACTIONS = {
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       bk_biz_id: relationIds[0]
+    })
+  },
+  // 业务集资源查看 (用于控制业务导航下业务集选择器的数据)
+  R_BIZ_SET_RESOURCE: {
+    id: 'access_business_set',
+    name: ['业务集访问', 'Access Business Set'],
+    cmdb_action: 'businessSet.accessBizSet',
+    relation: [{
+      view: IAM_VIEWS.BIZ_SET,
+      instances: [IAM_VIEWS.BIZ_SET]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      bk_biz_set_id: relationIds[0]
     })
   }
 }

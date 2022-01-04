@@ -1,4 +1,5 @@
 import http from '@/api'
+
 export const find = async (options, config = {}) => {
   try {
     const params = {}
@@ -15,6 +16,9 @@ export const find = async (options, config = {}) => {
   }
 }
 
+export const findBizSet = config => find({ bk_obj_id: 'biz_set' }, config)
+
 export default {
-  find
+  find,
+  findBizSet
 }
