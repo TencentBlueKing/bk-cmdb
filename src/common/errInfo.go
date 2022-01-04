@@ -480,6 +480,7 @@ const (
 
 	CCErrorTopoForbiddenDeleteBuiltInBiz    = 1101111
 	CCErrorTopoForbiddenDeleteUnarchivedBiz = 1101112
+	CCErrorTopoForbiddenBKObjIDStartWithBK  = 1101113
 
 	// object controller 1102XXX
 

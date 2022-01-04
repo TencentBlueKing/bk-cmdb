@@ -429,6 +429,10 @@ func (o *object) IsValid(isUpdate bool, data mapstr.MapStr) error {
 			blog.Errorf("[model-obj] failed to valid the object id(%s), rid: %s", metadata.ModelFieldObjectID, o.kit.Rid)
 			return o.kit.CCError.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID+" "+err.Error())
 		}
+
+		if err = o.FieldValid.ValidIDStartWithBK(o.kit, val); err != nil {
+			return err
+		}
 	}
 
 	if !isUpdate || data.Exists(metadata.ModelFieldObjectName) {

@@ -99,3 +99,15 @@ func (f *FieldValid) ValidNameWithRegex(kit *rest.Kit, value string) error {
 	*/
 	return nil
 }
+
+// ValidIDStartWithBK validate the id start with bk
+func (f *FieldValid) ValidIDStartWithBK(kit *rest.Kit, value string) error {
+	match, err := regexp.MatchString(`^bk`, value)
+	if err != nil {
+		return err
+	}
+	if match {
+		return kit.CCError.Error(common.CCErrorTopoForbiddenBKObjIDStartWithBK)
+	}
+	return nil
+}
