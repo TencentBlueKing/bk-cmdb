@@ -31,7 +31,7 @@ export const before = async function (to, from, next) {
   if (toTopRoute?.name === MENU_BUSINESS_SET) {
     const bizSetId = Number(to.params.bizSetId)
     const authorizedList = await getAuthorizedBusinessSet()
-    const found = authorizedList.find(item => item.bk_biz_set_id === bizSetId)
+    const found = authorizedList.some(item => item.bk_biz_set_id === bizSetId)
     if (!found) {
       toTopRoute.meta.view = 'permission'
       next()

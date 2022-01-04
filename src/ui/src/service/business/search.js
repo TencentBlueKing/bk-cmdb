@@ -1,5 +1,7 @@
 import http from '@/api'
 
+const findAllRequsetId = Symbol('findAllRequsetId')
+
 const findOne = async ({ bk_biz_id: bizId, config }) => {
   try {
     const { info } = await http.post(`biz/search/${window.Supplier.account}`, {
@@ -17,7 +19,7 @@ const findOne = async ({ bk_biz_id: bizId, config }) => {
 
 const findAll = async () => {
   const data = await http.get('biz/simplify?sort=bk_biz_id', {
-    requestId: Symbol(),
+    requestId: findAllRequsetId,
     fromCache: true
   })
 

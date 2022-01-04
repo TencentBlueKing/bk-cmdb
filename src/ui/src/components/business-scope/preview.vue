@@ -18,7 +18,7 @@
       <div class="content-main">
         <ul class="business-list" v-if="total > 0">
           <li v-for="(item, index) in businessList" :key="index" class="business-item">
-            <bk-link>{{item.bk_biz_name}}</bk-link>
+            <bk-link :title="item.bk_biz_name">{{item.bk_biz_name}}</bk-link>
           </li>
         </ul>
         <bk-exception :type="keyword ? 'search-empty' : 'empty'" scene="part" v-else></bk-exception>
@@ -75,8 +75,8 @@
 
       const searcher = computed(() => {
         const actions = {
-          before: businessSetService.previewOfBefore,
-          after: businessSetService.previewOfAfter
+          before: businessSetService.previewOfBeforeCreate,
+          after: businessSetService.previewOfAfterCreate
         }
         const params = {
           q: keyword.value,
@@ -175,8 +175,14 @@
         width: 33.333%
       }
 
-      ::v-deep .bk-link .bk-link-text {
-        font-size: 12px;
+      ::v-deep .bk-link {
+        width: 100%;
+        justify-content: flex-start;
+
+        .bk-link-text {
+          font-size: 12px;
+          @include ellipsis;
+        }
       }
     }
   }
