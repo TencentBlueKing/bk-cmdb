@@ -130,7 +130,6 @@
 	"1101110": "get topology node host/service instance count condition length exceeds the limit",
 	"1101111": "forbidden remove built in business",
 	"1101112": "forbidden remove unarhived business",
-	"1101113": "forbidden to create a model with a unique identifier starting with bk",
 
     "": ""
 }

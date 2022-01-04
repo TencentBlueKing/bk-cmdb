@@ -103,7 +103,7 @@ func (f *FieldValid) ValidNameWithRegex(kit *rest.Kit, value string) error {
 // ValidIDStartWithBK validate the id start with bk
 func (f *FieldValid) ValidIDStartWithBK(kit *rest.Kit, value string) error {
 	if strings.HasPrefix(value, "bk") {
-		return kit.CCError.Error(common.CCErrorTopoForbiddenBKObjIDStartWithBK)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_obj_id value can not start with bk")
 	}
 	return nil
 }
