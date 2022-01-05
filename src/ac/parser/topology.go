@@ -320,15 +320,13 @@ func (ps *parseStream) business() *parseStream {
 	return ps
 }
 
-var (
-	createBusinessSetRegexp = regexp.MustCompile(`^/api/v3/create/biz_set/[^\s/]+/?$`)
-)
-
 const (
+	createBizSetPattern               = `/api/v3/create/biz_set`
 	deleteBizSetPattern               = `/api/v3/deletemany/biz_set`
+	updateBizSetPattern               = `/api/v3/updatemany/biz_set`
 	findBizInBizSetPattern            = `/api/v3/find/biz_set/biz_list`
 	findBizSetTopoPattern             = `/api/v3/find/biz_set/topo_path`
-	findmanyBusinessSetRegexp         = `api/v3/findmany/biz_set`
+	findmanyBusinessSetRegexp         = `/api/v3/findmany/biz_set`
 	findReducedBusinessSetListPattern = `/api/v3/findmany/biz_set/with_reduced`
 	previewBusinessSet                = `/api/v3/find/biz_set/preview`
 )
@@ -370,6 +368,41 @@ func (ps *parseStream) businessSet() *parseStream {
 		}
 		return ps
 	}
+
+	// update biz set, authorize if user has update permission to all of the specified biz set ids
+	if ps.hitPattern(updateBizSetPattern, http.MethodPut) {
+		bizSetIDsVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_ids")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizSetIDArr := bizSetIDsVal.Array()
+		if len(bizSetIDArr) == 0 {
+			ps.err = errors.New("bk_biz_set_ids is not set")
+			return ps
+		}
+
+		for _, bizSetIDVal := range bizSetIDArr {
+			bizSetID := bizSetIDVal.Int()
+			if bizSetID <= 0 {
+				ps.err = errors.New("invalid biz set id")
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					Basic: meta.Basic{
+						Type:       meta.BizSet,
+						Action:     meta.Update,
+						InstanceID: bizSetID,
+					},
+				},
+			}
+		}
+		return ps
+	}
+
 	if ps.hitPattern(deleteBizSetPattern, http.MethodPost) {
 		bizSetIDsVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_ids")
 		if err != nil {
@@ -406,6 +439,7 @@ func (ps *parseStream) businessSet() *parseStream {
 		}
 		return ps
 	}
+
 	if ps.hitPattern(findBizSetTopoPattern, http.MethodPost) {
 		bizSetIDVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_id")
 		if err != nil {
@@ -430,6 +464,7 @@ func (ps *parseStream) businessSet() *parseStream {
 		}
 		return ps
 	}
+
 	// find many business set list for the user with any business set resources
 	if ps.hitPattern(findmanyBusinessSetRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -455,8 +490,9 @@ func (ps *parseStream) businessSet() *parseStream {
 		}
 		return ps
 	}
+
 	// create business set, this is not a normalize api.
-	if ps.hitRegexp(createBusinessSetRegexp, http.MethodPost) {
+	if ps.hitPattern(createBizSetPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{

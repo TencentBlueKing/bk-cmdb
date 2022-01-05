@@ -337,6 +337,58 @@ type BizSetScope struct {
 	Filter   *querybuilder.QueryFilter `json:"filter"`
 }
 
+// Validate 用于创建和更新场景下的对于业务集scope参数的校验，校验scope仅存在两层且子条件是与的关系，返回其中包含的字段用于后续校验
+func (scope *BizSetScope) Validate() ([]string, error) {
+	if scope.MatchAll == true {
+		return []string{}, nil
+	}
+
+	if !scope.MatchAll && scope.Filter == nil {
+		return []string{}, fmt.Errorf("when match_all is false, params filter must be set")
+	}
+
+	option := &querybuilder.RuleOption{
+		NeedSameSliceElementType: true,
+		MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
+		MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
+	}
+
+	if invalidKey, err := scope.Filter.Validate(option); err != nil {
+		return []string{}, fmt.Errorf("conditions.%s,err: %s", invalidKey, err.Error())
+	}
+
+	if scope.Filter.GetDeep() > common.BizSetConditionMaxDeep {
+		return []string{}, fmt.Errorf("exceed max scope condition deepth: %d", common.BizSetConditionMaxDeep)
+	}
+	if scope.Filter.Rule == nil {
+		return []string{}, nil
+	}
+
+	// 此场景下仅支持 CombinedRule 类型
+	if _, ok := scope.Filter.Rule.(querybuilder.CombinedRule); !ok {
+		return []string{}, fmt.Errorf("query filter must be combined rules")
+	}
+	qf := scope.Filter.Rule.(querybuilder.CombinedRule)
+	if qf.Condition != querybuilder.ConditionAnd {
+		return []string{}, fmt.Errorf("scope condition must be and")
+	}
+
+	// 由于只支持2层，所以可以直接获取rules中的field字段
+	fields := make([]string, 0)
+	for _, rule := range qf.Rules {
+		if _, ok := rule.(querybuilder.AtomRule); !ok {
+			return []string{}, fmt.Errorf("rule type must be AtomRule")
+		}
+		r := rule.(querybuilder.AtomRule)
+		// 仅支持 equal 和 in 操作符
+		if r.Operator != querybuilder.OperatorIn && r.Operator != querybuilder.OperatorEqual {
+			return []string{}, fmt.Errorf("scope operator must be equal or in")
+		}
+		fields = append(fields, r.Field)
+	}
+	return fields, nil
+}
+
 // CreateBizSetRequest biz set struct
 type CreateBizSetRequest struct {
 	BizSetAttr  map[string]interface{} `json:"bk_biz_set_attr"`
@@ -358,7 +410,7 @@ func (op *CreateBizSetRequest) Validate() ([]string, errors.RawErrorInfo) {
 		}
 	}
 
-	fields, err := op.scopeValidate()
+	fields, err := op.BizSetScope.Validate()
 	if err != nil {
 		return []string{}, errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
@@ -367,59 +419,6 @@ func (op *CreateBizSetRequest) Validate() ([]string, errors.RawErrorInfo) {
 	}
 
 	return fields, errors.RawErrorInfo{}
-}
-
-// scopeValidate 此函数是用于创建场景下的对于scope参数的校验
-func (op *CreateBizSetRequest) scopeValidate() ([]string, error) {
-
-	if op.BizSetScope.MatchAll == true {
-		return []string{}, nil
-	}
-
-	if !op.BizSetScope.MatchAll && op.BizSetScope.Filter == nil {
-		return []string{}, fmt.Errorf("when match_all is false, params filter must be set")
-	}
-
-	option := &querybuilder.RuleOption{
-		NeedSameSliceElementType: true,
-		MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
-		MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
-	}
-
-	if invalidKey, err := op.BizSetScope.Filter.Validate(option); err != nil {
-		return []string{}, fmt.Errorf("conditions.%s,err: %s", invalidKey, err.Error())
-	}
-
-	if op.BizSetScope.Filter.GetDeep() > common.BizSetConditionMaxDeep {
-		return []string{}, fmt.Errorf("exceed max scope condition deepth: %d", common.BizSetConditionMaxDeep)
-	}
-	if op.BizSetScope.Filter.Rule == nil {
-		return []string{}, nil
-	}
-
-	// 此场景下仅支持 CombinedRule 类型
-	if _, ok := op.BizSetScope.Filter.Rule.(querybuilder.CombinedRule); !ok {
-		return []string{}, fmt.Errorf("query filter must be combined rules")
-	}
-	qf := op.BizSetScope.Filter.Rule.(querybuilder.CombinedRule)
-	if qf.Condition != querybuilder.ConditionAnd {
-		return []string{}, fmt.Errorf("scope condition must be and")
-	}
-
-	// 由于只支持2层，所以可以直接获取rules中的field字段
-	types := make([]string, 0)
-	for _, rule := range qf.Rules {
-		if _, ok := rule.(querybuilder.AtomRule); !ok {
-			return []string{}, fmt.Errorf("rule type must be AtomRule")
-		}
-		r := rule.(querybuilder.AtomRule)
-		// 仅支持 equal 和 in 操作符
-		if r.Operator != querybuilder.OperatorIn && r.Operator != querybuilder.OperatorEqual {
-			return []string{}, fmt.Errorf("scope operator must be equal or in")
-		}
-		types = append(types, r.Field)
-	}
-	return types, nil
 }
 
 // GetHostAndSerInstCountResult 获取topo节点主机/服务实例数量结构
@@ -438,9 +437,10 @@ type TopoNodeCount struct {
 
 // FindBizInBizSetOption find all biz id and name list in biz set option
 type FindBizInBizSetOption struct {
-	BizSetID int64    `json:"bk_biz_set_id"`
-	Fields   []string `json:"fields"`
-	Page     BasePage `json:"page"`
+	BizSetID int64                     `json:"bk_biz_set_id"`
+	Filter   *querybuilder.QueryFilter `json:"filter,omitempty"`
+	Fields   []string                  `json:"fields"`
+	Page     BasePage                  `json:"page"`
 }
 
 // FindBizSetTopoOption find biz set topo nodes option
@@ -479,4 +479,16 @@ func (opt *FindBizSetTopoOption) Validate() errors.RawErrorInfo {
 // DeleteBizSetOption delete business set option
 type DeleteBizSetOption struct {
 	BizSetIDs []int64 `json:"bk_biz_set_ids"`
+}
+
+// UpdateBizSetOption update business set option
+type UpdateBizSetOption struct {
+	BizSetIDs []int64          `json:"bk_biz_set_ids"`
+	Data      *UpdateBizSetData `json:"data"`
+}
+
+// UpdateBizSetData update business set data
+type UpdateBizSetData struct {
+	BizSetAttr mapstr.MapStr `json:"bk_biz_set_attr"`
+	Scope      *BizSetScope  `json:"bk_scope"`
 }

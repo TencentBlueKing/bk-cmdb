@@ -456,7 +456,7 @@ func (m *instanceManager) getValidatorsFromInstances(kit *rest.Kit, objID string
 	needSearchBizInstIDIndexMap := make(map[int64]int)
 	for index, instance := range instanceData {
 		switch objID {
-		case common.BKInnerObjIDPlat:
+		case common.BKInnerObjIDPlat, common.BKInnerObjIDBizSet:
 			bizIDs[index] = 0
 		case common.BKInnerObjIDHost:
 			if validTye == common.ValidUpdate {
