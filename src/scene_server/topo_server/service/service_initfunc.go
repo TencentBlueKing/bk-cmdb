@@ -101,6 +101,13 @@ func (s *Service) initBizSet(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/deletemany/biz_set", Handler: s.DeleteBizSet})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/biz_set/biz_list", Handler: s.FindBizInBizSet})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/biz_set/topo_path", Handler: s.FindBizSetTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/biz_set", Handler: s.CreateBusinessSet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/biz_set", Handler: s.SearchBusinessSet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/biz_set/preview", Handler: s.PreviewBusinessSet})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodGet,
+		Path:    "/findmany/biz_set/with_reduced",
+		Handler: s.SearchReducedBusinessSetList})
 
 	utility.AddToRestfulWebService(web)
 }

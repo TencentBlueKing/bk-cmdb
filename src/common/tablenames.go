@@ -40,8 +40,9 @@ const (
 	// BKTableNameInstAsst the table name of the inst association
 	BKTableNameInstAsst = "cc_InstAsst"
 
-	BKTableNameBaseApp     = "cc_ApplicationBase"
-	BKTableNameBaseBizSet  = "cc_BizSetBase"
+	BKTableNameBaseApp    = "cc_ApplicationBase"
+	BKTableNameBaseBizSet = "cc_BizSetBase"
+
 	BKTableNameBaseHost    = "cc_HostBase"
 	BKTableNameBaseModule  = "cc_ModuleBase"
 	BKTableNameBaseInst    = "cc_ObjectBase"

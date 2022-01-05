@@ -32,7 +32,6 @@ func (ps *parseStream) topology() *parseStream {
 	}
 
 	ps.business().
-		businessSet().
 		mainline().
 		object().
 		objectAttributeGroup().
@@ -40,7 +39,8 @@ func (ps *parseStream) topology() *parseStream {
 		objectSet().
 		audit().
 		fullTextSearch().
-		cloudArea()
+		cloudArea().
+		businessSet()
 
 	return ps
 }
@@ -320,17 +320,49 @@ func (ps *parseStream) business() *parseStream {
 	return ps
 }
 
-const (
-	deleteBizSetPattern    = `/api/v3/deletemany/biz_set`
-	findBizInBizSetPattern = `/api/v3/find/biz_set/biz_list`
-	findBizSetTopoPattern  = `/api/v3/find/biz_set/topo_path`
+var (
+	createBusinessSetRegexp = regexp.MustCompile(`^/api/v3/create/biz_set/[^\s/]+/?$`)
 )
 
+const (
+	deleteBizSetPattern               = `/api/v3/deletemany/biz_set`
+	findBizInBizSetPattern            = `/api/v3/find/biz_set/biz_list`
+	findBizSetTopoPattern             = `/api/v3/find/biz_set/topo_path`
+	findmanyBusinessSetRegexp         = `api/v3/findmany/biz_set`
+	findReducedBusinessSetListPattern = `/api/v3/findmany/biz_set/with_reduced`
+	previewBusinessSet                = `/api/v3/find/biz_set/preview`
+)
+
+// NOCC:golint/fnsize(整体属于businessSet操作需要放在一起)
 func (ps *parseStream) businessSet() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
 
+	if ps.hitPattern(findBizInBizSetPattern, http.MethodPost) {
+		bizSetIDVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizSetID := bizSetIDVal.Int()
+		if bizSetID <= 0 {
+			ps.err = errors.New("invalid biz set id")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.AccessBizSet,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+		return ps
+	}
 	if ps.hitPattern(deleteBizSetPattern, http.MethodPost) {
 		bizSetIDsVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_ids")
 		if err != nil {
@@ -367,8 +399,7 @@ func (ps *parseStream) businessSet() *parseStream {
 		}
 		return ps
 	}
-
-	if ps.hitPattern(findBizInBizSetPattern, http.MethodPost) {
+	if ps.hitPattern(findBizSetTopoPattern, http.MethodPost) {
 		bizSetIDVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_id")
 		if err != nil {
 			ps.err = err
@@ -392,26 +423,51 @@ func (ps *parseStream) businessSet() *parseStream {
 		}
 		return ps
 	}
-
-	if ps.hitPattern(findBizSetTopoPattern, http.MethodPost) {
-		bizSetIDVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_id")
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		bizSetID := bizSetIDVal.Int()
-		if bizSetID <= 0 {
-			ps.err = errors.New("invalid biz set id")
-			return ps
-		}
-
+	// find many business set list for the user with any business set resources
+	if ps.hitPattern(findmanyBusinessSetRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:       meta.BizSet,
-					Action:     meta.AccessBizSet,
-					InstanceID: bizSetID,
+					Type:   meta.BizSet,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find reduced business set list for the user with any business set resources
+	if ps.hitPattern(findReducedBusinessSetListPattern, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizSet,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+	// create business set, this is not a normalize api.
+	if ps.hitRegexp(createBusinessSetRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizSet,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	// preview business set
+	if ps.hitPattern(previewBusinessSet, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizSet,
+					Action: meta.SkipAction,
 				},
 			},
 		}
