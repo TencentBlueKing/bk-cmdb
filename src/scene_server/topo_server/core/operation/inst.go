@@ -301,10 +301,20 @@ func (c *commonInst) validMainLineParentID(kit *rest.Kit, obj model.Object, data
 	if obj.Object().ObjectID == common.BKInnerObjIDApp {
 		return nil
 	}
+
 	def, exist := data.Get(common.BKDefaultField)
-	if exist && def.(int) != common.DefaultFlagDefaultValue {
-		return nil
+	if exist {
+		defInt, err := util.GetIntByInterface(def)
+		if err != nil {
+			blog.Errorf("parse default value failed, err: %v, rid: %s", err, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKDefaultField)
+		}
+
+		if defInt != common.DefaultFlagDefaultValue {
+			return nil
+		}
 	}
+
 	parent, err := obj.GetMainlineParentObject()
 	if err != nil {
 		blog.Errorf("[operation-inst] failed to get the object(%s) mainline parent, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), kit.Rid)
