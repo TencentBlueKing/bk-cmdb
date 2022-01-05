@@ -11,6 +11,7 @@ export const IAM_VIEWS = {
   CUSTOM_QUERY: 'biz_custom_query',
   // 业务列表
   BIZ: 'biz',
+  BIZ_SET: 'biz_set',
   // 跨业务转主机选择的主机所属业务的列表
   BIZ_FOR_HOST_TRANS: 'biz_for_host_trans',
   // 主机列表
@@ -417,8 +418,39 @@ export const IAM_ACTIONS = {
       return verifyMeta
     }
   },
-  // 跨业务转主机
+  /**
+   * 跨业务转移主机
+   * 注：只支持单个业务转移到单个业务
+   */
   HOST_TRANSFER_ACROSS_BIZ: {
+    id: 'host_transfer_across_business',
+    name: ['主机转移到其他业务', 'Transfer Host To Other Business'],
+    cmdb_action: 'hostInstance.moveHostToAnotherBizModule',
+    relation: [{
+      view: IAM_VIEWS.BIZ_FOR_HOST_TRANS,
+      instances: [IAM_VIEWS.BIZ_FOR_HOST_TRANS]
+    }, {
+      view: IAM_VIEWS.BIZ,
+      instances: [IAM_VIEWS.BIZ]
+    }],
+    transform: (cmdbAction, relationIds) => {
+      const [[[currentBizId], [targetBizId]]] = relationIds
+      const verifyMeta = basicTransform(cmdbAction)
+      verifyMeta.parent_layers = [{
+        resource_id: currentBizId,
+        resource_type: 'biz'
+      }, {
+        resource_id: targetBizId,
+        resource_type: 'biz'
+      }]
+      return verifyMeta
+    }
+  },
+  /**
+   * 跨业务转移空闲机
+   * 注：复用的是跨业务转移的权限，但实际需要的鉴权数据是不一样的，此权限支持多业务转移到单业务。
+   */
+  IDLE_HOST_TRANSFER_ACROSS_BIZ: {
     id: 'host_transfer_across_business',
     name: ['主机转移到其他业务', 'Transfer Host To Other Business'],
     cmdb_action: 'hostInstance.moveHostToAnotherBizModule',
@@ -670,6 +702,49 @@ export const IAM_ACTIONS = {
     relation: [{
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
+  },
+
+  // 业务集
+  C_BUSINESS_SET: {
+    id: 'create_business_set',
+    name: ['业务集创建', 'Create Business Set'],
+    cmdb_action: 'businessSet.create'
+  },
+  U_BUSINESS_SET: {
+    id: 'edit_business_set',
+    name: ['业务集编辑', 'Update Business Set'],
+    cmdb_action: 'businessSet.update',
+    relation: [{
+      view: IAM_VIEWS.BIZ_SET,
+      instances: [IAM_VIEWS.BIZ_SET]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
+  },
+  R_BUSINESS_SET: {
+    id: 'view_business_set',
+    name: ['业务集查看', 'View Business Set'],
+    cmdb_action: 'businessSet.findMany',
+    relation: [{
+      view: IAM_VIEWS.BIZ_SET,
+      instances: [IAM_VIEWS.BIZ_SET]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
+  },
+  D_BUSINESS_SET: {
+    id: 'delete_business_set',
+    name: ['业务集删除', 'Delete Business Set'],
+    cmdb_action: 'businessSet.delete',
+    relation: [{
+      view: IAM_VIEWS.BIZ_SET,
+      instances: [IAM_VIEWS.BIZ_SET]
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       resource_id: relationIds[0]
@@ -1087,6 +1162,19 @@ export const IAM_ACTIONS = {
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       bk_biz_id: relationIds[0]
+    })
+  },
+  // 业务集资源查看 (用于控制业务导航下业务集选择器的数据)
+  R_BIZ_SET_RESOURCE: {
+    id: 'access_business_set',
+    name: ['业务集访问', 'Access Business Set'],
+    cmdb_action: 'businessSet.accessBizSet',
+    relation: [{
+      view: IAM_VIEWS.BIZ_SET,
+      instances: [IAM_VIEWS.BIZ_SET]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      bk_biz_set_id: relationIds[0]
     })
   }
 }

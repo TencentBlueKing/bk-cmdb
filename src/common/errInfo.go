@@ -485,6 +485,8 @@ const (
 	CCErrorTopoForbiddenDeleteBuiltInBiz    = 1101111
 	CCErrorTopoForbiddenDeleteUnarchivedBiz = 1101112
 
+	CCErrorTopoGetAuthorizedBusinessSetListFailed = 1101114
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group

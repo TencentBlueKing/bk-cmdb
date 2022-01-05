@@ -5,10 +5,7 @@ import $http from '@/api'
  * @param {Object} globalConfig 全局设置全量集合
  * @returns {Promise}
  */
-export const updateConfig = globalConfig => $http.put('admin/update/system_config/platform_setting', {
-  snapshot_biz_name: 'BlueKing', // 后端数据收集所用的字段，写死
-  ...globalConfig
-})
+export const updateConfig = globalConfig => $http.put('admin/update/system_config/platform_setting', globalConfig)
 
 /**
  * 获取当前用户的全局设置

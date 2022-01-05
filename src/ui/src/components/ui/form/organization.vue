@@ -8,11 +8,11 @@
     }"
     :data-placeholder="placeholder">
     <i class="select-loading" v-if="$loading([searchRequestId]) && searchValue === undefined"></i>
-    <i class="select-angle bk-icon icon-angle-down"></i>
-    <i class="select-clear bk-icon icon-close"
+    <i class="select-clear bk-icon icon-close-circle-shape"
       v-if="clearable && !unselected && !disabled && !readonly"
       @click.prevent.stop="handleClear">
     </i>
+    <i class="select-angle bk-icon icon-angle-down"></i>
     <bk-popover class="select-dropdown"
       ref="selectDropdown"
       trigger="click"
@@ -114,8 +114,10 @@
           this.initTree()
         }
       },
-      checked(checked) {
-        this.$emit('input', checked)
+      checked(checked, oldChecked) {
+        if (!isEqual(checked, oldChecked)) {
+          this.$emit('input', checked)
+        }
         this.$emit('on-checked', checked)
         this.setDisplayName()
       },
@@ -458,6 +460,7 @@
             position: absolute;
             height: 100%;
             content: attr(data-placeholder);
+            font-size: 12px;
             left: 10px;
             top: 0;
             color: #c3cdd7;
@@ -485,21 +488,19 @@
             position: absolute;
             right: 6px;
             top: 8px;
-            width: 14px;
-            height: 14px;
-            line-height: 14px;
-            background-color: #c4c6cc;
-            border-radius: 50%;
             text-align: center;
             font-size: 14px;
-            color: #fff;
+            color: #c4c6cc;
             z-index: 100;
             &:before {
                 display: block;
-                transform: scale(.7);
             }
             &:hover {
-                background-color: #979ba5;
+                color: #979ba5;
+            }
+
+            & + .select-angle {
+              display: none;
             }
         }
 

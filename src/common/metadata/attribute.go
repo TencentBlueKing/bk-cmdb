@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -148,6 +149,8 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 		rawError = attribute.validUser(ctx, data, key)
 	case common.FieldTypeList:
 		rawError = attribute.validList(ctx, data, key)
+	case common.FieldObject:
+		rawError = attribute.validObjectCondition(ctx, data, key)
 	case common.FieldTypeOrganization:
 		rawError = attribute.validOrganization(ctx, data, key)
 	case "foreignkey", "singleasst", "multiasst":
@@ -644,6 +647,39 @@ func (attribute *Attribute) validUser(ctx context.Context, val interface{}, key 
 		blog.Errorf("params should be string, rid: %s", rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedString,
+			Args:    []interface{}{key},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// validObjectCondition valid object attribute that is user type
+func (attribute *Attribute) validObjectCondition(ctx context.Context, val interface{}, key string) (
+	rawError errors.RawErrorInfo) {
+
+	rid := util.ExtractRequestIDFromContext(ctx)
+	if nil == val || "" == val {
+		if attribute.IsRequired {
+			blog.Errorf("params in need, rid: %s", rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsNeedSet,
+				Args:    []interface{}{key},
+			}
+
+		}
+		return errors.RawErrorInfo{}
+	}
+	// 对于对象的校验只需要判断类型是否是map[string]interface和MapStr即可
+	switch val.(type) {
+	case map[string]interface{}:
+
+	case mapstr.MapStr:
+
+	default:
+		blog.Errorf("params type is error, type: %v, rid: %s", reflect.TypeOf(val), rid)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
 		}
 	}

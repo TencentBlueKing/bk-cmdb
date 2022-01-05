@@ -19,7 +19,7 @@
               :key="item.bk_biz_id"
               :id="item.bk_biz_id"
               :name="`[${item.bk_biz_id}] ${item.bk_biz_name}`"
-              :auth="{ type: $OPERATION.HOST_TRANSFER_ACROSS_BIZ, relation: item.relation }">
+              :auth="{ type: authType, relation: item.relation }">
             </cmdb-auth-option>
           </bk-select>
           <template v-if="targetBizId">
@@ -75,6 +75,8 @@
   import { AuthRequestId, afterVerify } from '@/components/ui/auth/auth-queue.js'
   import ModuleCheckedList from './module-checked-list.vue'
   import { sortTopoTree } from '@/utils/tools'
+  import { ONE_TO_ONE, MULTI_TO_ONE } from '@/dictionary/host-transfer-type.js'
+
   export default {
     name: 'cmdb-across-business-module-selector',
     components: {
@@ -90,11 +92,19 @@
         default: ''
       },
       /**
-       * 选择的机器所在业务
+       * 选择的机器所在业务，支持单个业务和多个业务。
        */
       business: {
         type: [Object, Array],
         required: true
+      },
+      /**
+       * 跨业务转移类型，支持两种类型
+       */
+      type: {
+        type: String,
+        required: true,
+        validator: type => [ONE_TO_ONE, MULTI_TO_ONE].includes(type)
       }
     },
     data() {
@@ -128,7 +138,17 @@
       },
       hasTitle() {
         return this.title && this.title.length
-      }
+      },
+      authType() {
+        const { HOST_TRANSFER_ACROSS_BIZ, IDLE_HOST_TRANSFER_ACROSS_BIZ } = this.$OPERATION
+        if (this.type === ONE_TO_ONE) {
+          return HOST_TRANSFER_ACROSS_BIZ
+        }
+        if (this.type === MULTI_TO_ONE) {
+          return IDLE_HOST_TRANSFER_ACROSS_BIZ
+        }
+        return ''
+      },
     },
     async created() {
       this.getFullAmountBusiness()
@@ -136,10 +156,23 @@
     methods: {
       generateRelation(businesses) {
         businesses.forEach((item) => {
-          const relation = []
-          this.bizIds.forEach((bizId) => {
-            relation.push([[bizId], [item.bk_biz_id]])
-          })
+          let relation = null
+
+          if (this.type === ONE_TO_ONE) {
+            relation = [[[this.bizIds[0]], [item.bk_biz_id]]]
+          }
+
+          if (this.type === MULTI_TO_ONE) {
+            relation = []
+            this.bizIds.forEach((bizId) => {
+              relation.push([[bizId], [item.bk_biz_id]])
+            })
+          }
+
+          if (!relation?.length) {
+            throw Error('relation is required')
+          }
+
           item.relation = relation
         })
       },

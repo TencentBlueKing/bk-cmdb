@@ -77,6 +77,8 @@ const (
 
 const (
 	// BKInnerObjIDBizSet the inner object
+
+	// TODO: 待确认 BKInnerObjIDBizSet = "bk_biz_set_obj"
 	BKInnerObjIDBizSet = "biz_set"
 
 	// BKInnerObjIDApp the inner object
@@ -450,6 +452,9 @@ const (
 	// BKSetDescField the set desc field
 	BKSetDescField = "bk_set_desc"
 
+	// BKBizSetDescField the biz set desc field
+	BKBizSetDescField = "bk_biz_set_desc"
+
 	// BKSetCapacityField the set capacity field
 	BKSetCapacityField = "bk_capacity"
 
@@ -635,9 +640,10 @@ const (
 	BKStartAtTimeField = "start_at_time"
 	BKSubResourceField = "bk_sub_resource"
 
-	BKBizSetIDField   = "bk_biz_set_id"
-	BKBizSetNameField = "bk_biz_set_name"
-	BKScopeField      = "bk_scope"
+	BKBizSetIDField    = "bk_biz_set_id"
+	BKBizSetNameField  = "bk_biz_set_name"
+	BKBizSetScopeField = "bk_scope"
+	BKBizSetMatchField = "match_all"
 )
 
 const (
@@ -782,6 +788,11 @@ const (
 	// FieldTypeUser the user field type
 	FieldTypeUser string = "objuser"
 
+	// FieldObject 此处只校验是否是对象。此校验是为了兼容biz_set中的bk_scope 的类型是 querybuilder，由于在 coreservice层解析出来的
+	// 是map[string]interface,所以在此处只需要校验是否是对象，对于querybuilder的合法性应该放在场景层做校验。后续如果走的是object校验，
+	// 都需要在场景层进行真正的校验
+	FieldObject string = "object"
+
 	// FieldTypeTimeZone the timezone field type
 	FieldTypeTimeZone string = "timezone"
 
@@ -896,6 +907,8 @@ const (
 	ExcelCellIgnoreValue = "--"
 )
 
+// BizSetConditionMaxDeep 业务集场景下querybuilder条件的最大深度不能超过2层
+const BizSetConditionMaxDeep = 2
 const (
 	// InputTypeExcel  data from excel
 	InputTypeExcel = "excel"

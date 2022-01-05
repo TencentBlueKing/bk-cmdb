@@ -1,4 +1,5 @@
 import businessSelector from './selector/business.vue'
+import businessMixSelector from './selector/business-mix.vue'
 import clipboardSelector from './selector/clipboard.vue'
 import selector from './selector/selector.vue'
 import cloudSelector from './selector/cloud.vue'
@@ -44,6 +45,7 @@ import tagInput from './tag-input/tag-input.vue'
 const install = (Vue) => {
   const components = [
     businessSelector,
+    businessMixSelector,
     clipboardSelector,
     selector,
     details,
@@ -95,6 +97,7 @@ const install = (Vue) => {
 export default {
   install,
   businessSelector,
+  businessMixSelector,
   clipboardSelector,
   selector,
   details,

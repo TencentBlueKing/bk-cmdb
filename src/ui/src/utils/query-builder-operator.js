@@ -1,6 +1,6 @@
 const mapping = {
   $eq: 'equal',
-  $neq: 'not_equal',
+  $ne: 'not_equal',
   $in: 'in',
   $nin: 'not_in',
   $lt: 'less',

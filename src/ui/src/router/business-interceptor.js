@@ -1,4 +1,9 @@
-import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+import { MENU_BUSINESS, MENU_BUSINESS_SET } from '@/dictionary/menu-symbol'
+import businessSetService from '@/service/business-set/index.js'
+import {
+  setBizSetIdToStorage,
+  setBizSetRecentlyUsed
+} from '@/utils/business-set-helper.js'
 import store from '@/store'
 
 const requestId = Symbol('getAuthorizedBusiness')
@@ -16,27 +21,57 @@ export async function getAuthorizedBusiness() {
   return info
 }
 
+export const getAuthorizedBusinessSet = async () => businessSetService.getAuthorizedWithCache()
+
 export const before = async function (to, from, next) {
-  // eslint-disable-next-line prefer-destructuring
-  const toTopRoute = to.matched[0]
-  // eslint-disable-next-line prefer-destructuring
-  const fromTopRoute = from.matched[0]
+  const [toTopRoute] = to.matched
+  const [fromTopRoute] = from.matched
+
+  // 业务集合法性检测
+  if (toTopRoute?.name === MENU_BUSINESS_SET) {
+    const bizSetId = Number(to.params.bizSetId)
+    const authorizedList = await getAuthorizedBusinessSet()
+    const found = authorizedList.some(item => item.bk_biz_set_id === bizSetId)
+    if (!found) {
+      toTopRoute.meta.view = 'permission'
+      next()
+      return false
+    }
+  }
+
+  // 记录上一次是否使用的是业务集视图并且保存id值
+  const isMatchedBusinessSetView = fromTopRoute?.name === MENU_BUSINESS_SET || toTopRoute?.name === MENU_BUSINESS_SET
+  const availableBusinessSetView = isMatchedBusinessSetView && fromTopRoute?.meta?.view !== 'permission'
+  setBizSetRecentlyUsed(availableBusinessSetView)
+  if (availableBusinessSetView) {
+    setBizSetIdToStorage(from.params.bizSetId || to.params.bizSetId)
+  }
+
+  // 从业务集视图跳出的时候重置view为默认防止再次进入时仍停留在permission
+  if (toTopRoute?.name !== MENU_BUSINESS_SET && fromTopRoute?.name === MENU_BUSINESS_SET) {
+    fromTopRoute.meta.view = 'default'
+    return true
+  }
+
   if (!toTopRoute || toTopRoute.name !== MENU_BUSINESS) {
     if (fromTopRoute && fromTopRoute.name === MENU_BUSINESS) {
       fromTopRoute.meta.view = 'default'
     }
     return true
   }
+
   // eslint-disable-next-line max-len
   if (fromTopRoute && fromTopRoute.name === MENU_BUSINESS && parseInt(to.params.bizId, 10) !== parseInt(from.params.bizId, 10)) {
     window.location.hash = to.fullPath
     window.location.reload()
     return false
   }
+
   if (toTopRoute.meta.view === 'permission') {
     next()
     return false
   }
+
   const authorizedList = await getAuthorizedBusiness()
   const id = parseInt(to.params.bizId || window.localStorage.getItem('selectedBusiness'), 10)
   const business = authorizedList.find(business => business.bk_biz_id === id)
@@ -70,12 +105,14 @@ export const before = async function (to, from, next) {
     }
     return true // 正常的有权限的业务，且URL中带了ID，则直接返回，进行后续的路由逻辑
   }
+
   // 未找到对应有权限的业务，且URL中有业务ID，则显示一级view的无权限视图
   if (hasURLId) {
     toTopRoute.meta.view = 'permission'
     next()
     return false
   }
+
   // 缓存无ID，URL无ID，则认为是首次进入业务导航，取有权限业务的第一个写入URL中
   if (authorizedList.length) {
     const [firstBusiness] = authorizedList
@@ -89,6 +126,7 @@ export const before = async function (to, from, next) {
     })
     return false
   }
+
   toTopRoute.meta.view = 'permission'
   next('/business')
   return false

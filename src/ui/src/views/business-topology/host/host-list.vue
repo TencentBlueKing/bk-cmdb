@@ -65,6 +65,8 @@
   import HostFilterTag from '@/components/filters/filter-tag'
   import FilterStore, { setupFilterStore } from '@/components/filters/store'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
+  import { ONE_TO_ONE } from '@/dictionary/host-transfer-type.js'
+
   export default {
     components: {
       HostListOptions,
@@ -370,7 +372,8 @@
       openAcrossBusinessModuleSelector() {
         this.dialog.props = {
           title: this.$t('转移主机到其他业务'),
-          business: this.currentBusiness
+          business: this.currentBusiness,
+          type: ONE_TO_ONE
         }
         this.dialog.width = 830
         this.dialog.height = 600
