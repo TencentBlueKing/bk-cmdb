@@ -486,20 +486,6 @@ var _ = Describe("business set test", func() {
 			Expect(err).NotTo(HaveOccurred())
 		}()
 
-		By("count businesses in biz set that matches all biz")
-		func() {
-			findBizOpt := &metadata.FindBizInBizSetOption{
-				BizSetID: bizSetID,
-				Page:     metadata.BasePage{EnableCount: true},
-			}
-
-			biz, err := instClient.FindBizInBizSet(ctx, header, findBizOpt)
-			util.RegisterResponseWithRid(biz, header)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(biz.Count).To(Equal(4))
-			Expect(len(biz.Info)).To(Equal(0))
-		}()
-
 		By("find businesses in biz set that matches all biz")
 		func() {
 			findBizOpt := &metadata.FindBizInBizSetOption{
@@ -515,6 +501,20 @@ var _ = Describe("business set test", func() {
 			Expect(commonutil.GetStrByInterface(biz.Info[1][common.BKAppNameField])).To(Equal("biz_for_biz_set"))
 			Expect(commonutil.GetStrByInterface(biz.Info[2][common.BKAppNameField])).To(Equal("biz_for_biz_set1"))
 			Expect(commonutil.GetStrByInterface(biz.Info[3][common.BKAppNameField])).To(Equal("biz_not_for_biz_set"))
+		}()
+
+		By("count businesses in biz set that matches all biz")
+		func() {
+			findBizOpt := &metadata.FindBizInBizSetOption{
+				BizSetID: bizSetID,
+				Page:     metadata.BasePage{EnableCount: true},
+			}
+
+			biz, err := instClient.FindBizInBizSet(ctx, header, findBizOpt)
+			util.RegisterResponseWithRid(biz, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(biz.Count).To(Equal(4))
+			Expect(len(biz.Info)).To(Equal(0))
 		}()
 
 		By("find businesses in biz set with fields")
@@ -719,7 +719,7 @@ var _ = Describe("business set test", func() {
 		func() {
 			findBizOpt := &metadata.FindBizSetTopoOption{
 				BizSetID:    sampleBizSetID,
-				ParentObjID: common.BKInnerObjIDSet,
+				ParentObjID: common.BKInnerObjIDApp,
 				ParentID:    bizID3,
 			}
 

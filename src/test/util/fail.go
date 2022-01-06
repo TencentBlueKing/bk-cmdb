@@ -28,16 +28,19 @@ var (
 	rid      string
 )
 
+// RegisterResponse register api response for debugging
 func RegisterResponse(rsp interface{}) {
 	response = rsp
 }
 
+// RegisterResponseWithRid register api response and rid from header to output them for debugging, set new rid to header
 func RegisterResponseWithRid(rsp interface{}, header http.Header) {
 	response = rsp
 	rid = util.GetHTTPCCRequestID(header)
 	header.Set(common.BKHTTPCCRequestID, util.GenerateRID())
 }
 
+// Fail ginkgo test fail hook
 func Fail(message string, callerSkip ...int) {
 	msg := message
 	if response != nil {

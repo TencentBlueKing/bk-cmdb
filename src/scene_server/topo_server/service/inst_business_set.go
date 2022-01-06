@@ -629,8 +629,7 @@ func (s *Service) SearchBusinessSet(ctx *rest.Contexts) {
 	ctx.RespEntity(bizSetResult)
 }
 
-func (s *Service) findBizSetTopo(kit *rest.Kit,
-	opt *metadata.FindBizSetTopoOption) ([]mapstr.MapStr, error) {
+func (s *Service) findBizSetTopo(kit *rest.Kit, opt *metadata.FindBizSetTopoOption) ([]mapstr.MapStr, error) {
 	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
 		blog.Errorf("option(%#v) is invalid, err: %v, rid: %s", opt, rawErr, kit.Rid)
 		return nil, rawErr.ToCCError(kit.CCError)
@@ -759,7 +758,7 @@ func (s *Service) getTopoBriefInfo(kit *rest.Kit, objID string, condition mapstr
 	instNameField := metadata.GetInstNameFieldName(objID)
 
 	instOpt := &metadata.QueryCondition{
-		Fields:         []string{instIDField, instNameField},
+		Fields:         []string{instIDField, instNameField, common.BKDefaultField},
 		Page:           metadata.BasePage{Limit: common.BKNoLimit, Sort: instIDField},
 		DisableCounter: true,
 		Condition:      condition,
@@ -777,6 +776,7 @@ func (s *Service) getTopoBriefInfo(kit *rest.Kit, objID string, condition mapstr
 			common.BKObjIDField:    objID,
 			common.BKInstIDField:   inst[instIDField],
 			common.BKInstNameField: inst[instNameField],
+			common.BKDefaultField:  inst[common.BKDefaultField],
 		}
 	}
 
