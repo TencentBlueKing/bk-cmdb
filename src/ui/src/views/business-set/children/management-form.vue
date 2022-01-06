@@ -4,6 +4,7 @@
       v-transfer-dom
       :is-show.sync="isShow"
       :title="title"
+      :quick-close="false"
       :width="800"
       :before-close="handleSliderBeforeClose">
       <cmdb-form slot="content" v-if="isShow"
@@ -121,18 +122,30 @@
       const saveAuth = computed(() => ({ type: isEdit.value ? OPERATION.U_BUSINESS : OPERATION.C_BUSINESS }))
 
       // 待保存的表单数据
-      const saveData = {
+      const defaultSaveData = () => ({
         bk_biz_set_attr: {},
         bk_scope: {
           match_all: true
         }
-      }
+      })
+      let saveData = defaultSaveData()
 
       const handleSave = async (values, changedValues, originalValues, type) => {
         try {
           submitting.value = true
           let result = null
           if (type === 'update') {
+            // 编辑时模型属性中会存在bk_scope字段，这里删除掉使用saveData中的bk_scope
+            Reflect.deleteProperty(values, 'bk_scope')
+
+            result = await businessSetService.update({
+              bk_biz_set_ids: [formData.value.bk_biz_set_id],
+              data: {
+                ...saveData,
+                bk_biz_set_attr: { ...values },
+              }
+            })
+            $success(t('编辑成功'))
           } else {
             saveData.bk_biz_set_attr = { ...values }
             result = await businessSetService.create(saveData)
@@ -193,11 +206,14 @@
 
       const handleSliderBeforeClose = () => {
         emit('update:show', false)
+
+        // 关闭时重置saveData
+        saveData = defaultSaveData()
       }
 
       const handlePreview = async () => {
         previewProps.show = true
-        previewProps.payload = saveData
+        previewProps.payload = { ...saveData }
       }
 
       return {

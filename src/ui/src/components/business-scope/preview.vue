@@ -3,12 +3,14 @@
     theme="primary"
     :width="840"
     :mask-close="false"
+    :show-footer="false"
     header-position="left"
     :title="$t('业务集预览')">
     <div class="content" v-bkloading="{ isLoading: $loading(requestId) }">
       <div class="content-head">
         <i18n path="共N个业务"><em place="count" class="count">{{total}}</em></i18n>
         <bk-input class="search-input" clearable
+          :value="keyword"
           right-icon="icon-search"
           :placeholder="$t('业务名')"
           @enter="handleSearch"
@@ -18,7 +20,7 @@
       <div class="content-main">
         <ul class="business-list" v-if="total > 0">
           <li v-for="(item, index) in businessList" :key="index" class="business-item">
-            <bk-link :title="item.bk_biz_name">{{item.bk_biz_name}}</bk-link>
+            <bk-link :title="item.bk_biz_name" @click="handleClickName(item)">{{item.bk_biz_name}}</bk-link>
           </li>
         </ul>
         <bk-exception :type="keyword ? 'search-empty' : 'empty'" scene="part" v-else></bk-exception>
@@ -36,8 +38,10 @@
 </template>
 
 <script>
-  import { computed, defineComponent, reactive, ref, toRefs, watchEffect } from '@vue/composition-api'
+  import { computed, defineComponent, reactive, ref, toRefs, watchEffect, watch } from '@vue/composition-api'
+  import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
   import businessSetService from '@/service/business-set/index.js'
+  import routerActions from '@/router/actions'
 
   export default defineComponent({
     props: {
@@ -79,10 +83,21 @@
           after: businessSetService.previewOfAfterCreate
         }
         const params = {
-          q: keyword.value,
           page: {
             start: pagination.limit * (pagination.current - 1),
             limit: pagination.limit
+          }
+        }
+
+        // 业务名模糊搜索
+        if (keyword.value) {
+          params.filter = {
+            condition: 'AND',
+            rules: [{
+              field: 'bk_biz_name',
+              operator: 'contains',
+              value: keyword.value,
+            }]
           }
         }
 
@@ -119,6 +134,23 @@
         keyword.value = value
       }
 
+      // 隐藏时重置值
+      watch(isShow, (val) => {
+        if (!val) {
+          keyword.value = ''
+          pagination.current = 1
+        }
+      })
+
+      const handleClickName = (item) => {
+        routerActions.open({
+          name: MENU_BUSINESS,
+          params: {
+            bizId: item.bk_biz_id
+          }
+        })
+      }
+
       return {
         isShow,
         requestId,
@@ -126,7 +158,8 @@
         total,
         pagination,
         businessList,
-        handleSearch
+        handleSearch,
+        handleClickName
       }
     }
   })
@@ -149,10 +182,13 @@
     }
 
     .content-main {
-      min-height: 160px;
-      max-height: 220px;
-      margin: 12px 0;
+      height: 220px;
+      margin: 24px 0;
       @include scrollbar-y;
+    }
+
+    .content-foot {
+      margin: 12px 0;
     }
   }
 
