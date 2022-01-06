@@ -27,10 +27,18 @@ import (
 
 // validateScopeFields validate if scope fields are all enum/organization type
 func (s *Service) validateScopeFields(kit *rest.Kit, fields []string) error {
+	// biz id field is allowed to use in biz set scope, exclude it in validation
+	validFields := make([]string, 0)
+	for _, field := range fields {
+		if field != common.BKAppIDField {
+			validFields = append(validFields, field)
+		}
+	}
+
 	cond := &metadata.QueryCondition{
 		Condition: map[string]interface{}{
 			common.BKPropertyIDField: map[string]interface{}{
-				common.BKDBIN: fields,
+				common.BKDBIN: validFields,
 			},
 		},
 		Fields: []string{common.BKPropertyTypeField},
@@ -43,7 +51,7 @@ func (s *Service) validateScopeFields(kit *rest.Kit, fields []string) error {
 		return err
 	}
 	// 数量上必须与查询一致
-	if res.Count != int64(len(fields)) {
+	if res.Count != int64(len(validFields)) {
 		blog.Errorf("read model attribute failed, error: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
 		return err
 	}
@@ -121,9 +129,14 @@ func (s *Service) UpdateBizSet(ctx *rest.Contexts) {
 		return
 	}
 
+	updateData := make(mapstr.MapStr)
+	if opt.Data.BizSetAttr != nil {
+		updateData = opt.Data.BizSetAttr
+	}
+
 	// do not allow batch update biz set name and scope
 	if len(opt.BizSetIDs) > 1 {
-		if _, exists := opt.Data.BizSetAttr[common.BKBizSetNameField]; exists {
+		if _, exists := updateData[common.BKBizSetNameField]; exists {
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKBizSetNameField))
 			return
 		}
@@ -138,7 +151,7 @@ func (s *Service) UpdateBizSet(ctx *rest.Contexts) {
 	if opt.Data.Scope != nil {
 		fields, err := opt.Data.Scope.Validate()
 		if err != nil {
-			blog.Errorf("validate create business set failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("validate business set scope failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKBizSetScopeField))
 			return
 		}
@@ -153,14 +166,13 @@ func (s *Service) UpdateBizSet(ctx *rest.Contexts) {
 		common.BKBizSetIDField: mapstr.MapStr{common.BKDBIN: opt.BizSetIDs},
 	}
 
-	bizSetData := opt.Data.BizSetAttr
 	if opt.Data.Scope != nil {
-		bizSetData[common.BKBizSetScopeField] = opt.Data.Scope
+		updateData[common.BKBizSetScopeField] = opt.Data.Scope
 	}
 
 	// update biz set instances
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Logics.InstOperation().UpdateInst(ctx.Kit, bizSetFilter, bizSetData, common.BKInnerObjIDBizSet)
+		err := s.Logics.InstOperation().UpdateInst(ctx.Kit, bizSetFilter, updateData, common.BKInnerObjIDBizSet)
 		if err != nil {
 			blog.Errorf("update biz set failed, err: %v, opt: %#v, rid: %s", err, opt, ctx.Kit.Rid)
 			return err
@@ -453,7 +465,8 @@ func (s *Service) getBizSetBizCond(kit *rest.Kit, bizSetID int64) (mapstr.MapStr
 	if bizSetRes.Data.Info[0].Scope.MatchAll {
 		// do not include resource pool biz in biz set by default
 		return mapstr.MapStr{
-			common.BKDefaultField: mapstr.MapStr{common.BKDBNE: common.DefaultAppFlag},
+			common.BKDefaultField:    mapstr.MapStr{common.BKDBNE: common.DefaultAppFlag},
+			common.BKDataStatusField: map[string]interface{}{common.BKDBNE: common.DataStatusDisabled},
 		}, nil
 	}
 
@@ -535,7 +548,7 @@ func (s *Service) getAuthBizSetIDList(kit *rest.Kit, action meta.Action) (bool, 
 	return false, authBizSetIDs, nil
 }
 
-// SearchBusiness search the business by condition
+// SearchBusinessSet search business set by condition
 func (s *Service) SearchBusinessSet(ctx *rest.Contexts) {
 
 	searchCond := new(metadata.QueryBusinessSetRequest)
@@ -635,7 +648,7 @@ func (s *Service) findBizSetTopo(kit *rest.Kit,
 	switch opt.ParentObjID {
 	case common.BKInnerObjIDBizSet:
 		if opt.ParentID != opt.BizSetID {
-			blog.Errorf("biz parent id %s is not equal to biz set id %s, rid: %s", opt.ParentID, opt.BizSetID, kit.Rid)
+			blog.Errorf("biz parent id %d is not equal to biz set id %d, rid: %s", opt.ParentID, opt.BizSetID, kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
 		}
 

@@ -82,7 +82,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 
 			bizSetID, err := strconv.ParseInt(request.Elements[7], 10, 64)
 			if err != nil {
-				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[5], err)
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[7], err)
 			}
 			return []int64{bizSetID}, nil
 		},
@@ -200,7 +200,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 
 			bizSetID, err := strconv.ParseInt(request.Elements[8], 10, 64)
 			if err != nil {
-				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[5], err)
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[8], err)
 			}
 			return []int64{bizSetID}, nil
 		},

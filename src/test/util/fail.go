@@ -15,16 +15,27 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
+	"configcenter/src/common"
+	"configcenter/src/common/util"
 
 	"github.com/onsi/ginkgo"
 )
 
 var (
 	response interface{} = nil
+	rid      string
 )
 
 func RegisterResponse(rsp interface{}) {
 	response = rsp
+}
+
+func RegisterResponseWithRid(rsp interface{}, header http.Header) {
+	response = rsp
+	rid = util.GetHTTPCCRequestID(header)
+	header.Set(common.BKHTTPCCRequestID, util.GenerateRID())
 }
 
 func Fail(message string, callerSkip ...int) {
@@ -32,6 +43,9 @@ func Fail(message string, callerSkip ...int) {
 	if response != nil {
 		j, _ := json.MarshalIndent(response, "", "\t")
 		msg = fmt.Sprintf("Test failed, message:\n%v\n\nresponse:\n%s", message, j)
+	}
+	if rid != "" {
+		msg += fmt.Sprintf("\nrid: %s\n", rid)
 	}
 	skip := 0
 	if len(callerSkip) > 0 {

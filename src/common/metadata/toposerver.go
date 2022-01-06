@@ -340,6 +340,9 @@ type BizSetScope struct {
 // Validate 用于创建和更新场景下的对于业务集scope参数的校验，校验scope仅存在两层且子条件是与的关系，返回其中包含的字段用于后续校验
 func (scope *BizSetScope) Validate() ([]string, error) {
 	if scope.MatchAll == true {
+		if scope.Filter != nil {
+			return []string{}, fmt.Errorf("when match_all is true, params filter can not be set")
+		}
 		return []string{}, nil
 	}
 
@@ -421,6 +424,12 @@ func (op *CreateBizSetRequest) Validate() ([]string, errors.RawErrorInfo) {
 	return fields, errors.RawErrorInfo{}
 }
 
+// CreateBizSetResponse create biz set response, returns the created biz set id
+type CreateBizSetResponse struct {
+	BaseResp `json:",inline"`
+	Data     int64 `json:"data"`
+}
+
 // GetHostAndSerInstCountResult 获取topo节点主机/服务实例数量结构
 type GetHostAndSerInstCountResult struct {
 	BaseResp `json:",inline"`
@@ -483,7 +492,7 @@ type DeleteBizSetOption struct {
 
 // UpdateBizSetOption update business set option
 type UpdateBizSetOption struct {
-	BizSetIDs []int64          `json:"bk_biz_set_ids"`
+	BizSetIDs []int64           `json:"bk_biz_set_ids"`
 	Data      *UpdateBizSetData `json:"data"`
 }
 
