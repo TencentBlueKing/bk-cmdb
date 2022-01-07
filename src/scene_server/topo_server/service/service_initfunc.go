@@ -98,6 +98,7 @@ func (s *Service) initBizSet(web *restful.WebService) {
 		Language: s.Engine.Language,
 	})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/biz_set", Handler: s.UpdateBizSet})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/deletemany/biz_set", Handler: s.DeleteBizSet})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/biz_set/biz_list", Handler: s.FindBizInBizSet})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/biz_set/topo_path", Handler: s.FindBizSetTopo})
@@ -108,6 +109,14 @@ func (s *Service) initBizSet(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet,
 		Path:    "/findmany/biz_set/with_reduced",
 		Handler: s.SearchReducedBusinessSetList})
+
+	// search biz resources by biz set, with the same logic of corresponding biz interface, **only for ui**
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/set/biz_set/{bk_biz_set_id}/biz/{app_id}",
+		Handler: s.SearchSet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/findmany/module/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}/set/{bk_set_id}", Handler: s.SearchModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/find/topopath/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}", Handler: s.SearchTopoPath})
 
 	utility.AddToRestfulWebService(web)
 }

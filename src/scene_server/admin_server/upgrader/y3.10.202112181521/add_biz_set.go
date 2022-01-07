@@ -35,7 +35,7 @@ var dataRows = map[string]*metadata.Attribute{
 		IsEditable:    true,
 		PropertyGroup: mCommon.BaseInfo,
 		PropertyType:  common.FieldTypeSingleChar,
-		Option:        "^[^\\\\\\\\\\\\|\\\\/:\\\\*,<>\\\"\\\\?#\\\\s]+$",
+		Option:        `^[^\\\|\/:\*,<>"\?#\s]+$`,
 	},
 	common.BKBizSetIDField: {
 		ObjectID:      common.BKInnerObjIDBizSet,

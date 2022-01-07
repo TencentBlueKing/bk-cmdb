@@ -154,6 +154,25 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		BizIndex:       7,
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.FindMany,
+	}, {
+		// get service template sync status by biz set regex, authorize by biz set access permission, **only for ui**
+		Name:           "GetServiceTemplateSyncStatusByBizSetRegexp",
+		Description:    "查询业务集中服务模版的同步状态",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/service_template/sync_status/biz_set/[0-9]+/biz/[0-9]+/?$`),
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.BizSet,
+		ResourceAction: meta.Find,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			if len(request.Elements) != 10 {
+				return nil, fmt.Errorf("get invalid url elements length %d", len(request.Elements))
+			}
+
+			bizSetID, err := strconv.ParseInt(request.Elements[7], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[7], err)
+			}
+			return []int64{bizSetID}, nil
+		},
 	},
 }
 
