@@ -67,6 +67,25 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.FindMany,
+	}, {
+		// search service instance by biz set regex, authorize by biz set access permission, **only for ui**
+		Name:           "findServiceInstanceWebByBizSetRegexp",
+		Description:    "UI查询服务实例",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/web/service_instance/biz_set/[0-9]+/?$`),
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.BizSet,
+		ResourceAction: meta.Find,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			if len(request.Elements) != 8 {
+				return nil, fmt.Errorf("get invalid url elements length %d", len(request.Elements))
+			}
+
+			bizSetID, err := strconv.ParseInt(request.Elements[7], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[7], err)
+			}
+			return []int64{bizSetID}, nil
+		},
 	},
 	{
 		Name:           "findServiceInstanceDetailsPattern",
@@ -166,6 +185,25 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.FindMany,
+	}, {
+		// aggregate service instance labels by biz set regex, authorize by biz set access permission, **only for ui**
+		Name:           "aggregationServiceInstanceLabelsByBizSetRegexp",
+		Description:    "聚合业务集下的服务实例标签",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/proc_template/biz_set/[0-9]+/?$`),
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.BizSet,
+		ResourceAction: meta.Find,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			if len(request.Elements) != 9 {
+				return nil, fmt.Errorf("get invalid url elements length %d", len(request.Elements))
+			}
+
+			bizSetID, err := strconv.ParseInt(request.Elements[8], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[8], err)
+			}
+			return []int64{bizSetID}, nil
+		},
 	}, {
 		Name:           "addServiceInstanceLabelsPattern",
 		Description:    "服务实例添加label",

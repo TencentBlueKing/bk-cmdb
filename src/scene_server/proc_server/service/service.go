@@ -158,6 +158,33 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/service_instance/task",
 		Handler: ps.DoSyncServiceInstanceTask})
 
+	// search process related resources by biz set, with the same logic of corresponding biz interface, **only for ui**
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/service_template/sync_status/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}",
+		Handler: ps.GetServiceTemplateSyncStatus,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/proc_template/biz_set/{bk_biz_set_id}",
+		Handler: ps.ListProcessTemplate,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/web/service_instance/biz_set/{bk_biz_set_id}",
+		Handler: ps.SearchServiceInstancesInModuleWeb,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/service_instance/labels/aggregation/biz_set/{bk_biz_set_id}",
+		Handler: ps.ServiceInstanceLabelsAggregation,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/process_instance/name_ids/biz_set/{bk_biz_set_id}",
+		Handler: ps.ListProcessInstancesNameIDsInModule,
+	})
+
 	utility.AddToRestfulWebService(web)
 }
 

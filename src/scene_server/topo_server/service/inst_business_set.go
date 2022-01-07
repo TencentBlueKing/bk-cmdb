@@ -25,17 +25,20 @@ import (
 	"configcenter/src/common/querybuilder"
 )
 
-func (s *Service) validateCreateParams(kit *rest.Kit, data *metadata.CreateBizSetRequest) error {
-	fields, errRaw := data.Validate()
-	if errRaw.ErrCode != 0 {
-		blog.Errorf("validate create business set failed, err: %v, rid: %s", errRaw, kit.Rid)
-		return errRaw.ToCCError(kit.CCError)
+// validateScopeFields validate if scope fields are all enum/organization type
+func (s *Service) validateScopeFields(kit *rest.Kit, fields []string) error {
+	// biz id field is allowed to use in biz set scope, exclude it in validation
+	validFields := make([]string, 0)
+	for _, field := range fields {
+		if field != common.BKAppIDField {
+			validFields = append(validFields, field)
+		}
 	}
 
 	cond := &metadata.QueryCondition{
 		Condition: map[string]interface{}{
 			common.BKPropertyIDField: map[string]interface{}{
-				common.BKDBIN: fields,
+				common.BKDBIN: validFields,
 			},
 		},
 		Fields: []string{common.BKPropertyTypeField},
@@ -48,7 +51,7 @@ func (s *Service) validateCreateParams(kit *rest.Kit, data *metadata.CreateBizSe
 		return err
 	}
 	// 数量上必须与查询一致
-	if res.Count != int64(len(fields)) {
+	if res.Count != int64(len(validFields)) {
 		blog.Errorf("read model attribute failed, error: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
 		return err
 	}
@@ -57,7 +60,7 @@ func (s *Service) validateCreateParams(kit *rest.Kit, data *metadata.CreateBizSe
 	for _, info := range res.Info {
 		if info.PropertyType != common.FieldTypeEnum && info.PropertyType != common.FieldTypeOrganization {
 			blog.Errorf("model attribute type must be enum or organization, cond: %+v, rid: %s", cond, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid,"model attribute must enum or organization")
+			return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "model attribute must enum or organization")
 		}
 	}
 	return nil
@@ -71,7 +74,14 @@ func (s *Service) CreateBusinessSet(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := s.validateCreateParams(ctx.Kit, data); err != nil {
+	fields, errRaw := data.Validate()
+	if errRaw.ErrCode != 0 {
+		blog.Errorf("validate create business set failed, err: %v, rid: %s", errRaw, ctx.Kit.Rid)
+		ctx.RespAutoError(errRaw.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	if err := s.validateScopeFields(ctx.Kit, fields); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -99,6 +109,82 @@ func (s *Service) CreateBusinessSet(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(bizSetID)
+}
+
+// UpdateBizSet update business set
+func (s *Service) UpdateBizSet(ctx *rest.Contexts) {
+	opt := new(metadata.UpdateBizSetOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(opt.BizSetIDs) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "bk_biz_set_ids"))
+		return
+	}
+
+	if opt.Data == nil || (opt.Data.BizSetAttr == nil && opt.Data.Scope == nil) {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "data"))
+		return
+	}
+
+	updateData := make(mapstr.MapStr)
+	if opt.Data.BizSetAttr != nil {
+		updateData = opt.Data.BizSetAttr
+	}
+
+	// do not allow batch update biz set name and scope
+	if len(opt.BizSetIDs) > 1 {
+		if _, exists := updateData[common.BKBizSetNameField]; exists {
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKBizSetNameField))
+			return
+		}
+
+		if opt.Data.Scope != nil {
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKBizSetScopeField))
+			return
+		}
+	}
+
+	// validate scope field
+	if opt.Data.Scope != nil {
+		fields, err := opt.Data.Scope.Validate()
+		if err != nil {
+			blog.Errorf("validate business set scope failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKBizSetScopeField))
+			return
+		}
+
+		if err := s.validateScopeFields(ctx.Kit, fields); err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
+	bizSetFilter := mapstr.MapStr{
+		common.BKBizSetIDField: mapstr.MapStr{common.BKDBIN: opt.BizSetIDs},
+	}
+
+	if opt.Data.Scope != nil {
+		updateData[common.BKBizSetScopeField] = opt.Data.Scope
+	}
+
+	// update biz set instances
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.Logics.InstOperation().UpdateInst(ctx.Kit, bizSetFilter, updateData, common.BKInnerObjIDBizSet)
+		if err != nil {
+			blog.Errorf("update biz set failed, err: %v, opt: %#v, rid: %s", err, opt, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
 }
 
 // DeleteBizSet delete business set
@@ -293,12 +379,28 @@ func (s *Service) FindBizInBizSet(ctx *rest.Contexts) {
 		return
 	}
 
+	var bizFilter mapstr.MapStr
+	if opt.Filter != nil {
+		cond, errKey, rawErr := opt.Filter.ToMgo()
+		if rawErr != nil {
+			blog.Errorf("parse biz filter(%#v) failed, err: %v, rid: %s", opt.Filter, rawErr, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
+			return
+		}
+		bizFilter = cond
+	}
+
 	// get biz mongo condition by biz scope in biz set
 	bizSetBizCond, err := s.getBizSetBizCond(ctx.Kit, opt.BizSetID)
 	if err != nil {
 		blog.Errorf("get biz cond by biz set id %d failed, err: %v, rid: %s", opt.BizSetID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
+	}
+
+	// merge biz set scope mongo condition with extra biz condition to search specific biz in all biz in biz set
+	if len(bizFilter) > 0 {
+		bizSetBizCond = mapstr.MapStr{common.BKDBAND: []mapstr.MapStr{bizSetBizCond, bizFilter}}
 	}
 
 	// count biz in biz set is enable count is set
@@ -312,7 +414,7 @@ func (s *Service) FindBizInBizSet(ctx *rest.Contexts) {
 			ctx.RespAutoError(err)
 			return
 		}
-		ctx.RespEntity(mapstr.MapStr{"count": counts[0]})
+		ctx.RespEntityWithCount(counts[0], make([]mapstr.MapStr, 0))
 		return
 	}
 
@@ -330,7 +432,7 @@ func (s *Service) FindBizInBizSet(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(mapstr.MapStr{"info": biz})
+	ctx.RespEntityWithCount(0, biz)
 }
 
 // getBizSetBizCond get biz mongo condition from the biz set scope
@@ -363,7 +465,8 @@ func (s *Service) getBizSetBizCond(kit *rest.Kit, bizSetID int64) (mapstr.MapStr
 	if bizSetRes.Data.Info[0].Scope.MatchAll {
 		// do not include resource pool biz in biz set by default
 		return mapstr.MapStr{
-			common.BKDefaultField: mapstr.MapStr{common.BKDBNE: common.DefaultAppFlag},
+			common.BKDefaultField:    mapstr.MapStr{common.BKDBNE: common.DefaultAppFlag},
+			common.BKDataStatusField: map[string]interface{}{common.BKDBNE: common.DataStatusDisabled},
 		}, nil
 	}
 
@@ -381,6 +484,11 @@ func (s *Service) getBizSetBizCond(kit *rest.Kit, bizSetID int64) (mapstr.MapStr
 	// do not include resource pool biz in biz set by default
 	if _, exists := bizSetBizCond[common.BKDefaultField]; !exists {
 		bizSetBizCond[common.BKDefaultField] = mapstr.MapStr{common.BKDBNE: common.DefaultAppFlag}
+	}
+
+	// do not include disabled biz in biz set by default
+	if _, exists := bizSetBizCond[common.BKDataStatusField]; !exists {
+		bizSetBizCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
 	}
 
 	return bizSetBizCond, nil
@@ -440,7 +548,7 @@ func (s *Service) getAuthBizSetIDList(kit *rest.Kit, action meta.Action) (bool, 
 	return false, authBizSetIDs, nil
 }
 
-// SearchBusiness search the business by condition
+// SearchBusinessSet search business set by condition
 func (s *Service) SearchBusinessSet(ctx *rest.Contexts) {
 
 	searchCond := new(metadata.QueryBusinessSetRequest)
@@ -521,8 +629,7 @@ func (s *Service) SearchBusinessSet(ctx *rest.Contexts) {
 	ctx.RespEntity(bizSetResult)
 }
 
-func (s *Service) findBizSetTopo(kit *rest.Kit,
-	opt *metadata.FindBizSetTopoOption) ([]mapstr.MapStr, error) {
+func (s *Service) findBizSetTopo(kit *rest.Kit, opt *metadata.FindBizSetTopoOption) ([]mapstr.MapStr, error) {
 	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
 		blog.Errorf("option(%#v) is invalid, err: %v, rid: %s", opt, rawErr, kit.Rid)
 		return nil, rawErr.ToCCError(kit.CCError)
@@ -535,24 +642,17 @@ func (s *Service) findBizSetTopo(kit *rest.Kit,
 		return nil, err
 	}
 
-	// check if the parent node belongs to a biz that is in the biz set
-	if err := s.checkTopoNodeInBizSet(kit, opt.ParentObjID, opt.ParentID, bizSetBizCond); err != nil {
-		blog.Errorf("check if parent %s node %d in biz failed, err: %v, biz cond: %#v, rid: %s", opt.ParentObjID,
-			opt.ParentID, err, bizSetBizCond, kit.Rid)
-		return nil, err
-	}
-
 	// get parent object id to check if the parent node is a valid mainline instance that belongs to the biz set
 	var childObjID string
 	switch opt.ParentObjID {
 	case common.BKInnerObjIDBizSet:
 		if opt.ParentID != opt.BizSetID {
-			blog.Errorf("biz parent id %s is not equal to biz set id %s, rid: %s", opt.ParentID, opt.BizSetID, kit.Rid)
+			blog.Errorf("biz parent id %d is not equal to biz set id %d, rid: %s", opt.ParentID, opt.BizSetID, kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
 		}
 
 		// find biz nodes by the condition in biz sets
-		bizArr, err := s.getTopoBriefInfo(kit, common.BKInnerObjIDSet, bizSetBizCond)
+		bizArr, err := s.getTopoBriefInfo(kit, common.BKInnerObjIDApp, bizSetBizCond)
 		if err != nil {
 			return nil, err
 		}
@@ -584,6 +684,13 @@ func (s *Service) findBizSetTopo(kit *rest.Kit,
 		childObjID = asst.Info[0].ObjectID
 	}
 
+	// check if the parent node belongs to a biz that is in the biz set
+	if err := s.checkTopoNodeInBizSet(kit, opt.ParentObjID, opt.ParentID, bizSetBizCond); err != nil {
+		blog.Errorf("check if parent %s node %d in biz failed, err: %v, biz cond: %#v, rid: %s", opt.ParentObjID,
+			opt.ParentID, err, bizSetBizCond, kit.Rid)
+		return nil, err
+	}
+
 	// find topo nodes' id and name by parent id
 	instArr, err := s.getTopoBriefInfo(kit, childObjID, mapstr.MapStr{common.BKParentIDField: opt.ParentID})
 	if err != nil {
@@ -601,7 +708,7 @@ func (s *Service) findBizSetTopo(kit *rest.Kit,
 		if err != nil {
 			return nil, err
 		}
-		return append(instArr, setArr...), nil
+		return append(setArr, instArr...), nil
 	}
 	return instArr, nil
 }
@@ -651,7 +758,7 @@ func (s *Service) getTopoBriefInfo(kit *rest.Kit, objID string, condition mapstr
 	instNameField := metadata.GetInstNameFieldName(objID)
 
 	instOpt := &metadata.QueryCondition{
-		Fields:         []string{instIDField, instNameField},
+		Fields:         []string{instIDField, instNameField, common.BKDefaultField},
 		Page:           metadata.BasePage{Limit: common.BKNoLimit, Sort: instIDField},
 		DisableCounter: true,
 		Condition:      condition,
@@ -669,6 +776,7 @@ func (s *Service) getTopoBriefInfo(kit *rest.Kit, objID string, condition mapstr
 			common.BKObjIDField:    objID,
 			common.BKInstIDField:   inst[instIDField],
 			common.BKInstNameField: inst[instNameField],
+			common.BKDefaultField:  inst[common.BKDefaultField],
 		}
 	}
 
