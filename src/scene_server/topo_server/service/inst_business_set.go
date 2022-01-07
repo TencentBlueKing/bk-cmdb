@@ -50,14 +50,15 @@ func (s *Service) validateCreateParams(kit *rest.Kit, data *metadata.CreateBizSe
 	// 数量上必须与查询一致
 	if res.Count != int64(len(fields)) {
 		blog.Errorf("read model attribute failed, error: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
-		return err
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "wrong number of model attributes")
+		return nil
 	}
 
 	// 严格校验每个字段类型是否是enum或 organization
 	for _, info := range res.Info {
 		if info.PropertyType != common.FieldTypeEnum && info.PropertyType != common.FieldTypeOrganization {
 			blog.Errorf("model attribute type must be enum or organization, cond: %+v, rid: %s", cond, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid,"model attribute must enum or organization")
+			return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "model attribute must enum or organization")
 		}
 	}
 	return nil
@@ -201,7 +202,6 @@ func (s *Service) PreviewBusinessSet(ctx *rest.Contexts) {
 			Sort:  common.BKAppIDField,
 		},
 	}
-
 	_, instItems, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, query)
 	if err != nil {
 		blog.Errorf("find business failed, err: %v, rid: %s", err, ctx.Kit.Rid)

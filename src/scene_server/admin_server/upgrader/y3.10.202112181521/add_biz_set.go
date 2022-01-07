@@ -13,7 +13,6 @@
 package y3_10_202112181521
 
 import (
-	"configcenter/src/storage/dal/types"
 	"context"
 	"fmt"
 
@@ -94,7 +93,7 @@ func addBizSetObjectRow(ctx context.Context, db dal.RDB, ownerID string) error {
 	// 判断是否有 biz_set 的对象表，如果没有需要初始化
 	err := db.Table(common.BKTableNameObjDes).Find(filter).
 		Fields(common.BKFieldID, common.BKObjNameField, common.CreatorField).One(ctx, model)
-	if err != nil && err != types.ErrDocumentNotFound {
+	if err != nil && !db.IsNotFoundError(err) {
 		blog.Errorf("count biz set object failed, err: %v", err)
 		return err
 	}
@@ -231,8 +230,8 @@ func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) err
 	attrs := make([]metadata.Attribute, 0)
 	// 判断是否有bizSet的对象属性表，如果没有需要初始化
 	if err := db.Table(common.BKTableNameObjAttDes).Find(filter).Fields(common.BKPropertyIDField, common.BKObjNameField,
-		common.CreatorField).All(ctx, &attrs); err != nil && err != types.ErrDocumentNotFound {
-		blog.Errorf("find object attribute describe fail,err: %v", err)
+		common.CreatorField).All(ctx, &attrs); err != nil && !db.IsNotFoundError(err) {
+		blog.Errorf("find object attribute describe fail, err: %v", err)
 		return err
 	}
 
