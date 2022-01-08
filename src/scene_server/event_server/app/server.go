@@ -27,7 +27,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/event_server/app/options"
 	svc "configcenter/src/scene_server/event_server/service"
-	"configcenter/src/scene_server/event_server/sync/hostIdentifier"
+	"configcenter/src/scene_server/event_server/sync/hostidentifier"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
@@ -247,51 +247,35 @@ func (es *EventServer) runSyncData() error {
 	if err != nil {
 		return err
 	}
-	syncData := hostIdentifier.NewHostIdentifier(es.ctx, es.redisCli, es.engine,
+	syncData := hostidentifier.NewHostIdentifier(es.ctx, es.redisCli, es.engine,
 		gseTaskServerClient, gseApiServerClient)
 
-	// 此协程用于当服务为master时，创建watch、周期全量同步、查询推送主机身份、将失败任务变成新任务 等协程的功能，需要注意，当服务原来是master,
-	// 后面变成从服务时，对应的watch、周期全量同步、查询推送主机身份、将失败任务变成新任务 等协程会退出，所以这里需要反复检查是否是master, 然
-	// 后重新创建相关的协程
+	// watch主机身份变化创建任务调用gse接口推送
+	go syncData.WatchToSyncHostIdentifier()
+
+	// 周期全量同步主机身份
+	batchSyncIntervalHours, err := cc.Int("eventServer.hostIdentifier.batchSyncIntervalHours")
+	if err != nil {
+		batchSyncIntervalHours = defaultBatchSyncIntervalHours
+	}
 	go func() {
-		needToCreatGoroutine := true
 		for {
-			time.Sleep(time.Minute)
 			if !es.engine.Discovery().IsMaster() {
-				blog.Infof("skip sync data because not master")
-				needToCreatGoroutine = true
+				time.Sleep(time.Minute)
 				continue
 			}
-
-			if needToCreatGoroutine {
-				// watch主机身份变化创建任务调用gse接口推送
-				go syncData.WatchToSyncHostIdentifier()
-
-				// 周期全量同步主机身份
-				batchSyncIntervalHours, err := cc.Int("eventServer.hostIdentifier.batchSyncIntervalHours")
-				if err != nil {
-					batchSyncIntervalHours = defaultBatchSyncIntervalHours
-				}
-				go func(c <-chan time.Time) {
-					for {
-						if !es.engine.Discovery().IsMaster() {
-							return
-						}
-						syncData.BatchSyncHostIdentifier()
-						<-c
-					}
-				}(time.Tick(time.Duration(batchSyncIntervalHours) * time.Hour))
-
-				for i := 0; i < defaultGoroutineCount; i++ {
-					// 查询推送主机身份任务结果并处理失败主机
-					go syncData.GetTaskExecutionStatus()
-					// 协程将失败的主机重新变成新任务
-					go syncData.MakeNewTaskFromFailHost()
-				}
-				needToCreatGoroutine = false
-			}
+			syncData.BatchSyncHostIdentifier()
+			time.Sleep(time.Duration(batchSyncIntervalHours) * time.Hour)
 		}
 	}()
+
+	for i := 0; i < defaultGoroutineCount; i++ {
+		// 查询推送主机身份任务结果并处理失败主机
+		go syncData.GetTaskExecutionStatus()
+		// 协程将失败的主机重新变成新任务
+		go syncData.MakeNewTaskFromFailHost()
+	}
+
 	return nil
 }
 

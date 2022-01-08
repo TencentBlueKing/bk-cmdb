@@ -13,13 +13,15 @@
 package client
 
 import (
+	"context"
+	"sync"
+
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/ssl"
 	apiserver "configcenter/src/thirdparty/gse/get_agent_state_forsyncdata"
 	taskserver "configcenter/src/thirdparty/gse/push_file_forsyncdata"
-	"context"
+
 	"github.com/apache/thrift/lib/go/thrift"
-	"sync"
 )
 
 type GseApiServerClient struct {
@@ -46,12 +48,12 @@ func NewGseApiServerClient(endpoints []string, conf *util.TLSClientConfig) (*Gse
 // GetAgentStatus get agent status
 func (g *GseApiServerClient) GetAgentStatus(ctx context.Context,
 	requestInfo *apiserver.AgentStatusRequest) (*apiserver.AgentStatusResponse, error) {
+	g.Lock()
+	defer g.Unlock()
 	return g.getClient().GetAgentStatus(ctx, requestInfo)
 }
 
 func (g *GseApiServerClient) getClient() *apiserver.CacheAPIClient {
-	g.Lock()
-	defer g.Unlock()
 	g.index++
 	if g.index >= len(g.clients) {
 		g.index = 0
@@ -83,17 +85,19 @@ func NewGseTaskServerClient(endpoints []string, conf *util.TLSClientConfig) (*Gs
 // PushFileV2 push host identifier to gse agent
 func (g *GseTaskServerClient) PushFileV2(ctx context.Context,
 	fileList []*taskserver.API_FileInfoV2) (*taskserver.API_CommRsp, error) {
+	g.Lock()
+	defer g.Unlock()
 	return g.getClient().PushFileV2(ctx, fileList)
 }
 
 // GetPushFileRst get push file task result
 func (g *GseTaskServerClient) GetPushFileRst(ctx context.Context, seqno string) (*taskserver.API_MapRsp, error) {
+	g.Lock()
+	defer g.Unlock()
 	return g.getClient().GetPushFileRst(ctx, seqno)
 }
 
 func (g *GseTaskServerClient) getClient() *taskserver.DoSomeCmdClient {
-	g.Lock()
-	defer g.Unlock()
 	g.index++
 	if g.index >= len(g.clients) {
 		g.index = 0

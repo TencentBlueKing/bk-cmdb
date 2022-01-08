@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package hostIdentifier
+package hostidentifier
 
 import (
 	"crypto/md5"
@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/gse/get_agent_state_forsyncdata"
+
 	"github.com/tidwall/gjson"
 )
 
@@ -59,14 +60,6 @@ func buildAgentStatusRequestHostInfo(cloudID, innerIP string) []*get_agent_state
 	var hostInfos []*get_agent_state_forsyncdata.CacheIPInfo
 	// 对于多ip的情况需要特殊处理，agent可能仅有一个ip处于on状态，需要将ip数组里的ip分别查询
 	ips := strings.Split(innerIP, ",")
-	if len(ips) == 1 {
-		hostInfos = append(hostInfos, &get_agent_state_forsyncdata.CacheIPInfo{
-			GseCompositeID: cloudID,
-			IP:             innerIP,
-		})
-		return hostInfos
-	}
-
 	for _, ip := range ips {
 		hostInfos = append(hostInfos, &get_agent_state_forsyncdata.CacheIPInfo{
 			GseCompositeID: cloudID,
@@ -78,15 +71,6 @@ func buildAgentStatusRequestHostInfo(cloudID, innerIP string) []*get_agent_state
 
 func getAgentIPStatusIsOn(cloudID, innerIP string, agentStatusResultMap map[string]string) (bool, string) {
 	ips := strings.Split(innerIP, ",")
-	if len(ips) == 1 {
-		key := cloudID + ":" + innerIP
-		if gjson.Get(agentStatusResultMap[key], "bk_agent_alive").Int() == agentOnStatus {
-			return true, innerIP
-		}
-		blog.Infof("host %v agent status is off", key)
-		return false, ""
-	}
-
 	for _, ip := range ips {
 		key := cloudID + ":" + ip
 		if gjson.Get(agentStatusResultMap[key], "bk_agent_alive").Int() == agentOnStatus {

@@ -31,7 +31,7 @@ func (ps *parseStream) eventRelated() *parseStream {
 	}
 
 	ps.watch().
-		synchostIdentifier()
+		syncHostIdentifier()
 
 	return ps
 }
@@ -39,8 +39,6 @@ func (ps *parseStream) eventRelated() *parseStream {
 var (
 	watchResourceRegexp = regexp.MustCompile(`^/api/v3/event/watch/resource/\S+/?$`)
 )
-
-const syncHostIdentifier = "/api/v3/event/sync/host_identifier"
 
 func (ps *parseStream) watch() *parseStream {
 	if ps.shouldReturn() {
@@ -96,7 +94,9 @@ func (ps *parseStream) watch() *parseStream {
 	return ps
 }
 
-func (ps *parseStream) synchostIdentifier() *parseStream {
+const syncHostIdentifier = "/api/v3/event/sync/host_identifier"
+
+func (ps *parseStream) syncHostIdentifier() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}

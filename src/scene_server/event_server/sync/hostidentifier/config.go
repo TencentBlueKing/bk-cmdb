@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package hostIdentifier
+package hostidentifier
 
 import (
 	"configcenter/src/common"
