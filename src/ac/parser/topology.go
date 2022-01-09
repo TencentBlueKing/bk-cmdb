@@ -326,7 +326,7 @@ const (
 	updateBizSetPattern               = `/api/v3/updatemany/biz_set`
 	findBizInBizSetPattern            = `/api/v3/find/biz_set/biz_list`
 	findBizSetTopoPattern             = `/api/v3/find/biz_set/topo_path`
-	findmanyBusinessSetPattern        = `api/v3/findmany/biz_set`
+	findmanyBusinessSetPattern        = `/api/v3/findmany/biz_set`
 	findReducedBusinessSetListPattern = `/api/v3/findmany/biz_set/with_reduced`
 	previewBusinessSetPattern         = `/api/v3/find/biz_set/preview`
 )
@@ -338,7 +338,7 @@ var (
 	findBizSetTopoPathRegexp = regexp.MustCompile(`^/api/v3/find/topopath/biz_set/[0-9]+/biz/[0-9]+/?$`)
 )
 
-// NOCC:golint/fnsize(整体属于businessSet操作需要放在一起)
+// NOCC:golint/fnsize(business set操作需要放到一个函数中)
 func (ps *parseStream) businessSet() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -471,7 +471,7 @@ func (ps *parseStream) businessSet() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.BizSet,
-					Action: meta.Find,
+					Action: meta.SkipAction,
 				},
 			},
 		}
