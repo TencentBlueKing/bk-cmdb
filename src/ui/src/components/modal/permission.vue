@@ -18,7 +18,6 @@
   import { IAM_VIEWS } from '@/dictionary/iam-auth'
   import permissionMixins from '@/mixins/permission'
   import PermissionMain from './permission-main.vue'
-  import uniqBy from 'lodash/uniqBy'
   export default {
     name: 'permissionModal',
     components: {
@@ -73,7 +72,7 @@
           const { related_resource_types: relatedResourceTypes = [] } = action
           const newInstances = []
           relatedResourceTypes.forEach(({ instances = [] }) => {
-            let insts = instances.filter((fullPaths) => {
+            const insts = instances.filter((fullPaths) => {
               const matched = fullPaths.find(item => batchInstTypes.includes(item.type))
               if (matched) {
                 const authed = authResults.find(item => String(item.resource_id) === matched.id)
@@ -81,7 +80,6 @@
               }
               return true
             })
-            insts = uniqBy(insts, inst => inst[0].id)
             newInstances.push(insts)
           })
 
