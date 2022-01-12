@@ -68,7 +68,7 @@ func (h *HostIdentifier) GetTaskExecutionStatus() {
 			continue
 		}
 
-		taskMessage, err := h.getTaskFromTaskList()
+		taskMessage, err := h.getFromTaskList()
 		if err != nil {
 			blog.Errorf("get task from redis task list error, err: %v", err)
 			continue
@@ -100,14 +100,14 @@ func (h *HostIdentifier) GetTaskExecutionStatus() {
 			if hostInfo.HasResult {
 				continue
 			}
-			key := strconv.FormatInt(hostInfo.CloudID, 10) + ":" + hostInfo.HostInnerIP
+			key := hostKey(strconv.FormatInt(hostInfo.CloudID, 10), hostInfo.HostInnerIP)
 			if taskResultMap[key] == "" {
 				blog.Errorf("can not get host identifier push message from task, hostInfo: %v, taskID: %s",
 					hostInfo, task.TaskID)
 				// 超过规定时间还没有拿到结果，并且没超过最大重试次数时，将没拿到结果的主机信息放到失败主机队列中
 				if time.Now().Unix() >= task.ExpiredTime && hostInfo.Times < retryTimes {
 					hostInfo.Times++
-					h.addHostToFailHostList(hostInfo)
+					h.addToFailHostList(hostInfo)
 				}
 				continue
 			}
@@ -117,7 +117,7 @@ func (h *HostIdentifier) GetTaskExecutionStatus() {
 				blog.Errorf("push host identifier error, hostInfo: %v, taskID: %s", hostInfo, task.TaskID)
 				if hostInfo.Times < retryTimes {
 					hostInfo.Times++
-					h.addHostToFailHostList(hostInfo)
+					h.addToFailHostList(hostInfo)
 				}
 			}
 			hostInfo.HasResult = true
@@ -125,7 +125,7 @@ func (h *HostIdentifier) GetTaskExecutionStatus() {
 
 		// 该任务包含的主机还没有拿到全部的结果，并且还没超过规定时间时，把任务重新放入任务队列中
 		if len(task.HostInfos) != len(taskResultMap) && time.Now().Unix() < task.ExpiredTime {
-			h.addTaskToTaskList(task)
+			h.addToTaskList(task)
 		}
 	}
 }
@@ -168,15 +168,15 @@ func (h *HostIdentifier) MakeNewTaskFromFailHost() {
 		// 此map保存hostID和该host处于on的agent的ip的对应关系
 		hostMap := make(map[int64]string)
 		for _, hostInfo := range hostInfoArray {
-			isOn, hostIP := getAgentIPStatusIsOn(strconv.FormatInt(hostInfo.CloudID, 10),
+			isOn, hostIP := getStatusOnAgentIP(strconv.FormatInt(hostInfo.CloudID, 10),
 				hostInfo.HostInnerIP, agentStatus.Result_)
-			if isOn {
-				hostIDs = append(hostIDs, hostInfo.HostID)
-				hostMap[hostInfo.HostID] = hostIP
-				hostInfo.HostInnerIP = hostIP
-				hostInfos = append(hostInfos, hostInfo)
+			if !isOn {
 				continue
 			}
+			hostIDs = append(hostIDs, hostInfo.HostID)
+			hostMap[hostInfo.HostID] = hostIP
+			hostInfo.HostInnerIP = hostIP
+			hostInfos = append(hostInfos, hostInfo)
 		}
 
 		if len(hostIDs) == 0 {
@@ -198,7 +198,7 @@ func (h *HostIdentifier) collectFailHost() ([]*HostInfo, *get_agent_state_forsyn
 		if time.Now().Sub(start) > 5*time.Minute {
 			break
 		}
-		hostInfoMessage, err := h.getFailHostFromFailHostList()
+		hostInfoMessage, err := h.getFromFailHostList()
 		if err != nil {
 			blog.Errorf("get host from redis fail_host_list error, err: %v", err)
 			continue
@@ -250,7 +250,7 @@ func (h *HostIdentifier) pushFile(always bool, hostInfos []*HostInfo,
 	}
 	failCount = 0
 	for failCount < retryTimes {
-		if err = h.addTaskToTaskList(task); err != nil {
+		if err = h.addToTaskList(task); err != nil {
 			failCount++
 			sleepForFail(failCount)
 			continue
@@ -263,13 +263,13 @@ func (h *HostIdentifier) pushFile(always bool, hostInfos []*HostInfo,
 	}
 }
 
-// addTaskToTaskList add task to redis task list
-func (h *HostIdentifier) addTaskToTaskList(task *Task) error {
+// addToTaskList add task to redis task list
+func (h *HostIdentifier) addToTaskList(task *Task) error {
 	return h.redisCli.RPush(h.ctx, redisTaskListName, task).Err()
 }
 
-// GetTaskFromTaskList get task from redis task list
-func (h *HostIdentifier) getTaskFromTaskList() (string, error) {
+// GetFromTaskList get task from redis task list
+func (h *HostIdentifier) getFromTaskList() (string, error) {
 	result, err := h.redisCli.BLPop(h.ctx, 0, redisTaskListName).Result()
 	if err != nil {
 		return "", err
@@ -277,13 +277,13 @@ func (h *HostIdentifier) getTaskFromTaskList() (string, error) {
 	return result[1], nil
 }
 
-// addHostToFailHostList add host to redis fail host list
-func (h *HostIdentifier) addHostToFailHostList(host *HostInfo) error {
+// addToFailHostList add host to redis fail host list
+func (h *HostIdentifier) addToFailHostList(host *HostInfo) error {
 	return h.redisCli.RPush(h.ctx, RedisFailHostListName, host).Err()
 }
 
-// getFailHostFromFailHostList get fail host from redis fail host list
-func (h *HostIdentifier) getFailHostFromFailHostList() (string, error) {
+// getFailHostList get fail host from redis fail host list
+func (h *HostIdentifier) getFromFailHostList() (string, error) {
 	result, err := h.redisCli.BLPop(h.ctx, 5*time.Minute, RedisFailHostListName).Result()
 	if err != nil {
 		return "", err

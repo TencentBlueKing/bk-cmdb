@@ -15,6 +15,7 @@ package hostidentifier
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -69,7 +70,7 @@ func buildAgentStatusRequestHostInfo(cloudID, innerIP string) []*get_agent_state
 	return hostInfos
 }
 
-func getAgentIPStatusIsOn(cloudID, innerIP string, agentStatusResultMap map[string]string) (bool, string) {
+func getStatusOnAgentIP(cloudID, innerIP string, agentStatusResultMap map[string]string) (bool, string) {
 	ips := strings.Split(innerIP, ",")
 	for _, ip := range ips {
 		key := cloudID + ":" + ip
@@ -81,13 +82,13 @@ func getAgentIPStatusIsOn(cloudID, innerIP string, agentStatusResultMap map[stri
 	return false, ""
 }
 
-// 根据与gse约定，需要根据content的内容拿到对应的ip和cloudIP，但是现在接口还未提供相关内容，这里作兼容，如果拿不到，就从key中截取相关的信息
+// 根据与gse约定，需要根据content的内容拿到对应的ip和cloudID，但是现在接口还未提供相关内容，这里作兼容，如果拿不到，就从key中截取相关的信息
 func buildTaskResultMap(originMap map[string]string) map[string]string {
 	taskResultMap := make(map[string]string)
 	for key, val := range originMap {
 		if gjson.Get(val, "content.dest").Exists() && gjson.Get(val, "content.dest_cloudid").Exists() {
-			key = gjson.Get(val, "content.dest_cloudid").String() + ":" +
-				gjson.Get(val, "content.dest").String()
+			key = hostKey(gjson.Get(val, "content.dest_cloudid").String(),
+				gjson.Get(val, "content.dest").String())
 			taskResultMap[key] = val
 			continue
 		}
@@ -95,8 +96,12 @@ func buildTaskResultMap(originMap map[string]string) map[string]string {
 		if len(split) < 2 {
 			continue
 		}
-		key = split[len(split)-2] + ":" + split[len(split)-1]
+		key = hostKey(split[len(split)-2], split[len(split)-1])
 		taskResultMap[key] = val
 	}
 	return taskResultMap
+}
+
+func hostKey(cloudID, hostIP string) string {
+	return fmt.Sprintf("%s:%s", cloudID, hostIP)
 }

@@ -18,9 +18,9 @@ import (
 	"strconv"
 	"time"
 
+	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -42,8 +42,8 @@ const (
 	hostIdentifierCursor = "host_identifier:cursor"
 	// callerName the name of the service that call the gse server
 	callerName = "CMDB"
-	// defaultHostIdentifierBatchSyncPerLimit default batch sync limit for host identifier
-	defaultHostIdentifierBatchSyncPerLimit = 500
+	// hostIdentifierBatchSyncPerLimit batch sync limit for host identifier
+	hostIdentifierBatchSyncPerLimit = 200
 )
 
 // HostIdentifier manipulate the structure of the host Identifier
@@ -53,17 +53,22 @@ type HostIdentifier struct {
 	ctx                 context.Context
 	gseTaskServerClient *client.GseTaskServerClient
 	gseApiServerClient  *client.GseApiServerClient
+	watchLimiter        flowctrl.RateLimiter
+	fullLimiter         flowctrl.RateLimiter
 }
 
 // NewHostIdentifier new HostIdentifier struct
 func NewHostIdentifier(ctx context.Context, redisCli redis.Client, engine *backbone.Engine,
 	gseTaskServerClient *client.GseTaskServerClient, gseApiServerClient *client.GseApiServerClient) *HostIdentifier {
+	qps, burst := getRateLimiterConfig()
 	h := &HostIdentifier{
 		redisCli:            redisCli,
 		ctx:                 ctx,
 		engine:              engine,
 		gseTaskServerClient: gseTaskServerClient,
 		gseApiServerClient:  gseApiServerClient,
+		watchLimiter:        flowctrl.NewRateLimiter(qps, burst),
+		fullLimiter:         flowctrl.NewRateLimiter(qps, burst),
 	}
 	return h
 }
@@ -109,13 +114,13 @@ func (h *HostIdentifier) WatchToSyncHostIdentifier() {
 			options.Cursor = gjson.Get(*watchEvents, "bk_events.0.bk_cursor").String()
 			continue
 		}
-		events := gjson.Get(*watchEvents, "bk_events")
+		events := gjson.Get(*watchEvents, "bk_events").Array()
 
 		h.watchToSyncHostIdentifier(events)
 
 		// 保存新的cursor到内存和redis中
 		redisFailCount := 0
-		options.Cursor = events.Array()[len(events.Array())-1].Get("bk_cursor").String()
+		options.Cursor = events[len(events)-1].Get("bk_cursor").String()
 		for redisFailCount < retryTimes {
 			if err := h.redisCli.Set(h.ctx, hostIdentifierCursor, options.Cursor, 3*time.Hour).Err(); err != nil {
 				blog.Errorf("set redis key: %s val: %s error, err: %v", hostIdentifierCursor, options.Cursor, err)
@@ -128,20 +133,20 @@ func (h *HostIdentifier) WatchToSyncHostIdentifier() {
 	}
 }
 
-func (h *HostIdentifier) watchToSyncHostIdentifier(events gjson.Result) {
+func (h *HostIdentifier) watchToSyncHostIdentifier(events []gjson.Result) {
 	// 查询主机状态
-	agentStatusRequest := new(get_agent_state_forsyncdata.AgentStatusRequest)
-	for _, event := range events.Array() {
-		eventDetail := event.Map()["bk_detail"].Map()
-		agentStatusRequest.Hosts = append(agentStatusRequest.Hosts,
-			buildAgentStatusRequestHostInfo(eventDetail[common.BKCloudIDField].String(),
-				eventDetail[common.BKHostInnerIPField].String())...)
+	status := new(get_agent_state_forsyncdata.AgentStatusRequest)
+	for _, event := range events {
+		eventDetailMap := event.Map()["bk_detail"].Map()
+		status.Hosts = append(status.Hosts,
+			buildAgentStatusRequestHostInfo(eventDetailMap[common.BKCloudIDField].String(),
+				eventDetailMap[common.BKHostInnerIPField].String())...)
 	}
 	gseFailCount := 0
 	agentStatus := new(get_agent_state_forsyncdata.AgentStatusResponse)
 	var err error
 	for {
-		agentStatus, err = h.gseApiServerClient.GetAgentStatus(h.ctx, agentStatusRequest)
+		agentStatus, err = h.gseApiServerClient.GetAgentStatus(h.ctx, status)
 		if err != nil || agentStatus.BkErrorCode != common.CCSuccess {
 			blog.Errorf("get host agent status error: err: %v, errCode: %d, errMessage: %s",
 				err, agentStatus.BkErrorCode, agentStatus.BkErrorMsg)
@@ -155,38 +160,35 @@ func (h *HostIdentifier) watchToSyncHostIdentifier(events gjson.Result) {
 	// 将处于on状态的主机拿出来构造推送信息
 	var fileList []*push_file_forsyncdata.API_FileInfoV2
 	var hostInfos []*HostInfo
-	for _, event := range events.Array() {
-		eventDetail := event.Map()["bk_detail"].Map()
-		isOn, hostIP := getAgentIPStatusIsOn(eventDetail[common.BKCloudIDField].String(),
-			eventDetail[common.BKHostInnerIPField].String(), agentStatus.Result_)
-		if isOn {
-			fileList = append(fileList, h.buildPushFile(event.Map()["bk_detail"].String(),
-				hostIP, eventDetail[common.BKCloudIDField].Int()))
-			hostInfos = append(hostInfos, &HostInfo{
-				HostID:      eventDetail[common.BKHostIDField].Int(),
-				HostInnerIP: hostIP,
-				CloudID:     eventDetail[common.BKCloudIDField].Int(),
-				Times:       retryTimes,
-			})
+	for _, event := range events {
+		eventDetail := event.Map()["bk_detail"]
+		eventDetailMap := eventDetail.Map()
+		isOn, hostIP := getStatusOnAgentIP(eventDetailMap[common.BKCloudIDField].String(),
+			eventDetailMap[common.BKHostInnerIPField].String(), agentStatus.Result_)
+		if !isOn {
+			continue
 		}
+		fileList = append(fileList, h.buildPushFile(eventDetail.String(),
+			hostIP, eventDetailMap[common.BKCloudIDField].Int()))
+		hostInfos = append(hostInfos, &HostInfo{
+			HostID:      eventDetailMap[common.BKHostIDField].Int(),
+			HostInnerIP: hostIP,
+			CloudID:     eventDetailMap[common.BKCloudIDField].Int(),
+		})
 	}
 
 	if len(fileList) == 0 {
 		return
 	}
 
+	h.watchLimiter.AcceptMany(int64(len(fileList)))
 	// 推送主机身份信息
 	h.pushFile(true, hostInfos, fileList)
 }
 
-// BatchSyncHostIdentifier batch sync host identifier
-func (h *HostIdentifier) BatchSyncHostIdentifier() {
+// FullSyncHostIdentifier Fully synchronize host identity
+func (h *HostIdentifier) FullSyncHostIdentifier() {
 	start := 0
-	limit, err := cc.Int("eventServer.hostIdentifier.batchSyncPerLimit")
-	if err != nil {
-		blog.Errorf("get host identifier batchSyncPerLimit config error, err: %v", err)
-		limit = defaultHostIdentifierBatchSyncPerLimit
-	}
 	for {
 		if !h.engine.Discovery().IsMaster() {
 			return
@@ -198,7 +200,7 @@ func (h *HostIdentifier) BatchSyncHostIdentifier() {
 			Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField},
 			Page: metadata.BasePage{
 				Start: start,
-				Limit: limit,
+				Limit: hostIdentifierBatchSyncPerLimit,
 			},
 		}
 		hosts, err := h.engine.CoreAPI.CoreService().Host().ListHosts(h.ctx, header, option)
@@ -210,16 +212,17 @@ func (h *HostIdentifier) BatchSyncHostIdentifier() {
 			break
 		}
 
-		h.batchSyncHostIdentifier(hosts.Info)
+		h.BatchSyncHostIdentifier(hosts.Info)
 
-		start += limit
+		start += hostIdentifierBatchSyncPerLimit
 		if start >= hosts.Count {
 			break
 		}
 	}
 }
 
-func (h *HostIdentifier) batchSyncHostIdentifier(hosts []map[string]interface{}) {
+// BatchSyncHostIdentifier batch sync host identifier
+func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{}) {
 	var err error
 	agentStatus := new(get_agent_state_forsyncdata.AgentStatusResponse)
 	failCount := 0
@@ -263,17 +266,17 @@ func (h *HostIdentifier) batchSyncHostIdentifier(hosts []map[string]interface{})
 			continue
 		}
 		innerIP := util.GetStrByInterface(hostInfo[common.BKHostInnerIPField])
-		isOn, hostIP := getAgentIPStatusIsOn(strconv.FormatInt(cloudID, 10), innerIP, agentStatus.Result_)
-		if isOn {
-			hostIDs = append(hostIDs, hostID)
-			hostMap[hostID] = hostIP
-			hostInfos = append(hostInfos, &HostInfo{
-				HostID:      hostID,
-				HostInnerIP: hostIP,
-				CloudID:     cloudID,
-				Times:       retryTimes,
-			})
+		isOn, hostIP := getStatusOnAgentIP(strconv.FormatInt(cloudID, 10), innerIP, agentStatus.Result_)
+		if !isOn {
+			continue
 		}
+		hostIDs = append(hostIDs, hostID)
+		hostMap[hostID] = hostIP
+		hostInfos = append(hostInfos, &HostInfo{
+			HostID:      hostID,
+			HostInnerIP: hostIP,
+			CloudID:     cloudID,
+		})
 	}
 
 	if len(hostIDs) == 0 {
@@ -341,6 +344,7 @@ func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[i
 		return
 	}
 
+	h.fullLimiter.AcceptMany(int64(len(fileList)))
 	// 推送主机身份信息
 	h.pushFile(false, hostInfos, fileList)
 }

@@ -42,10 +42,10 @@ const (
 	defaultDBConnectTimeout = 5 * time.Second
 
 	// defaultBatchSyncIntervalHours default batch sync host identifier interval hours
-	defaultBatchSyncIntervalHours = 24
+	defaultBatchSyncIntervalHours = 6
 
 	// defaultGoroutineCount default goroutine count
-	defaultGoroutineCount = 10
+	defaultGoroutineCount = 5
 )
 
 // EventServer is event server.
@@ -250,6 +250,8 @@ func (es *EventServer) runSyncData() error {
 	syncData := hostidentifier.NewHostIdentifier(es.ctx, es.redisCli, es.engine,
 		gseTaskServerClient, gseApiServerClient)
 
+	es.service.SyncData = syncData
+
 	// watch主机身份变化创建任务调用gse接口推送
 	go syncData.WatchToSyncHostIdentifier()
 
@@ -264,7 +266,7 @@ func (es *EventServer) runSyncData() error {
 				time.Sleep(time.Minute)
 				continue
 			}
-			syncData.BatchSyncHostIdentifier()
+			syncData.FullSyncHostIdentifier()
 			time.Sleep(time.Duration(batchSyncIntervalHours) * time.Hour)
 		}
 	}()

@@ -13,57 +13,134 @@
 package service
 
 import (
+	"strconv"
+
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/event_server/sync/hostidentifier"
 )
 
 // SyncHostIdentifier sync host identifier, add hostInfo message to redis fail host list
 func (s *Service) SyncHostIdentifier(ctx *rest.Contexts) {
-	hostInfo := new(hostidentifier.HostInfo)
-	if err := ctx.DecodeInto(&hostInfo); err != nil {
+	if s.SyncData == nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommInternalServerError,
+			"no start up sync hostIdentifier ability"))
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	hostIDArray := new(metadata.HostIDArray)
+	if err := ctx.DecodeInto(&hostIDArray); err != nil {
 		blog.Errorf("decode request body err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
+	rawErr := hostIDArray.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
 
-	result, err := s.engine.CoreAPI.CoreService().Host().GetHostByID(ctx.Kit.Ctx, ctx.Kit.Header, hostInfo.HostID)
+	hostModuleRelation, err := s.getHostModuleRelation(ctx, hostIDArray.HostIDs)
 	if err != nil {
-		blog.Errorf("sync hostIdentifier http do error, hostID: %d, err: %v, rid: %s",
-			hostInfo.HostID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
-		return
-
-	}
-	if !result.Result {
-		blog.Errorf("get host by id error, hostID: %d, err: %v, rid: %s", hostInfo.HostID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(result.Code, result.ErrMsg))
-		return
+		ctx.RespAutoError(err)
 	}
 
-	innerIP := util.GetStrByInterface(result.Data[common.BKHostInnerIPField])
-	if innerIP == "" {
-		blog.Errorf("the host value have not innerIP, host: %v, rid: %s", result.Data, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
-		return
+	if auth.EnableAuthorize() {
+		if err := s.haveAuthority(ctx, hostModuleRelation); err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
 	}
 
-	cloudID, err := util.GetInt64ByInterface(result.Data[common.BKCloudIDField])
+	hosts, err := s.getHostInfo(ctx, hostIDArray.HostIDs)
 	if err != nil {
-		blog.Errorf("the host value have not cloudID, host: %v, rid: %s", result.Data, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-
-	hostInfo.CloudID = cloudID
-	hostInfo.HostInnerIP = innerIP
-
-	if err := s.cache.LPush(ctx.Kit.Ctx, hostidentifier.RedisFailHostListName, hostInfo).Err(); err != nil {
-		blog.Errorf("add hostInfo to redis list error, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
+	s.SyncData.BatchSyncHostIdentifier(hosts.Info)
 	ctx.RespEntity(nil)
+}
+
+func (s *Service) getHostModuleRelation(ctx *rest.Contexts, hostIDs []int64) (*metadata.HostConfigData, error) {
+	cond := &metadata.HostModuleRelationRequest{
+		HostIDArr: hostIDs,
+		Fields:    []string{common.BKAppIDField},
+	}
+	result, err := s.engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	if err != nil {
+		blog.Errorf("http do error, err: %v, input: %v, rid: %s", err, cond, ctx.Kit.Rid)
+		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if result.Count == 0 {
+		blog.Errorf("get host module relation success, but result count is 0, hostIDs: %v, rid: %s",
+			hostIDs, ctx.Kit.Rid)
+		return nil, ctx.Kit.CCError.CCError(common.CCErrHostGetFail)
+	}
+	return result, nil
+}
+
+func (s *Service) haveAuthority(ctx *rest.Contexts, hostConfigData *metadata.HostConfigData) error {
+	authInput := meta.ListAuthorizedResourcesParam{
+		UserName:     ctx.Kit.User,
+		ResourceType: meta.Business,
+		Action:       meta.Find,
+	}
+	authorizedRes, err := s.GetAuthorizer().ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
+	if err != nil {
+		blog.Errorf("list authorized resources failed, user: %s, err: %v, rid: %s", ctx.Kit.User, err, ctx.Kit.Rid)
+		return ctx.Kit.CCError.CCError(common.CCErrorTopoGetAuthorizedBusinessListFailed)
+	}
+
+	if !authorizedRes.IsAny {
+		authorizedBizList := make([]int64, 0)
+		for _, resourceID := range authorizedRes.Ids {
+			bizID, err := strconv.ParseInt(resourceID, 10, 64)
+			if err != nil {
+				blog.Errorf("parse bizID failed, val: %s, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+				return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
+			}
+			authorizedBizList = append(authorizedBizList, bizID)
+		}
+
+		for _, info := range hostConfigData.Info {
+			if !util.InArray(info.AppID, authorizedBizList) {
+				return ctx.Kit.CCError.CCError(common.CCErrCommCheckAuthorizeFailed)
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Service) getHostInfo(ctx *rest.Contexts, hostIDs []int64) (*metadata.ListHostResult, error) {
+	options := &metadata.ListHosts{
+		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField},
+		HostPropertyFilter: &querybuilder.QueryFilter{
+			Rule: querybuilder.CombinedRule{
+				Condition: querybuilder.ConditionAnd,
+				Rules: []querybuilder.Rule{
+					querybuilder.AtomRule{
+						Field:    common.BKHostIDField,
+						Operator: querybuilder.OperatorIn,
+						Value:    hostIDs,
+					},
+				},
+			},
+		},
+	}
+	hosts, err := s.engine.CoreAPI.CoreService().Host().ListHosts(ctx.Kit.Ctx, ctx.Kit.Header, options)
+	if err != nil {
+		blog.Errorf("http do error, hostIDs: %v, err: %v, rid: %s", hostIDs, err, ctx.Kit.Rid)
+		return nil, err
+	}
+	if hosts.Count == 0 {
+		blog.Errorf("get host success, but host count is 0, hostIDs: %v, rid: %s", hostIDs, ctx.Kit.Rid)
+		return nil, ctx.Kit.CCError.CCError(common.CCErrHostGetFail)
+	}
+	return hosts, nil
 }

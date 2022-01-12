@@ -37,6 +37,10 @@ const (
 	defaultHostIdentifierWindowsFileOwner = "root"
 	// defaultHostIdentifierWindowsFileRight default host identifier windows fileRight
 	defaultHostIdentifierWindowsFileRight = 644
+	// defaultRateLimiterQPS default rate limiter QPS
+	defaultRateLimiterQPS = 200
+	// defaultRateLimiterBurst default rate limiter burst
+	defaultRateLimiterBurst = 200
 )
 
 // FileConf host identifier file config struct
@@ -110,4 +114,20 @@ func getDefaultHostIdentifierFileRight(osType string) int {
 	default:
 		return defaultHostIdentifierLinuxFileRight
 	}
+}
+
+func getRateLimiterConfig() (int64, int64) {
+	qps, err := cc.Int64("eventServer.hostIdentifier.rateLimiter.qps")
+	if err != nil {
+		blog.Errorf("can't find the value of eventServer.hostIdentifier.rateLimiter.qps settings, "+
+			"set the default value: %s", defaultRateLimiterQPS)
+		qps = defaultRateLimiterQPS
+	}
+	burst, err := cc.Int64("eventServer.hostIdentifier.rateLimiter.burst")
+	if err != nil {
+		blog.Errorf("can't find the value of eventServer.hostIdentifier.rateLimiter.burst setting,"+
+			"set the default value: %s", defaultRateLimiterBurst)
+		burst = defaultRateLimiterBurst
+	}
+	return qps, burst
 }

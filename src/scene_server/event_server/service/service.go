@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/restfulservice"
+	"configcenter/src/scene_server/event_server/sync/hostidentifier"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
@@ -41,6 +42,9 @@ type Service struct {
 	db         dal.RDB
 	cache      redis.Client
 	authorizer ac.AuthorizeInterface
+
+	// SyncData is sync host identifier operator
+	SyncData *hostidentifier.HostIdentifier
 }
 
 // NewService creates a new Service object.
@@ -152,4 +156,9 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteEntity(answer)
+}
+
+// GetAuthorizer get authorizer
+func (s *Service) GetAuthorizer() ac.AuthorizeInterface {
+	return s.authorizer
 }

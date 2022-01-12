@@ -445,7 +445,7 @@ func (option ListBizHostsTopoParameter) Validate(errProxy errors.DefaultCCErrorI
 		return errProxy.CCErrorf(common.CCErrCommXXExceedLimit, "page.limit", common.BKMaxInstanceLimit)
 	}
 
-	opt:= &querybuilder.RuleOption{NeedSameSliceElementType: true}
+	opt := &querybuilder.RuleOption{NeedSameSliceElementType: true}
 	if option.HostPropertyFilter != nil {
 		if key, err := option.HostPropertyFilter.Validate(opt); err != nil {
 			blog.Errorf("valid host property filter failed, err: %v", err)
@@ -873,4 +873,20 @@ type UpdateHostPropertyBatchParameter struct {
 type updateHostProperty struct {
 	HostID     int64                  `json:"bk_host_id"`
 	Properties map[string]interface{} `json:"properties"`
+}
+
+// HostIDArray hostID array struct
+type HostIDArray struct {
+	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" mapstructure:"bk_host_ids"`
+}
+
+// Validate validate hostIDs length
+func (h *HostIDArray) Validate() (rawError errors.RawErrorInfo) {
+	if len(h.HostIDs) == 0 || len(h.HostIDs) > 200 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_host_ids", 200},
+		}
+	}
+	return errors.RawErrorInfo{}
 }
