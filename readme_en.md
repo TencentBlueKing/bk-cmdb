@@ -77,3 +77,4 @@ If you are interested in contributing, check out the [CONTRIBUTING.md], also joi
 
 ## License
 Bk-cmdb is based on the MIT license. Please refer to [LICENSE](LICENSE) for details.
+We undertake not to change the open source license (MIT license) applicable to the current version of the project delivered to anyone in the future.
