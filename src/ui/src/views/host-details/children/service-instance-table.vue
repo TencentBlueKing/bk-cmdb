@@ -148,7 +148,6 @@
 <script>
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
-    MENU_BUSINESS_DELETE_SERVICE
   } from '@/dictionary/menu-symbol'
   import { processTableHeader } from '@/dictionary/table-header'
   import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
@@ -299,12 +298,27 @@
         this.header = header
       },
       handleDeleteInstance() {
-        this.$routerActions.redirect({
-          name: MENU_BUSINESS_DELETE_SERVICE,
-          params: {
-            ids: this.instance.id
-          },
-          history: true
+        this.$bkInfo({
+          title: this.$t('确定删除该服务实例'),
+          confirmLoading: true,
+          confirmFn: async () => {
+            try {
+              await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
+                config: {
+                  data: {
+                    service_instance_ids: [this.instance.id],
+                    bk_biz_id: this.bizId
+                  }
+                }
+              })
+              this.$success(this.$t('删除成功'))
+              this.$emit('delete-instance')
+              return true
+            } catch (e) {
+              console.error(e)
+              return false
+            }
+          }
         })
       },
       handleEditInstance() {
@@ -452,7 +466,7 @@
         })
       },
       updateInstanceInfo() {
-        // todo 需要后端提供接口查询数据变更后的服务实例信息，用于更新服务实例名
+        this.$emit('update-instance')
       }
     }
   }

@@ -458,11 +458,8 @@ const (
 	CCErrorTopoObjectInstanceObjIDFieldConflictWithURL     = 1101093
 	CCErrTopoImportMainlineForbidden                       = 1101094
 
-	CCErrorTopoSyncModuleTaskFailed    = 1101095
-	CCErrorTopoSyncModuleTaskIsRunning = 1101096
-
 	CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate = 1101097
-	CCErrorTopoForbiddenDeleteBuiltInSetModule                  = 1101098
+	CCErrorTopoForbiddenDeleteOrUpdateBuiltInSetModule          = 1101098
 	CCErrorTopoModuleNameDuplicated                             = 1101099
 
 	CCErrorTopoPathParamPaserFailed                = 1101100
@@ -480,6 +477,9 @@ const (
 	// CCErrorCheckRegularFailed check regular expression failed
 	CCErrorCheckRegularFailed   = 1101109
 	CCErrorParamExceedMaxLength = 1101110
+
+	CCErrorTopoForbiddenDeleteBuiltInBiz    = 1101111
+	CCErrorTopoForbiddenDeleteUnarchivedBiz = 1101112
 
 	// object controller 1102XXX
 
@@ -841,6 +841,7 @@ const (
 	CCErrTaskLockedTaskFail       = 1117005
 	CCErrTaskUnLockedTaskFail     = 1117006
 	CCErrTaskListTaskFail         = 1117007
+	CCErrTaskCreateConflict       = 1117008
 
 	// cloud_server 1118xxx
 	// CCErrCloudVendorNotSupport cloud vendor not support

@@ -47,6 +47,31 @@ func (t *object) UpdatePropertyGroup(ctx context.Context, h http.Header, cond *m
 	return
 }
 
+func (t *object) ExchangePropertyGroupIndex(ctx context.Context, h http.Header, cond *metadata.ExchangeGroupIndex) (
+	*metadata.Response, error) {
+
+	resp := new(metadata.Response)
+	subPath := "/update/objectattgroup/groupindex"
+
+	err := t.client.Put().
+		WithContext(ctx).
+		Body(cond).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return resp, nil
+}
+
 func (t *object) DeletePropertyGroup(ctx context.Context, groupID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/delete/objectattgroup/%s"

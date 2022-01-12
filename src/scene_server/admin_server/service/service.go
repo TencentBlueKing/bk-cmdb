@@ -83,9 +83,14 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/system/user_config/{key}/{can}").To(s.UserConfigSwitch))
 	api.Route(api.GET("/find/system/config_admin").To(s.SearchConfigAdmin))
 	api.Route(api.PUT("/update/system/config_admin").To(s.UpdateConfigAdmin))
+
+	api.Route(api.PUT("/update/system_config/platform_setting").To(s.UpdatePlatformSettingConfig))
+	api.Route(api.GET("/find/system_config/platform_setting/{type}").To(s.SearchPlatformSettingConfig))
+
 	api.Route(api.POST("/migrate/specify/version/{distribution}/{ownerID}").To(s.migrateSpecifyVersion))
 	api.Route(api.POST("/migrate/config/refresh").To(s.refreshConfig))
 	api.Route(api.POST("/migrate/dataid").To(s.migrateDataID))
+	api.Route(api.POST("/delete/auditlog").To(s.DeleteAuditLog))
 
 	container.Add(api)
 

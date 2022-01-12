@@ -29,7 +29,7 @@ type InstanceClientInterface interface {
 	ReadInstance(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error)
 	DeleteInstance(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
 	DeleteInstanceCascade(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
-	//  ReadInstanceStruct 按照结构体返回实例数据
+	// ReadInstanceStruct 按照结构体返回实例数据
 	ReadInstanceStruct(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition,
 		result interface{}) (err errors.CCErrorCoder)
 }

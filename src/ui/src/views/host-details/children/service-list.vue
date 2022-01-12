@@ -54,6 +54,7 @@
         :expanded="index === 0"
         :current-view="currentView"
         @delete-instance="handleDeleteInstance"
+        @update-instance="handleUpdateInstance"
         @check-change="handleCheckChange"
         @edit-name="handleEditName(instance)"
         @edit-name-success="handleEditNameSuccess(instance, ...arguments)"
@@ -85,8 +86,7 @@
 <script>
   import has from 'has'
   import {
-    MENU_BUSINESS_HOST_AND_SERVICE,
-    MENU_BUSINESS_DELETE_SERVICE
+    MENU_BUSINESS_HOST_AND_SERVICE
   } from '@/dictionary/menu-symbol'
   import { mapState } from 'vuex'
   import serviceInstanceTable from './service-instance-table.vue'
@@ -267,6 +267,9 @@
       handleDeleteInstance() {
         this.getHostSeriveInstances()
       },
+      handleUpdateInstance() {
+        this.getHostSeriveInstances()
+      },
       handleEditName(instance) {
         this.instances.forEach(instance => (instance.editing.name = false))
         instance.editing.name = true
@@ -296,12 +299,28 @@
         if (disabled) {
           return false
         }
-        this.$routerActions.redirect({
-          name: MENU_BUSINESS_DELETE_SERVICE,
-          params: {
-            ids: this.checked.map(instance => instance.id).join('/')
-          },
-          history: true
+        this.$bkInfo({
+          title: this.$t('确定删除N个实例', { count: this.checked.length }),
+          confirmLoading: true,
+          confirmFn: async () => {
+            const serviceInstanceIds = this.checked.map(instance => instance.id)
+            try {
+              await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
+                config: {
+                  data: {
+                    service_instance_ids: serviceInstanceIds,
+                    bk_biz_id: this.info.biz[0].bk_biz_id
+                  }
+                }
+              })
+              this.$success(this.$t('删除成功'))
+              this.getHostSeriveInstances()
+              return true
+            } catch (e) {
+              console.error(e)
+              return false
+            }
+          }
         })
       },
       handleCheckChange(checked, instance) {

@@ -93,18 +93,29 @@ type ModuleSyncStatus struct {
 	NeedSync bool  `json:"need_sync"`
 }
 
-type CreateServiceInstanceForServiceTemplateInput struct {
-	BizID                      int64                         `json:"bk_biz_id"`
-	Name                       string                        `json:"name"`
-	ModuleID                   int64                         `json:"bk_module_id"`
-	Instances                  []CreateServiceInstanceDetail `json:"instances"`
-	HostApplyConflictResolvers []HostApplyConflictResolver   `json:"host_apply_conflict_resolvers"`
+// CreateServiceInstanceInput create service instance with process input parameter
+type CreateServiceInstanceInput struct {
+	BizID     int64                         `json:"bk_biz_id"`
+	ModuleID  int64                         `json:"bk_module_id"`
+	Instances []CreateServiceInstanceDetail `json:"instances"`
 }
 
-type CreateServiceInstancePreviewInput struct {
+// CreateServiceInstanceResp create service instance response
+type CreateServiceInstanceResp struct {
+	BaseResp
+	ServiceInstanceIDs []int64 `json:"data"`
+}
+
+// SearchHostWithNoSvcInstInput input parameter of searching hosts with no service instance under the specified module
+type SearchHostWithNoSvcInstInput struct {
 	BizID    int64   `json:"bk_biz_id"`
 	ModuleID int64   `json:"bk_module_id"`
 	HostIDs  []int64 `json:"bk_host_ids"`
+}
+
+// SearchHostWithNoSvcInstOutput ids of the hosts that have no service instance
+type SearchHostWithNoSvcInstOutput struct {
+	HostIDs []int64 `json:"bk_host_ids"`
 }
 
 type CreateRawProcessInstanceInput struct {
@@ -138,17 +149,121 @@ type GetServiceInstanceBySetTemplateInput struct {
 	Page          BasePage `json:"page"`
 }
 
-type DiffModuleWithTemplateOption struct {
-	BizID     int64   `json:"bk_biz_id"`
-	ModuleIDs []int64 `json:"bk_module_ids"`
-	// PartialCompare judge whether need compare partial and finish in advance
-	// it finish the compare in advance once one module has difference with service template
-	PartialCompare bool `json:"partial_compare"`
+// ServiceTemplateDiffOption obtain the process template difference information under the service template.
+type ServiceTemplateDiffOption struct {
+	BizID             int64   `json:"bk_biz_id"`
+	ServiceTemplateId int64   `json:"service_template_id"`
+	ModuleIDs         []int64 `json:"bk_module_ids"`
 }
 
-type DiffOneModuleWithTemplateOption struct {
-	BizID    int64 `json:"bk_biz_id"`
-	ModuleID int64 `json:"bk_module_id"`
+// ServiceTemplateOptionValidate judge the validity of parameters.
+func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() error {
+
+	if option.BizID == 0 {
+		return fmt.Errorf("the biz id must be set")
+	}
+	if len(option.ModuleIDs) == 0 {
+		return fmt.Errorf("the module id must be set")
+	}
+	return nil
+}
+
+// ListDiffServiceInstancesOption list service instances request.
+type ListDiffServiceInstancesOption struct {
+	BizID             int64 `json:"bk_biz_id"`
+	ModuleID          int64 `json:"bk_module_id"`
+	ServiceTemplateId int64 `json:"service_template_id"`
+	ProcessTemplateId int64 `json:"process_template_id,omitempty"`
+
+	// ProcessTemplateName 当模板被删除场景下id为0，此时需要通过name找具体请求的模板
+	ProcTemplateName string `json:"process_template_name,omitempty"`
+
+	// ServiceCategory 此请求是获取服务分类场景的实例列表
+	ServiceCategory bool `json:"service_category,omitempty"`
+}
+
+// ServiceInstancesInfo 返回的服务实例信息只需要Id和Name
+type ServiceInstancesInfo struct {
+	// Id instance id
+	Id int64 `json:"id"`
+
+	// Name instance name
+	Name string `json:"name"`
+}
+
+// ListServiceInstancesResult Get service instances result.
+type ListServiceInstancesResult struct {
+
+	// TotalCount 获取到的实例数量，如果大于500只显示"500+"
+	TotalCount string `json:"total_count"`
+
+	// ServiceInstances 只显示前500个实例的id和信息
+	ServiceInsts []ServiceInstancesInfo `json:"service_instances"`
+
+	// Type 本次同步类型added、removed、changed、others其中一种
+	Type string `json:"type"`
+}
+
+// ServiceInstanceDetailReq Get service instance diff detail request.
+type ServiceInstanceDetailReq struct {
+	BizID             int64 `json:"bk_biz_id"`
+	ModuleID          int64 `json:"bk_module_id"`
+	ServiceTemplateId int64 `json:"service_template_id"`
+	ProcessTemplateId int64 `json:"process_template_id,omitempty"`
+
+	// ProcessTemplateName 进程模板名字，删除场景下进程模板id是0，需要用name进行区分
+	ProcessTemplateName string `json:"process_template_name,omitempty"`
+	ServiceInstanceId   int64  `json:"service_instance_id"`
+
+	// ServiceCategory 此请求是获取服务分类场景的实例列表
+	ServiceCategory bool `json:"service_category,omitempty"`
+}
+
+// ServiceInstanceDetailResult Details of service instance information.
+type ServiceInstanceDetailResult struct {
+
+	// ServiceInstanceId 指定的服务实例id
+	ServiceInstanceId int64 `json:"id"`
+
+	// ServiceInstanceName 指定的服务实例name
+	ServiceInstanceName string `json:"name"`
+
+	// ChangedAttributes 改变的进程属性内容
+	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
+
+	// ModuleAttribute Service classification content
+	ModuleAttribute []ModuleChangedAttribute `json:"module_attribute,omitempty"`
+
+	// Process process details 进程模板删除场景会将删除前的进程信息通过此参数带回
+	Process *Process `json:"process"`
+
+	// Type 改变类型 added、changed、removed和others其中一种
+	Type string `json:"type"`
+}
+
+const (
+	// ServiceInstancesMaxNum 对于同步服务模板场景下获取的服务实例数量最大不超过500个
+	ServiceInstancesMaxNum = 500
+
+	// ServiceInstancesTotalCount 当超过超过500的时候只给前端返回 "500+"
+	ServiceInstancesTotalCount = "500+"
+)
+
+// ProcessGeneralInfo summary of process templates.
+type ProcessGeneralInfo struct {
+	// Name process template alias.
+	Name string `json:"name"`
+
+	// Id process template id.
+	Id int64 `json:"id"`
+}
+
+// ServiceTemplateGeneralDiff changes under service template.
+type ServiceTemplateGeneralDiff struct {
+	Changed          []ProcessGeneralInfo `json:"changed"`
+	Added            []ProcessGeneralInfo `json:"added"`
+	Removed          []ProcessGeneralInfo `json:"removed"`
+	ChangedAttribute bool                 `json:"changed_attribute"`
 }
 
 type UpdateServiceInstanceOption struct {
@@ -158,6 +273,29 @@ type UpdateServiceInstanceOption struct {
 type OneUpdatedSrvInst struct {
 	ServiceInstanceID int64                  `json:"service_instance_id"`
 	Update            map[string]interface{} `json:"update"`
+}
+
+// DiffOption judge the validity of parameters.
+type DiffOption struct {
+	BizID             int64
+	ModuleID          int64
+	ServiceTemplateId int64
+}
+
+// ServiceInstancesOptionValidate judge the validity of parameters.
+func (option *DiffOption) ServiceInstancesOptionValidate() error {
+
+	if option.BizID == 0 {
+		return fmt.Errorf("the biz id must be set")
+	}
+	if option.ModuleID == 0 {
+		return fmt.Errorf("the module ServiceTemplateDiffOptionid must be set")
+	}
+	if option.ServiceTemplateId == 0 {
+		return fmt.Errorf("the service template must be set")
+	}
+
+	return nil
 }
 
 func (o *UpdateServiceInstanceOption) Validate() (rawError cErr.RawErrorInfo) {
@@ -218,35 +356,6 @@ type CoreDeleteServiceInstanceOption struct {
 	ServiceInstanceIDs []int64 `json:"service_instance_ids" field:"service_instance_ids" bson:"service_instance_ids"`
 }
 
-type FindServiceAndProcessInstanceOption struct {
-	BizID             int64 `json:"bk_biz_id" field:"bk_biz_id" bson:"bk_biz_id"`
-	ModuleID          int64 `json:"bk_module_id" field:"bk_module_id" bson:"bk_module_id"`
-	ServiceTemplateID int64 `json:"service_template_id" field:"service_template_id" bson:"service_template_id"`
-}
-
-// to describe the differences between service instance and it's service template's
-// process template's attribute.
-type ServiceProcessInstanceDifference struct {
-	ServiceInstanceID   int64             `json:"service_instance_id" field:"service_instance_id" bson:"service_instance_id"`
-	ServiceInstanceName string            `json:"service_instance_name" field:"service_instance_name" bson:"service_instance_name"`
-	BizID               int64             `json:"bk_biz_id" field:"bk_biz_id" bson:"bk_biz_id"`
-	HostID              int64             `json:"bk_host_id" field:"bk_host_id" bson:"bk_host_id"`
-	Differences         *DifferenceDetail `json:"differences" field:"differences" bson:"differences"`
-}
-
-type DifferenceDetail struct {
-	Unchanged []ProcessDifferenceDetail `json:"unchanged"`
-	Changed   []ProcessDifferenceDetail `json:"changed"`
-	Added     []ProcessDifferenceDetail `json:"added"`
-	Removed   []ProcessDifferenceDetail `json:"removed"`
-}
-
-type ProcessDifferenceDetail struct {
-	ProcessTemplateID int64                     `json:"process_template_id"`
-	ProcessInstance   Process                   `json:"process_instance"`
-	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
-}
-
 type ProcessChangedAttribute struct {
 	ID                    int64       `json:"id"`
 	PropertyID            string      `json:"property_id"`
@@ -282,12 +391,22 @@ type ServiceInstanceDifference struct {
 	ServiceInstances     []ServiceDifferenceDetails `json:"service_instances"`
 }
 
-// ServiceDifferenceDetails 服务实例与模板差异信息
+// ServiceDifferenceDetails different information between service instance and template.
 type ServiceDifferenceDetails struct {
 	ServiceInstance   SrvInstBriefInfo          `json:"service_instance"`
 	Process           *Process                  `json:"process"`
 	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
+	Type              string                    `json:"type"`
 }
+
+type ServiceDifferenceFlag int64
+
+const (
+	ServiceChanged = "changed"
+	ServiceAdded   = "added"
+	ServiceRemoved = "removed"
+	ServiceOthers  = "others"
+)
 
 type SrvInstBriefInfo struct {
 	ID        int64  `field:"id" json:"id"`
@@ -295,17 +414,18 @@ type SrvInstBriefInfo struct {
 	SvcTempID int64  `field:"service_template_id" json:"service_template_id"`
 }
 
-type CreateServiceInstanceOption struct {
+// ServiceInstanceOptions create or update service instance option
+type ServiceInstanceOptions struct {
+	Created []UpsertServiceInstanceInfo `json:"created,omitempty"`
+	Updated []UpsertServiceInstanceInfo `json:"updated,omitempty"`
+}
+
+// UpsertServiceInstanceInfo update or insert service instance info
+type UpsertServiceInstanceInfo struct {
 	ModuleID int64 `json:"bk_module_id"`
 	HostID   int64 `json:"bk_host_id"`
 	// Processes parameter usable only when create instance with raw
-	Processes []ProcessCreateOrUpdateInfo `json:"processes"`
-}
-
-type ProcessCreateOrUpdateInfo struct {
-	// ProcessTemplateID indicate which process to update if service instance bound with a template
-	ProcessTemplateID int64                  `json:"process_template_id"`
-	ProcessInfo       map[string]interface{} `json:"process_info"`
+	Processes []ProcessInstanceDetail `json:"processes,omitempty"`
 }
 
 type CreateServiceInstanceDetail struct {
@@ -402,15 +522,56 @@ func (o *UpdateProcessByIDsInput) Validate() (rawError cErr.RawErrorInfo) {
 	return cErr.RawErrorInfo{}
 }
 
+// SyncServiceInstanceByTemplateOption sync service instance by service template option
 type SyncServiceInstanceByTemplateOption struct {
-	BizID     int64   `json:"bk_biz_id"`
-	ModuleIDs []int64 `json:"bk_module_ids"`
+	BizID             int64   `json:"bk_biz_id"`
+	ModuleIDs         []int64 `json:"bk_module_ids"`
+	ServiceTemplateID int64   `json:"service_template_id"`
+}
+
+// Validate validates the input param
+func (s *SyncServiceInstanceByTemplateOption) Validate() (rawError cErr.RawErrorInfo) {
+	if s.BizID == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
+	if len(s.ModuleIDs) == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_module_ids"},
+		}
+	}
+
+	if s.ServiceTemplateID == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKServiceTemplateIDField},
+		}
+	}
+
+	return cErr.RawErrorInfo{}
+}
+
+// SyncOneModuleBySvcTempOption sync all service instances in one module by service template option
+type SyncOneModuleBySvcTempOption struct {
+	BizID             int64 `json:"bk_biz_id"`
+	ModuleID          int64 `json:"bk_module_id"`
+	ServiceTemplateID int64 `json:"service_template_id"`
 }
 
 // 用于同步单个模块的服务实例
 type SyncModuleServiceInstanceByTemplateOption struct {
 	BizID    int64 `json:"bk_biz_id"`
 	ModuleID int64 `json:"bk_module_id"`
+}
+
+// FindServiceTemplateSyncStatusOption find service template sync status option
+type FindServiceTemplateSyncStatusOption struct {
+	ModuleIDs         []int64 `json:"bk_module_ids"`
+	ServiceTemplateID int64   `json:"service_template_id"`
 }
 
 type ListServiceInstancesWithHostInput struct {
@@ -424,6 +585,12 @@ type ListServiceInstancesWithHostInput struct {
 type ListProcessInstancesOption struct {
 	BizID             int64 `json:"bk_biz_id"`
 	ServiceInstanceID int64 `json:"service_instance_id"`
+}
+
+// ListProcessInstancesRsp list process instances response
+type ListProcessInstancesRsp struct {
+	BaseResp
+	Data []ProcessInstance `json:"data"`
 }
 
 type ListProcessInstancesNameIDsOption struct {

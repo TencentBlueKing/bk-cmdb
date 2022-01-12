@@ -41,26 +41,28 @@ func (g *modelAttributeGroup) groupIDIsExists(kit *rest.Kit, objID, groupID stri
 	return oneResult, isExists, nil
 }
 
-func (g *modelAttributeGroup) groupNameIsExists(kit *rest.Kit, objID, groupName string, modelBizID int64) (oneResult metadata.Group, isExists bool, err error) {
+func (g *modelAttributeGroup) groupNameIsExists(kit *rest.Kit, objID, groupName string, modelBizID int64) (
+	metadata.Group, bool, error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldGroupName, Val: groupName})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: kit.SupplierAccount})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
+
 	if modelBizID > 0 {
-		cond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: modelBizID})
+		cond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: 0})
 	}
 
 	groups, err := g.search(kit, cond)
-	if nil != err {
-		return oneResult, isExists, err
+	if err != nil {
+		return metadata.Group{}, false, err
 	}
 
-	if 0 != len(groups) {
+	if len(groups) != 0 {
 		return groups[0], true, nil
 	}
 
-	return oneResult, isExists, nil
+	return metadata.Group{}, false, nil
 }
 
 func (g *modelAttributeGroup) hasAttributes(kit *rest.Kit, objID string, groupIDS []string) (isExists bool, err error) {

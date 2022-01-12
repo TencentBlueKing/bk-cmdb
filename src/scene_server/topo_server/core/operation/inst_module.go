@@ -35,7 +35,6 @@ type ModuleOperationInterface interface {
 	DeleteModule(kit *rest.Kit, bizID int64, setID, moduleIDS []int64) error
 	FindModule(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput) (count int, results []mapstr.MapStr, err error)
 	UpdateModule(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID, setID, moduleID int64) error
-
 	SetProxy(inst InstOperationInterface)
 }
 
@@ -325,14 +324,19 @@ func (m *module) FindModule(kit *rest.Kit, obj model.Object, cond *metadata.Quer
 }
 
 func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID, setID, moduleID int64) error {
-	innerCond := condition.CreateCondition()
-
-	innerCond.Field(common.BKAppIDField).Eq(bizID)
-	innerCond.Field(common.BKSetIDField).Eq(setID)
-	innerCond.Field(common.BKModuleIDField).Eq(moduleID)
-
+	innerCond := mapstr.MapStr{
+		common.BKAppIDField: mapstr.MapStr{
+			common.BKDBEQ: bizID,
+		},
+		common.BKSetIDField: mapstr.MapStr{
+			common.BKDBEQ: setID,
+		},
+		common.BKModuleIDField: mapstr.MapStr{
+			common.BKDBEQ: moduleID,
+		},
+	}
 	findCond := &metadata.QueryInput{
-		Condition: innerCond.ToMapStr(),
+		Condition: innerCond,
 	}
 	var err error
 	count, moduleInstances, err := m.FindModule(kit, obj, findCond)
@@ -407,7 +411,7 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, obj model.Objec
 	data.Remove(common.BKModuleIDField)
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.MetadataField)
-	updateErr := m.inst.UpdateInst(kit, data, obj, innerCond, -1)
+	updateErr := m.inst.UpdateInst(kit, data, obj, innerCond)
 	if updateErr != nil {
 		moduleNameStr, exist := data[common.BKModuleNameField]
 		if exist == false {

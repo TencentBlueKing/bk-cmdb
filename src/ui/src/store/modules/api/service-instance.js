@@ -41,6 +41,11 @@ const actions = {
   },
   updateServiceInstance(context, { bizId, params, config }) {
     return $http.put(`updatemany/proc/service_instance/biz/${bizId}`, params, config)
+  },
+
+  // 获取主机是否有服务实例
+  getNoServiceInstanceHost(context, { params, config }) {
+    return $http.post('findmany/proc/host/with_no_service_instance', params, config)
   }
 }
 

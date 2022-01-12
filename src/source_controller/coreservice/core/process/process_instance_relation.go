@@ -168,28 +168,32 @@ func (p *processOperation) ListProcessInstanceRelation(kit *rest.Kit, option met
 func (p *processOperation) DeleteProcessInstanceRelation(kit *rest.Kit, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder {
 	deleteFilter := map[string]interface{}{}
 	if option.BusinessID != nil {
-		deleteFilter[common.BKAppIDField] = option.BusinessID
+		deleteFilter[common.BKAppIDField] = *option.BusinessID
 	}
+
 	parameterEnough := false
-	if option.ProcessIDs != nil {
+	if len(option.ProcessIDs) != 0 {
 		parameterEnough = true
 		deleteFilter[common.BKProcIDField] = map[string]interface{}{
 			common.BKDBIN: option.ProcessIDs,
 		}
 	}
-	if option.ProcessTemplateIDs != nil {
+
+	if len(option.ProcessTemplateIDs) != 0 {
 		parameterEnough = true
 		deleteFilter[common.BKProcessTemplateIDField] = map[string]interface{}{
 			common.BKDBIN: option.ProcessTemplateIDs,
 		}
 	}
-	if option.ServiceInstanceIDs != nil {
+
+	if len(option.ServiceInstanceIDs) != 0 {
 		parameterEnough = true
 		deleteFilter[common.BKServiceInstanceIDField] = map[string]interface{}{
 			common.BKDBIN: option.ServiceInstanceIDs,
 		}
 	}
-	if option.ModuleIDs != nil {
+
+	if len(option.ModuleIDs) != 0 {
 		parameterEnough = true
 		deleteFilter[common.BKModuleIDField] = map[string]interface{}{
 			common.BKDBIN: option.ModuleIDs,

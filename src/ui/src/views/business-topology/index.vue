@@ -1,18 +1,20 @@
 <template>
   <div class="layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }" style="overflow: hidden;">
-    <cmdb-resize-layout :class="['resize-layout fl', { 'is-collapse': layout.topologyCollapse }]"
+    <cmdb-resize-layout
+      store-id="businessTopoPanel"
+      :class="['resize-layout fl', { 'is-collapse': layout.topologyCollapse }]"
       direction="right"
       :handler-offset="3"
       :min="200"
       :max="480"
       :disabled="layout.topologyCollapse">
-      <topology-tree ref="topologyTree" :active="activeTab"></topology-tree>
+      <topology-tree ref="topologyTree" :active="activeTab" v-test-id></topology-tree>
       <i class="topology-collapse-icon bk-icon icon-angle-left"
         @click="layout.topologyCollapse = !layout.topologyCollapse">
       </i>
     </cmdb-resize-layout>
     <div class="tab-layout">
-      <bk-tab class="topology-tab" type="unborder-card"
+      <bk-tab class="topology-tab" type="unborder-card" v-test-id
         :active.sync="activeTab"
         :validate-active="false"
         :before-toggle="handleTabToggle">
@@ -29,7 +31,7 @@
               </cmdb-auth>
             </i18n>
           </bk-exception>
-          <host-list v-show="!emptySet" :active="activeTab === 'hostList'" ref="hostList"></host-list>
+          <host-list v-show="!emptySet" :active="activeTab === 'hostList'" ref="hostList" v-test-id></host-list>
         </bk-tab-panel>
         <bk-tab-panel name="serviceInstance" :label="$t('服务实例')">
           <div class="non-business-module" v-if="!showServiceInstance">
@@ -38,7 +40,7 @@
               <span>{{$t('非业务模块，无服务实例，请选择业务模块查看')}}</span>
             </div>
           </div>
-          <service-instance-view v-else-if="activeTab === 'serviceInstance'"></service-instance-view>
+          <service-instance-view v-else-if="activeTab === 'serviceInstance'" v-test-id></service-instance-view>
         </bk-tab-panel>
         <bk-tab-panel name="nodeInfo" :label="$t('节点信息')">
           <div class="default-node-info" v-if="!showNodeInfo">
@@ -51,7 +53,7 @@
               <span class="value">{{nodeName}}</span>
             </div>
           </div>
-          <service-node-info v-else :active="activeTab === 'nodeInfo'" ref="nodeInfo"></service-node-info>
+          <service-node-info v-else :active="activeTab === 'nodeInfo'" ref="nodeInfo" v-test-id></service-node-info>
         </bk-tab-panel>
       </bk-tab>
     </div>

@@ -32,12 +32,13 @@ type TransferManager struct {
 
 type OperationDependence interface {
 	AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostIDs []int64, moduleIDs []int64) errors.CCErrorCoder
-	SelectObjectAttWithParams(kit *rest.Kit, objID string, bizID int64) (attribute []metadata.Attribute, err error)
+	SelectObjectAttWithParams(kit *rest.Kit, objID string, bizIDs []int64) (attribute []metadata.Attribute, err error)
 	UpdateModelInstance(kit *rest.Kit, objID string, param metadata.UpdateOption) (*metadata.UpdatedCount, error)
 }
 
 type HostApplyRuleDependence interface {
-	RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder)
+	RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relations []metadata.ModuleHost) (metadata.MultipleHostApplyResult,
+		errors.CCErrorCoder)
 }
 
 func New(dependence OperationDependence, hostApplyDependence HostApplyRuleDependence) *TransferManager {
@@ -48,51 +49,50 @@ func New(dependence OperationDependence, hostApplyDependence HostApplyRuleDepend
 }
 
 // NewHostModuleTransfer business normal module transfer
-func (manager *TransferManager) NewHostModuleTransfer(kit *rest.Kit, bizID int64, moduleIDArr []int64, isIncr bool) *genericTransfer {
+func (manager *TransferManager) NewHostModuleTransfer(kit *rest.Kit, bizID int64, moduleIDArr []int64, isIncr bool,
+	needAutoCreateSvcInst bool) *genericTransfer {
 	return &genericTransfer{
-		dependent:   manager.dependence,
-		moduleIDArr: moduleIDArr,
-		bizID:       bizID,
-		isIncrement: isIncr,
+		dependent:             manager.dependence,
+		hostApplyDependence:   manager.hostApplyDependence,
+		moduleIDArr:           moduleIDArr,
+		bizID:                 bizID,
+		isIncrement:           isIncr,
+		needAutoCreateSvcInst: needAutoCreateSvcInst,
 	}
 }
 
-// TransferHostToInnerModule transfer host to inner module, default module contain(idle module, fault module)
+// TransferToInnerModule transfer host to inner module, default module contain(idle module, fault module)
 func (manager *TransferManager) TransferToInnerModule(kit *rest.Kit, input *metadata.TransferHostToInnerModule) error {
 
-	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, []int64{input.ModuleID}, false)
+	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, []int64{input.ModuleID}, false, false)
 
 	exit, err := transfer.HasInnerModule(kit)
 	if err != nil {
-		blog.ErrorJSON("TransferHostToInnerModule failed, HasInnerModule failed, input:%s, err:%s, rid:%s", input, err.Error(), kit.Rid)
+		blog.Errorf("check if moduleID is inner module failed, input: %v, err: %v, rid: %s", input, err, kit.Rid)
 		return err
 	}
 	if !exit {
-		blog.ErrorJSON("TransferHostToInnerModule validate module failed, module ID is not default module. input:%s, rid:%s", input, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCoreServiceModuleNotDefaultModuleErr, input.ModuleID, input.ApplicationID)
+		blog.Errorf("validate module failed, module ID is not default module. input: %v, rid:%s", input, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCoreServiceModuleNotDefaultModuleErr, input.ModuleID,
+			input.ApplicationID)
 	}
 	err = transfer.ValidParameter(kit)
 	if err != nil {
-		blog.ErrorJSON("TransferHostToInnerModule failed, ValidParameter failed, input:%s, err:%s, rid:%s", input, err.Error(), kit.Rid)
+		blog.Errorf("valid parameter failed, input: %v, err: %v, rid:%s", input, err, kit.Rid)
 		return err
 	}
 
 	transferErr := transfer.Transfer(kit, input.HostID)
 	if transferErr != nil {
-		blog.ErrorJSON("TransferHostToInnerModule failed, Transfer module host relation failed, input:%s, hostID:%s, err:%s, rid:%s", input, transferErr.Error(), kit.Rid)
+		blog.Errorf("transfer module host relation failed, input: %v, hostID: %s, err:%v, rid:%s", input, transferErr,
+			kit.Rid)
 		return transferErr
-	}
-	updateHostOption := metadata.UpdateHostByHostApplyRuleOption{
-		HostIDs: input.HostID,
-	}
-	if _, err := manager.hostApplyDependence.RunHostApplyOnHosts(kit, input.ApplicationID, updateHostOption); err != nil {
-		blog.Warnf("TransferHostToInnerModule success, but RunHostApplyOnHosts failed, bizID: %d, option: %+v, err: %+v, rid: %s", input.ApplicationID, updateHostOption, err, kit.Rid)
 	}
 
 	return nil
 }
 
-// TransferHostModule transfer host to use add module
+// TransferToNormalModule transfer host to use add module
 // 目标模块不能为空闲机模块
 func (manager *TransferManager) TransferToNormalModule(kit *rest.Kit, input *metadata.HostsModuleRelation) error {
 	// 确保目标模块不能为空闲机模块
@@ -104,41 +104,38 @@ func (manager *TransferManager) TransferToNormalModule(kit *rest.Kit, input *met
 			common.BKDBIN: input.ModuleID,
 		},
 	}
-	defaultModuleCount, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(defaultModuleFilter).Count(kit.Ctx)
+	defaultModuleCount, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(defaultModuleFilter).
+		Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("TransferToNormalModule failed, filter default module failed, filter:%s, err:%s, rid:%s", defaultModuleFilter, common.BKTableNameBaseModule, err.Error(), kit.Rid)
+		blog.Errorf("filter default module failed, filter: %v, err: %v, rid: %s", defaultModuleFilter,
+			common.BKTableNameBaseModule, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if defaultModuleCount > 0 {
-		blog.ErrorJSON("TransferToNormalModule failed, target module shouldn't be default module, input:%s, defaultModuleCount:%s, rid:%s", input, defaultModuleCount, kit.Rid)
+		blog.Errorf("target module shouldn't be default module, input: %v, defaultModuleCount: %d, rid: %s", input,
+			defaultModuleCount, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCoreServiceTransferToDefaultModuleUseWrongMethod)
 	}
 
-	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, input.ModuleID, input.IsIncrement)
+	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, input.ModuleID, input.IsIncrement,
+		!input.DisableAutoCreateSvcInst)
 
 	err = transfer.ValidParameter(kit)
 	if err != nil {
-		blog.ErrorJSON("TransferToNormalModule failed, ValidParameter failed, input:%s, err:%s, rid:%s", input, err, kit.Rid)
+		blog.Errorf("valid parameter failed, input: %v, err: %v, rid: %s", input, err, kit.Rid)
 		return err
 	}
 
 	err = transfer.Transfer(kit, input.HostID)
 	if err != nil {
-		blog.ErrorJSON("transfer to normal module failed, transfer module host relation failed. input: %s, err: %s, rid: %s", input, err, kit.Rid)
+		blog.Errorf("transfer module host relation failed. input: %v, err: %v, rid: %s", input, err, kit.Rid)
 		return err
-	}
-
-	updateHostOption := metadata.UpdateHostByHostApplyRuleOption{
-		HostIDs: input.HostID,
-	}
-	if _, err := manager.hostApplyDependence.RunHostApplyOnHosts(kit, input.ApplicationID, updateHostOption); err != nil {
-		blog.Warnf("TransferToNormalModule success, but RunHostApplyOnHosts failed, bizID: %d, option: %+v, err: %+v, rid: %s", input.ApplicationID, updateHostOption, err, kit.Rid)
 	}
 
 	return nil
 }
 
-// RemoveHostFromModule 将主机从模块中移出
+// RemoveFromModule 将主机从模块中移出
 // 如果主机属于n+1个模块（n>0），操作之后，主机属于n个模块
 // 如果主机属于1个模块, 且非空闲机模块，操作之后，主机属于空闲机模块
 // 如果主机属于空闲机模块，操作失败
@@ -195,10 +192,11 @@ func (manager *TransferManager) RemoveFromModule(kit *rest.Kit, input *metadata.
 	}
 	if len(targetModuleIDs) > 0 {
 		option := metadata.HostsModuleRelation{
-			ApplicationID: input.ApplicationID,
-			HostID:        []int64{input.HostID},
-			ModuleID:      targetModuleIDs,
-			IsIncrement:   false,
+			ApplicationID:            input.ApplicationID,
+			HostID:                   []int64{input.HostID},
+			ModuleID:                 targetModuleIDs,
+			IsIncrement:              false,
+			DisableAutoCreateSvcInst: true,
 		}
 		err := manager.TransferToNormalModule(kit, &option)
 		if err != nil {
@@ -230,11 +228,11 @@ func (manager *TransferManager) RemoveFromModule(kit *rest.Kit, input *metadata.
 	return nil
 }
 
-// TransferHostCrossBusiness Host cross-business transfer
+// TransferToAnotherBusiness Host cross-business transfer
 func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit,
 	input *metadata.TransferHostsCrossBusinessRequest) error {
-	transfer := manager.NewHostModuleTransfer(kit, input.DstApplicationID, input.DstModuleIDArr, false)
-	transfer.SetCrossBusiness(kit, input.SrcApplicationID)
+	transfer := manager.NewHostModuleTransfer(kit, input.DstApplicationID, input.DstModuleIDArr, false, true)
+	transfer.SetCrossBusiness(kit, input.SrcApplicationIDs)
 	var err error
 	err = transfer.ValidParameter(kit)
 	if err != nil {
@@ -243,22 +241,12 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit,
 		return err
 	}
 
-	isAppArchived, err := transfer.isAppArchived(kit)
-	if err != nil {
-		blog.Errorf("valid app status failed, err:%s, input:%s, rid:%s", err.Error(), input, kit.Rid)
-		return err
-	}
-
-	if isAppArchived {
-		blog.Errorf("target business has been archived, bizID: %d, rid: %s", transfer.bizID, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrTransferHostToArchivedApp)
-	}
-
 	// attributes in legacy business
-	legacyAttributes, err := transfer.dependent.SelectObjectAttWithParams(kit, common.BKInnerObjIDHost, input.SrcApplicationID)
+	legacyAttributes, err := transfer.dependent.SelectObjectAttWithParams(kit, common.BKInnerObjIDHost,
+		input.SrcApplicationIDs)
 	if err != nil {
-		blog.ErrorJSON("select objectAtt with params failed, bizID: %s, err:%s, rid:%s", input.SrcApplicationID,
-			err.Error(), kit.Rid)
+		blog.Errorf("select objectAtt with params failed, bizIDs: %v, err: %s, rid: %s", input.SrcApplicationIDs, err,
+			kit.Rid)
 		return err
 	}
 
@@ -274,16 +262,6 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit,
 		blog.ErrorJSON("TransferToAnotherBusiness failed, clearLegacyPrivateField failed, "+
 			"hostID:%s, attributes:%s, err:%s, rid:%s", input.HostIDArr, legacyAttributes, err.Error(), kit.Rid)
 		// we should go on setting default value for new private field
-	}
-
-	updateHostOption := metadata.UpdateHostByHostApplyRuleOption{
-		HostIDs: input.HostIDArr,
-	}
-	if hostApplyResult, err := manager.hostApplyDependence.RunHostApplyOnHosts(kit,
-		input.DstApplicationID, updateHostOption); err != nil {
-		blog.Warnf("TransferToAnotherBusiness success, but RunHostApplyOnHosts failed, "+
-			"bizID: %d, option: %+v, hostApplyResult: %+v, err: %+v, rid: %s",
-			input.DstApplicationID, updateHostOption, hostApplyResult, err, kit.Rid)
 	}
 
 	return nil
@@ -400,7 +378,7 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 
 // DeleteHost delete host module relation and host info
 func (manager *TransferManager) DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) error {
-	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, nil, false)
+	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, nil, false, false)
 	return transfer.DeleteHosts(kit, input.HostIDArr)
 }
 

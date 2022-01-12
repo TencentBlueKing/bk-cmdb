@@ -216,7 +216,7 @@
             app_url: urlSuffix
           }), '*')
         } else {
-          const agentAppUrl = window.CMDB_CONFIG.site.agent
+          const agentAppUrl = this.$Site.agent
           if (agentAppUrl) {
             window.open(agentAppUrl + urlSuffix)
           } else {

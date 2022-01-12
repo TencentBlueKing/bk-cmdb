@@ -21,13 +21,13 @@
                     <i class="property-name-tooltips icon-cc-tips"
                       v-if="property['placeholder']"
                       v-bk-tooltips="{
-                        trigger: 'click',
+                        trigger: 'mouseenter',
                         content: htmlEncode(property['placeholder'])
                       }">
                     </i>
                   </div>
                   <div :class="['property-value', { 'is-lock': values[property.bk_property_id].as_default_value }]">
-                    <component class="form-component" ref="formComponent"
+                    <component class="form-component" ref="formComponent" v-test-id
                       :is="getComponentType(property)"
                       :disabled="getPropertyEditStatus(property)"
                       :class="{ error: errors.has(property['bk_property_id']) }"
@@ -69,7 +69,7 @@
       :class="{ sticky: sticky }">
       <slot name="form-options">
         <cmdb-auth :auth="auth">
-          <bk-button slot-scope="{ disabled }"
+          <bk-button slot-scope="{ disabled }" v-test-id="type === 'create' ? 'submit' : 'save'"
             class="button-save"
             theme="primary"
             :disabled="saveDisabled || $loading() || disabled || btnStatus()"
@@ -77,7 +77,9 @@
             {{type === 'create' ? $t('提交') : $t('保存')}}
           </bk-button>
         </cmdb-auth>
-        <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
+        <bk-button class="button-cancel" @click="handleCancel" v-test-id="'cancel'">
+          {{$t('取消')}}
+        </bk-button>
       </slot>
       <slot name="extra-options"></slot>
     </div>

@@ -34,6 +34,7 @@ const FilterStore = new Vue({
       header: [],
       collections: [],
       activeCollection: null,
+      needResetPage: false,
       throttleSearch: throttle(this.dispatchSearch, 100, { leading: false })
     }
   },
@@ -67,7 +68,8 @@ const FilterStore = new Vue({
       const key = this.config.header && this.config.header.custom
       const moduleNameProperty = Utils.findPropertyByPropertyId('bk_module_name', this.properties, 'module')
       const setNameProperty = Utils.findPropertyByPropertyId('bk_set_name', this.properties, 'set')
-      return getStorageHeader('usercustom', key, [...this.modelPropertyMap.host, moduleNameProperty, setNameProperty])
+      const bizNameProperty = Utils.findPropertyByPropertyId('bk_biz_name', this.properties, 'biz')
+      return getStorageHeader('usercustom', key, [...this.modelPropertyMap.host, moduleNameProperty, setNameProperty, bizNameProperty])
     },
     presetHeader() {
       const hostProperties = this.getModelProperties('host')
@@ -237,6 +239,7 @@ const FilterStore = new Vue({
       this.setHeader()
       this.setQuery()
       this.searchHandler(this.condition)
+      this.resetPage(false)
     },
     setQuery() {
       const query = {}
@@ -246,11 +249,19 @@ const FilterStore = new Vue({
           query[`${id}.${operator.replace('$', '')}`] = Array.isArray(value) ? value.join(',') : value
         }
       })
-      RouterQuery.set({
+
+      const allQuery = {
         filter: QS.stringify(query, { encode: false }),
         ip: QS.stringify(this.IP.text.trim().length ? this.IP : {}, { encode: false }),
         _t: Date.now()
-      })
+      }
+
+      // 在触发搜索的场景中会设置needResetPage为true，同时需要满足当前业务存在分页的场景
+      if (this.needResetPage && RouterQuery.get('page')) {
+        allQuery.page = 1
+      }
+
+      RouterQuery.set(allQuery)
     },
     setHeader() {
       const suffixPropertyId = Object.keys(this.condition).filter(id => String(this.condition[id].value).trim().length)
@@ -429,6 +440,9 @@ const FilterStore = new Vue({
         [this.userBehaviorKey]: properties.map(property => [property.bk_property_id, property.bk_obj_id])
       })
       return Promise.resolve()
+    },
+    resetPage(status = true) {
+      this.needResetPage = status
     }
   }
 })

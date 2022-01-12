@@ -338,11 +338,15 @@ func (s *Service) UpdateInsts(ctx *rest.Contexts) {
 		instanceIDs := make([]int64, 0)
 		for _, item := range updateCondition.Update {
 			instanceIDs = append(instanceIDs, item.InstID)
-			cond := condition.CreateCondition()
-			cond.Field(obj.GetInstIDFieldName()).Eq(item.InstID)
-			err = s.Core.InstOperation().UpdateInst(ctx.Kit, item.InstInfo, obj, cond, item.InstID)
+			cond := mapstr.MapStr{
+				obj.GetInstIDFieldName(): mapstr.MapStr{
+					common.BKDBEQ: item.InstID,
+				},
+			}
+			err = s.Core.InstOperation().UpdateInst(ctx.Kit, item.InstInfo, obj, cond)
 			if nil != err {
-				blog.Errorf("[api-inst] failed to update the object(%s) inst (%d),the data (%#v), error info is %s, rid: %s", obj.Object().ObjectID, item.InstID, data, err.Error(), ctx.Kit.Rid)
+				blog.Errorf("failed to update the object(%s) inst (%d), the data (%#v), err: %v, rid: %s",
+					obj.Object().ObjectID, item.InstID, data, err, ctx.Kit.Rid)
 				return err
 			}
 		}
@@ -402,13 +406,17 @@ func (s *Service) UpdateInst(ctx *rest.Contexts) {
 		// TODO add custom mainline instance param validation
 	}
 
-	cond := condition.CreateCondition()
-	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
+	cond := mapstr.MapStr{
+		obj.GetInstIDFieldName(): mapstr.MapStr{
+			common.BKDBEQ: instID,
+		},
+	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Core.InstOperation().UpdateInst(ctx.Kit, data, obj, cond, instID)
+		err = s.Core.InstOperation().UpdateInst(ctx.Kit, data, obj, cond)
 		if nil != err {
-			blog.Errorf("[api-inst] failed to update the object(%s) inst (%s),the data (%#v), error info is %s, rid: %s", obj.Object().ObjectID, ctx.Request.PathParameter("inst_id"), data, err.Error(), ctx.Kit.Rid)
+			blog.Errorf("failed to update the object(%s) inst (%s), the data (%#v), err: %v, rid: %s",
+				obj.Object().ObjectID, ctx.Request.PathParameter("inst_id"), data, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -1003,4 +1011,23 @@ func (s *Service) SearchInstAssociationWithOtherObject(ctx *rest.Contexts) {
 		"count": cnt,
 		"page":  input.Page,
 	})
+}
+
+// FindInsts find insts by cond
+func (s *Service) FindInsts(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	data := new(metadata.QueryCondition)
+	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	sets, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, objID, data)
+	if err != nil {
+		blog.Errorf("failed to get inst, obj id: %s, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(sets.Data)
 }

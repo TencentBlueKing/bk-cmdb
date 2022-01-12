@@ -66,16 +66,20 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 		return nil, fmt.Errorf("mongodb rsName not set")
 	}
 	socketTimeout := time.Second * time.Duration(config.SocketTimeout)
+	maxConnIdleTime := 25 * time.Minute
+	appName := common.GetIdentification()
 	// do not change this, our transaction plan need it to false.
 	// it's related with the transaction number(eg txnNumber) in a transaction session.
 	disableWriteRetry := false
 	conOpt := options.ClientOptions{
-		MaxPoolSize:    &config.MaxOpenConns,
-		MinPoolSize:    &config.MaxIdleConns,
-		ConnectTimeout: &timeout,
-		SocketTimeout:  &socketTimeout,
-		ReplicaSet:     &config.RsName,
-		RetryWrites:    &disableWriteRetry,
+		MaxPoolSize:     &config.MaxOpenConns,
+		MinPoolSize:     &config.MaxIdleConns,
+		ConnectTimeout:  &timeout,
+		SocketTimeout:   &socketTimeout,
+		ReplicaSet:      &config.RsName,
+		RetryWrites:     &disableWriteRetry,
+		MaxConnIdleTime: &maxConnIdleTime,
+		AppName:         &appName,
 	}
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(config.URI), &conOpt)
@@ -717,6 +721,15 @@ func (c *Mongo) DropTable(ctx context.Context, collName string) error {
 // CreateTable 创建集合 TODO test
 func (c *Mongo) CreateTable(ctx context.Context, collName string) error {
 	return c.dbc.Database(c.dbname).RunCommand(ctx, map[string]interface{}{"create": collName}).Err()
+}
+
+// RenameTable 更新集合名称
+func (c *Mongo) RenameTable(ctx context.Context, prevName, currName string) error {
+	cmd := bson.D{
+		{"renameCollection", c.dbname + "." + prevName},
+		{"to", c.dbname + "." + currName},
+	}
+	return c.dbc.Database("admin").RunCommand(ctx, cmd).Err()
 }
 
 // CreateIndex 创建索引

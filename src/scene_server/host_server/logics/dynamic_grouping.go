@@ -77,7 +77,7 @@ type HostDynamicGroupExecutor struct {
 
 // NewHostDynamicGroupExecutor creates a new HostDynamicGroupExecutor object.
 func NewHostDynamicGroupExecutor(kit *rest.Kit, lgc *Logics, params *metadata.HostCommonSearch,
-	fileds []string, disableCounter bool) *HostDynamicGroupExecutor {
+	fields []string, disableCounter bool) *HostDynamicGroupExecutor {
 
 	executor := &HostDynamicGroupExecutor{
 		kit:            kit,
@@ -88,7 +88,7 @@ func NewHostDynamicGroupExecutor(kit *rest.Kit, lgc *Logics, params *metadata.Ho
 		header:         kit.Header,
 		params:         params,
 		idArr:          searchHostIDArr{},
-		fields:         fileds,
+		fields:         fields,
 		disableCounter: disableCounter,
 	}
 	executor.conds.objectCondMap = make(map[string][]metadata.ConditionItem)
@@ -460,18 +460,14 @@ func (e *HostDynamicGroupExecutor) appendHostTopoConds() error {
 
 	var hostIDs []int64
 
-	respHostIDInfo, err := e.lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(e.ctx, e.kit.Header, &moduleHostConfig)
+	respHostIDs, err := e.lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(e.ctx, e.kit.Header,
+		&moduleHostConfig)
 	if err != nil {
 		blog.Errorf("get hosts failed, err: %v, rid: %s", err, e.ccRid)
-		return e.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err := respHostIDInfo.CCError(); err != nil {
-		blog.Errorf("get host id by topology relation failed, error code:%d, error message:%s, cond: %s, rid: %s",
-			respHostIDInfo.Code, respHostIDInfo.ErrMsg, moduleHostConfig, e.ccRid)
 		return err
 	}
-	e.total = len(respHostIDInfo.Data.IDArr)
+
+	e.total = len(respHostIDs)
 
 	// 当有根据主机实例内容查询的时候的时候，无法在程序中完成分页
 	hasHostCond := false
@@ -483,7 +479,7 @@ func (e *HostDynamicGroupExecutor) appendHostTopoConds() error {
 		start := e.params.Page.Start
 		limit := start + e.params.Page.Limit
 
-		uniqHostIDCnt := len(respHostIDInfo.Data.IDArr)
+		uniqHostIDCnt := len(respHostIDs)
 		if start < 0 {
 			start = 0
 		}
@@ -492,7 +488,7 @@ func (e *HostDynamicGroupExecutor) appendHostTopoConds() error {
 			return nil
 		}
 
-		allHostIDs := respHostIDInfo.Data.IDArr
+		allHostIDs := respHostIDs
 		sort.Slice(allHostIDs, func(i, j int) bool { return allHostIDs[i] < allHostIDs[j] })
 
 		if uniqHostIDCnt <= limit {
@@ -503,11 +499,11 @@ func (e *HostDynamicGroupExecutor) appendHostTopoConds() error {
 
 		e.needPaged = true
 	} else {
-		if len(respHostIDInfo.Data.IDArr) == 0 {
+		if len(respHostIDs) == 0 {
 			e.isNotFound = true
 			return nil
 		}
-		hostIDs = respHostIDInfo.Data.IDArr
+		hostIDs = respHostIDs
 	}
 
 	// 合并两种根据host_id查询的condition

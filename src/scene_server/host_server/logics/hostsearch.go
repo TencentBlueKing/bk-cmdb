@@ -786,17 +786,14 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 
 	var hostIDArr []int64
 
-	respHostIDInfo, err := sh.lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(sh.ctx, sh.kit.Header, &moduleHostConfig)
+	respHostIDs, err := sh.lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(sh.ctx, sh.kit.Header,
+		&moduleHostConfig)
 	if err != nil {
 		blog.Errorf("get hosts failed, err: %v, rid: %s", err, sh.ccRid)
-		return sh.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if err := respHostIDInfo.CCError(); err != nil {
-		blog.Errorf("get host id by topology relation failed, error code:%d, error message:%s, cond: %s, rid: %s", respHostIDInfo.Code, respHostIDInfo.ErrMsg, moduleHostConfig, sh.ccRid)
 		return err
 	}
 
-	sh.totalHostCnt = len(respHostIDInfo.Data.IDArr)
+	sh.totalHostCnt = len(respHostIDs)
 	// 当有根据主机实例内容查询的时候的时候，无法在程序中完成分页
 	hasHostCond := false
 	if len(sh.hostSearchParam.Ip.Data) > 0 || len(sh.conds.hostCond.Condition) > 0 || sh.conds.hostCond.TimeCondition != nil {
@@ -806,7 +803,7 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 		start := sh.hostSearchParam.Page.Start
 		limit := start + sh.hostSearchParam.Page.Limit
 
-		uniqHostIDCnt := len(respHostIDInfo.Data.IDArr)
+		uniqHostIDCnt := len(respHostIDs)
 		// 如果用户start 设置小于0， 将start 设置为默认值
 		if start < 0 {
 			start = 0
@@ -815,7 +812,7 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 			sh.noData = true
 			return nil
 		}
-		allHostIDsArr := respHostIDInfo.Data.IDArr
+		allHostIDsArr := respHostIDs
 		sort.Slice(allHostIDsArr, func(i, j int) bool { return allHostIDsArr[i] < allHostIDsArr[j] })
 		if uniqHostIDCnt <= limit {
 			hostIDArr = allHostIDsArr[start:]
@@ -824,11 +821,11 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 		}
 		sh.paged = true
 	} else {
-		if len(respHostIDInfo.Data.IDArr) == 0 {
+		if len(respHostIDs) == 0 {
 			sh.noData = true
 			return nil
 		}
-		hostIDArr = respHostIDInfo.Data.IDArr
+		hostIDArr = respHostIDs
 	}
 
 	// 合并两种涞源的根据 host_id 查询的 condition

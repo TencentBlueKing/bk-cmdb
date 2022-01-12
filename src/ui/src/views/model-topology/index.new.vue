@@ -4,23 +4,21 @@
       <cmdb-auth style="display: none;" ref="addBusinessLevel" :auth="{ type: $OPERATION.SYSTEM_TOPOLOGY }"
         @update-auth="handleReceiveAuth">
       </cmdb-auth>
-      <template v-if="!topoEdit.isEdit">
-        <cmdb-auth :auth="{ type: $OPERATION.SYSTEM_MODEL_GRAPHICS }">
-          <bk-button slot-scope="{ disabled }"
-            class="edit-button"
-            theme="primary"
-            :disabled="disabled"
-            @click="handleEditTopo">
-            {{$t('编辑拓扑')}}
-          </bk-button>
-        </cmdb-auth>
-      </template>
-      <template v-else>
+      <cmdb-auth v-show="!topoEdit.isEdit" :auth="{ type: $OPERATION.SYSTEM_MODEL_GRAPHICS }">
+        <bk-button slot-scope="{ disabled }"
+          class="edit-button"
+          theme="primary"
+          :disabled="disabled"
+          @click="handleEditTopo">
+          {{$t('编辑拓扑')}}
+        </bk-button>
+      </cmdb-auth>
+      <div v-show="topoEdit.isEdit">
         <bk-button style="margin-top: -2px;" theme="primary" @click="handleExitEdit">
           {{$t('返回')}}
         </bk-button>
         <p class="edit-cue">{{$t('所有更改已自动保存')}}</p>
-      </template>
+      </div>
       <div class="vis-button-group">
         <i
           :class="['bk-cc-icon', mainFullScreen ? 'icon-cc-fullscreen-outlined-reset' : 'icon-cc-fullscreen-outlined']"
@@ -147,6 +145,7 @@
       :is-show.sync="addBusinessLevel.showDialog"
       :is-main-line="true"
       :title="$t('新建层级')"
+      :operating="creating"
       @confirm="handleCreateBusinessLevel"
     ></the-create-model>
   </div>
@@ -220,7 +219,8 @@
         loading: true,
         isTopoHover: false,
         createAuth: false,
-        hideModelConfigKey: 'model_custom_hide_models'
+        hideModelConfigKey: 'model_custom_hide_models',
+        creating: false,
       }
     },
     computed: {
@@ -775,62 +775,68 @@
         // 先给节点解锁
         cy.autolock(false)
 
-        // 1. 设置主节点位置
-        const centerPos = { x: (extent.x1 + extent.x2) / 2, y: (extent.y1 + extent.y2) / 2 }
-        const startPosY = extent.y1 + NODE_WIDTH
-        // const nodeSpace = extent.h * 0.8 / this.mainLineModelList.length
-        const nodeSpace = 200
+        try {
+          // 1. 设置主节点位置
+          const centerPos = { x: (extent.x1 + extent.x2) / 2, y: (extent.y1 + extent.y2) / 2 }
+          const startPosY = extent.y1 + NODE_WIDTH
+          // const nodeSpace = extent.h * 0.8 / this.mainLineModelList.length
+          const nodeSpace = 200
 
-        // 坚排并lock
-        this.mainLineModelList.forEach((model, i) => {
-          cy.nodes(`#${model.bk_obj_id}`).position({
-            x: centerPos.x,
-            // eslint-disable-next-line no-mixed-operators
-            y: i * nodeSpace + startPosY
+          // 坚排并lock
+          this.mainLineModelList.forEach((model, i) => {
+            cy.nodes(`#${model.bk_obj_id}`).position({
+              x: centerPos.x,
+              // eslint-disable-next-line no-mixed-operators
+              y: i * nodeSpace + startPosY
+            })
+              .lock()
           })
+
+          // 2. 摆放添加业务层级按钮节点
+          cy.nodes('.add-business-btn').positions((node) => {
+            // 所属模型节点信息
+            const modelNodeId = node.data('model').bk_obj_id
+            const modelNode = cy.nodes(`#${modelNodeId}`)
+            const modelNodePos = modelNode.position()
+            const modelNodeHeight = modelNode.outerHeight() + 10
+
+            return {
+              x: modelNodePos.x,
+              y: modelNodePos.y + modelNodeHeight
+            }
+          })
+            .style('display', isEdit ? 'element' : 'none')
             .lock()
-        })
 
-        // 2. 摆放添加业务层级按钮节点
-        cy.nodes('.add-business-btn').positions((node) => {
-          // 所属模型节点信息
-          const modelNodeId = node.data('model').bk_obj_id
-          const modelNode = cy.nodes(`#${modelNodeId}`)
-          const modelNodePos = modelNode.position()
-          const modelNodeHeight = modelNode.outerHeight() + 10
-
-          return {
-            x: modelNodePos.x,
-            y: modelNodePos.y + modelNodeHeight
+          // 3. 摆放无位置节点
+          if (this.noPositionModels?.length) {
+            const nodeCollection = cy.collection()
+            this.noPositionModels.forEach((model) => {
+              const node = cy.nodes(`#${model.bk_obj_id}`)
+              nodeCollection.merge(node)
+            })
+            const collectionBoundingBox = nodeCollection.boundingBox()
+            const nodeTotal = nodeCollection.length
+            const nodeGutter = 15
+            // 设定一行最多5个
+            const maxCountInOneRow = Math.min(nodeTotal, 5)
+            const boundingBoxW = (collectionBoundingBox.w + nodeGutter) * maxCountInOneRow
+            const rowTotal = Math.ceil(nodeTotal / maxCountInOneRow)
+            const boundingBoxH = collectionBoundingBox.h * rowTotal
+            nodeCollection.layout({
+              name: 'grid',
+              fit: false,
+              padding: 30,
+              rows: rowTotal,
+              boundingBox: { x1: extent.x2, y1: extent.y1, w: boundingBoxW, h: boundingBoxH },
+              stop: () => {
+                cy.fit()
+              }
+            }).run()
           }
-        })
-          .style('display', isEdit ? 'element' : 'none')
-          .lock()
-
-        // 3. 摆放无位置节点
-        const nodeCollection = cy.collection()
-        this.noPositionModels.forEach((model) => {
-          const node = cy.nodes(`#${model.bk_obj_id}`)
-          nodeCollection.merge(node)
-        })
-        const collectionBoundingBox = nodeCollection.boundingBox()
-        const nodeTotal = nodeCollection.length
-        const nodeGutter = 15
-        // 设定一行最多5个
-        const maxCountInOneRow = Math.min(nodeTotal, 5)
-        const boundingBoxW = (collectionBoundingBox.w + nodeGutter) * maxCountInOneRow
-        const rowTotal = Math.ceil(nodeTotal / maxCountInOneRow)
-        const boundingBoxH = collectionBoundingBox.h * rowTotal
-        nodeCollection.layout({
-          name: 'grid',
-          fit: false,
-          padding: 30,
-          rows: rowTotal,
-          boundingBox: { x1: extent.x2, y1: extent.y1, w: boundingBoxW, h: boundingBoxH },
-          stop: () => {
-            cy.fit()
-          }
-        }).run()
+        } catch (e) {
+          console.error(e)
+        }
 
         // 更新节点锁状态
         cy.autolock(!isEdit)
@@ -1167,6 +1173,8 @@
       },
       async handleCreateBusinessLevel(data) {
         try {
+          this.creating = true
+
           await this.createMainlineObject({
             params: {
               bk_asst_obj_id: this.addBusinessLevel.parent.bk_obj_id,
@@ -1195,6 +1203,8 @@
         } catch (e) {
           console.log(e)
         }
+
+        this.creating = false
       },
       cancelCreateBusinessLevel() {
         this.addBusinessLevel.parent = null
@@ -1245,8 +1255,11 @@
         height: 50px;
         background: #fff;
         font-size: 0;
+        display: flex;
+        justify-content: space-between;
         .bk-button {
             margin-right: 10px;
+            transition: none;
         }
         .edit-cue {
             display: inline-block;

@@ -34,6 +34,7 @@ type GroupOperationInterface interface {
 	FindGroupByObject(kit *rest.Kit, objID string, cond condition.Condition, modelBizID int64) ([]model.GroupInterface, error)
 	UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondition) error
 	UpdateObjectAttributeGroup(kit *rest.Kit, cond []metadata.PropertyGroupObjectAtt, modelBizID int64) error
+	ExchangeObjectGroupIndex(kit *rest.Kit, ids []int64) error
 	DeleteObjectAttributeGroup(kit *rest.Kit, objID, propertyID, groupID string) error
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface)
 }
@@ -230,18 +231,25 @@ func (g *group) DeleteObjectAttributeGroup(kit *rest.Kit, objID, propertyID, gro
 	return nil
 }
 
+//  UpdateObjectGroup update object group by condition
 func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondition) error {
 	if cond.Data.Index == nil && cond.Data.Name == nil {
 		return nil
 	}
+
 	input := metadata.UpdateOption{
 		Condition: mapstr.NewFromStruct(cond.Condition, "json"),
 		Data:      mapstr.NewFromStruct(cond.Data, "json"),
 	}
 
+	if cond.ModelBizID != 0 {
+		input.Condition[common.BKAppIDField] = cond.ModelBizID
+	}
+
 	// generate audit log of object attribute group.
 	audit := auditlog.NewAttributeGroupAuditLog(g.clientSet.CoreService())
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(input.Data)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(
+		input.Data)
 	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, cond.Condition.ID, nil)
 	if err != nil {
 		blog.Errorf("generate audit log failed before update attribute group, groupName: %s, err: %v, rid: %s",
@@ -251,13 +259,15 @@ func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondi
 
 	// to update.
 	rsp, err := g.clientSet.CoreService().Model().UpdateAttributeGroupByCondition(kit.Ctx, kit.Header, input)
-	if nil != err {
-		blog.Errorf("[operation-grp] failed to set the group to the new data (%#v) by the condition (%#v), error info is %s , rid: %s", cond.Data, cond.Condition, err.Error(), kit.Rid)
+	if err != nil {
+		blog.Errorf("failed to set the group to the new data (%#v) by the condition (%#v), err: %v , rid: %s",
+			cond.Data, cond.Condition, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !rsp.Result {
-		blog.Errorf("[operation-grp] failed to set the group to the new data (%#v) by the condition (%#v), error info is %s , rid: %s", cond.Data, cond.Condition, rsp.ErrMsg, kit.Rid)
-		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
+	if ccErr := rsp.CCError(); ccErr != nil {
+		blog.Errorf("failed to set the group to the new data (%#v) by the condition (%#v), err: %v , rid: %s",
+			cond.Data, cond.Condition, ccErr, kit.Rid)
+		return ccErr
 	}
 
 	// save audit log.
@@ -266,5 +276,76 @@ func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondi
 			cond.Data.Name, err, kit.Rid)
 		return err
 	}
+	return nil
+}
+
+// ExchangeObjectGroupIndex exchange the group index of two groups
+// related issue: https://github.com/Tencent/bk-cmdb/issues/5873
+func (g *group) ExchangeObjectGroupIndex(kit *rest.Kit, ids []int64) error {
+
+	if len(ids) != 2 {
+		blog.Errorf("group ids must be two, now is %d, rid: %s", len(ids), kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKFieldID)
+	}
+
+	cond := metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: ids}},
+		Fields: []string{common.BKPropertyGroupIndexField, common.BKFieldID, common.BKObjIDField,
+			common.BKAppIDField},
+	}
+	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroupByCondition(kit.Ctx, kit.Header, cond)
+	if err != nil {
+		blog.Errorf("search group info by ids failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if ccErr := rsp.CCError(); ccErr != nil {
+		blog.Errorf("search group info by ids failed, err: %v, rid: %s", ccErr, kit.Rid)
+		return err
+	}
+
+	if len(rsp.Data.Info) != 2 {
+		blog.Errorf("search group info by ids failed, result not two group info, number: %d, rid: %s",
+			len(rsp.Data.Info), kit.Rid)
+		return kit.CCError.New(common.CCErrTopoObjectGroupUpdateFailed, "result not two group info")
+	}
+
+	// custom object create will create default group, index is -1, -2 has't been used
+	// once update any group_index will cause Mongo duplicate error without temp
+	tempIndex := int64(-2)
+	groupA, groupB := rsp.Data.Info[0], rsp.Data.Info[1]
+	if groupA.BizID != groupB.BizID || groupA.ObjectID != groupB.ObjectID {
+		blog.Errorf("two groups not the same business or object, rid: %s", kit.Rid)
+		return kit.CCError.New(common.CCErrTopoObjectGroupUpdateFailed, "two groups not the same business/object")
+	}
+
+	// update group A to a temp group_index
+	updateCond := &metadata.UpdateGroupCondition{}
+	updateCond.Condition.ID = groupA.ID
+	updateCond.Data.Index = &tempIndex
+	if err := g.UpdateObjectGroup(kit, updateCond); err != nil {
+		blog.Errorf("failed to set the group to the new data (%#v) by the condition (%#v), err: %v , rid: %s",
+			updateCond.Data, updateCond.Condition, err, kit.Rid)
+		return err
+	}
+
+	// update group B to group A origin group_index
+	updateCond.Condition.ID = groupB.ID
+	updateCond.Data.Index = &groupA.GroupIndex
+	if err := g.UpdateObjectGroup(kit, updateCond); err != nil {
+		blog.Errorf("failed to set the group to the new data (%#v) by the condition (%#v), err: %v , rid: %s",
+			updateCond.Data, updateCond.Condition, err, kit.Rid)
+		return err
+	}
+
+	// update group A to group B origin group_index
+	updateCond.Condition.ID = groupA.ID
+	updateCond.Data.Index = &groupB.GroupIndex
+	if err := g.UpdateObjectGroup(kit, updateCond); err != nil {
+		blog.Errorf("failed to set the group to the new data (%#v) by the condition (%#v), err: %v , rid: %s",
+			updateCond.Data, updateCond.Condition, err, kit.Rid)
+		return err
+	}
+
 	return nil
 }

@@ -1,6 +1,7 @@
 import cursor from '@/directives/cursor'
 import { IAM_ACTIONS } from '@/dictionary/iam-auth'
 import { $error } from '@/magicbox'
+import isEqual from 'lodash/isEqual'
 
 const SYSTEM_ID = 'bk_cmdb'
 
@@ -77,6 +78,8 @@ export const translateAuth = (auth) => {
     if (!definition.relation) {
       return action
     }
+
+    // 计算出完整的关联路径用于申请权限展示，如：模型-实例
     definition.relation.forEach((viewDefinition, viewDefinitionIndex) => { // 第m个视图的定义n
       const { view, instances } = viewDefinition
       const relatedResource = {
@@ -87,12 +90,15 @@ export const translateAuth = (auth) => {
         const viewPathData = resourceViewPaths[viewDefinitionIndex] || [] // 取出第x个资源对应的第m个视图对应的拓扑路径ID数组
         const viewFullPath = viewPathData.map((path, pathIndex) => ({ // 资源x的第m个视图对应的全路径拓扑对象
           type: instances[pathIndex],
-          id: String(path)
+          id: String(path) // 实例的id
         }))
-        relatedResource.instances.push(viewFullPath)
+        if (!relatedResource.instances.some(path => isEqual(path, viewFullPath))) {
+          relatedResource.instances.push(viewFullPath)
+        }
       })
       action.related_resource_types.push(relatedResource)
     })
+
     return action
   })
   return mergeSameActions(actions)
@@ -102,7 +108,7 @@ cursor.setOptions({
   globalCallback: (options) => {
     const permission = translateAuth(options.auth)
     const { permissionModal } = window
-    permissionModal && permissionModal.show(permission)
+    permissionModal && permissionModal.show(permission, options.authResults)
   },
   x: 16,
   y: 8

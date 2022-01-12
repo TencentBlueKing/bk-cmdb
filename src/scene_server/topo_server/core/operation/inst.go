@@ -48,7 +48,7 @@ type InstOperationInterface interface {
 	FindInstChildTopo(kit *rest.Kit, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
 	FindInstParentTopo(kit *rest.Kit, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
 	FindInstTopo(kit *rest.Kit, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []CommonInstTopoV2, err error)
-	UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error
+	UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond mapstr.MapStr) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface)
 }
@@ -301,10 +301,20 @@ func (c *commonInst) validMainLineParentID(kit *rest.Kit, obj model.Object, data
 	if obj.Object().ObjectID == common.BKInnerObjIDApp {
 		return nil
 	}
+
 	def, exist := data.Get(common.BKDefaultField)
-	if exist && def.(int) != common.DefaultFlagDefaultValue {
-		return nil
+	if exist {
+		defInt, err := util.GetIntByInterface(def)
+		if err != nil {
+			blog.Errorf("parse default value failed, err: %v, rid: %s", err, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKDefaultField)
+		}
+
+		if defInt != common.DefaultFlagDefaultValue {
+			return nil
+		}
 	}
+
 	parent, err := obj.GetMainlineParentObject()
 	if err != nil {
 		blog.Errorf("[operation-inst] failed to get the object(%s) mainline parent, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), kit.Rid)
@@ -579,7 +589,6 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 		return kit.CCError.Error(common.CCErrTopoHasHostCheckFailed)
 	}
 
-	bizSetMap := make(map[int64][]int64)
 	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
 	auditLogs := make([]metadata.AuditLog, 0)
 
@@ -592,15 +601,6 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 				return kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.GetInstIDField(objID))
 			}
 			delInstIDs[index] = instID
-
-			if objID == common.BKInnerObjIDSet {
-				bizID, err := instance.Int64(common.BKAppIDField)
-				if err != nil {
-					blog.ErrorJSON("can not convert biz ID to int64, err: %s, set: %s, rid: %s", err, instance, kit.Rid)
-					return kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
-				}
-				bizSetMap[bizID] = append(bizSetMap[bizID], instID)
-			}
 		}
 
 		// if any instance has been bind to a instance by the association, then these instances should not be deleted.
@@ -635,16 +635,6 @@ func (c *commonInst) deleteInstByCond(kit *rest.Kit, objectID string, cond mapst
 		if err := rsp.CCError(); err != nil {
 			blog.ErrorJSON("delete inst failed, err: %s, cond: %s rid: %s", err, delCond, kit.Rid)
 			return err
-		}
-	}
-
-	// clear set template sync status for set instances
-	for bizID, setIDs := range bizSetMap {
-		if len(setIDs) != 0 {
-			if ccErr := c.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, setIDs); ccErr != nil {
-				blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDs, ccErr.Error(), kit.Rid)
-				return ccErr
-			}
 		}
 	}
 
@@ -1195,51 +1185,43 @@ func (c *commonInst) FindInst(kit *rest.Kit, obj model.Object, cond *metadata.Qu
 	return rsp.Count, inst.CreateInst(kit, c.clientSet, obj, rsp.Info), nil
 }
 
-func (c *commonInst) UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
+// UpdateInst updates instances by condition
+func (c *commonInst) UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond mapstr.MapStr) error {
 	// not allowed to update these fields, need to use specialized function
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.BKAppIDField)
 
-	// update association
-	query := &metadata.QueryInput{}
-	query.Condition = cond.ToMapStr()
-	query.Limit = common.BKNoLimit
-	if 0 < instID {
-		innerCond := condition.CreateCondition()
-		innerCond.Field(obj.GetInstIDFieldName()).Eq(instID)
-		query.Condition = innerCond.ToMapStr()
-	}
-
-	fCond := cond.ToMapStr()
 	inputParams := metadata.UpdateOption{
 		Data:      data,
-		Condition: fCond,
+		Condition: cond,
 	}
 
 	// generate audit log of instance.
 	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(data)
-	auditLog, ccErr := audit.GenerateAuditLogByCondGetData(generateAuditParameter, obj.GetObjectID(), fCond)
+	auditLog, ccErr := audit.GenerateAuditLogByCondGetData(generateAuditParameter, obj.GetObjectID(), cond)
 	if ccErr != nil {
-		blog.Errorf(" update inst, generate audit log failed, err: %v, rid: %s", ccErr, kit.Rid)
+		blog.Errorf(" update inst failed to generate audit log, err: %v, rid: %s", ccErr, kit.Rid)
 		return ccErr
 	}
 
 	// to update.
-	rsp, err := c.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, obj.GetObjectID(), &inputParams)
+	rsp, err := c.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, obj.GetObjectID(),
+		&inputParams)
 	if nil != err {
-		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("update inst failed to request object controller, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !rsp.Result {
-		blog.Errorf("[operation-inst] failed to set the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, fCond, rsp.ErrMsg, kit.Rid)
+		blog.Errorf("update inst failed to set the object(%s) inst by the condition(%#v), err: %s, rid: %s",
+			obj.Object().ObjectID, cond, rsp.ErrMsg, kit.Rid)
 		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	// save audit log.
 	err = audit.SaveAuditLog(kit, auditLog...)
 	if err != nil {
-		blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("update inst failed to save audit log, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 	return nil

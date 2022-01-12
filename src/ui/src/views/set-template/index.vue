@@ -13,7 +13,7 @@
     <div class="options clearfix">
       <div class="fl">
         <cmdb-auth class="fl" :auth="{ type: $OPERATION.C_SET_TEMPLATE, relation: [bizId] }">
-          <bk-button slot-scope="{ disabled }"
+          <bk-button slot-scope="{ disabled }" v-test-id="'create'"
             theme="primary"
             :disabled="disabled"
             @click="handleCreate">
@@ -26,13 +26,14 @@
           :placeholder="$t('请输入xx', { name: $t('模板名称') })"
           clearable
           right-icon="icon-search"
-          v-model="searchName"
+          v-model.trim="searchName"
           @enter="handleFilterTemplate"
           @clear="handleClearFilter">
         </bk-input>
       </div>
     </div>
-    <bk-table class="template-table" v-bkloading="{ isLoading: $loading(request.getSetTemplates) }"
+    <bk-table class="template-table" v-test-id.businessSetTemplate="'templateList'"
+      v-bkloading="{ isLoading: $loading(request.getSetTemplates) }"
       :data="list"
       :row-style="{ cursor: 'pointer' }"
       @row-click="handleRowClick"
@@ -70,7 +71,7 @@
             {{$t('删除')}}
           </span>
           <cmdb-auth :auth="{ type: $OPERATION.D_SET_TEMPLATE, relation: [bizId, row.id] }" v-else>
-            <bk-button slot-scope="{ disabled }"
+            <bk-button slot-scope="{ disabled }" v-test-id="'delTemplate'"
               text
               :disabled="disabled"
               @click="handleDelete(row)"

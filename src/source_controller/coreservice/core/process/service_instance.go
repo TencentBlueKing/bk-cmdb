@@ -138,6 +138,11 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 			return nil, ccErr
 		}
 
+		if len(listProcTplResult.Info) == 0 {
+			blog.Errorf("create service instance for service template with no process is not allowed")
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
+
 		// get host data for bind IP if needed
 		host := metadata.HostMapStr{}
 		filter := map[string]interface{}{common.BKHostIDField: instance.HostID}
@@ -212,18 +217,6 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 			blog.Errorf("CreateServiceInstance failed,  ConstructServiceInstanceName err:%v, instance: %#v, err: %s, rid: %s", err, instance, kit.Rid)
 			return nil, err
 		}
-	}
-
-	// transfer host to target module
-	transferConfig := &metadata.HostsModuleRelation{
-		ApplicationID: bizID,
-		HostID:        []int64{instance.HostID},
-		ModuleID:      []int64{instance.ModuleID},
-		IsIncrement:   true,
-	}
-	if err := p.dependence.TransferHostModuleDep(kit, transferConfig); err != nil {
-		blog.Errorf("CreateServiceInstance failed, transfer host module failed, transfer: %+v, instance: %+v, err: %+v, rid: %s", transferConfig, instance, err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrHostTransferModule)
 	}
 
 	return instance, nil
@@ -360,17 +353,22 @@ func (p *processOperation) ListServiceInstance(kit *rest.Kit, option metadata.Li
 	var total uint64
 	var err error
 	if total, err = mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).Count(kit.Ctx); nil != err {
-		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, filter, err, kit.Rid)
+		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
+			common.BKTableNameServiceInstance, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
+	result := new(metadata.MultipleServiceInstance)
+
 	instances := make([]metadata.ServiceInstance, 0)
-	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).Sort(option.Page.Sort).Start(
-		uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(kit.Ctx, &instances); nil != err {
-		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, filter, err, kit.Rid)
+	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).Fields(option.Fields...).Sort(
+		option.Page.Sort).Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(kit.Ctx,
+		&instances); nil != err {
+		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
+			common.BKTableNameServiceInstance, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
-	result := &metadata.MultipleServiceInstance{
+	result = &metadata.MultipleServiceInstance{
 		Count: total,
 		Info:  instances,
 	}
@@ -378,7 +376,7 @@ func (p *processOperation) ListServiceInstance(kit *rest.Kit, option metadata.Li
 }
 
 func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstanceDetail, errors.CCErrorCoder) {
-	if option.BusinessID == 0 {
+	if option.BusinessID <= 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 	if option.Page.Limit > common.BKMaxPageSize {
@@ -389,25 +387,43 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 	filter := map[string]interface{}{
 		common.BKAppIDField: option.BusinessID,
 	}
-	if option.ModuleID != 0 {
+	if option.ModuleID > 0 {
 		filter[common.BKModuleIDField] = option.ModuleID
 	}
-	if option.HostID != 0 {
+
+	if option.HostID > 0 && len(option.HostList) > 0 {
+		blog.Errorf("list service instance failed, parameters bk_host_id and bk_host_list cannot be set at the "+
+			"same time, rid: %s", kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_host_id and bk_host_list cannot be "+
+			"set at the same time")
+	}
+
+	if option.HostID > 0 {
 		filter[common.BKHostIDField] = option.HostID
 	}
+
+	// Only one parameter between bk_host_list and bk_host_id can take effect,bk_host_id is not recommend to use.
+	if len(option.HostList) > 0 {
+		filter[common.BKHostIDField] = map[string]interface{}{
+			common.BKDBIN: option.HostList,
+		}
+	}
+
 	if option.ServiceInstanceIDs != nil {
 		filter[common.BKFieldID] = map[string]interface{}{
 			common.BKDBIN: option.ServiceInstanceIDs,
 		}
 	}
 	if key, err := option.Selectors.Validate(); err != nil {
-		blog.Errorf("ListServiceInstance failed, selector validate failed, selectors: %+v, key: %s, err: %+v, rid: %s", option.Selectors, key, err, kit.Rid)
+		blog.Errorf("list service instance failed, selector validate failed, selectors: %+v, key: %s, err: %+v, "+
+			"rid: %s", option.Selectors, key, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	if len(option.Selectors) != 0 {
 		labelFilter, err := option.Selectors.ToMgoFilter()
 		if err != nil {
-			blog.Errorf("ListServiceInstance failed, selectors to filer failed, selectors: %+v, err: %+v, rid: %s", option.Selectors, err, kit.Rid)
+			blog.Errorf("list service instance failed, selectors to filer failed, selectors: %+v, err: %+v, "+
+				"rid: %s", option.Selectors, err, kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "labels")
 		}
 		filter = util.MergeMaps(filter, labelFilter)
@@ -416,7 +432,8 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 	var total uint64
 	var err error
 	if total, err = mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).Count(kit.Ctx); nil != err {
-		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, filter, err, kit.Rid)
+		blog.Errorf("list service instance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
+			common.BKTableNameServiceInstance, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	serviceInstances := make([]metadata.ServiceInstance, 0)
@@ -430,7 +447,8 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 		query = query.Sort(common.BKFieldID)
 	}
 	if err := query.All(kit.Ctx, &serviceInstances); nil != err {
-		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, filter, err, kit.Rid)
+		blog.Errorf("list service instance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
+			common.BKTableNameServiceInstance, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	for _, serviceInstance := range serviceInstances {
@@ -460,7 +478,8 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 		},
 	}
 	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).All(kit.Ctx, &relations); err != nil {
-		blog.Errorf("ListServiceInstanceDetail failed, list processRelations failed, err: %+v, rid: %s", relationFilter, err, kit.Rid)
+		blog.Errorf("list service instance failed, list processRelations failed, err: %+v, rid: %s",
+			relationFilter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -475,7 +494,8 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 		},
 	}
 	if err := mongodb.Client().Table(common.BKTableNameBaseProcess).Find(processFilter).All(kit.Ctx, &processes); err != nil {
-		blog.Errorf("ListServiceInstanceDetail failed, list process failed, filter: %+v, err: %s, rid: %s", processFilter, err.Error(), kit.Rid)
+		blog.Errorf("list service instance failed, list process failed, filter: %+v, err: %s, rid: %s",
+			processFilter, err.Error(), kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	// processID -> relation
@@ -488,7 +508,8 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 	for _, process := range processes {
 		relation, ok := processRelationMap[process.ProcessID]
 		if !ok {
-			blog.Warnf("ListServiceInstanceDetail got unexpected state, process's relation not found, process: %+v, rid: %s", process, kit.Rid)
+			blog.Warnf("list service instance got unexpected state, process's relation not found, process: %+v, "+
+				"rid: %s", process, kit.Rid)
 			continue
 		}
 		if _, ok := serviceInstanceMap[relation.ServiceInstanceID]; !ok {
@@ -759,7 +780,12 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 
 	serviceTemplateIDs := make([]int64, 0)
 	for _, module := range modules {
-		serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
+		if module.ServiceTemplateID != common.ServiceTemplateIDNotSet {
+			serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
+		}
+	}
+	if len(serviceTemplateIDs) == 0 {
+		return nil
 	}
 
 	serviceProcessTemplateMap := make(map[int64][]metadata.ProcessTemplate)
@@ -797,6 +823,9 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 		return ccErr
 	}
 
+	if len(listProcTplResult.Info) == 0 {
+		return nil
+	}
 	for _, processTemplate := range listProcTplResult.Info {
 		serviceProcessTemplateMap[processTemplate.ServiceTemplateID] = append(serviceProcessTemplateMap[processTemplate.ServiceTemplateID], processTemplate)
 	}
@@ -804,6 +833,10 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 	now := time.Now()
 	for _, module := range modules {
 		processTemplates := serviceProcessTemplateMap[module.ServiceTemplateID]
+		if len(processTemplates) == 0 {
+			blog.Warnf("service template(%d) has no process template, rid: %s", module.ServiceTemplateID, kit.Rid)
+			continue
+		}
 
 		for _, host := range hosts {
 			hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
@@ -840,48 +873,43 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 				return kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 			}
 
-			var firstTemplateProcess *metadata.Process
-			if len(processTemplates) > 0 {
-				processes := make([]*metadata.Process, len(processTemplates))
-				relations := make([]*metadata.ProcessInstanceRelation, len(processTemplates))
-				templateIDs := make([]int64, len(processTemplates))
-				for idx, processTemplate := range processTemplates {
-					processData, err := processTemplate.NewProcess(module.BizID, kit.SupplierAccount, host)
-					if err != nil {
-						blog.ErrorJSON("create service instance, but generate process instance by template "+
-							"%s failed, err: %s, rid: %s", processTemplate, err, kit.Rid)
-						return errors.New(common.CCErrCommParamsInvalid, err.Error())
-					}
-					processes[idx] = processData
-					templateIDs[idx] = processTemplate.ID
+			processes := make([]*metadata.Process, len(processTemplates))
+			relations := make([]*metadata.ProcessInstanceRelation, len(processTemplates))
+			templateIDs := make([]int64, len(processTemplates))
+			for idx, processTemplate := range processTemplates {
+				processData, err := processTemplate.NewProcess(module.BizID, kit.SupplierAccount, host)
+				if err != nil {
+					blog.ErrorJSON("create service instance, but generate process instance by template "+
+						"%s failed, err: %s, rid: %s", processTemplate, err, kit.Rid)
+					return errors.New(common.CCErrCommParamsInvalid, err.Error())
 				}
-				processes, ccErr = p.dependence.CreateProcessInstances(kit, processes)
-				if ccErr != nil {
-					blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create process instances failed, processes: %#v, err: %+v, rid: %s", processes, ccErr, kit.Rid)
-					return ccErr
-				}
-
-				firstTemplateProcess = processes[0]
-
-				for idx, process := range processes {
-					relation := &metadata.ProcessInstanceRelation{
-						BizID:             module.BizID,
-						ProcessID:         process.ProcessID,
-						ServiceInstanceID: int64(id),
-						ProcessTemplateID: templateIDs[idx],
-						HostID:            hostID,
-						SupplierAccount:   kit.SupplierAccount,
-					}
-					relations[idx] = relation
-				}
-				relations, ccErr = p.CreateProcessInstanceRelations(kit, relations)
-				if ccErr != nil {
-					blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create process relation failed, relations: %#v, err: %+v, rid: %s", relations, ccErr, kit.Rid)
-					return ccErr
-				}
+				processes[idx] = processData
+				templateIDs[idx] = processTemplate.ID
+			}
+			processes, ccErr = p.dependence.CreateProcessInstances(kit, processes)
+			if ccErr != nil {
+				blog.Errorf("create process instances(%#v) failed, err: %v, rid: %s", processes, ccErr, kit.Rid)
+				return ccErr
 			}
 
-			if err := p.ConstructServiceInstanceName(kit, int64(id), host, firstTemplateProcess); err != nil {
+			for idx, process := range processes {
+				relation := &metadata.ProcessInstanceRelation{
+					BizID:             module.BizID,
+					ProcessID:         process.ProcessID,
+					ServiceInstanceID: int64(id),
+					ProcessTemplateID: templateIDs[idx],
+					HostID:            hostID,
+					SupplierAccount:   kit.SupplierAccount,
+				}
+				relations[idx] = relation
+			}
+			relations, ccErr = p.CreateProcessInstanceRelations(kit, relations)
+			if ccErr != nil {
+				blog.Errorf("create process relations(%#v) failed, err: %v, rid: %s", relations, ccErr, kit.Rid)
+				return ccErr
+			}
+
+			if err := p.ConstructServiceInstanceName(kit, int64(id), host, processes[0]); err != nil {
 				blog.Errorf("AutoCreateServiceInstanceModuleHost failed,  construct service instance name err: %v, instance id: %d, rid: %s", err, id, kit.Rid)
 				return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 			}

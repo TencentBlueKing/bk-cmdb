@@ -119,6 +119,18 @@ type SearchAssociationInstResult struct {
 	Data     []*InstAsst `json:"data"`
 }
 
+// AsstResult model item result
+type AsstResult struct {
+	Count int           `json:"count"`
+	Info  []Association `json:"info"`
+}
+
+// SearchAsstModelResp query association model result
+type SearchAsstModelResp struct {
+	BaseResp `json:",inline"`
+	Data     AsstResult `json:"data"`
+}
+
 type CreateAssociationInstRequest struct {
 	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id,omitempty"`
 	InstID       int64  `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
@@ -405,8 +417,6 @@ type TopoInst struct {
 	ObjID                string `json:"bk_obj_id"`
 	ObjName              string `json:"bk_obj_name"`
 	Default              int    `json:"default"`
-	HostCount            int64  `json:"host_count"`
-	ServiceInstanceCount int64  `json:"service_instance_count,omitempty"`
 	ServiceTemplateID    int64  `json:"service_template_id,omitempty"`
 	SetTemplateID        int64  `json:"set_template_id,omitempty"`
 	HostApplyEnabled     *bool  `json:"host_apply_enabled,omitempty"`

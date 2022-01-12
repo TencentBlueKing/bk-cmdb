@@ -1,8 +1,8 @@
 <template>
   <div class="list-layout">
-    <host-list-options @transfer="handleTransfer"></host-list-options>
+    <host-list-options @transfer="handleTransfer" v-test-id></host-list-options>
     <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
-    <bk-table class="host-table"
+    <bk-table class="host-table" v-test-id.businessHostAndService="'hostList'"
       ref="table"
       v-bkloading="{ isLoading: $loading(Object.values(request)) }"
       :data="table.data"
@@ -65,6 +65,8 @@
   import HostFilterTag from '@/components/filters/filter-tag'
   import FilterStore, { setupFilterStore } from '@/components/filters/store'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
+  import { ONE_TO_ONE } from '@/dictionary/host-transfer-type.js'
+
   export default {
     components: {
       HostListOptions,
@@ -311,7 +313,7 @@
           business: this.currentBusiness
         }
         if (type === 'idle') {
-          props.title = this.$t('转移主机到空闲模块')
+          props.title = this.$t('转移主机到空闲模块', { idleSet: this.$store.state.globalConfig.config.set })
         } else if (type === 'increment') {
           props.title = this.$t('追加主机到业务模块')
         } else {
@@ -370,7 +372,8 @@
       openAcrossBusinessModuleSelector() {
         this.dialog.props = {
           title: this.$t('转移主机到其他业务'),
-          business: this.currentBusiness
+          business: this.currentBusiness,
+          type: ONE_TO_ONE
         }
         this.dialog.width = 830
         this.dialog.height = 600
@@ -383,7 +386,7 @@
           return module.default !== 1
         }).map(item => item.host.bk_host_innerip)
         if (invalidList.length === this.table.selection.length) {
-          this.$warn(this.$t('主机不属于空闲机提示'))
+          this.$warn(this.$t('主机不属于空闲机提示', { idleModule: this.$store.state.globalConfig.config.idlePool.idle }))
           return false
         }
         return invalidList
@@ -429,14 +432,10 @@
         try {
           // eslint-disable-next-line prefer-destructuring
           const internalModule = modules[0]
-          const { selectedNode } = this
           await this.$http.post(`host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, {
             bk_host_ids: this.table.selection.map(data => data.host.bk_host_id),
             default_internal_module: internalModule.data.bk_inst_id,
-            remove_from_node: {
-              bk_inst_id: selectedNode.data.bk_inst_id,
-              bk_obj_id: selectedNode.data.bk_obj_id
-            }
+            is_remove_from_all: true
           }, {
             requestId: this.request.moveToIdleModule
           })

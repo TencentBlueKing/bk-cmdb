@@ -403,7 +403,7 @@
             }
             .bk-tab-section {
                 padding: 0;
-                height: calc(100% - 43px);
+                height: calc(100% - 50px);
                 overflow: visible;
                 .bk-tab-content {
                     height: 100%;

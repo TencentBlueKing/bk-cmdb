@@ -55,6 +55,12 @@ export const IAM_VIEWS_NAME = {
   [IAM_VIEWS.CLOUD_RESOURCE_TASK]: ['云资源发现任务', 'Cloud Resource Task']
 }
 
+/**
+ * 序列化鉴权字段
+ * @param {string} cmdbAction 需要鉴权的操作
+ * @param {Object} meta 额外的鉴权信息
+ * @returns 序列化后的鉴权字段
+ */
 function basicTransform(cmdbAction, meta = {}) {
   const [internalType, internalAction] = cmdbAction.split('.')
   const inejctedMeta = {
@@ -407,7 +413,10 @@ export const IAM_ACTIONS = {
       return verifyMeta
     }
   },
-  // 跨业务转主机
+  /**
+   * 跨业务转移主机
+   * 注：只支持单个业务转移到单个业务
+   */
   HOST_TRANSFER_ACROSS_BIZ: {
     id: 'host_transfer_across_business',
     name: ['主机转移到其他业务', 'Transfer Host To Other Business'],
@@ -430,6 +439,42 @@ export const IAM_ACTIONS = {
         resource_type: 'biz'
       }]
       return verifyMeta
+    }
+  },
+  /**
+   * 跨业务转移空闲机
+   * 注：复用的是跨业务转移的权限，但实际需要的鉴权数据是不一样的，此权限支持多业务转移到单业务。
+   */
+  IDLE_HOST_TRANSFER_ACROSS_BIZ: {
+    id: 'host_transfer_across_business',
+    name: ['主机转移到其他业务', 'Transfer Host To Other Business'],
+    cmdb_action: 'hostInstance.moveHostToAnotherBizModule',
+    relation: [{
+      view: IAM_VIEWS.BIZ_FOR_HOST_TRANS,
+      instances: [IAM_VIEWS.BIZ_FOR_HOST_TRANS]
+    }, {
+      view: IAM_VIEWS.BIZ,
+      instances: [IAM_VIEWS.BIZ]
+    }],
+    transform: (cmdbAction, relationIds) => {
+      const verifyMetas = []
+
+      relationIds.forEach((relationId) => {
+        const [[currentBizId], [targetBizId]] = relationId
+        const verifyMeta = basicTransform(cmdbAction)
+
+        verifyMeta.parent_layers = [{
+          resource_id: currentBizId,
+          resource_type: 'biz'
+        }, {
+          resource_id: targetBizId,
+          resource_type: 'biz'
+        }]
+
+        verifyMetas.push(verifyMeta)
+      })
+
+      return verifyMetas
     }
   },
 

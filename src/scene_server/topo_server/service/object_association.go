@@ -192,8 +192,25 @@ func (s *Service) ImportInstanceAssociation(ctx *rest.Contexts) {
 	})
 
 	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
+		ctx.RespEntityWithError(ret, txnErr)
 		return
 	}
 	ctx.RespEntity(ret)
+}
+
+// SearchModuleAssociation search model association
+func (s *Service) SearchModuleAssociation(ctx *rest.Contexts) {
+	data := new(metadata.QueryCondition)
+	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	resp, err := s.Engine.CoreAPI.CoreService().Association().ReadModelAssociation(ctx.Kit.Ctx, ctx.Kit.Header, data)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(resp.Data)
 }

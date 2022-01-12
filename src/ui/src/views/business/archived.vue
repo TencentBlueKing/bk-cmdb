@@ -27,17 +27,34 @@
       <bk-table-column prop="last_time" :label="$t('更新时间')" show-overflow-tooltip>
         <template slot-scope="{ row }">{{$tools.formatTime(row.last_time)}}</template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')" fixed="right">
+      <bk-table-column :label="$t('操作')" width="200" fixed="right">
         <template slot-scope="{ row }">
           <cmdb-auth class="inline-block-middle"
             :auth="{ type: $OPERATION.BUSINESS_ARCHIVE, relation: [row.bk_biz_id] }">
-            <bk-button slot-scope="{ disabled }"
-              theme="primary"
-              size="small"
-              :disabled="disabled"
-              @click="handleRecovery(row)">
-              {{$t('恢复业务')}}
-            </bk-button>
+            <template #default="{ disabled }">
+              <bk-button
+                theme="primary"
+                size="small"
+                :disabled="disabled"
+                @click="handleRecovery(row)">
+                {{$t('恢复业务')}}
+              </bk-button>
+              <bk-popconfirm
+                :title="$t('确认彻底删除该业务？')"
+                trigger="click"
+                :content="$t('一旦被清除，将无法再恢复，请谨慎操作！')"
+                @confirm="handleCompletelyDelete(row)">
+                <bk-button
+                  class="ml10"
+                  :disabled="disabled"
+                  theme="danger"
+                  :loading="compeletelyDeleting"
+                  size="small"
+                >
+                  {{$t('彻底删除')}}
+                </bk-button>
+              </bk-popconfirm>
+            </template>
           </cmdb-auth>
         </template>
       </bk-table-column>
@@ -104,7 +121,8 @@
           biz: {},
           name: ''
         },
-        columnsConfigKey: 'biz_custom_table_columns'
+        columnsConfigKey: 'biz_custom_table_columns',
+        compeletelyDeleting: false,
       }
     },
     computed: {
@@ -135,7 +153,7 @@
     },
     methods: {
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
-      ...mapActions('objectBiz', ['searchBusiness', 'recoveryBusiness']),
+      ...mapActions('objectBiz', ['searchBusiness', 'recoveryBusiness', 'compeltelyDeleteBusinesses']),
       setTableHeader() {
         const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customBusinessColumns, ['bk_biz_name'])
         this.header = headerProperties.map(property => ({
@@ -200,6 +218,23 @@
         this.recovery.show = true
         this.recovery.name = biz.bk_biz_name
         this.recovery.bizId = biz.bk_biz_id
+      },
+      handleCompletelyDelete(biz) {
+        this.compeletelyDeleting = true
+        this.compeltelyDeleteBusinesses({
+          bizIds: [biz.bk_biz_id]
+        }).then(() => {
+          this.$bkMessage({
+            message: `${biz.bk_biz_name}已彻底删除`
+          })
+          this.getTableData()
+        })
+          .catch((err) => {
+            console.log(err)
+          })
+          .finally(() => {
+            this.compeletelyDeleting = false
+          })
       },
       async recoveryBiz() {
         if (!await this.$validator.validateAll()) return

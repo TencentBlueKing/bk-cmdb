@@ -48,7 +48,12 @@
       props() {
         const props = { ...this.$attrs }
         if (this.api) {
-          props.api = this.api
+          try {
+            const url = new URL(this.api)
+            props.api = `${window.API_HOST}proxy/get/usermanage${url.pathname}`
+          } catch (e) {
+            console.error(e)
+          }
         } else {
           props.fuzzySearchMethod = this.fuzzySearchMethod
           props.exactSearchMethod = this.exactSearchMethod

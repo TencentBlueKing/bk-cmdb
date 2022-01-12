@@ -23,3 +23,8 @@ func ValidateCreateBusinessHook(kit *rest.Kit, api apimachinery.ClientSetInterfa
 
 	return nil
 }
+
+// ValidateDeleteBusinessHook validates if businesses can be deleted or not
+func ValidateDeleteBusinessHook(kit *rest.Kit, api apimachinery.ClientSetInterface, bizIDs []int64) error {
+	return nil
+}

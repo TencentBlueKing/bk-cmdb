@@ -2,7 +2,7 @@
   <div class="options">
     <div class="left">
       <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
-        <bk-button slot-scope="{ disabled }" theme="primary"
+        <bk-button slot-scope="{ disabled }" theme="primary" v-test-id="'batchEdit'"
           :disabled="disabled || !selection.value.length"
           @click="handleBatchEdit">
           {{$t('编辑')}}
@@ -10,7 +10,7 @@
       </cmdb-auth>
       <cmdb-auth class="ml10" v-if="!serviceTemplateId"
         :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
-        <bk-button slot-scope="{ disabled }" theme="default"
+        <bk-button slot-scope="{ disabled }" theme="default" v-test-id="'batchDel'"
           :disabled="disabled || !selection.value.length"
           :loading="$loading(selection.requestId)"
           @click="handleBatchtDelete">

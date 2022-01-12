@@ -12,7 +12,9 @@
       :default-labels="labels">
     </label-dialog-content>
     <div class="edit-label-dialog-footer" slot="footer">
-      <bk-button theme="primary" @click.stop="handleSubmit">{{$t('确定')}}</bk-button>
+      <bk-button theme="primary" :loading="$loading(Object.values(request))" @click.stop="handleSubmit">
+        {{$t('确定')}}
+      </bk-button>
       <bk-button theme="default" class="ml5" @click.stop="close">{{$t('取消')}}</bk-button>
     </div>
   </bk-dialog>
@@ -33,8 +35,7 @@
       return {
         isShow: false,
         request: {
-          delete: Symbol('delete'),
-          create: Symbol('create')
+          update: Symbol('update')
         }
       }
     },
@@ -62,45 +63,23 @@
             return false
           }
           const list = labelComp.submitList
-          const { removeKeysList } = labelComp
-          const { originList } = labelComp
-          const hasChange = JSON.stringify(labelComp.list) !== JSON.stringify(originList)
 
-          const request = []
-          if (removeKeysList.length) {
-            request.push(this.$store.dispatch('instanceLabel/deleteInstanceLabel', {
-              config: {
-                data: {
-                  bk_biz_id: this.bizId,
-                  instance_ids: [this.serviceInstance.id],
-                  keys: removeKeysList
-                },
-                requestId: this.request.delete
-              }
-            }))
-          }
-
-          if (list.length && hasChange) {
-            const labelSet = {}
-            list.forEach((label) => {
-              labelSet[label.key] = label.value
-            })
-            request.push(this.$store.dispatch('instanceLabel/createInstanceLabel', {
-              params: {
-                bk_biz_id: this.bizId,
-                instance_ids: [this.serviceInstance.id],
-                labels: labelSet
-              },
-              config: {
-                requestId: this.request.create
-              }
-            }))
-          }
-          if (request.length) {
-            await Promise.all(request)
-            this.updateCallback && this.updateCallback(list)
-            this.$success(this.$t('保存成功'))
-          }
+          const labelSet = {}
+          list.forEach((label) => {
+            labelSet[label.key] = label.value
+          })
+          await this.$store.dispatch('instanceLabel/updateInstanceLabel', {
+            params: {
+              bk_biz_id: this.bizId,
+              instance_ids: [this.serviceInstance.id],
+              labels: labelSet
+            },
+            config: {
+              requestId: this.request.update
+            }
+          })
+          this.updateCallback && this.updateCallback(list)
+          this.$success(this.$t('保存成功'))
           this.isShow = false
         } catch (error) {
           console.error(error)

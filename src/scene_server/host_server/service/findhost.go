@@ -214,22 +214,15 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 }
 
 // findDistinctHostInfo find distinct host info
-func (s *Service) findDistinctHostInfo(ctx *rest.Contexts, distinctHostCond *meta.DistinctHostIDByTopoRelationRequest, searchHostCond *meta.QueryCondition) (*meta.SearchHostResult, error) {
+func (s *Service) findDistinctHostInfo(ctx *rest.Contexts, distinctHostCond *meta.DistinctHostIDByTopoRelationRequest,
+	searchHostCond *meta.QueryCondition) (*meta.SearchHostResult, error) {
 
-	defErr := ctx.Kit.CCError
-
-	hmResult, err := s.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, ctx.Kit.Header, distinctHostCond)
+	allHostIDs, err := s.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, ctx.Kit.Header,
+		distinctHostCond)
 	if err != nil {
-		blog.Errorf("findDistinctHostInfo failed, GetDistinctHostIDByTopology error: %v, input:%#v, rid: %s", err, *hmResult, ctx.Kit.Rid)
-		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("get hostIDs failed, err: %v, input: %#v, rid: %s", err, distinctHostCond, ctx.Kit.Rid)
+		return nil, err
 	}
-
-	if !hmResult.Result {
-		blog.Errorf("findDistinctHostInfo failed, GetDistinctHostIDByTopology error: %v, input:%#v, rid: %s", hmResult.ErrMsg, *hmResult, ctx.Kit.Rid)
-		return nil, hmResult.CCError()
-	}
-
-	allHostIDs := hmResult.Data.IDArr
 	sort.Sort(util.Int64Slice(allHostIDs))
 
 	// get hostIDs according from page info
@@ -697,6 +690,11 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 			ctx.RespAutoError(err)
 			return
 		}
+
+		if len(filteredSetIDs) == 0 {
+			ctx.RespEntityWithCount(0, make([]meta.HostTopo, 0))
+			return
+		}
 	}
 
 	filteredModuleIDs := make([]int64, 0)
@@ -716,6 +714,11 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 			blog.ErrorJSON("get module by filter(%s) failed, err: %s, rid: %s", parameter.ModulePropertyFilter, err,
 				ctx.Kit.Rid)
 			ctx.RespAutoError(err)
+			return
+		}
+
+		if len(filteredModuleIDs) == 0 {
+			ctx.RespEntityWithCount(0, make([]meta.HostTopo, 0))
 			return
 		}
 	}

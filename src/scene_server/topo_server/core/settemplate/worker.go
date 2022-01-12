@@ -1,12 +1,10 @@
 package settemplate
 
 import (
-	"fmt"
 	"net/http"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
-	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -15,14 +13,19 @@ import (
 	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
+// BackendWorker worker to do backend syncing set template task
 type BackendWorker struct {
 	ClientSet       apimachinery.ClientSetInterface
 	ObjectOperation operation.ObjectOperationInterface
 	ModuleOperation operation.ModuleOperationInterface
-	Engine          *backbone.Engine
+	// InstOperation instance operations, used when updating module name
+	InstOperation operation.InstOperationInterface
 }
 
-func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetInst, moduleDiff metadata.SetModuleDiff) error {
+// DoModuleSyncTask do syncing module under set template by service template task
+func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetInst,
+	moduleDiff metadata.SetModuleDiff) error {
+
 	ctx := util.NewContextFromHTTPHeader(header)
 	rid := util.GetHTTPCCRequestID(header)
 	user := util.GetUser(header)
@@ -39,7 +42,7 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 	}
 	moduleObj, err := bw.ObjectOperation.FindSingleObject(kit, common.BKInnerObjIDModule)
 	if err != nil {
-		blog.Errorf("DoModuleSyncTask failed, FindSingleObject: module failed, err: %s, rid: %s", err.Error(), rid)
+		blog.Errorf("get module object failed, err: %v, rid: %s", err, rid)
 		return err
 	}
 
@@ -50,15 +53,17 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 	case metadata.ModuleDiffRemove:
 		err := bw.ModuleOperation.DeleteModule(kit, set.BizID, []int64{setID}, []int64{moduleID})
 		if err != nil {
-			blog.ErrorJSON("DoModuleSyncTask failed, DeleteModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
+			blog.Errorf("delete module %d failed, err: %v, biz: %d, set: %d, rid: %s", moduleID, err, bizID, setID, rid)
 			return err
 		}
 	case metadata.ModuleDiffAdd:
-		serviceTemplate, ccErr := bw.ClientSet.CoreService().Process().GetServiceTemplate(ctx, header, moduleDiff.ServiceTemplateID)
+		serviceTemplate, ccErr := bw.ClientSet.CoreService().Process().GetServiceTemplate(ctx, header,
+			moduleDiff.ServiceTemplateID)
 		if ccErr != nil {
-			blog.Errorf("DoModuleSyncTask failed, DeleteModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, ccErr.Error(), rid)
+			blog.Errorf("get service template failed, err: %v, id: %d, rid: %s", err, moduleDiff.ServiceTemplateID, rid)
 			return ccErr
 		}
+
 		data := map[string]interface{}{
 			common.BKModuleNameField:        moduleDiff.ServiceTemplateName,
 			common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
@@ -69,23 +74,29 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 
 		_, err := bw.ModuleOperation.CreateModule(kit, moduleObj, bizID, setID, data)
 		if err != nil {
-			blog.ErrorJSON("DoModuleSyncTask failed, CreateModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
+			blog.Errorf("create module(%#v) failed, err: %v, biz: %d, set: %d, rid: %s", data, err, bizID, setID, rid)
 			return err
 		}
 	case metadata.ModuleDiffChanged:
+		cond := mapstr.MapStr{
+			common.BKAppIDField:    bizID,
+			common.BKSetIDField:    setID,
+			common.BKModuleIDField: moduleID,
+		}
 		data := mapstr.MapStr(map[string]interface{}{
-			common.BKModuleNameField: moduleDiff.ModuleName,
+			common.BKModuleNameField: moduleDiff.ServiceTemplateName,
 		})
-		err := bw.ModuleOperation.UpdateModule(kit, data, moduleObj, bizID, setID, moduleID)
+
+		err := bw.InstOperation.UpdateInst(kit, data, moduleObj, cond)
 		if err != nil {
-			blog.ErrorJSON("DoModuleSyncTask failed, UpdateModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
+			blog.Errorf("update module failed, cond: %#v, data: %#v, err: %v, rid: %s", cond, data, err, rid)
 			return err
 		}
 	case metadata.ModuleDiffUnchanged:
 		return nil
 	default:
-		blog.ErrorJSON("DoModuleSyncTask failed, UpdateModule failed, set: %s, moduleDiff: %s, rid: %s", set, moduleDiff, rid)
-		return fmt.Errorf("unexpected diff type: %s", moduleDiff.DiffType)
+		blog.ErrorJSON("module sync task diff type(%s) is invalid, rid: %s", moduleDiff.DiffType, rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "diff_type")
 	}
 	return nil
 }
