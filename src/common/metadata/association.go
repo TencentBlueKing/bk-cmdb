@@ -13,9 +13,12 @@
 package metadata
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/querybuilder"
 )
 
 const (
@@ -144,6 +147,66 @@ type SearchInstAssociationListResult struct {
 		Dst []InstAsst `json:"dst"`
 	} `json:"association"`
 	Inst map[string][]mapstr.MapStr `json:"instance"`
+}
+
+// InstAndAssocDetailResult search inst and association detail result
+type InstAndAssocDetailResult struct {
+	BaseResp `json:",inline"`
+	Data     InstAndAssocDetailData `json:"data"`
+}
+
+// InstAndAssocDetailData search inst and association detail return data
+type InstAndAssocDetailData struct {
+	Asst []InstAsst      `field:"association" json:"association"`
+	Src  []mapstr.MapStr `field:"src" json:"src"`
+	Dst  []mapstr.MapStr `field:"dst" json:"dst"`
+}
+
+// InstAndAssocRequest search inst and association detail request
+type InstAndAssocRequest struct {
+	Condition struct {
+		AsstFilter *querybuilder.QueryFilter `field:"asst_filter" json:"asst_filter"`
+		AsstFields []string                  `field:"asst_fields" json:"asst_fields"`
+		SrcFields  []string                  `field:"src_fields" json:"src_fields"`
+		DstFields  []string                  `field:"dst_fields" json:"dst_fields"`
+		SrcDetail  bool                      `field:"src_detail" json:"src_detail"`
+		DstDetail  bool                      `field:"dst_detail" json:"dst_detail"`
+	} `field:"condition" json:"condition"`
+	Page BasePage `field:"page" json:"page"`
+}
+
+// Validate validate InstAndAssocDetailData
+func (assoc *InstAndAssocRequest) Validate() errors.RawErrorInfo {
+
+	if assoc.Condition.AsstFilter == nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"condition.asst_filter"},
+		}
+	}
+
+	filterOption := querybuilder.RuleOption{NeedSameSliceElementType: true}
+	if key, err := assoc.Condition.AsstFilter.Validate(&filterOption); err != nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{fmt.Sprintf("condition.asst_filter.%s", key)},
+		}
+	}
+
+	if assoc.Page.Limit > 200 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommPageLimitIsExceeded,
+		}
+	}
+
+	if assoc.Page.Limit == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }
 
 type CreateAssociationInstRequest struct {

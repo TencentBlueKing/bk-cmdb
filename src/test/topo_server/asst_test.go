@@ -387,6 +387,52 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(false))
 	})
 
+	It("search instance associations and instances detail", func() {
+		input := &metadata.InstAndAssocRequest{}
+		input.Condition.AsstFilter = &querybuilder.QueryFilter{Rule: querybuilder.CombinedRule{
+			Condition: querybuilder.ConditionAnd,
+			Rules: []querybuilder.Rule{
+				&querybuilder.AtomRule{
+					Field: common.BKObjIDField, Operator: querybuilder.OperatorEqual, Value: "bk_router",
+				},
+				&querybuilder.AtomRule{
+					Field: common.BKInstIDField, Operator: querybuilder.OperatorEqual, Value: routerInstId1,
+				},
+			},
+		}}
+		input.Condition.SrcDetail = true
+		input.Page.Limit = 200
+
+		rsp, err := asstClient.SearchInstAssocAndInstDetail(context.Background(), header, "bk_router", input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		Expect(len(rsp.Data.Asst)).To(Equal(2))
+		Expect(len(rsp.Data.Src)).To(Equal(1))
+	})
+
+	It("search instance associations and instances detail too many limit", func() {
+		input := &metadata.InstAndAssocRequest{}
+		input.Condition.AsstFilter = &querybuilder.QueryFilter{Rule: querybuilder.CombinedRule{
+			Condition: querybuilder.ConditionAnd,
+			Rules: []querybuilder.Rule{
+				&querybuilder.AtomRule{
+					Field: common.BKObjIDField, Operator: querybuilder.OperatorEqual, Value: "bk_router",
+				},
+				&querybuilder.AtomRule{
+					Field: common.BKInstIDField, Operator: querybuilder.OperatorEqual, Value: routerInstId1,
+				},
+			},
+		}}
+		input.Condition.SrcDetail = true
+		input.Page.Limit = 201
+
+		rsp, err := asstClient.SearchInstAssocAndInstDetail(context.Background(), header, "bk_router", input)
+		util.RegisterResponse(rsp)
+		Expect(err).To(HaveOccurred())
+	})
+
 	It("search instance associations", func() {
 		input := &metadata.CommonSearchFilter{
 			Conditions: &querybuilder.QueryFilter{

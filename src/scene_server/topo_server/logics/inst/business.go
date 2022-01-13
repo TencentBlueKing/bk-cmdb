@@ -51,7 +51,9 @@ type BusinessOperationInterface interface {
 	// 2. destination object can be biz. otherwise, src and destination object should be the neighbour.
 	// this api only return business topology relations.
 	GetBriefTopologyNodeRelation(kit *rest.Kit, opts *metadata.GetBriefBizRelationOptions) ([]*metadata.
-	BriefBizRelations, error)
+		BriefBizRelations, error)
+	// GetResourcePoolBusinessID search resource pool biz id
+	GetResourcePoolBusinessID(kit *rest.Kit) (int64, error)
 	// SetProxy SetProxy
 	SetProxy(inst InstOperationInterface, module ModuleOperationInterface, set SetOperationInterface)
 
@@ -435,6 +437,46 @@ func (b *business) genBriefTopologyNodeRelation(kit *rest.Kit, filter mapstr.Map
 	}
 
 	return relations, nil
+}
+
+// GetResourcePoolBusinessID search resource pool biz id
+func (b *business) GetResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
+
+	cond := &metadata.QueryCondition{
+		Fields:    []string{common.BKAppIDField, common.BkSupplierAccount},
+		Condition: map[string]interface{}{common.BKDefaultField: common.DefaultAppFlag},
+	}
+
+	rsp, err := b.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, cond)
+	if err != nil {
+		blog.Errorf("search resource pool id failed, err: %v, rid: %s", err, kit.Rid)
+		return 0, err
+	}
+
+	for idx, biz := range rsp.Info {
+		bizSupplierAccount, err := biz.String(common.BkSupplierAccount)
+		if err != nil {
+			blog.Errorf("get business supplier account failed, err: %v, rid: %s", err, kit.Rid)
+			return 0, err
+		}
+
+		if kit.SupplierAccount == bizSupplierAccount {
+			if !rsp.Info[idx].Exists(common.BKAppIDField) {
+				blog.Errorf("bk_biz_id is non-exist, rid: %s", kit.Rid)
+				// this can not be happen normally.
+				return 0, kit.CCError.CCError(common.CCErrTopoAppSearchFailed)
+			}
+			bizID, err := rsp.Info[idx].Int64(common.BKAppIDField)
+			if err != nil {
+				blog.Errorf("get business id failed, err: %v, rid: %s", err, kit.Rid)
+				return 0, err
+			}
+
+			return bizID, nil
+		}
+	}
+
+	return 0, kit.CCError.CCError(common.CCErrTopoAppSearchFailed)
 }
 
 // updateIdleModuleConfig update admin module config.

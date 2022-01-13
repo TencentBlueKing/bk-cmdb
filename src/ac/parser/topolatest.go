@@ -557,6 +557,8 @@ var (
 	deleteObjectInstanceAssociationBatchLatestRegexp = regexp.MustCompile("^/api/v3/delete/instassociation/batch")
 	findObjectInstanceTopologyUILatestRegexp         = regexp.MustCompile(`^/api/v3/findmany/inst/association/object/[^\s/]+/inst_id/[0-9]+/offset/[0-9]+/limit/[0-9]+/web$`)
 	findInstAssociationObjInstInfoLatestRegexp       = regexp.MustCompile(`^/api/v3/findmany/inst/association/association_object/inst_base_info$`)
+	searchInstAssociationAndInstDetailLatestRegexp   = regexp.MustCompile(
+		`^/api/v3/find/instassociation/object/[^\s/]+/inst/detail`)
 
 	searchInstanceAssociationsRegexp = regexp.MustCompile(`^/api/v3/search/instance_associations/object/[^\s/]+/?$`)
 	countInstanceAssociationsRegexp  = regexp.MustCompile(`^/api/v3/count/instance_associations/object/[^\s/]+/?$`)
@@ -1091,6 +1093,42 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   instanceType,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(searchInstAssociationAndInstDetailLatestRegexp, http.MethodPost) {
+
+		if len(ps.RequestCtx.Elements) != 8 {
+			ps.err = errors.New("search object instance associations, got invalid url")
+			return ps
+		}
+
+		objID := ps.RequestCtx.Elements[5]
+		if len(objID) == 0 {
+			ps.err = fmt.Errorf("search instance associations failed, got empty object id")
+			return ps
+		}
+
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   instanceType,
 					Action: meta.FindMany,

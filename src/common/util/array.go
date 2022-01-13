@@ -176,3 +176,18 @@ func RemoveDuplicatesAndEmptyByMap(target []string) []string {
 
 	return result
 }
+
+// IntArrComplementary calculates the complement of subset relative to target
+func IntArrComplementary(target []int64, subset []int64) []int64 {
+	complementaryInt := make([]int64, 0)
+	intMap := make(map[int64]struct{})
+	for _, i := range subset {
+		intMap[i] = struct{}{}
+	}
+	for _, j := range target {
+		if _, exist := intMap[j]; !exist {
+			complementaryInt = append(complementaryInt, j)
+		}
+	}
+	return complementaryInt
+}
