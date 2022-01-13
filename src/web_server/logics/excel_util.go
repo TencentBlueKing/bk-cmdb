@@ -361,8 +361,8 @@ func checkOrgnization(result map[string]interface{}, department map[int64]metada
 }
 
 // ProductExcelHeader Excel文件头部，
-func productExcelHeader(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet,
-	defLang lang.DefaultCCLanguageIf) {
+func productExcelHeader(ctx context.Context, fields map[string]Property, filter []string, xlsxFile *xlsx.File,
+	sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
 	// 橙棕色
@@ -385,7 +385,7 @@ func productExcelHeader(ctx context.Context, fields map[string]Property, filter 
 	}
 
 	// 给第一列剩下的空格设置颜色
-	for i := 3; i < 1000; i++ {
+	for i := 3; i < 1003; i++ {
 		cellName := sheet.Cell(i, 0)
 		cellName.SetStyle(colStyle)
 	}
@@ -395,6 +395,7 @@ func productExcelHeader(ctx context.Context, fields map[string]Property, filter 
 		Rid:        rid,
 		StyleCell:  styleCell,
 		Sheet:      sheet,
+		File:       xlsxFile,
 		Filter:     filter,
 		DefLang:    defLang,
 		CellStyle:  cellStyle,
@@ -461,7 +462,7 @@ func handleFields(handleFieldParam HandleFieldParam) {
 		index := field.ExcelColIndex
 		handleFieldParam.Sheet.Col(index).Width = 18
 		fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, handleFieldParam.DefLang)
-		if true == skip || field.NotExport {
+		if skip || field.NotExport {
 			// 不需要用户输入的类型continue
 			handleFieldParam.Sheet.Col(index).Hidden = true
 			continue
@@ -493,13 +494,20 @@ func handleFields(handleFieldParam HandleFieldParam) {
 		case common.FieldTypeFloat:
 			handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeNumeric)
 		case common.FieldTypeEnum:
-			option := field.Option
-			optionArr, ok := option.([]interface{})
+			optionArr, ok := field.Option.([]interface{})
 
 			if ok {
-				enumVals := getEnumNames(optionArr)
+
+				enumSheet, err := handleFieldParam.File.AddSheet(field.Name)
+				if err != nil {
+					blog.Errorf("add enum sheet failed, err: %s, rid: %s", err, handleFieldParam.Rid)
+				}
+
+				for _, enum := range getEnumNames(optionArr) {
+					enumSheet.AddRow().AddCell().SetString(enum)
+				}
 				dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-				if err := dd.SetDropList(enumVals); err != nil {
+				if err := dd.SetInFileList(field.Name, 0, 0, 0, len(optionArr)-1); err != nil {
 					blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, handleFieldParam.Rid)
 				}
 				handleFieldParam.Sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
@@ -524,7 +532,7 @@ func handleFields(handleFieldParam HandleFieldParam) {
 				setExcelCellIgnored(handleFieldParam.Sheet, handleFieldParam.CellStyle, 2, index)
 
 				// 给业务拓扑和业务列剩下的空格设置颜色
-				for i := 3; i < 1000; i++ {
+				for i := 3; i < 1003; i++ {
 					cellName := handleFieldParam.Sheet.Cell(i, index)
 					cellName.SetStyle(handleFieldParam.ColStyle)
 				}

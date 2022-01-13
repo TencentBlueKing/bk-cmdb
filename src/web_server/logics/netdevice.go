@@ -49,8 +49,11 @@ func GetImportNetDevices(header http.Header, defLang language.DefaultCCLanguageI
 	return GetExcelData(ctx, sheet, fields, nil, true, 0, defLang, nil)
 }
 
-func BuildNetDeviceExcelFromData(ctx context.Context, defLang language.DefaultCCLanguageIf, fields map[string]Property, data []mapstr.MapStr, sheet *xlsx.Sheet) error {
-	productExcelHeader(ctx, fields, nil, sheet, defLang)
+// BuildNetDeviceExcelFromData build net device data for excel
+func BuildNetDeviceExcelFromData(ctx context.Context, defLang language.DefaultCCLanguageIf, fields map[string]Property,
+	data []mapstr.MapStr, sheet *xlsx.Sheet, xlsxFile *xlsx.File) error {
+
+	productExcelHeader(ctx, fields, nil, xlsxFile, sheet, defLang)
 
 	rowIndex := common.HostAddMethodExcelIndexOffset
 	for _, row := range data {
@@ -104,8 +107,9 @@ func BuildNetDeviceExcelTemplate(header http.Header, defLang language.DefaultCCL
 	file = xlsx.NewFile()
 
 	sheet, err := file.AddSheet(common.BKNetDevice)
-	if nil != err {
-		blog.Errorf("[Build NetDevice Excel Template] add comment sheet error, sheet name:%s, error:%s, rid: %s", common.BKNetDevice, err.Error(), rid)
+	if err != nil {
+		blog.Errorf("[Build NetDevice Excel Template] add comment sheet error, sheet name: %s, err: %v, rid: %s",
+			common.BKNetDevice, err, rid)
 		return err
 	}
 
@@ -113,9 +117,9 @@ func BuildNetDeviceExcelTemplate(header http.Header, defLang language.DefaultCCL
 
 	blog.V(5).Infof("[Build NetDevice Excel Template] fields count:%d, rid: %s", len(fields), rid)
 
-	productExcelHeader(ctx, fields, nil, sheet, defLang)
+	productExcelHeader(ctx, fields, nil, file, sheet, defLang)
 
-	if err = file.Save(filename); nil != err {
+	if err = file.Save(filename); err != nil {
 		return err
 	}
 

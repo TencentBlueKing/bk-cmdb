@@ -166,8 +166,12 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 
 	}
 
-	if len(f.Sheets) > 2 {
-		asstInfoMap, errMsg := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset,
+	for _, sheet := range f.Sheets {
+		if sheet.Name != "association" {
+			continue
+		}
+
+		asstInfoMap, errMsg := GetAssociationExcelData(sheet, common.HostAddMethodExcelAssociationIndexOffset,
 			defLang)
 
 		if len(asstInfoMap) > 0 {
