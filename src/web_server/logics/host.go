@@ -227,35 +227,36 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, req *http.Requ
 		resp = result
 	}
 
-	if len(f.Sheets) <= 2 {
-		resp.Result = true
-		return resp
+	// if sheet name is 'association', the sheet is association data to be import
+	for _, sheet := range f.Sheets {
+		if sheet.Name != "association" {
+			continue
+		}
+
+		asstInfoMap, assoErrMsg := GetAssociationExcelData(sheet, common.HostAddMethodExcelAssociationIndexOffset,
+			defLang)
+
+		if len(asstInfoMap) > 0 {
+			asstInfoMapInput := &metadata.RequestImportAssociation{
+				AssociationInfoMap: asstInfoMap,
+			}
+			asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, req.Header,
+				common.BKInnerObjIDHost, asstInfoMapInput)
+			if asstResultErr != nil {
+				blog.Errorf("import host association failed, err: %v, rid: %s", asstResultErr, rid)
+				resp.Code = common.CCErrCommHTTPDoRequestFailed
+				resp.ErrMsg = defErr.Errorf(common.CCErrCommHTTPDoRequestFailed).Error()
+				return resp
+			}
+
+			assoErrMsg = append(assoErrMsg, asstResult.Data.ErrMsgMap...)
+			if resp.Result && !asstResult.Result {
+				resp.BaseResp = asstResult.BaseResp
+			}
+		}
+
+		resp.Data.Set("asst_error", assoErrMsg)
 	}
-
-	// if len(f.Sheets) > 2, the second sheet is association data to be import
-	asstInfoMap, assoErrMsg := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset,
-		defLang)
-
-	if len(asstInfoMap) > 0 {
-		asstInfoMapInput := &metadata.RequestImportAssociation{
-			AssociationInfoMap: asstInfoMap,
-		}
-		asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, req.Header, common.BKInnerObjIDHost,
-			asstInfoMapInput)
-		if asstResultErr != nil {
-			blog.Errorf("import host association failed, err: %v, rid: %s", asstResultErr, rid)
-			resp.Code = common.CCErrCommHTTPDoRequestFailed
-			resp.ErrMsg = defErr.Errorf(common.CCErrCommHTTPDoRequestFailed).Error()
-			return resp
-		}
-
-		assoErrMsg = append(assoErrMsg, asstResult.Data.ErrMsgMap...)
-		if resp.Result && !asstResult.Result {
-			resp.BaseResp = asstResult.BaseResp
-		}
-	}
-
-	resp.Data.Set("asst_error", assoErrMsg)
 
 	return resp
 }
