@@ -43,14 +43,16 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 		objIDs = append(objIDs, objID)
 	}
 
-	if err := s.AuthManager.AuthorizeByObjectIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.UpdateMany, 0, objIDs...); err != nil {
+	err := s.AuthManager.AuthorizeByObjectIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.UpdateMany, 0, objIDs...)
+	if err != nil {
 		blog.Errorf("check object authorization failed, objIDs: %+v, err: %v, rid: %s", objIDs, err, ctx.Kit.Rid)
 		if err != ac.NoAuthorizeError {
 			ctx.RespAutoError(err)
 			return
 		}
 
-		perm, err := s.AuthManager.GenObjectBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, meta.UpdateMany, 0, objIDs)
+		perm, err := s.AuthManager.GenObjectBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, meta.UpdateMany, 0,
+			objIDs)
 		if err != nil {
 			ctx.RespAutoError(err)
 			return
@@ -70,7 +72,7 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 	})
 
 	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
+		ctx.RespEntityWithError(ret, txnErr)
 		return
 	}
 	ctx.RespEntity(ret)
