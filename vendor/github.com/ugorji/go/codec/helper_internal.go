@@ -6,74 +6,6 @@ package codec
 // All non-std package dependencies live in this file,
 // so porting to different environment is easy (just update functions).
 
-import (
-	"errors"
-	"fmt"
-	"reflect"
-	"time"
-)
-
-func panicValToErr(panicVal interface{}, err *error) {
-	switch xerr := panicVal.(type) {
-	case nil:
-	case error:
-		*err = xerr
-	case string:
-		*err = errors.New(xerr)
-	default:
-		*err = fmt.Errorf("%v", panicVal)
-	}
-	return
-}
-
-func hIsEmptyValue(v reflect.Value, deref, checkStruct bool) bool {
-	switch v.Kind() {
-	case reflect.Invalid:
-		return true
-	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
-		return v.Len() == 0
-	case reflect.Bool:
-		return !v.Bool()
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return v.Int() == 0
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return v.Uint() == 0
-	case reflect.Float32, reflect.Float64:
-		return v.Float() == 0
-	case reflect.Interface, reflect.Ptr:
-		if deref {
-			if v.IsNil() {
-				return true
-			}
-			return hIsEmptyValue(v.Elem(), deref, checkStruct)
-		}
-		return v.IsNil()
-	case reflect.Struct:
-		// check for time.Time, and return true if IsZero
-		if rv2rtid(v) == timeTypId {
-			return rv2i(v).(time.Time).IsZero()
-		}
-		if !checkStruct {
-			return false
-		}
-		// return true if all fields are empty. else return false.
-		// we cannot use equality check, because some fields may be maps/slices/etc
-		// and consequently the structs are not comparable.
-		// return v.Interface() == reflect.Zero(v.Type()).Interface()
-		for i, n := 0, v.NumField(); i < n; i++ {
-			if !hIsEmptyValue(v.Field(i), deref, checkStruct) {
-				return false
-			}
-		}
-		return true
-	}
-	return false
-}
-
-func isEmptyValue(v reflect.Value, deref, checkStruct bool) bool {
-	return hIsEmptyValue(v, deref, checkStruct)
-}
-
 func pruneSignExt(v []byte, pos bool) (n int) {
 	if len(v) < 2 {
 	} else if pos && v[0] == 0 {
@@ -171,6 +103,9 @@ func growCap(oldCap, unit, num int) (newCap int) {
 
 	if num > 0 {
 		newCap += num
+	}
+	if newCap <= oldCap {
+		newCap = oldCap + 1
 	}
 
 	// ensure newCap is a multiple of 64 (if it is > 64) or 16.

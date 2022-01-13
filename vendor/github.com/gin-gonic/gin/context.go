@@ -6,8 +6,10 @@ package gin
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"math"
 	"mime/multipart"
 	"net"
@@ -15,6 +17,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-contrib/sse"
@@ -31,7 +34,11 @@ const (
 	MIMEPlain             = binding.MIMEPlain
 	MIMEPOSTForm          = binding.MIMEPOSTForm
 	MIMEMultipartPOSTForm = binding.MIMEMultipartPOSTForm
+	MIMEYAML              = binding.MIMEYAML
 )
+
+// BodyBytesKey indicates a default body bytes key.
+const BodyBytesKey = "_gin-gonic/gin/bodybyteskey"
 
 const abortIndex int8 = math.MaxInt8 / 2
 
@@ -45,8 +52,14 @@ type Context struct {
 	Params   Params
 	handlers HandlersChain
 	index    int8
+	fullPath string
 
-	engine *Engine
+	engine       *Engine
+	params       *Params
+	skippedNodes *[]skippedNode
+
+	// This mutex protect Keys map
+	mu sync.RWMutex
 
 	// Keys is a key/value pair exclusively for the context of each request.
 	Keys map[string]interface{}
@@ -56,6 +69,17 @@ type Context struct {
 
 	// Accepted defines a list of manually accepted formats for content negotiation.
 	Accepted []string
+
+	// queryCache use url.ParseQuery cached the param query result from c.Request.URL.Query()
+	queryCache url.Values
+
+	// formCache use url.ParseQuery cached PostForm contains the parsed form data from POST, PATCH,
+	// or PUT body parameters.
+	formCache url.Values
+
+	// SameSite allows a server to define a cookie attribute making it impossible for
+	// the browser to send this cookie along with cross-site requests.
+	sameSite http.SameSite
 }
 
 /************************************/
@@ -67,19 +91,37 @@ func (c *Context) reset() {
 	c.Params = c.Params[0:0]
 	c.handlers = nil
 	c.index = -1
+
+	c.fullPath = ""
 	c.Keys = nil
 	c.Errors = c.Errors[0:0]
 	c.Accepted = nil
+	c.queryCache = nil
+	c.formCache = nil
+	*c.params = (*c.params)[:0]
+	*c.skippedNodes = (*c.skippedNodes)[:0]
 }
 
 // Copy returns a copy of the current context that can be safely used outside the request's scope.
 // This has to be used when the context has to be passed to a goroutine.
 func (c *Context) Copy() *Context {
-	var cp = *c
+	cp := Context{
+		writermem: c.writermem,
+		Request:   c.Request,
+		Params:    c.Params,
+		engine:    c.engine,
+	}
 	cp.writermem.ResponseWriter = nil
 	cp.Writer = &cp.writermem
 	cp.index = abortIndex
 	cp.handlers = nil
+	cp.Keys = map[string]interface{}{}
+	for k, v := range c.Keys {
+		cp.Keys[k] = v
+	}
+	paramCopy := make([]Param, len(cp.Params))
+	copy(paramCopy, cp.Params)
+	cp.Params = paramCopy
 	return &cp
 }
 
@@ -89,9 +131,28 @@ func (c *Context) HandlerName() string {
 	return nameOfFunction(c.handlers.Last())
 }
 
+// HandlerNames returns a list of all registered handlers for this context in descending order,
+// following the semantics of HandlerName()
+func (c *Context) HandlerNames() []string {
+	hn := make([]string, 0, len(c.handlers))
+	for _, val := range c.handlers {
+		hn = append(hn, nameOfFunction(val))
+	}
+	return hn
+}
+
 // Handler returns the main handler.
 func (c *Context) Handler() HandlerFunc {
 	return c.handlers.Last()
+}
+
+// FullPath returns a matched route full path. For not found routes
+// returns an empty string.
+//     router.GET("/user/:id", func(c *gin.Context) {
+//         c.FullPath() == "/user/:id" // true
+//     })
+func (c *Context) FullPath() string {
+	return c.fullPath
 }
 
 /************************************/
@@ -103,8 +164,9 @@ func (c *Context) Handler() HandlerFunc {
 // See example in GitHub.
 func (c *Context) Next() {
 	c.index++
-	for s := int8(len(c.handlers)); c.index < s; c.index++ {
+	for c.index < int8(len(c.handlers)) {
 		c.handlers[c.index](c)
+		c.index++
 	}
 }
 
@@ -158,16 +220,15 @@ func (c *Context) Error(err error) *Error {
 	if err == nil {
 		panic("err is nil")
 	}
-	var parsedError *Error
-	switch err.(type) {
-	case *Error:
-		parsedError = err.(*Error)
-	default:
+
+	parsedError, ok := err.(*Error)
+	if !ok {
 		parsedError = &Error{
 			Err:  err,
 			Type: ErrorTypePrivate,
 		}
 	}
+
 	c.Errors = append(c.Errors, parsedError)
 	return parsedError
 }
@@ -179,16 +240,21 @@ func (c *Context) Error(err error) *Error {
 // Set is used to store a new key/value pair exclusively for this context.
 // It also lazy initializes  c.Keys if it was not used previously.
 func (c *Context) Set(key string, value interface{}) {
+	c.mu.Lock()
 	if c.Keys == nil {
 		c.Keys = make(map[string]interface{})
 	}
+
 	c.Keys[key] = value
+	c.mu.Unlock()
 }
 
 // Get returns the value for the given key, ie: (value, true).
 // If the value does not exists it returns (nil, false)
 func (c *Context) Get(key string) (value interface{}, exists bool) {
+	c.mu.RLock()
 	value, exists = c.Keys[key]
+	c.mu.RUnlock()
 	return
 }
 
@@ -228,6 +294,22 @@ func (c *Context) GetInt(key string) (i int) {
 func (c *Context) GetInt64(key string) (i64 int64) {
 	if val, ok := c.Get(key); ok && val != nil {
 		i64, _ = val.(int64)
+	}
+	return
+}
+
+// GetUint returns the value associated with the key as an unsigned integer.
+func (c *Context) GetUint(key string) (ui uint) {
+	if val, ok := c.Get(key); ok && val != nil {
+		ui, _ = val.(uint)
+	}
+	return
+}
+
+// GetUint64 returns the value associated with the key as an unsigned integer.
+func (c *Context) GetUint64(key string) (ui64 uint64) {
+	if val, ok := c.Get(key); ok && val != nil {
+		ui64, _ = val.(uint64)
 	}
 	return
 }
@@ -351,13 +433,37 @@ func (c *Context) QueryArray(key string) []string {
 	return values
 }
 
+func (c *Context) initQueryCache() {
+	if c.queryCache == nil {
+		if c.Request != nil {
+			c.queryCache = c.Request.URL.Query()
+		} else {
+			c.queryCache = url.Values{}
+		}
+	}
+}
+
 // GetQueryArray returns a slice of strings for a given query key, plus
 // a boolean value whether at least one value exists for the given key.
 func (c *Context) GetQueryArray(key string) ([]string, bool) {
-	if values, ok := c.Request.URL.Query()[key]; ok && len(values) > 0 {
+	c.initQueryCache()
+	if values, ok := c.queryCache[key]; ok && len(values) > 0 {
 		return values, true
 	}
 	return []string{}, false
+}
+
+// QueryMap returns a map for a given query key.
+func (c *Context) QueryMap(key string) map[string]string {
+	dicts, _ := c.GetQueryMap(key)
+	return dicts
+}
+
+// GetQueryMap returns a map for a given query key, plus a boolean value
+// whether at least one value exists for the given key.
+func (c *Context) GetQueryMap(key string) (map[string]string, bool) {
+	c.initQueryCache()
+	return c.get(c.queryCache, key)
 }
 
 // PostForm returns the specified key from a POST urlencoded form or multipart form
@@ -398,26 +504,69 @@ func (c *Context) PostFormArray(key string) []string {
 	return values
 }
 
+func (c *Context) initFormCache() {
+	if c.formCache == nil {
+		c.formCache = make(url.Values)
+		req := c.Request
+		if err := req.ParseMultipartForm(c.engine.MaxMultipartMemory); err != nil {
+			if err != http.ErrNotMultipart {
+				debugPrint("error on parse multipart form array: %v", err)
+			}
+		}
+		c.formCache = req.PostForm
+	}
+}
+
 // GetPostFormArray returns a slice of strings for a given form key, plus
 // a boolean value whether at least one value exists for the given key.
 func (c *Context) GetPostFormArray(key string) ([]string, bool) {
-	req := c.Request
-	req.ParseForm()
-	req.ParseMultipartForm(c.engine.MaxMultipartMemory)
-	if values := req.PostForm[key]; len(values) > 0 {
+	c.initFormCache()
+	if values := c.formCache[key]; len(values) > 0 {
 		return values, true
-	}
-	if req.MultipartForm != nil && req.MultipartForm.File != nil {
-		if values := req.MultipartForm.Value[key]; len(values) > 0 {
-			return values, true
-		}
 	}
 	return []string{}, false
 }
 
+// PostFormMap returns a map for a given form key.
+func (c *Context) PostFormMap(key string) map[string]string {
+	dicts, _ := c.GetPostFormMap(key)
+	return dicts
+}
+
+// GetPostFormMap returns a map for a given form key, plus a boolean value
+// whether at least one value exists for the given key.
+func (c *Context) GetPostFormMap(key string) (map[string]string, bool) {
+	c.initFormCache()
+	return c.get(c.formCache, key)
+}
+
+// get is an internal method and returns a map which satisfy conditions.
+func (c *Context) get(m map[string][]string, key string) (map[string]string, bool) {
+	dicts := make(map[string]string)
+	exist := false
+	for k, v := range m {
+		if i := strings.IndexByte(k, '['); i >= 1 && k[0:i] == key {
+			if j := strings.IndexByte(k[i+1:], ']'); j >= 1 {
+				exist = true
+				dicts[k[i+1:][:j]] = v[0]
+			}
+		}
+	}
+	return dicts, exist
+}
+
 // FormFile returns the first file for the provided form key.
 func (c *Context) FormFile(name string) (*multipart.FileHeader, error) {
-	_, fh, err := c.Request.FormFile(name)
+	if c.Request.MultipartForm == nil {
+		if err := c.Request.ParseMultipartForm(c.engine.MaxMultipartMemory); err != nil {
+			return nil, err
+		}
+	}
+	f, fh, err := c.Request.FormFile(name)
+	if err != nil {
+		return nil, err
+	}
+	f.Close()
 	return fh, err
 }
 
@@ -441,18 +590,18 @@ func (c *Context) SaveUploadedFile(file *multipart.FileHeader, dst string) error
 	}
 	defer out.Close()
 
-	io.Copy(out, src)
-	return nil
+	_, err = io.Copy(out, src)
+	return err
 }
 
 // Bind checks the Content-Type to select a binding engine automatically,
 // Depending the "Content-Type" header different bindings are used:
 //     "application/json" --> JSON binding
 //     "application/xml"  --> XML binding
-// otherwise --> returns an error
+// otherwise --> returns an error.
 // It parses the request's body as JSON if Content-Type == "application/json" using JSON or XML as a JSON input.
 // It decodes the json payload into the struct specified as a pointer.
-// It will writes a 400 error and sets Content-Type header "text/plain" in the response if input is not valid.
+// It writes a 400 error and sets Content-Type header "text/plain" in the response if input is not valid.
 func (c *Context) Bind(obj interface{}) error {
 	b := binding.Default(c.Request.Method, c.ContentType())
 	return c.MustBindWith(obj, b)
@@ -463,20 +612,45 @@ func (c *Context) BindJSON(obj interface{}) error {
 	return c.MustBindWith(obj, binding.JSON)
 }
 
+// BindXML is a shortcut for c.MustBindWith(obj, binding.BindXML).
+func (c *Context) BindXML(obj interface{}) error {
+	return c.MustBindWith(obj, binding.XML)
+}
+
 // BindQuery is a shortcut for c.MustBindWith(obj, binding.Query).
 func (c *Context) BindQuery(obj interface{}) error {
 	return c.MustBindWith(obj, binding.Query)
 }
 
-// MustBindWith binds the passed struct pointer using the specified binding engine.
-// It will abort the request with HTTP 400 if any error ocurrs.
-// See the binding package.
-func (c *Context) MustBindWith(obj interface{}, b binding.Binding) (err error) {
-	if err = c.ShouldBindWith(obj, b); err != nil {
-		c.AbortWithError(400, err).SetType(ErrorTypeBind)
-	}
+// BindYAML is a shortcut for c.MustBindWith(obj, binding.YAML).
+func (c *Context) BindYAML(obj interface{}) error {
+	return c.MustBindWith(obj, binding.YAML)
+}
 
-	return
+// BindHeader is a shortcut for c.MustBindWith(obj, binding.Header).
+func (c *Context) BindHeader(obj interface{}) error {
+	return c.MustBindWith(obj, binding.Header)
+}
+
+// BindUri binds the passed struct pointer using binding.Uri.
+// It will abort the request with HTTP 400 if any error occurs.
+func (c *Context) BindUri(obj interface{}) error {
+	if err := c.ShouldBindUri(obj); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err).SetType(ErrorTypeBind) // nolint: errcheck
+		return err
+	}
+	return nil
+}
+
+// MustBindWith binds the passed struct pointer using the specified binding engine.
+// It will abort the request with HTTP 400 if any error occurs.
+// See the binding package.
+func (c *Context) MustBindWith(obj interface{}, b binding.Binding) error {
+	if err := c.ShouldBindWith(obj, b); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err).SetType(ErrorTypeBind) // nolint: errcheck
+		return err
+	}
+	return nil
 }
 
 // ShouldBind checks the Content-Type to select a binding engine automatically,
@@ -497,9 +671,33 @@ func (c *Context) ShouldBindJSON(obj interface{}) error {
 	return c.ShouldBindWith(obj, binding.JSON)
 }
 
+// ShouldBindXML is a shortcut for c.ShouldBindWith(obj, binding.XML).
+func (c *Context) ShouldBindXML(obj interface{}) error {
+	return c.ShouldBindWith(obj, binding.XML)
+}
+
 // ShouldBindQuery is a shortcut for c.ShouldBindWith(obj, binding.Query).
 func (c *Context) ShouldBindQuery(obj interface{}) error {
 	return c.ShouldBindWith(obj, binding.Query)
+}
+
+// ShouldBindYAML is a shortcut for c.ShouldBindWith(obj, binding.YAML).
+func (c *Context) ShouldBindYAML(obj interface{}) error {
+	return c.ShouldBindWith(obj, binding.YAML)
+}
+
+// ShouldBindHeader is a shortcut for c.ShouldBindWith(obj, binding.Header).
+func (c *Context) ShouldBindHeader(obj interface{}) error {
+	return c.ShouldBindWith(obj, binding.Header)
+}
+
+// ShouldBindUri binds the passed struct pointer using the specified binding engine.
+func (c *Context) ShouldBindUri(obj interface{}) error {
+	m := make(map[string][]string)
+	for _, v := range c.Params {
+		m[v.Key] = []string{v.Value}
+	}
+	return binding.Uri.BindUri(m, obj)
 }
 
 // ShouldBindWith binds the passed struct pointer using the specified binding engine.
@@ -508,36 +706,113 @@ func (c *Context) ShouldBindWith(obj interface{}, b binding.Binding) error {
 	return b.Bind(c.Request, obj)
 }
 
-// ClientIP implements a best effort algorithm to return the real client IP, it parses
-// X-Real-IP and X-Forwarded-For in order to work properly with reverse-proxies such us: nginx or haproxy.
-// Use X-Forwarded-For before X-Real-Ip as nginx uses X-Real-Ip with the proxy's IP.
+// ShouldBindBodyWith is similar with ShouldBindWith, but it stores the request
+// body into the context, and reuse when it is called again.
+//
+// NOTE: This method reads the body before binding. So you should use
+// ShouldBindWith for better performance if you need to call only once.
+func (c *Context) ShouldBindBodyWith(obj interface{}, bb binding.BindingBody) (err error) {
+	var body []byte
+	if cb, ok := c.Get(BodyBytesKey); ok {
+		if cbb, ok := cb.([]byte); ok {
+			body = cbb
+		}
+	}
+	if body == nil {
+		body, err = ioutil.ReadAll(c.Request.Body)
+		if err != nil {
+			return err
+		}
+		c.Set(BodyBytesKey, body)
+	}
+	return bb.BindBody(body, obj)
+}
+
+// ClientIP implements one best effort algorithm to return the real client IP.
+// It called c.RemoteIP() under the hood, to check if the remote IP is a trusted proxy or not.
+// If it is it will then try to parse the headers defined in Engine.RemoteIPHeaders (defaulting to [X-Forwarded-For, X-Real-Ip]).
+// If the headers are not syntactically valid OR the remote IP does not correspond to a trusted proxy,
+// the remote IP (coming form Request.RemoteAddr) is returned.
 func (c *Context) ClientIP() string {
-	if c.engine.ForwardedByClientIP {
-		clientIP := c.requestHeader("X-Forwarded-For")
-		if index := strings.IndexByte(clientIP, ','); index >= 0 {
-			clientIP = clientIP[0:index]
-		}
-		clientIP = strings.TrimSpace(clientIP)
-		if clientIP != "" {
-			return clientIP
-		}
-		clientIP = strings.TrimSpace(c.requestHeader("X-Real-Ip"))
-		if clientIP != "" {
-			return clientIP
+	// Check if we're running on a trusted platform, continue running backwards if error
+	if c.engine.TrustedPlatform != "" {
+		// Developers can define their own header of Trusted Platform or use predefined constants
+		if addr := c.requestHeader(c.engine.TrustedPlatform); addr != "" {
+			return addr
 		}
 	}
 
+	// Legacy "AppEngine" flag
 	if c.engine.AppEngine {
+		log.Println(`The AppEngine flag is going to be deprecated. Please check issues #2723 and #2739 and use 'TrustedPlatform: gin.PlatformGoogleAppEngine' instead.`)
 		if addr := c.requestHeader("X-Appengine-Remote-Addr"); addr != "" {
 			return addr
 		}
 	}
 
-	if ip, _, err := net.SplitHostPort(strings.TrimSpace(c.Request.RemoteAddr)); err == nil {
-		return ip
+	remoteIP, trusted := c.RemoteIP()
+	if remoteIP == nil {
+		return ""
 	}
 
-	return ""
+	if trusted && c.engine.ForwardedByClientIP && c.engine.RemoteIPHeaders != nil {
+		for _, headerName := range c.engine.RemoteIPHeaders {
+			ip, valid := c.engine.validateHeader(c.requestHeader(headerName))
+			if valid {
+				return ip
+			}
+		}
+	}
+	return remoteIP.String()
+}
+
+func (e *Engine) isTrustedProxy(ip net.IP) bool {
+	if e.trustedCIDRs != nil {
+		for _, cidr := range e.trustedCIDRs {
+			if cidr.Contains(ip) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// RemoteIP parses the IP from Request.RemoteAddr, normalizes and returns the IP (without the port).
+// It also checks if the remoteIP is a trusted proxy or not.
+// In order to perform this validation, it will see if the IP is contained within at least one of the CIDR blocks
+// defined by Engine.SetTrustedProxies()
+func (c *Context) RemoteIP() (net.IP, bool) {
+	ip, _, err := net.SplitHostPort(strings.TrimSpace(c.Request.RemoteAddr))
+	if err != nil {
+		return nil, false
+	}
+	remoteIP := net.ParseIP(ip)
+	if remoteIP == nil {
+		return nil, false
+	}
+
+	return remoteIP, c.engine.isTrustedProxy(remoteIP)
+}
+
+func (e *Engine) validateHeader(header string) (clientIP string, valid bool) {
+	if header == "" {
+		return "", false
+	}
+	items := strings.Split(header, ",")
+	for i := len(items) - 1; i >= 0; i-- {
+		ipStr := strings.TrimSpace(items[i])
+		ip := net.ParseIP(ipStr)
+		if ip == nil {
+			return "", false
+		}
+
+		// X-Forwarded-For is appended by proxy
+		// Check IPs in reverse order and stop when find untrusted proxy
+		if (i == 0) || (!e.isTrustedProxy(ip)) {
+			return ipStr, true
+		}
+	}
+	return
 }
 
 // ContentType returns the Content-Type header of the request.
@@ -549,7 +824,7 @@ func (c *Context) ContentType() string {
 // handshake is being initiated by the client.
 func (c *Context) IsWebsocket() bool {
 	if strings.Contains(strings.ToLower(c.requestHeader("Connection")), "upgrade") &&
-		strings.ToLower(c.requestHeader("Upgrade")) == "websocket" {
+		strings.EqualFold(c.requestHeader("Upgrade"), "websocket") {
 		return true
 	}
 	return false
@@ -568,9 +843,9 @@ func bodyAllowedForStatus(status int) bool {
 	switch {
 	case status >= 100 && status <= 199:
 		return false
-	case status == 204:
+	case status == http.StatusNoContent:
 		return false
-	case status == 304:
+	case status == http.StatusNotModified:
 		return false
 	}
 	return true
@@ -578,7 +853,7 @@ func bodyAllowedForStatus(status int) bool {
 
 // Status sets the HTTP response code.
 func (c *Context) Status(code int) {
-	c.writermem.WriteHeader(code)
+	c.Writer.WriteHeader(code)
 }
 
 // Header is a intelligent shortcut for c.Writer.Header().Set(key, value).
@@ -587,9 +862,9 @@ func (c *Context) Status(code int) {
 func (c *Context) Header(key, value string) {
 	if value == "" {
 		c.Writer.Header().Del(key)
-	} else {
-		c.Writer.Header().Set(key, value)
+		return
 	}
+	c.Writer.Header().Set(key, value)
 }
 
 // GetHeader returns value from request headers.
@@ -600,6 +875,11 @@ func (c *Context) GetHeader(key string) string {
 // GetRawData return stream data.
 func (c *Context) GetRawData() ([]byte, error) {
 	return ioutil.ReadAll(c.Request.Body)
+}
+
+// SetSameSite with cookie
+func (c *Context) SetSameSite(samesite http.SameSite) {
+	c.sameSite = samesite
 }
 
 // SetCookie adds a Set-Cookie header to the ResponseWriter's headers.
@@ -615,6 +895,7 @@ func (c *Context) SetCookie(name, value string, maxAge int, path, domain string,
 		MaxAge:   maxAge,
 		Path:     path,
 		Domain:   domain,
+		SameSite: c.sameSite,
 		Secure:   secure,
 		HttpOnly: httpOnly,
 	})
@@ -633,6 +914,7 @@ func (c *Context) Cookie(name string) (string, error) {
 	return val, nil
 }
 
+// Render writes the response headers and calls render.Render to render data.
 func (c *Context) Render(code int, r render.Render) {
 	c.Status(code)
 
@@ -667,13 +949,37 @@ func (c *Context) IndentedJSON(code int, obj interface{}) {
 // Default prepends "while(1)," to response body if the given struct is array values.
 // It also sets the Content-Type as "application/json".
 func (c *Context) SecureJSON(code int, obj interface{}) {
-	c.Render(code, render.SecureJSON{Prefix: c.engine.secureJsonPrefix, Data: obj})
+	c.Render(code, render.SecureJSON{Prefix: c.engine.secureJSONPrefix, Data: obj})
+}
+
+// JSONP serializes the given struct as JSON into the response body.
+// It adds padding to response body to request data from a server residing in a different domain than the client.
+// It also sets the Content-Type as "application/javascript".
+func (c *Context) JSONP(code int, obj interface{}) {
+	callback := c.DefaultQuery("callback", "")
+	if callback == "" {
+		c.Render(code, render.JSON{Data: obj})
+		return
+	}
+	c.Render(code, render.JsonpJSON{Callback: callback, Data: obj})
 }
 
 // JSON serializes the given struct as JSON into the response body.
 // It also sets the Content-Type as "application/json".
 func (c *Context) JSON(code int, obj interface{}) {
 	c.Render(code, render.JSON{Data: obj})
+}
+
+// AsciiJSON serializes the given struct as JSON into the response body with unicode to ASCII string.
+// It also sets the Content-Type as "application/json".
+func (c *Context) AsciiJSON(code int, obj interface{}) {
+	c.Render(code, render.AsciiJSON{Data: obj})
+}
+
+// PureJSON serializes the given struct as JSON into the response body.
+// PureJSON, unlike JSON, does not replace special html characters with their unicode entities.
+func (c *Context) PureJSON(code int, obj interface{}) {
+	c.Render(code, render.PureJSON{Data: obj})
 }
 
 // XML serializes the given struct as XML into the response body.
@@ -685,6 +991,11 @@ func (c *Context) XML(code int, obj interface{}) {
 // YAML serializes the given struct as YAML into the response body.
 func (c *Context) YAML(code int, obj interface{}) {
 	c.Render(code, render.YAML{Data: obj})
+}
+
+// ProtoBuf serializes the given struct as ProtoBuf into the response body.
+func (c *Context) ProtoBuf(code int, obj interface{}) {
+	c.Render(code, render.ProtoBuf{Data: obj})
 }
 
 // String writes the given string into the response body.
@@ -709,8 +1020,36 @@ func (c *Context) Data(code int, contentType string, data []byte) {
 	})
 }
 
-// File writes the specified file into the body stream in a efficient way.
+// DataFromReader writes the specified reader into the body stream and updates the HTTP code.
+func (c *Context) DataFromReader(code int, contentLength int64, contentType string, reader io.Reader, extraHeaders map[string]string) {
+	c.Render(code, render.Reader{
+		Headers:       extraHeaders,
+		ContentType:   contentType,
+		ContentLength: contentLength,
+		Reader:        reader,
+	})
+}
+
+// File writes the specified file into the body stream in an efficient way.
 func (c *Context) File(filepath string) {
+	http.ServeFile(c.Writer, c.Request, filepath)
+}
+
+// FileFromFS writes the specified file from http.FileSystem into the body stream in an efficient way.
+func (c *Context) FileFromFS(filepath string, fs http.FileSystem) {
+	defer func(old string) {
+		c.Request.URL.Path = old
+	}(c.Request.URL.Path)
+
+	c.Request.URL.Path = filepath
+
+	http.FileServer(fs).ServeHTTP(c.Writer, c.Request)
+}
+
+// FileAttachment writes the specified file into the body stream in an efficient way
+// On the client side, the file will typically be downloaded with the given filename
+func (c *Context) FileAttachment(filepath, filename string) {
+	c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	http.ServeFile(c.Writer, c.Request, filepath)
 }
 
@@ -722,18 +1061,20 @@ func (c *Context) SSEvent(name string, message interface{}) {
 	})
 }
 
-func (c *Context) Stream(step func(w io.Writer) bool) {
+// Stream sends a streaming response and returns a boolean
+// indicates "Is client disconnected in middle of stream"
+func (c *Context) Stream(step func(w io.Writer) bool) bool {
 	w := c.Writer
 	clientGone := w.CloseNotify()
 	for {
 		select {
 		case <-clientGone:
-			return
+			return true
 		default:
 			keepOpen := step(w)
 			w.Flush()
 			if !keepOpen {
-				return
+				return false
 			}
 		}
 	}
@@ -743,15 +1084,18 @@ func (c *Context) Stream(step func(w io.Writer) bool) {
 /******** CONTENT NEGOTIATION *******/
 /************************************/
 
+// Negotiate contains all negotiations data.
 type Negotiate struct {
 	Offered  []string
 	HTMLName string
 	HTMLData interface{}
 	JSONData interface{}
 	XMLData  interface{}
+	YAMLData interface{}
 	Data     interface{}
 }
 
+// Negotiate calls different Render according acceptable Accept format.
 func (c *Context) Negotiate(code int, config Negotiate) {
 	switch c.NegotiateFormat(config.Offered...) {
 	case binding.MIMEJSON:
@@ -766,11 +1110,16 @@ func (c *Context) Negotiate(code int, config Negotiate) {
 		data := chooseData(config.XMLData, config.Data)
 		c.XML(code, data)
 
+	case binding.MIMEYAML:
+		data := chooseData(config.YAMLData, config.Data)
+		c.YAML(code, data)
+
 	default:
-		c.AbortWithError(http.StatusNotAcceptable, errors.New("the accepted formats are not offered by the server"))
+		c.AbortWithError(http.StatusNotAcceptable, errors.New("the accepted formats are not offered by the server")) // nolint: errcheck
 	}
 }
 
+// NegotiateFormat returns an acceptable Accept format.
 func (c *Context) NegotiateFormat(offered ...string) string {
 	assert1(len(offered) > 0, "you must provide at least one offer")
 
@@ -781,15 +1130,27 @@ func (c *Context) NegotiateFormat(offered ...string) string {
 		return offered[0]
 	}
 	for _, accepted := range c.Accepted {
-		for _, offert := range offered {
-			if accepted == offert {
-				return offert
+		for _, offer := range offered {
+			// According to RFC 2616 and RFC 2396, non-ASCII characters are not allowed in headers,
+			// therefore we can just iterate over the string without casting it into []rune
+			i := 0
+			for ; i < len(accepted); i++ {
+				if accepted[i] == '*' || offer[i] == '*' {
+					return offer
+				}
+				if accepted[i] != offer[i] {
+					break
+				}
+			}
+			if i == len(accepted) {
+				return offer
 			}
 		}
 	}
 	return ""
 }
 
+// SetAccepted sets Accept header data.
 func (c *Context) SetAccepted(formats ...string) {
 	c.Accepted = formats
 }
@@ -798,18 +1159,27 @@ func (c *Context) SetAccepted(formats ...string) {
 /***** GOLANG.ORG/X/NET/CONTEXT *****/
 /************************************/
 
+// Deadline always returns that there is no deadline (ok==false),
+// maybe you want to use Request.Context().Deadline() instead.
 func (c *Context) Deadline() (deadline time.Time, ok bool) {
 	return
 }
 
+// Done always returns nil (chan which will wait forever),
+// if you want to abort your work when the connection was closed
+// you should use Request.Context().Done() instead.
 func (c *Context) Done() <-chan struct{} {
 	return nil
 }
 
+// Err always returns nil, maybe you want to use Request.Context().Err() instead.
 func (c *Context) Err() error {
 	return nil
 }
 
+// Value returns the value associated with this context for key, or nil
+// if no value is associated with key. Successive calls to Value with
+// the same key returns the same result.
 func (c *Context) Value(key interface{}) interface{} {
 	if key == 0 {
 		return c.Request

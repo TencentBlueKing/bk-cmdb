@@ -7,7 +7,10 @@ package gin
 import (
 	"crypto/subtle"
 	"encoding/base64"
+	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin/internal/bytesconv"
 )
 
 // AuthUserKey is the cookie name for user credential in basic auth.
@@ -17,8 +20,8 @@ const AuthUserKey = "user"
 type Accounts map[string]string
 
 type authPair struct {
-	Value string
-	User  string
+	value string
+	user  string
 }
 
 type authPairs []authPair
@@ -28,8 +31,8 @@ func (a authPairs) searchCredential(authValue string) (string, bool) {
 		return "", false
 	}
 	for _, pair := range a {
-		if pair.Value == authValue {
-			return pair.User, true
+		if subtle.ConstantTimeCompare([]byte(pair.value), []byte(authValue)) == 1 {
+			return pair.user, true
 		}
 	}
 	return "", false
@@ -51,7 +54,7 @@ func BasicAuthForRealm(accounts Accounts, realm string) HandlerFunc {
 		if !found {
 			// Credentials doesn't match, we return 401 and abort handlers chain.
 			c.Header("WWW-Authenticate", realm)
-			c.AbortWithStatus(401)
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
@@ -68,14 +71,15 @@ func BasicAuth(accounts Accounts) HandlerFunc {
 }
 
 func processAccounts(accounts Accounts) authPairs {
-	assert1(len(accounts) > 0, "Empty list of authorized credentials")
-	pairs := make(authPairs, 0, len(accounts))
+	length := len(accounts)
+	assert1(length > 0, "Empty list of authorized credentials")
+	pairs := make(authPairs, 0, length)
 	for user, password := range accounts {
 		assert1(user != "", "User can not be empty")
 		value := authorizationHeader(user, password)
 		pairs = append(pairs, authPair{
-			Value: value,
-			User:  user,
+			value: value,
+			user:  user,
 		})
 	}
 	return pairs
@@ -83,13 +87,5 @@ func processAccounts(accounts Accounts) authPairs {
 
 func authorizationHeader(user, password string) string {
 	base := user + ":" + password
-	return "Basic " + base64.StdEncoding.EncodeToString([]byte(base))
-}
-
-func secureCompare(given, actual string) bool {
-	if subtle.ConstantTimeEq(int32(len(given)), int32(len(actual))) == 1 {
-		return subtle.ConstantTimeCompare([]byte(given), []byte(actual)) == 1
-	}
-	// Securely compare actual to itself to keep constant time, but always return false.
-	return subtle.ConstantTimeCompare([]byte(actual), []byte(actual)) == 1 && false
+	return "Basic " + base64.StdEncoding.EncodeToString(bytesconv.StringToBytes(base))
 }

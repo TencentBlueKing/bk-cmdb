@@ -140,29 +140,25 @@ func buildRootHuffmanNode() {
 		panic("unexpected size")
 	}
 	lazyRootHuffmanNode = newInternalNode()
-	// allocate a leaf node for each of the 256 symbols
-	leaves := new([256]node)
+	for i, code := range huffmanCodes {
+		addDecoderNode(byte(i), code, huffmanCodeLen[i])
+	}
+}
 
-	for sym, code := range huffmanCodes {
-		codeLen := huffmanCodeLen[sym]
-
-		cur := lazyRootHuffmanNode
-		for codeLen > 8 {
-			codeLen -= 8
-			i := uint8(code >> codeLen)
-			if cur.children[i] == nil {
-				cur.children[i] = newInternalNode()
-			}
-			cur = cur.children[i]
+func addDecoderNode(sym byte, code uint32, codeLen uint8) {
+	cur := lazyRootHuffmanNode
+	for codeLen > 8 {
+		codeLen -= 8
+		i := uint8(code >> codeLen)
+		if cur.children[i] == nil {
+			cur.children[i] = newInternalNode()
 		}
-		shift := 8 - codeLen
-		start, end := int(uint8(code<<shift)), int(1<<shift)
-
-		leaves[sym].sym = byte(sym)
-		leaves[sym].codeLen = codeLen
-		for i := start; i < start+end; i++ {
-			cur.children[i] = &leaves[sym]
-		}
+		cur = cur.children[i]
+	}
+	shift := 8 - codeLen
+	start, end := int(uint8(code<<shift)), int(1<<shift)
+	for i := start; i < start+end; i++ {
+		cur.children[i] = &node{sym: sym, codeLen: codeLen}
 	}
 }
 
