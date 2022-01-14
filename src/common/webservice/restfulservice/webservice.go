@@ -17,7 +17,7 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/version"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // Version provides the service version info

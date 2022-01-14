@@ -36,7 +36,7 @@ import (
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/operation_server/app/options"
 	"configcenter/src/scene_server/operation_server/logics"
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 type srvComm struct {

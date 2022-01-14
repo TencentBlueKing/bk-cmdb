@@ -34,7 +34,7 @@ import (
 	"configcenter/src/thirdparty/monitor"
 	"configcenter/src/thirdparty/monitor/meta"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 type Service struct {

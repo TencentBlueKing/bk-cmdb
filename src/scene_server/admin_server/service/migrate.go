@@ -32,7 +32,7 @@ import (
 	daltypes "configcenter/src/storage/dal/types"
 	streamtypes "configcenter/src/storage/stream/types"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *Service) migrate(req *restful.Request, resp *restful.Response) {

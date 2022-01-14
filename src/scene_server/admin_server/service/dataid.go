@@ -27,7 +27,7 @@ import (
 	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/util"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 const (

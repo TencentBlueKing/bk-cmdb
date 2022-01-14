@@ -12,7 +12,7 @@
 
 package hooks
 
-import "github.com/emicklei/go-restful"
+import "github.com/emicklei/go-restful/v3"
 
 // ValidRequestFromAPIGWHook valid request from api gateway hook
 func ValidRequestFromAPIGWHook(req *restful.Request) error {

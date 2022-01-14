@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/cloud_server/logics"
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 type Service struct {
