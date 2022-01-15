@@ -1486,5 +1486,6 @@
     "共N个业务": "Total {count} businesses",
     "业务集不存在或无权限": "Permission denied or business set non-exist",
     "申请业务集访问权限": "Apply for business set access",
-    "创建业务集": "Create a business set"
+    "创建业务集": "Create a business set",
+    "全业务": "Full business"
 }

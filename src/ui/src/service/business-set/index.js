@@ -1,7 +1,9 @@
 import http from '@/api'
+import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
 import { enableCount, onePageParams } from '../utils.js'
 
 const authorizedRequsetId = Symbol('getAuthorizedBusinessSet')
+const MODEL_ID_KEY = BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID
 
 const find = async (params, config) => {
   try {
@@ -12,17 +14,17 @@ const find = async (params, config) => {
     return { count, list }
   } catch (error) {
     console.error(error)
-    return { count: 0, list: [] }
+    return Promise.reject(error)
   }
 }
 
 const findById = async (id, config) => {
   try {
-    const { info: [instance = null] } = http.post('findmany/biz_set', enableCount({
+    const { info: [instance = null] } = await http.post('findmany/biz_set', enableCount({
       bk_biz_set_filter: {
         condition: 'AND',
         rules: [{
-          field: 'bk_biz_set_id',
+          field: MODEL_ID_KEY,
           operator: 'equal',
           value: id
         }]
