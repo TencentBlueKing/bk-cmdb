@@ -1,7 +1,7 @@
 <template>
   <div class="business-set-layout">
-    <div class="business-options clearfix">
-      <cmdb-auth class="fl" :auth="{ type: $OPERATION.C_BUSINESS }">
+    <div class="business-set-options clearfix">
+      <cmdb-auth class="fl" :auth="{ type: $OPERATION.C_BUSINESS_SET }">
         <bk-button slot-scope="{ disabled }"
           class="fl"
           theme="primary"
@@ -101,20 +101,23 @@
       </bk-table-column>
       <cmdb-table-empty
         slot="empty"
-        :stuff="table.stuff"
-        :auth="{ type: $OPERATION.C_BUSINESS_SET }">
-        <i18n path="业务集列表提示语" class="table-empty-tips">
-          <bk-link theme="primary" place="auth" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
-          <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS_SET }" place="create">
-            <bk-button slot-scope="{ disabled }" text
-              theme="primary"
-              class="text-btn"
-              :disabled="disabled"
-              @click="handleCreate">
-              {{$t('立即创建')}}
-            </bk-button>
-          </cmdb-auth>
-        </i18n>
+        :stuff="table.stuff">
+        <template #permission>
+          <bk-exception type="403" scene="part">
+            <i18n path="业务集列表提示语" class="table-empty-tips">
+              <bk-link theme="primary" place="auth" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
+              <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS_SET }" place="create">
+                <bk-button slot-scope="{ disabled }" text
+                  theme="primary"
+                  class="text-btn"
+                  :disabled="disabled"
+                  @click="handleCreate">
+                  {{$t('立即创建')}}
+                </bk-button>
+              </cmdb-auth>
+            </i18n>
+          </bk-exception>
+        </template>
       </cmdb-table-empty>
     </bk-table>
 
@@ -145,12 +148,14 @@
   import businessScopePreview from '@/components/business-scope/preview.vue'
   import columnsConfig from './children/columns-config.vue'
   import RouterQuery from '@/router/query'
+  import routerActions from '@/router/actions'
   import Utils from '@/components/filters/utils'
   import { getDefaultPaginationConfig, getSort } from '@/utils/tools.js'
   import applyPermission from '@/utils/apply-permission.js'
   import businessSetService from '@/service/business-set/index.js'
   import propertyService from '@/service/property/property.js'
   import propertyGroupService from '@/service/property/group.js'
+  import { MENU_RESOURCE_BUSINESS_SET_DETAILS } from '@/dictionary/menu-symbol.js'
 
   export default defineComponent({
     components: {
@@ -242,18 +247,30 @@
       })
 
       const getList = async () => {
-        const { list, count } = await businessSetService.find(searchParams.value, { requestId })
+        try {
+          const { list, count } = await businessSetService.find(searchParams.value, {
+            requestId,
+            cancelPrevious: true,
+            globalPermission: false
+          })
 
-        if (count && !list?.length) {
-          table.pagination.current -= 1
-          getList()
-          return
+          if (count && !list?.length) {
+            table.pagination.current -= 1
+            getList()
+            return
+          }
+
+          table.list = list
+          table.pagination.count = count
+
+          table.stuff.type = filter.value.toString().length ? 'search' : 'default'
+        } catch ({ permission }) {
+          if (!permission) return
+          table.stuff = {
+            type: 'permission',
+            payload: { permission }
+          }
         }
-
-        table.list = list
-        table.pagination.count = count
-
-        table.stuff.type = filter.value.toString().length ? 'search' : 'default'
       }
 
       // 获取模型属性与分组
@@ -393,10 +410,17 @@
         managementFormState.data = {}
       }
 
-      const handleValueClick = (item, column) => {
+      const handleValueClick = (row, column) => {
         if (column.id !== MODEL_ID_KEY) {
           return false
         }
+        routerActions.redirect({
+          name: MENU_RESOURCE_BUSINESS_SET_DETAILS,
+          params: {
+            bizSetId: row[MODEL_ID_KEY]
+          },
+          history: true
+        })
       }
 
       const handleApplyPermission = async () => {

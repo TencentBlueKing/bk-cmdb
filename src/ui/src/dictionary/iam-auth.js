@@ -11,7 +11,7 @@ export const IAM_VIEWS = {
   CUSTOM_QUERY: 'biz_custom_query',
   // 业务列表
   BIZ: 'biz',
-  BIZ_SET: 'biz_set',
+  BIZ_SET: 'business_set',
   // 跨业务转主机选择的主机所属业务的列表
   BIZ_FOR_HOST_TRANS: 'biz_for_host_trans',
   // 主机列表
@@ -41,6 +41,7 @@ export const IAM_VIEWS_NAME = {
   [IAM_VIEWS.INSTANCE_MODEL]: ['实例模型', 'Instance Model'],
   [IAM_VIEWS.CUSTOM_QUERY]: ['动态分组', 'Custom Query'],
   [IAM_VIEWS.BIZ]: ['业务', 'Business'],
+  [IAM_VIEWS.BIZ_SET]: ['业务集', 'Business Set'],
   [IAM_VIEWS.BIZ_FOR_HOST_TRANS]: ['业务', 'Business'],
   [IAM_VIEWS.HOST]: ['主机', 'Host'],
   [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
@@ -712,12 +713,12 @@ export const IAM_ACTIONS = {
   C_BUSINESS_SET: {
     id: 'create_business_set',
     name: ['业务集创建', 'Create Business Set'],
-    cmdb_action: 'businessSet.create'
+    cmdb_action: 'bizSet.create'
   },
   U_BUSINESS_SET: {
     id: 'edit_business_set',
     name: ['业务集编辑', 'Update Business Set'],
-    cmdb_action: 'businessSet.update',
+    cmdb_action: 'bizSet.update',
     relation: [{
       view: IAM_VIEWS.BIZ_SET,
       instances: [IAM_VIEWS.BIZ_SET]
@@ -729,10 +730,9 @@ export const IAM_ACTIONS = {
   R_BUSINESS_SET: {
     id: 'view_business_set',
     name: ['业务集查看', 'View Business Set'],
-    cmdb_action: 'businessSet.findMany',
+    cmdb_action: 'bizSet.findMany',
     relation: [{
-      view: IAM_VIEWS.BIZ_SET,
-      instances: [IAM_VIEWS.BIZ_SET]
+      view: IAM_VIEWS.BIZ_SET
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       resource_id: relationIds[0]
@@ -741,7 +741,7 @@ export const IAM_ACTIONS = {
   D_BUSINESS_SET: {
     id: 'delete_business_set',
     name: ['业务集删除', 'Delete Business Set'],
-    cmdb_action: 'businessSet.delete',
+    cmdb_action: 'bizSet.delete',
     relation: [{
       view: IAM_VIEWS.BIZ_SET,
       instances: [IAM_VIEWS.BIZ_SET]
@@ -1168,7 +1168,7 @@ export const IAM_ACTIONS = {
   R_BIZ_SET_RESOURCE: {
     id: 'access_business_set',
     name: ['业务集访问', 'Access Business Set'],
-    cmdb_action: 'businessSet.accessBizSet',
+    cmdb_action: 'bizSet.accessBizSet',
     relation: [{
       view: IAM_VIEWS.BIZ_SET,
       instances: [IAM_VIEWS.BIZ_SET]

@@ -24,8 +24,11 @@
                 <div class="property-name">
                   <span class="property-name-text">业务范围</span>
                 </div>
-                <div class="property">
-                  <business-scope-settings-form :data="scopeSettingsFormData" @change="handleScopeSettingsChange" />
+                <div class="property-value">
+                  <business-scope-settings-form
+                    class="form-component"
+                    :data="scopeSettingsFormData"
+                    @change="handleScopeSettingsChange" />
                 </div>
               </li>
             </ul>
@@ -119,7 +122,7 @@
         return data
       })
 
-      const saveAuth = computed(() => ({ type: isEdit.value ? OPERATION.U_BUSINESS : OPERATION.C_BUSINESS }))
+      const saveAuth = computed(() => ({ type: isEdit.value ? OPERATION.U_BUSINESS_SET : OPERATION.C_BUSINESS_SET }))
 
       // 待保存的表单数据
       const defaultSaveData = () => ({
