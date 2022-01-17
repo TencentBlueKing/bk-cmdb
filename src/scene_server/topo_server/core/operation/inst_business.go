@@ -234,7 +234,8 @@ func (b *business) deleteUserModuleConfig(kit *rest.Kit, option *metadata.BuiltI
 	return nil
 }
 
-// checkModuleNameValid check whether the module has duplicate names in business.
+// checkModuleNameValid check whether the module has duplicate names in business, bizID: resource pool's business id,
+// setID: resource pool's set id.
 func (b *business) checkModuleNameValid(ctx *rest.Kit, input metadata.ModuleOption, bizID int64, setID int64) error {
 	obj, err := b.obj.FindSingleObject(ctx, common.BKInnerObjIDModule)
 	if nil != err {
@@ -406,7 +407,8 @@ func (b *business) addUserDefinedModule(kit *rest.Kit, results []inst.Inst, data
 	return nil
 }
 
-// updateModuleName update module name except resource pool's module.
+// updateModuleName update module name except resource pool's module. bizID: resource pool's business id,
+// setID: resource pool's set id.
 func (b *business) updateModuleName(kit *rest.Kit, data metadata.ModuleOption, name string, bizID, setID int64) error {
 
 	obj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDModule)
@@ -432,6 +434,7 @@ func (b *business) updateModuleName(kit *rest.Kit, data metadata.ModuleOption, n
 	d := mapstr.New()
 	d.Set(common.BKModuleNameField, data.Name)
 
+	// 在更新模块时注意只更新业务下"空闲机池"的模块，需要将资源池下面的模块排除
 	inputParams := metadata.UpdateOption{
 		Data: d,
 		Condition: mapstr.MapStr{
@@ -529,7 +532,7 @@ func (b *business) deleteModuleName(kit *rest.Kit, op *metadata.BuiltInModuleDel
 	return nil
 }
 
-// updateBusinessSet rename business idle set except resource pool's set.
+// updateBusinessSet rename business idle set except resource pool's set, setID: resource pool's set id.
 func (b *business) updateBusinessSet(kit *rest.Kit, setOptin metadata.SetOption, setID int64) error {
 
 	obj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet)
@@ -597,6 +600,7 @@ func (b *business) UpdateBusinessIdleSetOrModule(kit *rest.Kit, option *metadata
 	return nil
 }
 
+// getResourceBizIDAndSetID get resource pool's biz id and set id.
 func (b *business) getResourceBizIDAndSetID(kit *rest.Kit) (int64, int64, error) {
 
 	// get resource pool's biz ID
