@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/thirdparty/hooks"
 )
 
 type genericTransfer struct {
@@ -51,6 +52,10 @@ type genericTransfer struct {
 
 // validParameter valid parameter legal
 func (t *genericTransfer) ValidParameter(kit *rest.Kit) errors.CCErrorCoder {
+	if err := hooks.ValidHostTransferHook(kit, mongodb.Client(), t.crossBizTransfer, t.srcBizIDs, t.bizID); err != nil {
+		return err
+	}
+
 	if len(t.innerModuleID) == 0 {
 		err := t.getInnerModuleIDArr(kit)
 		if err != nil {
