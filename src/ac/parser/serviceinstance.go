@@ -70,19 +70,19 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 	}, {
 		// search service instance by biz set regex, authorize by biz set access permission, **only for ui**
 		Name:           "findServiceInstanceWebByBizSetRegexp",
-		Description:    "UI查询服务实例",
-		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/web/service_instance/biz_set/[0-9]+/?$`),
+		Description:    "UI查询业务集下的服务实例",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/web/biz_set/[0-9]+/service_instance/?$`),
 		HTTPMethod:     http.MethodPost,
 		ResourceType:   meta.BizSet,
-		ResourceAction: meta.Find,
+		ResourceAction: meta.AccessBizSet,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			if len(request.Elements) != 8 {
 				return nil, fmt.Errorf("get invalid url elements length %d", len(request.Elements))
 			}
 
-			bizSetID, err := strconv.ParseInt(request.Elements[7], 10, 64)
+			bizSetID, err := strconv.ParseInt(request.Elements[6], 10, 64)
 			if err != nil {
-				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[7], err)
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[6], err)
 			}
 			return []int64{bizSetID}, nil
 		},
@@ -187,20 +187,21 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceAction: meta.FindMany,
 	}, {
 		// aggregate service instance labels by biz set regex, authorize by biz set access permission, **only for ui**
-		Name:           "aggregationServiceInstanceLabelsByBizSetRegexp",
-		Description:    "聚合业务集下的服务实例标签",
-		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/proc_template/biz_set/[0-9]+/?$`),
+		Name:        "aggregationServiceInstanceLabelsByBizSetRegexp",
+		Description: "聚合业务集下的服务实例标签",
+		Regex: regexp.MustCompile(
+			`^/api/v3/findmany/proc/biz_set/[0-9]+/service_instance/labels/aggregation/?$`),
 		HTTPMethod:     http.MethodPost,
 		ResourceType:   meta.BizSet,
-		ResourceAction: meta.Find,
+		ResourceAction: meta.AccessBizSet,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
 			if len(request.Elements) != 9 {
 				return nil, fmt.Errorf("get invalid url elements length %d", len(request.Elements))
 			}
 
-			bizSetID, err := strconv.ParseInt(request.Elements[8], 10, 64)
+			bizSetID, err := strconv.ParseInt(request.Elements[5], 10, 64)
 			if err != nil {
-				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[8], err)
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[5], err)
 			}
 			return []int64{bizSetID}, nil
 		},

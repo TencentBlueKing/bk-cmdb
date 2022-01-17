@@ -30,11 +30,12 @@ import (
 )
 
 var _ = Describe("business set test", func() {
-	test.ClearDatabase()
 	ctx := context.Background()
 
 	var sampleBizSetID, bizID3 int64
 	It("prepare environment, create a biz set and biz in it with topo for searching biz and topo in biz set", func() {
+		test.ClearDatabase()
+
 		biz := map[string]interface{}{
 			common.BKMaintainersField: "biz_set",
 			common.BKAppNameField:     "biz_for_biz_set",

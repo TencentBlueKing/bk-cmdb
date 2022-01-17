@@ -782,3 +782,88 @@ func (s *Service) getTopoBriefInfo(kit *rest.Kit, objID string, condition mapstr
 
 	return topoArr, nil
 }
+
+// CountBizSetTopoHostAndSrvInst count hosts and service instances in topo node under the biz set. **only for ui**
+func (s *Service) CountBizSetTopoHostAndSrvInst(ctx *rest.Contexts) {
+	urlBizSetID := ctx.Request.PathParameter(common.BKBizSetIDField)
+	bizSetID, err := strconv.ParseInt(urlBizSetID, 10, 64)
+	if err != nil {
+		blog.Errorf("parse biz set id: %s from url failed, err: %v , rid: %s", urlBizSetID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	input := new(metadata.HostAndSerInstCountOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(input.Condition) > 20 {
+		err := ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "condition length")
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// validate if the topo nodes are all in the biz set
+	objInstMap := make(map[string][]int64)
+	for _, node := range input.Condition {
+		objInstMap[node.ObjID] = append(objInstMap[node.ObjID], node.InstID)
+	}
+
+	bizIDs := make([]interface{}, 0)
+	bizIDMap := make(map[interface{}]struct{})
+	for objID, instIDs := range objInstMap {
+		distinctOpt := &metadata.DistinctFieldOption{
+			TableName: common.GetInstTableName(objID, ctx.Kit.SupplierAccount),
+			Field:     common.BKAppIDField,
+			Filter:    map[string]interface{}{common.GetInstIDField(objID): mapstr.MapStr{common.BKDBIN: instIDs}},
+		}
+
+		distinctIDs, err := s.Engine.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, distinctOpt)
+		if err != nil {
+			blog.Errorf("get biz ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+
+		for _, id := range distinctIDs {
+			if _, exists := bizIDMap[id]; !exists {
+				bizIDMap[id] = struct{}{}
+				bizIDs = append(bizIDs, id)
+			}
+		}
+	}
+
+	bizSetBizCond, err := s.getBizSetBizCond(ctx.Kit, bizSetID)
+	if err != nil {
+		blog.Errorf("get biz cond by biz set id %d failed, err: %v, rid: %s", bizSetID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	filter := []map[string]interface{}{{
+		common.BKDBAND: []map[string]interface{}{
+			bizSetBizCond, {common.BKAppIDField: mapstr.MapStr{common.BKDBIN: bizIDs}},
+		}}}
+	counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKTableNameBaseApp, filter)
+	if err != nil {
+		blog.Errorf("count topo nodes failed, err: %v, filter: %#v, rid: %s", err, filter, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if int(counts[0]) != len(bizIDs) {
+		blog.Errorf("topo nodes are not all in biz set, biz ids: %v, rid: %s", bizIDs, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "condition"))
+		return
+	}
+
+	result, err := s.Logics.InstAssociationOperation().TopoNodeHostAndSerInstCount(ctx.Kit, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
+}
