@@ -645,9 +645,10 @@ func (s *Service) SearchBusinessSet(ctx *rest.Contexts) {
 	}
 
 	query := &metadata.QueryCondition{
-		Condition: cond,
-		Page:      searchCond.Page,
-		Fields:    searchCond.Fields,
+		Condition:      cond,
+		Page:           searchCond.Page,
+		Fields:         searchCond.Fields,
+		DisableCounter: true,
 	}
 
 	res, err := s.Logics.InstOperation().FindInst(ctx.Kit, common.BKInnerObjIDBizSet, query)
@@ -657,7 +658,7 @@ func (s *Service) SearchBusinessSet(ctx *rest.Contexts) {
 		return
 	}
 
-	if res.Count == 0 {
+	if len(res.Info) == 0 {
 		ctx.RespEntity(bizSetResult)
 		return
 	}
