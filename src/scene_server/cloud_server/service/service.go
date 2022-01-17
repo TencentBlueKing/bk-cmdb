@@ -14,9 +14,11 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"configcenter/src/ac"
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/cryptor"
 	"configcenter/src/common/errors"
@@ -24,7 +26,10 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/cloud_server/logics"
+	"configcenter/src/thirdparty/logplatform"
+
 	"github.com/emicklei/go-restful/v3"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/emicklei/go-restful/otelrestful"
 )
 
 type Service struct {
@@ -63,6 +68,11 @@ func (s *Service) WebService() *restful.Container {
 
 	s.initRoute(api)
 	container := restful.NewContainer()
+
+	if logplatform.OpenTelemetryCfg.Enable {
+		container.Filter(otelrestful.OTelFilter(fmt.Sprintf("%s_%s","cmdb", common.GetIdentification())))
+	}
+
 	container.Add(api)
 
 	// common api

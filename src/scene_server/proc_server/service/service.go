@@ -12,6 +12,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -31,8 +32,10 @@ import (
 	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/thirdparty/esbserver"
 	"configcenter/src/thirdparty/esbserver/esbutil"
+	"configcenter/src/thirdparty/logplatform"
 
 	"github.com/emicklei/go-restful/v3"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/emicklei/go-restful/otelrestful"
 )
 
 type ProcServer struct {
@@ -61,6 +64,11 @@ func (ps *ProcServer) WebService() *restful.Container {
 
 	ps.newProcessService(api)
 	container := restful.NewContainer()
+
+	if logplatform.OpenTelemetryCfg.Enable {
+		container.Filter(otelrestful.OTelFilter(fmt.Sprintf("%s_%s","cmdb", common.GetIdentification())))
+	}
+
 	container.Add(api)
 
 	// common api

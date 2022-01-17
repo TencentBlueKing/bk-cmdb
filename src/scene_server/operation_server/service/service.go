@@ -36,7 +36,10 @@ import (
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/operation_server/app/options"
 	"configcenter/src/scene_server/operation_server/logics"
+	"configcenter/src/thirdparty/logplatform"
+
 	"github.com/emicklei/go-restful/v3"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/emicklei/go-restful/otelrestful"
 )
 
 type srvComm struct {
@@ -90,6 +93,11 @@ func (o *OperationServer) WebService() *restful.Container {
 
 	o.newOperationService(api)
 	container := restful.NewContainer()
+
+	if logplatform.OpenTelemetryCfg.Enable {
+		container.Filter(otelrestful.OTelFilter(fmt.Sprintf("%s_%s","cmdb", common.GetIdentification())))
+	}
+
 	container.Add(api)
 
 	// common api

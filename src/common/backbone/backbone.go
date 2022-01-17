@@ -33,6 +33,8 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/logplatform"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/thirdparty/monitor"
 
 	"github.com/rs/xid"
@@ -194,6 +196,13 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("init monitor failed, err: %v", err)
 	}
 
+	if err:= logplatform.InitOpenTelemetryConfig(); err != nil {
+		return nil, fmt.Errorf("init openTelemetry config failed, err: %v", err)
+	}
+
+	if err := opentelemetry.InitTracer(ctx); err != nil {
+		return nil, fmt.Errorf("init tracer failed, err: %v", err)
+	}
 	return engine, nil
 }
 

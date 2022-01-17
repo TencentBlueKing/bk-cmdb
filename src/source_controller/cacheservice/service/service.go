@@ -13,6 +13,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -33,8 +34,10 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream"
+	"configcenter/src/thirdparty/logplatform"
 
 	"github.com/emicklei/go-restful/v3"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/emicklei/go-restful/otelrestful"
 )
 
 // CacheServiceInterface the cache service methods used to init
@@ -129,6 +132,10 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 func (s *cacheService) WebService() *restful.Container {
 
 	container := restful.NewContainer()
+
+	if logplatform.OpenTelemetryCfg.Enable {
+		container.Filter(otelrestful.OTelFilter(fmt.Sprintf("%s_%s","cmdb", common.GetIdentification())))
+	}
 
 	getErrFunc := func() errors.CCErrorIf { return s.err }
 

@@ -13,6 +13,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -26,12 +27,14 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/ginservice"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/logplatform"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 type Service struct {
@@ -69,6 +72,11 @@ func (s *Service) WebService() *gin.Engine {
 		}()
 		c.Next()
 	})
+
+	if logplatform.OpenTelemetryCfg.Enable {
+		ws.Use(otelgin.Middleware(fmt.Sprintf("%s_%s", "cmdb", common.GetIdentification())))
+	}
+
 	middleware.Engine = s.Engine
 
 	ws.Static("/static", s.Config.Site.HtmlRoot)
@@ -109,7 +117,7 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/netproperty/export", s.ExportNetProperty)
 	ws.GET("/netcollect/importtemplate/netproperty", s.BuildDownLoadNetPropertyExcelTemplate)
 	ws.POST("/object/count", s.GetObjectInstanceCount)
-	
+
 	ws.POST("/regular/verify_regular_express", s.VerifyRegularExpress)
 	ws.POST("/regular/verify_regular_content_batch", s.VerifyRegularContentBatch)
 

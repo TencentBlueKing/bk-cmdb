@@ -640,7 +640,7 @@ func (s *Service) getCustomObjectInfo(ctx context.Context, header http.Header) (
 	}
 
 	objectName := make([]string, 0)
-	objects, err := s.Logics.CoreAPI.ApiServer().ReadModel(context.Background(), header, input)
+	objects, err := s.Logics.CoreAPI.ApiServer().ReadModel(ctx, header, input)
 	if err != nil {
 		blog.Errorf("search mainline obj failed, objIDs: %#v, err: %v, rid: %s", objectIDs, err, rid)
 		return objectName, util.ReverseArrayString(objectIDs), err

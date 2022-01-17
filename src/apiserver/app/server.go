@@ -19,13 +19,16 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/apiserver/app/options"
 	"configcenter/src/apiserver/service"
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/logplatform"
 
 	"github.com/emicklei/go-restful/v3"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/emicklei/go-restful/otelrestful"
 )
 
 // Run main loop function
@@ -75,6 +78,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
+
+	if logplatform.OpenTelemetryCfg.Enable {
+		ctnr.Filter(otelrestful.OTelFilter(fmt.Sprintf("%s_%s","cmdb", common.GetIdentification())))
+	}
+
 	for _, item := range svc.WebServices() {
 		ctnr.Add(item)
 	}
