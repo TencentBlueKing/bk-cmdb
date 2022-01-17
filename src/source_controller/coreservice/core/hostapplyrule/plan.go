@@ -311,22 +311,23 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relation
 		common.BKModuleIDField:       map[string]interface{}{common.BKDBIN: moduleIDs},
 		common.HostApplyEnabledField: true,
 	}
-	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules)
+	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).Fields(common.BKModuleIDField).
+		All(kit.Ctx, &modules)
 	if err != nil {
 		blog.Errorf("search modules info failed, filter: %s, err: %v, rid: %s", moduleFilter, err, kit.Rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	enableModuleMap := make(map[int64]bool)
+	enableModuleMap := make(map[int64]struct{})
 	for _, module := range modules {
-		enableModuleMap[module.ModuleID] = true
+		enableModuleMap[module.ModuleID] = struct{}{}
 	}
 	host2Modules := make(map[int64][]int64)
 	for _, relation := range relations {
-		if _, exist := host2Modules[relation.HostID]; !exist {
-			host2Modules[relation.HostID] = make([]int64, 0)
-		}
 		if _, exist := enableModuleMap[relation.ModuleID]; !exist {
 			continue
+		}
+		if _, exist := host2Modules[relation.HostID]; !exist {
+			host2Modules[relation.HostID] = make([]int64, 0)
 		}
 		// checkout host apply enabled status on module
 		host2Modules[relation.HostID] = append(host2Modules[relation.HostID], relation.ModuleID)
@@ -361,40 +362,64 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relation
 	for _, hostResult := range result.HostResults {
 		if ccErr := hostResult.GetError(); ccErr != nil {
 			result.SetError(ccErr)
+			break
 		}
 	}
 	return result, result.GetError()
 }
 
-func (p *hostApplyRule) carryOutPlan(kit *rest.Kit, plans []metadata.OneHostApplyPlan) []metadata.HostApplyResult {
+type updateHostOption struct {
+	hostIDs []int64
+	data    map[string]interface{}
+}
 
+func (p *hostApplyRule) carryOutPlan(kit *rest.Kit, plans []metadata.OneHostApplyPlan) []metadata.HostApplyResult {
 	hostResults := make([]metadata.HostApplyResult, 0)
+
+	// group hosts with the same host apply update data together, updateDataMap key is the json format of update data
+	updateDataMap := make(map[string]*updateHostOption)
 	for _, plan := range plans {
-		applyResult := metadata.HostApplyResult{
-			ErrorContainer: metadata.ErrorContainer{},
-			HostID:         0,
-		}
-		updateData := plan.GetUpdateData()
-		if len(updateData) == 0 {
-			hostResults = append(hostResults, applyResult)
+		if len(plan.UpdateFields) == 0 {
+			hostResults = append(hostResults, metadata.HostApplyResult{HostID: plan.HostID})
 			continue
 		}
 
-		updateOption := metadata.UpdateOption{
-			Condition: map[string]interface{}{common.BKHostIDField: plan.HostID},
-			Data:      updateData,
-		}
-		if _, err := p.dependence.UpdateModelInstance(kit, common.BKInnerObjIDHost, updateOption); err != nil {
-			blog.Warnf("update host failed, hostID: %d, updateOption: %+v, err: %+v, rid: %s", plan.HostID,
-				updateOption, err, kit.Rid)
-			if ccErr, ok := err.(errors.CCErrorCoder); ok {
-				applyResult.SetError(ccErr)
-			} else {
-				ccErr := kit.CCError.CCError(common.CCErrHostUpdateFail)
-				applyResult.SetError(ccErr)
+		dataStr := plan.GetUpdateDataStr()
+		if _, exists := updateDataMap[dataStr]; !exists {
+			updateDataMap[dataStr] = &updateHostOption{
+				hostIDs: make([]int64, 0),
+				data:    plan.GetUpdateData(),
 			}
 		}
-		hostResults = append(hostResults, applyResult)
+		updateDataMap[dataStr].hostIDs = append(updateDataMap[dataStr].hostIDs, plan.HostID)
+	}
+
+	// batch update the hosts with the same update data together to improve performance
+	for _, updateOpt := range updateDataMap {
+		updateOption := metadata.UpdateOption{
+			Data: updateOpt.data,
+			Condition: map[string]interface{}{
+				common.BKHostIDField: map[string]interface{}{common.BKDBIN: updateOpt.hostIDs},
+			},
+		}
+
+		if _, err := p.dependence.UpdateModelInstance(kit, common.BKInnerObjIDHost, updateOption); err != nil {
+			blog.Warnf("update host failed, updateOption: %+v, err: %v, rid: %s", updateOption, err, kit.Rid)
+			ccErr, ok := err.(errors.CCErrorCoder)
+			if !ok {
+				ccErr = kit.CCError.CCError(common.CCErrHostUpdateFail)
+			}
+			applyResult := metadata.HostApplyResult{}
+			applyResult.SetError(ccErr)
+			for _, hostID := range updateOpt.hostIDs {
+				applyResult.HostID = hostID
+				hostResults = append(hostResults, applyResult)
+			}
+			continue
+		}
+		for _, hostID := range updateOpt.hostIDs {
+			hostResults = append(hostResults, metadata.HostApplyResult{HostID: hostID})
+		}
 	}
 
 	return hostResults
