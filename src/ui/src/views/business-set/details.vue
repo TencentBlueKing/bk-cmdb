@@ -11,11 +11,11 @@
           :inst="inst">
           <template #append>
             <div class="group business-scope-group">
-              <div class="group-title">资源定义范围</div>
+              <div class="group-title">{{$t('资源定义范围')}}</div>
               <ul class="property-list">
                 <li class="property-item full-width">
                   <div class="property-name">
-                    <span class="property-name-text">业务范围</span>
+                    <span class="property-name-text">{{$t('业务范围')}}</span>
                   </div>
                   <div class="property-value">
                     <business-scope-settings-details
