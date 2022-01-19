@@ -97,3 +97,4 @@ export const MENU_RESOURCE_CLOUD_RESOURCE = 'menu_resource_cloud_resource'
 
 // 业务集资源实例
 export const MENU_RESOURCE_BUSINESS_SET = 'menu_resource_business_set'
+export const MENU_RESOURCE_BUSINESS_SET_DETAILS = 'menu_resource_set_business_details'

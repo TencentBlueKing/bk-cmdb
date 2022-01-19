@@ -47,6 +47,7 @@
           ]),
           resource: new Set([
             'business',
+            'biz_set',
             'model_instance',
             'instance_association',
             'resource_directory',

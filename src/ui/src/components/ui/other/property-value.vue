@@ -110,7 +110,7 @@
           displayQueue = [this.getDisplayValue(value)]
         }
         const result = await Promise.all(displayQueue)
-        this.displayValue = result.join(',')
+        this.displayValue = result.join(', ')
       },
       async getDisplayValue(value) {
         let displayValue
