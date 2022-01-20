@@ -178,10 +178,11 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
 
 // GetTopoNodeHostAndSerInstCount calculate how many service instances amd how many hosts on toponode
 func (s *Service) GetTopoNodeHostAndSerInstCount(ctx *rest.Contexts) {
-	id, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	urlBizID := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(urlBizID, 10, 64)
 	if err != nil {
-		blog.Errorf("parse biz id: %s from url path failed, error info is: %s , "+
-			"rid: %s", ctx.Request.PathParameter("bk_biz_id"), err, ctx.Kit.Rid)
+		blog.Errorf("parse biz set id: %s from url failed, err: %v , rid: %s", urlBizID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
 	}
 
@@ -198,7 +199,33 @@ func (s *Service) GetTopoNodeHostAndSerInstCount(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := s.Logics.InstAssociationOperation().TopoNodeHostAndSerInstCount(ctx.Kit, id, input)
+	// validate if the topo nodes are all in biz
+	objInstMap := make(map[string][]int64)
+	for _, node := range input.Condition {
+		objInstMap[node.ObjID] = append(objInstMap[node.ObjID], node.InstID)
+	}
+
+	for objID, instIDs := range objInstMap {
+		filter := []map[string]interface{}{{
+			common.GetInstIDField(objID): mapstr.MapStr{common.BKDBIN: instIDs},
+			common.BKAppIDField:          bizID,
+		}}
+		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.GetInstTableName(objID, ctx.Kit.SupplierAccount), filter)
+		if err != nil {
+			blog.Errorf("count topo nodes failed, err: %v, filter: %#v, rid: %s", err, filter, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+
+		if int(counts[0]) != len(instIDs) {
+			blog.Errorf("topo nodes are not all in biz, obj: %s, inst ids: %v, rid: %s", objID, instIDs, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "condition"))
+			return
+		}
+	}
+
+	result, err := s.Logics.InstAssociationOperation().TopoNodeHostAndSerInstCount(ctx.Kit, input)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

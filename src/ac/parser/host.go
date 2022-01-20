@@ -643,7 +643,7 @@ func (ps *parseStream) host() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:       meta.BizSet,
-					Action:     meta.Find,
+					Action:     meta.AccessBizSet,
 					InstanceID: bizSetID,
 				},
 			},
