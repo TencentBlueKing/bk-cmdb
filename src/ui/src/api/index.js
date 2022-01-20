@@ -18,10 +18,6 @@ const randomString = (length, chars) => {
 // axios实例
 const axiosInstance = Axios.create({
   baseURL: window.API_PREFIX,
-  headers: {
-    traceparent: `00-${randomString(32, TRACE_CHARS)}-${randomString(16, TRACE_CHARS)}-01`,
-    Cc_Request_Id: `cc0000${xid.next()}`
-  },
   xsrfCookieName: 'data_csrftoken',
   xsrfHeaderName: 'X-CSRFToken',
   withCredentials: true
@@ -29,7 +25,16 @@ const axiosInstance = Axios.create({
 
 // axios实例拦截器
 axiosInstance.interceptors.request.use(
-  config => config,
+  (config) => {
+    config.headers.common = {
+      ...config.headers.common,
+      // opentelementry TraceID
+      traceparent: `00-${randomString(32, TRACE_CHARS)}-${randomString(16, TRACE_CHARS)}-01`,
+      // 请求ID
+      Cc_Request_Id: `cc0000${xid.next()}`
+    }
+    return config
+  },
   error => Promise.reject(error)
 )
 
