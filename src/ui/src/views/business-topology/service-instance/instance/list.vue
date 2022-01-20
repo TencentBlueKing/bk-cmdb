@@ -13,7 +13,10 @@
     <bk-table-column type="selection" prop="id"></bk-table-column>
     <bk-table-column type="expand" prop="expand" width="15" :before-expand-change="beforeExpandChange">
       <div slot-scope="{ row }" v-bkloading="{ isLoading: row.pending }">
-        <expand-list :service-instance="row" @update-list="handleExpandResolved(row, ...arguments)"></expand-list>
+        <expand-list
+          :service-instance="row"
+          :list-request="processListRequest"
+          @update-list="handleExpandResolved(row, ...arguments)"></expand-list>
       </div>
     </bk-table-column>
     <bk-table-column :label="$t('实例名称')" prop="name" width="340">
@@ -161,6 +164,12 @@
           this.pagination.count = 0
           console.error(error)
         }
+      },
+      processListRequest(reqParams, reqConfig) {
+        return this.$store.dispatch('processInstance/getServiceInstanceProcesses', {
+          params: reqParams,
+          config: reqConfig
+        })
       },
       getRowClassName({ row }) {
         const className = ['instance-table-row']

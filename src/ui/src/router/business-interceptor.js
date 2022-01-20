@@ -32,6 +32,7 @@ export const before = async function (to, from, next) {
     const bizSetId = Number(to.params.bizSetId)
     const authorizedList = await getAuthorizedBusinessSet()
     const found = authorizedList.some(item => item.bk_biz_set_id === bizSetId)
+    store.commit('bizSet/setBizSetList', authorizedList)
     if (!found) {
       toTopRoute.meta.view = 'permission'
       next()
@@ -45,12 +46,13 @@ export const before = async function (to, from, next) {
   setBizSetRecentlyUsed(availableBusinessSetView)
   if (availableBusinessSetView) {
     setBizSetIdToStorage(from.params.bizSetId || to.params.bizSetId)
+    store.commit('bizSet/setBizSetId', from.params.bizSetId || to.params.bizSetId)
+    store.commit('bizSet/setBizId', from.query.bizId || to.query.bizId)
   }
 
   // 从业务集视图跳出的时候重置view为默认防止再次进入时仍停留在permission
   if (toTopRoute?.name !== MENU_BUSINESS_SET && fromTopRoute?.name === MENU_BUSINESS_SET) {
     fromTopRoute.meta.view = 'default'
-    return true
   }
 
   if (!toTopRoute || toTopRoute.name !== MENU_BUSINESS) {

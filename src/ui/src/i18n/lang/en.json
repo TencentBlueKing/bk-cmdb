@@ -514,6 +514,7 @@
     "端口信息": "Port Information",
     "其他属性": "Other Attributes",
     "进程别名": "Process alias",
+    "请输入进程别名": "Please input Process Alias",
     "启动参数匹配规则": "Start parameter matching rule",
     "进程描述": "Process description",
     "协议": "protocol",
