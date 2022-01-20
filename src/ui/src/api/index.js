@@ -1,5 +1,6 @@
 import Axios from 'axios'
 import md5 from 'md5'
+import xid from 'xid-js'
 import CachedPromise from './_cached-promise'
 import RequestQueue from './_request-queue'
 // eslint-disable-next-line
@@ -7,9 +8,20 @@ import { $error, $warn } from '@/magicbox'
 import i18n, { language } from '@/i18n'
 import has from 'has'
 
+const TRACE_CHARS = 'abcdef0123456789'
+const randomString = (length, chars) => {
+  let result = ''
+  for (let i = length; i > 0; --i) result += chars[Math.random() * chars.length | 0]
+  return result
+}
+
 // axios实例
 const axiosInstance = Axios.create({
   baseURL: window.API_PREFIX,
+  headers: {
+    traceparent: `00-${randomString(32, TRACE_CHARS)}-${randomString(16, TRACE_CHARS)}-01`,
+    Cc_Request_Id: `cc0000${xid.next()}`
+  },
   xsrfCookieName: 'data_csrftoken',
   xsrfHeaderName: 'X-CSRFToken',
   withCredentials: true
