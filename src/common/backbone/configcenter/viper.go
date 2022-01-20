@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -411,12 +412,23 @@ func Int(key string) (int, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
 	if migrateParser != nil && migrateParser.isSet(key) {
+		if !migrateParser.isConfigIntType(key) {
+			return 0, err.New("config is not int type")
+		}
 		return migrateParser.getInt(key), nil
 	}
+
 	if commonParser != nil && commonParser.isSet(key) {
+		if !commonParser.isConfigIntType(key) {
+			return 0, err.New("config is not int type")
+		}
 		return commonParser.getInt(key), nil
 	}
+
 	if extraParser != nil && extraParser.isSet(key) {
+		if !extraParser.isConfigIntType(key) {
+			return 0, err.New("config is not int type")
+		}
 		return extraParser.getInt(key), nil
 	}
 	return 0, err.New("config not found")
@@ -427,12 +439,23 @@ func Int64(key string) (int64, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
 	if migrateParser != nil && migrateParser.isSet(key) {
+		if !migrateParser.isConfigIntType(key) {
+			return 0, err.New("config is not int type")
+		}
 		return migrateParser.getInt64(key), nil
 	}
+
 	if commonParser != nil && commonParser.isSet(key) {
+		if !commonParser.isConfigIntType(key) {
+			return 0, err.New("config is not int type")
+		}
 		return commonParser.getInt64(key), nil
 	}
+
 	if extraParser != nil && extraParser.isSet(key) {
+		if !extraParser.isConfigIntType(key) {
+			return 0, err.New("config is not int type")
+		}
 		return extraParser.getInt64(key), nil
 	}
 	return 0, err.New("config not found")
@@ -443,14 +466,26 @@ func Bool(key string) (bool, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
 	if migrateParser != nil && migrateParser.isSet(key) {
+		if !migrateParser.isConfigBoolType(key) {
+			return false, err.New("config is not bool type")
+		}
 		return migrateParser.getBool(key), nil
 	}
+
 	if commonParser != nil && commonParser.isSet(key) {
+		if !commonParser.isConfigBoolType(key) {
+			return false, err.New("config is not bool type")
+		}
 		return commonParser.getBool(key), nil
 	}
+
 	if extraParser != nil && extraParser.isSet(key) {
+		if !extraParser.isConfigBoolType(key) {
+			return false, err.New("config is not bool type")
+		}
 		return extraParser.getBool(key), nil
 	}
+
 	return false, err.New("config not found")
 }
 
@@ -556,4 +591,21 @@ func (vp *viperParser) getInt64(path string) int64 {
 
 func (vp *viperParser) getStringSlice(path string) []string {
 	return vp.parser.GetStringSlice(path)
+}
+
+func (vp *viperParser) isConfigIntType(path string) bool {
+	val := vp.parser.GetString(path)
+	_, err := strconv.Atoi(val)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func (vp *viperParser) isConfigBoolType(path string) bool {
+	val := vp.parser.GetString(path)
+	if val != "true" && val != "false" {
+		return false
+	}
+	return true
 }

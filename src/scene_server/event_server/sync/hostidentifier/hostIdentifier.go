@@ -15,6 +15,7 @@ package hostidentifier
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -53,45 +54,71 @@ type HostIdentifier struct {
 	ctx                 context.Context
 	gseTaskServerClient *client.GseTaskServerClient
 	gseApiServerClient  *client.GseApiServerClient
+	winFileConfig       *FileConf
+	linuxFileConfig     *FileConf
 	watchLimiter        flowctrl.RateLimiter
 	fullLimiter         flowctrl.RateLimiter
 }
 
 // NewHostIdentifier new HostIdentifier struct
 func NewHostIdentifier(ctx context.Context, redisCli redis.Client, engine *backbone.Engine,
-	gseTaskServerClient *client.GseTaskServerClient, gseApiServerClient *client.GseApiServerClient) *HostIdentifier {
-	qps, burst := getRateLimiterConfig()
+	taskClient *client.GseTaskServerClient, apiClient *client.GseApiServerClient) (*HostIdentifier, error) {
+	winFileConfig, err := newHostIdentifierFileConf("windows")
+	if err != nil {
+		return nil, err
+	}
+
+	linuxFileConfig, err := newHostIdentifierFileConf("linux")
+	if err != nil {
+		return nil, err
+	}
+
+	qps, burst, err := getRateLimiterConfig()
+	if err != nil {
+		return nil, err
+	}
+
 	h := &HostIdentifier{
 		redisCli:            redisCli,
 		ctx:                 ctx,
 		engine:              engine,
-		gseTaskServerClient: gseTaskServerClient,
-		gseApiServerClient:  gseApiServerClient,
+		gseTaskServerClient: taskClient,
+		gseApiServerClient:  apiClient,
+		winFileConfig:       winFileConfig,
+		linuxFileConfig:     linuxFileConfig,
 		watchLimiter:        flowctrl.NewRateLimiter(qps, burst),
 		fullLimiter:         flowctrl.NewRateLimiter(qps, burst),
 	}
-	return h
+	return h, nil
 }
 
 // WatchToSyncHostIdentifier watch to sync host identifier
 func (h *HostIdentifier) WatchToSyncHostIdentifier() {
+	errFrequency := util.NewErrFrequency(nil)
 	options := &watch.WatchEventOptions{
 		EventTypes: []watch.EventType{watch.Create, watch.Update},
 		Resource:   watch.HostIdentifier,
 	}
-	// 从redis里拿cursor，否则从当前时间watch
-	cursor, err := h.redisCli.Get(h.ctx, hostIdentifierCursor).Result()
-	if err != nil {
-		blog.Errorf("get host identity cursor from redis error, err: %v", err)
-	} else {
-		options.Cursor = cursor
-	}
-
+	// 用于判断之前的状态是从节点，此值当第一次从slave切换到master时，会去查询redis里的cursor
+	isBeforeStatusSlave := true
 	// start to watch and push host identifier
 	for {
 		if !h.engine.Discovery().IsMaster() {
+			isBeforeStatusSlave = true
 			time.Sleep(time.Minute)
 			continue
+		}
+
+		if isBeforeStatusSlave {
+			options.Cursor = ""
+			// 从redis里拿cursor，否则从当前时间watch
+			cursor, err := h.redisCli.Get(h.ctx, hostIdentifierCursor).Result()
+			if err != nil {
+				blog.Errorf("get host identity cursor from redis error, err: %v", err)
+			} else {
+				options.Cursor = cursor
+			}
+			isBeforeStatusSlave = false
 		}
 
 		header, rid := newHeaderWithRid()
@@ -101,11 +128,19 @@ func (h *HostIdentifier) WatchToSyncHostIdentifier() {
 				// 设置从当前时间开始watch
 				options.Cursor = ""
 				if err := h.redisCli.Del(h.ctx, hostIdentifierCursor).Err(); err != nil {
-					blog.Errorf("delete redis key failed, key: %s, err: %v, rid: %s",
-						hostIdentifierCursor, err, rid)
+					blog.Errorf("delete redis key failed, key: %s, err: %v, rid: %s", hostIdentifierCursor, err, rid)
 				}
 			}
-			blog.Errorf("watch host_identifier event error, err: %v, rid: %s", err, rid)
+
+			if errFrequency.IsErrAlwaysAppear(watchErr) {
+				options.Cursor = ""
+				if err := h.redisCli.Del(h.ctx, hostIdentifierCursor).Err(); err != nil {
+					blog.Errorf("delete redis key failed, key: %s, err: %v, rid: %s", hostIdentifierCursor, err, rid)
+				}
+			}
+
+			blog.Errorf("watch host_identifier event failed, reset watch it from current time, err: %v, rid: %s",
+				watchErr, rid)
 			time.Sleep(time.Second)
 			continue
 		}
@@ -115,6 +150,10 @@ func (h *HostIdentifier) WatchToSyncHostIdentifier() {
 			continue
 		}
 		events := gjson.Get(*watchEvents, "bk_events").Array()
+		if len(events) == 0 {
+			blog.Errorf("can not get events from bk_events, watchEvent: %v, rid: %s", *watchEvents, rid)
+			continue
+		}
 
 		h.watchToSyncHostIdentifier(events)
 
@@ -123,7 +162,7 @@ func (h *HostIdentifier) WatchToSyncHostIdentifier() {
 		options.Cursor = events[len(events)-1].Get("bk_cursor").String()
 		for redisFailCount < retryTimes {
 			if err := h.redisCli.Set(h.ctx, hostIdentifierCursor, options.Cursor, 3*time.Hour).Err(); err != nil {
-				blog.Errorf("set redis key: %s val: %s error, err: %v", hostIdentifierCursor, options.Cursor, err)
+				blog.Errorf("set redis error, key: %s, val: %s, err: %v", hostIdentifierCursor, options.Cursor, err)
 				redisFailCount++
 				sleepForFail(redisFailCount)
 				continue
@@ -134,22 +173,39 @@ func (h *HostIdentifier) WatchToSyncHostIdentifier() {
 }
 
 func (h *HostIdentifier) watchToSyncHostIdentifier(events []gjson.Result) {
-	// 查询主机状态
+	// 查询主机状态处于on还是off
 	status := new(get_agent_state_forsyncdata.AgentStatusRequest)
 	for _, event := range events {
-		eventDetailMap := event.Map()["bk_detail"].Map()
+		eventDetail := event.Map()["bk_detail"]
+		if !eventDetail.Exists() {
+			continue
+		}
+
+		eventDetailMap := eventDetail.Map()
+		if !eventDetailMap[common.BKCloudIDField].Exists() || !eventDetailMap[common.BKHostInnerIPField].Exists() {
+			continue
+		}
+
 		status.Hosts = append(status.Hosts,
 			buildAgentStatusRequestHostInfo(eventDetailMap[common.BKCloudIDField].String(),
 				eventDetailMap[common.BKHostInnerIPField].String())...)
 	}
+
 	gseFailCount := 0
 	agentStatus := new(get_agent_state_forsyncdata.AgentStatusResponse)
 	var err error
 	for {
 		agentStatus, err = h.gseApiServerClient.GetAgentStatus(h.ctx, status)
-		if err != nil || agentStatus.BkErrorCode != common.CCSuccess {
-			blog.Errorf("get host agent status error: err: %v, errCode: %d, errMessage: %s",
-				err, agentStatus.BkErrorCode, agentStatus.BkErrorMsg)
+		if err != nil {
+			blog.Errorf("get host agent status error, err: %v", err)
+			gseFailCount++
+			sleepForFail(gseFailCount)
+			continue
+		}
+
+		if agentStatus.BkErrorCode != common.CCSuccess {
+			blog.Errorf("get host agent status fail, errCode: %d, errMessage: %s",
+				agentStatus.BkErrorCode, agentStatus.BkErrorMsg)
 			gseFailCount++
 			sleepForFail(gseFailCount)
 			continue
@@ -158,11 +214,19 @@ func (h *HostIdentifier) watchToSyncHostIdentifier(events []gjson.Result) {
 	}
 
 	// 将处于on状态的主机拿出来构造推送信息
-	var fileList []*push_file_forsyncdata.API_FileInfoV2
-	var hostInfos []*HostInfo
+	fileList := make([]*push_file_forsyncdata.API_FileInfoV2, 0)
+	hostInfos := make([]*HostInfo, 0)
 	for _, event := range events {
 		eventDetail := event.Map()["bk_detail"]
+		if !eventDetail.Exists() {
+			continue
+		}
+
 		eventDetailMap := eventDetail.Map()
+		if !eventDetailMap[common.BKCloudIDField].Exists() || !eventDetailMap[common.BKHostInnerIPField].Exists() {
+			continue
+		}
+
 		isOn, hostIP := getStatusOnAgentIP(eventDetailMap[common.BKCloudIDField].String(),
 			eventDetailMap[common.BKHostInnerIPField].String(), agentStatus.Result_)
 		if !isOn {
@@ -183,7 +247,9 @@ func (h *HostIdentifier) watchToSyncHostIdentifier(events []gjson.Result) {
 
 	h.watchLimiter.AcceptMany(int64(len(fileList)))
 	// 推送主机身份信息
-	h.pushFile(true, hostInfos, fileList)
+	if _, err := h.pushFile(true, hostInfos, fileList); err != nil {
+		blog.Errorf("push host identifier to gse error, err: %v", err)
+	}
 }
 
 // FullSyncHostIdentifier Fully synchronize host identity
@@ -208,11 +274,10 @@ func (h *HostIdentifier) FullSyncHostIdentifier() {
 			blog.Errorf("get host in batch error, resp: %v, err: %v, rid: %s", hosts, err, rid)
 			continue
 		}
-		if len(hosts.Info) == 0 {
-			break
-		}
 
-		h.BatchSyncHostIdentifier(hosts.Info)
+		if _, err := h.BatchSyncHostIdentifier(hosts.Info); err != nil {
+			blog.Errorf("full sync host identifier error, hosts: %v, err: %v, rid: %s", hosts.Info, err, rid)
+		}
 
 		start += hostIdentifierBatchSyncPerLimit
 		if start >= hosts.Count {
@@ -222,7 +287,11 @@ func (h *HostIdentifier) FullSyncHostIdentifier() {
 }
 
 // BatchSyncHostIdentifier batch sync host identifier
-func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{}) {
+func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{}) (*Task, error) {
+	if len(hosts) == 0 {
+		return nil, fmt.Errorf("the hosts count is 0")
+	}
+
 	var err error
 	agentStatus := new(get_agent_state_forsyncdata.AgentStatusResponse)
 	failCount := 0
@@ -236,22 +305,30 @@ func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{})
 		}
 
 		agentStatus, err = h.gseApiServerClient.GetAgentStatus(h.ctx, agentStatusRequest)
-		if err != nil || agentStatus.BkErrorCode != common.CCSuccess {
-			blog.Errorf("get host agent status error: err: %v, errCode: %d, errMessage: %s",
-				err, agentStatus.BkErrorCode, agentStatus.BkErrorMsg)
+		if err != nil {
+			blog.Errorf("get host agent status error: err: %v", err)
+			failCount++
+			sleepForFail(failCount)
+			continue
+		}
+
+		if agentStatus.BkErrorCode != common.CCSuccess {
+			blog.Errorf("get host agent status fail, errCode: %d, errMessage: %s",
+				agentStatus.BkErrorCode, agentStatus.BkErrorMsg)
 			failCount++
 			sleepForFail(failCount)
 			continue
 		}
 		break
 	}
+
 	if failCount >= retryTimes {
-		return
+		return nil, err
 	}
 
 	// 将处于on状态的主机拿出来构造主机身份推送信息
-	var hostIDs []int64
-	var hostInfos []*HostInfo
+	hostIDs := make([]int64, 0)
+	hostInfos := make([]*HostInfo, 0)
 	// 此map保存hostID和该host处于on的agent的ip的对应关系
 	hostMap := make(map[int64]string)
 	for _, hostInfo := range hosts {
@@ -280,10 +357,10 @@ func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{})
 	}
 
 	if len(hostIDs) == 0 {
-		return
+		return nil, fmt.Errorf("the host agent status is off")
 	}
 
-	h.getHostIdentifierAndPush(hostIDs, hostMap, hostInfos)
+	return h.getHostIdentifierAndPush(hostIDs, hostMap, hostInfos)
 }
 
 func (h *HostIdentifier) buildPushFile(hostIdentifier, hostIP string,
@@ -306,29 +383,33 @@ func (h *HostIdentifier) buildPushFile(hostIdentifier, hostIP string,
 	}
 
 	osType := gjson.Get(hostIdentifier, common.BKOSTypeField).String()
-	conf := getHostIdentifierFileConf(osType)
+	conf := h.getHostIdentifierFileConf(osType)
 	fileInfo.MFile.MName = conf.FileName
 	fileInfo.MFile.MPath = conf.FilePath
 	fileInfo.MFile.MOwner = conf.FileOwner
-	fileInfo.MFile.MRight = conf.FileRight
+	fileInfo.MFile.MRight = conf.FilePrivilege
+
 	return fileInfo
 }
 
-func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[int64]string, hostInfos []*HostInfo) {
+func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[int64]string,
+	hostInfos []*HostInfo) (*Task, error) {
+	// 查询主机身份
 	header, rid := newHeaderWithRid()
 	util.SetReadPreference(h.ctx, header, common.SecondaryPreferredMode)
 	queryHostIdentifier := &metadata.SearchHostIdentifierParam{HostIDs: hostIDs}
 	rsp, err := h.engine.CoreAPI.CoreService().Host().FindIdentifier(h.ctx, header, queryHostIdentifier)
 	if err != nil {
 		blog.Errorf("find host identifier error, hostIDs: %v, err: %v, rid: %s", hostIDs, err, rid)
-		return
+		return nil, err
 	}
 	if rsp.Count == 0 {
-		blog.Errorf("can not find host identifier, hostIDs: %v, err: %v, rid: %s", hostIDs, err, rid)
-		return
+		blog.Errorf("can not find host identifier, hostIDs: %v, rid: %s", hostIDs, rid)
+		return nil, fmt.Errorf("can not find host identifier")
 	}
 
-	var fileList []*push_file_forsyncdata.API_FileInfoV2
+	// 构造想要推送的主机身份文件信息
+	fileList := make([]*push_file_forsyncdata.API_FileInfoV2, 0)
 	for _, identifier := range rsp.Info {
 		hostIdentifier, err := json.Marshal(identifier)
 		if err != nil {
@@ -341,10 +422,10 @@ func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[i
 
 	if len(fileList) == 0 {
 		blog.Errorf("get host identifier success, but can not build file to push, hostID: %v, rid: %s", hostIDs, rid)
-		return
+		return nil, fmt.Errorf("get host identifier success, but can not build file to push")
 	}
 
 	h.fullLimiter.AcceptMany(int64(len(fileList)))
 	// 推送主机身份信息
-	h.pushFile(false, hostInfos, fileList)
+	return h.pushFile(false, hostInfos, fileList)
 }

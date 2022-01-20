@@ -17,6 +17,7 @@ import (
 	"net/http"
 
 	"configcenter/src/ac"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -39,9 +40,10 @@ type Service struct {
 	ctx    context.Context
 	engine *backbone.Engine
 
-	db         dal.RDB
-	cache      redis.Client
-	authorizer ac.AuthorizeInterface
+	db          dal.RDB
+	cache       redis.Client
+	authorizer  ac.AuthorizeInterface
+	AuthManager *extensions.AuthManager
 
 	// SyncData is sync host identifier operator
 	SyncData *hostidentifier.HostIdentifier
@@ -156,9 +158,4 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteEntity(answer)
-}
-
-// GetAuthorizer get authorizer
-func (s *Service) GetAuthorizer() ac.AuthorizeInterface {
-	return s.authorizer
 }

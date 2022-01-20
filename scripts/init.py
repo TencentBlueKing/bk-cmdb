@@ -376,6 +376,60 @@ openTelemetry:
   endpoint:
   # 日志平台openTelemetry跟踪链功能的上报data_id
   bkDataID:
+
+# eventServer相关配置
+eventServer:
+  # 下发主机身份相关配置
+  hostIdentifier:
+    # 是否开始下发主机身份功能, 有两个值，true和false，当处于true时，开启下发主机身份功能，false时，关闭该功能
+    startUp: false
+    # 每隔多少个小时进行一次全量主机身份批量的同步操作，整数值，单位为小时，注：刚启动服务时，会等一个周期后再进行全量同步操作
+    batchSyncIntervalHours: 6
+    # 用于设置推送主机身份请求gse的taskServer能力，起到限流的作用。qps的默认值为200, 代表每秒最多推送的主机数量，burst的默认值为200
+    rateLimiter:
+      qps: 200
+      burst: 200
+    # 下发主机身份文件名
+    fileName: "hostid"
+    # 当下发主机为linux操作系统时，相关配置
+    linux:
+      # 下发主机身份文件路径
+      filePath: "/var/lib/gse/host"
+      # 下发主机身份文件所有者
+      fileOwner: "root"
+      # 下发主机身份文件权限值
+      filePrivilege: 644
+    # 当下发主机为windows操作系统时，相关配置
+    windows:
+      # 下发主机身份文件路径
+      filePath: "c:/gse/data/host"
+      # 下发主机身份文件所有者
+      fileOwner: "root"
+      # 下发主机身份文件权限值
+      filePrivilege: 644
+
+# 直接调用gse服务相关配置
+gse:
+  # 调用gse的apiServer服务时相关配置
+  apiServer:
+    # 此配置为数组类型，可配置连接gse的apiServer的多个host:port格式的值，去建立连接
+    endpoints:
+      # 证书相关信息
+    insecureSkipVerify: true
+    certFile:
+    keyFile:
+    caFile:
+    password:
+  # 调用gse的taskServer服务时相关配置
+  taskServer:
+    # 此配置为数组类型，可配置连接gse的taskServer的多个host:port格式的值，去建立连接
+    endpoints:
+    # 证书相关信息
+    insecureSkipVerify: true
+    certFile:
+    keyFile:
+    caFile:
+    password:
     '''
 
     template = FileTemplate(common_file_template_str)

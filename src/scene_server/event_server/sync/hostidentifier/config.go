@@ -18,116 +18,66 @@ import (
 	"configcenter/src/common/blog"
 )
 
-const (
-	// windowOSType window os type
-	windowOSType = "windows"
-	// linuxOSType linux os type
-	linuxOSType = "linux"
-	// defaultHostIdentifierFileName default host identifier fileName
-	defaultHostIdentifierFileName = "hostid"
-	// defaultHostIdentifierLinuxFilePath default host identifier linux filePath
-	defaultHostIdentifierLinuxFilePath = "/var/lib/gse/host"
-	// defaultHostIdentifierLinuxFileOwner default host identifier linux fileOwner
-	defaultHostIdentifierLinuxFileOwner = "root"
-	// defaultHostIdentifierLinuxFileRight default host identifier linux fileRight
-	defaultHostIdentifierLinuxFileRight = 644
-	// defaultHostIdentifierWindowsFilePath default host identifier windows filePath
-	defaultHostIdentifierWindowsFilePath = "c:/gse/data/host"
-	// defaultHostIdentifierWindowsFileOwner default host identifier windows fileOwner
-	defaultHostIdentifierWindowsFileOwner = "root"
-	// defaultHostIdentifierWindowsFileRight default host identifier windows fileRight
-	defaultHostIdentifierWindowsFileRight = 644
-	// defaultRateLimiterQPS default rate limiter QPS
-	defaultRateLimiterQPS = 200
-	// defaultRateLimiterBurst default rate limiter burst
-	defaultRateLimiterBurst = 200
-)
-
 // FileConf host identifier file config struct
 type FileConf struct {
-	FileName  string
-	FilePath  string
-	FileOwner string
-	FileRight int32
+	FileName      string
+	FilePath      string
+	FileOwner     string
+	FilePrivilege int32
 }
 
-func getHostIdentifierFileConf(osType string) *FileConf {
-	var prefix string
-	switch osType {
-	case common.HostOSTypeEnumWindows:
-		prefix = windowOSType
-	default:
-		prefix = linuxOSType
-	}
-
+// newHostIdentifierFileConf new host identifier file config
+func newHostIdentifierFileConf(prefix string) (*FileConf, error) {
 	fileName, err := cc.String("eventServer.hostIdentifier.fileName")
-	if err == nil {
-		fileName = defaultHostIdentifierFileName
+	if err != nil {
+		blog.Errorf("get host identifier fileName error, err: %v", err)
+		return nil, err
 	}
 
 	filePath, err := cc.String("eventServer.hostIdentifier." + prefix + ".filePath")
 	if err != nil {
 		blog.Errorf("get host identifier filePath error, err: %v", err)
-		filePath = getDefaultHostIdentifierFilePath(osType)
+		return nil, err
 	}
+
 	fileOwner, err := cc.String("eventServer.hostIdentifier." + prefix + ".fileOwner")
 	if err != nil {
 		blog.Errorf("get host identifier fileOwner error, err: %v", err)
-		fileOwner = getDefaultHostIdentifierFileOwner(osType)
+		return nil, err
 	}
-	fileRight, err := cc.Int("eventServer.hostIdentifier." + prefix + ".fileRight")
+
+	filePrivilege, err := cc.Int("eventServer.hostIdentifier." + prefix + ".filePrivilege")
 	if err != nil {
-		blog.Errorf("get host identifier fileRight error, err: %v", err)
-		fileRight = getDefaultHostIdentifierFileRight(osType)
+		blog.Errorf("get host identifier filePrivilege error, err: %v", err)
+		return nil, err
 	}
 
 	return &FileConf{
-		FileName:  fileName,
-		FilePath:  filePath,
-		FileOwner: fileOwner,
-		FileRight: int32(fileRight),
-	}
+		FileName:      fileName,
+		FilePath:      filePath,
+		FileOwner:     fileOwner,
+		FilePrivilege: int32(filePrivilege),
+	}, nil
 }
 
-func getDefaultHostIdentifierFilePath(osType string) string {
+func (h *HostIdentifier) getHostIdentifierFileConf(osType string) *FileConf {
 	switch osType {
 	case common.HostOSTypeEnumWindows:
-		return defaultHostIdentifierWindowsFilePath
+		return h.winFileConfig
 	default:
-		return defaultHostIdentifierLinuxFilePath
+		return h.linuxFileConfig
 	}
 }
 
-func getDefaultHostIdentifierFileOwner(osType string) string {
-	switch osType {
-	case common.HostOSTypeEnumWindows:
-		return defaultHostIdentifierWindowsFileOwner
-	default:
-		return defaultHostIdentifierLinuxFileOwner
-	}
-}
-
-func getDefaultHostIdentifierFileRight(osType string) int {
-	switch osType {
-	case common.HostOSTypeEnumWindows:
-		return defaultHostIdentifierWindowsFileRight
-	default:
-		return defaultHostIdentifierLinuxFileRight
-	}
-}
-
-func getRateLimiterConfig() (int64, int64) {
+func getRateLimiterConfig() (int64, int64, error) {
 	qps, err := cc.Int64("eventServer.hostIdentifier.rateLimiter.qps")
 	if err != nil {
-		blog.Errorf("can't find the value of eventServer.hostIdentifier.rateLimiter.qps settings, "+
-			"set the default value: %s", defaultRateLimiterQPS)
-		qps = defaultRateLimiterQPS
+		return 0, 0, err
 	}
+
 	burst, err := cc.Int64("eventServer.hostIdentifier.rateLimiter.burst")
 	if err != nil {
-		blog.Errorf("can't find the value of eventServer.hostIdentifier.rateLimiter.burst setting,"+
-			"set the default value: %s", defaultRateLimiterBurst)
-		burst = defaultRateLimiterBurst
+		return 0, 0, err
 	}
-	return qps, burst
+	return qps, burst, nil
 }

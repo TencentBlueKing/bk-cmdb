@@ -528,6 +528,9 @@ const (
 	CCErrEventChainNodeNotExist = 1103007
 	CCErrEventDetailNotExist    = 1103008
 
+	CCErrEventGetTaskStatusTimeout     = 1103009
+	CCErrEventPushHostIdentifierFailed = 1103010
+
 	// host 1104XXX
 	CCErrHostModuleRelationAddFailed = 1104000
 

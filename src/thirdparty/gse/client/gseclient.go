@@ -120,9 +120,9 @@ func createGseApiServerClient(endpoint string, conf *util.TLSClientConfig) (*api
 	}
 
 	trans = thrift.NewTFramedTransport(trans)
-	clientPRotocolFactory := thrift.NewTBinaryProtocolFactoryDefault()
-	iprot := clientPRotocolFactory.GetProtocol(trans)
-	oprot := clientPRotocolFactory.GetProtocol(trans)
+	clientProtocolFactory := thrift.NewTBinaryProtocolFactoryDefault()
+	iprot := clientProtocolFactory.GetProtocol(trans)
+	oprot := clientProtocolFactory.GetProtocol(trans)
 	clientInner := thrift.NewTStandardClient(iprot, oprot)
 	client := apiserver.NewCacheAPIClient(clientInner)
 

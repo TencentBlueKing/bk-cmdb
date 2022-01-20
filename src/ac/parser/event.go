@@ -94,14 +94,14 @@ func (ps *parseStream) watch() *parseStream {
 	return ps
 }
 
-const syncHostIdentifier = "/api/v3/event/sync/host_identifier"
+const syncHostIdentifierPattern = "/api/v3/event/sync/host_identifier"
 
 func (ps *parseStream) syncHostIdentifier() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
 
-	if ps.hitPattern(syncHostIdentifier, http.MethodPost) {
+	if ps.hitPattern(syncHostIdentifierPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{

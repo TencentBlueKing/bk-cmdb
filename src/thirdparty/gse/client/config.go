@@ -29,26 +29,28 @@ func NewGseConnConfig(prefix string) (*GseConnConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	tlsConfig := &util.TLSClientConfig{}
-	if val, err := cc.Bool(prefix + ".insecureSkipVerify"); err == nil {
-		tlsConfig.InsecureSkipVerify = val
+	if tlsConfig.InsecureSkipVerify, err = cc.Bool(prefix + ".insecureSkipVerify"); err != nil {
+		return nil, err
 	}
 
-	if val, err := cc.String(prefix + ".certFile"); err == nil {
-		tlsConfig.CertFile = val
+	if tlsConfig.CertFile, err = cc.String(prefix + ".certFile"); err != nil {
+		return nil, err
 	}
 
-	if val, err := cc.String(prefix + ".keyFile"); err == nil {
-		tlsConfig.KeyFile = val
+	if tlsConfig.KeyFile, err = cc.String(prefix + ".keyFile"); err != nil {
+		return nil, err
 	}
 
-	if val, err := cc.String(prefix + ".caFile"); err == nil {
-		tlsConfig.CAFile = val
+	if tlsConfig.CAFile, err = cc.String(prefix + ".caFile"); err != nil {
+		return nil, err
 	}
 
 	if val, err := cc.String(prefix + ".password"); err == nil {
 		tlsConfig.Password = val
 	}
+
 	return &GseConnConfig{
 		Endpoints: endpoints,
 		TLSConf:   tlsConfig,

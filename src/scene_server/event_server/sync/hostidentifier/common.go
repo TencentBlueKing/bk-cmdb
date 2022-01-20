@@ -70,6 +70,7 @@ func buildAgentStatusRequestHostInfo(cloudID, innerIP string) []*get_agent_state
 	return hostInfos
 }
 
+// 只需要拿到主机的其中一个处于on状态的ip即可
 func getStatusOnAgentIP(cloudID, innerIP string, agentStatusResultMap map[string]string) (bool, string) {
 	ips := strings.Split(innerIP, ",")
 	for _, ip := range ips {
@@ -87,21 +88,23 @@ func buildTaskResultMap(originMap map[string]string) map[string]string {
 	taskResultMap := make(map[string]string)
 	for key, val := range originMap {
 		if gjson.Get(val, "content.dest").Exists() && gjson.Get(val, "content.dest_cloudid").Exists() {
-			key = hostKey(gjson.Get(val, "content.dest_cloudid").String(),
+			key = HostKey(gjson.Get(val, "content.dest_cloudid").String(),
 				gjson.Get(val, "content.dest").String())
 			taskResultMap[key] = val
 			continue
 		}
+
 		split := strings.Split(key, ":")
 		if len(split) < 2 {
 			continue
 		}
-		key = hostKey(split[len(split)-2], split[len(split)-1])
+		key = HostKey(split[len(split)-2], split[len(split)-1])
 		taskResultMap[key] = val
 	}
 	return taskResultMap
 }
 
-func hostKey(cloudID, hostIP string) string {
+// HostKey return the host key to represent a unique host
+func HostKey(cloudID, hostIP string) string {
 	return fmt.Sprintf("%s:%s", cloudID, hostIP)
 }
