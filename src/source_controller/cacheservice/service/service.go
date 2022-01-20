@@ -34,7 +34,7 @@ import (
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // CacheServiceInterface the cache service methods used to init

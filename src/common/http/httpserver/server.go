@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/ssl"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // HttpServer is data struct of http server

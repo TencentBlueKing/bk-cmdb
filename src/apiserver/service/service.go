@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/storage/dal/redis"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // Service service methods

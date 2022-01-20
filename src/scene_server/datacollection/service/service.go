@@ -29,7 +29,7 @@ import (
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/esbserver"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // Service impls main logics as service for datacolection app.
