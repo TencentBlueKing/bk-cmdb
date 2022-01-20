@@ -24,7 +24,7 @@
         </process-bind-info-value>
       </template>
     </bk-table-column>
-    <bk-table-column width="150" :resizable="false">
+    <bk-table-column v-if="!readonly" width="150" :resizable="false">
       <div class="options-wrapper" slot-scope="{ row }">
         <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
           <bk-button slot-scope="{ disabled }" v-test-id="'edit'"
@@ -65,7 +65,22 @@
       ProcessBindInfoValue
     },
     props: {
-      serviceInstance: Object
+      serviceInstance: Object,
+      /**
+       * 是否只读
+       */
+      readonly: {
+        type: Boolean,
+        default: false
+      },
+      /**
+       * 列表请求方法
+       */
+      listRequest: {
+        type: Function,
+        default: null,
+        required: true
+      }
     },
     data() {
       return {
@@ -80,7 +95,10 @@
     },
     computed: {
       ...mapGetters(['supplierAccount']),
-      ...mapGetters('objectBiz', ['bizId']),
+      bizId() {
+        const  { objectBiz, bizSet } = this.$store.state
+        return objectBiz.bizId || bizSet.bizId
+      },
       dynamicProps() {
         const dynamicProps = {}
         const paddingHeight = 43
@@ -136,17 +154,17 @@
       },
       async getList() {
         try {
-          this.list = await this.$store.dispatch('processInstance/getServiceInstanceProcesses', {
-            params: {
-              bk_biz_id: this.bizId,
-              service_instance_id: this.serviceInstance.id
-            },
-            config: {
-              requestId: this.request.list,
-              cancelPrevious: true,
-              cancelWhenRouteChange: true
-            }
-          })
+          const reqParams = {
+            bk_biz_id: this.bizId,
+            service_instance_id: this.serviceInstance.id
+          }
+          const reqConfig = {
+            requestId: this.request.list,
+            cancelPrevious: true,
+            cancelWhenRouteChange: true
+          }
+
+          this.list = await this.listRequest(reqParams, reqConfig)
         } catch (error) {
           console.error(error)
         } finally {
@@ -162,7 +180,8 @@
           bizId: this.bizId,
           serviceTemplateId: this.serviceInstance.service_template_id,
           processTemplateId: row.relation.process_template_id,
-          submitHandler: this.editSubmitHandler
+          submitHandler: this.editSubmitHandler,
+          showOptions: !this.readonly,
         })
       },
       handleEdit(row) {

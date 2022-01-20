@@ -119,7 +119,10 @@
     },
     computed: {
       ...mapGetters('businessHost', ['selectedNode']),
-      ...mapGetters('objectBiz', ['bizId']),
+      bizId() {
+        const { objectBiz, bizSet } = this.$store.state
+        return objectBiz.bizId || bizSet.bizId
+      },
       withTemplate() {
         return this.selectedNode && this.selectedNode.data.service_template_id
       },

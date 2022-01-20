@@ -12,6 +12,7 @@
     <bk-table-column type="expand" width="28">
       <div slot-scope="{ row }" v-bkloading="{ isLoading: row.pending }">
         <expand-list
+          :readonly="true"
           :process="row"
           :list-request="instanceListRequest"
           @resolved="handleExpandResolved(row, ...arguments)">
@@ -28,11 +29,13 @@
 </template>
 
 <script>
-  import { mapGetters } from 'vuex'
+  import { mapGetters, mapState } from 'vuex'
   import RouterQuery from '@/router/query'
-  import Bus from '../common/bus'
-  import ExpandList from './expand-list'
+  import Bus from '@/views/business-topology/service-instance/common/bus.js'
+  import ExpandList from '@/views/business-topology/service-instance/process/expand-list.vue'
+  import { ProcessInstanceService } from '@/service/business-set/process-instance.js'
   export default {
+    name: 'ProcessList',
     components: {
       ExpandList
     },
@@ -47,7 +50,7 @@
       }
     },
     computed: {
-      ...mapGetters('objectBiz', ['bizId']),
+      ...mapState('bizSet', ['bizSetId', 'bizId']),
       ...mapGetters('businessHost', ['selectedNode'])
     },
     watch: {
@@ -84,18 +87,19 @@
       },
       async getProcessList() {
         try {
-          const { count, info } = await this.$store.dispatch('serviceInstance/getMoudleProcessList', {
-            params: {
+          const { count, info } = await ProcessInstanceService.findAll(
+            this.bizSetId,
+            {
               bk_module_id: this.selectedNode.data.bk_inst_id,
               bk_biz_id: this.bizId,
               process_name: this.filter,
               page: this.$tools.getPageParams(this.pagination)
             },
-            config: {
+            {
               requestId: this.request.getProcessList,
               cancelPrevious: true
             }
-          })
+          )
           this.list = info.map(item => ({ ...item, pending: true, reserved: [] }))
           this.pagination.count = count
         } catch (error) {
@@ -107,10 +111,8 @@
         }
       },
       instanceListRequest(reqParams, reqConfig) {
-        return this.$store.dispatch('serviceInstance/getProcessListById', {
-          params: reqParams,
-          config: reqConfig,
-        }).then(({ info }) => info)
+        return ProcessInstanceService
+          .findServiceInstanceByProcess(this.bizSetId, reqParams, reqConfig).then(({ info }) => info)
       },
       handlePageChange(page) {
         RouterQuery.set({

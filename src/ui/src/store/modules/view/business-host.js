@@ -39,6 +39,9 @@ const getters = {
     condition: [],
     fields: []
   })),
+  /**
+   * await 这个方法可以等待拓扑首页的通用请求加载完以后再进行其他操作。
+   */
   commonRequest: state => state.commonRequest,
   failHostList: state => state.failHostList
 }

@@ -29,8 +29,7 @@
 </template>
 
 <script>
-  import { mapGetters } from 'vuex'
-  import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+  import { MENU_BUSINESS_HOST_APPLY, MENU_BUSINESS_SET_TOPOLOGY } from '@/dictionary/menu-symbol'
   const serviceCategoryRequestId = Symbol('serviceCategoryRequestId')
   export default {
     name: 'service-template-info',
@@ -47,7 +46,13 @@
       }
     },
     computed: {
-      ...mapGetters('objectBiz', ['bizId']),
+      isBizSet() {
+        return this.$route.name === MENU_BUSINESS_SET_TOPOLOGY
+      },
+      bizId() {
+        const { objectBiz, bizSet } = this.$store.state
+        return this.isBizSet ? bizSet.bizId : objectBiz.bizId
+      },
       selectedNode() {
         return this.$store.state.businessHost.selectedNode
       },
