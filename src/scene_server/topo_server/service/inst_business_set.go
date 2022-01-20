@@ -800,7 +800,7 @@ func (s *Service) CountBizSetTopoHostAndSrvInst(ctx *rest.Contexts) {
 	}
 
 	if len(input.Condition) > 20 {
-		err := ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "condition length")
+		err := ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "condition length exceed 20")
 		ctx.RespAutoError(err)
 		return
 	}
@@ -854,7 +854,7 @@ func (s *Service) CountBizSetTopoHostAndSrvInst(ctx *rest.Contexts) {
 		return
 	}
 
-	if int(counts[0]) != len(bizIDs) {
+	if len(counts) != 1 || (int(counts[0]) != len(bizIDs)) {
 		blog.Errorf("topo nodes are not all in biz set, biz ids: %v, rid: %s", bizIDs, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "condition"))
 		return
