@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_10_202112181521
+package y3_10_202201201516
 
 import (
 	"context"
@@ -21,17 +21,16 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.10.202112181521", upgrade)
+	upgrader.RegistUpgrader("y3.10.202201201516", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.10.202112181521")
+	blog.Infof("start execute y3.10.202201201516")
 
-	if err = addBizSePropertytOption(ctx, db, conf); err != nil {
-		blog.Errorf("upgrade y3.10.202112181521 add biz set property options failed, err:  %v", err)
+	if err = addBizSetPropertyOption(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade y3.10.202201201516 add biz set property options failed, err: %v", err)
 		return err
 	}
-	blog.Infof("upgrade y3.10.202112181521 add biz set success")
-
+	blog.Infof("upgrade y3.10.202201201516 add biz set success")
 	return nil
 }

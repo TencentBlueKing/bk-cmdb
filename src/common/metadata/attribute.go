@@ -671,13 +671,22 @@ func (attribute *Attribute) validObjectCondition(ctx context.Context, val interf
 		return errors.RawErrorInfo{}
 	}
 	// 对于对象的校验只需要判断类型是否是map[string]interface和MapStr即可
-	switch val.(type) {
-	case map[string]interface{}:
 
-	case mapstr.MapStr:
+	switch reflect.TypeOf(val).Kind() {
+	case reflect.Map:
+	case reflect.Ptr:
+		switch reflect.TypeOf(val).Elem().Kind() {
+		case reflect.Map:
+		default:
+			blog.Errorf("object type is error, must be map, type: %v, rid: %s", reflect.TypeOf(val).Elem().Kind(), rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{key},
+			}
+		}
 
 	default:
-		blog.Errorf("params type is error, type: %v, rid: %s", reflect.TypeOf(val), rid)
+		blog.Errorf("object type is error, must be map, type: %v, rid: %s", reflect.TypeOf(val), rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},

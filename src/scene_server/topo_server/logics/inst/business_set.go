@@ -76,7 +76,7 @@ func (b *businessSet) CreateBusinessSet(kit *rest.Kit, data *metadata.CreateBizS
 
 	bizSetInst, err := b.inst.CreateInst(kit, common.BKInnerObjIDBizSet, data.BizSetAttr)
 	if err != nil {
-		blog.Errorf("create business failed, err: %v, data: %#v, rid: %s", err, data, kit.Rid)
+		blog.Errorf("create business failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
 		return nil, err
 	}
 

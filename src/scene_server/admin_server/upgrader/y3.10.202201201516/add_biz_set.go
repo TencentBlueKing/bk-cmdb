@@ -10,10 +10,11 @@
  * limitations under the License.
  */
 
-package y3_10_202112181521
+package y3_10_202201201516
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"configcenter/src/common"
@@ -23,6 +24,7 @@ import (
 	mCommon "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/types"
 )
 
 var dataRows = map[string]*metadata.Attribute{
@@ -35,6 +37,7 @@ var dataRows = map[string]*metadata.Attribute{
 		IsEditable:    true,
 		PropertyGroup: mCommon.BaseInfo,
 		PropertyType:  common.FieldTypeSingleChar,
+		Creator:       common.CCSystemOperatorUserName,
 		Option:        `^[^\\\|\/:\*,<>"\?#\s]+$`,
 	},
 	common.BKBizSetIDField: {
@@ -46,6 +49,7 @@ var dataRows = map[string]*metadata.Attribute{
 		IsOnly:        true,
 		PropertyGroup: mCommon.BaseInfo,
 		PropertyType:  common.FieldTypeInt,
+		Creator:       common.CCSystemOperatorUserName,
 		Option:        metadata.IntOption{},
 	},
 	common.BKBizSetDescField: {
@@ -57,6 +61,7 @@ var dataRows = map[string]*metadata.Attribute{
 		IsEditable:    true,
 		PropertyGroup: mCommon.BaseInfo,
 		PropertyType:  common.FieldTypeSingleChar,
+		Creator:       common.CCSystemOperatorUserName,
 		Option:        "",
 	},
 	common.BKMaintainersField: {
@@ -68,6 +73,7 @@ var dataRows = map[string]*metadata.Attribute{
 		IsEditable:    true,
 		PropertyGroup: mCommon.AppRole,
 		PropertyType:  common.FieldTypeUser,
+		Creator:       common.CCSystemOperatorUserName,
 		Option:        "",
 	},
 	common.BKBizSetScopeField: {
@@ -80,6 +86,7 @@ var dataRows = map[string]*metadata.Attribute{
 		IsAPI:         true,
 		PropertyGroup: mCommon.BaseInfo,
 		PropertyType:  common.FieldObject,
+		Creator:       common.CCSystemOperatorUserName,
 		Option:        "",
 		Placeholder:   "业务集所包含的业务的条件",
 	},
@@ -90,7 +97,7 @@ func addBizSetObjectRow(ctx context.Context, db dal.RDB, ownerID string) error {
 	filter := mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDBizSet}
 	model := new(metadata.Object)
 
-	// 判断是否有 biz_set 的对象表，如果没有需要初始化
+	// 判断是否有 BKInnerObjIDBizSet 的对象表，如果没有需要初始化
 	err := db.Table(common.BKTableNameObjDes).Find(filter).
 		Fields(common.BKFieldID, common.BKObjNameField, common.CreatorField).One(ctx, model)
 	if err != nil && !db.IsNotFoundError(err) {
@@ -101,9 +108,9 @@ func addBizSetObjectRow(ctx context.Context, db dal.RDB, ownerID string) error {
 		if model.ObjectName == "业务集" && model.Creator == common.CCSystemOperatorUserName {
 			return nil
 		}
-		blog.Errorf("the model %s already exists, and not system establishment, you must deal it.",
-			common.BKInnerObjIDBizSet)
-		return fmt.Errorf("model %s must be deal", common.BKInnerObjIDBizSet)
+		blog.Errorf("the model %s already exists, but does not conform to the specification, object name: %s, "+
+			"creator: %s, issue is #5923.", common.BKInnerObjIDBizSet, model.ObjectName, model.Creator)
+		return fmt.Errorf("model %s failed to create", common.BKInnerObjIDBizSet)
 	}
 
 	t := metadata.Now()
@@ -121,7 +128,7 @@ func addBizSetObjectRow(ctx context.Context, db dal.RDB, ownerID string) error {
 		Description: "",
 		Modifier:    "",
 	}
-	uniqueKeys := []string{common.BKObjIDField, common.BKClassificationIDField, common.BKOwnerIDField}
+	uniqueKeys := []string{common.BKObjIDField}
 	_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameObjDes, dataRows, "id", uniqueKeys, []string{"id"})
 	if err != nil {
 		blog.Errorf("add data for %s table error  %s", common.BKTableNameObjDes, err)
@@ -133,16 +140,45 @@ func addBizSetObjectRow(ctx context.Context, db dal.RDB, ownerID string) error {
 func addObjectUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	attrs := make([]metadata.Attribute, 0)
-
 	cond := mapstr.MapStr{
 		common.BKObjIDField: common.BKInnerObjIDBizSet,
-		"bk_property_id":    mapstr.MapStr{common.BKDBIN: []string{common.BKBizSetNameField, common.BKBizSetIDField}},
+		common.BKPropertyIDField: mapstr.MapStr{
+			common.BKDBIN: []string{common.BKBizSetNameField, common.BKBizSetIDField},
+		},
 	}
-
-	err := db.Table(common.BKTableNameObjAttDes).Find(cond).All(ctx, &attrs)
-	if err != nil {
+	if err := db.Table(common.BKTableNameObjAttDes).Find(cond).All(ctx, &attrs); err != nil {
 		return err
 	}
+
+	// 需要判断 cc_ObjectUnique 中是否有关于业务集的值
+	uniqueIdxs := make([]metadata.ObjectUnique, 0)
+	condObjUnique := mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDBizSet}
+
+	if err := db.Table(common.BKTableNameObjUnique).Find(condObjUnique).Fields(common.BKObjIDField,
+		common.BKObjectUniqueKeys).All(ctx, &uniqueIdxs); err != nil {
+		return err
+	}
+
+	// if it exists, you need to determine whether the id is legal.
+	if len(uniqueIdxs) > 0 {
+		if len(uniqueIdxs) != len(attrs) {
+			return errors.New("inconsistent number of unique indexes")
+		}
+
+		keysId := make(map[uint64]struct{})
+		for _, index := range uniqueIdxs {
+			for _, id := range index.Keys {
+				keysId[id.ID] = struct{}{}
+			}
+		}
+		for _, attr := range attrs {
+			if _, ok := keysId[uint64(attr.ID)]; !ok {
+				return errors.New("attr ID does not exist")
+			}
+		}
+		return nil
+	}
+
 	for _, attr := range attrs {
 		keys := make([]metadata.UniqueKey, 0)
 
@@ -170,7 +206,6 @@ func addObjectUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 	}
 
 	return nil
-
 }
 
 func addBizSetCollection(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -229,7 +264,7 @@ func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) err
 	filter := mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDBizSet}
 	attrs := make([]metadata.Attribute, 0)
 	// 判断是否有bizSet的对象属性表，如果没有需要初始化
-	if err := db.Table(common.BKTableNameObjAttDes).Find(filter).Fields(common.BKPropertyIDField, common.BKObjNameField,
+	if err := db.Table(common.BKTableNameObjAttDes).Find(filter).Fields(common.BKPropertyIDField, common.BKPropertyNameField,
 		common.CreatorField).All(ctx, &attrs); err != nil && !db.IsNotFoundError(err) {
 		blog.Errorf("find object attribute describe fail, err: %v", err)
 		return err
@@ -238,21 +273,24 @@ func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) err
 	if len(attrs) > 0 {
 		// 如果存在的话，数量必须一致。并且必须严格校验每个属性bk_property_name和creator必须完全一致，不一致直接报错需要先处理完毕后再升级
 		if len(attrs) != len(dataRows) {
-			blog.Errorf("the biz set model attrs num is incorrect")
-			return fmt.Errorf("the biz set model attrs num is incorrect")
+			blog.Errorf("Illegal number of business set model attributes, num is: %d", len(attrs))
+			return errors.New("illegal number of business set model attributes")
 		}
 
 		for _, attr := range attrs {
 			if data, ok := dataRows[attr.PropertyID]; ok {
-				if attr.PropertyName != data.PropertyName || attr.Creator != attr.Creator {
-					blog.Errorf("the model biz set attr %s already exists, and not system establishment, you must"+
-						" deal it.", attr.PropertyID)
-					return fmt.Errorf("the model biz set attr  already exists")
+				if attr.PropertyName != data.PropertyName || attr.Creator != data.Creator {
+					blog.Errorf("the model biz set attribute %s already exists, but is illegal, name: %v, creator: %v",
+						attr.PropertyID, attr.PropertyName, attr.Creator)
+					return errors.New("model biz set attribute is invalid")
 				}
 			}
 		}
+		return nil
 	}
+
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+
 	nowTime := metadata.Now()
 	for _, row := range dataRows {
 		row.OwnerID = ownerID
@@ -260,9 +298,7 @@ func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) err
 		row.IsReadOnly = false
 		row.CreateTime = &nowTime
 		row.LastTime = &nowTime
-		row.Creator = common.CCSystemOperatorUserName
 		row.Description = ""
-
 		_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, row, "id", uniqueFields, []string{})
 		if err != nil {
 			blog.Errorf("add biz set attr failed, attribute: %v, err: %v", row, err)
@@ -272,7 +308,67 @@ func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) err
 	return nil
 }
 
-func addBizSePropertytOption(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+// addBizSetTableIndexes add indexes for common audit log query params
+func addBizSetTableIndexes(ctx context.Context, db dal.RDB) error {
+	indexes := []types.Index{
+		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "biz_set_id",
+			Keys: map[string]int32{
+				common.BKBizSetIDField: 1,
+			},
+			Background: true,
+			Unique:     true,
+		},
+		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "biz_set_name",
+			Keys: map[string]int32{
+				common.BKBizSetNameField: 1,
+			},
+			Unique:     true,
+			Background: true,
+		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "biz_set_id_biz_set_name_owner_id",
+			Keys: map[string]int32{
+				common.BKBizSetIDField:   1,
+				common.BKBizSetNameField: 1,
+				common.BKOwnerIDField:    1,
+			},
+			Background: true,
+		},
+	}
+
+	existIndexArr, err := db.Table(common.BKTableNameBaseBizSet).Indexes(ctx)
+	if err != nil {
+		blog.Errorf("get exist index for biz set table failed, err: %v", err)
+		return err
+	}
+
+	existIdxMap := make(map[string]bool)
+	for _, index := range existIndexArr {
+		existIdxMap[index.Name] = true
+	}
+
+	// the number of indexes is not as expected.
+	if len(existIdxMap) != len(indexes) {
+		blog.Errorf("the number of indexes is not as expected, existId: %+v, indexes: %v", existIdxMap, indexes)
+		return errors.New("the number of indexes is not as expected")
+	}
+
+	for _, index := range indexes {
+		if _, exist := existIdxMap[index.Name]; exist {
+			continue
+		}
+		err = db.Table(common.BKTableNameBaseBizSet).CreateIndex(ctx, index)
+		if err != nil && !db.IsDuplicatedError(err) {
+			blog.Errorf("create index for biz set table failed, err: %v, index: %+v", err, index)
+			return err
+		}
+	}
+	return nil
+}
+
+func addBizSetPropertyOption(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	if err := addBizSetObjectRow(ctx, db, conf.OwnerID); err != nil {
 		return err
@@ -293,5 +389,10 @@ func addBizSePropertytOption(ctx context.Context, db dal.RDB, conf *upgrader.Con
 	if err := addBizSetCollection(ctx, db, conf); err != nil {
 		return err
 	}
+
+	if err := addBizSetTableIndexes(ctx, db); err != nil {
+		return err
+	}
+
 	return nil
 }

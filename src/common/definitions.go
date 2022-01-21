@@ -529,6 +529,9 @@ const (
 	// BKIsPre the ispre field
 	BKIsPre = "ispre"
 
+	// BKObjectUniqueKeys object unique keys field
+	BKObjectUniqueKeys = "keys"
+
 	// BKIsIncrementField the isincrement field
 	BKIsIncrementField = "is_increment"
 
