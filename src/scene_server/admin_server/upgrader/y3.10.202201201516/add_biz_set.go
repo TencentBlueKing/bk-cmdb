@@ -346,11 +346,15 @@ func addBizSetTableIndexes(ctx context.Context, db dal.RDB) error {
 
 	existIdxMap := make(map[string]bool)
 	for _, index := range existIndexArr {
+		// skip the default "_id" index for the database
+		if index.Name == "_id_" {
+			continue
+		}
 		existIdxMap[index.Name] = true
 	}
 
 	// the number of indexes is not as expected.
-	if len(existIdxMap) != len(indexes) {
+	if len(existIdxMap) != 0 && (len(existIdxMap) != len(indexes)) {
 		blog.Errorf("the number of indexes is not as expected, existId: %+v, indexes: %v", existIdxMap, indexes)
 		return errors.New("the number of indexes is not as expected")
 	}

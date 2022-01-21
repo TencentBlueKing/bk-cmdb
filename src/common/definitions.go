@@ -76,10 +76,9 @@ const (
 )
 
 const (
-	// BKInnerObjIDBizSet the inner object
 
-	// TODO: 待确认 BKInnerObjIDBizSet = "bk_biz_set_obj"
-	BKInnerObjIDBizSet = "biz_set"
+	// BKInnerObjIDBizSet the inner object
+	BKInnerObjIDBizSet = "bk_biz_set_obj"
 
 	// BKInnerObjIDApp the inner object
 	BKInnerObjIDApp = "biz"
