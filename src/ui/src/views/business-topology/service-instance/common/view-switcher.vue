@@ -11,7 +11,7 @@
         content: '#tipsContent',
         allowHtml: true,
         placement: 'bottom-end',
-        disabled: tipsDisabled,
+        disabled: tipsDisabled || !showTips,
         showOnInit: !tipsDisabled,
         hideOnClick: false,
         trigger: 'manual',
@@ -21,7 +21,7 @@
       @click="handleSwitch('process')">
       {{$t('进程')}}
     </bk-button>
-    <span class="tips-content" id="tipsContent">
+    <span v-if="showTips" class="tips-content" id="tipsContent">
       {{$t('切换进程视角提示语')}}
       <i class="bk-icon icon-close" @click="handleCloseTips"></i>
     </span>
@@ -31,6 +31,12 @@
 <script>
   import RouterQuery from '@/router/query'
   export default {
+    props: {
+      showTips: {
+        type: Boolean,
+        default: true
+      }
+    },
     data() {
       return {
         tipsDisabled: !!window.localStorage.getItem('service_instance_view_switcher'),

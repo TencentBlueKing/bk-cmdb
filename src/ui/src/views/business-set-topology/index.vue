@@ -1,5 +1,7 @@
 <template>
-  <div class="layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }" style="overflow: hidden;">
+  <div
+    class="layout"
+    v-bkloading="{ isLoading: $loading(Object.values(request)) }" style="overflow: hidden;">
     <cmdb-resize-layout
       store-id="businessTopoPanel"
       :class="['resize-layout fl', { 'is-collapse': layout.topologyCollapse }]"
@@ -8,11 +10,17 @@
       :min="200"
       :max="480"
       :disabled="layout.topologyCollapse">
-      <!-- <topology-tree ref="topologyTree" :active="activeTab" v-test-id></topology-tree> -->
+      <topology-tree
+        ref="topologyTree"
+        :count-type="activeTab === 'serviceInstance' ? 'service_instance_count' : 'host_count'"
+        :topology-models="topologyModels"
+        v-test-id>
+      </topology-tree>
       <i class="topology-collapse-icon bk-icon icon-angle-left"
         @click="layout.topologyCollapse = !layout.topologyCollapse">
       </i>
     </cmdb-resize-layout>
+
     <div class="tab-layout">
       <bk-tab class="topology-tab" type="unborder-card" v-test-id
         :active.sync="activeTab"
@@ -31,9 +39,10 @@
               </cmdb-auth>
             </i18n>
           </bk-exception>
-          <!-- <host-list v-show="!emptySet" :active="activeTab === 'hostList'" ref="hostList" v-test-id>
-          </host-list> -->
+          <host-list v-show="!emptySet" :active="activeTab === 'hostList'" ref="hostList" v-test-id>
+          </host-list>
         </bk-tab-panel>
+
         <bk-tab-panel name="serviceInstance" :label="$t('服务实例')">
           <div class="non-business-module" v-if="!showServiceInstance">
             <div class="tips">
@@ -41,10 +50,13 @@
               <span>{{$t('非业务模块，无服务实例，请选择业务模块查看')}}</span>
             </div>
           </div>
-          <!-- <service-instance-view v-else-if="activeTab === 'serviceInstance'" v-test-id></service-instance-view> -->
+          <service-instance-view v-else-if="activeTab === 'serviceInstance'" v-test-id></service-instance-view>
         </bk-tab-panel>
+
         <bk-tab-panel name="nodeInfo" :label="$t('节点信息')">
-          <div class="default-node-info" v-if="!showNodeInfo">
+          <div
+            class="default-node-info"
+            v-if="!showNodeInfo">
             <div class="info-item">
               <label class="name">{{$t('ID')}}:</label>
               <span class="value">{{nodeId}}</span>
@@ -54,8 +66,11 @@
               <span class="value">{{nodeName}}</span>
             </div>
           </div>
-          <!-- <service-node-info v-else :active="activeTab === 'nodeInfo'" ref="nodeInfo" v-test-id>
-          </service-node-info> -->
+          <service-node-info
+            v-else-if="activeTab === 'nodeInfo'"
+            :active="activeTab === 'nodeInfo'"
+            v-test-id>
+          </service-node-info>
         </bk-tab-panel>
       </bk-tab>
     </div>
@@ -64,19 +79,23 @@
 </template>
 
 <script>
-  // import TopologyTree from './children/topology-tree.vue'
-  // import HostList from './host/host-list.vue'
-  // import ServiceNodeInfo from './children/service-node-info.vue'
-  import { mapGetters } from 'vuex'
+  import TopologyTree from './children/topology-tree.vue'
+  import HostList from './children/host-list/index.vue'
+  import ServiceNodeInfo from './children/service-node-info.vue'
+  import { mapGetters, mapState } from 'vuex'
   import Bus from '@/utils/bus.js'
   import RouterQuery from '@/router/query'
-  // import ServiceInstanceView from './service-instance/view'
+  import ServiceInstanceView from './children/service-instance/index.vue'
+  import to from 'await-to-js'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+
   export default {
+    name: 'business-set-topology',
     components: {
-      // TopologyTree,
-      // HostList,
-      // ServiceNodeInfo,
-      // ServiceInstanceView
+      TopologyTree,
+      HostList,
+      ServiceNodeInfo,
+      ServiceInstanceView
     },
     data() {
       return {
@@ -87,28 +106,28 @@
         request: {
           mainline: Symbol('mainline'),
           properties: Symbol('properties')
-        }
+        },
+        topologyModels: []
       }
     },
     computed: {
       ...mapGetters(['supplierAccount']),
-      ...mapGetters('objectBiz', ['bizId']),
+      ...mapState('bizSet', ['bizId']),
       ...mapGetters('businessHost', ['selectedNode']),
       showServiceInstance() {
-        return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module' && this.selectedNode.data.default === 0
+        return this.selectedNode?.data?.bk_obj_id === BUILTIN_MODELS.MODULE && this.selectedNode?.data?.default === 0
       },
       showNodeInfo() {
-        return this.selectedNode && this.selectedNode.data.default === 0
+        return this.selectedNode?.data?.default === 0
       },
       nodeId() {
-        return this.selectedNode ? this.selectedNode.data.bk_inst_id : '--'
+        return this.selectedNode?.data?.bk_inst_id || '--'
       },
       nodeName() {
-        return this.selectedNode && this.selectedNode.data.bk_inst_name
+        return this.selectedNode?.data?.bk_inst_name
       },
       emptySet() {
-        return this.selectedNode && this.selectedNode.data.bk_obj_id === 'set'
-          && this.selectedNode.children && !this.selectedNode.children.length
+        return this.selectedNode?.data?.bk_obj_id === BUILTIN_MODELS.SET && !this.selectedNode?.children?.length
       }
     },
     watch: {
@@ -134,15 +153,16 @@
       this.unwatch = RouterQuery.watch('tab', (value = 'hostList') => {
         this.activeTab = value
       })
-      try {
-        const topologyModels = await this.getTopologyModels()
-        const properties = await this.getProperties(topologyModels)
-        this.$store.commit('businessHost/setTopologyModels', topologyModels)
-        this.$store.commit('businessHost/setPropertyMap', Object.freeze(properties))
-        this.$store.commit('businessHost/resolveCommonRequest')
-      } catch (e) {
-        console.error(e)
-      }
+
+      const [, topologyModels] = await to(this.getTopologyModels())
+
+      this.topologyModels = topologyModels
+
+      this.$store.commit('businessHost/setTopologyModels', topologyModels)
+
+      const [, properties] = await to(this.getProperties(topologyModels))
+
+      this.$store.commit('businessHost/setPropertyMap', Object.freeze(properties))
     },
     beforeDestroy() {
       this.$store.commit('businessHost/clear')
@@ -165,7 +185,7 @@
       },
       getProperties(models) {
         return this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
-          injectId: 'host',
+          injectId: BUILTIN_MODELS.HOST,
           params: {
             bk_biz_id: this.bizId,
             bk_obj_id: {

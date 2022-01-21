@@ -117,6 +117,8 @@ func (s *Service) initBizSet(web *restful.WebService) {
 		Path: "/findmany/module/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}/set/{bk_set_id}", Handler: s.SearchModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path: "/find/topopath/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}", Handler: s.SearchTopoPath})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/count/topoinst/host_service_inst/biz_set/{bk_biz_set_id}", Handler: s.CountBizSetTopoHostAndSrvInst})
 
 	utility.AddToRestfulWebService(web)
 }

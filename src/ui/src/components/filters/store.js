@@ -40,6 +40,9 @@ const FilterStore = new Vue({
   },
   computed: {
     bizId() {
+      if (typeof this.config.bk_biz_id === 'function') {
+        return this.config.bk_biz_id()
+      }
       return this.config.bk_biz_id || void 0
     },
     userBehaviorKey() {
@@ -100,11 +103,18 @@ const FilterStore = new Vue({
       })
       return map
     },
+    /**
+     * 判断是否存在已生效的筛选条件
+     * @returns {Boolean}
+     */
     hasCondition() {
-      return Object.keys(this.condition).some((id) => {
-        const { value } = this.condition[id]
-        return !!String(value).trim().length
+      const existedSelectedCondition = this.selected?.some((property) => {
+        const { value } = this.condition[property.id]
+        return value !== null && value !== undefined && !!value.toString().length
       })
+      const existedIP = Utils.splitIP(this.IP.text)?.length > 0
+
+      return existedSelectedCondition || existedIP
     }
   },
   watch: {

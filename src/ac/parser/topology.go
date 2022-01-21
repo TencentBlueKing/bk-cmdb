@@ -333,9 +333,10 @@ const (
 
 var (
 	// search biz resources by biz set regex, authorize by biz set access permission, **only for ui**
-	listSetInBizSetRegexp    = regexp.MustCompile(`^/api/v3/findmany/set/biz_set/[0-9]+/biz/{biz_id}/?$`)
-	listModuleInBizSetRegexp = regexp.MustCompile(`^/api/v3/findmany/module/biz_set/[0-9]+/biz/[0-9]+/set/[0-9]+/?$`)
-	findBizSetTopoPathRegexp = regexp.MustCompile(`^/api/v3/find/topopath/biz_set/[0-9]+/biz/[0-9]+/?$`)
+	listSetInBizSetRegexp     = regexp.MustCompile(`^/api/v3/findmany/set/biz_set/[0-9]+/biz/[0-9]+/?$`)
+	listModuleInBizSetRegexp  = regexp.MustCompile(`^/api/v3/findmany/module/biz_set/[0-9]+/biz/[0-9]+/set/[0-9]+/?$`)
+	findBizSetTopoPathRegexp  = regexp.MustCompile(`^/api/v3/find/topopath/biz_set/[0-9]+/biz/[0-9]+/?$`)
+	countTopoHostAndSrvRegexp = regexp.MustCompile(`^/api/v3/count/topoinst/host_service_inst/biz_set/[0-9]+/?$`)
 )
 
 // NOCC:golint/fnsize(business set操作需要放到一个函数中)
@@ -533,7 +534,7 @@ func (ps *parseStream) businessSet() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:       meta.BizSet,
-					Action:     meta.Find,
+					Action:     meta.AccessBizSet,
 					InstanceID: bizSetID,
 				},
 			},
@@ -558,7 +559,7 @@ func (ps *parseStream) businessSet() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:       meta.BizSet,
-					Action:     meta.Find,
+					Action:     meta.AccessBizSet,
 					InstanceID: bizSetID,
 				},
 			},
@@ -583,7 +584,32 @@ func (ps *parseStream) businessSet() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:       meta.BizSet,
-					Action:     meta.Find,
+					Action:     meta.AccessBizSet,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(countTopoHostAndSrvRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		bizSetID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.AccessBizSet,
 					InstanceID: bizSetID,
 				},
 			},

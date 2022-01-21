@@ -4,6 +4,7 @@
       v-transfer-dom
       :is-show.sync="isShow"
       :title="title"
+      :quick-close="false"
       :width="800"
       :before-close="handleSliderBeforeClose">
       <cmdb-form slot="content" v-if="isShow"
@@ -17,14 +18,17 @@
         @on-cancel="handleSliderBeforeClose">
         <template #append>
           <div class="custom-group">
-            <div class="group-title">资源定义范围</div>
+            <div class="group-title">{{$t('资源定义范围')}}</div>
             <ul class="property-list">
               <li class="property-item full-width">
                 <div class="property-name">
-                  <span class="property-name-text">业务范围</span>
+                  <span class="property-name-text">{{$t('业务范围')}}</span>
                 </div>
-                <div class="property">
-                  <business-scope-settings-form :data="scopeSettingsFormData" @change="handleScopeSettingsChange" />
+                <div class="property-value">
+                  <business-scope-settings-form
+                    class="form-component"
+                    :data="scopeSettingsFormData"
+                    @change="handleScopeSettingsChange" />
                 </div>
               </li>
             </ul>
@@ -118,21 +122,33 @@
         return data
       })
 
-      const saveAuth = computed(() => ({ type: isEdit.value ? OPERATION.U_BUSINESS : OPERATION.C_BUSINESS }))
+      const saveAuth = computed(() => ({ type: isEdit.value ? OPERATION.U_BUSINESS_SET : OPERATION.C_BUSINESS_SET }))
 
       // 待保存的表单数据
-      const saveData = {
+      const defaultSaveData = () => ({
         bk_biz_set_attr: {},
         bk_scope: {
           match_all: true
         }
-      }
+      })
+      let saveData = defaultSaveData()
 
       const handleSave = async (values, changedValues, originalValues, type) => {
         try {
           submitting.value = true
           let result = null
           if (type === 'update') {
+            // 编辑时模型属性中会存在bk_scope字段，这里删除掉使用saveData中的bk_scope
+            Reflect.deleteProperty(values, 'bk_scope')
+
+            result = await businessSetService.update({
+              bk_biz_set_ids: [formData.value.bk_biz_set_id],
+              data: {
+                ...saveData,
+                bk_biz_set_attr: { ...values },
+              }
+            })
+            $success(t('编辑成功'))
           } else {
             saveData.bk_biz_set_attr = { ...values }
             result = await businessSetService.create(saveData)
@@ -193,11 +209,14 @@
 
       const handleSliderBeforeClose = () => {
         emit('update:show', false)
+
+        // 关闭时重置saveData
+        saveData = defaultSaveData()
       }
 
       const handlePreview = async () => {
         previewProps.show = true
-        previewProps.payload = saveData
+        previewProps.payload = { ...saveData }
       }
 
       return {
