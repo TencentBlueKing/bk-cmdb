@@ -44,7 +44,6 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 		return
 	}
 	if len(input.Processes) > common.BKMaxUpdateOrCreatePageSize {
-		blog.Errorf("process num exceed the limit, input: %+v", input)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}
@@ -516,12 +515,10 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 
 	if len(input.ProcessInstanceIDs) == 0 {
 		ctx.RespEntity([]int64{})
-		blog.Infof("no process to delete, return")
 		return
 	}
 
 	if len(input.ProcessInstanceIDs) > common.BKMaxDeletePageSize {
-		blog.Errorf("process num exceed the limit, input: %+v", input)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}

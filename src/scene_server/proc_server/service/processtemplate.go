@@ -37,7 +37,6 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 	}
 
 	if len(input.Processes) > common.BKMaxUpdateOrCreatePageSize {
-		blog.Errorf("process num exceed the limit, input: %+v", input)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}

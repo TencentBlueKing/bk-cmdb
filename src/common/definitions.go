@@ -38,11 +38,12 @@ const (
 	// max limit of a page
 	BKMaxPageSize = 1000
 
-	// max limit of a page
+	// BKMaxLimitSize max limit of a page.
 	BKMaxLimitSize = 500
 
-	// BKMaxUpdatePageSize max limit of a update page
+	// BKMaxUpdateOrCreatePageSize maximum number of updates.
 	BKMaxUpdateOrCreatePageSize = 100
+
 	// BKMaxDeletePageSize max limit of a delete page
 	BKMaxDeletePageSize = 500
 
