@@ -646,6 +646,23 @@ const (
 	BKTxnIDField   = "bk_txn_id"
 )
 
+const (
+	// UserDefinedModules user define idle module key.
+	UserDefinedModules = "user_modules"
+
+	// SystemSetName user define idle module key.
+	SystemSetName = "set_name"
+
+	// SystemIdleModuleKey system idle module key.
+	SystemIdleModuleKey = "idle"
+
+	// SystemFaultModuleKey system define fault module name.
+	SystemFaultModuleKey = "fault"
+
+	// SystemRecycleModuleKey system define recycle module name.
+	SystemRecycleModuleKey = "recycle"
+)
+
 // DefaultResSetName the inner module set
 const DefaultResSetName string = "空闲机池"
 
@@ -732,6 +749,9 @@ const (
 
 	// DefaultResSelfDefinedModuleFlag the default resource self-defined module flag
 	DefaultResSelfDefinedModuleFlag int = 4
+
+	// DefaultUserResModuleFlag the default platform self-defined module flag.
+	DefaultUserResModuleFlag int = 5
 )
 
 const (
@@ -820,6 +840,9 @@ const (
 
 	// HostAddMethodExcelAssociationIndexOffset
 	HostAddMethodExcelAssociationIndexOffset = 2
+
+	// HostAddMethodExcelDefaultIndex 生成表格数据起始索引，第一列为字段说明
+	HostAddMethodExcelDefaultIndex = 1
 
 	/*EXCEL color AARRGGBB :
 	AA means Alpha
@@ -1233,8 +1256,10 @@ const (
 	OperationDescription = "op_desc"
 	OptionOther          = "其他"
 	TimerPattern         = "^[\\d]+\\:[\\d]+$"
-	SyncSetTaskName      = "sync-settemplate2set"
-	SyncSetTaskFlag      = "set_template_sync"
+	// BKTaskTypeField the api task type field
+	BKTaskTypeField    = "task_type"
+	SyncSetTaskFlag    = "set_template_sync"
+	SyncModuleTaskFlag = "service_template_sync"
 
 	BKHostState = "bk_state"
 )

@@ -1,5 +1,4 @@
 import index from '@/views/index/router.config'
-import admin from '@/views/admin/router.config'
 import hostLanding from '@/views/host-details/router.config'
 
 import audit from '@/views/audit/router.config'
@@ -31,6 +30,11 @@ import cloudResource from '@/views/cloud-resource/router.config'
 import statusPermission from '@/views/status/permission'
 import statusError from '@/views/status/error'
 
+/**
+ * 平台管理
+ */
+import globalConfig from '@/views/global-config/router.config'
+
 const flatternViews = (views) => {
   const flatterned = []
   views.forEach((view) => {
@@ -55,8 +59,6 @@ export const injectStatusComponents = (views) => {
 }
 
 export const indexViews = injectStatusComponents(flatternViews([index]))
-
-export const adminViews = injectStatusComponents(flatternViews([admin]))
 
 export const hostLandingViews = injectStatusComponents(flatternViews([hostLanding]))
 
@@ -94,12 +96,17 @@ export const analysisViews = injectStatusComponents(flatternViews([
   operation
 ]))
 
+
+export const platformManagementViews = injectStatusComponents(flatternViews([
+  globalConfig
+]))
+
 export default {
   ...indexViews,
-  ...adminViews,
   ...hostLandingViews,
   ...businessViews,
   ...resourceViews,
   ...modelViews,
-  ...analysisViews
+  ...analysisViews,
+  ...platformManagementViews
 }

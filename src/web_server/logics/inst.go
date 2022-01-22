@@ -31,7 +31,9 @@ import (
 func (lgc *Logics) GetImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header, headerRow int, isInst bool, defLang lang.DefaultCCLanguageIf, modelBizID int64) (map[int]map[string]interface{}, []string, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, modelBizID)
+	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
+
 	if nil != err {
 		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
 	}
@@ -109,16 +111,17 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header,
 	defLang lang.DefaultCCLanguageIf, modelBizID int64, asstObjectUniqueIDMap map[string]int64, objectUniqueID int64) (
 	resultData mapstr.MapStr, errCode int, err error) {
+
 	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	resultData = mapstr.New()
 
 	insts, errMsg, err := lgc.GetImportInsts(ctx, f, objID, header, 0, true, defLang, modelBizID)
-	if nil != err {
-		blog.Errorf("ImportInsts  get %s inst info from excel error, error:%s, rid: %s", objID, err.Error(), rid)
-		return
+	if err != nil {
+		blog.Errorf("get %s inst info from excel error, err: %v, rid: %s", objID, err, rid)
+		return resultData, common.CCErrWebFileContentFail, err
 	}
-	if 0 != len(errMsg) {
+	if len(errMsg) != 0 {
 		resultData.Set("err", errMsg)
 		return resultData, common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, " file empty")
 	}
@@ -127,26 +130,23 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 	result := &metadata.ResponseDataMapStr{}
 	result.BaseResp.Result = true
 
-	if 0 != len(insts) {
+	if len(insts) != 0 {
 		params := mapstr.MapStr{}
 		params["input_type"] = common.InputTypeExcel
 		params["BatchInfo"] = insts
 		params[common.BKAppIDField] = modelBizID
-		result, resultErr = lgc.CoreAPI.ApiServer().AddInst(context.Background(), header, util.GetOwnerID(header), objID, params)
-		if nil != err {
-			blog.Errorf("ImportInsts add inst info  http request  error:%s, rid:%s", resultErr.Error(), util.GetHTTPCCRequestID(header))
-			return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		result, resultErr = lgc.CoreAPI.ApiServer().AddInstByImport(context.Background(), header,
+			util.GetOwnerID(header), objID, params)
+		if resultErr != nil {
+			blog.Errorf("ImportInsts add inst info  http request  err: %v, rid: %s", resultErr, rid)
+			return nil, common.CCErrorUnknownOrUnrecognizedError, resultErr
 		}
 		resultData.Merge(result.Data)
-		if !result.Result {
-			errCode = result.Code
-			err = defErr.New(result.Code, result.ErrMsg)
-		}
-
 	}
 
 	if len(f.Sheets) > 2 && len(asstObjectUniqueIDMap) > 0 {
-		asstInfoMap := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset)
+		asstInfoMap, errMsg := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset,
+			defLang)
 
 		if len(asstInfoMap) > 0 {
 			asstInfoMapInput := &metadata.RequestImportAssociation{
@@ -155,18 +155,19 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 				ObjectUniqueID:        objectUniqueID,
 			}
 			asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, objID, asstInfoMapInput)
-			if nil != asstResultErr {
-				blog.Errorf("ImportHosts logics http request import %s association error:%s, rid:%s", objID, asstResultErr.Error(), util.GetHTTPCCRequestID(header))
+			if asstResultErr != nil {
+				blog.Errorf("import %s association failed, err: %v, rid:%s", objID, asstResultErr, rid)
 				return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 			}
-			resultData.Set("asst_error", asstResult.Data.ErrMsgMap)
+			errMsg = append(errMsg, asstResult.Data.ErrMsgMap...)
 			if errCode == 0 && !asstResult.Result {
 				errCode = asstResult.Code
 				err = defErr.New(asstResult.Code, asstResult.ErrMsg)
 			}
 		}
+
+		resultData.Set("asst_error", errMsg)
 	}
 
 	return
-
 }

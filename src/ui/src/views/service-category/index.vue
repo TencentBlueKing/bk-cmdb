@@ -2,7 +2,7 @@
   <div class="category-wrapper" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
     <cmdb-tips class="mb10" tips-key="categoryTips">{{$t('服务分类功能提示')}}</cmdb-tips>
     <div class="category-filter">
-      <bk-input class="filter-input"
+      <bk-input class="filter-input" v-test-id
         :clearable="true"
         :right-icon="'bk-icon icon-search'"
         :placeholder="$t('请输入关键字')"
@@ -15,10 +15,11 @@
           :style="{
             'background-color': editMainStatus === mainCategory['id'] ? '#f0f1f5' : ''
           }">
-          <div class="main-edit"
+          <div class="main-edit" v-test-id="'mainEdit'"
             :style="{ width: editMainStatus === mainCategory['id'] ? '100%' : 'auto' }"
             v-if="editMainStatus === mainCategory['id']">
             <category-input
+              v-test-id
               ref="editInput"
               :input-ref="'categoryInput'"
               :placeholder="$t('请输入一级分类')"
@@ -52,7 +53,7 @@
             </div>
             <div class="menu-operational" v-if="!mainCategory['is_built_in']">
               <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }">
-                <bk-button slot-scope="{ disabled }"
+                <bk-button slot-scope="{ disabled }" v-test-id="'addChild'"
                   class="menu-btn"
                   :disabled="disabled"
                   :text="true"
@@ -77,8 +78,9 @@
             </div>
           </template>
         </div>
-        <div class="child-category">
+        <div class="child-category" v-test-id="'childCategory'">
           <div v-for="(childCategory, childIndex) in mainCategory['child_category_list']"
+            v-test-id="'childEdit'"
             :key="childIndex"
             :class="['child-item', {
               'child-edit': editChildStatus === childCategory['id'],
@@ -100,9 +102,9 @@
               <div class="child-title">
                 <span :title="childCategory['name']">{{childCategory['name']}}</span>
                 <span class="child-id" :title="childCategory['id']">{{childCategory['id']}}</span>
-                <div class="child-edit" v-if="!childCategory['is_built_in']">
+                <div class="child-edit" v-if="!childCategory['is_built_in']" v-test-id="'childEdit'">
                   <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_CATEGORY, relation: [bizId] }">
-                    <bk-button slot-scope="{ disabled }"
+                    <bk-button slot-scope="{ disabled }" v-test-id="'childEdit'"
                       class="child-edit-btn"
                       theme="primary"
                       :text="true"
@@ -113,7 +115,7 @@
                   </cmdb-auth>
                   <cmdb-auth :auth="{ type: $OPERATION.D_SERVICE_CATEGORY, relation: [bizId] }"
                     v-if="!childCategory['usage_amount']">
-                    <bk-button slot-scope="{ disabled }"
+                    <bk-button slot-scope="{ disabled }" v-test-id="'childDel'"
                       class="child-edit-btn"
                       theme="primary"
                       :text="true"
@@ -134,7 +136,7 @@
             <div class="child-title">
               <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }"
                 @update-auth="isAuthcompleted = true">
-                <bk-button slot-scope="{ disabled }"
+                <bk-button slot-scope="{ disabled }" v-test-id="'addChild'"
                   class="add-btn"
                   :disabled="disabled"
                   :text="true"
@@ -145,8 +147,8 @@
               </cmdb-auth>
             </div>
           </div>
-          <div class="child-item child-edit" v-if="addChildStatus === mainCategory['id']">
-            <category-input
+          <div class="child-item child-edit" v-test-id="'childEdit'" v-if="addChildStatus === mainCategory['id']">
+            <category-input v-test-id
               class="child-input"
               ref="editInput"
               :input-ref="'categoryInput'"
@@ -165,8 +167,9 @@
         :style="{ 'border-style': showAddMianCategory ? 'solid' : 'dashed' }"
         v-show="!keyword">
         <div class="category-title" :style="{ 'border-bottom-style': showAddMianCategory ? 'solid' : 'dashed' }">
-          <div class="main-edit" style="width: 100%;" v-if="showAddMianCategory">
+          <div class="main-edit" style="width: 100%;" v-if="showAddMianCategory" v-test-id="'mainEdit'">
             <category-input
+              v-test-id
               ref="addCategoryInput"
               :input-ref="'categoryInput'"
               :placeholder="$t('请输入一级分类')"
@@ -181,7 +184,7 @@
         <div class="child-category"></div>
         <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }"
           v-show="!showAddMianCategory">
-          <bk-button slot-scope="{ disabled }"
+          <bk-button slot-scope="{ disabled }" v-test-id="'addMain'"
             class="add-btn"
             :disabled="disabled"
             @click="handleAddBox">

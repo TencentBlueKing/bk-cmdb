@@ -4,7 +4,7 @@
       <div class="options clearfix">
         <div class="fl">
           <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }">
-            <bk-button slot-scope="{ disabled }"
+            <bk-button slot-scope="{ disabled }" v-test-id.businessSetTemplate="'batchSync'"
               theme="primary"
               :disabled="disabled || !checkedList.length"
               @click="handleBatchSync">
@@ -25,7 +25,7 @@
           </bk-select>
           <bk-input class="filter-item" right-icon="bk-icon icon-search"
             clearable
-            v-model="filterName"
+            v-model.trim="filterName"
             :placeholder="$t('请输入集群名称搜索')"
             @enter="handleSearch"
             @clear="handleSearch">
@@ -37,7 +37,7 @@
           </icon-button>
         </div>
       </div>
-      <bk-table class="instance-table"
+      <bk-table class="instance-table" v-test-id.businessSetTemplate="'instanceTable'"
         ref="instanceTable"
         v-bkloading="{ isLoading: $loading('getSetInstanceData') }"
         :data="displayList"
@@ -53,32 +53,7 @@
           <span class="topo-path" slot-scope="{ row }" @click="handlePathClick(row)">{{getTopoPath(row)}}</span>
         </bk-table-column>
         <bk-table-column :label="$t('主机数量')" prop="host_count"></bk-table-column>
-        <bk-table-column :label="$t('状态')" prop="status">
-          <template slot-scope="{ row }">
-            <span v-if="row.status === 'syncing'" class="sync-status">
-              <img class="svg-icon" src="../../../assets/images/icon/loading.svg" alt="">
-              {{$t('同步中')}}
-            </span>
-            <span v-else-if="row.status === 'waiting'" class="sync-status">
-              <i class="status-circle waiting"></i>
-              {{$t('待同步')}}
-            </span>
-            <span v-else-if="row.status === 'finished'" class="sync-status">
-              <i class="status-circle success"></i>
-              {{$t('已同步')}}
-            </span>
-            <span v-else-if="row.status === 'failure'"
-              class="sync-status"
-              v-bk-tooltips="{
-                content: row.fail_tips,
-                placement: 'right'
-              }">
-              <i class="status-circle fail"></i>
-              {{$t('同步失败')}}
-            </span>
-            <span v-else>--</span>
-          </template>
-        </bk-table-column>
+        <InstanceStatusColumn></InstanceStatusColumn>
         <bk-table-column :label="$t('上次同步时间')" prop="last_time" sortable="custom" show-overflow-tooltip>
           <template slot-scope="{ row }">
             <span>{{row.last_time ? $tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm:ss') : '--'}}</span>
@@ -101,7 +76,7 @@
                 </bk-button>
                 <bk-button v-else
                   text
-                  :disabled="disabled || ['syncing', 'finished'].includes(row.status)"
+                  :disabled="disabled || isSyncing(row.status) || row.status === 'finished'"
                   @click="handleSync(row)">
                   {{$t('去同步')}}
                 </bk-button>
@@ -126,7 +101,20 @@
 <script>
   import { mapGetters } from 'vuex'
   import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+  import InstanceStatusColumn from '@/views/service-template/children/instance-status-column.vue'
+  import { Polling } from '@/utils/polling'
+  /**
+   * 实例状态说明：
+   * 实例状态共有 need_sync、new、waiting、executing、finished、failure 6 种状态，其中：
+   * need_sync 为「待同步」
+   * new、waiting、executing 为「同步中」，要特别注意的是这个状态。后端接口返回的状态和 UI 中呈现的状态是不一致的，所以需要对状态进行处理，在筛选和状态变化时做特殊处理。
+   * finished 为「已同步」
+   * failure 为「同步失败」
+   */
   export default {
+    components: {
+      InstanceStatusColumn
+    },
     props: {
       templateId: {
         type: [Number, String],
@@ -134,6 +122,16 @@
       }
     },
     data() {
+      this.polling = new Polling(() => {
+        const needSync = this.list.some(i => this.isSyncing(i.status))
+        if (needSync) {
+          return Promise.all([
+            this.updateStatusData(),
+            this.getInstancesInfo()
+          ])
+        }
+      }, 5000)
+
       return {
         timer: null,
         list: [],
@@ -163,10 +161,10 @@
           id: 'all',
           name: this.$t('全部')
         }, {
-          id: 'waiting',
+          id: 'need_sync',
           name: this.$t('待同步')
         }, {
-          id: 'syncing',
+          id: 'new,waiting,executing',
           name: this.$t('同步中')
         }, {
           id: 'failure',
@@ -190,6 +188,7 @@
           if (setInfo) {
             otherParams.topo_path = setInfo.topo_path || []
             otherParams.host_count = setInfo.host_count || 0
+            otherParams.bk_set_name = setInfo.bk_set_name || 0
           }
           const templateSyncInfo = this.instancesInfo[item.bk_set_id]
           const syncFail = 500
@@ -221,42 +220,45 @@
           }
         }
         if (this.statusFilter !== 'all') {
-          params.status = this.statusFilter
+          params.status = this.statusFilter.split(',')
         }
         this.filterName && (params.search = this.filterName)
         return params
       }
     },
     watch: {
-      list() {
-        if (!this.list.length) {
-          clearInterval(this.timer)
-          this.timer = null
-        } else if (!this.timer) {
-          this.polling()
+      list: {
+        immediate: true,
+        handler() {
+          if (!this.list.length) {
+            this.polling.stop()
+          } else {
+            this.polling.start()
+          }
         }
       }
     },
-    async created() {
-      await this.getData()
-      if (this.list.length) {
-        this.getSetInstancesWithTopo()
-        this.getInstancesInfo()
-        this.polling()
-      }
+    created() {
+      this.handleFilter()
     },
     beforeDestroy() {
-      clearInterval(this.timer)
+      this.polling.stop()
     },
     methods: {
       getTopoPath(row) {
         return [...row.topo_path].reverse().map(path => path.bk_inst_name)
           .join(' / ') || '--'
       },
+      formatStatusData(data) {
+        return data.map(i => ({
+          ...i,
+          bk_set_id: i.bk_inst_id
+        }))
+      },
       async getData() {
         const data = await this.getSetInstancesWithStatus('getSetInstanceData')
         this.pagination.count = data.count
-        this.list = data.info || []
+        this.list = this.formatStatusData(data.info) || []
       },
       async updateStatusData() {
         const data = await this.getSetInstancesWithStatus('updateStatusData', {
@@ -270,7 +272,7 @@
           globalError: false
         })
         const backupList = this.$tools.clone(this.checkedList)
-        this.list = data.info || []
+        this.list = this.formatStatusData(data.info) || []
         const table = this.$refs.instanceTable
         if (table) {
           this.$nextTick(() => {
@@ -329,22 +331,6 @@
         })
         this.instancesInfo = instancesInfo
       },
-      polling() {
-        try {
-          if (this.timer) {
-            clearInterval(this.timer)
-            this.timer = null
-          }
-          this.timer = setInterval(() => {
-            this.updateStatusData()
-            this.getInstancesInfo()
-          }, 10000)
-        } catch (e) {
-          console.error(e)
-          clearInterval(this.timer)
-          this.timer = null
-        }
-      },
       handleLinkServiceTopo() {
         this.$routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
       },
@@ -379,7 +365,10 @@
         this.handleFilter(1, true)
       },
       handleSelectable(row) {
-        return !['syncing', 'finished'].includes(row.status)
+        return !this.isSyncing(row.status) && row.status !== 'finished'
+      },
+      isSyncing(status) {
+        return ['new', 'waiting', 'executing'].includes(status)
       },
       handleBatchSync() {
         this.$store.commit('setFeatures/setSyncIdMap', {
@@ -419,7 +408,7 @@
               requestId: 'syncTemplateToInstances'
             }
           })
-          row.status = 'syncing'
+          row.status = 'executing'
           this.$success(this.$t('提交同步成功'))
         } catch (e) {
           console.error(e)
@@ -476,30 +465,6 @@
                 cursor: pointer;
                 &:hover {
                     color: $primaryColor;
-                }
-            }
-            .sync-status {
-                color: #63656E;
-                .status-circle {
-                    display: inline-block;
-                    width: 8px;
-                    height: 8px;
-                    margin-right: 4px;
-                    border-radius: 50%;
-                    &.waiting {
-                        background-color: #3A84FF;
-                    }
-                    &.success {
-                        background-color: #2DCB56;
-                    }
-                    &.fail {
-                        background-color: #EA3536;
-                    }
-                }
-                .svg-icon {
-                    @include inlineBlock;
-                    margin-top: -4px;
-                    width: 16px;
                 }
             }
         }

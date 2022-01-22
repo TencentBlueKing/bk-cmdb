@@ -41,16 +41,18 @@ func (m *modelManager) isValid(kit *rest.Kit, objID string) error {
 	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: objID})
 
 	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(checkCond.ToMapStr()).Count(kit.Ctx)
-	if nil != err {
-		blog.Errorf("count operation on the table (%s) by the condition (%#v) failed , err: %v", common.BKTableNameObjDes, checkCond.ToMapStr(), err, kit.Rid)
-		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
+	if err != nil {
+		blog.Errorf("count operation on the table (%s) by the condition (%#v) failed, err: %v, rid: %s",
+			common.BKTableNameObjDes, checkCond.ToMapStr(), err, kit.Rid)
+		return err
 	}
 
 	if cnt == 0 {
+		blog.Errorf("object [%s] has not been created, rid: %s", objID, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, objID)
 	}
 
-	return err
+	return nil
 }
 
 func (m *modelManager) deleteModelAndAttributes(kit *rest.Kit, targetObjIDS []string) (uint64, error) {

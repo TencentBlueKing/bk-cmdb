@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // SearchConfigAdmin search the config
@@ -100,5 +100,179 @@ func (s *Service) UpdateConfigAdmin(req *restful.Request, resp *restful.Response
 		_ = resp.WriteError(http.StatusOK, result)
 		return
 	}
-	_ = resp.WriteEntity(metadata.NewSuccessResp("udpate config admin success"))
+	_ = resp.WriteEntity(metadata.NewSuccessResp("update config admin success"))
+}
+
+// UpdatePlatformSettingConfig update platform_setting.
+func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restful.Response) {
+	rHeader := req.Request.Header
+	rid := util.GetHTTPCCRequestID(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
+
+	config := new(metadata.PlatformSettingConfig)
+	if err := json.NewDecoder(req.Request.Body).Decode(config); err != nil {
+		blog.Errorf("decode param failed, err: %v, body: %v, rid: %s", err, req.Request.Body, rid)
+		rErr := resp.WriteError(http.StatusOK, &metadata.RespError{
+			Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed),
+		})
+		if rErr != nil {
+			blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, rid)
+			return
+		}
+		return
+	}
+
+	if err := config.Validate(); err != nil {
+		blog.Errorf("validate param failed, err: %v, input: %v, rid: %s", err, config, rid)
+		rErr := resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+		if rErr != nil {
+			blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, rid)
+			return
+		}
+		return
+	}
+
+	err := s.updatePlatformSetting(config)
+	if err != nil {
+		blog.Errorf("update config admin failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrCommDBUpdateFailed),
+		}
+		rErr := resp.WriteError(http.StatusOK, result)
+		if rErr != nil {
+			blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, rid)
+			return
+		}
+		return
+	}
+
+	err = resp.WriteEntity(metadata.NewSuccessResp("udpate config admin success"))
+	if err != nil {
+		blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
+		return
+	}
+}
+
+// updatePlatformSetting update current configuration to database.
+func (s *Service) updatePlatformSetting(config *metadata.PlatformSettingConfig) error {
+
+	bytes, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	updateCond := map[string]interface{}{
+		"_id": common.ConfigAdminID,
+	}
+
+	data := map[string]interface{}{
+		common.ConfigAdminValueField: string(bytes),
+		common.LastTimeField:         time.Now(),
+	}
+
+	err = s.db.Table(common.BKTableNameSystem).Update(s.ctx, updateCond, data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// searchCurrentConfig get the current configuration in the database.
+func (s *Service) searchCurrentConfig(rid string) (*metadata.PlatformSettingConfig, error) {
+
+	cond := map[string]interface{}{"_id": common.ConfigAdminID}
+	ret := make(map[string]interface{})
+
+	err := s.db.Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(s.ctx, &ret)
+	if err != nil {
+		blog.Errorf("search platform db config failed, err: %v, rid: %s", err, rid)
+		return nil, err
+	}
+	if ret[common.ConfigAdminValueField] == nil {
+		blog.Errorf("get config failed, rid: %s", rid)
+		return nil, err
+	}
+
+	if _, ok := ret[common.ConfigAdminValueField].(string); !ok {
+		blog.Errorf("db config type is error,rid: %s", rid)
+		return nil, err
+	}
+
+	conf := new(metadata.PlatformSettingConfig)
+	if err := json.Unmarshal([]byte(ret[common.ConfigAdminValueField].(string)), conf); err != nil {
+		blog.Errorf("search platform config fail, unmarshal err: %v, config: %+v,rid: %s", err, ret, rid)
+		return nil, err
+	}
+	return conf, nil
+}
+
+// searchInitConfig get init config.
+func (s *Service) searchInitConfig(rid string) (*metadata.PlatformSettingConfig, error) {
+	conf := new(metadata.PlatformSettingConfig)
+
+	if err := json.Unmarshal([]byte(metadata.InitAdminConfig), conf); err != nil {
+		blog.Errorf("search initial config unmarshal fail, err: %v, rid: %s", err, rid)
+		return nil, err
+	}
+
+	if err := conf.EncodeWithBase64(); err != nil {
+		blog.Errorf("initial config  encode bases64 fail,err: %v, rid: %s", err, rid)
+		return nil, err
+	}
+	return conf, nil
+}
+
+// SearchPlatformSettingConfig search the platform config.typeId:current db's config ,typeId:initial initial config.
+func (s *Service) SearchPlatformSettingConfig(req *restful.Request, resp *restful.Response) {
+	rHeader := req.Request.Header
+	rid := util.GetHTTPCCRequestID(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
+	typeId := req.PathParameter("type")
+
+	conf := new(metadata.PlatformSettingConfig)
+	var err error
+	switch typeId {
+
+	case "current":
+		conf, err = s.searchCurrentConfig(rid)
+		if err != nil {
+			rErr := resp.WriteError(http.StatusOK, &metadata.RespError{
+				Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+			if rErr != nil {
+				blog.Errorf("response url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, rid)
+				return
+			}
+			return
+		}
+	case "initial":
+		conf, err = s.searchInitConfig(rid)
+		if err != nil {
+			rErr := resp.WriteError(http.StatusOK, &metadata.RespError{
+				Msg: defErr.Error(common.CCErrCommParamsInvalid),
+			})
+			if rErr != nil {
+				blog.Errorf("response url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, rid)
+				return
+			}
+			return
+		}
+
+	default:
+		rErr := resp.WriteError(http.StatusOK, &metadata.RespError{
+			Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "type"),
+		})
+
+		if rErr != nil {
+			blog.Errorf("response url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, rid)
+			return
+		}
+		return
+	}
+
+	err = resp.WriteEntity(metadata.NewSuccessResp(conf))
+	if err != nil {
+		blog.Errorf("response url: %s failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
+		return
+	}
 }

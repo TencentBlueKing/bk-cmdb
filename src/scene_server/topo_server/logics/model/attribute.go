@@ -518,12 +518,8 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 				attr.PropertyGroup = groupID
 			} else {
 				grp := metadata.CreateModelAttributeGroup{
-					Data: metadata.Group{
-						GroupName: attr.PropertyGroupName,
-						GroupID:   NewGroupID(false),
-						ObjectID:  objID,
-						OwnerID:   kit.SupplierAccount,
-						BizID:     attr.BizID,
+					Data: metadata.Group{GroupName: attr.PropertyGroupName, GroupID: NewGroupID(false), ObjectID: objID,
+						OwnerID: kit.SupplierAccount, BizID: attr.BizID,
 					}}
 
 				_, err := a.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header, objID, grp)
@@ -564,7 +560,11 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 			}
 		} else {
 			// update attribute
-			updateAttrOpt := metadata.UpdateOption{Condition: attrCond, Data: attr.ToMapStr()}
+			updateData := attr.ToMapStr()
+			updateData.Remove(metadata.AttributeFieldPropertyID)
+			updateData.Remove(metadata.AttributeFieldObjectID)
+			updateData.Remove(metadata.AttributeFieldID)
+			updateAttrOpt := metadata.UpdateOption{Condition: attrCond, Data: updateData}
 			_, err := a.clientSet.CoreService().Model().UpdateModelAttrs(kit.Ctx, kit.Header, objID, &updateAttrOpt)
 			if err != nil {
 				blog.Errorf("failed to update module attr, err: %s, rid: %s", err, kit.Rid)

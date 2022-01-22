@@ -322,6 +322,9 @@ type ProcessOperation interface {
 type LabelOperation interface {
 	AddLabel(kit *rest.Kit, tableName string, option selector.LabelAddOption) errors.CCErrorCoder
 	RemoveLabel(kit *rest.Kit, tableName string, option selector.LabelRemoveOption) errors.CCErrorCoder
+
+	// update instances labels
+	UpdateLabel(kit *rest.Kit, tableName string, option *selector.LabelUpdateOption) errors.CCErrorCoder
 }
 
 type SetTemplateOperation interface {
@@ -336,13 +339,6 @@ type SetTemplateOperation interface {
 	ListSetServiceTemplateRelations(kit *rest.Kit, bizID int64, setTemplateID int64) (
 		[]metadata.SetServiceTemplateRelation, errors.CCErrorCoder)
 	ListSetTplRelatedSvcTpl(kit *rest.Kit, bizID, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder)
-	UpdateSetTemplateSyncStatus(kit *rest.Kit, setID int64, option metadata.SetTemplateSyncStatus) errors.CCErrorCoder
-	ListSetTemplateSyncStatus(kit *rest.Kit, option metadata.ListSetTemplateSyncStatusOption) (
-		metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
-	ListSetTemplateSyncHistory(kit *rest.Kit, option metadata.ListSetTemplateSyncStatusOption) (
-		metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
-	DeleteSetTemplateSyncStatus(kit *rest.Kit, option metadata.DeleteSetTemplateSyncStatusOption) errors.CCErrorCoder
-	ModifySetTemplateSyncStatus(kit *rest.Kit, setID int64, sysncStatus metadata.SyncStatus) errors.CCErrorCoder
 }
 
 type HostApplyRuleOperation interface {
@@ -387,11 +383,13 @@ type CloudOperation interface {
 type SystemOperation interface {
 	GetSystemUserConfig(kit *rest.Kit) (map[string]interface{}, errors.CCErrorCoder)
 	SearchConfigAdmin(kit *rest.Kit) (*metadata.ConfigAdmin, errors.CCErrorCoder)
+	SearchPlatformSettingConfig(kit *rest.Kit) (*metadata.PlatformSettingConfig, errors.CCErrorCoder)
+	UpdatePlatformSettingConfig(kit *rest.Kit, input *metadata.PlatformSettingConfig) errors.CCErrorCoder
 }
 
 type AuthOperation interface {
 	SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64, []map[string]interface{},
-	errors.CCErrorCoder)
+		errors.CCErrorCoder)
 }
 
 type CommonOperation interface {

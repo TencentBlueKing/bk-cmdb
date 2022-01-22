@@ -17,7 +17,7 @@ import (
 
 	"configcenter/src/common/http/rest"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *coreService) initModelClassification(web *restful.WebService) {
@@ -285,6 +285,7 @@ func (s *coreService) label(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/labels", Handler: s.AddLabels})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/labels", Handler: s.RemoveLabels})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/updatemany/labels", Handler: s.UpdateLabels})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -310,6 +311,13 @@ func (s *coreService) ccSystem(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/system/user_config", Handler: s.GetSystemUserConfig})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/system/config_admin", Handler: s.SearchConfigAdmin})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet,
+		Path:    "/find/system_config/platform_setting",
+		Handler: s.SearchPlatformSettingConfig})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path:    "/update/system_config/platform_setting",
+		Handler: s.UpdatePlatformSetting})
 
 	utility.AddToRestfulWebService(web)
 }

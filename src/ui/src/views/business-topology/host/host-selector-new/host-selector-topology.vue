@@ -67,7 +67,10 @@
       </div>
     </cmdb-resize-layout>
     <div class="table-wrapper" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
-      <host-table :list="hostList" :selected="selected" @select-change="handleHostSelectChange" />
+      <host-table :list="hostList" :selected="selected"
+        :pagination.sync="hostTablePagination"
+        @pagination-change="handleHostPaginationChange"
+        @select-change="handleHostSelectChange" />
     </div>
   </div>
 </template>
@@ -77,6 +80,7 @@
   import HostTable from './host-table.vue'
   import debounce from 'lodash.debounce'
   import CmdbLoading from '@/components/loading/loading'
+  import { sortTopoTree } from '@/utils/tools'
   export default {
     components: {
       HostTable,
@@ -106,7 +110,13 @@
           1: 'icon-cc-host-free-pool',
           2: 'icon-cc-host-breakdown',
           default: 'icon-cc-host-free-pool'
-        }
+        },
+        hostTablePagination: {
+          start: 0,
+          limit: 500,
+          count: 0,
+        },
+        currentNode: {}
       }
     },
     computed: {
@@ -132,6 +142,8 @@
             this.getInstanceTopology(),
             this.getInternalTopology()
           ])
+          sortTopoTree(topology, 'bk_inst_name', 'child')
+          sortTopoTree(internal.module, 'bk_module_name')
           const root = topology[0] || {}
           const children = root.child || []
           const idlePool = {
@@ -139,7 +151,7 @@
             bk_inst_id: internal.bk_set_id,
             bk_inst_name: internal.bk_set_name,
             default: internal.default,
-            child: this.$tools.sort((internal.module || []), 'default').map(module => ({
+            child: internal.module.map(module => ({
               bk_obj_id: 'module',
               bk_inst_id: module.bk_module_id,
               bk_inst_name: module.bk_module_name,
@@ -181,7 +193,9 @@
           bk_biz_id: this.bizId,
           ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
           page: {
-            sort: 'bk_host_innerip'
+            sort: 'bk_host_innerip',
+            start: this.hostTablePagination.start,
+            limit: this.hostTablePagination.limit
           },
           condition: this.getDefaultSearchCondition()
         }
@@ -204,6 +218,10 @@
             requestId: this.request.host
           }
         })
+          .then((res) => {
+            this.hostTablePagination.count = res?.count || 0
+            return res
+          })
       },
       searchTopology() {
         const keyword = this.filter.keyword.toLowerCase()
@@ -253,7 +271,12 @@
         return this.filter.popover
       },
       async handleModuleSelectChange(node) {
+        this.currentNode = node
         const result = await this.searchHost(node)
+        this.hostList = result.info
+      },
+      async handleHostPaginationChange() {
+        const result = await this.searchHost(this.currentNode)
         this.hostList = result.info
       },
       handleClickFilterInput() {

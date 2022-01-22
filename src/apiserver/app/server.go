@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // Run main loop function
@@ -102,4 +102,3 @@ func (h *APIServer) onApiServerConfigUpdate(previous, current cc.ProcessConfig) 
 }
 
 const waitForSeconds = 180
-

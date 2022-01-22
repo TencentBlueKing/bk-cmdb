@@ -1,7 +1,7 @@
 <template>
   <div v-bkloading="{ isLoading: fetching || $loading(request.chart) }">
     <cmdb-tips style="margin: 10px 20px" v-show="!(fetching || $loading(request.chart))"
-      v-if="site.disableOperationStatistic">
+      v-if="$Site.disableOperationStatistic">
       {{$t('运营统计停止统计提示')}}
     </cmdb-tips>
     <div class="operate-menus" v-show="!(fetching || $loading(request.chart))">
@@ -186,7 +186,7 @@
     MENU_RESOURCE_HOST,
     MENU_MODEL_MANAGEMENT
   } from '@/dictionary/menu-symbol'
-  import { mapActions, mapGetters } from 'vuex'
+  import { mapActions } from 'vuex'
   import vDetail from './chart-detail'
   let Plotly
   let PlotlyCN
@@ -243,9 +243,6 @@
         fetching: false
       }
     },
-    computed: {
-      ...mapGetters(['site'])
-    },
     async created() {
       this.fetching = true
       const [plotly, plotlyCn] = await Promise.all([
@@ -273,7 +270,7 @@
             }
           })
           this.hostData.disList = res.info.host || []
-          this.instData.disList = res.info.instt || []
+          this.instData.disList = res.info.inst || []
 
           if (res.info.nav && res.info.nav.length) {
             res.info.nav.forEach((item) => {

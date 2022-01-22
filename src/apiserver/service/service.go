@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/storage/dal/redis"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // Service service methods
@@ -49,6 +49,7 @@ type service struct {
 	limiter    *Limiter
 }
 
+// SetConfig set config
 func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface,
 	clientSet apimachinery.ClientSetInterface, cache redis.Client, limiter *Limiter) {
 	s.engine = engine
@@ -60,6 +61,7 @@ func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, disc
 	s.authorizer = iam.NewAuthorizer(clientSet)
 }
 
+// WebServices
 func (s *service) WebServices() []*restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.engine.CCErr
@@ -67,6 +69,7 @@ func (s *service) WebServices() []*restful.WebService {
 
 	ws := &restful.WebService{}
 	ws.Path(rootPath)
+	ws.Filter(s.JwtFilter())
 	ws.Filter(s.engine.Metric().RestfulMiddleWare)
 	ws.Filter(rdapi.AllGlobalFilter(getErrFun))
 	ws.Filter(rdapi.RequestLogFilter())

@@ -1,0 +1,13 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+rootDir=$(pwd)
+
+cd src/ui
+
+# 对 commit-msg 进行格式检查
+if command -v commitlint >/dev/null 2>&1; then
+  npx --no -- commitlint --edit $rootDir/$1
+else 
+  echo 'commitlint is not installed.' 
+fi

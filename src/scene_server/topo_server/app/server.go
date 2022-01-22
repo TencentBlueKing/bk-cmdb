@@ -20,13 +20,11 @@ import (
 
 	"configcenter/src/ac/extensions"
 	"configcenter/src/ac/iam"
-	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/logics"
 	"configcenter/src/scene_server/topo_server/service"
@@ -57,33 +55,6 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	}
 }
 
-func (t *TopoServer) setBusinessTopoLevelMax() error {
-	tryCnt := 30
-	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
-	for i := 1; i <= tryCnt; i++ {
-		time.Sleep(time.Second * 2)
-		res, err := t.Core.CoreAPI.CoreService().System().SearchConfigAdmin(context.Background(), header)
-		if err != nil {
-			blog.Warnf("setBusinessTopoLevelMax failed,  try count:%d, SearchConfigAdmin err: %v", i, err)
-			continue
-		}
-		if res.Result == false {
-			blog.Warnf("setBusinessTopoLevelMax failed,  try count:%d, SearchConfigAdmin err: %s", i, res.ErrMsg)
-			continue
-		}
-		t.Config.BusinessTopoLevelMax = int(res.Data.Backend.MaxBizTopoLevel)
-		break
-	}
-
-	if t.Config.BusinessTopoLevelMax == 0 {
-		blog.Errorf("setBusinessTopoLevelMax failed, BusinessTopoLevelMax is 0, check the coreservice and the value in table cc_System")
-		return fmt.Errorf("setBusinessTopoLevelMax failed")
-	}
-
-	blog.Infof("setBusinessTopoLevelMax successfully, BusinessTopoLevelMax is %d", t.Config.BusinessTopoLevelMax)
-	return nil
-}
-
 // Run main function
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := types.NewServerInfo(op.ServConf)
@@ -109,10 +80,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	server.Core = engine
 
 	if err := server.CheckForReadiness(); err != nil {
-		return err
-	}
-
-	if err := server.setBusinessTopoLevelMax(); err != nil {
 		return err
 	}
 

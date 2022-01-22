@@ -19,10 +19,13 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/rentiansheng/xlsx"
 )
 
 // Property object fields
@@ -40,6 +43,55 @@ type Property struct {
 	NotExport     bool
 }
 
+// HandleFieldParam 处理Excel表格字段入参
+type HandleFieldParam struct {
+	Fields     map[string]Property
+	Rid        string
+	StyleCell  *xlsx.Style
+	Sheet      *xlsx.Sheet
+	Filter     []string
+	DefLang    lang.DefaultCCLanguageIf
+	CellStyle  *xlsx.Style
+	ColStyle   *xlsx.Style
+	BizTopoMap map[string]int
+}
+
+// HanlehHostDataParam 处理主机数据生成excel表格数据入参
+type HanlehHostDataParam struct {
+	HostData             []mapstr.MapStr
+	ExtFieldsTopoID      string
+	ExtFieldsBizID       string
+	ExtFieldsModuleID    string
+	ExtFieldsSetID       string
+	CcErr                errors.DefaultCCErrorIf
+	ExtFieldKey          []string
+	UsernameMap          map[string]string
+	PropertyList         []string
+	CcLang               lang.DefaultCCLanguageIf
+	Sheet                *xlsx.Sheet
+	Rid                  string
+	ObjID                string
+	ObjIDs               []string
+	Fields               map[string]Property
+}
+
+// HandleHostParam 处理主机数据入参
+type HandleHostParam struct {
+	RowIndex     int
+	Data         []mapstr.MapStr
+	CcErr        errors.DefaultCCErrorIf
+	Fields       map[string]Property
+	Rid          string
+	ModelBizID   int64
+	CustomLen    int
+	ObjID        string
+	UsernameMap  map[string]string
+	PropertyList []string
+	ObjName      []string
+	CcLang       lang.DefaultCCLanguageIf
+	Sheet        *xlsx.Sheet
+}
+
 // PropertyGroup property group
 type PropertyGroup struct {
 	Name  string
@@ -54,8 +106,9 @@ type PropertyPrimaryVal struct {
 }
 
 // GetObjFieldIDs get object fields
-func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, modelBizID int64) (map[string]Property, error) {
-	fields, err := lgc.getObjFieldIDs(objID, header, modelBizID, customFields)
+func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header,
+	modelBizID int64, index int) (map[string]Property, error) {
+	fields, err := lgc.getObjFieldIDs(objID, header, modelBizID, customFields, index)
 	if nil != err {
 		return nil, fmt.Errorf("get object fields failed, err: %+v", err)
 	}
@@ -106,7 +159,8 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, modelBizID i
 
 }
 
-func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID int64, customFields []string) ([]Property, error) {
+func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID int64, customFields []string,
+	index int) ([]Property, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	sort := fmt.Sprintf("%s", common.BKPropertyIndexField)
 
@@ -134,7 +188,7 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID i
 	fields := make([]Property, 0)
 	noUniqueFields := make([]Property, 0)
 	noRequiredFields := make([]Property, 0)
-	index := 1
+
 	// 第一步，选出唯一校验字段；
 	for _, field := range sortedFields {
 		noUniqueFields = append(noUniqueFields, field)
@@ -237,7 +291,7 @@ func getPropertyTypeAliasName(propertyType string, defLang lang.DefaultCCLanguag
 }
 
 // addSystemField add system field, get property not return property fields
-func addSystemField(fields map[string]Property, objID string, defLang lang.DefaultCCLanguageIf) {
+func addSystemField(fields map[string]Property, objID string, defLang lang.DefaultCCLanguageIf, index int) {
 	for key, field := range fields {
 		field.ExcelColIndex = field.ExcelColIndex + 1
 		fields[key] = field
@@ -248,7 +302,7 @@ func addSystemField(fields map[string]Property, objID string, defLang lang.Defau
 		Name:          "",
 		PropertyType:  common.FieldTypeInt,
 		Group:         "defalut",
-		ExcelColIndex: 1, // why set ExcelColIndex=1? because ExcelColIndex=0 used by tip column
+		ExcelColIndex: index,
 	}
 
 	switch objID {

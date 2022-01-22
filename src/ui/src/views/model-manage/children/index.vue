@@ -205,6 +205,7 @@
     MENU_RESOURCE_INSTANCE
   } from '@/dictionary/menu-symbol'
   export default {
+    name: 'ModelManagement',
     components: {
       theFieldGroup,
       theRelation,

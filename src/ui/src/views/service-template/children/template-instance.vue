@@ -3,11 +3,15 @@
     <div class="instance-main">
       <div class="options clearfix">
         <div class="fl">
-          <bk-button theme="primary"
-            :disabled="!table.selection.length"
-            @click="handleBatchSync">
-            {{$t('批量同步')}}
-          </bk-button>
+          <cmdb-auth :auth="auth">
+            <template #default="{ disabled }">
+              <bk-button theme="primary"
+                :disabled="!table.selection.length || disabled"
+                @click="handleBatchSync">
+                {{$t('批量同步')}}
+              </bk-button>
+            </template>
+          </cmdb-auth>
         </div>
         <div class="fr">
           <bk-input class="filter-item" right-icon="bk-icon icon-search"
@@ -20,30 +24,41 @@
       </div>
       <bk-table class="instance-table"
         ref="instanceTable"
-        v-bkloading="{ isLoading: $loading(Object.values(request)) || table.filtering }"
-        :data="table.data"
+        v-bkloading="{ isLoading: instancesLoading || table.filtering }"
+        :data="table.visibleList"
         :pagination="table.pagination"
         :max-height="$APP.height - 250"
         @page-limit-change="handleSizeChange"
-        @page-change="handlePageChange"
-        @selection-change="handleSelectionChange">
-        <bk-table-column type="selection" :selectable="checkSelectable"></bk-table-column>
+        @page-change="handlePageChange">
+        <BatchSelectionColumn
+          width="60"
+          :data="table.visibleList"
+          :full-data="table.data"
+          ref="batchSelectionColumn"
+          row-key="bk_module_id"
+          :selectable="row => !isInstanceDisabled(row.status)"
+          @selection-change="handleSelectionChange">
+        </BatchSelectionColumn>
         <bk-table-column :label="$t('模块名称')" prop="bk_module_name" show-overflow-tooltip></bk-table-column>
         <bk-table-column :label="$t('拓扑路径')" sortable :sort-method="sortByPath" show-overflow-tooltip>
-          <span slot-scope="{ row }" class="topo-path" @click="handlePathClick(row)">{{row._path_}}</span>
+          <span slot-scope="{ row }" class="topo-path" @click="handlePathClick(row)">{{row.topoPath}}</span>
         </bk-table-column>
+        <InstanceStatusColumn></InstanceStatusColumn>
         <bk-table-column :label="$t('上次同步时间')" sortable :sort-method="sortByTime" show-overflow-tooltip>
           <template slot-scope="{ row }">{{row.last_time | time}}</template>
         </bk-table-column>
         <bk-table-column :label="$t('操作')">
           <template slot-scope="{ row }">
-            <span class="latest-sync" v-if="isSyncDisabled(row)" v-bk-tooltips="$t('无需同步')">
-              {{$t('去同步')}}
-            </span>
-            <bk-button v-else text @click="handleSync(row)">
-              {{$t('去同步')}}
-            </bk-button>
-          </template>
+            <cmdb-auth :auth="auth">
+              <template #default="{ disabled }">
+                <bk-button
+                  text
+                  :disabled="isInstanceDisabled(row.status) || disabled"
+                  @click="handleSync(row)">
+                  {{$t('去同步')}}
+                </bk-button>
+              </template>
+            </cmdb-auth></template>
         </bk-table-column>
         <cmdb-table-empty slot="empty" :stuff="table.stuff">
           <div>
@@ -66,22 +81,39 @@
   import debounce from 'lodash.debounce'
   import Bus from '@/utils/bus'
   import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+  import InstanceStatusColumn from './instance-status-column.vue'
+  import { Polling } from '@/utils/polling'
+  import BatchSelectionColumn from '@/components/batch-selection-column'
+  import to from 'await-to-js'
+  import cloneDeep from 'lodash/cloneDeep'
   export default {
+    name: 'templateInstance',
+    components: {
+      BatchSelectionColumn,
+      InstanceStatusColumn,
+    },
     filters: {
       time
     },
     props: {
-      active: Boolean
+      active: Boolean,
     },
     data() {
+      this.polling = new Polling(() => {
+        const syncingModules = this.table.data
+          .filter(theModule => this.isSyncing(theModule.status)).map(theModule => theModule.bk_module_id)
+        if (syncingModules.length > 0) {
+          return this.loadInstanceStatus(syncingModules)
+        }
+      }, 5000)
       return {
         table: {
           filter: '',
           filtering: false,
           selection: [],
           data: [],
+          visibleList: [],
           backup: [],
-          syncStatus: [],
           stuff: {
             type: 'default',
             payload: {}
@@ -94,103 +126,139 @@
             })
           }
         },
-        request: {
-          instance: Symbol('instance'),
-          status: Symbol('status'),
-          path: Symbol('path')
-        },
-        handleFilter: null
+        handleFilter: null,
+        instancesLoading: false,
       }
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       serviceTemplateId() {
         return this.$route.params.templateId
+      },
+      auth() {
+        return {
+          type: this.$OPERATION.U_SERVICE_TEMPLATE,
+          relation: [this.bizId, Number(this.serviceTemplateId)]
+        }
       }
     },
     watch: {
       active: {
         immediate: true,
         handler(active) {
-          active && this.refresh()
+          if (active) {
+            this.loadIntegrationInstances()
+            this.polling.start()
+            this.$refs?.batchSelectionColumn?.clearSelection()
+          } else {
+            this.polling.stop()
+          }
         }
-      }
+      },
+    },
+    destroyed() {
+      this.polling.stop()
     },
     created() {
       this.handleFilter = debounce(this.filterData, 300)
     },
     methods: {
-      async refresh() {
-        try {
-          const data = await this.getTemplateInstance()
-          if (data.count) {
-            const [syncStatus, topoPath] = await Promise.all([
-              this.getSyncStatus(data.info),
-              this.getTopoPath(data.info)
-            ])
-            this.table.syncStatus = syncStatus.modules
-            this.table.pagination.count = data.count
-            data.info.forEach((module) => {
-              const topo = topoPath.nodes.find(topo => topo.topo_node.bk_inst_id === module.bk_module_id)
-              // eslint-disable-next-line no-underscore-dangle
-              module._path_ = topo.topo_path.map(path => path.bk_inst_name).reverse()
-                .join(' / ')
-            })
-          }
-          this.table.data = Object.freeze(data.info)
-          this.table.backup = Object.freeze(data.info)
-          Bus.$emit('module-loaded', data.count)
-        } catch (e) {
-          console.error(e)
+      /**
+       * 加载集成了状态、拓扑路径的实例
+       */
+      async loadIntegrationInstances() {
+        this.instancesLoading = true
+        const [loadInstanceErr, data] = await to(this.loadInstance())
+
+        if (loadInstanceErr) {
+          throw Error(`加载实例失败 ${loadInstanceErr}`)
         }
+
+        if (data.count) {
+          const [loadTopoPathErr, topoPath] = await to(this.loadTopoPath(data.info))
+
+          if (loadTopoPathErr) {
+            throw Error(`加载 topo path 失败 ${loadTopoPathErr}`)
+          }
+
+          data.info.forEach((module) => {
+            const topo = topoPath.nodes.find(topo => topo.topo_node.bk_inst_id === module.bk_module_id)
+            module.topoPath = topo.topo_path.map(path => path.bk_inst_name).reverse()
+              .join(' / ')
+          })
+        }
+        this.table.data = data.info
+        this.table.backup = Object.freeze(cloneDeep(data.info))
+        this.table.pagination.current = 1
+        this.table.pagination.count = data.count
+        if (data.count > 0 && data.info?.length > 0) {
+          await to(this.loadInstanceStatus(this.table.data.map(i => i.bk_module_id)))
+        }
+        this.renderVisibleList()
+        this.instancesLoading = false
+
+        Bus.$emit('module-loaded', data.count)
       },
-      getTemplateInstance() {
+      /**
+        * 加载实例
+       */
+      loadInstance() {
         return this.$store.dispatch('serviceTemplate/getServiceTemplateModules', {
           bizId: this.bizId,
           serviceTemplateId: this.serviceTemplateId,
-          params: {
-            page: {
-              start: (this.table.pagination.current - 1) * this.table.pagination.limit,
-              limit: this.table.pagination.limit
-            }
-          },
-          config: {
-            requestId: this.request.instance
-          }
         })
       },
-      getSyncStatus(modules) {
-        return this.$store.dispatch('serviceTemplate/getServiceTemplateSyncStatus', {
+      renderVisibleList() {
+        const { limit, current } = this.table.pagination
+        this.table.visibleList = this.table.data.slice((current - 1) * limit, current * limit)
+      },
+      /**
+       * 加载实例状态
+       */
+      loadInstanceStatus(moduleIds) {
+        return this.$store.dispatch('serviceTemplate/getServiceTemplateInstanceStatus', {
           bizId: this.bizId,
           params: {
-            is_partial: false,
-            bk_module_ids: modules.map(module => module.bk_module_id),
-          },
-          config: {
-            requestId: this.request.status
+            bk_module_ids: moduleIds,
+            service_template_id: parseInt(this.serviceTemplateId, 10)
           }
+        }).then((res) => {
+          this.table.data.forEach((item) => {
+            const instanceStatus = res.find(r => r.bk_inst_id === item.bk_module_id)
+            if (instanceStatus) {
+              this.$set(item, 'status', instanceStatus.status)
+              this.$set(item, 'last_time', instanceStatus.last_time)
+              this.$set(item, 'fail_tips', instanceStatus.fail_tips)
+            }
+          })
+          this.table.data.sort(a => (a.status === 'need_sync' ? -1 : 0))
         })
+          .catch((err) => {
+            console.log(err)
+          })
       },
-      getTopoPath(modules) {
+      /**
+       * 判断实例是否正在同步中
+       */
+      isSyncing(status) {
+        return ['new', 'waiting', 'executing'].includes(status)
+      },
+      /**
+       * 实例是否置灰
+       */
+      isInstanceDisabled(status) {
+        return this.isSyncing(status) || status === 'finished'
+      },
+      /**
+       * 加载实例拓扑路径
+       */
+      loadTopoPath(modules) {
         return this.$store.dispatch('objectMainLineModule/getTopoPath', {
           bizId: this.bizId,
           params: {
             topo_nodes: modules.map(module => ({ bk_obj_id: 'module', bk_inst_id: module.bk_module_id }))
-          },
-          config: {
-            requestId: this.request.path
           }
         })
-      },
-      getSyncStatusDifference(row) {
-        return this.table.syncStatus.find(difference => difference.bk_module_id === row.bk_module_id)
-      },
-      isSyncDisabled(row) {
-        const difference = this.getSyncStatusDifference(row)
-        if (difference) {
-          return !difference.need_sync
-        }
-        return true
       },
       handleSync(row) {
         this.$routerActions.redirect({
@@ -201,9 +269,6 @@
           },
           history: true
         })
-      },
-      checkSelectable(row) {
-        return !this.isSyncDisabled(row)
       },
       handleSelectionChange(selection) {
         this.table.selection = selection
@@ -220,16 +285,18 @@
       },
       filterData() {
         this.table.filtering = true
+        this.table.pagination.current = 1
+        this.$refs.batchSelectionColumn.clearSelection()
         this.$nextTick(() => {
           if (this.table.filter) {
-            this.table.data = this.table.backup.filter((row) => {
-              // eslint-disable-next-line no-underscore-dangle
-              const path = row._path_.replace(/\s*(\/)\s*/g, '$1')
+            this.table.visibleList = this.table.data.filter((row) => {
+              const path = row.topoPath.replace(/\s*(\/)\s*/g, '$1')
               const filter = this.table.filter.replace(/\s*(\/)\s*/g, '$1')
+
               return path.indexOf(filter) > -1
             })
           } else {
-            this.table.data = [...this.table.backup]
+            this.renderVisibleList()
           }
           this.table.stuff.type = this.table.filter ? 'search' : 'default'
           this.table.filtering = false
@@ -237,7 +304,7 @@
       },
       sortByPath(rowA, rowB) {
         // eslint-disable-next-line no-underscore-dangle
-        return rowA._path_.toLowerCase().localeCompare(rowB._path_.toLowerCase(), 'zh-Hans-CN', { sensitivity: 'accent' })
+        return rowA.topoPath.toLowerCase().localeCompare(rowB.topoPath.toLowerCase(), 'zh-Hans-CN', { sensitivity: 'accent' })
       },
       sortByTime(rowA, rowB) {
         const timeA = (new Date(rowA.last_time)).getTime()
@@ -258,11 +325,11 @@
       handleSizeChange(size) {
         this.table.pagination.limit = size
         this.table.pagination.current = 1
-        this.refresh()
+        this.renderVisibleList()
       },
       handlePageChange(page) {
         this.table.pagination.current = page
-        this.refresh()
+        this.renderVisibleList()
       }
     }
   }
@@ -295,6 +362,15 @@
             font-size: 12px;
             cursor: not-allowed;
             color: #DCDEE5;
+        }
+
+        .instance-table {
+            .topo-path {
+                cursor: pointer;
+                &:hover {
+                    color: $primaryColor;
+                }
+            }
         }
     }
 </style>

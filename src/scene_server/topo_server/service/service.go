@@ -26,7 +26,7 @@ import (
 	"configcenter/src/scene_server/topo_server/logics"
 	"configcenter/src/thirdparty/elasticsearch"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 type Service struct {

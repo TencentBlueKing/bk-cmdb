@@ -1,20 +1,20 @@
 <template>
   <div class="instance-operation">
-    <cmdb-auth tag="span" class="operation-item"
+    <cmdb-auth tag="span" class="operation-item" v-test-id.businessHostAndService="'addProcess'"
       v-if="!row.service_template_id"
       :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
       @click.native.stop
       @click="handleAddProcess">
       {{$t('添加进程')}}
     </cmdb-auth>
-    <cmdb-auth tag="span" class="operation-item"
+    <cmdb-auth tag="span" class="operation-item" v-test-id.businessHostAndService="'cloneProcess'"
       v-if="!row.service_template_id"
       :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }"
       @click.native.stop
       @click="handleClone">
       {{$t('克隆')}}
     </cmdb-auth>
-    <cmdb-auth tag="span" class="operation-item"
+    <cmdb-auth tag="span" class="operation-item" v-test-id.businessHostAndService="'delProcess'"
       :auth="{ type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }"
       @click.native.stop>
       <bk-popconfirm trigger="click"

@@ -262,6 +262,34 @@ func (s *Service) TransferHostAcrossBusiness(ctx *rest.Contexts) {
 	return
 }
 
+// TransferResourceHostsAcrossBusiness Transfer resource hosts across business, delete old business host and module
+// relation.
+func (s *Service) TransferResourceHostsAcrossBusiness(ctx *rest.Contexts) {
+	data := new(metadata.TransferResourceHostAcrossBusinessParam)
+	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.Logic.TransferResourceHostsAcrossBusiness(ctx.Kit, data.ResourceSrcHosts, data.DstAppID,
+			data.DstModuleID)
+		if err != nil {
+			blog.Errorf("transfer host across business failed, input: %v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(nil)
+	return
+}
+
 // DeleteHostFromBusiness delete host from business
 // dangerous operation
 func (s *Service) DeleteHostFromBusiness(ctx *rest.Contexts) {
@@ -322,7 +350,7 @@ func (s *Service) moveHostToDefaultModule(ctx *rest.Contexts, defaultModuleFlag 
 	}
 
 	moduleFilter[common.BKAppIDField] = bizID
-	moduleID, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, moduleFilter)
+	moduleID, _, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, moduleFilter)
 	if err != nil {
 		blog.ErrorJSON("move host to default module failed, get default module id failed, filter: %s, err: %s, rid: %s", moduleFilter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(defErr.Errorf(common.CCErrAddHostToModuleFailStr, "module not found"))

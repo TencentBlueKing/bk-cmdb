@@ -66,16 +66,20 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 		return nil, fmt.Errorf("mongodb rsName not set")
 	}
 	socketTimeout := time.Second * time.Duration(config.SocketTimeout)
+	maxConnIdleTime := 25 * time.Minute
+	appName := common.GetIdentification()
 	// do not change this, our transaction plan need it to false.
 	// it's related with the transaction number(eg txnNumber) in a transaction session.
 	disableWriteRetry := false
 	conOpt := options.ClientOptions{
-		MaxPoolSize:    &config.MaxOpenConns,
-		MinPoolSize:    &config.MaxIdleConns,
-		ConnectTimeout: &timeout,
-		SocketTimeout:  &socketTimeout,
-		ReplicaSet:     &config.RsName,
-		RetryWrites:    &disableWriteRetry,
+		MaxPoolSize:     &config.MaxOpenConns,
+		MinPoolSize:     &config.MaxIdleConns,
+		ConnectTimeout:  &timeout,
+		SocketTimeout:   &socketTimeout,
+		ReplicaSet:      &config.RsName,
+		RetryWrites:     &disableWriteRetry,
+		MaxConnIdleTime: &maxConnIdleTime,
+		AppName:         &appName,
 	}
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(config.URI), &conOpt)
@@ -630,12 +634,13 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	case common.BKTableNameProcessInstanceRelation:
 
 	case common.BKTableNameBaseInst:
+	case common.BKTableNameInstAsst:
 		// NOTE: should not use the table name for archive, the object instance and association
 		// was saved in sharding tables, we still case the BKTableNameBaseInst here for the archive
 		// error message in order to find the wrong table name used in logics level.
 
 	default:
-		if !common.IsObjectInstShardingTable(c.collName) {
+		if !common.IsObjectShardingTable(c.collName) {
 			// do not archive the delete docs
 			return nil
 		}
@@ -794,6 +799,15 @@ func (c *Mongo) CreateTable(ctx context.Context, collName string) error {
 	return c.dbc.Database(c.dbname).RunCommand(ctx, map[string]interface{}{"create": collName}).Err()
 }
 
+// RenameTable 更新集合名称
+func (c *Mongo) RenameTable(ctx context.Context, prevName, currName string) error {
+	cmd := bson.D{
+		{"renameCollection", c.dbname + "." + prevName},
+		{"to", c.dbname + "." + currName},
+	}
+	return c.dbc.Database("admin").RunCommand(ctx, cmd).Err()
+}
+
 // CreateIndex 创建索引
 func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 	mtc.collectOperCount(c.collName, indexCreateOper)
@@ -838,6 +852,9 @@ func (c *Collection) DropIndex(ctx context.Context, indexName string) error {
 	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
 	_, err := indexView.DropOne(ctx, indexName)
 	if err != nil {
+		if strings.Contains(err.Error(), "IndexNotFound") {
+			return nil
+		}
 		mtc.collectErrorCount(c.collName, indexDropOper)
 		return err
 	}

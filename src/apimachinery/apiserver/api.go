@@ -257,6 +257,29 @@ func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID s
 	return
 }
 
+// AddInstByImport add instances by import excel
+func (a *apiServer) AddInstByImport(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (
+	*metadata.ResponseDataMapStr, error) {
+
+	resp := new(metadata.ResponseDataMapStr)
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef("/create/instance/object/%s/by_import", objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+	return resp, nil
+}
+
 func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/createmany/object"
@@ -400,6 +423,57 @@ func (a *apiServer) ListHostWithoutApp(ctx context.Context, h http.Header, optio
 		WithHeaders(h).
 		Do().
 		Into(&resp)
+
+	return
+}
+
+// ReadModuleAssociation get mainline topo model association
+func (a *apiServer) ReadModuleAssociation(ctx context.Context, h http.Header,
+	cond *metadata.QueryCondition) (resp *metadata.SearchAsstModelResp, err error) {
+	resp = new(metadata.SearchAsstModelResp)
+	subPath := "/find/instassociation/model"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+// ReadModel read object model data by obj id
+func (a *apiServer) ReadModel(ctx context.Context, h http.Header, cond *metadata.QueryCondition) (resp *metadata.
+	ReadModelResult, err error) {
+	resp = new(metadata.ReadModelResult)
+	subPath := "/find/object/model"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+// ReadInstance read instance by obj id and condition
+func (a *apiServer) ReadInstance(ctx context.Context, h http.Header, objID string,
+	cond *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error) {
+	resp = new(metadata.QueryConditionResult)
+	subPath := "/find/instance/%s"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
 
 	return
 }

@@ -69,12 +69,13 @@
           <bk-button slot-scope="{ disabled }"
             class="button-save"
             theme="primary"
-            :disabled="disabled || !hasChange || $loading()"
+            :loading="loading || allValidating"
+            :disabled="disabled || !hasChange"
             @click="handleSave">
             {{$t('保存')}}
           </bk-button>
         </cmdb-auth>
-        <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
+        <bk-button class="button-cancel" :disabled="loading" @click="handleCancel">{{$t('取消')}}</bk-button>
       </slot>
     </div>
   </cmdb-sticky-layout>
@@ -89,11 +90,16 @@
       saveAuth: {
         type: [Object, Array],
         default: null
+      },
+      loading: {
+        type: Boolean,
+        default: false,
       }
     },
     data() {
       return {
         isMultiple: true,
+        allValidating: false,
         values: {},
         refrenceValues: {},
         editable: {},
@@ -206,6 +212,7 @@
         return this.$tools.formatValues(multipleValues, this.properties)
       },
       handleSave() {
+        this.allValidating = true
         this.$validator.validateAll().then((result) => {
           if (result) {
             this.$emit('on-submit', this.getMultipleValues())
@@ -213,6 +220,9 @@
             this.uncollapseGroup()
           }
         })
+          .finally(() => {
+            this.allValidating = false
+          })
       },
       uncollapseGroup() {
         this.errors.items.forEach((item) => {

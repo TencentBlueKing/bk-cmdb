@@ -228,12 +228,13 @@
               globalError: false
             }
           })
-          if (response.result) {
+          if (!response.result || response.data.error) {
+            this.setFileState('error')
+            const importError = response.data?.error ? response.data : { error: [response.bk_error_msg] }
+            this.setFileError(importError)
+          } else {
             this.setFileState('success')
             this.importState.success && this.importState.success()
-          } else {
-            this.setFileState('error')
-            this.setFileError(response.data)
           }
         } catch (error) {
           console.error(error)

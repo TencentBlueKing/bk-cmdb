@@ -284,6 +284,23 @@ func (s *Service) GetModelStatistics(ctx *rest.Contexts) {
 	ctx.RespEntity(result.Data)
 }
 
+// SearchModel search some model by condition
+func (s *Service) SearchModel(ctx *rest.Contexts) {
+	data := new(metadata.QueryCondition)
+	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModel(ctx.Kit.Ctx, ctx.Kit.Header, data)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(resp)
+}
+
 // 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
 // (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 // please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).

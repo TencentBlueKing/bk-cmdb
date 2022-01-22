@@ -56,9 +56,21 @@ func (f *identityHandler) setLastWatchToken(ctx context.Context, data map[string
 		"_id": event.HostIdentityKey.Collection(),
 	}
 
-	tokenInfo := mapstr.MapStr{
-		f.key.Collection(): data,
+	// only update the need fields to avoid erasing the previous exist fields
+	tokenInfo := make(mapstr.MapStr)
+	for key, value := range data {
+		tokenInfo[f.key.Collection()+"."+key] = value
 	}
+
+	// update id and cursor field if set, to compensate for the scenario of searching with an outdated but latest cursor
+	if id, exists := data[common.BKFieldID]; exists {
+		tokenInfo[common.BKFieldID] = id
+	}
+
+	if cursor, exists := data[common.BKCursorField]; exists {
+		tokenInfo[common.BKCursorField] = cursor
+	}
+
 	if err := f.watchDB.Table(common.BKTableNameWatchToken).Update(ctx, filter, tokenInfo); err != nil {
 		blog.Errorf("set host identity %s last watch token failed, err: %v, data: %+v", f.key.Collection(),
 			err, tokenInfo)
@@ -133,7 +145,7 @@ func (f *identityHandler) getStartWatchTime(ctx context.Context) (*types.TimeSta
 	}
 
 	data := make(map[string]watch.LastChainNodeData)
-	err := f.watchDB.Table(common.BKTableNameWatchToken).Find(filter).One(ctx, &data)
+	err := f.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(f.key.Collection()).One(ctx, &data)
 	if err != nil {
 		blog.Errorf("get host identity %s start watch time, but find in watch token failed, err: %v",
 			f.key.Collection(), err)

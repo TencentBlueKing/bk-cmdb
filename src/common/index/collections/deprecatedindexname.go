@@ -40,12 +40,6 @@ var deprecatedIndexName = map[string][]string{
 		"idx_id",
 		"idx_unique_bizID_name",
 	},
-	common.BKTableNameSetTemplateSyncStatus: {
-		"idx_taskID",
-		"idx_setID",
-		"idx_createLastTime",
-		"idx_status",
-	},
 	common.BKTableNameAsstDes: {
 		"idx_unique_id",
 		"idx_supplierId",
@@ -77,12 +71,6 @@ var deprecatedIndexName = map[string][]string{
 	},
 	common.BKTableNameSetServiceTemplateRelation: {
 		"idx_unque_setTemplateID_serviceTemplateID",
-	},
-	common.BKTableNameSetTemplateSyncHistory: {
-		"idx_taskID",
-		"idx_setID",
-		"idx_createLastTime",
-		"idx_status",
 	},
 	common.BKTableNameBaseHost: {
 		"bk_host_name_1",

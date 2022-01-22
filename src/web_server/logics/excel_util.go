@@ -48,7 +48,6 @@ func getFilterFields(objID string) []string {
 	default:
 		return []string{"create_time"}
 	}
-	//return []string{"create_time"}
 }
 
 func getCustomFields(filterFields []string, customFields []string) []string {
@@ -304,21 +303,22 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 }
 
 // ProductExcelHeader Excel文件头部，
-func productExcelHeader(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
+func productExcelHeader(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet,
+	defLang lang.DefaultCCLanguageIf) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
-	//橙棕色
+	// 橙棕色
 	cellStyle := getCellStyle(common.ExcelFirstColumnCellColor, common.ExcelHeaderFirstRowFontColor)
-	//粉色
+	// 粉色
 	colStyle := getCellStyle(common.ExcelHeaderFirstColumnColor, common.ExcelHeaderFirstRowFontColor)
-
 	sheet.Col(0).Width = 18
-	//字典中的值为国际化之后的"业务拓扑"和"业务名"，用来做判断，命中即变化相应的cell颜色。
+	// 字典中的值为国际化之后的"业务拓扑"和"业务名"，用来做判断，命中即变化相应的cell颜色。
 	bizTopoMap := map[string]int{
 		defLang.Language("web_ext_field_topo"):       1,
 		defLang.Language("biz_property_bk_biz_name"): 1,
 	}
-	firstColFields := []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType, common.ExcelFirstColumnFieldID, common.ExcelFirstColumnInstData}
+	firstColFields := []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType,
+		common.ExcelFirstColumnFieldID, common.ExcelFirstColumnInstData}
 	for index, field := range firstColFields {
 		cellName := sheet.Cell(index, 0)
 		fieldName := defLang.Language(field)
@@ -332,41 +332,108 @@ func productExcelHeader(ctx context.Context, fields map[string]Property, filter 
 		cellName.SetStyle(colStyle)
 	}
 
-	for _, field := range fields {
+	handleFieldParam := HandleFieldParam{
+		Fields:     fields,
+		Rid:        rid,
+		StyleCell:  styleCell,
+		Sheet:      sheet,
+		Filter:     filter,
+		DefLang:    defLang,
+		CellStyle:  cellStyle,
+		ColStyle:   colStyle,
+		BizTopoMap: bizTopoMap,
+	}
+
+	handleFields(handleFieldParam)
+}
+
+// productHostExcelHeader Excel文件头部，
+func productHostExcelHeader(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet,
+	defLang lang.DefaultCCLanguageIf, objName []string) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	styleCell := getHeaderCellGeneralStyle()
+	// 橙棕色
+	cellStyle := getCellStyle(common.ExcelFirstColumnCellColor, common.ExcelHeaderFirstRowFontColor)
+	// 粉色
+	colStyle := getCellStyle(common.ExcelHeaderFirstColumnColor, common.ExcelHeaderFirstRowFontColor)
+	sheet.Col(0).Width = 18
+	// 字典中的值为国际化之后的"业务拓扑"和"业务名"，"集群"，”模块“，用来做判断，命中即变化相应的cell颜色。
+	bizTopoMap := map[string]int{
+		defLang.Language("web_ext_field_topo"):        1,
+		defLang.Language("biz_property_bk_biz_name"):  1,
+		defLang.Language("web_ext_field_module_name"): 1,
+		defLang.Language("web_ext_field_set_name"):    1,
+	}
+	for _, name := range objName {
+		bizTopoMap[name] = 1
+	}
+
+	firstColFields := []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType,
+		common.ExcelFirstColumnFieldID, common.ExcelFirstColumnInstData}
+
+	for index, field := range firstColFields {
+		cellName := sheet.Cell(index, 0)
+		fieldName := defLang.Language(field)
+		cellName.Value = fieldName
+		cellName.SetStyle(cellStyle)
+	}
+
+	// 给第一列剩下的空格设置颜色
+	for i := 3; i < 1000; i++ {
+		cellName := sheet.Cell(i, 0)
+		cellName.SetStyle(colStyle)
+	}
+
+	handleFieldParam := HandleFieldParam{
+		Fields:     fields,
+		Rid:        rid,
+		StyleCell:  styleCell,
+		Sheet:      sheet,
+		Filter:     filter,
+		DefLang:    defLang,
+		CellStyle:  cellStyle,
+		ColStyle:   colStyle,
+		BizTopoMap: bizTopoMap,
+	}
+	handleFields(handleFieldParam)
+}
+
+func handleFields(handleFieldParam HandleFieldParam) {
+	for _, field := range handleFieldParam.Fields {
 		index := field.ExcelColIndex
-		sheet.Col(index).Width = 18
-		fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, defLang)
+		handleFieldParam.Sheet.Col(index).Width = 18
+		fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, handleFieldParam.DefLang)
 		if true == skip || field.NotExport {
 			// 不需要用户输入的类型continue
-			sheet.Col(index).Hidden = true
+			handleFieldParam.Sheet.Col(index).Hidden = true
 			continue
 		}
 		isRequire := ""
 
 		if field.IsRequire {
 			// "(必填)"
-			isRequire = defLang.Language("web_excel_header_required")
+			isRequire = handleFieldParam.DefLang.Language("web_excel_header_required")
 		}
-		if util.Contains(filter, field.ID) {
+		if util.Contains(handleFieldParam.Filter, field.ID) {
 			continue
 		}
-		cellName := sheet.Cell(0, index)
+		cellName := handleFieldParam.Sheet.Cell(0, index)
 		cellName.Value = field.Name + isRequire
 		cellName.SetStyle(getHeaderFirstRowCellStyle(field.IsRequire))
 
-		cellType := sheet.Cell(1, index)
+		cellType := handleFieldParam.Sheet.Cell(1, index)
 		cellType.Value = fieldTypeName
-		cellType.SetStyle(styleCell)
+		cellType.SetStyle(handleFieldParam.StyleCell)
 
-		cellEnName := sheet.Cell(2, index)
+		cellEnName := handleFieldParam.Sheet.Cell(2, index)
 		cellEnName.Value = field.ID
-		cellEnName.SetStyle(styleCell)
+		cellEnName.SetStyle(handleFieldParam.StyleCell)
 
 		switch field.PropertyType {
 		case common.FieldTypeInt:
-			sheet.Col(index).SetType(xlsx.CellTypeNumeric)
+			handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeNumeric)
 		case common.FieldTypeFloat:
-			sheet.Col(index).SetType(xlsx.CellTypeNumeric)
+			handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeNumeric)
 		case common.FieldTypeEnum:
 			option := field.Option
 			optionArr, ok := option.([]interface{})
@@ -375,49 +442,50 @@ func productExcelHeader(ctx context.Context, fields map[string]Property, filter 
 				enumVals := getEnumNames(optionArr)
 				dd := xlsx.NewXlsxCellDataValidation(true, true, true)
 				if err := dd.SetDropList(enumVals); err != nil {
-					blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, rid)
+					blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, handleFieldParam.Rid)
 				}
-				sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
+				handleFieldParam.Sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
 
 			}
-			sheet.Col(index).SetType(xlsx.CellTypeString)
+			handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeString)
 
 		case common.FieldTypeBool:
 			dd := xlsx.NewXlsxCellDataValidation(true, true, true)
 			if err := dd.SetDropList([]string{fieldTypeBoolTrue, fieldTypeBoolFalse}); err != nil {
-				blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, rid)
+				blog.Errorf("set drop list failed, err: %v, rid: %s", err, handleFieldParam.Rid)
 			}
-			sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
-			sheet.Col(index).SetType(xlsx.CellTypeString)
+			handleFieldParam.Sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
+			handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeString)
 
 		default:
-			if _, ok := bizTopoMap[field.Name]; ok {
-				cellName := sheet.Cell(0, index)
+			if _, ok := handleFieldParam.BizTopoMap[field.Name]; ok {
+				cellName := handleFieldParam.Sheet.Cell(0, index)
 				cellName.Value = field.Name + isRequire
-				cellName.SetStyle(cellStyle)
-				setExcelCellIgnored(sheet, cellStyle, 1, index)
-				setExcelCellIgnored(sheet, cellStyle, 2, index)
+				cellName.SetStyle(handleFieldParam.CellStyle)
+				setExcelCellIgnored(handleFieldParam.Sheet, handleFieldParam.CellStyle, 1, index)
+				setExcelCellIgnored(handleFieldParam.Sheet, handleFieldParam.CellStyle, 2, index)
 
 				// 给业务拓扑和业务列剩下的空格设置颜色
 				for i := 3; i < 1000; i++ {
-					cellName := sheet.Cell(i, index)
-					cellName.SetStyle(colStyle)
+					cellName := handleFieldParam.Sheet.Cell(i, index)
+					cellName.SetStyle(handleFieldParam.ColStyle)
 				}
-				sheet.Col(index).SetType(xlsx.CellTypeString)
+				handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeString)
 			}
 
 			if field.ID == common.BKCloudIDField {
-				setExcelCellIgnored(sheet, styleCell, 1, index)
-				setExcelCellIgnored(sheet, styleCell, 2, index)
+				setExcelCellIgnored(handleFieldParam.Sheet, handleFieldParam.StyleCell, 1, index)
+				setExcelCellIgnored(handleFieldParam.Sheet, handleFieldParam.StyleCell, 2, index)
 			}
 
-			sheet.Col(index).SetType(xlsx.CellTypeString)
+			handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeString)
 		}
 	}
 }
 
 // ProductExcelHeader Excel文件头部，
-func productExcelAssociationHeader(ctx context.Context, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf, instNum int, asstList []*metadata.Association) {
+func productExcelAssociationHeader(ctx context.Context, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf,
+	instNum int, asstList []*metadata.Association) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	//第一列(指标说明，橙色)

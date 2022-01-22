@@ -14,11 +14,13 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac"
 	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
@@ -29,6 +31,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/hooks"
 )
@@ -65,13 +68,13 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 				blog.Errorf("get biz id failed, err: %v, biz: %#v, rid: %s", err, business, ctx.Kit.Rid)
 				return err
 			}
-			
+
 			var bizName string
 			if bizName, err = business.String(common.BKAppNameField); err != nil {
 				blog.Errorf("get biz name failed, err: %v, biz: %#v, rid: %s", err, business, ctx.Kit.Rid)
 				return err
 			}
-			
+
 			iamInstance := metadata.IamInstanceWithCreator{
 				Type:    string(iam.Business),
 				ID:      strconv.FormatInt(bizID, 10),
@@ -144,8 +147,8 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+	
 	query := &metadata.QueryCondition{
-		Fields:    []string{common.BKAppNameField},
 		Condition: mapstr.MapStr{common.BKAppIDField: bizID},
 	}
 	_, bizs, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, query)
@@ -216,6 +219,170 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// UpdateBizPropertyBatch batch update business properties
+func (s *Service) UpdateBizPropertyBatch(ctx *rest.Contexts) {
+	param := new(metadata.UpdateBizPropertyBatchParameter)
+	if err := ctx.DecodeInto(param); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizIDs, err := s.getBizIDByCond(ctx, param.Condition)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(bizIDs) <= 0 {
+		blog.Errorf("found no business by condition, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
+		return
+	}
+
+	// check authorization
+	if s.AuthManager.Enabled() {
+		if err := s.AuthManager.AuthorizeByBusinessID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, bizIDs...); err ==
+			ac.NoAuthorizeError {
+			perm, err := s.AuthManager.GenBizBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, bizIDs)
+			if err != nil && err != ac.NoAuthorizeError {
+				blog.Errorf("get biz permission failed, biz: %v, err: %v, rid: %s", bizIDs, err, ctx.Kit.Rid)
+				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+				return
+			}
+			ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
+			return
+		} else if err != nil {
+			blog.Errorf("biz authorize failed, biz: %v, err: %v, rid: %s", bizIDs, err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+			return
+		}
+	}
+
+	updateCond := mapstr.MapStr{
+		common.BKAppIDField: mapstr.MapStr{
+			common.BKDBIN: bizIDs,
+		},
+		// exclude archived biz
+		common.BKDataStatusField: mapstr.MapStr{
+			common.BKDBNE: common.DataStatusDisabled,
+		},
+		// exclude default biz
+		common.BKDefaultField: mapstr.MapStr{
+			common.BKDBNE: common.DefaultAppFlag,
+		},
+	}
+
+	data := param.Properties
+	// cannot update biz bk_data_status
+	delete(data, common.BKDataStatusField)
+
+	// update biz instances
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err = s.Logics.InstOperation().UpdateInst(ctx.Kit, updateCond, data, common.BKInnerObjIDApp)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+func (s *Service) getBizIDByCond(ctx *rest.Contexts, cond mapstr.MapStr) ([]int64, error) {
+	opt := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			metadata.AttributeFieldObjectID:     common.BKInnerObjIDApp,
+			metadata.AttributeFieldPropertyType: common.FieldTypeUser,
+		},
+		DisableCounter: true,
+	}
+	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDApp, opt)
+	if err != nil {
+		blog.Errorf("failed to get the business attribute, err: %v, rid:%s", err, ctx.Kit.Rid)
+		return nil, err
+	}
+	// userFieldArr Fields in the business are user-type fields
+	var userFields []string
+	for _, attribute := range resp.Info {
+		userFields = append(userFields, attribute.PropertyID)
+	}
+
+	filter := handleSpecialBusinessFieldSearchCond(cond, userFields)
+	// can only find normal business, but not resource pool business
+	filter[common.BKDefaultField] = mapstr.MapStr{
+		common.BKDBNE: common.DefaultAppFlag,
+	}
+
+	distinctOpt := &metadata.DistinctFieldOption{
+		TableName: common.BKTableNameBaseApp,
+		Field:     common.BKAppIDField,
+		Filter:    filter,
+	}
+
+	rst, err := s.Engine.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, distinctOpt)
+	if err != nil {
+		blog.Errorf("get biz ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt, err, ctx.Kit.Rid)
+		return nil, err
+	}
+
+	bizIDs, err := util.SliceInterfaceToInt64(rst)
+	if err != nil {
+		blog.Errorf("biz ids to int failed, biz ids: %v, err: %v, rid: %s", rst, err, ctx.Kit.Rid)
+		return nil, err
+	}
+
+	return bizIDs, nil
+}
+
+// DeleteBusiness delete archived business
+func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
+	param := new(metadata.DeleteBizParam)
+	if err := ctx.DecodeInto(param); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(param.BizID) == 0 {
+		blog.Errorf("invalid bk_biz_id len 0, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField))
+		return
+	}
+
+	if len(param.BizID) > common.BKDefaultLimit {
+		blog.Errorf("bk_biz_id len %d exceed max page size %d, rid:%s", len(param.BizID),
+			common.BKDefaultLimit, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "update",
+			common.BKDefaultLimit))
+		return
+	}
+
+	if err := hooks.ValidateDeleteBusinessHook(ctx.Kit, s.Engine.CoreAPI, param.BizID); err != nil {
+		blog.Errorf("validate delete business hook failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// delete biz instances and related resources
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := s.Logics.BusinessOperation().DeleteBusiness(ctx.Kit, param.BizID); err != nil {
+			blog.Errorf("failed to delete biz, ids: %v, err: %v, rid: %s", param.BizID, err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
 // find business list with these info：
 // 1. have any authorized resources in a business.
 // 2. only returned with a few field for this business info.
@@ -226,6 +393,12 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 	sortParam := ctx.Request.QueryParameter("sort")
 	if len(sortParam) > 0 {
 		page.Sort = sortParam
+	}
+	
+	if errKey, err := page.Validate(true); err != nil {
+		blog.Errorf("page parameter invalid, errKey: %v, err: %s, rid: %s", errKey, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
+		return
 	}
 	
 	query := &metadata.QueryCondition{
@@ -250,7 +423,7 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoGetAuthorizedBusinessListFailed))
 			return
 		}
-		
+
 		// if isAny is false,we should add bizIds condition.
 		if !authorizedRes.IsAny {
 			appList := make([]int64, 0)
@@ -264,9 +437,7 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 				appList = append(appList, bizID)
 			}
 			if len(appList) == 0 {
-				blog.Errorf("ListAuthorizedResources failed, user: %s,err: %v, rid: %s",
-					ctx.Kit.User, err, ctx.Kit.Rid)
-				ctx.RespAutoError(err)
+				ctx.RespEntityWithCount(0, make([]mapstr.MapStr, 0))
 				return
 			}
 			// sort for prepare to find business with page.
@@ -326,7 +497,7 @@ func (s *Service) GetBusinessBasicInfo(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	
+
 	bizData := result.Info[0]
 	ctx.RespEntity(bizData)
 }
@@ -380,10 +551,19 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 
 // SearchBusiness search the business by condition
 func (s *Service) SearchBusiness(ctx *rest.Contexts) {
-	searchCond := new(metadata.QueryCondition)
+	searchCond := new(metadata.QueryBusinessRequest)
 	if err := ctx.DecodeInto(&searchCond); err != nil {
 		blog.Errorf("failed to parse the params, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
+		return
+	}
+
+	// parameters condition and biz_property_filter cannot be set at the same time.
+	if searchCond.Condition != nil && searchCond.BizPropertyFilter != nil {
+		blog.Errorf("failed to parse the params, condition and biz_property_filter cannot be set at the same "+
+			"time, rid: %s", ctx.Kit.Rid)
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "condition and biz_property_filter cannot be set "+
+			"at the same time")
 		return
 	}
 
@@ -412,6 +592,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	// parse business id from user's condition for testing.
 	bizIDs := make([]int64, 0)
 	authBizIDs := make([]int64, 0)
+	defErr := ctx.Kit.CCError
 	biz, exist := searchCond.Condition[common.BKAppIDField]
 	if exist {
 		// constrict that bk_biz_id field can only be a numeric value,
@@ -500,8 +681,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 				// now you have the authority.
 			} else {
 				if len(appList) == 0 {
-					blog.Errorf("get appList is fail, user: %s, err: %v,rid: %s", ctx.Kit.User, err, ctx.Kit.Rid)
-					ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")
+					ctx.RespEntityWithCount(0, make([]mapstr.MapStr, 0))
 					return
 				}
 
@@ -513,6 +693,41 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 		}
 	}
 
+	// Only one of biz_property_filter and condition parameters can take effect, and condition is not recommended to
+	// continue to use it.
+	if searchCond.BizPropertyFilter != nil {
+		option := &querybuilder.RuleOption{
+			NeedSameSliceElementType: true,
+			MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
+			MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
+		}
+		
+		if key, err := searchCond.BizPropertyFilter.Validate(option); err != nil {
+			blog.Errorf("bizPropertyFilter is illegal, err: %v, rid:%s", err, ctx.Kit.Rid)
+			ccErr := defErr.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("biz.property.%s", key))
+			ctx.RespAutoError(ccErr)
+			return
+		}
+		
+		if searchCond.BizPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			blog.Errorf("bizPropertyFilter is illegal, err: %v, rid: %s", err, ctx.Kit.Rid, ctx.Kit.Rid)
+			ccErr := defErr.CCErrorf(common.CCErrCommParamsInvalid,
+				fmt.Sprintf("exceed max query condition deepth: %d", querybuilder.MaxDeep))
+			ctx.RespAutoError(ccErr)
+			return
+		}
+
+		mgoFilter, key, err := searchCond.BizPropertyFilter.ToMgo()
+		if err != nil {
+			blog.Errorf("BizPropertyFilter ToMgo failed: %s, err: %v,  rid:%s", searchCond.BizPropertyFilter,
+				err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid,
+				err.Error()+fmt.Sprintf(", biz_property_filter.%s", key)))
+			return
+		}
+		searchCond.Condition = mgoFilter
+	}
+
 	if _, ok := searchCond.Condition[common.BKDataStatusField]; !ok {
 		searchCond.Condition[common.BKDataStatusField] = mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled}
 	}
@@ -520,7 +735,13 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	// can only find normal business, but not resource pool business
 	searchCond.Condition[common.BKDefaultField] = 0
 
-	cnt, instItems, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, searchCond)
+	query := &metadata.QueryCondition{
+		Condition: searchCond.Condition,
+		Fields:    searchCond.Fields,
+		Page:      searchCond.Page,
+	}
+
+	cnt, instItems, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, query)
 	if err != nil {
 		blog.Errorf("find business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

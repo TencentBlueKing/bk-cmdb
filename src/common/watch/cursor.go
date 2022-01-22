@@ -67,6 +67,8 @@ const (
 	HostIdentifier CursorType = "host_identifier"
 	// MainlineInstance specified for mainline instance event watch, filtered from object instance events
 	MainlineInstance CursorType = "mainline_instance"
+	// InstAsst specified for instance association event watch
+	InstAsst CursorType = "inst_asst"
 )
 
 func (ct CursorType) ToInt() int {
@@ -93,6 +95,8 @@ func (ct CursorType) ToInt() int {
 		return 11
 	case MainlineInstance:
 		return 12
+	case InstAsst:
+		return 13
 	default:
 		return -1
 	}
@@ -122,6 +126,8 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = HostIdentifier
 	case 12:
 		*ct = MainlineInstance
+	case 13:
+		*ct = InstAsst
 	default:
 		*ct = UnknownType
 	}
@@ -129,8 +135,8 @@ func (ct *CursorType) ParseInt(typ int) {
 
 // ListCursorTypes returns all support CursorTypes.
 func ListCursorTypes() []CursorType {
-	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase, Process,
-		ProcessInstanceRelation, HostIdentifier, MainlineInstance}
+	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase, Process, ProcessInstanceRelation,
+		HostIdentifier, MainlineInstance, InstAsst}
 }
 
 // ListEventCallbackCursorTypes returns all support CursorTypes for event callback.
@@ -256,9 +262,19 @@ func (c *Cursor) Decode(cur string) error {
 	cursorType.ParseInt(typ)
 	c.Type = cursorType
 
-	_, err = primitive.ObjectIDFromHex(elements[2])
-	if err != nil {
-		return fmt.Errorf("got invalid oid: %s, err: %v", elements[2], err)
+	switch cursorType {
+	case InstAsst:
+		// instance association events use its identity id which is formatted to a string type as its event's oid.
+		// so its oid should be validate with ParseInt function.
+		_, err = strconv.ParseInt(elements[2], 10, 64)
+		if err != nil {
+			return fmt.Errorf("got invalid oid: %s, should be a string formatted from int, err: %v", elements[2], err)
+		}
+	default:
+		_, err = primitive.ObjectIDFromHex(elements[2])
+		if err != nil {
+			return fmt.Errorf("got invalid oid: %s, should be a hex string, err: %v", elements[2], err)
+		}
 	}
 	c.Oid = elements[2]
 
@@ -308,6 +324,8 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 		curType = Process
 	case common.BKTableNameProcessInstanceRelation:
 		curType = ProcessInstanceRelation
+	case common.BKTableNameInstAsst:
+		curType = InstAsst
 	default:
 		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.ID())
 		return "", fmt.Errorf("unsupported cursor type collection: %s", coll)
@@ -320,7 +338,7 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 		Oper:        e.OperationType,
 	}
 
-	if curType == ObjectBase || curType == MainlineInstance {
+	if curType == ObjectBase || curType == MainlineInstance || curType == InstAsst {
 		if instID <= 0 {
 			return "", errors.New("invalid instance id")
 		}

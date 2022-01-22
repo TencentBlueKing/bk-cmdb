@@ -27,7 +27,7 @@ import (
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {

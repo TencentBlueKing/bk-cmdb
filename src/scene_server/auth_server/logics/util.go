@@ -33,7 +33,7 @@ func getResourceTableName(resourceType iam.TypeID) string {
 		return common.BKTableNameBaseHost
 	case iam.SysModelGroup:
 		return common.BKTableNameObjClassification
-	case iam.SysModel, iam.SysInstanceModel, iam.SysModelEvent, iam.MainlineModelEvent:
+	case iam.SysModel, iam.SysInstanceModel, iam.SysModelEvent, iam.MainlineModelEvent, iam.InstAsstEvent:
 		return common.BKTableNameObjDes
 	case iam.SysAssociationType:
 		return common.BKTableNameAsstDes
@@ -205,7 +205,7 @@ type modelIDObjIDMap struct {
 // modelObjIDMap is map whose key is modelID , value is objID
 // eg : {7:"bk_switch"}
 var modelObjIDMap = &modelIDObjIDMap{
-	data : make(map[int64]string),
+	data: make(map[int64]string),
 }
 
 func (m *modelIDObjIDMap) get(objID int64) string {

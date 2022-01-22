@@ -76,13 +76,33 @@ func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.A
 	return resources
 }
 
-func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Header, action meta.Action, businesses ...BusinessSimplify) error {
+// AuthorizeByBusiness authorize by business
+func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Header, action meta.Action,
+	businesses ...BusinessSimplify) error {
+
 	if !am.Enabled() {
 		return nil
 	}
 
+	resourcePoolBusinessID, err := am.getResourcePoolBusinessID(ctx, header)
+	if err != nil {
+		return err
+	}
+
+	bizArr := make([]BusinessSimplify, 0)
+	if action == meta.ViewBusinessResource {
+		for _, biz := range businesses {
+			if biz.BKAppIDField == resourcePoolBusinessID {
+				continue
+			}
+			bizArr = append(bizArr, biz)
+		}
+	} else {
+		bizArr = businesses
+	}
+
 	// make auth resources
-	resources := am.MakeResourcesByBusiness(header, action, businesses...)
+	resources := am.MakeResourcesByBusiness(header, action, bizArr...)
 
 	return am.batchAuthorize(ctx, header, resources...)
 }
@@ -98,4 +118,24 @@ func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.He
 	}
 
 	return am.AuthorizeByBusiness(ctx, header, action, businesses...)
+}
+
+func (am *AuthManager) GenBizBatchNoPermissionResp(ctx context.Context, header http.Header, action meta.Action,
+	bizIDs []int64) (*metadata.BaseResp, error) {
+	businesses, err := am.collectBusinessByIDs(ctx, header, bizIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	// make auth resources
+	resources := am.MakeResourcesByBusiness(header, action, businesses...)
+
+	rid := util.ExtractRequestIDFromContext(ctx)
+	permission, err := am.Authorizer.GetPermissionToApply(ctx, header, resources)
+	if err != nil {
+		blog.Errorf("get permission to apply failed, err: %v, rid: %s", err, rid)
+		return nil, err
+	}
+	resp := metadata.NewNoPermissionResp(permission)
+	return &resp, nil
 }

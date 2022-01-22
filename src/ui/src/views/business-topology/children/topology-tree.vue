@@ -1,12 +1,12 @@
 <template>
   <section class="tree-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
-    <bk-input class="tree-search"
+    <bk-input class="tree-search" v-test-id
       clearable
       right-icon="bk-icon icon-search"
       :placeholder="$t('请输入关键词')"
-      v-model="filter">
+      v-model.trim="filter">
     </bk-input>
-    <bk-big-tree ref="tree" class="topology-tree"
+    <bk-big-tree ref="tree" class="topology-tree" v-test-id
       selectable
       display-matched-node-descendants
       :height="$APP.height - 160"
@@ -46,7 +46,7 @@
               }">
               {{$t('新建')}}
             </i>
-            <bk-button v-else class="node-button"
+            <bk-button v-else class="node-button" v-test-id="'createNode'"
               theme="primary"
               :disabled="disabled"
               @click.stop="showCreateDialog(node)">
@@ -106,6 +106,7 @@
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import FilterStore from '@/components/filters/store'
   import CmdbLoading from '@/components/loading/loading'
+  import { sortTopoTree } from '@/utils/tools'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE
   } from '@/dictionary/menu-symbol'
@@ -201,6 +202,8 @@
             this.getInstanceTopology(),
             this.getInternalTopology()
           ])
+          sortTopoTree(topology, 'bk_inst_name', 'child')
+          sortTopoTree(internal.module, 'bk_module_name')
           const root = topology[0] || {}
           const children = root.child || []
           const idlePool = {
@@ -209,7 +212,7 @@
             bk_inst_name: internal.bk_set_name,
             default: internal.default,
             is_idle_set: true,
-            child: this.$tools.sort((internal.module || []), 'default').map(module => ({
+            child: internal.module.map(module => ({
               bk_obj_id: 'module',
               bk_inst_id: module.bk_module_id,
               bk_inst_name: module.bk_module_name,
@@ -279,7 +282,7 @@
         return firstNode || null
       },
       getInstanceTopology() {
-        return this.$store.dispatch('objectMainLineModule/getInstTopo', {
+        return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
           bizId: this.bizId,
           config: {
             requestId: this.request.instance

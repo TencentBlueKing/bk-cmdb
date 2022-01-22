@@ -15,7 +15,6 @@ package y3_6_201910091234
 import (
 	"context"
 
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader"
@@ -24,7 +23,7 @@ import (
 )
 
 func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tableNames := []string{common.BKTableNameSetTemplateSyncStatus, common.BKTableNameSetTemplateSyncHistory}
+	tableNames := []string{"cc_SetTemplateSyncStatus", "cc_SetTemplateSyncHistory"}
 	for _, tableName := range tableNames {
 		existTable, err := db.HasTable(ctx, tableName)
 		if err != nil {
@@ -41,11 +40,11 @@ func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrade
 		}
 
 		setIDUnique := false
-		if tableName == common.BKTableNameSetTemplateSyncStatus {
+		if tableName == "cc_SetTemplateSyncStatus" {
 			setIDUnique = true
 		}
 		taskIDUnique := false
-		if tableName == common.BKTableNameSetTemplateSyncHistory {
+		if tableName == "cc_SetTemplateSyncHistory" {
 			taskIDUnique = true
 		}
 		indexArr := []types.Index{

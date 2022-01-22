@@ -14,6 +14,7 @@ package system
 
 import (
 	"encoding/json"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -66,4 +67,66 @@ func (sm *systemManager) SearchConfigAdmin(kit *rest.Kit) (*metadata.ConfigAdmin
 	}
 
 	return conf, nil
+}
+
+// SearchPlatformSettingConfig search platform setting.
+func (sm *systemManager) SearchPlatformSettingConfig(kit *rest.Kit) (*metadata.PlatformSettingConfig,
+	errors.CCErrorCoder) {
+
+	cond := map[string]interface{}{
+		"_id": common.ConfigAdminID,
+	}
+
+	ret := make(map[string]interface{})
+
+	err := mongodb.Client().Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).
+		One(kit.Ctx, &ret)
+	if err != nil {
+		blog.Errorf("search platform setting failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if ret[common.ConfigAdminValueField] == nil {
+		blog.Errorf("search platform setting failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if _, ok := ret[common.ConfigAdminValueField].(string); !ok {
+		blog.Errorf("search platform setting failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	conf := new(metadata.PlatformSettingConfig)
+	if err := json.Unmarshal([]byte(ret[common.ConfigAdminValueField].(string)), conf); err != nil {
+		blog.Errorf("platform setting unmarshal err: %v, config: %v,rid: %s", err,
+			ret[common.ConfigAdminValueField].(string), kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	return conf, nil
+}
+
+// UpdatePlatformSettingConfig update platform setting.
+func (sm *systemManager) UpdatePlatformSettingConfig(kit *rest.Kit,
+	input *metadata.PlatformSettingConfig) errors.CCErrorCoder {
+
+	bytes, err := json.Marshal(input)
+	if err != nil {
+		blog.Errorf("update config admin failed, Marshal err: %v, input: %v, rid: %s", err, *input, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	cond := map[string]interface{}{
+		"_id": common.ConfigAdminID,
+	}
+	data := map[string]interface{}{
+		common.ConfigAdminValueField: string(bytes),
+		common.LastTimeField:         time.Now(),
+	}
+	err = mongodb.Client().Table(common.BKTableNameSystem).Update(kit.Ctx, cond, data)
+	if err != nil {
+		blog.Errorf("update config admin failed, update err: %v, rid: %s", err, kit.Rid)
+
+		return kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed, err)
+	}
+
+	return nil
 }

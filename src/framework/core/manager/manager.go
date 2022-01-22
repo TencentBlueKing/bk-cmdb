@@ -22,7 +22,7 @@ import (
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output"
 	"configcenter/src/framework/core/types"
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // Manager contains the basic framework data.

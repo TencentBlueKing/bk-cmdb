@@ -330,6 +330,8 @@ type DefaultModuleHostConfigParams struct {
 type Condition struct {
 	// Condition conditions.
 	Condition map[string]interface{} `json:"condition"`
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition *TimeCondition `json:"time_condition,omitempty"`
 }
 
 // common search struct
@@ -416,6 +418,9 @@ type CommonSearchFilter struct {
 	// Conditions is target search conditions that make up by the query filter.
 	Conditions *querybuilder.QueryFilter `json:"conditions"`
 
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition *TimeCondition `json:"time_condition,omitempty"`
+
 	// Fields indicates which fields should be returns, it's would be ignored if not exists.
 	Fields []string `json:"fields"`
 
@@ -490,6 +495,9 @@ type CommonCountFilter struct {
 
 	// Conditions is target search conditions that make up by the query filter.
 	Conditions *querybuilder.QueryFilter `json:"conditions"`
+
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition *TimeCondition `json:"time_condition,omitempty"`
 }
 
 // Validate validates the common count filter struct,

@@ -190,7 +190,7 @@ func ConvertSysInstanceActionID(resourceType meta.ResourceType, action meta.Acti
 	case meta.Delete:
 		actionType = Delete
 	case meta.Find:
-		actionType = View
+		return Skip, nil
 	default:
 		return Unsupported, fmt.Errorf("unsupported action: %s", action)
 	}
@@ -392,6 +392,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.WatchProcess:          WatchProcessEvent,
 		meta.WatchCommonInstance:   WatchCommonInstanceEvent,
 		meta.WatchMainlineInstance: WatchMainlineInstanceEvent,
+		meta.WatchInstAsst:         WatchInstAsstEvent,
 	},
 	meta.UserCustom: {
 		meta.Find:   Skip,
@@ -456,11 +457,11 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Create:   Skip,
 	},
 	meta.ConfigAdmin: {
+
+		// reuse GlobalSettings permissions
 		meta.Find:   Skip,
 		meta.Update: GlobalSettings,
-		// unsupported action
 		meta.Delete: Unsupported,
-		// unsupported action
 		meta.Create: Unsupported,
 	},
 }

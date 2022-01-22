@@ -36,6 +36,19 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, iam *iamtype.IAM, c
 		return nil
 	}
 
+	// for the first installation, cmdb is not registered to iam,
+	// skip migrate iam system instances
+	isRegistered, err := iam.IsRegisteredToIAM(ctx)
+	if err != nil {
+		blog.Errorf("check iam system info failed, err: %v", err)
+		return err
+	}
+
+	if !isRegistered {
+		blog.Warnf("skip migrate iam system instances, for not registered to iam yet")
+		return nil
+	}
+
 	// get all custom objects(without inner and mainline objects that authorize separately)
 	associations := make([]metadata.Association, 0)
 	filter := mapstr.MapStr{
@@ -65,8 +78,7 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, iam *iamtype.IAM, c
 			common.BKDBNIN: excludeObjIDs,
 		},
 	}
-	err := db.Table(common.BKTableNameObjDes).Find(condition).All(ctx, &objects)
-	if err != nil {
+	if err := db.Table(common.BKTableNameObjDes).Find(condition).All(ctx, &objects); err != nil {
 		blog.Errorf("get all custom objects failed, err: %v", err)
 		return err
 	}
@@ -77,9 +89,22 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, iam *iamtype.IAM, c
 		return err
 	}
 
+	fields := []iamtype.SystemQueryField{iamtype.FieldActions}
+	iamResp, err := iam.Client.GetSystemInfo(ctx, fields)
+	if err != nil {
+		blog.Errorf("get system info failed, error: %v", err)
+		return err
+	}
+	iamActionMap := make(map[iamtype.ActionID]struct{})
+	for _, action := range iamResp.Data.Actions {
+		iamActionMap[action.ID] = struct{}{}
+	}
 	// migrate instance auth policies
 	instanceActions := []iamtype.ActionID{"create_sys_instance", "edit_sys_instance", "delete_sys_instance"}
 	for _, action := range instanceActions {
+		if _, ok := iamActionMap[action]; !ok {
+			continue
+		}
 		if err := migrateModelInstancePermission(ctx, action, db, iam, objects); err != nil {
 			blog.Errorf("[upgrade y3.10.202106301057] migrate model instance authorization failed, error: %v", err)
 			return err

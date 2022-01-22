@@ -73,7 +73,9 @@ func (s *coreService) SearchModelInstances(ctx *rest.Contexts) {
 		ctx.RespEntityWithError(dataResult, err)
 		return
 	}
+
 	multilingual.TranslateInstanceName(s.Language(ctx.Kit.Header), objectID, dataResult.Info)
+
 	ctx.RespEntity(dataResult)
 }
 

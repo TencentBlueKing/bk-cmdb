@@ -1,5 +1,5 @@
 <template>
-  <bk-table class="instance-table" ref="instanceTable"
+  <bk-table class="instance-table" ref="instanceTable" v-test-id.businessHostAndService="'svrInstList'"
     v-bkloading="{ isLoading: $loading(request.getList) }"
     :row-class-name="getRowClassName"
     :data="list"

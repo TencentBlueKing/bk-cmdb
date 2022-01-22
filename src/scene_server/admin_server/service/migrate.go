@@ -32,7 +32,7 @@ import (
 	daltypes "configcenter/src/storage/dal/types"
 	streamtypes "configcenter/src/storage/stream/types"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
@@ -131,7 +131,8 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 				ExpireAfterSeconds: dbChainTTLTime},
 		}
 
-		if cursorType == watch.ObjectBase || cursorType == watch.MainlineInstance {
+		if cursorType == watch.ObjectBase || cursorType == watch.MainlineInstance || cursorType == watch.InstAsst {
+
 			subResourceIndex := daltypes.Index{
 				Name: "index_sub_resource", Keys: map[string]int32{common.BKSubResourceField: 1}, Background: true,
 			}

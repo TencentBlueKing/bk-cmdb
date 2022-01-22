@@ -135,7 +135,10 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 	if 0 == len(f.Sheets) {
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
-	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, modelBizID)
+
+	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
+
 	if nil != err {
 		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
 	}
@@ -187,116 +190,86 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	resp := &metadata.ResponseDataMapStr{Data: mapstr.New()}
 
 	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang, modelBizID)
-	if nil != err {
-		blog.Errorf("ImportHosts failed, GetImportHosts error:%s, rid: %s", err.Error(), rid)
-		return &metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrWebFileContentFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(),
-			},
-			Data: nil,
-		}
+	if err != nil {
+		blog.Errorf("get import hosts failed, err: %v, rid: %s", err, rid)
+		resp.Code = common.CCErrWebFileContentFail
+		resp.ErrMsg = defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error()
+		return resp
 	}
 	if len(errMsg) > 0 {
-		return &metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrWebFileContentFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, "").Error(),
-			},
-			Data: map[string]interface{}{
-				"error": errMsg,
-			},
-		}
+		resp.Code = common.CCErrWebFileContentFail
+		resp.ErrMsg = defErr.Errorf(common.CCErrWebFileContentFail, "").Error()
+		resp.Data.Set("error", errMsg)
+		return resp
 	}
 
 	errMsg, err = lgc.CheckHostsAdded(ctx, header, hosts)
-	if nil != err {
-		blog.Errorf("ImportHosts failed,  CheckHostsAdded error:%s, rid: %s", err.Error(), rid)
-		return &metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrWebHostCheckFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebHostCheckFail, err.Error()).Error(),
-			},
-			Data: nil,
-		}
+	if err != nil {
+		blog.Errorf("check host added failed, err: %v, rid: %s", err, rid)
+		resp.Code = common.CCErrWebHostCheckFail
+		resp.ErrMsg = defErr.Errorf(common.CCErrWebHostCheckFail, err.Error()).Error()
+		return resp
 	}
 	if len(errMsg) > 0 {
-		return &metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrWebHostCheckFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebHostCheckFail, "").Error(),
-			},
-			Data: map[string]interface{}{
-				"error": errMsg,
-			},
-		}
+		resp.Code = common.CCErrWebHostCheckFail
+		resp.ErrMsg = defErr.Errorf(common.CCErrWebHostCheckFail, "").Error()
+		resp.Data.Set("error", errMsg)
+		return resp
 	}
 
-	var resultErr error
-	result := &metadata.ResponseDataMapStr{}
-	result.BaseResp.Result = true
-	result.Data = mapstr.New()
 	if len(hosts) > 0 {
 		params := map[string]interface{}{
 			"host_info":            hosts,
 			"input_type":           common.InputTypeExcel,
 			common.BKModuleIDField: moduleID,
 		}
-		result, resultErr = lgc.CoreAPI.ApiServer().AddHostByExcel(context.Background(), header, params)
-		if nil != resultErr {
-			blog.Errorf("ImportHosts add host info  http request  error:%s, rid:%s", resultErr.Error(), util.GetHTTPCCRequestID(header))
-			return &metadata.ResponseDataMapStr{
-				BaseResp: metadata.BaseResp{
-					Result: false,
-					Code:   common.CCErrCommHTTPDoRequestFailed,
-					ErrMsg: defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(),
-				},
-				Data: nil,
-			}
+		result, resultErr := lgc.CoreAPI.ApiServer().AddHostByExcel(context.Background(), header, params)
+		if resultErr != nil {
+			blog.Errorf("add host info failed, err: %v, rid: %s", resultErr, rid)
+			resp.Code = common.CCErrCommHTTPDoRequestFailed
+			resp.ErrMsg = defErr.Errorf(common.CCErrCommHTTPDoRequestFailed).Error()
+			return resp
+		}
+
+		resp = result
+	}
+
+	if len(f.Sheets) <= 2 || len(asstObjectUniqueIDMap) == 0 {
+		resp.Result = true
+		return resp
+	}
+
+	// if len(f.Sheets) > 2, the second sheet is association data to be import
+	asstInfoMap, assoErrMsg := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset,
+		defLang)
+
+	if len(asstInfoMap) > 0 {
+		asstInfoMapInput := &metadata.RequestImportAssociation{
+			AssociationInfoMap:    asstInfoMap,
+			AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
+			ObjectUniqueID:        objectUniqueID,
+		}
+		asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, common.BKInnerObjIDHost,
+			asstInfoMapInput)
+		if asstResultErr != nil {
+			blog.Errorf("import host association failed, err: %v, rid: %s", asstResultErr, rid)
+			resp.Code = common.CCErrCommHTTPDoRequestFailed
+			resp.ErrMsg = defErr.Errorf(common.CCErrCommHTTPDoRequestFailed).Error()
+			return resp
+		}
+
+		assoErrMsg = append(assoErrMsg, asstResult.Data.ErrMsgMap...)
+		if resp.Result && !asstResult.Result {
+			resp.BaseResp = asstResult.BaseResp
 		}
 	}
 
-	if len(f.Sheets) < 2 || len(asstObjectUniqueIDMap) == 0 {
-		return result
-	}
+	resp.Data.Set("asst_error", assoErrMsg)
 
-	// if len(f.Sheets) >= 2, the second sheet is association data to be import
-	asstInfoMap := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset)
-	if len(asstInfoMap) == 0 {
-		return result
-	}
-
-	asstInfoMapInput := &metadata.RequestImportAssociation{
-		AssociationInfoMap:    asstInfoMap,
-		AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
-		ObjectUniqueID:        objectUniqueID,
-	}
-	asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, common.BKInnerObjIDHost, asstInfoMapInput)
-	if nil != asstResultErr {
-		blog.Errorf("ImportHosts logics http request import association error:%s, rid:%s", asstResultErr.Error(), util.GetHTTPCCRequestID(header))
-		return &metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrCommHTTPDoRequestFailed,
-				ErrMsg: defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(),
-			},
-			Data: nil,
-		}
-	}
-
-	result.Data.Set("asst_error", asstResult.Data.ErrMsgMap)
-
-	if result.Result && !asstResult.Result {
-		result.BaseResp = asstResult.BaseResp
-	}
-
-	return result
+	return resp
 }
 
 // Statistics
@@ -455,7 +428,7 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 		return result
 	}
 	// if len(f.Sheets) >= 2, the second sheet is association data to be import
-	asstInfoMap := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset)
+	asstInfoMap, _ := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset, defLang)
 	if len(asstInfoMap) == 0 {
 		return result
 	}

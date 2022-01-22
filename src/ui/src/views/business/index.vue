@@ -10,6 +10,17 @@
           {{$t('新建')}}
         </bk-button>
       </cmdb-auth>
+      <cmdb-auth :auth="{ type: $OPERATION.U_BUSINESS }">
+        <template #default="{ disabled }">
+          <bk-button
+            class="ml10"
+            :disabled="selectedRows.length === 0 || disabled"
+            @click="handleBatchEdit"
+          >
+            {{ $t("批量编辑") }}
+          </bk-button>
+        </template>
+      </cmdb-auth>
       <div class="options-button fr">
         <cmdb-auth class="inline-block-middle" :auth="{ type: $OPERATION.BUSINESS_ARCHIVE }">
           <icon-button slot-scope="{ disabled }"
@@ -47,12 +58,23 @@
     </div>
     <bk-table class="business-table"
       v-bkloading="{ isLoading: $loading('post_searchBusiness_list') }"
-      :data="table.list"
+      :data="table.visibleList"
       :pagination="table.pagination"
       :max-height="$APP.height - 200"
       @sort-change="handleSortChange"
       @page-limit-change="handleSizeChange"
       @page-change="handlePageChange">
+      <batch-selection-column
+        width="60px"
+        row-key="bk_biz_id"
+        ref="batchSelectionColumn"
+        indeterminate
+        :cross-page="table.visibleList.length >= table.pagination.limit"
+        :selected-rows.sync="selectedRows"
+        :data="table.visibleList"
+        :full-data="table.list"
+      >
+      </batch-selection-column>
       <bk-table-column v-for="column in table.header"
         sortable="custom"
         :key="column.id"
@@ -131,8 +153,48 @@
         </bk-tab-panel>
       </bk-tab>
     </bk-sideslider>
-    <bk-sideslider v-transfer-dom :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
-      <cmdb-columns-config slot="content"
+
+    <bk-sideslider
+      v-transfer-dom
+      :is-show.sync="batchUpdateSlider.show"
+      :title="$t('批量修改业务')"
+      :width="800"
+      :before-close="handleBatchUpdateSliderBeforeClose"
+    >
+      <bk-tab
+        :active.sync="tab.active"
+        type="unborder-card"
+        slot="content"
+        v-if="batchUpdateSlider.show"
+      >
+        <bk-tab-panel
+          name="attribute"
+          :label="$t('属性')"
+          style="width: calc(100% + 40px); margin: 0 -20px"
+        >
+          <cmdb-form-multiple
+            ref="batchUpdateForm"
+            :properties="properties"
+            :property-groups="propertyGroups"
+            :object-unique="objectUnique"
+            :save-auth="saveAuth"
+            @on-submit="handleMultipleSave"
+            :loading="batchUpdateSlider.loading"
+            @on-cancel="handleBatchUpdateSliderBeforeClose"
+          >
+          </cmdb-form-multiple>
+        </bk-tab-panel>
+      </bk-tab>
+    </bk-sideslider>
+
+    <bk-sideslider
+      v-transfer-dom
+      :is-show.sync="columnsConfig.show"
+      :width="600"
+      :title="$t('列表显示属性配置')"
+    >
+      <cmdb-columns-config
+        slot="content"
         v-if="columnsConfig.show"
         :properties="properties"
         :selected="columnsConfig.selected"
@@ -153,11 +215,13 @@
   import cmdbPropertySelector from '@/components/property-selector'
   import RouterQuery from '@/router/query'
   import Utils from '@/components/filters/utils'
-  import throttle from  'lodash.throttle'
+  import throttle from 'lodash.throttle'
+  import BatchSelectionColumn from '@/components/batch-selection-column'
   export default {
     components: {
       cmdbColumnsConfig,
-      cmdbPropertySelector
+      cmdbPropertySelector,
+      BatchSelectionColumn,
     },
     data() {
       return {
@@ -166,6 +230,7 @@
         table: {
           header: [],
           list: [],
+          visibleList: [],
           pagination: {
             count: 0,
             current: 1,
@@ -180,6 +245,8 @@
             }
           }
         },
+        selectedRows: [],
+        editAll: false,
         filter: {
           field: 'bk_biz_name',
           value: '',
@@ -188,6 +255,10 @@
         slider: {
           show: false,
           title: ''
+        },
+        batchUpdateSlider: {
+          show: false,
+          loading: false,
         },
         tab: {
           active: 'attribute'
@@ -310,6 +381,7 @@
         'searchBusiness',
         'archiveBusiness',
         'updateBusiness',
+        'batchUpdateBusiness',
         'createBusiness',
         'searchBusinessById'
       ]),
@@ -333,6 +405,40 @@
             defaultData.value
           )
         }
+      },
+      handleBatchEdit() {
+        this.batchUpdateSlider.show = true
+      },
+      async handleMultipleSave(changedValues) {
+        const includeBizIds = this.selectedRows.map(r => r.bk_biz_id)
+        const condition = {
+          ...this.getSearchParams()?.condition
+        }
+
+        if (includeBizIds?.length > 0) {
+          condition.bk_biz_id = { $in: includeBizIds }
+        }
+
+        this.batchUpdateSlider.loading = true
+        this.batchUpdateBusiness({
+          params: {
+            properties: changedValues,
+            condition
+          },
+        })
+          .then(() => {
+            this.$refs.batchSelectionColumn.clearSelection()
+            this.batchUpdateSlider.show = false
+            RouterQuery.set({
+              _t: Date.now(),
+            })
+          })
+          .catch((err) => {
+            console.log(err)
+          })
+          .finally(() => {
+            this.batchUpdateSlider.loading = false
+          })
       },
       getPropertyGroups() {
         return this.searchGroup({
@@ -381,14 +487,20 @@
       handleSortChange(sort) {
         this.table.sort = this.$tools.getSort(sort)
         this.handlePageChange(1)
+        this.getTableData()
       },
       handleSizeChange(size) {
         this.table.pagination.limit = size
         this.handlePageChange(1)
+        this.renderVisibleList()
       },
       handlePageChange(page) {
         this.table.pagination.current = page
-        this.getTableData()
+        this.renderVisibleList()
+      },
+      renderVisibleList() {
+        const { limit, current } = this.table.pagination
+        this.table.visibleList = this.table.list.slice((current - 1) * limit, current * limit)
       },
       getBusinessList(config = { cancelPrevious: true }) {
         return this.searchBusiness({
@@ -415,6 +527,7 @@
         this.handleFilterValueEnter()
       },
       handleFilterValueEnter() {
+        this.$refs.batchSelectionColumn.clearSelection()
         RouterQuery.set({
           _t: Date.now(),
           page: 1,
@@ -434,6 +547,8 @@
 
           this.table.stuff.type = this.filter.value.toString().length ? 'search' : 'default'
 
+          this.renderVisibleList()
+
           return data
         })
           .catch(({ permission }) => {
@@ -451,8 +566,8 @@
           },
           fields: [],
           page: {
-            start: this.table.pagination.limit * (this.table.pagination.current - 1),
-            limit: this.table.pagination.limit,
+            start: 0,
+            limit: 10000,
             sort: this.table.sort
           }
         }
@@ -516,7 +631,7 @@
           }).then(() => {
             this.attribute.inst.details = Object.assign({}, originalValues, values)
             this.getTableData()
-            this.handleCancel()
+            this.closeCreateSlider()
             this.$success(this.$t('修改成功'))
             this.$http.cancel('post_searchBusiness_$ne_disabled')
           })
@@ -525,14 +640,14 @@
           this.createBusiness({
             params: values
           }).then(() => {
-            this.handlePageChange(1)
-            this.handleCancel()
+            this.getTableData()
+            this.closeCreateSlider()
             this.$success(this.$t('创建成功'))
             this.$http.cancel('post_searchBusiness_$ne_disabled')
           })
         }
       },
-      handleCancel() {
+      closeCreateSlider() {
         if (this.attribute.type === 'create') {
           this.slider.show = false
         }
@@ -556,9 +671,19 @@
         })
       },
       handleSliderBeforeClose() {
+        const { changedValues } = this.$refs.form
+
+        this.addDoubleConfirm(changedValues, this.closeCreateSlider)
+      },
+      handleBatchUpdateSliderBeforeClose() {
+        const { changedValues } = this.$refs.batchUpdateForm
+
+        this.addDoubleConfirm(changedValues, () => {
+          this.batchUpdateSlider.show = false
+        })
+      },
+      addDoubleConfirm(changedValues, confirmCallback) {
         if (this.tab.active === 'attribute') {
-          const $form = this.$refs.form
-          const { changedValues } = $form
           if (Object.keys(changedValues).length) {
             return new Promise((resolve) => {
               this.$bkInfo({
@@ -567,7 +692,7 @@
                 extCls: 'bk-dialog-sub-header-center',
                 confirmFn: () => {
                   resolve(true)
-                  this.handleCancel()
+                  confirmCallback && confirmCallback()
                 },
                 cancelFn: () => {
                   resolve(false)
@@ -575,10 +700,14 @@
               })
             })
           }
-          this.handleCancel()
+
+          confirmCallback && confirmCallback()
+
           return true
         }
-        this.handleCancel()
+
+        confirmCallback && confirmCallback()
+
         return true
       },
       async handleApplyPermission() {

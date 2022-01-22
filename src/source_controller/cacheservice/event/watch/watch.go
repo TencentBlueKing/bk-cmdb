@@ -124,6 +124,8 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 		common.BKClusterTimeField: map[string]interface{}{
 			common.BKDBGT: metadata.Time{Time: time.Unix(opts.StartFrom, 0).Local()},
 		},
+		// filters out the previous version where sub resource is string type // TODO remove this
+		common.BKSubResourceField: map[string]interface{}{common.BKDBType: "array"},
 	}
 
 	node := new(watch.ChainNode)
@@ -500,8 +502,11 @@ func (c *Client) isNodeHitSubResource(node *watch.ChainNode, subResource string)
 		return true
 	}
 
-	if node.SubResource == subResource {
-		return true
+	for _, subRes := range node.SubResource {
+		if subRes == subResource {
+			return true
+		}
 	}
+
 	return false
 }

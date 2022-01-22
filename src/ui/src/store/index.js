@@ -63,12 +63,15 @@ import cloudarea from './modules/api/cloudarea'
 import audit from './modules/api/audit.js'
 import dynamicGroup from './modules/api/dynamic-group'
 
+import globalConfig from './modules/global-config.js'
+
 Vue.use(Vuex)
 
 export default new Vuex.Store({
   ...global,
   modules: {
     index,
+    globalConfig,
     hostDetails,
     serviceProcess,
     businessSync,

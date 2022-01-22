@@ -47,6 +47,8 @@ type DB interface {
 	DropTable(ctx context.Context, name string) error
 	// CreateTable 创建集合
 	CreateTable(ctx context.Context, name string) error
+	// RenameTable 更新集合名称
+	RenameTable(ctx context.Context, prevName, currName string) error
 
 	IsDuplicatedError(error) bool
 	IsNotFoundError(error) bool
@@ -56,7 +58,7 @@ type DB interface {
 	// CommitTransaction 提交事务
 	CommitTransaction(context.Context, *metadata.TxnCapable) error
 	// AbortTransaction 取消事务
-	AbortTransaction(context.Context, *metadata.TxnCapable) error
+	AbortTransaction(context.Context, *metadata.TxnCapable) (bool,error)
 
 	// InitTxnManager TxnID management of initial transaction
 	InitTxnManager(r redis.Client) error

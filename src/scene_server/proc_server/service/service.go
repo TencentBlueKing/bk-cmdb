@@ -32,7 +32,7 @@ import (
 	"configcenter/src/thirdparty/esbserver"
 	"configcenter/src/thirdparty/esbserver/esbutil"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 type ProcServer struct {
@@ -114,10 +114,26 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/details", Handler: ps.ListServiceInstancesDetails})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/proc/service_instance/biz/{bk_biz_id}", Handler: ps.UpdateServiceInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/service_instance", Handler: ps.DeleteServiceInstance})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/proc/service_instance/difference", Handler: ps.DiffServiceInstanceWithTemplate})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/proc/service_template/general_difference",
+		Handler: ps.DiffServiceTemplateGeneral})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/proc/difference/service_instances",
+		Handler: ps.ListDiffServiceInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/proc/service_instance/difference_detail",
+		Handler: ps.DiffServiceInstanceDetail})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_instance/sync", Handler: ps.SyncServiceInstanceByTemplate})
+
+	// deprecated,  only for old api
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/service_instance/labels", Handler: ps.ServiceInstanceAddLabels})
+
+	// deprecated,  only for old api
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/service_instance/labels", Handler: ps.ServiceInstanceRemoveLabels})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/updatemany/proc/service_instance/labels",
+		Handler: ps.ServiceInstanceUpdateLabels})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/labels/aggregation", Handler: ps.ServiceInstanceLabelsAggregation})
 
 	// process instance

@@ -25,13 +25,15 @@ import (
 // 1. 公有模型加入业务私有字段：私有字段不能与当前业务私有字段重复，且不能与公有字段重复
 // 2. 公有模型加入业务公有字段：公有字段不能与其它公有字段重复，且不能与任何业务的私有字段重复(即忽略业务参数)
 // 字段不能与其它开发商下的字段重复
-func (m *modelAttribute) isExists(kit *rest.Kit, objID, propertyID string, modelBizID int64) (oneAttribute *metadata.Attribute, exists bool, err error) {
+func (m *modelAttribute) isExists(kit *rest.Kit, objID, propertyID string, modelBizIDs int64) (
+	oneAttribute *metadata.Attribute, exists bool, err error) {
+
 	filter := map[string]interface{}{
 		metadata.AttributeFieldPropertyID: propertyID,
 		common.BKObjIDField:               objID,
 	}
 
-	util.AddModelBizIDCondition(filter, modelBizID)
+	util.AddModelBizIDCondition(filter, modelBizIDs)
 	oneAttribute = &metadata.Attribute{}
 	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(filter).One(kit.Ctx, oneAttribute)
 	if nil != err && !mongodb.Client().IsNotFoundError(err) {

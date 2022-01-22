@@ -29,7 +29,7 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // Service impls main logics as service.

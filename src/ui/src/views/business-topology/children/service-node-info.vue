@@ -23,7 +23,7 @@
       <template slot="details-options">
         <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [business] }">
           <template slot-scope="{ disabled }">
-            <bk-button class="button-edit"
+            <bk-button class="button-edit" v-test-id="'edit'"
               theme="primary"
               :disabled="disabled"
               @click="handleEdit">
@@ -39,7 +39,7 @@
                 {{$t('删除节点')}}
               </bk-button>
             </span>
-            <bk-button class="btn-delete" v-else
+            <bk-button class="btn-delete" v-else v-test-id="'del'"
               hover-theme="danger"
               :disabled="disabled"
               @click="handleDelete">
@@ -76,6 +76,7 @@
   import debounce from 'lodash.debounce'
   import NodeExtraInfo from './node-extra-info'
   import FormServiceCategory from './form-service-category'
+  import instanceService from '@/service/instance/instance'
   export default {
     components: {
       NodeExtraInfo,
@@ -362,25 +363,10 @@
         return instance
       },
       async getCustomInstance() {
-        const data = await this.$store.dispatch('objectCommonInst/searchInst', {
-          objId: this.modelId,
-          params: {
-            page: { start: 0, limit: 1 },
-            fields: {},
-            condition: {
-              [this.modelId]: [{
-                field: 'bk_inst_id',
-                operator: '$eq',
-                value: this.selectedNode.data.bk_inst_id
-              }]
-            }
-          },
-          config: {
-            requestId: 'getNodeInstance',
-            cancelPrevious: true
-          }
+        return instanceService.findOne({
+          bk_obj_id: this.modelId,
+          bk_inst_id: this.selectedNode.data.bk_inst_id
         })
-        return data.info[0]
       },
       handleEdit() {
         this.type = 'update'

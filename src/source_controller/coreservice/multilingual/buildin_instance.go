@@ -44,10 +44,21 @@ var BuildInInstanceNamePkg = map[string]map[string][]string{
 // 2: a fault module
 // 3: a recycle module
 func TranslateInstanceName(defLang language.DefaultCCLanguageIf, objectID string, instances []mapstr.MapStr) {
+
 	if m, ok := BuildInInstanceNamePkg[objectID]; ok {
-		for idx := range instances {
+		for idx, inst := range instances {
+			// 如果用户将默认的内置模块名或者内置"空闲机池"名修改了，就不需要国际化，直接跳过
+			if v, ok := inst[common.BKModuleNameField]; ok &&
+				!(v == common.DefaultResModuleName || v == common.DefaultFaultModuleName ||
+					v == common.DefaultRecycleModuleName) {
+				continue
+			}
+			if v, ok := inst[common.BKSetNameField]; ok && v != common.DefaultResSetName {
+				continue
+			}
 			// get the default's value and it's corresponding infos from defaultNameLanguagePkg
 			subResult := m[fmt.Sprint(instances[idx][common.BKDefaultField])]
+
 			if len(subResult) >= 2 {
 				instances[idx][subResult[1]] = util.FirstNotEmptyString(defLang.Language(subResult[0]),
 					fmt.Sprint(instances[idx][subResult[1]]))

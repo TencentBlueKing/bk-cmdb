@@ -13,39 +13,45 @@
 package taskconfig
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 )
 
+// CodeTaskConfig task queue config defined in code
 type CodeTaskConfig struct {
-	//  task name,
+	// Name name of the task queue
 	Name string
-	// service name, apiserver, host, topo, proc etc
+	// SvrType service type, api, host, topo, proc etc.
 	SvrType string
-	// url path
+	// Path url path
 	Path string
-	// http request error. max retry
+	// Retry max retry attempts if request the callback interface failed
 	Retry int64
+	// LockTTL the expire time of task lock in minutes
+	LockTTL int64
 }
 
 var (
 	// 在代码中配置任务的任务
-	codeTaskConfigArr = []CodeTaskConfig{}
+	codeTaskConfigArr = make([]CodeTaskConfig, 0)
 )
 
-// init for auto task
+// init task queue
 func init() {
-	AddCodeTaskConfig("sync-settemplate2set", types.CC_MODULE_TOPO, "/topo/v3/internal/task", 1)
+	AddCodeTaskConfig(common.SyncSetTaskFlag, types.CC_MODULE_TOPO, "/topo/v3/internal/sync/module/task", 1, 2)
+	AddCodeTaskConfig(common.SyncModuleTaskFlag, types.CC_MODULE_PROC, "/process/v3/sync/service_instance/task", 1, 2)
 }
 
 // AddCodeTaskConfig add task
-func AddCodeTaskConfig(name, srvType, path string, retry int64) {
-	blog.Infof("add task. name:%s, service type:%s, path:%s", name, srvType, path)
+func AddCodeTaskConfig(name, srvType, path string, retry, lockTTL int64) {
+	blog.Infof("add task. name: %s, service type: %s, path: %s", name, srvType, path)
 	codeTaskConfigArr = append(codeTaskConfigArr, CodeTaskConfig{
 		Name:    name,
 		SvrType: srvType,
 		Path:    path,
 		Retry:   retry,
+		LockTTL: lockTTL,
 	})
 }
 

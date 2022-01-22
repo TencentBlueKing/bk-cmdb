@@ -35,6 +35,8 @@
   import AcrossBusinessModuleSelector from './across-business-module-selector.vue'
   import NoPermission from './no-permission.vue'
   import has from 'has'
+  import { ONE_TO_ONE } from '@/dictionary/host-transfer-type.js'
+
   export default {
     name: 'module-selector-with-tab',
     components: {
@@ -67,7 +69,7 @@
             {
               props: {
                 name: 'idle',
-                label: this.$t('转移到空闲模块'),
+                label: this.$t('转移到空闲模块', { idleSet: this.$store.state.globalConfig.config.set }),
                 visible: true
               },
               component: {
@@ -104,6 +106,7 @@
               component: {
                 name: AcrossBusinessModuleSelector.name,
                 props: {
+                  type: ONE_TO_ONE,
                   business: {},
                   confirmLoading: false
                 }

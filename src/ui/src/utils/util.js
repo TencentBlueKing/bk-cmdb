@@ -56,3 +56,16 @@ export function generateObjIcon(image, options) {
                     <circle cx="50" cy="50" r="49" fill="${options.backgroundColor}"/>
                 </svg>`
 }
+
+export function cached(fn) {
+  const cache = Object.create(null)
+  return (function cachedFn(str, ...args) {
+    const hit = cache[str]
+    return hit || (cache[str] = fn.apply(null, [str, ...args]))
+  })
+}
+
+export const camelize = cached((str, separator = '-') => {
+  const camelizeRE = new RegExp(`${separator}(\\w)`, 'g')
+  return str.replace(camelizeRE, (_, c) => (c ? c.toUpperCase() : ''))
+})

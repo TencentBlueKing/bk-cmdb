@@ -51,12 +51,12 @@ func (c *Mongo) CommitTransaction(ctx context.Context, cap *metadata.TxnCapable)
 }
 
 // AbortTransaction 取消事务
-func (c *Mongo) AbortTransaction(ctx context.Context, cap *metadata.TxnCapable) error {
+func (c *Mongo) AbortTransaction(ctx context.Context, cap *metadata.TxnCapable) (bool, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 	reloadSession, err := c.tm.PrepareTransaction(cap, c.dbc)
 	if err != nil {
 		blog.Errorf("abort transaction, but prepare transaction failed, err: %v, rid: %v", err, rid)
-		return err
+		return false, err
 	}
 	// reset the transaction state, so that we can abort the transaction after start the
 	// transaction immediately.
@@ -65,7 +65,7 @@ func (c *Mongo) AbortTransaction(ctx context.Context, cap *metadata.TxnCapable) 
 	// we abort the transaction with the session id
 	err = reloadSession.AbortTransaction(ctx)
 	if err != nil {
-		return fmt.Errorf("abort transaction: %s failed, err: %v, rid: %v", cap.SessionID, err, rid)
+		return false, fmt.Errorf("abort transaction: %s failed, err: %v, rid: %v", cap.SessionID, err, rid)
 	}
 
 	err = c.tm.RemoveSessionKey(cap.SessionID)
@@ -75,5 +75,12 @@ func (c *Mongo) AbortTransaction(ctx context.Context, cap *metadata.TxnCapable) 
 		// do not return.
 	}
 
-	return nil
+	errorType := c.tm.GetTxnError(sessionKey(cap.SessionID))
+	switch errorType {
+	// retry when the transaction error type is write conflict, which means the transaction conflicts with another one
+	case WriteConflictType:
+		return true, nil
+	}
+
+	return false, nil
 }
