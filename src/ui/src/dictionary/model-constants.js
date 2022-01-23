@@ -9,7 +9,7 @@ import {
 
 // 常用的内置模型ID
 export const BUILTIN_MODELS = Object.freeze({
-  BUSINESS_SET: 'biz_set',
+  BUSINESS_SET: 'bk_biz_set_obj',
   BUSINESS: 'biz',
   SET: 'set',
   MODULE: 'module',

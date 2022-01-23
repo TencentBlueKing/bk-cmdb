@@ -54,6 +54,7 @@
   import businessScopeSettingsForm from '@/components/business-scope/settings-form.vue'
   import businessScopePreview from '@/components/business-scope/preview.vue'
   import businessSetService from '@/service/business-set/index.js'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
 
   export default defineComponent({
     components: {
@@ -87,7 +88,7 @@
       } = toRefs(props)
 
       const getModelById = store.getters['objectModelClassify/getModelById']
-      const model = computed(() => getModelById('biz_set') || {})
+      const model = computed(() => getModelById(BUILTIN_MODELS.BUSINESS_SET) || {})
       const isEmptyRuleValue = value => value === null || value === undefined || !value.toString().length
 
       const submitting = ref(false)
