@@ -1,4 +1,5 @@
 import http from '@/api'
+import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
 
 function createIdProperty(objId) {
   const keyMap = {
@@ -56,7 +57,7 @@ export const findBiz = (injectId = false, config) => {
 
 export const findBizSet = (injectId = false, config) => {
   const params = {
-    bk_obj_id: 'biz_set',
+    bk_obj_id: BUILTIN_MODELS.BUSINESS_SET,
     bk_supplier_account: window.Supplier.account
   }
   return find(params, config, injectId)

@@ -291,6 +291,11 @@
         }).then((data) => {
           this.attchObjName(data)
           sortTopoTree(data, 'bk_inst_name')
+
+          if (parentModelId === BUILTIN_MODELS.BUSINESS) {
+            data.sort(a => (a.bk_obj_id === BUILTIN_MODELS.SET && a.default === 1 ? -1 : 0))
+          }
+
           return data
         })
       },
