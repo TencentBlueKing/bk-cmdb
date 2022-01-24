@@ -1,11 +1,11 @@
 import http from '@/api'
-import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
 
 function createIdProperty(objId) {
   const keyMap = {
-    biz: 'bk_biz_id',
-    biz_set: 'bk_biz_set_id',
-    host: 'bk_host_id'
+    [BUILTIN_MODELS.BUSINESS]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].ID,
+    [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID,
+    [BUILTIN_MODELS.HOST]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.HOST].ID
   }
   return {
     id: Date.now(),

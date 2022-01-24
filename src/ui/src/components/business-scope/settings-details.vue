@@ -63,7 +63,10 @@
         scopeData.value?.filter?.rules?.forEach((rule) => {
           if (rule.field === 'bk_biz_id') {
             rule.value.forEach((bizId) => {
-              selectedBusiness.push(allBusiness.value.find(business => business.bk_biz_id === bizId))
+              const business = allBusiness.value.find(business => business.bk_biz_id === bizId)
+              if (business) {
+                selectedBusiness.push(business)
+              }
             })
           } else {
             condition.push({
