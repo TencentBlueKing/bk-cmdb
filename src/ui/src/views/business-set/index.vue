@@ -102,22 +102,18 @@
       <cmdb-table-empty
         slot="empty"
         :stuff="table.stuff">
-        <template #permission>
-          <bk-exception type="403" scene="part">
-            <i18n path="业务集列表提示语" class="table-empty-tips">
-              <bk-link theme="primary" place="auth" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
-              <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS_SET }" place="create">
-                <bk-button slot-scope="{ disabled }" text
-                  theme="primary"
-                  class="text-btn"
-                  :disabled="disabled"
-                  @click="handleCreate">
-                  {{$t('立即创建')}}
-                </bk-button>
-              </cmdb-auth>
-            </i18n>
-          </bk-exception>
-        </template>
+        <i18n path="业务集列表提示语" class="table-empty-tips">
+          <bk-link theme="primary" place="auth" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
+          <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS_SET }" place="create">
+            <bk-button slot-scope="{ disabled }" text
+              theme="primary"
+              class="text-btn"
+              :disabled="disabled"
+              @click="handleCreate">
+              {{$t('立即创建')}}
+            </bk-button>
+          </cmdb-auth>
+        </i18n>
       </cmdb-table-empty>
     </bk-table>
 
@@ -180,8 +176,7 @@
           current: 1,
           ...getDefaultPaginationConfig()
         },
-        defaultSort: MODEL_ID_KEY,
-        sort: MODEL_ID_KEY,
+        sort: `-${MODEL_ID_KEY}`,
         stuff: {
           type: 'default',
           payload: {
@@ -359,7 +354,7 @@
       }
 
       const handleSortChange = (sort) => {
-        table.sort = getSort(sort)
+        table.sort = getSort(sort, { prop: MODEL_ID_KEY, order: 'descending' })
         RouterQuery.refresh()
       }
 

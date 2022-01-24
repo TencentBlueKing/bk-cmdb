@@ -211,6 +211,9 @@
               requestId: 'updateHostInfo'
             }
           })
+
+          this.$success(this.$t('修改成功'))
+
           this.$store.commit('hostDetails/updateInfo', {
             [property.bk_property_id]: sumitValue
           })

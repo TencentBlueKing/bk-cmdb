@@ -21,6 +21,14 @@ export const BUILTIN_MODEL_PROPERTY_KEYS = Object.freeze({
   [BUILTIN_MODELS.BUSINESS_SET]: {
     ID: 'bk_biz_set_id',
     NAME: 'bk_biz_set_name'
+  },
+  [BUILTIN_MODELS.BUSINESS]: {
+    ID: 'bk_biz_id',
+    NAME: 'bk_biz_name'
+  },
+  [BUILTIN_MODELS.HOST]: {
+    ID: 'bk_host_id',
+    NAME: 'bk_host_name'
   }
 })
 

@@ -209,6 +209,8 @@
             })
           }
 
+          this.$success(this.$t('修改成功'))
+
           this.instState = { ...this.instState, ...values }
 
           this.loadingState = this.loadingState.filter(exist => exist !== property)

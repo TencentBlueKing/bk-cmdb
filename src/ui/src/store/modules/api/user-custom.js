@@ -14,7 +14,7 @@ import $http from '@/api'
 import Vue from 'vue'
 import has from 'has'
 import { MENU_RESOURCE_COLLECTION } from '@/dictionary/menu-symbol'
-import { BUILTIN_MODELS, BUILTIN_MODEL_COLLECTION_KEYS } from '@/dictionary/model-constants.js'
+import { BUILTIN_MODEL_COLLECTION_KEYS } from '@/dictionary/model-constants.js'
 
 const state = {
   usercustom: {},
@@ -35,8 +35,7 @@ const getters = {
   resourceCollection: (state, getters, rootState, rootGetters) => {
     const collection = [...(state.usercustom[MENU_RESOURCE_COLLECTION] || [])]
 
-    Object.keys(BUILTIN_MODELS).forEach((k) => {
-      const modelId = BUILTIN_MODELS[k]
+    Object.keys(BUILTIN_MODEL_COLLECTION_KEYS).forEach((modelId) => {
       const collected = state.usercustom[BUILTIN_MODEL_COLLECTION_KEYS[modelId]] ?? true
       if (collected) {
         collection.unshift(modelId)
