@@ -43,11 +43,12 @@ export const before = async function (to, from, next) {
   // 记录上一次是否使用的是业务集视图并且保存id值
   const isMatchedBusinessSetView = fromTopRoute?.name === MENU_BUSINESS_SET || toTopRoute?.name === MENU_BUSINESS_SET
   const availableBusinessSetView = isMatchedBusinessSetView && fromTopRoute?.meta?.view !== 'permission'
-  setBizSetRecentlyUsed(availableBusinessSetView)
+
   if (availableBusinessSetView) {
     setBizSetIdToStorage(from.params.bizSetId || to.params.bizSetId)
     store.commit('bizSet/setBizSetId', from.params.bizSetId || to.params.bizSetId)
     store.commit('bizSet/setBizId', from.query.bizId || to.query.bizId)
+    setBizSetRecentlyUsed(true)
   }
 
   // 从业务集视图跳出的时候重置view为默认防止再次进入时仍停留在permission
@@ -55,6 +56,7 @@ export const before = async function (to, from, next) {
     fromTopRoute.meta.view = 'default'
   }
 
+  // 拦截非业务视图的路由
   if (!toTopRoute || toTopRoute.name !== MENU_BUSINESS) {
     if (fromTopRoute && fromTopRoute.name === MENU_BUSINESS) {
       fromTopRoute.meta.view = 'default'
@@ -62,8 +64,10 @@ export const before = async function (to, from, next) {
     return true
   }
 
-  // eslint-disable-next-line max-len
-  if (fromTopRoute && fromTopRoute.name === MENU_BUSINESS && parseInt(to.params.bizId, 10) !== parseInt(from.params.bizId, 10)) {
+  const newBizId = parseInt(to.params.bizId, 10)
+  const oldBizId = parseInt(from.params.bizId, 10)
+
+  if (fromTopRoute && fromTopRoute.name === MENU_BUSINESS && newBizId !== oldBizId) {
     window.location.hash = to.fullPath
     window.location.reload()
     return false
@@ -85,6 +89,7 @@ export const before = async function (to, from, next) {
     toTopRoute.meta.view = 'default'
     window.localStorage.setItem('selectedBusiness', id)
     store.commit('objectBiz/setBizId', id)
+    setBizSetRecentlyUsed(false)
 
     if (!isSubRoute) { // 如果是一级路由，则重定向到带业务id的二级路由首页(业务拓扑)
       next({
