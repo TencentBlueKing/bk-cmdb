@@ -10,4 +10,5 @@ export const setBizSetIdToStorage = (id) => {
 export const getBizSetIdFromStorage = () => window.localStorage.getItem(storageKey)
 
 export const setBizSetRecentlyUsed = used => recentlyUsed = used
+
 export const getBizSetRecentlyUsed = () => recentlyUsed

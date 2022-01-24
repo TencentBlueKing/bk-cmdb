@@ -47,7 +47,7 @@
             { 'is-selected': node.selected, 'is-template': isTemplate(node) }
           ]"
         >
-          {{ data.bk_obj_name[0] }}
+          {{ getModelPrefix(data.bk_obj_id) }}
         </i>
         <cmdb-loading
           :class="['node-count fr', { 'is-selected': node.selected }]"
@@ -289,7 +289,6 @@
           parentModelId,
           parentInstanceId,
         }).then((data) => {
-          this.attchObjName(data)
           sortTopoTree(data, 'bk_inst_name')
 
           if (parentModelId === BUILTIN_MODELS.BUSINESS) {
@@ -299,14 +298,10 @@
           return data
         })
       },
-      /**
-       * 附加模型名称
-       * @param {Array} data 拓扑节点数据
-       */
-      attchObjName(data) {
-        data.forEach((item) => {
-          item.bk_obj_name = this.topologyModels?.find(model => model.bk_obj_id === item.bk_obj_id)?.bk_obj_name || ''
-        })
+      getModelPrefix(modelId) {
+        const modelName = this.topologyModels?.find(model => model.bk_obj_id === modelId)?.bk_obj_name
+
+        return modelName?.[0] || ''
       },
       /**
        * 使业务集根节点不可点击
@@ -464,12 +459,14 @@
        * 计算业务集下实例总数
        */
       countBizSetSum() {
-        const bizSetSum = this.$refs.tree.nodes
+        const bizSetSum = this.$refs.tree?.nodes
           .filter(node => node.data.bk_obj_id === BUILTIN_MODELS.BUSINESS)
           .reduce((acc, node) => {
             const count = this.getNodeCount(node.data)
             return acc + count
           }, 0)
+
+        if (!bizSetSum) return
 
         const rootNode = this.$refs.tree.getNodeById(`${BUILTIN_MODELS.BUSINESS_SET}-${this.bizSetId}`)
 
