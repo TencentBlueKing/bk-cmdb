@@ -426,3 +426,10 @@ type TransferExceptionResult struct {
 	BaseResp `json:",inline"`
 	Data     TransferException `json:"data"`
 }
+
+// SyncHostIdentifierResult sync host identifier result struct
+type SyncHostIdentifierResult struct {
+	SuccessList []int64 `json:"success_list"`
+	FailedList  []int64 `json:"failed_list"`
+	TaskID      string  `json:"task_id"`
+}

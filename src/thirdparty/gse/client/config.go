@@ -15,6 +15,7 @@ package client
 import (
 	"configcenter/src/apimachinery/util"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
 )
 
 // GseConnConfig connect to gse config
@@ -30,25 +31,32 @@ func NewGseConnConfig(prefix string) (*GseConnConfig, error) {
 		return nil, err
 	}
 
-	tlsConfig := &util.TLSClientConfig{}
+	tlsConfig := new(util.TLSClientConfig)
 	if tlsConfig.InsecureSkipVerify, err = cc.Bool(prefix + ".insecureSkipVerify"); err != nil {
+		blog.Errorf("get gse %v insecureSkipVerify config error, err: %v", prefix, err)
 		return nil, err
 	}
 
 	if tlsConfig.CertFile, err = cc.String(prefix + ".certFile"); err != nil {
+		blog.Errorf("get gse %v certFile config error, err: %v", prefix, err)
 		return nil, err
 	}
 
 	if tlsConfig.KeyFile, err = cc.String(prefix + ".keyFile"); err != nil {
+		blog.Errorf("get gse %v keyFile config error, err: %v", prefix, err)
 		return nil, err
 	}
 
 	if tlsConfig.CAFile, err = cc.String(prefix + ".caFile"); err != nil {
+		blog.Errorf("get gse %v caFile config error, err: %v", prefix, err)
 		return nil, err
 	}
 
-	if val, err := cc.String(prefix + ".password"); err == nil {
-		tlsConfig.Password = val
+	if cc.IsExist(prefix + ".password") {
+		if tlsConfig.Password, err = cc.String(prefix + ".password"); err != nil {
+			blog.Errorf("get gse %v password config error, err: %v", prefix, err)
+			return nil, err
+		}
 	}
 
 	return &GseConnConfig{

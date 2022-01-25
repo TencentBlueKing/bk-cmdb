@@ -14,8 +14,13 @@ package util
 
 import "time"
 
+// ErrFrequencyInterface err appear frequency interface
 type ErrFrequencyInterface interface {
+	// IsErrAlwaysAppear is error always appear
 	IsErrAlwaysAppear(err error) bool
+
+	// Release release error
+	Release()
 }
 
 type errFrequency struct {
@@ -47,4 +52,9 @@ func (e *errFrequency) IsErrAlwaysAppear(err error) bool {
 	e.err = err
 	e.endTime = time.Now().Add(10 * time.Minute).Unix()
 	return false
+}
+
+// Release release error
+func (e *errFrequency) Release() {
+	e.err = nil
 }

@@ -21,9 +21,8 @@ import (
 	"time"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
-	"configcenter/src/thirdparty/gse/get_agent_state_forsyncdata"
+	getstatus "configcenter/src/thirdparty/gse/get_agent_state_forsyncdata"
 
 	"github.com/tidwall/gjson"
 )
@@ -41,11 +40,10 @@ func strMd5(str string) (retMd5 string) {
 
 // sleepForFail sleep due to failure
 func sleepForFail(failCount int) {
-	sleepVal := failCount * 5
-	if sleepVal > maxSecondForSleep {
-		sleepVal = maxSecondForSleep
+	if failCount > maxSecondForSleep {
+		failCount = maxSecondForSleep
 	}
-	time.Sleep(time.Duration(sleepVal) * time.Second)
+	time.Sleep(time.Duration(failCount) * time.Second)
 }
 
 func newHeaderWithRid() (http.Header, string) {
@@ -57,12 +55,13 @@ func newHeaderWithRid() (http.Header, string) {
 	return header, rid
 }
 
-func buildAgentStatusRequestHostInfo(cloudID, innerIP string) []*get_agent_state_forsyncdata.CacheIPInfo {
-	var hostInfos []*get_agent_state_forsyncdata.CacheIPInfo
+// buildForStatus 构造查询agent状态的主机信息
+func buildForStatus(cloudID, innerIP string) []*getstatus.CacheIPInfo {
+	var hostInfos []*getstatus.CacheIPInfo
 	// 对于多ip的情况需要特殊处理，agent可能仅有一个ip处于on状态，需要将ip数组里的ip分别查询
 	ips := strings.Split(innerIP, ",")
 	for _, ip := range ips {
-		hostInfos = append(hostInfos, &get_agent_state_forsyncdata.CacheIPInfo{
+		hostInfos = append(hostInfos, &getstatus.CacheIPInfo{
 			GseCompositeID: cloudID,
 			IP:             ip,
 		})
@@ -71,15 +70,14 @@ func buildAgentStatusRequestHostInfo(cloudID, innerIP string) []*get_agent_state
 }
 
 // 只需要拿到主机的其中一个处于on状态的ip即可
-func getStatusOnAgentIP(cloudID, innerIP string, agentStatusResultMap map[string]string) (bool, string) {
+func getStatusOnAgentIP(cloudID, innerIP string, agentStatus map[string]string) (bool, string) {
 	ips := strings.Split(innerIP, ",")
 	for _, ip := range ips {
-		key := cloudID + ":" + ip
-		if gjson.Get(agentStatusResultMap[key], "bk_agent_alive").Int() == agentOnStatus {
+		key := HostKey(cloudID, ip)
+		if gjson.Get(agentStatus[key], "bk_agent_alive").Int() == agentOnStatus {
 			return true, ip
 		}
 	}
-	blog.Infof("host %v agent status is off", cloudID+":"+innerIP)
 	return false, ""
 }
 

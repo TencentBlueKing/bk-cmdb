@@ -18,6 +18,87 @@ import (
 	"configcenter/src/common/blog"
 )
 
+// RateLimiter push identifier rate limiter
+type RateLimiter struct {
+	Qps   int64
+	Burst int64
+}
+
+// HostIdentifierConf host identifier config
+type HostIdentifierConf struct {
+	StartUp                bool
+	BatchSyncIntervalHours int
+	LinuxFileConf          *FileConf
+	WinFileConf            *FileConf
+	RateLimiter            *RateLimiter
+}
+
+// ParseIdentifierConf parser host identifier config
+func ParseIdentifierConf() (*HostIdentifierConf, error) {
+	startUp, err := cc.Bool("eventServer.hostIdentifier.startUp")
+	if err != nil {
+		blog.Errorf("get eventServer.hostIdentifier.startUp error, err: %v", err)
+		return nil, err
+	}
+
+	if !startUp {
+		blog.Warnf("eventServer.hostIdentifier.startUp is false, will not start sync host identifier")
+		return &HostIdentifierConf{
+			StartUp: startUp,
+		}, nil
+	}
+
+	batchSyncIntervalHours, err := cc.Int("eventServer.hostIdentifier.batchSyncIntervalHours")
+	if err != nil {
+		blog.Errorf("get eventServer.hostIdentifier.batchSyncIntervalHours error, err: %v", err)
+		return nil, err
+	}
+
+	winFileConfig, err := newHostIdentifierFileConf("windows")
+	if err != nil {
+		blog.Errorf("get eventServer hostIdentifier windows config error, err: %v", err)
+		return nil, err
+	}
+
+	linuxFileConfig, err := newHostIdentifierFileConf("linux")
+	if err != nil {
+		blog.Errorf("get eventServer hostIdentifier linux config error, err: %v", err)
+		return nil, err
+	}
+
+	qps, burst, err := getRateLimiterConfig()
+	if err != nil {
+		blog.Errorf("get evenServer hostIdentifier rate limiter config error, err: %v", err)
+		return nil, err
+	}
+
+	rateLimiter := &RateLimiter{
+		Qps:   qps,
+		Burst: burst,
+	}
+
+	return &HostIdentifierConf{
+		StartUp:                startUp,
+		BatchSyncIntervalHours: batchSyncIntervalHours,
+		LinuxFileConf:          linuxFileConfig,
+		WinFileConf:            winFileConfig,
+		RateLimiter:            rateLimiter,
+	}, nil
+}
+
+func getRateLimiterConfig() (int64, int64, error) {
+	qps, err := cc.Int64("eventServer.hostIdentifier.rateLimiter.qps")
+	if err != nil {
+		return 0, 0, err
+	}
+
+	burst, err := cc.Int64("eventServer.hostIdentifier.rateLimiter.burst")
+	if err != nil {
+		return 0, 0, err
+	}
+	return qps, burst, nil
+}
+
 // FileConf host identifier file config struct
 type FileConf struct {
 	FileName      string
@@ -67,17 +148,4 @@ func (h *HostIdentifier) getHostIdentifierFileConf(osType string) *FileConf {
 	default:
 		return h.linuxFileConfig
 	}
-}
-
-func getRateLimiterConfig() (int64, int64, error) {
-	qps, err := cc.Int64("eventServer.hostIdentifier.rateLimiter.qps")
-	if err != nil {
-		return 0, 0, err
-	}
-
-	burst, err := cc.Int64("eventServer.hostIdentifier.rateLimiter.burst")
-	if err != nil {
-		return 0, 0, err
-	}
-	return qps, burst, nil
 }

@@ -176,8 +176,33 @@ func (es *EventServer) initConfigs() error {
 
 	es.config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
 	if err != nil {
-		blog.Warnf("parse auth center config failed: %v", err)
+		blog.Errorf("parse auth center config failed: %v", err)
+		return err
 	}
+
+	identifierConf, err := hostidentifier.ParseIdentifierConf()
+	if err != nil {
+		blog.Errorf("parse eventServer host identifier config error, err: %v", err)
+		return err
+	}
+	es.config.IdentifierConf = identifierConf
+
+	if !es.config.IdentifierConf.StartUp {
+		return nil
+	}
+
+	es.config.TaskConf, err = client.NewGseConnConfig("gse.taskServer")
+	if err != nil {
+		blog.Errorf("get gse taskServer Config error, err: %v", err)
+		return err
+	}
+
+	es.config.ApiConf, err = client.NewGseConnConfig("gse.apiServer")
+	if err != nil {
+		blog.Errorf("get gse apiServer Config error, err: %v", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -240,37 +265,26 @@ func (es *EventServer) Run() error {
 }
 
 func (es *EventServer) runSyncData() error {
-	startUp, err := cc.Bool("eventServer.hostIdentifier.startUp")
-	if err != nil {
-		return err
-	}
-
-	if !startUp {
+	if !es.config.IdentifierConf.StartUp {
 		return nil
 	}
 
-	gseTaskConfig, err := client.NewGseConnConfig("gse.taskServer")
+	gseTaskClient, err := client.NewGseTaskServerClient(es.config.TaskConf.Endpoints, es.config.TaskConf.TLSConf)
 	if err != nil {
+		blog.Errorf("new gse taskServer error, err: %v", err)
 		return err
 	}
 
-	gseTaskClient, err := client.NewGseTaskServerClient(gseTaskConfig.Endpoints, gseTaskConfig.TLSConf)
+	gseApiClient, err := client.NewGseApiServerClient(es.config.ApiConf.Endpoints, es.config.ApiConf.TLSConf)
 	if err != nil {
+		blog.Errorf("new gse apiServer error, err: %v", err)
 		return err
 	}
 
-	gseApiConfig, err := client.NewGseConnConfig("gse.apiServer")
+	syncData, err := hostidentifier.NewHostIdentifier(es.ctx, es.redisCli, es.engine, es.config.IdentifierConf,
+		gseTaskClient, gseApiClient)
 	if err != nil {
-		return err
-	}
-
-	gseApiClient, err := client.NewGseApiServerClient(gseApiConfig.Endpoints, gseApiConfig.TLSConf)
-	if err != nil {
-		return err
-	}
-
-	syncData, err := hostidentifier.NewHostIdentifier(es.ctx, es.redisCli, es.engine, gseTaskClient, gseApiClient)
-	if err != nil {
+		blog.Errorf("new host identifier error, err: %v", err)
 		return err
 	}
 
@@ -280,11 +294,7 @@ func (es *EventServer) runSyncData() error {
 	go syncData.WatchToSyncHostIdentifier()
 
 	// 周期全量同步主机身份
-	batchSyncIntervalHours, err := cc.Int("eventServer.hostIdentifier.batchSyncIntervalHours")
-	if err != nil {
-		return err
-	}
-	go es.CycleSyncIdentifier(syncData, batchSyncIntervalHours)
+	go es.CycleSyncIdentifier()
 
 	for i := 0; i < defaultGoroutineCount; i++ {
 		// 查询推送主机身份任务结果并处理失败主机
@@ -298,14 +308,15 @@ func (es *EventServer) runSyncData() error {
 }
 
 // CycleSyncIdentifier cycle sync host identifier
-func (es *EventServer) CycleSyncIdentifier(syncData *hostidentifier.HostIdentifier, batchSyncIntervalHours int) {
+func (es *EventServer) CycleSyncIdentifier() {
 	for {
 		if !es.engine.Discovery().IsMaster() {
+			blog.V(4).Infof("loop full sync host identifier, but not master, skip.")
 			time.Sleep(time.Minute)
 			continue
 		}
-		time.Sleep(time.Duration(batchSyncIntervalHours) * time.Hour)
-		syncData.FullSyncHostIdentifier()
+		time.Sleep(time.Duration(es.config.IdentifierConf.BatchSyncIntervalHours) * time.Hour)
+		es.service.SyncData.FullSyncHostIdentifier()
 	}
 }
 

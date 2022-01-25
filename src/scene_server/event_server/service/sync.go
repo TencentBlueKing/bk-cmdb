@@ -31,8 +31,8 @@ import (
 // SyncHostIdentifier sync host identifier, add hostInfo message to redis fail host list
 func (s *Service) SyncHostIdentifier(ctx *rest.Contexts) {
 	if s.SyncData == nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommInternalServerError,
-			"no start up sync hostIdentifier ability"))
+		blog.Errorf("sync host identifier disabled, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrEventSyncHostIdentifierDisabled))
 		return
 	}
 
@@ -46,104 +46,117 @@ func (s *Service) SyncHostIdentifier(ctx *rest.Contexts) {
 	}
 	rawErr := hostIDArray.Validate()
 	if rawErr.ErrCode != 0 {
+		blog.Errorf("exceed max limit number, rid: %s", ctx.Kit.Rid)
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
 	if auth.EnableAuthorize() {
-		if err := s.haveAuthority(ctx, hostIDArray.HostIDs); err != nil {
+		if err := s.haveAuthority(ctx.Kit, hostIDArray.HostIDs); err != nil {
 			ctx.RespAutoError(err)
 			return
 		}
 	}
 
-	hosts, err := s.getHostInfo(ctx, hostIDArray.HostIDs)
+	hosts, err := s.getHostInfo(ctx.Kit, hostIDArray.HostIDs)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	task, err := s.SyncData.BatchSyncHostIdentifier(hosts.Info)
+	task, err := s.SyncData.BatchSyncHostIdentifier(hosts.Info, ctx.Kit.Header, ctx.Kit.Rid)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	var resultMap map[string]string
+	retry := true
 	endTime := time.Now().Add(30 * time.Second).Unix()
-
-	for time.Now().Unix() < endTime {
-		resultMap, err = s.SyncData.GetTaskExecutionResultMap(task)
+	result := &metadata.SyncHostIdentifierResult{
+		TaskID: task.TaskID,
+	}
+	for retry && time.Now().Unix() < endTime {
+		retry = false
+		resultMap, err := s.SyncData.GetTaskExecutionResultMap(task)
 		if err != nil {
-			ctx.RespAutoError(err)
+			ctx.RespEntityWithError(result, err)
 			return
 		}
-		// 该任务包含的主机拿到全部的结果
-		if len(task.HostInfos) == len(resultMap) {
-			break
+
+		// 该任务包含的主机没有拿到全部的结果
+		if len(task.HostInfos) != len(resultMap) {
+			continue
 		}
-		time.Sleep(2 * time.Second)
+
+		failIDs := make([]int64, 0)
+		successIDs := make([]int64, 0)
+		for _, hostInfo := range task.HostInfos {
+			key := hostidentifier.HostKey(strconv.FormatInt(hostInfo.CloudID, 10), hostInfo.HostInnerIP)
+			code := gjson.Get(resultMap[key], "error_code").Int()
+			if code == common.CCSuccess {
+				successIDs = append(successIDs, hostInfo.HostID)
+				continue
+			}
+
+			if code == hostidentifier.Handling {
+				retry = true
+			}
+
+			failIDs = append(failIDs, hostInfo.HostID)
+		}
+
+		result.FailedList = failIDs
+		result.SuccessList = successIDs
 	}
 
-	if resultMap == nil || time.Now().Unix() >= endTime {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrEventGetTaskStatusTimeout))
+	if len(result.FailedList) != 0 {
+		ctx.RespEntityWithError(result, ctx.Kit.CCError.CCErrorf(common.CCErrEventPushHostIdentifierFailed))
 		return
 	}
 
-	failHostIDs := make([]int64, 0)
-	for _, hostInfo := range task.HostInfos {
-		key := hostidentifier.HostKey(strconv.FormatInt(hostInfo.CloudID, 10), hostInfo.HostInnerIP)
-		// 把推送失败且没超过最大重试次数的主机放到失败主机队列中
-		if gjson.Get(resultMap[key], "error_code").Int() != common.CCSuccess {
-			failHostIDs = append(failHostIDs, hostInfo.HostID)
-		}
-	}
-	if len(failHostIDs) != 0 {
-		ctx.RespEntityWithError(failHostIDs, ctx.Kit.CCError.CCErrorf(common.CCErrEventPushHostIdentifierFailed))
-		return
-	}
-
-	ctx.RespEntity(nil)
+	ctx.RespEntity(result)
 }
 
-func (s *Service) haveAuthority(ctx *rest.Contexts, hostIDs []int64) error {
-	businessIDInfo, err := s.getHostBusinessIDInfo(ctx, hostIDs)
+func (s *Service) haveAuthority(kit *rest.Kit, hostIDs []int64) error {
+	businessIDs, err := s.getHostBusinessIDs(kit, hostIDs)
 	if err != nil {
+		blog.Errorf("get host businessIDs error, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
-	businessIDs := make([]int64, len(businessIDInfo.Info))
-	for _, info := range businessIDInfo.Info {
-		businessIDs = append(businessIDs, info.AppID)
-	}
-
-	err = s.AuthManager.AuthorizeByBusinessID(ctx.Kit.Ctx, ctx.Kit.Header, meta.ViewBusinessResource, businessIDs...)
+	err = s.AuthManager.AuthorizeByBusinessID(kit.Ctx, kit.Header, meta.ViewBusinessResource, businessIDs...)
 	if err != nil {
+		blog.Errorf("authorize businesses failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
 	return nil
 }
 
-func (s *Service) getHostBusinessIDInfo(ctx *rest.Contexts, hostIDs []int64) (*metadata.HostConfigData, error) {
+func (s *Service) getHostBusinessIDs(kit *rest.Kit, hostIDs []int64) ([]int64, error) {
 	cond := &metadata.HostModuleRelationRequest{
 		HostIDArr: hostIDs,
 		Fields:    []string{common.BKAppIDField},
 	}
-	result, err := s.engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	result, err := s.engine.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, cond)
 	if err != nil {
-		blog.Errorf("http do error, err: %v, input: %v, rid: %s", err, cond, ctx.Kit.Rid)
+		blog.Errorf("http do error, input: %v, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, err
 	}
 	if result.Count == 0 {
-		blog.Errorf("get host module relation success, but result count is 0, hostIDs: %v, rid: %s",
-			hostIDs, ctx.Kit.Rid)
-		return nil, ctx.Kit.CCError.CCError(common.CCErrCommGetBusinessIDByHostIDFailed)
+		blog.Errorf("get host biz count is 0, hostIDs: %v, rid: %s", hostIDs, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommGetBusinessIDByHostIDFailed)
 	}
-	return result, nil
+
+	businessIDs := make([]int64, result.Count)
+	for _, info := range result.Info {
+		businessIDs = append(businessIDs, info.AppID)
+	}
+
+	return businessIDs, nil
 }
 
-func (s *Service) getHostInfo(ctx *rest.Contexts, hostIDs []int64) (*metadata.ListHostResult, error) {
+func (s *Service) getHostInfo(kit *rest.Kit, hostIDs []int64) (*metadata.ListHostResult, error) {
 	options := &metadata.ListHosts{
 		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField},
 		HostPropertyFilter: &querybuilder.QueryFilter{
@@ -159,14 +172,16 @@ func (s *Service) getHostInfo(ctx *rest.Contexts, hostIDs []int64) (*metadata.Li
 			},
 		},
 	}
-	hosts, err := s.engine.CoreAPI.CoreService().Host().ListHosts(ctx.Kit.Ctx, ctx.Kit.Header, options)
+
+	hosts, err := s.engine.CoreAPI.CoreService().Host().ListHosts(kit.Ctx, kit.Header, options)
 	if err != nil {
-		blog.Errorf("http do error, hostIDs: %v, err: %v, rid: %s", hostIDs, err, ctx.Kit.Rid)
+		blog.Errorf("http do error, hostIDs: %v, err: %v, rid: %s", hostIDs, err, kit.Rid)
 		return nil, err
 	}
+
 	if hosts.Count == 0 {
-		blog.Errorf("get host success, but host count is 0, hostIDs: %v, rid: %s", hostIDs, ctx.Kit.Rid)
-		return nil, ctx.Kit.CCError.CCError(common.CCErrHostGetFail)
+		blog.Errorf("host count is 0, hostIDs: %v, rid: %s", hostIDs, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrHostGetFail)
 	}
 	return hosts, nil
 }
