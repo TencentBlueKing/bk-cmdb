@@ -14,10 +14,8 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"configcenter/src/ac/extensions"
-	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
@@ -27,10 +25,9 @@ import (
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/logics"
 	"configcenter/src/thirdparty/elasticsearch"
-	"configcenter/src/thirdparty/logplatform"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/emicklei/go-restful/otelrestful"
 )
 
 type Service struct {
@@ -59,9 +56,7 @@ func (s *Service) WebService() *restful.Container {
 
 	container := restful.NewContainer().Add(api)
 
-	if logplatform.OpenTelemetryCfg.Enable {
-		container.Filter(otelrestful.OTelFilter(fmt.Sprintf("%s_%s","cmdb", common.GetIdentification())))
-	}
+	opentelemetry.AddOtlpFilter(container)
 
 	// common api
 	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)

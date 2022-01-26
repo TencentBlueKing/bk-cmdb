@@ -31,12 +31,11 @@ import (
 	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/logplatform"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/thirdparty/monitor"
 	"configcenter/src/thirdparty/monitor/meta"
 
 	"github.com/emicklei/go-restful/v3"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/emicklei/go-restful/otelrestful"
 )
 
 type Service struct {
@@ -76,9 +75,7 @@ func (s *Service) SetIam(iam *iam.IAM) {
 func (s *Service) WebService() *restful.Container {
 	container := restful.NewContainer()
 
-	if logplatform.OpenTelemetryCfg.Enable {
-		container.Filter(otelrestful.OTelFilter(fmt.Sprintf("%s_%s","cmdb", common.GetIdentification())))
-	}
+	opentelemetry.AddOtlpFilter(container)
 
 	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {

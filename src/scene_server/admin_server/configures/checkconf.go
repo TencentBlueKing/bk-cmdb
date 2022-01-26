@@ -243,6 +243,10 @@ func (cc *ConfCenter) isLogPlatFormConfigOK(v *viper.Viper, fileName string) err
 		}
 	}
 
+	if !v.GetBool("logPlatform.openTelemetry.enable") {
+		return nil
+	}
+
 	if v.IsSet("logPlatform.openTelemetry.bkDataID") {
 		if err := cc.isConfigNotIntVal("logPlatform.openTelemetry.bkDataID", fileName, v); err != nil {
 			return err

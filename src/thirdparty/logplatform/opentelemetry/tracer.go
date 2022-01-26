@@ -14,12 +14,8 @@ package opentelemetry
 
 import (
 	"context"
-	"fmt"
 
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/thirdparty/logplatform"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -30,14 +26,14 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
-//  InitTracer init tracer to report trace information
+// InitTracer init tracer to report trace information
 func InitTracer(ctx context.Context) error {
-	if !logplatform.OpenTelemetryCfg.Enable {
+	if !openTelemetryCfg.enable {
 		return nil
 	}
 
 	// 配置http上报地址
-	traceExporter, err := otlptracehttp.New(ctx, otlptracehttp.WithEndpoint(logplatform.OpenTelemetryCfg.EndPoint),
+	traceExporter, err := otlptracehttp.New(ctx, otlptracehttp.WithEndpoint(openTelemetryCfg.endPoint),
 		otlptracehttp.WithInsecure())
 	if err != nil {
 		return err
@@ -46,8 +42,8 @@ func InitTracer(ctx context.Context) error {
 	// 设置resource配置 服务名称 bk_data_id
 	resources := resource.NewWithAttributes(
 		semconv.SchemaURL,
-		semconv.ServiceNameKey.String(fmt.Sprintf("%s_%s","cmdb", common.GetIdentification())),
-		attribute.Key("bk_data_id").Int64(logplatform.OpenTelemetryCfg.BkDataID),
+		semconv.ServiceNameKey.String(serviceName()),
+		attribute.Key("bk_data_id").Int64(openTelemetryCfg.bkDataID),
 	)
 
 	// 初始化Trace配置
@@ -60,11 +56,7 @@ func InitTracer(ctx context.Context) error {
 	// 注入trace配置
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{},
-	propagation.Baggage{}))
-
-
-	// 将进行http调用的client也进行跟踪链接入
-	util.WrapperTraceClient()
+		propagation.Baggage{}))
 
 	// 开启协程在应用结束时关闭tracer
 	go func() {

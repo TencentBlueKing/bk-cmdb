@@ -13,7 +13,6 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -27,14 +26,13 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/ginservice"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/logplatform"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 type Service struct {
@@ -73,9 +71,7 @@ func (s *Service) WebService() *gin.Engine {
 		c.Next()
 	})
 
-	if logplatform.OpenTelemetryCfg.Enable {
-		ws.Use(otelgin.Middleware(fmt.Sprintf("%s_%s", "cmdb", common.GetIdentification())))
-	}
+	opentelemetry.UseOtlpMiddleware(ws)
 
 	middleware.Engine = s.Engine
 

@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package logplatform
+package opentelemetry
 
 import (
 	"errors"
@@ -22,58 +22,52 @@ import (
 )
 
 var (
-	OpenTelemetryCfg = new(OpenTelemetryConfig)
+	openTelemetryCfg = new(OpenTelemetryConfig)
 )
 
 type OpenTelemetryConfig struct {
 	// 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
-	Enable bool
+	enable bool
 	// 日志平台openTelemetry跟踪链功能的自定义上报服务地址
-	EndPoint string
+	endPoint string
 	// 日志平台openTelemetry跟踪链功能的上报data_id
-	BkDataID int64
+	bkDataID int64
 }
 
 // InitOpenTelemetryConfig init openTelemetry config
 func InitOpenTelemetryConfig() error {
+
 	var err error
 	maxCnt := 100
 	cnt := 0
 	for !cc.IsExist("logPlatform.openTelemetry") && cnt < maxCnt {
-		blog.Infof("waiting logPlatform.openTelemetry config to be init")
+		blog.V(5).Infof("waiting logPlatform.openTelemetry config to be init")
 		cnt++
 		time.Sleep(time.Millisecond * 300)
 	}
 
 	if cnt == maxCnt {
-		blog.Infof("init openTelemetry failed, no openTelemetry config is found, " +
-			"the config 'logPlatform.openTelemetry' must exist")
-		return fmt.Errorf("init openTelemetry failed, " +
-			"no openTelemetry config is found, the config 'logPlatform.openTelemetry' must exist")
+		return errors.New("no openTelemetry config is found, the config 'logPlatform.openTelemetry' must exist")
 	}
 
-	OpenTelemetryCfg.Enable, err = cc.Bool("logPlatform.openTelemetry.enable")
+	openTelemetryCfg.enable, err = cc.Bool("logPlatform.openTelemetry.enable")
 	if err != nil {
-		blog.Errorf("init openTelemetry failed, openTelemetry.enable err: %v", err)
-		return errors.New("config logPlatform.openTelemetry is not found")
+		return fmt.Errorf("config logPlatform.openTelemetry.enable err: %v", err)
 	}
 
-	//如果不需要开启OpenTelemetry，那么后续没有必要再检查配置
-	if !OpenTelemetryCfg.Enable {
+	// 如果不需要开启OpenTelemetry，那么后续没有必要再检查配置
+	if !openTelemetryCfg.enable {
 		return nil
 	}
 
-	OpenTelemetryCfg.EndPoint, err = cc.String("logPlatform.openTelemetry.endpoint")
+	openTelemetryCfg.endPoint, err = cc.String("logPlatform.openTelemetry.endpoint")
 	if err != nil {
-		blog.Errorf("init openTelemetry failed, err: %v", err)
-		return errors.New("logPlatform.openTelemetry.endpoint is not found")
+		return fmt.Errorf("config logPlatform.openTelemetry.endpoint err: %v", err)
 	}
 
-	OpenTelemetryCfg.BkDataID, err = cc.Int64("logPlatform.openTelemetry.bkDataID")
+	openTelemetryCfg.bkDataID, err = cc.Int64("logPlatform.openTelemetry.bkDataID")
 	if err != nil {
-		blog.Errorf("init openTelemetry failed, err: %v", err)
-		return errors.New("config logPlatform.openTelemetry.bkDataID is not found")
+		return fmt.Errorf("config logPlatform.openTelemetry.bkDataID err: %v", err)
 	}
 	return nil
 }
-

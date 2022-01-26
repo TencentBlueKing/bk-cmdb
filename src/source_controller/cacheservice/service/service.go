@@ -13,7 +13,6 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -34,10 +33,9 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream"
-	"configcenter/src/thirdparty/logplatform"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/emicklei/go-restful/otelrestful"
 )
 
 // CacheServiceInterface the cache service methods used to init
@@ -133,9 +131,7 @@ func (s *cacheService) WebService() *restful.Container {
 
 	container := restful.NewContainer()
 
-	if logplatform.OpenTelemetryCfg.Enable {
-		container.Filter(otelrestful.OTelFilter(fmt.Sprintf("%s_%s","cmdb", common.GetIdentification())))
-	}
+	opentelemetry.AddOtlpFilter(container)
 
 	getErrFunc := func() errors.CCErrorIf { return s.err }
 

@@ -14,7 +14,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/ac"
@@ -29,10 +28,9 @@ import (
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/logplatform"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/emicklei/go-restful/otelrestful"
 )
 
 // Service impls main logics as service.
@@ -68,9 +66,7 @@ func (s *Service) SetAuthorizer(authorizer ac.AuthorizeInterface) {
 func (s *Service) WebService() *restful.Container {
 	container := restful.NewContainer()
 
-	if logplatform.OpenTelemetryCfg.Enable {
-		container.Filter(otelrestful.OTelFilter(fmt.Sprintf("%s_%s","cmdb", common.GetIdentification())))
-	}
+	opentelemetry.AddOtlpFilter(container)
 
 	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {

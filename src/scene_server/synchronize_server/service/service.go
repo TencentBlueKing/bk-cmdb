@@ -14,7 +14,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/apimachinery/discovery"
@@ -32,10 +31,9 @@ import (
 	"configcenter/src/scene_server/synchronize_server/app/options"
 	"configcenter/src/scene_server/synchronize_server/logics"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/logplatform"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/emicklei/go-restful/otelrestful"
 )
 
 type Service struct {
@@ -81,9 +79,7 @@ func (s *Service) newSrvComm(header http.Header) *srvComm {
 func (s *Service) WebService() *restful.Container {
 	container := restful.NewContainer()
 
-	if logplatform.OpenTelemetryCfg.Enable {
-		container.Filter(otelrestful.OTelFilter(fmt.Sprintf("%s_%s","cmdb", common.GetIdentification())))
-	}
+	opentelemetry.AddOtlpFilter(container)
 
 	ws := new(restful.WebService)
 	ws.Path("/synchronize/{version}").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.HTTPRequestIDFilter()).Produces(restful.MIME_JSON)

@@ -13,7 +13,6 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common"
@@ -42,10 +41,9 @@ import (
 	"configcenter/src/source_controller/coreservice/core/settemplate"
 	dbSystem "configcenter/src/source_controller/coreservice/core/system"
 	"configcenter/src/storage/driver/mongodb"
-	"configcenter/src/thirdparty/logplatform"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/emicklei/go-restful/otelrestful"
 )
 
 // CoreServiceInterface the topo service methods used to init
@@ -132,9 +130,7 @@ func (s *coreService) WebService() *restful.Container {
 
 	container := restful.NewContainer()
 
-	if logplatform.OpenTelemetryCfg.Enable {
-		container.Filter(otelrestful.OTelFilter(fmt.Sprintf("%s_%s","cmdb", common.GetIdentification())))
-	}
+	opentelemetry.AddOtlpFilter(container)
 
 	getErrFunc := func() errors.CCErrorIf {
 		return s.err

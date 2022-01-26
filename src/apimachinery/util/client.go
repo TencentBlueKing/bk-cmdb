@@ -19,17 +19,10 @@ import (
 	"time"
 
 	"configcenter/src/common/ssl"
-	"configcenter/src/thirdparty/logplatform"
-
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 )
 
-var httpClient *http.Client
-
 func NewClient(c *TLSClientConfig) (*http.Client, error) {
-	if httpClient != nil {
-		return httpClient, nil
-	}
 	tlsConf := new(tls.Config)
 	if nil != c {
 		tlsConf.InsecureSkipVerify = c.InsecureSkipVerify
@@ -54,22 +47,15 @@ func NewClient(c *TLSClientConfig) (*http.Client, error) {
 		ResponseHeaderTimeout: 10 * time.Minute,
 	}
 
-	httpClient = &http.Client{
+	client := &http.Client{
 		Transport: transport,
 	}
-	return httpClient, nil
+
+	opentelemetry.WrapperTraceClient(client)
+
+	return client, nil
 }
 
 type HttpClient interface {
 	Do(req *http.Request) (*http.Response, error)
-}
-
-// WrapperTraceClient wrapper client to record trace
-func WrapperTraceClient() {
-	if httpClient == nil {
-		return
-	}
-	if logplatform.OpenTelemetryCfg.Enable {
-		httpClient.Transport = otelhttp.NewTransport(httpClient.Transport)
-	}
 }

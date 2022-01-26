@@ -14,7 +14,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -32,10 +31,9 @@ import (
 	sdkauth "configcenter/src/scene_server/auth_server/sdk/auth"
 	"configcenter/src/scene_server/auth_server/sdk/client"
 	"configcenter/src/scene_server/auth_server/types"
-	"configcenter/src/thirdparty/logplatform"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/emicklei/go-restful/otelrestful"
 )
 
 type AuthService struct {
@@ -162,9 +160,7 @@ func (s *AuthService) WebService() *restful.Container {
 
 	container := restful.NewContainer()
 
-	if logplatform.OpenTelemetryCfg.Enable {
-		container.Filter(otelrestful.OTelFilter(fmt.Sprintf("%s_%s","cmdb", common.GetIdentification())))
-	}
+	opentelemetry.AddOtlpFilter(container)
 
 	container.Add(api)
 
