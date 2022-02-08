@@ -90,7 +90,6 @@
     "eslint-webpack-plugin": "^2.5.3",
     "fibers": "^5.0.0",
     "html-webpack-plugin": "^5.3.1",
-    "husky": "^7.0.4",
     "launch-editor-middleware": "^2.2.1",
     "lint-staged": "^12.1.2",
     "mini-css-extract-plugin": "^1.5.0",
