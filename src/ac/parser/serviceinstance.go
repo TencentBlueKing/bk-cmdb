@@ -112,6 +112,25 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.FindMany,
 	}, {
+		// search service instance by biz set regex, authorize by biz set access permission, **only for ui**
+		Name:           "uiFindServiceInstanceByHostAndBizSetRegexp",
+		Description:    "根据主机查询业务集下的服务实例-frontend",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/web/biz_set/[0-9]+/service_instance/with_host/?$`),
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.BizSet,
+		ResourceAction: meta.AccessBizSet,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			if len(request.Elements) != 9 {
+				return nil, fmt.Errorf("get invalid url elements length %d", len(request.Elements))
+			}
+
+			bizSetID, err := strconv.ParseInt(request.Elements[6], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[6], err)
+			}
+			return []int64{bizSetID}, nil
+		},
+	}, {
 		Name:           "updateServiceInstances",
 		Description:    "更新某业务下的服务实例",
 		Regex:          regexp.MustCompile(`^/api/v3/updatemany/proc/service_instance/biz/([0-9]+)/?$`),
