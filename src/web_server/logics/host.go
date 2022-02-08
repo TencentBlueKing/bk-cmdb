@@ -129,14 +129,15 @@ func (lgc *Logics) GetHostData(appID int64, hostIDArr []int64, hostFields []stri
 
 // GetImportHosts get import hosts
 // return inst array data, errmsg collection, error
-func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf, modelBizID int64) (map[int]map[string]interface{}, []string, error) {
-	ctx := util.NewContextFromHTTPHeader(header)
+func (lgc *Logics) GetImportHosts(f *xlsx.File, req *http.Request, defLang lang.DefaultCCLanguageIf,
+	modelBizID int64) (map[int]map[string]interface{}, []string, error) {
+	ctx := util.NewContextFromHTTPHeader(req.Header)
 
-	if 0 == len(f.Sheets) {
+	if len(f.Sheets) == 0 {
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
 
-	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, modelBizID,
+	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, req.Header, modelBizID,
 		common.HostAddMethodExcelDefaultIndex)
 
 	if nil != err {
@@ -148,13 +149,20 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
-	return GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, 0, defLang)
+	departmentMap, err := lgc.getDepartmentMap(req)
+	if err != nil {
+		blog.Errorf("get department failed, err: %v, rid: %s", err, util.GetHTTPCCRequestID(req.Header))
+		return nil, nil, err
+	}
+
+	return GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, 0, defLang,
+		departmentMap)
 }
 
 // ImportHosts import host info
-func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
-	modelBizID int64, moduleID int64, opType int64, AsstObjectUniqueIDMap map[string]int64,
-	objectUniqueID int64) *metadata.ResponseDataMapStr {
+func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.Header,req *http.Request,
+	defLang lang.DefaultCCLanguageIf, modelBizID int64, moduleID int64, opType int64, 
+	AsstObjectUniqueIDMap map[string]int64,	objectUniqueID int64) *metadata.ResponseDataMapStr {
 
 	rid := util.GetHTTPCCRequestID(header)
 
@@ -189,10 +197,10 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 	objectUniqueID int64) *metadata.ResponseDataMapStr {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Header))
 	resp := &metadata.ResponseDataMapStr{Data: mapstr.New()}
 
-	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang, modelBizID)
+	hosts, errMsg, err := lgc.GetImportHosts(f, req, defLang, modelBizID)
 	if err != nil {
 		blog.Errorf("get import hosts failed, err: %v, rid: %s", err, rid)
 		resp.Code = common.CCErrWebFileContentFail
@@ -206,7 +214,7 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 		return resp
 	}
 
-	errMsg, err = lgc.CheckHostsAdded(ctx, header, hosts)
+	errMsg, err = lgc.CheckHostsAdded(ctx, req.Header, hosts)
 	if err != nil {
 		blog.Errorf("check host added failed, err: %v, rid: %s", err, rid)
 		resp.Code = common.CCErrWebHostCheckFail
@@ -226,7 +234,7 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 			"input_type":           common.InputTypeExcel,
 			common.BKModuleIDField: moduleID,
 		}
-		result, resultErr := lgc.CoreAPI.ApiServer().AddHostByExcel(context.Background(), header, params)
+		result, resultErr := lgc.CoreAPI.ApiServer().AddHostByExcel(context.Background(), req.Header, params)
 		if resultErr != nil {
 			blog.Errorf("add host info failed, err: %v, rid: %s", resultErr, rid)
 			resp.Code = common.CCErrCommHTTPDoRequestFailed
@@ -242,32 +250,36 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 		return resp
 	}
 
-	// if len(f.Sheets) > 2, the second sheet is association data to be import
-	asstInfoMap, assoErrMsg := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset,
-		defLang)
-
-	if len(asstInfoMap) > 0 {
-		asstInfoMapInput := &metadata.RequestImportAssociation{
-			AssociationInfoMap:    asstInfoMap,
-			AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
-			ObjectUniqueID:        objectUniqueID,
-		}
-		asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, common.BKInnerObjIDHost,
-			asstInfoMapInput)
-		if asstResultErr != nil {
-			blog.Errorf("import host association failed, err: %v, rid: %s", asstResultErr, rid)
-			resp.Code = common.CCErrCommHTTPDoRequestFailed
-			resp.ErrMsg = defErr.Errorf(common.CCErrCommHTTPDoRequestFailed).Error()
-			return resp
+	// if sheet name is 'association', the sheet is association data to be import
+	for _, sheet := range f.Sheets {
+		if sheet.Name != "association" {
+			continue
 		}
 
-		assoErrMsg = append(assoErrMsg, asstResult.Data.ErrMsgMap...)
-		if resp.Result && !asstResult.Result {
-			resp.BaseResp = asstResult.BaseResp
+		asstInfoMap, assoErrMsg := GetAssociationExcelData(sheet, common.HostAddMethodExcelAssociationIndexOffset,
+			defLang)
+
+		if len(asstInfoMap) > 0 {
+			asstInfoMapInput := &metadata.RequestImportAssociation{
+				AssociationInfoMap: asstInfoMap,
+			}
+			asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, req.Header,
+				common.BKInnerObjIDHost, asstInfoMapInput)
+			if asstResultErr != nil {
+				blog.Errorf("import host association failed, err: %v, rid: %s", asstResultErr, rid)
+				resp.Code = common.CCErrCommHTTPDoRequestFailed
+				resp.ErrMsg = defErr.Errorf(common.CCErrCommHTTPDoRequestFailed).Error()
+				return resp
+			}
+
+			assoErrMsg = append(assoErrMsg, asstResult.Data.ErrMsgMap...)
+			if resp.Result && !asstResult.Result {
+				resp.BaseResp = asstResult.BaseResp
+			}
 		}
+
+		resp.Data.Set("asst_error", assoErrMsg)
 	}
-
-	resp.Data.Set("asst_error", assoErrMsg)
 
 	return resp
 }
@@ -326,15 +338,15 @@ func (lgc *Logics) importStatisticsAssociation(ctx context.Context, header http.
 }
 
 // UpdateHosts update excel import hosts
-func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
-	modelBizID, OpType int64, AsstObjectUniqueIDMap map[string]int64,
+func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, req *http.Request, header http.Header, 
+	defLang lang.DefaultCCLanguageIf, modelBizID, OpType int64, AsstObjectUniqueIDMap map[string]int64,
 	objectUniqueID int64) *metadata.ResponseDataMapStr {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Header))
 
-	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang, modelBizID)
-	if nil != err {
+	hosts, errMsg, err := lgc.GetImportHosts(f, req, defLang, modelBizID)
+	if err != nil {
 		blog.Errorf("ImportHost get import hosts from excel err, error:%s, rid: %s", err.Error(), rid)
 		return &metadata.ResponseDataMapStr{
 			BaseResp: metadata.BaseResp{
@@ -345,7 +357,7 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 			Data: nil,
 		}
 	}
-	if 0 != len(errMsg) {
+	if len(errMsg) != 0 {
 		return &metadata.ResponseDataMapStr{
 			BaseResp: metadata.BaseResp{
 				Result: false,
@@ -380,8 +392,9 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 		return result
 	}
 
-	errMsg, err = lgc.CheckHostsUpdated(ctx, header, hosts, modelBizID)
-	if nil != err {
+
+	errMsg, err = lgc.CheckHostsUpdated(ctx, req.Header, hosts, modelBizID)
+	if err != nil {
 		blog.Errorf("ImportHosts failed,  CheckHostsAdded error:%s, rid: %s", err.Error(), rid)
 		return &metadata.ResponseDataMapStr{
 			BaseResp: metadata.BaseResp{
@@ -409,7 +422,7 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 	result := &metadata.ResponseDataMapStr{}
 	result.BaseResp.Result = true
 	result.Data = mapstr.New()
-	if 0 != len(hosts) {
+	if len(hosts) != 0 {
 		params := map[string]interface{}{
 			"host_info":  hosts,
 			"input_type": common.InputTypeExcel,

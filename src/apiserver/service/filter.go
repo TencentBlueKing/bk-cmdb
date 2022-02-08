@@ -24,10 +24,12 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/metrics"
 	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/hooks"
 
 	"github.com/emicklei/go-restful/v3"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type RequestType string
@@ -212,6 +214,13 @@ func (s *service) verifyAuthorizeStatus(req *restful.Request,
 	}
 
 	if !authorized {
+		s.noPermissionRequestTotal.With(
+			prometheus.Labels{
+				metrics.LabelHandler: path,
+				metrics.LabelAppCode: req.Request.Header.Get(common.BKHTTPRequestAppCode),
+			},
+		).Inc()
+		
 		permission, err := s.authorizer.GetPermissionToApply(req.Request.Context(), req.Request.Header,
 			attribute.Resources)
 		if err != nil {
@@ -222,8 +231,10 @@ func (s *service) verifyAuthorizeStatus(req *restful.Request,
 				Result: false,
 			}, false
 		}
+		
 		blog.WarnJSON("authFilter failed, url: %s, attribute: %s, permission: %s, rid: %s", path, attribute,
 			permission, rid)
+		
 		return &metadata.BaseResp{
 			Code:        common.CCNoPermission,
 			ErrMsg:      errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
@@ -231,6 +242,7 @@ func (s *service) verifyAuthorizeStatus(req *restful.Request,
 			Permissions: permission,
 		}, false
 	}
+	
 	return nil, true
 }
 

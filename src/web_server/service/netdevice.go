@@ -87,6 +87,7 @@ func (s *Service) ImportNetDevice(c *gin.Context) {
 	c.String(http.StatusOK, resultStr)
 }
 
+// ExportNetDevice export net device by excel
 func (s *Service) ExportNetDevice(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
@@ -97,17 +98,18 @@ func (s *Service) ExportNetDevice(c *gin.Context) {
 
 	deviceIDstr := c.PostForm(common.BKDeviceIDField)
 	deviceInfo, err := s.Logics.GetNetDeviceData(c.Request.Header, deviceIDstr)
-	if nil != err {
-		blog.Errorf("[Export Net Device] get device data error:%s, rid: %s", err.Error(), rid)
-		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
+	if err != nil {
+		blog.Errorf("get device data failed, err: %v, rid: %s", err, rid)
+		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(),
+			nil)
 		c.String(http.StatusInternalServerError, msg)
 		return
 	}
 
 	file := xlsx.NewFile()
 	sheet, err := file.AddSheet(common.BKNetDevice)
-	if nil != err {
-		blog.Errorf("[Export Net Device] create sheet error:%s, rid: %s", err.Error(), rid)
+	if err != nil {
+		blog.Errorf("create sheet failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 			defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
 		c.String(http.StatusInternalServerError, msg)
@@ -117,8 +119,8 @@ func (s *Service) ExportNetDevice(c *gin.Context) {
 	fields := logics.GetNetDevicefield(defLang)
 	logics.AddNetDeviceExtFields(fields, defLang)
 
-	if err = logics.BuildNetDeviceExcelFromData(ctx, defLang, fields, deviceInfo, sheet); nil != err {
-		blog.Errorf("[Export Net Device] build net device excel data error:%s, rid: %s", err.Error(), rid)
+	if err = logics.BuildNetDeviceExcelFromData(ctx, defLang, fields, deviceInfo, sheet, file); err != nil {
+		blog.Errorf("build net device excel data failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 			defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
 		c.String(http.StatusInternalServerError, msg)
@@ -126,9 +128,9 @@ func (s *Service) ExportNetDevice(c *gin.Context) {
 	}
 
 	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
-	if _, err = os.Stat(dirFileName); nil != err {
-		if err = os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); nil != err {
-			blog.Errorf("[Export Net Device] mkdir error:%s, rid: %s", err.Error(), rid)
+	if _, err = os.Stat(dirFileName); err != nil {
+		if err = os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); err != nil {
+			blog.Errorf("mkdir failed, err: %v, rid: %s", err, rid)
 			msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 				defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
 			c.String(http.StatusInternalServerError, msg)
@@ -141,8 +143,8 @@ func (s *Service) ExportNetDevice(c *gin.Context) {
 
 	logics.ProductExcelCommentSheet(ctx, file, defLang)
 
-	if err = file.Save(dirFileName); nil != err {
-		blog.Error("[Export Net Device] save file error:%s, rid: %s", err.Error(), rid)
+	if err = file.Save(dirFileName); err != nil {
+		blog.Errorf("save file failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 			defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
 		c.String(http.StatusInternalServerError, msg)
@@ -152,8 +154,8 @@ func (s *Service) ExportNetDevice(c *gin.Context) {
 	logics.AddDownExcelHttpHeader(c, "netdevice.xlsx")
 	c.File(dirFileName)
 
-	if err = os.Remove(dirFileName); nil != err {
-		blog.Error("[Export Net Device] remove file error:%s, rid: %s", err.Error(), rid)
+	if err = os.Remove(dirFileName); err != nil {
+		blog.Errorf("remove file failed, err: %v, rid: %s", err, rid)
 	}
 }
 

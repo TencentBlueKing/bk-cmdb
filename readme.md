@@ -78,4 +78,7 @@
 ![jiawei](docs/resource/img/jiawei-logo.png)　　![youole](docs/resource/img/youole-logo.png)　　![honops](docs/resource/img/honops-logo.png)
 
 ## License
-项目基于 MIT 协议， 详细请参考 [LICENSE](LICENSE.txt) 。
+项目基于 MIT 协议，详细请参考 [LICENSE](LICENSE.txt)。
+
+我们承诺未来不会更改适用于交付给任何人的当前项目版本的开源许可证（MIT 协议）。
+

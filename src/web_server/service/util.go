@@ -166,3 +166,42 @@ func (s *Service) getUserListStr(userList []string) []string {
 
 	return userListStr
 }
+
+// getDepartment search department detail and return a id-fullname map
+func (s *Service) getDepartment(c *gin.Context, objID string) ([]metadata.DepartmentItem, []string, error) {
+
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	cond := metadata.QueryCondition{
+		Fields: []string{metadata.AttributeFieldPropertyID},
+		Condition: map[string]interface{}{
+			metadata.AttributeFieldObjectID:     objID,
+			metadata.AttributeFieldPropertyType: common.FieldTypeOrganization,
+		},
+	}
+	attrRsp, err := s.CoreAPI.CoreService().Model().ReadModelAttr(c, c.Request.Header, objID, &cond)
+	if err != nil {
+		blog.Errorf("search object[%s] attribute failed, err: %v, rid: %s", objID, err, rid)
+		return nil, nil, err
+	}
+	if !attrRsp.Result {
+		blog.Errorf("failed to search the object(%s), err: %s, rid: %s", objID, attrRsp.ErrMsg, rid)
+		return nil, nil, err
+	}
+
+	if len(attrRsp.Data.Info) == 0 {
+		return make([]metadata.DepartmentItem, 0), make([]string, 0), nil
+	}
+
+	propertyList := make([]string, 0)
+	for _, item := range attrRsp.Data.Info {
+		propertyList = append(propertyList, item.PropertyID)
+	}
+
+	department, err := s.Logics.GetDepartment(c, s.Config)
+	if err != nil {
+		blog.Errorf("get department failed, err: %v, rid: %s", err, rid)
+		return nil, nil, err
+	}
+
+	return department.Results, propertyList, nil
+}
