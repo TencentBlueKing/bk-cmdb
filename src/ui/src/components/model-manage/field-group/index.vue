@@ -464,6 +464,7 @@
     methods: {
       ...mapActions('objectModelFieldGroup', [
         'searchGroup',
+        'updateGroup',
         'switchGroupIndex',
         'deleteGroup',
         'createGroup',

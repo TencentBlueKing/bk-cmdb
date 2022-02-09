@@ -24,9 +24,11 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/metrics"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type RequestType string
@@ -199,6 +201,12 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		}
 
 		if !authorized {
+			s.noPermissionRequestTotal.With(
+				prometheus.Labels{
+					metrics.LabelHandler: path,
+					metrics.LabelAppCode: req.Request.Header.Get(common.BKHTTPRequestAppCode),
+				},
+			).Inc()
 			permission, err := s.authorizer.GetPermissionToApply(req.Request.Context(), req.Request.Header, attribute.Resources)
 			if err != nil {
 				blog.Errorf("get permission to apply failed, err: %v, rid: %s", err, rid)

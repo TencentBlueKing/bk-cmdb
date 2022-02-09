@@ -56,6 +56,33 @@ func (s *Sheet) AddRow() *Row {
 	return row
 }
 
+// Add a new Row to a Sheet at a specific index
+func (s *Sheet) AddRowAtIndex(index int) (*Row, error) {
+	if index < 0 || index > len(s.Rows) {
+		return nil, errors.New("AddRowAtIndex: index out of bounds")
+	}
+	row := &Row{Sheet: s}
+	s.Rows = append(s.Rows, nil)
+
+	if index < len(s.Rows) {
+		copy(s.Rows[index+1:], s.Rows[index:])
+	}
+	s.Rows[index] = row
+	if len(s.Rows) > s.MaxRow {
+		s.MaxRow = len(s.Rows)
+	}
+	return row, nil
+}
+
+// Removes a row at a specific index
+func (s *Sheet) RemoveRowAtIndex(index int) error {
+	if index < 0 || index >= len(s.Rows) {
+		return errors.New("RemoveRowAtIndex: index out of bounds")
+	}
+	s.Rows = append(s.Rows[:index], s.Rows[index+1:]...)
+	return nil
+}
+
 // Make sure we always have as many Rows as we do cells.
 func (s *Sheet) maybeAddRow(rowCount int) {
 	if rowCount > s.MaxRow {
@@ -209,7 +236,6 @@ func (s *Sheet) makeXLSXSheet(refTable *RefTable, styles *xlsxStyleSheet) *xlsxW
 	worksheet.SheetFormatPr.DefaultColWidth = s.SheetFormat.DefaultColWidth
 
 	colsXfIdList := make([]int, len(s.Cols))
-	worksheet.Cols = &xlsxCols{Col: []xlsxCol{}}
 	for c, col := range s.Cols {
 		XfId := 0
 		if col.Min == 0 {
@@ -233,6 +259,10 @@ func (s *Sheet) makeXLSXSheet(refTable *RefTable, styles *xlsxStyleSheet) *xlsxW
 
 		} else {
 			customWidth = true
+		}
+		// When the cols content is empty, the cols flag is not output in the xml file.
+		if worksheet.Cols == nil {
+			worksheet.Cols = &xlsxCols{Col: []xlsxCol{}}
 		}
 		worksheet.Cols.Col = append(worksheet.Cols.Col,
 			xlsxCol{Min: col.Min,

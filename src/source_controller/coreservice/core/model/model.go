@@ -14,6 +14,7 @@ package model
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -53,10 +54,10 @@ func New(dependent OperationDependences, language language.CCLanguageIf) core.Mo
 	return coreMgr
 }
 
+// CreateModel create a new model
 func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error) {
 
 	locker := lock.NewLocker(redis.Client())
-	// fmt.Sprintf("coreservice:create:model:%s", inputParam.Spec.ObjectID)
 	redisKey := lock.GetLockKey(lock.CreateModelFormat, inputParam.Spec.ObjectID)
 
 	locked, err := locker.Lock(redisKey, time.Second*35)
@@ -71,29 +72,32 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	}
 	blog.V(5).Infof("create model redis look info. key:%s, bl:%v, err:%v, rid:%s", redisKey, locked, err, kit.Rid)
 
-	dataResult := &metadata.CreateOneDataResult{}
-
 	// check the model attributes value
 	if 0 == len(inputParam.Spec.ObjectID) {
 		blog.Errorf("request(%s): it is failed to create a new model, because of the modelID (%s) is not set", kit.Rid, inputParam.Spec.ObjectID)
-		return dataResult, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
+	}
+
+	// 禁止创建bk或者BK打头的模型，用于后续创建内置模型，避免冲突
+	if err := validIDStartWithBK(kit, inputParam.Spec.ObjectID); err != nil {
+		return nil, err
 	}
 
 	if !SatisfyMongoCollLimit(inputParam.Spec.ObjectID) {
 		blog.Errorf("inputParam.Spec.ObjectID:%s not SatisfyMongoCollLimit", inputParam.Spec.ObjectID)
-		return dataResult, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID)
 	}
 
 	// check the input classification ID
 	isValid, err := m.modelClassification.isValid(kit, inputParam.Spec.ObjCls)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check whether the classificationID(%s) is invalid, error info is %s", kit.Rid, inputParam.Spec.ObjCls, err.Error())
-		return dataResult, err
+		return nil, err
 	}
 
 	if !isValid {
 		blog.Warnf("request(%s): it is failed to create a new model, because of the classificationID (%s) is invalid", kit.Rid, inputParam.Spec.ObjCls)
-		return dataResult, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ClassificationFieldID)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ClassificationFieldID)
 	}
 
 	// check the model if it is exists
@@ -104,11 +108,11 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	_, exists, err := m.isExists(kit, condCheckModel)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check whether the model (%s) is exists, error info is %s ", kit.Rid, inputParam.Spec.ObjectID, err.Error())
-		return dataResult, err
+		return nil, err
 	}
 	if exists {
 		blog.Warnf("request(%s): it is failed to  create a new model , because of the model (%s) is already exists ", kit.Rid, inputParam.Spec.ObjectID)
-		return dataResult, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectID)
+		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectID)
 	}
 
 	// 检查模型名称重复
@@ -119,30 +123,29 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	sameNameCount, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("whether same name model exists, name: %s, err: %s, rid: %s", inputParam.Spec.ObjectName, err.Error(), kit.Rid)
-		return dataResult, err
+		return nil, err
 	}
 	if sameNameCount > 0 {
 		blog.Warnf("create model failed, field `%s` duplicated, rid: %s", inputParam.Spec.ObjectName, kit.Rid)
-		return dataResult, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectName)
+		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectName)
 	}
 
 	inputParam.Spec.OwnerID = kit.SupplierAccount
 	id, err := m.save(kit, &inputParam.Spec)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to save the model (%#v), error info is %s", kit.Rid, inputParam.Spec, err.Error())
-		return dataResult, err
+		return nil, err
 	}
 
 	if len(inputParam.Attributes) != 0 {
 		_, err = m.modelAttribute.CreateModelAttributes(kit, inputParam.Spec.ObjectID, metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
 		if nil != err {
 			blog.Errorf("request(%s): it is failed to create some attributes (%#v) for the model (%s), err: %v", kit.Rid, inputParam.Attributes, inputParam.Spec.ObjectID, err)
-			return dataResult, err
+			return nil, err
 		}
 	}
 
-	dataResult.Created.ID = id
-	return dataResult, nil
+	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
 }
 func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*metadata.SetDataResult, error) {
 
@@ -370,4 +373,12 @@ func (m *modelManager) SearchModelWithAttribute(kit *rest.Kit, inputParam metada
 	}
 
 	return dataResult, nil
+}
+
+// validIDStartWithBK validate the id start with bk or BK
+func validIDStartWithBK(kit *rest.Kit, modelID string) error {
+	if strings.HasPrefix(strings.ToLower(modelID), "bk") {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_obj_id value can not start with bk or BK")
+	}
+	return nil
 }
