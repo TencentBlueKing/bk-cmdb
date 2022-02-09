@@ -18,14 +18,15 @@
             {{$t('新增关联')}}
           </bk-button>
         </span>
+        <bk-button theme="default" class="options-button" v-show="false">{{$t('批量取消')}}</bk-button>
+      </div>
+      <div class="fr">
         <bk-checkbox v-if="hasRelation"
+          v-show="activeView === viewName.list"
           :size="16" class="options-checkbox"
           @change="handleExpandAll">
           <span class="checkbox-label">{{$t('全部展开')}}</span>
         </bk-checkbox>
-        <bk-button theme="default" class="options-button" v-show="false">{{$t('批量取消')}}</bk-button>
-      </div>
-      <div class="fr">
         <bk-button class="options-button options-button-view"
           :theme="activeView === viewName.list ? 'primary' : 'default'"
           @click="handleToggleView(viewName.list)">
@@ -227,7 +228,7 @@
             }
         }
         .options-checkbox {
-            margin: 0 0 0 25px;
+            margin: 0 15px 0 0;
             line-height: 32px;
             .checkbox-label {
                 padding-left: 4px;

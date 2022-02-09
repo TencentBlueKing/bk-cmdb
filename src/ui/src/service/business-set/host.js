@@ -19,6 +19,21 @@ export const findAll = (bizSetId, params, config) => $http.post(`findmany/hosts/
   return data
 })
 
+
+/**
+ * 查询单个主机
+ * @param {number} bizSetId 业务集 ID
+ * @param {Object} params 查询参数
+ * @param {Obejct} config 请求配置
+ * @returns {Promise}
+ */
+export const findOne = (bizSetId, params, config) => $http.post(
+  `findmany/hosts/biz_set/${bizSetId}`,
+  params,
+  config
+)
+
 export const HostService = {
-  findAll
+  findAll,
+  findOne
 }

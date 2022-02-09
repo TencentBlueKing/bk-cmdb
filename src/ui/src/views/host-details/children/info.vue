@@ -30,7 +30,7 @@
             { type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }
           ]">
             <i class="topology-remove-trigger icon-cc-tips-close"
-              v-if="!item.isInternal"
+              v-if="!item.isInternal && !readonly"
               v-bk-tooltips="{ content: $t('从该模块移除'), interactive: false }"
               @click="handleRemove(item.id)">
             </i>
@@ -44,7 +44,7 @@
         {{$t('更多信息')}}
         <i class="bk-icon icon-angle-down" :class="{ 'is-all-show': showAll }"></i>
       </a>
-      <a class="action-btn change-topology" v-if="isBusinessHost"
+      <a class="action-btn change-topology" v-if="isBusinessHost && !readonly"
         href="javascript:void(0)"
         @click="handleEditTopo">
         {{$t('修改')}}
@@ -73,11 +73,15 @@
     MENU_BUSINESS_HOST_DETAILS
   } from '@/dictionary/menu-symbol'
   import ModuleSelectorWithTab from '@/views/business-topology/host/module-selector-with-tab.vue'
+  import { readonlyMixin } from '../mixin-readonly'
+  import { topoPathProxy } from '../service-proxy'
+
   export default {
     name: 'cmdb-host-info',
     components: {
       [ModuleSelectorWithTab.name]: ModuleSelectorWithTab
     },
+    mixins: [readonlyMixin],
     data() {
       return {
         displayType: window.localStorage.getItem('host_topology_display_type') || 'double',
@@ -161,11 +165,8 @@
         try {
           const modules = this.info.module || []
           const biz = this.info.biz || []
-          const result = await this.$store.dispatch('objectMainLineModule/getTopoPath', {
-            bizId: biz[0].bk_biz_id,
-            params: {
-              topo_nodes: modules.map(module => ({ bk_obj_id: 'module', bk_inst_id: module.bk_module_id }))
-            }
+          const result = await topoPathProxy(biz[0].bk_biz_id, {
+            topo_nodes: modules.map(module => ({ bk_obj_id: 'module', bk_inst_id: module.bk_module_id }))
           })
           this.topoNodesPath = result.nodes || []
         } catch (e) {

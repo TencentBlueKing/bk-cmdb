@@ -27,7 +27,18 @@ export const findChildren = ({
  */
 export const getInstanceCount = (bizSetId, condition, config) => $http.post(`count/topoinst/host_service_inst/biz_set/${bizSetId}`, { condition }, config)
 
+/**
+ * 获取业务下资源的拓扑路径
+ * @param {number} bizSetId 业务集 ID
+ * @param {number} bizId 业务 ID
+ * @param {Array} condition 实例查询条件
+ * @param {Object} config 请求配置
+ * @returns {Promise}
+ */
+export const findTopoPath = ({ bizSetId, bizId }, params, config) => $http.post(`find/topopath/biz_set/${bizSetId}/biz/${bizId}`, params, config)
+
 export const TopologyService = {
   findChildren,
+  findTopoPath,
   getInstanceCount
 }
