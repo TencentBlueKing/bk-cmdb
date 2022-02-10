@@ -40,19 +40,19 @@ func InitOpenTelemetryConfig() error {
 	var err error
 	maxCnt := 100
 	cnt := 0
-	for !cc.IsExist("logPlatform.openTelemetry") && cnt < maxCnt {
-		blog.V(5).Infof("waiting logPlatform.openTelemetry config to be init")
+	for !cc.IsExist("openTelemetry") && cnt < maxCnt {
+		blog.V(5).Infof("waiting openTelemetry config to be init")
 		cnt++
 		time.Sleep(time.Millisecond * 300)
 	}
 
 	if cnt == maxCnt {
-		return errors.New("no openTelemetry config is found, the config 'logPlatform.openTelemetry' must exist")
+		return errors.New("no openTelemetry config is found, the config 'openTelemetry' must exist")
 	}
 
-	openTelemetryCfg.enable, err = cc.Bool("logPlatform.openTelemetry.enable")
+	openTelemetryCfg.enable, err = cc.Bool("openTelemetry.enable")
 	if err != nil {
-		return fmt.Errorf("config logPlatform.openTelemetry.enable err: %v", err)
+		return fmt.Errorf("config openTelemetry.enable err: %v", err)
 	}
 
 	// 如果不需要开启OpenTelemetry，那么后续没有必要再检查配置
@@ -60,14 +60,14 @@ func InitOpenTelemetryConfig() error {
 		return nil
 	}
 
-	openTelemetryCfg.endPoint, err = cc.String("logPlatform.openTelemetry.endpoint")
+	openTelemetryCfg.endPoint, err = cc.String("openTelemetry.endpoint")
 	if err != nil {
-		return fmt.Errorf("config logPlatform.openTelemetry.endpoint err: %v", err)
+		return fmt.Errorf("config openTelemetry.endpoint err: %v", err)
 	}
 
-	openTelemetryCfg.bkDataID, err = cc.Int64("logPlatform.openTelemetry.bkDataID")
+	openTelemetryCfg.bkDataID, err = cc.Int64("openTelemetry.bkDataID")
 	if err != nil {
-		return fmt.Errorf("config logPlatform.openTelemetry.bkDataID err: %v", err)
+		return fmt.Errorf("config openTelemetry.bkDataID err: %v", err)
 	}
 	return nil
 }

@@ -133,9 +133,8 @@ func GenerateHttpHeaderRID(req *http.Request, resp http.ResponseWriter) {
 			cid = util.GenerateRID()
 		}
 		req.Header.Set(common.BKHTTPCCRequestID, cid)
-		resp.Header().Set(common.BKHTTPCCRequestID, cid)
 	}
-
+	resp.Header().Set(common.BKHTTPCCRequestID, cid)
 	return
 }
 
