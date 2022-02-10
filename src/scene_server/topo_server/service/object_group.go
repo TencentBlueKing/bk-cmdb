@@ -103,10 +103,10 @@ func (s *Service) ExchangeObjectGroupIndex(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		// if err := s.Core.GroupOperation().ExchangeObjectGroupIndex(ctx.Kit, query.Condition.ID); err != nil {
-		// 	blog.Errorf("change object group index failed,err: %v, rid: %s", err, ctx.Kit.Rid)
-		// 	return err
-		// }
+		if err := s.Logics.GroupOperation().ExchangeObjectGroupIndex(ctx.Kit, query.Condition.ID); err != nil {
+			blog.Errorf("change object group index failed,err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
 
 		return nil
 	})
