@@ -213,7 +213,7 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 		case xlsx.CellTypeNumeric:
 			cellValue, err := cell.Float()
 			if err != nil {
-				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (cellIndex+1)))
+				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (rowIndex+1)))
 				blog.Errorf("%d row %s column get content err: %v, rid: %s", rowIndex+1, fieldName, err, rid)
 				continue
 			}
@@ -225,13 +225,13 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 			cellValue, err := cell.GetTime(true)
 			if err != nil {
 				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName,
-					(cellIndex+1)))
+					(rowIndex+1)))
 				blog.Errorf("%d row %s column get content error:%s, rid: %s", rowIndex+1, fieldName, err, rid)
 				continue
 			}
 			result[fieldName] = cellValue
 		default:
-			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (cellIndex+1)))
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (rowIndex+1)))
 			blog.Errorf("unknown the type, %v,   %v, rid: %s", reflect.TypeOf(cell), cell.Type(), rid)
 			continue
 		}
@@ -242,7 +242,8 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 			continue
 		}
 
-		result, errMsg = buildAttrByPropertyType(rid, fieldName, cell.Value, field, result, department, defLang, errMsg)
+		result, errMsg = buildAttrByPropertyType(rid, fieldName, cell.Value, rowIndex, field, result, department,
+			defLang, errMsg)
 	}
 	if len(errMsg) != 0 {
 		return nil, errMsg
@@ -258,9 +259,9 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 
 }
 
-func buildAttrByPropertyType(rid, fieldName, cellValue string, field Property, result map[string]interface{},
-	department map[int64]metadata.DepartmentItem, defLang lang.DefaultCCLanguageIf, errMsg []string) (
-	map[string]interface{}, []string) {
+func buildAttrByPropertyType(rid, fieldName, cellValue string, rowIndex int, field Property,
+	result map[string]interface{}, department map[int64]metadata.DepartmentItem, defLang lang.DefaultCCLanguageIf,
+	errMsg []string) (map[string]interface{}, []string) {
 
 	switch field.PropertyType {
 	case common.FieldTypeBool:
@@ -291,7 +292,7 @@ func buildAttrByPropertyType(rid, fieldName, cellValue string, field Property, r
 				result[fieldName], err, rid)
 		}
 	case common.FieldTypeOrganization:
-		result, errMsg = checkOrgnization(result, department, defLang, errMsg, fieldName, rid)
+		result, errMsg = checkOrgnization(result, department, rowIndex, defLang, errMsg, fieldName, rid)
 	case common.FieldTypeUser:
 		// convert userNames,  eg: " admin(admin),xiaoming(小明 ),leo(li hong),  " => "admin,xiaoming,leo"
 		userNames := util.GetStrByInterface(result[fieldName])
@@ -307,12 +308,13 @@ func buildAttrByPropertyType(rid, fieldName, cellValue string, field Property, r
 	return result, errMsg
 }
 
-func checkOrgnization(result map[string]interface{}, department map[int64]metadata.DepartmentItem,
+func checkOrgnization(result map[string]interface{}, department map[int64]metadata.DepartmentItem, rowIndex int,
 	defLang lang.DefaultCCLanguageIf, errMsg []string, fieldName, rid string) (map[string]interface{}, []string) {
 
 	if len(department) == 0 {
 		blog.Debug("no department in paas, rid: %s", rid)
-		errMsg = append(errMsg, defLang.Languagef("nonexistent_org"))
+		errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (rowIndex+1))+
+			defLang.Languagef("nonexistent_org"))
 		return result, errMsg
 	}
 	// convert Organization,  eg: "[1]总公司,[2]分公司" => "1,2"
@@ -320,7 +322,8 @@ func checkOrgnization(result map[string]interface{}, department map[int64]metada
 	if len(orgStr) <= 0 {
 		blog.Debug("get excel cell value failed, field:%s, value:%s, err:%v, rid: %s", fieldName,
 			result[fieldName], "not a valid organization type", rid)
-		errMsg = append(errMsg, "organization type is invalid")
+		errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (rowIndex+1))+
+			defLang.Languagef("nonexistent_org"))
 		return result, errMsg
 	}
 	orgItems := strings.Split(orgStr, ",")
@@ -328,19 +331,29 @@ func checkOrgnization(result map[string]interface{}, department map[int64]metada
 	for i, v := range orgItems {
 		var err error
 		orgID := orgBracketsRegexp.FindString(v)
+		if len(orgID) == 0 {
+			blog.Errorf("regular matching is empty, please enter the correct content, field:%s, value:%s, rid: %s",
+				fieldName, result[fieldName], rid)
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (rowIndex+1))+
+				defLang.Languagef("nonexistent_org"))
+			break
+		}
+
 		if org[i], err = strconv.ParseInt(strings.TrimSpace(orgID[1:len(orgID)-1]), 10, 64); err != nil {
-			blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName,
+			blog.Debug("get excel cell value error, field:%s, value:%s, err:%v, rid: %s", fieldName,
 				result[fieldName], "not a valid organization type", rid)
-			errMsg = append(errMsg, defLang.Languagef("nonexistent_org"))
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (rowIndex+1))+
+				defLang.Languagef("nonexistent_org"))
 			break
 		}
 
 		importDepart := v[len(orgID):]
 		dp, exist := department[org[i]]
 		if !exist {
-			blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName,
+			blog.Debug("get excel cell value error, field:%s, value:%s, err:%v, rid: %s", fieldName,
 				result[fieldName], "organization does not exist", rid)
-			errMsg = append(errMsg, defLang.Languagef("nonexistent_org"))
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (rowIndex+1))+
+				defLang.Languagef("nonexistent_org"))
 			break
 		}
 
@@ -349,9 +362,10 @@ func checkOrgnization(result map[string]interface{}, department map[int64]metada
 		}
 
 		if dp.Name != importDepart && dp.FullName != importDepart {
-			blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName,
+			blog.Debug("get excel cell value error, field:%s, value:%s, err:%v, rid: %s", fieldName,
 				result[fieldName], "organization name or full_name does not match", rid)
-			errMsg = append(errMsg, defLang.Languagef("nonexistent_org"))
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (rowIndex+1))+
+				defLang.Languagef("nonexistent_org"))
 			break
 		}
 	}
