@@ -27,6 +27,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 
 	"github.com/google/go-cmp/cmp"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // GenerateApplyPlan 生成主机属性自动应用执行计划
@@ -162,65 +163,83 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 	return result, nil
 }
 
-func (p *hostApplyRule) generateOneHostApplyPlan(
-	kit *rest.Kit,
-	hostID int64,
-	host map[string]interface{},
-	moduleIDs []int64,
-	rules []metadata.HostApplyRule,
-	attributes []metadata.Attribute,
-	resolvers []metadata.HostApplyConflictResolver,
-) (metadata.OneHostApplyPlan, errors.CCErrorCoder) {
+// isRuleEqualOrNot: When the attribute type is "organization", the type obtained from the database is the database's
+// native primitive.A type. When converted to []interface{}, the The type is int64, the type of propertyValue is
+// []interface{}, and the type of each element inside is json.Number, which needs to be unified before comparing.
+// The rest of the attribute types can be compared directly in non-organization scenarios.
+func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue interface{}) (bool, errors.CCErrorCoder) {
+
+	switch pType {
+	case common.FieldTypeOrganization:
+		if _, ok := expectValue.(primitive.A); !ok {
+			return false, errors.New(common.CCErrCommUnexpectedFieldType, "expect value type error")
+		}
+		if _, ok := propertyValue.([]interface{}); !ok {
+			return false, errors.New(common.CCErrCommUnexpectedFieldType, "property value type error")
+		}
+
+		expectValueList := make([]int, 0)
+		for _, eValue := range []interface{}(expectValue.(primitive.A)) {
+			value, err := util.GetIntByInterface(eValue)
+			if err != nil {
+				return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
+			}
+			expectValueList = append(expectValueList, value)
+		}
+
+		ruleValueList := make([]int, 0)
+		for _, rValue := range propertyValue.([]interface{}) {
+			value, err := util.GetIntByInterface(rValue)
+			if err != nil {
+				return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
+			}
+			ruleValueList = append(ruleValueList, value)
+		}
+		if cmp.Equal(expectValueList, ruleValueList) {
+			return true, nil
+		}
+
+	default:
+		if cmp.Equal(expectValue, propertyValue) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func ifNeedJudgeRule(targetRules []metadata.HostApplyRule, attributeID int64, attrMap map[int64]metadata.Attribute,
+	rid string) (metadata.Attribute, bool) {
+	if len(targetRules) == 0 {
+		return metadata.Attribute{}, false
+	}
+	attribute, exist := attrMap[attributeID]
+	if !exist {
+		blog.Infof("attribute id field not exist, attributeID: %s, rid: %s", attributeID, rid)
+		return metadata.Attribute{}, false
+	}
+	if metadata.CheckAllowHostApplyOnField(attribute.PropertyID) == false {
+		return metadata.Attribute{}, false
+	}
+	return attribute, true
+}
+
+func getOneHostApplyPlan(kit *rest.Kit, attrRules map[int64][]metadata.HostApplyRule,
+	attrMap map[int64]metadata.Attribute, hostID int64, host map[string]interface{}, moduleIDs []int64,
+	resolverMap map[int64]interface{}) (metadata.OneHostApplyPlan, errors.CCErrorCoder) {
+
 	rid := util.ExtractRequestUserFromContext(kit.Ctx)
-
-	resolverMap := make(map[int64]interface{})
-	for _, item := range resolvers {
-		if item.HostID != hostID {
-			continue
-		}
-		resolverMap[item.AttributeID] = item.PropertyValue
-	}
-
 	plan := metadata.OneHostApplyPlan{
-		HostID:                  hostID,
-		ModuleIDs:               moduleIDs,
-		ExpectHost:              host,
-		ConflictFields:          make([]metadata.HostApplyConflictField, 0),
-		UpdateFields:            make([]metadata.HostApplyUpdateField, 0),
-		UnresolvedConflictCount: 0,
+		HostID:         hostID,
+		ModuleIDs:      moduleIDs,
+		ExpectHost:     host,
+		ConflictFields: make([]metadata.HostApplyConflictField, 0),
+		UpdateFields:   make([]metadata.HostApplyUpdateField, 0),
 	}
 
-	moduleIDSet := make(map[int64]bool)
-	for _, moduleID := range moduleIDs {
-		moduleIDSet[moduleID] = true
-	}
-	attributeRules := make(map[int64][]metadata.HostApplyRule)
-	for _, rule := range rules {
-		if _, exist := moduleIDSet[rule.ModuleID]; !exist {
-			continue
-		}
-		if _, exist := attributeRules[rule.AttributeID]; !exist {
-			attributeRules[rule.AttributeID] = make([]metadata.HostApplyRule, 0)
-		}
-		attributeRules[rule.AttributeID] = append(attributeRules[rule.AttributeID], rule)
-	}
+	for attributeID, targetRules := range attrRules {
 
-	attributeMap := make(map[int64]metadata.Attribute)
-	for _, attribute := range attributes {
-		attributeMap[attribute.ID] = attribute
-	}
-
-	// update host if conflicts not exist
-	for attributeID, targetRules := range attributeRules {
-		if len(targetRules) == 0 {
-			continue
-		}
-		attribute, exist := attributeMap[attributeID]
-		if !exist {
-			blog.Infof("generateOneHostApplyPlan attribute id filed not exist, attributeID: %s, rid: %s", attributeID, rid)
-			continue
-		}
-		if metadata.CheckAllowHostApplyOnField(attribute.PropertyID) == false {
+		attribute, need := ifNeedJudgeRule(targetRules, attributeID, attrMap, rid)
+		if !need {
 			continue
 		}
 		propertyIDField := attribute.PropertyID
@@ -229,15 +248,22 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 			originalValue = nil
 		}
 
-		// check conflicts
 		expectValue := originalValue
-		conflictedStillExist := false
+
+		// check conflicts and if needChange
+		conflictedStillExist, needChange := false, false
 		// checks if host needs to be changed by the apply rules, if not, do not append the field to the update fields
-		needChange := false
 		for _, rule := range targetRules {
-			if cmp.Equal(expectValue, rule.PropertyValue) {
+			isEqual, err := isRuleEqualOrNot(attribute.PropertyType, expectValue, rule.PropertyValue)
+			if err != nil {
+				blog.Errorf("compare rule value failed, err: %v, rid: %s", err, rid)
+				return metadata.OneHostApplyPlan{}, err
+			}
+
+			if isEqual {
 				continue
 			}
+
 			needChange = true
 			expectValue = rule.PropertyValue
 			conflictedStillExist = true
@@ -270,20 +296,64 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 		}
 		rawErr := attribute.Validate(kit.Ctx, expectValue, propertyIDField)
 		if rawErr.ErrCode != 0 {
-			err := rawErr.ToCCError(kit.CCError)
-			blog.ErrorJSON("generateOneHostApplyPlan failed, Validate failed, "+
-				"attribute: %s, firstValue: %s, propertyIDField: %s, rawErr: %s, rid: %s",
+			blog.Errorf("attribute validate failed, attribute: %s, firstValue: %s, propertyID: %s, err: %s, rid: %s",
 				attribute, expectValue, propertyIDField, rawErr, rid)
-			plan.ErrCode = err.GetCode()
-			plan.ErrMsg = err.Error()
+			plan.ErrCode = rawErr.ToCCError(kit.CCError).GetCode()
+			plan.ErrMsg = rawErr.ToCCError(kit.CCError).Error()
 			break
 		}
+
 		plan.ExpectHost[propertyIDField] = expectValue
 		plan.UpdateFields = append(plan.UpdateFields, metadata.HostApplyUpdateField{
 			AttributeID:   attributeID,
 			PropertyID:    propertyIDField,
 			PropertyValue: expectValue,
 		})
+	}
+	return plan, nil
+}
+
+func (p *hostApplyRule) generateOneHostApplyPlan(
+	kit *rest.Kit,
+	hostID int64,
+	host map[string]interface{},
+	moduleIDs []int64,
+	rules []metadata.HostApplyRule,
+	attributes []metadata.Attribute,
+	resolvers []metadata.HostApplyConflictResolver,
+) (metadata.OneHostApplyPlan, errors.CCErrorCoder) {
+
+	resolverMap := make(map[int64]interface{})
+	for _, item := range resolvers {
+		if item.HostID != hostID {
+			continue
+		}
+		resolverMap[item.AttributeID] = item.PropertyValue
+	}
+
+	moduleIDSet := make(map[int64]bool)
+	for _, moduleID := range moduleIDs {
+		moduleIDSet[moduleID] = true
+	}
+	attributeRules := make(map[int64][]metadata.HostApplyRule)
+	for _, rule := range rules {
+		if _, exist := moduleIDSet[rule.ModuleID]; !exist {
+			continue
+		}
+		if _, exist := attributeRules[rule.AttributeID]; !exist {
+			attributeRules[rule.AttributeID] = make([]metadata.HostApplyRule, 0)
+		}
+		attributeRules[rule.AttributeID] = append(attributeRules[rule.AttributeID], rule)
+	}
+
+	attributeMap := make(map[int64]metadata.Attribute)
+	for _, attribute := range attributes {
+		attributeMap[attribute.ID] = attribute
+	}
+
+	plan, err := getOneHostApplyPlan(kit, attributeRules, attributeMap, hostID, host, moduleIDs, resolverMap)
+	if err != nil {
+		return metadata.OneHostApplyPlan{}, err
 	}
 
 	sort.SliceStable(plan.UpdateFields, func(i, j int) bool {
