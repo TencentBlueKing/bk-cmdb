@@ -87,19 +87,12 @@ func (s *Service) ImportInst(c *gin.Context) {
 		msg := getReturnStr(common.CCErrCommParamsValueInvalidError,
 			defErr.CCErrorf(common.CCErrCommParamsValueInvalidError, "params", err.Error()).Error(), nil)
 		c.String(http.StatusOK, msg)
-
-	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
-	if err != nil {
-		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(
-			common.CCErrCommJSONUnmarshalFailed).Error(), nil)
-		c.String(http.StatusOK, string(msg))
-		return
 	}
 
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/import/"
 	_, err = os.Stat(dir)
-	if nil != err {
+	if err != nil {
 		if err != nil {
 			blog.Warnf("os.Stat failed, filename: %s, will retry with os.MkdirAll, err: %+v, rid: %s", dir, err, rid)
 		}
@@ -109,7 +102,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 	}
 	filePath := fmt.Sprintf("%s/importinsts-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
 	err = c.SaveUploadedFile(file, filePath)
-	if nil != err {
+	if err != nil {
 		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail,
 			err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -121,7 +114,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 		}
 	}()
 	f, err := xlsx.OpenFile(filePath)
-	if nil != err {
+	if err != nil {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail,
 			err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -132,7 +125,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 		c.Request, c.Request.Header, defLang, inputJSON.BizID, inputJSON.OpType, inputJSON.AssociationCond,
 		inputJSON.ObjectUniqueID)
 
-	if nil != err {
+	if err != nil {
 		msg := getReturnStr(errCode, err.Error(), data)
 		c.String(http.StatusOK, string(msg))
 		return
@@ -175,15 +168,12 @@ func (s *Service) ExportInst(c *gin.Context) {
 
 	instInfo, err := s.Logics.GetInstData(objID, input.InstIDArr, pheader)
 	if err != nil {
-		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
+		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail,
+			err.Error()).Error(), nil)
 		blog.ErrorJSON("get inst data error. err: %s, inst id: %s, rid: %s", err.Error(), input.InstIDArr, rid)
 		c.String(http.StatusForbidden, msg)
 		return
 	}
-
-	var file *xlsx.File
-
-	file = xlsx.NewFile()
 
 	customFields := logics.GetCustomFields(nil, input.CustomFields)
 	fields, err := s.Logics.GetObjFieldIDs(objID, nil, customFields, pheader, modelBizID,
@@ -211,7 +201,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 
 	file := xlsx.NewFile()
 	err = s.Logics.BuildExcelFromData(ctx, objID, fields, nil, instInfo, file, pheader, modelBizID, usernameMap,
-		propertyList, input.AssociationCond, input.ObjectUniqueID)
+		propertyList, org, orgPropertyList, input.AssociationCond, input.ObjectUniqueID)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s, rid: %s", objID, err.Error(), rid)
 		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(

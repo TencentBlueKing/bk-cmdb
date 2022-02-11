@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -97,8 +98,8 @@ func (lgc *Logics) GetInstData(objID string, instIDArr []int64, header http.Head
 }
 
 // ImportInsts import host info
-func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, req *http.Request, header http.Header, 
-	defLang lang.DefaultCCLanguageIf, modelBizID int64, opType int64, 
+func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, req *http.Request, header http.Header,
+	defLang lang.DefaultCCLanguageIf, modelBizID int64, opType int64,
 	AsstObjectUniqueIDMap map[string]int64, objectUniqueID int64) (
 	resultData mapstr.MapStr, errCode int, err error) {
 
@@ -116,11 +117,11 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 		return mapstr.MapStr{"association": info}, 0, nil
 	}
 
-	return lgc.importInsts(ctx, f, objID, header, defLang, modelBizID, AsstObjectUniqueIDMap, objectUniqueID)
+	return lgc.importInsts(ctx, f, objID, req, defLang, modelBizID, AsstObjectUniqueIDMap, objectUniqueID)
 }
 
 // importInsts import insts info
-func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header,
+func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, req *http.Request,
 	defLang lang.DefaultCCLanguageIf, modelBizID int64, asstObjectUniqueIDMap map[string]int64, objectUniqueID int64) (
 	resultData mapstr.MapStr, errCode int, err error) {
 
@@ -148,8 +149,8 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 		params["input_type"] = common.InputTypeExcel
 		params["BatchInfo"] = insts
 		params[common.BKAppIDField] = modelBizID
-		result, resultErr = lgc.CoreAPI.ApiServer().AddInstByImport(context.Background(), header,
-			util.GetOwnerID(header), objID, params)
+		result, resultErr = lgc.CoreAPI.ApiServer().AddInstByImport(context.Background(), req.Header,
+			util.GetOwnerID(req.Header), objID, params)
 		if resultErr != nil {
 			blog.Errorf("ImportInsts add inst info  http request  err: %v, rid: %s", resultErr, rid)
 			return nil, common.CCErrorUnknownOrUnrecognizedError, resultErr

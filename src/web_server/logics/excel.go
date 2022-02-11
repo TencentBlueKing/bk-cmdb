@@ -35,7 +35,7 @@ import (
 // BuildExcelFromData product excel from data
 func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string,
 	data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64, usernameMap map[string]string,
-	propertyList []string, org []metadata.DepartmentItem, orgPropertyList []string, 
+	propertyList []string, org []metadata.DepartmentItem, orgPropertyList []string,
 	AsstObjectUniqueIDMap map[string]int64, selfObjectUniqueID int64) error {
 
 	rid := util.GetHTTPCCRequestID(header)
@@ -55,7 +55,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 	} else {
 		filter = append(filter, getFilterFields(objID)...)
 	}
-	
+
 	productExcelHeader(ctx, fields, filter, xlsxFile, sheet, ccLang)
 	// indexID := getFieldsIDIndexMap(fields)
 
@@ -145,29 +145,27 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 
 	productHostExcelHeader(ctx, fields, filter, sheet, ccLang, objNames)
 
-	instPrimaryKeyValMap := make(map[int64][]PropertyPrimaryVal)
 	handleHostDataParam := &HandleHostDataParam{
-		HostData:             data,
-		ExtFieldsTopoID:      extFieldsTopoID,
-		ExtFieldsBizID:       extFieldsBizID,
-		ExtFieldsModuleID:    extFieldsModuleID,
-		ExtFieldsSetID:       extFieldsSetID,
-		CcErr:                ccErr,
-		ExtFieldKey:          extFieldKey,
-		UsernameMap:          usernameMap,
-		PropertyList:         propertyList,
-		Organization:         org,
-		OrgPropertyList:      orgPropertyList,
-		CcLang:               ccLang,
-		Sheet:                sheet,
-		Rid:                  rid,
-		ObjID:                objID,
-		ObjIDs:               objIDs,
-		Fields:               fields,
-		InstPrimaryKeyValMap: instPrimaryKeyValMap,
+		HostData:          data,
+		ExtFieldsTopoID:   extFieldsTopoID,
+		ExtFieldsBizID:    extFieldsBizID,
+		ExtFieldsModuleID: extFieldsModuleID,
+		ExtFieldsSetID:    extFieldsSetID,
+		CcErr:             ccErr,
+		ExtFieldKey:       extFieldKey,
+		UsernameMap:       usernameMap,
+		PropertyList:      propertyList,
+		Organization:      org,
+		OrgPropertyList:   orgPropertyList,
+		CcLang:            ccLang,
+		Sheet:             sheet,
+		Rid:               rid,
+		ObjID:             objID,
+		ObjIDs:            objIDs,
+		Fields:            fields,
 	}
 
-	instIDs, err := lgc.buildHostExcelData(hanlehHostDataParam)
+	instIDs, err := lgc.buildHostExcelData(handleHostDataParam)
 	if err != nil {
 		blog.Errorf("build host excel data failed, err: %v, rid: %s", err, rid)
 		return err
@@ -262,8 +260,7 @@ func (lgc *Logics) buildHostExcelData(handleHostDataParam *HandleHostDataParam) 
 			return nil, err
 		}
 
-		primaryKeyArr := setExcelRowDataByIndex(rowMap, handleHostDataParam.Sheet, rowIndex, handleHostDataParam.Fields)
-		handleHostDataParam.InstPrimaryKeyValMap[instID] = primaryKeyArr
+		setExcelRowDataByIndex(rowMap, handleHostDataParam.Sheet, rowIndex, handleHostDataParam.Fields)
 		instIDArr = append(instIDArr, instID)
 		rowIndex++
 	}
@@ -303,23 +300,12 @@ func (lgc *Logics) getObjectAssociation(ctx context.Context, header http.Header,
 }
 
 // BuildAssociationExcelFromData build association excel
-func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID string,
-	instPrimaryInfo map[int64][]PropertyPrimaryVal, xlsxFile *xlsx.File, header http.Header, modelBizID int64) error {
+func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID string, instIDArr []int64,
+	xlsxFile *xlsx.File, header http.Header, modelBizID int64, AsstObjectUniqueIDMap map[string]int64,
+	selfObjectUniqueID int64) error {
 
-	defLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	rid := util.ExtractRequestIDFromContext(ctx)
-	var instIDArr []int64
-	for instID := range instPrimaryInfo {
-		instIDArr = append(instIDArr, instID)
-	}
-	instAsst, err := lgc.fetchAssociationData(ctx, header, objID, instIDArr, modelBizID)
-	if err != nil {
-		return err
-	}
-	asstData, err := lgc.getAssociationData(ctx, header, objID, instAsst, modelBizID)
-	if err != nil {
-		return err
-	}
+	defLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 
 	sheet, err := xlsxFile.AddSheet("association")
 	if err != nil {
@@ -330,19 +316,6 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 	asstList, err := lgc.getObjectAssociation(ctx, header, objID, modelBizID)
 	if err != nil {
 		return err
-	}
-
-	cond := &metadata.SearchAssociationObjectRequest{
-		Condition: map[string]interface{}{
-			condition.BKDBOR: []mapstr.MapStr{
-				{
-					common.BKObjIDField: objID,
-				},
-				{
-					common.BKAsstObjIDField: objID,
-				},
-			},
-		},
 	}
 
 	// 未设置, 不导出关联关系数据

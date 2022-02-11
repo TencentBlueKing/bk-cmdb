@@ -183,17 +183,13 @@ func (s *Service) getDepartment(c *gin.Context, objID string) ([]metadata.Depart
 		blog.Errorf("search object[%s] attribute failed, err: %v, rid: %s", objID, err, rid)
 		return nil, nil, err
 	}
-	if !attrRsp.Result {
-		blog.Errorf("failed to search the object(%s), err: %s, rid: %s", objID, attrRsp.ErrMsg, rid)
-		return nil, nil, err
-	}
 
-	if len(attrRsp.Data.Info) == 0 {
+	if len(attrRsp.Info) == 0 {
 		return make([]metadata.DepartmentItem, 0), make([]string, 0), nil
 	}
 
 	propertyList := make([]string, 0)
-	for _, item := range attrRsp.Data.Info {
+	for _, item := range attrRsp.Info {
 		propertyList = append(propertyList, item.PropertyID)
 	}
 

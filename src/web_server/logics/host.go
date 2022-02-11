@@ -160,17 +160,17 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, req *http.Request, defLang lang.
 }
 
 // ImportHosts import host info
-func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.Header,req *http.Request,
-	defLang lang.DefaultCCLanguageIf, modelBizID int64, moduleID int64, opType int64, 
-	AsstObjectUniqueIDMap map[string]int64,	objectUniqueID int64) *metadata.ResponseDataMapStr {
+func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, req *http.Request,
+	defLang lang.DefaultCCLanguageIf, modelBizID int64, moduleID int64, opType int64,
+	AsstObjectUniqueIDMap map[string]int64, objectUniqueID int64) *metadata.ResponseDataMapStr {
 
-	rid := util.GetHTTPCCRequestID(header)
+	rid := util.GetHTTPCCRequestID(req.Header)
 
 	if opType == 1 {
 		if len(f.Sheets) < 2 {
 			return &metadata.ResponseDataMapStr{}
 		}
-		info, err := lgc.importStatisticsAssociation(ctx, header, common.BKInnerObjIDHost, f.Sheets[1])
+		info, err := lgc.importStatisticsAssociation(ctx, req.Header, common.BKInnerObjIDHost, f.Sheets[1])
 		if err != nil {
 			blog.Errorf("ImportHosts failed, GetImportHosts error:%s, rid: %s", err.Error(), rid)
 			return &metadata.ResponseDataMapStr{
@@ -188,11 +188,11 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 		}
 
 	}
-	return lgc.importHosts(ctx, f, header, defLang, modelBizID, modelBizID, AsstObjectUniqueIDMap, objectUniqueID)
+	return lgc.importHosts(ctx, f, req, defLang, modelBizID, modelBizID, AsstObjectUniqueIDMap, objectUniqueID)
 }
 
 // importHosts import host info
-func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
+func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, req *http.Request, defLang lang.DefaultCCLanguageIf,
 	modelBizID int64, moduleID int64, asstObjectUniqueIDMap map[string]int64,
 	objectUniqueID int64) *metadata.ResponseDataMapStr {
 
@@ -338,7 +338,7 @@ func (lgc *Logics) importStatisticsAssociation(ctx context.Context, header http.
 }
 
 // UpdateHosts update excel import hosts
-func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, req *http.Request, header http.Header, 
+func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, req *http.Request, header http.Header,
 	defLang lang.DefaultCCLanguageIf, modelBizID, OpType int64, AsstObjectUniqueIDMap map[string]int64,
 	objectUniqueID int64) *metadata.ResponseDataMapStr {
 
@@ -391,7 +391,6 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, req *http.Requ
 		result.Data.Set("association", statisAsstInfo)
 		return result
 	}
-
 
 	errMsg, err = lgc.CheckHostsUpdated(ctx, req.Header, hosts, modelBizID)
 	if err != nil {
