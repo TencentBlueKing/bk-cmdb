@@ -400,8 +400,8 @@ func productExcelHeader(ctx context.Context, fields map[string]Property, filter 
 }
 
 // productHostExcelHeader Excel文件头部，
-func productHostExcelHeader(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet,
-	defLang lang.DefaultCCLanguageIf, objName []string) {
+func productHostExcelHeader(ctx context.Context, fields map[string]Property, filter []string, xlsxFile *xlsx.File,
+	sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf, objName []string) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
 	// 橙棕色
@@ -441,6 +441,7 @@ func productHostExcelHeader(ctx context.Context, fields map[string]Property, fil
 		Rid:        rid,
 		StyleCell:  styleCell,
 		Sheet:      sheet,
+		File:       xlsxFile,
 		Filter:     filter,
 		DefLang:    defLang,
 		CellStyle:  cellStyle,

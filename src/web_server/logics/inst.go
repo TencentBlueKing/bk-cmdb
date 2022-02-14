@@ -100,16 +100,16 @@ func (lgc *Logics) GetInstData(objID string, instIDArr []int64, header http.Head
 // ImportInsts import host info
 func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, req *http.Request, header http.Header,
 	defLang lang.DefaultCCLanguageIf, modelBizID int64, opType int64,
-	AsstObjectUniqueIDMap map[string]int64, objectUniqueID int64) (
+	asstObjectUniqueIDMap map[string]int64, objectUniqueID int64) (
 	resultData mapstr.MapStr, errCode int, err error) {
 
 	rid := util.GetHTTPCCRequestID(header)
 
 	if opType == 1 {
-		if len(f.Sheets) < 2 {
+		if _, exist := f.Sheet["association"]; !exist {
 			return nil, 0, nil
 		}
-		info, err := lgc.importStatisticsAssociation(ctx, header, objID, f.Sheets[1])
+		info, err := lgc.importStatisticsAssociation(ctx, header, objID, f.Sheet["association"])
 		if err != nil {
 			blog.Errorf("ImportHosts failed, GetImportHosts error:%s, rid: %s", err.Error(), rid)
 			return nil, err.GetCode(), err
@@ -117,7 +117,7 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 		return mapstr.MapStr{"association": info}, 0, nil
 	}
 
-	return lgc.importInsts(ctx, f, objID, req, defLang, modelBizID, AsstObjectUniqueIDMap, objectUniqueID)
+	return lgc.importInsts(ctx, f, objID, req, defLang, modelBizID, asstObjectUniqueIDMap, objectUniqueID)
 }
 
 // importInsts import insts info

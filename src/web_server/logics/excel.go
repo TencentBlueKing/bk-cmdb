@@ -36,7 +36,7 @@ import (
 func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string,
 	data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64, usernameMap map[string]string,
 	propertyList []string, org []metadata.DepartmentItem, orgPropertyList []string,
-	AsstObjectUniqueIDMap map[string]int64, selfObjectUniqueID int64) error {
+	asstObjectUniqueIDMap map[string]int64, selfObjectUniqueID int64) error {
 
 	rid := util.GetHTTPCCRequestID(header)
 
@@ -91,7 +91,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 	}
 
 	err = lgc.BuildAssociationExcelFromData(ctx, objID, instIDArr, xlsxFile, header, modelBizID,
-		AsstObjectUniqueIDMap, selfObjectUniqueID)
+		asstObjectUniqueIDMap, selfObjectUniqueID)
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property,
 	filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64,
 	usernameMap map[string]string, propertyList []string, objNames, objIDs []string, org []metadata.DepartmentItem,
-	orgPropertyList []string, AsstObjectUniqueIDMap map[string]int64, selfObjectUniqueID int64) error {
+	orgPropertyList []string, asstObjectUniqueIDMap map[string]int64, selfObjectUniqueID int64) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
@@ -143,7 +143,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 	// len(objNames)+5=tip + biztopo + biz + set + moudle + customLen, the former indexes is used by these columns
 	addSystemField(fields, common.BKInnerObjIDHost, ccLang, len(objNames)+5)
 
-	productHostExcelHeader(ctx, fields, filter, sheet, ccLang, objNames)
+	productHostExcelHeader(ctx, fields, filter, xlsxFile, sheet, ccLang, objNames)
 
 	handleHostDataParam := &HandleHostDataParam{
 		HostData:          data,
@@ -172,7 +172,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 	}
 
 	err = lgc.BuildAssociationExcelFromData(ctx, objID, instIDs, xlsxFile, header, modelBizID,
-		AsstObjectUniqueIDMap, selfObjectUniqueID)
+		asstObjectUniqueIDMap, selfObjectUniqueID)
 	if err != nil {
 		blog.Errorf("build association excel data failed, err: %v, rid: %s", err, rid)
 		return err
@@ -301,7 +301,7 @@ func (lgc *Logics) getObjectAssociation(ctx context.Context, header http.Header,
 
 // BuildAssociationExcelFromData build association excel
 func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID string, instIDArr []int64,
-	xlsxFile *xlsx.File, header http.Header, modelBizID int64, AsstObjectUniqueIDMap map[string]int64,
+	xlsxFile *xlsx.File, header http.Header, modelBizID int64, asstObjectUniqueIDMap map[string]int64,
 	selfObjectUniqueID int64) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -319,14 +319,14 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 	}
 
 	// 未设置, 不导出关联关系数据
-	if len(AsstObjectUniqueIDMap) == 0 {
+	if len(asstObjectUniqueIDMap) == 0 {
 		productExcelAssociationHeader(ctx, sheet, defLang, 0, asstList)
 		return nil
 	}
 
 	// 2021年06月01日， 判断时候需要导出自关联，这个处理就是打补丁，不友好
 	hasSelfAssociation := false
-	if _, ok := AsstObjectUniqueIDMap[objID]; ok {
+	if _, ok := asstObjectUniqueIDMap[objID]; ok {
 		hasSelfAssociation = true
 	}
 
@@ -335,7 +335,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 
 		// 只导出自关联关系时的判断
 		// 防止仅导出自关联但fetch多个关联关系导致被关联对象uniqueID未传值初始化为0使getAssociationData返回报错
-		if len(AsstObjectUniqueIDMap) == 1 && hasSelfAssociation {
+		if len(asstObjectUniqueIDMap) == 1 && hasSelfAssociation {
 			if asst.ObjectID == asst.AsstObjID {
 				asstIDArr = append(asstIDArr, asst.AssociationName)
 				break
@@ -343,12 +343,12 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 			continue
 		}
 
-		_, ok := AsstObjectUniqueIDMap[asst.ObjectID]
+		_, ok := asstObjectUniqueIDMap[asst.ObjectID]
 		if ok {
 			asstIDArr = append(asstIDArr, asst.AssociationName)
 			continue
 		}
-		_, ok = AsstObjectUniqueIDMap[asst.AsstObjID]
+		_, ok = asstObjectUniqueIDMap[asst.AsstObjID]
 		if ok {
 			asstIDArr = append(asstIDArr, asst.AssociationName)
 			continue
@@ -360,7 +360,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		return err
 	}
 	asstData, objInstData, err := lgc.getAssociationData(ctx, header, objID, instAsst, modelBizID,
-		AsstObjectUniqueIDMap, selfObjectUniqueID)
+		asstObjectUniqueIDMap, selfObjectUniqueID)
 	if err != nil {
 		return err
 	}
