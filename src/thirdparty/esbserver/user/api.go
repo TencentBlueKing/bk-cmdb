@@ -14,6 +14,7 @@ package user
 import (
 	"context"
 	"net/http"
+	"net/url"
 
 	"configcenter/src/common/metadata"
 	"configcenter/src/thirdparty/esbserver/esbutil"
@@ -100,17 +101,23 @@ func (p *user) ListUsers(ctx context.Context, h http.Header, params map[string]s
 }
 
 // get department from pass
-func (p *user) GetDepartment(ctx context.Context, q *http.Request) (resp *metadata.EsbDepartmentResponse, err error) {
+func (p *user) GetDepartment(ctx context.Context, h http.Header, u *url.URL) (
+	resp *metadata.EsbDepartmentResponse, err error) {
+
 	resp = &metadata.EsbDepartmentResponse{}
 	subPath := "/v2/usermanage/list_departments/"
-	h := q.Header
 	h.Set("Accept", "application/json")
 
-	err = p.client.Get().
+	request := p.client.Get().
 		WithContext(ctx).
 		// 通过WithParamsFromURL中的url参数指定page_size可以覆盖此默认的page_size
-		WithParam("page_size", "500").
-		WithParamsFromURL(q.URL).
+		WithParam("page_size", "500")
+
+	if u != nil {
+		request.WithParamsFromURL(u)
+	}
+
+	err = request.
 		// 确保只使用分页查找，指定一个大page_size同样能达到不分页的效果
 		WithParam("no_page", "false").
 		SubResourcef(subPath).

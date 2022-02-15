@@ -176,9 +176,6 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
-	exportCond := input.ExportCond
-	associationCond := input.AssociationCond
-
 	appID := input.AppID
 
 	objID := common.BKInnerObjIDHost
@@ -186,7 +183,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	customFields := logics.GetCustomFields(filterFields, input.CustomFields)
 	// customLen+5为生成主机数据的起始列索引, 5=字段说明1列+业务拓扑，业务名，集群，模块4列
 	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, appID, len(objectName)+5)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("get host model fields failed, err: %v, rid: %s", err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed,
 			objID).Error(), nil)
@@ -194,67 +191,13 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
-	var hostFields []string
-	for _, property := range fields {
-		hostFields = append(hostFields, property.ID)
-	}
-
-	hostInfo, err := s.Logics.GetHostData(appID, input.HostIDArr, hostFields, exportCond, header, defLang)
-	if err != nil {
-		blog.Errorf("get hosts failed, host id: %v, err: %v, rid: %s", input.HostIDArr, err, rid)
-		reply := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail,
-			err.Error()).Error(), nil)
-		_, _ = c.Writer.Write([]byte(reply))
-		return
-	}
-	if len(hostInfo) == 0 {
-		blog.Errorf("not find host, host id: %v, cond: %#v, rid: %s", input.HostIDArr, exportCond, rid)
-		reply := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail,
-			"no host is found").Error(), nil)
-		_, _ = c.Writer.Write([]byte(reply))
-		return
-	}
-
-	err = s.handleModule(hostInfo, rid)
-	if err != nil {
-		blog.Errorf("get host model fields failed, err: %v, rid: %s", err, rid)
-		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(
-			common.CCErrCommExcelTemplateFailed, objID).Error(), nil)))
-		return
-	}
-
-	hostInfo, err := s.handleHostInfo(c, fields, appID, c.PostForm("bk_host_id"), c.PostForm("export_condition"), objIDs)
+	hostInfo, err := s.handleHostInfo(c, fields, appID, objIDs, input)
 	if err != nil {
 		blog.Errorf("search and handle host info failed, err: %v, rid: %s", err, rid)
 		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail,
 			err.Error()).Error(), nil)))
 		return
 	}
-
-	usernameMap, propertyList, err := s.getUsernameMapWithPropertyList(c, objID, hostInfo)
-	if err != nil {
-		blog.Errorf("ExportHost failed, get username map and property list failed, err: %+v, rid: %s", err, rid)
-		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetUsernameMapFail, defErr.Errorf(
-			common.CCErrWebGetUsernameMapFail, objID).Error(), nil)))
-		return
-	}
-
-		err = s.handleCustomData(ctx, header, hostInfo, objIDs, rid, setParentIDs, setCustomMap, hostSetMap)
-		if err != nil {
-			blog.Errorf("get custom parent id and host custom rel map failed, err: %v, rid: %s", err, rid)
-			return
-		}
-	}
-
-	org, orgPropertyList, err := s.getDepartment(c, objID)
-	if err != nil {
-	blog.Errorf("get department map and property list failed, err: %+v, rid: %s", err, rid)
-	_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetDepartmentMapFail,
-	defErr.Errorf(common.CCErrWebGetDepartmentMapFail, err.Error()).Error(), nil)))
-	}
-
-	var file *xlsx.File
-	file = xlsx.NewFile()
 
 	usernameMap, propertyList, err := s.getUsernameMapWithPropertyList(c, objID, hostInfo)
 	if nil != err {
@@ -265,8 +208,16 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
+	org, orgPropertyList, err := s.getDepartment(c, objID)
+	if err != nil {
+		blog.Errorf("get department map and property list failed, err: %+v, rid: %s", err, rid)
+		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetDepartmentMapFail,
+			defErr.Errorf(common.CCErrWebGetDepartmentMapFail, err.Error()).Error(), nil)))
+	}
+
+	file := xlsx.NewFile()
 	err = s.Logics.BuildHostExcelFromData(ctx, objID, fields, nil, hostInfo, file, header, appID, usernameMap,
-		propertyList, objectName, objIDs, associationCond, input.ObjectUniqueID)
+		propertyList, objectName, objIDs, org, orgPropertyList, input.AssociationCond, input.ObjectUniqueID)
 	if nil != err {
 		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err,
 			rid)
@@ -671,8 +622,8 @@ func (s *Service) getCustomObjectInfo(ctx context.Context, header http.Header) (
 }
 
 // handleHostInfo handle host info to export host
-func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Property, appID int64, hostIDStr,
-	exportCondStr string, objIDs []string) ([]mapstr.MapStr, error) {
+func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Property, appID int64,
+	objIDs []string, input *excelExportHostInput) ([]mapstr.MapStr, error) {
 
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
@@ -685,13 +636,13 @@ func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Proper
 		hostFields = append(hostFields, property.ID)
 	}
 
-	hostInfo, err := s.Logics.GetHostData(appID, hostIDStr, hostFields, exportCondStr, header, defLang)
+	hostInfo, err := s.Logics.GetHostData(appID, input.HostIDArr, hostFields, input.ExportCond, header, defLang)
 	if err != nil {
-		blog.Errorf("get hosts failed, host id:%s, err: %v, rid: %s", hostIDStr, err, rid)
+		blog.Errorf("get hosts failed, host id: %v, err: %v, rid: %s", input.HostIDArr, err, rid)
 		return nil, err
 	}
 	if len(hostInfo) == 0 {
-		blog.Errorf("not find host, host id: %s, cond: %#v, rid: %s", hostIDStr, exportCondStr, rid)
+		blog.Errorf("not find host, host id: %v, cond: %#v, rid: %s", input.HostIDArr, input.ExportCond, rid)
 		return nil, err
 	}
 
