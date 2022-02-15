@@ -15,7 +15,6 @@ package logics
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/configcenter"
@@ -39,14 +38,8 @@ func (lgc *Logics) GetDepartment(c *gin.Context, config *options.Config) (*metad
 	header := c.Request.Header
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(header))
 	rid := commonutil.GetHTTPCCRequestID(header)
-	urlParams := c.Request.URL.Query()
 
-	params := make(map[string]string)
-	for paramName, values := range urlParams {
-		params[paramName] = strings.Join(values, ";")
-	}
-
-	result, esbErr := esb.EsbClient().User().GetDepartment(c.Request.Context(), c.Request.Header, params)
+	result, esbErr := esb.EsbClient().User().GetDepartment(c.Request.Context(), c.Request.Header, c.Request.URL)
 	if esbErr != nil {
 		blog.Errorf("get department by esb client failed, http failed, err: %+v, rid: %s", esbErr, rid)
 		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
