@@ -33,7 +33,7 @@ import (
 
 const (
 	userBracketsPattern        = `\([a-zA-Z0-9\@\p{Han} .,_-]*\)`
-	orgnizationBracketsPattern = `\[(\d+)\]`
+	orgnizationBracketsPattern = `\[(\d+)\]([^\s/]+)`
 )
 
 var (
@@ -331,11 +331,11 @@ func checkOrgnization(result map[string]interface{}, department map[int64]metada
 	for i, v := range orgItems {
 		var err error
 		orgID := orgBracketsRegexp.FindStringSubmatch(v)
-		if len(orgID) != 2 {
+		if len(orgID) != 3 {
 			blog.Errorf("regular matching is empty, please enter the correct content, field: %s, value: %s, rid: %s",
 				fieldName, result[fieldName], rid)
 			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
-				defLang.Languagef("nonexistent_org"))
+				defLang.Languagef("organization_type_invalid"))
 			break
 		}
 
@@ -343,7 +343,7 @@ func checkOrgnization(result map[string]interface{}, department map[int64]metada
 			blog.Debug("get excel cell value error, field: %s, value: %s, err: %v, rid: %s", fieldName,
 				result[fieldName], "not a valid organization type", rid)
 			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
-				defLang.Languagef("nonexistent_org"))
+				defLang.Languagef("organization_type_invalid"))
 			break
 		}
 
@@ -356,15 +356,11 @@ func checkOrgnization(result map[string]interface{}, department map[int64]metada
 			break
 		}
 
-		if len(v[len(orgID[0]):]) == 0 {
-			continue
-		}
-
-		if dp.Name != v[len(orgID[0]):] && dp.FullName != v[len(orgID[0]):] {
+		if dp.Name != orgID[2] && dp.FullName != orgID[2] {
 			blog.Debug("get excel cell value error, field:%s, value:%s, err:%v, rid: %s", fieldName,
 				result[fieldName], "organization name or full_name does not match", rid)
 			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
-				defLang.Languagef("nonexistent_org"))
+				defLang.Languagef("organization_type_invalid"))
 			break
 		}
 	}
