@@ -1621,6 +1621,9 @@ func (lgc *Logics) ListServiceTemplateHostIDMap(kit *rest.Kit, ids []int64) ([]m
 				fmt.Sprintf("module[%d]'s service_template_id is invalid", item.ModuleID))
 		}
 
+		if moduleSvTmp[item.ModuleID] == 0 {
+			continue
+		}
 		hostSvTmp[item.HostID] = append(hostSvTmp[item.HostID], moduleSvTmp[item.ModuleID])
 	}
 
