@@ -29,7 +29,7 @@ type OpenTelemetryConfig struct {
 	// 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
 	enable bool
 	// 日志平台openTelemetry跟踪链功能的自定义上报服务地址
-	endPoint string
+	endpoint string
 	// 日志平台openTelemetry跟踪链功能的上报data_id
 	bkDataID int64
 }
@@ -60,7 +60,7 @@ func InitOpenTelemetryConfig() error {
 		return nil
 	}
 
-	openTelemetryCfg.endPoint, err = cc.String("openTelemetry.endpoint")
+	openTelemetryCfg.endpoint, err = cc.String("openTelemetry.endpoint")
 	if err != nil {
 		return fmt.Errorf("config openTelemetry.endpoint err: %v", err)
 	}
