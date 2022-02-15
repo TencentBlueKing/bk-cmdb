@@ -37,7 +37,7 @@ type GseClientInterface interface {
 	ConfigUpdateRoute(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateRouteParams) error
 	ConfigDeleteRoute(ctx context.Context, h http.Header, data *metadata.GseConfigDeleteRouteParams) error
 	ConfigQueryRoute(ctx context.Context, h http.Header, data *metadata.GseConfigQueryRouteParams) (
-		[]metadata.GseConfigChannel, error)
+		[]metadata.GseConfigChannel, bool, error)
 }
 
 func NewGsecClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigSrv) GseClientInterface {
