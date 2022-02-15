@@ -40,6 +40,8 @@ type GroupOperationInterface interface {
 	UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondition) error
 	// UpdateObjectAttributeGroup Update Object Attribute group
 	UpdateObjectAttributeGroup(kit *rest.Kit, cond []metadata.PropertyGroupObjectAtt, modelBizID int64) error
+	// ExchangeObjectGroupIndex exchange the group index of two groups
+	ExchangeObjectGroupIndex(kit *rest.Kit, ids []int64) error
 	// DeleteObjectAttributeGroup delete object attribute group
 	DeleteObjectAttributeGroup(kit *rest.Kit, objID, propertyID, groupID string) error
 	// SetProxy SetProxy
@@ -331,4 +333,70 @@ func NewGroupID(isDefault bool) string {
 	} else {
 		return xid.New().String()
 	}
+}
+
+// ExchangeObjectGroupIndex exchange the group index of two groups
+// related issue: https://github.com/Tencent/bk-cmdb/issues/5873
+func (g *group) ExchangeObjectGroupIndex(kit *rest.Kit, ids []int64) error {
+
+	if len(ids) != 2 {
+		blog.Errorf("group ids must be two, now is %d, rid: %s", len(ids), kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKFieldID)
+	}
+
+	cond := metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: ids}},
+		Fields: []string{common.BKPropertyGroupIndexField, common.BKFieldID, common.BKObjIDField,
+			common.BKAppIDField},
+	}
+	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroupByCondition(kit.Ctx, kit.Header, cond)
+	if err != nil {
+		blog.Errorf("search group info by ids failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if len(rsp.Info) != 2 {
+		blog.Errorf("search group info by ids failed, result not two group info, number: %d, rid: %s",
+			len(rsp.Info), kit.Rid)
+		return kit.CCError.New(common.CCErrTopoObjectGroupUpdateFailed, "result not two group info")
+	}
+
+	// custom object create will create default group, index is -1, -2 has't been used
+	// once update any group_index will cause Mongo duplicate error without temp
+	tempIndex := int64(-2)
+	groupA, groupB := rsp.Info[0], rsp.Info[1]
+	if groupA.BizID != groupB.BizID || groupA.ObjectID != groupB.ObjectID {
+		blog.Errorf("two groups not the same business or object, rid: %s", kit.Rid)
+		return kit.CCError.New(common.CCErrTopoObjectGroupUpdateFailed, "two groups not the same business/object")
+	}
+
+	// update group A to a temp group_index
+	updateCond := &metadata.UpdateGroupCondition{}
+	updateCond.Condition.ID = groupA.ID
+	updateCond.Data.Index = &tempIndex
+	if err := g.UpdateObjectGroup(kit, updateCond); err != nil {
+		blog.Errorf("failed to set the group to the new data (%#v) by the condition (%#v), err: %v , rid: %s",
+			updateCond.Data, updateCond.Condition, err, kit.Rid)
+		return err
+	}
+
+	// update group B to group A origin group_index
+	updateCond.Condition.ID = groupB.ID
+	updateCond.Data.Index = &groupA.GroupIndex
+	if err := g.UpdateObjectGroup(kit, updateCond); err != nil {
+		blog.Errorf("failed to set the group to the new data (%#v) by the condition (%#v), err: %v , rid: %s",
+			updateCond.Data, updateCond.Condition, err, kit.Rid)
+		return err
+	}
+
+	// update group A to group B origin group_index
+	updateCond.Condition.ID = groupA.ID
+	updateCond.Data.Index = &groupB.GroupIndex
+	if err := g.UpdateObjectGroup(kit, updateCond); err != nil {
+		blog.Errorf("failed to set the group to the new data (%#v) by the condition (%#v), err: %v , rid: %s",
+			updateCond.Data, updateCond.Condition, err, kit.Rid)
+		return err
+	}
+
+	return nil
 }
