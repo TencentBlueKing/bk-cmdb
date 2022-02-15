@@ -21,5 +21,6 @@
     "export_page_limit_err": "excel export condition param page.limit must be 1～%d",
     "nonexistent_user": "user already does not exist",
     "nonexistent_org": "organization does not exist",
+    "organization_type_invalid": "organization type is invalid",
     "": ""
 }
