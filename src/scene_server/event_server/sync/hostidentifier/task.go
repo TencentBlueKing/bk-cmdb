@@ -255,6 +255,7 @@ func (h *HostIdentifier) collectFailHost(rid string) ([]*HostInfo, *getstatus.Ag
 		}
 
 		if val == 0 {
+			time.Sleep(time.Second)
 			continue
 		}
 
