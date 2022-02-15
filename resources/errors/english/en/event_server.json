@@ -10,5 +10,6 @@
     "1103008": "Event detail not exist",
     "1103009": "Get task status timeout",
     "1103010": "Failed to push host identifier",
+    "1103011": "Host identity synchronization is not enabled",
     "": ""
 }

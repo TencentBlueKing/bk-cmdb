@@ -882,7 +882,14 @@ type HostIDArray struct {
 
 // Validate validate hostIDs length
 func (h *HostIDArray) Validate() (rawError errors.RawErrorInfo) {
-	if len(h.HostIDs) == 0 || len(h.HostIDs) > common.BKMaxSyncIdentifierLimit {
+	if len(h.HostIDs) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"bk_host_ids"},
+		}
+	}
+
+	if len(h.HostIDs) > common.BKMaxSyncIdentifierLimit {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommXXExceedLimit,
 			Args:    []interface{}{"bk_host_ids", common.BKMaxSyncIdentifierLimit},
