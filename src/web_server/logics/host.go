@@ -191,7 +191,6 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 	return lgc.importHosts(ctx, f, header, defLang, modelBizID, modelBizID, asstObjectUniqueIDMap, objectUniqueID)
 }
 
-// importHosts import host info
 func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
 	modelBizID int64, moduleID int64, asstObjectUniqueIDMap map[string]int64,
 	objectUniqueID int64) *metadata.ResponseDataMapStr {
@@ -256,12 +255,11 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 			continue
 		}
 
-		asstInfoMap, assoErrMsg := GetAssociationExcelData(sheet, common.HostAddMethodExcelAssociationIndexOffset,
-			defLang)
+		asstMap, assoErrMsg := GetAssociationExcelData(sheet, common.HostAddMethodExcelAssociationIndexOffset, defLang)
 
-		if len(asstInfoMap) > 0 {
+		if len(asstMap) > 0 {
 			asstInfoMapInput := &metadata.RequestImportAssociation{
-				AssociationInfoMap:    asstInfoMap,
+				AssociationInfoMap:    asstMap,
 				AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
 				ObjectUniqueID:        objectUniqueID,
 			}
