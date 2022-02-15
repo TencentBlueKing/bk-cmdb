@@ -21,5 +21,6 @@
     "export_page_limit_err": "excel导出条件参数page.limit的范围是1～%d",
     "nonexistent_user": "用户已经不存在",
     "nonexistent_org": "组织不存在",
+    "organization_type_invalid": "组织类型错误，请填写正确的组织内容，例如: [1]公司",
     "": ""
 }
