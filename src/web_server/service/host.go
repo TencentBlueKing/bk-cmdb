@@ -139,7 +139,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 		c.String(http.StatusOK, msg)
 		return
 	}
-	result := s.Logics.ImportHosts(ctx, f, c.Request, defLang, 0, inputJSON.ModuleID,
+	result := s.Logics.ImportHosts(ctx, f, c.Request.Header, defLang, 0, inputJSON.ModuleID,
 		inputJSON.OpType, inputJSON.AssociationCond, inputJSON.ObjectUniqueID)
 
 	c.JSON(http.StatusOK, result)
@@ -183,7 +183,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	customFields := logics.GetCustomFields(filterFields, input.CustomFields)
 	// customLen+5为生成主机数据的起始列索引, 5=字段说明1列+业务拓扑，业务名，集群，模块4列
 	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, appID, len(objectName)+5)
-	if err != err {
+	if err != nil {
 		blog.Errorf("get host model fields failed, err: %v, rid: %s", err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed,
 			objID).Error(), nil)
@@ -506,7 +506,7 @@ func (s *Service) UpdateHosts(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	result := s.Logics.UpdateHosts(ctx, f, c.Request, c.Request.Header, defLang, inputJSON.BizID, inputJSON.OpType,
+	result := s.Logics.UpdateHosts(ctx, f, c.Request.Header, defLang, inputJSON.BizID, inputJSON.OpType,
 		inputJSON.AssociationCond, inputJSON.ObjectUniqueID)
 
 	c.JSON(http.StatusOK, result)

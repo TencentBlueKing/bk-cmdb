@@ -29,13 +29,12 @@ import (
 )
 
 // GetImportInsts get insts from excel file
-func (lgc *Logics) GetImportInsts(ctx context.Context, f *xlsx.File, objID string, req *http.Request, headerRow int,
+func (lgc *Logics) GetImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header, headerRow int,
 	isInst bool, defLang lang.DefaultCCLanguageIf, modelBizID int64) (map[int]map[string]interface{}, []string, error) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, req.Header, modelBizID,
-		common.HostAddMethodExcelDefaultIndex)
+	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, modelBizID, common.HostAddMethodExcelDefaultIndex)
 
 	if nil != err {
 		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
@@ -45,12 +44,12 @@ func (lgc *Logics) GetImportInsts(ctx context.Context, f *xlsx.File, objID strin
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
 	sheet := f.Sheets[0]
-	if nil == sheet {
+	if sheet == nil {
 		blog.Errorf("import object %s instance, but the excel file sheet is empty, rid: %s", objID, rid)
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
-	departmentMap, err := lgc.getDepartmentMap(req)
+	departmentMap, err := lgc.getDepartmentMap(ctx, header)
 	if err != nil {
 		blog.Errorf("get department failed, err: %v, rid: %s", err, rid)
 		return nil, nil, err
@@ -89,7 +88,7 @@ func (lgc *Logics) GetInstData(objID string, instIDArr []int64, header http.Head
 		return nil, defErr.Error(result.Code)
 	}
 
-	if 0 == result.Data.Count {
+	if result.Data.Count == 0 {
 		blog.Errorf("get inst data detail, but got 0 instances , search condition:%#v, rid: %s", searchCond, rid)
 		return nil, defErr.Error(common.CCErrAPINoObjectInstancesIsFound)
 	}
@@ -98,7 +97,7 @@ func (lgc *Logics) GetInstData(objID string, instIDArr []int64, header http.Head
 }
 
 // ImportInsts import host info
-func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, req *http.Request, header http.Header,
+func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header,
 	defLang lang.DefaultCCLanguageIf, modelBizID int64, opType int64,
 	asstObjectUniqueIDMap map[string]int64, objectUniqueID int64) (
 	resultData mapstr.MapStr, errCode int, err error) {
@@ -117,19 +116,19 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 		return mapstr.MapStr{"association": info}, 0, nil
 	}
 
-	return lgc.importInsts(ctx, f, objID, req, defLang, modelBizID, asstObjectUniqueIDMap, objectUniqueID)
+	return lgc.importInsts(ctx, f, objID, header, defLang, modelBizID, asstObjectUniqueIDMap, objectUniqueID)
 }
 
 // importInsts import insts info
-func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, req *http.Request,
+func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header,
 	defLang lang.DefaultCCLanguageIf, modelBizID int64, asstObjectUniqueIDMap map[string]int64, objectUniqueID int64) (
 	resultData mapstr.MapStr, errCode int, err error) {
 
-	rid := util.GetHTTPCCRequestID(req.Header)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Header))
+	rid := util.GetHTTPCCRequestID(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	resultData = mapstr.New()
 
-	insts, errMsg, err := lgc.GetImportInsts(ctx, f, objID, req, 0, true, defLang, modelBizID)
+	insts, errMsg, err := lgc.GetImportInsts(ctx, f, objID, header, 0, true, defLang, modelBizID)
 	if err != nil {
 		blog.Errorf("get %s inst info from excel error, err: %v, rid: %s", objID, err, rid)
 		return resultData, common.CCErrWebFileContentFail, err
@@ -149,8 +148,8 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 		params["input_type"] = common.InputTypeExcel
 		params["BatchInfo"] = insts
 		params[common.BKAppIDField] = modelBizID
-		result, resultErr = lgc.CoreAPI.ApiServer().AddInstByImport(context.Background(), req.Header,
-			util.GetOwnerID(req.Header), objID, params)
+		result, resultErr = lgc.CoreAPI.ApiServer().AddInstByImport(context.Background(), header,
+			util.GetOwnerID(header), objID, params)
 		if resultErr != nil {
 			blog.Errorf("ImportInsts add inst info  http request  err: %v, rid: %s", resultErr, rid)
 			return nil, common.CCErrorUnknownOrUnrecognizedError, resultErr
@@ -172,7 +171,7 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 				AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
 				ObjectUniqueID:        objectUniqueID,
 			}
-			asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, req.Header, objID,
+			asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, objID,
 				asstInfoMapInput)
 			if asstResultErr != nil {
 				blog.Errorf("import %s association failed, err: %v, rid:%s", objID, asstResultErr, rid)

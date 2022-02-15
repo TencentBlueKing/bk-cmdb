@@ -231,7 +231,7 @@ func replaceDepartmentFullName(rid string, rowMap mapstr.MapStr, org []metadata.
 
 	for _, property := range propertyList {
 		orgIDInterface, exist := rowMap[property]
-		if !exist {
+		if !exist || orgIDInterface == nil {
 			continue
 		}
 

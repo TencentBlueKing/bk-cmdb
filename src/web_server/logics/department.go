@@ -13,7 +13,9 @@
 package logics
 
 import (
+	"context"
 	"net/http"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/configcenter"
@@ -37,8 +39,14 @@ func (lgc *Logics) GetDepartment(c *gin.Context, config *options.Config) (*metad
 	header := c.Request.Header
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(header))
 	rid := commonutil.GetHTTPCCRequestID(header)
+	urlParams := c.Request.URL.Query()
 
-	result, esbErr := esb.EsbClient().User().GetDepartment(c.Request.Context(), c.Request)
+	params := make(map[string]string)
+	for paramName, values := range urlParams {
+		params[paramName] = strings.Join(values, ";")
+	}
+
+	result, esbErr := esb.EsbClient().User().GetDepartment(c.Request.Context(), c.Request.Header, params)
 	if esbErr != nil {
 		blog.Errorf("get department by esb client failed, http failed, err: %+v, rid: %s", esbErr, rid)
 		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -74,16 +82,17 @@ func (lgc *Logics) GetDepartmentProfile(c *gin.Context, config *options.Config) 
 	return &result.Data, nil
 }
 
-func (lgc *Logics) getDepartmentMap(req *http.Request) (map[int64]metadata.DepartmentItem, errors.CCErrorCoder) {
+func (lgc *Logics) getDepartmentMap(ctx context.Context, header http.Header) (map[int64]metadata.DepartmentItem,
+	errors.CCErrorCoder) {
 	// if no esb config, return
 	if !configcenter.IsExist("webServer.esb.addr") {
 		return nil, nil
 	}
 
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(req.Header))
-	rid := commonutil.GetHTTPCCRequestID(req.Header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(header))
+	rid := commonutil.GetHTTPCCRequestID(header)
 
-	result, esbErr := esb.EsbClient().User().GetDepartment(req.Context(), req)
+	result, esbErr := esb.EsbClient().User().GetDepartment(ctx, header, nil)
 	if esbErr != nil {
 		blog.Errorf("get department by esb client failed, http failed, err: %+v, rid: %s", esbErr, rid)
 		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)

@@ -33,7 +33,7 @@ import (
 
 const (
 	userBracketsPattern        = `\([a-zA-Z0-9\@\p{Han} .,_-]*\)`
-	orgnizationBracketsPattern = `\[[a-zA-Z0-9\@\p{Han} .,_-]*\]`
+	orgnizationBracketsPattern = `\[(\d+)\]([^\s/]+)`
 )
 
 var (
@@ -292,7 +292,7 @@ func checkOrgnization(result map[string]interface{}, department map[int64]metada
 
 	if len(department) == 0 {
 		blog.Debug("no department in paas, rid: %s", rid)
-		errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (rowIndex+1))+
+		errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
 			defLang.Languagef("nonexistent_org"))
 		return result, errMsg
 	}
@@ -301,55 +301,49 @@ func checkOrgnization(result map[string]interface{}, department map[int64]metada
 	if len(orgStr) <= 0 {
 		blog.Debug("get excel cell value failed, field:%s, value:%s, err:%v, rid: %s", fieldName,
 			result[fieldName], "not a valid organization type", rid)
-		errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (rowIndex+1))+
-			defLang.Languagef("nonexistent_org"))
+		errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
+			defLang.Languagef("organization_type_invalid"))
 		return result, errMsg
 	}
 	orgItems := strings.Split(orgStr, ",")
 	org := make([]int64, len(orgItems))
 	for i, v := range orgItems {
 		var err error
-		orgID := orgBracketsRegexp.FindString(v)
-		if len(orgID) == 0 {
-			blog.Errorf("regular matching is empty, please enter the correct content, field:%s, value:%s, rid: %s",
+		orgID := orgBracketsRegexp.FindStringSubmatch(v)
+		if len(orgID) != 3 {
+			blog.Errorf("regular matching is empty, please enter the correct content, field: %s, value: %s, rid: %s",
 				fieldName, result[fieldName], rid)
-			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (rowIndex+1))+
-				defLang.Languagef("nonexistent_org"))
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
+				defLang.Languagef("organization_type_invalid"))
 			break
 		}
 
-		if org[i], err = strconv.ParseInt(strings.TrimSpace(orgID[1:len(orgID)-1]), 10, 64); err != nil {
-			blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName,
+		if org[i], err = strconv.ParseInt(orgID[1], 10, 64); err != nil {
+			blog.Debug("get excel cell value error, field: %s, value: %s, err: %v, rid: %s", fieldName,
 				result[fieldName], "not a valid organization type", rid)
-			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (rowIndex+1))+
-				defLang.Languagef("nonexistent_org"))
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
+				defLang.Languagef("organization_type_invalid"))
 			break
 		}
 
-		importDepart := v[len(orgID):]
 		dp, exist := department[org[i]]
 		if !exist {
-			blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName,
+			blog.Debug("get excel cell value error, field:%s, value:%s, err:%v, rid: %s", fieldName,
 				result[fieldName], "organization does not exist", rid)
-			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (rowIndex+1))+
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
 				defLang.Languagef("nonexistent_org"))
 			break
 		}
 
-		if len(importDepart) == 0 {
-			continue
-		}
-
-		if dp.Name != importDepart && dp.FullName != importDepart {
-			blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName,
+		if dp.Name != orgID[2] && dp.FullName != orgID[2] {
+			blog.Debug("get excel cell value error, field:%s, value:%s, err:%v, rid: %s", fieldName,
 				result[fieldName], "organization name or full_name does not match", rid)
-			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (rowIndex+1))+
-				defLang.Languagef("nonexistent_org"))
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
+				defLang.Languagef("organization_type_invalid"))
 			break
 		}
 	}
 	result[fieldName] = org
-
 	return result, errMsg
 }
 

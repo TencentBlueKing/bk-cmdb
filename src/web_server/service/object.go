@@ -104,7 +104,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, c.Request, 3, false, defLang, modelBizID)
+	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, c.Request.Header, 3, false, defLang, modelBizID)
 	if len(attrItems) == 0 {
 		var msg string
 		if err != nil {

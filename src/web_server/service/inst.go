@@ -121,9 +121,8 @@ func (s *Service) ImportInst(c *gin.Context) {
 		return
 	}
 
-	data, errCode, err := s.Logics.ImportInsts(context.Background(), f, objID,
-		c.Request, c.Request.Header, defLang, inputJSON.BizID, inputJSON.OpType, inputJSON.AssociationCond,
-		inputJSON.ObjectUniqueID)
+	data, errCode, err := s.Logics.ImportInsts(context.Background(), f, objID, c.Request.Header, defLang,
+		inputJSON.BizID, inputJSON.OpType, inputJSON.AssociationCond, inputJSON.ObjectUniqueID)
 
 	if err != nil {
 		msg := getReturnStr(errCode, err.Error(), data)
