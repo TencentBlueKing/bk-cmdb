@@ -227,3 +227,7 @@ func (c *client) SRem(ctx context.Context, key string, members ...interface{}) I
 func (c *client) TTL(ctx context.Context, key string) DurationResult {
 	return c.cli.TTL(key)
 }
+
+func (c *client) BLPop(ctx context.Context, timeout time.Duration, keys ...string) StringSliceResult {
+	return c.cli.BLPop(timeout, keys...)
+}

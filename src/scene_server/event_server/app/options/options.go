@@ -13,10 +13,13 @@
 package options
 
 import (
+	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/scene_server/event_server/sync/hostidentifier"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/gse/client"
 
 	"github.com/spf13/pflag"
 )
@@ -50,4 +53,16 @@ type Config struct {
 
 	// Redis is cc redis configs.
 	Redis redis.Config
+
+	// Auth is auth config
+	Auth iam.AuthConfig
+
+	// IdentifierConf host identifier config
+	IdentifierConf *hostidentifier.HostIdentifierConf
+
+	// TaskConf gse taskServer connection config
+	TaskConf *client.GseConnConfig
+
+	// ApiConf gse apiServer connection config
+	ApiConf *client.GseConnConfig
 }

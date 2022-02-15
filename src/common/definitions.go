@@ -73,6 +73,9 @@ const (
 
 	// BKTopoBusinessLevelDefault the mainline topo level default level
 	BKTopoBusinessLevelDefault = 7
+
+	// BKMaxSyncIdentifierLimit sync identifier max value
+	BKMaxSyncIdentifierLimit = 200
 )
 
 const (
