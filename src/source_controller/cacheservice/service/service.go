@@ -33,6 +33,7 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -129,6 +130,8 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 func (s *cacheService) WebService() *restful.Container {
 
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
 
 	getErrFunc := func() errors.CCErrorIf { return s.err }
 

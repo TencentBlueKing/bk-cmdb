@@ -367,6 +367,15 @@ monitor:
     rateLimiter:
       qps: 10
       burst: 20
+
+# 日志平台openTelemetry跟踪链接入相关配置
+openTelemetry:
+  # 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
+  enable: false
+  # 日志平台openTelemetry跟踪链功能的自定义上报服务地址
+  endpoint:
+  # 日志平台openTelemetry跟踪链功能的上报data_id
+  bkDataID:
     '''
 
     template = FileTemplate(common_file_template_str)

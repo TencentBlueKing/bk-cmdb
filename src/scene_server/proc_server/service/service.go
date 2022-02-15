@@ -31,6 +31,7 @@ import (
 	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/thirdparty/esbserver"
 	"configcenter/src/thirdparty/esbserver/esbutil"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -61,6 +62,9 @@ func (ps *ProcServer) WebService() *restful.Container {
 
 	ps.newProcessService(api)
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
+
 	container.Add(api)
 
 	// common api

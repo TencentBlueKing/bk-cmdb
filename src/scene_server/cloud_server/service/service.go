@@ -24,6 +24,8 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/cloud_server/logics"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
+
 	"github.com/emicklei/go-restful/v3"
 )
 
@@ -63,6 +65,9 @@ func (s *Service) WebService() *restful.Container {
 
 	s.initRoute(api)
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
+
 	container.Add(api)
 
 	// common api

@@ -25,6 +25,7 @@ import (
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/logics"
 	"configcenter/src/thirdparty/elasticsearch"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -54,6 +55,8 @@ func (s *Service) WebService() *restful.Container {
 	s.initService(api)
 
 	container := restful.NewContainer().Add(api)
+
+	opentelemetry.AddOtlpFilter(container)
 
 	// common api
 	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)

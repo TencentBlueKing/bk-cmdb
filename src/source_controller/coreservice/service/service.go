@@ -41,6 +41,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/settemplate"
 	dbSystem "configcenter/src/source_controller/coreservice/core/system"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -128,6 +129,9 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 func (s *coreService) WebService() *restful.Container {
 
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
+
 	getErrFunc := func() errors.CCErrorIf {
 		return s.err
 	}
