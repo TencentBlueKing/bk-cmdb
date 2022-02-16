@@ -147,7 +147,6 @@
           console.error(e)
         }
       },
-      // 单个属性变更后可能会引起模型的权限变更，需要重载组件获取新的权限，避免出现权限已变更但 UI 仍然显示旧权限的情况。
       handleAfterUpdate() {
         this.propertyListActive = false
         this.$nextTick(() => {
