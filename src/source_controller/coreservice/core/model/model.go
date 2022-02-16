@@ -83,7 +83,9 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 		return nil, err
 	}
 
-	if !SatisfyMongoCollLimit(inputParam.Spec.ObjectID) {
+	// 因为模型名称会用于生成实例和实例关联的mongodb表名，所以需要校验模型对应的实例表和实例关联表名均不超过mongodb的长度限制
+	if !SatisfyMongoCollLimit(common.GetObjectInstTableName(inputParam.Spec.ObjectID, kit.SupplierAccount)) ||
+		!SatisfyMongoCollLimit(common.GetObjectInstAsstTableName(inputParam.Spec.ObjectID, kit.SupplierAccount)) {
 		blog.Errorf("inputParam.Spec.ObjectID:%s not SatisfyMongoCollLimit", inputParam.Spec.ObjectID)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID)
 	}
