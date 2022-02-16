@@ -87,7 +87,7 @@
                 <i class="icon-cc-add-line"></i>
               </bk-button>
             </cmdb-auth>
-            <cmdb-auth v-if="!mainLoading" class="group-btn"
+            <cmdb-auth v-if="!mainLoading && !isUncategoried(classification.bk_classification_id)" class="group-btn"
               :auth="{ type: $OPERATION.U_MODEL_GROUP, relation: [classification.id] }">
               <bk-button slot-scope="{ disabled }"
                 theme="primary"
@@ -97,7 +97,7 @@
                 <i class="icon-cc-edit"></i>
               </bk-button>
             </cmdb-auth>
-            <cmdb-auth v-if="!mainLoading" class="group-btn"
+            <cmdb-auth v-if="!mainLoading && !isUncategoried(classification.bk_classification_id)" class="group-btn"
               :auth="{ type: $OPERATION.D_MODEL_GROUP, relation: [classification.id] }">
               <bk-button slot-scope="{ disabled }"
                 theme="primary"
@@ -299,14 +299,15 @@
       ]),
       allClassifications() {
         const allClassifications = []
-        this.classifications.forEach((classification) => {
-          allClassifications.push({
-            ...classification,
-            bk_objects: classification.bk_objects
-              .filter(model => !model.bk_ishidden)
-              .sort((a, b) => a.bk_ispaused - b.bk_ispaused),
+        this.classifications
+          .forEach((classification) => {
+            allClassifications.push({
+              ...classification,
+              bk_objects: classification.bk_objects
+                .filter(model => !model.bk_ishidden)
+                .sort((a, b) => a.bk_ispaused - b.bk_ispaused),
+            })
           })
-        })
         return allClassifications
       },
       enableClassifications() {
@@ -330,11 +331,19 @@
         return disabledClassifications.filter(item => item.bk_objects.length)
       },
       currentClassifications() {
+        let currentClassifications = []
+
         if (!this.searchModel) {
-          if (!this.modelType) return this.allClassifications
-          return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
+          if (!this.modelType) {
+            currentClassifications = this.allClassifications
+          } else {
+            currentClassifications = this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
+          }
+        } else {
+          currentClassifications = this.filterClassifications
         }
-        return this.filterClassifications
+
+        return currentClassifications.sort((a, b) => (b.bk_classification_id === 'bk_uncategorized' ? -1 : 0))
       },
       disabledModelBtnText() {
         return this.disabledClassifications.length ? '' : this.$t('停用模型提示')
@@ -581,7 +590,10 @@
         }
 
         this.getModelInstanceCount(model.bk_obj_id)
-      }
+      },
+      isUncategoried(classificationId) {
+        return classificationId === 'bk_uncategorized'
+      },
     }
   }
 </script>
