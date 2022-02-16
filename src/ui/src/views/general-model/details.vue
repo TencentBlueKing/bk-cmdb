@@ -5,8 +5,10 @@
       :active.sync="active">
       <bk-tab-panel name="property" :label="$t('属性')">
         <cmdb-property
+          v-if="propertyListActive"
           :properties="properties"
           :property-groups="propertyGroups"
+          @after-update="handleAfterUpdate"
           :inst="inst">
         </cmdb-property>
       </bk-tab-panel>
@@ -43,6 +45,7 @@
       return {
         inst: {},
         properties: [],
+        propertyListActive: true,
         propertyGroups: [],
         active: this.$route.query.tab || 'property'
       }
@@ -143,6 +146,12 @@
         } catch (e) {
           console.error(e)
         }
+      },
+      handleAfterUpdate() {
+        this.propertyListActive = false
+        this.$nextTick(() => {
+          this.propertyListActive = true
+        })
       }
     }
   }
