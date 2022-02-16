@@ -114,35 +114,44 @@ func (c *consumerGroupHandler) Cleanup(sarama.ConsumerGroupSession) error {
 func (c *consumerGroupHandler) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	blog.Infof("KafkaPorter[%s]| start a new analyze loop now!", c.name)
 	var msgArray []string
+	retry := false
 	// record the last message for commit
 	var lastMessage *sarama.ConsumerMessage
 	for {
-		if c.analyzer.IsSuccess() {
+		if !retry {
 			msgArray, lastMessage = c.readMessage(claim)
 		}
 
-		c.analyzer.SetSuccessFlag(true)
+		retry = false
 
 		// open goroutine to analyse message until consumption is complete
 		var wg sync.WaitGroup
 		for _, msg := range msgArray {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				if err := c.analyzer.Analyze(&msg); err != nil {
-					blog.Errorf("KafkaPorter[%s]| analyze message failed, %v", c.name, err)
+			if retry {
+				break
+			}
 
+			wg.Add(1)
+			go func(msg string) {
+				defer wg.Done()
+				result, err := c.analyzer.Analyze(&msg)
+				if err != nil {
+					blog.Errorf("KafkaPorter[%s]| analyze message failed, %v", c.name, err)
 					// metrics stats for analyze failed.
 					c.analyzeTotal.WithLabelValues("failed").Inc()
 				} else {
 					// metrics stats for analyze success.
 					c.analyzeTotal.WithLabelValues("success").Inc()
 				}
-			}()
+
+				if result {
+					retry = true
+				}
+			}(msg)
 		}
 		wg.Wait()
 
-		if !c.analyzer.IsSuccess() {
+		if retry {
 			continue
 		}
 
@@ -166,14 +175,12 @@ func (c *consumerGroupHandler) readMessage(claim sarama.ConsumerGroupClaim) ([]s
 
 	startTime := time.Now()
 	// 如果 没有消息 或者 在2秒内读取的消息没超过100条，那么这两种情况会进行消息的读取操作
-	for len(msgMap) == 0 ||
-		(len(msgMap) > 0 && len(msgMap) <= msgCount && time.Now().Sub(startTime) < 2*time.Second) {
-
+	for len(msgMap) == 0 || (len(msgMap) > 0 && len(msgMap) <= msgCount && time.Now().Sub(startTime) < 2*time.Second) {
 		var message *sarama.ConsumerMessage
 		select {
 		case message = <-claim.Messages():
 			break
-		case <-time.After(2 * time.Second):
+		case <-time.After(time.Second):
 			break
 		}
 
@@ -284,7 +291,7 @@ func (k *KafkaPorter) Run() error {
 // Mock mock analyzer
 func (k *KafkaPorter) Mock() error {
 	mock := k.analyzer.Mock()
-	if err := k.analyzer.Analyze(&mock); err != nil {
+	if _, err := k.analyzer.Analyze(&mock); err != nil {
 		return fmt.Errorf("mock failed, %+v", err)
 	}
 	return nil

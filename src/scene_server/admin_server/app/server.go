@@ -57,9 +57,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	process.Config.Register.Address, _ = cc.String("registerServer.addrs")
 	snapDataID, _ := cc.Int("hostsnap.dataID")
 	process.Config.SnapDataID = int64(snapDataID)
-	process.Config.SnapReportMode, _ = cc.String("hostsnap.reportMode")
 	process.Config.SyncIAMPeriodMinutes, _ = cc.Int("adminServer.syncIAMPeriodMinutes")
-	process.Config.SnapKafka, _ = cc.Kafka("kafka.snap")
 
 	// load mongodb, redis and common config from configure directory
 	mongodbPath := process.Config.Configures.Dir + "/" + types.CCConfigureMongo
@@ -76,6 +74,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err := cc.SetCommonFromFile(commonPath); err != nil {
 		return fmt.Errorf("parse common config from file[%s] failed, err: %v", commonPath, err)
 	}
+
+	process.Config.SnapReportMode, _ = cc.String("datacollection.hostsnap.reportMode")
+	process.Config.SnapKafka, _ = cc.Kafka("kafka.snap")
 
 	if err := monitor.InitMonitor(); err != nil {
 		return fmt.Errorf("init monitor failed, err: %v", err)

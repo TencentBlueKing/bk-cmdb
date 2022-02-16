@@ -28,6 +28,7 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/datacollection/app/options"
@@ -99,6 +100,9 @@ type DataCollectionConfig struct {
 
 	// Auth is auth config
 	Auth iam.AuthConfig
+
+	// SnapReportMode hostsnap report mode
+	SnapReportMode string
 }
 
 // DataCollection is data collection server.
@@ -224,8 +228,7 @@ func (c *DataCollection) initConfigs() error {
 		if c.config == nil {
 			c.hostConfigUpdateMu.Unlock()
 
-			blog.Info("DataCollection| can't find configs to run the new datacollection server, " +
-				"try again later!")
+			blog.Info("DataCollection| can't find configs to run the new datacollection server, try again later!")
 			time.Sleep(defaultInitWaitDuration)
 			continue
 		}
@@ -273,7 +276,14 @@ func (c *DataCollection) initConfigs() error {
 		return fmt.Errorf("init netcollect redis configs, %+v", err)
 	}
 
-	c.config.SnapKafka, _ = cc.Kafka("kafka.snap")
+	c.config.SnapReportMode, _ = cc.String("datacollection.hostsnap.reportMode")
+	if metadata.GseConfigReportMode(c.config.SnapReportMode) == metadata.GseConfigReportModeKafka {
+		c.config.SnapKafka, _ = cc.Kafka("kafka.snap")
+		if err := c.config.SnapKafka.Check(); err != nil {
+			blog.Errorf("kafka config is error, err: %v", err)
+			return err
+		}
+	}
 
 	c.config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
 	if err != nil {
@@ -348,7 +358,7 @@ func (c *DataCollection) initModules() error {
 	}
 
 	// connect to snap kafka.
-	if c.config.SnapKafka.Brokers != nil {
+	if c.config.SnapReportMode == "kafka" {
 		config := sarama.NewConfig()
 		config.Consumer.Return.Errors = false
 		config.Consumer.Offsets.AutoCommit.Enable = false // 禁用自动提交，改为手动
@@ -364,9 +374,10 @@ func (c *DataCollection) initModules() error {
 			config.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA512
 		}
 		var err error
-		c.snapConsumerGroup, err =
-			sarama.NewConsumerGroup(c.config.SnapKafka.Brokers, c.config.SnapKafka.GroupID, config)
+		c.snapConsumerGroup, err = sarama.NewConsumerGroup(c.config.SnapKafka.Brokers, c.config.SnapKafka.GroupID,
+			config)
 		if err != nil {
+			blog.Errorf("create kafka consumer group error, err: %v", err)
 			return err
 		}
 	}
@@ -458,7 +469,7 @@ func (c *DataCollection) runCollectPorters() {
 	blog.Info("DataCollection| get default appid id success[%s]", c.defaultAppID)
 
 	// create and add new porters.
-	if c.config.SnapKafka.Brokers != nil {
+	if metadata.GseConfigReportMode(c.config.SnapReportMode) == metadata.GseConfigReportModeKafka {
 		topic := c.snapMessageTopic(c.defaultAppID)
 		analyzer := hostsnap.NewHostSnap(c.ctx, c.redisCli, c.db, c.engine, c.authManager)
 

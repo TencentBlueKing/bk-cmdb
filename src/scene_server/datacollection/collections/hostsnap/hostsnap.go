@@ -73,7 +73,6 @@ type HostSnap struct {
 	ctx       context.Context
 	db        dal.RDB
 	window    *Window
-	success   bool
 }
 
 // NewHostSnap new hostsnap
@@ -89,19 +88,8 @@ func NewHostSnap(ctx context.Context, redisCli redis.Client, db dal.RDB, engine 
 		Engine:      engine,
 		filter:      newFilter(),
 		window:      newWindow(),
-		success:     true,
 	}
 	return h
-}
-
-// IsSuccess judge failed due to network problems etc.
-func (h *HostSnap) IsSuccess() bool {
-	return h.success
-}
-
-// SetSuccessFlag set success flag
-func (h *HostSnap) SetSuccessFlag(success bool) {
-	h.success = success
 }
 
 func getRateLimiterConfig() (int, int) {
@@ -157,9 +145,9 @@ func getLimitConfig(config string, defaultValue, minValue int) int {
 }
 
 // Analyze analyze host snap
-func (h *HostSnap) Analyze(msg *string) error {
+func (h *HostSnap) Analyze(msg *string) (bool, error) {
 	if msg == nil {
-		return fmt.Errorf("message nil")
+		return false, fmt.Errorf("message nil")
 	}
 
 	var data string
@@ -178,24 +166,24 @@ func (h *HostSnap) Analyze(msg *string) error {
 	host, err := h.getHostByVal(header, cloudID, ips, &val)
 	if err != nil {
 		blog.Errorf("get host detail with ips: %v failed, err: %v, rid: %s", ips, err, rid)
-		return err
+		return false, err
 	}
 	elements := gjson.GetMany(host, common.BKHostIDField, common.BKHostInnerIPField, common.BKHostOuterIPField)
 	// check host id field
 	if !elements[0].Exists() {
 		blog.Errorf("snapshot analyze, but host id not exist, host: %s, ips: %v, rid: %s", host, ips, rid)
-		return errors.New("host id not exist")
+		return false, errors.New("host id not exist")
 	}
 	hostID := elements[0].Int()
 	if hostID == 0 {
 		blog.Errorf("snapshot analyze, but host id is 0, host: %s, ips: %v, rid: %s", host, ips, rid)
-		return errors.New("host id can not be 0")
+		return false, errors.New("host id can not be 0")
 	}
 
 	// check inner ip
 	if !elements[1].Exists() {
 		blog.Errorf("snapshot analyze, but host inner ip not exist, host: %s, ips: %v, rid: %s", host, ips, rid)
-		return errors.New("host inner ip not exist")
+		return false, errors.New("host inner ip not exist")
 	}
 
 	innerIP := elements[1].String()
@@ -212,51 +200,24 @@ func (h *HostSnap) Analyze(msg *string) error {
 			blog.Infof("not within the time window that can pass, skip host snapshot data update, "+
 				"host id: %d, ip: %s, cloud id: %d, rid: %s", hostID, innerIP, cloudID, rid)
 		}
-		return nil
+		return false, nil
 	}
 
-	// verify the timestamp to determine whether the host sequence is correct
-	if val.Get("data.apiVer").Exists() {
-		key := redisConsumptionCheckPrefix + innerIP + ":" + strconv.FormatInt(cloudID, 10)
-		timestamp, err := h.redisCli.Get(context.Background(), key).Result()
-		if err != nil && !redis.IsNilErr(err) {
-			blog.Errorf("get key: %s from redis err: %v, rid: %s", key, err, rid)
-		}
-
-		var oldTimestamp int64
-		if timestamp != "" {
-			oldTimestamp, err = strconv.ParseInt(timestamp, 10, 64)
-			if err != nil {
-				blog.Errorf("parseInt timestamp %s error, key: %s to redis err: %v, rid: %s",
-					timestamp, key, err, rid)
-			}
-		}
-
-		newTimestamp := val.Get("data.timestamp").Int()
-		if err == nil && oldTimestamp != 0 && oldTimestamp > newTimestamp {
-			blog.Warnf("skip host snapshot data update due to it is old data, host id: %d, ip: %s, "+
-				"cloud id: %d, timestamp: %d, rid: %s", hostID, innerIP, cloudID, newTimestamp, rid)
-			return nil
-		}
-
-		randTime := util.RandInt64WithRange(int64(5), int64(10))
-		err = h.redisCli.Set(context.Background(), key, newTimestamp, time.Minute*time.Duration(randTime)).Err()
-		if err != nil {
-			blog.Errorf("set key: %s to redis err: %v, rid: %s", key, err, rid)
-		}
+	if h.skipMsg(val, innerIP, rid, hostID, cloudID) {
+		return false, nil
 	}
 
 	setter, raw := parseSetter(&val, innerIP, outerIP)
 	// no need to update
 	if !needToUpdate(raw, host) {
-		return nil
+		return false, nil
 	}
 
 	// limit request from the old collection plug-in
 	if !val.Get("data.apiVer").Exists() && !h.rateLimit.TryAccept() {
 		blog.Warnf("skip host snapshot data update due to request limit, host id: %d, ip: %s, cloud id: %d, "+
 			"rid: %s", hostID, innerIP, cloudID, rid)
-		return nil
+		return false, nil
 	}
 
 	// limit the request from the new collection plug-in
@@ -283,17 +244,16 @@ func (h *HostSnap) Analyze(msg *string) error {
 	err = json.Unmarshal([]byte(host), &hostData)
 	if err != nil {
 		blog.Errorf("unmarshal host %s failed, err: %v", host, err)
-		return err
+		return false, err
 	}
 
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).
 		WithOperateFrom(metadata.FromDataCollection).WithUpdateFields(setter)
 	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, 0, []mapstr.MapStr{hostData})
 	if err != nil {
-		h.success = false
 		blog.Errorf("generate host snap audit log failed before update host, host: %d/%s, err: %v, rid: %s",
 			hostID, innerIP, err, rid)
-		return err
+		return true, err
 	}
 
 	// notice: needToUpdate 需要顺序，只能在更新数据库之前，删除需要忽略更新的字段
@@ -311,22 +271,54 @@ func (h *HostSnap) Analyze(msg *string) error {
 
 	_, err = h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, header, common.BKInnerObjIDHost, opt)
 	if err != nil {
-		h.success = false
 		blog.Errorf("snapshot changed, update host %d/%s snapshot failed, err: %v, rid: %s",
 			hostID, innerIP, err, rid)
-		return err
+		return true, err
 	}
 	// save audit log.
 	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
-		h.success = false
 		blog.Errorf("save host snap audit log failed after update host, host %d/%s, err: %v, rid: %s", hostID,
 			innerIP, err, rid)
-		return err
+		return true, err
 	}
 	blog.V(5).Infof("snapshot for host changed, update success, host id: %d, ip: %s, cloud id: %d, rid: %s",
 		hostID, innerIP, cloudID, rid)
 
-	return nil
+	return false, nil
+}
+
+// skipMsg verify the timestamp to determine whether the host sequence is correct, if it is old message, skip.
+func (h *HostSnap) skipMsg(val gjson.Result, innerIP, rid string, hostID, cloudID int64) bool {
+	if val.Get("data.apiVer").Exists() {
+		key := redisConsumptionCheckPrefix + innerIP + ":" + strconv.FormatInt(cloudID, 10)
+		timestamp, err := h.redisCli.Get(context.Background(), key).Result()
+		if err != nil && !redis.IsNilErr(err) {
+			blog.Errorf("get key: %s from redis err: %v, rid: %s", key, err, rid)
+		}
+
+		var oldTimestamp int64
+		if timestamp != "" {
+			oldTimestamp, err = strconv.ParseInt(timestamp, 10, 64)
+			if err != nil {
+				blog.Errorf("parseInt timestamp %s error, key: %s to redis err: %v, rid: %s",
+					timestamp, key, err, rid)
+			}
+		}
+
+		newTimestamp := val.Get("data.timestamp").Int()
+		if err == nil && oldTimestamp != 0 && oldTimestamp > newTimestamp {
+			blog.Warnf("skip host snapshot data update due to it is old data, host id: %d, ip: %s, "+
+				"cloud id: %d, timestamp: %d, rid: %s", hostID, innerIP, cloudID, newTimestamp, rid)
+			return true
+		}
+
+		randTime := util.RandInt64WithRange(int64(5), int64(10))
+		err = h.redisCli.Set(context.Background(), key, newTimestamp, time.Minute*time.Duration(randTime)).Err()
+		if err != nil {
+			blog.Errorf("set key: %s to redis err: %v, rid: %s", key, err, rid)
+		}
+	}
+	return false
 }
 
 func needToUpdate(src, toCompare string) bool {

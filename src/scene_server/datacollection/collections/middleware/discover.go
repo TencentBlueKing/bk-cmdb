@@ -51,16 +51,6 @@ func NewDiscover(ctx context.Context, redisCli redis.Client, backbone *backbone.
 	return discover
 }
 
-// IsSuccess judge whether the message is processed successfully.
-func (d *Discover) IsSuccess() bool {
-	return false
-}
-
-// SetSuccessFlag set success flag
-func (d *Discover) SetSuccessFlag(success bool) {
-	// todo
-}
-
 // Hash returns hash value base on message.
 func (d *Discover) Hash(cloudid, ip string) (string, error) {
 	if len(cloudid) == 0 {
@@ -81,12 +71,12 @@ func (d *Discover) Mock() string {
 }
 
 // Analyze analyze discover data
-func (d *Discover) Analyze(msg *string) error {
+func (d *Discover) Analyze(msg *string) (bool, error) {
 	err := d.UpdateOrCreateInst(msg)
 	if err != nil {
-		return fmt.Errorf("create inst err: %v, raw: %s", err, msg)
+		return false, fmt.Errorf("create inst err: %v, raw: %s", err, msg)
 	}
-	return nil
+	return false, nil
 }
 
 var MockMessage = `{

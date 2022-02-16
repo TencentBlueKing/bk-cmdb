@@ -400,19 +400,29 @@ func Mongo(prefix string) (mongo.Config, error) {
 func Kafka(prefix string) (kafka.Config, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
-	brokers, _ := StringSlice(prefix + ".brokers")
-	groupID, _ := String(prefix + ".groupID")
-	topic, _ := String(prefix + ".topic")
-	partition, _ := Int64(prefix + ".partition")
-	user, _ := String(prefix + ".user")
-	pwd, _ := String(prefix + ".password")
+
+	var parser *viperParser
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		parser = getCommonParser()
+		if parser != nil {
+			break
+		}
+		blog.Warn("the configuration of common is not ready yet")
+		time.Sleep(time.Duration(1) * time.Second)
+	}
+
+	if parser == nil {
+		blog.Errorf("can't find kafka configuration")
+		return kafka.Config{}, err.New("can't find kafka configuration")
+	}
+
 	return kafka.Config{
-		Brokers:   brokers,
-		GroupID:   groupID,
-		Topic:     topic,
-		Partition: partition,
-		User:      user,
-		Password:  pwd,
+		Brokers:   parser.getStringSlice(prefix + ".brokers"),
+		GroupID:   parser.getString(prefix + ".groupID"),
+		Topic:     parser.getString(prefix + ".topic"),
+		Partition: parser.getInt64(prefix + ".partition"),
+		User:      parser.getString(prefix + ".user"),
+		Password:  parser.getString(prefix + ".password"),
 	}, nil
 }
 
@@ -486,22 +496,6 @@ func Int64(key string) (int64, error) {
 	return 0, err.New("config not found")
 }
 
-// StringSlice return the stringSlice value of the configuration information according to the key.
-func StringSlice(key string) ([]string, error) {
-	confLock.RLock()
-	defer confLock.RUnlock()
-	if migrateParser != nil && migrateParser.isSet(key) {
-		return migrateParser.getStringSlice(key), nil
-	}
-	if commonParser != nil && commonParser.isSet(key) {
-		return commonParser.getStringSlice(key), nil
-	}
-	if extraParser != nil && extraParser.isSet(key) {
-		return extraParser.getStringSlice(key), nil
-	}
-	return nil, err.New("config not found")
-}
-
 // Bool return the bool value of the configuration information according to the key.
 func Bool(key string) (bool, error) {
 	confLock.RLock()
@@ -530,6 +524,22 @@ func Bool(key string) (bool, error) {
 	return false, err.New("config not found")
 }
 
+// StringSlice return the stringSlice value of the configuration information according to the key.
+func StringSlice(key string) ([]string, error) {
+	confLock.RLock()
+	defer confLock.RUnlock()
+	if migrateParser != nil && migrateParser.isSet(key) {
+		return migrateParser.getStringSlice(key), nil
+	}
+	if commonParser != nil && commonParser.isSet(key) {
+		return commonParser.getStringSlice(key), nil
+	}
+	if extraParser != nil && extraParser.isSet(key) {
+		return extraParser.getStringSlice(key), nil
+	}
+	return nil, err.New("config not found")
+}
+
 func IsExist(key string) bool {
 	confLock.RLock()
 	defer confLock.RUnlock()
@@ -548,6 +558,10 @@ func getRedisParser() *viperParser {
 
 func getMongodbParser() *viperParser {
 	return mongodbParser
+}
+
+func getCommonParser() *viperParser {
+	return commonParser
 }
 
 type viperParser struct {
@@ -625,4 +639,3 @@ func (vp *viperParser) isConfigBoolType(path string) bool {
 	}
 	return true
 }
-

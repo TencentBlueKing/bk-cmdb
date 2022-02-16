@@ -214,23 +214,26 @@ func (s *Service) generateGseConfigStreamTo(header http.Header, user string, def
 	snapStreamTo = &metadata.GseConfigStreamTo{
 		Name: snapStreamToName,
 	}
-	if s.Config.SnapReportMode == "" || s.Config.SnapReportMode == "kafka" {
+	if metadata.GseConfigReportMode(s.Config.SnapReportMode) == metadata.GseConfigReportModeKafka {
+		if err := s.Config.SnapKafka.Check(); err != nil {
+			blog.Errorf("kafka config is error, err: %v", err)
+			return nil, err
+		}
+
 		snapStreamTo.ReportMode = metadata.GseConfigReportModeKafka
 		kafkaStreamToAddresses := make([]metadata.GseConfigStorageAddress, 0)
 		for _, addr := range s.Config.SnapKafka.Brokers {
 			ipPort := strings.Split(addr, ":")
 			if len(ipPort) != 2 {
 				blog.Errorf("host snap kafka address is invalid, addr: %s, rid: %s", addr, rid)
-				return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid,
-					"snap kafka")}
+				return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "snap kafka")}
 			}
 
 			port, err := strconv.ParseInt(ipPort[1], 10, 64)
 			if err != nil {
 				blog.Errorf("parse snap kafka address port failed, err: %v, port: %s, rid: %s",
 					err, ipPort[1], rid)
-				return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid,
-					"snap kafka")}
+				return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "snap kafka")}
 			}
 
 			kafkaStreamToAddresses = append(kafkaStreamToAddresses, metadata.GseConfigStorageAddress{
@@ -247,9 +250,12 @@ func (s *Service) generateGseConfigStreamTo(header http.Header, user string, def
 			snapStreamTo.Kafka.SaslMechanisms = "SCRAM-SHA-512"
 			snapStreamTo.Kafka.SecurityProtocol = "SASL_PLAINTEXT"
 		}
+		return snapStreamTo, nil
 	}
 
-	if s.Config.SnapReportMode == "redis" {
+	if s.Config.SnapReportMode == "" ||
+		metadata.GseConfigReportMode(s.Config.SnapReportMode) == metadata.GseConfigReportModeRedis {
+
 		snapStreamTo.ReportMode = metadata.GseConfigReportModeRedis
 		redisStreamToAddresses := make([]metadata.GseConfigStorageAddress, 0)
 		snapRedisAddresses := strings.Split(s.Config.SnapRedis.Address, ",")
@@ -257,16 +263,14 @@ func (s *Service) generateGseConfigStreamTo(header http.Header, user string, def
 			ipPort := strings.Split(addr, ":")
 			if len(ipPort) != 2 {
 				blog.Errorf("host snap redis address is invalid, addr: %s, rid: %s", addr, rid)
-				return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid,
-					"snap redis")}
+				return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "snap redis")}
 			}
 
 			port, err := strconv.ParseInt(ipPort[1], 10, 64)
 			if err != nil {
 				blog.Errorf("parse snap redis address port failed, err: %v, port: %s, rid: %s",
 					err, ipPort[1], rid)
-				return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid,
-					"snap redis")}
+				return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "snap redis")}
 			}
 
 			redisStreamToAddresses = append(redisStreamToAddresses, metadata.GseConfigStorageAddress{
@@ -351,8 +355,7 @@ func (s *Service) gseConfigAddStreamTo(streamTo *metadata.GseConfigStreamTo, hea
 	}
 
 	if err := s.db.Table(common.BKTableNameSystem).Upsert(s.ctx, cond, &streamToID); err != nil {
-		blog.Errorf("upsert stream to id %d to db failed, err: %v, rid: %s",
-			addStreamResult.StreamToID, err, rid)
+		blog.Errorf("upsert stream to id %d to db failed, err: %v, rid: %s", addStreamResult.StreamToID, err, rid)
 		return addStreamResult.StreamToID, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)}
 	}
 
@@ -436,7 +439,8 @@ func (s *Service) generateGseConfigChannel(streamToID, dataID int64, rid string)
 			},
 		}},
 	}
-	if s.Config.SnapReportMode == "" || s.Config.SnapReportMode == "kafka" {
+
+	if metadata.GseConfigReportMode(s.Config.SnapReportMode) == metadata.GseConfigReportModeKafka {
 		snapChannel.Route[0].StreamTo.Kafka = &metadata.GseConfigRouteKafka{
 			TopicName: fmt.Sprintf("snapshot%d", bizID),
 			// compatible for the older version of gse that uses DataSet+BizID as channel name
@@ -444,8 +448,12 @@ func (s *Service) generateGseConfigChannel(streamToID, dataID int64, rid string)
 			BizID:     bizID,
 			Partition: s.Config.SnapKafka.Partition,
 		}
+		return snapChannel, nil
 	}
-	if s.Config.SnapReportMode == "redis" {
+
+	if s.Config.SnapReportMode == "" ||
+		metadata.GseConfigReportMode(s.Config.SnapReportMode) == metadata.GseConfigReportModeRedis {
+
 		snapChannel.Route[0].StreamTo.Redis = &metadata.GseConfigRouteRedis{
 			ChannelName: fmt.Sprintf("snapshot%d", bizID),
 			// compatible for the older version of gse that uses DataSet+BizID as channel name

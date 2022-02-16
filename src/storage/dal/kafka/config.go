@@ -12,6 +12,8 @@
 
 package kafka
 
+import "errors"
+
 // Config kafka config
 type Config struct {
 	Brokers   []string
@@ -20,4 +22,20 @@ type Config struct {
 	Partition int64
 	User      string
 	Password  string
+}
+
+// Check check kafka config
+func (c *Config) Check() error {
+	if c.Brokers == nil || len(c.Brokers) == 0 {
+		return errors.New("can not find kafka brokers config")
+	}
+
+	if c.GroupID == "" {
+		return errors.New("can not find kafka groupID config")
+	}
+
+	if c.Partition == 0 {
+		return errors.New("can not find kafka partition config or value cannot be set to 0")
+	}
+	return nil
 }
