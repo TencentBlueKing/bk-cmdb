@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -91,6 +92,11 @@ var dataRows = map[string]*metadata.Attribute{
 		Placeholder:   "业务集所包含的业务的条件",
 	},
 }
+
+const (
+	// Business set initial ID
+	bizSetInitialID = 10000000
+)
 
 func addBizSetObjectRow(ctx context.Context, db dal.RDB, ownerID string) error {
 
@@ -208,7 +214,52 @@ func addObjectUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 	return nil
 }
 
-func addBizSetCollection(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+type Idgen struct {
+	ID         string `bson:"_id"`
+	SequenceID uint64 `bson:"SequenceID"`
+}
+
+func addBizSetIDToIdgenerator(ctx context.Context, db dal.RDB) error {
+
+	// 1、find out whether there is data whose id is BKTableNameBaseBizSet in the cc_idgenerator table. If there is,
+	// an error will be reported directly, which needs to be processed manually.
+	filter := map[string]interface{}{
+		"_id": common.BKTableNameBaseBizSet,
+	}
+
+	idGenerator := new(Idgen)
+	err := db.Table(common.BKTableNameIDgenerator).Find(filter).Fields("SequenceID").One(ctx, idGenerator)
+	if err != nil && !db.IsNotFoundError(err) {
+		blog.Errorf("count cc_BizSetBase id failed, err: %v", err)
+		return err
+	}
+	if err != nil && db.IsNotFoundError(err) {
+		// set the initialization value to 10000000
+		data := map[string]interface{}{
+			"_id":                  common.BKTableNameBaseBizSet,
+			"SequenceID":           bizSetInitialID,
+			common.CreateTimeField: time.Now(),
+			common.LastTimeField:   time.Now(),
+		}
+		err = db.Table(common.BKTableNameIDgenerator).Insert(ctx, data)
+		if nil != err {
+			blog.Errorf("add data fail, error %s", err)
+			return err
+		}
+		return nil
+	}
+
+	// Illegal if num is between 0 and bizSetInitialID
+	if idGenerator.SequenceID < bizSetInitialID {
+		blog.Errorf("cc_BizSetBase id should not exist, upgrade failed.")
+		return errors.New("cc_BizSetBase id should not exist")
+	}
+
+	// If greater or equal to bizSetInitialID, it is considered that a legal business set has been created
+	return nil
+}
+
+func addBizSetCollection(ctx context.Context, db dal.RDB) error {
 
 	exists, err := db.HasTable(ctx, common.BKTableNameBaseBizSet)
 	if err != nil {
@@ -390,7 +441,11 @@ func addBizSetPropertyOption(ctx context.Context, db dal.RDB, conf *upgrader.Con
 		return err
 	}
 
-	if err := addBizSetCollection(ctx, db, conf); err != nil {
+	if err := addBizSetCollection(ctx, db); err != nil {
+		return err
+	}
+
+	if err := addBizSetIDToIdgenerator(ctx, db); err != nil {
 		return err
 	}
 
