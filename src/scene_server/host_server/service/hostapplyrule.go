@@ -428,7 +428,7 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 
 	planResult, err := s.generateApplyPlan(ctx, bizID, planRequest)
 	if err != nil {
-		blog.Errorf("generate apply plan failed, bizID: %s, request: %s, err: %v, rid:%s", bizID, planRequest, err, rid)
+		blog.Errorf("generate apply plan failed, bizID: %s, req: %s, err: %v, rid: %s", bizID, planRequest, err, rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -498,6 +498,24 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(hostApplyResults)
 }
 
+func generateCondition(dataStr string, hostIDs []int64) (map[string]interface{}, map[string]interface{}) {
+	data := make(map[string]interface{})
+	_ = json.Unmarshal([]byte(dataStr), &data)
+
+	andCond := make([]map[string]interface{}, 0)
+
+	for key, value := range data {
+		andCond = append(andCond, map[string]interface{}{
+			key: map[string]interface{}{common.BKDBNE: value},
+		})
+	}
+	mergeCond := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs},
+		common.BKDBAND:       andCond,
+	}
+	return mergeCond, data
+}
+
 func (s *Service) updateHostPlan(planResult metadata.HostApplyPlanResult, kit *rest.Kit) (
 	[]metadata.HostApplyResult, errors.CCErrorCoder) {
 	var (
@@ -518,7 +536,6 @@ func (s *Service) updateHostPlan(planResult metadata.HostApplyPlanResult, kit *r
 	hostApplyResults := make([]metadata.HostApplyResult, 0)
 
 	pipeline := make(chan bool, 5)
-
 	for dataStr, hostIDs := range updateMap {
 
 		pipeline <- true
@@ -529,28 +546,29 @@ func (s *Service) updateHostPlan(planResult metadata.HostApplyPlanResult, kit *r
 				wg.Done()
 				<-pipeline
 			}()
-			data := make(map[string]interface{})
-			_ = json.Unmarshal([]byte(dataStr), &data)
 
-			andCond := make([]map[string]interface{}, 0)
-			for key, value := range data {
-				andCond = append(andCond, map[string]interface{}{
-					key: map[string]interface{}{common.BKDBNE: value},
-				})
+			mergeCond, data := generateCondition(dataStr, hostIDs)
+			counts, cErr := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+				common.BKTableNameBaseHost, []map[string]interface{}{mergeCond})
+			if cErr != nil {
+				if firstErr == nil {
+					firstErr = cErr
+				}
+				blog.Errorf("get hosts count failed, filter: %+v, err: %v, rid: %s", mergeCond, cErr, kit.Rid)
+				return
+			}
+			if counts[0] == 0 {
+				blog.V(5).Infof("no hosts founded, filter: %+v, rid: %s", mergeCond, kit.Rid)
+				return
 			}
 
-			updateOption := &metadata.UpdateOption{
-				Data: data,
-				Condition: map[string]interface{}{
-					common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs},
-					common.BKDBAND:       andCond,
-				},
-			}
+			// If there is no eligible host, then return directly.
+			updateOp := &metadata.UpdateOption{Data: data, Condition: mergeCond}
 
-			updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header,
-				common.BKInnerObjIDHost, updateOption)
+			result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header,
+				common.BKInnerObjIDHost, updateOp)
 			if err != nil {
-				blog.Errorf("update host failed, option: %s, err: %v, rid: %s", updateOption, err, kit.Rid)
+				blog.Errorf("update host failed, option: %s, err: %v, rid: %s", updateOp, err, kit.Rid)
 				for _, hostID := range hostIDs {
 					hostApplyResult := metadata.HostApplyResult{HostID: hostID}
 					hostApplyResult.SetError(kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
@@ -562,9 +580,8 @@ func (s *Service) updateHostPlan(planResult metadata.HostApplyPlanResult, kit *r
 				return
 			}
 
-			if ccErr := updateResult.CCError(); ccErr != nil {
-				blog.Errorf("update host failed, op: %s, resp: %s, err: %v, rid: %s", updateOption, updateResult,
-					ccErr, kit.Rid)
+			if ccErr := result.CCError(); ccErr != nil {
+				blog.Errorf("update host failed, op: %s, resp: %s, err: %v, rid: %s", updateOp, result, ccErr, kit.Rid)
 
 				for _, hostID := range hostIDs {
 					hostApplyResult := metadata.HostApplyResult{HostID: hostID}

@@ -169,9 +169,15 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 // The rest of the attribute types can be compared directly in non-organization scenarios.
 func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue interface{}) (bool, errors.CCErrorCoder) {
 
+	// in the transfer host scenario, the rule may be empty.
+	if expectValue == nil {
+		return false, nil
+	}
 	switch pType {
 	case common.FieldTypeOrganization:
-		if _, ok := expectValue.(primitive.A); !ok {
+
+		value, ok := expectValue.(primitive.A)
+		if !ok {
 			return false, errors.New(common.CCErrCommUnexpectedFieldType, "expect value type error")
 		}
 		if _, ok := propertyValue.([]interface{}); !ok {
@@ -179,7 +185,7 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 		}
 
 		expectValueList := make([]int, 0)
-		for _, eValue := range []interface{}(expectValue.(primitive.A)) {
+		for _, eValue := range []interface{}(value) {
 			value, err := util.GetIntByInterface(eValue)
 			if err != nil {
 				return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
