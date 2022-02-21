@@ -18,7 +18,18 @@ export const findAll = (bizSetId, params, config) => $http.post(`findmany/proc/w
  */
 export const findAggregationLabels = (bizSetId, params, config) => $http.post(`findmany/proc/biz_set/${bizSetId}/service_instance/labels/aggregation`, params, config)
 
+
+/**
+ * 根据主机查询服务实例
+ * @param {number} bizSetId 业务集 ID
+ * @param {Object} params 查询参数
+ * @param {Object} config 请求配置
+ * @returns {Promise}
+ */
+export const findServiceInstanceWithHost = (bizSetId, params, config) => $http.post(`findmany/proc/web/biz_set/${bizSetId}/service_instance/with_host`, params, config)
+
 export const ServiceInstanceService = {
   findAll,
-  findAggregationLabels
+  findAggregationLabels,
+  findServiceInstanceWithHost
 }

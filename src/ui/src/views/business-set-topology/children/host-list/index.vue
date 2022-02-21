@@ -47,7 +47,7 @@
   import { mapGetters, mapState } from 'vuex'
   import {
     MENU_BUSINESS_SET_TOPOLOGY,
-    MENU_BUSINESS_HOST_DETAILS,
+    MENU_BUSINESS_SET_HOST_DETAILS,
   } from '@/dictionary/menu-symbol'
   import RouterQuery from '@/router/query'
   import HostFilterTag from '@/components/filters/filter-tag'
@@ -186,7 +186,7 @@
           return
         }
         this.$routerActions.redirect({
-          name: MENU_BUSINESS_HOST_DETAILS,
+          name: MENU_BUSINESS_SET_HOST_DETAILS,
           params: {
             bizId: this.bizId,
             id: row.host.bk_host_id

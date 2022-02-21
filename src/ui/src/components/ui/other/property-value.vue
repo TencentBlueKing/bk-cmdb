@@ -12,7 +12,7 @@
     :value="value"
     display-type="info">
   </service-template-value>
-  <compmoent :is="tag" v-bind="attrs" v-else>{{displayValue}}</compmoent>
+  <component :is="tag" v-bind="attrs" v-else>{{displayValue}}</component>
 </template>
 
 <script>
