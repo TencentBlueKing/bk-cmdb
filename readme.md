@@ -36,7 +36,7 @@
 如果想了解以上功能的详细说明，请参考[功能说明](http://bk.tencent.com/document/bkprod/000120.html)
 
 ## Experience
-* [在线体验蓝鲸CMDB](https://cmdb.bk.tencent.com/login) 🔥
+* [在线体验蓝鲸CMDB](https://cmdb-exp.bktencent.com/start) 🔥 **用户名密码：admin:admin**
 * [极速体验容器化部署蓝鲸CMDB](docs/wiki/container-support.md)
 
 ## Getting started

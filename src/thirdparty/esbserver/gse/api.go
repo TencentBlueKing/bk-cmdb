@@ -296,7 +296,7 @@ func (p *gse) ConfigDeleteRoute(ctx context.Context, h http.Header, data *metada
 }
 
 func (p *gse) ConfigQueryRoute(ctx context.Context, h http.Header, data *metadata.GseConfigQueryRouteParams) (
-	[]metadata.GseConfigChannel, error) {
+	[]metadata.GseConfigChannel, bool, error) {
 
 	resp := new(metadata.GseConfigQueryRouteResp)
 	subPath := "/v2/gse/config_query_route/"
@@ -314,10 +314,16 @@ func (p *gse) ConfigQueryRoute(ctx context.Context, h http.Header, data *metadat
 		Into(resp)
 
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
+
+	// 14001 is a special error code for route not exists
+	if resp.Code == 14001 {
+		return nil, false, nil
+	}
+
 	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("gse config query route failed, code: %d, message: %s", resp.Code, resp.Message)
+		return nil, false, fmt.Errorf("gse config query route failed, code: %d, message: %s", resp.Code, resp.Message)
 	}
-	return resp.Data, nil
+	return resp.Data, true, nil
 }
