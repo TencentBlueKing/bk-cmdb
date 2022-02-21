@@ -241,7 +241,7 @@
         return params
       })
 
-      const getList = async () => {
+      const getList = async (options = {}) => {
         try {
           const { list, count } = await businessSetService.find(searchParams.value, {
             requestId,
@@ -249,9 +249,11 @@
             globalPermission: false
           })
 
-          if (count && !list?.length) {
-            table.pagination.current -= 1
-            getList()
+          if (options.isDel && count && !list?.length) {
+            RouterQuery.set({
+              page: table.pagination.current - 1,
+              _t: Date.now()
+            })
             return
           }
 
@@ -380,7 +382,7 @@
           confirmFn: async () => {
             try {
               await businessSetService.deleteById(inst[MODEL_ID_KEY])
-              getList()
+              getList({ isDel: true })
               $success(t('删除成功'))
             } catch (error) {
               console.error(error)

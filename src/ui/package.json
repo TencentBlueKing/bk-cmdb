@@ -96,7 +96,7 @@
     "postcss": "^8.2.10",
     "postcss-deep-scopable": "0.0.2",
     "postcss-loader": "^5.2.0",
-    "postcss-preset-env": "^6.7.0",
+    "postcss-preset-env": "^7.4.0",
     "postcss-scss": "^3.0.5",
     "progress-bar-webpack-plugin": "^2.1.0",
     "resolve-url-loader": "^4.0.0-beta.1",
