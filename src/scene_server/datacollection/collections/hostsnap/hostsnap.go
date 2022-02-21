@@ -289,35 +289,41 @@ func (h *HostSnap) Analyze(msg *string) (bool, error) {
 
 // skipMsg verify the timestamp to determine whether the host sequence is correct, if it is old message, skip.
 func (h *HostSnap) skipMsg(val gjson.Result, innerIP, rid string, hostID, cloudID int64) bool {
-	if val.Get("data.apiVer").Exists() {
-		key := redisConsumptionCheckPrefix + innerIP + ":" + strconv.FormatInt(cloudID, 10)
-		timestamp, err := h.redisCli.Get(context.Background(), key).Result()
-		if err != nil && !redis.IsNilErr(err) {
-			blog.Errorf("get key: %s from redis err: %v, rid: %s", key, err, rid)
-		}
+	if !val.Get("data.apiVer").Exists() {
+		return false
+	}
 
-		var oldTimestamp int64
-		if timestamp != "" {
-			oldTimestamp, err = strconv.ParseInt(timestamp, 10, 64)
-			if err != nil {
-				blog.Errorf("parseInt timestamp %s error, key: %s to redis err: %v, rid: %s",
-					timestamp, key, err, rid)
-			}
-		}
+	key := redisConsumptionCheckPrefix + innerIP + ":" + strconv.FormatInt(cloudID, 10)
+	timestamp, err := h.redisCli.Get(context.Background(), key).Result()
+	if err != nil && !redis.IsNilErr(err) {
+		blog.Errorf("get key: %s from redis err: %v, rid: %s", key, err, rid)
+		return false
+	}
 
-		newTimestamp := val.Get("data.timestamp").Int()
-		if err == nil && oldTimestamp != 0 && oldTimestamp > newTimestamp {
-			blog.Warnf("skip host snapshot data update due to it is old data, host id: %d, ip: %s, "+
-				"cloud id: %d, timestamp: %d, rid: %s", hostID, innerIP, cloudID, newTimestamp, rid)
-			return true
-		}
-
-		randTime := util.RandInt64WithRange(int64(5), int64(10))
-		err = h.redisCli.Set(context.Background(), key, newTimestamp, time.Minute*time.Duration(randTime)).Err()
+	var oldTimestamp int64
+	if timestamp != "" {
+		oldTimestamp, err = strconv.ParseInt(timestamp, 10, 64)
 		if err != nil {
-			blog.Errorf("set key: %s to redis err: %v, rid: %s", key, err, rid)
+			blog.Errorf("parseInt timestamp %s error, key: %s to redis err: %v, rid: %s",
+				timestamp, key, err, rid)
+			return false
 		}
 	}
+
+	newTimestamp := val.Get("data.timestamp").Int()
+	if err == nil && oldTimestamp != 0 && oldTimestamp > newTimestamp {
+		blog.Warnf("skip host snapshot data update due to it is old data, host id: %d, ip: %s, "+
+			"cloud id: %d, timestamp: %d, rid: %s", hostID, innerIP, cloudID, newTimestamp, rid)
+		return true
+	}
+
+	randTime := util.RandInt64WithRange(int64(5), int64(10))
+	err = h.redisCli.Set(context.Background(), key, newTimestamp, time.Minute*time.Duration(randTime)).Err()
+	if err != nil {
+		blog.Errorf("set key: %s to redis err: %v, rid: %s", key, err, rid)
+		return false
+	}
+
 	return false
 }
 
