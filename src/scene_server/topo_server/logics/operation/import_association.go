@@ -261,7 +261,7 @@ func (ia *importAssociation) importAssociation() {
 			continue
 		}
 
-		err = ia.cli.authManager.AuthorizeByInstanceID(ia.kit.Ctx, ia.kit.Header, meta.Update, ia.objID, srcInstID)
+		err = ia.cli.authManager.AuthorizeByInstanceID(ia.kit.Ctx, ia.kit.Header, meta.Update, asst.ObjectID, srcInstID)
 		if err != nil {
 			ia.parseImportDataErr[idx] = err.Error()
 			continue
