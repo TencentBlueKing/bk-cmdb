@@ -79,8 +79,11 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
     } else if (['organization'].includes(propertyType)) {
       values[propertyId] = inst[propertyId] || null
     } else if (['table'].includes(propertyType)) {
+      // table类型的字段编辑和展示目前仅在进程绑定信息被使用，如后期有扩展在其它场景form-table组件与此处都需要调整
+      // 接口需要过滤掉不允许编辑及内置的字段
+      const tableColumns = property.option?.filter(property => property.editable && !property.bk_isapi)
       // eslint-disable-next-line max-len
-      values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(property.option || [], row, autoSelect))
+      values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(tableColumns || [], row, autoSelect))
     } else {
       values[propertyId] = has(inst, propertyId) ? inst[propertyId] : ''
     }
@@ -255,7 +258,7 @@ export function getValidateEvents(property) {
   const hasRegular = !!property.option
   if (isChar && hasRegular) {
     return {
-      'data-vv-validate-on': 'blur'
+      'data-vv-validate-on': 'blur|change'
     }
   }
   return {}
