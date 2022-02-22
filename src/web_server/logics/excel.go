@@ -460,11 +460,11 @@ func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.Kv
 	for ; index < rowCnt; index++ {
 		row := sheet.Rows[index]
 		host, getErr := getDataFromByExcelRow(ctx, row, index, nil, defFields, nameIndexMap, defLang, department)
-		if nil != getErr {
+		if getErr != nil {
 			errMsg = append(errMsg, getErr...)
 			continue
 		}
-		if len(host) != 0 {
+		if len(host) == 0 {
 			hosts[index+1] = nil
 		} else {
 			hosts[index+1] = host
