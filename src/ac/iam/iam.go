@@ -14,6 +14,7 @@ package iam
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"configcenter/src/ac/meta"
@@ -318,8 +319,15 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object) error {
 	rid := commonutil.ExtractRequestIDFromContext(ctx)
 
-	fields := []SystemQueryField{FieldResourceTypes,
-		FieldActions, FieldActionGroups, FieldInstanceSelections}
+	// validate the objects
+	for _, obj := range objects {
+		if obj.ID == 0 || len(obj.ObjectID) == 0 || len(obj.ObjectName) == 0 {
+			blog.Errorf("sync iam system instances but object(%#v) is invalid, rid: %s", obj, rid)
+			return errors.New("object is invalid")
+		}
+	}
+
+	fields := []SystemQueryField{FieldResourceTypes, FieldActions, FieldActionGroups, FieldInstanceSelections}
 	iamResp, err := i.Client.GetSystemInfo(ctx, fields)
 	if err != nil {
 		blog.ErrorJSON("sync iam sysInstances failed, get system info error: %s, fields: %s, rid: %s",
