@@ -1005,7 +1005,7 @@ func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, bizID int64, host
 	}
 
 	// 单独处理一下第一次added processTemplate的场景，第一次added时模块下面的主机还没有实例化，模块下的实例数量是0并且主机数量大于0
-	if len(hostMap) > 0 && len(serviceInstances) == 0 {
+	if len(hostMap) != len(serviceInstances) {
 		for templateID, processTemplate := range pTemplateMap {
 			moduleDifference.Added = append(moduleDifference.Added, metadata.ProcessGeneralInfo{
 				Id: templateID, Name: processTemplate.ProcessName})
@@ -1321,7 +1321,7 @@ func (ps *ProcServer) getListDiffServiceInstanceNum(ctx *rest.Contexts, opt *met
 			d.ServiceInsts = append(d.ServiceInsts, metadata.ServiceInstancesInfo{Id: inst.ID, Name: inst.Name})
 		}
 
-		if len(sInsts.Info) == 0 && len(hMap) > 0 {
+		if len(sInsts.Info) != len(hMap) {
 			d.ServiceInsts = ps.handleAddedServiceInsts(module, hMap, hostIDs, hostInst, pTs)
 		}
 
