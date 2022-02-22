@@ -462,6 +462,19 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 					Detail:    nil,
 				}}, nil
 			} else {
+				// 如果最后一个事件存在，则重新拉取匹配watch条件(type和sub resource)的事件，防止最后一个事件正好在超时之后但是
+				// 拉取之前产生的情况下丢失从超时起到最后一个事件之间的事件。如果从起始cursor到最后一个事件之间没有匹配事件的话，
+				// 返回最后一个事件，以免下次拉取时需要从起始cursor再重新拉取一遍不匹配的事件
+				searchOpt.id = nodeID
+				nodes, err = c.searchFollowingEventChainNodesByID(kit, searchOpt)
+				if err != nil {
+					blog.Errorf("watch event from cursor: %s failed, err: %v, rid: %s", opts.Cursor, err, rid)
+					return nil, err
+				}
+				if len(nodes) != 0 {
+					return c.getEventDetailsWithNodes(kit, opts, nodes, key)
+				}
+
 				resp := &watch.WatchEventDetail{
 					Cursor:   lastNode.Cursor,
 					Resource: opts.Resource,
