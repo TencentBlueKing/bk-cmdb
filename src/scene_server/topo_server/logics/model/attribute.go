@@ -132,39 +132,51 @@ func (a *attribute) isPropertyTypeIntEnumListSingleLong(propertyType string) boo
 
 // checkAttributeGroupExist check attribute group exist, not exist create default group
 func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attribute) error {
-	cond := mapstr.MapStr{
+	cond := []map[string]interface{}{{
 		common.BKObjIDField:           data.ObjectID,
 		common.BKPropertyGroupIDField: data.PropertyGroup,
-	}
-	groupResult, err := a.grp.FindGroupByObject(kit, data.ObjectID, cond, data.BizID)
+	}}
+
+	defCntRes, err := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNamePropertyGroup, cond)
 	if err != nil {
-		blog.Errorf("failed to search the attribute group data (%#v), err: %s, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("get attribute group count by cond(%#v) failed, err: %v, rid: %s", cond, err, kit.Rid)
 		return err
 	}
 
-	if len(groupResult) > 0 {
-		data.PropertyGroupName = groupResult[0].GroupName
+	if len(defCntRes) != 1 {
+		blog.Errorf("get attr group count by cond(%#v) returns not one result, err: %v, rid: %s", cond, err, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommNotFound)
+	}
+
+	if defCntRes[0] > 0 {
 		return nil
 	}
 
 	if data.BizID == 0 {
 		data.PropertyGroup = common.BKDefaultField
-		data.PropertyGroupName = common.BKDefaultField
 		return nil
 	}
 
-	// create the biz default group
-	bizDefaultGroupCond := mapstr.MapStr{
+	// create the biz default group if it is not exist
+	bizDefaultGroupCond := []map[string]interface{}{{
 		common.BKObjIDField:           data.ObjectID,
 		common.BKPropertyGroupIDField: common.BKBizDefault,
-	}
-	bizDefaultGroupResult, err := a.grp.FindGroupByObject(kit, data.ObjectID, bizDefaultGroupCond, data.BizID)
+	}}
+
+	bizDefCntRes, err := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNamePropertyGroup, bizDefaultGroupCond)
 	if err != nil {
-		blog.Errorf("failed to search the attr group data: %#v, err: %s, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("get attribute group count by cond(%#v) failed, err: %v, rid: %s", cond, err, kit.Rid)
 		return err
 	}
 
-	if len(bizDefaultGroupResult) == 0 {
+	if len(bizDefCntRes) != 1 {
+		blog.Errorf("get attr group count by cond(%#v) returns not one result, err: %v, rid: %s", cond, err, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommNotFound)
+	}
+
+	if bizDefCntRes[0] == 0 {
 		group := metadata.Group{
 			IsDefault:  true,
 			GroupIndex: -1,
@@ -182,7 +194,6 @@ func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attri
 	}
 
 	data.PropertyGroup = common.BKBizDefault
-	data.PropertyGroupName = common.BKBizDefault
 	return nil
 }
 
@@ -248,13 +259,27 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 			input, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrTopoObjectAttributeCreateFailed)
 	}
-	data.ID = int64(resp.Created[0].ID)
+
+	// get current model attribute data by id.
+	attrReq := &metadata.QueryCondition{Condition: mapstr.MapStr{metadata.AttributeFieldID: int64(resp.Created[0].ID)}}
+	attrRes, err := a.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, data.ObjectID, attrReq)
+	if err != nil {
+		blog.Errorf("get created model attribute by id(%d) failed, err: %v, rid: %s", resp.Created[0].ID, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(attrRes.Info) != 1 {
+		blog.Errorf("get created model attribute by id(%d) returns not one attr, rid: %s", resp.Created[0].ID, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
+	}
+
+	data = &attrRes.Info[0]
 
 	// generate audit log of model attribute.
 	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 
-	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, int64(resp.Created[0].ID), nil)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, data.ID, data)
 	if err != nil {
 		blog.Errorf("create object attribute %s success, but generate audit log failed, err: %v, rid: %s",
 			data.PropertyName, err, kit.Rid)

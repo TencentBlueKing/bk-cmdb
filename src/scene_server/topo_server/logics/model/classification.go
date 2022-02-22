@@ -65,12 +65,25 @@ func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr)
 		return nil, err
 	}
 
-	cls.ID = int64(rsp.Created.ID)
+	// get created model classification data by id
+	clsReq := &metadata.QueryCondition{Condition: mapstr.MapStr{metadata.ClassificationFieldID: int64(rsp.Created.ID)}}
+	clsResp, err := c.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, clsReq)
+	if err != nil {
+		blog.Errorf("get created model classification by id(%d) failed, err: %v, rid: %s", rsp.Created.ID, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(clsResp.Info) != 1 {
+		blog.Errorf("get created model classification by id(%d) returns not one cls, rid: %s", rsp.Created.ID, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
+	}
+
+	cls = &clsResp.Info[0]
 
 	// generate audit log of object classification.
 	audit := auditlog.NewObjectClsAuditLog(c.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, cls.ID, nil)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, cls.ID, cls)
 	if err != nil {
 		blog.Errorf("create object classification %s success, but generate audit log failed, err: %v, rid: %s",
 			cls.ClassificationName, err, kit.Rid)
