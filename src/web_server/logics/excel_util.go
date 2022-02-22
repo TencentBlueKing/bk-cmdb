@@ -32,14 +32,14 @@ import (
 )
 
 const (
-	userBracketsPattern        = `\([a-zA-Z0-9\@\p{Han} .,_-]*\)`
-	orgnizationBracketsPattern = `\[(\d+)\]([^\s/]+)`
+	userBracketsPattern         = `\([a-zA-Z0-9\@\p{Han} .,_-]*\)`
+	organizationBracketsPattern = `\[(\d+)\]([^\s]+)`
 )
 
 var (
 	headerRow          = common.HostAddMethodExcelIndexOffset
 	userBracketsRegexp = regexp.MustCompile(userBracketsPattern)
-	orgBracketsRegexp  = regexp.MustCompile(orgnizationBracketsPattern)
+	orgBracketsRegexp  = regexp.MustCompile(organizationBracketsPattern)
 )
 
 // getFilterFields 不需要展示字段
