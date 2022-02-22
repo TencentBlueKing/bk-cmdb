@@ -109,12 +109,12 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, lgc *logics.Logics) {
 		dbReady, err = upgrader.DBReady(context.Background(), s.db)
 		if err != nil {
 			blog.Errorf("sync iam, check whether db initialization is complete failed, err: %v, rid: %s", err, rid)
-			time.Sleep(20 * time.Second)
+			time.Sleep(5 * time.Second)
 			continue
 		}
 		if !dbReady {
-			blog.Errorf("sync iam, but db initialization is not complete, rid: %s", rid)
-			time.Sleep(20 * time.Second)
+			blog.Warnf("sync iam, but db initialization is not complete, rid: %s", rid)
+			time.Sleep(5 * time.Second)
 			continue
 		}
 	}

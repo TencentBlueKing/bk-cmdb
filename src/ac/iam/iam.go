@@ -323,7 +323,7 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 	for _, obj := range objects {
 		if obj.ID == 0 || len(obj.ObjectID) == 0 || len(obj.ObjectName) == 0 {
 			blog.Errorf("sync iam system instances but object(%#v) is invalid, rid: %s", obj, rid)
-			return errors.New("object is invalid")
+			return errors.New("sync iam instances, but object is invalid")
 		}
 	}
 

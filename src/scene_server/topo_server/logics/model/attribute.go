@@ -249,14 +249,12 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 	}
 
 	if len(resp.Repeated) > 0 {
-		blog.Errorf("create model attrs failed, the attr is duplicated, ObjectID: %s, input: %s, rid: %s",
-			data.ObjectID, input, kit.Rid)
+		blog.Errorf("create model(%s) attr but it is duplicated, input: %#v, rid: %s", data.ObjectID, input, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrorAttributeNameDuplicated)
 	}
 
 	if len(resp.Created) != 1 {
-		blog.Errorf("create model attrs created amount error, ObjectID: %s, input: %s, rid: %s", data.ObjectID,
-			input, kit.Rid)
+		blog.Errorf("created model(%s) attr amount is not one, input: %#v, rid: %s", data.ObjectID, input, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrTopoObjectAttributeCreateFailed)
 	}
 
@@ -281,15 +279,13 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 
 	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, data.ID, data)
 	if err != nil {
-		blog.Errorf("create object attribute %s success, but generate audit log failed, err: %v, rid: %s",
-			data.PropertyName, err, kit.Rid)
+		blog.Errorf("gen audit log after creating attr %s failed, err: %v, rid: %s", data.PropertyName, err, kit.Rid)
 		return nil, err
 	}
 
 	// save audit log.
 	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
-		blog.Errorf("create object attribute %s success, but save audit log failed, err: %v, rid: %s",
-			data.PropertyName, err, kit.Rid)
+		blog.Errorf("save audit log after creating attr %s failed, err: %v, rid: %s", data.PropertyName, err, kit.Rid)
 		return nil, err
 	}
 
