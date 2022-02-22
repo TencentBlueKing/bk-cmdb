@@ -97,6 +97,9 @@ func InstanceUniqueIndex() []types.Index {
 			},
 			Background: false,
 			Unique:     true,
+			PartialFilterExpression: map[string]interface{}{
+				common.BKInstNameField: map[string]string{common.BKDBType: "string"},
+			},
 		},
 	}
 }
