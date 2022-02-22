@@ -165,7 +165,7 @@
         topoPath: {}, // 进程模板涉及的实例的拓扑路径
         processList: [], // 进程模板列表
         currentDiff: {
-          process_template_id: '', // 当前进程模板 id
+          process_template_id: 0, // 当前进程模板 id
           process_template_name: '', // 当前进程模板名称
           process_template: {}, // 当前进程模板内容
           changedProperties: [], // 当前进程模板实例具体更改细节
