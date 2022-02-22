@@ -14,7 +14,7 @@
           size="small"
           font-size="small"
           v-bind="$tools.getValidateEvents(column)"
-          v-validate="$tools.getValidateRules(column)"
+          v-validate="getRules(rowProps, column)"
           :disabled="isLocked(rowProps)"
           :data-vv-name="column.bk_property_id"
           :data-vv-as="column.bk_property_name"
@@ -97,6 +97,12 @@
       isLocked({ column, index }) {
         const rowState = this.lockStates[index]
         return rowState ? rowState[column.property] : false
+      },
+      getRules(rowProps, property) {
+        const rules = this.$tools.getValidateRules(property)
+        // 与模板配置保持一致，统一为必填
+        rules.required = true
+        return rules
       },
       getComponentType(property) {
         if (property.bk_property_id === 'ip') {
