@@ -148,11 +148,18 @@
         }
       },
       // 单个属性变更后可能会引起模型的权限变更，需要重载组件获取新的权限，避免出现权限已变更但 UI 仍然显示旧权限的情况。
-      handleAfterUpdate() {
-        this.propertyListActive = false
-        this.$nextTick(() => {
-          this.propertyListActive = true
-        })
+      // 因为 property 组件的重载会让数据变为初始化数据，所以需要手动重新获取实例数据，以便更新为修改后的数据。
+      async handleAfterUpdate() {
+        try {
+          const inst = await this.getInstInfo()
+          this.inst = inst
+          this.propertyListActive = false
+          this.$nextTick(() => {
+            this.propertyListActive = true
+          })
+        } catch (error) {
+          console.log(error)
+        }
       }
     }
   }
