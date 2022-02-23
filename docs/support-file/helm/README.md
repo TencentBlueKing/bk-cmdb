@@ -10,33 +10,9 @@
 
 ## BK-CMDB 部署项目
 
-### 子服务介绍
+### 架构设计
 
-BK-CMDB由15个服务组成
-
-|      名称       | 描述 |
-| :-------------: | :--: |
-|    webserver    | Web服务管理，用户登陆管理等 |
-|    apiserver    | API网关；负责API路由，用户鉴权等 |
-|   adminserver   | 自动升级管理、配置管理、权限视图管理、权限数据同步等 |
-|   authserver    | 与权限相关的功能管理，包括：鉴权、有权限资源查询、IAM资源回调 |
-|   cloudserver   | 云资源管理：包括云主机同步、云区域管理、云帐户管理等 |
-| datacollection  | 主机快照管理、中间件数据采集管理、设备采集管理 |
-|   eventserver   | 事件订阅管理、事件生成管理、事件推送管理等 |
-| operationserver | 运营统计功能管理：数据统计，图表管理等 |
-|   hostserver    | 主机相关服务管理：包括主机CRUD、主机转移、主机属性自动应用、云区域管理、动态分组管理等 |
-| procserver | 服务模板管理、进程模板、服务分类管理、服务实例管理、进程实例管理、进程同步管理等 |
-| synchronizeserver | 数据同步功能服务 |
-| taskserver | 所有异步任务管理，包括执行、状态管理等 |
-| toposerver | 业务管理，主线拓扑管理，模型管理、模型实例管理、模型关联关系管理、模型实例关联关系管理 |
-| coreservice | 核心原子接口管理服务，直接与Mongodb交互 |
-| cacheservice | 缓存服务管理、资源事件流管理。直接与Mongodb/Redis交互 |
-
-
-
-### 架构图
-
-<img src="./cmdb.png" alt="50%" style="zoom:50%;" />
+* [点击这里](https://github.com/Tencent/bk-cmdb/blob/master/docs/overview/architecture.md)
 
 ## 部署
 
@@ -603,8 +579,9 @@ common:
     appCode: xxx
     appSecret: xxx
  ...
-  site:
-    authscheme: iam
+  webServer:
+      site:
+        authscheme: iam
 ```
 
 ### 7. blueking方式登陆
