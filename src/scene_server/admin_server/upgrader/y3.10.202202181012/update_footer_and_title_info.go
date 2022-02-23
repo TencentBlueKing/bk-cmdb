@@ -36,7 +36,12 @@ const (
 	// NOCC:tosa/linelength(忽略长度)
 	footerCn = "[技术支持](https://wpa1.qq.com/KziXGWJs?_type=wpa&qidian=true) | [社区论坛](https://bk.tencent.com/s-mart/community/) | [产品官网](https://bk.tencent.com/index/)"
 	// NOCC:tosa/linelength(忽略长度)
-	footerEn = "[Support](https://wpa1.qq.com/KziXGWJs?_type=wpa&amp;qidian=true) | [Forum](https://bk.tencent.com/s-mart/community/) | [Official](https://bk.tencent.com/index/)"
+	footerEn          = "[Support](https://wpa1.qq.com/KziXGWJs?_type=wpa&amp;qidian=true) | [Forum](https://bk.tencent.com/s-mart/community/) | [Official](https://bk.tencent.com/index/)"
+	communityCn       = "配置平台 | 蓝鲸智云社区版"
+	tencentBlueKingCn = "配置平台 | 腾讯蓝鲸智云"
+	enterpriseCn      = "配置平台 | 蓝鲸智云企业版"
+	versionEn         = "CMDB | BlueKing"
+	tencentVersion    = "CMDB | Tencent BlueKing"
 )
 
 func getDBPlatformSetting(ctx context.Context, db dal.RDB) (*metadata.PlatformSettingConfig, error) {
@@ -56,14 +61,15 @@ func getDBPlatformSetting(ctx context.Context, db dal.RDB) (*metadata.PlatformSe
 		blog.Errorf("failed to get platform management config field, err: %v", err)
 		return nil, errors.New("get platform config failed")
 	}
-	if _, ok := value.(string); !ok {
+	setting, ok := value.(string)
+	if !ok {
 		blog.Errorf("platform management config field type validation error, type: %v", reflect.TypeOf(value))
 		return nil, errors.New("platform config type error")
 	}
 
 	platformSetting := new(metadata.PlatformSettingConfig)
-	if err := json.Unmarshal([]byte(value.(string)), platformSetting); err != nil {
-		blog.Errorf("platform setting unmarshal failed, config: %v, err: %v", value.(string), err)
+	if err := json.Unmarshal([]byte(setting), platformSetting); err != nil {
+		blog.Errorf("platform setting unmarshal failed, config: %v, err: %v", setting, err)
 		return nil, fmt.Errorf("config unmarshal failed, err: %v", err)
 	}
 	return platformSetting, nil
@@ -75,32 +81,21 @@ func getDBPlatformSetting(ctx context.Context, db dal.RDB) (*metadata.PlatformSe
 func getFinalConfig(dbConfig *metadata.PlatformSettingConfig) {
 
 	switch version.CCDistro {
-	case version.CCDistrCommunity:
-
-		if dbConfig.SiteConfig.SiteName.I18N.CN == "配置平台 | 蓝鲸智云社区版" {
-			dbConfig.SiteConfig.SiteName.Value = "配置平台 | 腾讯蓝鲸智云"
-			dbConfig.SiteConfig.SiteName.I18N.CN = "配置平台 | 腾讯蓝鲸智云"
-		}
-		if dbConfig.SiteConfig.SiteName.I18N.EN == "CMDB | BlueKing" {
-			dbConfig.SiteConfig.SiteName.I18N.EN = "CMDB | Tencent BlueKing"
-		}
 
 	case version.CCDistrEnterprise:
-		if dbConfig.SiteConfig.SiteName.I18N.CN == "配置平台 | 蓝鲸智云企业版" {
-			dbConfig.SiteConfig.SiteName.Value = "配置平台 | 腾讯蓝鲸智云"
-			dbConfig.SiteConfig.SiteName.I18N.CN = "配置平台 | 腾讯蓝鲸智云"
+		if dbConfig.SiteConfig.SiteName.I18N.CN == enterpriseCn {
+			dbConfig.SiteConfig.SiteName.Value = tencentBlueKingCn
+			dbConfig.SiteConfig.SiteName.I18N.CN = tencentBlueKingCn
 		}
-		if dbConfig.SiteConfig.SiteName.I18N.EN == "CMDB | BlueKing" {
-			dbConfig.SiteConfig.SiteName.I18N.EN = "CMDB | Tencent BlueKing"
-		}
+
 	default:
-		if dbConfig.SiteConfig.SiteName.I18N.CN == "配置平台 | 蓝鲸智云社区版" {
-			dbConfig.SiteConfig.SiteName.Value = "配置平台 | 腾讯蓝鲸智云"
-			dbConfig.SiteConfig.SiteName.I18N.CN = "配置平台 | 腾讯蓝鲸智云"
+		if dbConfig.SiteConfig.SiteName.I18N.CN == communityCn {
+			dbConfig.SiteConfig.SiteName.Value = tencentBlueKingCn
+			dbConfig.SiteConfig.SiteName.I18N.CN = tencentBlueKingCn
 		}
-		if dbConfig.SiteConfig.SiteName.I18N.EN == "CMDB | BlueKing" {
-			dbConfig.SiteConfig.SiteName.I18N.EN = "CMDB | Tencent BlueKing"
-		}
+	}
+	if dbConfig.SiteConfig.SiteName.I18N.EN == versionEn {
+		dbConfig.SiteConfig.SiteName.I18N.EN = tencentVersion
 	}
 
 	if dbConfig.FooterConfig.ContactInfo.I18N.CN == oldFooterCn {
