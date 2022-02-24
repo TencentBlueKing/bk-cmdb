@@ -91,6 +91,8 @@ func (s *Service) initFindhost(web *restful.WebService) {
 		Handler: s.GetHostRelationsWithMainlineTopoInstance})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/service_template",
 		Handler: s.ListServiceTemplateIDsByHost})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/total_mainline_topo/biz/{bk_biz_id}",
+		Handler: s.ListHostTotalMainlineTopo})
 
 	utility.AddToRestfulWebService(web)
 
