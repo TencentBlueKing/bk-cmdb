@@ -131,11 +131,13 @@ func (h *HostIdentifier) watchToSyncHostIdentifier(events []*IdentifierEvent, ri
 	for _, event := range events {
 		isOn, hostIP := getStatusOnAgentIP(strconv.FormatInt(event.CloudID, 10), event.InnerIP, resp.Result_)
 		if !isOn {
-			blog.Infof("host %v agent status is off, rid: %s", event, rid)
+			blog.Infof("agent status is off, hostID: %d, ip: %s, cloudID: %d, rid: %s",
+				event.HostID, event.InnerIP, event.CloudID, rid)
 			continue
 		}
 
-		blog.Infof("host %v agent status is on, ip: %s, rid: %s", event, hostIP, rid)
+		blog.Infof("agent status is on, hostID: %d, ip: %s, cloudID: %d, rid: %s",
+			event.HostID, hostIP, event.CloudID, rid)
 
 		file := h.buildPushFile(event.RawEvent, hostIP, event.CloudID)
 		fList = append(fList, file)
@@ -235,7 +237,7 @@ func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{},
 		innerIP := util.GetStrByInterface(hostInfo[common.BKHostInnerIPField])
 		isOn, hostIP := getStatusOnAgentIP(strconv.FormatInt(cloudID, 10), innerIP, resp.Result_)
 		if !isOn {
-			blog.Infof("host %v agent status is off, rid: %s", hostInfo, rid)
+			blog.Infof("agent status is off, hostID: %d, ip: %s, cloudID: %d, rid: %s", hostID, innerIP, cloudID, rid)
 			continue
 		}
 		hostIDs = append(hostIDs, hostID)
