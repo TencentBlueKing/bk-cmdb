@@ -143,6 +143,9 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OperType, cont
 	allAttrFieldValue := make([]*operator.FieldValue, 0)
 	allList := make([]types.AuthorizeList, 0)
 
+	// initialize the returned struct to prevent pointer panic
+	idList = new(types.AuthorizeList)
+
 	err = preAnalyzeContent(op, content)
 	if err != nil {
 		return nil, err
