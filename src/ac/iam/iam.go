@@ -548,12 +548,25 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 
 	// update action_groups in iam
 	if len(deletedActions) > 0 {
+		actionMap := map[ActionID]struct{}{}
+		for _, action := range iamResp.Data.Actions {
+			actionMap[action.ID] = struct{}{}
+		}
+
+		for _, action := range deletedActions {
+			delete(actionMap, action)
+		}
+
 		cmdbActionGroups := GenerateActionGroups(objects)
-		blog.Infof("begin update actionGroups")
-		if err := i.Client.UpdateActionGroups(ctx, cmdbActionGroups); err != nil {
-			blog.ErrorJSON("delete cmdb resource failed, update actionGroups error: %s, actionGroups: %s, "+
-				"rid: %s", err, cmdbActionGroups, rid)
-			return err
+		actualActionGroups := getActionGroupWithExistAction(cmdbActionGroups, actionMap)
+
+		if len(actualActionGroups) > 0 {
+			blog.Infof("begin update action groups")
+			if err := i.Client.UpdateActionGroups(ctx, actualActionGroups); err != nil {
+				blog.Errorf("update action groups(%+v) after delete cmdb resource from iam failed, err: %v, rid: %s",
+					actualActionGroups, err, rid)
+				return err
+			}
 		}
 	}
 

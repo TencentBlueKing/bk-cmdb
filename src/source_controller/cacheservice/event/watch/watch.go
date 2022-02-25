@@ -124,8 +124,12 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 		common.BKClusterTimeField: map[string]interface{}{
 			common.BKDBGT: metadata.Time{Time: time.Unix(opts.StartFrom, 0).Local()},
 		},
-		// filters out the previous version where sub resource is string type // TODO remove this
-		common.BKSubResourceField: map[string]interface{}{common.BKDBType: "array"},
+	}
+
+	// filters out the previous version where sub resource is string type // TODO remove this
+	if key.Collection() == common.BKTableNameBaseInst ||
+		key.Collection() == common.BKTableNameMainlineInstance {
+		filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBType: "array"}
 	}
 
 	node := new(watch.ChainNode)
