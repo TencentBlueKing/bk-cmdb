@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-monstache-configures
+data:
+
+  config.toml: |-
+    # mongodb settings
+    mongo-url = {{ include "cmdb.mongodb.mongo-url" . | quote }}
+
+    # elasticsearch settings
+    elasticsearch-urls = [{{ include "cmdb.elasticsearch.urlAndPort" . | quote }}]
+    {{- if .Values.common.es.usr }}
+    elasticsearch-user = {{ .Values.common.es.usr | quote }}
+    {{- end }}
+    {{- if .Values.common.es.pwd }}
+    elasticsearch-password = {{ .Values.common.es.pwd | quote }}
+    {{- end }}
+    gzip = true
+
+    # metadata collections.
+    change-stream-namespaces = [""]
+    direct-read-namespaces = [""]
+    direct-read-dynamic-include-regex = {{ .Values.monstache.directReadDynamicIncludeRegex | quote }}
+
+    # plugin
+    mapper-plugin-path = {{ .Values.monstache.mapperPluginPath | quote }}
+
+    # resume mode
+    resume = false
+
+  extra.toml: |-
+    elasticsearch-shard-num = {{ .Values.monstache.elasticsearchShardNum | quote }}
+    elasticsearch-replica-num = {{ .Values.monstache.elasticsearchReplicaNum | quote }}
+
+
+
+

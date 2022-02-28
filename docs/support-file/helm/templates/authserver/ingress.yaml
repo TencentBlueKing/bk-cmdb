@@ -1,0 +1,27 @@
+{{- if .Values.authserver.ingress.enabled -}}
+{{- $serviceName := include "bk-cmdb.authserver" . -}}
+{{- $servicePort := .Values.authserver.service.externalPort -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ template "bk-cmdb.authserver" . }}
+  labels:
+{{ include "common.labels.standard" . | indent 4 }}
+  annotations:
+    {{- range $key, $value := .Values.authserver.ingress.annotations }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  rules:
+    - host: {{ .Values.authserver.ingress.host }}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: {{ $serviceName }}
+              servicePort: {{ $servicePort }}
+  {{- if .Values.authserver.ingress.tls }}
+  tls:
+{{ toYaml .Values.authserver.ingress.tls | indent 4 }}
+  {{- end -}}
+{{- end -}}

@@ -1,0 +1,16 @@
+{{- if .Values.cacheservice.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ template "bk-cmdb.cacheservice" . }}"
+  labels:
+{{ include "common.labels.standard" . | indent 4 }}
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: {{ .Values.cacheservice.port }}
+  selector:
+{{ include "common.labels.matchLabels" . | indent 4 }}
+    component: cacheservice
+{{- end }}

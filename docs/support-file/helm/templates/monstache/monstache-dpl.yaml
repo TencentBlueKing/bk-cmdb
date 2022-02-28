@@ -1,0 +1,47 @@
+{{- if .Values.monstache.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-monstache"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: monstache
+spec:
+  replicas: {{ .Values.monstache.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: monstache
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        component: monstache
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+      {{- with .Values.monstache.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.monstache.podAnnotations }}
+        {{ toYaml .Values.monstache.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: monstache
+        image: {{ .Values.image.registry }}/{{ .Values.monstache.image.repository }}:{{ .Values.monstache.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+        workingDir: {{ .Values.monstache.workDir }}
+        command: ["./monstache"]
+        args: ["-f", "./etc/config.toml"]
+        ports:
+        - containerPort: {{ .Values.monstache.port }}
+        volumeMounts:
+          - name: configures
+            mountPath: {{ .Values.monstache.configDir }}
+      volumes:
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-monstache-configures
+
+{{- end }}

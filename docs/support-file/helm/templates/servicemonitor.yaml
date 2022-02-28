@@ -1,0 +1,16 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: bk-cmdb
+spec:
+  endpoints:
+    - port: http
+      path: "/metrics"
+      interval: {{ .Values.serviceMonitor.interval }}
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      app: bk-cmdb
+{{- end }}
