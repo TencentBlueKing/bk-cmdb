@@ -1674,25 +1674,25 @@ func (lgc *Logics) ListServiceTemplateHostIDMap(kit *rest.Kit, ids []int64) ([]m
 func (lgc *Logics) ListHostTotalMainlineTopo(kit *rest.Kit, bizID int64, params metadata.FindHostTotalTopo) (
 	*metadata.HostMainlineTopoResult, error) {
 
-	filterIDs, isRetrun, err := lgc.buildFilterIDs(kit, params)
+	childMap, parentMap, err := lgc.searchMainlineRelationMap(kit)
+	if err != nil {
+		blog.Errorf("get mainline association failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	filterIDs, isReturn, err := lgc.buildFilterIDs(kit, bizID, params, childMap, parentMap)
 	if err != nil {
 		blog.Errorf("build topo level filter failed, params: %v, err: %v, rid: %s", params, err, kit.Rid)
 		return nil, err
 	}
 
-	if isRetrun {
+	if isReturn {
 		return &metadata.HostMainlineTopoResult{Count: 0, Info: []metadata.HostDetailWithTopo{}}, nil
 	}
 
 	hostRelation, hostInfo, err := lgc.getHostMainlineRelation(kit, bizID, params, filterIDs)
 	if err != nil {
 		blog.Errorf("get host topo mainline relation failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	childMap, parentMap, err := lgc.searchMainlineRelationMap(kit)
-	if err != nil {
-		blog.Errorf("get mainline association failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
@@ -1710,9 +1710,17 @@ func (lgc *Logics) ListHostTotalMainlineTopo(kit *rest.Kit, bizID int64, params 
 	return rsp, nil
 }
 
-func (lgc *Logics) buildFilterIDs(kit *rest.Kit, params metadata.FindHostTotalTopo) (map[string][]int64, bool, error) {
+func (lgc *Logics) buildFilterIDs(kit *rest.Kit, bizID int64, params metadata.FindHostTotalTopo, childMap,
+	parentMap map[string]string) (map[string][]int64, bool, error) {
+
 	filterIDs := make(map[string][]int64)
+	objectFilter := make(map[string]map[string]interface{})
+
 	for _, objFilter := range params.MainlinePropertyFilter {
+
+		if objFilter.ObjectID == common.BKInnerObjIDSet || objFilter.ObjectID == common.BKInnerObjIDModule {
+			continue
+		}
 
 		mainlineFilter, key, err := objFilter.Filter.ToMgo()
 		if err != nil {
@@ -1720,21 +1728,7 @@ func (lgc *Logics) buildFilterIDs(kit *rest.Kit, params metadata.FindHostTotalTo
 				objFilter.Filter, key, err, kit.Rid)
 			return nil, true, err
 		}
-
-		filterMainlineIDs, err := lgc.getInstIDsByCond(kit, objFilter.ObjectID, mainlineFilter)
-		if err != nil {
-			blog.Errorf("get object[%s] instIDs by filter(%v) failed, err: %s, rid: %s", objFilter.ObjectID,
-				mainlineFilter, err, kit.Rid)
-			return nil, true, err
-		}
-
-		if len(filterMainlineIDs) == 0 {
-			blog.V(5).Infof("search object[%s] instIDs by filter(%v) return empty, rid: %s", objFilter.ObjectID,
-				objFilter.Filter, kit.Rid)
-			return nil, true, nil
-		}
-
-		filterIDs[objFilter.ObjectID] = filterMainlineIDs
+		objectFilter[objFilter.ObjectID] = mainlineFilter
 	}
 
 	if params.SetPropertyFilter != nil {
@@ -1744,19 +1738,7 @@ func (lgc *Logics) buildFilterIDs(kit *rest.Kit, params metadata.FindHostTotalTo
 				kit.Rid)
 			return nil, true, err
 		}
-
-		filterSetIDs, err := lgc.getInstIDsByCond(kit, common.BKInnerObjIDSet, setFilter)
-		if err != nil {
-			blog.Errorf("get setIDs by filter(%v) failed, err: %s, rid: %s", setFilter, err, kit.Rid)
-			return nil, true, err
-		}
-
-		if len(filterSetIDs) == 0 {
-			blog.V(5).Infof("search setIDs by filter(%v) return empty, rid: %s", setFilter, kit.Rid)
-			return nil, true, nil
-		}
-
-		filterIDs[common.BKInnerObjIDSet] = filterSetIDs
+		objectFilter[common.BKInnerObjIDSet] = setFilter
 	}
 
 	if params.ModulePropertyFilter != nil {
@@ -1766,19 +1748,44 @@ func (lgc *Logics) buildFilterIDs(kit *rest.Kit, params metadata.FindHostTotalTo
 				kit.Rid)
 			return nil, true, err
 		}
+		objectFilter[common.BKInnerObjIDModule] = moduleFilter
+	}
 
-		filterModuleIDs, err := lgc.getInstIDsByCond(kit, common.BKInnerObjIDModule, moduleFilter)
-		if err != nil {
-			blog.Errorf("get moduleIDs by filter(%v) failed, err: %s, rid: %s", moduleFilter, err, kit.Rid)
-			return nil, true, err
+	instIDs := make([]int64, 0)
+	flag := false
+	for object := childMap[common.BKInnerObjIDApp]; object != ""; object = childMap[object] {
+		filter := objectFilter[object]
+		if filter == nil {
+			filter = make(map[string]interface{})
+		} else {
+			flag = true
 		}
 
-		if len(filterModuleIDs) == 0 {
-			blog.V(5).Infof("search moduleIDs by filter(%v) return empty, rid: %s", moduleFilter, kit.Rid)
+		if !flag {
+			continue
+		}
+
+		filter[common.BKAppIDField] = bizID
+
+		if len(instIDs) != 0 {
+			filter[common.BKParentIDField] = mapstr.MapStr{common.BKDBIN: instIDs}
+		}
+
+		insts, parents, err := lgc.getInstIDsByCond(kit, object, filter)
+		if err != nil {
+			blog.Errorf("search object[%s] inst failed, cond: %v, err: %v, rid: %s", object, filter, err, kit.Rid)
+			return nil, false, err
+		}
+
+		if len(insts) == 0 {
 			return nil, true, nil
 		}
 
-		filterIDs[common.BKInnerObjIDModule] = filterModuleIDs
+		filterIDs[object] = insts
+		filterIDs[parentMap[object]] = util.IntArrayUnique(util.IntArrIntersection(
+			filterIDs[parentMap[object]], parents))
+
+		instIDs = insts
 	}
 
 	return filterIDs, false, nil
@@ -1808,6 +1815,10 @@ func (lgc *Logics) searchMainlineRelationMap(kit *rest.Kit) (map[string]string, 
 	objParentMap := make(map[string]string)
 
 	for _, item := range mainline.Data.Info {
+		if item.ObjectID == common.BKInnerObjIDHost {
+			continue
+		}
+
 		objChildMap[item.AsstObjID] = item.ObjectID
 		objParentMap[item.ObjectID] = item.AsstObjID
 	}
@@ -2041,11 +2052,11 @@ func buildTopoList(kit *rest.Kit, insts []int64, objectID string, parents, resul
 	return nil
 }
 
-func (lgc *Logics) getInstIDsByCond(kit *rest.Kit, objID string, cond mapstr.MapStr) ([]int64, error) {
+func (lgc *Logics) getInstIDsByCond(kit *rest.Kit, objID string, cond mapstr.MapStr) ([]int64, []int64, error) {
 	idField := metadata.GetInstIDFieldByObjID(objID)
 
 	query := &metadata.QueryCondition{
-		Fields:    []string{idField},
+		Fields:    []string{idField, common.BKParentIDField},
 		Condition: cond,
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
@@ -2054,18 +2065,26 @@ func (lgc *Logics) getInstIDsByCond(kit *rest.Kit, objID string, cond mapstr.Map
 
 	instances, err := lgc.SearchInstance(kit, objID, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	instanceIDs := make([]int64, 0)
+	instIDs := make([]int64, 0)
+	parentIDs := make([]int64, 0)
 	for _, instance := range instances {
-		instanceID, err := instance.Int64(idField)
+		instID, err := instance.Int64(idField)
 		if err != nil {
 			blog.Errorf("instance %v id is invalid, err: %v, rid: %s", instance, err, kit.Rid)
-			return nil, err
+			return nil, nil, err
 		}
-		instanceIDs = append(instanceIDs, instanceID)
+		instIDs = append(instIDs, instID)
+
+		parentID, err := instance.Int64(common.BKParentIDField)
+		if err != nil {
+			blog.Errorf("instance %v parentID is invalid, err: %v, rid: %s", instance, err, kit.Rid)
+			return nil, nil, err
+		}
+		parentIDs = append(parentIDs, parentID)
 	}
 
-	return instanceIDs, nil
+	return instIDs, parentIDs, nil
 }

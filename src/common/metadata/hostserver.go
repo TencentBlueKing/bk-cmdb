@@ -889,7 +889,7 @@ type customTopoFilter struct {
 	Filter   *querybuilder.QueryFilter `json:"filter"`
 }
 
-// FindHostTotalTopo struct to find host total topo
+// FindHostTotalTopo find host total topo parameter
 type FindHostTotalTopo struct {
 	MainlinePropertyFilter []customTopoFilter        `json:"mainline_property_filters"`
 	SetPropertyFilter      *querybuilder.QueryFilter `json:"set_property_filter"`
@@ -911,14 +911,18 @@ func (f *FindHostTotalTopo) Validate(errProxy errors.DefaultCCErrorIf) errors.CC
 
 	for _, objFilter := range f.MainlinePropertyFilter {
 
+		if objFilter.Filter == nil || len(objFilter.ObjectID) == 0 {
+			blog.Errorf("get object filter failed, filter is empty or object ID didn't provide")
+			return errProxy.CCErrorf(common.CCErrCommParamsInvalid, "mainline_property_filters")
+		}
+
 		if key, err := objFilter.Filter.Validate(); err != nil {
 			return errProxy.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("%s of %s", key, objFilter.ObjectID))
 		}
 
 		if objFilter.Filter.GetDeep() > querybuilder.MaxDeep {
-			return errProxy.CCErrorf(common.CCErrCommXXExceedLimit, fmt.Sprintf("filter.rule of %s",
-				objFilter.ObjectID),
-				querybuilder.MaxDeep)
+			return errProxy.CCErrorf(common.CCErrCommXXExceedLimit,
+				fmt.Sprintf("filter.rule of %s", objFilter.ObjectID), querybuilder.MaxDeep)
 		}
 	}
 
