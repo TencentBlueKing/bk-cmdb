@@ -402,6 +402,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.WatchCommonInstance:   WatchCommonInstanceEvent,
 		meta.WatchMainlineInstance: WatchMainlineInstanceEvent,
 		meta.WatchInstAsst:         WatchInstAsstEvent,
+		meta.WatchBizSet:           WatchBizSetEvent,
 	},
 	meta.UserCustom: {
 		meta.Find:   Skip,

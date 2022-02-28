@@ -343,6 +343,7 @@ const (
 	WatchCommonInstanceEvent   ActionID = "watch_comm_model_inst_event"
 	WatchMainlineInstanceEvent ActionID = "watch_custom_topo_layer_event"
 	WatchInstAsstEvent         ActionID = "watch_inst_asst_event"
+	WatchBizSetEvent           ActionID = "watch_biz_set_event"
 
 	GlobalSettings ActionID = "global_settings"
 

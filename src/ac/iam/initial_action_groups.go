@@ -356,6 +356,9 @@ func genResourceManageActionGroups() []ActionGroup {
 						{
 							ID: WatchInstAsstEvent,
 						},
+						{
+							ID: WatchBizSetEvent,
+						},
 					},
 				},
 			},
