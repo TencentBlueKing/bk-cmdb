@@ -49,6 +49,11 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 		return err
 	}
 
+	if err := e.runBizSet(context.Background()); err != nil {
+		blog.Errorf("run biz set event flow failed, err: %v", err)
+		return err
+	}
+
 	if err := e.runBiz(context.Background()); err != nil {
 		blog.Errorf("run biz event flow failed, err: %v", err)
 		return err
@@ -215,4 +220,17 @@ func (e *Event) runInstAsst(ctx context.Context) error {
 	}
 
 	return newInstAsstFlow(ctx, opts, getDeleteEventDetails, parseInstAsstEvent)
+}
+
+func (e *Event) runBizSet(ctx context.Context) error {
+	opts := flowOptions{
+		key:         event.BizSetKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
+	}
+
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }

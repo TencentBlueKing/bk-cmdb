@@ -632,6 +632,7 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	case common.BKTableNameSetTemplate:
 	case common.BKTableNameBaseProcess:
 	case common.BKTableNameProcessInstanceRelation:
+	case common.BKTableNameBaseBizSet:
 
 	case common.BKTableNameBaseInst:
 	case common.BKTableNameInstAsst:

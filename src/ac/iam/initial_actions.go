@@ -116,6 +116,7 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchCommonInstanceEvent:            "模型实例事件监听",
 	WatchMainlineInstanceEvent:          "自定义拓扑层级事件监听",
 	WatchInstAsstEvent:                  "实例关联事件监听",
+	WatchBizSetEvent:                    "业务集事件监听",
 	GlobalSettings:                      "全局设置",
 }
 
@@ -1228,6 +1229,14 @@ func genEventWatchActions() []ResourceAction {
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:      WatchBizSetEvent,
+		Name:    ActionIDNameMap[WatchBizSetEvent],
+		NameEn:  "Business Set Event Listen",
+		Type:    View,
+		Version: 1,
 	})
 
 	modelSelection := []RelatedInstanceSelection{{

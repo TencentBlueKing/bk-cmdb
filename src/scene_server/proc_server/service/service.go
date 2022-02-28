@@ -199,6 +199,11 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 		Path:    "/find/proc/biz_set/{bk_biz_set_id}/proc_template/id/{processTemplateID}",
 		Handler: ps.GetProcessTemplate,
 	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance/with_host",
+		Handler: ps.ListServiceInstancesWithHostWeb,
+	})
 
 	utility.AddToRestfulWebService(web)
 }
