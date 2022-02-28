@@ -92,15 +92,25 @@ func (s *coreService) SearchModelClassification(ctx *rest.Contexts) {
 
 	// translate language
 	lang := s.Language(ctx.Kit.Header)
+	defaultIDMap := map[string]bool{
+		metadata.ClassificationHostManageID:    true,
+		metadata.ClassificationBizTopoID:       true,
+		metadata.ClassificationOrganizationID:  true,
+		metadata.ClassificationNetworkID:       true,
+		metadata.ClassificationUncategorizedID: true,
+	}
+	nameMap := map[string]string{
+		metadata.ClassificationHostManageID:    metadata.ClassificationHostManage,
+		metadata.ClassificationBizTopoID:       metadata.ClassificationTopo,
+		metadata.ClassificationOrganizationID:  metadata.ClassificationOrganization,
+		metadata.ClassificationNetworkID:       metadata.ClassificationNet,
+		metadata.ClassificationUncategorizedID: metadata.ClassificationUncategorized,
+	}
+
 	for index := range dataResult.Info {
-		defaultClassificationMap := map[string]bool{
-			"bk_host_manage":  true,
-			"bk_biz_topo":     true,
-			"bk_organization": true,
-			"bk_network":      true,
-		}
-		if defaultClassificationMap[dataResult.Info[index].ClassificationID] {
-			dataResult.Info[index].ClassificationName = s.TranslateClassificationName(lang, &dataResult.Info[index])
+		result := dataResult.Info[index]
+		if defaultIDMap[result.ClassificationID] && result.ClassificationName == nameMap[result.ClassificationID] {
+			result.ClassificationName = s.TranslateClassificationName(lang, &result)
 		}
 	}
 	ctx.RespEntity(dataResult)

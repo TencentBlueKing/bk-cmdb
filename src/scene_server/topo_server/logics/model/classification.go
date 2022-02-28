@@ -215,10 +215,31 @@ func (c *classification) FindClassification(kit *rest.Kit, cond mapstr.MapStr) (
 	return rsp.Info, nil
 }
 
+// dealClassificationID dealClassificationID If ClassificationFieldID is of string type and the corresponding value is
+// ClassificationUncategorizedID, this ID needs to be deleted, because ClassificationUncategorizedID is a built-in type
+// and cannot be changed.
+func dealClassificationID(data mapstr.MapStr) {
+	id := data[metadata.ClassFieldClassificationID]
+	value, ok := id.(string)
+	if !ok {
+		data.Remove(metadata.ClassFieldClassificationID)
+		return
+	}
+	if value == metadata.ClassificationUncategorizedID {
+		data.Remove(metadata.ClassFieldClassificationID)
+		data.Remove(metadata.ClassFieldClassificationName)
+	}
+	return
+}
+
 // UpdateClassification update classification by id
 func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr, id int64) error {
+
 	// remove unchangeable fields.
-	data.Remove(metadata.ClassFieldClassificationID)
+	if data.Exists(metadata.ClassFieldClassificationID) {
+		dealClassificationID(data)
+	}
+
 	data.Remove(metadata.ClassificationFieldID)
 
 	_, err := c.isValid(kit, true, data)
