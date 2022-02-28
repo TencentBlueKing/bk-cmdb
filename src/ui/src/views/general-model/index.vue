@@ -22,26 +22,38 @@
             {{$t('导入')}}
           </bk-button>
         </cmdb-auth>
-        <div class="fl mr10">
-          <bk-button class="models-button" theme="default"
-            :disabled="!table.checked.length"
-            @click="handleExport">
-            {{$t('导出')}}
-          </bk-button>
-        </div>
-        <div class="fl mr10">
-          <bk-button class="models-button"
-            :disabled="!table.checked.length"
-            @click="handleMultipleEdit">
-            {{$t('批量更新')}}
-          </bk-button>
-        </div>
-        <bk-button class="models-button button-delete fl mr10"
-          hover-theme="danger"
-          :disabled="!table.checked.length"
-          @click="handleMultipleDelete">
-          {{$t('删除')}}
-        </bk-button>
+        <cmdb-auth class="fl mr10"
+          :auth="[
+            { type: $OPERATION.R_INST, relation: [model.id] }
+          ]"
+        >
+          <template #default="{ disabled }">
+            <bk-button class="models-button" theme="default"
+              :disabled="!table.checked.length || disabled"
+              @click="handleExport">
+              {{$t('导出')}}
+            </bk-button>
+          </template>
+        </cmdb-auth>
+        <cmdb-auth class="fl mr10" :auth="batchUpdateAuth">
+          <template #default="{ disabled }">
+            <bk-button class="models-button"
+              :disabled="!table.checked.length || disabled"
+              @click="handleMultipleEdit">
+              {{$t('批量更新')}}
+            </bk-button>
+          </template>
+        </cmdb-auth>
+        <cmdb-auth class="fl mr10" :auth="batchDeleteAuth">
+          <template #default="{ disabled }">
+            <bk-button class="models-button button-delete"
+              hover-theme="danger"
+              :disabled="!table.checked.length || disabled"
+              @click="handleMultipleDelete">
+              {{$t('删除')}}
+            </bk-button>
+          </template>
+        </cmdb-auth>
       </div>
       <div class="options-button fr">
         <icon-button class="ml5"
@@ -315,6 +327,18 @@
         return ['singlechar', 'longchar'].includes(this.filterType)
       },
       saveAuth() {
+        return this.table.checked.map(instId => ({
+          type: this.$OPERATION.U_INST,
+          relation: [this.model.id, parseInt(instId, 10)]
+        }))
+      },
+      batchDeleteAuth() {
+        return this.table.checked.map(instId => ({
+          type: this.$OPERATION.D_INST,
+          relation: [this.model.id, parseInt(instId, 10)]
+        }))
+      },
+      batchUpdateAuth() {
         return this.table.checked.map(instId => ({
           type: this.$OPERATION.U_INST,
           relation: [this.model.id, parseInt(instId, 10)]
