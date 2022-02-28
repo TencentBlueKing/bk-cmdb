@@ -823,8 +823,7 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 	}
 
 	if len(otherModuleIDs) > 0 {
-		moduleFilter := map[string]interface{}{common.BKModuleIDField: map[string]interface{}{common.BKDBIN:
-		otherModuleIDs}}
+		moduleFilter := map[string]interface{}{common.BKModuleIDField: map[string]interface{}{common.BKDBIN: otherModuleIDs}}
 		otherModuleMap, _, err := s.Logic.GetInstIDNameInfo(ctx.Kit, common.BKInnerObjIDModule, moduleFilter)
 		if err != nil {
 			blog.ErrorJSON("get module by filter(%s) failed, err: %s, rid: %s", moduleFilter, err, ctx.Kit.Rid)
@@ -1063,5 +1062,5 @@ func (s *Service) ListHostTotalMainlineTopo(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(rsp)
+	ctx.RespEntityWithCount(int64(len(rsp)), rsp)
 }
