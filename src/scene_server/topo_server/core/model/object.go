@@ -513,8 +513,8 @@ func (o *object) isClassificationValid(data mapstr.MapStr) error {
 	}
 	if len(rsp.Data.Info) <= 0 {
 		blog.Errorf("no model classification founded, err: %s, rid: %s",
-			o.kit.CCError.CCError(common.CCErrorModelNotFound), o.kit.Rid)
-		return o.kit.CCError.CCError(common.CCErrorModelNotFound)
+			o.kit.CCError.CCError(common.CCErrorModelClassificationNotFound), o.kit.Rid)
+		return o.kit.CCError.CCError(common.CCErrorModelClassificationNotFound)
 	}
 	return nil
 }
