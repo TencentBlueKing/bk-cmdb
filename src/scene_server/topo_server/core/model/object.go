@@ -495,7 +495,6 @@ func (o *object) Update(data mapstr.MapStr) error {
 
 	data.Remove(metadata.ModelFieldObjectID)
 	data.Remove(metadata.ModelFieldID)
-	data.Remove(metadata.ModelFieldObjCls)
 
 	if err := o.IsValid(true, data); nil != err {
 		return err
