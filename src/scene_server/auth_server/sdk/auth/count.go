@@ -146,6 +146,7 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OperType, cont
 	}
 	allAttrPolicies := make([]*operator.Policy, 0)
 	allList := make([]types.AuthorizeList, 0)
+	idList = new(types.AuthorizeList)
 
 	for _, policy := range content.Content {
 		switch policy.Operator {
