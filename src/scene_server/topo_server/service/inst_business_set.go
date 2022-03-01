@@ -33,10 +33,18 @@ func (s *Service) validateScopeFields(kit *rest.Kit, fieldInfo *metadata.BizSetS
 	// biz id field is allowed to use in biz set scope, exclude it in validation
 	validFields := make([]string, 0)
 	fieldMap := make(map[string]interface{})
+
+	if fieldInfo == nil {
+		return nil
+	}
+
 	for _, field := range fieldInfo.FieldInfo {
 		if field.Field != common.BKAppIDField {
 			fieldMap[field.Field] = field.Value
 		}
+	}
+	if len(fieldMap) == 0 {
+		return nil
 	}
 
 	for f := range fieldMap {
@@ -50,6 +58,7 @@ func (s *Service) validateScopeFields(kit *rest.Kit, fieldInfo *metadata.BizSetS
 		Fields: []string{common.BKPropertyTypeField, common.BKPropertyIDField},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 	}
+
 	res, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, common.BKInnerObjIDApp, cond)
 	if err != nil {
 		blog.Errorf("read model attribute failed, cond: %+v, error: %v, rid: %s", cond, err, kit.Rid)
@@ -67,13 +76,15 @@ func (s *Service) validateScopeFields(kit *rest.Kit, fieldInfo *metadata.BizSetS
 			blog.Errorf("propertyID key not exist, fieldMap: %v, propertyID: %v", fieldMap, info.PropertyID, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid)
 		}
+
+		propertyID := fieldMap[info.PropertyID]
 		if fieldInfo.Operator == querybuilder.OperatorIn {
-			if err := propertyTypeInValidate(info.PropertyType, fieldMap[info.PropertyID]); err != nil {
+			if err := propertyTypeInValidate(info.PropertyType, propertyID); err != nil {
 				blog.Errorf("operator is in, wrong field type, err: %v, rid: %s", err, kit.Rid)
 				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error())
 			}
 		} else {
-			if err := propertyTypeEqualValidate(info.PropertyType, fieldMap[info.PropertyID]); err != nil {
+			if err := propertyTypeEqualValidate(info.PropertyType, propertyID); err != nil {
 				blog.Errorf("operator is equal, wrong field type, err: %v, rid: %s", err, kit.Rid)
 				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error())
 			}

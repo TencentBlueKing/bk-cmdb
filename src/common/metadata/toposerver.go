@@ -354,11 +354,11 @@ type BizSetScopeParamsInfo struct {
 func (scope *BizSetScope) Validate() (*BizSetScopeParamsInfo, error) {
 
 	fieldInfo := new(BizSetScopeParamsInfo)
-	if scope.MatchAll == true {
+	if scope.MatchAll {
 		if scope.Filter != nil {
 			return nil, errors.New("when match_all is true, params filter can not be set")
 		}
-		return fieldInfo, nil
+		return nil, nil
 	}
 	if scope.Filter == nil {
 		return nil, errors.New("when match_all is false, params filter must be set")
@@ -375,7 +375,7 @@ func (scope *BizSetScope) Validate() (*BizSetScopeParamsInfo, error) {
 	}
 
 	if scope.Filter.GetDeep() != common.BizSetConditionMaxDeep {
-		return nil, fmt.Errorf("exceed max scope condition deepth: %d", common.BizSetConditionMaxDeep)
+		return nil, fmt.Errorf("scope condition depth must be equal to: %d", common.BizSetConditionMaxDeep)
 	}
 	if scope.Filter.Rule == nil {
 		return fieldInfo, nil

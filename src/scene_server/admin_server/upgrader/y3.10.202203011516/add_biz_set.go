@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_10_202202251516
+package y3_10_202203011516
 
 import (
 	"context"
@@ -160,8 +160,8 @@ func addObjectUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 	uniqueIdxs := make([]metadata.ObjectUnique, 0)
 	condObjUnique := mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDBizSet}
 
-	if err := db.Table(common.BKTableNameObjUnique).Find(condObjUnique).Fields(common.BKObjIDField,
-		common.BKObjectUniqueKeys).All(ctx, &uniqueIdxs); err != nil {
+	if err := db.Table(common.BKTableNameObjUnique).Find(condObjUnique).Fields(common.BKObjectUniqueKeys).
+		All(ctx, &uniqueIdxs); err != nil {
 		return err
 	}
 
@@ -176,6 +176,10 @@ func addObjectUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 			for _, id := range index.Keys {
 				keysId[id.ID] = struct{}{}
 			}
+		}
+		// to prevent compliance with index scenarios, the number of indexes must be exactly the same.
+		if len(keysId) != len(attrs) {
+			return errors.New("invalid number of index ids")
 		}
 		for _, attr := range attrs {
 			if _, ok := keysId[uint64(attr.ID)]; !ok {
@@ -405,7 +409,7 @@ func addBizSetTableIndexes(ctx context.Context, db dal.RDB) error {
 	}
 
 	// the number of indexes is not as expected.
-	if len(existIdxMap) != 0 && (len(existIdxMap) != len(indexes)) {
+	if len(existIdxMap) != 0 && (len(existIdxMap) < len(indexes)) {
 		blog.Errorf("the number of indexes is not as expected, existId: %+v, indexes: %v", existIdxMap, indexes)
 		return errors.New("the number of indexes is not as expected")
 	}
