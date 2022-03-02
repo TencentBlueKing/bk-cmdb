@@ -649,6 +649,15 @@ const (
 	BKBizSetNameField  = "bk_biz_set_name"
 	BKBizSetScopeField = "bk_scope"
 	BKBizSetMatchField = "match_all"
+
+	// BKHostInnerIPv6Field the host innerip field in the form of ipv6
+	BKHostInnerIPv6Field = "bk_host_innerip_v6"
+
+	// BKHostOuterIPv6Field the host outerip field in the form of ipv6
+	BKHostOuterIPv6Field = "bk_host_outerip_v6"
+
+	// BKAgentIDField the agent id field, used by agent to identify a host
+	BKAgentIDField = "bk_agent_id"
 )
 
 const (
