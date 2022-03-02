@@ -125,43 +125,48 @@ var ModuleKey = Key{
 	},
 }
 
-var setTemplateFields = []string{common.BKFieldID, common.BKFieldName}
-var SetTemplateKey = Key{
-	namespace:  watchCacheNamespace + "set_template",
-	collection: common.BKTableNameSetTemplate,
-	ttlSeconds: 6 * 60 * 60,
-	validator: func(doc []byte) error {
-		fields := gjson.GetManyBytes(doc, setTemplateFields...)
-		for idx := range setTemplateFields {
-			if !fields[idx].Exists() {
-				return fmt.Errorf("field %s not exist", setTemplateFields[idx])
-			}
-		}
-		return nil
-	},
-	instName: func(doc []byte) string {
-		fields := gjson.GetManyBytes(doc, setTemplateFields...)
-		return fields[1].String()
-	},
-}
-
-var objectBaseFields = []string{common.BKInstIDField, common.BKInstNameField}
 var ObjectBaseKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDObject,
 	collection: common.BKTableNameBaseInst,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
-		fields := gjson.GetManyBytes(doc, objectBaseFields...)
-		for idx := range objectBaseFields {
-			if !fields[idx].Exists() {
-				return fmt.Errorf("field %s not exist", objectBaseFields[idx])
-			}
+		field := gjson.GetBytes(doc, common.BKInstIDField)
+		if !field.Exists() {
+			return fmt.Errorf("field %s not exist", common.BKInstIDField)
 		}
+
+		if field.Int() <= 0 {
+			return fmt.Errorf("invalid bk_inst_id: %s, should be integer type and >= 0", field.Raw)
+		}
+
 		return nil
 	},
 	instName: func(doc []byte) string {
-		fields := gjson.GetManyBytes(doc, objectBaseFields...)
-		return fields[1].String()
+		return gjson.GetBytes(doc, common.BKInstNameField).String()
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKInstIDField).Int()
+	},
+}
+
+var MainlineInstanceKey = Key{
+	namespace:  watchCacheNamespace + "mainline_instance",
+	collection: common.BKTableNameMainlineInstance,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		field := gjson.GetBytes(doc, common.BKInstIDField)
+		if !field.Exists() {
+			return fmt.Errorf("field %s not exist", common.BKInstIDField)
+		}
+
+		if field.Int() <= 0 {
+			return fmt.Errorf("invalid bk_inst_id: %s, should be integer type and >= 0", field.Raw)
+		}
+
+		return nil
+	},
+	instName: func(doc []byte) string {
+		return gjson.GetBytes(doc, common.BKInstNameField).String()
 	},
 	instID: func(doc []byte) int64 {
 		return gjson.GetBytes(doc, common.BKInstIDField).Int()
@@ -208,6 +213,72 @@ var ProcessInstanceRelationKey = Key{
 	instName: func(doc []byte) string {
 		fields := gjson.GetManyBytes(doc, processInstanceRelationFields...)
 		return fields[0].String()
+	},
+}
+
+// this is a virtual collection name which represent for
+// the mix of host, host relation, process events.
+const hostIdentityWatchCollName = "cc_HostIdentityMixed"
+
+var HostIdentityKey = Key{
+	namespace:  watchCacheNamespace + "host_identity",
+	collection: hostIdentityWatchCollName,
+	// unused ttl seconds, details is generated directly from db.
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		value := gjson.GetBytes(doc, common.BKHostIDField)
+		if !value.Exists() {
+			return fmt.Errorf("field %s not exist", common.BKHostIDField)
+		}
+
+		return nil
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKHostIDField).Int()
+	},
+}
+
+// InstAsstKey instance association watch key
+var InstAsstKey = Key{
+	namespace:  watchCacheNamespace + "instance_association",
+	collection: common.BKTableNameInstAsst,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		field := gjson.GetBytes(doc, common.BKFieldID)
+		if !field.Exists() {
+			return fmt.Errorf("field %s not exist", common.BKFieldID)
+		}
+
+		if field.Int() <= 0 {
+			return fmt.Errorf("invalid %s: %s, should be integer type and >= 0", common.BKFieldID, field.Raw)
+		}
+
+		return nil
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKFieldID).Int()
+	},
+}
+
+var bizSetFields = []string{common.BKBizSetIDField, common.BKBizSetNameField}
+var BizSetKey = Key{
+	namespace:  watchCacheNamespace + common.BKInnerObjIDBizSet,
+	collection: common.BKTableNameBaseBizSet,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, bizSetFields...)
+		for idx := range bizSetFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", bizSetFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		return gjson.GetBytes(doc, common.BKBizSetNameField).String()
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKBizSetIDField).Int()
 	},
 }
 
@@ -275,4 +346,13 @@ func (k Key) Collection() string {
 // ChainCollection returns the event chain db collection name
 func (k Key) ChainCollection() string {
 	return k.collection + "WatchChain"
+}
+
+// ShardingCollection returns the sharding collection name. ** Can only be used for common and mainline instance **
+func (k Key) ShardingCollection(objID, supplierAccount string) string {
+	if k.Collection() != common.BKTableNameBaseInst && k.Collection() != common.BKTableNameMainlineInstance {
+		return ""
+	}
+
+	return common.GetObjectInstTableName(objID, supplierAccount)
 }

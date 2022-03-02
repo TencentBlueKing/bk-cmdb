@@ -21,6 +21,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
@@ -31,7 +32,7 @@ import (
 	daltypes "configcenter/src/storage/dal/types"
 	streamtypes "configcenter/src/storage/stream/types"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
@@ -53,7 +54,7 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	preVersion, finishedVersions, err := upgrader.Upgrade(s.ctx, s.db, s.cache, updateCfg)
+	preVersion, finishedVersions, err := upgrader.Upgrade(s.ctx, s.db, s.cache, s.iam, updateCfg)
 	if err != nil {
 		blog.Errorf("db upgrade failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
@@ -130,6 +131,14 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 				ExpireAfterSeconds: dbChainTTLTime},
 		}
 
+		if cursorType == watch.ObjectBase || cursorType == watch.MainlineInstance || cursorType == watch.InstAsst {
+
+			subResourceIndex := daltypes.Index{
+				Name: "index_sub_resource", Keys: map[string]int32{common.BKSubResourceField: 1}, Background: true,
+			}
+			indexes = append(indexes, subResourceIndex)
+		}
+
 		existIndexArr, err := s.watchDB.Table(key.ChainCollection()).Indexes(s.ctx)
 		if err != nil {
 			blog.Errorf("get exist indexes for table %s failed, err: %v, rid: %s", key.ChainCollection(), err, rid)
@@ -164,6 +173,22 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 		}
 
 		if count > 0 {
+			continue
+		}
+
+		if key.Collection() == event.HostIdentityKey.Collection() {
+			// host identity's watch token is different with other identity.
+			// only set coll is ok, the other fields is useless
+			data := mapstr.MapStr{
+				"_id":                              key.Collection(),
+				common.BKTableNameBaseHost:         watch.LastChainNodeData{Coll: common.BKTableNameBaseHost},
+				common.BKTableNameModuleHostConfig: watch.LastChainNodeData{Coll: common.BKTableNameModuleHostConfig},
+				common.BKTableNameBaseProcess:      watch.LastChainNodeData{Coll: common.BKTableNameBaseProcess},
+			}
+			if err := s.watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
+				blog.Errorf("init last watch token failed, err: %v, data: %+v", err, data)
+				return err
+			}
 			continue
 		}
 
@@ -202,11 +227,11 @@ func (s *Service) migrateSpecifyVersion(req *restful.Request, resp *restful.Resp
 	}
 
 	if input.CommitID != version.CCGitHash {
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "time_stamp")})
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "commit_id")})
 		return
 	}
 
-	err := upgrader.UpgradeSpecifyVersion(s.ctx, s.db, s.cache, updateCfg, input.Version)
+	err := upgrader.UpgradeSpecifyVersion(s.ctx, s.db, s.cache, s.iam, updateCfg, input.Version)
 	if err != nil {
 		blog.Errorf("db upgrade specify failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{

@@ -144,6 +144,7 @@ func (s *StringArrayToString) UnmarshalBSONValue(typo bsontype.Type, raw []byte)
 var specialFields = []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKOperatorField, common.BKBakOperatorField}
 
 // convert host ip and operator fields value from string to array
+// NOTICE: if host special value is empty, convert it to null to trespass the unique check, **do not change this logic**
 func ConvertHostSpecialStringToArray(host map[string]interface{}) map[string]interface{} {
 	for _, field := range specialFields {
 		value, ok := host[field]

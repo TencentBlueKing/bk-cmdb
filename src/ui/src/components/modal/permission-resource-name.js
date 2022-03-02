@@ -1,6 +1,12 @@
 import { IAM_VIEWS } from '@/dictionary/iam-auth'
 import CombineRequest from '@/api/combine-request.js'
 import { foreignkey } from '@/filters/formatter.js'
+import instanceService from '@/service/instance/instance'
+import businessSetService from '@/service/business-set/index.js'
+import {
+  BUILTIN_MODELS,
+  BUILTIN_MODEL_PROPERTY_KEYS
+} from '@/dictionary/model-constants.js'
 
 const requestConfigBase = key => ({
   requestId: `permission_${key}`,
@@ -38,14 +44,12 @@ export const IAM_VIEWS_INST_NAME = {
   async [IAM_VIEWS.INSTANCE](vm, id, relations) {
     const models = vm.$store.getters['objectModelClassify/models']
     const objId = (models.find(item => item.id === Number(relations[0][1])) || {}).bk_obj_id
-
-    const action = 'objectCommonInst/searchInstById'
-    const inst = await vm.$store.dispatch(action, {
-      objId,
-      instId: Number(id),
-      config: { ...requestConfigBase(`${action}${id}`) }
+    const inst = await instanceService.findOne({
+      bk_obj_id: objId,
+      bk_inst_id: Number(id),
+      config: { ...requestConfigBase(`find_instance_${id}`) }
     })
-    return inst.bk_inst_name
+    return inst ? inst.bk_inst_name : id
   },
   [IAM_VIEWS.INSTANCE_MODEL](vm, id) {
     const models = vm.$store.getters['objectModelClassify/models']
@@ -67,6 +71,13 @@ export const IAM_VIEWS_INST_NAME = {
     const list = await getBusinessList(vm)
     const business = list.find(business => business.bk_biz_id === Number(id))
     return business.bk_biz_name
+  },
+  async [IAM_VIEWS.BIZ_SET](vm, id) {
+    const list = await businessSetService.getAuthorizedWithCache()
+    const MODEL_ID_KEY = BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID
+    const MODEL_NAME_KEY = BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME
+    const businessSet = list.find(item => item[MODEL_ID_KEY] === Number(id))
+    return businessSet[MODEL_NAME_KEY]
   },
   async [IAM_VIEWS.BIZ_FOR_HOST_TRANS](vm, id) {
     const list = await getBusinessList(vm)

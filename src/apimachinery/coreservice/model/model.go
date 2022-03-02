@@ -21,44 +21,77 @@ import (
 )
 
 type ModelClientInterface interface {
-	CreateManyModelClassification(ctx context.Context, h http.Header, input *metadata.CreateManyModelClassifiaction) (resp *metadata.CreatedManyOptionResult, err error)
-	CreateModelClassification(ctx context.Context, h http.Header, input *metadata.CreateOneModelClassification) (resp *metadata.CreatedOneOptionResult, err error)
-	SetManyModelClassification(ctx context.Context, h http.Header, input *metadata.SetManyModelClassification) (resp *metadata.SetOptionResult, err error)
-	SetModelClassification(ctx context.Context, h http.Header, input *metadata.SetOneModelClassification) (resp *metadata.SetOptionResult, err error)
-	UpdateModelClassification(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
-	DeleteModelClassification(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
-	ReadModelClassification(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelClassifitionResult, err error)
-	CreateModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (resp *metadata.CreatedOneOptionResult, err error)
+	CreateManyModelClassification(ctx context.Context, h http.Header, input *metadata.CreateManyModelClassifiaction) (
+		resp *metadata.CreatedManyOptionResult, err error)
+	CreateModelClassification(ctx context.Context, h http.Header, input *metadata.CreateOneModelClassification) (
+		*metadata.CreateOneDataResult, error)
+	SetManyModelClassification(ctx context.Context, h http.Header, input *metadata.SetManyModelClassification) (
+		resp *metadata.SetOptionResult, err error)
+	SetModelClassification(ctx context.Context, h http.Header, input *metadata.SetOneModelClassification) (
+		resp *metadata.SetOptionResult, err error)
+	UpdateModelClassification(ctx context.Context, h http.Header, input *metadata.UpdateOption) (*metadata.UpdatedCount,
+		error)
+	DeleteModelClassification(ctx context.Context, h http.Header, input *metadata.DeleteOption) (*metadata.DeletedCount,
+		error)
+	ReadModelClassification(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
+		*metadata.QueryModelClassificationDataResult, error)
+	CreateModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (*metadata.CreateOneDataResult, error)
 	SetModel(ctx context.Context, h http.Header, input *metadata.SetModel) (resp *metadata.SetOptionResult, err error)
-	UpdateModel(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
-	DeleteModel(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
-	DeleteModelCascade(ctx context.Context, h http.Header, modelID int64) (resp *metadata.DeletedOptionResult, err error)
-	ReadModel(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelResult, err error)
-	CreateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelAttributes) (resp *metadata.CreatedManyOptionResult, err error)
-	SetModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.SetModelAttributes) (resp *metadata.SetOptionResult, err error)
-	UpdateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
-	UpdateModelAttrsIndex(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (resp *metadata.UpdatedAttrIndexResult, err error)
-	// deprecated,  only for old api
-	UpdateModelAttrsByCondition(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
-	DeleteModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
-	ReadModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.ReadModelAttrResult, err error)
+	UpdateModel(ctx context.Context, h http.Header, input *metadata.UpdateOption) (*metadata.UpdatedCount, error)
+	DeleteModel(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult,
+		err error)
+	DeleteModelCascade(ctx context.Context, h http.Header, modelID int64) (*metadata.DeletedCount, error)
+	ReadModelWithAttribute(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
+		resp *metadata.ReadModelWithAttributeResult, err error)
+	// TODO replace the calling of ReadModelWithAttribute that do not need the object's attributes with this
+	ReadModel(ctx context.Context, h http.Header, input *metadata.QueryCondition) (*metadata.QueryModelDataResult,
+		error)
+	CreateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelAttributes) (
+		*metadata.CreateManyDataResult, error)
+	SetModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.SetModelAttributes) (
+		resp *metadata.SetOptionResult, err error)
+	UpdateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
+		*metadata.UpdatedCount, error)
+	UpdateModelAttrsIndex(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
+		*metadata.UpdateAttrIndexData, error)
 	// deprecated, only for old api
-	ReadModelAttrByCondition(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelAttrResult, err error)
+	UpdateModelAttrsByCondition(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
+		*metadata.UpdatedCount, error)
+	DeleteModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (
+		resp *metadata.DeletedOptionResult, err error)
+	ReadModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (
+		*metadata.QueryModelAttributeDataResult, error)
+	// deprecated, only for old api
+	ReadModelAttrByCondition(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
+		*metadata.QueryModelAttributeDataResult, error)
 	GetModelStatistics(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 
-	ReadAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.QueryCondition) (resp metadata.ReadModelAttributeGroupResult, err error)
-	ReadAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.QueryCondition) (resp metadata.ReadModelAttributeGroupResult, err error)
-	CreateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.CreateModelAttributeGroup) (resp metadata.CreatedOneOptionResult, err error)
-	UpdateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.UpdateOption) (resp metadata.UpdatedOptionResult, err error)
-	UpdateAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.UpdateOption) (resp metadata.UpdatedOptionResult, err error)
-	SetAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.SetModelAttributes) (resp metadata.SetOptionResult, err error)
-	DeleteAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.DeleteOption) (resp metadata.DeletedOptionResult, err error)
-	DeleteAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.DeleteOption) (resp metadata.DeletedOptionResult, err error)
+	ReadAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.QueryCondition) (
+		*metadata.QueryModelAttributeGroupDataResult, error)
+	ReadAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.QueryCondition) (
+		*metadata.QueryModelAttributeGroupDataResult, error)
+	CreateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.CreateModelAttributeGroup) (
+		*metadata.CreateOneDataResult, error)
+	UpdateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.UpdateOption) (
+		resp metadata.UpdatedOptionResult, err error)
+	UpdateAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.UpdateOption) (
+		*metadata.UpdatedCount, error)
+	SetAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.SetModelAttributes) (
+		resp metadata.SetOptionResult, err error)
+	DeleteAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.DeleteOption) (
+		resp metadata.DeletedOptionResult, err error)
+	DeleteAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.DeleteOption) (
+		*metadata.DeletedCount, error)
 
-	CreateModelAttrUnique(ctx context.Context, h http.Header, objID string, data metadata.CreateModelAttrUnique) (*metadata.CreatedOneOptionResult, error)
-	UpdateModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, data metadata.UpdateModelAttrUnique) (*metadata.UpdatedOptionResult, error)
-	DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (*metadata.DeletedOptionResult, error)
-	ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (*metadata.ReadModelUniqueResult, error)
+	CreateModelAttrUnique(ctx context.Context, h http.Header, objID string, data metadata.CreateModelAttrUnique) (
+		*metadata.CreateOneDataResult, error)
+	UpdateModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64,
+		data metadata.UpdateModelAttrUnique) (*metadata.UpdatedCount, error)
+	DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (*metadata.DeletedCount, error)
+	ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (
+		*metadata.QueryUniqueResult, error)
+
+	CreateModelTables(ctx context.Context, h http.Header, input *metadata.CreateModelTable) (err error)
 }
 
 func NewModelClientInterface(client rest.ClientInterface) ModelClientInterface {

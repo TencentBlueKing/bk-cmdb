@@ -306,7 +306,39 @@ func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metad
 			},
 		},
 	}
-	err = c.dbProxy.Table(common.BKTableNameInstAsst).Delete(kit.Ctx, asstFilter)
+
+	hostAsstTableName := common.GetObjectInstAsstTableName(common.BKInnerObjIDHost, kit.SupplierAccount)
+	hostAssociations := make([]metadata.InstAsst, 0)
+	if err := c.dbProxy.Table(hostAsstTableName).Find(asstFilter).Fields(common.BKObjIDField, common.BKAsstObjIDField).
+		All(kit.Ctx, &hostAssociations); err != nil {
+		blog.ErrorJSON("find host associations failed, err: %s, filter: %s, rid: %s", err, asstFilter, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	objIDMap := make(map[string]struct{})
+	for _, asst := range hostAssociations {
+		var objID string
+		if asst.ObjectID != common.BKInnerObjIDHost {
+			objID = asst.ObjectID
+		} else if asst.AsstObjectID != common.BKInnerObjIDHost {
+			objID = asst.AsstObjectID
+		}
+
+		if _, exists := objIDMap[objID]; exists {
+			continue
+		}
+		objIDMap[objID] = struct{}{}
+
+		asstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
+		err = c.dbProxy.Table(asstTableName).Delete(kit.Ctx, asstFilter)
+		if err != nil {
+			blog.ErrorJSON("delete host association failed, err: %s, table: %s, filter: %s, rid: %s", err,
+				asstTableName, asstFilter, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
+		}
+	}
+
+	err = c.dbProxy.Table(hostAsstTableName).Delete(kit.Ctx, asstFilter)
 	if nil != err {
 		blog.Errorf("DeleteDestroyedHostRelated failed, delete inst association err:%s, filter:%s, rid: %s", err, asstFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)

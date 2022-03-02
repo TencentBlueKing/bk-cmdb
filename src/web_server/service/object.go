@@ -104,7 +104,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, c.Request, 3, false, defLang, modelBizID)
+	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, c.Request.Header, 3, false, defLang, modelBizID)
 	if len(attrItems) == 0 {
 		var msg string
 		if err != nil {
@@ -236,7 +236,6 @@ func (s *Service) ExportObject(c *gin.Context) {
 
 	webCommon.SetProxyHeader(c)
 
-	ownerID := c.Param(common.BKOwnerIDField)
 	objID := c.Param(common.BKObjIDField)
 
 	language := webCommon.GetLanguageByHTTPRequest(c)
@@ -253,7 +252,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 	}
 
 	// get the all attribute of the object
-	arrItems, err := s.Logics.GetObjectData(ownerID, objID, c.Request.Header, requestBody.BizID)
+	arrItems, err := s.Logics.GetObjectData(objID, c.Request.Header, requestBody.BizID)
 	if nil != err {
 		blog.Error("export model, but get object data failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
@@ -368,5 +367,32 @@ func (s *Service) SearchBusiness(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, biz)
+	return
+}
+
+func (s *Service) GetObjectInstanceCount(c *gin.Context) {
+	header := c.Request.Header
+	rid := util.GetHTTPCCRequestID(header)
+	ctx := util.NewContextFromGinContext(c)
+	webCommon.SetProxyHeader(c)
+	cond := &metadata.ObjectCountParams{}
+
+	err := c.BindJSON(&cond)
+	if err != nil {
+		blog.Errorf("unmarshal body to json failed, err: %s, rid: %s", err.Error(), rid)
+		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, err.Error(), nil)
+		_, _ = c.Writer.Write([]byte(msg))
+		return
+	}
+
+	resp, err := s.Logics.GetObjectCount(ctx, header, cond)
+	if err != nil {
+		blog.Errorf("get object count failed, err: %s, rid: %s", err.Error(), rid)
+		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, err.Error(), nil)
+		_, _ = c.Writer.Write([]byte(msg))
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
 	return
 }

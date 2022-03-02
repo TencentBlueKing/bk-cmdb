@@ -44,9 +44,6 @@ export const types = {
   association_kind: {
     association_kind: t('关联类型')
   },
-  event: {
-    event: t('事件订阅')
-  },
   cloud_resource: {
     cloud_area: t('云区域'),
     cloud_account: t('云账户'),

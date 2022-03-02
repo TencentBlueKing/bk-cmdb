@@ -24,32 +24,7 @@ import (
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/cache/topo_tree"
 	"configcenter/src/source_controller/cacheservice/event"
-	"configcenter/src/storage/driver/redis"
 )
-
-func (s *cacheService) SearchTopologyTreeInCache(ctx *rest.Contexts) {
-	opt := new(topo_tree.SearchOption)
-	if err := ctx.DecodeInto(&opt); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if err := opt.Validate(); err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "search topology tree, but request parameter is invalid: %v", err)
-		return
-	}
-
-	topo, err := s.cacheSet.Tree.SearchTopologyTree(opt)
-	if err != nil {
-		if err == topo_tree.OverHeadError {
-			ctx.RespWithError(err, common.SearchTopoTreeScanTooManyData, "search topology tree failed, err: %v", err)
-			return
-		}
-		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search topology tree failed, err: %v", err)
-		return
-	}
-	ctx.RespEntity(topo)
-}
 
 func (s *cacheService) SearchHostWithInnerIPInCache(ctx *rest.Contexts) {
 	opt := new(metadata.SearchHostWithInnerIPOption)
@@ -114,69 +89,6 @@ func (s *cacheService) ListHostWithPageInCache(ctx *rest.Contexts) {
 	ctx.RespCountInfoString(cnt, host)
 }
 
-// GetHostSnap get one host snap
-func (s *cacheService) GetHostSnap(ctx *rest.Contexts) {
-	hostID := ctx.Request.PathParameter(common.BKHostIDField)
-	key := common.RedisSnapKeyPrefix + hostID
-	result, err := redis.Client().Get(ctx.Kit.Ctx, key).Result()
-	if nil != err && !redis.IsNilErr(err) {
-		blog.Errorf("get host snapshot failed, hostID: %v, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
-		return
-	}
-
-	ctx.RespEntity(metadata.HostSnap{
-		Data: result,
-	})
-}
-
-// GetHostSnapBatch get host snap in batch
-func (s *cacheService) GetHostSnapBatch(ctx *rest.Contexts) {
-	input := metadata.HostSnapBatchInput{}
-	if err := ctx.DecodeInto(&input); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if len(input.HostIDs) == 0 {
-		ctx.RespEntity(map[int64]string{})
-		return
-	}
-
-	keys := []string{}
-	for _, id := range input.HostIDs {
-		keys = append(keys, common.RedisSnapKeyPrefix+strconv.FormatInt(id, 10))
-	}
-
-	res, err := redis.Client().MGet(ctx.Kit.Ctx, keys...).Result()
-	if err != nil {
-		if redis.IsNilErr(err) {
-			ctx.RespEntity(map[int64]string{})
-			return
-		}
-		blog.Errorf("get host snapshot failed, keys: %#v, err: %v, rid: %s", keys, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
-		return
-	}
-
-	ret := make(map[int64]string)
-	for i, hostID := range input.HostIDs {
-		if res[i] == nil {
-			ret[hostID] = ""
-			continue
-		}
-		value, ok := res[i].(string)
-		if !ok {
-			blog.Errorf("GetHostSnapBatch failed, hostID: %d, value in redis is not type string, but tyep: %T, value:%#v, rid: %s", hostID, res[i], res[i], ctx.Kit.Rid)
-			ret[hostID] = ""
-			continue
-		}
-		ret[hostID] = value
-	}
-
-	ctx.RespEntity(ret)
-}
-
 // ListBusiness list business with id from cache, if not exist in cache, then get from mongodb directly.
 func (s *cacheService) ListBusinessInCache(ctx *rest.Contexts) {
 	opt := new(metadata.ListWithIDOption)
@@ -231,7 +143,7 @@ func (s *cacheService) SearchBusinessInCache(ctx *rest.Contexts) {
 		ctx.RespErrorCodeOnly(common.CCErrCommParamsIsInvalid, "invalid biz id")
 		return
 	}
-	biz, err := s.cacheSet.Business.GetBusiness(bizID)
+	biz, err := s.cacheSet.Business.GetBusiness(ctx.Kit.Ctx, bizID)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search biz with id in cache, but get biz failed, err: %v", err)
 		return
@@ -246,7 +158,7 @@ func (s *cacheService) SearchSetInCache(ctx *rest.Contexts) {
 		return
 	}
 
-	set, err := s.cacheSet.Business.GetSet(setID)
+	set, err := s.cacheSet.Business.GetSet(ctx.Kit.Ctx, setID)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search set with id in cache failed, err: %v", err)
 		return
@@ -261,7 +173,7 @@ func (s *cacheService) SearchModuleInCache(ctx *rest.Contexts) {
 		return
 	}
 
-	module, err := s.cacheSet.Business.GetModuleDetail(moduleID)
+	module, err := s.cacheSet.Business.GetModuleDetail(ctx.Kit.Ctx, moduleID)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search module with id in cache failed, err: %v", err)
 		return
@@ -278,7 +190,7 @@ func (s *cacheService) SearchCustomLayerInCache(ctx *rest.Contexts) {
 		return
 	}
 
-	inst, err := s.cacheSet.Business.GetCustomLevelDetail(objID, instID)
+	inst, err := s.cacheSet.Business.GetCustomLevelDetail(ctx.Kit.Ctx, objID, ctx.Kit.SupplierAccount, instID)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search custom layer with id in cache failed, err: %v", err)
 		return
@@ -308,7 +220,7 @@ func (s *cacheService) SearchBizTopologyNodePath(ctx *rest.Contexts) {
 
 	opt.Business = bizID
 
-	paths, err := s.cacheSet.Tree.SearchNodePath(ctx.Kit.Ctx, opt)
+	paths, err := s.cacheSet.Tree.SearchNodePath(ctx.Kit.Ctx, opt, ctx.Kit.SupplierAccount)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -334,54 +246,6 @@ func (s *cacheService) SearchBusinessBriefTopology(ctx *rest.Contexts) {
 	}
 
 	ctx.RespString(topo)
-}
-
-func (s *cacheService) GetLatestEvent(ctx *rest.Contexts) {
-	opt := new(metadata.GetLatestEventOption)
-	if err := ctx.DecodeInto(opt); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	node, err := s.cacheSet.Event.GetLatestEvent(ctx.Kit, opt)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntity(node)
-}
-
-func (s *cacheService) SearchFollowingEventChainNodes(ctx *rest.Contexts) {
-	opt := new(metadata.SearchEventNodesOption)
-	if err := ctx.DecodeInto(opt); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	nodes, err := s.cacheSet.Event.SearchFollowingEventChainNodes(ctx.Kit, opt)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntity(nodes)
-}
-
-func (s *cacheService) SearchEventDetails(ctx *rest.Contexts) {
-	opt := new(metadata.SearchEventDetailsOption)
-	if err := ctx.DecodeInto(opt); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	details, err := s.cacheSet.Event.SearchEventDetails(ctx.Kit, opt)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntity(details)
 }
 
 func (s *cacheService) WatchEvent(ctx *rest.Contexts) {

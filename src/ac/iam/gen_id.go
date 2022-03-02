@@ -30,10 +30,10 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 	switch a.Basic.Type {
 	case meta.Business:
 		return genBusinessResource(act, rscType, a)
+	case meta.BizSet:
+		return genBizSetResource(act, rscType, a)
 	case meta.DynamicGrouping:
 		return genDynamicGroupingResource(act, rscType, a)
-	case meta.EventPushing:
-		return genEventSubscribeResource(act, rscType, a)
 	case meta.EventWatch:
 		return genResourceWatch(act, rscType, a)
 	case meta.ProcessServiceTemplate, meta.ProcessTemplate:
@@ -70,8 +70,6 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 		}
 	case meta.ModelClassification:
 		return genModelClassificationResource(act, rscType, a)
-	case meta.ModelInstance, meta.ModelInstanceAssociation:
-		return genModelInstanceResource(act, rscType, a)
 	case meta.AssociationType:
 		return genAssociationTypeResource(act, rscType, a)
 	case meta.ModelAttribute:
@@ -94,6 +92,10 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 		return make([]types.Resource, 0), nil
 	case meta.ProcessServiceCategory:
 		return genProcessServiceCategoryResource(act, rscType, a)
+	default:
+		if IsCMDBSysInstance(a.Basic.Type) {
+			return genSysInstanceResource(act, rscType, a)
+		}
 	}
 
 	return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", a.Type)
@@ -109,6 +111,27 @@ func genBusinessResource(act ActionID, typ TypeID, attribute *meta.ResourceAttri
 
 	// create business do not related to instance authorize
 	if act == CreateBusiness {
+		return make([]types.Resource, 0), nil
+	}
+
+	// compatible for authorize any
+	if attribute.InstanceID > 0 {
+		r.ID = strconv.FormatInt(attribute.InstanceID, 10)
+	}
+
+	return []types.Resource{r}, nil
+}
+
+// generate biz set related resource id.
+func genBizSetResource(act ActionID, typ TypeID, attribute *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
+		System:    SystemIDCMDB,
+		Type:      types.ResourceType(typ),
+		Attribute: nil,
+	}
+
+	// create biz set do not related to instance authorize
+	if act == CreateBizSet {
 		return make([]types.Resource, 0), nil
 	}
 
@@ -167,26 +190,50 @@ func genProcessServiceCategoryResource(_ ActionID, _ TypeID, att *meta.ResourceA
 	return []types.Resource{r}, nil
 }
 
-func genEventSubscribeResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
-		Attribute: nil,
-	}
+func genResourceWatch(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	switch act {
+	case WatchCommonInstanceEvent:
+		r := types.Resource{
+			System:    SystemIDCMDB,
+			Attribute: nil,
+		}
 
-	if act == CreateEventPushing {
+		// do not related to instance authorize
+		r.Type = types.ResourceType(SysModelEvent)
+		if att.InstanceID > 0 {
+			r.ID = strconv.FormatInt(att.InstanceID, 10)
+		}
+		return []types.Resource{r}, nil
+
+	case WatchMainlineInstanceEvent:
+		r := types.Resource{
+			System:    SystemIDCMDB,
+			Attribute: nil,
+		}
+
+		// do not related to instance authorize
+		r.Type = types.ResourceType(MainlineModelEvent)
+		if att.InstanceID > 0 {
+			r.ID = strconv.FormatInt(att.InstanceID, 10)
+		}
+		return []types.Resource{r}, nil
+
+	case WatchInstAsstEvent:
+		r := types.Resource{
+			System:    SystemIDCMDB,
+			Attribute: nil,
+		}
+
+		// do not related to instance authorize
+		r.Type = types.ResourceType(InstAsstEvent)
+		if att.InstanceID > 0 {
+			r.ID = strconv.FormatInt(att.InstanceID, 10)
+		}
+		return []types.Resource{r}, nil
+
+	default:
 		return make([]types.Resource, 0), nil
 	}
-
-	if att.InstanceID > 0 {
-		r.ID = strconv.FormatInt(att.InstanceID, 10)
-	}
-
-	return []types.Resource{r}, nil
-}
-
-func genResourceWatch(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
-	return make([]types.Resource, 0), nil
 }
 
 func genServiceTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
@@ -634,28 +681,20 @@ func genBizModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttrib
 	return []types.Resource{r}, nil
 }
 
-func genModelInstanceResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+func genSysInstanceResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
 	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
 	}
 
-	// because we have to compatible to the any verify ,so we check the layers.
-	// and if layer is 0, the exact authorize status is false as expected.
-	if len(att.Layers) > 0 {
-		if act == CreateSysInstance {
-			r.Type = types.ResourceType(SysInstanceModel)
-			r.ID = strconv.FormatInt(att.Layers[0].InstanceID, 10)
-			return []types.Resource{r}, nil
-		}
+	// create action do not related to instance authorize
+	if att.Action == meta.Create || att.Action == meta.CreateMany {
+		return make([]types.Resource, 0), nil
+	}
 
+	if att.InstanceID > 0 {
 		r.ID = strconv.FormatInt(att.InstanceID, 10)
-
-		// authorize based on a model
-		r.Attribute = map[string]interface{}{
-			types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", SysInstanceModel, att.Layers[0].InstanceID)},
-		}
 	}
 
 	return []types.Resource{r}, nil

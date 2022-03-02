@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // SearchConfigAdmin search the config

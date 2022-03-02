@@ -30,7 +30,6 @@ import (
 	"configcenter/src/source_controller/coreservice/core/cloud"
 	coreCommon "configcenter/src/source_controller/coreservice/core/common"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
-	e "configcenter/src/source_controller/coreservice/core/event"
 	"configcenter/src/source_controller/coreservice/core/host"
 	"configcenter/src/source_controller/coreservice/core/hostapplyrule"
 	"configcenter/src/source_controller/coreservice/core/instances"
@@ -42,9 +41,9 @@ import (
 	"configcenter/src/source_controller/coreservice/core/settemplate"
 	dbSystem "configcenter/src/source_controller/coreservice/core/system"
 	"configcenter/src/storage/driver/mongodb"
-	"configcenter/src/storage/driver/redis"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // CoreServiceInterface the topo service methods used to init
@@ -121,7 +120,6 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		dbSystem.New(),
 		cloud.New(mongodb.Client()),
 		auth.New(mongodb.Client()),
-		e.New(mongodb.Client(), redis.Client()),
 		coreCommon.New(),
 	)
 	return nil
@@ -131,6 +129,9 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 func (s *coreService) WebService() *restful.Container {
 
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
+
 	getErrFunc := func() errors.CCErrorIf {
 		return s.err
 	}

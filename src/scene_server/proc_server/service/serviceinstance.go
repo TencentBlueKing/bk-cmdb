@@ -447,19 +447,14 @@ func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if !moduleInsts.Result {
-		blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, ReadInstance failed, filter: %s, response: %s, rid: %s", qc, moduleInsts, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(moduleInsts.Code, moduleInsts.ErrMsg))
-		return
-	}
 
 	// get the list of module by moduleInsts
-	modules := make([]int64, moduleInsts.Data.Count)
-	for _, moduleInst := range moduleInsts.Data.Info {
+	modules := make([]int64, moduleInsts.Count)
+	for _, moduleInst := range moduleInsts.Info {
 		moduleID, err := util.GetInt64ByInterface(moduleInst[common.BKModuleIDField])
 		if err != nil {
 			blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, GetInt64ByInterface failed, moduleInst: %s, err: %#v, rid: %s", moduleInsts, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.New(moduleInsts.Code, moduleInsts.ErrMsg))
+			ctx.RespAutoError(err)
 			return
 		}
 		modules = append(modules, moduleID)
@@ -1010,7 +1005,7 @@ func (ps *ProcServer) calculateGeneralDiff(ctx *rest.Contexts, bizID int64, host
 	}
 
 	// 单独处理一下第一次added processTemplate的场景，第一次added时模块下面的主机还没有实例化，模块下的实例数量是0并且主机数量大于0
-	if len(hostMap) > 0 && len(serviceInstances) == 0 {
+	if len(hostMap) != len(serviceInstances) {
 		for templateID, processTemplate := range pTemplateMap {
 			moduleDifference.Added = append(moduleDifference.Added, metadata.ProcessGeneralInfo{
 				Id: templateID, Name: processTemplate.ProcessName})
@@ -1171,7 +1166,7 @@ func (ps *ProcServer) getProcAndAttributeMap(ctx *rest.Contexts, procIDs []int64
 	}
 
 	attributeMap := make(map[string]metadata.Attribute)
-	for _, attr := range attrResult.Data.Info {
+	for _, attr := range attrResult.Info {
 		attributeMap[attr.PropertyID] = attr
 	}
 
@@ -1229,7 +1224,6 @@ func (ps *ProcServer) getProcDetailsAndAttr(ctx *rest.Contexts, procInstRelation
 	for _, r := range procInstRelations {
 		procIDs = append(procIDs, r.ProcessID)
 	}
-
 	procID2Detail, attrMap, err := ps.getProcAndAttributeMap(ctx, procIDs)
 	if err != nil {
 		return nil, nil, err
@@ -1272,14 +1266,11 @@ func (ps *ProcServer) getListDiffServiceInstanceNum(ctx *rest.Contexts, opt *met
 		if e != nil {
 			return nil, err
 		}
-
 		procID2Detail, attrMap, err := ps.getProcDetailsAndAttr(ctx, relations.Info)
 		if err != nil {
 			return nil, err
 		}
-
 		flag := false
-
 		for _, inst := range sInsts.Info {
 
 			relations := sInstMap[inst.ID]
@@ -1294,6 +1285,7 @@ func (ps *ProcServer) getListDiffServiceInstanceNum(ctx *rest.Contexts, opt *met
 				p, exist := pTMap[relation.ProcessTemplateID]
 
 				if !exist && opt.ProcessTemplateId == 0 && opt.ProcTemplateName == procName {
+
 					d.ServiceInsts = append(d.ServiceInsts, metadata.ServiceInstancesInfo{Id: inst.ID, Name: inst.Name})
 					flag = true
 					break
@@ -1329,7 +1321,7 @@ func (ps *ProcServer) getListDiffServiceInstanceNum(ctx *rest.Contexts, opt *met
 			d.ServiceInsts = append(d.ServiceInsts, metadata.ServiceInstancesInfo{Id: inst.ID, Name: inst.Name})
 		}
 
-		if len(sInsts.Info) == 0 && len(hMap) > 0 {
+		if len(sInsts.Info) != len(hMap) {
 			d.ServiceInsts = ps.handleAddedServiceInsts(module, hMap, hostIDs, hostInst, pTs)
 		}
 
@@ -1551,6 +1543,7 @@ func (ps *ProcServer) getModuleInfo(ctx *rest.Contexts, moduleId int64) (*metada
 
 	module, err := ps.getModule(ctx.Kit, moduleId)
 	if err != nil {
+
 		blog.Errorf(" get module failed, option: %d, err: %v, rid: %s", moduleId, err, ctx.Kit.Rid)
 		return nil, err
 	}
@@ -1724,7 +1717,7 @@ func (ps *ProcServer) CalculateModuleAttributeDifference(ctx context.Context, he
 		return nil, errors.New(common.CCErrCommDBSelectFailed, "db select failed")
 	}
 	attributeMap := make(map[string]metadata.Attribute)
-	for _, attr := range attrResult.Data.Info {
+	for _, attr := range attrResult.Info {
 		attributeMap[attr.PropertyID] = attr
 	}
 	if module.ServiceCategoryID != serviceTpl.ServiceCategoryID {
@@ -1934,15 +1927,11 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 				common.BKModuleIDField: syncOption.ModuleID,
 			},
 		}
-		resp, e := ps.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		_, e := ps.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
 			moduleUpdateOption)
 		if e != nil {
 			blog.Errorf("update module failed, option: %#v, err: %v, rid: %s", moduleUpdateOption, e, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if ccErr := resp.CCError(); ccErr != nil {
-			blog.Errorf("update module failed, option: %#v, err: %v, rid: %s", moduleUpdateOption, ccErr, kit.Rid)
-			return ccErr
 		}
 	}
 
@@ -2118,7 +2107,7 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 
 			// we can not find this process template in all this service instance,
 			// which means that a new process template need to be added to this service instance
-			newProcess, generateErr := processTemplate.NewProcess(syncOption.BizID, kit.SupplierAccount,
+			newProcess, generateErr := processTemplate.NewProcess(syncOption.BizID, svcID, kit.SupplierAccount,
 				hostMap[serviceInstance2HostMap[svcID]])
 			if generateErr != nil {
 				blog.ErrorJSON("generate process instance by template %s failed, err: %s, rid: %s", processTemplate,
@@ -2158,6 +2147,7 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 			return err
 		}
 	}
+
 	return nil
 }
 

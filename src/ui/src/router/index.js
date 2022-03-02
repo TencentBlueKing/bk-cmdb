@@ -18,6 +18,7 @@ import {
 
 import {
   MENU_ENTRY,
+  MENU_BUSINESS_SET,
   MENU_BUSINESS,
   MENU_RESOURCE,
   MENU_MODEL,
@@ -28,6 +29,7 @@ import {
 import {
   indexViews,
   hostLandingViews,
+  businessSetViews,
   businessViews,
   resourceViews,
   modelViews,
@@ -72,6 +74,21 @@ const router = new Router({
       children: indexViews,
       path: '/',
       redirect: '/index'
+    },
+    {
+      name: MENU_BUSINESS_SET,
+      components: {
+        default: dynamicRouterView,
+        error: require('@/views/status/error').default,
+        permission: require('@/views/status/non-exist-business-set').default
+      },
+      children: businessSetViews,
+      path: '/business-set/:bizSetId',
+      meta: {
+        menu: {
+          i18n: '业务集'
+        }
+      }
     },
     {
       name: MENU_BUSINESS,
@@ -287,5 +304,4 @@ router.onError((error) => {
     $error(i18n.t('资源请求失败提示'))
   }
 })
-
 export default router

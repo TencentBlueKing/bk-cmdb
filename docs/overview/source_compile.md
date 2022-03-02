@@ -4,9 +4,14 @@
 
 ## 编译环境
 
-- golang >= 1.8
+- golang >= 1.16
 - python >= 2.7.5
 - nodejs >= 4.0.0（编译过程中需要可以连公网下载依赖包）
+
+#### 将go mod设置为auto
+```
+go env -w GO111MODULE="auto"
+```
 
 ## 源码下载
 

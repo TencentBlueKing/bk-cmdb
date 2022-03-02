@@ -19,12 +19,14 @@ import (
 	"time"
 
 	"configcenter/src/ac/extensions"
+	"configcenter/src/ac/iam"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/topo_server/app/options"
-	"configcenter/src/scene_server/topo_server/core"
+	"configcenter/src/scene_server/topo_server/logics"
 	"configcenter/src/scene_server/topo_server/service"
 	"configcenter/src/storage/driver/redis"
 	"configcenter/src/thirdparty/elasticsearch"
@@ -46,6 +48,10 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", nil)
 	if err != nil {
 		blog.Warnf("parse es config failed: %v", err)
+	}
+	t.Config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
+	if err != nil {
+		blog.Warnf("parse auth center config failed: %v", err)
 	}
 }
 
@@ -98,13 +104,24 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		essrv.Client = esClient
 	}
 
-	authManager := extensions.NewAuthManager(engine.CoreAPI)
+	iamCli := new(iam.IAM)
+	if auth.EnableAuthorize() {
+		blog.Info("enable auth center access")
+		iamCli, err = iam.NewIAM(nil, server.Config.Auth, engine.Metric().Registry())
+		if err != nil {
+			return fmt.Errorf("new iam client failed: %v", err)
+		}
+	} else {
+		blog.Infof("disable auth center access")
+	}
+	authManager := extensions.NewAuthManager(engine.CoreAPI, iamCli)
+
 	server.Service = &service.Service{
 		Language:    engine.Language,
 		Engine:      engine,
 		AuthManager: authManager,
 		Es:          essrv,
-		Core:        core.New(engine.CoreAPI, authManager, engine.Language),
+		Logics:      logics.New(engine.CoreAPI, authManager, engine.Language),
 		Error:       engine.CCErr,
 		Config:      server.Config,
 	}

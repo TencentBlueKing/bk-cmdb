@@ -70,6 +70,7 @@ const (
 	CLE
 	CLF
 	CLP
+	CNH
 	CNX
 	CNY
 	COP
@@ -233,6 +234,7 @@ const (
 	SRG
 	SSP
 	STD
+	STN
 	SUR
 	SVC
 	SYP

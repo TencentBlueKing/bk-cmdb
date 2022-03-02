@@ -28,8 +28,9 @@ import (
 	"configcenter/src/scene_server/host_server/app/options"
 	"configcenter/src/scene_server/host_server/logics"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 type Service struct {
@@ -44,6 +45,8 @@ type Service struct {
 func (s *Service) WebService() *restful.Container {
 
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
 
 	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {

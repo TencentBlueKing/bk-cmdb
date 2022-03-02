@@ -34,7 +34,9 @@ type Discover struct {
 
 var msgHandlerCnt = int64(0)
 
-func NewDiscover(ctx context.Context, redisCli redis.Client, backbone *backbone.Engine, authManager *extensions.AuthManager) *Discover {
+// NewDiscover new discover
+func NewDiscover(ctx context.Context, redisCli redis.Client, backbone *backbone.Engine,
+	authManager *extensions.AuthManager) *Discover {
 	header := http.Header{}
 	header.Add(bkc.BKHTTPOwnerID, bkc.BKDefaultOwnerID)
 	header.Add(bkc.BKHTTPHeaderUser, bkc.CCSystemCollectorUserName)
@@ -68,12 +70,13 @@ func (d *Discover) Mock() string {
 	return MockMessage
 }
 
-func (d *Discover) Analyze(msg *string) error {
+// Analyze analyze discover data
+func (d *Discover) Analyze(msg *string) (bool, error) {
 	err := d.UpdateOrCreateInst(msg)
 	if err != nil {
-		return fmt.Errorf("create inst err: %v, raw: %s", err, msg)
+		return false, fmt.Errorf("create inst err: %v, raw: %s", err, msg)
 	}
-	return nil
+	return false, nil
 }
 
 var MockMessage = `{

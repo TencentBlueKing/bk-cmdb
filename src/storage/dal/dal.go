@@ -41,6 +41,8 @@ type DB interface {
 
 	// HasTable 判断是否存在集合
 	HasTable(ctx context.Context, name string) (bool, error)
+	// ListTables 获取所有的表名
+	ListTables(ctx context.Context) ([]string, error)
 	// DropTable 移除集合
 	DropTable(ctx context.Context, name string) error
 	// CreateTable 创建集合

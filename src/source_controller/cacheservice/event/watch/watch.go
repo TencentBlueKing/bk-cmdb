@@ -13,6 +13,8 @@
 package watch
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"configcenter/src/common"
@@ -20,9 +22,14 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	types2 "configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
+	"configcenter/src/source_controller/coreservice/core/host/identifier"
 	"configcenter/src/storage/stream/types"
+	"configcenter/src/thirdparty/monitor"
+	"configcenter/src/thirdparty/monitor/meta"
 )
 
 /* eventserver watcher defines, just created base on old service/watch.go */
@@ -69,7 +76,7 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 
 	// start from is ahead of the latest's event time, watch from now.
 	if int64(tailNode.ClusterTime.Sec) <= opts.StartFrom {
-		if !c.isNodeWithEventType(tailNode, opts.EventTypes) {
+		if !c.isNodeHitEventType(tailNode, opts.EventTypes) || !c.isNodeHitSubResource(tailNode, opts.Filter.SubResource) {
 			// not matched, set to no event cursor with empty detail
 			return []*watch.WatchEventDetail{{
 				Cursor:    watch.NoEventCursor,
@@ -89,13 +96,27 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 			return nil, kit.CCError.CCError(common.CCErrEventDetailNotExist)
 		}
 
-		// matched the event type.
-		return []*watch.WatchEventDetail{{
+		event := &watch.WatchEventDetail{
 			Cursor:    tailNode.Cursor,
 			Resource:  opts.Resource,
 			EventType: tailNode.EventType,
-			Detail:    watch.JsonString(*detail),
-		}}, nil
+		}
+
+		if detail == nil {
+			// convert to a no event cursor
+			event.Detail = nil
+		} else {
+			if len(*detail) == 0 {
+				// convert to a no event cursor
+				event.Detail = nil
+			} else {
+				event.Detail = watch.JsonString(*detail)
+			}
+
+		}
+
+		// matched the event type.
+		return []*watch.WatchEventDetail{event}, nil
 	}
 
 	// find the first node with a larger cluster time than the start from parameter
@@ -103,6 +124,12 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 		common.BKClusterTimeField: map[string]interface{}{
 			common.BKDBGT: metadata.Time{Time: time.Unix(opts.StartFrom, 0).Local()},
 		},
+	}
+
+	// filters out the previous version where sub resource is string type // TODO remove this
+	if key.Collection() == common.BKTableNameBaseInst ||
+		key.Collection() == common.BKTableNameMainlineInstance {
+		filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBType: "array"}
 	}
 
 	node := new(watch.ChainNode)
@@ -121,14 +148,21 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 		}}, nil
 	}
 
-	nodes, err := c.searchFollowingEventChainNodesByID(kit, node.ID, eventStep, opts.EventTypes, key)
+	searchOpt := &searchFollowingChainNodesOption{
+		id:          node.ID,
+		limit:       eventStep,
+		types:       opts.EventTypes,
+		key:         key,
+		subResource: opts.Filter.SubResource,
+	}
+	nodes, err := c.searchFollowingEventChainNodesByID(kit, searchOpt)
 	if err != nil {
 		blog.ErrorJSON("get event failed, err: %s, rid: %s, filter: %s", err, rid, filter)
 		return nil, err
 	}
 
 	// since the first node is after the start time, we need to include it in the nodes after the start time
-	if c.isNodeWithEventType(node, opts.EventTypes) {
+	if c.isNodeHitEventType(node, opts.EventTypes) && c.isNodeHitSubResource(node, opts.Filter.SubResource) {
 		nodes = append([]*watch.ChainNode{node}, nodes...)
 	}
 
@@ -153,6 +187,11 @@ func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventO
 
 	if len(hitNodes) == 0 {
 		return make([]*watch.WatchEventDetail, 0), nil
+	}
+
+	if opts.Resource == watch.HostIdentifier {
+		// get from db directly.
+		return c.getHostIdentityEventDetailWithNodes(kit, hitNodes)
 	}
 
 	cursors := make([]string, len(hitNodes))
@@ -219,7 +258,93 @@ func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventO
 	return resp, nil
 }
 
-// WatchFromNow watches target resource events from noc.
+// get host identity from db directly
+func (c *Client) getHostIdentityEventDetailWithNodes(kit *rest.Kit, hitNodes []*watch.ChainNode) (
+	[]*watch.WatchEventDetail, error) {
+
+	if len(hitNodes) == 0 {
+		return nil, errors.New("no hit host identity event nodes")
+	}
+
+	hostIDs := make([]int64, 0)
+	for idx := range hitNodes {
+		if hitNodes[idx].InstanceID <= 0 {
+			monitor.Collect(&meta.Alarm{
+				RequestID: kit.Rid,
+				Type:      meta.EventFatalError,
+				Detail: fmt.Sprintf("host identity, instance id: %d is invalid, cursor: %s",
+					hitNodes[idx].InstanceID, hitNodes[idx].Cursor),
+				Module:    types2.CC_MODULE_CACHESERVICE,
+				Dimension: map[string]string{"host_identifier": "yes"},
+			})
+
+			blog.ErrorJSON("get host identity with chain nodes, but got invalid host id, skip, detail: %s, rid: %s",
+				hitNodes[idx], kit.Rid)
+			continue
+		}
+
+		hostIDs = append(hostIDs, hitNodes[idx].InstanceID)
+	}
+
+	hostIDs = util.IntArrayUnique(hostIDs)
+	// read from secondary, but this may get host identity may not same with master.
+	// kit.Ctx, kit.Header = util.SetReadPreference(kit.Ctx, kit.Header, common.SecondaryPreferredMode)
+	list, err := identifier.NewIdentifier().Identifier(kit, hostIDs)
+	if err != nil {
+		blog.Errorf("get host identity from db failed, host id: %v, err: %v, rid: %s", hostIDs, err, kit.Rid)
+		return nil, err
+	}
+
+	identityMap := make(map[int64]*metadata.HostIdentifier)
+	for idx := range list {
+		identityMap[list[idx].HostID] = &list[idx]
+	}
+
+	details := make([]*watch.WatchEventDetail, 0)
+	for _, one := range hitNodes {
+
+		if one.InstanceID <= 0 {
+			// skip
+			continue
+		}
+
+		identity, exists := identityMap[one.InstanceID]
+		if !exists {
+			// host already be deleted, skip this event.
+			continue
+		}
+
+		js, err := json.Marshal(identity)
+		if err != nil {
+			blog.Errorf("marshal host identity failed, skip, detail: %+v, err :%v, rid: %s", *identity, err, kit.Rid)
+			continue
+		}
+
+		details = append(details, &watch.WatchEventDetail{
+			Cursor:    one.Cursor,
+			Resource:  watch.HostIdentifier,
+			EventType: one.EventType,
+			Detail:    watch.JsonString(js),
+		})
+	}
+
+	if len(details) == 0 {
+		// return the last node's cursor without details, so that use can watch from
+		// this nodes continually.
+		lastOne := hitNodes[len(hitNodes)-1]
+		one := &watch.WatchEventDetail{
+			Cursor:    lastOne.Cursor,
+			Resource:  watch.HostIdentifier,
+			EventType: lastOne.EventType,
+			Detail:    nil,
+		}
+		return []*watch.WatchEventDetail{one}, nil
+	}
+
+	return details, nil
+}
+
+// WatchFromNow watches target resource events from now.
 func (c *Client) WatchFromNow(kit *rest.Kit, key event.Key, opts *watch.WatchEventOptions) (
 	*watch.WatchEventDetail, error) {
 
@@ -241,7 +366,7 @@ func (c *Client) WatchFromNow(kit *rest.Kit, key event.Key, opts *watch.WatchEve
 		}, nil
 	}
 
-	if !c.isNodeWithEventType(node, opts.EventTypes) {
+	if !c.isNodeHitEventType(node, opts.EventTypes) || !c.isNodeHitSubResource(node, opts.Filter.SubResource) {
 		// not matched, set to no event cursor with empty detail
 		return &watch.WatchEventDetail{
 			Cursor:    watch.NoEventCursor,
@@ -261,13 +386,27 @@ func (c *Client) WatchFromNow(kit *rest.Kit, key event.Key, opts *watch.WatchEve
 		return nil, kit.CCError.CCError(common.CCErrEventDetailNotExist)
 	}
 
-	// matched the event type.
-	return &watch.WatchEventDetail{
+	e := &watch.WatchEventDetail{
 		Cursor:    node.Cursor,
 		Resource:  opts.Resource,
 		EventType: node.EventType,
-		Detail:    watch.JsonString(*detail),
-	}, nil
+	}
+
+	if detail == nil {
+		// convert to a no event cursor
+		e.Detail = nil
+	} else {
+		if len(*detail) == 0 {
+			// convert to a no event cursor
+			e.Detail = nil
+		} else {
+			e.Detail = watch.JsonString(*detail)
+		}
+
+	}
+
+	// matched the event type.
+	return e, nil
 }
 
 // watchWithCursor get events with the start cursor which is offered by user.
@@ -282,7 +421,14 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 	rid := kit.Rid
 	start := time.Now().Unix()
 
-	exists, nodes, nodeID, err := c.searchFollowingEventChainNodes(kit, opts.Cursor, eventStep, opts.EventTypes, key)
+	searchOpt := &searchFollowingChainNodesOption{
+		startCursor: opts.Cursor,
+		limit:       eventStep,
+		types:       opts.EventTypes,
+		key:         key,
+		subResource: opts.Filter.SubResource,
+	}
+	exists, nodes, nodeID, err := c.searchFollowingEventChainNodes(kit, searchOpt)
 	if err != nil {
 		blog.Errorf("search nodes after cursor %s failed, err: %v, rid: %s", opts.Cursor, err, kit.Rid)
 		return nil, err
@@ -320,6 +466,19 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 					Detail:    nil,
 				}}, nil
 			} else {
+				// 如果最后一个事件存在，则重新拉取匹配watch条件(type和sub resource)的事件，防止最后一个事件正好在超时之后但是
+				// 拉取之前产生的情况下丢失从超时起到最后一个事件之间的事件。如果从起始cursor到最后一个事件之间没有匹配事件的话，
+				// 返回最后一个事件，以免下次拉取时需要从起始cursor再重新拉取一遍不匹配的事件
+				searchOpt.id = nodeID
+				nodes, err = c.searchFollowingEventChainNodesByID(kit, searchOpt)
+				if err != nil {
+					blog.Errorf("watch event from cursor: %s failed, err: %v, rid: %s", opts.Cursor, err, rid)
+					return nil, err
+				}
+				if len(nodes) != 0 {
+					return c.getEventDetailsWithNodes(kit, opts, nodes, key)
+				}
+
 				resp := &watch.WatchEventDetail{
 					Cursor:   lastNode.Cursor,
 					Resource: opts.Resource,
@@ -331,7 +490,8 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 			}
 		}
 
-		nodes, err = c.searchFollowingEventChainNodesByID(kit, nodeID, eventStep, opts.EventTypes, key)
+		searchOpt.id = nodeID
+		nodes, err = c.searchFollowingEventChainNodesByID(kit, searchOpt)
 		if err != nil {
 			blog.Errorf("watch event from cursor: %s failed, err: %v, rid: %s", opts.Cursor, err, rid)
 			return nil, err
@@ -339,7 +499,7 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 	}
 }
 
-func (c *Client) isNodeWithEventType(node *watch.ChainNode, types []watch.EventType) bool {
+func (c *Client) isNodeHitEventType(node *watch.ChainNode, types []watch.EventType) bool {
 	if len(types) == 0 {
 		return true
 	}
@@ -349,5 +509,21 @@ func (c *Client) isNodeWithEventType(node *watch.ChainNode, types []watch.EventT
 			return true
 		}
 	}
+	return false
+}
+
+// isNodeHitSubResource check if node hit the sub resource, not specifying sub resource means matching all and is hit
+// only used for common and mainline instances that contains sub resource
+func (c *Client) isNodeHitSubResource(node *watch.ChainNode, subResource string) bool {
+	if len(subResource) == 0 {
+		return true
+	}
+
+	for _, subRes := range node.SubResource {
+		if subRes == subResource {
+			return true
+		}
+	}
+
 	return false
 }

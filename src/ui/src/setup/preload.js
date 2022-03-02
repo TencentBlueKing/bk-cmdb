@@ -1,4 +1,4 @@
-import { getAuthorizedBusiness } from '@/router/business-interceptor.js'
+import { getAuthorizedBusiness, getAuthorizedBusinessSet } from '@/router/business-interceptor.js'
 import { verifyAuth } from '@/services/auth.js'
 import store from '@/store'
 
@@ -73,7 +73,13 @@ export default async function (app) {
     // 开源版的可能没有 IAM，不需要鉴权
     store.commit('globalConfig/setAuth', true)
   }
+
+  // 获取有访问权限的业务
   getAuthorizedBusiness()
+
+  // 获取有访问权限的业务集
+  getAuthorizedBusinessSet()
+
   return Promise.all([
     getGlobalConfig(app),
     getClassifications(app),

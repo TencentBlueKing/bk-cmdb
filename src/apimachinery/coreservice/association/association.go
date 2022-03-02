@@ -21,27 +21,53 @@ import (
 )
 
 type AssociationClientInterface interface {
-	UpdateAssociationType(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
-	DeleteAssociationType(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
-	ReadAssociationType(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.SearchAssociationTypeResult, err error)
-	CreateAssociationType(ctx context.Context, h http.Header, input *metadata.CreateAssociationKind) (resp *metadata.CreatedOneOptionResult, err error)
+	UpdateAssociationType(ctx context.Context, h http.Header, input *metadata.UpdateOption) (*metadata.UpdatedCount,
+		error)
+	DeleteAssociationType(ctx context.Context, h http.Header, input *metadata.DeleteOption) (
+		*metadata.DeletedCount, error)
+	ReadAssociationType(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
+		*metadata.SearchAssociationType, error)
+	CreateAssociationType(ctx context.Context, h http.Header, input *metadata.CreateAssociationKind) (
+		*metadata.CreateOneDataResult, error)
 
-	CreateManyAssociation(ctx context.Context, h http.Header, input *metadata.CreateManyAssociationKind) (resp *metadata.CreatedManyOptionResult, err error)
-	SetAssociation(ctx context.Context, h http.Header, input *metadata.SetAssociationKind) (resp *metadata.SetOptionResult, err error)
-	SetManyAssociation(ctx context.Context, h http.Header, input *metadata.SetManyAssociationKind) (resp *metadata.SetOptionResult, err error)
-	DeleteAssociationCascade(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
-	CreateModelAssociation(ctx context.Context, h http.Header, input *metadata.CreateModelAssociation) (resp *metadata.CreatedOneOptionResult, err error)
-	CreateMainlineModelAssociation(ctx context.Context, h http.Header, input *metadata.CreateModelAssociation) (resp *metadata.CreatedOneOptionResult, err error)
-	SetModelAssociation(ctx context.Context, h http.Header, input *metadata.SetModelAssociation) (resp *metadata.SetOptionResult, err error)
-	UpdateModelAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
-	ReadModelAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelAssociationResult, err error)
-	DeleteModelAssociation(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
-	DeleteModelAssociationCascade(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
-	CreateInstAssociation(ctx context.Context, h http.Header, input *metadata.CreateOneInstanceAssociation) (resp *metadata.CreatedOneOptionResult, err error)
-	SetInstAssociation(ctx context.Context, h http.Header, input *metadata.SetOneInstanceAssociation) (resp *metadata.SetOptionResult, err error)
-	UpdateInstAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
-	ReadInstAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadInstAssociationResult, err error)
-	DeleteInstAssociation(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
+	CreateManyAssociation(ctx context.Context, h http.Header, input *metadata.CreateManyAssociationKind) (
+		resp *metadata.CreatedManyOptionResult, err error)
+	SetAssociation(ctx context.Context, h http.Header, input *metadata.SetAssociationKind) (
+		resp *metadata.SetOptionResult, err error)
+	SetManyAssociation(ctx context.Context, h http.Header, input *metadata.SetManyAssociationKind) (
+		resp *metadata.SetOptionResult, err error)
+	DeleteAssociationCascade(ctx context.Context, h http.Header, input *metadata.DeleteOption) (
+		resp *metadata.DeletedOptionResult, err error)
+	CreateModelAssociation(ctx context.Context, h http.Header, input *metadata.CreateModelAssociation) (
+		*metadata.CreateOneDataResult, error)
+	CreateMainlineModelAssociation(ctx context.Context, h http.Header, input *metadata.CreateModelAssociation) (
+		*metadata.CreateOneDataResult, error)
+	SetModelAssociation(ctx context.Context, h http.Header, input *metadata.SetModelAssociation) (
+		resp *metadata.SetOptionResult, err error)
+	UpdateModelAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (*metadata.UpdatedCount,
+		error)
+	ReadModelAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
+		*metadata.QueryModelAssociationResult, error)
+	DeleteModelAssociation(ctx context.Context, h http.Header, input *metadata.DeleteOption) (*metadata.DeletedCount,
+		error)
+	DeleteModelAssociationCascade(ctx context.Context, h http.Header, input *metadata.DeleteOption) (
+		resp *metadata.DeletedOptionResult, err error)
+	CreateInstAssociation(ctx context.Context, h http.Header, input *metadata.CreateOneInstanceAssociation) (
+		*metadata.CreateOneDataResult, error)
+	CreateManyInstAssociation(ctx context.Context, header http.Header, input *metadata.CreateManyInstanceAssociation) (
+		*metadata.CreateManyDataResult, error)
+	SetInstAssociation(ctx context.Context, h http.Header, input *metadata.SetOneInstanceAssociation) (
+		resp *metadata.SetOptionResult, err error)
+	UpdateInstAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
+		resp *metadata.UpdatedOptionResult, err error)
+	ReadInstAssociation(ctx context.Context, h http.Header, input *metadata.InstAsstQueryCondition) (
+		resp *metadata.QueryInstAssociationResult, err error)
+	DeleteInstAssociation(ctx context.Context, h http.Header, input *metadata.InstAsstDeleteOption) (
+		*metadata.DeletedCount, error)
+
+	// CountInstanceAssociations counts model instance associations num.
+	CountInstanceAssociations(ctx context.Context, header http.Header, objID string, input *metadata.Condition) (
+		*metadata.CountResponseContent, error)
 }
 
 func NewAssociationClientInterface(client rest.ClientInterface) AssociationClientInterface {

@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/json"
@@ -38,7 +39,8 @@ func (ps *parseStream) topology() *parseStream {
 		objectSet().
 		audit().
 		fullTextSearch().
-		cloudArea()
+		cloudArea().
+		businessSet()
 
 	return ps
 }
@@ -56,10 +58,10 @@ var (
 const (
 	findReducedBusinessListPattern      = `/api/v3/biz/with_reduced`
 	findSimplifiedBusinessListPattern   = `/api/v3/biz/simplify`
-	updatePlatformSettingIdleSetPattern = `/api/v3/topo/update/biz/idle_set`
-	deletePlatformSettingModulePattern  = `/api/v3/topo/delete/biz/extra_moudle`
 	updatemanyBizPropertyPattern        = `/api/v3/updatemany/biz/property`
 	deletemanyBizPropertyPattern        = `/api/v3/deletemany/biz`
+	updatePlatformSettingIdleSetPattern = `/api/v3/topo/update/biz/idle_set`
+	deletePlatformSettingModulePattern  = `/api/v3/topo/delete/biz/extra_moudle`
 )
 
 func (ps *parseStream) business() *parseStream {
@@ -289,6 +291,7 @@ func (ps *parseStream) business() *parseStream {
 		}
 		return ps
 	}
+
 	// find simplified business list with limited fields return
 	if ps.hitPattern(updatePlatformSettingIdleSetPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -301,6 +304,7 @@ func (ps *parseStream) business() *parseStream {
 		}
 		return ps
 	}
+
 	if ps.hitPattern(deletePlatformSettingModulePattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -316,10 +320,315 @@ func (ps *parseStream) business() *parseStream {
 	return ps
 }
 
+const (
+	createBizSetPattern               = `/api/v3/create/biz_set`
+	deleteBizSetPattern               = `/api/v3/deletemany/biz_set`
+	updateBizSetPattern               = `/api/v3/updatemany/biz_set`
+	findBizInBizSetPattern            = `/api/v3/find/biz_set/biz_list`
+	findBizSetTopoPattern             = `/api/v3/find/biz_set/topo_path`
+	findmanyBusinessSetPattern        = `/api/v3/findmany/biz_set`
+	findReducedBusinessSetListPattern = `/api/v3/findmany/biz_set/with_reduced`
+	previewBusinessSetPattern         = `/api/v3/find/biz_set/preview`
+)
+
+var (
+	// search biz resources by biz set regex, authorize by biz set access permission, **only for ui**
+	listSetInBizSetRegexp     = regexp.MustCompile(`^/api/v3/findmany/set/biz_set/[0-9]+/biz/[0-9]+/?$`)
+	listModuleInBizSetRegexp  = regexp.MustCompile(`^/api/v3/findmany/module/biz_set/[0-9]+/biz/[0-9]+/set/[0-9]+/?$`)
+	findBizSetTopoPathRegexp  = regexp.MustCompile(`^/api/v3/find/topopath/biz_set/[0-9]+/biz/[0-9]+/?$`)
+	countTopoHostAndSrvRegexp = regexp.MustCompile(`^/api/v3/count/topoinst/host_service_inst/biz_set/[0-9]+/?$`)
+)
+
+// NOCC:golint/fnsize(business set操作需要放到一个函数中)
+func (ps *parseStream) businessSet() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitPattern(findBizInBizSetPattern, http.MethodPost) {
+		bizSetIDVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizSetID := bizSetIDVal.Int()
+		if bizSetID <= 0 {
+			ps.err = errors.New("invalid biz set id")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.AccessBizSet,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+		return ps
+	}
+
+	// update biz set, authorize if user has update permission to all of the specified biz set ids
+	if ps.hitPattern(updateBizSetPattern, http.MethodPut) {
+		bizSetIDsVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_ids")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizSetIDArr := bizSetIDsVal.Array()
+		if len(bizSetIDArr) == 0 {
+			ps.err = errors.New("bk_biz_set_ids is not set")
+			return ps
+		}
+
+		for _, bizSetIDVal := range bizSetIDArr {
+			bizSetID := bizSetIDVal.Int()
+			if bizSetID <= 0 {
+				ps.err = errors.New("invalid biz set id")
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					Basic: meta.Basic{
+						Type:       meta.BizSet,
+						Action:     meta.Update,
+						InstanceID: bizSetID,
+					},
+				},
+			}
+		}
+		return ps
+	}
+
+	if ps.hitPattern(deleteBizSetPattern, http.MethodPost) {
+		bizSetIDsVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_ids")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizSetIDArr := bizSetIDsVal.Array()
+		if len(bizSetIDArr) == 0 {
+			ps.err = errors.New("bk_biz_set_ids is not set")
+			return ps
+		}
+		if len(bizSetIDArr) > 100 {
+			ps.err = errors.New("bk_biz_set_ids exceeds maximum length 100")
+			return ps
+		}
+
+		for _, bizSetIDVal := range bizSetIDArr {
+			bizSetID := bizSetIDVal.Int()
+			if bizSetID <= 0 {
+				ps.err = errors.New("invalid biz set id")
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					Basic: meta.Basic{
+						Type:       meta.BizSet,
+						Action:     meta.Delete,
+						InstanceID: bizSetID,
+					},
+				},
+			}
+		}
+		return ps
+	}
+
+	if ps.hitPattern(findBizSetTopoPattern, http.MethodPost) {
+		bizSetIDVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizSetID := bizSetIDVal.Int()
+		if bizSetID <= 0 {
+			ps.err = errors.New("invalid biz set id")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.AccessBizSet,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find many business set list for the user with any business set resources
+	if ps.hitPattern(findmanyBusinessSetPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizSet,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find reduced business set list for the user with any business set resources
+	if ps.hitPattern(findReducedBusinessSetListPattern, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizSet,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// create business set, this is not a normalize api.
+	if ps.hitPattern(createBizSetPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizSet,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	// preview business set
+	if ps.hitPattern(previewBusinessSetPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizSet,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(listSetInBizSetRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 8 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		bizSetID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.AccessBizSet,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(listModuleInBizSetRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 10 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		bizSetID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.AccessBizSet,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(findBizSetTopoPathRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 8 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		bizSetID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.AccessBizSet,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(countTopoHostAndSrvRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		bizSetID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.AccessBizSet,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	return ps
+}
+
 var (
 	findMainlineIdleFaultModuleRegexp               = regexp.MustCompile(`^/api/v3/topo/internal/[^\s/]+/[0-9]+/?$`)
 	findMainlineIdleFaultModuleWithStatisticsRegexp = regexp.MustCompile(`^/api/v3/topo/internal/[^\s/]+/[0-9]+/with_statistics/?$`)
 	findBriefBizTopoRegexp                          = regexp.MustCompile(`^/api/v3/find/topo/tree/brief/biz/[0-9]+/?$`)
+)
+
+const (
+	findBriefTopologyNodeRelation = "/api/v3/find/topo/biz/brief_node_relation"
 )
 
 func (ps *parseStream) mainline() *parseStream {
@@ -395,6 +704,19 @@ func (ps *parseStream) mainline() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.MainlineInstance,
 					Action: meta.Find,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(findBriefTopologyNodeRelation, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.MainlineInstance,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -512,7 +834,7 @@ func (ps *parseStream) objectModule() *parseStream {
 				},
 				Layers: []meta.Item{
 					{
-						Type:       meta.ModelInstance,
+						Type:       meta.ModelSet,
 						Name:       "set",
 						InstanceID: setID,
 					},
@@ -557,7 +879,7 @@ func (ps *parseStream) objectModule() *parseStream {
 				},
 				Layers: []meta.Item{
 					{
-						Type:       meta.ModelInstance,
+						Type:       meta.ModelSet,
 						Name:       "set",
 						InstanceID: setID,
 					},
@@ -601,7 +923,7 @@ func (ps *parseStream) objectModule() *parseStream {
 				},
 				Layers: []meta.Item{
 					{
-						Type:       meta.ModelInstance,
+						Type:       meta.ModelSet,
 						Name:       "set",
 						InstanceID: setID,
 					},
@@ -1090,10 +1412,16 @@ func (ps *parseStream) audit() *parseStream {
 			return ps
 		}
 
+		model, err := ps.getOneModel(map[string]interface{}{common.BKObjIDField: query.Condition.ObjID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   iam.GenCMDBDynamicResType(model.ID),
 					Action: meta.SkipAction,
 				},
 			},

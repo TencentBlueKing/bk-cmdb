@@ -37,18 +37,14 @@ func (h *objectAuditLog) GenerateAuditLog(parameter *generateAuditCommonParamete
 				err.Error(), kit.Rid)
 			return nil, err
 		}
-		if rsp.Result != true {
-			blog.Errorf("generate audit log of model failed, failed to read model, rsp code is %v, err: %s, rid: %s",
-				rsp.Code, rsp.ErrMsg, kit.Rid)
-			return nil, rsp.CCError()
-		}
-		if len(rsp.Data.Info) <= 0 {
+
+		if len(rsp.Info) <= 0 {
 			blog.Errorf("generate audit log of model failed, failed to read model, err: %s, rid: %s",
 				kit.CCError.CCError(common.CCErrorModelNotFound), kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrorModelNotFound)
 		}
 
-		data = &rsp.Data.Info[0].Spec
+		data = &rsp.Info[0]
 	}
 
 	return &metadata.AuditLog{

@@ -21,79 +21,49 @@ import (
 	"configcenter/src/scene_server/auth_server/types"
 )
 
-// list enumeration attributes of instance type resource
+// ListAttr list enumeration and list type attributes of instance type resource
 func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.AttrResource, error) {
 	attrs := make([]types.AttrResource, 0)
 	objID := getInstanceResourceObjID(resourceType)
-	if objID == "" && resourceType != iam.SysInstance {
+	if objID == "" && !iam.IsIAMSysInstance(resourceType) {
 		return attrs, nil
 	}
 
 	param := metadata.QueryCondition{
 		Condition: map[string]interface{}{
-			common.BKPropertyTypeField: common.FieldTypeEnum,
+			common.BKPropertyTypeField: map[string]interface{}{
+				common.BKDBIN: []interface{}{
+					common.FieldTypeEnum,
+					common.FieldTypeList,
+				},
+			},
 		},
 		Fields: []string{common.BKPropertyIDField, common.BKPropertyNameField},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 	}
-	var res *metadata.ReadModelAttrResult
-	var err error
 
-	// read all non-inner model attributes for SysInstance resource, add object id to distinguish
-	if resourceType == iam.SysInstance {
-		param.Fields = append(param.Fields, common.BKObjIDField)
-		param.Condition[common.BKObjIDField] = map[string]interface{}{
-			common.BKDBNIN: []string{
-				common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule,
-				common.BKInnerObjIDHost, common.BKInnerObjIDProc, common.BKInnerObjIDPlat,
-			},
+	var err error
+	if iam.IsIAMSysInstance(resourceType) {
+		objID, err = lgc.GetObjIDFromResourceType(kit.Ctx, kit.Header, resourceType)
+		if err != nil {
+			blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
+				err, resourceType, kit.Rid)
+			return nil, err
 		}
-		res, err = lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, &param)
-	} else {
-		res, err = lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, &param)
 	}
+	
+	res, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, &param)
 	if err != nil {
 		blog.ErrorJSON("read model attribute failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
 		return nil, err
 	}
-	if !res.Result {
-		blog.ErrorJSON("read model attribute failed, error code: %s, error message: %s, param: %s, rid: %s", res.Code, res.ErrMsg, param, kit.Rid)
-		return nil, res.CCError()
-	}
-	if len(res.Data.Info) == 0 {
+
+	if len(res.Info) == 0 {
 		return attrs, nil
 	}
 
-	// get object id name map for common instances
-	objIDNameMap := make(map[string]string)
-	if resourceType == iam.SysInstance {
-		objIDs := make([]string, 0)
-		for _, attr := range res.Data.Info {
-			objIDs = append(objIDs, attr.ObjectID)
-		}
-		modelRes, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{
-			Fields: []string{common.BKObjIDField, common.BKObjNameField},
-			Page:   metadata.BasePage{Limit: common.BKNoLimit},
-			Condition: map[string]interface{}{
-				common.BKObjIDField: map[string]interface{}{
-					common.BKDBIN: objIDs,
-				},
-			},
-		})
-		if err != nil {
-			blog.Errorf("get model failed, error: %s, rid: %s", err.Error(), kit.Rid)
-			return nil, err
-		}
-		for _, obj := range modelRes.Data.Info {
-			objIDNameMap[obj.Spec.ObjectID] = obj.Spec.ObjectName
-		}
-	}
-
-	for _, attr := range res.Data.Info {
+	for _, attr := range res.Info {
 		displayName := attr.PropertyName
-		if resourceType == iam.SysInstance {
-			displayName = objIDNameMap[attr.ObjectID] + "-" + attr.PropertyName
-		}
 		attrs = append(attrs, types.AttrResource{
 			ID:          attr.PropertyID,
 			DisplayName: displayName,

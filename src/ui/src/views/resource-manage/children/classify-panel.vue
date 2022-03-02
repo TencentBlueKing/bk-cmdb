@@ -4,7 +4,7 @@
       <span class="classify-name-text">{{classify['bk_classification_name']}}</span>
     </h4>
     <div class="models-layout">
-      <div class="models-link" v-for="(model, index) in classify['bk_objects']"
+      <div class="models-link" v-for="(model, index) in models"
         :key="index"
         :title="model['bk_obj_name']"
         @click="redirect(model)">
@@ -14,36 +14,37 @@
           :class="[isCollected(model) ? 'icon-star-shape' : 'icon-star']"
           @click.prevent.stop="toggleCustomNavigation(model)">
         </i>
-        <span class="model-instance-count">{{getInstanceCount(model)}}</span>
+        <div class="model-instance-count">
+          <instance-count :obj-id="model.bk_obj_id" />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+  import has from 'has'
   import { mapGetters } from 'vuex'
   import {
-    MENU_RESOURCE_HOST,
-    MENU_RESOURCE_BUSINESS,
     MENU_RESOURCE_INSTANCE,
-    MENU_RESOURCE_COLLECTION,
-    MENU_RESOURCE_HOST_COLLECTION,
-    MENU_RESOURCE_BUSINESS_COLLECTION
+    MENU_RESOURCE_COLLECTION
   } from '@/dictionary/menu-symbol'
-  import has from 'has'
+  import InstanceCount from './instance-count.vue'
+  import { BUILTIN_MODELS, BUILTIN_MODEL_COLLECTION_KEYS, BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
+
   export default {
+    components: {
+      InstanceCount
+    },
     props: {
       classify: {
         type: Object,
         required: true
       },
-      instanceCount: {
-        type: Array,
-        required: true
-      },
       collection: {
         type: Array,
-        required: true
+        required: true,
+        default: () => ([])
       }
     },
     data() {
@@ -55,24 +56,16 @@
       ...mapGetters('userCustom', ['usercustom']),
       collectedCount() {
         return this.collection.length
+      },
+      models() {
+        return this.classify.bk_objects
       }
     },
     methods: {
-      getInstanceCount(model) {
-        const data = this.instanceCount.find(data => data.bk_obj_id === model.bk_obj_id)
-        if (data) {
-          return data.instance_count
-        }
-        return 0
-      },
       redirect(model) {
-        const map = {
-          host: MENU_RESOURCE_HOST,
-          biz: MENU_RESOURCE_BUSINESS
-        }
-        if (has(map, model.bk_obj_id)) {
+        if (has(BUILTIN_MODEL_RESOURCE_MENUS, model.bk_obj_id)) {
           this.$routerActions.redirect({
-            name: map[model.bk_obj_id]
+            name: BUILTIN_MODEL_RESOURCE_MENUS[model.bk_obj_id]
           })
         } else {
           this.$routerActions.redirect({
@@ -86,8 +79,11 @@
       isCollected(model) {
         return this.collection.includes(model.bk_obj_id)
       },
+      isBuiltinModel(model) {
+        return Object.values(BUILTIN_MODELS).includes(model.bk_obj_id)
+      },
       toggleCustomNavigation(model) {
-        if (['host', 'biz'].includes(model.bk_obj_id)) {
+        if (this.isBuiltinModel(model)) {
           this.toggleDefaultCollection(model)
         } else {
           let isAdd = false
@@ -112,12 +108,12 @@
         }
       },
       async toggleDefaultCollection(model) {
-        const isCollected = this.collection.includes(model.bk_obj_id)
+        const isCollected = this.isCollected(model)
         if (!isCollected && this.collection.length >= this.maxCustomNavigationCount) {
           this.$warn(this.$t('限制添加导航提示', { max: this.maxCustomNavigationCount }))
         } else {
           try {
-            const key = model.bk_obj_id === 'host' ? MENU_RESOURCE_HOST_COLLECTION : MENU_RESOURCE_BUSINESS_COLLECTION
+            const key =  BUILTIN_MODEL_COLLECTION_KEYS[model.bk_obj_id]
             await this.$store.dispatch('userCustom/saveUsercustom', {
               [key]: !isCollected
             })
@@ -207,12 +203,16 @@
             }
             .model-instance-count {
                 float: right;
+                @include inlineBlock;
                 width: 35px;
                 font-size: 14px;
+                height: 24px;
                 line-height: 24px;
                 color: #C4C6CC;
                 text-align: right;
-                @include inlineBlock;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
             }
             .model-star{
                 display: none;

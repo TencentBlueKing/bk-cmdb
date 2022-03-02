@@ -27,6 +27,9 @@ type RateLimiter interface {
 
 	// Burst returns the burst of this rate limiter
 	Burst() int64
+
+	// AcceptMany will wait and not return unless the token becomes available.
+	AcceptMany(count int64)
 }
 
 func NewRateLimiter(qps, burst int64) RateLimiter {
@@ -60,6 +63,11 @@ func (t *tokenBucket) Burst() int64 {
 	return t.burst
 }
 
+// AcceptMany accept many token
+func (t *tokenBucket) AcceptMany(count int64) {
+	t.limiter.Wait(count)
+}
+
 func NewMockRateLimiter() RateLimiter {
 	return &mockRatelimiter{}
 }
@@ -80,4 +88,8 @@ func (*mockRatelimiter) QPS() int64 {
 
 func (*mockRatelimiter) Burst() int64 {
 	return 0
+}
+
+// AcceptMany accept many token
+func (*mockRatelimiter) AcceptMany(count int64) {
 }

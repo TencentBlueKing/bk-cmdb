@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"configcenter/src/common/metrics"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -57,15 +58,17 @@ func initMongoMetric() {
 type oper string
 
 const (
-	findOper      oper = "find"
-	insertOper    oper = "insert"
-	updateOper    oper = "update"
-	upsertOper    oper = "upsert"
-	deleteOper    oper = "delete"
-	distinctOper  oper = "distinct"
-	aggregateOper oper = "aggregate"
-	countOper     oper = "count"
-	columnOper    oper = "column"
+	findOper        oper = "find"
+	insertOper      oper = "insert"
+	updateOper      oper = "update"
+	upsertOper      oper = "upsert"
+	deleteOper      oper = "delete"
+	distinctOper    oper = "distinct"
+	aggregateOper   oper = "aggregate"
+	countOper       oper = "count"
+	columnOper      oper = "column"
+	indexCreateOper oper = "create_index"
+	indexDropOper   oper = "drop_index"
 )
 
 type mongoMetric struct {

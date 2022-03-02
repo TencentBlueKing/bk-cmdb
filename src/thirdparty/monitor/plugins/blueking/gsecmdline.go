@@ -50,8 +50,10 @@ func (g *GseCmdline) Report(data string) error {
 
 func (g *GseCmdline) isAvailable() bool {
 	cmd := exec.Command(config.MonitorCfg.GsecmdlinePath, "-v")
+
 	tryCnt := 3
 	for i := 0; i < tryCnt; i++ {
+
 		if err := cmd.Run(); err != nil {
 			blog.Errorf("check gsecmdline is available failed, command err: %v", err)
 			continue

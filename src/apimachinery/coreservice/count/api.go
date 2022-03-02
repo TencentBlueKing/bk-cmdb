@@ -16,14 +16,13 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
-func (s *count) GetCountByFilter(ctx context.Context, h http.Header, table string, filters []map[string]interface{}) ([]int64, errors.CCErrorCoder) {
-	rid := util.ExtractRequestIDFromContext(ctx)
+// GetCountByFilter search number array of needed by filters
+func (s *count) GetCountByFilter(ctx context.Context, h http.Header, table string, filters []map[string]interface{}) (
+	[]int64, errors.CCErrorCoder) {
 
 	resp := &struct {
 		metadata.BaseResp `json:",inline"`
@@ -45,12 +44,12 @@ func (s *count) GetCountByFilter(ctx context.Context, h http.Header, table strin
 		WithHeaders(h).
 		Do().
 		Into(resp)
+
 	if httpDoErr != nil {
-		blog.Errorf("GetCountByFilter failed, http request failed, err: %+v, rid: %s", httpDoErr, rid)
 		return nil, errors.CCHttpError
 	}
-	if resp.Result == false || resp.Code != 0 {
-		return nil, errors.New(resp.Code, resp.ErrMsg)
+	if err := resp.CCError(); err != nil {
+		return nil, err
 	}
 
 	return resp.Data, nil

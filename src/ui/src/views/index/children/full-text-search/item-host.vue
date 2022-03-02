@@ -5,13 +5,13 @@
     </div>
     <div class="result-desc" v-if="properties" @click="data.linkTo(data.source)">
       <div class="desc-item"
-        v-html="`${$t('主机ID')}：${getHighlightValue(data.source.bk_host_id, data, 'bk_host_id')}`">
+        v-html="`${$t('主机ID')}：${getHighlightValue(data.source.bk_host_id, data)}`">
       </div>
       <template v-for="(property, childIndex) in properties">
-        <div class="desc-item"
+        <div class="desc-item hl"
           v-if="data.source[property.bk_property_id]"
           :key="childIndex"
-          v-html="`${property.bk_property_name}：${getText(property, data, property.bk_property_id)}`">
+          v-html="`${property.bk_property_name}：${getText(property, data)}`">
         </div>
       </template>
     </div>

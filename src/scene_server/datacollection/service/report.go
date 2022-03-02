@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *Service) SearchReportSummary(req *restful.Request, resp *restful.Response) {

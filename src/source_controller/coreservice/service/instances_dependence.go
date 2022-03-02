@@ -30,8 +30,8 @@ func (s *coreService) IsInstAsstExist(kit *rest.Kit, objID string, instID uint64
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID}, &mongo.Eq{Key: common.BKInstIDField, Val: instID})
-	countCond := &metadata.CountCondition{Condition: cond.ToMapStr()}
-	objInstsRst, err := s.core.AssociationOperation().CountInstanceAssociations(kit, countCond)
+	countCond := &metadata.Condition{Condition: cond.ToMapStr()}
+	objInstsRst, err := s.core.AssociationOperation().CountInstanceAssociations(kit, objID, countCond)
 	if err != nil {
 		blog.Errorf("search instance association err: %v, rid: %s", err, kit.Rid)
 		return false, err
@@ -42,8 +42,8 @@ func (s *coreService) IsInstAsstExist(kit *rest.Kit, objID string, instID uint64
 
 	cond = mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKAsstObjIDField, Val: objID}, &mongo.Eq{Key: common.BKAsstInstIDField, Val: instID})
-	countCond = &metadata.CountCondition{Condition: cond.ToMapStr()}
-	objAsstInstsRst, err := s.core.AssociationOperation().CountInstanceAssociations(kit, countCond)
+	countCond = &metadata.Condition{Condition: cond.ToMapStr()}
+	objAsstInstsRst, err := s.core.AssociationOperation().CountInstanceAssociations(kit, objID, countCond)
 	if err != nil {
 		blog.Errorf("search instance to association err: %v, rid: %s", err, kit.Rid)
 		return false, err
@@ -60,7 +60,7 @@ func (s *coreService) DeleteInstAsst(kit *rest.Kit, objID string, instID uint64)
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID}, &mongo.Eq{Key: common.BKInstIDField, Val: instID})
 	deleteCond := metadata.DeleteOption{Condition: cond.ToMapStr()}
-	_, err := s.core.AssociationOperation().DeleteInstanceAssociation(kit, deleteCond)
+	_, err := s.core.AssociationOperation().DeleteInstanceAssociation(kit, objID, deleteCond)
 	if nil != err {
 		blog.Errorf("delete instance association error %v, rid: %s", err, kit.Rid)
 		return err
@@ -68,7 +68,7 @@ func (s *coreService) DeleteInstAsst(kit *rest.Kit, objID string, instID uint64)
 	cond = mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKAsstObjIDField, Val: objID}, &mongo.Eq{Key: common.BKAsstInstIDField, Val: instID})
 	deleteCond = metadata.DeleteOption{Condition: cond.ToMapStr()}
-	_, err = s.core.AssociationOperation().DeleteInstanceAssociation(kit, deleteCond)
+	_, err = s.core.AssociationOperation().DeleteInstanceAssociation(kit, objID, deleteCond)
 	if nil != err {
 		blog.Errorf("delete instance to association error %v, rid: %s", err, kit.Rid)
 		return err

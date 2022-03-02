@@ -184,7 +184,7 @@ func (c *CloudServer) getSecretKey() (string, error) {
 	return secretsClient.GetCloudAccountSecretKey(context.Background(), header)
 }
 
-// getSyncPeriod get the sync period
+// setSyncPeriod set the sync period
 func (c *CloudServer) setSyncPeriod() {
 	cloudsync.SyncPeriodMinutes = c.Config.SyncPeriodMinutes
 	if cloudsync.SyncPeriodMinutes < cloudsync.SyncPeriodMinutesMin {

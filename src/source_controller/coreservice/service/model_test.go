@@ -130,7 +130,7 @@ func queryModel(t *testing.T, client *httpclient.HttpClient, modelID, classID st
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
-	modelResult := &metadata.ReadModelResult{}
+	modelResult := &metadata.ReadModelWithAttributeResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
 	require.NotNil(t, modelResult)

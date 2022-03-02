@@ -123,14 +123,20 @@ const (
 	ModelTopologyOperation Action = "modelTopologyOperation"
 
 	// event watch
-	WatchHost         Action = "host"
-	WatchHostRelation Action = "host_relation"
-	WatchBiz          Action = "biz"
-	WatchSet          Action = "set"
-	WatchModule       Action = "module"
-	WatchSetTemplate  Action = "set_template"
-	WatchProcess      Action = "process"
+	WatchHost             Action = "host"
+	WatchHostRelation     Action = "host_relation"
+	WatchBiz              Action = "biz"
+	WatchSet              Action = "set"
+	WatchModule           Action = "module"
+	WatchProcess          Action = "process"
+	WatchCommonInstance   Action = "object_instance"
+	WatchMainlineInstance Action = "mainline_instance"
+	WatchInstAsst         Action = "inst_asst"
+	WatchBizSet           Action = "biz_set"
 
 	// can view business related resources, including business and business collection resources
 	ViewBusinessResource Action = "viewBusinessResource"
+
+	// AccessBizSet access business set related resources, including business and business related resources
+	AccessBizSet Action = "accessBizSet"
 )

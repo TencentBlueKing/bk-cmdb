@@ -76,7 +76,8 @@ func (s *Service) VerifyRegularContentBatch(c *gin.Context) {
 	requestBody := new(VerifyRegularContentBatchRequest)
 	err := c.BindJSON(requestBody)
 	if err != nil {
-		blog.Errorf("verify regular content batch failed, but unmarshal body to json failed, err: %v, rid: %s", err, rid)
+		blog.Errorf("verify regular content batch failed, but unmarshal body to json failed, err: %v, rid: %s", err,
+			rid)
 		c.String(http.StatusBadRequest, "invalid body, parse json failed, err: %+v", err)
 		return
 	}

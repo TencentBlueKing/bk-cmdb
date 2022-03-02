@@ -151,13 +151,13 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 	blog.V(5).Infof("AuditQuery, AuditOperation auditQuery: %+v, rid: %s", auditQuery, ctx.Kit.Rid)
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	count, list, err := s.Core.AuditOperation().SearchAuditList(ctx.Kit, auditQuery)
+	rsp, err := s.Engine.CoreAPI.CoreService().Audit().SearchAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditQuery)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntityWithCount(count, list)
+	ctx.RespEntityWithCount(rsp.Data.Count, rsp.Data.Info)
 }
 
 // SearchAuditDetail search audit log detail by id
@@ -181,15 +181,21 @@ func (s *Service) SearchAuditDetail(ctx *rest.Contexts) {
 	auditDetailQuery := metadata.QueryCondition{
 		Condition: cond,
 	}
-	blog.V(5).Infof("AuditDetailQuery, AuditOperation auditDetailQuery: %+v, rid: %s", auditDetailQuery, ctx.Kit.Rid)
+	blog.V(5).Infof("AuditDetailQuery, AuditOperation auditDetailQuery: %+v, rid: %s",
+		auditDetailQuery, ctx.Kit.Rid)
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	list, err := s.Core.AuditOperation().SearchAuditDetail(ctx.Kit, auditDetailQuery)
-	if nil != err {
+	rsp, err := s.Engine.CoreAPI.CoreService().Audit().SearchAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditDetailQuery)
+	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(list)
+
+	if len(rsp.Data.Info) == 0 {
+		blog.Errorf("get no audit log detail, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKFieldID))
+	}
+	ctx.RespEntity(rsp.Data.Info)
 }
 
 func parseOperationTimeCondition(kit *rest.Kit, operationTime metadata.OperationTimeCondition) (map[string]interface{}, error) {
@@ -252,14 +258,7 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, query.Condition.ObjID)
-	if err != nil {
-		blog.Errorf("find object[%s] failed, err: %v, rid: %s", query.Condition.ObjID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	isMainline, err := obj.IsMainlineObject()
+	isMainline, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, query.Condition.ObjID)
 	if err != nil {
 		blog.Errorf("check if object is mainline object failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -286,13 +285,15 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 	}
 
 	auditQuery := metadata.QueryCondition{Condition: cond, Fields: fields, Page: query.Page}
-	count, list, err := s.Core.AuditOperation().SearchAuditList(ctx.Kit, auditQuery)
-	if err != nil {
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	rsp, err := s.Engine.CoreAPI.CoreService().Audit().SearchAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditQuery)
+	if nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntityWithCount(count, list)
+	ctx.RespEntityWithCount(rsp.Data.Count, rsp.Data.Info)
 }
 
 func buildInstAuditCondition(ctx *rest.Contexts, query metadata.InstAuditCondition) (mapstr.MapStr, error) {
@@ -324,8 +325,8 @@ func buildInstAuditCondition(ctx *rest.Contexts, query metadata.InstAuditConditi
 		cond[common.BKOperationDetailField+"."+"src_obj_id"] = query.ObjID
 	case metadata.ModelInstanceRes:
 		cond[common.BKOperationDetailField+"."+common.BKObjIDField] = query.ObjID
-	case metadata.BusinessRes, metadata.HostRes:
-		// host, biz auditlog not need bk_obj_id or operation_detail to select
+	case metadata.BusinessRes, metadata.BizSetRes, metadata.HostRes:
+		// host, biz and biz set auditlog not need bk_obj_id or operation_detail to select
 		break
 	default:
 		blog.Errorf("unsupported resource type %s when query with object id", query.ResourceType)

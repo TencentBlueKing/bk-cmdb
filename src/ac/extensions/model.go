@@ -27,8 +27,11 @@ import (
 	"configcenter/src/common/util"
 )
 
-// collectObjectsByObjectIDs collect business object that belongs to business or global object, which both id must in objectIDs
-func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header http.Header, businessID int64, objectIDs ...string) ([]metadata.Object, error) {
+// collectObjectsByObjectIDs collect business object that belongs to business or global object,
+// which both id must in objectIDs
+func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header http.Header, businessID int64,
+	objectIDs ...string) ([]metadata.Object, error) {
+
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	objectIDs = util.StrArrayUnique(objectIDs)
 
@@ -43,19 +46,14 @@ func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header htt
 	if err != nil {
 		return nil, fmt.Errorf("get model by id: %+v failed, err: %+v", objectIDs, err)
 	}
-	if len(resp.Data.Info) == 0 {
+	if len(resp.Info) == 0 {
 		return nil, fmt.Errorf("get model by id: %+v failed, not found", objectIDs)
 	}
-	if len(resp.Data.Info) != len(objectIDs) {
+	if len(resp.Info) != len(objectIDs) {
 		return nil, fmt.Errorf("get model by id: %+v failed, get multiple model", objectIDs)
 	}
 
-	objects := make([]metadata.Object, 0)
-	for _, item := range resp.Data.Info {
-		objects = append(objects, item.Spec)
-	}
-
-	return objects, nil
+	return resp.Info, nil
 }
 
 // MakeResourcesByObjects make object resource with businessID and objects
@@ -161,4 +159,33 @@ func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.
 	}
 
 	return am.batchAuthorize(ctx, header, resource)
+}
+
+// CreateObjectOnIAM create object on iam including:
+// 1. create iam view
+// 2. register object resource creator action to iam
+func (am *AuthManager) CreateObjectOnIAM(ctx context.Context, header http.Header, objects []metadata.Object,
+	iamInstances []metadata.IamInstanceWithCreator) error {
+	if !am.Enabled() {
+		return nil
+	}
+
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	// create iam view
+	if err := am.Viewer.CreateView(ctx, header, objects); err != nil {
+		blog.ErrorJSON("create view failed, objects:%s, err: %s, rid: %s", objects, err, rid)
+		return err
+	}
+
+	// register object resource creator action to iam
+	for _, iamInstance := range iamInstances {
+		if _, err := am.Authorizer.RegisterResourceCreatorAction(ctx, header, iamInstance); err != nil {
+			blog.ErrorJSON("register created object to iam failed, iam instance:%s, err: %s, rid: %s",
+				iamInstance, err, rid)
+			return err
+		}
+	}
+
+	return nil
 }

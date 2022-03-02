@@ -13,12 +13,14 @@
 package operation
 
 import (
+	"errors"
 	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -34,14 +36,74 @@ func New() core.StatisticOperation {
 	return &operationManager{}
 }
 
+// SearchInstCount serach inner common object model instance count.
 func (m *operationManager) SearchInstCount(kit *rest.Kit, inputParam map[string]interface{}) (uint64, error) {
-	count, err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(inputParam).Count(kit.Ctx)
-	if nil != err {
-		blog.Errorf("query database error:%s, condition:%v, rid: %v", err.Error(), inputParam, kit.Rid)
-		return 0, err
+	// all object models.
+	allObjects := []metadata.ObjectIDCount{}
+
+	// target object model id, search target object when there is a object id in input params.
+	targetObjectID := util.GetStrByInterface(inputParam[common.BKObjIDField])
+
+	// common filter to search object.
+	objectFilter := []map[string]interface{}{
+		{
+			common.BKDBGroup: map[string]interface{}{
+				"_id": "$bk_obj_id",
+				"count": map[string]interface{}{
+					common.BKDBSum: 1,
+				},
+			},
+		},
 	}
 
-	return count, nil
+	// make search mode.
+	if len(targetObjectID) != 0 {
+		// only search the target object model in input params.
+		if !metadata.IsCommon(targetObjectID) {
+			return 0, errors.New("only support inner object model instance")
+		}
+		allObjects = append(allObjects, metadata.ObjectIDCount{ObjID: targetObjectID})
+	} else {
+		// search all object models.
+		err := mongodb.Client().Table(common.BKTableNameObjDes).AggregateAll(kit.Ctx, objectFilter, &allObjects)
+		if err != nil {
+			blog.Errorf("get all object models failed, err: %+v, rid: %s", err, kit.Rid)
+			return 0, err
+		}
+	}
+
+	// inner object model instance count.
+	commonObjects := []metadata.ObjectIDCount{}
+
+	for _, object := range allObjects {
+		if metadata.IsCommon(object.ObjID) {
+			commonObjects = append(commonObjects, object)
+		}
+	}
+
+	// stat all common object counts in sharding tables.
+	var total uint64
+
+	for _, object := range commonObjects {
+		// stat the object sharding data one by one.
+		objectCounts := []metadata.ObjectIDCount{}
+
+		// sharding table name.
+		tableName := common.GetObjectInstTableName(object.ObjID, kit.SupplierAccount)
+
+		if err := mongodb.Client().Table(tableName).AggregateAll(kit.Ctx, objectFilter, &objectCounts); err != nil {
+			blog.Errorf("get object %s instances count failed, err: %+v, rid: %s", object.ObjID, err, kit.Rid)
+			return 0, err
+		}
+
+		// only one item in objectCounts for sharding object table, but we keep using
+		// the range mode to count total num.
+		for _, count := range objectCounts {
+			total += uint64(count.Count)
+		}
+	}
+
+	return total, nil
 }
 
 func (m *operationManager) SearchChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error) {
@@ -113,11 +175,16 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 			}
 		}
 	} else {
-		instCount, countErr = mongodb.Client().Table(common.BKTableNameBaseInst).Find(cond).Count(kit.Ctx)
+		instCount, countErr = mongodb.Client().
+			Table(common.GetObjectInstTableName(inputParam.ObjID, kit.SupplierAccount)).
+			Find(cond).
+			Count(kit.Ctx)
+
 		if countErr != nil {
 			blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, countErr, kit.Rid)
 			return nil, countErr
 		}
+
 		if instCount > 0 {
 			pipeline := []M{
 				{common.BKDBMatch: M{common.BKDBAND: []M{
@@ -127,7 +194,12 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 				}}},
 				{common.BKDBGroup: M{"_id": groupField, "count": M{common.BKDBSum: 1}}},
 			}
-			if err := mongodb.Client().Table(common.BKTableNameBaseInst).AggregateAll(kit.Ctx, pipeline, &groupCountArr); err != nil {
+
+			err := mongodb.Client().
+				Table(common.GetObjectInstTableName(inputParam.ObjID, kit.SupplierAccount)).
+				AggregateAll(kit.Ctx, pipeline, &groupCountArr)
+
+			if err != nil {
 				blog.Errorf("model's instance count aggregate failed, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, kit.Rid)
 				return nil, err
 			}

@@ -24,7 +24,9 @@ type cloudAreaAuditLog struct {
 }
 
 // GenerateAuditLog batch generate audit log for cloud area, auto get cloud area data by cloud ID.
-func (h *cloudAreaAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, platIDs []int64) ([]metadata.AuditLog, error) {
+func (h *cloudAreaAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, platIDs []int64) (
+	[]metadata.AuditLog, error) {
+
 	if len(platIDs) == 0 {
 		return make([]metadata.AuditLog, 0), nil
 	}
@@ -45,7 +47,7 @@ func (h *cloudAreaAuditLog) GenerateAuditLog(parameter *generateAuditCommonParam
 
 	// mapping from cloudID to cloudData.
 	mutilCloudArea := make(map[int64]mapstr.MapStr)
-	for _, data := range res.Data.Info {
+	for _, data := range res.Info {
 		cloudID, err := data.Int64(common.BKCloudIDField)
 		if err != nil {
 			return nil, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDPlat,

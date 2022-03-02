@@ -17,18 +17,23 @@ import (
 	"fmt"
 	"time"
 
-	"configcenter/src/ac/iam"
+	iamcli "configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/configures"
+	"configcenter/src/scene_server/admin_server/iam"
+	"configcenter/src/scene_server/admin_server/logics"
 	svc "configcenter/src/scene_server/admin_server/service"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/thirdparty/monitor"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -52,6 +57,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	process.Config.Register.Address, _ = cc.String("registerServer.addrs")
 	snapDataID, _ := cc.Int("hostsnap.dataID")
 	process.Config.SnapDataID = int64(snapDataID)
+	process.Config.SyncIAMPeriodMinutes, _ = cc.Int("adminServer.syncIAMPeriodMinutes")
 
 	// load mongodb, redis and common config from configure directory
 	mongodbPath := process.Config.Configures.Dir + "/" + types.CCConfigureMongo
@@ -67,6 +73,13 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	commonPath := process.Config.Configures.Dir + "/" + types.CCConfigureCommon
 	if err := cc.SetCommonFromFile(commonPath); err != nil {
 		return fmt.Errorf("parse common config from file[%s] failed, err: %v", commonPath, err)
+	}
+
+	process.Config.SnapReportMode, _ = cc.String("datacollection.hostsnap.reportMode")
+	process.Config.SnapKafka, _ = cc.Kafka("kafka.snap")
+
+	if err := monitor.InitMonitor(); err != nil {
+		return fmt.Errorf("init monitor failed, err: %v", err)
 	}
 
 	mongoConf, err := cc.Mongo("mongodb")
@@ -93,13 +106,18 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	process.Config.SnapRedis = snapRedisConf
 
-	process.Config.Iam, err = iam.ParseConfigFromKV("authServer", nil)
+	process.Config.IAM, err = iamcli.ParseConfigFromKV("authServer", nil)
 	if err != nil && auth.EnableAuthorize() {
 		blog.Errorf("parse iam error: %v", err)
+		return err
+	}
+
+	if err := parseShardingTableConfig(process); err != nil {
+		return err
 	}
 
 	input := &backbone.BackboneParameter{
-		ConfigUpdate: process.onHostConfigUpdate,
+		ConfigUpdate: process.onMigrateConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
 		Regdiscv:     process.Config.Register.Address,
 		SrvInfo:      svrInfo,
@@ -128,6 +146,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.Config = *process.Config
 	service.ConfigCenter = process.ConfigCenter
 	process.Service = service
+	var iamCli *iamcli.IAM
 
 	for {
 		if process.Config == nil {
@@ -136,10 +155,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
-		db, err := local.NewMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
-		if err != nil {
-			return fmt.Errorf("connect mongo server failed %s", err.Error())
+		dbErr := mongodb.InitClient("", &process.Config.MongoDB)
+		if dbErr != nil {
+			return fmt.Errorf("connect mongo server failed %s", dbErr.Error())
 		}
+		db := mongodb.Client()
 		process.Service.SetDB(db)
 
 		watchDB, err := local.NewMgo(process.Config.WatchDB.GetMongoConf(), time.Minute)
@@ -157,7 +177,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		if auth.EnableAuthorize() {
 			blog.Info("enable auth center access.")
 
-			iamCli, err := iam.NewIam(nil, process.Config.Iam, engine.Metric().Registry())
+			iamCli, err = iamcli.NewIAM(nil, process.Config.IAM, engine.Metric().Registry())
 			if err != nil {
 				return fmt.Errorf("new iam client failed: %v", err)
 			}
@@ -169,12 +189,25 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		if esbConfig, err := esb.ParseEsbConfig(""); err == nil {
 			esb.UpdateEsbConfig(*esbConfig)
 		}
+
+		process.Service.Logics = logics.NewLogics(engine)
 		break
+	}
+
+	if err := service.BackgroundTask(*process.Config); err != nil {
+		return err
 	}
 	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
 	if err != nil {
 		return err
 	}
+
+	errors.SetGlobalCCError(engine.CCErr)
+
+	syncor := iam.NewSyncor()
+	syncor.SetDB(mongodb.Client())
+	syncor.SetSyncIAMPeriod(process.Config.SyncIAMPeriodMinutes)
+	go syncor.SyncIAM(iamCli, service.Logics)
 
 	select {
 	case <-ctx.Done():
@@ -190,4 +223,47 @@ type MigrateServer struct {
 	ConfigCenter *configures.ConfCenter
 }
 
-func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {}
+func (h *MigrateServer) onMigrateConfigUpdate(previous, current cc.ProcessConfig) {}
+
+func parseShardingTableConfig(process *MigrateServer) error {
+	if cc.IsExist("shardingTable.indexInterval") {
+		val, err := cc.Int64("shardingTable.indexInterval")
+		if err != nil {
+			blog.Errorf("config shardingTable.indexInterval parse error. err: %s", err)
+			return fmt.Errorf("config shardingTable.indexInterval parse error. err: %s", err)
+		}
+		if val < 30 || val > 720 {
+			blog.Errorf("config shardingTable.indexInterval value illegal. must be in 20-720(minute), "+
+				"but now val is %d", val)
+			return fmt.Errorf("config shardingTable.indexInterval parse error. err: %s", err)
+		}
+		process.Config.ShardingTable.IndexesInterval = val
+	} else {
+		blog.Infof("config shardingTable.index not set. use default value(30m)")
+		// IndexesInterval 表中同步索引间隔时间，单位分钟， 最小30分钟， 默认60分钟， 最大720分钟
+		process.Config.ShardingTable.IndexesInterval = 60
+	}
+
+	// TableInterval模型shardingTable 对比和处理， 单位秒， 最小60秒，默认 120秒， 最大1800s
+	if cc.IsExist("shardingTable.tableInterval") {
+		val, err := cc.Int64("shardingTable.tableInterval")
+		if err != nil {
+			blog.Errorf("config shardingTable.tableInterval parse error. err: %s", err)
+			return fmt.Errorf("config shardingTable.tableInterval parse error. err: %s", err)
+		}
+		if val < 30 || val > 720 {
+			blog.Errorf("config shardingTable.tableInterval value illegal. must be in 60-1800(second), "+
+				"but now val is %d", val)
+			return fmt.Errorf("config shardingTable.tableInterval parse error. err: %s", err)
+		}
+		process.Config.ShardingTable.TableInterval = val
+
+	} else {
+		blog.Infof("config shardingTable.tableInterval not set. use default value(120s)")
+		// TableInterval模型shardingTable 对比和处理， 单位秒， 最小60秒，默认 120秒， 最大1800s
+		process.Config.ShardingTable.TableInterval = 120
+
+	}
+
+	return nil
+}

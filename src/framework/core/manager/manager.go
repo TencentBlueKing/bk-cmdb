@@ -17,19 +17,17 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/httpserver"
 	"configcenter/src/framework/core/input"
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output"
 	"configcenter/src/framework/core/types"
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
-// Manager contains the basic framework data and the publisher client used to public events.
+// Manager contains the basic framework data.
 type Manager struct {
 	cancel      context.CancelFunc
-	eventMgr    *eventSubscription
 	ms          []Action
 	OutputerMgr output.Manager
 	InputerMgr  input.Manager
@@ -73,16 +71,6 @@ func (cli *Manager) CreateFrameworkContext() FrameworkContext {
 	return cli
 }
 
-// RegisterEvent register cmdb 3.0 event
-func (cli *Manager) RegisterEvent(key types.EventKey, eventType types.EventType, eventFunc types.EventCallbackFunc) types.EventKey {
-	return cli.eventMgr.register(key, eventType, eventFunc)
-}
-
-// UnRegisterEvent unregister cmdb 3.0 event
-func (cli *Manager) UnRegisterEvent(eventKey types.EventKey) {
-	cli.eventMgr.unregister(eventKey)
-}
-
 // stop used to stop the business cycles.
 func (cli *Manager) stop() error {
 
@@ -97,12 +85,6 @@ func (cli *Manager) stop() error {
 func (cli *Manager) Run(ctx context.Context, cancel context.CancelFunc) {
 
 	cli.cancel = cancel
-
-	cli.eventMgr.setOutputer(cli.OutputerMgr)
-
-	common.GoRun(func() {
-		cli.eventMgr.run(ctx)
-	}, nil)
 
 	cli.InputerMgr.Run(ctx, cli)
 }

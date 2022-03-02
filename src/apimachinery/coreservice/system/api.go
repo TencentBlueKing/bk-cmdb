@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package auditlog
+package system
 
 import (
 	"context"

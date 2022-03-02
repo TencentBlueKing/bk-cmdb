@@ -16,7 +16,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/settemplate"
+	"configcenter/src/scene_server/topo_server/logics/settemplate"
 )
 
 // SyncModuleTaskHandler sync module under set template by service template task handler
@@ -24,9 +24,8 @@ func (s *Service) SyncModuleTaskHandler(ctx *rest.Contexts) {
 	// parse task body
 	backendWorker := settemplate.BackendWorker{
 		ClientSet:       s.Engine.CoreAPI,
-		ObjectOperation: s.Core.ObjectOperation(),
-		ModuleOperation: s.Core.ModuleOperation(),
-		InstOperation:   s.Core.InstOperation(),
+		ModuleOperation: s.Logics.ModuleOperation(),
+		InstOperation:   s.Logics.InstOperation(),
 	}
 	task := &metadata.SyncModuleTask{}
 	if err := ctx.DecodeInto(task); err != nil {

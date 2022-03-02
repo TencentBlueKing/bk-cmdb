@@ -32,14 +32,14 @@ import (
 )
 
 const (
-	userBracketsPattern        = `\([a-zA-Z0-9\@\p{Han} .,_-]*\)`
-	orgnizationBracketsPattern = `\[(\d+)\]([^\s/]+)`
+	userBracketsPattern         = `\([a-zA-Z0-9\@\p{Han} .,_-]*\)`
+	organizationBracketsPattern = `\[(\d+)\]([^\s]+)`
 )
 
 var (
 	headerRow          = common.HostAddMethodExcelIndexOffset
 	userBracketsRegexp = regexp.MustCompile(userBracketsPattern)
-	orgBracketsRegexp  = regexp.MustCompile(orgnizationBracketsPattern)
+	orgBracketsRegexp  = regexp.MustCompile(organizationBracketsPattern)
 )
 
 // getFilterFields 不需要展示字段
@@ -50,11 +50,9 @@ func getFilterFields(objID string) []string {
 	default:
 		return []string{"create_time"}
 	}
-	//return []string{"create_time"}
 }
 
-func getCustomFields(filterFields []string, customFieldsStr string) []string {
-	customFields := strings.Split(customFieldsStr, ",")
+func getCustomFields(filterFields []string, customFields []string) []string {
 	customFieldsList := make([]string, 0)
 
 	for _, fieldID := range customFields {
@@ -94,10 +92,8 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 		}
 		ret[index] = strName
 	}
-	// valid excel three row is instance property fields,
-	// excel three row  values  exceeding 1/2 does not appear in the field array,
-	// indicating that the third line of the excel template was deleted
-	if len(errCells) > len(sheet.Rows[headerRow-1].Cells)/2 && true == isCheckHeader {
+
+	if len(sheet.Rows[headerRow-1].Cells) < 2 && true == isCheckHeader {
 		blog.Errorf("err:%s, no found fields %s, rid:%s", defLang.Language("web_import_field_not_found"), strings.Join(errCells, ","), rid)
 		return ret, errors.New(defLang.Language("web_import_field_not_found"))
 	}
@@ -108,9 +104,7 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 // setExcelRowDataByIndex insert  map[string]interface{}  to excel row by index,
 // mapHeaderIndex:Correspondence between head and field
 // fields each field description,  field type, isrequire, validate role
-func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex int, fields map[string]Property) []PropertyPrimaryVal {
-
-	primaryKeyArr := make([]PropertyPrimaryVal, 0)
+func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex int, fields map[string]Property) {
 
 	// 非模型字段导出是没有field中没有ID 字段，因为导入的时候，第二行是作为Property
 	for id, property := range fields {
@@ -119,13 +113,6 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 			continue
 		}
 		if property.NotExport {
-			if property.IsOnly {
-				primaryKeyArr = append(primaryKeyArr, PropertyPrimaryVal{
-					ID:     property.ID,
-					Name:   property.Name,
-					StrVal: getPrimaryKey(val),
-				})
-			}
 			continue
 		}
 
@@ -178,17 +165,9 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 			}
 		}
 
-		if property.IsOnly {
-			primaryKeyArr = append(primaryKeyArr, PropertyPrimaryVal{
-				ID:     property.ID,
-				Name:   property.Name,
-				StrVal: cell.String(),
-			})
-		}
-
 	}
 
-	return primaryKeyArr
+	return
 
 }
 
@@ -365,7 +344,6 @@ func checkOrgnization(result map[string]interface{}, department map[int64]metada
 		}
 	}
 	result[fieldName] = org
-
 	return result, errMsg
 }
 
@@ -416,8 +394,8 @@ func productExcelHeader(ctx context.Context, fields map[string]Property, filter 
 }
 
 // productHostExcelHeader Excel文件头部，
-func productHostExcelHeader(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet,
-	defLang lang.DefaultCCLanguageIf, objName []string) {
+func productHostExcelHeader(ctx context.Context, fields map[string]Property, filter []string, xlsxFile *xlsx.File,
+	sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf, objName []string) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
 	// 橙棕色
@@ -457,6 +435,7 @@ func productHostExcelHeader(ctx context.Context, fields map[string]Property, fil
 		Rid:        rid,
 		StyleCell:  styleCell,
 		Sheet:      sheet,
+		File:       xlsxFile,
 		Filter:     filter,
 		DefLang:    defLang,
 		CellStyle:  cellStyle,
@@ -591,7 +570,7 @@ func productExcelAssociationHeader(ctx context.Context, sheet *xlsx.Sheet, defLa
 	sheet.Col(3).Width = 60
 	sheet.Col(4).Width = 60
 
-	cellAsstID := sheet.Cell(0, assciationAsstObjIDIndex)
+	cellAsstID := sheet.Cell(0, associationAsstObjIDIndex)
 	cellAsstID.SetString(defLang.Language("excel_association_object_id"))
 	cellAsstID.SetStyle(getHeaderFirstRowCellStyle(false))
 	choiceCell := xlsx.NewXlsxCellDataValidation(true, true, true)
@@ -615,37 +594,37 @@ func productExcelAssociationHeader(ctx context.Context, sheet *xlsx.Sheet, defLa
 	}
 	sheet.Col(2).SetDataValidationWithStart(dd, associationOPColIndex)
 
-	cellSrcID := sheet.Cell(0, assciationSrcInstIndex)
+	cellSrcID := sheet.Cell(0, associationSrcInstIndex)
 	cellSrcID.SetString(defLang.Language("excel_association_src_inst"))
 	style := getHeaderFirstRowCellStyle(false)
 	style.Alignment.WrapText = true
 	cellSrcID.SetStyle(style)
 
-	cellDstID := sheet.Cell(0, assciationDstInstIndex)
+	cellDstID := sheet.Cell(0, associationDstInstIndex)
 	cellDstID.SetString(defLang.Language("excel_association_dst_inst"))
 	style = getHeaderFirstRowCellStyle(false)
 	style.Alignment.WrapText = true
 	cellDstID.SetStyle(style)
 
-	cell := sheet.Cell(1, assciationAsstObjIDIndex)
+	cell := sheet.Cell(1, associationAsstObjIDIndex)
 	cell.SetString(defLang.Language("excel_example_association"))
 	cell.SetStyle(backStyle)
 	cell = sheet.Cell(1, associationOPColIndex)
 	cell.SetString(defLang.Language("excel_example_op"))
 	cell.SetStyle(backStyle)
-	cell = sheet.Cell(1, assciationSrcInstIndex)
+	cell = sheet.Cell(1, associationSrcInstIndex)
 	cell.SetString(defLang.Language("excel_example_association_src_inst"))
 	cell.SetStyle(backStyle)
-	cell = sheet.Cell(1, assciationDstInstIndex)
+	cell = sheet.Cell(1, associationDstInstIndex)
 	cell.SetString(defLang.Language("excel_example_association_dst_inst"))
 	cell.SetStyle(backStyle)
 }
 
 const (
-	associationOPColIndex    = 2
-	assciationAsstObjIDIndex = 1
-	assciationSrcInstIndex   = 3
-	assciationDstInstIndex   = 4
+	associationOPColIndex     = 2
+	associationAsstObjIDIndex = 1
+	associationSrcInstIndex   = 3
+	associationDstInstIndex   = 4
 
 	associationOPAdd = "add"
 	//associationOPUpdate = "update"

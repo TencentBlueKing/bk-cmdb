@@ -23,7 +23,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/mssola/user_agent"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

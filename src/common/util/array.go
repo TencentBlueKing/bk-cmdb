@@ -157,3 +157,37 @@ func ReverseArrayString(t []string) []string {
 	}
 	return t
 }
+
+// RemoveDuplicatesAndEmptyByMap remove duplicate element and empty element by map
+func RemoveDuplicatesAndEmptyByMap(target []string) []string {
+	result := make([]string, 0)
+	tempMap := map[string]struct{}{}
+	for _, item := range target {
+		if item == "" {
+			continue
+		}
+
+		if _, exist := tempMap[item]; exist {
+			continue
+		}
+		tempMap[item] = struct{}{}
+		result = append(result, item)
+	}
+
+	return result
+}
+
+// IntArrComplementary calculates the complement of subset relative to target
+func IntArrComplementary(target []int64, subset []int64) []int64 {
+	complementaryInt := make([]int64, 0)
+	intMap := make(map[int64]struct{})
+	for _, i := range subset {
+		intMap[i] = struct{}{}
+	}
+	for _, j := range target {
+		if _, exist := intMap[j]; !exist {
+			complementaryInt = append(complementaryInt, j)
+		}
+	}
+	return complementaryInt
+}

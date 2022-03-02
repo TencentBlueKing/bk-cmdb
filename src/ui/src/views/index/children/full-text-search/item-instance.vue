@@ -4,12 +4,11 @@
       <span v-html="`${data.typeName} - ${data.title}`"></span>
     </div>
     <div class="result-desc" @click="data.linkTo(data.source)">
-      <div class="desc-item" v-html="`${$t('实例ID')}：${data.source.bk_inst_id}`"> </div>
+      <div class="desc-item hl" v-html="`${$t('实例ID')}：${getHighlightValue(data.source.bk_inst_id, data)}`"> </div>
       <template v-for="(property, childIndex) in properties">
-        <div class="desc-item"
+        <div class="desc-item hl"
           :key="childIndex"
-          v-if="data.source[property['bk_property_id']]"
-          v-html="`${property.bk_property_name}：${getText(property, data, property.bk_property_id)}`">
+          v-html="`${getHighlightValue(property.bk_property_name, data)}：${getText(property, data)}`">
         </div>
       </template>
     </div>

@@ -1,5 +1,8 @@
-import { computed, isRef, ref } from '@vue/composition-api'
+import { computed, isRef, ref, unref } from '@vue/composition-api'
 import debounce from 'lodash.debounce'
+import { currentSetting as advancedSetting, allModelIds } from './use-advanced-setting.js'
+
+const requestId = Symbol('fullTextSearch')
 
 export default function useResult(state, root) {
   const { $store } = root
@@ -16,49 +19,53 @@ export default function useResult(state, root) {
 
   const params = computed(() => {
     const { query } = route.value
-    const { c: queryObjId, ps: limit = 10, p: page = 1 } = query
+    const {
+      c: queryObjId,
+      k: kind,
+      ps: limit = 10,
+      p: page = 1
+    } = query
+
     const kw = queryKeyword.value
     const nonLetter = /\W/.test(kw)
     // eslint-disable-next-line no-useless-escape
     const singleSpecial = /[!"#$%&'()\*,-\./:;<=>?@\[\\\]^_`{}\|~]{1}/
     const queryString = kw.length === 1 ? kw.replace(singleSpecial, '') : kw
 
+    const filter = {}
+    advancedSetting.targets.forEach((target) => {
+      const key = `${target}s`
+      filter[key] = advancedSetting[key].length ? advancedSetting[key] : unref(allModelIds)
+    })
     const params = {
+      filter,
+      query_string: nonLetter ? `*${queryString}*` : queryString,
       page: {
         start: typing.value ? 0 : (page - 1) * limit,
         limit: typing.value ? 10 : Number(limit)
-      },
-      bk_obj_id: '',
-      bk_biz_id: '',
-      query_string: nonLetter ? `*${queryString}*` : queryString
+      }
     }
 
-    if (typing.value) {
-      return params
-    }
-
-    let objId = ''
-    let filter = []
     if (queryObjId) {
-      const isNormalModelInst = !['model', 'host', 'biz'].includes(queryObjId)
-      objId = isNormalModelInst ? queryObjId : ''
-      filter = isNormalModelInst ? ['instance'] : [queryObjId]
+      params.sub_resource = {
+        [`${kind}s`]: queryObjId.split(',')
+      }
     }
 
-    params.bk_obj_id = objId
-    params.filter = filter
     return params
   })
 
   const getSearchResult = async () => {
-    if (!queryKeyword.value.length) return
+    if (!params.value.query_string.length || !allModelIds.value.length) {
+      return
+    }
+
     try {
       fetching.value = true
       result.value = await $store.dispatch('fullTextSearch/search', {
         params: params.value,
         config: {
-          requestId: 'search',
-          cancelPrevious: true
+          requestId
         }
       })
     } finally {

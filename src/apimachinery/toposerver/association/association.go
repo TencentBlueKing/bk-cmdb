@@ -179,14 +179,31 @@ func (asst *Association) CreateInst(ctx context.Context, h http.Header, request 
 
 	return
 }
-func (asst *Association) DeleteInst(ctx context.Context, h http.Header, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error) {
+
+func (asst *Association) CreateManyInstAssociation(ctx context.Context, header http.Header,
+	request *metadata.CreateManyInstAsstRequest) (*metadata.CreateManyInstAsstResult, error) {
+	resp := new(metadata.CreateManyInstAsstResult)
+	subPath := "/createmany/instassociation"
+
+	err := asst.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	return resp, err
+}
+
+func (asst *Association) DeleteInst(ctx context.Context, h http.Header, objID string, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error) {
 	resp = new(metadata.DeleteAssociationInstResult)
-	subPath := "/delete/instassociation/%d"
+	subPath := "/delete/instassociation/%s/%d"
 
 	err = asst.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, assoID).
+		SubResourcef(subPath, objID, assoID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -222,4 +239,65 @@ func (asst *Association) SearchObjectAssoWithAssoKindList(ctx context.Context, h
 		Into(resp)
 
 	return
+}
+
+// SearchInstanceAssociations is search instance associations api in toposerver.
+func (asst *Association) SearchInstanceAssociations(ctx context.Context, header http.Header,
+	objID string, input *metadata.CommonSearchFilter) (*metadata.Response, error) {
+
+	resp := new(metadata.Response)
+	subPath := "/search/instance_associations/object/%s"
+
+	err := asst.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, objID).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	return resp, err
+}
+
+// CountInstanceAssociations is count instance associations api in toposerver.
+func (asst *Association) CountInstanceAssociations(ctx context.Context, header http.Header,
+	objID string, input *metadata.CommonCountFilter) (*metadata.Response, error) {
+
+	resp := new(metadata.Response)
+	subPath := "/count/instance_associations/object/%s"
+
+	err := asst.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, objID).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	return resp, err
+}
+
+// SearchInstAssocAndInstDetail is search instance associations and inst detail api in toposerver.
+func (asst *Association) SearchInstAssocAndInstDetail(ctx context.Context, header http.Header, objID string,
+	input *metadata.InstAndAssocRequest) (*metadata.InstAndAssocDetailResult, error) {
+
+	resp := new(metadata.InstAndAssocDetailResult)
+	subPath := "/find/instassociation/object/%s/inst/detail"
+
+	err := asst.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, objID).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+	return resp, nil
 }

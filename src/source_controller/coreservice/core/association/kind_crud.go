@@ -41,8 +41,8 @@ func (m *associationKind) hasModel(kit *rest.Kit, cond mapstr.MapStr) (cnt uint6
 	return cnt, exists, err
 }
 
-func (m *associationKind) update(kit *rest.Kit, data mapstr.MapStr, cond mapstr.MapStr) error {
-	return mongodb.Client().Table(common.BKTableNameAsstDes).Update(kit.Ctx, cond, data)
+func (m *associationKind) update(kit *rest.Kit, data mapstr.MapStr, cond mapstr.MapStr) (uint64, error) {
+	return mongodb.Client().Table(common.BKTableNameAsstDes).UpdateMany(kit.Ctx, cond, data)
 }
 
 func (m *associationKind) countInstanceAssociation(kit *rest.Kit, cond mapstr.MapStr) (count uint64, err error) {

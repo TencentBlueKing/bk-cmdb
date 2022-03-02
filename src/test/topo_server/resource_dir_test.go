@@ -136,7 +136,7 @@ var moduleID1, moduleID2 int64
 
 func prepareData() {
 	// 删除资源池目录表
-	err := test.GetDB().DropTable(context.Background(), common.BKTableNameBaseModule)
+	err := test.GetDB().Table(common.BKTableNameBaseModule).Delete(context.Background(), map[string]interface{}{})
 	Expect(err).NotTo(HaveOccurred())
 
 	// 准备测试数据

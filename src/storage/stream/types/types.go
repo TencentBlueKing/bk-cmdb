@@ -124,6 +124,11 @@ type Options struct {
 	// document
 	Filter map[string]interface{}
 
+	// CollectionFilter helps you filter out which kind of collection's change event you want to receive,
+	// such as the filter : {"$regex":"^cc_ObjectBase"} means you can only receive events from collections
+	// starts with the prefix cc_ObjectBase
+	CollectionFilter interface{}
+
 	// EventStruct is the point data struct that the event decoded into.
 	// Note: must be a point value.
 	EventStruct interface{}
@@ -132,8 +137,9 @@ type Options struct {
 	Collection string
 
 	// StartAfterToken describe where you want to watch the event.
-	// Note: the returned event does'nt contains the token represented,
+	// Note: the returned event doesn't contains the token represented,
 	// and will returns event just after this token.
+	// If StartAfterToken and StartAtTime is set at the same time, then StartAfterToken is used only.
 	StartAfterToken *EventToken
 
 	// Ensures that this watch will provide events that occurred after this timestamp.
@@ -142,6 +148,10 @@ type Options struct {
 	// WatchFatalErrorCallback the function to be called when watch failed with a fatal error
 	// reset the resume token and set the start time for next watch in case it use the mistaken token again
 	WatchFatalErrorCallback func(startAtTime TimeStamp) error `json:"-"`
+
+	// Fields defines which fields will be returned along with the events
+	// this is optional, if not set, all the fields will be returned.
+	Fields []string
 }
 
 var defaultMaxAwaitTime = time.Second
@@ -162,7 +172,7 @@ func (opts *Options) CheckSetDefault() error {
 		opts.MaxAwaitTime = &defaultMaxAwaitTime
 	}
 
-	if len(opts.Collection) == 0 {
+	if len(opts.Collection) == 0 && opts.CollectionFilter == nil {
 		return errors.New("invalid Namespace field, database and collection can not be empty")
 	}
 	return nil
@@ -249,6 +259,7 @@ type Event struct {
 	Document      interface{}
 	DocBytes      []byte
 	OperationType OperType
+	Collection    string
 
 	// The timestamp from the oplog entry associated with the event.
 	ClusterTime TimeStamp

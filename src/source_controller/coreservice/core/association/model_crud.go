@@ -64,16 +64,7 @@ func (m *associationModel) save(kit *rest.Kit, assoParam *metadata.Association) 
 
 func (m *associationModel) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.count(kit, cond)
-	if nil != err {
-		return 0, err
-	}
-
-	if 0 >= cnt {
-		return 0, err
-	}
-
-	err = mongodb.Client().Table(common.BKTableNameObjAsst).Update(kit.Ctx, cond.ToMapStr(), data)
+	cnt, err = mongodb.Client().Table(common.BKTableNameObjAsst).UpdateMany(kit.Ctx, cond.ToMapStr(), data)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute database upate some data (%v) on the table (%s) by the condition (%#v)", kit.Rid, data, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
 		return 0, err
@@ -83,16 +74,7 @@ func (m *associationModel) update(kit *rest.Kit, data mapstr.MapStr, cond univer
 
 func (m *associationModel) delete(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.count(kit, cond)
-	if nil != err {
-		return 0, err
-	}
-
-	if 0 >= cnt {
-		return 0, err
-	}
-
-	err = mongodb.Client().Table(common.BKTableNameObjAsst).Delete(kit.Ctx, cond.ToMapStr())
+	cnt, err = mongodb.Client().Table(common.BKTableNameObjAsst).DeleteMany(kit.Ctx, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("request(%s): it is to delete some data on the table (%s) by the condition (%#v), error info is %s", kit.Rid, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
 		return 0, err

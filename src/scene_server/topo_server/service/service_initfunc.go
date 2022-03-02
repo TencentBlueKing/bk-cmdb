@@ -17,7 +17,7 @@ import (
 
 	"configcenter/src/common/http/rest"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *Service) initAssociation(web *restful.WebService) {
@@ -31,6 +31,7 @@ func (s *Service) initAssociation(web *restful.WebService) {
 		Handler: s.SearchObjectByClassificationID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/tree/brief/biz/{bk_biz_id}",
 		Handler: s.SearchBriefBizTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/biz/brief_node_relation", Handler: s.GetBriefTopologyNodeRelation})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -86,6 +87,38 @@ func (s *Service) initBusiness(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "topo/delete/biz/extra_moudle",
 		Handler: s.DeleteUserModulesSettingConfig})
+
+	utility.AddToRestfulWebService(web)
+}
+
+// 业务集
+func (s *Service) initBizSet(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/biz_set", Handler: s.UpdateBizSet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/deletemany/biz_set", Handler: s.DeleteBizSet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/biz_set/biz_list", Handler: s.FindBizInBizSet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/biz_set/topo_path", Handler: s.FindBizSetTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/biz_set", Handler: s.CreateBusinessSet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/biz_set", Handler: s.SearchBusinessSet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/biz_set/preview", Handler: s.PreviewBusinessSet})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodGet,
+		Path:    "/findmany/biz_set/with_reduced",
+		Handler: s.SearchReducedBusinessSetList})
+
+	// search biz resources by biz set, with the same logic of corresponding biz interface, **only for ui**
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/set/biz_set/{bk_biz_set_id}/biz/{app_id}",
+		Handler: s.SearchSet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/findmany/module/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}/set/{bk_set_id}", Handler: s.SearchModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/find/topopath/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}", Handler: s.SearchTopoPath})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/count/topoinst/host_service_inst/biz_set/{bk_biz_set_id}", Handler: s.CountBizSetTopoHostAndSrvInst})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -209,7 +242,7 @@ func (s *Service) initFullTextSearch(web *restful.WebService) {
 		Language: s.Engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/full_text", Handler: s.FullTextFind})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/full_text", Handler: s.FullTextSearch})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -237,6 +270,7 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initAssociation(web)
 	s.initAuditLog(web)
 	s.initBusiness(web)
+	s.initBizSet(web)
 	s.initInst(web)
 	s.initModule(web)
 	s.initSet(web)

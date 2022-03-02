@@ -1,7 +1,7 @@
 <template>
   <bk-select
     v-model="localValue"
-    searchable
+    :searchable="searchable"
     font-size="medium"
     :clearable="false"
     v-bind="$attrs">
@@ -21,13 +21,13 @@
         type: Array,
         default: () => ([])
       },
-      objectUnique: {
-        type: Array,
-        default: () => ([])
-      },
       value: {
         type: [String, Number],
         default: ''
+      },
+      searchable: {
+        type: Boolean,
+        default: true
       }
     },
     computed: {
@@ -41,15 +41,7 @@
         }
       },
       options() {
-        const options = this.properties.filter(property => !!property.id)
-        const uniqueIds = (this.objectUnique.find(unique => unique.must_check) || {}).keys || []
-        options.sort((m, n) => {
-          const seedM = uniqueIds.some(key => key.key_id === m.id) ? m.id : Infinity
-          const seedN = uniqueIds.some(key => key.key_id === n.id) ? n.id : Infinity
-          const result = seedM - seedN
-          return isNaN(result) ? 0 : result
-        })
-        return options
+        return this.properties.filter(property => !!property.id)
       }
     }
   }

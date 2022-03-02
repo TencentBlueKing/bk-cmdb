@@ -1,0 +1,53 @@
+# Name of the workflow needs to match the name of the major version directory
+name: v2
+on:
+  push:
+    paths:
+      - 'v2/**'
+  pull_request:
+    paths:
+      - 'v2/**'
+
+jobs:
+  build:
+    name: Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: [ '1.13.x', '1.14.x', '1.15.x' ]
+    steps:
+      - name: Set up Go ${{ matrix.go }}
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Test well formatted with gofmt
+        run: |
+          GO_FILES=$(find ${GITHUB_WORKFLOW} -iname '*.go' -type f | grep -v /vendor/)
+          test -z $(gofmt -s -d -l -e $GO_FILES | tee /dev/fd/2 | xargs | sed 's/\s//g')
+        id: gofmt
+
+      - name: Go vet
+        run: |
+          cd ${GITHUB_WORKFLOW}
+          go vet ./...
+        id: govet
+
+      - name: Unit tests
+        run: |
+          cd ${GITHUB_WORKFLOW}
+          go test -race ./...
+        id: unitTests
+
+      - name: Unit tests (32bit)
+        run: |
+          cd ${GITHUB_WORKFLOW}
+          go test ./...
+        env:
+          GOARCH: 386
+        id: unitTest32

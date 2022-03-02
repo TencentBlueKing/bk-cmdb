@@ -7,7 +7,7 @@
     :header-cell-style="{ backgroundColor: '#fff' }"
     v-bind="dynamicProps"
     @selection-change="handleSelectionChange">
-    <bk-table-column type="selection" fixed></bk-table-column>
+    <bk-table-column v-if="!readonly" type="selection" fixed></bk-table-column>
     <bk-table-column :label="$t('所属实例')" prop="service_instance_name" min-width="150" fixed show-overflow-tooltip>
       <template slot-scope="{ row }">
         <span class="instance-name" @click.stop="handleView(row)">{{row.service_instance_name}}</span>
@@ -30,7 +30,7 @@
         </process-bind-info-value>
       </template>
     </bk-table-column>
-    <bk-table-column :label="$t('操作')" width="150" fixed="right" :resizable="false">
+    <bk-table-column v-if="!readonly" :label="$t('操作')" width="150" fixed="right" :resizable="false">
       <template slot-scope="{ row }">
         <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
           <bk-button slot-scope="{ disabled }" v-test-id="'edit'"
@@ -73,7 +73,22 @@
       ProcessBindInfoValue
     },
     props: {
-      process: Object
+      process: Object,
+      /**
+       * 是否只读
+       */
+      readonly: {
+        type: Boolean,
+        default: false
+      },
+      /**
+       * 列表请求方法
+       */
+      listRequest: {
+        type: Function,
+        default: null,
+        required: true
+      }
     },
     data() {
       return {
@@ -91,7 +106,10 @@
     computed: {
       ...mapGetters(['supplierAccount']),
       ...mapGetters('businessHost', ['selectedNode']),
-      ...mapGetters('objectBiz', ['bizId']),
+      bizId() {
+        const { objectBiz, bizSet } = this.$store.state
+        return objectBiz.bizId || bizSet.bizId
+      },
       serviceTemplateId() {
         return this.selectedNode && this.selectedNode.data.service_template_id
       },
@@ -127,18 +145,17 @@
       },
       async getList() {
         try {
-          const { info } = await this.$store.dispatch('serviceInstance/getProcessListById', {
-            params: {
-              bk_biz_id: this.bizId,
-              process_ids: this.process.process_ids,
-              page: { limit: 999999999 }
-            },
-            config: {
-              requestId: this.request.list,
-              cancelPrevious: true
-            }
-          })
-          this.list = info
+          const reqParams = {
+            bk_biz_id: this.bizId,
+            process_ids: this.process.process_ids,
+            page: { limit: 999999999 }
+          }
+          const reqConfig = {
+            requestId: this.request.list,
+            cancelPrevious: true
+          }
+
+          this.list = await this.listRequest(reqParams, reqConfig)
         } catch (error) {
           console.error(error)
           this.list = []
@@ -210,7 +227,8 @@
           processTemplateId: row.relation.process_template_id,
           hostId: row.relation.bk_host_id,
           bizId: this.bizId,
-          submitHandler: this.editSubmitHandler
+          submitHandler: this.editSubmitHandler,
+          showOptions: !this.readonly,
         })
       },
       handleEdit(row) {

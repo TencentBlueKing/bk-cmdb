@@ -16,6 +16,7 @@ import (
 	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
 
@@ -45,16 +46,21 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 }
 
 type Config struct {
-	MongoDB    mongo.Config
-	WatchDB    mongo.Config
-	Errors     ErrorConfig
-	Language   LanguageConfig
-	Configures ConfConfig
-	Register   RegisterConfig
-	Redis      redis.Config
-	SnapRedis  redis.Config
-	Iam        iam.AuthConfig
-	SnapDataID int64
+	MongoDB        mongo.Config
+	WatchDB        mongo.Config
+	Errors         ErrorConfig
+	Language       LanguageConfig
+	Configures     ConfConfig
+	Register       RegisterConfig
+	Redis          redis.Config
+	SnapRedis      redis.Config
+	SnapKafka      kafka.Config
+	IAM            iam.AuthConfig
+	SnapDataID     int64
+	SnapReportMode string
+	ShardingTable  ShardingTableConfig
+	// SyncIAMPeriodMinutes the period for sync IAM resources
+	SyncIAMPeriodMinutes int
 }
 
 type LanguageConfig struct {
@@ -71,4 +77,11 @@ type ConfConfig struct {
 
 type RegisterConfig struct {
 	Address string
+}
+
+type ShardingTableConfig struct {
+	// 表中同步索引间隔时间，单位分钟， 最小30分钟， 默认60分钟， 最大720分钟
+	IndexesInterval int64
+	// 模型shardingTable 对比和处理， 单位秒， 最小60秒，默认 120秒， 最大1800s
+	TableInterval int64
 }
