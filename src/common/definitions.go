@@ -76,10 +76,9 @@ const (
 )
 
 const (
-	// BKInnerObjIDBizSet the inner object
 
-	// TODO: 待确认 BKInnerObjIDBizSet = "bk_biz_set_obj"
-	BKInnerObjIDBizSet = "biz_set"
+	// BKInnerObjIDBizSet the inner object
+	BKInnerObjIDBizSet = "bk_biz_set_obj"
 
 	// BKInnerObjIDApp the inner object
 	BKInnerObjIDApp = "biz"
@@ -528,6 +527,9 @@ const (
 
 	// BKIsPre the ispre field
 	BKIsPre = "ispre"
+
+	// BKObjectUniqueKeys object unique keys field
+	BKObjectUniqueKeys = "keys"
 
 	// BKIsIncrementField the isincrement field
 	BKIsIncrementField = "is_increment"

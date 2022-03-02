@@ -13,10 +13,11 @@
 package metadata
 
 import (
+	"errors"
 	"fmt"
 
 	"configcenter/src/common"
-	"configcenter/src/common/errors"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/querybuilder"
 )
@@ -90,17 +91,17 @@ type PreviewBusinessSetRequest struct {
 }
 
 // Validate validates preview business set info conditions format.
-func (option *PreviewBusinessSetRequest) Validate(allowNoLimit bool) errors.RawErrorInfo {
+func (option *PreviewBusinessSetRequest) Validate(allowNoLimit bool) ccErr.RawErrorInfo {
 
 	if errInfo, err := option.Page.Validate(allowNoLimit); err != nil {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{errInfo},
 		}
 	}
 
 	if option.BizSetPropertyFilter == nil && option.Filter == nil {
-		return errors.RawErrorInfo{}
+		return ccErr.RawErrorInfo{}
 	}
 	op := &querybuilder.RuleOption{
 		NeedSameSliceElementType: true,
@@ -110,14 +111,14 @@ func (option *PreviewBusinessSetRequest) Validate(allowNoLimit bool) errors.RawE
 
 	if option.BizSetPropertyFilter != nil {
 		if key, err := option.BizSetPropertyFilter.Validate(op); err != nil {
-			return errors.RawErrorInfo{
+			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsNeedSet,
 				Args:    []interface{}{(key)},
 			}
 		}
 
-		if option.BizSetPropertyFilter.GetDeep() > common.BizSetConditionMaxDeep {
-			return errors.RawErrorInfo{
+		if option.BizSetPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommXXExceedLimit,
 				Args:    []interface{}{},
 			}
@@ -125,21 +126,21 @@ func (option *PreviewBusinessSetRequest) Validate(allowNoLimit bool) errors.RawE
 	}
 	if option.Filter != nil {
 		if key, err := option.Filter.Validate(op); err != nil {
-			return errors.RawErrorInfo{
+			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsNeedSet,
 				Args:    []interface{}{(key)},
 			}
 		}
 
 		if option.Filter.GetDeep() > common.BizSetConditionMaxDeep {
-			return errors.RawErrorInfo{
+			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommXXExceedLimit,
 				Args:    []interface{}{},
 			}
 		}
 	}
 
-	return errors.RawErrorInfo{}
+	return ccErr.RawErrorInfo{}
 }
 
 // QueryBusinessSetRequest query business set by query builder
@@ -158,17 +159,17 @@ type QueryBusinessSetResponse struct {
 }
 
 // Validate validates query business set info conditions format.
-func (option *QueryBusinessSetRequest) Validate(allowNoLimit bool) errors.RawErrorInfo {
+func (option *QueryBusinessSetRequest) Validate(allowNoLimit bool) ccErr.RawErrorInfo {
 
 	if errInfo, err := option.Page.Validate(allowNoLimit); err != nil {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{errInfo},
 		}
 	}
 
 	if option.BizSetPropertyFilter == nil {
-		return errors.RawErrorInfo{}
+		return ccErr.RawErrorInfo{}
 	}
 
 	op := &querybuilder.RuleOption{
@@ -178,21 +179,20 @@ func (option *QueryBusinessSetRequest) Validate(allowNoLimit bool) errors.RawErr
 	}
 
 	if _, err := option.BizSetPropertyFilter.Validate(op); err != nil {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{fmt.Sprintf("biz set property filter is illegal, err: %s", err.Error())},
 		}
 	}
-
-	if option.BizSetPropertyFilter.GetDeep() > common.BizSetConditionMaxDeep {
-		return errors.RawErrorInfo{
+	if option.BizSetPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args: []interface{}{
-				fmt.Sprintf("exceed max filter condition deepth: %d", common.BizSetConditionMaxDeep),
+				fmt.Sprintf("exceed max filter condition deepth: %d", querybuilder.MaxDeep),
 			},
 		}
 	}
-	return errors.RawErrorInfo{}
+	return ccErr.RawErrorInfo{}
 }
 
 type BriefBizRelations struct {
@@ -213,50 +213,51 @@ type GetBriefBizRelationOptions struct {
 	Page       BasePage `json:"page"`
 }
 
-func (o *GetBriefBizRelationOptions) Validate() errors.RawErrorInfo {
+// Validate validate get brief biz relation option.
+func (o *GetBriefBizRelationOptions) Validate() ccErr.RawErrorInfo {
 	if len(o.SrcBizObj) == 0 || o.SrcBizObj == common.BKInnerObjIDHost {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"src_biz_obj"},
 		}
 	}
 
 	if len(o.SrcInstIDs) == 0 || len(o.SrcInstIDs) > 200 {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"src_inst_ids"},
 		}
 	}
 
 	if len(o.DestBizObj) == 0 || o.DestBizObj == common.BKInnerObjIDHost {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"dest_biz_obj is host"},
 		}
 	}
 
 	if o.SrcBizObj == o.DestBizObj {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"src_inst_ids or dest_biz_obj is same "},
 		}
 	}
 
 	if len(o.Page.Sort) != 0 {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"page.sort should not set"},
 		}
 	}
 
 	if err := o.Page.ValidateLimit(500); err != nil {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"page.limit"},
 		}
 	}
 
-	return errors.RawErrorInfo{ErrCode: 0}
+	return ccErr.RawErrorInfo{ErrCode: 0}
 }
 
 type UpdateBusinessStatusOption struct {
@@ -291,29 +292,29 @@ type DeleteBizParam struct {
 }
 
 // Validate validates the input param
-func (o *SearchBriefBizTopoOption) Validate() (rawError errors.RawErrorInfo) {
+func (o *SearchBriefBizTopoOption) Validate() (rawError ccErr.RawErrorInfo) {
 	if len(o.SetFields) == 0 {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"set_fields"},
 		}
 	}
 
 	if len(o.ModuleFields) == 0 {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"module_fields"},
 		}
 	}
 
 	if len(o.HostFields) == 0 {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"host_fields"},
 		}
 	}
 
-	return errors.RawErrorInfo{}
+	return ccErr.RawErrorInfo{}
 }
 
 type SetTopo struct {
@@ -337,17 +338,30 @@ type BizSetScope struct {
 	Filter   *querybuilder.QueryFilter `json:"filter"`
 }
 
-// Validate 用于创建和更新场景下的对于业务集scope参数的校验，校验scope仅存在两层且子条件是与的关系，返回其中包含的字段用于后续校验
-func (scope *BizSetScope) Validate() ([]string, error) {
-	if scope.MatchAll == true {
-		if scope.Filter != nil {
-			return []string{}, fmt.Errorf("when match_all is true, params filter can not be set")
-		}
-		return []string{}, nil
-	}
+// BizSetScopeField specific conditions of business scope.
+type BizSetScopeField struct {
+	Field string
+	Value interface{}
+}
 
-	if !scope.MatchAll && scope.Filter == nil {
-		return []string{}, fmt.Errorf("when match_all is false, params filter must be set")
+// BizSetScopeParamsInfo  field info
+type BizSetScopeParamsInfo struct {
+	Operator  querybuilder.Operator
+	FieldInfo []BizSetScopeField
+}
+
+// Validate 用于创建和更新场景下的对于业务集scope参数的校验，校验scope仅存在两层且子条件是与的关系，返回其中包含的字段用于后续校验
+func (scope *BizSetScope) Validate() (*BizSetScopeParamsInfo, error) {
+
+	fieldInfo := new(BizSetScopeParamsInfo)
+	if scope.MatchAll {
+		if scope.Filter != nil {
+			return nil, errors.New("when match_all is true, params filter can not be set")
+		}
+		return nil, nil
+	}
+	if scope.Filter == nil {
+		return nil, errors.New("when match_all is false, params filter must be set")
 	}
 
 	option := &querybuilder.RuleOption{
@@ -357,39 +371,42 @@ func (scope *BizSetScope) Validate() ([]string, error) {
 	}
 
 	if invalidKey, err := scope.Filter.Validate(option); err != nil {
-		return []string{}, fmt.Errorf("conditions.%s,err: %s", invalidKey, err.Error())
+		return nil, fmt.Errorf("conditions.%s, err: %s", invalidKey, err.Error())
 	}
 
-	if scope.Filter.GetDeep() > common.BizSetConditionMaxDeep {
-		return []string{}, fmt.Errorf("exceed max scope condition deepth: %d", common.BizSetConditionMaxDeep)
+	if scope.Filter.GetDeep() != common.BizSetConditionMaxDeep {
+		return nil, fmt.Errorf("scope condition depth must be equal to: %d", common.BizSetConditionMaxDeep)
 	}
 	if scope.Filter.Rule == nil {
-		return []string{}, nil
+		return fieldInfo, nil
 	}
 
 	// 此场景下仅支持 CombinedRule 类型
 	if _, ok := scope.Filter.Rule.(querybuilder.CombinedRule); !ok {
-		return []string{}, fmt.Errorf("query filter must be combined rules")
+		return nil, errors.New("query filter must be combined rules")
 	}
 	qf := scope.Filter.Rule.(querybuilder.CombinedRule)
 	if qf.Condition != querybuilder.ConditionAnd {
-		return []string{}, fmt.Errorf("scope condition must be and")
+		return nil, errors.New("scope condition must be and")
 	}
 
 	// 由于只支持2层，所以可以直接获取rules中的field字段
-	fields := make([]string, 0)
 	for _, rule := range qf.Rules {
 		if _, ok := rule.(querybuilder.AtomRule); !ok {
-			return []string{}, fmt.Errorf("rule type must be AtomRule")
+			return nil, errors.New("rule type must be AtomRule")
 		}
 		r := rule.(querybuilder.AtomRule)
 		// 仅支持 equal 和 in 操作符
 		if r.Operator != querybuilder.OperatorIn && r.Operator != querybuilder.OperatorEqual {
-			return []string{}, fmt.Errorf("scope operator must be equal or in")
+			return nil, errors.New("scope operator must be equal or in")
 		}
-		fields = append(fields, r.Field)
+		fieldInfo.Operator = r.Operator
+		fieldInfo.FieldInfo = append(fieldInfo.FieldInfo, BizSetScopeField{
+			Value: r.Value,
+			Field: r.Field,
+		})
 	}
-	return fields, nil
+	return fieldInfo, nil
 }
 
 // CreateBizSetRequest biz set struct
@@ -399,29 +416,29 @@ type CreateBizSetRequest struct {
 }
 
 // Validate validates create biz set params
-func (op *CreateBizSetRequest) Validate() ([]string, errors.RawErrorInfo) {
+func (op *CreateBizSetRequest) Validate() (*BizSetScopeParamsInfo, ccErr.RawErrorInfo) {
 	if op.BizSetAttr == nil || op.BizSetScope == nil {
-		return []string{}, errors.RawErrorInfo{
+		return nil, ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"params is nil"},
 		}
 	}
 	if name, ok := op.BizSetAttr[common.BKBizSetNameField]; !ok || name == "" {
-		return []string{}, errors.RawErrorInfo{
+		return nil, ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"biz set name must be set"},
 		}
 	}
 
-	fields, err := op.BizSetScope.Validate()
+	fieldInfo, err := op.BizSetScope.Validate()
 	if err != nil {
-		return []string{}, errors.RawErrorInfo{
+		return nil, ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{err},
 		}
 	}
 
-	return fields, errors.RawErrorInfo{}
+	return fieldInfo, ccErr.RawErrorInfo{}
 }
 
 // CreateBizSetResponse create biz set response, returns the created biz set id
@@ -460,29 +477,29 @@ type FindBizSetTopoOption struct {
 }
 
 // Validate validate the input option, check if all required fields are set
-func (opt *FindBizSetTopoOption) Validate() errors.RawErrorInfo {
+func (opt *FindBizSetTopoOption) Validate() ccErr.RawErrorInfo {
 	if opt.BizSetID == 0 {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{common.BKBizSetIDField},
 		}
 	}
 
 	if opt.ParentID == 0 {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{common.BKParentIDField},
 		}
 	}
 
 	if len(opt.ParentObjID) == 0 {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"bk_parent_obj_id"},
 		}
 	}
 
-	return errors.RawErrorInfo{}
+	return ccErr.RawErrorInfo{}
 }
 
 // DeleteBizSetOption delete business set option

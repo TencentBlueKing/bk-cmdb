@@ -326,9 +326,9 @@ const (
 	updateBizSetPattern               = `/api/v3/updatemany/biz_set`
 	findBizInBizSetPattern            = `/api/v3/find/biz_set/biz_list`
 	findBizSetTopoPattern             = `/api/v3/find/biz_set/topo_path`
-	findmanyBusinessSetRegexp         = `/api/v3/findmany/biz_set`
+	findmanyBusinessSetPattern        = `/api/v3/findmany/biz_set`
 	findReducedBusinessSetListPattern = `/api/v3/findmany/biz_set/with_reduced`
-	previewBusinessSet                = `/api/v3/find/biz_set/preview`
+	previewBusinessSetPattern         = `/api/v3/find/biz_set/preview`
 )
 
 var (
@@ -339,7 +339,7 @@ var (
 	countTopoHostAndSrvRegexp = regexp.MustCompile(`^/api/v3/count/topoinst/host_service_inst/biz_set/[0-9]+/?$`)
 )
 
-// NOCC:golint/fnsize(整体属于businessSet操作需要放在一起)
+// NOCC:golint/fnsize(business set操作需要放到一个函数中)
 func (ps *parseStream) businessSet() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -467,12 +467,12 @@ func (ps *parseStream) businessSet() *parseStream {
 	}
 
 	// find many business set list for the user with any business set resources
-	if ps.hitPattern(findmanyBusinessSetRegexp, http.MethodPost) {
+	if ps.hitPattern(findmanyBusinessSetPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
 					Type:   meta.BizSet,
-					Action: meta.Find,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -506,7 +506,7 @@ func (ps *parseStream) businessSet() *parseStream {
 	}
 
 	// preview business set
-	if ps.hitPattern(previewBusinessSet, http.MethodPost) {
+	if ps.hitPattern(previewBusinessSetPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
