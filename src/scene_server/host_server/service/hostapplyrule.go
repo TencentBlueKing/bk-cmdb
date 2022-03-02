@@ -434,7 +434,7 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 				PropertyValue: rule.PropertyValue,
 			})
 		}
-
+    
 		saveRuleOp := metadata.BatchCreateOrUpdateApplyRuleOption{Rules: rulesOption}
 		if _, ccErr := s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
 			bizID, saveRuleOp); ccErr != nil {
@@ -510,7 +510,6 @@ func (s *Service) updateHostPlan(planResult metadata.HostApplyPlanResult, kit *r
 	}
 
 	hostApplyResults := make([]metadata.HostApplyResult, 0)
-
 	pipeline := make(chan bool, 5)
 	for dataStr, hostIDs := range updateMap {
 
