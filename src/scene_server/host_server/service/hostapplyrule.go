@@ -434,7 +434,6 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 				PropertyValue: rule.PropertyValue,
 			})
 		}
-
 		saveRuleOp := metadata.BatchCreateOrUpdateApplyRuleOption{Rules: rulesOption}
 		if _, ccErr := s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
 			bizID, saveRuleOp); ccErr != nil {
