@@ -140,6 +140,15 @@ func preAnalyzeContent(op operator.OperType, content *operator.Content) error {
 func (a *Authorize) countContent(ctx context.Context, op operator.OperType, content *operator.Content,
 	resourceType types.ResourceType) (idList *types.AuthorizeList, err error) {
 
+<<<<<<< HEAD
+=======
+	allAttrFieldValue := make([]*operator.FieldValue, 0)
+	allList := make([]types.AuthorizeList, 0)
+
+	// initialize the returned struct to prevent pointer panic
+	idList = new(types.AuthorizeList)
+
+>>>>>>> 7fd6d05b07b5864cea614ccc3c009d54e668abaa
 	err = preAnalyzeContent(op, content)
 	if err != nil {
 		return nil, err

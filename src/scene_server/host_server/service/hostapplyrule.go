@@ -447,7 +447,6 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 			delOp := metadata.DeleteHostApplyRuleOption{
 				RuleIDs: planRequest.RemoveRuleIDs,
 			}
-
 			if ccErr := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
 				delOp); ccErr != nil {
 				blog.Errorf("delete apply rule failed, bizID: %s, req: %s, err: %v, rid: %s", bizID, delOp, ccErr, rid)
