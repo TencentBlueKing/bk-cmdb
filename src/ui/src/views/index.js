@@ -27,6 +27,11 @@ import cloudArea from '@/views/cloud-area/router.config'
 import cloudAccount from '@/views/cloud-account/router.config'
 import cloudResource from '@/views/cloud-resource/router.config'
 
+// 业务集实例
+import businessSet from '@/views/business-set/router.config'
+
+import businessSetTopology from '@/views/business-set-topology/router.config.js'
+
 import statusPermission from '@/views/status/permission'
 import statusError from '@/views/status/error'
 
@@ -75,8 +80,14 @@ export const businessViews = injectStatusComponents(flatternViews([
   hostApply
 ]))
 
+// 业务集消费视图
+export const businessSetViews = injectStatusComponents(flatternViews([
+  businessSetTopology
+]))
+
 export const resourceViews = injectStatusComponents(flatternViews([
   business,
+  businessSet,
   resource,
   generalModel,
   resourceManagement,
@@ -104,6 +115,7 @@ export const platformManagementViews = injectStatusComponents(flatternViews([
 export default {
   ...indexViews,
   ...hostLandingViews,
+  ...businessSetViews,
   ...businessViews,
   ...resourceViews,
   ...modelViews,

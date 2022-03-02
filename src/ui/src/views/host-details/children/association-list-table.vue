@@ -36,7 +36,7 @@
         show-overflow-tooltip>
         <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')">
+      <bk-table-column v-if="!readonly" :label="$t('操作')">
         <template slot-scope="{ row }">
           <cmdb-auth :auth="HOST_AUTH.U_HOST">
             <bk-button slot-scope="{ disabled }"
@@ -64,9 +64,11 @@
 <script>
   import authMixin from '../mixin-auth'
   import instanceService from '@/service/instance/instance'
+  import { readonlyMixin } from '../mixin-readonly'
+
   export default {
     name: 'cmdb-host-association-list-table',
-    mixins: [authMixin],
+    mixins: [authMixin, readonlyMixin],
     props: {
       type: {
         type: String,

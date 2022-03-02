@@ -1,7 +1,7 @@
 <template>
   <div class="association">
     <div class="options clearfix">
-      <div class="fl" v-show="activeView === viewName.list">
+      <div class="fl" v-if="!readonly" v-show="activeView === viewName.list">
         <cmdb-auth class="inline-block-middle mr10"
           v-if="hasAssociation"
           :auth="HOST_AUTH.U_HOST">
@@ -18,14 +18,14 @@
             {{$t('新增关联')}}
           </bk-button>
         </span>
+      </div>
+      <div class="fr">
         <bk-checkbox v-if="hasInstance"
+          v-show="activeView === viewName.list"
           :size="16" class="options-checkbox"
           @change="handleExpandAll">
           <span class="checkbox-label">{{$t('全部展开')}}</span>
         </bk-checkbox>
-        <bk-button theme="default" class="options-button" v-show="false">{{$t('批量取消')}}</bk-button>
-      </div>
-      <div class="fr">
         <bk-button class="options-button options-button-view"
           :theme="activeView === viewName.list ? 'primary' : 'default'"
           @click="toggleView(viewName.list)">
@@ -59,6 +59,8 @@
   import cmdbHostAssociationCreate from './association-create.vue'
   import { mapGetters } from 'vuex'
   import authMixin from '../mixin-auth'
+  import { readonlyMixin } from '../mixin-readonly'
+
   export default {
     name: 'cmdb-host-association',
     components: {
@@ -66,7 +68,7 @@
       cmdbInstanceAssociation,
       cmdbHostAssociationCreate
     },
-    mixins: [authMixin],
+    mixins: [authMixin, readonlyMixin],
     data() {
       return {
         viewName: {
@@ -140,7 +142,7 @@
             }
         }
         .options-checkbox {
-            margin: 0 0 0 25px;
+            margin: 0 15px 0 0;
             line-height: 32px;
             .checkbox-label {
                 padding-left: 4px;

@@ -260,6 +260,28 @@ var InstAsstKey = Key{
 	},
 }
 
+var bizSetFields = []string{common.BKBizSetIDField, common.BKBizSetNameField}
+var BizSetKey = Key{
+	namespace:  watchCacheNamespace + common.BKInnerObjIDBizSet,
+	collection: common.BKTableNameBaseBizSet,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, bizSetFields...)
+		for idx := range bizSetFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", bizSetFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		return gjson.GetBytes(doc, common.BKBizSetNameField).String()
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKBizSetIDField).Int()
+	},
+}
+
 type Key struct {
 	namespace string
 	// the watching db collection name

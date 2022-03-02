@@ -58,6 +58,7 @@
         </div>
       </template>
     </div>
+    <slot name="append"></slot>
     <div class="form-options" slot="footer" slot-scope="{ sticky }"
       v-if="showOptions"
       :class="{ sticky: sticky }">
@@ -66,12 +67,13 @@
           <bk-button slot-scope="{ disabled }"
             class="button-save"
             theme="primary"
-            :loading="$loading()"
+            :loading="submitting || validating"
             :disabled="disabled || (type !== 'create' && !hasChange)"
             @click="handleSave">
             {{type === 'create' ? $t('提交') : $t('保存')}}
           </bk-button>
         </cmdb-auth>
+        <slot name="side-options"></slot>
         <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
       </slot>
       <slot name="extra-options"></slot>
@@ -126,12 +128,17 @@
         default: () => []
       },
       customValidator: Function,
-      isMainLine: Boolean
+      isMainLine: Boolean,
+      submitting: {
+        type: Boolean,
+        default: false
+      }
     },
     data() {
       return {
         values: {},
-        refrenceValues: {}
+        refrenceValues: {},
+        validating: false
       }
     },
     computed: {
@@ -216,7 +223,8 @@
         if (typeof this.customValidator === 'function') {
           validatePromise.push(this.customValidator())
         }
-        const results = await Promise.all(validatePromise)
+        this.validating = true
+        const results = await Promise.all(validatePromise).finally(() =>  this.validating = false)
         const isValid = results.every(result => result)
         if (isValid) {
           this.$emit(

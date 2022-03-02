@@ -22,6 +22,7 @@ func (r ResourceType) String() string {
 // 两者之间有映射关系，详情见 ConvertResourceType
 const (
 	Business                 ResourceType = "business"
+	BizSet                   ResourceType = "bizSet"
 	Model                    ResourceType = "model"
 	ModelModule              ResourceType = "modelModule"
 	ModelSet                 ResourceType = "modelSet"
