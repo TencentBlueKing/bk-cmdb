@@ -62,15 +62,15 @@ func (h *NetCollect) Mock() string {
 }
 
 // Analyze implements the Analyzer interface
-func (h *NetCollect) Analyze(msg *string) error {
+func (h *NetCollect) Analyze(msg *string) (bool, error) {
 	if msg == nil {
-		return fmt.Errorf("message nil")
+		return false, fmt.Errorf("message nil")
 	}
 
 	data := ReportMessage{}
 
 	if err := json.Unmarshal([]byte(*msg), &data); err != nil {
-		return fmt.Errorf("unmarshal message error: %+v", err)
+		return false, fmt.Errorf("unmarshal message error: %+v", err)
 	}
 
 	for _, report := range data.Data {
@@ -79,7 +79,7 @@ func (h *NetCollect) Analyze(msg *string) error {
 		}
 	}
 
-	return nil
+	return false, nil
 }
 
 func (h *NetCollect) handleReport(report *metadata.NetcollectReport) (err error) {

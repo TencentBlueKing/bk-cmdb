@@ -358,6 +358,9 @@ var (
 	findHostsBySetTemplatesRegex     = regexp.MustCompile(`^/api/v3/findmany/hosts/by_set_templates/biz/\d+$`)
 	findHostModuleRelationsRegex     = regexp.MustCompile(`^/api/v3/findmany/module_relation/bk_biz_id/[0-9]+/?$`)
 	findHostsByTopoRegex             = regexp.MustCompile(`^/api/v3/findmany/hosts/by_topo/biz/\d+$`)
+
+	// find host by biz set regex, authorize by biz set access permission, **only for ui**
+	findHostsByBizSetPattern = regexp.MustCompile(`^/api/v3/findmany/hosts/biz_set/[0-9]+/?$`)
 )
 
 func (ps *parseStream) host() *parseStream {
@@ -640,6 +643,32 @@ func (ps *parseStream) host() *parseStream {
 
 		return ps
 	}
+
+	if ps.hitRegexp(findHostsByBizSetPattern, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		bizSetID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.AccessBizSet,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+
+		return ps
+	}
+
 	// find hosts without app id
 	if ps.hitPattern(findBizHostsWithoutAppPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{

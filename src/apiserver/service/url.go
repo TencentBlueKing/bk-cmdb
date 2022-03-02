@@ -63,8 +63,9 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 	return serverType, err
 }
 
-var topoURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(inst|object|objects|topo|biz|module|set|resource)/.*$", verbs))
-var objectURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(object|biz)$", verbs))
+var topoURLRegexp = regexp.MustCompile(fmt.Sprintf(
+	"^/api/v3/(%s)/(inst|object|objects|topo|biz|module|set|resource|biz_set)/.*$", verbs))
+var objectURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(object|biz|biz_set)$", verbs))
 
 // WithTopo parse topo api's url
 func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
@@ -116,7 +117,6 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 
 	case strings.Contains(string(*u), "/classificationobject"):
 		from, to, isHit = rootPath, topoRoot, true
-
 	case strings.Contains(string(*u), "/objectattr"):
 		from, to, isHit = rootPath, topoRoot, true
 	case strings.Contains(string(*u), "/objectunique"):

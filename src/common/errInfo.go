@@ -485,7 +485,8 @@ const (
 	CCErrorTopoForbiddenDeleteBuiltInBiz    = 1101111
 	CCErrorTopoForbiddenDeleteUnarchivedBiz = 1101112
 
-	CCErrorModelClassificationNotFound = 1101113
+	CCErrorModelClassificationNotFound            = 1101113
+	CCErrorTopoGetAuthorizedBusinessSetListFailed = 1101114
 
 	// object controller 1102XXX
 

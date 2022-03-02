@@ -132,7 +132,11 @@ const (
 	WatchCommonInstance   Action = "object_instance"
 	WatchMainlineInstance Action = "mainline_instance"
 	WatchInstAsst         Action = "inst_asst"
+	WatchBizSet           Action = "biz_set"
 
 	// can view business related resources, including business and business collection resources
 	ViewBusinessResource Action = "viewBusinessResource"
+
+	// AccessBizSet access business set related resources, including business and business related resources
+	AccessBizSet Action = "accessBizSet"
 )

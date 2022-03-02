@@ -239,7 +239,7 @@ func (p *SimplePorter) analyzeLoop() {
 		cost := time.Now()
 
 		// analyze message from collectors.
-		if err := p.analyzer.Analyze(msg); err != nil {
+		if _, err := p.analyzer.Analyze(msg); err != nil {
 			blog.Errorf("SimplePorter[%s]| analyze message failed, %+v", p.name, err)
 
 			// metrics stats for analyze failed.

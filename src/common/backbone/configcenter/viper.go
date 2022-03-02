@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/types"
+	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
 
@@ -365,30 +366,64 @@ func Mongo(prefix string) (mongo.Config, error) {
 		c.MaxOpenConns = parser.getUint64(prefix + ".maxOpenConns")
 	}
 
-	if !parser.isSet(prefix+".maxIdleConns") || parser.getUint64(prefix+".maxIdleConns") < mongo.MinimumMaxIdleOpenConns {
+	if !parser.isSet(prefix+".maxIdleConns") ||
+		parser.getUint64(prefix+".maxIdleConns") < mongo.MinimumMaxIdleOpenConns {
 		c.MaxIdleConns = mongo.MinimumMaxIdleOpenConns
 	} else {
 		c.MaxIdleConns = parser.getUint64(prefix + ".maxIdleConns")
 	}
 
 	if !parser.isSet(prefix + ".socketTimeoutSeconds") {
-		blog.Errorf("can not find mongo.socketTimeoutSeconds config, use default value: %d", mongo.DefaultSocketTimeout)
+		blog.Errorf("can not find mongo.socketTimeoutSeconds config, use default value: %d",
+			mongo.DefaultSocketTimeout)
 		c.SocketTimeout = mongo.DefaultSocketTimeout
 		return c, nil
 	}
 
 	c.SocketTimeout = parser.getInt(prefix + ".socketTimeoutSeconds")
 	if c.SocketTimeout > mongo.MaximumSocketTimeout {
-		blog.Errorf("mongo.socketTimeoutSeconds config %d exceeds maximum value, use maximum value %d", c.SocketTimeout, mongo.MaximumSocketTimeout)
+		blog.Errorf("mongo.socketTimeoutSeconds config %d exceeds maximum value, use maximum value %d",
+			c.SocketTimeout, mongo.MaximumSocketTimeout)
 		c.SocketTimeout = mongo.MaximumSocketTimeout
 	}
 
 	if c.SocketTimeout < mongo.MinimumSocketTimeout {
-		blog.Errorf("mongo.socketTimeoutSeconds config %d less than minimum value, use minimum value %d", c.SocketTimeout, mongo.MinimumSocketTimeout)
+		blog.Errorf("mongo.socketTimeoutSeconds config %d less than minimum value, use minimum value %d",
+			c.SocketTimeout, mongo.MinimumSocketTimeout)
 		c.SocketTimeout = mongo.MinimumSocketTimeout
 	}
 
 	return c, nil
+}
+
+// Kafka return kafka configuration information according to the prefix.
+func Kafka(prefix string) (kafka.Config, error) {
+	confLock.RLock()
+	defer confLock.RUnlock()
+
+	var parser *viperParser
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		parser = getCommonParser()
+		if parser != nil {
+			break
+		}
+		blog.Warn("the configuration of common is not ready yet")
+		time.Sleep(time.Duration(1) * time.Second)
+	}
+
+	if parser == nil {
+		blog.Errorf("can't find kafka configuration")
+		return kafka.Config{}, err.New("can't find kafka configuration")
+	}
+
+	return kafka.Config{
+		Brokers:   parser.getStringSlice(prefix + ".brokers"),
+		GroupID:   parser.getString(prefix + ".groupID"),
+		Topic:     parser.getString(prefix + ".topic"),
+		Partition: parser.getInt64(prefix + ".partition"),
+		User:      parser.getString(prefix + ".user"),
+		Password:  parser.getString(prefix + ".password"),
+	}, nil
 }
 
 // String return the string value of the configuration information according to the key.
@@ -525,13 +560,8 @@ func getMongodbParser() *viperParser {
 	return mongodbParser
 }
 
-type Parser interface {
-	GetString(string) string
-	GetInt(string) int
-	GetUint64(string) uint64
-	GetBool(string) bool
-	GetDuration(string) time.Duration
-	IsSet(path string) bool
+func getCommonParser() *viperParser {
+	return commonParser
 }
 
 type viperParser struct {

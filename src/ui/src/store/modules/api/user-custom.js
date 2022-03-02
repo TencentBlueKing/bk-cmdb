@@ -13,6 +13,8 @@
 import $http from '@/api'
 import Vue from 'vue'
 import has from 'has'
+import { MENU_RESOURCE_COLLECTION } from '@/dictionary/menu-symbol'
+import { BUILTIN_MODEL_COLLECTION_KEYS } from '@/dictionary/model-constants.js'
 
 const state = {
   usercustom: {},
@@ -29,6 +31,20 @@ const getters = {
       return state.usercustom[key]
     }
     return defaultData
+  },
+  resourceCollection: (state, getters, rootState, rootGetters) => {
+    const collection = [...(state.usercustom[MENU_RESOURCE_COLLECTION] || [])]
+
+    Object.keys(BUILTIN_MODEL_COLLECTION_KEYS).forEach((modelId) => {
+      const collected = state.usercustom[BUILTIN_MODEL_COLLECTION_KEYS[modelId]] ?? true
+      if (collected) {
+        collection.unshift(modelId)
+      }
+    })
+
+    const models = rootGetters['objectModelClassify/models']
+
+    return collection.filter(modelId => models.some(model => model.bk_obj_id === modelId))
   }
 }
 

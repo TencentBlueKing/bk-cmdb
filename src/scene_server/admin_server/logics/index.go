@@ -301,6 +301,8 @@ func (dt *dbTable) findSyncIndexesLogicUnique(ctx context.Context) (map[string][
 			switch obj.ObjectID {
 			case common.BKInnerObjIDHost:
 				tb = common.BKTableNameBaseHost
+			case common.BKInnerObjIDBizSet:
+				tb = common.BKTableNameBaseBizSet
 			case common.BKInnerObjIDApp:
 				tb = common.BKTableNameBaseApp
 			case common.BKInnerObjIDModule:

@@ -15,6 +15,8 @@ package common
 // GetInstNameField returns the inst name field
 func GetInstNameField(objID string) string {
 	switch objID {
+	case BKInnerObjIDBizSet:
+		return BKBizSetNameField
 	case BKInnerObjIDApp:
 		return BKAppNameField
 	case BKInnerObjIDSet:
@@ -42,6 +44,8 @@ func GetInstNameField(objID string) string {
 // GetInstIDField get primary key of object's collection/table
 func GetInstIDField(objType string) string {
 	switch objType {
+	case BKInnerObjIDBizSet:
+		return BKBizSetIDField
 	case BKInnerObjIDApp:
 		return BKAppIDField
 	case BKInnerObjIDSet:
@@ -76,7 +80,7 @@ func GetInstIDField(objType string) string {
 
 func GetObjByType(objType string) string {
 	switch objType {
-	case BKInnerObjIDApp, BKInnerObjIDSet,
+	case BKInnerObjIDBizSet, BKInnerObjIDApp, BKInnerObjIDSet,
 		BKInnerObjIDModule, BKInnerObjIDProc,
 		BKInnerObjIDHost, BKInnerObjIDPlat:
 		return objType
