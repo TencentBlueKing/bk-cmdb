@@ -1740,25 +1740,19 @@ func (lgc *Logics) buildFilterIDs(kit *rest.Kit, bizID int64, params metadata.Fi
 		objectFilter[common.BKInnerObjIDModule] = moduleFilter
 	}
 
-	instIDs := make([]int64, 0)
-	flag := false
-	for object := childMap[common.BKInnerObjIDApp]; object != ""; object = childMap[object] {
-		filter := objectFilter[object]
-		if filter == nil {
-			filter = make(map[string]interface{})
-		} else {
-			flag = true
-		}
+	if len(objectFilter) == 0 {
+		return filterIDs, false, nil
+	}
 
-		if !flag {
+	filter := objectFilter[childMap[common.BKInnerObjIDApp]]
+	for object := childMap[common.BKInnerObjIDApp]; object != common.BKInnerObjIDHost; object = childMap[object] {
+
+		if len(filter) == 0 {
+			filter = objectFilter[childMap[object]]
 			continue
 		}
 
 		filter[common.BKAppIDField] = bizID
-
-		if len(instIDs) != 0 {
-			filter[common.BKParentIDField] = mapstr.MapStr{common.BKDBIN: instIDs}
-		}
 
 		insts, err := lgc.getInstIDsByCond(kit, object, filter)
 		if err != nil {
@@ -1772,7 +1766,11 @@ func (lgc *Logics) buildFilterIDs(kit *rest.Kit, bizID int64, params metadata.Fi
 
 		filterIDs[object] = insts
 
-		instIDs = insts
+		filter = objectFilter[childMap[object]]
+		if len(filter) == 0 {
+			filter = make(map[string]interface{})
+		}
+		filter[common.BKParentIDField] = mapstr.MapStr{common.BKDBIN: insts}
 	}
 
 	return filterIDs, false, nil
@@ -1799,10 +1797,6 @@ func (lgc *Logics) searchMainlineRelationMap(kit *rest.Kit) (map[string]string, 
 
 	objChildMap := make(map[string]string)
 	for _, item := range mainline.Data.Info {
-		if item.ObjectID == common.BKInnerObjIDHost {
-			continue
-		}
-
 		objChildMap[item.AsstObjID] = item.ObjectID
 	}
 
