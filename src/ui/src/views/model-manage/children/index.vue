@@ -64,7 +64,6 @@
               {{modelClassificationName}}
             </span>
             <cmdb-auth tag="i" class="icon icon-cc-edit text-primary"
-              v-if="isEditable"
               :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
               @click="editModelClassification">
             </cmdb-auth>
@@ -91,7 +90,7 @@
           </template>
         </div>
         <div class="model-text instance-count"
-          v-if="!activeModel['bk_ispaused'] && activeModel.bk_classification_id !== 'bk_biz_topo'">
+          v-if="!activeModel['bk_ispaused'] && !isNoInstanceModel">
           <span>{{$t('实例数量')}}：</span>
           <div class="text-content-count" @click="handleGoInstance">
             <cmdb-loading :loading="$loading(request.instanceCount)">
@@ -336,7 +335,12 @@
       modelId() {
         const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
         return model.id || null
-      }
+      },
+      isNoInstanceModel() {
+        // 不能直接查看实例的模型
+        const noInstanceModelIds = ['set', 'module']
+        return noInstanceModelIds.includes(this.activeModel.bk_obj_id)
+      },
     },
     watch: {
       '$route.params.modelId'() {
