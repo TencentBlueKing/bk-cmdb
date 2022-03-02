@@ -14,6 +14,7 @@ package service
 
 import (
 	"strconv"
+	"sync"
 	"time"
 
 	"configcenter/src/common"
@@ -404,29 +405,23 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 
 	planResult, err := s.generateApplyPlan(ctx, bizID, planRequest)
 	if err != nil {
-		blog.ErrorJSON("GenerateApplyPlan failed, generateApplyPlan failed, bizID: %s, request: %s, err: %v, rid:%s",
-			bizID, planRequest, err, rid)
+		blog.Errorf("generate apply plan failed, bizID: %s, req: %s, err: %v, rid: %s", bizID, planRequest, err, rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		// enable host apply on module
-		moduleUpdateOption := &metadata.UpdateOption{
+		op := &metadata.UpdateOption{
 			Condition: map[string]interface{}{
-				common.BKModuleIDField: map[string]interface{}{
-					common.BKDBIN: planRequest.ModuleIDs,
-				},
-			},
-			Data: map[string]interface{}{
-				common.HostApplyEnabledField: true,
-			},
+				common.BKModuleIDField: map[string]interface{}{common.BKDBIN: planRequest.ModuleIDs}},
+			Data: map[string]interface{}{common.HostApplyEnabledField: true},
 		}
+
 		_, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
-			common.BKInnerObjIDModule, moduleUpdateOption)
+			common.BKInnerObjIDModule, op)
 		if err != nil {
-			blog.ErrorJSON("GenerateApplyPlan failed, UpdateInstance of module http failed, option: %s, err: %v, "+
-				"rid:%s", moduleUpdateOption, err, rid)
+			blog.Errorf("update instance of module failed, option: %s, err: %v, rid: %s", op, err, rid)
 			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
 
@@ -439,25 +434,23 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 				PropertyValue: rule.PropertyValue,
 			})
 		}
-		saveRuleOption := metadata.BatchCreateOrUpdateApplyRuleOption{
-			Rules: rulesOption,
-		}
+
+		saveRuleOp := metadata.BatchCreateOrUpdateApplyRuleOption{Rules: rulesOption}
 		if _, ccErr := s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
-			bizID, saveRuleOption); ccErr != nil {
-			blog.ErrorJSON("GenerateApplyPlan failed, BatchUpdateHostApplyRule failed, bizID: %s, request: %s, "+
-				"err: %v, rid:%s", bizID, saveRuleOption, ccErr, rid)
+			bizID, saveRuleOp); ccErr != nil {
+			blog.Errorf("update host rule failed, bizID: %s, req: %s, err: %v, rid: %s", bizID, saveRuleOp, ccErr, rid)
 			return ccErr
 		}
 
 		// delete rules
 		if len(planRequest.RemoveRuleIDs) > 0 {
-			deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+			delOp := metadata.DeleteHostApplyRuleOption{
 				RuleIDs: planRequest.RemoveRuleIDs,
 			}
-			if ccErr := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
-				bizID, deleteRuleOption); ccErr != nil {
-				blog.ErrorJSON("GenerateApplyPlan failed, DeleteHostApplyRule failed, bizID: %s, request: %s, "+
-					"err: %v, rid:%s", bizID, deleteRuleOption, ccErr, rid)
+
+			if ccErr := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
+				delOp); ccErr != nil {
+				blog.Errorf("delete apply rule failed, bizID: %s, req: %s, err: %v, rid: %s", bizID, delOp, ccErr, rid)
 				return ccErr
 			}
 		}
@@ -470,6 +463,42 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
+	// update host operation is not done in a transaction, since the successfully updated hosts need not roll back
+	ctx.Kit.Header.Del(common.TransactionIdHeader)
+
+	hostApplyResults, err := s.updateHostPlan(planResult, ctx.Kit)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(hostApplyResults)
+}
+
+func generateCondition(dataStr string, hostIDs []int64) (map[string]interface{}, map[string]interface{}) {
+	data := make(map[string]interface{})
+	_ = json.Unmarshal([]byte(dataStr), &data)
+
+	andCond := make([]map[string]interface{}, 0)
+
+	for key, value := range data {
+		andCond = append(andCond, map[string]interface{}{
+			key: map[string]interface{}{common.BKDBNE: value},
+		})
+	}
+	mergeCond := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs},
+		common.BKDBAND:       andCond,
+	}
+	return mergeCond, data
+}
+
+func (s *Service) updateHostPlan(planResult metadata.HostApplyPlanResult, kit *rest.Kit) (
+	[]metadata.HostApplyResult, errors.CCErrorCoder) {
+	var (
+		wg       sync.WaitGroup
+		firstErr errors.CCErrorCoder
+	)
+
 	// update host instances, allow partial success
 	updateMap := make(map[string][]int64, 0)
 	for _, plan := range planResult.Plans {
@@ -480,45 +509,67 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 		updateMap[dataStr] = append(updateMap[dataStr], plan.HostID)
 	}
 
-	// update host operation is not done in a transaction, since the successfully updated hosts need not roll back
-	ctx.Kit.Header.Del(common.TransactionIdHeader)
-
 	hostApplyResults := make([]metadata.HostApplyResult, 0)
+
+	pipeline := make(chan bool, 5)
 	for dataStr, hostIDs := range updateMap {
-		data := make(map[string]interface{})
-		_ = json.Unmarshal([]byte(dataStr), &data)
 
-		updateOption := &metadata.UpdateOption{
-			Data: data,
-			Condition: map[string]interface{}{
-				common.BKHostIDField: map[string]interface{}{
-					common.BKDBIN: hostIDs,
-				},
-			},
-		}
+		pipeline <- true
+		wg.Add(1)
 
-		_, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
-			common.BKInnerObjIDHost, updateOption)
-		if err != nil {
-			blog.ErrorJSON("run host apply rule, update host failed, option: %s, err: %s, rid: %s", updateOption,
-				err.Error(), rid)
+		go func(dataStr string, hostIDs []int64) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			mergeCond, data := generateCondition(dataStr, hostIDs)
+			counts, cErr := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+				common.BKTableNameBaseHost, []map[string]interface{}{mergeCond})
+			if cErr != nil {
+				if firstErr == nil {
+					firstErr = cErr
+				}
+				blog.Errorf("get hosts count failed, filter: %+v, err: %v, rid: %s", mergeCond, cErr, kit.Rid)
+				return
+			}
+			if counts[0] == 0 {
+				blog.V(5).Infof("no hosts founded, filter: %+v, rid: %s", mergeCond, kit.Rid)
+				return
+			}
+
+			// If there is no eligible host, then return directly.
+			updateOp := &metadata.UpdateOption{Data: data, Condition: mergeCond}
+
+			_, err := s.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header,
+				common.BKInnerObjIDHost, updateOp)
+			if err != nil {
+				blog.Errorf("update host failed, option: %s, err: %v, rid: %s", updateOp, err, kit.Rid)
+				for _, hostID := range hostIDs {
+					hostApplyResult := metadata.HostApplyResult{HostID: hostID}
+					hostApplyResult.SetError(kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
+					hostApplyResults = append(hostApplyResults, hostApplyResult)
+				}
+				if firstErr == nil {
+					firstErr = errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+				}
+				return
+			}
+
 			for _, hostID := range hostIDs {
 				hostApplyResult := metadata.HostApplyResult{HostID: hostID}
-				if ccErr, ok := err.(errors.CCErrorCoder); ok {
-					hostApplyResult.SetError(ccErr)
-				}
 				hostApplyResults = append(hostApplyResults, hostApplyResult)
 			}
-			continue
-		}
 
-		for _, hostID := range hostIDs {
-			hostApplyResult := metadata.HostApplyResult{HostID: hostID}
-			hostApplyResults = append(hostApplyResults, hostApplyResult)
-		}
+		}(dataStr, hostIDs)
 	}
 
-	ctx.RespEntity(hostApplyResults)
+	wg.Wait()
+	if firstErr != nil {
+		return nil, firstErr
+	}
+
+	return hostApplyResults, nil
 }
 
 // ListHostRelatedApplyRule 返回主机关联的规则信息（仅返回启用模块的规则）
