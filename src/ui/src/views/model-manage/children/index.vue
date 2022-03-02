@@ -1,6 +1,6 @@
 <template>
   <div class="model-detail-wrapper">
-    <div class="model-info" v-bkloading="{ isLoading: $loading('searchObjects') }">
+    <div class="model-info" v-bkloading="{ isLoading: $loading('getClassificationsObjectStatistics') }">
       <template v-if="activeModel !== null">
         <div class="choose-icon-wrapper">
           <span class="model-type">{{getModelType()}}</span>
@@ -53,8 +53,41 @@
                 v-model.trim="modelInfo.objName">
               </bk-input>
             </div>
-            <span class="text-primary" @click="saveModel">{{$t('保存')}}</span>
+            <span class="text-primary" @click="saveModel('modelName')">{{$t('保存')}}</span>
             <span class="text-primary" @click="isEditName = false">{{$t('取消')}}</span>
+          </template>
+        </div>
+        <div class="model-text">
+          <span>{{$t('所属分组')}}：</span>
+          <template v-if="!isEditClassification">
+            <span class="text-content" :title="modelClassificationName">
+              {{modelClassificationName}}
+            </span>
+            <cmdb-auth tag="i" class="icon icon-cc-edit text-primary"
+              v-if="isEditable"
+              :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
+              @click="editModelClassification">
+            </cmdb-auth>
+          </template>
+          <template v-else>
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelClassificationId') }">
+              <bk-select
+                :clearable="false"
+                :searchable="true"
+                class="cmdb-form-select"
+                name="modelClassificationId"
+                v-validate="'required'"
+                v-model.trim="modelInfo.classificationId">
+                <bk-option
+                  v-for="classification in classifications"
+                  :key="classification.bk_classification_id"
+                  :id="classification.bk_classification_id"
+                  :name="classification.bk_classification_name">
+                </bk-option>
+              </bk-select>
+            </div>
+            <span class="text-primary" @click="saveModel('classificationId')">{{$t('保存')}}</span>
+            <span class="text-primary" @click="isEditClassification = false">{{$t('取消')}}</span>
           </template>
         </div>
         <div class="model-text instance-count"
@@ -221,11 +254,14 @@
         },
         modelInfo: {
           objName: '',
-          objIcon: ''
+          objIcon: '',
+          classificationId: ''
         },
         isIconListShow: false,
         isEditName: false,
         modelInstanceCount: null,
+        isEditClassification: false,
+        modelStatisticsSet: {},
         importField: {
           show: false,
           templateUrl: ''
@@ -249,7 +285,7 @@
         'activeModel',
         'isMainLine'
       ]),
-      ...mapGetters('objectModelClassify', ['models']),
+      ...mapGetters('objectModelClassify', ['models', 'classifications']),
       isShowOperationButton() {
         return this.activeModel && !this.activeModel.ispre
       },
@@ -265,10 +301,15 @@
         }
         return false
       },
+      modelClassificationName() {
+        return this.classifications
+          .find(item => item.bk_classification_id === this.activeModel.bk_classification_id)?.bk_classification_name || ''
+      },
       modelParams() {
         const {
           objIcon,
-          objName
+          objName,
+          classificationId
         } = this.modelInfo
         const params = {
           modifier: this.userName
@@ -276,8 +317,11 @@
         if (objIcon) {
           Object.assign(params, { bk_obj_icon: objIcon })
         }
-        if (objName.length && objName !== this.activeModel.bk_obj_name) {
+        if (objName?.length && objName !== this.activeModel.bk_obj_name) {
           Object.assign(params, { bk_obj_name: objName })
+        }
+        if (classificationId?.length && classificationId !== this.activeModel.bk_classification_id) {
+          Object.assign(params, { bk_classification_id: classificationId })
         }
         return params
       },
@@ -380,18 +424,29 @@
         this.modelInfo.objName = this.activeModel.bk_obj_name
         this.isEditName = true
       },
-      async saveModel() {
-        if (!await this.$validator.validateAll()) {
+      editModelClassification() {
+        this.modelInfo.classificationId = this.activeModel.bk_classification_id
+        this.isEditClassification = true
+      },
+      async saveModel(fieldName = '') {
+        if (!await this.$validator.validateAll() || this.$loading('updateTheModel')) {
           return
         }
-        await this.updateObject({
+
+        this.updateObject({
           id: this.activeModel.id,
-          params: this.modelParams
-        }).then(() => {
-          this.$http.cancel('post_searchClassificationsObjects')
+          params: this.modelParams,
+          config: {
+            requestId: 'updateTheModel'
+          }
         })
-        this.setActiveModel({ ...this.activeModel, ...this.modelParams })
-        this.isEditName = false
+          .then(() => {
+            this.$http.cancel('post_searchClassificationsObjects')
+            this.$success(this.$t('修改成功'))
+            this.setActiveModel({ ...this.activeModel, ...this.modelParams })
+            if (fieldName === 'modelName') this.isEditName = false
+            if (fieldName === 'classificationId') this.isEditClassification = false
+          })
       },
       initObject() {
         const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
@@ -702,6 +757,9 @@
                 input {
                     vertical-align: top;
                 }
+            }
+            .cmdb-form-select {
+              width: 100%;
             }
             .text-primary {
                 cursor: pointer;

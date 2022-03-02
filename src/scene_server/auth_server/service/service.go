@@ -31,8 +31,9 @@ import (
 	sdkauth "configcenter/src/scene_server/auth_server/sdk/auth"
 	"configcenter/src/scene_server/auth_server/sdk/client"
 	"configcenter/src/scene_server/auth_server/types"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 type AuthService struct {
@@ -158,6 +159,9 @@ func (s *AuthService) WebService() *restful.Container {
 	s.initResourcePull(api)
 
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
+
 	container.Add(api)
 
 	authAPI := new(restful.WebService).Produces(restful.MIME_JSON)

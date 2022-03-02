@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build windows
 // +build windows
 
 // Example service program that beeps.
@@ -36,11 +37,11 @@ func usage(errmsg string) {
 func main() {
 	const svcName = "myservice"
 
-	isIntSess, err := svc.IsAnInteractiveSession()
+	inService, err := svc.IsWindowsService()
 	if err != nil {
-		log.Fatalf("failed to determine if we are running in an interactive session: %v", err)
+		log.Fatalf("failed to determine if we are running in service: %v", err)
 	}
-	if !isIntSess {
+	if inService {
 		runService(svcName, false)
 		return
 	}

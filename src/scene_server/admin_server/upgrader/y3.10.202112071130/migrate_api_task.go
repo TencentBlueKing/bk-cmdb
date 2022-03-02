@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
@@ -26,14 +27,14 @@ import (
 
 // apiTask api task info
 type apiTaskInfo struct {
-	TaskID string        `bson:"task_id"`
-	Status int64         `bson:"status"`
+	TaskID interface{}   `bson:"task_id"`
+	Status interface{}   `bson:"status"`
 	Detail []subTaskInfo `bson:"detail"`
 }
 
 // subTask sub task data and execute detail
 type subTaskInfo struct {
-	Status int64 `bson:"status"`
+	Status interface{} `bson:"status"`
 }
 
 // migrateApiTask migrate api task table to common api task sync status table
@@ -54,16 +55,11 @@ func migrateApiTask(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 
 	toRemoveFields := []string{"name"}
 	taskFilter := map[string]interface{}{
-		"name": map[string]interface{}{common.BKDBExists: true},
-	}
-
-	// previous int64 status to current enum status mapping
-	taskStatusMapping := map[int64]string{
-		0:   "new",
-		1:   "waiting",
-		100: "executing",
-		200: "finished",
-		500: "failure",
+		common.BKDBOR: []map[string]interface{}{
+			{"name": map[string]interface{}{common.BKDBExists: true}},
+			{"status": map[string]interface{}{common.BKDBType: "long"}},
+			{"detail.status": map[string]interface{}{common.BKDBType: "long"}},
+		},
 	}
 
 	for {
@@ -79,23 +75,12 @@ func migrateApiTask(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			break
 		}
 
-		taskIDs := make([]string, len(taskArr))
+		taskIDs := make([]interface{}, len(taskArr))
 		for index, task := range taskArr {
 			taskIDs[index] = task.TaskID
 
-			updateStatusFilter := map[string]interface{}{
-				"task_id": task.TaskID,
-			}
-
-			updateStatusData := map[string]interface{}{
-				"status": taskStatusMapping[task.Status],
-			}
-			for idx, subTask := range task.Detail {
-				key := "detail." + strconv.FormatInt(int64(idx), 10) + ".status"
-				updateStatusData[key] = taskStatusMapping[subTask.Status]
-			}
-			if err := db.Table("cc_APITask").Update(ctx, updateStatusFilter, updateStatusData); err != nil {
-				blog.Errorf("update api task status type failed, filter: %#v, err: %v", updateStatusFilter, err)
+			if err := updateApiTaskStatus(ctx, db, task); err != nil {
+				blog.Errorf("update task status failed, err: %v, task: %#v", err, task)
 				return err
 			}
 		}
@@ -120,6 +105,62 @@ func migrateApiTask(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			break
 		}
 	}
+	return nil
+}
+
+// taskStatusMapping previous int64 status to current enum status mapping
+var taskStatusMapping = map[int64]string{
+	0:   "new",
+	1:   "waiting",
+	100: "executing",
+	200: "finished",
+	500: "failure",
+}
+
+// updateApiTaskStatus update previous api task from int64 to current enum, skip those that are already string
+func updateApiTaskStatus(ctx context.Context, db dal.RDB, task apiTaskInfo) error {
+	updateStatusData := make(map[string]interface{})
+
+	switch task.Status.(type) {
+	case string:
+	default:
+		status, err := util.GetInt64ByInterface(task.Status)
+		if err != nil {
+			blog.Errorf("parse task status(%#v) failed, err: %v", task.Status, err)
+			return err
+		}
+
+		updateStatusData["status"] = taskStatusMapping[status]
+	}
+
+	for idx, subTask := range task.Detail {
+		switch subTask.Status.(type) {
+		case string:
+		default:
+			status, err := util.GetInt64ByInterface(subTask.Status)
+			if err != nil {
+				blog.Errorf("parse sub task status(%#v) failed, err: %v", subTask.Status, err)
+				return err
+			}
+
+			key := "detail." + strconv.FormatInt(int64(idx), 10) + ".status"
+			updateStatusData[key] = taskStatusMapping[status]
+		}
+	}
+
+	if len(updateStatusData) == 0 {
+		return nil
+	}
+
+	updateStatusFilter := map[string]interface{}{
+		"task_id": task.TaskID,
+	}
+
+	if err := db.Table("cc_APITask").Update(ctx, updateStatusFilter, updateStatusData); err != nil {
+		blog.Errorf("update api task status type failed, filter: %#v, err: %v", updateStatusFilter, err)
+		return err
+	}
+
 	return nil
 }
 

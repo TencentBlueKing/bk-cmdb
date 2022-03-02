@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/ginservice"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
@@ -69,6 +70,9 @@ func (s *Service) WebService() *gin.Engine {
 		}()
 		c.Next()
 	})
+
+	opentelemetry.UseOtlpMiddleware(ws)
+
 	middleware.Engine = s.Engine
 
 	ws.Static("/static", s.Config.Site.HtmlRoot)
@@ -109,7 +113,7 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/netproperty/export", s.ExportNetProperty)
 	ws.GET("/netcollect/importtemplate/netproperty", s.BuildDownLoadNetPropertyExcelTemplate)
 	ws.POST("/object/count", s.GetObjectInstanceCount)
-	
+
 	ws.POST("/regular/verify_regular_express", s.VerifyRegularExpress)
 	ws.POST("/regular/verify_regular_content_batch", s.VerifyRegularContentBatch)
 

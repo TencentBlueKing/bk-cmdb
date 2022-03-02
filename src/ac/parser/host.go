@@ -334,6 +334,8 @@ const (
 	findHostRelationWithObjInstPattern = "/api/v3/findmany/hosts/relation/with_topo"
 	listHostDetailAndTopologyPattern   = "/api/v3/findmany/hosts/detail_topo"
 
+	findHostsServiceTemplatesPattern = "/api/v3/findmany/hosts/service_template"
+
 	// 特殊接口，给蓝鲸业务使用
 	hostInstallPattern = "/api/v3/host/install/bk"
 
@@ -427,6 +429,21 @@ func (ps *parseStream) host() *parseStream {
 			},
 		}
 		blog.Infof("hit auth, url: %s rid: %s", ps.RequestCtx.URI, ps.RequestCtx.Rid)
+		return ps
+	}
+
+	// find host service_template_id relation
+	if ps.hitPattern(findHostsServiceTemplatesPattern, http.MethodPost) {
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
 		return ps
 	}
 

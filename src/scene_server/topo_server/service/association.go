@@ -19,6 +19,7 @@ import (
 	"strconv"
 
 	"configcenter/src/ac/iam"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
@@ -825,6 +826,161 @@ func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(res.Info)
+}
+
+// SearchInstAssociationAndInstDetail search association, source object inst and destination object inst
+// related issue: https://github.com/Tencent/bk-cmdb/issues/5807
+func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
+	request := metadata.InstAndAssocRequest{}
+	if err := ctx.DecodeInto(&request); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if ccErr := request.Validate(); ccErr.ErrCode != 0 {
+		blog.Errorf("validate request failed, err: %v, rid: %s", ccErr, ctx.Kit.Rid)
+		ctx.RespAutoError(ccErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	assocFilter, errKey, err := request.Condition.AsstFilter.ToMgo()
+	if err != nil {
+		blog.Errorf("parse asst_filter to mongo searcher failed, errKey: %s, err: %v", errKey, err)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
+		return
+	}
+
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	cond := &metadata.InstAsstQueryCondition{
+		Cond: metadata.QueryCondition{
+			Condition:      assocFilter,
+			Fields:         request.Condition.AsstFields,
+			Page:           request.Page,
+			DisableCounter: true,
+		},
+		ObjID: objID,
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	assocRsp, err := s.Engine.CoreAPI.CoreService().Association().ReadInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	if err != nil {
+		blog.Errorf("search inst association failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	resp := metadata.InstAndAssocDetailData{Asst: assocRsp.Info}
+	if !request.Condition.SrcDetail && !request.Condition.DstDetail {
+		ctx.RespEntity(resp)
+		return
+	}
+
+	srcObjInst := make(map[string][]int64)
+	dstObjInst := make(map[string][]int64)
+	for _, item := range assocRsp.Info {
+		srcObjInst[item.ObjectID] = append(srcObjInst[item.ObjectID], item.InstID)
+		dstObjInst[item.AsstObjectID] = append(dstObjInst[item.AsstObjectID], item.AsstInstID)
+	}
+
+	if request.Condition.SrcDetail {
+		for obj, insts := range srcObjInst {
+			srcRsp, err := s.searchInstForAssocDetail(ctx, obj, request.Condition.SrcFields, insts)
+			if err != nil {
+				blog.Errorf("search src inst failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				ctx.RespAutoError(err)
+				return
+			}
+
+			resp.Src = append(resp.Src, srcRsp...)
+		}
+	}
+
+	if request.Condition.DstDetail {
+		for obj, insts := range dstObjInst {
+			dstRsp, err := s.searchInstForAssocDetail(ctx, obj, request.Condition.DstFields, insts)
+			if err != nil {
+				blog.Errorf("search dst inst failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				ctx.RespAutoError(err)
+				return
+			}
+
+			resp.Dst = append(resp.Dst, dstRsp...)
+		}
+	}
+
+	ctx.RespEntity(resp)
+}
+
+func (s *Service) searchInstForAssocDetail(ctx *rest.Contexts, objID string, fields []string, insts []int64) (
+	[]mapstr.MapStr, error) {
+
+	isMainline, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, objID)
+	if err != nil {
+		blog.Errorf("check object is mainline failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		return nil, err
+	}
+
+	// common object's auth is different from mainline object, mainline need to check business id
+	// mainline object will verify whether user has the viewBusinessResource of the business which the object belongs
+	action := meta.FindMany
+	authObject := objID
+	authInst := insts
+	if isMainline {
+		action = meta.ViewBusinessResource
+		authObject = common.BKInnerObjIDApp
+		authInst = make([]int64, 0)
+		if objID == common.BKInnerObjIDHost {
+			input := &metadata.HostModuleRelationRequest{HostIDArr: insts}
+			relation, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header,
+				input)
+			if err != nil {
+				blog.Errorf("search host business relation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return nil, err
+			}
+			for _, item := range relation.Info {
+				authInst = append(authInst, item.AppID)
+			}
+		} else {
+			cond := &metadata.QueryCondition{
+				Condition:      mapstr.MapStr{common.GetInstIDField(objID): mapstr.MapStr{common.BKDBIN: insts}},
+				Fields:         []string{common.BKAppIDField},
+				DisableCounter: true,
+			}
+			rsp, err := s.Logics.InstOperation().FindInst(ctx.Kit, objID, cond)
+			if err != nil {
+				blog.Errorf("search object[%s] instance failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+				return nil, err
+			}
+
+			for _, item := range rsp.Info {
+				bizID, err := item.Int64(common.BKAppIDField)
+				if err != nil {
+					blog.Errorf("get object[%s] instance parentID failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+					return nil, err
+				}
+				authInst = append(authInst, bizID)
+			}
+		}
+	}
+
+	err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, action, authObject, authInst...)
+	if err != nil {
+		blog.Errorf("authorize object[%s] failed, action: %s, insts: %v, err: %v, rid: %s", objID, action, insts, err,
+			ctx.Kit.Rid)
+		return nil, err
+	}
+
+	query := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.GetInstIDField(objID): mapstr.MapStr{common.BKDBIN: insts}},
+		Fields:         fields,
+		DisableCounter: true,
+	}
+	rsp, err := s.Logics.InstOperation().FindInst(ctx.Kit, objID, query)
+	if err != nil {
+		blog.Errorf("search object[%s] insts failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+		return nil, err
+	}
+	return rsp.Info, nil
 }
 
 // CreateAssociationInst create instance associaiton

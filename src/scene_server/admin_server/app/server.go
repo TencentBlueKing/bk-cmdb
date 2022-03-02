@@ -202,6 +202,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	errors.SetGlobalCCError(engine.CCErr)
 
 	syncor := iam.NewSyncor()
+	syncor.SetDB(mongodb.Client())
 	syncor.SetSyncIAMPeriod(process.Config.SyncIAMPeriodMinutes)
 	go syncor.SyncIAM(iamCli, service.Logics)
 

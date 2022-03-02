@@ -13,6 +13,8 @@
 package model
 
 import (
+	"strings"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -33,6 +35,14 @@ func (m *modelClassification) CreateOneModelClassification(kit *rest.Kit, inputP
 	if 0 == len(inputParam.Data.ClassificationID) {
 		blog.Errorf("request(%s): it is failed to create the model classification, because of the classificationID (%#v) is not set", kit.Rid, inputParam.Data)
 		return &metadata.CreateOneDataResult{}, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ClassFieldClassificationID)
+	}
+
+	// It is forbidden to create a model group starting with bk or BK, to prevent the subsequent creation of built-in
+	// model group conflicts. Note that the upper topo server has this id check, which is used here as a bottom line to
+	// prevent direct calls to core service without interception.
+	if strings.HasPrefix(strings.ToLower(inputParam.Data.ClassificationID), "bk") {
+		return &metadata.CreateOneDataResult{}, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid,
+			"bk_classification_id can not start with bk or BK")
 	}
 
 	inputParam.Data.OwnerID = kit.SupplierAccount

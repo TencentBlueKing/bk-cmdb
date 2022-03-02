@@ -502,14 +502,14 @@ func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64, plans []met
 		enableModuleMap[moduleID] = true
 	}
 
-	// generate host apply plans
+	// generate host apply plans only generate new module
 	hostModules := make([]metadata.Host2Modules, 0)
 	for _, item := range plans {
 		host2Module := metadata.Host2Modules{
 			HostID:    item.HostID,
 			ModuleIDs: make([]int64, 0),
 		}
-		for _, moduleID := range item.FinalModules {
+		for _, moduleID := range item.ToAddToModules {
 			if _, exist := enableModuleMap[moduleID]; exist {
 				host2Module.ModuleIDs = append(host2Module.ModuleIDs, moduleID)
 			}

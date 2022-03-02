@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *service) Get(req *restful.Request, resp *restful.Response) {
@@ -50,7 +50,7 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 	rid := util.GetHTTPCCRequestID(req.Request.Header)
 	start := time.Now()
 	url := req.Request.URL.Scheme + "://" + req.Request.URL.Host + req.Request.RequestURI
-	proxyReq, err := http.NewRequest(req.Request.Method, url, req.Request.Body)
+	proxyReq, err := http.NewRequestWithContext(req.Request.Context(), req.Request.Method, url, req.Request.Body)
 	if err != nil {
 		blog.Errorf("new proxy request[%s] failed, err: %v, rid: %s", url, err, rid)
 		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{

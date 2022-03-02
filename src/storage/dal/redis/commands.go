@@ -64,4 +64,5 @@ type Commands interface {
 	TTL(ctx context.Context, key string) DurationResult
 	TxPipeline(ctx context.Context) Pipeliner
 	Discard(ctx context.Context, pipe Pipeliner) error
+	BLPop(ctx context.Context, timeout time.Duration, keys ...string) StringSliceResult
 }

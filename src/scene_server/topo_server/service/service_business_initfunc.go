@@ -17,7 +17,7 @@ import (
 
 	"configcenter/src/common/http/rest"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *Service) initBusinessObject(web *restful.WebService) {
@@ -92,9 +92,14 @@ func (s *Service) initBusinessObjectAttrGroup(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/objectattgroup", Handler: s.CreateObjectGroup})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattgroup", Handler: s.UpdateObjectGroup})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/objectattgroup/{id}", Handler: s.DeleteObjectGroup})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattgroupproperty", Handler: s.UpdateObjectAttributeGroupProperty})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectattgroup/object/{bk_obj_id}", Handler: s.SearchGroupByObject})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/objectattgroup/{id}",
+		Handler: s.DeleteObjectGroup})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattgroupproperty",
+		Handler: s.UpdateObjectAttributeGroupProperty})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectattgroup/object/{bk_obj_id}",
+		Handler: s.SearchGroupByObject})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattgroup/groupindex",
+		Handler: s.ExchangeObjectGroupIndex})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -152,6 +157,8 @@ func (s *Service) initBusinessAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/instance_associations/object/{bk_obj_id}", Handler: s.CountInstanceAssociations})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/model",
 		Handler: s.SearchModuleAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/object/{bk_obj_id}/inst/detail",
+		Handler: s.SearchInstAssociationAndInstDetail})
 
 	// topo search methods
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/object/{bk_obj_id}", Handler: s.SearchInstByAssociation})

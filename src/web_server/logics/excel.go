@@ -35,11 +35,12 @@ import (
 // BuildExcelFromData product excel from data
 func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string,
 	data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64, usernameMap map[string]string,
-	propertyList []string, AsstObjectUniqueIDMap map[string]int64, selfObjectUniqueID int64) error {
+	propertyList []string, org []metadata.DepartmentItem, orgPropertyList []string,
+	asstObjectUniqueIDMap map[string]int64, selfObjectUniqueID int64) error {
+
 	rid := util.GetHTTPCCRequestID(header)
 
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
-	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	sheet, err := xlsxFile.AddSheet("inst")
 	if err != nil {
 		blog.Errorf("setExcelRowDataByIndex add excel sheet error, err:%s, rid:%s", err.Error(), rid)
@@ -49,13 +50,13 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 	// index=1 表格数据的起始索引，excel表格数据第一列为字段说明，第二列为数据列
 	addSystemField(fields, common.BKInnerObjIDObject, ccLang, 1)
 
-	if 0 == len(filter) {
+	if len(filter) == 0 {
 		filter = getFilterFields(objID)
 	} else {
 		filter = append(filter, getFilterFields(objID)...)
 	}
 
-	productExcelHeader(ctx, fields, filter, sheet, ccLang)
+	productExcelHeader(ctx, fields, filter, xlsxFile, sheet, ccLang)
 	// indexID := getFieldsIDIndexMap(fields)
 
 	rowIndex := common.HostAddMethodExcelIndexOffset
@@ -66,13 +67,19 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		instID, err := rowMap.Int64(instIDKey)
 		if err != nil {
-			blog.Errorf("setExcelRowDataByIndex inst:%+v, not inst id key:%s, objID:%s, rid:%s", rowMap, instIDKey, objID, rid)
-			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, "instIDKey", objID)
+			blog.Errorf("parse inst(%+v) id(key:%s) failed, err: %v, objID: %s, rid: %s", rowMap, instIDKey, err,
+				objID, rid)
 		}
 		// 使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
 		rowMap, err = replaceEnName(rid, rowMap, usernameMap, propertyList, ccLang)
 		if err != nil {
-			blog.Errorf("rebuild user list field, rid: %s", rid)
+			blog.Errorf("rebuild user list failed, err: %v, rid: %s", err, rid)
+			return err
+		}
+
+		rowMap, err = replaceDepartmentFullName(rid, rowMap, org, orgPropertyList, ccLang)
+		if err != nil {
+			blog.Errorf("rebuild organization list failed, err: %v, rid: %s", err, rid)
 			return err
 		}
 
@@ -84,7 +91,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 	}
 
 	err = lgc.BuildAssociationExcelFromData(ctx, objID, instIDArr, xlsxFile, header, modelBizID,
-		AsstObjectUniqueIDMap, selfObjectUniqueID)
+		asstObjectUniqueIDMap, selfObjectUniqueID)
 	if err != nil {
 		return err
 	}
@@ -95,8 +102,8 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 // selfObjectUniqueID 当前导出对象使用的唯一校验id
 func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property,
 	filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64,
-	usernameMap map[string]string, propertyList []string, objNames, objIDs []string,
-	AsstObjectUniqueIDMap map[string]int64, selfObjectUniqueID int64) error {
+	usernameMap map[string]string, propertyList []string, objNames, objIDs []string, org []metadata.DepartmentItem,
+	orgPropertyList []string, asstObjectUniqueIDMap map[string]int64, selfObjectUniqueID int64) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
@@ -136,9 +143,9 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 	// len(objNames)+5=tip + biztopo + biz + set + moudle + customLen, the former indexes is used by these columns
 	addSystemField(fields, common.BKInnerObjIDHost, ccLang, len(objNames)+5)
 
-	productHostExcelHeader(ctx, fields, filter, sheet, ccLang, objNames)
+	productHostExcelHeader(ctx, fields, filter, xlsxFile, sheet, ccLang, objNames)
 
-	hanlehHostDataParam := &HanlehHostDataParam{
+	handleHostDataParam := &HandleHostDataParam{
 		HostData:          data,
 		ExtFieldsTopoID:   extFieldsTopoID,
 		ExtFieldsBizID:    extFieldsBizID,
@@ -148,6 +155,8 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		ExtFieldKey:       extFieldKey,
 		UsernameMap:       usernameMap,
 		PropertyList:      propertyList,
+		Organization:      org,
+		OrgPropertyList:   orgPropertyList,
 		CcLang:            ccLang,
 		Sheet:             sheet,
 		Rid:               rid,
@@ -156,14 +165,14 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		Fields:            fields,
 	}
 
-	instIDs, err := lgc.buildHostExcelData(hanlehHostDataParam)
+	instIDs, err := lgc.buildHostExcelData(handleHostDataParam)
 	if err != nil {
 		blog.Errorf("build host excel data failed, err: %v, rid: %s", err, rid)
 		return err
 	}
 
 	err = lgc.BuildAssociationExcelFromData(ctx, objID, instIDs, xlsxFile, header, modelBizID,
-		AsstObjectUniqueIDMap, selfObjectUniqueID)
+		asstObjectUniqueIDMap, selfObjectUniqueID)
 	if err != nil {
 		blog.Errorf("build association excel data failed, err: %v, rid: %s", err, rid)
 		return err
@@ -172,35 +181,35 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 }
 
 // buildHostExcelData 处理主机数据，生成Excel表格数据
-func (lgc *Logics) buildHostExcelData(hanlehHostDataParam *HanlehHostDataParam) ([]int64, error) {
+func (lgc *Logics) buildHostExcelData(handleHostDataParam *HandleHostDataParam) ([]int64, error) {
 	instIDArr := make([]int64, 0)
 	rowIndex := common.HostAddMethodExcelIndexOffset
-	for _, hostData := range hanlehHostDataParam.HostData {
+	for _, hostData := range handleHostDataParam.HostData {
 		rowMap, err := mapstr.NewFromInterface(hostData[common.BKInnerObjIDHost])
 		if err != nil {
 			blog.Errorf("build host excel data failed, hostData: %#v, err: %v, rid: %s", hostData, err,
-				hanlehHostDataParam.Rid)
-			return nil, hanlehHostDataParam.CcErr.CCError(common.CCErrCommReplyDataFormatError)
+				handleHostDataParam.Rid)
+			return nil, handleHostDataParam.CcErr.CCError(common.CCErrCommReplyDataFormatError)
 		}
 
 		// handle custom extFieldKey,前两个元素为业务拓扑、业务，后两个元素为集群、模块，中间的为自定义层级列
-		for idx, field := range hanlehHostDataParam.ExtFieldKey[2 : len(hanlehHostDataParam.ExtFieldKey)-2] {
-			rowMap[field] = hostData[hanlehHostDataParam.ObjIDs[idx]]
+		for idx, field := range handleHostDataParam.ExtFieldKey[2 : len(handleHostDataParam.ExtFieldKey)-2] {
+			rowMap[field] = hostData[handleHostDataParam.ObjIDs[idx]]
 		}
-		rowMap[hanlehHostDataParam.ExtFieldsSetID] = hostData["sets"]
-		rowMap[hanlehHostDataParam.ExtFieldsModuleID] = hostData["modules"]
+		rowMap[handleHostDataParam.ExtFieldsSetID] = hostData["sets"]
+		rowMap[handleHostDataParam.ExtFieldsModuleID] = hostData["modules"]
 
-		if _, exist := hanlehHostDataParam.Fields[common.BKCloudIDField]; exist {
+		if _, exist := handleHostDataParam.Fields[common.BKCloudIDField]; exist {
 			cloudAreaArr, err := rowMap.MapStrArray(common.BKCloudIDField)
 			if err != nil {
-				blog.Errorf("get cloud id failed, host: %#v, err: %v, rid: %s", hostData, err, hanlehHostDataParam.Rid)
-				return nil, hanlehHostDataParam.CcErr.CCError(common.CCErrCommReplyDataFormatError)
+				blog.Errorf("get cloud id failed, host: %#v, err: %v, rid: %s", hostData, err, handleHostDataParam.Rid)
+				return nil, handleHostDataParam.CcErr.CCError(common.CCErrCommReplyDataFormatError)
 			}
 
 			if len(cloudAreaArr) != 1 {
 				blog.Errorf("host has many cloud areas, host: %#v, err: %v, rid: %s", hostData, err,
-					hanlehHostDataParam.Rid)
-				return nil, hanlehHostDataParam.CcErr.CCError(common.CCErrCommReplyDataFormatError)
+					handleHostDataParam.Rid)
+				return nil, handleHostDataParam.CcErr.CCError(common.CCErrCommReplyDataFormatError)
 			}
 
 			cloudArea := fmt.Sprintf("%v[%v]", cloudAreaArr[0][common.BKInstNameField],
@@ -214,7 +223,7 @@ func (lgc *Logics) buildHostExcelData(hanlehHostDataParam *HanlehHostDataParam) 
 			if len(topos) > 0 {
 				idx := strings.Index(topos[0], logics.SplitFlag)
 				if idx > 0 {
-					rowMap[hanlehHostDataParam.ExtFieldsBizID] = topos[0][:idx]
+					rowMap[handleHostDataParam.ExtFieldsBizID] = topos[0][:idx]
 				}
 
 				toposNobiz := make([]string, 0)
@@ -224,27 +233,34 @@ func (lgc *Logics) buildHostExcelData(hanlehHostDataParam *HanlehHostDataParam) 
 						toposNobiz = append(toposNobiz, topo[idx+len(logics.SplitFlag):])
 					}
 				}
-				rowMap[hanlehHostDataParam.ExtFieldsTopoID] = strings.Join(toposNobiz, ", ")
+				rowMap[handleHostDataParam.ExtFieldsTopoID] = strings.Join(toposNobiz, ", ")
 			}
 		}
 
-		instIDKey := metadata.GetInstIDFieldByObjID(hanlehHostDataParam.ObjID)
+		instIDKey := metadata.GetInstIDFieldByObjID(handleHostDataParam.ObjID)
 		instID, err := rowMap.Int64(instIDKey)
 		if err != nil {
-			blog.Errorf("get inst id failed, inst: %#v, err: %v, rid: %s", rowMap, err, hanlehHostDataParam.Rid)
-			return nil, hanlehHostDataParam.CcErr.Errorf(common.CCErrCommInstFieldNotFound, instIDKey,
-				hanlehHostDataParam.ObjID)
+			blog.Errorf("get inst id failed, inst: %#v, err: %v, rid: %s", rowMap, err, handleHostDataParam.Rid)
+			return nil, handleHostDataParam.CcErr.Errorf(common.CCErrCommInstFieldNotFound, instIDKey,
+				handleHostDataParam.ObjID)
 		}
 
 		// 使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
-		rowMap, err = replaceEnName(hanlehHostDataParam.Rid, rowMap, hanlehHostDataParam.UsernameMap,
-			hanlehHostDataParam.PropertyList, hanlehHostDataParam.CcLang)
+		rowMap, err = replaceEnName(handleHostDataParam.Rid, rowMap, handleHostDataParam.UsernameMap,
+			handleHostDataParam.PropertyList, handleHostDataParam.CcLang)
 		if err != nil {
-			blog.Errorf("rebuild user list field, err: %v, rid: %s", err, hanlehHostDataParam.Rid)
+			blog.Errorf("rebuild user list field, err: %v, rid: %s", err, handleHostDataParam.Rid)
 			return nil, err
 		}
 
-		setExcelRowDataByIndex(rowMap, hanlehHostDataParam.Sheet, rowIndex, hanlehHostDataParam.Fields)
+		rowMap, err = replaceDepartmentFullName(handleHostDataParam.Rid, rowMap, handleHostDataParam.Organization,
+			handleHostDataParam.OrgPropertyList, handleHostDataParam.CcLang)
+		if err != nil {
+			blog.Errorf("rebuild organization list failed, err: %v, rid: %s", err, handleHostDataParam.Rid)
+			return nil, err
+		}
+
+		setExcelRowDataByIndex(rowMap, handleHostDataParam.Sheet, rowIndex, handleHostDataParam.Fields)
 		instIDArr = append(instIDArr, instID)
 		rowIndex++
 	}
@@ -283,18 +299,17 @@ func (lgc *Logics) getObjectAssociation(ctx context.Context, header http.Header,
 	return resp.Data, nil
 }
 
-// BuildAssociationExcelFromData
-// @Params: AsstObjectUniqueIDMap 用来限定导出关联模型ID 和 导出数据使用使用的唯一索引
+// BuildAssociationExcelFromData build association excel
 func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID string, instIDArr []int64,
-	xlsxFile *xlsx.File, header http.Header, modelBizID int64,
-	AsstObjectUniqueIDMap map[string]int64, selfObjectUniqueID int64) error {
+	xlsxFile *xlsx.File, header http.Header, modelBizID int64, asstObjectUniqueIDMap map[string]int64,
+	selfObjectUniqueID int64) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 
 	sheet, err := xlsxFile.AddSheet("association")
 	if err != nil {
-		blog.Errorf("setExcelRowDataByIndex add excel  association sheet error. err:%s, rid:%s", err.Error(), rid)
+		blog.Errorf("add excel association sheet failed, err: %v, rid:%s", err, rid)
 		return err
 	}
 
@@ -302,15 +317,16 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 	if err != nil {
 		return err
 	}
+
 	// 未设置, 不导出关联关系数据
-	if len(AsstObjectUniqueIDMap) == 0 {
+	if len(asstObjectUniqueIDMap) == 0 {
 		productExcelAssociationHeader(ctx, sheet, defLang, 0, asstList)
 		return nil
 	}
 
 	// 2021年06月01日， 判断时候需要导出自关联，这个处理就是打补丁，不友好
 	hasSelfAssociation := false
-	if _, ok := AsstObjectUniqueIDMap[objID]; ok {
+	if _, ok := asstObjectUniqueIDMap[objID]; ok {
 		hasSelfAssociation = true
 	}
 
@@ -319,7 +335,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 
 		// 只导出自关联关系时的判断
 		// 防止仅导出自关联但fetch多个关联关系导致被关联对象uniqueID未传值初始化为0使getAssociationData返回报错
-		if len(AsstObjectUniqueIDMap) == 1 && hasSelfAssociation {
+		if len(asstObjectUniqueIDMap) == 1 && hasSelfAssociation {
 			if asst.ObjectID == asst.AsstObjID {
 				asstIDArr = append(asstIDArr, asst.AssociationName)
 				break
@@ -327,12 +343,12 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 			continue
 		}
 
-		_, ok := AsstObjectUniqueIDMap[asst.ObjectID]
+		_, ok := asstObjectUniqueIDMap[asst.ObjectID]
 		if ok {
 			asstIDArr = append(asstIDArr, asst.AssociationName)
 			continue
 		}
-		_, ok = AsstObjectUniqueIDMap[asst.AsstObjID]
+		_, ok = asstObjectUniqueIDMap[asst.AsstObjID]
 		if ok {
 			asstIDArr = append(asstIDArr, asst.AssociationName)
 			continue
@@ -344,7 +360,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		return err
 	}
 	asstData, objInstData, err := lgc.getAssociationData(ctx, header, objID, instAsst, modelBizID,
-		AsstObjectUniqueIDMap, selfObjectUniqueID)
+		asstObjectUniqueIDMap, selfObjectUniqueID)
 	if err != nil {
 		return err
 	}
@@ -373,7 +389,6 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 	}
 
 	return nil
-
 }
 
 func buildRowInfo(objID, rid string, inst *metadata.InstAsst, asstData map[string]map[int64][]PropertyPrimaryVal,
@@ -425,7 +440,9 @@ func buildExcelPrimaryStr(property PropertyPrimaryVal) string {
 }
 
 // BuildExcelTemplate  return httpcode, error
-func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename string, header http.Header, defLang lang.DefaultCCLanguageIf, modelBizID int64) error {
+func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename string, header http.Header,
+	defLang lang.DefaultCCLanguageIf, modelBizID int64) error {
+
 	rid := util.GetHTTPCCRequestID(header)
 	filterFields := getFilterFields(objID)
 	// host excel template doesn't need export field bk_cloud_id
@@ -461,7 +478,7 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 	productExcelAssociationHeader(ctx, asstSheet, defLang, 0, asstList)
 
 	blog.V(5).Infof("BuildExcelTemplate fields count:%d, rid: %s", fields, rid)
-	productExcelHeader(ctx, fields, filterFields, sheet, defLang)
+	productExcelHeader(ctx, fields, filterFields, file, sheet, defLang)
 	ProductExcelCommentSheet(ctx, file, defLang)
 
 	if err = file.Save(filename); nil != err {
@@ -486,32 +503,34 @@ func AddDownExcelHttpHeader(c *gin.Context, name string) {
 }
 
 // GetExcelData excel数据，一个kv结构，key行数（excel中的行数），value内容
-func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, defFields common.KvMap, isCheckHeader bool, firstRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, []string, error) {
+func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, defFields common.KvMap,
+	isCheckHeader bool, firstRow int, defLang lang.DefaultCCLanguageIf, department map[int64]metadata.DepartmentItem) (
+	map[int]map[string]interface{}, []string, error) {
 
 	var err error
 	nameIndexMap, err := checkExcelHeader(ctx, sheet, fields, isCheckHeader, defLang)
-	if nil != err {
+	if err != nil {
 		return nil, nil, err
 	}
 	hosts := make(map[int]map[string]interface{})
 	index := headerRow
-	if 0 != firstRow {
+	if firstRow != 0 {
 		index = firstRow
 	}
 	errMsg := make([]string, 0)
 	rowCnt := len(sheet.Rows)
 	for ; index < rowCnt; index++ {
 		row := sheet.Rows[index]
-		host, getErr := getDataFromByExcelRow(ctx, row, index, fields, defFields, nameIndexMap, defLang)
-		if 0 != len(getErr) {
+		host, getErr := getDataFromByExcelRow(ctx, row, index, fields, defFields, nameIndexMap, defLang, department)
+		if len(getErr) != 0 {
 			errMsg = append(errMsg, getErr...)
 			continue
 		}
-		if 0 != len(host) {
+		if len(host) != 0 {
 			hosts[index+1] = host
 		}
 	}
-	if 0 != len(errMsg) {
+	if len(errMsg) != 0 {
 		return nil, errMsg, nil
 	}
 
@@ -520,7 +539,9 @@ func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Prop
 }
 
 // GetExcelData excel数据，一个kv结构，key行数（excel中的行数），value内容
-func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.KvMap, firstRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, []string, error) {
+func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.KvMap, firstRow int,
+	defLang lang.DefaultCCLanguageIf, department map[int64]metadata.DepartmentItem) (map[int]map[string]interface{},
+	[]string, error) {
 
 	var err error
 	nameIndexMap, err := checkExcelHeader(ctx, sheet, nil, false, defLang)
@@ -529,25 +550,25 @@ func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.Kv
 	}
 	hosts := make(map[int]map[string]interface{})
 	index := headerRow
-	if 0 != firstRow {
+	if firstRow != 0 {
 		index = firstRow
 	}
 	errMsg := make([]string, 0)
 	rowCnt := len(sheet.Rows)
 	for ; index < rowCnt; index++ {
 		row := sheet.Rows[index]
-		host, getErr := getDataFromByExcelRow(ctx, row, index, nil, defFields, nameIndexMap, defLang)
-		if nil != getErr {
+		host, getErr := getDataFromByExcelRow(ctx, row, index, nil, defFields, nameIndexMap, defLang, department)
+		if getErr != nil {
 			errMsg = append(errMsg, getErr...)
 			continue
 		}
-		if 0 == len(host) {
+		if len(host) == 0 {
 			hosts[index+1] = nil
 		} else {
 			hosts[index+1] = host
 		}
 	}
-	if 0 != len(errMsg) {
+	if len(errMsg) != 0 {
 		return nil, errMsg, nil
 	}
 

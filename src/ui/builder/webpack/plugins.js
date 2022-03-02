@@ -25,6 +25,11 @@ const getCommonPlugins = config => ([
     'process.env': modeValue(prodEnv, devEnv)
   }),
 
+  new webpack.ProvidePlugin({
+    process: 'process/browser',
+    Buffer: ['buffer', 'Buffer'],
+  }),
+
   new VueLoaderPlugin(),
 
   new HtmlWebpackPlugin({

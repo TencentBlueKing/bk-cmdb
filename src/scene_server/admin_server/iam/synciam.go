@@ -13,6 +13,7 @@
 package iam
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -24,6 +25,8 @@ import (
 	commonlgc "configcenter/src/common/logics"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/logics"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
 const (
@@ -37,6 +40,8 @@ const (
 type syncor struct {
 	// 同步周期
 	SyncIAMPeriodMinutes int
+	// db mongodb实例连接，用于判断是否数据库初始化已完成，防止和模型实例权限迁移的upgrader冲突
+	db dal.RDB
 }
 
 func NewSyncor() *syncor {
@@ -50,6 +55,11 @@ func (s *syncor) SetSyncIAMPeriod(periodMinutes int) {
 		s.SyncIAMPeriodMinutes = syncIAMPeriodMinutesDefault
 	}
 	blog.Infof("sync iam period is %d minutes", s.SyncIAMPeriodMinutes)
+}
+
+// SetDB set db
+func (s *syncor) SetDB(db dal.RDB) {
+	s.db = db
 }
 
 // newHeader 创建IAM同步需要的header
@@ -91,6 +101,23 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, lgc *logics.Logics) {
 		return
 	}
 	time.Sleep(time.Minute)
+
+	// 等待数据库初始化完成，防止和模型实例权限迁移的upgrader冲突
+	rid := util.GenerateRID()
+	for dbReady := false; !dbReady; {
+		var err error
+		dbReady, err = upgrader.DBReady(context.Background(), s.db)
+		if err != nil {
+			blog.Errorf("sync iam, check whether db initialization is complete failed, err: %v, rid: %s", err, rid)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		if !dbReady {
+			blog.Warnf("sync iam, but db initialization is not complete, rid: %s", rid)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+	}
 
 	for {
 		// new kit with a different rid, header

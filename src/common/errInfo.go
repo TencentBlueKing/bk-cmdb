@@ -485,6 +485,8 @@ const (
 	CCErrorTopoForbiddenDeleteBuiltInBiz    = 1101111
 	CCErrorTopoForbiddenDeleteUnarchivedBiz = 1101112
 
+	CCErrorModelClassificationNotFound = 1101113
+
 	CCErrorTopoGetAuthorizedBusinessSetListFailed = 1101114
 
 	// object controller 1102XXX
@@ -529,6 +531,10 @@ const (
 
 	CCErrEventChainNodeNotExist = 1103007
 	CCErrEventDetailNotExist    = 1103008
+
+	CCErrEventGetTaskStatusTimeout       = 1103009
+	CCErrEventPushHostIdentifierFailed   = 1103010
+	CCErrEventSyncHostIdentifierDisabled = 1103011
 
 	// host 1104XXX
 	CCErrHostModuleRelationAddFailed = 1104000
@@ -728,6 +734,7 @@ const (
 	CCErrWebUnknownLoginVersion         = 1111017
 	CCErrWebGetUsernameMapFail          = 1111018
 	CCErrWebHostCheckFail               = 1111019
+	CCErrWebGetDepartmentMapFail        = 1111020
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000

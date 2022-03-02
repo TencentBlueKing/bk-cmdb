@@ -1548,3 +1548,92 @@ func (lgc *Logics) getCustomObjectInstances(kit *rest.Kit, obj string, instIDs [
 
 	return instRes.Info, nil
 }
+
+// ListServiceTemplateHostIDMap list hostID——serviceTemplateID map
+func (lgc *Logics) ListServiceTemplateHostIDMap(kit *rest.Kit, ids []int64) ([]mapstr.MapStr, error) {
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	relationCond := metadata.HostModuleRelationRequest{
+		HostIDArr: ids,
+		Fields:    []string{common.BKModuleIDField, common.BKHostIDField},
+	}
+	relation, err := lgc.GetHostRelations(kit, relationCond)
+	if err != nil {
+		blog.Errorf("search host relation failed, cond: %v, err: %v, rid: %s", relationCond, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(relation) == 0 {
+		blog.Errorf("host relation search result is empty, cond: %v, rid: %s", relationCond, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotExist, ids)
+	}
+
+	moduleIDs := make([]int64, 0)
+	for _, item := range relation {
+		moduleIDs = append(moduleIDs, item.ModuleID)
+	}
+
+	moduleCond := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKModuleIDField: mapstr.MapStr{common.BKDBIN: moduleIDs}},
+		Fields:         []string{common.BKModuleIDField, common.BKServiceTemplateIDField},
+		DisableCounter: true,
+	}
+	moduleRsp, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		moduleCond)
+	if err != nil {
+		blog.Errorf("search module failed, cond: %v, err: %v, rid: %s", moduleCond, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(moduleRsp.Info) == 0 {
+		blog.Errorf("module search result is empty, cond: %v, rid: %s", moduleCond, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrHostGetModuleFail, "modules does not exist")
+	}
+
+	moduleSvTmp := make(map[int64]int64)
+	for _, item := range moduleRsp.Info {
+		moduleID, err := item.Int64(common.BKModuleIDField)
+		if err != nil {
+			blog.Errorf("get bk_module_id failed, module: %v, err: %v, rid: %s", item, err, kit.Rid)
+			return nil, err
+		}
+		svTmpID, err := item.Int64(common.BKServiceTemplateIDField)
+		if err != nil {
+			blog.Errorf("get service_template_id failed, module: %v, err: %v, rid: %s", item, err, kit.Rid)
+			return nil, err
+		}
+		moduleSvTmp[moduleID] = svTmpID
+	}
+
+	hostSvTmp := make(map[int64][]int64)
+	for _, item := range relation {
+		if _, exist := hostSvTmp[item.HostID]; !exist {
+			hostSvTmp[item.HostID] = make([]int64, 0)
+		}
+
+		if _, exist := moduleSvTmp[item.ModuleID]; !exist {
+			blog.Errorf("service_template_id of module[%d] where the host[%d] is located is nil, rid: %s",
+				item.ModuleID, item.HostID, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrHostGetModuleFail,
+				fmt.Sprintf("module[%d]'s service_template_id is invalid", item.ModuleID))
+		}
+
+		if moduleSvTmp[item.ModuleID] == 0 {
+			continue
+		}
+		hostSvTmp[item.HostID] = append(hostSvTmp[item.HostID], moduleSvTmp[item.ModuleID])
+	}
+
+	result := make([]mapstr.MapStr, 0)
+	for host, sv := range hostSvTmp {
+		result = append(result, mapstr.MapStr{
+			common.BKHostIDField:            host,
+			common.BKServiceTemplateIDField: util.IntArrayUnique(sv),
+		})
+	}
+
+	return result, nil
+}

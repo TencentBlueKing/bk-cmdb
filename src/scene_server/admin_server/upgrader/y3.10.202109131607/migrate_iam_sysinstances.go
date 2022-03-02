@@ -198,6 +198,10 @@ func migrateModelInstancePolicy(ctx context.Context, action iamtype.ActionID, db
 
 	// migrate objects permissions to the 'any' permission of this object's instance action
 	for _, id := range parsedPolicy.objectIDs {
+		if _, exists := objMap[id]; !exists {
+			blog.Errorf("iam policy has an object(%d) that is not in cc, **skip this object**", id)
+			continue
+		}
 		err := batchGrantInstanceAuth(ctx, policyRes.Subject, policyRes.ExpiredAt, action, nil, id)
 		if err != nil {
 			blog.ErrorJSON("batch grant instance auth failed, err: %s, policy: %s, id: %s", err, policyRes, id)
@@ -206,6 +210,11 @@ func migrateModelInstancePolicy(ctx context.Context, action iamtype.ActionID, db
 	}
 
 	for objID, instanceIDs := range parsedPolicy.objInstIDMap {
+		if _, exists := objMap[objID]; !exists {
+			blog.Errorf("iam policy has an object(%d) that is not in cc, **skip this object**", objID)
+			continue
+		}
+
 		// get objectID by instance IDs to judge if the instances belongs to the object specified
 		instIDObjMappings, err := instancemapping.GetInstanceObjectMapping(instanceIDs)
 		if err != nil {
@@ -256,6 +265,11 @@ func grantAuthForInstances(ctx context.Context, objInstIDs []int64, db dal.DB,
 
 	instIDs := make([]int64, 0)
 	for index, instID := range objInstIDs {
+		if _, exists := instanceMap[instID]; !exists {
+			blog.Errorf("iam policy has an instance(%d) that is not in cc, **skip this object**", instID)
+			continue
+		}
+
 		instIDs = append(instIDs, instID)
 
 		// iam only allows granting 20 permissions at a time

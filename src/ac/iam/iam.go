@@ -14,6 +14,7 @@ package iam
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"configcenter/src/ac/meta"
@@ -318,8 +319,15 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object) error {
 	rid := commonutil.ExtractRequestIDFromContext(ctx)
 
-	fields := []SystemQueryField{FieldResourceTypes,
-		FieldActions, FieldActionGroups, FieldInstanceSelections}
+	// validate the objects
+	for _, obj := range objects {
+		if obj.ID == 0 || len(obj.ObjectID) == 0 || len(obj.ObjectName) == 0 {
+			blog.Errorf("sync iam system instances but object(%#v) is invalid, rid: %s", obj, rid)
+			return errors.New("sync iam instances, but object is invalid")
+		}
+	}
+
+	fields := []SystemQueryField{FieldResourceTypes, FieldActions, FieldActionGroups, FieldInstanceSelections}
 	iamResp, err := i.Client.GetSystemInfo(ctx, fields)
 	if err != nil {
 		blog.ErrorJSON("sync iam sysInstances failed, get system info error: %s, fields: %s, rid: %s",
@@ -540,12 +548,25 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourcePa
 
 	// update action_groups in iam
 	if len(deletedActions) > 0 {
+		actionMap := map[ActionID]struct{}{}
+		for _, action := range iamResp.Data.Actions {
+			actionMap[action.ID] = struct{}{}
+		}
+
+		for _, action := range deletedActions {
+			delete(actionMap, action)
+		}
+
 		cmdbActionGroups := GenerateActionGroups(objects)
-		blog.Infof("begin update actionGroups")
-		if err := i.Client.UpdateActionGroups(ctx, cmdbActionGroups); err != nil {
-			blog.ErrorJSON("delete cmdb resource failed, update actionGroups error: %s, actionGroups: %s, "+
-				"rid: %s", err, cmdbActionGroups, rid)
-			return err
+		actualActionGroups := getActionGroupWithExistAction(cmdbActionGroups, actionMap)
+
+		if len(actualActionGroups) > 0 {
+			blog.Infof("begin update action groups")
+			if err := i.Client.UpdateActionGroups(ctx, actualActionGroups); err != nil {
+				blog.Errorf("update action groups(%+v) after delete cmdb resource from iam failed, err: %v, rid: %s",
+					actualActionGroups, err, rid)
+				return err
+			}
 		}
 	}
 

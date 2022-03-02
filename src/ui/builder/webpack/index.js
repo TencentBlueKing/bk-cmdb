@@ -31,13 +31,16 @@ module.exports = {
     extensions: ['.js', '.vue', '.json'],
     alias: {
       vue$: 'vue/dist/vue.esm.js',
-      '@': resolveBase('src'),
+      '@': resolveBase('src')
     },
     fallback: {
       fs: false,
-      buffer: false,
       assert: false,
-      path: require.resolve('path-browserify')
+      buffer: require.resolve('buffer/'), // lookup npm module
+      path: require.resolve('path-browserify'),
+      crypto: require.resolve('crypto-browserify'),
+      os: require.resolve('os-browserify/browser'),
+      stream: require.resolve('stream-browserify')
     }
   },
 

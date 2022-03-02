@@ -20,7 +20,7 @@ import (
 
 	"configcenter/src/apiserver/service/match"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // URLPath url path filter
