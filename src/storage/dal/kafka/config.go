@@ -10,29 +10,32 @@
  * limitations under the License.
  */
 
-package collections
+package kafka
 
-// Analyzer is common collection analyzer interface.
-type Analyzer interface {
-	// Analyze analyzes message from collectors.
-	Analyze(message *string) (bool, error)
+import "errors"
 
-	// Hash returns a hash value of the input message string.
-	Hash(cloudid, ip string) (string, error)
-
-	// Mock returns mock message that could be analyzed by the Analyzer.
-	Mock() string
+// Config kafka config
+type Config struct {
+	Brokers   []string
+	GroupID   string
+	Topic     string
+	Partition int64
+	User      string
+	Password  string
 }
 
-// Porter is common porter interface. It handles
-// message from collectors base on Analyzer.
-type Porter interface {
-	// Name returns name of the Porter.
-	Name() string
+// Check check kafka config
+func (c *Config) Check() error {
+	if c.Brokers == nil || len(c.Brokers) == 0 {
+		return errors.New("can not find kafka brokers config")
+	}
 
-	// Run runs the Porter.
-	Run() error
+	if c.GroupID == "" {
+		return errors.New("can not find kafka groupID config")
+	}
 
-	// Mock supports mock service in Porter.
-	Mock() error
+	if c.Partition == 0 {
+		return errors.New("can not find kafka partition config or value cannot be set to 0")
+	}
+	return nil
 }
