@@ -339,6 +339,8 @@ cloudServer:
 #datacollection专属配置
 datacollection:
   hostsnap:
+    # 主机静态数据采集模式，将数据导入kafka或者redis，可选值是 kafka、redis，默认值为redis（仅用于新插件bkmonitorbeat）
+    reportMode: redis
     # 当主机快照数据属性,如cpu,bk_cpu_mhz,bk_disk,bk_mem这些数值型数据变动的范围大于该配置的值时，进行db数据的更新，默认值为10%，最小值为5%，以百分比为单位
     changeRangePercent: 10
     # 用于设置主机快照key在redis中的过期时间，该时间会有上下50%的波动，当key存在时，同一id的主机数据不会更新，默认值为10分钟，最小值为5分钟，以分钟为单位
@@ -429,6 +431,19 @@ gse:
     certFile:
     keyFile:
     caFile:
+    password:
+
+# 当主机静态数据采集模式为kafka时，datacollection处理插件bkmonitorbeat采集上来的主机静态数据，选择kafka作为数据导入组件时的相关配置
+# 此配置与migrate.yaml文件中的reportMode相关联
+kafka:
+  snap:
+    brokers:
+    # groupID为固定值，请勿随便修改，修改后会导致重复消费过去的数据
+    groupID: bk_cmdb_snapshot_group
+    # partition数量固定为1，保证消息的顺序性
+    partition: 1
+    # 安全协议SASL_PLAINTEXT，SASL机制SCRAM-SHA-512的账号、密码信息
+    user:
     password:
     '''
 

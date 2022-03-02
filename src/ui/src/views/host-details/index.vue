@@ -42,6 +42,8 @@
   import cmdbAuditHistory from '@/components/model-instance/audit-history'
   import cmdbHostService from './children/service-list.vue'
   import RouterQuery from '@/router/query'
+  import { hostInfoProxy } from './service-proxy.js'
+
   export default {
     components: {
       cmdbHostInfo,
@@ -116,9 +118,8 @@
       },
       async getHostInfo() {
         try {
-          const { info } = await this.$store.dispatch('hostSearch/searchHost', {
-            params: this.getSearchHostParams()
-          })
+          const { info } = await hostInfoProxy(this.getSearchHostParams())
+
           if (info.length) {
             this.$store.commit('hostDetails/setHostInfo', info[0])
           } else {

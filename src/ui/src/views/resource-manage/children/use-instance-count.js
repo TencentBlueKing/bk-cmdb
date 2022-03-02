@@ -47,7 +47,7 @@ export default function useInstanceCount(state = {}, root) {
           console.error(reason?.message)
           continue
         }
-        list.push(...value)
+        list.push(...value ?? [])
       }
       // 一个批次更新一次
       instanceCounts.value.push(list)

@@ -237,11 +237,11 @@
   import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import {
-    MENU_RESOURCE_HOST,
-    MENU_RESOURCE_BUSINESS,
     MENU_RESOURCE_INSTANCE,
     MENU_MODEL_DETAILS
   } from '@/dictionary/menu-symbol'
+  import { BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
+
   export default {
     filters: {
       instanceCount(value) {
@@ -555,14 +555,10 @@
       },
       handleGoInstance(model) {
         this.sucessDialog.isShow = false
-        const map = {
-          host: MENU_RESOURCE_HOST,
-          biz: MENU_RESOURCE_BUSINESS
-        }
-        if (has(map, model.bk_obj_id)) {
+        if (has(BUILTIN_MODEL_RESOURCE_MENUS, model.bk_obj_id)) {
           const query = model.bk_obj_id === 'host' ? { scope: 'all' } : {}
           this.$routerActions.redirect({
-            name: map[model.bk_obj_id],
+            name: BUILTIN_MODEL_RESOURCE_MENUS[model.bk_obj_id],
             query
           })
         } else {

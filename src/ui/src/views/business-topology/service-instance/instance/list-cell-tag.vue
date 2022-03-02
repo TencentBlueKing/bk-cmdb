@@ -10,7 +10,10 @@
       <li class="tag-item ellipsis" ref="ellipsis" v-show="tags.length" @click.stop>...</li>
     </ul>
     <span class="tag-empty" v-else>--</span>
-    <cmdb-auth tag="i" class="tag-edit icon-cc-edit"
+    <cmdb-auth
+      v-if="!readonly"
+      tag="i"
+      class="tag-edit icon-cc-edit"
       ref="editTrigger"
       :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
       @click.native.stop
@@ -27,7 +30,11 @@
   export default {
     name: 'list-cell-tag',
     props: {
-      row: Object
+      row: Object,
+      readonly: {
+        type: Boolean,
+        default: false,
+      }
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
@@ -55,6 +62,7 @@
     },
     methods: {
       handleResize() {
+        if (this.readonly) return
         this.removeEllipsisTag()
         if (!this.tags.length) {
           this.updateEditPosition()

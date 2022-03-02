@@ -50,7 +50,7 @@ func addProcessBindInfoOption(ctx context.Context, db dal.RDB, conf *upgrader.Co
 
 	for _, subAttr := range options {
 		if subAttr.PropertyID == "template_row_id" {
-			blog.Errorf("bind_info option already has field template_row_id")
+			blog.Infof("bind_info option already has field template_row_id")
 			return nil
 		}
 	}

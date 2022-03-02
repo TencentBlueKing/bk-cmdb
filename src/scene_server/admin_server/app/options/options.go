@@ -16,6 +16,7 @@ import (
 	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
 
@@ -45,17 +46,19 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 }
 
 type Config struct {
-	MongoDB       mongo.Config
-	WatchDB       mongo.Config
-	Errors        ErrorConfig
-	Language      LanguageConfig
-	Configures    ConfConfig
-	Register      RegisterConfig
-	Redis         redis.Config
-	SnapRedis     redis.Config
-	IAM           iam.AuthConfig
-	SnapDataID    int64
-	ShardingTable ShardingTableConfig
+	MongoDB        mongo.Config
+	WatchDB        mongo.Config
+	Errors         ErrorConfig
+	Language       LanguageConfig
+	Configures     ConfConfig
+	Register       RegisterConfig
+	Redis          redis.Config
+	SnapRedis      redis.Config
+	SnapKafka      kafka.Config
+	IAM            iam.AuthConfig
+	SnapDataID     int64
+	SnapReportMode string
+	ShardingTable  ShardingTableConfig
 	// SyncIAMPeriodMinutes the period for sync IAM resources
 	SyncIAMPeriodMinutes int
 }

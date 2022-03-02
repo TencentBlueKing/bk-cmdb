@@ -18,11 +18,13 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 )
 
+// InstanceInterface instance operation interface
 type InstanceInterface interface {
 	CreateApp(ctx context.Context, ownerID string, h http.Header, dat map[string]interface{}) (resp *metadata.CreateInstResult, err error)
 	DeleteApp(ctx context.Context, ownerID string, appID string, h http.Header) (resp *metadata.Response, err error)
@@ -71,6 +73,27 @@ type InstanceInterface interface {
 	// CountObjectInstances counts object instances num.
 	CountObjectInstances(ctx context.Context, header http.Header,
 		objID string, input *metadata.CommonCountFilter) (*metadata.Response, error)
+
+	// CreateBizSet create biz set
+	CreateBizSet(ctx context.Context, h http.Header, opt metadata.CreateBizSetRequest) (int64, errors.CCErrorCoder)
+
+	// UpdateBizSet update biz set
+	UpdateBizSet(ctx context.Context, h http.Header, opt metadata.UpdateBizSetOption) errors.CCErrorCoder
+
+	// DeleteBizSet delete biz set
+	DeleteBizSet(ctx context.Context, h http.Header, opt metadata.DeleteBizSetOption) errors.CCErrorCoder
+
+	// FindBizInBizSet find biz list in biz set
+	FindBizInBizSet(ctx context.Context, h http.Header, opt *metadata.FindBizInBizSetOption) (*metadata.InstResult,
+		errors.CCErrorCoder)
+
+	// FindBizSetTopo find topo info by parent in biz set
+	FindBizSetTopo(ctx context.Context, h http.Header, opt *metadata.FindBizSetTopoOption) ([]mapstr.MapStr,
+		errors.CCErrorCoder)
+
+	// SearchBusinessSet search business set
+	SearchBusinessSet(ctx context.Context, h http.Header, opt *metadata.QueryBusinessSetRequest) (
+		*metadata.InstResult, errors.CCErrorCoder)
 }
 
 type instanceClient struct {

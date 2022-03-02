@@ -64,6 +64,7 @@ import audit from './modules/api/audit.js'
 import dynamicGroup from './modules/api/dynamic-group'
 
 import globalConfig from './modules/global-config.js'
+import bizSet from './modules/biz-set.js'
 
 Vue.use(Vuex)
 
@@ -71,6 +72,7 @@ export default new Vuex.Store({
   ...global,
   modules: {
     index,
+    bizSet,
     globalConfig,
     hostDetails,
     serviceProcess,
