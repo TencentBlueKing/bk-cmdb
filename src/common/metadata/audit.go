@@ -22,12 +22,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-type AuditQueryResult struct {
+// AuditQueryResponse query audit logs response
+type AuditQueryResponse struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Count int64      `json:"count"`
-		Info  []AuditLog `json:"info"`
-	} `json:"data"`
+	Data     *AuditQueryResult `json:"data"`
+}
+
+// AuditQueryResult query audit logs result
+type AuditQueryResult struct {
+	Count int64      `json:"count"`
+	Info  []AuditLog `json:"info"`
 }
 
 type CreateAuditLogParam struct {
@@ -184,6 +188,7 @@ type AuditLog struct {
 	// the business id of the resource if it belongs to a business.
 	BusinessID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
 	// ResourceID is the id of the resource instance. which is a unique id, dynamic grouping id is string type.
+	// for service instance audit log,
 	ResourceID interface{} `json:"resource_id" bson:"resource_id"`
 	// ResourceName is the name of the resource, such as a switch model has a name "switch"
 	ResourceName string `json:"resource_name" bson:"resource_name"`
@@ -283,6 +288,12 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
+	case ServiceInstanceRes:
+		operationDetail := new(ServiceInstanceOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
 	default:
 		operationDetail := new(BasicOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -341,6 +352,12 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		auditLog.OperationDetail = operationDetail
 	case ModelAttributeRes, ModelAttributeGroupRes:
 		operationDetail := new(ModelAttrOpDetail)
+		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+	case ServiceInstanceRes:
+		operationDetail := new(ServiceInstanceOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
@@ -470,6 +487,30 @@ type ModelAssociationOpDetail struct {
 
 func (ao *ModelAssociationOpDetail) WithName() string {
 	return "ModelAssociationOpDetail"
+}
+
+// ServiceInstanceOpDetail service instance operation detail
+type ServiceInstanceOpDetail struct {
+	BasicOpDetail `json:",inline" bson:",inline"`
+	HostID        int64 `json:"bk_host_id" bson:"bk_host_id"`
+	// Processes operation detail of processes in service instance
+	Processes []SvcInstProOpDetail `json:"processes,omitempty" bson:"processes,omitempty"`
+}
+
+// SvcInstProOpDetail process operation detail, aggregated in service instance operation detail
+type SvcInstProOpDetail struct {
+	// Action process operation action, can be one of CUD
+	Action ActionType `json:"action" bson:"action"`
+	// ProcessIDs operated process ids
+	ProcessIDs int64 `json:"bk_process_ids" bson:"bk_process_ids"`
+	// ProcessNames operated process names, used by ui
+	ProcessNames  string `json:"bk_process_names" bson:"bk_process_names"`
+	BasicOpDetail `json:",inline" bson:",inline"`
+}
+
+// WithName returns the service instance operation detail name
+func (op *ServiceInstanceOpDetail) WithName() string {
+	return "ServiceInstanceOpDetail"
 }
 
 // Content contains the details information with in a user's operation.
@@ -722,8 +763,8 @@ var auditDict = []resourceTypeInfo{
 		},
 	},
 	{
-		ID:   ProcessRes,
-		Name: "进程",
+		ID:   ServiceInstanceRes,
+		Name: "服务实例",
 		Operations: []actionTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],
