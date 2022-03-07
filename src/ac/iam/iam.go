@@ -42,6 +42,16 @@ func NewIAM(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer
 	if !auth.EnableAuthorize() {
 		return new(IAM), nil
 	}
+
+	if tls == nil {
+		config, err := util.NewTLSClientConfigFromConfig("authServer.authCenter.tls")
+		if err != nil {
+			blog.Infof("get authCenter.tls config error, err: %v", err)
+			return nil, err
+		}
+		tls = &config
+	}
+
 	client, err := util.NewClient(tls)
 	if err != nil {
 		return nil, err

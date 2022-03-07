@@ -158,11 +158,6 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("new engine failed, err: %v", err)
 	}
 	engine.client = client
-	engine.apiMachineryConfig = &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
 	engine.discovery = serviceDiscovery
 	engine.ServiceManageInterface = serviceDiscovery
 	engine.srvInfo = input.SrvInfo
@@ -211,6 +206,17 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("init tracer failed, err: %v", err)
 	}
 
+	tlsConf, err := getTLSConf()
+	if err != nil {
+		blog.Errorf("get tls config error, err: %v", err)
+		return nil, err
+	}
+	engine.apiMachineryConfig = &util.APIMachineryConfig{
+		QPS:       1000,
+		Burst:     2000,
+		TLSConfig: tlsConf,
+	}
+
 	machinery, err := newApiMachinery(serviceDiscovery, engine.apiMachineryConfig)
 	if err != nil {
 		return nil, err
@@ -221,11 +227,21 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 }
 
 func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTPHandler http.Handler, pprofEnabled bool) error {
+	tlsConf, err := getTLSConf()
+	if err != nil {
+		blog.Errorf("get tls config error, err: %v", err)
+		return err
+	}
+
+	if isTLS(tlsConf) {
+		e.srvInfo.Scheme = "https"
+	}
+
 	e.server = Server{
 		ListenAddr:   e.srvInfo.IP,
 		ListenPort:   e.srvInfo.Port,
 		Handler:      e.Metric().HTTPMiddleware(HTTPHandler),
-		TLS:          TLSConfig{},
+		TLS:          tlsConf,
 		PProfEnabled: pprofEnabled,
 	}
 
@@ -362,4 +378,71 @@ func getRegisterPath(ip string) string {
 // GetSrvInfo get service info
 func (e *Engine) GetSrvInfo() *types.ServerInfo {
 	return e.srvInfo
+}
+
+func getTLSConf() (*util.TLSClientConfig, error) {
+	var prefix string
+	switch common.GetIdentification() {
+	case types.CC_MODULE_DATACOLLECTION:
+		prefix = "datacollection"
+
+	case types.CC_MODULE_HOST:
+		prefix = "hostServer"
+
+	case types.CC_MODULE_MIGRATE:
+		prefix = "adminServer"
+
+	case types.CC_MODULE_PROC:
+		prefix = "procServer"
+
+	case types.CC_MODULE_TOPO:
+		prefix = "topoServer"
+
+	case types.CC_MODULE_APISERVER:
+		prefix = "apiServer"
+
+	case types.CC_MODULE_WEBSERVER:
+		prefix = "webServer"
+
+	case types.CC_MODULE_EVENTSERVER:
+		prefix = "eventServer"
+
+	case types.CC_MODULE_CORESERVICE:
+		prefix = "coreService"
+
+	case types.CC_MODULE_SYNCHRONZESERVER:
+		prefix = "synchronizeServer"
+
+	case types.CC_MODULE_OPERATION:
+		prefix = "operationServer"
+
+	case types.CC_MODULE_TASK:
+		prefix = "taskServer"
+
+	case types.CC_MODULE_CLOUD:
+		prefix = "cloudServer"
+
+	case types.CC_MODULE_AUTH:
+		prefix = "authServer"
+
+	case types.CC_MODULE_CACHESERVICE:
+		prefix = "cacheService"
+	}
+
+	if prefix == "" {
+		blog.Warnf("unknown server, identifier: %s", common.GetIdentification())
+		return nil, nil
+	}
+
+	prefix += ".tls"
+
+	config, err := util.NewTLSClientConfigFromConfig(prefix)
+	return &config, err
+}
+
+func isTLS(config *util.TLSClientConfig) bool {
+	if config == nil || len(config.CertFile) == 0 || len(config.KeyFile) == 0 {
+		return false
+	}
+	return true
 }

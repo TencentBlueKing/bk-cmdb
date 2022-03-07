@@ -37,9 +37,6 @@ import (
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
-	// init esb client
-	esb.InitEsbClient(nil)
-
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -193,6 +190,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		process.Service.Logics = logics.NewLogics(engine)
 		break
 	}
+
+	// init esb client
+	esb.InitEsbClient(nil)
 
 	if err := service.BackgroundTask(*process.Config); err != nil {
 		return err

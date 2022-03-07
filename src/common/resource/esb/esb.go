@@ -63,7 +63,7 @@ func ParseEsbConfig(prefix string) (*esbutil.EsbConfig, errors.CCErrorCoder) {
 	}
 
 	// 不支持热更新
-	tlsConfig, err = util.NewTLSClientConfigFromConfig(prefix+"esb", nil)
+	tlsConfig, err = util.NewTLSClientConfigFromConfig(prefix + "esb")
 	if err != nil {
 		lastInitErr = errors.NewCCError(common.CCErrCommResourceInitFailed, "'esb' initialization failed")
 		return nil, lastInitErr

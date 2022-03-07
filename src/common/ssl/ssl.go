@@ -20,9 +20,10 @@ import (
 	"io/ioutil"
 )
 
-func ClientTslConfNoVerity() *tls.Config {
+// client tls config without verify
+func ClientTLSConfNoVerify() *tls.Config {
 	return &tls.Config{
-		InsecureSkipVerify: false,
+		InsecureSkipVerify: true,
 	}
 }
 
@@ -59,16 +60,16 @@ func ClientTLSConfVerity(caFile, certFile, keyFile, passwd string) (*tls.Config,
 	return conf, nil
 }
 
-func ServerTslConf(caFile, certFile, keyFile, passwd string) (*tls.Config, error) {
-	if "" == caFile {
-		return ServerTslConfVerity(certFile, keyFile, passwd)
+// ServerTLSConf return server tls config
+func ServerTLSConf(caFile, certFile, keyFile, passwd string, requireAndVerifyClientCert bool) (*tls.Config, error) {
+	if !requireAndVerifyClientCert {
+		return serverTLSConf(certFile, keyFile, passwd)
 	}
 
-	return ServerTslConfVerityClient(caFile, certFile, keyFile, passwd)
+	return serverTLSVerifyClient(caFile, certFile, keyFile, passwd)
 }
 
-func ServerTslConfVerity(certFile, keyFile, passwd string) (*tls.Config, error) {
-
+func serverTLSConf(certFile, keyFile, passwd string) (*tls.Config, error) {
 	cert, err := loadCertificates(certFile, keyFile, passwd)
 	if err != nil {
 		return nil, err
@@ -81,7 +82,8 @@ func ServerTslConfVerity(certFile, keyFile, passwd string) (*tls.Config, error) 
 	return conf, nil
 }
 
-func ServerTslConfVerityClient(caFile, certFile, keyFile, passwd string) (*tls.Config, error) {
+// ServerTLSVerifyClient server tls verify client
+func serverTLSVerifyClient(caFile, certFile, keyFile, passwd string) (*tls.Config, error) {
 	caPool, err := loadCa(caFile)
 	if err != nil {
 		return nil, err
