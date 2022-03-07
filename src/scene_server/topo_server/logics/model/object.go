@@ -449,6 +449,30 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 	return results, nil
 }
 
+func (o *object) isClassificationValid(kit *rest.Kit, data mapstr.MapStr) error {
+
+	if !data.Exists(metadata.ModelFieldObjCls) {
+		return nil
+	}
+
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			metadata.ModelFieldObjCls: data[metadata.ModelFieldObjCls],
+		},
+	}
+	rsp, err := o.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("failed to read model classification, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+	if len(rsp.Info) <= 0 {
+		blog.Errorf("no model classification founded, err: %s, rid: %s",
+			kit.CCError.CCError(common.CCErrorModelClassificationNotFound), kit.Rid)
+		return kit.CCError.CCError(common.CCErrorModelClassificationNotFound)
+	}
+	return nil
+}
+
 // UpdateObject update a common object by id
 func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error {
 
@@ -463,8 +487,10 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 	// remove unchangeable fields.
 	data.Remove(metadata.ModelFieldObjectID)
 	data.Remove(metadata.ModelFieldID)
-	data.Remove(metadata.ModelFieldObjCls)
 
+	if err := o.isClassificationValid(kit, data); err != nil {
+		return err
+	}
 	// generate audit log of object attribute group.
 	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).
