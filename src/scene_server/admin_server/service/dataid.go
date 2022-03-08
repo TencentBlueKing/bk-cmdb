@@ -408,7 +408,7 @@ func (s *Service) getSnapBizID(rid string) (int64, error) {
 		return 0, err
 	}
 
-	configAdmin := new(metadata.ConfigAdmin)
+	configAdmin := new(metadata.PlatformSettingConfig)
 	if err := json.Unmarshal([]byte(cfg[common.ConfigAdminValueField]), configAdmin); err != nil {
 		blog.Errorf("unmarshal config admin(%s) failed, err: %v, rid: %s", cfg[common.ConfigAdminValueField], err, rid)
 		return 0, err
@@ -429,6 +429,7 @@ func (s *Service) generateGseConfigChannel(streamToID, dataID int64, rid string,
 	version snapshotVersion) (*metadata.GseConfigChannel, error) {
 
 	if snapChannel != nil {
+		snapChannel.Metadata.ChannelID = dataID
 		return snapChannel, nil
 	}
 
