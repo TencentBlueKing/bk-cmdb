@@ -220,7 +220,6 @@ func (p *hostApplyRule) DeleteHostApplyRule(kit *rest.Kit, bizID int64, ruleIDs 
 		blog.Errorf("DeleteHostApplyRule failed, db remove failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
 	}
-
 	return nil
 }
 
@@ -461,10 +460,11 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, opt
 			Index: index,
 		}
 		ruleFilter := map[string]interface{}{
-			common.BKAppIDField:       bizID,
-			common.BkSupplierAccount:  kit.SupplierAccount,
-			common.BKAttributeIDField: item.AttributeID,
-			common.BKModuleIDField:    item.ModuleID,
+			common.BKAppIDField:             bizID,
+			common.BkSupplierAccount:        kit.SupplierAccount,
+			common.BKAttributeIDField:       item.AttributeID,
+			common.BKModuleIDField:          item.ModuleID,
+			common.BKServiceTemplateIDField: item.ServiceTemplateID,
 		}
 		count, err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(ruleFilter).Count(kit.Ctx)
 		if err != nil {
@@ -521,16 +521,17 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, opt
 			continue
 		}
 		rule := metadata.HostApplyRule{
-			ID:              int64(newRuleID),
-			BizID:           bizID,
-			ModuleID:        item.ModuleID,
-			AttributeID:     item.AttributeID,
-			PropertyValue:   item.PropertyValue,
-			Creator:         kit.User,
-			Modifier:        kit.User,
-			CreateTime:      now,
-			LastTime:        now,
-			SupplierAccount: kit.SupplierAccount,
+			ID:                int64(newRuleID),
+			BizID:             bizID,
+			ModuleID:          item.ModuleID,
+			ServiceTemplateId: item.ServiceTemplateID,
+			AttributeID:       item.AttributeID,
+			PropertyValue:     item.PropertyValue,
+			Creator:           kit.User,
+			Modifier:          kit.User,
+			CreateTime:        now,
+			LastTime:          now,
+			SupplierAccount:   kit.SupplierAccount,
 		}
 		if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Insert(kit.Ctx, rule); err != nil {
 			blog.ErrorJSON("BatchUpdateHostApplyRule failed, insert rule failed, doc: %s, err: %s, rid: %s", rule, err.Error(), rid)

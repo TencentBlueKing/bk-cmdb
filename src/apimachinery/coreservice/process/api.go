@@ -279,6 +279,30 @@ func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, temp
 	return &ret.Data, nil
 }
 
+// UpdateBatchServiceTemplate batch update service template action
+func (p *process) UpdateBatchServiceTemplate(ctx context.Context, h http.Header, option *metadata.UpdateOption) errors.CCErrorCoder {
+	ret := new(metadata.OneServiceTemplateResult)
+	subPath := "/update/batch/process/service_templates"
+
+	err := p.client.Put().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("update service templates failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
+}
+
 func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, templateID int64) errors.CCErrorCoder {
 	ret := new(metadata.OneServiceTemplateResult)
 	subPath := "/delete/process/service_template/%d"

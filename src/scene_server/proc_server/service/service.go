@@ -92,6 +92,22 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	// service template
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template", Handler: ps.CreateServiceTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_template", Handler: ps.UpdateServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path:    "/updatemany/proc/service_template/host_apply_enable_status/biz/{bk_biz_id}",
+		Handler: ps.UpdateServiceTemplateHostApplyEnableStatus})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path:    "/deletemany/proc/service_template/host_apply_rule/biz/{bk_biz_id}",
+		Handler: ps.DeleteHostApplyRule})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/updatemany/proc/service_template/host_apply_plan/run",
+		Handler: ps.UpdateServiceTemplateHostApplyRule})
+
+	// task Execute asynchronous service template host automation application tasks.
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/updatemany/service_template/host_apply_plan/task",
+		Handler: ps.ExecServiceTemplateHostApplyRule})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_template/{service_template_id}", Handler: ps.GetServiceTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_template/{service_template_id}/detail", Handler: ps.GetServiceTemplateDetail})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_template", Handler: ps.ListServiceTemplates})

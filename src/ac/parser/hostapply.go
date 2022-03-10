@@ -84,12 +84,11 @@ var HostApplyAuthConfigs = []AuthConfig{
 		ResourceType:   meta.MainlineInstanceTopology,
 		ResourceAction: meta.SkipAction,
 	}, {
-		Name:           "RunHostApplyRuleRegex",
-		Description:    "执行主机属性自动应用",
-		Regex:          regexp.MustCompile(`^/api/v3/updatemany/host_apply_plan/bk_biz_id/([0-9]+)/run/?$`),
+		Name:           "RunHostApplyRuleOnModuleRegex",
+		Description:    "模块场景下执行主机属性自动应用",
+		Regex:          regexp.MustCompile(`^/api/v3/host/updatemany/module/host_apply_plan/bk_biz_id/run/?$`),
 		HTTPMethod:     http.MethodPost,
-		BizIDGetter:    BizIDFromURLGetter,
-		BizIndex:       5,
+		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.HostApply,
 		ResourceAction: meta.Update,
 	}, {

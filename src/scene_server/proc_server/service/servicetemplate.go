@@ -13,13 +13,19 @@
 package service
 
 import (
+	"encoding/json"
+	"fmt"
+	"sort"
 	"strconv"
+	"strings"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -105,6 +111,408 @@ func (ps *ProcServer) GetServiceTemplateDetail(ctx *rest.Contexts) {
 	ctx.RespEntity(templateDetail)
 }
 
+func (ps *ProcServer) getHostIDByCondition(kit *rest.Kit, bizID int64, serviceTemplateIDs []int64,
+	hostIDs []int64) ([]int64, errors.CCErrorCoder) {
+
+	// 1、get module ids by template ids.
+	moduleCond := mapstr.MapStr{
+		common.BKAppIDField:             bizID,
+		common.BKServiceTemplateIDField: mapstr.MapStr{common.BKDBIN: serviceTemplateIDs},
+	}
+
+	moduleFilter := &metadata.QueryCondition{
+		Condition:      moduleCond,
+		Fields:         []string{common.BKModuleIDField},
+		DisableCounter: true,
+	}
+
+	moduleRes := new(metadata.ResponseModuleInstance)
+	err := ps.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		moduleFilter, moduleRes)
+	if err != nil {
+		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", moduleFilter, err, kit.Rid)
+		return nil, err
+	}
+	if err := moduleRes.CCError(); err != nil {
+		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", moduleFilter, err, kit.Rid)
+		return nil, err
+	}
+	if len(moduleRes.Data.Info) == 0 {
+		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", moduleFilter, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
+	}
+	modIDs := make([]int64, 0)
+
+	for _, modID := range moduleRes.Data.Info {
+		modIDs = append(modIDs, modID.ModuleID)
+	}
+	// 2、get the corresponding hostIDs list through the module ids.
+	relationReq := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		ModuleIDArr:   modIDs,
+		Page:          metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:        []string{common.BKModuleIDField, common.BKHostIDField},
+	}
+
+	// hostIDs are not empty in the invalid host scenario.
+	if hostIDs != nil {
+		relationReq.HostIDArr = hostIDs
+	}
+	hostRelations, e := ps.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, relationReq)
+	if e != nil {
+		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, kit.Rid)
+		return []int64{}, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	hostModuleMap := make(map[int64]struct{})
+	for _, item := range hostRelations.Info {
+		hostModuleMap[item.HostID] = struct{}{}
+	}
+	result := make([]int64, 0)
+	for hostID := range hostModuleMap {
+		result = append(result, hostID)
+	}
+	return result, nil
+
+}
+
+// ExecServiceTemplateHostApplyRule execute the host automatic application task in the template scenario.
+func (ps *ProcServer) ExecServiceTemplateHostApplyRule(ctx *rest.Contexts) {
+	rid := ctx.Kit.Rid
+
+	planReq := new(metadata.HostApplyServiceTemplateOption)
+	if err := ctx.DecodeInto(planReq); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	hostIDs, err := ps.getHostIDByCondition(ctx.Kit, planReq.BizID, planReq.ServiceTemplateIDs, planReq.HostIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		// enable host apply on service template
+		updateOption := &metadata.UpdateOption{
+			Condition: map[string]interface{}{
+				common.BKFieldID:    map[string]interface{}{common.BKDBIN: planReq.ServiceTemplateIDs},
+				common.BKAppIDField: planReq.BizID,
+			},
+			Data: map[string]interface{}{common.HostApplyEnabledField: true},
+		}
+
+		err := ps.CoreAPI.CoreService().Process().UpdateBatchServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, updateOption)
+		if err != nil {
+			blog.Errorf("update service template failed, err: %v", err)
+			return err
+		}
+
+		// save rules to database
+		rulesOption := make([]metadata.CreateOrUpdateApplyRuleOption, 0)
+		for _, rule := range planReq.AdditionalRules {
+			rulesOption = append(rulesOption, metadata.CreateOrUpdateApplyRuleOption{
+				AttributeID:       rule.AttributeID,
+				ServiceTemplateID: rule.ServiceTemplateID,
+				PropertyValue:     rule.PropertyValue,
+			})
+		}
+		// 1、update or add rules.
+		saveRuleOp := metadata.BatchCreateOrUpdateApplyRuleOption{Rules: rulesOption}
+		if _, ccErr := ps.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
+			planReq.BizID, saveRuleOp); ccErr != nil {
+			blog.Errorf("update host rule failed, bizID: %s, req: %s, err: %v, rid: %s", planReq.BizID, saveRuleOp,
+				ccErr, rid)
+			return ccErr
+		}
+
+		// 2、delete rules.
+		if len(planReq.RemoveRuleIDs) > 0 {
+			removeOp := metadata.DeleteHostApplyRuleOption{
+				RuleIDs:            planReq.RemoveRuleIDs,
+				ServiceTemplateIDs: planReq.ServiceTemplateIDs,
+			}
+			if ccErr := ps.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
+				planReq.BizID, removeOp); ccErr != nil {
+				blog.Errorf("delete apply rule failed, bizID: %d, req: %s, err: %v, rid: %s", planReq.BizID, removeOp,
+					ccErr, rid)
+				return ccErr
+			}
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(&metadata.RespError{Msg: txnErr})
+		return
+	}
+
+	// If the Changed flag is false or the request only contains the delete rule scenario, then there is no need to
+	// update the host rule.
+	if !planReq.Changed || len(planReq.AdditionalRules) == 0 {
+		ctx.RespEntity(nil)
+		return
+	}
+
+	// update host operation is not done in a transaction, since the successfully updated hosts need not roll back
+	ctx.Kit.Header.Del(common.TransactionIdHeader)
+
+	// host apply attribute rules to the host.
+	err = ps.updateHostAttributes(ctx.Kit, planReq, hostIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+func (s *ProcServer) getUpdateDataStr(kit *rest.Kit, rules []metadata.CreateHostApplyRuleOption) (
+	string, errors.CCErrorCoder) {
+	attributeIDs := make([]int64, 0)
+	attrIDmap := make(map[int64]struct{})
+	for _, rule := range rules {
+		if _, ok := attrIDmap[rule.AttributeID]; ok {
+			continue
+		}
+		attrIDmap[rule.AttributeID] = struct{}{}
+		attributeIDs = append(attributeIDs, rule.AttributeID)
+	}
+
+	attCond := &metadata.QueryCondition{
+		Fields: []string{common.BKFieldID, common.BKPropertyIDField},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{
+			common.BKFieldID: map[string]interface{}{
+				common.BKDBIN: attributeIDs,
+			},
+		},
+	}
+
+	attrRes, err := s.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, common.BKInnerObjIDHost, attCond)
+	if err != nil {
+		blog.Errorf("read model attr failed, err: %v, attrCond: %#v, rid: %s", err, attCond, kit.Rid)
+		return "", kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	attrMap := make(map[int64]string)
+	for _, attr := range attrRes.Info {
+		attrMap[attr.ID] = attr.PropertyID
+	}
+
+	fields := make([]string, len(rules))
+
+	for index, field := range rules {
+		value, _ := json.Marshal(field.PropertyValue)
+		fields[index] = fmt.Sprintf(`"%s":%s`, attrMap[field.AttributeID], string(value))
+	}
+
+	sort.Strings(fields)
+	return "{" + strings.Join(fields, ",") + "}", nil
+}
+
+func generateCondition(dataStr string, hostIDs []int64) (map[string]interface{}, map[string]interface{}) {
+	data := make(map[string]interface{})
+	_ = json.Unmarshal([]byte(dataStr), &data)
+
+	cond := make([]map[string]interface{}, 0)
+
+	for key, value := range data {
+		cond = append(cond, map[string]interface{}{
+			key: map[string]interface{}{common.BKDBNE: value},
+		})
+	}
+	mergeCond := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs},
+		common.BKDBOR:        cond,
+	}
+	return mergeCond, data
+}
+
+func (s *ProcServer) updateHostAttributes(kit *rest.Kit, planResult *metadata.HostApplyServiceTemplateOption,
+	hostIDs []int64) errors.CCErrorCoder {
+
+	dataStr, err := s.getUpdateDataStr(kit, planResult.AdditionalRules)
+	if err != nil {
+		return err
+	}
+	mergeCond, data := generateCondition(dataStr, hostIDs)
+	counts, cErr := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameBaseHost, []map[string]interface{}{mergeCond})
+	if cErr != nil {
+		blog.Errorf("get hosts count failed, filter: %+v, err: %v, rid: %s", mergeCond, cErr, kit.Rid)
+		return cErr
+	}
+	if counts[0] == 0 {
+		blog.V(5).Infof("no hosts founded, filter: %+v, rid: %s", mergeCond, kit.Rid)
+		return nil
+	}
+
+	// If there is no eligible host, then return directly.
+	updateOp := &metadata.UpdateOption{Data: data, Condition: mergeCond}
+
+	_, e := s.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, updateOp)
+	if e != nil {
+		blog.Errorf("update host failed, option: %s, err: %v, rid: %s", updateOp, e, kit.Rid)
+		return errors.New(common.CCErrCommHTTPDoRequestFailed, e.Error())
+	}
+	return nil
+}
+
+// UpdateServiceTemplateHostApplyRule update host auto-apply rules in service template dimension.
+func (ps *ProcServer) UpdateServiceTemplateHostApplyRule(ctx *rest.Contexts) {
+
+	syncOpt := new(metadata.HostApplyServiceTemplateOption)
+	if err := ctx.DecodeInto(syncOpt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := syncOpt.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	taskInfo := metadata.APITaskDetail{}
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		taskRes, err := ps.CoreAPI.TaskServer().Task().Create(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.SyncServiceTemplateHostApplyTaskFlag, syncOpt.BizID, []interface{}{syncOpt})
+		if err != nil {
+			blog.Errorf("create service template host apply sync rule task failed, opt: %+v, err: %v, rid: %s",
+				syncOpt, err, ctx.Kit.Rid)
+			return err
+		}
+		taskInfo = taskRes
+		blog.V(4).Infof("successfully create service template host apply sync task: %#v, rid: %s", taskRes, ctx.Kit.Rid)
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(metadata.HostApplyTaskResult{BizID: taskInfo.InstID, TaskID: taskInfo.TaskID})
+}
+
+// UpdateServiceTemplateHostApplyEnableStatus update object host if apply's status is enabled
+func (ps *ProcServer) UpdateServiceTemplateHostApplyEnableStatus(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		blog.Errorf("parse bk_biz_id failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+		return
+	}
+
+	requestBody := metadata.UpdateHostApplyEnableStatusOption{}
+	if err := ctx.DecodeInto(&requestBody); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(requestBody.IDs) == 0 {
+		blog.Errorf("parse service template id failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "service_template_ids"))
+		return
+	}
+	updateOption := &metadata.UpdateOption{
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+			common.BKFieldID:    mapstr.MapStr{common.BKDBIN: requestBody.IDs},
+		},
+		Data: map[string]interface{}{
+			common.HostApplyEnabledField: requestBody.Enable,
+		},
+	}
+
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := ps.CoreAPI.CoreService().Process().UpdateBatchServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, updateOption)
+		if err != nil {
+			blog.Errorf("update service template failed, err: %v", err)
+			return err
+		}
+
+		// in the scenario of turning on the host's automatic application state, there is no clear rule action, and
+		// return directly
+		if requestBody.Enable {
+			return nil
+		}
+
+		if requestBody.ClearRules {
+			listRuleOption := metadata.ListHostApplyRuleOption{
+				ServiceTemplateIDs: requestBody.IDs,
+				Page: metadata.BasePage{
+					Limit: common.BKNoLimit,
+				},
+			}
+			listRuleResult, ccErr := ps.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx,
+				ctx.Kit.Header, bizID, listRuleOption)
+			if ccErr != nil {
+				blog.Errorf("get list host apply rule failed, bizID: %d,listRuleOption: %#v, rid: %s", bizID,
+					listRuleOption, ctx.Kit.Rid)
+				return ccErr
+			}
+			ruleIDs := make([]int64, 0)
+			for _, item := range listRuleResult.Info {
+				ruleIDs = append(ruleIDs, item.ID)
+			}
+			if len(ruleIDs) > 0 {
+				deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+					RuleIDs:            ruleIDs,
+					ServiceTemplateIDs: requestBody.IDs,
+				}
+				if ccErr := ps.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx,
+					ctx.Kit.Header, bizID, deleteRuleOption); ccErr != nil {
+					blog.Errorf("delete list host apply rule failed, bizID: %d, listRuleOption: %#v, rid: %s",
+						bizID, listRuleOption, ctx.Kit.Rid)
+					return ccErr
+				}
+			}
+		}
+		return nil
+	})
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+func (ps *ProcServer) DeleteHostApplyRule(ctx *rest.Contexts) {
+
+	rid := ctx.Kit.Rid
+
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("DeleteHostApplyRule failed, parse biz id failed, bizIDStr: %s, err: %v,rid:%s", bizIDStr, err, rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+	option := metadata.DeleteHostApplyRuleOption{}
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := option.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := ps.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, option); err != nil {
+			blog.ErrorJSON("DeleteHostApplyRule failed, core service DeleteHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(make(map[string]interface{}))
+
+}
 func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 	option := new(metadata.UpdateServiceTemplateOption)
 	if err := ctx.DecodeInto(option); err != nil {

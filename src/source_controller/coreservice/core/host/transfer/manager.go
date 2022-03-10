@@ -82,7 +82,7 @@ func (manager *TransferManager) TransferToInnerModule(kit *rest.Kit, input *meta
 		return err
 	}
 
-	transferErr := transfer.Transfer(kit, input.HostID)
+	transferErr := transfer.Transfer(kit, input.HostID, false)
 	if transferErr != nil {
 		blog.Errorf("transfer module host relation failed, input: %v, hostID: %s, err:%v, rid:%s", input, transferErr,
 			kit.Rid)
@@ -125,8 +125,7 @@ func (manager *TransferManager) TransferToNormalModule(kit *rest.Kit, input *met
 		blog.Errorf("valid parameter failed, input: %v, err: %v, rid: %s", input, err, kit.Rid)
 		return err
 	}
-
-	err = transfer.Transfer(kit, input.HostID)
+	err = transfer.Transfer(kit, input.HostID, input.DisableTransferHostAutoApply)
 	if err != nil {
 		blog.Errorf("transfer module host relation failed. input: %v, err: %v, rid: %s", input, err, kit.Rid)
 		return err
@@ -250,7 +249,7 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit,
 		return err
 	}
 
-	err = transfer.Transfer(kit, input.HostIDArr)
+	err = transfer.Transfer(kit, input.HostIDArr, false)
 	if err != nil {
 		blog.ErrorJSON("transfer to another business failed, transfer module host relation error. "+
 			"err: %s, input: %s, rid: %s", err.Error(), input, kit.Rid)

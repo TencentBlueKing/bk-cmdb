@@ -1001,11 +1001,12 @@ type ServiceTemplate struct {
 	// now, the class must have two labels.
 	ServiceCategoryID int64 `field:"service_category_id" json:"service_category_id" bson:"service_category_id"`
 
-	Creator         string    `field:"creator" json:"creator" bson:"creator"`
-	Modifier        string    `field:"modifier" json:"modifier" bson:"modifier"`
-	CreateTime      time.Time `field:"create_time" json:"create_time" bson:"create_time"`
-	LastTime        time.Time `field:"last_time" json:"last_time" bson:"last_time"`
-	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator          string    `field:"creator" json:"creator" bson:"creator"`
+	Modifier         string    `field:"modifier" json:"modifier" bson:"modifier"`
+	CreateTime       time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime         time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	SupplierAccount  string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	HostApplyEnabled bool      `field:"host_apply_enabled" json:"host_apply_enabled" bson:"host_apply_enabled"`
 }
 
 func (st *ServiceTemplate) Validate(errProxy cErr.DefaultCCErrorIf) (field string, err error) {

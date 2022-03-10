@@ -13,9 +13,11 @@
 package service
 
 import (
+	"fmt"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -116,16 +118,14 @@ func (s *Service) DeleteHostApplyRule(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
 	}
-
 	option := metadata.DeleteHostApplyRuleOption{}
 	if err := ctx.DecodeInto(&option); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if len(option.RuleIDs) == 0 {
-		blog.Errorf("DeleteHostApplyRule failed, decode request body failed, err: %v,rid:%s", err, rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "host_apply_rule_ids"))
+	if rawErr := option.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
@@ -252,242 +252,20 @@ func (s *Service) BatchCreateOrUpdateHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(batchResult)
 }
 
-func (s *Service) GenerateApplyPlan(ctx *rest.Contexts) {
-	rid := ctx.Kit.Rid
-
-	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
-	if err != nil {
-		blog.Errorf("GenerateApplyPlan failed, parse biz id failed, bizIDStr: %s, err: %v,rid:%s", bizIDStr, err, rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
-		return
-	}
-
-	planRequest := metadata.HostApplyPlanRequest{}
-	if err := ctx.DecodeInto(&planRequest); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if len(planRequest.ModuleIDs) == 0 {
-		blog.Errorf("GenerateApplyPlan failed, bk_module_ids shouldn't empty, err: %v, rid:%s", err, rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_module_ids"))
-		return
-	}
-	result, err := s.generateApplyPlan(ctx, bizID, planRequest)
-	if err != nil {
-		blog.ErrorJSON("GenerateApplyPlan failed, generateApplyPlan failed, bizID: %s, request: %s, err: %v, rid:%s", bizID, planRequest, err, rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	var ccErr errors.CCErrorCoder
-	for _, item := range result.Plans {
-		if err := item.GetError(); err != nil {
-			ccErr = err
-			break
-		}
-	}
-	if ccErr != nil {
-		response := &metadata.RespError{Msg: ccErr}
-		response.Data = result
-		ctx.RespAutoError(response)
-		return
-	}
-
-	ctx.RespEntity(result)
-	return
-}
-
-func (s *Service) generateApplyPlan(ctx *rest.Contexts, bizID int64, planRequest metadata.HostApplyPlanRequest) (
-	metadata.HostApplyPlanResult, errors.CCErrorCoder) {
-
-	rid := ctx.Kit.Rid
-
-	relationReq := &metadata.HostModuleRelationRequest{
-		ApplicationID: bizID,
-		ModuleIDArr:   planRequest.ModuleIDs,
-		Page:          metadata.BasePage{Limit: common.BKNoLimit},
-		Fields:        []string{common.BKModuleIDField, common.BKHostIDField},
-	}
-	if planRequest.HostIDs != nil {
-		relationReq.HostIDArr = planRequest.HostIDs
-	}
-	hostRelations, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationReq)
-	if err != nil {
-		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, rid)
-		return metadata.HostApplyPlanResult{}, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	hostModuleMap := make(map[int64][]int64)
-	moduleIDs := make([]int64, 0)
-	for _, item := range hostRelations.Info {
-		hostModuleMap[item.HostID] = append(hostModuleMap[item.HostID], item.ModuleID)
-		moduleIDs = append(moduleIDs, item.ModuleID)
-	}
-	hostModules := make([]metadata.Host2Modules, 0)
-	for hostID, moduleIDs := range hostModuleMap {
-		hostModules = append(hostModules, metadata.Host2Modules{
-			HostID:    hostID,
-			ModuleIDs: moduleIDs,
-		})
-	}
-
-	ruleOption := metadata.ListHostApplyRuleOption{
-		ModuleIDs: moduleIDs,
-		Page:      metadata.BasePage{Limit: common.BKNoLimit},
-	}
-	rules, ccErr := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
-		ruleOption)
-	if ccErr != nil {
-		blog.Errorf("list host apply rule failed, bizID: %d, opt: %#v, err: %v, rid: %s", bizID, ruleOption, ccErr, rid)
-		return metadata.HostApplyPlanResult{}, ccErr
-	}
-
-	now := time.Now()
-	if len(planRequest.AdditionalRules) > 0 {
-	OuterLoop:
-		for _, item := range planRequest.AdditionalRules {
-			for index, rule := range rules.Info {
-				if item.ModuleID == rule.ModuleID && item.AttributeID == rule.AttributeID {
-					rules.Info[index].PropertyValue = item.PropertyValue
-					continue OuterLoop
-				}
-			}
-			rules.Info = append(rules.Info, metadata.HostApplyRule{BizID: bizID, ModuleID: item.ModuleID,
-				AttributeID: item.AttributeID, PropertyValue: item.PropertyValue, Creator: ctx.Kit.User,
-				Modifier: ctx.Kit.User, CreateTime: now, LastTime: now, SupplierAccount: ctx.Kit.SupplierAccount,
-			})
-		}
-	}
-
-	// filter out removed rules
-	finalRules := make([]metadata.HostApplyRule, 0)
-	for _, item := range rules.Info {
-		if util.InArray(item.ID, planRequest.RemoveRuleIDs) || util.InArray(item.ID, planRequest.IgnoreRuleIDs) {
-			continue
-		}
-		finalRules = append(finalRules, item)
-	}
-
-	planOption := metadata.HostApplyPlanOption{
-		Rules:             finalRules,
-		HostModules:       hostModules,
-		ConflictResolvers: planRequest.ConflictResolvers,
-	}
-
-	planResult, ccErr := s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
-		planOption)
-	if ccErr != nil {
-		blog.Errorf("generate apply plan failed, bizID: %d, opt: %#v, err: %v, rid: %s", bizID, planOption, ccErr, rid)
-		return planResult, ccErr
-	}
-	planResult.Rules = rules.Info
-	return planResult, nil
-}
-
-func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
-	rid := ctx.Kit.Rid
-
-	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
-	if err != nil {
-		blog.Errorf("GenerateApplyPlan failed, parse biz id failed, bizIDStr: %s, err: %v,rid:%s", bizIDStr, err, rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
-		return
-	}
-
-	planRequest := metadata.HostApplyPlanRequest{}
-	if err := ctx.DecodeInto(&planRequest); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	planResult, err := s.generateApplyPlan(ctx, bizID, planRequest)
-	if err != nil {
-		blog.Errorf("generate apply plan failed, bizID: %s, req: %s, err: %v, rid: %s", bizID, planRequest, err, rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		// enable host apply on module
-		op := &metadata.UpdateOption{
-			Condition: map[string]interface{}{
-				common.BKModuleIDField: map[string]interface{}{common.BKDBIN: planRequest.ModuleIDs}},
-			Data: map[string]interface{}{common.HostApplyEnabledField: true},
-		}
-		
-		_, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
-			common.BKInnerObjIDModule, op)
-		if err != nil {
-			blog.Errorf("update instance of module failed, option: %s, err: %v, rid: %s", op, err, rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-
-		// save rules to database
-		rulesOption := make([]metadata.CreateOrUpdateApplyRuleOption, 0)
-		for _, rule := range planResult.Rules {
-			rulesOption = append(rulesOption, metadata.CreateOrUpdateApplyRuleOption{
-				AttributeID:   rule.AttributeID,
-				ModuleID:      rule.ModuleID,
-				PropertyValue: rule.PropertyValue,
-			})
-		}
-
-		saveRuleOp := metadata.BatchCreateOrUpdateApplyRuleOption{Rules: rulesOption}
-		if _, ccErr := s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
-			bizID, saveRuleOp); ccErr != nil {
-			blog.Errorf("update host rule failed, bizID: %s, req: %s, err: %v, rid: %s", bizID, saveRuleOp, ccErr, rid)
-			return ccErr
-		}
-
-		// delete rules
-		if len(planRequest.RemoveRuleIDs) > 0 {
-			delOp := metadata.DeleteHostApplyRuleOption{
-				RuleIDs: planRequest.RemoveRuleIDs,
-			}
-
-			if ccErr := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
-				delOp); ccErr != nil {
-				blog.Errorf("delete apply rule failed, bizID: %s, req: %s, err: %v, rid: %s", bizID, delOp, ccErr, rid)
-				return ccErr
-			}
-		}
-
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(&metadata.RespError{Msg: txnErr})
-		return
-	}
-
-	// update host operation is not done in a transaction, since the successfully updated hosts need not roll back
-	ctx.Kit.Header.Del(common.TransactionIdHeader)
-
-	hostApplyResults, err := s.updateHostPlan(planResult, ctx.Kit)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	ctx.RespEntity(hostApplyResults)
-}
-
 func generateCondition(dataStr string, hostIDs []int64) (map[string]interface{}, map[string]interface{}) {
 	data := make(map[string]interface{})
 	_ = json.Unmarshal([]byte(dataStr), &data)
 
-	andCond := make([]map[string]interface{}, 0)
+	cond := make([]map[string]interface{}, 0)
 
 	for key, value := range data {
-		andCond = append(andCond, map[string]interface{}{
+		cond = append(cond, map[string]interface{}{
 			key: map[string]interface{}{common.BKDBNE: value},
 		})
 	}
 	mergeCond := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs},
-		common.BKDBAND:       andCond,
+		common.BKDBOR:        cond,
 	}
 	return mergeCond, data
 }
@@ -569,6 +347,317 @@ func (s *Service) updateHostPlan(planResult metadata.HostApplyPlanResult, kit *r
 	}
 
 	return hostApplyResults, nil
+}
+
+// getHostIDByCondition get the final list of hostIDs.
+func (s *Service) getHostIDByCondition(kit *rest.Kit, bizID int64, modIDs []int64, hostIDs []int64) ([]int64, error) {
+	relationReq := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		ModuleIDArr:   modIDs,
+		Page:          metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:        []string{common.BKModuleIDField, common.BKHostIDField},
+	}
+
+	// hostIDs are not empty in the invalid host scenario.
+	if hostIDs != nil {
+		relationReq.HostIDArr = hostIDs
+	}
+	hostRelations, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, relationReq)
+	if err != nil {
+		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, kit.Rid)
+		return []int64{}, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	hostModuleMap := make(map[int64]struct{})
+	for _, item := range hostRelations.Info {
+		hostModuleMap[item.HostID] = struct{}{}
+	}
+	result := make([]int64, 0)
+	for hostID := range hostModuleMap {
+		result = append(result, hostID)
+	}
+	return result, nil
+}
+
+func (s *Service) getUpdateDataStr(kit *rest.Kit, rules []metadata.HostAttribute) (
+	string, errors.CCErrorCoder) {
+	attributeIDs := make([]int64, 0)
+	for _, rule := range rules {
+		attributeIDs = append(attributeIDs, rule.AttributeID)
+	}
+
+	attCond := &metadata.QueryCondition{
+		Fields: []string{common.BKFieldID, common.BKPropertyIDField},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{
+			common.BKFieldID: map[string]interface{}{
+				common.BKDBIN: attributeIDs,
+			},
+		},
+	}
+
+	attrRes, err := s.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, common.BKInnerObjIDHost, attCond)
+	if err != nil {
+		blog.Errorf("read model attr failed, err: %v, attrCond: %#v, rid: %s", err, attCond, kit.Rid)
+		return "", kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	attrMap := make(map[int64]string)
+	for _, attr := range attrRes.Info {
+		attrMap[attr.ID] = attr.PropertyID
+	}
+
+	fields := make([]string, len(rules))
+
+	for index, field := range rules {
+		value, _ := json.Marshal(field.PropertyValue)
+		fields[index] = fmt.Sprintf(`"%s":%s`, attrMap[field.AttributeID], string(value))
+	}
+
+	sort.Strings(fields)
+	return "{" + strings.Join(fields, ",") + "}", nil
+
+}
+
+func (s *Service) getModulesByPlanCond(kit *rest.Kit, bizID int64, modules []int64) ([]metadata.ModuleInst, errors.CCErrorCoder) {
+	query := &metadata.QueryCondition{
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Fields: []string{
+			common.BKModuleIDField,
+			common.HostApplyEnabledField,
+		},
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+			common.BKModuleIDField: map[string]interface{}{
+				common.BKDBIN: modules,
+			},
+		},
+	}
+
+	moduleRes := new(metadata.ResponseModuleInstance)
+	err := s.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule, query,
+		&moduleRes)
+	if err != nil {
+		blog.Errorf("get modules failed, input: %#v, err: %v, rid:%s", query, err, kit.Rid)
+		return nil, err
+	}
+	if err := moduleRes.CCError(); err != nil {
+		blog.Errorf("get modules failed, input: %#v, err: %v, rid:%s", query, err, kit.Rid)
+		return nil, err
+	}
+
+	return moduleRes.Data.Info, nil
+}
+
+func (s *Service) updateHostAttributes(kit *rest.Kit, planResult []metadata.HostAttribute, hostIDs []int64) errors.CCErrorCoder {
+
+	dataStr, err := s.getUpdateDataStr(kit, planResult)
+	if err != nil {
+		return err
+	}
+	mergeCond, data := generateCondition(dataStr, hostIDs)
+	counts, cErr := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameBaseHost, []map[string]interface{}{mergeCond})
+	if cErr != nil {
+		blog.Errorf("get hosts count failed, filter: %+v, err: %v, rid: %s", mergeCond, cErr, kit.Rid)
+		return cErr
+	}
+	if counts[0] == 0 {
+		blog.V(5).Infof("no hosts founded, filter: %+v, rid: %s", mergeCond, kit.Rid)
+		return nil
+	}
+
+	// If there is no eligible host, then return directly.
+	updateOp := &metadata.UpdateOption{Data: data, Condition: mergeCond}
+
+	_, e := s.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, updateOp)
+	if e != nil {
+		blog.Errorf("update host failed, option: %s, err: %v, rid: %s", updateOp, e, kit.Rid)
+		return errors.New(common.CCErrCommHTTPDoRequestFailed, e.Error())
+	}
+
+	return nil
+}
+
+// GetHostApplyTaskStatus get host auto-apply asynchronous task status.
+func (s *Service) GetHostApplyTaskStatus(ctx *rest.Contexts) {
+
+	syncStatusOpt := new(metadata.HostApplyTaskStatusOption)
+	if err := ctx.DecodeInto(syncStatusOpt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if rawErr := syncStatusOpt.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	flagOption := []string{common.SyncModuleHostApplyTaskFlag, common.SyncServiceTemplateHostApplyTaskFlag}
+	// get host auto-apply task status by task ids
+	statusOpt := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKInstIDField:   syncStatusOpt.BizID,
+			common.BKTaskTypeField: map[string]interface{}{common.BKDBIN: flagOption},
+			common.BKTaskIDField:   map[string]interface{}{common.BKDBIN: syncStatusOpt.TaskIDS},
+		},
+		Fields:         []string{common.BKStatusField, common.BKTaskIDField},
+		DisableCounter: true,
+	}
+
+	tasksStatus, err := s.CoreAPI.TaskServer().Task().ListSyncStatusHistory(ctx.Kit.Ctx, ctx.Kit.Header, statusOpt)
+	if err != nil {
+		blog.Errorf("list sync status history failed, option: %#v, err: %v, rid: %s", statusOpt, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	result := metadata.HostApplyTaskStatusRsp{
+		BizID: syncStatusOpt.BizID,
+	}
+	for _, task := range tasksStatus.Info {
+		result.TaskInfo = append(result.TaskInfo, metadata.HostAppyTaskInfo{
+			TaskID: task.TaskID,
+			Status: string(task.Status),
+		})
+	}
+	ctx.RespEntity(result)
+	return
+}
+
+// UpdateModuleHostApplyRule update host auto-apply rules in module dimension.
+func (s *Service) UpdateModuleHostApplyRule(ctx *rest.Contexts) {
+
+	syncOpt := new(metadata.HostApplyModulesOption)
+	if err := ctx.DecodeInto(syncOpt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := syncOpt.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	taskInfo := metadata.APITaskDetail{}
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		taskRes, err := s.CoreAPI.TaskServer().Task().Create(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.SyncModuleHostApplyTaskFlag, syncOpt.BizID, []interface{}{syncOpt})
+		if err != nil {
+			blog.Errorf("create module host apply sync rule task failed, opt: %+v, err: %v, rid: %s",
+				syncOpt, err, ctx.Kit.Rid)
+			return err
+		}
+		taskInfo = taskRes
+		blog.V(4).Infof("successfully created module host apply sync task: %#v, rid: %s", taskRes, ctx.Kit.Rid)
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(metadata.HostApplyTaskResult{BizID: taskInfo.InstID, TaskID: taskInfo.TaskID})
+}
+
+// ExecModuleHostApplyRule the host automatically applies rules in the asynchronous execution module scenario.
+func (s *Service) ExecModuleHostApplyRule(ctx *rest.Contexts) {
+
+	rid := ctx.Kit.Rid
+
+	planReq := new(metadata.HostApplyModulesOption)
+	if err := ctx.DecodeInto(planReq); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	hostIDs, err := s.getHostIDByCondition(ctx.Kit, planReq.BizID, planReq.ModuleIDs, planReq.HostIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		// enable host apply on module
+		op := &metadata.UpdateOption{
+			Condition: map[string]interface{}{
+				common.BKModuleIDField: map[string]interface{}{common.BKDBIN: planReq.ModuleIDs}},
+			Data: map[string]interface{}{common.HostApplyEnabledField: true},
+		}
+
+		_, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+			common.BKInnerObjIDModule, op)
+		if err != nil {
+			blog.Errorf("update instance of module failed, option: %s, err: %v, rid: %s", op, err, rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		// save rules to database
+		rulesOption := make([]metadata.CreateOrUpdateApplyRuleOption, 0)
+		for _, rule := range planReq.AdditionalRules {
+
+			rulesOption = append(rulesOption, metadata.CreateOrUpdateApplyRuleOption{
+				AttributeID:   rule.AttributeID,
+				ModuleID:      rule.ModuleID,
+				PropertyValue: rule.PropertyValue,
+			})
+		}
+
+		// 1、update or add rules.
+		saveRuleOp := metadata.BatchCreateOrUpdateApplyRuleOption{Rules: rulesOption}
+		if _, ccErr := s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
+			planReq.BizID, saveRuleOp); ccErr != nil {
+			blog.Errorf("update host rule failed, bizID: %s, req: %s, err: %v, rid: %s", planReq.BizID, saveRuleOp,
+				ccErr, rid)
+			return ccErr
+		}
+
+		// 2、delete rules.
+		if len(planReq.RemoveRuleIDs) > 0 {
+			removeOp := metadata.DeleteHostApplyRuleOption{
+				RuleIDs:   planReq.RemoveRuleIDs,
+				ModuleIDs: planReq.ModuleIDs,
+			}
+			if ccErr := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
+				planReq.BizID, removeOp); ccErr != nil {
+				blog.Errorf("delete apply rule failed, bizID: %d, req: %s, err: %v, rid: %s", planReq.BizID, removeOp,
+					ccErr, rid)
+				return ccErr
+			}
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(&metadata.RespError{Msg: txnErr})
+		return
+	}
+
+	// If the Changed flag is false or the request only contains the delete rule scenario, then there is no need to
+	// update the host rule.
+	if !planReq.Changed || len(planReq.AdditionalRules) == 0 {
+		ctx.RespEntity(nil)
+		return
+	}
+
+	// update host operation is not done in a transaction, since the successfully updated hosts need not roll back
+	ctx.Kit.Header.Del(common.TransactionIdHeader)
+
+	attributes := make([]metadata.HostAttribute, 0)
+
+	for _, rule := range planReq.AdditionalRules {
+		attributes = append(attributes, metadata.HostAttribute{
+			AttributeID:   rule.AttributeID,
+			PropertyValue: rule.PropertyValue,
+		})
+	}
+	// apply module attribute rules to the host.
+	err = s.updateHostAttributes(ctx.Kit, attributes, hostIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
 }
 
 // ListHostRelatedApplyRule 返回主机关联的规则信息（仅返回启用模块的规则）

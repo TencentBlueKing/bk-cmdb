@@ -173,6 +173,16 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 			}
 			return []int64{bizSetID}, nil
 		},
+	}, {
+		Name:        "UpdatemanyServiceTemplateHostApplyEnableStatus",
+		Description: "获取服务模板详情",
+		// NOCC:tosa/linelength(忽略长度)
+		Regex:          regexp.MustCompile(`^/api/v3/updatemany/proc/service_template/host_apply_enable_status/bk_biz_id/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Update,
 	},
 }
 

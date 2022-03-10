@@ -140,6 +140,33 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.UpdateMany,
 	}, {
+		Name:        "updateServiceTemplateHostApplyEnableStatus",
+		Description: "更新服务模板主机自动应用状态",
+		// NOCC:tosa/linelength(ignore length)
+		Regex:          regexp.MustCompile(`^/api/v3/updatemany/proc/service_template/host_apply_enable_status/biz/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       6,
+		ResourceType:   meta.Business,
+		ResourceAction: meta.UpdateMany,
+	}, {
+		Name:           "deleteServiceTemplateHostApplyRule",
+		Description:    "删除模板主机自动应用规则",
+		Regex:          regexp.MustCompile(`^/deletemany/proc/service_template/host_apply_rule/biz/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodDelete,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       5,
+		ResourceType:   meta.Business,
+		ResourceAction: meta.Delete,
+	}, {
+		Name:           "updateServiceTemplateHostApplyEnableStatus",
+		Description:    "编辑服务模板场景下主机自动应用规则",
+		Regex:          regexp.MustCompile(`^/api/v3/updatemany/proc/service_template/host_apply_plan/run`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.Business,
+		ResourceAction: meta.UpdateMany,
+	}, {
 		Name:           "deleteServiceInstancePattern",
 		Description:    "删除服务实例",
 		Pattern:        "/api/v3/deletemany/proc/service_instance",

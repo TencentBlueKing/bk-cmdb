@@ -350,8 +350,6 @@ type HostApplyRuleOperation interface {
 	GetHostApplyRule(kit *rest.Kit, bizID int64, ruleID int64) (metadata.HostApplyRule, errors.CCErrorCoder)
 	ListHostApplyRule(kit *rest.Kit, bizID int64, option metadata.ListHostApplyRuleOption) (
 		metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder)
-	GenerateApplyPlan(kit *rest.Kit, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult,
-		errors.CCErrorCoder)
 	SearchRuleRelatedModules(kit *rest.Kit, bizID int64, option metadata.SearchRuleRelatedModulesOption) (
 		[]metadata.Module, errors.CCErrorCoder)
 	BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, option metadata.BatchCreateOrUpdateApplyRuleOption) (

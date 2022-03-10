@@ -59,7 +59,6 @@ var deprecatedHostApplyRuleIndexes = []types.Index{
 			"bk_attribute_id": 1,
 			"bk_module_id":    1,
 		},
-		Unique:     true,
 		Background: false,
 	},
 	{
@@ -70,6 +69,49 @@ var deprecatedHostApplyRuleIndexes = []types.Index{
 			"bk_biz_id":       1,
 		},
 		Unique:     true,
+		Background: true,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + common.BKServiceTemplateIDField,
+		Keys: map[string]int32{
+			common.BKServiceTemplateIDField: 1,
+		},
+		Background: true,
+	},
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "host_property_under_service_template",
+		Keys: map[string]int32{
+			common.BKAttributeIDField:       1,
+			common.BKServiceTemplateIDField: 1,
+		},
+		Unique:     true,
+		Background: true,
+	},
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "bizID_serviceTemplateID_attrID",
+		Keys: map[string]int32{
+			common.BKServiceTemplateIDField: 1,
+			common.BKAttributeIDField:       1,
+			common.BKAppIDField:             1,
+		},
+		Unique:     true,
+		Background: true,
+	},
+	{
+		Keys: map[string]int32{
+			common.BKAppIDField:             1,
+			common.BKServiceTemplateIDField: 1,
+		},
+		Name:       common.CCLogicIndexNamePrefix + "bizID_serviceTemplateID",
+		Background: true,
+	},
+	// complement the composite index of BizID and moduleID
+	{
+		Keys: map[string]int32{
+			common.BKAppIDField:    1,
+			common.BKModuleIDField: 1,
+		},
+		Name:       common.CCLogicIndexNamePrefix + "bizID_ModuleID",
 		Background: true,
 	},
 }
