@@ -49,6 +49,8 @@ func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
 		key = InstAsstKey
 	case watch.BizSet:
 		key = BizSetKey
+	case watch.BizSetRelation:
+		key = BizSetRelationKey
 	default:
 		return key, fmt.Errorf("unsupported cursor type %s", res)
 	}

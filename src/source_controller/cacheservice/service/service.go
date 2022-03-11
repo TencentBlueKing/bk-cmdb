@@ -27,6 +27,7 @@ import (
 	"configcenter/src/source_controller/cacheservice/app/options"
 	"configcenter/src/source_controller/cacheservice/cache"
 	cacheop "configcenter/src/source_controller/cacheservice/cache"
+	bsrelation "configcenter/src/source_controller/cacheservice/event/biz-set-relation"
 	"configcenter/src/source_controller/cacheservice/event/flow"
 	"configcenter/src/source_controller/cacheservice/event/identifier"
 	"configcenter/src/source_controller/coreservice/core"
@@ -120,6 +121,11 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 
 	if err := identifier.NewIdentity(watcher, engine.ServiceManageInterface, watchDB, ccDB); err != nil {
 		blog.Errorf("new host identity event failed, err: %v", err)
+		return err
+	}
+
+	if err := bsrelation.NewBizSetRelation(watcher, watchDB, ccDB); err != nil {
+		blog.Errorf("new biz set relation event failed, err: %v", err)
 		return err
 	}
 

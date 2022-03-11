@@ -105,10 +105,21 @@ func (c *Client) getEarliestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNod
 func (c *Client) getEventDetail(kit *rest.Kit, node *watch.ChainNode, fields []string, key event.Key) (*string,
 	bool, error) {
 
-	if key.Collection() == event.HostIdentityKey.Collection() {
-		details, err := c.getHostIdentityEventDetailWithNodes(kit, []*watch.ChainNode{node})
-		if err != nil {
-			return nil, false, err
+	coll := key.Collection()
+	if coll == event.HostIdentityKey.Collection() || coll == event.BizSetRelationKey.Collection() {
+		var details []*watch.WatchEventDetail
+		var err error
+		switch coll {
+		case event.HostIdentityKey.Collection():
+			details, err = c.getHostIdentityEventDetailWithNodes(kit, []*watch.ChainNode{node})
+			if err != nil {
+				return nil, false, err
+			}
+		case event.BizSetRelationKey.Collection():
+			details, err = c.getBizSetRelationEventDetailWithNodes(kit, []*watch.ChainNode{node})
+			if err != nil {
+				return nil, false, err
+			}
 		}
 
 		if len(details) == 0 {
