@@ -113,6 +113,7 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 	hostApplyPlans := make([]metadata.OneHostApplyPlan, 0)
 	var hostApplyPlan metadata.OneHostApplyPlan
 	unresolvedConflictCount := int64(0)
+	count := 0
 	for _, hostModule := range option.HostModules {
 		host, exist := hostMap[hostModule.HostID]
 		if !exist {
@@ -133,8 +134,9 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 		}
 		if hostApplyPlan.UnresolvedConflictCount > 0 {
 			unresolvedConflictCount += 1
+			hostApplyPlans = append(hostApplyPlans, hostApplyPlan)
 		}
-		hostApplyPlans = append(hostApplyPlans, hostApplyPlan)
+		count++
 	}
 
 	sort.SliceStable(hostApplyPlans, func(i, j int) bool {
@@ -156,7 +158,7 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 
 	result = metadata.HostApplyPlanResult{
 		Plans:                   hostApplyPlans,
-		Count:                   len(hostApplyPlans),
+		Count:                   count,
 		UnresolvedConflictCount: unresolvedConflictCount,
 		HostAttributes:          attributes,
 	}
@@ -202,6 +204,20 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 			ruleValueList = append(ruleValueList, value)
 		}
 		if cmp.Equal(expectValueList, ruleValueList) {
+			return true, nil
+		}
+
+	// 当属性是int类型时，需要转为统一类型进行对比
+	case common.FieldTypeInt:
+		origin, err := util.GetIntByInterface(propertyValue)
+		if err != nil {
+			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
+		}
+		expect, err := util.GetIntByInterface(expectValue)
+		if err != nil {
+			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
+		}
+		if cmp.Equal(origin, expect) {
 			return true, nil
 		}
 

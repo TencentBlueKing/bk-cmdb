@@ -246,3 +246,20 @@ func (s *coreService) UpdateHostByHostApplyRule(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(result)
 }
+
+// SearchRuleRelatedServiceTemplate search rule related service templates
+func (s *coreService) SearchRuleRelatedServiceTemplates(ctx *rest.Contexts) {
+	option := metadata.RuleRelatedServiceTemplateOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	serviceTemplates, err := s.core.HostApplyRuleOperation().SearchRuleRelatedServiceTemplates(ctx.Kit, option)
+	if err != nil {
+		blog.Errorf("search templates failed, option: %v, err: %v, rid: %s", option, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(serviceTemplates)
+}

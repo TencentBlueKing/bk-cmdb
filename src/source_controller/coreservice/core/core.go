@@ -358,6 +358,8 @@ type HostApplyRuleOperation interface {
 		metadata.BatchCreateOrUpdateHostApplyRuleResult, errors.CCErrorCoder)
 	RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relations []metadata.ModuleHost) (
 		metadata.MultipleHostApplyResult, errors.CCErrorCoder)
+	SearchRuleRelatedServiceTemplates(kit *rest.Kit, option metadata.RuleRelatedServiceTemplateOption) (
+		[]metadata.SrvTemplate, errors.CCErrorCoder)
 }
 
 type CloudOperation interface {

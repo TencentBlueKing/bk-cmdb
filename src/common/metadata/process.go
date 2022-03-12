@@ -58,7 +58,8 @@ type ListServiceTemplateInput struct {
 	// search service templates by name
 	Search string `json:"search"`
 	// used with search, means whether search service templates with exact name or not
-	IsExact bool `json:"is_exact"`
+	IsExact            bool    `json:"is_exact"`
+	ServiceTemplateIDs []int64 `json:"service_template_ids"`
 }
 
 type DeleteServiceTemplatesInput struct {
@@ -1001,11 +1002,12 @@ type ServiceTemplate struct {
 	// now, the class must have two labels.
 	ServiceCategoryID int64 `field:"service_category_id" json:"service_category_id" bson:"service_category_id"`
 
-	Creator         string    `field:"creator" json:"creator" bson:"creator"`
-	Modifier        string    `field:"modifier" json:"modifier" bson:"modifier"`
-	CreateTime      time.Time `field:"create_time" json:"create_time" bson:"create_time"`
-	LastTime        time.Time `field:"last_time" json:"last_time" bson:"last_time"`
-	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator          string    `field:"creator" json:"creator" bson:"creator"`
+	Modifier         string    `field:"modifier" json:"modifier" bson:"modifier"`
+	CreateTime       time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime         time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	SupplierAccount  string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	HostApplyEnabled bool      `field:"host_apply_enabled" json:"host_apply_enabled" bson:"host_apply_enabled"`
 }
 
 func (st *ServiceTemplate) Validate(errProxy cErr.DefaultCCErrorIf) (field string, err error) {
@@ -1981,4 +1983,10 @@ type SrvInstNameParams struct {
 	ServiceInstanceID int64                  `json:"service_instance_id"`
 	Host              map[string]interface{} `json:"host"`
 	Process           *Process               `json:"process"`
+}
+
+// SrvTemplate service template struct
+type SrvTemplate struct {
+	ID   int64  `json:"id" bson:"id" mapstructure:"id"`
+	Name string `json:"name" bson:"name" mapstructure:"name"`
 }
