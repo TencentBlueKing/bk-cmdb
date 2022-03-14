@@ -107,6 +107,7 @@ func (qf *QueryFilter) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
+// MarshalBSON marshal query filter into bson value
 func (qf *QueryFilter) MarshalBSON() ([]byte, error) {
 	if qf.Rule != nil {
 		return bson.Marshal(qf.Rule)
@@ -114,6 +115,7 @@ func (qf *QueryFilter) MarshalBSON() ([]byte, error) {
 	return make([]byte, 0), nil
 }
 
+// UnmarshalBSON unmarshal query filter from bson value by first parse bson into map and then parse map into filter
 func (qf *QueryFilter) UnmarshalBSON(raw []byte) error {
 	data := make(map[string]interface{})
 	if err := bson.Unmarshal(raw, &data); err != nil {

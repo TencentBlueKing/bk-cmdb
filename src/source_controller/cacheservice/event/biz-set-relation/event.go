@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
-	"configcenter/src/source_controller/cacheservice/event/mix_event"
+	mixevent "configcenter/src/source_controller/cacheservice/event/mix-event"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/stream"
@@ -34,7 +34,7 @@ import (
 )
 
 // newBizSetRelation init and run biz set relation event watch with sub event key
-func newBizSetRelation(ctx context.Context, opts mix_event.MixEventFlowOptions) error {
+func newBizSetRelation(ctx context.Context, opts mixevent.MixEventFlowOptions) error {
 	relation := bizSetRelation{
 		watch:             opts.Watch,
 		watchDB:           opts.WatchDB,
@@ -48,7 +48,7 @@ func newBizSetRelation(ctx context.Context, opts mix_event.MixEventFlowOptions) 
 
 	go relation.syncNeedCareBizFields()
 
-	flow, err := mix_event.NewMixEventFlow(opts, relation.rearrangeEvents, relation.parseEvent)
+	flow, err := mixevent.NewMixEventFlow(opts, relation.rearrangeEvents, relation.parseEvent)
 	if err != nil {
 		return err
 	}

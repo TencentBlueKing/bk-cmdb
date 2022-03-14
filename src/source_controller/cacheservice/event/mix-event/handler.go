@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package mix_event
+package mixevent
 
 import (
 	"context"

@@ -104,17 +104,26 @@ func (b *bizSetRelation) rearrangeBizSetEvents(es []*types.Event, rid string) ([
 	// 2. create + update: event is changed to create event with the update event detail
 	// 3. update + delete: event is changed to delete event
 	lastEventMap := make(map[string]*types.Event)
+	deletedOids := make([]string, 0)
+
 	for i := len(es) - 1; i >= 0; i-- {
 		e := es[i]
 		if _, exists := lastEventMap[e.Oid]; !exists {
 			lastEventMap[e.Oid] = e
+
+			if e.OperationType == types.Delete {
+				deletedOids = append(deletedOids, e.Oid)
+			}
 		}
 	}
 
+	// get deleted biz set detail from del archive before adding to the events.
+	oidDetailMap, err := b.getDeleteEventDetails(deletedOids, rid)
+	if err != nil {
+		return nil, err
+	}
+
 	hitEvents := make([]*types.Event, 0)
-	deleteEvents := make([]*types.Event, 0)
-	deletedOids := make([]string, 0)
-	containsMatchAllBizSet := false
 	// remind if a biz set events has already been hit, if yes, then skip this event.
 	reminder := make(map[string]struct{})
 
@@ -126,76 +135,81 @@ func (b *bizSetRelation) rearrangeBizSetEvents(es []*types.Event, rid string) ([
 			continue
 		}
 
-		switch one.OperationType {
-		case types.Insert:
-			// if events are in the order of create + update + delete, all biz set events will be ignored
-			lastEvent := lastEventMap[one.Oid]
-			if lastEvent.OperationType == types.Delete {
-				reminder[one.Oid] = struct{}{}
-				continue
-			}
+		// get the hit event(nil means no event is hit) and if other events of the biz set needs to be ignored
+		hitEvent, needIgnored := b.parseBizSetEvent(one, oidDetailMap, lastEventMap, rid)
 
-			// if events are in the order of create + update, it is changed to create event with the update event detail
-			if lastEvent.OperationType == types.Update {
-				one.DocBytes = lastEvent.DocBytes
-				one.Document = lastEvent.Document
-			}
-
-			// insert event is added directly.
-			hitEvents = append(hitEvents, one)
-			if gjson.Get(string(one.DocBytes), "bk_scope.match_all").Bool() {
-				containsMatchAllBizSet = true
-			}
-			continue
-		case types.Delete:
-			// delete event needs to get biz set detail from del archive before adding to the events.
-			deleteEvents = append(deleteEvents, one)
-			deletedOids = append(deletedOids, one.Oid)
-			reminder[one.Oid] = struct{}{}
-			continue
-		case types.Update, types.Replace:
-			// if events are in the order of update + delete, it is changed to delete event, update event is ignored
-			if lastEventMap[one.Oid].OperationType == types.Delete {
-				continue
-			}
-
-			// judge if update event needs to be added outside the switch clause.
-		default:
-			blog.Errorf("biz set event operation type(%s) is invalid, event: %+v, rid: %s", one.OperationType, one, rid)
-			continue
+		if hitEvent != nil {
+			hitEvents = append(hitEvents, hitEvent)
 		}
 
-		// replace event's change description is empty, we do not know what is changed, so we add this event directly.
+		if needIgnored {
+			reminder[one.Oid] = struct{}{}
+		}
+	}
+
+	// refresh all biz ids cache if the events contains match all biz set, the cache is used to generate detail later
+	for _, e := range hitEvents {
+		if e.OperationType != types.Delete && gjson.Get(string(e.DocBytes), "bk_scope.match_all").Bool() {
+			if err := b.refreshAllBizIDStr(rid); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return hitEvents, nil
+}
+
+// parseBizSetEvent parse biz set event, returns the hit event and if same oid events needs to be skipped
+func (b *bizSetRelation) parseBizSetEvent(one *types.Event, oidDetailMap map[string][]byte,
+	lastEventMap map[string]*types.Event, rid string) (*types.Event, bool) {
+
+	switch one.OperationType {
+	case types.Insert:
+		// if events are in the order of create + update + delete, all events of this biz set will be ignored
+		lastEvent := lastEventMap[one.Oid]
+		if lastEvent.OperationType == types.Delete {
+			return nil, true
+		}
+
+		// if events are in the order of create + update, it is changed to create event with the update event detail
+		if lastEvent.OperationType == types.Update {
+			one.DocBytes = lastEvent.DocBytes
+			one.Document = lastEvent.Document
+		}
+
+		// insert event is added directly.
+		return one, true
+	case types.Delete:
+		// reset delete event detail to the value before deletion from del archive, then add to hit events.
+		doc, exist := oidDetailMap[one.Oid]
+		if !exist {
+			blog.Errorf("%s event delete detail[oid: %s] not exists, rid: %s", b.key.Collection(), one.Oid, rid)
+			return nil, false
+		}
+		one.DocBytes = doc
+		return one, true
+	case types.Update, types.Replace:
+		// if events are in the order of update + delete, it is changed to delete event, update event is ignored
+		if lastEventMap[one.Oid].OperationType == types.Delete {
+			return nil, false
+		}
+
+		// replace event's change description is empty, we do not know what is changed, so we add it directly.
 		if len(one.ChangeDesc.UpdatedFields) == 0 && len(one.ChangeDesc.RemovedFields) == 0 {
-			hitEvents = append(hitEvents, one)
-			if gjson.Get(string(one.DocBytes), "bk_scope.match_all").Bool() {
-				containsMatchAllBizSet = true
-			}
-			reminder[one.Oid] = struct{}{}
-			continue
+			return one, true
 		}
 
-		// check if updated/removed fields contains "bk_scope" field, only add those that changed scope to the events.
+		// check if updated/removed fields contains "bk_scope" field, only add the events that changed scope.
 		if len(one.ChangeDesc.UpdatedFields) != 0 {
 			if _, exists := one.ChangeDesc.UpdatedFields[common.BKBizSetScopeField]; exists {
-				hitEvents = append(hitEvents, one)
-				if gjson.Get(string(one.DocBytes), "bk_scope.match_all").Bool() {
-					containsMatchAllBizSet = true
-				}
-				reminder[one.Oid] = struct{}{}
-				continue
+				return one, true
 			}
 		}
 
 		if len(one.ChangeDesc.RemovedFields) != 0 {
 			for _, field := range one.ChangeDesc.RemovedFields {
 				if field == common.BKBizSetScopeField {
-					hitEvents = append(hitEvents, one)
-					if gjson.Get(string(one.DocBytes), "bk_scope.match_all").Bool() {
-						containsMatchAllBizSet = true
-					}
-					reminder[one.Oid] = struct{}{}
-					continue
+					return one, true
 				}
 			}
 		}
@@ -203,35 +217,11 @@ func (b *bizSetRelation) rearrangeBizSetEvents(es []*types.Event, rid string) ([
 		// event that needs to be ignored comes here.
 		blog.Infof("biz set relation event, biz set change detail do not care, skip, oid: %s, detail: %+v, rid: %s",
 			one.ID(), one.ChangeDesc, rid)
+	default:
+		blog.Errorf("biz set event operation type(%s) is invalid, event: %+v, rid: %s", one.OperationType, one, rid)
+		return nil, false
 	}
-
-	if containsMatchAllBizSet {
-		if err := b.refreshAllBizIDStr(rid); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(deleteEvents) == 0 {
-		return hitEvents, nil
-	}
-
-	// reset delete event detail doc bytes to the value before deletion from del archive.
-	oidDetailMap, err := b.getDeleteEventDetails(deletedOids, rid)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, e := range deleteEvents {
-		doc, exist := oidDetailMap[e.Oid]
-		if !exist {
-			blog.Errorf("%s event delete detail[oid: %s] not exists, rid: %s", b.key.Collection(), e.Oid, rid)
-			continue
-		}
-		e.DocBytes = doc
-		hitEvents = append(hitEvents, e)
-	}
-
-	return hitEvents, nil
+	return nil, false
 }
 
 // delArchive delete event archived detail struct, with oid and detail
@@ -278,6 +268,22 @@ func (b *bizSetRelation) rearrangeBizEvents(es []*types.Event, rid string) ([]*t
 		}
 	}
 
+	// parse biz events to convert biz event parameter
+	params := b.parseBizEvents(es, deletedDetailMap, rid)
+
+	// convert biz event to related biz set event whose relation is affected by biz event
+	bizSetEvents, err := b.convertBizEvent(params)
+	if err != nil {
+		return nil, err
+	}
+
+	return bizSetEvents, nil
+}
+
+// parseBizEvents parse biz events to insert/delete event details and updated fields, used to generate biz set events
+func (b *bizSetRelation) parseBizEvents(es []*types.Event, deletedDetailMap map[string]map[string]interface{},
+	rid string) convertBizEventParams {
+
 	// generate convert biz event to biz set event parameter
 	params := convertBizEventParams{
 		es:                            es,
@@ -317,7 +323,7 @@ func (b *bizSetRelation) rearrangeBizEvents(es []*types.Event, rid string) ([]*t
 				continue
 			}
 
-			// judge if updated/removed fields needs to be cared, ignores the rest.
+			// get the updated/removed fields that need to be cared, ignores the rest.
 			isIgnored := true
 			if len(one.ChangeDesc.UpdatedFields) > 0 {
 				// for biz set relation,archive biz is treated as delete event while recover is treated as insert event
@@ -361,13 +367,7 @@ func (b *bizSetRelation) rearrangeBizEvents(es []*types.Event, rid string) ([]*t
 		}
 	}
 
-	// convert biz event to related biz set event whose relation is affected by biz event
-	bizSetEvents, err := b.convertBizEvent(params)
-	if err != nil {
-		return nil, err
-	}
-
-	return bizSetEvents, nil
+	return params
 }
 
 // convertBizEventParams parameter for convertBizEvent function
@@ -391,12 +391,7 @@ func (b *bizSetRelation) convertBizEvent(params convertBizEventParams) ([]*types
 
 	bizSetEvents := make([]*types.Event, 0)
 
-	hasInsertedAndDeletedBiz := false
-	if len(params.insertedAndDeletedBiz) > 0 {
-		hasInsertedAndDeletedBiz = true
-	}
-
-	if !hasInsertedAndDeletedBiz && len(params.updatedFieldsIndexMap) == 0 {
+	if len(params.insertedAndDeletedBiz) == 0 && len(params.updatedFieldsIndexMap) == 0 {
 		return bizSetEvents, nil
 	}
 
@@ -406,15 +401,54 @@ func (b *bizSetRelation) convertBizEvent(params convertBizEventParams) ([]*types
 		return nil, err
 	}
 
-	// biz event index to need care biz set map, used to generate biz set event
+	// get biz events' related biz sets
+	relatedBizSets, containsMatchAllBizSet := b.getRelatedBizSets(params, bizSets)
+
+	// refresh all biz ids cache if the events affected match all biz set, the cache is used to generate detail later
+	if containsMatchAllBizSet {
+		if err := b.refreshAllBizIDStr(params.rid); err != nil {
+			return nil, err
+		}
+	}
+
+	// parse biz sets into biz set events
+	for bizEventIndex, bizSetArr := range relatedBizSets {
+		bizEvent := params.es[bizEventIndex]
+
+		for _, bizSet := range bizSetArr {
+			doc, err := json.Marshal(bizSet.BizSetInst)
+			if err != nil {
+				blog.Errorf("marshal biz set(%+v) failed, err: %v, rid: %s", bizSet.BizSetInst, err, params.rid)
+				return nil, err
+			}
+
+			bizSetEvents = append(bizSetEvents, &types.Event{
+				Oid:           bizSet.Oid.Hex(),
+				Document:      bizSet.BizSetInst,
+				DocBytes:      doc,
+				OperationType: types.Update,
+				Collection:    common.BKTableNameBaseBizSet,
+				ClusterTime:   bizEvent.ClusterTime,
+				Token:         bizEvent.Token,
+			})
+		}
+	}
+
+	return bizSetEvents, nil
+}
+
+// getRelatedBizSets get biz events index to related biz sets map, which is used to generate biz set events
+func (b *bizSetRelation) getRelatedBizSets(params convertBizEventParams, bizSets []bizSetWithOid) (
+	map[int][]bizSetWithOid, bool) {
+
 	containsMatchAllBizSet := false
-	needCareBizSets := make(map[int][]bizSetWithOid, 0)
+	relatedBizSets := make(map[int][]bizSetWithOid, 0)
 	for _, bizSet := range bizSets {
 		// for biz set that matches all biz, only insert and delete event will affect their relations
 		if bizSet.Scope.MatchAll {
-			if hasInsertedAndDeletedBiz {
+			if len(params.insertedAndDeletedBiz) > 0 {
 				eventIndex := params.insertedAndDeletedBizIndexMap[0]
-				needCareBizSets[eventIndex] = append(needCareBizSets[eventIndex], bizSet)
+				relatedBizSets[eventIndex] = append(relatedBizSets[eventIndex], bizSet)
 				containsMatchAllBizSet = true
 			}
 			continue
@@ -479,40 +513,11 @@ func (b *bizSetRelation) convertBizEvent(params convertBizEventParams) ([]*types
 		}
 
 		if matched {
-			needCareBizSets[firstEventIndex] = append(needCareBizSets[firstEventIndex], bizSet)
+			relatedBizSets[firstEventIndex] = append(relatedBizSets[firstEventIndex], bizSet)
 		}
 	}
 
-	if containsMatchAllBizSet {
-		if err := b.refreshAllBizIDStr(params.rid); err != nil {
-			return nil, err
-		}
-	}
-
-	// parse biz sets into biz set events
-	for bizEventIndex, bizSetArr := range needCareBizSets {
-		bizEvent := params.es[bizEventIndex]
-
-		for _, bizSet := range bizSetArr {
-			doc, err := json.Marshal(bizSet.BizSetInst)
-			if err != nil {
-				blog.Errorf("marshal biz set(%+v) failed, err: %v, rid: %s", bizSet.BizSetInst, err, params.rid)
-				return nil, err
-			}
-
-			bizSetEvents = append(bizSetEvents, &types.Event{
-				Oid:           bizSet.Oid.Hex(),
-				Document:      bizSet.BizSetInst,
-				DocBytes:      doc,
-				OperationType: types.Update,
-				Collection:    common.BKTableNameBaseBizSet,
-				ClusterTime:   bizEvent.ClusterTime,
-				Token:         bizEvent.Token,
-			})
-		}
-	}
-
-	return bizSetEvents, nil
+	return relatedBizSets, containsMatchAllBizSet
 }
 
 // matchEqualOper check if biz set scope filter rule with equal operator matches biz value

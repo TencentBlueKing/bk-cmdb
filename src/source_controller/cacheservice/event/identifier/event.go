@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
-	"configcenter/src/source_controller/cacheservice/event/mix_event"
+	mixevent "configcenter/src/source_controller/cacheservice/event/mix-event"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/stream"
@@ -49,7 +49,7 @@ func newIdentity(ctx context.Context, opts identityOptions) error {
 		metrics:         event.InitialMetrics(opts.key.Collection(), "host_identifier"),
 	}
 
-	flowOpt := mix_event.MixEventFlowOptions{
+	flowOpt := mixevent.MixEventFlowOptions{
 		MixKey:       event.HostIdentityKey,
 		Key:          opts.key,
 		WatchFields:  opts.watchFields,
@@ -60,7 +60,7 @@ func newIdentity(ctx context.Context, opts identityOptions) error {
 		EventLockKey: hostIdentityLockKey,
 	}
 
-	flow, err := mix_event.NewMixEventFlow(flowOpt, identity.rearrangeEvents, identity.parseEvent)
+	flow, err := mixevent.NewMixEventFlow(flowOpt, identity.rearrangeEvents, identity.parseEvent)
 	if err != nil {
 		return err
 	}

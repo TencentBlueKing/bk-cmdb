@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package mix_event
+package mixevent
 
 import (
 	"context"
@@ -173,13 +173,32 @@ func (f *MixEventFlow) doBatch(es []*types.Event) (retry bool) {
 		return true
 	}
 
-	// release the lock when the job is done or failed,
+	// release the lock when the job is done or failed.
 	defer f.releaseLock(rid)
 
+	// last event in original events is used to generate
+	lastEvent := es[len(es)-1]
+	lastTokenData := mapstr.MapStr{
+		common.BKTokenField:       lastEvent.Token.Data,
+		common.BKStartAtTimeField: lastEvent.ClusterTime,
+	}
+
+	// handle the rearranged events
+	retry, err = f.handleEvents(events, lastTokenData, rid)
+	if err != nil {
+		return retry
+	}
+
+	hasError = false
+	return false
+}
+
+// handleEvents handle the rearranged events, parse them into chain nodes and details, then insert into db and redis
+func (f *MixEventFlow) handleEvents(events []*types.Event, lastTokenData mapstr.MapStr, rid string) (bool, error) {
 	eventIDs, err := f.WatchDB.NextSequences(context.Background(), f.MixKey.Collection(), len(events))
 	if err != nil {
 		blog.Errorf("get %s event ids failed, err: %v, rid: %s", f.Key.ChainCollection(), err, rid)
-		return true
+		return true, err
 	}
 
 	// process events into db chain nodes to store in db and details to store in redis
@@ -196,7 +215,7 @@ func (f *MixEventFlow) doBatch(es []*types.Event) (retry bool) {
 
 		chainNode, detailBytes, retry, err := f.parseEvent(e, eventIDs[index], rid)
 		if err != nil {
-			return retry
+			return retry, err
 		}
 
 		if chainNode == nil {
@@ -204,7 +223,7 @@ func (f *MixEventFlow) doBatch(es []*types.Event) (retry bool) {
 		}
 
 		if len(detailBytes) > 0 {
-			// if hit cursor conflict, the former cursor node's detail will be overwrite by the later one, so it
+			// if hit cursor conflict, the former cursor node's detail will be overwritten by the later one, so it
 			// is not needed to remove the overlapped cursor node's detail again.
 			pipe.Set(f.MixKey.DetailKey(chainNode.Cursor), string(detailBytes),
 				time.Duration(f.MixKey.TTLSeconds())*time.Second)
@@ -224,19 +243,13 @@ func (f *MixEventFlow) doBatch(es []*types.Event) (retry bool) {
 		chainNodes = append(chainNodes, chainNode)
 	}
 
-	lastEvents := es[len(es)-1]
-	lastTokenData := mapstr.MapStr{
-		common.BKTokenField:       lastEvents.Token.Data,
-		common.BKStartAtTimeField: lastEvents.ClusterTime,
-	}
-
 	// if all events are invalid, set last token to the last events' token, do not need to retry for the invalid ones
 	if len(chainNodes) == 0 {
 		if err := f.tokenHandler.setLastWatchToken(context.Background(), lastTokenData); err != nil {
 			f.metrics.CollectMongoError()
-			return false
+			return false, err
 		}
-		return false
+		return false, err
 	}
 
 	// store details at first, in case those watching cmdb events read chain when details are not inserted yet
@@ -245,18 +258,18 @@ func (f *MixEventFlow) doBatch(es []*types.Event) (retry bool) {
 			f.metrics.CollectRedisError()
 			blog.Errorf("run flow, but insert details for %s failed, oids: %+v, err: %v, rid: %s,", f.Key.Collection(),
 				oids, err, rid)
-			return true
+			return true, err
 		}
 	}
 
-	retry, err = f.doInsertEvents(chainNodes, lastTokenData, rid)
+	retry, err := f.doInsertEvents(chainNodes, lastTokenData, rid)
 	if err != nil {
-		return retry
+		return retry, err
 	}
 
-	blog.Infof("insert %s event for %s success, oid: %v, rid: %s", f.MixKey.Namespace(), f.Key.Collection(), oids, rid)
-	hasError = false
-	return false
+	blog.Infof("insert %s event for %s success, oids: %v, rid: %s", f.MixKey.Namespace(), f.Key.Collection(), oids, rid)
+	return false, nil
+
 }
 
 func (f *MixEventFlow) doInsertEvents(chainNodes []*watch.ChainNode, lastTokenData map[string]interface{}, rid string) (
@@ -278,47 +291,8 @@ func (f *MixEventFlow) doInsertEvents(chainNodes []*watch.ChainNode, lastTokenDa
 	}
 	defer session.EndSession(context.Background())
 
-	// conflictError record the conflict cursor error
-	var conflictError error
-
-	txnErr := mongo.WithSession(context.Background(), session, func(sc mongo.SessionContext) error {
-		if err = session.StartTransaction(); err != nil {
-			blog.Errorf("watch %s events, but start transaction failed, coll: %s, err: %v, rid: %s",
-				f.MixKey.Namespace(), f.Key.Collection(), err, rid)
-			return err
-		}
-
-		if err := f.WatchDB.Table(f.MixKey.ChainCollection()).Insert(sc, chainNodes); err != nil {
-			blog.ErrorJSON("watch %s events, but insert chain nodes for %s failed, nodes: %s, err: %v, rid: %s",
-				f.Key.Collection(), f.MixKey.Namespace(), chainNodes, err, rid)
-			f.metrics.CollectMongoError()
-			_ = session.AbortTransaction(context.Background())
-
-			if event.IsConflictError(err) {
-				conflictError = err
-			}
-			return err
-		}
-
-		lastNode := chainNodes[len(chainNodes)-1]
-		lastTokenData[common.BKFieldID] = lastNode.ID
-		lastTokenData[common.BKCursorField] = lastNode.Cursor
-		lastTokenData[common.BKStartAtTimeField] = lastNode.ClusterTime
-		if err := f.tokenHandler.setLastWatchToken(sc, lastTokenData); err != nil {
-			f.metrics.CollectMongoError()
-			_ = session.AbortTransaction(context.Background())
-			return err
-		}
-
-		// Use context.Background() to ensure that the commit can complete successfully even if the context passed to
-		// mongo.WithSession is changed to have a timeout.
-		if err = session.CommitTransaction(context.Background()); err != nil {
-			blog.Errorf("watch %s events, but commit mongo transaction failed, err: %v", f.MixKey.Namespace(), err)
-			f.metrics.CollectMongoError()
-			return err
-		}
-		return nil
-	})
+	// insert events into db in an transaction
+	txnErr, conflictError := f.insertEvents(session, chainNodes, lastTokenData, rid)
 
 	if txnErr != nil {
 		blog.Errorf("do insert %s events failed, err: %v, rid: %s", f.MixKey.Namespace(), txnErr, rid)
@@ -369,6 +343,55 @@ func (f *MixEventFlow) doInsertEvents(chainNodes []*watch.ChainNode, lastTokenDa
 	}
 
 	return false, nil
+}
+
+// insertEvents insert events and last watch token
+func (f *MixEventFlow) insertEvents(session mongo.Session, chainNodes []*watch.ChainNode,
+	lastTokenData map[string]interface{}, rid string) (error, error) {
+
+	// conflictError record the conflict cursor error
+	var conflictError error
+
+	txnErr := mongo.WithSession(context.Background(), session, func(sc mongo.SessionContext) error {
+		if err := session.StartTransaction(); err != nil {
+			blog.Errorf("watch %s events, but start transaction failed, coll: %s, err: %v, rid: %s",
+				f.MixKey.Namespace(), f.Key.Collection(), err, rid)
+			return err
+		}
+
+		if err := f.WatchDB.Table(f.MixKey.ChainCollection()).Insert(sc, chainNodes); err != nil {
+			blog.ErrorJSON("watch %s events, but insert chain nodes for %s failed, nodes: %s, err: %v, rid: %s",
+				f.Key.Collection(), f.MixKey.Namespace(), chainNodes, err, rid)
+			f.metrics.CollectMongoError()
+			_ = session.AbortTransaction(context.Background())
+
+			if event.IsConflictError(err) {
+				conflictError = err
+			}
+			return err
+		}
+
+		lastNode := chainNodes[len(chainNodes)-1]
+		lastTokenData[common.BKFieldID] = lastNode.ID
+		lastTokenData[common.BKCursorField] = lastNode.Cursor
+		lastTokenData[common.BKStartAtTimeField] = lastNode.ClusterTime
+		if err := f.tokenHandler.setLastWatchToken(sc, lastTokenData); err != nil {
+			f.metrics.CollectMongoError()
+			_ = session.AbortTransaction(context.Background())
+			return err
+		}
+
+		// Use context.Background() to ensure that the commit can complete successfully even if the context passed to
+		// mongo.WithSession is changed to have a timeout.
+		if err := session.CommitTransaction(context.Background()); err != nil {
+			blog.Errorf("watch %s events, but commit mongo transaction failed, err: %v", f.MixKey.Namespace(), err)
+			f.metrics.CollectMongoError()
+			return err
+		}
+		return nil
+	})
+
+	return txnErr, conflictError
 }
 
 func (f *MixEventFlow) getLock(rid string) error {
