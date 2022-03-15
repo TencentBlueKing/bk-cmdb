@@ -381,62 +381,7 @@ func (e *Engine) GetSrvInfo() *types.ServerInfo {
 }
 
 func getTLSConf() (*util.TLSClientConfig, error) {
-	var prefix string
-	switch common.GetIdentification() {
-	case types.CC_MODULE_DATACOLLECTION:
-		prefix = "datacollection"
-
-	case types.CC_MODULE_HOST:
-		prefix = "hostServer"
-
-	case types.CC_MODULE_MIGRATE:
-		prefix = "adminServer"
-
-	case types.CC_MODULE_PROC:
-		prefix = "procServer"
-
-	case types.CC_MODULE_TOPO:
-		prefix = "topoServer"
-
-	case types.CC_MODULE_APISERVER:
-		prefix = "apiServer"
-
-	case types.CC_MODULE_WEBSERVER:
-		prefix = "webServer"
-
-	case types.CC_MODULE_EVENTSERVER:
-		prefix = "eventServer"
-
-	case types.CC_MODULE_CORESERVICE:
-		prefix = "coreService"
-
-	case types.CC_MODULE_SYNCHRONZESERVER:
-		prefix = "synchronizeServer"
-
-	case types.CC_MODULE_OPERATION:
-		prefix = "operationServer"
-
-	case types.CC_MODULE_TASK:
-		prefix = "taskServer"
-
-	case types.CC_MODULE_CLOUD:
-		prefix = "cloudServer"
-
-	case types.CC_MODULE_AUTH:
-		prefix = "authServer"
-
-	case types.CC_MODULE_CACHESERVICE:
-		prefix = "cacheService"
-	}
-
-	if prefix == "" {
-		blog.Warnf("unknown server, identifier: %s", common.GetIdentification())
-		return nil, nil
-	}
-
-	prefix += ".tls"
-
-	config, err := util.NewTLSClientConfigFromConfig(prefix)
+	config, err := util.NewTLSClientConfigFromConfig("tls")
 	return &config, err
 }
 

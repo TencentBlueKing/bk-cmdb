@@ -157,7 +157,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.AuthCenter.AppCode, _ = cc.String("webServer.app.authAppCode")
 	w.Config.AuthCenter.URL, _ = cc.String("webServer.app.authUrl")
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
-	if esbConfig, err := esb.ParseEsbConfig(""); err == nil {
+	if esbConfig, err := esb.ParseEsbConfig(); err == nil {
 		esb.UpdateEsbConfig(*esbConfig)
 	}
 	w.Config.DisableOperationStatistic, _ = cc.Bool("operationServer.disableOperationStatistic")

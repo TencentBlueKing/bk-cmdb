@@ -183,7 +183,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			blog.Infof("disable auth center access.")
 		}
 
-		if esbConfig, err := esb.ParseEsbConfig(""); err == nil {
+		if esbConfig, err := esb.ParseEsbConfig(); err == nil {
 			esb.UpdateEsbConfig(*esbConfig)
 		}
 

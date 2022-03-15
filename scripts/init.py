@@ -305,11 +305,11 @@ webServer:
       tls:
         # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
         insecureSkipVerify: true
-        # 服务使用的证书
+        # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
         certFile:
-        # 服务使用的证书对应的密钥
+        # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
         keyFile:
-        # CA证书，用于验证对方证书
+        # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
         caFile:
         # 用于解密根据RFC1423加密的证书密钥的PEM块
         password:
@@ -320,20 +320,7 @@ webServer:
   login:
     #登录模式
     version: $loginVersion
-  # 服务tls配置
-    tls:
-      # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-      insecureSkipVerify: true
-      # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-      requireAndVerifyClientCert: false
-      # 服务使用的证书
-      certFile:
-      # 服务使用的证书对应的密钥
-      keyFile:
-      # CA证书，用于验证对方证书
-      caFile:
-      # 用于解密根据RFC1423加密的证书密钥的PEM块
-      password:
+
 # operation_server专属配置
 operationServer:
   timer:
@@ -341,20 +328,6 @@ operationServer:
     spec: 00:30  # 00:00 - 23:59
   # 禁用运营统计数据统计功能，默认false
   disableOperationStatistic: false
-  # 服务tls配置
-  tls:
-    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
-    # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-    requireAndVerifyClientCert: false
-    # 服务使用的证书
-    certFile:
-    # 服务使用的证书对应的密钥
-    keyFile:
-    # CA证书，用于验证对方证书
-    caFile:
-    # 用于解密根据RFC1423加密的证书密钥的PEM块
-    password:
 
 #auth_server专属配置
 authServer:
@@ -364,20 +337,19 @@ authServer:
   appCode: $auth_app_code
   #cmdb项目在蓝鲸权限中心的应用密钥
   appSecret: $auth_app_secret
-  # 服务tls配置
-  tls:
-    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
-    # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-    requireAndVerifyClientCert: false
-    # 服务使用的证书
-    certFile:
-    # 服务使用的证书对应的密钥
-    keyFile:
-    # CA证书，用于验证对方证书
-    caFile:
-    # 用于解密根据RFC1423加密的证书密钥的PEM块
-    password:
+  authCenter:
+     # 权限中心tls配置
+     tls:
+       # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+       insecureSkipVerify: true
+       # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+       certFile:
+       # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+       keyFile:
+       # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+       caFile:
+       # 用于解密根据RFC1423加密的证书密钥的PEM块
+       password:
 
 #cloudServer专属配置
 cloudServer:
@@ -393,20 +365,6 @@ cloudServer:
   syncTask:
     # 同步周期,最小为5分钟
     syncPeriodMinutes: 5
-  # 服务tls配置
-  tls:
-    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
-    # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-    requireAndVerifyClientCert: false
-    # 服务使用的证书
-    certFile:
-    # 服务使用的证书对应的密钥
-    keyFile:
-    # CA证书，用于验证对方证书
-    caFile:
-    # 用于解密根据RFC1423加密的证书密钥的PEM块
-    password:
 
 #datacollection专属配置
 datacollection:
@@ -421,20 +379,6 @@ datacollection:
     rateLimiter:
       qps: 40
       burst: 100
-  # 服务tls配置
-  tls:
-    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
-    # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-    requireAndVerifyClientCert: false
-    # 服务使用的证书
-    certFile:
-    # 服务使用的证书对应的密钥
-    keyFile:
-    # CA证书，用于验证对方证书
-    caFile:
-    # 用于解密根据RFC1423加密的证书密钥的PEM块
-    password:
 
 # 监控配置， monitor配置项必须存在
 monitor:
@@ -457,23 +401,6 @@ monitor:
       qps: 10
       burst: 20
 
-# cacheService相关配置
-cacheService:
-  # 服务tls配置
-  tls:
-    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
-    # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-    requireAndVerifyClientCert: false
-    # 服务使用的证书
-    certFile:
-    # 服务使用的证书对应的密钥
-    keyFile:
-    # CA证书，用于验证对方证书
-    caFile:
-    # 用于解密根据RFC1423加密的证书密钥的PEM块
-    password:
-
 # 日志平台openTelemetry跟踪链接入相关配置
 openTelemetry:
   # 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
@@ -486,11 +413,11 @@ openTelemetry:
   tls:
     # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
     insecureSkipVerify: true
-    # 服务使用的证书
+    # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
     certFile:
-    # 服务使用的证书对应的密钥
+    # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
     keyFile:
-    # CA证书，用于验证对方证书
+    # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
     caFile:
     # 用于解密根据RFC1423加密的证书密钥的PEM块
     password:
@@ -525,20 +452,6 @@ eventServer:
       fileOwner: "root"
       # 下发主机身份文件权限值
       filePrivilege: 644
- # 服务tls配置
-  tls:
-    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
-    # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-    requireAndVerifyClientCert: false
-    # 服务使用的证书
-    certFile:
-    # 服务使用的证书对应的密钥
-    keyFile:
-    # CA证书，用于验证对方证书
-    caFile:
-    # 用于解密根据RFC1423加密的证书密钥的PEM块
-    password:
 
 # 直接调用gse服务相关配置
 gse:
@@ -576,124 +489,20 @@ kafka:
     user:
     password:
 
-# host_server服务相关配置
-hostServer:
-  # 服务tls配置
-  tls:
-    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
-    # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-    requireAndVerifyClientCert: false
-    # 服务使用的证书
-    certFile:
-    # 服务使用的证书对应的密钥
-    keyFile:
-    # CA证书，用于验证对方证书
-    caFile:
-    # 用于解密根据RFC1423加密的证书密钥的PEM块
-    password:
-
-# proc_server服务相关配置
-procServer:
-  # 服务tls配置
-  tls:
-    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
-    # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-    requireAndVerifyClientCert: false
-    # 服务使用的证书
-    certFile:
-    # 服务使用的证书对应的密钥
-    keyFile:
-    # CA证书，用于验证对方证书
-    caFile:
-    # 用于解密根据RFC1423加密的证书密钥的PEM块
-    password:
-
-# topo_server服务相关配置
-topoServer:
-  # 服务tls配置
-  tls:
-    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
-    # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-    requireAndVerifyClientCert: false
-    # 服务使用的证书
-    certFile:
-    # 服务使用的证书对应的密钥
-    keyFile:
-    # CA证书，用于验证对方证书
-    caFile:
-    # 用于解密根据RFC1423加密的证书密钥的PEM块
-    password:
-
-# apiserver服务相关配置
-apiServer:
-  # 服务tls配置
-  tls:
-    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
-    # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-    requireAndVerifyClientCert: false
-    # 服务使用的证书
-    certFile:
-    # 服务使用的证书对应的密钥
-    keyFile:
-    # CA证书，用于验证对方证书
-    caFile:
-    # 用于解密根据RFC1423加密的证书密钥的PEM块
-    password:
-
-# coreservice服务相关配置
-coreService:
-  # 服务tls配置
-  tls:
-    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
-    # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-    requireAndVerifyClientCert: false
-    # 服务使用的证书
-    certFile:
-    # 服务使用的证书对应的密钥
-    keyFile:
-    # CA证书，用于验证对方证书
-    caFile:
-    # 用于解密根据RFC1423加密的证书密钥的PEM块
-    password:
-
-# synchronize_server服务相关配置
-synchronizeServer:
-  # 服务tls配置
-  tls:
-    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
-    # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-    requireAndVerifyClientCert: false
-    # 服务使用的证书
-    certFile:
-    # 服务使用的证书对应的密钥
-    keyFile:
-    # CA证书，用于验证对方证书
-    caFile:
-    # 用于解密根据RFC1423加密的证书密钥的PEM块
-    password:
-
-# task_server服务相关配置
-taskServer:
-  # 服务tls配置
-  tls:
-    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
-    # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-    requireAndVerifyClientCert: false
-    # 服务使用的证书
-    certFile:
-    # 服务使用的证书对应的密钥
-    keyFile:
-    # CA证书，用于验证对方证书
-    caFile:
-    # 用于解密根据RFC1423加密的证书密钥的PEM块
-    password:
+# cmdb服务tls配置
+tls:
+  # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+  insecureSkipVerify: true
+  # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
+  requireAndVerifyClientCert: false
+  # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+  certFile:
+  # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+  keyFile:
+  # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+  caFile:
+  # 用于解密根据RFC1423加密的证书密钥的PEM块
+  password:
     '''
 
     template = FileTemplate(common_file_template_str)
@@ -773,22 +582,6 @@ language:
 # 指定monstache相关配置文件
 monstache:
   res: monstache/etc
-
-adminServer:
-  # 服务tls配置
-  tls:
-    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
-    # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-    requireAndVerifyClientCert: false
-    # 服务使用的证书
-    certFile:
-    # 服务使用的证书对应的密钥
-    keyFile:
-    # CA证书，用于验证对方证书
-    caFile:
-    # 用于解密根据RFC1423加密的证书密钥的PEM块
-    password:
     '''
 
     template = FileTemplate(migrate_file_template_str)

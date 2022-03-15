@@ -135,7 +135,7 @@ func (a *AuthServer) onAuthConfigUpdate(previous, current cc.ProcessConfig) {
 			blog.Warnf("parse auth center tls config failed: %v", err)
 		}
 
-		if esbConfig, err := esb.ParseEsbConfig(""); err == nil {
+		if esbConfig, err := esb.ParseEsbConfig(); err == nil {
 			esb.UpdateEsbConfig(*esbConfig)
 		}
 	}
