@@ -411,7 +411,7 @@ func (f *MixEventFlow) getLock(rid string) error {
 
 		if !success {
 			blog.V(3).Infof("get %s: %s lock failed, retry later, rid: %s", f.MixKey.Namespace(), f.EventLockKey, rid)
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(300 * time.Millisecond)
 			continue
 		}
 		// get lock success.

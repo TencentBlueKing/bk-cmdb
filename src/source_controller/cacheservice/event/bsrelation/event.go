@@ -46,6 +46,14 @@ func newBizSetRelation(ctx context.Context, opts mixevent.MixEventFlowOptions) e
 		metrics:           event.InitialMetrics(opts.Key.Collection(), "biz_set_relation"),
 	}
 
+	// get need care biz fields for biz event conversion, then sync it in goroutine
+	fields, err := relation.getNeedCareBizFields(context.Background())
+	if err != nil {
+		blog.Errorf("run biz set relation watch, but get need care biz fields failed, err: %v", err)
+		return err
+	}
+	relation.needCareBizFields.Set(fields)
+
 	go relation.syncNeedCareBizFields()
 
 	flow, err := mixevent.NewMixEventFlow(opts, relation.rearrangeEvents, relation.parseEvent)

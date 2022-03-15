@@ -55,18 +55,18 @@ func (a *needCareBizFields) Set(fieldMap map[string]string) {
 	a.fieldMap = fieldMap
 }
 
-// syncNeedCareBizFields refresh need cared biz fields every 5 minutes
+// syncNeedCareBizFields refresh need cared biz fields every minutes
 func (b *bizSetRelation) syncNeedCareBizFields() {
 	for {
+		time.Sleep(time.Minute)
+
 		fields, err := b.getNeedCareBizFields(context.Background())
 		if err != nil {
-			blog.Errorf("run object instance watch, but get mainline objects failed, err: %v", err)
+			blog.Errorf("run biz set relation watch, but get need care biz fields failed, err: %v", err)
 			continue
 		}
 		b.needCareBizFields.Set(fields)
-		blog.V(5).Infof("run object instance watch, sync mainline object map done, map: %+v", b.needCareBizFields.Get())
-
-		time.Sleep(time.Minute * 5)
+		blog.V(5).Infof("run biz set relation watch, sync need care biz fields done, fields: %+v", fields)
 	}
 }
 
@@ -150,9 +150,11 @@ func (b *bizSetRelation) rearrangeBizSetEvents(es []*types.Event, rid string) ([
 	// refresh all biz ids cache if the events contains match all biz set, the cache is used to generate detail later
 	for _, e := range hitEvents {
 		if e.OperationType != types.Delete && gjson.Get(string(e.DocBytes), "bk_scope.match_all").Bool() {
-			if err := b.refreshAllBizIDStr(rid); err != nil {
+			err := b.refreshAllBizIDStr(rid)
+			if err != nil {
 				return nil, err
 			}
+			break
 		}
 	}
 
@@ -455,6 +457,7 @@ func (b *bizSetRelation) getRelatedBizSets(params convertBizEventParams, bizSets
 		}
 
 		if bizSet.Scope.Filter == nil {
+			blog.Errorf("biz set(%+v) scope filter is empty, skip, rid: %s", bizSet, params.rid)
 			continue
 		}
 

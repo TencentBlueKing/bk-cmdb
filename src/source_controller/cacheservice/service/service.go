@@ -27,7 +27,7 @@ import (
 	"configcenter/src/source_controller/cacheservice/app/options"
 	"configcenter/src/source_controller/cacheservice/cache"
 	cacheop "configcenter/src/source_controller/cacheservice/cache"
-	bsrelation "configcenter/src/source_controller/cacheservice/event/biz-set-relation"
+	"configcenter/src/source_controller/cacheservice/event/bsrelation"
 	"configcenter/src/source_controller/cacheservice/event/flow"
 	"configcenter/src/source_controller/cacheservice/event/identifier"
 	"configcenter/src/source_controller/coreservice/core"

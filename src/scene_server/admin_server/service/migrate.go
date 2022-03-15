@@ -198,6 +198,8 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 				"_id":                        key.Collection(),
 				common.BKTableNameBaseApp:    watch.LastChainNodeData{Coll: common.BKTableNameBaseApp},
 				common.BKTableNameBaseBizSet: watch.LastChainNodeData{Coll: common.BKTableNameBaseBizSet},
+				common.BKFieldID:             0,
+				common.BKTokenField:          "",
 			}
 			if err := s.watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
 				blog.Errorf("init last biz set relation watch token failed, err: %v, data: %+v", err, data)
