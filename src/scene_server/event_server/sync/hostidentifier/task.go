@@ -143,11 +143,11 @@ func (h *HostIdentifier) compareTaskResult(task *Task, taskResultMap map[string]
 		if code != common.CCSuccess {
 			blog.Errorf("push host identifier error, hostInfo: %v, taskID: %s", hostInfo, task.TaskID)
 			failHosts = append(failHosts, hostInfo)
-			h.hostResultTotal.WithLabelValues("failed").Inc()
+			h.metric.hostResultTotal.WithLabelValues("failed").Inc()
 			continue
 		}
 
-		h.hostResultTotal.WithLabelValues("success").Inc()
+		h.metric.hostResultTotal.WithLabelValues("success").Inc()
 		blog.V(5).Infof("push identifier to host success, host: %v, taskID: %s", hostInfo, task.TaskID)
 	}
 
@@ -163,7 +163,7 @@ func (h *HostIdentifier) GetTaskExecutionResultMap(task *Task) (map[string]strin
 		resp, err = h.gseTaskServerClient.GetPushFileRst(h.ctx, task.TaskID)
 		if err != nil {
 			blog.Errorf("get task status from gse error, task: %v, err: %v", task, err)
-			h.getResultTotal.WithLabelValues("failed").Inc()
+			h.metric.getResultTotal.WithLabelValues("failed").Inc()
 			failCount++
 			sleepForFail(failCount)
 			continue
@@ -171,7 +171,7 @@ func (h *HostIdentifier) GetTaskExecutionResultMap(task *Task) (map[string]strin
 
 		if resp.MErrcode != common.CCSuccess {
 			blog.Errorf("get task status from gse fail, task: %v, code: %d, msg: %s", task, resp.MErrcode, resp.MErrmsg)
-			h.getResultTotal.WithLabelValues("failed").Inc()
+			h.metric.getResultTotal.WithLabelValues("failed").Inc()
 			failCount++
 			sleepForFail(failCount)
 			continue
@@ -182,7 +182,7 @@ func (h *HostIdentifier) GetTaskExecutionResultMap(task *Task) (map[string]strin
 		return nil, errors.New("get task push result error")
 	}
 
-	h.getResultTotal.WithLabelValues("success").Inc()
+	h.metric.getResultTotal.WithLabelValues("success").Inc()
 	return buildTaskResultMap(resp.MRsp), nil
 }
 
@@ -300,7 +300,7 @@ func (h *HostIdentifier) pushFile(always bool, hostInfos []*HostInfo, fileList [
 		resp, err = h.gseTaskServerClient.PushFileV2(context.Background(), fileList)
 		if err != nil {
 			blog.Errorf("push host identifier to gse error, err: %v, rid: %s", err, rid)
-			h.pushFileTotal.WithLabelValues("failed").Inc()
+			h.metric.pushFileTotal.WithLabelValues("failed").Inc()
 			failCount++
 			sleepForFail(failCount)
 			continue
@@ -308,7 +308,7 @@ func (h *HostIdentifier) pushFile(always bool, hostInfos []*HostInfo, fileList [
 
 		if resp.MErrcode != common.CCSuccess {
 			blog.Errorf("push host identifier fail, code: %d, msg: %s, rid: %s", resp.MErrcode, resp.MErrmsg, rid)
-			h.pushFileTotal.WithLabelValues("failed").Inc()
+			h.metric.pushFileTotal.WithLabelValues("failed").Inc()
 			failCount++
 			sleepForFail(failCount)
 			continue
@@ -320,7 +320,7 @@ func (h *HostIdentifier) pushFile(always bool, hostInfos []*HostInfo, fileList [
 		return nil, errors.New("push host identifier to gse taskServer error")
 	}
 
-	h.pushFileTotal.WithLabelValues("success").Inc()
+	h.metric.pushFileTotal.WithLabelValues("success").Inc()
 	blog.V(5).Infof("push host identifier to gse success: file: %v, taskID: %s, rid: %s", fileList, resp.MContent, rid)
 
 	// 2、构建task放到redis维护的任务队列中

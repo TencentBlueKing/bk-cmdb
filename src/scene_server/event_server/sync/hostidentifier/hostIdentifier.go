@@ -51,6 +51,19 @@ const (
 	metricsNamespacePrefix = "cmdb_sync_data"
 )
 
+type hostIdentifierMetric struct {
+	// getAgentStatusTotal call gse get agent status api total
+	getAgentStatusTotal *prometheus.CounterVec
+	// pushFileTotal call gse push file api total
+	pushFileTotal *prometheus.CounterVec
+	// getResultTotal call gse get task result api total
+	getResultTotal *prometheus.CounterVec
+	// agentStatusTotal host agent status total
+	agentStatusTotal *prometheus.CounterVec
+	// hostResultTotal host result total
+	hostResultTotal *prometheus.CounterVec
+}
+
 // HostIdentifier manipulate the structure of the host Identifier
 type HostIdentifier struct {
 	redisCli            redis.Client
@@ -62,17 +75,7 @@ type HostIdentifier struct {
 	linuxFileConfig     *FileConf
 	watchLimiter        flowctrl.RateLimiter
 	fullLimiter         flowctrl.RateLimiter
-
-	// getAgentStatusTotal call gse get agent status interface total
-	getAgentStatusTotal *prometheus.CounterVec
-	// pushFileTotal call gse push file interface total
-	pushFileTotal *prometheus.CounterVec
-	// getResultTotal call gse get task result interface total
-	getResultTotal *prometheus.CounterVec
-	// agentStatusTotal host agent status total
-	agentStatusTotal *prometheus.CounterVec
-	// hostResultTotal host result total
-	hostResultTotal *prometheus.CounterVec
+	metric              *hostIdentifierMetric
 }
 
 // NewHostIdentifier new HostIdentifier struct
@@ -97,50 +100,50 @@ func NewHostIdentifier(ctx context.Context, redisCli redis.Client, engine *backb
 
 // registerMetrics registers prometheus metrics.
 func (h *HostIdentifier) registerMetrics() {
-	h.getAgentStatusTotal = prometheus.NewCounterVec(
+	getAgentStatusTotal := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: fmt.Sprintf("%s_get_agent_status_total", metricsNamespacePrefix),
-			Help: "call gse get agent status interface total.",
+			Help: "call gse get agent status api total.",
 		},
 		[]string{"status"},
 	)
-	h.engine.Metric().Registry().MustRegister(h.getAgentStatusTotal)
+	h.engine.Metric().Registry().MustRegister(getAgentStatusTotal)
 
-	h.pushFileTotal = prometheus.NewCounterVec(
+	pushFileTotal := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: fmt.Sprintf("%s_push_file_total", metricsNamespacePrefix),
-			Help: "call gse push file interface total.",
+			Help: "call gse push file api total.",
 		},
 		[]string{"status"},
 	)
-	h.engine.Metric().Registry().MustRegister(h.pushFileTotal)
+	h.engine.Metric().Registry().MustRegister(pushFileTotal)
 
-	h.getResultTotal = prometheus.NewCounterVec(
+	getResultTotal := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: fmt.Sprintf("%s_get_result_total", metricsNamespacePrefix),
-			Help: "call gse get task result interface total.",
+			Help: "call gse get task result api total.",
 		},
 		[]string{"status"},
 	)
-	h.engine.Metric().Registry().MustRegister(h.getResultTotal)
+	h.engine.Metric().Registry().MustRegister(getResultTotal)
 
-	h.agentStatusTotal = prometheus.NewCounterVec(
+	agentStatusTotal := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: fmt.Sprintf("%s_host_agent_status_total", metricsNamespacePrefix),
 			Help: "host agent status total.",
 		},
 		[]string{"status"},
 	)
-	h.engine.Metric().Registry().MustRegister(h.agentStatusTotal)
+	h.engine.Metric().Registry().MustRegister(agentStatusTotal)
 
-	h.hostResultTotal = prometheus.NewCounterVec(
+	hostResultTotal := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: fmt.Sprintf("%s_host_result_total", metricsNamespacePrefix),
 			Help: "host result total.",
 		},
 		[]string{"status"},
 	)
-	h.engine.Metric().Registry().MustRegister(h.hostResultTotal)
+	h.engine.Metric().Registry().MustRegister(hostResultTotal)
 
 	h.engine.Metric().Registry().MustRegister(prometheus.NewGaugeFunc(
 		prometheus.GaugeOpts{
@@ -171,6 +174,14 @@ func (h *HostIdentifier) registerMetrics() {
 			return float64(val)
 		},
 	))
+
+	h.metric = &hostIdentifierMetric{
+		getAgentStatusTotal: getAgentStatusTotal,
+		pushFileTotal:       pushFileTotal,
+		getResultTotal:      getResultTotal,
+		agentStatusTotal:    agentStatusTotal,
+		hostResultTotal:     hostResultTotal,
+	}
 }
 
 // WatchToSyncHostIdentifier watch to sync host identifier
@@ -229,11 +240,11 @@ func (h *HostIdentifier) watchToSyncHostIdentifier(events []*IdentifierEvent, ri
 		if !isOn {
 			blog.Infof("agent status is off, hostID: %d, ip: %s, cloudID: %d, rid: %s",
 				event.HostID, event.InnerIP, event.CloudID, rid)
-			h.agentStatusTotal.WithLabelValues("off").Inc()
+			h.metric.agentStatusTotal.WithLabelValues("off").Inc()
 			continue
 		}
 
-		h.agentStatusTotal.WithLabelValues("on").Inc()
+		h.metric.agentStatusTotal.WithLabelValues("on").Inc()
 		blog.Infof("agent status is on, hostID: %d, ip: %s, cloudID: %d, rid: %s",
 			event.HostID, hostIP, event.CloudID, rid)
 
@@ -336,11 +347,11 @@ func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{},
 		isOn, hostIP := getStatusOnAgentIP(strconv.FormatInt(cloudID, 10), innerIP, resp.Result_)
 		if !isOn {
 			blog.Infof("agent status is off, hostID: %d, ip: %s, cloudID: %d, rid: %s", hostID, innerIP, cloudID, rid)
-			h.agentStatusTotal.WithLabelValues("off").Inc()
+			h.metric.agentStatusTotal.WithLabelValues("off").Inc()
 			continue
 		}
 
-		h.agentStatusTotal.WithLabelValues("on").Inc()
+		h.metric.agentStatusTotal.WithLabelValues("on").Inc()
 		hostIDs = append(hostIDs, hostID)
 		hostMap[hostID] = hostIP
 		hostInfos = append(hostInfos, &HostInfo{
@@ -370,7 +381,7 @@ func (h *HostIdentifier) getAgentStatus(status *getstatus.AgentStatusRequest,
 		resp, err = h.gseApiServerClient.GetAgentStatus(context.Background(), status)
 		if err != nil {
 			blog.Errorf("get host agent status error, err: %v, rid: %s", err, rid)
-			h.getAgentStatusTotal.WithLabelValues("failed").Inc()
+			h.metric.getAgentStatusTotal.WithLabelValues("failed").Inc()
 			failCount++
 			sleepForFail(failCount)
 			continue
@@ -378,7 +389,7 @@ func (h *HostIdentifier) getAgentStatus(status *getstatus.AgentStatusRequest,
 
 		if resp.BkErrorCode != common.CCSuccess {
 			blog.Errorf("get agent status fail, code: %d, msg: %s, rid: %s", resp.BkErrorCode, resp.BkErrorMsg, rid)
-			h.getAgentStatusTotal.WithLabelValues("failed").Inc()
+			h.metric.getAgentStatusTotal.WithLabelValues("failed").Inc()
 			failCount++
 			sleepForFail(failCount)
 			continue
@@ -390,7 +401,7 @@ func (h *HostIdentifier) getAgentStatus(status *getstatus.AgentStatusRequest,
 		return nil, errors.New("find agent status from apiServer error")
 	}
 
-	h.getAgentStatusTotal.WithLabelValues("success").Inc()
+	h.metric.getAgentStatusTotal.WithLabelValues("success").Inc()
 	return resp, nil
 }
 
