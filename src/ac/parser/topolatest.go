@@ -2146,7 +2146,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// find business instance topology operation.
 	// also is find mainline instance topology operation.
-	if ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) {
+	if  ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find business instance topology, but got invalid url")
 			return ps
@@ -2200,7 +2200,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// find business instance topology operation.
 	// also is find mainline instance topology operation.
-	if ps.hitRegexp(findBusinessInstanceTopologyWithStatisticsLatestRegexp, http.MethodPost) {
+	if ps.hitRegexp(findBusinessInstanceTopologyWithStatisticsLatestRegexp, http.MethodPost)  {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find business instance topology, but got invalid url")
 			return ps

@@ -31,7 +31,7 @@ type ObjectInterface interface {
 	UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error)
 	CreateClassification(ctx context.Context, h http.Header, obj *metadata.Classification) (resp *metadata.Response, err error)
-	SelectClassificationWithObjects(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	SelectClassificationWithObjects(ctx context.Context,  h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	SelectClassificationWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	UpdateClassification(ctx context.Context, classID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteClassification(ctx context.Context, classID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
