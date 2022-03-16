@@ -80,7 +80,8 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 		}
 		if objID == common.BKInnerObjIDHost &&
 			(attr.PropertyID == common.BKHostInnerIPField || attr.PropertyID == common.BKHostOuterIPField ||
-				attr.PropertyID == common.BKOperatorField || attr.PropertyID == common.BKBakOperatorField) {
+				attr.PropertyID == common.BKOperatorField || attr.PropertyID == common.BKBakOperatorField ||
+				attr.PropertyID == common.BKHostInnerIPv6Field || attr.PropertyID == common.BKHostOuterIPv6Field) {
 			// NOTICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未innerIP,OuterIP 特殊的类型
 			attr.PropertyType = common.FieldTypeList
 		}

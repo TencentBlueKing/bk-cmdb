@@ -298,10 +298,12 @@ func (f *Find) Limit(limit uint64) types.Find {
 }
 
 var hostSpecialFieldMap = map[string]bool{
-	common.BKHostInnerIPField: true,
-	common.BKHostOuterIPField: true,
-	common.BKOperatorField:    true,
-	common.BKBakOperatorField: true,
+	common.BKHostInnerIPField:   true,
+	common.BKHostOuterIPField:   true,
+	common.BKOperatorField:      true,
+	common.BKBakOperatorField:   true,
+	common.BKHostInnerIPv6Field: true,
+	common.BKHostOuterIPv6Field: true,
 }
 
 // All 查询多个
