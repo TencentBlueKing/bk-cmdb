@@ -325,7 +325,7 @@ func createTableIndex(ctx context.Context, tableName string, idxs []types.Index,
 			}
 		}
 
-		if err := db.Table(tableName).CreateIndex(ctx, idx); err != nil {
+		if err := db.Table(tableName).CreateIndex(ctx, idx); err != nil && !db.IsDuplicatedError(err) {
 			return fmt.Errorf("create index(%s) error. err: %s", idx.Name, err.Error())
 		}
 	}
@@ -386,7 +386,7 @@ func createTableLogicUniqueIndex(ctx context.Context, objID string, tableName st
 
 		// 升级版本程序不考虑，数据不一致的情况
 		if _, exists := alreadyIdxNameMap[newDBIndex.Name]; !exists {
-			if err := db.Table(tableName).CreateIndex(ctx, newDBIndex); err != nil {
+			if err := db.Table(tableName).CreateIndex(ctx, newDBIndex); err != nil && !db.IsDuplicatedError(err) {
 				return fmt.Errorf("create unique index(%s) error. err: %s", newDBIndex.Name, err.Error())
 			}
 		}
