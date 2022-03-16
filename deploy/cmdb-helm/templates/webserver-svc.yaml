@@ -1,0 +1,19 @@
+{{- if .Values.webserver.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: cmdb-portal
+  labels:
+    app: cmdb
+spec:
+  type: {{ .Values.webserver.service.type }}
+  ports:
+  {{- with .Values.webserver.service.ports }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  # ports:
+  #   - port: 80
+  #     targetPort: {{ .Values.webserver.port }}
+  selector:
+    app: cmdb
+{{- end }}

@@ -1,0 +1,5 @@
+name: cmdb
+version: 3.9.37
+appVersion: v1
+description: An open source trusted cloud native registry that stores, signs, and scans content
+

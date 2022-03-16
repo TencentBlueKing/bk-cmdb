@@ -1,0 +1,46 @@
+
+externalURL: https://bk-cmdb.blueking.domain
+
+
+imagePullPolicy: IfNotPresent
+
+webserver:
+  # dnsPolicy: ClusterFirstWithHostNet
+  # hostNetwork: true
+  dnsPolicy: ClusterFirst
+  hostNetwork: false
+  ingress:
+    enabled: false
+    hosts:
+      - cmdb.bk.com
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    tls:
+  enabled: true
+  image:
+    repository: harbor.dev.21vianet.com/cmdb/cmdb
+    tag: v2
+  replicas: 1
+  port: 8090
+  service:
+    type: "NodePort"
+    ports:
+      - protocol: TCP
+        port: 80
+        targetPort: 8090
+        nodePort: 30311
+    externalPort: 80
+
+  # resources:
+  #  requests:
+  #    memory: 256Mi
+  #    cpu: 100m
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+
+ApiVersion:
+  Deployment: "apps/v1"

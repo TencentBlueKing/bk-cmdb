@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cmdb-deployment
+  namespace: cmdbv1
+  labels:
+    app: cmdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cmdb
+  template:
+    metadata:
+      labels:
+        app: cmdb
+    spec:
+      containers:
+      - name: cmdb
+        image: harbor.dev.21vianet.com/cmdb/cmdb:v2
+        imagePullPolicy: Always # 每次Pod启动拉取镜像策略，三个选择 Always、Never、IfNotPresent
+        ports:
+        - containerPort: 8090

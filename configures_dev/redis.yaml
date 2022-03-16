@@ -1,0 +1,47 @@
+
+#redis:
+#  host: 127.0.0.1:6379
+#  pwd: "123456"
+#  database: "0"
+#  maxOpenConns: 3000
+#  maxIDleConns: 1000
+#  snap:
+#    host: 127.0.0.1:6379
+#    pwd: 123456
+#    database: "0"
+#  discover:
+#    host: 127.0.0.1:6379
+#    pwd: 123456
+#    database: "0"
+#  netcollect:
+#    host: 127.0.0.1:6379
+#    pwd: 123456
+#    database: "0"
+redis:
+  #公共redis配置信息,用于存取缓存，用户信息等数据
+  host: 172.22.50.25:6379
+  pwd: "cc"
+  sentinelPwd: ""
+  database: "0"
+  maxOpenConns: 3000
+  maxIDleConns: 1000
+  #以下几个redis配置为datacollection模块所需的配置,用于接收第三方提供的数据
+  #接收主机信息数据的redis
+  snap:
+    host: 172.22.50.25:6379
+    pwd: "cc"
+    sentinelPwd: ""
+    database: "0"
+  #接收模型实例数据的redis
+  discover:
+    host: 172.22.50.25:6379
+    pwd: "cc"
+    sentinelPwd: ""
+    database: "0"
+  #接受硬件数据的redis
+  netcollect:
+    host: 172.22.50.25:6379
+    pwd: "cc"
+    sentinelPwd: ""
+    database: "0"
+    

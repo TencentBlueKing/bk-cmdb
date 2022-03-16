@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  mongo1:
+    container_name: mongo1
+    image: harbor.dev.21vianet.com/cmdb/mongo:4.4.12
+    volumes:
+      - /home/taojun/mongors/data1:/data/db
+      - ./rs-init.sh:/scripts/rs-init.sh
+    networks:
+      - mongors-network
+    ports:
+      - 27021:27017
+    links:
+      - mongo2
+      - mongo3
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+  mongo2:
+    container_name: mongo2
+    image: harbor.dev.21vianet.com/cmdb/mongo:4.4.12
+    volumes:
+      - /home/taojun/mongors/data2:/data/db
+    networks:
+      - mongors-network
+    ports:
+      - 27022:27017
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+  mongo3:
+    container_name: mongo3
+    image: harbor.dev.21vianet.com/cmdb/mongo:4.4.12
+    volumes:
+      - /home/taojun/mongors/data3:/data/db
+    networks:
+      - mongors-network
+    ports:
+      - 27023:27017
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+
+networks:
+  mongors-network:
+    driver: bridge

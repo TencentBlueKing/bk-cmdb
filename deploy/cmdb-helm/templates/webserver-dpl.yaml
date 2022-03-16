@@ -1,0 +1,83 @@
+{{- if .Values.webserver.enabled }}
+apiVersion: {{ .Values.ApiVersion.Deployment }}
+kind: Deployment
+metadata:
+  name: cmdb
+  labels:
+    app: cmdb
+spec:
+  replicas: {{ .Values.webserver.replicas }}
+  selector:
+    matchLabels:
+      app: cmdb
+  template:
+    metadata:
+      labels:
+        app: cmdb
+      {{- with .Values.webserver.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.webserver.podAnnotations }}
+        {{ toYaml .Values.webserver.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      securityContext:
+        sysctls:
+        - name: net.ipv4.ip_local_port_range
+          value: "10240 50998"   
+      {{- if .Values.webserver.hostNetwork }}
+      hostNetwork: false
+      {{- end }}
+      dnsPolicy: {{ .Values.webserver.dnsPolicy }}
+      containers:
+      - name: cmdb
+        image: {{ .Values.webserver.image.repository }}:{{ .Values.webserver.image.tag }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.webserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.webserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        {{- if .Values.webserver.resources }}
+        resources:
+          {{ toYaml .Values.webserver.resources | indent 10 }}
+        {{- end }}
+
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.webserver.env }}
+          {{ toYaml .Values.webserver.env | indent 10 }}
+        {{- end }}
+
+        ports:
+        - containerPort: {{ .Values.webserver.port }}
+
+      {{- with .Values.webserver.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.webserver.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.webserver.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+{{- end }}

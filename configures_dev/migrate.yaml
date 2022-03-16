@@ -1,0 +1,56 @@
+
+#configServer:
+#  addrs: 127.0.0.1:2181
+#  usr: cc
+#  pwd: cc
+#registerServer:
+#  addrs: 127.0.0.1:2181
+#  usr: cc
+#  pwd: cc
+#mongodb:
+#  host: 127.0.0.1
+#  port: 27017
+#  usr: cc
+#  pwd: cc
+#  database: cmdb
+#  maxOpenConns: 5
+#  maxIdleConns: 1
+#  mechanism: SCRAM-SHA-1
+#  rsName: rs0
+#redis:
+#  host: 127.0.0.1:6379
+#  pwd: 123456
+#  database: "0"
+#  maxOpenConns: 5
+#  maxIDleConns: 1
+#confs:
+#  dir: /data/cmdb/cmdb_adminserver/configures/
+#errors:
+#  res: /data/cmdb/cmdb_adminserver/conf/errors
+#language:
+#  res: /data/cmdb/cmdb_adminserver/conf/language
+#auth:
+#  address: 127.0.0.1
+#  appCode: bk_cmdb
+#  appSecret: 123456
+
+# 配置中心
+configServer:
+  addrs: 172.22.50.25:2181
+  usr:
+  pwd:
+# 注册中心
+registerServer:
+  addrs: 172.22.50.25:2181
+  usr:
+  pwd:
+# 指定configures的路径，通过这个路径找到其他的配置文件
+confs:
+  dir: /data/work/go/src/configcenter/configures_dev
+# 指定errors的路径
+errors:
+  res: /data/work/go/src/configcenter/resources/errors
+# 指定language的路径
+language:
+  res: /data/work/go/src/configcenter/resources/language
+    
