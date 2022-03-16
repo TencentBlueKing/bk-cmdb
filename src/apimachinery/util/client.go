@@ -24,16 +24,16 @@ import (
 
 // NewClient create a new http client
 func NewClient(c *TLSClientConfig, conf ...ExtraClientConfig) (*http.Client, error) {
-	tlsConf := &tls.Config{
-		InsecureSkipVerify: true,
-	}
+	tlsConf := new(tls.Config)
 	if c != nil && len(c.CAFile) != 0 && len(c.CertFile) != 0 && len(c.KeyFile) != 0 {
 		var err error
 		tlsConf, err = ssl.ClientTLSConfVerity(c.CAFile, c.CertFile, c.KeyFile, c.Password)
 		if err != nil {
 			return nil, err
 		}
+	}
 
+	if c != nil {
 		tlsConf.InsecureSkipVerify = c.InsecureSkipVerify
 	}
 

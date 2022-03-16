@@ -174,7 +174,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		if auth.EnableAuthorize() {
 			blog.Info("enable auth center access.")
 
-			iamCli, err = iamcli.NewIAM(nil, process.Config.IAM, engine.Metric().Registry())
+			iamCli, err = iamcli.NewIAM(process.Config.IAM, engine.Metric().Registry())
 			if err != nil {
 				return fmt.Errorf("new iam client failed: %v", err)
 			}

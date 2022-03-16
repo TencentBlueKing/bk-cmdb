@@ -396,7 +396,7 @@ func (c *DataCollection) initModules() error {
 	iamCli := new(iam.IAM)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM(nil, c.config.Auth, c.engine.Metric().Registry())
+		iamCli, err = iam.NewIAM(c.config.Auth, c.engine.Metric().Registry())
 		if err != nil {
 			return fmt.Errorf("new iam client failed: %v", err)
 		}

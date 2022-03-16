@@ -37,20 +37,19 @@ type IAM struct {
 }
 
 // NewIAM new iam client
-func NewIAM(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer) (*IAM, error) {
-	blog.V(5).Infof("new iam with parameters tls: %+v, cfg: %+v", tls, cfg)
+func NewIAM(cfg AuthConfig, reg prometheus.Registerer) (*IAM, error) {
+	blog.V(5).Infof("new iam with parameters cfg: %+v", cfg)
 	if !auth.EnableAuthorize() {
 		return new(IAM), nil
 	}
 
-	if tls == nil {
-		config, err := util.NewTLSClientConfigFromConfig("authServer.authCenter.tls")
-		if err != nil {
-			blog.Infof("get authCenter.tls config error, err: %v", err)
-			return nil, err
-		}
-		tls = &config
+	var tls *util.TLSClientConfig
+	config, err := util.NewTLSClientConfigFromConfig("authServer.authCenter.tls")
+	if err != nil {
+		blog.Infof("get authCenter.tls config error, err: %v", err)
+		return nil, err
 	}
+	tls = &config
 
 	client, err := util.NewClient(tls)
 	if err != nil {
