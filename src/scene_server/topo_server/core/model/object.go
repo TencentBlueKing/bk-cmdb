@@ -491,46 +491,16 @@ func (o *object) Create() error {
 	return nil
 }
 
-func (o *object) isClassificationValid(data mapstr.MapStr) error {
-
-	if !data.Exists(metadata.ModelFieldObjCls) {
-		return nil
-	}
-
-	query := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{
-			metadata.ModelFieldObjCls: data[metadata.ModelFieldObjCls],
-		},
-	}
-	rsp, err := o.clientSet.CoreService().Model().ReadModelClassification(o.kit.Ctx, o.kit.Header, query)
-	if err != nil {
-		blog.Errorf("failed to read model classification, err: %v, rid: %s", err, o.kit.Rid)
-		return err
-	}
-	if rsp.Result != true {
-		blog.Errorf("failed to read model classification, code %v, err: %s, rid: %s", rsp.Code, rsp.ErrMsg, o.kit.Rid)
-		return rsp.CCError()
-	}
-	if len(rsp.Data.Info) <= 0 {
-		blog.Errorf("no model classification founded, err: %s, rid: %s",
-			o.kit.CCError.CCError(common.CCErrorModelClassificationNotFound), o.kit.Rid)
-		return o.kit.CCError.CCError(common.CCErrorModelClassificationNotFound)
-	}
-	return nil
-}
-
 func (o *object) Update(data mapstr.MapStr) error {
 
 	data.Remove(metadata.ModelFieldObjectID)
 	data.Remove(metadata.ModelFieldID)
+	data.Remove(metadata.ModelFieldObjCls)
 
-	if err := o.IsValid(true, data); err != nil {
+	if err := o.IsValid(true, data); nil != err {
 		return err
 	}
 
-	if err := o.isClassificationValid(data); err != nil {
-		return err
-	}
 	exists, err := o.IsExists()
 	if nil != err {
 		return err

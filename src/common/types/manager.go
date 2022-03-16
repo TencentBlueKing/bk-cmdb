@@ -19,8 +19,11 @@ var (
 
 // DiscoveryAllService 发现所有定义的服务
 func DiscoveryAllService() {
-	for name := range AllModule {
-		needDiscoveryServiceName[name] = struct{}{}
+	for name, b := range AllModule {
+		if b {
+			needDiscoveryServiceName[name] = struct{}{}
+		}
+
 	}
 }
 

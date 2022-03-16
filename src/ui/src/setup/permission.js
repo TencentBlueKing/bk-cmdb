@@ -1,7 +1,6 @@
 import cursor from '@/directives/cursor'
 import { IAM_ACTIONS } from '@/dictionary/iam-auth'
 import { $error } from '@/magicbox'
-import isEqual from 'lodash/isEqual'
 
 const SYSTEM_ID = 'bk_cmdb'
 
@@ -92,9 +91,7 @@ export const translateAuth = (auth) => {
           type: instances[pathIndex],
           id: String(path) // 实例的id
         }))
-        if (!relatedResource.instances.some(path => isEqual(path, viewFullPath))) {
-          relatedResource.instances.push(viewFullPath)
-        }
+        relatedResource.instances.push(viewFullPath)
       })
       action.related_resource_types.push(relatedResource)
     })

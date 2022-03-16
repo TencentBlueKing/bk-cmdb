@@ -823,8 +823,7 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 	}
 
 	if len(otherModuleIDs) > 0 {
-		moduleFilter := map[string]interface{}{common.BKModuleIDField: map[string]interface{}{common.BKDBIN:
-		otherModuleIDs}}
+		moduleFilter := map[string]interface{}{common.BKModuleIDField: map[string]interface{}{common.BKDBIN: otherModuleIDs}}
 		otherModuleMap, _, err := s.Logic.GetInstIDNameInfo(ctx.Kit, common.BKInnerObjIDModule, moduleFilter)
 		if err != nil {
 			blog.ErrorJSON("get module by filter(%s) failed, err: %s, rid: %s", moduleFilter, err, ctx.Kit.Rid)
@@ -1005,29 +1004,4 @@ func (s *Service) countTopoNodeHosts(ctx *rest.Contexts, bizID int64, option met
 	}
 
 	return hostCounts, nil
-}
-
-// ListServiceTemplateIDsByHost list service template id one by one about hostID
-func (s *Service) ListServiceTemplateIDsByHost(ctx *rest.Contexts) {
-
-	input := struct {
-		ID []int64 `json:"bk_host_id"`
-	}{}
-	if err := ctx.DecodeInto(&input); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if len(input.ID) > 200 {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommValExceedMaxFailed, common.BKHostIDField, 200))
-		return
-	}
-
-	rsp, err := s.Logic.ListServiceTemplateHostIDMap(ctx.Kit, input.ID)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntity(rsp)
 }

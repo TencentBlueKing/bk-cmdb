@@ -38,6 +38,8 @@ type Core interface {
 	AuditOperation() operation.AuditOperationInterface
 	UniqueOperation() operation.UniqueOperationInterface
 	SetTemplateOperation() settemplate.SetTemplate
+	// xxx add tt
+	TTOperation() operation.TTOperationInterface
 }
 
 type core struct {
@@ -55,10 +57,16 @@ type core struct {
 	identifier     operation.IdentifierOperationInterface
 	unique         operation.UniqueOperationInterface
 	setTemplate    settemplate.SetTemplate
+	// xxx add tt
+	tt operation.TTOperationInterface
 }
 
 // New create a logics manager
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager, languageIf language.CCLanguageIf) Core {
+
+	// xxx add tt
+	ttOperation := operation.NewTTOperation(client, authManager)
+
 	// create instances
 	attributeOperation := operation.NewAttributeOperation(client, authManager)
 	classificationOperation := operation.NewClassificationOperation(client, authManager)
@@ -77,6 +85,9 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 
 	targetModel := model.New(client, languageIf)
 	targetInst := inst.New(client)
+
+	// xxx add tt
+	ttOperation.SetProxy(targetModel, targetInst, associationOperation, objectOperation)
 
 	// set the operation
 	objectOperation.SetProxy(targetModel, targetInst, classificationOperation, associationOperation, instOperation, attributeOperation, groupOperation, unique)
@@ -107,7 +118,14 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		identifier:     identifier,
 		unique:         unique,
 		setTemplate:    setTemplate,
+		//
+		tt: ttOperation,
 	}
+}
+
+// xxx add tt
+func (c *core) TTOperation() operation.TTOperationInterface {
+	return c.tt
 }
 
 func (c *core) SetOperation() operation.SetOperationInterface {

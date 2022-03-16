@@ -234,6 +234,9 @@ func (s *Service) initResourceDirectory(web *restful.WebService) {
 }
 
 func (s *Service) initService(web *restful.WebService) {
+	// xxx add tt
+	s.init_tt(web)
+
 	s.initAssociation(web)
 	s.initAuditLog(web)
 	s.initBusiness(web)
@@ -250,7 +253,7 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initBusinessObjectAttribute(web)
 	s.initBusinessObjectUnique(web)
 	s.initBusinessObjectAttrGroup(web)
-	s.initBusinessAssociation(web)
+	s.initBusinessAssociation(web) //xxx find/associationtype
 	s.initBusinessGraphics(web)
 	s.initBusinessInst(web)
 

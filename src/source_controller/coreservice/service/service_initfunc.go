@@ -20,6 +20,17 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
+func (s *coreService) initTT(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model12/tt", Handler: s.SearchModelTT})
+
+	utility.AddToRestfulWebService(web)
+}
+
 func (s *coreService) initModelClassification(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.engine.CCErr,
@@ -401,9 +412,12 @@ func (s *coreService) initCommon(web *restful.WebService) {
 }
 
 func (s *coreService) initService(web *restful.WebService) {
+	// xxx add tt
+	s.initTT(web)
+
 	s.initModelClassification(web)
 	s.initModel(web)
-	s.initAssociationKind(web)
+	s.initAssociationKind(web) // xxx
 	s.initAttrUnique(web)
 	s.initModelAssociation(web)
 	s.initModelInstances(web)

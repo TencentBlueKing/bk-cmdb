@@ -117,6 +117,20 @@ func (m *model) ReadModelClassification(ctx context.Context, h http.Header, inpu
 	return
 }
 
+func (m *model) ReadTT(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelClassifitionResult, err error) {
+	resp = new(metadata.ReadModelClassifitionResult)
+	subPath := "/read/model12/tt"
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (m *model) CreateModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (resp *metadata.CreatedOneOptionResult, err error) {
 	resp = new(metadata.CreatedOneOptionResult)
 	subPath := "/create/model"

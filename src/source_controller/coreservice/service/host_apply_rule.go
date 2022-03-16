@@ -18,9 +18,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/storage/driver/mongodb"
 )
 
 func (s *coreService) CreateHostApplyRule(ctx *rest.Contexts) {
@@ -228,17 +226,7 @@ func (s *coreService) UpdateHostByHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
-	relationFilter := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: option.HostIDs}}
-	relations := make([]metadata.ModuleHost, 0)
-	err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(relationFilter).All(ctx.Kit.Ctx, &relations)
-	if err != nil {
-		blog.Errorf("find %s failed, filter: %s, err: %v, rid: %s", common.BKTableNameModuleHostConfig, relationFilter,
-			err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	result, err := s.core.HostApplyRuleOperation().RunHostApplyOnHosts(ctx.Kit, bizID, relations)
+	result, err := s.core.HostApplyRuleOperation().RunHostApplyOnHosts(ctx.Kit, bizID, option)
 	if err != nil {
 		blog.Errorf("UpdateHostByHostApplyRule failed, RunHostApplyOnHosts failed, option: %+v, err: %+v, rid: %s", option, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

@@ -35,6 +35,7 @@ func (lgc *Logics) SearchHost(kit *rest.Kit, data *metadata.HostCommonSearch, is
 	retHostInfo := &metadata.SearchHost{
 		Info: make([]mapstr.MapStr, 0),
 	}
+	// by core_server
 	err := searchHostInst.SearchHostByConds()
 	if err != nil {
 		return retHostInfo, err
@@ -705,7 +706,7 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 	if sh.paged {
 		query.Start = 0
 	}
-
+	// func gethosts /findmany/hosts/search
 	gResult, err := sh.lgc.CoreAPI.CoreService().Host().GetHosts(sh.ctx, sh.pheader, query)
 	if err != nil {
 		blog.Errorf("get hosts failed, err: %v, rid: %s", err, sh.ccRid)

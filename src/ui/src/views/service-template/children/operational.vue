@@ -251,7 +251,6 @@
     MENU_BUSINESS_SET_TEMPLATE
   } from '@/dictionary/menu-symbol'
   import Bus from '@/utils/bus'
-
   export default {
     components: {
       processTable,
@@ -534,7 +533,7 @@
           this.processList = data.info.map(template => ({
             process_id: template.id,
             ...template.property
-          })).sort((prev, next) => prev.process_id - next.process_id)
+          }))
         })
           .finally(() => {
             this.processLoading = false

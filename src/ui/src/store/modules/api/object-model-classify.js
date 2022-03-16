@@ -22,11 +22,7 @@ const getters = {
     const models = []
     state.classifications.forEach((classification) => {
       (classification.bk_objects || []).forEach((model) => {
-        models.push({
-          ...model,
-          bk_classification_name: classification.bk_classification_name,
-          bk_classification_id: classification.bk_classification_id
-        })
+        models.push(model)
       })
     })
     return models

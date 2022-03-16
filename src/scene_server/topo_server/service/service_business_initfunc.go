@@ -92,14 +92,9 @@ func (s *Service) initBusinessObjectAttrGroup(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/objectattgroup", Handler: s.CreateObjectGroup})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattgroup", Handler: s.UpdateObjectGroup})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/objectattgroup/{id}",
-		Handler: s.DeleteObjectGroup})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattgroupproperty",
-		Handler: s.UpdateObjectAttributeGroupProperty})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectattgroup/object/{bk_obj_id}",
-		Handler: s.SearchGroupByObject})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattgroup/groupindex",
-		Handler: s.ExchangeObjectGroupIndex})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/objectattgroup/{id}", Handler: s.DeleteObjectGroup})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattgroupproperty", Handler: s.UpdateObjectAttributeGroupProperty})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectattgroup/object/{bk_obj_id}", Handler: s.SearchGroupByObject})
 
 	utility.AddToRestfulWebService(web)
 }

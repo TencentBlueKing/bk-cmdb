@@ -37,8 +37,7 @@ type OperationDependence interface {
 }
 
 type HostApplyRuleDependence interface {
-	RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relations []metadata.ModuleHost) (metadata.MultipleHostApplyResult,
-		errors.CCErrorCoder)
+	RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder)
 }
 
 func New(dependence OperationDependence, hostApplyDependence HostApplyRuleDependence) *TransferManager {
@@ -53,7 +52,6 @@ func (manager *TransferManager) NewHostModuleTransfer(kit *rest.Kit, bizID int64
 	needAutoCreateSvcInst bool) *genericTransfer {
 	return &genericTransfer{
 		dependent:             manager.dependence,
-		hostApplyDependence:   manager.hostApplyDependence,
 		moduleIDArr:           moduleIDArr,
 		bizID:                 bizID,
 		isIncrement:           isIncr,
@@ -87,6 +85,15 @@ func (manager *TransferManager) TransferToInnerModule(kit *rest.Kit, input *meta
 		blog.Errorf("transfer module host relation failed, input: %v, hostID: %s, err:%v, rid:%s", input, transferErr,
 			kit.Rid)
 		return transferErr
+	}
+	updateHostOption := metadata.UpdateHostByHostApplyRuleOption{
+		HostIDs: input.HostID,
+	}
+
+	_, err = manager.hostApplyDependence.RunHostApplyOnHosts(kit, input.ApplicationID, updateHostOption)
+	if err != nil {
+		blog.Warnf("transfer hsot to inner module success, but run host apply on hosts failed, bizID: %d, option: %+v,"+
+			"err: %+v, rid: %s", input.ApplicationID, updateHostOption, err, kit.Rid)
 	}
 
 	return nil
@@ -130,6 +137,15 @@ func (manager *TransferManager) TransferToNormalModule(kit *rest.Kit, input *met
 	if err != nil {
 		blog.Errorf("transfer module host relation failed. input: %v, err: %v, rid: %s", input, err, kit.Rid)
 		return err
+	}
+
+	updateHostOption := metadata.UpdateHostByHostApplyRuleOption{
+		HostIDs: input.HostID,
+	}
+	_, err = manager.hostApplyDependence.RunHostApplyOnHosts(kit, input.ApplicationID, updateHostOption)
+	if err != nil {
+		blog.Warnf("transfer host to normal module success, but run host apply on hosts failed, bizID: %d, "+
+			"option: %+v, err: %+v, rid: %s", input.ApplicationID, updateHostOption, err, kit.Rid)
 	}
 
 	return nil
@@ -262,6 +278,16 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit,
 		blog.ErrorJSON("TransferToAnotherBusiness failed, clearLegacyPrivateField failed, "+
 			"hostID:%s, attributes:%s, err:%s, rid:%s", input.HostIDArr, legacyAttributes, err.Error(), kit.Rid)
 		// we should go on setting default value for new private field
+	}
+
+	updateHostOption := metadata.UpdateHostByHostApplyRuleOption{
+		HostIDs: input.HostIDArr,
+	}
+	if hostApplyResult, err := manager.hostApplyDependence.RunHostApplyOnHosts(kit,
+		input.DstApplicationID, updateHostOption); err != nil {
+		blog.Warnf("TransferToAnotherBusiness success, but RunHostApplyOnHosts failed, "+
+			"bizID: %d, option: %+v, hostApplyResult: %+v, err: %+v, rid: %s",
+			input.DstApplicationID, updateHostOption, hostApplyResult, err, kit.Rid)
 	}
 
 	return nil

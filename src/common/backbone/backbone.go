@@ -13,6 +13,7 @@
 package backbone
 
 import (
+	"configcenter/src/thirdparty/monitor"
 	"context"
 	"fmt"
 	"net/http"
@@ -33,8 +34,6 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/monitor"
-
 	"github.com/rs/xid"
 )
 
@@ -122,18 +121,21 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	if err := validateParameter(input); err != nil {
 		return nil, err
 	}
-
+	// 初始化 promethes指标项
 	metricService := metrics.NewService(metrics.Config{ProcessName: common.GetIdentification(), ProcessInstance: input.SrvInfo.Instance()})
 
 	common.SetServerInfo(input.SrvInfo)
+	// init zk
 	client, err := newSvcManagerClient(ctx, input.Regdiscv)
 	if err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
 	}
+	//zk watch all modules
 	serviceDiscovery, err := discovery.NewServiceDiscovery(client)
 	if err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
 	}
+	// zk register 可以将 服务注册进zk
 	disc, err := NewServiceRegister(client)
 	if err != nil {
 		return nil, fmt.Errorf("new service discover failed, err:%v", err)
@@ -144,6 +146,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		Burst:     2000,
 		TLSConfig: nil,
 	}
+	// 自身的配置
 	c, err := newConfig(ctx, input.SrvInfo, serviceDiscovery, apiMachineryConfig)
 	if err != nil {
 		return nil, err
@@ -179,6 +182,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	// get the real configuration center.
 	curentConfigCenter := cc.CurrentConfigCenter()
 
+	// xxx 读取zk配置  并同步到变量中，WATCH zk
 	err = cc.NewConfigCenter(ctx, curentConfigCenter, input.ConfigPath, handler)
 	if err != nil {
 		return nil, fmt.Errorf("new config center failed, err: %v", err)

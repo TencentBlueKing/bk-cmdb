@@ -196,8 +196,6 @@
           this.instState = { ...this.instState, ...values }
 
           this.loadingState = this.loadingState.filter(exist => exist !== property)
-
-          this.$emit('after-update')
         } catch (e) {
           console.error(e)
           this.loadingState = this.loadingState.filter(exist => exist !== property)

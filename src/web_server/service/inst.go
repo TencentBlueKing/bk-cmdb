@@ -49,8 +49,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 
 	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
 	if err != nil {
-		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(
-			common.CCErrCommJSONUnmarshalFailed).Error(), nil)
+		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
@@ -69,8 +68,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 	filePath := fmt.Sprintf("%s/importinsts-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
 	err = c.SaveUploadedFile(file, filePath)
 	if nil != err {
-		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail,
-			err.Error()).Error(), nil)
+		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
@@ -81,13 +79,12 @@ func (s *Service) ImportInst(c *gin.Context) {
 	}()
 	f, err := xlsx.OpenFile(filePath)
 	if nil != err {
-		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail,
-			err.Error()).Error(), nil)
+		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 
-	data, errCode, err := s.Logics.ImportInsts(context.Background(), f, objID, c.Request, defLang, modelBizID)
+	data, errCode, err := s.Logics.ImportInsts(context.Background(), f, objID, c.Request.Header, defLang, modelBizID)
 
 	if nil != err {
 		msg := getReturnStr(errCode, err.Error(), data)
@@ -100,7 +97,6 @@ func (s *Service) ImportInst(c *gin.Context) {
 
 // ExportInst export inst
 func (s *Service) ExportInst(c *gin.Context) {
-
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
 	webCommon.SetProxyHeader(c)
@@ -109,70 +105,71 @@ func (s *Service) ExportInst(c *gin.Context) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 	pheader := c.Request.Header
 
+	ownerID := c.Param(common.BKOwnerIDField)
+	objID := c.Param(common.BKObjIDField)
+	instIDStr := c.PostForm(common.BKInstIDField)
+	customFieldsStr := c.PostForm(common.ExportCustomFields)
+
 	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
 	if err != nil {
-		c.String(http.StatusOK, getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(
-			common.CCErrCommJSONUnmarshalFailed).Error(), nil))
+		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
+		c.String(http.StatusOK, string(msg))
 		return
 	}
 
-	objID := c.Param(common.BKObjIDField)
 	kvMap := mapstr.MapStr{}
-	instInfo, err := s.Logics.GetInstData(c.Param(common.BKOwnerIDField), objID, c.PostForm(common.BKInstIDField),
-		pheader, kvMap)
+	instInfo, err := s.Logics.GetInstData(ownerID, objID, instIDStr, pheader, kvMap)
 	if err != nil {
-		c.String(http.StatusOK, getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(
-			common.CCErrWebGetObjectFail, err.Error()).Error(), nil))
+		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
+		fmt.Println("return msg: ", msg)
+		c.String(http.StatusForbidden, msg)
 		return
 	}
 
-	customFields := logics.GetCustomFields(nil, c.PostForm(common.ExportCustomFields))
+	var file *xlsx.File
+
+	file = xlsx.NewFile()
+
+	customFields := logics.GetCustomFields(nil, customFieldsStr)
 	fields, err := s.Logics.GetObjFieldIDs(objID, nil, customFields, pheader, modelBizID,
 		common.HostAddMethodExcelDefaultIndex)
 	if err != nil {
-		blog.Errorf("get object:%s attribute field failed, err: %v, rid: %s", objID, err, rid)
-		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(
-			common.CCErrCommExcelTemplateFailed, objID).Error(), nil)))
+		blog.Errorf("export object instance, but get object:%s attribute field failed, err: %v, rid: %s", objID, err, rid)
+		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
 
 	usernameMap, propertyList, err := s.getUsernameMapWithPropertyList(c, objID, instInfo)
-	if err != nil {
+	if nil != err {
 		blog.Errorf("ExportInst failed, get username map and property list failed, err: %+v, rid: %s", err, rid)
-		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetUsernameMapFail, defErr.Errorf(
-			common.CCErrWebGetUsernameMapFail, objID).Error(), nil)))
+		reply := getReturnStr(common.CCErrWebGetUsernameMapFail, defErr.Errorf(common.CCErrWebGetUsernameMapFail, objID).Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
 	}
 
-	org, orgPropertyList, err := s.getDepartment(c, objID)
-	if err != nil {
-		blog.Errorf("get department map and property list failed, err: %+v, rid: %s", err, rid)
-		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetDepartmentMapFail, defErr.Errorf(
-			common.CCErrWebGetDepartmentMapFail, err.Error()).Error(), nil)))
-	}
-
-	file := xlsx.NewFile()
-	if err := s.Logics.BuildExcelFromData(ctx, objID, fields, nil, instInfo, file, pheader, modelBizID, usernameMap,
-		propertyList, org, orgPropertyList); err != nil {
+	err = s.Logics.BuildExcelFromData(ctx, objID, fields, nil, instInfo, file, pheader, modelBizID, usernameMap, propertyList)
+	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s, rid: %s", objID, err.Error(), rid)
-		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(
-			common.CCErrCommExcelTemplateFailed, objID).Error(), nil)))
+		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
-
 	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
-	if _, err = os.Stat(dirFileName); err != nil {
+	_, err = os.Stat(dirFileName)
+	if nil != err {
 		blog.Warnf("os.Stat failed, filename: %s, will retry with os.MkdirAll, err: %+v, rid: %s", dirFileName, err, rid)
 		if err := os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); err != nil {
 			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dirFileName, err, rid)
 		}
 	}
-
-	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano()))
+	fileName := fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano())
+	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
 	logics.ProductExcelCommentSheet(ctx, file, defLang)
-	if err = file.Save(dirFileName); err != nil {
+	err = file.Save(dirFileName)
+	if err != nil {
 		blog.Errorf("ExportInst save file error:%s, rid: %s", err.Error(), rid)
-		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(
-			common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)))
+		reply := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
 	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_export_inst_%s.xlsx", objID))

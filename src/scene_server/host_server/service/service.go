@@ -51,7 +51,7 @@ func (s *Service) WebService() *restful.Container {
 	}
 	api.Path("/host/v3").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
-	// init service actions
+	//xxx init service actions
 	s.initService(api)
 
 	container.Add(api)

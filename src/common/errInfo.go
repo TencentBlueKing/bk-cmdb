@@ -481,8 +481,6 @@ const (
 	CCErrorTopoForbiddenDeleteBuiltInBiz    = 1101111
 	CCErrorTopoForbiddenDeleteUnarchivedBiz = 1101112
 
-	CCErrorModelClassificationNotFound = 1101113
-
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
@@ -722,7 +720,6 @@ const (
 	CCErrWebUnknownLoginVersion         = 1111017
 	CCErrWebGetUsernameMapFail          = 1111018
 	CCErrWebHostCheckFail               = 1111019
-	CCErrWebGetDepartmentMapFail        = 1111020
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000

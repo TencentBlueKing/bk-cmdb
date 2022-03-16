@@ -13,15 +13,15 @@
 package service
 
 import (
+	"configcenter/src/common/errors"
+	"configcenter/src/common/rdapi"
 	"context"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
-	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/admin_server/app/options"
@@ -74,6 +74,7 @@ func (s *Service) WebService() *restful.Container {
 	}
 	api.Path("/migrate/v3")
 	api.Filter(s.Engine.Metric().RestfulMiddleWare)
+	// xxx 检查header 权限
 	api.Filter(rdapi.AllGlobalFilter(getErrFunc))
 	api.Produces(restful.MIME_JSON)
 
@@ -90,7 +91,6 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/specify/version/{distribution}/{ownerID}").To(s.migrateSpecifyVersion))
 	api.Route(api.POST("/migrate/config/refresh").To(s.refreshConfig))
 	api.Route(api.POST("/migrate/dataid").To(s.migrateDataID))
-	api.Route(api.POST("/migrate/old/dataid").To(s.migrateOldDataID))
 	api.Route(api.POST("/delete/auditlog").To(s.DeleteAuditLog))
 
 	container.Add(api)

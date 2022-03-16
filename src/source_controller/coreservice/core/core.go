@@ -354,7 +354,7 @@ type HostApplyRuleOperation interface {
 		[]metadata.Module, errors.CCErrorCoder)
 	BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, option metadata.BatchCreateOrUpdateApplyRuleOption) (
 		metadata.BatchCreateOrUpdateHostApplyRuleResult, errors.CCErrorCoder)
-	RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relations []metadata.ModuleHost) (
+	RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (
 		metadata.MultipleHostApplyResult, errors.CCErrorCoder)
 }
 

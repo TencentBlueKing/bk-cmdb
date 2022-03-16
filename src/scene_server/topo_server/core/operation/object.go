@@ -747,6 +747,7 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 	// remove unchangeable fields.
 	data.Remove(metadata.ModelFieldObjectID)
 	data.Remove(metadata.ModelFieldID)
+	data.Remove(metadata.ModelFieldObjCls)
 
 	// generate audit log of object attribute group.
 	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())

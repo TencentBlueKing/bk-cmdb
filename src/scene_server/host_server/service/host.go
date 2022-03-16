@@ -621,6 +621,7 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 	}
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	// xxx host 查询 需要core_server
 	host, err := s.Logic.SearchHost(ctx.Kit, body, false)
 	if err != nil {
 		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)

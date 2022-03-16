@@ -218,7 +218,7 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(kit *rest.Kit
 			Condition: cond.ToMapStr(),
 		}
 		resp, err := g.SearchModelAttributeGroupByCondition(kit, queryCond)
-		if err != nil {
+		if nil != err {
 			blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, err: %v", kit.Rid,
 				name, err)
 			return &metadata.UpdatedCount{}, err
@@ -228,7 +228,7 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(kit *rest.Kit
 				continue
 			}
 			_, exists, err := g.groupNameIsExists(kit, item.ObjectID, name, bizID)
-			if err != nil {
+			if nil != err {
 				blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, err: %v",
 					kit.Rid, name, err)
 				return &metadata.UpdatedCount{}, err
@@ -243,7 +243,7 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(kit *rest.Kit
 	cnt, err := g.update(kit, inputParam.Data, cond)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to update the data (%s) by the condition (%#v), err: %v", kit.Rid,
-			inputParam.Data, cond, err)
+			inputParam.Data, err)
 		return &metadata.UpdatedCount{}, err
 	}
 

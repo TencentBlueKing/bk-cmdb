@@ -42,6 +42,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	process := new(MigrateServer)
 	process.Config = new(options.Config)
+	//if os.Getenv("dev") == "true"{
+	//
+	//}
+	// xxx 读取 migrate.yaml 配置文件
 	if err := cc.SetMigrateFromFile(op.ServConf.ExConfig); err != nil {
 		return fmt.Errorf("parse config file error %s", err.Error())
 	}
@@ -113,6 +117,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	process.ConfigCenter = configures.NewConfCenter(ctx, engine.ServiceManageClient())
 
 	// adminserver conf not depend discovery
+	//xxx redis mongo common 配置写入zk
 	err = process.ConfigCenter.Start(
 		process.Config.Configures.Dir,
 		process.Config.Errors.Res,

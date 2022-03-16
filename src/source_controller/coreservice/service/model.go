@@ -13,6 +13,7 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -75,6 +76,68 @@ func (s *coreService) DeleteModelClassification(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntityWithError(s.core.ModelOperation().DeleteModelClassification(ctx.Kit, inputData))
+}
+
+type A struct {
+	A int `json:"a"`
+}
+
+func (s *coreService) SearchModelTT(ctx *rest.Contexts) {
+	//inputData := metadata.QueryCondition{}
+	//if err := ctx.DecodeInto(&inputData); nil != err {
+	//	ctx.RespAutoError(err)
+	//	return
+	//}
+	a := &A{}
+	ctx.Request.ReadEntity(a)
+	fmt.Printf("%+v\n", a)
+	//ctx.resp.WriteAsJson()
+	//dataResult, err := s.core.ModelOperation().SearchModelClassification(ctx.Kit, inputData)
+	//if nil != err {
+	//	ctx.RespEntityWithError(dataResult, err)
+	//	return
+	//}
+
+	info1 := metadata.Classification{
+		ID:                 1,
+		ClassificationID:   "1",
+		ClassificationName: "1",
+		ClassificationType: "1",
+		ClassificationIcon: "1",
+		OwnerID:            "1",
+	}
+	info2 := metadata.Classification{
+		ID:                 2,
+		ClassificationID:   "2",
+		ClassificationName: "2",
+		ClassificationType: "2",
+		ClassificationIcon: "2",
+		OwnerID:            "2",
+	}
+
+	dataResult := &metadata.QueryModelClassificationDataResult{
+		Info: []metadata.Classification{},
+	}
+	dataResult.Info = append(dataResult.Info, []metadata.Classification{info1, info2}...)
+	dataResult.Count = 2
+
+	//dataResult := make(map[string]interface{},0)
+	//dataResult = map[string]interface{}{"aa":"bb"}
+
+	// translate language
+	//lang := s.Language(ctx.Kit.Header)
+	//for index := range dataResult.Info {
+	//	defaultClassificationMap := map[string]bool{
+	//		"bk_host_manage":  true,
+	//		"bk_biz_topo":     true,
+	//		"bk_organization": true,
+	//		"bk_network":      true,
+	//	}
+	//	if defaultClassificationMap[dataResult.Info[index].ClassificationID] {
+	//		dataResult.Info[index].ClassificationName = s.TranslateClassificationName(lang, &dataResult.Info[index])
+	//	}
+	//}
+	ctx.RespEntity(dataResult)
 }
 
 func (s *coreService) SearchModelClassification(ctx *rest.Contexts) {

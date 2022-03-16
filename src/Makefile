@@ -22,7 +22,7 @@ linux:
 	@cd  $(SCRIPT_DIR) && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 bash ./build.sh
 	@cd $(SCRIPT_DIR) && python ./generate.py -t '$(BIN_PATH)' -i '${IMAGE}' -o '$(BIN_PATH)/docker'
 	@echo -e "\033[34mbuilding web... \033[0m"
-	@cd $(SOURCE_ROOT)/ui && bash ./build.sh ${NPM} ${BIN_PATH}
+#	@cd $(SOURCE_ROOT)/ui && bash ./build.sh ${NPM} ${BIN_PATH}
 
 .PHONY:server
 server:
@@ -51,7 +51,7 @@ debug:
 package:
 	rm -rf $(SOURCE_ROOT)/bin/pub/cmdb
 	mkdir -p $(SOURCE_ROOT)/bin/pub && cp -R $(BIN_PATH) ./bin/pub/cmdb
-	cd $(SOURCE_ROOT)/bin/pub && tar -zvcf cmdb.tar.gz cmdb
+	cd $(SOURCE_ROOT)/bin/pub && tar -zcf cmdb.tar.gz cmdb
 	@echo -e "\033[34mpackage success and store in $(SOURCE_ROOT)/bin/pub/cmdb.tar.gz\033[0m"
 
 .PHONY:enterprise

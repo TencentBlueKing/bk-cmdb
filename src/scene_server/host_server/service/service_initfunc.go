@@ -67,30 +67,17 @@ func (s *Service) initFindhost(web *restful.WebService) {
 		Language: s.Engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/module_relation/bk_biz_id/{bk_biz_id}",
-		Handler: s.FindModuleHostRelation})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/by_service_templates/biz/{bk_biz_id}",
-		Handler: s.FindHostsByServiceTemplates})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/by_set_templates/biz/{bk_biz_id}",
-		Handler: s.FindHostsBySetTemplates})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/list_resource_pool_hosts",
-		Handler: s.ListResourcePoolHosts})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/app/{appid}/list_hosts",
-		Handler: s.ListBizHosts})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/list_hosts_without_app",
-		Handler: s.ListHostsWithNoBiz})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/app/{bk_biz_id}/list_hosts_topo",
-		Handler: s.ListBizHostsTopo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/count_by_topo_node/bk_biz_id/{bk_biz_id}",
-		Handler: s.CountTopoNodeHosts})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/by_topo/biz/{bk_biz_id}",
-		Handler: s.FindHostsByTopo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/detail_topo",
-		Handler: s.ListHostDetailAndTopology})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/relation/with_topo",
-		Handler: s.GetHostRelationsWithMainlineTopoInstance})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/service_template",
-		Handler: s.ListServiceTemplateIDsByHost})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/module_relation/bk_biz_id/{bk_biz_id}", Handler: s.FindModuleHostRelation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/by_service_templates/biz/{bk_biz_id}", Handler: s.FindHostsByServiceTemplates})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/by_set_templates/biz/{bk_biz_id}", Handler: s.FindHostsBySetTemplates})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/list_resource_pool_hosts", Handler: s.ListResourcePoolHosts})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/app/{appid}/list_hosts", Handler: s.ListBizHosts})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/list_hosts_without_app", Handler: s.ListHostsWithNoBiz})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/app/{bk_biz_id}/list_hosts_topo", Handler: s.ListBizHostsTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/count_by_topo_node/bk_biz_id/{bk_biz_id}", Handler: s.CountTopoNodeHosts})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/by_topo/biz/{bk_biz_id}", Handler: s.FindHostsByTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/detail_topo", Handler: s.ListHostDetailAndTopology})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/relation/with_topo", Handler: s.GetHostRelationsWithMainlineTopoInstance})
 
 	utility.AddToRestfulWebService(web)
 

@@ -78,13 +78,6 @@ type UpdateGroupCondition struct {
 	} `json:"data"`
 }
 
-// ExchangeGroupIndex struct of object grouup ids for change object attribute group index
-type ExchangeGroupIndex struct {
-	Condition struct {
-		ID []int64 `field:"id" json:"id,omitempty"`
-	} `json:"condition"`
-}
-
 // QueryObjectAttributeWrapperResult query object attribute with association info result
 type QueryObjectAttributeWrapperResult struct {
 	BaseResp `json:",inline"`

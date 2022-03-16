@@ -51,7 +51,6 @@
 <script>
   import { processTableHeader } from '@/dictionary/table-header'
   import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
-
   export default {
     components: {
       ProcessBindInfoValue
@@ -105,6 +104,7 @@
           result._original_ = template
           return result
         })
+        list.sort((prev, next) => prev.process_id - next.process_id)
         return list
       }
     },

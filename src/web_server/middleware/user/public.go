@@ -46,7 +46,8 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	if common.LoginSystemMultiSupplierTrue == multipleOwner {
 		isMultiOwner = true
 	}
-
+	//xxx skip-login opensource 不同的 处理器
+	// init() 不同的认证方法 /data/work/go/src/configcenter/src/web_server/middleware/user/plugins/method
 	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
 	userInfo, loginSuccess = user.LoginUser(c, m.config.ConfigMap, isMultiOwner)
 

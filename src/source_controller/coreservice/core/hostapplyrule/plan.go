@@ -27,7 +27,6 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 
 	"github.com/google/go-cmp/cmp"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // GenerateApplyPlan 生成主机属性自动应用执行计划
@@ -163,89 +162,65 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 	return result, nil
 }
 
-// isRuleEqualOrNot: When the attribute type is "organization", the type obtained from the database is the database's
-// native primitive.A type. When converted to []interface{}, the type is int64, the type of propertyValue is
-// []interface{}, and the type of each element inside is json.Number, which needs to be unified before comparing.
-// The rest of the attribute types can be compared directly in non-organization scenarios.
-func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue interface{}) (bool, errors.CCErrorCoder) {
-
-	// in the transfer host scenario, the rule may be empty.
-	if expectValue == nil {
-		return false, nil
-	}
-	switch pType {
-	case common.FieldTypeOrganization:
-
-		value, ok := expectValue.(primitive.A)
-		if !ok {
-			return false, errors.New(common.CCErrCommUnexpectedFieldType, "expect value type error")
-		}
-		if _, ok := propertyValue.([]interface{}); !ok {
-			return false, errors.New(common.CCErrCommUnexpectedFieldType, "property value type error")
-		}
-
-		expectValueList := make([]int, 0)
-		for _, eValue := range []interface{}(value) {
-			value, err := util.GetIntByInterface(eValue)
-			if err != nil {
-				return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
-			}
-			expectValueList = append(expectValueList, value)
-		}
-
-		ruleValueList := make([]int, 0)
-		for _, rValue := range propertyValue.([]interface{}) {
-			value, err := util.GetIntByInterface(rValue)
-			if err != nil {
-				return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
-			}
-			ruleValueList = append(ruleValueList, value)
-		}
-		if cmp.Equal(expectValueList, ruleValueList) {
-			return true, nil
-		}
-
-	default:
-		if cmp.Equal(expectValue, propertyValue) {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-func preCheckRules(targetRules []metadata.HostApplyRule, attributeID int64, attrMap map[int64]metadata.Attribute,
-	rid string) (metadata.Attribute, bool) {
-	if len(targetRules) == 0 {
-		return metadata.Attribute{}, false
-	}
-	attribute, exist := attrMap[attributeID]
-	if !exist {
-		blog.Infof("attribute id field not exist, attributeID: %s, rid: %s", attributeID, rid)
-		return metadata.Attribute{}, false
-	}
-	if metadata.CheckAllowHostApplyOnField(attribute.PropertyID) == false {
-		return metadata.Attribute{}, false
-	}
-	return attribute, true
-}
-
-func getOneHostApplyPlan(kit *rest.Kit, attrRules map[int64][]metadata.HostApplyRule,
-	attrMap map[int64]metadata.Attribute, hostID int64, host map[string]interface{}, moduleIDs []int64,
-	resolverMap map[int64]interface{}) (metadata.OneHostApplyPlan, errors.CCErrorCoder) {
-
+func (p *hostApplyRule) generateOneHostApplyPlan(
+	kit *rest.Kit,
+	hostID int64,
+	host map[string]interface{},
+	moduleIDs []int64,
+	rules []metadata.HostApplyRule,
+	attributes []metadata.Attribute,
+	resolvers []metadata.HostApplyConflictResolver,
+) (metadata.OneHostApplyPlan, errors.CCErrorCoder) {
 	rid := util.ExtractRequestUserFromContext(kit.Ctx)
-	plan := metadata.OneHostApplyPlan{
-		HostID:         hostID,
-		ModuleIDs:      moduleIDs,
-		ExpectHost:     host,
-		ConflictFields: make([]metadata.HostApplyConflictField, 0),
-		UpdateFields:   make([]metadata.HostApplyUpdateField, 0),
+
+	resolverMap := make(map[int64]interface{})
+	for _, item := range resolvers {
+		if item.HostID != hostID {
+			continue
+		}
+		resolverMap[item.AttributeID] = item.PropertyValue
 	}
 
-	for attributeID, targetRules := range attrRules {
+	plan := metadata.OneHostApplyPlan{
+		HostID:                  hostID,
+		ModuleIDs:               moduleIDs,
+		ExpectHost:              host,
+		ConflictFields:          make([]metadata.HostApplyConflictField, 0),
+		UpdateFields:            make([]metadata.HostApplyUpdateField, 0),
+		UnresolvedConflictCount: 0,
+	}
 
-		attribute, need := preCheckRules(targetRules, attributeID, attrMap, rid)
-		if !need {
+	moduleIDSet := make(map[int64]bool)
+	for _, moduleID := range moduleIDs {
+		moduleIDSet[moduleID] = true
+	}
+	attributeRules := make(map[int64][]metadata.HostApplyRule)
+	for _, rule := range rules {
+		if _, exist := moduleIDSet[rule.ModuleID]; !exist {
+			continue
+		}
+		if _, exist := attributeRules[rule.AttributeID]; !exist {
+			attributeRules[rule.AttributeID] = make([]metadata.HostApplyRule, 0)
+		}
+		attributeRules[rule.AttributeID] = append(attributeRules[rule.AttributeID], rule)
+	}
+
+	attributeMap := make(map[int64]metadata.Attribute)
+	for _, attribute := range attributes {
+		attributeMap[attribute.ID] = attribute
+	}
+
+	// update host if conflicts not exist
+	for attributeID, targetRules := range attributeRules {
+		if len(targetRules) == 0 {
+			continue
+		}
+		attribute, exist := attributeMap[attributeID]
+		if !exist {
+			blog.Infof("generateOneHostApplyPlan attribute id filed not exist, attributeID: %s, rid: %s", attributeID, rid)
+			continue
+		}
+		if metadata.CheckAllowHostApplyOnField(attribute.PropertyID) == false {
 			continue
 		}
 		propertyIDField := attribute.PropertyID
@@ -254,23 +229,15 @@ func getOneHostApplyPlan(kit *rest.Kit, attrRules map[int64][]metadata.HostApply
 			originalValue = nil
 		}
 
+		// check conflicts
 		expectValue := originalValue
-
-		// check conflicts and if needChange
-		conflictedStillExist, needChange := false, false
-		// check if host needs to be changed by the host apply rules, if not, do not append the field to the update
-		// fields
+		conflictedStillExist := false
+		// checks if host needs to be changed by the apply rules, if not, do not append the field to the update fields
+		needChange := false
 		for _, rule := range targetRules {
-			isEqual, err := isRuleEqualOrNot(attribute.PropertyType, expectValue, rule.PropertyValue)
-			if err != nil {
-				blog.Errorf("compare rule value failed, err: %v, rid: %s", err, rid)
-				return metadata.OneHostApplyPlan{}, err
-			}
-
-			if isEqual {
+			if cmp.Equal(expectValue, rule.PropertyValue) {
 				continue
 			}
-
 			needChange = true
 			expectValue = rule.PropertyValue
 			conflictedStillExist = true
@@ -303,64 +270,20 @@ func getOneHostApplyPlan(kit *rest.Kit, attrRules map[int64][]metadata.HostApply
 		}
 		rawErr := attribute.Validate(kit.Ctx, expectValue, propertyIDField)
 		if rawErr.ErrCode != 0 {
-			blog.Errorf("attribute validate failed, attribute: %s, firstValue: %s, propertyID: %s, err: %s, rid: %s",
+			err := rawErr.ToCCError(kit.CCError)
+			blog.ErrorJSON("generateOneHostApplyPlan failed, Validate failed, "+
+				"attribute: %s, firstValue: %s, propertyIDField: %s, rawErr: %s, rid: %s",
 				attribute, expectValue, propertyIDField, rawErr, rid)
-			plan.ErrCode = rawErr.ToCCError(kit.CCError).GetCode()
-			plan.ErrMsg = rawErr.ToCCError(kit.CCError).Error()
+			plan.ErrCode = err.GetCode()
+			plan.ErrMsg = err.Error()
 			break
 		}
-
 		plan.ExpectHost[propertyIDField] = expectValue
 		plan.UpdateFields = append(plan.UpdateFields, metadata.HostApplyUpdateField{
 			AttributeID:   attributeID,
 			PropertyID:    propertyIDField,
 			PropertyValue: expectValue,
 		})
-	}
-	return plan, nil
-}
-
-func (p *hostApplyRule) generateOneHostApplyPlan(
-	kit *rest.Kit,
-	hostID int64,
-	host map[string]interface{},
-	moduleIDs []int64,
-	rules []metadata.HostApplyRule,
-	attributes []metadata.Attribute,
-	resolvers []metadata.HostApplyConflictResolver,
-) (metadata.OneHostApplyPlan, errors.CCErrorCoder) {
-
-	resolverMap := make(map[int64]interface{})
-	for _, item := range resolvers {
-		if item.HostID != hostID {
-			continue
-		}
-		resolverMap[item.AttributeID] = item.PropertyValue
-	}
-
-	moduleIDSet := make(map[int64]bool)
-	for _, moduleID := range moduleIDs {
-		moduleIDSet[moduleID] = true
-	}
-	attributeRules := make(map[int64][]metadata.HostApplyRule)
-	for _, rule := range rules {
-		if _, exist := moduleIDSet[rule.ModuleID]; !exist {
-			continue
-		}
-		if _, exist := attributeRules[rule.AttributeID]; !exist {
-			attributeRules[rule.AttributeID] = make([]metadata.HostApplyRule, 0)
-		}
-		attributeRules[rule.AttributeID] = append(attributeRules[rule.AttributeID], rule)
-	}
-
-	attributeMap := make(map[int64]metadata.Attribute)
-	for _, attribute := range attributes {
-		attributeMap[attribute.ID] = attribute
-	}
-
-	plan, err := getOneHostApplyPlan(kit, attributeRules, attributeMap, hostID, host, moduleIDs, resolverMap)
-	if err != nil {
-		return metadata.OneHostApplyPlan{}, err
 	}
 
 	sort.SliceStable(plan.UpdateFields, func(i, j int) bool {
@@ -374,37 +297,47 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 	return plan, nil
 }
 
-// RunHostApplyOnHosts run host apply rule on specified host
-func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relations []metadata.ModuleHost) (
-	metadata.MultipleHostApplyResult, errors.CCErrorCoder) {
-
-	result := metadata.MultipleHostApplyResult{HostResults: make([]metadata.HostApplyResult, 0)}
+func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder) {
+	rid := kit.Rid
+	result := metadata.MultipleHostApplyResult{
+		HostResults: make([]metadata.HostApplyResult, 0),
+	}
+	relationFilter := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: option.HostIDs,
+		},
+	}
+	relations := make([]metadata.ModuleHost, 0)
+	if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(relationFilter).All(kit.Ctx, &relations); err != nil {
+		blog.ErrorJSON("RunHostApplyOnHosts failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, relationFilter, err.Error(), rid)
+		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
 	moduleIDs := make([]int64, 0)
 	for _, item := range relations {
 		moduleIDs = append(moduleIDs, item.ModuleID)
 	}
 	modules := make([]metadata.ModuleInst, 0)
 	moduleFilter := map[string]interface{}{
-		common.BKModuleIDField:       map[string]interface{}{common.BKDBIN: moduleIDs},
+		common.BKModuleIDField: map[string]interface{}{
+			common.BKDBIN: moduleIDs,
+		},
 		common.HostApplyEnabledField: true,
 	}
-	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).Fields(common.BKModuleIDField).
-		All(kit.Ctx, &modules)
-	if err != nil {
-		blog.Errorf("search modules info failed, filter: %s, err: %v, rid: %s", moduleFilter, err, kit.Rid)
+	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules); err != nil {
+		blog.ErrorJSON("RunHostApplyOnHosts failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameBaseModule, moduleFilter, err.Error(), rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	enableModuleMap := make(map[int64]struct{})
+	enableModuleMap := make(map[int64]bool)
 	for _, module := range modules {
-		enableModuleMap[module.ModuleID] = struct{}{}
+		enableModuleMap[module.ModuleID] = true
 	}
 	host2Modules := make(map[int64][]int64)
 	for _, relation := range relations {
-		if _, exist := enableModuleMap[relation.ModuleID]; !exist {
-			continue
-		}
 		if _, exist := host2Modules[relation.HostID]; !exist {
 			host2Modules[relation.HostID] = make([]int64, 0)
+		}
+		if _, exist := enableModuleMap[relation.ModuleID]; !exist {
+			continue
 		}
 		// checkout host apply enabled status on module
 		host2Modules[relation.HostID] = append(host2Modules[relation.HostID], relation.ModuleID)
@@ -418,11 +351,13 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relation
 	}
 	listHostApplyRuleOption := metadata.ListHostApplyRuleOption{
 		ModuleIDs: moduleIDs,
-		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
 	}
 	rules, ccErr := p.ListHostApplyRule(kit, bizID, listHostApplyRuleOption)
 	if ccErr != nil {
-		blog.Errorf("list host apply rule failed, opt: %v, err: %v, rid: %s", listHostApplyRuleOption, ccErr, kit.Rid)
+		blog.ErrorJSON("RunHostApplyOnHosts failed, ListHostApplyRule failed, option: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, listHostApplyRuleOption, ccErr.Error(), rid)
 		return result, ccErr
 	}
 	planOption := metadata.HostApplyPlanOption{
@@ -431,73 +366,44 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relation
 	}
 	planResult, ccErr := p.GenerateApplyPlan(kit, bizID, planOption)
 	if ccErr != nil {
-		blog.ErrorJSON("generate apply plan failed, option: %v, err: %v, rid: %s", planOption, ccErr, kit.Rid)
+		blog.ErrorJSON("RunHostApplyOnHosts failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, relationFilter, ccErr.Error(), rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
+	for _, plan := range planResult.Plans {
+		applyResult := metadata.HostApplyResult{
+			ErrorContainer: metadata.ErrorContainer{},
+			HostID:         0,
+		}
+		updateData := plan.GetUpdateData()
+		if len(updateData) == 0 {
+			result.HostResults = append(result.HostResults, applyResult)
+			continue
+		}
 
-	result.HostResults = p.carryOutPlan(kit, planResult.Plans)
+		updateOption := metadata.UpdateOption{
+			Condition: map[string]interface{}{
+				common.BKHostIDField: plan.HostID,
+			},
+			Data: updateData,
+		}
+		_, err := p.dependence.UpdateModelInstance(kit, common.BKInnerObjIDHost, updateOption)
+		blog.Warnf("RunHostApplyOnHosts failed, UpdateModelInstance failed, hostID: %d, updateOption: %+v, err: %+v, rid: %s", plan.HostID, updateOption, err, rid)
+		if err != nil {
+			ccErr, ok := err.(errors.CCErrorCoder)
+			if ok {
+				applyResult.SetError(ccErr)
+			} else {
+				ccErr := kit.CCError.CCError(common.CCErrHostUpdateFail)
+				applyResult.SetError(ccErr)
+			}
+		}
+		result.HostResults = append(result.HostResults, applyResult)
+	}
+
 	for _, hostResult := range result.HostResults {
 		if ccErr := hostResult.GetError(); ccErr != nil {
 			result.SetError(ccErr)
-			break
 		}
 	}
 	return result, result.GetError()
-}
-
-type updateHostOption struct {
-	hostIDs []int64
-	data    map[string]interface{}
-}
-
-func (p *hostApplyRule) carryOutPlan(kit *rest.Kit, plans []metadata.OneHostApplyPlan) []metadata.HostApplyResult {
-	hostResults := make([]metadata.HostApplyResult, 0)
-
-	// group hosts with the same host apply update data together, updateDataMap key is the json format of update data
-	updateDataMap := make(map[string]*updateHostOption)
-	for _, plan := range plans {
-		if len(plan.UpdateFields) == 0 {
-			hostResults = append(hostResults, metadata.HostApplyResult{HostID: plan.HostID})
-			continue
-		}
-
-		dataStr := plan.GetUpdateDataStr()
-		if _, exists := updateDataMap[dataStr]; !exists {
-			updateDataMap[dataStr] = &updateHostOption{
-				hostIDs: make([]int64, 0),
-				data:    plan.GetUpdateData(),
-			}
-		}
-		updateDataMap[dataStr].hostIDs = append(updateDataMap[dataStr].hostIDs, plan.HostID)
-	}
-
-	// batch update the hosts with the same update data together to improve performance
-	for _, updateOpt := range updateDataMap {
-		updateOption := metadata.UpdateOption{
-			Data: updateOpt.data,
-			Condition: map[string]interface{}{
-				common.BKHostIDField: map[string]interface{}{common.BKDBIN: updateOpt.hostIDs},
-			},
-		}
-
-		if _, err := p.dependence.UpdateModelInstance(kit, common.BKInnerObjIDHost, updateOption); err != nil {
-			blog.Warnf("update host failed, updateOption: %+v, err: %v, rid: %s", updateOption, err, kit.Rid)
-			ccErr, ok := err.(errors.CCErrorCoder)
-			if !ok {
-				ccErr = kit.CCError.CCError(common.CCErrHostUpdateFail)
-			}
-			applyResult := metadata.HostApplyResult{}
-			applyResult.SetError(ccErr)
-			for _, hostID := range updateOpt.hostIDs {
-				applyResult.HostID = hostID
-				hostResults = append(hostResults, applyResult)
-			}
-			continue
-		}
-		for _, hostID := range updateOpt.hostIDs {
-			hostResults = append(hostResults, metadata.HostApplyResult{HostID: hostID})
-		}
-	}
-
-	return hostResults
 }
