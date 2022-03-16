@@ -70,6 +70,8 @@ const (
 	MainlineInstance CursorType = "mainline_instance"
 	// InstAsst specified for instance association event watch
 	InstAsst CursorType = "inst_asst"
+	// BizSetRelation a mixed event type containing biz set & biz events, which are converted to their relation events
+	BizSetRelation CursorType = "biz_set_relation"
 )
 
 func (ct CursorType) ToInt() int {
@@ -100,6 +102,8 @@ func (ct CursorType) ToInt() int {
 		return 13
 	case BizSet:
 		return 14
+	case BizSetRelation:
+		return 15
 	default:
 		return -1
 	}
@@ -133,6 +137,8 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = InstAsst
 	case 14:
 		*ct = BizSet
+	case 15:
+		*ct = BizSetRelation
 	default:
 		*ct = UnknownType
 	}
@@ -141,7 +147,7 @@ func (ct *CursorType) ParseInt(typ int) {
 // ListCursorTypes returns all support CursorTypes.
 func ListCursorTypes() []CursorType {
 	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase, Process, ProcessInstanceRelation,
-		HostIdentifier, MainlineInstance, InstAsst, BizSet}
+		HostIdentifier, MainlineInstance, InstAsst, BizSet, BizSetRelation}
 }
 
 // ListEventCallbackCursorTypes returns all support CursorTypes for event callback.
