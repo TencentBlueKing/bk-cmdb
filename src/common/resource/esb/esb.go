@@ -35,6 +35,7 @@ func EsbClient() esbserver.EsbClientInterface {
 	return esbClient
 }
 
+// ParseEsbConfig parse esb config
 func ParseEsbConfig() (*esbutil.EsbConfig, errors.CCErrorCoder) {
 	var err error
 	esbAddr, err := cc.String("esb.addr")
