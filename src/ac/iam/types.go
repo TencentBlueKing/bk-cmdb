@@ -295,7 +295,7 @@ const (
 
 	CreateBizSet ActionID = "create_business_set"
 	EditBizSet   ActionID = "edit_business_set"
-	DeleteBizSet ActionID = "archive_business_set"
+	DeleteBizSet ActionID = "delete_business_set"
 	ViewBizSet   ActionID = "view_business_set"
 	AccessBizSet ActionID = "access_business_set"
 
