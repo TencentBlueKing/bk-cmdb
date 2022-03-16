@@ -192,6 +192,22 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 			continue
 		}
 
+		if key.Collection() == event.BizSetRelationKey.Collection() {
+			// biz set relation's watch token is generated in the same way with the host identity's watch token
+			data := mapstr.MapStr{
+				"_id":                        key.Collection(),
+				common.BKTableNameBaseApp:    watch.LastChainNodeData{Coll: common.BKTableNameBaseApp},
+				common.BKTableNameBaseBizSet: watch.LastChainNodeData{Coll: common.BKTableNameBaseBizSet},
+				common.BKFieldID:             0,
+				common.BKTokenField:          "",
+			}
+			if err := s.watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
+				blog.Errorf("init last biz set relation watch token failed, err: %v, data: %+v", err, data)
+				return err
+			}
+			continue
+		}
+
 		data := watch.LastChainNodeData{
 			Coll:  key.Collection(),
 			Token: "",

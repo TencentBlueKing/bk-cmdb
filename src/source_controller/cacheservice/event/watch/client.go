@@ -105,33 +105,47 @@ func (c *Client) getEarliestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNod
 func (c *Client) getEventDetail(kit *rest.Kit, node *watch.ChainNode, fields []string, key event.Key) (*string,
 	bool, error) {
 
-	if key.Collection() == event.HostIdentityKey.Collection() {
+	coll := key.Collection()
+	switch coll {
+	case event.HostIdentityKey.Collection():
 		details, err := c.getHostIdentityEventDetailWithNodes(kit, []*watch.ChainNode{node})
 		if err != nil {
 			return nil, false, err
 		}
+		return getFirstEventDetail(details)
 
-		if len(details) == 0 {
-			empty := ""
-			return &empty, false, nil
-		}
-
-		js, err := json.Marshal(details[0].Detail)
+	case event.BizSetRelationKey.Collection():
+		details, err := c.getBizSetRelationEventDetailWithNodes(kit, []*watch.ChainNode{node})
 		if err != nil {
 			return nil, false, err
 		}
-		str := string(js)
-		return &str, true, nil
+		return getFirstEventDetail(details)
+
+	default:
+		detail, err := c.getEventDetailFromRedis(kit, node.Cursor, fields, key)
+		if err == nil {
+			return detail, true, nil
+		}
+
+		blog.Errorf("get event detail from redis failed, will get from db directly, err: %v, rid: %s", err, kit.Rid)
+
+		return c.getEventDetailFromMongo(kit, node, fields, key)
+	}
+}
+
+// getFirstEventDetail get first event detail from event details, used to parse batch event detail result of one event
+func getFirstEventDetail(details []*watch.WatchEventDetail) (*string, bool, error) {
+	if len(details) == 0 {
+		empty := ""
+		return &empty, false, nil
 	}
 
-	detail, err := c.getEventDetailFromRedis(kit, node.Cursor, fields, key)
-	if err == nil {
-		return detail, true, nil
+	js, err := json.Marshal(details[0].Detail)
+	if err != nil {
+		return nil, false, err
 	}
-
-	blog.Errorf("get event detail from redis failed, will get from db directly, err: %v, rid: %s", err, kit.Rid)
-
-	return c.getEventDetailFromMongo(kit, node, fields, key)
+	str := string(js)
+	return &str, true, nil
 }
 
 // getEventDetailFromRedis get event detail with the needed fields by cursor from redis
