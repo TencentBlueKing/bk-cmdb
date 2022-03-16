@@ -37,7 +37,7 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		return err
 	}
 	if err = changeModelClassification(ctx, db); err != nil {
-		blog.Errorf("upgrade y3.10.202203021455 change default classification type failed, err: %v", err)
+		blog.Errorf("upgrade y3.10.202203021455 change model classification type failed, err: %v", err)
 		return err
 	}
 	blog.Infof("upgrade y3.10.202203021455 add default classification success")

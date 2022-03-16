@@ -448,6 +448,7 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 
 	return results, nil
 }
+
 func (o *object) isClassificationValid(kit *rest.Kit, data mapstr.MapStr) error {
 
 	if !data.Exists(metadata.ModelFieldObjCls) {
