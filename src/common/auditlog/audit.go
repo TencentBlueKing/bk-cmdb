@@ -30,9 +30,8 @@ type audit struct {
 	clientSet coreservice.CoreServiceClientInterface
 }
 
-func (a *audit) SaveAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) error {
-	_, err := a.clientSet.Audit().SaveAuditLog(kit.Ctx, kit.Header, logs...)
-	return err
+func (a *audit) SaveAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) errors.CCErrorCoder {
+	return a.clientSet.Audit().SaveAuditLog(kit.Ctx, kit.Header, logs...)
 }
 
 func (a *audit) getInstByCond(kit *rest.Kit, objID string, condition map[string]interface{}, fields []string) (

@@ -14,6 +14,7 @@ package transfer
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
@@ -452,7 +453,7 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 		}
 	}
 	instances := make([]metadata.ServiceInstance, 0)
-	err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Fields(common.BKFieldID).All(kit.Ctx, &instances)
+	err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).All(kit.Ctx, &instances)
 	if err != nil {
 		blog.ErrorJSON("removeHostServiceInstance failed, get service instance IDs failed, err: %s, filter: %s, rid: %s", err, serviceInstanceFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -464,6 +465,9 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 	for _, instance := range instances {
 		serviceInstanceIDs = append(serviceInstanceIDs, instance.ID)
 	}
+
+	audit := auditlog.NewSvcInstAuditGenerator()
+	audit.WithServiceInstance(instances)
 
 	// get all process IDs of the service instances to be removed
 	processRelationFilter := map[string]interface{}{
@@ -493,6 +497,32 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 				common.BKDBIN: processIDs,
 			},
 		}
+
+		// generate process audit log for host transfer, use a new kit to keep it out of the txn
+		auditKit := kit.NewKit()
+		processes := make([]mapstr.MapStr, 0)
+		err := mongodb.Client().Table(common.BKTableNameBaseProcess).Find(processFilter).All(auditKit.Ctx, &processes)
+		if err != nil {
+			blog.Errorf("get process instances failed, filter: %+v, err: %v, rid: %s", processFilter, err, auditKit.Rid)
+			return auditKit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+		}
+
+		procMap := make(map[int64]mapstr.MapStr)
+		for _, proc := range processes {
+			procID, err := util.GetInt64ByInterface(proc[common.BKProcessIDField])
+			if err != nil {
+				blog.ErrorJSON("get process(%+v) id failed, err: %v, rid: %s", proc, err, auditKit.Rid)
+				return auditKit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessIDField)
+			}
+			procMap[procID] = proc
+		}
+
+		genAuditParam := auditlog.NewGenerateAuditCommonParameter(auditKit, metadata.AuditDelete)
+		if err := audit.WithProc(genAuditParam, processes, relations); err != nil {
+			return err
+		}
+
+		// delete processes
 		if err := mongodb.Client().Table(common.BKTableNameBaseProcess).Delete(kit.Ctx, processFilter); nil != err {
 			blog.Errorf("removeHostServiceInstance failed, delete process instances failed, err: %s, filter: %s, rid: %s", err, processFilter, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
@@ -509,6 +539,15 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 		blog.Errorf("removeHostServiceInstance failed, delete service instances failed, err: %s, filter: %s, rid: %s", err, serviceInstanceIDFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
+
+	// generate and save service instance audit logs for host transfer, use a new kit to keep it out of the txn
+	auditKit := kit.NewKit()
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(auditKit, metadata.AuditDelete)
+	auditLogs := audit.GenerateAuditLog(generateAuditParameter)
+	if err := t.dependent.CreateAuditLogDependence(auditKit, auditLogs...); err != nil {
+		return kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
+	}
+
 	return nil
 }
 
