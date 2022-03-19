@@ -234,6 +234,12 @@
         loading: true
       }
     },
+    provide() {
+      return {
+        getModuleName: this.getModuleName,
+        getModulePath: this.getModulePath
+      }
+    },
     computed: {
       ...mapGetters('objectBiz', ['bizId', 'currentBusiness']),
       ...mapGetters('businessHost', [
@@ -691,7 +697,7 @@
           if (!result) {
             const failList = []
             const successList = []
-            data.forEach((item) => {
+            data?.forEach((item) => {
               if (item.code !== 0) {
                 failList.push(item)
               } else {

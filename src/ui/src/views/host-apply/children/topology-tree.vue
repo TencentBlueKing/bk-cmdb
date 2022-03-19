@@ -159,15 +159,33 @@
       async handleSearch(params) {
         try {
           if (params.query_filter.rules.length) {
-            const data = await this.$store.dispatch('hostApply/searchNode', {
-              bizId: this.business,
-              params,
-              config: {
-                requestId: this.request.searchNode
+            const keywordRuleIndex = params.query_filter.rules.findIndex(item => item.field === 'keyword')
+
+            if (keywordRuleIndex === -1) {
+              // 不存在关键字完全采用接口搜索
+              const data = await this.searchNode(params)
+              this.$refs.tree.filter({ remote: data })
+            } else {
+              // 先取出关键字的参数值
+              const keyword = params.query_filter.rules[keywordRuleIndex]?.value
+
+              // 接口搜索需要去掉keyword参数
+              params.query_filter.rules.splice(keywordRuleIndex, 1)
+
+              // 两者都存在，混合搜索
+              if (params.query_filter.rules.length) {
+                const data = await this.searchNode(params)
+                this.$refs.tree.filter({
+                  keyword,
+                  remote: data,
+                })
+              } else {
+                // 仅存在关键字搜索
+                this.$refs.tree.filter({ keyword })
               }
-            })
-            this.$refs.tree.filter(data)
+            }
           } else {
+            // 清空搜索
             this.$refs.tree.filter()
           }
           if (this.checked.length) {
@@ -177,9 +195,32 @@
           console.error(e)
         }
       },
-      filterMethod(remoteData, node) {
+      searchNode(params) {
+        return this.$store.dispatch('hostApply/searchNode', {
+          bizId: this.business,
+          params,
+          config: {
+            requestId: this.request.searchNode
+          }
+        })
+      },
+      filterMethod({ remote: remoteData, keyword }, node) {
+        // eslint-disable-next-line newline-per-chained-call
+        const keywordFilter = (keyword, node) => String(node.name).toLowerCase().indexOf(keyword) > -1
         // eslint-disable-next-line max-len
-        return remoteData.some(datum => datum.bk_inst_id === node.data.bk_inst_id && datum.bk_obj_id === node.data.bk_obj_id)
+        const remoteFilter = (remoteData, node) => remoteData.some(item => item.bk_inst_id === node.data.bk_inst_id && item.bk_obj_id === node.data.bk_obj_id)
+
+        if (remoteData && keyword) {
+          return keywordFilter(keyword, node) && remoteFilter(remoteData, node)
+        }
+
+        if (remoteData) {
+          return remoteFilter(remoteData, node)
+        }
+
+        if (keyword) {
+          return keywordFilter(keyword, node)
+        }
       },
       setDefaultState(data) {
         this.$refs.tree.setData(data)

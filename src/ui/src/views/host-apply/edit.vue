@@ -3,8 +3,7 @@
     <component
       :is="currentView"
       :module-ids="moduleIds"
-      :action="action"
-    >
+      :action="action">
     </component>
   </div>
 </template>
@@ -26,6 +25,12 @@
       return {
         currentView: '',
         moduleMap: {}
+      }
+    },
+    provide() {
+      return {
+        getModuleName: this.getModuleName,
+        getModulePath: this.getModulePath
       }
     },
     computed: {
@@ -110,7 +115,7 @@
 </script>
 
 <style lang="scss" scoped>
-    .apply-edit {
-        padding: 0 20px;
-    }
+  .apply-edit {
+    padding: 0;
+  }
 </style>

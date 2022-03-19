@@ -3,6 +3,7 @@
     <property-confirm-table
       ref="propertyConfirmTable"
       :list="table.list"
+      :max-height="$APP.height - 220"
       :total="table.total">
     </property-confirm-table>
     <div class="bottom-actionbar">
@@ -16,30 +17,22 @@
             {{$t('应用')}}
           </bk-button>
         </cmdb-auth>
+        <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
       </div>
     </div>
-    <apply-status-modal
-      ref="applyStatusModal"
-      :request="applyRequest"
-      @return="handleStatusModalBack"
-      @view-host="handleViewHost"
-      @view-failed="handleViewFailed">
-    </apply-status-modal>
   </div>
 </template>
 
 <script>
   import { mapGetters, mapActions } from 'vuex'
   import propertyConfirmTable from '@/components/host-apply/property-confirm-table'
-  import applyStatusModal from './children/apply-status'
   import {
-    MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_BUSINESS_HOST_APPLY,
-    MENU_BUSINESS_HOST_APPLY_FAILED
+    MENU_BUSINESS_HOST_APPLY_RUN
   } from '@/dictionary/menu-symbol'
+
   export default {
     components: {
-      applyStatusModal,
       propertyConfirmTable
     },
     data() {
@@ -54,14 +47,8 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      moduleIds() {
-        const { mid } = this.$route.query
-        let moduleIds = []
-        if (mid) {
-          moduleIds = String(mid).split(',')
-            .map(id => Number(id))
-        }
-        return moduleIds
+      moduleId() {
+        return Number(this.$route.query.mid)
       }
     },
     created() {
@@ -70,21 +57,21 @@
     },
     methods: {
       ...mapActions('hostApply', [
-        'getApplyPreview',
-        'runApply'
+        'getApplyPreview'
       ]),
       async initData() {
         try {
           const previewData = await this.getApplyPreview({
-            bizId: this.bizId,
-            params: { bk_module_ids: this.moduleIds },
+            params: {
+              bk_biz_id: this.bizId,
+              bk_module_ids: [this.moduleId]
+            },
             config: {
               requestId: 'getHostApplyPreview'
             }
           })
-          const conflictList = (previewData.plans || []).filter(item => item.unresolved_conflict_count > 0)
-          this.table.list = conflictList
-          this.table.total = previewData.unresolved_conflict_count
+          this.table.list = previewData.plans ?? []
+          this.table.total = previewData.count
         } catch (e) {
           this.applyButtonDisabled = true
           console.error(e)
@@ -93,69 +80,47 @@
       setBreadcrumbs() {
         this.$store.commit('setTitle', this.$t('策略失效主机'))
       },
-      goBack() {
-        this.$routerActions.redirect({
-          name: MENU_BUSINESS_HOST_APPLY
-        })
-      },
-      postApply() {
-        const { conflictResolveResult } = this.$refs.propertyConfirmTable
-        const conflictResolvers = []
-        Object.keys(conflictResolveResult).forEach((key) => {
-          const propertyList = conflictResolveResult[key]
-          propertyList.forEach((property) => {
-            conflictResolvers.push({
-              bk_host_id: Number(key),
-              bk_attribute_id: property.id,
-              // eslint-disable-next-line no-underscore-dangle
-              bk_property_value: property.__extra__.value
-            })
-          })
-        })
-
-        this.applyRequest = this.runApply({
-          bizId: this.bizId,
-          params: {
-            bk_module_ids: this.moduleIds,
-            conflict_resolvers: conflictResolvers
-          },
-          config: {
-            requestId: 'runHostApply'
+      handleApply() {
+        this.$bkInfo({
+          title: this.$t('确认应用'),
+          subTitle: this.$t('自动应用的主机属性统一修改为目标值确认'),
+          confirmFn: () => {
+            this.gotoApply()
           }
         })
-        this.$refs.applyStatusModal.show()
       },
-      async handleApply() {
-        const allResolved = this.$refs.propertyConfirmTable.list.every(item => item.unresolved_conflict_count === 0)
-        if (allResolved) {
-          this.postApply()
-        } else {
-          this.$bkInfo({
-            title: this.$t('确认应用'),
-            subTitle: this.$t('您还有无法自动应用的主机属性需确认'),
-            confirmFn: () => {
-              this.postApply()
-            }
-          })
+      async gotoApply() {
+        // 失效主机只有单模块场景，需要更新的字段每一条都是一致的
+        const updateFields = this.table.list[0].update_fields
+
+        // 合入是否更新失效主机选项值
+        const propertyConfig = {
+          changed: true,
+          // bk_module_ids: [this.moduleId],
+          additional_rules: updateFields.map(item => ({
+            bk_attribute_id: item.bk_attribute_id,
+            bk_module_id: this.moduleId,
+            bk_property_value: item.bk_property_value
+          })),
+          bk_host_ids: this.table.list.map(item => item.bk_host_id)
         }
-      },
-      handleStatusModalBack() {
-        this.goBack()
-      },
-      handleViewHost() {
+
+        // 更新属性配置，用于后续应用执行
+        this.$store.commit('hostApply/setPropertyConfig', propertyConfig)
+
         this.$routerActions.redirect({
-          name: MENU_BUSINESS_HOST_AND_SERVICE,
+          name: MENU_BUSINESS_HOST_APPLY_RUN,
           query: {
-            node: `module-${this.moduleIds[0]}`
-          },
-          history: true
+            from: 'conflict-list'
+          }
         })
       },
-      handleViewFailed() {
+      handleCancel() {
         this.$routerActions.redirect({
-          name: MENU_BUSINESS_HOST_APPLY_FAILED,
-          query: this.$route.query,
-          history: true
+          name: MENU_BUSINESS_HOST_APPLY,
+          query: {
+            module: this.moduleId
+          }
         })
       }
     }
@@ -163,20 +128,20 @@
 </script>
 
 <style lang="scss" scoped>
-    .conflict-list {
-        padding: 15px 20px 0;
-    }
+  .conflict-list {
+    padding: 15px 20px 0;
+  }
 
-    .bottom-actionbar {
-        width: 100%;
-        height: 50px;
-        z-index: 100;
+  .bottom-actionbar {
+    width: 100%;
+    height: 50px;
+    z-index: 100;
 
-        .actionbar-inner {
-            padding: 20px 0 0 0;
-            .bk-button {
-                min-width: 86px;
-            }
-        }
+    .actionbar-inner {
+      padding: 20px 0 0 0;
+      .bk-button {
+        min-width: 86px;
+      }
     }
+  }
 </style>

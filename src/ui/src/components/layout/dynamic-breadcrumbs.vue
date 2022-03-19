@@ -1,6 +1,6 @@
 <template>
   <div class="breadcrumbs-layout clearfix">
-    <i class="icon icon-cc-arrow fl" v-if="from && current" @click="handleClick"></i>
+    <i class="icon icon-cc-arrow fl" v-if="!hideBack && from && current" @click="handleClick"></i>
     <h1 class="current fl">{{current}}</h1>
   </div>
 </template>
@@ -15,6 +15,9 @@
       current() {
         const menuI18n = this.$route.meta.menu.i18n && this.$t(this.$route.meta.menu.i18n)
         return this.title || this.$route.meta.title || menuI18n
+      },
+      hideBack() {
+        return (this.$route.meta.layout || {}).breadcrumbs?.back === false
       },
       defaultFrom() {
         const menu = this.$route.meta.menu || {}

@@ -205,7 +205,6 @@
       Bus.$on('topologyTree/expandChange', (lastNodeLevel) => {
         const { offsetWidth } = $resizeLayoutEl
         const visibleWidth = (lastNodeLevel + 2) * 30 + 100
-        console.log(visibleWidth)
         if (offsetWidth < visibleWidth) {
           this.sidebarWidth = visibleWidth
         }
@@ -226,8 +225,8 @@
           this.checkedPropertyIdList = this.initRuleList.map(item => item.bk_attribute_id)
 
           if (this.hasRule && this.applyEnabled) {
-            const previewData = await this.getApplyPreview()
-            this.conflictNum = previewData.unresolved_conflict_count
+            const { count } = await this.getConflictCount()
+            this.conflictNum = count
           }
         } catch (e) {
           console.log(e)
@@ -244,14 +243,11 @@
           }
         })
       },
-      getApplyPreview() {
-        return this.$store.dispatch('hostApply/getApplyPreview', {
-          bizId: this.bizId,
+      getConflictCount() {
+        return this.$store.dispatch('hostApply/getConflictCount', {
           params: {
-            bk_module_ids: [this.moduleId]
-          },
-          config: {
-            requestId: 'getHostApplyPreview'
+            bk_biz_id: this.bizId,
+            id: this.moduleId
           }
         })
       },
@@ -295,9 +291,9 @@
             try {
               await this.$store.dispatch('hostApply/setEnableStatus', {
                 bizId: this.bizId,
-                moduleId: this.moduleId,
                 params: {
-                  host_apply_enabled: false,
+                  ids: [this.moduleId],
+                  enabled: false,
                   clear_rules: this.clearRules
                 }
               })
@@ -333,6 +329,11 @@
       },
       handleSelectModule(data) {
         this.currentModule = data
+        this.$router.push({
+          query: {
+            module: data.bk_inst_id
+          }
+        })
         this.getData()
       },
       handleActionChange(action) {

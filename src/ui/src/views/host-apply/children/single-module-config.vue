@@ -1,48 +1,53 @@
 <template>
-  <div class="single-module-config" v-bkloading="{ isLoading: $loading(['getHostApplyConfigs']) }">
-    <div class="config-body">
-      <div :class="['choose-field', { 'not-choose': !checkedPropertyIdList.length }]">
-        <div class="choose-hd">
-          <span class="label">{{$t('自动应用字段')}}</span>
-          <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
-            <bk-button
-              icon="plus"
-              slot-scope="{ disabled }"
-              :disabled="disabled"
-              @click="handleChooseField"
+  <cmdb-sticky-layout class="config-wrapper">
+    <template #header="{ sticky }">
+      <top-steps :class="{ 'is-sticky': sticky }" :current="1" />
+    </template>
+    <div class="single-module-config" v-bkloading="{ isLoading: $loading(['getHostApplyConfigs']) }">
+      <div class="config-body">
+        <div :class="['choose-field', { 'not-choose': !checkedPropertyIdList.length }]">
+          <div class="choose-hd">
+            <span class="label">{{$t('自动应用字段')}}</span>
+            <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
+              <bk-button
+                icon="plus"
+                slot-scope="{ disabled }"
+                :disabled="disabled"
+                @click="handleChooseField"
+              >
+                {{$t('选择字段')}}
+              </bk-button>
+            </cmdb-auth>
+          </div>
+          <div class="choose-bd" v-show="checkedPropertyIdList.length">
+            <property-config-table
+              ref="propertyConfigTable"
+              :checked-property-id-list.sync="checkedPropertyIdList"
+              :rule-list="initRuleList"
+              @property-value-change="handlePropertyValueChange"
             >
-              {{$t('选择字段')}}
-            </bk-button>
-          </cmdb-auth>
-        </div>
-        <div class="choose-bd" v-show="checkedPropertyIdList.length">
-          <property-config-table
-            ref="propertyConfigTable"
-            :checked-property-id-list.sync="checkedPropertyIdList"
-            :rule-list="initRuleList"
-            @property-value-change="handlePropertyValueChange"
-          >
-          </property-config-table>
-        </div>
-        <div class="choose-ft">
-          <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
-            <bk-button
-              theme="primary"
-              slot-scope="{ disabled }"
-              :disabled="nextButtonDisabled || disabled"
-              @click="handleNextStep"
-            >
-              {{$t('下一步')}}
-            </bk-button>
-          </cmdb-auth>
-          <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
+            </property-config-table>
+          </div>
         </div>
       </div>
     </div>
+    <template #footer="{ sticky }">
+      <div :class="['wrapper-footer', { 'is-sticky': sticky }]">
+        <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
+          <bk-button
+            theme="primary"
+            slot-scope="{ disabled }"
+            :disabled="nextButtonDisabled || disabled"
+            @click="handleNextStep">
+            {{$t('下一步')}}
+          </bk-button>
+        </cmdb-auth>
+        <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
+      </div>
+    </template>
     <host-property-modal
       :visible.sync="propertyModalVisible"
-      :checked-list.sync="checkedPropertyIdList"
-    >
+      :checked-list.sync="checkedPropertyIdList">
     </host-property-modal>
     <leave-confirm
       reverse
@@ -51,15 +56,15 @@
       :title="$t('是否退出配置')"
       :content="$t('启用步骤未完成，退出将会丢失当前配置')"
       :ok-text="$t('退出')"
-      :cancel-text="$t('取消')"
-    >
+      :cancel-text="$t('取消')">
     </leave-confirm>
-  </div>
+  </cmdb-sticky-layout>
 </template>
 
 <script>
   import { mapGetters, mapState } from 'vuex'
   import leaveConfirm from '@/components/ui/dialog/leave-confirm'
+  import topSteps from './top-steps.vue'
   import hostPropertyModal from './host-property-modal'
   import propertyConfigTable from './property-config-table'
   import {
@@ -70,6 +75,7 @@
     name: 'single-module-config',
     components: {
       leaveConfirm,
+      topSteps,
       hostPropertyModal,
       propertyConfigTable
     },
@@ -206,58 +212,61 @@
 </script>
 
 <style lang="scss" scoped>
-    .single-module-config {
-        display: flex;
-        flex-direction: column;
-        width: 1066px;
-        height: 100%;
+  .config-wrapper {
+    max-height: 100%;
+    @include scrollbar-y;
+    .wrapper-footer {
+      display: flex;
+      align-items: center;
+      height: 52px;
+      padding: 0 20px;
+      .bk-button {
+        min-width: 86px;
 
-        .config-head,
-        .config-foot {
-            flex: none;
+        & + .bk-button {
+          margin-left: 8px;
         }
-        .config-body {
-            flex: auto;
-        }
+      }
+      .auth-box + .bk-button {
+        margin-left: 8px;
+      }
+      &.is-sticky {
+        background-color: #fff;
+        border-top: 1px solid $borderColor;
+      }
     }
+  }
+  .single-module-config {
+    display: flex;
+    flex-direction: column;
+    width: 1066px;
+    height: 100%;
+    padding: 0 20px;
 
-    .choose-field {
-        padding: 16px 2px;
-        .choose-hd {
-            .label {
-                font-size: 14px;
-                color: #63656e;
-                margin-right: 8px;
-            }
-        }
-        .choose-bd {
-            margin-top: 20px;
-
-            .form-element-content {
-                padding: 4px 0;
-            }
-        }
-        .choose-ft {
-            margin-top: 20px;
-            .bk-button {
-                min-width: 86px;
-            }
-        }
-
-        &.not-choose {
-            .choose-ft {
-                margin-left: 111px;
-            }
-        }
+    .config-head,
+    .config-foot {
+      flex: none;
     }
-
-    [bk-language="en"] {
-        .choose-field {
-            &.not-choose {
-                .choose-ft {
-                    margin-left: 95px;
-                }
-            }
-        }
+    .config-body {
+      flex: auto;
     }
+  }
+
+  .choose-field {
+    padding: 16px 2px;
+    .choose-hd {
+      .label {
+        font-size: 14px;
+        color: #63656e;
+        margin-right: 8px;
+      }
+    }
+    .choose-bd {
+      margin-top: 20px;
+
+      .form-element-content {
+        padding: 4px 0;
+      }
+    }
+  }
 </style>

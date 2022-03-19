@@ -3,38 +3,36 @@
     header-cell-class-name="header-cell"
     ext-cls="property-config-table"
     :data="modulePropertyList"
-    @selection-change="handleSelectionChange"
-  >
+    @selection-change="handleSelectionChange">
     <bk-table-column type="selection" width="60" align="center" v-if="deletable"></bk-table-column>
     <bk-table-column
       :width="readonly ? 300 : 200"
       :label="$t('字段名称')"
-      prop="bk_property_name"
-    >
+      prop="bk_property_name">
+      <div slot-scope="{ row }" :class="{ ignore: row.__extra__.ignore }">
+        {{row.bk_property_name}}
+      </div>
     </bk-table-column>
     <bk-table-column
       v-if="multiple"
       :label="$t('已配置的模块')"
-      class-name="table-cell-module-path"
-    >
-      <template slot-scope="{ row }">
+      class-name="table-cell-module-path">
+      <div slot-scope="{ row }" :class="{ ignore: row.__extra__.ignore }">
         <template v-for="(id, index) in moduleIdList">
           <div
             class="path-item"
             :key="index" v-show="showMore.expanded[row.id] || index < showMore.max"
-            :title="$parent.getModulePath(id)"
-          >
-            {{$parent.getModulePath(id)}}
+            :title="getModulePath(id)">
+            {{getModulePath(id)}}
           </div>
         </template>
         <div
           v-show="moduleIdList.length > showMore.max"
           :class="['show-more', { expanded: showMore.expanded[row.id] }]"
-          @click="handleToggleExpanded(row.id)"
-        >
+          @click="handleToggleExpanded(row.id)">
           {{showMore.expanded[row.id] ? $t('收起') : $t('展开更多')}}<i class="bk-cc-icon icon-cc-arrow-down"></i>
         </div>
-      </template>
+      </div>
     </bk-table-column>
     <bk-table-column
       v-if="multiple || readonly"
@@ -42,7 +40,7 @@
       :label="$t('当前值')"
       show-overflow-tooltip>
       <template slot-scope="{ row }">
-        <template v-if="multiple">
+        <div v-if="multiple" :class="{ ignore: row.__extra__.ignore }">
           <template v-for="(id, index) in moduleIdList">
             <cmdb-property-value
               class="value-item"
@@ -55,7 +53,7 @@
             </cmdb-property-value>
           </template>
           <div v-show="moduleIdList.length > showMore.max" class="show-more">&nbsp;</div>
-        </template>
+        </div>
         <template v-else>
           <cmdb-property-value
             :class="['property-value', { disabled: !row.host_apply_enabled }]"
@@ -72,8 +70,7 @@
     <bk-table-column
       v-if="!readonly"
       :label="$t(multiple ? '修改后' : '值')"
-      class-name="table-cell-form-element"
-    >
+      class-name="table-cell-form-element">
       <template slot-scope="{ row }">
         <div class="form-element-content">
           <property-form-element :property="row" @value-change="handlePropertyValueChange"></property-form-element>
@@ -84,15 +81,18 @@
       v-if="!readonly"
       width="180"
       :label="$t('操作')"
-      :render-header="multiple ? (h, data) => renderColumnHeader(h, data, $t('删除操作不影响原有配置')) : null"
-    >
+      :render-header="multiple ? (h, data) => renderColumnHeader(h, data, $t('忽略操作不影响原有配置')) : null">
       <template slot-scope="{ row }">
-        <bk-button theme="primary" text @click="handlePropertyRowDel(row)">{{$t('删除')}}</bk-button>
+        <bk-button theme="primary" text @click="handlePropertyRowDel(row)">
+          <span v-if="multiple">{{$t(row.__extra__.ignore ? '恢复' : '忽略')}}</span>
+          <span v-else>{{$t('删除')}}</span>
+        </bk-button>
       </template>
     </bk-table-column>
   </bk-table>
 </template>
 <script>
+  /* eslint-disable no-underscore-dangle */
   import { mapGetters, mapState } from 'vuex'
   import has from 'has'
   import propertyFormElement from '@/components/host-apply/property-form-element'
@@ -137,6 +137,9 @@
         }
       }
     },
+    inject: {
+      getModulePath: { default: null }
+    },
     computed: {
       ...mapGetters('hostApply', ['configPropertyList']),
       ...mapState('hostApply', ['ruleDraft']),
@@ -176,15 +179,11 @@
               const property = this.$tools.clone(findProperty)
               // 初始化值
               if (this.multiple) {
-                // eslint-disable-next-line no-underscore-dangle
                 property.__extra__.ruleList = this.ruleList.filter(item => item.bk_attribute_id === property.id)
-                // eslint-disable-next-line no-underscore-dangle
                 property.__extra__.value = this.getPropertyDefaultValue(property)
               } else {
                 const rule = this.ruleList.find(item => item.bk_attribute_id === property.id) || {}
-                // eslint-disable-next-line no-underscore-dangle
                 property.__extra__.ruleId = rule.id
-                // eslint-disable-next-line no-underscore-dangle
                 property.__extra__.value = has(rule, 'bk_property_value') ? rule.bk_property_value : this.getPropertyDefaultValue(property)
               }
               this.modulePropertyList.push(property)
@@ -241,11 +240,18 @@
         this.$emit('selection-change', value)
       },
       handlePropertyRowDel(property) {
-        const checkedIndex = this.checkedPropertyIdList.findIndex(id => id === property.id)
-        this.checkedPropertyIdList.splice(checkedIndex, 1)
+        if (this.multiple) {
+          const extra = this.modulePropertyList.find(item => item.id === property.id)?.__extra__
+          this.$set(extra, 'ignore', !extra.ignore)
+        } else {
+          const checkedIndex = this.checkedPropertyIdList.findIndex(id => id === property.id)
+          this.checkedPropertyIdList.splice(checkedIndex, 1)
+        }
 
         // 清理展开状态
         delete this.showMore.expanded[property.id]
+
+        this.$emit('property-remove', property)
       },
       handlePropertyValueChange(value) {
         this.$emit('property-value-change', value)
@@ -291,6 +297,9 @@
         .disabled-tips {
           margin-top: 0;
           margin-left: 6px;
+        }
+        .ignore {
+          color: $textDisabledColor !important;
         }
       }
     }
