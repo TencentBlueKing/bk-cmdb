@@ -219,11 +219,15 @@
         this.showMore.showLink = rowCount > this.showMore.moduleListMaxRow
         this.showMore.linkLeft = moduleItemWidth * (maxCountInRow - 1)
       },
+      getAvailableModulePropertyList(modulePropertyList) {
+        // 被忽略的不需要
+        const availableList = modulePropertyList.filter(property => !property.__extra__.ignore)
+
+        return availableList
+      },
       toggleNextButtonDisabled() {
         const { modulePropertyList } = this.$refs.configEditTable
-
-        // 忽略的不检查
-        const availableList = modulePropertyList.filter(property => !property.__extra__.ignore)
+        const availableList = this.getAvailableModulePropertyList(modulePropertyList)
 
         const everyTruthy = availableList.every((property) => {
           const validTruthy = property.__extra__.valid !== false
@@ -240,21 +244,13 @@
 
         this.nextButtonDisabled = !availableList.length || !everyTruthy
       },
-      goBack() {
-        // 删除离开不用确认
-        this.leaveConfirmConfig.active = !this.isDel
-        this.$nextTick(function () {
-          // 回到入口页
-          this.$routerActions.redirect({
-            name: MENU_BUSINESS_HOST_APPLY
-          })
-        })
-      },
       handleNextStep() {
         const { modulePropertyList, ignoreRuleIds } = this.$refs.configEditTable
+
+        const availableModulePropertyList = this.getAvailableModulePropertyList(modulePropertyList)
         const additionalRules = []
         this.moduleIds.forEach((moduleId) => {
-          modulePropertyList.forEach((property) => {
+          availableModulePropertyList.forEach((property) => {
             additionalRules.push({
               bk_attribute_id: property.id,
               bk_module_id: moduleId,
@@ -312,6 +308,16 @@
               console.log(e)
             }
           }
+        })
+      },
+      goBack() {
+        // 删除离开不用确认
+        this.leaveConfirmConfig.active = !this.isDel
+        this.$nextTick(function () {
+          // 回到入口页
+          this.$routerActions.redirect({
+            name: MENU_BUSINESS_HOST_APPLY
+          })
         })
       },
       handleCancel() {
