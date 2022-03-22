@@ -221,23 +221,24 @@ func (s *migrateCheckService) getObjAttrMap(ctx context.Context, objID string) (
 	}
 
 	attrMap := make(map[int64]metadata.Attribute)
-	for _, attribute := range attributes {
-		if !model.SatisfyMongoFieldLimit(attribute.PropertyID) {
-			printError("object(%s) attribute(%d) property id %s is invalid\n", objID, attribute.ID, attribute.PropertyID)
+	for _, attr := range attributes {
+		if !model.SatisfyMongoFieldLimit(attr.PropertyID) {
+			printError("object(%s) attribute(%d) property id %s is invalid\n", objID, attr.ID, attr.PropertyID)
 		}
 
-		if objID == common.BKInnerObjIDHost && attribute.PropertyID == common.BKCloudIDField {
+		if objID == common.BKInnerObjIDHost && attr.PropertyID == common.BKCloudIDField {
 			// NOTICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未foreignkey 特殊的类型
-			attribute.PropertyType = common.FieldTypeInt
+			attr.PropertyType = common.FieldTypeInt
 		}
 		if objID == common.BKInnerObjIDHost &&
-			(attribute.PropertyID == common.BKHostInnerIPField || attribute.PropertyID == common.BKHostOuterIPField ||
-				attribute.PropertyID == common.BKOperatorField || attribute.PropertyID == common.BKBakOperatorField) {
+			(attr.PropertyID == common.BKHostInnerIPField || attr.PropertyID == common.BKHostOuterIPField ||
+				attr.PropertyID == common.BKOperatorField || attr.PropertyID == common.BKBakOperatorField ||
+				attr.PropertyID == common.BKHostInnerIPv6Field || attr.PropertyID == common.BKHostOuterIPv6Field) {
 			// NOTICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未innerIP,OuterIP 特殊的类型
-			attribute.PropertyType = common.FieldTypeList
+			attr.PropertyType = common.FieldTypeList
 		}
 
-		attrMap[attribute.ID] = attribute
+		attrMap[attr.ID] = attr
 	}
 
 	return attrMap, nil

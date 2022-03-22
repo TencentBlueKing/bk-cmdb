@@ -38,6 +38,19 @@ var commHostBaseIndexes = []types.Index{
 			common.BKHostInnerIPField: map[string]string{common.BKDBType: "array"},
 		},
 	},
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "bkHostInnerIPv6_bkCloudID",
+		Keys: map[string]int32{
+			common.BKHostInnerIPv6Field: 1,
+			common.BKCloudIDField:       1,
+		},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			common.BKHostInnerIPv6Field: map[string]string{common.BKDBType: "string"},
+			common.BKCloudIDField:       map[string]string{common.BKDBType: "number"},
+		},
+	},
 }
 
 // deprecated 未规范化前的索引，只允许删除不允许新加和修改，

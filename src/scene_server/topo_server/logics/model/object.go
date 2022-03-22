@@ -465,6 +465,7 @@ func (o *object) isClassificationValid(kit *rest.Kit, data mapstr.MapStr) error 
 		blog.Errorf("failed to read model classification, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
+
 	if len(rsp.Info) <= 0 {
 		blog.Errorf("no model classification founded, err: %s, rid: %s",
 			kit.CCError.CCError(common.CCErrorModelClassificationNotFound), kit.Rid)

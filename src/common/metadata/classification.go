@@ -21,6 +21,22 @@ const (
 	ClassFieldClassificationID   = "bk_classification_id"
 	ClassFieldClassificationName = "bk_classification_name"
 )
+const (
+	ClassificationHostManageID    = "bk_host_manage"
+	ClassificationBizTopoID       = "bk_biz_topo"
+	ClassificationOrganizationID  = "bk_organization"
+	ClassificationNetworkID       = "bk_network"
+	ClassificationUncategorizedID = "bk_uncategorized"
+)
+
+// Model group classification initialization value
+const (
+	ClassificationHostManage    = "主机管理"
+	ClassificationTopo          = "业务拓扑"
+	ClassificationOrganization  = "组织测试"
+	ClassificationNet           = "网络"
+	ClassificationUncategorized = "未分类"
+)
 
 // Classification the classification metadata definition
 type Classification struct {

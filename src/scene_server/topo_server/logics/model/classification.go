@@ -217,7 +217,7 @@ func (c *classification) FindClassification(kit *rest.Kit, cond mapstr.MapStr) (
 
 // UpdateClassification update classification by id
 func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr, id int64) error {
-	// remove unchangeable fields.
+
 	data.Remove(metadata.ClassFieldClassificationID)
 	data.Remove(metadata.ClassificationFieldID)
 
@@ -239,8 +239,11 @@ func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr,
 
 	// update classification
 	input := metadata.UpdateOption{
-		Condition: map[string]interface{}{metadata.ClassificationFieldID: id},
-		Data:      data,
+		Condition: map[string]interface{}{
+			metadata.ClassificationFieldID:      id,
+			metadata.ClassFieldClassificationID: mapstr.MapStr{common.BKDBNE: metadata.ClassificationUncategorizedID},
+		},
+		Data: data,
 	}
 	_, err = c.clientSet.CoreService().Model().UpdateModelClassification(kit.Ctx, kit.Header, &input)
 	if err != nil {

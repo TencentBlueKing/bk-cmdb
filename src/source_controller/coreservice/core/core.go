@@ -299,7 +299,7 @@ type ProcessOperation interface {
 	AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostIDs []int64, moduleIDs []int64) errors.CCErrorCoder
 	RemoveTemplateBindingOnModule(kit *rest.Kit, moduleID int64) errors.CCErrorCoder
 	ConstructServiceInstanceName(kit *rest.Kit, instanceID int64, host map[string]interface{},
-		process *metadata.Process) errors.CCErrorCoder
+		process *metadata.Process) (string, errors.CCErrorCoder)
 	ReconstructServiceInstanceName(kit *rest.Kit, instanceID int64) errors.CCErrorCoder
 
 	// process instance relation

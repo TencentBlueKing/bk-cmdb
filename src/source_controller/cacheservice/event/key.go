@@ -282,6 +282,30 @@ var BizSetKey = Key{
 	},
 }
 
+// bizSetRelationWatchCollName a virtual collection name for biz set & biz events in the form of their relation events
+const bizSetRelationWatchCollName = "cc_bizSetRelationMixed"
+
+var BizSetRelationKey = Key{
+	namespace:  watchCacheNamespace + "biz_set_relation",
+	collection: bizSetRelationWatchCollName,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		value := gjson.GetBytes(doc, common.BKBizSetIDField)
+		if !value.Exists() {
+			return fmt.Errorf("field %s not exists", common.BKBizSetIDField)
+		}
+		return nil
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKBizSetIDField).Int()
+	},
+}
+
+// GenBizSetRelationDetail generate biz set relation event detail json form by biz set id and biz ids string form
+func GenBizSetRelationDetail(bizSetID int64, bizIDsStr string) string {
+	return fmt.Sprintf(`{"bk_biz_set_id":%d,"bk_biz_ids":[%s]}`, bizSetID, bizIDsStr)
+}
+
 type Key struct {
 	namespace string
 	// the watching db collection name

@@ -58,6 +58,11 @@ func (ps *parseStream) watch() *parseStream {
 			resource = string(watch.Host)
 		}
 
+		if resource == string(watch.BizSetRelation) {
+			// redirect biz set relation resource to biz set resource in iam.
+			resource = string(watch.BizSet)
+		}
+
 		authResource := meta.ResourceAttribute{
 			Basic: meta.Basic{
 				Type:   meta.EventWatch,

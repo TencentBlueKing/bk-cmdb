@@ -27,6 +27,8 @@ type Rule interface {
 	Validate(option *RuleOption) (string, error)
 	ToMgo() (mgoFilter map[string]interface{}, errKey string, err error)
 	Match(matcher Matcher) bool
+	// MatchAny if any of the rules matches the matcher, return true
+	MatchAny(matcher Matcher) bool
 }
 
 // *************** define condition ************************
@@ -167,6 +169,11 @@ func (r AtomRule) Validate(option *RuleOption) (string, error) {
 type Matcher func(r AtomRule) bool
 
 func (r AtomRule) Match(matcher Matcher) bool {
+	return matcher(r)
+}
+
+// MatchAny if any of the rules matches the matcher, return true
+func (r AtomRule) MatchAny(matcher Matcher) bool {
 	return matcher(r)
 }
 
@@ -460,4 +467,18 @@ func (r CombinedRule) Match(matcher Matcher) bool {
 	default:
 		panic(fmt.Sprintf("unexpected condition %s", r.Condition))
 	}
+}
+
+// MatchAny if any of the rules matches the matcher, return true
+func (r CombinedRule) MatchAny(matcher Matcher) bool {
+	if len(r.Rules) == 0 {
+		return true
+	}
+
+	for _, rule := range r.Rules {
+		if rule.MatchAny(matcher) {
+			return true
+		}
+	}
+	return false
 }
