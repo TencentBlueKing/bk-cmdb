@@ -943,7 +943,8 @@ func (ps *parseStream) objectModule() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("update module host apply enabled status, but got invalid business id %s", ps.RequestCtx.Elements[5])
+			ps.err = fmt.Errorf("update module host apply enabled status, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
 			return ps
 		}
 

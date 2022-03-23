@@ -174,8 +174,8 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 			return []int64{bizSetID}, nil
 		},
 	}, {
-		Name:        "UpdatemanyServiceTemplateHostApplyEnableStatus",
-		Description: "获取服务模板详情",
+		Name:        "updatemanyServiceTemplateHostApplyEnableStatus",
+		Description: "更新服务模板主机自动应用状态",
 		// NOCC:tosa/linelength(忽略长度)
 		Regex:          regexp.MustCompile(`^/api/v3/updatemany/proc/service_template/host_apply_enable_status/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodPut,

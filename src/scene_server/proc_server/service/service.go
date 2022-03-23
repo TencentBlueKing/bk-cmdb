@@ -100,6 +100,10 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 		Handler: ps.DeleteHostApplyRule})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/findmany/proc/service_template/host_apply_plan/status",
+		Handler: ps.GetHostApplyTaskStatus})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/updatemany/proc/service_template/host_apply_plan/run",
 		Handler: ps.UpdateServiceTemplateHostApplyRule})
 

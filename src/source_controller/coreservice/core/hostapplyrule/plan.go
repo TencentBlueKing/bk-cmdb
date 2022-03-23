@@ -430,7 +430,6 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relation
 		HostModules: hostModules,
 	}
 
-	// 这里应该是直接调用 coreservice的主机自动
 	planResult, ccErr := p.GenerateApplyPlan(kit, bizID, planOption)
 	if ccErr != nil {
 		blog.ErrorJSON("generate apply plan failed, option: %v, err: %v, rid: %s", planOption, ccErr, kit.Rid)

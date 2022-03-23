@@ -33,6 +33,7 @@ func (s *coreService) initHostApplyRule(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}/", Handler: s.GetHostApplyRule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}/", Handler: s.ListHostApplyRule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/updatemany/host_apply_rule/bk_biz_id/{bk_biz_id}", Handler: s.BatchUpdateHostApplyRule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/host_apply_plan/bk_biz_id/{bk_biz_id}/", Handler: s.GenerateApplyPlan})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/modules/bk_biz_id/{bk_biz_id}/host_apply_rule_related", Handler: s.SearchRuleRelatedModules})
 

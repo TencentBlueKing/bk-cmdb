@@ -64,12 +64,13 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	if ccErr := s.validateTransferHostWithAutoClearServiceInstanceOption(ctx.Kit, bizID, &option); ccErr != nil {
 		ctx.RespAutoError(ccErr)
 		return
 	}
 
-	transferPlans, hostIDs, err := s.generateTransferPlans(ctx.Kit, bizID, option)
+	transferPlans, hostIDs, err := s.preTransferPlans(ctx.Kit, option, bizID)
 	if err != nil {
 		blog.ErrorJSON("generate transfer plans failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err,
 			ctx.Kit.Rid)
@@ -364,10 +365,9 @@ func (s *Service) updateHostApplyByRule(kit *rest.Kit, rule metadata.HostApplyTr
 
 	return nil
 }
+func (s *Service) preTransferPlans(kit *rest.Kit, option metadata.TransferHostWithAutoClearServiceInstanceOption,
+	bizID int64) ([]metadata.HostTransferPlan, []int64, errors.CCErrorCoder) {
 
-func (s *Service) generateTransferPlans(kit *rest.Kit, bizID int64,
-	option metadata.TransferHostWithAutoClearServiceInstanceOption) (
-	[]metadata.HostTransferPlan, []int64, errors.CCErrorCoder) {
 	rid := kit.Rid
 
 	// get host module config
@@ -445,7 +445,6 @@ func (s *Service) generateTransferPlans(kit *rest.Kit, bizID int64,
 	}
 
 	return transferPlans, hostIDs, nil
-
 }
 
 // generateTransferPlan 实现计算主机将从哪个模块移除，添加到哪个模块，最终在哪些模块
@@ -655,4 +654,265 @@ func (s *Service) validateTransferHostWithAutoClearServiceInstanceOption(kit *re
 	}
 
 	return nil
+}
+
+func (s *Service) generateTransferPlans(kit *rest.Kit, bizID int64,
+	option metadata.TransferHostWithAutoClearServiceInstanceOption) (
+	[]metadata.HostTransferPlan, errors.CCErrorCoder) {
+	transferPlans, _, err := s.preTransferPlans(kit, option, bizID)
+	if err != nil {
+		return nil, err
+	}
+
+	// generate host apply plans
+	return s.generateHostApplyPlans(kit, bizID, transferPlans)
+}
+func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64, plans []metadata.HostTransferPlan,
+) ([]metadata.HostTransferPlan, errors.CCErrorCoder) {
+
+	if len(plans) == 0 {
+		return plans, nil
+	}
+
+	// get final modules' host apply rules
+	finalModuleIDs := make([]int64, 0)
+	for _, item := range plans {
+		finalModuleIDs = append(finalModuleIDs, item.FinalModules...)
+	}
+
+	ruleOpt := metadata.ListHostApplyRuleOption{
+		ModuleIDs: finalModuleIDs,
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+	}
+	rules, ccErr := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(kit.Ctx, kit.Header, bizID, ruleOpt)
+	if ccErr != nil {
+		blog.Errorf("list apply rule failed, bizID: %s, option: %#v, err: %s, rid: %s", bizID, ruleOpt, ccErr, kit.Rid)
+		return plans, ccErr
+	}
+
+	// get modules that enabled host apply
+	moduleCondition := metadata.QueryCondition{
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Fields: []string{common.BKModuleIDField},
+		Condition: map[string]interface{}{
+			common.BKModuleIDField:       map[string]interface{}{common.BKDBIN: finalModuleIDs},
+			common.HostApplyEnabledField: true,
+		},
+	}
+	enabledModules, err := s.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
+		common.BKInnerObjIDModule, &moduleCondition)
+	if err != nil {
+		blog.ErrorJSON("get apply enabled modules failed, filter: %s, err: %s, rid: %s", moduleCondition, err, kit.Rid)
+		return plans, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	enableModuleMap := make(map[int64]bool)
+	for _, item := range enabledModules.Info {
+		moduleID, err := util.GetInt64ByInterface(item[common.BKModuleIDField])
+		if err != nil {
+			blog.ErrorJSON("parse module from db failed, module: %s, err: %s, rid: %s", item, err, kit.Rid)
+			return plans, kit.CCError.CCError(common.CCErrCommParseDBFailed)
+		}
+		enableModuleMap[moduleID] = true
+	}
+
+	// generate host apply plans only generate new module
+	hostModules := make([]metadata.Host2Modules, 0)
+	for _, item := range plans {
+		host2Module := metadata.Host2Modules{
+			HostID:    item.HostID,
+			ModuleIDs: make([]int64, 0),
+		}
+		for _, moduleID := range item.ToAddToModules {
+			if _, exist := enableModuleMap[moduleID]; exist {
+				host2Module.ModuleIDs = append(host2Module.ModuleIDs, moduleID)
+			}
+		}
+		hostModules = append(hostModules, host2Module)
+	}
+
+	planOpt := metadata.HostApplyPlanOption{
+		Rules:       rules.Info,
+		HostModules: hostModules,
+	}
+
+	hostApplyPlanResult, ccErr := s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(kit.Ctx, kit.Header, bizID,
+		planOpt)
+	if ccErr != nil {
+		blog.Errorf("generate apply plan failed, biz: %d, opt: %#v, err: %v, rid: %s", bizID, planOpt, ccErr, kit.Rid)
+		return plans, ccErr
+	}
+
+	hostApplyPlanMap := make(map[int64]metadata.OneHostApplyPlan)
+	for _, item := range hostApplyPlanResult.Plans {
+		hostApplyPlanMap[item.HostID] = item
+	}
+	for index, transferPlan := range plans {
+		if applyPlan, ok := hostApplyPlanMap[transferPlan.HostID]; ok {
+			plans[index].HostApplyPlan = applyPlan
+		}
+	}
+
+	return plans, nil
+}
+
+// TransferHostWithAutoClearServiceInstancePreview generate a preview of changes for
+// TransferHostWithAutoClearServiceInstance operation
+// 接口请求参数跟转移是一致的
+// 主机从模块删除时提供了将要删除的服务实例信息
+// 主机添加到新模块时，提供了模块对应的服务模板（如果有）
+func (s *Service) TransferHostWithAutoClearServiceInstancePreview(ctx *rest.Contexts) {
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.V(7).Infof("parse bizID from url failed, bizID: %s, err: %+v, rid: %s", bizIDStr, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+		return
+	}
+
+	option := metadata.TransferHostWithAutoClearServiceInstanceOption{}
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if ccErr := s.validateTransferHostWithAutoClearServiceInstanceOption(ctx.Kit, bizID, &option); ccErr != nil {
+		ctx.RespAutoError(ccErr)
+		return
+	}
+
+	transferPlans, ccErr := s.generateTransferPlans(ctx.Kit, bizID, option)
+	if ccErr != nil {
+		blog.ErrorJSON("generate transfer plans failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, ccErr,
+			ctx.Kit.Rid)
+		ctx.RespAutoError(ccErr)
+		return
+	}
+
+	addModuleIDs := make([]int64, 0)
+	removeModuleIDs := make([]int64, 0)
+	for _, plan := range transferPlans {
+		addModuleIDs = append(addModuleIDs, plan.ToAddToModules...)
+		removeModuleIDs = append(removeModuleIDs, plan.ToRemoveFromModules...)
+	}
+
+	// get to remove service instances
+	moduleHostSrvInstMap := make(map[int64]map[int64][]metadata.ServiceInstance)
+	if len(removeModuleIDs) > 0 {
+		listSrvInstOption := &metadata.ListServiceInstanceOption{
+			BusinessID: bizID,
+			HostIDs:    option.HostIDs,
+			ModuleIDs:  removeModuleIDs,
+			Page: metadata.BasePage{
+				Limit: common.BKNoLimit,
+			},
+		}
+
+		srvInstResult, ccErr := s.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+			listSrvInstOption)
+		if ccErr != nil {
+			blog.ErrorJSON("list service instance failed, bizID: %s, option: %s, err: %s, rid: %s", bizID,
+				listSrvInstOption, ccErr, ctx.Kit.Rid)
+			ctx.RespAutoError(ccErr)
+			return
+		}
+		for _, item := range srvInstResult.Info {
+			if _, exist := moduleHostSrvInstMap[item.ModuleID]; !exist {
+				moduleHostSrvInstMap[item.ModuleID] = make(map[int64][]metadata.ServiceInstance, 0)
+			}
+			if _, exist := moduleHostSrvInstMap[item.ModuleID][item.HostID]; !exist {
+				moduleHostSrvInstMap[item.ModuleID][item.HostID] = make([]metadata.ServiceInstance, 0)
+			}
+			moduleHostSrvInstMap[item.ModuleID][item.HostID] = append(moduleHostSrvInstMap[item.ModuleID][item.HostID],
+				item)
+		}
+	}
+
+	moduleServiceTemplateMap := make(map[int64]metadata.ServiceTemplateDetail)
+	if len(addModuleIDs) > 0 {
+		// get add to modules
+		modules, ccErr := s.getModules(ctx.Kit, bizID, addModuleIDs)
+		if ccErr != nil {
+			blog.Errorf("get modules failed, err: %v, bizID: %d, module ids: %+v, rid: %s", ccErr, bizID, addModuleIDs,
+				ctx.Kit.Rid)
+			ctx.RespAutoError(ccErr)
+			return
+		}
+
+		// get service template related to add modules
+		serviceTemplateIDs := make([]int64, 0)
+		for _, module := range modules {
+			if module.ServiceTemplateID == common.ServiceTemplateIDNotSet {
+				continue
+			}
+			serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
+		}
+
+		if len(serviceTemplateIDs) > 0 {
+			serviceTemplateDetails, ccErr := s.CoreAPI.CoreService().Process().ListServiceTemplateDetail(ctx.Kit.Ctx,
+				ctx.Kit.Header, bizID, serviceTemplateIDs...)
+			if ccErr != nil {
+				blog.Errorf("list service template detail failed, bizID: %s, option: %s, err: %s, rid: %s", bizID,
+					serviceTemplateIDs, ccErr, ctx.Kit.Rid)
+				ctx.RespAutoError(ccErr)
+				return
+			}
+
+			serviceTemplateMap := make(map[int64]metadata.ServiceTemplateDetail)
+			for _, templateDetail := range serviceTemplateDetails.Info {
+				serviceTemplateMap[templateDetail.ServiceTemplate.ID] = templateDetail
+			}
+			for _, module := range modules {
+				templateDetail, exist := serviceTemplateMap[module.ServiceTemplateID]
+				if exist {
+					moduleServiceTemplateMap[module.ModuleID] = templateDetail
+				}
+			}
+		}
+	}
+
+	previews := make([]metadata.HostTransferPreview, 0)
+	for _, plan := range transferPlans {
+		preview := metadata.HostTransferPreview{
+			HostID:              plan.HostID,
+			FinalModules:        plan.FinalModules,
+			ToRemoveFromModules: make([]metadata.RemoveFromModuleInfo, 0),
+			ToAddToModules:      make([]metadata.AddToModuleInfo, 0),
+			HostApplyPlan:       plan.HostApplyPlan,
+		}
+
+		for _, moduleID := range plan.ToRemoveFromModules {
+			removeInfo := metadata.RemoveFromModuleInfo{
+				ModuleID:         moduleID,
+				ServiceInstances: make([]metadata.ServiceInstance, 0),
+			}
+			hostSrvInstMap, exist := moduleHostSrvInstMap[moduleID]
+			if !exist {
+				preview.ToRemoveFromModules = append(preview.ToRemoveFromModules, removeInfo)
+				continue
+			}
+
+			serviceInstances, exist := hostSrvInstMap[plan.HostID]
+			if exist {
+				removeInfo.ServiceInstances = append(removeInfo.ServiceInstances, serviceInstances...)
+			}
+			preview.ToRemoveFromModules = append(preview.ToRemoveFromModules, removeInfo)
+		}
+
+		for _, moduleID := range plan.ToAddToModules {
+			addInfo := metadata.AddToModuleInfo{
+				ModuleID:        moduleID,
+				ServiceTemplate: nil,
+			}
+
+			serviceTemplateDetail, exist := moduleServiceTemplateMap[moduleID]
+			if exist {
+				addInfo.ServiceTemplate = &serviceTemplateDetail
+			}
+			preview.ToAddToModules = append(preview.ToAddToModules, addInfo)
+		}
+		previews = append(previews, preview)
+	}
+	ctx.RespEntity(previews)
+	return
 }

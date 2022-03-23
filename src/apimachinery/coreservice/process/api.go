@@ -280,7 +280,8 @@ func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, temp
 }
 
 // UpdateBatchServiceTemplate batch update service template action
-func (p *process) UpdateBatchServiceTemplate(ctx context.Context, h http.Header, option *metadata.UpdateOption) errors.CCErrorCoder {
+func (p *process) UpdateBatchServiceTemplate(ctx context.Context, h http.Header,
+	option *metadata.UpdateOption) errors.CCErrorCoder {
 	ret := new(metadata.OneServiceTemplateResult)
 	subPath := "/update/batch/process/service_templates"
 

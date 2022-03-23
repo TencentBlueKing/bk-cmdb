@@ -23,7 +23,7 @@ import (
 	"configcenter/src/storage/dal/types"
 )
 
-// addServiceTemplateTableColumn Added host_apply_enabled field to service template table.
+// addServiceTemplateTableColumn add host_apply_enabled field to service template table.
 func addServiceTemplateTableColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	err := db.Table(common.BKTableNameServiceTemplate).AddColumn(ctx, common.HostApplyEnabledField, false)
@@ -34,7 +34,7 @@ func addServiceTemplateTableColumn(ctx context.Context, db dal.RDB, conf *upgrad
 	return nil
 }
 
-// addHostApplyRuleTableColumn The host automatic application table adds the service_template_id field.
+// addHostApplyRuleTableColumn the host automatic application table adds the service_template_id field.
 func addHostApplyRuleTableColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	err := db.Table(common.BKTableNameHostApplyRule).AddColumn(ctx, common.BKServiceTemplateIDField, 0)
@@ -46,45 +46,73 @@ func addHostApplyRuleTableColumn(ctx context.Context, db dal.RDB, conf *upgrader
 	// add index
 	indexes := []types.Index{
 		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "bizID_ModuleID_serviceTemplateID_attrID",
+			Keys: map[string]int32{
+				common.BKAppIDField:             1,
+				common.BKModuleIDField:          1,
+				common.BKServiceTemplateIDField: 1,
+				common.BKAttributeIDField:       1,
+			},
+			Unique:     true,
+			Background: true,
+		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "host_property_under_service_template",
 			Keys: map[string]int32{
 				common.BKServiceTemplateIDField: 1,
 				common.BKAttributeIDField:       1,
 			},
-			Name:       common.CCLogicIndexNamePrefix + "host_property_under_service_template",
 			Background: true,
 		},
 		{
+			Name: common.CCLogicIndexNamePrefix + "bizID_serviceTemplateID_attrID",
 			Keys: map[string]int32{
 				common.BKAppIDField:             1,
 				common.BKServiceTemplateIDField: 1,
 				common.BKAttributeIDField:       1,
 			},
 			Background: true,
-			Name:       common.CCLogicIndexNamePrefix + "bizID_serviceTemplateID_attrID",
 		},
 		{
+			Name: common.CCLogicIndexNamePrefix + common.BKServiceTemplateIDField,
 			Keys: map[string]int32{
 				common.BKServiceTemplateIDField: 1,
 			},
-			Name:       common.CCLogicIndexNamePrefix + common.BKServiceTemplateIDField,
 			Background: true,
 		},
 		{
+			Name: common.CCLogicIndexNamePrefix + "bizID_serviceTemplateID",
 			Keys: map[string]int32{
 				common.BKAppIDField:             1,
 				common.BKServiceTemplateIDField: 1,
 			},
-			Name:       common.CCLogicIndexNamePrefix + "bizID_serviceTemplateID",
 			Background: true,
 		},
 		// complement the composite index of BizID and moduleID.
 		{
+			Name: common.CCLogicIndexNamePrefix + "bizID_ModuleID",
 			Keys: map[string]int32{
 				common.BKAppIDField:    1,
 				common.BKModuleIDField: 1,
 			},
-			Name:       common.CCLogicIndexNamePrefix + "bizID_ModuleID",
 			Background: true,
+		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "bizID_moduleID_attrID",
+			Keys: map[string]int32{
+				common.BKAppIDField:       1,
+				common.BKModuleIDField:    1,
+				common.BKAttributeIDField: 1,
+			},
+			Background: true,
+		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "moduleID_attrID",
+			Keys: map[string]int32{
+				common.BKModuleIDField:    1,
+				common.BKAttributeIDField: 1,
+			},
+			Background: false,
 		},
 	}
 
@@ -94,10 +122,41 @@ func addHostApplyRuleTableColumn(ctx context.Context, db dal.RDB, conf *upgrader
 		return err
 	}
 
+	idArrMap := make(map[string]types.Index)
+
+	for _, idx := range idxArr {
+		idArrMap[idx.Name] = idx
+	}
+	// It is necessary to delete the previous unique indexes that do not meet the requirements of the new scenario.
+	// According to the current factory, there are only two indexes that need to be deleted and rebuilt. They are
+	// "idx_unique_bizID_moduleID_attrID" and "idx_unique_bizID_moduleID_attrID". After "host_property_under_module"
+	// is deleted, the reconstruction needs to be performed according to the latest naming rules. The corresponding
+	// new indexes are "bkcc_idx_bizID_moduleID_attrID" and "bkcc_idx_moduleID_attrID".
+	for name, index := range idArrMap {
+		if name == "idx_unique_bizID_moduleID_attrID" && index.Unique {
+			if err := db.Table(common.BKTableNameHostApplyRule).DropIndex(ctx, index.Name); err != nil &&
+				!db.IsNotFoundError(err) {
+				blog.Errorf("remove table: %s index: %s error, err: %v, rid: %s", common.BKTableNameHostApplyRule,
+					name, err)
+				return err
+			}
+			delete(idArrMap, name)
+		}
+		if index.Name == "host_property_under_module" && index.Unique {
+			if err := db.Table(common.BKTableNameHostApplyRule).DropIndex(ctx, index.Name); err != nil &&
+				!db.IsNotFoundError(err) {
+				blog.Errorf("remove table: %s index: %s error, err: %v, rid: %s", common.BKTableNameHostApplyRule,
+					name, err)
+				return err
+			}
+			delete(idArrMap, name)
+		}
+	}
+
 	for _, index := range indexes {
 		exist := false
-		for _, existIdx := range idxArr {
-			if existIdx.Name == index.Name {
+		for name := range idArrMap {
+			if name == index.Name {
 				exist = true
 				break
 			}

@@ -154,7 +154,7 @@ func (s *Service) initHostapplyrule(web *restful.WebService) {
 		Handler: s.ExecModuleHostApplyRule})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/findmany/host_apply_plan/status",
+		Path:    "/host/findmany/module/host_apply_plan/status",
 		Handler: s.GetHostApplyTaskStatus})
 
 	utility.AddToRestfulWebService(web)
@@ -230,6 +230,7 @@ func (s *Service) initTransfer(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/", Handler: s.TransferHostWithAutoClearServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/preview/", Handler: s.TransferHostWithAutoClearServiceInstancePreview})
 
 	utility.AddToRestfulWebService(web)
 }

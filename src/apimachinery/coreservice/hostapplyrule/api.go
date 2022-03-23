@@ -172,6 +172,31 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(ctx context.Context, header htt
 	return ret.Data, nil
 }
 
+func (p *hostApplyRule) GenerateApplyPlan(ctx context.Context, header http.Header, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data metadata.HostApplyPlanResult `json:"data"`
+	}{}
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef("/findmany/host_apply_plan/bk_biz_id/%d/", bizID).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("GenerateApplyPlan failed, http request failed, err: %+v", err)
+		return ret.Data, errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.Data, ret.CCError()
+	}
+
+	return ret.Data, nil
+}
+
 func (p *hostApplyRule) SearchRuleRelatedModules(ctx context.Context, header http.Header, bizID int64, option metadata.SearchRuleRelatedModulesOption) ([]metadata.Module, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp

@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -108,6 +109,7 @@ func (s *Service) UpdateHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(rule)
 }
 
+// DeleteHostApplyRule delete the host automatic application rule in the module scenario.
 func (s *Service) DeleteHostApplyRule(ctx *rest.Contexts) {
 	rid := ctx.Kit.Rid
 
@@ -124,7 +126,7 @@ func (s *Service) DeleteHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
-	if rawErr := option.Validate(); rawErr.ErrCode != 0 {
+	if rawErr := option.ValidateModuleOption(); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
@@ -367,7 +369,9 @@ func (s *Service) getHostIDByCondition(kit *rest.Kit, bizID int64, modIDs []int6
 		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, kit.Rid)
 		return []int64{}, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-
+	if len(hostRelations.Info) == 0 {
+		return []int64{}, nil
+	}
 	hostModuleMap := make(map[int64]struct{})
 	for _, item := range hostRelations.Info {
 		hostModuleMap[item.HostID] = struct{}{}
@@ -377,6 +381,93 @@ func (s *Service) getHostIDByCondition(kit *rest.Kit, bizID int64, modIDs []int6
 		result = append(result, hostID)
 	}
 	return result, nil
+}
+
+func (s *Service) generateApplyPlan(ctx *rest.Contexts, bizID int64, planRequest metadata.HostApplyPlanRequest) (
+	metadata.HostApplyPlanResult, errors.CCErrorCoder) {
+
+	rid := ctx.Kit.Rid
+
+	relationReq := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		ModuleIDArr:   planRequest.ModuleIDs,
+		Page:          metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:        []string{common.BKModuleIDField, common.BKHostIDField},
+	}
+	if planRequest.HostIDs != nil {
+		relationReq.HostIDArr = planRequest.HostIDs
+	}
+	hostRelations, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationReq)
+	if err != nil {
+		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, rid)
+		return metadata.HostApplyPlanResult{}, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	hostModuleMap := make(map[int64][]int64)
+	moduleIDs := make([]int64, 0)
+	for _, item := range hostRelations.Info {
+		hostModuleMap[item.HostID] = append(hostModuleMap[item.HostID], item.ModuleID)
+		moduleIDs = append(moduleIDs, item.ModuleID)
+	}
+	hostModules := make([]metadata.Host2Modules, 0)
+	for hostID, moduleIDs := range hostModuleMap {
+		hostModules = append(hostModules, metadata.Host2Modules{
+			HostID:    hostID,
+			ModuleIDs: moduleIDs,
+		})
+	}
+
+	ruleOption := metadata.ListHostApplyRuleOption{
+		ModuleIDs: moduleIDs,
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+	}
+	rules, ccErr := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
+		ruleOption)
+	if ccErr != nil {
+		blog.Errorf("list host apply rule failed, bizID: %d, opt: %#v, err: %v, rid: %s", bizID, ruleOption, ccErr, rid)
+		return metadata.HostApplyPlanResult{}, ccErr
+	}
+
+	now := time.Now()
+	if len(planRequest.AdditionalRules) > 0 {
+	OuterLoop:
+		for _, item := range planRequest.AdditionalRules {
+			for index, rule := range rules.Info {
+				if item.ModuleID == rule.ModuleID && item.AttributeID == rule.AttributeID {
+					rules.Info[index].PropertyValue = item.PropertyValue
+					continue OuterLoop
+				}
+			}
+			rules.Info = append(rules.Info, metadata.HostApplyRule{BizID: bizID, ModuleID: item.ModuleID,
+				AttributeID: item.AttributeID, PropertyValue: item.PropertyValue, Creator: ctx.Kit.User,
+				Modifier: ctx.Kit.User, CreateTime: now, LastTime: now, SupplierAccount: ctx.Kit.SupplierAccount,
+			})
+		}
+	}
+
+	// filter out removed rules
+	finalRules := make([]metadata.HostApplyRule, 0)
+	for _, item := range rules.Info {
+		if util.InArray(item.ID, planRequest.RemoveRuleIDs) || util.InArray(item.ID, planRequest.IgnoreRuleIDs) {
+			continue
+		}
+		finalRules = append(finalRules, item)
+	}
+
+	planOption := metadata.HostApplyPlanOption{
+		Rules:             finalRules,
+		HostModules:       hostModules,
+		ConflictResolvers: planRequest.ConflictResolvers,
+	}
+
+	planResult, ccErr := s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
+		planOption)
+	if ccErr != nil {
+		blog.Errorf("generate apply plan failed, bizID: %d, opt: %#v, err: %v, rid: %s", bizID, planOption, ccErr, rid)
+		return planResult, ccErr
+	}
+	planResult.Rules = rules.Info
+	return planResult, nil
 }
 
 func (s *Service) getUpdateDataStr(kit *rest.Kit, rules []metadata.HostAttribute) (
@@ -417,38 +508,6 @@ func (s *Service) getUpdateDataStr(kit *rest.Kit, rules []metadata.HostAttribute
 	sort.Strings(fields)
 	return "{" + strings.Join(fields, ",") + "}", nil
 
-}
-
-func (s *Service) getModulesByPlanCond(kit *rest.Kit, bizID int64, modules []int64) ([]metadata.ModuleInst, errors.CCErrorCoder) {
-	query := &metadata.QueryCondition{
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-		Fields: []string{
-			common.BKModuleIDField,
-			common.HostApplyEnabledField,
-		},
-		Condition: map[string]interface{}{
-			common.BKAppIDField: bizID,
-			common.BKModuleIDField: map[string]interface{}{
-				common.BKDBIN: modules,
-			},
-		},
-	}
-
-	moduleRes := new(metadata.ResponseModuleInstance)
-	err := s.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule, query,
-		&moduleRes)
-	if err != nil {
-		blog.Errorf("get modules failed, input: %#v, err: %v, rid:%s", query, err, kit.Rid)
-		return nil, err
-	}
-	if err := moduleRes.CCError(); err != nil {
-		blog.Errorf("get modules failed, input: %#v, err: %v, rid:%s", query, err, kit.Rid)
-		return nil, err
-	}
-
-	return moduleRes.Data.Info, nil
 }
 
 func (s *Service) updateHostAttributes(kit *rest.Kit, planResult []metadata.HostAttribute, hostIDs []int64) errors.CCErrorCoder {
@@ -494,12 +553,11 @@ func (s *Service) GetHostApplyTaskStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	flagOption := []string{common.SyncModuleHostApplyTaskFlag, common.SyncServiceTemplateHostApplyTaskFlag}
 	// get host auto-apply task status by task ids
 	statusOpt := &metadata.QueryCondition{
 		Condition: map[string]interface{}{
 			common.BKInstIDField:   syncStatusOpt.BizID,
-			common.BKTaskTypeField: map[string]interface{}{common.BKDBIN: flagOption},
+			common.BKTaskTypeField: common.SyncModuleHostApplyTaskFlag,
 			common.BKTaskIDField:   map[string]interface{}{common.BKDBIN: syncStatusOpt.TaskIDS},
 		},
 		Fields:         []string{common.BKStatusField, common.BKTaskIDField},
@@ -633,9 +691,11 @@ func (s *Service) ExecModuleHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
-	// If the Changed flag is false or the request only contains the delete rule scenario, then there is no need to
-	// update the host rule.
-	if !planReq.Changed || len(planReq.AdditionalRules) == 0 {
+	// the following three scenarios do not require the update of the host properties to be automatically applied:
+	// 1. The changed flag is false.
+	// 2. This request only deletes the rule scenario.
+	// 3. No eligible host was found.
+	if !planReq.Changed || len(planReq.AdditionalRules) == 0 || len(hostIDs) == 0 {
 		ctx.RespEntity(nil)
 		return
 	}

@@ -82,7 +82,7 @@ func (s *coreService) updateModuleHostApplyStatus(kit *rest.Kit, bizID int64, mo
 
 	modIDs := make([]int64, 0)
 
-	// 判断每个模块的主机规则是否存在，如果没有的话 需要关闭主机属性开关
+	// determine whether the host rule of each module exists, if not, you need to turn off the host attribute switch.
 	for _, moduleID := range moduleIDs {
 		filter := map[string]interface{}{
 			common.BKAppIDField:    bizID,
@@ -190,7 +190,7 @@ func (s *coreService) DeleteHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := s.core.HostApplyRuleOperation().DeleteHostApplyRule(ctx.Kit, bizID, option.RuleIDs...); err != nil {
+	if err := s.core.HostApplyRuleOperation().DeleteHostApplyRule(ctx.Kit, bizID, option); err != nil {
 		blog.Errorf("DeleteHostApplyRule failed, bizID: %d, ruleID: %d, err: %+v, rid: %s", bizID, option.RuleIDs, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -250,6 +250,29 @@ func (s *coreService) ListHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(hostApplyRuleResult)
+}
+
+func (s *coreService) GenerateApplyPlan(ctx *rest.Contexts) {
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	option := metadata.HostApplyPlanOption{}
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	applyPlans, err := s.core.HostApplyRuleOperation().GenerateApplyPlan(ctx.Kit, bizID, option)
+	if err != nil {
+		blog.Errorf("GenerateApplyPlan failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(applyPlans)
 }
 
 func (s *coreService) SearchRuleRelatedModules(ctx *rest.Contexts) {

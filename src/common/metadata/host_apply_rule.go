@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/json"
 	"configcenter/src/common/querybuilder"
+	"configcenter/src/common/util"
 )
 
 const (
@@ -33,7 +34,7 @@ type HostApplyRule struct {
 	BizID    int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
 	ModuleID int64 `field:"bk_module_id" json:"bk_module_id" bson:"bk_module_id" mapstructure:"bk_module_id"`
 	// NOCC:tosa/linelength(忽略长度)
-	ServiceTemplateId int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id" mapstructure:"service_template_id"`
+	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id" mapstructure:"service_template_id"`
 
 	// `id` field of table: `cc_AsstDes`, not the same with bk_property_id
 	AttributeID   int64       `field:"bk_attribute_id" json:"bk_attribute_id" bson:"bk_attribute_id" mapstructure:"bk_attribute_id"`
@@ -51,9 +52,8 @@ func (h *HostApplyRule) Validate() (string, error) {
 	return "", nil
 }
 
-// CreateHostApplyRuleOption 创建主机自动应用规则
+// CreateHostApplyRuleOption create host auto-apply rules.
 type CreateHostApplyRuleOption struct {
-	// NOCC:tosa/linelength(ignore length)
 	ModuleID int64 `field:"bk_module_id" json:"bk_module_id,omitempty" bson:"bk_module_id" mapstructure:"bk_module_id"`
 	// NOCC:tosa/linelength(ignore length)
 	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id" mapstructure:"service_template_id"`
@@ -89,13 +89,13 @@ type ListHostRelatedApplyRuleOption struct {
 type DeleteHostApplyRuleOption struct {
 	ModuleIDs []int64 `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
 	// NOCC:tosa/linelength(ignore length)
-	ServiceTemplateIDs []int64 `field:"bk_template_ids" json:"bk_template_ids" bson:"bk_template_ids" mapstructure:"bk_template_ids"`
+	ServiceTemplateIDs []int64 `field:"service_template_ids" json:"service_template_ids" bson:"service_template_ids" mapstructure:"service_template_ids"`
 	// NOCC:tosa/linelength(ignore length)
 	RuleIDs []int64 `field:"host_apply_rule_ids" json:"host_apply_rule_ids" bson:"host_apply_rule_ids" mapstructure:"host_apply_rule_ids"`
 }
 
-// Validate validate DeleteHostApplyRuleOption
-func (option *DeleteHostApplyRuleOption) Validate() (rawError errors.RawErrorInfo) {
+// ValidateServiceTemplateOption judging the validity of parameters in the service template scenario.
+func (option *DeleteHostApplyRuleOption) ValidateServiceTemplateOption() (rawError errors.RawErrorInfo) {
 
 	if len(option.RuleIDs) == 0 {
 		return errors.RawErrorInfo{
@@ -103,16 +103,63 @@ func (option *DeleteHostApplyRuleOption) Validate() (rawError errors.RawErrorInf
 			Args:    []interface{}{"host_apply_rule_ids"},
 		}
 	}
-	if len(option.ServiceTemplateIDs) == 0 && len(option.ModuleIDs) == 0 {
+
+	if len(option.ModuleIDs) > 0 {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"bk_template_ids", "bk_module_ids"},
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"bk_module_ids"},
 		}
 	}
-	if len(option.ServiceTemplateIDs) > 0 && len(option.ModuleIDs) > 0 {
+
+	if len(option.ServiceTemplateIDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"bk_template_ids", "bk_module_ids"},
+			Args:    []interface{}{"bk_template_ids"},
+		}
+	}
+
+	// serviceTemplate id does not allow id 0 to exist.
+	if len(option.ServiceTemplateIDs) > 0 {
+		if util.InArray(0, option.ServiceTemplateIDs) {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{"bk_template_ids"},
+			}
+		}
+	}
+	return errors.RawErrorInfo{}
+}
+
+// ValidateModuleOption judging the validity of parameters in the module scenario.
+func (option *DeleteHostApplyRuleOption) ValidateModuleOption() (rawError errors.RawErrorInfo) {
+
+	if len(option.RuleIDs) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"host_apply_rule_ids"},
+		}
+	}
+	if len(option.ServiceTemplateIDs) > 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"service_template_ids"},
+		}
+	}
+
+	if len(option.ModuleIDs) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_module_ids"},
+		}
+	}
+
+	// module id does not allow id 0 to exist.
+	if len(option.ModuleIDs) > 0 {
+		if util.InArray(0, option.ModuleIDs) {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{"bk_module_ids"},
+			}
 		}
 	}
 	return errors.RawErrorInfo{}
@@ -131,7 +178,6 @@ type CreateOrUpdateApplyRuleOption struct {
 	ModuleID int64 `field:"bk_module_id" json:"bk_module_id,omitempty" bson:"bk_module_id" mapstructure:"bk_module_id"`
 	// NOCC:tosa/linelength(ignore length)
 	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id" mapstructure:"service_template_id"`
-
 	// NOCC:tosa/linelength(ignore length)
 	AttributeID int64 `field:"bk_attribute_id" json:"bk_attribute_id" bson:"bk_attribute_id" mapstructure:"bk_attribute_id"`
 	// NOCC:tosa/linelength(ignore length)
@@ -156,7 +202,7 @@ type HostAttribute struct {
 	PropertyValue interface{} `field:"bk_property_value" json:"bk_property_value" bson:"bk_property_value" mapstructure:"bk_property_value"`
 }
 
-// HostApplyConflictResolver 定义单个冲突的解决办法
+// HostApplyConflictResolver define a resolution to a single conflict.
 type HostApplyConflictResolver struct {
 	HostID        int64 `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
 	HostAttribute `json:",inline"`
@@ -263,7 +309,7 @@ type HostApplyPlanBase struct {
 	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" bson:"bk_host_ids" mapstructure:"bk_host_ids"`
 }
 
-// HostApplyTaskStatusOption 获取任务状态
+// HostApplyTaskStatusOption get task status.
 type HostApplyTaskStatusOption struct {
 	BizID   int64    `json:"bk_biz_id"`
 	TaskIDS []string `json:"task_ids"`
@@ -312,26 +358,35 @@ type HostApplyModulesOption struct {
 	ModuleIDs []int64 `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
 }
 
-// Validate validate HostApplyModulesOption
-func (op *HostApplyModulesOption) Validate() (rawError errors.RawErrorInfo) {
-
-	if op.BizID == 0 {
+func hostApplyBaseValidate(bizID int64, addRules []CreateHostApplyRuleOption,
+	removeIDs []int64) (rawError errors.RawErrorInfo) {
+	if bizID == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{common.BKAppIDField},
 		}
 	}
+
+	if len(addRules) == 0 && len(removeIDs) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"additional_rules and remove_rule_ids"},
+		}
+	}
+	return errors.RawErrorInfo{}
+}
+
+// Validate validate HostApplyModulesOption
+func (op *HostApplyModulesOption) Validate() (rawError errors.RawErrorInfo) {
+
 	if len(op.ModuleIDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"bk_module_ids"},
 		}
 	}
-	if len(op.AdditionalRules) == 0 && len(op.RemoveRuleIDs) == 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"additional_rules and remove_rule_ids"},
-		}
+	if err := hostApplyBaseValidate(op.BizID, op.AdditionalRules, op.RemoveRuleIDs); err.ErrCode != 0 {
+		return err
 	}
 	return errors.RawErrorInfo{}
 }
@@ -346,23 +401,14 @@ type HostApplyServiceTemplateOption struct {
 // Validate validate HostApplyServiceTemplateOption
 func (op *HostApplyServiceTemplateOption) Validate() (rawError errors.RawErrorInfo) {
 
-	if op.BizID == 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{common.BKAppIDField},
-		}
-	}
 	if len(op.ServiceTemplateIDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"bk_service_template_ids"},
 		}
 	}
-	if len(op.AdditionalRules) == 0 && len(op.RemoveRuleIDs) == 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"additional_rules and remove_rule_ids"},
-		}
+	if err := hostApplyBaseValidate(op.BizID, op.AdditionalRules, op.RemoveRuleIDs); err.ErrCode != 0 {
+		return err
 	}
 	return errors.RawErrorInfo{}
 }
@@ -422,6 +468,6 @@ type UpdateHostApplyEnableStatusOption struct {
 
 	//IDs the module scene represents the list of module IDs. In the template scene,this ID is the list of template IDs.
 	IDs        []int64 `json:"ids" mapstructure:"ids"`
-	Enable     bool    `json:"enable" mapstructure:"enable"`
+	Enable     bool    `json:"enabled" mapstructure:"enabled"`
 	ClearRules bool    `json:"clear_rules" mapstructure:"clear_rules"`
 }

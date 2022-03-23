@@ -49,8 +49,6 @@ var deprecatedIndexName = map[string][]string{
 		"bk_biz_id",
 		"id",
 		"bk_module_id",
-		"host_property_under_module",
-		"idx_unique_bizID_moduleID_attrID",
 	},
 	common.BKTableNameHostLock: {
 		"bk_host_id_1",

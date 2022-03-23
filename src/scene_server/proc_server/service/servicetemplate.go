@@ -137,10 +137,12 @@ func (ps *ProcServer) getHostIDByCondition(kit *rest.Kit, bizID int64, serviceTe
 		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", moduleFilter, err, kit.Rid)
 		return nil, err
 	}
+	// need to be compatible with scenarios without modules under the service template. In this scenario, only attribute
+	// rules need to be applied to service templates, not host attribute rules (without modules, there must be no hosts)
 	if len(moduleRes.Data.Info) == 0 {
-		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", moduleFilter, err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
+		return []int64{}, nil
 	}
+
 	modIDs := make([]int64, 0)
 
 	for _, modID := range moduleRes.Data.Info {
@@ -206,7 +208,7 @@ func (ps *ProcServer) ExecServiceTemplateHostApplyRule(ctx *rest.Contexts) {
 			return err
 		}
 
-		// save rules to database
+		// 1、update or add rules.
 		rulesOption := make([]metadata.CreateOrUpdateApplyRuleOption, 0)
 		for _, rule := range planReq.AdditionalRules {
 			rulesOption = append(rulesOption, metadata.CreateOrUpdateApplyRuleOption{
@@ -215,7 +217,6 @@ func (ps *ProcServer) ExecServiceTemplateHostApplyRule(ctx *rest.Contexts) {
 				PropertyValue:     rule.PropertyValue,
 			})
 		}
-		// 1、update or add rules.
 		saveRuleOp := metadata.BatchCreateOrUpdateApplyRuleOption{Rules: rulesOption}
 		if _, ccErr := ps.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
 			planReq.BizID, saveRuleOp); ccErr != nil {
@@ -246,9 +247,11 @@ func (ps *ProcServer) ExecServiceTemplateHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
-	// If the Changed flag is false or the request only contains the delete rule scenario, then there is no need to
-	// update the host rule.
-	if !planReq.Changed || len(planReq.AdditionalRules) == 0 {
+	// The following three scenarios do not require the update of the host properties to be automatically applied:
+	// 1. The changed flag is false.
+	// 2. This request only deletes the rule scenario.
+	// 3. No module is created under the service template or there is no eligible host under the module.
+	if !planReq.Changed || len(planReq.AdditionalRules) == 0 || len(hostIDs) == 0 {
 		ctx.RespEntity(nil)
 		return
 	}
@@ -476,6 +479,51 @@ func (ps *ProcServer) UpdateServiceTemplateHostApplyEnableStatus(ctx *rest.Conte
 	}
 	ctx.RespEntity(nil)
 }
+
+// GetHostApplyTaskStatus get host auto-apply asynchronous task status.
+func (s *ProcServer) GetHostApplyTaskStatus(ctx *rest.Contexts) {
+
+	syncStatusOpt := new(metadata.HostApplyTaskStatusOption)
+	if err := ctx.DecodeInto(syncStatusOpt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if rawErr := syncStatusOpt.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// get host auto-apply task status by task ids
+	statusOpt := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKInstIDField:   syncStatusOpt.BizID,
+			common.BKTaskTypeField: common.SyncServiceTemplateHostApplyTaskFlag,
+			common.BKTaskIDField:   map[string]interface{}{common.BKDBIN: syncStatusOpt.TaskIDS},
+		},
+		Fields:         []string{common.BKStatusField, common.BKTaskIDField},
+		DisableCounter: true,
+	}
+
+	tasksStatus, err := s.CoreAPI.TaskServer().Task().ListSyncStatusHistory(ctx.Kit.Ctx, ctx.Kit.Header, statusOpt)
+	if err != nil {
+		blog.Errorf("list sync status history failed, option: %#v, err: %v, rid: %s", statusOpt, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	result := metadata.HostApplyTaskStatusRsp{
+		BizID: syncStatusOpt.BizID,
+	}
+	for _, task := range tasksStatus.Info {
+		result.TaskInfo = append(result.TaskInfo, metadata.HostAppyTaskInfo{
+			TaskID: task.TaskID,
+			Status: string(task.Status),
+		})
+	}
+	ctx.RespEntity(result)
+	return
+}
+
+// DeleteHostApplyRule delete the host automatic application rule in the service template scenario.
 func (ps *ProcServer) DeleteHostApplyRule(ctx *rest.Contexts) {
 
 	rid := ctx.Kit.Rid
@@ -493,7 +541,7 @@ func (ps *ProcServer) DeleteHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
-	if rawErr := option.Validate(); rawErr.ErrCode != 0 {
+	if rawErr := option.ValidateServiceTemplateOption(); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}

@@ -39,14 +39,14 @@ var HostApplyAuthConfigs = []AuthConfig{
 		ResourceType:   meta.HostApply,
 		ResourceAction: meta.Update,
 	}, {
-		Name:           "DeleteHostApplyRuleRegex",
-		Description:    "删除主机属性自动应用规则",
-		Regex:          regexp.MustCompile(`^/api/v3/deletemany/host_apply_rule/bk_biz_id/([0-9]+)/?$`),
+		Name:           "DeleteModuleHostApplyRuleRegex",
+		Description:    "删除模块场景下主机属性自动应用规则",
+		Regex:          regexp.MustCompile(`^/api/v3/host/deletemany/module/host_apply_rule/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodDelete,
 		BizIDGetter:    BizIDFromURLGetter,
-		BizIndex:       5,
+		BizIndex:       7,
 		ResourceType:   meta.HostApply,
-		ResourceAction: meta.Update,
+		ResourceAction: meta.Delete,
 	}, {
 		Name:           "GetHostApplyRuleRegex",
 		Description:    "获取主机属性自动应用规则",
@@ -64,6 +64,14 @@ var HostApplyAuthConfigs = []AuthConfig{
 		BizIDGetter:    BizIDFromURLGetter,
 		BizIndex:       5,
 		ResourceType:   meta.MainlineInstanceTopology,
+		ResourceAction: meta.SkipAction,
+	}, {
+		Name:           "FindmanyModuleHostApplyTaskStatus",
+		Description:    "查询模块场景下主机自动应用任务状态",
+		Regex:          regexp.MustCompile(`^/api/v3/host/findmany/module/host_apply_plan/status`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.HostApply,
 		ResourceAction: meta.SkipAction,
 	}, {
 		Name:           "BatchUpdateOrCreateHostApplyRuleRegex",
@@ -86,7 +94,7 @@ var HostApplyAuthConfigs = []AuthConfig{
 	}, {
 		Name:           "RunHostApplyRuleOnModuleRegex",
 		Description:    "模块场景下执行主机属性自动应用",
-		Regex:          regexp.MustCompile(`^/api/v3/host/updatemany/module/host_apply_plan/bk_biz_id/run/?$`),
+		Regex:          regexp.MustCompile(`^/api/v3/host/updatemany/module/host_apply_plan/run`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.HostApply,

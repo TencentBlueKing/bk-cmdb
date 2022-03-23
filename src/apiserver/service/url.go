@@ -30,6 +30,7 @@ type URLPath string
 func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 	var serverType RequestType
 	var err error
+
 	switch {
 	case u.WithCache(req):
 		serverType = CacheType

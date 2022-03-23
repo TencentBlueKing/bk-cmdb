@@ -18,6 +18,7 @@ import (
 	"math/rand"
 	"strconv"
 
+	"configcenter/src/common"
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/test/util"
@@ -197,13 +198,16 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_apply_enabled": true,
 				"clear_rules":        false,
+				"ids": map[string]interface{}{
+					common.BKDBIN: []int64{value2},
+				},
 			}
 
 			rsp := metadata.Response{}
 			err := apiServerClient.Client().Put().
 				WithContext(ctx).
 				Body(input).
-				SubResourcef("/module/host_apply_enable_status/bk_biz_id/%d/bk_module_id/%d/", value1, value2).
+				SubResourcef("/module/host_apply_enable_status/bk_biz_id/%d", value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -532,10 +536,23 @@ var _ = Describe("host abnormal test", func() {
 		It("12. RunHostApplyPlan", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			urlTemplate := "/updatemany/host_apply_plan/bk_biz_id/%d/run"
+			urlTemplate := "/host/updatemany/module/host_apply_plan/run"
 
 			input := map[string]interface{}{
 				"bk_module_ids": []interface{}{value2},
+				"bk_biz_id":     value1,
+				"additional_rules": []map[string]interface{}{
+					{
+						"bk_attribute_id":   125,
+						"bk_module_id":      value2,
+						"bk_property_value": "运营中[需告警]",
+					},
+					{
+						"bk_attribute_id":   34,
+						"bk_module_id":      value2,
+						"bk_property_value": "3",
+					},
+				},
 			}
 
 			rsp := metadata.Response{}
@@ -598,6 +615,13 @@ var _ = Describe("host abnormal test", func() {
 				"add_to_modules": []interface{}{
 					value4,
 					value5,
+				},
+				"host_apply_trans_rule": map[string]interface{}{
+					"changed": true,
+					"final_rules": map[string]interface{}{
+						"bk_attribute_id":   125,
+						"bk_property_value": "运营中[需告警]",
+					},
 				},
 			}
 
@@ -720,10 +744,13 @@ var _ = Describe("host abnormal test", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_d0479d956b6c40b5aedb6c2fbb5451d5", "name:$.data.id", "{.data.id}")
 			value3 := util.JsonPathExtractInt(responses, "req_19a5ec9ae86f47dcbe1c9f17d12e3fc2", "name:$.data.items[1].rule.id", "{.data.items[1].rule.id}")
+			value4 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
+
 			urlTemplate := "/deletemany/host_apply_rule/bk_biz_id/%d"
 
 			input := map[string]interface{}{
 				"host_apply_rule_ids": []interface{}{value2, value3},
+				"bk_module_ids":       []interface{}{value4},
 			}
 
 			rsp := metadata.Response{}
