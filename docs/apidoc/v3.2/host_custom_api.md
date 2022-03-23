@@ -199,7 +199,7 @@ condition 参数说明： condition 字段为自定义api的属性字段, 可以
 
 
 
-* ouput 
+* output 
 ```
 {
     "result":true,
@@ -287,7 +287,7 @@ condition 参数说明：
 | id        | string | 是   | 无     | 主键ID | pripary key ID |
 
 
-* ouput 
+* output 
 
 ```
 {

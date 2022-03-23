@@ -97,16 +97,16 @@ func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discove
 
 func validateParameter(input *BackboneParameter) error {
 	if input.Regdiscv == "" {
-		return fmt.Errorf("regdiscv can not be emtpy")
+		return fmt.Errorf("regdiscv can not be empty")
 	}
 	if input.SrvInfo.IP == "" {
-		return fmt.Errorf("addrport ip can not be emtpy")
+		return fmt.Errorf("addrport ip can not be empty")
 	}
 	if input.SrvInfo.Port <= 0 || input.SrvInfo.Port > 65535 {
 		return fmt.Errorf("addrport port must be 1-65535")
 	}
 	if input.ConfigUpdate == nil && input.ExtraUpdate == nil {
-		return fmt.Errorf("service config change funcation can not be emtpy")
+		return fmt.Errorf("service config change funcation can not be empty")
 	}
 	// to prevent other components which doesn't set it from failing
 	if input.SrvInfo.RegisterIP == "" {
