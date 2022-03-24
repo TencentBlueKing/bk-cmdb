@@ -88,7 +88,7 @@ func (lgc *Logics) getDepartmentMap(ctx context.Context, header http.Header) (ma
 	}
 
 	if loginVersion == common.BKOpenSourceLoginPluginVersion || loginVersion == common.BKSkipLoginPluginVersion {
-		return nil, nil
+		return map[int64]metadata.DepartmentItem{}, nil
 	}
 
 	result, esbErr := esb.EsbClient().User().GetDepartment(ctx, header, nil)
