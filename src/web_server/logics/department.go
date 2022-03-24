@@ -30,8 +30,8 @@ import (
 
 // GetDepartment get department info from paas
 func (lgc *Logics) GetDepartment(c *gin.Context, config *options.Config) (*metadata.DepartmentData, errors.CCErrorCoder) {
-	// if no esb config, return
-	if !configcenter.IsExist("webServer.esb.addr") {
+	if config.LoginVersion == common.BKOpenSourceLoginPluginVersion ||
+		config.LoginVersion == common.BKSkipLoginPluginVersion {
 		return &metadata.DepartmentData{}, nil
 	}
 
@@ -54,8 +54,8 @@ func (lgc *Logics) GetDepartment(c *gin.Context, config *options.Config) (*metad
 
 // GetDepartmentProfile get department profile from paas
 func (lgc *Logics) GetDepartmentProfile(c *gin.Context, config *options.Config) (*metadata.DepartmentProfileData, errors.CCErrorCoder) {
-	// if no esb config, return
-	if !configcenter.IsExist("webServer.esb.addr") {
+	if config.LoginVersion == common.BKOpenSourceLoginPluginVersion ||
+		config.LoginVersion == common.BKSkipLoginPluginVersion {
 		return &metadata.DepartmentProfileData{}, nil
 	}
 
@@ -77,13 +77,19 @@ func (lgc *Logics) GetDepartmentProfile(c *gin.Context, config *options.Config) 
 
 func (lgc *Logics) getDepartmentMap(ctx context.Context, header http.Header) (map[int64]metadata.DepartmentItem,
 	errors.CCErrorCoder) {
-	// if no esb config, return
-	if !configcenter.IsExist("webServer.esb.addr") {
-		return nil, nil
-	}
 
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(header))
 	rid := commonutil.GetHTTPCCRequestID(header)
+
+	loginVersion, err := configcenter.String("webServer.login.version")
+	if err != nil {
+		blog.Errorf("get config webServer.login.version failed, err: %v, rid: %s", err, rid)
+		return nil, defErr.CCErrorf(common.CCErrCommConfMissItem, "webServer.login.version")
+	}
+
+	if loginVersion == common.BKOpenSourceLoginPluginVersion || loginVersion == common.BKSkipLoginPluginVersion {
+		return nil, nil
+	}
 
 	result, esbErr := esb.EsbClient().User().GetDepartment(ctx, header, nil)
 	if esbErr != nil {
