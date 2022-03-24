@@ -80,6 +80,7 @@ func (lgc *Logics) getDepartmentMap(ctx context.Context, header http.Header) (ma
 
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(header))
 	rid := commonutil.GetHTTPCCRequestID(header)
+	dpMap := make(map[int64]metadata.DepartmentItem)
 
 	loginVersion, err := configcenter.String("webServer.login.version")
 	if err != nil {
@@ -88,7 +89,7 @@ func (lgc *Logics) getDepartmentMap(ctx context.Context, header http.Header) (ma
 	}
 
 	if loginVersion == common.BKOpenSourceLoginPluginVersion || loginVersion == common.BKSkipLoginPluginVersion {
-		return map[int64]metadata.DepartmentItem{}, nil
+		return dpMap, nil
 	}
 
 	result, esbErr := esb.EsbClient().User().GetDepartment(ctx, header, nil)
@@ -101,7 +102,6 @@ func (lgc *Logics) getDepartmentMap(ctx context.Context, header http.Header) (ma
 		return nil, errors.NewCCError(result.Code, result.Message)
 	}
 
-	dpMap := make(map[int64]metadata.DepartmentItem)
 	for _, item := range result.Data.Results {
 		dpMap[item.ID] = item
 	}
