@@ -82,6 +82,15 @@ type ApiServerClientInterface interface {
 
 	SearchObjectAssociation(ctx context.Context, h http.Header,
 		request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error)
+
+	SearchObjectWithTotalInfo(ctx context.Context, h http.Header, params mapstr.MapStr) (*metadata.TotalObjectInfo,
+		error)
+	SearchAssociationType(ctx context.Context, h http.Header, params metadata.SearchAssociationTypeRequest) (
+		*metadata.SearchAssociationType, error)
+	UpdateAssociationType(ctx context.Context, h http.Header, id int64,
+		params metadata.UpdateAssociationTypeRequest) error
+	CreateAssociationType(ctx context.Context, h http.Header, params metadata.AssociationKind) (*metadata.RspID, error)
+	CreateManyObject(ctx context.Context, h http.Header, params metadata.ImportObjects) ([]metadata.Object, error)
 }
 
 func NewApiServerClientInterface(c *util.Capability, version string) ApiServerClientInterface {

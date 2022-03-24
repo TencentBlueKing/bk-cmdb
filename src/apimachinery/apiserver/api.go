@@ -70,6 +70,35 @@ func (a *apiServer) GetObjectData(ctx context.Context, h http.Header, params map
 	return
 }
 
+// SearchObjectsWithTotalInfo search object with it's attribute and association
+func (a *apiServer) SearchObjectWithTotalInfo(ctx context.Context, h http.Header, params mapstr.MapStr) (
+	*metadata.TotalObjectInfo, error) {
+
+	resp := struct {
+		metadata.BaseResp `json:",inline"`
+		Data              metadata.TotalObjectInfo `json:"data"`
+	}{}
+	subPath := "/findmany/object/total/info"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return &resp.Data, nil
+}
+
 func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
 
 	resp = new(metadata.QueryInstResult)
@@ -524,4 +553,115 @@ func (asst *apiServer) SearchObjectAssociation(ctx context.Context, h http.Heade
 		Into(resp)
 
 	return
+}
+
+// SearchAssociationType search association kind by params
+func (a *apiServer) SearchAssociationType(ctx context.Context, h http.Header,
+	params metadata.SearchAssociationTypeRequest) (*metadata.SearchAssociationType, error) {
+
+	resp := new(metadata.SearchAssociationTypeResult)
+	subPath := "/find/associationtype"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return &resp.Data, nil
+}
+
+// UpdateAssociationType update association kind by params
+func (a *apiServer) UpdateAssociationType(ctx context.Context, h http.Header, id int64,
+	params metadata.UpdateAssociationTypeRequest) error {
+
+	resp := new(metadata.Response)
+	subPath := "/update/associationtype/%d"
+
+	err := a.client.Put().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath, id).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return ccErr
+	}
+
+	return nil
+}
+
+// CreateAssociationType create association kind by params
+func (a *apiServer) CreateAssociationType(ctx context.Context, h http.Header, params metadata.AssociationKind) (
+	*metadata.RspID, error) {
+
+	var asstRespoense struct {
+		metadata.BaseResp `json:",inline"`
+		Data              metadata.RspID `json:"data"`
+	}
+
+	subPath := "/create/associationtype"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&asstRespoense)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := asstRespoense.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return &asstRespoense.Data, nil
+}
+
+// CreateManyObject create many object
+func (a *apiServer) CreateManyObject(ctx context.Context, h http.Header, params metadata.ImportObjects) (
+	[]metadata.Object, error) {
+
+	resp := struct {
+		metadata.BaseResp `json:",inline"`
+		Data              []metadata.Object `json:"data"`
+	}{}
+	subPath := "/createmany/object/by_import"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return resp.Data, nil
 }

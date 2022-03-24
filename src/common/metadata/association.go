@@ -385,6 +385,11 @@ func (cli *AssociationKind) Parse(data mapstr.MapStr) (*AssociationKind, error) 
 	return cli, err
 }
 
+// ToMapStr to mapstr
+func (cli *AssociationKind) ToMapStr() mapstr.MapStr {
+	return mapstr.SetValueToMapStrByTags(cli)
+}
+
 type AssociationOnDeleteAction string
 type AssociationMapping string
 
@@ -721,4 +726,27 @@ type FindAssociationByObjectAssociationIDRequest struct {
 type FindAssociationByObjectAssociationIDResponse struct {
 	BaseResp
 	Data []Association `json:"data"`
+}
+
+// AssociationKindYaml yaml's field about association kind
+type AssociationKindYaml struct {
+	YamlHeader `json:",inline" yaml:",inline"`
+	AsstKind   []AssociationKind `json:"asst_kind" yaml:"asst_kind"`
+}
+
+func (asst *AssociationKindYaml) Validate() errors.RawErrorInfo {
+	if err := asst.YamlHeader.Validate(); err.ErrCode != 0 {
+		return err
+	}
+
+	for _, item := range asst.AsstKind {
+		if len(item.AssociationKindID) == 0 {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrWebVerifyYamlFail,
+				Args:    []interface{}{common.AssociationKindIDField + " no found"},
+			}
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }

@@ -13,8 +13,12 @@
 package metadata
 
 import (
+	"fmt"
 	"net/http"
+	"time"
 
+	"configcenter/src/common"
+	"configcenter/src/common/cryptor"
 	"configcenter/src/common/errors"
 
 	"github.com/gin-gonic/gin"
@@ -134,4 +138,75 @@ type ObjectAsstIDStatisticsInfo struct {
 	Create int64 `json:"create"`
 	Delete int64 `json:"delete"`
 	Total  int64 `json:"total"`
+}
+
+// BatchExportObject param of bacth export object
+type BatchExportObject struct {
+	ObjectID       []int64 `json:"object_id"`
+	ExcludedAsstID []int64 `json:"excluded_asst_id"`
+	Password       string  `json:"password"`
+	Expiration     int64   `json:"expiration"`
+	FileName       string  `json:"file_name"`
+}
+
+// ZipFileAnalysis analysis zip file
+type ZipFileAnalysis struct {
+	Password string `json:"password"`
+}
+
+// AnalysisResult result of analysis zip file
+type AnalysisResult struct {
+	BaseResp `json:",inline"`
+	Data     struct {
+		Object []YamlObject      `json:"import_object"`
+		Asst   []AssociationKind `json:"import_asst"`
+	} `json:"data"`
+}
+
+// BatchImportObject param of batch import object
+type BatchImportObject struct {
+	Object []YamlObject      `json:"import_object"`
+	Asst   []AssociationKind `json:"import_asst"`
+}
+
+// YamlHeader yaml's common header
+type YamlHeader struct {
+	Creator    string `json:"creator" yaml:"creator"`
+	ExpireTime string `json:"expire_time" yaml:"expire_time"`
+	CreateTime int64  `json:"create_time" yaml:"create_time"`
+}
+
+// Validate validate yaml common field
+func (o *YamlHeader) Validate() errors.RawErrorInfo {
+	if len(o.ExpireTime) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail,
+			Args:    []interface{}{"expire_time not found"},
+		}
+	}
+
+	if o.CreateTime == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail,
+			Args:    []interface{}{"create_time not found"},
+		}
+	}
+
+	timeCryptor := cryptor.NewAesEncrpytor(fmt.Sprintf("export%v", o.CreateTime))
+	timeDecrypt, err := timeCryptor.Decrypt(fmt.Sprint(o.ExpireTime))
+	if err != nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail,
+			Args:    []interface{}{err.Error()},
+		}
+	}
+
+	if timeDecrypt < fmt.Sprintf("%d", time.Now().Unix()) && timeDecrypt != fmt.Sprint(o.CreateTime) {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail,
+			Args:    []interface{}{"expire time incorrect"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }

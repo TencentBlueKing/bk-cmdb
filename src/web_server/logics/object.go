@@ -13,19 +13,27 @@
 package logics
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"sync"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/cryptor"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/chalice-1831/zip"
+	yl "github.com/ghodss/yaml"
 )
 
 // GetObjectData get object data
@@ -232,4 +240,186 @@ func (lgc *Logics) ProcessObjectIDArray(ctx context.Context, header http.Header,
 	}
 
 	return objArray, nonexistentObjects, nil
+}
+
+// BuildExportObjectYaml build export yaml
+func (lgc *Logics) BuildExportYaml(header http.Header, expiration int64, data interface{},
+	exportType string) ([]byte, error) {
+
+	rid := util.GetHTTPCCRequestID(header)
+	user := util.GetUser(header)
+	nowTime := time.Now()
+
+	expirationTime := nowTime.Unix()
+	if expiration != 0 {
+		expirationTime = nowTime.AddDate(0, 0, int(expiration)).Unix()
+	}
+
+	aesEncrpytor := cryptor.NewAesEncrpytor(fmt.Sprintf("export%d", nowTime.Unix()))
+	aesExpiration, err := aesEncrpytor.Encrypt(fmt.Sprint(expirationTime))
+	if err != nil {
+		blog.Errorf("encrypt expiration time failed, err: %v, rid: %s", err, rid)
+		return nil, err
+	}
+
+	exportInfo := mapstr.MapStr{
+		"creator":     user,
+		"create_time": nowTime.Unix(),
+		"expire_time": aesExpiration,
+		exportType:    data,
+	}
+
+	yamlData, err := yl.Marshal(exportInfo)
+	if err != nil {
+		blog.Errorf("marshal data[%v] into yaml failed, err: %v, rid: %s", data, err, rid)
+		return nil, err
+	}
+
+	return yamlData, nil
+}
+
+// BuildZipFile build zip file with password
+func (lgc *Logics) BuildZipFile(header http.Header, zipw *zip.Writer, fileName string, password string,
+	data []byte) error {
+
+	rid := util.GetHTTPCCRequestID(header)
+	if password != "" {
+		w, err := zipw.Encrypt(fileName, password, zip.AES256Encryption)
+		if err != nil {
+			blog.Errorf("encrypt zip file failed, err: %v, rid: %s", err, rid)
+			return err
+		}
+
+		if _, err = io.Copy(w, bytes.NewReader(data)); err != nil {
+			blog.Errorf("copy data into zip file failed, err: %v, rid: %s", err, rid)
+			return err
+		}
+	} else {
+		w, err := zipw.Create(fileName)
+		if err != nil {
+			blog.Errorf("encrypt zip file failed, err: %v, rid: %s", err, rid)
+			return err
+		}
+
+		if _, err = io.Copy(w, bytes.NewReader(data)); err != nil {
+			blog.Errorf("copy data into zip file failed, err: %v, rid: %s", err, rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// GetDataFromZipFile get data from zip file
+func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, password string,
+	result *metadata.AnalysisResult) error {
+
+	rid := util.GetHTTPCCRequestID(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+
+	if file.IsEncrypted() {
+		if len(password) == 0 {
+			blog.Errorf("zip is encrypted but no password provided, rid: %s", rid)
+			return defErr.Errorf(common.CCErrWebVerifyYamlPwdFail, "no password")
+		}
+
+		file.SetPassword(password)
+	}
+
+	zipFile, err := file.Open()
+	if err != nil {
+		blog.Errorf("open zip file failed, err: %+v, rid: %s", err, rid)
+		return err
+	}
+
+	defer zipFile.Close()
+
+	receiver := new(bytes.Buffer)
+	io.Copy(receiver, zipFile)
+	if strings.Contains(file.Name, "asst_kind") {
+		fileInfo := metadata.AssociationKindYaml{}
+		if err := yl.Unmarshal(receiver.Bytes(), &fileInfo); err != nil {
+			blog.Errorf("unmarshal zip file failed, err: %+v, rid: %s", err, rid)
+			return err
+		}
+
+		if err := fileInfo.Validate(); err.ErrCode != 0 {
+			blog.Errorf("validate file failed, err: %+v, rid: %s", err, rid)
+			return err.ToCCError(defErr)
+		}
+
+		result.Data.Asst = append(result.Data.Asst, fileInfo.AsstKind...)
+	} else {
+		fileInfo := metadata.ObjectYaml{}
+		if err := yl.Unmarshal(receiver.Bytes(), &fileInfo); err != nil {
+			blog.Errorf("unmarshal zip file failed, err: %+v, rid: %s", err, rid)
+			return err
+		}
+		if err := fileInfo.Validate(); err.ErrCode != 0 {
+			blog.Errorf("validate file failed, err: %+v, rid: %s", err, rid)
+			return err.ToCCError(defErr)
+		}
+		result.Data.Object = append(result.Data.Object, fileInfo.Object)
+	}
+
+	return nil
+}
+
+// CreateOrUpdateAssociationType create association type, if association type exist, update it
+func (lgc *Logics) CreateOrUpdateAssociationType(ctx context.Context, header http.Header,
+	asst []metadata.AssociationKind) error {
+
+	rid := util.GetHTTPCCRequestID(header)
+	asstKindMap := make(map[string]metadata.AssociationKind)
+	asstKindID := make([]string, 0)
+	for _, item := range asst {
+		asstKindMap[item.AssociationKindID] = metadata.AssociationKind{
+			AssociationKindID:       item.AssociationKindID,
+			AssociationKindName:     item.AssociationKindName,
+			DestinationToSourceNote: item.DestinationToSourceNote,
+			SourceToDestinationNote: item.SourceToDestinationNote,
+			Direction:               item.Direction,
+		}
+		asstKindID = append(asstKindID, item.AssociationKindID)
+	}
+
+	asstQuery := metadata.SearchAssociationTypeRequest{
+		Condition: map[string]interface{}{common.AssociationKindIDField: mapstr.MapStr{common.BKDBIN: asstKindID}}}
+	rsp, err := lgc.Engine.CoreAPI.ApiServer().SearchAssociationType(ctx, header, asstQuery)
+	if err != nil {
+		blog.Errorf("search asstkind failed, cond: %v, err: %v, rid: %s", asstQuery, err, rid)
+		return err
+	}
+
+	existAsstKind := make([]string, 0)
+	kindIDMap := make(map[string]int64)
+	for _, item := range rsp.Info {
+		existAsstKind = append(existAsstKind, item.AssociationKindID)
+		kindIDMap[item.AssociationKindID] = item.ID
+	}
+
+	needCreateAsst := util.StrArrDiff(asstKindID, existAsstKind)
+	for _, item := range existAsstKind {
+		updataCond := metadata.UpdateAssociationTypeRequest{
+			AsstName:  asstKindMap[item].AssociationKindName,
+			SrcDes:    asstKindMap[item].SourceToDestinationNote,
+			DestDes:   asstKindMap[item].DestinationToSourceNote,
+			Direction: string(asstKindMap[item].Direction),
+		}
+		if err := lgc.Engine.CoreAPI.ApiServer().UpdateAssociationType(ctx, header, kindIDMap[item],
+			updataCond); err != nil {
+			blog.Errorf("update asstkind failed, cond: %v,err: %s, rid: %s", updataCond, err.Error(), rid)
+			return err
+		}
+	}
+
+	for _, item := range needCreateAsst {
+		createCond := asstKindMap[item]
+		if _, err := lgc.Engine.CoreAPI.ApiServer().CreateAssociationType(ctx, header, createCond); err != nil {
+			blog.Errorf("create asstkind failed, cond: %v, err: %s, rid: %s", createCond, err.Error(), rid)
+			return err
+		}
+	}
+
+	return nil
 }
