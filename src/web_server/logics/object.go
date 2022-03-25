@@ -320,7 +320,7 @@ func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, passwo
 	if file.IsEncrypted() {
 		if len(password) == 0 {
 			blog.Errorf("zip is encrypted but no password provided, rid: %s", rid)
-			return defErr.Errorf(common.CCErrWebVerifyYamlPwdFail, "no password")
+			return defErr.CCErrorf(common.CCErrWebVerifyYamlPwdFail, "no password")
 		}
 
 		file.SetPassword(password)
@@ -336,6 +336,13 @@ func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, passwo
 
 	receiver := new(bytes.Buffer)
 	io.Copy(receiver, zipFile)
+
+	// if encryption method use ZipCrypto, decrypt it with incorrect password receiver will be empty
+	if len(receiver.Bytes()) == 0 {
+		blog.Errorf("get file info failed, zip use ZipCrypto, password incorrect, rid: %s", rid)
+		return defErr.CCErrorf(common.CCErrWebVerifyYamlPwdFail, "invalid password")
+	}
+
 	if strings.Contains(file.Name, "asst_kind") {
 		fileInfo := metadata.AssociationKindYaml{}
 		if err := yl.Unmarshal(receiver.Bytes(), &fileInfo); err != nil {

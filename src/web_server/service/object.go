@@ -547,7 +547,7 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 
 		if err := s.Logics.GetDataFromZipFile(c.Request.Header, item, cond.Password, result); err != nil {
 			var msg string
-			if strings.Contains(err.Error(), "invalid password") {
+			if strings.Contains(err.Error(), "invalid password") || strings.Contains(err.Error(), "no password") {
 				msg = getReturnStr(common.CCErrWebVerifyYamlPwdFail, err.Error(), nil)
 			} else {
 				msg = getReturnStr(common.CCErrWebAnalysisZipFileFail, err.Error(), nil)
