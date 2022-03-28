@@ -734,6 +734,7 @@ type AssociationKindYaml struct {
 	AsstKind   []AssociationKind `json:"asst_kind" yaml:"asst_kind"`
 }
 
+// Validate validate total yaml of association
 func (asst *AssociationKindYaml) Validate() errors.RawErrorInfo {
 	if err := asst.YamlHeader.Validate(); err.ErrCode != 0 {
 		return err

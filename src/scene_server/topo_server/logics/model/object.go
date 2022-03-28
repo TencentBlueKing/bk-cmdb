@@ -662,6 +662,7 @@ func (o *object) CreateObjectByImport(kit *rest.Kit, data []metadata.YamlObject)
 			common.BKObjNameField:          objectInfo.ObjectName,
 			common.BKObjIconField:          objectInfo.ObjIcon,
 			common.BKClassificationIDField: objectInfo.ClsID,
+			common.CreatorField:            kit.User,
 		}
 
 		obj, err := o.isValid(kit, false, object)
@@ -799,6 +800,8 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, data []metadata.A
 			createdGroup[item.PropertyGroupName] = struct{}{}
 		}
 
+		item.Creator = kit.User
+
 		if item.PropertyID == common.GetInstNameField(objID) {
 			isInstName = true
 			attrs = append([]metadata.Attribute{item}, attrs...)
@@ -812,7 +815,7 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, data []metadata.A
 			ObjectID:          objID,
 			IsOnly:            true,
 			IsPre:             true,
-			Creator:           "user",
+			Creator:           kit.User,
 			IsEditable:        true,
 			PropertyIndex:     -1,
 			PropertyGroup:     groups[0].GroupID,
@@ -847,17 +850,14 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, data []metadata.A
 		}
 	}
 
-	uni := metadata.ObjectUnique{
+	cond := metadata.CreateModelAttrUnique{Data: metadata.ObjectUnique{
 		ObjID:   objID,
 		OwnerID: kit.SupplierAccount,
 		Keys:    keys,
 		Ispre:   false,
-	}
-
-	_, err = o.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header,
-		uni.ObjID, metadata.CreateModelAttrUnique{Data: uni})
-	if err != nil {
-		blog.Errorf("create unique for %s failed, err: %v, rid: %s", uni.ObjID, err, kit.Rid)
+	}}
+	if _, err = o.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header, objID, cond); err != nil {
+		blog.Errorf("create unique for %s failed, err: %v, rid: %s", objID, err, kit.Rid)
 		return err
 	}
 
