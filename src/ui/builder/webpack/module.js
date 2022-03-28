@@ -21,6 +21,12 @@ module.exports = () => ({
     {
       test: /\.vue$/,
       loader: 'vue-loader',
+      options: {
+        compilerOptions: {
+          whitespace: 'condense',
+          preserveWhitespace: false
+        }
+      }
     },
     {
       test: /\.js$/,
