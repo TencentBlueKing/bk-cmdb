@@ -172,7 +172,8 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(ctx context.Context, header htt
 	return ret.Data, nil
 }
 
-func (p *hostApplyRule) GenerateApplyPlan(ctx context.Context, header http.Header, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder) {
+func (p *hostApplyRule) GenerateApplyPlan(ctx context.Context, header http.Header, bizID int64,
+	option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp
 		Data metadata.HostApplyPlanResult `json:"data"`

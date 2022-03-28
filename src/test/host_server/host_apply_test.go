@@ -18,7 +18,6 @@ import (
 	"math/rand"
 	"strconv"
 
-	"configcenter/src/common"
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/test/util"
@@ -196,11 +195,9 @@ var _ = Describe("host abnormal test", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
 			input := map[string]interface{}{
-				"host_apply_enabled": true,
-				"clear_rules":        false,
-				"ids": map[string]interface{}{
-					common.BKDBIN: []int64{value2},
-				},
+				"enabled":     true,
+				"clear_rules": false,
+				"ids":         []int64{value2},
 			}
 
 			rsp := metadata.Response{}
@@ -511,28 +508,6 @@ var _ = Describe("host abnormal test", func() {
 			responses["req_19a5ec9ae86f47dcbe1c9f17d12e3fc2"] = rsp
 		})
 
-		It("12. GenerateHostApplyPlan", func() {
-			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
-			value2 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			urlTemplate := "/createmany/host_apply_plan/bk_biz_id/%d/preview"
-
-			input := map[string]interface{}{
-				"bk_module_ids": []interface{}{value2},
-			}
-
-			rsp := metadata.Response{}
-			err := apiServerClient.Client().Post().
-				WithContext(ctx).
-				Body(input).
-				SubResourcef(urlTemplate, value1).
-				WithHeaders(header).
-				Do().Into(&rsp)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			responses["req_8585626c27b845bbae201d6f8c80be59"] = rsp
-		})
-
 		It("12. RunHostApplyPlan", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
@@ -559,7 +534,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResourcef(urlTemplate, value1).
+				SubResourcef(urlTemplate).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -668,40 +643,6 @@ var _ = Describe("host abnormal test", func() {
 			responses["req_d3a0e99e1865429d883029dc1df44b6d"] = rsp
 		})
 
-		It("16. GenerateHostApplyPlan", func() {
-			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
-			value2 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			value4 := util.JsonPathExtractInt(responses, "req_9a5a5cc52e624951a6954ee2e1c6d512", "name:$.data.id", "{.data.id}")
-			value5 := util.JsonPathExtractInt(responses, "req_ad1c416acb594b8a924163dad615df7a", "name:$.data.info[0].bk_host_id", "{.data.info[0].bk_host_id}")
-			urlTemplate := "/createmany/host_apply_plan/bk_biz_id/%d/preview"
-
-			input := map[string]interface{}{
-				"bk_module_ids": []interface{}{
-					value2,
-				},
-				// {#"remove_rule_ids": [value3],#}
-				"conflict_resolvers": []map[string]interface{}{
-					{
-						"bk_attribute_id":   value4,
-						"bk_host_id":        value5,
-						"bk_property_value": "xxx",
-					},
-				},
-			}
-
-			rsp := metadata.Response{}
-			err := apiServerClient.Client().Post().
-				WithContext(ctx).
-				Body(input).
-				SubResourcef(urlTemplate, value1).
-				WithHeaders(header).
-				Do().Into(&rsp)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			responses["req_3a107db2c5fa455a987c64d43fb35620"] = rsp
-		})
-
 		It("17. SearchHostApplyRuleRelatedModules", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtract(responses, "req_97c8a2eacfe243b7b910bbbb15299641", "name:$.data.bk_set_name", "{.data.bk_set_name}")
@@ -746,8 +687,7 @@ var _ = Describe("host abnormal test", func() {
 			value3 := util.JsonPathExtractInt(responses, "req_19a5ec9ae86f47dcbe1c9f17d12e3fc2", "name:$.data.items[1].rule.id", "{.data.items[1].rule.id}")
 			value4 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
 
-			urlTemplate := "/deletemany/host_apply_rule/bk_biz_id/%d"
-
+			urlTemplate := "/host/deletemany/module/host_apply_rule/bk_biz_id/%d"
 			input := map[string]interface{}{
 				"host_apply_rule_ids": []interface{}{value2, value3},
 				"bk_module_ids":       []interface{}{value4},

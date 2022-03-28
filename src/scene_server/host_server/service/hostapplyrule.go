@@ -510,7 +510,8 @@ func (s *Service) getUpdateDataStr(kit *rest.Kit, rules []metadata.HostAttribute
 
 }
 
-func (s *Service) updateHostAttributes(kit *rest.Kit, planResult []metadata.HostAttribute, hostIDs []int64) errors.CCErrorCoder {
+func (s *Service) updateHostAttributes(kit *rest.Kit, planResult []metadata.HostAttribute,
+	hostIDs []int64) errors.CCErrorCoder {
 
 	dataStr, err := s.getUpdateDataStr(kit, planResult)
 	if err != nil {
@@ -553,10 +554,10 @@ func (s *Service) GetHostApplyTaskStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	// get host auto-apply task status by task ids
+	// get host auto-apply task status by task ids. Query the automatic application status of the host. Since the instID
+	// when creating a task is a random number, the instID input condition is not required when querying.
 	statusOpt := &metadata.QueryCondition{
 		Condition: map[string]interface{}{
-			common.BKInstIDField:   syncStatusOpt.BizID,
 			common.BKTaskTypeField: common.SyncModuleHostApplyTaskFlag,
 			common.BKTaskIDField:   map[string]interface{}{common.BKDBIN: syncStatusOpt.TaskIDS},
 		},
@@ -598,9 +599,16 @@ func (s *Service) UpdateModuleHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	taskInfo := metadata.APITaskDetail{}
+	// The host is automatically updated asynchronously in the application scenario. The instID corresponds to the
+	// BizID, but if the task is created according to the business level, a large number of task conflict scenarios will
+	// appear. This scenario allows repeated execution of the same task, and only the execution result of the last task
+	// is retained. When querying the task result, the history api can be used without passing the instID. Therefore,
+	// the instID here can be assigned a random number. Random instID from 1 to 10000 in module scenario.
+	randInstNum := util.RandInt64WithRange(int64(1), int64(10000))
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		taskRes, err := s.CoreAPI.TaskServer().Task().Create(ctx.Kit.Ctx, ctx.Kit.Header,
-			common.SyncModuleHostApplyTaskFlag, syncOpt.BizID, []interface{}{syncOpt})
+			common.SyncModuleHostApplyTaskFlag, randInstNum, []interface{}{syncOpt})
 		if err != nil {
 			blog.Errorf("create module host apply sync rule task failed, opt: %+v, err: %v, rid: %s",
 				syncOpt, err, ctx.Kit.Rid)
@@ -650,15 +658,13 @@ func (s *Service) ExecModuleHostApplyRule(ctx *rest.Contexts) {
 			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		// save rules to database
 		rulesOption := make([]metadata.CreateOrUpdateApplyRuleOption, 0)
 		for _, rule := range planReq.AdditionalRules {
 
 			rulesOption = append(rulesOption, metadata.CreateOrUpdateApplyRuleOption{
 				AttributeID:   rule.AttributeID,
 				ModuleID:      rule.ModuleID,
-				PropertyValue: rule.PropertyValue,
-			})
+				PropertyValue: rule.PropertyValue})
 		}
 
 		// 1、update or add rules.
@@ -674,8 +680,7 @@ func (s *Service) ExecModuleHostApplyRule(ctx *rest.Contexts) {
 		if len(planReq.RemoveRuleIDs) > 0 {
 			removeOp := metadata.DeleteHostApplyRuleOption{
 				RuleIDs:   planReq.RemoveRuleIDs,
-				ModuleIDs: planReq.ModuleIDs,
-			}
+				ModuleIDs: planReq.ModuleIDs}
 			if ccErr := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
 				planReq.BizID, removeOp); ccErr != nil {
 				blog.Errorf("delete apply rule failed, bizID: %d, req: %s, err: %v, rid: %s", planReq.BizID, removeOp,
@@ -692,9 +697,7 @@ func (s *Service) ExecModuleHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	// the following three scenarios do not require the update of the host properties to be automatically applied:
-	// 1. The changed flag is false.
-	// 2. This request only deletes the rule scenario.
-	// 3. No eligible host was found.
+	// 1. The changed flag is false. 2. This request only deletes the rule scenario. 3. No eligible host was found.
 	if !planReq.Changed || len(planReq.AdditionalRules) == 0 || len(hostIDs) == 0 {
 		ctx.RespEntity(nil)
 		return
@@ -708,8 +711,7 @@ func (s *Service) ExecModuleHostApplyRule(ctx *rest.Contexts) {
 	for _, rule := range planReq.AdditionalRules {
 		attributes = append(attributes, metadata.HostAttribute{
 			AttributeID:   rule.AttributeID,
-			PropertyValue: rule.PropertyValue,
-		})
+			PropertyValue: rule.PropertyValue})
 	}
 	// apply module attribute rules to the host.
 	err = s.updateHostAttributes(ctx.Kit, attributes, hostIDs)

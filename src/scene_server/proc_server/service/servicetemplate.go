@@ -376,9 +376,17 @@ func (ps *ProcServer) UpdateServiceTemplateHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	taskInfo := metadata.APITaskDetail{}
+
+	// The host is automatically updated asynchronously in the application scenario. The instID corresponds to the
+	// BizID, but if the task is created according to the business level, a large number of task conflict scenarios will
+	// appear. This scenario allows repeated execution of the same task, and only the execution result of the last task
+	// is retained. When querying the task result, the history api can be used without passing the instID. Therefore,
+	// the instID here can be assigned a random number. Random instID from 10000 to 20000 in template scene.
+	randInstNum := util.RandInt64WithRange(int64(10000), int64(20000))
+
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		taskRes, err := ps.CoreAPI.TaskServer().Task().Create(ctx.Kit.Ctx, ctx.Kit.Header,
-			common.SyncServiceTemplateHostApplyTaskFlag, syncOpt.BizID, []interface{}{syncOpt})
+			common.SyncServiceTemplateHostApplyTaskFlag, randInstNum, []interface{}{syncOpt})
 		if err != nil {
 			blog.Errorf("create service template host apply sync rule task failed, opt: %+v, err: %v, rid: %s",
 				syncOpt, err, ctx.Kit.Rid)
@@ -493,10 +501,10 @@ func (s *ProcServer) GetHostApplyTaskStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	// get host auto-apply task status by task ids
+	// get host auto-apply task status by task ids. query the automatic application status of the host. Since the instID
+	// when creating a task is a random number, the instID input condition is not required when querying.
 	statusOpt := &metadata.QueryCondition{
 		Condition: map[string]interface{}{
-			common.BKInstIDField:   syncStatusOpt.BizID,
 			common.BKTaskTypeField: common.SyncServiceTemplateHostApplyTaskFlag,
 			common.BKTaskIDField:   map[string]interface{}{common.BKDBIN: syncStatusOpt.TaskIDS},
 		},
@@ -547,8 +555,10 @@ func (ps *ProcServer) DeleteHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		if err := ps.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, option); err != nil {
-			blog.ErrorJSON("DeleteHostApplyRule failed, core service DeleteHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), rid)
+		if err := ps.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
+			option); err != nil {
+			blog.Errorf("DeleteHostApplyRule failed, core service DeleteHostApplyRule failed, bizID: %s, option: %s,"+
+				" err: %v, rid: %s", bizID, option, err, rid)
 			return err
 		}
 		return nil

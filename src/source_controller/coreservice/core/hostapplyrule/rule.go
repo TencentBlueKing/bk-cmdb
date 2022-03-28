@@ -203,7 +203,8 @@ func (p *hostApplyRule) UpdateHostApplyRule(kit *rest.Kit, bizID int64, ruleID i
 }
 
 // DeleteHostApplyRule delete host apply rule by condition, bizID maybe 0
-func (p *hostApplyRule) DeleteHostApplyRule(kit *rest.Kit, bizID int64, option metadata.DeleteHostApplyRuleOption) errors.CCErrorCoder {
+func (p *hostApplyRule) DeleteHostApplyRule(kit *rest.Kit, bizID int64,
+	option metadata.DeleteHostApplyRuleOption) errors.CCErrorCoder {
 	if len(option.RuleIDs) == 0 {
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "host_apply_rule_ids")
 	}
