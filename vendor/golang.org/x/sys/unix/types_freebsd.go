@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build ignore
 // +build ignore
 
 /*
@@ -39,6 +40,7 @@ package unix
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/ucred.h>
 #include <sys/un.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
@@ -139,6 +141,8 @@ type Timespec C.struct_timespec
 
 type Timeval C.struct_timeval
 
+type Time_t C.time_t
+
 // Processes
 
 type Rusage C.struct_rusage
@@ -203,6 +207,8 @@ type RawSockaddrAny C.struct_sockaddr_any
 
 type _Socklen C.socklen_t
 
+type Xucred C.struct_xucred
+
 type Linger C.struct_linger
 
 type Iovec C.struct_iovec
@@ -229,7 +235,9 @@ const (
 	SizeofSockaddrAny      = C.sizeof_struct_sockaddr_any
 	SizeofSockaddrUnix     = C.sizeof_struct_sockaddr_un
 	SizeofSockaddrDatalink = C.sizeof_struct_sockaddr_dl
+	SizeofXucred           = C.sizeof_struct_xucred
 	SizeofLinger           = C.sizeof_struct_linger
+	SizeofIovec            = C.sizeof_struct_iovec
 	SizeofIPMreq           = C.sizeof_struct_ip_mreq
 	SizeofIPMreqn          = C.sizeof_struct_ip_mreqn
 	SizeofIPv6Mreq         = C.sizeof_struct_ipv6_mreq
@@ -368,9 +376,10 @@ type Winsize C.struct_winsize
 
 const (
 	AT_FDCWD            = C.AT_FDCWD
-	AT_REMOVEDIR        = C.AT_REMOVEDIR
-	AT_SYMLINK_FOLLOW   = C.AT_SYMLINK_FOLLOW
+	AT_EACCESS          = C.AT_EACCESS
 	AT_SYMLINK_NOFOLLOW = C.AT_SYMLINK_NOFOLLOW
+	AT_SYMLINK_FOLLOW   = C.AT_SYMLINK_FOLLOW
+	AT_REMOVEDIR        = C.AT_REMOVEDIR
 )
 
 // poll

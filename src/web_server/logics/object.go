@@ -17,14 +17,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // GetObjectData get object data
-func (lgc *Logics) GetObjectData(ownerID, objID string, header http.Header, modelBizID int64) ([]interface{}, error) {
+func (lgc *Logics) GetObjectData(objID string, header http.Header, modelBizID int64) ([]interface{}, error) {
 
 	condition := mapstr.MapStr{
 		"condition": []string{
@@ -106,4 +111,125 @@ func ConvAttrOption(attrItems map[int]map[string]interface{}) {
 			attrItems[index][common.BKOptionField] = iOption
 		}
 	}
+}
+
+// GetObjectCount search object count
+func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header, cond *metadata.ObjectCountParams) (
+	*metadata.ObjectCountResult, error) {
+	rid := util.GetHTTPCCRequestID(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+
+	objIDs := cond.Condition.ObjectIDs
+	if len(objIDs) > 20 {
+		blog.Errorf("field obj_ids number %d exceeds the max number 20, rid: %s", len(objIDs), rid)
+		return nil, defErr.CCErrorf(common.CCErrCommValExceedMaxFailed, "obj_ids", 20)
+	}
+	objArray, nonexistentObjects, err := lgc.ProcessObjectIDArray(ctx, header, objIDs)
+	if err != nil {
+		blog.Errorf("process object array failed, err %s, rid: %s", err.Error(), rid)
+		return nil, err
+	}
+	resp := &metadata.ObjectCountResult{}
+	for _, nonexistentObject := range nonexistentObjects {
+		objCount := metadata.ObjectCountDetails{
+			ObjectID: nonexistentObject,
+			Error:    defErr.CCError(common.CCErrorModelNotFound).Error(),
+		}
+		resp.Data = append(resp.Data, objCount)
+	}
+
+	var wg sync.WaitGroup
+	var apiErr errors.CCErrorCoder
+	existObjResult := make([]metadata.ObjectCountDetails, len(objArray))
+	pipeline := make(chan bool, 10)
+	for idx, objID := range objArray {
+		objCount := metadata.ObjectCountDetails{ObjectID: objID}
+		pipeline <- true
+		wg.Add(1)
+		go func(ctx context.Context, header http.Header, objID string, idx int, objCount metadata.ObjectCountDetails) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+			if metadata.IsCommon(objID) {
+				params := &metadata.Condition{Condition: map[string]interface{}{common.BKObjIDField: objID}}
+				count, err := lgc.CoreAPI.CoreService().Instance().CountInstances(ctx, header, objID, params)
+				if err != nil {
+					blog.Errorf("get %s instance count failed, err: %s, rid: %s", objID, err.Error(), rid)
+					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
+					return
+				}
+				if count == nil {
+					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
+					return
+				}
+
+				objCount.InstCount = count.Count
+			} else {
+				tableName := common.GetInstTableName(objID, common.BKDefaultOwnerID)
+				count, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(ctx, header, tableName,
+					[]map[string]interface{}{{}})
+				if err != nil {
+					blog.Errorf("get %s instance count failed, err: %s, rid: %s", objID, err.Error(), rid)
+					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
+					return
+				}
+				if len(count) == 0 {
+					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
+					return
+				}
+				objCount.InstCount = uint64(count[0])
+			}
+
+			existObjResult[idx] = objCount
+
+		}(ctx, header, objID, idx, objCount)
+	}
+
+	wg.Wait()
+	resp.Data = append(resp.Data, existObjResult...)
+
+	if apiErr != nil {
+		return nil, apiErr
+	}
+
+	resp.Result = true
+	return resp, nil
+}
+
+// ProcessObjectIDArray process objectIDs
+func (lgc *Logics) ProcessObjectIDArray(ctx context.Context, header http.Header, objectArray []string) ([]string,
+	[]string, error) {
+	rid := util.GetHTTPCCRequestID(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+
+	objArray := util.RemoveDuplicatesAndEmpty(objectArray)
+	objects, err := lgc.CoreAPI.CoreService().Model().ReadModel(ctx, header, &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKObjIDField: map[string]interface{}{
+				common.BKDBIN: objArray,
+			},
+		},
+	})
+	if err != nil {
+		blog.Errorf("get object by object id failed, err: %s, rid: %s", err.Error(), rid)
+		return nil, nil, defErr.CCError(common.CCErrTopoModuleSelectFailed)
+	}
+
+	if objects.Count == 0 {
+		blog.Errorf("none object exist, object id: %v, err: %s, rid: %s", objectArray,
+			defErr.CCError(common.CCErrorModelNotFound).Error(), rid)
+		return nil, nil, defErr.CCError(common.CCErrorModelNotFound)
+	}
+	var nonexistentObjects []string
+	if objects.Count < int64(len(objArray)) {
+		var temp []string
+		for _, object := range objects.Info {
+			temp = append(temp, object.ObjectID)
+		}
+		nonexistentObjects = util.StrArrDiff(objArray, temp)
+		objArray = temp
+	}
+
+	return objArray, nonexistentObjects, nil
 }

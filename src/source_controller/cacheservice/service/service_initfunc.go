@@ -17,18 +17,13 @@ import (
 
 	"configcenter/src/common/http/rest"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *cacheService) initCache(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.engine.CCErr,
 		Language: s.engine.Language,
-	})
-	utility.AddHandler(rest.Action{
-		Verb:    http.MethodPost,
-		Path:    "/find/cache/topo/topotree",
-		Handler: s.SearchTopologyTreeInCache,
 	})
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,
@@ -49,16 +44,6 @@ func (s *cacheService) initCache(web *restful.WebService) {
 		Verb:    http.MethodPost,
 		Path:    "/findmany/cache/host/with_page",
 		Handler: s.ListHostWithPageInCache,
-	})
-	utility.AddHandler(rest.Action{
-		Verb:    http.MethodGet,
-		Path:    "/find/cache/host/snapshot/{bk_host_id}",
-		Handler: s.GetHostSnap,
-	})
-	utility.AddHandler(rest.Action{
-		Verb:    http.MethodPost,
-		Path:    "/findmany/cache/host/snapshot/batch",
-		Handler: s.GetHostSnapBatch,
 	})
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,
@@ -104,21 +89,6 @@ func (s *cacheService) initCache(web *restful.WebService) {
 		Verb:    http.MethodGet,
 		Path:    "/find/cache/topo/brief/biz/{biz}",
 		Handler: s.SearchBusinessBriefTopology,
-	})
-	utility.AddHandler(rest.Action{
-		Verb:    http.MethodPost,
-		Path:    "/find/cache/event/latest",
-		Handler: s.GetLatestEvent,
-	})
-	utility.AddHandler(rest.Action{
-		Verb:    http.MethodPost,
-		Path:    "/findmany/cache/event/node/with_start_from",
-		Handler: s.SearchFollowingEventChainNodes,
-	})
-	utility.AddHandler(rest.Action{
-		Verb:    http.MethodPost,
-		Path:    "/findmany/cache/event/detail",
-		Handler: s.SearchEventDetails,
 	})
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,

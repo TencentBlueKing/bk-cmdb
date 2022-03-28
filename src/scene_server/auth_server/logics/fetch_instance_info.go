@@ -258,6 +258,92 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 	return hosts, nil
 }
 
+// FetchObjInstInfo fetch object instances' specified attributes info using instance ids
+func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
+	[]map[string]interface{}, error) {
+
+	if !iam.IsIAMSysInstance(resourceType) {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
+	}
+
+	if len(filter.Attrs) == 0 {
+		return make([]map[string]interface{}, 0), nil
+	}
+
+	// if attribute filter is set, add id attribute and convert display_name to the real name field
+	var attrs []string
+	needPath := false
+	if len(filter.Attrs) > 0 {
+		attrs = append(filter.Attrs, common.BKInstIDField)
+		for index, attr := range attrs {
+			if attr == types.NameField {
+				attrs[index] = common.BKInstNameField
+				continue
+			}
+			if attr == sdktypes.IamPathKey {
+				needPath = true
+			}
+		}
+		if needPath {
+			for _, parent := range resourceParentMap[resourceType] {
+				attrs = append(attrs, GetResourceIDField(parent))
+			}
+		}
+	}
+
+	ids := make([]int64, len(filter.IDs))
+	for idx, idStr := range filter.IDs {
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			blog.Errorf("id %s parse int failed, error: %s, rid: %s, skip it", idStr, err.Error(), kit.Rid)
+			return nil, err
+		}
+		ids[idx] = id
+	}
+
+	instances := make([]map[string]interface{}, 0)
+	query := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKInstIDField: map[string]interface{}{common.BKDBIN: ids},
+		},
+		Fields: attrs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	objID, err := lgc.GetObjIDFromResourceType(kit.Ctx, kit.Header, resourceType)
+
+	if err != nil {
+		blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
+			err, resourceType, kit.Rid)
+		return nil, err
+	}
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, query)
+	if err != nil {
+		blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, ids, err, kit.Rid)
+		return nil, err
+	}
+	
+	// covert id and display_name field
+	for _, instance := range result.Info {
+		instance[types.IDField] = util.GetStrByInterface(instance[common.BKInstIDField])
+		if instance[common.BKInstNameField] != nil {
+			instance[types.NameField] = util.GetStrByInterface(instance[common.BKInstNameField])
+		}
+		if needPath {
+			var err error
+			instance[sdktypes.IamPathKey], err = lgc.getResourceIamPath(kit, resourceType, instance)
+			if err != nil {
+				blog.ErrorJSON("get iam path failed, err: %s, instance: %s, rid: %s", err, instance, kit.Rid)
+				return nil, err
+			}
+		}
+		instances = append(instances, instance)
+	}
+
+	return instances, nil
+}
+
 func (lgc *Logics) ValidateFetchInstanceInfoRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.FetchInstanceInfoFilter, error) {
 	filter, ok := req.Filter.(types.FetchInstanceInfoFilter)
 	if !ok {
@@ -286,12 +372,15 @@ func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iam.TypeID, in
 	return iamPath, nil
 }
 
-func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, hostList []int64) (map[int64][]string, error) {
+func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, hostList []int64) (map[int64][]string,
+	error) {
+
 	if resourceType != iam.Host {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
-	// get host iam path, either in resource pool directory or in business TODO: support host in business module when topology is supported
+	// get host iam path, either in resource pool directory or in business
+	// TODO: support host in business module when topology is supported
 	defaultBizID, err := lgc.GetResourcePoolBizID(kit)
 	if err != nil {
 		return nil, err
@@ -310,18 +399,12 @@ func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, hostLi
 		return nil, err
 	}
 
-	if !res.Result {
-		blog.Errorf("GetHostModuleRelation by host id %v failed, err: %v, rid: %s", hostList,
-			res.Code, res.ErrMsg, kit.Rid)
-		return nil, res.CCError()
-	}
-
-	if len(res.Data.Info) == 0 {
+	if len(res.Info) == 0 {
 		return make(map[int64][]string), nil
 	}
 
 	relationMap := make(map[int64][]string)
-	for _, relation := range res.Data.Info {
+	for _, relation := range res.Info {
 		var path string
 		if relation.AppID == defaultBizID {
 			path = "/" + string(iam.SysResourcePoolDirectory) + "," + strconv.FormatInt(relation.ModuleID, 10) + "/"

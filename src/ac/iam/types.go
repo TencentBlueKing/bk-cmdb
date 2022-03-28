@@ -18,8 +18,10 @@ import (
 	"strings"
 	"sync"
 
+	"configcenter/src/ac/meta"
 	"configcenter/src/common/auth"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/scene_server/auth_server/sdk/operator"
 )
 
 const (
@@ -99,6 +101,19 @@ type System struct {
 	ProviderConfig     *SysConfig `json:"provider_config"`
 }
 
+// SystemQueryField is system query field for searching system info
+type SystemQueryField string
+
+const (
+	FieldBaseInfo               SystemQueryField = "base_info"
+	FieldResourceTypes          SystemQueryField = "resource_types"
+	FieldActions                SystemQueryField = "actions"
+	FieldActionGroups           SystemQueryField = "action_groups"
+	FieldInstanceSelections     SystemQueryField = "instance_selections"
+	FieldResourceCreatorActions SystemQueryField = "resource_creator_actions"
+	FieldCommonActions          SystemQueryField = "common_actions"
+)
+
 type SysConfig struct {
 	Host string `json:"host,omitempty"`
 	Auth string `json:"auth,omitempty"`
@@ -139,11 +154,15 @@ func (a *AuthError) Error() string {
 type TypeID string
 
 const (
-	SysEventPushing TypeID = "sys_event_pushing"
-	SysModelGroup   TypeID = "sys_model_group"
+	SysModelGroup TypeID = "sys_model_group"
+
 	// special model resource for selection of instance, not including models whose instances are managed separately
-	SysInstanceModel         TypeID = "sys_instance_model"
-	SysModel                 TypeID = "sys_model"
+	SysInstanceModel TypeID = "sys_instance_model"
+	SysModel         TypeID = "sys_model"
+	// SysModelEvent special model resource for resource watch, not including inner and mainline models
+	SysModelEvent TypeID = "sys_model_event"
+	// MainlineModelEvent special mainline model resource for resource watch
+	MainlineModelEvent       TypeID = "mainline_model_event"
 	SysInstance              TypeID = "sys_instance"
 	SysAssociationType       TypeID = "sys_association_type"
 	SysAuditLog              TypeID = "sys_audit_log"
@@ -156,11 +175,15 @@ const (
 	SysEventWatch            TypeID = "event_watch"
 	Host                     TypeID = "host"
 	UserCustom               TypeID = "usercustom"
+	// InstAsstEvent instance association resource for resource watch
+	InstAsstEvent TypeID = "inst_asst_event"
+
 	// for resource type, which is not need to be authorized
 	SkipType TypeID = "skip_type"
 )
 
 const (
+	BizSet               TypeID = "business_set"
 	Business             TypeID = "biz"
 	BusinessForHostTrans TypeID = "biz_for_host_trans"
 	// Set                       ResourceTypeID = "set"
@@ -177,9 +200,12 @@ const (
 
 // describe resource type defined and registered to iam.
 type ResourceType struct {
-	ID             TypeID         `json:"id"`
-	Name           string         `json:"name"`
-	NameEn         string         `json:"name_en"`
+	// unique id
+	ID TypeID `json:"id"`
+	// unique name
+	Name   string `json:"name"`
+	NameEn string `json:"name_en"`
+	// unique description
 	Description    string         `json:"description"`
 	DescriptionEn  string         `json:"description_en"`
 	Parents        []Parent       `json:"parents"`
@@ -208,6 +234,13 @@ const (
 	Edit   ActionType = "edit"
 	List   ActionType = "list"
 )
+
+var ActionTypeIDNameMap = map[ActionType]string{
+	Create: "新建",
+	Edit:   "编辑",
+	Delete: "删除",
+	View:   "查询",
+}
 
 type ActionID string
 
@@ -260,18 +293,15 @@ const (
 	FindBusiness         ActionID = "find_business"
 	ViewBusinessResource ActionID = "find_business_resource"
 
+	CreateBizSet ActionID = "create_business_set"
+	EditBizSet   ActionID = "edit_business_set"
+	DeleteBizSet ActionID = "delete_business_set"
+	ViewBizSet   ActionID = "view_business_set"
+	AccessBizSet ActionID = "access_business_set"
+
 	CreateCloudArea ActionID = "create_cloud_area"
 	EditCloudArea   ActionID = "edit_cloud_area"
 	DeleteCloudArea ActionID = "delete_cloud_area"
-
-	CreateSysInstance ActionID = "create_sys_instance"
-	EditSysInstance   ActionID = "edit_sys_instance"
-	DeleteSysInstance ActionID = "delete_sys_instance"
-
-	CreateEventPushing ActionID = "create_event_subscription"
-	EditEventPushing   ActionID = "edit_event_subscription"
-	DeleteEventPushing ActionID = "delete_event_subscription"
-	FindEventPushing   ActionID = "find_event_subscription"
 
 	CreateCloudAccount ActionID = "create_cloud_account"
 	EditCloudAccount   ActionID = "edit_cloud_account"
@@ -304,19 +334,28 @@ const (
 
 	FindAuditLog ActionID = "find_audit_log"
 
-	WatchHostEvent         ActionID = "watch_host_event"
-	WatchHostRelationEvent ActionID = "watch_host_relation_event"
-	WatchBizEvent          ActionID = "watch_biz_event"
-	WatchSetEvent          ActionID = "watch_set_event"
-	WatchModuleEvent       ActionID = "watch_module_event"
-	WatchSetTemplateEvent  ActionID = "watch_set_template_event"
-	WatchProcessEvent      ActionID = "watch_process_event"
-	GlobalSettings         ActionID = "global_settings"
+	WatchHostEvent             ActionID = "watch_host_event"
+	WatchHostRelationEvent     ActionID = "watch_host_relation_event"
+	WatchBizEvent              ActionID = "watch_biz_event"
+	WatchSetEvent              ActionID = "watch_set_event"
+	WatchModuleEvent           ActionID = "watch_module_event"
+	WatchProcessEvent          ActionID = "watch_process_event"
+	WatchCommonInstanceEvent   ActionID = "watch_comm_model_inst_event"
+	WatchMainlineInstanceEvent ActionID = "watch_custom_topo_layer_event"
+	WatchInstAsstEvent         ActionID = "watch_inst_asst_event"
+	WatchBizSetEvent           ActionID = "watch_biz_set_event"
+
+	GlobalSettings ActionID = "global_settings"
 
 	// Unknown is an action that can not be recognized
 	Unsupported ActionID = "unsupported"
 	// Skip is an action that no need to auth
 	Skip ActionID = "skip"
+)
+
+const (
+	// IAM侧资源的通用模型实例前缀标识
+	IAMSysInstTypePrefix = meta.CMDBSysInstTypePrefix
 )
 
 type ResourceAction struct {
@@ -331,13 +370,25 @@ type ResourceAction struct {
 	Version              int                  `json:"version"`
 }
 
+// 选择类型, 资源在权限中心产品上配置权限时的作用范围
+type SelectionMode string
+
+const (
+	// 仅可选择实例, 默认值
+	modeInstance SelectionMode = "instance"
+	// 仅可配置属性, 此时instance_selections配置不生效
+	modeAttribute SelectionMode = "attribute"
+	// 可以同时选择实例和配置属性
+	modeAll SelectionMode = "all"
+)
+
 type RelateResourceType struct {
 	SystemID           string                     `json:"system_id"`
 	ID                 TypeID                     `json:"id"`
 	NameAlias          string                     `json:"name_alias"`
 	NameAliasEn        string                     `json:"name_alias_en"`
 	Scope              *Scope                     `json:"scope"`
-	SelectionMode      string                     `json:"selection_mode"`
+	SelectionMode      SelectionMode              `json:"selection_mode"`
 	InstanceSelections []RelatedInstanceSelection `json:"related_instance_selections"`
 }
 
@@ -380,30 +431,35 @@ const (
 	// 业务的两种视图，管理的资源也相同，仅名称做区分
 	BusinessSelection                  InstanceSelectionID = "business"
 	BusinessHostTransferSelection      InstanceSelectionID = "business_host_transfer"
+	BizSetSelection                    InstanceSelectionID = "business_set_list"
 	BizHostInstanceSelection           InstanceSelectionID = "biz_host_instance"
 	BizCustomQuerySelection            InstanceSelectionID = "biz_custom_query"
 	BizProcessServiceTemplateSelection InstanceSelectionID = "biz_process_service_template"
 	BizSetTemplateSelection            InstanceSelectionID = "biz_set_template"
 	SysHostInstanceSelection           InstanceSelectionID = "sys_host_instance"
-	SysEventPushingSelection           InstanceSelectionID = "sys_event_pushing"
 	SysModelGroupSelection             InstanceSelectionID = "sys_model_group"
 	SysModelSelection                  InstanceSelectionID = "sys_model"
-	SysInstanceSelection               InstanceSelectionID = "sys_instance"
+	SysModelEventSelection             InstanceSelectionID = "sys_model_event"
+	MainlineModelEventSelection        InstanceSelectionID = "mainline_model_event"
 	SysInstanceModelSelection          InstanceSelectionID = "sys_instance_model"
 	SysAssociationTypeSelection        InstanceSelectionID = "sys_association_type"
 	SysCloudAreaSelection              InstanceSelectionID = "sys_cloud_area"
 	SysCloudAccountSelection           InstanceSelectionID = "sys_cloud_account"
 	SysCloudResourceTaskSelection      InstanceSelectionID = "sys_cloud_resource_task"
+	InstAsstEventSelection             InstanceSelectionID = "inst_asst_event"
 	// 主机池目录的两种视图，管理的资源也相同，仅名称做区分
 	SysResourcePoolDirectorySelection InstanceSelectionID = "sys_resource_pool_directory"
 	SysHostRscPoolDirectorySelection  InstanceSelectionID = "sys_host_rsc_pool_directory"
 )
 
 type InstanceSelection struct {
-	ID                InstanceSelectionID `json:"id"`
-	Name              string              `json:"name"`
-	NameEn            string              `json:"name_en"`
-	ResourceTypeChain []ResourceChain     `json:"resource_type_chain"`
+	// unique
+	ID InstanceSelectionID `json:"id"`
+	// unique
+	Name string `json:"name"`
+	// unique
+	NameEn            string          `json:"name_en"`
+	ResourceTypeChain []ResourceChain `json:"resource_type_chain"`
 }
 
 type ResourceChain struct {
@@ -474,4 +530,68 @@ type CommonAction struct {
 	Name        string         `json:"name"`
 	EnglishName string         `json:"name_en"`
 	Actions     []ActionWithID `json:"actions"`
+}
+
+// DynamicAction is dynamic model action
+type DynamicAction struct {
+	ActionID     ActionID
+	ActionType   ActionType
+	ActionNameCN string
+	ActionNameEN string
+}
+
+type DeleteCMDBResourceParam struct {
+	ActionIDs            []ActionID
+	InstanceSelectionIDs []InstanceSelectionID
+	TypeIDs              []TypeID
+}
+
+// ListPoliciesParams list iam policies parameter
+type ListPoliciesParams struct {
+	ActionID  ActionID
+	Page      int64
+	PageSize  int64
+	Timestamp int64
+}
+
+// ListPoliciesResp list iam policies response
+type ListPoliciesResp struct {
+	BaseResponse
+	Data *ListPoliciesData `json:"data"`
+}
+
+// ListPoliciesData list policy data, which represents iam policies
+type ListPoliciesData struct {
+	Metadata PolicyMetadata `json:"metadata"`
+	Count    int64          `json:"count"`
+	Results  []PolicyResult `json:"results"`
+}
+
+// PolicyMetadata iam policy metadata
+type PolicyMetadata struct {
+	System    string       `json:"system"`
+	Action    ActionWithID `json:"action"`
+	Timestamp int64        `json:"timestamp"`
+}
+
+// PolicyResult iam policy result
+type PolicyResult struct {
+	Version    string           `json:"version"`
+	ID         int64            `json:"id"`
+	Subject    PolicySubject    `json:"subject"`
+	Expression *operator.Policy `json:"expression"`
+	ExpiredAt  int64            `json:"expired_at"`
+}
+
+// PolicySubject policy subject, which represents user or user group for now
+type PolicySubject struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// SimplifiedInstance simplified instance with only id and name
+type SimplifiedInstance struct {
+	InstanceID   int64  `json:"bk_inst_id" bson:"bk_inst_id"`
+	InstanceName string `json:"bk_inst_name" bson:"bk_inst_name"`
 }

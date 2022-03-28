@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/util"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAttribute, error) {

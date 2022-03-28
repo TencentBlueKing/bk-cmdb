@@ -63,11 +63,11 @@ func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourc
 
 		} else {
 			// TODO: cause we do not support _bk_iam_path_ field for now
-			// So we only need to check resource's attribute field.
+			// So we only need to get resource's other attribute policy.
 			opts := &types.ListWithAttributes{
-				Operator:   p.Operator,
-				Attributes: []*operator.FieldValue{fv},
-				Type:       resourceType,
+				Operator:     p.Operator,
+				AttrPolicies: []*operator.Policy{p},
+				Type:         resourceType,
 			}
 
 			ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)
@@ -140,13 +140,13 @@ func preAnalyzeContent(op operator.OperType, content *operator.Content) error {
 func (a *Authorize) countContent(ctx context.Context, op operator.OperType, content *operator.Content,
 	resourceType types.ResourceType) (idList *types.AuthorizeList, err error) {
 
-	allAttrFieldValue := make([]*operator.FieldValue, 0)
-	allList := make([]types.AuthorizeList, 0)
-
 	err = preAnalyzeContent(op, content)
 	if err != nil {
 		return nil, err
 	}
+	allAttrPolicies := make([]*operator.Policy, 0)
+	allList := make([]types.AuthorizeList, 0)
+	idList = new(types.AuthorizeList)
 
 	for _, policy := range content.Content {
 		switch policy.Operator {
@@ -181,18 +181,17 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OperType, cont
 
 			} else {
 				// TODO: cause we do not support _bk_iam_path_ field for now
-				// So we only need to check resource's attribute field.
-				allAttrFieldValue = append(allAttrFieldValue, fv)
+				// So we only need to get resource's other attribute policy.
+				allAttrPolicies = append(allAttrPolicies, policy)
 			}
 		}
 	}
 
-	//  if isAny flag is true,we needn't to find ids.
-	if len(allAttrFieldValue) != 0 {
+	if len(allAttrPolicies) != 0 {
 		opts := &types.ListWithAttributes{
-			Operator:   op,
-			Attributes: allAttrFieldValue,
-			Type:       resourceType,
+			Operator:     op,
+			AttrPolicies: allAttrPolicies,
+			Type:         resourceType,
 		}
 
 		ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)

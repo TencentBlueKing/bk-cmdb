@@ -25,22 +25,25 @@
     <bk-table class="association-table"
       v-show="expanded"
       :data="list"
-      :max-height="462">
-      <bk-table-column v-for="column in header"
+      :max-height="462"
+      :row-style="{ cursor: 'pointer' }"
+      @row-click="handleShowDetails">
+      <bk-table-column v-for="(column, index) in header"
         :key="column.id"
         :prop="column.id"
         :label="column.name"
+        :class-name="index === 0 ? 'is-highlight' : ''"
         show-overflow-tooltip>
         <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')">
+      <bk-table-column v-if="!readonly" :label="$t('操作')">
         <template slot-scope="{ row }">
           <cmdb-auth :auth="HOST_AUTH.U_HOST">
             <bk-button slot-scope="{ disabled }"
               text
               theme="primary"
               :disabled="disabled"
-              @click="showTips($event, row)">
+              @click.stop="showTips($event, row)">
               {{$t('取消关联')}}
             </bk-button>
           </cmdb-auth>
@@ -60,9 +63,12 @@
 
 <script>
   import authMixin from '../mixin-auth'
+  import instanceService from '@/service/instance/instance'
+  import { readonlyMixin } from '../mixin-readonly'
+
   export default {
     name: 'cmdb-host-association-list-table',
-    mixins: [authMixin],
+    mixins: [authMixin, readonlyMixin],
     props: {
       type: {
         type: String,
@@ -285,29 +291,24 @@
         })
       },
       getModelInstances(config) {
-        return this.$store.dispatch('objectCommonInst/searchInst', {
-          objId: this.id,
+        return instanceService.find({
+          bk_obj_id: this.id,
           params: {
-            fields: {},
-            condition: {
-              [this.id]: [{
-                field: 'bk_inst_id',
-                operator: '$in',
-                value: this.instanceIds
-              }]
-            },
+            fields: [],
             page: {
               ...this.page,
               sort: 'bk_inst_id'
+            },
+            conditions: {
+              condition: 'AND',
+              rules: [{
+                field: 'bk_inst_id',
+                operator: 'in',
+                value: this.instanceIds
+              }]
             }
           },
           config
-        }).then((data) => {
-          data = data || {
-            count: 0,
-            info: []
-          }
-          return data
         })
       },
       async cancelAssociation() {
@@ -318,6 +319,7 @@
           })
           await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
             id: asstInstance.id,
+            objId: 'host',
             config: { data: {} }
           })
           this.hideTips()
@@ -372,6 +374,16 @@
         this.confirm.show = true
         this.$nextTick(() => {
           this.confirm.instance.show()
+        })
+      },
+      async handleShowDetails(row) {
+        const showInstanceDetails = await import('@/components/instance/details')
+        const nameMapping = { host: 'bk_host_innerip', biz: 'bk_biz_name' }
+        const idMapping = { host: 'bk_host_id', biz: 'bk_biz_id' }
+        showInstanceDetails.default({
+          bk_obj_id: this.id,
+          bk_inst_id: row[idMapping[this.id] || 'bk_inst_id'],
+          title: `${this.model.bk_obj_name}-${row[nameMapping[this.id] || 'bk_inst_name']}`
         })
       }
     }

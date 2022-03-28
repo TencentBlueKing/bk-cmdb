@@ -4,7 +4,6 @@ import hostLanding from '@/views/host-details/router.config'
 import audit from '@/views/audit/router.config'
 import business from '@/views/business/router.config'
 import customQuery from '@/views/dynamic-group/router.config'
-import eventpush from '@/views/eventpush/router.config'
 import model from '@/views/model-manage/router.config'
 import modelAssociation from '@/views/model-association/router.config'
 import modelTopology from '@/views/model-topology/router.config'
@@ -27,6 +26,11 @@ import businessTopology from '@/views/business-topology/router.config'
 import cloudArea from '@/views/cloud-area/router.config'
 import cloudAccount from '@/views/cloud-account/router.config'
 import cloudResource from '@/views/cloud-resource/router.config'
+
+// 业务集实例
+import businessSet from '@/views/business-set/router.config'
+
+import businessSetTopology from '@/views/business-set-topology/router.config.js'
 
 import statusPermission from '@/views/status/permission'
 import statusError from '@/views/status/error'
@@ -76,11 +80,16 @@ export const businessViews = injectStatusComponents(flatternViews([
   hostApply
 ]))
 
+// 业务集消费视图
+export const businessSetViews = injectStatusComponents(flatternViews([
+  businessSetTopology
+]))
+
 export const resourceViews = injectStatusComponents(flatternViews([
   business,
+  businessSet,
   resource,
   generalModel,
-  eventpush,
   resourceManagement,
   cloudArea,
   cloudAccount,
@@ -106,6 +115,7 @@ export const platformManagementViews = injectStatusComponents(flatternViews([
 export default {
   ...indexViews,
   ...hostLandingViews,
+  ...businessSetViews,
   ...businessViews,
   ...resourceViews,
   ...modelViews,

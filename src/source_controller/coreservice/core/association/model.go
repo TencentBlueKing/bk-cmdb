@@ -156,7 +156,7 @@ func (m *associationModel) SearchModelAssociation(kit *rest.Kit, inputParam meta
 }
 
 // CountModelAssociations counts target model associations num
-func (m *associationModel) CountModelAssociations(kit *rest.Kit, input *metadata.CountCondition) (
+func (m *associationModel) CountModelAssociations(kit *rest.Kit, input *metadata.Condition) (
 	*metadata.CommonCountResult, error) {
 
 	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(input.Condition, kit.SupplierAccount))

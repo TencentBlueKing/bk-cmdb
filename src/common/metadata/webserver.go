@@ -129,3 +129,9 @@ type ExcelAssociation struct {
 	SrcPrimary   string                  `json:"src_primary_key"`
 	DstPrimary   string                  `json:"dst_primary_key"`
 }
+
+type ObjectAsstIDStatisticsInfo struct {
+	Create int64 `json:"create"`
+	Delete int64 `json:"delete"`
+	Total  int64 `json:"total"`
+}

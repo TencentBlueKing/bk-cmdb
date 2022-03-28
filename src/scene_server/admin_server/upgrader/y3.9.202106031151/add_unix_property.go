@@ -57,7 +57,6 @@ func addUnixProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 	cond.Field(common.BKPropertyIDField).Eq(common.BKOSTypeField)
 	cond.Field(common.BKAppIDField).Eq(0)
 
-
 	ostypeProperty := attribute{}
 	err := db.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, &ostypeProperty)
 	if err != nil {

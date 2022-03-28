@@ -73,7 +73,8 @@ func (s *setIdentifierFlag) Run(kit *rest.Kit) errors.CCErrorCoder {
 func (s *setIdentifierFlag) dbCollectionInfo(kit *rest.Kit) errors.CCErrorCoder {
 	switch s.params.DataType {
 	case metadata.SynchronizeOperateDataTypeInstance:
-		s.tableName = common.GetInstTableName(s.params.DataClassify)
+		// TODO: 需要上传修改
+		s.tableName = common.GetInstTableName(s.params.DataClassify, kit.SupplierAccount)
 		s.instIDField = common.GetInstIDField(s.params.DataClassify)
 
 	default:

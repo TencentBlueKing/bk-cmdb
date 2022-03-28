@@ -29,6 +29,7 @@ type SearchParams struct {
 	Fields    []string               `json:"fields,omitempty"`
 }
 
+// ParseCommonParams parse common params
 func ParseCommonParams(input []metadata.ConditionItem, output map[string]interface{}) error {
 	for _, i := range input {
 		switch i.Operator {
@@ -73,20 +74,22 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 			}
 			output[i.Field] = d
 		default:
-			d := make(map[string]interface{})
-			if i.Value == nil {
-				d[i.Operator] = i.Value
-				/*} else if reflect.TypeOf(i.Value).Kind() == reflect.String {
-				d[i.Operator] = SpecialCharChange(i.Value.(string))*/
-			} else {
-				d[i.Operator] = i.Value
+			// 对于有两个或者更多条件的Field, 比如 B > Field > A, 先判断是否创建了这个Field的map，防止条件覆盖，导致前一个条件不生效
+			if _, ok := output[i.Field]; !ok {
+				output[i.Field] = make(map[string]interface{})
 			}
-			output[i.Field] = d
+			queryCondItem, ok := output[i.Field].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("filed %s only support for map[string]interface{} type", i.Field)
+			}
+			queryCondItem[i.Operator] = i.Value
+			output[i.Field] = queryCondItem
 		}
 	}
 	return nil
 }
 
+// SpecialCharChange change special char
 func SpecialCharChange(targetStr string) string {
 
 	re := regexp.MustCompile("[.()\\\\|\\[\\]\\*{}\\^\\$\\?]")

@@ -14,6 +14,7 @@ package user
 import (
 	"context"
 	"net/http"
+	"net/url"
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/metadata"
@@ -23,7 +24,8 @@ import (
 type UserClientInterface interface {
 	GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.EsbUserListResponse, err error)
 	ListUsers(ctx context.Context, h http.Header, params map[string]string) (resp *metadata.EsbListUserResponse, err error)
-	GetDepartment(ctx context.Context, q *http.Request) (resp *metadata.EsbDepartmentResponse, err error)
+	GetDepartment(ctx context.Context, h http.Header, u *url.URL) (resp *metadata.EsbDepartmentResponse,
+		err error)
 	GetDepartmentProfile(ctx context.Context, q *http.Request) (resp *metadata.EsbDepartmentProfileResponse, err error)
 }
 

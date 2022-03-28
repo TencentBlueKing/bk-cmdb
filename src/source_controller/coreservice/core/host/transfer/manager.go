@@ -34,6 +34,7 @@ type OperationDependence interface {
 	AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostIDs []int64, moduleIDs []int64) errors.CCErrorCoder
 	SelectObjectAttWithParams(kit *rest.Kit, objID string, bizIDs []int64) (attribute []metadata.Attribute, err error)
 	UpdateModelInstance(kit *rest.Kit, objID string, param metadata.UpdateOption) (*metadata.UpdatedCount, error)
+	CreateAuditLogDependence(kit *rest.Kit, logs ...metadata.AuditLog) error
 }
 
 type HostApplyRuleDependence interface {

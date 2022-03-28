@@ -6,8 +6,14 @@ pushd $(pwd) > /dev/null
     for tmp in $DIRS;do
         FILES=$(find $tmp -name 'Makefile')
         for tmp_file in $FILES;do
+            # 全文检索插件编译场景下，由于将依赖vendor放到了src/tools/monstache_plugin下，所以需要将vendor下的Makefile跳过
+            if [[ $tmp_file == *vendor* ]]
+            then
+                continue
+            fi
+            flag=false
             target_makefile_path=$(pwd)/$tmp_file
-            if [ -f $target_makefile_path ];then
+            if [ -f $target_makefile_path ] && [ "$flag" = false ];then
                 pushd $(pwd) > /dev/null
                     cd $(dirname $target_makefile_path)
 		    echo "enter directory: " $(pwd)

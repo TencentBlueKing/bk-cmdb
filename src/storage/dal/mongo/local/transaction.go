@@ -19,12 +19,30 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/dal/redis"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // CommitTransaction 提交事务
 func (c *Mongo) CommitTransaction(ctx context.Context, cap *metadata.TxnCapable) error {
 	rid := ctx.Value(common.ContextRequestIDField)
+
+	// check if txn number exists, if not, then no db operation with transaction is executed, committing will return an
+	// error: "(NoSuchTransaction) Given transaction number 1 does not match any in-progress transactions. The active
+	// transaction number is -1.". So we will return directly in this situation.
+	txnNumber, err := c.tm.GetTxnNumber(cap.SessionID)
+	if err != nil {
+		if redis.IsNilErr(err) {
+			blog.Infof("commit transaction: %s but no transaction need to commit, *skip*, rid: %s", cap.SessionID, rid)
+			return nil
+		}
+		return fmt.Errorf("get txn number failed, err: %v", err)
+	}
+	if txnNumber == 0 {
+		blog.Infof("commit transaction: %s but no transaction to commit, **skip**, rid: %s", cap.SessionID, rid)
+		return nil
+	}
+
 	reloadSession, err := c.tm.PrepareTransaction(cap, c.dbc)
 	if err != nil {
 		blog.Errorf("commit transaction, but prepare transaction failed, err: %v, rid: %v", err, rid)

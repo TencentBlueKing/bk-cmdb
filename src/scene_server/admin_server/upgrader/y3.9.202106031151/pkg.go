@@ -20,7 +20,6 @@ import (
 )
 
 func init() {
-
 	upgrader.RegistUpgrader("y3.9.202106031151", upgrade)
 }
 

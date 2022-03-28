@@ -12,6 +12,8 @@
 
 package iam
 
+import "configcenter/src/common/metadata"
+
 var (
 	businessChain = ResourceChain{
 		SystemID: SystemIDCMDB,
@@ -20,13 +22,28 @@ var (
 )
 
 // GenerateInstanceSelections generate all the instance selections registered to IAM.
-func GenerateInstanceSelections() []InstanceSelection {
+func GenerateInstanceSelections(models []metadata.Object) []InstanceSelection {
+	instSelections := GenerateStaticInstanceSelections()
+	instSelections = append(instSelections, genDynamicInstanceSelections(models)...)
+	return instSelections
+}
+
+func GenerateStaticInstanceSelections() []InstanceSelection {
 	return []InstanceSelection{
 		{
 			ID:                BusinessSelection,
 			Name:              "业务列表",
 			NameEn:            "Business List",
 			ResourceTypeChain: []ResourceChain{businessChain},
+		},
+		{
+			ID:     BizSetSelection,
+			Name:   "业务集列表",
+			NameEn: "Business Set List",
+			ResourceTypeChain: []ResourceChain{{
+				SystemID: SystemIDCMDB,
+				ID:       BizSet,
+			}},
 		},
 		{
 			ID:     BusinessHostTransferSelection,
@@ -140,21 +157,6 @@ func GenerateInstanceSelections() []InstanceSelection {
 			},
 		},
 		{
-			ID:     SysInstanceSelection,
-			Name:   "实例列表",
-			NameEn: "Instance List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysInstanceModel,
-				},
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysInstance,
-				},
-			},
-		},
-		{
 			ID:     SysInstanceModelSelection,
 			Name:   "实例模型列表",
 			NameEn: "Instance Model List",
@@ -162,17 +164,6 @@ func GenerateInstanceSelections() []InstanceSelection {
 				{
 					SystemID: SystemIDCMDB,
 					ID:       SysInstanceModel,
-				},
-			},
-		},
-		{
-			ID:     SysEventPushingSelection,
-			Name:   "事件订阅列表",
-			NameEn: "Event Subscription List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysEventPushing,
 				},
 			},
 		},
@@ -228,6 +219,39 @@ func GenerateInstanceSelections() []InstanceSelection {
 				{
 					SystemID: SystemIDCMDB,
 					ID:       SysModelGroup,
+				},
+			},
+		},
+		{
+			ID:     SysModelEventSelection,
+			Name:   "模型事件列表",
+			NameEn: "Model Event List",
+			ResourceTypeChain: []ResourceChain{
+				{
+					SystemID: SystemIDCMDB,
+					ID:       SysModelEvent,
+				},
+			},
+		},
+		{
+			ID:     MainlineModelEventSelection,
+			Name:   "自定义拓扑层级列表",
+			NameEn: "Custom Topo Layer Event List",
+			ResourceTypeChain: []ResourceChain{
+				{
+					SystemID: SystemIDCMDB,
+					ID:       MainlineModelEvent,
+				},
+			},
+		},
+		{
+			ID:     InstAsstEventSelection,
+			Name:   "实例关联事件列表",
+			NameEn: "Instance Association Event List",
+			ResourceTypeChain: []ResourceChain{
+				{
+					SystemID: SystemIDCMDB,
+					ID:       InstAsstEvent,
 				},
 			},
 		},

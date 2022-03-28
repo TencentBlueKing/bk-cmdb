@@ -18,9 +18,11 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
@@ -176,7 +178,7 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 			relations := make([]*metadata.ProcessInstanceRelation, len(listProcTplResult.Info))
 			templateIDs := make([]int64, len(listProcTplResult.Info))
 			for idx, processTemplate := range listProcTplResult.Info {
-				processData, err := processTemplate.NewProcess(module.BizID, kit.SupplierAccount, host)
+				processData, err := processTemplate.NewProcess(module.BizID, instance.ID, kit.SupplierAccount, host)
 				if err != nil {
 					blog.ErrorJSON("create service instance, but generate process instance by template "+
 						"%s failed, err: %s, rid: %s", processTemplate, err, kit.Rid)
@@ -213,10 +215,12 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 	}
 
 	if instance.Name == "" {
-		if err := p.ConstructServiceInstanceName(kit, instance.ID, host, firstTemplateProcess); err != nil {
+		name, err := p.ConstructServiceInstanceName(kit, instance.ID, host, firstTemplateProcess)
+		if err != nil {
 			blog.Errorf("CreateServiceInstance failed,  ConstructServiceInstanceName err:%v, instance: %#v, err: %s, rid: %s", err, instance, kit.Rid)
 			return nil, err
 		}
+		instance.Name = name
 	}
 
 	return instance, nil
@@ -645,7 +649,9 @@ func (p *processOperation) generateServiceInstanceName(kit *rest.Kit, instanceID
 // ConstructServiceInstanceName construct service instance name
 // if no service instance name is defined, use the following rule to construct service name:
 // hostInnerIP(if exist) + firstProcessName(if exist) + firstProcessPort(if exist)
-func (p *processOperation) ConstructServiceInstanceName(kit *rest.Kit, instanceID int64, host map[string]interface{}, process *metadata.Process) errors.CCErrorCoder {
+func (p *processOperation) ConstructServiceInstanceName(kit *rest.Kit, instanceID int64, host map[string]interface{},
+	process *metadata.Process) (string, errors.CCErrorCoder) {
+
 	serviceInstanceName := util.GetStrByInterface(host[common.BKHostInnerIPField])
 
 	if process != nil {
@@ -660,7 +666,11 @@ func (p *processOperation) ConstructServiceInstanceName(kit *rest.Kit, instanceI
 		}
 	}
 
-	return p.updateServiceInstanceName(kit, instanceID, serviceInstanceName)
+	if err := p.updateServiceInstanceName(kit, instanceID, serviceInstanceName); err != nil {
+		return "", err
+	}
+
+	return serviceInstanceName, nil
 }
 
 // ReconstructServiceInstanceName do reconstruct service instance name after process name or process port changed
@@ -830,6 +840,10 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 		serviceProcessTemplateMap[processTemplate.ServiceTemplateID] = append(serviceProcessTemplateMap[processTemplate.ServiceTemplateID], processTemplate)
 	}
 
+	audit := auditlog.NewSvcInstAuditGenerator()
+	auditLogs := make([]metadata.AuditLog, 0)
+	genAuditParam := auditlog.NewGenerateAuditCommonParameter(kit.NewKit(), metadata.AuditCreate)
+
 	now := time.Now()
 	for _, module := range modules {
 		processTemplates := serviceProcessTemplateMap[module.ServiceTemplateID]
@@ -877,7 +891,7 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 			relations := make([]*metadata.ProcessInstanceRelation, len(processTemplates))
 			templateIDs := make([]int64, len(processTemplates))
 			for idx, processTemplate := range processTemplates {
-				processData, err := processTemplate.NewProcess(module.BizID, kit.SupplierAccount, host)
+				processData, err := processTemplate.NewProcess(module.BizID, int64(id), kit.SupplierAccount, host)
 				if err != nil {
 					blog.ErrorJSON("create service instance, but generate process instance by template "+
 						"%s failed, err: %s, rid: %s", processTemplate, err, kit.Rid)
@@ -909,11 +923,36 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 				return ccErr
 			}
 
-			if err := p.ConstructServiceInstanceName(kit, int64(id), host, processes[0]); err != nil {
-				blog.Errorf("AutoCreateServiceInstanceModuleHost failed,  construct service instance name err: %v, instance id: %d, rid: %s", err, id, kit.Rid)
+			svcInstName, err := p.ConstructServiceInstanceName(kit, int64(id), host, processes[0])
+			if err != nil {
+				blog.Errorf("construct service instance(id: %d) name err: %v, rid: %s", id, err, kit.Rid)
 				return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 			}
+			serviceInstanceData.Name = svcInstName
+
+			// generate audit log for created service instance
+			audit.WithServiceInstance([]metadata.ServiceInstance{*serviceInstanceData})
+
+			addedRelations := make([]metadata.ProcessInstanceRelation, len(relations))
+			for index, relation := range relations {
+				addedRelations[index] = *relation
+			}
+			addedProcesses := make([]mapstr.MapStr, len(processes))
+			for index, proc := range processes {
+				addedProcesses[index] = mapstr.SetValueToMapStrByTags(proc)
+			}
+
+			if err := audit.WithProc(genAuditParam, addedProcesses, addedRelations); err != nil {
+				return err
+			}
+			logs := audit.GenerateAuditLog(genAuditParam)
+			auditLogs = append(auditLogs, logs...)
 		}
+	}
+
+	// save service instance audit logs for host transfer, use a new kit to keep it out of the txn
+	if err := p.dependence.CreateAuditLogDependence(kit.NewKit(), auditLogs...); err != nil {
+		return kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
 
 	return nil

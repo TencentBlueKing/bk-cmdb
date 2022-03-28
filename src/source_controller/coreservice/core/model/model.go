@@ -83,7 +83,9 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 		return nil, err
 	}
 
-	if !SatisfyMongoCollLimit(inputParam.Spec.ObjectID) {
+	// 因为模型名称会用于生成实例和实例关联的mongodb表名，所以需要校验模型对应的实例表和实例关联表名均不超过mongodb的长度限制
+	if !SatisfyMongoCollLimit(common.GetObjectInstTableName(inputParam.Spec.ObjectID, kit.SupplierAccount)) ||
+		!SatisfyMongoCollLimit(common.GetObjectInstAsstTableName(inputParam.Spec.ObjectID, kit.SupplierAccount)) {
 		blog.Errorf("inputParam.Spec.ObjectID:%s not SatisfyMongoCollLimit", inputParam.Spec.ObjectID)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID)
 	}
@@ -104,7 +106,6 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	condCheckModelMap := util.SetModOwner(make(map[string]interface{}), kit.SupplierAccount)
 	condCheckModel, _ := mongo.NewConditionFromMapStr(condCheckModelMap)
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
-
 	_, exists, err := m.isExists(kit, condCheckModel)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check whether the model (%s) is exists, error info is %s ", kit.Rid, inputParam.Spec.ObjectID, err.Error())
@@ -119,7 +120,6 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	modelNameUniqueFilter := map[string]interface{}{
 		common.BKObjNameField: inputParam.Spec.ObjectName,
 	}
-
 	sameNameCount, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("whether same name model exists, name: %s, err: %s, rid: %s", inputParam.Spec.ObjectName, err.Error(), kit.Rid)
@@ -130,6 +130,14 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectName)
 	}
 
+	// check object instance and instance association table.
+	/* 	if err := m.createObjectShardingTables(kit, inputParam.Spec.ObjectID); err != nil {
+		blog.Errorf("handle object sharding tables failed, object: %s name: %s, err: %s, rid: %s",
+			inputParam.Spec.ObjectID, inputParam.Spec.ObjectName, err.Error(), kit.Rid)
+		return nil, err
+	} */
+
+	// create new model after checking base informations and sharding table operation.
 	inputParam.Spec.OwnerID = kit.SupplierAccount
 	id, err := m.save(kit, &inputParam.Spec)
 	if nil != err {
@@ -137,6 +145,7 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 		return nil, err
 	}
 
+	// create initial phase model attributes.
 	if len(inputParam.Attributes) != 0 {
 		_, err = m.modelAttribute.CreateModelAttributes(kit, inputParam.Spec.ObjectID, metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
 		if nil != err {
@@ -265,10 +274,9 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 		blog.Errorf("request(%s): it is failed to check whether some models (%#v) has some instances, error info is %s", kit.Rid, targetObjIDS, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
-
 	if exists {
 		blog.Warnf("request(%s): it is forbidden to delete the models (%#v), because of they have some instances.", kit.Rid, targetObjIDS)
-		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrTopoObjectHasSomeInstsForbiddenToDelete)
+		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrCoreServiceModelHasInstanceErr)
 	}
 
 	// check if the model is used: secondly to check association
@@ -277,10 +285,9 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 		blog.Errorf("request(%s): it is failed to check whether some models (%#v) has some associations, error info is %s", kit.Rid, targetObjIDS, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
-
 	if exists {
 		blog.Warnf("request(%s): it is forbidden to delete the models (%#v), because of they have some associations.", kit.Rid, targetObjIDS)
-		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrTopoForbiddenToDeleteModelFailed)
+		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrCoreServiceModelHasAssociationErr)
 	}
 
 	// delete model self
@@ -295,18 +302,62 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 
 // CascadeDeleteModel 将会删除模型/模型属性/属性分组/唯一校验
 func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metadata.DeletedCount, error) {
-
+	// NOTE: just single model cascade delete action now.
 	deleteCondMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
 	deleteCond, _ := mongo.NewConditionFromMapStr(deleteCondMap)
 	deleteCond.Element(&mongo.Eq{Key: metadata.ModelFieldID, Val: modelID})
 
-	// read all models by the deletion condition
-	cnt, err := m.cascadeDelete(kit, deleteCond)
-	if nil != err {
-		blog.ErrorJSON("CascadeDeleteModel failed, cascadeDelete failed, condition: %s, err: %s, rid: %s", deleteCond.ToMapStr(), err.Error(), kit.Rid)
-		return &metadata.DeletedCount{}, err
+	// NOTE: the func logics supports cascade delete models in batch mode.
+	// You can change the condition to index many models.
+	models, err := m.search(kit, deleteCond)
+	if err != nil {
+		blog.Errorf("cascade delete model, search target models failed, condition: %s, error: %s, rid: %s",
+			deleteCond.ToMapStr(), err.Error(), kit.Rid)
+		return nil, err
 	}
-	return &metadata.DeletedCount{Count: cnt}, err
+
+	objIDs := make([]string, 0)
+	for _, model := range models {
+		objIDs = append(objIDs, model.ObjectID)
+	}
+	if len(objIDs) == 0 {
+		return &metadata.DeletedCount{}, nil
+	}
+
+	// check object instances.
+	exists, err := m.dependent.HasInstance(kit, objIDs)
+	if err != nil {
+		blog.Errorf("cascade delete model, check object instance failed, objects: %+v, error: %s, rid: %s",
+			objIDs, err.Error(), kit.Rid)
+		return nil, err
+	}
+	if exists {
+		blog.Errorf("cascade delete model failed, there are vestigital object instances, objects: %+v, rid: %s",
+			objIDs, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCoreServiceModelHasInstanceErr)
+	}
+
+	// check model associations.
+	exists, err = m.dependent.HasAssociation(kit, objIDs)
+	if err != nil {
+		blog.Errorf("cascade delete model, check model associations failed, objects: %+v, error: %s, rid: %s",
+			objIDs, err.Error(), kit.Rid)
+		return nil, err
+	}
+	if exists {
+		blog.Errorf("cascade delete model failed, there are vestigital model associations, objects: %+v, rid: %s",
+			objIDs, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCoreServiceModelHasAssociationErr)
+	}
+
+	// cascade delete.
+	cnt, err := m.cascadeDelete(kit, objIDs)
+	if err != nil {
+		blog.Errorf("cascade delete model failed, objects: %+v, err: %s, rid: %s", objIDs, err.Error(), kit.Rid)
+		return nil, err
+	}
+
+	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
 func (m *modelManager) SearchModel(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error) {

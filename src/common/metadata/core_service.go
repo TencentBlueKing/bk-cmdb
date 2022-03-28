@@ -625,16 +625,6 @@ type MultipleSyncRegionResult struct {
 	Data     []*Region `json:"data"`
 }
 
-type SubscriptionResult struct {
-	BaseResp `json:",inline"`
-	Data     Subscription `json:"data"`
-}
-
-type MultipleSubscriptionResult struct {
-	BaseResp `json:",inline"`
-	Data     RspSubscriptionSearch `json:"data"`
-}
-
 type DistinctFieldOption struct {
 	TableName string                 `json:"table_name"`
 	Field     string                 `json:"field"`
@@ -657,4 +647,10 @@ func (d *DistinctFieldOption) Validate() (rawError errors.RawErrorInfo) {
 	}
 
 	return errors.RawErrorInfo{}
+}
+
+// CreateModelTable create model table params
+type CreateModelTable struct {
+	ObjectIDs  []string `json:"bk_object_ids"`
+	IsMainLine bool     `json:"is_main_line"`
 }

@@ -370,13 +370,9 @@ func (lgc *Logics) getHostFields(kit *rest.Kit) (map[string]*metadata.ObjAttDes,
 		blog.Errorf("getHostFields http do error, err:%s, input:%+v, rid:%s", err.Error(), input, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("getHostFields http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, input, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
 	attributesDesc := make([]metadata.ObjAttDes, 0)
-	for _, att := range result.Data.Info {
+	for _, att := range result.Info {
 		attributesDesc = append(attributesDesc, metadata.ObjAttDes{Attribute: att})
 	}
 
@@ -432,17 +428,13 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 	input := &metadata.UpdateOption{}
 	input.Condition = map[string]interface{}{common.BKHostIDField: hostID}
 	input.Data = host
-	uResult, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, h.pheader, common.BKInnerObjIDHost, input)
+	_, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, h.pheader, common.BKInnerObjIDHost, input)
 	if err != nil {
 		ip, _ := host[common.BKHostInnerIPField].(string)
 		blog.Errorf("updateHostInstance http do error,  err:%s,input:%+v,rid:%s", err.Error(), input, h.rid)
 		return fmt.Errorf(h.ccLang.Languagef("host_import_update_fail", index, ip, err.Error()))
 	}
-	if !uResult.Result {
-		ip, _ := host[common.BKHostInnerIPField].(string)
-		blog.Errorf("updateHostInstance http response error,  err code:%d, err msg:%s,input:%+v,rid:%s", uResult.Code, uResult.ErrMsg, input, h.rid)
-		return fmt.Errorf(h.ccLang.Languagef("host_import_update_fail", index, ip, uResult.ErrMsg))
-	}
+
 	return nil
 }
 
@@ -452,10 +444,12 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 // app id : host belong app id
 // module id: host belong module id
 // host : host info
-func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs []int64, toInternalModule bool, host map[string]interface{}) (int64, error) {
+func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs []int64, toInternalModule bool,
+	host map[string]interface{}) (int64, error) {
 	ip, _ := host[common.BKHostInnerIPField].(string)
 	if cloudID < 0 {
-		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, h.ccLang.Language("import_host_cloudID_invalid")))
+		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip,
+			h.ccLang.Language("import_host_cloudID_invalid")))
 	}
 
 	// determine if the cloud area exists
@@ -467,7 +461,8 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 
 		}
 		if !isExist {
-			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, h.ccErr.Errorf(common.CCErrTopoCloudNotFound).Error()))
+			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip,
+				h.ccErr.Errorf(common.CCErrTopoCloudNotFound).Error()))
 
 		}
 	}
@@ -484,12 +479,8 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 		blog.Errorf("addHostInstance http do error,err:%s, input:%+v,rid:%s", err.Error(), host, h.rid)
 		return 0, err
 	}
-	if !result.Result {
-		blog.Errorf("addHostInstance http response error,err code:%d,err msg:%s, input:%+v,rid:%s", result.Code, result.ErrMsg, host, h.rid)
-		return 0, result.CCError()
-	}
 
-	hostID := int64(result.Data.Created.ID)
+	hostID := int64(result.Created.ID)
 	var hResult []metadata.ExceptionResult
 	var option interface{}
 	if toInternalModule == true {
@@ -577,17 +568,13 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 	hResult, err := h.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.pheader, common.BKInnerObjIDHost, query)
 	if err != nil {
 		blog.Errorf("get host failed, err: %v, input: %#v, rid:%s", err, query, h.rid)
-		return nil, nil, h.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if err := hResult.CCError(); err != nil {
-		blog.Errorf("get host failed, err: %v, input: %#v, rid:%s", err, query, h.rid)
 		return nil, nil, err
 	}
 
 	// step3. arrange data as a map, cloudKey: hostID
 	hostMap := make(map[string]int64, 0)
 	hostIDMap := make(map[int64]mapstr.MapStr, 0)
-	for _, host := range hResult.Data.Info {
+	for _, host := range hResult.Info {
 		key := generateHostCloudKey(host[common.BKHostInnerIPField], host[common.BKCloudIDField])
 		hostID, err := host.Int64(common.BKHostIDField)
 		if err != nil {

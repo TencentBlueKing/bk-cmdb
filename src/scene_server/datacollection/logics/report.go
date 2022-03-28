@@ -243,16 +243,14 @@ func (lgc *Logics) findAttrs(header http.Header, objIDs ...string) ([]metadata.A
 	rid := util.GetHTTPCCRequestID(header)
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).In(objIDs)
-	resp, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(), header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	resp, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(), header,
+		&metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("[NetDevice][findAttrs] for %v failed, err: %v, rid: %s", objIDs, err, rid)
 		return nil, err
 	}
-	if !resp.Result {
-		blog.Errorf("[NetDevice][findAttrs] for %v failed, err: %v, rid: %s", objIDs, resp, rid)
-		return nil, err
-	}
-	return resp.Data.Info, nil
+
+	return resp.Info, nil
 }
 
 func (lgc *Logics) findObjectMap(header http.Header, objIDs ...string) (map[string]metadata.Object, error) {
@@ -282,16 +280,8 @@ func (lgc *Logics) findObject(header http.Header, filter mapstr.MapStr) ([]metad
 		blog.Errorf("[NetDevice][findObject] by %+v failed, err: %v, rid: %s", filter, err, rid)
 		return nil, err
 	}
-	if !resp.Result {
-		blog.Errorf("[NetDevice][findObject] by %+v failed, err: %v, rid: %s", filter, resp, rid)
-		return nil, err
-	}
-	models := make([]metadata.Object, 0)
-	for _, info := range resp.Data.Info {
-		models = append(models, info.Spec)
-	}
 
-	return models, nil
+	return resp.Info, nil
 }
 
 func (lgc *Logics) findInstMap(header http.Header, objectID string, query *metadata.QueryCondition) (map[int64]mapstr.MapStr, error) {
@@ -311,18 +301,16 @@ func (lgc *Logics) findInstMap(header http.Header, objectID string, query *metad
 	return instMap, nil
 }
 
-func (lgc *Logics) findInst(header http.Header, objectID string, query *metadata.QueryCondition) ([]mapstr.MapStr, error) {
+func (lgc *Logics) findInst(header http.Header, objectID string, query *metadata.QueryCondition) ([]mapstr.MapStr,
+	error) {
 	rid := util.GetHTTPCCRequestID(header)
 	resp, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(context.Background(), header, objectID, query)
 	if err != nil {
 		blog.Errorf("[NetDevice][findInst] by %+v failed, err: %v, rid: %s", query, err, rid)
 		return nil, err
 	}
-	if !resp.Result {
-		blog.Errorf("[NetDevice][findInst] by %+v failed, err: %+v, rid: %s", query, resp, rid)
-		return nil, err
-	}
-	return resp.Data.Info, nil
+
+	return resp.Info, nil
 }
 
 func (lgc *Logics) findInstAssociation(header http.Header, objectID string, instID int64) ([]*metadata.InstAsst, error) {
@@ -340,6 +328,7 @@ func (lgc *Logics) findInstAssociation(header http.Header, objectID string, inst
 
 	option := &metadata.SearchAssociationInstRequest{
 		Condition: cond.ToMapStr(),
+		ObjID:     objectID,
 	}
 	resp, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(context.Background(), header, option)
 	if err != nil {

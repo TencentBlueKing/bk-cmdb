@@ -104,13 +104,9 @@ func (h *hostAuditLog) getBizIDByHostID(kit *rest.Kit, hostIDs []int64) (map[int
 		blog.Errorf("failed to get host module relation, hostIDs: %+v, err: %v, rid: %s", hostIDs, err, kit.Rid)
 		return nil, err
 	}
-	if err := moduleHost.CCError(); err != nil {
-		blog.Errorf("failed to get host module relation, hostIDs: %+v, err: %v, rid: %s", hostIDs, err, kit.Rid)
-		return nil, err
-	}
 
 	hostBizMap := make(map[int64]int64)
-	for _, relation := range moduleHost.Data.Info {
+	for _, relation := range moduleHost.Info {
 		hostBizMap[relation.HostID] = relation.AppID
 	}
 

@@ -5,18 +5,20 @@
       <span class="text">{{$t('搜索内容为空')}}</span>
     </div>
     <div class="content" v-else-if="type === 'permission'">
-      <bk-exception type="403" scene="part">
-        <i18n path="抱歉您没有查看权限">
-          <bk-button class="text-btn"
-            place="link"
-            text
-            theme="primary"
-            @click="handleApplyPermission"
-          >
-            {{$t('去申请')}}
-          </bk-button>
-        </i18n>
-      </bk-exception>
+      <slot name="permission">
+        <bk-exception type="403" scene="part">
+          <i18n path="抱歉您没有查看权限">
+            <bk-button class="text-btn"
+              place="link"
+              text
+              theme="primary"
+              @click="handleApplyPermission"
+            >
+              {{$t('去申请')}}
+            </bk-button>
+          </i18n>
+        </bk-exception>
+      </slot>
     </div>
     <div class="content" v-else>
       <img class="img-empty" src="../../../assets/images/empty-content.png" alt="">

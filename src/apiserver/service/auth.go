@@ -27,7 +27,7 @@ import (
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
@@ -83,7 +83,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		}
 	}
 
-	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
+	ctx := context.WithValue(req.Request.Context(), common.ContextRequestIDField, rid)
 
 	if len(needExactAuthAttrs) > 0 {
 		verifyResults, err := s.authorizer.AuthorizeBatch(ctx, pheader, user, needExactAuthAttrs...)

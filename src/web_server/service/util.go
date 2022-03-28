@@ -33,7 +33,8 @@ func parseModelBizID(data string) (int64, error) {
 
 // 依照"bk_obj_id"和"bk_property_type":"objuser"查询"cc_ObjAttDes"集合,得到"bk_property_id"的值;
 // 然后以它的值为key,取得Info中的value,然后以value作为param访问ESB,得到其中文名。
-func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, infoList []mapstr.MapStr) (map[string]string, []string, error) {
+func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, infoList []mapstr.MapStr) (
+	map[string]string, []string, error) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	cond := metadata.QueryCondition{
 		Fields: []string{metadata.AttributeFieldPropertyID},
@@ -47,10 +48,6 @@ func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, i
 		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), rid)
 		return nil, nil, err
 	}
-	if !attrRsp.Result {
-		blog.Errorf("failed to search the object(%s), err: %s, rid: %s", objID, attrRsp.ErrMsg, rid)
-		return nil, nil, err
-	}
 
 	usernameList := []string{}
 	propertyList := []string{}
@@ -60,12 +57,14 @@ func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, i
 		if objID == common.BKInnerObjIDHost {
 			info, ok = info[common.BKInnerObjIDHost].(map[string]interface{})
 			if !ok {
-				err = fmt.Errorf("failed to cast %s instance info from interface{} to map[string]interface{}, rid: %s", objID, rid)
-				blog.Errorf("failed to cast %s instance info from interface{} to map[string]interface{}, rid: %s", objID, rid)
+				err = fmt.Errorf("failed to cast %s instance info from interface{} to map[string]interface{}, "+
+					"rid: %s", objID, rid)
+				blog.Errorf("failed to cast %s instance info from interface{} to map[string]interface{}, rid: %s",
+					objID, rid)
 				return nil, nil, err
 			}
 		}
-		for _, item := range attrRsp.Data.Info {
+		for _, item := range attrRsp.Info {
 			propertyList = append(propertyList, item.PropertyID)
 			if info[item.PropertyID] != nil {
 				username, ok := info[item.PropertyID].(string)
@@ -184,17 +183,13 @@ func (s *Service) getDepartment(c *gin.Context, objID string) ([]metadata.Depart
 		blog.Errorf("search object[%s] attribute failed, err: %v, rid: %s", objID, err, rid)
 		return nil, nil, err
 	}
-	if !attrRsp.Result {
-		blog.Errorf("failed to search the object(%s), err: %s, rid: %s", objID, attrRsp.ErrMsg, rid)
-		return nil, nil, err
-	}
 
-	if len(attrRsp.Data.Info) == 0 {
+	if len(attrRsp.Info) == 0 {
 		return make([]metadata.DepartmentItem, 0), make([]string, 0), nil
 	}
 
 	propertyList := make([]string, 0)
-	for _, item := range attrRsp.Data.Info {
+	for _, item := range attrRsp.Info {
 		propertyList = append(propertyList, item.PropertyID)
 	}
 

@@ -213,7 +213,7 @@ func TestReadModelClassification(t *testing.T) {
 	mockAPI := NewMockApiMachinery()
 
 	t.Log("test with struct mock do output")
-	var resp metadata.ReadModelClassifitionResult
+	var resp metadata.ReadModelClassificationResult
 
 	err := json.Unmarshal([]byte(getReadModelClassificationResult()), &resp)
 	if err != nil {

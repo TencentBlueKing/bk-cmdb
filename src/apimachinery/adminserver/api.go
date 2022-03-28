@@ -60,3 +60,17 @@ func (a *adminServer) Migrate(ctx context.Context, ownerID string, distribution 
 		Into(resp)
 	return
 }
+
+func (a *adminServer) RunSyncDBIndex(ctx context.Context, h http.Header) (*metadata.Response, error) {
+	resp := new(metadata.Response)
+	subPath := "/migrate/sync/db/index"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return resp, err
+}

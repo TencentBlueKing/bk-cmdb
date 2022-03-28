@@ -33,7 +33,8 @@ type ApiServerClientInterface interface {
 	SearchDefaultApp(ctx context.Context, h http.Header, ownerID string) (resp *metadata.QueryInstResult, err error)
 	GetObjectData(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ObjectAttrBatchResult, err error)
 	GetInstDetail(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error)
-	GetInstUniqueFields(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error)
+	GetInstUniqueFields(ctx context.Context, h http.Header, objID string, uniqueID int64, params mapstr.MapStr) (
+		resp metadata.QueryUniqueFieldsResult, err error)
 	CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error)
 	UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error)
@@ -46,6 +47,8 @@ type ApiServerClientInterface interface {
 	UpdateHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error)
 	GetHostModuleRelation(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.HostModuleResp, err error)
 	AddInst(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error)
+	AddInstByImport(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (
+		*metadata.ResponseDataMapStr, error)
 	AddObjectBatch(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response, err error)
 	SearchAssociationInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	ImportAssociation(ctx context.Context, h http.Header, objID string, input *metadata.RequestImportAssociation) (resp *metadata.ResponeImportAssociation, err error)
@@ -71,6 +74,14 @@ type ApiServerClientInterface interface {
 		err error)
 	ReadInstance(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.
 		QueryConditionResult, err error)
+	SearchObjectUnique(ctx context.Context, objID string, h http.Header) (resp *metadata.SearchUniqueResult, err error)
+
+	FindAssociationByObjectAssociationID(ctx context.Context, h http.Header, objID string,
+		input metadata.FindAssociationByObjectAssociationIDRequest) (
+		resp *metadata.FindAssociationByObjectAssociationIDResponse, err error)
+
+	SearchObjectAssociation(ctx context.Context, h http.Header,
+		request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error)
 }
 
 func NewApiServerClientInterface(c *util.Capability, version string) ApiServerClientInterface {

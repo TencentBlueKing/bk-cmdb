@@ -29,7 +29,9 @@ import (
  * plat represent cloud plat here
  */
 
-func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header, platIDs ...int64) ([]PlatSimplify, error) {
+func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header, platIDs ...int64) ([]PlatSimplify,
+	error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
@@ -44,7 +46,7 @@ func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header,
 		return nil, fmt.Errorf("get plats by id failed, err: %+v", err)
 	}
 	plats := make([]PlatSimplify, 0)
-	for _, cls := range result.Data.Info {
+	for _, cls := range result.Info {
 		plat := PlatSimplify{}
 		_, err = plat.Parse(cls)
 		if err != nil {

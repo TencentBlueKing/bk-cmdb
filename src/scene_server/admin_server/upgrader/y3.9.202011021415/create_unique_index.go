@@ -22,6 +22,12 @@ import (
 	"configcenter/src/storage/dal/types"
 )
 
+const (
+	tableNameSubscription = "cc_Subscription"
+	subscriptionIDField   = "subscription_id"
+	subscriptionNameField = "subscription_name"
+)
+
 var (
 	sortFlag      = int32(1)
 	idUniqueIndex = types.Index{
@@ -160,12 +166,6 @@ func buildTopoIndex(indexes map[string][]types.Index) {
 			Unique:     true,
 			Background: true,
 			Name:       "idx_unique_cloudID",
-		},
-		{
-			Keys:       map[string]int32{common.BKCloudNameField: sortFlag},
-			Unique:     true,
-			Background: true,
-			Name:       "idx_unique_cloudName",
 		},
 	}
 	indexes[common.BKTableNameProcessInstanceRelation] = []types.Index{
@@ -341,15 +341,15 @@ func buildExtIndex(indexes map[string][]types.Index) {
 		},
 	}
 
-	indexes[common.BKTableNameSubscription] = []types.Index{
+	indexes[tableNameSubscription] = []types.Index{
 		{
-			Keys:       map[string]int32{common.BKSubscriptionIDField: sortFlag},
+			Keys:       map[string]int32{subscriptionIDField: sortFlag},
 			Unique:     true,
 			Background: true,
 			Name:       "idx_unique_subscriptionID",
 		},
 		{
-			Keys:       map[string]int32{common.BKSubscriptionNameField: sortFlag},
+			Keys:       map[string]int32{subscriptionNameField: sortFlag},
 			Unique:     true,
 			Background: true,
 			Name:       "idx_unique_subscriptionName",

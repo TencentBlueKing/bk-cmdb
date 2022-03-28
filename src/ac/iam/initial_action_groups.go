@@ -12,9 +12,24 @@
 
 package iam
 
+import "configcenter/src/common/metadata"
+
 // GenerateActionGroups generate all the resource action groups registered to IAM.
-func GenerateActionGroups() []ActionGroup {
+func GenerateActionGroups(objects []metadata.Object) []ActionGroup {
+	ActionGroups := GenerateStaticActionGroups()
+
+	// generate model instance manage action groups, contains model instance related actions which are dynamic
+	ActionGroups = append(ActionGroups, GenModelInstanceManageActionGroups(objects)...)
+
+	return ActionGroups
+}
+
+// GenerateStaticActionGroups generate all the static resource action groups.
+func GenerateStaticActionGroups() []ActionGroup {
 	ActionGroups := make([]ActionGroup, 0)
+
+	// generate business set manage action groups, contains business set related actions
+	ActionGroups = append(ActionGroups, genBizSetManageActionGroups()...)
 
 	// generate business manage action groups, contains business related actions
 	ActionGroups = append(ActionGroups, genBusinessManageActionGroups()...)
@@ -32,6 +47,20 @@ func GenerateActionGroups() []ActionGroup {
 	ActionGroups = append(ActionGroups, genGlobalSettingsActionGroups()...)
 
 	return ActionGroups
+}
+
+func genBizSetManageActionGroups() []ActionGroup {
+	return []ActionGroup{
+		{
+			Name:   "业务集管理",
+			NameEn: "Business Set Manage",
+			Actions: []ActionWithID{
+				{
+					ID: AccessBizSet,
+				},
+			},
+		},
+	}
 }
 
 func genBusinessManageActionGroups() []ActionGroup {
@@ -228,17 +257,20 @@ func genResourceManageActionGroups() []ActionGroup {
 					},
 				},
 				{
-					Name:   "实例",
-					NameEn: "Configuration Instance",
+					Name:   "业务集",
+					NameEn: "BizSet",
 					Actions: []ActionWithID{
 						{
-							ID: CreateSysInstance,
+							ID: CreateBizSet,
 						},
 						{
-							ID: EditSysInstance,
+							ID: EditBizSet,
 						},
 						{
-							ID: DeleteSysInstance,
+							ID: DeleteBizSet,
+						},
+						{
+							ID: ViewBizSet,
 						},
 					},
 				},
@@ -294,24 +326,6 @@ func genResourceManageActionGroups() []ActionGroup {
 					},
 				},
 				{
-					Name:   "事件订阅",
-					NameEn: "Event Subscription",
-					Actions: []ActionWithID{
-						{
-							ID: CreateEventPushing,
-						},
-						{
-							ID: EditEventPushing,
-						},
-						{
-							ID: DeleteEventPushing,
-						},
-						{
-							ID: FindEventPushing,
-						},
-					},
-				},
-				{
 					Name:   "事件监听",
 					NameEn: "Event Watch",
 					Actions: []ActionWithID{
@@ -331,10 +345,19 @@ func genResourceManageActionGroups() []ActionGroup {
 							ID: WatchModuleEvent,
 						},
 						{
-							ID: WatchSetTemplateEvent,
+							ID: WatchProcessEvent,
 						},
 						{
-							ID: WatchProcessEvent,
+							ID: WatchCommonInstanceEvent,
+						},
+						{
+							ID: WatchMainlineInstanceEvent,
+						},
+						{
+							ID: WatchInstAsstEvent,
+						},
+						{
+							ID: WatchBizSetEvent,
 						},
 					},
 				},
@@ -347,7 +370,7 @@ func genModelManageActionGroups() []ActionGroup {
 	return []ActionGroup{
 		{
 			Name:   "模型管理",
-			NameEn: "Model Mange",
+			NameEn: "Model Manage",
 			SubGroups: []ActionGroup{
 				{
 					Name:   "模型分组",
@@ -407,6 +430,24 @@ func genModelManageActionGroups() []ActionGroup {
 					},
 				},
 			},
+		},
+	}
+}
+
+func GenModelInstanceManageActionGroups(objects []metadata.Object) []ActionGroup {
+	if len(objects) == 0 {
+		return make([]ActionGroup, 0)
+	}
+
+	subGroups := []ActionGroup{}
+	for _, obj := range objects {
+		subGroups = append(subGroups, genDynamicActionSubGroup(obj))
+	}
+	return []ActionGroup{
+		{
+			Name:      "模型实例管理",
+			NameEn:    "Model instance Manage",
+			SubGroups: subGroups,
 		},
 	}
 }

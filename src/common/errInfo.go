@@ -35,7 +35,8 @@ const (
 	// CCErrCommHTTPDoRequestFailed the HTTP Request failed
 	CCErrCommHTTPDoRequestFailed = 1199002
 
-	// CCErrCommHTTPInputInvalid the input parameter is invalid, and the parameter here refers to the URL or Query parameter
+	// CCErrCommHTTPInputInvalid the input parameter is invalid, and the parameter here refers to the URL or Query
+	// parameter
 	CCErrCommHTTPInputInvalid = 1199003
 
 	// CCErrCommHTTPReadBodyFailed unable to read HTTP request body data
@@ -242,6 +243,7 @@ const (
 	CCErrAPIGetAuthorizedAppListFromAuthFailed = 1100001
 	CCErrAPIGetUserResourceAuthStatusFailed    = 1100002
 	CCErrAPINoObjectInstancesIsFound           = 1100003
+	CCErrAPINoPassSourceCertification          = 1100004
 
 	// toposerver 1101XXX
 	// CCErrTopoInstCreateFailed unable to create the instance
@@ -475,11 +477,17 @@ const (
 	CCErrorSetNameDuplicated       = 1101108
 
 	// CCErrorCheckRegularFailed check regular expression failed
-	CCErrorCheckRegularFailed   = 1101109
-	CCErrorParamExceedMaxLength = 1101110
+	CCErrorCheckRegularFailed = 1101109
+
+	// CCErrorTopObjectUniqueIndexNotFound  模型xx的唯一校验xx不存在
+	CCErrorTopObjectUniqueIndexNotFound = 1101110
 
 	CCErrorTopoForbiddenDeleteBuiltInBiz    = 1101111
 	CCErrorTopoForbiddenDeleteUnarchivedBiz = 1101112
+
+	CCErrorModelClassificationNotFound = 1101113
+
+	CCErrorTopoGetAuthorizedBusinessSetListFailed = 1101114
 
 	// object controller 1102XXX
 
@@ -523,6 +531,10 @@ const (
 
 	CCErrEventChainNodeNotExist = 1103007
 	CCErrEventDetailNotExist    = 1103008
+
+	CCErrEventGetTaskStatusTimeout       = 1103009
+	CCErrEventPushHostIdentifierFailed   = 1103010
+	CCErrEventSyncHostIdentifierDisabled = 1103011
 
 	// host 1104XXX
 	CCErrHostModuleRelationAddFailed = 1104000
@@ -629,6 +641,7 @@ const (
 	CCErrAuditTakeSnapshotFailed = 1109002
 	CCErrAuditSelectFailed       = 1109003
 	CCErrAuditSelectTimeout      = 1109004
+	CCErrAuditGenerateLogFailed  = 1109005
 
 	// host server
 	CCErrHostGetFail               = 1110001
@@ -687,7 +700,8 @@ const (
 	CCErrDeleteHostFromBusiness = 1110055
 	// CCErrHostModuleConfigNotMatch hostID[%#v] not belong to business
 	CCErrHostModuleConfigNotMatch = 1110056
-	// CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed Module does not exist or there are multiple built-in modules
+	// CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed Module does not exist or there are multiple built-in
+	// modules
 	CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed = 1110057
 	CCErrHostSearchNeedObjectInstIDErr                        = 1110058
 	CCErrHostSetNotExist                                      = 1110059
@@ -799,21 +813,34 @@ const (
 	// CCErrCoreServiceModelHasAssociationErr 模型与其他模型有关联关系
 	CCErrCoreServiceModelHasAssociationErr           = 1113031
 	CCErrCoreServiceOnlyNodeServiceCategoryAvailable = 1113032
-	// SearchTopoTreeScanTooManyData means hit too many data, we return directly.
-	SearchTopoTreeScanTooManyData = 1113033
+	// Deprecated SearchTopoTreeScanTooManyData means hit too many data, we return directly.
+	SearchTopoTreeScanTooManyData = 1113038
 
 	// CCERrrCoreServiceUniqueRuleExist 模型唯一校验规则已经存在
 	CCERrrCoreServiceSameUniqueCheckRuleExist = 1113050
-	CCERrrCoreServiceConcurrent               = 1113051
+	// CCERrrCoreServiceSubsetUniqueRuleExist 已存在 “X字段” 唯一校验，请在该规则基础上进行补充
+	CCERrrCoreServiceSubsetUniqueRuleExist = 1113051
+	// CCERrrCoreServiceSupersetUniqueRuleExist 所选字段组合和已有规则重复，请勿创建冗余规则
+	CCERrrCoreServiceSupersetUniqueRuleExist = 1113052
+	CCERrrCoreServiceConcurrent              = 1113053
 
 	// CCErrCoreServiceResourceDirectoryNotExistErr 资源池目录不存在
 	CCErrCoreServiceResourceDirectoryNotExistErr = 1113033
 	// CCErrCoreServiceHostNotUnderAnyResourceDirectory 主机不在任意资源池目录下
 	CCErrCoreServiceHostNotUnderAnyResourceDirectory = 11130034
+	// CCErrCoreServiceUniqueIndexPropertyType 唯一索引不支持的字段类型. 字段名: %s
+	CCErrCoreServiceUniqueIndexPropertyType = 1113035
+	// CCErrCoreServiceCreateDBUniqueIndex 创建唯一索引失败
+	CCErrCoreServiceCreateDBUniqueIndex = 1113036
+	// CCErrCoreServiceSearchDBUniqueIndex 获取db唯一索引失败
+	CCErrCoreServiceSearchDBUniqueIndex = 1113037
+	// CCErrCoreServiceCreateDBUniqueIndex 创建唯一索引失败,现有数据有重复值
+	CCErrCoreServiceCreateDBUniqueIndexDuplicateValue = 1113039
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
-	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %s does not exist
+	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %s does not
+	// exist
 	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
 
 	// synchronize_server 1114xxx

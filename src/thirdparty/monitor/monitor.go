@@ -18,10 +18,8 @@ import (
 	"time"
 
 	"configcenter/src/apimachinery/flowctrl"
-	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
 	"configcenter/src/thirdparty/monitor/config"
 	"configcenter/src/thirdparty/monitor/meta"
 	"configcenter/src/thirdparty/monitor/plugins"
@@ -105,11 +103,6 @@ func (m *Monitor) reportLoop() {
 func InitMonitor() error {
 
 	var err error
-	// no need init for adminserver
-	if common.GetIdentification() == types.CC_MODULE_MIGRATE {
-		return nil
-	}
-
 	maxCnt := 100
 	cnt := 0
 	for !cc.IsExist("monitor") && cnt < maxCnt {

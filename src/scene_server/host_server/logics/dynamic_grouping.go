@@ -408,20 +408,16 @@ func (e *HostDynamicGroupExecutor) searchByHostConds() error {
 		blog.Errorf("get hosts failed, err: %v, rid: %s", err, e.ccRid)
 		return err
 	}
-	if !result.Result {
-		blog.Errorf("get host failed, error code:%d, error message:%s, rid: %s", result.Code, result.ErrMsg, e.ccRid)
-		return e.ccErr.New(result.Code, result.ErrMsg)
-	}
 
-	if len(result.Data.Info) == 0 {
+	if len(result.Info) == 0 {
 		e.isNotFound = true
 	}
 
 	if !e.needPaged {
-		e.total = result.Data.Count
+		e.total = result.Count
 	}
 
-	for _, host := range result.Data.Info {
+	for _, host := range result.Info {
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
 			return err

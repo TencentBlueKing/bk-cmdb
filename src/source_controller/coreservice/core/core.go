@@ -101,6 +101,7 @@ type ModelOperation interface {
 	SearchModel(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error)
 	SearchModelWithAttribute(kit *rest.Kit, inputParam metadata.QueryCondition) (
 		*metadata.QueryModelWithAttributeDataResult, error)
+	CreateModelTables(kit *rest.Kit, inputParam metadata.CreateModelTable) error
 }
 
 // InstanceOperation instance methods
@@ -111,8 +112,8 @@ type InstanceOperation interface {
 		*metadata.CreateManyDataResult, error)
 	UpdateModelInstance(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	SearchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
-	CountModelInstances(kit *rest.Kit, objID string, inputParam *metadata.CountCondition) (*metadata.CommonCountResult,
-		error)
+	CountModelInstances(kit *rest.Kit, objID string, input *metadata.Condition) (
+		*metadata.CommonCountResult, error)
 	DeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount,
 		error)
@@ -142,7 +143,7 @@ type ModelAssociation interface {
 	SetModelAssociation(kit *rest.Kit, inputParam metadata.SetModelAssociation) (*metadata.SetDataResult, error)
 	UpdateModelAssociation(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	SearchModelAssociation(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
-	CountModelAssociations(kit *rest.Kit, inputParam *metadata.CountCondition) (*metadata.CommonCountResult, error)
+	CountModelAssociations(kit *rest.Kit, inputParam *metadata.Condition) (*metadata.CommonCountResult, error)
 	DeleteModelAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModelAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
@@ -153,9 +154,11 @@ type InstanceAssociation interface {
 		*metadata.CreateOneDataResult, error)
 	CreateManyInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateManyInstanceAssociation) (
 		*metadata.CreateManyDataResult, error)
-	SearchInstanceAssociation(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
-	CountInstanceAssociations(kit *rest.Kit, inputParam *metadata.CountCondition) (*metadata.CommonCountResult, error)
-	DeleteInstanceAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
+	SearchInstanceAssociation(kit *rest.Kit, objID string, param metadata.QueryCondition) (
+		*metadata.QueryResult, error)
+	CountInstanceAssociations(kit *rest.Kit, objID string, input *metadata.Condition) (
+		*metadata.CommonCountResult, error)
+	DeleteInstanceAssociation(kit *rest.Kit, objID string, param metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
 
 // DataSynchronizeOperation manager data synchronize interface
@@ -244,7 +247,6 @@ type Core interface {
 	SystemOperation() SystemOperation
 	CloudOperation() CloudOperation
 	AuthOperation() AuthOperation
-	EventOperation() EventOperation
 	CommonOperation() CommonOperation
 }
 
@@ -297,7 +299,7 @@ type ProcessOperation interface {
 	AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostIDs []int64, moduleIDs []int64) errors.CCErrorCoder
 	RemoveTemplateBindingOnModule(kit *rest.Kit, moduleID int64) errors.CCErrorCoder
 	ConstructServiceInstanceName(kit *rest.Kit, instanceID int64, host map[string]interface{},
-		process *metadata.Process) errors.CCErrorCoder
+		process *metadata.Process) (string, errors.CCErrorCoder)
 	ReconstructServiceInstanceName(kit *rest.Kit, instanceID int64) errors.CCErrorCoder
 
 	// process instance relation
@@ -390,14 +392,6 @@ type AuthOperation interface {
 		errors.CCErrorCoder)
 }
 
-type EventOperation interface {
-	Subscribe(kit *rest.Kit, subscription *metadata.Subscription) (*metadata.Subscription, errors.CCErrorCoder)
-	UnSubscribe(kit *rest.Kit, subscribeID int64) errors.CCErrorCoder
-	UpdateSubscription(kit *rest.Kit, subscribeID int64, subscription *metadata.Subscription) errors.CCErrorCoder
-	ListSubscriptions(kit *rest.Kit, data *metadata.ParamSubscriptionSearch) (*metadata.RspSubscriptionSearch,
-		errors.CCErrorCoder)
-}
-
 type CommonOperation interface {
 	GetDistinctField(kit *rest.Kit, param *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder)
 	GetDistinctCount(kit *rest.Kit, param *metadata.DistinctFieldOption) (int64, errors.CCErrorCoder)
@@ -419,7 +413,6 @@ type core struct {
 	hostApplyRule   HostApplyRuleOperation
 	cloud           CloudOperation
 	auth            AuthOperation
-	event           EventOperation
 	common          CommonOperation
 }
 
@@ -439,7 +432,6 @@ func New(
 	sys SystemOperation,
 	cloud CloudOperation,
 	auth AuthOperation,
-	event EventOperation,
 	common CommonOperation,
 ) Core {
 	return &core{
@@ -458,7 +450,6 @@ func New(
 		hostApplyRule:   hostApplyRule,
 		cloud:           cloud,
 		auth:            auth,
-		event:           event,
 		common:          common,
 	}
 }
@@ -521,10 +512,6 @@ func (m *core) CloudOperation() CloudOperation {
 
 func (m *core) AuthOperation() AuthOperation {
 	return m.auth
-}
-
-func (m *core) EventOperation() EventOperation {
-	return m.event
 }
 
 func (m *core) CommonOperation() CommonOperation {

@@ -51,6 +51,24 @@ type LabelRemoveRequest struct {
 	TableName string            `json:"table_name"`
 }
 
+// SvcInstLabelAddOption add labels to service instance option, need biz id for authorization
+type SvcInstLabelAddOption struct {
+	BizID int64 ` json:"bk_biz_id"`
+	LabelAddOption
+}
+
+// SvcInstLabelUpdateOption update service instance labels option, need biz id for authorization
+type SvcInstLabelUpdateOption struct {
+	BizID int64 ` json:"bk_biz_id"`
+	LabelUpdateOption
+}
+
+// SvcInstLabelRemoveOption remove service instance labels option, need biz id for authorization
+type SvcInstLabelRemoveOption struct {
+	BizID int64 ` json:"bk_biz_id"`
+	LabelRemoveOption
+}
+
 type Operator string
 
 const (

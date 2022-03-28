@@ -26,17 +26,10 @@ import (
 )
 
 type Identifier struct {
-	dbQuery *hostutil.DBExecQuery
-	hosts   []metadata.HostIdentifier
-
-	// tmp data
+	dbQuery          *hostutil.DBExecQuery
+	hosts            []metadata.HostIdentifier
 	setIDs           []int64
-	moduleIDs        []int64
-	bizIDs           []int64
 	sets             map[int64]metadata.SetInst
-	modules          map[int64]*metadata.ModuleInst
-	bizs             map[int64]metadata.BizInst
-	clouds           map[int64]metadata.CloudInst
 	hostProcRelation map[int64][]metadata.HostIdentProcess
 	modulehosts      map[int64][]metadata.ModuleHost
 	asstMap          map[string]string
@@ -48,9 +41,6 @@ func NewIdentifier() *Identifier {
 	return &Identifier{
 		dbQuery:          dbQuery,
 		sets:             make(map[int64]metadata.SetInst),
-		modules:          make(map[int64]*metadata.ModuleInst),
-		bizs:             make(map[int64]metadata.BizInst),
-		clouds:           make(map[int64]metadata.CloudInst),
 		hostProcRelation: make(map[int64][]metadata.HostIdentProcess),
 		modulehosts:      make(map[int64][]metadata.ModuleHost),
 		asstMap:          make(map[string]string),
@@ -78,10 +68,6 @@ func (i *Identifier) Identifier(kit *rest.Kit, hostIDs []int64) ([]metadata.Host
 	if err != nil {
 		return nil, err
 	}
-	err = i.findHostCloud(kit)
-	if err != nil {
-		return nil, err
-	}
 
 	err = i.findHostLayerInfo(kit)
 	if err != nil {
@@ -92,19 +78,26 @@ func (i *Identifier) Identifier(kit *rest.Kit, hostIDs []int64) ([]metadata.Host
 	return i.hosts, nil
 }
 
+var identityHostFields = []string{
+	common.BKHostIDField,
+	common.BKCloudIDField,
+	common.BKHostInnerIPField,
+	common.BKOSTypeField,
+	common.BkSupplierAccount,
+}
+
 // FindHost query host info
 func (i *Identifier) findHost(kit *rest.Kit, hostIDs []int64) error {
 	hostCond := condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs)
 	condHostMap := util.SetQueryOwner(hostCond.ToMapStr(), kit.SupplierAccount)
 	// fetch all hosts
-	i.hosts = make([]metadata.HostIdentifier, 0) // New func init
-	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condHostMap).All(kit.Ctx, &i.hosts)
+	i.hosts = make([]metadata.HostIdentifier, 0)
+	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condHostMap).Fields(identityHostFields...).
+		All(kit.Ctx, &i.hosts)
 	if err != nil {
 		blog.ErrorJSON("findHost query host error. err:%s, conidtion:%s, rid:%s", err.Error(), condHostMap, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
-
-	blog.V(5).Infof("findHost query host info. host:%#v, rid;%s", i.hosts, kit.Rid)
 
 	return nil
 }
@@ -121,13 +114,9 @@ func (i *Identifier) findModuleHostRelation(kit *rest.Kit, hostIDs []int64) erro
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
-	blog.V(5).Infof("findModuleHostRelation query host and module relation. relation:%#v, rid;%s", i.hosts, kit.Rid)
-
 	for _, modulehost := range moduleHostRelation {
 		i.modulehosts[modulehost.HostID] = append(i.modulehosts[modulehost.HostID], modulehost)
 		i.setIDs = append(i.setIDs, modulehost.SetID)
-		i.moduleIDs = append(i.moduleIDs, modulehost.ModuleID)
-		i.bizIDs = append(i.bizIDs, modulehost.AppID)
 	}
 
 	return nil
@@ -140,65 +129,15 @@ func (i *Identifier) findHostTopoInfo(kit *rest.Kit) error {
 	if len(i.setIDs) > 0 {
 		setInfoArr := make([]metadata.SetInst, 0)
 		cond := condition.CreateCondition().Field(common.BKSetIDField).In(i.setIDs)
-		err := i.dbQuery.ExecQuery(kit, common.BKTableNameBaseSet, nil, cond.ToMapStr(), &setInfoArr)
+		fields := []string{common.BKSetIDField, common.BKParentIDField}
+		err := i.dbQuery.ExecQuery(kit, common.BKTableNameBaseSet, fields, cond.ToMapStr(),
+			&setInfoArr)
 		if err != nil {
 			blog.Errorf("findHostTopoInfo query set info error. condition:%#v, rid:%s", cond.ToMapStr(), kit.Rid)
 			return err
 		}
 		for _, setInfo := range setInfoArr {
 			i.sets[setInfo.SetID] = setInfo
-		}
-	}
-	if len(i.moduleIDs) > 0 {
-		moduleInfoArr := make([]*metadata.ModuleInst, 0)
-		cond := condition.CreateCondition().Field(common.BKModuleIDField).In(i.moduleIDs)
-		err := i.dbQuery.ExecQuery(kit, common.BKTableNameBaseModule, nil, cond.ToMapStr(), &moduleInfoArr)
-		if err != nil {
-			blog.Errorf("findHostTopoInfo query module info error. condition:%#v, rid:%s", cond.ToMapStr(), kit.Rid)
-			return err
-		}
-		for _, moduleInfo := range moduleInfoArr {
-			i.modules[moduleInfo.ModuleID] = moduleInfo
-		}
-	}
-	if len(i.bizIDs) > 0 {
-		bizInfoArr := make([]metadata.BizInst, 0)
-		cond := condition.CreateCondition().Field(common.BKAppIDField).In(i.bizIDs)
-		err := i.dbQuery.ExecQuery(kit, common.BKTableNameBaseApp, nil, cond.ToMapStr(), &bizInfoArr)
-		if err != nil {
-			blog.Errorf("findHostTopoInfo query biz info error. rid:%s", kit.Rid)
-			return err
-		}
-		for _, bizInfo := range bizInfoArr {
-			i.bizs[bizInfo.BizID] = bizInfo
-		}
-	}
-	blog.V(5).Infof("findHostTopoInfo query host topo info. bizIDs:%#v, setIDs:%#v, moduleIDs:%#v, biz:%#v, set:%#v, module:%#v, rid;%s", i.bizIDs, i.setIDs, i.moduleIDs, i.bizs, i.sets, i.modules, kit.Rid)
-
-	return nil
-}
-
-// findHostCloud find host cloud area info
-func (i *Identifier) findHostCloud(kit *rest.Kit) error {
-	var cloudIDs []int64
-	// parse  host  cloud id
-	for _, host := range i.hosts {
-		cloudIDs = append(cloudIDs, host.CloudID)
-	}
-
-	if len(cloudIDs) > 0 {
-		cloudInfoArr := make([]metadata.CloudInst, 0)
-		cond := condition.CreateCondition().Field(common.BKCloudIDField).In(cloudIDs)
-		err := i.dbQuery.ExecQuery(kit, common.BKTableNameBasePlat, nil, cond.ToMapStr(), &cloudInfoArr)
-		if err != nil {
-			blog.Errorf("findHostCloud query cloud info error. condition:%#v, rid:%s", cond.ToMapStr(), kit.Rid)
-			return err
-		}
-
-		blog.V(5).Infof("findHostCloud query cloud info. cloud id:%#v, cloud info:%#v, rid;%s", cloudIDs, cloudInfoArr, kit.Rid)
-
-		for _, cloudInfo := range cloudInfoArr {
-			i.clouds[cloudInfo.CloudID] = cloudInfo
 		}
 	}
 
@@ -221,8 +160,6 @@ func (i *Identifier) findHostServiceInst(kit *rest.Kit, hostIDs []int64) error {
 		return err
 	}
 
-	blog.V(5).Infof("findHostServiceInst query host and process relation. hostID:%#v, relation:%#v, rid;%s", hostIDs, relations, kit.Rid)
-
 	procIDs, serviceInstIDs := make([]int64, 0), make([]int64, 0)
 	// 进程与服务实例的关系
 	procServiceInstMap := make(map[int64][]int64, 0)
@@ -243,20 +180,11 @@ func (i *Identifier) findHostServiceInst(kit *rest.Kit, hostIDs []int64) error {
 		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s, rid:%s", common.BKTableNameServiceInstance, serviceInstFilter, kit.Rid)
 		return err
 	}
-	blog.V(5).Infof("findHostServiceInst query service instance info. service instance id:%#v, info:%#v, rid;%s", serviceInstIDs, serviceInstInfos, kit.Rid)
+
 	// 服务实例与模块的关系
 	serviceInstModuleRelation := make(map[int64][]int64, 0)
 	for _, serviceInstInfo := range serviceInstInfos {
 		serviceInstModuleRelation[serviceInstInfo.ID] = append(serviceInstModuleRelation[serviceInstInfo.ID], serviceInstInfo.ModuleID)
-	}
-
-	procModuleRelation := make(map[int64][]int64, 0)
-	for procID, serviceInstIDs := range procServiceInstMap {
-		for _, serviceInstID := range serviceInstIDs {
-			for _, moduleID := range serviceInstModuleRelation[serviceInstID] {
-				procModuleRelation[procID] = append(procModuleRelation[procID], moduleID)
-			}
-		}
 	}
 
 	procInfos := make([]metadata.HostIdentProcess, 0)
@@ -267,8 +195,6 @@ func (i *Identifier) findHostServiceInst(kit *rest.Kit, hostIDs []int64) error {
 		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s, rid:%s", common.BKTableNameBaseProcess, cond.ToMapStr(), kit.Rid)
 		return err
 	}
-
-	blog.V(5).Infof("findHostServiceInst query process info. procIDs:%#v, info:%#v, rid;%s", procIDs, procInfos, kit.Rid)
 
 	procs := make(map[int64]metadata.HostIdentProcess, 0)
 	for _, procInfo := range procInfos {
@@ -291,9 +217,6 @@ func (i *Identifier) findHostServiceInst(kit *rest.Kit, hostIDs []int64) error {
 			}
 		}
 
-		if moduleIDs, ok := procModuleRelation[procInfo.ProcessID]; ok {
-			procInfo.BindModules = moduleIDs
-		}
 		procs[procInfo.ProcessID] = procInfo
 	}
 
@@ -337,7 +260,8 @@ func (i *Identifier) findHostLayerInfo(kit *rest.Kit) error {
 		layers := make([]metadata.MainlineInstInfo, 0)
 		cond := condition.CreateCondition().Field(common.BKInstIDField).In(parentIDs)
 		cond.Field(common.BKObjIDField).Eq(curObj)
-		err := i.dbQuery.ExecQuery(kit, common.BKTableNameBaseInst, nil, cond.ToMapStr(), &layers)
+		tableName := common.GetObjectInstTableName(curObj, kit.SupplierAccount)
+		err := i.dbQuery.ExecQuery(kit, tableName, nil, cond.ToMapStr(), &layers)
 		if err != nil {
 			blog.Errorf("findHostLayerInfo query layer info error. condition:%#v, rid:%s", cond.ToMapStr(), kit.Rid)
 			return err
@@ -355,15 +279,11 @@ func (i *Identifier) findHostLayerInfo(kit *rest.Kit) error {
 		}
 	}
 
-	blog.V(5).Infof("findHostLayerInfo query host layer info. layers: %#v, rid;%s", i.layers, kit.Rid)
 	return nil
 }
 
 func (i *Identifier) build(kit *rest.Kit) {
 	for idx, host := range i.hosts {
-		if cloudInfo, ok := i.clouds[host.CloudID]; ok {
-			host.CloudName = cloudInfo.CloudName
-		}
 		// 填充主机身份中的 业务，模块，集群，自定义层级信息
 		for _, relation := range i.modulehosts[host.HostID] {
 			mod := &metadata.HostIdentModule{
@@ -377,20 +297,9 @@ func (i *Identifier) build(kit *rest.Kit) {
 			}
 			host.HostIdentModule[strconv.FormatInt(mod.ModuleID, 10)] = mod
 
-			if biz, ok := i.bizs[mod.BizID]; ok {
-				mod.BizName = biz.BizName
-			}
-
 			var parentID int64
 			if set, ok := i.sets[mod.SetID]; ok {
-				mod.SetName = set.SetName
-				mod.SetEnv = set.SetEnv
-				mod.SetStatus = set.SetStatus
 				parentID = set.ParentID
-			}
-
-			if module, ok := i.modules[mod.ModuleID]; ok {
-				mod.ModuleName = module.ModuleName
 			}
 
 			curObj, ok := i.asstMap[common.BKInnerObjIDSet]

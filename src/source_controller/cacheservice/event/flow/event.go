@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
@@ -48,6 +49,11 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 		return err
 	}
 
+	if err := e.runBizSet(context.Background()); err != nil {
+		blog.Errorf("run biz set event flow failed, err: %v", err)
+		return err
+	}
+
 	if err := e.runBiz(context.Background()); err != nil {
 		blog.Errorf("run biz event flow failed, err: %v", err)
 		return err
@@ -63,11 +69,6 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 		return err
 	}
 
-	if err := e.runSetTemplate(context.Background()); err != nil {
-		blog.Errorf("run set_template event flow failed, err: %v", err)
-		return err
-	}
-
 	if err := e.runObjectBase(context.Background()); err != nil {
 		blog.Errorf("run object base event flow failed, err: %v", err)
 		return err
@@ -80,6 +81,11 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 
 	if err := e.runProcessInstanceRelation(context.Background()); err != nil {
 		blog.Errorf("run process instance relation event flow failed, err: %v", err)
+		return err
+	}
+
+	if err := e.runInstAsst(context.Background()); err != nil {
+		blog.Errorf("run instance association event flow failed, err: %v", err)
 		return err
 	}
 
@@ -101,108 +107,130 @@ type Event struct {
 
 func (e *Event) runHost(ctx context.Context) error {
 	opts := flowOptions{
-		key:      event.HostKey,
-		watch:    e.watch,
-		watchDB:  e.watchDB,
-		ccDB:     e.ccDB,
-		isMaster: e.isMaster,
+		key:         event.HostKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(metadata.HostMapStr),
 	}
 
-	return newFlow(ctx, opts)
+	return newFlow(ctx, opts, getHostDeleteEventDetails, parseEvent)
 }
 
 func (e *Event) runModuleHostRelation(ctx context.Context) error {
 	opts := flowOptions{
-		key:      event.ModuleHostRelationKey,
-		watch:    e.watch,
-		watchDB:  e.watchDB,
-		ccDB:     e.ccDB,
-		isMaster: e.isMaster,
+		key:         event.ModuleHostRelationKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts)
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
 
 func (e *Event) runBiz(ctx context.Context) error {
 	opts := flowOptions{
-		key:      event.BizKey,
-		watch:    e.watch,
-		watchDB:  e.watchDB,
-		ccDB:     e.ccDB,
-		isMaster: e.isMaster,
+		key:         event.BizKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts)
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
 
 func (e *Event) runSet(ctx context.Context) error {
 	opts := flowOptions{
-		key:      event.SetKey,
-		watch:    e.watch,
-		watchDB:  e.watchDB,
-		ccDB:     e.ccDB,
-		isMaster: e.isMaster,
+		key:         event.SetKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts)
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
 
 func (e *Event) runModule(ctx context.Context) error {
 	opts := flowOptions{
-		key:      event.ModuleKey,
-		watch:    e.watch,
-		watchDB:  e.watchDB,
-		ccDB:     e.ccDB,
-		isMaster: e.isMaster,
+		key:         event.ModuleKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts)
-}
-
-func (e *Event) runSetTemplate(ctx context.Context) error {
-	opts := flowOptions{
-		key:      event.SetTemplateKey,
-		watch:    e.watch,
-		watchDB:  e.watchDB,
-		ccDB:     e.ccDB,
-		isMaster: e.isMaster,
-	}
-
-	return newFlow(ctx, opts)
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
 
 func (e *Event) runObjectBase(ctx context.Context) error {
 	opts := flowOptions{
-		key:      event.ObjectBaseKey,
-		watch:    e.watch,
-		watchDB:  e.watchDB,
-		ccDB:     e.ccDB,
-		isMaster: e.isMaster,
+		key:         event.ObjectBaseKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts)
+	return newInstanceFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
 
 func (e *Event) runProcess(ctx context.Context) error {
 	opts := flowOptions{
-		key:      event.ProcessKey,
-		watch:    e.watch,
-		watchDB:  e.watchDB,
-		ccDB:     e.ccDB,
-		isMaster: e.isMaster,
+		key:         event.ProcessKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts)
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
 
 func (e *Event) runProcessInstanceRelation(ctx context.Context) error {
 	opts := flowOptions{
-		key:      event.ProcessInstanceRelationKey,
-		watch:    e.watch,
-		watchDB:  e.watchDB,
-		ccDB:     e.ccDB,
-		isMaster: e.isMaster,
+		key:         event.ProcessInstanceRelationKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts)
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+}
+
+func (e *Event) runInstAsst(ctx context.Context) error {
+	opts := flowOptions{
+		key:         event.InstAsstKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
+	}
+
+	return newInstAsstFlow(ctx, opts, getDeleteEventDetails, parseInstAsstEvent)
+}
+
+func (e *Event) runBizSet(ctx context.Context) error {
+	opts := flowOptions{
+		key:         event.BizSetKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
+	}
+
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }

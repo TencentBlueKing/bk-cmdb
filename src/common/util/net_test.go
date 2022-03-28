@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/stretchr/testify/require"
 )
 

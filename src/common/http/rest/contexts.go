@@ -28,7 +28,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 type Kit struct {
@@ -72,7 +72,10 @@ func (c *Contexts) RespEntity(data interface{}) {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.Response(metadata.NewSuccessResp(data))
+	c.Response(&metadata.Response{
+		BaseResp: metadata.BaseResp{Result: true, Code: common.CCSuccess, ErrMsg: common.CCSuccessStr},
+		Data:     data,
+	})
 }
 
 // RespString response the data format to a json string.

@@ -35,6 +35,43 @@ import (
 	"github.com/rentiansheng/xlsx"
 )
 
+type excelExportHostInput struct {
+	// 导出的主机字段
+	CustomFields []string `json:"export_custom_fields"`
+	// 指定需要导出的主机ID, 设置本参数后， ExportCond限定条件无效
+	HostIDArr []int64 `json:"bk_host_ids"`
+	// 需要导出主机业务id
+	AppID int64 `json:"bk_biz_id"`
+	// 导出主机查询参数,就是search host 主机参数
+	ExportCond metadata.HostCommonSearch `json:"export_condition"`
+
+	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
+	AssociationCond map[string]int64 `json:"association_condition"`
+	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// 自关联的时候，规定左边对象使用到的唯一索引
+	ObjectUniqueID int64 `json:"object_unique_id"`
+}
+
+type excelImportAddHostInput struct {
+	ModuleID int64 `json:"bk_module_id"`
+	OpType   int64 `json:"op"`
+	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
+	AssociationCond map[string]int64 `json:"association_condition"`
+	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// 自关联的时候，规定左边对象使用到的唯一索引
+	ObjectUniqueID int64 `json:"object_unique_id"`
+}
+
+type excelImportUpdateHostInput struct {
+	BizID  int64 `json:"bk_biz_id"`
+	OpType int64 `json:"op"`
+	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
+	AssociationCond map[string]int64 `json:"association_condition"`
+	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// 自关联的时候，规定左边对象使用到的唯一索引
+	ObjectUniqueID int64 `json:"object_unique_id"`
+}
+
 // ImportHost import host
 func (s *Service) ImportHost(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
@@ -51,15 +88,21 @@ func (s *Service) ImportHost(c *gin.Context) {
 		return
 	}
 
-	moduleID := int64(0)
-	if moduleIDStr := c.PostForm(common.BKModuleIDField); moduleIDStr != "" {
-		moduleID, err = strconv.ParseInt(moduleIDStr, 10, 64)
-		if err != nil {
-			blog.Errorf("ImportHost failed, bk_module_id not integer, err: %+v, bk_module_id: %s,  rid: %s", err, moduleIDStr, rid)
-			msg := getReturnStr(common.CCErrCommParamsNeedInt, defErr.CCErrorf(common.CCErrCommParamsNeedInt, common.BKModuleIDField).Error(), nil)
-			c.String(http.StatusOK, msg)
-			return
-		}
+	params := c.PostForm("params")
+	if params == "" {
+		blog.ErrorJSON("ImportHost failed, not found params value, rid: %s", rid)
+		msg := getReturnStr(common.CCErrCommParamsNeedSet,
+			defErr.CCErrorf(common.CCErrCommParamsNeedSet, "params").Error(), nil)
+		c.String(http.StatusOK, msg)
+		return
+	}
+	inputJSON := &excelImportAddHostInput{}
+	if err := json.Unmarshal([]byte(params), inputJSON); err != nil {
+		blog.ErrorJSON("ImportHost failed, params unmarshal error, err: %s, rid: %s", err.Error(), rid)
+		msg := getReturnStr(common.CCErrCommParamsValueInvalidError,
+			defErr.CCErrorf(common.CCErrCommParamsValueInvalidError, "params", err.Error()).Error(), nil)
+		c.String(http.StatusOK, msg)
+		return
 	}
 
 	webCommon.SetProxyHeader(c)
@@ -96,7 +139,8 @@ func (s *Service) ImportHost(c *gin.Context) {
 		c.String(http.StatusOK, msg)
 		return
 	}
-	result := s.Logics.ImportHosts(ctx, f, c.Request, defLang, 0, moduleID)
+	result := s.Logics.ImportHosts(ctx, f, c.Request.Header, defLang, 0, inputJSON.ModuleID,
+		inputJSON.OpType, inputJSON.AssociationCond, inputJSON.ObjectUniqueID)
 
 	c.JSON(http.StatusOK, result)
 }
@@ -110,11 +154,19 @@ func (s *Service) ExportHost(c *gin.Context) {
 	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
-	appID, err := strconv.ParseInt(c.PostForm("bk_biz_id"), 10, 64)
-	if err != nil {
-		blog.Errorf("bk_biz_id not integer. err: %+v, biz id: %s,  rid: %s", err, c.PostForm("bk_biz_id"), rid)
-		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommParamsNeedInt, defErr.CCErrorf(
-			common.CCErrCommParamsNeedInt, common.BKAppIDField).Error(), nil)))
+	input := &excelExportHostInput{}
+	if err := c.BindJSON(input); err != nil {
+		blog.ErrorJSON("Unmarshal input error. input: %s, err: %s, rid: %s", c.Keys, err.Error(), rid)
+
+		ccErr := defErr.CCError(common.CCErrCommJSONUnmarshalFailed)
+		result := metadata.ResponseDataMapStr{
+			BaseResp: metadata.BaseResp{
+				Result: false,
+				Code:   ccErr.GetCode(),
+				ErrMsg: ccErr.Error(),
+			},
+		}
+		c.JSON(http.StatusOK, result)
 		return
 	}
 
@@ -124,19 +176,22 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
+	appID := input.AppID
+
 	objID := common.BKInnerObjIDHost
 	filterFields := logics.GetFilterFields(objID)
-	customFields := logics.GetCustomFields(filterFields, c.PostForm(common.ExportCustomFields))
+	customFields := logics.GetCustomFields(filterFields, input.CustomFields)
 	// customLen+5为生成主机数据的起始列索引, 5=字段说明1列+业务拓扑，业务名，集群，模块4列
 	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, appID, len(objectName)+5)
 	if err != nil {
 		blog.Errorf("get host model fields failed, err: %v, rid: %s", err, rid)
-		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(
-			common.CCErrCommExcelTemplateFailed, objID).Error(), nil)))
+		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed,
+			objID).Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
 
-	hostInfo, err := s.handleHostInfo(c, fields, appID, c.PostForm("bk_host_id"), c.PostForm("export_condition"), objIDs)
+	hostInfo, err := s.handleHostInfo(c, fields, appID, objIDs, input)
 	if err != nil {
 		blog.Errorf("search and handle host info failed, err: %v, rid: %s", err, rid)
 		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail,
@@ -145,10 +200,11 @@ func (s *Service) ExportHost(c *gin.Context) {
 	}
 
 	usernameMap, propertyList, err := s.getUsernameMapWithPropertyList(c, objID, hostInfo)
-	if err != nil {
+	if nil != err {
 		blog.Errorf("ExportHost failed, get username map and property list failed, err: %+v, rid: %s", err, rid)
-		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetUsernameMapFail, defErr.Errorf(
-			common.CCErrWebGetUsernameMapFail, objID).Error(), nil)))
+		reply := getReturnStr(common.CCErrWebGetUsernameMapFail, defErr.Errorf(common.CCErrWebGetUsernameMapFail,
+			objID).Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
 
@@ -160,11 +216,14 @@ func (s *Service) ExportHost(c *gin.Context) {
 	}
 
 	file := xlsx.NewFile()
-	if err := s.Logics.BuildHostExcelFromData(ctx, objID, fields, nil, hostInfo, file, header, appID, usernameMap,
-		propertyList, objectName, objIDs, org, orgPropertyList); err != nil {
-		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
-		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(
-			common.CCErrCommExcelTemplateFailed, objID).Error(), nil)))
+	err = s.Logics.BuildHostExcelFromData(ctx, objID, fields, nil, hostInfo, file, header, appID, usernameMap,
+		propertyList, objectName, objIDs, org, orgPropertyList, input.AssociationCond, input.ObjectUniqueID)
+	if nil != err {
+		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err,
+			rid)
+		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed,
+			objID).Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
 
@@ -385,15 +444,24 @@ func (s *Service) UpdateHosts(c *gin.Context) {
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-	bizIDStr := c.PostForm("bk_biz_id")
-	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
-	if err != nil {
-		blog.Errorf("bk_biz_id not integer. err: %+v, biz id: %s,  rid: %s", err, bizIDStr, rid)
-		err := defErr.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
-		reply := getReturnStr(err.GetCode(), err.Error(), nil)
-		_, _ = c.Writer.Write([]byte(reply))
+
+	params := c.PostForm("params")
+	if params == "" {
+		blog.ErrorJSON("ImportHost failed, not found params value, rid: %s", rid)
+		msg := getReturnStr(common.CCErrCommParamsNeedSet,
+			defErr.CCErrorf(common.CCErrCommParamsNeedSet, "params").Error(), nil)
+		c.String(http.StatusOK, msg)
 		return
 	}
+	inputJSON := &excelImportUpdateHostInput{}
+	if err := json.Unmarshal([]byte(params), inputJSON); err != nil {
+		blog.ErrorJSON("ImportHost failed, params unmarshal error, err: %s, rid: %s", err.Error(), rid)
+		msg := getReturnStr(common.CCErrCommParamsValueInvalidError,
+			defErr.CCErrorf(common.CCErrCommParamsValueInvalidError, "params", err.Error()).Error(), nil)
+		c.String(http.StatusOK, msg)
+		return
+	}
+
 	file, err := c.FormFile("file")
 	if nil != err {
 		blog.Errorf("excel import update hosts failed, get file from form data failed, err: %+v, rid: %s", err, rid)
@@ -438,7 +506,8 @@ func (s *Service) UpdateHosts(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	result := s.Logics.UpdateHosts(ctx, f, c.Request, defLang, bizID)
+	result := s.Logics.UpdateHosts(ctx, f, c.Request.Header, defLang, inputJSON.BizID, inputJSON.OpType,
+		inputJSON.AssociationCond, inputJSON.ObjectUniqueID)
 
 	c.JSON(http.StatusOK, result)
 }
@@ -532,7 +601,7 @@ func (s *Service) getCustomObjectInfo(ctx context.Context, header http.Header) (
 	}
 
 	objectName := make([]string, 0)
-	objects, err := s.Logics.CoreAPI.ApiServer().ReadModel(context.Background(), header, input)
+	objects, err := s.Logics.CoreAPI.ApiServer().ReadModel(ctx, header, input)
 	if err != nil {
 		blog.Errorf("search mainline obj failed, objIDs: %#v, err: %v, rid: %s", objectIDs, err, rid)
 		return objectName, util.ReverseArrayString(objectIDs), err
@@ -540,7 +609,7 @@ func (s *Service) getCustomObjectInfo(ctx context.Context, header http.Header) (
 
 	objIDNameMap := make(map[string]string, 0)
 	for _, val := range objects.Data.Info {
-		objIDNameMap[val.Spec.ObjectID] = val.Spec.ObjectName
+		objIDNameMap[val.ObjectID] = val.ObjectName
 	}
 
 	for _, objID := range objectIDs {
@@ -553,8 +622,8 @@ func (s *Service) getCustomObjectInfo(ctx context.Context, header http.Header) (
 }
 
 // handleHostInfo handle host info to export host
-func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Property, appID int64, hostIDStr,
-	exportCondStr string, objIDs []string) ([]mapstr.MapStr, error) {
+func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Property, appID int64,
+	objIDs []string, input *excelExportHostInput) ([]mapstr.MapStr, error) {
 
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
@@ -567,13 +636,13 @@ func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Proper
 		hostFields = append(hostFields, property.ID)
 	}
 
-	hostInfo, err := s.Logics.GetHostData(appID, hostIDStr, hostFields, exportCondStr, header, defLang)
+	hostInfo, err := s.Logics.GetHostData(appID, input.HostIDArr, hostFields, input.ExportCond, header, defLang)
 	if err != nil {
-		blog.Errorf("get hosts failed, host id:%s, err: %v, rid: %s", hostIDStr, err, rid)
+		blog.Errorf("get hosts failed, host id: %v, err: %v, rid: %s", input.HostIDArr, err, rid)
 		return nil, err
 	}
 	if len(hostInfo) == 0 {
-		blog.Errorf("not find host, host id: %s, cond: %#v, rid: %s", hostIDStr, exportCondStr, rid)
+		blog.Errorf("not find host, host id: %v, cond: %#v, rid: %s", input.HostIDArr, input.ExportCond, rid)
 		return nil, err
 	}
 

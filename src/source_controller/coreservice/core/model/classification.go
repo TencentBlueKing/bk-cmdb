@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type modelClassification struct {
@@ -44,21 +45,15 @@ func (m *modelClassification) CreateOneModelClassification(kit *rest.Kit, inputP
 			"bk_classification_id can not start with bk or BK")
 	}
 
-	_, exists, err := m.isExists(kit, inputParam.Data.ClassificationID)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to check if the classification ID (%s)is exists, error info is %s", kit.Rid, inputParam.Data.ClassificationID, err.Error())
-		return nil, err
-	}
-	if exists {
-		blog.Errorf("classification (%#v)is duplicated, rid: %s", inputParam.Data, kit.Rid)
-		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.ClassificationID)
-	}
-
 	inputParam.Data.OwnerID = kit.SupplierAccount
 
 	id, err := m.save(kit, inputParam.Data)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to save the classification(%#v), error info is %s", kit.Rid, inputParam.Data, err.Error())
+		if mongodb.Client().IsDuplicatedError(err) {
+			dupErr := kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
+			return &metadata.CreateOneDataResult{}, dupErr
+		}
 		return &metadata.CreateOneDataResult{}, err
 	}
 	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
@@ -252,6 +247,10 @@ func (m *modelClassification) UpdateModelClassification(kit *rest.Kit, inputPara
 	cnt, err := m.update(kit, inputParam.Data, cond)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to update some fields(%#v) for some classifications by the condition(%#v), error info is %s", kit.Rid, inputParam.Data, inputParam.Condition, err.Error())
+		if mongodb.Client().IsDuplicatedError(err) {
+			dupErr := kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
+			return &metadata.UpdatedCount{}, dupErr
+		}
 		return &metadata.UpdatedCount{}, err
 	}
 	return &metadata.UpdatedCount{Count: cnt}, nil

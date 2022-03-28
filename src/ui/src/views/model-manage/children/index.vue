@@ -1,6 +1,6 @@
 <template>
   <div class="model-detail-wrapper">
-    <div class="model-info" v-bkloading="{ isLoading: $loading('searchObjects') }">
+    <div class="model-info" v-bkloading="{ isLoading: $loading('getClassificationsObjectStatistics') }">
       <template v-if="activeModel !== null">
         <div class="choose-icon-wrapper">
           <span class="model-type">{{getModelType()}}</span>
@@ -53,17 +53,49 @@
                 v-model.trim="modelInfo.objName">
               </bk-input>
             </div>
-            <span class="text-primary" @click="saveModel">{{$t('保存')}}</span>
+            <span class="text-primary" @click="saveModel('modelName')">{{$t('保存')}}</span>
             <span class="text-primary" @click="isEditName = false">{{$t('取消')}}</span>
           </template>
         </div>
-        <div class="model-text ml10"
-          v-if="!activeModel['bk_ispaused'] && activeModel.bk_classification_id !== 'bk_biz_topo'">
+        <div class="model-text">
+          <span>{{$t('所属分组')}}：</span>
+          <template v-if="!isEditClassification">
+            <span class="text-content" :title="modelClassificationName">
+              {{modelClassificationName}}
+            </span>
+            <cmdb-auth tag="i" class="icon icon-cc-edit text-primary"
+              :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
+              @click="editModelClassification">
+            </cmdb-auth>
+          </template>
+          <template v-else>
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelClassificationId') }">
+              <bk-select
+                :clearable="false"
+                :searchable="true"
+                class="cmdb-form-select"
+                name="modelClassificationId"
+                v-validate="'required'"
+                v-model.trim="modelInfo.classificationId">
+                <bk-option
+                  v-for="classification in classifications"
+                  :key="classification.bk_classification_id"
+                  :id="classification.bk_classification_id"
+                  :name="classification.bk_classification_name">
+                </bk-option>
+              </bk-select>
+            </div>
+            <span class="text-primary" @click="saveModel('classificationId')">{{$t('保存')}}</span>
+            <span class="text-primary" @click="isEditClassification = false">{{$t('取消')}}</span>
+          </template>
+        </div>
+        <div class="model-text instance-count"
+          v-if="!activeModel['bk_ispaused'] && !isNoInstanceModel">
           <span>{{$t('实例数量')}}：</span>
-          <div class="text-content-count"
-            :title="modelStatisticsSet[activeModel['bk_obj_id']] || 0"
-            @click="handleGoInstance">
-            <span>{{modelStatisticsSet[activeModel['bk_obj_id']] || 0}}</span>
+          <div class="text-content-count" @click="handleGoInstance">
+            <cmdb-loading :loading="$loading(request.instanceCount)">
+              {{modelInstanceCount}}
+            </cmdb-loading>
             <i class="icon-cc-share"></i>
           </div>
         </div>
@@ -191,17 +223,19 @@
   import has from 'has'
   import theRelation from './relation'
   import theVerification from './verification'
+  import cmdbLoading from '@/components/loading/index.vue'
   import theFieldGroup from '@/components/model-manage/field-group'
   import theChooseIcon from '@/components/model-manage/choose-icon/_choose-icon'
   import cmdbImport from '@/components/import/import'
   import { mapActions, mapGetters, mapMutations } from 'vuex'
   import RouterQuery from '@/router/query'
+  import modelImportExportService from '@/service/model/import-export'
   import {
     MENU_MODEL_MANAGEMENT,
-    MENU_RESOURCE_HOST,
-    MENU_RESOURCE_BUSINESS,
     MENU_RESOURCE_INSTANCE
   } from '@/dictionary/menu-symbol'
+  import { BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
+
   export default {
     name: 'ModelManagement',
     components: {
@@ -209,7 +243,8 @@
       theRelation,
       theVerification,
       theChooseIcon,
-      cmdbImport
+      cmdbImport,
+      cmdbLoading
     },
     data() {
       return {
@@ -218,10 +253,13 @@
         },
         modelInfo: {
           objName: '',
-          objIcon: ''
+          objIcon: '',
+          classificationId: ''
         },
         isIconListShow: false,
         isEditName: false,
+        modelInstanceCount: null,
+        isEditClassification: false,
         modelStatisticsSet: {},
         importField: {
           show: false,
@@ -231,6 +269,9 @@
           success: null,
           insert_failed: null,
           update_failed: null
+        },
+        request: {
+          instanceCount: Symbol('instanceCount')
         }
       }
     },
@@ -243,7 +284,7 @@
         'activeModel',
         'isMainLine'
       ]),
-      ...mapGetters('objectModelClassify', ['models']),
+      ...mapGetters('objectModelClassify', ['models', 'classifications']),
       isShowOperationButton() {
         return this.activeModel && !this.activeModel.ispre
       },
@@ -259,10 +300,15 @@
         }
         return false
       },
+      modelClassificationName() {
+        return this.classifications
+          .find(item => item.bk_classification_id === this.activeModel.bk_classification_id)?.bk_classification_name || ''
+      },
       modelParams() {
         const {
           objIcon,
-          objName
+          objName,
+          classificationId
         } = this.modelInfo
         const params = {
           modifier: this.userName
@@ -270,16 +316,16 @@
         if (objIcon) {
           Object.assign(params, { bk_obj_icon: objIcon })
         }
-        if (objName.length && objName !== this.activeModel.bk_obj_name) {
+        if (objName?.length && objName !== this.activeModel.bk_obj_name) {
           Object.assign(params, { bk_obj_name: objName })
+        }
+        if (classificationId?.length && classificationId !== this.activeModel.bk_classification_id) {
+          Object.assign(params, { bk_classification_id: classificationId })
         }
         return params
       },
-      exportUrl() {
-        return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel.bk_obj_id}/export`
-      },
       importUrl() {
-        return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel.bk_obj_id}/import`
+        return `${window.API_HOST}object/object/${this.activeModel.bk_obj_id}/import`
       },
       canBeImport() {
         const cantImport = ['host', 'biz']
@@ -289,7 +335,12 @@
       modelId() {
         const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
         return model.id || null
-      }
+      },
+      isNoInstanceModel() {
+        // 不能直接查看实例的模型
+        const noInstanceModelIds = ['set', 'module']
+        return noInstanceModelIds.includes(this.activeModel.bk_obj_id)
+      },
     },
     watch: {
       '$route.params.modelId'() {
@@ -298,6 +349,9 @@
     },
     created() {
       this.initObject()
+    },
+    beforeDestroy() {
+      this.$http.cancelRequest(this.request.instanceCount)
     },
     methods: {
       handleTabChange(tab) {
@@ -374,40 +428,53 @@
         this.modelInfo.objName = this.activeModel.bk_obj_name
         this.isEditName = true
       },
-      async saveModel() {
-        if (!await this.$validator.validateAll()) {
+      editModelClassification() {
+        this.modelInfo.classificationId = this.activeModel.bk_classification_id
+        this.isEditClassification = true
+      },
+      async saveModel(fieldName = '') {
+        if (!await this.$validator.validateAll() || this.$loading('updateTheModel')) {
           return
         }
-        await this.updateObject({
+
+        this.updateObject({
           id: this.activeModel.id,
-          params: this.modelParams
-        }).then(() => {
-          this.$http.cancel('post_searchClassificationsObjects')
+          params: this.modelParams,
+          config: {
+            requestId: 'updateTheModel'
+          }
         })
-        this.setActiveModel({ ...this.activeModel, ...this.modelParams })
-        this.isEditName = false
+          .then(() => {
+            this.$http.cancel('post_searchClassificationsObjects')
+            this.$success(this.$t('修改成功'))
+            this.setActiveModel({ ...this.activeModel, ...this.modelParams })
+            if (fieldName === 'modelName') this.isEditName = false
+            if (fieldName === 'classificationId') this.isEditClassification = false
+          })
       },
-      async initObject() {
-        await this.getModelStatistics()
+      initObject() {
         const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
         if (model) {
           this.$store.commit('objectModel/setActiveModel', model)
           this.initModelInfo()
+          this.getModelInstanceCount()
         } else {
           this.$routerActions.redirect({ name: 'status404' })
         }
       },
-      async getModelStatistics() {
-        const modelStatisticsSet = {}
-        const res = await this.$store.dispatch('objectModelClassify/getClassificationsObjectStatistics', {
+      async getModelInstanceCount() {
+        const result = await this.$store.dispatch('objectCommonInst/searchInstanceCount', {
+          params: {
+            condition: { obj_ids: [this.activeModel.bk_obj_id] }
+          },
           config: {
-            requestId: 'getClassificationsObjectStatistics'
+            requestId: this.request.instanceCount,
+            globalError: false
           }
         })
-        res.forEach((item) => {
-          modelStatisticsSet[item.bk_obj_id] = item.instance_count
-        })
-        this.modelStatisticsSet = modelStatisticsSet
+
+        const [data] = result
+        this.modelInstanceCount = data?.error ? '--' : data?.inst_count
       },
       initModelInfo() {
         this.modelInfo = {
@@ -415,29 +482,8 @@
           objName: this.activeModel.bk_obj_name
         }
       },
-      exportExcel(response) {
-        const contentDisposition = response.headers['content-disposition']
-        const fileName = contentDisposition.substring(contentDisposition.indexOf('filename') + 9)
-        const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
-        const link = document.createElement('a')
-        link.style.display = 'none'
-        link.href = url
-        link.setAttribute('download', fileName)
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      },
-      async exportField() {
-        const res = await this.exportObjectAttribute({
-          objId: this.activeModel.bk_obj_id,
-          params: {},
-          config: {
-            globalError: false,
-            originalResponse: true,
-            responseType: 'blob'
-          }
-        })
-        this.exportExcel(res)
+      exportField() {
+        modelImportExportService.export(this.activeModel.bk_obj_id)
       },
       dialogConfirm(type) {
         switch (type) {
@@ -506,14 +552,10 @@
       },
       handleGoInstance() {
         const model = this.activeModel
-        const map = {
-          host: MENU_RESOURCE_HOST,
-          biz: MENU_RESOURCE_BUSINESS
-        }
-        if (has(map, model.bk_obj_id)) {
+        if (has(BUILTIN_MODEL_RESOURCE_MENUS, model.bk_obj_id)) {
           const query = model.bk_obj_id === 'host' ? { scope: 'all' } : {}
           this.$routerActions.redirect({
-            name: map[model.bk_obj_id],
+            name: BUILTIN_MODEL_RESOURCE_MENUS[model.bk_obj_id],
             query
           })
         } else {
@@ -694,11 +736,11 @@
                 }
             }
             .text-content-count {
-                display: inline-block;
-                vertical-align: middle;
+                display: flex;
+                align-items: center;
                 color: #3a84ff;
                 cursor: pointer;
-                >span {
+                /deep/ span {
                     font-size: 14px;
                     vertical-align: middle;
                 }
@@ -720,9 +762,17 @@
                     vertical-align: top;
                 }
             }
+            .cmdb-form-select {
+              width: 100%;
+            }
             .text-primary {
                 cursor: pointer;
                 margin-left: 5px;
+            }
+
+            &.instance-count {
+              display: flex;
+              margin-left: 10px;
             }
         }
         .restart-btn {

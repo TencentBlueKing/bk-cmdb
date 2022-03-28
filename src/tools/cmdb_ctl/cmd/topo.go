@@ -60,6 +60,8 @@ type topoCheckService struct {
 	objectParentMap map[string]string
 	modelIDs        []string
 	instanceMap     map[string]*topoInstance
+	// 从业务信息中取出来业务所在的租户
+	supplierAccount string
 }
 
 type topoInstance struct {
@@ -113,8 +115,14 @@ func (s *topoCheckService) searchMainlineModel() error {
 		return fmt.Errorf("query topo model mainline association from db failed, %+v", err)
 	}
 	for _, association := range associations {
-		s.modelIDs = append(s.modelIDs, association.ObjectID)
-		s.modelIDs = append(s.modelIDs, association.AsstObjID)
+		if metadata.IsCommon(association.ObjectID) {
+			s.modelIDs = append(s.modelIDs, association.ObjectID)
+		}
+
+		if metadata.IsCommon(association.AsstObjID) {
+			s.modelIDs = append(s.modelIDs, association.AsstObjID)
+		}
+
 		if _, exist := s.objectParentMap[association.ObjectID]; !exist {
 			s.objectParentMap[association.ObjectID] = association.AsstObjID
 		}
@@ -128,13 +136,16 @@ func (s *topoCheckService) searchMainlineInstance() error {
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: s.bizID})
 	// search business instances
-	num, err := s.service.DbProxy.Table(common.BKTableNameBaseApp).Find(cond.ToMapStr()).Count(context.Background())
-	if err != nil {
+	bizList := make([]metadata.BizInst, 0)
+	if err := s.service.DbProxy.Table(common.BKTableNameBaseApp).
+		Find(cond.ToMapStr()).All(context.Background(), &bizList); err != nil {
 		return fmt.Errorf("get business instances by business id: %d failed, err: %+v", s.bizID, err)
 	}
-	if num != 1 {
-		_, _ = fmt.Fprintf(os.Stderr, "business id: %d has too many(num = %d) business instances\n", s.bizID, num)
+	if len(bizList) != 1 {
+		_, _ = fmt.Fprintf(os.Stderr, "business id: %d has too many(num = %d) business instances\n",
+			s.bizID, len(bizList))
 	} else {
+		s.supplierAccount = bizList[0].SupplierAccount
 		s.instanceMap[fmt.Sprintf("%s:%d", common.BKInnerObjIDApp, s.bizID)] = &topoInstance{
 			ObjectID:         common.BKInnerObjIDApp,
 			InstanceID:       s.bizID,
@@ -143,7 +154,7 @@ func (s *topoCheckService) searchMainlineInstance() error {
 	}
 	// search set instances
 	setInstances := make([]map[string]interface{}, 0)
-	err = s.service.DbProxy.Table(common.BKTableNameBaseSet).Find(cond.ToMapStr()).All(context.Background(), &setInstances)
+	err := s.service.DbProxy.Table(common.BKTableNameBaseSet).Find(cond.ToMapStr()).All(context.Background(), &setInstances)
 	if err != nil {
 		return fmt.Errorf("get set instances by business id: %d failed, err: %+v", s.bizID, err)
 	}
@@ -199,40 +210,45 @@ func (s *topoCheckService) searchMainlineInstance() error {
 			Default:          defaultFieldValue,
 		}
 	}
+
 	// search mainline instances
-	mainlineInstances := make([]map[string]interface{}, 0)
-	instCond := map[string]interface{}{
-		common.BKObjIDField: map[string]interface{}{
-			common.BKDBIN: s.modelIDs,
-		},
-		common.BKAppIDField: s.bizID,
-	}
-	err = s.service.DbProxy.Table(common.BKTableNameBaseInst).Find(instCond).All(context.Background(), &mainlineInstances)
-	if err != nil {
-		return fmt.Errorf("get mainline instances by business id: %d failed, err: %+v", s.bizID, err)
-	}
-	for _, instance := range mainlineInstances {
-		instanceID, err := util.GetInt64ByInterface(instance[common.BKInstIDField])
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "parse instanceID: %+v to int64 failed, err: %+v, mainline instance: %+v\n", instance[common.BKInstIDField], err, instance)
-			continue
+	for _, objectID := range s.modelIDs {
+		mainlineInstances := make([]map[string]interface{}, 0)
+
+		cond :=map[string]interface{}{
+			common.BKObjIDField: objectID,
+			common.BKAppIDField: s.bizID,
 		}
-		parentInstanceID, err := util.GetInt64ByInterface(instance[common.BKInstParentStr])
+
+		err = s.service.DbProxy.Table(common.GetInstTableName(objectID, s.supplierAccount)).
+			Find(cond).All(context.Background(), &mainlineInstances)
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "parse parentInstanceID:%+v to int64 failed, err: %+v, mainline instance: %+v\n", instance[common.BKInstParentStr], err, instance)
-			continue
+			return fmt.Errorf("get mainline instances by business id: %d failed, err: %+v", s.bizID, err)
 		}
-		defaultFieldValue, err := util.GetInt64ByInterface(instance[common.BKDefaultField])
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "parse default field failed, default: %+v, err: %+v, mainline instance: %+v\n", instance[common.BKDefaultField], err, instance)
-			continue
-		}
-		objectID := util.GetStrByInterface(instance[common.BKObjIDField])
-		s.instanceMap[fmt.Sprintf("%s:%d", objectID, instanceID)] = &topoInstance{
-			ObjectID:         objectID,
-			InstanceID:       instanceID,
-			ParentInstanceID: parentInstanceID,
-			Default:          defaultFieldValue,
+
+		for _, instance := range mainlineInstances {
+			instanceID, err := util.GetInt64ByInterface(instance[common.BKInstIDField])
+			if err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "parse instanceID: %+v to int64 failed, err: %+v, mainline instance: %+v\n", instance[common.BKInstIDField], err, instance)
+				continue
+			}
+			parentInstanceID, err := util.GetInt64ByInterface(instance[common.BKInstParentStr])
+			if err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "parse parentInstanceID:%+v to int64 failed, err: %+v, mainline instance: %+v\n", instance[common.BKInstParentStr], err, instance)
+				continue
+			}
+			defaultFieldValue, err := util.GetInt64ByInterface(instance[common.BKDefaultField])
+			if err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "parse default field failed, default: %+v, err: %+v, mainline instance: %+v\n", instance[common.BKDefaultField], err, instance)
+				continue
+			}
+			objectID := util.GetStrByInterface(instance[common.BKObjIDField])
+			s.instanceMap[fmt.Sprintf("%s:%d", objectID, instanceID)] = &topoInstance{
+				ObjectID:         objectID,
+				InstanceID:       instanceID,
+				ParentInstanceID: parentInstanceID,
+				Default:          defaultFieldValue,
+			}
 		}
 	}
 	return nil
@@ -262,10 +278,11 @@ func (s *topoCheckService) checkMainlineInstanceTopo() {
 		parentIDField := common.GetInstIDField(parentObjectID)
 		mongoCondition.Element(&mongo.Eq{Key: parentIDField, Val: instance.ParentInstanceID})
 		missedInstances := make([]map[string]interface{}, 0)
-		parentTable := common.GetInstTableName(parentObjectID)
+		parentTable := common.GetInstTableName(parentObjectID, s.supplierAccount)
 		err := s.service.DbProxy.Table(parentTable).Find(mongoCondition.ToMapStr()).All(context.Background(), &missedInstances)
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "find missing parent intance for object %s and instance: %d failed, err: %+v, parentObjectID: %s, ParentInstanceID: %d\n",
+			_, _ = fmt.Fprintf(os.Stderr, "find missing parent instance for object %s and instance: %d failed, "+
+				"err: %+v, parentObjectID: %s, ParentInstanceID: %d\n",
 				instance.ObjectID, instance.InstanceID, err, parentObjectID, instance.ParentInstanceID)
 			continue
 		}

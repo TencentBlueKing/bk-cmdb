@@ -70,6 +70,18 @@ func (h *HostMapStr) UnmarshalBSON(b []byte) error {
 				return err
 			}
 			(*h)[common.BKBakOperatorField] = string(bakOperator)
+		case common.BKHostInnerIPv6Field:
+			innerIPv6, err := parseBsonStringArrayValueToString(rawValue)
+			if err != nil {
+				return err
+			}
+			(*h)[common.BKHostInnerIPv6Field] = string(innerIPv6)
+		case common.BKHostOuterIPv6Field:
+			outerIPv6, err := parseBsonStringArrayValueToString(rawValue)
+			if err != nil {
+				return err
+			}
+			(*h)[common.BKHostOuterIPv6Field] = string(outerIPv6)
 		default:
 			dc := bsoncodec.DecodeContext{Registry: bson.DefaultRegistry}
 			vr := bsonrw.NewBSONValueReader(rawValue.Type, rawValue.Data)
@@ -141,9 +153,11 @@ func (s *StringArrayToString) UnmarshalBSONValue(typo bsontype.Type, raw []byte)
 	return err
 }
 
-var specialFields = []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKOperatorField, common.BKBakOperatorField}
+var specialFields = []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKOperatorField,
+	common.BKBakOperatorField, common.BKHostInnerIPv6Field, common.BKHostOuterIPv6Field}
 
 // convert host ip and operator fields value from string to array
+// NOTICE: if host special value is empty, convert it to null to trespass the unique check, **do not change this logic**
 func ConvertHostSpecialStringToArray(host map[string]interface{}) map[string]interface{} {
 	for _, field := range specialFields {
 		value, ok := host[field]

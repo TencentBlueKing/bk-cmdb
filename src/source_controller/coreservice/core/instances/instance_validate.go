@@ -84,7 +84,7 @@ func (m *instanceManager) fetchBizIDFromInstance(kit *rest.Kit, objID string, in
 			return 0, err
 		}
 		return bizID, nil
-	case common.BKInnerObjIDPlat:
+	case common.BKInnerObjIDBizSet, common.BKInnerObjIDPlat:
 		return 0, nil
 	default:
 		biz, exist := instanceData[common.BKAppIDField]
@@ -138,7 +138,7 @@ func (m *instanceManager) validBizID(kit *rest.Kit, bizID int64) error {
 func (m *instanceManager) newValidator(kit *rest.Kit, objID string, bizID int64) (*validator, error) {
 	validator, err := NewValidator(kit, m.dependent, objID, bizID, m.language)
 	if nil != err {
-		blog.Errorf("newValidator failed , NewValidator err:%v, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("newValidator failed , NewValidator err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
@@ -230,7 +230,7 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		}
 	}
 
-	return valid.validCreateUnique(kit, instanceData, m)
+	return nil
 }
 
 func (m *instanceManager) validateModuleCreate(kit *rest.Kit, instanceData mapstr.MapStr, valid *validator) error {
@@ -341,7 +341,7 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 		return nil
 	}
 
-	return valid.validUpdateUnique(kit, updateData, instanceData, instID, m)
+	return nil
 }
 
 func (m *instanceManager) isMainlineObject(kit *rest.Kit, objID string) (bool, error) {
@@ -456,7 +456,7 @@ func (m *instanceManager) getValidatorsFromInstances(kit *rest.Kit, objID string
 	needSearchBizInstIDIndexMap := make(map[int64]int)
 	for index, instance := range instanceData {
 		switch objID {
-		case common.BKInnerObjIDPlat:
+		case common.BKInnerObjIDPlat, common.BKInnerObjIDBizSet:
 			bizIDs[index] = 0
 		case common.BKInnerObjIDHost:
 			if validTye == common.ValidUpdate {

@@ -27,13 +27,16 @@ import (
 	"configcenter/src/source_controller/cacheservice/app/options"
 	"configcenter/src/source_controller/cacheservice/cache"
 	cacheop "configcenter/src/source_controller/cacheservice/cache"
+	"configcenter/src/source_controller/cacheservice/event/bsrelation"
 	"configcenter/src/source_controller/cacheservice/event/flow"
+	"configcenter/src/source_controller/cacheservice/event/identifier"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // CacheServiceInterface the cache service methods used to init
@@ -116,6 +119,16 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		return flowErr
 	}
 
+	if err := identifier.NewIdentity(watcher, engine.ServiceManageInterface, watchDB, ccDB); err != nil {
+		blog.Errorf("new host identity event failed, err: %v", err)
+		return err
+	}
+
+	if err := bsrelation.NewBizSetRelation(watcher, watchDB, ccDB); err != nil {
+		blog.Errorf("new biz set relation event failed, err: %v", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -123,6 +136,8 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 func (s *cacheService) WebService() *restful.Container {
 
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
 
 	getErrFunc := func() errors.CCErrorIf { return s.err }
 

@@ -41,8 +41,7 @@
         <cmdb-property-selector
           class="filter-selector fl"
           v-model="filter.field"
-          :properties="properties"
-          :object-unique="objectUnique">
+          :properties="properties">
         </cmdb-property-selector>
         <component class="filter-value fl"
           :is="`cmdb-search-${filterType}`"
@@ -143,7 +142,6 @@
         <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
           <cmdb-form
             ref="form"
-            :object-unique="objectUnique"
             :properties="properties"
             :property-groups="propertyGroups"
             :inst="attribute.inst.edit"
@@ -227,7 +225,6 @@
     },
     data() {
       return {
-        objectUnique: [],
         properties: [],
         propertyGroups: [],
         table: {
@@ -350,7 +347,6 @@
         })
         await Promise.all([
           this.getPropertyGroups(),
-          this.getObjectUnique(),
           this.setTableHeader()
         ])
         this.throttleGetTableData = throttle(this.getTableData, 300, { leading: false, trailing: true })
@@ -455,15 +451,6 @@
         }).then((groups) => {
           this.propertyGroups = groups
           return groups
-        })
-      },
-      getObjectUnique() {
-        return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
-          objId: 'biz',
-          params: {}
-        }).then((data) => {
-          this.objectUnique = data
-          return data
         })
       },
       setTableHeader() {

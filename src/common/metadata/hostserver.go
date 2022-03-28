@@ -40,16 +40,6 @@ type HostInstancePropertiesResult struct {
 	Data     []HostInstanceProperties `json:"data"`
 }
 
-type HostSnapResult struct {
-	BaseResp `json:",inline"`
-	Data     map[string]interface{} `json:"data"`
-}
-
-type HostSnapBatchResult struct {
-	BaseResp `json:",inline"`
-	Data     []map[string]interface{} `json:"data"`
-}
-
 type HostInputType string
 
 const (
@@ -395,7 +385,7 @@ func (option ListHostsParameter) Validate() (string, error) {
 	}
 
 	if option.HostPropertyFilter != nil {
-		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+		if key, err := option.HostPropertyFilter.Validate(&querybuilder.RuleOption{NeedSameSliceElementType: true}); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
@@ -426,7 +416,7 @@ func (option ListHostsWithNoBizParameter) Validate() (string, error) {
 	}
 
 	if option.HostPropertyFilter != nil {
-		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+		if key, err := option.HostPropertyFilter.Validate(&querybuilder.RuleOption{NeedSameSliceElementType: true}); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
@@ -455,8 +445,9 @@ func (option ListBizHostsTopoParameter) Validate(errProxy errors.DefaultCCErrorI
 		return errProxy.CCErrorf(common.CCErrCommXXExceedLimit, "page.limit", common.BKMaxInstanceLimit)
 	}
 
+	opt := &querybuilder.RuleOption{NeedSameSliceElementType: true}
 	if option.HostPropertyFilter != nil {
-		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+		if key, err := option.HostPropertyFilter.Validate(opt); err != nil {
 			blog.Errorf("valid host property filter failed, err: %v", err)
 			return errProxy.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("host_property_filter.%s", key))
 		}
@@ -466,7 +457,7 @@ func (option ListBizHostsTopoParameter) Validate(errProxy errors.DefaultCCErrorI
 	}
 
 	if option.SetPropertyFilter != nil {
-		if key, err := option.SetPropertyFilter.Validate(); err != nil {
+		if key, err := option.SetPropertyFilter.Validate(opt); err != nil {
 			blog.Errorf("valid set property filter failed, err: %v", err)
 			return errProxy.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("set_property_filter.%s", key))
 		}
@@ -476,7 +467,7 @@ func (option ListBizHostsTopoParameter) Validate(errProxy errors.DefaultCCErrorI
 	}
 
 	if option.ModulePropertyFilter != nil {
-		if key, err := option.ModulePropertyFilter.Validate(); err != nil {
+		if key, err := option.ModulePropertyFilter.Validate(opt); err != nil {
 			blog.Errorf("valid module property filter failed, err: %v", err)
 			return errProxy.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("module_property_filter.%s", key))
 		}
@@ -513,7 +504,7 @@ func (option *ListHostsDetailAndTopoOption) Validate() *errors.RawErrorInfo {
 	}
 
 	if option.HostPropertyFilter != nil {
-		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+		if key, err := option.HostPropertyFilter.Validate(&querybuilder.RuleOption{NeedSameSliceElementType: true}); err != nil {
 			return &errors.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsInvalid,
 				Args:    []interface{}{"host_property_filter." + key},
@@ -564,7 +555,7 @@ func (option ListHosts) Validate() (errKey string, err error) {
 	}
 
 	if option.HostPropertyFilter != nil {
-		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+		if key, err := option.HostPropertyFilter.Validate(&querybuilder.RuleOption{NeedSameSliceElementType: true}); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
@@ -882,4 +873,27 @@ type UpdateHostPropertyBatchParameter struct {
 type updateHostProperty struct {
 	HostID     int64                  `json:"bk_host_id"`
 	Properties map[string]interface{} `json:"properties"`
+}
+
+// HostIDArray hostID array struct
+type HostIDArray struct {
+	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" mapstructure:"bk_host_ids"`
+}
+
+// Validate validate hostIDs length
+func (h *HostIDArray) Validate() (rawError errors.RawErrorInfo) {
+	if len(h.HostIDs) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"bk_host_ids"},
+		}
+	}
+
+	if len(h.HostIDs) > common.BKMaxSyncIdentifierLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"bk_host_ids", common.BKMaxSyncIdentifierLimit},
+		}
+	}
+	return errors.RawErrorInfo{}
 }

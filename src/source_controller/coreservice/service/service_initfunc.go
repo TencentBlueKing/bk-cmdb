@@ -17,7 +17,7 @@ import (
 
 	"configcenter/src/common/http/rest"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *coreService) initModelClassification(web *restful.WebService) {
@@ -49,7 +49,9 @@ func (s *coreService) initModel(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model", Handler: s.DeleteModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{id}/cascade", Handler: s.CascadeDeleteModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model", Handler: s.SearchModel})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/with/attribute", Handler: s.SearchModelWithAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/read/model/statistics", Handler: s.GetModelStatistics})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model/tables", Handler: s.CreateModelTables})
 
 	// init model attribute groups methods
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model/{bk_obj_id}/group", Handler: s.CreateModelAttributeGroup})
@@ -98,8 +100,10 @@ func (s *coreService) initModelInstances(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/model/{bk_obj_id}/instance", Handler: s.CreateManyModelInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model/{bk_obj_id}/instance", Handler: s.UpdateModelInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/{bk_obj_id}/instances", Handler: s.SearchModelInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/model/{bk_obj_id}/instances", Handler: s.CountModelInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance", Handler: s.DeleteModelInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance/cascade", Handler: s.CascadeDeleteModelInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/get/instance/object/mapping", Handler: s.GetInstanceObjectMapping})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -148,6 +152,7 @@ func (s *coreService) initInstanceAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/instanceassociation", Handler: s.CreateOneInstanceAssociation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/instanceassociation", Handler: s.CreateManyInstanceAssociation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/instanceassociation", Handler: s.SearchInstanceAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/instanceassociation/model/{bk_obj_id}", Handler: s.CountInstanceAssociations})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/instanceassociation", Handler: s.DeleteInstanceAssociation})
 
 	utility.AddToRestfulWebService(web)
@@ -373,20 +378,6 @@ func (s *coreService) initAuth(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
-func (s *coreService) initEvent(web *restful.WebService) {
-	utility := rest.NewRestUtility(rest.Config{
-		ErrorIf:  s.engine.CCErr,
-		Language: s.engine.Language,
-	})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/subscribe", Handler: s.Subscribe})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/subscribe/{subscribeID}", Handler: s.UnSubscribe})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/subscribe/{subscribeID}", Handler: s.UpdateSubscription})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/subscribe", Handler: s.ListSubscriptions})
-
-	utility.AddToRestfulWebService(web)
-}
-
 func (s *coreService) initCommon(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.engine.CCErr,
@@ -423,6 +414,5 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initCount(web)
 	s.initCloudSync(web)
 	s.initAuth(web)
-	s.initEvent(web)
 	s.initCommon(web)
 }
