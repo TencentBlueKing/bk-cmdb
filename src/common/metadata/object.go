@@ -313,6 +313,13 @@ func (o *YamlObject) Validate() errors.RawErrorInfo {
 		}
 	}
 
+	if common.IsInnerModel(o.ObjectID) {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail,
+			Args:    []interface{}{common.BKObjIDField + " is inner model"},
+		}
+	}
+
 	if len(o.ObjectName) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrWebVerifyYamlFail,
