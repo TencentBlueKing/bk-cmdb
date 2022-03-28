@@ -1185,16 +1185,16 @@ const (
 
 	/* synchronize model description classify*/
 
-	// SynchronizeModelTypeClassification synchroneize model classification
+	// SynchronizeModelTypeClassification synchronize model classification
 	SynchronizeModelTypeClassification = "model_classification"
-	// SynchronizeModelTypeAttribute synchroneize model attribute
+	// SynchronizeModelTypeAttribute synchronize model attribute
 	SynchronizeModelTypeAttribute = "model_attribute"
-	// SynchronizeModelTypeAttributeGroup synchroneize model attribute group
+	// SynchronizeModelTypeAttributeGroup synchronize model attribute group
 	SynchronizeModelTypeAttributeGroup = "model_atrribute_group"
-	// SynchronizeModelTypeBase synchroneize model attribute
+	// SynchronizeModelTypeBase synchronize model attribute
 	SynchronizeModelTypeBase = "model"
 
-	/* synchronize instance assoication sign*/
+	/* synchronize instance association sign*/
 
 	// SynchronizeAssociationTypeModelHost synchroneize model ggroup
 	SynchronizeAssociationTypeModelHost = "module_host"

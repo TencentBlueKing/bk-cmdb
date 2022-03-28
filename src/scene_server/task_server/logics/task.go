@@ -328,7 +328,7 @@ func (lgc *Logics) ChangeStatusToFailure(kit *rest.Kit, taskID, subTaskID string
 		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "sub_task_id")
 	}
 	if errResponse == nil || errResponse.Code == 0 {
-		return kit.CCError.CCError(common.CCErrTaskErrResponseEmtpyFail)
+		return kit.CCError.CCError(common.CCErrTaskErrResponseemptyFail)
 	}
 	return lgc.changeStatus(kit, taskID, subTaskID, metadata.APITAskStatusFail, errResponse)
 }
