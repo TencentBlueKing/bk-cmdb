@@ -46,7 +46,7 @@
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelId') }">
               <bk-input type="text" class="cmdb-form-input"
                 name="modelId"
-                :placeholder="$t('请输入唯一标识')"
+                :placeholder="$t('模型唯一标识提示语')"
                 v-model.trim="modelDialog.data['bk_obj_id']"
                 v-validate="'required|modelId|length:115|reservedWord'">
               </bk-input>
@@ -190,7 +190,7 @@
             }
             .color-danger {
                 display: inline-block;
-                font-size: 16px;
+                font-size: 14px;
                 width: 15px;
                 text-align: center;
                 vertical-align: middle;
@@ -200,7 +200,7 @@
                 color: $cmdbBorderColor;
             }
             .label-title {
-                font-size: 16px;
+                font-size: 14px;
                 line-height: 36px;
                 vertical-align: middle;
                 @include ellipsis;

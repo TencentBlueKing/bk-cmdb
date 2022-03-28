@@ -1,156 +1,140 @@
 <template>
   <div class="model-detail-wrapper">
-    <div class="model-info" v-bkloading="{ isLoading: $loading('getClassificationsObjectStatistics') }">
-      <template v-if="activeModel !== null">
-        <div class="choose-icon-wrapper">
-          <span class="model-type">{{getModelType()}}</span>
-          <template v-if="isEditable">
-            <cmdb-auth tag="div" class="icon-box"
-              v-if="!activeModel.bk_ispaused"
-              :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
-              @click="isIconListShow = true">
-              <i class="icon" :class="activeModel.bk_obj_icon || 'icon-cc-default'"></i>
-              <p class="hover-text is-paused" v-if="activeModel.bk_ispaused">{{$t('已停用')}}</p>
-              <p class="hover-text" v-else>{{$t('点击切换')}}</p>
-            </cmdb-auth>
-            <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
-              <the-choose-icon
-                v-model="modelInfo.objIcon"
-                @close="hideChooseBox"
-                @chooseIcon="chooseIcon">
-              </the-choose-icon>
-            </div>
-          </template>
-          <template v-else>
-            <div class="icon-box" style="cursor: default;">
-              <i class="icon" :class="activeModel.bk_obj_icon || 'icon-cc-default'"></i>
-            </div>
-          </template>
-        </div>
-        <div class="model-text">
-          <span>{{$t('唯一标识')}}：</span>
-          <span class="text-content id" :title="activeModel['bk_obj_id'] || ''">
-            {{activeModel['bk_obj_id'] || ''}}
-          </span>
-        </div>
-        <div class="model-text">
-          <span>{{$t('名称')}}：</span>
-          <template v-if="!isEditName">
-            <span class="text-content" :title="activeModel['bk_obj_name'] || ''">
-              {{activeModel['bk_obj_name'] || ''}}
-            </span>
-            <cmdb-auth tag="i" class="icon icon-cc-edit text-primary"
-              v-if="isEditable"
-              :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
-              @click="editModelName">
-            </cmdb-auth>
-          </template>
-          <template v-else>
-            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelName') }">
-              <bk-input type="text" class="cmdb-form-input"
-                name="modelName"
-                v-validate="'required|singlechar|length:256'"
-                v-model.trim="modelInfo.objName">
-              </bk-input>
-            </div>
-            <span class="text-primary" @click="saveModel('modelName')">{{$t('保存')}}</span>
-            <span class="text-primary" @click="isEditName = false">{{$t('取消')}}</span>
-          </template>
-        </div>
-        <div class="model-text">
-          <span>{{$t('所属分组')}}：</span>
-          <template v-if="!isEditClassification">
-            <span class="text-content" :title="modelClassificationName">
-              {{modelClassificationName}}
-            </span>
-            <cmdb-auth tag="i" class="icon icon-cc-edit text-primary"
-              :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
-              @click="editModelClassification">
-            </cmdb-auth>
-          </template>
-          <template v-else>
-            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelClassificationId') }">
-              <bk-select
-                :clearable="false"
-                :searchable="true"
-                class="cmdb-form-select"
-                name="modelClassificationId"
-                v-validate="'required'"
-                v-model.trim="modelInfo.classificationId">
-                <bk-option
-                  v-for="classification in classifications"
-                  :key="classification.bk_classification_id"
-                  :id="classification.bk_classification_id"
-                  :name="classification.bk_classification_name">
-                </bk-option>
-              </bk-select>
-            </div>
-            <span class="text-primary" @click="saveModel('classificationId')">{{$t('保存')}}</span>
-            <span class="text-primary" @click="isEditClassification = false">{{$t('取消')}}</span>
-          </template>
-        </div>
-        <div class="model-text instance-count"
-          v-if="!activeModel['bk_ispaused'] && !isNoInstanceModel">
-          <span>{{$t('实例数量')}}：</span>
-          <div class="text-content-count" @click="handleGoInstance">
-            <cmdb-loading :loading="$loading(request.instanceCount)">
-              {{modelInstanceCount}}
-            </cmdb-loading>
-            <i class="icon-cc-share"></i>
+    <div class="model-info-wrapper">
+      <div class="model-info" v-bkloading="{ isLoading: $loading('getClassificationsObjectStatistics') }">
+        <template v-if="activeModel !== null">
+          <div class="choose-icon-wrapper">
+            <span class="model-type" :class="{ 'is-builtin': activeModel.ispre }">{{getModelType()}}</span>
+            <template v-if="isEditable">
+              <cmdb-auth tag="div" class="icon-box"
+                v-if="!activeModel.bk_ispaused"
+                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
+                @click="isIconListShow = true">
+                <i class="icon" :class="activeModel.bk_obj_icon || 'icon-cc-default'"></i>
+                <p class="hover-text is-paused" v-if="activeModel.bk_ispaused">{{$t('已停用')}}</p>
+                <p class="hover-text" v-else>{{$t('点击切换')}}</p>
+              </cmdb-auth>
+              <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
+                <the-choose-icon
+                  v-model="activeModel.bk_obj_icon"
+                  @close="hideChooseBox"
+                  @input="handleModelIconUpdateConfirm">
+                </the-choose-icon>
+              </div>
+            </template>
+            <template v-else>
+              <div class="icon-box" style="cursor: default;">
+                <i class="icon" :class="activeModel.bk_obj_icon || 'icon-cc-default'"></i>
+              </div>
+            </template>
           </div>
-        </div>
-        <cmdb-auth class="restart-btn"
-          v-if="!isMainLine && activeModel.bk_ispaused"
-          :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
-          <bk-button slot-scope="{ disabled }"
-            theme="primary"
-            :disabled="disabled"
-            @click="dialogConfirm('restart')">
-            {{$t('立即启用')}}
-          </bk-button>
-        </cmdb-auth>
-        <div class="btn-group">
-          <template v-if="canBeImport">
-            <cmdb-auth tag="label" class="label-btn"
-              v-if="tab.active === 'field'"
+          <div class="model-identity">
+            <div class="model-name">
+              <editable-field
+                :editing.sync="modelNameIsEditing"
+                v-model="activeModel.bk_obj_name"
+                :control-attrs="{
+                  fontSize: '12px'
+                }"
+                @confirm="handleModelNameUpdateConfirm"
+                :editable="isEditable"
+                validate="required|singlechar|length:256|reservedWord"
+                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
+              >
+              </editable-field>
+            </div>
+            <div class="model-id" v-show="!modelNameIsEditing">
+              {{activeModel['bk_obj_id'] || ''}}
+            </div>
+          </div>
+          <div class="model-group-name">
+            <span class="model-group-name-label">{{$t('所属分组')}}：</span>
+            <editable-field
+              v-model="activeModel.bk_classification_id"
+              :label="modelClassificationName"
               :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
-              :class="{ 'disabled': isReadOnly }"
-              @click="handleImportField">
-              <i class="icon-cc-import"></i>
-              <span>{{$t('导入')}}</span>
-            </cmdb-auth>
-            <label class="label-btn" @click="exportField">
-              <i class="icon-cc-derivation"></i>
-              <span>{{$t('导出')}}</span>
-            </label>
-          </template>
-          <template v-if="isShowOperationButton">
-            <cmdb-auth class="label-btn"
-              v-if="!isMainLine && !activeModel['bk_ispaused']"
-              v-bk-tooltips="$t('保留模型和相应实例，隐藏关联关系')"
-              :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
-              <bk-button slot-scope="{ disabled }"
-                text
-                :disabled="disabled"
-                @click="dialogConfirm('stop')">
-                <i class="bk-icon icon-minus-circle-shape"></i>
-                <span>{{$t('停用')}}</span>
-              </bk-button>
-            </cmdb-auth>
-            <cmdb-auth class="label-btn"
-              v-bk-tooltips="$t('删除模型和其下所有实例，此动作不可逆，请谨慎操作')"
-              :auth="{ type: $OPERATION.D_MODEL, relation: [modelId] }">
-              <bk-button slot-scope="{ disabled }"
-                text
-                :disabled="disabled"
-                @click="dialogConfirm('delete')">
-                <i class="icon-cc-del"></i>
-                <span>{{$t('删除')}}</span>
-              </bk-button>
-            </cmdb-auth>
-          </template>
-        </div>
-      </template>
+              validate="required"
+              @confirm="handleModelGroupUpdateConfirm"
+              control-name="bk-select"
+              :control-attrs="{
+                clearable: false,
+                searchable: true,
+                fontSize: '12px'
+              }"
+            >
+              <bk-option
+                v-for="classification in classifications"
+                :key="classification.bk_classification_id"
+                :id="classification.bk_classification_id"
+                :name="classification.bk_classification_name">
+              </bk-option>
+            </editable-field>
+          </div>
+          <div class="instance-count"
+            v-if="!activeModel['bk_ispaused'] && !isNoInstanceModel">
+            <span>{{$t('实例数量')}}：</span>
+            <span class="instance-count-text" @click="handleGoInstance">
+              <cmdb-loading :loading="$loading(request.instanceCount)">
+                {{modelInstanceCount || 0}}
+              </cmdb-loading>
+              <i class="icon-cc-share instance-count-link-icon"></i>
+            </span>
+          </div>
+          <cmdb-auth class="restart-btn"
+            v-if="!isMainLine && activeModel.bk_ispaused"
+            :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
+            <bk-button slot-scope="{ disabled }"
+              theme="primary"
+              :disabled="disabled"
+              @click="dialogConfirm('restart')">
+              {{$t('立即启用')}}
+            </bk-button>
+          </cmdb-auth>
+          <div class="btn-group">
+            <template v-if="canBeImport">
+              <cmdb-auth tag="label" class="label-btn"
+                v-if="tab.active === 'field'"
+                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
+                :class="{ 'disabled': isReadOnly }"
+                @click="handleImportField">
+                <i class="icon-cc-import"></i>
+                <span class="label-btn-text">{{$t('导入')}}</span>
+              </cmdb-auth>
+              <label class="label-btn" @click="exportField">
+                <i class="icon-cc-derivation"></i>
+                <span class="label-btn-text">{{$t('导出')}}</span>
+              </label>
+            </template>
+            <template v-if="isShowOperationButton">
+              <cmdb-auth class="label-btn"
+                v-if="!isMainLine && !activeModel['bk_ispaused']"
+                v-bk-tooltips="$t('保留模型和相应实例，隐藏关联关系')"
+                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
+                <bk-button slot-scope="{ disabled }"
+                  text
+                  :disabled="disabled"
+                  @click="dialogConfirm('stop')">
+                  <i
+                    class="label-btn-icon bk-icon icon-minus-circle-shape">
+                  </i>
+                  <span class="label-btn-text">{{$t('停用')}}</span>
+                </bk-button>
+              </cmdb-auth>
+              <cmdb-auth class="label-btn"
+                v-bk-tooltips="$t('删除模型和其下所有实例，此动作不可逆，请谨慎操作')"
+                :auth="{ type: $OPERATION.D_MODEL, relation: [modelId] }">
+                <bk-button slot-scope="{ disabled }"
+                  text
+                  :disabled="disabled"
+                  @click="dialogConfirm('delete')">
+                  <i class="label-btn-icon icon-cc-del"></i>
+                  <span class="label-btn-text">{{$t('删除')}}</span>
+                </bk-button>
+              </cmdb-auth>
+            </template>
+          </div>
+        </template>
+      </div>
     </div>
     <bk-tab class="model-details-tab" type="unborder-card"
       :active.sync="tab.active"
@@ -235,26 +219,23 @@
     MENU_RESOURCE_INSTANCE
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
+  import EditableField from './editable-field.vue'
 
   export default {
-    name: 'ModelManagement',
+    name: 'ModelDetails',
     components: {
       theFieldGroup,
       theRelation,
       theVerification,
       theChooseIcon,
       cmdbImport,
-      cmdbLoading
+      cmdbLoading,
+      EditableField
     },
     data() {
       return {
         tab: {
           active: RouterQuery.get('tab', 'field')
-        },
-        modelInfo: {
-          objName: '',
-          objIcon: '',
-          classificationId: ''
         },
         isIconListShow: false,
         isEditName: false,
@@ -272,7 +253,8 @@
         },
         request: {
           instanceCount: Symbol('instanceCount')
-        }
+        },
+        modelNameIsEditing: false
       }
     },
     computed: {
@@ -280,10 +262,15 @@
         'supplierAccount',
         'userName'
       ]),
-      ...mapGetters('objectModel', [
-        'activeModel',
-        'isMainLine'
-      ]),
+      ...mapGetters('objectModel', ['isMainLine']),
+      activeModel: {
+        get() {
+          return this.$store.getters['objectModel/activeModel']
+        },
+        set(value) {
+          this.setActiveModel(value)
+        }
+      },
       ...mapGetters('objectModelClassify', ['models', 'classifications']),
       isShowOperationButton() {
         return this.activeModel && !this.activeModel.ispre
@@ -303,26 +290,6 @@
       modelClassificationName() {
         return this.classifications
           .find(item => item.bk_classification_id === this.activeModel.bk_classification_id)?.bk_classification_name || ''
-      },
-      modelParams() {
-        const {
-          objIcon,
-          objName,
-          classificationId
-        } = this.modelInfo
-        const params = {
-          modifier: this.userName
-        }
-        if (objIcon) {
-          Object.assign(params, { bk_obj_icon: objIcon })
-        }
-        if (objName?.length && objName !== this.activeModel.bk_obj_name) {
-          Object.assign(params, { bk_obj_name: objName })
-        }
-        if (classificationId?.length && classificationId !== this.activeModel.bk_classification_id) {
-          Object.assign(params, { bk_classification_id: classificationId })
-        }
-        return params
       },
       importUrl() {
         return `${window.API_HOST}object/object/${this.activeModel.bk_obj_id}/import`
@@ -374,7 +341,7 @@
       ]),
       getModelType() {
         if (this.activeModel) {
-          return this.activeModel.ispre ? this.$t('内置') : this.$t('公共')
+          return this.activeModel.ispre ? this.$t('内置') : this.$t('自定义')
         }
         return ''
       },
@@ -420,43 +387,57 @@
       hideChooseBox() {
         this.isIconListShow = false
       },
-      chooseIcon() {
+      handleModelIconUpdateConfirm(value) {
         this.isIconListShow = false
-        this.saveModel()
+        this.saveModel({ modelIcon: value })
       },
-      editModelName() {
-        this.modelInfo.objName = this.activeModel.bk_obj_name
-        this.isEditName = true
+      handleModelNameUpdateConfirm({ value, confirm, stop }) {
+        this.saveModel({
+          modelName: value
+        })
+          .then(() => {
+            confirm()
+          })
+          .catch((err) => {
+            stop()
+            console.log(err)
+          })
       },
-      editModelClassification() {
-        this.modelInfo.classificationId = this.activeModel.bk_classification_id
-        this.isEditClassification = true
+      handleModelGroupUpdateConfirm({ value, confirm, stop }) {
+        this.saveModel({
+          classificationId: value
+        })
+          .then(() => {
+            confirm()
+          })
+          .catch((err) => {
+            stop()
+            console.log(err)
+          })
       },
-      async saveModel(fieldName = '') {
-        if (!await this.$validator.validateAll() || this.$loading('updateTheModel')) {
-          return
+      async saveModel({ modelIcon, modelName, classificationId } = {}) {
+        const params = {
+          modifier: this.userName,
         }
 
-        this.updateObject({
+        if (modelIcon) params.bk_obj_icon = modelIcon
+        if (classificationId) params.bk_classification_id = classificationId
+        if (modelName) params.bk_obj_name = modelName
+
+        return this.updateObject({
           id: this.activeModel.id,
-          params: this.modelParams,
-          config: {
-            requestId: 'updateTheModel'
-          }
+          params
         })
           .then(() => {
             this.$http.cancel('post_searchClassificationsObjects')
             this.$success(this.$t('修改成功'))
-            this.setActiveModel({ ...this.activeModel, ...this.modelParams })
-            if (fieldName === 'modelName') this.isEditName = false
-            if (fieldName === 'classificationId') this.isEditClassification = false
+            this.activeModel = { ...this.activeModel, ...params }
           })
       },
       initObject() {
         const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
         if (model) {
-          this.$store.commit('objectModel/setActiveModel', model)
-          this.initModelInfo()
+          this.activeModel = model
           this.getModelInstanceCount()
         } else {
           this.$routerActions.redirect({ name: 'status404' })
@@ -475,12 +456,6 @@
 
         const [data] = result
         this.modelInstanceCount = data?.error ? '--' : data?.inst_count
-      },
-      initModelInfo() {
-        this.modelInfo = {
-          objIcon: this.activeModel.bk_obj_icon,
-          objName: this.activeModel.bk_obj_name
-        }
       },
       exportField() {
         modelImportExportService.export(this.activeModel.bk_obj_id)
@@ -528,7 +503,7 @@
           bk_ispaused: ispaused,
           bk_obj_id: this.activeModel.bk_obj_id
         })
-        this.setActiveModel({ ...this.activeModel, ...{ bk_ispaused: ispaused } })
+        this.activeModel = { ...this.activeModel, ...{ bk_ispaused: ispaused } }
       },
       async deleteModel() {
         if (this.isMainLine) {
@@ -586,6 +561,7 @@
         }
       },
       handleImportField() {
+        if (this.isReadOnly) return
         this.importField.show = true
       }
     }
@@ -593,56 +569,55 @@
 </script>
 
 <style lang="scss" scoped>
-    .model-detail-wrapper {
-        padding: 0;
-    }
-    .model-details-tab {
-        height: calc(100% - 70px) !important;
-        /deep/ {
-            .bk-tab-header {
-                padding: 0;
-                margin: 0 20px;
-            }
-            .bk-tab-section {
-                padding: 0;
-            }
-        }
-    }
     .model-info {
-        padding: 0 24px;
-        height: 70px;
-        background: #ebf4ff;
+        &-wrapper{
+          padding: 20px 24px;
+        }
+
+        display: flex;
+        height: 80px;
+        background: #fff;
         font-size: 14px;
-        border-bottom: 1px solid #dcdee5;
+        box-shadow: 0px 2px 4px 0px rgba(25,25,41,0.05);
+        align-items: center;
+
         .choose-icon-wrapper {
             position: relative;
-            float: left;
-            margin: 8px 30px 0 0;
+            margin-left: 32px;
             .model-type {
+                $builtinColor:#ffb23a;
+                $customizeColor: #dcfde2;
                 position: absolute;
-                left: 42px;
-                top: -12px;
-                padding: 0 6px;
+                left: 30px;
+                top: -16px;
+                padding: 0 8px;
                 border-radius: 4px;
-                background-color: #ffb23a;
+                background-color: $customizeColor;
                 font-size: 20px;
                 line-height: 32px;
-                color: #fff;
+                color: #34ce5c;
+                font-weight: 700;
                 white-space: nowrap;
                 transform: scale(.5);
                 transform-origin: left center;
                 z-index: 2;
-                &:after {
+                &::after {
                     content: "";
                     position: absolute;
                     top: 100%;
-                    left: 10px;
+                    left: 50%;
                     width: 0;
                     height: 0;
-                    border-top: 8px solid #ffb23a;
-                    border-right: 10px solid transparent;
-                    transform: skew(-15deg);
-                    transform-origin: left top;
+                    border-top: 8px solid $customizeColor;
+                    border-right: 14px solid transparent;
+                    transform: translateX(-50%);
+                }
+                &.is-builtin {
+                    background-color: $builtinColor;
+                    color: #fff;
+                    &::after{
+                      border-top-color: $builtinColor;
+                    }
                 }
             }
             .choose-icon-box {
@@ -674,12 +649,14 @@
             }
         }
         .icon-box {
-            padding-top: 16px;
-            width: 54px;
-            height: 54px;
-            border: 1px solid #dde4eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            $iconSize:56px;
+            width: $iconSize;
+            height: $iconSize;
             border-radius: 50%;
-            background: #fff;
+            background: #e7f0ff;
             text-align: center;
             font-size: 20px;
             color: $cmdbBorderFocusColor;
@@ -695,9 +672,9 @@
                 position: absolute;
                 top: 0;
                 left: 0;
-                width: 54px;
-                height: 54px;
-                line-height: 54px;
+                right: 0;
+                bottom: 0;
+                line-height: $iconSize;
                 font-size: 12px;
                 border-radius: 50%;
                 text-align: center;
@@ -708,89 +685,86 @@
                 }
             }
             .icon {
-                vertical-align: top;
                 &.ispre {
                     color: #3a84ff;
                 }
             }
         }
-        .model-text {
-            float: left;
-            margin: 18px 10px 0 0;
-            line-height: 36px;
-            font-size: 0;
-            >span {
-                display: inline-block;
-                vertical-align: middle;
-                height: 36px;
-                font-size: 14px;
-                color: #737987;
-            }
-            .text-content {
-                max-width: 110px;
-                vertical-align: middle;
-                color: #333948;
-                @include ellipsis;
-                &.id {
-                    min-width: 50px;
-                }
-            }
-            .text-content-count {
-                display: flex;
-                align-items: center;
-                color: #3a84ff;
-                cursor: pointer;
-                /deep/ span {
-                    font-size: 14px;
-                    vertical-align: middle;
-                }
-                .icon-cc-share {
-                    font-size: 12px;
-                    margin-left: 6px;
-                    vertical-align: middle;
-                }
-            }
-            .icon-cc-edit {
-                vertical-align: middle;
-                font-size: 14px;
-            }
-            .cmdb-form-item {
-                display: inline-block;
-                width: 156px;
-                vertical-align: top;
-                input {
-                    vertical-align: top;
-                }
-            }
-            .cmdb-form-select {
-              width: 100%;
-            }
-            .text-primary {
-                cursor: pointer;
-                margin-left: 5px;
-            }
 
-            &.instance-count {
-              display: flex;
-              margin-left: 10px;
-            }
+        .model-identity {
+          width: 225px;
+          margin-left: 10px;
+
+          .model-name {
+            font-weight: 700;
+          }
+
+          .model-id {
+            font-size: 12px;
+            color: #979ba5;
+          }
         }
+
+        .model-group-name {
+          width: 250px;
+          font-size: 12px;
+          color: #63656e;
+          display: flex;
+          align-items: center;
+
+          &-label {
+            flex: 0 0 auto;
+          }
+        }
+
+        .instance-count {
+            display: flex;
+            font-size: 12px;
+            color: #63656e;
+            &-text {
+              color: #3a84ff;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+            }
+            &-link-icon {
+              margin-left: 6px;
+            }
+         }
         .restart-btn {
             display: inline-block;
-            margin: 19px 0 0 20px;
         }
         .btn-group {
-            float: right;
-            height: 70px;
-            line-height: 70px;
+            margin-left: auto;
+            margin-right: 24px;
             display: flex;
             align-items: center;
             .label-btn {
-                line-height: normal;
+                display: flex;
+                align-items: center;
                 outline: 0;
                 position: relative;
+                font-size: 12px;
+                margin-left: 10px;
+                cursor: pointer;
+                &:hover {
+                    color: $cmdbBorderFocusColor;
+                    .bk-button-text {
+                        color: $cmdbBorderFocusColor;
+                    }
+                }
+                &-text {
+                  margin-left: 4px;
+                }
+                &-icon {
+                  display: inline-block;
+                  vertical-align: middle;
+                  line-height: 1;
+                  height: 14px;
+                 }
                 .bk-button-text {
-                    color: #737987;
+                  font-size: inherit;
+                  color: #737987;
                     &:disabled {
                         color: #dcdee5 !important;
                         cursor: not-allowed;
@@ -798,6 +772,10 @@
                 }
                 &.disabled {
                     cursor: not-allowed;
+                    opacity: 0.5;
+                    &:hover {
+                      color: inherit;
+                    }
                 }
                 input[type="file"] {
                     position: absolute;
@@ -815,24 +793,27 @@
             .export-form {
                 display: inline-block;
             }
-            .label-btn {
-                margin-left: 10px;
-                cursor: pointer;
-                &:hover {
-                    color: $cmdbBorderFocusColor;
-                    .bk-button-text {
-                        color: $cmdbBorderFocusColor;
-                    }
-                }
-            }
-            i,
-            span {
-                vertical-align: middle;
-            }
         }
+    }
+    /deep/ .model-details-tab {
+        height: calc(100% - 120px);
+        margin: 0 20px;
+        background-color: #fff;
+        border-radius: 2px;
+        box-shadow: 0px 2px 4px 0px rgba(25,25,41,0.05);
+        .bk-tab-header {
+            padding: 0;
+            margin: 0 10px;
+        }
+        .bk-tab-section {
+            padding: 0;
+        }
+    }
+    .editable-field {
+      width: 100%;
     }
 </style>
 
 <style lang="scss">
-    @import '@/assets/scss/model-manage.scss';
+@import '@/assets/scss/model-manage.scss';
 </style>

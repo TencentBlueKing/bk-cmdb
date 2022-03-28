@@ -37,6 +37,26 @@
       </label>
       <div class="form-label">
         <span class="label-text">
+          {{$t('字段分组')}}
+          <span class="color-danger">*</span>
+        </span>
+        <div class="cmdb-form-item">
+          <bk-select
+            class="bk-select-full-width"
+            searchable
+            :clearable="false"
+            v-model="fieldInfo.bk_group_id"
+            :disabled="isEditField">
+            <bk-option v-for="(option, index) in groups"
+              :key="index"
+              :id="option.bk_group_id"
+              :name="option.bk_group_name">
+            </bk-option>
+          </bk-select>
+        </div>
+      </div>
+      <div class="form-label">
+        <span class="label-text">
           {{$t('字段类型')}}
           <span class="color-danger">*</span>
         </span>
@@ -141,7 +161,12 @@
         type: Object
       },
       group: {
-        type: Object
+        type: Object,
+        default: () => ({})
+      },
+      groups: {
+        type: Array,
+        default: () => []
       },
       isReadOnly: {
         type: Boolean,
@@ -203,6 +228,7 @@
         fieldInfo: {
           bk_property_name: '',
           bk_property_id: '',
+          bk_group_id: this.group.bk_group_id,
           unit: '',
           placeholder: '',
           bk_property_type: 'singlechar',
