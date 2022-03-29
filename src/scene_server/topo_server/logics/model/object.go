@@ -868,38 +868,15 @@ func (o *object) createObjectAssociation(kit *rest.Kit, data []metadata.AsstWith
 
 	for _, item := range data {
 
-		if item.AsstKindID == common.AssociationKindMainline {
-			return kit.CCError.CCError(common.CCErrorTopoAssociationKindMainlineUnavailable)
-		}
-		if len(item.AsstKindID) == 0 || len(item.AsstObjID) == 0 || len(item.ObjectID) == 0 {
-			blog.Errorf("association kind id、 associate/object id is required, rid: %s", kit.Rid)
-			return kit.CCError.CCError(common.CCErrorTopoAssociationMissingParameters)
-		}
-
 		// if the on delete action is empty, set none as default.
 		if len(item.OnDelete) == 0 {
 			item.OnDelete = metadata.NoAction
 		}
 
 		cond := &metadata.CreateModelAssociation{Spec: item.Association}
-		asstRsp, err := o.clientSet.CoreService().Association().CreateModelAssociation(kit.Ctx, kit.Header, cond)
+		_, err := o.clientSet.CoreService().Association().CreateModelAssociation(kit.Ctx, kit.Header, cond)
 		if err != nil {
 			blog.Errorf("create object association failed, param: %#v , err: %v, rid: %s", cond, err, kit.Rid)
-			return err
-		}
-
-		// generate audit log of object attribute group.
-		audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
-		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, int64(asstRsp.Created.ID), nil)
-		if err != nil {
-			blog.Errorf("generate audit log failed, err: %v, rid: %s", err, kit.Rid)
-			return err
-		}
-
-		// save audit log.
-		if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
-			blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
 			return err
 		}
 	}
@@ -938,8 +915,13 @@ func (o *object) SearchObjectsWithTotalInfo(kit *rest.Kit, ids, excludedAsst []i
 	}
 	clsRsp, err := o.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, input)
 	if err != nil {
-		blog.Errorf("find classification failed,cond: %v, err: %v, rid: %s", input, err, kit.Rid)
+		blog.Errorf("find classification failed, cond: %v, err: %v, rid: %s", input, err, kit.Rid)
 		return nil, err
+	}
+
+	if len(clsRsp.Info) == 0 {
+		blog.Errorf("find classification failed, result is empty, cond: %v, rid: %s", input, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrorModelClassificationNotFound)
 	}
 
 	clsMap := make(map[string]string)
@@ -968,7 +950,7 @@ func (o *object) SearchObjectsWithTotalInfo(kit *rest.Kit, ids, excludedAsst []i
 		return nil, err
 	}
 
-	result := make(map[string]mapstr.MapStr, 0)
+	result := make(map[string]interface{}, 0)
 	for objID, obj := range objs {
 		objInfo := mapstr.MapStr{
 			common.BKObjIDField:            obj.ObjectID,
@@ -983,7 +965,7 @@ func (o *object) SearchObjectsWithTotalInfo(kit *rest.Kit, ids, excludedAsst []i
 		result[objID] = objInfo
 	}
 
-	return &metadata.TotalObjectInfo{Objcet: result, Asst: asstKind}, nil
+	return &metadata.TotalObjectInfo{Object: result, Asst: asstKind}, nil
 }
 
 func (o *object) searchObjectByCondition(kit *rest.Kit, cond metadata.QueryCondition) (map[string]metadata.Object,

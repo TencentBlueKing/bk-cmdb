@@ -392,7 +392,7 @@ func (s *Service) CreateManyObject(ctx *rest.Contexts) {
 	ctx.RespEntity(rsp)
 }
 
-// SearchObjectsWithTotalInfo search object with it's attribute and association
+// SearchObjectWithTotalInfo search object with it's attribute and association
 func (s *Service) SearchObjectWithTotalInfo(ctx *rest.Contexts) {
 	data := struct {
 		ObjIDs       []int64 `json:"object_id"`

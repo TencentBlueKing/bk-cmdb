@@ -69,6 +69,11 @@ type UpdateAssociationTypeRequest struct {
 	Direction string `field:"direction" json:"direction" bson:"direction"`
 }
 
+// UpdateManyAssociationTypeRequest params of update many association type
+type UpdateManyAssociationTypeRequest struct {
+	Data map[int64]UpdateAssociationTypeRequest `field:"data" json:"data" bson:"data"`
+}
+
 type UpdateAssociationTypeResult struct {
 	BaseResp `json:",inline"`
 	Data     string `json:"data"`
@@ -745,6 +750,13 @@ func (asst *AssociationKindYaml) Validate() errors.RawErrorInfo {
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrWebVerifyYamlFail,
 				Args:    []interface{}{common.AssociationKindIDField + " no found"},
+			}
+		}
+
+		if item.AssociationKindID == common.AssociationKindMainline {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrWebVerifyYamlFail,
+				Args:    []interface{}{common.AssociationKindMainline + " forbidden operationx"},
 			}
 		}
 	}

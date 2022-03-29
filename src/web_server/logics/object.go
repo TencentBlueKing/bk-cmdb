@@ -261,7 +261,7 @@ func (lgc *Logics) BuildExportYaml(header http.Header, expiration int64, data in
 
 	yamlData, err := yl.Marshal(exportInfo)
 	if err != nil {
-		blog.Errorf("marshal data[%v] into yaml failed, err: %v, rid: %s", data, err, rid)
+		blog.Errorf("marshal data[%+v] into yaml failed, err: %v, rid: %s", data, err, rid)
 		return nil, err
 	}
 
@@ -287,7 +287,7 @@ func (lgc *Logics) BuildZipFile(header http.Header, zipw *zip.Writer, fileName s
 	} else {
 		w, err := zipw.Create(fileName)
 		if err != nil {
-			blog.Errorf("encrypt zip file failed, err: %v, rid: %s", err, rid)
+			blog.Errorf("create zip file failed, err: %v, rid: %s", err, rid)
 			return err
 		}
 
@@ -318,14 +318,17 @@ func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, passwo
 
 	zipFile, err := file.Open()
 	if err != nil {
-		blog.Errorf("open zip file failed, err: %+v, rid: %s", err, rid)
+		blog.Errorf("open zip file failed, err: %v, rid: %s", err, rid)
 		return err
 	}
 
 	defer zipFile.Close()
 
 	receiver := new(bytes.Buffer)
-	io.Copy(receiver, zipFile)
+	if _, err := io.Copy(receiver, zipFile); err != nil {
+		blog.Errorf("copy zip file into receicer failed, err: %v, rid: %s", err, rid)
+		return err
+	}
 
 	// if encryption method use ZipCrypto, decrypt it with incorrect password receiver will be empty
 	if len(receiver.Bytes()) == 0 {
@@ -336,12 +339,12 @@ func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, passwo
 	if strings.Contains(file.Name, "asst_kind") {
 		fileInfo := metadata.AssociationKindYaml{}
 		if err := yl.Unmarshal(receiver.Bytes(), &fileInfo); err != nil {
-			blog.Errorf("unmarshal zip file failed, err: %+v, rid: %s", err, rid)
+			blog.Errorf("unmarshal zip file failed, err: %v, rid: %s", err, rid)
 			return err
 		}
 
 		if err := fileInfo.Validate(); err.ErrCode != 0 {
-			blog.Errorf("validate file failed, err: %+v, rid: %s", err, rid)
+			blog.Errorf("validate file failed, err: %v, rid: %s", err, rid)
 			return err.ToCCError(defErr)
 		}
 
@@ -349,11 +352,11 @@ func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, passwo
 	} else {
 		fileInfo := metadata.ObjectYaml{}
 		if err := yl.Unmarshal(receiver.Bytes(), &fileInfo); err != nil {
-			blog.Errorf("unmarshal zip file failed, err: %+v, rid: %s", err, rid)
+			blog.Errorf("unmarshal zip file failed, err: %v, rid: %s", err, rid)
 			return err
 		}
 		if err := fileInfo.Validate(); err.ErrCode != 0 {
-			blog.Errorf("validate file failed, err: %+v, rid: %s", err, rid)
+			blog.Errorf("validate file failed, err: %v, rid: %s", err, rid)
 			return err.ToCCError(defErr)
 		}
 		result.Data.Object = append(result.Data.Object, fileInfo.Object)
@@ -396,26 +399,29 @@ func (lgc *Logics) CreateOrUpdateAssociationType(ctx context.Context, header htt
 	}
 
 	needCreateAsst := util.StrArrDiff(asstKindID, existAsstKind)
+	updateCond := metadata.UpdateManyAssociationTypeRequest{Data: make(map[int64]metadata.UpdateAssociationTypeRequest)}
 	for _, item := range existAsstKind {
-		updataCond := metadata.UpdateAssociationTypeRequest{
+		updateCond.Data[kindIDMap[item]] = metadata.UpdateAssociationTypeRequest{
 			AsstName:  asstKindMap[item].AssociationKindName,
 			SrcDes:    asstKindMap[item].SourceToDestinationNote,
 			DestDes:   asstKindMap[item].DestinationToSourceNote,
 			Direction: string(asstKindMap[item].Direction),
 		}
-		if err := lgc.Engine.CoreAPI.ApiServer().UpdateAssociationType(ctx, header, kindIDMap[item],
-			updataCond); err != nil {
-			blog.Errorf("update asstkind failed, cond: %v,err: %s, rid: %s", updataCond, err.Error(), rid)
-			return err
-		}
 	}
 
+	if err := lgc.Engine.CoreAPI.ApiServer().UpdateManyAssociationType(ctx, header, updateCond); err != nil {
+		blog.Errorf("update asstkind failed, cond: %+v, err: %v, rid: %s", updateCond, err, rid)
+		return err
+	}
+
+	createCond := metadata.CreateManyAssociationKind{Datas: make([]metadata.AssociationKind, 0)}
 	for _, item := range needCreateAsst {
-		createCond := asstKindMap[item]
-		if _, err := lgc.Engine.CoreAPI.ApiServer().CreateAssociationType(ctx, header, createCond); err != nil {
-			blog.Errorf("create asstkind failed, cond: %v, err: %s, rid: %s", createCond, err.Error(), rid)
-			return err
-		}
+		createCond.Datas = append(createCond.Datas, asstKindMap[item])
+	}
+
+	if _, err := lgc.Engine.CoreAPI.ApiServer().CreateManyAssociationType(ctx, header, createCond); err != nil {
+		blog.Errorf("create asstkind failed, cond: %+v, err: %v, rid: %s", createCond, err, rid)
+		return err
 	}
 
 	return nil

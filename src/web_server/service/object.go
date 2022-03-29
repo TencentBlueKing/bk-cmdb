@@ -414,21 +414,13 @@ func (s *Service) BatchExportObject(c *gin.Context) {
 		return
 	}
 
-	params := mapstr.MapStr{"object_id": cond.ObjectID}
-	objRsp, err := s.Engine.CoreAPI.ApiServer().SearchObjectWithTotalInfo(ctx, header, params)
-	if err != nil {
-		blog.Errorf("search object info to build yaml failed, cond: %v, err: %v, rid: %s", cond, err, rid)
-		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, err.Error(), nil)
-		_, _ = c.Writer.Write([]byte(msg))
-		return
-	}
-
 	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	_, err = os.Stat(dirFileName)
 	if err != nil {
-		blog.Warnf("os.Stat failed, will retry with os.MkdirAll, filename: %s, err: %+v, rid: %s", dirFileName, err, rid)
+		blog.Warnf("os.Stat failed, will retry with os.MkdirAll, filename: %s, err: %v, rid: %s", dirFileName, err, rid)
 		if err := os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); err != nil {
-			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dirFileName, err, rid)
+			blog.Errorf("os.MkdirAll failed, filename: %s, err: %v, rid: %s", dirFileName, err, rid)
+			return
 		}
 	}
 
@@ -445,7 +437,17 @@ func (s *Service) BatchExportObject(c *gin.Context) {
 		return
 	}
 	zipw := zip.NewWriter(fzip)
-	for objID, item := range objRsp.Objcet {
+
+	queryCond := mapstr.MapStr{"object_id": cond.ObjectID}
+	objRsp, err := s.Engine.CoreAPI.ApiServer().SearchObjectWithTotalInfo(ctx, header, queryCond)
+	if err != nil {
+		blog.Errorf("search object info to build yaml failed, cond: %v, err: %v, rid: %s", queryCond, err, rid)
+		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, err.Error(), nil)
+		_, _ = c.Writer.Write([]byte(msg))
+		return
+	}
+
+	for objID, item := range objRsp.Object {
 		yamlData, err := s.Logics.BuildExportYaml(header, cond.Expiration, item, "object")
 		if err != nil {
 			blog.Errorf("build yaml data failed, err: %v, rid: %s", err, rid)
@@ -477,7 +479,7 @@ func (s *Service) BatchExportObject(c *gin.Context) {
 	c.File(fileDir)
 
 	if err := os.Remove(fileDir); err != nil {
-		blog.Errorf("os.Remove failed, filename: %s, err: %+v, rid: %s", fileDir, err, rid)
+		blog.Errorf("os.Remove failed, filename: %s, err: %v, rid: %s", fileDir, err, rid)
 	}
 }
 
@@ -511,9 +513,9 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/import/"
 	if _, err = os.Stat(dir); err != nil {
-		blog.Warnf("os.Stat failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
+		blog.Warnf("os.Stat failed, filename: %s, err: %v, rid: %s", dir, err, rid)
 		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
-			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
+			blog.Errorf("os.MkdirAll failed, filename: %s, err: %v, rid: %s", dir, err, rid)
 		}
 	}
 	filePath := fmt.Sprintf("%s/batch_import_object-%d-%d.zip", dir, time.Now().UnixNano(), randNum)
@@ -525,7 +527,7 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 	}
 	defer func() {
 		if err := os.Remove(filePath); err != nil {
-			blog.Errorf("os.Remove failed, filename: %s, err: %+v, rid: %s", filePath, err, rid)
+			blog.Errorf("os.Remove failed, filename: %s, err: %v, rid: %s", filePath, err, rid)
 		}
 	}()
 
@@ -551,6 +553,7 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 		}
 
 		if err := s.Logics.GetDataFromZipFile(c.Request.Header, item, cond.Password, result); err != nil {
+			blog.Errorf("get data from zip file failed, err: %v, rid: %s", err, rid)
 			var msg string
 			if strings.Contains(err.Error(), "invalid password") || strings.Contains(err.Error(), "no password") {
 				msg = getReturnStr(common.CCErrWebVerifyYamlPwdFail, err.Error(), nil)

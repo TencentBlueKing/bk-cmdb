@@ -70,7 +70,7 @@ func (a *apiServer) GetObjectData(ctx context.Context, h http.Header, params map
 	return
 }
 
-// SearchObjectsWithTotalInfo search object with it's attribute and association
+// SearchObjectWithTotalInfo search object with it's attribute and association
 func (a *apiServer) SearchObjectWithTotalInfo(ctx context.Context, h http.Header, params mapstr.MapStr) (
 	*metadata.TotalObjectInfo, error) {
 
@@ -581,17 +581,17 @@ func (a *apiServer) SearchAssociationType(ctx context.Context, h http.Header,
 	return &resp.Data, nil
 }
 
-// UpdateAssociationType update association kind by params
-func (a *apiServer) UpdateAssociationType(ctx context.Context, h http.Header, id int64,
-	params metadata.UpdateAssociationTypeRequest) error {
+// UpdateManyAssociationType update association kind by params
+func (a *apiServer) UpdateManyAssociationType(ctx context.Context, h http.Header,
+	params metadata.UpdateManyAssociationTypeRequest) error {
 
 	resp := new(metadata.Response)
-	subPath := "/update/associationtype/%d"
+	subPath := "/updatemany/associationtype"
 
 	err := a.client.Put().
 		WithContext(ctx).
 		Body(params).
-		SubResourcef(subPath, id).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -608,15 +608,15 @@ func (a *apiServer) UpdateAssociationType(ctx context.Context, h http.Header, id
 }
 
 // CreateAssociationType create association kind by params
-func (a *apiServer) CreateAssociationType(ctx context.Context, h http.Header, params metadata.AssociationKind) (
-	*metadata.RspID, error) {
+func (a *apiServer) CreateManyAssociationType(ctx context.Context, h http.Header,
+	params metadata.CreateManyAssociationKind) (*metadata.CreateManyDataResult, error) {
 
 	var asstRespoense struct {
 		metadata.BaseResp `json:",inline"`
-		Data              metadata.RspID `json:"data"`
+		Data              metadata.CreateManyDataResult `json:"data"`
 	}
 
-	subPath := "/create/associationtype"
+	subPath := "/createmany/associationtype"
 
 	err := a.client.Post().
 		WithContext(ctx).

@@ -87,9 +87,10 @@ type ApiServerClientInterface interface {
 		error)
 	SearchAssociationType(ctx context.Context, h http.Header, params metadata.SearchAssociationTypeRequest) (
 		*metadata.SearchAssociationType, error)
-	UpdateAssociationType(ctx context.Context, h http.Header, id int64,
-		params metadata.UpdateAssociationTypeRequest) error
-	CreateAssociationType(ctx context.Context, h http.Header, params metadata.AssociationKind) (*metadata.RspID, error)
+	UpdateManyAssociationType(ctx context.Context, h http.Header,
+		params metadata.UpdateManyAssociationTypeRequest) error
+	CreateManyAssociationType(ctx context.Context, h http.Header, params metadata.CreateManyAssociationKind) (
+		*metadata.CreateManyDataResult, error)
 	CreateManyObject(ctx context.Context, h http.Header, params metadata.ImportObjects) ([]metadata.Object, error)
 }
 

@@ -440,6 +440,14 @@ func (o *AsstWithAsstObjInfo) Validate(objID string) errors.RawErrorInfo {
 		}
 	}
 
+	if o.AsstKindID == common.AssociationKindMainline {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail,
+			Args: []interface{}{common.AssociationKindIDField + " is not allowed as " +
+				common.AssociationKindMainline},
+		}
+	}
+
 	if len(o.Mapping) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrWebVerifyYamlFail,
@@ -452,6 +460,6 @@ func (o *AsstWithAsstObjInfo) Validate(objID string) errors.RawErrorInfo {
 
 // TotalObjectInfo total object with it's info and total asstkind info of object association's asst kind
 type TotalObjectInfo struct {
-	Objcet map[string]mapstr.MapStr `json:"object"`
-	Asst   []mapstr.MapStr          `json:"asst_kind"`
+	Object map[string]interface{} `json:"object"`
+	Asst   []mapstr.MapStr        `json:"asst_kind"`
 }
