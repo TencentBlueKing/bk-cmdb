@@ -25,7 +25,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/cryptor"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -247,25 +246,16 @@ func (lgc *Logics) BuildExportYaml(header http.Header, expiration int64, data in
 	exportType string) ([]byte, error) {
 
 	rid := util.GetHTTPCCRequestID(header)
-	user := util.GetUser(header)
-	nowTime := time.Now()
+	nowTime := time.Now().Local()
 
-	expirationTime := nowTime.Unix()
+	expirationTime := nowTime.UnixNano()
 	if expiration != 0 {
-		expirationTime = nowTime.AddDate(0, 0, int(expiration)).Unix()
-	}
-
-	aesEncrpytor := cryptor.NewAesEncrpytor(fmt.Sprintf("export%d", nowTime.Unix()))
-	aesExpiration, err := aesEncrpytor.Encrypt(fmt.Sprint(expirationTime))
-	if err != nil {
-		blog.Errorf("encrypt expiration time failed, err: %v, rid: %s", err, rid)
-		return nil, err
+		expirationTime = nowTime.AddDate(0, 0, int(expiration)).UnixNano()
 	}
 
 	exportInfo := mapstr.MapStr{
-		"creator":     user,
-		"create_time": nowTime.Unix(),
-		"expire_time": aesExpiration,
+		"create_time": nowTime.UnixNano(),
+		"expire_time": expirationTime,
 		exportType:    data,
 	}
 

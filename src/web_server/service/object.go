@@ -545,6 +545,11 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 			continue
 		}
 
+		// file name start with '.' means hidden file, ignore
+		if strings.HasPrefix(item.FileInfo().Name(), ".") {
+			continue
+		}
+
 		if err := s.Logics.GetDataFromZipFile(c.Request.Header, item, cond.Password, result); err != nil {
 			var msg string
 			if strings.Contains(err.Error(), "invalid password") || strings.Contains(err.Error(), "no password") {

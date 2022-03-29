@@ -13,12 +13,10 @@
 package metadata
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
 	"configcenter/src/common"
-	"configcenter/src/common/cryptor"
 	"configcenter/src/common/errors"
 
 	"github.com/gin-gonic/gin"
@@ -171,14 +169,13 @@ type BatchImportObject struct {
 
 // YamlHeader yaml's common header
 type YamlHeader struct {
-	Creator    string `json:"creator" yaml:"creator"`
-	ExpireTime string `json:"expire_time" yaml:"expire_time"`
-	CreateTime int64  `json:"create_time" yaml:"create_time"`
+	ExpireTime int64 `json:"expire_time" yaml:"expire_time"`
+	CreateTime int64 `json:"create_time" yaml:"create_time"`
 }
 
 // Validate validate yaml common field
 func (o *YamlHeader) Validate() errors.RawErrorInfo {
-	if len(o.ExpireTime) == 0 {
+	if o.ExpireTime == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrWebVerifyYamlFail,
 			Args:    []interface{}{"expire_time not found"},
@@ -192,16 +189,7 @@ func (o *YamlHeader) Validate() errors.RawErrorInfo {
 		}
 	}
 
-	timeCryptor := cryptor.NewAesEncrpytor(fmt.Sprintf("export%v", o.CreateTime))
-	timeDecrypt, err := timeCryptor.Decrypt(fmt.Sprint(o.ExpireTime))
-	if err != nil {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrWebVerifyYamlFail,
-			Args:    []interface{}{err.Error()},
-		}
-	}
-
-	if timeDecrypt < fmt.Sprintf("%d", time.Now().Unix()) && timeDecrypt != fmt.Sprint(o.CreateTime) {
+	if (o.ExpireTime != o.CreateTime && o.ExpireTime < time.Now().Local().UnixNano()) || o.ExpireTime < o.CreateTime {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrWebVerifyYamlFail,
 			Args:    []interface{}{"expire time incorrect"},

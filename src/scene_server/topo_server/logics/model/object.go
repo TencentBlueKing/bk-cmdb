@@ -975,7 +975,6 @@ func (o *object) SearchObjectsWithTotalInfo(kit *rest.Kit, ids, excludedAsst []i
 			common.BKObjNameField:          obj.ObjectName,
 			common.BKObjIconField:          obj.ObjIcon,
 			common.BKClassificationIDField: obj.ObjCls,
-			common.BKCreator:               obj.Creator,
 			common.BKIsPre:                 obj.IsPre,
 		}
 		objInfo[common.BKClassificationNameField] = clsMap[obj.ObjCls]
@@ -1053,6 +1052,7 @@ func (o *object) searchObjAttrByCondition(kit *rest.Kit, cond metadata.QueryCond
 			delete(attrInfo, common.LastTimeField)
 			delete(attrInfo, common.BkSupplierAccount)
 			delete(attrInfo, common.BKAppIDField)
+			delete(attrInfo, common.CreatorField)
 			result[objID] = append(result[objID], attrInfo)
 		}
 	}
