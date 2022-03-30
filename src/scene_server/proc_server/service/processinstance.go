@@ -39,7 +39,7 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 	}
 
 	if len(input.Processes) == 0 {
-		ctx.RespEntity([]int64{})
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsIsInvalid, "not set processes"))
 		blog.Infof("no process to create, return")
 		return
 	}
@@ -48,7 +48,7 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 		return
 	}
 
-	var processIDs []int64
+	processIDs := make([]int64, 0)
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		processIDs, err = ps.createProcessInstances(ctx, input)

@@ -76,7 +76,6 @@ var _ = Describe("service template test", func() {
 				"page": map[string]interface{}{
 					"start": 0,
 					"limit": 50,
-					"sort":  "",
 				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
@@ -148,7 +147,6 @@ var _ = Describe("service template test", func() {
 				"page": map[string]interface{}{
 					"start": 0,
 					"limit": 50,
-					"sort":  "",
 				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
@@ -316,7 +314,6 @@ var _ = Describe("service template test", func() {
 				"page": map[string]interface{}{
 					"start": 0,
 					"limit": 50,
-					"sort":  "",
 				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
@@ -642,7 +639,6 @@ var _ = Describe("service template test", func() {
 				"page": map[string]interface{}{
 					"start": 0,
 					"limit": 50,
-					"sort":  "",
 				},
 			}
 			rsp, err := serviceClient.SearchServiceInstanceBySetTemplate(context.Background(), strconv.FormatInt(bizId, 10), header, input)
@@ -838,7 +834,6 @@ var _ = Describe("service template test", func() {
 				"page": map[string]interface{}{
 					"start": 0,
 					"limit": 50,
-					"sort":  "",
 				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
@@ -922,7 +917,6 @@ var _ = Describe("service template test", func() {
 				"page": map[string]interface{}{
 					"start": 0,
 					"limit": 50,
-					"sort":  "",
 				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
@@ -942,7 +936,6 @@ var _ = Describe("service template test", func() {
 				"page": map[string]interface{}{
 					"start": 0,
 					"limit": 50,
-					"sort":  "",
 				},
 			}
 			rsp, err := serviceClient.DeleteServiceInstance(context.Background(), header, input)
