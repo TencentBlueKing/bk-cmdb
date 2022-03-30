@@ -493,8 +493,6 @@ kafka:
 tls:
   # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
   insecureSkipVerify: true
-  # 服务端是否校验客户端证书, bool值, true为校验，false为不校验
-  requireAndVerifyClientCert: false
   # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
   certFile:
   # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key

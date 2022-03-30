@@ -75,11 +75,10 @@ func ListenAndServe(c Server, svcDisc ServiceRegisterInterface, cancel context.C
 		return nil
 	}
 
-	tlsC, err := ssl.ServerTLSConf(c.TLS.CAFile,
+	tlsC, err := ssl.ServerTLSVerifyClient(c.TLS.CAFile,
 		c.TLS.CertFile,
 		c.TLS.KeyFile,
-		c.TLS.Password,
-		c.TLS.RequireAndVerifyClientCert)
+		c.TLS.Password)
 	if err != nil {
 		return fmt.Errorf("generate tls config failed. err: %v", err)
 	}

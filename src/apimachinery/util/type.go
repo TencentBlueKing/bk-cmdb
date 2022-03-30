@@ -20,7 +20,6 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/flowctrl"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/ssl"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -69,8 +68,6 @@ type TLSClientConfig struct {
 	CAFile string
 	// the password to decrypt the certificate
 	Password string
-	// RequireAndVerifyClientCert indicates that a client certificate should be requested
-	RequireAndVerifyClientCert bool
 }
 
 // NewTLSClientConfigFromConfig new config about tls client config
@@ -104,18 +101,6 @@ func NewTLSClientConfigFromConfig(prefix string) (TLSClientConfig, error) {
 	if val, err := cc.String(passwordKey); err == nil {
 		tlsConfig.Password = val
 	}
-
-	needClientCert := fmt.Sprintf("%s.requireAndVerifyClientCert", prefix)
-	if !cc.IsExist(needClientCert) {
-		return tlsConfig, nil
-	}
-
-	requireAndVerifyClientCert, err := cc.Bool(needClientCert)
-	if err != nil {
-		blog.Errorf("get config %s error, err: %v", needClientCert, err)
-		return TLSClientConfig{}, err
-	}
-	tlsConfig.RequireAndVerifyClientCert = requireAndVerifyClientCert
 
 	return tlsConfig, nil
 }

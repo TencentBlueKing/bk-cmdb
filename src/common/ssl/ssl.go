@@ -60,30 +60,8 @@ func ClientTLSConfVerity(caFile, certFile, keyFile, passwd string) (*tls.Config,
 	return conf, nil
 }
 
-// ServerTLSConf return server tls config
-func ServerTLSConf(caFile, certFile, keyFile, passwd string, requireAndVerifyClientCert bool) (*tls.Config, error) {
-	if !requireAndVerifyClientCert {
-		return serverTLSConf(certFile, keyFile, passwd)
-	}
-
-	return serverTLSVerifyClient(caFile, certFile, keyFile, passwd)
-}
-
-func serverTLSConf(certFile, keyFile, passwd string) (*tls.Config, error) {
-	cert, err := loadCertificates(certFile, keyFile, passwd)
-	if err != nil {
-		return nil, err
-	}
-
-	conf := &tls.Config{
-		Certificates: []tls.Certificate{*cert},
-	}
-
-	return conf, nil
-}
-
 // ServerTLSVerifyClient server tls verify client
-func serverTLSVerifyClient(caFile, certFile, keyFile, passwd string) (*tls.Config, error) {
+func ServerTLSVerifyClient(caFile, certFile, keyFile, passwd string) (*tls.Config, error) {
 	caPool, err := loadCa(caFile)
 	if err != nil {
 		return nil, err
