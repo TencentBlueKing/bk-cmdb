@@ -1715,7 +1715,7 @@ func (lgc *Logics) buildFilterIDs(kit *rest.Kit, bizID int64, params metadata.Fi
 		if err != nil {
 			blog.Errorf("object[%s] filter %v is invalid, key: %s, err: %s, rid: %s", objFilter.ObjectID,
 				objFilter.Filter, key, err, kit.Rid)
-			return nil, true, err
+			return nil, false, err
 		}
 		objectFilter[objFilter.ObjectID] = mainlineFilter
 	}
@@ -1725,7 +1725,7 @@ func (lgc *Logics) buildFilterIDs(kit *rest.Kit, bizID int64, params metadata.Fi
 		if err != nil {
 			blog.Errorf("set filter %v is invalid, key: %s, err: %s, rid: %s", params.SetPropertyFilter, key, err,
 				kit.Rid)
-			return nil, true, err
+			return nil, false, err
 		}
 		objectFilter[common.BKInnerObjIDSet] = setFilter
 	}
@@ -1735,7 +1735,7 @@ func (lgc *Logics) buildFilterIDs(kit *rest.Kit, bizID int64, params metadata.Fi
 		if err != nil {
 			blog.Errorf("module filter %v is invalid, key: %s, err: %s, rid: %s", params.ModulePropertyFilter, key, err,
 				kit.Rid)
-			return nil, true, err
+			return nil, false, err
 		}
 		objectFilter[common.BKInnerObjIDModule] = moduleFilter
 	}
