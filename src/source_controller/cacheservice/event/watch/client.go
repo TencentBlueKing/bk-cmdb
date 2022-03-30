@@ -54,8 +54,12 @@ func (c *Client) getLatestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNode,
 		common.BKClusterTimeField: map[string]interface{}{
 			common.BKDBGTE: metadata.Time{Time: time.Now().Add(-time.Duration(key.TTLSeconds()) * time.Second).UTC()},
 		},
-		// filters out the previous version where sub resource is string type // TODO remove this
-		common.BKSubResourceField: map[string]interface{}{common.BKDBType: "array"},
+	}
+
+	// filters out the previous version where sub resource is string type // TODO remove this
+	if key.Collection() == common.BKTableNameBaseInst ||
+		key.Collection() == common.BKTableNameMainlineInstance {
+		filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBType: "array"}
 	}
 
 	node := new(watch.ChainNode)
@@ -76,8 +80,12 @@ func (c *Client) getEarliestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNod
 		common.BKClusterTimeField: map[string]interface{}{
 			common.BKDBGTE: metadata.Time{Time: time.Now().Add(-time.Duration(key.TTLSeconds()) * time.Second).UTC()},
 		},
-		// filters out the previous version where sub resource is string type // TODO remove this
-		common.BKSubResourceField: map[string]interface{}{common.BKDBType: "array"},
+	}
+
+	// filters out the previous version where sub resource is string type // TODO remove this
+	if key.Collection() == common.BKTableNameBaseInst ||
+		key.Collection() == common.BKTableNameMainlineInstance {
+		filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBType: "array"}
 	}
 
 	node := new(watch.ChainNode)
@@ -97,33 +105,47 @@ func (c *Client) getEarliestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNod
 func (c *Client) getEventDetail(kit *rest.Kit, node *watch.ChainNode, fields []string, key event.Key) (*string,
 	bool, error) {
 
-	if key.Collection() == event.HostIdentityKey.Collection() {
+	coll := key.Collection()
+	switch coll {
+	case event.HostIdentityKey.Collection():
 		details, err := c.getHostIdentityEventDetailWithNodes(kit, []*watch.ChainNode{node})
 		if err != nil {
 			return nil, false, err
 		}
+		return getFirstEventDetail(details)
 
-		if len(details) == 0 {
-			empty := ""
-			return &empty, false, nil
-		}
-
-		js, err := json.Marshal(details[0].Detail)
+	case event.BizSetRelationKey.Collection():
+		details, err := c.getBizSetRelationEventDetailWithNodes(kit, []*watch.ChainNode{node})
 		if err != nil {
 			return nil, false, err
 		}
-		str := string(js)
-		return &str, true, nil
+		return getFirstEventDetail(details)
+
+	default:
+		detail, err := c.getEventDetailFromRedis(kit, node.Cursor, fields, key)
+		if err == nil {
+			return detail, true, nil
+		}
+
+		blog.Errorf("get event detail from redis failed, will get from db directly, err: %v, rid: %s", err, kit.Rid)
+
+		return c.getEventDetailFromMongo(kit, node, fields, key)
+	}
+}
+
+// getFirstEventDetail get first event detail from event details, used to parse batch event detail result of one event
+func getFirstEventDetail(details []*watch.WatchEventDetail) (*string, bool, error) {
+	if len(details) == 0 {
+		empty := ""
+		return &empty, false, nil
 	}
 
-	detail, err := c.getEventDetailFromRedis(kit, node.Cursor, fields, key)
-	if err == nil {
-		return detail, true, nil
+	js, err := json.Marshal(details[0].Detail)
+	if err != nil {
+		return nil, false, err
 	}
-
-	blog.Errorf("get event detail from redis failed, will get from db directly, err: %v, rid: %s", err, kit.Rid)
-
-	return c.getEventDetailFromMongo(kit, node, fields, key)
+	str := string(js)
+	return &str, true, nil
 }
 
 // getEventDetailFromRedis get event detail with the needed fields by cursor from redis
@@ -293,8 +315,12 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, opts *searchFollo
 		common.BKClusterTimeField: map[string]interface{}{
 			common.BKDBGTE: metadata.Time{Time: time.Now().Add(-time.Duration(opts.key.TTLSeconds()) * time.Second).UTC()},
 		},
-		// filters out the previous version where sub resource is string type // TODO remove this
-		common.BKSubResourceField: map[string]interface{}{common.BKDBType: "array"},
+	}
+
+	// filters out the previous version where sub resource is string type // TODO remove this
+	if opts.key.Collection() == common.BKTableNameBaseInst ||
+		opts.key.Collection() == common.BKTableNameMainlineInstance {
+		filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBType: "array"}
 	}
 
 	node := new(watch.ChainNode)
@@ -341,29 +367,7 @@ func (c *Client) getLastEventID(kit *rest.Kit, key event.Key) (uint64, error) {
 		"_id": key.Collection(),
 	}
 
-	if key.Collection() == event.HostIdentityKey.Collection() {
-		// host identity is different with the other kinds of event
-		data := make(map[string]watch.LastChainNodeData)
-		err := c.watchDB.Table(common.BKTableNameWatchToken).Find(filter).One(kit.Ctx, &data)
-		if err != nil {
-			if !c.watchDB.IsNotFoundError(err) {
-				blog.ErrorJSON("get last watch id failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
-				return 0, err
-			}
-			return 0, nil
-		}
-
-		// find the max event id in all types of event ids.
-		max := uint64(0)
-		for _, node := range data {
-			if node.ID > max {
-				max = node.ID
-			}
-		}
-
-		return max, nil
-	}
-
+	// host identifier event can use this logic too, since we've added an extra field of last id and cursor in it
 	data := new(watch.LastChainNodeData)
 	err := c.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKFieldID).One(kit.Ctx, data)
 	if err != nil {

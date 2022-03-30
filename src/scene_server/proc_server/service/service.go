@@ -31,6 +31,7 @@ import (
 	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/thirdparty/esbserver"
 	"configcenter/src/thirdparty/esbserver/esbutil"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -61,6 +62,9 @@ func (ps *ProcServer) WebService() *restful.Container {
 
 	ps.newProcessService(api)
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
+
 	container.Add(api)
 
 	// common api
@@ -157,6 +161,53 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	// task
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/service_instance/task",
 		Handler: ps.DoSyncServiceInstanceTask})
+
+	// search process related resources by biz set, with the same logic of corresponding biz interface, **only for ui**
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}/service_template/sync_status",
+		Handler: ps.GetServiceTemplateSyncStatus,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/biz_set/{bk_biz_set_id}/proc_template",
+		Handler: ps.ListProcessTemplate,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance",
+		Handler: ps.SearchServiceInstancesInModuleWeb,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/biz_set/{bk_biz_set_id}/service_instance/labels/aggregation",
+		Handler: ps.ServiceInstanceLabelsAggregation,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/biz_set/{bk_biz_set_id}/process_instance/name_ids",
+		Handler: ps.ListProcessInstancesNameIDsInModule,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/biz_set/{bk_biz_set_id}/process_instance",
+		Handler: ps.ListProcessInstances,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/biz_set/{bk_biz_set_id}/process_instance/detail/by_ids",
+		Handler: ps.ListProcessInstancesDetailsByIDs,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/find/proc/biz_set/{bk_biz_set_id}/proc_template/id/{processTemplateID}",
+		Handler: ps.GetProcessTemplate,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance/with_host",
+		Handler: ps.ListServiceInstancesWithHostWeb,
+	})
 
 	utility.AddToRestfulWebService(web)
 }

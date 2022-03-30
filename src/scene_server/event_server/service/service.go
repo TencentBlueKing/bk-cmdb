@@ -17,6 +17,7 @@ import (
 	"net/http"
 
 	"configcenter/src/ac"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -26,8 +27,10 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/restfulservice"
+	"configcenter/src/scene_server/event_server/sync/hostidentifier"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -37,9 +40,13 @@ type Service struct {
 	ctx    context.Context
 	engine *backbone.Engine
 
-	db         dal.RDB
-	cache      redis.Client
-	authorizer ac.AuthorizeInterface
+	db          dal.RDB
+	cache       redis.Client
+	authorizer  ac.AuthorizeInterface
+	AuthManager *extensions.AuthManager
+
+	// SyncData is sync host identifier operator
+	SyncData *hostidentifier.HostIdentifier
 }
 
 // NewService creates a new Service object.
@@ -64,6 +71,8 @@ func (s *Service) SetAuthorizer(authorizer ac.AuthorizeInterface) {
 // WebService setups a new restful web service.
 func (s *Service) WebService() *restful.Container {
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
 
 	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
@@ -96,6 +105,7 @@ func (s *Service) initService(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/watch/resource/{resource}", Handler: s.WatchEvent})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/host_identifier", Handler: s.SyncHostIdentifier})
 
 	utility.AddToRestfulWebService(web)
 

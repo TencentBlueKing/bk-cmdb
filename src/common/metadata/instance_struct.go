@@ -35,3 +35,15 @@ type SetInstanceData struct {
 	Count int       `json:"count"`
 	Info  []SetInst `json:"info"`
 }
+
+// BizSetInstanceResponse 业务集查询接口响应，只有业务集的企业版本部分属性，使用前请注意
+type BizSetInstanceResponse struct {
+	BaseResp `json:",inline"`
+	Data     BizSetInstanceData `json:"data"`
+}
+
+// BizSetInstanceData 业务集查询接口响应数据，只有业务集的企业版本部分属性，使用前请注意
+type BizSetInstanceData struct {
+	Count int          `json:"count"`
+	Info  []BizSetInst `json:"info"`
+}

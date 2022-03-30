@@ -339,6 +339,8 @@ cloudServer:
 #datacollection专属配置
 datacollection:
   hostsnap:
+    # 主机静态数据采集模式，将数据导入kafka或者redis，可选值是 kafka、redis，默认值为redis（仅用于新插件bkmonitorbeat）
+    reportMode: redis
     # 当主机快照数据属性,如cpu,bk_cpu_mhz,bk_disk,bk_mem这些数值型数据变动的范围大于该配置的值时，进行db数据的更新，默认值为10%，最小值为5%，以百分比为单位
     changeRangePercent: 10
     # 用于设置主机快照key在redis中的过期时间，该时间会有上下50%的波动，当key存在时，同一id的主机数据不会更新，默认值为10分钟，最小值为5分钟，以分钟为单位
@@ -367,6 +369,82 @@ monitor:
     rateLimiter:
       qps: 10
       burst: 20
+
+# 日志平台openTelemetry跟踪链接入相关配置
+openTelemetry:
+  # 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
+  enable: false
+  # 日志平台openTelemetry跟踪链功能的自定义上报服务地址
+  endpoint:
+  # 日志平台openTelemetry跟踪链功能的上报data_id
+  bkDataID:
+
+# eventServer相关配置
+eventServer:
+  # 下发主机身份相关配置
+  hostIdentifier:
+    # 是否开始下发主机身份功能, 有两个值，true和false，当处于true时，开启下发主机身份功能，false时，关闭该功能
+    startUp: false
+    # 每隔多少个小时进行一次全量主机身份批量的同步操作，整数值，单位为小时，注：刚启动服务时，会等一个周期后再进行全量同步操作
+    batchSyncIntervalHours: 6
+    # 用于设置推送主机身份请求gse的taskServer能力，起到限流的作用。qps的默认值为200, 代表每秒最多推送的主机数量，burst的默认值为200
+    rateLimiter:
+      qps: 200
+      burst: 200
+    # 下发主机身份文件名
+    fileName: "hostid"
+    # 当下发主机为linux操作系统时，相关配置
+    linux:
+      # 下发主机身份文件路径
+      filePath: "/var/lib/gse/host"
+      # 下发主机身份文件所有者
+      fileOwner: "root"
+      # 下发主机身份文件权限值
+      filePrivilege: 644
+    # 当下发主机为windows操作系统时，相关配置
+    windows:
+      # 下发主机身份文件路径
+      filePath: "c:/gse/data/host"
+      # 下发主机身份文件所有者
+      fileOwner: "root"
+      # 下发主机身份文件权限值
+      filePrivilege: 644
+
+# 直接调用gse服务相关配置
+gse:
+  # 调用gse的apiServer服务时相关配置
+  apiServer:
+    # 此配置为数组类型，可配置连接gse的apiServer的多个host:port格式的值，去建立连接
+    endpoints:
+      # 证书相关信息
+    insecureSkipVerify: true
+    certFile:
+    keyFile:
+    caFile:
+    password:
+  # 调用gse的taskServer服务时相关配置
+  taskServer:
+    # 此配置为数组类型，可配置连接gse的taskServer的多个host:port格式的值，去建立连接
+    endpoints:
+    # 证书相关信息
+    insecureSkipVerify: true
+    certFile:
+    keyFile:
+    caFile:
+    password:
+
+# 当主机静态数据采集模式为kafka时，datacollection处理插件bkmonitorbeat采集上来的主机静态数据，选择kafka作为数据导入组件时的相关配置
+# 此配置与migrate.yaml文件中的reportMode相关联
+kafka:
+  snap:
+    brokers:
+    # groupID为固定值，请勿随便修改，修改后会导致重复消费过去的数据
+    groupID: bk_cmdb_snapshot_group
+    # partition数量固定为1，保证消息的顺序性
+    partition: 1
+    # 安全协议SASL_PLAINTEXT，SASL机制SCRAM-SHA-512的账号、密码信息
+    user:
+    password:
     '''
 
     template = FileTemplate(common_file_template_str)

@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"configcenter/src/common/ssl"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 )
 
 func NewClient(c *TLSClientConfig) (*http.Client, error) {
@@ -46,8 +47,12 @@ func NewClient(c *TLSClientConfig) (*http.Client, error) {
 		ResponseHeaderTimeout: 10 * time.Minute,
 	}
 
-	client := new(http.Client)
-	client.Transport = transport
+	client := &http.Client{
+		Transport: transport,
+	}
+
+	opentelemetry.WrapperTraceClient(client)
+
 	return client, nil
 }
 

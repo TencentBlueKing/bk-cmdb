@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/mapstr"
 
 	"github.com/mitchellh/mapstructure"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type RuleGroup struct {
@@ -101,6 +102,29 @@ func (qf *QueryFilter) UnmarshalJSON(raw []byte) error {
 	rule, errKey, err := ParseRuleFromBytes(raw)
 	if err != nil {
 		return fmt.Errorf("UnmarshalJSON failed, key: %s, err: %+v", errKey, err)
+	}
+	qf.Rule = rule
+	return nil
+}
+
+// MarshalBSON marshal query filter into bson value
+func (qf *QueryFilter) MarshalBSON() ([]byte, error) {
+	if qf.Rule != nil {
+		return bson.Marshal(qf.Rule)
+	}
+	return make([]byte, 0), nil
+}
+
+// UnmarshalBSON unmarshal query filter from bson value by first parse bson into map and then parse map into filter
+func (qf *QueryFilter) UnmarshalBSON(raw []byte) error {
+	data := make(map[string]interface{})
+	if err := bson.Unmarshal(raw, &data); err != nil {
+		return err
+	}
+
+	rule, errKey, err := ParseRule(data)
+	if err != nil {
+		return fmt.Errorf("parse rule failed, key: %s, err: %v", errKey, err)
 	}
 	qf.Rule = rule
 	return nil

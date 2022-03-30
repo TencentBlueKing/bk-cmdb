@@ -299,7 +299,7 @@ type ProcessOperation interface {
 	AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostIDs []int64, moduleIDs []int64) errors.CCErrorCoder
 	RemoveTemplateBindingOnModule(kit *rest.Kit, moduleID int64) errors.CCErrorCoder
 	ConstructServiceInstanceName(kit *rest.Kit, instanceID int64, host map[string]interface{},
-		process *metadata.Process) errors.CCErrorCoder
+		process *metadata.Process) (string, errors.CCErrorCoder)
 	ReconstructServiceInstanceName(kit *rest.Kit, instanceID int64) errors.CCErrorCoder
 
 	// process instance relation
@@ -356,7 +356,7 @@ type HostApplyRuleOperation interface {
 		[]metadata.Module, errors.CCErrorCoder)
 	BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, option metadata.BatchCreateOrUpdateApplyRuleOption) (
 		metadata.BatchCreateOrUpdateHostApplyRuleResult, errors.CCErrorCoder)
-	RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (
+	RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relations []metadata.ModuleHost) (
 		metadata.MultipleHostApplyResult, errors.CCErrorCoder)
 }
 

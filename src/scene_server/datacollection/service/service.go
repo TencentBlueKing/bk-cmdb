@@ -28,6 +28,7 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/esbserver"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -84,6 +85,8 @@ func (s *Service) SetNetCollectCli(db redis.Client) {
 // WebService setups a new restful web service.
 func (s *Service) WebService() *restful.Container {
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
 
 	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {

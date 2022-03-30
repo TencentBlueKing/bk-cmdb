@@ -49,7 +49,8 @@ func (w *watchConf) addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().Int64Var(&w.startFrom, "start-from", 0, "unix time, where to start from, can be negative, "+
 		"which is means start from now-(start-from)")
 	cmd.PersistentFlags().StringVar(&w.resource, "rsc", "host", "the resource to watch, can be：host, host_relation, "+
-		"biz, set, module, process, object_instance")
+		"biz, set, module, process, process_instance_relation, object_instance, mainline_instance, inst_asst, "+
+		"host_identifier, biz_set, biz_set_relation")
 	cmd.PersistentFlags().StringSliceVar(&w.fields, "fields", nil, "the resource fields to return")
 	cmd.PersistentFlags().StringVar(&w.filter, "filter", "", "a k:v pair to filter events, k and v is separate with "+
 		"':' , multiple kv is separated with ';', like k1:v1;k2:v2")

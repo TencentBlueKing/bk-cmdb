@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -54,6 +55,34 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 		processIDs, err = ps.createProcessInstances(ctx, input)
 		if err != nil {
 			blog.Errorf("create process instance failed, serviceInstanceID: %d, input: %+v, err: %+v", input.ServiceInstanceID, input, err)
+			return err
+		}
+
+		// generate and save audit log after processes are created
+		audit := auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
+		if err = audit.WithServiceInstanceByIDs(ctx.Kit, input.BizID, []int64{input.ServiceInstanceID},
+			[]string{common.BKFieldID}); err != nil {
+			return err
+		}
+
+		relations := make([]metadata.ProcessInstanceRelation, len(processIDs))
+		for index, procID := range processIDs {
+			relations[index] = metadata.ProcessInstanceRelation{
+				BizID:             input.BizID,
+				ProcessID:         procID,
+				ServiceInstanceID: input.ServiceInstanceID,
+			}
+		}
+
+		genProcAuditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
+		err = audit.WithProcByRelations(genProcAuditParam, relations, nil)
+		if err != nil {
+			return err
+		}
+
+		genAuditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
+		auditLogs := audit.GenerateAuditLog(genAuditParam)
+		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
 			return err
 		}
 		return nil
@@ -151,6 +180,40 @@ func (ps *ProcServer) UpdateProcessInstancesByIDs(ctx *rest.Contexts) {
 		return
 	}
 
+	// generate audit log before processes are updated
+	relOpt := &metadata.ListProcessInstanceRelationOption{
+		BusinessID: input.BizID,
+		ProcessIDs: input.ProcessIDs,
+		Page:       metadata.BasePage{Limit: common.BKNoLimit},
+	}
+	relRes, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relOpt)
+	if err != nil {
+		blog.Errorf("get process relations failed, option: %+v, err: %v, rid: %s", relOpt, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	svcInstIDs := make([]int64, 0)
+	for _, relation := range relRes.Info {
+		svcInstIDs = append(svcInstIDs, relation.ServiceInstanceID)
+	}
+
+	audit := auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
+	if err = audit.WithServiceInstanceByIDs(ctx.Kit, input.BizID, svcInstIDs, []string{common.BKFieldID}); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate).
+		WithUpdateFields(input.UpdateData)
+	err = audit.WithProc(generateAuditParameter, processResult.Info, relRes.Info)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	auditLogs := audit.GenerateAuditLog(generateAuditParameter)
+
+	// parse update data and update the processes
 	raws := make([]map[string]interface{}, 0)
 	for _, process := range processResult.Info {
 		for k, v := range input.UpdateData {
@@ -174,6 +237,11 @@ func (ps *ProcServer) UpdateProcessInstancesByIDs(ctx *rest.Contexts) {
 		var err error
 		result, err = ps.updateProcessInstances(ctx, updateInput)
 		if err != nil {
+			return err
+		}
+
+		// save audit logs
+		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
 			return err
 		}
 		return nil
@@ -200,24 +268,112 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 
 	if len(input.Raw) > common.BKMaxUpdateOrCreatePageSize {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
-		return
-	}
-
-	var result []int64
-	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
-		result, err = ps.updateProcessInstances(ctx, input)
+		// generate audit log before processes are updated
+		auditLogs, err := ps.generateUpdateProcessAudit(ctx.Kit, input)
 		if err != nil {
-			return err
+			ctx.RespAutoError(err)
+			return
 		}
-		return nil
-	})
 
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
+		var result []int64
+		txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+			// update process instances
+			var err error
+			result, err = ps.updateProcessInstances(ctx, input)
+			if err != nil {
+				return err
+			}
+
+			// save audit log
+			audit := auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
+			if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+				return err
+			}
+			return nil
+		})
+
+		if txnErr != nil {
+			ctx.RespAutoError(txnErr)
+			return
+		}
+		ctx.RespEntity(result)
 	}
-	ctx.RespEntity(result)
+}
+
+// generateUpdateProcessAudit generate audit logs for process update operation
+func (ps *ProcServer) generateUpdateProcessAudit(kit *rest.Kit, input metadata.UpdateRawProcessInstanceInput) (
+	[]metadata.AuditLog, error) {
+
+	// generate audit log before processes are updated
+	// get process ids
+	procIDs := make([]int64, 0)
+	procMap := make(map[int64]mapstr.MapStr)
+	for _, proc := range input.Raw {
+		procID, err := util.GetInt64ByInterface(proc[common.BKProcessIDField])
+		if err != nil {
+			blog.Errorf("parse process(%+v) id failed, err: %v, rid: %s", proc, err, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessIDField)
+		}
+		procIDs = append(procIDs, procID)
+		procMap[procID] = proc
+	}
+
+	// get process relations, then get service instance ids by relations, set service instance data in audit logs
+	relOpt := &metadata.ListProcessInstanceRelationOption{
+		BusinessID: input.BizID,
+		ProcessIDs: procIDs,
+		Page:       metadata.BasePage{Limit: common.BKNoLimit},
+	}
+	relRes, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(kit.Ctx, kit.Header, relOpt)
+	if err != nil {
+		blog.Errorf("get process relations failed, option: %+v, err: %v, rid: %s", relOpt, err, kit.Rid)
+		return nil, err
+	}
+
+	svcInstIDs := make([]int64, 0)
+	procRelationMap := make(map[int64]metadata.ProcessInstanceRelation)
+	for _, relation := range relRes.Info {
+		svcInstIDs = append(svcInstIDs, relation.ServiceInstanceID)
+		procRelationMap[relation.ProcessID] = relation
+	}
+
+	audit := auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
+	if err = audit.WithServiceInstanceByIDs(kit, input.BizID, svcInstIDs, []string{common.BKFieldID}); err != nil {
+		return nil, err
+	}
+
+	// get process data before updating, generate audit logs by these
+	procOpt := &metadata.QueryCondition{
+		Condition: map[string]interface{}{common.BKProcessIDField: map[string]interface{}{common.BKDBIN: procIDs}},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+	}
+	procRes, rawErr := ps.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
+		common.BKInnerObjIDProc, procOpt)
+	if rawErr != nil {
+		blog.Errorf("get process data failed, option: %+v, err: %v, rid: %s", procOpt, rawErr, kit.Rid)
+		return nil, rawErr
+	}
+
+	for _, data := range procRes.Info {
+		procID, err := util.GetInt64ByInterface(data[common.BKProcessIDField])
+		if err != nil {
+			blog.Errorf("parse previous process(%+v) id failed, err: %v, rid: %s", data, err, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessIDField)
+		}
+
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).
+			WithUpdateFields(procMap[procID])
+		err = audit.WithProc(generateAuditParameter, []mapstr.MapStr{data},
+			[]metadata.ProcessInstanceRelation{procRelationMap[procID]})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate)
+	auditLogs := audit.GenerateAuditLog(generateAuditParameter)
+
+	return auditLogs, nil
 }
 
 func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.UpdateRawProcessInstanceInput) ([]int64, errors.CCErrorCoder) {
@@ -514,7 +670,7 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 	}
 
 	if len(input.ProcessInstanceIDs) == 0 {
-		ctx.RespEntity([]int64{})
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcessIDField))
 		return
 	}
 
@@ -539,15 +695,11 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 	}
 
 	templateProcessIDs := make([]string, 0)
-	serviceInstanceExistsMap := make(map[int64]struct{}, 0)
 	for _, relation := range relations.Info {
 		// get processes that are created by template, can not delete them
 		if relation.ProcessTemplateID != common.ServiceTemplateIDNotSet {
 			templateProcessIDs = append(templateProcessIDs, strconv.FormatInt(relation.ProcessID, 10))
 		}
-
-		// get service instances to check if all of their processes are deleted
-		serviceInstanceExistsMap[relation.ServiceInstanceID] = struct{}{}
 	}
 
 	if len(templateProcessIDs) > 0 {
@@ -559,7 +711,7 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 	}
 
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		return ps.deleteProcessInstance(ctx.Kit, input.BizID, input.ProcessInstanceIDs, serviceInstanceExistsMap)
+		return ps.deleteProcessInstance(ctx.Kit, input.BizID, input.ProcessInstanceIDs, relations.Info)
 	})
 
 	if txnErr != nil {
@@ -570,10 +722,17 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 }
 
 func (ps *ProcServer) deleteProcessInstance(kit *rest.Kit, bizID int64, procIDs []int64,
-	svcInstExistsMap map[int64]struct{}) error {
+	relations []metadata.ProcessInstanceRelation) error {
 
 	if len(procIDs) == 0 {
 		return nil
+	}
+
+	// set process data for audit log before they are deleted
+	audit := auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
+	genAuditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+	if err := audit.WithProcByRelations(genAuditParam, relations, nil); err != nil {
+		return err
 	}
 
 	// delete process relations at the same time.
@@ -592,13 +751,82 @@ func (ps *ProcServer) deleteProcessInstance(kit *rest.Kit, bizID int64, procIDs 
 		return err
 	}
 
-	// get service instance to processes relations after processes are deleted to check if they have other processes
-	if len(svcInstExistsMap) == 0 {
+	// skip checking for service instance to delete or saving audit logs if no relation exists
+	if len(relations) == 0 {
 		return nil
 	}
+
+	updatedSvcInstIDs, delSvcInstIDs, err := ps.checkIfSvcInstNeedCascadeDelete(kit, bizID, relations)
+	if err != nil {
+		return err
+	}
+
+	// get service instances by ids for audit logs
+	serviceInstances, err := audit.GetSvcInstByIDs(kit, bizID, append(updatedSvcInstIDs, delSvcInstIDs...), nil)
+	if err != nil {
+		return err
+	}
+	svcInstMap := make(map[int64]metadata.ServiceInstance)
+	for _, svcInst := range serviceInstances {
+		svcInstMap[svcInst.ID] = svcInst
+	}
+
+	// generate audit logs for updated service instances
+	auditLogs := make([]metadata.AuditLog, 0)
+	if len(updatedSvcInstIDs) > 0 {
+		updatedServiceInstances := make([]metadata.ServiceInstance, len(updatedSvcInstIDs))
+		for index, svcInstID := range updatedSvcInstIDs {
+			updatedServiceInstances[index] = svcInstMap[svcInstID]
+		}
+		audit.WithServiceInstance(updatedServiceInstances)
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate)
+		auditLogs = append(auditLogs, audit.GenerateAuditLog(generateAuditParameter)...)
+	}
+
+	if len(delSvcInstIDs) > 0 {
+		// generate service instance audit log before they are deleted
+		deletedServiceInstances := make([]metadata.ServiceInstance, len(delSvcInstIDs))
+		for index, svcInstID := range delSvcInstIDs {
+			deletedServiceInstances[index] = svcInstMap[svcInstID]
+		}
+		audit.WithServiceInstance(deletedServiceInstances)
+		auditLogs = append(auditLogs, audit.GenerateAuditLog(genAuditParam)...)
+
+		// remove the service instances whose last process is deleted
+		deleteOption := &metadata.CoreDeleteServiceInstanceOption{
+			BizID:              bizID,
+			ServiceInstanceIDs: delSvcInstIDs,
+		}
+		err = ps.CoreAPI.CoreService().Process().DeleteServiceInstance(kit.Ctx, kit.Header, deleteOption)
+		if err != nil {
+			blog.Errorf("delete service instances: %+v failed, err: %v, rid: %s", delSvcInstIDs, err, kit.Rid)
+			return err
+		}
+	}
+
+	// save audit log
+	if err := audit.SaveAuditLog(kit, auditLogs...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// checkIfSvcInstNeedCascadeDelete returns to be updated and cascade deleted svc inst ids after processes are deleted
+func (ps *ProcServer) checkIfSvcInstNeedCascadeDelete(kit *rest.Kit, bizID int64,
+	relations []metadata.ProcessInstanceRelation) ([]int64, []int64, errors.CCErrorCoder) {
+
+	if len(relations) == 0 {
+		return make([]int64, 0), make([]int64, 0), nil
+	}
+
+	// get service instance to processes relations after processes are deleted to check if they have other processes
+	svcInstExistsMap := make(map[int64]struct{}, 0)
 	serviceInstanceIDs := make([]int64, 0)
-	for serviceInstanceID := range svcInstExistsMap {
-		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstanceID)
+	for _, relation := range relations {
+		// get service instances to check if all of their processes are deleted
+		svcInstExistsMap[relation.ServiceInstanceID] = struct{}{}
+		serviceInstanceIDs = append(serviceInstanceIDs, relation.ServiceInstanceID)
 	}
 
 	svcOpt := &metadata.ListProcessInstanceRelationOption{
@@ -608,38 +836,30 @@ func (ps *ProcServer) deleteProcessInstance(kit *rest.Kit, bizID int64, procIDs 
 			Limit: common.BKNoLimit,
 		},
 	}
-	svcRelations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(kit.Ctx, kit.Header,
-		svcOpt)
+	svcRelations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(kit.Ctx, kit.Header, svcOpt)
 	if err != nil {
 		blog.Errorf("list service relation failed, option: %#v, err: %v, rid: %s", svcOpt, err, kit.Rid)
-		return err
+		return nil, nil, err
 	}
 
 	// exclude those service instances that has other process instances
+	updatedSvcInstIDs := make([]int64, 0)
 	for _, relation := range svcRelations.Info {
-		delete(svcInstExistsMap, relation.ServiceInstanceID)
+		if _, exists := svcInstExistsMap[relation.ServiceInstanceID]; exists {
+			delete(svcInstExistsMap, relation.ServiceInstanceID)
+			updatedSvcInstIDs = append(updatedSvcInstIDs, relation.ServiceInstanceID)
+		}
 	}
+
 	if len(svcInstExistsMap) == 0 {
-		return nil
+		return updatedSvcInstIDs, make([]int64, 0), nil
 	}
 
 	delSvcInstIDs := make([]int64, 0)
 	for serviceInstanceID := range svcInstExistsMap {
 		delSvcInstIDs = append(delSvcInstIDs, serviceInstanceID)
 	}
-
-	// remove the service instances whose last process is deleted
-	deleteOption := &metadata.CoreDeleteServiceInstanceOption{
-		BizID:              bizID,
-		ServiceInstanceIDs: delSvcInstIDs,
-	}
-	err = ps.CoreAPI.CoreService().Process().DeleteServiceInstance(kit.Ctx, kit.Header, deleteOption)
-	if err != nil {
-		blog.Errorf("delete service instances: %+v failed, err: %v, rid: %s", delSvcInstIDs, err, kit.Rid)
-		return err
-	}
-
-	return nil
+	return updatedSvcInstIDs, delSvcInstIDs, nil
 }
 
 func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {

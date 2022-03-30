@@ -21,10 +21,11 @@
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelGroup') }">
               <bk-select style="width: 100%;" ref="groupSelector"
                 v-validate="'required'"
+                :searchable="true"
                 name="modelGroup"
                 :value="modelDialog.data.bk_classification_id"
                 :scroll-height="200">
-                <bk-option v-for="(option, index) in localClassifications"
+                <bk-option v-for="(option, index) in classifications"
                   :key="index"
                   :id="option.bk_classification_id"
                   :name="option.bk_classification_name">
@@ -47,7 +48,7 @@
                 name="modelId"
                 :placeholder="$t('请输入唯一标识')"
                 v-model.trim="modelDialog.data['bk_obj_id']"
-                v-validate="'required|modelId|length:115'">
+                v-validate="'required|modelId|length:115|reservedWord'">
               </bk-input>
               <p class="form-error" :title="errors.first('modelId')">{{errors.first('modelId')}}</p>
             </div>
@@ -130,11 +131,7 @@
     computed: {
       ...mapGetters('objectModelClassify', [
         'classifications'
-      ]),
-      localClassifications() {
-        const filterGroups = ['bk_biz_topo', 'bk_host_manage', 'bk_organization']
-        return this.classifications.filter(group => !filterGroups.includes(group.bk_classification_id))
-      }
+      ])
     },
     watch: {
       isShow(isShow) {

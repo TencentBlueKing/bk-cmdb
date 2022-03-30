@@ -22,4 +22,4 @@ export const language = locale
 
 export default i18n
 
-export const t = content => i18n.t(content)
+export const t = (content, ...rest) => i18n.t(content, ...rest)

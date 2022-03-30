@@ -61,34 +61,33 @@ func (s *Service) ImportObject(c *gin.Context) {
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-	header := c.Request.Header
 
 	file, err := c.FormFile("file")
-	if nil != err {
+	if err != nil {
 		msg := getReturnStr(common.CCErrWebFileNoFound, defErr.Error(common.CCErrWebFileNoFound).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
 	if err != nil {
-		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
+		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed,
+			defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/import/"
-	_, err = os.Stat(dir)
-	if nil != err {
+	if _, err = os.Stat(dir); err != nil {
 		blog.Warnf("os.Stat failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
 		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
 			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
 		}
 	}
 	filePath := fmt.Sprintf("%s/importinsts-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
-	err = c.SaveUploadedFile(file, filePath)
-	if nil != err {
-		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail, err.Error()).Error(), nil)
+	if err = c.SaveUploadedFile(file, filePath); err != nil {
+		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail,
+			err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
@@ -98,45 +97,45 @@ func (s *Service) ImportObject(c *gin.Context) {
 		}
 	}()
 	f, err := xlsx.OpenFile(filePath)
-	if nil != err {
-		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
+	if err != nil {
+		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail,
+			err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 
-	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, header, 3, false, defLang, modelBizID)
-	if 0 == len(attrItems) {
+	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, c.Request.Header, 3, false, defLang, modelBizID)
+	if len(attrItems) == 0 {
 		var msg string
-		if nil != err {
-			msg = getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(), nil)
+		if err != nil {
+			msg = getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
+				err.Error()).Error(), nil)
 		} else {
-			msg = getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, "").Error(), nil)
+			msg = getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
+				"").Error(), nil)
 		}
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	if 0 != len(errMsg) {
-		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, strings.Join(errMsg, ",")).Error(), common.KvMap{"err": errMsg})
+	if len(errMsg) != 0 {
+		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
+			strings.Join(errMsg, ",")).Error(), common.KvMap{"err": errMsg})
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 
 	logics.ConvAttrOption(attrItems)
 
-	params := map[string]interface{}{
-		objID: map[string]interface{}{
-			"attr": attrItems,
-		},
-	}
+	params := map[string]interface{}{objID: map[string]interface{}{"attr": attrItems}}
 
 	result, err := s.CoreAPI.ApiServer().AddObjectBatch(ctx, c.Request.Header, params)
-	if nil != err {
-		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed, "").Error(), nil)
+	if err != nil {
+		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed,
+			"").Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 	c.JSON(http.StatusOK, result)
-
 }
 
 func setExcelSubTitle(row *xlsx.Row) *xlsx.Row {

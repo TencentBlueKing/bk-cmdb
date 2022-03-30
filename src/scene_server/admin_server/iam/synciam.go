@@ -13,6 +13,7 @@
 package iam
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -21,9 +22,12 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	commonlgc "configcenter/src/common/logics"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/logics"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
 const (
@@ -37,6 +41,8 @@ const (
 type syncor struct {
 	// 同步周期
 	SyncIAMPeriodMinutes int
+	// db mongodb实例连接，用于判断是否数据库初始化已完成，防止和模型实例权限迁移的upgrader冲突
+	db dal.RDB
 }
 
 func NewSyncor() *syncor {
@@ -50,6 +56,11 @@ func (s *syncor) SetSyncIAMPeriod(periodMinutes int) {
 		s.SyncIAMPeriodMinutes = syncIAMPeriodMinutesDefault
 	}
 	blog.Infof("sync iam period is %d minutes", s.SyncIAMPeriodMinutes)
+}
+
+// SetDB set db
+func (s *syncor) SetDB(db dal.RDB) {
+	s.db = db
 }
 
 // newHeader 创建IAM同步需要的header
@@ -92,6 +103,23 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, lgc *logics.Logics) {
 	}
 	time.Sleep(time.Minute)
 
+	// 等待数据库初始化完成，防止和模型实例权限迁移的upgrader冲突
+	rid := util.GenerateRID()
+	for dbReady := false; !dbReady; {
+		var err error
+		dbReady, err = upgrader.DBReady(context.Background(), s.db)
+		if err != nil {
+			blog.Errorf("sync iam, check whether db initialization is complete failed, err: %v, rid: %s", err, rid)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		if !dbReady {
+			blog.Warnf("sync iam, but db initialization is not complete, rid: %s", rid)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+	}
+
 	for {
 		// new kit with a different rid, header
 		kit := newKit()
@@ -105,7 +133,7 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, lgc *logics.Logics) {
 
 		blog.Infof("start sync iam, rid: %s", kit.Rid)
 
-		objects, err := commonlgc.GetCustomObjects(kit.Ctx, kit.Header, lgc.CoreAPI)
+		objects, err := GetCustomObjects(kit.Ctx, s.db)
 		if err != nil {
 			blog.Errorf("sync iam failed, get custom objects err: %s ,rid: %s", err, kit.Rid)
 			time.Sleep(time.Duration(s.SyncIAMPeriodMinutes) * time.Minute)
@@ -121,4 +149,45 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, lgc *logics.Logics) {
 		blog.Infof("finish sync iam successfully, rid:%s", kit.Rid)
 		time.Sleep(time.Duration(s.SyncIAMPeriodMinutes) * time.Minute)
 	}
+}
+
+// GetCustomObjects get all custom objects(without inner and mainline objects that authorize separately)
+func GetCustomObjects(ctx context.Context, db dal.DB) ([]metadata.Object, error) {
+	// get mainline objects
+	associations := make([]metadata.Association, 0)
+	filter := mapstr.MapStr{
+		common.AssociationKindIDField: common.AssociationKindMainline,
+	}
+
+	err := db.Table(common.BKTableNameObjAsst).Find(filter).Fields(common.BKObjIDField).All(ctx, &associations)
+	if err != nil {
+		blog.Errorf("get mainline associations failed, err: %v", err)
+		return nil, err
+	}
+
+	// get all excluded objectIDs
+	excludeObjIDs := []string{
+		common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule,
+		common.BKInnerObjIDHost, common.BKInnerObjIDProc, common.BKInnerObjIDPlat,
+	}
+	for _, association := range associations {
+		if !metadata.IsCommon(association.ObjectID) {
+			excludeObjIDs = append(excludeObjIDs, association.ObjectID)
+		}
+	}
+
+	// get all custom objects
+	objects := make([]metadata.Object, 0)
+	condition := map[string]interface{}{
+		common.BKIsPre: false,
+		common.BKObjIDField: map[string]interface{}{
+			common.BKDBNIN: excludeObjIDs,
+		},
+	}
+	if err := db.Table(common.BKTableNameObjDes).Find(condition).All(ctx, &objects); err != nil {
+		blog.Errorf("get all custom objects failed, err: %v", err)
+		return nil, err
+	}
+
+	return objects, nil
 }

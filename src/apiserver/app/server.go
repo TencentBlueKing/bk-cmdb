@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -75,6 +76,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
+
+	opentelemetry.AddOtlpFilter(ctnr)
+
 	for _, item := range svc.WebServices() {
 		ctnr.Add(item)
 	}

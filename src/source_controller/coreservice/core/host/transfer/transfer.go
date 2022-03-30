@@ -14,6 +14,7 @@ package transfer
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
@@ -22,10 +23,12 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/thirdparty/hooks"
 )
 
 type genericTransfer struct {
-	dependent OperationDependence
+	dependent           OperationDependence
+	hostApplyDependence HostApplyRuleDependence
 
 	// depend parameter
 	moduleIDArr []int64
@@ -48,13 +51,10 @@ type genericTransfer struct {
 	moduleIDSetIDMap map[int64]int64
 }
 
-// validParameter valid parameter legal
+// ValidParameter valid if transfer host parameter legal
 func (t *genericTransfer) ValidParameter(kit *rest.Kit) errors.CCErrorCoder {
-	if len(t.innerModuleID) == 0 {
-		err := t.getInnerModuleIDArr(kit)
-		if err != nil {
-			return err
-		}
+	if err := hooks.ValidHostTransferHook(kit, mongodb.Client(), t.crossBizTransfer, t.srcBizIDs, t.bizID); err != nil {
+		return err
 	}
 
 	err := t.validParameterInst(kit)
@@ -77,6 +77,13 @@ func (t *genericTransfer) ValidParameter(kit *rest.Kit) errors.CCErrorCoder {
 		blog.Errorf("target business or source business has been archived, dest biz ID: %d, src bizI Ds: %v, rid: %s",
 			t.bizID, t.srcBizIDs, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrTransferHostToArchivedApp)
+	}
+
+	if len(t.innerModuleID) == 0 {
+		err := t.getInnerModuleIDArr(kit)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -157,31 +164,33 @@ func (t *genericTransfer) DeleteHosts(kit *rest.Kit, hostIDs []int64) error {
 
 // validParameterInst  validate module, biz, srcBiz must be exist
 func (t *genericTransfer) validParameterInst(kit *rest.Kit) errors.CCErrorCoder {
+	var bizIDs []int64
+	if t.crossBizTransfer {
+		bizIDs = t.srcBizIDs
+		hasSameSrcDestBiz := false
+		for _, bizID := range bizIDs {
+			if bizID == t.bizID {
+				hasSameSrcDestBiz = true
+				break
+			}
+		}
+		if !hasSameSrcDestBiz {
+			bizIDs = append(bizIDs, t.bizID)
+		}
+	} else {
+		bizIDs = []int64{t.bizID}
+	}
 
-	appCond := map[string]interface{}{common.BKAppIDField: t.bizID}
+	appCond := map[string]interface{}{common.BKAppIDField: mapstr.MapStr{common.BKDBIN: bizIDs}}
 	appCond = util.SetQueryOwner(appCond, kit.SupplierAccount)
 
 	cnt, err := t.countByCond(kit, appCond, common.BKTableNameBaseApp)
 	if err != nil {
 		return err
 	}
-	if cnt == 0 {
-		blog.ErrorJSON("validParameter not business host error. cond:%s, rid:%s", appCond, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCoreServiceBusinessNotExist, t.bizID)
-	}
-	// cross-business validation source business
-	if t.crossBizTransfer {
-		appCond := condition.CreateCondition()
-		appCond.Field(common.BKAppIDField).In(t.srcBizIDs)
-
-		cnt, err = t.countByCond(kit, appCond.ToMapStr(), common.BKTableNameBaseApp)
-		if err != nil {
-			return err
-		}
-		if cnt == 0 {
-			blog.ErrorJSON("validParameter not cross-business host error. cond:%s, rid:%s", appCond.ToMapStr(), kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCoreServiceBusinessNotExist, t.srcBizIDs)
-		}
+	if int(cnt) != len(bizIDs) {
+		blog.Errorf("host transfer business are not all exists. cond: %v, rid: %s", appCond, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCoreServiceBusinessNotExist, bizIDs)
 	}
 	return nil
 }
@@ -357,7 +366,6 @@ func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostIDs []int64) 
 		return nil
 	}
 
-	bizID := t.bizID
 	existHostModuleIDMap := make(map[int64]map[int64]struct{}, 0)
 
 	// filter already exist modules
@@ -383,19 +391,19 @@ func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostIDs []int64) 
 		existHostModuleIDMap[item.HostID][item.ModuleID] = struct{}{}
 	}
 
-	var insertDataArr []mapstr.MapStr
+	var insertDataArr []metadata.ModuleHost
 	for _, moduleID := range t.moduleIDArr {
 		for _, hostID := range hostIDs {
 			if _, ok := existHostModuleIDMap[hostID][moduleID]; ok {
 				continue
 			}
-			insertData := mapstr.MapStr{
-				common.BKAppIDField: bizID, common.BKHostIDField: hostID, common.BKModuleIDField: moduleID,
-				common.BKSetIDField: t.moduleIDSetIDMap[moduleID],
-			}
-
-			insertData = util.SetModOwner(insertData, kit.SupplierAccount)
-			insertDataArr = append(insertDataArr, insertData)
+			insertDataArr = append(insertDataArr, metadata.ModuleHost{
+				SetID:    t.moduleIDSetIDMap[moduleID],
+				ModuleID: moduleID,
+				HostID:   hostID,
+				AppID:    t.bizID,
+				OwnerID:  kit.SupplierAccount,
+			})
 		}
 	}
 
@@ -403,11 +411,17 @@ func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostIDs []int64) 
 		return nil
 	}
 
-	err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Insert(kit.Ctx, insertDataArr)
-	if err != nil {
+	if err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Insert(kit.Ctx, insertDataArr); err != nil {
 		blog.Errorf("add host module relation, add module host relation error: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
+
+	// run new module's host apply rule, prevent repeated execution of rules
+	if _, err := t.hostApplyDependence.RunHostApplyOnHosts(kit, t.bizID, insertDataArr); err != nil {
+		blog.Errorf("run host apply rule failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
 	return nil
 }
 
@@ -439,7 +453,7 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 		}
 	}
 	instances := make([]metadata.ServiceInstance, 0)
-	err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Fields(common.BKFieldID).All(kit.Ctx, &instances)
+	err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).All(kit.Ctx, &instances)
 	if err != nil {
 		blog.ErrorJSON("removeHostServiceInstance failed, get service instance IDs failed, err: %s, filter: %s, rid: %s", err, serviceInstanceFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -451,6 +465,9 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 	for _, instance := range instances {
 		serviceInstanceIDs = append(serviceInstanceIDs, instance.ID)
 	}
+
+	audit := auditlog.NewSvcInstAuditGenerator()
+	audit.WithServiceInstance(instances)
 
 	// get all process IDs of the service instances to be removed
 	processRelationFilter := map[string]interface{}{
@@ -480,6 +497,32 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 				common.BKDBIN: processIDs,
 			},
 		}
+
+		// generate process audit log for host transfer, use a new kit to keep it out of the txn
+		auditKit := kit.NewKit()
+		processes := make([]mapstr.MapStr, 0)
+		err := mongodb.Client().Table(common.BKTableNameBaseProcess).Find(processFilter).All(auditKit.Ctx, &processes)
+		if err != nil {
+			blog.Errorf("get process instances failed, filter: %+v, err: %v, rid: %s", processFilter, err, auditKit.Rid)
+			return auditKit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+		}
+
+		procMap := make(map[int64]mapstr.MapStr)
+		for _, proc := range processes {
+			procID, err := util.GetInt64ByInterface(proc[common.BKProcessIDField])
+			if err != nil {
+				blog.ErrorJSON("get process(%+v) id failed, err: %v, rid: %s", proc, err, auditKit.Rid)
+				return auditKit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessIDField)
+			}
+			procMap[procID] = proc
+		}
+
+		genAuditParam := auditlog.NewGenerateAuditCommonParameter(auditKit, metadata.AuditDelete)
+		if err := audit.WithProc(genAuditParam, processes, relations); err != nil {
+			return err
+		}
+
+		// delete processes
 		if err := mongodb.Client().Table(common.BKTableNameBaseProcess).Delete(kit.Ctx, processFilter); nil != err {
 			blog.Errorf("removeHostServiceInstance failed, delete process instances failed, err: %s, filter: %s, rid: %s", err, processFilter, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
@@ -496,39 +539,47 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 		blog.Errorf("removeHostServiceInstance failed, delete service instances failed, err: %s, filter: %s, rid: %s", err, serviceInstanceIDFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
+
+	// generate and save service instance audit logs for host transfer, use a new kit to keep it out of the txn
+	auditKit := kit.NewKit()
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(auditKit, metadata.AuditDelete)
+	auditLogs := audit.GenerateAuditLog(generateAuditParameter)
+	if err := t.dependent.CreateAuditLogDependence(auditKit, auditLogs...); err != nil {
+		return kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
+	}
+
 	return nil
 }
 
-// getInnerModuleIDArr get default module
+// getInnerModuleIDArr get inner module ids for source biz
 func (t *genericTransfer) getInnerModuleIDArr(kit *rest.Kit) errors.CCErrorCoder {
-	bizIDs := []int64{t.bizID}
+	moduleCond := mapstr.MapStr{common.BKDefaultField: mapstr.MapStr{common.BKDBNE: common.DefaultFlagDefaultValue}}
+
 	// transfer the host across business,
 	// check host belongs to the original business ID
 	if t.crossBizTransfer {
-		bizIDs = t.srcBizIDs
+		moduleCond[common.BKAppIDField] = mapstr.MapStr{common.BKDBIN: t.srcBizIDs}
+	} else {
+		moduleCond[common.BKAppIDField] = t.bizID
 	}
-	moduleConds := condition.CreateCondition()
-	moduleConds.Field(common.BKAppIDField).In(bizIDs)
-	moduleConds.Field(common.BKDefaultField).NotEq(common.DefaultFlagDefaultValue)
-	cond := util.SetQueryOwner(moduleConds.ToMapStr(), kit.SupplierAccount)
+	cond := util.SetQueryOwner(moduleCond, kit.SupplierAccount)
 
-	moduleInfoArr := make([]mapstr.MapStr, 0)
-	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(cond).All(kit.Ctx, &moduleInfoArr)
-
+	moduleIDArr, err := mongodb.Client().Table(common.BKTableNameBaseModule).Distinct(kit.Ctx, common.BKModuleIDField,
+		cond)
 	if err != nil {
-		blog.ErrorJSON("getInnerModuleIDArr find data error. err:%s,cond:%s, rid:%s", err.Error(), cond, kit.Rid)
+		blog.Errorf("get inner module ids failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
-	if len(moduleInfoArr) == 0 {
-		blog.Warnf("get inner module not found default module. appID: %v, rid: %s", bizIDs, kit.Rid)
+
+	if len(moduleIDArr) == 0 {
+		blog.Warnf("not found inner module. cond: %v, rid: %s", cond, kit.Rid)
+		return nil
 	}
-	for _, moduleInfo := range moduleInfoArr {
-		moduleID, err := moduleInfo.Int64(common.BKModuleIDField)
-		if err != nil {
-			blog.ErrorJSON("getInnerModuleIDArr module info field module id not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfo, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
-		}
-		t.innerModuleID = append(t.innerModuleID, moduleID)
+
+	t.innerModuleID, err = util.SliceInterfaceToInt64(moduleIDArr)
+	if err != nil {
+		blog.Errorf("parse inner module ids failed, err: %v, raw ids: %v, rid: %s", err, moduleIDArr, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommParseDBFailed)
 	}
 
 	return nil
@@ -591,26 +642,22 @@ func (t *genericTransfer) countByCond(kit *rest.Kit, conds mapstr.MapStr, tableN
 
 func (t *genericTransfer) isAppArchived(kit *rest.Kit) (bool, errors.CCErrorCoder) {
 
-	bizIDs := []int64{t.bizID}
+	bizIDs := append(t.srcBizIDs, t.bizID)
 
-	for _, bizId := range t.srcBizIDs {
-		if bizId < 0 {
-			return false, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid)
-		}
-		if bizId > 0 {
-			bizIDs = append(bizIDs, bizId)
+	for _, bizId := range bizIDs {
+		if bizId <= 0 {
+			return false, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
 		}
 	}
 
 	cond := mapstr.MapStr{
 		common.BKAppIDField:      mapstr.MapStr{common.BKDBIN: bizIDs},
-		common.BKDataStatusField: "disabled",
+		common.BKDataStatusField: common.DataStatusDisabled,
 	}
 
 	cnt, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(cond).Count(kit.Ctx)
 	if err != nil {
-		blog.Errorf("get app info failed, err: %v, table: %s, cond:%v, rid: %s", err, common.BKTableNameBaseApp, cond,
-			kit.Rid)
+		blog.Errorf("count diabled biz failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return false, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 

@@ -2121,8 +2121,9 @@ func (ps *parseStream) objectClassificationLatest() *parseStream {
 }
 
 const (
-	createObjectAttributeGroupLatestPattern = "/api/v3/create/objectattgroup"
-	updateObjectAttributeGroupLatestPattern = "/api/v3/update/objectattgroup"
+	createObjectAttributeGroupLatestPattern   = "/api/v3/create/objectattgroup"
+	updateObjectAttributeGroupLatestPattern   = "/api/v3/update/objectattgroup"
+	exchangeObjectAttributeGroupLatestPattern = "/api/v3/update/objectattgroup/groupindex"
 )
 
 var (
@@ -2214,7 +2215,46 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
 		groups, err := ps.getAttributeGroup(val.Value())
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		for _, group := range groups {
+			filter := mapstr.MapStr{
+				common.BKObjIDField: group.ObjectID,
+			}
+			model, err := ps.getOneModel(filter)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			ps.Attribute.Resources = append(ps.Attribute.Resources,
+				meta.ResourceAttribute{
+					BusinessID: group.BizID,
+					Basic: meta.Basic{
+						Type:       meta.ModelAttributeGroup,
+						Action:     meta.Update,
+						InstanceID: group.ID,
+					},
+					Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+				})
+		}
+		return ps
+	}
+
+	// exchange objects' attribute group_index
+	if ps.hitPattern(exchangeObjectAttributeGroupLatestPattern, http.MethodPut) {
+		val, err := ps.RequestCtx.getValueFromBody("condition.id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		cond := mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: val.Value()}}
+		groups, err := ps.getAttributeGroup(cond)
 		if err != nil {
 			ps.err = err
 			return ps

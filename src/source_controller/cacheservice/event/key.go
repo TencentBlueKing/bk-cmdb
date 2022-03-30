@@ -260,6 +260,52 @@ var InstAsstKey = Key{
 	},
 }
 
+var bizSetFields = []string{common.BKBizSetIDField, common.BKBizSetNameField}
+var BizSetKey = Key{
+	namespace:  watchCacheNamespace + common.BKInnerObjIDBizSet,
+	collection: common.BKTableNameBaseBizSet,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, bizSetFields...)
+		for idx := range bizSetFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", bizSetFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		return gjson.GetBytes(doc, common.BKBizSetNameField).String()
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKBizSetIDField).Int()
+	},
+}
+
+// bizSetRelationWatchCollName a virtual collection name for biz set & biz events in the form of their relation events
+const bizSetRelationWatchCollName = "cc_bizSetRelationMixed"
+
+var BizSetRelationKey = Key{
+	namespace:  watchCacheNamespace + "biz_set_relation",
+	collection: bizSetRelationWatchCollName,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		value := gjson.GetBytes(doc, common.BKBizSetIDField)
+		if !value.Exists() {
+			return fmt.Errorf("field %s not exists", common.BKBizSetIDField)
+		}
+		return nil
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKBizSetIDField).Int()
+	},
+}
+
+// GenBizSetRelationDetail generate biz set relation event detail json form by biz set id and biz ids string form
+func GenBizSetRelationDetail(bizSetID int64, bizIDsStr string) string {
+	return fmt.Sprintf(`{"bk_biz_set_id":%d,"bk_biz_ids":[%s]}`, bizSetID, bizIDsStr)
+}
+
 type Key struct {
 	namespace string
 	// the watching db collection name

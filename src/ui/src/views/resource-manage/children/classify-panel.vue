@@ -23,17 +23,15 @@
 </template>
 
 <script>
+  import has from 'has'
   import { mapGetters } from 'vuex'
   import {
-    MENU_RESOURCE_HOST,
-    MENU_RESOURCE_BUSINESS,
     MENU_RESOURCE_INSTANCE,
-    MENU_RESOURCE_COLLECTION,
-    MENU_RESOURCE_HOST_COLLECTION,
-    MENU_RESOURCE_BUSINESS_COLLECTION
+    MENU_RESOURCE_COLLECTION
   } from '@/dictionary/menu-symbol'
-  import has from 'has'
   import InstanceCount from './instance-count.vue'
+  import { BUILTIN_MODELS, BUILTIN_MODEL_COLLECTION_KEYS, BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
+
   export default {
     components: {
       InstanceCount
@@ -45,7 +43,8 @@
       },
       collection: {
         type: Array,
-        required: true
+        required: true,
+        default: () => ([])
       }
     },
     data() {
@@ -64,13 +63,9 @@
     },
     methods: {
       redirect(model) {
-        const map = {
-          host: MENU_RESOURCE_HOST,
-          biz: MENU_RESOURCE_BUSINESS
-        }
-        if (has(map, model.bk_obj_id)) {
+        if (has(BUILTIN_MODEL_RESOURCE_MENUS, model.bk_obj_id)) {
           this.$routerActions.redirect({
-            name: map[model.bk_obj_id]
+            name: BUILTIN_MODEL_RESOURCE_MENUS[model.bk_obj_id]
           })
         } else {
           this.$routerActions.redirect({
@@ -84,8 +79,11 @@
       isCollected(model) {
         return this.collection.includes(model.bk_obj_id)
       },
+      isBuiltinModel(model) {
+        return Object.values(BUILTIN_MODELS).includes(model.bk_obj_id)
+      },
       toggleCustomNavigation(model) {
-        if (['host', 'biz'].includes(model.bk_obj_id)) {
+        if (this.isBuiltinModel(model)) {
           this.toggleDefaultCollection(model)
         } else {
           let isAdd = false
@@ -110,12 +108,12 @@
         }
       },
       async toggleDefaultCollection(model) {
-        const isCollected = this.collection.includes(model.bk_obj_id)
+        const isCollected = this.isCollected(model)
         if (!isCollected && this.collection.length >= this.maxCustomNavigationCount) {
           this.$warn(this.$t('限制添加导航提示', { max: this.maxCustomNavigationCount }))
         } else {
           try {
-            const key = model.bk_obj_id === 'host' ? MENU_RESOURCE_HOST_COLLECTION : MENU_RESOURCE_BUSINESS_COLLECTION
+            const key =  BUILTIN_MODEL_COLLECTION_KEYS[model.bk_obj_id]
             await this.$store.dispatch('userCustom/saveUsercustom', {
               [key]: !isCollected
             })

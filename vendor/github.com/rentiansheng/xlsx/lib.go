@@ -13,7 +13,10 @@ import (
 )
 
 const (
-	sheetEnding = `</sheetData></worksheet>`
+	sheetEnding           = `</sheetData></worksheet>`
+	fixedCellRefChar      = "$"
+	cellRangeChar         = ":"
+	externalSheetBangChar = "!"
 )
 
 // XLSXReaderError is the standard error type for otherwise undefined
@@ -1106,4 +1109,25 @@ func truncateSheetXML(r io.Reader, rowLimit int) (io.Reader, error) {
 		}
 	}
 	return output, nil
+}
+
+// GetCellIDStringFromCoordsWithFixed returns the Excel format cell name that
+// represents a pair of zero based cartesian coordinates.
+// It can specify either value as fixed.
+func GetCellIDStringFromCoordsWithFixed(x, y int, xFixed, yFixed bool) string {
+	xStr := ColIndexToLetters(x)
+	if xFixed {
+		xStr = fixedCellRefChar + xStr
+	}
+	yStr := RowIndexToString(y)
+	if yFixed {
+		yStr = fixedCellRefChar + yStr
+	}
+	return xStr + yStr
+}
+
+// RowIndexToString is used to convert a zero based, numeric row
+// indentifier into its string representation.
+func RowIndexToString(rowRef int) string {
+	return strconv.Itoa(rowRef + 1)
 }

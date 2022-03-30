@@ -40,6 +40,9 @@ const FilterStore = new Vue({
   },
   computed: {
     bizId() {
+      if (typeof this.config.bk_biz_id === 'function') {
+        return this.config.bk_biz_id()
+      }
       return this.config.bk_biz_id || void 0
     },
     userBehaviorKey() {
@@ -68,7 +71,8 @@ const FilterStore = new Vue({
       const key = this.config.header && this.config.header.custom
       const moduleNameProperty = Utils.findPropertyByPropertyId('bk_module_name', this.properties, 'module')
       const setNameProperty = Utils.findPropertyByPropertyId('bk_set_name', this.properties, 'set')
-      return getStorageHeader('usercustom', key, [...this.modelPropertyMap.host, moduleNameProperty, setNameProperty])
+      const bizNameProperty = Utils.findPropertyByPropertyId('bk_biz_name', this.properties, 'biz')
+      return getStorageHeader('usercustom', key, [...this.modelPropertyMap.host, moduleNameProperty, setNameProperty, bizNameProperty])
     },
     presetHeader() {
       const hostProperties = this.getModelProperties('host')
@@ -100,11 +104,18 @@ const FilterStore = new Vue({
       })
       return map
     },
+    /**
+     * 判断是否存在已生效的筛选条件
+     * @returns {Boolean}
+     */
     hasCondition() {
-      return Object.keys(this.condition).some((id) => {
-        const { value } = this.condition[id]
-        return !!String(value).trim().length
+      const existedSelectedCondition = this.selected?.some((property) => {
+        const { value } = this.condition[property.id]
+        return value !== null && value !== undefined && !!value.toString().length
       })
+      const existedIP = Utils.splitIP(this.IP.text)?.length > 0
+
+      return existedSelectedCondition || existedIP
     }
   },
   watch: {
@@ -321,7 +332,11 @@ const FilterStore = new Vue({
           exact: this.IP.exact ? 1 : 0,
           flag: flag.join('|')
         },
-        condition: Utils.transformCondition(this.condition, this.selected, this.header)
+        condition: Utils.transformCondition(
+          this.condition,
+          this.selected,
+          this.header.filter(property => !property?.isInject)
+        ),
       }
       if (transformedIP.condition) {
         const { condition } = params.condition.find(condition => condition.bk_obj_id === 'host')
@@ -377,7 +392,8 @@ const FilterStore = new Vue({
           bk_property_index: Infinity,
           bk_property_name: i18n.t('业务拓扑'),
           bk_property_type: 'topology',
-          required: true
+          required: true,
+          isInject: true // 表示属性为前端注入，仅在视图中使用，不需要传递给后台。
         })
         this.properties = [...properties, hostIdProperty, serviceTemplateProperty, topologyProperty]
       }

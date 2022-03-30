@@ -75,6 +75,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("parse common config from file[%s] failed, err: %v", commonPath, err)
 	}
 
+	process.Config.SnapReportMode, _ = cc.String("datacollection.hostsnap.reportMode")
+	process.Config.SnapKafka, _ = cc.Kafka("kafka.snap")
+
 	if err := monitor.InitMonitor(); err != nil {
 		return fmt.Errorf("init monitor failed, err: %v", err)
 	}
@@ -202,6 +205,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	errors.SetGlobalCCError(engine.CCErr)
 
 	syncor := iam.NewSyncor()
+	syncor.SetDB(mongodb.Client())
 	syncor.SetSyncIAMPeriod(process.Config.SyncIAMPeriodMinutes)
 	go syncor.SyncIAM(iamCli, service.Logics)
 
@@ -229,8 +233,8 @@ func parseShardingTableConfig(process *MigrateServer) error {
 			return fmt.Errorf("config shardingTable.indexInterval parse error. err: %s", err)
 		}
 		if val < 30 || val > 720 {
-			blog.Errorf("config shardingTable.indexInterval value illegal. must be in 20-720(minute), but now val is %d",
-				val)
+			blog.Errorf("config shardingTable.indexInterval value illegal. must be in 20-720(minute), "+
+				"but now val is %d", val)
 			return fmt.Errorf("config shardingTable.indexInterval parse error. err: %s", err)
 		}
 		process.Config.ShardingTable.IndexesInterval = val
@@ -248,7 +252,8 @@ func parseShardingTableConfig(process *MigrateServer) error {
 			return fmt.Errorf("config shardingTable.tableInterval parse error. err: %s", err)
 		}
 		if val < 30 || val > 720 {
-			blog.Errorf("config shardingTable.tableInterval value illegal. must be in 60-1800(second), but now val is %d", val)
+			blog.Errorf("config shardingTable.tableInterval value illegal. must be in 60-1800(second), "+
+				"but now val is %d", val)
 			return fmt.Errorf("config shardingTable.tableInterval parse error. err: %s", err)
 		}
 		process.Config.ShardingTable.TableInterval = val

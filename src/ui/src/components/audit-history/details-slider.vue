@@ -18,6 +18,11 @@
 <script>
   import DetailsJson from './details-json'
   import DetailsTable from './details-table'
+  import {
+    BUILTIN_MODELS,
+    BUILTIN_MODEL_RESOURCE_TYPES
+  } from '@/dictionary/model-constants.js'
+
   export default {
     components: {
       [DetailsJson.name]: DetailsJson,
@@ -56,7 +61,16 @@
         if (!this.details) {
           return null
         }
-        const withCompare = ['host', 'module', 'set', 'mainline_instance', 'model_instance', 'business', 'cloud_area']
+        const withCompare = [
+          BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.HOST],
+          BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS],
+          BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS_SET],
+          'module',
+          'set',
+          'mainline_instance',
+          'model_instance',
+          'cloud_area'
+        ]
         return withCompare.includes(this.details.resource_type) ? DetailsTable.name : DetailsJson.name
       }
     },

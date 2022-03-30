@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -148,6 +149,8 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 		rawError = attribute.validUser(ctx, data, key)
 	case common.FieldTypeList:
 		rawError = attribute.validList(ctx, data, key)
+	case common.FieldObject:
+		rawError = attribute.validObjectCondition(ctx, data, key)
 	case common.FieldTypeOrganization:
 		rawError = attribute.validOrganization(ctx, data, key)
 	case "foreignkey", "singleasst", "multiasst":
@@ -651,6 +654,48 @@ func (attribute *Attribute) validUser(ctx context.Context, val interface{}, key 
 	return errors.RawErrorInfo{}
 }
 
+// validObjectCondition valid object attribute that is user type
+func (attribute *Attribute) validObjectCondition(ctx context.Context, val interface{}, key string) (
+	rawError errors.RawErrorInfo) {
+
+	rid := util.ExtractRequestIDFromContext(ctx)
+	if nil == val || "" == val {
+		if attribute.IsRequired {
+			blog.Errorf("params in need, rid: %s", rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsNeedSet,
+				Args:    []interface{}{key},
+			}
+
+		}
+		return errors.RawErrorInfo{}
+	}
+	// 对于对象的校验只需要判断类型是否是map[string]interface和MapStr即可
+
+	switch reflect.TypeOf(val).Kind() {
+	case reflect.Map:
+	case reflect.Ptr:
+		switch reflect.TypeOf(val).Elem().Kind() {
+		case reflect.Map:
+		default:
+			blog.Errorf("object type is error, must be map, type: %v, rid: %s", reflect.TypeOf(val).Elem().Kind(), rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{key},
+			}
+		}
+
+	default:
+		blog.Errorf("object type is error, must be map, type: %v, rid: %s", reflect.TypeOf(val), rid)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{key},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
 func (attribute *Attribute) validList(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
 	rid := util.ExtractRequestUserFromContext(ctx)
 
@@ -771,25 +816,36 @@ func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key
 		subAttrMap[subAttr.PropertyID] = subAttr
 	}
 
-	valArr, ok := val.([]interface{})
-	if !ok {
-		blog.Errorf("check value type failed, err: %v, rid: %s", err, rid)
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{key},
+	var valMapArr []mapstr.MapStr
+	switch t := val.(type) {
+	case []interface{}:
+		valMapArr = make([]mapstr.MapStr, len(t))
+		for index, value := range t {
+			var valMap mapstr.MapStr
+			switch v := value.(type) {
+			case mapstr.MapStr:
+				valMap = v
+			case map[string]interface{}:
+				valMap = v
+			default:
+				blog.Errorf("check value type failed, valMap: %#v, rid: %s", valMap, rid)
+				return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+			}
+			valMapArr[index] = valMap
 		}
+	case []mapstr.MapStr:
+		valMapArr = t
+	case []map[string]interface{}:
+		valMapArr = make([]mapstr.MapStr, len(t))
+		for index, value := range t {
+			valMapArr[index] = value
+		}
+	default:
+		blog.Errorf("check value type failed, val: %#v, rid: %s", val, rid)
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
 	}
 
-	for _, valMap := range valArr {
-		value, ok := valMap.(map[string]interface{})
-		if !ok {
-			blog.Errorf("check value type failed, err: %v, rid: %s", err, rid)
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsInvalid,
-				Args:    []interface{}{key},
-			}
-		}
-
+	for _, value := range valMapArr {
 		for subKey, subValue := range value {
 			validator, exist := subAttrMap[subKey]
 			if !exist {

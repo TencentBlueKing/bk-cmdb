@@ -59,6 +59,18 @@ const actions = {
   },
 
   /**
+     * 交换分组索引，用于排序
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+  switchGroupIndex({ commit, state, dispatch }, { params, config }) {
+    return $http.put('update/objectattgroup/groupindex', params, config)
+  },
+
+  /**
      * 删除分组基本信息
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state

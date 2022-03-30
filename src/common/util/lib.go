@@ -88,7 +88,12 @@ func ExtractOwnerFromContext(ctx context.Context) string {
 }
 
 func NewContextFromGinContext(c *gin.Context) context.Context {
-	return NewContextFromHTTPHeader(c.Request.Header)
+	header := c.Request.Header
+	ctx := c.Request.Context()
+	ctx = context.WithValue(ctx, common.ContextRequestIDField, GetHTTPCCRequestID(header))
+	ctx = context.WithValue(ctx, common.ContextRequestUserField, GetUser(header))
+	ctx = context.WithValue(ctx, common.ContextRequestOwnerField, GetOwnerID(header))
+	return ctx
 }
 
 func NewContextFromHTTPHeader(header http.Header) context.Context {

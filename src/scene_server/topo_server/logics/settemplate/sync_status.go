@@ -59,6 +59,9 @@ func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int6
 	return instResult.Data.Info, nil
 }
 
+// isSyncRequired Note: If the parameter isInterrupt is true, it will return if a state to be synchronized is found.
+// At this time, the rest of the cluster state will be set to synchronized by default. If you need to return all pending
+//synchronization status state setId, you need to set this parameter to false.
 func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64,
 	isInterrupt bool) (map[int64]bool, errors.CCErrorCoder) {
 
@@ -276,7 +279,7 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 	}
 
 	// compare sets with set templates to get their sync status
-	statusMap, err := st.isSyncRequired(kit, option.BizID, option.SetTemplateID, setIDs, true)
+	statusMap, err := st.isSyncRequired(kit, option.BizID, option.SetTemplateID, setIDs, false)
 	if err != nil {
 		blog.Errorf("check if set need sync failed, err: %v, set ids: %+v, rid: %s", err, setIDs, kit.Rid)
 		return nil, err

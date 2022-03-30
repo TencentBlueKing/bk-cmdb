@@ -124,6 +124,7 @@ func createAPIRspStr(errcode int, info string) (string, error) {
 	return string(s), err
 }
 
+// GenerateHttpHeaderRID generate http header Cc_Request_Id
 func GenerateHttpHeaderRID(req *http.Request, resp http.ResponseWriter) {
 	cid := util.GetHTTPCCRequestID(req.Header)
 	if "" == cid {
@@ -132,9 +133,8 @@ func GenerateHttpHeaderRID(req *http.Request, resp http.ResponseWriter) {
 			cid = util.GenerateRID()
 		}
 		req.Header.Set(common.BKHTTPCCRequestID, cid)
-		resp.Header().Set(common.BKHTTPCCRequestID, cid)
 	}
-
+	resp.Header().Set(common.BKHTTPCCRequestID, cid)
 	return
 }
 

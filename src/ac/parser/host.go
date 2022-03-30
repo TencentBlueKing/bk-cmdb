@@ -334,6 +334,8 @@ const (
 	findHostRelationWithObjInstPattern = "/api/v3/findmany/hosts/relation/with_topo"
 	listHostDetailAndTopologyPattern   = "/api/v3/findmany/hosts/detail_topo"
 
+	findHostsServiceTemplatesPattern = "/api/v3/findmany/hosts/service_template"
+
 	// 特殊接口，给蓝鲸业务使用
 	hostInstallPattern = "/api/v3/host/install/bk"
 
@@ -356,6 +358,9 @@ var (
 	findHostsBySetTemplatesRegex     = regexp.MustCompile(`^/api/v3/findmany/hosts/by_set_templates/biz/\d+$`)
 	findHostModuleRelationsRegex     = regexp.MustCompile(`^/api/v3/findmany/module_relation/bk_biz_id/[0-9]+/?$`)
 	findHostsByTopoRegex             = regexp.MustCompile(`^/api/v3/findmany/hosts/by_topo/biz/\d+$`)
+
+	// find host by biz set regex, authorize by biz set access permission, **only for ui**
+	findHostsByBizSetPattern = regexp.MustCompile(`^/api/v3/findmany/hosts/biz_set/[0-9]+/?$`)
 )
 
 func (ps *parseStream) host() *parseStream {
@@ -424,6 +429,21 @@ func (ps *parseStream) host() *parseStream {
 			},
 		}
 		blog.Infof("hit auth, url: %s rid: %s", ps.RequestCtx.URI, ps.RequestCtx.Rid)
+		return ps
+	}
+
+	// find host service_template_id relation
+	if ps.hitPattern(findHostsServiceTemplatesPattern, http.MethodPost) {
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
 		return ps
 	}
 
@@ -623,6 +643,32 @@ func (ps *parseStream) host() *parseStream {
 
 		return ps
 	}
+
+	if ps.hitRegexp(findHostsByBizSetPattern, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		bizSetID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.BizSet,
+					Action:     meta.AccessBizSet,
+					InstanceID: bizSetID,
+				},
+			},
+		}
+
+		return ps
+	}
+
 	// find hosts without app id
 	if ps.hitPattern(findBizHostsWithoutAppPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{

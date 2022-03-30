@@ -15,15 +15,15 @@ RUN apt-get update && apt-get install -y  --no-install-recommends \
 # Get the git sources. If not cached, this takes O(5 minutes).
 WORKDIR /git
 RUN git config --global advice.detachedHead false
-# Linux Kernel: Released 31 May 2020
-RUN git clone --branch v5.7 --depth 1 https://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux
-# GNU C library: Released 01 Feb 2020 (we should try to get a secure way to clone this)
-RUN git clone --branch release/2.31/master --depth 1 git://sourceware.org/git/glibc.git
+# Linux Kernel: Released 09 Jan 2022
+RUN git clone --branch v5.16 --depth 1 https://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux
+# GNU C library: Released 03 Feb 2022
+RUN git clone --branch release/2.35/master --depth 1 https://sourceware.org/git/glibc.git
 
 # Get Go
-ENV GOLANG_VERSION 1.15rc1
+ENV GOLANG_VERSION 1.17.6
 ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz
-ENV GOLANG_DOWNLOAD_SHA256 ac092ebb92f88366786063e68a9531d5eccac51371f9becb128f064721731b2e
+ENV GOLANG_DOWNLOAD_SHA256 231654bbf2dab3d86c1619ce799e77b03d96f9b50770297c8f4dff8836fc8ca2
 
 RUN curl -fsSL "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
     && echo "$GOLANG_DOWNLOAD_SHA256  golang.tar.gz" | sha256sum -c - \
@@ -45,13 +45,13 @@ RUN apt-get update && apt-get install -y \
         gcc-aarch64-linux-gnu       gcc-arm-linux-gnueabi     \
         gcc-mips-linux-gnu          gcc-mips64-linux-gnuabi64 \
         gcc-mips64el-linux-gnuabi64 gcc-mipsel-linux-gnu      \
-        gcc-powerpc64-linux-gnu     gcc-powerpc64le-linux-gnu \
-	gcc-riscv64-linux-gnu                                 \
+        gcc-powerpc-linux-gnu       gcc-powerpc64-linux-gnu   \
+        gcc-powerpc64le-linux-gnu   gcc-riscv64-linux-gnu     \
         gcc-s390x-linux-gnu         gcc-sparc64-linux-gnu     \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Let the scripts know they are in the docker environment
 ENV GOLANG_SYS_BUILD docker
-WORKDIR /build
+WORKDIR /build/unix
 ENTRYPOINT ["go", "run", "linux/mkall.go", "/git/linux", "/git/glibc"]

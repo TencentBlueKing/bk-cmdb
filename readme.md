@@ -36,7 +36,7 @@
 如果想了解以上功能的详细说明，请参考[功能说明](http://bk.tencent.com/document/bkprod/000120.html)
 
 ## Experience
-* [在线体验蓝鲸CMDB](https://cmdb.bk.tencent.com/login) 🔥
+* [在线体验蓝鲸CMDB](https://cmdb-exp.bktencent.com/start) 🔥 **用户名密码：admin:admin**
 * [极速体验容器化部署蓝鲸CMDB](docs/wiki/container-support.md)
 
 ## Getting started
@@ -78,4 +78,7 @@
 ![jiawei](docs/resource/img/jiawei-logo.png)　　![youole](docs/resource/img/youole-logo.png)　　![honops](docs/resource/img/honops-logo.png)
 
 ## License
-项目基于 MIT 协议， 详细请参考 [LICENSE](LICENSE.txt) 。
+项目基于 MIT 协议，详细请参考 [LICENSE](LICENSE.txt)。
+
+我们承诺未来不会更改适用于交付给任何人的当前项目版本的开源许可证（MIT 协议）。
+

@@ -1056,6 +1056,7 @@ var _ = Describe("service template test", func() {
 					serviceId,
 					serviceId1,
 				},
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1072,6 +1073,7 @@ var _ = Describe("service template test", func() {
 				"instance_ids": []int64{
 					serviceId1,
 				},
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1109,6 +1111,7 @@ var _ = Describe("service template test", func() {
 					serviceId,
 					serviceId1,
 				},
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1126,6 +1129,7 @@ var _ = Describe("service template test", func() {
 					10000,
 					serviceId1,
 				},
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1523,6 +1527,7 @@ var _ = Describe("service template test", func() {
 					serviceId,
 					serviceId1,
 				},
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceRemoveLabels(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1540,6 +1545,7 @@ var _ = Describe("service template test", func() {
 					100000,
 					serviceId1,
 				},
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceRemoveLabels(context.Background(), header, input)
 			util.RegisterResponse(rsp)

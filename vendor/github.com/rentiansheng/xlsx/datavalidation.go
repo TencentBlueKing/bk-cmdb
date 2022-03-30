@@ -64,9 +64,9 @@ const (
 // NewXlsxCellDataValidation return data validation struct
 func NewXlsxCellDataValidation(allowBlank, ShowInputMessage, showErrorMessage bool) *xlsxCellDataValidation {
 	return &xlsxCellDataValidation{
-		AllowBlank:       convBoolToStr(allowBlank),
-		ShowErrorMessage: convBoolToStr(showErrorMessage),
-		ShowInputMessage: convBoolToStr(ShowInputMessage),
+		AllowBlank:       allowBlank,
+		ShowErrorMessage: showErrorMessage,
+		ShowInputMessage: ShowInputMessage,
 	}
 }
 
@@ -104,6 +104,29 @@ func (dd *xlsxCellDataValidation) SetDropList(keys []string) error {
 	return nil
 }
 
+// SetInFileList is like SetDropList, excel that instead of having a hard coded list,
+// a reference to a part of the file is accepted and the list is automatically taken from there.
+// Setting y2 to -1 will select all the way to the end of the column. Selecting to the end of the
+// column will cause Google Sheets to spin indefinitely while trying to load the possible drop down
+// values (more than 5 minutes).
+// List validations do not work in Apple Numbers.
+// get this function from https://github.com/tealeg/xlsx
+func (dd *xlsxCellDataValidation) SetInFileList(sheet string, x1, y1, x2, y2 int) error {
+	start := GetCellIDStringFromCoordsWithFixed(x1, y1, true, true)
+	if y2 < 0 {
+		y2 = Excel2006MaxRowIndex
+	}
+
+	end := GetCellIDStringFromCoordsWithFixed(x2, y2, true, true)
+	// Escape single quotes in the file name.
+	// Single quotes are escaped by replacing them with two single quotes.
+	sheet = strings.Replace(sheet, "'", "''", -1)
+	formula := "'" + sheet + "'" + externalSheetBangChar + start + cellRangeChar + end
+	dd.Formula1 = formula
+	dd.Type = convDataValidationType(typeList)
+	return nil
+}
+
 // SetDropList data validation range
 func (dd *xlsxCellDataValidation) SetRange(f1, f2 int, t DataValidationType, o DataValidationOperator) error {
 	formula1 := fmt.Sprintf("%d", f1)
@@ -129,14 +152,6 @@ func (dd *xlsxCellDataValidation) SetRange(f1, f2 int, t DataValidationType, o D
 	dd.Type = convDataValidationType(t)
 	dd.Operator = convDataValidationOperatior(o)
 	return nil
-}
-
-// convBoolToStr  convert boolean to string , false to 0, true to 1
-func convBoolToStr(bl bool) string {
-	if bl {
-		return "1"
-	}
-	return "0"
 }
 
 // convDataValidationType get excel data validation type

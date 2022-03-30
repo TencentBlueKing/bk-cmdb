@@ -88,6 +88,7 @@ func (s *Service) ImportNetProperty(c *gin.Context) {
 	c.String(http.StatusOK, resultStr)
 }
 
+// ExportNetProperty export net property by excel
 func (s *Service) ExportNetProperty(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
@@ -98,17 +99,18 @@ func (s *Service) ExportNetProperty(c *gin.Context) {
 
 	netPropertyIDStr := c.PostForm(common.BKNetcollectPropertyIDField)
 	netPropertyInfo, err := s.Logics.GetNetPropertyData(c.Request.Header, netPropertyIDStr)
-	if nil != err {
-		blog.Errorf("[Export Net Property] get property data error:%s, rid: %s", err.Error(), rid)
-		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
+	if err != nil {
+		blog.Errorf("get property data failed, err: %v, rid: %s", err, rid)
+		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(),
+			nil)
 		c.String(http.StatusBadGateway, msg)
 		return
 	}
 
 	file := xlsx.NewFile()
 	sheet, err := file.AddSheet(common.BKNetProperty)
-	if nil != err {
-		blog.Errorf("[Export Net Property] create sheet error:%s, rid: %s", err.Error(), rid)
+	if err != nil {
+		blog.Errorf("create sheet error:%s, rid: %s", err.Error(), rid)
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 			defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
 		c.String(http.StatusInternalServerError, msg)
@@ -118,8 +120,8 @@ func (s *Service) ExportNetProperty(c *gin.Context) {
 	fields := logics.GetNetPropertyField(defLang)
 	logics.AddNetPropertyExtFields(fields, defLang)
 
-	if err = logics.BuildNetPropertyExcelFromData(ctx, defLang, fields, netPropertyInfo, sheet); nil != err {
-		blog.Errorf("[Export Net Property] build net property excel data error:%s, rid: %s", err.Error(), rid)
+	if err = logics.BuildNetPropertyExcelFromData(ctx, defLang, fields, netPropertyInfo, sheet, file); err != nil {
+		blog.Errorf("build net property excel data failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 			defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
 		c.String(http.StatusInternalServerError, msg)
@@ -127,9 +129,9 @@ func (s *Service) ExportNetProperty(c *gin.Context) {
 	}
 
 	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
-	if _, err = os.Stat(dirFileName); nil != err {
-		if err = os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); nil != err {
-			blog.Errorf("[Export Net Property] mkdir error:%s, rid: %s", err.Error(), rid)
+	if _, err = os.Stat(dirFileName); err != nil {
+		if err = os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); err != nil {
+			blog.Errorf("mkdir failed, errv: %v, rid: %s", err, rid)
 			msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 				defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
 			c.String(http.StatusInternalServerError, msg)
@@ -142,8 +144,8 @@ func (s *Service) ExportNetProperty(c *gin.Context) {
 
 	logics.ProductExcelCommentSheet(ctx, file, defLang)
 
-	if err = file.Save(dirFileName); nil != err {
-		blog.Errorf("[Export Net Property] save file error:%s, rid: %s", err.Error(), rid)
+	if err = file.Save(dirFileName); err != nil {
+		blog.Errorf("save file failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 			defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
 		c.String(http.StatusInternalServerError, msg)
@@ -153,8 +155,8 @@ func (s *Service) ExportNetProperty(c *gin.Context) {
 	logics.AddDownExcelHttpHeader(c, "netproperty.xlsx")
 	c.File(dirFileName)
 
-	if err = os.Remove(dirFileName); nil != err {
-		blog.Errorf("[Export Net Property] remove file error:%s, rid: %s", err.Error(), rid)
+	if err = os.Remove(dirFileName); err != nil {
+		blog.Errorf("remove file failed, err: %v, rid: %s", err, rid)
 	}
 }
 

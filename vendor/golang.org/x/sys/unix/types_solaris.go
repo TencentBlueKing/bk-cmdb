@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build ignore
 // +build ignore
 
 /*
@@ -33,6 +34,7 @@ package unix
 #include <sys/mman.h>
 #include <sys/mount.h>
 #include <sys/param.h>
+#include <sys/port.h>
 #include <sys/resource.h>
 #include <sys/select.h>
 #include <sys/signal.h>
@@ -173,6 +175,7 @@ const (
 	SizeofSockaddrUnix     = C.sizeof_struct_sockaddr_un
 	SizeofSockaddrDatalink = C.sizeof_struct_sockaddr_dl
 	SizeofLinger           = C.sizeof_struct_linger
+	SizeofIovec            = C.sizeof_struct_iovec
 	SizeofIPMreq           = C.sizeof_struct_ip_mreq
 	SizeofIPv6Mreq         = C.sizeof_struct_ipv6_mreq
 	SizeofMsghdr           = C.sizeof_struct_msghdr
@@ -266,4 +269,34 @@ const (
 	POLLRDNORM = C.POLLRDNORM
 	POLLWRBAND = C.POLLWRBAND
 	POLLWRNORM = C.POLLWRNORM
+)
+
+// Event Ports
+
+type fileObj C.struct_file_obj
+
+type portEvent C.struct_port_event
+
+const (
+	PORT_SOURCE_AIO    = C.PORT_SOURCE_AIO
+	PORT_SOURCE_TIMER  = C.PORT_SOURCE_TIMER
+	PORT_SOURCE_USER   = C.PORT_SOURCE_USER
+	PORT_SOURCE_FD     = C.PORT_SOURCE_FD
+	PORT_SOURCE_ALERT  = C.PORT_SOURCE_ALERT
+	PORT_SOURCE_MQ     = C.PORT_SOURCE_MQ
+	PORT_SOURCE_FILE   = C.PORT_SOURCE_FILE
+	PORT_ALERT_SET     = C.PORT_ALERT_SET
+	PORT_ALERT_UPDATE  = C.PORT_ALERT_UPDATE
+	PORT_ALERT_INVALID = C.PORT_ALERT_INVALID
+	FILE_ACCESS        = C.FILE_ACCESS
+	FILE_MODIFIED      = C.FILE_MODIFIED
+	FILE_ATTRIB        = C.FILE_ATTRIB
+	FILE_TRUNC         = C.FILE_TRUNC
+	FILE_NOFOLLOW      = C.FILE_NOFOLLOW
+	FILE_DELETE        = C.FILE_DELETE
+	FILE_RENAME_TO     = C.FILE_RENAME_TO
+	FILE_RENAME_FROM   = C.FILE_RENAME_FROM
+	UNMOUNTED          = C.UNMOUNTED
+	MOUNTEDOVER        = C.MOUNTEDOVER
+	FILE_EXCEPTION     = C.FILE_EXCEPTION
 )

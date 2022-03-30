@@ -157,7 +157,7 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithCount(rsp.Data.Count, rsp.Data.Info)
+	ctx.RespEntityWithCount(rsp.Count, rsp.Info)
 }
 
 // SearchAuditDetail search audit log detail by id
@@ -191,11 +191,11 @@ func (s *Service) SearchAuditDetail(ctx *rest.Contexts) {
 		return
 	}
 
-	if len(rsp.Data.Info) == 0 {
+	if len(rsp.Info) == 0 {
 		blog.Errorf("get no audit log detail, rid: %s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKFieldID))
 	}
-	ctx.RespEntity(rsp.Data.Info)
+	ctx.RespEntity(rsp.Info)
 }
 
 func parseOperationTimeCondition(kit *rest.Kit, operationTime metadata.OperationTimeCondition) (map[string]interface{}, error) {
@@ -293,7 +293,7 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithCount(rsp.Data.Count, rsp.Data.Info)
+	ctx.RespEntityWithCount(rsp.Count, rsp.Info)
 }
 
 func buildInstAuditCondition(ctx *rest.Contexts, query metadata.InstAuditCondition) (mapstr.MapStr, error) {
@@ -325,8 +325,8 @@ func buildInstAuditCondition(ctx *rest.Contexts, query metadata.InstAuditConditi
 		cond[common.BKOperationDetailField+"."+"src_obj_id"] = query.ObjID
 	case metadata.ModelInstanceRes:
 		cond[common.BKOperationDetailField+"."+common.BKObjIDField] = query.ObjID
-	case metadata.BusinessRes, metadata.HostRes:
-		// host, biz auditlog not need bk_obj_id or operation_detail to select
+	case metadata.BusinessRes, metadata.BizSetRes, metadata.HostRes:
+		// host, biz and biz set auditlog not need bk_obj_id or operation_detail to select
 		break
 	default:
 		blog.Errorf("unsupported resource type %s when query with object id", query.ResourceType)

@@ -13,6 +13,7 @@
       <div slot-scope="{ row }" v-bkloading="{ isLoading: row.pending }">
         <expand-list
           :process="row"
+          :list-request="instanceListRequest"
           @resolved="handleExpandResolved(row, ...arguments)">
         </expand-list>
       </div>
@@ -104,6 +105,12 @@
         } finally {
           Bus.$emit('process-list-change')
         }
+      },
+      instanceListRequest(reqParams, reqConfig) {
+        return this.$store.dispatch('serviceInstance/getProcessListById', {
+          params: reqParams,
+          config: reqConfig,
+        }).then(({ info }) => info)
       },
       handlePageChange(page) {
         RouterQuery.set({

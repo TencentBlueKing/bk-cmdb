@@ -51,6 +51,8 @@ export const $warn = (message, delay = 3000) => magicbox.bkMessage({
   hasCloseIcon: true
 })
 
+export const $bkInfo = magicbox.bkInfoBox
+
 Vue.prototype.$error = $error
 Vue.prototype.$success = $success
 Vue.prototype.$info = $info

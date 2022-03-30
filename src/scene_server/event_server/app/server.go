@@ -19,7 +19,9 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/ac/iam"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -27,9 +29,11 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/event_server/app/options"
 	svc "configcenter/src/scene_server/event_server/service"
+	"configcenter/src/scene_server/event_server/sync/hostidentifier"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/gse/client"
 )
 
 const (
@@ -38,6 +42,9 @@ const (
 
 	// defaultDBConnectTimeout is default connect timeout of cc db.
 	defaultDBConnectTimeout = 5 * time.Second
+
+	// defaultGoroutineCount default goroutine count
+	defaultGoroutineCount = 5
 )
 
 // EventServer is event server.
@@ -167,6 +174,35 @@ func (es *EventServer) initConfigs() error {
 		return fmt.Errorf("init cc redis configs, %+v", err)
 	}
 
+	es.config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
+	if err != nil {
+		blog.Errorf("parse auth center config failed: %v", err)
+		return err
+	}
+
+	identifierConf, err := hostidentifier.ParseIdentifierConf()
+	if err != nil {
+		blog.Errorf("parse eventServer host identifier config error, err: %v", err)
+		return err
+	}
+	es.config.IdentifierConf = identifierConf
+
+	if !es.config.IdentifierConf.StartUp {
+		return nil
+	}
+
+	es.config.TaskConf, err = client.NewGseConnConfig("gse.taskServer")
+	if err != nil {
+		blog.Errorf("get gse taskServer Config error, err: %v", err)
+		return err
+	}
+
+	es.config.ApiConf, err = client.NewGseConnConfig("gse.apiServer")
+	if err != nil {
+		blog.Errorf("get gse apiServer Config error, err: %v", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -193,6 +229,18 @@ func (es *EventServer) initModules() error {
 	// initialize auth authorizer
 	es.service.SetAuthorizer(iam.NewAuthorizer(es.engine.CoreAPI))
 
+	iamCli := new(iam.IAM)
+	if auth.EnableAuthorize() {
+		blog.Info("enable auth center access")
+		iamCli, err = iam.NewIAM(nil, es.config.Auth, es.engine.Metric().Registry())
+		if err != nil {
+			return fmt.Errorf("new iam client failed: %v", err)
+		}
+	} else {
+		blog.Infof("disable auth center access")
+	}
+	es.service.AuthManager = extensions.NewAuthManager(es.engine.CoreAPI, iamCli)
+
 	return nil
 }
 
@@ -210,7 +258,66 @@ func (es *EventServer) Run() error {
 	}
 	blog.Info("init modules success!")
 
+	if err := es.runSyncData(); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (es *EventServer) runSyncData() error {
+	if !es.config.IdentifierConf.StartUp {
+		return nil
+	}
+
+	gseTaskClient, err := client.NewGseTaskServerClient(es.config.TaskConf.Endpoints, es.config.TaskConf.TLSConf)
+	if err != nil {
+		blog.Errorf("new gse taskServer error, err: %v", err)
+		return err
+	}
+
+	gseApiClient, err := client.NewGseApiServerClient(es.config.ApiConf.Endpoints, es.config.ApiConf.TLSConf)
+	if err != nil {
+		blog.Errorf("new gse apiServer error, err: %v", err)
+		return err
+	}
+
+	syncData, err := hostidentifier.NewHostIdentifier(es.ctx, es.redisCli, es.engine, es.config.IdentifierConf,
+		gseTaskClient, gseApiClient)
+	if err != nil {
+		blog.Errorf("new host identifier error, err: %v", err)
+		return err
+	}
+
+	es.service.SyncData = syncData
+
+	// watch主机身份变化创建任务调用gse接口推送
+	go syncData.WatchToSyncHostIdentifier()
+
+	// 周期全量同步主机身份
+	go es.CycleSyncIdentifier()
+
+	for i := 0; i < defaultGoroutineCount; i++ {
+		// 查询推送主机身份任务结果并处理失败主机
+		go syncData.GetTaskExecutionStatus()
+		// 协程将失败的主机重新变成新任务
+		go syncData.LaunchTaskForFailedHost()
+	}
+
+	blog.Info("run sync data success!")
+	return nil
+}
+
+// CycleSyncIdentifier cycle sync host identifier
+func (es *EventServer) CycleSyncIdentifier() {
+	for {
+		if !es.engine.Discovery().IsMaster() {
+			blog.V(4).Infof("loop full sync host identifier, but not master, skip.")
+			time.Sleep(time.Minute)
+			continue
+		}
+		time.Sleep(time.Duration(es.config.IdentifierConf.BatchSyncIntervalHours) * time.Hour)
+		es.service.SyncData.FullSyncHostIdentifier()
+	}
 }
 
 // Run setups a new EventServer app with a context and options and runs it as server instance.

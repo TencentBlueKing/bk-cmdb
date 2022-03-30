@@ -70,7 +70,7 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 	})
 
 	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
+		ctx.RespEntityWithError(ret, txnErr)
 		return
 	}
 	ctx.RespEntity(ret)

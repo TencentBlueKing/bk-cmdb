@@ -22,12 +22,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-type AuditQueryResult struct {
+// AuditQueryResponse query audit logs response
+type AuditQueryResponse struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Count int64      `json:"count"`
-		Info  []AuditLog `json:"info"`
-	} `json:"data"`
+	Data     *AuditQueryResult `json:"data"`
+}
+
+// AuditQueryResult query audit logs result
+type AuditQueryResult struct {
+	Count int64      `json:"count"`
+	Info  []AuditLog `json:"info"`
 }
 
 type CreateAuditLogParam struct {
@@ -135,7 +139,8 @@ func (input *InstAuditQueryInput) Validate() errors.RawErrorInfo {
 
 	// 前端目前只允许查看主机、业务、自定义模型的变更记录，因此在此限制objid不为host和biz时报错
 	// front-end only allow to see change record of host, biz, custom object
-	if input.Condition.ObjID != common.BKInnerObjIDApp && input.Condition.ObjID != common.BKInnerObjIDHost {
+	if input.Condition.ObjID != common.BKInnerObjIDApp && input.Condition.ObjID != common.BKInnerObjIDHost &&
+		input.Condition.ObjID != common.BKInnerObjIDBizSet {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{common.BKObjIDField},
@@ -183,6 +188,7 @@ type AuditLog struct {
 	// the business id of the resource if it belongs to a business.
 	BusinessID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
 	// ResourceID is the id of the resource instance. which is a unique id, dynamic grouping id is string type.
+	// for service instance audit log,
 	ResourceID interface{} `json:"resource_id" bson:"resource_id"`
 	// ResourceName is the name of the resource, such as a switch model has a name "switch"
 	ResourceName string `json:"resource_name" bson:"resource_name"`
@@ -263,7 +269,8 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	}
 
 	switch audit.ResourceType {
-	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, MainlineInstanceRes, ResourceDirRes:
+	case BusinessRes, BizSetRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes,
+		MainlineInstanceRes, ResourceDirRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -277,6 +284,12 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 		auditLog.OperationDetail = operationDetail
 	case ModelAttributeRes, ModelAttributeGroupRes:
 		operationDetail := new(ModelAttrOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+	case ServiceInstanceRes:
+		operationDetail := new(ServiceInstanceOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
@@ -324,7 +337,8 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	}
 
 	switch audit.ResourceType {
-	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, MainlineInstanceRes, ResourceDirRes:
+	case BusinessRes, BizSetRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes,
+		MainlineInstanceRes, ResourceDirRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -338,6 +352,12 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		auditLog.OperationDetail = operationDetail
 	case ModelAttributeRes, ModelAttributeGroupRes:
 		operationDetail := new(ModelAttrOpDetail)
+		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+	case ServiceInstanceRes:
+		operationDetail := new(ServiceInstanceOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
@@ -469,6 +489,30 @@ func (ao *ModelAssociationOpDetail) WithName() string {
 	return "ModelAssociationOpDetail"
 }
 
+// ServiceInstanceOpDetail service instance operation detail
+type ServiceInstanceOpDetail struct {
+	BasicOpDetail `json:",inline" bson:",inline"`
+	HostID        int64 `json:"bk_host_id" bson:"bk_host_id"`
+	// Processes operation detail of processes in service instance
+	Processes []SvcInstProOpDetail `json:"processes,omitempty" bson:"processes,omitempty"`
+}
+
+// SvcInstProOpDetail process operation detail, aggregated in service instance operation detail
+type SvcInstProOpDetail struct {
+	// Action process operation action, can be one of CUD
+	Action ActionType `json:"action" bson:"action"`
+	// ProcessIDs operated process ids
+	ProcessIDs int64 `json:"bk_process_ids" bson:"bk_process_ids"`
+	// ProcessNames operated process names, used by ui
+	ProcessNames  string `json:"bk_process_names" bson:"bk_process_names"`
+	BasicOpDetail `json:",inline" bson:",inline"`
+}
+
+// WithName returns the service instance operation detail name
+func (op *ServiceInstanceOpDetail) WithName() string {
+	return "ServiceInstanceOpDetail"
+}
+
 // Content contains the details information with in a user's operation.
 // Generally, works for business, model, model instance etc.
 type BasicContent struct {
@@ -486,6 +530,9 @@ const (
 	// BusinessKind represent business itself's operation audit. such as you change a business maintainer, it's
 	// audit belongs to this kind.
 	BusinessType AuditType = "business"
+
+	// BizSetType represent operation audit of biz set itself
+	BizSetType AuditType = "biz_set"
 
 	// Business resource include resources as follows:
 	// - service template
@@ -534,6 +581,7 @@ type ResourceType string
 const (
 	// business related operation type
 	BusinessRes             ResourceType = "business"
+	BizSetRes               ResourceType = "biz_set"
 	ServiceTemplateRes      ResourceType = "service_template"
 	SetTemplateRes          ResourceType = "set_template"
 	ServiceCategoryRes      ResourceType = "service_category"
@@ -617,6 +665,8 @@ const (
 
 func GetAuditTypeByObjID(objID string, isMainline bool) AuditType {
 	switch objID {
+	case common.BKInnerObjIDBizSet:
+		return BizSetType
 	case common.BKInnerObjIDApp:
 		return BusinessType
 	case common.BKInnerObjIDSet:
@@ -641,6 +691,8 @@ func GetAuditTypeByObjID(objID string, isMainline bool) AuditType {
 
 func GetResourceTypeByObjID(objID string, isMainline bool) ResourceType {
 	switch objID {
+	case common.BKInnerObjIDBizSet:
+		return BizSetRes
 	case common.BKInnerObjIDApp:
 		return BusinessRes
 	case common.BKInnerObjIDSet:
@@ -669,7 +721,7 @@ func GetAuditTypesByCategory(category string) []AuditType {
 	case "business":
 		return []AuditType{BusinessResourceType, DynamicGroupType}
 	case "resource":
-		return []AuditType{BusinessType, ModelInstanceType, CloudResourceType}
+		return []AuditType{BusinessType, BizSetType, ModelInstanceType, CloudResourceType}
 	case "host":
 		return []AuditType{HostType}
 	case "other":
@@ -711,8 +763,8 @@ var auditDict = []resourceTypeInfo{
 		},
 	},
 	{
-		ID:   ProcessRes,
-		Name: "进程",
+		ID:   ServiceInstanceRes,
+		Name: "服务实例",
 		Operations: []actionTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],
@@ -739,6 +791,15 @@ var auditDict = []resourceTypeInfo{
 			actionInfoMap[AuditUpdate],
 			actionInfoMap[AuditArchive],
 			actionInfoMap[AuditRecover],
+		},
+	},
+	{
+		ID:   BizSetRes,
+		Name: "业务集",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
 		},
 	},
 	{

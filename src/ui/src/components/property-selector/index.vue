@@ -1,7 +1,7 @@
 <template>
   <bk-select
     v-model="localValue"
-    searchable
+    :searchable="searchable"
     font-size="medium"
     :clearable="false"
     v-bind="$attrs">
@@ -24,6 +24,10 @@
       value: {
         type: [String, Number],
         default: ''
+      },
+      searchable: {
+        type: Boolean,
+        default: true
       }
     },
     computed: {

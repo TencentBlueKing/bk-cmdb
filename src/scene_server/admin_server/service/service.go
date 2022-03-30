@@ -31,6 +31,7 @@ import (
 	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/thirdparty/monitor"
 	"configcenter/src/thirdparty/monitor/meta"
 
@@ -74,6 +75,8 @@ func (s *Service) SetIam(iam *iam.IAM) {
 func (s *Service) WebService() *restful.Container {
 	container := restful.NewContainer()
 
+	opentelemetry.AddOtlpFilter(container)
+
 	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
@@ -97,6 +100,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/specify/version/{distribution}/{ownerID}").To(s.migrateSpecifyVersion))
 	api.Route(api.POST("/migrate/config/refresh").To(s.refreshConfig))
 	api.Route(api.POST("/migrate/dataid").To(s.migrateDataID))
+	api.Route(api.POST("/migrate/old/dataid").To(s.migrateOldDataID))
 	api.Route(api.POST("/delete/auditlog").To(s.DeleteAuditLog))
 	api.Route(api.POST("/migrate/sync/db/index").To(s.RunSyncDBIndex))
 	api.Route(api.GET("/healthz").To(s.Healthz))

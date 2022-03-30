@@ -347,9 +347,14 @@
         }
         ColumnsConfig.open({
           props: {
-            properties: FilterStore.properties.filter(property => property.bk_obj_id === 'host'
-              || (property.bk_obj_id === 'module' && property.bk_property_id === 'bk_module_name')
-              || (property.bk_obj_id === 'set' && property.bk_property_id === 'bk_set_name')),
+            properties: FilterStore.properties.filter((property) => {
+              const { bk_obj_id: objId, bk_property_id: propId } = property
+              const isHost = objId === 'host'
+              const isModuleName = objId === 'module' && propId === 'bk_module_name'
+              const isSetName = objId === 'set' && propId === 'bk_set_name'
+              const isBizName = objId === 'biz' && propId  === 'bk_biz_name'
+              return isHost || isModuleName || isSetName || isBizName
+            }),
             selected: FilterStore.defaultHeader.map(property => property.bk_property_id),
             disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
           },

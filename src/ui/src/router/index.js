@@ -18,6 +18,7 @@ import {
 
 import {
   MENU_ENTRY,
+  MENU_BUSINESS_SET,
   MENU_BUSINESS,
   MENU_RESOURCE,
   MENU_MODEL,
@@ -28,6 +29,7 @@ import {
 import {
   indexViews,
   hostLandingViews,
+  businessSetViews,
   businessViews,
   resourceViews,
   modelViews,
@@ -72,6 +74,21 @@ const router = new Router({
       children: indexViews,
       path: '/',
       redirect: '/index'
+    },
+    {
+      name: MENU_BUSINESS_SET,
+      components: {
+        default: dynamicRouterView,
+        error: require('@/views/status/error').default,
+        permission: require('@/views/status/non-exist-business-set').default
+      },
+      children: businessSetViews,
+      path: '/business-set/:bizSetId',
+      meta: {
+        menu: {
+          i18n: '业务集'
+        }
+      }
     },
     {
       name: MENU_BUSINESS,
@@ -181,31 +198,71 @@ const setupStatus = {
 router.beforeEach((to, from, next) => {
   Vue.nextTick(async () => {
     try {
+      /**
+       * 取消上个页面中的所有请求
+       */
       cancelRequest(router.app)
+
+      /**
+       * 设置当前页面的标题
+       */
       to.name !== from.name && router.app.$store.commit('setTitle', '')
+
+
+      /**
+       * 将非 permission 的 view 设置为 default
+       */
       if (to.meta.view !== 'permission') {
         Vue.set(to.meta, 'view', 'default')
       }
-      if (to.name === from.name) {
+
+      /**
+       * 如果路由中的业务 ID 改变了，应该继续往下执行到业务拦截器，否则在同页路由下直接执行路由跳转，不再执行往后的逻辑
+       */
+      const isFromBiz = from.matched[0]?.name === MENU_BUSINESS
+      const bizIsChanged = isFromBiz && parseInt(to.params.bizId, 10) !== parseInt(from.params.bizId, 10)
+
+      if (to.name === from.name && !bizIsChanged) {
         return next()
       }
+
+      /**
+       * 初始化预加载，只会加载一次
+       */
       if (setupStatus.preload) {
         setLoading(true)
         setupStatus.preload = false
         await preload(router.app)
         setupValidator(router.app)
       }
+
+      /**
+       * 执行插入的钩子
+       */
       await runBeforeHooks()
+
+      /**
+       * 业务拦截器，检查是否有当前业务的权限
+       */
       const shouldContinue = await businessBeforeInterceptor(to, from, next)
+
       if (!shouldContinue) {
         return false
       }
 
+      /**
+       * 检查页面是否被设置为 available，如果设置为 false 则会跳转到 404 页面
+       */
       const isAvailable = checkAvailable(to, from)
       if (!isAvailable) {
         throw new StatusError({ name: '404' })
       }
+
+      /**
+       * 检查是否有权限访问当前页面
+       */
       await checkViewAuthorize(to)
+
       return next()
     } catch (e) {
       console.error(e)
