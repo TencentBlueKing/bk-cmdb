@@ -29,11 +29,11 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
-type kind string
+type ruleType string
 
 const (
-	module          kind = "module"
-	serviceTemplate kind = "serviceTmeplate"
+	module          ruleType = "module"
+	serviceTemplate ruleType = "serviceTmeplate"
 )
 
 type hostApplyRule struct {
@@ -467,13 +467,15 @@ func getAttributeIDs(kit *rest.Kit, filter *querybuilder.QueryFilter) ([]int64, 
 	return attributeIDs, nil
 }
 
-func getRuleRelationIDs(rules []metadata.HostApplyRule, k kind) (map[int64]map[string]metadata.HostApplyRule, []int64) {
+func getRuleRelationIDs(rules []metadata.HostApplyRule, rType ruleType) (map[int64]map[string]metadata.HostApplyRule,
+	[]int64) {
+
 	idToRules := make(map[int64]map[string]metadata.HostApplyRule)
 	ids := make([]int64, 0)
 
 	for _, rule := range rules {
 		var id int64
-		switch k {
+		switch rType {
 		case module:
 			if rule.ServiceTemplateID != 0 {
 				continue

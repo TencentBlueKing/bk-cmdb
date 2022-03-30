@@ -13,7 +13,7 @@
 package service
 
 import (
-	err "errors"
+	errs "errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -194,7 +194,7 @@ func (s *Service) ListHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	if err := checkIDs(option.ModuleIDs); err != nil {
-		blog.Errorf("parameter bk_module_ids invalid, err: %v, rid:%s", err, rid)
+		blog.Errorf("get module host apply rule failed, parameter bk_module_ids invalid, err: %v, rid:%s", err, rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_module_ids"))
 		return
 	}
@@ -266,13 +266,13 @@ func (s *Service) GenerateModuleApplyPlan(ctx *rest.Contexts) {
 	}
 
 	if planRequest.BizID == 0 {
-		blog.Errorf("bk_biz_id shouldn't empty, rid:%s", ctx.Kit.Rid)
+		blog.Errorf("generate module host apply rule plan failed, bk_biz_id shouldn't empty, rid:%s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id"))
 		return
 	}
 
 	if err := checkIDs(planRequest.ModuleIDs); err != nil {
-		blog.Errorf("parameter bk_module_ids invalid, err: %v, rid:%s", err, rid)
+		blog.Errorf("generate module host apply rule plan failed, bk_module_ids invalid, err: %v, rid:%s", err, rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_module_ids"))
 		return
 	}
@@ -284,18 +284,11 @@ func (s *Service) GenerateModuleApplyPlan(ctx *rest.Contexts) {
 		return
 	}
 
-	var ccErr errors.CCErrorCoder
 	for _, item := range result.Plans {
 		if err := item.GetError(); err != nil {
-			ccErr = err
-			break
+			ctx.RespAutoError(err)
+			return
 		}
-	}
-	if ccErr != nil {
-		response := &metadata.RespError{Msg: ccErr}
-		response.Data = result
-		ctx.RespAutoError(response)
-		return
 	}
 
 	ctx.RespEntity(result)
@@ -758,37 +751,31 @@ func (s *Service) GenerateTemplateApplyPlan(ctx *rest.Contexts) {
 	}
 
 	if planRequest.BizID == 0 {
-		blog.Errorf("bk_biz_id shouldn't empty, rid:%s", ctx.Kit.Rid)
+		blog.Errorf("generate service template host apply plan, bk_biz_id shouldn't empty, rid:%s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id"))
 		return
 	}
 
 	if err := checkIDs(planRequest.ServiceTemplateIDs); err != nil {
-		blog.Errorf("parameter service_template_ids invalid, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("generate service template host apply plan failed, service_template_ids invalid, err: %v, rid: %s",
+			err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "service_template_ids"))
 		return
 	}
 
 	result, err := s.generateServiceTemplateApplyPlan(ctx.Kit, &planRequest)
 	if err != nil {
-		blog.ErrorJSON("generate service template apply plan failed, request: %s, err: %v, rid:%s",
+		blog.Errorf("generate service template apply plan failed, request: %v, err: %v, rid: %s",
 			planRequest, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	var ccErr errors.CCErrorCoder
 	for _, item := range result.Plans {
 		if err := item.GetError(); err != nil {
-			ccErr = err
-			break
+			ctx.RespAutoError(err)
+			return
 		}
-	}
-	if ccErr != nil {
-		response := &metadata.RespError{Msg: ccErr}
-		response.Data = result
-		ctx.RespAutoError(response)
-		return
 	}
 
 	ctx.RespEntity(result)
@@ -894,8 +881,8 @@ func (s *Service) findSrvTemplateRule(kit *rest.Kit, bizID int64, ids []int64) (
 	return rule.Info, nil
 }
 
-func getFinalRule(rules []metadata.HostApplyRule,
-	option *metadata.HostApplyServiceTemplateOption) []metadata.HostApplyRule {
+func getFinalRule(rules []metadata.HostApplyRule, option *metadata.HostApplyServiceTemplateOption) []metadata.
+	HostApplyRule {
 
 	keyToRule := make(map[string]metadata.HostApplyRule)
 	for _, rule := range rules {
@@ -941,13 +928,13 @@ func (s *Service) GetServiceTemplateHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	if option.ApplicationID == 0 {
-		blog.Errorf("bk_biz_id shouldn't empty, rid:%s", ctx.Kit.Rid)
+		blog.Errorf("get service template rule failed, bk_biz_id shouldn't empty, rid:%s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id"))
 		return
 	}
 
 	if err := checkIDs(option.ServiceTemplateIDs); err != nil {
-		blog.Errorf("parameter service_template_ids invalid, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("get service template rule failed,service_template_ids invalid, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "service_template_ids"))
 		return
 	}
@@ -971,13 +958,13 @@ func (s *Service) GetModuleInvalidHostCount(ctx *rest.Contexts) {
 	}
 
 	if planRequest.ApplicationID == 0 {
-		blog.Errorf("bk_biz_id shouldn't empty, rid:%s", ctx.Kit.Rid)
+		blog.Errorf("get module invalid host count failed, bk_biz_id shouldn't empty, rid:%s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id"))
 		return
 	}
 
 	if err := checkIDs([]int64{planRequest.ID}); err != nil {
-		blog.Errorf("parameter id invalid, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("get module invalid host count failed, id invalid, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "id"))
 		return
 	}
@@ -995,18 +982,11 @@ func (s *Service) GetModuleInvalidHostCount(ctx *rest.Contexts) {
 		return
 	}
 
-	var ccErr errors.CCErrorCoder
 	for _, item := range result.Plans {
 		if err := item.GetError(); err != nil {
-			ccErr = err
-			break
+			ctx.RespAutoError(err)
+			return
 		}
-	}
-	if ccErr != nil {
-		response := &metadata.RespError{Msg: ccErr}
-		response.Data = result
-		ctx.RespAutoError(response)
-		return
 	}
 
 	ctx.RespEntity(&metadata.InvalidHostCountResult{
@@ -1023,13 +1003,13 @@ func (s *Service) GetServiceTemplateInvalidHostCount(ctx *rest.Contexts) {
 	}
 
 	if planRequest.ApplicationID == 0 {
-		blog.Errorf("bk_biz_id shouldn't empty, rid:%s", ctx.Kit.Rid)
+		blog.Errorf("get service template invalid host count failed, bk_biz_id shouldn't empty, rid:%s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id"))
 		return
 	}
 
 	if err := checkIDs([]int64{planRequest.ID}); err != nil {
-		blog.Errorf("parameter id invalid, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("get service template invalid host count failed, id invalid, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "id"))
 		return
 	}
@@ -1042,24 +1022,17 @@ func (s *Service) GetServiceTemplateInvalidHostCount(ctx *rest.Contexts) {
 	}
 	result, err := s.generateServiceTemplateApplyPlan(ctx.Kit, option)
 	if err != nil {
-		blog.ErrorJSON("generate service template apply plan failed, request: %s, err: %v, rid:%s",
+		blog.Errorf("generate service template apply plan failed, request: %v, err: %v, rid:%s",
 			planRequest, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	var ccErr errors.CCErrorCoder
 	for _, item := range result.Plans {
 		if err := item.GetError(); err != nil {
-			ccErr = err
-			break
+			ctx.RespAutoError(err)
+			return
 		}
-	}
-	if ccErr != nil {
-		response := &metadata.RespError{Msg: ccErr}
-		response.Data = result
-		ctx.RespAutoError(response)
-		return
 	}
 
 	ctx.RespEntity(&metadata.InvalidHostCountResult{
@@ -1077,13 +1050,14 @@ func (s *Service) GetServiceTemplateHostApplyRuleCount(ctx *rest.Contexts) {
 	}
 
 	if option.ApplicationID == 0 {
-		blog.Errorf("bk_biz_id shouldn't empty, rid:%s", ctx.Kit.Rid)
+		blog.Errorf("get service template host apply rule count failed, bk_biz_id shouldn't empty, rid:%s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id"))
 		return
 	}
 
 	if err := checkIDs(option.ServiceTemplateIDs); err != nil {
-		blog.Errorf("parameter service_template_ids invalid, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("get service template host apply rule count failed, service_template_ids invalid, err: %v, rid: %s",
+			err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "service_template_ids"))
 		return
 	}
@@ -1120,11 +1094,11 @@ func (s *Service) GetServiceTemplateHostApplyRuleCount(ctx *rest.Contexts) {
 
 func checkIDs(ids []int64) error {
 	if len(ids) == 0 {
-		return err.New("the parameters length is 0")
+		return errs.New("the parameters length is 0")
 	}
 
 	if util.InArray(0, ids) {
-		return err.New("the parameters can not have 0 value")
+		return errs.New("the parameters can not have 0 value")
 	}
 
 	return nil
@@ -1139,13 +1113,13 @@ func (s *Service) GetModuleFinalRules(ctx *rest.Contexts) {
 	}
 
 	if option.ApplicationID == 0 {
-		blog.Errorf("bk_biz_id shouldn't empty, rid:%s", ctx.Kit.Rid)
+		blog.Errorf("get module final rules failed, bk_biz_id shouldn't empty, rid: %s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id"))
 		return
 	}
 
 	if err := checkIDs(option.ModuleIDs); err != nil {
-		blog.Errorf("parameter bk_module_ids invalid, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("get module final rules failed, bk_module_ids invalid, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_module_ids"))
 		return
 	}

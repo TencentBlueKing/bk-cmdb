@@ -251,7 +251,7 @@ func (p *hostApplyRule) RunHostApplyOnHosts(ctx context.Context, header http.Hea
 
 // SearchRuleRelatedServiceTemplates search rule related service templates
 func (p *hostApplyRule) SearchRuleRelatedServiceTemplates(ctx context.Context, header http.Header,
-	option metadata.RuleRelatedServiceTemplateOption) ([]metadata.SrvTemplate, errors.CCErrorCoder) {
+	option *metadata.RuleRelatedServiceTemplateOption) ([]metadata.SrvTemplate, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp
 		Data []metadata.SrvTemplate `json:"data"`
@@ -269,7 +269,6 @@ func (p *hostApplyRule) SearchRuleRelatedServiceTemplates(ctx context.Context, h
 		Into(&ret)
 
 	if err != nil {
-		blog.Errorf("http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
 	if ret.CCError() != nil {
