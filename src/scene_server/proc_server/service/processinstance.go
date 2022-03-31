@@ -268,36 +268,37 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 
 	if len(input.Raw) > common.BKMaxUpdateOrCreatePageSize {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
-		// generate audit log before processes are updated
-		auditLogs, err := ps.generateUpdateProcessAudit(ctx.Kit, input)
-		if err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
-
-		var result []int64
-		txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-			// update process instances
-			var err error
-			result, err = ps.updateProcessInstances(ctx, input)
-			if err != nil {
-				return err
-			}
-
-			// save audit log
-			audit := auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
-			if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-				return err
-			}
-			return nil
-		})
-
-		if txnErr != nil {
-			ctx.RespAutoError(txnErr)
-			return
-		}
-		ctx.RespEntity(result)
+		return
 	}
+	// generate audit log before processes are updated
+	auditLogs, err := ps.generateUpdateProcessAudit(ctx.Kit, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	var result []int64
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		// update process instances
+		var err error
+		result, err = ps.updateProcessInstances(ctx, input)
+		if err != nil {
+			return err
+		}
+
+		// save audit log
+		audit := auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
+		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
 // generateUpdateProcessAudit generate audit logs for process update operation
