@@ -263,7 +263,7 @@
       },
       reset() {
         if (!this.hasRuleDraft) {
-          this.modulePropertyList = []
+          this.propertyRuleList = []
         }
       },
       renderColumnHeader(h, data, tips) {
@@ -315,6 +315,10 @@
         height: 20px;
         line-height: 20px;
         @include ellipsis;
+    }
+    .path-item {
+      direction: rtl;
+      text-align: left;
     }
     .property-value {
       &.disabled {

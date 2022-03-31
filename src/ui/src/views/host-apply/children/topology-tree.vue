@@ -15,6 +15,7 @@
       :node-height="36"
       :check-on-click="true"
       :before-select="beforeSelect"
+      :before-check="beforeCheck"
       :filter-method="filterMethod"
       @select-change="handleSelectChange"
       @check-change="handleCheckChange"
@@ -54,6 +55,7 @@
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import { sortTopoTree } from '@/utils/tools'
   import topologyInstanceService, { requestIds as topologyrequestIds } from '@/services/topology/instance.js'
+  import { CONFIG_MODE } from '@/services/service-template/index.js'
 
   export default {
     props: {
@@ -133,6 +135,13 @@
         topologyInstanceService.geFulltWithStat(this.business),
         this.getMainLine()
       ])
+
+      // 从另外一侧关闭应用规则需要更新对应一侧的状态数据
+      Bus.$on('host-apply-closed', (mode, id) => {
+        if (mode === CONFIG_MODE.TEMPLATE) {
+          this.setModuleApplyStatusByTemplate(this.treeStat?.withTemplateModuleIdMap.get(id))
+        }
+      })
 
       sortTopoTree(data, 'bk_inst_name', 'child')
 
@@ -250,7 +259,7 @@
         if (defaultNodeId) {
           const treeNode = this.$refs.tree.getNodeById(defaultNodeId)
           if (treeNode.data.service_template_id) {
-            await this.setModuleApplyStatusByTemplate(treeNode.data.bk_inst_id)
+            await this.setModuleApplyStatusByTemplate([treeNode.data.bk_inst_id])
           }
           this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
           // 展开父级
@@ -262,7 +271,8 @@
           firstModule: null,
           levels: {},
           noRuleIds: [],
-          withTemplateModuleIds: [],
+          // 模板id为键的模块id列表
+          withTemplateModuleIdMap: new Map(),
           withTemplateHostApplyIds: []
         }
         const findModule = function (data, parent) {
@@ -271,7 +281,11 @@
             stat.levels[item.bk_inst_id] = parent ? (stat.levels[parent.bk_inst_id] + 1) : 0
             if (item.bk_obj_id === 'module') {
               if (item.service_template_id) {
-                stat.withTemplateModuleIds.push(item.bk_inst_id)
+                if (stat.withTemplateModuleIdMap.has(item.service_template_id)) {
+                  stat.withTemplateModuleIdMap.get(item.service_template_id).push(item.bk_inst_id)
+                } else {
+                  stat.withTemplateModuleIdMap.set(item.service_template_id, [item.bk_inst_id])
+                }
                 if (item.service_template_host_apply_enabled) {
                   stat.withTemplateHostApplyIds.push(item.bk_inst_id)
                 }
@@ -338,8 +352,11 @@
       isModule(node) {
         return node.data.bk_obj_id === 'module'
       },
-      async beforeSelect(node) {
+      beforeSelect(node) {
         return this.isModule(node)
+      },
+      beforeCheck() {
+        return Boolean(this.action)
       },
       getNodeTips(nodeData) {
         if (nodeData.service_template_host_apply_enabled) {
@@ -377,10 +394,14 @@
           Bus.$emit('topologyTree/expandChange', lastNodeLevel)
         }
       },
-      async setModuleApplyStatusByTemplate(id) {
-        let { withTemplateModuleIds } = this.treeStat
-        if (id) {
-          withTemplateModuleIds = [id]
+      async setModuleApplyStatusByTemplate(ids) {
+        const { withTemplateModuleIdMap } = this.treeStat
+        let withTemplateModuleIds = []
+        for (const moduleIds of withTemplateModuleIdMap.values()) {
+          withTemplateModuleIds.push(...moduleIds)
+        }
+        if (ids) {
+          withTemplateModuleIds = ids
         }
         try {
           const result = await this.$store.dispatch('hostApply/getModuleApplyStatusByTemplate', {

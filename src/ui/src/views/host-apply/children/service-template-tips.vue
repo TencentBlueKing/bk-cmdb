@@ -46,6 +46,7 @@
           </bk-input>
         </div>
         <bk-table class="module-list-table"
+          :cell-class-name="cellClassName"
           ref="table"
           v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }"
           :pagination="pagination"
@@ -215,6 +216,12 @@
         state.isShow = false
       }
 
+      const cellClassName = ({ column }) => {
+        if (column?.property) {
+          return column.property
+        }
+      }
+
       return {
         ...toRefs(state),
         requestIds,
@@ -223,7 +230,8 @@
         handlePageLimitChange,
         handleViewModuleHostApply,
         handleShow,
-        handleClose
+        handleClose,
+        cellClassName
       }
     }
   })
@@ -275,6 +283,15 @@
         .bk-exception-text {
           font-size: 12px;
         }
+      }
+    }
+
+    ::v-deep {
+      .topopath .cell {
+        direction: rtl;
+        text-align: left;
+        white-space: nowrap;
+        display: block;
       }
     }
   }

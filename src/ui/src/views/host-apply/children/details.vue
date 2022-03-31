@@ -5,7 +5,7 @@
         <div class="config-head">
           <h2 class="config-title">
             <div class="config-name" v-bk-overflow-tips>{{modeValues.title}}</div>
-            <small class="last-edit-time" v-if="hasRule && ruleLastEditTime">
+            <small class="last-edit-time" v-if="localHasRule && ruleLastEditTime">
               ( {{$t('上次编辑时间')}}{{ruleLastEditTime}} )
             </small>
           </h2>
@@ -81,7 +81,7 @@
           </template>
 
           <template v-else>
-            <div class="empty" v-if="!hasRule">
+            <div class="empty" v-if="!localHasRule">
               <div class="desc">
                 <i class="bk-cc-icon icon-cc-tips"></i>
                 <span v-if="mode === CONFIG_MODE.MODULE">{{$t('当前模块未启用自动应用策略')}}</span>
@@ -178,12 +178,14 @@
       bizId: Number,
       currentNode: Object,
       ruleList: Array,
+      hasRule: Boolean,
       checkedPropertyIdList: Array,
       conflictNum: Number
     },
     setup(props, { emit }) {
       const {
         id,
+        hasRule,
         ruleList,
         currentNode,
         conflictNum
@@ -207,7 +209,7 @@
 
       const serviceTemplateApplyEnabled = computed(() => currentNode.value?.service_template_host_apply_enabled)
 
-      const hasRule = computed(() => ruleList.value?.length > 0)
+      const localHasRule = computed(() => hasRule.value && ruleList.value?.length > 0)
 
       const hasConflict = computed(() => conflictNum.value > 0)
 
@@ -252,7 +254,7 @@
         ruleLastEditTime,
         applyEnabled,
         serviceTemplateApplyEnabled,
-        hasRule,
+        localHasRule,
         hasConflict,
         reset,
         handleDeletePropertyRule,

@@ -28,6 +28,7 @@
           :id="targetId"
           :biz-id="bizId"
           :rule-list="initRuleList"
+          :has-rule="hasRule"
           :current-node="currentNode"
           :conflict-num="conflictNum"
           :checked-property-id-list="checkedPropertyIdList"
@@ -275,6 +276,8 @@
 
               // 更新当前节点开启状态
               this.currentNode.host_apply_enabled = false
+
+              Bus.$emit('host-apply-closed', this.mode, this.targetId, this.clearRules)
             } catch (e) {
               console.log(e)
             }
