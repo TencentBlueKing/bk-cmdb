@@ -152,11 +152,11 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 	}, {
 		Name:           "findmanyServiceTemplateHostApplyTaskStatus",
 		Description:    "查看服务模板场景下主机自动应用任务状态",
-		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/service_template/host_apply_plan/status`),
+		Regex:          regexp.MustCompile(`/api/v3/findmany/proc/service_template/host_apply_plan/status`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    DefaultBizIDGetter,
-		ResourceType:   meta.ProcessServiceInstance,
-		ResourceAction: meta.SkipAction,
+		ResourceType:   meta.Business,
+		ResourceAction: meta.ViewBusinessResource,
 	}, {
 		Name:           "deleteServiceTemplateHostApplyRule",
 		Description:    "删除服务模板场景下主机自动应用规则",

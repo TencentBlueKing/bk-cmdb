@@ -142,6 +142,7 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 			},
 			Name:       "host_property_under_module",
 			Background: false,
+			Unique:     true,
 		},
 	}
 	for _, index := range indexes {

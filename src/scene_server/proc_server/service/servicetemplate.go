@@ -116,8 +116,11 @@ func (ps *ProcServer) getHostIDByCondition(kit *rest.Kit, bizID int64, serviceTe
 
 	// 1、get module ids by template ids.
 	moduleCond := mapstr.MapStr{
-		common.BKAppIDField:             bizID,
-		common.BKServiceTemplateIDField: mapstr.MapStr{common.BKDBIN: serviceTemplateIDs},
+		common.BKAppIDField: bizID,
+	}
+
+	if len(serviceTemplateIDs) > 0 {
+		moduleCond[common.BKServiceTemplateIDField] = mapstr.MapStr{common.BKDBIN: serviceTemplateIDs}
 	}
 
 	moduleFilter := &metadata.QueryCondition{
@@ -137,44 +140,36 @@ func (ps *ProcServer) getHostIDByCondition(kit *rest.Kit, bizID int64, serviceTe
 		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", moduleFilter, err, kit.Rid)
 		return nil, err
 	}
+	modIDs := make([]int64, 0)
+
 	// need to be compatible with scenarios without modules under the service template. In this scenario, only attribute
 	// rules need to be applied to service templates, not host attribute rules (without modules, there must be no hosts)
 	if len(moduleRes.Data.Info) == 0 {
-		return []int64{}, nil
+		return modIDs, nil
 	}
-
-	modIDs := make([]int64, 0)
 
 	for _, modID := range moduleRes.Data.Info {
 		modIDs = append(modIDs, modID.ModuleID)
 	}
+
 	// 2、get the corresponding hostIDs list through the module ids.
-	relationReq := &metadata.HostModuleRelationRequest{
-		ApplicationID: bizID,
-		ModuleIDArr:   modIDs,
-		Page:          metadata.BasePage{Limit: common.BKNoLimit},
-		Fields:        []string{common.BKModuleIDField, common.BKHostIDField},
+	relReq := &metadata.DistinctHostIDByTopoRelationRequest{
+		ApplicationIDArr: []int64{bizID},
 	}
-
-	// hostIDs are not empty in the invalid host scenario.
 	if hostIDs != nil {
-		relationReq.HostIDArr = hostIDs
+		relReq.HostIDArr = hostIDs
 	}
-	hostRelations, e := ps.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, relationReq)
-	if e != nil {
-		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, kit.Rid)
-		return []int64{}, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	if len(modIDs) > 0 {
+		relReq.ModuleIDArr = modIDs
 	}
 
-	hostModuleMap := make(map[int64]struct{})
-	for _, item := range hostRelations.Info {
-		hostModuleMap[item.HostID] = struct{}{}
+	relRsp, relErr := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, relReq)
+	if relErr != nil {
+		blog.Errorf("get host ids failed, req: %s, err: %s, rid: %s", relReq, relErr, kit.Rid)
+		return relRsp, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	result := make([]int64, 0)
-	for hostID := range hostModuleMap {
-		result = append(result, hostID)
-	}
-	return result, nil
+
+	return relRsp, nil
 
 }
 
@@ -269,15 +264,15 @@ func (ps *ProcServer) ExecServiceTemplateHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-func (s *ProcServer) getUpdateDataStr(kit *rest.Kit, rules []metadata.CreateHostApplyRuleOption) (
+func (s *ProcServer) getUpdateDataStrByApplyRule(kit *rest.Kit, rules []metadata.CreateHostApplyRuleOption) (
 	string, errors.CCErrorCoder) {
 	attributeIDs := make([]int64, 0)
-	attrIDmap := make(map[int64]struct{})
+	attrIDMap := make(map[int64]struct{})
 	for _, rule := range rules {
-		if _, ok := attrIDmap[rule.AttributeID]; ok {
+		if _, ok := attrIDMap[rule.AttributeID]; ok {
 			continue
 		}
-		attrIDmap[rule.AttributeID] = struct{}{}
+		attrIDMap[rule.AttributeID] = struct{}{}
 		attributeIDs = append(attributeIDs, rule.AttributeID)
 	}
 
@@ -334,7 +329,7 @@ func generateCondition(dataStr string, hostIDs []int64) (map[string]interface{},
 func (s *ProcServer) updateHostAttributes(kit *rest.Kit, planResult *metadata.HostApplyServiceTemplateOption,
 	hostIDs []int64) errors.CCErrorCoder {
 
-	dataStr, err := s.getUpdateDataStr(kit, planResult.AdditionalRules)
+	dataStr, err := s.getUpdateDataStrByApplyRule(kit, planResult.AdditionalRules)
 	if err != nil {
 		return err
 	}
@@ -420,11 +415,11 @@ func (ps *ProcServer) UpdateServiceTemplateHostApplyEnableStatus(ctx *rest.Conte
 		return
 	}
 
-	if len(requestBody.IDs) == 0 {
-		blog.Errorf("parse service template id failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "service_template_ids"))
+	if err := requestBody.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
+
 	updateOption := &metadata.UpdateOption{
 		Condition: map[string]interface{}{
 			common.BKAppIDField: bizID,
@@ -506,7 +501,7 @@ func (s *ProcServer) GetHostApplyTaskStatus(ctx *rest.Contexts) {
 	statusOpt := &metadata.QueryCondition{
 		Condition: map[string]interface{}{
 			common.BKTaskTypeField: common.SyncServiceTemplateHostApplyTaskFlag,
-			common.BKTaskIDField:   map[string]interface{}{common.BKDBIN: syncStatusOpt.TaskIDS},
+			common.BKTaskIDField:   map[string]interface{}{common.BKDBIN: syncStatusOpt.TaskIDs},
 		},
 		Fields:         []string{common.BKStatusField, common.BKTaskIDField},
 		DisableCounter: true,
@@ -568,7 +563,7 @@ func (ps *ProcServer) DeleteHostApplyRule(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(make(map[string]interface{}))
+	ctx.RespEntity(nil)
 
 }
 func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {

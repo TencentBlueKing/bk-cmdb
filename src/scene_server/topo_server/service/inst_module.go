@@ -615,10 +615,16 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 	}
 
 	if len(request.IDs) == 0 {
-		blog.Errorf("parse modules failed, rid: %s", ctx.Kit.Rid)
+		blog.Errorf("module ids must be set, rid: %s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "bk_module_ids"))
 		return
 	}
+
+	if err := request.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
 	updateOption := &metadata.UpdateOption{
 		Condition: map[string]interface{}{
 			common.BKAppIDField:    bizID,

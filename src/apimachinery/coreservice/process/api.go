@@ -269,7 +269,6 @@ func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, temp
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("UpdateServiceTemplate failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
 	if ret.CCError() != nil {
@@ -282,7 +281,7 @@ func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, temp
 // UpdateBatchServiceTemplate batch update service template action
 func (p *process) UpdateBatchServiceTemplate(ctx context.Context, h http.Header,
 	option *metadata.UpdateOption) errors.CCErrorCoder {
-	ret := new(metadata.OneServiceTemplateResult)
+	ret := new(metadata.BaseResp)
 	subPath := "/update/batch/process/service_templates"
 
 	err := p.client.Put().
@@ -294,7 +293,6 @@ func (p *process) UpdateBatchServiceTemplate(ctx context.Context, h http.Header,
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("update service templates failed, http request failed, err: %+v", err)
 		return errors.CCHttpError
 	}
 	if ret.CCError() != nil {

@@ -312,12 +312,12 @@ func (s *Service) updateHostPlan(planResult metadata.HostApplyPlanResult, kit *r
 				blog.Errorf("get hosts count failed, filter: %+v, err: %v, rid: %s", mergeCond, cErr, kit.Rid)
 				return
 			}
+			// If there is no eligible host, then return directly.
 			if counts[0] == 0 {
 				blog.V(5).Infof("no hosts founded, filter: %+v, rid: %s", mergeCond, kit.Rid)
 				return
 			}
 
-			// If there is no eligible host, then return directly.
 			updateOp := &metadata.UpdateOption{Data: data, Condition: mergeCond}
 
 			_, err := s.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header,
@@ -353,34 +353,24 @@ func (s *Service) updateHostPlan(planResult metadata.HostApplyPlanResult, kit *r
 
 // getHostIDByCondition get the final list of hostIDs.
 func (s *Service) getHostIDByCondition(kit *rest.Kit, bizID int64, modIDs []int64, hostIDs []int64) ([]int64, error) {
-	relationReq := &metadata.HostModuleRelationRequest{
-		ApplicationID: bizID,
-		ModuleIDArr:   modIDs,
-		Page:          metadata.BasePage{Limit: common.BKNoLimit},
-		Fields:        []string{common.BKModuleIDField, common.BKHostIDField},
+
+	relReq := &metadata.DistinctHostIDByTopoRelationRequest{
+		ApplicationIDArr: []int64{bizID},
+	}
+	if hostIDs != nil {
+		relReq.HostIDArr = hostIDs
+	}
+	if len(modIDs) > 0 {
+		relReq.ModuleIDArr = modIDs
 	}
 
-	// hostIDs are not empty in the invalid host scenario.
-	if hostIDs != nil {
-		relationReq.HostIDArr = hostIDs
+	relRsp, relErr := s.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, relReq)
+	if relErr != nil {
+		blog.Errorf("get host ids failed, req: %s, err: %v, rid: %s", relReq, relErr, kit.Rid)
+		return relRsp, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	hostRelations, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, relationReq)
-	if err != nil {
-		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, kit.Rid)
-		return []int64{}, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if len(hostRelations.Info) == 0 {
-		return []int64{}, nil
-	}
-	hostModuleMap := make(map[int64]struct{})
-	for _, item := range hostRelations.Info {
-		hostModuleMap[item.HostID] = struct{}{}
-	}
-	result := make([]int64, 0)
-	for hostID := range hostModuleMap {
-		result = append(result, hostID)
-	}
-	return result, nil
+
+	return relRsp, nil
 }
 
 func (s *Service) generateApplyPlan(ctx *rest.Contexts, bizID int64, planRequest metadata.HostApplyPlanRequest) (
@@ -470,8 +460,8 @@ func (s *Service) generateApplyPlan(ctx *rest.Contexts, bizID int64, planRequest
 	return planResult, nil
 }
 
-func (s *Service) getUpdateDataStr(kit *rest.Kit, rules []metadata.HostAttribute) (
-	string, errors.CCErrorCoder) {
+func (s *Service) getUpdateDataStrByHostAttribute(kit *rest.Kit, rules []metadata.HostAttribute) (string,
+	errors.CCErrorCoder) {
 	attributeIDs := make([]int64, 0)
 	for _, rule := range rules {
 		attributeIDs = append(attributeIDs, rule.AttributeID)
@@ -501,7 +491,11 @@ func (s *Service) getUpdateDataStr(kit *rest.Kit, rules []metadata.HostAttribute
 	fields := make([]string, len(rules))
 
 	for index, field := range rules {
-		value, _ := json.Marshal(field.PropertyValue)
+		value, err := json.Marshal(field.PropertyValue)
+		if err != nil {
+			blog.Errorf("propertyValue marshal failed, err: %v, rid: %s", err, kit.Rid)
+			return "", kit.CCError.CCError(common.CCErrCommJSONMarshalFailed)
+		}
 		fields[index] = fmt.Sprintf(`"%s":%s`, attrMap[field.AttributeID], string(value))
 	}
 
@@ -513,7 +507,7 @@ func (s *Service) getUpdateDataStr(kit *rest.Kit, rules []metadata.HostAttribute
 func (s *Service) updateHostAttributes(kit *rest.Kit, planResult []metadata.HostAttribute,
 	hostIDs []int64) errors.CCErrorCoder {
 
-	dataStr, err := s.getUpdateDataStr(kit, planResult)
+	dataStr, err := s.getUpdateDataStrByHostAttribute(kit, planResult)
 	if err != nil {
 		return err
 	}
@@ -559,7 +553,7 @@ func (s *Service) GetHostApplyTaskStatus(ctx *rest.Contexts) {
 	statusOpt := &metadata.QueryCondition{
 		Condition: map[string]interface{}{
 			common.BKTaskTypeField: common.SyncModuleHostApplyTaskFlag,
-			common.BKTaskIDField:   map[string]interface{}{common.BKDBIN: syncStatusOpt.TaskIDS},
+			common.BKTaskIDField:   map[string]interface{}{common.BKDBIN: syncStatusOpt.TaskIDs},
 		},
 		Fields:         []string{common.BKStatusField, common.BKTaskIDField},
 		DisableCounter: true,

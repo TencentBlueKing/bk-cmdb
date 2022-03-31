@@ -74,30 +74,6 @@ func addHostApplyRuleTableColumn(ctx context.Context, db dal.RDB, conf *upgrader
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + common.BKServiceTemplateIDField,
-			Keys: map[string]int32{
-				common.BKServiceTemplateIDField: 1,
-			},
-			Background: true,
-		},
-		{
-			Name: common.CCLogicIndexNamePrefix + "bizID_serviceTemplateID",
-			Keys: map[string]int32{
-				common.BKAppIDField:             1,
-				common.BKServiceTemplateIDField: 1,
-			},
-			Background: true,
-		},
-		// complement the composite index of BizID and moduleID.
-		{
-			Name: common.CCLogicIndexNamePrefix + "bizID_ModuleID",
-			Keys: map[string]int32{
-				common.BKAppIDField:    1,
-				common.BKModuleIDField: 1,
-			},
-			Background: true,
-		},
-		{
 			Name: common.CCLogicIndexNamePrefix + "bizID_moduleID_attrID",
 			Keys: map[string]int32{
 				common.BKAppIDField:       1,
@@ -112,7 +88,7 @@ func addHostApplyRuleTableColumn(ctx context.Context, db dal.RDB, conf *upgrader
 				common.BKModuleIDField:    1,
 				common.BKAttributeIDField: 1,
 			},
-			Background: false,
+			Background: true,
 		},
 	}
 
@@ -155,18 +131,18 @@ func addHostApplyRuleTableColumn(ctx context.Context, db dal.RDB, conf *upgrader
 
 	for _, index := range indexes {
 		exist := false
-		for name := range idArrMap {
-			if name == index.Name {
-				exist = true
-				break
-			}
+		if _, ok := idArrMap[index.Name]; ok {
+			exist = true
+			break
 		}
+
 		// index already exist, skip create
 		if exist {
 			continue
 		}
 
-		if err := db.Table(common.BKTableNameHostApplyRule).CreateIndex(ctx, index); err != nil {
+		if err := db.Table(common.BKTableNameHostApplyRule).CreateIndex(ctx, index); err != nil &&
+			!db.IsDuplicatedError(err) {
 			blog.Errorf("add host property apply index failed, table: %s, index: %+v, err: %v",
 				common.BKTableNameHostApplyRule, index, err)
 			return fmt.Errorf("add index failed, table: %s, index: %s, err: %v",

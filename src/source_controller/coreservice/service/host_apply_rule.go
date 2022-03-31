@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -78,38 +79,36 @@ func (s *coreService) UpdateHostApplyRule(ctx *rest.Contexts) {
 // updateModuleHostApplyStatus after judging the deletion of the module rule, whether there is a corresponding host
 // automatic application rule in the cc_HostApplyRule table, if not, the host automatic application state corresponding
 // to this module needs to be turned off.
-func (s *coreService) updateModuleHostApplyStatus(kit *rest.Kit, bizID int64, moduleIDs []int64) error {
-
-	modIDs := make([]int64, 0)
-
-	// determine whether the host rule of each module exists, if not, you need to turn off the host attribute switch.
-	for _, moduleID := range moduleIDs {
-		filter := map[string]interface{}{
-			common.BKAppIDField:    bizID,
-			common.BKModuleIDField: moduleID,
-		}
-		count, err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(filter).Count(kit.Ctx)
-		if err != nil {
-			blog.Errorf("update host apply enable status failed, table: %s, filter: %+v,  err: %+v, rid: %s",
-				common.BKTableNameBaseModule, filter, err, kit.Rid)
-			return err
-		}
-		if count == 0 {
-			modIDs = append(modIDs, moduleID)
-		}
-	}
-	if len(modIDs) == 0 {
-		return nil
-	}
-	enabled := map[string]interface{}{
-		common.HostApplyEnabledField: false,
-	}
+func (s *coreService) updateModuleHostApplyStatus(kit *rest.Kit, bizID int64, moduleIDs []int64, enabled bool) error {
 
 	filter := map[string]interface{}{
 		common.BKAppIDField:    bizID,
+		common.BKModuleIDField: map[string]interface{}{common.BKDBIN: moduleIDs},
+	}
+	fields := []string{common.BKModuleIDField}
+
+	rules := make([]metadata.HostApplyRule, 0)
+	err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(filter).Fields(fields...).All(kit.Ctx, &rules)
+	if err != nil {
+		blog.Errorf("GetHostApplyRule failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+		return err
+	}
+	dbModIDs := make([]int64, 0)
+	for _, rule := range rules {
+		dbModIDs = append(dbModIDs, rule.ModuleID)
+	}
+
+	modIDs := util.IntArrDeleteElements(moduleIDs, dbModIDs)
+
+	enabledField := map[string]interface{}{
+		common.HostApplyEnabledField: enabled,
+	}
+
+	option := map[string]interface{}{
+		common.BKAppIDField:    bizID,
 		common.BKModuleIDField: map[string]interface{}{common.BKDBIN: modIDs},
 	}
-	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Update(kit.Ctx, filter, enabled); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Update(kit.Ctx, option, enabledField); nil != err {
 		blog.Errorf("update host apply enable status failed, table: %s, filter: %+v,  err: %+v, rid: %s",
 			common.BKTableNameBaseModule, filter, err, kit.Rid)
 		return err
@@ -120,39 +119,39 @@ func (s *coreService) updateModuleHostApplyStatus(kit *rest.Kit, bizID int64, mo
 // updateServiceTemplateHostApplyStatus after judging the host automatic application rule corresponding to the deleted
 // template, whether the template has other corresponding host automatic application rules in the cc_HostApplyRule
 // table, if not, the host automatic application state corresponding to this template needs to be turned off.
-func (s *coreService) updateTemplateHostApplyStatus(kit *rest.Kit, bizID int64, serviceTemplateIDs []int64) error {
-
-	templateIDs := make([]int64, 0)
-	for _, templateID := range serviceTemplateIDs {
-		filter := map[string]interface{}{
-			common.BKAppIDField:             bizID,
-			common.BKServiceTemplateIDField: templateID,
-		}
-		count, err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(filter).Count(kit.Ctx)
-		if err != nil {
-			blog.Errorf("update host apply enable status failed, table: %s, filter: %+v,  err: %+v, rid: %s",
-				common.BKTableNameBaseModule, filter, err, kit.Rid)
-			return err
-		}
-		if count == 0 {
-			templateIDs = append(templateIDs, templateID)
-		}
-	}
-	if len(templateIDs) == 0 {
-		return nil
-	}
-
-	enabled := map[string]interface{}{
-		common.HostApplyEnabledField: false,
-	}
+func (s *coreService) updateTemplateHostApplyStatus(kit *rest.Kit, bizID int64, serviceTemplateIDs []int64,
+	enabled bool) error {
 
 	filter := map[string]interface{}{
+		common.BKAppIDField:             bizID,
+		common.BKServiceTemplateIDField: map[string]interface{}{common.BKDBIN: serviceTemplateIDs},
+	}
+	fields := []string{common.BKServiceTemplateIDField}
+	rules := make([]metadata.HostApplyRule, 0)
+	err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(filter).Fields(fields...).All(kit.Ctx, &rules)
+	if err != nil {
+		blog.Errorf("GetHostApplyRule failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+		return err
+	}
+
+	dbServiceTemplateIDs := make([]int64, 0)
+	for _, rule := range rules {
+		dbServiceTemplateIDs = append(dbServiceTemplateIDs, rule.ServiceTemplateID)
+	}
+
+	templateIDs := util.IntArrDeleteElements(serviceTemplateIDs, dbServiceTemplateIDs)
+
+	enabledField := map[string]interface{}{
+		common.HostApplyEnabledField: enabled,
+	}
+
+	updateFilter := map[string]interface{}{
 		common.BKAppIDField: bizID,
 		common.BKFieldID:    map[string]interface{}{common.BKDBIN: templateIDs},
 	}
 
-	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Update(kit.Ctx, filter,
-		enabled); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Update(kit.Ctx, updateFilter,
+		enabledField); nil != err {
 		blog.Errorf("update service template host apply enable status failed, filter: %+v,  err: %+v, rid: %s",
 			filter, err, kit.Rid)
 		return err
@@ -160,16 +159,16 @@ func (s *coreService) updateTemplateHostApplyStatus(kit *rest.Kit, bizID int64, 
 	return nil
 }
 
-func (s *coreService) updateHostaApplyEnableStatus(kit *rest.Kit, bizID int64,
+func (s *coreService) updateHostApplyEnableStatus(kit *rest.Kit, bizID int64,
 	option metadata.DeleteHostApplyRuleOption) error {
 
 	if len(option.ModuleIDs) > 0 {
 		// update module host apply enabled status
-		if err := s.updateModuleHostApplyStatus(kit, bizID, option.ModuleIDs); err != nil {
+		if err := s.updateModuleHostApplyStatus(kit, bizID, option.ModuleIDs, false); err != nil {
 			return err
 		}
 	} else {
-		if err := s.updateTemplateHostApplyStatus(kit, bizID, option.ServiceTemplateIDs); err != nil {
+		if err := s.updateTemplateHostApplyStatus(kit, bizID, option.ServiceTemplateIDs, false); err != nil {
 			return err
 		}
 	}
@@ -198,7 +197,7 @@ func (s *coreService) DeleteHostApplyRule(ctx *rest.Contexts) {
 
 	// Check whether there are other rules in the cc_HostApplyRule table after deleting the rules according to ModuleIDs
 	// or templateIDs, if not, then you need to turn off the corresponding host automatic application status.
-	if e := s.updateHostaApplyEnableStatus(ctx.Kit, bizID, option); e != nil {
+	if e := s.updateHostApplyEnableStatus(ctx.Kit, bizID, option); e != nil {
 		ctx.RespAutoError(e)
 		return
 	}

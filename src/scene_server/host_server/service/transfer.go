@@ -667,8 +667,9 @@ func (s *Service) generateTransferPlans(kit *rest.Kit, bizID int64,
 	// generate host apply plans
 	return s.generateHostApplyPlans(kit, bizID, transferPlans)
 }
-func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64, plans []metadata.HostTransferPlan,
-) ([]metadata.HostTransferPlan, errors.CCErrorCoder) {
+
+func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64,
+	plans []metadata.HostTransferPlan) ([]metadata.HostTransferPlan, errors.CCErrorCoder) {
 
 	if len(plans) == 0 {
 		return plans, nil
@@ -771,7 +772,7 @@ func (s *Service) getRemovedServiceInstance(ctx *rest.Contexts, bizID int64, rem
 	srvInstResult, ccErr := s.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		listSrvInstOption)
 	if ccErr != nil {
-		blog.Errorf("list service instance failed, bizID: %s, option: %s, err: %v, rid: %s", bizID,
+		blog.Errorf("list service instance failed, bizID: %d, option: %s, err: %v, rid: %s", bizID,
 			listSrvInstOption, ccErr, ctx.Kit.Rid)
 		return nil, ccErr
 	}
@@ -795,7 +796,7 @@ func (s *Service) getModuleServiceTemplate(ctx *rest.Contexts, bizID int64, addM
 	// get add to modules
 	modules, ccErr := s.getModules(ctx.Kit, bizID, addModuleIDs)
 	if ccErr != nil {
-		blog.Errorf("get modules failed, err: %v, bizID: %d, module ids: %+v, rid: %s", ccErr, bizID, addModuleIDs,
+		blog.Errorf("get modules failed, bizID: %d, module ids: %+v, err: %v, rid: %s", bizID, addModuleIDs, ccErr,
 			ctx.Kit.Rid)
 		return nil, ccErr
 	}
@@ -814,7 +815,7 @@ func (s *Service) getModuleServiceTemplate(ctx *rest.Contexts, bizID int64, addM
 		serviceTemplateDetails, ccErr := s.CoreAPI.CoreService().Process().ListServiceTemplateDetail(ctx.Kit.Ctx,
 			ctx.Kit.Header, bizID, serviceTemplateIDs...)
 		if ccErr != nil {
-			blog.Errorf("list service template detail failed, bizID: %s, option: %s, err: %s, rid: %s", bizID,
+			blog.Errorf("list service template detail failed, bizID: %d, option: %s, err: %s, rid: %s", bizID,
 				serviceTemplateIDs, ccErr, ctx.Kit.Rid)
 			return nil, ccErr
 		}
