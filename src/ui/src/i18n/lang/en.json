@@ -1371,6 +1371,7 @@
     "请输入实例名称": "Please enter the instance name",
     "默认名称为：IP_首进程名称_端口": "The default name is: IP_first process name_port",
     "该集群尚未创建模块": "The set has not yet created a module, {link}",
+    "业务集下该集群尚未创建模块": "The set has not yet created a module",
     "解析查询链接出错提示": "Unexpected search link, some parameters have been ignored",
     "收藏条件删除提示": "Confirm to delete this collection?",
     "收藏条件未完全解析提示": "Part of propertes are invalid, some condition will be ignored in searching",
