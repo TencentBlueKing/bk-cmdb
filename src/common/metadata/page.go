@@ -13,10 +13,12 @@
 package metadata
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
+	ccErr "configcenter/src/common/errors"
 )
 
 const (
@@ -30,12 +32,21 @@ const (
 
 // BasePage for paging query
 type BasePage struct {
-	Sort  string `json:"sort,omitempty" mapstructure:"sort"`
-	Limit int    `json:"limit,omitempty" mapstructure:"limit"`
-	Start int    `json:"start" mapstructure:"start"`
+	Sort        string `json:"sort,omitempty" mapstructure:"sort"`
+	Limit       int    `json:"limit,omitempty" mapstructure:"limit"`
+	Start       int    `json:"start" mapstructure:"start"`
+	EnableCount bool   `json:"enable_count,omitempty" mapstructure:"enable_count,omitempty"`
 }
 
 func (page BasePage) Validate(allowNoLimit bool) (string, error) {
+	// 此场景下如果仅仅是获取查询对象的数量，page的其余参数只能是初始化值
+	if page.EnableCount {
+		if page.Start > 0 || page.Limit > 0 || page.Sort != "" {
+			return "page", errors.New("params page can not be set")
+		}
+		return "", nil
+	}
+
 	if page.Limit > common.BKMaxPageSize {
 		if page.Limit != common.BKNoLimit || allowNoLimit != true {
 			return "limit", fmt.Errorf("exceed max page size: %d", common.BKMaxPageSize)
@@ -56,7 +67,7 @@ func (page BasePage) IsIllegal() bool {
 // ValidateLimit validates target page limit.
 func (page BasePage) ValidateLimit(maxLimit int) error {
 	if page.Limit == 0 {
-		return fmt.Errorf("page limit must not be zero")
+		return errors.New("page limit must not be zero")
 	}
 
 	if maxLimit > common.BKMaxPageSize {
@@ -68,6 +79,40 @@ func (page BasePage) ValidateLimit(maxLimit int) error {
 	}
 
 	return nil
+}
+
+// ValidateWithEnableCount validate if page has only one of enable count and other param, and if limit is set and valid
+func (page BasePage) ValidateWithEnableCount(allowNoLimit bool, maxLimit ...int) ccErr.RawErrorInfo {
+	if page.EnableCount {
+		if page.Start != 0 || page.Limit != 0 || page.Sort != "" {
+			return ccErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{"page.enable_count"},
+			}
+		}
+		return ccErr.RawErrorInfo{}
+	}
+
+	if page.Limit == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	limit := common.BKMaxPageSize
+	if len(maxLimit) > 0 {
+		limit = maxLimit[0]
+	}
+
+	if page.Limit > limit {
+		if allowNoLimit || page.Limit != common.BKNoLimit {
+			return ccErr.RawErrorInfo{
+				ErrCode: common.CCErrCommPageLimitIsExceeded,
+			}
+		}
+	}
+	return ccErr.RawErrorInfo{}
 }
 
 func ParsePage(origin interface{}) BasePage {

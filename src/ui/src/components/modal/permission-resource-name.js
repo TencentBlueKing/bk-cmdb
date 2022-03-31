@@ -2,6 +2,11 @@ import { IAM_VIEWS } from '@/dictionary/iam-auth'
 import CombineRequest from '@/api/combine-request.js'
 import { foreignkey } from '@/filters/formatter.js'
 import instanceService from '@/service/instance/instance'
+import businessSetService from '@/service/business-set/index.js'
+import {
+  BUILTIN_MODELS,
+  BUILTIN_MODEL_PROPERTY_KEYS
+} from '@/dictionary/model-constants.js'
 
 const requestConfigBase = key => ({
   requestId: `permission_${key}`,
@@ -66,6 +71,13 @@ export const IAM_VIEWS_INST_NAME = {
     const list = await getBusinessList(vm)
     const business = list.find(business => business.bk_biz_id === Number(id))
     return business.bk_biz_name
+  },
+  async [IAM_VIEWS.BIZ_SET](vm, id) {
+    const list = await businessSetService.getAuthorizedWithCache()
+    const MODEL_ID_KEY = BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID
+    const MODEL_NAME_KEY = BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME
+    const businessSet = list.find(item => item[MODEL_ID_KEY] === Number(id))
+    return businessSet[MODEL_NAME_KEY]
   },
   async [IAM_VIEWS.BIZ_FOR_HOST_TRANS](vm, id) {
     const list = await getBusinessList(vm)

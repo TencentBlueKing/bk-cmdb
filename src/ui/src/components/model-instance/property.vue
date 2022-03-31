@@ -94,12 +94,19 @@
         </li>
       </ul>
     </div>
+    <slot name="append"></slot>
   </div>
 </template>
 
 <script>
   import { mapGetters, mapActions } from 'vuex'
   import formMixins from '@/mixins/form'
+  import {
+    BUILTIN_MODELS,
+    BUILTIN_MODEL_PROPERTY_KEYS,
+    BUILTIN_MODEL_RESOURCE_TYPES
+  } from '@/dictionary/model-constants.js'
+  import businessSetService from '@/service/business-set/index.js'
   import authMixin from './mixin-auth'
   export default {
     filters: {
@@ -132,10 +139,11 @@
     computed: {
       ...mapGetters('objectModelClassify', ['models', 'getModelById']),
       authData() {
-        if (this.resourceType === 'business') {
-          return this.INST_AUTH.U_BUSINESS
+        const auths = {
+          [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS]]: this.INST_AUTH.U_BUSINESS,
+          [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS_SET]]: this.INST_AUTH.U_BUSINESS_SET
         }
-        return this.INST_AUTH.U_INST
+        return auths[this.resourceType] || this.INST_AUTH.U_INST
       }
     },
     watch: {
@@ -180,10 +188,18 @@
           this.loadingState.push(property)
           const values = { [property.bk_property_id]: this.$tools.formatValue(value, property) }
 
-          if (this.resourceType === 'business') {
+          if (this.resourceType === BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS]) {
             await this.updateBusiness({
               bizId: this.instState.bk_biz_id,
               params: values
+            })
+          } else if (this.resourceType === BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS_SET]) {
+            const MODEL_ID_KEY = BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID
+            await businessSetService.update({
+              bk_biz_set_ids: [this.instState[MODEL_ID_KEY]],
+              data: {
+                bk_biz_set_attr: { ...values },
+              }
             })
           } else {
             await this.updateInst({
@@ -192,6 +208,8 @@
               params: values
             })
           }
+
+          this.$success(this.$t('修改成功'))
 
           this.instState = { ...this.instState, ...values }
 

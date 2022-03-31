@@ -21,8 +21,7 @@ import (
 )
 
 // SaveAuditLog api of save audit log
-func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.AuditLog) (
-	*metadata.Response, error) {
+func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.AuditLog) errors.CCErrorCoder {
 
 	resp := new(metadata.Response)
 	subPath := "/create/auditlog"
@@ -36,21 +35,21 @@ func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...m
 		Into(resp)
 
 	if err != nil {
-		return nil, errors.CCHttpError
+		return errors.CCHttpError
 	}
 
-	if err = resp.CCError(); err != nil {
-		return nil, err
+	if err := resp.CCError(); err != nil {
+		return err
 	}
 
-	return resp, nil
+	return nil
 }
 
 // SearchAuditLog api of search audit log
 func (inst *auditlog) SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryCondition) (
-	*metadata.AuditQueryResult, error) {
+	*metadata.AuditQueryResult, errors.CCErrorCoder) {
 
-	resp := new(metadata.AuditQueryResult)
+	resp := new(metadata.AuditQueryResponse)
 	subPath := "/read/auditlog"
 
 	err := inst.client.Post().
@@ -65,9 +64,9 @@ func (inst *auditlog) SearchAuditLog(ctx context.Context, h http.Header, param m
 		return nil, errors.CCHttpError
 	}
 
-	if err = resp.CCError(); err != nil {
+	if err := resp.CCError(); err != nil {
 		return nil, err
 	}
 
-	return resp, nil
+	return resp.Data, nil
 }

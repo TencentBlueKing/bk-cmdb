@@ -336,8 +336,8 @@ func (m *modelAttribute) SearchModelAttributes(kit *rest.Kit, objID string, inpu
 		return nil, err
 	}
 
-	inputParam.Condition[common.BKObjIDField] = objID
 	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
+	inputParam.Condition[common.BKObjIDField] = objID
 
 	attrResult, err := m.newSearch(kit, inputParam.Condition)
 	if err != nil {

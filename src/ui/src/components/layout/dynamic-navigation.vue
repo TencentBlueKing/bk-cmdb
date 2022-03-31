@@ -5,16 +5,17 @@
     @mouseleave="handleMouseLeave">
     <div class="nav-wrapper"
       :class="{ unfold: unfold, flexible: !navStick }">
-      <div class="business-wrapper" v-show="isBusinessNav">
+      <div class="business-wrapper" v-if="isBusinessView">
         <transition name="fade">
-          <cmdb-business-selector class="business-selector" v-test-id.dynamic
+          <cmdb-business-mix-selector class="business-selector" v-test-id.dynamic
             v-show="unfold"
             show-apply-permission
+            :value="currentBusinessViewPayload.selectedId"
             :popover-options="{
               appendTo: () => this.$el
             }"
             @select="handleToggleBusiness">
-          </cmdb-business-selector>
+          </cmdb-business-mix-selector>
         </transition>
         <transition name="fade">
           <i class="business-flag bk-icon icon-angle-down" v-show="!unfold"></i>
@@ -56,16 +57,14 @@
   import MENU_DICTIONARY from '@/dictionary/menu'
   import {
     MENU_BUSINESS,
+    MENU_BUSINESS_SET,
+    MENU_BUSINESS_SET_TOPOLOGY,
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_RESOURCE,
-    MENU_RESOURCE_BUSINESS,
-    MENU_RESOURCE_HOST,
     MENU_RESOURCE_INSTANCE,
-    // MENU_RESOURCE_MANAGEMENT,
-    MENU_RESOURCE_COLLECTION,
-    MENU_RESOURCE_HOST_COLLECTION,
-    MENU_RESOURCE_BUSINESS_COLLECTION
   } from '@/dictionary/menu-symbol'
+  import { BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
+
   export default {
     data() {
       return {
@@ -77,14 +76,31 @@
     },
     computed: {
       ...mapGetters(['navStick', 'navFold', 'admin']),
-      ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('objectModelClassify', ['classifications', 'models']),
+      ...mapGetters('userCustom', ['resourceCollection']),
       isBusinessNav() {
-        const { matched } = this.$route
-        if (!matched.length) {
-          return false
+        const { matched: [topRoute] } = this.$route
+        return topRoute?.name === MENU_BUSINESS
+      },
+      isBusinessSetNav() {
+        const { matched: [topRoute] } = this.$route
+        return topRoute?.name === MENU_BUSINESS_SET
+      },
+      // 业务或业务集统称为业务视图
+      isBusinessView() {
+        return this.isBusinessNav || this.isBusinessSetNav
+      },
+      // 当前业务视图附属数据
+      currentBusinessViewPayload() {
+        if (!this.isBusinessView) {
+          return {}
         }
-        return matched[0].name === MENU_BUSINESS
+        const paramName = this.isBusinessNav ? 'bizId' : 'bizSetId'
+        const id = Number(this.$route.params[paramName])
+        const selectedId = `${id}-${this.isBusinessNav ? 'biz' : 'bizset'}`
+
+        // 路由参数中的业务(集)id,参数名称,业务选择器的id值
+        return { id, paramName, selectedId }
       },
       unfold() {
         return this.navStick || !this.navFold
@@ -94,21 +110,7 @@
       },
       collection() {
         if (this.owner === MENU_RESOURCE) {
-          const isHostCollected = this.usercustom[MENU_RESOURCE_HOST_COLLECTION] === undefined
-            ? true
-            : this.usercustom[MENU_RESOURCE_HOST_COLLECTION]
-          const isBusinessCollected = this.usercustom[MENU_RESOURCE_BUSINESS_COLLECTION] === undefined
-            ? true
-            : this.usercustom[MENU_RESOURCE_BUSINESS_COLLECTION]
-          const collection = [...(this.usercustom[MENU_RESOURCE_COLLECTION] || [])]
-          if (isHostCollected) {
-            collection.unshift('host')
-          }
-          if (isBusinessCollected) {
-            collection.unshift('biz')
-          }
-          // eslint-disable-next-line max-len
-          return collection.filter(modelId => this.models.some(model => model.bk_obj_id === modelId && !model.bk_ispaused))
+          return this.resourceCollection
         }
         return []
       },
@@ -198,13 +200,9 @@
         return menu.route.name === this.relativeActiveName
       },
       getCollectionRoute(model) {
-        const map = {
-          host: MENU_RESOURCE_HOST,
-          biz: MENU_RESOURCE_BUSINESS
-        }
-        if (has(map, model.bk_obj_id)) {
+        if (has(BUILTIN_MODEL_RESOURCE_MENUS, model.bk_obj_id)) {
           return {
-            name: map[model.bk_obj_id]
+            name: BUILTIN_MODEL_RESOURCE_MENUS[model.bk_obj_id]
           }
         }
         return {
@@ -243,15 +241,21 @@
           stick: !this.navStick
         })
       },
-      handleToggleBusiness(id, oldValue) {
-        if (!oldValue || id === oldValue) {
+      handleToggleBusiness(value, newId, isBizSet) {
+        // 切换前的业务(集)id值
+        const { selectedId } = this.currentBusinessViewPayload
+
+        // 非业务视图或切换的前后值相同则取消执行
+        if (!this.isBusinessView || value === selectedId) {
           return false
         }
+
+        const paramName = isBizSet ? 'bizSetId' : 'bizId'
         this.$routerActions.redirect({
-          name: MENU_BUSINESS_HOST_AND_SERVICE,
+          name: isBizSet ? MENU_BUSINESS_SET_TOPOLOGY : MENU_BUSINESS_HOST_AND_SERVICE,
           params: {
             ...this.$route.params,
-            bizId: id
+            [paramName]: newId
           },
           reload: true
         })

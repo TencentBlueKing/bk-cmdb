@@ -76,13 +76,6 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		return nil, err
 	}
 
-	// update the mainline topo inst association
-	if _, err = assoc.instasst.SetMainlineInstAssociation(kit, parentObjID, childObjID, currentObj.ObjectID,
-		currentObj.ObjectName); err != nil {
-		blog.Errorf("failed set the mainline inst association, err: %s, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
 	if err = assoc.createMainlineObjectAssociation(kit, currentObj.ObjectID, parentObjID); err != nil {
 		blog.Errorf("create mainline object[%s] association related to object[%s] failed, err: %v, rid: %s",
 			currentObj.ObjectID, parentObjID, err, kit.Rid)
@@ -92,6 +85,13 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	if err = assoc.setMainlineParentObject(kit, childObjID, currentObj.ObjectID); err != nil {
 		blog.Errorf("update mainline current object's[%s] child object[%s] association to current failed, "+
 			"err: %v, rid: %s", currentObj.ObjectID, childObjID, err, kit.Rid)
+		return nil, err
+	}
+
+	// update the mainline topo inst association
+	if _, err = assoc.instasst.SetMainlineInstAssociation(kit, parentObjID, childObjID, currentObj.ObjectID,
+		currentObj.ObjectName); err != nil {
+		blog.Errorf("failed set the mainline inst association, err: %s, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
@@ -270,13 +270,15 @@ func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit, targetObj
 
 // IsMainlineObject check whether objID is mainline object or not
 func (assoc *association) IsMainlineObject(kit *rest.Kit, objID string) (bool, error) {
-	filter := []map[string]interface{}{
-		{common.AssociationKindIDField: common.AssociationKindMainline,
-			common.BKDBOR: []mapstr.MapStr{
-				{common.BKObjIDField: objID},
-				{common.BKAsstObjIDField: objID},
-			}},
+	// judge whether it is an inner mainline model
+	if common.IsInnerMainlineModel(objID) {
+		return true, nil
 	}
+
+	filter := []map[string]interface{}{{
+		common.AssociationKindIDField: common.AssociationKindMainline,
+		common.BKAsstObjIDField:       objID,
+	}}
 	asstCnt, err := assoc.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		common.BKTableNameObjAsst, filter)
 	if err != nil {

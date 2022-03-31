@@ -13,20 +13,24 @@
 package watch
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	types2 "configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/source_controller/coreservice/core/host/identifier"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/stream/types"
 	"configcenter/src/thirdparty/monitor"
 	"configcenter/src/thirdparty/monitor/meta"
@@ -194,6 +198,11 @@ func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventO
 		return c.getHostIdentityEventDetailWithNodes(kit, hitNodes)
 	}
 
+	if opts.Resource == watch.BizSetRelation {
+		// get from db directly.
+		return c.getBizSetRelationEventDetailWithNodes(kit, hitNodes)
+	}
+
 	cursors := make([]string, len(hitNodes))
 	for index, node := range hitNodes {
 		cursors[index] = node.Cursor
@@ -342,6 +351,179 @@ func (c *Client) getHostIdentityEventDetailWithNodes(kit *rest.Kit, hitNodes []*
 	}
 
 	return details, nil
+}
+
+// getBizSetRelationEventDetailWithNodes get biz set relation event detail by chain nodes
+func (c *Client) getBizSetRelationEventDetailWithNodes(kit *rest.Kit, hitNodes []*watch.ChainNode) (
+	[]*watch.WatchEventDetail, error) {
+
+	if len(hitNodes) == 0 {
+		return make([]*watch.WatchEventDetail, 0), nil
+	}
+
+	cursors := make([]string, len(hitNodes))
+	for index, node := range hitNodes {
+		cursors[index] = node.Cursor
+	}
+
+	// get biz set relation event detail from redis, ignore the fields in watch option, return the whole detail
+	details, errCursors, errCursorIndexMap, err := c.searchEventDetailsFromRedis(kit, cursors, event.BizSetRelationKey)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(errCursors) == 0 {
+		resp := make([]*watch.WatchEventDetail, len(details))
+		for idx, detail := range details {
+			resp[idx] = &watch.WatchEventDetail{
+				Cursor:    hitNodes[idx].Cursor,
+				Resource:  watch.BizSetRelation,
+				EventType: hitNodes[idx].EventType,
+				Detail:    watch.JsonString(*types.GetEventDetail(&detail)),
+			}
+		}
+		return resp, nil
+	}
+
+	// get event chain nodes related details from db for cursors that failed when reading redis
+	errCursorsExistMap := make(map[string]struct{})
+	for _, errCursor := range errCursors {
+		errCursorsExistMap[errCursor] = struct{}{}
+	}
+
+	bizSetIDs := make([]int64, 0)
+	indexBizSetIDMap := make(map[int]int64)
+	for _, node := range hitNodes {
+		if _, exists := errCursorsExistMap[node.Cursor]; exists {
+			bizSetIDs = append(bizSetIDs, node.InstanceID)
+			indexBizSetIDMap[errCursorIndexMap[node.Cursor]] = node.InstanceID
+		}
+	}
+
+	bizSetDetailMap, err := c.getBizSetRelationEventDetailFromMongo(kit, bizSetIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// generate event details, if mongo detail not exists(biz set is deleted), return biz set id with empty relations
+	resp := make([]*watch.WatchEventDetail, len(details))
+	for idx, detail := range details {
+		bizSetID, exists := indexBizSetIDMap[idx]
+		if exists {
+			detail, exists = bizSetDetailMap[bizSetID]
+			if !exists {
+				detail = event.GenBizSetRelationDetail(bizSetID, "")
+			}
+		} else {
+			detail = *types.GetEventDetail(&detail)
+		}
+
+		resp[idx] = &watch.WatchEventDetail{
+			Cursor:    hitNodes[idx].Cursor,
+			Resource:  watch.BizSetRelation,
+			EventType: hitNodes[idx].EventType,
+			Detail:    watch.JsonString(detail),
+		}
+	}
+	return resp, nil
+}
+
+// getBizSetRelationEventDetailWithNodes get biz set relation event details by biz set ids from mongo
+func (c *Client) getBizSetRelationEventDetailFromMongo(kit *rest.Kit, bizSetIDs []int64) (map[int64]string, error) {
+	if len(bizSetIDs) == 0 {
+		return make(map[int64]string), nil
+	}
+
+	// get biz sets by chain nodes instance ids from db
+	bizSetCond := map[string]interface{}{
+		common.BKBizSetIDField: map[string]interface{}{common.BKDBIN: bizSetIDs},
+	}
+
+	bizSets := make([]metadata.BizSetInst, 0)
+	err := mongodb.Client().Table(common.BKTableNameBaseBizSet).Find(bizSetCond).
+		Fields(common.BKBizSetIDField, common.BKBizSetScopeField).All(kit.Ctx, &bizSets)
+	if err != nil {
+		blog.Errorf("get biz sets by cond(%+v) failed, err: %v, rid: %s", bizSetCond, err, kit.Rid)
+		return nil, err
+	}
+
+	// get biz set id to detail map by searching for biz ids by biz set scope
+	var allBizIDStr string
+	bizSetDetailMap := make(map[int64]string)
+	for _, bizSet := range bizSets {
+		// save a cache of all biz ids string form for biz set scope that matches all, use it to gen relation detail
+		if bizSet.Scope.MatchAll {
+			if len(allBizIDStr) == 0 {
+				// do not include resource pool and disabled biz in biz set
+				allBizIDCond := map[string]interface{}{
+					common.BKDefaultField:    mapstr.MapStr{common.BKDBNE: common.DefaultAppFlag},
+					common.BKDataStatusField: map[string]interface{}{common.BKDBNE: common.DataStatusDisabled},
+				}
+
+				allBizIDStr, err = c.getBizIDArrStrByCond(kit, allBizIDCond)
+				if err != nil {
+					return nil, err
+				}
+			}
+			bizSetDetailMap[bizSet.BizSetID] = event.GenBizSetRelationDetail(bizSet.BizSetID, allBizIDStr)
+			continue
+		}
+
+		// parse biz condition from biz set scope filter, get biz ids using it to gen relation detail
+		if bizSet.Scope.Filter == nil {
+			continue
+		}
+
+		bizSetBizCond, errKey, rawErr := bizSet.Scope.Filter.ToMgo()
+		if rawErr != nil {
+			blog.Errorf("parse biz set scope(%#v) failed, err: %v, rid: %s", bizSet.Scope, rawErr, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey)
+		}
+
+		// do not include resource pool and disabled biz in biz set
+		bizSetBizCond[common.BKDefaultField] = mapstr.MapStr{common.BKDBNE: common.DefaultAppFlag}
+		bizSetBizCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
+
+		bizIDStr, err := c.getBizIDArrStrByCond(kit, bizSetBizCond)
+		if err != nil {
+			return nil, err
+		}
+		bizSetDetailMap[bizSet.BizSetID] = event.GenBizSetRelationDetail(bizSet.BizSetID, bizIDStr)
+	}
+
+	return bizSetDetailMap, nil
+}
+
+func (c *Client) getBizIDArrStrByCond(kit *rest.Kit, cond map[string]interface{}) (string, error) {
+	const step = 500
+
+	bizIDJson := bytes.Buffer{}
+
+	for start := uint64(0); ; start += step {
+		oneStep := make([]metadata.BizInst, 0)
+
+		err := c.db.Table(common.BKTableNameBaseApp).Find(cond).Fields(common.BKAppIDField).Start(start).
+			Limit(step).Sort(common.BKAppIDField).All(kit.Ctx, &oneStep)
+		if err != nil {
+			blog.Errorf("get biz by cond(%+v) failed, err: %v, rid: %s", cond, err, kit.Rid)
+			return "", err
+		}
+
+		for _, biz := range oneStep {
+			bizIDJson.WriteString(strconv.FormatInt(biz.BizID, 10))
+			bizIDJson.WriteByte(',')
+		}
+
+		if len(oneStep) < step {
+			break
+		}
+	}
+
+	// returns biz ids string form joined by comma, trim the extra trilling comma
+	if bizIDJson.Len() == 0 {
+		return "", nil
+	}
+	return bizIDJson.String()[:bizIDJson.Len()-1], nil
 }
 
 // WatchFromNow watches target resource events from now.

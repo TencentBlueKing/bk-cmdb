@@ -22,65 +22,68 @@
             </cmdb-property-value>
           </span>
           <template v-if="!loadingState.includes(property)">
-            <template v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
-              <span :id="`rule-${property.id}`">
-                <i18n path="已配置属性自动应用提示" v-if="hasRelatedRules(property)">
-                  <bk-button text place="link" @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
-                </i18n>
-                <span v-else>{{$t('系统限定不可修改')}}</span>
-              </span>
-              <i class="is-related property-edit icon-cc-edit"
-                v-bk-tooltips="{
-                  allowHtml: true,
-                  content: `#rule-${property.id}`,
-                  placement: 'top',
-                  onShow: () => {
-                    setFocus(`#property-item-${property.id}`, true)
-                  },
-                  onHide: () => {
-                    setFocus(`#property-item-${property.id}`, false)
-                  }
-                }">
-              </i>
-            </template>
-            <template v-else>
-              <cmdb-auth style="margin: 8px 0 0 8px; font-size: 0;"
-                :auth="HOST_AUTH.U_HOST"
-                v-show="property !== editState.property">
-                <bk-button slot-scope="{ disabled }"
-                  text
-                  theme="primary"
-                  class="property-edit-btn"
-                  :disabled="disabled"
-                  @click="setEditState(property)">
-                  <i class="property-edit icon-cc-edit"></i>
-                </bk-button>
-              </cmdb-auth>
-              <div class="property-form" v-if="property === editState.property">
-                <div :class="['form-component', property.bk_property_type]">
-                  <component
-                    :is="`cmdb-form-${property.bk_property_type}`"
-                    :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
-                    :unit="property.unit"
-                    :options="property.option || []"
-                    :data-vv-name="property.bk_property_id"
-                    :data-vv-as="property.bk_property_name"
-                    :placeholder="getPlaceholder(property)"
-                    :auto-check="false"
-                    v-bind="$tools.getValidateEvents(property)"
-                    v-validate="$tools.getValidateRules(property)"
-                    v-model.trim="editState.value"
-                    :ref="`component-${property.bk_property_id}`">
-                  </component>
-                </div>
-                <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
-                <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
-                <span class="form-error"
-                  v-if="errors.has(property.bk_property_id)">
-                  {{errors.first(property.bk_property_id)}}
+            <template v-if="!readonly">
+              <template v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
+                <span :id="`rule-${property.id}`">
+                  <i18n path="已配置属性自动应用提示" v-if="hasRelatedRules(property)">
+                    <bk-button text place="link" @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
+                  </i18n>
+                  <span v-else>{{$t('系统限定不可修改')}}</span>
                 </span>
-              </div>
+                <i class="is-related property-edit icon-cc-edit"
+                  v-bk-tooltips="{
+                    allowHtml: true,
+                    content: `#rule-${property.id}`,
+                    placement: 'top',
+                    onShow: () => {
+                      setFocus(`#property-item-${property.id}`, true)
+                    },
+                    onHide: () => {
+                      setFocus(`#property-item-${property.id}`, false)
+                    }
+                  }">
+                </i>
+              </template>
+              <template v-else>
+                <cmdb-auth style="margin: 8px 0 0 8px; font-size: 0;"
+                  :auth="HOST_AUTH.U_HOST"
+                  v-show="property !== editState.property">
+                  <bk-button slot-scope="{ disabled }"
+                    text
+                    theme="primary"
+                    class="property-edit-btn"
+                    :disabled="disabled"
+                    @click="setEditState(property)">
+                    <i class="property-edit icon-cc-edit"></i>
+                  </bk-button>
+                </cmdb-auth>
+                <div class="property-form" v-if="property === editState.property">
+                  <div :class="['form-component', property.bk_property_type]">
+                    <component
+                      :is="`cmdb-form-${property.bk_property_type}`"
+                      :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
+                      :unit="property.unit"
+                      :options="property.option || []"
+                      :data-vv-name="property.bk_property_id"
+                      :data-vv-as="property.bk_property_name"
+                      :placeholder="getPlaceholder(property)"
+                      :auto-check="false"
+                      v-bind="$tools.getValidateEvents(property)"
+                      v-validate="$tools.getValidateRules(property)"
+                      v-model.trim="editState.value"
+                      :ref="`component-${property.bk_property_id}`">
+                    </component>
+                  </div>
+                  <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
+                  <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
+                  <span class="form-error"
+                    v-if="errors.has(property.bk_property_id)">
+                    {{errors.first(property.bk_property_id)}}
+                  </span>
+                </div>
+              </template>
             </template>
+
             <template v-if="host[property.bk_property_id] && property !== editState.property">
               <div class="copy-box">
                 <i class="property-copy icon-cc-details-copy" @click="handleCopy(property.bk_property_id)"></i>
@@ -104,6 +107,7 @@
   import { mapGetters, mapState } from 'vuex'
   import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
   import authMixin from '../mixin-auth'
+  import { readonlyMixin } from '../mixin-readonly'
   export default {
     name: 'cmdb-host-property',
     filters: {
@@ -111,7 +115,7 @@
         return value === '--' ? '--' : value + unit
       }
     },
-    mixins: [authMixin],
+    mixins: [authMixin, readonlyMixin],
     data() {
       return {
         editState: {
@@ -211,6 +215,9 @@
               requestId: 'updateHostInfo'
             }
           })
+
+          this.$success(this.$t('修改成功'))
+
           this.$store.commit('hostDetails/updateInfo', {
             [property.bk_property_id]: sumitValue
           })

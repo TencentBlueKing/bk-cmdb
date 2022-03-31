@@ -19,9 +19,9 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	commonlgc "configcenter/src/common/logics"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/admin_server/iam"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -60,7 +60,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	}
 
 	// 由于模型实例的编辑&删除拆分为实例级别, 需要先拿到当前已存在的模型, 再进行相应的IAM注册操作
-	models, err := commonlgc.GetCustomObjects(s.ctx, rHeader, s.CoreAPI)
+	models, err := iam.GetCustomObjects(s.ctx, s.db)
 	if err != nil {
 		blog.Errorf("init iam failed, collect notPre-models failed, err: %s, rid:%s", err.Error(), rid)
 		_ = resp.WriteError(http.StatusBadRequest,

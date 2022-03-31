@@ -22,7 +22,8 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	commonlgc "configcenter/src/common/logics"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/scene_server/admin_server/upgrader"
@@ -132,7 +133,7 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, lgc *logics.Logics) {
 
 		blog.Infof("start sync iam, rid: %s", kit.Rid)
 
-		objects, err := commonlgc.GetCustomObjects(kit.Ctx, kit.Header, lgc.CoreAPI)
+		objects, err := GetCustomObjects(kit.Ctx, s.db)
 		if err != nil {
 			blog.Errorf("sync iam failed, get custom objects err: %s ,rid: %s", err, kit.Rid)
 			time.Sleep(time.Duration(s.SyncIAMPeriodMinutes) * time.Minute)
@@ -148,4 +149,45 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, lgc *logics.Logics) {
 		blog.Infof("finish sync iam successfully, rid:%s", kit.Rid)
 		time.Sleep(time.Duration(s.SyncIAMPeriodMinutes) * time.Minute)
 	}
+}
+
+// GetCustomObjects get all custom objects(without inner and mainline objects that authorize separately)
+func GetCustomObjects(ctx context.Context, db dal.DB) ([]metadata.Object, error) {
+	// get mainline objects
+	associations := make([]metadata.Association, 0)
+	filter := mapstr.MapStr{
+		common.AssociationKindIDField: common.AssociationKindMainline,
+	}
+
+	err := db.Table(common.BKTableNameObjAsst).Find(filter).Fields(common.BKObjIDField).All(ctx, &associations)
+	if err != nil {
+		blog.Errorf("get mainline associations failed, err: %v", err)
+		return nil, err
+	}
+
+	// get all excluded objectIDs
+	excludeObjIDs := []string{
+		common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule,
+		common.BKInnerObjIDHost, common.BKInnerObjIDProc, common.BKInnerObjIDPlat,
+	}
+	for _, association := range associations {
+		if !metadata.IsCommon(association.ObjectID) {
+			excludeObjIDs = append(excludeObjIDs, association.ObjectID)
+		}
+	}
+
+	// get all custom objects
+	objects := make([]metadata.Object, 0)
+	condition := map[string]interface{}{
+		common.BKIsPre: false,
+		common.BKObjIDField: map[string]interface{}{
+			common.BKDBNIN: excludeObjIDs,
+		},
+	}
+	if err := db.Table(common.BKTableNameObjDes).Find(condition).All(ctx, &objects); err != nil {
+		blog.Errorf("get all custom objects failed, err: %v", err)
+		return nil, err
+	}
+
+	return objects, nil
 }

@@ -52,3 +52,8 @@ func (s *coreService) SearchAuditLog(ctx *rest.Contexts) {
 
 	ctx.RespEntityWithCount(int64(count), auditLogs)
 }
+
+// CreateAuditLogDependence is a dependence for host to create service instance audit logs for transfer operation
+func (s *coreService) CreateAuditLogDependence(kit *rest.Kit, logs ...metadata.AuditLog) error {
+	return s.core.AuditOperation().CreateAuditLog(kit, logs...)
+}

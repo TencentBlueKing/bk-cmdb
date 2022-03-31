@@ -62,6 +62,7 @@ const (
 	ObjectBase              CursorType = "object_instance"
 	Process                 CursorType = "process"
 	ProcessInstanceRelation CursorType = "process_instance_relation"
+	BizSet                  CursorType = "biz_set"
 	// a mixed event type, which contains host, host relation, process events etc.
 	// and finally converted to host identifier event.
 	HostIdentifier CursorType = "host_identifier"
@@ -69,6 +70,8 @@ const (
 	MainlineInstance CursorType = "mainline_instance"
 	// InstAsst specified for instance association event watch
 	InstAsst CursorType = "inst_asst"
+	// BizSetRelation a mixed event type containing biz set & biz events, which are converted to their relation events
+	BizSetRelation CursorType = "biz_set_relation"
 )
 
 func (ct CursorType) ToInt() int {
@@ -97,6 +100,10 @@ func (ct CursorType) ToInt() int {
 		return 12
 	case InstAsst:
 		return 13
+	case BizSet:
+		return 14
+	case BizSetRelation:
+		return 15
 	default:
 		return -1
 	}
@@ -128,6 +135,10 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = MainlineInstance
 	case 13:
 		*ct = InstAsst
+	case 14:
+		*ct = BizSet
+	case 15:
+		*ct = BizSetRelation
 	default:
 		*ct = UnknownType
 	}
@@ -136,7 +147,7 @@ func (ct *CursorType) ParseInt(typ int) {
 // ListCursorTypes returns all support CursorTypes.
 func ListCursorTypes() []CursorType {
 	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase, Process, ProcessInstanceRelation,
-		HostIdentifier, MainlineInstance, InstAsst}
+		HostIdentifier, MainlineInstance, InstAsst, BizSet, BizSetRelation}
 }
 
 // ListEventCallbackCursorTypes returns all support CursorTypes for event callback.
@@ -326,6 +337,8 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 		curType = ProcessInstanceRelation
 	case common.BKTableNameInstAsst:
 		curType = InstAsst
+	case common.BKTableNameBaseBizSet:
+		curType = BizSet
 	default:
 		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.ID())
 		return "", fmt.Errorf("unsupported cursor type collection: %s", coll)

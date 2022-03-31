@@ -1,6 +1,6 @@
 <template>
   <div class="group-wrapper"
-    v-bkloading="{ isLoading: mainLoading }"
+    v-bkloading="{ isLoading: $loading(requestIds.searchClassifications) }"
     :style="{ 'padding-top': topPadding + 'px' }">
     <cmdb-main-inject ref="mainInject"
       inject-type="prepend"
@@ -16,7 +16,7 @@
           <bk-button slot-scope="{ disabled }"
             theme="primary"
             :disabled="disabled || modelType === 'disabled'"
-            @click="showModelDialog()">
+            @click="showModelDialog('bk_uncategorized')">
             {{$t('新建模型')}}
           </bk-button>
         </cmdb-auth>
@@ -66,18 +66,19 @@
       <li class="group-item clearfix"
         v-for="(classification, classIndex) in currentClassifications"
         :key="classIndex">
-        <div class="group-title">
-          <div class="title-info"
-            v-bk-tooltips="{
-              disabled: isEditable(classification),
-              content: $t('内置模型组不支持添加和修改'),
-              placement: 'right'
-            }">
+        <div
+          class="group-title"
+          v-bk-tooltips="{
+            disabled: !isBuiltinClass(classification),
+            content: $t('内置模型组不支持删除和修改'),
+            placement: 'right'
+          }">
+          <div class="title-info">
             <span class="mr5">{{classification['bk_classification_name']}}</span>
             <span class="number">({{classification['bk_objects'].length}})</span>
           </div>
-          <template v-if="isEditable(classification) && modelType !== 'disabled'">
-            <cmdb-auth v-if="!mainLoading" class="group-btn ml5"
+          <template v-if="modelType !== 'disabled'">
+            <cmdb-auth class="group-btn ml5"
               :auth="{ type: $OPERATION.C_MODEL, relation: [classification.id] }">
               <bk-button slot-scope="{ disabled }"
                 theme="primary"
@@ -87,7 +88,9 @@
                 <i class="icon-cc-add-line"></i>
               </bk-button>
             </cmdb-auth>
-            <cmdb-auth v-if="!mainLoading" class="group-btn"
+            <cmdb-auth
+              v-if="!isBuiltinClass(classification)"
+              class="group-btn"
               :auth="{ type: $OPERATION.U_MODEL_GROUP, relation: [classification.id] }">
               <bk-button slot-scope="{ disabled }"
                 theme="primary"
@@ -97,7 +100,9 @@
                 <i class="icon-cc-edit"></i>
               </bk-button>
             </cmdb-auth>
-            <cmdb-auth v-if="!mainLoading" class="group-btn"
+            <cmdb-auth
+              v-if="!isBuiltinClass(classification)"
+              class="group-btn"
               :auth="{ type: $OPERATION.D_MODEL_GROUP, relation: [classification.id] }">
               <bk-button slot-scope="{ disabled }"
                 theme="primary"
@@ -120,7 +125,7 @@
             :key="modelIndex">
             <div class="info-model"
               :class="{
-                'radius': model.bk_ispaused || classification['bk_classification_id'] === 'bk_biz_topo'
+                'radius': model.bk_ispaused || isNoInstanceModel(model.bk_obj_id)
               }"
               @click="modelClick(model)">
               <div class="icon-box">
@@ -131,13 +136,13 @@
                 <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
               </div>
             </div>
-            <div v-if="!model.bk_ispaused && model.bk_classification_id !== 'bk_biz_topo'"
+            <div v-if="!model.bk_ispaused && !isNoInstanceModel(model.bk_obj_id)"
               class="info-instance"
               @click="handleGoInstance(model)">
               <i class="icon-cc-share"></i>
               <p>
                 <cmdb-loading
-                  :loading="!modelStatisticsSet[model.bk_obj_id] || $loading(request.statistics[model.bk_obj_id])">
+                  :loading="!modelStatisticsSet[model.bk_obj_id] || $loading(requestIds.statistics[model.bk_obj_id])">
                   {{modelStatisticsSet[model.bk_obj_id] | instanceCount}}
                 </cmdb-loading>
               </p>
@@ -167,7 +172,7 @@
                 :placeholder="$t('请输入唯一标识')"
                 :disabled="groupDialog.isEdit"
                 v-model.trim="groupDialog.data['bk_classification_id']"
-                v-validate="'required|classifyId|length:128'">
+                v-validate="'required|classifyId|length:128|reservedWord'">
               </bk-input>
               <p class="form-error" :title="errors.first('classifyId')">{{errors.first('classifyId')}}</p>
             </div>
@@ -205,6 +210,7 @@
       :is-show.sync="modelDialog.isShow"
       :group-id.sync="modelDialog.groupId"
       :title="$t('新建模型')"
+      :operating="$loading('createModel')"
       @confirm="saveModel">
     </the-create-model>
 
@@ -237,11 +243,11 @@
   import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import {
-    MENU_RESOURCE_HOST,
-    MENU_RESOURCE_BUSINESS,
     MENU_RESOURCE_INSTANCE,
     MENU_MODEL_DETAILS
   } from '@/dictionary/menu-symbol'
+  import { BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
+
   export default {
     filters: {
       instanceCount(value) {
@@ -253,7 +259,6 @@
       }
     },
     components: {
-      // theModel,
       theCreateModel,
       cmdbMainInject,
       noSearchResults,
@@ -286,10 +291,11 @@
           isShow: false,
           groupId: ''
         },
-        request: {
-          statistics: [],
-          searchClassifications: Symbol('searchClassifications')
-        }
+        requestIds: {
+          statistics: [], // 模型实例数据加载请求 id
+          searchClassifications: Symbol('searchClassifications') // 模型分组数据加载请求 id
+        },
+        mainlineModels: []
       }
     },
     computed: {
@@ -330,17 +336,24 @@
         return disabledClassifications.filter(item => item.bk_objects.length)
       },
       currentClassifications() {
-        if (!this.searchModel) {
-          if (!this.modelType) return this.allClassifications
-          return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
+        let currentClassifications = []
+
+        if (!this.searchModel && !this.modelType) {
+          currentClassifications = this.allClassifications
         }
-        return this.filterClassifications
+
+        if (this.modelType) {
+          currentClassifications = this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
+        }
+
+        if (this.searchModel) {
+          currentClassifications = this.filterClassifications
+        }
+
+        return currentClassifications.sort((a, b) => (b.bk_classification_id === 'bk_uncategorized' ? -1 : 0))
       },
       disabledModelBtnText() {
         return this.disabledClassifications.length ? '' : this.$t('停用模型提示')
-      },
-      mainLoading() {
-        return this.$loading(Object.values(this.request))
       }
     },
     watch: {
@@ -372,16 +385,26 @@
       this.scrollHandler = (event) => {
         this.scrollTop = event.target.scrollTop
       }
+
       addMainScrollListener(this.scrollHandler)
+
+      this.handleModelMouseEnterDebounce = debounce(this.handleModelItemMouseEnter, 200)
+
       try {
         await this.searchClassificationsObjects({
           params: {},
           config: {
-            requestId: this.request.searchClassifications
+            requestId: this.requestIds.searchClassifications
           }
         })
       } catch (e) {
         this.$route.meta.view = 'error'
+      }
+
+      try {
+        this.mainlineModels = await this.searchMainlineObject({})
+      } catch (error) {
+        console.log(error)
       }
 
       if (this.$route.query.searchModel) {
@@ -389,8 +412,6 @@
         this.searchModel = this.$route.query.searchModel
         window.location.hash = hash.substring(0, hash.indexOf('?'))
       }
-
-      this.handleModelMouseEnterDebounce = debounce(this.handleModelItemMouseEnter, 200)
     },
     mounted() {
       addResizeListener(this.$refs.mainInject.$el, this.handleSetPadding)
@@ -398,7 +419,7 @@
     beforeDestroy() {
       removeResizeListener(this.$refs.mainInject.$el, this.handleSetPadding)
       removeMainScrollListener(this.scrollHandler)
-      this.$http.cancelRequest(this.request.statistics)
+      this.$http.cancelRequest(this.requestIds.statistics)
     },
     methods: {
       ...mapMutations('objectModelClassify', [
@@ -415,11 +436,14 @@
       ...mapActions('objectModel', [
         'createObject'
       ]),
+      ...mapActions('objectMainLineModule', [
+        'searchMainlineObject',
+      ]),
       handleSetPadding() {
         this.topPadding = this.$refs.mainInject.$el.offsetHeight
       },
-      isEditable(classification) {
-        return !['bk_biz_topo', 'bk_host_manage', 'bk_organization'].includes(classification.bk_classification_id)
+      isBuiltinClass(classification) {
+        return classification.bk_classification_type === 'inner'
       },
       showGroupDialog(isEdit, group) {
         if (isEdit) {
@@ -448,11 +472,11 @@
         }
 
         const requestId = `getModelInstanceCount_${id}`
-        this.request.statistics.push(requestId)
+        this.requestIds.statistics.push(requestId)
 
         // 取消上一个请求
-        const currentIndex = this.request.statistics.findIndex(rid => rid === requestId)
-        const prevIndex = this.request.statistics[currentIndex - 1]
+        const currentIndex = this.requestIds.statistics.findIndex(rid => rid === requestId)
+        const prevIndex = this.requestIds.statistics[currentIndex - 1]
         if (prevIndex) {
           this.$http.cancelRequest(prevIndex)
         }
@@ -474,47 +498,57 @@
         })
       },
       async saveGroup() {
-        const res = await Promise.all([
-          this.$validator.validate('classifyId'),
-          this.$validator.validate('classifyName')
-        ])
-        if (res.includes(false)) {
-          return
+        try {
+          const res = await Promise.all([
+            this.$validator.validate('classifyId'),
+            this.$validator.validate('classifyName')
+          ])
+          if (res.includes(false)) {
+            return
+          }
+          const params = {
+            bk_supplier_account: this.supplierAccount,
+            bk_classification_id: this.groupDialog.data.bk_classification_id,
+            bk_classification_name: this.groupDialog.data.bk_classification_name
+          }
+          if (this.groupDialog.isEdit) {
+            // eslint-disable-next-line no-unused-vars
+            const res = await this.updateClassification({
+              id: this.groupDialog.data.id,
+              params,
+              config: {
+                requestId: 'updateClassification'
+              }
+            })
+            this.updateClassify({ ...params, ...{ id: this.groupDialog.data.id } })
+          } else {
+            const res = await this.createClassification({
+              params,
+              config: { requestId: 'createClassification' }
+            })
+            this.updateClassify({ ...params, ...{ id: res.id } })
+            this.$success(this.$t('新建成功'))
+          }
+          this.hideGroupDialog()
+          this.searchModel = ''
+        } catch (error) {
+          console.log(error)
         }
-        const params = {
-          bk_supplier_account: this.supplierAccount,
-          bk_classification_id: this.groupDialog.data.bk_classification_id,
-          bk_classification_name: this.groupDialog.data.bk_classification_name
-        }
-        if (this.groupDialog.isEdit) {
-          // eslint-disable-next-line no-unused-vars
-          const res = await this.updateClassification({
-            id: this.groupDialog.data.id,
-            params,
-            config: {
-              requestId: 'updateClassification'
-            }
-          })
-          this.updateClassify({ ...params, ...{ id: this.groupDialog.data.id } })
-        } else {
-          const res = await this.createClassification({
-            params,
-            config: { requestId: 'createClassification' }
-          })
-          this.updateClassify({ ...params, ...{ id: res.id } })
-        }
-        this.hideGroupDialog()
-        this.searchModel = ''
       },
       deleteGroup(group) {
         this.$bkInfo({
           title: this.$t('确认要删除此分组'),
           confirmFn: async () => {
-            await this.deleteClassification({
-              id: group.id
-            })
-            this.$store.commit('objectModelClassify/deleteClassify', group.bk_classification_id)
-            this.searchModel = ''
+            try {
+              await this.deleteClassification({
+                id: group.id
+              })
+              this.$store.commit('objectModelClassify/deleteClassify', group.bk_classification_id)
+              this.searchModel = ''
+              this.$success(this.$t('删除成功'))
+            } catch (error) {
+              console.log(error)
+            }
           }
         })
       },
@@ -531,17 +565,21 @@
           bk_obj_id: data.bk_obj_id,
           userName: this.userName
         }
-        const createModel = await this.createObject({ params, config: { requestId: 'createModel' } })
-        this.curCreateModel = createModel
-        this.sucessDialog.isShow = true
-        this.$http.cancel('post_searchClassificationsObjects')
-        this.getModelInstanceCount(params.bk_obj_id)
-        this.searchClassificationsObjects({
-          params: {}
-        })
-        this.modelDialog.isShow = false
-        this.modelDialog.groupId = ''
-        this.searchModel = ''
+        try {
+          const createModel = await this.createObject({ params, config: { requestId: 'createModel' } })
+          this.curCreateModel = createModel
+          this.sucessDialog.isShow = true
+          this.$http.cancel('post_searchClassificationsObjects')
+          this.getModelInstanceCount(params.bk_obj_id)
+          this.searchClassificationsObjects({
+            params: {}
+          })
+          this.modelDialog.isShow = false
+          this.modelDialog.groupId = ''
+          this.searchModel = ''
+        } catch (error) {
+          console.log(error)
+        }
       },
       modelClick(model) {
         this.$store.commit('objectModel/setActiveModel', model)
@@ -555,14 +593,10 @@
       },
       handleGoInstance(model) {
         this.sucessDialog.isShow = false
-        const map = {
-          host: MENU_RESOURCE_HOST,
-          biz: MENU_RESOURCE_BUSINESS
-        }
-        if (has(map, model.bk_obj_id)) {
+        if (has(BUILTIN_MODEL_RESOURCE_MENUS, model.bk_obj_id)) {
           const query = model.bk_obj_id === 'host' ? { scope: 'all' } : {}
           this.$routerActions.redirect({
-            name: map[model.bk_obj_id],
+            name: BUILTIN_MODEL_RESOURCE_MENUS[model.bk_obj_id],
             query
           })
         } else {
@@ -574,11 +608,17 @@
           })
         }
       },
+      isNoInstanceModel(modelId) {
+        // 不能直接查看实例的模型
+        const noInstanceModelIds = ['set', 'module']
+        return noInstanceModelIds.includes(modelId)
+      },
       handleModelItemMouseEnter(model) {
-        if ((model.bk_ispaused && !model.bk_ishidden) || model.bk_classification_id === 'bk_biz_topo') {
-          // ignore disabled | bk_biz_topo
-          return
-        }
+        if (!model) return
+
+        const isDisabledModel = model.bk_ispaused && !model.bk_ishidden
+
+        if (isDisabledModel || this.isNoInstanceModel(model.bk_obj_id)) return
 
         this.getModelInstanceCount(model.bk_obj_id)
       }
@@ -655,7 +695,8 @@
         .group-title {
             display: inline-block;
             margin: 0 40px 0 0;
-            line-height: 21px;
+            height: 22px;
+            line-height: 22px;
             color: #333948;
             outline: 0;
             &:before {
