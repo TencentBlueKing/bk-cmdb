@@ -1,30 +1,47 @@
 <template>
   <cmdb-sticky-layout class="config-wrapper">
-    <template #header="{ sticky }">
+    <template #header="{ sticky }" v-if="!isDel">
       <top-steps :class="{ 'is-sticky': sticky }" :current="1" />
     </template>
-    <div class="multi-module-config" v-bkloading="{ isLoading: $loading(['getHostApplyConfigs']) }">
+    <div class="multi-config" v-bkloading="{ isLoading: $loading(requestIds.rules) }">
+
+      <service-template-tips class="config-tips" v-if="isTemplateMode" :service-template-ids="ids" />
+
       <div class="config-bd">
         <div class="config-item">
           <div class="item-label">
-            <i18n path="已选择N个模块：">
-              <span place="count">{{moduleIds.length}}</span>
+            <i18n path="已选择N个模块：" v-if="isModuleMode">
+              <span place="count">{{ids.length}}</span>
+            </i18n>
+            <i18n path="已选择N个模板：" v-else-if="isTemplateMode">
+              <span place="count">{{ids.length}}</span>
             </i18n>
           </div>
           <div class="item-content">
-            <div :class="['module-list', { 'show-more': showMore.isMoreModuleShowed }]" ref="moduleList">
+            <div :class="['target-list', { 'show-more': showMore.isMoreShowed }]" ref="targetList">
+              <template v-if="isModuleMode">
+                <div
+                  v-for="(id, index) in ids" :key="index"
+                  class="target-item"
+                  v-bk-tooltips="getModulePath(id)">
+                  <span class="target-icon">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
+                  {{getModuleName(id)}}
+                </div>
+              </template>
+              <template v-else-if="isTemplateMode">
+                <div
+                  v-for="(id, index) in ids" :key="index"
+                  class="target-item"
+                  v-bk-tooltips="getTemplateName(id)">
+                  <span class="target-icon">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
+                  {{getTemplateName(id)}}
+                </div>
+              </template>
               <div
-                v-for="(id, index) in moduleIds" :key="index"
-                class="module-item"
-                v-bk-tooltips="getModulePath(id)">
-                <span class="module-icon">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
-                {{getModuleName(id)}}
-              </div>
-              <div
-                :class="['module-item', 'more', { 'opened': showMore.isMoreModuleShowed }]"
+                :class="['target-item', 'more', { 'opened': showMore.isMoreShowed }]"
                 :style="{ left: `${showMore.linkLeft}px` }"
                 v-show="showMore.showLink" @click="handleShowMore">
-                {{showMore.isMoreModuleShowed ? $t('收起') : $t('展开更多')}}<i class="bk-cc-icon icon-cc-arrow-down"></i>
+                {{showMore.isMoreShowed ? $t('收起') : $t('展开更多')}}<i class="bk-cc-icon icon-cc-arrow-down"></i>
               </div>
             </div>
           </div>
@@ -48,13 +65,14 @@
             </div>
             <div class="config-table" v-show="checkedPropertyIdList.length">
               <property-config-table
-                ref="configEditTable"
+                ref="propertyConfigTable"
+                :mode="mode"
                 :multiple="true"
                 :readonly="isDel"
                 :deletable="isDel"
                 :checked-property-id-list.sync="checkedPropertyIdList"
                 :rule-list="initRuleList"
-                :module-id-list="moduleIds"
+                :id-list="ids"
                 @property-value-change="handlePropertyValueChange"
                 @selection-change="handlePropertySelectionChange"
                 @property-remove="handlePropertyRemove">
@@ -108,20 +126,25 @@
   import topSteps from './top-steps.vue'
   import hostPropertyModal from './host-property-modal'
   import propertyConfigTable from './property-config-table'
-  import {
-    MENU_BUSINESS_HOST_APPLY,
-    MENU_BUSINESS_HOST_APPLY_CONFIRM
-  } from '@/dictionary/menu-symbol'
+  import serviceTemplateTips from './service-template-tips.vue'
+  import { MENU_BUSINESS_HOST_APPLY_CONFIRM } from '@/dictionary/menu-symbol'
+  import { CONFIG_MODE } from '@/services/service-template/index.js'
+
   export default {
-    name: 'multi-module-config',
+    name: 'multi-config',
     components: {
       leaveConfirm,
       topSteps,
       hostPropertyModal,
-      propertyConfigTable
+      propertyConfigTable,
+      serviceTemplateTips
     },
     props: {
-      moduleIds: {
+      mode: {
+        type: String,
+        required: true
+      },
+      ids: {
         type: Array,
         default: () => ([])
       },
@@ -135,9 +158,9 @@
         initRuleList: [],
         checkedPropertyIdList: [],
         showMore: {
-          moduleListMaxRow: 2,
+          listMaxRow: 2,
           showLink: false,
-          isMoreModuleShowed: false,
+          isMoreShowed: false,
           linkLeft: 0
         },
         selectedPropertyRow: [],
@@ -145,23 +168,80 @@
         nextButtonDisabled: false,
         delButtonDisabled: true,
         leaveConfirmConfig: {
-          id: 'multiModule',
+          id: 'multiConfig',
           active: true
+        },
+        requestIds: {
+          rules: Symbol('rules'),
+          del: Symbol('del')
         }
       }
     },
     inject: [
       'getModuleName',
-      'getModulePath'
+      'getModulePath',
+      'getTemplateName'
     ],
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       ...mapState('hostApply', ['ruleDraft']),
+      isModuleMode() {
+        return this.mode === CONFIG_MODE.MODULE
+      },
+      isTemplateMode() {
+        return this.mode === CONFIG_MODE.TEMPLATE
+      },
       isDel() {
         return this.action === 'batch-del'
       },
       hasRuleDraft() {
         return Object.keys(this.ruleDraft).length > 0
+      },
+      targetIdsKey() {
+        const targetIdsKeys = {
+          [CONFIG_MODE.MODULE]: 'bk_module_ids',
+          [CONFIG_MODE.TEMPLATE]: 'service_template_ids'
+        }
+        return targetIdsKeys[this.mode]
+      },
+      targetIdKey() {
+        const targetIdKeys = {
+          [CONFIG_MODE.MODULE]: 'bk_module_id',
+          [CONFIG_MODE.TEMPLATE]: 'service_template_id'
+        }
+        return targetIdKeys[this.mode]
+      },
+      requestConfigs() {
+        return {
+          [this.requestIds.rules]: {
+            [CONFIG_MODE.MODULE]: {
+              action: 'hostApply/getRules',
+              payload: {
+                bizId: this.bizId,
+                params: {
+                  bk_module_ids: this.ids
+                }
+              }
+            },
+            [CONFIG_MODE.TEMPLATE]: {
+              action: 'hostApply/getTemplateRules',
+              payload: {
+                params: {
+                  bk_biz_id: this.bizId,
+                  service_template_ids: this.ids
+                }
+              }
+            }
+          },
+          [this.requestIds.del]: {
+            [CONFIG_MODE.MODULE]: {
+              action: 'hostApply/deleteRules'
+            },
+            [CONFIG_MODE.TEMPLATE]: {
+              action: 'hostApply/deleteTemplateRules'
+            }
+          }
+        }
       }
     },
     watch: {
@@ -196,38 +276,36 @@
         }
       },
       getRules() {
-        return this.$store.dispatch('hostApply/getRules', {
-          bizId: this.bizId,
-          params: {
-            bk_module_ids: this.moduleIds
-          },
+        const requestConfig = this.requestConfigs[this.requestIds.rules][this.mode]
+        return this.$store.dispatch(requestConfig.action, {
           config: {
-            requestId: 'getHostApplyConfigs'
-          }
+            requestId: this.requestIds.rules
+          },
+          ...requestConfig.payload
         })
       },
       setShowMoreLinkStatus() {
-        const { moduleList } = this.$refs
+        const { targetList } = this.$refs
         // eslint-disable-next-line prefer-destructuring
-        const moduleItemEl = moduleList.getElementsByClassName('module-item')[0]
-        const moduleItemStyle = getComputedStyle(moduleItemEl)
+        const itemEl = targetList.getElementsByClassName('target-item')[0]
+        const itemStyle = getComputedStyle(itemEl)
         // eslint-disable-next-line max-len
-        const moduleItemWidth = moduleItemEl.offsetWidth + parseInt(moduleItemStyle.marginLeft, 10) + parseInt(moduleItemStyle.marginRight, 10)
-        const moduleListWidth = moduleList.clientWidth
-        const maxCountInRow = Math.floor(moduleListWidth / moduleItemWidth)
-        const rowCount = Math.ceil(this.moduleIds.length / maxCountInRow)
-        this.showMore.showLink = rowCount > this.showMore.moduleListMaxRow
-        this.showMore.linkLeft = moduleItemWidth * (maxCountInRow - 1)
+        const itemWidth = itemEl.offsetWidth + parseInt(itemStyle.marginLeft, 10) + parseInt(itemStyle.marginRight, 10)
+        const targetListWidth = targetList.clientWidth
+        const maxCountInRow = Math.floor(targetListWidth / itemWidth)
+        const rowCount = Math.ceil(this.ids.length / maxCountInRow)
+        this.showMore.showLink = rowCount > this.showMore.listMaxRow
+        this.showMore.linkLeft = itemWidth * (maxCountInRow - 1)
       },
-      getAvailableModulePropertyList(modulePropertyList) {
+      getAvailablePropertyRuleList(propertyRuleList) {
         // 被忽略的不需要
-        const availableList = modulePropertyList.filter(property => !property.__extra__.ignore)
+        const availableList = propertyRuleList.filter(property => !property.__extra__.ignore)
 
         return availableList
       },
       toggleNextButtonDisabled() {
-        const { modulePropertyList } = this.$refs.configEditTable
-        const availableList = this.getAvailableModulePropertyList(modulePropertyList)
+        const { propertyRuleList } = this.$refs.propertyConfigTable
+        const availableList = this.getAvailablePropertyRuleList(propertyRuleList)
 
         const everyTruthy = availableList.every((property) => {
           const validTruthy = property.__extra__.valid !== false
@@ -245,23 +323,23 @@
         this.nextButtonDisabled = !availableList.length || !everyTruthy
       },
       handleNextStep() {
-        const { modulePropertyList, ignoreRuleIds } = this.$refs.configEditTable
+        const { propertyRuleList, ignoreRuleIds } = this.$refs.propertyConfigTable
 
-        const availableModulePropertyList = this.getAvailableModulePropertyList(modulePropertyList)
+        const availablePropertyRuleList = this.getAvailablePropertyRuleList(propertyRuleList)
         const additionalRules = []
-        this.moduleIds.forEach((moduleId) => {
-          availableModulePropertyList.forEach((property) => {
+        this.ids.forEach((id) => {
+          availablePropertyRuleList.forEach((property) => {
             additionalRules.push({
               bk_attribute_id: property.id,
-              bk_module_id: moduleId,
+              [this.targetIdKey]: id,
               bk_property_value: property.__extra__.value
             })
           })
         })
 
         const savePropertyConfig = {
-          // 模块列表
-          bk_module_ids: this.moduleIds,
+          // 配置对象列表
+          [this.targetIdsKey]: this.ids,
           // 附加的规则
           additional_rules: additionalRules,
           // 删除的规则，来源于编辑表格删除
@@ -269,18 +347,13 @@
         }
         this.$store.commit('hostApply/setPropertyConfig', savePropertyConfig)
         this.$store.commit('hostApply/setRuleDraft', {
-          moduleIds: this.moduleIds,
-          rules: modulePropertyList
+          rules: propertyRuleList
         })
 
         this.leaveConfirmConfig.active = false
         this.$nextTick(function () {
           this.$routerActions.redirect({
             name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
-            query: {
-              batch: 1,
-              mid: this.$route.query.mid
-            },
             history: true
           })
         })
@@ -292,17 +365,19 @@
           confirmFn: async () => {
             // eslint-disable-next-line max-len
             const ruleIds = this.selectedPropertyRow.reduce((acc, cur) => acc.concat(cur.__extra__.ruleList.map(item => item.id)), [])
+            const requestConfig = this.requestConfigs[this.requestIds.del][this.mode]
             try {
-              await this.$store.dispatch('hostApply/deleteRules', {
+              await this.$store.dispatch(requestConfig.action, {
                 bizId: this.bizId,
                 params: {
                   data: {
                     host_apply_rule_ids: ruleIds,
-                    bk_module_ids: this.moduleIds
+                    [this.targetIdsKey]: this.ids
                   }
                 }
               })
 
+              this.$success(this.$t('删除成功'))
               this.goBack()
             } catch (e) {
               console.log(e)
@@ -313,11 +388,8 @@
       goBack() {
         // 删除离开不用确认
         this.leaveConfirmConfig.active = !this.isDel
-        this.$nextTick(function () {
-          // 回到入口页
-          this.$routerActions.redirect({
-            name: MENU_BUSINESS_HOST_APPLY
-          })
+        this.$nextTick(() => {
+          this.$routerActions.back()
         })
       },
       handleCancel() {
@@ -338,7 +410,7 @@
         this.propertyModalVisible = true
       },
       handleShowMore() {
-        this.showMore.isMoreModuleShowed = !this.showMore.isMoreModuleShowed
+        this.showMore.isMoreShowed = !this.showMore.isMoreShowed
       }
     }
   }
@@ -372,9 +444,13 @@
     }
   }
 
-  .multi-module-config {
-    // width: 1066px;
-    padding-top: 15px;
+  .multi-config {
+    padding-top: 12px;
+
+    .config-tips {
+      margin: 0 20px 16px 20px;
+    }
+
     .config-item {
       display: flex;
       margin: 8px 0;
@@ -407,7 +483,7 @@
     }
   }
 
-  .module-list {
+  .target-list {
     position: relative;
     max-height: 72px;
     overflow: hidden;
@@ -417,7 +493,7 @@
       max-height: 100%;
     }
   }
-  .module-item {
+  .target-item {
     position: relative;
     display: inline-block;
     vertical-align: middle;
@@ -436,12 +512,12 @@
     &:hover {
       border-color: $primaryColor;
       color: $primaryColor;
-      .module-icon {
+      .target-icon {
           background-color: $primaryColor;
       }
     }
 
-    .module-icon {
+    .target-icon {
       position: absolute;
       left: 2px;
       top: 2px;
@@ -456,7 +532,7 @@
     }
 
     &.more {
-        position: absolute;
+      position: absolute;
       left: 0;
       bottom: 0;
       background: #fafbfd;

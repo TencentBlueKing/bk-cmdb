@@ -3,13 +3,17 @@
     <top-steps :current="2" />
     <div class="host-apply-confirm">
       <div class="update-options">
-        <div class="option-label">同时更新<span class="has-tips" v-bk-tooltips="'属性当前值与目标值不一致的主机'">失效主机</span></div>
+        <div class="option-label">
+          <i18n path="同时更新失效主机">
+            <span place="invalid" class="has-tips" v-bk-tooltips="$t('属性当前值与目标值不一致的主机')">{{$t('-失效主机')}}</span>
+          </i18n>
+        </div>
         <bk-radio-group class="option-content" v-model="updateOption.changed">
           <bk-radio :value="true">
-            是，将把失效主机配置全部更新为当前的配置
+            {{$t('是将把失效主机更新为当前的配置')}}
           </bk-radio>
           <bk-radio :value="false">
-            否，将保留失效主机的配置
+            {{$t('否将保留失效主机的配置')}}
           </bk-radio>
         </bk-radio-group>
       </div>
@@ -52,28 +56,31 @@
           <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
       </div>
-      <leave-confirm
-        v-bind="leaveConfirmConfig"
-        reverse
-        :title="$t('是否退出配置')"
-        :content="$t('启用步骤未完成，退出将会丢失当前配置')"
-        :ok-text="$t('退出')"
-        :cancel-text="$t('取消')">
-      </leave-confirm>
     </div>
+
+    <leave-confirm
+      v-bind="leaveConfirmConfig"
+      reverse
+      :title="$t('是否退出配置')"
+      :content="$t('启用步骤未完成，退出将会丢失当前配置')"
+      :ok-text="$t('退出')"
+      :cancel-text="$t('取消')">
+    </leave-confirm>
   </div>
 </template>
 
 <script>
   import { mapGetters, mapState, mapActions } from 'vuex'
   import leaveConfirm from '@/components/ui/dialog/leave-confirm'
-  import topSteps from './children/top-steps.vue'
   import propertyConfirmTable from '@/components/host-apply/property-confirm-table'
+  import topSteps from './children/top-steps.vue'
   import {
     MENU_BUSINESS_HOST_APPLY,
     MENU_BUSINESS_HOST_APPLY_EDIT,
     MENU_BUSINESS_HOST_APPLY_RUN
   } from '@/dictionary/menu-symbol'
+  import { CONFIG_MODE } from '@/services/service-template/index.js'
+
   export default {
     components: {
       leaveConfirm,
@@ -104,8 +111,51 @@
     computed: {
       ...mapState('hostApply', ['propertyConfig']),
       ...mapGetters('objectBiz', ['bizId']),
+      mode() {
+        return this.$route.params.mode
+      },
+      isModuleMode() {
+        return this.mode === CONFIG_MODE.MODULE
+      },
+      isTemplateMode() {
+        return this.mode === CONFIG_MODE.TEMPLATE
+      },
       isBatch() {
         return this.$route.query.batch === 1
+      },
+      targetIdsKey() {
+        const targetIdsKeys = {
+          [CONFIG_MODE.MODULE]: 'bk_module_ids',
+          [CONFIG_MODE.TEMPLATE]: 'service_template_ids'
+        }
+        return targetIdsKeys[this.mode]
+      },
+      targetIds() {
+        return this.propertyConfig[this.targetIdsKey]
+      },
+      requestConfigs() {
+        return {
+          [this.requestIds.applyPreview]: {
+            [CONFIG_MODE.MODULE]: {
+              action: 'getApplyPreview',
+              payload: {
+                params: {
+                  bk_biz_id: this.bizId,
+                  ...this.propertyConfig
+                }
+              }
+            },
+            [CONFIG_MODE.TEMPLATE]: {
+              action: 'getTemplateApplyPreview',
+              payload: {
+                params: {
+                  bk_biz_id: this.bizId,
+                  ...this.propertyConfig
+                }
+              }
+            }
+          }
+        }
       }
     },
     beforeRouteLeave(to, from, next) {
@@ -128,15 +178,14 @@
     },
     methods: {
       ...mapActions('hostApply', [
-        'getApplyPreview'
+        'getApplyPreview',
+        'getTemplateApplyPreview'
       ]),
       async initData() {
         try {
-          const previewData = await this.getApplyPreview({
-            params: {
-              bk_biz_id: this.bizId,
-              ...this.propertyConfig
-            },
+          const requestConfig = this.requestConfigs[this.requestIds.applyPreview][this.mode]
+          const previewData = await this[requestConfig.action]({
+            ...requestConfig.payload,
             config: {
               requestId: this.requestIds.applyPreview
             }
@@ -163,11 +212,14 @@
         const query = {}
         if (!this.isBatch) {
           // eslint-disable-next-line prefer-destructuring
-          query.module = this.propertyConfig.bk_module_ids[0]
+          query.id = this.propertyConfig[this.targetIdsKey][0]
         }
         this.$store.commit('hostApply/clearRuleDraft')
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY,
+          params: {
+            mode: this.mode
+          },
           query
         })
       },

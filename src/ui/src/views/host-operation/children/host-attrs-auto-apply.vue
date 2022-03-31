@@ -16,27 +16,32 @@
       {{$t('转移属性变化确认提示')}}
     </cmdb-tips>
     <div class="options-row">
-      <div class="option-label"><span class="has-tips" v-bk-tooltips="'属性值与目标模块配置不一致的主机'">是否更新主机属性</span></div>
+      <div class="option-label">
+        <span class="has-tips" v-bk-tooltips="$t('属性值与目标模块配置不一致的主机')">{{$t('是否更新主机属性')}}</span>
+      </div>
       <bk-radio-group class="option-content"
         v-model="updateOption.changed"
         @change="handleUpdateOptionChange">
         <bk-radio :value="true">
-          是，将把转移的主机配置全部更新为目标模块配置
+          {{$t('是将把转移的主机更新为目标模块配置')}}
         </bk-radio>
         <bk-radio :value="false">
-          否，将保留主机原有配置
+          {{$t('否将保留主机原有配置')}}
         </bk-radio>
       </bk-radio-group>
     </div>
     <div class="options-row conflict" v-if="hasMultipleConflictModule && updateOption.changed">
-      <div class="option-label"><span class="has-tips" v-bk-tooltips="'目标模块配置了不同的自动应用属性，需要重新指定配置'">冲突字段配置</span></div>
+      <div class="option-label">
+        <span class="has-tips" v-bk-tooltips="$t('目标模块配置了不同的自动应用属性，需要重新指定配置')">{{$t('冲突字段配置')}}</span>
+      </div>
       <div class="option-content conflict-property-list">
         <template v-for="item in conflictPropertyList">
           <div class="conflict-property-item" :key="item.bk_attribute_id" v-if="item.host_apply_rules.length > 1">
             <div class="property-name" :title="item.propertyName">{{item.propertyName}}</div>
             <bk-select v-model="item.selectedRuleId" class="property-value-selector"
+              ext-popover-cls="host-apply-property-value-selector-popover"
               :clearable="false"
-              placeholder="请选择目标模块配置"
+              :placeholder="$t('请选择目标模块配置')"
               :searchable="item.host_apply_rules.length > 10"
               @change="handleModuleRuleChange">
               <bk-option v-for="rule in item.host_apply_rules"
@@ -45,6 +50,11 @@
                 :name="getModulePath(rule.bk_module_id)"
                 @mouseenter.native="(event) => handleModuleRuleHover(event, rule, item.bk_attribute_id)"
                 @mouseleave.native="(event) => handleModuleRuleHover(event, rule, item.bk_attribute_id)">
+                <div class="bk-option-content-default">
+                  <div class="bk-option-name medium-font">
+                    {{getModulePath(rule.bk_module_id)}}
+                  </div>
+                </div>
               </bk-option>
             </bk-select>
           </div>
@@ -162,14 +172,14 @@
         return moduleIdList
       },
       hasMultipleConflictModule() {
-        // 冲突规则配置存在于多个模块间则判定为多存在多个冲突模块
-        return this.moduleIdList.length > 1
-      },
-
+        // 冲突规则配置存在于多个模块间且每个规则多于一条配置
+        const hasMoreThanOne = this.conflictPropertyList.some(conflict => conflict.host_apply_rules.length > 1)
+        return this.moduleIdList.length > 1 && hasMoreThanOne
+      }
     },
     watch: {
       moduleIdList() {
-        this.getRules()
+        this.getModuleFinalRules()
       },
       conflictPropertyList() {
         this.initUpdateOption()
@@ -192,15 +202,15 @@
           })
         })
       },
-      async getRules() {
+      async getModuleFinalRules() {
         try {
-          const { info: list } = await this.$store.dispatch('hostApply/getRules', {
-            bizId: this.bizId,
+          const rules = await this.$store.dispatch('hostApply/getModuleFinalRules', {
             params: {
+              bk_biz_id: this.bizId,
               bk_module_ids: this.moduleIdList
             }
           })
-          this.ruleList = list ?? []
+          this.ruleList = rules ?? []
         } catch (e) {
           console.error(e)
         }
@@ -312,7 +322,6 @@
 </script>
 
 <style lang="scss" scoped>
-
   .options-row {
     display: flex;
     align-items: center;
@@ -385,6 +394,13 @@
       margin-left: -1px;
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
+
+      ::v-deep {
+        .bk-select-name {
+          direction: rtl;
+          text-align: left;
+        }
+      }
     }
 
     &:nth-child(2n) {
@@ -446,6 +462,14 @@
           }
         }
       }
+    }
+  }
+</style>
+<style lang="scss">
+  .host-apply-property-value-selector-popover {
+    .bk-option-name {
+      direction: rtl;
+      text-align: left;
     }
   }
 </style>

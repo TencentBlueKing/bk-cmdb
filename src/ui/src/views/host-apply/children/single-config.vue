@@ -3,7 +3,11 @@
     <template #header="{ sticky }">
       <top-steps :class="{ 'is-sticky': sticky }" :current="1" />
     </template>
-    <div class="single-module-config" v-bkloading="{ isLoading: $loading(['getHostApplyConfigs']) }">
+    <div :class="['single-config', { 'is-loading': $loading(requestIds.rules) }]"
+      v-bkloading="{ isLoading: $loading(requestIds.rules) }">
+
+      <service-template-tips class="config-tips" v-if="isTemplateMode" :service-template-ids="ids" />
+
       <div class="config-body">
         <div :class="['choose-field', { 'not-choose': !checkedPropertyIdList.length }]">
           <div class="choose-hd">
@@ -13,8 +17,7 @@
                 icon="plus"
                 slot-scope="{ disabled }"
                 :disabled="disabled"
-                @click="handleChooseField"
-              >
+                @click="handleChooseField">
                 {{$t('选择字段')}}
               </bk-button>
             </cmdb-auth>
@@ -22,10 +25,10 @@
           <div class="choose-bd" v-show="checkedPropertyIdList.length">
             <property-config-table
               ref="propertyConfigTable"
+              :mode="mode"
               :checked-property-id-list.sync="checkedPropertyIdList"
               :rule-list="initRuleList"
-              @property-value-change="handlePropertyValueChange"
-            >
+              @property-value-change="handlePropertyValueChange">
             </property-config-table>
           </div>
         </div>
@@ -67,20 +70,25 @@
   import topSteps from './top-steps.vue'
   import hostPropertyModal from './host-property-modal'
   import propertyConfigTable from './property-config-table'
-  import {
-    MENU_BUSINESS_HOST_APPLY,
-    MENU_BUSINESS_HOST_APPLY_CONFIRM
-  } from '@/dictionary/menu-symbol'
+  import serviceTemplateTips from './service-template-tips.vue'
+  import { MENU_BUSINESS_HOST_APPLY_CONFIRM } from '@/dictionary/menu-symbol'
+  import { CONFIG_MODE } from '@/services/service-template/index.js'
+
   export default {
-    name: 'single-module-config',
+    name: 'single-config',
     components: {
       leaveConfirm,
       topSteps,
       hostPropertyModal,
-      propertyConfigTable
+      propertyConfigTable,
+      serviceTemplateTips
     },
     props: {
-      moduleIds: {
+      mode: {
+        type: String,
+        required: true
+      },
+      ids: {
         type: Array,
         default: () => ([])
       }
@@ -92,19 +100,66 @@
         nextButtonDisabled: true,
         propertyModalVisible: false,
         leaveConfirmConfig: {
-          id: 'singleModule',
+          id: 'singleConfig',
           active: true
+        },
+        requestIds: {
+          rules: Symbol('rules')
         }
       }
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       ...mapState('hostApply', ['ruleDraft']),
-      moduleId() {
-        return this.moduleIds[0]
+      isModuleMode() {
+        return this.mode === CONFIG_MODE.MODULE
+      },
+      isTemplateMode() {
+        return this.mode === CONFIG_MODE.TEMPLATE
+      },
+      targetId() {
+        return this.ids[0]
       },
       hasRuleDraft() {
         return Object.keys(this.ruleDraft).length > 0
+      },
+      targetIdsKey() {
+        const targetIdsKeys = {
+          [CONFIG_MODE.MODULE]: 'bk_module_ids',
+          [CONFIG_MODE.TEMPLATE]: 'service_template_ids'
+        }
+        return targetIdsKeys[this.mode]
+      },
+      targetIdKey() {
+        const targetIdKeys = {
+          [CONFIG_MODE.MODULE]: 'bk_module_id',
+          [CONFIG_MODE.TEMPLATE]: 'service_template_id'
+        }
+        return targetIdKeys[this.mode]
+      },
+      requestConfigs() {
+        return {
+          [this.requestIds.rules]: {
+            [CONFIG_MODE.MODULE]: {
+              action: 'hostApply/getRules',
+              payload: {
+                bizId: this.bizId,
+                params: {
+                  bk_module_ids: [this.targetId]
+                }
+              }
+            },
+            [CONFIG_MODE.TEMPLATE]: {
+              action: 'hostApply/getTemplateRules',
+              payload: {
+                params: {
+                  bk_biz_id: this.bizId,
+                  service_template_ids: [this.targetId]
+                }
+              }
+            }
+          }
+        }
       }
     },
     watch: {
@@ -127,21 +182,19 @@
         }
       },
       getRules() {
-        return this.$store.dispatch('hostApply/getRules', {
-          bizId: this.bizId,
-          params: {
-            bk_module_ids: [this.moduleId]
-          },
+        const requestConfig = this.requestConfigs[this.requestIds.rules][this.mode]
+        return this.$store.dispatch(requestConfig.action, {
           config: {
-            requestId: 'getHostApplyConfigs'
-          }
+            requestId: this.requestIds.rules
+          },
+          ...requestConfig.payload
         })
       },
       toggleNextButtonDisabled() {
         this.$nextTick(() => {
           if (this.$refs.propertyConfigTable) {
-            const { modulePropertyList } = this.$refs.propertyConfigTable
-            const everyTruthy = modulePropertyList.every((property) => {
+            const { propertyRuleList } = this.$refs.propertyConfigTable
+            const everyTruthy = propertyRuleList.every((property) => {
               // eslint-disable-next-line no-underscore-dangle
               const validTruthy = property.__extra__.valid !== false
               // eslint-disable-next-line no-underscore-dangle
@@ -158,17 +211,17 @@
         })
       },
       async handleNextStep() {
-        const { modulePropertyList, removeRuleIds } = this.$refs.propertyConfigTable
-        const additionalRules = modulePropertyList.map(property => ({
+        const { propertyRuleList, removeRuleIds } = this.$refs.propertyConfigTable
+        const additionalRules = propertyRuleList.map(property => ({
           bk_attribute_id: property.id,
-          bk_module_id: this.moduleId,
+          [this.targetIdKey]: this.targetId,
           // eslint-disable-next-line no-underscore-dangle
           bk_property_value: property.__extra__.value
         }))
 
         const savePropertyConfig = {
-          // 模块列表
-          bk_module_ids: [this.moduleId],
+          // 配置对象列表
+          [this.targetIdsKey]: [this.targetId],
           // 附加的规则
           additional_rules: additionalRules,
           // 删除的规则，来源于编辑表格删除
@@ -177,8 +230,7 @@
 
         this.$store.commit('hostApply/setPropertyConfig', savePropertyConfig)
         this.$store.commit('hostApply/setRuleDraft', {
-          moduleIds: [this.moduleId],
-          rules: modulePropertyList
+          rules: propertyRuleList
         })
 
         // 使离开确认失活
@@ -186,9 +238,6 @@
         this.$nextTick(function () {
           this.$routerActions.redirect({
             name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
-            query: {
-              mid: this.$route.query.mid
-            },
             history: true
           })
         })
@@ -200,12 +249,7 @@
         this.propertyModalVisible = true
       },
       handleCancel() {
-        this.$routerActions.redirect({
-          name: MENU_BUSINESS_HOST_APPLY,
-          query: {
-            module: this.moduleId
-          }
-        })
+        this.$routerActions.back()
       }
     }
   }
@@ -236,18 +280,27 @@
       }
     }
   }
-  .single-module-config {
+  .single-config {
     display: flex;
     flex-direction: column;
-    width: 1066px;
     height: 100%;
     padding: 0 20px;
+
+    &.is-loading {
+      min-height: 160px;
+      width: 100%;
+    }
+
+    .config-tips {
+      margin-top: 12px;
+    }
 
     .config-head,
     .config-foot {
       flex: none;
     }
     .config-body {
+      width: 1066px;
       flex: auto;
     }
   }

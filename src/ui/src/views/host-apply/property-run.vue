@@ -11,11 +11,18 @@
         </div>
       </div>
 
-      <div class="status-error" v-else-if="requestErrors.run || requestErrors.task">
-        <div class="status-inner">
+      <div class="status-result" v-else-if="requestErrors.run">
+        <div class="result-icon">
           <span class="status-icon bk-icon icon-close icon-error"></span>
-          <p class="status-title" v-show="requestErrors.run">{{$t('应用异常')}}</p>
-          <p class="status-title" v-show="requestErrors.task">{{$t('查询状态异常')}}</p>
+          <p class="result-title">
+            <span>{{$t('应用异常')}}</span>
+          </p>
+          <p class="result-subtitle">
+            <span>{{requestErrors.msg.run}}</span>
+          </p>
+          <div class="result-options">
+            <bk-button @click="handleRetry">{{$t('重试')}}</bk-button>
+          </div>
         </div>
       </div>
 
@@ -27,7 +34,7 @@
         </div>
         <p class="result-title">
           <span v-show="taskSuccess">{{$t('应用成功')}}</span>
-          <span v-show="taskUndone">{{$t('应用中')}}</span>
+          <span v-show="taskUndone">{{$t('正在应用中')}}</span>
           <span v-show="taskFail">{{$t('应用失败')}}</span>
         </p>
         <p class="result-subtitle">
@@ -43,14 +50,14 @@
       </div>
 
       <bk-exception v-else class="exception-wrap-item exception-part" type="empty" scene="part">
-        <span>无应用任务</span>
+        <span>{{$t('无应用任务')}}</span>
       </bk-exception>
     </div>
 
     <leave-confirm
       v-bind="leaveConfirmConfig"
       reverse
-      :title="$t('是否退出')"
+      :title="$t('是否退出应用')"
       :content="$t('应用未完成，退出后任务将在后台执行')"
       :ok-text="$t('退出')"
       :cancel-text="$t('取消')">
@@ -67,6 +74,8 @@
     MENU_BUSINESS_HOST_APPLY
   } from '@/dictionary/menu-symbol'
   import { TASK_STATUS, setTask, getTask, removeTask  } from './task-helper.js'
+  import { CONFIG_MODE } from '@/services/service-template/index.js'
+
   export default {
     components: {
       topSteps,
@@ -80,7 +89,9 @@
         },
         requestErrors: {
           run: false,
-          task: false
+          msg: {
+            run: ''
+          }
         },
         taskStatus: null,
         undoneStatus: [TASK_STATUS.NEW, TASK_STATUS.WAITING, TASK_STATUS.EXECUTING],
@@ -96,6 +107,9 @@
       ...mapGetters(['userName']),
       ...mapGetters('objectBiz', ['bizId']),
       ...mapState('hostApply', ['propertyConfig']),
+      mode() {
+        return this.$route.params.mode
+      },
       hasConfig() {
         return Object.keys(this.propertyConfig).length > 0
       },
@@ -110,28 +124,37 @@
       },
       hasSteps() {
         return !['conflict-list'].includes(this.$route.query.from)
+      },
+      targetIdsKey() {
+        const targetIdsKeys = {
+          [CONFIG_MODE.MODULE]: 'bk_module_ids',
+          [CONFIG_MODE.TEMPLATE]: 'service_template_ids'
+        }
+        return targetIdsKeys[this.mode]
+      },
+      requestConfigs() {
+        return {
+          [this.requestIds.run]: {
+            [CONFIG_MODE.MODULE]: {
+              action: 'runApply'
+            },
+            [CONFIG_MODE.TEMPLATE]: {
+              action: 'runTemplateApply'
+            }
+          },
+          [this.requestIds.task]: {
+            [CONFIG_MODE.MODULE]: {
+              action: 'getApplyTaskStatus'
+            },
+            [CONFIG_MODE.TEMPLATE]: {
+              action: 'getTemplateApplyTaskStatus'
+            }
+          }
+        }
       }
     },
     async created() {
-      // 本地任务ID
-      const localTaskId = getTask(`${this.userName}${this.bizId}`)
-
-      // 存在配置数据，先执行应用
-      if (this.hasConfig) {
-        const result = await this.saveAndApply()
-        if (result === false) {
-          this.requestErrors.run = true
-          return
-        }
-
-        // 存储新任务ID
-        const { bk_biz_id: bizId, task_id: newTaskId } = result
-        setTask(newTaskId, `${this.userName}${bizId}`)
-
-        this.pollTaskStatus(newTaskId)
-      } else if (localTaskId) {
-        this.pollTaskStatus(localTaskId)
-      }
+      this.run()
 
       this.leaveConfirmConfig.active = false
 
@@ -143,14 +166,39 @@
     methods: {
       ...mapActions('hostApply', [
         'runApply',
-        'getApplyTaskStatus'
+        'runTemplateApply',
+        'getApplyTaskStatus',
+        'getTemplateApplyTaskStatus'
       ]),
+      async run() {
+        // 本地任务ID
+        const localTaskId = getTask(`${this.userName}${this.bizId}`)
+
+        // 存在配置数据，先执行应用
+        if (this.hasConfig) {
+          const [result, msg] = await this.saveAndApply()
+          if (result === false) {
+            this.requestErrors.run = true
+            this.requestErrors.msg.run = msg
+            return
+          }
+
+          // 存储新任务ID
+          const { bk_biz_id: bizId, task_id: newTaskId } = result
+          setTask(newTaskId, `${this.userName}${bizId}`)
+
+          this.pollTaskStatus(newTaskId)
+        } else if (localTaskId) {
+          this.pollTaskStatus(localTaskId)
+        }
+      },
       setBreadcrumbs() {
         this.$store.commit('setTitle', this.$t('应用属性'))
       },
       async saveAndApply() {
         try {
-          const res = await this.runApply({
+          const requestConfig = this.requestConfigs[this.requestIds.run][this.mode]
+          const res = await this[requestConfig.action]({
             params: {
               bk_biz_id: this.bizId,
               ...this.propertyConfig
@@ -161,7 +209,7 @@
               transformData: false
             }
           })
-          return Promise.resolve(res?.result ? res.data : false)
+          return Promise.resolve(res?.result ? [res.data] : [false, res.bk_error_msg])
         } catch (error) {
           console.error(error)
           return Promise.resolve(false)
@@ -194,7 +242,8 @@
       },
       async getTaskStatus(taskId) {
         try {
-          const result = await this.getApplyTaskStatus({
+          const requestConfig = this.requestConfigs[this.requestIds.task][this.mode]
+          const result = await this[requestConfig.action]({
             params: {
               bk_biz_id: this.bizId,
               task_ids: [taskId]
@@ -212,9 +261,9 @@
       },
       handleBack() {
         const query = {}
-        if (this.propertyConfig.bk_module_ids?.length === 1) {
+        if (this.propertyConfig[this.targetIdsKey]?.length === 1) {
           // eslint-disable-next-line prefer-destructuring
-          query.module = this.propertyConfig.bk_module_ids[0]
+          query.id = this.propertyConfig[this.targetIdsKey][0]
         }
         this.$store.commit('hostApply/clearRuleDraft')
 
@@ -222,6 +271,9 @@
         this.$nextTick(() => {
           this.$routerActions.redirect({
             name: MENU_BUSINESS_HOST_APPLY,
+            params: {
+              mode: this.mode
+            },
             query
           })
         })
@@ -242,7 +294,7 @@
         })
       },
       handleRetry() {
-        this.pollTaskStatus(this.runningTaskId)
+        this.run()
       },
       clearTimer() {
         this.pollTimer && clearTimeout(this.pollTimer)
@@ -291,8 +343,7 @@
     }
   }
 
-  .status-loading,
-  .status-error {
+  .status-loading {
     display: flex;
     align-items: center;
     justify-content: center;

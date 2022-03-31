@@ -2,7 +2,7 @@
   <bk-table
     header-cell-class-name="header-cell"
     ext-cls="property-config-table"
-    :data="modulePropertyList"
+    :data="propertyRuleList"
     @selection-change="handleSelectionChange">
     <bk-table-column type="selection" width="60" align="center" v-if="deletable"></bk-table-column>
     <bk-table-column
@@ -15,19 +15,29 @@
     </bk-table-column>
     <bk-table-column
       v-if="multiple"
-      :label="$t('已配置的模块')"
+      :label="isModuleMode ? $t('已配置的模块') : $t('已配置的模板')"
       class-name="table-cell-module-path">
       <div slot-scope="{ row }" :class="{ ignore: row.__extra__.ignore }">
-        <template v-for="(id, index) in moduleIdList">
-          <div
+        <template v-if="isModuleMode">
+          <div v-for="(id, index) in idList"
+            v-show="showMore.expanded[row.id] || index < showMore.max"
             class="path-item"
-            :key="index" v-show="showMore.expanded[row.id] || index < showMore.max"
+            :key="index"
             :title="getModulePath(id)">
             {{getModulePath(id)}}
           </div>
         </template>
+        <template v-else-if="isTemplateMode">
+          <div v-for="(id, index) in idList"
+            v-show="showMore.expanded[row.id] || index < showMore.max"
+            class="path-item"
+            :key="index"
+            :title="getTemplateName(id)">
+            {{getTemplateName(id)}}
+          </div>
+        </template>
         <div
-          v-show="moduleIdList.length > showMore.max"
+          v-show="idList.length > showMore.max"
           :class="['show-more', { expanded: showMore.expanded[row.id] }]"
           @click="handleToggleExpanded(row.id)">
           {{showMore.expanded[row.id] ? $t('收起') : $t('展开更多')}}<i class="bk-cc-icon icon-cc-arrow-down"></i>
@@ -41,7 +51,7 @@
       show-overflow-tooltip>
       <template slot-scope="{ row }">
         <div v-if="multiple" :class="{ ignore: row.__extra__.ignore }">
-          <template v-for="(id, index) in moduleIdList">
+          <template v-for="(id, index) in idList">
             <cmdb-property-value
               class="value-item"
               v-show="showMore.expanded[row.id] || index < showMore.max"
@@ -52,7 +62,7 @@
               :property="row">
             </cmdb-property-value>
           </template>
-          <div v-show="moduleIdList.length > showMore.max" class="show-more">&nbsp;</div>
+          <div v-show="idList.length > showMore.max" class="show-more">&nbsp;</div>
         </div>
         <template v-else>
           <cmdb-property-value
@@ -89,6 +99,16 @@
         </bk-button>
       </template>
     </bk-table-column>
+    <bk-table-column
+      v-if="readonly && showDelColumn"
+      width="280"
+      :label="$t('操作')">
+      <template slot-scope="{ row }">
+        <bk-button theme="primary" text @click="handleDeletePropertyRule(row)">
+          {{$t('删除')}}
+        </bk-button>
+      </template>
+    </bk-table-column>
   </bk-table>
 </template>
 <script>
@@ -96,16 +116,22 @@
   import { mapGetters, mapState } from 'vuex'
   import has from 'has'
   import propertyFormElement from '@/components/host-apply/property-form-element'
+  import { CONFIG_MODE } from '@/services/service-template/index.js'
+
   export default {
     components: {
       propertyFormElement
     },
     props: {
+      mode: {
+        type: String,
+        required: true
+      },
       checkedPropertyIdList: {
         type: Array,
         default: () => ([])
       },
-      moduleIdList: {
+      idList: {
         type: Array,
         default: () => ([])
       },
@@ -124,11 +150,15 @@
       deletable: {
         type: Boolean,
         default: false
+      },
+      showDelColumn: {
+        type: Boolean,
+        default: false
       }
     },
     data() {
       return {
-        modulePropertyList: [],
+        propertyRuleList: [],
         removeRuleIds: [],
         ignoreRuleIds: [],
         showMore: {
@@ -138,42 +168,49 @@
       }
     },
     inject: {
-      getModulePath: { default: null }
+      getModulePath: { default: null },
+      getTemplateName: { default: null }
     },
     computed: {
       ...mapGetters('hostApply', ['configPropertyList']),
       ...mapState('hostApply', ['ruleDraft']),
+      isModuleMode() {
+        return this.mode === CONFIG_MODE.MODULE
+      },
+      isTemplateMode() {
+        return this.mode === CONFIG_MODE.TEMPLATE
+      },
       hasRuleDraft() {
         return Object.keys(this.ruleDraft).length > 0
       }
     },
     watch: {
       checkedPropertyIdList() {
-        this.setModulePropertyList()
+        this.setPropertyRuleList()
       },
       configPropertyList() {
-        this.setModulePropertyList()
+        this.setPropertyRuleList()
       },
-      modulePropertyList() {
+      propertyRuleList() {
         this.setConfigData()
       }
     },
     created() {
       if (this.hasRuleDraft) {
-        this.modulePropertyList = this.$tools.clone(this.ruleDraft.rules)
-        const checkedPropertyIdList = this.modulePropertyList.map(item => item.id)
+        this.propertyRuleList = this.$tools.clone(this.ruleDraft.rules)
+        const checkedPropertyIdList = this.propertyRuleList.map(item => item.id)
         this.$emit('update:checkedPropertyIdList', checkedPropertyIdList)
       } else {
-        this.setModulePropertyList()
+        this.setPropertyRuleList()
       }
     },
     methods: {
-      setModulePropertyList() {
-        // 当前模块属性列表中不存在，则添加
+      setPropertyRuleList() {
+        // 当前属性列表中不存在，则添加
         this.checkedPropertyIdList.forEach((id) => {
           // 原始主机属性对象
-          const moduleIndex = this.modulePropertyList.findIndex(property => id === property.id)
-          if (moduleIndex === -1) {
+          const index = this.propertyRuleList.findIndex(property => id === property.id)
+          if (index === -1) {
             const findProperty = this.configPropertyList.find(item => id === item.id)
             if (findProperty) {
               const property = this.$tools.clone(findProperty)
@@ -186,21 +223,21 @@
                 property.__extra__.ruleId = rule.id
                 property.__extra__.value = has(rule, 'bk_property_value') ? rule.bk_property_value : this.getPropertyDefaultValue(property)
               }
-              this.modulePropertyList.push(property)
+              this.propertyRuleList.push(property)
             }
           }
         })
 
         // 删除或取消选择的，则去除
         // eslint-disable-next-line max-len
-        this.modulePropertyList = this.modulePropertyList.filter(property => this.checkedPropertyIdList.includes(property.id))
+        this.propertyRuleList = this.propertyRuleList.filter(property => this.checkedPropertyIdList.includes(property.id))
       },
       setConfigData() {
         this.removeRuleIds = []
         this.ignoreRuleIds = []
         // 找出不存在于初始数据中的规则
         this.ruleList.forEach((rule) => {
-          const findIndex = this.modulePropertyList.findIndex(property => property.id === rule.bk_attribute_id)
+          const findIndex = this.propertyRuleList.findIndex(property => property.id === rule.bk_attribute_id)
           if (findIndex === -1) {
             // 批量模式标记为忽略，单个标记为删除
             if (this.multiple) {
@@ -211,8 +248,11 @@
           }
         })
       },
-      getRuleValue(attrId, moduleId) {
-        return (this.ruleList.find(rule => rule.bk_attribute_id === attrId && rule.bk_module_id === moduleId) || {}).bk_property_value || ''
+      getRuleValue(attrId, targetId) {
+        if (this.isModuleMode) {
+          return (this.ruleList.find(rule => rule.bk_attribute_id === attrId && rule.bk_module_id === targetId) || {}).bk_property_value || ''
+        }
+        return (this.ruleList.find(rule => rule.bk_attribute_id === attrId && rule.service_template_id === targetId) || {}).bk_property_value || ''
       },
       getPropertyDefaultValue(property) {
         let value = ''
@@ -241,7 +281,7 @@
       },
       handlePropertyRowDel(property) {
         if (this.multiple) {
-          const extra = this.modulePropertyList.find(item => item.id === property.id)?.__extra__
+          const extra = this.propertyRuleList.find(item => item.id === property.id)?.__extra__
           this.$set(extra, 'ignore', !extra.ignore)
         } else {
           const checkedIndex = this.checkedPropertyIdList.findIndex(id => id === property.id)
@@ -255,6 +295,9 @@
       },
       handlePropertyValueChange(value) {
         this.$emit('property-value-change', value)
+      },
+      handleDeletePropertyRule(property) {
+        this.$emit('property-rule-delete', property)
       }
     }
   }
