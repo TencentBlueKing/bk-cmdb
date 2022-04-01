@@ -270,7 +270,8 @@ type ExportObjectCondition struct {
 
 // ImportObjects create many object by batch import
 type ImportObjects struct {
-	Objects []YamlObject `json:"object"`
+	Objects []YamlObject      `json:"object"`
+	Asst    []AssociationKind `json:"asst"`
 }
 
 // ObjectYaml define yaml about object
@@ -294,36 +295,34 @@ func (o *ObjectYaml) Validate() errors.RawErrorInfo {
 
 // YamlObject yaml's field about object
 type YamlObject struct {
-	ObjectID   string                `json:"bk_obj_id" yaml:"bk_obj_id"`
-	ObjectName string                `json:"bk_obj_name" yaml:"bk_obj_name"`
-	ObjIcon    string                `json:"bk_obj_icon" yaml:"bk_obj_icon"`
-	IsPre      bool                  `json:"ispre" yaml:"ispre"`
-	ClsID      string                `json:"bk_classification_id" yaml:"bk_classification_id"`
-	ClsName    string                `json:"bk_classification_name" yaml:"bk_classification_name"`
-	ObjectAsst []AsstWithAsstObjInfo `json:"object_asst" yaml:"object_asst"`
-	ObjectAttr []Attribute           `json:"object_attr" yaml:"object_attr"`
+	ObjectID         string                `json:"bk_obj_id" yaml:"bk_obj_id"`
+	ObjectName       string                `json:"bk_obj_name" yaml:"bk_obj_name"`
+	ObjIcon          string                `json:"bk_obj_icon" yaml:"bk_obj_icon"`
+	IsPre            bool                  `json:"ispre" yaml:"ispre"`
+	ClsID            string                `json:"bk_classification_id" yaml:"bk_classification_id"`
+	ClsName          string                `json:"bk_classification_name" yaml:"bk_classification_name"`
+	ObjectAsst       []AsstWithAsstObjInfo `json:"object_asst" yaml:"object_asst"`
+	ObjectAttr       []Attribute           `json:"object_attr" yaml:"object_attr"`
+	ObjectAttrUnique [][]string            `json:"object_attr_unique" yaml:"object_attr_unique"`
 }
 
 // Validate validate object yaml
 func (o *YamlObject) Validate() errors.RawErrorInfo {
 	if len(o.ObjectID) == 0 {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrWebVerifyYamlFail,
-			Args:    []interface{}{common.BKObjIDField + " no found"},
+			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKObjIDField + " no found"},
 		}
 	}
 
 	if common.IsInnerModel(o.ObjectID) {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrWebVerifyYamlFail,
-			Args:    []interface{}{common.BKObjIDField + " is inner model"},
+			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKObjIDField + " is inner model"},
 		}
 	}
 
 	if len(o.ObjectName) == 0 {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrWebVerifyYamlFail,
-			Args:    []interface{}{common.BKObjNameField + " no found"},
+			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKObjNameField + " no found"},
 		}
 	}
 
@@ -333,15 +332,13 @@ func (o *YamlObject) Validate() errors.RawErrorInfo {
 
 	if len(o.ClsID) == 0 {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrWebVerifyYamlFail,
-			Args:    []interface{}{common.BKClassificationIDField + " no found"},
+			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKClassificationIDField + " no found"},
 		}
 	}
 
 	if len(o.ClsName) == 0 {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrWebVerifyYamlFail,
-			Args:    []interface{}{common.BKClassificationNameField + " no found"},
+			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKClassificationNameField + " no found"},
 		}
 	}
 
@@ -359,22 +356,19 @@ func (o *YamlObject) Validate() errors.RawErrorInfo {
 
 		if len(item.PropertyID) == 0 {
 			return errors.RawErrorInfo{
-				ErrCode: common.CCErrWebVerifyYamlFail,
-				Args:    []interface{}{common.BKPropertyIDField + " no found"},
+				ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKPropertyIDField + " no found"},
 			}
 		}
 
 		if len(item.PropertyName) == 0 {
 			return errors.RawErrorInfo{
-				ErrCode: common.CCErrWebVerifyYamlFail,
-				Args:    []interface{}{common.BKPropertyNameField + " no found"},
+				ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKPropertyNameField + " no found"},
 			}
 		}
 
 		if len(item.PropertyGroup) == 0 {
 			return errors.RawErrorInfo{
-				ErrCode: common.CCErrWebVerifyYamlFail,
-				Args:    []interface{}{common.BKPropertyGroupField + " no found"},
+				ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKPropertyGroupField + " no found"},
 			}
 		}
 
@@ -387,13 +381,18 @@ func (o *YamlObject) Validate() errors.RawErrorInfo {
 
 		if len(item.PropertyType) == 0 {
 			return errors.RawErrorInfo{
-				ErrCode: common.CCErrWebVerifyYamlFail,
-				Args:    []interface{}{common.BKPropertyTypeField + " no found"},
+				ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKPropertyTypeField + " no found"},
 			}
 		}
 
 		if strings.HasPrefix(item.PropertyID, "bk_") || strings.HasPrefix(item.PropertyID, "_bk") {
 			o.ObjectAttr[index].IsPre = true
+		}
+	}
+
+	if len(o.ObjectAttrUnique) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{"object unique no found"},
 		}
 	}
 

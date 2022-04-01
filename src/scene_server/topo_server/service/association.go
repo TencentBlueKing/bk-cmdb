@@ -607,53 +607,6 @@ func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.RspID{ID: int64(ret.Created.ID)})
 }
 
-// CreateManyAssociationType create many association kinds
-func (s *Service) CreateManyAssociationType(ctx *rest.Contexts) {
-	request := &metadata.CreateManyAssociationKind{}
-	if err := ctx.DecodeInto(request); err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
-		return
-	}
-
-	var ret *metadata.CreatedManyOptionResult
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
-		ret, err = s.Engine.CoreAPI.CoreService().Association().CreateManyAssociation(ctx.Kit.Ctx, ctx.Kit.Header,
-			request)
-		if err != nil {
-			return err
-		}
-		// register association type resource creator action to iam
-		if auth.EnableAuthorize() {
-			indexID := make(map[int64]int64)
-			for _, item := range ret.Data.Created {
-				indexID[item.OriginIndex] = int64(item.ID)
-			}
-
-			for index, item := range request.Datas {
-				iamInstance := metadata.IamInstanceWithCreator{
-					Type:    string(iam.SysAssociationType),
-					ID:      strconv.FormatInt(indexID[int64(index)], 10),
-					Name:    item.AssociationKindName,
-					Creator: ctx.Kit.User,
-				}
-				if _, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header,
-					iamInstance); err != nil {
-					blog.Errorf("register created association type to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-					return err
-				}
-			}
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
-	}
-	ctx.RespEntity(ret)
-}
-
 // UpdateAssociationType update association kind
 func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
 	request := &metadata.UpdateAssociationTypeRequest{}
@@ -685,46 +638,6 @@ func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("update association type failed, input: %#v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
 			return err
-		}
-
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
-	}
-	ctx.RespEntity(nil)
-}
-
-// UpdateManyAssociationType update association kind
-func (s *Service) UpdateManyAssociationType(ctx *rest.Contexts) {
-	request := &metadata.UpdateManyAssociationTypeRequest{}
-	if err := ctx.DecodeInto(request); err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
-		return
-	}
-
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
-
-		for id, item := range request.Data {
-
-			input := metadata.UpdateOption{
-				Condition: mapstr.MapStr{common.BKFieldID: id},
-				Data: mapstr.MapStr{
-					"bk_asst_name": item.AsstName,
-					"src_des":      item.SrcDes,
-					"dest_des":     item.DestDes,
-					"direction":    item.Direction,
-				},
-			}
-
-			if _, err = s.Engine.CoreAPI.CoreService().Association().UpdateAssociationType(ctx.Kit.Ctx, ctx.Kit.Header,
-				&input); err != nil {
-				blog.Errorf("update association type failed, input: %#v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
-				return err
-			}
 		}
 
 		return nil

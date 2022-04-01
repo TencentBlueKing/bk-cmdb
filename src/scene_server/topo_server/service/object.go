@@ -381,6 +381,13 @@ func (s *Service) CreateManyObject(ctx *rest.Contexts) {
 			}
 		}
 
+		if len(data.Asst) != 0 {
+			if err = s.Logics.AssociationOperation().CreateOrUpdateAssociationType(ctx.Kit, data.Asst); err != nil {
+				blog.Errorf("create or update association kind failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
+		}
+
 		return nil
 	})
 

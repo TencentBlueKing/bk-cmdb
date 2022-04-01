@@ -420,6 +420,8 @@ func (s *Service) BatchExportObject(c *gin.Context) {
 		blog.Warnf("os.Stat failed, will retry with os.MkdirAll, filename: %s, err: %v, rid: %s", dirFileName, err, rid)
 		if err := os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); err != nil {
 			blog.Errorf("os.MkdirAll failed, filename: %s, err: %v, rid: %s", dirFileName, err, rid)
+			c.String(http.StatusInternalServerError,
+				fmt.Sprintf("save form data to local file failed, mkdir failed, err: %v", err))
 			return
 		}
 	}
@@ -436,9 +438,16 @@ func (s *Service) BatchExportObject(c *gin.Context) {
 		_, _ = c.Writer.Write([]byte(msg))
 		return
 	}
+
+	defer func() {
+		if err := os.Remove(fileDir); err != nil {
+			blog.Errorf("os.Remove failed, filename: %s, err: %v, rid: %s", fileDir, err, rid)
+		}
+	}()
+
 	zipw := zip.NewWriter(fzip)
 
-	queryCond := mapstr.MapStr{"object_id": cond.ObjectID}
+	queryCond := mapstr.MapStr{"object_id": cond.ObjectID, "excluded_asst_id": cond.ExcludedAsstID}
 	objRsp, err := s.Engine.CoreAPI.ApiServer().SearchObjectWithTotalInfo(ctx, header, queryCond)
 	if err != nil {
 		blog.Errorf("search object info to build yaml failed, cond: %v, err: %v, rid: %s", queryCond, err, rid)
@@ -477,10 +486,6 @@ func (s *Service) BatchExportObject(c *gin.Context) {
 	c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", cond.FileName))
 	c.Writer.Header().Set("Content-Type", "application/octet-stream;charset=UTF-8")
 	c.File(fileDir)
-
-	if err := os.Remove(fileDir); err != nil {
-		blog.Errorf("os.Remove failed, filename: %s, err: %v, rid: %s", fileDir, err, rid)
-	}
 }
 
 // BatchImportObjectAnalysis batch analysis object and asstkind yaml
@@ -495,7 +500,7 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 	cond := metadata.ZipFileAnalysis{}
 	if len(params) != 0 {
 		if err := json.Unmarshal([]byte(params), &cond); err != nil {
-			blog.ErrorJSON("ImportHost failed, params unmarshal error, err: %s, rid: %s", err.Error(), rid)
+			blog.Errorf("params unmarshal error, err: %v, rid: %s", err, rid)
 			msg := getReturnStr(common.CCErrCommParamsValueInvalidError,
 				defErr.CCErrorf(common.CCErrCommParamsValueInvalidError, "params", err.Error()).Error(), nil)
 			c.String(http.StatusOK, msg)
@@ -505,8 +510,9 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 
 	file, err := c.FormFile("file")
 	if err != nil {
+		blog.Errorf("get file from web form failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebFileNoFound, defErr.Error(common.CCErrWebFileNoFound).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+		c.String(http.StatusOK, msg)
 		return
 	}
 
@@ -516,13 +522,16 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 		blog.Warnf("os.Stat failed, filename: %s, err: %v, rid: %s", dir, err, rid)
 		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
 			blog.Errorf("os.MkdirAll failed, filename: %s, err: %v, rid: %s", dir, err, rid)
+			c.String(http.StatusInternalServerError,
+				fmt.Sprintf("save form data to local file failed, mkdir failed, err: %v", err))
+			return
 		}
 	}
 	filePath := fmt.Sprintf("%s/batch_import_object-%d-%d.zip", dir, time.Now().UnixNano(), randNum)
 	if err = c.SaveUploadedFile(file, filePath); err != nil {
 		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail,
 			err.Error()).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+		c.String(http.StatusOK, msg)
 		return
 	}
 	defer func() {
@@ -533,9 +542,10 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 
 	zipReader, err := zip.OpenReader(filePath)
 	if err != nil {
+		blog.Errorf("open zip reader failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail,
 			err.Error()).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+		c.String(http.StatusOK, msg)
 		return
 	}
 
@@ -560,7 +570,7 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 			} else {
 				msg = getReturnStr(common.CCErrWebAnalysisZipFileFail, err.Error(), nil)
 			}
-			c.String(http.StatusOK, string(msg))
+			c.String(http.StatusOK, msg)
 			return
 		}
 	}
@@ -584,17 +594,10 @@ func (s *Service) BatchImportObject(c *gin.Context) {
 		return
 	}
 
-	objInfo := metadata.ImportObjects{Objects: cond.Object}
+	objInfo := metadata.ImportObjects{Objects: cond.Object, Asst: cond.Asst}
 	if _, err := s.Engine.CoreAPI.ApiServer().CreateManyObject(ctx, c.Request.Header, objInfo); err != nil {
 		blog.Errorf("create many object failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrTopoModuleCreateFailed, err.Error(), nil)
-		_, _ = c.Writer.Write([]byte(msg))
-		return
-	}
-
-	if err := s.Logics.CreateOrUpdateAssociationType(ctx, c.Request.Header, cond.Asst); err != nil {
-		blog.Errorf("create or update association type failed, err: %v, rid: %s", err, rid)
-		msg := getReturnStr(common.CCErrTopoCreateAssocKindFailed, err.Error(), nil)
 		_, _ = c.Writer.Write([]byte(msg))
 		return
 	}

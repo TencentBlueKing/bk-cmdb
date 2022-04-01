@@ -22,9 +22,7 @@ import (
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 
 	"github.com/tidwall/gjson"
 )
@@ -211,10 +209,8 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 }
 
 const (
-	findManyAssociationKindLatestPattern   = "/api/v3/find/associationtype"
-	createAssociationKindLatestPattern     = "/api/v3/create/associationtype"
-	createManyAssociationKindLatestPattern = "/api/v3/createmany/associationtype"
-	updateManyAssociationKindLatestPattern = "/api/v3/updatemany/associationtype"
+	findManyAssociationKindLatestPattern = "/api/v3/find/associationtype"
+	createAssociationKindLatestPattern   = "/api/v3/create/associationtype"
 )
 
 var (
@@ -250,47 +246,6 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 				},
 			},
 		}
-		return ps
-	}
-
-	// create many association kind operation
-	if ps.hitPattern(createManyAssociationKindLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.AssociationType,
-					Action: meta.CreateMany,
-				},
-			},
-		}
-		return ps
-	}
-
-	// update many association kind operation
-	if ps.hitPattern(updateManyAssociationKindLatestPattern, http.MethodPut) {
-
-		input := metadata.UpdateManyAssociationTypeRequest{}
-		body, err := ps.RequestCtx.getRequestBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		if err := json.Unmarshal(body, &input); err != nil {
-			ps.err = fmt.Errorf("unmarshal request body failed, err: %+v", err)
-			return ps
-		}
-
-		ps.Attribute.Resources = make([]meta.ResourceAttribute, 0)
-		for id := range input.Data {
-			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:       meta.AssociationType,
-					Action:     meta.UpdateMany,
-					InstanceID: id,
-				},
-			})
-		}
-
 		return ps
 	}
 

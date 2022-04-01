@@ -273,28 +273,26 @@ func (lgc *Logics) BuildZipFile(header http.Header, zipw *zip.Writer, fileName s
 	data []byte) error {
 
 	rid := util.GetHTTPCCRequestID(header)
+	var w io.Writer
+	var err error
 	if password != "" {
-		w, err := zipw.Encrypt(fileName, password, zip.AES256Encryption)
+		w, err = zipw.Encrypt(fileName, password, zip.AES256Encryption)
 		if err != nil {
 			blog.Errorf("encrypt zip file failed, err: %v, rid: %s", err, rid)
 			return err
 		}
 
-		if _, err = io.Copy(w, bytes.NewReader(data)); err != nil {
-			blog.Errorf("copy data into zip file failed, err: %v, rid: %s", err, rid)
-			return err
-		}
 	} else {
-		w, err := zipw.Create(fileName)
+		w, err = zipw.Create(fileName)
 		if err != nil {
 			blog.Errorf("create zip file failed, err: %v, rid: %s", err, rid)
 			return err
 		}
+	}
 
-		if _, err = io.Copy(w, bytes.NewReader(data)); err != nil {
-			blog.Errorf("copy data into zip file failed, err: %v, rid: %s", err, rid)
-			return err
-		}
+	if _, err := io.Copy(w, bytes.NewReader(data)); err != nil {
+		blog.Errorf("copy data into zip file failed, err: %v, rid: %s", err, rid)
+		return err
 	}
 
 	return nil
@@ -344,7 +342,7 @@ func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, passwo
 		}
 
 		if err := fileInfo.Validate(); err.ErrCode != 0 {
-			blog.Errorf("validate file failed, err: %v, rid: %s", err, rid)
+			blog.Errorf("validate file failed, fileName: %s, err: %v, rid: %s", file.Name, err, rid)
 			return err.ToCCError(defErr)
 		}
 
@@ -356,72 +354,10 @@ func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, passwo
 			return err
 		}
 		if err := fileInfo.Validate(); err.ErrCode != 0 {
-			blog.Errorf("validate file failed, err: %v, rid: %s", err, rid)
+			blog.Errorf("validate file failed, fileName: %s, err: %v, rid: %s", file.Name, err, rid)
 			return err.ToCCError(defErr)
 		}
 		result.Data.Object = append(result.Data.Object, fileInfo.Object)
-	}
-
-	return nil
-}
-
-// CreateOrUpdateAssociationType create association type, if association type exist, update it
-func (lgc *Logics) CreateOrUpdateAssociationType(ctx context.Context, header http.Header,
-	asst []metadata.AssociationKind) error {
-
-	rid := util.GetHTTPCCRequestID(header)
-	asstKindMap := make(map[string]metadata.AssociationKind)
-	asstKindID := make([]string, 0)
-	for _, item := range asst {
-		asstKindMap[item.AssociationKindID] = metadata.AssociationKind{
-			AssociationKindID:       item.AssociationKindID,
-			AssociationKindName:     item.AssociationKindName,
-			DestinationToSourceNote: item.DestinationToSourceNote,
-			SourceToDestinationNote: item.SourceToDestinationNote,
-			Direction:               item.Direction,
-		}
-		asstKindID = append(asstKindID, item.AssociationKindID)
-	}
-
-	asstQuery := metadata.SearchAssociationTypeRequest{
-		Condition: map[string]interface{}{common.AssociationKindIDField: mapstr.MapStr{common.BKDBIN: asstKindID}}}
-	rsp, err := lgc.Engine.CoreAPI.ApiServer().SearchAssociationType(ctx, header, asstQuery)
-	if err != nil {
-		blog.Errorf("search asstkind failed, cond: %v, err: %v, rid: %s", asstQuery, err, rid)
-		return err
-	}
-
-	existAsstKind := make([]string, 0)
-	kindIDMap := make(map[string]int64)
-	for _, item := range rsp.Info {
-		existAsstKind = append(existAsstKind, item.AssociationKindID)
-		kindIDMap[item.AssociationKindID] = item.ID
-	}
-
-	needCreateAsst := util.StrArrDiff(asstKindID, existAsstKind)
-	updateCond := metadata.UpdateManyAssociationTypeRequest{Data: make(map[int64]metadata.UpdateAssociationTypeRequest)}
-	for _, item := range existAsstKind {
-		updateCond.Data[kindIDMap[item]] = metadata.UpdateAssociationTypeRequest{
-			AsstName:  asstKindMap[item].AssociationKindName,
-			SrcDes:    asstKindMap[item].SourceToDestinationNote,
-			DestDes:   asstKindMap[item].DestinationToSourceNote,
-			Direction: string(asstKindMap[item].Direction),
-		}
-	}
-
-	if err := lgc.Engine.CoreAPI.ApiServer().UpdateManyAssociationType(ctx, header, updateCond); err != nil {
-		blog.Errorf("update asstkind failed, cond: %+v, err: %v, rid: %s", updateCond, err, rid)
-		return err
-	}
-
-	createCond := metadata.CreateManyAssociationKind{Datas: make([]metadata.AssociationKind, 0)}
-	for _, item := range needCreateAsst {
-		createCond.Datas = append(createCond.Datas, asstKindMap[item])
-	}
-
-	if _, err := lgc.Engine.CoreAPI.ApiServer().CreateManyAssociationType(ctx, header, createCond); err != nil {
-		blog.Errorf("create asstkind failed, cond: %+v, err: %v, rid: %s", createCond, err, rid)
-		return err
 	}
 
 	return nil

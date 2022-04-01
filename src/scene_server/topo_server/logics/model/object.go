@@ -650,24 +650,24 @@ func (o *object) CreateObjectByImport(kit *rest.Kit, data []metadata.YamlObject)
 
 	assts := make([]metadata.AsstWithAsstObjInfo, 0)
 	objs := make([]metadata.Object, 0)
-	for _, objectInfo := range data {
+	for _, objInfo := range data {
 
-		if err := objectInfo.Validate(); err.ErrCode != 0 {
-			blog.Errorf("get bk_classification_id failed, rid: %s", kit.Rid)
+		if err := objInfo.Validate(); err.ErrCode != 0 {
+			blog.Errorf("validate object info failed, objectinfo: %+v, rid: %s", objInfo, kit.Rid)
 			return nil, err.ToCCError(kit.CCError)
 		}
 
 		object := mapstr.MapStr{
-			common.BKObjIDField:            objectInfo.ObjectID,
-			common.BKObjNameField:          objectInfo.ObjectName,
-			common.BKObjIconField:          objectInfo.ObjIcon,
-			common.BKClassificationIDField: objectInfo.ClsID,
+			common.BKObjIDField:            objInfo.ObjectID,
+			common.BKObjNameField:          objInfo.ObjectName,
+			common.BKObjIconField:          objInfo.ObjIcon,
+			common.BKClassificationIDField: objInfo.ClsID,
 			common.CreatorField:            kit.User,
 		}
 
 		obj, err := o.isValid(kit, false, object)
 		if err != nil {
-			blog.Errorf("valid data(%#v) failed, err: %v, rid: %s", objectInfo, err, kit.Rid)
+			blog.Errorf("valid data(%#v) failed, err: %v, rid: %s", objInfo, err, kit.Rid)
 			return nil, err
 		}
 
@@ -679,8 +679,8 @@ func (o *object) CreateObjectByImport(kit *rest.Kit, data []metadata.YamlObject)
 
 		if !exist {
 			cls := metadata.Classification{
-				ClassificationID:   objectInfo.ClsID,
-				ClassificationName: objectInfo.ClsName,
+				ClassificationID:   objInfo.ClsID,
+				ClassificationName: objInfo.ClsName,
 			}
 			if err := o.createClassification(kit, cls); err != nil {
 				blog.Errorf("create classification failed, err: %v, rid: %s", err, kit.Rid)
@@ -696,12 +696,12 @@ func (o *object) CreateObjectByImport(kit *rest.Kit, data []metadata.YamlObject)
 		}
 		obj.ID = int64(objRsp.Created.ID)
 
-		if err := o.createObjectAttr(kit, obj.ObjectID, objectInfo.ObjectAttr); err != nil {
+		if err := o.createObjectAttr(kit, obj.ObjectID, objInfo.ObjectAttr, objInfo.ObjectAttrUnique); err != nil {
 			blog.Errorf("create object(%s) failed, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
 			return nil, err
 		}
 
-		assts = append(assts, objectInfo.ObjectAsst...)
+		assts = append(assts, objInfo.ObjectAsst...)
 		objs = append(objs, *obj)
 
 		// generate audit log of object attribute group.
@@ -771,14 +771,12 @@ func (o *object) createClassification(kit *rest.Kit, data metadata.Classificatio
 	return nil
 }
 
-func (o *object) createObjectAttr(kit *rest.Kit, objID string, data []metadata.Attribute) error {
+func (o *object) createObjectAttr(kit *rest.Kit, objID string, attr []metadata.Attribute, attrUniq [][]string) error {
 
 	groupIndex := 1
 	createdGroup := map[string]struct{}{}
-	groups := make([]metadata.Group, 0)
 	attrs := make([]metadata.Attribute, 0)
-	isInstName := false
-	for _, item := range data {
+	for _, item := range attr {
 		if _, exist := createdGroup[item.PropertyGroupName]; !exist {
 
 			group := metadata.Group{
@@ -788,7 +786,6 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, data []metadata.A
 				ObjectID:   objID,
 				OwnerID:    kit.SupplierAccount,
 			}
-			groups = append(groups, group)
 			groupParams := metadata.CreateModelAttributeGroup{Data: group}
 			_, err := o.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header, objID, groupParams)
 			if err != nil {
@@ -801,30 +798,7 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, data []metadata.A
 		}
 
 		item.Creator = kit.User
-
-		if item.PropertyID == common.GetInstNameField(objID) {
-			isInstName = true
-			attrs = append([]metadata.Attribute{item}, attrs...)
-			continue
-		}
 		attrs = append(attrs, item)
-	}
-
-	if !isInstName {
-		attrs = append([]metadata.Attribute{{
-			ObjectID:          objID,
-			IsOnly:            true,
-			IsPre:             true,
-			Creator:           kit.User,
-			IsEditable:        true,
-			PropertyIndex:     -1,
-			PropertyGroup:     groups[0].GroupID,
-			PropertyGroupName: groups[0].GroupName,
-			IsRequired:        true,
-			PropertyType:      common.FieldTypeSingleChar,
-			PropertyID:        common.GetInstNameField(objID),
-			PropertyName:      common.DefaultInstName,
-			OwnerID:           kit.SupplierAccount}}, attrs...)
 	}
 
 	param := &metadata.CreateModelAttributes{Attributes: attrs}
@@ -843,22 +817,31 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, data []metadata.A
 		return kit.CCError.CCError(common.CCErrorAttributeNameDuplicated)
 	}
 
-	keys := make([]metadata.UniqueKey, 0)
-	for _, id := range rspAttr.Created {
-		if id.OriginIndex == 0 {
-			keys = append(keys, metadata.UniqueKey{Kind: metadata.UniqueKeyKindProperty, ID: id.ID})
-		}
+	attrIDMap := make(map[string]uint64)
+	for _, attr := range rspAttr.Created {
+		attrIDMap[attrs[attr.OriginIndex].PropertyID] = attr.ID
 	}
 
-	cond := metadata.CreateModelAttrUnique{Data: metadata.ObjectUnique{
-		ObjID:   objID,
-		OwnerID: kit.SupplierAccount,
-		Keys:    keys,
-		Ispre:   false,
-	}}
-	if _, err = o.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header, objID, cond); err != nil {
-		blog.Errorf("create unique for %s failed, err: %v, rid: %s", objID, err, kit.Rid)
-		return err
+	for _, item := range attrUniq {
+		keys := make([]metadata.UniqueKey, 0)
+		for _, uniqAttrID := range item {
+			keys = append(keys, metadata.UniqueKey{
+				Kind: metadata.UniqueKeyKindProperty,
+				ID:   attrIDMap[uniqAttrID],
+			})
+		}
+
+		cond := metadata.CreateModelAttrUnique{Data: metadata.ObjectUnique{
+			ObjID:   objID,
+			OwnerID: kit.SupplierAccount,
+			Keys:    keys,
+			Ispre:   false,
+		}}
+		_, err = o.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header, objID, cond)
+		if err != nil {
+			blog.Errorf("create unique for %s failed, err: %v, rid: %s", objID, err, kit.Rid)
+			return err
+		}
 	}
 
 	return nil
@@ -873,8 +856,39 @@ func (o *object) createObjectAssociation(kit *rest.Kit, data []metadata.AsstWith
 			item.OnDelete = metadata.NoAction
 		}
 
+		// check source object exists
+		queryCond := &metadata.QueryCondition{
+			Condition: mapstr.MapStr{
+				common.BKObjIDField: mapstr.MapStr{common.BKDBIN: []string{item.ObjectID, item.AsstObjID}},
+			}}
+		objRsp, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, queryCond)
+		if err != nil {
+			blog.Errorf("read the object(%s) failed, err: %v, rid: %s", item.ObjectID, err, kit.Rid)
+			return err
+		}
+
+		if len(objRsp.Info) == 0 {
+			blog.Errorf("object(%s) and asstObject(%s) is invalid, rid: %s", item.ObjectID, item.AsstObjID, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_obj_id&bk_asst_obj_id")
+		}
+
+		checkMap := make(map[string]struct{})
+		for _, item := range objRsp.Info {
+			checkMap[item.ObjectID] = struct{}{}
+		}
+
+		if _, exist := checkMap[item.ObjectID]; !exist {
+			blog.Errorf("object(%s) is invalid, rid: %s", item.ObjectID, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField)
+		}
+
+		if _, exist := checkMap[item.AsstObjID]; !exist {
+			blog.Errorf("object(%s) is invalid, rid: %s", item.AsstObjID, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKAsstObjIDField)
+		}
+
 		cond := &metadata.CreateModelAssociation{Spec: item.Association}
-		_, err := o.clientSet.CoreService().Association().CreateModelAssociation(kit.Ctx, kit.Header, cond)
+		_, err = o.clientSet.CoreService().Association().CreateModelAssociation(kit.Ctx, kit.Header, cond)
 		if err != nil {
 			blog.Errorf("create object association failed, param: %#v , err: %v, rid: %s", cond, err, kit.Rid)
 			return err
@@ -933,7 +947,7 @@ func (o *object) SearchObjectsWithTotalInfo(kit *rest.Kit, ids, excludedAsst []i
 		Condition:      mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}},
 		DisableCounter: true,
 	}
-	attrRsp, err := o.searchObjAttrByCondition(kit, attrCond)
+	attrRsp, attrUni, err := o.searchObjAttrByCondition(kit, attrCond)
 	if err != nil {
 		blog.Errorf("find classification failed, cond: %v, err: %v, rid: %s", attrCond, err, kit.Rid)
 		return nil, err
@@ -961,6 +975,7 @@ func (o *object) SearchObjectsWithTotalInfo(kit *rest.Kit, ids, excludedAsst []i
 		}
 		objInfo[common.BKClassificationNameField] = clsMap[obj.ObjCls]
 		objInfo["object_attr"] = attrRsp[objID]
+		objInfo["object_attr_unique"] = attrUni[objID]
 		objInfo["object_asst"] = asstRsp[objID]
 		result[objID] = objInfo
 	}
@@ -985,16 +1000,17 @@ func (o *object) searchObjectByCondition(kit *rest.Kit, cond metadata.QueryCondi
 }
 
 func (o *object) searchObjAttrByCondition(kit *rest.Kit, cond metadata.QueryCondition) (map[string][]mapstr.MapStr,
-	error) {
+	map[string][][]string, error) {
 
 	attrRsp, err := o.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, &cond)
 	if err != nil {
 		blog.Errorf("find object attribute failed, cond: %v, err: %v, rid: %s", cond, err, kit.Rid)
-		return nil, err
+		return nil, nil, err
 	}
 
 	objIDs := make([]string, 0)
 	attrMap := make(map[string][]metadata.Attribute)
+	attrIDMap := make(map[int64]string)
 	for _, item := range attrRsp.Info {
 		if _, exist := attrMap[item.ObjectID]; !exist {
 			attrMap[item.ObjectID] = make([]metadata.Attribute, 0)
@@ -1002,6 +1018,7 @@ func (o *object) searchObjAttrByCondition(kit *rest.Kit, cond metadata.QueryCond
 
 		attrMap[item.ObjectID] = append(attrMap[item.ObjectID], item)
 		objIDs = append(objIDs, item.ObjectID)
+		attrIDMap[item.ID] = item.PropertyID
 	}
 
 	queryCond := metadata.QueryCondition{
@@ -1011,7 +1028,7 @@ func (o *object) searchObjAttrByCondition(kit *rest.Kit, cond metadata.QueryCond
 	grpRsp, err := o.clientSet.CoreService().Model().ReadAttributeGroupByCondition(kit.Ctx, kit.Header, queryCond)
 	if err != nil {
 		blog.Errorf("find objects attributes group failed, cond: %v, err: %v, rid: %s", queryCond, err, kit.Rid)
-		return nil, err
+		return nil, nil, err
 	}
 
 	grpMap := make(map[string]map[string]string)
@@ -1020,6 +1037,30 @@ func (o *object) searchObjAttrByCondition(kit *rest.Kit, cond metadata.QueryCond
 			grpMap[item.ObjectID] = make(map[string]string)
 		}
 		grpMap[item.ObjectID][item.GroupID] = item.GroupName
+	}
+
+	uniCond := metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}},
+		DisableCounter: true,
+	}
+	uniRsp, err := o.clientSet.CoreService().Model().ReadModelAttrUnique(kit.Ctx, kit.Header, uniCond)
+	if err != nil {
+		blog.Errorf("find objects attributes group failed, cond: %v, err: %v, rid: %s", uniCond, err, kit.Rid)
+		return nil, nil, err
+	}
+
+	attrID := make(map[string][][]string)
+	for _, item := range uniRsp.Info {
+		if _, exist := attrID[item.ObjID]; !exist {
+			attrID[item.ObjID] = make([][]string, 0)
+		}
+
+		uniqIDs := make([]string, 0)
+		for _, id := range item.Keys {
+			uniqIDs = append(uniqIDs, attrIDMap[int64(id.ID)])
+		}
+
+		attrID[item.ObjID] = append(attrID[item.ObjID], uniqIDs)
 	}
 
 	result := make(map[string][]mapstr.MapStr)
@@ -1039,7 +1080,7 @@ func (o *object) searchObjAttrByCondition(kit *rest.Kit, cond metadata.QueryCond
 		}
 	}
 
-	return result, nil
+	return result, attrID, nil
 }
 
 func (o *object) searchObjAsstByCondition(kit *rest.Kit, cond metadata.QueryCondition) (

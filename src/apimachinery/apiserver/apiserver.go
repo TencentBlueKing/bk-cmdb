@@ -85,12 +85,6 @@ type ApiServerClientInterface interface {
 
 	SearchObjectWithTotalInfo(ctx context.Context, h http.Header, params mapstr.MapStr) (*metadata.TotalObjectInfo,
 		error)
-	SearchAssociationType(ctx context.Context, h http.Header, params metadata.SearchAssociationTypeRequest) (
-		*metadata.SearchAssociationType, error)
-	UpdateManyAssociationType(ctx context.Context, h http.Header,
-		params metadata.UpdateManyAssociationTypeRequest) error
-	CreateManyAssociationType(ctx context.Context, h http.Header, params metadata.CreateManyAssociationKind) (
-		*metadata.CreateManyDataResult, error)
 	CreateManyObject(ctx context.Context, h http.Header, params metadata.ImportObjects) ([]metadata.Object, error)
 }
 
