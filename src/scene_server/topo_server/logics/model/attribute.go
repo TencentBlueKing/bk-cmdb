@@ -335,10 +335,15 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, mod
 				common.BKFieldID: mapstr.MapStr{common.BKDBIN: instIDs},
 			},
 		}
-		_, err = a.clientSet.CoreService().Model().DeleteModelAttr(kit.Ctx, kit.Header, objID, deleteCond)
+		rsp, err := a.clientSet.CoreService().Model().DeleteModelAttr(kit.Ctx, kit.Header, objID, deleteCond)
 		if err != nil {
 			blog.Errorf("delete object attribute failed, err: %v, rid: %s", err, kit.Rid)
 			return err
+		}
+
+		if ccErr := rsp.CCError(); ccErr != nil {
+			blog.Errorf("delete object attribute failed, err: %v, rid: %s", ccErr, kit.Rid)
+			return ccErr
 		}
 	}
 
