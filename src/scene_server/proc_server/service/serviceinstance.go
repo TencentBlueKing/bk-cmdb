@@ -2103,6 +2103,8 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 
 	audit := auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
 	updatedSvcInstMap := make(map[int64]metadata.ServiceInstance)
+	// get updated svc inst involves map operation, so we need a lock to avoid concurrent map read & write in goroutine
+	var mapLock sync.Mutex
 
 	// step 9:
 	// compare the difference between process instance and process template from one service instance to another.
@@ -2157,9 +2159,11 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 					return
 				}
 
+				mapLock.Lock()
 				if _, exists := updatedSvcInstMap[serviceInstanceID]; !exists {
 					updatedSvcInstMap[serviceInstanceID] = serviceInstanceMap[serviceInstanceID]
 				}
+				mapLock.Unlock()
 
 				// set updated process data for audit logs
 				genAuditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).
@@ -2169,6 +2173,7 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 					if firstErr == nil {
 						firstErr = err
 					}
+					return
 				}
 
 				if err := ps.Logic.UpdateProcessInstance(kit, process.ProcessID, proc); err != nil {
