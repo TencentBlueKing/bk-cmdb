@@ -296,6 +296,37 @@ func (lgc *Logics) notExistAppModuleHost(kit *rest.Kit, appIDs []int64, moduleID
 	return errHostIDArr, nil
 }
 
+func (lgc *Logics) getResourceModuleIDs(kit *rest.Kit, ownerAppID int64) ([]int64, error) {
+
+	moduleCond := []metadata.ConditionItem{
+		{
+			Field:    common.BKAppIDField,
+			Operator: common.BKDBEQ,
+			Value:    ownerAppID,
+		},
+		{
+			Field:    common.BKDefaultField,
+			Operator: common.BKDBIN,
+			Value: []int{
+				common.DefaultResModuleFlag,
+				common.DefaultResSelfDefinedModuleFlag,
+				common.DefaultUserResModuleFlag,
+			},
+		},
+	}
+
+	moduleIDs, err := lgc.GetModuleIDByCond(kit, metadata.ConditionWithTime{Condition: moduleCond})
+	if err != nil {
+		blog.Errorf("assign host to app failed, moduleCond:%+v, err: %v, rid:%s", err, moduleCond, kit.Rid)
+		return nil, err
+	}
+	if len(moduleIDs) == 0 {
+		blog.Errorf("no eligible modules, moduleCond: %+v, rid:%s", err, moduleCond, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrHostMoveResourcePoolFail)
+	}
+	return moduleIDs, nil
+}
+
 // AssignHostToApp transfer resource host to  idle module
 func (lgc *Logics) AssignHostToApp(kit *rest.Kit, conf *metadata.DefaultModuleHostConfigParams) ([]metadata.ExceptionResult, error) {
 
@@ -322,25 +353,11 @@ func (lgc *Logics) AssignHostToApp(kit *rest.Kit, conf *metadata.DefaultModuleHo
 	if ownerAppID == conf.ApplicationID {
 		return nil, nil
 	}
-	moduleCond := []metadata.ConditionItem{
-		{
-			Field:    common.BKAppIDField,
-			Operator: common.BKDBEQ,
-			Value:    ownerAppID,
-		},
-		{
-			Field:    common.BKDefaultField,
-			Operator: common.BKDBIN,
-			Value:    []int{common.DefaultResModuleFlag, common.DefaultResSelfDefinedModuleFlag},
-		},
-	}
 
-	resourceModuleIDs, err := lgc.GetModuleIDByCond(kit, metadata.ConditionWithTime{Condition: moduleCond})
+	resourceModuleIDs, err := lgc.getResourceModuleIDs(kit, ownerAppID)
 	if err != nil {
-		blog.Errorf("assign host to app failed, GetModuleIDByCond err: %v, moduleCond:%+v, rid:%s", err, moduleCond, kit.Rid)
 		return nil, err
 	}
-
 	errHostID, err := lgc.notExistAppModuleHost(kit, []int64{ownerAppID}, resourceModuleIDs, conf.HostIDs)
 	if err != nil {
 		blog.Errorf("assign host to app, notExistAppModuleHost error, err: %v, input:%+v, rid:%s", err, conf, kit.Rid)

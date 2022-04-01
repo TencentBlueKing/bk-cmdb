@@ -481,10 +481,14 @@ func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit, input *
 }
 
 func (manager *TransferManager) validTransferResourceDirParams(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) ([]int64, errors.CCErrorCoder) {
-	// valid bk_module_id,资源池目录default=4,空闲机default=1
+	// valid bk_module_id,资源池目录default=4,空闲机default=1,管理员创建的目录 default=5
 	cond := mapstr.MapStr{}
 	cond[common.BKModuleIDField] = input.ModuleID
-	cond[common.BKDBOR] = []mapstr.MapStr{{common.BKDefaultField: 1}, {common.BKDefaultField: 4}}
+	cond[common.BKDBOR] = []mapstr.MapStr{
+		{common.BKDefaultField: common.DefaultResModuleFlag},
+		{common.BKDefaultField: common.DefaultResSelfDefinedModuleFlag},
+		{common.BKDefaultField: common.DefaultUserResModuleFlag},
+	}
 	count, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(cond).Count(kit.Ctx)
 	if err != nil {
 		blog.ErrorJSON("validTransferResourceDirParams find data error, err: %s, cond:%s, rid: %s", err.Error(), cond, kit.Rid)
