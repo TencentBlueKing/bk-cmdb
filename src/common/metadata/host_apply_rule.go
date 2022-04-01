@@ -244,20 +244,20 @@ type UpdateModuleHostApplyEnableStatusOption struct {
 
 // GetHostApplyStatusParam get service template host apply status param
 type GetHostApplyStatusParam struct {
-	ApplicationID int64   `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
-	ModuleIDs     []int64 `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
+	ApplicationID int64   `json:"bk_biz_id"`
+	ModuleIDs     []int64 `json:"bk_module_ids"`
 }
 
 // HostApplyStatusResult host apply status result
 type HostApplyStatusResult struct {
-	ModuleID         int64 `field:"bk_module_id" json:"bk_module_id" bson:"bk_module_id"`
-	HostApplyEnabled bool  `field:"host_apply_enabled" json:"host_apply_enabled" bson:"host_apply_enabled" `
+	ModuleID         int64 `json:"bk_module_id"`
+	HostApplyEnabled bool  `json:"host_apply_enabled"`
 }
 
 // RuleRelatedServiceTemplate rule related service template option
 type RuleRelatedServiceTemplateOption struct {
-	ApplicationID int64                     `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
-	QueryFilter   *querybuilder.QueryFilter `json:"query_filter" field:"query_filter" mapstructure:"query_filter"`
+	ApplicationID int64                     `json:"bk_biz_id"`
+	QueryFilter   *querybuilder.QueryFilter `json:"query_filter"`
 }
 
 // HostApplyPlanBase  host auto-apply Infrastructure
@@ -291,29 +291,29 @@ type HostApplyServiceTemplateOption struct {
 
 // InvalidHostCountOption request parameters struct about invalid host count
 type InvalidHostCountOption struct {
-	ApplicationID int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
-	ID            int64 `field:"id" json:"id" bson:"id" mapstructure:"id"`
+	ApplicationID int64 `json:"bk_biz_id"`
+	ID            int64 `json:"id"`
 }
 
 // InvalidHostCountResult the result struct about invalid host count
 type InvalidHostCountResult struct {
-	Count int64 `field:"count" json:"count" bson:"count" mapstructure:"count"`
+	Count int64 `json:"count"`
 }
 
 // HostApplyRuleCountOption service template host apply rule count option
 type HostApplyRuleCountOption struct {
-	ApplicationID      int64   `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
-	ServiceTemplateIDs []int64 `field:"service_template_ids" json:"service_template_ids" bson:"service_template_ids" mapstructure:"service_template_ids"`
+	ApplicationID      int64   `json:"bk_biz_id"`
+	ServiceTemplateIDs []int64 `json:"service_template_ids"`
 }
 
 // HostApplyRuleCountResult service template host apply rule count
 type HostApplyRuleCountResult struct {
-	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id" mapstructure:"service_template_id"`
-	Count             int64 `field:"count" json:"count" bson:"count" mapstructure:"count"`
+	ServiceTemplateID int64 `json:"service_template_id"`
+	Count             int64 `json:"count"`
 }
 
 // ModuleFinalRulesParam module final rules param
 type ModuleFinalRulesParam struct {
-	ApplicationID int64   `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
-	ModuleIDs     []int64 `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
+	ApplicationID int64   `json:"bk_biz_id"`
+	ModuleIDs     []int64 `json:"bk_module_ids"`
 }
