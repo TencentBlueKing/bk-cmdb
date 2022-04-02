@@ -113,7 +113,6 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 	hostApplyPlans := make([]metadata.OneHostApplyPlan, 0)
 	var hostApplyPlan metadata.OneHostApplyPlan
 	unresolvedConflictCount := int64(0)
-	count := 0
 	for _, hostModule := range option.HostModules {
 		host, exist := hostMap[hostModule.HostID]
 		if !exist {
@@ -136,7 +135,6 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 			unresolvedConflictCount += 1
 			hostApplyPlans = append(hostApplyPlans, hostApplyPlan)
 		}
-		count++
 	}
 
 	sort.SliceStable(hostApplyPlans, func(i, j int) bool {
@@ -158,7 +156,7 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 
 	result = metadata.HostApplyPlanResult{
 		Plans:                   hostApplyPlans,
-		Count:                   count,
+		Count:                   len(option.HostModules),
 		UnresolvedConflictCount: unresolvedConflictCount,
 		HostAttributes:          attributes,
 	}

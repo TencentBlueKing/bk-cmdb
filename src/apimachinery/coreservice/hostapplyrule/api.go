@@ -252,13 +252,8 @@ func (p *hostApplyRule) RunHostApplyOnHosts(ctx context.Context, header http.Hea
 // SearchRuleRelatedServiceTemplates search rule related service templates
 func (p *hostApplyRule) SearchRuleRelatedServiceTemplates(ctx context.Context, header http.Header,
 	option *metadata.RuleRelatedServiceTemplateOption) ([]metadata.SrvTemplate, errors.CCErrorCoder) {
-	ret := struct {
-		metadata.BaseResp
-		Data []metadata.SrvTemplate `json:"data"`
-	}{
-		BaseResp: metadata.BaseResp{},
-		Data:     make([]metadata.SrvTemplate, 0),
-	}
+
+	resp := new(metadata.ServiceTemplatesResponse)
 
 	err := p.client.Post().
 		WithContext(ctx).
@@ -266,14 +261,14 @@ func (p *hostApplyRule) SearchRuleRelatedServiceTemplates(ctx context.Context, h
 		SubResourcef("/findmany/service_templates/host_apply_rule_related").
 		WithHeaders(header).
 		Do().
-		Into(&ret)
+		Into(resp)
 
 	if err != nil {
-		return ret.Data, errors.CCHttpError
+		return resp.Data, errors.CCHttpError
 	}
-	if ret.CCError() != nil {
-		return ret.Data, ret.CCError()
+	if resp.CCError() != nil {
+		return resp.Data, resp.CCError()
 	}
 
-	return ret.Data, nil
+	return resp.Data, nil
 }

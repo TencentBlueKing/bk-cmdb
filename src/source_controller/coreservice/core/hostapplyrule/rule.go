@@ -33,7 +33,7 @@ type ruleType string
 
 const (
 	module          ruleType = "module"
-	serviceTemplate ruleType = "serviceTmeplate"
+	serviceTemplate ruleType = "serviceTemplate"
 )
 
 type hostApplyRule struct {
@@ -360,7 +360,7 @@ func (p *hostApplyRule) SearchRuleRelatedModules(kit *rest.Kit, bizID int64,
 	option metadata.SearchRuleRelatedModulesOption) ([]metadata.Module, errors.CCErrorCoder) {
 
 	// 1.获取与查询条件中的属性关联的rule和attribute
-	rules, attributeMap, ccErr := getRuleAndAttribute(kit, bizID, option.QueryFilter)
+	rules, attributeMap, ccErr := getRuleAndAttribute(kit, bizID, option.QueryFilter, module)
 	if ccErr != nil {
 		return nil, ccErr
 	}
@@ -403,15 +403,15 @@ func (p *hostApplyRule) SearchRuleRelatedModules(kit *rest.Kit, bizID int64,
 	return resultModules, nil
 }
 
-func getRuleAndAttribute(kit *rest.Kit, bizID int64,
-	filter *querybuilder.QueryFilter) ([]metadata.HostApplyRule, map[int64]metadata.Attribute, errors.CCErrorCoder) {
+func getRuleAndAttribute(kit *rest.Kit, bizID int64, filter *querybuilder.QueryFilter, rType ruleType) (
+	[]metadata.HostApplyRule, map[int64]metadata.Attribute, errors.CCErrorCoder) {
 
 	attributeIDs, ccErr := getAttributeIDs(kit, filter)
 	if ccErr != nil {
 		return nil, nil, ccErr
 	}
 
-	if attributeIDs == nil || len(attributeIDs) == 0 {
+	if len(attributeIDs) == 0 {
 		return nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "query_filter")
 	}
 
@@ -422,10 +422,23 @@ func getRuleAndAttribute(kit *rest.Kit, bizID int64,
 			common.BKDBIN: attributeIDs,
 		},
 	}
+
+	switch rType {
+	case module:
+		ruleFilter[common.BKModuleIDField] = map[string]interface{}{
+			common.BKDBGT: 0,
+		}
+	case serviceTemplate:
+		ruleFilter[common.BKServiceTemplateIDField] = map[string]interface{}{
+			common.BKDBGT: 0,
+		}
+	}
+
 	var err error
 	rules := make([]metadata.HostApplyRule, 0)
-	if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(ruleFilter).All(kit.Ctx, &rules); err != nil {
-		blog.Errorf("find rules failed, filter: %s, err: %v, rid: %s", ruleFilter, err, kit.Rid)
+	err = mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(ruleFilter).All(kit.Ctx, &rules)
+	if err != nil {
+		blog.Errorf("find rules failed, filter: %+v, err: %v, rid: %s", ruleFilter, err, kit.Rid)
 		return nil, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -437,7 +450,7 @@ func getRuleAndAttribute(kit *rest.Kit, bizID int64,
 	attributes := make([]metadata.Attribute, 0)
 	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(attributeFilter).All(kit.Ctx, &attributes)
 	if err != nil {
-		blog.Errorf("find attributes failed, filter: %s, err: %v, rid: %s", attributeFilter, err, kit.Rid)
+		blog.Errorf("find attributes failed, filter: %+v, err: %v, rid: %s", attributeFilter, err, kit.Rid)
 		return nil, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -645,7 +658,7 @@ func (p *hostApplyRule) SearchRuleRelatedServiceTemplates(kit *rest.Kit,
 	option metadata.RuleRelatedServiceTemplateOption) ([]metadata.SrvTemplate, errors.CCErrorCoder) {
 
 	// 1.获取与查询条件中的属性关联的rule和attribute
-	rules, attributeMap, ccErr := getRuleAndAttribute(kit, option.ApplicationID, option.QueryFilter)
+	rules, attributeMap, ccErr := getRuleAndAttribute(kit, option.ApplicationID, option.QueryFilter, serviceTemplate)
 	if ccErr != nil {
 		return nil, ccErr
 	}
@@ -668,7 +681,7 @@ func (p *hostApplyRule) SearchRuleRelatedServiceTemplates(kit *rest.Kit,
 	srvTemplates := make([]metadata.SrvTemplate, 0)
 	err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(srvTemplateFilter).All(kit.Ctx, &srvTemplates)
 	if err != nil {
-		blog.Errorf("find service templates failed, filter: %s, err: %v, rid: %s", srvTemplateFilter, err, kit.Rid)
+		blog.Errorf("find service templates failed, filter: %+v, err: %v, rid: %s", srvTemplateFilter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 

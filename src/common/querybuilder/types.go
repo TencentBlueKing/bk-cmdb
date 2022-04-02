@@ -498,7 +498,7 @@ func (r CombinedRule) GetField() []string {
 	result := make([]string, 0)
 	for _, rule := range r.Rules {
 		fields := rule.GetField()
-		if fields != nil && len(fields) != 0 {
+		if len(fields) != 0 {
 			result = append(result, fields...)
 		}
 	}

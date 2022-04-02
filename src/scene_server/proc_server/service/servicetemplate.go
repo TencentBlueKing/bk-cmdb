@@ -347,8 +347,8 @@ func (ps *ProcServer) GetServiceTemplateSyncStatus(ctx *rest.Contexts) {
 
 // SearchRuleRelatedServiceTemplate search rule related service templates
 func (ps *ProcServer) SearchRuleRelatedServiceTemplates(ctx *rest.Contexts) {
-	requestBody := metadata.RuleRelatedServiceTemplateOption{}
-	if err := ctx.DecodeInto(&requestBody); err != nil {
+	requestBody := new(metadata.RuleRelatedServiceTemplateOption)
+	if err := ctx.DecodeInto(requestBody); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -373,7 +373,7 @@ func (ps *ProcServer) SearchRuleRelatedServiceTemplates(ctx *rest.Contexts) {
 	}
 
 	templates, err := ps.Engine.CoreAPI.CoreService().HostApplyRule().SearchRuleRelatedServiceTemplates(ctx.Kit.Ctx,
-		ctx.Kit.Header, &requestBody)
+		ctx.Kit.Header, requestBody)
 	if err != nil {
 		blog.Errorf("search rule related service templates failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

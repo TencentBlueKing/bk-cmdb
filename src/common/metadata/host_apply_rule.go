@@ -317,3 +317,9 @@ type ModuleFinalRulesParam struct {
 	ApplicationID int64   `json:"bk_biz_id"`
 	ModuleIDs     []int64 `json:"bk_module_ids"`
 }
+
+// ServiceTemplatesResponse service template response
+type ServiceTemplatesResponse struct {
+	BaseResp `json:",inline"`
+	Data     []SrvTemplate `json:"data"`
+}

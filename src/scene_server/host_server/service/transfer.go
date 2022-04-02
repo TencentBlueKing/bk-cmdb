@@ -453,8 +453,8 @@ func (s *Service) generateTransferPlans(kit *rest.Kit, bizID int64, withHostAppl
 	return s.generateHostApplyPlans(kit, bizID, transferPlans)
 }
 
-func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64,
-	plans []metadata.HostTransferPlan) ([]metadata.HostTransferPlan, errors.CCErrorCoder) {
+func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64, plans []metadata.HostTransferPlan) (
+	[]metadata.HostTransferPlan, errors.CCErrorCoder) {
 
 	if len(plans) == 0 {
 		return plans, nil
@@ -468,7 +468,7 @@ func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64,
 
 	rules, err := s.getRulesPriorityFromTemplate(kit, finalModuleIDs, bizID)
 	if err != nil {
-		blog.Errorf("get module rule failed, err: %v, rid: %s", err, kit)
+		blog.Errorf("get module rule failed, err: %v, rid: %s", err, kit.Rid)
 		return plans, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -880,10 +880,10 @@ func (s *Service) validateTransferHostWithAutoClearServiceInstanceOption(kit *re
 	return nil
 }
 
-func (s *Service) getRulesPriorityFromTemplate(kit *rest.Kit, moduleIDs []int64,
-	bizID int64) ([]metadata.HostApplyRule, error) {
+func (s *Service) getRulesPriorityFromTemplate(kit *rest.Kit, moduleIDs []int64, bizID int64) (
+	[]metadata.HostApplyRule, error) {
 
-	moduleRes, err := s.getModuleRes(kit, bizID, moduleIDs, nil)
+	moduleRes, err := s.getModuleRelateHostApply(kit, bizID, moduleIDs, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -894,10 +894,13 @@ func (s *Service) getRulesPriorityFromTemplate(kit *rest.Kit, moduleIDs []int64,
 	tempToModMap := make(map[int64][]int64)
 	srvTmpIDs := make([]int64, 0)
 	for _, module := range moduleRes {
-		enabledModuleIDMap[module.ModuleID] = true
 		if module.ServiceTemplateID != 0 {
 			tempToModMap[module.ServiceTemplateID] = append(tempToModMap[module.ServiceTemplateID], module.ModuleID)
 			srvTmpIDs = append(srvTmpIDs, module.ServiceTemplateID)
+
+			if module.HostApplyEnabled {
+				enabledModuleIDMap[module.ModuleID] = true
+			}
 			continue
 		}
 
@@ -930,13 +933,13 @@ func (s *Service) getRulesPriorityFromTemplate(kit *rest.Kit, moduleIDs []int64,
 	// 2.查询有模版并且模版开启主机自动应用的规则
 	rules := make([]metadata.HostApplyRule, 0)
 	if len(enableSrvTemplateIDs) != 0 {
-		srvTemplteRules, err := s.findSrvTemplateRule(kit, bizID, enableSrvTemplateIDs)
+		srvTemplateRules, err := s.findSrvTemplateRule(kit, bizID, enableSrvTemplateIDs)
 		if err != nil {
 			blog.Errorf("list service template host apply rule failed, err: %v, rid: %s", err, kit.Rid)
 			return nil, err
 		}
 
-		for _, rule := range srvTemplteRules {
+		for _, rule := range srvTemplateRules {
 			moduleIDs, exist := tempToModMap[rule.ServiceTemplateID]
 			if !exist {
 				continue
