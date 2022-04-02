@@ -28,6 +28,14 @@
           </template>
         </cmdb-property>
       </bk-tab-panel>
+      <bk-tab-panel name="association" :label="$t('关联')">
+        <cmdb-relation
+          v-if="active === 'association'"
+          :resource-type="resourceType"
+          :obj-id="objId"
+          :inst="inst">
+        </cmdb-relation>
+      </bk-tab-panel>
       <bk-tab-panel name="history" :label="$t('变更记录')">
         <cmdb-audit-history v-if="active === 'history'"
           :resource-type="resourceType"
@@ -51,6 +59,7 @@
   import router from '@/router/index.js'
   import RouterQuery from '@/router/query'
   import cmdbProperty from '@/components/model-instance/property'
+  import cmdbRelation from '@/components/model-instance/relation'
   import cmdbAuditHistory from '@/components/model-instance/audit-history'
   import businessScopeSettingsDetails from '@/components/business-scope/settings-details.vue'
   import propertySetService from '@/service/business-set/index.js'
@@ -61,6 +70,7 @@
     components: {
       cmdbProperty,
       cmdbAuditHistory,
+      cmdbRelation,
       businessScopeSettingsDetails
     },
     setup() {

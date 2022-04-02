@@ -1,7 +1,17 @@
 import http from '@/api'
 import i18n from '@/i18n'
-const getIdKey = modelId => ({ host: 'bk_host_id', biz: 'bk_biz_id' }[modelId] || 'bk_inst_id')
-const getNameKey = modelId => ({ host: 'bk_host_innerip', biz: 'bk_biz_name' }[modelId] || 'bk_inst_name')
+import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
+
+const getIdKey = modelId => ({
+  [BUILTIN_MODELS.HOST]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.HOST].ID],
+  [BUILTIN_MODELS.BUSINESS]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].ID],
+  [BUILTIN_MODELS.BUSINESS_SET]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]
+}[modelId] || 'bk_inst_id')
+const getNameKey = modelId => ({
+  [BUILTIN_MODELS.HOST]: 'bk_host_innerip',
+  [BUILTIN_MODELS.BUSINESS]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].NAME],
+  [BUILTIN_MODELS.BUSINESS_SET]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME]
+}[modelId] || 'bk_inst_name')
 const findInstance = (instances, objId, instId) => {
   const idKey = getIdKey(objId)
   return (instances || []).find(instance => instance[idKey] === instId)

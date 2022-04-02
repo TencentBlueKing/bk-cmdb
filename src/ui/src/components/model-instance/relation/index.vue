@@ -68,6 +68,12 @@
   import cmdbInstanceAssociation from '@/components/instance/association/index'
   import cmdbRelationCreate from './create.vue'
   import authMixin from '../mixin-auth'
+  import {
+    BUILTIN_MODELS,
+    BUILTIN_MODEL_PROPERTY_KEYS,
+    BUILTIN_MODEL_RESOURCE_TYPES
+  } from '@/dictionary/model-constants.js'
+
   export default {
     components: {
       cmdbRelationList,
@@ -102,12 +108,14 @@
         activeView: cmdbRelationList.name,
         showCreate: false,
         idKeyMap: {
-          host: 'bk_host_id',
-          biz: 'bk_biz_id'
+          [BUILTIN_MODELS.HOST]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.HOST].ID,
+          [BUILTIN_MODELS.BUSINESS]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].ID,
+          [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID
         },
         nameKeyMap: {
-          host: 'bk_host_innerip',
-          biz: 'bk_biz_name'
+          [BUILTIN_MODELS.HOST]: 'bk_host_innerip',
+          [BUILTIN_MODELS.BUSINESS]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].NAME,
+          [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME
         }
       }
     },
@@ -122,10 +130,11 @@
         }
       },
       authResources() {
-        if (this.resourceType === 'business') {
-          return this.INST_AUTH.U_BUSINESS
+        const authTypes = {
+          [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS]]: this.INST_AUTH.U_BUSINESS,
+          [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS_SET]]: this.INST_AUTH.U_BUSINESS_SET
         }
-        return this.INST_AUTH.U_INST
+        return authTypes[this.resourceType] || this.INST_AUTH.U_INST
       },
       componentProps() {
         if (this.activeView === cmdbInstanceAssociation.name) {

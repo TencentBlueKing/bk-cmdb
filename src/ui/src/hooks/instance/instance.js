@@ -1,24 +1,26 @@
+import { reactive, isRef, watch, toRefs } from '@vue/composition-api'
 import hostSearchService from '@/service/host/search'
 import businessSearchService from '@/service/business/search'
 import instanceSearchService from '@/service/instance/search'
-import { reactive, isRef, watch, toRefs } from '@vue/composition-api'
+import businessSetService from '@/service/business-set/index.js'
+import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
 
 const getService = ({ bk_obj_id: objId }) => {
   const modelServiceMapping = {
-    host: hostSearchService,
-    biz: businessSearchService,
+    [BUILTIN_MODELS.HOST]: hostSearchService,
+    [BUILTIN_MODELS.BUSINESS]: businessSearchService,
+    [BUILTIN_MODELS.BUSINESS_SET]: businessSetService
   }
   return modelServiceMapping[objId] || instanceSearchService
 }
 
 const getServiceOptions = (options) => {
-  if (options.bk_obj_id === 'host') {
-    return { ...options, bk_host_id: options.bk_inst_id }
+  const idMapping = {
+    [BUILTIN_MODELS.HOST]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.HOST].ID],
+    [BUILTIN_MODELS.BUSINESS]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].ID],
+    [BUILTIN_MODELS.BUSINESS_SET]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]
   }
-  if (options.bk_obj_id === 'biz') {
-    return { ...options, bk_biz_id: options.bk_inst_id }
-  }
-  return options
+  return { ...options, [idMapping[options.bk_obj_id] || 'bk_inst_id']: options.bk_inst_id }
 }
 /**
  * options.bk_obj_id 模型id

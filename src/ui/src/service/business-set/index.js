@@ -18,7 +18,7 @@ const find = async (params, config) => {
   }
 }
 
-const findById = async (id, config) => {
+const findById = async (id, config = {}) => {
   try {
     const { info: [instance = null] } = await http.post('findmany/biz_set', enableCount({
       bk_biz_set_filter: {
@@ -38,6 +38,8 @@ const findById = async (id, config) => {
     return null
   }
 }
+
+const findOne = async (params, config = {}) => findById(params[MODEL_ID_KEY], config)
 
 const getAuthorized = async (config) => {
   try {
@@ -91,6 +93,7 @@ const deleteById = (id, config) => http.post('deletemany/biz_set', {
 export default {
   find,
   findById,
+  findOne,
   create,
   update,
   deleteById,

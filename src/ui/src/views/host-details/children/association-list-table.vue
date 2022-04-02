@@ -65,6 +65,8 @@
   import authMixin from '../mixin-auth'
   import instanceService from '@/service/instance/instance'
   import { readonlyMixin } from '../mixin-readonly'
+  import businessSetService from '@/service/business-set/index.js'
+  import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
 
   export default {
     name: 'cmdb-host-association-list-table',
@@ -218,20 +220,29 @@
             })
           } else {
             switch (this.id) {
-              case 'host':
+              case BUILTIN_MODELS.HOST:
                 promise = this.getHostInstances(config)
                 break
-              case 'biz':
+              case BUILTIN_MODELS.BUSINESS:
                 promise = this.getBusinessInstances(config)
+                break
+              case BUILTIN_MODELS.BUSINESS_SET:
+                promise = this.getBusinessSetInstances(config)
                 break
               default:
                 promise = this.getModelInstances(config)
             }
           }
           const data = await promise
-          this.list = data.info
+
+          const dataListKeys = {
+            [BUILTIN_MODELS.BUSINESS_SET]: 'list'
+          }
+          const dataListKey = dataListKeys[this.id] || 'info'
+
+          this.list = data[dataListKey]
           this.pagination.count = data.count
-          if (data.count && !data.info.length) {
+          if (data.count && !data[dataListKey].length) {
             this.pagination.current -= 1
             this.getInstances()
           }
@@ -289,6 +300,18 @@
           },
           config
         })
+      },
+      getBusinessSetInstances(config) {
+        const params = {
+          fields: [],
+          bk_biz_set_filter: {
+            condition: 'AND',
+            rules: [{ field: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID, operator: 'in', value: this.instanceIds }]
+          },
+          page: this.page
+        }
+
+        return businessSetService.find(params, config)
       },
       getModelInstances(config) {
         return instanceService.find({
@@ -350,7 +373,9 @@
       },
       getRowInstId(item) {
         const specialModel = ['host', 'biz', 'set', 'module']
-        const mapping = {}
+        const mapping = {
+          [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID
+        }
         specialModel.forEach(key => (mapping[key] = `bk_${key}_id`))
         return item[mapping[this.id] || 'bk_inst_id']
       },
@@ -378,8 +403,16 @@
       },
       async handleShowDetails(row) {
         const showInstanceDetails = await import('@/components/instance/details')
-        const nameMapping = { host: 'bk_host_innerip', biz: 'bk_biz_name' }
-        const idMapping = { host: 'bk_host_id', biz: 'bk_biz_id' }
+        const nameMapping = {
+          host: 'bk_host_innerip',
+          biz: 'bk_biz_name',
+          [BUILTIN_MODELS.BUSINESS_SET]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME]
+        }
+        const idMapping = {
+          host: 'bk_host_id',
+          biz: 'bk_biz_id',
+          [BUILTIN_MODELS.BUSINESS_SET]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]
+        }
         showInstanceDetails.default({
           bk_obj_id: this.id,
           bk_inst_id: row[idMapping[this.id] || 'bk_inst_id'],
