@@ -704,7 +704,7 @@ func (o *object) CreateObjectByImport(kit *rest.Kit, data []metadata.YamlObject)
 		assts = append(assts, objInfo.ObjectAsst...)
 		objs = append(objs, *obj)
 
-		// generate audit log of object attribute group.
+		// generate audit log of object.
 		audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
 		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, int64(objRsp.Created.ID), nil)
@@ -773,23 +773,15 @@ func (o *object) createClassification(kit *rest.Kit, data metadata.Classificatio
 
 func (o *object) createObjectAttr(kit *rest.Kit, objID string, attr []metadata.Attribute, attrUniq [][]string) error {
 
-	groupIndex := 1
+	var groupIndex int64 = 1
 	createdGroup := map[string]struct{}{}
 	attrs := make([]metadata.Attribute, 0)
 	for _, item := range attr {
 		if _, exist := createdGroup[item.PropertyGroupName]; !exist {
 
-			group := metadata.Group{
-				GroupID:    item.PropertyGroup,
-				GroupName:  item.PropertyGroupName,
-				GroupIndex: int64(groupIndex),
-				ObjectID:   objID,
-				OwnerID:    kit.SupplierAccount,
-			}
-			groupParams := metadata.CreateModelAttributeGroup{Data: group}
-			_, err := o.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header, objID, groupParams)
+			err := o.createObjectAttrGroup(kit, objID, item.PropertyGroup, item.PropertyGroupName, groupIndex)
 			if err != nil {
-				blog.Errorf("create attribute group[%s] failed, err: %v, rid: %s", group.GroupID, err, kit.Rid)
+				blog.Errorf("create attribute group[%s] failed, err: %v, rid: %s", item.PropertyGroup, err, kit.Rid)
 				return err
 			}
 
@@ -844,6 +836,64 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, attr []metadata.A
 		}
 	}
 
+	// generate audit log of model attribute.
+	audit := auditlog.NewObjectAttributeAuditLog(o.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+
+	for _, item := range rspAttr.Created {
+		attrs[item.OriginIndex].ID = int64(item.ID)
+		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, int64(item.ID), &attrs[item.OriginIndex])
+		if err != nil {
+			blog.Errorf("generate audit log after creating attr %s failed, err: %v, rid: %s",
+				attrs[item.OriginIndex].PropertyName, err, kit.Rid)
+			return err
+		}
+
+		// save audit log.
+		if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+			blog.Errorf("save audit log after creating attr %s failed, err: %v, rid: %s",
+				attrs[item.OriginIndex].PropertyName, err, kit.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (o *object) createObjectAttrGroup(kit *rest.Kit, objID, groupID, groupName string, groupIndex int64) error {
+	group := metadata.Group{
+		GroupID:    groupID,
+		GroupName:  groupName,
+		GroupIndex: groupIndex,
+		ObjectID:   objID,
+		OwnerID:    kit.SupplierAccount,
+	}
+	groupParams := metadata.CreateModelAttributeGroup{Data: group}
+	rsp, err := o.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header, objID, groupParams)
+	if err != nil {
+		blog.Errorf("create attribute group[%s] failed, err: %v, rid: %s", group.GroupID, err, kit.Rid)
+		return err
+	}
+
+	group.ID = int64(rsp.Created.ID)
+
+	// generate audit log of object attribute group.
+	audit := auditlog.NewAttributeGroupAuditLog(o.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, group.ID, &group)
+	if err != nil {
+		blog.Errorf("create object attribute group %s success, but generate audit log failed, err: %v, rid: %s",
+			group.GroupName, err, kit.Rid)
+		return err
+	}
+
+	// save audit log.
+	if err = audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("create object attribute group %s success, but save audit log failed, err: %v, rid: %s",
+			group.GroupName, err, kit.Rid)
+		return err
+	}
+
 	return nil
 }
 
@@ -860,7 +910,9 @@ func (o *object) createObjectAssociation(kit *rest.Kit, data []metadata.AsstWith
 		queryCond := &metadata.QueryCondition{
 			Condition: mapstr.MapStr{
 				common.BKObjIDField: mapstr.MapStr{common.BKDBIN: []string{item.ObjectID, item.AsstObjID}},
-			}}
+			},
+			Fields: []string{common.BKObjIDField},
+		}
 		objRsp, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, queryCond)
 		if err != nil {
 			blog.Errorf("read the object(%s) failed, err: %v, rid: %s", item.ObjectID, err, kit.Rid)
@@ -907,7 +959,9 @@ func (o *object) SearchObjectsWithTotalInfo(kit *rest.Kit, ids, excludedAsst []i
 	}
 
 	objCond := metadata.QueryCondition{
-		Condition:      mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: ids}},
+		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: ids}},
+		Fields: []string{common.BKObjIDField, common.BKObjNameField, common.BKClassificationIDField,
+			common.BKObjIconField, common.BKIsPre},
 		DisableCounter: true,
 	}
 	objs, err := o.searchObjectByCondition(kit, objCond)
@@ -925,6 +979,7 @@ func (o *object) SearchObjectsWithTotalInfo(kit *rest.Kit, ids, excludedAsst []i
 
 	input := &metadata.QueryCondition{
 		Condition:      mapstr.MapStr{common.BKClassificationIDField: mapstr.MapStr{common.BKDBIN: clsIDs}},
+		Fields:         []string{common.BKClassificationNameField, common.BKClassificationIDField},
 		DisableCounter: true,
 	}
 	clsRsp, err := o.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, input)

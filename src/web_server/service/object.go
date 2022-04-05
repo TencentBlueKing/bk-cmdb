@@ -447,10 +447,9 @@ func (s *Service) BatchExportObject(c *gin.Context) {
 
 	zipw := zip.NewWriter(fzip)
 
-	queryCond := mapstr.MapStr{"object_id": cond.ObjectID, "excluded_asst_id": cond.ExcludedAsstID}
-	objRsp, err := s.Engine.CoreAPI.ApiServer().SearchObjectWithTotalInfo(ctx, header, queryCond)
+	objRsp, err := s.Engine.CoreAPI.ApiServer().SearchObjectWithTotalInfo(ctx, header, cond)
 	if err != nil {
-		blog.Errorf("search object info to build yaml failed, cond: %v, err: %v, rid: %s", queryCond, err, rid)
+		blog.Errorf("search object info to build yaml failed, cond: %v, err: %v, rid: %s", cond, err, rid)
 		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, err.Error(), nil)
 		_, _ = c.Writer.Write([]byte(msg))
 		return
@@ -562,14 +561,10 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 			continue
 		}
 
-		if err := s.Logics.GetDataFromZipFile(c.Request.Header, item, cond.Password, result); err != nil {
+		errCode, err := s.Logics.GetDataFromZipFile(c.Request.Header, item, cond.Password, result)
+		if err != nil {
 			blog.Errorf("get data from zip file failed, err: %v, rid: %s", err, rid)
-			var msg string
-			if strings.Contains(err.Error(), "invalid password") || strings.Contains(err.Error(), "no password") {
-				msg = getReturnStr(common.CCErrWebVerifyYamlPwdFail, err.Error(), nil)
-			} else {
-				msg = getReturnStr(common.CCErrWebAnalysisZipFileFail, err.Error(), nil)
-			}
+			msg := getReturnStr(errCode, err.Error(), nil)
 			c.String(http.StatusOK, msg)
 			return
 		}

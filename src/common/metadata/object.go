@@ -385,7 +385,8 @@ func (o *YamlObject) Validate() errors.RawErrorInfo {
 			}
 		}
 
-		if strings.HasPrefix(item.PropertyID, "bk_") || strings.HasPrefix(item.PropertyID, "_bk") {
+		propertyID := strings.ToLower(item.PropertyID)
+		if strings.HasPrefix(propertyID, "bk_") || strings.HasPrefix(propertyID, "_bk") {
 			o.ObjectAttr[index].IsPre = true
 		}
 	}

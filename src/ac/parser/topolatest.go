@@ -1810,7 +1810,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
-					Action: meta.SkipAction,
+					Action: meta.Create,
 				},
 			},
 		}

@@ -241,7 +241,7 @@ func (lgc *Logics) ProcessObjectIDArray(ctx context.Context, header http.Header,
 	return objArray, nonexistentObjects, nil
 }
 
-// BuildExportObjectYaml build export yaml
+// BuildExportYaml build export yaml
 func (lgc *Logics) BuildExportYaml(header http.Header, expiration int64, data interface{},
 	exportType string) ([]byte, error) {
 
@@ -300,7 +300,7 @@ func (lgc *Logics) BuildZipFile(header http.Header, zipw *zip.Writer, fileName s
 
 // GetDataFromZipFile get data from zip file
 func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, password string,
-	result *metadata.AnalysisResult) error {
+	result *metadata.AnalysisResult) (int, error) {
 
 	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -308,7 +308,7 @@ func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, passwo
 	if file.IsEncrypted() {
 		if len(password) == 0 {
 			blog.Errorf("zip is encrypted but no password provided, rid: %s", rid)
-			return defErr.CCErrorf(common.CCErrWebVerifyYamlPwdFail, "no password")
+			return common.CCErrWebVerifyYamlPwdFail, defErr.CCErrorf(common.CCErrWebVerifyYamlPwdFail, "no password")
 		}
 
 		file.SetPassword(password)
@@ -317,7 +317,10 @@ func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, passwo
 	zipFile, err := file.Open()
 	if err != nil {
 		blog.Errorf("open zip file failed, err: %v, rid: %s", err, rid)
-		return err
+		if strings.Contains(err.Error(), "invalid password") {
+			return common.CCErrWebVerifyYamlPwdFail, err
+		}
+		return common.CCErrWebAnalysisZipFileFail, err
 	}
 
 	defer zipFile.Close()
@@ -325,25 +328,25 @@ func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, passwo
 	receiver := new(bytes.Buffer)
 	if _, err := io.Copy(receiver, zipFile); err != nil {
 		blog.Errorf("copy zip file into receicer failed, err: %v, rid: %s", err, rid)
-		return err
+		return common.CCErrWebAnalysisZipFileFail, err
 	}
 
 	// if encryption method use ZipCrypto, decrypt it with incorrect password receiver will be empty
 	if len(receiver.Bytes()) == 0 {
 		blog.Errorf("get file info failed, zip use ZipCrypto, password incorrect, rid: %s", rid)
-		return defErr.CCErrorf(common.CCErrWebVerifyYamlPwdFail, "invalid password")
+		return common.CCErrWebVerifyYamlPwdFail, defErr.CCErrorf(common.CCErrWebVerifyYamlPwdFail, "invalid password")
 	}
 
 	if strings.Contains(file.Name, "asst_kind") {
 		fileInfo := metadata.AssociationKindYaml{}
 		if err := yl.Unmarshal(receiver.Bytes(), &fileInfo); err != nil {
 			blog.Errorf("unmarshal zip file failed, err: %v, rid: %s", err, rid)
-			return err
+			return common.CCErrWebAnalysisZipFileFail, err
 		}
 
 		if err := fileInfo.Validate(); err.ErrCode != 0 {
 			blog.Errorf("validate file failed, fileName: %s, err: %v, rid: %s", file.Name, err, rid)
-			return err.ToCCError(defErr)
+			return common.CCErrWebAnalysisZipFileFail, err.ToCCError(defErr)
 		}
 
 		result.Data.Asst = append(result.Data.Asst, fileInfo.AsstKind...)
@@ -351,14 +354,14 @@ func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, passwo
 		fileInfo := metadata.ObjectYaml{}
 		if err := yl.Unmarshal(receiver.Bytes(), &fileInfo); err != nil {
 			blog.Errorf("unmarshal zip file failed, err: %v, rid: %s", err, rid)
-			return err
+			return common.CCErrWebAnalysisZipFileFail, err
 		}
 		if err := fileInfo.Validate(); err.ErrCode != 0 {
 			blog.Errorf("validate file failed, fileName: %s, err: %v, rid: %s", file.Name, err, rid)
-			return err.ToCCError(defErr)
+			return common.CCErrWebAnalysisZipFileFail, err.ToCCError(defErr)
 		}
 		result.Data.Object = append(result.Data.Object, fileInfo.Object)
 	}
 
-	return nil
+	return 0, nil
 }

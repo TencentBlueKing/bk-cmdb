@@ -339,7 +339,7 @@ func (s *Service) createObjectTableByObjectID(ctx *rest.Contexts, objectID strin
 // CreateManyObject batch create object with it's attr and asst
 func (s *Service) CreateManyObject(ctx *rest.Contexts) {
 	data := new(metadata.ImportObjects)
-	if err := ctx.DecodeInto(&data); err != nil {
+	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -401,15 +401,12 @@ func (s *Service) CreateManyObject(ctx *rest.Contexts) {
 
 // SearchObjectWithTotalInfo search object with it's attribute and association
 func (s *Service) SearchObjectWithTotalInfo(ctx *rest.Contexts) {
-	data := struct {
-		ObjIDs       []int64 `json:"object_id"`
-		ExcludedAsst []int64 `json:"excluded_asst_id"`
-	}{}
-	if err := ctx.DecodeInto(&data); nil != err {
+	data := new(metadata.BatchExportObject)
+	if err := ctx.DecodeInto(data); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
-	resp, err := s.Logics.ObjectOperation().SearchObjectsWithTotalInfo(ctx.Kit, data.ObjIDs, data.ExcludedAsst)
+	resp, err := s.Logics.ObjectOperation().SearchObjectsWithTotalInfo(ctx.Kit, data.ObjectID, data.ExcludedAsstID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

@@ -71,13 +71,10 @@ func (a *apiServer) GetObjectData(ctx context.Context, h http.Header, params map
 }
 
 // SearchObjectWithTotalInfo search object with it's attribute and association
-func (a *apiServer) SearchObjectWithTotalInfo(ctx context.Context, h http.Header, params mapstr.MapStr) (
+func (a *apiServer) SearchObjectWithTotalInfo(ctx context.Context, h http.Header, params *metadata.BatchExportObject) (
 	*metadata.TotalObjectInfo, error) {
 
-	resp := struct {
-		metadata.BaseResp `json:",inline"`
-		Data              metadata.TotalObjectInfo `json:"data"`
-	}{}
+	resp := new(metadata.ListObjectTopoResponse)
 	subPath := "/findmany/object/total/info"
 
 	err := a.client.Post().
@@ -86,7 +83,7 @@ func (a *apiServer) SearchObjectWithTotalInfo(ctx context.Context, h http.Header
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(&resp)
+		Into(resp)
 
 	if err != nil {
 		return nil, err
@@ -96,7 +93,7 @@ func (a *apiServer) SearchObjectWithTotalInfo(ctx context.Context, h http.Header
 		return nil, ccErr
 	}
 
-	return &resp.Data, nil
+	return resp.Data, nil
 }
 
 func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {

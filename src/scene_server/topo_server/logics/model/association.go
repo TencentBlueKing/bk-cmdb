@@ -31,6 +31,7 @@ import (
 // AssociationOperationInterface association operation methods
 type AssociationOperationInterface interface {
 	DeleteAssociationType(kit *rest.Kit, asstTypeID int64) error
+	// CreateOrUpdateAssociationType only allow import api to use
 	CreateOrUpdateAssociationType(kit *rest.Kit, asst []metadata.AssociationKind) error
 	CreateCommonAssociation(kit *rest.Kit, data *metadata.Association) (*metadata.Association, error)
 	DeleteAssociationWithPreCheck(kit *rest.Kit, associationID int64) error
@@ -130,19 +131,20 @@ func (assoc *association) DeleteAssociationType(kit *rest.Kit, asstTypeID int64)
 	return nil
 }
 
+// CreateOrUpdateAssociationType only allow import api to use
 // CreateOrUpdateAssociationType create association type, if association type exist, update it
 func (assoc *association) CreateOrUpdateAssociationType(kit *rest.Kit, asst []metadata.AssociationKind) error {
 
+	if len(asst) == 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "asst")
+	}
+
 	asstKindMap := make(map[string]metadata.AssociationKind)
+	asstKindIDMap := make(map[string]struct{}, 0)
 	asstKindID := make([]string, 0)
-	for _, item := range asst {
-		asstKindMap[item.AssociationKindID] = metadata.AssociationKind{
-			AssociationKindID:       item.AssociationKindID,
-			AssociationKindName:     item.AssociationKindName,
-			DestinationToSourceNote: item.DestinationToSourceNote,
-			SourceToDestinationNote: item.SourceToDestinationNote,
-			Direction:               item.Direction,
-		}
+	for index, item := range asst {
+		asstKindMap[item.AssociationKindID] = asst[index]
+		asstKindIDMap[item.AssociationKindID] = struct{}{}
 		asstKindID = append(asstKindID, item.AssociationKindID)
 	}
 
@@ -156,15 +158,11 @@ func (assoc *association) CreateOrUpdateAssociationType(kit *rest.Kit, asst []me
 		return err
 	}
 
-	existAsstKind := make([]string, 0)
-	for _, item := range rsp.Info {
-		existAsstKind = append(existAsstKind, item.AssociationKindID)
-	}
-
-	needCreateAsst := util.StrArrDiff(asstKindID, existAsstKind)
 	updateCond := &metadata.UpdateOption{}
-	for _, item := range existAsstKind {
-		data := asstKindMap[item]
+	for _, item := range rsp.Info {
+		delete(asstKindIDMap, item.AssociationKindID)
+
+		data := asstKindMap[item.AssociationKindID]
 		dataMapstr := data.ToMapStr()
 		delete(dataMapstr, common.BKFieldID)
 		updateCond.Condition = mapstr.MapStr{common.AssociationKindIDField: item}
@@ -177,9 +175,13 @@ func (assoc *association) CreateOrUpdateAssociationType(kit *rest.Kit, asst []me
 		}
 	}
 
+	if len(asstKindIDMap) == 0 {
+		return nil
+	}
+
 	createCond := &metadata.CreateManyAssociationKind{Datas: make([]metadata.AssociationKind, 0)}
-	for _, item := range needCreateAsst {
-		createCond.Datas = append(createCond.Datas, asstKindMap[item])
+	for key := range asstKindIDMap {
+		createCond.Datas = append(createCond.Datas, asstKindMap[key])
 	}
 
 	createRsp, err := assoc.clientSet.CoreService().Association().CreateManyAssociation(kit.Ctx, kit.Header, createCond)
@@ -188,20 +190,20 @@ func (assoc *association) CreateOrUpdateAssociationType(kit *rest.Kit, asst []me
 		return err
 	}
 
-	if len(createRsp.Data.Repeated) > 0 {
-		blog.Errorf("asst kind repeated, data: %+v, rid: %s", createRsp.Data.Repeated, kit.Rid)
+	if len(createRsp.Repeated) > 0 {
+		blog.Errorf("asst kind repeated, data: %+v, rid: %s", createRsp.Repeated, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDuplicateItem)
 	}
 
-	if len(createRsp.Data.Exceptions) > 0 {
-		blog.Errorf("asst kind failed, data: %+v, rid: %s", createRsp.Data.Exceptions, kit.Rid)
-		return kit.CCError.CCErrorf(int(createRsp.Data.Exceptions[0].Code), createRsp.Data.Exceptions[0].Message)
+	if len(createRsp.Exceptions) > 0 {
+		blog.Errorf("asst kind failed, data: %+v, rid: %s", createRsp.Exceptions, kit.Rid)
+		return kit.CCError.CCErrorf(int(createRsp.Exceptions[0].Code), createRsp.Exceptions[0].Message)
 	}
 
 	// register association type resource creator action to iam
 	if auth.EnableAuthorize() {
 		indexID := make(map[int64]int64)
-		for _, item := range createRsp.Data.Created {
+		for _, item := range createRsp.Created {
 			indexID[item.OriginIndex] = int64(item.ID)
 		}
 

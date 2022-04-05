@@ -147,6 +147,12 @@ type BatchExportObject struct {
 	FileName       string  `json:"file_name"`
 }
 
+// ListObjectTopoResponse list object with it's topo info response
+type ListObjectTopoResponse struct {
+	BaseResp `json:",inline"`
+	Data     *TotalObjectInfo `json:"data"`
+}
+
 // ZipFileAnalysis analysis zip file
 type ZipFileAnalysis struct {
 	Password string `json:"password"`
@@ -155,10 +161,7 @@ type ZipFileAnalysis struct {
 // AnalysisResult result of analysis zip file
 type AnalysisResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Object []YamlObject      `json:"import_object"`
-		Asst   []AssociationKind `json:"import_asst"`
-	} `json:"data"`
+	Data     BatchImportObject `json:"data"`
 }
 
 // BatchImportObject param of batch import object
