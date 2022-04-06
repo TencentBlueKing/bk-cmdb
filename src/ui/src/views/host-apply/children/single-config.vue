@@ -88,6 +88,7 @@
         type: String,
         required: true
       },
+      // 模块或模板id
       ids: {
         type: Array,
         default: () => ([])

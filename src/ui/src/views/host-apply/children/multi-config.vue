@@ -144,13 +144,14 @@
         type: String,
         required: true
       },
+      // 模块或模板id
       ids: {
         type: Array,
         default: () => ([])
       },
       action: {
         type: String,
-        default: ''
+        default: '' // 'batch-del' | 'batch-edit'
       }
     },
     data() {

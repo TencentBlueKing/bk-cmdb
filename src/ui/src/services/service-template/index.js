@@ -4,7 +4,7 @@ export const requestIds = {
   findmanyTemplate: Symbol('findmanyTemplate')
 }
 
-const find = async ({ params, config }) => {
+const find = async (params, config) => {
   try {
     const { count = 0, info: list = [] } = await http.post('findmany/proc/service_template', params, {
       requestId: requestIds.findmanyTemplate,
@@ -17,7 +17,7 @@ const find = async ({ params, config }) => {
   }
 }
 
-const findAll = async ({ params, config }) => {
+const findAll = async (params, config) => {
   try {
     let index = 1
     const size = 1000

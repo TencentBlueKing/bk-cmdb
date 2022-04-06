@@ -58,11 +58,7 @@
       const targetId = computed(() => Number(router.app.$route.query.id))
 
       watchEffect(async () => {
-        const list = await serviceTemplateService.findAll({
-          params: {
-            bk_biz_id: bizId
-          }
-        })
+        const list = await serviceTemplateService.findAll({ bk_biz_id: bizId })
 
         sortTopoTree(list ?? [], 'name')
 

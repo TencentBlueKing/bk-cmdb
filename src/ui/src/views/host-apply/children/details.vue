@@ -47,34 +47,37 @@
               </div>
               <div class="view-ft">
                 <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
-                  <bk-button
-                    slot-scope="{ disabled }"
-                    theme="primary"
-                    :disabled="disabled"
-                    @click="$emit('edit')">
-                    {{$t('编辑')}}
-                  </bk-button>
+                  <template #default="{ disabled }">
+                    <bk-button
+                      theme="primary"
+                      :disabled="disabled"
+                      @click="$emit('edit')">
+                      {{$t('编辑')}}
+                    </bk-button>
+                  </template>
                 </cmdb-auth>
                 <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
-                  <bk-button
-                    slot-scope="{ disabled }"
-                    :disabled="!hasConflict || disabled"
-                    @click="$emit('view-conflict')">
-                    <span v-bk-tooltips="{ content: $t('无失效需处理') }" v-if="!hasConflict">
-                      {{$t('失效主机')}}<em class="conflict-num">{{conflictNum}}</em>
-                    </span>
-                    <span v-else>
-                      {{$t('失效主机')}}<em class="conflict-num">{{conflictNum}}</em>
-                    </span>
-                  </bk-button>
+                  <template #default="{ disabled }">
+                    <bk-button
+                      :disabled="!hasConflict || disabled"
+                      @click="$emit('view-conflict')">
+                      <span v-bk-tooltips="{ content: $t('无失效需处理') }" v-if="!hasConflict">
+                        {{$t('失效主机')}}<em class="conflict-num">{{conflictNum}}</em>
+                      </span>
+                      <span v-else>
+                        {{$t('失效主机')}}<em class="conflict-num">{{conflictNum}}</em>
+                      </span>
+                    </bk-button>
+                  </template>
                 </cmdb-auth>
                 <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
-                  <bk-button
-                    slot-scope="{ disabled }"
-                    :disabled="disabled"
-                    @click="$emit('close')">
-                    {{$t('关闭自动应用')}}
-                  </bk-button>
+                  <template #default="{ disabled }">
+                    <bk-button
+                      :disabled="disabled"
+                      @click="$emit('close')">
+                      {{$t('关闭自动应用')}}
+                    </bk-button>
+                  </template>
                 </cmdb-auth>
               </div>
             </div>
@@ -89,14 +92,15 @@
               </div>
               <div class="action">
                 <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
-                  <bk-button
-                    outline
-                    theme="primary"
-                    slot-scope="{ disabled }"
-                    :disabled="disabled"
-                    @click="$emit('edit')">
-                    {{$t('立即启用')}}
-                  </bk-button>
+                  <template #default="{ disabled }">
+                    <bk-button
+                      outline
+                      theme="primary"
+                      :disabled="disabled"
+                      @click="$emit('edit')">
+                      {{$t('立即启用')}}
+                    </bk-button>
+                  </template>
                 </cmdb-auth>
               </div>
             </div>
@@ -121,14 +125,15 @@
                       </div>
                       <div class="action">
                         <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
-                          <bk-button
-                            outline
-                            theme="primary"
-                            slot-scope="{ disabled }"
-                            :disabled="disabled"
-                            @click="$emit('edit')">
-                            {{$t('重新启用')}}
-                          </bk-button>
+                          <template #default="{ disabled }">
+                            <bk-button
+                              outline
+                              theme="primary"
+                              :disabled="disabled"
+                              @click="$emit('edit')">
+                              {{$t('重新启用')}}
+                            </bk-button>
+                          </template>
                         </cmdb-auth>
                       </div>
                     </div>
@@ -193,11 +198,28 @@
 
       const mode = computed(() => router.app.$route.params?.mode)
 
+      const modeValues = computed(() => {
+        const values = {
+          [CONFIG_MODE.MODULE]: {
+            targetIdKey: 'bk_module_id',
+            createLink: MENU_BUSINESS_HOST_AND_SERVICE,
+            title: currentNode.value.bk_inst_name
+          },
+          [CONFIG_MODE.TEMPLATE]: {
+            targetIdKey: 'service_template_id',
+            createLink: MENU_BUSINESS_SERVICE_TEMPLATE,
+            title: currentNode.value.name
+          }
+        }
+        return values[mode.value] ?? {}
+      })
+
       const propertyConfigTable = ref(null)
 
       const ruleLastEditTime = computed(() => {
-        // eslint-disable-next-line max-len
-        const lastTimeList = ruleList.value?.filter(rule => rule.bk_module_id === id.value)?.map(rule => new Date(rule.last_time).getTime())
+        const lastTimeList = ruleList.value
+          ?.filter(rule => rule[modeValues.value.targetIdKey] === id.value)
+          ?.map(rule => new Date(rule.last_time).getTime())
         if (lastTimeList?.length) {
           const latestTime = Math.max(...lastTimeList)
           return formatTime(latestTime, 'YYYY-MM-DD HH:mm:ss')
@@ -212,20 +234,6 @@
       const localHasRule = computed(() => hasRule.value && ruleList.value?.length > 0)
 
       const hasConflict = computed(() => conflictNum.value > 0)
-
-      const modeValues = computed(() => {
-        const values = {
-          [CONFIG_MODE.MODULE]: {
-            createLink: MENU_BUSINESS_HOST_AND_SERVICE,
-            title: currentNode.value.bk_inst_name
-          },
-          [CONFIG_MODE.TEMPLATE]: {
-            createLink: MENU_BUSINESS_SERVICE_TEMPLATE,
-            title: currentNode.value.name
-          }
-        }
-        return values[mode.value] ?? {}
-      })
 
       const handleDeletePropertyRule = (property) => {
         emit('delete-rule', property)

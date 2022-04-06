@@ -101,8 +101,7 @@
           width: 514,
           isShow: false,
           title: ''
-        },
-        currentRow: {}
+        }
       }
     },
     computed: {
@@ -149,26 +148,32 @@
         const { conflicts } = row
         const resultConflicts = conflicts.map((item) => {
           const property = this.configPropertyList.find(propertyItem => propertyItem.id === item.bk_attribute_id) || {}
-          /* eslint-disable max-len */
-          return <span>{property.bk_property_name}：<cmdb-property-value value={item.bk_property_value} property={property} /></span>
+          return (
+            <span>
+              {property.bk_property_name}：<cmdb-property-value value={item.bk_property_value} property={property} />
+            </span>
+          )
         })
         return (
-            <div>
-              { resultConflicts.reduce((acc, x) => (acc === null ? [x] : [acc, '；', x]), null) }
-            </div>
+          <div>
+            { resultConflicts.reduce((acc, x) => (acc === null ? [x] : [acc, '；', x]), null) }
+          </div>
         )
       },
       getTargetValue(row) {
         const { update_fields: updateFields } = row
         const resultUpdates = updateFields.map((item) => {
           const property = this.configPropertyList.find(propertyItem => propertyItem.id === item.bk_attribute_id) || {}
-          /* eslint-disable max-len */
-          return <span>{property.bk_property_name}：<cmdb-property-value value={item.bk_property_value} property={property} /></span>
+          return (
+            <span>
+              {property.bk_property_name}：<cmdb-property-value value={item.bk_property_value} property={property} />
+            </span>
+          )
         })
         return (
-            <div>
-                { resultUpdates.reduce((acc, x) => (acc === null ? [x] : [acc, '；', x]), null) }
-            </div>
+          <div>
+            { resultUpdates.reduce((acc, x) => (acc === null ? [x] : [acc, '；', x]), null) }
+          </div>
         )
       },
       getPropertyGroups() {
@@ -197,7 +202,6 @@
         this.setTableList()
       },
       async handleShowDetails(row) {
-        this.currentRow = row
         this.slider.title = `${this.$t('属性详情')}【${row.expect_host.bk_host_innerip}】`
         const properties = this.propertyList
         // 云区域数据

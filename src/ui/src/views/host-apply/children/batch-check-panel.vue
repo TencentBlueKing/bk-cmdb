@@ -10,8 +10,8 @@
       <slot name="content" />
     </div>
     <div class="panel-ft">
-      <bk-button theme="primary" :disabled="!localCheckedList.length" @click="$emit('edit')">
-        {{$t(localActionMode === 'batch-del' ? '去删除' : '去编辑')}}
+      <bk-button theme="primary" :disabled="!checkedList.length" @click="$emit('edit')">
+        {{$t(actionMode === 'batch-del' ? '去删除' : '去编辑')}}
       </bk-button>
       <bk-button theme="default" @click="$emit('cancel')">{{$t('取消')}}</bk-button>
     </div>
@@ -19,19 +19,12 @@
 </template>
 
 <script>
-  import { defineComponent, toRefs } from '@vue/composition-api'
+  import { defineComponent } from '@vue/composition-api'
 
   export default defineComponent({
     props: {
       checkedList: Array,
       actionMode: String
-    },
-    setup(props) {
-      const { checkedList: localCheckedList, actionMode: localActionMode } = toRefs(props)
-      return {
-        localCheckedList,
-        localActionMode
-      }
     }
   })
 </script>

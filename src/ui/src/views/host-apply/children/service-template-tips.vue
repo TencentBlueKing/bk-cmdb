@@ -133,7 +133,6 @@
 
         const [firstTemplate] = list
         state.currentTemplateId = firstTemplate.id
-        // state.currentModuleList = await getModulesById(state.currentTemplateId)
         state.displayModuleList = await getModulesById(state.currentTemplateId)
       })
 
@@ -157,6 +156,7 @@
           return []
         }
 
+        // 获取模块的拓扑路径
         const topopath = await store.dispatch('objectMainLineModule/getTopoPath', {
           bizId,
           params: {
@@ -167,6 +167,7 @@
           }
         })
 
+        // 将拓扑路径加入到模块数据中
         modules.forEach((module) => {
           const moduleNode = topopath.nodes.find(node => node.topo_node.bk_inst_id === module.bk_module_id)
           module.topopath = moduleNode.topo_path.map(path => path.bk_inst_name).reverse()
