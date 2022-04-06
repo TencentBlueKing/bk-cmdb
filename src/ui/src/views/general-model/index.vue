@@ -22,7 +22,7 @@
           </bk-button>
         </cmdb-auth>
         <bk-button class="models-button" theme="default"
-          :disabled="!table.checked.length || disabled"
+          :disabled="!table.checked.length"
           @click="handleExport">
           {{$t('导出')}}
         </bk-button>
