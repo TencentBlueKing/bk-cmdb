@@ -14,20 +14,31 @@ package service
 
 import (
 	"fmt"
+	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/auth_server/types"
 )
 
 // PullResource iam pull resource callback function, returns resource attributes or instances based on query condition
 func (s *AuthService) PullResource(ctx *rest.Contexts) {
+	start := time.Now()
+
 	query := new(types.PullResourceReq)
 	err := ctx.DecodeInto(query)
 	if err != nil {
 		ctx.RespBkError(types.InternalServerErrorCode, err.Error())
 		return
 	}
+
+	defer func() {
+		if time.Since(start) > time.Second {
+			blog.V(4).Infof("[iam pull resource] request exceeded max latency time, cost: %dms, user: %s, body: %#v, "+
+				"rid: %s", time.Since(start)/time.Millisecond, ctx.Kit.User, query, ctx.Kit.Rid)
+		}
+	}()
 
 	method, err := s.genResourcePullMethod(ctx.Kit, query.Type)
 	if err != nil {

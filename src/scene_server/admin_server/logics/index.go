@@ -104,7 +104,6 @@ func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB,
 				}
 				blog.Infof("end sync table rid: %s", rid)
 				time.Sleep(time.Second * time.Duration(options.ShardingTable.TableInterval))
-				blog.Infof("end sync table rid: %s", rid)
 
 			} else {
 				blog.Infof("start table common index rid: %s", rid)
@@ -176,19 +175,26 @@ func (dt *dbTable) syncDBTableIndexes(ctx context.Context) error {
 		return err
 	}
 
-	for dt, indexes := range dtIndexesMap {
-		tableIndexes[dt] = append(tableIndexes[dt], indexes...)
-	}
-
 	for tableName, indexes := range tableIndexes {
 		blog.Infof("start sync table(%s) index, rid: %s", tableName, dt.rid)
 		deprecatedTableIndexNames := deprecatedIndexNames[tableName]
 
+		indexes = append(indexes, dtIndexesMap[tableName]...)
+		delete(dtIndexesMap, tableName)
 		if err := dt.syncIndexesToDB(ctx, tableName, indexes, deprecatedTableIndexNames); err != nil {
-			blog.Warnf("sync table (%s) index error. err: %s, rid: %s", tableName, err.Error(), dt.rid)
+			blog.Warnf("sync table (%s) index failed. err: %v, rid: %s", tableName, err, dt.rid)
 			continue
 		}
+	}
 
+	for tableName, indexes := range dtIndexesMap {
+		blog.Infof("start sync table(%s) index, rid: %s", tableName, dt.rid)
+		deprecatedTableIndexNames := deprecatedIndexNames[tableName]
+
+		if err := dt.syncIndexesToDB(ctx, tableName, indexes, deprecatedTableIndexNames); err != nil {
+			blog.Warnf("sync table (%s) index failed. err: %v, rid: %s", tableName, err, dt.rid)
+			continue
+		}
 	}
 
 	return nil
@@ -252,8 +258,6 @@ func (dt *dbTable) syncIndexesToDB(ctx context.Context, tableName string,
 	}
 
 	for _, logicIndex := range logicIndexes {
-		// 是否存在相同key的索引
-		indexNameExist := false
 		// 是否存在同名
 		dbIndex, indexNameExist := dbIdxNameMap[logicIndex.Name]
 		if indexNameExist {
@@ -292,10 +296,9 @@ func (dt *dbTable) findSyncIndexesLogicUnique(ctx context.Context) (map[string][
 				obj.ObjectID, err.Error(), dt.rid)
 			return nil, err
 		}
-		objIndexes := append(index.InstanceIndexes(), uniques...)
 		// 内置模型不需要简表
 		if !obj.IsPre {
-			tbIndexes[instTable] = append(index.InstanceIndexes(), objIndexes...)
+			tbIndexes[instTable] = append(index.InstanceIndexes(), uniques...)
 		} else {
 			tb := ""
 			switch obj.ObjectID {
