@@ -62,8 +62,8 @@
 <style lang="scss" scoped>
 .footer {
     position: absolute;
-    width: calc(100vw - 50px);
     left: 25px;
+    right: 25px;
     bottom: 0;
     padding-top: 8px;
     height: 52px;

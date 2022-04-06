@@ -58,3 +58,8 @@ export const BUILTIN_MODEL_RESOURCE_TYPES = Object.freeze({
   [BUILTIN_MODELS.BUSINESS]: 'business',
   [BUILTIN_MODELS.BUSINESS_SET]: 'biz_set'
 })
+
+/**
+ * @constant {String} 未分类模型分组 ID
+ */
+export const UNCATEGORIZED_GROUP_ID = 'bk_uncategorized'

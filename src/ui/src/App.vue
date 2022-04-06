@@ -121,11 +121,7 @@
     .no-breadcrumb {
         /deep/ {
             .main-layout {
-                margin-top: 0
-            }
-            .main-views {
-                height: 100%;
-                margin-top: 0;
+               height: 100%;
             }
         }
     }
