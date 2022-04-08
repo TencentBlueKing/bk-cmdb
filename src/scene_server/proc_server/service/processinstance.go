@@ -603,8 +603,7 @@ func (ps *ProcServer) getModule(kit *rest.Kit, moduleID int64) (*metadata.Module
 }
 
 var (
-	ipRegex   = `^((1?\d{1,2}|2[0-4]\d|25[0-5])[.]){3}(1?\d{1,2}|2[0-4]\d|25[0-5])$`
-	portRegex = `^([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$`
+	ipRegex = `^((1?\d{1,2}|2[0-4]\d|25[0-5])[.]){3}(1?\d{1,2}|2[0-4]\d|25[0-5])$`
 )
 
 func (ps *ProcServer) validateProcessInstance(kit *rest.Kit, process *metadata.Process) errors.CCErrorCoder {
@@ -630,19 +629,18 @@ func (ps *ProcServer) validateProcessInstance(kit *rest.Kit, process *metadata.P
 			}
 		}
 
-		if bindInfo.Std.Port == nil || len(*bindInfo.Std.Port) == 0 {
+		port := metadata.PropertyPort{
+			Value: bindInfo.Std.Port,
+		}
+		if err := port.Validate(); err != nil {
 			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKPort)
 		}
-		if matched, err := regexp.MatchString(portRegex, *bindInfo.Std.Port); err != nil || !matched {
-			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcBindInfo+"."+common.BKPort)
-		}
 
-		if bindInfo.Std.Protocol == nil || len(*bindInfo.Std.Protocol) == 0 {
-			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKProtocol)
+		protocol := metadata.PropertyProtocol{
+			Value: (*metadata.ProtocolType)(bindInfo.Std.Protocol),
 		}
-		if *bindInfo.Std.Protocol != string(metadata.ProtocolTypeTCP) &&
-			*bindInfo.Std.Protocol != string(metadata.ProtocolTypeUDP) {
-			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcBindInfo+"."+common.BKProtocol)
+		if err := protocol.Validate(); err != nil {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKProtocol)
 		}
 	}
 
