@@ -226,7 +226,7 @@ func (st *setTemplate) DispatchTask4ModuleSync(kit *rest.Kit, taskType string, s
 	createTaskResult, err := st.client.TaskServer().Task().Create(kit.Ctx, kit.Header, taskType, setID, tasksData)
 	if err != nil {
 		blog.ErrorJSON("dispatch synchronize task failed, task: %s, err: %s, rid: %s", tasks, err.Error(), kit.Rid)
-		return taskDetail, errors.CCHttpError
+		return taskDetail, err
 	}
 	blog.InfoJSON("dispatch synchronize task success, task: %s, create result: %s, rid: %s",
 		tasks, createTaskResult, kit.Rid)
