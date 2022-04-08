@@ -223,7 +223,7 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 		// check if context is cancelled because of timeout or else, if so, do not need to abort the transaction.
 		select {
 		case <-ctx.Done():
-			blog.Errorf("run transaction, but context is cancelled, rid: %s", rid)
+			blog.Errorf("run transaction, but context is cancelled, err: %v, rid: %s", ctx.Err(), rid)
 			return false, runErr
 		default:
 		}

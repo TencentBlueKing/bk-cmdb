@@ -65,4 +65,5 @@ type Commands interface {
 	TxPipeline(ctx context.Context) Pipeliner
 	Discard(ctx context.Context, pipe Pipeliner) error
 	BLPop(ctx context.Context, timeout time.Duration, keys ...string) StringSliceResult
+	ZRemRangeByRank(key string, start, stop int64) IntResult
 }
