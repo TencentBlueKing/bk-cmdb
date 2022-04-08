@@ -1154,7 +1154,10 @@ func (ps *ProcServer) getHostAndServiceInsts(ctx *rest.Contexts, option *hostAnd
 		Page: metadata.BasePage{
 			Sort: common.BKFieldID,
 		},
-		ProcessTemplateIDs: []int64{option.ProcTemplateId},
+	}
+
+	if option.ProcTemplateId != 0 {
+		cond.ProcessTemplateIDs = []int64{option.ProcTemplateId}
 	}
 
 	processTemplates, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, cond)
@@ -1661,17 +1664,20 @@ func (ps *ProcServer) handleAddedServiceInsts(module *metadata.ModuleInst, hostM
 	processTemplates *metadata.MultipleProcessTemplate) []metadata.ServiceInstancesInfo {
 
 	srvInstNameSuffix := ""
-	proc := processTemplates.Info[0].Property
 
-	// 此时模块下的主机均未实例化，所以需要构造实例名字
-	if proc != nil {
-		if proc.ProcessName.Value != nil && len(*proc.ProcessName.Value) > 0 {
-			srvInstNameSuffix += "_" + processTemplates.Info[0].ProcessName
-		}
-		for _, bindInfo := range proc.BindInfo.Value {
-			if bindInfo.Std != nil && bindInfo.Std.Port.Value != nil {
-				srvInstNameSuffix += "_" + *bindInfo.Std.Port.Value
-				break
+	if processTemplates != nil && len(processTemplates.Info) > 0 {
+		proc := processTemplates.Info[0].Property
+
+		// 此时模块下的主机均未实例化，所以需要构造实例名字
+		if proc != nil {
+			if proc.ProcessName.Value != nil && len(*proc.ProcessName.Value) > 0 {
+				srvInstNameSuffix += "_" + processTemplates.Info[0].ProcessName
+			}
+			for _, bindInfo := range proc.BindInfo.Value {
+				if bindInfo.Std != nil && bindInfo.Std.Port.Value != nil {
+					srvInstNameSuffix += "_" + *bindInfo.Std.Port.Value
+					break
+				}
 			}
 		}
 	}
