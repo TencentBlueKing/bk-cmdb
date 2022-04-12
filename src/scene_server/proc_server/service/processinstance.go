@@ -629,16 +629,12 @@ func (ps *ProcServer) validateProcessInstance(kit *rest.Kit, process *metadata.P
 			}
 		}
 
-		port := metadata.PropertyPort{
-			Value: bindInfo.Std.Port,
-		}
+		port := (*metadata.PropertyPortValue)(bindInfo.Std.Port)
 		if err := port.Validate(); err != nil {
 			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKPort)
 		}
 
-		protocol := metadata.PropertyProtocol{
-			Value: (*metadata.ProtocolType)(bindInfo.Std.Protocol),
-		}
+		protocol := (*metadata.ProtocolType)(bindInfo.Std.Protocol)
 		if err := protocol.Validate(); err != nil {
 			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKProtocol)
 		}

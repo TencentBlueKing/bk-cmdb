@@ -873,9 +873,13 @@ func (p ProtocolType) String() string {
 	}
 }
 
-func (p ProtocolType) Validate() error {
+// Validate validate ProtocolType
+func (p *ProtocolType) Validate() error {
+	if p == nil || len(*p) == 0 {
+		return errors.New("protocol is not set or is empty")
+	}
 	validValues := []ProtocolType{ProtocolTypeTCP, ProtocolTypeUDP}
-	if util.InArray(p, validValues) == false {
+	if util.InArray(*p, validValues) == false {
 		return fmt.Errorf("invalid protocol type, value: %s, available values: %+v", p, validValues)
 	}
 	return nil
@@ -1795,16 +1799,20 @@ type PropertyPort struct {
 	AsDefaultValue *bool   `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
-func (ti *PropertyPort) Validate() error {
-	if ti.Value == nil || len(*ti.Value) == 0 {
+// PropertyPortValue port value
+type PropertyPortValue string
+
+// Validate validate the PropertyPortValue
+func (ti *PropertyPortValue) Validate() error {
+	if ti == nil || len(*ti) == 0 {
 		return errors.New("port is not set or is empty")
 	}
 
-	if matched := ProcessPortFormat.MatchString(*ti.Value); matched == false {
+	if matched := ProcessPortFormat.MatchString(string(*ti)); matched == false {
 		return fmt.Errorf("port format invalid")
 	}
 	var tmpPortArr []propertyPortItem
-	strPortItemArr := strings.Split(*ti.Value, ",")
+	strPortItemArr := strings.Split(string(*ti), ",")
 	for _, strPortItem := range strPortItemArr {
 		portArr := strings.Split(strPortItem, "-")
 		var start, end int64
@@ -1860,17 +1868,6 @@ func (ti *PropertyBindIP) Validate() error {
 type PropertyProtocol struct {
 	Value          *ProtocolType `field:"value" json:"value" bson:"value"`
 	AsDefaultValue *bool         `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
-}
-
-func (ti *PropertyProtocol) Validate() error {
-	if ti.Value == nil || len(*ti.Value) == 0 {
-		return errors.New("protocol is not set or is empty")
-	}
-
-	if err := ti.Value.Validate(); err != nil {
-		return err
-	}
-	return nil
 }
 
 // ServiceInstance is a service, which created when a host binding with a service template.
