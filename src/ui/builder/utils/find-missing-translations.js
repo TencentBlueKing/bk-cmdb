@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 
-const baseDir = path.resolve(__dirname, '../src')
+const baseDir = path.resolve(__dirname, '../../src')
 
 const fileCN = path.join(baseDir, 'i18n/lang/cn.json')
 const fileEN = path.join(baseDir, 'i18n/lang/en.json')
@@ -11,7 +11,7 @@ const en = require(fileEN)
 // 搜索模板中的语法正则
 const searchTplRe = [/path="(.+?)"/gm, /\$t[c]?\((.+?)\)/gm, /i18n.t\((.+?)\)/gm]
 // 搜索路由配置中的语法正则
-const searchRouteCfgRe = [/i18n:([^,\t\n\}]+)/gm]
+const searchRouteCfgRe = [/i18n:([^,\t\n\\}]+)/gm]
 // 模板中的中文字符
 const searchTplCn = /[\u4E00-\u9FA5]+/gm
 

@@ -10,7 +10,7 @@
         v-model="condition.user"
         :exclude="false"
         :multiple="false"
-        :palceholder="$t('操作账号')"
+        :placeholder="$t('操作账号')"
         @input="handlePageChange(1)">
       </cmdb-form-objuser>
     </div>

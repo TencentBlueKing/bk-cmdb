@@ -228,8 +228,8 @@
         <i class="bk-icon icon-check-1"></i>
         <h3 class="title">{{$t('创建成功')}}</h3>
         <i18n path="服务模板创建成功，您可以在XXX" tag="p" class="next-content">
-          <bk-link place="link1" theme="primary" @click="handleToSetTemplate">集群模板</bk-link>
-          <bk-link place="link2" theme="primary" @click="handleToBusinessTopo">业务拓扑</bk-link>
+          <bk-link place="link1" theme="primary" @click="handleToSetTemplate">{{$t('集群模板')}}</bk-link>
+          <bk-link place="link2" theme="primary" @click="handleToBusinessTopo">{{$t('业务拓扑')}}</bk-link>
         </i18n>
         <div class="btns">
           <bk-button class="btn mr10" theme="primary" @click="handleContinueCreating">{{$t('继续创建')}}</bk-button>
