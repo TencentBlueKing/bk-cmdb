@@ -651,26 +651,6 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-func (s *Service) judgeAuthorizeByHostsIDs(kit *rest.Kit, hostIDArr []int64) error {
-
-	err := s.AuthManager.AuthorizeByHostsIDs(kit.Ctx, kit.Header, authmeta.Update, hostIDArr...)
-	if err != nil {
-		if err != nil && err != ac.NoAuthorizeError {
-			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, kit.Rid)
-			return err
-		}
-
-		_, err := s.AuthManager.GenHostBatchNoPermissionResp(kit.Ctx, kit.Header, authmeta.Update, hostIDArr)
-		if err != nil && err != ac.NoAuthorizeError {
-			blog.Errorf("get permission failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, kit.Rid)
-			return err
-		}
-		blog.Errorf("host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, ac.NoAuthorizeError, kit.Rid)
-		return ac.NoAuthorizeError
-	}
-	return nil
-}
-
 func (s *Service) getHostBizMapAndHostInfoMap(kit *rest.Kit, hostIDs []int64) (map[int64]int64,
 	map[int64]mapstr.MapStr, error) {
 
@@ -728,6 +708,10 @@ func (s *Service) updateHostPropertyBatch(kit *rest.Kit, hostIDArr []int64, host
 		pipeline := make(chan bool, 5)
 
 		for _, update := range parameter.Update {
+			if firstErr != nil {
+				break
+			}
+
 			pipeline <- true
 			wg.Add(1)
 
@@ -808,29 +792,42 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 	}
 
 	if len(parameter.Update) > common.BKMaxPageSize {
-		blog.Errorf("UpdateHostPropertyBatch failed, data len %d exceed max pageSize %d, rid: %s",
+		blog.Errorf("update host property batch failed, data len %d exceed max pageSize %d, rid: %s",
 			len(parameter.Update), common.BKMaxPageSize, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "update", common.BKMaxPageSize))
 		return
 	}
 
-	hostIDArr := make([]int64, 0)
+	hostIDs := make([]int64, 0)
 	for _, update := range parameter.Update {
-		hostIDArr = append(hostIDArr, update.HostID)
+		hostIDs = append(hostIDs, update.HostID)
 	}
 
-	if err := s.judgeAuthorizeByHostsIDs(ctx.Kit, hostIDArr); err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, hostIDs...); err != nil {
+		if err != nil && err != ac.NoAuthorizeError {
+			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDs, err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+			return
+		}
+		perm, err := s.AuthManager.GenHostBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, hostIDs)
+		if err != nil && err != ac.NoAuthorizeError {
+			blog.Errorf("check host authorization get permission failed, hosts: %+v, err: %v, rid: %s", hostIDs,
+				err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+			return
+		}
+		blog.Errorf("hosts no authorized, hosts: %+v, rid: %s", hostIDs, ctx.Kit.Rid)
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
 	}
 
-	hostBizMap, hostMap, err := s.getHostBizMapAndHostInfoMap(ctx.Kit, hostIDArr)
+	hostBizMap, hostMap, err := s.getHostBizMapAndHostInfoMap(ctx.Kit, hostIDs)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsValueInvalidError, "hostID"))
+		ctx.RespAutoError(err)
 		return
 	}
 
-	if err := s.updateHostPropertyBatch(ctx.Kit, hostIDArr, hostMap, hostBizMap, parameter); err != nil {
+	if err := s.updateHostPropertyBatch(ctx.Kit, hostIDs, hostMap, hostBizMap, parameter); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
