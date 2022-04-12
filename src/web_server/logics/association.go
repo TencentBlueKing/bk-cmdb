@@ -94,11 +94,11 @@ func (lgc *Logics) fetchAssociationData(ctx context.Context, header http.Header,
 	input.Condition = cond.ToMapStr()
 	bkObjRst, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(ctx, header, input)
 	if err != nil {
-		blog.Errorf("fetch %s association data failed, err: %v, input: %+v, rid: %s", objID, err, input, rid)
+		blog.Errorf("fetch %s association data failed, input: %+v, err: %v, rid: %s", objID, input, err, rid)
 		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if ccErr := bkObjRst.CCError(); ccErr != nil {
-		blog.Errorf("fetch %s association data failed, err: %v, input: %+v, rid: %s", objID, ccErr, input, rid)
+		blog.Errorf("fetch %s association data failed, input: %+v, err: %v, rid: %s", objID, input, ccErr, rid)
 		return nil, ccErr
 	}
 
@@ -113,11 +113,11 @@ func (lgc *Logics) fetchAssociationData(ctx context.Context, header http.Header,
 	input.Condition = cond.ToMapStr()
 	bkAsstObjRst, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(ctx, header, input)
 	if err != nil {
-		blog.Errorf("fetch %s association data failed, err: %v, input: %+v, rid: %s", objID, err, input, rid)
+		blog.Errorf("fetch %s association data failed, input: %+v, err: %v, rid: %s", objID, input, err, rid)
 		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if ccErr := bkObjRst.CCError(); ccErr != nil {
-		blog.Errorf("fetch %s association data failed, err: %v, input: %+v, rid: %s", objID, ccErr, input, rid)
+		blog.Errorf("fetch %s association data failed, input: %+v, err: %v, rid: %s", objID, input, ccErr, rid)
 		return nil, ccErr
 	}
 	result := append(bkObjRst.Data[:], bkAsstObjRst.Data...)
