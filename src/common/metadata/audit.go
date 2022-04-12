@@ -734,6 +734,7 @@ func GetAuditDict() []resourceTypeInfo {
 	return auditDict
 }
 
+// 注意：在auditDict添加资源时，记得在resourceTypeToName中添加对应资源的不同语言的名字，用于国际化
 var auditDict = []resourceTypeInfo{
 	{
 		ID:   ModuleRes,
@@ -913,6 +914,7 @@ var auditDict = []resourceTypeInfo{
 	},
 }
 
+// 注意：在actionInfoMap添加动作时，记得在actionTypeToName中添加对应动作的不同语言的名字，用于国际化
 var actionInfoMap = map[ActionType]actionTypeInfo{
 	AuditCreate:             {ID: AuditCreate, Name: "新增"},
 	AuditUpdate:             {ID: AuditUpdate, Name: "修改"},
@@ -957,4 +959,136 @@ func (input *AuditDetailQueryInput) Validate() errors.RawErrorInfo {
 	}
 
 	return errors.RawErrorInfo{}
+}
+
+// GetResourceTypeToName get resource type to name map
+func GetResourceTypeToName() map[ResourceType]map[common.LanguageType]string {
+	return resourceTypeToName
+}
+
+var resourceTypeToName = map[ResourceType]map[common.LanguageType]string{
+	ModuleRes: {
+		common.Chinese: "模块",
+		common.English: "Module",
+	},
+	SetRes: {
+		common.Chinese: "集群",
+		common.English: "Set",
+	},
+	MainlineInstanceRes: {
+		common.Chinese: "节点",
+		common.English: "Node",
+	},
+	ServiceInstanceRes: {
+		common.Chinese: "服务实例",
+		common.English: "Service Instance",
+	},
+	HostRes: {
+		common.Chinese: "主机",
+		common.English: "Host",
+	},
+	BusinessRes: {
+		common.Chinese: "业务",
+		common.English: "Business",
+	},
+	BizSetRes: {
+		common.Chinese: "业务集",
+		common.English: "Business Set",
+	},
+	CloudAreaRes: {
+		common.Chinese: "云区域",
+		common.English: "Cloud Area",
+	},
+	ModelInstanceRes: {
+		common.Chinese: "模型实例",
+		common.English: "Model Instance",
+	},
+	InstanceAssociationRes: {
+		common.Chinese: "实例关联",
+		common.English: "Instance Association",
+	},
+	ResourceDirectoryRes: {
+		common.Chinese: "资源池目录",
+		common.English: "Resource Directory",
+	},
+	ModelGroupRes: {
+		common.Chinese: "模型分组",
+		common.English: "Model Group",
+	},
+	ModelRes: {
+		common.Chinese: "模型",
+		common.English: "Model",
+	},
+	ModelAttributeRes: {
+		common.Chinese: "模型字段",
+		common.English: "Model Attribute",
+	},
+	ModelAttributeGroupRes: {
+		common.Chinese: "模型字段分组",
+		common.English: "Model Attribute Group",
+	},
+	CloudAccountRes: {
+		common.Chinese: "云账户",
+		common.English: "Cloud Account",
+	},
+	CloudSyncTaskRes: {
+		common.Chinese: "云资源同步任务",
+		common.English: "Cloud Synchronous Task",
+	},
+	DynamicGroupRes: {
+		common.Chinese: "动态分组",
+		common.English: "Dynamic Group",
+	},
+	PlatFormSettingRes: {
+		common.Chinese: "平台管理",
+		common.English: "Platform Management",
+	},
+}
+
+// GetActionTypeToName get action type to name map
+func GetActionTypeToName() map[ActionType]map[common.LanguageType]string {
+	return actionTypeToName
+}
+
+var actionTypeToName = map[ActionType]map[common.LanguageType]string{
+	AuditCreate: {
+		common.Chinese: "新增",
+		common.English: "Create",
+	},
+	AuditUpdate: {
+		common.Chinese: "修改",
+		common.English: "Update",
+	},
+	AuditDelete: {
+		common.Chinese: "删除",
+		common.English: "Delete",
+	},
+	AuditAssignHost: {
+		common.Chinese: "分配到业务",
+		common.English: "Assign to business",
+	},
+	AuditUnassignHost: {
+		common.Chinese: "归还到资源池",
+		common.English: "Return to the resource pool",
+	},
+	AuditTransferHostModule: {
+		common.Chinese: "转移模块",
+		common.English: "Transfer module",
+	},
+	AuditArchive: {
+		common.Chinese: "归档",
+		common.English: "Archive",
+	},
+	AuditRecover: {
+		common.Chinese: "恢复",
+		common.English: "Recover",
+	},
+	AuditPause: {
+		common.Chinese: "停用",
+		common.English: "Pause",
+	},
+	AuditResume: {
+		common.Chinese: "启用",
+		common.English: "Resume",
+	},
 }

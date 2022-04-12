@@ -19,11 +19,47 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
+	"configcenter/src/common/util"
 )
 
 // SearchAuditDict returns all audit types with their name and actions for front-end display
 func (s *Service) SearchAuditDict(ctx *rest.Contexts) {
-	ctx.RespEntity(metadata.GetAuditDict())
+	languageType := common.LanguageType(util.GetLanguage(ctx.Kit.Header))
+	if languageType != common.Chinese && languageType != common.English {
+		blog.Errorf("can not find language, transform to Chinese, language: %v, rid: %s", languageType, ctx.Kit.Rid)
+		languageType = common.Chinese
+	}
+
+	dict := metadata.GetAuditDict()
+	if languageType == common.Chinese {
+		ctx.RespEntity(dict)
+		return
+	}
+
+	resourceTypeToName := metadata.GetResourceTypeToName()
+	actionTypeToName := metadata.GetActionTypeToName()
+
+	for outerIdx, res := range dict {
+		resourceNameMap, exist := resourceTypeToName[res.ID]
+		if !exist {
+			blog.Errorf("can not find resource type to name, type: %s, rid: %s", res.ID, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
+			return
+		}
+		dict[outerIdx].Name = resourceNameMap[languageType]
+
+		for innerIdx, operation := range res.Operations {
+			actionNameMap, exist := actionTypeToName[operation.ID]
+			if !exist {
+				blog.Errorf("can not find action type to name, type: %s, rid: %s", operation.ID, ctx.Kit.Rid)
+				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
+				return
+			}
+			dict[outerIdx].Operations[innerIdx].Name = actionNameMap[languageType]
+		}
+	}
+
+	ctx.RespEntity(dict)
 }
 
 // SearchAuditList search audit log list, only contains information for front-end table display
