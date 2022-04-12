@@ -497,6 +497,14 @@ func (s *Service) FindBizInBizSet(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	if !util.InArray(common.BKDefaultField, opt.Fields) {
+		for index, item := range biz {
+			delete(item, common.BKDefaultField)
+			biz[index] = item
+		}
+	}
+
 	ctx.RespEntityWithCount(0, biz)
 }
 
