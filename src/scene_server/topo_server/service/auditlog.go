@@ -30,33 +30,11 @@ func (s *Service) SearchAuditDict(ctx *rest.Contexts) {
 		languageType = common.Chinese
 	}
 
-	dict := metadata.GetAuditDict()
-	if languageType == common.Chinese {
-		ctx.RespEntity(dict)
+	dict := metadata.GetAuditDict(languageType)
+	if dict == nil {
+		blog.Errorf("can not find audit dict, language type: %v, rid: %s", languageType, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
 		return
-	}
-
-	resourceTypeToName := metadata.GetResourceTypeToName()
-	actionTypeToName := metadata.GetActionTypeToName()
-
-	for outerIdx, res := range dict {
-		resourceNameMap, exist := resourceTypeToName[res.ID]
-		if !exist {
-			blog.Errorf("can not find resource type to name, type: %s, rid: %s", res.ID, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
-			return
-		}
-		dict[outerIdx].Name = resourceNameMap[languageType]
-
-		for innerIdx, operation := range res.Operations {
-			actionNameMap, exist := actionTypeToName[operation.ID]
-			if !exist {
-				blog.Errorf("can not find action type to name, type: %s, rid: %s", operation.ID, ctx.Kit.Rid)
-				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
-				return
-			}
-			dict[outerIdx].Operations[innerIdx].Name = actionNameMap[languageType]
-		}
 	}
 
 	ctx.RespEntity(dict)
