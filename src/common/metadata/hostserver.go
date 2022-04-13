@@ -867,10 +867,11 @@ type UpdateHostCloudAreaFieldOption struct {
 
 // UpdateHostPropertyBatchParameter batch update host property parameter
 type UpdateHostPropertyBatchParameter struct {
-	Update []updateHostProperty `json:"update"`
+	Update []UpdateHostProperty `json:"update"`
 }
 
-type updateHostProperty struct {
+// UpdateHostProperty host property parameter
+type UpdateHostProperty struct {
 	HostID     int64                  `json:"bk_host_id"`
 	Properties map[string]interface{} `json:"properties"`
 }
