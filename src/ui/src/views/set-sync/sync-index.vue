@@ -1,6 +1,6 @@
 <template>
   <cmdb-sticky-layout class="sync-set-layout" ref="instancesInfo"
-    v-bkloading="{ isLoading: $loading('diffTemplateAndInstances') }">
+    v-bkloading="{ isLoading: $loading(requestIds.diffTemplateAndInstances) }">
     <template v-if="noInfo">
       <div class="no-content">
         <img src="../../assets/images/no-content.png" alt="no-content">
@@ -64,6 +64,7 @@
           <bk-button v-if="canSyncStatus()"
             class="mr10"
             theme="primary"
+            :loading="$loading(requestIds.syncTemplateToInstances)"
             :disabled="disabled"
             @click="handleConfirmSync">
             {{$t('确认同步')}}
@@ -91,7 +92,11 @@
         noInfo: false,
         isLatestInfo: false,
         templateName: '',
-        moduleHostCount: {}
+        moduleHostCount: {},
+        requestIds: {
+          diffTemplateAndInstances: Symbol(),
+          syncTemplateToInstances: Symbol()
+        }
       }
     },
     computed: {
@@ -152,7 +157,7 @@
               bk_set_ids: this.setInstancesId
             },
             config: {
-              requestId: 'diffTemplateAndInstances'
+              requestId: this.requestIds.diffTemplateAndInstances
             }
           })
           this.moduleHostCount = data.module_host_count || {}
@@ -190,7 +195,7 @@
               bk_set_ids: this.setInstancesId
             },
             config: {
-              requestId: 'syncTemplateToInstances'
+              requestId: this.requestIds.syncTemplateToInstances
             }
           })
           this.$success(this.$t('提交同步成功'))
