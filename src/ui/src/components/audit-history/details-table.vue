@@ -271,4 +271,10 @@
     .details-toggle {
         text-align: right;
     }
+
+    [lang="en"] {
+      .details-info .info-group .info-label {
+        width: 160px;
+      }
+    }
 </style>

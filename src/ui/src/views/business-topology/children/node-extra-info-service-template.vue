@@ -20,7 +20,7 @@
       <span class="name fl">{{$t('主机属性自动应用')}}</span>
       <div class="fl">
         <div class="template-value" @click="linkToAutoApply">
-          <span class="text link">{{autoApplyEnable ? '已启用' : '未启用'}}</span>
+          <span class="text link">{{autoApplyEnable ? $t('已启用') : $t('未启用')}}</span>
           <i class="icon-cc-share link"></i>
         </div>
       </div>
