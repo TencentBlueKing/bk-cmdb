@@ -350,6 +350,9 @@
 
         return nodeClass
       },
+      getBizSetRootNode() {
+        return this.$refs?.tree.getNodeById(`${BUILTIN_MODELS.BUSINESS_SET}-${this.bizSetId}`)
+      },
       /**
        * 处理节点选择事件
        */
@@ -420,7 +423,7 @@
       async loadNodeCount(targetNodes, force = false) {
         let nodes = null
 
-        const doneStatuses = !['pending', 'finished']
+        const doneStatuses = ['pending', 'finished']
 
         if (force) {
           nodes = targetNodes.filter(({ data }) => !doneStatuses.includes(data.status)
@@ -429,7 +432,10 @@
           nodes = targetNodes.filter(({ data }) => data.bk_obj_id !== BUILTIN_MODELS.BUSINESS_SET)
         }
 
-        if (!nodes.length) return
+        if (!nodes.length) {
+          this.setNodesStatus([this.getBizSetRootNode()], 'finished')
+          return
+        }
 
         this.setNodesStatus(nodes, 'pending')
 
@@ -459,6 +465,10 @@
        * 计算业务集下实例总数
        */
       countBizSetSum() {
+        if (!this.$refs?.tree) {
+          return
+        }
+
         const bizSetSum = this.$refs.tree?.nodes
           .filter(node => node.data.bk_obj_id === BUILTIN_MODELS.BUSINESS)
           .reduce((acc, node) => {
@@ -466,13 +476,11 @@
             return acc + count
           }, 0)
 
-        if (!bizSetSum) return
-
-        const rootNode = this.$refs.tree.getNodeById(`${BUILTIN_MODELS.BUSINESS_SET}-${this.bizSetId}`)
+        const rootNode = this.getBizSetRootNode()
 
         rootNode.data[this.countType] = bizSetSum
 
-        rootNode.data.status = 'finished'
+        this.setNodesStatus([rootNode], 'finished')
       },
       /**
        * 设置所有节点的加载状态
@@ -481,7 +489,9 @@
        */
       setNodesStatus(nodes, status) {
         nodes.forEach((node) => {
-          this.$set(node.data, 'status', status)
+          if (node?.data) {
+            this.$set(node.data, 'status', status)
+          }
         })
       },
       /**
