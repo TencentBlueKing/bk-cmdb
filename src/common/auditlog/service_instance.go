@@ -13,6 +13,8 @@
 package auditlog
 
 import (
+	"sync"
+
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -33,6 +35,7 @@ type svcInstLog struct {
 type svcInstLogGenerator struct {
 	data         []metadata.ServiceInstance
 	procAuditMap map[int64][]metadata.SvcInstProOpDetail
+	sync.Mutex
 }
 
 // WithServiceInstance set service instances data in audit log
@@ -87,6 +90,7 @@ func (s *svcInstLogGenerator) WithProc(param *generateAuditCommonParameter, proc
 			details.Details = &metadata.BasicContent{PreData: proc, UpdateFields: param.updateFields}
 		}
 
+		s.Lock()
 		s.procAuditMap[relation.ServiceInstanceID] = append(s.procAuditMap[relation.ServiceInstanceID],
 			metadata.SvcInstProOpDetail{
 				Action:        param.action,
@@ -94,6 +98,7 @@ func (s *svcInstLogGenerator) WithProc(param *generateAuditCommonParameter, proc
 				ProcessNames:  util.GetStrByInterface(proc[common.BKProcessNameField]),
 				BasicOpDetail: details,
 			})
+		s.Unlock()
 	}
 	return nil
 }
