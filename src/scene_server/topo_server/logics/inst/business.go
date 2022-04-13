@@ -617,21 +617,23 @@ func (b *business) deleteUserModuleConfig(kit *rest.Kit, option *metadata.BuiltI
 	return nil
 }
 
-// checkModuleNameValid check whether the module has duplicate names.
-func (b *business) checkModuleNameValid(kit *rest.Kit, input metadata.ModuleOption) error {
+// checkModuleNameValid check whether the module has duplicate names in business, bizID: resource pool's business id.
+func (b *business) checkModuleNameValid(kit *rest.Kit, input metadata.ModuleOption, bizID int64) error {
 	queryCond := []map[string]interface{}{{
 		common.BKModuleNameField: input.Name,
+		common.BKDefaultField:    map[string]interface{}{common.BKDBGT: common.NormalModuleFlag},
+		common.BKAppIDField:      map[string]interface{}{common.BKDBNE: bizID},
 	}}
 
 	rst, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseModule,
 		queryCond)
 	if err != nil {
-		blog.Errorf("get duplicate module count failed, filter: %+v, err: %v, rid: %s", queryCond, err, kit.Rid)
+		blog.Errorf("get module count failed, filter: %+v, err: %v, rid: %s", queryCond, err, kit.Rid)
 		return err
 	}
 
 	if rst[0] > 0 {
-		blog.Errorf("module %s is duplicate,  rid: %s", input.Name, kit.Rid)
+		blog.Errorf("module %s is duplicate, rid: %s", input.Name, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, input.Name)
 	}
 	return nil
@@ -642,12 +644,12 @@ func (b *business) checkModuleNameValid(kit *rest.Kit, input metadata.ModuleOpti
 // 2、如果不存在这个key那么合法即是新增场景
 // 3、true是更新场景，false是新增场景
 // 4、目前系统出厂的idle 、fault、recycle只支持改名字不支持删除
-func (b *business) validateIdleModuleConfigName(ctx *rest.Kit, input metadata.ModuleOption) (error, bool, string,
-	metadata.PlatformSettingConfig) {
+func (b *business) validateIdleModuleConfigName(ctx *rest.Kit, input metadata.ModuleOption) (bool, string,
+	metadata.PlatformSettingConfig, error) {
 
 	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(ctx.Ctx, ctx.Header)
 	if err != nil {
-		return err, false, "", metadata.PlatformSettingConfig{}
+		return false, "", metadata.PlatformSettingConfig{}, err
 	}
 
 	conf := res.Data
@@ -656,21 +658,21 @@ func (b *business) validateIdleModuleConfigName(ctx *rest.Kit, input metadata.Mo
 	switch input.Key {
 	case common.SystemIdleModuleKey:
 		if input.Name == conf.BuiltInModuleConfig.IdleName {
-			return fmt.Errorf("idle name cannot be the same"), false, "", metadata.PlatformSettingConfig{}
+			return false, "", metadata.PlatformSettingConfig{}, fmt.Errorf("idle name cannot be the same")
 		}
 		oldName = conf.BuiltInModuleConfig.IdleName
 		flag = true
 
 	case common.SystemFaultModuleKey:
 		if input.Name == conf.BuiltInModuleConfig.FaultName {
-			return fmt.Errorf("fault name cannot be the same"), false, "", metadata.PlatformSettingConfig{}
+			return false, "", metadata.PlatformSettingConfig{}, fmt.Errorf("fault name cannot be the same")
 		}
 		oldName = conf.BuiltInModuleConfig.FaultName
 		flag = true
 
 	case common.SystemRecycleModuleKey:
 		if input.Name == conf.BuiltInModuleConfig.RecycleName {
-			return fmt.Errorf("recycle name cannot be the same"), false, "", metadata.PlatformSettingConfig{}
+			return false, "", metadata.PlatformSettingConfig{}, fmt.Errorf("recycle name cannot be the same")
 		}
 		oldName = conf.BuiltInModuleConfig.RecycleName
 		flag = true
@@ -679,8 +681,8 @@ func (b *business) validateIdleModuleConfigName(ctx *rest.Kit, input metadata.Mo
 		for _, m := range conf.BuiltInModuleConfig.UserModules {
 			if m.Key == input.Key {
 				if m.Value == input.Name {
-					return fmt.Errorf("user defined module name cannot be the same"), false, "",
-						metadata.PlatformSettingConfig{}
+					return false, "", metadata.PlatformSettingConfig{},
+						fmt.Errorf("user defined module name cannot be the same")
 				} else {
 					oldName = m.Value
 					flag = true
@@ -689,7 +691,7 @@ func (b *business) validateIdleModuleConfigName(ctx *rest.Kit, input metadata.Mo
 			}
 		}
 	}
-	return nil, flag, oldName, conf
+	return flag, oldName, conf, nil
 }
 
 func (b *business) validateDeleteModuleName(kit *rest.Kit, option *metadata.BuiltInModuleDeleteOption) (
@@ -762,7 +764,7 @@ func (b *business) addUserDefinedModule(kit *rest.Kit, results []mapstr.MapStr, 
 	return nil
 }
 
-func (b *business) updateModuleName(kit *rest.Kit, data metadata.ModuleOption, oldName string) error {
+func (b *business) updateModuleName(kit *rest.Kit, data metadata.ModuleOption, name string, bizID int64) error {
 	var defaultFlag int
 
 	// 根据不同类型的模块获取不同的模块标记,最终获取到原来的模块名称
@@ -780,11 +782,14 @@ func (b *business) updateModuleName(kit *rest.Kit, data metadata.ModuleOption, o
 	d := mapstr.New()
 	d.Set(common.BKModuleNameField, data.Name)
 
+	// 在更新模块时注意只更新业务下"空闲机池"的模块，需要将资源池下面的模块排除.
 	inputParams := metadata.UpdateOption{
 		Data: d,
 		Condition: mapstr.MapStr{
 			common.BKDefaultField:    defaultFlag,
-			common.BKModuleNameField: oldName},
+			common.BKModuleNameField: name,
+			common.BKAppIDField:      mapstr.MapStr{common.BKDBNE: bizID},
+		},
 	}
 
 	_, err := b.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
@@ -852,10 +857,10 @@ func (b *business) deleteModuleName(kit *rest.Kit, op *metadata.BuiltInModuleDel
 	return nil
 }
 
-// updateBusinessSet rename business idle set.
-func (b *business) updateBusinessSet(kit *rest.Kit, setOption metadata.SetOption) error {
-	// verify whether the cluster name is duplicate.
-	if err := b.checkSetNameValid(kit, setOption); err != nil {
+// updateBusinessSet rename business idle set, except resource pool's set.
+func (b *business) updateBusinessSet(kit *rest.Kit, setOption metadata.SetOption, bizID int64) error {
+	// determine whether there is a set with the same name in a non-resource pool.
+	if err := b.checkSetNameValid(kit, setOption, bizID); err != nil {
 		return err
 	}
 
@@ -866,37 +871,43 @@ func (b *business) updateBusinessSet(kit *rest.Kit, setOption metadata.SetOption
 		},
 		Condition: map[string]interface{}{
 			common.BKDefaultField: common.DefaultResSetFlag,
+			common.BKAppIDField:   map[string]interface{}{common.BKDBNE: bizID},
 		},
 	}
 
 	_, err := b.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
 		&inputParams)
 	if err != nil {
-		blog.Errorf("update set name failed , err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("update set name failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
 	// update platform setting.
 	err = b.updateBuiltInSetConfig(kit, setOption.Name)
 	if err != nil {
-		blog.Errorf("update set config failed, rid: %s", kit.Rid)
+		blog.Errorf("update config failed, set name: %s, rid: %s", setOption.Name, kit.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// UpdateBusinessIdleSetOrModule 此函数用于更新全局的空闲机池和及下面的模块，属于管理员操作，只允许将此接口提供给前端使用
+// UpdateBusinessIdleSetOrModule 此函数用于更新全局非资源池下的空闲机池和及下面的模块，属于管理员操作，只允许将此接口提供给前端使用。
 func (b *business) UpdateBusinessIdleSetOrModule(kit *rest.Kit, option *metadata.ConfigUpdateSettingOption) error {
+
+	bizID, err := b.getResourceBizID(kit)
+	if err != nil {
+		return err
+	}
 
 	switch option.Type {
 	case metadata.ConfigUpdateTypeSet:
-		err := b.updateBusinessSet(kit, option.Set)
+		err := b.updateBusinessSet(kit, option.Set, bizID)
 		if err != nil {
 			return err
 		}
 	case metadata.ConfigUpdateTypeModule:
-		err := b.updateBusinessModule(kit, option.Module)
+		err := b.updateBusinessModule(kit, option.Module, bizID)
 		if err != nil {
 			return err
 		}
@@ -907,30 +918,66 @@ func (b *business) UpdateBusinessIdleSetOrModule(kit *rest.Kit, option *metadata
 	return nil
 }
 
+// getResourceBizID get resource pool's biz ID.
+func (b *business) getResourceBizID(kit *rest.Kit) (int64, error) {
+
+	// get resource pool's biz ID
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.BKDefaultField: common.DefaultAppFlag},
+		Fields:    []string{common.BKAppIDField},
+	}
+	count, bizItems, err := b.FindBiz(kit, query)
+	if err != nil {
+		blog.Errorf("get resource pool's biz failed, query: %+v, err: %v, rid: %s", query, err, kit.Rid)
+		return 0, err
+	}
+	if count > 1 || count == 0 {
+		blog.Errorf("get resource pool's biz num incorrect, query: %+v, err: %v, rid: %s", query, err, kit.Rid)
+		return 0, err
+	}
+
+	bizID, err := bizItems[0].Int64(common.BKAppIDField)
+	if err != nil {
+		blog.Errorf("bizID convert to Int64 failed, err: %v, rid: %v", err, kit.Rid)
+		return 0, err
+	}
+	return bizID, nil
+}
+
 //updateBusinessModule: 对特殊空闲机池下模块(flag:1,2,3,5)做新增或改名操作
-func (b *business) updateBusinessModule(kit *rest.Kit, module metadata.ModuleOption) error {
+func (b *business) updateBusinessModule(kit *rest.Kit, module metadata.ModuleOption, bizID int64) error {
 
 	// check param is legal or not
-	if err := b.checkModuleNameValid(kit, module); err != nil {
-		blog.Errorf("params is illegal err: %v, config: %v, rid: %s", err, module, kit.Rid)
+	if err := b.checkModuleNameValid(kit, module, bizID); err != nil {
+		blog.Errorf("params is illegal, bizID: %d, module: %+v, err: %v, rid: %s", bizID, module, err, kit.Rid)
 		return err
 	}
 
-	err, flag, oldname, conf := b.validateIdleModuleConfigName(kit, module)
+	flag, oldname, conf, err := b.validateIdleModuleConfigName(kit, module)
 	if err != nil {
-		blog.Errorf("params is illegal err: %v, config: %v ,rid: %s", err, module, kit.Rid)
+		blog.Errorf("params is illegal, bizID: %d, module: %+v, err: %v, rid: %s", bizID, module, err, kit.Rid)
 		return err
 	}
 
 	if flag {
-		// add user module or rename
-		err := b.updateModuleName(kit, module, oldname)
+		// add normal module or rename normal module.
+		err := b.updateModuleName(kit, module, oldname, bizID)
 		if err != nil {
 			return err
 		}
 	} else {
 		// find idle set list
-		results, err := b.getIdleSetList(kit)
+		query := &metadata.QueryCondition{
+			Condition: map[string]interface{}{
+				common.BKDefaultField: common.DefaultResSetFlag,
+				common.BKAppIDField:   map[string]interface{}{common.BKDBNE: bizID},
+			},
+			Page: metadata.BasePage{
+				Limit: common.BKNoLimit,
+			},
+			Fields: []string{common.BKSetIDField, common.BKAppIDField},
+		}
+		results, err := b.getIdleSetList(kit, query)
 		if err != nil {
 			return err
 		}
@@ -940,7 +987,7 @@ func (b *business) updateBusinessModule(kit *rest.Kit, module metadata.ModuleOpt
 		}
 	}
 
-	// update platform config
+	// update platform config.
 	err = b.updateIdleModuleConfig(kit, module, conf)
 	if err != nil {
 		blog.Errorf("update module config failed, err: %v, rid: %s", err, kit.Rid)
@@ -949,10 +996,13 @@ func (b *business) updateBusinessModule(kit *rest.Kit, module metadata.ModuleOpt
 	return nil
 }
 
-func (b *business) checkSetNameValid(kit *rest.Kit, setOption metadata.SetOption) error {
-	queryCond := []map[string]interface{}{{
-		common.BKSetNameField: setOption.Name,
-	}}
+func (b *business) checkSetNameValid(kit *rest.Kit, setOption metadata.SetOption, bizID int64) error {
+	queryCond := []map[string]interface{}{
+		{
+			common.BKSetNameField: setOption.Name,
+			common.BKAppIDField:   map[string]interface{}{common.BKDBNE: bizID},
+		},
+	}
 
 	rst, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseSet,
 		queryCond)
@@ -962,25 +1012,17 @@ func (b *business) checkSetNameValid(kit *rest.Kit, setOption metadata.SetOption
 	}
 
 	if rst[0] > 0 {
-		blog.Errorf("set %s is duplicate,  rid: %s", setOption.Name, kit.Rid)
+		blog.Errorf("set %s is duplicate, rid: %s", setOption.Name, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, setOption.Name)
 	}
 	return nil
 }
 
-func (b *business) getIdleSetList(kit *rest.Kit) ([]mapstr.MapStr, error) {
-
-	querySet := &metadata.QueryCondition{
-		Condition: map[string]interface{}{
-			common.BKDefaultField: common.DefaultResSetFlag,
-		},
-		Page:   metadata.BasePage{Limit: common.BKNoLimit},
-		Fields: []string{common.BKSetIDField, common.BKAppIDField},
-	}
+func (b *business) getIdleSetList(kit *rest.Kit, querySet *metadata.QueryCondition) ([]mapstr.MapStr, error) {
 
 	res, err := b.inst.FindInst(kit, common.BKInnerObjIDSet, querySet)
 	if err != nil {
-		blog.Errorf("find set failed err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("find set failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
