@@ -19,11 +19,25 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
+	"configcenter/src/common/util"
 )
 
 // SearchAuditDict returns all audit types with their name and actions for front-end display
 func (s *Service) SearchAuditDict(ctx *rest.Contexts) {
-	ctx.RespEntity(metadata.GetAuditDict())
+	languageType := common.LanguageType(util.GetLanguage(ctx.Kit.Header))
+	if languageType != common.Chinese && languageType != common.English {
+		blog.Errorf("can not find language, transform to Chinese, language: %v, rid: %s", languageType, ctx.Kit.Rid)
+		languageType = common.Chinese
+	}
+
+	dict := metadata.GetAuditDict(languageType)
+	if dict == nil {
+		blog.Errorf("can not find audit dict, language type: %v, rid: %s", languageType, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
+		return
+	}
+
+	ctx.RespEntity(dict)
 }
 
 // SearchAuditList search audit log list, only contains information for front-end table display
