@@ -65,13 +65,15 @@ func addDefaultBusinessSet(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	}
 
 	if len(result) >= 2 {
-		blog.Errorf("business set id %s or name %s already exists, the number of business set that meet the "+
+		blog.Errorf("business set id %s and name %s already exists, the number of business set that meet the "+
 			"condition is greater than 2, val: %v", bizSetID, bizSetName, result)
 		return fmt.Errorf("failed to add default business set: %v", defaultBusinessSet)
 	}
 
 	if len(result) == 1 {
-		if result[0].BizSetID == bizSetID && result[0].BizSetName == bizSetName && result[0].Scope.MatchAll {
+		if result[0].BizSetID == bizSetID && result[0].BizSetName == bizSetName && result[0].Scope.MatchAll &&
+			result[0].SupplierAccount == conf.OwnerID {
+
 			return nil
 		}
 
