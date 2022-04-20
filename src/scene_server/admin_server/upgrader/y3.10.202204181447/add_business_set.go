@@ -41,6 +41,7 @@ func addDefaultBusinessSet(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		SupplierAccount:  conf.OwnerID,
 		CreateTime:       now,
 		LastTime:         now,
+		Default:          common.DefaultResBusinessSetFlag,
 		Scope: metadata.BizSetScope{
 			MatchAll: true,
 		},
@@ -72,7 +73,7 @@ func addDefaultBusinessSet(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 
 	if len(result) == 1 {
 		if result[0].BizSetID == bizSetID && result[0].BizSetName == bizSetName && result[0].Scope.MatchAll &&
-			result[0].SupplierAccount == conf.OwnerID {
+			result[0].SupplierAccount == conf.OwnerID && result[0].Default == common.DefaultResBusinessSetFlag {
 
 			return nil
 		}

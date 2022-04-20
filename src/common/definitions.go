@@ -1345,3 +1345,8 @@ const (
 	CCLogicUniqueIdxNamePrefix = "bkcc_unique_"
 	CCLogicIndexNamePrefix     = "bkcc_idx_"
 )
+
+const (
+	// DefaultResBusinessSetFlag the default resource business set flag
+	DefaultResBusinessSetFlag = 1
+)

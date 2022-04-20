@@ -489,6 +489,10 @@ const (
 
 	CCErrorTopoGetAuthorizedBusinessSetListFailed = 1101114
 
+	CCErrorTopoForbiddenDeleteBuiltInBusinessSet = 1101115
+
+	CCErrorTopoForbiddenUpdateBuiltInBusinessSetScope = 1101116
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group

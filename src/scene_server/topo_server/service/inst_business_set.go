@@ -237,6 +237,21 @@ func (s *Service) UpdateBizSet(ctx *rest.Contexts) {
 		updateData[common.BKBizSetScopeField] = opt.Data.Scope
 	}
 
+	// check if update the built-in business set scope
+	isBuiltIn, err := s.isBuiltInBusinessSet(ctx.Kit, opt.BizSetIDs)
+	if err != nil {
+		blog.Errorf("determine whether it is a built-in business set error, ids: %v, err: %v, rid: %s", opt.BizSetIDs,
+			err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if isBuiltIn && opt.Data.Scope != nil && !opt.Data.Scope.MatchAll {
+		blog.Errorf("can not update built-in business set scope, opt: %v, rid: %s", opt, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoForbiddenUpdateBuiltInBusinessSetScope))
+		return
+	}
+
 	// update biz set instances
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Logics.InstOperation().UpdateInst(ctx.Kit, bizSetFilter, updateData, common.BKInnerObjIDBizSet)
@@ -272,6 +287,21 @@ func (s *Service) DeleteBizSet(ctx *rest.Contexts) {
 		return
 	}
 
+	// check if the built-in business set is included
+	isBuiltIn, err := s.isBuiltInBusinessSet(ctx.Kit, opt.BizSetIDs)
+	if err != nil {
+		blog.Errorf("determine whether it is a built-in business set error, ids: %v, err: %v, rid: %s", opt.BizSetIDs,
+			err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if isBuiltIn {
+		blog.Errorf("can not delete built-in business set, ids: %v, rid: %s", opt.BizSetIDs, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoForbiddenDeleteBuiltInBusinessSet))
+		return
+	}
+
 	// delete bizSet instances and related resources
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Logics.InstOperation().DeleteInstByInstID(ctx.Kit, common.BKInnerObjIDBizSet, opt.BizSetIDs, false)
@@ -288,6 +318,39 @@ func (s *Service) DeleteBizSet(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
+}
+
+func (s *Service) isBuiltInBusinessSet(kit *rest.Kit, bizSetIDs []int64) (bool, error) {
+	query := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKBizSetIDField: mapstr.MapStr{common.BKDBIN: bizSetIDs}},
+		Fields:         []string{common.BKDefaultField},
+		DisableCounter: true,
+	}
+
+	res, err := s.Logics.InstOperation().FindInst(kit, common.BKInnerObjIDBizSet, query)
+	if err != nil {
+		blog.Errorf("failed to find the biz set, query: %s, err: %v, rid: %s", query, err, kit.Rid)
+		return false, err
+	}
+
+	for _, bizSet := range res.Info {
+		if bizSet[common.BKDefaultField] == nil {
+			continue
+		}
+
+		defaultVal, err := util.GetInt64ByInterface(bizSet[common.BKDefaultField])
+		if err != nil {
+			blog.Errorf("parse default value failed, val: %v, err: %v, rid: %s", bizSet[common.BKDefaultField], err,
+				kit.Rid)
+			return false, err
+		}
+
+		if defaultVal == common.DefaultResBusinessSetFlag {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // PreviewBusinessSet  此预览接口用于创建业务集过程中的预览，支持进行条件匹配
