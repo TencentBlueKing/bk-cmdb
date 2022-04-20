@@ -24,9 +24,10 @@
                 <div class="property-name">
                   <span class="property-name-text">{{$t('业务范围')}}</span>
                 </div>
-                <div class="property-value">
+                <div class="property-value" v-bk-tooltips="{ content: $t('内置业务集不可编辑'), disabled: !isBuiltin }">
                   <business-scope-settings-form
                     class="form-component"
+                    :disabled="isBuiltin"
                     :data="scopeSettingsFormData"
                     @change="handleScopeSettingsChange" />
                 </div>
@@ -94,6 +95,8 @@
       const submitting = ref(false)
       const isEdit = computed(() => Boolean(formData.value.bk_biz_set_id))
       const title = computed(() => (isEdit.value ? t('编辑') : `${t('创建')}${model.value.bk_obj_name}`))
+
+      const isBuiltin = computed(() => formData.value?.default && formData.value.default === 1)
 
       const previewProps = reactive({
         show: false,
@@ -223,6 +226,7 @@
       return {
         isShow,
         isEdit,
+        isBuiltin,
         title,
         formData,
         saveAuth,
