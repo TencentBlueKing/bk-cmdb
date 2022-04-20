@@ -321,33 +321,22 @@ func (s *Service) DeleteBizSet(ctx *rest.Contexts) {
 }
 
 func (s *Service) isBuiltInBusinessSet(kit *rest.Kit, bizSetIDs []int64) (bool, error) {
-	query := &metadata.QueryCondition{
-		Condition:      mapstr.MapStr{common.BKBizSetIDField: mapstr.MapStr{common.BKDBIN: bizSetIDs}},
-		Fields:         []string{common.BKDefaultField},
-		DisableCounter: true,
+	condition := &metadata.Condition{
+		Condition: mapstr.MapStr{
+			common.BKBizSetIDField: mapstr.MapStr{common.BKDBIN: bizSetIDs},
+			common.BKDefaultField:  common.DefaultResBusinessSetFlag,
+		},
 	}
 
-	res, err := s.Logics.InstOperation().FindInst(kit, common.BKInnerObjIDBizSet, query)
+	resp, err := s.Engine.CoreAPI.CoreService().Instance().CountInstances(kit.Ctx, kit.Header,
+		common.BKInnerObjIDBizSet, condition)
 	if err != nil {
-		blog.Errorf("failed to find the biz set, query: %s, err: %v, rid: %s", query, err, kit.Rid)
+		blog.Errorf("count business set failed, cond: %v, err: %v, rid: %s", condition, err, kit.Rid)
 		return false, err
 	}
 
-	for _, bizSet := range res.Info {
-		if bizSet[common.BKDefaultField] == nil {
-			continue
-		}
-
-		defaultVal, err := util.GetInt64ByInterface(bizSet[common.BKDefaultField])
-		if err != nil {
-			blog.Errorf("parse default value failed, val: %v, err: %v, rid: %s", bizSet[common.BKDefaultField], err,
-				kit.Rid)
-			return false, err
-		}
-
-		if defaultVal == common.DefaultResBusinessSetFlag {
-			return true, nil
-		}
+	if resp.Count > 0 {
+		return true, nil
 	}
 
 	return false, nil

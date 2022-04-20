@@ -73,7 +73,18 @@ func addDefaultBusinessSet(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 
 	if len(result) == 1 {
 		if result[0].BizSetID == bizSetID && result[0].BizSetName == bizSetName && result[0].Scope.MatchAll &&
-			result[0].SupplierAccount == conf.OwnerID && result[0].Default == common.DefaultResBusinessSetFlag {
+			result[0].SupplierAccount == conf.OwnerID {
+
+			if result[0].Default != common.DefaultResBusinessSetFlag {
+				data := map[string]interface{}{
+					common.BKDefaultField: common.DefaultResBusinessSetFlag,
+				}
+
+				if err := db.Table(common.BKTableNameBaseBizSet).Update(ctx, filter, data); err != nil {
+					blog.Errorf("update business set default val failed, err: %v", err)
+					return err
+				}
+			}
 
 			return nil
 		}
