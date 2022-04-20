@@ -454,7 +454,7 @@
         })
       }
 
-      const isBuiltin = inst => inst?.default && inst.default === 1
+      const isBuiltin = inst => inst?.default === 1
 
       return  {
         properties,
