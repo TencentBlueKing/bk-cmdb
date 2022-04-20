@@ -57,8 +57,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  saveUsercustom({ commit, state, dispatch }, usercustom = {}) {
-    return $http.post('usercustom', usercustom, { cancelWhenRouteChange: false }).then(() => {
+  saveUsercustom({ commit, state, dispatch }, usercustom = {}, config = {}) {
+    return $http.post('usercustom', usercustom, { cancelWhenRouteChange: false, ...config }).then(() => {
       $http.cancelCache('searchUserCustom')
       commit('setUsercustom', usercustom)
       return state.usercustom
