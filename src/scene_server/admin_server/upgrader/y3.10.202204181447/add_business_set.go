@@ -49,14 +49,8 @@ func addDefaultBusinessSet(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 
 	result := make([]metadata.BizSetInst, 0)
 	filter := map[string]interface{}{
-		common.BKDBOR: []map[string]interface{}{
-			{
-				common.BKBizSetIDField: bizSetID,
-			},
-			{
-				common.BKBizSetNameField: bizSetName,
-			},
-		},
+		common.BKBizSetIDField:   bizSetID,
+		common.BKBizSetNameField: bizSetName,
 	}
 
 	err := db.Table(common.BKTableNameBaseBizSet).Find(filter).All(ctx, &result)

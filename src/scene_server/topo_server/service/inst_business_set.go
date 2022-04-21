@@ -28,6 +28,13 @@ import (
 	"configcenter/src/common/util"
 )
 
+type action string
+
+const (
+	updateAction action = "update"
+	deleteAction action = "delete"
+)
+
 // validateScopeFields validate if scope fields are all enum/organization type
 func (s *Service) validateScopeFields(kit *rest.Kit, fieldInfo *metadata.BizSetScopeParamsInfo) error {
 	// biz id field is allowed to use in biz set scope, exclude it in validation
@@ -237,18 +244,9 @@ func (s *Service) UpdateBizSet(ctx *rest.Contexts) {
 		updateData[common.BKBizSetScopeField] = opt.Data.Scope
 	}
 
-	// check if update the built-in business set scope
-	isBuiltIn, err := s.isBuiltInBusinessSet(ctx.Kit, opt.BizSetIDs)
-	if err != nil {
-		blog.Errorf("determine whether it is a built-in business set error, ids: %v, err: %v, rid: %s", opt.BizSetIDs,
-			err, ctx.Kit.Rid)
+	if err := s.doAboutBuiltInBusinessSet(ctx.Kit, opt.BizSetIDs, opt.Data.Scope, updateAction); err != nil {
+		blog.Errorf("do about built-in business set error, opt: %v, err: %v, rid: %s", opt, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
-		return
-	}
-
-	if isBuiltIn && opt.Data.Scope != nil && !opt.Data.Scope.MatchAll {
-		blog.Errorf("can not update built-in business set scope, opt: %v, rid: %s", opt, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoForbiddenUpdateBuiltInBusinessSetScope))
 		return
 	}
 
@@ -287,18 +285,9 @@ func (s *Service) DeleteBizSet(ctx *rest.Contexts) {
 		return
 	}
 
-	// check if the built-in business set is included
-	isBuiltIn, err := s.isBuiltInBusinessSet(ctx.Kit, opt.BizSetIDs)
-	if err != nil {
-		blog.Errorf("determine whether it is a built-in business set error, ids: %v, err: %v, rid: %s", opt.BizSetIDs,
-			err, ctx.Kit.Rid)
+	if err := s.doAboutBuiltInBusinessSet(ctx.Kit, opt.BizSetIDs, nil, deleteAction); err != nil {
+		blog.Errorf("do about built-in business set error, opt: %v, err: %v, rid: %s", opt, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
-		return
-	}
-
-	if isBuiltIn {
-		blog.Errorf("can not delete built-in business set, ids: %v, rid: %s", opt.BizSetIDs, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoForbiddenDeleteBuiltInBusinessSet))
 		return
 	}
 
@@ -320,7 +309,9 @@ func (s *Service) DeleteBizSet(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-func (s *Service) isBuiltInBusinessSet(kit *rest.Kit, bizSetIDs []int64) (bool, error) {
+func (s *Service) doAboutBuiltInBusinessSet(kit *rest.Kit, bizSetIDs []int64, scope *metadata.BizSetScope,
+	ac action) error {
+
 	condition := &metadata.Condition{
 		Condition: mapstr.MapStr{
 			common.BKBizSetIDField: mapstr.MapStr{common.BKDBIN: bizSetIDs},
@@ -332,14 +323,27 @@ func (s *Service) isBuiltInBusinessSet(kit *rest.Kit, bizSetIDs []int64) (bool, 
 		common.BKInnerObjIDBizSet, condition)
 	if err != nil {
 		blog.Errorf("count business set failed, cond: %v, err: %v, rid: %s", condition, err, kit.Rid)
-		return false, err
+		return err
 	}
 
-	if resp.Count > 0 {
-		return true, nil
+	switch ac {
+	case deleteAction:
+		// check if the built-in business set is included, if deleted, it will affect the use of other platforms.
+		if resp.Count > 0 {
+			blog.Errorf("can not delete built-in business set, ids: %v, rid: %s", bizSetIDs, kit.Rid)
+			return kit.CCError.CCError(common.CCErrorTopoForbiddenDeleteBuiltInBusinessSet)
+		}
+
+	case updateAction:
+		// check if update the built-in business set scope, if it changes, it will affect the use of other platforms.
+		if resp.Count > 0 && scope != nil {
+			blog.Errorf("can not update built-in business set scope, ids: %v, scope: %v, rid: %s", bizSetIDs, scope,
+				kit.Rid)
+			return kit.CCError.CCError(common.CCErrorTopoForbiddenUpdateBuiltInBusinessSetScope)
+		}
 	}
 
-	return false, nil
+	return nil
 }
 
 // PreviewBusinessSet  此预览接口用于创建业务集过程中的预览，支持进行条件匹配

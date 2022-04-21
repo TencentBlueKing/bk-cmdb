@@ -25,7 +25,7 @@ func init() {
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.10.202204181447")
+	blog.Infof("start execute y3.10.202204181447, add default business set")
 
 	if err = addDefaultBusinessSet(ctx, db, conf); err != nil {
 		blog.Errorf("upgrade y3.10.202204181447 add default business set failed, err: %v", err)
