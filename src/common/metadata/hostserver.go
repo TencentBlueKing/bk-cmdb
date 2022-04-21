@@ -898,3 +898,53 @@ func (h *HostIDArray) Validate() (rawError errors.RawErrorInfo) {
 	}
 	return errors.RawErrorInfo{}
 }
+
+// BindAgentParam bind gse agent to host request parameter
+type BindAgentParam struct {
+	HostID  int64  `json:"bk_host_id"`
+	AgentID string `json:"bk_agent_id"`
+}
+
+// Validate validate the BindAgentParam
+func (b *BindAgentParam) Validate() (rawError errors.RawErrorInfo) {
+	if b.HostID <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKHostIDField},
+		}
+	}
+
+	if len(b.AgentID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAgentIDField},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// UnbindAgentParam unbind gse agent and host request parameter
+type UnbindAgentParam struct {
+	HostID  int64  `json:"bk_host_id"`
+	AgentID string `json:"bk_agent_id"`
+}
+
+// Validate validate the UnbindAgentParam
+func (b *UnbindAgentParam) Validate() (rawError errors.RawErrorInfo) {
+	if b.HostID <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKHostIDField},
+		}
+	}
+
+	if len(b.AgentID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAgentIDField},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}

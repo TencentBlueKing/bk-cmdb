@@ -213,10 +213,11 @@ func (lgc *Logics) addHost(kit *rest.Kit, appID int64, host map[string]interface
 func (lgc *Logics) GetHostInfoByConds(kit *rest.Kit, cond map[string]interface{}) ([]mapstr.MapStr,
 	errors.CCErrorCoder) {
 	query := &metadata.QueryInput{
-		Condition: cond,
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Sort:      common.BKHostIDField,
+		Condition:      cond,
+		Start:          0,
+		Limit:          common.BKNoLimit,
+		Sort:           common.BKHostIDField,
+		DisableCounter: true,
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Host().GetHosts(kit.Ctx, kit.Header, query)

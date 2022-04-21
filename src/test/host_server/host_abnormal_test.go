@@ -633,6 +633,11 @@ var _ = Describe("host abnormal test", func() {
 
 	Describe("search host test", func() {
 
+		// 清空数据
+		BeforeEach(func() {
+			clearData()
+		})
+
 		// 准备数据
 		JustBeforeEach(func() {
 			prepareData()

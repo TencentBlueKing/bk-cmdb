@@ -658,6 +658,9 @@ const (
 
 	// BKAgentIDField the agent id field, used by agent to identify a host
 	BKAgentIDField = "bk_agent_id"
+
+	// BKAddressingField the host addressing mode field, data collection will collect & change inner ip if it's dynamic
+	BKAddressingField = "addressing"
 )
 
 const (
