@@ -184,6 +184,7 @@
 
 <style lang="scss" scoped>
   .business-scope-settings-form {
+    width: 100%;
     .condition-item {
       display: flex;
       align-items: center;
@@ -202,7 +203,8 @@
         margin-right: 8px;
       }
       .condition-value {
-        flex: 1;
+        flex: none;
+        width: calc(100% - 158px);
         &.organization {
           font-size: 14px;
         }

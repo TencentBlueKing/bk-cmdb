@@ -45,7 +45,9 @@
 </template>
 
 <script>
-  import { computed, defineComponent, reactive, ref, toRefs } from '@vue/composition-api'
+  import { computed, defineComponent, reactive, ref, toRefs, watch } from '@vue/composition-api'
+  import cloneDeep from 'lodash/cloneDeep'
+  import isEqual from 'lodash/isEqual'
   import store from '@/store'
   import { t } from '@/i18n'
   import { OPERATION } from '@/dictionary/iam-auth'
@@ -137,19 +139,23 @@
       })
       let saveData = defaultSaveData()
 
+      let scopeCopy = null
+      let scopeChanged = false
+
       const handleSave = async (values, changedValues, originalValues, type) => {
         try {
           submitting.value = true
           let result = null
           if (type === 'update') {
             // 编辑时模型属性中会存在bk_scope字段，这里删除掉使用saveData中的bk_scope
-            Reflect.deleteProperty(values, 'bk_scope')
+            Reflect.deleteProperty(changedValues, 'bk_scope')
 
             result = await businessSetService.update({
               bk_biz_set_ids: [formData.value.bk_biz_set_id],
               data: {
                 ...saveData,
-                bk_biz_set_attr: { ...values },
+                bk_scope: scopeChanged ? saveData.bk_scope : undefined,
+                bk_biz_set_attr: { ...changedValues }
               }
             })
             $success(t('编辑成功'))
@@ -209,19 +215,36 @@
         } else {
           Reflect.deleteProperty(saveData.bk_scope, 'filter')
         }
+
+        if (!scopeCopy) {
+          scopeCopy = cloneDeep(saveData.bk_scope)
+        }
+
+        scopeChanged = !isEqual(scopeCopy, saveData.bk_scope)
+      }
+
+      const resetData = () => {
+        // 关闭时重置saveData
+        saveData = defaultSaveData()
+
+        scopeCopy = null
+        scopeChanged = false
       }
 
       const handleSliderBeforeClose = () => {
         emit('update:show', false)
-
-        // 关闭时重置saveData
-        saveData = defaultSaveData()
       }
 
       const handlePreview = async () => {
         previewProps.show = true
         previewProps.payload = { ...saveData }
       }
+
+      watch(isShow, (show) => {
+        if (!show) {
+          resetData()
+        }
+      })
 
       return {
         isShow,
