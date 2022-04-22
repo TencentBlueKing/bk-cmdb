@@ -120,6 +120,10 @@ func (s *Service) initBizSet(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path: "/count/topoinst/host_service_inst/biz_set/{bk_biz_set_id}", Handler: s.CountBizSetTopoHostAndSrvInst})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodGet,
+		Path:    "/findmany/biz_set/simplify",
+		Handler: s.ListAllBusinessSetSimplify})
+
 	utility.AddToRestfulWebService(web)
 }
 
