@@ -88,12 +88,15 @@ const deleteById = (id, config) => http.post('deletemany/biz_set', {
   bk_biz_set_ids: [id]
 }, config)
 
+const getAll = config => http.get('findmany/biz_set/simplify', config)
+
 export default {
   find,
   findById,
   create,
   update,
   deleteById,
+  getAll,
   previewOfBeforeCreate,
   previewOfAfterCreate,
   getAuthorized,

@@ -452,6 +452,10 @@
         })
       }
 
+      if (query.value.create) {
+        handleCreate()
+      }
+
       return  {
         properties,
         propertyGroups,

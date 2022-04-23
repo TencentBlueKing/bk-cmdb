@@ -370,6 +370,10 @@
       } catch (e) {
         // ignore
       }
+
+      if (this.$route.query.create) {
+        this.handleCreate()
+      }
     },
     beforeDestroy() {
       this.unwatch()

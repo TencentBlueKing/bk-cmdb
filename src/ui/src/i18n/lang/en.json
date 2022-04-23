@@ -1574,5 +1574,7 @@
     "默认全部": "Default all",
     "无匹配人员": "no match",
     "已启用": "On",
-    "未启用": "Off"
+    "未启用": "Off",
+    "新建业务": "New business",
+    "新建业务集": "New Business Set"
 }

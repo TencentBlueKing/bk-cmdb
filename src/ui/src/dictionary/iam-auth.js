@@ -1151,20 +1151,20 @@ export const IAM_ACTIONS = {
     }
   },
 
-  // 业务资源查看 (用于控制业务导航下业务选择器的数据)
+  // 业务访问 (用于控制业务导航下业务选择器的数据)
   R_BIZ_RESOURCE: {
     id: 'find_business_resource',
-    name: ['业务资源查看', 'View Business Resource'],
+    name: ['业务访问', 'View Business Resource'],
     cmdb_action: 'business.viewBusinessResource',
     relation: [{
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
-      bk_biz_id: relationIds[0]
+      resource_id: relationIds[0]
     })
   },
-  // 业务集资源查看 (用于控制业务导航下业务集选择器的数据)
+  // 业务集访问 (用于控制业务导航下业务集选择器的数据)
   R_BIZ_SET_RESOURCE: {
     id: 'access_business_set',
     name: ['业务集访问', 'Access Business Set'],
@@ -1174,7 +1174,7 @@ export const IAM_ACTIONS = {
       instances: [IAM_VIEWS.BIZ_SET]
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
-      bk_biz_set_id: relationIds[0]
+      resource_id: relationIds[0]
     })
   }
 }

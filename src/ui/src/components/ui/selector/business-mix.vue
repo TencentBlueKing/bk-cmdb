@@ -1,7 +1,8 @@
 <template>
   <bk-select style="text-align: left;"
+    :loading="$loading([requestIds.biz, requestIds.bizset])"
     v-model="localSelected"
-    ext-popover-cls="business-mix-selector-popover"
+    :popover-width="320"
     :searchable="true"
     :search-with-pinyin="true"
     :clearable="false"
@@ -9,46 +10,37 @@
     :disabled="disabled"
     :popover-options="popoverOptions"
     @toggle="handleSelectToggle">
-    <bk-option v-for="(option, index) in sortedList"
-      :key="index"
+    <bk-option v-for="option in sortedList"
+      :key="option.id"
       :id="option.id"
-      :name="option.name">
-      <div class="option-item-content" :title="option.name">
-        <div class="text">
-          <span class="item-name">{{option.rawName}}</span>
-          <span class="item-id">({{option.rawId}})</span>
+      :name="option.name"
+      :disabled="!option.authorized">
+      <auth-mask tag="div" :auth="option.auth" :authorized="option.authorized">
+        <div
+          :class="['option-item-content', { disabled: !option.authorized }]"
+          :title="option.name">
+          <div class="text">
+            <span class="item-name">{{option.rawName}}</span>
+            <span class="item-id">({{option.rawId}})</span>
+          </div>
+          <i class="icon icon-cc-business-set" v-if="option.isBizSet"></i>
+          <i :class="['icon', 'bk-icon', 'collection', isCollected(option) ? 'icon-star-shape' : 'icon-star']"
+            @click.prevent.stop="handleCollect(option)">
+          </i>
         </div>
-        <i class="icon icon-cc-business-set" v-if="option.isBizSet"></i>
-        <i :class="['icon', 'bk-icon', 'collection', isCollected(option) ? 'icon-star-shape' : 'icon-star']"
-          @click.prevent.stop="handleCollect(option)">
-        </i>
-      </div>
+      </auth-mask>
     </bk-option>
-    <div class="business-extension" slot="extension" v-if="showApplyPermission || showApplyCreate">
-      <template v-if="showApplyPermission">
-        <a href="javascript:void(0)" class="extension-link"
-          @click="handleApplyBizPermission">
-          <i class="bk-icon icon-plus-circle"></i>
-          {{$t('申请业务权限')}}
-        </a>
-        <a href="javascript:void(0)" class="extension-link"
-          @click="handleApplyBizSetPermission">
-          <i class="bk-icon icon-plus-circle"></i>
-          {{$t('申请业务集权限')}}
-        </a>
-      </template>
-      <template v-if="showApplyCreate">
-        <a href="javascript:void(0)" class="extension-link"
-          @click="handleApplyCreate">
-          <i class="bk-icon icon-plus-circle"></i>
-          {{$t('申请创建业务')}}
-        </a>
-        <a href="javascript:void(0)" class="extension-link"
-          @click="handleApplyCreate">
-          <i class="bk-icon icon-plus-circle"></i>
-          {{$t('申请创建业务集')}}
-        </a>
-      </template>
+    <div class="business-extension" slot="extension">
+      <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS }" tag="div" class="extension-link"
+        @click="handleCreateBusiness">
+        <i class="bk-icon icon-plus-circle"></i>
+        {{$t('新建业务')}}
+      </cmdb-auth>
+      <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS_SET }" tag="div" class="extension-link"
+        @click="handleCreateBusinessSet">
+        <i class="bk-icon icon-plus-circle"></i>
+        {{$t('新建业务集')}}
+      </cmdb-auth>
     </div>
   </bk-select>
 </template>
@@ -56,13 +48,22 @@
 <script>
   import { mapGetters } from 'vuex'
   import businessSetService from '@/service/business-set/index.js'
-  import applyPermission from '@/utils/apply-permission.js'
-  import { BUSINESS_SELECTOR_COLLECTION } from '@/dictionary/menu-symbol'
+  import { verifyAuth } from '@/services/auth.js'
+  import { TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
+  import AuthMask from '@/components/ui/auth/auth-mask.vue'
+  import {
+    BUSINESS_SELECTOR_COLLECTION,
+    MENU_RESOURCE_BUSINESS,
+    MENU_RESOURCE_BUSINESS_SET
+  } from '@/dictionary/menu-symbol'
 
   const MAX_COLLECT_COUNT = 8
 
   export default {
     name: 'cmdb-business-mix-selector',
+    components: {
+      AuthMask
+    },
     props: {
       value: {
         type: String
@@ -77,20 +78,22 @@
           return {}
         }
       },
-      showApplyPermission: Boolean,
       showApplyCreate: Boolean
     },
     data() {
       return {
+        useIAM: this.$Site.authscheme === 'iam',
         normalizationList: [],
         sortedList: [],
         requestIds: {
+          biz: Symbol(),
+          bizset: Symbol(),
           collection: Symbol()
         }
       }
     },
     computed: {
-      ...mapGetters('objectBiz', ['bizId', 'authorizedBusiness']),
+      ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('userCustom', ['usercustom']),
       collection() {
         return this.usercustom[BUSINESS_SELECTOR_COLLECTION] || []
@@ -107,34 +110,100 @@
       }
     },
     async created() {
-      const list = await businessSetService.getAuthorizedWithCache()
-      const allList = [...this.authorizedBusiness, ...list]
-      const normalizationList = []
-      allList.forEach((item) => {
-        const isBizSet = Boolean(item.bk_biz_set_id)
-        const rawId = isBizSet ? item.bk_biz_set_id : item.bk_biz_id
-        const rawName = isBizSet ? item.bk_biz_set_name : item.bk_biz_name
-        normalizationList.push({
-          isBizSet,
-          rawId,
-          rawName,
-          // id值加后缀标明类型
-          id: isBizSet ? `${rawId}-bizset` : `${rawId}-biz`,
-          name: `${rawName} (${rawId})`
-        })
-      })
-      this.normalizationList = normalizationList
-      this.sortedList = this.normalizationList
+      this.getData()
     },
     methods: {
+      async getData() {
+        const [{ info: bizList = [] }, { info: bizsetList = [] }] = await Promise.all([
+          this.$http.get('biz/simplify', {
+            requestId: this.requestIds.biz,
+            fromCache: true
+          }),
+          businessSetService.getAll({
+            requestId: this.requestIds.bizset,
+            fromCache: true
+          })
+        ])
+
+        const allList = [...bizList, ...bizsetList]
+        const normalizationList = []
+        const authList = []
+
+        allList.forEach((item) => {
+          const isBizSet = Boolean(item.bk_biz_set_id)
+          const rawId = isBizSet ? item.bk_biz_set_id : item.bk_biz_id
+          const rawName = isBizSet ? item.bk_biz_set_name : item.bk_biz_name
+          normalizationList.push({
+            isBizSet,
+            rawId,
+            rawName,
+            authType: isBizSet ? 'bizSet' : 'business',
+            authorized: true,
+            // id值加后缀标明类型
+            id: isBizSet ? `${rawId}-bizset` : `${rawId}-biz`,
+            name: `${rawName} (${rawId})`
+          })
+
+          if (this.useIAM) {
+            authList.push({
+              type: isBizSet ? this.$OPERATION.R_BIZ_SET_RESOURCE : this.$OPERATION.R_BIZ_RESOURCE,
+              relation: [rawId]
+            })
+          }
+        })
+
+        if (this.useIAM) {
+          const authResult = await verifyAuth(TRANSFORM_TO_INTERNAL(authList)) || []
+          authResult.forEach(({ resource_id: id, resource_type: type, is_pass: isPass }, index) => {
+            const matched = normalizationList.find(item => item.authType === type && item.rawId === id)
+            matched.authorized = isPass
+            matched.auth = authList[index]
+          })
+        }
+
+        this.normalizationList = normalizationList
+        this.sortedList = this.normalizationList
+      },
       isCollected(option) {
         return this.collection.includes(option.id)
       },
       sortList(list) {
         return list.slice().sort((a, b) => {
-          if (this.isCollected(a) > this.isCollected(b)) {
+          const isACollected = this.isCollected(a)
+          const isBCollected = this.isCollected(b)
+
+          // 收藏的优先级最高
+          if (isACollected > isBCollected) {
             return -1
           }
+
+          // 同为收藏，先收藏的在前
+          if (isACollected && isBCollected) {
+            if (this.collection.indexOf(a.id) < this.collection.indexOf(b.id)) {
+              return -1
+            }
+            return 1
+          }
+
+          if (!isACollected && !isBCollected) {
+            // 有权限排前面
+            if (a.authorized > b.authorized) {
+              return -1
+            }
+
+            if (!a.authorized && !b.authorized) {
+              // 同为业务，id正序
+              if (!a.isBizSet && !b.isBizSet && a.rawId < b.rawId) {
+                return -1
+              }
+
+              // 同为业务集，id正序
+              if (a.isBizSet && b.isBizSet && a.rawId < b.rawId) {
+                return -1
+              }
+            }
+          }
+
           return 0
         })
       },
@@ -148,7 +217,7 @@
 
         if (isAdd && this.collection.length >= MAX_COLLECT_COUNT) {
           this.$warn(this.$t('限制收藏个数提示', { max: MAX_COLLECT_COUNT }))
-          return false
+          return
         }
 
         if (isAdd) {
@@ -172,27 +241,22 @@
           this.sortedList = this.sortList(this.normalizationList)
         }
       },
-      async handleApplyBizPermission() {
-        try {
-          await applyPermission({
-            type: this.$OPERATION.R_BIZ_RESOURCE,
-            relation: []
-          })
-        } catch (e) {
-          console.error(e)
-        }
+      handleCreateBusiness() {
+        this.$routerActions.redirect({
+          name: MENU_RESOURCE_BUSINESS,
+          query: {
+            create: 1
+          }
+        })
       },
-      async handleApplyBizSetPermission() {
-        try {
-          await applyPermission({
-            type: this.$OPERATION.R_BIZ_SET_RESOURCE,
-            relation: []
-          })
-        } catch (e) {
-          console.error(e)
-        }
-      },
-      handleApplyCreate() {}
+      handleCreateBusinessSet() {
+        this.$routerActions.redirect({
+          name: MENU_RESOURCE_BUSINESS_SET,
+          query: {
+            create: 1
+          }
+        })
+      }
     }
   }
 </script>
@@ -205,6 +269,10 @@
     align-items: center;
     justify-content: space-between;
 
+    &.disabled {
+      color: #c4c6cc;
+    }
+
     .text {
       flex: 1;
       overflow: hidden;
@@ -212,8 +280,12 @@
     }
     .icon {
       margin-left: 8px;
-      &.collection:not(.icon-star-shape) {
-        display: none;
+      &.collection {
+        padding: 2px;
+
+        &:not(.icon-star-shape) {
+          display: none;
+        }
       }
 
       &.icon-star-shape {
@@ -233,37 +305,34 @@
       }
     }
   }
+
   .business-extension {
     width: calc(100% + 32px);
     margin-left: -16px;
-  }
-  .extension-link {
-    display: block;
-    line-height: 38px;
-    background-color: #FAFBFD;
-    padding: 0 9px;
-    font-size: 13px;
-    color: #63656E;
-    &:hover {
-      opacity: .85;
-    }
-    .bk-icon {
-      font-size: 18px;
-      color: #979BA5;
-      vertical-align: text-top;
-    }
-  }
-</style>
 
-<style lang="scss">
-    .bk-select-dropdown-content.business-selector-popover {
-        .bk-option-content-default {
-            padding: 0;
-            .bk-option-name {
-                width: 100%;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
+    .extension-link {
+      display: block;
+      line-height: 38px;
+      background-color: #FAFBFD;
+      padding: 0 9px;
+      font-size: 13px;
+      color: #63656E;
+      cursor: pointer;
+      &:hover {
+        opacity: .85;
+      }
+      .bk-icon {
+        font-size: 18px;
+        color: #979BA5;
+        vertical-align: text-top;
+      }
+
+      &.disabled {
+        color: $textDisabledColor;
+        .bk-icon {
+          color: $textDisabledColor;
         }
+      }
     }
+  }
 </style>
