@@ -152,6 +152,24 @@
 
         this.initializing = true
 
+        const currentBizSetTopo = await this.loadTopologyData(this.bizSetId, BUILTIN_MODELS.BUSINESS_SET, this.bizSetId)
+
+        let currentBizNode = null
+
+        // 检测业务是否存在，如果查询条件中的业务不存在则清除查询条件刷新当前页面
+        if (this.bizId) {
+          currentBizNode = currentBizSetTopo.find(item => item.bk_inst_id === this.bizId)
+          if (!currentBizNode) {
+            this.$routerActions.redirect({
+              ...this.$route,
+              query: {},
+              reload: true
+            })
+
+            return
+          }
+        }
+
         if (topoPath) {
           let parentData = null
 
@@ -182,39 +200,34 @@
           }
         }
 
-        this.loadTopologyData(this.bizSetId, BUILTIN_MODELS.BUSINESS_SET, this.bizSetId)
-          .then((data) => {
-            const root = [
-              {
-                bk_obj_id: BUILTIN_MODELS.BUSINESS_SET,
-                bk_obj_name: '',
-                bk_inst_id: this.bizSetId,
-                bk_inst_name: this.bizSetName,
-                host_count: 0,
-                service_instance_count: 0,
-                child: data,
-              },
-            ]
+        // 初始化根节点
+        const root = [
+          {
+            bk_obj_id: BUILTIN_MODELS.BUSINESS_SET,
+            bk_obj_name: '',
+            bk_inst_id: this.bizSetId,
+            bk_inst_name: this.bizSetName,
+            host_count: 0,
+            service_instance_count: 0,
+            child: currentBizSetTopo,
+          },
+        ]
 
-            const currentBizNode = data.find(item => item.bk_inst_id === this.bizId)
+        if (topoTreeData && currentBizNode) {
+          currentBizNode.child = topoTreeData
+        }
 
-            if (topoTreeData && currentBizNode) {
-              currentBizNode.child = topoTreeData
-            }
+        this.$refs.tree.setData(root)
 
-            this.$refs.tree.setData(root)
+        const bizNodes = this.$refs.tree.nodes[0].children
+        const [firstBizNode] = bizNodes
 
-            const bizNodes = this.$refs.tree.nodes[0].children
-            const [firstBizNode] = bizNodes
+        const expanedNodes = currentBizNode ? expandedIds.map(id => this.$refs.tree.getNodeById(id)) : []
 
-            const expanedNodes = currentBizNode ? expandedIds.map(id => this.$refs.tree.getNodeById(id)) : []
+        this.loadNodeCount([...bizNodes, ...expanedNodes])
+        this.setDefaultExpandedNode(this.getNodeFromQuery() || firstBizNode)
 
-            this.loadNodeCount([...bizNodes, ...expanedNodes])
-            this.setDefaultExpandedNode(this.getNodeFromQuery() || firstBizNode)
-          })
-          .finally(() => {
-            this.initializing = false
-          })
+        this.initializing = false
       },
       /**
        * 设置默认展开节点
