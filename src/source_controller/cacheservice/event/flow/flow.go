@@ -85,7 +85,7 @@ func NewFlow(opts flowOptions, getDelEventDetails getDeleteEventDetailsFunc, par
 	return Flow{
 		flowOptions:           opts,
 		metrics:               event.InitialMetrics(opts.key.Collection(), "watch"),
-		getDeleteEventDetails: getDeleteEventDetails,
+		getDeleteEventDetails: getDelEventDetails,
 		parseEvent:            parseEvent,
 		cursorQueue: &cursorQueue{
 			cursorQueue: make(map[string]string),
