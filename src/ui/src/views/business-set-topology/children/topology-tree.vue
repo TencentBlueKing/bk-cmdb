@@ -160,12 +160,7 @@
         if (this.bizId) {
           currentBizNode = currentBizSetTopo.find(item => item.bk_inst_id === this.bizId)
           if (!currentBizNode) {
-            this.$routerActions.redirect({
-              ...this.$route,
-              query: {},
-              reload: true
-            })
-
+            this.clearQueryReload()
             return
           }
         }
@@ -181,7 +176,13 @@
 
             if (this.isLeaf(modelId)) break
 
-            const [, data] = await to(this.loadTopologyData(this.bizSetId, modelId, instanceId))
+            const [err, data] = await to(this.loadTopologyData(this.bizSetId, modelId, instanceId))
+
+            // 获取数据失败则清除条件刷新页面，非法id或者数据被删除
+            if (err) {
+              this.clearQueryReload()
+              return
+            }
 
             if (!topoTreeData) {
               topoTreeData = data
@@ -583,6 +584,13 @@
       handleResize() {
         this.$refs.tree.resize()
       },
+      clearQueryReload() {
+        this.$routerActions.redirect({
+          ...this.$route,
+          query: {},
+          reload: true
+        })
+      }
     },
   }
 </script>
