@@ -237,8 +237,7 @@ func (s *Service) generateGseConfigStreamTo(header http.Header, user string, def
 
 			port, err := strconv.ParseInt(ipPort[1], 10, 64)
 			if err != nil {
-				blog.Errorf("parse snap redis address port failed, err: %v, port: %s, rid: %s",
-					err, ipPort[1], rid)
+				blog.Errorf("parse snap redis address port failed, port: %s, err: %v, rid: %s", ipPort[1], err, rid)
 				return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "snap redis")}
 			}
 
@@ -253,12 +252,19 @@ func (s *Service) generateGseConfigStreamTo(header http.Header, user string, def
 			MasterName:       s.Config.SnapRedis.MasterName,
 		}
 
+		// The special logic here is to be compatible with the changes of the gse, it is necessary to explicitly specify
+		// whether the mode is sentinel or single.
+		if s.Config.SnapRedis.MasterName == "" {
+			snapStreamTo.Redis.Mode = common.RedisSingleMode
+		} else {
+			snapStreamTo.Redis.Mode = common.RedisSentinelMode
+		}
 		return snapStreamTo, nil
 	}
 
 	if metadata.GseConfigReportMode(s.Config.SnapReportMode) == metadata.GseConfigReportModeKafka {
 		if err := s.Config.SnapKafka.Check(); err != nil {
-			blog.Errorf("kafka config is error, err: %v", err)
+			blog.Errorf("kafka config is error, err: %v, rid: %s,", err, rid)
 			return nil, err
 		}
 
@@ -273,7 +279,7 @@ func (s *Service) generateGseConfigStreamTo(header http.Header, user string, def
 
 			port, err := strconv.ParseInt(ipPort[1], 10, 64)
 			if err != nil {
-				blog.Errorf("parse snap kafka address port failed, err: %v, port: %s, rid: %s", err, ipPort[1], rid)
+				blog.Errorf("parse snap kafka address port failed, port: %s, err: %v, rid: %s", ipPort[1], err, rid)
 				return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "snap kafka")}
 			}
 

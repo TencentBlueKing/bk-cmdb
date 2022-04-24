@@ -973,6 +973,12 @@ const (
 	EventCacheEventIDKey = BKCacheKeyV3Prefix + "event:inst_id"
 	RedisSnapKeyPrefix   = BKCacheKeyV3Prefix + "snapshot:"
 )
+const (
+	// RedisSentinelMode redis mode is sentinel
+	RedisSentinelMode = "sentinel"
+	// RedisSingleMode redis mode is single
+	RedisSingleMode = "single"
+)
 
 // api cache keys
 const (
