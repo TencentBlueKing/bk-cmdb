@@ -26,8 +26,9 @@ import (
 	"configcenter/src/source_controller/cacheservice/event"
 )
 
+// SearchHostWithInnerIPInCache find host information in redis by ip and cloudID.
 func (s *cacheService) SearchHostWithInnerIPInCache(ctx *rest.Contexts) {
-	opt := new(metadata.SearchHostWithInnerIPOption)
+	opt := new(metadata.SearchHostOption)
 	if err := ctx.DecodeInto(&opt); nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -35,6 +36,21 @@ func (s *cacheService) SearchHostWithInnerIPInCache(ctx *rest.Contexts) {
 	host, err := s.cacheSet.Host.GetHostWithInnerIP(ctx.Kit.Ctx, opt)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search host with inner ip in cache, but get host failed, err: %v", err)
+		return
+	}
+	ctx.RespString(&host)
+}
+
+// SearchHostWithAgentIDInCache find host information in redis by agentID.
+func (s *cacheService) SearchHostWithAgentIDInCache(ctx *rest.Contexts) {
+	opt := new(metadata.SearchHostOption)
+	if err := ctx.DecodeInto(&opt); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	host, err := s.cacheSet.Host.GetHostWithAgentID(ctx.Kit.Ctx, opt)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "no host with agentID be founded, err: %v", err)
 		return
 	}
 	ctx.RespString(&host)

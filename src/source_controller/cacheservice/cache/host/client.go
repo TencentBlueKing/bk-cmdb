@@ -34,7 +34,8 @@ type Client struct {
 // GetHostWithID get host with host id.
 // fields allows you can specify which fields you need only.
 func (c *Client) GetHostWithID(ctx context.Context, opt *metadata.SearchHostWithIDOption) (string, error) {
-	rid := ctx.Value(common.ContextRequestIDField)
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	needRefresh := false
 	data, err := redis.Client().Get(context.Background(), hostKey.HostDetailKey(opt.HostID)).Result()
 	if err != nil {
@@ -56,19 +57,19 @@ func (c *Client) GetHostWithID(ctx context.Context, opt *metadata.SearchHostWith
 	}
 
 	// data has already expired, need to refresh from db
-	ips, cloudID, detail, err := getHostDetailsFromMongoWithHostID(opt.HostID)
+	host, err := getHostDetailsFromMongoWithHostID(rid, opt.HostID)
 	if err != nil {
-		blog.Errorf("get host with id: %d, and cache expired, but get from mongo failed, err: %v, rid: %s", opt.HostID, err, rid)
+		blog.Errorf("get host with id: %d, and cache expired, but get from mongo failed, err: %v, rid: %s",
+			opt.HostID, err, rid)
 		return "", err
 	}
-
 	// try refresh cache
-	c.tryRefreshHostDetail(opt.HostID, ips, cloudID, detail)
+	c.tryRefreshHostDetail(rid, host)
 
 	if len(opt.Fields) == 0 {
-		return string(detail), nil
+		return host.detail, nil
 	} else {
-		h := string(detail)
+		h := host.detail
 		return *json.CutJsonDataWithFields(&h, opt.Fields), nil
 	}
 }
@@ -78,7 +79,8 @@ func (c *Client) GetHostWithID(ctx context.Context, opt *metadata.SearchHostWith
 // then it will not be return. so the returned array may not equal to
 // the request host ids length and the sequence is also may not same.
 func (c *Client) ListHostWithHostIDs(ctx context.Context, opt *metadata.ListWithIDOption) ([]string, error) {
-	rid := ctx.Value(common.ContextRequestIDField)
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	if len(opt.IDs) > 500 {
 		return nil, errors.New("host id length is over limit")
 	}
@@ -131,7 +133,7 @@ func (c *Client) ListHostWithHostIDs(ctx context.Context, opt *metadata.ListWith
 			return nil, err
 		}
 		for _, host := range toAdd {
-			c.tryRefreshHostDetail(host.id, host.ip, host.cloudID, []byte(host.detail))
+			c.tryRefreshHostDetail(rid, host)
 
 			if len(opt.Fields) != 0 {
 				list = append(list, *json.CutJsonDataWithFields(&host.detail, opt.Fields))
@@ -143,15 +145,35 @@ func (c *Client) ListHostWithHostIDs(ctx context.Context, opt *metadata.ListWith
 	return list, nil
 }
 
+// GetHostWithAgentID is to get host with the ip and cloud id it belongs.
+// the ip must be a unique one, can not be a ip string with multiple ip separated with comma.
+func (c *Client) GetHostWithAgentID(ctx context.Context, opt *metadata.SearchHostOption) (string, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	if opt.AgentID == "" {
+		return "", errors.New("invalid agentID")
+	}
+	detail, err := c.getHostDetailWithAgentID(rid, opt.AgentID)
+	if err != nil {
+		blog.Errorf("get host with agentID: %s failed, err：%v, rid: %v", opt.AgentID, err, rid)
+		return "", err
+	}
+
+	if len(opt.Fields) == 0 {
+		return *detail, nil
+	} else {
+		return *json.CutJsonDataWithFields(detail, opt.Fields), nil
+	}
+}
+
 // GetHostWithInnerIP is to get host with the ip and cloud id it belongs.
 // the ip must be a unique one, can not be a ip string with multiple ip separated with comma.
-func (c *Client) GetHostWithInnerIP(ctx context.Context, opt *metadata.SearchHostWithInnerIPOption) (string, error) {
-	rid := ctx.Value(common.ContextRequestIDField)
+func (c *Client) GetHostWithInnerIP(ctx context.Context, opt *metadata.SearchHostOption) (string, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	if len(opt.InnerIP) == 0 || len(strings.Split(opt.InnerIP, ",")) > 1 {
 		return "", errors.New("invalid ip address with multiple ip")
 	}
 
-	detail, err := c.getHostDetailWithIP(opt.InnerIP, opt.CloudID)
+	detail, err := c.getHostDetailWithIP(rid, opt.InnerIP, opt.CloudID, opt.AgentID)
 	if err != nil {
 		blog.Errorf("get host with inner ip: %s failed, err：%v, rid: %s", opt.InnerIP, err, rid)
 		return "", err
@@ -233,7 +255,7 @@ func (c *Client) ListHostsWithPage(ctx context.Context, opt *metadata.ListHostWi
 		}
 
 		for _, host := range refresh {
-			c.tryRefreshHostDetail(host.id, host.ip, host.cloudID, []byte(host.detail))
+			c.tryRefreshHostDetail(rid, host)
 
 			if len(opt.Fields) != 0 {
 				// only return with user needed fields.

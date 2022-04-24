@@ -19,6 +19,7 @@ import (
 	"reflect"
 	"strconv"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/driver/redis"
@@ -45,10 +46,53 @@ end;
 return detail
 `
 
-const hostCloudIdRelationNotExitError = "host cloud id relation not exist"
+const hostCloudIdRelationNotExitError = "host relation not exist"
 const hostDetailNotExitError = "host detail not exist"
 
-func (c *Client) getHostDetailWithIP(innerIP string, cloudID int64) (*string, error) {
+func (c *Client) getHostDetailWithAgentID(rid string, agentID string) (*string, error) {
+	keys := hostKey.AgentIDKey(agentID)
+
+	result, err := redis.Client().Eval(context.Background(), getHostWithIpScript, []string{keys},
+		hostCloudIdRelationNotExitError, hostDetailNotExitError).Result()
+	if err != nil {
+		return nil, fmt.Errorf("run getHostWithIpScript in redis failed, err: %v", err)
+	}
+	resp, ok := result.(string)
+	if !ok {
+		return nil, fmt.Errorf("run getHostWithIpScript in redis, but get invalid result data: %v", result)
+	}
+
+	switch resp {
+	case hostCloudIdRelationNotExitError:
+		blog.V(5).Infof("run getHostWithIpScript in redis, but not find key: %s, rid: %s", keys, rid)
+	case hostDetailNotExitError:
+		blog.V(5).Infof("not find host detail in redis key pattern: %s, rid: %s", hostKey.HostDetailKey(-1), rid)
+		// host detail not exist
+	default:
+		// we have find the data, return directly.
+		return &resp, nil
+	}
+
+	// now, we need to refresh the cache.
+	hostID, detail, err := getHostDetailsFromMongoWithAgentID(rid, agentID)
+	if err != nil {
+		return nil, fmt.Errorf("get host detail with agentID :%s failed, err: %v, rid: %s", agentID, err, rid)
+	}
+
+	host := &hostBase{
+		hostID:      hostID,
+		agentID:     agentID,
+		addressType: common.BKAddressingStatic,
+		detail:      string(detail),
+	}
+	// refreshing the cache through agentID does not need to care about addressType, just assign static value directly.
+	c.tryRefreshHostDetail(rid, host)
+	detailStr := string(detail)
+	return &detailStr, nil
+}
+
+func (c *Client) getHostDetailWithIP(rid string, innerIP string, cloudID int64, agentID string) (*string, error) {
+	detailStr := ""
 	keys := hostKey.IPCloudIDKey(innerIP, cloudID)
 	result, err := redis.Client().Eval(context.Background(), getHostWithIpScript, []string{keys}, hostCloudIdRelationNotExitError,
 		hostDetailNotExitError).Result()
@@ -65,9 +109,10 @@ func (c *Client) getHostDetailWithIP(innerIP string, cloudID int64) (*string, er
 	switch resp {
 	case hostCloudIdRelationNotExitError:
 		// host inner ip and cloud id relation not exist
-		blog.V(5).Infof("run getHostWithIpScript in redis, but not find key: %s", keys)
+		blog.V(5).Infof("run getHostWithIpScript in redis, but not find key: %s, rid: %s", keys, rid)
 	case hostDetailNotExitError:
-		blog.V(5).Infof("run getHostWithIpScript in redis, but not find host detail key pattern: %s", hostKey.HostDetailKey(-1))
+		blog.V(5).Infof("run getHostWithIpScript in redis, but not find host detail key pattern: %s, rid: %s",
+			hostKey.HostDetailKey(-1), rid)
 		// host detail not exist
 	default:
 		// we have find the data, return directly.
@@ -77,11 +122,21 @@ func (c *Client) getHostDetailWithIP(innerIP string, cloudID int64) (*string, er
 	// now, we need to refresh the cache.
 	hostID, detail, err := getHostDetailsFromMongoWithIP(innerIP, cloudID)
 	if err != nil {
+		blog.Errorf("get host detail with ip failed, innerIP: %s, err: %v, rid: %s", innerIP, err, rid)
 		return nil, fmt.Errorf("get host detail with ip failed, err: %v", err)
 	}
+	host := &hostBase{
+		hostID:      hostID,
+		cloudID:     cloudID,
+		ip:          innerIP,
+		agentID:     agentID,
+		addressType: common.BKAddressingStatic,
+		detail:      string(detail),
+	}
+	// when querying through ip+cloudID, you must directly use the scene where the addressType is static
+	c.tryRefreshHostDetail(rid, host)
+	detailStr = string(detail)
 
-	c.tryRefreshHostDetail(hostID, innerIP, cloudID, detail)
-	detailStr := string(detail)
 	return &detailStr, nil
 }
 

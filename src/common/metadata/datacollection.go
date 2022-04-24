@@ -12,6 +12,13 @@
 
 package metadata
 
+const (
+	// MonitorDataSourcesDelayQueue monitoring and reporting data comes from the delay queue.
+	MonitorDataSourcesDelayQueue = "delayQueue"
+	// MonitorDataSourcesChannel the source of monitoring and reporting data is channels such as redis or kafka.
+	MonitorDataSourcesChannel = "channel"
+)
+
 type AddDeviceResult struct {
 	DeviceID uint64 `json:"device_id"`
 }
