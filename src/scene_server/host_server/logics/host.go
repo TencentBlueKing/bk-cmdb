@@ -836,7 +836,7 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 	_, doErr := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, input)
 	if doErr != nil {
 		blog.ErrorJSON("CloneHostProperty UpdateInstance error. err: %s,condition:%s,rid:%s", doErr, input, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		return doErr
 	}
 
 	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {

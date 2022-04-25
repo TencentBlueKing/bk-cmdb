@@ -417,12 +417,12 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 				common.BKModuleIDField: map[string]interface{}{common.BKDBIN: planRequest.ModuleIDs}},
 			Data: map[string]interface{}{common.HostApplyEnabledField: true},
 		}
-		
+
 		_, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 			common.BKInnerObjIDModule, op)
 		if err != nil {
 			blog.Errorf("update instance of module failed, option: %s, err: %v, rid: %s", op, err, rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return err
 		}
 
 		// save rules to database
@@ -546,11 +546,11 @@ func (s *Service) updateHostPlan(planResult metadata.HostApplyPlanResult, kit *r
 				blog.Errorf("update host failed, option: %s, err: %v, rid: %s", updateOp, err, kit.Rid)
 				for _, hostID := range hostIDs {
 					hostApplyResult := metadata.HostApplyResult{HostID: hostID}
-					hostApplyResult.SetError(kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
+					hostApplyResult.SetError(err)
 					hostApplyResults = append(hostApplyResults, hostApplyResult)
 				}
 				if firstErr == nil {
-					firstErr = errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+					firstErr = err
 				}
 				return
 			}

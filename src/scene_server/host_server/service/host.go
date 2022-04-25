@@ -632,7 +632,7 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v, input: %+v, param: %+v, rid: %s",
 				err, data, opt, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return err
 		}
 
 		// save audit log.

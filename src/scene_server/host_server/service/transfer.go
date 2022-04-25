@@ -360,7 +360,7 @@ func (s *Service) updateHostByHostApplyConflictResolvers(kit *rest.Kit,
 			common.BKInnerObjIDHost, updateOption)
 		if err != nil {
 			blog.ErrorJSON("update host failed, option: %#v, err: %v, rid: %s", updateOption, err, kit.Rid)
-			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return err
 		}
 
 	}
