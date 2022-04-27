@@ -16,6 +16,7 @@ var hostServerClient = test.GetClientSet().HostServer()
 var apiServerClient = test.GetClientSet().ApiServer()
 var instClient = test.GetClientSet().TopoServer().Instance()
 var dirClient = test.GetClientSet().TopoServer().ResourceDirectory()
+var procServerClient = test.GetClientSet().ProcServer().Service()
 
 func TestHostServer(t *testing.T) {
 	RegisterFailHandler(util.Fail)

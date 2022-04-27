@@ -58,7 +58,8 @@ type ListServiceTemplateInput struct {
 	// search service templates by name
 	Search string `json:"search"`
 	// used with search, means whether search service templates with exact name or not
-	IsExact bool `json:"is_exact"`
+	IsExact            bool    `json:"is_exact"`
+	ServiceTemplateIDs []int64 `json:"service_template_ids"`
 }
 
 type DeleteServiceTemplatesInput struct {
@@ -1982,4 +1983,10 @@ type SrvInstNameParams struct {
 	ServiceInstanceID int64                  `json:"service_instance_id"`
 	Host              map[string]interface{} `json:"host"`
 	Process           *Process               `json:"process"`
+}
+
+// SrvTemplate service template struct
+type SrvTemplate struct {
+	ID   int64  `json:"id" bson:"id" mapstructure:"id"`
+	Name string `json:"name" bson:"name" mapstructure:"name"`
 }

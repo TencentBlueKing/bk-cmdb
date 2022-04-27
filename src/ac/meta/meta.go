@@ -109,9 +109,8 @@ const (
 	EmptyAction Action = "" // used for register resources
 	SkipAction  Action = "skip"
 
+	Execute          Action = "execute"
 	DefaultHostApply Action = "default"
-
-	Execute Action = "execute"
 
 	// move resource pool hosts to a business idle module
 	MoveResPoolHostToBizIdleModule Action = "moveResPoolHostToBizIdleModule"

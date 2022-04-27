@@ -945,3 +945,90 @@ func getPreviewsResult(transferPlans []metadata.HostTransferPlan,
 	}
 	return previews
 }
+
+func (s *Service) getRulesPriorityFromTemplate(kit *rest.Kit, moduleIDs []int64, bizID int64) (
+	[]metadata.HostApplyRule, error) {
+
+	moduleRes, err := s.getModuleRelateHostApply(kit, bizID, moduleIDs, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.过滤出需要查询主机应用规则的模版id和模块id
+	enabledModuleIDs := make([]int64, 0)
+	enabledModuleIDMap := make(map[int64]bool)
+	tempToModMap := make(map[int64][]int64)
+	srvTmpIDs := make([]int64, 0)
+	for _, module := range moduleRes {
+		if module.ServiceTemplateID != 0 {
+			tempToModMap[module.ServiceTemplateID] = append(tempToModMap[module.ServiceTemplateID], module.ModuleID)
+			srvTmpIDs = append(srvTmpIDs, module.ServiceTemplateID)
+
+			if module.HostApplyEnabled {
+				enabledModuleIDMap[module.ModuleID] = true
+			}
+			continue
+		}
+
+		if module.HostApplyEnabled {
+			enabledModuleIDs = append(enabledModuleIDs, module.ModuleID)
+		}
+	}
+
+	enableSrvTemplateIDs := make([]int64, 0)
+	if len(srvTmpIDs) != 0 {
+		srvTempStatus, err := s.getSrvTemplateApplyStatus(kit, bizID, srvTmpIDs)
+		if err != nil {
+			blog.Errorf("get service template host apply status failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+
+		for templateID, status := range srvTempStatus {
+			if status {
+				enableSrvTemplateIDs = append(enableSrvTemplateIDs, templateID)
+				continue
+			}
+			for _, moduleID := range tempToModMap[templateID] {
+				if enabledModuleIDMap[moduleID] {
+					enabledModuleIDs = append(enabledModuleIDs, moduleID)
+				}
+			}
+		}
+	}
+
+	// 2.查询有模版并且模版开启主机自动应用的规则
+	rules := make([]metadata.HostApplyRule, 0)
+	if len(enableSrvTemplateIDs) != 0 {
+		srvTemplateRules, err := s.findSrvTemplateRule(kit, bizID, enableSrvTemplateIDs)
+		if err != nil {
+			blog.Errorf("list service template host apply rule failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+
+		for _, rule := range srvTemplateRules {
+			moduleIDs, exist := tempToModMap[rule.ServiceTemplateID]
+			if !exist {
+				continue
+			}
+
+			for _, moduleID := range moduleIDs {
+				rule.ModuleID = moduleID
+				rules = append(rules, rule)
+			}
+		}
+	}
+
+	// 3.查询没有模版，以及有模版但是模版没有开启主机自动应用的模块的规则
+	if len(enabledModuleIDs) != 0 {
+		moduleRules, err := s.getEnabledModuleRules(kit, bizID, enabledModuleIDs)
+		if err != nil {
+			blog.Errorf("get module host apply rule failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+		if len(moduleRules) != 0 {
+			rules = append(rules, moduleRules...)
+		}
+	}
+
+	return rules, nil
+}

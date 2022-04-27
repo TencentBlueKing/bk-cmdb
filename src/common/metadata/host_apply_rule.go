@@ -70,6 +70,7 @@ type MultipleHostApplyRuleResult struct {
 }
 
 type ListHostApplyRuleOption struct {
+	ApplicationID      int64    `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	ModuleIDs          []int64  `json:"bk_module_ids" bson:"bk_module_ids"`
 	ServiceTemplateIDs []int64  `json:"service_template_ids" bson:"service_template_ids"`
 	AttributeIDs       []int64  `json:"bk_attribute_ids" bson:"bk_attribute_ids"`
@@ -401,11 +402,13 @@ type HostApplyRsp struct {
 	TaskId string `json:"task_id"`
 }
 type HostApplyPlanRequest struct {
-	RemoveRuleIDs     []int64                     `field:"remove_rule_ids" json:"remove_rule_ids" bson:"remove_rule_ids" mapstructure:"remove_rule_ids"`
-	IgnoreRuleIDs     []int64                     `field:"ignore_rule_ids" json:"ignore_rule_ids" bson:"ignore_rule_ids" mapstructure:"ignore_rule_ids"`
-	AdditionalRules   []CreateHostApplyRuleOption `field:"additional_rules" json:"additional_rules" bson:"additional_rules" mapstructure:"additional_rules"`
-	ConflictResolvers []HostApplyConflictResolver `field:"conflict_resolvers" json:"conflict_resolvers" bson:"conflict_resolvers" mapstructure:"conflict_resolvers"`
-	ModuleIDs         []int64                     `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
+	ApplicationID      int64                       `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
+	RemoveRuleIDs      []int64                     `field:"remove_rule_ids" json:"remove_rule_ids" bson:"remove_rule_ids" mapstructure:"remove_rule_ids"`
+	IgnoreRuleIDs      []int64                     `field:"ignore_rule_ids" json:"ignore_rule_ids" bson:"ignore_rule_ids" mapstructure:"ignore_rule_ids"`
+	AdditionalRules    []CreateHostApplyRuleOption `field:"additional_rules" json:"additional_rules" bson:"additional_rules" mapstructure:"additional_rules"`
+	ConflictResolvers  []HostApplyConflictResolver `field:"conflict_resolvers" json:"conflict_resolvers" bson:"conflict_resolvers" mapstructure:"conflict_resolvers"`
+	ModuleIDs          []int64                     `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
+	ServiceTemplateIDs []int64                     `field:"service_template_ids" json:"service_template_ids" bson:"service_template_ids"`
 	// optional, if set, only hostID in HostIDs will be used
 	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" bson:"bk_host_ids" mapstructure:"bk_host_ids"`
 }
@@ -441,7 +444,6 @@ func (container *ErrorContainer) GetError() errors.CCErrorCoder {
 }
 
 type SearchRuleRelatedModulesOption struct {
-	Keyword     string                    `json:"keyword" field:"keyword" mapstructure:"keyword"`
 	QueryFilter *querybuilder.QueryFilter `json:"query_filter" field:"query_filter" mapstructure:"query_filter"`
 }
 
@@ -472,4 +474,57 @@ func (op *UpdateHostApplyEnableStatusOption) Validate() (rawError errors.RawErro
 
 	}
 	return errors.RawErrorInfo{}
+}
+
+// GetHostApplyStatusParam get service template host apply status param
+type GetHostApplyStatusParam struct {
+	ApplicationID int64   `json:"bk_biz_id"`
+	ModuleIDs     []int64 `json:"bk_module_ids"`
+}
+
+// HostApplyStatusResult host apply status result
+type HostApplyStatusResult struct {
+	ModuleID         int64 `json:"bk_module_id"`
+	HostApplyEnabled bool  `json:"host_apply_enabled"`
+}
+
+// RuleRelatedServiceTemplate rule related service template option
+type RuleRelatedServiceTemplateOption struct {
+	ApplicationID int64                     `json:"bk_biz_id"`
+	QueryFilter   *querybuilder.QueryFilter `json:"query_filter"`
+}
+
+// InvalidHostCountOption request parameters struct about invalid host count
+type InvalidHostCountOption struct {
+	ApplicationID int64 `json:"bk_biz_id"`
+	ID            int64 `json:"id"`
+}
+
+// InvalidHostCountResult the result struct about invalid host count
+type InvalidHostCountResult struct {
+	Count int64 `json:"count"`
+}
+
+// HostApplyRuleCountOption service template host apply rule count option
+type HostApplyRuleCountOption struct {
+	ApplicationID      int64   `json:"bk_biz_id"`
+	ServiceTemplateIDs []int64 `json:"service_template_ids"`
+}
+
+// HostApplyRuleCountResult service template host apply rule count
+type HostApplyRuleCountResult struct {
+	ServiceTemplateID int64 `json:"service_template_id"`
+	Count             int64 `json:"count"`
+}
+
+// ModuleFinalRulesParam module final rules param
+type ModuleFinalRulesParam struct {
+	ApplicationID int64   `json:"bk_biz_id"`
+	ModuleIDs     []int64 `json:"bk_module_ids"`
+}
+
+// ServiceTemplatesResponse service template response
+type ServiceTemplatesResponse struct {
+	BaseResp `json:",inline"`
+	Data     []SrvTemplate `json:"data"`
 }

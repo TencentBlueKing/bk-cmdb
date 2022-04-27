@@ -173,7 +173,7 @@
     },
     methods: {
       setDefaultExpand() {
-        const expandedId = this.$route.meta.menu.parent
+        const expandedId = this.$route.meta?.menu?.parent
         if (expandedId) {
           this.$set(this.state, expandedId, { expanded: true })
         } else if (this.relativeActiveName) {

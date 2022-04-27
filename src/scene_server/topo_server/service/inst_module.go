@@ -284,6 +284,7 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 		Page    *metadata.BasePage `field:"page" json:"page" mapstructure:"page"`
 		Keyword string             `field:"keyword" json:"keyword" mapstructure:"keyword"`
 		Modules []int64            `field:"bk_module_ids" json:"bk_module_ids" mapstructure:"bk_module_ids"`
+		Fields  []string           `field:"fields" json:"fields" mapstructure:"fields"`
 	}{}
 	if err := ctx.DecodeInto(&requestBody); err != nil {
 		ctx.RespAutoError(err)
@@ -326,6 +327,11 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 		Page:      *requestBody.Page,
 		Condition: filter,
 	}
+
+	if len(requestBody.Fields) > 0 {
+		qc.Fields = requestBody.Fields
+	}
+
 	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		common.BKInnerObjIDModule, qc)
 	if err != nil {
@@ -549,13 +555,6 @@ func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {
 		return
 	}
 
-	topoRoot, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx,
-		ctx.Kit.Header, bizID, false)
-	if err != nil {
-		blog.Errorf("search mainline instance topo failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
 	matchNodes := make([]metadata.TopoNode, 0)
 	for _, module := range modules {
 		matchNodes = append(matchNodes, metadata.TopoNode{
@@ -563,41 +562,8 @@ func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {
 			InstanceID: module.ModuleID,
 		})
 	}
-	topoRoot.DeepFirstTraversal(func(node *metadata.TopoInstanceNode) {
-		matched := requestBody.QueryFilter.Match(func(r querybuilder.AtomRule) bool {
-			if r.Field != metadata.TopoNodeKeyword {
-				return false
-			}
-			valueStr, ok := r.Value.(string)
-			if ok == false {
-				return false
-			}
-			// case-insensitive contains
-			if r.Operator == querybuilder.OperatorContains {
-				if util.CaseInsensitiveContains(node.InstanceName, valueStr) {
-					return true
-				}
-			}
-			return false
-		})
-		if matched {
-			matchNodes = append(matchNodes, metadata.TopoNode{
-				ObjectID:   node.ObjectID,
-				InstanceID: node.InstanceID,
-			})
-		}
-	})
-	// unique result
-	finalNodes := make([]metadata.TopoNode, 0)
-	existMap := make(map[string]bool)
-	for _, item := range matchNodes {
-		if _, exist := existMap[item.Key()]; exist == true {
-			continue
-		}
-		existMap[item.Key()] = true
-		finalNodes = append(finalNodes, item)
-	}
-	ctx.RespEntity(finalNodes)
+
+	ctx.RespEntity(matchNodes)
 }
 
 // UpdateModuleHostApplyEnableStatus update object host if apply's status is enabled

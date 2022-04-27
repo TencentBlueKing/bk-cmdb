@@ -636,6 +636,8 @@ const (
 
 	CCErrSyncServiceInstanceByTemplateFailed = 1108045
 
+	CCErrFindServiceTemplateByModuleFailed = 1108046
+
 	// audit log 1109XXX
 	CCErrAuditSaveLogFailed      = 1109001
 	CCErrAuditTakeSnapshotFailed = 1109002

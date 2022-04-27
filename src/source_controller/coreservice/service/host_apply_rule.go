@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
@@ -318,4 +319,54 @@ func (s *coreService) BatchUpdateHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(result)
+}
+
+func (s *coreService) UpdateHostByHostApplyRule(ctx *rest.Contexts) {
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	option := metadata.UpdateHostByHostApplyRuleOption{}
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	relationFilter := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: option.HostIDs}}
+	relations := make([]metadata.ModuleHost, 0)
+	err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(relationFilter).All(ctx.Kit.Ctx, &relations)
+	if err != nil {
+		blog.Errorf("find %s failed, filter: %s, err: %v, rid: %s", common.BKTableNameModuleHostConfig, relationFilter,
+			err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result, err := s.core.HostApplyRuleOperation().RunHostApplyOnHosts(ctx.Kit, bizID, relations)
+	if err != nil {
+		blog.Errorf("UpdateHostByHostApplyRule failed, RunHostApplyOnHosts failed, option: %+v, err: %+v, rid: %s", option, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
+}
+
+// SearchRuleRelatedServiceTemplate search rule related service templates
+func (s *coreService) SearchRuleRelatedServiceTemplates(ctx *rest.Contexts) {
+	option := metadata.RuleRelatedServiceTemplateOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	serviceTemplates, err := s.core.HostApplyRuleOperation().SearchRuleRelatedServiceTemplates(ctx.Kit, option)
+	if err != nil {
+		blog.Errorf("search templates failed, option: %v, err: %v, rid: %s", option, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(serviceTemplates)
 }

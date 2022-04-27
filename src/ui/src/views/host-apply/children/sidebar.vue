@@ -1,9 +1,19 @@
 <template>
   <div class="host-apply-sidebar">
     <div class="tree-wrapper">
+      <div class="config-mode">
+        <bk-radio-group class="radio-group" v-model="configMode">
+          <bk-radio-button
+            :disabled="Boolean(actionMode) && configMode !== CONFIG_MODE.MODULE"
+            :value="CONFIG_MODE.MODULE">{{$t('按业务拓扑')}}</bk-radio-button>
+          <bk-radio-button
+            :disabled="Boolean(actionMode) && configMode !== CONFIG_MODE.TEMPLATE"
+            :value="CONFIG_MODE.TEMPLATE">{{$t('按服务模板')}}</bk-radio-button>
+        </bk-radio-group>
+      </div>
       <div class="searchbar">
         <div class="search-select">
-          <search-select-mix></search-select-mix>
+          <search-select-mix :mode="configMode" />
         </div>
         <div class="action-menu" v-show="!actionMode">
           <bk-dropdown-menu
@@ -21,8 +31,7 @@
                     href="javascript:;"
                     slot-scope="{ disabled }"
                     :class="{ disabled }"
-                    @click="handleBatchAction('batch-edit')"
-                  >
+                    @click="handleBatchAction('batch-edit')">
                     {{$t('批量编辑')}}
                   </a>
                 </cmdb-auth>
@@ -33,8 +42,7 @@
                     href="javascript:;"
                     slot-scope="{ disabled }"
                     :class="{ disabled }"
-                    @click="handleBatchAction('batch-del')"
-                  >
+                    @click="handleBatchAction('batch-del')">
                     {{$t('批量删除')}}
                   </a>
                 </cmdb-auth>
@@ -43,57 +51,68 @@
           </bk-dropdown-menu>
         </div>
       </div>
-      <topology-tree
-        ref="topologyTree"
-        :tree-options="treeOptions"
-        :action="actionMode"
-        :checked="checkedNodes"
-        @selected="handleTreeSelected"
-        @checked="handleTreeChecked"
-      ></topology-tree>
+      <KeepAlive>
+        <component
+          :is="configTree.is"
+          ref="topologyTree"
+          v-bind="configTree.props"
+          v-on="configTree.events" />
+      </KeepAlive>
     </div>
-    <div class="checked-list" v-show="showCheckedPanel">
-      <div class="panel-hd">
-        <div class="panel-title">
-          <i18n path="已选择N个模块">
+    <div class="checked-list" v-show="showCheckPanel">
+      <batch-check-panel
+        v-bind="checkPanelProps"
+        @clear="handleClearChecked"
+        @edit="handleGoEdit"
+        @cancel="handleCancelEdit">
+        <template #title>
+          <i18n path="已选择N个模块" v-if="isModuleMode">
             <em class="checked-num" place="count">{{checkedList.length}}</em>
           </i18n>
-          <a href="javascript:;" class="clear-all" @click="handleClearChecked">{{$t('清空')}}</a>
-        </div>
-      </div>
-      <div class="panel-bd">
-        <dl class="module-list">
-          <div class="module-item" v-for="item in checkedList" :key="item.bk_inst_id">
-            <dt class="module-name">{{item.bk_inst_name}}</dt>
-            <dd class="module-path" :title="item.path.join(' / ')">{{item.path.join(' / ')}}</dd>
-            <dd class="module-icon"><span>{{$i18n.locale === 'en' ? 'M' : '模'}}</span></dd>
-            <dd class="action-icon">
-              <a href="javascript:;" @click="handleRemoveChecked(item.bk_inst_id)">
+          <i18n path="已选择N个模板" v-else-if="isTemplateMode">
+            <em class="checked-num" place="count">{{checkedTemplateList.length}}</em>
+          </i18n>
+        </template>
+        <template #content>
+          <dl class="module-list" v-if="isModuleMode">
+            <div class="module-item" v-for="item in checkedList" :key="item.bk_inst_id">
+              <dt class="module-name">{{item.bk_inst_name}}</dt>
+              <dd class="module-path" :title="item.path.join(' / ')">{{item.path.join(' / ')}}</dd>
+              <dd class="module-icon"><span>{{$i18n.locale === 'en' ? 'M' : '模'}}</span></dd>
+              <dd class="action-icon">
+                <a href="javascript:;" @click="handleRemoveChecked(item.bk_inst_id)">
+                  <i class="bk-icon icon-close"></i>
+                </a>
+              </dd>
+            </div>
+          </dl>
+          <ul class="template-list" v-else-if="isTemplateMode">
+            <li class="template-item" v-for="item in checkedTemplateList" :key="item.id">
+              <i class="template-icon"><span>{{$i18n.locale === 'en' ? 'M' : '模'}}</span></i>
+              <div class="template-name">{{item.name}}</div>
+              <a href="javascript:;" class="action-icon" @click="handleRemoveChecked(item.id)">
                 <i class="bk-icon icon-close"></i>
               </a>
-            </dd>
-          </div>
-        </dl>
-      </div>
-      <div class="panel-ft">
-        <bk-button theme="primary" :disabled="!checkedList.length" @click="handleGoEdit">
-          {{$t(actionMode === 'batch-del' ? '去删除' : '去编辑')}}
-        </bk-button>
-        <bk-button theme="default" @click="handleCancelEdit">{{$t('取消')}}</bk-button>
-      </div>
+            </li>
+          </ul>
+        </template>
+      </batch-check-panel>
     </div>
   </div>
 </template>
 
 <script>
   import searchSelectMix from './search-select-mix'
-  import topologyTree from './topology-tree'
+  import topologyTreeComponent from './topology-tree'
+  import serviceTemplateListComponent from './service-template-list'
+  import batchCheckPanel from './batch-check-panel.vue'
   import { MENU_BUSINESS_HOST_APPLY_EDIT } from '@/dictionary/menu-symbol'
   import { mapGetters } from 'vuex'
+  import { CONFIG_MODE } from '@/services/service-template/index.js'
   export default {
     components: {
       searchSelectMix,
-      topologyTree
+      batchCheckPanel
     },
     data() {
       return {
@@ -105,21 +124,68 @@
           displayMatchedNodeDescendants: true
         },
         actionMode: '',
-        showCheckedPanel: false,
+        showCheckPanel: false,
         checkedList: [],
-        showBatchDropdown: false
+        checkedTemplateList: [],
+        showBatchDropdown: false,
+        CONFIG_MODE
       }
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      topologyTree() {
-        return this.$refs.topologyTree
-      },
-      checkedNodes() {
-        if (this.actionMode === 'batch-edit') {
-          return this.checkedList.map(data => this.topologyTree.idGenerator(data))
+      configMode: {
+        get() {
+          return this.$route.params.mode || CONFIG_MODE.MODULE
+        },
+        set(mode) {
+          this.$emit('mode-changed', mode)
         }
-        return []
+      },
+      isModuleMode() {
+        return this.configMode === CONFIG_MODE.MODULE
+      },
+      isTemplateMode() {
+        return this.configMode === CONFIG_MODE.TEMPLATE
+      },
+      configTree() {
+        const treeComponents = {
+          [CONFIG_MODE.MODULE]: {
+            is: topologyTreeComponent,
+            props: {
+              treeOptions: this.treeOptions,
+              action: this.actionMode
+            },
+            events: {
+              selected: this.handleTreeSelected,
+              checked: this.handleTreeChecked
+            }
+          },
+          [CONFIG_MODE.TEMPLATE]: {
+            is: serviceTemplateListComponent,
+            props: {
+              options: this.treeOptions,
+              action: this.actionMode
+            },
+            events: {
+              selected: this.handleTreeSelected,
+              checked: this.handleTemplateChecked
+            }
+          }
+        }
+        return treeComponents[this.configMode]
+      },
+      checkPanelProps() {
+        const componentProps = {
+          [CONFIG_MODE.MODULE]: {
+            checkedList: this.checkedList,
+            actionMode: this.actionMode
+          },
+          [CONFIG_MODE.TEMPLATE]: {
+            checkedList: this.checkedTemplateList,
+            actionMode: this.actionMode
+          }
+        }
+        return componentProps[this.configMode]
       }
     },
     watch: {
@@ -128,16 +194,19 @@
       }
     },
     methods: {
-      setApplyClosed(moduleId, isClear) {
-        this.topologyTree.updateNodeStatus(moduleId, isClear)
+      setApplyClosed(targetId, options) {
+        this.$refs.topologyTree.updateNodeStatus(targetId, options)
       },
       removeChecked() {
-        const { tree } = this.topologyTree.$refs
-        tree.removeChecked({ emitEvent: true })
+        if (this.configMode === CONFIG_MODE.MODULE) {
+          this.$refs.topologyTree.$refs.tree.removeChecked({ emitEvent: true })
+        } else if (this.configMode === CONFIG_MODE.TEMPLATE) {
+          this.$refs.topologyTree.removeChecked()
+        }
       },
       async handleBatchAction(actionMode) {
         this.actionMode = actionMode
-        this.showCheckedPanel = true
+        this.showCheckPanel = true
         this.treeOptions.showCheckbox = true
         this.treeOptions.selectable = false
         this.treeOptions.checkOnClick = true
@@ -147,7 +216,7 @@
         this.$emit('module-selected', node.data)
       },
       handleTreeChecked(ids) {
-        const { treeData } = this.topologyTree
+        const { treeData } = this.$refs.topologyTree
         const modules = []
         const findModuleNode = function (data, parent) {
           data.forEach((item) => {
@@ -164,21 +233,37 @@
 
         this.checkedList = modules
       },
+      handleTemplateChecked(ids) {
+        // 清空
+        if (!ids?.length) {
+          this.checkedTemplateList = []
+          return
+        }
+
+        this.checkedTemplateList = this.$refs.topologyTree.displayList.filter(item => ids.includes(item.id))
+      },
       handleRemoveChecked(id) {
-        const { tree } = this.topologyTree.$refs
-        const checkedIds = this.checkedList.filter(item => item.bk_inst_id !== id).map(item => `module_${item.bk_inst_id}`)
-        tree.removeChecked({ emitEvent: true })
-        tree.setChecked(checkedIds, { emitEvent: true, beforeCheck: true, checked: true })
+        if (this.configMode === CONFIG_MODE.MODULE) {
+          const { tree } = this.$refs.topologyTree.$refs
+          const checkedIds = this.checkedList.filter(item => item.bk_inst_id !== id).map(item => `module_${item.bk_inst_id}`)
+          tree.removeChecked({ emitEvent: true })
+          tree.setChecked(checkedIds, { emitEvent: true, beforeCheck: true, checked: true })
+        } else if (this.configMode === CONFIG_MODE.TEMPLATE) {
+          this.$refs.topologyTree.removeChecked(id)
+        }
       },
       handleClearChecked() {
         this.removeChecked()
       },
       handleGoEdit() {
-        const checkedIds = this.checkedList.map(item => item.bk_inst_id)
+        const checkedIds = {
+          [CONFIG_MODE.MODULE]: this.checkedList.map(item => item.bk_inst_id),
+          [CONFIG_MODE.TEMPLATE]: this.checkedTemplateList.map(item => item.id)
+        }
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY_EDIT,
           query: {
-            mid: checkedIds.join(','),
+            id: checkedIds[this.configMode].join(','),
             batch: 1,
             action: this.actionMode
           },
@@ -189,7 +274,7 @@
         this.treeOptions.showCheckbox = false
         this.treeOptions.selectable = true
         this.treeOptions.checkOnClick = false
-        this.showCheckedPanel = false
+        this.showCheckPanel = false
         this.treeOptions.checkOnlyAvailableStrictly = false
         this.actionMode = ''
         this.removeChecked()
@@ -199,181 +284,242 @@
 </script>
 
 <style lang="scss" scoped>
-    .host-apply-sidebar {
-        position: relative;
-        height: 100%;
-        padding: 10px 0;
+  .host-apply-sidebar {
+    position: relative;
+    height: 100%;
+    padding: 10px 0;
 
-        .tree-wrapper {
-            height: 100%;
-        }
+    .tree-wrapper {
+      height: 100%;
     }
-    .searchbar {
-        display: flex;
-        padding: 0 10px;
+  }
 
-        .search-select {
-            flex: 1;
+  .config-mode {
+    padding: 0 10px;
+    margin-bottom: 12px;
+    .radio-group {
+      display: flex;
+      .bk-form-radio-button {
+        flex: 1;
+        ::v-deep .bk-radio-button-text {
+          display: block;
         }
-        .action-menu {
-            flex: none;
-            margin-left: 8px;
-
-            .dropdown-trigger {
-                border: 1px solid #c4c6cc;
-                border-radius: 2px;
-                padding: 0 8px;
-                height: 32px;
-                text-align: center;
-                line-height: 32px;
-                cursor: pointer;
-                &:hover {
-                    border-color: #979ba5;
-                    color: #63656e;
-                }
-                &:active {
-                    border-color: #3a84ff;
-                    color: #3a84ff;
-                }
-
-                .icon-angle-down {
-                    font-size: 22px;
-                    margin: -3px -5px 0 -4px
-                }
-            }
+        ::v-deep &:not(:first-child) .bk-radio-button-input:disabled + .bk-radio-button-text {
+          border-left: none;
         }
+        ::v-deep .bk-radio-button-input:disabled + .bk-radio-button-text {
+          border: 1px solid #c4c6cc;
+        }
+      }
     }
+  }
 
-    .checked-list {
-        position: absolute;
-        width: 290px;
-        height: 100%;
-        left: 100%;
+  .searchbar {
+    display: flex;
+    padding: 0 10px;
+
+    .search-select {
+      flex: 1;
+    }
+    .action-menu {
+      flex: none;
+      margin-left: 8px;
+
+      .dropdown-trigger {
+        border: 1px solid #c4c6cc;
+        border-radius: 2px;
+        padding: 0 8px;
+        height: 32px;
+        text-align: center;
+        line-height: 32px;
+        cursor: pointer;
+        &:hover {
+          border-color: #979ba5;
+          color: #63656e;
+        }
+        &:active {
+          border-color: #3a84ff;
+          color: #3a84ff;
+        }
+
+        .icon-angle-down {
+          font-size: 22px;
+          margin: -3px -5px 0 -4px
+        }
+      }
+    }
+  }
+
+  .checked-list {
+    position: absolute;
+    width: 290px;
+    height: 100%;
+    left: 100%;
+    top: 0;
+    z-index: 9999;
+    border-left: 1px solid #dcdee5;
+    border-right: 1px solid #dcdee5;
+
+    .panel-hd,
+    .panel-ft {
+      background: #fafbfd;
+    }
+    .panel-hd {
+      height: 52px;
+      line-height: 52px;
+      padding: 0 12px;
+      border-bottom: 1px solid #dcdee5;
+    }
+    .panel-title {
+      position: relative;
+      font-size: 14px;
+      color: #63656e;
+
+      .checked-num {
+        font-style: normal;
+        font-weight: bold;
+        color: #2dcb56;
+        margin: .1em;
+      }
+
+      .clear-all {
+          position: absolute;
+        right: 0;
         top: 0;
-        z-index: 1000;
-        border-left: 1px solid #dcdee5;
-        border-right: 1px solid #dcdee5;
-
-        .panel-hd,
-        .panel-ft {
-            background: #fafbfd;
-        }
-        .panel-hd {
-            height: 52px;
-            line-height: 52px;
-            padding: 0 12px;
-            border-bottom: 1px solid #dcdee5;
-        }
-        .panel-title {
-            position: relative;
-            font-size: 14px;
-            color: #63656e;
-
-            .checked-num {
-                font-style: normal;
-                font-weight: bold;
-                color: #2dcb56;
-                margin: .1em;
-            }
-
-            .clear-all {
-                position: absolute;
-                right: 0;
-                top: 0;
-                color: #3a84ff;
-            }
-        }
-        .panel-bd {
-            height: calc(100% - 52px - 60px);
-            background: #fff;
-            @include scrollbar-y;
-        }
-        .panel-ft {
-            height: 60px;
-            line-height: 58px;
-            text-align: center;
-            border-top: 1px solid #dcdee5;
-            .bk-button {
-                min-width: 86px;
-                margin: 0 3px;
-            }
-        }
-
-        .module-list {
-            .module-item {
-                position: relative;
-                padding: 8px 42px;
-
-                &:hover {
-                    background: #f0f1f5;
-                }
-
-                .module-name {
-                    font-size: 14px;
-                    color: #63656e;
-                }
-                .module-path {
-                    font-size: 12px;
-                    color: #c4c6cc;
-                    @include ellipsis;
-                }
-                .module-icon {
-                    position: absolute;
-                    left: 12px;
-                    top: 8px;
-                    font-size: 12px;
-                    border-radius: 50%;
-                    background-color: #c4c6cc;
-                    width: 22px;
-                    height: 22px;
-                    line-height: 21px;
-                    text-align: center;
-                    font-style: normal;
-                    color: #fff;
-                }
-                .action-icon {
-                    position: absolute;
-                    right: 8px;
-                    top: 10px;
-                    width: 28px;
-                    height: 28px;
-                    text-align: center;
-                    line-height: 28px;
-
-                    a {
-                        color: #c4c6cc;
-                        &:hover {
-                            color: #979ba5;
-                        }
-                    }
-                }
-            }
-        }
+        color: #3a84ff;
+      }
+    }
+    .panel-bd {
+      height: calc(100% - 52px - 60px);
+      background: #fff;
+      @include scrollbar-y;
+    }
+    .panel-ft {
+      height: 60px;
+      line-height: 58px;
+      text-align: center;
+      border-top: 1px solid #dcdee5;
+      .bk-button {
+        min-width: 86px;
+        margin: 0 3px;
+      }
     }
 
-    .bk-dropdown-list {
-        .auth-box {
-            width: 100%;
+    .module-list {
+      .module-item {
+        position: relative;
+        padding: 8px 42px;
+
+        &:hover {
+          background: #f0f1f5;
         }
 
-        > li a {
-            display: block;
-            height: 32px;
-            line-height: 33px;
-            padding: 0 16px;
-            color: #63656e;
-            font-size: 14px;
-            text-decoration: none;
-            white-space: nowrap;
+        .module-name {
+          font-size: 14px;
+          color: #63656e;
+        }
+        .module-path {
+          font-size: 12px;
+          color: #c4c6cc;
+          @include ellipsis;
+        }
+        .module-icon {
+          position: absolute;
+          left: 12px;
+          top: 8px;
+          font-size: 12px;
+          border-radius: 50%;
+          background-color: #c4c6cc;
+          width: 22px;
+          height: 22px;
+          line-height: 21px;
+          text-align: center;
+          font-style: normal;
+          color: #fff;
+        }
+        .action-icon {
+          position: absolute;
+          right: 8px;
+          top: 10px;
+          width: 28px;
+          height: 28px;
+          text-align: center;
+          line-height: 28px;
 
+          a {
+            color: #c4c6cc;
             &:hover {
-                background-color: #eaf3ff;
-                color: #3a84ff;
+              color: #979ba5;
             }
-
-            &.disabled {
-                color: #c4c6cc;
-            }
+          }
         }
+      }
     }
+
+    .template-list {
+      .template-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        &:hover {
+          background: #f0f1f5;
+        }
+
+        .template-name {
+          flex: 1;
+          font-size: 14px;
+          color: #63656e;
+          margin: 0 8px;
+          @include ellipsis;
+        }
+        .template-icon {
+          font-size: 12px;
+          border-radius: 50%;
+          background-color: #c4c6cc;
+          width: 22px;
+          height: 22px;
+          line-height: 21px;
+          text-align: center;
+          font-style: normal;
+          color: #fff;
+        }
+        .action-icon {
+          width: 28px;
+          height: 28px;
+          color: #c4c6cc;
+          text-align: center;
+          line-height: 26px;
+          &:hover {
+            color: #979ba5;
+          }
+        }
+      }
+    }
+  }
+
+  .bk-dropdown-list {
+    .auth-box {
+      width: 100%;
+    }
+
+    > li a {
+      display: block;
+      height: 32px;
+      line-height: 33px;
+      padding: 0 16px;
+      color: #63656e;
+      font-size: 14px;
+      text-decoration: none;
+      white-space: nowrap;
+
+      &:hover {
+        background-color: #eaf3ff;
+        color: #3a84ff;
+      }
+
+      &.disabled {
+        color: #c4c6cc;
+      }
+    }
+  }
 </style>
