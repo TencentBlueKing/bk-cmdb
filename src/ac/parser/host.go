@@ -361,6 +361,8 @@ var (
 
 	// find host by biz set regex, authorize by biz set access permission, **only for ui**
 	findHostsByBizSetPattern = regexp.MustCompile(`^/api/v3/findmany/hosts/biz_set/[0-9]+/?$`)
+
+	findHostsTotalTopo = regexp.MustCompile(`^/api/v3/findmany/hosts/total_mainline_topo/biz/\d+$`)
 )
 
 func (ps *parseStream) host() *parseStream {
@@ -470,6 +472,26 @@ func (ps *parseStream) host() *parseStream {
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("find hosts by set templates, but got invalid business id: %s", ps.RequestCtx.Elements[6])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findHostsTotalTopo, http.MethodPost) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find hosts total mainline topo, but got invalid business id: %s",
+				ps.RequestCtx.Elements[6])
 			return ps
 		}
 
