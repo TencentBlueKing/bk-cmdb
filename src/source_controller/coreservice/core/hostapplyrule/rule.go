@@ -240,24 +240,35 @@ func (p *hostApplyRule) UpdateHostApplyRule(kit *rest.Kit, bizID int64, ruleID i
 }
 
 // DeleteHostApplyRule delete host apply rule by condition, bizID maybe 0
-func (p *hostApplyRule) DeleteHostApplyRule(kit *rest.Kit, bizID int64, ruleIDs ...int64) errors.CCErrorCoder {
-	if len(ruleIDs) == 0 {
+func (p *hostApplyRule) DeleteHostApplyRule(kit *rest.Kit, bizID int64,
+	option metadata.DeleteHostApplyRuleOption) errors.CCErrorCoder {
+	if len(option.RuleIDs) == 0 {
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "host_apply_rule_ids")
 	}
 	filter := map[string]interface{}{
 		common.BKOwnerIDField: kit.SupplierAccount,
 		common.BKFieldID: map[string]interface{}{
-			common.BKDBIN: ruleIDs,
+			common.BKDBIN: option.RuleIDs,
 		},
 	}
 	if bizID != 0 {
 		filter[common.BKAppIDField] = bizID
 	}
+	if len(option.ModuleIDs) > 0 {
+		filter[common.BKModuleIDField] = map[string]interface{}{
+			common.BKDBIN: option.ModuleIDs,
+		}
+	}
+
+	if len(option.ServiceTemplateIDs) > 0 {
+		filter[common.BKServiceTemplateIDField] = map[string]interface{}{
+			common.BKDBIN: option.ServiceTemplateIDs,
+		}
+	}
 	if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Delete(kit.Ctx, filter); err != nil {
 		blog.Errorf("DeleteHostApplyRule failed, db remove failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
 	}
-
 	return nil
 }
 
@@ -558,10 +569,11 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, opt
 			Index: index,
 		}
 		ruleFilter := map[string]interface{}{
-			common.BKAppIDField:       bizID,
-			common.BkSupplierAccount:  kit.SupplierAccount,
-			common.BKAttributeIDField: item.AttributeID,
-			common.BKModuleIDField:    item.ModuleID,
+			common.BKAppIDField:             bizID,
+			common.BkSupplierAccount:        kit.SupplierAccount,
+			common.BKAttributeIDField:       item.AttributeID,
+			common.BKModuleIDField:          item.ModuleID,
+			common.BKServiceTemplateIDField: item.ServiceTemplateID,
 		}
 		count, err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(ruleFilter).Count(kit.Ctx)
 		if err != nil {
@@ -618,16 +630,17 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, opt
 			continue
 		}
 		rule := metadata.HostApplyRule{
-			ID:              int64(newRuleID),
-			BizID:           bizID,
-			ModuleID:        item.ModuleID,
-			AttributeID:     item.AttributeID,
-			PropertyValue:   item.PropertyValue,
-			Creator:         kit.User,
-			Modifier:        kit.User,
-			CreateTime:      now,
-			LastTime:        now,
-			SupplierAccount: kit.SupplierAccount,
+			ID:                int64(newRuleID),
+			BizID:             bizID,
+			ModuleID:          item.ModuleID,
+			ServiceTemplateID: item.ServiceTemplateID,
+			AttributeID:       item.AttributeID,
+			PropertyValue:     item.PropertyValue,
+			Creator:           kit.User,
+			Modifier:          kit.User,
+			CreateTime:        now,
+			LastTime:          now,
+			SupplierAccount:   kit.SupplierAccount,
 		}
 		if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Insert(kit.Ctx, rule); err != nil {
 			blog.ErrorJSON("BatchUpdateHostApplyRule failed, insert rule failed, doc: %s, err: %s, rid: %s", rule, err.Error(), rid)

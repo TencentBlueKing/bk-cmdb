@@ -1287,6 +1287,11 @@ const (
 	SyncSetTaskFlag    = "set_template_sync"
 	SyncModuleTaskFlag = "service_template_sync"
 
+	// SyncModuleHostApplyTaskFlag module dimension host auto-apply async task flag.
+	SyncModuleHostApplyTaskFlag = "module_host_apply_sync"
+	// SyncServiceTemplateHostApplyTaskFlag  service template dimension host auto-apply async task flag.
+	SyncServiceTemplateHostApplyTaskFlag = "service_template_host_apply_sync"
+
 	BKHostState = "bk_state"
 )
 

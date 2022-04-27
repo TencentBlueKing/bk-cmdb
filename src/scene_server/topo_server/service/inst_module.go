@@ -574,41 +574,49 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
 	}
-	moduleID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKModuleIDField), 10, 64)
-	if err != nil {
-		blog.Errorf("parse bk_module_id failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKModuleIDField))
-		return
-	}
-
-	requestBody := metadata.UpdateModuleHostApplyEnableStatusOption{}
-	if err := ctx.DecodeInto(&requestBody); err != nil {
+	request := metadata.UpdateHostApplyEnableStatusOption{}
+	if err := ctx.DecodeInto(&request); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	if len(request.IDs) == 0 {
+		blog.Errorf("module ids must be set, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "bk_module_ids"))
+		return
+	}
+
+	if err := request.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
 	updateOption := &metadata.UpdateOption{
 		Condition: map[string]interface{}{
 			common.BKAppIDField:    bizID,
-			common.BKModuleIDField: moduleID,
+			common.BKModuleIDField: mapstr.MapStr{common.BKDBIN: request.IDs},
 		},
 		Data: map[string]interface{}{
-			common.HostApplyEnabledField: requestBody.Enable,
+			common.HostApplyEnabledField: request.Enable,
 		},
 	}
 
-	var result *metadata.UpdatedCount
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		result, err = s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		_, err = s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 			common.BKInnerObjIDModule, updateOption)
 		if err != nil {
 			blog.Errorf("search rule related modules failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
-
-		if requestBody.ClearRules {
+		// If this request is to enable the host to automatically apply, then the cleanup rules are not involved, and
+		// return directly here。
+		if request.Enable {
+			return nil
+		}
+		if request.ClearRules {
 			listRuleOption := metadata.ListHostApplyRuleOption{
-				ModuleIDs: []int64{moduleID},
+				ModuleIDs: request.IDs,
 				Page: metadata.BasePage{
 					Limit: common.BKNoLimit,
 				},
@@ -626,7 +634,8 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 			}
 			if len(ruleIDs) > 0 {
 				deleteRuleOption := metadata.DeleteHostApplyRuleOption{
-					RuleIDs: ruleIDs,
+					RuleIDs:   ruleIDs,
+					ModuleIDs: request.IDs,
 				}
 				if ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx,
 					ctx.Kit.Header, bizID, deleteRuleOption); ccErr != nil {
@@ -642,7 +651,7 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(result)
+	ctx.RespEntity(nil)
 }
 
 // GetInternalModuleWithStatistics get internal object by statistics

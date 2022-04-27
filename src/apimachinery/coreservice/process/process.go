@@ -45,6 +45,8 @@ type ProcessInterface interface {
 		metadata.MultipleServiceTemplateDetail, errors.CCErrorCoder)
 	UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceTemplate) (
 		*metadata.ServiceTemplate, errors.CCErrorCoder)
+	UpdateBatchServiceTemplate(ctx context.Context, h http.Header, option *metadata.UpdateOption) errors.CCErrorCoder
+
 	ListServiceTemplates(ctx context.Context, h http.Header, option *metadata.ListServiceTemplateOption) (
 		*metadata.MultipleServiceTemplate, errors.CCErrorCoder)
 	DeleteServiceTemplate(ctx context.Context, h http.Header, serviceTemplateID int64) errors.CCErrorCoder

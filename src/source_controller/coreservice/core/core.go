@@ -346,7 +346,7 @@ type HostApplyRuleOperation interface {
 		errors.CCErrorCoder)
 	UpdateHostApplyRule(kit *rest.Kit, bizID int64, ruleID int64, option metadata.UpdateHostApplyRuleOption) (
 		metadata.HostApplyRule, errors.CCErrorCoder)
-	DeleteHostApplyRule(kit *rest.Kit, bizID int64, ruleIDs ...int64) errors.CCErrorCoder
+	DeleteHostApplyRule(kit *rest.Kit, bizID int64, option metadata.DeleteHostApplyRuleOption) errors.CCErrorCoder
 	GetHostApplyRule(kit *rest.Kit, bizID int64, ruleID int64) (metadata.HostApplyRule, errors.CCErrorCoder)
 	ListHostApplyRule(kit *rest.Kit, bizID int64, option metadata.ListHostApplyRuleOption) (
 		metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder)

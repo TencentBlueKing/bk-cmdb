@@ -30,7 +30,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// GenerateApplyPlan 生成主机属性自动应用执行计划
+//GenerateApplyPlan 生成主机属性自动应用执行计划
 func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder) {
 	rid := kit.Rid
 
@@ -443,6 +443,7 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relation
 		Rules:       rules.Info,
 		HostModules: hostModules,
 	}
+
 	planResult, ccErr := p.GenerateApplyPlan(kit, bizID, planOption)
 	if ccErr != nil {
 		blog.ErrorJSON("generate apply plan failed, option: %v, err: %v, rid: %s", planOption, ccErr, kit.Rid)

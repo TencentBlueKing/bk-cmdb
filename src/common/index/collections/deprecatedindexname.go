@@ -14,7 +14,9 @@ package collections
 
 import "configcenter/src/common"
 
-// 2021年03月12日 这里的数据不能删除，在deprecatedIndexName存在的索引名字，没有在表中索引存在，就表示这个字段需要被删除
+// 2021年03月12日 这里的数据不能删除，在deprecatedIndexName存在的索引名字，没有数据库表中索引存在，就表示这个字段需要被删除
+// 例如 index/collections/cc_DynamicGroup中的deprecatedDynamicGroupIndexes中的index存在id_1和id_1_bk_biz_id_1 而下面map中存在
+// 的是id_1，id_1_bk_biz_id_1和 bk_biz_id_1_name_1，所以就会将索引 bk_biz_id_1_name_1删除。
 var deprecatedIndexName = map[string][]string{
 	common.BKTableNameDynamicGroup: {
 		"id_1",

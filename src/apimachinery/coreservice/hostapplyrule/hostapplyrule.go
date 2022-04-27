@@ -39,6 +39,7 @@ type HostApplyRuleInterface interface {
 	BatchUpdateHostApplyRule(ctx context.Context, header http.Header, bizID int64,
 		option metadata.BatchCreateOrUpdateApplyRuleOption) (metadata.BatchCreateOrUpdateHostApplyRuleResult,
 		errors.CCErrorCoder)
+
 	RunHostApplyOnHosts(ctx context.Context, header http.Header, bizID int64,
 		option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder)
 	SearchRuleRelatedServiceTemplates(ctx context.Context, header http.Header,
