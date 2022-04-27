@@ -337,7 +337,8 @@ func (p *setTemplateOperation) GetSetTemplate(kit *rest.Kit, bizID int64, setTem
 
 func (p *setTemplateOperation) ListSetTemplate(kit *rest.Kit, bizID int64, option metadata.ListSetTemplateOption) (metadata.MultipleSetTemplateResult, errors.CCErrorCoder) {
 	result := metadata.MultipleSetTemplateResult{}
-	if option.Page.Limit > common.BKMaxPageSize && option.Page.Limit != common.BKNoLimit {
+
+	if option.Page.IsIllegal() {
 		return result, kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded)
 	}
 

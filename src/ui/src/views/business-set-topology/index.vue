@@ -28,16 +28,7 @@
         :before-toggle="handleTabToggle">
         <bk-tab-panel name="hostList" :label="$t('主机列表')">
           <bk-exception class="empty-set" type="empty" scene="part" v-if="emptySet">
-            <i18n path="该集群尚未创建模块">
-              <cmdb-auth place="link" :auth="{ type: $OPERATION.C_TOPO, relation: [bizId] }">
-                <bk-button text slot-scope="{ disabled }"
-                  theme="primary"
-                  :disabled="disabled"
-                  @click="handleCreateModule">
-                  {{$t('立即创建')}}
-                </bk-button>
-              </cmdb-auth>
-            </i18n>
+            {{$t('业务集下该集群尚未创建模块')}}
           </bk-exception>
           <host-list v-show="!emptySet" :active="activeTab === 'hostList'" ref="hostList" v-test-id>
           </host-list>

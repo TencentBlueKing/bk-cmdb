@@ -231,3 +231,7 @@ func (c *client) TTL(ctx context.Context, key string) DurationResult {
 func (c *client) BLPop(ctx context.Context, timeout time.Duration, keys ...string) StringSliceResult {
 	return c.cli.BLPop(timeout, keys...)
 }
+
+func (c *client) ZRemRangeByRank(key string, start, stop int64) IntResult {
+	return c.cli.ZRemRangeByRank(key, start, stop)
+}

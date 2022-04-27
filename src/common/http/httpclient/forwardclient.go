@@ -14,9 +14,14 @@ package httpclient
 
 import (
 	"io/ioutil"
+	"net"
+	"net/http"
 	"net/http/httputil"
-
 	"net/url"
+	"time"
+
+	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/blog"
 
 	"github.com/emicklei/go-restful/v3"
 	"github.com/gin-gonic/gin"
@@ -74,10 +79,32 @@ func ReqHttp(req *restful.Request, url, method string, body []byte) (string, err
 
 //porxy http
 func ProxyHttp(c *gin.Context, addr string) {
+	tlsConf, err := util.GetClientTLSConfig("webServer.tls")
+	if err != nil {
+		c.Writer.Write([]byte(err.Error()))
+		blog.Errorf("get webServer.tls config error, err: %v", err)
+		return
+	}
 
 	u, err := url.Parse(addr)
 	if err == nil {
 		proxy := httputil.NewSingleHostReverseProxy(u)
+		if tlsConf != nil {
+			proxy.Transport = &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}).DialContext,
+				ForceAttemptHTTP2:     true,
+				MaxIdleConns:          100,
+				IdleConnTimeout:       90 * time.Second,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+				TLSClientConfig:       tlsConf,
+			}
+
+		}
 		proxy.ServeHTTP(c.Writer, c.Request)
 	} else {
 		c.Writer.Write([]byte(err.Error()))

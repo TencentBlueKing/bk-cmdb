@@ -33,9 +33,11 @@ var commHostBaseIndexes = []types.Index{
 			common.BKHostInnerIPField: 1,
 			common.BKCloudIDField:     1,
 		},
-		Unique: true,
+		Unique:     true,
+		Background: true,
 		PartialFilterExpression: map[string]interface{}{
-			common.BKHostInnerIPField: map[string]string{common.BKDBType: "array"},
+			common.BKHostInnerIPField: map[string]string{common.BKDBType: "string"},
+			common.BKCloudIDField:     map[string]string{common.BKDBType: "number"},
 		},
 	},
 	{

@@ -34,9 +34,6 @@ import (
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
-	// init esb client
-	esb.InitEsbClient(nil)
-
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		return fmt.Errorf("wrap authServer info failed, err: %v", err)
@@ -94,6 +91,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		authServer.Service = service.NewAuthService(engine, iamCli, lgc, authorizer)
 		break
 	}
+
+	// init esb client
+	esb.InitEsbClient(nil)
+
 	err = backbone.StartServer(ctx, cancel, engine, authServer.Service.WebService(), true)
 	if err != nil {
 		return err
@@ -129,12 +130,12 @@ func (a *AuthServer) onAuthConfigUpdate(previous, current cc.ProcessConfig) {
 			blog.Warnf("parse auth center config failed: %v", err)
 		}
 
-		a.Config.TLS, err = util.NewTLSClientConfigFromConfig("authServer", nil)
+		a.Config.TLS, err = util.NewTLSClientConfigFromConfig("authServer")
 		if err != nil {
 			blog.Warnf("parse auth center tls config failed: %v", err)
 		}
 
-		if esbConfig, err := esb.ParseEsbConfig("authServer"); err == nil {
+		if esbConfig, err := esb.ParseEsbConfig(); err == nil {
 			esb.UpdateEsbConfig(*esbConfig)
 		}
 	}

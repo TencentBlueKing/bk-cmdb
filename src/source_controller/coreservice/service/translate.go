@@ -34,6 +34,7 @@ var needTranslateObjMap = map[string]bool{
 	common.BKInnerObjIDRouter:   true,
 	common.BKInnerObjIDBlance:   true,
 	common.BKInnerObjIDFirewall: true,
+	common.BKInnerObjIDBizSet:   true,
 }
 
 func (s *coreService) TranslateObjectName(defLang language.DefaultCCLanguageIf, obj *metadata.Object) string {

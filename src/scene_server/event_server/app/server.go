@@ -232,7 +232,7 @@ func (es *EventServer) initModules() error {
 	iamCli := new(iam.IAM)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM(nil, es.config.Auth, es.engine.Metric().Registry())
+		iamCli, err = iam.NewIAM(es.config.Auth, es.engine.Metric().Registry())
 		if err != nil {
 			return fmt.Errorf("new iam client failed: %v", err)
 		}

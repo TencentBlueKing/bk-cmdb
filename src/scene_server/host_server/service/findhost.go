@@ -1036,3 +1036,37 @@ func (s *Service) ListServiceTemplateIDsByHost(ctx *rest.Contexts) {
 
 	ctx.RespEntity(rsp)
 }
+
+// ListHostTotalMainlineTopo list host total mainline topo tree
+func (s *Service) ListHostTotalMainlineTopo(ctx *rest.Contexts) {
+
+	bizID, err := util.GetInt64ByInterface(ctx.Request.PathParameter(common.BKAppIDField))
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	if bizID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+	params := meta.FindHostTotalTopo{}
+	if err := ctx.DecodeInto(&params); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := params.Validate(ctx.Kit.CCError); err != nil {
+		blog.Errorf("validate param failed, param: %v, err: %v, rid: %s", params, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rsp, err := s.Logic.ListHostTotalMainlineTopo(ctx.Kit, bizID, params)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntityWithCount(int64(len(rsp)), rsp)
+}

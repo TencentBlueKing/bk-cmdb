@@ -9,6 +9,7 @@
       v-bind="props"
       v-model="localValue"
       :class="{ 'has-fast-select': fastSelect }"
+      :empty-text="$t('无匹配人员')"
       @focus="$emit('focus')"
       @blur="$emit('blur')">
     </blueking-user-selector>

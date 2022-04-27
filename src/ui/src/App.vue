@@ -69,6 +69,9 @@
       addResizeListener(this.$el, this.calculateAppHeight)
       window.permissionModal = this.$refs.permissionModal
       window.loginModal = this.$refs.loginModal
+
+      // 在body标签添加语言标识属性，用于插入到body下的内容进行国际化处理
+      document.body.setAttribute('lang', this.$i18n.locale)
     },
     beforeDestroy() {
       removeResizeListener(this.$el, this.calculateAppHeight)
@@ -121,11 +124,7 @@
     .no-breadcrumb {
         /deep/ {
             .main-layout {
-                margin-top: 0
-            }
-            .main-views {
-                height: 100%;
-                margin-top: 0;
+               height: 100%;
             }
         }
     }

@@ -1,138 +1,190 @@
 <template>
-  <div class="group-layout" v-bkloading="{ isLoading: $loading(), extCls: 'field-loading' }">
-    <div class="layout-header">
-      <bk-button @click="previewShow = true" :disabled="!properties.length">{{$t('字段预览')}}</bk-button>
-      <bk-input class="filter-input" clearable
+  <div
+    class="field-group"
+    :class="{
+      'is-dragging': isDragging,
+      'is-readonly': !updateAuth
+    }"
+    v-bkloading="{ isLoading: $loading(), extCls: 'field-loading' }"
+  >
+    <div class="field-options">
+      <cmdb-auth :auth="authResources">
+        <template #default="{ disabled }">
+          <bk-button theme="primary" :disabled="disabled"
+            @click="handleAddField(displayGroupedProperties[0])">{{$t('新建字段')}}</bk-button>
+        </template>
+      </cmdb-auth>
+      <cmdb-auth :auth="authResources">
+        <template #default="{ disabled }">
+          <bk-button :disabled="disabled" @click="handleAddGroup">{{$t('新建分组')}}</bk-button>
+        </template>
+      </cmdb-auth>
+      <bk-button @click="previewShow = true" :disabled="!properties.length">{{
+        $t("字段预览")
+      }}</bk-button>
+      <bk-input
+        class="filter-input"
+        clearable
         right-icon="icon-search"
         :placeholder="$t('请输入关键字')"
-        v-model.trim="keyword">
+        v-model.trim="keyword"
+      >
       </bk-input>
-      <bk-button text class="setting-btn" v-if="canEditSort" @click="configProperty.show = true">
-        <i class="icon-cc-setting"></i>
-        {{$t('表格排序设置')}}
-      </bk-button>
+      <bk-button
+        text
+        class="setting-btn"
+        icon="cog"
+        v-if="canEditSort"
+        @click="configProperty.show = true"
+      ></bk-button>
     </div>
-    <div class="layout-content">
-      <div class="group"
-        v-for="(group, index) in displayGroupedProperties"
-        :key="index">
-        <cmdb-collapse
-          :collapse.sync="groupState[group.info['bk_group_id']]">
+    <div class="group-wrapper">
+      <draggable
+        class="group-list"
+        tag="div"
+        draggable=".group-item"
+        ghost-class="group-item-ghost"
+        group="group-list"
+        handle=".collapse-group-title"
+        :animation="200"
+        :disabled="!updateAuth"
+        @start="handleGroupDragStart"
+        @end="handleGroupDragEnd"
+        @change="handleGroupDragChange"
+        v-model="displayGroupedProperties"
+      >
+        <div
+          class="group-item"
+          v-for="(group, groupIndex) in displayGroupedProperties"
+          :key="group.bk_classification_id"
+          :class="[{ 'is-collapse': !groupCollapseState[group.info.bk_group_id] }]">
           <div class="group-header" slot="title">
-            <div class="header-title">
-              <div class="group-name" :title="group.info.bk_group_name">
-                {{group.info['bk_group_name']}}
-                <span v-if="isBuiltInGroup(group.info)">（{{$t('全局配置不可以在业务内调整')}}）</span>
-              </div>
-              <div class="title-icon-btn" v-if="!isBuiltInGroup(group.info)" @click.stop>
-                <cmdb-auth class="ml10" :auth="authResources" @update-auth="handleReceiveAuth">
-                  <bk-button slot-scope="{ disabled }"
-                    class="icon-btn"
-                    :text="true"
-                    :disabled="disabled || !isEditable(group.info)"
-                    @click.stop="handleEditGroup(group)">
-                    <i class="title-icon icon icon-cc-edit-shape"></i>
-                  </bk-button>
-                </cmdb-auth>
-                <cmdb-auth class="ml5" :auth="authResources">
-                  <bk-button slot-scope="{ disabled }"
-                    class="icon-btn"
-                    :text="true"
-                    :disabled="disabled || !isEditable(group.info) || group.info['bk_isdefault']"
-                    @click.stop="handleDeleteGroup(group, index)">
-                    <i class="title-icon bk-icon icon-cc-delete"></i>
-                  </bk-button>
-                </cmdb-auth>
-                <cmdb-auth class="ml5" :auth="authResources">
-                  <bk-button slot-scope="{ disabled }"
-                    class="icon-btn"
-                    :text="true"
-                    :disabled="disabled || !isEditable(group.info) || !canRiseGroup(index, group)"
-                    @click.stop="handleRiseGroup(index, group)">
-                    <i class="title-icon bk-icon icon-arrows-up"></i>
-                  </bk-button>
-                </cmdb-auth>
-                <cmdb-auth class="ml5" :auth="authResources">
-                  <bk-button slot-scope="{ disabled }"
-                    class="icon-btn"
-                    :text="true"
-                    :disabled="disabled || !isEditable(group.info) || !canDropGroup(index, group)"
-                    @click.stop="handleDropGroup(index, group)">
-                    <i class="title-icon bk-icon icon-arrows-down"></i>
-                  </bk-button>
-                </cmdb-auth>
-              </div>
-            </div>
+            <collapse-group-title
+              :drag-icon="updateAuth"
+              :dropdown-menu="isEditable(group)"
+              :collapse="groupCollapseState[group.info.bk_group_id]"
+              :title="`${group.info.bk_group_name} ( ${group.properties.length} )`"
+              @click.native="toggleGroup(group)"
+              :commands="[
+                {
+                  text: $t('编辑分组'),
+                  auth: authResources,
+                  onUpdateAuth: handleReceiveAuth,
+                  disabled: !isEditable(group.info),
+                  handler: () => handleEditGroup(group)
+                },
+                {
+                  text: $t('删除分组'),
+                  disabled: !isEditable(group.info) || group.info['bk_isdefault'],
+                  auth: authResources,
+                  handler: () => handleDeleteGroup(group, groupIndex)
+                }
+              ]"
+              v-bk-tooltips="{
+                disabled: !isBuiltInGroup(group.info),
+                content: $t('全局配置不可以在业务内调整'),
+                placement: 'right'
+              }">
+            </collapse-group-title>
           </div>
-          <template>
-            <vue-draggable class="property-list clearfix"
-              element="ul"
+          <bk-transition name="collapse" duration-type="ease">
+            <draggable
+              class="field-list clearfix"
+              v-show="!groupCollapseState[group.info.bk_group_id]"
+              tag="ul"
               v-model="group.properties"
-              :options="{
-                group: 'property',
-                animation: 150,
-                filter: '.no-drag',
-                disabled: !updateAuth || !isEditable(group.info)
-              }"
+              ghost-class="field-item-ghost"
+              draggable=".field-item"
+              group="field-list"
+              :animation="150"
+              :disabled="!updateAuth || !isEditable(group.info)"
               :class="{
                 empty: !group.properties.length,
                 disabled: !updateAuth || !isEditable(group.info)
               }"
-              @change="handleDragChange">
-              <li class="property-item fl"
+              @start="handleModelDragStart"
+              @end="handleModelDragEnd"
+              @change="handleModelDragChange"
+            >
+              <li
+                class="field-item fl"
                 v-for="(property, fieldIndex) in group.properties"
-                :class="{ 'only-ready': !updateAuth || !isFieldEditable(property) }"
+                :class="{
+                  'only-ready': !updateAuth || !isFieldEditable(property)
+                }"
                 :key="fieldIndex"
-                @click="handleFieldDetailsView({ group, index, fieldIndex, property })">
-                <span class="drag-logo"></span>
+                @click="
+                  handleFieldDetailsView({ group, index: groupIndex, fieldIndex, property })
+                "
+              >
+                <span class="drag-icon"></span>
                 <div class="drag-content">
                   <div class="field-name">
-                    <span :title="property.bk_property_name">{{property.bk_property_name}}</span>
+                    <span :title="property.bk_property_name">{{
+                      property.bk_property_name
+                    }}</span>
                     <i v-if="property.isrequired">*</i>
                   </div>
                   <p>
-                    {{fieldTypeMap[property.bk_property_type]}}
-                    <span class="field-id">{{property.bk_property_id}}</span>
+                    {{ fieldTypeMap[property.bk_property_type] }}
+                    <span class="field-id">{{ property.bk_property_id }}</span>
                   </p>
                 </div>
                 <template v-if="isGlobalView || isBizCustomData(property)">
-                  <cmdb-auth class="mr10" :auth="authResources" @click.native.stop>
-                    <bk-button slot-scope="{ disabled }"
-                      class="property-icon-btn"
+                  <cmdb-auth
+                    class="mr10"
+                    :auth="authResources"
+                    @click.native.stop
+                  >
+                    <bk-button
+                      slot-scope="{ disabled }"
+                      class="field-button"
                       :text="true"
                       :disabled="disabled || !isFieldEditable(property, false)"
-                      @click.stop="handleEditField(group, property)">
-                      <i class="property-icon icon-cc-edit"></i>
+                      @click.stop="handleEditField(group, property)"
+                    >
+                      <i class="field-button-icon icon-cc-edit-shape"></i>
                     </bk-button>
                   </cmdb-auth>
-                  <cmdb-auth class="mr10" :auth="authResources" @click.native.stop v-if="!property.ispre">
-                    <bk-button slot-scope="{ disabled }"
-                      class="property-icon-btn"
+                  <cmdb-auth
+                    class="mr10"
+                    :auth="authResources"
+                    @click.native.stop
+                    v-if="!property.ispre"
+                  >
+                    <bk-button
+                      slot-scope="{ disabled }"
+                      class="field-button"
                       :text="true"
                       :disabled="disabled || !isFieldEditable(property)"
-                      @click.stop="handleDeleteField({ property, index, fieldIndex })">
-                      <i class="property-icon bk-icon icon-cc-delete"></i>
+                      @click.stop="
+                        handleDeleteField({ property, index: groupIndex, fieldIndex })
+                      "
+                    >
+                      <i class="field-button-icon bk-icon icon-cc-del"></i>
                     </bk-button>
                   </cmdb-auth>
                 </template>
               </li>
-              <li class="property-add no-drag fl" v-if="isEditable(group.info)">
-                <cmdb-auth :auth="authResources" style="display: block;">
-                  <bk-button slot-scope="{ disabled }"
-                    class="property-add-btn"
+              <li class="field-add fl" v-if="isEditable(group.info)">
+                <cmdb-auth :auth="authResources" tag="div">
+                  <bk-button
+                    slot-scope="{ disabled }"
+                    class="field-add-btn"
                     :text="true"
                     :disabled="disabled"
-                    @click.stop="handleAddField(group)">
+                    @click.stop="handleAddField(group)"
+                  >
                     <i class="bk-icon icon-plus"></i>
                     {{customObjId ? $t('新建业务字段') : $t('添加')}}
                   </bk-button>
                 </cmdb-auth>
               </li>
               <li class="property-empty" v-if="!isEditable(group.info) && !group.properties.length">{{$t('暂无字段')}}</li>
-            </vue-draggable>
-          </template>
-        </cmdb-collapse>
-        <div class="add-group" v-if="index === (groupedProperties.length - 1)">
+            </draggable>
+          </bk-transition>
+        </div>
+        <div class="add-group">
           <cmdb-auth :auth="authResources">
             <bk-button slot-scope="{ disabled }"
               class="add-group-trigger"
@@ -144,7 +196,7 @@
             </bk-button>
           </cmdb-auth>
         </div>
-      </div>
+      </draggable>
     </div>
 
     <bk-dialog class="bk-dialog-no-padding"
@@ -247,6 +299,7 @@
         :is-edit-field="slider.isEditField"
         :field="slider.curField"
         :group="slider.curGroup"
+        :groups="groupedProperties.map(item => item.info)"
         :custom-obj-id="customObjId"
         @save="handleFieldSave"
         @cancel="handleSliderBeforeClose">
@@ -285,7 +338,7 @@
 </template>
 
 <script>
-  import vueDraggable from 'vuedraggable'
+  import Draggable from 'vuedraggable'
   import has from 'has'
   import debounce from 'lodash.debounce'
   import theFieldDetail from './field-detail'
@@ -295,13 +348,17 @@
   import { mapGetters, mapActions, mapState } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
   import { v4 as uuidv4 } from 'uuid'
+  import CollapseGroupTitle from '@/views/model-manage/children/collapse-group-title.vue'
+
   export default {
+    name: 'FieldGroup',
     components: {
-      vueDraggable,
+      Draggable,
       theFieldDetail,
       previewField,
       fieldDetailsView,
-      CmdbColumnsConfig
+      CmdbColumnsConfig,
+      CollapseGroupTitle,
     },
     props: {
       customObjId: String
@@ -309,13 +366,14 @@
     data() {
       return {
         updateAuth: false,
+        isDragging: false,
         properties: [],
         groups: [],
         groupedProperties: [],
         displayGroupedProperties: [],
         previewShow: false,
         keyword: '',
-        groupState: {},
+        groupCollapseState: {},
         initGroupState: {},
         fieldTypeMap: {
           singlechar: this.$t('短字符'),
@@ -471,9 +529,10 @@
         'updatePropertyGroup',
         'updatePropertySort'
       ]),
-      ...mapActions('objectModelProperty', [
-        'searchObjectAttribute'
-      ]),
+      ...mapActions('objectModelProperty', ['searchObjectAttribute']),
+      toggleGroup(group) {
+        this.groupCollapseState[`${group.info.bk_group_id}`] = !this.groupCollapseState[`${group.info.bk_group_id}`]
+      },
       isBizCustomData(data) {
         return has(data, 'bk_biz_id') && data.bk_biz_id > 0
       },
@@ -515,14 +574,6 @@
         const customDataIndex = this.bizGroupedProperties.indexOf(group)
         return customDataIndex !== (this.bizGroupedProperties.length - 1)
       },
-      handleRiseGroup(index, group) {
-        const previousGroup = this.groupedProperties[index - 1]
-        this.updateGroupIndex(group, previousGroup)
-      },
-      handleDropGroup(index, group) {
-        const nextGroup = this.groupedProperties[index + 1]
-        this.updateGroupIndex(group, nextGroup)
-      },
       async resetData(filedId) {
         const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
         if (filedId && this.slider.isShow) {
@@ -540,9 +591,9 @@
       init(properties, groups) {
         properties = this.sortProperties(properties)
         const separatedGroups = this.separateBizCustomGroups(groups)
-        const groupState = {}
+        const groupCollapseState = {}
         const groupedProperties = separatedGroups.map((group) => {
-          groupState[group.bk_group_id] = group.is_collapse
+          groupCollapseState[group.bk_group_id] = group.is_collapse
           return {
             info: group,
             properties: properties.filter((property) => {
@@ -554,10 +605,10 @@
           }
         })
         const seletedProperties = this.$tools.getHeaderProperties(properties, [], this.disabledConfig)
-        // eslint-disable-next-line max-len
-        this.configProperty.selected = this.curGlobalCustomTableColumns || seletedProperties.map(property => property.bk_property_id)
-        this.initGroupState = this.$tools.clone(groupState)
-        this.groupState = Object.assign({}, groupState, this.groupState)
+        this.configProperty.selected = this.curGlobalCustomTableColumns
+          || seletedProperties.map(property => property.bk_property_id)
+        this.initGroupState = this.$tools.clone(groupCollapseState)
+        this.groupCollapseState = Object.assign({}, groupCollapseState, this.groupCollapseState)
         this.groupedProperties = groupedProperties
       },
       filterField() {
@@ -579,7 +630,7 @@
             }
           })
           displayGroupedProperties.forEach((group) => {
-            this.groupState[group.info.bk_group_id] = false
+            this.groupCollapseState[group.info.bk_group_id] = false
           })
           this.displayGroupedProperties = displayGroupedProperties
         } else {
@@ -737,8 +788,9 @@
         })
         curGroup.info.bk_group_name = this.groupForm.groupName
         curGroup.info.is_collapse = this.groupForm.isCollapse
-        this.groupState[curGroup.info.bk_group_id] = this.groupForm.isCollapse
+        this.groupCollapseState[curGroup.info.bk_group_id] = this.groupForm.isCollapse
         this.groupDialog.isShow = false
+        this.$success(this.$t('修改成功'))
       },
       handleAddGroup() {
         this.groupDialog.isShow = true
@@ -754,35 +806,40 @@
         this.groupDialog.isShow = false
       },
       async handleCreateGroup() {
-        const valid = await this.$validator.validate('groupName')
-        if (!valid) {
-          return
+        try {
+          const valid = await this.$validator.validate('groupName')
+          if (!valid) {
+            return
+          }
+          const { groupedProperties } = this
+          const isExist = groupedProperties.some(group => group.info.bk_group_name === this.groupForm.groupName)
+          if (isExist) {
+            this.$error(this.$t('该名字已经存在'))
+            return
+          }
+          const latestIndex = Math.max(...groupedProperties.map(group => group.info.bk_group_index))
+          const params = {
+            bk_group_id: uuidv4(),
+            bk_group_index: latestIndex + 1,
+            bk_group_name: this.groupForm.groupName,
+            bk_obj_id: this.objId,
+            bk_supplier_account: this.supplierAccount,
+            is_collapse: this.groupForm.isCollapse
+          }
+          if (!this.isGlobalView) {
+            params.bk_biz_id = this.bizId
+          }
+          const group = await this.createGroup({ params })
+          groupedProperties.push({
+            info: group,
+            properties: []
+          })
+          this.groupCollapseState[group.bk_group_id] = group.is_collapse
+          this.groupDialog.isShow = false
+          this.$success(this.$t('创建成功'))
+        } catch (err) {
+          console.log(err)
         }
-        const { groupedProperties } = this
-        const isExist = groupedProperties.some(group => group.info.bk_group_name === this.groupForm.groupName)
-        if (isExist) {
-          this.$error(this.$t('该名字已经存在'))
-          return
-        }
-        const latestIndex = Math.max(...groupedProperties.map(group => group.info.bk_group_index))
-        const params = {
-          bk_group_id: uuidv4(),
-          bk_group_index: latestIndex + 1,
-          bk_group_name: this.groupForm.groupName,
-          bk_obj_id: this.objId,
-          bk_supplier_account: this.supplierAccount,
-          is_collapse: this.groupForm.isCollapse
-        }
-        if (!this.isGlobalView) {
-          params.bk_biz_id = this.bizId
-        }
-        const group = await this.createGroup({ params })
-        groupedProperties.push({
-          info: group,
-          properties: []
-        })
-        this.groupState[group.bk_group_id] = group.is_collapse
-        this.groupDialog.isShow = false
       },
       async handleDeleteGroup(group, index) {
         if (group.properties.length) {
@@ -801,12 +858,17 @@
       resortGroups() {
         this.groupedProperties.sort((groupA, groupB) => groupA.info.bk_group_index - groupB.info.bk_group_index)
       },
+      handleGroupDragChange({ moved }) {
+        const groupA = this.displayGroupedProperties[moved.oldIndex]
+        const groupB = this.displayGroupedProperties[moved.newIndex]
+        this.updateGroupIndex(groupA, groupB)
+      },
       updateGroupIndex(groupA, groupB) {
         return this.switchGroupIndex({
           params: {
             condition: {
-              id: [groupA.info.id, groupB.info.id]
-            }
+              id: [groupA.info.id, groupB.info.id],
+            },
           },
           config: {
             requestId: 'put_updateGroup_index',
@@ -818,14 +880,17 @@
           groupA.info.bk_group_index = groupBIndex
           groupB.info.bk_group_index = groupAIndex
           this.resortGroups()
+          this.$success(this.$t('修改成功'))
         })
           .catch((err) => {
             console.log(err)
           })
       },
-      handleDragChange(moveInfo) {
+      handleModelDragChange(moveInfo) {
         if (has(moveInfo, 'moved') || has(moveInfo, 'added')) {
-          const info = moveInfo.moved ? { ...moveInfo.moved } : { ...moveInfo.added }
+          const info = moveInfo.moved
+            ? { ...moveInfo.moved }
+            : { ...moveInfo.added }
           this.updatePropertyIndex(info)
         }
       },
@@ -833,10 +898,8 @@
         let curIndex = 0
         let curGroup = ''
 
-        // eslint-disable-next-line no-restricted-syntax
         for (const group of this.groupedProperties) {
           const len = group.properties.length
-          // eslint-disable-next-line no-restricted-syntax
           for (const item of group.properties) {
             if (item.bk_property_id === property.bk_property_id) {
               // 取移动字段新位置的前一个字段 index + 1，当给空字段组添加新字段时，curIndex 默认为 0
@@ -850,25 +913,36 @@
             }
           }
         }
+
         const params = {
           bk_property_group: curGroup,
           bk_property_index: curIndex
         }
+
         if (!this.isGlobalView) {
           params.bk_biz_id = this.bizId
         }
-        await this.updatePropertySort({
-          objId: this.objId,
-          propertyId: property.id,
-          params,
-          config: {
-            requestId: `updatePropertySort_${this.objId}`
-          }
-        })
-        const properties = await this.getProperties()
-        this.init(properties, this.groups)
+
+        try {
+          await this.updatePropertySort({
+            objId: this.objId,
+            propertyId: property.id,
+            params,
+            config: {
+              requestId: `updatePropertySort_${this.objId}`
+            }
+          })
+
+          const properties = await this.getProperties()
+
+          this.init(properties, this.groups)
+
+          this.$success(this.$t('修改成功'))
+        } catch (error) {
+          console.log(error)
+        }
       },
-      handleAddField(group) {
+      handleAddField(group = {}) {
         this.slider.isEditField = false
         this.slider.curField = {}
         this.slider.curGroup = group.info
@@ -894,19 +968,26 @@
         this.$bkInfo({
           title: this.$tc('确定删除字段？', field.bk_property_name, { name: field.bk_property_name }),
           subTitle: this.$t('删除模型字段提示', { property: field.bk_property_name, model: this.curModel.bk_obj_name }),
+          confirmLoading: this.$loading('deleteObjectAttribute'),
           confirmFn: async () => {
-            const res = await this.$store.dispatch('objectModelProperty/deleteObjectAttribute', {
-              id: field.id,
-              config: {
-                data: this.isGlobalView ? {} : { bk_biz_id: this.bizId },
-                requestId: 'deleteObjectAttribute',
-                originalResponse: true
+            if (this.$loading('deleteObjectAttribute')) return false
+            try {
+              const res = await this.$store.dispatch('objectModelProperty/deleteObjectAttribute', {
+                id: field.id,
+                config: {
+                  data: this.isGlobalView ? {} : { bk_biz_id: this.bizId },
+                  requestId: 'deleteObjectAttribute',
+                  originalResponse: true
+                }
+              })
+              this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
+              if (res.data.bk_error_msg === 'success' && res.data.bk_error_code === 0) {
+                this.displayGroupedProperties[index].properties.splice(fieldIndex, 1)
+                this.handleSliderHidden()
+                this.$success(this.$t('删除成功'))
               }
-            })
-            this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
-            if (res.data.bk_error_msg === 'success' && res.data.bk_error_code === 0) {
-              this.displayGroupedProperties[index].properties.splice(fieldIndex, 1)
-              this.handleSliderHidden()
+            } catch (error) {
+              console.log(error)
             }
           }
         })
@@ -976,369 +1057,346 @@
           this.configProperty.selected = setProperties
           this.configProperty.show = false
         })
-      }
-    }
+      },
+      handleModelDragStart() {
+        this.isDragging = true
+      },
+      handleModelDragEnd() {
+        this.isDragging = false
+      },
+      handleGroupDragStart() {
+        this.isDragging = true
+      },
+      handleGroupDragEnd() {
+        this.isDragging = false
+      },
+    },
   }
 </script>
 
 <style lang="scss" scoped>
-    $modelHighlightColor: #3c96ff;
-    .group-layout {
-        height: 100%;
-        padding: 20px;
-        @include scrollbar-y;
+$modelHighlightColor: #3c96ff;
+.field-group {
+  height: 100%;
+  padding: 20px;
+  @include scrollbar-y;
+}
+
+.field-options {
+  display: flex;
+  margin: 0 0 14px;
+  .bk-button {
+    margin-right: 10px;
+  }
+  .filter-input {
+    width: 240px;
+    margin-left: auto;
+  }
+  .setting-btn {
+    margin-left: 10px;
+    height: 32px;
+    line-height: 32px;
+    color: #979ba5;
+    border: 1px solid #c4c6cc;
+    border-radius: 2px;
+    /deep/ .icon-cog {
+      font-size: 16px;
+      vertical-align: 2px;
     }
-    .layout-header {
-        margin: 0 0 14px;
-        .setting-btn {
-            float: right;
-            height: 32px;
-            line-height: 32px;
-            color: #63656e;
-            .icon-cc-setting {
-                font-size: 18px;
-                color: #979ba5;
-                vertical-align: unset;
-            }
-        }
-        .filter-input {
-            width: 240px;
-            margin-left: 4px;
-        }
+  }
+}
+
+.group-wrapper {
+  position: relative;
+}
+
+.group-item + .group-item{
+  margin-top: 15px;
+}
+/deep/ .collapse-layout {
+  width: 100%;
+  .collapse-trigger {
+    display: flex;
+    align-items: center;
+  }
+  .collapse-arrow {
+    margin-right: 8px;
+    color: #63656e;
+  }
+}
+
+.group-header {
+  display: flex;
+  color: #313238;
+  font-size: 14px;
+}
+
+.field-list {
+  margin-top: 7px;
+  font-size: 14px;
+  position: relative;
+  &.empty {
+    min-height: 70px;
+  }
+  &.disabled {
+    .field-item {
+      cursor: pointer;
+      &::before {
+        display: none !important;
+      }
     }
-    .group {
-        margin-bottom: 19px;
+  }
+  .field-item {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    position: relative;
+    width: 246px;
+    height: 58px;
+    margin: 0 12px 12px 0;
+    border: 1px solid #dcdee5;
+    border-radius: 2px;
+    background-color: #ffffff;
+    user-select: none;
+    cursor: pointer;
+    &.only-ready {
+      background-color: #f4f6f9;
     }
-    /deep/ .collapse-layout {
-        width: 100%;
-        .collapse-trigger {
-            display: flex;
-            align-items: center;
+    &:hover {
+      border-color: #3a84ff;
+      background-color: #f0f5ff;
+      .drag-icon {
+        visibility: visible;
+        @at-root .is-dragging & {
+          visibility: hidden;
         }
-        .collapse-arrow {
-            margin-right: 8px;
-            color: #63656e;
+        @at-root .is-readonly & {
+          visibility: hidden;
         }
+      }
+      .field-button {
+        visibility: visible;
+        @at-root .is-dragging & {
+          visibility: hidden;
+        }
+      }
+      &::before {
+        display: block;
+      }
+      @at-root .is-dragging & {
+        border-color: #dcdee5;
+        background-color: #fff;
+      }
     }
-    .group-header {
-        .header-title {
-            display: flex;
-            align-items: center;
-            height: 21px;
-            padding: 0 21px 0 0;
-            line-height: 21px;
-            color: #313237;
-            position: relative;
-            font-size: 0;
-            .title-input {
-                width: 180px;
-                display: inline-block;
-                top: -5px;
-                /deep/ .bk-form-input {
-                    height: 28px;
-                    line-height: 28px;
-                }
-            }
-            .title-input-button {
-                display: inline-block;
-                margin: 0 0 0 14px;
-                font-size: 14px;
-                color: $modelHighlightColor;
-            }
-            .group-name {
-                flex: none;
-                max-width: 500px;
-                font-size: 14px;
-                font-weight: 700;
-                @include ellipsis;
-                span {
-                    @include inlineBlock;
-                    font-size: 12px;
-                    color: #c4c6cc;
-                }
-            }
-            .group-count {
-                font-size: 16px;
-                display: inline-block;
-                vertical-align: middle;
-                color: #c3cdd7;
-            }
-            .title-icon-btn {
-                flex: none;
-            }
-            .icon-btn {
-                @include inlineBlock;
-                display: none;
-                vertical-align: middle;
-                font-size: 0;
-                height: 21px;
-                color: $modelHighlightColor;
-                &.is-disabled {
-                    color: #c4c6cc;
-                }
-            }
-            .title-icon {
-                font-size: 16px;
-                width: 16px;
-                height: 16px;
-                &.icon-arrows-down,
-                &.icon-arrows-up {
-                    font-size: 30px;
-                    text-indent: -7px;
-                }
-            }
-            &:hover .icon-btn {
-                display: inline-block;
-            }
-        }
+    &-ghost {
+      $ghostBorderColor: #dcdee5;
+      $ghostBackgroundColor:#f5f7fa;
+      background-color: $ghostBackgroundColor !important;
+      border: 1px dashed $ghostBorderColor;
+
+      &:hover {
+        border-color: $ghostBorderColor;
+        background-color: $ghostBackgroundColor;
+        box-shadow: none;
+      }
+
+      > * {
+        display: none !important;
+      }
     }
-    .property-list {
-        width: calc(100% + 10px);
-        margin: 0 0 0 -5px;
+    .drag-icon {
+      @include dragIcon;
+      visibility: hidden;
+      margin: 0 4px;
+    }
+    .drag-content {
+      flex: 1;
+      width: 0;
+      color: #737987;
+      .field-name {
+        display: flex;
+        align-items: center;
+        font-size: 12px;
+        span {
+          line-height: 21px;
+          @include ellipsis;
+        }
+        i {
+          font-size: 16px;
+          font-style: normal;
+          font-weight: bold;
+          margin: 4px 4px 0;
+          line-height: 7px;
+        }
+      }
+      p {
+        font-size: 12px;
+        color: #c4c6cc;
+        @include ellipsis;
+      }
+      .field-id {
+        margin-left: 4px;
+      }
+    }
+    .field-button {
+      font-size: 0;
+      visibility: hidden;
+      color: #63656e;
+      &:hover {
+        color: #3a84ff;
+      }
+      .field-button-icon {
         font-size: 14px;
-        position: relative;
-        &.empty {
-            min-height: 70px;
-        }
-        &.disabled {
-            .property-item {
-                cursor: pointer;
-                &::before {
-                    display: none !important;
-                }
-            }
-        }
-        .property-item {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            position: relative;
-            width: calc(20% - 10px);
-            height: 59px;
-            padding: 10px 10px 10px 14px;
-            margin: 10px 5px;
-            border: 1px solid #dcdee5;
-            border-radius: 2px;
-            background-color: #ffffff;
-            user-select: none;
-            cursor: move;
-            &.only-ready {
-                background-color: #f4f6f9;
-            }
-            &:hover {
-                border-color: #3a84ff;
-                background-color: #f0f5ff;
-                .drag-logo {
-                    display: block;
-                }
-                .property-icon-btn {
-                    display: inline-block;
-                }
-                &::before {
-                    display: block;
-                }
-            }
-            &.sortable-ghost {
-                height: 59px;
-                background: #fff;
-                color: #fff;
-                border: 1px dashed $cmdbBorderFocusColor;
-                &::before, .drag-content, .property-icon-btn {
-                    display: none;
-                }
-            }
-            &::before {
-                content: '';
-                display: none;
-                position: absolute;
-                top: 25px;
-                left: 5px;
-                width: 2px;
-                height: 2px;
-                border-radius: 50%;
-                background-color: #666666;
-                box-shadow: 0 6px 0 0 #666666,
-                    0 12px 0 0 #666666,
-                    0 -6px 0 0 #666666,
-                    6px 0 0 0 #3b3b3b,
-                    6px 6px 0 0 #3b3b3b,
-                    6px -6px 0 0 #3b3b3b,
-                    6px 12px 0 0 #3b3b3b;
-            }
-            .drag-content {
-                flex: 1;
-                width: 0;
-                color: #737987;
-                margin-left: 6px;
-                .field-name {
-                    display: flex;
-                    align-items: center;
-                    span {
-                        line-height: 21px;
-                        @include ellipsis;
-                    }
-                    i {
-                        font-size: 16px;
-                        font-style: normal;
-                        font-weight: bold;
-                        margin: 4px 4px 0;
-                        line-height: 7px;
-                    }
-                }
-                p {
-                    font-size: 12px;
-                    color: #c4c6cc;
-                    @include ellipsis;
-                }
-                .field-id {
-                    margin-left: 4px;
-                }
-            }
-            .property-icon-btn {
-                font-size: 0;
-                color: #3a84ff;
-                display: none;
-                .property-icon {
-                    font-size: 14px;
-                }
-                &.is-disabled {
-                    color: #C4C6CC;
-                }
-            }
-        }
-        .property-add {
-            width: calc(20% - 10px);
-            margin: 10px 5px;
-            .property-add-btn {
-                display: block;
-                width: 100%;
-                height: 59px;
-                line-height: 59px;
-                text-align: center;
-                border: 1px dashed #dcdee5;
-                background-color: #ffffff;
-                &:not(.is-disabled):hover {
-                    color: #3a84ff;
-                    border-color: #3a84ff;
-                }
-            }
-            .icon-plus {
-                font-weight: bold;
-                margin-top: -4px;
-                font-size: 16px;
-            }
-        }
-        .property-empty {
-            width: calc(100% - 10px);
-            height: 60px;
-            line-height: 60px;
-            border: 1px dashed #dde4eb;
-            text-align: center;
-            font-size: 14px;
-            color: #aaaaaa;
-            margin: 10px 0 10px 5px;
-        }
+      }
+      &.is-disabled {
+        color: #c4c6cc;
+      }
     }
-    .add-group {
-        margin: 20px 0 0 0;
-        font-size: 0;
-        .add-group-trigger {
-            color: #979BA5;
-            font-size: 14px;
-            height: 30px;
-            width: 146px;
-            line-height: 30px;
-            text-align: left;
-            padding-left: 2px;
-            &.is-disabled {
-                color: #C4C6CC;
-                .icon {
-                    color: #63656E;
-                }
-            }
-            .icon-cc-plus {
-                margin: -4px 2px 0 0;
-                display: inline-block;
-                vertical-align: middle;
-                font-size: 18px;
-            }
-            &:not(.is-disabled):hover {
-                background-color: #F0F1F5;
-            }
-        }
+  }
+  .field-add {
+    width: 246px;
+    height: 58px;
+    margin: 0 12px 12px 0;
+    .auth-box{
+      display: block;
+      height: 100%;
     }
-    .dialog-title {
-        padding: 20px 13px;
-        font-size: 20px;
-        color: #333948;
+    .field-add-btn {
+      width: 100%;
+      height: 100%;
+      border: 1px dashed #dcdee5;
+      background-color: #ffffff;
+      border-radius: 2px;
+      font-size: 12px;
+      &:not(.is-disabled):hover {
+        color: #3a84ff;
+        border-color: #3a84ff;
+      }
     }
-    .dialog-content {
-        width: 470px;
-        padding: 0 0 20px 0;
-        margin: 0 auto;
+    .icon-plus {
+      font-weight: bold;
+      margin-top: -4px;
+      font-size: 16px;
     }
-    .dialog-filter {
-        position: relative;
-        input {
-            padding-right: 40px;
-        }
-        .icon-search {
-            position: absolute;
-            right: 11px;
-            top: 9px;
-            font-size: 18px;
-        }
+  }
+  .property-empty {
+    width: calc(100% - 10px);
+    height: 60px;
+    line-height: 60px;
+    border: 1px dashed #dde4eb;
+    text-align: center;
+    font-size: 14px;
+    color: #aaaaaa;
+    margin: 10px 0 10px 5px;
+  }
+}
+.add-group {
+  margin: 15px 0 0 0;
+  font-size: 0;
+  .add-group-trigger {
+    color: #63656E;
+    font-size: 14px;
+    height: 30px;
+    padding-right: 30px;
+    line-height: 30px;
+    text-align: left;
+    padding-left: 2px;
+    border-radius: 2px;
+    &.is-disabled {
+      color: #c4c6cc;
+      .icon {
+        color: #63656e;
+      }
     }
-    .dialog-property {
-        padding: 3px 29px;
-        margin: 28px 0 0 0;
-        max-height: 300px;
-        @include scrollbar-y;
-        .property-item {
-            width: 50%;
-            margin: 0 0 22px 0;
-            .property-label {
-                float: left;
-                max-width: 100%;
-                padding: 0 0 0 4px;
-                line-height: 18px;
-                cursor: pointer;
-                @include ellipsis;
-                &:before {
-                    content: "";
-                    display: inline-block;
-                    vertical-align: -4px;
-                    width: 18px;
-                    height: 18px;
-                    background: #fff url("../../../assets/images/checkbox-sprite.png") no-repeat;
-                    background-position: 0 -62px;
-                }
-                &.checked:before {
-                    background-position: -33px -62px;
-                }
-            }
-        }
+    .icon-cc-plus {
+      margin: -4px 2px 0 0;
+      display: inline-block;
+      vertical-align: middle;
+      font-size: 18px;
     }
-    .group-dialog-header {
-        color: #313237;
-        font-size: 20px;
-        padding: 18px 24px 14px;
+    &:not(.is-disabled):hover {
+      background-color: #f0f1f5;
     }
-    .group-dialog-content {
-        padding: 0 24px;
-        .cmdb-form-item {
-            margin: 10px 0 20px;
-            &.is-error {
-                /deep/ .bk-form-input {
-                    border-color: #ff5656;
-                }
-            }
-        }
+  }
+}
+.dialog-title {
+  padding: 20px 13px;
+  font-size: 20px;
+  color: #333948;
+}
+.dialog-content {
+  width: 470px;
+  padding: 0 0 20px 0;
+  margin: 0 auto;
+}
+.dialog-filter {
+  position: relative;
+  input {
+    padding-right: 40px;
+  }
+  .icon-search {
+    position: absolute;
+    right: 11px;
+    top: 9px;
+    font-size: 18px;
+  }
+}
+.dialog-property {
+  padding: 3px 29px;
+  margin: 28px 0 0 0;
+  max-height: 300px;
+  @include scrollbar-y;
+  .field-item {
+    width: 50%;
+    margin: 0 0 22px 0;
+    .property-label {
+      float: left;
+      max-width: 100%;
+      padding: 0 0 0 4px;
+      line-height: 18px;
+      cursor: pointer;
+      @include ellipsis;
+      &:before {
+        content: "";
+        display: inline-block;
+        vertical-align: -4px;
+        width: 18px;
+        height: 18px;
+        background: #fff url("../../../assets/images/checkbox-sprite.png")
+          no-repeat;
+        background-position: 0 -62px;
+      }
+      &.checked:before {
+        background-position: -33px -62px;
+      }
     }
+  }
+}
+.group-dialog-header {
+  color: #313237;
+  font-size: 20px;
+  padding: 18px 24px 14px;
+}
+.group-dialog-content {
+  padding: 0 24px;
+  .cmdb-form-item {
+    margin: 10px 0 20px;
+    &.is-error {
+      /deep/ .bk-form-input {
+        border-color: #ff5656;
+      }
+    }
+  }
+}
+.group-dialog-footer {
+  .bk-button + .bk-button{
+    margin-left: 10px;
+  }
+}
 </style>
 
 <style lang="scss">
-    .field-loading {
-        position: sticky !important;
-    }
+.field-loading {
+  position: sticky !important;
+}
 </style>

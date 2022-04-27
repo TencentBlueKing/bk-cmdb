@@ -148,5 +148,8 @@
     "bk_firewall_property_bk_os_detail": "os detail",
     "bk_firewall_property_bk_detail": "detail",
     "bk_firewall_property_bk_biz_status": "business status",
+    "bk_biz_set_obj_property_bk_biz_set_name": "name",
+    "bk_biz_set_obj_property_bk_biz_set_desc": "description",
+    "bk_biz_set_obj_property_bk_biz_maintainer": "ops",
     "": ""
 }

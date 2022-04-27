@@ -64,12 +64,14 @@ var deprecatedIndexName = map[string][]string{
 		"bk_set_name_1",
 		"bk_set_id_1_bk_biz_id_1",
 		"idx_unique_setID",
+		"bk_set_id_1",
 	},
 	common.BKTableNameObjAttDes: {
 		"bk_obj_id_1",
 		"bk_supplier_account_1",
 		"idx_unique_objID_propertyID_bizID",
 		"idx_unique_Id",
+		"id_1",
 	},
 	common.BKTableNameSetServiceTemplateRelation: {
 		"idx_unque_setTemplateID_serviceTemplateID",
@@ -99,6 +101,7 @@ var deprecatedIndexName = map[string][]string{
 		"bk_idx_set_template_id_service_template_id",
 		"bk_idx_set_template_id",
 		"bk_idx_service_template_id",
+		"bk_module_id_1",
 	},
 	common.BKTableNameChartConfig: {
 		"config_id",
@@ -133,6 +136,7 @@ var deprecatedIndexName = map[string][]string{
 		"bk_biz_id_1_bk_host_id_1",
 		"idx_unique_id",
 		"bk_idx_host_id",
+		"idx_id",
 	},
 	common.BKTableNameProcessInstanceRelation: {
 		"idx_bkServiceInstanceID",
@@ -149,6 +153,7 @@ var deprecatedIndexName = map[string][]string{
 		"idx_unique_id",
 		"bk_idx_service_template_idd_bk_process_name",
 		"bk_idx_service_template_id_bk_process_name",
+		"idx_id",
 	},
 	common.BKTableNameCloudAccount: {
 		"bk_account_id",
@@ -171,6 +176,7 @@ var deprecatedIndexName = map[string][]string{
 		"idx_bkBizID",
 		"idx_unique_id",
 		"bk_idx_bk_biz_id_name",
+		"idx_id",
 	},
 	common.BKTableNameAPITask: {
 		"idx_taskID",
@@ -211,6 +217,7 @@ var deprecatedIndexName = map[string][]string{
 		"bk_biz_id_1_bk_supplier_account_1",
 		"default_1_bk_supplier_account_1",
 		"idx_unique_bizID",
+		"bk_biz_id_1",
 	},
 	common.BKTableNameServiceCategory: {
 		"idx_unique_id",

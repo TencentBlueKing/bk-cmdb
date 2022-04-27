@@ -24,4 +24,5 @@ const (
 	EventFatalError    MonitorType = "event_fatal_error"
 	MongoDDLFatalError MonitorType = "mongo_ddl_fatal_error"
 	EventTestInfo      MonitorType = "event_test_info"
+	HttpFatalError     MonitorType = "http_fatal_error"
 )

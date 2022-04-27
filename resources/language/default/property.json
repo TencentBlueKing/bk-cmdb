@@ -143,5 +143,8 @@
     "bk_firewall_property_bk_os_detail": "操作系统详情",
     "bk_firewall_property_bk_detail": "详细描述",
     "bk_firewall_property_bk_biz_status": "运营状态",
+    "bk_biz_set_obj_property_bk_biz_set_name": "业务集名",
+    "bk_biz_set_obj_property_bk_biz_set_desc": "业务集描述",
+    "bk_biz_set_obj_property_bk_biz_maintainer": "运维人员",
     "": ""
 }

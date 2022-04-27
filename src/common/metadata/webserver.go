@@ -14,7 +14,9 @@ package metadata
 
 import (
 	"net/http"
+	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/errors"
 
 	"github.com/gin-gonic/gin"
@@ -134,4 +136,68 @@ type ObjectAsstIDStatisticsInfo struct {
 	Create int64 `json:"create"`
 	Delete int64 `json:"delete"`
 	Total  int64 `json:"total"`
+}
+
+// BatchExportObject param of bacth export object
+type BatchExportObject struct {
+	ObjectID       []int64 `json:"object_id"`
+	ExcludedAsstID []int64 `json:"excluded_asst_id"`
+	Password       string  `json:"password"`
+	Expiration     int64   `json:"expiration"`
+	FileName       string  `json:"file_name"`
+}
+
+// ListObjectTopoResponse list object with it's topo info response
+type ListObjectTopoResponse struct {
+	BaseResp `json:",inline"`
+	Data     *TotalObjectInfo `json:"data"`
+}
+
+// ZipFileAnalysis analysis zip file
+type ZipFileAnalysis struct {
+	Password string `json:"password"`
+}
+
+// AnalysisResult result of analysis zip file
+type AnalysisResult struct {
+	BaseResp `json:",inline"`
+	Data     BatchImportObject `json:"data"`
+}
+
+// BatchImportObject param of batch import object
+type BatchImportObject struct {
+	Object []YamlObject      `json:"import_object"`
+	Asst   []AssociationKind `json:"import_asst"`
+}
+
+// YamlHeader yaml's common header
+type YamlHeader struct {
+	ExpireTime int64 `json:"expire_time" yaml:"expire_time"`
+	CreateTime int64 `json:"create_time" yaml:"create_time"`
+}
+
+// Validate validate yaml common field
+func (o *YamlHeader) Validate() errors.RawErrorInfo {
+	if o.ExpireTime == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail,
+			Args:    []interface{}{"expire_time not found"},
+		}
+	}
+
+	if o.CreateTime == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail,
+			Args:    []interface{}{"create_time not found"},
+		}
+	}
+
+	if (o.ExpireTime != o.CreateTime && o.ExpireTime < time.Now().Local().UnixNano()) || o.ExpireTime < o.CreateTime {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail,
+			Args:    []interface{}{"expire time incorrect"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }

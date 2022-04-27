@@ -232,9 +232,8 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 	}
 
 	cond := mapstr.MapStr{metadata.AttributeFieldID: id}
-	err = s.Logics.AttributeOperation().DeleteObjectAttribute(ctx.Kit, cond, modelType.BizID)
-	if err != nil {
-		blog.Errorf("delete object attribute failed, params: %+v, err: %+v, rid: %s", ctx.Kit, err, ctx.Kit.Rid)
+	if err = s.Logics.AttributeOperation().DeleteObjectAttribute(ctx.Kit, cond, modelType.BizID); err != nil {
+		blog.Errorf("delete object attribute failed, params: %+v, err: %+v, rid: %s", cond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

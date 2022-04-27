@@ -324,6 +324,11 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		return nil
 	}
 
+	needAsst := make(map[string]struct{})
+	for key := range asstObjectUniqueIDMap {
+		needAsst[key] = struct{}{}
+	}
+
 	// 2021年06月01日， 判断时候需要导出自关联，这个处理就是打补丁，不友好
 	hasSelfAssociation := false
 	if _, ok := asstObjectUniqueIDMap[objID]; ok {
@@ -331,24 +336,23 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 	}
 
 	var asstIDArr []string
+	// 单独处理自关联模型, 将自关联模型找到后直接删除该字段，之后的模型关联就不会到受到影响导致所有的关联关系都导出
+	for _, asst := range asstList {
+		if asst.ObjectID == asst.AsstObjID && hasSelfAssociation {
+			asstIDArr = append(asstIDArr, asst.AssociationName)
+			delete(needAsst, asst.ObjectID)
+			break
+		}
+	}
+
 	for _, asst := range asstList {
 
-		// 只导出自关联关系时的判断
-		// 防止仅导出自关联但fetch多个关联关系导致被关联对象uniqueID未传值初始化为0使getAssociationData返回报错
-		if len(asstObjectUniqueIDMap) == 1 && hasSelfAssociation {
-			if asst.ObjectID == asst.AsstObjID {
-				asstIDArr = append(asstIDArr, asst.AssociationName)
-				break
-			}
-			continue
-		}
-
-		_, ok := asstObjectUniqueIDMap[asst.ObjectID]
+		_, ok := needAsst[asst.ObjectID]
 		if ok {
 			asstIDArr = append(asstIDArr, asst.AssociationName)
 			continue
 		}
-		_, ok = asstObjectUniqueIDMap[asst.AsstObjID]
+		_, ok = needAsst[asst.AsstObjID]
 		if ok {
 			asstIDArr = append(asstIDArr, asst.AssociationName)
 			continue

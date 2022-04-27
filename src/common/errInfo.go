@@ -489,6 +489,10 @@ const (
 
 	CCErrorTopoGetAuthorizedBusinessSetListFailed = 1101114
 
+	CCErrorTopoForbiddenDeleteBuiltInBusinessSet = 1101115
+
+	CCErrorTopoForbiddenUpdateBuiltInBusinessSetScope = 1101116
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
@@ -737,6 +741,10 @@ const (
 	CCErrWebGetUsernameMapFail          = 1111018
 	CCErrWebHostCheckFail               = 1111019
 	CCErrWebGetDepartmentMapFail        = 1111020
+	CCErrWebAnalysisZipFileFail         = 1111021
+	CCErrWebVerifyYamlFail              = 1111022
+	CCErrWebVerifyYamlPwdFail           = 1111023
+	CCErrWebBuildZipFail                = 1111024
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000

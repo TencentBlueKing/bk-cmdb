@@ -225,9 +225,12 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 		}
 	}
 
-	hostPathMap, err := lgc.getHostIamPath(kit, resourceType, hostIDList)
-	if err != nil {
-		return nil, err
+	var hostPathMap map[int64][]string
+	if needPath {
+		hostPathMap, err = lgc.getHostIamPath(kit, resourceType, hostIDList)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// covert id and display_name field
@@ -323,7 +326,7 @@ func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filt
 		blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, ids, err, kit.Rid)
 		return nil, err
 	}
-	
+
 	// covert id and display_name field
 	for _, instance := range result.Info {
 		instance[types.IDField] = util.GetStrByInterface(instance[common.BKInstIDField])

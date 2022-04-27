@@ -39,7 +39,17 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 		return
 	}
 
-	var processIDs []int64
+	if len(input.Processes) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsIsInvalid, "not set processes"))
+		blog.Infof("no process to create, return")
+		return
+	}
+	if len(input.Processes) > common.BKMaxUpdateOrCreatePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
+	processIDs := make([]int64, 0)
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		processIDs, err = ps.createProcessInstances(ctx, input)
@@ -256,6 +266,10 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(input.Raw) > common.BKMaxUpdateOrCreatePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
 	// generate audit log before processes are updated
 	auditLogs, err := ps.generateUpdateProcessAudit(ctx.Kit, input)
 	if err != nil {
@@ -603,8 +617,7 @@ func (ps *ProcServer) getModule(kit *rest.Kit, moduleID int64) (*metadata.Module
 }
 
 var (
-	ipRegex   = `^((1?\d{1,2}|2[0-4]\d|25[0-5])[.]){3}(1?\d{1,2}|2[0-4]\d|25[0-5])$`
-	portRegex = `^([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$`
+	ipRegex = `^((1?\d{1,2}|2[0-4]\d|25[0-5])[.]){3}(1?\d{1,2}|2[0-4]\d|25[0-5])$`
 )
 
 func (ps *ProcServer) validateProcessInstance(kit *rest.Kit, process *metadata.Process) errors.CCErrorCoder {
@@ -630,19 +643,14 @@ func (ps *ProcServer) validateProcessInstance(kit *rest.Kit, process *metadata.P
 			}
 		}
 
-		if bindInfo.Std.Port == nil || len(*bindInfo.Std.Port) == 0 {
+		port := (*metadata.PropertyPortValue)(bindInfo.Std.Port)
+		if err := port.Validate(); err != nil {
 			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKPort)
 		}
-		if matched, err := regexp.MatchString(portRegex, *bindInfo.Std.Port); err != nil || !matched {
-			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcBindInfo+"."+common.BKPort)
-		}
 
-		if bindInfo.Std.Protocol == nil || len(*bindInfo.Std.Protocol) == 0 {
+		protocol := (*metadata.ProtocolType)(bindInfo.Std.Protocol)
+		if err := protocol.Validate(); err != nil {
 			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKProtocol)
-		}
-		if *bindInfo.Std.Protocol != string(metadata.ProtocolTypeTCP) &&
-			*bindInfo.Std.Protocol != string(metadata.ProtocolTypeUDP) {
-			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcBindInfo+"."+common.BKProtocol)
 		}
 	}
 
@@ -658,6 +666,11 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 
 	if len(input.ProcessInstanceIDs) == 0 {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcessIDField))
+		return
+	}
+
+	if len(input.ProcessInstanceIDs) > common.BKMaxDeletePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}
 

@@ -360,17 +360,32 @@ func Mongo(prefix string) (mongo.Config, error) {
 	if c.Mechanism == "" {
 		c.Mechanism = "SCRAM-SHA-1"
 	}
-	if !parser.isSet(prefix+".maxOpenConns") || parser.getUint64(prefix+".maxOpenConns") > mongo.MaximumMaxOpenConns {
+
+	maxOpenConns := prefix + ".maxOpenConns"
+	if !parser.isSet(maxOpenConns) {
+		blog.Errorf("can not find config %s, set default value: %d", maxOpenConns, mongo.DefaultMaxOpenConns)
 		c.MaxOpenConns = mongo.DefaultMaxOpenConns
 	} else {
-		c.MaxOpenConns = parser.getUint64(prefix + ".maxOpenConns")
+		c.MaxOpenConns = parser.getUint64(maxOpenConns)
 	}
 
-	if !parser.isSet(prefix+".maxIdleConns") ||
-		parser.getUint64(prefix+".maxIdleConns") < mongo.MinimumMaxIdleOpenConns {
+	if c.MaxIdleConns > mongo.MaximumMaxOpenConns {
+		blog.Errorf("config %s exceeds maximum value, use maximum value %d", maxOpenConns, mongo.MaximumMaxOpenConns)
+		c.MaxIdleConns = mongo.MaximumMaxOpenConns
+	}
+
+	maxIdleConns := prefix + ".maxIdleConns"
+	if !parser.isSet(maxIdleConns) {
+		blog.Errorf("can not find config %s, set default value: %d", maxIdleConns, mongo.MinimumMaxIdleOpenConns)
 		c.MaxIdleConns = mongo.MinimumMaxIdleOpenConns
 	} else {
-		c.MaxIdleConns = parser.getUint64(prefix + ".maxIdleConns")
+		c.MaxIdleConns = parser.getUint64(maxIdleConns)
+	}
+
+	if c.MaxIdleConns < mongo.MinimumMaxIdleOpenConns {
+		blog.Errorf("config %s less than minimum value, use minimum value %d",
+			maxIdleConns, mongo.MinimumMaxIdleOpenConns)
+		c.MaxIdleConns = mongo.MinimumMaxIdleOpenConns
 	}
 
 	if !parser.isSet(prefix + ".socketTimeoutSeconds") {

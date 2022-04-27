@@ -3,38 +3,38 @@
     <bk-link theme="default" class="anchor"
       icon="bk-icon icon-angle-down"
       icon-placement="right"
-      @click="handleShow">高级搜索</bk-link>
+      @click="handleShow">{{$t('高级搜索')}}</bk-link>
     <template #content>
       <div class="advanced-search-form">
         <div class="setting-group">
-          <div class="title">检索对象</div>
+          <div class="title">{{$t('检索对象')}}</div>
           <div class="content">
             <div class="bk-button-group">
               <bk-button
                 @click="handleTargetClick('model')"
-                :class="{ 'is-selected': targets.includes('model') }">模型</bk-button>
+                :class="{ 'is-selected': targets.includes('model') }">{{$t('模型')}}</bk-button>
               <bk-button
                 @click="handleTargetClick('instance')"
-                :class="{ 'is-selected': targets.includes('instance') }">实例</bk-button>
+                :class="{ 'is-selected': targets.includes('instance') }">{{$t('实例')}}</bk-button>
             </div>
           </div>
         </div>
         <div class="setting-group scope">
-          <div class="title">模型范围</div>
+          <div class="title">{{$t('模型范围')}}</div>
           <div class="content">
             <div class="setting-item" v-show="targets.includes('model')">
-              <label class="label">模型</label>
-              <model-selector multiple searchable class="form-el" placeholder="默认全部" v-model="models" />
+              <label class="label">{{$t('模型')}}</label>
+              <model-selector multiple searchable class="form-el" :placeholder="$t('默认全部')" v-model="models" />
             </div>
             <div class="setting-item" v-show="targets.includes('instance')">
-              <label class="label">实例</label>
-              <model-selector multiple searchable class="form-el" placeholder="默认全部" v-model="instances" />
+              <label class="label">{{$t('实例')}}</label>
+              <model-selector multiple searchable class="form-el" :placeholder="$t('默认全部')" v-model="instances" />
             </div>
           </div>
         </div>
         <div class="buttons">
-          <bk-button theme="primary" @click="handleConfirm">确定</bk-button>
-          <bk-button theme="default" @click="handleCancel">取消</bk-button>
+          <bk-button theme="primary" @click="handleConfirm">{{$t('确定')}}</bk-button>
+          <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
       </div>
     </template>

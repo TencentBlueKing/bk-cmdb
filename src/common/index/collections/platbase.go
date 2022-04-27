@@ -27,7 +27,19 @@ func init() {
 
 //  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 
-var commPlatBaseIndexes = []types.Index{}
+var commPlatBaseIndexes = []types.Index{
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "bkCloudName",
+		Keys: map[string]int32{
+			common.BKCloudNameField: 1,
+		},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			common.BKCloudNameField: map[string]string{common.BKDBType: "string"},
+		},
+	},
+}
 
 // deprecated 未规范化前的索引，只允许删除不允许新加和修改，
 var deprecatedPlatBaseIndexes = []types.Index{
@@ -43,14 +55,6 @@ var deprecatedPlatBaseIndexes = []types.Index{
 		Keys: map[string]int32{
 			"bk_vpc_id": 1,
 		},
-		Background: true,
-	},
-	{
-		Name: "idx_unique_cloudName",
-		Keys: map[string]int32{
-			"bk_cloud_name": 1,
-		},
-		Unique:     true,
 		Background: true,
 	},
 }

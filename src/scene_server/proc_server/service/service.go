@@ -29,8 +29,6 @@ import (
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
-	"configcenter/src/thirdparty/esbserver"
-	"configcenter/src/thirdparty/esbserver/esbutil"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
@@ -38,9 +36,7 @@ import (
 
 type ProcServer struct {
 	*backbone.Engine
-	EsbConfigChn       chan esbutil.EsbConfig
 	Config             *options.Config
-	EsbSrv             esbserver.EsbClientInterface
 	procHostInstConfig logics.ProcHostInstConfig
 	ConfigMap          map[string]string
 	AuthManager        *extensions.AuthManager
@@ -280,15 +276,6 @@ func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 }
 
 func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig) {
-	esbAddr, addrErr := cfnc.String("procServer.esb.addr")
-	esbAppCode, appCodeErr := cfnc.String("procServer.esb.appCode")
-	esbAppSecret, appSecretErr := cfnc.String("procServer.esb.appSecret")
-	if addrErr == nil && appCodeErr == nil && appSecretErr == nil {
-		go func() {
-			ps.EsbConfigChn <- esbutil.EsbConfig{Addrs: esbAddr, AppCode: esbAppCode, AppSecret: esbAppSecret}
-		}()
-	}
-
 	ps.Config = &options.Config{}
 
 	hostInstPrefix := "procServer.host-instance"
