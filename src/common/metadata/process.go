@@ -904,6 +904,11 @@ func (p *ProtocolType) Validate() error {
 	if p == nil || len(*p) == 0 {
 		return errors.New("protocol is not set or is empty")
 	}
+
+	if err := process.ValidateProcessBindProtocolHook(); err != nil {
+		return err
+	}
+
 	validValues := []ProtocolType{ProtocolTypeTCP, ProtocolTypeUDP, ProtocolTypeTCP6, ProtocolTypeUDP6}
 	if util.InArray(*p, validValues) == false {
 		return fmt.Errorf("invalid protocol type, value: %s, available values: %+v", p, validValues)
@@ -1901,6 +1906,10 @@ type PropertyBindIP struct {
 func (ti *PropertyBindIP) Validate() error {
 	if ti.Value == nil || len(*ti.Value) == 0 {
 		return process.ValidateProcessBindIPEmptyHook()
+	}
+
+	if err := process.ValidateProcessBindIPHook(); err != nil {
+		return err
 	}
 
 	if err := ti.Value.Validate(); err != nil {

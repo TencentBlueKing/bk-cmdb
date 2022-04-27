@@ -16,3 +16,13 @@ package process
 func ValidateProcessBindIPEmptyHook() error {
 	return nil
 }
+
+// ValidateProcessBindIPHook validate if process bind ip value is valid, the value is not empty
+func ValidateProcessBindIPHook() error {
+	return nil
+}
+
+// ValidateProcessBindProtocolHook validate if process bind protocol value is valid, the value is not empty
+func ValidateProcessBindProtocolHook() error {
+	return nil
+}
