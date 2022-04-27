@@ -263,6 +263,13 @@ router.beforeEach((to, from, next) => {
        */
       await checkViewAuthorize(to)
 
+      /**
+       * 执行路由配置中的before钩子
+       */
+      if (to.meta?.before && !await to.meta?.before?.(to, from, router.app)) {
+        return false
+      }
+
       return next()
     } catch (e) {
       console.error(e)

@@ -328,6 +328,9 @@
                         background-image: url("../../../assets/images/icon/loading.svg");
                     }
                 }
+                .user-selector {
+                    font-size: 14px !important;
+                }
             }
             .property-edit-btn {
                 height: auto;
