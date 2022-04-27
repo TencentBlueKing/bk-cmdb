@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_10_202203111313
+package y3_10_202204271725
 
 import (
 	"context"
@@ -21,22 +21,22 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.10.202203111313", upgrade)
+	upgrader.RegistUpgrader("y3.10.202204271725", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.10.202203111313")
+	blog.Infof("start execute y3.10.202204271725")
 
 	if err = addServiceTemplateTableColumn(ctx, db, conf); err != nil {
-		blog.Errorf("upgrade y3.10.202203111313 add service template table column failed, err: %v", err)
+		blog.Errorf("upgrade y3.10.202204271725 add service template table column failed, err: %v", err)
 		return err
 	}
 
 	if err = addHostApplyRuleTableColumn(ctx, db, conf); err != nil {
-		blog.Errorf("upgrade y3.10.202203111313 add host apply rule table column failed, err: %v", err)
+		blog.Errorf("upgrade y3.10.202204271725 add host apply rule table column failed, err: %v", err)
 		return err
 	}
 
-	blog.Infof("upgrade y3.10.202203111313 success")
+	blog.Infof("upgrade y3.10.202204271725 success")
 	return nil
 }
