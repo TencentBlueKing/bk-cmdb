@@ -100,3 +100,9 @@ func NewTLSClientConfigFromConfig(prefix string, config map[string]string) (TLSC
 
 	return tlsConfig, nil
 }
+
+// ExtraClientConfig extra http client configuration
+type ExtraClientConfig struct {
+	// ResponseHeaderTimeout the amount of time to wait for a server's response headers
+	ResponseHeaderTimeout time.Duration
+}
