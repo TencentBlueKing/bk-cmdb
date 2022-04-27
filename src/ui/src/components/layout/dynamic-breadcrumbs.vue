@@ -38,6 +38,9 @@
         const menuI18n = this.$route.meta.menu.i18n && this.$t(this.$route.meta.menu.i18n)
         return this.title || this.$route.meta.title || menuI18n
       },
+      hideBack() {
+        return (this.$route.meta.layout || {}).breadcrumbs?.back === false
+      },
       defaultFrom() {
         const menu = this.$route.meta.menu || {}
         if (menu.relative) {

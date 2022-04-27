@@ -150,7 +150,7 @@ func (s *Service) initModule(web *restful.WebService) {
 		Path:    "/module/bk_biz_id/{bk_biz_id}/service_template_id/{service_template_id}",
 		Handler: s.ListModulesByServiceTemplateID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut,
-		Path:    "/module/host_apply_enable_status/bk_biz_id/{bk_biz_id}/bk_module_id/{bk_module_id}",
+		Path:    "/module/host_apply_enable_status/bk_biz_id/{bk_biz_id}",
 		Handler: s.UpdateModuleHostApplyEnableStatus})
 
 	utility.AddToRestfulWebService(web)

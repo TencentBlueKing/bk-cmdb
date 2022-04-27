@@ -191,3 +191,25 @@ func IntArrComplementary(target []int64, subset []int64) []int64 {
 	}
 	return complementaryInt
 }
+
+// IntArrDeleteElements  the same elements in target and sub are deleted from target.
+func IntArrDeleteElements(target, sub []int64) []int64 {
+	if len(sub) == 0 {
+		return target
+	}
+
+	templateMap := make(map[int64]struct{})
+	for _, id := range target {
+		templateMap[id] = struct{}{}
+	}
+	for _, id := range sub {
+		if _, ok := templateMap[id]; ok {
+			delete(templateMap, id)
+		}
+	}
+	result := make([]int64, 0)
+	for id := range templateMap {
+		result = append(result, id)
+	}
+	return result
+}

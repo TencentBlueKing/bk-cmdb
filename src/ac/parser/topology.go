@@ -804,10 +804,13 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 }
 
 var (
-	createModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/?$`)
-	deleteModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
-	updateModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
-	updateModuleHostApplyStatusRegexp = regexp.MustCompile(`^/api/v3/module/host_apply_enable_status/bk_biz_id/([0-9]+)/bk_module_id/([0-9]+)/?$`)
+	createModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/?$`)
+	deleteModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
+	updateModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
+
+	// NOCC:tosa/linelength(ignore length)
+	updateModuleHostApplyStatusRegexp = regexp.MustCompile(`^/api/v3/module/host_apply_enable_status/bk_biz_id/([0-9]+)/?$`)
+
 	findModuleRegexp                  = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
 	findMouduleByConditionRegexp      = regexp.MustCompile(`^/api/v3/findmany/module/biz/[0-9]+/?$`)
 	findMouduleBatchRegexp            = regexp.MustCompile(`^/api/v3/findmany/module/bk_biz_id/[0-9]+/?$`)
@@ -947,14 +950,15 @@ func (ps *parseStream) objectModule() *parseStream {
 		return ps
 	}
 	if ps.hitRegexp(updateModuleHostApplyStatusRegexp, http.MethodPut) {
-		if len(ps.RequestCtx.Elements) != 8 {
+		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("update module host apply enabled status, but got invalid url")
 			return ps
 		}
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("update module host apply enabled status, but got invalid business id %s", ps.RequestCtx.Elements[5])
+			ps.err = fmt.Errorf("update module host apply enabled status, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
 			return ps
 		}
 

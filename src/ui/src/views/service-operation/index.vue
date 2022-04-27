@@ -174,7 +174,7 @@
       setHostAttrsAutoApply(data = {}) {
         const applyList = data.plans || []
         const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
-        tab.props.info = applyList.filter(item => item.conflicts.length || item.update_fields.length)
+        tab.props.info = applyList.filter(item => item.conflicts?.length || item.update_fields?.length)
       },
       getHostInfo(hostIds) {
         return this.$store.dispatch('hostSearch/searchHost', {

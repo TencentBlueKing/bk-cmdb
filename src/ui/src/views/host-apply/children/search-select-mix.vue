@@ -24,22 +24,44 @@
   import Bus from '@/utils/bus'
   import { mapGetters } from 'vuex'
   import has from 'has'
+  import { CONFIG_MODE } from '@/services/service-template/index.js'
+
   export default {
-    components: {},
+    props: {
+      mode: String
+    },
     data() {
       return {
         showClear: false,
         searchOptions: [],
         fullOptions: [],
         searchValue: [],
-        properties: [],
-        currentMenu: null
+        currentMenu: null,
+        eventNames: {
+          [CONFIG_MODE.MODULE]: 'host-apply-topology-search',
+          [CONFIG_MODE.TEMPLATE]: 'host-apply-template-search'
+        }
       }
     },
     computed: {
-      ...mapGetters('objectBiz', ['bizId'])
+      ...mapGetters('hostApply', ['configPropertyList']),
+      searchEventName() {
+        return this.eventNames[this.mode]
+      }
     },
     watch: {
+      mode(newMode, oldMode) {
+        // 切换mode时清空搜索
+        if (this.searchValue?.length) {
+          this.searchValue = []
+
+          // 同时清空切换时所在mode的搜索，实现切换时恢复原数据
+          Bus.$emit(this.eventNames[oldMode], this.getSearchValue())
+        }
+      },
+      configPropertyList() {
+        this.initOptions()
+      },
       searchValue(searchValue) {
         this.searchOptions.forEach((option) => {
           // eslint-disable-next-line max-len
@@ -54,34 +76,28 @@
     },
     methods: {
       async initOptions() {
-        try {
-          // eslint-disable-next-line max-len
-          const properties = await this.$store.dispatch('hostApply/getProperties', { params: { bk_biz_id: this.bizId } })
-          const availableProperties = properties.filter(property => property.host_apply_enabled)
-          this.searchOptions = availableProperties.map((property) => {
-            const type = property.bk_property_type
-            const data = { id: property.id, name: property.bk_property_name, type, disabled: false }
-            if (type === 'enum') {
-              // eslint-disable-next-line max-len
-              data.children = (property.option || []).map(option => ({ id: option.id, name: option.name, disabled: false }))
-              data.multiable = true
-            } else if (type === 'list') {
-              data.children = (property.option || []).map(option => ({ id: option, name: option, disabled: false }))
-              data.multiable = true
-            } else if (type === 'timezone') {
-              data.children = TIMEZONE.map(timezone => ({ id: timezone, name: timezone, disabled: false }))
-              data.multiable = true
-            } else if (type === 'bool') {
-              data.children = [{ id: true, name: 'true' }, { id: false, name: 'false' }]
-            } else {
-              data.children = []
-            }
-            return data
-          })
-          this.fullOptions = this.searchOptions.slice(0)
-        } catch (e) {
-          console.error(e)
-        }
+        const availableProperties = this.configPropertyList.filter(property => property.host_apply_enabled)
+        this.searchOptions = availableProperties.map((property) => {
+          const type = property.bk_property_type
+          const data = { id: property.id, name: property.bk_property_name, type, disabled: false }
+          if (type === 'enum') {
+            // eslint-disable-next-line max-len
+            data.children = (property.option || []).map(option => ({ id: option.id, name: option.name, disabled: false }))
+            data.multiable = true
+          } else if (type === 'list') {
+            data.children = (property.option || []).map(option => ({ id: option, name: option, disabled: false }))
+            data.multiable = true
+          } else if (type === 'timezone') {
+            data.children = TIMEZONE.map(timezone => ({ id: timezone, name: timezone, disabled: false }))
+            data.multiable = true
+          } else if (type === 'bool') {
+            data.children = [{ id: true, name: 'true' }, { id: false, name: 'false' }]
+          } else {
+            data.children = []
+          }
+          return data
+        })
+        this.fullOptions = this.searchOptions.slice(0)
       },
       handleChange(values) {
         const keywords = values.filter(value => !has(value, 'type') && has(value, 'id'))
@@ -101,10 +117,10 @@
       },
       handleClear() {
         this.searchValue = []
-        Bus.$emit('topology-search', { query_filter: { rules: [] } })
+        Bus.$emit(this.searchEventName, { query_filter: { rules: [] } })
       },
       handleSearch() {
-        Bus.$emit('topology-search', this.getSearchValue())
+        Bus.$emit(this.searchEventName, this.getSearchValue())
       },
       getSearchValue() {
         const params = {
@@ -150,6 +166,7 @@
             })
           }
         })
+
         return params
       },
       handleMenuSelect(item) {
@@ -168,14 +185,19 @@
   }
 </script>
 <style lang="scss" scoped>
-    .icon-close-circle-shape {
-        font-size: 14px;
-        margin-right: 6px;
-        cursor: pointer;
-    }
-    .icon-search {
-        font-size: 16px;
-        margin-right: 10px;
-        cursor: pointer;
-    }
+  .icon-close-circle-shape {
+    font-size: 14px;
+    margin-right: 6px;
+    cursor: pointer;
+  }
+  .icon-search {
+    font-size: 16px;
+    margin-right: 10px;
+    cursor: pointer;
+  }
+</style>
+<style lang="scss">
+  .tippy-tooltip.bk-search-select-theme-theme {
+    box-shadow: 0 3px 9px 0 rgb(0 0 0 / 10%);
+  }
 </style>

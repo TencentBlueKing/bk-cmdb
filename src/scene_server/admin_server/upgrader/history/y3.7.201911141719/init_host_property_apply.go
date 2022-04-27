@@ -141,8 +141,8 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 				common.BKAttributeIDField: 1,
 			},
 			Name:       "host_property_under_module",
-			Unique:     true,
 			Background: false,
+			Unique:     true,
 		},
 	}
 	for _, index := range indexes {

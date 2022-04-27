@@ -88,6 +88,10 @@ type HostsModuleRelation struct {
 	IsIncrement   bool    `json:"is_increment"`
 	// DisableAutoCreateSvcInst disable auto create service instance when transfer to a module with process in template
 	DisableAutoCreateSvcInst bool `json:"disable_auto_create"`
+
+	// DisableTransferHostAutoApply when this flag is true, it means that the user specifies not to automatically apply
+	// the host in the host transfer scenario.
+	DisableTransferHostAutoApply bool
 }
 
 type HostModuleConfig struct {
@@ -821,8 +825,14 @@ type TransferHostWithAutoClearServiceInstanceOption struct {
 }
 
 type TransferOptions struct {
-	ServiceInstanceOptions     ServiceInstanceOptions      `json:"service_instance_options"`
+	ServiceInstanceOptions ServiceInstanceOptions `json:"service_instance_options"`
+
+	// HostApplyConflictResolvers update the attribute value of the host with the host as the dimension.
 	HostApplyConflictResolvers []HostApplyConflictResolver `json:"host_apply_conflict_resolvers"`
+
+	// HostApplyTransPropertyRule update attributes with the dimension of the rule, which is used to update the host
+	// attribute value in the host transfer scenario。
+	HostApplyTransPropertyRule HostApplyTransRules `json:"host_apply_trans_rule"`
 }
 
 type HostTransferPlan struct {
