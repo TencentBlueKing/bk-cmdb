@@ -1,208 +1,334 @@
 <template>
-  <div class="group-wrapper"
+  <div
+    class="model-management"
     v-bkloading="{ isLoading: $loading(requestIds.searchClassifications) }"
-    :style="{ 'padding-top': topPadding + 'px' }">
-    <cmdb-main-inject ref="mainInject"
-      inject-type="prepend"
-      :class="['btn-group', 'clearfix', { sticky: !!scrollTop }]">
+    :class="{
+      'is-model-selectable': isModelSelectable,
+      'is-tips-hidden': isTipsHidden
+    }"
+  >
+    <div
+      class="model-management-header clearfix"
+    >
       <cmdb-tips
-        class="mb10"
         tips-key="modelTips"
-        more-link="https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品功能/Model.md">
-        {{$t('模型顶部提示')}}
+        @input="isVisible => isTipsHidden = !isVisible"
+        more-link="https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品功能/Model.md"
+      >
+        {{ $t("模型顶部提示") }}
       </cmdb-tips>
-      <div class="fl">
-        <cmdb-auth :auth="{ type: $OPERATION.C_MODEL }">
-          <bk-button slot-scope="{ disabled }"
-            theme="primary"
-            :disabled="disabled || modelType === 'disabled'"
-            @click="showModelDialog('bk_uncategorized')">
-            {{$t('新建模型')}}
-          </bk-button>
-        </cmdb-auth>
-        <cmdb-auth :auth="{ type: $OPERATION.C_MODEL_GROUP }">
-          <bk-button slot-scope="{ disabled }"
-            theme="default"
-            :disabled="disabled || modelType === 'disabled'"
-            @click="showGroupDialog(false)">
-            {{$t('新建分组')}}
-          </bk-button>
-        </cmdb-auth>
-      </div>
-      <div class="model-type-options fr">
-        <bk-button class="model-type-button"
-          :class="[{ 'model-type-button-active': modelType === '' }]"
-          size="small"
-          @click="modelType = ''">
-          {{$t('全部')}}
-        </bk-button>
-        <bk-button class="model-type-button"
-          :class="[{ 'model-type-button-active': modelType === 'enable' }]"
-          size="small"
-          @click="modelType = 'enable'">
-          {{$t('启用中')}}
-        </bk-button>
-        <span class="inline-block-middle" style="outline: 0;" v-bk-tooltips="disabledModelBtnText">
-          <bk-button class="model-type-button disabled"
-            :class="[{ 'model-type-button-active': modelType === 'disabled' }]"
-            size="small"
-            :disabled="!disabledClassifications.length"
-            @click="modelType = 'disabled'">
-            {{$t('已停用')}}
-          </bk-button>
-        </span>
-      </div>
-      <div class="model-search-options fr">
-        <bk-input class="search-model"
-          :clearable="true"
-          :right-icon="'bk-icon icon-search'"
-          :placeholder="$t('请输入关键字')"
-          v-model.trim="searchModel">
-        </bk-input>
-      </div>
-    </cmdb-main-inject>
 
-    <ul class="group-list" v-show="currentClassifications.length">
-      <li class="group-item clearfix"
-        v-for="(classification, classIndex) in currentClassifications"
-        :key="classIndex">
-        <div
-          class="group-title"
-          v-bk-tooltips="{
-            disabled: !isBuiltinClass(classification),
-            content: $t('内置模型组不支持删除和修改'),
-            placement: 'right'
-          }">
-          <div class="title-info">
-            <span class="mr5">{{classification['bk_classification_name']}}</span>
-            <span class="number">({{classification['bk_objects'].length}})</span>
-          </div>
-          <template v-if="modelType !== 'disabled'">
-            <cmdb-auth class="group-btn ml5"
-              :auth="{ type: $OPERATION.C_MODEL, relation: [classification.id] }">
-              <bk-button slot-scope="{ disabled }"
+      <div class="model-management-options">
+        <div class="model-export-label">{{$t('请选择需要导出的模型')}}</div>
+
+        <div class="model-operation-options">
+          <cmdb-auth :auth="{ type: $OPERATION.C_MODEL }">
+            <template #default="{ disabled }">
+              <bk-button
                 theme="primary"
-                text
-                :disabled="disabled"
-                @click="showModelDialog(classification.bk_classification_id)">
-                <i class="icon-cc-add-line"></i>
+                :disabled="disabled || modelType === 'disabled'"
+                @click="showModelDialog(UNCATEGORIZED_GROUP_ID)"
+              >
+                {{ $t("新建模型") }}
               </bk-button>
-            </cmdb-auth>
-            <cmdb-auth
-              v-if="!isBuiltinClass(classification)"
-              class="group-btn"
-              :auth="{ type: $OPERATION.U_MODEL_GROUP, relation: [classification.id] }">
-              <bk-button slot-scope="{ disabled }"
-                theme="primary"
-                text
-                :disabled="disabled"
-                @click="showGroupDialog(true, classification)">
-                <i class="icon-cc-edit"></i>
+            </template>
+          </cmdb-auth>
+          <cmdb-auth :auth="{ type: $OPERATION.C_MODEL_GROUP }">
+            <template #default="{ disabled }">
+              <bk-button
+                theme="default"
+                :disabled="disabled || modelType === 'disabled'"
+                @click="showGroupDialog(false)"
+              >
+                {{ $t("新建分组") }}
               </bk-button>
-            </cmdb-auth>
-            <cmdb-auth
-              v-if="!isBuiltinClass(classification)"
-              class="group-btn"
-              :auth="{ type: $OPERATION.D_MODEL_GROUP, relation: [classification.id] }">
-              <bk-button slot-scope="{ disabled }"
-                theme="primary"
-                text
-                :disabled="disabled"
-                @click="deleteGroup(classification)">
-                <i class="icon-cc-delete"></i>
+            </template>
+          </cmdb-auth>
+          <cmdb-auth :auth="[
+            { type: $OPERATION.C_MODEL_GROUP },
+            { type: $OPERATION.C_MODEL }
+          ]">
+            <template #default="{ disabled }">
+              <bk-button
+                theme="default"
+                :disabled="disabled || modelType === 'disabled'"
+                @click="importModel"
+              >
+                {{ $t("导入") }}
               </bk-button>
-            </cmdb-auth>
-          </template>
+            </template>
+          </cmdb-auth>
+          <bk-button
+            theme="default"
+            :disabled="modelType === 'disabled'"
+            @click="exportModel"
+          >
+            {{ $t("导出") }}
+          </bk-button>
         </div>
-        <ul class="model-list clearfix">
-          <li class="model-item bgc-white"
-            @mouseenter="handleModelMouseEnterDebounce(model)"
-            :class="{
-              'ispaused': model['bk_ispaused'],
-              'ispre': model.ispre
-            }"
-            v-for="(model, modelIndex) in classification['bk_objects']"
-            :key="modelIndex">
-            <div class="info-model"
+
+        <div class="model-type-options">
+          <bk-button
+            class="model-type-button"
+            :class="[{ 'is-active': modelType === '' }]"
+            size="small"
+            @click="modelType = ''"
+          >
+            {{ $t("全部") }}
+          </bk-button>
+          <bk-button
+            class="model-type-button"
+            :class="[{ 'is-active': modelType === 'enable' }]"
+            size="small"
+            @click="modelType = 'enable'"
+          >
+            {{ $t("启用中") }}
+          </bk-button>
+          <span
+            class="inline-block-middle"
+            style="outline: 0"
+            v-bk-tooltips="disabledModelBtnText"
+          >
+            <bk-button
+              class="model-type-button disabled"
+              :class="[
+                { 'is-active': modelType === 'disabled' }
+              ]"
+              size="small"
+              :disabled="!disabledClassifications.length"
+              @click="modelType = 'disabled'"
+            >
+              {{ $t("已停用") }}
+            </bk-button>
+          </span>
+        </div>
+
+        <div class="model-search-options">
+          <bk-input
+            class="model-search-input"
+            :clearable="true"
+            :right-icon="'bk-icon icon-search'"
+            :placeholder="$t('请输入关键字')"
+            v-model.trim="modelSearchKey"
+          >
+          </bk-input>
+        </div>
+      </div>
+    </div>
+
+    <div class="model-management-body">
+      <ul
+        class="group-list"
+        :class="{
+          'is-dragging': isDragging
+        }"
+      >
+        <li
+          class="group-item clearfix"
+          v-for="(classification, classIndex) in currentClassifications"
+          :key="classIndex"
+        >
+          <div class="group-header clearfix">
+            <collapse-group-title
+              :dropdown-menu="!isModelSelectable"
+              :collapse=" classificationsCollapseState[classification.id]"
+              :title="`${classification.bk_classification_name} ( ${ classification.bk_objects.length} )`"
+              @click.native="toggleModelList(classification)"
+              :commands="groupCommands(classification)"
+              v-bk-tooltips="{
+                disabled: !isBuiltinClass(classification),
+                content: $t('内置模型组不支持删除和修改'),
+                placement: 'right'
+              }">
+            </collapse-group-title>
+            <bk-checkbox
+              @change="handleModelGroupSelectionChange(classification, $event)"
+              v-model="classificationSelectionState[classification.bk_classification_id]"
+              :disabled="isGroupEmpty(classification)"
+              class="full-selection-checkbox"
+            >{{$t('全选')}}</bk-checkbox>
+          </div>
+          <bk-transition name="collapse" duration-type="ease">
+            <draggable
+              class="model-list clearfix"
               :class="{
-                'radius': model.bk_ispaused || isNoInstanceModel(model.bk_obj_id)
+                'is-empty': isGroupEmpty(classification)
               }"
-              @click="modelClick(model)">
-              <div class="icon-box">
-                <i class="icon" :class="[model['bk_obj_icon']]"></i>
+              v-show="!classificationsCollapseState[classification.id]"
+              tag="div"
+              :sort="false"
+              :animation="200"
+              :disabled="isModelSelectable"
+              draggable=".model-item"
+              group="model-list"
+              ghost-class="model-item-ghost"
+              :data-group-id="classification.bk_classification_id"
+              v-model="classification.bk_objects"
+              @start="handleModelDragStart"
+              :move="handleModelDragMove"
+              @end="handleModelDragEnd"
+              @add="handleModelDragAdd"
+            >
+              <div
+                class="model-item bgc-white"
+                v-for="model in classification['bk_objects']"
+                :key="model.bk_obj_id"
+                :data-group-id="model.bk_classification_id"
+                :data-model-id="model.id"
+                :class="{
+                  'is-paused': model['bk_ispaused'],
+                  'is-builtin': model.ispre
+                }"
+                @mouseenter="handleModelMouseEnterDebounce(model)"
+              >
+                <div
+                  class="model-info"
+                  :class="{
+                    'no-instance-count': model.bk_ispaused || isNoInstanceModel(model.bk_obj_id)
+                  }"
+                  @click="handleModelClick(model, classification)"
+                >
+                  <div class="drag-icon"></div>
+                  <div class="model-icon">
+                    <i class="icon" :class="[model['bk_obj_icon']]"></i>
+                  </div>
+                  <div class="model-details">
+                    <p class="model-name" :title="model['bk_obj_name']">
+                      {{ model["bk_obj_name"] }}
+                    </p>
+                    <p class="model-id" :title="model['bk_obj_id']">
+                      {{ model["bk_obj_id"] }}
+                    </p>
+                  </div>
+                  <bk-checkbox
+                    v-model="modelSelectionState[model.bk_obj_id]"
+                    @change="handleModelSelectionChange(classification)"
+                    :disabled="isBuiltinModel(model)"
+                    v-bk-tooltips="{
+                      content: $t('内置模型不允许导出'),
+                      disabled: !isBuiltinModel(model)
+                    }"
+                    @click.stop.native
+                    class="model-checkbox"
+                  >
+                  </bk-checkbox>
+                </div>
+                <div
+                  v-if="!model.bk_ispaused && !isNoInstanceModel(model.bk_obj_id)"
+                  class="model-instance-count"
+                  @click="handleGoInstance(model)"
+                >
+                  <span class="count-number">
+                    <cmdb-loading
+                      :loading="!modelStatisticsSet[model.bk_obj_id] ||
+                        $loading(requestIds.statistics[model.bk_obj_id])"
+                    >
+                      {{ modelStatisticsSet[model.bk_obj_id] | instanceCount }}
+                    </cmdb-loading>
+                  </span>
+                </div>
               </div>
-              <div class="model-details">
-                <p class="model-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</p>
-                <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
-              </div>
-            </div>
-            <div v-if="!model.bk_ispaused && !isNoInstanceModel(model.bk_obj_id)"
-              class="info-instance"
-              @click="handleGoInstance(model)">
-              <i class="icon-cc-share"></i>
-              <p>
-                <cmdb-loading
-                  :loading="!modelStatisticsSet[model.bk_obj_id] || $loading(requestIds.statistics[model.bk_obj_id])">
-                  {{modelStatisticsSet[model.bk_obj_id] | instanceCount}}
-                </cmdb-loading>
-              </p>
-            </div>
-          </li>
-        </ul>
-      </li>
-    </ul>
-    <no-search-results v-if="!currentClassifications.length" :text="$t('搜不到相关模型')" />
+            </draggable>
+          </bk-transition>
+        </li>
+      </ul>
+      <no-search-results
+        v-if="!currentClassifications.length"
+        :text="$t('搜不到相关模型')"
+      />
+    </div>
+
+    <div class="model-management-footer" v-show="isModelSelectable">
+      <div class="export-action-bar">
+        <bk-checkbox
+          class="full-selection"
+          @change="toggleAllModelSelection"
+          v-model="isAllSelected"
+        >{{$t('全选')}}</bk-checkbox
+        >
+        <span class="selected-count"
+        >{{$t('已选')}}：<em>{{ exportModelsLen }}</em></span
+        >
+        <bk-button @click="doubleCheckCancelExport" class="cancel-button">{{$t('取消')}}</bk-button>
+        <bk-button
+          @click="toNextExportStep"
+          theme="primary"
+          :disabled="exportModelsLen === 0" class="next-step-button">{{$t('下一步')}}</bk-button>
+      </div>
+    </div>
 
     <bk-dialog
       class="bk-dialog-no-padding bk-dialog-no-tools group-dialog dialog"
       :close-icon="false"
       :width="600"
       :mask-close="false"
-      v-model="groupDialog.isShow">
+      v-model="groupDialog.isShow"
+    >
       <div class="dialog-content">
-        <p class="title">{{groupDialog.title}}</p>
+        <p class="title">{{ groupDialog.title }}</p>
         <div class="content">
           <label>
             <div class="label-title">
-              {{$t('唯一标识')}}<span class="color-danger">*</span>
+              {{ $t("唯一标识") }}<span class="color-danger">*</span>
             </div>
-            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('classifyId') }">
-              <bk-input type="text" class="cmdb-form-input"
+            <div
+              class="cmdb-form-item"
+              :class="{ 'is-error': errors.has('classifyId') }"
+            >
+              <bk-input
+                type="text"
+                class="cmdb-form-input"
                 name="classifyId"
-                :placeholder="$t('请输入唯一标识')"
+                :placeholder="$t('请填写英文开头，下划线，数字，英文的组合')"
                 :disabled="groupDialog.isEdit"
                 v-model.trim="groupDialog.data['bk_classification_id']"
                 v-validate="'required|classifyId|length:128|reservedWord'">
               </bk-input>
-              <p class="form-error" :title="errors.first('classifyId')">{{errors.first('classifyId')}}</p>
+              <p class="form-error" :title="errors.first('classifyId')">
+                {{ errors.first("classifyId") }}
+              </p>
             </div>
-            <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('请填写英文开头，下划线，数字，英文的组合')"></i>
+            <i
+              class="bk-icon icon-info-circle"
+              v-bk-tooltips="$t('请填写英文开头，下划线，数字，英文的组合')"
+            ></i>
           </label>
           <label>
             <span class="label-title">
-              {{$t('名称')}}
+              {{ $t("名称") }}
             </span>
             <span class="color-danger">*</span>
-            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('classifyName') }">
-              <bk-input type="text"
+            <div
+              class="cmdb-form-item"
+              :class="{ 'is-error': errors.has('classifyName') }"
+            >
+              <bk-input
+                type="text"
                 class="cmdb-form-input"
                 name="classifyName"
                 :placeholder="$t('请输入名称')"
                 v-model.trim="groupDialog.data['bk_classification_name']"
-                v-validate="'required|length:128'">
+                v-validate="'required|length:128'"
+              >
               </bk-input>
-              <p class="form-error" :title="errors.first('classifyName')">{{errors.first('classifyName')}}</p>
+              <p class="form-error" :title="errors.first('classifyName')">
+                {{ errors.first("classifyName") }}
+              </p>
             </div>
           </label>
         </div>
       </div>
       <div slot="footer" class="footer">
-        <bk-button theme="primary"
+        <bk-button
+          theme="primary"
           :loading="$loading(['updateClassification', 'createClassification'])"
-          @click="saveGroup">
-          {{groupDialog.isEdit ? $t('保存') : $t('提交')}}
+          @click="saveGroup"
+        >
+          {{ groupDialog.isEdit ? $t("保存") : $t("提交") }}
         </bk-button>
-        <bk-button theme="default" @click="hideGroupDialog">{{$t('取消')}}</bk-button>
+        <bk-button theme="default" @click="hideGroupDialog">{{
+          $t("取消")
+        }}</bk-button>
       </div>
     </bk-dialog>
 
@@ -219,36 +345,61 @@
       :width="400"
       :show-footer="false"
       :mask-close="false"
-      v-model="sucessDialog.isShow">
+      v-model="modelCreatedDialogVisible"
+    >
       <div class="success-content">
         <i class="bk-icon icon-check-1"></i>
-        <p>{{$t('模型创建成功')}}</p>
+        <p>{{ $t("模型创建成功") }}</p>
         <div class="btn-box">
-          <bk-button theme="primary" @click="modelClick(curCreateModel)">{{$t('配置字段')}}</bk-button>
-          <bk-button @click="sucessDialog.isShow = false">{{$t('返回列表')}}</bk-button>
+          <bk-button
+            theme="primary"
+            @click="checkModelDetails(curCreateModel)"
+          >{{ $t("配置字段") }}</bk-button
+          >
+          <bk-button @click="modelCreatedDialogVisible = false">{{
+            $t("返回列表")
+          }}</bk-button>
         </div>
       </div>
     </bk-dialog>
+
+    <!-- 模型导出 -->
+    <model-export-pane
+      @cancel="doubleCheckCancelExport"
+      @done="doneExport"
+      :data="exportModels"
+      v-if="exportPaneVisible">
+    </model-export-pane>
+
+    <!-- 模型导入 -->
+    <model-import-pane
+      v-if="importPaneVisible"
+      @cancel="doubleCheckCancelImport"
+      @done="doneImport">
+    </model-import-pane>
   </div>
 </template>
 
 <script>
   import has from 'has'
-  import cmdbMainInject from '@/components/layout/main-inject'
   import theCreateModel from '@/components/model-manage/_create-model'
   import cmdbLoading from '@/components/loading/index.vue'
   import noSearchResults from '@/views/status/no-search-results.vue'
+  import CollapseGroupTitle from './children/collapse-group-title.vue'
   import { mapGetters, mapMutations, mapActions } from 'vuex'
   import debounce from 'lodash.debounce'
-  import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
-  import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
+  import Draggable from 'vuedraggable'
+  import ModelExportPane from './children/model-import-export/model-export-pane/index.vue'
+  import ModelImportPane from './children/model-import-export//model-import-pane/index.vue'
   import {
     MENU_RESOURCE_INSTANCE,
-    MENU_MODEL_DETAILS
+    MENU_MODEL_DETAILS,
   } from '@/dictionary/menu-symbol'
-  import { BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
+  import { BUILTIN_MODEL_RESOURCE_MENUS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants.js'
+  import Bus from '@/utils/bus'
 
   export default {
+    name: 'ModelManagement',
     filters: {
       instanceCount(value) {
         if (!value) return
@@ -256,27 +407,28 @@
           return '--'
         }
         return value.inst_count > 999 ? '999+' : value.inst_count
-      }
+      },
     },
     components: {
       theCreateModel,
-      cmdbMainInject,
       noSearchResults,
-      cmdbLoading
+      cmdbLoading,
+      CollapseGroupTitle,
+      Draggable,
+      ModelExportPane,
+      ModelImportPane
     },
     data() {
       return {
-        scrollHandler: null,
-        scrollTop: 0,
-        topPadding: 0,
-        modelType: '',
-        searchModel: '',
-        filterClassifications: [],
-        modelStatisticsSet: {},
-        curCreateModel: {},
-        sucessDialog: {
-          isShow: false
-        },
+        UNCATEGORIZED_GROUP_ID,
+        modelType: '', // 模型启用、停用状态
+        modelSearchKey: '', // 模型搜索关键字
+        filterClassifications: [], // 过滤后的分组
+        modelStatisticsSet: {}, // 模型实例数量统计
+        curCreateModel: {}, // 当前创建的模型
+        modelCreatedDialogVisible: false,
+
+        // 分组表单弹窗
         groupDialog: {
           isShow: false,
           isEdit: false,
@@ -284,25 +436,43 @@
           data: {
             bk_classification_id: '',
             bk_classification_name: '',
-            id: ''
-          }
+            id: '',
+          },
         },
+
+        // 新建模型弹窗
         modelDialog: {
           isShow: false,
-          groupId: ''
+          groupId: '',
         },
         requestIds: {
           statistics: [], // 模型实例数据加载请求 id
           searchClassifications: Symbol('searchClassifications') // 模型分组数据加载请求 id
         },
-        mainlineModels: []
+        isDragging: false, // 是否处于拖拽状态
+        classificationsCollapseState: {}, // 分类折叠状态
+
+        /**
+         * 导出模型
+         */
+        exportModels: [], // 已选择的需要的导出模型
+        isModelSelectable: false, // 是否在导出选择中
+        exportPaneVisible: false, // 导出面板是否显示
+        isAllSelected: false, // 是否全选所有模型
+        classificationSelectionState: {}, // 导出模型组的选中状态
+        modelSelectionState: {}, // 导出模型的选中状态
+
+        /**
+         * 导入模型
+         */
+        importPaneVisible: false, // 导入面板是否显示
+
+        isTipsHidden: false // 模型管理提示是否隐藏
       }
     },
     computed: {
       ...mapGetters(['supplierAccount', 'userName']),
-      ...mapGetters('objectModelClassify', [
-        'classifications'
-      ]),
+      ...mapGetters('objectModelClassify', ['classifications']),
       allClassifications() {
         const allClassifications = []
         this.classifications.forEach((classification) => {
@@ -327,18 +497,20 @@
       },
       disabledClassifications() {
         const disabledClassifications = []
+
         this.classifications.forEach((classification) => {
           disabledClassifications.push({
             ...classification,
             bk_objects: classification.bk_objects.filter(model => model.bk_ispaused),
           })
         })
+
         return disabledClassifications.filter(item => item.bk_objects.length)
       },
       currentClassifications() {
         let currentClassifications = []
 
-        if (!this.searchModel && !this.modelType) {
+        if (!this.modelSearchKey && !this.modelType) {
           currentClassifications = this.allClassifications
         }
 
@@ -346,104 +518,314 @@
           currentClassifications = this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
         }
 
-        if (this.searchModel) {
+        if (this.modelSearchKey) {
           currentClassifications = this.filterClassifications
         }
 
-        return currentClassifications.sort((a, b) => (b.bk_classification_id === 'bk_uncategorized' ? -1 : 0))
+        return currentClassifications.sort((a, b) => (b.bk_classification_id === UNCATEGORIZED_GROUP_ID ? -1 : 0))
       },
       disabledModelBtnText() {
         return this.disabledClassifications.length ? '' : this.$t('停用模型提示')
+      },
+      exportModelsLen() {
+        return Object.values(this.modelSelectionState).filter(isSelected => isSelected).length
+      },
+      needLeaveConfirm() {
+        return this.exportPaneVisible || this.isModelSelectable || this.importPaneVisible
       }
     },
     watch: {
-      searchModel(value) {
+      currentClassifications: {
+        deep: true,
+        handler(val) {
+          const classificationsCollapseState = {}
+
+          val.forEach(({ id }) => {
+            classificationsCollapseState[id] = this.classificationsCollapseState?.[id] || false
+          })
+
+          this.classificationsCollapseState = classificationsCollapseState
+        },
+      },
+      modelSearchKey(value) {
         if (!value) {
           return
         }
         const searchResult = []
-        // eslint-disable-next-line no-nested-ternary
-        const currentClassifications = !this.modelType ? this.allClassifications : (this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications)
+        let currentClassifications = null
+
+        if (!this.modelType) {
+          currentClassifications = this.allClassifications
+        } else if (this.modelType === 'enable') {
+          currentClassifications = this.enableClassifications
+        } else {
+          currentClassifications = this.disabledClassifications
+        }
         const classifications = this.$tools.clone(currentClassifications)
         const lowerCaseValue = value.toLowerCase()
+
         for (let i = 0; i < classifications.length; i++) {
           classifications[i].bk_objects = classifications[i].bk_objects.filter((model) => {
             const modelName = model.bk_obj_name.toLowerCase()
             const modelId = model.bk_obj_id.toLowerCase()
-            // eslint-disable-next-line max-len
-            return (modelName && modelName.indexOf(lowerCaseValue) !== -1) || (modelId && modelId.indexOf(lowerCaseValue) !== -1)
+            return (
+              modelName?.includes(lowerCaseValue)
+              || modelId?.includes(lowerCaseValue)
+            )
           })
           searchResult.push(classifications[i])
         }
+
         this.filterClassifications = searchResult.filter(item => item.bk_objects.length)
       },
       modelType() {
-        this.searchModel = ''
-      }
+        this.modelSearchKey = ''
+      },
     },
     async created() {
-      this.scrollHandler = (event) => {
-        this.scrollTop = event.target.scrollTop
+      window.onbeforeunload = () => {
+        if (this.needLeaveConfirm) {
+          return this.$t('系统不会保存您所做的修改，确认要离开？')
+        }
       }
-
-      addMainScrollListener(this.scrollHandler)
 
       this.handleModelMouseEnterDebounce = debounce(this.handleModelItemMouseEnter, 200)
 
       try {
-        await this.searchClassificationsObjects({
-          params: {},
-          config: {
-            requestId: this.requestIds.searchClassifications
-          }
-        })
+        await this.loadAllModels()
       } catch (e) {
         this.$route.meta.view = 'error'
       }
 
-      try {
-        this.mainlineModels = await this.searchMainlineObject({})
-      } catch (error) {
-        console.log(error)
-      }
-
-      if (this.$route.query.searchModel) {
+      if (this.$route.query.modelSearchKey) {
         const { hash } = window.location
-        this.searchModel = this.$route.query.searchModel
+        this.modelSearchKey = this.$route.query.modelSearchKey
         window.location.hash = hash.substring(0, hash.indexOf('?'))
       }
-    },
-    mounted() {
-      addResizeListener(this.$refs.mainInject.$el, this.handleSetPadding)
+
+      this.$on('model-selection-change', (model, classification) => {
+        this.handleModelSelectionChange(classification)
+      })
     },
     beforeDestroy() {
-      removeResizeListener(this.$refs.mainInject.$el, this.handleSetPadding)
-      removeMainScrollListener(this.scrollHandler)
       this.$http.cancelRequest(this.requestIds.statistics)
+    },
+    beforeRouteLeave(to, from, next) {
+      if (this.needLeaveConfirm) {
+        this.$bkInfo({
+          title: this.$t('确定离开页面？'),
+          subTitle: this.$t('系统不会保存您所做的修改，确认要离开？'),
+          confirmFn: () => {
+            next()
+          },
+          cancelFn: () => {
+            next(false)
+          }
+        })
+      } else {
+        next()
+      }
     },
     methods: {
       ...mapMutations('objectModelClassify', [
         'updateClassify',
-        'deleteClassify'
+        'deleteClassify',
       ]),
       ...mapActions('objectModelClassify', [
         'searchClassificationsObjects',
         'getClassificationsObjectStatistics',
         'createClassification',
         'updateClassification',
-        'deleteClassification'
+        'deleteClassification',
       ]),
-      ...mapActions('objectModel', [
-        'createObject'
-      ]),
-      ...mapActions('objectMainLineModule', [
-        'searchMainlineObject',
-      ]),
-      handleSetPadding() {
-        this.topPadding = this.$refs.mainInject.$el.offsetHeight
+      ...mapActions('objectModel', ['createObject', 'updateObject']),
+      loadAllModels() {
+        return this.searchClassificationsObjects({
+          params: {},
+          config: {
+            requestId: this.requestIds.searchClassifications
+          }
+        })
+      },
+      groupCommands(classification) {
+        return [
+          {
+            text: this.$t('新建模型'),
+            auth: {
+              type: this.$OPERATION.C_MODEL,
+              relation: [classification.id]
+            },
+            handler: () => this.showModelDialog(classification.bk_classification_id)
+          },
+          {
+            text: this.$t('编辑分组'),
+            visible: !this.isBuiltinClass(classification),
+            auth: {
+              type: this.$OPERATION.U_MODEL_GROUP,
+              relation: [classification.id]
+            },
+            handler: () => this.showGroupDialog(true, classification)
+          },
+          {
+            text: this.$t('删除分组'),
+            visible: !this.isBuiltinClass(classification),
+            disabled: Boolean(classification.bk_objects.length),
+            disabledTooltips: this.$t('分组下有模型，不能删除'),
+            auth: {
+              type: this.$OPERATION.D_MODEL_GROUP,
+              relation: [classification.id]
+            },
+            handler: () => this.deleteGroup(classification)
+          }
+        ]
+      },
+      toggleModelList(classification) {
+        this.classificationsCollapseState[classification.id] = !this.classificationsCollapseState[classification.id]
+      },
+      handleModelDragStart() {
+        this.isDragging = true
+      },
+      handleModelDragEnd() {
+        this.isDragging = false
+      },
+      handleModelDragMove(event) {
+        const draggedModel = event.draggedContext.element
+        const targetGroupModels = event.relatedContext.list
+
+        const isTargetGroupEmpty = targetGroupModels.length === 0
+
+        if (isTargetGroupEmpty) return isTargetGroupEmpty
+
+        const isOtherGroup = !targetGroupModels
+          .some(model => model.bk_classification_id === draggedModel?.bk_classification_id)
+
+        return isOtherGroup || isTargetGroupEmpty
+      },
+      handleModelDragAdd(event) {
+        const { modelId } = event.item.dataset
+        const newGroupId = event.to.dataset.groupId
+
+        this.updateModelGroup({ modelId, newGroupId })
+      },
+      getExportModels() {
+        return this.currentClassifications
+          .map(classification => ({
+            ...classification,
+            bk_objects: classification.bk_objects
+              .filter(model => this.modelSelectionState[model.bk_obj_id])
+          }))
+          .filter(classification => classification.bk_objects.length !== 0)
+      },
+      handleModelGroupSelectionChange(classification, value) {
+        this.$set(this.classificationSelectionState, classification.bk_classification_id, value)
+        classification.bk_objects.forEach((model) => {
+          const isChecked = value && !this.isBuiltinModel(model)
+          this.$set(this.modelSelectionState, model.bk_obj_id, isChecked)
+        })
+
+        this.generateAllModelSelection()
+      },
+      /**
+       * 检查模型分组下的模型是否为空
+       * @param {Object} classification 模型分组数据
+       */
+      isGroupEmpty(classification) {
+        return classification.bk_objects.length === 0
+      },
+      handleModelSelectionChange(classification) {
+        const isGroupChecked = classification.bk_objects.every(model => this.modelSelectionState[model.bk_obj_id])
+
+        this.$set(this.classificationSelectionState, classification.bk_classification_id, isGroupChecked)
+
+        this.generateAllModelSelection()
+      },
+      // 根据当前模型的选择状态生成全选所有 checkbox 的选择状态。
+      generateAllModelSelection() {
+        const isAllModelChecked = this.currentClassifications
+          .every(classification => this.classificationSelectionState[classification.bk_classification_id])
+
+        this.isAllSelected = isAllModelChecked
+      },
+      toggleAllModelSelection(value) {
+        this.currentClassifications.forEach((classification) => {
+          const isGroupChecked = !this.isGroupEmpty(classification) && value
+          this.$set(this.classificationSelectionState, classification.bk_classification_id, isGroupChecked)
+
+          classification.bk_objects.forEach((model) => {
+            const isModelChecked = !this.isBuiltinModel(model) && value
+
+            this.$set(this.modelSelectionState, model.bk_obj_id, isModelChecked)
+          })
+        })
+      },
+      exportModel() {
+        this.isModelSelectable = true
+      },
+      doubleCheckCancelExport() {
+        if (this.exportModelsLen > 0) {
+          this.$bkInfo({
+            title: this.$t('确定离开页面？'),
+            subTitle: this.$t('系统不会保存您所做的修改，确认要离开？'),
+            confirmFn: this.cancelExport
+          })
+        } else {
+          this.cancelExport()
+        }
+      },
+      cancelExport() {
+        this.isModelSelectable = false
+        this.exportPaneVisible = false
+        this.modelSelectionState = {}
+        this.classificationSelectionState = {}
+        this.isAllSelected = false
+        this.exportModels = this.getExportModels()
+        Bus.$emit('disable-customize-breadcrumbs')
+      },
+      doneExport() {
+        this.cancelExport()
+        this.loadAllModels()
+      },
+      toNextExportStep() {
+        if (this.exportModelsLen > 0) {
+          this.exportModels = this.getExportModels()
+          this.exportPaneVisible = true
+          Bus.$emit('enable-customize-breadcrumbs', {
+            title: this.$t('导出模型'),
+            backward: () => {
+              this.doubleCheckCancelExport()
+            }
+          })
+        }
+      },
+      importModel() {
+        this.importPaneVisible = true
+        Bus.$emit('enable-customize-breadcrumbs', {
+          title: this.$t('导入模型'),
+          backward: () => {
+            this.doubleCheckCancelImport()
+          }
+        })
+      },
+      cancelImport() {
+        this.importPaneVisible = false
+        Bus.$emit('disable-customize-breadcrumbs')
+      },
+      doneImport() {
+        this.importPaneVisible = false
+        this.loadAllModels()
+      },
+      doubleCheckCancelImport() {
+        this.$bkInfo({
+          title: this.$t('确定离开页面？'),
+          subTitle: this.$t('系统不会保存您所做的修改，确认要离开？'),
+          confirmFn: this.cancelImport
+        })
       },
       isBuiltinClass(classification) {
         return classification.bk_classification_type === 'inner'
+      },
+      isBuiltinModel(model) {
+        return model.ispre
       },
       showGroupDialog(isEdit, group) {
         if (isEdit) {
@@ -465,13 +847,64 @@
         this.groupDialog.isShow = false
         this.$validator.reset()
       },
-      async getModelInstanceCount(id) {
+      // 处理模型点击事件。在导出时改变模型选择状态；在非导出时跳转到模型详情。
+      handleModelClick(model, classification) {
+        if (this.isModelSelectable) {
+          const isChecked = !this.modelSelectionState[model.bk_obj_id] && !this.isBuiltinModel(model)
+          this.$set(this.modelSelectionState, model.bk_obj_id, isChecked)
+          this.$emit('model-selection-change', model, classification)
+        } else {
+          this.checkModelDetails(model)
+        }
+      },
+      checkModelDetails(model) {
+        this.$store.commit('objectModel/setActiveModel', model)
+        this.$routerActions.redirect({
+          name: MENU_MODEL_DETAILS,
+          params: {
+            modelId: model.bk_obj_id,
+          },
+          history: true,
+        })
+      },
+      handleGoInstance(model) {
+        this.modelCreatedDialogVisible = false
+        if (has(BUILTIN_MODEL_RESOURCE_MENUS, model.bk_obj_id)) {
+          const query = model.bk_obj_id === 'host' ? { scope: 'all' } : {}
+          this.$routerActions.redirect({
+            name: BUILTIN_MODEL_RESOURCE_MENUS[model.bk_obj_id],
+            query
+          })
+        } else {
+          this.$routerActions.redirect({
+            name: MENU_RESOURCE_INSTANCE,
+            params: {
+              objId: model.bk_obj_id,
+            },
+          })
+        }
+      },
+      isNoInstanceModel(modelId) {
+        // 不能直接查看实例的模型
+        const noInstanceModelIds = ['set', 'module']
+        return noInstanceModelIds.includes(modelId)
+      },
+      handleModelItemMouseEnter(model) {
+        if (!model) return
+
+        const isDisabledModel = model.bk_ispaused && !model.bk_ishidden
+
+        if (isDisabledModel || this.isNoInstanceModel(model.bk_obj_id)) return
+
+        this.getModelInstanceCount(model.bk_obj_id)
+      },
+      async getModelInstanceCount(modelId) {
         // 存在则不再请求
-        if (has(this.modelStatisticsSet, id)) {
+        if (has(this.modelStatisticsSet, modelId)) {
           return
         }
 
-        const requestId = `getModelInstanceCount_${id}`
+        const requestId = `getModelInstanceCount_${modelId}`
         this.requestIds.statistics.push(requestId)
 
         // 取消上一个请求
@@ -481,20 +914,24 @@
           this.$http.cancelRequest(prevIndex)
         }
 
-        const result = await this.$store.dispatch('objectCommonInst/searchInstanceCount', {
-          params: {
-            condition: { obj_ids: [id] }
-          },
-          config: {
-            requestId,
-            globalError: false
+        const result = await this.$store.dispatch(
+          'objectCommonInst/searchInstanceCount',
+          {
+            params: {
+              condition: { obj_ids: [modelId] },
+            },
+            config: {
+              requestId,
+              globalError: false,
+            },
           }
-        })
+        )
 
         const [data] = result
+
         this.$set(this.modelStatisticsSet, data.bk_obj_id, {
           error: data.error,
-          inst_count: data.inst_count
+          inst_count: data.inst_count,
         })
       },
       async saveGroup() {
@@ -530,7 +967,7 @@
             this.$success(this.$t('新建成功'))
           }
           this.hideGroupDialog()
-          this.searchModel = ''
+          this.modelSearchKey = ''
         } catch (error) {
           console.log(error)
         }
@@ -544,7 +981,7 @@
                 id: group.id
               })
               this.$store.commit('objectModelClassify/deleteClassify', group.bk_classification_id)
-              this.searchModel = ''
+              this.modelSearchKey = ''
               this.$success(this.$t('删除成功'))
             } catch (error) {
               console.log(error)
@@ -556,6 +993,19 @@
         this.modelDialog.groupId = groupId || ''
         this.modelDialog.isShow = true
       },
+      updateModelGroup({ modelId, newGroupId }) {
+        return this.updateObject({
+          id: modelId,
+          params: {
+            modifier: this.userName,
+            bk_classification_id: newGroupId
+          }
+        })
+          .then(() => {
+            this.$success(this.$t('修改成功'))
+            this.loadAllModels()
+          })
+      },
       async saveModel(data) {
         const params = {
           bk_supplier_account: this.supplierAccount,
@@ -563,354 +1013,24 @@
           bk_obj_icon: data.bk_obj_icon,
           bk_classification_id: data.bk_classification_id,
           bk_obj_id: data.bk_obj_id,
-          userName: this.userName
+          userName: this.userName,
         }
         try {
           const createModel = await this.createObject({ params, config: { requestId: 'createModel' } })
           this.curCreateModel = createModel
-          this.sucessDialog.isShow = true
+          this.modelCreatedDialogVisible = true
           this.$http.cancel('post_searchClassificationsObjects')
           this.getModelInstanceCount(params.bk_obj_id)
-          this.searchClassificationsObjects({
-            params: {}
-          })
+          this.loadAllModels()
           this.modelDialog.isShow = false
           this.modelDialog.groupId = ''
-          this.searchModel = ''
+          this.modelSearchKey = ''
         } catch (error) {
           console.log(error)
         }
-      },
-      modelClick(model) {
-        this.$store.commit('objectModel/setActiveModel', model)
-        this.$routerActions.redirect({
-          name: MENU_MODEL_DETAILS,
-          params: {
-            modelId: model.bk_obj_id
-          },
-          history: true
-        })
-      },
-      handleGoInstance(model) {
-        this.sucessDialog.isShow = false
-        if (has(BUILTIN_MODEL_RESOURCE_MENUS, model.bk_obj_id)) {
-          const query = model.bk_obj_id === 'host' ? { scope: 'all' } : {}
-          this.$routerActions.redirect({
-            name: BUILTIN_MODEL_RESOURCE_MENUS[model.bk_obj_id],
-            query
-          })
-        } else {
-          this.$routerActions.redirect({
-            name: MENU_RESOURCE_INSTANCE,
-            params: {
-              objId: model.bk_obj_id
-            }
-          })
-        }
-      },
-      isNoInstanceModel(modelId) {
-        // 不能直接查看实例的模型
-        const noInstanceModelIds = ['set', 'module']
-        return noInstanceModelIds.includes(modelId)
-      },
-      handleModelItemMouseEnter(model) {
-        if (!model) return
-
-        const isDisabledModel = model.bk_ispaused && !model.bk_ishidden
-
-        if (isDisabledModel || this.isNoInstanceModel(model.bk_obj_id)) return
-
-        this.getModelInstanceCount(model.bk_obj_id)
       }
-    }
+    },
   }
 </script>
 
-<style lang="scss" scoped>
-    .group-wrapper {
-        padding: 72px 0 20px 0;
-    }
-    .btn-group {
-        position: absolute;
-        top: 53px;
-        left: 0;
-        width: calc(100% - 17px);
-        padding: 15px 20px 20px;
-        font-size: 0;
-        background-color: #fafbfd;
-        z-index: 100;
-        .bk-primary {
-            margin-right: 10px;
-        }
-        &.sticky {
-            box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.03);
-        }
-    }
-    .model-search-options {
-        .search-model {
-            width: 240px;
-        }
-    }
-    .model-type-options {
-        margin: 0 0 0 10px;
-        font-size: 0;
-        text-align: right;
-        .model-type-button {
-            position: relative;
-            margin: 0;
-            font-size: 12px;
-            height: 32px;
-            line-height: 30px;
-            &.enable {
-                border-radius: 2px 0 0 2px;
-                border-right-color: #3a84ff;
-                z-index: 2;
-            }
-            &.disabled {
-                border-radius: 0 2px 2px 0;
-                margin-left: -1px;
-                z-index: 1;
-            }
-            &:hover {
-                border-color: #3a84ff;
-                z-index: 2;
-            }
-            &-active {
-                border-color: #3a84ff;
-                color: #3a84ff;
-                z-index: 2;
-            }
-            & + .model-type-button {
-              border-radius: 0 2px 2px 0;
-              margin-left: -1px;
-            }
-        }
-    }
-    .group-list {
-        padding: 0 20px;
-        .group-item {
-            position: relative;
-            padding: 10px 0 20px;
-        }
-        .group-title {
-            display: inline-block;
-            margin: 0 40px 0 0;
-            height: 22px;
-            line-height: 22px;
-            color: #333948;
-            outline: 0;
-            &:before {
-                content: "";
-                display: inline-block;
-                width:4px;
-                height:14px;
-                margin: 0 10px 0 0;
-                vertical-align: middle;
-                background: $cmdbBorderColor;
-            }
-            .title-info {
-                @include inlineBlock;
-                font-size: 0;
-                > span {
-                    @include inlineBlock;
-                    font-size: 14px;
-                    font-weight: 700;
-                }
-            }
-            .number {
-                color: $cmdbBorderColor;
-            }
-            .group-btn {
-                display: none;
-                vertical-align: middle;
-                margin-right: 4px;
-                .bk-button-text {
-                    font-size: 16px;
-                }
-            }
-            &:hover {
-                .group-btn {
-                    display: inline-block;
-                }
-            }
-        }
-    }
-    .model-list {
-        padding-left: 12px;
-        overflow: hidden;
-        transition: height .2s;
-        .model-item {
-            display: flex;
-            position: relative;
-            float: left;
-            margin: 10px 10px 0 0;
-            width: calc((100% - 10px * 4) / 5);
-            height: 70px;
-            border: 1px solid $cmdbTableBorderColor;
-            border-radius: 4px;
-            background-color: #ffffff;
-            cursor: pointer;
-            &:nth-child(5n) {
-                margin-right: 0;
-            }
-            &.ispaused {
-                background: #fcfdfe;
-                border-color: #dde4eb;
-                .icon-box {
-                    color: #96c2f7;
-                }
-                .model-name {
-                    color: #bfc7d2;
-                }
-            }
-            &.ispre {
-                .icon-box {
-                    color: #798aad;
-                }
-            }
-            &:hover {
-                border-color: $cmdbBorderFocusColor;
-                .info-instance {
-                    display: block;
-                }
-            }
-            .icon-box {
-                float: left;
-                width: 66px;
-                text-align: center;
-                font-size: 32px;
-                color: #3a84ff;
-                .icon {
-                    line-height: 68px;
-                }
-            }
-            .model-details {
-                padding: 0 4px 0 0;
-                overflow: hidden;
-            }
-            .model-name {
-                margin-top: 16px;
-                line-height: 19px;
-                font-size: 14px;
-                @include ellipsis;
-            }
-            .model-id {
-                line-height: 16px;
-                font-size: 12px;
-                color: #bfc7d2;
-                @include ellipsis;
-            }
-            .info-model {
-                flex: 1;
-                width: 0;
-                border-radius: 4px 0 0 4px;
-                &:hover {
-                    background-color: #f0f5ff;
-                }
-                &.radius {
-                    border-radius: 4px;
-                }
-            }
-            .info-instance {
-                display: none;
-                width: 70px;
-                padding: 0 8px 0 6px;
-                text-align: center;
-                color: #c3cdd7;
-                border-radius: 0 4px 4px 0;
-                &:hover {
-                    background-color: #f0f5ff;
-                    p {
-                        color: #3a84ff;
-                    }
-                }
-                .icon-cc-share {
-                    font-size: 14px;
-                    margin-top: 16px;
-                    color: #3a84ff;
-                }
-                p {
-                    font-size: 16px;
-                    padding-top: 2px;
-                    @include ellipsis;
-                }
-            }
-        }
-    }
-    .dialog {
-        .dialog-content {
-            padding: 20px 15px 20px 28px;
-        }
-        .title {
-            font-size: 20px;
-            color: #333948;
-            line-height: 1;
-            padding-bottom: 14px;
-        }
-        .label-item,
-        label {
-            display: block;
-            margin-bottom: 10px;
-            font-size: 0;
-            &:last-child {
-                margin: 0;
-            }
-            .color-danger {
-                display: inline-block;
-                font-size: 16px;
-                width: 15px;
-                text-align: center;
-                vertical-align: middle;
-            }
-            .icon-info-circle {
-                font-size: 18px;
-                color: $cmdbBorderColor;
-            }
-            .label-title {
-                font-size: 16px;
-                line-height: 36px;
-                vertical-align: middle;
-                @include ellipsis;
-            }
-            .cmdb-form-item {
-                display: inline-block;
-                margin-right: 10px;
-                width: 519px;
-                vertical-align: middle;
-            }
-        }
-        .footer {
-            font-size: 0;
-            text-align: right;
-            .bk-primary {
-                margin-right: 10px;
-            }
-        }
-    }
-    .success-content {
-        text-align: center;
-        padding-bottom: 46px;
-        p {
-            color: #444444;
-            font-size: 24px;
-            padding: 10px 0 20px;
-        }
-        .icon-check-1 {
-            width: 58px;
-            height: 58px;
-            line-height: 58px;
-            font-size: 50px;
-            font-weight: bold;
-            color: #fff;
-            border-radius: 50%;
-            background-color: #2dcb56;
-            text-align: center;
-        }
-        .btn-box {
-            font-size: 0;
-            .bk-button {
-                margin: 0 5px;
-            }
-        }
-    }
-</style>
+<style lang="scss" scoped src="./style.scss"></style>

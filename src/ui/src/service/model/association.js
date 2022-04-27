@@ -1,9 +1,9 @@
 import http from '@/api'
 
-export const find = async (modelId, type) => {
+export const find = async (modelId, type, config) => {
   try {
     const key = type === 'source' ? 'bk_obj_id' : 'bk_asst_obj_id'
-    const result = await http.post('find/objectassociation', { condition: { [key]: modelId } })
+    const result = await http.post('find/objectassociation', { condition: { [key]: modelId } }, config)
     return result
   } catch (error) {
     console.error(error)
