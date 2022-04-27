@@ -321,14 +321,15 @@ func (ps *parseStream) business() *parseStream {
 }
 
 const (
-	createBizSetPattern               = `/api/v3/create/biz_set`
-	deleteBizSetPattern               = `/api/v3/deletemany/biz_set`
-	updateBizSetPattern               = `/api/v3/updatemany/biz_set`
-	findBizInBizSetPattern            = `/api/v3/find/biz_set/biz_list`
-	findBizSetTopoPattern             = `/api/v3/find/biz_set/topo_path`
-	findmanyBusinessSetPattern        = `/api/v3/findmany/biz_set`
-	findReducedBusinessSetListPattern = `/api/v3/findmany/biz_set/with_reduced`
-	previewBusinessSetPattern         = `/api/v3/find/biz_set/preview`
+	createBizSetPattern                  = `/api/v3/create/biz_set`
+	deleteBizSetPattern                  = `/api/v3/deletemany/biz_set`
+	updateBizSetPattern                  = `/api/v3/updatemany/biz_set`
+	findBizInBizSetPattern               = `/api/v3/find/biz_set/biz_list`
+	findBizSetTopoPattern                = `/api/v3/find/biz_set/topo_path`
+	findmanyBusinessSetPattern           = `/api/v3/findmany/biz_set`
+	findReducedBusinessSetListPattern    = `/api/v3/findmany/biz_set/with_reduced`
+	previewBusinessSetPattern            = `/api/v3/find/biz_set/preview`
+	findSimplifiedBusinessSetListPattern = `/api/v3/findmany/biz_set/simplify`
 )
 
 var (
@@ -468,6 +469,19 @@ func (ps *parseStream) businessSet() *parseStream {
 
 	// find many business set list for the user with any business set resources
 	if ps.hitPattern(findmanyBusinessSetPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizSet,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// NOTE: find many business set for front-end use alone.
+	if ps.hitPattern(findSimplifiedBusinessSetListPattern, http.MethodGet) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{

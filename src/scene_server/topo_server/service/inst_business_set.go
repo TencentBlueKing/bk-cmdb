@@ -773,7 +773,7 @@ func (s *Service) SearchBusinessSet(ctx *rest.Contexts) {
 
 	res, err := s.Logics.InstOperation().FindInst(ctx.Kit, common.BKInnerObjIDBizSet, query)
 	if err != nil {
-		blog.Errorf("failed to find the biz set, query: %s, err: %v, rid: %s", query, err, ctx.Kit.Rid)
+		blog.Errorf("failed to find the biz set, query: %+v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -1022,4 +1022,31 @@ func (s *Service) CountBizSetTopoHostAndSrvInst(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(result)
+}
+
+// ListAllBusinessSetSimplify list all businesses set  with return only id and name.
+// Note: This function is a special function provided to the front-end alone. It is used for users to apply for
+// permissions when they perceive that they do not have permission. This function is not authenticated and cannot
+// be used in other scenarios.
+func (s *Service) ListAllBusinessSetSimplify(ctx *rest.Contexts) {
+
+	// get the full business set id and name.
+	page := metadata.BasePage{
+		Limit: common.BKNoLimit,
+	}
+
+	query := &metadata.QueryCondition{
+		Fields: []string{common.BKBizSetIDField, common.BKBizSetNameField},
+		Page:   page,
+	}
+
+	res, err := s.Logics.InstOperation().FindInst(ctx.Kit, common.BKInnerObjIDBizSet, query)
+	if err != nil {
+		blog.Errorf("failed to find the biz set, query: %+v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(res)
+	return
 }
