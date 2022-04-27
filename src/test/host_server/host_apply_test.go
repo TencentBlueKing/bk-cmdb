@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
+	commonutil "configcenter/src/common/util"
 	"configcenter/src/test/util"
 
 	. "github.com/onsi/ginkgo"
@@ -507,12 +508,13 @@ var _ = Describe("host abnormal test", func() {
 			responses["req_19a5ec9ae86f47dcbe1c9f17d12e3fc2"] = rsp
 		})
 
-		It("12. GenerateHostApplyPlan", func() {
+		It("12. GenerateModuleApplyPlan", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			urlTemplate := "/createmany/host_apply_plan/bk_biz_id/%d/preview"
+			urlTemplate := "/host/createmany/module/host_apply_plan/preview"
 
 			input := map[string]interface{}{
+				"bk_biz_id":     value1,
 				"bk_module_ids": []interface{}{value2},
 			}
 
@@ -520,7 +522,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResourcef(urlTemplate, value1).
+				SubResourcef(urlTemplate).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -529,27 +531,7 @@ var _ = Describe("host abnormal test", func() {
 			responses["req_8585626c27b845bbae201d6f8c80be59"] = rsp
 		})
 
-		It("12. RunHostApplyPlan", func() {
-			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
-			value2 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			urlTemplate := "/updatemany/host_apply_plan/bk_biz_id/%d/run"
-
-			input := map[string]interface{}{
-				"bk_module_ids": []interface{}{value2},
-			}
-
-			rsp := metadata.Response{}
-			err := apiServerClient.Client().Post().
-				WithContext(ctx).
-				Body(input).
-				SubResourcef(urlTemplate, value1).
-				WithHeaders(header).
-				Do().Into(&rsp)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			responses["req_676540002c8547f29b7004b6620e6c53"] = rsp
-		})
+		// todo 由于主机自动应用规则的应用在另一个pr中实现，所以这里把代码和测试用例临时删除掉
 
 		It("13. CreateModule", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
@@ -644,45 +626,10 @@ var _ = Describe("host abnormal test", func() {
 			responses["req_d3a0e99e1865429d883029dc1df44b6d"] = rsp
 		})
 
-		It("16. GenerateHostApplyPlan", func() {
+		It("16. SearchHostApplyRuleRelatedModules", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
-			value2 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			value4 := util.JsonPathExtractInt(responses, "req_9a5a5cc52e624951a6954ee2e1c6d512", "name:$.data.id", "{.data.id}")
-			value5 := util.JsonPathExtractInt(responses, "req_ad1c416acb594b8a924163dad615df7a", "name:$.data.info[0].bk_host_id", "{.data.info[0].bk_host_id}")
-			urlTemplate := "/createmany/host_apply_plan/bk_biz_id/%d/preview"
-
-			input := map[string]interface{}{
-				"bk_module_ids": []interface{}{
-					value2,
-				},
-				// {#"remove_rule_ids": [value3],#}
-				"conflict_resolvers": []map[string]interface{}{
-					{
-						"bk_attribute_id":   value4,
-						"bk_host_id":        value5,
-						"bk_property_value": "xxx",
-					},
-				},
-			}
-
-			rsp := metadata.Response{}
-			err := apiServerClient.Client().Post().
-				WithContext(ctx).
-				Body(input).
-				SubResourcef(urlTemplate, value1).
-				WithHeaders(header).
-				Do().Into(&rsp)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			responses["req_3a107db2c5fa455a987c64d43fb35620"] = rsp
-		})
-
-		It("17. SearchHostApplyRuleRelatedModules", func() {
-			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
-			value2 := util.JsonPathExtract(responses, "req_97c8a2eacfe243b7b910bbbb15299641", "name:$.data.bk_set_name", "{.data.bk_set_name}")
-			value3 := util.JsonPathExtractInt(responses, "req_9a5a5cc52e624951a6954ee2e1c6d512", "name:$.data.id", "{.data.id}")
-			value4 := util.JsonPathExtract(responses, "req_9a5a5cc52e624951a6954ee2e1c6d512", "name:$.data.bk_property_name", "{.data.bk_property_name}")
+			value2 := util.JsonPathExtractInt(responses, "req_9a5a5cc52e624951a6954ee2e1c6d512", "name:$.data.id", "{.data.id}")
+			value3 := util.JsonPathExtract(responses, "req_9a5a5cc52e624951a6954ee2e1c6d512", "name:$.data.bk_property_name", "{.data.bk_property_name}")
 			urlTemplate := "/find/topoinst/bk_biz_id/%d/host_apply_rule_related"
 
 			input := map[string]interface{}{
@@ -690,14 +637,9 @@ var _ = Describe("host abnormal test", func() {
 					"condition": "OR",
 					"rules": []map[string]interface{}{
 						{
-							"field":    "keyword",
-							"operator": "contains",
-							"value":    value2,
-						},
-						{
 							"operator": "exist",
-							"field":    strconv.FormatInt(value3, 10),
-							"value":    value4,
+							"field":    strconv.FormatInt(value2, 10),
+							"value":    value3,
 						},
 					},
 				},
@@ -716,7 +658,7 @@ var _ = Describe("host abnormal test", func() {
 			responses["req_6d1f79ae6ad4429b8f40689713b44e2c"] = rsp
 		})
 
-		It("18. DeleteHostApplyRule", func() {
+		It("17. DeleteHostApplyRule", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_d0479d956b6c40b5aedb6c2fbb5451d5", "name:$.data.id", "{.data.id}")
 			value3 := util.JsonPathExtractInt(responses, "req_19a5ec9ae86f47dcbe1c9f17d12e3fc2", "name:$.data.items[1].rule.id", "{.data.items[1].rule.id}")
@@ -737,6 +679,278 @@ var _ = Describe("host abnormal test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			responses["req_315b9b59bef44dcb8af27ef9f0c2cae8"] = rsp
+		})
+
+		It("prepare environment", func() {
+			// create service template
+			bizID := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d",
+				"name:$.data.bk_biz_id", "{.data.bk_biz_id}")
+			option := map[string]interface{}{
+				"service_category_id": 2,
+				"bk_biz_id":           bizID,
+				"name":                util.RandSeq(16),
+				"host_apply_enabled":  true,
+			}
+			resp, err := procServerClient.CreateServiceTemplate(context.Background(), header, option)
+			util.RegisterResponse(resp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Result).To(Equal(true))
+			responses["req_ba23073a86944d0cb6386a1b2a331wq2"] = resp
+
+			// create module
+			templateID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a331wq2", "name:$.data.id",
+				"{.data.id}")
+			setID := util.JsonPathExtractInt(responses, "req_97c8a2eacfe243b7b910bbbb15299641", "name:$.data.bk_set_id",
+				"{.data.bk_set_id}")
+
+			input := map[string]interface{}{
+				"bk_module_name":      util.RandSeq(16),
+				"bk_parent_id":        setID,
+				"service_category_id": 2,
+				"service_template_id": templateID,
+			}
+			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizID, 10),
+				strconv.FormatInt(setID, 10), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			responses["req_ba23073a86944d0cb6386a1b2a7341ed1"] = rsp
+
+			//create module rule
+			moduleID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a7341ed1",
+				"name:$.data.bk_module_id", "{.data.bk_module_id}")
+			attributeID := util.JsonPathExtractInt(responses, "req_269f039e70864ca29c0ca7bfce344ed5", "name:$.data.id",
+				"{.data.id}")
+			moduleRuleInput := map[string]interface{}{
+				"bk_module_id":      moduleID,
+				"bk_attribute_id":   attributeID,
+				"bk_property_value": "testModule",
+			}
+
+			moduleRuleRsp := metadata.Response{}
+			err = apiServerClient.Client().Post().
+				WithContext(ctx).
+				Body(moduleRuleInput).
+				SubResourcef("/create/host_apply_rule/bk_biz_id/%d", bizID).
+				WithHeaders(header).
+				Do().Into(&moduleRuleRsp)
+			util.RegisterResponse(moduleRuleRsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(moduleRuleRsp.Result).To(Equal(true))
+
+			// create service template rule
+			ruleInput := map[string]interface{}{
+				"service_template_id": templateID,
+				"bk_attribute_id":     attributeID,
+				"bk_property_value":   "testServiceTemplate",
+			}
+
+			templateRuleRsp := metadata.Response{}
+			err = apiServerClient.Client().Post().
+				WithContext(ctx).
+				Body(ruleInput).
+				SubResourcef("/create/host_apply_rule/bk_biz_id/%d", bizID).
+				WithHeaders(header).
+				Do().Into(&templateRuleRsp)
+			util.RegisterResponse(templateRuleRsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(templateRuleRsp.Result).To(Equal(true))
+
+			// transfer host
+			host1 := util.JsonPathExtractInt(responses, "req_ad1c416acb594b8a924163dad615df7a",
+				"name:$.data.info[0].bk_host_id", "{.data.info[0].bk_host_id}")
+			host2 := util.JsonPathExtractInt(responses, "req_ad1c416acb594b8a924163dad615df7a",
+				"name:$.data.info[1].bk_host_id", "{.data.info[1].bk_host_id}")
+			transInput := map[string]interface{}{
+				"bk_host_ids": []interface{}{
+					host1,
+					host2,
+				},
+				"is_remove_from_all": false,
+				"add_to_modules": []interface{}{
+					moduleID,
+				},
+			}
+
+			transRsp := metadata.Response{}
+			err = apiServerClient.Client().Post().
+				WithContext(ctx).
+				Body(transInput).
+				SubResourcef("/host/transfer_with_auto_clear_service_instance/bk_biz_id/%d", bizID).
+				WithHeaders(header).
+				Do().Into(&transRsp)
+			util.RegisterResponse(transRsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(transRsp.Result).To(Equal(true))
+		})
+
+		It("18. GetTemplateHostApplyStatus", func() {
+			bizID := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d",
+				"name:$.data.bk_biz_id", "{.data.bk_biz_id}")
+			moduleID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a7341ed1",
+				"name:$.data.bk_module_id", "{.data.bk_module_id}")
+			option := metadata.GetHostApplyStatusParam{
+				ApplicationID: bizID,
+				ModuleIDs:     []int64{moduleID},
+			}
+			resp := metadata.MapArrayResponse{}
+			err := apiServerClient.Client().Post().
+				WithContext(ctx).
+				Body(option).
+				SubResourcef("/host/find/service_template/host_apply_status").
+				WithHeaders(header).
+				Do().Into(&resp)
+
+			util.RegisterResponse(resp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Result).To(Equal(true))
+			Expect(commonutil.GetInt64ByInterface(resp.Data[0]["bk_module_id"])).To(Equal(moduleID))
+			Expect(commonutil.GetStrByInterface(resp.Data[0]["host_apply_enabled"])).To(Equal("true"))
+		})
+
+		It("19. GenerateTemplateApplyPlan", func() {
+			bizID := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id",
+				"{.data.bk_biz_id}")
+			templateID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a331wq2", "name:$.data.id",
+				"{.data.id}")
+			urlTemplate := "/host/createmany/service_template/host_apply_plan/preview"
+
+			input := map[string]interface{}{
+				"bk_biz_id":            bizID,
+				"service_template_ids": []interface{}{templateID},
+			}
+
+			rsp := metadata.Response{}
+			err := apiServerClient.Client().Post().
+				WithContext(ctx).
+				Body(input).
+				SubResourcef(urlTemplate).
+				WithHeaders(header).
+				Do().Into(&rsp)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("20. GetServiceTemplateHostApplyRule", func() {
+			bizID := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id",
+				"{.data.bk_biz_id}")
+			templateID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a331wq2", "name:$.data.id",
+				"{.data.id}")
+
+			input := map[string]interface{}{
+				"bk_biz_id":            bizID,
+				"service_template_ids": []interface{}{templateID},
+			}
+
+			rsp := metadata.ResponseInstData{}
+			err := apiServerClient.Client().Post().
+				WithContext(ctx).
+				Body(input).
+				SubResourcef("/host/findmany/service_template/host_apply_rule").
+				WithHeaders(header).
+				Do().Into(&rsp)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Info[0].Int64("service_template_id")).To(Equal(templateID))
+		})
+
+		It("21. GetServiceTemplateInvalidHostCount", func() {
+			bizID := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id",
+				"{.data.bk_biz_id}")
+			templateID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a331wq2", "name:$.data.id",
+				"{.data.id}")
+
+			input := map[string]interface{}{
+				"bk_biz_id": bizID,
+				"id":        templateID,
+			}
+
+			rsp := metadata.ResponseDataMapStr{}
+			err := apiServerClient.Client().Post().
+				WithContext(ctx).
+				Body(input).
+				SubResourcef("/host/findmany/service_template/host_apply_plan/invalid_host_count").
+				WithHeaders(header).
+				Do().Into(&rsp)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Int64("count")).To(Equal(int64(2)))
+		})
+
+		It("22. GetModuleInvalidHostCount", func() {
+			bizID := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id",
+				"{.data.bk_biz_id}")
+			moduleID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a7341ed1",
+				"name:$.data.bk_module_id", "{.data.bk_module_id}")
+
+			input := map[string]interface{}{
+				"bk_biz_id": bizID,
+				"id":        moduleID,
+			}
+
+			rsp := metadata.ResponseDataMapStr{}
+			err := apiServerClient.Client().Post().
+				WithContext(ctx).
+				Body(input).
+				SubResourcef("/host/findmany/module/host_apply_plan/invalid_host_count").
+				WithHeaders(header).
+				Do().Into(&rsp)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Int64("count")).To(Equal(int64(2)))
+		})
+
+		It("23. GetServiceTemplateHostApplyRuleCount", func() {
+			bizID := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d",
+				"name:$.data.bk_biz_id", "{.data.bk_biz_id}")
+			templateID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a331wq2", "name:$.data.id",
+				"{.data.id}")
+			option := metadata.HostApplyRuleCountOption{
+				ApplicationID:      bizID,
+				ServiceTemplateIDs: []int64{templateID},
+			}
+			resp := metadata.MapArrayResponse{}
+			err := apiServerClient.Client().Post().
+				WithContext(ctx).
+				Body(option).
+				SubResourcef("/host/findmany/service_template/host_apply_rule_count").
+				WithHeaders(header).
+				Do().Into(&resp)
+
+			util.RegisterResponse(resp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Result).To(Equal(true))
+			Expect(commonutil.GetInt64ByInterface(resp.Data[0]["service_template_id"])).To(Equal(templateID))
+			Expect(commonutil.GetInt64ByInterface(resp.Data[0]["count"])).To(Equal(int64(1)))
+		})
+
+		It("24. GetModuleFinalRules", func() {
+			bizID := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d",
+				"name:$.data.bk_biz_id", "{.data.bk_biz_id}")
+			moduleID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a7341ed1",
+				"name:$.data.bk_module_id", "{.data.bk_module_id}")
+			templateID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a331wq2", "name:$.data.id",
+				"{.data.id}")
+			option := metadata.ModuleFinalRulesParam{
+				ApplicationID: bizID,
+				ModuleIDs:     []int64{moduleID},
+			}
+			resp := metadata.MapArrayResponse{}
+			err := apiServerClient.Client().Post().
+				WithContext(ctx).
+				Body(option).
+				SubResourcef("/host/findmany/module/get_module_final_rules").
+				WithHeaders(header).
+				Do().Into(&resp)
+
+			util.RegisterResponse(resp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Result).To(Equal(true))
+			Expect(commonutil.GetInt64ByInterface(resp.Data[0]["service_template_id"])).To(Equal(templateID))
 		})
 	})
 })

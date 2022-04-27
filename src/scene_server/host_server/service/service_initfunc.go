@@ -139,9 +139,25 @@ func (s *Service) initHostapplyrule(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}/", Handler: s.GetHostApplyRule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}", Handler: s.ListHostApplyRule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/host_apply_rule/bk_biz_id/{bk_biz_id}/batch_create_or_update", Handler: s.BatchCreateOrUpdateHostApplyRule})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/host_apply_plan/bk_biz_id/{bk_biz_id}/preview", Handler: s.GenerateApplyPlan})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/updatemany/host_apply_plan/bk_biz_id/{bk_biz_id}/run", Handler: s.RunHostApplyRule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/createmany/module/host_apply_plan/preview",
+		Handler: s.GenerateModuleApplyPlan})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}/host_related_rules", Handler: s.ListHostRelatedApplyRule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/find/service_template/host_apply_status",
+		Handler: s.GetTemplateHostApplyStatus})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/findmany/service_template/host_apply_rule",
+		Handler: s.GetServiceTemplateHostApplyRule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/host/createmany/service_template/host_apply_plan/preview", Handler: s.GenerateTemplateApplyPlan})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/host/findmany/module/host_apply_plan/invalid_host_count", Handler: s.GetModuleInvalidHostCount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/host/findmany/service_template/host_apply_plan/invalid_host_count",
+		Handler: s.GetServiceTemplateInvalidHostCount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/host/findmany/service_template/host_apply_rule_count",
+		Handler: s.GetServiceTemplateHostApplyRuleCount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/host/findmany/module/get_module_final_rules", Handler: s.GetModuleFinalRules})
 
 	utility.AddToRestfulWebService(web)
 }

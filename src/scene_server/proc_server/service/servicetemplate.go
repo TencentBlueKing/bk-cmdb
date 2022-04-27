@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 )
 
@@ -36,6 +37,7 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		Name:              option.Name,
 		ServiceCategoryID: option.ServiceCategoryID,
 		SupplierAccount:   ctx.Kit.SupplierAccount,
+		HostApplyEnabled:  option.HostApplyEnabled,
 	}
 
 	var tpl *metadata.ServiceTemplate
@@ -149,11 +151,12 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 	}
 
 	option := metadata.ListServiceTemplateOption{
-		BusinessID:        input.BizID,
-		Page:              input.Page,
-		ServiceCategoryID: &input.ServiceCategoryID,
-		Search:            input.Search,
-		IsExact:           input.IsExact,
+		BusinessID:         input.BizID,
+		Page:               input.Page,
+		ServiceCategoryID:  &input.ServiceCategoryID,
+		Search:             input.Search,
+		IsExact:            input.IsExact,
+		ServiceTemplateIDs: input.ServiceTemplateIDs,
 	}
 	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
@@ -340,4 +343,42 @@ func (ps *ProcServer) GetServiceTemplateSyncStatus(ctx *rest.Contexts) {
 		ctx.RespEntity(metadata.ServiceTemplateSyncStatus{Modules: statuses})
 		return
 	}
+}
+
+// SearchRuleRelatedServiceTemplate search rule related service templates
+func (ps *ProcServer) SearchRuleRelatedServiceTemplates(ctx *rest.Contexts) {
+	requestBody := new(metadata.RuleRelatedServiceTemplateOption)
+	if err := ctx.DecodeInto(requestBody); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if requestBody.ApplicationID == 0 {
+		blog.Errorf("bk_biz_id should not be empty, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_biz_id"))
+		return
+	}
+
+	if requestBody.QueryFilter == nil {
+		blog.Errorf("search query_filter should not be empty, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "query_filter"))
+		return
+	}
+
+	key, err := requestBody.QueryFilter.Validate(&querybuilder.RuleOption{NeedSameSliceElementType: true})
+	if err != nil {
+		blog.Errorf("search query_filter.%s validate failed, err: %v, rid: %s", key, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "query_filter."+key))
+		return
+	}
+
+	templates, err := ps.Engine.CoreAPI.CoreService().HostApplyRule().SearchRuleRelatedServiceTemplates(ctx.Kit.Ctx,
+		ctx.Kit.Header, requestBody)
+	if err != nil {
+		blog.Errorf("search rule related service templates failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(templates)
 }

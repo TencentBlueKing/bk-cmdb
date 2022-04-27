@@ -41,6 +41,8 @@ type HostApplyRuleInterface interface {
 		errors.CCErrorCoder)
 	RunHostApplyOnHosts(ctx context.Context, header http.Header, bizID int64,
 		option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder)
+	SearchRuleRelatedServiceTemplates(ctx context.Context, header http.Header,
+		option *metadata.RuleRelatedServiceTemplateOption) ([]metadata.SrvTemplate, errors.CCErrorCoder)
 }
 
 func NewHostApplyRuleClient(client rest.ClientInterface) HostApplyRuleInterface {

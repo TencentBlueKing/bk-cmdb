@@ -173,6 +173,14 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 			}
 			return []int64{bizSetID}, nil
 		},
+	}, {
+		Name:           "searchRuleRelatedServiceTemplates",
+		Description:    "根据配置字段搜索服务模板",
+		Pattern:        "/api/v3/find/proc/service_template/host_apply_rule_related",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.FindMany,
 	},
 }
 

@@ -450,11 +450,11 @@ func (s *Service) generateTransferPlans(kit *rest.Kit, bizID int64, withHostAppl
 	}
 
 	// generate host apply plans
-	return s.generateHostApplyPlans(kit, bizID, transferPlans, option.Options.HostApplyConflictResolvers)
+	return s.generateHostApplyPlans(kit, bizID, transferPlans)
 }
 
-func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64, plans []metadata.HostTransferPlan,
-	resolvers []metadata.HostApplyConflictResolver) ([]metadata.HostTransferPlan, errors.CCErrorCoder) {
+func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64, plans []metadata.HostTransferPlan) (
+	[]metadata.HostTransferPlan, errors.CCErrorCoder) {
 
 	if len(plans) == 0 {
 		return plans, nil
@@ -466,40 +466,10 @@ func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64, plans []met
 		finalModuleIDs = append(finalModuleIDs, item.FinalModules...)
 	}
 
-	ruleOpt := metadata.ListHostApplyRuleOption{
-		ModuleIDs: finalModuleIDs,
-		Page:      metadata.BasePage{Limit: common.BKNoLimit},
-	}
-	rules, ccErr := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(kit.Ctx, kit.Header, bizID, ruleOpt)
-	if ccErr != nil {
-		blog.Errorf("list apply rule failed, bizID: %s, option: %#v, err: %s, rid: %s", bizID, ruleOpt, ccErr, kit.Rid)
-		return plans, ccErr
-	}
-
-	// get modules that enabled host apply
-	moduleCondition := metadata.QueryCondition{
-		Page:   metadata.BasePage{Limit: common.BKNoLimit},
-		Fields: []string{common.BKModuleIDField},
-		Condition: map[string]interface{}{
-			common.BKModuleIDField:       map[string]interface{}{common.BKDBIN: finalModuleIDs},
-			common.HostApplyEnabledField: true,
-		},
-	}
-	enabledModules, err := s.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
-		common.BKInnerObjIDModule, &moduleCondition)
+	rules, err := s.getRulesPriorityFromTemplate(kit, finalModuleIDs, bizID)
 	if err != nil {
-		blog.ErrorJSON("get apply enabled modules failed, filter: %s, err: %s, rid: %s", moduleCondition, err, kit.Rid)
-		return plans, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
-	enableModuleMap := make(map[int64]bool)
-	for _, item := range enabledModules.Info {
-		moduleID, err := util.GetInt64ByInterface(item[common.BKModuleIDField])
-		if err != nil {
-			blog.ErrorJSON("parse module from db failed, module: %s, err: %s, rid: %s", item, err, kit.Rid)
-			return plans, kit.CCError.CCError(common.CCErrCommParseDBFailed)
-		}
-		enableModuleMap[moduleID] = true
+		blog.Errorf("get module rule failed, err: %v, rid: %s", err, kit.Rid)
+		return plans, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	// generate host apply plans only generate new module
@@ -510,17 +480,14 @@ func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64, plans []met
 			ModuleIDs: make([]int64, 0),
 		}
 		for _, moduleID := range item.ToAddToModules {
-			if _, exist := enableModuleMap[moduleID]; exist {
-				host2Module.ModuleIDs = append(host2Module.ModuleIDs, moduleID)
-			}
+			host2Module.ModuleIDs = append(host2Module.ModuleIDs, moduleID)
 		}
 		hostModules = append(hostModules, host2Module)
 	}
 
 	planOpt := metadata.HostApplyPlanOption{
-		Rules:             rules.Info,
-		HostModules:       hostModules,
-		ConflictResolvers: resolvers,
+		Rules:       rules,
+		HostModules: hostModules,
 	}
 
 	hostApplyPlanResult, ccErr := s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(kit.Ctx, kit.Header, bizID,
@@ -911,4 +878,91 @@ func (s *Service) validateTransferHostWithAutoClearServiceInstanceOption(kit *re
 	}
 
 	return nil
+}
+
+func (s *Service) getRulesPriorityFromTemplate(kit *rest.Kit, moduleIDs []int64, bizID int64) (
+	[]metadata.HostApplyRule, error) {
+
+	moduleRes, err := s.getModuleRelateHostApply(kit, bizID, moduleIDs, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1.过滤出需要查询主机应用规则的模版id和模块id
+	enabledModuleIDs := make([]int64, 0)
+	enabledModuleIDMap := make(map[int64]bool)
+	tempToModMap := make(map[int64][]int64)
+	srvTmpIDs := make([]int64, 0)
+	for _, module := range moduleRes {
+		if module.ServiceTemplateID != 0 {
+			tempToModMap[module.ServiceTemplateID] = append(tempToModMap[module.ServiceTemplateID], module.ModuleID)
+			srvTmpIDs = append(srvTmpIDs, module.ServiceTemplateID)
+
+			if module.HostApplyEnabled {
+				enabledModuleIDMap[module.ModuleID] = true
+			}
+			continue
+		}
+
+		if module.HostApplyEnabled {
+			enabledModuleIDs = append(enabledModuleIDs, module.ModuleID)
+		}
+	}
+
+	enableSrvTemplateIDs := make([]int64, 0)
+	if len(srvTmpIDs) != 0 {
+		srvTempStatus, err := s.getSrvTemplateApplyStatus(kit, bizID, srvTmpIDs)
+		if err != nil {
+			blog.Errorf("get service template host apply status failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+
+		for templateID, status := range srvTempStatus {
+			if status {
+				enableSrvTemplateIDs = append(enableSrvTemplateIDs, templateID)
+				continue
+			}
+			for _, moduleID := range tempToModMap[templateID] {
+				if enabledModuleIDMap[moduleID] {
+					enabledModuleIDs = append(enabledModuleIDs, moduleID)
+				}
+			}
+		}
+	}
+
+	// 2.查询有模版并且模版开启主机自动应用的规则
+	rules := make([]metadata.HostApplyRule, 0)
+	if len(enableSrvTemplateIDs) != 0 {
+		srvTemplateRules, err := s.findSrvTemplateRule(kit, bizID, enableSrvTemplateIDs)
+		if err != nil {
+			blog.Errorf("list service template host apply rule failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+
+		for _, rule := range srvTemplateRules {
+			moduleIDs, exist := tempToModMap[rule.ServiceTemplateID]
+			if !exist {
+				continue
+			}
+
+			for _, moduleID := range moduleIDs {
+				rule.ModuleID = moduleID
+				rules = append(rules, rule)
+			}
+		}
+	}
+
+	// 3.查询没有模版，以及有模版但是模版没有开启主机自动应用的模块的规则
+	if len(enabledModuleIDs) != 0 {
+		moduleRules, err := s.getEnabledModuleRules(kit, bizID, enabledModuleIDs)
+		if err != nil {
+			blog.Errorf("get module host apply rule failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+		if len(moduleRules) != 0 {
+			rules = append(rules, moduleRules...)
+		}
+	}
+
+	return rules, nil
 }
