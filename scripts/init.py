@@ -304,7 +304,7 @@ webServer:
       # pass的tls相关配置
       tls:
         # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-        insecureSkipVerify: true
+        insecureSkipVerify:
         # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
         certFile:
         # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
@@ -341,7 +341,7 @@ authServer:
      # 权限中心tls配置
      tls:
        # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-       insecureSkipVerify: true
+       insecureSkipVerify:
        # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
        certFile:
        # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
@@ -412,7 +412,7 @@ openTelemetry:
   # 服务tls配置
   tls:
     # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-    insecureSkipVerify: true
+    insecureSkipVerify:
     # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
     certFile:
     # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
@@ -492,7 +492,7 @@ kafka:
 # cmdb服务tls配置
 tls:
   # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-  insecureSkipVerify: true
+  insecureSkipVerify:
   # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
   certFile:
   # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
