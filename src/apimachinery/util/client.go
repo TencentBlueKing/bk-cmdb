@@ -25,15 +25,16 @@ import (
 // NewClient create a new http client
 func NewClient(c *TLSClientConfig, conf ...ExtraClientConfig) (*http.Client, error) {
 	tlsConf := new(tls.Config)
-	if nil != c {
-		tlsConf.InsecureSkipVerify = c.InsecureSkipVerify
-		if len(c.CAFile) != 0 && len(c.CertFile) != 0 && len(c.KeyFile) != 0 {
-			var err error
-			tlsConf, err = ssl.ClientTLSConfVerity(c.CAFile, c.CertFile, c.KeyFile, c.Password)
-			if err != nil {
-				return nil, err
-			}
+	if c != nil && len(c.CAFile) != 0 && len(c.CertFile) != 0 && len(c.KeyFile) != 0 {
+		var err error
+		tlsConf, err = ssl.ClientTLSConfVerity(c.CAFile, c.CertFile, c.KeyFile, c.Password)
+		if err != nil {
+			return nil, err
 		}
+	}
+
+	if c != nil {
+		tlsConf.InsecureSkipVerify = c.InsecureSkipVerify
 	}
 
 	// set api request timeout to 25s, so that we can stop the long request like searching all hosts

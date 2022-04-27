@@ -22,6 +22,7 @@ import (
 
 	"configcenter/src/ac/extensions"
 	"configcenter/src/ac/iam"
+	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
@@ -214,9 +215,9 @@ func (c *DataCollection) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
 
 		blog.V(3).Infof("DataCollection| on host config update event: \n%s", string(curr.ConfigData))
 		// ESB configs.
-		c.config.Esb.Addrs, _ = cc.String("datacollection.esb.addr")
-		c.config.Esb.AppCode, _ = cc.String("datacollection.esb.appCode")
-		c.config.Esb.AppSecret, _ = cc.String("datacollection.esb.appSecret")
+		c.config.Esb.Addrs, _ = cc.String("esb.addr")
+		c.config.Esb.AppCode, _ = cc.String("esb.appCode")
+		c.config.Esb.AppSecret, _ = cc.String("esb.appSecret")
 	}
 }
 
@@ -305,7 +306,17 @@ func (c *DataCollection) initModules() error {
 	blog.Info("DataCollection| init modules, create mongo client success[%+v]", c.config.MongoDB.GetMongoConf())
 
 	// create blueking ESB client.
-	esb, err := esbserver.NewEsb(c.engine.ApiMachineryConfig(), nil, /* you can update it by a chan here */
+	tlsConfig, err := apiutil.NewTLSClientConfigFromConfig("esb")
+	if err != nil {
+		return err
+	}
+	apiMachineryConfig := &apiutil.APIMachineryConfig{
+		QPS:       1000,
+		Burst:     1000,
+		TLSConfig: &tlsConfig,
+	}
+
+	esb, err := esbserver.NewEsb(apiMachineryConfig, nil, /* you can update it by a chan here */
 		&c.config.Esb, c.engine.Metric().Registry())
 	if err != nil {
 		return fmt.Errorf("create ESB client, %+v", err)
@@ -385,7 +396,7 @@ func (c *DataCollection) initModules() error {
 	iamCli := new(iam.IAM)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM(nil, c.config.Auth, c.engine.Metric().Registry())
+		iamCli, err = iam.NewIAM(c.config.Auth, c.engine.Metric().Registry())
 		if err != nil {
 			return fmt.Errorf("new iam client failed: %v", err)
 		}

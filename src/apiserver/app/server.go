@@ -36,11 +36,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	client, err := util.NewClient(&util.TLSClientConfig{})
-	if err != nil {
-		return fmt.Errorf("new proxy client failed, err: %v", err)
-	}
-
 	svc := service.NewService()
 
 	apiSvr := new(APIServer)
@@ -70,6 +65,17 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err != nil {
 		blog.Infof("SyncLimiterRules failed, err: %v", err)
 		return err
+	}
+
+	config, err := util.NewTLSClientConfigFromConfig("apiServer.tls")
+	if err != nil {
+		blog.Errorf("get apiServer.tls config error, err: %v", err)
+		return err
+	}
+
+	client, err := util.NewClient(&config)
+	if err != nil {
+		return fmt.Errorf("new proxy client failed, err: %v", err)
 	}
 
 	svc.SetConfig(engine, client, engine.Discovery(), engine.CoreAPI, cache, limiter)
