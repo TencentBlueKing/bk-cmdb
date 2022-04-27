@@ -85,7 +85,11 @@
   import authMixin from '../mixin-auth'
   import instanceService from '@/service/instance/instance'
   import instanceAssociationService from '@/service/instance/association'
+  import businessSetService from '@/service/business-set/index.js'
   import queryBuilderOperator from '@/utils/query-builder-operator'
+  import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
+  import Utils from '@/components/filters/utils'
+
   export default {
     name: 'cmdb-host-association-create',
     components: {
@@ -152,7 +156,8 @@
           biz: 'bk_biz_id',
           plat: 'bk_cloud_id',
           module: 'bk_module_id',
-          set: 'bk_set_id'
+          set: 'bk_set_id',
+          [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID
         }
         if (has(specialObj, this.currentAsstObj)) {
           return specialObj[this.currentAsstObj]
@@ -166,7 +171,9 @@
           bk_cloud_id: 'bk_cloud_name',
           bk_module_id: 'bk_module_name',
           bk_set_id: 'bk_set_name',
-          bk_inst_id: 'bk_inst_name'
+          bk_inst_id: 'bk_inst_name',
+          // eslint-disable-next-line max-len
+          [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME
         }
         return nameKey[this.instanceIdKey]
       },
@@ -177,7 +184,8 @@
           bk_cloud_name: this.$t('云区域'),
           bk_module_name: this.$t('模块名'),
           bk_set_name: this.$t('集群名'),
-          bk_inst_name: this.$t('实例名')
+          bk_inst_name: this.$t('实例名'),
+          [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME]: this.$t('业务集名'),
         }
         if (has(name, this.filter.id)) {
           return this.filter.name
@@ -243,14 +251,21 @@
       getInstanceAuth(row) {
         const auth = [this.HOST_AUTH.U_HOST]
         switch (this.currentAsstObj) {
-          case 'biz': {
+          case BUILTIN_MODELS.BUSINESS: {
             auth.push({
               type: this.$OPERATION.U_BUSINESS,
               relation: [row.bk_biz_id]
             })
             break
           }
-          case 'host': {
+          case BUILTIN_MODELS.BUSINESS_SET: {
+            auth.push({
+              type: this.$OPERATION.U_BUSINESS_SET,
+              relation: [row[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]]
+            })
+            break
+          }
+          case BUILTIN_MODELS.HOST: {
             const originalData = this.table.originalList.find(data => data.host.bk_host_id === row.bk_host_id)
             const [biz] = originalData.biz
             if (biz.default === 0) {
@@ -522,11 +537,14 @@
         }
         let promise
         switch (objId) {
-          case 'host':
+          case BUILTIN_MODELS.HOST:
             promise = this.getHostInstance(config)
             break
-          case 'biz':
+          case BUILTIN_MODELS.BUSINESS:
             promise = this.getBizInstance(config)
+            break
+          case BUILTIN_MODELS.BUSINESS_SET:
+            promise = this.getBizSetInstance(config)
             break
           default:
             promise = this.getObjInstance(objId, config)
@@ -594,6 +612,36 @@
           config
         })
       },
+      getBizSetInstance(config) {
+        const params = {
+          fields: [],
+          page: this.page
+        }
+
+        const condition = {}
+        if (this.filter.value !== '') {
+          condition[this.filter.id] = {
+            value: this.filter.value,
+            operator: this.filter.operator
+          }
+        }
+
+        // eslint-disable-next-line max-len
+        const { conditions, time_condition: timeCondition } = Utils.transformGeneralModelCondition(condition, this.properties) || {}
+
+        if (timeCondition) {
+          params.time_condition = timeCondition
+        }
+
+        if (conditions) {
+          params.bk_biz_set_filter = {
+            condition: 'AND',
+            rules: conditions.rules
+          }
+        }
+
+        return businessSetService.find(params, config)
+      },
       getObjInstance(objId, config) {
         return instanceService.find({
           bk_obj_id: objId,
@@ -623,13 +671,16 @@
         return params
       },
       setTableList(data, asstObjId) {
-        // const properties = this.properties
-        this.table.pagination.count = data.count
-        this.table.originalList = Object.freeze(data.info.slice())
-        if (asstObjId === 'host') {
-          data.info = data.info.map(item => item.host)
+        const dataListKeys = {
+          [BUILTIN_MODELS.BUSINESS_SET]: 'list'
         }
-        this.table.list = data.info
+        const dataListKey = dataListKeys[asstObjId] || 'info'
+        this.table.pagination.count = data.count
+        this.table.originalList = Object.freeze(data[dataListKey].slice())
+        if (asstObjId === BUILTIN_MODELS.HOST) {
+          data[dataListKey] = data[dataListKey].map(item => item.host)
+        }
+        this.table.list = data[dataListKey]
       },
       getProperty(propertyId) {
         return this.properties.find(({ bk_property_id: bkPropertyId }) => bkPropertyId === propertyId)
@@ -681,6 +732,11 @@
         &.is-associated {
             color: #979BA5;
             cursor: not-allowed;
+        }
+        ::v-deep {
+          .bk-link-text {
+              font-size: 12px;
+          }
         }
     }
     .new-association-table{

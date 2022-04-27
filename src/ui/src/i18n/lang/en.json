@@ -577,6 +577,7 @@
     "暂无可批量更新的属性": "There are no batch update properties",
     "实例名": "Instance Name",
     "业务名": "Business Name",
+    "业务集名": "Business Set Name",
     "关联管理": "Association Management",
     "解除选中关联": "Remove Selected Association",
     "关联列表": "Model",
