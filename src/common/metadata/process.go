@@ -306,6 +306,13 @@ func (o *UpdateServiceInstanceOption) Validate() (rawError cErr.RawErrorInfo) {
 		}
 	}
 
+	if len(o.Data) > common.BKMaxUpdateOrCreatePageSize {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"data"},
+		}
+	}
+
 	for _, inst := range o.Data {
 		if inst.ServiceInstanceID <= 0 {
 			return cErr.RawErrorInfo{

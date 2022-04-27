@@ -396,6 +396,11 @@ var _ = Describe("host abnormal test", func() {
 
 			input := map[string]interface{}{
 				"bk_module_ids": []interface{}{value2},
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 100,
+					"sort":  "",
+				},
 			}
 
 			rsp := metadata.Response{}

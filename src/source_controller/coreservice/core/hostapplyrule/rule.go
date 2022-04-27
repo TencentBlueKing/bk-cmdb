@@ -264,7 +264,8 @@ func (p *hostApplyRule) GetHostApplyRuleByAttributeID(kit *rest.Kit, bizID, modu
 // ListHostApplyRule by condition, bizID maybe 0
 func (p *hostApplyRule) ListHostApplyRule(kit *rest.Kit, bizID int64, option metadata.ListHostApplyRuleOption) (metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder) {
 	result := metadata.MultipleHostApplyRuleResult{}
-	if option.Page.Limit > common.BKMaxPageSize && option.Page.Limit != common.BKNoLimit {
+
+	if option.Page.IsIllegal() {
 		return result, kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded)
 	}
 
