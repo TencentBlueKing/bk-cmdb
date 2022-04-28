@@ -22,7 +22,8 @@ func (ps *parseStream) hostRelated() *parseStream {
 		return ps
 	}
 
-	ps.host().
+	ps.hostAgentManagement().
+		host().
 		hostTransfer().
 		dynamicGrouping().
 		userCustom().
@@ -45,6 +46,32 @@ func (ps *parseStream) parseBusinessID() (int64, error) {
 		return 0, errors.New("invalid bk_biz_id value")
 	}
 	return bizID, nil
+}
+
+const (
+	// host agent id management
+	bindHostAgentPattern   = "/api/v3/host/bind/agent"
+	unbindHostAgentPattern = "/api/v3/host/unbind/agent"
+)
+
+func (ps *parseStream) hostAgentManagement() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitPattern(bindHostAgentPattern, http.MethodPost) || ps.hitPattern(unbindHostAgentPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.ManageHostAgentID,
+				},
+			},
+		}
+		return ps
+	}
+
+	return ps
 }
 
 var (
@@ -341,10 +368,6 @@ const (
 
 	// cc system user config
 	systemUserConfig = "/api/v3/system/config/user_config/blueking_modify"
-
-	// host agent id management
-	bindHostAgentPattern   = "/api/v3/host/bind/agent"
-	unbindHostAgentPattern = "/api/v3/host/unbind/agent"
 )
 
 var (
@@ -872,18 +895,6 @@ func (ps *parseStream) host() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.MainlineInstanceTopology,
 					Action: meta.Find,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitPattern(bindHostAgentPattern, http.MethodPost) || ps.hitPattern(unbindHostAgentPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.ManageHostAgentID,
 				},
 			},
 		}

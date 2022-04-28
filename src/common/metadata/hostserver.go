@@ -899,14 +899,14 @@ func (h *HostIDArray) Validate() (rawError errors.RawErrorInfo) {
 	return errors.RawErrorInfo{}
 }
 
-// BindAgentParam bind gse agent to host request parameter
-type BindAgentParam struct {
+// HostAgentRelation host id and agent id relation pair
+type HostAgentRelation struct {
 	HostID  int64  `json:"bk_host_id"`
 	AgentID string `json:"bk_agent_id"`
 }
 
-// Validate validate the BindAgentParam
-func (b *BindAgentParam) Validate() (rawError errors.RawErrorInfo) {
+// Validate validate the HostAgentRelation
+func (b *HostAgentRelation) Validate() errors.RawErrorInfo {
 	if b.HostID <= 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
@@ -924,25 +924,46 @@ func (b *BindAgentParam) Validate() (rawError errors.RawErrorInfo) {
 	return errors.RawErrorInfo{}
 }
 
+// BindAgentParam bind gse agent to host request parameter
+type BindAgentParam struct {
+	List []HostAgentRelation `json:"list"`
+}
+
+// Validate validate the BindAgentParam
+func (b *BindAgentParam) Validate() errors.RawErrorInfo {
+	if len(b.List) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"list"},
+		}
+	}
+
+	for _, param := range b.List {
+		if rawErr := param.Validate(); rawErr.ErrCode != 0 {
+			return rawErr
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
 // UnbindAgentParam unbind gse agent and host request parameter
 type UnbindAgentParam struct {
-	HostID  int64  `json:"bk_host_id"`
-	AgentID string `json:"bk_agent_id"`
+	List []HostAgentRelation `json:"list"`
 }
 
 // Validate validate the UnbindAgentParam
 func (b *UnbindAgentParam) Validate() (rawError errors.RawErrorInfo) {
-	if b.HostID <= 0 {
+	if len(b.List) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{common.BKHostIDField},
+			Args:    []interface{}{"list"},
 		}
 	}
 
-	if len(b.AgentID) == 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{common.BKAgentIDField},
+	for _, param := range b.List {
+		if rawErr := param.Validate(); rawErr.ErrCode != 0 {
+			return rawErr
 		}
 	}
 

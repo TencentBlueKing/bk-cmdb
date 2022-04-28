@@ -118,7 +118,7 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchInstAsstEvent:                  "实例关联事件监听",
 	WatchBizSetEvent:                    "业务集事件监听",
 	GlobalSettings:                      "全局设置",
-	ManageHostAgentID:                   "主机agentID管理",
+	ManageHostAgentID:                   "主机AgentID管理",
 }
 
 // GenerateActions generate all the actions registered to IAM.
