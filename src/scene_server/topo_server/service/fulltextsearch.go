@@ -279,6 +279,14 @@ func (r *FullTextSearchFilter) generateESQueryConditions() []*FullTextSearchCond
 
 	for _, instance := range r.Instances {
 		switch instance {
+		case common.BKInnerObjIDBizSet:
+			searchFilterConditions = append(searchFilterConditions, &FullTextSearchCondition{
+				IndexName: metadata.IndexNameBizSet,
+				Conditions: map[string]interface{}{
+					metadata.IndexPropertyBKObjID: common.BKInnerObjIDBizSet,
+				},
+			})
+
 		case common.BKInnerObjIDApp:
 			searchFilterConditions = append(searchFilterConditions, &FullTextSearchCondition{
 				IndexName: metadata.IndexNameBiz,
@@ -561,6 +569,17 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 func fullTextSearchForInstanceCond(objectID string, ids []int64) *metadata.CommonSearchFilter {
 	input := &metadata.CommonSearchFilter{}
 	switch objectID {
+	case common.BKInnerObjIDBizSet:
+		input = &metadata.CommonSearchFilter{
+			Conditions: &querybuilder.QueryFilter{
+				Rule: &querybuilder.AtomRule{
+					Field:    common.BKBizSetIDField,
+					Operator: querybuilder.OperatorIn,
+					Value:    ids,
+				},
+			},
+			Page: metadata.BasePage{Start: 0, Limit: common.BKMaxInstanceLimit},
+		}
 	case common.BKInnerObjIDApp:
 		input = &metadata.CommonSearchFilter{
 			Conditions: &querybuilder.QueryFilter{
@@ -648,6 +667,8 @@ func (s *Service) fullTextSearchForInstance(ctx *rest.Contexts, instMetadataCond
 			var idStr string
 			inst := instance.(*mapstr.MapStr)
 			switch objectID {
+			case common.BKInnerObjIDBizSet:
+				idStr, err = inst.String(common.BKBizSetIDField)
 			case common.BKInnerObjIDApp:
 				idStr, err = inst.String(common.BKAppIDField)
 			case common.BKInnerObjIDSet:

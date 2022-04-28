@@ -23,6 +23,9 @@ const (
 	// IndexNamePrefix prefix of index name.
 	IndexNamePrefix = "bk_cmdb."
 
+	// IndexNameBizSet name of model business set instance es index.
+	IndexNameBizSet = IndexNamePrefix + "biz_set"
+
 	// IndexNameBiz name of model business application instance es index.
 	IndexNameBiz = IndexNamePrefix + "biz"
 
@@ -76,6 +79,9 @@ const (
 
 	// IndexPropertyBKBizID es index property for business id.
 	IndexPropertyBKBizID = "meta_bk_biz_id"
+
+	// IndexPropertyBKBizSetID es index property for business set id.
+	IndexPropertyBKBizSetID = "meta_bk_biz_set_id"
 
 	// IndexPropertyBKParentID es index property for model parent id.
 	IndexPropertyBKParentID = "meta_bk_parent_id"

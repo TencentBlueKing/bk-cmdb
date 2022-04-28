@@ -41,6 +41,7 @@ import (
 // elastic index versions.
 // NOTE: CHANGE the version name if you have modify the indexes metadata struct.
 const (
+	indexVersionBizSet         = "20210710"
 	indexVersionBiz            = "20210710"
 	indexVersionSet            = "20210710"
 	indexVersionModule         = "20210710"
@@ -63,6 +64,7 @@ const (
 
 // elastic indexes.
 var (
+	indexBizSet         *meta.ESIndex
 	indexBiz            *meta.ESIndex
 	indexSet            *meta.ESIndex
 	indexModule         *meta.ESIndex
@@ -206,6 +208,35 @@ func init() {
 	skipBizIdList = &skipBizId{
 		bizIds: make(map[int64]struct{}),
 	}
+
+	// business set index.
+	indexBizSet = meta.NewESIndex(meta.IndexNameBizSet, indexVersionBizSet,
+		&meta.ESIndexMetadata{
+			Settings: meta.ESIndexMetaSettings{
+				Shards:   config.ShardingNum,
+				Replicas: config.ReplicaNum,
+			},
+			Mappings: meta.ESIndexMetaMappings{
+				Properties: map[string]meta.ESIndexMetaMappingsProperty{
+					meta.IndexPropertyID: {
+						PropertyType: meta.IndexPropertyTypeKeyword,
+					},
+					meta.IndexPropertyBKObjID: {
+						PropertyType: meta.IndexPropertyTypeKeyword,
+					},
+					meta.IndexPropertyBKSupplierAccount: {
+						PropertyType: meta.IndexPropertyTypeKeyword,
+					},
+					meta.IndexPropertyBKBizSetID: {
+						PropertyType: meta.IndexPropertyTypeKeyword,
+					},
+					meta.IndexPropertyKeywords: {
+						PropertyType: meta.IndexPropertyTypeKeyword,
+					},
+				},
+			},
+		})
+	indexList = append(indexList, indexBizSet)
 
 	// business application index.
 	indexBiz = meta.NewESIndex(meta.IndexNameBiz, indexVersionBiz,
@@ -449,6 +480,12 @@ func originalDataCleaning(document map[string]interface{}, collection string) ma
 	doc := make(map[string]interface{})
 
 	switch collection {
+	case common.BKTableNameBaseBizSet:
+		doc = baseDataCleaning(document)
+		// do not need to sync "default".
+		delete(doc, common.BKDefaultField)
+		delete(doc, common.BKBizSetScopeField)
+
 	case common.BKTableNameBaseApp:
 		doc = baseDataCleaning(document)
 		// do not need to sync "default".
@@ -509,6 +546,8 @@ func originalDataCleaning(document map[string]interface{}, collection string) ma
 func getModeNameByCollection(collection string) (innerObjId string) {
 
 	switch collection {
+	case common.BKTableNameBaseBizSet:
+		innerObjId = common.BKInnerObjIDBizSet
 	case common.BKTableNameBaseHost:
 		innerObjId = common.BKInnerObjIDHost
 	case common.BKTableNameBaseApp:
@@ -556,6 +595,12 @@ func analysisDocument(document map[string]interface{}, collection string) (strin
 	var id string
 	// analysis collection document id.
 	switch collection {
+	case common.BKTableNameBaseBizSet:
+		bizSetId, err := getMetaIdToStr(document[common.BKBizSetIDField])
+		if err != nil {
+			return "", nil, errors.New(fmt.Sprintf("missing: %s,err: %v", common.BKBizSetIDField, err))
+		}
+		id = bizSetId
 	case common.BKTableNameBaseApp:
 		bizId, err := getMetaIdToStr(document[common.BKAppIDField])
 		if err != nil {
@@ -615,6 +660,44 @@ func analysisDocument(document map[string]interface{}, collection string) (strin
 
 	// return document id and compressed keywords.
 	return id, compressKeywords(keywords), nil
+}
+
+// indexingBizSet indexing the business set instance.
+func indexingBizSet(input *monstachemap.MapperPluginInput, output *monstachemap.MapperPluginOutput) error {
+
+	bizSetId := input.Document[common.BKBizSetIDField]
+	oId := input.Document[common.BKOwnerIDField]
+	metaId := input.Document[mongoMetaId]
+
+	// analysis document.
+	id, keywords, err := analysisDocument(input.Document, input.Collection)
+	if err != nil {
+		return fmt.Errorf("analysis business set document failed, %+v, %+v", input.Document, err)
+	}
+
+	// build elastic document.
+	document := map[string]interface{}{
+		meta.IndexPropertyID:                id,
+		meta.IndexPropertyDataKind:          meta.DataKindInstance,
+		meta.IndexPropertyBKObjID:           common.BKInnerObjIDBizSet,
+		meta.IndexPropertyBKSupplierAccount: oId,
+		meta.IndexPropertyBKBizSetID:        bizSetId,
+		meta.IndexPropertyKeywords:          keywords,
+	}
+
+	documentID, ok := metaId.(primitive.ObjectID)
+	if !ok {
+		return errors.New("missing document metadata id")
+	}
+	idEs := fmt.Sprintf("%s:%s", documentID.Hex(), common.BKInnerObjIDBizSet)
+	output.ID = idEs
+
+	output.Document = document
+
+	// use alias name to indexing document.
+	output.Index = indexBizSet.AliasName()
+
+	return nil
 }
 
 // indexingApplication indexing the business application instance.
@@ -976,6 +1059,11 @@ func Map(input *monstachemap.MapperPluginInput) (*monstachemap.MapperPluginOutpu
 
 	output := new(monstachemap.MapperPluginOutput)
 	switch input.Collection {
+	case common.BKTableNameBaseBizSet:
+		if err := indexingBizSet(input, output); err != nil {
+			return nil, err
+		}
+
 	case common.BKTableNameBaseApp:
 		if err := indexingApplication(input, output); err != nil {
 			return nil, err
