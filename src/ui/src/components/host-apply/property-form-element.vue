@@ -9,7 +9,7 @@
       :data-vv-as="property.bk_property_name"
       :placeholder="$t('请输入xx', { name: property.bk_property_name })"
       :auto-check="false"
-      :disabled="!property.host_apply_enabled"
+      :disabled="!property.host_apply_enabled || property.__extra__.ignore"
       v-bind="$tools.getValidateEvents(property)"
       v-validate="$tools.getValidateRules(property)"
       v-model.trim="property.__extra__.value"

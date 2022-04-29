@@ -13,19 +13,26 @@
 package model
 
 import (
+	"strconv"
+
 	"configcenter/src/ac/extensions"
+	"configcenter/src/ac/iam"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/logics/inst"
 )
 
 // AssociationOperationInterface association operation methods
 type AssociationOperationInterface interface {
 	DeleteAssociationType(kit *rest.Kit, asstTypeID int64) error
+	// CreateOrUpdateAssociationType only allow import api to use
+	CreateOrUpdateAssociationType(kit *rest.Kit, asst []metadata.AssociationKind) error
 	CreateCommonAssociation(kit *rest.Kit, data *metadata.Association) (*metadata.Association, error)
 	DeleteAssociationWithPreCheck(kit *rest.Kit, associationID int64) error
 	UpdateObjectAssociation(kit *rest.Kit, data mapstr.MapStr, assoID int64) error
@@ -119,6 +126,100 @@ func (assoc *association) DeleteAssociationType(kit *rest.Kit, asstTypeID int64)
 	if err != nil {
 		blog.Errorf("delete association type failed, kind id: %d, err: %v, rid: %s", asstTypeID, err, kit.Rid)
 		return err
+	}
+
+	return nil
+}
+
+// CreateOrUpdateAssociationType only allow import api to use
+// CreateOrUpdateAssociationType create association type, if association type exist, update it
+func (assoc *association) CreateOrUpdateAssociationType(kit *rest.Kit, asst []metadata.AssociationKind) error {
+
+	if len(asst) == 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "asst")
+	}
+
+	asstKindMap := make(map[string]metadata.AssociationKind)
+	asstKindIDMap := make(map[string]struct{}, 0)
+	asstKindID := make([]string, 0)
+	for index, item := range asst {
+		asstKindMap[item.AssociationKindID] = asst[index]
+		asstKindIDMap[item.AssociationKindID] = struct{}{}
+		asstKindID = append(asstKindID, item.AssociationKindID)
+	}
+
+	asstQuery := &metadata.QueryCondition{
+		Condition:      map[string]interface{}{common.AssociationKindIDField: mapstr.MapStr{common.BKDBIN: asstKindID}},
+		DisableCounter: true,
+	}
+	rsp, err := assoc.clientSet.CoreService().Association().ReadAssociationType(kit.Ctx, kit.Header, asstQuery)
+	if err != nil {
+		blog.Errorf("search asstkind failed, cond: %v, err: %v, rid: %s", asstQuery, err, kit.Rid)
+		return err
+	}
+
+	updateCond := &metadata.UpdateOption{}
+	for _, item := range rsp.Info {
+		delete(asstKindIDMap, item.AssociationKindID)
+
+		data := asstKindMap[item.AssociationKindID]
+		dataMapstr := data.ToMapStr()
+		delete(dataMapstr, common.BKFieldID)
+		updateCond.Condition = mapstr.MapStr{common.AssociationKindIDField: item}
+		updateCond.Data = dataMapstr
+
+		_, err := assoc.clientSet.CoreService().Association().UpdateAssociationType(kit.Ctx, kit.Header, updateCond)
+		if err != nil {
+			blog.Errorf("update asstkind failed, cond: %+v, err: %v, rid: %s", updateCond, err, kit.Rid)
+			return err
+		}
+	}
+
+	if len(asstKindIDMap) == 0 {
+		return nil
+	}
+
+	createCond := &metadata.CreateManyAssociationKind{Datas: make([]metadata.AssociationKind, 0)}
+	for key := range asstKindIDMap {
+		createCond.Datas = append(createCond.Datas, asstKindMap[key])
+	}
+
+	createRsp, err := assoc.clientSet.CoreService().Association().CreateManyAssociation(kit.Ctx, kit.Header, createCond)
+	if err != nil {
+		blog.Errorf("create asstkind failed, cond: %+v, err: %v, rid: %s", createCond, err, kit.Rid)
+		return err
+	}
+
+	if len(createRsp.Repeated) > 0 {
+		blog.Errorf("asst kind repeated, data: %+v, rid: %s", createRsp.Repeated, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDuplicateItem)
+	}
+
+	if len(createRsp.Exceptions) > 0 {
+		blog.Errorf("asst kind failed, data: %+v, rid: %s", createRsp.Exceptions, kit.Rid)
+		return kit.CCError.CCErrorf(int(createRsp.Exceptions[0].Code), createRsp.Exceptions[0].Message)
+	}
+
+	// register association type resource creator action to iam
+	if auth.EnableAuthorize() {
+		indexID := make(map[int64]int64)
+		for _, item := range createRsp.Created {
+			indexID[item.OriginIndex] = int64(item.ID)
+		}
+
+		for index, item := range createCond.Datas {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.SysAssociationType),
+				ID:      strconv.FormatInt(indexID[int64(index)], 10),
+				Name:    item.AssociationKindName,
+				Creator: kit.User,
+			}
+			if _, err = assoc.authManager.Authorizer.RegisterResourceCreatorAction(kit.Ctx, kit.Header,
+				iamInstance); err != nil {
+				blog.Errorf("register created association type to iam failed, err: %v, rid: %s", err, kit.Rid)
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -246,7 +347,7 @@ func (assoc *association) DeleteAssociationWithPreCheck(kit *rest.Kit, associati
 func (assoc *association) UpdateObjectAssociation(kit *rest.Kit, data mapstr.MapStr, assoID int64) error {
 
 	if field, can := canUpdate(data); !can {
-		blog.Warnf("request to update a forbidden update field[%s], rid: %s", assoID, field, kit.Rid)
+		blog.Errorf("request to update a forbidden update, id:[%d], field[%s], rid: %s", assoID, field, kit.Rid)
 		return kit.CCError.CCError(common.CCErrorTopoObjectAssociationUpdateForbiddenFields)
 	}
 
@@ -350,39 +451,41 @@ func (assoc *association) isObjectInAssocValid(kit *rest.Kit, objectID, asstObje
 }
 
 func canUpdate(data mapstr.MapStr) (field string, can bool) {
-	id, err := data.Int64(common.BKFieldID)
-	if err != nil || id != 0 {
-		return "id", false
+	id, exist := data.Get(common.BKFieldID)
+	if exist {
+		if idInt, err := util.GetInt64ByInterface(id); err != nil || idInt != 0 {
+			return common.BKFieldID, false
+		}
 	}
 
-	_, exist := data.Get(common.BkSupplierAccount)
-	if !exist {
-		return "bk_supplier_account", false
+	_, exist = data.Get(common.BkSupplierAccount)
+	if exist {
+		return common.BkSupplierAccount, false
 	}
 
 	_, exist = data.Get(common.AssociationObjAsstIDField)
-	if !exist {
-		return "bk_obj_asst_id", false
+	if exist {
+		return common.AssociationObjAsstIDField, false
 	}
 
 	_, exist = data.Get(common.BKObjIDField)
-	if !exist {
-		return "bk_obj_id", false
+	if exist {
+		return common.BKObjIDField, false
 	}
 
 	_, exist = data.Get(common.BKAsstObjIDField)
-	if !exist {
-		return "bk_asst_obj_id", false
+	if exist {
+		return common.BKAsstObjIDField, false
 	}
 
 	_, exist = data.Get("mapping")
-	if !exist {
+	if exist {
 		return "mapping", false
 	}
 
-	_, exist = data.Get("ispre")
-	if !exist {
-		return "ispre", false
+	_, exist = data.Get(common.BKIsPre)
+	if exist {
+		return common.BKIsPre, false
 	}
 
 	// only on delete, association kind id, alias name can be update.

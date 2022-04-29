@@ -95,7 +95,7 @@ func (t *genericTransfer) SetCrossBusiness(kit *rest.Kit, bizIDs []int64) {
 	t.srcBizIDs = bizIDs
 }
 
-func (t *genericTransfer) Transfer(kit *rest.Kit, hostIDs []int64) errors.CCErrorCoder {
+func (t *genericTransfer) Transfer(kit *rest.Kit, hostIDs []int64, disableHostApply bool) errors.CCErrorCoder {
 	err := t.validHosts(kit, hostIDs)
 	if err != nil {
 		return err
@@ -113,7 +113,7 @@ func (t *genericTransfer) Transfer(kit *rest.Kit, hostIDs []int64) errors.CCErro
 	}
 
 	// transfer host module config
-	if err := t.addHostModuleRelation(kit, hostIDs); err != nil {
+	if err := t.addHostModuleRelation(kit, hostIDs, disableHostApply); err != nil {
 		return err
 	}
 
@@ -361,7 +361,7 @@ func (t *genericTransfer) delHostModuleRelationItem(kit *rest.Kit, bizIDs []int6
 }
 
 // AddSingleHostModuleRelation add single host module relation
-func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostIDs []int64) errors.CCErrorCoder {
+func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostIDs []int64, disable bool) errors.CCErrorCoder {
 	if len(hostIDs) == 0 || len(t.moduleIDArr) == 0 {
 		return nil
 	}
@@ -415,7 +415,10 @@ func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostIDs []int64) 
 		blog.Errorf("add host module relation, add module host relation error: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
-
+	// 对于主机转移场景下此标记如果是true表示不进行主机属性自动应用，其余场景按照原逻辑进行主机级别的属性自动应用
+	if disable {
+		return nil
+	}
 	// run new module's host apply rule, prevent repeated execution of rules
 	if _, err := t.hostApplyDependence.RunHostApplyOnHosts(kit, t.bizID, insertDataArr); err != nil {
 		blog.Errorf("run host apply rule failed, err: %v, rid: %s", err, kit.Rid)

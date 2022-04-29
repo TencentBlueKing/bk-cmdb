@@ -26,8 +26,54 @@ func init() {
 }
 
 //  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
+var commHostApplyRuleIndexes = []types.Index{
 
-var commHostApplyRuleIndexes = []types.Index{}
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "bizID_ModuleID_serviceTemplateID_attrID",
+		Keys: map[string]int32{
+			common.BKAppIDField:             1,
+			common.BKModuleIDField:          1,
+			common.BKServiceTemplateIDField: 1,
+			common.BKAttributeIDField:       1,
+		},
+		Unique:     true,
+		Background: true,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "host_property_under_service_template",
+		Keys: map[string]int32{
+			common.BKServiceTemplateIDField: 1,
+			common.BKAttributeIDField:       1,
+		},
+		Background: true,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "bizID_serviceTemplateID_attrID",
+		Keys: map[string]int32{
+			common.BKAppIDField:             1,
+			common.BKServiceTemplateIDField: 1,
+			common.BKAttributeIDField:       1,
+		},
+		Background: true,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "bizID_moduleID_attrID",
+		Keys: map[string]int32{
+			common.BKAppIDField:       1,
+			common.BKModuleIDField:    1,
+			common.BKAttributeIDField: 1,
+		},
+		Background: true,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "moduleID_attrID",
+		Keys: map[string]int32{
+			common.BKModuleIDField:    1,
+			common.BKAttributeIDField: 1,
+		},
+		Background: true,
+	},
+}
 
 // deprecated 未规范化前的索引，只允许删除不允许新加和修改，
 var deprecatedHostApplyRuleIndexes = []types.Index{
@@ -52,24 +98,5 @@ var deprecatedHostApplyRuleIndexes = []types.Index{
 			"bk_module_id": 1,
 		},
 		Background: false,
-	},
-	{
-		Name: "host_property_under_module",
-		Keys: map[string]int32{
-			"bk_attribute_id": 1,
-			"bk_module_id":    1,
-		},
-		Unique:     true,
-		Background: false,
-	},
-	{
-		Name: "idx_unique_bizID_moduleID_attrID",
-		Keys: map[string]int32{
-			"bk_module_id":    1,
-			"bk_attribute_id": 1,
-			"bk_biz_id":       1,
-		},
-		Unique:     true,
-		Background: true,
 	},
 }

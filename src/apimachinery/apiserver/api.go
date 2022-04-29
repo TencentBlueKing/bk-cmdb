@@ -70,6 +70,32 @@ func (a *apiServer) GetObjectData(ctx context.Context, h http.Header, params map
 	return
 }
 
+// SearchObjectWithTotalInfo search object with it's attribute and association
+func (a *apiServer) SearchObjectWithTotalInfo(ctx context.Context, h http.Header, params *metadata.BatchExportObject) (
+	*metadata.TotalObjectInfo, error) {
+
+	resp := new(metadata.ListObjectTopoResponse)
+	subPath := "/findmany/object/total/info"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return resp.Data, nil
+}
+
 func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
 
 	resp = new(metadata.QueryInstResult)
@@ -524,4 +550,33 @@ func (asst *apiServer) SearchObjectAssociation(ctx context.Context, h http.Heade
 		Into(resp)
 
 	return
+}
+
+// CreateManyObject create many object
+func (a *apiServer) CreateManyObject(ctx context.Context, h http.Header, params metadata.ImportObjects) (
+	[]metadata.Object, error) {
+
+	resp := struct {
+		metadata.BaseResp `json:",inline"`
+		Data              []metadata.Object `json:"data"`
+	}{}
+	subPath := "/createmany/object/by_import"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return resp.Data, nil
 }

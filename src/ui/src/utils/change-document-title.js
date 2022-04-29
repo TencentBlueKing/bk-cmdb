@@ -4,7 +4,7 @@ import { t } from '@/i18n'
 
 /**
  * 更改文档标题
- * @param {Array} appendRouteNames 追加的标题，会展示在默认名称之后
+ * @param {Array} [appendTitles] 追加的标题，会展示在默认名称之后。不传入时会根据当前路由重新生成路径。
  */
 export const changeDocumentTitle = (appendTitles = []) => {
   const { name, separator } = store.state.globalConfig.config.site

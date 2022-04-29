@@ -300,6 +300,19 @@ webServer:
     htmlRoot: $ui_root
     #帮助文档地址
     helpDocUrl: https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品简介/Overview.md
+    paas:
+      # pass的tls相关配置
+      tls:
+        # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+        insecureSkipVerify:
+        # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+        certFile:
+        # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+        keyFile:
+        # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+        caFile:
+        # 用于解密根据RFC1423加密的证书密钥的PEM块
+        password:
   app:
     agentAppUrl: ${agent_url}/console/?app=bk_agent_setup
     #权限模式，web页面使用，可选值: internal, iam
@@ -307,6 +320,7 @@ webServer:
   login:
     #登录模式
     version: $loginVersion
+
 # operation_server专属配置
 operationServer:
   timer:
@@ -314,6 +328,7 @@ operationServer:
     spec: 00:30  # 00:00 - 23:59
   # 禁用运营统计数据统计功能，默认false
   disableOperationStatistic: false
+
 #auth_server专属配置
 authServer:
   #蓝鲸权限中心地址,可配置多个,用,(逗号)分割
@@ -322,6 +337,20 @@ authServer:
   appCode: $auth_app_code
   #cmdb项目在蓝鲸权限中心的应用密钥
   appSecret: $auth_app_secret
+  authCenter:
+     # 权限中心tls配置
+     tls:
+       # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+       insecureSkipVerify:
+       # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+       certFile:
+       # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+       keyFile:
+       # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+       caFile:
+       # 用于解密根据RFC1423加密的证书密钥的PEM块
+       password:
+
 #cloudServer专属配置
 cloudServer:
   # 加密服务使用
@@ -336,6 +365,7 @@ cloudServer:
   syncTask:
     # 同步周期,最小为5分钟
     syncPeriodMinutes: 5
+
 #datacollection专属配置
 datacollection:
   hostsnap:
@@ -349,6 +379,7 @@ datacollection:
     rateLimiter:
       qps: 40
       burst: 100
+
 # 监控配置， monitor配置项必须存在
 monitor:
     # 监控插件名称，有noop，blueking， 不填时默认为noop
@@ -378,6 +409,18 @@ openTelemetry:
   endpoint:
   # 日志平台openTelemetry跟踪链功能的上报data_id
   bkDataID:
+  # 服务tls配置
+  tls:
+    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+    insecureSkipVerify:
+    # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+    certFile:
+    # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+    keyFile:
+    # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+    caFile:
+    # 用于解密根据RFC1423加密的证书密钥的PEM块
+    password:
 
 # eventServer相关配置
 eventServer:
@@ -445,6 +488,19 @@ kafka:
     # 安全协议SASL_PLAINTEXT，SASL机制SCRAM-SHA-512的账号、密码信息
     user:
     password:
+
+# cmdb服务tls配置
+tls:
+  # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+  insecureSkipVerify:
+  # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+  certFile:
+  # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+  keyFile:
+  # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+  caFile:
+  # 用于解密根据RFC1423加密的证书密钥的PEM块
+  password:
     '''
 
     template = FileTemplate(common_file_template_str)

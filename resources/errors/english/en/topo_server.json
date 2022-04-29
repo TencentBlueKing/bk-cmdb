@@ -133,6 +133,8 @@
 	"1101112": "forbidden remove unarhived business",
 	"1101113": "model classification not found",
 	"1101114": "get authorized business set list failed",
+	"1101115": "forbidden delete built-in business set",
+	"1101116": "forbidden update built-in business set scope",
 
     "": "" 
 }

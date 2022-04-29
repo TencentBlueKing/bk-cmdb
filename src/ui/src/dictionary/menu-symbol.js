@@ -30,6 +30,7 @@ export const MENU_BUSINESS_SET_TEMPLATE = 'menu_business_set_template'
 export const MENU_BUSINESS_HOST_APPLY = 'menu_business_host_apply'
 export const MENU_BUSINESS_HOST_APPLY_EDIT = 'menu_business_host_apply_edit'
 export const MENU_BUSINESS_HOST_APPLY_CONFIRM = 'menu_business_host_apply_confirm'
+export const MENU_BUSINESS_HOST_APPLY_RUN = 'menu_business_host_apply_run'
 export const MENU_BUSINESS_HOST_APPLY_CONFLICT = 'menu_business_host_apply_conflict'
 export const MENU_BUSINESS_HOST_APPLY_FAILED = 'menu_business_host_apply_failed'
 

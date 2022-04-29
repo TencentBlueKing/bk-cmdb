@@ -137,6 +137,6 @@ func ParseConfigFromKV(prefix string, configMap map[string]string) (EsConfig, er
 		EsPassword:     pwd,
 	}
 	var err error
-	conf.TLSClientConfig, err = apiutil.NewTLSClientConfigFromConfig(prefix, nil)
+	conf.TLSClientConfig, err = apiutil.NewTLSClientConfigFromConfig(prefix)
 	return conf, err
 }

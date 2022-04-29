@@ -13,7 +13,10 @@
 package metadata
 
 import (
+	"strings"
+
 	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 )
 
@@ -263,4 +266,200 @@ type ImportObjectData struct {
 // ExportObjectCondition export object attribute condition
 type ExportObjectCondition struct {
 	ObjIDs []string `json:"condition"`
+}
+
+// ImportObjects create many object by batch import
+type ImportObjects struct {
+	Objects []YamlObject      `json:"object"`
+	Asst    []AssociationKind `json:"asst"`
+}
+
+// ObjectYaml define yaml about object
+type ObjectYaml struct {
+	YamlHeader `json:",inline" yaml:",inline"`
+	Object     YamlObject `json:"object" yaml:"object"`
+}
+
+// Validate validate total yaml of object
+func (o *ObjectYaml) Validate() errors.RawErrorInfo {
+	if err := o.YamlHeader.Validate(); err.ErrCode != 0 {
+		return err
+	}
+
+	if err := o.Object.Validate(); err.ErrCode != 0 {
+		return err
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// YamlObject yaml's field about object
+type YamlObject struct {
+	ObjectID         string                `json:"bk_obj_id" yaml:"bk_obj_id"`
+	ObjectName       string                `json:"bk_obj_name" yaml:"bk_obj_name"`
+	ObjIcon          string                `json:"bk_obj_icon" yaml:"bk_obj_icon"`
+	IsPre            bool                  `json:"ispre" yaml:"ispre"`
+	ClsID            string                `json:"bk_classification_id" yaml:"bk_classification_id"`
+	ClsName          string                `json:"bk_classification_name" yaml:"bk_classification_name"`
+	ObjectAsst       []AsstWithAsstObjInfo `json:"object_asst" yaml:"object_asst"`
+	ObjectAttr       []Attribute           `json:"object_attr" yaml:"object_attr"`
+	ObjectAttrUnique [][]string            `json:"object_attr_unique" yaml:"object_attr_unique"`
+}
+
+// Validate validate object yaml
+func (o *YamlObject) Validate() errors.RawErrorInfo {
+	if len(o.ObjectID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKObjIDField + " no found"},
+		}
+	}
+
+	if common.IsInnerModel(o.ObjectID) {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKObjIDField + " is inner model"},
+		}
+	}
+
+	if len(o.ObjectName) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKObjNameField + " no found"},
+		}
+	}
+
+	if len(o.ObjIcon) == 0 {
+		o.ObjIcon = "icon-cc-default"
+	}
+
+	if len(o.ClsID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKClassificationIDField + " no found"},
+		}
+	}
+
+	if len(o.ClsName) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKClassificationNameField + " no found"},
+		}
+	}
+
+	for _, item := range o.ObjectAsst {
+		if err := item.Validate(o.ObjectID); err.ErrCode != 0 {
+			return err
+		}
+	}
+
+	for index, item := range o.ObjectAttr {
+
+		if len(item.ObjectID) == 0 {
+			o.ObjectAttr[index].ObjectID = o.ObjectID
+		}
+
+		if len(item.PropertyID) == 0 {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKPropertyIDField + " no found"},
+			}
+		}
+
+		if len(item.PropertyName) == 0 {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKPropertyNameField + " no found"},
+			}
+		}
+
+		if len(item.PropertyGroup) == 0 {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKPropertyGroupField + " no found"},
+			}
+		}
+
+		if len(item.PropertyGroupName) == 0 {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrWebVerifyYamlFail,
+				Args:    []interface{}{common.BKPropertyGroupNameField + " no found"},
+			}
+		}
+
+		if len(item.PropertyType) == 0 {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKPropertyTypeField + " no found"},
+			}
+		}
+
+		propertyID := strings.ToLower(item.PropertyID)
+		if strings.HasPrefix(propertyID, "bk_") || strings.HasPrefix(propertyID, "_bk") {
+			o.ObjectAttr[index].IsPre = true
+		}
+	}
+
+	if len(o.ObjectAttrUnique) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{"object unique no found"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// AsstWithAsstObjInfo association with asst object info
+type AsstWithAsstObjInfo struct {
+	Association  `json:",inline" yaml:",inline"`
+	AsstObjName  string `json:"bk_asst_obj_name" yaml:"bk_asst_obj_name"`
+	AsstObjIcon  string `json:"bk_asst_obj_icon" yaml:"bk_asst_obj_icon"`
+	AsstOBjIsPre *bool  `json:"bk_asst_obj_ispre" yaml:"bk_asst_obj_ispre"`
+}
+
+// Validate validate association yaml
+func (o *AsstWithAsstObjInfo) Validate(objID string) errors.RawErrorInfo {
+
+	if len(o.ObjectID) == 0 {
+		o.ObjectID = objID
+	}
+
+	if len(o.AsstObjID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail,
+			Args:    []interface{}{common.BKAsstObjIDField + " no found"},
+		}
+	}
+
+	if len(o.AsstObjName) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail,
+			Args:    []interface{}{"bk_asst_obj_name no found"},
+		}
+	}
+
+	if len(o.AsstObjIcon) == 0 {
+		o.AsstObjIcon = "icon-cc-default"
+	}
+
+	if len(o.AsstKindID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail,
+			Args:    []interface{}{common.AssociationKindIDField + " no found"},
+		}
+	}
+
+	if o.AsstKindID == common.AssociationKindMainline {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail,
+			Args: []interface{}{common.AssociationKindIDField + " is not allowed as " +
+				common.AssociationKindMainline},
+		}
+	}
+
+	if len(o.Mapping) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrWebVerifyYamlFail,
+			Args:    []interface{}{"mapping no found"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// TotalObjectInfo total object with it's info and total asstkind info of object association's asst kind
+type TotalObjectInfo struct {
+	Object map[string]interface{} `json:"object"`
+	Asst   []mapstr.MapStr        `json:"asst_kind"`
 }

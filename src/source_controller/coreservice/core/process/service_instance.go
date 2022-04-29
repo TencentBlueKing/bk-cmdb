@@ -383,8 +383,8 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 	if option.BusinessID <= 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
-	if option.Page.Limit > common.BKMaxPageSize {
-		return nil, kit.CCError.CCError(common.CCErrCommOverLimit)
+	if option.Page.IsIllegal() {
+		return nil, kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded)
 	}
 
 	// set query params

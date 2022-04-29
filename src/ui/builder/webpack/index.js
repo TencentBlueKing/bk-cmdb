@@ -40,7 +40,9 @@ module.exports = {
       path: require.resolve('path-browserify'),
       crypto: require.resolve('crypto-browserify'),
       os: require.resolve('os-browserify/browser'),
-      stream: require.resolve('stream-browserify')
+      stream: require.resolve('stream-browserify'),
+      zlib: require.resolve('browserify-zlib'), // for unzip
+      util: require.resolve('util/') // for unzip
     }
   },
 

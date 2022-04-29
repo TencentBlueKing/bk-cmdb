@@ -176,7 +176,6 @@
             ref="batchUpdateForm"
             :properties="properties"
             :property-groups="propertyGroups"
-            :object-unique="objectUnique"
             :save-auth="saveAuth"
             @on-submit="handleMultipleSave"
             :loading="batchUpdateSlider.loading"

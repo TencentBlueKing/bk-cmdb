@@ -3,6 +3,7 @@
     <div class="condition-item">
       <bk-select
         v-model="selectedBusiness"
+        :disabled="disabled"
         :placeholder="$t('业务范围选择placeholder')"
         :list="allBusiness"
         class="select-business"
@@ -18,6 +19,7 @@
     <div class="condition-item" v-for="rule in condition" :key="rule.property.id">
       <cmdb-property-selector class="condition-field" v-if="rule.property.id"
         v-model="rule.field"
+        :disabled="disabled"
         :properties="getAvailableProperties(rule.property)"
         :searchable="unusedProperties.length > 1"
         :loading="loading.property"
@@ -28,13 +30,14 @@
         :placeholder="getPlaceholder(rule.property)"
         :clearable="true"
         :multiple="true"
+        :disabled="disabled"
         v-bind="getBindProps(rule.property)"
         v-model="rule.value">
       </component>
       <i class="bk-icon icon-close" @click="handleRemove(rule)"></i>
     </div>
     <bk-button class="condition-button"
-      :disabled="!unusedProperties.length"
+      :disabled="!unusedProperties.length || disabled"
       icon="icon-plus-circle"
       :text="true"
       @click="handleAdd">
@@ -58,6 +61,10 @@
       data: {
         type: Object,
         default: () => ({})
+      },
+      disabled: {
+        type: Boolean,
+        default: false
       }
     },
     setup(props, { emit }) {
@@ -177,6 +184,7 @@
 
 <style lang="scss" scoped>
   .business-scope-settings-form {
+    width: 100%;
     .condition-item {
       display: flex;
       align-items: center;
@@ -195,7 +203,8 @@
         margin-right: 8px;
       }
       .condition-value {
-        flex: 1;
+        flex: none;
+        width: calc(100% - 158px);
         &.organization {
           font-size: 14px;
         }

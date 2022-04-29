@@ -33,8 +33,15 @@ func InitTracer(ctx context.Context) error {
 	}
 
 	// 配置http上报地址
-	traceExporter, err := otlptracehttp.New(ctx, otlptracehttp.WithEndpoint(openTelemetryCfg.endpoint),
-		otlptracehttp.WithInsecure())
+	option := []otlptracehttp.Option{
+		otlptracehttp.WithEndpoint(openTelemetryCfg.endpoint),
+		otlptracehttp.WithInsecure(),
+	}
+
+	if openTelemetryCfg.tlsConf != nil {
+		option = append(option, otlptracehttp.WithTLSClientConfig(openTelemetryCfg.tlsConf))
+	}
+	traceExporter, err := otlptracehttp.New(ctx, option...)
 	if err != nil {
 		return err
 	}
