@@ -5,7 +5,7 @@
       :max-height="$APP.height - 120">
       <bk-table-column prop="property_name" :label="$t('属性名称')" show-overflow-tooltip></bk-table-column>
 
-      <bk-table-column prop="property_value" :label="$t('变更前')" show-overflow-tooltip>
+      <bk-table-column prop="property_value" :label="$t('变更前')">
         <template slot-scope="{ row }">
           <process-bind-info-value
             v-if="row.property_id === 'bind_info'"
@@ -15,6 +15,10 @@
 
           <cmdb-property-value
             v-else
+            v-bk-tooltips="{
+              content: getPropertyValue(row, 'before'),
+              duration: 500
+            }"
             :value="getPropertyValue(row, 'before')"
             :property="properties.find(property => property.bk_property_id === row.property_id)">
           </cmdb-property-value>
