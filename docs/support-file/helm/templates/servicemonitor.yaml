@@ -8,9 +8,13 @@ spec:
     - port: http
       path: "/metrics"
       interval: {{ .Values.serviceMonitor.interval }}
+      metricRelabelings:
+        - action: replace
+          replacement: bk-cmdb
+          targetLabel: job
   namespaceSelector:
     any: true
   selector:
     matchLabels:
-      app: bk-cmdb
+      app.kubernetes.io/name: bk-cmdb
 {{- end }}

@@ -130,6 +130,8 @@ data:
     #datacollection专属配置
     datacollection:
       hostsnap:
+        # 主机静态数据采集模式，将数据导入kafka或者redis，可选值是 kafka、redis，默认值为redis（仅用于新插件bkmonitorbeat）
+        reportMode: {{ .Values.common.datacollection.hostSnapshot.reportMode }}
         # 当主机快照数据属性,如cpu,bk_cpu_mhz,bk_disk,bk_mem这些数值型数据变动的范围大于该配置的值时，进行db数据的更新，默认值为10%，最小值为5%，以百分比为单位
         changeRangePercent: {{ .Values.common.datacollection.hostSnapshot.changeRangePercent}}
         # 用于设置主机快照key在redis中的过期时间，该时间会有上下50%的波动，当key存在时，同一id的主机数据不会更新，默认值为10分钟，最小值为5分钟，以分钟为单位
@@ -176,6 +178,90 @@ data:
     # 业务简要拓扑缓存的定时刷新时间，默认为15分钟，最小为2分钟。每次会将所有的业务的拓扑刷新一次到缓存中
       briefTopologySyncIntervalMinutes: {{ .Values.common.cacheService.briefTopologySyncIntervalMinutes }}
 
+    # 日志平台openTelemetry跟踪链接入相关配置
+    openTelemetry:
+      # 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
+      enable: {{ .Values.common.openTelemetry.enable }}
+      # 日志平台openTelemetry跟踪链功能的自定义上报服务地址
+      endpoint: {{ .Values.common.openTelemetry.endpoint }}
+      # 日志平台openTelemetry跟踪链功能的上报data_id
+      bkDataID: {{ .Values.common.openTelemetry.bkDataID }}
+
+    # eventServer相关配置
+    eventServer:
+      # 下发主机身份相关配置
+      hostIdentifier:
+        # 是否开始下发主机身份功能, 有两个值，true和false，当处于true时，开启下发主机身份功能，false时，关闭该功能
+        startUp: {{ .Values.common.eventServer.hostIdentifier.startUp }}
+        # 每隔多少个小时进行一次全量主机身份批量的同步操作，整数值，单位为小时，注：刚启动服务时，会等一个周期后再进行全量同步操作
+        batchSyncIntervalHours: {{ .Values.common.eventServer.hostIdentifier.batchSyncIntervalHours }}
+        # 用于设置推送主机身份请求gse的taskServer能力，起到限流的作用。qps的默认值为200, 代表每秒最多推送的主机数量，burst的默认值为200
+        rateLimiter:
+          qps: {{ .Values.common.eventServer.hostIdentifier.rateLimiter.qps }}
+          burst: {{ .Values.common.eventServer.hostIdentifier.rateLimiter.burst }}
+        # 下发主机身份文件名
+        fileName: {{ .Values.common.eventServer.hostIdentifier.fileName }}
+        # 当下发主机为linux操作系统时，相关配置
+        linux:
+          # 下发主机身份文件路径
+          filePath: {{ .Values.common.eventServer.hostIdentifier.linux.filePath }}
+          # 下发主机身份文件所有者
+          fileOwner: {{ .Values.common.eventServer.hostIdentifier.linux.fileOwner }}
+          # 下发主机身份文件权限值
+          filePrivilege: {{ .Values.common.eventServer.hostIdentifier.linux.filePrivilege }}
+        # 当下发主机为windows操作系统时，相关配置
+        windows:
+          # 下发主机身份文件路径
+          filePath: {{ .Values.common.eventServer.hostIdentifier.windows.filePath }}
+          # 下发主机身份文件所有者
+          fileOwner: {{ .Values.common.eventServer.hostIdentifier.windows.fileOwner }}
+          # 下发主机身份文件权限值
+          filePrivilege: {{ .Values.common.eventServer.hostIdentifier.windows.filePrivilege }}
+
+    # 直接调用gse服务相关配置
+    gse:
+      # 调用gse的apiServer服务时相关配置
+      apiServer:
+        # 此配置为数组类型，可配置连接gse的apiServer的多个host:port格式的值，去建立连接
+        endpoints:
+    {{- range $endpoint := .Values.common.gse.apiServer.endpoints }}
+          - {{ $endpoint }}
+    {{- end }}
+          # 证书相关信息
+        insecureSkipVerify: {{ .Values.common.gse.apiServer.insecureSkipVerify }}
+        certFile: {{ .Values.certPath }}/{{ .Values.common.gse.apiServer.certFile }}
+        keyFile: {{ .Values.certPath }}/{{ .Values.common.gse.apiServer.keyFile }}
+        caFile: {{ .Values.certPath }}/{{ .Values.common.gse.apiServer.caFile }}
+        password: {{ .Values.common.gse.apiServer.password }}
+      # 调用gse的taskServer服务时相关配置
+      taskServer:
+        # 此配置为数组类型，可配置连接gse的taskServer的多个host:port格式的值，去建立连接
+        endpoints:
+    {{- range $endpoint := .Values.common.gse.taskServer.endpoints }}
+          - {{ $endpoint }}
+    {{- end }}
+        # 证书相关信息
+        insecureSkipVerify: {{ .Values.common.gse.taskServer.insecureSkipVerify }}
+        certFile: {{ .Values.certPath }}/{{ .Values.common.gse.taskServer.certFile }}
+        keyFile: {{ .Values.certPath }}/{{ .Values.common.gse.taskServer.keyFile }}
+        caFile: {{ .Values.certPath }}/{{ .Values.common.gse.taskServer.caFile }}
+        password: {{ .Values.common.gse.taskServer.password }}
+
+    # 当主机静态数据采集模式为kafka时，datacollection处理插件bkmonitorbeat采集上来的主机静态数据，选择kafka作为数据导入组件时的相关配置
+    kafka:
+      snap:
+        brokers:
+    {{- range $broker := .Values.common.kafka.brokers }}
+          - {{ $broker }}
+    {{- end }}
+        # groupID为固定值，请勿随便修改，修改后会导致重复消费过去的数据
+        groupID: {{ .Values.common.kafka.groupID }}
+        # partition数量固定为1，保证消息的顺序性
+        partition: {{ .Values.common.kafka.partition }}
+        # 安全协议SASL_PLAINTEXT，SASL机制SCRAM-SHA-512的账号、密码信息
+        user: {{ .Values.common.kafka.user }}
+        password: {{ .Values.common.kafka.password }}
+
   extra.yaml: |-
     
 
@@ -208,7 +294,6 @@ data:
       usr: {{ include "cmdb.mongodb.usr" . | quote }}
       pwd: {{ include "cmdb.mongodb.pwd" . | quote }}
       database: {{ .Values.mongodb.externalMongodb.database }}
-      port: {{ include "cmdb.mongodb.port" . | quote }}
       maxOpenConns: {{ .Values.mongodb.externalMongodb.maxOpenConns }}
       maxIdleConns: {{ .Values.mongodb.externalMongodb.maxIdleConns }}
 
@@ -220,7 +305,6 @@ data:
 
     watch:
       host: {{ include "cmdb.mongodb.watch.addr" . | quote }}
-      port: {{ include "cmdb.mongodb.watch.port" . | quote }}
       usr: {{ include "cmdb.mongodb.watch.usr" . | quote }}
       pwd: {{ include "cmdb.mongodb.watch.pwd" . | quote }}
       database: {{ .Values.mongodb.watch.database }}
@@ -237,21 +321,29 @@ data:
       database: {{ .Values.redis.redis.database }}
       maxOpenConns: {{ .Values.redis.redis.maxOpenConns }}
       maxIdleConns: {{ .Values.redis.redis.maxIdleConns }}
+      sentinelPwd: {{ .Values.redis.redis.sentinelPwd }}
+      masterName: {{ .Values.redis.redis.masterName }}
       snap:
         host: {{ include "cmdb.redis.snap.host" . | quote }}
         pwd: {{ include "cmdb.redis.snap.pwd" . | quote }}
         database: {{ .Values.redis.snapshotRedis.database }}
         maxOpenConns: {{ .Values.redis.snapshotRedis.maxOpenConns }}
         maxIdleConns: {{ .Values.redis.snapshotRedis.maxIdleConns }}
+        sentinelPwd: {{ .Values.redis.snapshotRedis.sentinelPwd }}
+        masterName: {{ .Values.redis.snapshotRedis.masterName }}
       discover:
         host: {{ include "cmdb.redis.discover.host" . | quote }}
         pwd: {{ include "cmdb.redis.discover.pwd" . | quote }}
         database: {{ .Values.redis.discoverRedis.database }}
         maxOpenConns: {{ .Values.redis.discoverRedis.maxOpenConns }}
         maxIdleConns: {{ .Values.redis.discoverRedis.maxIdleConns }}
+        sentinelPwd: {{ .Values.redis.discoverRedis.sentinelPwd }}
+        masterName: {{ .Values.redis.discoverRedis.masterName }}
       netcollect:
         host: {{ include "cmdb.redis.netcollect.host" . | quote }}
         pwd: {{ include "cmdb.redis.netcollect.pwd" . | quote }}
         database: {{ .Values.redis.netCollectRedis.database }}
         maxOpenConns: {{ .Values.redis.netCollectRedis.maxOpenConns }}
         maxIdleConns: {{ .Values.redis.netCollectRedis.maxIdleConns }}
+        sentinelPwd: {{ .Values.redis.netCollectRedis.sentinelPwd }}
+        masterName: {{ .Values.redis.netCollectRedis.masterName }}

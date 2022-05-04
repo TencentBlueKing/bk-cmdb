@@ -75,11 +75,19 @@ spec:
         ports:
         - containerPort: {{ .Values.eventserver.port }}
 
-      {{- if .Values.eventserver.configDir }}
         volumeMounts:
+          - name: cert
+            mountPath: {{ .Values.certPath }}
+        {{- if .Values.eventserver.configDir }}
           - name: configures
             mountPath: {{ .Values.eventserver.configDir }}
+        {{- end }}
+
       volumes:
+        - name: cert
+          configMap:
+            name: {{ template "bk-cmdb.fullname" . }}-certs
+      {{- if .Values.eventserver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-eventserver-configures

@@ -391,6 +391,14 @@ monstache是一个用于将mongodb的数据同步到es去创建索引的一个�
 | serviceMonitor.enabled | 是否开启服务监控，采集cmdb业务指标数据 | false       |
 | serviceMonitor.interval | cmdb业务指标数据采集间隔时间 | 15s |
 
+### 证书相关配置
+|            参数             |                             描述                             | 默认值 |
+| :-------------------------: | :----------------------------------------------------------: | :----: |
+| certPath | 证书的挂载pod里的路径 | "/data/cmdb/cert"       |
+| gseCert.ca |gse的CA证书  | "" |
+| gseCert.cmdbCert | cmdb连接gse服务所需要的证书 |""  |
+| gseCert.cmdbKey | cmdb连接gse服务所需要的证书的密钥 |  ""|
+
 ## 配置案例
 
 ### 1. 使用外接mongodb
@@ -404,8 +412,7 @@ mongodb:
     usr: xxx
     pwd: xxx
     database: xxx
-    host: xxx
-    port: xxx
+    host: 127.0.0.1:27017
     maxOpenConns: xxx
     maxIdleConns: xxx
     mechanism: xxx
@@ -415,8 +422,7 @@ mongodb:
     usr: xxx
     pwd: xxx
     database: xxx
-    host: xxx
-    port: xxx
+    host: 127.0.0.1:27017
     maxOpenConns: xxx
     maxIdleConns: xxx
     mechanism: xxx
@@ -432,32 +438,40 @@ redis:
   ...
   # external redis configuration
   redis:
-    host: xxx
+    host: 127.0.0.1:6379
     pwd: xxx
     database: xxx
     maxOpenConns: xxx
     maxIdleConns: xxx
+    sentinelPwd: xxx
+    masterName: xxx
 
   snapshotRedis:
-    host: xxx
+    host: 127.0.0.1:6379
     pwd: xxx
     database: xxx
     maxOpenConns: xxx
     maxIdleConns: xxx
+    sentinelPwd: xxx
+    masterName: xxx
 
   discoverRedis:
-    host: xxx
+    host: 127.0.0.1:6379
     pwd: xxx
     database: xxx
     maxOpenConns: xxx
     maxIdleConns: xxx
+    sentinelPwd: xxx
+    masterName: xxx
 
   netCollectRedis:
-    host: xxx
+    host: 127.0.0.1:6379
     pwd: xxx
     database: xxx
     maxOpenConns: xxx
     maxIdleConns: xxx
+    sentinelPwd: xxx
+    masterName: xxx
 ```
 
 ### 3. 使用外接zookeeper作为配置发现中心和服务发现中心
@@ -466,7 +480,7 @@ redis:
 zookeeper:
   enabled: false
 configAndServiceCenter:
-  addr: xxx
+  addr: 127.0.0.1:2181
 
 ```
 
@@ -580,8 +594,8 @@ common:
     appSecret: xxx
  ...
   webServer:
-      site:
-        authscheme: iam
+    site:
+      authScheme: iam
 ```
 
 ### 7. blueking方式登陆
@@ -658,6 +672,40 @@ authserver:
 
 如果长时间有些服务无法启动，如：toposerver，请确认job是否启动并执行完成
 
+### 3. 想要配置多个外置zookeeper地址作为服务中心怎么办？
+
+答：通过,(逗号)分隔，如下：
+```
+configAndServiceCenter:
+  addr: 127.0.0.1:2181,127.0.0.2:2181
+
+```
+
+### 4. 想要配置多个外置redis地址怎么办？
+
+答：通过,(逗号)分隔，如下：
+```
+redis:
+  ...
+  # external redis configuration
+  redis:
+    host: 127.0.0.1:6379,128.0.0.1:6379
+
+```
+
+### 5. 想要配置多个外置mongo地址怎么办？
+
+答：通过,(逗号)分隔，如下：
+```
+mongodb:
+  # external mongo configuration
+  externalMongodb:
+    enabled: xxx
+    usr: xxx
+    pwd: xxx
+    database: xxx
+    host: 127.0.0.1:27017,127.0.0.1:27018
+```
 
 
 

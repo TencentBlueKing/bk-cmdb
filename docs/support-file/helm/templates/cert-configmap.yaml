@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "bk-cmdb.fullname" . }}-certs
+data:
+  gseca.crt: {{ .Values.gseCert.ca | b64dec | quote }}
+  cmdb.cert: {{ .Values.gseCert.cmdbCert | b64dec | quote }}
+  cmdb.key: {{ .Values.gseCert.cmdbKey | b64dec | quote }}

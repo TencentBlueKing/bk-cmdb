@@ -11,7 +11,7 @@ spec:
   namespace: {{ .Release.Namespace }}
   labelSelector:
     matchLabels:
-      app: bk-cmdb
+      app.kubernetes.io/name: bk-cmdb
   encoding: 'utf-8'
   path:
     - /data/cmdb/cmdb_*/logs/*
@@ -30,5 +30,5 @@ spec:
   namespace: {{ .Release.Namespace }}
   labelSelector:
     matchLabels:
-      app: bk-cmdb
+      app.kubernetes.io/name: bk-cmdb
 {{- end }}
