@@ -13,6 +13,7 @@
 package metadata
 
 import (
+	"configcenter/src/common"
 	"fmt"
 
 	ccjson "configcenter/src/common/json"
@@ -23,17 +24,20 @@ const (
 	// IndexNamePrefix prefix of index name.
 	IndexNamePrefix = "bk_cmdb."
 
+	// IndexNameBizSet name of model business set instance es index.
+	IndexNameBizSet = IndexNamePrefix + common.BKInnerObjIDBizSet
+
 	// IndexNameBiz name of model business application instance es index.
-	IndexNameBiz = IndexNamePrefix + "biz"
+	IndexNameBiz = IndexNamePrefix + common.BKInnerObjIDApp
 
 	// IndexNameSet name of model set instance es index.
-	IndexNameSet = IndexNamePrefix + "set"
+	IndexNameSet = IndexNamePrefix + common.BKInnerObjIDSet
 
 	// IndexNameModule name of model module instance es index.
-	IndexNameModule = IndexNamePrefix + "module"
+	IndexNameModule = IndexNamePrefix + common.BKInnerObjIDModule
 
 	// IndexNameHost name of model host instance es index.
-	IndexNameHost = IndexNamePrefix + "host"
+	IndexNameHost = IndexNamePrefix + common.BKInnerObjIDHost
 
 	// IndexNameModel name of model es index.
 	IndexNameModel = IndexNamePrefix + "model"
@@ -76,6 +80,9 @@ const (
 
 	// IndexPropertyBKBizID es index property for business id.
 	IndexPropertyBKBizID = "meta_bk_biz_id"
+
+	// IndexPropertyBKBizSetID es index property for business set id.
+	IndexPropertyBKBizSetID = "meta_bk_biz_set_id"
 
 	// IndexPropertyBKParentID es index property for model parent id.
 	IndexPropertyBKParentID = "meta_bk_parent_id"

@@ -218,6 +218,9 @@ type FullTextSearchReq struct {
 	// Filter search filter.
 	Filter *FullTextSearchFilter `json:"filter"`
 
+	// Fields search object filter
+	Fields []string `json:"fields"`
+
 	// SubResource main search list
 	SubResource *FullTextSearchFilter `json:"sub_resource"`
 	// QueryString elastic query_string keyword.
@@ -279,6 +282,14 @@ func (r *FullTextSearchFilter) generateESQueryConditions() []*FullTextSearchCond
 
 	for _, instance := range r.Instances {
 		switch instance {
+		case common.BKInnerObjIDBizSet:
+			searchFilterConditions = append(searchFilterConditions, &FullTextSearchCondition{
+				IndexName: metadata.IndexNameBizSet,
+				Conditions: map[string]interface{}{
+					metadata.IndexPropertyBKObjID: common.BKInnerObjIDBizSet,
+				},
+			})
+
 		case common.BKInnerObjIDApp:
 			searchFilterConditions = append(searchFilterConditions, &FullTextSearchCondition{
 				IndexName: metadata.IndexNameBiz,
@@ -527,8 +538,146 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 		objectIDs, instMetadataConditions, ctx.Kit.Rid)
 	// set read preference.
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	// query metadata model.
+
+	// query metadata object.
+	searchObjectResults := s.fullTextSearchForObject(ctx, objectIDs, objHits, request)
+	searchResults = append(searchResults, searchObjectResults...)
+
+	// query metadata instance.
+	searchInstanceResults := s.fullTextSearchForInstance(ctx, instMetadataConditions, insHits, request)
+	searchResults = append(searchResults, searchInstanceResults...)
+	return searchResults, nil
+}
+
+// initCommonSearchFilter init common search filter cond
+func initCommonSearchFilter(field string, ids []int64) *metadata.CommonSearchFilter {
+	return &metadata.CommonSearchFilter{
+		Conditions: &querybuilder.QueryFilter{
+			Rule: &querybuilder.AtomRule{
+				Field:    field,
+				Operator: querybuilder.OperatorIn,
+				Value:    ids,
+			},
+		},
+		Page: metadata.BasePage{Start: 0, Limit: common.BKMaxInstanceLimit},
+	}
+}
+
+// fullTextSearchForInstanceCond composition query instance condition.
+func fullTextSearchForInstanceCond(objectID string, ids []int64) *metadata.CommonSearchFilter {
+	input := &metadata.CommonSearchFilter{}
+	switch objectID {
+	case common.BKInnerObjIDBizSet:
+		input = initCommonSearchFilter(common.BKBizSetIDField, ids)
+	case common.BKInnerObjIDApp:
+		input = initCommonSearchFilter(common.BKAppIDField, ids)
+	case common.BKInnerObjIDSet:
+		input = initCommonSearchFilter(common.BKSetIDField, ids)
+	case common.BKInnerObjIDModule:
+		input = initCommonSearchFilter(common.BKModuleIDField, ids)
+	case common.BKInnerObjIDHost:
+		input = initCommonSearchFilter(common.BKHostIDField, ids)
+	default:
+		input = initCommonSearchFilter(common.BKInstIDField, ids)
+	}
+	return input
+}
+
+// fullTextSearchForInstance search instance result.
+func (s *Service) fullTextSearchForInstance(ctx *rest.Contexts, instMetadataConditions map[string][]int64,
+	insHits map[string]map[int64]*elastic.SearchHit, request FullTextSearchReq) []SearchResult {
+
+	searchResults := make([]SearchResult, 0)
+	if len(instMetadataConditions) == 0 {
+		blog.Errorf("inst metadata cond is invalid, cond: %+v, rid: %s", instMetadataConditions, ctx.Kit.Rid)
+		return nil
+	}
+
+	// query metadata instance.
+	input := &metadata.CommonSearchFilter{}
+	var wg sync.WaitGroup
+	var rwLock sync.RWMutex
+	var firstErr error
+	pipeline := make(chan bool, 10)
+	for objectID, ids := range instMetadataConditions {
+		pipeline <- true
+		wg.Add(1)
+		go func(objectID string, ids []int64) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			input = fullTextSearchForInstanceCond(objectID, ids)
+			// search object instances.
+			result, err := s.Logics.InstOperation().SearchObjectInstances(ctx.Kit, objectID, input)
+			if err != nil {
+				blog.Errorf("search object instances fail,objectID: %s,ids: %v,rid: %s", objectID, ids, ctx.Kit.Rid)
+				firstErr = err
+				return
+			}
+
+			for _, instance := range result.Info {
+
+				if _, ok := instance.(*mapstr.MapStr); !ok {
+					blog.Errorf("get inst struct fail, objectID: %v,rid: %s", objectID, ctx.Kit.Rid)
+					continue
+				}
+				var idStr string
+				inst := instance.(*mapstr.MapStr)
+				switch objectID {
+				case common.BKInnerObjIDBizSet:
+					idStr, err = inst.String(common.BKBizSetIDField)
+				case common.BKInnerObjIDApp:
+					idStr, err = inst.String(common.BKAppIDField)
+				case common.BKInnerObjIDSet:
+					idStr, err = inst.String(common.BKSetIDField)
+				case common.BKInnerObjIDModule:
+					idStr, _ = inst.String(common.BKModuleIDField)
+				case common.BKInnerObjIDHost:
+					idStr, err = inst.String(common.BKHostIDField)
+				default:
+					idStr, err = inst.String(common.BKInstIDField)
+				}
+				if err != nil {
+					blog.Errorf("get instId fail, objectID: %v,rid: %s", objectID, ctx.Kit.Rid)
+					continue
+				}
+
+				id, err := strconv.ParseInt(idStr, 10, 64)
+				if err != nil {
+					blog.Errorf("parse instId fail, objectID: %v,rid: %s", objectID, ctx.Kit.Rid)
+					continue
+				}
+
+				// instance result
+				searchRes := SearchResult{}
+				rawString := strings.Trim(request.QueryString, "*")
+				searchRes.setHit(ctx.Kit.Ctx, insHits[objectID][id], request.BizID, rawString)
+				searchRes.Kind = metadata.DataKindInstance
+				searchRes.Key = objectID
+				searchRes.Source = instance
+				rwLock.Lock()
+				searchResults = append(searchResults, searchRes)
+				rwLock.Unlock()
+			}
+
+		}(objectID, ids)
+	}
+	wg.Wait()
+
+	if firstErr != nil {
+		return nil
+	}
+	return searchResults
+}
+
+// fullTextSearchForObject search object result.
+func (s *Service) fullTextSearchForObject(ctx *rest.Contexts, objectIDs []string,
+	objHits map[string]*elastic.SearchHit, request FullTextSearchReq) []SearchResult {
+
 	modelCondition := &metadata.QueryCondition{
+		Fields:         request.Fields,
 		Page:           metadata.BasePage{Limit: common.BKNoLimit},
 		Condition:      mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objectIDs}},
 		DisableCounter: true,
@@ -537,9 +686,15 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 	objects, err := s.Engine.CoreAPI.CoreService().Model().ReadModel(ctx.Kit.Ctx, ctx.Kit.Header, modelCondition)
 	if err != nil {
 		blog.Errorf("get objects(%+v) failed, err: %v, rid: %s", objectIDs, err, ctx.Kit.Rid)
-		return nil, err
+		return nil
 	}
 
+	if objects.Count == 0 {
+		blog.Errorf("meet the modelCond object is empty, modelCond: %+v, rid: %s", modelCondition, ctx.Kit.Rid)
+		return nil
+	}
+
+	searchResults := make([]SearchResult, 0)
 	// model result.
 	for _, object := range objects.Info {
 		searchRes := SearchResult{}
@@ -551,135 +706,6 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 		searchResults = append(searchResults, searchRes)
 	}
 
-	// query metadata instance.
-	searchInstanceResults := s.fullTextSearchForInstance(ctx, instMetadataConditions, insHits, request)
-	searchResults = append(searchResults, searchInstanceResults...)
-	return searchResults, nil
-}
-
-// fullTextSearchForInstanceCond composition query instance condition.
-func fullTextSearchForInstanceCond(objectID string, ids []int64) *metadata.CommonSearchFilter {
-	input := &metadata.CommonSearchFilter{}
-	switch objectID {
-	case common.BKInnerObjIDApp:
-		input = &metadata.CommonSearchFilter{
-			Conditions: &querybuilder.QueryFilter{
-				Rule: &querybuilder.AtomRule{
-					Field:    common.BKAppIDField,
-					Operator: querybuilder.OperatorIn,
-					Value:    ids,
-				},
-			},
-			Page: metadata.BasePage{Start: 0, Limit: common.BKMaxInstanceLimit},
-		}
-	case common.BKInnerObjIDSet:
-		input = &metadata.CommonSearchFilter{
-			Conditions: &querybuilder.QueryFilter{
-				Rule: &querybuilder.AtomRule{
-					Field:    common.BKSetIDField,
-					Operator: querybuilder.OperatorIn,
-					Value:    ids,
-				},
-			},
-			Page: metadata.BasePage{Start: 0, Limit: common.BKMaxInstanceLimit},
-		}
-	case common.BKInnerObjIDModule:
-		input = &metadata.CommonSearchFilter{
-			Conditions: &querybuilder.QueryFilter{
-				Rule: &querybuilder.AtomRule{
-					Field:    common.BKModuleIDField,
-					Operator: querybuilder.OperatorIn,
-					Value:    ids,
-				},
-			},
-			Page: metadata.BasePage{Start: 0, Limit: common.BKMaxInstanceLimit},
-		}
-
-	case common.BKInnerObjIDHost:
-		input = &metadata.CommonSearchFilter{
-			Conditions: &querybuilder.QueryFilter{
-				Rule: &querybuilder.AtomRule{
-					Field:    common.BKHostIDField,
-					Operator: querybuilder.OperatorIn,
-					Value:    ids,
-				},
-			},
-			Page: metadata.BasePage{Start: 0, Limit: common.BKMaxInstanceLimit},
-		}
-	default:
-		input = &metadata.CommonSearchFilter{
-			Conditions: &querybuilder.QueryFilter{
-				Rule: &querybuilder.AtomRule{
-					Field:    common.BKInstIDField,
-					Operator: querybuilder.OperatorIn,
-					Value:    ids,
-				},
-			},
-			Page: metadata.BasePage{Start: 0, Limit: common.BKMaxInstanceLimit},
-		}
-	}
-	return input
-}
-
-// fullTextSearchForInstance search instance result.
-func (s *Service) fullTextSearchForInstance(ctx *rest.Contexts, instMetadataConditions map[string][]int64,
-	insHits map[string]map[int64]*elastic.SearchHit, request FullTextSearchReq) []SearchResult {
-
-	searchResults := make([]SearchResult, 0)
-
-	// query metadata instance.
-	input := &metadata.CommonSearchFilter{}
-	for objectID, ids := range instMetadataConditions {
-
-		input = fullTextSearchForInstanceCond(objectID, ids)
-		// search object instances.
-		result, err := s.Logics.InstOperation().SearchObjectInstances(ctx.Kit, objectID, input)
-		if err != nil {
-			blog.Errorf("search object instances fail,objectID: %s,ids: %v,rid: %s", objectID, ids, ctx.Kit.Rid)
-			continue
-		}
-
-		for _, instance := range result.Info {
-
-			if _, ok := instance.(*mapstr.MapStr); !ok {
-				blog.Errorf("get inst struct fail, objectID: %v,rid: %s", objectID, ctx.Kit.Rid)
-				continue
-			}
-			var idStr string
-			inst := instance.(*mapstr.MapStr)
-			switch objectID {
-			case common.BKInnerObjIDApp:
-				idStr, err = inst.String(common.BKAppIDField)
-			case common.BKInnerObjIDSet:
-				idStr, err = inst.String(common.BKSetIDField)
-			case common.BKInnerObjIDModule:
-				idStr, _ = inst.String(common.BKModuleIDField)
-			case common.BKInnerObjIDHost:
-				idStr, err = inst.String(common.BKHostIDField)
-			default:
-				idStr, err = inst.String(common.BKInstIDField)
-			}
-			if err != nil {
-				blog.Errorf("get instId fail, objectID: %v,rid: %s", objectID, ctx.Kit.Rid)
-				continue
-			}
-
-			id, err := strconv.ParseInt(idStr, 10, 64)
-			if err != nil {
-				blog.Errorf("parse instId fail, objectID: %v,rid: %s", objectID, ctx.Kit.Rid)
-				continue
-			}
-
-			// instance result
-			searchRes := SearchResult{}
-			rawString := strings.Trim(request.QueryString, "*")
-			searchRes.setHit(ctx.Kit.Ctx, insHits[objectID][id], request.BizID, rawString)
-			searchRes.Kind = metadata.DataKindInstance
-			searchRes.Key = objectID
-			searchRes.Source = instance
-			searchResults = append(searchResults, searchRes)
-		}
-	}
 	return searchResults
 }
 
@@ -812,8 +838,6 @@ func (sr *SearchResult) dealHighlight(source map[string]interface{}, highlight e
 			if !rawStringInObjId {
 				delete(highlight, key)
 			}
-		} else if key == metadata.IndexPropertyBKBizID {
-			delete(highlight, key)
 		} else {
 			// we don't need highlight with meta_bk_obj_id and meta_bk_biz_id, just like <em>meta_bk_obj_id</em>,
 			// <em>meta_bk_biz_id</em>. Replace it <em>meta_bk_obj_id</em> be bk_obj_id (do not need <em>)
