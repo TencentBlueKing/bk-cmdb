@@ -537,7 +537,8 @@ func analysisDocument(document map[string]interface{}, collection string) (strin
 }
 
 // outputDocument return output document
-func outputDocument(input *monstachemap.MapperPluginInput, output *monstachemap.MapperPluginOutput, objID, esObjID string) (map[string]interface{}, error) {
+func outputDocument(input *monstachemap.MapperPluginInput, output *monstachemap.MapperPluginOutput, objID,
+	esObjID string) (map[string]interface{}, error) {
 	oId := input.Document[common.BKOwnerIDField]
 	metaId := input.Document[mongoMetaId]
 	bizId := input.Document[common.BKAppIDField]
