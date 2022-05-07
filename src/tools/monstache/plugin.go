@@ -537,11 +537,16 @@ func analysisDocument(document map[string]interface{}, collection string) (strin
 }
 
 // outputDocument return output document
-func outputDocument(input *monstachemap.MapperPluginInput, output *monstachemap.MapperPluginOutput, id string,
-	keywords []string, objID, esObjID string) (map[string]interface{}, error) {
+func outputDocument(input *monstachemap.MapperPluginInput, output *monstachemap.MapperPluginOutput, objID, esObjID string) (map[string]interface{}, error) {
 	oId := input.Document[common.BKOwnerIDField]
 	metaId := input.Document[mongoMetaId]
 	bizId := input.Document[common.BKAppIDField]
+
+	// analysis document.
+	id, keywords, err := analysisDocument(input.Document, input.Collection)
+	if err != nil {
+		return nil, fmt.Errorf("analysis output document failed, %+v, %v", input.Document, err)
+	}
 
 	// build elastic document.
 	document := map[string]interface{}{
@@ -568,13 +573,7 @@ func indexingBizSet(input *monstachemap.MapperPluginInput, output *monstachemap.
 
 	bizSetId := input.Document[common.BKBizSetIDField]
 
-	// analysis document.
-	id, keywords, err := analysisDocument(input.Document, input.Collection)
-	if err != nil {
-		return fmt.Errorf("analysis biz set document failed, %+v, %v", input.Document, err)
-	}
-
-	document, err := outputDocument(input, output, id, keywords, common.BKInnerObjIDBizSet, common.BKInnerObjIDBizSet)
+	document, err := outputDocument(input, output, common.BKInnerObjIDBizSet, common.BKInnerObjIDBizSet)
 	if err != nil {
 		return fmt.Errorf("get biz set output document failed, err: %v", err)
 	}
@@ -591,13 +590,7 @@ func indexingBizSet(input *monstachemap.MapperPluginInput, output *monstachemap.
 // indexingApplication indexing the business application instance.
 func indexingApplication(input *monstachemap.MapperPluginInput, output *monstachemap.MapperPluginOutput) error {
 
-	// analysis document.
-	id, keywords, err := analysisDocument(input.Document, input.Collection)
-	if err != nil {
-		return fmt.Errorf("analysis business application document failed, %+v, %v", input.Document, err)
-	}
-
-	document, err := outputDocument(input, output, id, keywords, common.BKInnerObjIDApp, common.BKInnerObjIDApp)
+	document, err := outputDocument(input, output, common.BKInnerObjIDApp, common.BKInnerObjIDApp)
 	if err != nil {
 		return fmt.Errorf("get biz output document failed, err: %v", err)
 	}
@@ -614,13 +607,7 @@ func indexingSet(input *monstachemap.MapperPluginInput, output *monstachemap.Map
 
 	pId := input.Document[common.BKParentIDField]
 
-	// analysis document.
-	id, keywords, err := analysisDocument(input.Document, input.Collection)
-	if err != nil {
-		return fmt.Errorf("analysis set document failed, %+v, %v", input.Document, err)
-	}
-
-	document, err := outputDocument(input, output, id, keywords, common.BKInnerObjIDSet, common.BKInnerObjIDSet)
+	document, err := outputDocument(input, output, common.BKInnerObjIDSet, common.BKInnerObjIDSet)
 	if err != nil {
 		return fmt.Errorf("get set output document failed, err: %v", err)
 	}
@@ -636,13 +623,7 @@ func indexingSet(input *monstachemap.MapperPluginInput, output *monstachemap.Map
 // indexingModule indexing the module instance.
 func indexingModule(input *monstachemap.MapperPluginInput, output *monstachemap.MapperPluginOutput) error {
 
-	// analysis document.
-	id, keywords, err := analysisDocument(input.Document, input.Collection)
-	if err != nil {
-		return fmt.Errorf("analysis module document failed, %+v, %v", input.Document, err)
-	}
-
-	document, err := outputDocument(input, output, id, keywords, common.BKInnerObjIDModule, common.BKInnerObjIDModule)
+	document, err := outputDocument(input, output, common.BKInnerObjIDModule, common.BKInnerObjIDModule)
 	if err != nil {
 		return fmt.Errorf("get module output document failed, err: %v", err)
 	}
@@ -656,13 +637,8 @@ func indexingModule(input *monstachemap.MapperPluginInput, output *monstachemap.
 
 // indexingHost indexing the host instance.
 func indexingHost(input *monstachemap.MapperPluginInput, output *monstachemap.MapperPluginOutput) error {
-	// analysis document.
-	id, keywords, err := analysisDocument(input.Document, input.Collection)
-	if err != nil {
-		return fmt.Errorf("analysis host document failed, %+v, %v", input.Document, err)
-	}
 
-	document, err := outputDocument(input, output, id, keywords, common.BKInnerObjIDHost, common.BKInnerObjIDHost)
+	document, err := outputDocument(input, output, common.BKInnerObjIDHost, common.BKInnerObjIDHost)
 	if err != nil {
 		return fmt.Errorf("get host output document failed, err: %v", err)
 	}
@@ -692,6 +668,10 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 		Decode(&model); err != nil {
 		return fmt.Errorf("query model object[%s] failed, %v", objectID, err)
 	}
+
+	oId := model[common.BKOwnerIDField]
+	bizId := model[common.BKAppIDField]
+	metaId := model[mongoMetaId]
 
 	// analysis model document.
 	_, keywords, err := analysisDocument(model, common.BKTableNameObjDes)
@@ -723,14 +703,23 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 		}
 		keywords = append(keywords, analysisJSONKeywords(gjson.Parse(jsonDoc))...)
 	}
-
-	document, err := outputDocument(input, output, nullMetaId, keywords, objectID, common.BKInnerObjIDObject)
-	if err != nil {
-		return fmt.Errorf("get object output document failed, err: %v", err)
+	documentID, ok := metaId.(primitive.ObjectID)
+	if !ok {
+		return fmt.Errorf("missing document metadata id")
 	}
-	document[meta.IndexPropertyDataKind] = meta.DataKindModel
-	document[meta.IndexPropertyKeywords] = compressKeywords(keywords)
+	idEs := fmt.Sprintf("%s:%s", documentID.Hex(), common.BKInnerObjIDObject)
 
+	// build elastic document.
+	document := map[string]interface{}{
+		// model scene,we use meta_bk_obj_id to search mongo,this id set null.
+		meta.IndexPropertyID:                nullMetaId,
+		meta.IndexPropertyDataKind:          meta.DataKindModel,
+		meta.IndexPropertyBKObjID:           objectID,
+		meta.IndexPropertyBKSupplierAccount: oId,
+		meta.IndexPropertyBKBizID:           bizId,
+		meta.IndexPropertyKeywords:          compressKeywords(keywords),
+	}
+	output.ID = idEs
 	output.Document = document
 	// use alias name to indexing document.
 	output.Index = indexModel.AliasName()
@@ -743,13 +732,7 @@ func indexingObjectInstance(input *monstachemap.MapperPluginInput, output *monst
 
 	objId := input.Document[common.BKObjIDField]
 
-	// analysis document.
-	id, keywords, err := analysisDocument(input.Document, input.Collection)
-	if err != nil {
-		return fmt.Errorf("analysis object instance document failed, %+v, %v", input.Document, err)
-	}
-
-	document, err := outputDocument(input, output, id, keywords, objId.(string), commonObject)
+	document, err := outputDocument(input, output, objId.(string), commonObject)
 	if err != nil {
 		return fmt.Errorf("get object instance output document failed, err: %v", err)
 	}
