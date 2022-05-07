@@ -45,7 +45,8 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 	}
 
 	if len(input.Instances) > common.BKMaxUpdateOrCreatePageSize {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "create service instances",
+			common.BKMaxUpdateOrCreatePageSize))
 		return
 	}
 
@@ -538,7 +539,8 @@ func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 	}
 
 	if len(input.HostIDs) > common.BKMaxPageSize {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommXXExceedLimit))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "search service instances",
+			common.BKMaxPageSize))
 		return
 	}
 	if _, err := input.Page.Validate(false); err != nil {
@@ -675,7 +677,8 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 	}
 
 	if len(input.ServiceInstanceIDs) > common.BKMaxDeletePageSize {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommXXExceedLimit))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "delete service instance",
+			common.BKMaxDeletePageSize))
 		return
 	}
 
@@ -2674,7 +2677,8 @@ func (ps *ProcServer) ServiceInstanceAddLabels(ctx *rest.Contexts) {
 	}
 
 	if len(option.InstanceIDs) > common.BKMaxUpdateOrCreatePageSize {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommXXExceedLimit))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "add labels",
+			common.BKMaxUpdateOrCreatePageSize))
 		return
 	}
 
@@ -2740,7 +2744,8 @@ func (ps *ProcServer) ServiceInstanceRemoveLabels(ctx *rest.Contexts) {
 	}
 
 	if len(option.InstanceIDs) > common.BKMaxDeletePageSize {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommXXExceedLimit))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "remove labels",
+			common.BKMaxDeletePageSize))
 		return
 	}
 
