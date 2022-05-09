@@ -31,7 +31,7 @@ const baseDir = dir || fs.realpathSync(process.cwd())
 const searchDir = path.resolve(baseDir, './')
 
 const htmlTypeExts = ['.vue', '.html', '.htm']
-const searchFileExts = ['.js', ...htmlTypeExts, '.css', 'scss']
+const searchFileExts = ['.js', ...htmlTypeExts, '.css', '.scss']
 
 const newLicenseContent = `
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
