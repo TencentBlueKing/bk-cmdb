@@ -13,9 +13,9 @@
 package metadata
 
 import (
-	"configcenter/src/common"
 	"fmt"
 
+	"configcenter/src/common"
 	ccjson "configcenter/src/common/json"
 )
 

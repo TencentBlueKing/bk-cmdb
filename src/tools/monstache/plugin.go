@@ -14,6 +14,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -115,12 +116,12 @@ func cronInsEnumInfo(input *monstachemap.InitPluginInput) {
 		modelCursor, err := input.MongoClient.Database(mongoDatabase).Collection(common.BKTableNameObjDes).
 			Find(context.Background(), bson.D{})
 		if err != nil {
-			log.Printf("query model attributes cursor failed, %+v", err)
+			log.Printf("query model attributes cursor failed, err: %v", err)
 			return
 		}
 
 		if err := modelCursor.All(context.Background(), &models); err != nil {
-			log.Printf("query model attributes failed, %+v", err)
+			log.Printf("query model attributes failed, err: %v", err)
 			return
 		}
 
@@ -173,7 +174,7 @@ func cronInsEnumInfo(input *monstachemap.InitPluginInput) {
 		instEnumInfo.rw.Lock()
 		defer instEnumInfo.rw.Unlock()
 		instEnumInfo.instEnumMap = instEnumInfoTmp.instEnumMap
-		log.Printf("update instEnumInfo successfully")
+		log.Println("update instEnumInfo successfully")
 		return
 	}
 
@@ -181,7 +182,7 @@ func cronInsEnumInfo(input *monstachemap.InitPluginInput) {
 		initEnum()
 		err := initSkipBizId(input)
 		if err != nil {
-			log.Printf("init resource pool fail,err: %v", err)
+			log.Printf("init resource pool fail, err: %v", err)
 			os.Exit(1)
 		}
 		time.Sleep(time.Minute)
@@ -227,7 +228,7 @@ func init() {
 	}
 
 	if config.ShardingNum == "" || config.ReplicaNum == "" {
-		panic(fmt.Sprintf("es shardingNum or replicaNum is not config!"))
+		panic(fmt.Sprintln("es shardingNum or replicaNum is not config!"))
 	}
 
 	instEnumInfo = &instEnumIdToName{
@@ -239,11 +240,10 @@ func init() {
 
 	// biz set index.
 	indexBizSetMetadata := newESIndexMetadata(config)
-	indexBizSetMetadata.Mappings.Properties = map[string]meta.ESIndexMetaMappingsProperty{
-		meta.IndexPropertyBKBizSetID: {
-			PropertyType: meta.IndexPropertyTypeKeyword,
-		},
+	indexBizSetMetadata.Mappings.Properties[meta.IndexPropertyBKBizSetID] = meta.ESIndexMetaMappingsProperty{
+		PropertyType: meta.IndexPropertyTypeKeyword,
 	}
+	// init indexBizSetMetadata, but biz set not meta.IndexPropertyBKBizID field, delete it
 	delete(indexBizSetMetadata.Mappings.Properties, meta.IndexPropertyBKBizID)
 	indexBizSet = meta.NewESIndex(meta.IndexNameBizSet, indexVersionBizSet, indexBizSetMetadata)
 	indexList = append(indexList, indexBizSet)
@@ -255,10 +255,8 @@ func init() {
 
 	// set index.
 	indexSetMetadata := newESIndexMetadata(config)
-	indexSetMetadata.Mappings.Properties = map[string]meta.ESIndexMetaMappingsProperty{
-		meta.IndexPropertyBKParentID: {
-			PropertyType: meta.IndexPropertyTypeKeyword,
-		},
+	indexSetMetadata.Mappings.Properties[meta.IndexPropertyBKParentID] = meta.ESIndexMetaMappingsProperty{
+		PropertyType: meta.IndexPropertyTypeKeyword,
 	}
 	indexSet = meta.NewESIndex(meta.IndexNameSet, indexVersionSet, indexSetMetadata)
 	indexList = append(indexList, indexSet)
@@ -270,12 +268,11 @@ func init() {
 
 	// host index.
 	indexHostMetadata := newESIndexMetadata(config)
-	indexHostMetadata.Mappings.Properties = map[string]meta.ESIndexMetaMappingsProperty{
-		meta.IndexPropertyBKCloudID: {
-			PropertyType: meta.IndexPropertyTypeKeyword,
-		},
+	indexHostMetadata.Mappings.Properties[meta.IndexPropertyBKCloudID] = meta.ESIndexMetaMappingsProperty{
+		PropertyType: meta.IndexPropertyTypeKeyword,
 	}
-	delete(indexBizSetMetadata.Mappings.Properties, meta.IndexPropertyBKBizID)
+	// init indexHostMetadata, but host is not meta.IndexPropertyBKBizID field, delete it
+	delete(indexHostMetadata.Mappings.Properties, meta.IndexPropertyBKBizID)
 	indexHost = meta.NewESIndex(meta.IndexNameHost, indexVersionHost, indexHostMetadata)
 	indexList = append(indexList, indexHost)
 
@@ -330,7 +327,7 @@ func compressKeywords(keywords []string) []string {
 // getMetaIdToStr objID/hostID/setID/moduleID/instanceID/bizID  convert to string.
 func getMetaIdToStr(d interface{}) (string, error) {
 	if d == nil {
-		return "", fmt.Errorf("document id is nil")
+		return "", errors.New("document id is nil")
 	}
 	return fmt.Sprintf("%v", d), nil
 }
@@ -472,47 +469,47 @@ func analysisDocument(document map[string]interface{}, collection string) (strin
 	case common.BKTableNameBaseBizSet:
 		bizSetId, err := getMetaIdToStr(document[common.BKBizSetIDField])
 		if err != nil {
-			return "", nil, fmt.Errorf("missing: %s,err: %v", common.BKBizSetIDField, err)
+			return "", nil, fmt.Errorf("missing: %s, err: %v", common.BKBizSetIDField, err)
 		}
 		id = bizSetId
 	case common.BKTableNameBaseApp:
 		bizId, err := getMetaIdToStr(document[common.BKAppIDField])
 		if err != nil {
-			return "", nil, fmt.Errorf("missing: %s,err: %v", common.BKAppIDField, err)
+			return "", nil, fmt.Errorf("missing: %s, err: %v", common.BKAppIDField, err)
 		}
 		id = bizId
 	case common.BKTableNameBaseSet:
 
 		setId, err := getMetaIdToStr(document[common.BKSetIDField])
 		if err != nil {
-			return "", nil, fmt.Errorf("missing: %s,err: %v", common.BKSetIDField, err)
+			return "", nil, fmt.Errorf("missing: %s, err: %v", common.BKSetIDField, err)
 		}
 		id = setId
 	case common.BKTableNameBaseModule:
 
 		moduleId, err := getMetaIdToStr(document[common.BKModuleIDField])
 		if err != nil {
-			return "", nil, fmt.Errorf("missing: %s,err: %v", common.BKModuleIDField, err)
+			return "", nil, fmt.Errorf("missing: %s, err: %v", common.BKModuleIDField, err)
 		}
 		id = moduleId
 
 	case common.BKTableNameBaseHost:
 		hostId, err := getMetaIdToStr(document[common.BKHostIDField])
 		if err != nil {
-			return "", nil, fmt.Errorf("missing: %s,err: %v", common.BKHostIDField, err)
+			return "", nil, fmt.Errorf("missing: %s, err: %v", common.BKHostIDField, err)
 		}
 		id = hostId
 
 	case common.BKTableNameObjDes, common.BKTableNameObjAttDes:
 		objId, err := getMetaIdToStr(document[common.BKObjIDField])
 		if err != nil {
-			return "", nil, fmt.Errorf("missing: %s,err: %v", common.BKObjIDField, err)
+			return "", nil, fmt.Errorf("missing: %s, err: %v", common.BKObjIDField, err)
 		}
 		id = objId
 	default:
 		instId, err := getMetaIdToStr(document[common.BKInstIDField])
 		if err != nil {
-			return "", nil, fmt.Errorf("missing: %s,err: %v", common.BKInstIDField, err)
+			return "", nil, fmt.Errorf("missing: %s, err: %v", common.BKInstIDField, err)
 		}
 		id = instId
 	}
@@ -523,7 +520,7 @@ func analysisDocument(document map[string]interface{}, collection string) (strin
 
 	doc := originalDataCleaning(document, collection)
 	if doc == nil {
-		return "", nil, fmt.Errorf("there is no document")
+		return "", nil, errors.New("there is no document")
 	}
 	// analysis keywords.
 	jsonDoc, err := ccjson.MarshalToString(doc)
@@ -546,7 +543,7 @@ func outputDocument(input *monstachemap.MapperPluginInput, output *monstachemap.
 	// analysis document.
 	id, keywords, err := analysisDocument(input.Document, input.Collection)
 	if err != nil {
-		return nil, fmt.Errorf("analysis output document failed, %+v, %v", input.Document, err)
+		return nil, fmt.Errorf("analysis output document failed, document: %+v, err: %v", input.Document, err)
 	}
 
 	// build elastic document.
@@ -561,7 +558,7 @@ func outputDocument(input *monstachemap.MapperPluginInput, output *monstachemap.
 
 	documentID, ok := metaId.(primitive.ObjectID)
 	if !ok {
-		return nil, fmt.Errorf("missing document metadata id")
+		return nil, errors.New("missing document metadata id")
 	}
 	idEs := fmt.Sprintf("%s:%s", documentID.Hex(), esObjID)
 	output.ID = idEs
@@ -706,7 +703,7 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 	}
 	documentID, ok := metaId.(primitive.ObjectID)
 	if !ok {
-		return fmt.Errorf("missing document metadata id")
+		return errors.New("missing document metadata id")
 	}
 	idEs := fmt.Sprintf("%s:%s", documentID.Hex(), common.BKInnerObjIDObject)
 
@@ -732,11 +729,32 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 func indexingObjectInstance(input *monstachemap.MapperPluginInput, output *monstachemap.MapperPluginOutput) error {
 
 	objId := input.Document[common.BKObjIDField]
+	bizId := input.Document[common.BKAppIDField]
+	oId := input.Document[common.BKOwnerIDField]
+	metaId := input.Document[mongoMetaId]
 
-	document, err := outputDocument(input, output, objId.(string), commonObject)
+	// analysis document.
+	id, keywords, err := analysisDocument(input.Document, input.Collection)
 	if err != nil {
-		return fmt.Errorf("get object instance output document failed, err: %v", err)
+		return fmt.Errorf("analysis object instance document failed, %+v, %v", input.Document, err)
 	}
+
+	// build elastic document.
+	document := map[string]interface{}{
+		meta.IndexPropertyID:                id,
+		meta.IndexPropertyDataKind:          meta.DataKindInstance,
+		meta.IndexPropertyBKObjID:           objId,
+		meta.IndexPropertyBKSupplierAccount: oId,
+		meta.IndexPropertyBKBizID:           bizId,
+		meta.IndexPropertyKeywords:          keywords,
+	}
+
+	documentID, ok := metaId.(primitive.ObjectID)
+	if !ok {
+		return errors.New("missing document metadata id")
+	}
+	idEs := fmt.Sprintf("%s:%s", documentID, commonObject)
+	output.ID = idEs
 
 	output.Document = document
 	// use alias name to indexing document.
@@ -753,14 +771,14 @@ func initSkipBizId(input *monstachemap.InitPluginInput) error {
 	appCursor, err := input.MongoClient.Database(mongoDatabase).Collection(common.BKTableNameBaseApp).
 		Find(context.Background(), bson.D{{common.BKDefaultField, 1}})
 	if err != nil {
-		return fmt.Errorf("query app database appCursor fail ,err %v", err)
+		return fmt.Errorf("query app database appCursor fail, err: %v", err)
 	}
 
 	if err := appCursor.All(context.Background(), &bizInfo); err != nil {
-		return fmt.Errorf("query app database fail ,err %v", err)
+		return fmt.Errorf("query app database fail, err: %v", err)
 	}
 	if len(bizInfo) == 0 {
-		return fmt.Errorf("query list num is zero")
+		return errors.New("query list num is zero")
 	}
 	skipBizIdList.rw.Lock()
 	defer skipBizIdList.rw.Unlock()
@@ -768,7 +786,7 @@ func initSkipBizId(input *monstachemap.InitPluginInput) error {
 	for _, v := range bizInfo {
 		skipBizIdList.bizIds[v.BusinessID] = struct{}{}
 	}
-	log.Printf(" initSkipBizId success,bizId: %v", bizInfo)
+	log.Printf("initSkipBizId success, bizId: %v", bizInfo)
 	return nil
 }
 
@@ -803,7 +821,7 @@ func Init(input *monstachemap.InitPluginInput) error {
 		}
 	}
 
-	log.Printf("initialize elastic indexes successfully")
+	log.Println("initialize elastic indexes successfully")
 
 	return nil
 }
@@ -817,7 +835,7 @@ func Map(input *monstachemap.MapperPluginInput) (*monstachemap.MapperPluginOutpu
 		if errRecover := recover(); errRecover != nil {
 			buf := make([]byte, 1<<16)
 			runtime.Stack(buf, true)
-			log.Printf("map data panic,buf: %v", string(buf))
+			log.Printf("map data panic, buf: %v", string(buf))
 		}
 	}()
 
@@ -829,7 +847,7 @@ func Map(input *monstachemap.MapperPluginInput) (*monstachemap.MapperPluginOutpu
 			defer skipBizIdList.rw.RUnlock()
 			bId, err := util.GetInt64ByInterface(bizId)
 			if err != nil {
-				log.Printf("bizId convert fail,bizId: %v,err: %v", bizId, err)
+				log.Printf("bizId convert fail, bizId: %v, err: %v", bizId, err)
 				return nil, err
 			}
 

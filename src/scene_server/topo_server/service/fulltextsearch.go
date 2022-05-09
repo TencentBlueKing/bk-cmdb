@@ -595,9 +595,11 @@ func (s *Service) fullTextSearchForInstance(ctx *rest.Contexts, instMetadataCond
 
 	// query metadata instance.
 	input := &metadata.CommonSearchFilter{}
-	var wg sync.WaitGroup
-	var rwLock sync.RWMutex
-	var firstErr error
+	var (
+		wg sync.WaitGroup
+		rwLock sync.RWMutex
+		firstErr error
+	)
 	pipeline := make(chan bool, 10)
 	for objectID, ids := range instMetadataConditions {
 		pipeline <- true
@@ -612,7 +614,7 @@ func (s *Service) fullTextSearchForInstance(ctx *rest.Contexts, instMetadataCond
 			// search object instances.
 			result, err := s.Logics.InstOperation().SearchObjectInstances(ctx.Kit, objectID, input)
 			if err != nil {
-				blog.Errorf("search object instances fail,objectID: %s,ids: %v,rid: %s", objectID, ids, ctx.Kit.Rid)
+				blog.Errorf("search obj instances fail, objID: %s, ids: %v, rid: %s", objectID, ids, ctx.Kit.Rid)
 				firstErr = err
 				return
 			}
@@ -620,7 +622,7 @@ func (s *Service) fullTextSearchForInstance(ctx *rest.Contexts, instMetadataCond
 			for _, instance := range result.Info {
 
 				if _, ok := instance.(*mapstr.MapStr); !ok {
-					blog.Errorf("get inst struct fail, objectID: %v,rid: %s", objectID, ctx.Kit.Rid)
+					blog.Errorf("get inst struct fail, objectID: %v, rid: %s", objectID, ctx.Kit.Rid)
 					continue
 				}
 				var idStr string
@@ -646,7 +648,7 @@ func (s *Service) fullTextSearchForInstance(ctx *rest.Contexts, instMetadataCond
 
 				id, err := strconv.ParseInt(idStr, 10, 64)
 				if err != nil {
-					blog.Errorf("parse instId fail, objectID: %v,rid: %s", objectID, ctx.Kit.Rid)
+					blog.Errorf("parse instId fail, objectID: %v, rid: %s", objectID, ctx.Kit.Rid)
 					continue
 				}
 
