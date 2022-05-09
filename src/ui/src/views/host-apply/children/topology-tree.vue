@@ -403,6 +403,11 @@
         if (ids) {
           withTemplateModuleIds = ids
         }
+
+        if (!withTemplateModuleIds?.length) {
+          return
+        }
+
         try {
           const result = await this.$store.dispatch('hostApply/getModuleApplyStatusByTemplate', {
             params: {

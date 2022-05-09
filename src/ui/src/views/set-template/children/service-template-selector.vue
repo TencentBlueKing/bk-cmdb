@@ -75,6 +75,8 @@
 <script>
   import { MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
   import { mapGetters } from 'vuex'
+  import serviceTemplateService from '@/services/service-template/index.js'
+
   export default {
     name: 'serviceTemplateSelector',
     props: {
@@ -138,17 +140,10 @@
     methods: {
       async getTemplates() {
         try {
-          const { info: templates } = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
-            params: {
-              bk_biz_id: this.bizId,
-              page: {
-                sort: 'name'
-              }
-            },
-            config: {
-              requestId: 'getServiceTemplate'
-            }
+          const templates = await serviceTemplateService.findAll({ bk_biz_id: this.bizId, page: { sort: 'name' } }, {
+            requestId: 'getServiceTemplate'
           })
+
           this.templates = templates.sort((A, B) => {
             const weightA = this.selected.includes(A.id) ? 1 : 0
             const weightB = this.selected.includes(B.id) ? 1 : 0

@@ -106,7 +106,7 @@ export default class CombineRequest {
     const callQueue = this.slice(this.concurrency, params)
 
     const genCall = function* (queue, cb) {
-      for (let i = 0; i　< queue.length; i++) {
+      for (let i = 0; i < queue.length; i++) {
         // concurrency个为一组
         yield Promise.allSettled(queue[i].map(params => cb(params)))
       }

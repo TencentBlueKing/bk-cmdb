@@ -104,7 +104,9 @@
 
 <script>
   import has from 'has'
+  import serviceTemplateService from '@/services/service-template/index.js'
   import { MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
+
   export default {
     props: {
       parentNode: {
@@ -187,17 +189,10 @@
           this.templateList = this.serviceTemplateMap[this.business]
         } else {
           try {
-            const { info: templates } = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
-              params: {
-                bk_biz_id: this.business,
-                page: {
-                  sort: '-last_time'
-                }
-              },
-              config: {
-                requestId: this.request.serviceTemplate
-              }
+            const templates = await serviceTemplateService.findAll({ bk_biz_id: this.business, page: { sort: '-last_time' } }, {
+              requestId: this.request.serviceTemplate
             })
+
             this.templateList = templates
             this.$store.commit('businessHost/setServiceTemplate', {
               id: this.business,
